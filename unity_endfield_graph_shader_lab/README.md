@@ -3941,6 +3941,7 @@ Li Zhiyan's retail video oracle is imported separately from draw ownership:
 python tools\build_lizhiyan_retail_draw_observation_contract.py
 python tools\build_lizhiyan_retail_visual_oracle.py
 python tools\build_lizhiyan_overview_timing_alignment.py
+python tools\build_lizhiyan_overview_start01_contract.py
 ```
 
 The current fixture pins `videos/2026-08-15_10-32-32.mkv` by byte count and
@@ -3977,6 +3978,19 @@ finger window, but PTS 42000 still contains measured teal after that root would
 have been destroyed at candidate PTS 41134. The one recovered finger effect
 therefore cannot explain the full retail teal chronology; eleven other
 serialized Li entrance requests remain unbound.
+
+The first of those requests is now structurally separated from particle
+effects. `P_fxui_lizhiyan_overview_start_01` is a root-mounted, non-looping
+2.2-second static-mesh animation: five hierarchy nodes, four
+MeshFilter/MeshRenderer pairs, no ParticleSystems, one shared mesh
+`S_fx_lzy_tiaodaifenwei_01`, and materials
+`M_fxui__lizhiyan_overview_09/_10/_11` at queue 3704. Its EffectSetting,
+transforms, renderer state, converted OBJ, and three serialized VFXBaseV2
+material payloads are pinned in `lizhiyan_overview_start_01_effect.json`.
+External start AnimationClip PathID `7360398354216100382`, native mesh payload,
+selected shader variants, and a static-mesh runtime binding kind remain open,
+so no prefab is materialized and visible admission stays false. Do not route
+this effect through the particle marker or invent ParticleSystems.
 
 One original dialog facial asset is now executable as a bounded source fixture:
 Zhuang Fangyi's 2.15-second

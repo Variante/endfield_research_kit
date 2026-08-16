@@ -33,6 +33,9 @@ namespace EndfieldGraphShaderLabEditor
         private const string TimingAlignmentPath =
             "Assets/EndfieldGraphShaderLab/Generated/OriginalData/ShaderEvidence/" +
             "LiZhiyanOverviewFinger/lizhiyan_overview_timing_alignment.json";
+        private const string Start01ContractPath =
+            "Assets/EndfieldGraphShaderLab/Generated/OriginalData/Effects/" +
+            "lizhiyan_overview_start_01_effect.json";
         private const string Schema = "endfield.lizhiyan-overview-vfxbasev2-variants.v1";
         private const long ShaderPathId = -1430105248647086886L;
 
@@ -147,6 +150,59 @@ namespace EndfieldGraphShaderLabEditor
             ValidateRetailDrawObservation();
             ValidateRetailVisualOracle();
             ValidateOverviewTimingAlignment();
+            ValidateOverviewStart01Contract();
+        }
+
+        private static void ValidateOverviewStart01Contract()
+        {
+            Dictionary<string, object> contract = L.Dict(
+                ManifestMiniJson.Deserialize(File.ReadAllText(
+                    L.ProjectAbsolute(Start01ContractPath), Encoding.UTF8)));
+            Dictionary<string, object> summary = L.Dict(contract["summary"]);
+            Dictionary<string, object> timing =
+                L.Dict(L.Dict(contract["effectSetting"])["timing"]);
+            Dictionary<string, object> animation = L.Dict(contract["animation"]);
+            Dictionary<string, object> startClip = L.Dict(animation["startAnimationClip"]);
+            Dictionary<string, object> mesh = L.Dict(contract["meshDependency"]);
+            Dictionary<string, object> execution = L.Dict(contract["executionBoundary"]);
+            IList nodes = L.List(contract["staticMeshNodes"]);
+            var materialIds = new HashSet<long>();
+            foreach (object item in nodes)
+            {
+                Dictionary<string, object> node = L.Dict(item);
+                IList materials = L.List(node["materials"]);
+                L.Require(materials.Count == 1 &&
+                    L.Long(L.Dict(node["mesh"]), "pathID") == -6840663686705882004L,
+                    "Li Zhiyan start_01 static node dependency drifted");
+                materialIds.Add(L.Long(L.Dict(materials[0]), "pathID"));
+            }
+            L.Require(
+                L.Str(contract, "schema") == "endfield.lizhiyan-overview-start01-effect.v1" &&
+                L.Str(contract, "status") ==
+                    "static_mesh_payload_closed_animation_clip_external_pending_visible_fail_closed" &&
+                L.Str(contract, "effectName") == "P_fxui_lizhiyan_overview_start_01" &&
+                L.Str(contract, "mountPoint") == string.Empty &&
+                L.Long(summary, "hierarchyNodes") == 5 &&
+                L.Long(summary, "staticMeshNodes") == 4 &&
+                L.Long(summary, "particleSystems") == 0 &&
+                L.Long(summary, "materials") == 3 &&
+                L.Str(summary, "sourceAggregateSha256") ==
+                    "97B99E3B23FDFA6EE75B6009FC2E4B90D7DEA1F5EEB40A9822FEDC6396E0C4D8" &&
+                Mathf.Abs(L.Float(timing, "duration") - 2.2f) < 0.000001f &&
+                Mathf.Abs(L.Float(timing, "delay")) < 0.000001f &&
+                L.Long(startClip, "fileID") == 3 &&
+                L.Long(startClip, "pathID") == 7360398354216100382L &&
+                L.Str(startClip, "status") == "external_target_unavailable" &&
+                L.Long(mesh, "pathID") == -6840663686705882004L &&
+                materialIds.SetEquals(new long[] {
+                    -6912999194325832649L, 2993445828574428557L, 3282333668994552481L }) &&
+                L.Str(execution, "bindingKind") == "static_mesh_animated" &&
+                !L.Bool(execution, "sourcePayloadApplied") &&
+                !L.Bool(execution, "sourceAnimationPayloadApplied") &&
+                L.Bool(execution, "rendererFailClosedForUnrecoveredShader") &&
+                !L.Bool(execution, "visibleAdmission") &&
+                L.List(execution["blockedBy"]).Count == 4,
+                "Li Zhiyan start_01 static-mesh fail-closed contract drifted");
         }
 
         private static void ValidateOverviewTimingAlignment()

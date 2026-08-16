@@ -1644,6 +1644,15 @@ only stable interpretation and priorities.
    PTS-40000 peak but not measured teal at PTS 42000. Recover the original
    request producer and the other eleven Li entrance effects instead of
    stretching or retiming the one proven finger prefab.
+   The first remaining root request is now classified:
+   `P_fxui_lizhiyan_overview_start_01` is a five-node, four-renderer static-mesh
+   animation with zero ParticleSystems, duration `2.2`, delay `0`, shared mesh
+   `S_fx_lzy_tiaodaifenwei_01`, and exact queue-3704 materials
+   `M_fxui__lizhiyan_overview_09/_10/_11`. The source contract pins hierarchy,
+   transforms, EffectSetting, renderer/filter payloads, converted OBJ, and
+   material payloads. External AnimationClip PathID `7360398354216100382`,
+   native mesh payload, exact selected shaders, and a static-mesh runtime
+   binding remain open; do not force it through the particle importer.
    Downstream HGMesh workers now prove a real ordering/publication stage:
    accepted 64-byte records are sorted in place by `0x181043bd0` using
    comparator `0x180fe0740`, an unsigned lexicographic comparison over the

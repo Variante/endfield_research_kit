@@ -1,0 +1,4658 @@
+{
+  "schema": "endfield.lizhiyan-overview-start01-effect.v1",
+  "status": "static_mesh_payload_closed_animation_clip_external_pending_visible_fail_closed",
+  "effectName": "P_fxui_lizhiyan_overview_start_01",
+  "mountPoint": "",
+  "summary": {
+    "hierarchyNodes": 5,
+    "staticMeshNodes": 4,
+    "particleSystems": 0,
+    "materials": 3,
+    "uniqueMeshes": 1,
+    "sourceAggregateSha256": "97B99E3B23FDFA6EE75B6009FC2E4B90D7DEA1F5EEB40A9822FEDC6396E0C4D8"
+  },
+  "effectSetting": {
+    "pathID": 2305038813790631653,
+    "source": {
+      "path": "scratch/character_recovery/next_effect_candidates/prefabs/MonoBehaviour/MonoBehaviour#228_p1FFD2496A97A76E5.json",
+      "bytes": 21561,
+      "sha256": "D164C7D274CA7C4E8D38DFA6A75949E161ADE6A19AB929EB7BFFA9C3B4D27CF3",
+      "objectType": "EffectSetting",
+      "pathID": 2305038813790631653,
+      "sourceFile": "CAB-1a4e3d88efa9710fe68148fcc61fa33a",
+      "sourceOffset": 100024758,
+      "rawDataLength": 544,
+      "rawDataSha256": "86EC537F6AFD3A9B72BDB3B2D30B5FE5746DDB4E4FDC32F4A1DC40EDFEB04D17",
+      "typeTreeSource": "serializedType"
+    },
+    "fields": {
+      "m_GameObject": {
+        "m_FileID": 0,
+        "m_PathID": 1314393592276219621
+      },
+      "m_Enabled": 1,
+      "m_Script": {
+        "m_FileID": 1,
+        "m_PathID": 3702473578925163395
+      },
+      "m_Name": "",
+      "bboxMode": 0,
+      "bboxMin": {
+        "x": -5.0,
+        "y": -5.0,
+        "z": -5.0
+      },
+      "bboxMax": {
+        "x": 5.0,
+        "y": 5.0,
+        "z": 5.0
+      },
+      "importantType": 0,
+      "effectLogicCfg": {
+        "isLoop": 0,
+        "duration": 2.2,
+        "randomDelay": 0,
+        "delay": 0.0,
+        "range": {
+          "x": 0.0,
+          "y": 0.0
+        },
+        "fadeoutTime": 0.0,
+        "timeScaleMode": 0,
+        "autoFade": 0,
+        "startFadeTime": 0.0,
+        "endFadeTime": 0.0
+      },
+      "effectEntityRenderVfxCfg": {
+        "vfxNames": []
+      },
+      "effectFunc": {
+        "data": []
+      },
+      "lodSetting": [
+        {
+          "gameobject": {
+            "m_FileID": 0,
+            "m_PathID": 1314393592276219621
+          },
+          "particle": {
+            "m_FileID": 0,
+            "m_PathID": 0
+          },
+          "animator": {
+            "m_FileID": 0,
+            "m_PathID": -7686199192497981723
+          },
+          "renderer": {
+            "m_FileID": 0,
+            "m_PathID": 0
+          },
+          "settingLodLevel": 15,
+          "platformLayer": 7,
+          "targetLayer": 3,
+          "_distanceLodInfos": [
+            {
+              "speedPercent": 1.0,
+              "isActive": 1
+            }
+          ]
+        },
+        {
+          "gameobject": {
+            "m_FileID": 0,
+            "m_PathID": -3035674024450951451
+          },
+          "particle": {
+            "m_FileID": 0,
+            "m_PathID": 0
+          },
+          "animator": {
+            "m_FileID": 0,
+            "m_PathID": 0
+          },
+          "renderer": {
+            "m_FileID": 0,
+            "m_PathID": -1741348596941359387
+          },
+          "settingLodLevel": 15,
+          "platformLayer": 7,
+          "targetLayer": 3,
+          "_distanceLodInfos": [
+            {
+              "speedPercent": 1.0,
+              "isActive": 1
+            }
+          ]
+        },
+        {
+          "gameobject": {
+            "m_FileID": 0,
+            "m_PathID": -8894984188664187163
+          },
+          "particle": {
+            "m_FileID": 0,
+            "m_PathID": 0
+          },
+          "animator": {
+            "m_FileID": 0,
+            "m_PathID": 0
+          },
+          "renderer": {
+            "m_FileID": 0,
+            "m_PathID": 4708942470875150053
+          },
+          "settingLodLevel": 15,
+          "platformLayer": 7,
+          "targetLayer": 3,
+          "_distanceLodInfos": [
+            {
+              "speedPercent": 1.0,
+              "isActive": 1
+            }
+          ]
+        },
+        {
+          "gameobject": {
+            "m_FileID": 0,
+            "m_PathID": -4762788037748558107
+          },
+          "particle": {
+            "m_FileID": 0,
+            "m_PathID": 0
+          },
+          "animator": {
+            "m_FileID": 0,
+            "m_PathID": 0
+          },
+          "renderer": {
+            "m_FileID": 0,
+            "m_PathID": 8270785745755535077
+          },
+          "settingLodLevel": 15,
+          "platformLayer": 7,
+          "targetLayer": 3,
+          "_distanceLodInfos": [
+            {
+              "speedPercent": 1.0,
+              "isActive": 1
+            }
+          ]
+        },
+        {
+          "gameobject": {
+            "m_FileID": 0,
+            "m_PathID": -5633037065891318043
+          },
+          "particle": {
+            "m_FileID": 0,
+            "m_PathID": 0
+          },
+          "animator": {
+            "m_FileID": 0,
+            "m_PathID": 0
+          },
+          "renderer": {
+            "m_FileID": 0,
+            "m_PathID": -6436609233402104091
+          },
+          "settingLodLevel": 15,
+          "platformLayer": 7,
+          "targetLayer": 3,
+          "_distanceLodInfos": [
+            {
+              "speedPercent": 1.0,
+              "isActive": 1
+            }
+          ]
+        }
+      ],
+      "distanceLodCfgList": [
+        {
+          "distance": 0.0,
+          "framePercent": 1.0
+        }
+      ],
+      "cullDis": 100.0,
+      "lodFadeTime": 1.0,
+      "isUseDistanceLod": 1,
+      "_isCullDisable": 1,
+      "grounded": 0,
+      "useGuardLod": 0,
+      "dynamicChangeGuardLod": 0,
+      "guardAlpha": 0.5,
+      "useBodyScale": 0,
+      "radius": 0.0,
+      "dynamicShapeParticles": [],
+      "references": {
+        "version": 2,
+        "RefIds": []
+      }
+    },
+    "timing": {
+      "isLoop": 0,
+      "duration": 2.2,
+      "randomDelay": 0,
+      "delay": 0.0,
+      "range": {
+        "x": 0.0,
+        "y": 0.0
+      },
+      "fadeoutTime": 0.0,
+      "timeScaleMode": 0,
+      "autoFade": 0,
+      "startFadeTime": 0.0,
+      "endFadeTime": 0.0
+    }
+  },
+  "animation": {
+    "animatorPathID": -7686199192497981723,
+    "animator": {
+      "m_Avatar": {
+        "m_FileID": 0,
+        "m_PathID": 0,
+        "Name": "",
+        "IsNull": true
+      },
+      "m_Controller": {
+        "m_FileID": 0,
+        "m_PathID": 0,
+        "Name": "",
+        "IsNull": true
+      },
+      "m_HasTransformHierarchy": false,
+      "m_Enabled": 1,
+      "m_GameObject": {
+        "m_FileID": 0,
+        "m_PathID": 1314393592276219621,
+        "Name": "P_fxui_lizhiyan_overview_start_01",
+        "IsNull": false
+      }
+    },
+    "animatorSource": {
+      "path": "scratch/character_recovery/next_effect_candidates/prefabs/Animator/P_fxui_lizhiyan_overview_start_01_p9555228EC24376E5.json",
+      "bytes": 467,
+      "sha256": "92D86B85DC02FB2F6CEBDCC365B8A7A27086952A7CD8C24CE81044452341AD3F",
+      "objectType": "Animator",
+      "pathID": -7686199192497981723,
+      "sourceFile": null,
+      "sourceOffset": null,
+      "rawDataLength": null,
+      "rawDataSha256": null,
+      "typeTreeSource": null
+    },
+    "helperPathID": -8633596874860955931,
+    "helper": {
+      "m_GameObject": {
+        "m_FileID": 0,
+        "m_PathID": 1314393592276219621
+      },
+      "m_Enabled": 1,
+      "m_Script": {
+        "m_FileID": 1,
+        "m_PathID": -9221315333163877308
+      },
+      "m_Name": "",
+      "startAnimationClip": {
+        "m_FileID": 3,
+        "m_PathID": 7360398354216100382
+      },
+      "loopAnimationClip": {
+        "m_FileID": 0,
+        "m_PathID": 0
+      },
+      "endAnimationClip": {
+        "m_FileID": 0,
+        "m_PathID": 0
+      },
+      "isEnableChangeState": 1
+    },
+    "helperSource": {
+      "path": "scratch/character_recovery/next_effect_candidates/prefabs/MonoBehaviour/MonoBehaviour#216_p882F4D6293FD76E5.json",
+      "bytes": 4153,
+      "sha256": "FC2554FAD5EEC4E2FE8192AE638E69ECABBF2A90C322FCF0E029C3279CF3C6CA",
+      "objectType": "EffectAnimationHelper",
+      "pathID": -8633596874860955931,
+      "sourceFile": "CAB-1a4e3d88efa9710fe68148fcc61fa33a",
+      "sourceOffset": 100024758,
+      "rawDataLength": 72,
+      "rawDataSha256": "93E578F50115A7FA912E4B9678E10C524BCF783BCA9F63E4D8C5A0585A865F19",
+      "typeTreeSource": "serializedType"
+    },
+    "startAnimationClip": {
+      "fileID": 3,
+      "pathID": 7360398354216100382,
+      "status": "external_target_unavailable"
+    },
+    "loopAnimationClip": null,
+    "endAnimationClip": null
+  },
+  "hierarchyNodes": [
+    {
+      "hierarchy": "P_fxui_lizhiyan_overview_start_01",
+      "gameObjectPathID": 1314393592276219621,
+      "transformPathID": 4995983695754262245,
+      "gameObject": {
+        "m_Components": [
+          {
+            "m_FileID": 0,
+            "m_PathID": 4995983695754262245,
+            "Name": "",
+            "IsNull": false
+          },
+          {
+            "m_FileID": 0,
+            "m_PathID": -7686199192497981723,
+            "Name": "P_fxui_lizhiyan_overview_start_01",
+            "IsNull": false
+          },
+          {
+            "m_FileID": 0,
+            "m_PathID": 2305038813790631653,
+            "Name": "",
+            "IsNull": false
+          },
+          {
+            "m_FileID": 0,
+            "m_PathID": -8633596874860955931,
+            "Name": "",
+            "IsNull": false
+          }
+        ],
+        "m_Name": "P_fxui_lizhiyan_overview_start_01",
+        "m_Transform": {
+          "m_LocalRotation": {
+            "X": 0.0,
+            "Y": 0.0,
+            "Z": 0.0,
+            "W": 1.0
+          },
+          "m_LocalPosition": {
+            "X": 0.0,
+            "Y": 0.0,
+            "Z": 0.0
+          },
+          "m_LocalScale": {
+            "X": 1.0,
+            "Y": 1.0,
+            "Z": 1.0
+          },
+          "m_Children": [
+            {
+              "m_FileID": 0,
+              "m_PathID": 5043134150308755173,
+              "Name": "",
+              "IsNull": false
+            },
+            {
+              "m_FileID": 0,
+              "m_PathID": 4605173516639106789,
+              "Name": "",
+              "IsNull": false
+            },
+            {
+              "m_FileID": 0,
+              "m_PathID": -1254243568809380123,
+              "Name": "",
+              "IsNull": false
+            },
+            {
+              "m_FileID": 0,
+              "m_PathID": -3446281828114336027,
+              "Name": "",
+              "IsNull": false
+            }
+          ],
+          "m_Father": {
+            "m_FileID": 0,
+            "m_PathID": 0,
+            "Name": "",
+            "IsNull": true
+          },
+          "m_GameObject": {
+            "m_FileID": 0,
+            "m_PathID": 1314393592276219621,
+            "Name": "P_fxui_lizhiyan_overview_start_01",
+            "IsNull": false
+          },
+          "Name": ""
+        },
+        "m_MeshRenderer": null,
+        "m_MeshFilter": null,
+        "m_SkinnedMeshRenderer": null,
+        "m_Animator": {
+          "m_Avatar": {
+            "m_FileID": 0,
+            "m_PathID": 0,
+            "Name": "",
+            "IsNull": true
+          },
+          "m_Controller": {
+            "m_FileID": 0,
+            "m_PathID": 0,
+            "Name": "",
+            "IsNull": true
+          },
+          "m_HasTransformHierarchy": false,
+          "m_Enabled": 1,
+          "m_GameObject": {
+            "m_FileID": 0,
+            "m_PathID": 1314393592276219621,
+            "Name": "P_fxui_lizhiyan_overview_start_01",
+            "IsNull": false
+          },
+          "Name": "P_fxui_lizhiyan_overview_start_01"
+        },
+        "m_Animation": null
+      },
+      "transform": {
+        "m_LocalRotation": {
+          "X": 0.0,
+          "Y": 0.0,
+          "Z": 0.0,
+          "W": 1.0
+        },
+        "m_LocalPosition": {
+          "X": 0.0,
+          "Y": 0.0,
+          "Z": 0.0
+        },
+        "m_LocalScale": {
+          "X": 1.0,
+          "Y": 1.0,
+          "Z": 1.0
+        },
+        "m_Children": [
+          {
+            "m_FileID": 0,
+            "m_PathID": 5043134150308755173,
+            "Name": "",
+            "IsNull": false
+          },
+          {
+            "m_FileID": 0,
+            "m_PathID": 4605173516639106789,
+            "Name": "",
+            "IsNull": false
+          },
+          {
+            "m_FileID": 0,
+            "m_PathID": -1254243568809380123,
+            "Name": "",
+            "IsNull": false
+          },
+          {
+            "m_FileID": 0,
+            "m_PathID": -3446281828114336027,
+            "Name": "",
+            "IsNull": false
+          }
+        ],
+        "m_Father": {
+          "m_FileID": 0,
+          "m_PathID": 0,
+          "Name": "",
+          "IsNull": true
+        },
+        "m_GameObject": {
+          "m_FileID": 0,
+          "m_PathID": 1314393592276219621,
+          "Name": "P_fxui_lizhiyan_overview_start_01",
+          "IsNull": false
+        }
+      },
+      "gameObjectSource": {
+        "path": "scratch/character_recovery/next_effect_candidates/prefabs/GameObject/P_fxui_lizhiyan_overview_start_01_p123DAA021AAC76E5.json",
+        "bytes": 2420,
+        "sha256": "B1948F59CD21DDCC04BCCBEA20B86E3880452AFDE6B7FEACEA014C99830DFA81",
+        "objectType": "GameObject",
+        "pathID": 1314393592276219621,
+        "sourceFile": null,
+        "sourceOffset": null,
+        "rawDataLength": null,
+        "rawDataSha256": null,
+        "typeTreeSource": null
+      },
+      "transformSource": {
+        "path": "scratch/character_recovery/next_effect_candidates/prefabs/Transform/Transform#232_p45554CB3911376E5.json",
+        "bytes": 1010,
+        "sha256": "67A2D501DF6F4F3D3F4EA6F3A53584528F57573E7E35602E15A0F696BF2DF700",
+        "objectType": "Transform",
+        "pathID": 4995983695754262245,
+        "sourceFile": null,
+        "sourceOffset": null,
+        "rawDataLength": null,
+        "rawDataSha256": null,
+        "typeTreeSource": null
+      }
+    },
+    {
+      "hierarchy": "P_fxui_lizhiyan_overview_start_01/S_fx_lzy_tiaodaifenwei_01 (4)",
+      "gameObjectPathID": -3035674024450951451,
+      "transformPathID": 5043134150308755173,
+      "gameObject": {
+        "m_Components": [
+          {
+            "m_FileID": 0,
+            "m_PathID": 5043134150308755173,
+            "Name": "",
+            "IsNull": false
+          },
+          {
+            "m_FileID": 0,
+            "m_PathID": 8907211204029478629,
+            "Name": "",
+            "IsNull": false
+          },
+          {
+            "m_FileID": 0,
+            "m_PathID": -1741348596941359387,
+            "Name": "",
+            "IsNull": false
+          }
+        ],
+        "m_Name": "S_fx_lzy_tiaodaifenwei_01 (4)",
+        "m_Transform": {
+          "m_LocalRotation": {
+            "X": -0.7071068,
+            "Y": 0.0,
+            "Z": -0.0,
+            "W": 0.7071068
+          },
+          "m_LocalPosition": {
+            "X": 0.40779486,
+            "Y": 1.0111285,
+            "Z": 0.50908583
+          },
+          "m_LocalScale": {
+            "X": 2.54,
+            "Y": 2.54,
+            "Z": 2.54
+          },
+          "m_Children": [],
+          "m_Father": {
+            "m_FileID": 0,
+            "m_PathID": 4995983695754262245,
+            "Name": "",
+            "IsNull": false
+          },
+          "m_GameObject": {
+            "m_FileID": 0,
+            "m_PathID": -3035674024450951451,
+            "Name": "S_fx_lzy_tiaodaifenwei_01 (4)",
+            "IsNull": false
+          },
+          "Name": ""
+        },
+        "m_MeshRenderer": {
+          "m_AdditionalVertexStreams": {
+            "m_FileID": 0,
+            "m_PathID": 0,
+            "Name": "",
+            "IsNull": true
+          },
+          "m_Enabled": true,
+          "m_CastShadows": 1,
+          "m_ReceiveShadows": 1,
+          "m_DynamicOccludee": 1,
+          "m_StaticShadowCaster": 0,
+          "m_RealtimeShadowCaster": 0,
+          "m_SubMeshRenderMode": 0,
+          "m_CharacterIndex": 0,
+          "m_MotionVectors": 1,
+          "m_LightProbeUsage": 1,
+          "m_ReflectionProbeUsage": 1,
+          "m_RayTracingMode": 2,
+          "m_RayTraceProcedural": 0,
+          "m_RenderFoliageOccluder": 0,
+          "m_PlatformSpecificCastShadows": 1,
+          "m_RenderingLayerMask": 1,
+          "m_RendererPriority": 0,
+          "m_LightmapIndex": 65535,
+          "m_LightmapIndexDynamic": 65535,
+          "m_LightmapTilingOffset": {
+            "X": 1.0,
+            "Y": 1.0,
+            "Z": 0.0,
+            "W": 0.0
+          },
+          "m_LightmapTilingOffsetDynamic": {
+            "X": 1.0,
+            "Y": 1.0,
+            "Z": 0.0,
+            "W": 0.0
+          },
+          "m_StaticBatchRoot": {
+            "m_FileID": 0,
+            "m_PathID": 0,
+            "Name": "",
+            "IsNull": true
+          },
+          "m_ProbeAnchor": {
+            "m_FileID": 0,
+            "m_PathID": 0,
+            "Name": "",
+            "IsNull": true
+          },
+          "m_LightProbeVolumeOverride": {
+            "m_FileID": 0,
+            "m_PathID": 0,
+            "Name": "",
+            "IsNull": true
+          },
+          "m_ShadowProxyMesh": {
+            "m_FileID": 0,
+            "m_PathID": 0,
+            "Name": "",
+            "IsNull": true
+          },
+          "m_SortingLayerID": 0,
+          "m_SortingLayer": 0,
+          "m_SortingOrder": 0,
+          "m_EnableCharacterOutline": true,
+          "m_EnablePerRendererLighting": false,
+          "m_PerRendererLightingOffset": {
+            "X": 0.0,
+            "Y": 0.0,
+            "Z": 0.0
+          },
+          "m_PerRendererLightingAnchor": {
+            "m_FileID": 0,
+            "m_PathID": 0,
+            "Name": "",
+            "IsNull": true
+          },
+          "m_LightModeMask": 4294967295,
+          "m_RendererSortingFudge": 0.0,
+          "m_Materials": [
+            {
+              "m_FileID": 4,
+              "m_PathID": 2993445828574428557,
+              "Name": "",
+              "IsNull": false
+            }
+          ],
+          "m_StaticBatchInfo": {
+            "firstSubMesh": 0,
+            "subMeshCount": 0
+          },
+          "m_SubsetIndices": null,
+          "m_GameObject": {
+            "m_FileID": 0,
+            "m_PathID": -3035674024450951451,
+            "Name": "S_fx_lzy_tiaodaifenwei_01 (4)",
+            "IsNull": false
+          },
+          "Name": ""
+        },
+        "m_MeshFilter": {
+          "m_Mesh": {
+            "m_FileID": 2,
+            "m_PathID": -6840663686705882004,
+            "Name": "",
+            "IsNull": false
+          },
+          "m_GameObject": {
+            "m_FileID": 0,
+            "m_PathID": -3035674024450951451,
+            "Name": "S_fx_lzy_tiaodaifenwei_01 (4)",
+            "IsNull": false
+          },
+          "Name": ""
+        },
+        "m_SkinnedMeshRenderer": null,
+        "m_Animator": null,
+        "m_Animation": null
+      },
+      "transform": {
+        "m_LocalRotation": {
+          "X": -0.7071068,
+          "Y": 0.0,
+          "Z": -0.0,
+          "W": 0.7071068
+        },
+        "m_LocalPosition": {
+          "X": 0.40779486,
+          "Y": 1.0111285,
+          "Z": 0.50908583
+        },
+        "m_LocalScale": {
+          "X": 2.54,
+          "Y": 2.54,
+          "Z": 2.54
+        },
+        "m_Children": [],
+        "m_Father": {
+          "m_FileID": 0,
+          "m_PathID": 4995983695754262245,
+          "Name": "",
+          "IsNull": false
+        },
+        "m_GameObject": {
+          "m_FileID": 0,
+          "m_PathID": -3035674024450951451,
+          "Name": "S_fx_lzy_tiaodaifenwei_01 (4)",
+          "IsNull": false
+        }
+      },
+      "gameObjectSource": {
+        "path": "scratch/character_recovery/next_effect_candidates/prefabs/GameObject/S_fx_lzy_tiaodaifenwei_01 (4)_pD5DF1E8EF6B876E5.json",
+        "bytes": 3937,
+        "sha256": "98ADD47DC623A3968210BB14D31521F455251B5117235046F0F3D0F8688EDE16",
+        "objectType": "GameObject",
+        "pathID": -3035674024450951451,
+        "sourceFile": null,
+        "sourceOffset": null,
+        "rawDataLength": null,
+        "rawDataSha256": null,
+        "typeTreeSource": null
+      },
+      "transformSource": {
+        "path": "scratch/character_recovery/next_effect_candidates/prefabs/Transform/Transform#233_p45FCCFCA3FCB76E5.json",
+        "bytes": 582,
+        "sha256": "75D1B17907B9CF9351D774D7A13298B629E9DD31906EC195994E2D49D7EE1A30",
+        "objectType": "Transform",
+        "pathID": 5043134150308755173,
+        "sourceFile": null,
+        "sourceOffset": null,
+        "rawDataLength": null,
+        "rawDataSha256": null,
+        "typeTreeSource": null
+      }
+    },
+    {
+      "hierarchy": "P_fxui_lizhiyan_overview_start_01/S_fx_lzy_tiaodaifenwei_01 (5)",
+      "gameObjectPathID": -8894984188664187163,
+      "transformPathID": 4605173516639106789,
+      "gameObject": {
+        "m_Components": [
+          {
+            "m_FileID": 0,
+            "m_PathID": 4605173516639106789,
+            "Name": "",
+            "IsNull": false
+          },
+          {
+            "m_FileID": 0,
+            "m_PathID": -3027743468593580315,
+            "Name": "",
+            "IsNull": false
+          },
+          {
+            "m_FileID": 0,
+            "m_PathID": 4708942470875150053,
+            "Name": "",
+            "IsNull": false
+          }
+        ],
+        "m_Name": "S_fx_lzy_tiaodaifenwei_01 (5)",
+        "m_Transform": {
+          "m_LocalRotation": {
+            "X": -0.7071068,
+            "Y": 0.0,
+            "Z": -0.0,
+            "W": 0.7071068
+          },
+          "m_LocalPosition": {
+            "X": 0.40779486,
+            "Y": 1.0111285,
+            "Z": 0.50908583
+          },
+          "m_LocalScale": {
+            "X": 2.54,
+            "Y": 2.54,
+            "Z": 2.54
+          },
+          "m_Children": [],
+          "m_Father": {
+            "m_FileID": 0,
+            "m_PathID": 4995983695754262245,
+            "Name": "",
+            "IsNull": false
+          },
+          "m_GameObject": {
+            "m_FileID": 0,
+            "m_PathID": -8894984188664187163,
+            "Name": "S_fx_lzy_tiaodaifenwei_01 (5)",
+            "IsNull": false
+          },
+          "Name": ""
+        },
+        "m_MeshRenderer": {
+          "m_AdditionalVertexStreams": {
+            "m_FileID": 0,
+            "m_PathID": 0,
+            "Name": "",
+            "IsNull": true
+          },
+          "m_Enabled": true,
+          "m_CastShadows": 1,
+          "m_ReceiveShadows": 1,
+          "m_DynamicOccludee": 1,
+          "m_StaticShadowCaster": 0,
+          "m_RealtimeShadowCaster": 0,
+          "m_SubMeshRenderMode": 0,
+          "m_CharacterIndex": 0,
+          "m_MotionVectors": 1,
+          "m_LightProbeUsage": 1,
+          "m_ReflectionProbeUsage": 1,
+          "m_RayTracingMode": 2,
+          "m_RayTraceProcedural": 0,
+          "m_RenderFoliageOccluder": 0,
+          "m_PlatformSpecificCastShadows": 1,
+          "m_RenderingLayerMask": 1,
+          "m_RendererPriority": 0,
+          "m_LightmapIndex": 65535,
+          "m_LightmapIndexDynamic": 65535,
+          "m_LightmapTilingOffset": {
+            "X": 1.0,
+            "Y": 1.0,
+            "Z": 0.0,
+            "W": 0.0
+          },
+          "m_LightmapTilingOffsetDynamic": {
+            "X": 1.0,
+            "Y": 1.0,
+            "Z": 0.0,
+            "W": 0.0
+          },
+          "m_StaticBatchRoot": {
+            "m_FileID": 0,
+            "m_PathID": 0,
+            "Name": "",
+            "IsNull": true
+          },
+          "m_ProbeAnchor": {
+            "m_FileID": 0,
+            "m_PathID": 0,
+            "Name": "",
+            "IsNull": true
+          },
+          "m_LightProbeVolumeOverride": {
+            "m_FileID": 0,
+            "m_PathID": 0,
+            "Name": "",
+            "IsNull": true
+          },
+          "m_ShadowProxyMesh": {
+            "m_FileID": 0,
+            "m_PathID": 0,
+            "Name": "",
+            "IsNull": true
+          },
+          "m_SortingLayerID": 0,
+          "m_SortingLayer": 0,
+          "m_SortingOrder": 0,
+          "m_EnableCharacterOutline": true,
+          "m_EnablePerRendererLighting": false,
+          "m_PerRendererLightingOffset": {
+            "X": 0.0,
+            "Y": 0.0,
+            "Z": 0.0
+          },
+          "m_PerRendererLightingAnchor": {
+            "m_FileID": 0,
+            "m_PathID": 0,
+            "Name": "",
+            "IsNull": true
+          },
+          "m_LightModeMask": 4294967295,
+          "m_RendererSortingFudge": 0.0,
+          "m_Materials": [
+            {
+              "m_FileID": 4,
+              "m_PathID": 2993445828574428557,
+              "Name": "",
+              "IsNull": false
+            }
+          ],
+          "m_StaticBatchInfo": {
+            "firstSubMesh": 0,
+            "subMeshCount": 0
+          },
+          "m_SubsetIndices": null,
+          "m_GameObject": {
+            "m_FileID": 0,
+            "m_PathID": -8894984188664187163,
+            "Name": "S_fx_lzy_tiaodaifenwei_01 (5)",
+            "IsNull": false
+          },
+          "Name": ""
+        },
+        "m_MeshFilter": {
+          "m_Mesh": {
+            "m_FileID": 2,
+            "m_PathID": -6840663686705882004,
+            "Name": "",
+            "IsNull": false
+          },
+          "m_GameObject": {
+            "m_FileID": 0,
+            "m_PathID": -8894984188664187163,
+            "Name": "S_fx_lzy_tiaodaifenwei_01 (5)",
+            "IsNull": false
+          },
+          "Name": ""
+        },
+        "m_SkinnedMeshRenderer": null,
+        "m_Animator": null,
+        "m_Animation": null
+      },
+      "transform": {
+        "m_LocalRotation": {
+          "X": -0.7071068,
+          "Y": 0.0,
+          "Z": -0.0,
+          "W": 0.7071068
+        },
+        "m_LocalPosition": {
+          "X": 0.40779486,
+          "Y": 1.0111285,
+          "Z": 0.50908583
+        },
+        "m_LocalScale": {
+          "X": 2.54,
+          "Y": 2.54,
+          "Z": 2.54
+        },
+        "m_Children": [],
+        "m_Father": {
+          "m_FileID": 0,
+          "m_PathID": 4995983695754262245,
+          "Name": "",
+          "IsNull": false
+        },
+        "m_GameObject": {
+          "m_FileID": 0,
+          "m_PathID": -8894984188664187163,
+          "Name": "S_fx_lzy_tiaodaifenwei_01 (5)",
+          "IsNull": false
+        }
+      },
+      "gameObjectSource": {
+        "path": "scratch/character_recovery/next_effect_candidates/prefabs/GameObject/S_fx_lzy_tiaodaifenwei_01 (5)_p848EAB020FF476E5.json",
+        "bytes": 3937,
+        "sha256": "8395A55ED91FA60DC9F772F55BC08A39E4C154B3E579F721CABA9E9C2634AFEA",
+        "objectType": "GameObject",
+        "pathID": -8894984188664187163,
+        "sourceFile": null,
+        "sourceOffset": null,
+        "rawDataLength": null,
+        "rawDataSha256": null,
+        "typeTreeSource": null
+      },
+      "transformSource": {
+        "path": "scratch/character_recovery/next_effect_candidates/prefabs/Transform/Transform#230_p3FE8DCEA044F76E5.json",
+        "bytes": 582,
+        "sha256": "E54C00EDD40C07E6A225853163708F25FF8F3A3D97BC335E08BAA8D112D2F2EC",
+        "objectType": "Transform",
+        "pathID": 4605173516639106789,
+        "sourceFile": null,
+        "sourceOffset": null,
+        "rawDataLength": null,
+        "rawDataSha256": null,
+        "typeTreeSource": null
+      }
+    },
+    {
+      "hierarchy": "P_fxui_lizhiyan_overview_start_01/S_fx_lzy_tiaodaifenwei_01 (6)",
+      "gameObjectPathID": -4762788037748558107,
+      "transformPathID": -1254243568809380123,
+      "gameObject": {
+        "m_Components": [
+          {
+            "m_FileID": 0,
+            "m_PathID": -1254243568809380123,
+            "Name": "",
+            "IsNull": false
+          },
+          {
+            "m_FileID": 0,
+            "m_PathID": 3101834544805148389,
+            "Name": "",
+            "IsNull": false
+          },
+          {
+            "m_FileID": 0,
+            "m_PathID": 8270785745755535077,
+            "Name": "",
+            "IsNull": false
+          }
+        ],
+        "m_Name": "S_fx_lzy_tiaodaifenwei_01 (6)",
+        "m_Transform": {
+          "m_LocalRotation": {
+            "X": -0.7071068,
+            "Y": 0.0,
+            "Z": -0.0,
+            "W": 0.7071068
+          },
+          "m_LocalPosition": {
+            "X": 0.40779486,
+            "Y": 1.0111285,
+            "Z": 0.50908583
+          },
+          "m_LocalScale": {
+            "X": 2.54,
+            "Y": 2.54,
+            "Z": 2.54
+          },
+          "m_Children": [],
+          "m_Father": {
+            "m_FileID": 0,
+            "m_PathID": 4995983695754262245,
+            "Name": "",
+            "IsNull": false
+          },
+          "m_GameObject": {
+            "m_FileID": 0,
+            "m_PathID": -4762788037748558107,
+            "Name": "S_fx_lzy_tiaodaifenwei_01 (6)",
+            "IsNull": false
+          },
+          "Name": ""
+        },
+        "m_MeshRenderer": {
+          "m_AdditionalVertexStreams": {
+            "m_FileID": 0,
+            "m_PathID": 0,
+            "Name": "",
+            "IsNull": true
+          },
+          "m_Enabled": true,
+          "m_CastShadows": 1,
+          "m_ReceiveShadows": 1,
+          "m_DynamicOccludee": 1,
+          "m_StaticShadowCaster": 0,
+          "m_RealtimeShadowCaster": 0,
+          "m_SubMeshRenderMode": 0,
+          "m_CharacterIndex": 0,
+          "m_MotionVectors": 1,
+          "m_LightProbeUsage": 1,
+          "m_ReflectionProbeUsage": 1,
+          "m_RayTracingMode": 2,
+          "m_RayTraceProcedural": 0,
+          "m_RenderFoliageOccluder": 0,
+          "m_PlatformSpecificCastShadows": 1,
+          "m_RenderingLayerMask": 1,
+          "m_RendererPriority": 0,
+          "m_LightmapIndex": 65535,
+          "m_LightmapIndexDynamic": 65535,
+          "m_LightmapTilingOffset": {
+            "X": 1.0,
+            "Y": 1.0,
+            "Z": 0.0,
+            "W": 0.0
+          },
+          "m_LightmapTilingOffsetDynamic": {
+            "X": 1.0,
+            "Y": 1.0,
+            "Z": 0.0,
+            "W": 0.0
+          },
+          "m_StaticBatchRoot": {
+            "m_FileID": 0,
+            "m_PathID": 0,
+            "Name": "",
+            "IsNull": true
+          },
+          "m_ProbeAnchor": {
+            "m_FileID": 0,
+            "m_PathID": 0,
+            "Name": "",
+            "IsNull": true
+          },
+          "m_LightProbeVolumeOverride": {
+            "m_FileID": 0,
+            "m_PathID": 0,
+            "Name": "",
+            "IsNull": true
+          },
+          "m_ShadowProxyMesh": {
+            "m_FileID": 0,
+            "m_PathID": 0,
+            "Name": "",
+            "IsNull": true
+          },
+          "m_SortingLayerID": 0,
+          "m_SortingLayer": 0,
+          "m_SortingOrder": 0,
+          "m_EnableCharacterOutline": true,
+          "m_EnablePerRendererLighting": false,
+          "m_PerRendererLightingOffset": {
+            "X": 0.0,
+            "Y": 0.0,
+            "Z": 0.0
+          },
+          "m_PerRendererLightingAnchor": {
+            "m_FileID": 0,
+            "m_PathID": 0,
+            "Name": "",
+            "IsNull": true
+          },
+          "m_LightModeMask": 4294967295,
+          "m_RendererSortingFudge": 0.0,
+          "m_Materials": [
+            {
+              "m_FileID": 4,
+              "m_PathID": 3282333668994552481,
+              "Name": "",
+              "IsNull": false
+            }
+          ],
+          "m_StaticBatchInfo": {
+            "firstSubMesh": 0,
+            "subMeshCount": 0
+          },
+          "m_SubsetIndices": null,
+          "m_GameObject": {
+            "m_FileID": 0,
+            "m_PathID": -4762788037748558107,
+            "Name": "S_fx_lzy_tiaodaifenwei_01 (6)",
+            "IsNull": false
+          },
+          "Name": ""
+        },
+        "m_MeshFilter": {
+          "m_Mesh": {
+            "m_FileID": 2,
+            "m_PathID": -6840663686705882004,
+            "Name": "",
+            "IsNull": false
+          },
+          "m_GameObject": {
+            "m_FileID": 0,
+            "m_PathID": -4762788037748558107,
+            "Name": "S_fx_lzy_tiaodaifenwei_01 (6)",
+            "IsNull": false
+          },
+          "Name": ""
+        },
+        "m_SkinnedMeshRenderer": null,
+        "m_Animator": null,
+        "m_Animation": null
+      },
+      "transform": {
+        "m_LocalRotation": {
+          "X": -0.7071068,
+          "Y": 0.0,
+          "Z": -0.0,
+          "W": 0.7071068
+        },
+        "m_LocalPosition": {
+          "X": 0.40779486,
+          "Y": 1.0111285,
+          "Z": 0.50908583
+        },
+        "m_LocalScale": {
+          "X": 2.54,
+          "Y": 2.54,
+          "Z": 2.54
+        },
+        "m_Children": [],
+        "m_Father": {
+          "m_FileID": 0,
+          "m_PathID": 4995983695754262245,
+          "Name": "",
+          "IsNull": false
+        },
+        "m_GameObject": {
+          "m_FileID": 0,
+          "m_PathID": -4762788037748558107,
+          "Name": "S_fx_lzy_tiaodaifenwei_01 (6)",
+          "IsNull": false
+        }
+      },
+      "gameObjectSource": {
+        "path": "scratch/character_recovery/next_effect_candidates/prefabs/GameObject/S_fx_lzy_tiaodaifenwei_01 (6)_pBDE72D83958476E5.json",
+        "bytes": 3937,
+        "sha256": "C6298EDAFF65AB139BECD16BD90104396648DD0C87307C84A8B2E94DDF9C731F",
+        "objectType": "GameObject",
+        "pathID": -4762788037748558107,
+        "sourceFile": null,
+        "sourceOffset": null,
+        "rawDataLength": null,
+        "rawDataSha256": null,
+        "typeTreeSource": null
+      },
+      "transformSource": {
+        "path": "scratch/character_recovery/next_effect_candidates/prefabs/Transform/Transform#225_pEE98081E934C76E5.json",
+        "bytes": 582,
+        "sha256": "49D5F797A72BDEF2012FE6F112407528C2D27FD8D4542CE1B3BBBB2CADC6F6E2",
+        "objectType": "Transform",
+        "pathID": -1254243568809380123,
+        "sourceFile": null,
+        "sourceOffset": null,
+        "rawDataLength": null,
+        "rawDataSha256": null,
+        "typeTreeSource": null
+      }
+    },
+    {
+      "hierarchy": "P_fxui_lizhiyan_overview_start_01/S_fx_lzy_tiaodaifenwei_01 (7)",
+      "gameObjectPathID": -5633037065891318043,
+      "transformPathID": -3446281828114336027,
+      "gameObject": {
+        "m_Components": [
+          {
+            "m_FileID": 0,
+            "m_PathID": -3446281828114336027,
+            "Name": "",
+            "IsNull": false
+          },
+          {
+            "m_FileID": 0,
+            "m_PathID": -9078621906017421595,
+            "Name": "",
+            "IsNull": false
+          },
+          {
+            "m_FileID": 0,
+            "m_PathID": -6436609233402104091,
+            "Name": "",
+            "IsNull": false
+          }
+        ],
+        "m_Name": "S_fx_lzy_tiaodaifenwei_01 (7)",
+        "m_Transform": {
+          "m_LocalRotation": {
+            "X": -0.7071068,
+            "Y": -0.0,
+            "Z": -0.0,
+            "W": 0.7071068
+          },
+          "m_LocalPosition": {
+            "X": 0.40779486,
+            "Y": 1.0111285,
+            "Z": 0.50908583
+          },
+          "m_LocalScale": {
+            "X": 2.54,
+            "Y": 2.5399997,
+            "Z": 2.5399997
+          },
+          "m_Children": [],
+          "m_Father": {
+            "m_FileID": 0,
+            "m_PathID": 4995983695754262245,
+            "Name": "",
+            "IsNull": false
+          },
+          "m_GameObject": {
+            "m_FileID": 0,
+            "m_PathID": -5633037065891318043,
+            "Name": "S_fx_lzy_tiaodaifenwei_01 (7)",
+            "IsNull": false
+          },
+          "Name": ""
+        },
+        "m_MeshRenderer": {
+          "m_AdditionalVertexStreams": {
+            "m_FileID": 0,
+            "m_PathID": 0,
+            "Name": "",
+            "IsNull": true
+          },
+          "m_Enabled": true,
+          "m_CastShadows": 1,
+          "m_ReceiveShadows": 1,
+          "m_DynamicOccludee": 1,
+          "m_StaticShadowCaster": 0,
+          "m_RealtimeShadowCaster": 0,
+          "m_SubMeshRenderMode": 0,
+          "m_CharacterIndex": 0,
+          "m_MotionVectors": 1,
+          "m_LightProbeUsage": 1,
+          "m_ReflectionProbeUsage": 1,
+          "m_RayTracingMode": 2,
+          "m_RayTraceProcedural": 0,
+          "m_RenderFoliageOccluder": 0,
+          "m_PlatformSpecificCastShadows": 1,
+          "m_RenderingLayerMask": 1,
+          "m_RendererPriority": 0,
+          "m_LightmapIndex": 65535,
+          "m_LightmapIndexDynamic": 65535,
+          "m_LightmapTilingOffset": {
+            "X": 1.0,
+            "Y": 1.0,
+            "Z": 0.0,
+            "W": 0.0
+          },
+          "m_LightmapTilingOffsetDynamic": {
+            "X": 1.0,
+            "Y": 1.0,
+            "Z": 0.0,
+            "W": 0.0
+          },
+          "m_StaticBatchRoot": {
+            "m_FileID": 0,
+            "m_PathID": 0,
+            "Name": "",
+            "IsNull": true
+          },
+          "m_ProbeAnchor": {
+            "m_FileID": 0,
+            "m_PathID": 0,
+            "Name": "",
+            "IsNull": true
+          },
+          "m_LightProbeVolumeOverride": {
+            "m_FileID": 0,
+            "m_PathID": 0,
+            "Name": "",
+            "IsNull": true
+          },
+          "m_ShadowProxyMesh": {
+            "m_FileID": 0,
+            "m_PathID": 0,
+            "Name": "",
+            "IsNull": true
+          },
+          "m_SortingLayerID": 0,
+          "m_SortingLayer": 0,
+          "m_SortingOrder": 0,
+          "m_EnableCharacterOutline": true,
+          "m_EnablePerRendererLighting": false,
+          "m_PerRendererLightingOffset": {
+            "X": 0.0,
+            "Y": 0.0,
+            "Z": 0.0
+          },
+          "m_PerRendererLightingAnchor": {
+            "m_FileID": 0,
+            "m_PathID": 0,
+            "Name": "",
+            "IsNull": true
+          },
+          "m_LightModeMask": 4294967295,
+          "m_RendererSortingFudge": 0.0,
+          "m_Materials": [
+            {
+              "m_FileID": 4,
+              "m_PathID": -6912999194325832649,
+              "Name": "",
+              "IsNull": false
+            }
+          ],
+          "m_StaticBatchInfo": {
+            "firstSubMesh": 0,
+            "subMeshCount": 0
+          },
+          "m_SubsetIndices": null,
+          "m_GameObject": {
+            "m_FileID": 0,
+            "m_PathID": -5633037065891318043,
+            "Name": "S_fx_lzy_tiaodaifenwei_01 (7)",
+            "IsNull": false
+          },
+          "Name": ""
+        },
+        "m_MeshFilter": {
+          "m_Mesh": {
+            "m_FileID": 2,
+            "m_PathID": -6840663686705882004,
+            "Name": "",
+            "IsNull": false
+          },
+          "m_GameObject": {
+            "m_FileID": 0,
+            "m_PathID": -5633037065891318043,
+            "Name": "S_fx_lzy_tiaodaifenwei_01 (7)",
+            "IsNull": false
+          },
+          "Name": ""
+        },
+        "m_SkinnedMeshRenderer": null,
+        "m_Animator": null,
+        "m_Animation": null
+      },
+      "transform": {
+        "m_LocalRotation": {
+          "X": -0.7071068,
+          "Y": -0.0,
+          "Z": -0.0,
+          "W": 0.7071068
+        },
+        "m_LocalPosition": {
+          "X": 0.40779486,
+          "Y": 1.0111285,
+          "Z": 0.50908583
+        },
+        "m_LocalScale": {
+          "X": 2.54,
+          "Y": 2.5399997,
+          "Z": 2.5399997
+        },
+        "m_Children": [],
+        "m_Father": {
+          "m_FileID": 0,
+          "m_PathID": 4995983695754262245,
+          "Name": "",
+          "IsNull": false
+        },
+        "m_GameObject": {
+          "m_FileID": 0,
+          "m_PathID": -5633037065891318043,
+          "Name": "S_fx_lzy_tiaodaifenwei_01 (7)",
+          "IsNull": false
+        }
+      },
+      "gameObjectSource": {
+        "path": "scratch/character_recovery/next_effect_candidates/prefabs/GameObject/S_fx_lzy_tiaodaifenwei_01 (7)_pB1D36EA238F076E5.json",
+        "bytes": 3951,
+        "sha256": "B7BF424E45816E579C5C31CB581010D505864F7548452D0C99BEC9B773F35550",
+        "objectType": "GameObject",
+        "pathID": -5633037065891318043,
+        "sourceFile": null,
+        "sourceOffset": null,
+        "rawDataLength": null,
+        "rawDataSha256": null,
+        "typeTreeSource": null
+      },
+      "transformSource": {
+        "path": "scratch/character_recovery/next_effect_candidates/prefabs/Transform/Transform#221_pD02C58EFBF5C76E5.json",
+        "bytes": 593,
+        "sha256": "F8FCA0AABB4CE9B54318D333C9454166E773791A9AAB3760164244FE33454141",
+        "objectType": "Transform",
+        "pathID": -3446281828114336027,
+        "sourceFile": null,
+        "sourceOffset": null,
+        "rawDataLength": null,
+        "rawDataSha256": null,
+        "typeTreeSource": null
+      }
+    }
+  ],
+  "staticMeshNodes": [
+    {
+      "hierarchy": "P_fxui_lizhiyan_overview_start_01/S_fx_lzy_tiaodaifenwei_01 (4)",
+      "gameObjectPathID": -3035674024450951451,
+      "meshFilterPathID": 8907211204029478629,
+      "meshRendererPathID": -1741348596941359387,
+      "mesh": {
+        "fileID": 2,
+        "pathID": -6840663686705882004
+      },
+      "materials": [
+        {
+          "fileID": 4,
+          "pathID": 2993445828574428557
+        }
+      ],
+      "meshFilter": {
+        "m_Mesh": {
+          "m_FileID": 2,
+          "m_PathID": -6840663686705882004,
+          "Name": "",
+          "IsNull": false
+        },
+        "m_GameObject": {
+          "m_FileID": 0,
+          "m_PathID": -3035674024450951451,
+          "Name": "S_fx_lzy_tiaodaifenwei_01 (4)",
+          "IsNull": false
+        }
+      },
+      "meshRenderer": {
+        "m_AdditionalVertexStreams": {
+          "m_FileID": 0,
+          "m_PathID": 0,
+          "Name": "",
+          "IsNull": true
+        },
+        "m_Enabled": true,
+        "m_CastShadows": 1,
+        "m_ReceiveShadows": 1,
+        "m_DynamicOccludee": 1,
+        "m_StaticShadowCaster": 0,
+        "m_RealtimeShadowCaster": 0,
+        "m_SubMeshRenderMode": 0,
+        "m_CharacterIndex": 0,
+        "m_MotionVectors": 1,
+        "m_LightProbeUsage": 1,
+        "m_ReflectionProbeUsage": 1,
+        "m_RayTracingMode": 2,
+        "m_RayTraceProcedural": 0,
+        "m_RenderFoliageOccluder": 0,
+        "m_PlatformSpecificCastShadows": 1,
+        "m_RenderingLayerMask": 1,
+        "m_RendererPriority": 0,
+        "m_LightmapIndex": 65535,
+        "m_LightmapIndexDynamic": 65535,
+        "m_LightmapTilingOffset": {
+          "X": 1.0,
+          "Y": 1.0,
+          "Z": 0.0,
+          "W": 0.0
+        },
+        "m_LightmapTilingOffsetDynamic": {
+          "X": 1.0,
+          "Y": 1.0,
+          "Z": 0.0,
+          "W": 0.0
+        },
+        "m_StaticBatchRoot": {
+          "m_FileID": 0,
+          "m_PathID": 0,
+          "Name": "",
+          "IsNull": true
+        },
+        "m_ProbeAnchor": {
+          "m_FileID": 0,
+          "m_PathID": 0,
+          "Name": "",
+          "IsNull": true
+        },
+        "m_LightProbeVolumeOverride": {
+          "m_FileID": 0,
+          "m_PathID": 0,
+          "Name": "",
+          "IsNull": true
+        },
+        "m_ShadowProxyMesh": {
+          "m_FileID": 0,
+          "m_PathID": 0,
+          "Name": "",
+          "IsNull": true
+        },
+        "m_SortingLayerID": 0,
+        "m_SortingLayer": 0,
+        "m_SortingOrder": 0,
+        "m_EnableCharacterOutline": true,
+        "m_EnablePerRendererLighting": false,
+        "m_PerRendererLightingOffset": {
+          "X": 0.0,
+          "Y": 0.0,
+          "Z": 0.0
+        },
+        "m_PerRendererLightingAnchor": {
+          "m_FileID": 0,
+          "m_PathID": 0,
+          "Name": "",
+          "IsNull": true
+        },
+        "m_LightModeMask": 4294967295,
+        "m_RendererSortingFudge": 0.0,
+        "m_Materials": [
+          {
+            "m_FileID": 4,
+            "m_PathID": 2993445828574428557,
+            "Name": "",
+            "IsNull": false
+          }
+        ],
+        "m_StaticBatchInfo": {
+          "firstSubMesh": 0,
+          "subMeshCount": 0
+        },
+        "m_SubsetIndices": null,
+        "m_GameObject": {
+          "m_FileID": 0,
+          "m_PathID": -3035674024450951451,
+          "Name": "S_fx_lzy_tiaodaifenwei_01 (4)",
+          "IsNull": false
+        }
+      },
+      "meshFilterSource": {
+        "path": "scratch/character_recovery/next_effect_candidates/prefabs/MeshFilter/MeshFilter#235_p7B9CC565CB8E76E5.json",
+        "bytes": 289,
+        "sha256": "4B848CE2524D7D4AE60F12C965CCE116E96220B5084A624BE6E57374190CFC0F",
+        "objectType": "MeshFilter",
+        "pathID": 8907211204029478629,
+        "sourceFile": null,
+        "sourceOffset": null,
+        "rawDataLength": null,
+        "rawDataSha256": null,
+        "typeTreeSource": null
+      },
+      "meshRendererSource": {
+        "path": "scratch/character_recovery/next_effect_candidates/prefabs/MeshRenderer/MeshRenderer#224_pE7D57CAD592F76E5.json",
+        "bytes": 2154,
+        "sha256": "148616F8BA48008FAC36A3ACE56C98B5AA37CD642BE565EE0B948425F087125E",
+        "objectType": "MeshRenderer",
+        "pathID": -1741348596941359387,
+        "sourceFile": null,
+        "sourceOffset": null,
+        "rawDataLength": null,
+        "rawDataSha256": null,
+        "typeTreeSource": null
+      }
+    },
+    {
+      "hierarchy": "P_fxui_lizhiyan_overview_start_01/S_fx_lzy_tiaodaifenwei_01 (5)",
+      "gameObjectPathID": -8894984188664187163,
+      "meshFilterPathID": -3027743468593580315,
+      "meshRendererPathID": 4708942470875150053,
+      "mesh": {
+        "fileID": 2,
+        "pathID": -6840663686705882004
+      },
+      "materials": [
+        {
+          "fileID": 4,
+          "pathID": 2993445828574428557
+        }
+      ],
+      "meshFilter": {
+        "m_Mesh": {
+          "m_FileID": 2,
+          "m_PathID": -6840663686705882004,
+          "Name": "",
+          "IsNull": false
+        },
+        "m_GameObject": {
+          "m_FileID": 0,
+          "m_PathID": -8894984188664187163,
+          "Name": "S_fx_lzy_tiaodaifenwei_01 (5)",
+          "IsNull": false
+        }
+      },
+      "meshRenderer": {
+        "m_AdditionalVertexStreams": {
+          "m_FileID": 0,
+          "m_PathID": 0,
+          "Name": "",
+          "IsNull": true
+        },
+        "m_Enabled": true,
+        "m_CastShadows": 1,
+        "m_ReceiveShadows": 1,
+        "m_DynamicOccludee": 1,
+        "m_StaticShadowCaster": 0,
+        "m_RealtimeShadowCaster": 0,
+        "m_SubMeshRenderMode": 0,
+        "m_CharacterIndex": 0,
+        "m_MotionVectors": 1,
+        "m_LightProbeUsage": 1,
+        "m_ReflectionProbeUsage": 1,
+        "m_RayTracingMode": 2,
+        "m_RayTraceProcedural": 0,
+        "m_RenderFoliageOccluder": 0,
+        "m_PlatformSpecificCastShadows": 1,
+        "m_RenderingLayerMask": 1,
+        "m_RendererPriority": 0,
+        "m_LightmapIndex": 65535,
+        "m_LightmapIndexDynamic": 65535,
+        "m_LightmapTilingOffset": {
+          "X": 1.0,
+          "Y": 1.0,
+          "Z": 0.0,
+          "W": 0.0
+        },
+        "m_LightmapTilingOffsetDynamic": {
+          "X": 1.0,
+          "Y": 1.0,
+          "Z": 0.0,
+          "W": 0.0
+        },
+        "m_StaticBatchRoot": {
+          "m_FileID": 0,
+          "m_PathID": 0,
+          "Name": "",
+          "IsNull": true
+        },
+        "m_ProbeAnchor": {
+          "m_FileID": 0,
+          "m_PathID": 0,
+          "Name": "",
+          "IsNull": true
+        },
+        "m_LightProbeVolumeOverride": {
+          "m_FileID": 0,
+          "m_PathID": 0,
+          "Name": "",
+          "IsNull": true
+        },
+        "m_ShadowProxyMesh": {
+          "m_FileID": 0,
+          "m_PathID": 0,
+          "Name": "",
+          "IsNull": true
+        },
+        "m_SortingLayerID": 0,
+        "m_SortingLayer": 0,
+        "m_SortingOrder": 0,
+        "m_EnableCharacterOutline": true,
+        "m_EnablePerRendererLighting": false,
+        "m_PerRendererLightingOffset": {
+          "X": 0.0,
+          "Y": 0.0,
+          "Z": 0.0
+        },
+        "m_PerRendererLightingAnchor": {
+          "m_FileID": 0,
+          "m_PathID": 0,
+          "Name": "",
+          "IsNull": true
+        },
+        "m_LightModeMask": 4294967295,
+        "m_RendererSortingFudge": 0.0,
+        "m_Materials": [
+          {
+            "m_FileID": 4,
+            "m_PathID": 2993445828574428557,
+            "Name": "",
+            "IsNull": false
+          }
+        ],
+        "m_StaticBatchInfo": {
+          "firstSubMesh": 0,
+          "subMeshCount": 0
+        },
+        "m_SubsetIndices": null,
+        "m_GameObject": {
+          "m_FileID": 0,
+          "m_PathID": -8894984188664187163,
+          "Name": "S_fx_lzy_tiaodaifenwei_01 (5)",
+          "IsNull": false
+        }
+      },
+      "meshFilterSource": {
+        "path": "scratch/character_recovery/next_effect_candidates/prefabs/MeshFilter/MeshFilter#223_pD5FB4B5B637876E5.json",
+        "bytes": 289,
+        "sha256": "5240133FCB82E0DFDE22A197AF6BEBE8E0C1BF22C770373F82C2222BB24C1DE4",
+        "objectType": "MeshFilter",
+        "pathID": -3027743468593580315,
+        "sourceFile": null,
+        "sourceOffset": null,
+        "rawDataLength": null,
+        "rawDataSha256": null,
+        "typeTreeSource": null
+      },
+      "meshRendererSource": {
+        "path": "scratch/character_recovery/next_effect_candidates/prefabs/MeshRenderer/MeshRenderer#231_p4159863A6C4376E5.json",
+        "bytes": 2154,
+        "sha256": "4DEB98F8381B2054E7EA90F3F699DC8834FA197D1B6A7A3E98A8E251065FE46E",
+        "objectType": "MeshRenderer",
+        "pathID": 4708942470875150053,
+        "sourceFile": null,
+        "sourceOffset": null,
+        "rawDataLength": null,
+        "rawDataSha256": null,
+        "typeTreeSource": null
+      }
+    },
+    {
+      "hierarchy": "P_fxui_lizhiyan_overview_start_01/S_fx_lzy_tiaodaifenwei_01 (6)",
+      "gameObjectPathID": -4762788037748558107,
+      "meshFilterPathID": 3101834544805148389,
+      "meshRendererPathID": 8270785745755535077,
+      "mesh": {
+        "fileID": 2,
+        "pathID": -6840663686705882004
+      },
+      "materials": [
+        {
+          "fileID": 4,
+          "pathID": 3282333668994552481
+        }
+      ],
+      "meshFilter": {
+        "m_Mesh": {
+          "m_FileID": 2,
+          "m_PathID": -6840663686705882004,
+          "Name": "",
+          "IsNull": false
+        },
+        "m_GameObject": {
+          "m_FileID": 0,
+          "m_PathID": -4762788037748558107,
+          "Name": "S_fx_lzy_tiaodaifenwei_01 (6)",
+          "IsNull": false
+        }
+      },
+      "meshRenderer": {
+        "m_AdditionalVertexStreams": {
+          "m_FileID": 0,
+          "m_PathID": 0,
+          "Name": "",
+          "IsNull": true
+        },
+        "m_Enabled": true,
+        "m_CastShadows": 1,
+        "m_ReceiveShadows": 1,
+        "m_DynamicOccludee": 1,
+        "m_StaticShadowCaster": 0,
+        "m_RealtimeShadowCaster": 0,
+        "m_SubMeshRenderMode": 0,
+        "m_CharacterIndex": 0,
+        "m_MotionVectors": 1,
+        "m_LightProbeUsage": 1,
+        "m_ReflectionProbeUsage": 1,
+        "m_RayTracingMode": 2,
+        "m_RayTraceProcedural": 0,
+        "m_RenderFoliageOccluder": 0,
+        "m_PlatformSpecificCastShadows": 1,
+        "m_RenderingLayerMask": 1,
+        "m_RendererPriority": 0,
+        "m_LightmapIndex": 65535,
+        "m_LightmapIndexDynamic": 65535,
+        "m_LightmapTilingOffset": {
+          "X": 1.0,
+          "Y": 1.0,
+          "Z": 0.0,
+          "W": 0.0
+        },
+        "m_LightmapTilingOffsetDynamic": {
+          "X": 1.0,
+          "Y": 1.0,
+          "Z": 0.0,
+          "W": 0.0
+        },
+        "m_StaticBatchRoot": {
+          "m_FileID": 0,
+          "m_PathID": 0,
+          "Name": "",
+          "IsNull": true
+        },
+        "m_ProbeAnchor": {
+          "m_FileID": 0,
+          "m_PathID": 0,
+          "Name": "",
+          "IsNull": true
+        },
+        "m_LightProbeVolumeOverride": {
+          "m_FileID": 0,
+          "m_PathID": 0,
+          "Name": "",
+          "IsNull": true
+        },
+        "m_ShadowProxyMesh": {
+          "m_FileID": 0,
+          "m_PathID": 0,
+          "Name": "",
+          "IsNull": true
+        },
+        "m_SortingLayerID": 0,
+        "m_SortingLayer": 0,
+        "m_SortingOrder": 0,
+        "m_EnableCharacterOutline": true,
+        "m_EnablePerRendererLighting": false,
+        "m_PerRendererLightingOffset": {
+          "X": 0.0,
+          "Y": 0.0,
+          "Z": 0.0
+        },
+        "m_PerRendererLightingAnchor": {
+          "m_FileID": 0,
+          "m_PathID": 0,
+          "Name": "",
+          "IsNull": true
+        },
+        "m_LightModeMask": 4294967295,
+        "m_RendererSortingFudge": 0.0,
+        "m_Materials": [
+          {
+            "m_FileID": 4,
+            "m_PathID": 3282333668994552481,
+            "Name": "",
+            "IsNull": false
+          }
+        ],
+        "m_StaticBatchInfo": {
+          "firstSubMesh": 0,
+          "subMeshCount": 0
+        },
+        "m_SubsetIndices": null,
+        "m_GameObject": {
+          "m_FileID": 0,
+          "m_PathID": -4762788037748558107,
+          "Name": "S_fx_lzy_tiaodaifenwei_01 (6)",
+          "IsNull": false
+        }
+      },
+      "meshFilterSource": {
+        "path": "scratch/character_recovery/next_effect_candidates/prefabs/MeshFilter/MeshFilter#229_p2B0BEE15932576E5.json",
+        "bytes": 289,
+        "sha256": "08236ADAD397869508DD8E1A66EEB95F3C26CDBF92DB7D16703B3875D4E84013",
+        "objectType": "MeshFilter",
+        "pathID": 3101834544805148389,
+        "sourceFile": null,
+        "sourceOffset": null,
+        "rawDataLength": null,
+        "rawDataSha256": null,
+        "typeTreeSource": null
+      },
+      "meshRendererSource": {
+        "path": "scratch/character_recovery/next_effect_candidates/prefabs/MeshRenderer/MeshRenderer#234_p72C7BBD0B51F76E5.json",
+        "bytes": 2154,
+        "sha256": "9F46CDE0F4DE8F8E3FE27673D49AF7037E25F24375DA57BAF2C3C2ABFDD715D9",
+        "objectType": "MeshRenderer",
+        "pathID": 8270785745755535077,
+        "sourceFile": null,
+        "sourceOffset": null,
+        "rawDataLength": null,
+        "rawDataSha256": null,
+        "typeTreeSource": null
+      }
+    },
+    {
+      "hierarchy": "P_fxui_lizhiyan_overview_start_01/S_fx_lzy_tiaodaifenwei_01 (7)",
+      "gameObjectPathID": -5633037065891318043,
+      "meshFilterPathID": -9078621906017421595,
+      "meshRendererPathID": -6436609233402104091,
+      "mesh": {
+        "fileID": 2,
+        "pathID": -6840663686705882004
+      },
+      "materials": [
+        {
+          "fileID": 4,
+          "pathID": -6912999194325832649
+        }
+      ],
+      "meshFilter": {
+        "m_Mesh": {
+          "m_FileID": 2,
+          "m_PathID": -6840663686705882004,
+          "Name": "",
+          "IsNull": false
+        },
+        "m_GameObject": {
+          "m_FileID": 0,
+          "m_PathID": -5633037065891318043,
+          "Name": "S_fx_lzy_tiaodaifenwei_01 (7)",
+          "IsNull": false
+        }
+      },
+      "meshRenderer": {
+        "m_AdditionalVertexStreams": {
+          "m_FileID": 0,
+          "m_PathID": 0,
+          "Name": "",
+          "IsNull": true
+        },
+        "m_Enabled": true,
+        "m_CastShadows": 1,
+        "m_ReceiveShadows": 1,
+        "m_DynamicOccludee": 1,
+        "m_StaticShadowCaster": 0,
+        "m_RealtimeShadowCaster": 0,
+        "m_SubMeshRenderMode": 0,
+        "m_CharacterIndex": 0,
+        "m_MotionVectors": 1,
+        "m_LightProbeUsage": 1,
+        "m_ReflectionProbeUsage": 1,
+        "m_RayTracingMode": 2,
+        "m_RayTraceProcedural": 0,
+        "m_RenderFoliageOccluder": 0,
+        "m_PlatformSpecificCastShadows": 1,
+        "m_RenderingLayerMask": 1,
+        "m_RendererPriority": 0,
+        "m_LightmapIndex": 65535,
+        "m_LightmapIndexDynamic": 65535,
+        "m_LightmapTilingOffset": {
+          "X": 1.0,
+          "Y": 1.0,
+          "Z": 0.0,
+          "W": 0.0
+        },
+        "m_LightmapTilingOffsetDynamic": {
+          "X": 1.0,
+          "Y": 1.0,
+          "Z": 0.0,
+          "W": 0.0
+        },
+        "m_StaticBatchRoot": {
+          "m_FileID": 0,
+          "m_PathID": 0,
+          "Name": "",
+          "IsNull": true
+        },
+        "m_ProbeAnchor": {
+          "m_FileID": 0,
+          "m_PathID": 0,
+          "Name": "",
+          "IsNull": true
+        },
+        "m_LightProbeVolumeOverride": {
+          "m_FileID": 0,
+          "m_PathID": 0,
+          "Name": "",
+          "IsNull": true
+        },
+        "m_ShadowProxyMesh": {
+          "m_FileID": 0,
+          "m_PathID": 0,
+          "Name": "",
+          "IsNull": true
+        },
+        "m_SortingLayerID": 0,
+        "m_SortingLayer": 0,
+        "m_SortingOrder": 0,
+        "m_EnableCharacterOutline": true,
+        "m_EnablePerRendererLighting": false,
+        "m_PerRendererLightingOffset": {
+          "X": 0.0,
+          "Y": 0.0,
+          "Z": 0.0
+        },
+        "m_PerRendererLightingAnchor": {
+          "m_FileID": 0,
+          "m_PathID": 0,
+          "Name": "",
+          "IsNull": true
+        },
+        "m_LightModeMask": 4294967295,
+        "m_RendererSortingFudge": 0.0,
+        "m_Materials": [
+          {
+            "m_FileID": 4,
+            "m_PathID": -6912999194325832649,
+            "Name": "",
+            "IsNull": false
+          }
+        ],
+        "m_StaticBatchInfo": {
+          "firstSubMesh": 0,
+          "subMeshCount": 0
+        },
+        "m_SubsetIndices": null,
+        "m_GameObject": {
+          "m_FileID": 0,
+          "m_PathID": -5633037065891318043,
+          "Name": "S_fx_lzy_tiaodaifenwei_01 (7)",
+          "IsNull": false
+        }
+      },
+      "meshFilterSource": {
+        "path": "scratch/character_recovery/next_effect_candidates/prefabs/MeshFilter/MeshFilter#214_p8202417A21C076E5.json",
+        "bytes": 289,
+        "sha256": "42FA2C2F7EF5124A27475DD7C877BD8898E05DE5B5379AF94C2D91A7A29B913E",
+        "objectType": "MeshFilter",
+        "pathID": -9078621906017421595,
+        "sourceFile": null,
+        "sourceOffset": null,
+        "rawDataLength": null,
+        "rawDataSha256": null,
+        "typeTreeSource": null
+      },
+      "meshRendererSource": {
+        "path": "scratch/character_recovery/next_effect_candidates/prefabs/MeshRenderer/MeshRenderer#218_pA6AC92013D1176E5.json",
+        "bytes": 2155,
+        "sha256": "44A6DA91A4664B990286FF107A32DFCB652F9064E096CCD4958C24AA9DE0A946",
+        "objectType": "MeshRenderer",
+        "pathID": -6436609233402104091,
+        "sourceFile": null,
+        "sourceOffset": null,
+        "rawDataLength": null,
+        "rawDataSha256": null,
+        "typeTreeSource": null
+      }
+    }
+  ],
+  "meshDependency": {
+    "fileID": 2,
+    "pathID": -6840663686705882004,
+    "convertedObj": {
+      "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Mesh/S_fx_lzy_tiaodaifenwei_01_pA111149ECDFB5C6C.obj",
+      "bytes": 55884,
+      "sha256": "787CD7A33CDF2E4F7615296E961264982AA933CA14F9C2B859A7BC7CB9161555",
+      "objectType": "MeshObj"
+    },
+    "nativePayloadStatus": "converted_obj_present_native_mesh_payload_not_pinned"
+  },
+  "materials": [
+    {
+      "pathID": -6912999194325832649,
+      "name": "M_fxui__lizhiyan_overview_11",
+      "shaderPathID": -1430105248647086886,
+      "customRenderQueue": 3704,
+      "validKeywords": [
+        "_SAMPLE_TEX0",
+        "_SAMPLE_TEX1",
+        "_SAMPLE_TEX2",
+        "_SAMPLE_TEX3",
+        "_USE_SOFTBLEND"
+      ],
+      "payload": {
+        "m_Shader": {
+          "m_FileID": 1,
+          "m_PathID": -1430105248647086886,
+          "Name": "",
+          "IsNull": false
+        },
+        "m_ShaderKeywords": null,
+        "m_ValidKeywords": [
+          "_SAMPLE_TEX0",
+          "_SAMPLE_TEX1",
+          "_SAMPLE_TEX2",
+          "_SAMPLE_TEX3",
+          "_USE_SOFTBLEND"
+        ],
+        "m_InvalidKeywords": [],
+        "m_LightmapFlags": 4,
+        "m_EnableInstancingVariants": false,
+        "m_CustomRenderQueue": 3704,
+        "m_StringTagMap": {
+          "RenderType": "Transparent"
+        },
+        "m_DisabledShaderPasses": [
+          "DepthOnly",
+          "GBuffer"
+        ],
+        "m_SavedProperties": {
+          "m_TexEnvs": {
+            "_BlendTex": {
+              "m_Texture": {
+                "m_FileID": 2,
+                "m_PathID": 5503065527579778695,
+                "Name": "",
+                "IsNull": false
+              },
+              "m_Scale": {
+                "X": 13.0,
+                "Y": 1.0
+              },
+              "m_Offset": {
+                "X": 0.0,
+                "Y": 0.0
+              }
+            },
+            "_ColorTexture": {
+              "m_Texture": {
+                "m_FileID": 0,
+                "m_PathID": 0,
+                "Name": "",
+                "IsNull": true
+              },
+              "m_Scale": {
+                "X": 1.0,
+                "Y": 1.0
+              },
+              "m_Offset": {
+                "X": 0.0,
+                "Y": 0.0
+              }
+            },
+            "_DissolveTex": {
+              "m_Texture": {
+                "m_FileID": 3,
+                "m_PathID": -1647025128171678556,
+                "Name": "",
+                "IsNull": false
+              },
+              "m_Scale": {
+                "X": 2.0,
+                "Y": 1.0
+              },
+              "m_Offset": {
+                "X": 0.0,
+                "Y": 0.0
+              }
+            },
+            "_DisturbTex1": {
+              "m_Texture": {
+                "m_FileID": 4,
+                "m_PathID": -2436663960397463630,
+                "Name": "",
+                "IsNull": false
+              },
+              "m_Scale": {
+                "X": 2.0,
+                "Y": 3.0
+              },
+              "m_Offset": {
+                "X": 0.0,
+                "Y": 0.0
+              }
+            },
+            "_DisturbTex2": {
+              "m_Texture": {
+                "m_FileID": 0,
+                "m_PathID": 0,
+                "Name": "",
+                "IsNull": true
+              },
+              "m_Scale": {
+                "X": 1.0,
+                "Y": 1.0
+              },
+              "m_Offset": {
+                "X": 0.0,
+                "Y": 0.0
+              }
+            },
+            "_LookupTable": {
+              "m_Texture": {
+                "m_FileID": 0,
+                "m_PathID": 0,
+                "Name": "",
+                "IsNull": true
+              },
+              "m_Scale": {
+                "X": 1.0,
+                "Y": 1.0
+              },
+              "m_Offset": {
+                "X": 0.0,
+                "Y": 0.0
+              }
+            },
+            "_MainTex": {
+              "m_Texture": {
+                "m_FileID": 5,
+                "m_PathID": 1332343754204177352,
+                "Name": "",
+                "IsNull": false
+              },
+              "m_Scale": {
+                "X": 1.0,
+                "Y": 1.0
+              },
+              "m_Offset": {
+                "X": 0.81,
+                "Y": 0.0
+              }
+            },
+            "_MaskTex": {
+              "m_Texture": {
+                "m_FileID": 6,
+                "m_PathID": 2432870227437740027,
+                "Name": "",
+                "IsNull": false
+              },
+              "m_Scale": {
+                "X": 3.0,
+                "Y": 1.0
+              },
+              "m_Offset": {
+                "X": 0.0,
+                "Y": 0.0
+              }
+            },
+            "_OffsetMaskTex": {
+              "m_Texture": {
+                "m_FileID": 0,
+                "m_PathID": 0,
+                "Name": "",
+                "IsNull": true
+              },
+              "m_Scale": {
+                "X": 1.0,
+                "Y": 1.0
+              },
+              "m_Offset": {
+                "X": 0.0,
+                "Y": 0.0
+              }
+            },
+            "_OffsetTex": {
+              "m_Texture": {
+                "m_FileID": 0,
+                "m_PathID": 0,
+                "Name": "",
+                "IsNull": true
+              },
+              "m_Scale": {
+                "X": 1.0,
+                "Y": 1.0
+              },
+              "m_Offset": {
+                "X": 0.0,
+                "Y": 0.0
+              }
+            },
+            "_PositionTexture": {
+              "m_Texture": {
+                "m_FileID": 0,
+                "m_PathID": 0,
+                "Name": "",
+                "IsNull": true
+              },
+              "m_Scale": {
+                "X": 1.0,
+                "Y": 1.0
+              },
+              "m_Offset": {
+                "X": 0.0,
+                "Y": 0.0
+              }
+            },
+            "_RotationTexture": {
+              "m_Texture": {
+                "m_FileID": 0,
+                "m_PathID": 0,
+                "Name": "",
+                "IsNull": true
+              },
+              "m_Scale": {
+                "X": 1.0,
+                "Y": 1.0
+              },
+              "m_Offset": {
+                "X": 0.0,
+                "Y": 0.0
+              }
+            },
+            "_SampleTex0": {
+              "m_Texture": {
+                "m_FileID": 4,
+                "m_PathID": -2436663960397463630,
+                "Name": "",
+                "IsNull": false
+              },
+              "m_Scale": {
+                "X": 2.0,
+                "Y": 3.0
+              },
+              "m_Offset": {
+                "X": 0.0,
+                "Y": 0.0
+              }
+            },
+            "_SampleTex1": {
+              "m_Texture": {
+                "m_FileID": 6,
+                "m_PathID": 2432870227437740027,
+                "Name": "",
+                "IsNull": false
+              },
+              "m_Scale": {
+                "X": 3.0,
+                "Y": 1.0
+              },
+              "m_Offset": {
+                "X": 0.0,
+                "Y": 0.0
+              }
+            },
+            "_SampleTex2": {
+              "m_Texture": {
+                "m_FileID": 2,
+                "m_PathID": 5503065527579778695,
+                "Name": "",
+                "IsNull": false
+              },
+              "m_Scale": {
+                "X": 13.0,
+                "Y": 1.0
+              },
+              "m_Offset": {
+                "X": 0.0,
+                "Y": 0.0
+              }
+            },
+            "_SampleTex3": {
+              "m_Texture": {
+                "m_FileID": 3,
+                "m_PathID": -1647025128171678556,
+                "Name": "",
+                "IsNull": false
+              },
+              "m_Scale": {
+                "X": 2.0,
+                "Y": 1.0
+              },
+              "m_Offset": {
+                "X": 0.0,
+                "Y": 0.0
+              }
+            },
+            "_SampleTex4": {
+              "m_Texture": {
+                "m_FileID": 0,
+                "m_PathID": 0,
+                "Name": "",
+                "IsNull": true
+              },
+              "m_Scale": {
+                "X": 1.0,
+                "Y": 1.0
+              },
+              "m_Offset": {
+                "X": 0.0,
+                "Y": 0.0
+              }
+            },
+            "_SampleTex5": {
+              "m_Texture": {
+                "m_FileID": 0,
+                "m_PathID": 0,
+                "Name": "",
+                "IsNull": true
+              },
+              "m_Scale": {
+                "X": 1.0,
+                "Y": 1.0
+              },
+              "m_Offset": {
+                "X": 0.0,
+                "Y": 0.0
+              }
+            },
+            "_WeightTex": {
+              "m_Texture": {
+                "m_FileID": 0,
+                "m_PathID": 0,
+                "Name": "",
+                "IsNull": true
+              },
+              "m_Scale": {
+                "X": 1.0,
+                "Y": 1.0
+              },
+              "m_Offset": {
+                "X": 0.0,
+                "Y": 0.0
+              }
+            }
+          },
+          "m_Ints": {},
+          "m_Floats": {
+            "_AdvancedOptions": 0.0,
+            "_AlphaDstBlend": 10.0,
+            "_AlphaSrcBlend": 1.0,
+            "_B_Particle_Vert_Color": 1.0,
+            "_B_UNLOAD_ROT_TEX": 0.0,
+            "_B_animateFirstFrame": 0.0,
+            "_B_autoPlayback": 0.0,
+            "_B_hideOverlappingOrigin": 0.0,
+            "_B_pscaleAreInPosA": 0.0,
+            "_B_spinFromHeading": 0.0,
+            "_B_stretchByVel": 0.0,
+            "_B_surfaceNormals": 0.0,
+            "_B_uvFromRG": 0.0,
+            "_Bi_Disturb": 0.0,
+            "_Bi_Offset": 0.0,
+            "_BlendMode": 0.0,
+            "_BlendTexMipmapBias": 0.0,
+            "_BlendTexUVRotate": 0.0,
+            "_BlendTexUseDisturb": 0.0,
+            "_BlendUVSet": 0.0,
+            "_BoxInnerRadius": 1.0,
+            "_BoxOuterRadius": 2.0,
+            "_BreathingMinAlpha": 0.0,
+            "_BreathingPower": 1.0,
+            "_BreathingSpeed": 1.0,
+            "_BrightType": 0.0,
+            "_BrightUseVertColor": 0.0,
+            "_CharacterHeight": 1.5,
+            "_CullMode": 0.0,
+            "_DebugSampleTexUses": 0.0,
+            "_DisableParticleInstanceColor": 0.0,
+            "_DisableVertColor": 0.0,
+            "_DisableZTest": 0.0,
+            "_DissolveEdgeSharp": 1.7,
+            "_DissolveEmissiveEdge": 0.0,
+            "_DissolveScheduleOffset": 0.0,
+            "_DissolveTexMipmapBias": 0.0,
+            "_DissolveTexUseDisturb": 0.0,
+            "_DissolveUVRotate": 0.0,
+            "_DissolveUVSet": 0.0,
+            "_DissolveUseWeight": 0.0,
+            "_DistortAlpha": 1.0,
+            "_DistortIntensity": 0.0,
+            "_DistortOnEdge": 0.0,
+            "_DistortScale": 5.0,
+            "_DistortSpeed": 1.0,
+            "_DisturbTex1MipmapBias": 0.0,
+            "_DisturbTex1Normal": 0.0,
+            "_DisturbTex2MipmapBias": 0.0,
+            "_DisturbTex2Normal": 0.0,
+            "_DisturbUIntensity1": 0.5,
+            "_DisturbUIntensity2": 0.0,
+            "_DisturbUVSet": 0.0,
+            "_DisturbUseWeight": 1.0,
+            "_DisturbVIntensity1": 0.0,
+            "_DisturbVIntensity2": 0.0,
+            "_DstBlend": 10.0,
+            "_EdgeColorMode": 0.0,
+            "_EdgeDistance": 0.001,
+            "_EdgeDistanceOffset": 0.001,
+            "_EnableComposeVolumetric": 0.0,
+            "_EnableHoudiniVAT": 0.0,
+            "_EnableTransparentMV": 0.0,
+            "_EnvLightStrength": 0.0,
+            "_ExcludeCharacterVFX": 0.0,
+            "_ExpIntensity": 0.0,
+            "_ExpThreshold": 1.0,
+            "_FogIntensity": 1.0,
+            "_FogIntensityFadeOutDistance": 2000.0,
+            "_FresnelAffectOpacity": 1.0,
+            "_FresnelBias": 0.0,
+            "_FresnelFlip": 0.001,
+            "_FresnelPower": 1.0,
+            "_HoudiniVATInParticle": 0.0,
+            "_HoudiniVATType": 0.0,
+            "_IgnorePostExposure": 1.0,
+            "_InParticle": 0.0,
+            "_InnerRadius": 0.0,
+            "_IsSceneEffect": 0.0,
+            "_IsUI": 0.0,
+            "_LocalPivortSpace": 0.0,
+            "_MVDstColorBlend": 6.0,
+            "_MVSrcColorBlend": 3.0,
+            "_MainProperties": 0.0,
+            "_MainTexMipmapBias": 0.0,
+            "_MainTexUVRotate": 0.0,
+            "_MainTexUseDisturb": 0.0,
+            "_MainUVSet": 0.0,
+            "_MaskTexMipmapBias": 0.0,
+            "_MaskTexUVRotate": 0.0,
+            "_MaskTexUseDisturb": 0.164,
+            "_MaskUVSet": 0.0,
+            "_NearCameraFadeDistanceEnd": 10.0,
+            "_NearCameraFadeDistanceEnd2": 100.0,
+            "_NearCameraFadeDistanceStart": 0.001,
+            "_NearCameraFadeDistanceStart2": 120.0,
+            "_OffsetIntensity": 0.0,
+            "_OffsetMaskPower": 0.0,
+            "_OffsetSwitchDir": 0.0,
+            "_OffsetUVSet": 0.0,
+            "_OuterRadius": 2.0,
+            "_PortalStencilSet": 0.0,
+            "_ProcedureAlpha": 1.0,
+            "_RayleighMieLerpFactor": 0.0,
+            "_RenderTransparentAfterDOF": 1.0,
+            "_RenderTransparentAfterDistortion": 0.0,
+            "_Responsive": 1.0,
+            "_RotateNormalToWorldUp": 1.0,
+            "_SafeFullAbsorpDistance": 0.0,
+            "_SampleTex0MipmapBias": 0.0,
+            "_SampleTex0UVSet": 0.0,
+            "_SampleTex0Use": 0.0,
+            "_SampleTex0UseDisturb": 0.0,
+            "_SampleTex0UseWeight0": 1.0,
+            "_SampleTex0UseWeight2": 0.0,
+            "_SampleTex0UseWeight3": 0.0,
+            "_SampleTex0UseWeight4": 0.0,
+            "_SampleTex0UseWeight5": 0.0,
+            "_SampleTex1MipmapBias": 0.0,
+            "_SampleTex1UVSet": 0.0,
+            "_SampleTex1Use": 3.0,
+            "_SampleTex1UseDisturb": 0.164,
+            "_SampleTex1UseWeight1": 0.0,
+            "_SampleTex1UseWeight2": 0.0,
+            "_SampleTex1UseWeight3": 1.0,
+            "_SampleTex1UseWeight4": 0.0,
+            "_SampleTex1UseWeight5": 0.0,
+            "_SampleTex2MipmapBias": 0.0,
+            "_SampleTex2UVSet": 0.0,
+            "_SampleTex2Use": 4.0,
+            "_SampleTex2UseDisturb": 0.0,
+            "_SampleTex2UseWeight2": 0.0,
+            "_SampleTex2UseWeight3": 0.0,
+            "_SampleTex2UseWeight4": 1.0,
+            "_SampleTex2UseWeight5": 0.0,
+            "_SampleTex3MipmapBias": 0.0,
+            "_SampleTex3UVSet": 0.0,
+            "_SampleTex3Use": 5.0,
+            "_SampleTex3UseDisturb": 0.0,
+            "_SampleTex3UseWeight3": 0.0,
+            "_SampleTex3UseWeight4": 0.0,
+            "_SampleTex3UseWeight5": 1.0,
+            "_SampleTex4MipmapBias": 0.0,
+            "_SampleTex4UVSet": 0.0,
+            "_SampleTex4Use": 0.0,
+            "_SampleTex4UseDisturb": 0.0,
+            "_SampleTex4UseWeight4": 0.0,
+            "_SampleTex4UseWeight5": 0.0,
+            "_SampleTex5MipmapBias": 0.0,
+            "_SampleTex5UVSet": 0.0,
+            "_SampleTex5Use": 0.0,
+            "_SampleTex5UseDisturb": 0.0,
+            "_ScanLineSchedule": 0.0,
+            "_ScanLineWidth": 0.0,
+            "_ScreenUVUseDepth": 1.0,
+            "_SectorAngle": 0.0,
+            "_SectorCenterRadius": 2.0,
+            "_SectorRadius": 2.0,
+            "_SoftBias": 0.0,
+            "_SoftDistance": 0.001,
+            "_SrcBlend": 1.0,
+            "_StencilComp": 8.0,
+            "_StencilOp": 0.0,
+            "_StencilReadMask": 255.0,
+            "_StencilRef": 0.0,
+            "_StencilWriteMask": 255.0,
+            "_SubsurfaceIntensity": 0.0,
+            "_SurfaceType": 1.0,
+            "_TextureFormat": 1.0,
+            "_TintColorAlpha": 1.97,
+            "_TintColorIntensity": 5.0,
+            "_TransparentSortPriority": 4.0,
+            "_UseAnimBreathing": 0.0,
+            "_UseBlend": 1.0,
+            "_UseBright": 0.0,
+            "_UseDissolve": 1.0,
+            "_UseDisturb": 1.0,
+            "_UseDisturb2": 0.0,
+            "_UseEdgeColor": 0.0,
+            "_UseFog": 0.0,
+            "_UseForceDynamicLighting": 0.0,
+            "_UseFresnel": 0.0,
+            "_UseLighting": 0.0,
+            "_UseMainTexAsAlpha": 0.0,
+            "_UseMask": 1.0,
+            "_UseMaskTexAsAlpha": 1.0,
+            "_UseNearCameraFade": 0.0,
+            "_UseParticleDisturb": 0.0,
+            "_UsePolarUV": 0.0,
+            "_UsePosYAsScreenV": 0.0,
+            "_UseSampleTex0": 1.0,
+            "_UseSampleTex0AsAlpha": 0.0,
+            "_UseSampleTex1": 1.0,
+            "_UseSampleTex1AsAlpha": 1.0,
+            "_UseSampleTex2": 1.0,
+            "_UseSampleTex2AsAlpha": 0.0,
+            "_UseSampleTex3": 1.0,
+            "_UseSampleTex3AsAlpha": 0.0,
+            "_UseSampleTex4": 0.0,
+            "_UseSampleTex4AsAlpha": 1.0,
+            "_UseSampleTex5": 0.0,
+            "_UseSampleTex5AsAlpha": 1.0,
+            "_UseScreenUV": 0.0,
+            "_UseSoftBlend": 1.0,
+            "_UseTrail": 0.0,
+            "_UseVATColorTex": 0.0,
+            "_UseVFXPortal": 0.0,
+            "_UseVertexOffset": 0.0,
+            "_UseVertexOffsetMask": 0.0,
+            "_UseWaterBlend": 0.0,
+            "_UseWeightTex": 0.0,
+            "_VertCameraOffset": 0.0,
+            "_VolumetricComposeDepthFadeDistance": 10.0,
+            "_WaterHeight": -9999.0,
+            "_WeightTexIntensity": 1.0,
+            "_WeightTexMipmapBias": 0.0,
+            "_WeightTexUVRotate": 0.0,
+            "_WeightUVSet": 0.0,
+            "_ZTest": 4.0,
+            "_ZWrite": 0.0,
+            "_boundMaxX": 0.0,
+            "_boundMaxY": 0.0,
+            "_boundMaxZ": 0.0,
+            "_boundMinX": 0.0,
+            "_boundMinY": 0.0,
+            "_boundMinZ": 0.0,
+            "_displayFrame": 0.0,
+            "_frameCount": 0.0,
+            "_gameTimeAtFirstFrame": 0.0,
+            "_globalPscaleMul": 1.0,
+            "_heightBaseScale": 0.2,
+            "_houdiniFPS": 0.0,
+            "_originRadius": 0.0,
+            "_particleTexUScale": 1.0,
+            "_particleTexVScale": 1.0,
+            "_playbackSpeed": 0.0,
+            "_scaleByVelAmount": 1.0,
+            "_stretchByVelAmount": 0.0,
+            "_widthBaseScale": 0.2
+          },
+          "m_Colors": {
+            "_BlendTexUVSpeed": {
+              "r": 0.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_BlendTint": {
+              "r": 0.0,
+              "g": 1.6177737,
+              "b": 1.7207553,
+              "a": 1.0
+            },
+            "_BrightCenter": {
+              "r": 0.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_BrightColor": {
+              "r": 1.0,
+              "g": 1.0,
+              "b": 1.0,
+              "a": 1.0
+            },
+            "_DissolveEmissiveColor": {
+              "r": 0.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_DissolveUVSpeed": {
+              "r": 0.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_DisturbUVSpeed1": {
+              "r": 0.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_DisturbUVSpeed2": {
+              "r": 0.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_EdgeColor": {
+              "r": 1.0,
+              "g": 1.0,
+              "b": 1.0,
+              "a": 1.0
+            },
+            "_FresnelColor": {
+              "r": 1.0,
+              "g": 1.0,
+              "b": 1.0,
+              "a": 1.0
+            },
+            "_MainTexUVRotateMat": {
+              "r": 1.0,
+              "g": -0.0,
+              "b": 0.0,
+              "a": 1.0
+            },
+            "_MainTexUVSpeed": {
+              "r": 0.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_MainTexUVWeights": {
+              "r": 1.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_MaskTexUVSpeed": {
+              "r": 0.15,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_OffsetDir": {
+              "r": 0.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_OffsetMaskSpeed": {
+              "r": 0.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_OffsetSpeed": {
+              "r": 0.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_SampleTex0UVRotateMat": {
+              "r": 1.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 1.0
+            },
+            "_SampleTex0UVSpeed": {
+              "r": 0.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_SampleTex0UVWeights": {
+              "r": 1.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_SampleTex1UVRotateMat": {
+              "r": 1.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 1.0
+            },
+            "_SampleTex1UVSpeed": {
+              "r": 0.15,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_SampleTex1UVWeights": {
+              "r": 1.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_SampleTex2UVRotateMat": {
+              "r": 1.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 1.0
+            },
+            "_SampleTex2UVSpeed": {
+              "r": 0.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_SampleTex2UVWeights": {
+              "r": 1.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_SampleTex3UVRotateMat": {
+              "r": 1.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 1.0
+            },
+            "_SampleTex3UVSpeed": {
+              "r": 0.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_SampleTex3UVWeights": {
+              "r": 1.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_SampleTex4UVRotateMat": {
+              "r": 1.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 1.0
+            },
+            "_SampleTex4UVSpeed": {
+              "r": 0.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_SampleTex4UVWeights": {
+              "r": 0.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_SampleTex5UVRotateMat": {
+              "r": 1.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 1.0
+            },
+            "_SampleTex5UVSpeed": {
+              "r": 0.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_SampleTex5UVWeights": {
+              "r": 0.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_ScanFillColor": {
+              "r": 1.0,
+              "g": 1.0,
+              "b": 1.0,
+              "a": 1.0
+            },
+            "_TintColor": {
+              "r": 0.21960783,
+              "g": 0.7032827,
+              "b": 0.7490196,
+              "a": 1.0
+            },
+            "_WaterAbsorption": {
+              "r": 1.0,
+              "g": 1.0,
+              "b": 1.0,
+              "a": 1.0
+            },
+            "_WaterAbsorption2": {
+              "r": 1.0,
+              "g": 1.0,
+              "b": 1.0,
+              "a": 1.0
+            },
+            "_WaterScatter": {
+              "r": 1.0,
+              "g": 1.0,
+              "b": 1.0,
+              "a": 1.0
+            },
+            "_WeightTexUVSpeed": {
+              "r": 0.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            }
+          }
+        },
+        "m_Name": "M_fxui__lizhiyan_overview_11"
+      },
+      "source": {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fxui__lizhiyan_overview_11_pA01017DC01A5AC37.json",
+        "bytes": 19621,
+        "sha256": "88DF672E53C3BAA2082883654D851753BF2F3AF96DA59ACF8EE771310EFBBEAD",
+        "objectType": "Material",
+        "pathID": -6912999194325832649,
+        "sourceFile": null,
+        "sourceOffset": null,
+        "rawDataLength": null,
+        "rawDataSha256": null,
+        "typeTreeSource": null
+      }
+    },
+    {
+      "pathID": 2993445828574428557,
+      "name": "M_fxui__lizhiyan_overview_09",
+      "shaderPathID": -1430105248647086886,
+      "customRenderQueue": 3704,
+      "validKeywords": [
+        "_SAMPLE_TEX0",
+        "_SAMPLE_TEX1",
+        "_SAMPLE_TEX2",
+        "_USE_SOFTBLEND"
+      ],
+      "payload": {
+        "m_Shader": {
+          "m_FileID": 1,
+          "m_PathID": -1430105248647086886,
+          "Name": "",
+          "IsNull": false
+        },
+        "m_ShaderKeywords": null,
+        "m_ValidKeywords": [
+          "_SAMPLE_TEX0",
+          "_SAMPLE_TEX1",
+          "_SAMPLE_TEX2",
+          "_USE_SOFTBLEND"
+        ],
+        "m_InvalidKeywords": [],
+        "m_LightmapFlags": 4,
+        "m_EnableInstancingVariants": false,
+        "m_CustomRenderQueue": 3704,
+        "m_StringTagMap": {
+          "RenderType": "Transparent"
+        },
+        "m_DisabledShaderPasses": [
+          "DepthOnly",
+          "GBuffer"
+        ],
+        "m_SavedProperties": {
+          "m_TexEnvs": {
+            "_BlendTex": {
+              "m_Texture": {
+                "m_FileID": 2,
+                "m_PathID": 5503065527579778695,
+                "Name": "",
+                "IsNull": false
+              },
+              "m_Scale": {
+                "X": 13.0,
+                "Y": 1.0
+              },
+              "m_Offset": {
+                "X": 0.0,
+                "Y": 0.0
+              }
+            },
+            "_ColorTexture": {
+              "m_Texture": {
+                "m_FileID": 0,
+                "m_PathID": 0,
+                "Name": "",
+                "IsNull": true
+              },
+              "m_Scale": {
+                "X": 1.0,
+                "Y": 1.0
+              },
+              "m_Offset": {
+                "X": 0.0,
+                "Y": 0.0
+              }
+            },
+            "_DissolveTex": {
+              "m_Texture": {
+                "m_FileID": 3,
+                "m_PathID": -1647025128171678556,
+                "Name": "",
+                "IsNull": false
+              },
+              "m_Scale": {
+                "X": 2.0,
+                "Y": 1.0
+              },
+              "m_Offset": {
+                "X": 0.0,
+                "Y": 0.0
+              }
+            },
+            "_DisturbTex1": {
+              "m_Texture": {
+                "m_FileID": 0,
+                "m_PathID": 0,
+                "Name": "",
+                "IsNull": true
+              },
+              "m_Scale": {
+                "X": 0.1,
+                "Y": 0.1
+              },
+              "m_Offset": {
+                "X": 0.0,
+                "Y": 0.0
+              }
+            },
+            "_DisturbTex2": {
+              "m_Texture": {
+                "m_FileID": 0,
+                "m_PathID": 0,
+                "Name": "",
+                "IsNull": true
+              },
+              "m_Scale": {
+                "X": 1.0,
+                "Y": 1.0
+              },
+              "m_Offset": {
+                "X": 0.0,
+                "Y": 0.0
+              }
+            },
+            "_LookupTable": {
+              "m_Texture": {
+                "m_FileID": 0,
+                "m_PathID": 0,
+                "Name": "",
+                "IsNull": true
+              },
+              "m_Scale": {
+                "X": 1.0,
+                "Y": 1.0
+              },
+              "m_Offset": {
+                "X": 0.0,
+                "Y": 0.0
+              }
+            },
+            "_MainTex": {
+              "m_Texture": {
+                "m_FileID": 9,
+                "m_PathID": 7553184953741353081,
+                "Name": "",
+                "IsNull": false
+              },
+              "m_Scale": {
+                "X": 1.0,
+                "Y": 1.0
+              },
+              "m_Offset": {
+                "X": 0.38,
+                "Y": 0.0
+              }
+            },
+            "_MaskTex": {
+              "m_Texture": {
+                "m_FileID": 7,
+                "m_PathID": 5707730051549422076,
+                "Name": "",
+                "IsNull": false
+              },
+              "m_Scale": {
+                "X": 1.35,
+                "Y": 0.45
+              },
+              "m_Offset": {
+                "X": 0.0,
+                "Y": 0.32
+              }
+            },
+            "_OffsetMaskTex": {
+              "m_Texture": {
+                "m_FileID": 0,
+                "m_PathID": 0,
+                "Name": "",
+                "IsNull": true
+              },
+              "m_Scale": {
+                "X": 1.0,
+                "Y": 1.0
+              },
+              "m_Offset": {
+                "X": 0.0,
+                "Y": 0.0
+              }
+            },
+            "_OffsetTex": {
+              "m_Texture": {
+                "m_FileID": 0,
+                "m_PathID": 0,
+                "Name": "",
+                "IsNull": true
+              },
+              "m_Scale": {
+                "X": 1.0,
+                "Y": 1.0
+              },
+              "m_Offset": {
+                "X": 0.0,
+                "Y": 0.0
+              }
+            },
+            "_PositionTexture": {
+              "m_Texture": {
+                "m_FileID": 0,
+                "m_PathID": 0,
+                "Name": "",
+                "IsNull": true
+              },
+              "m_Scale": {
+                "X": 1.0,
+                "Y": 1.0
+              },
+              "m_Offset": {
+                "X": 0.0,
+                "Y": 0.0
+              }
+            },
+            "_RotationTexture": {
+              "m_Texture": {
+                "m_FileID": 0,
+                "m_PathID": 0,
+                "Name": "",
+                "IsNull": true
+              },
+              "m_Scale": {
+                "X": 1.0,
+                "Y": 1.0
+              },
+              "m_Offset": {
+                "X": 0.0,
+                "Y": 0.0
+              }
+            },
+            "_SampleTex0": {
+              "m_Texture": {
+                "m_FileID": 7,
+                "m_PathID": 5707730051549422076,
+                "Name": "",
+                "IsNull": false
+              },
+              "m_Scale": {
+                "X": 1.35,
+                "Y": 0.45
+              },
+              "m_Offset": {
+                "X": 0.0,
+                "Y": 0.32
+              }
+            },
+            "_SampleTex1": {
+              "m_Texture": {
+                "m_FileID": 2,
+                "m_PathID": 5503065527579778695,
+                "Name": "",
+                "IsNull": false
+              },
+              "m_Scale": {
+                "X": 13.0,
+                "Y": 1.0
+              },
+              "m_Offset": {
+                "X": 0.0,
+                "Y": 0.0
+              }
+            },
+            "_SampleTex2": {
+              "m_Texture": {
+                "m_FileID": 3,
+                "m_PathID": -1647025128171678556,
+                "Name": "",
+                "IsNull": false
+              },
+              "m_Scale": {
+                "X": 2.0,
+                "Y": 1.0
+              },
+              "m_Offset": {
+                "X": 0.0,
+                "Y": 0.0
+              }
+            },
+            "_SampleTex3": {
+              "m_Texture": {
+                "m_FileID": 0,
+                "m_PathID": 0,
+                "Name": "",
+                "IsNull": true
+              },
+              "m_Scale": {
+                "X": 2.0,
+                "Y": 1.0
+              },
+              "m_Offset": {
+                "X": 0.0,
+                "Y": 0.0
+              }
+            },
+            "_SampleTex4": {
+              "m_Texture": {
+                "m_FileID": 0,
+                "m_PathID": 0,
+                "Name": "",
+                "IsNull": true
+              },
+              "m_Scale": {
+                "X": 1.0,
+                "Y": 1.0
+              },
+              "m_Offset": {
+                "X": 0.0,
+                "Y": 0.0
+              }
+            },
+            "_SampleTex5": {
+              "m_Texture": {
+                "m_FileID": 0,
+                "m_PathID": 0,
+                "Name": "",
+                "IsNull": true
+              },
+              "m_Scale": {
+                "X": 1.0,
+                "Y": 1.0
+              },
+              "m_Offset": {
+                "X": 0.0,
+                "Y": 0.0
+              }
+            },
+            "_WeightTex": {
+              "m_Texture": {
+                "m_FileID": 0,
+                "m_PathID": 0,
+                "Name": "",
+                "IsNull": true
+              },
+              "m_Scale": {
+                "X": 1.0,
+                "Y": 1.0
+              },
+              "m_Offset": {
+                "X": 0.0,
+                "Y": 0.0
+              }
+            }
+          },
+          "m_Ints": {},
+          "m_Floats": {
+            "_AdvancedOptions": 0.0,
+            "_AlphaDstBlend": 10.0,
+            "_AlphaSrcBlend": 1.0,
+            "_B_Particle_Vert_Color": 1.0,
+            "_B_UNLOAD_ROT_TEX": 0.0,
+            "_B_animateFirstFrame": 0.0,
+            "_B_autoPlayback": 0.0,
+            "_B_hideOverlappingOrigin": 0.0,
+            "_B_pscaleAreInPosA": 0.0,
+            "_B_spinFromHeading": 0.0,
+            "_B_stretchByVel": 0.0,
+            "_B_surfaceNormals": 0.0,
+            "_B_uvFromRG": 0.0,
+            "_Bi_Disturb": 0.0,
+            "_Bi_Offset": 0.0,
+            "_BlendMode": 0.0,
+            "_BlendTexMipmapBias": 0.0,
+            "_BlendTexUVRotate": 0.0,
+            "_BlendTexUseDisturb": 1.0,
+            "_BlendUVSet": 0.0,
+            "_BoxInnerRadius": 1.0,
+            "_BoxOuterRadius": 2.0,
+            "_BreathingMinAlpha": 0.0,
+            "_BreathingPower": 1.0,
+            "_BreathingSpeed": 1.0,
+            "_BrightType": 0.0,
+            "_BrightUseVertColor": 0.0,
+            "_CharacterHeight": 1.5,
+            "_CullMode": 0.0,
+            "_DebugSampleTexUses": 0.0,
+            "_DisableParticleInstanceColor": 0.0,
+            "_DisableVertColor": 0.0,
+            "_DisableZTest": 0.0,
+            "_DissolveEdgeSharp": 1.7,
+            "_DissolveEmissiveEdge": 0.0,
+            "_DissolveScheduleOffset": 0.0,
+            "_DissolveTexMipmapBias": 0.0,
+            "_DissolveTexUseDisturb": 0.0,
+            "_DissolveUVRotate": 0.0,
+            "_DissolveUVSet": 0.0,
+            "_DissolveUseWeight": 0.0,
+            "_DistortAlpha": 1.0,
+            "_DistortIntensity": 0.0,
+            "_DistortOnEdge": 0.0,
+            "_DistortScale": 5.0,
+            "_DistortSpeed": 1.0,
+            "_DisturbTex1MipmapBias": 0.0,
+            "_DisturbTex1Normal": 0.0,
+            "_DisturbTex2MipmapBias": 0.0,
+            "_DisturbTex2Normal": 0.0,
+            "_DisturbUIntensity1": 0.01,
+            "_DisturbUIntensity2": 0.0,
+            "_DisturbUVSet": 0.0,
+            "_DisturbUseWeight": 1.0,
+            "_DisturbVIntensity1": 0.0,
+            "_DisturbVIntensity2": 0.0,
+            "_DstBlend": 10.0,
+            "_EdgeColorMode": 0.0,
+            "_EdgeDistance": 0.001,
+            "_EdgeDistanceOffset": 0.001,
+            "_EnableComposeVolumetric": 0.0,
+            "_EnableHoudiniVAT": 0.0,
+            "_EnableTransparentMV": 0.0,
+            "_EnvLightStrength": 0.0,
+            "_ExcludeCharacterVFX": 0.0,
+            "_ExpIntensity": 0.0,
+            "_ExpThreshold": 1.0,
+            "_FogIntensity": 1.0,
+            "_FogIntensityFadeOutDistance": 2000.0,
+            "_FresnelAffectOpacity": 1.0,
+            "_FresnelBias": 0.0,
+            "_FresnelFlip": 0.001,
+            "_FresnelPower": 1.0,
+            "_HoudiniVATInParticle": 0.0,
+            "_HoudiniVATType": 0.0,
+            "_IgnorePostExposure": 1.0,
+            "_InParticle": 0.0,
+            "_InnerRadius": 0.0,
+            "_IsSceneEffect": 0.0,
+            "_IsUI": 0.0,
+            "_LocalPivortSpace": 0.0,
+            "_MVDstColorBlend": 6.0,
+            "_MVSrcColorBlend": 3.0,
+            "_MainProperties": 0.0,
+            "_MainTexMipmapBias": 0.0,
+            "_MainTexUVRotate": 0.0,
+            "_MainTexUseDisturb": 0.0,
+            "_MainUVSet": 0.0,
+            "_MaskTexMipmapBias": 0.0,
+            "_MaskTexUVRotate": 0.0,
+            "_MaskTexUseDisturb": 0.0,
+            "_MaskUVSet": 0.0,
+            "_NearCameraFadeDistanceEnd": 10.0,
+            "_NearCameraFadeDistanceEnd2": 100.0,
+            "_NearCameraFadeDistanceStart": 0.001,
+            "_NearCameraFadeDistanceStart2": 120.0,
+            "_OffsetIntensity": 0.0,
+            "_OffsetMaskPower": 0.0,
+            "_OffsetSwitchDir": 0.0,
+            "_OffsetUVSet": 0.0,
+            "_OuterRadius": 2.0,
+            "_PortalStencilSet": 0.0,
+            "_ProcedureAlpha": 1.0,
+            "_RayleighMieLerpFactor": 0.0,
+            "_RenderTransparentAfterDOF": 1.0,
+            "_RenderTransparentAfterDistortion": 0.0,
+            "_Responsive": 1.0,
+            "_RotateNormalToWorldUp": 1.0,
+            "_SafeFullAbsorpDistance": 0.0,
+            "_SampleTex0MipmapBias": 0.0,
+            "_SampleTex0UVSet": 0.0,
+            "_SampleTex0Use": 3.0,
+            "_SampleTex0UseDisturb": 0.0,
+            "_SampleTex0UseWeight0": 0.0,
+            "_SampleTex0UseWeight2": 0.0,
+            "_SampleTex0UseWeight3": 1.0,
+            "_SampleTex0UseWeight4": 0.0,
+            "_SampleTex0UseWeight5": 0.0,
+            "_SampleTex1MipmapBias": 0.0,
+            "_SampleTex1UVSet": 0.0,
+            "_SampleTex1Use": 4.0,
+            "_SampleTex1UseDisturb": 1.0,
+            "_SampleTex1UseWeight1": 0.0,
+            "_SampleTex1UseWeight2": 0.0,
+            "_SampleTex1UseWeight3": 0.0,
+            "_SampleTex1UseWeight4": 1.0,
+            "_SampleTex1UseWeight5": 0.0,
+            "_SampleTex2MipmapBias": 0.0,
+            "_SampleTex2UVSet": 0.0,
+            "_SampleTex2Use": 5.0,
+            "_SampleTex2UseDisturb": 0.0,
+            "_SampleTex2UseWeight2": 0.0,
+            "_SampleTex2UseWeight3": 0.0,
+            "_SampleTex2UseWeight4": 0.0,
+            "_SampleTex2UseWeight5": 1.0,
+            "_SampleTex3MipmapBias": 0.0,
+            "_SampleTex3UVSet": 0.0,
+            "_SampleTex3Use": 5.0,
+            "_SampleTex3UseDisturb": 0.0,
+            "_SampleTex3UseWeight3": 0.0,
+            "_SampleTex3UseWeight4": 0.0,
+            "_SampleTex3UseWeight5": 1.0,
+            "_SampleTex4MipmapBias": 0.0,
+            "_SampleTex4UVSet": 0.0,
+            "_SampleTex4Use": 0.0,
+            "_SampleTex4UseDisturb": 0.0,
+            "_SampleTex4UseWeight4": 0.0,
+            "_SampleTex4UseWeight5": 0.0,
+            "_SampleTex5MipmapBias": 0.0,
+            "_SampleTex5UVSet": 0.0,
+            "_SampleTex5Use": 0.0,
+            "_SampleTex5UseDisturb": 0.0,
+            "_ScanLineSchedule": 0.0,
+            "_ScanLineWidth": 0.0,
+            "_ScreenUVUseDepth": 1.0,
+            "_SectorAngle": 0.0,
+            "_SectorCenterRadius": 2.0,
+            "_SectorRadius": 2.0,
+            "_SoftBias": 0.0,
+            "_SoftDistance": 0.001,
+            "_SrcBlend": 1.0,
+            "_StencilComp": 8.0,
+            "_StencilOp": 0.0,
+            "_StencilReadMask": 255.0,
+            "_StencilRef": 0.0,
+            "_StencilWriteMask": 255.0,
+            "_SubsurfaceIntensity": 0.0,
+            "_SurfaceType": 1.0,
+            "_TextureFormat": 1.0,
+            "_TintColorAlpha": 0.3,
+            "_TintColorIntensity": 5.0,
+            "_TransparentSortPriority": 4.0,
+            "_UseAnimBreathing": 0.0,
+            "_UseBlend": 1.0,
+            "_UseBright": 0.0,
+            "_UseDissolve": 1.0,
+            "_UseDisturb": 0.0,
+            "_UseDisturb2": 0.0,
+            "_UseEdgeColor": 0.0,
+            "_UseFog": 0.0,
+            "_UseForceDynamicLighting": 0.0,
+            "_UseFresnel": 0.0,
+            "_UseLighting": 0.0,
+            "_UseMainTexAsAlpha": 0.0,
+            "_UseMask": 1.0,
+            "_UseMaskTexAsAlpha": 1.0,
+            "_UseNearCameraFade": 0.0,
+            "_UseParticleDisturb": 0.0,
+            "_UsePolarUV": 0.0,
+            "_UsePosYAsScreenV": 0.0,
+            "_UseSampleTex0": 1.0,
+            "_UseSampleTex0AsAlpha": 1.0,
+            "_UseSampleTex1": 1.0,
+            "_UseSampleTex1AsAlpha": 0.0,
+            "_UseSampleTex2": 1.0,
+            "_UseSampleTex2AsAlpha": 0.0,
+            "_UseSampleTex3": 0.0,
+            "_UseSampleTex3AsAlpha": 0.0,
+            "_UseSampleTex4": 0.0,
+            "_UseSampleTex4AsAlpha": 1.0,
+            "_UseSampleTex5": 0.0,
+            "_UseSampleTex5AsAlpha": 1.0,
+            "_UseScreenUV": 0.0,
+            "_UseSoftBlend": 1.0,
+            "_UseTrail": 0.0,
+            "_UseVATColorTex": 0.0,
+            "_UseVFXPortal": 0.0,
+            "_UseVertexOffset": 0.0,
+            "_UseVertexOffsetMask": 0.0,
+            "_UseWaterBlend": 0.0,
+            "_UseWeightTex": 0.0,
+            "_VertCameraOffset": 0.0,
+            "_VolumetricComposeDepthFadeDistance": 10.0,
+            "_WaterHeight": -9999.0,
+            "_WeightTexIntensity": 1.0,
+            "_WeightTexMipmapBias": 0.0,
+            "_WeightTexUVRotate": 0.0,
+            "_WeightUVSet": 0.0,
+            "_ZTest": 4.0,
+            "_ZWrite": 0.0,
+            "_boundMaxX": 0.0,
+            "_boundMaxY": 0.0,
+            "_boundMaxZ": 0.0,
+            "_boundMinX": 0.0,
+            "_boundMinY": 0.0,
+            "_boundMinZ": 0.0,
+            "_displayFrame": 0.0,
+            "_frameCount": 0.0,
+            "_gameTimeAtFirstFrame": 0.0,
+            "_globalPscaleMul": 1.0,
+            "_heightBaseScale": 0.2,
+            "_houdiniFPS": 0.0,
+            "_originRadius": 0.0,
+            "_particleTexUScale": 1.0,
+            "_particleTexVScale": 1.0,
+            "_playbackSpeed": 0.0,
+            "_scaleByVelAmount": 1.0,
+            "_stretchByVelAmount": 0.0,
+            "_widthBaseScale": 0.2
+          },
+          "m_Colors": {
+            "_BlendTexUVSpeed": {
+              "r": 0.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_BlendTint": {
+              "r": 0.7529412,
+              "g": 2.6039217,
+              "b": 2.9960785,
+              "a": 1.0
+            },
+            "_BrightCenter": {
+              "r": 0.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_BrightColor": {
+              "r": 1.0,
+              "g": 1.0,
+              "b": 1.0,
+              "a": 1.0
+            },
+            "_DissolveEmissiveColor": {
+              "r": 0.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_DissolveUVSpeed": {
+              "r": 0.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_DisturbUVSpeed1": {
+              "r": 0.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_DisturbUVSpeed2": {
+              "r": 0.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_EdgeColor": {
+              "r": 1.0,
+              "g": 1.0,
+              "b": 1.0,
+              "a": 1.0
+            },
+            "_FresnelColor": {
+              "r": 1.0,
+              "g": 1.0,
+              "b": 1.0,
+              "a": 1.0
+            },
+            "_MainTexUVRotateMat": {
+              "r": 1.0,
+              "g": -0.0,
+              "b": 0.0,
+              "a": 1.0
+            },
+            "_MainTexUVSpeed": {
+              "r": 0.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_MainTexUVWeights": {
+              "r": 1.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_MaskTexUVSpeed": {
+              "r": 0.3,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_OffsetDir": {
+              "r": 0.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_OffsetMaskSpeed": {
+              "r": 0.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_OffsetSpeed": {
+              "r": 0.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_SampleTex0UVRotateMat": {
+              "r": 1.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 1.0
+            },
+            "_SampleTex0UVSpeed": {
+              "r": 0.3,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_SampleTex0UVWeights": {
+              "r": 1.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_SampleTex1UVRotateMat": {
+              "r": 1.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 1.0
+            },
+            "_SampleTex1UVSpeed": {
+              "r": 0.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_SampleTex1UVWeights": {
+              "r": 1.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_SampleTex2UVRotateMat": {
+              "r": 1.0,
+              "g": -0.0,
+              "b": 0.0,
+              "a": 1.0
+            },
+            "_SampleTex2UVSpeed": {
+              "r": 0.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_SampleTex2UVWeights": {
+              "r": 1.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_SampleTex3UVRotateMat": {
+              "r": 1.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 1.0
+            },
+            "_SampleTex3UVSpeed": {
+              "r": 0.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_SampleTex3UVWeights": {
+              "r": 1.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_SampleTex4UVRotateMat": {
+              "r": 1.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 1.0
+            },
+            "_SampleTex4UVSpeed": {
+              "r": 0.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_SampleTex4UVWeights": {
+              "r": 0.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_SampleTex5UVRotateMat": {
+              "r": 1.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 1.0
+            },
+            "_SampleTex5UVSpeed": {
+              "r": 0.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_SampleTex5UVWeights": {
+              "r": 0.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_ScanFillColor": {
+              "r": 1.0,
+              "g": 1.0,
+              "b": 1.0,
+              "a": 1.0
+            },
+            "_TintColor": {
+              "r": 0.49803925,
+              "g": 1.0,
+              "b": 0.9907437,
+              "a": 1.0
+            },
+            "_WaterAbsorption": {
+              "r": 1.0,
+              "g": 1.0,
+              "b": 1.0,
+              "a": 1.0
+            },
+            "_WaterAbsorption2": {
+              "r": 1.0,
+              "g": 1.0,
+              "b": 1.0,
+              "a": 1.0
+            },
+            "_WaterScatter": {
+              "r": 1.0,
+              "g": 1.0,
+              "b": 1.0,
+              "a": 1.0
+            },
+            "_WeightTexUVSpeed": {
+              "r": 0.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            }
+          }
+        },
+        "m_Name": "M_fxui__lizhiyan_overview_09"
+      },
+      "source": {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fxui__lizhiyan_overview_09_p298ADB1F028DBD8D.json",
+        "bytes": 19561,
+        "sha256": "0F91285C1BFFDCDCC488F3AC29466D21C37F4C3C60348CBAC2FA634976CC1864",
+        "objectType": "Material",
+        "pathID": 2993445828574428557,
+        "sourceFile": null,
+        "sourceOffset": null,
+        "rawDataLength": null,
+        "rawDataSha256": null,
+        "typeTreeSource": null
+      }
+    },
+    {
+      "pathID": 3282333668994552481,
+      "name": "M_fxui__lizhiyan_overview_10",
+      "shaderPathID": -1430105248647086886,
+      "customRenderQueue": 3704,
+      "validKeywords": [
+        "_SAMPLE_TEX0",
+        "_SAMPLE_TEX1",
+        "_SAMPLE_TEX2",
+        "_USE_SOFTBLEND"
+      ],
+      "payload": {
+        "m_Shader": {
+          "m_FileID": 1,
+          "m_PathID": -1430105248647086886,
+          "Name": "",
+          "IsNull": false
+        },
+        "m_ShaderKeywords": null,
+        "m_ValidKeywords": [
+          "_SAMPLE_TEX0",
+          "_SAMPLE_TEX1",
+          "_SAMPLE_TEX2",
+          "_USE_SOFTBLEND"
+        ],
+        "m_InvalidKeywords": [],
+        "m_LightmapFlags": 4,
+        "m_EnableInstancingVariants": false,
+        "m_CustomRenderQueue": 3704,
+        "m_StringTagMap": {
+          "RenderType": "Transparent"
+        },
+        "m_DisabledShaderPasses": [
+          "DepthOnly",
+          "GBuffer"
+        ],
+        "m_SavedProperties": {
+          "m_TexEnvs": {
+            "_BlendTex": {
+              "m_Texture": {
+                "m_FileID": 2,
+                "m_PathID": 5503065527579778695,
+                "Name": "",
+                "IsNull": false
+              },
+              "m_Scale": {
+                "X": 13.0,
+                "Y": 1.0
+              },
+              "m_Offset": {
+                "X": 0.0,
+                "Y": 0.0
+              }
+            },
+            "_ColorTexture": {
+              "m_Texture": {
+                "m_FileID": 0,
+                "m_PathID": 0,
+                "Name": "",
+                "IsNull": true
+              },
+              "m_Scale": {
+                "X": 1.0,
+                "Y": 1.0
+              },
+              "m_Offset": {
+                "X": 0.0,
+                "Y": 0.0
+              }
+            },
+            "_DissolveTex": {
+              "m_Texture": {
+                "m_FileID": 3,
+                "m_PathID": -1647025128171678556,
+                "Name": "",
+                "IsNull": false
+              },
+              "m_Scale": {
+                "X": 2.0,
+                "Y": 1.0
+              },
+              "m_Offset": {
+                "X": 0.0,
+                "Y": 0.0
+              }
+            },
+            "_DisturbTex1": {
+              "m_Texture": {
+                "m_FileID": 0,
+                "m_PathID": 0,
+                "Name": "",
+                "IsNull": true
+              },
+              "m_Scale": {
+                "X": 1.0,
+                "Y": 1.0
+              },
+              "m_Offset": {
+                "X": 0.0,
+                "Y": 0.0
+              }
+            },
+            "_DisturbTex2": {
+              "m_Texture": {
+                "m_FileID": 0,
+                "m_PathID": 0,
+                "Name": "",
+                "IsNull": true
+              },
+              "m_Scale": {
+                "X": 1.0,
+                "Y": 1.0
+              },
+              "m_Offset": {
+                "X": 0.0,
+                "Y": 0.0
+              }
+            },
+            "_LookupTable": {
+              "m_Texture": {
+                "m_FileID": 0,
+                "m_PathID": 0,
+                "Name": "",
+                "IsNull": true
+              },
+              "m_Scale": {
+                "X": 1.0,
+                "Y": 1.0
+              },
+              "m_Offset": {
+                "X": 0.0,
+                "Y": 0.0
+              }
+            },
+            "_MainTex": {
+              "m_Texture": {
+                "m_FileID": 8,
+                "m_PathID": -3788096699771536442,
+                "Name": "",
+                "IsNull": false
+              },
+              "m_Scale": {
+                "X": 0.2,
+                "Y": 1.0
+              },
+              "m_Offset": {
+                "X": 1.0,
+                "Y": 0.0
+              }
+            },
+            "_MaskTex": {
+              "m_Texture": {
+                "m_FileID": 7,
+                "m_PathID": 5707730051549422076,
+                "Name": "",
+                "IsNull": false
+              },
+              "m_Scale": {
+                "X": 1.35,
+                "Y": 0.45
+              },
+              "m_Offset": {
+                "X": 0.0,
+                "Y": 0.32
+              }
+            },
+            "_OffsetMaskTex": {
+              "m_Texture": {
+                "m_FileID": 0,
+                "m_PathID": 0,
+                "Name": "",
+                "IsNull": true
+              },
+              "m_Scale": {
+                "X": 1.0,
+                "Y": 1.0
+              },
+              "m_Offset": {
+                "X": 0.0,
+                "Y": 0.0
+              }
+            },
+            "_OffsetTex": {
+              "m_Texture": {
+                "m_FileID": 0,
+                "m_PathID": 0,
+                "Name": "",
+                "IsNull": true
+              },
+              "m_Scale": {
+                "X": 1.0,
+                "Y": 1.0
+              },
+              "m_Offset": {
+                "X": 0.0,
+                "Y": 0.0
+              }
+            },
+            "_PositionTexture": {
+              "m_Texture": {
+                "m_FileID": 0,
+                "m_PathID": 0,
+                "Name": "",
+                "IsNull": true
+              },
+              "m_Scale": {
+                "X": 1.0,
+                "Y": 1.0
+              },
+              "m_Offset": {
+                "X": 0.0,
+                "Y": 0.0
+              }
+            },
+            "_RotationTexture": {
+              "m_Texture": {
+                "m_FileID": 0,
+                "m_PathID": 0,
+                "Name": "",
+                "IsNull": true
+              },
+              "m_Scale": {
+                "X": 1.0,
+                "Y": 1.0
+              },
+              "m_Offset": {
+                "X": 0.0,
+                "Y": 0.0
+              }
+            },
+            "_SampleTex0": {
+              "m_Texture": {
+                "m_FileID": 7,
+                "m_PathID": 5707730051549422076,
+                "Name": "",
+                "IsNull": false
+              },
+              "m_Scale": {
+                "X": 1.35,
+                "Y": 0.45
+              },
+              "m_Offset": {
+                "X": 0.0,
+                "Y": 0.32
+              }
+            },
+            "_SampleTex1": {
+              "m_Texture": {
+                "m_FileID": 2,
+                "m_PathID": 5503065527579778695,
+                "Name": "",
+                "IsNull": false
+              },
+              "m_Scale": {
+                "X": 13.0,
+                "Y": 1.0
+              },
+              "m_Offset": {
+                "X": 0.0,
+                "Y": 0.0
+              }
+            },
+            "_SampleTex2": {
+              "m_Texture": {
+                "m_FileID": 3,
+                "m_PathID": -1647025128171678556,
+                "Name": "",
+                "IsNull": false
+              },
+              "m_Scale": {
+                "X": 2.0,
+                "Y": 1.0
+              },
+              "m_Offset": {
+                "X": 0.0,
+                "Y": 0.0
+              }
+            },
+            "_SampleTex3": {
+              "m_Texture": {
+                "m_FileID": 0,
+                "m_PathID": 0,
+                "Name": "",
+                "IsNull": true
+              },
+              "m_Scale": {
+                "X": 1.0,
+                "Y": 1.0
+              },
+              "m_Offset": {
+                "X": 0.0,
+                "Y": 0.0
+              }
+            },
+            "_SampleTex4": {
+              "m_Texture": {
+                "m_FileID": 0,
+                "m_PathID": 0,
+                "Name": "",
+                "IsNull": true
+              },
+              "m_Scale": {
+                "X": 1.0,
+                "Y": 1.0
+              },
+              "m_Offset": {
+                "X": 0.0,
+                "Y": 0.0
+              }
+            },
+            "_SampleTex5": {
+              "m_Texture": {
+                "m_FileID": 0,
+                "m_PathID": 0,
+                "Name": "",
+                "IsNull": true
+              },
+              "m_Scale": {
+                "X": 1.0,
+                "Y": 1.0
+              },
+              "m_Offset": {
+                "X": 0.0,
+                "Y": 0.0
+              }
+            },
+            "_WeightTex": {
+              "m_Texture": {
+                "m_FileID": 0,
+                "m_PathID": 0,
+                "Name": "",
+                "IsNull": true
+              },
+              "m_Scale": {
+                "X": 1.0,
+                "Y": 1.0
+              },
+              "m_Offset": {
+                "X": 0.0,
+                "Y": 0.0
+              }
+            }
+          },
+          "m_Ints": {},
+          "m_Floats": {
+            "_AdvancedOptions": 0.0,
+            "_AlphaDstBlend": 10.0,
+            "_AlphaSrcBlend": 1.0,
+            "_B_Particle_Vert_Color": 1.0,
+            "_B_UNLOAD_ROT_TEX": 0.0,
+            "_B_animateFirstFrame": 0.0,
+            "_B_autoPlayback": 0.0,
+            "_B_hideOverlappingOrigin": 0.0,
+            "_B_pscaleAreInPosA": 0.0,
+            "_B_spinFromHeading": 0.0,
+            "_B_stretchByVel": 0.0,
+            "_B_surfaceNormals": 0.0,
+            "_B_uvFromRG": 0.0,
+            "_Bi_Disturb": 0.0,
+            "_Bi_Offset": 0.0,
+            "_BlendMode": 0.0,
+            "_BlendTexMipmapBias": 0.0,
+            "_BlendTexUVRotate": 0.0,
+            "_BlendTexUseDisturb": 1.0,
+            "_BlendUVSet": 0.0,
+            "_BoxInnerRadius": 1.0,
+            "_BoxOuterRadius": 2.0,
+            "_BreathingMinAlpha": 0.0,
+            "_BreathingPower": 1.0,
+            "_BreathingSpeed": 1.0,
+            "_BrightType": 0.0,
+            "_BrightUseVertColor": 0.0,
+            "_CharacterHeight": 1.5,
+            "_CullMode": 0.0,
+            "_DebugSampleTexUses": 0.0,
+            "_DisableParticleInstanceColor": 0.0,
+            "_DisableVertColor": 0.0,
+            "_DisableZTest": 0.0,
+            "_DissolveEdgeSharp": 1.7,
+            "_DissolveEmissiveEdge": 0.0,
+            "_DissolveScheduleOffset": 0.0,
+            "_DissolveTexMipmapBias": 0.0,
+            "_DissolveTexUseDisturb": 0.0,
+            "_DissolveUVRotate": 0.0,
+            "_DissolveUVSet": 0.0,
+            "_DissolveUseWeight": 0.0,
+            "_DistortAlpha": 1.0,
+            "_DistortIntensity": 0.0,
+            "_DistortOnEdge": 0.0,
+            "_DistortScale": 5.0,
+            "_DistortSpeed": 1.0,
+            "_DisturbTex1MipmapBias": 0.0,
+            "_DisturbTex1Normal": 0.0,
+            "_DisturbTex2MipmapBias": 0.0,
+            "_DisturbTex2Normal": 0.0,
+            "_DisturbUIntensity1": 0.0,
+            "_DisturbUIntensity2": 0.0,
+            "_DisturbUVSet": 0.0,
+            "_DisturbUseWeight": 1.0,
+            "_DisturbVIntensity1": 0.0,
+            "_DisturbVIntensity2": 0.0,
+            "_DstBlend": 10.0,
+            "_EdgeColorMode": 0.0,
+            "_EdgeDistance": 0.001,
+            "_EdgeDistanceOffset": 0.001,
+            "_EnableComposeVolumetric": 0.0,
+            "_EnableHoudiniVAT": 0.0,
+            "_EnableTransparentMV": 0.0,
+            "_EnvLightStrength": 0.0,
+            "_ExcludeCharacterVFX": 0.0,
+            "_ExpIntensity": 13.5,
+            "_ExpThreshold": 1.0,
+            "_FogIntensity": 1.0,
+            "_FogIntensityFadeOutDistance": 2000.0,
+            "_FresnelAffectOpacity": 1.0,
+            "_FresnelBias": 0.0,
+            "_FresnelFlip": 0.001,
+            "_FresnelPower": 1.0,
+            "_HoudiniVATInParticle": 0.0,
+            "_HoudiniVATType": 0.0,
+            "_IgnorePostExposure": 1.0,
+            "_InParticle": 0.0,
+            "_InnerRadius": 0.0,
+            "_IsSceneEffect": 0.0,
+            "_IsUI": 0.0,
+            "_LocalPivortSpace": 0.0,
+            "_MVDstColorBlend": 6.0,
+            "_MVSrcColorBlend": 3.0,
+            "_MainProperties": 0.0,
+            "_MainTexMipmapBias": 0.0,
+            "_MainTexUVRotate": 0.0,
+            "_MainTexUseDisturb": 1.0,
+            "_MainUVSet": 0.0,
+            "_MaskTexMipmapBias": 0.0,
+            "_MaskTexUVRotate": 0.0,
+            "_MaskTexUseDisturb": 0.0,
+            "_MaskUVSet": 0.0,
+            "_NearCameraFadeDistanceEnd": 10.0,
+            "_NearCameraFadeDistanceEnd2": 100.0,
+            "_NearCameraFadeDistanceStart": 0.001,
+            "_NearCameraFadeDistanceStart2": 120.0,
+            "_OffsetIntensity": 0.0,
+            "_OffsetMaskPower": 0.0,
+            "_OffsetSwitchDir": 0.0,
+            "_OffsetUVSet": 0.0,
+            "_OuterRadius": 2.0,
+            "_PortalStencilSet": 0.0,
+            "_ProcedureAlpha": 1.0,
+            "_RayleighMieLerpFactor": 0.0,
+            "_RenderTransparentAfterDOF": 1.0,
+            "_RenderTransparentAfterDistortion": 0.0,
+            "_Responsive": 1.0,
+            "_RotateNormalToWorldUp": 1.0,
+            "_SafeFullAbsorpDistance": 0.0,
+            "_SampleTex0MipmapBias": 0.0,
+            "_SampleTex0UVSet": 0.0,
+            "_SampleTex0Use": 3.0,
+            "_SampleTex0UseDisturb": 0.0,
+            "_SampleTex0UseWeight0": 0.0,
+            "_SampleTex0UseWeight2": 0.0,
+            "_SampleTex0UseWeight3": 1.0,
+            "_SampleTex0UseWeight4": 0.0,
+            "_SampleTex0UseWeight5": 0.0,
+            "_SampleTex1MipmapBias": 0.0,
+            "_SampleTex1UVSet": 0.0,
+            "_SampleTex1Use": 4.0,
+            "_SampleTex1UseDisturb": 1.0,
+            "_SampleTex1UseWeight1": 0.0,
+            "_SampleTex1UseWeight2": 0.0,
+            "_SampleTex1UseWeight3": 0.0,
+            "_SampleTex1UseWeight4": 1.0,
+            "_SampleTex1UseWeight5": 0.0,
+            "_SampleTex2MipmapBias": 0.0,
+            "_SampleTex2UVSet": 0.0,
+            "_SampleTex2Use": 5.0,
+            "_SampleTex2UseDisturb": 0.0,
+            "_SampleTex2UseWeight2": 0.0,
+            "_SampleTex2UseWeight3": 0.0,
+            "_SampleTex2UseWeight4": 0.0,
+            "_SampleTex2UseWeight5": 1.0,
+            "_SampleTex3MipmapBias": 0.0,
+            "_SampleTex3UVSet": 0.0,
+            "_SampleTex3Use": 0.0,
+            "_SampleTex3UseDisturb": 0.0,
+            "_SampleTex3UseWeight3": 0.0,
+            "_SampleTex3UseWeight4": 0.0,
+            "_SampleTex3UseWeight5": 0.0,
+            "_SampleTex4MipmapBias": 0.0,
+            "_SampleTex4UVSet": 0.0,
+            "_SampleTex4Use": 0.0,
+            "_SampleTex4UseDisturb": 0.0,
+            "_SampleTex4UseWeight4": 0.0,
+            "_SampleTex4UseWeight5": 0.0,
+            "_SampleTex5MipmapBias": 0.0,
+            "_SampleTex5UVSet": 0.0,
+            "_SampleTex5Use": 0.0,
+            "_SampleTex5UseDisturb": 0.0,
+            "_ScanLineSchedule": 0.0,
+            "_ScanLineWidth": 0.0,
+            "_ScreenUVUseDepth": 1.0,
+            "_SectorAngle": 0.0,
+            "_SectorCenterRadius": 2.0,
+            "_SectorRadius": 2.0,
+            "_SoftBias": 0.0,
+            "_SoftDistance": 1.0,
+            "_SrcBlend": 1.0,
+            "_StencilComp": 8.0,
+            "_StencilOp": 0.0,
+            "_StencilReadMask": 255.0,
+            "_StencilRef": 0.0,
+            "_StencilWriteMask": 255.0,
+            "_SubsurfaceIntensity": 0.0,
+            "_SurfaceType": 1.0,
+            "_TextureFormat": 1.0,
+            "_TintColorAlpha": 1.0,
+            "_TintColorIntensity": 5.0,
+            "_TransparentSortPriority": 4.0,
+            "_UseAnimBreathing": 0.0,
+            "_UseBlend": 1.0,
+            "_UseBright": 0.0,
+            "_UseDissolve": 1.0,
+            "_UseDisturb": 0.0,
+            "_UseDisturb2": 0.0,
+            "_UseEdgeColor": 0.0,
+            "_UseFog": 0.0,
+            "_UseForceDynamicLighting": 0.0,
+            "_UseFresnel": 0.0,
+            "_UseLighting": 0.0,
+            "_UseMainTexAsAlpha": 0.0,
+            "_UseMask": 1.0,
+            "_UseMaskTexAsAlpha": 1.0,
+            "_UseNearCameraFade": 0.0,
+            "_UseParticleDisturb": 0.0,
+            "_UsePolarUV": 0.0,
+            "_UsePosYAsScreenV": 0.0,
+            "_UseSampleTex0": 1.0,
+            "_UseSampleTex0AsAlpha": 1.0,
+            "_UseSampleTex1": 1.0,
+            "_UseSampleTex1AsAlpha": 0.0,
+            "_UseSampleTex2": 1.0,
+            "_UseSampleTex2AsAlpha": 0.0,
+            "_UseSampleTex3": 0.0,
+            "_UseSampleTex3AsAlpha": 1.0,
+            "_UseSampleTex4": 0.0,
+            "_UseSampleTex4AsAlpha": 1.0,
+            "_UseSampleTex5": 0.0,
+            "_UseSampleTex5AsAlpha": 1.0,
+            "_UseScreenUV": 0.0,
+            "_UseSoftBlend": 1.0,
+            "_UseTrail": 0.0,
+            "_UseVATColorTex": 0.0,
+            "_UseVFXPortal": 0.0,
+            "_UseVertexOffset": 0.0,
+            "_UseVertexOffsetMask": 0.0,
+            "_UseWaterBlend": 0.0,
+            "_UseWeightTex": 0.0,
+            "_VertCameraOffset": 0.0,
+            "_VolumetricComposeDepthFadeDistance": 10.0,
+            "_WaterHeight": -9999.0,
+            "_WeightTexIntensity": 1.0,
+            "_WeightTexMipmapBias": 0.0,
+            "_WeightTexUVRotate": 0.0,
+            "_WeightUVSet": 0.0,
+            "_ZTest": 4.0,
+            "_ZWrite": 0.0,
+            "_boundMaxX": 0.0,
+            "_boundMaxY": 0.0,
+            "_boundMaxZ": 0.0,
+            "_boundMinX": 0.0,
+            "_boundMinY": 0.0,
+            "_boundMinZ": 0.0,
+            "_displayFrame": 0.0,
+            "_frameCount": 0.0,
+            "_gameTimeAtFirstFrame": 0.0,
+            "_globalPscaleMul": 1.0,
+            "_heightBaseScale": 0.2,
+            "_houdiniFPS": 0.0,
+            "_originRadius": 0.0,
+            "_particleTexUScale": 1.0,
+            "_particleTexVScale": 1.0,
+            "_playbackSpeed": 0.0,
+            "_scaleByVelAmount": 1.0,
+            "_stretchByVelAmount": 0.0,
+            "_widthBaseScale": 0.2
+          },
+          "m_Colors": {
+            "_BlendTexUVSpeed": {
+              "r": 0.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_BlendTint": {
+              "r": 0.7529412,
+              "g": 2.6039217,
+              "b": 2.9960785,
+              "a": 1.0
+            },
+            "_BrightCenter": {
+              "r": 0.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_BrightColor": {
+              "r": 1.0,
+              "g": 1.0,
+              "b": 1.0,
+              "a": 1.0
+            },
+            "_DissolveEmissiveColor": {
+              "r": 0.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_DissolveUVSpeed": {
+              "r": 0.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_DisturbUVSpeed1": {
+              "r": 0.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_DisturbUVSpeed2": {
+              "r": 0.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_EdgeColor": {
+              "r": 1.0,
+              "g": 1.0,
+              "b": 1.0,
+              "a": 1.0
+            },
+            "_FresnelColor": {
+              "r": 1.0,
+              "g": 1.0,
+              "b": 1.0,
+              "a": 1.0
+            },
+            "_MainTexUVRotateMat": {
+              "r": 1.0,
+              "g": -0.0,
+              "b": 0.0,
+              "a": 1.0
+            },
+            "_MainTexUVSpeed": {
+              "r": 0.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_MainTexUVWeights": {
+              "r": 1.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_MaskTexUVSpeed": {
+              "r": 0.3,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_OffsetDir": {
+              "r": 0.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_OffsetMaskSpeed": {
+              "r": 0.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_OffsetSpeed": {
+              "r": 0.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_SampleTex0UVRotateMat": {
+              "r": 1.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 1.0
+            },
+            "_SampleTex0UVSpeed": {
+              "r": 0.3,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_SampleTex0UVWeights": {
+              "r": 1.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_SampleTex1UVRotateMat": {
+              "r": 1.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 1.0
+            },
+            "_SampleTex1UVSpeed": {
+              "r": 0.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_SampleTex1UVWeights": {
+              "r": 1.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_SampleTex2UVRotateMat": {
+              "r": 1.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 1.0
+            },
+            "_SampleTex2UVSpeed": {
+              "r": 0.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_SampleTex2UVWeights": {
+              "r": 1.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_SampleTex3UVRotateMat": {
+              "r": 1.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 1.0
+            },
+            "_SampleTex3UVSpeed": {
+              "r": 0.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_SampleTex3UVWeights": {
+              "r": 0.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_SampleTex4UVRotateMat": {
+              "r": 1.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 1.0
+            },
+            "_SampleTex4UVSpeed": {
+              "r": 0.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_SampleTex4UVWeights": {
+              "r": 0.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_SampleTex5UVRotateMat": {
+              "r": 1.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 1.0
+            },
+            "_SampleTex5UVSpeed": {
+              "r": 0.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_SampleTex5UVWeights": {
+              "r": 0.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            },
+            "_ScanFillColor": {
+              "r": 1.0,
+              "g": 1.0,
+              "b": 1.0,
+              "a": 1.0
+            },
+            "_TintColor": {
+              "r": 0.6,
+              "g": 0.97669584,
+              "b": 1.0,
+              "a": 1.0
+            },
+            "_WaterAbsorption": {
+              "r": 1.0,
+              "g": 1.0,
+              "b": 1.0,
+              "a": 1.0
+            },
+            "_WaterAbsorption2": {
+              "r": 1.0,
+              "g": 1.0,
+              "b": 1.0,
+              "a": 1.0
+            },
+            "_WaterScatter": {
+              "r": 1.0,
+              "g": 1.0,
+              "b": 1.0,
+              "a": 1.0
+            },
+            "_WeightTexUVSpeed": {
+              "r": 0.0,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 0.0
+            }
+          }
+        },
+        "m_Name": "M_fxui__lizhiyan_overview_10"
+      },
+      "source": {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fxui__lizhiyan_overview_10_p2D8D3114D6B992A1.json",
+        "bytes": 19552,
+        "sha256": "14A0293079B27CE20FD17808EAD4BBCC0D549126836B621288422A0918E43341",
+        "objectType": "Material",
+        "pathID": 3282333668994552481,
+        "sourceFile": null,
+        "sourceOffset": null,
+        "rawDataLength": null,
+        "rawDataSha256": null,
+        "typeTreeSource": null
+      }
+    }
+  ],
+  "executionBoundary": {
+    "bindingKind": "static_mesh_animated",
+    "sourcePayloadApplied": false,
+    "sourceAnimationPayloadApplied": false,
+    "rendererFailClosedForUnrecoveredShader": true,
+    "visibleAdmission": false,
+    "blockedBy": [
+      "external start AnimationClip PathID 7360398354216100382 is unresolved",
+      "native Mesh payload and Unity import parity are not pinned",
+      "three VFXBaseV2 material variants lack exact selected DXBC/descriptor/draw admission",
+      "static-mesh effect runtime binding kind is not implemented"
+    ]
+  }
+}
