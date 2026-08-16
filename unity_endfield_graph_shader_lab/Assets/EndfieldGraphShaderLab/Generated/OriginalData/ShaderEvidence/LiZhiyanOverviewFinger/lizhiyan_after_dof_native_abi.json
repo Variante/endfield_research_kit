@@ -520,6 +520,13 @@
       "functionSha256": "707E05C87AC50FACCF48FA9D3B2A726B4632DD98AB399EDFBB03721839249CFC"
     },
     {
+      "label": "HGMesh publication descriptor-state bridge",
+      "va": "0x180619cf0",
+      "functionEnd": "0x180619e70",
+      "functionBytes": 384,
+      "functionSha256": "8BF0F56A5B4FEA3557C92E752E58064FEB13226FB88B285A358D9053788475D7"
+    },
+    {
       "label": "HG generic opcode 0x2731 producer candidate 1",
       "va": "0x1805a3790",
       "functionEnd": "0x1805a37ef",
@@ -1110,14 +1117,23 @@
               "descriptor or PSO update",
               "draw or queue submit"
             ],
-            "result": "record publication reaches an internal 0x80-byte resource table and CPU arrays, but no same-record GPU identity is statically proven"
+            "callbackTrampolines": [
+              "0x18103adbc",
+              "0x18103bd0c",
+              "0x18103cc7c",
+              "0x18103decc",
+              "0x18103f11c",
+              "0x18104034c"
+            ],
+            "callbackRoute": "each finalizer stores the output object at callback+0x08 and 0x180feaea0 at callback+0x10; the thunk enters 0x1810484e0, which replays the same key/selector and 0x80-byte resource-table resolver semantics before API-2 dispatch",
+            "result": "record publication reaches an internal 0x80-byte resource table, CPU arrays, and the API-2 resource-recording callback; one particular final draw identity is not yet statically proven"
           },
           "provenPipeline": "post-filter 64-byte records -> in-place key sort -> invalid-record skip -> ID/resource resolve -> pointer-vector publication",
           "backendBoundary": {
             "resultCallbackThunkVA": "0x180feaea0",
             "frontEndHandoffVA": "0x1810484e0",
             "frontEndHandoffEndVA": "0x181049007",
-            "behavior": "consumes the CPU publication/result object and reaches generic front-end virtual dispatch; opcode 0x2748 preserves its resource pointer into API-2 binding state and a later opcode 0x2730 can publish that state to a Vulkan descriptor, but no same-record identity is proven to reach a draw command",
+            "behavior": "consumes the CPU publication/result object, repeats its resource-table lookup, records 0x2748/0x274a, invokes resource-array builders, and reaches opcode 0x2730 through a pinned helper chain; no same-AfterDOF-interval 0x2731 or particular draw identity is proven",
             "publicationResultLayout": "pair +0x00 is a 0x90-stride CPU-record base, +0x08 auxiliary resource/state, +0x10 count; each record keeps resource/object +0x08 and descriptor +0x10 among selector/payload fields",
             "graphicsFront": {
               "contextGetterVA": "0x180725dc0",
@@ -1146,10 +1162,12 @@
               "opcode2730Layout": "u32 opcode, eight-byte alignment, seven u64 values, u32 element count, then count*u32 payload; dispatches to API-2 +0xe90",
               "opcode2731Layout": "u32 opcode only; dispatches to API-2 +0xde8 with no payload",
               "batchBoundary": "begin recording selects the current buffer and enables append; end recording disables append and may emit 0x27cb; bounded-substream parser 0x1813aea00 repeatedly advances one shared cursor",
-              "sequenceBoundary": "same-instance records are conditionally consumed in append order, but no static producer edge guarantees 0x2748 -> 0x2730 -> 0x2731 or even that all three occur before the same recording end",
+              "sequenceBoundary": "the HGMesh front has a static path to 0x2730 on the same recorder family, but no static producer edge proves a later 0x2731 occurs in the same AfterDOF recording interval or belongs to this draw-list",
               "handoffWriterOrder": "within each 0x90-byte HGMesh publication record, 0x181048848 invokes front +0x268 with record resource at +0x60, then 0x1810488dc invokes front +0x280 with its local serialized payload on the same graphics-front context",
-              "handoffExcludedWriters": "0x1810484e0..0x181049007 and its bounded direct callees contain no front +0x2a0 (0x2730) or +0x3e8 (0x2731) invocation",
-              "separateProducerCandidates": "generic helper 0x180623ef0 can invoke +0x2a0; getter-backed 0x1805a3790/0x1805a37f0 can invoke +0x3e8, but none shares a proven resource/result identity or recorder interval with the HGMesh handoff",
+              "descriptorProducerRoute": "0x1810487e1 -> 0x180619cf0 -> 0x180623ef0; 0x180623f1d reacquires the graphics-front family through 0x180725dc0 and 0x1806243d3 invokes vtable +0x2a0, the 0x2730 writer",
+              "resourceBuilderCalls": "0x181048dc7/0x181048f2f invoke vtable +0xda0 and 0x181048df8/0x181048f60 invoke +0x380; these enter the API-2 resource-array builder family rather than directly issuing a draw",
+              "handoffExcludedWriter": "0x1810484e0..0x181049007 has no direct front +0x3e8 (0x2731) invocation; the +0x2a0 edge is indirect through 0x180619cf0 -> 0x180623ef0",
+              "executeProducerCandidates": "getter-backed 0x1805a3790/0x1805a37f0 invoke +0x3e8 on the same recorder family, but no static edge places either call in this AfterDOF recording interval",
               "resourceToBindingState": "0x2748 passes the original pointer unchanged; 0x180842370 resolves object-local maps at resource +0x20..+0x30/+0x50/+0x70 and writes descriptor-like state under S+0x2a0 plus payload backing under S+0x22d0",
               "provenBoundary": "both opcodes are API-2 resource/state operations, not draw opcodes; 0x2748 identity reaches backend binding state while the 0x274a qword semantics remain unresolved"
             },
@@ -1163,7 +1181,7 @@
             },
             "vulkanExecution": {
               "descriptorUpdateRoute": "opcode 0x2730 -> API-2 +0xe90 0x180843bf0 -> 0x18083f680 -> vkUpdateDescriptorSetWithTemplate at 0x18083f89d",
-              "descriptorIdentityBoundary": "if a later generic 0x2730 occurs on the same API-2 context, it packages S+0x22d0/S+0x22a8/S+0x2a0 into the Vulkan descriptor-update worker; the HGMesh handoff itself emits no 0x2730 and does not prove this condition",
+              "descriptorIdentityBoundary": "the HGMesh front statically reaches the generic 0x2730 producer through 0x180619cf0 -> 0x180623ef0, and the handler packages S+0x22d0/S+0x22a8/S+0x2a0 into the Vulkan descriptor-update worker; the remaining boundary is the later 0x2731 interval/draw-list attribution",
               "callbackListBuilders": "API-2 +0xda0 0x18083e720 builds resource-binding and pipeline/descriptor-state child nodes; +0xda8 0x18083ec60 builds an indirect-draw child node; 0x180841c40 packages child heads +0x2b58/+0x2b60 into master nodes at +0x2b50",
               "resourceBindingNode": "0x68-byte node callback reaches 0x18082d6b0; payload includes wrapper/resource handle, index format/offset, vertex-buffer pointer range, and vertex offsets",
               "pipelineDescriptorNode": "0x40-byte node callback reaches 0x18082e660; payload includes pipeline, layout, stencil/depth state, descriptor-set array/count, and dynamic offsets",
@@ -1178,7 +1196,7 @@
                 "0x180844a09",
                 "0x180844bd3"
               ],
-              "remainingIdentityEdge": "runtime proof that the same HGMesh publication resource participates in a later generic 0x2730 descriptor update and 0x2731 execution, then reaches a particular +0x2b50 callback node and specific draw record"
+              "remainingIdentityEdge": "proof that a later 0x2731 execution occurs in the same AfterDOF recorder interval and that the resulting +0x2b50 callback node is the particular HGMesh draw record rather than another shared-recorder command"
             },
             "d3d12StaticBoundary": "D3D12 is absent and the image contains 'D3D12 support not compiled in!'; D3D11 dynamic bootstrap/fallback code exists but is not the observed session backend",
             "observedRuntimeBackend": {
