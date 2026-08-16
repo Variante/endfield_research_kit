@@ -590,6 +590,83 @@
       "functionSha256": "04BD4CD80A27F57B12DB884E2D2AA62E4201FAAF93A5E61884DE7839A8C02723"
     },
     {
+      "label": "stock PrepareRendererListsAsync injected adapter",
+      "va": "0x1800bac40",
+      "functionEnd": "0x1800bacad",
+      "functionBytes": 109,
+      "functionSha256": "AEB2F4ACEC7B526E23D26C5CF72AC005874AFF6995F776C78FEC496B815DF676"
+    },
+    {
+      "label": "stock PrepareRendererListsAsyncRT injected adapter",
+      "va": "0x1800baf10",
+      "functionEnd": "0x1800baf7d",
+      "functionBytes": 109,
+      "functionSha256": "D40440B31C33CED182AA4269B58726F1F46D22A6BA7A5647B99689EEDA4C5DEF"
+    },
+    {
+      "label": "stock PrepareRendererListsAsyncWithLightModePrefilter adapter",
+      "va": "0x1800bb080",
+      "functionEnd": "0x1800bb0ed",
+      "functionBytes": 109,
+      "functionSha256": "82AE7E0CE331EF51A71449B03F9E4E1CAF4BA0477ED659863C8A6C1C9960FAD4"
+    },
+    {
+      "label": "stock RendererList synchronous preparation",
+      "va": "0x180535630",
+      "functionEnd": "0x1805356ad",
+      "functionBytes": 125,
+      "functionSha256": "DE5599C155B5E3B1125C561292DAAB49E8B641C76DEAF62370E821C6B7DD8A61"
+    },
+    {
+      "label": "stock RendererList RT preparation request",
+      "va": "0x180535790",
+      "functionEnd": "0x180535865",
+      "functionBytes": 213,
+      "functionSha256": "305BBA6DE18FA738F7C2F2A4AF01B5A6FDA23D70218566D5062BE570B19F4608"
+    },
+    {
+      "label": "stock RendererList filtered preparation",
+      "va": "0x180535870",
+      "functionEnd": "0x1805359f8",
+      "functionBytes": 392,
+      "functionSha256": "A84C4E0710F41E77E147F46C188BCD63787C7C161162E1D3933301987FEE1223"
+    },
+    {
+      "label": "stock RendererList collection-filter update",
+      "va": "0x18053f690",
+      "functionEnd": "0x18053fc8d",
+      "functionBytes": 1533,
+      "functionSha256": "E9DFCC1855DBBD5BC7ED3686198E2D219BC61D993C8B4E0C7D49B6C2EE8B3AB5"
+    },
+    {
+      "label": "stock RendererList backend materializer",
+      "va": "0x18053fc90",
+      "functionEnd": "0x18054027d",
+      "functionBytes": 1517,
+      "functionSha256": "817179A9059F5C90EA111BC0BB0C56CD5CEACEDCA5A36AC6A69C94A42D927D0E"
+    },
+    {
+      "label": "stock RendererList backend downstream consumer",
+      "va": "0x180540280",
+      "functionEnd": "0x180540506",
+      "functionBytes": 646,
+      "functionSha256": "89B8C8C818F37168643C4855A517017E882C5870BACB0C50BACC5F4F342275EF"
+    },
+    {
+      "label": "stock RendererList backend resource preparation",
+      "va": "0x180540510",
+      "functionEnd": "0x18054094f",
+      "functionBytes": 1087,
+      "functionSha256": "6ADA176EFDC2C937B452E3F1F16206012FC9F948E5F9C040D9E2156CFBB81730"
+    },
+    {
+      "label": "stock RendererList temporary record fill",
+      "va": "0x1805438e0",
+      "functionEnd": "0x18054396f",
+      "functionBytes": 143,
+      "functionSha256": "28D9F291F96C0919CA6B2BC0ACCE97C9B3861788D3E2C2A061F8E69E38FAAD1C"
+    },
+    {
       "label": "HGShadingStateSystem GetOrCreatePerMaterialCBHandle icall",
       "va": "0x1801ee430",
       "functionEnd": "0x1801ee495",
@@ -1319,6 +1396,31 @@
       "target": "0x18052cf70"
     },
     {
+      "label": "stock PrepareRendererListsAsync injected adapter -> synchronous materialization",
+      "callsite": "0x1800bac9d",
+      "target": "0x180535630"
+    },
+    {
+      "label": "stock PrepareRendererListsAsyncRT injected adapter -> scheduled request",
+      "callsite": "0x1800baf6d",
+      "target": "0x180535790"
+    },
+    {
+      "label": "stock PrepareRendererListsAsyncWithLightModePrefilter adapter -> filtered materialization",
+      "callsite": "0x1800bb0dd",
+      "target": "0x180535870"
+    },
+    {
+      "label": "stock materialized backend downstream consumer -> resource preparation",
+      "callsite": "0x1805402ff",
+      "target": "0x180540510"
+    },
+    {
+      "label": "stock materialized backend downstream consumer -> temporary record fill",
+      "callsite": "0x180540444",
+      "target": "0x1805438e0"
+    },
+    {
       "label": "stock DrawRendererList injected adapter -> opcode-0x4d append",
       "callsite": "0x1800629ac",
       "target": "0x1804c9230"
@@ -1900,6 +2002,8 @@
     "classic": "CoreUtils.DrawRendererList(renderContext, cmd, rendererList)",
     "classicNativeHandle": "ScriptableRenderContext.CreateRendererList_Internal_Injected at 0x1800ba8e0 calls 0x18052cf70 and returns a 16-byte opaque stock RendererList payload: context pointer +0x00, list/index word +0x08, generation/status +0x0c. Renderer identity remains behind the context/index backend rather than being copied as an HGMesh handle",
     "classicCommand": "CommandBuffer.Internal_DrawRendererList_Injected at 0x180062960 calls 0x1804c9230, which appends high-level opcode 0x4d plus the 16-byte RendererList payload. ExecuteCommandBuffer enters 0x18052d730 and the ready interpreter; signed-RVA dispatch table 0x1804d19c8 maps 0x4d to the in-interpreter branch at 0x1804ce406 (adjacent 0x4e and 0x55 branches are 0x1804ce43a and 0x1804ce4bd)",
+    "classicPreparation": "registered icalls 3659/3660/3661 map PrepareRendererListsAsync, PrepareRendererListsAsyncRT, and PrepareRendererListsAsyncWithLightModePrefilter to 0x1800bac40/0x1800baf10/0x1800bb080. They unwrap 16-byte list records and enter 0x180535630/0x180535790/0x180535870 before command retirement. The direct routes call 0x18053fc90, store the 0x248-byte materialized object at context+0x10148[index], and set the 0x1a0-byte source row state at +0x194 to 1",
+    "classicMaterializedBackend": "0x18053fc90 copies the complete 0x1a0 source row into materialized object+0x60, retains the backend manager at +0x200, a registration/resource result at +0x210, and auxiliary resources at +0x220/+0x228. 0x18053f690 performs collection/filter association and retirement, not draw execution. The downstream 0x180540280 path consumes +0x200/+0x210/+0x220/+0x228 and +0x50, calls 0x180540510 and 0x1805438e0, and prepares temporary/resource records; it still exposes no static graphics API draw or submit",
     "classicBackendBoundary": "opcode 0x4d validates payload context/index, resolves context+0x10148[index], releases that backend row through 0x18053d640, and writes state 2 to context+0x10108+index*0x1a0+0x194. Payload+0x0c is not read here, so this path does not prove generation validation. It exposes no static Li renderer ID, Vulkan draw, queue submit or visible-pixel edge and is a retirement path, not the missing draw expansion. The stock handle route remains distinct from dedicated AddDrawECSMeshRendererList/HGMesh records",
     "liClassicEligibility": "Li start_01/_02/_03 serialize ordinary enabled MeshRenderers and the peak roots serialize enabled ParticleSystemRenderers; queue 3704 is inside 3660..3740, ordinary GPU instancing is enabled while HG GPU instancing is disabled, and no source HGMeshRendererData exists. Classic submission is the strongest source-backed route, but runtime camera mask, exact LightMode tag, culling survivor and final draw remain unobserved",
     "ecs": "HGMeshRender.DrawECSRendererList(cmd, rendererListHandle)",

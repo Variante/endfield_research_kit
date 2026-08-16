@@ -2060,6 +2060,20 @@ only stable interpretation and priorities.
    ECS commands, but it is a retirement path, not the missing draw expansion;
    renderer identity remains behind the context/list backend and no static
    Li-to-Vulkan draw or submit edge is exposed.
+   RendererList preparation is now separated from that retirement command.
+   Registered icalls 3659--3661 bind `PrepareRendererListsAsync*` to
+   `0x1800bac40`, `0x1800baf10`, and `0x1800bb080`, which enter
+   `0x180535630`, `0x180535790`, and `0x180535870`. Direct preparation
+   materializes a source row through logical body
+   `0x18053fc90..0x18054027d`, stores the resulting 0x248-byte object at
+   `context+0x10148[index]`, and changes row state `+0x194` from 0 to 1.
+   That object retains the copied 0x1a0 row at `+0x60`, backend manager at
+   `+0x200`, resource/registration state at `+0x210`, and auxiliary resources
+   at `+0x220/+0x228`. `0x18053f690` is a collection/filter association pass,
+   not a draw executor. Bounded downstream consumer `0x180540280` uses those
+   fields and `+0x50`, then calls `0x180540510` and `0x1805438e0` to prepare
+   resource/temporary records; their first graphics-backend draw consumer is
+   the next static recovery boundary.
    All six selected materials have `_IsSceneEffect=0` and
    `_EnableTransparentMV=0`, so `_VFXParams1` and transform history are safely
    bypassed rather than guessed. Exact inverse-VP soft depth, live

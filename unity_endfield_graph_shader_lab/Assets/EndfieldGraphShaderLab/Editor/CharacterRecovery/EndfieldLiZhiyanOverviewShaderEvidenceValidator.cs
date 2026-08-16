@@ -672,7 +672,7 @@ namespace EndfieldGraphShaderLabEditor
                 !L.Bool(importer, "injectedIntoRetailClient") &&
                 L.Bool(importer, "captureRequiresSeparateExplicitAuthorization") &&
                 L.Str(abi, "sha256") ==
-                    "DD8E17F06A9CCEE032F1D152749C2FC42F51A7ABA5DAAA09315DC9D81CCEBB3A" &&
+                    "08220BFC143D9834A69097C435E1B99840564894226BD11864BF6CBF55B61408" &&
                 L.Long(video, "bytes") == 1678613397L &&
                 L.Str(video, "sha256") ==
                     "2F542A3BE7CE3332295D3A841FD8613C62707E084F9E33A0F156DA8A06EBF5E7" &&
@@ -783,7 +783,7 @@ namespace EndfieldGraphShaderLabEditor
                     "CA97F2AD6D958078B68FEC88EDB666A64CCEA3F8E3F2155414384E175B842619",
                 "Li Zhiyan HGMesh survivor-job construction identity drifted");
             IList unityCalls = L.List(native["unityPlayerDecisiveCalls"]);
-            L.Require(unityCalls.Count == 34 &&
+            L.Require(unityCalls.Count == 39 &&
                 unityCalls.Cast<object>().Select(L.Dict).Any(row =>
                     L.Str(row, "callsite") == "0x180ff82b5" &&
                     L.Str(row, "target") == "0x1810442f0") &&
