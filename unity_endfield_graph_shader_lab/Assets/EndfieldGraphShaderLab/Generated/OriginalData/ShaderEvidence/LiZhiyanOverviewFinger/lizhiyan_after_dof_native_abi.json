@@ -653,11 +653,11 @@
       "functionSha256": "89B8C8C818F37168643C4855A517017E882C5870BACB0C50BACC5F4F342275EF"
     },
     {
-      "label": "stock RendererList backend resource preparation",
+      "label": "stock RendererList backend filtered-record preparation",
       "va": "0x180540510",
-      "functionEnd": "0x18054094f",
-      "functionBytes": 1087,
-      "functionSha256": "6ADA176EFDC2C937B452E3F1F16206012FC9F948E5F9C040D9E2156CFBB81730"
+      "functionEnd": "0x18054160a",
+      "functionBytes": 4346,
+      "functionSha256": "EE035AE295C175B895C941FEC9C4786498BA5E7DBD92F4E7E34EB1F6DED1188F"
     },
     {
       "label": "stock RendererList temporary record fill",
@@ -665,6 +665,34 @@
       "functionEnd": "0x18054396f",
       "functionBytes": 143,
       "functionSha256": "28D9F291F96C0919CA6B2BC0ACCE97C9B3861788D3E2C2A061F8E69E38FAAD1C"
+    },
+    {
+      "label": "stock RendererList temporary range partition continuation",
+      "va": "0x18054396f",
+      "functionEnd": "0x180543bd1",
+      "functionBytes": 610,
+      "functionSha256": "C071FA62F74A752A0E5B781D05781B4FB9215C17D7000813498DC24BA4979698"
+    },
+    {
+      "label": "stock RendererList generic 0x18 record fill",
+      "va": "0x180555180",
+      "functionEnd": "0x180555425",
+      "functionBytes": 677,
+      "functionSha256": "7008748FED3F149FFBDE711F88E6ED85914D0B377E395437721F3B897D527729"
+    },
+    {
+      "label": "stock RendererList generated-index consumer",
+      "va": "0x180542e10",
+      "functionEnd": "0x180542ee9",
+      "functionBytes": 217,
+      "functionSha256": "C07B79146B9C57ECB20C3003EB1CF0DB69B99A0FE31BDF6B6B44D490ACDF2669"
+    },
+    {
+      "label": "stock RendererList resource-parameter state builder",
+      "va": "0x1805419d0",
+      "functionEnd": "0x180542e01",
+      "functionBytes": 5169,
+      "functionSha256": "51DD11EA018EEBD2CD14E31D05194222C5812236179D64C3003AE11031F42412"
     },
     {
       "label": "HGShadingStateSystem GetOrCreatePerMaterialCBHandle icall",
@@ -1421,6 +1449,16 @@
       "target": "0x1805438e0"
     },
     {
+      "label": "stock materialized backend downstream consumer -> generic 0x18 record fill",
+      "callsite": "0x1805404d4",
+      "target": "0x180555180"
+    },
+    {
+      "label": "stock generated-index consumer -> resource-parameter state builder",
+      "callsite": "0x180542ecf",
+      "target": "0x1805419d0"
+    },
+    {
       "label": "stock DrawRendererList injected adapter -> opcode-0x4d append",
       "callsite": "0x1800629ac",
       "target": "0x1804c9230"
@@ -2003,7 +2041,7 @@
     "classicNativeHandle": "ScriptableRenderContext.CreateRendererList_Internal_Injected at 0x1800ba8e0 calls 0x18052cf70 and returns a 16-byte opaque stock RendererList payload: context pointer +0x00, list/index word +0x08, generation/status +0x0c. Renderer identity remains behind the context/index backend rather than being copied as an HGMesh handle",
     "classicCommand": "CommandBuffer.Internal_DrawRendererList_Injected at 0x180062960 calls 0x1804c9230, which appends high-level opcode 0x4d plus the 16-byte RendererList payload. ExecuteCommandBuffer enters 0x18052d730 and the ready interpreter; signed-RVA dispatch table 0x1804d19c8 maps 0x4d to the in-interpreter branch at 0x1804ce406 (adjacent 0x4e and 0x55 branches are 0x1804ce43a and 0x1804ce4bd)",
     "classicPreparation": "registered icalls 3659/3660/3661 map PrepareRendererListsAsync, PrepareRendererListsAsyncRT, and PrepareRendererListsAsyncWithLightModePrefilter to 0x1800bac40/0x1800baf10/0x1800bb080. They unwrap 16-byte list records and enter 0x180535630/0x180535790/0x180535870 before command retirement. The direct routes call 0x18053fc90, store the 0x248-byte materialized object at context+0x10148[index], and set the 0x1a0-byte source row state at +0x194 to 1",
-    "classicMaterializedBackend": "0x18053fc90 copies the complete 0x1a0 source row into materialized object+0x60, retains the backend manager at +0x200, a registration/resource result at +0x210, and auxiliary resources at +0x220/+0x228. 0x18053f690 performs collection/filter association and retirement, not draw execution. The downstream 0x180540280 path consumes +0x200/+0x210/+0x220/+0x228 and +0x50, calls 0x180540510 and 0x1805438e0, and prepares temporary/resource records; it still exposes no static graphics API draw or submit",
+    "classicMaterializedBackend": "0x18053fc90 copies the complete 0x1a0 source row into materialized object+0x60, retains the backend manager at +0x200, a registration/resource result at +0x210, and auxiliary resources at +0x220/+0x228. 0x18053f690 performs collection/filter association and retirement, not draw execution. The downstream 0x180540280 path consumes +0x200/+0x210/+0x220/+0x228 and +0x50. Full logical routine 0x180540510..0x18054160a filters source-row flags/IDs/ranges and emits 0x50-byte CPU records; 0x1805438e0..0x180543bd1 partitions/copies their ranges, while generic 0x180555180 emits a 0x18-byte index table stored at object+0x208 with count at +0x210. 0x180542e10 consumes those indices and enters resource/parameter builder 0x1805419d0. Its terminal object-vtable+0x210 call is the strongest unresolved backend boundary. None of these paths statically proves a graphics API draw or submit",
     "classicBackendBoundary": "opcode 0x4d validates payload context/index, resolves context+0x10148[index], releases that backend row through 0x18053d640, and writes state 2 to context+0x10108+index*0x1a0+0x194. Payload+0x0c is not read here, so this path does not prove generation validation. It exposes no static Li renderer ID, Vulkan draw, queue submit or visible-pixel edge and is a retirement path, not the missing draw expansion. The stock handle route remains distinct from dedicated AddDrawECSMeshRendererList/HGMesh records",
     "liClassicEligibility": "Li start_01/_02/_03 serialize ordinary enabled MeshRenderers and the peak roots serialize enabled ParticleSystemRenderers; queue 3704 is inside 3660..3740, ordinary GPU instancing is enabled while HG GPU instancing is disabled, and no source HGMeshRendererData exists. Classic submission is the strongest source-backed route, but runtime camera mask, exact LightMode tag, culling survivor and final draw remain unobserved",
     "ecs": "HGMeshRender.DrawECSRendererList(cmd, rendererListHandle)",

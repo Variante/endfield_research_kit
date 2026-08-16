@@ -2075,8 +2075,19 @@ only stable interpretation and priorities.
    source-row flags, IDs, and ranges and emits compact 0x50-byte CPU records.
    Its indirect `vtable+0x48` call at `0x18054126f` is the first unresolved
    backend boundary, not a proven API draw. `0x1805438e0` prepares a separate
-   temporary record; the vtable target and consumers of both record types are
-   the next static recovery boundary.
+   temporary record; its `0x18054396f..0x180543bd1` continuation partitions and
+   copies 0x50-byte ranges. Generic `0x180555180` emits a 0x18-byte index table
+   at backend object `+0x208` with count at `+0x210`. Indirect consumer
+   `0x180542e10` resolves those indices and enters resource/parameter builder
+   `0x1805419d0`, whose terminal object-vtable `+0x210` call is now the
+   strongest unresolved backend boundary. Concrete target/object provenance
+   for that call is the next static recovery queue; no CPU record helper is a
+   proven draw or submit.
+   The actor-composed Unity witness assigns one strictly monotonic
+   `captureInvocationSerial` to every actual `Camera.Render()` call. Its 24
+   anchors times seven aggregate/root lanes validate as 168 unique invocations,
+   independently of `Time.frameCount`. This is a stable join key for the
+   planned renderer-ID sidecar, not a retail/native frame or command-buffer ID.
    All six selected materials have `_IsSceneEffect=0` and
    `_EnableTransparentMV=0`, so `_VFXParams1` and transform history are safely
    bypassed rather than guessed. Exact inverse-VP soft depth, live
