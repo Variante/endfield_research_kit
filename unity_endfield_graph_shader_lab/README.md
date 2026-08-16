@@ -4125,10 +4125,14 @@ ordinary Renderer `+0x268` or HGMeshRenderer `+0x50`. `0x1810469A0` itself
 only packs 0x90-stride CPU publication arrays, but six finalizer trampolines
 pass them through `0x180FEAEA0` to `0x1810484E0`. That callback repeats the
 resource lookup, records `0x2748/0x274A`, invokes the API-2 resource builders,
-and reaches the same-recorder `+0x2A0`/opcode-`0x2730` writer through
-`0x180619CF0 -> 0x180623EF0`. Admission still requires a later `0x2731` in
-the same after-DOF recording interval and concrete attribution of the resulting
-`+0x2B50` Vulkan callback/draw node to this HGMesh draw-list.
+and reaches `0x180619CF0`. Its `descriptor+0x450` branch selects among three
+helpers; only `0x180623EF0` reaches the same-recorder `+0x2A0`/opcode-`0x2730`
+writer, and Li's selected branch is not statically known. The generic `0x2731`
+producer uses a separate runtime-callback bracket, while the parser carries no
+mandatory-next flag or generation between the independent `0x2730/0x2731`
+cases. Admission still requires the Li branch value, a later `0x2731` in the
+same after-DOF interval, and concrete attribution of the resulting `+0x2B50`
+Vulkan callback/draw node to this HGMesh draw-list.
 The same contract pins `SetManual(bool)`, `ManualEvaluate(float)`,
 `SyncProgress(float)`, time-scale/start-duration/start-
 scale setters, Stop, OnDisable, and OnRelease. Their decoded fallback bodies
