@@ -1742,6 +1742,18 @@ only stable interpretation and priorities.
    renderer probe records source PathID, hierarchy, Unity instance ID, and
    frame solely to support a future compatible runtime capture; it makes no
    native/HGTree mapping claim.
+   A source-scoped start_01 diagnostic prefab is now materialized separately
+   from normal actor bindings. Its importer hash-checks the exact shared OBJ,
+   matching Animator FBX, eight PNGs, and resolved `.anim`; rebuilds the four
+   serialized child transforms and Renderer/Filter/Material PathIDs; and uses
+   `VFXBaseV2SampleStack` only as a labeled visual approximation. Unity applies
+   171 supported serialized material properties and reports 726 unsupported
+   properties. Native payload, exact shader, retail ABI, HGTree ownership, and
+   visible admission all remain false.
+   Deterministic comparison uses candidate PTS 37967 as diagnostic local zero
+   and publishes 19 capture anchors through the start_01/_02/_03 lifetime and
+   shared-clip endpoints. This mapping is a repeatable video alignment, not
+   proof of the original effect-request epoch.
    The managed graph control is now closed beyond construction. `_AddClip`
    connects each non-null clip from output port zero to mixer input
    `animationState-1`; Li's null loop/end return before connection. On every
