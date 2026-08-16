@@ -82,7 +82,7 @@ list`, and the callback executes global scene-color/vector/texture setup,
 fullscreen draw, the ordinary forward renderer list, then the ECS renderer
 list. The callback contains no constant-buffer publication. The generated
 native ABI contract is `lizhiyan_after_dof_native_abi.json`, SHA-256
-`53B809BE843B2696B5FB51227F70B54024FC93280D12559ABFFC75D921325BF4`.
+`6C26208B607F1BD7B2F5553C7779801EE8B616A7F6525C4F0FBB898B845EA33B`.
 
 The deferred ECS producer is now closed as well. Current-build
 `HGRenderPathDeferred.OnPreRendering` recreates the 32-bit handle each camera
@@ -145,10 +145,13 @@ teardown remains possible and is the next lifecycle boundary; per-frame reuse
 must not be invented from this append-only local path.
 Accessor `0x180fc5e60` supplies index `0x14` to generic table accessor
 `0x18030f100`, resolving singleton pointer cell `0x1821688a0`. The HGMesh and
-HGTree managers are separate context fields at `+0xb0` and `+0xc0`. No writer
-or replacer for that singleton cell, and no destructor demonstrably operating
-on this context's `+0xb0`, has been found; unrelated objects with their own
-`+0xb0` cleanup are not evidence for HGMesh teardown.
+HGTree managers are separate context fields at `+0xb0` and `+0xc0`. Generic
+setter `0x18030f5b0` owns table writes; bulk registrar `0x180319e60` loops
+indices `0..0x15` and conditionally registers slot `0x14`. Global teardown
+`0x18058cc20` walks indices `0x1a..1`, invokes object cleanup, and necessarily
+clears slot `0x14`. Context construction semantics and the destructor internals
+for this exact `+0xb0` manager remain unresolved; unrelated objects with their
+own `+0xb0` cleanup are not evidence for HGMesh teardown.
 
 The downstream ordering stage is now positively identified. Resource builder
 `0x18104e920` selects one of 14 post-filter workers. The workers assemble
@@ -173,6 +176,15 @@ pipeline. The key is an opaque, worker-variant packed renderer-state key; its
 semantic field names remain unresolved, so this must not be called transparent
 depth sorting, material sorting, or batch sorting yet.
 No indirect draw or backend queue submission has been reached.
+The resolved resource pointer is converted into a CPU publication/result
+object, then callback thunk `0x180feaea0` reaches generic front-end handoff
+`0x1810484e0..0x181049007`. That handoff performs CPU/resource work and virtual
+dispatch, but no pointer identity is proven to enter a GPU descriptor, indirect
+buffer, or draw command. This UnityPlayer imports no D3D12/D3D11 command API,
+contains no D3D12 command-method strings, and explicitly contains
+`D3D12 support not compiled in!`; a D3D12 backend cannot be recovered inside
+this image. The active backend remains unresolved, and generic Vulkan/API-2
+wrappers are not HGMesh evidence by themselves.
 
 The next positive proof is now an explicit runtime-capture contract rather
 than a generic request for “a capture.” On this exact build it must join one

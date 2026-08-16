@@ -1549,8 +1549,11 @@ only stable interpretation and priorities.
    do not invent per-frame handle reuse.
    That boundary is now addressable: `0x180fc5e60 -> 0x18030f100` reads
    singleton table slot `0x14` at pointer cell `0x1821688a0`; its context keeps
-   HGMesh at `+0xb0` and HGTree separately at `+0xc0`. No cell writer/replacer
-   or destructor proven to own this exact `+0xb0` has been found.
+   HGMesh at `+0xb0` and HGTree separately at `+0xc0`. Generic setter
+   `0x18030f5b0` writes the table, bulk registrar `0x180319e60` reaches slot
+   `0x14`, and global teardown `0x18058cc20` necessarily cleans and clears it.
+   Construction semantics and this exact `+0xb0` destructor internals remain
+   open.
    The next runtime proof is bounded to five already pinned observation points:
    `0x1801f1e40`, `0x18104e300`, `0x181005c10`, `0x18105e400`, and
    `0x18105e350`. Acceptance requires a same-frame handle -> opcode `0x4e` ->
@@ -1558,6 +1561,12 @@ only stable interpretation and priorities.
    Li Zhiyan pixel join, plus a Li-absent or Wulfa negative control. This
    versioned contract does not authorize attaching/injecting into retail and
    fails closed on protection refusal or binary/prologue drift.
+   Downstream, resolved pointers reach a CPU publication/result object and
+   generic front-end handoff `0x180feaea0 -> 0x1810484e0..0x181049007`, but no
+   GPU descriptor/indirect-buffer/draw identity is proven. The installed
+   UnityPlayer explicitly says `D3D12 support not compiled in!` and carries no
+   D3D12 command backend surface; active backend selection/submission remains
+   unresolved, and generic Vulkan/API-2 wrappers are excluded until joined.
    Runtime values and final survivor/order/lifetime capture remain required;
    do not synthesize a `Renderer[]` bridge from the integer ECS handle.
    Downstream HGMesh workers now prove a real ordering/publication stage:
