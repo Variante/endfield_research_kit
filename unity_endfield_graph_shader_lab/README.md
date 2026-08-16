@@ -4201,6 +4201,22 @@ inactive frames. The deterministic shared camera is not the retail actor/camera
 composition, so the manifest keeps `comparesRetailPixels=false` and cannot
 raise native or visible admission.
 
+`EndfieldLiZhiyanActorComposedVisualCaptureHarness.BuildAndCapture` adds a
+separate actor-composed diagnostic without changing that effects-only baseline.
+Under a real D3D12 batch session it writes actor-only, effects-only, composite,
+and per-root images to
+`scratch/character_recovery/lizhiyan_actor_composed_capture/`; run its
+`ValidateCommandLine` entry point afterward. The harness samples the recovered
+Li overview-start actor clip and all three effects on one explicit clock, uses
+the source overview position/LookAt/FOV/clip planes, and records the authored
+camera quaternion separately from its inferred hierarchy LookRotation.
+Four-corner background consensus remains stable when the animated coat crosses
+a frame corner. Predicate-only retail ROI comparison shows the current
+`broadTeal` peak at PTS 40000 is 3.499% composite versus 21.699% retail, while
+PTS 43000 is 7.618% versus 9.972%; effects are blank at PTS 46000 while the
+actor remains visible. These are diagnostic composition metrics, not retail
+pixels, renderer-list ownership, or native shader parity.
+
 The exact managed LOD renderer bindings are now part of the playable-topology
 contract: start_01 has four non-null MeshRenderer PathIDs and start_02/start_03
 have three each. `EffectLodCfg.Play/Stop` owns their enabled lifecycle. This
