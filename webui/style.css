@@ -4947,6 +4947,16 @@ body.is-resizing-filter * {
   overflow-wrap: anywhere;
 }
 
+.gameplay-buff-action-technical {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.gameplay-buff-action-technical > summary {
+  cursor: pointer;
+}
+
 .gameplay-skill-title,
 .gameplay-group-title {
   font-weight: 700;
