@@ -2096,14 +2096,24 @@ only stable interpretation and priorities.
    anchors times seven aggregate/root lanes validate as 168 unique invocations,
    independently of `Time.frameCount`. This is a stable join key for the
    planned renderer-ID sidecar, not a retail/native frame or command-buffer ID.
-   The first real D3D12 RGBA32F renderer-ID sidecar capture now reuses the
-   exact after-post `CullingResults`, queue 3660--3740, depth, layer mask, and
-   transparent sorting. Twelve serial-keyed reads are positive across the
-   composite/effects/peak lanes at retail PTS 39367, 39934, 40000, and 40167,
-   with roughly 258k--485k nonzero ID pixels. The other 156 invocations remain
-   unavailable because the existing SceneMV admission gate rejects visible
-   frames containing the diagnostic piaodai queue-3702 material or because no
-   eligible renderer is present. Override-material coverage does not preserve
+   The real D3D12 RGBA32F renderer-ID sidecar reuses the exact after-post
+   `CullingResults`, queue 3660--3740, depth, layer mask, and transparent
+   sorting. The initial gate incorrectly classified every SampleStack material
+   as one of Zhuang Fangyi's three exact queue-3700 piaodai materials. Li
+   material 18's queue 3702 is instead source-serialized and remains unchanged;
+   only source-named Li diagnostic/actor-composed SampleStack instances now
+   admit their preserved 3660--3740 queues, while unknown instances still fail
+   closed. Twenty-one serial-keyed reads are positive across the
+   composite/effects/peak lanes at retail PTS 38000, 38167, 38183, 39367,
+   39934, 40000, and 40167, with roughly 258k--498k nonzero ID pixels. The
+   other 147 invocations explicitly report that no exact selected MRT material
+   is active. Red-channel IDs are local to one `captureInvocationSerial`;
+   cross-frame joins use the stored ordinal hierarchy path, material slot/name,
+   and stable renderer key rather than comparing numeric IDs. The four later
+   composite/effects pairs are byte-identical; their stable effect contributors
+   are queue-3704 `tiaodaifenwei_01 (7)` (~432k pixels),
+   `fenweiqiliu_02 (3)` (~21k), and `shoutiaodai_01 (1)` (~3.5k), so the actor
+   adds no renderer in this queue range. Override-material coverage does not preserve
    source alpha clip/cull/discard, so this proves Unity diagnostic
    renderer admission/depth/sort ownership only; it is not retail pixel,
    native survivor, or final draw ownership and does not raise
