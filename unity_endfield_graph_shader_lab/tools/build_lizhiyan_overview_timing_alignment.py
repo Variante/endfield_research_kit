@@ -79,6 +79,8 @@ def build() -> dict[str, Any]:
     effect_start = delay
     effect_end = delay + duration
     candidate_restart = int(boundary["candidateRestartPts"])
+    candidate_effect_start_pts = round(candidate_restart + effect_start * 1000.0)
+    candidate_effect_end_pts = round(candidate_restart + effect_end * 1000.0)
     mapped_samples = []
     for sample in oracle["samples"]:
         pts = int(sample["pts"])
@@ -137,10 +139,14 @@ def build() -> dict[str, Any]:
             "evidenceClass": "candidate_only",
             "candidateRestartPts": candidate_restart,
             "candidateBasis": "first Li Zhiyan visible exact-PTS frame",
+            "candidateCompatibilityEffectWindowPts": [
+                candidate_effect_start_pts, candidate_effect_end_pts
+            ],
             "mappedSamples": mapped_samples,
             "diagnosticMismatch": (
                 "PTS 42000 retains measured teal after the compatibility finger-effect root "
-                "would have been destroyed at candidate PTS 41049; the one recovered finger "
+                f"would have been destroyed at candidate PTS {candidate_effect_end_pts}; "
+                "the one recovered finger "
                 "effect cannot explain the full retail teal chronology by itself."
             ),
         },

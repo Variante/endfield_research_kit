@@ -37,21 +37,23 @@
   },
   "transitionBoundary": {
     "evidenceClass": "exact_pts_frame_hash_plus_bounded_visual_annotation",
-    "lastPriorActorResidualPts": 37683,
+    "lastPriorActorStablePts": 37667,
+    "firstPriorActorFadePts": 37683,
     "firstBlankPts": 37700,
-    "lastBlankPts": 37867,
-    "firstLiZhiyanVisiblePts": 37883,
-    "firstLiZhiyanOpaquePts": 37950,
-    "candidateRestartPts": 37883,
+    "lastBlankPts": 37950,
+    "firstLiZhiyanRecognizablePts": 37967,
+    "firstTealEdgeCandidatePts": 38167,
+    "firstUnambiguousTealSlabPts": 38183,
+    "candidateRestartPts": 37967,
     "candidateRestartStatus": "visual_alignment_candidate_not_original_event_proof"
   },
   "tealPredicateRgb24": "g>=80 && b>=80 && g-r>=20 && b-r>=10",
   "transitionAnchors": [
     {
-      "pts": 37650,
+      "pts": 37667,
       "timeBase": "1/1000",
-      "classification": "prior_actor_visible",
-      "scaledRgb24Sha256": "16F8F5E56589F78D341D373F358056BD783660BB411B4F5C7E8693E48614A1F4",
+      "classification": "prior_actor_last_stable",
+      "scaledRgb24Sha256": "6740938A8E6CCDD8617D8F11BE7731E88A225EA1BCD3131EA9BD9618721E2F74",
       "broadTeal": {
         "sourceBoundsXyxy": [
           500,
@@ -67,18 +69,18 @@
         ],
         "pixelCount": 219700,
         "meanRgb": [
-          155.851438,
-          155.672645,
-          153.861912
+          180.691211,
+          180.514588,
+          178.317629
         ],
-        "tealPixelCount": 1079,
-        "tealCoverage": 0.004911243
+        "tealPixelCount": 0,
+        "tealCoverage": 0.0
       }
     },
     {
       "pts": 37683,
       "timeBase": "1/1000",
-      "classification": "prior_actor_last_residual",
+      "classification": "prior_actor_fade_first",
       "scaledRgb24Sha256": "DC42D9ED2BDBE1A0AEBDBA4E2442AFE4B701C3EA2253E239841E4F3CA494E89A",
       "broadTeal": {
         "sourceBoundsXyxy": [
@@ -132,65 +134,9 @@
       }
     },
     {
-      "pts": 37867,
-      "timeBase": "1/1000",
-      "classification": "blank_transition_last",
-      "scaledRgb24Sha256": "F0078FFEBB2E801F134C120FCE2C03DC3E5C9CE277FC69E8312CADC8331A987B",
-      "broadTeal": {
-        "sourceBoundsXyxy": [
-          500,
-          450,
-          3100,
-          1800
-        ],
-        "scaledBoundsXyxy": [
-          125,
-          112,
-          775,
-          450
-        ],
-        "pixelCount": 219700,
-        "meanRgb": [
-          190.140396,
-          190.131921,
-          187.624615
-        ],
-        "tealPixelCount": 0,
-        "tealCoverage": 0.0
-      }
-    },
-    {
-      "pts": 37883,
-      "timeBase": "1/1000",
-      "classification": "lizhiyan_first_visible",
-      "scaledRgb24Sha256": "15BBFF03CB2DF34B97CA09FB0A7C62E9F041327D8F092BD9D485140732550C05",
-      "broadTeal": {
-        "sourceBoundsXyxy": [
-          500,
-          450,
-          3100,
-          1800
-        ],
-        "scaledBoundsXyxy": [
-          125,
-          112,
-          775,
-          450
-        ],
-        "pixelCount": 219700,
-        "meanRgb": [
-          190.037724,
-          190.032453,
-          187.528025
-        ],
-        "tealPixelCount": 0,
-        "tealCoverage": 0.0
-      }
-    },
-    {
       "pts": 37950,
       "timeBase": "1/1000",
-      "classification": "lizhiyan_opaque",
+      "classification": "blank_transition_last",
       "scaledRgb24Sha256": "DEB3DC2098AF32E63B75E6FE012FD6A2B1F4ACC6DAB032F4433567F510EED0D0",
       "broadTeal": {
         "sourceBoundsXyxy": [
@@ -214,13 +160,97 @@
         "tealPixelCount": 3564,
         "tealCoverage": 0.016222121
       }
+    },
+    {
+      "pts": 37967,
+      "timeBase": "1/1000",
+      "classification": "lizhiyan_first_recognizable",
+      "scaledRgb24Sha256": "693B6F7442C8173B6556A3E923C7D5C3B4BCE9C0A50E28A97817AFF5AAA11B81",
+      "broadTeal": {
+        "sourceBoundsXyxy": [
+          500,
+          450,
+          3100,
+          1800
+        ],
+        "scaledBoundsXyxy": [
+          125,
+          112,
+          775,
+          450
+        ],
+        "pixelCount": 219700,
+        "meanRgb": [
+          117.238589,
+          119.13416,
+          118.362713
+        ],
+        "tealPixelCount": 5120,
+        "tealCoverage": 0.023304506
+      }
+    },
+    {
+      "pts": 38167,
+      "timeBase": "1/1000",
+      "classification": "first_teal_edge_candidate",
+      "scaledRgb24Sha256": "F3F7FE87FE168FE99410759F71F76EFD066C1792865AE688CA05A509829B4196",
+      "broadTeal": {
+        "sourceBoundsXyxy": [
+          500,
+          450,
+          3100,
+          1800
+        ],
+        "scaledBoundsXyxy": [
+          125,
+          112,
+          775,
+          450
+        ],
+        "pixelCount": 219700,
+        "meanRgb": [
+          128.598421,
+          129.84827,
+          127.441361
+        ],
+        "tealPixelCount": 3218,
+        "tealCoverage": 0.014647246
+      }
+    },
+    {
+      "pts": 38183,
+      "timeBase": "1/1000",
+      "classification": "first_unambiguous_teal_slab",
+      "scaledRgb24Sha256": "136B86320867C32B3F529A3481DB198794D92058893859736B84BB628D257DE5",
+      "broadTeal": {
+        "sourceBoundsXyxy": [
+          500,
+          450,
+          3100,
+          1800
+        ],
+        "scaledBoundsXyxy": [
+          125,
+          112,
+          775,
+          450
+        ],
+        "pixelCount": 219700,
+        "meanRgb": [
+          125.895735,
+          128.787396,
+          126.32965
+        ],
+        "tealPixelCount": 6993,
+        "tealCoverage": 0.031829768
+      }
     }
   ],
   "samples": [
     {
       "pts": 38000,
       "timeBase": "1/1000",
-      "phase": "broad_effect_active",
+      "phase": "lizhiyan_transition_visible_pre_distinct_teal",
       "scaledRgb24Sha256": "C17C726C803E335013E9FFFAD596F6A1B4F76D47DA528F78F5860F7008530BEC",
       "scaledDimensions": [
         960,

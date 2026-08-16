@@ -17,7 +17,7 @@
     },
     "visualOracle": {
       "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/ShaderEvidence/LiZhiyanOverviewFinger/lizhiyan_retail_visual_oracle.json",
-      "sha256": "43FEB8A56F945AD2508869923C7737D6ADBE0417C7D18156EC1EACCAB1B0C8E5"
+      "sha256": "D6C8640AFCD28C00FA27597AF8E9A9D1EA90A1707D77099FD47EEC7CA50D0DDD"
     }
   },
   "sourceClosedControllerTiming": {
@@ -52,59 +52,63 @@
   },
   "retailVisualAlignment": {
     "evidenceClass": "candidate_only",
-    "candidateRestartPts": 37883,
+    "candidateRestartPts": 37967,
     "candidateBasis": "first Li Zhiyan visible exact-PTS frame",
+    "candidateCompatibilityEffectWindowPts": [
+      38800,
+      41134
+    ],
     "mappedSamples": [
       {
         "retailPts": 38000,
-        "phase": "broad_effect_active",
-        "candidateElapsedSinceRestartSeconds": 0.117,
-        "candidateStartClipLocalSeconds": 0.179452073,
+        "phase": "lizhiyan_transition_visible_pre_distinct_teal",
+        "candidateElapsedSinceRestartSeconds": 0.033,
+        "candidateStartClipLocalSeconds": 0.095452073,
         "compatibilityFingerEffectWindow": "inactive",
         "visibleAdmission": false
       },
       {
         "retailPts": 40000,
         "phase": "broad_teal_peak",
-        "candidateElapsedSinceRestartSeconds": 2.117,
-        "candidateStartClipLocalSeconds": 2.179452073,
+        "candidateElapsedSinceRestartSeconds": 2.033,
+        "candidateStartClipLocalSeconds": 2.095452073,
         "compatibilityFingerEffectWindow": "active",
         "visibleAdmission": false
       },
       {
         "retailPts": 42000,
         "phase": "broad_effect_late",
-        "candidateElapsedSinceRestartSeconds": 4.117,
-        "candidateStartClipLocalSeconds": 4.179452073,
+        "candidateElapsedSinceRestartSeconds": 4.033,
+        "candidateStartClipLocalSeconds": 4.095452073,
         "compatibilityFingerEffectWindow": "inactive",
         "visibleAdmission": false
       },
       {
         "retailPts": 43000,
         "phase": "compact_teal_trail",
-        "candidateElapsedSinceRestartSeconds": 5.117,
-        "candidateStartClipLocalSeconds": 5.179452073,
+        "candidateElapsedSinceRestartSeconds": 5.033,
+        "candidateStartClipLocalSeconds": 5.095452073,
         "compatibilityFingerEffectWindow": "inactive",
         "visibleAdmission": false
       },
       {
         "retailPts": 44000,
         "phase": "trail_decay",
-        "candidateElapsedSinceRestartSeconds": 6.117,
-        "candidateStartClipLocalSeconds": 6.179452073,
+        "candidateElapsedSinceRestartSeconds": 6.033,
+        "candidateStartClipLocalSeconds": 6.095452073,
         "compatibilityFingerEffectWindow": "inactive",
         "visibleAdmission": false
       },
       {
         "retailPts": 46000,
         "phase": "settled_no_substantial_teal",
-        "candidateElapsedSinceRestartSeconds": 8.117,
-        "candidateStartClipLocalSeconds": 8.179452073,
+        "candidateElapsedSinceRestartSeconds": 8.033,
+        "candidateStartClipLocalSeconds": 8.095452073,
         "compatibilityFingerEffectWindow": "inactive",
         "visibleAdmission": false
       }
     ],
-    "diagnosticMismatch": "PTS 42000 retains measured teal after the compatibility finger-effect root would have been destroyed at candidate PTS 41049; the one recovered finger effect cannot explain the full retail teal chronology by itself."
+    "diagnosticMismatch": "PTS 42000 retains measured teal after the compatibility finger-effect root would have been destroyed at candidate PTS 41134; the one recovered finger effect cannot explain the full retail teal chronology by itself."
   },
   "remainingEvidence": [
     "original retail producer and timestamp for the entrance-effect request",

@@ -1633,13 +1633,14 @@ only stable interpretation and priorities.
    (`0.006558944`). This enables repeatable Unity camera/timing/compositing
    comparisons but remains `diagnostic_only`, `visibleAdmission=false`, and
    proves no material or draw ownership.
-   Exact transition frames now bound the prior actor residual at PTS 37683,
-   blank interval at 37700..37867, first Li pixel at 37883, and opaque Li at
-   37950. Source controller timing independently closes start-clip entry to
+   Exact transition frames now bound the prior actor as last stable at PTS
+   37667, first fading at 37683, the blank interval at 37700..37950, and first
+   recognizable Li at 37967. The first teal edge is tentative at 38167 and the
+   first unambiguous slab is PTS 38183. Source controller timing independently closes start-clip entry to
    `0.062452073 s`, exit to `10.68547903 s`, and transition duration to
    `0.014519697 s`; the 10.7-second clip has no AnimationEvents. The timing
-   alignment keeps PTS 37883 candidate-only. Current lab request semantics
-   would make the finger root live at candidate PTS 38716..41049, covering the
+   alignment keeps PTS 37967 candidate-only. Current lab request semantics
+   would make the finger root live at candidate PTS 38800..41134, covering the
    PTS-40000 peak but not measured teal at PTS 42000. Recover the original
    request producer and the other eleven Li entrance effects instead of
    stretching or retiming the one proven finger prefab.

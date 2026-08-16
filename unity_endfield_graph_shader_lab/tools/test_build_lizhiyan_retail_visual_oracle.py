@@ -40,7 +40,7 @@ def test_all_samples_stay_non_admitting() -> None:
     assert [row[0] for row in M.SAMPLES] == [38000, 40000, 42000, 43000, 44000, 46000]
     assert M.SCHEMA.endswith(".v1")
     assert [row[0] for row in M.TRANSITION_ANCHORS] == [
-        37650, 37683, 37700, 37867, 37883, 37950
+        37667, 37683, 37700, 37950, 37967, 38167, 38183
     ]
 
 
