@@ -1920,6 +1920,12 @@ only stable interpretation and priorities.
    missing positive joins are therefore Li selecting the `0x2730` branch, a
    later `0x2731` in the same after-DOF interval, and attribution of its
    `+0x2b50` callback node to this HGMesh draw rather than another command.
+   Recorder setup `0x1809258c0` initializes the shared `+0x2710/+0x2711`
+   admission state and `+0x2720` command stream, but contains no frame counter,
+   generation, or per-frame reset. End slot `+0x880` only flushes and clears
+   `+0x2711`. This proves the two opcodes share one recorder/backend family and
+   append order when invoked, but still cannot promote them to the same frame
+   or AfterDOF interval.
    The descriptor selector is now traced back through the publication layout.
    Finalizer argument M0 owns a hash table at `M0+0x28`; shift/mask fields at
    `+0x40/+0x44` select a 0x60-stride entry, whose `+0x28` descriptor D is
@@ -1999,6 +2005,18 @@ only stable interpretation and priorities.
    Player log contain none of those IDs; a positive join requires same-build
    observation of instance ID/object fingerprint -> handle -> accepted record
    -> draw.
+   The live-ID bridge itself is now exact rather than conceptual.
+   `HGShadingStateSystem.GetMaterialHandle`, adapter
+   `0x1801ee250..0x1801ee2ce`, maps its instance ID through the M0 12-byte
+   key/value table and returns the full packed handle; the parallel
+   `HGGeometrySystem.GetGeometryHandle` adapter
+   `0x1801ee550..0x1801ee5ce` does the same through M1. Reverse adapter
+   `0x1801ee5d0` masks an M1 handle to its low 24-bit slot before returning
+   the Mesh. Separately, `HGMeshRendererData` initializer `0x181088d80`
+   maps native `m_Materials +0x58`, `m_Meshes +0x78`, and
+   `m_ShadowProxyMeshes +0x98` through M0/M1 and writes runtime-record
+   `+0x04/+0x08/+0x0c`. These edges identify exact future observation sites;
+   they do not supply Li's live IDs offline.
    All six selected materials have `_IsSceneEffect=0` and
    `_EnableTransparentMV=0`, so `_VFXParams1` and transform history are safely
    bypassed rather than guessed. Exact inverse-VP soft depth, live
