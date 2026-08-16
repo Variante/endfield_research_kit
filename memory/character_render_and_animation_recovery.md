@@ -1578,6 +1578,22 @@ only stable interpretation and priorities.
    `0x18083f1e0 -> 0x180843d60` and resolves Vulkan bind/draw/indirect/submit
    commands. Backend selection is closed; the unresolved edge is the HGMesh
    resource identity reaching one specific Vulkan draw and visible pixel.
+   Front opcodes `0x2748/0x274a` are now decoded through interpreter
+   `0x1813aee90` and dispatch cases `0x1813b1624/0x1813b16f0`: they return to
+   API-2 `+0x268/+0x280`, select modes 1/0 at `0x180842370`, and operate on
+   16-byte resource/state records under context `+0x2e48`. They are not draw
+   opcodes. Vulkan execution later walks a distinct master callback list at
+   context `+0x2b50`; verified callback families bind vertex/index data,
+   pipeline/descriptors, issue direct or indirect draws, and submit. The
+   original `0x2748` pointer is preserved into backend binding state at
+   `S+0x2a0/S+0x22d0`; later opcode `0x2730` packages those regions through
+   API-2 `+0xe90` and reaches `vkUpdateDescriptorSetWithTemplate` at
+   `0x18083f89d`. The remaining identity edge is specifically that descriptor
+   update to a particular later `0x2731`, `+0x2b50` callback, and draw record.
+   Slot-0x14 teardown is also closed through generic cleanup `0x18031aec0`
+   and nested cleanup `0x18031af80`, followed by indirect virtual slot-0
+   destruction and cell clearing. The concrete context `+0xb0` HGMesh-manager
+   destructor target is still not statically identified.
    Runtime values and final survivor/order/lifetime capture remain required;
    do not synthesize a `Renderer[]` bridge from the integer ECS handle.
    Downstream HGMesh workers now prove a real ordering/publication stage:

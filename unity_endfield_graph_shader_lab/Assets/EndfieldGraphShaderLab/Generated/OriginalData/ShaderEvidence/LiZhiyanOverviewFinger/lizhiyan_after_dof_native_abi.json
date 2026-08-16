@@ -408,6 +408,20 @@
       "functionSha256": "8906BE4ECA853038B30BFEF1E6A9AA4F51631BA66CBBD65A510BF392ABFD261F"
     },
     {
+      "label": "HG singleton generic virtual cleanup",
+      "va": "0x18031aec0",
+      "functionEnd": "0x18031af0c",
+      "functionBytes": 76,
+      "functionSha256": "7843C1A52391DFC295106F0DB4DF3951681FFD4FB04028A9E2D7B5EC3C6C2105"
+    },
+    {
+      "label": "HG singleton nested-resource cleanup",
+      "va": "0x18031af80",
+      "functionEnd": "0x18031b0d7",
+      "functionBytes": 343,
+      "functionSha256": "F02609397543ECC6B0CCECAE38BA64426BB1BF711C10D5FD4AE197505A42C9D1"
+    },
+    {
       "label": "HGMesh publication result callback thunk",
       "va": "0x180feaea0",
       "functionEnd": "0x180feaeb0",
@@ -469,6 +483,132 @@
       "functionEnd": "0x181dbcfc8",
       "functionBytes": 3888,
       "functionSha256": "86EECEFB04596DAB252D480476864310EF833556C4F614C2BEE103E1A86C4E08"
+    },
+    {
+      "label": "HG graphics-front opcode 0x2748 writer",
+      "va": "0x180939640",
+      "functionEnd": "0x180939751",
+      "functionBytes": 273,
+      "functionSha256": "F3F33DE37A4D10E0F3F46C1D7AC1FF6696A297B5E19283DFC91EC8A111D989B1"
+    },
+    {
+      "label": "HG graphics-front opcode 0x274a writer",
+      "va": "0x18093a920",
+      "functionEnd": "0x18093aaa4",
+      "functionBytes": 388,
+      "functionSha256": "7D2D4D560E53C0E5C10309850249039A5F73C6660CCC6C2D5D18FDABC9200E48"
+    },
+    {
+      "label": "HG low-level command interpreter",
+      "va": "0x1813aee90",
+      "functionEnd": "0x1813bb9bc",
+      "functionBytes": 52012,
+      "functionSha256": "6D4D2E594245F8B1267CFE8B39D5D753077D5DC1A163D04356EDCFC792067774"
+    },
+    {
+      "label": "HG low-level command dispatch table",
+      "va": "0x1813bb574",
+      "functionEnd": "0x1813bb9bc",
+      "functionBytes": 1096,
+      "functionSha256": "E51223E243CB963CE476B2FC9AB466D3CA17A312F8A6F7F253D7384D71AAFA19"
+    },
+    {
+      "label": "HG API-2 resource-state loop entry",
+      "va": "0x180842370",
+      "functionEnd": "0x1808423a4",
+      "functionBytes": 52,
+      "functionSha256": "47B98F080E61F06F8391D385CC3CF95777B5418E34ED72CE161CE012E96ECF2F"
+    },
+    {
+      "label": "HG API-2 resource-state loop hot range",
+      "va": "0x180842370",
+      "functionEnd": "0x18084283b",
+      "functionBytes": 1227,
+      "functionSha256": "C1153C92ACA078C82F59278F3F51119A9454FA67330259B728E0A19047DD17B5"
+    },
+    {
+      "label": "HG API-2 resource-state loop cold range",
+      "va": "0x18084283b",
+      "functionEnd": "0x180843065",
+      "functionBytes": 2090,
+      "functionSha256": "3015D0A8DBF3541D20E390AA7CFFE5F45A35C4B77C02D2787CA10382B03C8D34"
+    },
+    {
+      "label": "HG opcode 0x2748 decoder",
+      "va": "0x1813b1624",
+      "functionEnd": "0x1813b1694",
+      "functionBytes": 112,
+      "functionSha256": "DAD23669C2757305E4902726B122906E398781C0062DAB1E35444CA23D244602"
+    },
+    {
+      "label": "HG opcode 0x274a decoder",
+      "va": "0x1813b16f0",
+      "functionEnd": "0x1813b1857",
+      "functionBytes": 359,
+      "functionSha256": "804FE555D51C89DD3AA453DC90802C212B9483D8E49C1589F4D4B9F3124E7356"
+    },
+    {
+      "label": "HG opcode 0x2730 descriptor-state handler",
+      "va": "0x1813afb6b",
+      "functionEnd": "0x1813afecf",
+      "functionBytes": 868,
+      "functionSha256": "F5280DEC414D0CFF6B8C2DF5BE3DF60A04F9FE40E720BBCA03EA048E62198410"
+    },
+    {
+      "label": "HG API-2 descriptor-state wrapper",
+      "va": "0x180843bf0",
+      "functionEnd": "0x180843cda",
+      "functionBytes": 234,
+      "functionSha256": "2BE9B903998C6E9208A723FE819CF5D99EDBF757C291973A5CC9CB4A109798E3"
+    },
+    {
+      "label": "HG API-2 Vulkan descriptor update",
+      "va": "0x18083f680",
+      "functionEnd": "0x1808406c0",
+      "functionBytes": 4160,
+      "functionSha256": "F00BA4BA9FFDE864CF0A4BE024E974F5EF8194AEC3DC295CD5AC9C09213A32C9"
+    },
+    {
+      "label": "HG Vulkan vertex-index binding callback",
+      "va": "0x18082d6b0",
+      "functionEnd": "0x18082d79a",
+      "functionBytes": 234,
+      "functionSha256": "AF9E75A85F4B5207EC3F7570989585122B3842396352C0988CA3F22068E13A1B"
+    },
+    {
+      "label": "HG Vulkan pipeline-descriptor state callback",
+      "va": "0x18082e660",
+      "functionEnd": "0x18082e754",
+      "functionBytes": 244,
+      "functionSha256": "9C55A6D8EE58B004FEA73473C0EB126EE7DF3E4F399A231F74F4F2A3386D22CB"
+    },
+    {
+      "label": "HG Vulkan indirect-draw callback",
+      "va": "0x18082e820",
+      "functionEnd": "0x18082e94b",
+      "functionBytes": 299,
+      "functionSha256": "E7BD8B97049438804582C226E553DAFDBC56785337E0D9636AA6BE40AFE173A8"
+    },
+    {
+      "label": "HG Vulkan direct-draw helper",
+      "va": "0x18083d264",
+      "functionEnd": "0x18083d3a7",
+      "functionBytes": 323,
+      "functionSha256": "12489C1AD1B5940E35DBD716D7EC8F32DD768676F43DB5EDE53F40D184CF7588"
+    },
+    {
+      "label": "HG Vulkan master-list executor entry",
+      "va": "0x180843d60",
+      "functionEnd": "0x180843f2a",
+      "functionBytes": 458,
+      "functionSha256": "3481D18AE0BD3FC6C2CD9CB7333053C5B8F5500CF8909E3688DEB9C9CB2D37B7"
+    },
+    {
+      "label": "HG Vulkan master-list executor continuation",
+      "va": "0x180843f2a",
+      "functionEnd": "0x180845386",
+      "functionBytes": 5212,
+      "functionSha256": "63A20255D99B7ABD9D3C6B18D7991F8DD391409D505E5C6993A0EB714156BF7B"
     }
   ],
   "decisiveCalls": [
@@ -696,7 +836,11 @@
             "bulkRegistrarBehavior": "loops indices 0..0x15 and conditionally writes slot 0x14 through the generic setter",
             "globalTeardownVA": "0x18058cc20",
             "globalTeardownBehavior": "walks indices 0x1a down to 1, invokes object cleanup, and necessarily clears slot 0x14 through the generic setter",
-            "provenBoundary": "slot-0x14 registration and global cell clearing are proven; the context construction semantics and destructor internals for its +0xb0 HGMesh manager remain unresolved"
+            "genericCleanupVA": "0x18031aec0",
+            "nestedCleanupVA": "0x18031af80",
+            "genericCleanupBehavior": "releases object +0x10 through nested cleanup, then invokes object vtable slot 0 before the singleton cell is cleared",
+            "concreteDestructorTarget": "indirect [slot14_object->vtable + 0]; no pinned static edge identifies a +0xb0 HGMesh-manager destructor",
+            "provenBoundary": "slot-0x14 registration, generic virtual destruction, and global cell clearing are proven; context construction semantics and the concrete +0xb0 HGMesh-manager destructor remain unresolved"
           }
         },
         "invalidRequestGate": "request[0] == 0xffffffff returns 0xffffffff without appending",
@@ -764,7 +908,7 @@
             "resultCallbackThunkVA": "0x180feaea0",
             "frontEndHandoffVA": "0x1810484e0",
             "frontEndHandoffEndVA": "0x181049007",
-            "behavior": "consumes the CPU publication/result object and reaches generic front-end virtual dispatch; no resolved pointer identity is proven to enter a GPU descriptor, indirect buffer, or draw command",
+            "behavior": "consumes the CPU publication/result object and reaches generic front-end virtual dispatch; opcode 0x2748 preserves its resource pointer into API-2 binding state and a later opcode 0x2730 can publish that state to a Vulkan descriptor, but no same-record identity is proven to reach a draw command",
             "publicationResultLayout": "pair +0x00 is a 0x90-stride CPU-record base, +0x08 auxiliary resource/state, +0x10 count; each record keeps resource/object +0x08 and descriptor +0x10 among selector/payload fields",
             "graphicsFront": {
               "contextGetterVA": "0x180725dc0",
@@ -775,6 +919,19 @@
               "resourceAppendSlot": "vtable +0x268 -> 0x180939640, opcode 0x2748",
               "resourceBindSlot": "vtable +0x280 -> 0x18093a920, opcode 0x274a"
             },
+            "commandInterpreter": {
+              "interpreterVA": "0x1813aee90",
+              "dispatchTableVA": "0x1813bb574",
+              "opcode2748CaseVA": "0x1813b1624",
+              "opcode2748Layout": "u32 opcode, alignment/padding, aligned u64 resource-object pointer; writer increments resource +0x0c",
+              "opcode2748Route": "front +0x268 -> record 0x2748 -> interpreter -> selected backend +0x268 -> 0x1808547c0 -> mode 1 at 0x180842370",
+              "opcode274aCaseVA": "0x1813b16f0",
+              "opcode274aLayout": "u32 opcode, alignment/padding, u64 token-or-length-like result of 0x1805d1e80, then variable serialized payload",
+              "opcode274aRoute": "front +0x280 -> record 0x274a -> interpreter -> selected backend +0x280 -> 0x180855200 -> mode 0 at 0x180842370",
+              "api2ResourceCollection": "context +0x2e48, 16-byte records holding payload/key at +0x00 and type/key at +0x08",
+              "resourceToBindingState": "0x2748 passes the original pointer unchanged; 0x180842370 resolves object-local maps at resource +0x20..+0x30/+0x50/+0x70 and writes descriptor-like state under S+0x2a0 plus payload backing under S+0x22d0",
+              "provenBoundary": "both opcodes are API-2 resource/state operations, not draw opcodes; 0x2748 identity reaches backend binding state while the 0x274a qword semantics remain unresolved"
+            },
             "backendSelection": {
               "selectorVA": "0x18072f7e0",
               "api2FactoryVA": "0x180891210",
@@ -782,6 +939,20 @@
               "api2Meaning": "internal Hypergryph backend-family ID, not Unity's public GraphicsDeviceType numeric enum",
               "vulkanDrawFlush": "API-2 +0xde8 -> 0x18083f1e0 -> 0x180843d60 resolves Vulkan pipeline/descriptor/draw/queue operations",
               "vulkanCommandCells": "vkCmdDraw 0x1821d35b0, vkCmdDrawIndirect 0x1821d35c0, vkCmdDrawIndexedIndirect 0x1821d35c8, vkQueueSubmit 0x1821d32c0"
+            },
+            "vulkanExecution": {
+              "descriptorUpdateRoute": "opcode 0x2730 -> API-2 +0xe90 0x180843bf0 -> 0x18083f680 -> vkUpdateDescriptorSetWithTemplate at 0x18083f89d",
+              "descriptorIdentityBoundary": "the state populated from the unchanged 0x2748 object is packaged from S+0x22d0/S+0x22a8/S+0x2a0 into the Vulkan descriptor-update worker",
+              "masterList": "context +0x2b50; callbacks are invoked through [node+0x08] with payload node+0x10 by 0x180843d60",
+              "resourceBinding": "0x18082d6b0 binds index and vertex buffers",
+              "pipelineDescriptorState": "0x18082e660 binds pipeline/descriptors and sets depth bias/stencil reference",
+              "indirectDraw": "0x18082e820 issues vkCmdDrawIndexedIndirect or vkCmdDrawIndirect",
+              "directDraw": "0x18083d264 updates a descriptor template, binds pipeline/descriptors, then issues vkCmdDraw(3,1,0,0)",
+              "queueSubmitCallsites": [
+                "0x180844a09",
+                "0x180844bd3"
+              ],
+              "remainingIdentityEdge": "same-stream/same-frame association from the 0x2748-populated descriptor state and later 0x2730 descriptor update into a particular 0x2731 execution, +0x2b50 callback node, and specific draw record"
             },
             "d3d12StaticBoundary": "D3D12 is absent and the image contains 'D3D12 support not compiled in!'; D3D11 dynamic bootstrap/fallback code exists but is not the observed session backend",
             "observedRuntimeBackend": {
@@ -833,12 +1004,16 @@
             "0x18104e300 registration core",
             "0x181005c10 opcode-0x4e consumer",
             "0x18105e400 complete 64-byte record append",
-            "0x18105e350 resolved-resource pointer append"
+            "0x18105e350 resolved-resource pointer append",
+            "0x1813b1624 opcode-0x2748 decoder preserving the resource pointer",
+            "0x18083f89d Vulkan descriptor-template update callsite",
+            "0x1813afed9 opcode-0x2731 API-2 execution dispatch"
           ],
           "boundedFields": [
             "session/PID/module hashes, monotonic timestamp, thread ID, and present interval",
             "renderer-list handle, manager count, 16-byte slot, and 0x30-byte state",
-            "complete 64-byte record, first 16 key bytes, +0x20 marker, +0x22 u16, +0x2c signed field, and resolved resource pointer"
+            "complete 64-byte record, first 16 key bytes, +0x20 marker, +0x22 u16, +0x2c signed field, and resolved resource pointer",
+            "0x2748 stream position/object pointer, matching 0x2730 descriptor-update state, 0x2731 execution position, callback node, and Vulkan draw parameters"
           ],
           "requiredPositiveJoin": "same build and frame: CreateRendererList handle -> opcode 0x4e consumer -> accepted/sorted 64-byte record -> resolved resource identity -> specific Vulkan draw/submit -> visible Li Zhiyan after-DOF pixel",
           "negativeControl": "repeat with Li Zhiyan absent or replaced by Wulfa; timing coincidence alone is insufficient",
