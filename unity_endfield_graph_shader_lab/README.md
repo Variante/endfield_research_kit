@@ -4023,6 +4023,19 @@ invented AnimatorController and makes an EffectAnimation-compatible playable
 driver the intended lab implementation. The renderer pointer has not yet been
 joined to a specific renderer-list/API-2 record or final draw.
 
+The exact graph contract is narrower than stock Unity's common mixer path.
+Retail `_CreatePlayableGraph` selects `GameTime`, scale one, and a three-input
+`UnityEngine.Animations.AdvancedAnimationMixerPlayable` whose slots are
+start/loop/end; these Li effects populate only start. That custom retail
+AnimationModule type is absent from both the installed stock Unity 2021 editor
+and this lab's Unity 2022 editor. The validator therefore rejects standard
+`AnimationMixerPlayable`, Timeline mixers, clip stretching, and manual
+evaluation as unproven substitutes. The generated
+`lizhiyan_effect_animation_playable_topology.json` contract remains
+`visibleAdmission=false` and no graph driver starts until the advanced-mixer
+semantics, time-control callsites, static renderer payload, and final draw
+ownership are closed.
+
 The two sibling roots are now source-closed as the remaining halves of that
 shared clip. `start_02` is a 5-second, three-renderer effect using one Plane009
 mesh and materials 12/13/14; `start_03` is a 7-second, three-renderer effect

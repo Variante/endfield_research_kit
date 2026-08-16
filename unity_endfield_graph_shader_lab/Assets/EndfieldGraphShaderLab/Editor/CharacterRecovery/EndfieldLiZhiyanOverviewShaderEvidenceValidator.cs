@@ -42,6 +42,9 @@ namespace EndfieldGraphShaderLabEditor
         private const string StaticSiblingContractPath =
             "Assets/EndfieldGraphShaderLab/Generated/OriginalData/Effects/" +
             "lizhiyan_overview_start_02_03_effects.json";
+        private const string PlayableTopologyContractPath =
+            "Assets/EndfieldGraphShaderLab/Generated/OriginalData/ShaderEvidence/" +
+            "LiZhiyanOverviewFinger/lizhiyan_effect_animation_playable_topology.json";
         private const string Schema = "endfield.lizhiyan-overview-vfxbasev2-variants.v1";
         private const long ShaderPathId = -1430105248647086886L;
 
@@ -158,6 +161,50 @@ namespace EndfieldGraphShaderLabEditor
             ValidateOverviewTimingAlignment();
             ValidateOverviewStart01Contract();
             ValidateOverviewStaticSiblingContracts();
+            ValidateEffectAnimationPlayableTopology();
+        }
+
+        private static void ValidateEffectAnimationPlayableTopology()
+        {
+            Dictionary<string, object> contract = L.Dict(
+                ManifestMiniJson.Deserialize(File.ReadAllText(
+                    L.ProjectAbsolute(PlayableTopologyContractPath), Encoding.UTF8)));
+            Dictionary<string, object> sources = L.Dict(contract["sources"]);
+            foreach (object value in sources.Values)
+                ValidateRepositoryArtifact(L.Dict(value));
+            Dictionary<string, object> topology =
+                L.Dict(contract["retailEffectAnimationTopology"]);
+            Dictionary<string, object> create = L.Dict(topology["createPlayableGraph"]);
+            Dictionary<string, object> mixer = L.Dict(topology["mixer"]);
+            Dictionary<string, object> lab = L.Dict(contract["labBoundary"]);
+            Type retailMixer = Type.GetType(
+                "UnityEngine.Animations.AdvancedAnimationMixerPlayable, UnityEngine.AnimationModule",
+                false);
+            L.Require(
+                L.Str(contract, "schema") ==
+                    "endfield.lizhiyan-effect-animation-playable-topology.v1" &&
+                L.Str(contract, "status") ==
+                    "retail_topology_closed_editor_advanced_mixer_unavailable_visible_fail_closed" &&
+                !L.Bool(contract, "visibleAdmission") &&
+                L.Str(topology, "updateMode") == "GameTime" &&
+                Mathf.Abs(L.Float(topology, "timeScale") - 1.0f) < 0.000001f &&
+                !L.Bool(topology, "manualEvaluation") &&
+                L.Str(create, "token") == "0x060059D0" &&
+                L.Str(create, "va") == "0x183437F90" &&
+                L.Str(mixer, "type") ==
+                    "UnityEngine.Animations.AdvancedAnimationMixerPlayable" &&
+                L.Str(mixer, "typeToken") == "0x02000053" &&
+                L.Long(mixer, "inputCount") == 3 &&
+                L.List(topology["clipSlots"]).Count == 3 &&
+                retailMixer == null &&
+                typeof(UnityEngine.Animations.AnimationMixerPlayable) != null &&
+                !L.Bool(lab, "retailAdvancedMixerTypeExpectedInEditor") &&
+                !L.Bool(lab, "standardAnimationMixerPlayableIsExactSubstitute") &&
+                L.Str(lab, "driverStatus") ==
+                    "exact_retail_mixer_type_unavailable_do_not_start_graph" &&
+                L.List(lab["blockedBy"]).Count == 4 &&
+                L.List(contract["nonClaims"]).Count == 3,
+                "Li Zhiyan retail EffectAnimation playable topology drifted");
         }
 
         private static void ValidateOverviewStaticSiblingContracts()
@@ -816,6 +863,21 @@ namespace EndfieldGraphShaderLabEditor
             L.Require(File.Exists(path) && new FileInfo(path).Length == L.Long(artifact, "bytes") &&
                 Sha256(path) == L.Str(artifact, "sha256").ToUpperInvariant(),
                 "Li Zhiyan shader artifact drifted: " + path);
+        }
+
+        private static void ValidateRepositoryArtifact(Dictionary<string, object> artifact)
+        {
+            string relative = L.Str(artifact, "path").Replace('\\', '/');
+            string repositoryRoot = Path.GetFullPath(
+                Path.Combine(Application.dataPath, "..", ".."));
+            string path = Path.GetFullPath(Path.Combine(
+                repositoryRoot,
+                relative.Replace('/', Path.DirectorySeparatorChar)));
+            L.Require(path.StartsWith(repositoryRoot + Path.DirectorySeparatorChar,
+                    StringComparison.OrdinalIgnoreCase) &&
+                File.Exists(path) && new FileInfo(path).Length == L.Long(artifact, "bytes") &&
+                Sha256(path) == L.Str(artifact, "sha256").ToUpperInvariant(),
+                "Li Zhiyan repository evidence artifact drifted: " + path);
         }
 
         private static string Signature(IEnumerable<string> values)

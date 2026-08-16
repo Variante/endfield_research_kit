@@ -1678,6 +1678,18 @@ only stable interpretation and priorities.
    `EffectLodCfg.renderer` identity reaching a specific renderer-list,
    descriptor/PSO, draw, submit, and visible pixel; generic HGMesh/API-2
    evidence does not prove that attribution.
+   The retail playable topology is now pinned more narrowly: it creates a
+   `GameTime` graph at scale one, an `AnimationPlayableOutput`, and a
+   three-input `UnityEngine.Animations.AdvancedAnimationMixerPlayable` for
+   start/loop/end clips. These Li roots populate only the start slot and do
+   not prove clip retiming or manual evaluation. That advanced mixer is a
+   retail custom AnimationModule type and is absent from both the stock
+   installed 2021 editor and this lab's Unity 2022 editor. Standard
+   `AnimationMixerPlayable`, Timeline mixers, and an invented controller are
+   therefore rejected as exact substitutes. The generated topology contract
+   and Unity validator keep graph creation and visible admission fail-closed
+   until an equivalent retail backend and the unresolved time-control
+   callsites are proven.
    `P_fxui_lizhiyan_overview_start_02` and `_03` are now source-closed sibling
    static effects: each has a root Animator and three MeshRenderers with zero
    particles; their lifetimes are 5 and 7 seconds. `_02` uses one shared mesh
