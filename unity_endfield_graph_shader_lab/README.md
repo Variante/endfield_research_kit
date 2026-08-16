@@ -4156,6 +4156,16 @@ the sole confirmed `0x180FF8020` callback reference, and registers it through
 through `0x18104EC20`. Only population of the caller-supplied M0/M1 tables
 before this owner remains unresolved, so the Li branch stays deliberately
 unselected.
+The tables are no longer anonymous. Slot-0x14 root `+0x90` is the
+`HGShadingStateSystem` built by `0x1810AFC80`; `0x1810AEEA0` initializes its
+`+0x28` table and the finalizer proves 0x60-byte entries. Root `+0xA0` is the
+`HGGeometrySystem` built by `0x181091DC0`; `0x1810914A0` initializes its
+0x38-byte table. Root construction injects these exact objects into HGMesh
+manager `+0x50/+0x58`, closing their transport through the job and finalizer.
+`HGShadingStateSystem.GetOrCreatePerMaterialCBHandle` selects the same M0
+entry, but its inspected path reads resource state rather than writing
+descriptor D at `entry+0x28`. Concrete shading/geometry entry population is
+still fail-closed.
 The same contract pins `SetManual(bool)`, `ManualEvaluate(float)`,
 `SyncProgress(float)`, time-scale/start-duration/start-
 scale setters, Stop, OnDisable, and OnRelease. Their decoded fallback bodies
