@@ -1691,8 +1691,13 @@ only stable interpretation and priorities.
    until an equivalent retail backend is proven. The advanced type is also
    ABI-distinct from stock: stock `Create` accepts `normalizeWeights` and has
    an implicit Playable conversion, while the advanced type has neither.
-   Default/null weights, null-playable transitions, input-count failure
-   behavior, and its internal-call native body remain unresolved.
+   Its injected creation path is now native-closed as UnityPlayer internal-call
+   table entry 501 (`0x180158b30`): it validates the graph, allocates custom
+   playable node type `0x178`, attaches it, and returns a pointer/version
+   handle. Stock mixer creation uses distinct node type `0x170` and a distinct
+   initializer, proving it is not exact. Input count is applied afterward by
+   `SetInputCount`; default/null weights, input-count rejection, and allocator
+   failure behavior remain unresolved.
    The complete control ABI is now pinned as well. `ManualEvaluate(float)`
    evaluates the graph, `SyncProgress(float)` derives a time and delegates to
    it, duration/scale setters refresh root speed, `OnDisable` stops, and
@@ -1723,6 +1728,12 @@ only stable interpretation and priorities.
    owns those managed references, but no static body joins a pointer or
    instance id to an accepted 64-byte HGTree survivor/resource record. Native
    ECS slot 67 is separate LOD/culling state and must not be used as that join.
+   Ordinary `Renderer.get_entityID` is now pinned through internal-call table
+   entry 1278 (`0x1800e6c40`) to backing native renderer `+0x268`.
+   `HGMeshRenderer.GetEntity` instead returns the ECS qword at native `+0x50`
+   and requires `+0x50/+0x54` nonzero. The Li fields are ordinary
+   MeshRenderers, and no evidence equates these offsets, so this is a stronger
+   typed boundary rather than the missing HGTree identity join.
    Downstream HGMesh workers now prove a real ordering/publication stage:
    accepted 64-byte records are sorted in place by `0x181043bd0` using
    comparator `0x180fe0740`, an unsigned lexicographic comparison over the

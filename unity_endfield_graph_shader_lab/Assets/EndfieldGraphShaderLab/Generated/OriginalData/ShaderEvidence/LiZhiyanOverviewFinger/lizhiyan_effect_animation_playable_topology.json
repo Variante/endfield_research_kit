@@ -89,7 +89,7 @@
         "m_NullPlayable": "0x04000152"
       },
       "createSignature": "Create(PlayableGraph graph, inputCount)",
-      "injectedBoundary": "CreateHandleInternal_Injected carries internal-call metadata, but its native body and exact by-reference/value lowering are not recovered",
+      "injectedBoundary": "CreateHandleInternal_Injected is bound to UnityPlayer 0x180158B30 and creates the retail 0x178 native node; input count and weights are handled later",
       "methodTokens": {
         "Create": "0x06000339",
         "CreateHandle": "0x0600033A",
@@ -113,7 +113,7 @@
         "default and normalized input weights",
         "null-playable state transitions and equality behavior",
         "accepted input-count range and failure behavior",
-        "native CreateHandleInternal_Injected implementation"
+        "SetInputCount downstream initialization and allocation-failure behavior"
       ]
     },
     "clipSlots": [
@@ -139,6 +139,42 @@
       "P_fxui_lizhiyan_overview_start_03": 7.0
     },
     "clipStopTimeSeconds": 6.366667
+  },
+  "retailAdvancedMixerNative": {
+    "tableIndex": 501,
+    "name": "UnityEngine.Animations.AdvancedAnimationMixerPlayable::CreateHandleInternal_Injected",
+    "namePointerSlotFileOffset": "0x20DD608",
+    "functionPointerSlotFileOffset": "0x20DF118",
+    "nativeTargetVA": "0x180158B30",
+    "nativeBodyBytes": 66,
+    "nativeBodySha256": "a1344805c7af26cc4c405b18c770e862a7a3c3108d06d9efaa170ce57e71be25",
+    "managedWrappers": {
+      "Create": "0x183E0F350",
+      "CreateHandle": "0x183E0F450",
+      "CreateHandleInternal": "0x183E0F5C0",
+      "CreateHandleInternal_Injected": "0x183E0FA30",
+      "SetInputCount": "0x183E0F8D0",
+      "SetInputCount_Injected": "0x183E0F910"
+    },
+    "nativeCreateHelperVA": "0x180B3E5C0",
+    "invalidGraphDiagnosticVA": "0x1807791C0",
+    "advancedNodeTypeId": "0x178",
+    "stockNodeTypeId": "0x170",
+    "handleLayout": {
+      "nativePointerOffset": 0,
+      "versionOffset": 8,
+      "meaningfulBytes": 12,
+      "storageBytes": 16
+    },
+    "classification": "native_create_closed_stock_mixer_not_equivalent_weights_pending",
+    "provenBehavior": [
+      "validates a non-null graph handle and masked version",
+      "allocates and attaches a distinct native 0x178 playable node",
+      "materializes a native-pointer plus version PlayableHandle",
+      "CreateHandle applies inputCount only after injected creation through SetInputCount",
+      "creation does not initialize or normalize input weights"
+    ],
+    "failureBoundary": "invalid graphs return false through the common diagnostic path; allocator failure and SetInputCount rejection remain unresolved"
   },
   "effectAnimationControlAbi": {
     "installedPatchState": {
@@ -509,9 +545,33 @@
     ],
     "provenBehavior": "EffectLodCfg.Play enables its configured Renderer and EffectLodCfg.Stop disables or resets the same managed lifecycle; each non-null lodSetting renderer is an exact serialized Li Zhiyan MeshRenderer PathID",
     "nativeJoinStatus": "managed_renderer_to_hgtree_survivor_record_unresolved_fail_closed",
+    "ordinaryRendererNativeIdentity": {
+      "tableIndex": 1278,
+      "name": "UnityEngine.Renderer::get_entityID",
+      "namePointerSlotFileOffset": "0x20D4FA0",
+      "functionPointerSlotFileOffset": "0x20CD1F0",
+      "nativeTargetVA": "0x1800E6C40",
+      "nativeBodyBytes": 324,
+      "nativeBodySha256": "b9b416829ec0528693a48ec4116a2e71ed7d4d26893866fc807aa59c86045e79",
+      "managedBackingPointerHelperVA": "0x180769270",
+      "nativeEntityIdOffset": "0x268",
+      "classification": "ordinary_renderer_native_entity_id_field_closed_semantic_join_pending"
+    },
+    "hgMeshRendererComparison": {
+      "getEntityManagedVA": "0x18B3FA3B0",
+      "getEntityInjectedUnityPlayerVA": "0x1801E04E0",
+      "hasEntityUnityPlayerVA": "0x1801E0340",
+      "nativeEntityOffset": "0x50",
+      "requiresNonzeroOffsets": [
+        "0x50",
+        "0x54"
+      ],
+      "ordinaryRendererEquivalent": false
+    },
     "remainingIdentityEdge": "a concrete UnityEngine.MeshRenderer pointer or instance id must be joined to the native entity/renderer index and one accepted 64-byte HGTree record",
     "nonClaims": [
       "native ECS component slot 67 is not EffectLodCfg.renderer",
+      "ordinary Renderer native+0x268 is not proven equal to HGMeshRenderer native+0x50",
       "generic HGTree renderer-list creation does not assign a Li Zhiyan PathID to a draw"
     ]
   },

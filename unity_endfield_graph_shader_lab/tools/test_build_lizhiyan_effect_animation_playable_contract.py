@@ -21,6 +21,12 @@ def test_topology() -> None:
     assert topology["mixer"]["fieldTokens"]["m_NullPlayable"] == "0x04000152"
     assert topology["mixer"]["stockAnimationMixerComparison"]["behavioralEquivalenceProven"] is False
     assert topology["updateMode"] == "GameTime"
+    native_mixer = contract["retailAdvancedMixerNative"]
+    assert native_mixer["tableIndex"] == 501
+    assert native_mixer["nativeTargetVA"] == "0x180158B30"
+    assert native_mixer["advancedNodeTypeId"] == "0x178"
+    assert native_mixer["stockNodeTypeId"] == "0x170"
+    assert native_mixer["handleLayout"]["meaningfulBytes"] == 12
     assert [row["pathID"] for row in topology["clipSlots"]] == [
         7360398354216100382, 0, 0
     ]
@@ -44,6 +50,10 @@ def test_topology() -> None:
     assert abi["liZhiyanCallerStatus"] == "no_asset_specific_caller_proven_for_optional_time_controls"
     ownership = contract["effectLodRendererOwnership"]
     assert ownership["managedField"]["fieldToken"] == "0x04004F24"
+    assert ownership["ordinaryRendererNativeIdentity"]["tableIndex"] == 1278
+    assert ownership["ordinaryRendererNativeIdentity"]["nativeEntityIdOffset"] == "0x268"
+    assert ownership["hgMeshRendererComparison"]["nativeEntityOffset"] == "0x50"
+    assert ownership["hgMeshRendererComparison"]["ordinaryRendererEquivalent"] is False
     assert [row["rendererPathIDs"] for row in ownership["serializedBindings"]] == [
         [-1741348596941359387, 4708942470875150053, 8270785745755535077,
          -6436609233402104091],
