@@ -3940,6 +3940,7 @@ Li Zhiyan's retail video oracle is imported separately from draw ownership:
 ```bat
 python tools\build_lizhiyan_retail_draw_observation_contract.py
 python tools\build_lizhiyan_retail_visual_oracle.py
+python tools\build_lizhiyan_overview_timing_alignment.py
 ```
 
 The current fixture pins `videos/2026-08-15_10-32-32.mkv` by byte count and
@@ -3959,6 +3960,22 @@ It records the broad teal peak at PTS 40000 and the below-one-percent settled
 baseline at PTS 46000. This is only a camera/timing/compositing regression
 target: it stays `diagnostic_only`, keeps `visibleAdmission=false`, and cannot
 unlock the seven fail-closed particle renderers.
+
+The timing-alignment builder joins those frames to source controller data
+without upgrading the visual candidate into an original event claim. The
+10.7-second start clip enters at normalized `0.0058366423` (clip-local
+`0.062452073 s`), exits at `10.68547903 s`, and uses a `0.014519697 s`
+transition. The clip has no AnimationEvents. Current lab compatibility policy
+publishes the request in the same restart call and would create/destroy the
+finger effect at clip-local `0.895782073/3.229112073 s`; the original retail
+request producer and epoch remain unknown. Exact frames bound the transition:
+the prior actor's last residual is PTS 37683, blank frames span PTS
+37700..37867, Li first appears at PTS 37883, and is opaque by PTS 37950.
+Treating 37883 as a candidate restart aligns PTS 40000 with the compatibility
+finger window, but PTS 42000 still contains measured teal after that root would
+have been destroyed at candidate PTS 41049. The one recovered finger effect
+therefore cannot explain the full retail teal chronology; eleven other
+serialized Li entrance requests remain unbound.
 
 One original dialog facial asset is now executable as a bounded source fixture:
 Zhuang Fangyi's 2.15-second

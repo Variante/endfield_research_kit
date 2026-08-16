@@ -35,7 +35,187 @@
       "The broad trails decay by PTS 44000 and no substantial teal layer remains at PTS 46000."
     ]
   },
+  "transitionBoundary": {
+    "evidenceClass": "exact_pts_frame_hash_plus_bounded_visual_annotation",
+    "lastPriorActorResidualPts": 37683,
+    "firstBlankPts": 37700,
+    "lastBlankPts": 37867,
+    "firstLiZhiyanVisiblePts": 37883,
+    "firstLiZhiyanOpaquePts": 37950,
+    "candidateRestartPts": 37883,
+    "candidateRestartStatus": "visual_alignment_candidate_not_original_event_proof"
+  },
   "tealPredicateRgb24": "g>=80 && b>=80 && g-r>=20 && b-r>=10",
+  "transitionAnchors": [
+    {
+      "pts": 37650,
+      "timeBase": "1/1000",
+      "classification": "prior_actor_visible",
+      "scaledRgb24Sha256": "16F8F5E56589F78D341D373F358056BD783660BB411B4F5C7E8693E48614A1F4",
+      "broadTeal": {
+        "sourceBoundsXyxy": [
+          500,
+          450,
+          3100,
+          1800
+        ],
+        "scaledBoundsXyxy": [
+          125,
+          112,
+          775,
+          450
+        ],
+        "pixelCount": 219700,
+        "meanRgb": [
+          155.851438,
+          155.672645,
+          153.861912
+        ],
+        "tealPixelCount": 1079,
+        "tealCoverage": 0.004911243
+      }
+    },
+    {
+      "pts": 37683,
+      "timeBase": "1/1000",
+      "classification": "prior_actor_last_residual",
+      "scaledRgb24Sha256": "DC42D9ED2BDBE1A0AEBDBA4E2442AFE4B701C3EA2253E239841E4F3CA494E89A",
+      "broadTeal": {
+        "sourceBoundsXyxy": [
+          500,
+          450,
+          3100,
+          1800
+        ],
+        "scaledBoundsXyxy": [
+          125,
+          112,
+          775,
+          450
+        ],
+        "pixelCount": 219700,
+        "meanRgb": [
+          189.54853,
+          189.230023,
+          186.704866
+        ],
+        "tealPixelCount": 0,
+        "tealCoverage": 0.0
+      }
+    },
+    {
+      "pts": 37700,
+      "timeBase": "1/1000",
+      "classification": "blank_transition_first",
+      "scaledRgb24Sha256": "A62AA729E9C75BAD59A7D9CCB368F7949F2AC0F5E7E4212C5E4B6D0C40A4B3AE",
+      "broadTeal": {
+        "sourceBoundsXyxy": [
+          500,
+          450,
+          3100,
+          1800
+        ],
+        "scaledBoundsXyxy": [
+          125,
+          112,
+          775,
+          450
+        ],
+        "pixelCount": 219700,
+        "meanRgb": [
+          190.366131,
+          190.357815,
+          187.859795
+        ],
+        "tealPixelCount": 0,
+        "tealCoverage": 0.0
+      }
+    },
+    {
+      "pts": 37867,
+      "timeBase": "1/1000",
+      "classification": "blank_transition_last",
+      "scaledRgb24Sha256": "F0078FFEBB2E801F134C120FCE2C03DC3E5C9CE277FC69E8312CADC8331A987B",
+      "broadTeal": {
+        "sourceBoundsXyxy": [
+          500,
+          450,
+          3100,
+          1800
+        ],
+        "scaledBoundsXyxy": [
+          125,
+          112,
+          775,
+          450
+        ],
+        "pixelCount": 219700,
+        "meanRgb": [
+          190.140396,
+          190.131921,
+          187.624615
+        ],
+        "tealPixelCount": 0,
+        "tealCoverage": 0.0
+      }
+    },
+    {
+      "pts": 37883,
+      "timeBase": "1/1000",
+      "classification": "lizhiyan_first_visible",
+      "scaledRgb24Sha256": "15BBFF03CB2DF34B97CA09FB0A7C62E9F041327D8F092BD9D485140732550C05",
+      "broadTeal": {
+        "sourceBoundsXyxy": [
+          500,
+          450,
+          3100,
+          1800
+        ],
+        "scaledBoundsXyxy": [
+          125,
+          112,
+          775,
+          450
+        ],
+        "pixelCount": 219700,
+        "meanRgb": [
+          190.037724,
+          190.032453,
+          187.528025
+        ],
+        "tealPixelCount": 0,
+        "tealCoverage": 0.0
+      }
+    },
+    {
+      "pts": 37950,
+      "timeBase": "1/1000",
+      "classification": "lizhiyan_opaque",
+      "scaledRgb24Sha256": "DEB3DC2098AF32E63B75E6FE012FD6A2B1F4ACC6DAB032F4433567F510EED0D0",
+      "broadTeal": {
+        "sourceBoundsXyxy": [
+          500,
+          450,
+          3100,
+          1800
+        ],
+        "scaledBoundsXyxy": [
+          125,
+          112,
+          775,
+          450
+        ],
+        "pixelCount": 219700,
+        "meanRgb": [
+          123.249936,
+          125.274137,
+          124.488908
+        ],
+        "tealPixelCount": 3564,
+        "tealCoverage": 0.016222121
+      }
+    }
+  ],
   "samples": [
     {
       "pts": 38000,

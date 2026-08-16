@@ -1,0 +1,120 @@
+{
+  "schema": "endfield.lizhiyan-overview-timing-alignment.v1",
+  "status": "source_timing_closed_retail_request_epoch_pending",
+  "visibleAdmission": false,
+  "sources": {
+    "prefab": {
+      "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Lizhiyan/Prefabs/Lizhiyan.prefab",
+      "sha256": "9B3B399A1D4B116BD735858C7A7E95E1D9E8E13D71197D129FF3D8C371B61B4B"
+    },
+    "startClip": {
+      "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Lizhiyan/Animations/A_actor_lizhiyan_ui_overview_start_01.anim",
+      "sha256": "5BE556A7AE9E2E6DF4E317129C19D90B2D76DD1DD1A3C871FF6BED8945EAF27E"
+    },
+    "effect": {
+      "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/Effects/lizhiyan_overview_finger_effect.json",
+      "sha256": "DD142A7A093644FD548FBA18601791CCC7D6C4E83060035DADAC31BC30312375"
+    },
+    "visualOracle": {
+      "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/ShaderEvidence/LiZhiyanOverviewFinger/lizhiyan_retail_visual_oracle.json",
+      "sha256": "43FEB8A56F945AD2508869923C7737D6ADBE0417C7D18156EC1EACCAB1B0C8E5"
+    }
+  },
+  "sourceClosedControllerTiming": {
+    "startClip": "A_actor_lizhiyan_ui_overview_start_01",
+    "startClipLengthSeconds": 10.7,
+    "animationEvents": [],
+    "entryNormalizedOffset": 0.0058366423,
+    "entryClipLocalSeconds": 0.062452073,
+    "exitNormalizedTime": 0.9986429,
+    "exitClipLocalSeconds": 10.68547903,
+    "normalizedTransitionDuration": 0.001356981,
+    "transitionDurationSeconds": 0.014519697,
+    "loopDestinationNormalizedOffset": 0.0
+  },
+  "sourceClosedEffectLocalTiming": {
+    "effect": "P_fxui_lizhiyan_overview_trails_Bip001_R_Finger2Nub",
+    "mount": "Bip001_R_Finger2Nub",
+    "delaySeconds": 0.83333,
+    "durationSeconds": 2.33333,
+    "randomDelaySeconds": 0.0,
+    "looping": false
+  },
+  "labCompatibilityChronology": {
+    "evidenceClass": "current_lab_policy_not_original_request_chronology",
+    "publishRelativeToRestart": "same call after start clip Play and entry-time assignment",
+    "effectCreateElapsedSeconds": 0.83333,
+    "effectDestroyElapsedSeconds": 3.16666,
+    "effectCreateClipLocalSeconds": 0.895782073,
+    "effectDestroyClipLocalSeconds": 3.229112073,
+    "usesScaledWaitForSeconds": true,
+    "finishWhenExit": false
+  },
+  "retailVisualAlignment": {
+    "evidenceClass": "candidate_only",
+    "candidateRestartPts": 37883,
+    "candidateBasis": "first Li Zhiyan visible exact-PTS frame",
+    "mappedSamples": [
+      {
+        "retailPts": 38000,
+        "phase": "broad_effect_active",
+        "candidateElapsedSinceRestartSeconds": 0.117,
+        "candidateStartClipLocalSeconds": 0.179452073,
+        "compatibilityFingerEffectWindow": "inactive",
+        "visibleAdmission": false
+      },
+      {
+        "retailPts": 40000,
+        "phase": "broad_teal_peak",
+        "candidateElapsedSinceRestartSeconds": 2.117,
+        "candidateStartClipLocalSeconds": 2.179452073,
+        "compatibilityFingerEffectWindow": "active",
+        "visibleAdmission": false
+      },
+      {
+        "retailPts": 42000,
+        "phase": "broad_effect_late",
+        "candidateElapsedSinceRestartSeconds": 4.117,
+        "candidateStartClipLocalSeconds": 4.179452073,
+        "compatibilityFingerEffectWindow": "inactive",
+        "visibleAdmission": false
+      },
+      {
+        "retailPts": 43000,
+        "phase": "compact_teal_trail",
+        "candidateElapsedSinceRestartSeconds": 5.117,
+        "candidateStartClipLocalSeconds": 5.179452073,
+        "compatibilityFingerEffectWindow": "inactive",
+        "visibleAdmission": false
+      },
+      {
+        "retailPts": 44000,
+        "phase": "trail_decay",
+        "candidateElapsedSinceRestartSeconds": 6.117,
+        "candidateStartClipLocalSeconds": 6.179452073,
+        "compatibilityFingerEffectWindow": "inactive",
+        "visibleAdmission": false
+      },
+      {
+        "retailPts": 46000,
+        "phase": "settled_no_substantial_teal",
+        "candidateElapsedSinceRestartSeconds": 8.117,
+        "candidateStartClipLocalSeconds": 8.179452073,
+        "compatibilityFingerEffectWindow": "inactive",
+        "visibleAdmission": false
+      }
+    ],
+    "diagnosticMismatch": "PTS 42000 retains measured teal after the compatibility finger-effect root would have been destroyed at candidate PTS 41049; the one recovered finger effect cannot explain the full retail teal chronology by itself."
+  },
+  "remainingEvidence": [
+    "original retail producer and timestamp for the entrance-effect request",
+    "the other eleven serialized Li Zhiyan entrance-effect bindings",
+    "same-generation Unity capture keyed to an explicit restart PTS",
+    "HGMesh-to-descriptor/draw/present identity for visible material admission"
+  ],
+  "nonClaims": [
+    "first visible Li Zhiyan frame is not proof of the retail controller restart event",
+    "the lab's same-call request publication is compatibility behavior, not recovered retail chronology",
+    "timing alignment never admits the fail-closed VFX materials"
+  ]
+}
