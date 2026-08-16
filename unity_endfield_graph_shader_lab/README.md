@@ -4153,19 +4153,22 @@ the sole confirmed `0x180FF8020` callback reference, and registers it through
 `0x180555D30 -> 0x1805573D0 -> 0x180559520`. The primary path supplies source
 `+0x00/+0x08/+0x10`; internal-call index 399,
 `HGMeshRender.CreateRendererListFromEntities_Injected`, reaches the same owner
-through `0x18104EC20`. Only population of the caller-supplied M0/M1 tables
-before this owner remains unresolved, so the Li branch stays deliberately
-unselected.
+through `0x18104EC20`. This path transports already-populated M0/M1 tables and
+does not construct their entries.
 The tables are no longer anonymous. Slot-0x14 root `+0x90` is the
 `HGShadingStateSystem` built by `0x1810AFC80`; `0x1810AEEA0` initializes its
 `+0x28` table and the finalizer proves 0x60-byte entries. Root `+0xA0` is the
 `HGGeometrySystem` built by `0x181091DC0`; `0x1810914A0` initializes its
 0x38-byte table. Root construction injects these exact objects into HGMesh
 manager `+0x50/+0x58`, closing their transport through the job and finalizer.
-`HGShadingStateSystem.GetOrCreatePerMaterialCBHandle` selects the same M0
-entry, but its inspected path reads resource state rather than writing
-descriptor D at `entry+0x28`. Concrete shading/geometry entry population is
-still fail-closed.
+M0 entry population is now source-closed. `0x1810B9990` performs
+material-handle lookup/insertion, clears a new 0x60-byte entry, and calls
+`0x18109C9D0` at `0x1810B9C5C`. That function repeats the M0 hash lookup and
+writes its native material/shading-state object to `entry+0x28` at
+`0x18109CA2F`; the two direct insertion callers are `0x1811E1A24` and
+`0x18131B76B`. `GetOrCreatePerMaterialCBHandle` is a downstream consumer.
+M1 concrete population and the Li-specific M0 handle/object-to-`D+0x450` mode
+join remain fail-closed, so the Li branch stays deliberately unselected.
 The same contract pins `SetManual(bool)`, `ManualEvaluate(float)`,
 `SyncProgress(float)`, time-scale/start-duration/start-
 scale setters, Stop, OnDisable, and OnRelease. Their decoded fallback bodies
