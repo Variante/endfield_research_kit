@@ -1,0 +1,277 @@
+{
+  "schema": "endfield.lizhiyan-visual-capture-spec.v1",
+  "status": "diagnostic_only",
+  "comparisonOnly": true,
+  "eventOriginProven": false,
+  "eventOriginStatus": "visual_alignment_candidate_not_original_event_proof",
+  "visibleAdmission": false,
+  "sources": {
+    "retailOracle": {
+      "path": "videos/2026-08-15_10-32-32.mkv",
+      "bytes": 1678613397,
+      "sha256": "2F542A3BE7CE3332295D3A841FD8613C62707E084F9E33A0F156DA8A06EBF5E7",
+      "dimensions": [
+        3840,
+        2160
+      ],
+      "timeBase": "1/1000",
+      "oraclePath": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/ShaderEvidence/LiZhiyanOverviewFinger/lizhiyan_retail_visual_oracle.json",
+      "oracleSha256": "D6C8640AFCD28C00FA27597AF8E9A9D1EA90A1707D77099FD47EEC7CA50D0DDD"
+    },
+    "timingAlignment": {
+      "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/ShaderEvidence/LiZhiyanOverviewFinger/lizhiyan_overview_timing_alignment.json",
+      "sha256": "6269CCE410373C033B49E6DFF37C8AD943204600BAB736514B5A42729C00C436",
+      "schema": "endfield.lizhiyan-overview-timing-alignment.v1",
+      "status": "source_timing_closed_retail_request_epoch_pending",
+      "visibleAdmission": false,
+      "sourceHashes": [
+        {
+          "name": "effect",
+          "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/Effects/lizhiyan_overview_finger_effect.json",
+          "sha256": "DD142A7A093644FD548FBA18601791CCC7D6C4E83060035DADAC31BC30312375"
+        },
+        {
+          "name": "prefab",
+          "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Lizhiyan/Prefabs/Lizhiyan.prefab",
+          "sha256": "9B3B399A1D4B116BD735858C7A7E95E1D9E8E13D71197D129FF3D8C371B61B4B"
+        },
+        {
+          "name": "startClip",
+          "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Lizhiyan/Animations/A_actor_lizhiyan_ui_overview_start_01.anim",
+          "sha256": "5BE556A7AE9E2E6DF4E317129C19D90B2D76DD1DD1A3C871FF6BED8945EAF27E"
+        },
+        {
+          "name": "staticAnimation",
+          "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/Effects/A_fxui__lizhiyan_overview_start_01.anim",
+          "sha256": "C1D7846FB29A9AF720B2760BA2EEA97B870CAC8DF101DADE797A2301778FF920"
+        },
+        {
+          "name": "staticSiblings",
+          "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/Effects/lizhiyan_overview_start_02_03_effects.json",
+          "sha256": "14C875115B8354C6A4066FC47C77E4912532016DEDEE829DAF700729FD8663F6"
+        },
+        {
+          "name": "staticStart01",
+          "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/Effects/lizhiyan_overview_start_01_effect.json",
+          "sha256": "EF68E7B93DECC8988904406C957F8F0FD51A0D677AD061E7E2EEB820878A6CB4"
+        },
+        {
+          "name": "visualOracle",
+          "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/ShaderEvidence/LiZhiyanOverviewFinger/lizhiyan_retail_visual_oracle.json",
+          "sha256": "D6C8640AFCD28C00FA27597AF8E9A9D1EA90A1707D77099FD47EEC7CA50D0DDD"
+        }
+      ]
+    }
+  },
+  "clock": {
+    "retailTimeBase": "1/1000",
+    "restartCandidatePts": 37967,
+    "restartCandidateLocalSeconds": 0.0,
+    "localTimeMapping": "localSeconds=(retailPts-37967)/1000",
+    "mappingPrecision": "integer retail milliseconds mapped to six-decimal local seconds"
+  },
+  "effectLifetimes": [
+    {
+      "effectRoot": "P_fxui_lizhiyan_overview_start_01",
+      "durationSeconds": 2.2,
+      "startRetailPts": 37967,
+      "endRetailPts": 40167,
+      "startLocalSeconds": 0.0,
+      "endLocalSeconds": 2.2
+    },
+    {
+      "effectRoot": "P_fxui_lizhiyan_overview_start_02",
+      "durationSeconds": 5.0,
+      "startRetailPts": 37967,
+      "endRetailPts": 42967,
+      "startLocalSeconds": 0.0,
+      "endLocalSeconds": 5.0
+    },
+    {
+      "effectRoot": "P_fxui_lizhiyan_overview_start_03",
+      "durationSeconds": 7.0,
+      "startRetailPts": 37967,
+      "endRetailPts": 44967,
+      "startLocalSeconds": 0.0,
+      "endLocalSeconds": 7.0
+    }
+  ],
+  "sharedMaterialClip": {
+    "name": "A_fxui__lizhiyan_overview_start_01",
+    "sampleRate": 30.0,
+    "lengthSeconds": 6.366667,
+    "endRetailPts": 44333.667,
+    "nearestCapturePts": 44334,
+    "nearestCaptureLocalSeconds": 6.367
+  },
+  "dynamicKeyWindows": [
+    {
+      "effectRoot": "P_fxui_lizhiyan_overview_start_01",
+      "firstDynamicKeySeconds": 0.2,
+      "firstDynamicKeyCandidatePts": 38167,
+      "lastDynamicKeySeconds": 1.966667,
+      "lastDynamicKeyCandidatePts": 39934
+    },
+    {
+      "effectRoot": "P_fxui_lizhiyan_overview_start_02",
+      "firstDynamicKeySeconds": 2.866667,
+      "firstDynamicKeyCandidatePts": 40834,
+      "lastDynamicKeySeconds": 4.0,
+      "lastDynamicKeyCandidatePts": 41967
+    },
+    {
+      "effectRoot": "P_fxui_lizhiyan_overview_start_03",
+      "firstDynamicKeySeconds": 1.4,
+      "firstDynamicKeyCandidatePts": 39367,
+      "lastDynamicKeySeconds": 6.366667,
+      "lastDynamicKeyCandidatePts": 44334
+    }
+  ],
+  "minimalCapturePts": [
+    37967,
+    38000,
+    38167,
+    38183,
+    39934,
+    40000,
+    40167,
+    40834,
+    40867,
+    41967,
+    42000,
+    42467,
+    42967,
+    43000,
+    43900,
+    44000,
+    44334,
+    44967,
+    46000
+  ],
+  "captures": [
+    {
+      "retailPts": 37967,
+      "timeBase": "1/1000",
+      "localSeconds": 0.0,
+      "phase": "candidate_restart"
+    },
+    {
+      "retailPts": 38000,
+      "timeBase": "1/1000",
+      "localSeconds": 0.033,
+      "phase": "lizhiyan_transition_visible_pre_distinct_teal"
+    },
+    {
+      "retailPts": 38167,
+      "timeBase": "1/1000",
+      "localSeconds": 0.2,
+      "phase": "start_01_first_dynamic_key_candidate"
+    },
+    {
+      "retailPts": 38183,
+      "timeBase": "1/1000",
+      "localSeconds": 0.216,
+      "phase": "start_01_first_unambiguous_teal_slab"
+    },
+    {
+      "retailPts": 39934,
+      "timeBase": "1/1000",
+      "localSeconds": 1.967,
+      "phase": "start_01_last_dynamic_key_candidate"
+    },
+    {
+      "retailPts": 40000,
+      "timeBase": "1/1000",
+      "localSeconds": 2.033,
+      "phase": "broad_teal_peak"
+    },
+    {
+      "retailPts": 40167,
+      "timeBase": "1/1000",
+      "localSeconds": 2.2,
+      "phase": "start_01_lifetime_end"
+    },
+    {
+      "retailPts": 40834,
+      "timeBase": "1/1000",
+      "localSeconds": 2.867,
+      "phase": "start_02_first_dynamic_key_candidate_path_3"
+    },
+    {
+      "retailPts": 40867,
+      "timeBase": "1/1000",
+      "localSeconds": 2.9,
+      "phase": "start_02_first_dynamic_key_candidate_paths_0_1"
+    },
+    {
+      "retailPts": 41967,
+      "timeBase": "1/1000",
+      "localSeconds": 4.0,
+      "phase": "start_02_last_dynamic_key"
+    },
+    {
+      "retailPts": 42000,
+      "timeBase": "1/1000",
+      "localSeconds": 4.033,
+      "phase": "broad_effect_late"
+    },
+    {
+      "retailPts": 42467,
+      "timeBase": "1/1000",
+      "localSeconds": 4.5,
+      "phase": "start_03_next_material_wave"
+    },
+    {
+      "retailPts": 42967,
+      "timeBase": "1/1000",
+      "localSeconds": 5.0,
+      "phase": "start_02_lifetime_end"
+    },
+    {
+      "retailPts": 43000,
+      "timeBase": "1/1000",
+      "localSeconds": 5.033,
+      "phase": "compact_teal_trail"
+    },
+    {
+      "retailPts": 43900,
+      "timeBase": "1/1000",
+      "localSeconds": 5.933,
+      "phase": "start_03_tail_dynamic_key"
+    },
+    {
+      "retailPts": 44000,
+      "timeBase": "1/1000",
+      "localSeconds": 6.033,
+      "phase": "trail_decay"
+    },
+    {
+      "retailPts": 44334,
+      "timeBase": "1/1000",
+      "localSeconds": 6.367,
+      "phase": "shared_material_clip_end_nearest_frame"
+    },
+    {
+      "retailPts": 44967,
+      "timeBase": "1/1000",
+      "localSeconds": 7.0,
+      "phase": "start_03_lifetime_end"
+    },
+    {
+      "retailPts": 46000,
+      "timeBase": "1/1000",
+      "localSeconds": 8.033,
+      "phase": "settled_no_substantial_teal"
+    }
+  ],
+  "diagnosticNotes": [
+    "Capture points are comparison anchors, not proof of the original effect-request event.",
+    "The current compatibility finger effect is active only at candidate PTS 38800..41134 and cannot explain measured teal at PTS 42000.",
+    "The oracle hashes scaled RGB frames and fixed ROI measurements; they do not identify material, renderer-list, descriptor, draw, or submit ownership."
+  ],
+  "nonClaims": [
+    "event origin and request timestamp remain unproven",
+    "visible retail admission remains false",
+    "ordinary Renderer identity is not equated with an HGTree survivor/resource identity"
+  ]
+}

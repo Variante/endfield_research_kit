@@ -4084,6 +4084,20 @@ reports non-equivalence and no visible admission. Its optional renderer probe
 records only source PathID, hierarchy, Unity instance ID, and frame for a
 future compatible capture; those values are not treated as native/HGTree
 identity.
+The separate start_01 diagnostic prefab importer now hash-checks and imports
+the exact shared OBJ, matching Animator FBX, eight converted textures, and
+resolved animation clip. It reconstructs the four serialized nodes and their
+Renderer/Filter/Material PathIDs, then applies supported material properties
+to `VFXBaseV2SampleStack`. The current build applies 171 properties and reports
+726 unsupported entries. This prefab is never registered as a normal actor
+effect and keeps source/native payload, exact shader, and visible admission
+false.
+
+`tools/build_lizhiyan_visual_capture_spec.py` pins the deterministic comparison
+clock and 19 retail PTS anchors. Candidate PTS 37967 maps to local zero;
+start_01/_02/_03 end at 40167/42967/44967, and the shared clip ends nearest
+44334. These are diagnostic alignment coordinates, not proof of the original
+request timestamp or draw ownership.
 The same contract pins `SetManual(bool)`, `ManualEvaluate(float)`,
 `SyncProgress(float)`, time-scale/start-duration/start-
 scale setters, Stop, OnDisable, and OnRelease. Their decoded fallback bodies
