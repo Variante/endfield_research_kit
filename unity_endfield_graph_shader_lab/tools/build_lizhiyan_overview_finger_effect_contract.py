@@ -23,6 +23,9 @@ from build_lastrite_overview_head_effect_contract import (
 
 LAB_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_SOURCE = REPO_ROOT / "scratch/character_recovery/lizhiyan_trail_candidate"
+DEFAULT_NATIVE_TEXTURE_ROOT = (
+    REPO_ROOT / "scratch/character_recovery/lizhiyan_native_textures/export/Texture2D"
+)
 DEFAULT_OUTPUT = (
     LAB_ROOT / "Assets/EndfieldGraphShaderLab/Generated/OriginalData/Effects"
     / "lizhiyan_overview_finger_effect.json"
@@ -30,9 +33,54 @@ DEFAULT_OUTPUT = (
 EFFECT_NAME = "P_fxui_lizhiyan_overview_trails_Bip001_R_Finger2Nub"
 
 
+def resolve_native_texture_payloads(root: Path, texture_ids: set[int]) -> list[dict[str, Any]]:
+    rows: dict[int, dict[str, Any]] = {}
+    for manifest_path in sorted(root.glob("*.texture2d.*.manifest.json")):
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        path_id = int(manifest.get("pathId") or 0)
+        if path_id not in texture_ids:
+            continue
+        require(path_id not in rows, f"duplicate native texture payload for {path_id}")
+        require(manifest.get("schema") == "animestudio.texture2d-native-payload.v1", "native texture schema drifted")
+        require(manifest.get("format") == "BC7", f"native texture {path_id} is not BC7")
+        require(manifest.get("mipsStripped") == 0, f"native texture {path_id} has stripped mips")
+        require(manifest.get("imageCount") == 1 and manifest.get("textureDimension") == 2,
+                f"native texture {path_id} is not a single 2D image")
+        payload_info = manifest.get("payload") or {}
+        require(payload_info.get("layoutValidated") is True, f"native texture {path_id} layout is unvalidated")
+        payload_path = manifest_path.with_name(str(payload_info.get("file") or ""))
+        require(payload_path.is_file(), f"missing native texture payload for {path_id}")
+        require(payload_path.stat().st_size == int(payload_info.get("bytes") or -1),
+                f"native texture {path_id} byte count drifted")
+        require(sha256(payload_path) == str(payload_info.get("sha256") or "").upper(),
+                f"native texture {path_id} hash drifted")
+        rows[path_id] = {
+            "pathID": path_id,
+            "name": manifest.get("name"),
+            "format": manifest.get("format"),
+            "width": manifest.get("width"),
+            "height": manifest.get("height"),
+            "mipCount": manifest.get("mipCount"),
+            "colorSpace": manifest.get("colorSpace"),
+            "textureSettings": manifest.get("textureSettings"),
+            "payload": {
+                "path": payload_path.resolve().relative_to(REPO_ROOT.resolve()).as_posix(),
+                "bytes": payload_path.stat().st_size,
+                "sha256": sha256(payload_path),
+                "objectType": "Texture2DNativePayload",
+                "pathID": path_id,
+            },
+            "manifest": artifact(manifest_path, "Texture2DNativePayloadManifest"),
+            "mipDimensions": payload_info.get("mipDimensions"),
+        }
+    require(set(rows) == texture_ids, "native texture payload set does not match material references")
+    return [rows[path_id] for path_id in sorted(rows)]
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--source-root", type=Path, default=DEFAULT_SOURCE)
+    parser.add_argument("--native-texture-root", type=Path, default=DEFAULT_NATIVE_TEXTURE_ROOT)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     args = parser.parse_args()
 
@@ -139,6 +187,10 @@ def main() -> int:
     require({row["shaderPathID"] for row in material_rows} == {-1430105248647086886}, "shader identity drifted")
     texture_dependencies = resolve_textures(texture_ids)
     artifact_paths.extend(REPO_ROOT / row["convertedPng"]["path"] for row in texture_dependencies)
+    native_texture_payloads = resolve_native_texture_payloads(args.native_texture_root, texture_ids)
+    for row in native_texture_payloads:
+        artifact_paths.append(REPO_ROOT / row["payload"]["path"])
+        artifact_paths.append(REPO_ROOT / row["manifest"]["path"])
 
     aggregate = hashlib.sha256()
     for path in sorted(set(artifact_paths), key=lambda value: value.as_posix().casefold()):
@@ -147,7 +199,7 @@ def main() -> int:
         aggregate.update(bytes.fromhex(sha256(path)))
 
     output: dict[str, Any] = {
-        "schema": "endfield.lizhiyan-overview-finger-effect.v1",
+        "schema": "endfield.lizhiyan-overview-finger-effect.v2",
         "status": "source_serialized_payload_closed_visual_shaders_fail_closed",
         "effectName": EFFECT_NAME,
         "mountPoint": "Bip001_R_Finger2Nub",
@@ -156,8 +208,9 @@ def main() -> int:
         "effectSetting": {"source": artifact(setting_path, "EffectSetting"), "fields": source_payload(setting), "timing": timing},
         "hierarchyNodes": hierarchy_nodes, "particlePairs": particle_pairs, "materials": material_rows,
         "textureDependencyBoundary": {"uniquePathIDs": sorted(texture_ids), "textures": texture_dependencies,
-            "status": "assetmap_identity_and_converted_png_closed_native_mip_payload_pending"},
-        "executionBoundary": "Hierarchy, transforms, timing, particle payloads, material payloads, and converted texture identities are source-closed. Materials remain ColorMask-0 until the selected retail VFXBaseV2 draw/PSO/MRT and native sampling contract is admitted.",
+            "nativePayloads": native_texture_payloads,
+            "status": "assetmap_converted_png_and_bc7_native_mip_sampling_metadata_closed"},
+        "executionBoundary": "Hierarchy, transforms, timing, particle payloads, material payloads, converted texture identities, original BC7 mip chains, and serialized sampler settings are source-closed. Materials remain ColorMask-0 until the selected retail VFXBaseV2 variant, descriptors, draw/PSO/MRT, depth, and compositing contract is admitted.",
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(output, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

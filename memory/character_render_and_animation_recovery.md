@@ -1493,11 +1493,17 @@ only stable interpretation and priorities.
    non-Zhuangfy executable Overview prefab: 8 hierarchy nodes, 7 particle
    pairs, 6 VFXBaseV2 materials, 8 resolved texture identities, exact
    `0.83333/2.33333 s` timing, and unique `Bip001_R_Finger2Nub` binding pass
-   Unity validation. All 12 controller requests are preserved; the other 11
+   Unity validation. A focused installed-VFS export now also closes all eight
+   original BC7 payloads: every single-image 2D mip chain has zero stripped
+   mips, exporter-validated byte layout, payload hash, dimensions, color-space,
+   and serialized filter/aniso/bias/wrap settings pinned in contract schema v2.
+   All 12 controller requests are preserved; the other 11
    remain explicitly unbound. Its `38-47 s` retail slot, especially the
    hand-adjacent teal layer near 40 seconds, is the current strongest visual
-   acceptance window, but visible admission still requires the exact retail
-   PSO/descriptors/native mip and ForwardOnly MRT/depth scheduling contract.
+   acceptance window, but native bytes do not identify a draw. Visible
+   admission still requires the exact retail VFXBaseV2 specialization,
+   descriptor binding, PSO, ForwardOnly MRT/depth scheduling, and compositing
+   contract.
    Wulfa `bishou_wind3` is next after that boundary because its visible
    purple/red wind trail mixes VFXRefract and VFXBaseV2 families.
 6. Add controller, grounding, facial, FX, and secondary systems behind
