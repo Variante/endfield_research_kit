@@ -69,6 +69,12 @@ def test_topology() -> None:
     )
     assert applicability["visibleAdmission"] is False
     assert contract["labBoundary"]["standardAnimationMixerPlayableIsExactSubstitute"] is False
+    simulation = contract["labBoundary"]["behavioralSimulation"]
+    assert simulation["mode"] == "behavioral_simulation"
+    assert simulation["backend"] == "stock AnimationMixerPlayable"
+    assert simulation["retailAbiEquivalent"] is False
+    assert simulation["nativeRendererMappingClaimed"] is False
+    assert simulation["visibleAdmission"] is False
     abi = contract["effectAnimationControlAbi"]
     patch = abi["installedPatchState"]
     assert patch["patchBytes"] == 86926
@@ -91,6 +97,16 @@ def test_topology() -> None:
     assert ownership["ordinaryRendererNativeIdentity"]["tableIndex"] == 1278
     assert ownership["ordinaryRendererNativeIdentity"]["nativeEntityIdOffset"] == "0x268"
     assert ownership["ordinaryRendererNativeIdentity"]["directManagedCallersInGameAssemblyText"] == 0
+    resource_route = ownership["ordinaryRendererNativeIdentity"]["persistentResourceRoute"]
+    assert resource_route["rendererCache"] == "native_renderer+0x140+index*0x10"
+    assert resource_route["componentKeyOffset"] == "0x268"
+    assert resource_route["componentValidityOffset"] == "0x26C"
+    assert resource_route["resolverVA"] == "0x1804255F0"
+    assert resource_route["resourceDestination"] == "resolved_resource+0xB0+index*0x10"
+    assert resource_route["characterParamsRendererOffset"] == "0x160"
+    assert resource_route["characterParamsResourceOffset"] == "0xD0"
+    assert resource_route["hgtreeContextArrayEquivalent"] is False
+    assert resource_route["resourceToDescriptorUploadProven"] is False
     assert ownership["hgMeshRendererComparison"]["nativeEntityOffset"] == "0x50"
     assert ownership["hgMeshRendererComparison"]["ordinaryRendererEquivalent"] is False
     assert [row["rendererPathIDs"] for row in ownership["serializedBindings"]] == [
