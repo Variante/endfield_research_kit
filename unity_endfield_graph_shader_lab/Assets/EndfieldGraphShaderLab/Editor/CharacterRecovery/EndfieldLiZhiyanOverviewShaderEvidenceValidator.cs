@@ -191,6 +191,7 @@ namespace EndfieldGraphShaderLabEditor
             Dictionary<string, object> passInputOffsets = L.Dict(rendererList["passInputOffsets"]);
             Dictionary<string, object> ecsProducer = L.Dict(rendererList["ecsRendererListProducer"]);
             Dictionary<string, object> nativeAdapter = L.Dict(ecsProducer["nativeAdapter"]);
+            Dictionary<string, object> commandConsumer = L.Dict(nativeAdapter["commandConsumer"]);
             L.Require(L.Str(boundary, "callbackConstantBufferPublication") == "not_present" &&
                 L.Str(boundary, "callbackGlobalVectorAndTexturePublication") == "present" &&
                 !L.Bool(boundary, "serializedBindingsAreD3D12RootParameters") &&
@@ -237,6 +238,11 @@ namespace EndfieldGraphShaderLabEditor
                 L.Str(nativeAdapter, "registrationCoreVA") == "0x18104e300" &&
                 L.Str(nativeAdapter, "resourceRecordBuilderVA") == "0x18104e920" &&
                 L.Str(nativeAdapter, "behavior").Contains("contains no entity iteration") &&
+                L.Str(commandConsumer, "opcode") == "0x4e" &&
+                L.Str(commandConsumer, "managerSingletonOffset") == "0xb0" &&
+                L.Long(commandConsumer, "slotStride") == 16 &&
+                L.Str(commandConsumer, "consumerVA") == "0x181005c10" &&
+                L.Str(commandConsumer, "excludedParallelFamily").Contains("HGTree") &&
                 !L.Bool(consumers, "opaqueArgument") &&
                 L.Str(consumers, "frameSettingsGate") == "TransparentObjects" &&
                 L.Str(consumers, "survivorIdentity") ==
