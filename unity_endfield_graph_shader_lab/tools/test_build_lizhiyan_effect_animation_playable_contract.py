@@ -61,6 +61,13 @@ def test_topology() -> None:
     assert start_only["weightsOnStart"] == [1.0, 0.0, 0.0]
     assert start_only["slot0Operations"] == ["Play", "SetTime(0.0)"]
     assert start_only["crossFade"] is False
+    applicability = topology["liZhiyanAdvancedApplicability"]
+    assert applicability["advancedMixerCreation"] == "proven_applicable"
+    assert applicability["customStageTimelineLiActivation"] == "not_proven_fail_closed"
+    assert applicability["serializedStageProducer"] == (
+        "not_found_in_start01_start02_start03_effect_roots"
+    )
+    assert applicability["visibleAdmission"] is False
     assert contract["labBoundary"]["standardAnimationMixerPlayableIsExactSubstitute"] is False
     abi = contract["effectAnimationControlAbi"]
     patch = abi["installedPatchState"]

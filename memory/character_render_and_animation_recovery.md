@@ -1724,6 +1724,15 @@ only stable interpretation and priorities.
    and the unique native scheduler dispatch remain unresolved. Public Playable
    APIs cannot represent this ABI; exact recovery requires a native custom
    node/shim or a complete managed behavioral rewrite labeled non-ABI-equivalent.
+   Applicability is now split rather than inferred wholesale. All three Li
+   roots prove the Advanced mixer creation, three-input graph, and start-only
+   one-hot control. They do not serialize a producer for the native context's
+   active gate, stage table, bound, or current-stage fields, so activation of
+   the four-mode custom timeline remains `not_proven_fail_closed`. The
+   2.2/5/7-second `EffectSetting` lifetimes are outer destruction boundaries,
+   not evidence of mixer stages or clip retiming. Do not inject that stage
+   behavior into Li; a stock-mixer implementation may only be an explicitly
+   labeled external-behavior simulation and cannot raise visible admission.
    The managed graph control is now closed beyond construction. `_AddClip`
    connects each non-null clip from output port zero to mixer input
    `animationState-1`; Li's null loop/end return before connection. On every

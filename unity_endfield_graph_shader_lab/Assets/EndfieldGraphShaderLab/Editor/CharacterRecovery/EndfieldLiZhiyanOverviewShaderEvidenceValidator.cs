@@ -182,6 +182,8 @@ namespace EndfieldGraphShaderLabEditor
                 L.Dict(topology["playAnimationStateMachine"]);
             Dictionary<string, object> startOnly =
                 L.Dict(topology["liZhiyanStartOnlyEffectiveRoute"]);
+            Dictionary<string, object> advancedApplicability =
+                L.Dict(topology["liZhiyanAdvancedApplicability"]);
             Dictionary<string, object> controlAbi =
                 L.Dict(contract["effectAnimationControlAbi"]);
             Dictionary<string, object> controlMethods = L.Dict(controlAbi["methods"]);
@@ -278,6 +280,12 @@ namespace EndfieldGraphShaderLabEditor
                 Mathf.Abs(Convert.ToSingle(L.List(startOnly["weightsOnStart"])[0]) - 1.0f) < 0.000001f &&
                 !L.Bool(startOnly, "crossFade") &&
                 L.Str(startOnly, "classification") == "retail_start_only_graph_control_closed" &&
+                L.Str(advancedApplicability, "advancedMixerCreation") == "proven_applicable" &&
+                L.Str(advancedApplicability, "customStageTimelineLiActivation") ==
+                    "not_proven_fail_closed" &&
+                L.Str(advancedApplicability, "serializedStageProducer") ==
+                    "not_found_in_start01_start02_start03_effect_roots" &&
+                !L.Bool(advancedApplicability, "visibleAdmission") &&
                 L.Str(manualEvaluate, "token") == "0x060059D2" &&
                 L.Str(manualEvaluate, "va") == "0x187431CB0" &&
                 L.List(manualEvaluate["parameters"]).Count == 1 &&

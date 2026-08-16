@@ -429,6 +429,31 @@ def build() -> dict[str, Any]:
                 "crossFade": False,
                 "classification": "retail_start_only_graph_control_closed",
             },
+            "liZhiyanAdvancedApplicability": {
+                "advancedMixerCreation": "proven_applicable",
+                "threeInputGraph": "proven_applicable",
+                "startOnlyConnectAndOneHotControl": "proven_applicable",
+                "customStageTimelineRuntimeExists": True,
+                "customStageTimelineLiActivation": "not_proven_fail_closed",
+                "serializedStageProducer": "not_found_in_start01_start02_start03_effect_roots",
+                "serializedFacts": {
+                    "rootAnimator": True,
+                    "effectAnimationHelper": True,
+                    "controller": None,
+                    "avatar": None,
+                    "effectSettingLifetimesSeconds": [2.2, 5.0, 7.0],
+                    "sharedClipLengthSeconds": 6.366667,
+                },
+                "lifetimeInterpretation": (
+                    "EffectSetting destruction boundaries do not prove mixer stage count, clip retiming, "
+                    "or native custom-timeline population"
+                ),
+                "backendDecision": (
+                    "do not inject custom stage behavior into Li; stock mixer may host an explicitly "
+                    "labeled proven-external-behavior simulation but is not retail ABI equivalent"
+                ),
+                "visibleAdmission": False,
+            },
         },
         "retailAdvancedMixerNative": {
             **unityplayer["advancedMixerCreate"],
