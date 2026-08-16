@@ -261,7 +261,7 @@ namespace EndfieldGraphShaderLabEditor
                 "all 6 VFXBaseV2 materials fail-closed");
         }
 
-        private static void EnsureFolder(string path)
+        internal static void EnsureFolder(string path)
         {
             string[] parts = path.Split('/');
             string current = parts[0];
@@ -274,60 +274,60 @@ namespace EndfieldGraphShaderLabEditor
             }
         }
 
-        private static string ProjectAbsolute(string path) =>
+        internal static string ProjectAbsolute(string path) =>
             Path.GetFullPath(Path.Combine(Application.dataPath, "..", path));
 
         private static string RepoAbsolute(string path) =>
             Path.GetFullPath(Path.Combine(Application.dataPath, "..", "..", path));
 
-        private static string Safe(string value) =>
+        internal static string Safe(string value) =>
             string.Concat(value.Select(ch => Path.GetInvalidFileNameChars().Contains(ch) ? '_' : ch));
 
-        private static Dictionary<string, object> Dict(object value) =>
+        internal static Dictionary<string, object> Dict(object value) =>
             value as Dictionary<string, object> ?? throw new InvalidOperationException("Expected object");
 
-        private static IList List(object value) =>
+        internal static IList List(object value) =>
             value as IList ?? throw new InvalidOperationException("Expected array");
 
-        private static string Str(Dictionary<string, object> value, string key) =>
+        internal static string Str(Dictionary<string, object> value, string key) =>
             value.TryGetValue(key, out object result) ? Convert.ToString(result, CultureInfo.InvariantCulture) : string.Empty;
 
-        private static long Long(Dictionary<string, object> value, string key) =>
+        internal static long Long(Dictionary<string, object> value, string key) =>
             value.TryGetValue(key, out object result) ? Convert.ToInt64(result, CultureInfo.InvariantCulture) : 0L;
 
-        private static int Int(Dictionary<string, object> value, string key) =>
+        internal static int Int(Dictionary<string, object> value, string key) =>
             checked((int)Long(value, key));
 
-        private static bool Bool(Dictionary<string, object> value, string key) =>
+        internal static bool Bool(Dictionary<string, object> value, string key) =>
             value.TryGetValue(key, out object result) && Convert.ToBoolean(result, CultureInfo.InvariantCulture);
 
-        private static float Float(Dictionary<string, object> value, string key) =>
+        internal static float Float(Dictionary<string, object> value, string key) =>
             value.TryGetValue(key, out object result) ? Convert.ToSingle(result, CultureInfo.InvariantCulture) : 0f;
 
-        private static long PPtrId(object value) =>
+        internal static long PPtrId(object value) =>
             value is Dictionary<string, object> row ? Long(row, "m_PathID") : 0L;
 
-        private static long[] PPtrIds(object value) =>
+        internal static long[] PPtrIds(object value) =>
             List(value).Cast<object>().Select(PPtrId).Where(identity => identity != 0).ToArray();
 
         private static float Number(Dictionary<string, object> value, string lower, string upper) =>
             value.TryGetValue(lower, out object result) || value.TryGetValue(upper, out result)
                 ? Convert.ToSingle(result, CultureInfo.InvariantCulture) : 0f;
 
-        private static Vector3 Vector3Value(object value)
+        internal static Vector3 Vector3Value(object value)
         {
             Dictionary<string, object> row = Dict(value);
             return new Vector3(Number(row, "x", "X"), Number(row, "y", "Y"), Number(row, "z", "Z"));
         }
 
-        private static Quaternion QuaternionValue(object value)
+        internal static Quaternion QuaternionValue(object value)
         {
             Dictionary<string, object> row = Dict(value);
             return new Quaternion(Number(row, "x", "X"), Number(row, "y", "Y"),
                 Number(row, "z", "Z"), Number(row, "w", "W"));
         }
 
-        private static void Require(bool value, string message)
+        internal static void Require(bool value, string message)
         {
             if (!value)
                 throw new InvalidOperationException(message);

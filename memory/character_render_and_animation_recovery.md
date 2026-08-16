@@ -1489,6 +1489,17 @@ only stable interpretation and priorities.
    Last Rite's retail slot is `269.25-283.25 s`, but it is a weak per-effect
    oracle: no head/hand/thigh/ear particle pass is independently visible over
    the animation, costume/weapon geometry, cyan hair, and transition haze.
+   Li Zhiyan's independently AssetMap-proven finger effect is now the second
+   non-Zhuangfy executable Overview prefab: 8 hierarchy nodes, 7 particle
+   pairs, 6 VFXBaseV2 materials, 8 resolved texture identities, exact
+   `0.83333/2.33333 s` timing, and unique `Bip001_R_Finger2Nub` binding pass
+   Unity validation. All 12 controller requests are preserved; the other 11
+   remain explicitly unbound. Its `38-47 s` retail slot, especially the
+   hand-adjacent teal layer near 40 seconds, is the current strongest visual
+   acceptance window, but visible admission still requires the exact retail
+   PSO/descriptors/native mip and ForwardOnly MRT/depth scheduling contract.
+   Wulfa `bishou_wind3` is next after that boundary because its visible
+   purple/red wind trail mixes VFXRefract and VFXBaseV2 families.
 6. Add controller, grounding, facial, FX, and secondary systems behind
    source-validated fail-closed gates.
 7. Upgrade representative non-playable families before broad parity claims.
