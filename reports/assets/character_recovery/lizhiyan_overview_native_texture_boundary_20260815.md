@@ -25,8 +25,9 @@ and native manifests is
 This closes missing native texture bytes and sampler metadata, not retail draw
 ownership. The six exact materials use only three serialized keyword sets:
 no valid keyword, `_USE_SOFTBLEND`, and
-`_SAMPLE_TEX0 + _USE_SOFTBLEND`. Those material selections still do not prove
-the selected compiled VFXBaseV2 program, live descriptor table, PSO overrides,
+`_SAMPLE_TEX0 + _USE_SOFTBLEND`. Those material selections are now joined
+separately to the installed Persistent-VFS shader's three exact compiled
+VFXBaseV2 pairs. They still do not prove a retail live descriptor table, PSO overrides,
 ForwardOnly dual-MRT attachments, scene-depth handoff, ordering, or final
 compositing. All six generated materials therefore remain on ColorMask-0.
 

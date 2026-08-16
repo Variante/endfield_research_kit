@@ -1,0 +1,1029 @@
+{
+  "VectorParameters": [],
+  "MatrixParameters": [],
+  "TextureParameters": [],
+  "BufferParameters": [
+    {
+      "Name": "_VertexSkinMatrices",
+      "NameIndex": 37,
+      "Index": 18,
+      "ArraySize": 1
+    }
+  ],
+  "ConstantBufferParameters": [
+    {
+      "Name": "_TransformVariables",
+      "NameIndex": 0,
+      "MatrixParameters": [
+        {
+          "Name": "_ViewMatrix",
+          "NameIndex": 6,
+          "Index": 0,
+          "ArraySize": 0,
+          "Type": 0,
+          "RowCount": 4,
+          "ColumnCount": 4,
+          "IsMatrix": true
+        },
+        {
+          "Name": "_InvViewProjMatrix",
+          "NameIndex": 7,
+          "Index": 384,
+          "ArraySize": 0,
+          "Type": 0,
+          "RowCount": 4,
+          "ColumnCount": 4,
+          "IsMatrix": true
+        },
+        {
+          "Name": "_NonJitteredViewNoTransProjMatrix",
+          "NameIndex": 8,
+          "Index": 512,
+          "ArraySize": 0,
+          "Type": 0,
+          "RowCount": 4,
+          "ColumnCount": 4,
+          "IsMatrix": true
+        },
+        {
+          "Name": "_PrevNonJitteredViewNoTransProjMatrix",
+          "NameIndex": 9,
+          "Index": 912,
+          "ArraySize": 0,
+          "Type": 0,
+          "RowCount": 4,
+          "ColumnCount": 4,
+          "IsMatrix": true
+        }
+      ],
+      "VectorParameters": [
+        {
+          "Name": "_WorldSpaceCameraPos_Internal",
+          "NameIndex": 4,
+          "Index": 704,
+          "ArraySize": 0,
+          "Type": 0,
+          "RowCount": 4,
+          "ColumnCount": 1,
+          "IsMatrix": false
+        },
+        {
+          "Name": "_PrevCamPosRWS_Internal",
+          "NameIndex": 5,
+          "Index": 1296,
+          "ArraySize": 0,
+          "Type": 0,
+          "RowCount": 4,
+          "ColumnCount": 1,
+          "IsMatrix": false
+        }
+      ],
+      "StructParameters": [],
+      "Size": 1312,
+      "IsPartialCB": true
+    },
+    {
+      "Name": "ShaderVariablesGlobal",
+      "NameIndex": 1,
+      "MatrixParameters": [],
+      "VectorParameters": [
+        {
+          "Name": "_ScreenSize",
+          "NameIndex": 10,
+          "Index": 0,
+          "ArraySize": 0,
+          "Type": 0,
+          "RowCount": 4,
+          "ColumnCount": 1,
+          "IsMatrix": false
+        },
+        {
+          "Name": "_GlobalMipBias",
+          "NameIndex": 11,
+          "Index": 416,
+          "ArraySize": 0,
+          "Type": 0,
+          "RowCount": 1,
+          "ColumnCount": 1,
+          "IsMatrix": false
+        },
+        {
+          "Name": "_ExposureWithMiscParams",
+          "NameIndex": 12,
+          "Index": 432,
+          "ArraySize": 0,
+          "Type": 0,
+          "RowCount": 4,
+          "ColumnCount": 1,
+          "IsMatrix": false
+        },
+        {
+          "Name": "_VFXParams1",
+          "NameIndex": 13,
+          "Index": 1664,
+          "ArraySize": 0,
+          "Type": 0,
+          "RowCount": 4,
+          "ColumnCount": 1,
+          "IsMatrix": false
+        },
+        {
+          "Name": "_TaaJitterStrength",
+          "NameIndex": 14,
+          "Index": 304,
+          "ArraySize": 0,
+          "Type": 0,
+          "RowCount": 4,
+          "ColumnCount": 1,
+          "IsMatrix": false
+        },
+        {
+          "Name": "_VFXParams0",
+          "NameIndex": 15,
+          "Index": 1648,
+          "ArraySize": 0,
+          "Type": 0,
+          "RowCount": 4,
+          "ColumnCount": 1,
+          "IsMatrix": false
+        }
+      ],
+      "StructParameters": [],
+      "Size": 3200,
+      "IsPartialCB": true
+    },
+    {
+      "Name": "UnityPerMaterial",
+      "NameIndex": 2,
+      "MatrixParameters": [],
+      "VectorParameters": [
+        {
+          "Name": "_SurfaceType",
+          "NameIndex": 16,
+          "Index": 0,
+          "ArraySize": 0,
+          "Type": 0,
+          "RowCount": 1,
+          "ColumnCount": 1,
+          "IsMatrix": false
+        },
+        {
+          "Name": "_BlendMode",
+          "NameIndex": 17,
+          "Index": 4,
+          "ArraySize": 0,
+          "Type": 0,
+          "RowCount": 1,
+          "ColumnCount": 1,
+          "IsMatrix": false
+        },
+        {
+          "Name": "_Responsive",
+          "NameIndex": 18,
+          "Index": 8,
+          "ArraySize": 0,
+          "Type": 0,
+          "RowCount": 1,
+          "ColumnCount": 1,
+          "IsMatrix": false
+        },
+        {
+          "Name": "_EnableTransparentMV",
+          "NameIndex": 19,
+          "Index": 12,
+          "ArraySize": 0,
+          "Type": 0,
+          "RowCount": 1,
+          "ColumnCount": 1,
+          "IsMatrix": false
+        },
+        {
+          "Name": "_DisableVertColor",
+          "NameIndex": 20,
+          "Index": 20,
+          "ArraySize": 0,
+          "Type": 0,
+          "RowCount": 1,
+          "ColumnCount": 1,
+          "IsMatrix": false
+        },
+        {
+          "Name": "_TintColorIntensity",
+          "NameIndex": 21,
+          "Index": 24,
+          "ArraySize": 0,
+          "Type": 0,
+          "RowCount": 1,
+          "ColumnCount": 1,
+          "IsMatrix": false
+        },
+        {
+          "Name": "_TintColorAlpha",
+          "NameIndex": 22,
+          "Index": 28,
+          "ArraySize": 0,
+          "Type": 0,
+          "RowCount": 1,
+          "ColumnCount": 1,
+          "IsMatrix": false
+        },
+        {
+          "Name": "_ExpThreshold",
+          "NameIndex": 23,
+          "Index": 36,
+          "ArraySize": 0,
+          "Type": 0,
+          "RowCount": 1,
+          "ColumnCount": 1,
+          "IsMatrix": false
+        },
+        {
+          "Name": "_ExpIntensity",
+          "NameIndex": 24,
+          "Index": 40,
+          "ArraySize": 0,
+          "Type": 0,
+          "RowCount": 1,
+          "ColumnCount": 1,
+          "IsMatrix": false
+        },
+        {
+          "Name": "_IsSceneEffect",
+          "NameIndex": 25,
+          "Index": 44,
+          "ArraySize": 0,
+          "Type": 0,
+          "RowCount": 1,
+          "ColumnCount": 1,
+          "IsMatrix": false
+        },
+        {
+          "Name": "_IgnorePostExposure",
+          "NameIndex": 26,
+          "Index": 48,
+          "ArraySize": 0,
+          "Type": 0,
+          "RowCount": 1,
+          "ColumnCount": 1,
+          "IsMatrix": false
+        },
+        {
+          "Name": "_TintColor",
+          "NameIndex": 27,
+          "Index": 64,
+          "ArraySize": 0,
+          "Type": 0,
+          "RowCount": 4,
+          "ColumnCount": 1,
+          "IsMatrix": false
+        },
+        {
+          "Name": "_UseMainTexAsAlpha",
+          "NameIndex": 28,
+          "Index": 84,
+          "ArraySize": 0,
+          "Type": 0,
+          "RowCount": 1,
+          "ColumnCount": 1,
+          "IsMatrix": false
+        },
+        {
+          "Name": "_MainTexMipmapBias",
+          "NameIndex": 29,
+          "Index": 88,
+          "ArraySize": 0,
+          "Type": 0,
+          "RowCount": 1,
+          "ColumnCount": 1,
+          "IsMatrix": false
+        },
+        {
+          "Name": "_MainTex_ST",
+          "NameIndex": 30,
+          "Index": 144,
+          "ArraySize": 0,
+          "Type": 0,
+          "RowCount": 4,
+          "ColumnCount": 1,
+          "IsMatrix": false
+        },
+        {
+          "Name": "_MainTexUVWeights",
+          "NameIndex": 31,
+          "Index": 128,
+          "ArraySize": 0,
+          "Type": 0,
+          "RowCount": 4,
+          "ColumnCount": 1,
+          "IsMatrix": false
+        },
+        {
+          "Name": "_MainTexUVRotateMat",
+          "NameIndex": 32,
+          "Index": 112,
+          "ArraySize": 0,
+          "Type": 0,
+          "RowCount": 4,
+          "ColumnCount": 1,
+          "IsMatrix": false
+        },
+        {
+          "Name": "_MainTexUVSpeed",
+          "NameIndex": 33,
+          "Index": 96,
+          "ArraySize": 0,
+          "Type": 0,
+          "RowCount": 4,
+          "ColumnCount": 1,
+          "IsMatrix": false
+        },
+        {
+          "Name": "_InParticle",
+          "NameIndex": 34,
+          "Index": 16,
+          "ArraySize": 0,
+          "Type": 0,
+          "RowCount": 1,
+          "ColumnCount": 1,
+          "IsMatrix": false
+        },
+        {
+          "Name": "_VertCameraOffset",
+          "NameIndex": 35,
+          "Index": 52,
+          "ArraySize": 0,
+          "Type": 0,
+          "RowCount": 1,
+          "ColumnCount": 1,
+          "IsMatrix": false
+        }
+      ],
+      "StructParameters": [],
+      "Size": 432,
+      "IsPartialCB": true
+    },
+    {
+      "Name": "_PerPassConstants",
+      "NameIndex": 3,
+      "MatrixParameters": [],
+      "VectorParameters": [
+        {
+          "Name": "_DisableAnimateVert",
+          "NameIndex": 36,
+          "Index": 16,
+          "ArraySize": 0,
+          "Type": 0,
+          "RowCount": 1,
+          "ColumnCount": 1,
+          "IsMatrix": false
+        }
+      ],
+      "StructParameters": [],
+      "Size": 32,
+      "IsPartialCB": true
+    }
+  ],
+  "BufferBindingParameters": [
+    {
+      "Name": "_TransformVariables",
+      "NameIndex": 0,
+      "Index": 12,
+      "ArraySize": 1
+    },
+    {
+      "Name": "ShaderVariablesGlobal",
+      "NameIndex": 1,
+      "Index": 16,
+      "ArraySize": 1
+    },
+    {
+      "Name": "_PerPassConstants",
+      "NameIndex": 3,
+      "Index": 13,
+      "ArraySize": 1
+    }
+  ],
+  "UAVParameters": [],
+  "SamplerParameters": [
+    {
+      "Sampler": 65538,
+      "BindPoint": 0,
+      "Name": "s_trilinear_repeat_sampler",
+      "PackedBinding": 4294967043,
+      "PackedInfo": 65538,
+      "StaticSamplerState": "encoded",
+      "StaticSamplerStateKnown": true
+    },
+    {
+      "Sampler": 65622,
+      "BindPoint": 1,
+      "Name": "s_trilinear_clamp_sampler",
+      "PackedBinding": 4294967043,
+      "PackedInfo": 65622,
+      "StaticSamplerState": "encoded",
+      "StaticSamplerStateKnown": true
+    },
+    {
+      "Sampler": 65536,
+      "BindPoint": 2,
+      "Name": "s_point_repeat_sampler",
+      "PackedBinding": 4294967043,
+      "PackedInfo": 65536,
+      "StaticSamplerState": "encoded",
+      "StaticSamplerStateKnown": true
+    },
+    {
+      "Sampler": 65620,
+      "BindPoint": 3,
+      "Name": "s_point_clamp_sampler",
+      "PackedBinding": 4278255363,
+      "PackedInfo": 65620,
+      "StaticSamplerState": "encoded",
+      "StaticSamplerStateKnown": true
+    },
+    {
+      "Sampler": 65537,
+      "BindPoint": 4,
+      "Name": "s_linear_repeat_sampler",
+      "PackedBinding": 4294967043,
+      "PackedInfo": 65537,
+      "StaticSamplerState": "encoded",
+      "StaticSamplerStateKnown": true
+    },
+    {
+      "Sampler": 65793,
+      "BindPoint": 5,
+      "Name": "s_linear_repeat_compare_sampler",
+      "PackedBinding": 4294967043,
+      "PackedInfo": 65793,
+      "StaticSamplerState": "encoded",
+      "StaticSamplerStateKnown": true
+    },
+    {
+      "Sampler": 65621,
+      "BindPoint": 6,
+      "Name": "s_linear_clamp_sampler",
+      "PackedBinding": 4294967043,
+      "PackedInfo": 65621,
+      "StaticSamplerState": "encoded",
+      "StaticSamplerStateKnown": true
+    },
+    {
+      "Sampler": 65877,
+      "BindPoint": 7,
+      "Name": "s_linear_clamp_compare_sampler",
+      "PackedBinding": 4294967043,
+      "PackedInfo": 65877,
+      "StaticSamplerState": "encoded",
+      "StaticSamplerStateKnown": true
+    },
+    {
+      "Sampler": 65620,
+      "BindPoint": 19,
+      "Name": "s_point_clamp_float_sampler",
+      "PackedBinding": 4294967042,
+      "PackedInfo": 65620,
+      "StaticSamplerState": "encoded",
+      "StaticSamplerStateKnown": true
+    },
+    {
+      "Sampler": 65705,
+      "BindPoint": 20,
+      "Name": "mirror_linear_sampler_SceneColorTexture",
+      "PackedBinding": 4294967042,
+      "PackedInfo": 65705,
+      "StaticSamplerState": "encoded",
+      "StaticSamplerStateKnown": true
+    },
+    {
+      "Sampler": 131071,
+      "BindPoint": 1,
+      "Name": "_SampleTex0",
+      "PackedBinding": 4278386434,
+      "PackedInfo": 131071,
+      "StaticSamplerState": "unknown",
+      "StaticSamplerStateKnown": false
+    },
+    {
+      "Sampler": 131071,
+      "BindPoint": 2,
+      "Name": "_MainTex",
+      "PackedBinding": 4278320898,
+      "PackedInfo": 131071,
+      "StaticSamplerState": "unknown",
+      "StaticSamplerStateKnown": false
+    }
+  ],
+  "DescriptorSetParameters": [
+    {
+      "Name": "Global",
+      "NameIndex": -1,
+      "SetId": 0,
+      "MaxBindingIndex": 50,
+      "Bindings": [
+        {
+          "Name": "s_trilinear_repeat_sampler",
+          "NameIndex": -1,
+          "BindingIndex": 0,
+          "DescriptorType": 1,
+          "PackedBinding": 4294967043,
+          "PackedInfo": 65538
+        },
+        {
+          "Name": "s_trilinear_clamp_sampler",
+          "NameIndex": -1,
+          "BindingIndex": 1,
+          "DescriptorType": 1,
+          "PackedBinding": 4294967043,
+          "PackedInfo": 65622
+        },
+        {
+          "Name": "s_point_repeat_sampler",
+          "NameIndex": -1,
+          "BindingIndex": 2,
+          "DescriptorType": 1,
+          "PackedBinding": 4294967043,
+          "PackedInfo": 65536
+        },
+        {
+          "Name": "s_point_clamp_sampler",
+          "NameIndex": -1,
+          "BindingIndex": 3,
+          "DescriptorType": 1,
+          "PackedBinding": 4278255363,
+          "PackedInfo": 65620
+        },
+        {
+          "Name": "s_linear_repeat_sampler",
+          "NameIndex": -1,
+          "BindingIndex": 4,
+          "DescriptorType": 1,
+          "PackedBinding": 4294967043,
+          "PackedInfo": 65537
+        },
+        {
+          "Name": "s_linear_repeat_compare_sampler",
+          "NameIndex": -1,
+          "BindingIndex": 5,
+          "DescriptorType": 1,
+          "PackedBinding": 4294967043,
+          "PackedInfo": 65793
+        },
+        {
+          "Name": "s_linear_clamp_sampler",
+          "NameIndex": -1,
+          "BindingIndex": 6,
+          "DescriptorType": 1,
+          "PackedBinding": 4294967043,
+          "PackedInfo": 65621
+        },
+        {
+          "Name": "s_linear_clamp_compare_sampler",
+          "NameIndex": -1,
+          "BindingIndex": 7,
+          "DescriptorType": 1,
+          "PackedBinding": 4294967043,
+          "PackedInfo": 65877
+        },
+        {
+          "Name": "_CloudShadowTex",
+          "NameIndex": -1,
+          "BindingIndex": 8,
+          "DescriptorType": 2,
+          "PackedBinding": 4294967043,
+          "PackedInfo": 66303
+        },
+        {
+          "Name": "_CSMShadowmapTex",
+          "NameIndex": -1,
+          "BindingIndex": 9,
+          "DescriptorType": 2,
+          "PackedBinding": 4294967043,
+          "PackedInfo": 66303
+        },
+        {
+          "Name": "_CSMShadowRampTex",
+          "NameIndex": -1,
+          "BindingIndex": 10,
+          "DescriptorType": 2,
+          "PackedBinding": 4294967043,
+          "PackedInfo": 66303
+        },
+        {
+          "Name": "_ASMShadowmapTex",
+          "NameIndex": -1,
+          "BindingIndex": 11,
+          "DescriptorType": 2,
+          "PackedBinding": 4294967043,
+          "PackedInfo": 66303
+        },
+        {
+          "Name": "_TransformVariables",
+          "NameIndex": -1,
+          "BindingIndex": 12,
+          "DescriptorType": 4,
+          "PackedBinding": 16842499,
+          "PackedInfo": 65536
+        },
+        {
+          "Name": "_PerPassConstants",
+          "NameIndex": -1,
+          "BindingIndex": 13,
+          "DescriptorType": 4,
+          "PackedBinding": 16776963,
+          "PackedInfo": 65540
+        },
+        {
+          "Name": "_LightDataBuffer",
+          "NameIndex": -1,
+          "BindingIndex": 14,
+          "DescriptorType": 4,
+          "PackedBinding": 4294967043,
+          "PackedInfo": 131071
+        },
+        {
+          "Name": "ShadowData",
+          "NameIndex": -1,
+          "BindingIndex": 15,
+          "DescriptorType": 4,
+          "PackedBinding": 4294967043,
+          "PackedInfo": 131071
+        },
+        {
+          "Name": "ShaderVariablesGlobal",
+          "NameIndex": -1,
+          "BindingIndex": 16,
+          "DescriptorType": 4,
+          "PackedBinding": 33685251,
+          "PackedInfo": 65537
+        },
+        {
+          "Name": "ReflectionProbeGlobalData",
+          "NameIndex": -1,
+          "BindingIndex": 17,
+          "DescriptorType": 4,
+          "PackedBinding": 4294967043,
+          "PackedInfo": 131071
+        },
+        {
+          "Name": "_VertexSkinMatrices",
+          "NameIndex": -1,
+          "BindingIndex": 18,
+          "DescriptorType": 5,
+          "PackedBinding": 16776963,
+          "PackedInfo": 131071
+        },
+        {
+          "Name": "s_point_clamp_float_sampler",
+          "NameIndex": -1,
+          "BindingIndex": 19,
+          "DescriptorType": 1,
+          "PackedBinding": 4294967042,
+          "PackedInfo": 65620
+        },
+        {
+          "Name": "mirror_linear_sampler_SceneColorTexture",
+          "NameIndex": -1,
+          "BindingIndex": 20,
+          "DescriptorType": 1,
+          "PackedBinding": 4294967042,
+          "PackedInfo": 65705
+        },
+        {
+          "Name": "_VisibilitySHRT",
+          "NameIndex": -1,
+          "BindingIndex": 21,
+          "DescriptorType": 2,
+          "PackedBinding": 4294967042,
+          "PackedInfo": 66303
+        },
+        {
+          "Name": "_SceneColorTexture",
+          "NameIndex": -1,
+          "BindingIndex": 22,
+          "DescriptorType": 2,
+          "PackedBinding": 4294967042,
+          "PackedInfo": 66303
+        },
+        {
+          "Name": "_SSRLightingTexture",
+          "NameIndex": -1,
+          "BindingIndex": 23,
+          "DescriptorType": 2,
+          "PackedBinding": 4294967042,
+          "PackedInfo": 66303
+        },
+        {
+          "Name": "_SSRFadenessTexture",
+          "NameIndex": -1,
+          "BindingIndex": 24,
+          "DescriptorType": 2,
+          "PackedBinding": 4294967042,
+          "PackedInfo": 66303
+        },
+        {
+          "Name": "_ReflectionProbeOctTextureArray",
+          "NameIndex": -1,
+          "BindingIndex": 25,
+          "DescriptorType": 2,
+          "PackedBinding": 4294967042,
+          "PackedInfo": 67071
+        },
+        {
+          "Name": "_MultiscatteringLUT",
+          "NameIndex": -1,
+          "BindingIndex": 26,
+          "DescriptorType": 2,
+          "PackedBinding": 4294967042,
+          "PackedInfo": 66303
+        },
+        {
+          "Name": "_LightCookie",
+          "NameIndex": -1,
+          "BindingIndex": 27,
+          "DescriptorType": 2,
+          "PackedBinding": 4294967042,
+          "PackedInfo": 66303
+        },
+        {
+          "Name": "_IrradianceVolumeClipmapTextureBLod3",
+          "NameIndex": -1,
+          "BindingIndex": 28,
+          "DescriptorType": 2,
+          "PackedBinding": 4294967042,
+          "PackedInfo": 66559
+        },
+        {
+          "Name": "_IrradianceVolumeClipmapTextureBLod1",
+          "NameIndex": -1,
+          "BindingIndex": 29,
+          "DescriptorType": 2,
+          "PackedBinding": 4294967042,
+          "PackedInfo": 66559
+        },
+        {
+          "Name": "_IrradianceVolumeClipmapTextureBLod0",
+          "NameIndex": -1,
+          "BindingIndex": 30,
+          "DescriptorType": 2,
+          "PackedBinding": 4294967042,
+          "PackedInfo": 66559
+        },
+        {
+          "Name": "_IrradianceVolumeClipmapTextureALod3",
+          "NameIndex": -1,
+          "BindingIndex": 31,
+          "DescriptorType": 2,
+          "PackedBinding": 4294967042,
+          "PackedInfo": 66559
+        },
+        {
+          "Name": "_IrradianceVolumeClipmapTextureALod1",
+          "NameIndex": -1,
+          "BindingIndex": 32,
+          "DescriptorType": 2,
+          "PackedBinding": 4294967042,
+          "PackedInfo": 66559
+        },
+        {
+          "Name": "_IrradianceVolumeClipmapTextureALod0",
+          "NameIndex": -1,
+          "BindingIndex": 33,
+          "DescriptorType": 2,
+          "PackedBinding": 4294967042,
+          "PackedInfo": 66559
+        },
+        {
+          "Name": "_IntegratedLightScattering",
+          "NameIndex": -1,
+          "BindingIndex": 34,
+          "DescriptorType": 2,
+          "PackedBinding": 4294967042,
+          "PackedInfo": 66559
+        },
+        {
+          "Name": "_GlintPatternTexture",
+          "NameIndex": -1,
+          "BindingIndex": 35,
+          "DescriptorType": 2,
+          "PackedBinding": 4294967042,
+          "PackedInfo": 66303
+        },
+        {
+          "Name": "_GBufferTexture1",
+          "NameIndex": -1,
+          "BindingIndex": 36,
+          "DescriptorType": 2,
+          "PackedBinding": 4294967042,
+          "PackedInfo": 66303
+        },
+        {
+          "Name": "_CharacterSnowEffectTex",
+          "NameIndex": -1,
+          "BindingIndex": 37,
+          "DescriptorType": 2,
+          "PackedBinding": 4294967042,
+          "PackedInfo": 66303
+        },
+        {
+          "Name": "_CharacterShadowmapTex",
+          "NameIndex": -1,
+          "BindingIndex": 38,
+          "DescriptorType": 2,
+          "PackedBinding": 4294967042,
+          "PackedInfo": 66303
+        },
+        {
+          "Name": "_CharacterRainStreakTex",
+          "NameIndex": -1,
+          "BindingIndex": 39,
+          "DescriptorType": 2,
+          "PackedBinding": 4294967042,
+          "PackedInfo": 66303
+        },
+        {
+          "Name": "_CharacterRainFaceDropletTex",
+          "NameIndex": -1,
+          "BindingIndex": 40,
+          "DescriptorType": 2,
+          "PackedBinding": 4294967042,
+          "PackedInfo": 66303
+        },
+        {
+          "Name": "_CharacterRainFaceDripTex",
+          "NameIndex": -1,
+          "BindingIndex": 41,
+          "DescriptorType": 2,
+          "PackedBinding": 4294967042,
+          "PackedInfo": 66303
+        },
+        {
+          "Name": "_CharacterRainEffectTex",
+          "NameIndex": -1,
+          "BindingIndex": 42,
+          "DescriptorType": 2,
+          "PackedBinding": 4294967042,
+          "PackedInfo": 66303
+        },
+        {
+          "Name": "_CharMaxCubemap",
+          "NameIndex": -1,
+          "BindingIndex": 43,
+          "DescriptorType": 2,
+          "PackedBinding": 4294967042,
+          "PackedInfo": 66815
+        },
+        {
+          "Name": "_CameraDepthTexture",
+          "NameIndex": -1,
+          "BindingIndex": 44,
+          "DescriptorType": 2,
+          "PackedBinding": 4278255362,
+          "PackedInfo": 66303
+        },
+        {
+          "Name": "_ABLutTex",
+          "NameIndex": -1,
+          "BindingIndex": 45,
+          "DescriptorType": 2,
+          "PackedBinding": 4294967042,
+          "PackedInfo": 66303
+        },
+        {
+          "Name": "_LightBinningConstants",
+          "NameIndex": -1,
+          "BindingIndex": 46,
+          "DescriptorType": 4,
+          "PackedBinding": 4294967042,
+          "PackedInfo": 131071
+        },
+        {
+          "Name": "VisibilitySHConstData",
+          "NameIndex": -1,
+          "BindingIndex": 47,
+          "DescriptorType": 4,
+          "PackedBinding": 4294967042,
+          "PackedInfo": 131071
+        },
+        {
+          "Name": "LightCookieCB",
+          "NameIndex": -1,
+          "BindingIndex": 48,
+          "DescriptorType": 4,
+          "PackedBinding": 4294967042,
+          "PackedInfo": 131071
+        },
+        {
+          "Name": "_OutParticleLightingResult",
+          "NameIndex": -1,
+          "BindingIndex": 49,
+          "DescriptorType": 5,
+          "PackedBinding": 4294967042,
+          "PackedInfo": 131071
+        },
+        {
+          "Name": "_GlobalBinningBuffer",
+          "NameIndex": -1,
+          "BindingIndex": 50,
+          "DescriptorType": 5,
+          "PackedBinding": 4294967042,
+          "PackedInfo": 131071
+        },
+        {
+          "Name": "_VertexSkinMatrices",
+          "NameIndex": 37,
+          "BindingIndex": 18,
+          "DescriptorType": 2,
+          "PackedBinding": 218103826,
+          "PackedInfo": 0
+        }
+      ]
+    },
+    {
+      "Name": "PerMaterial",
+      "NameIndex": -1,
+      "SetId": 1,
+      "MaxBindingIndex": 4,
+      "Bindings": [
+        {
+          "Name": "UnityPerMaterial",
+          "NameIndex": -1,
+          "BindingIndex": 0,
+          "DescriptorType": 4,
+          "PackedBinding": 67370755,
+          "PackedInfo": 65539
+        },
+        {
+          "Name": "_SampleTex0",
+          "NameIndex": -1,
+          "BindingIndex": 1,
+          "DescriptorType": 1,
+          "PackedBinding": 4278386434,
+          "PackedInfo": 131071
+        },
+        {
+          "Name": "_MainTex",
+          "NameIndex": -1,
+          "BindingIndex": 2,
+          "DescriptorType": 1,
+          "PackedBinding": 4278320898,
+          "PackedInfo": 131071
+        },
+        {
+          "Name": "_SampleTex0",
+          "NameIndex": -1,
+          "BindingIndex": 3,
+          "DescriptorType": 2,
+          "PackedBinding": 4278386434,
+          "PackedInfo": 66049
+        },
+        {
+          "Name": "_MainTex",
+          "NameIndex": -1,
+          "BindingIndex": 4,
+          "DescriptorType": 2,
+          "PackedBinding": 4278320898,
+          "PackedInfo": 66050
+        }
+      ]
+    },
+    {
+      "Name": "PerObject",
+      "NameIndex": -1,
+      "SetId": 2,
+      "MaxBindingIndex": 0,
+      "Bindings": [
+        {
+          "Name": "UnityPerDraw",
+          "NameIndex": -1,
+          "BindingIndex": 0,
+          "DescriptorType": 4,
+          "PackedBinding": 50528003,
+          "PackedInfo": 65538
+        }
+      ]
+    }
+  ],
+  "EntryPoint": "main",
+  "DebugName": "subshader0/pass0:ForwardOnly/vertex/blob1400/33",
+  "SourceShaderLOD": 600,
+  "SourceSubShaderIndex": 0,
+  "SourcePassIndex": 0,
+  "SourcePassName": "ForwardOnly",
+  "SourceSerializedProgramStage": "vertex",
+  "SourceCompilerPlatform": "d3d11",
+  "SourceShaderHardwareTier": -1,
+  "SourceProgramBlobIndex": 1400,
+  "SourceParameterBlobIndex": 131,
+  "SourceEndfieldParameterRecordParsed": true,
+  "SourceCombinedProgramContainer": true,
+  "SourceCompiledKeywords": [
+    "HG_ENABLE_MV",
+    "_SAMPLE_TEX0",
+    "_USE_SOFTBLEND"
+  ],
+  "SourceLocalKeywords": [],
+  "UsedMaterials": [],
+  "DecodedProgramStage": "vertex",
+  "DecodedProgramEncoding": "DXBC"
+}
