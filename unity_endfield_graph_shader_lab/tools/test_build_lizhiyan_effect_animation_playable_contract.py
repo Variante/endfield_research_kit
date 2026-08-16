@@ -34,6 +34,10 @@ def test_topology() -> None:
     assert inputs["defaultWeight"] == 0.0
     assert inputs["automaticNormalization"] is False
     assert native_mixer["initializers"]["advancedExtraWordValue"] == "0x0101"
+    advanced_slots = native_mixer["advancedOnlyStateSlots"]
+    assert advanced_slots["slot3"]["va"] == "0x180AD5230"
+    assert advanced_slots["stockImplementationsDiffer"] is True
+    assert advanced_slots["restrictedStartOnlyStockEquivalenceProven"] is False
     assert [row["pathID"] for row in topology["clipSlots"]] == [
         7360398354216100382, 0, 0
     ]

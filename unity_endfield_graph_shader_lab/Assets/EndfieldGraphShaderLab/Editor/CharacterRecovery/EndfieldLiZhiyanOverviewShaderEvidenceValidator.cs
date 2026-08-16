@@ -200,6 +200,8 @@ namespace EndfieldGraphShaderLabEditor
                 L.Dict(nativeMixer["sharedInputOperations"]);
             Dictionary<string, object> mixerInitializers =
                 L.Dict(nativeMixer["initializers"]);
+            Dictionary<string, object> advancedSlots =
+                L.Dict(nativeMixer["advancedOnlyStateSlots"]);
             Dictionary<string, object> lodOwnership =
                 L.Dict(contract["effectLodRendererOwnership"]);
             Dictionary<string, object> lodField = L.Dict(lodOwnership["managedField"]);
@@ -241,6 +243,11 @@ namespace EndfieldGraphShaderLabEditor
                 Mathf.Abs(L.Float(sharedInputs, "defaultWeight")) < 0.000001f &&
                 !L.Bool(sharedInputs, "automaticNormalization") &&
                 L.Str(mixerInitializers, "advancedExtraWordValue") == "0x0101" &&
+                L.Str(L.Dict(advancedSlots["slot3"]), "va") == "0x180AD5230" &&
+                L.Bool(advancedSlots, "stockImplementationsDiffer") &&
+                !L.Bool(advancedSlots, "restrictedStartOnlyStockEquivalenceProven") &&
+                L.Str(advancedSlots, "classification") ==
+                    "advanced_runtime_state_gate_not_reproducible_with_stock_mixer" &&
                 L.Str(nativeMixer, "classification") ==
                     "native_create_and_shared_input_semantics_closed_advanced_slots_pending" &&
                 L.List(topology["clipSlots"]).Count == 3 &&

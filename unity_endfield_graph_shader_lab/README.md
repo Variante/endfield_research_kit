@@ -4047,8 +4047,12 @@ Advanced and stock use the same count/weight virtual functions. Each 16-byte
 slot is cleared on growth or reactivation, producing a null playable and zero
 weight with no automatic normalization; negative counts diagnose. Advanced
 then differs by its root vtable and the `0x0101` word at node `+0x170`.
-Advanced-only slots, null transitions, and extreme allocation failure remain
-open. The same contract pins `SetManual(bool)`,
+Advanced-only slots 3/4/13/18/19 read or mutate `+0x170/+0x171` and gate
+animation-runtime behavior, while stock uses no-ops or different methods.
+Consequently a stock mixer with explicit weights is only a labeled visual
+approximation even for the start-only Li graph, not a retail-equivalent
+backend. Null transitions and extreme allocation failure remain open. The
+same contract pins `SetManual(bool)`,
 `ManualEvaluate(float)`, `SyncProgress(float)`, time-scale/start-duration/start-
 scale setters, Stop, OnDisable, and OnRelease. Their decoded fallback bodies
 prove graph evaluation, progress-to-time delegation, forced root-speed

@@ -1702,7 +1702,11 @@ only stable interpretation and priorities.
    counts are accepted subject to allocation, while negative counts diagnose.
    The advanced initializer first runs stock initialization, then installs its
    own root vtable and writes `0x0101` at node `+0x170`. Advanced-only virtual
-   slots, null-state transitions, and extreme allocation failure remain open.
+   slots 3/4/13/18/19 actively read/write the `+0x170/+0x171` state bytes and
+   gate animation-runtime calls; the corresponding stock slots are no-ops or
+   different implementations. Thus even the Li start-only graph cannot claim
+   exact stock-mixer equivalence. Null-state transitions and extreme
+   allocation failure remain open.
    The complete control ABI is now pinned as well. `ManualEvaluate(float)`
    evaluates the graph, `SyncProgress(float)` derives a time and delegates to
    it, duration/scale setters refresh root speed, `OnDisable` stops, and

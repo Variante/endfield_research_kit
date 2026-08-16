@@ -419,6 +419,17 @@ def build() -> dict[str, Any]:
                 "advancedExtraWordOffset": "0x170",
                 "advancedExtraWordValue": "0x0101",
             },
+            "advancedOnlyStateSlots": {
+                "stateBytes": ["0x170", "0x171"],
+                "slot3": {"va": "0x180AD5230", "behavior": "reads_and_writes_state_bytes_and_calls_animation_runtime"},
+                "slot4": {"va": "0x180AD87C0", "behavior": "writes_state_byte_0x170_to_one"},
+                "slot13": {"va": "0x180AD43E0", "behavior": "restores_state_word_0x0101"},
+                "slot18": {"va": "0x180AD59F0", "behavior": "gates_stock_path_on_state_bytes"},
+                "slot19": {"va": "0x180AD5460", "behavior": "gates_stock_path_on_state_bytes"},
+                "stockImplementationsDiffer": True,
+                "restrictedStartOnlyStockEquivalenceProven": False,
+                "classification": "advanced_runtime_state_gate_not_reproducible_with_stock_mixer",
+            },
             "classification": "native_create_and_shared_input_semantics_closed_advanced_slots_pending",
             "provenBehavior": [
                 "validates a non-null graph handle and masked version",
