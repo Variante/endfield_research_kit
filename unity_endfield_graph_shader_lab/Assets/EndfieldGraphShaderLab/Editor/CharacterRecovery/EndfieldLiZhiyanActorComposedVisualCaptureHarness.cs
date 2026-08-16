@@ -264,6 +264,7 @@ namespace EndfieldGraphShaderLabEditor
                         captures = new ActorComposedCaptureRecord[Anchors.Length],
                     };
 
+                    long nextCaptureInvocationSerial = 1;
                     for (int anchorIndex = 0; anchorIndex < Anchors.Length; anchorIndex++)
                     {
                         CaptureAnchor anchor = Anchors[anchorIndex];
@@ -288,19 +289,23 @@ namespace EndfieldGraphShaderLabEditor
                             CaptureRendererFingerprintWitness(bundle);
                         capture.composite = CaptureNamedFrame(
                             camera, target, readback, outputDirectory,
-                            "composite_" + Pts(anchor.retailPts) + ".png", oracleSample);
+                            "composite_" + Pts(anchor.retailPts) + ".png", oracleSample,
+                            ref nextCaptureInvocationSerial);
                         ConfigureVisibility(bundle, localSeconds, false, -2);
                         capture.actorOnly = CaptureNamedFrame(
                             camera, target, readback, outputDirectory,
-                            "actor_only_" + Pts(anchor.retailPts) + ".png", oracleSample);
+                            "actor_only_" + Pts(anchor.retailPts) + ".png", oracleSample,
+                            ref nextCaptureInvocationSerial);
                         ConfigureVisibility(bundle, localSeconds, false, -3);
                         capture.effectsOnly = CaptureNamedFrame(
                             camera, target, readback, outputDirectory,
-                            "effects_only_" + Pts(anchor.retailPts) + ".png", oracleSample);
+                            "effects_only_" + Pts(anchor.retailPts) + ".png", oracleSample,
+                            ref nextCaptureInvocationSerial);
                         ConfigureVisibility(bundle, localSeconds, false, -4);
                         capture.peakParticlesOnly = CaptureNamedFrame(
                             camera, target, readback, outputDirectory,
-                            "peak_particles_only_" + Pts(anchor.retailPts) + ".png", oracleSample);
+                            "peak_particles_only_" + Pts(anchor.retailPts) + ".png", oracleSample,
+                            ref nextCaptureInvocationSerial);
 
                         capture.roots = new RootCaptureRecord[Roots.Length];
                         for (int rootIndex = 0; rootIndex < Roots.Length; rootIndex++)
@@ -318,7 +323,8 @@ namespace EndfieldGraphShaderLabEditor
                                 clipClampedAfterEnd = localSeconds > SharedClipStopTime,
                                 frame = CaptureNamedFrame(
                                     camera, target, readback, outputDirectory,
-                                    fileName, oracleSample),
+                                    fileName, oracleSample,
+                                    ref nextCaptureInvocationSerial),
                             };
                         }
 
@@ -927,9 +933,11 @@ namespace EndfieldGraphShaderLabEditor
             Texture2D readback,
             string outputDirectory,
             string fileName,
-            RetailSample oracleSample)
+            RetailSample oracleSample,
+            ref long nextCaptureInvocationSerial)
         {
             string outputPath = Path.Combine(outputDirectory, fileName);
+            long captureInvocationSerial = nextCaptureInvocationSerial++;
             RenderTexture previousTarget = camera.targetTexture;
             RenderTexture previousActive = RenderTexture.active;
             try
@@ -965,6 +973,7 @@ namespace EndfieldGraphShaderLabEditor
 
             return new FrameRecord
             {
+                captureInvocationSerial = captureInvocationSerial,
                 png = OutputDirectoryRelativePath + "/" + fileName,
                 pngBytes = new FileInfo(outputPath).Length,
                 pngSha256 = Sha256File(outputPath),
@@ -1393,6 +1402,7 @@ namespace EndfieldGraphShaderLabEditor
             Dictionary<string, string> stableRendererFingerprints = null;
             var actorPoseHashes = new Dictionary<string, HashSet<string>>(
                 StringComparer.Ordinal);
+            long expectedCaptureInvocationSerial = 1;
             for (int anchorIndex = 0; anchorIndex < Anchors.Length; anchorIndex++)
             {
                 CaptureAnchor expected = Anchors[anchorIndex];
@@ -1407,11 +1417,14 @@ namespace EndfieldGraphShaderLabEditor
                     "Actor-composed capture timing/shape drifted at PTS " + expected.retailPts);
                 ValidateRendererFingerprintWitness(
                     capture, ref stableRendererFingerprints, actorPoseHashes);
-                ValidateFrame(capture.composite, outputDirectory, expected.retailPts, "composite");
-                ValidateFrame(capture.actorOnly, outputDirectory, expected.retailPts, "actor_only");
-                ValidateFrame(capture.effectsOnly, outputDirectory, expected.retailPts, "effects_only");
+                ValidateFrame(capture.composite, outputDirectory, expected.retailPts, "composite",
+                    expectedCaptureInvocationSerial++);
+                ValidateFrame(capture.actorOnly, outputDirectory, expected.retailPts, "actor_only",
+                    expectedCaptureInvocationSerial++);
+                ValidateFrame(capture.effectsOnly, outputDirectory, expected.retailPts, "effects_only",
+                    expectedCaptureInvocationSerial++);
                 ValidateFrame(capture.peakParticlesOnly, outputDirectory, expected.retailPts,
-                    "peak_particles_only");
+                    "peak_particles_only", expectedCaptureInvocationSerial++);
                 foundVisibleActor |= capture.actorOnly.nonBackgroundCoverage > 0f;
                 foundVisiblePeakParticles |= capture.peakParticleAliveCount > 0 &&
                     capture.peakParticlesOnly.nonBackgroundCoverage > 0f;
@@ -1426,7 +1439,7 @@ namespace EndfieldGraphShaderLabEditor
                         "Actor-composed root lifecycle drifted for " + Roots[rootIndex].key +
                         " at PTS " + expected.retailPts);
                     ValidateFrame(root.frame, outputDirectory, expected.retailPts,
-                        Roots[rootIndex].key + "_only");
+                        Roots[rootIndex].key + "_only", expectedCaptureInvocationSerial++);
                     if (!expectedActive)
                         Require(root.frame.nonBackgroundCoverage == 0f,
                             "Inactive root is not blank: " + Roots[rootIndex].key +
@@ -1454,6 +1467,9 @@ namespace EndfieldGraphShaderLabEditor
             Require(actorPoseHashes.Count > 0 &&
                 actorPoseHashes.Values.Any(values => values.Count > 1),
                 "Actor skinned-pose witness did not change across capture anchors");
+            Require(expectedCaptureInvocationSerial ==
+                1L + Anchors.Length * (4 + Roots.Length),
+                "Actor-composed capture invocation serial census drifted");
         }
 
         private static void ValidateRendererFingerprintWitness(
@@ -1568,9 +1584,11 @@ namespace EndfieldGraphShaderLabEditor
         }
 
         private static void ValidateFrame(
-            FrameRecord frame, string outputDirectory, int pts, string label)
+            FrameRecord frame, string outputDirectory, int pts, string label,
+            long expectedCaptureInvocationSerial)
         {
-            Require(frame.width == Width && frame.height == Height &&
+            Require(frame.captureInvocationSerial == expectedCaptureInvocationSerial &&
+                frame.width == Width && frame.height == Height &&
                 frame.alphaCoverage >= 0f && frame.alphaCoverage <= 1f &&
                 frame.nonBackgroundCoverage >= 0f && frame.nonBackgroundCoverage <= 1f,
                 "Frame coverage/dimensions drifted for " + label + " at PTS " + pts);
@@ -1964,6 +1982,7 @@ namespace EndfieldGraphShaderLabEditor
         [Serializable]
         private sealed class FrameRecord
         {
+            public long captureInvocationSerial;
             public string png;
             public long pngBytes;
             public string pngSha256;

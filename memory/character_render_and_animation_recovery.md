@@ -2071,8 +2071,11 @@ only stable interpretation and priorities.
    `+0x200`, resource/registration state at `+0x210`, and auxiliary resources
    at `+0x220/+0x228`. `0x18053f690` is a collection/filter association pass,
    not a draw executor. Bounded downstream consumer `0x180540280` uses those
-   fields and `+0x50`, then calls `0x180540510` and `0x1805438e0` to prepare
-   resource/temporary records; their first graphics-backend draw consumer is
+   fields and `+0x50`. Full logical body `0x180540510..0x18054160a` filters
+   source-row flags, IDs, and ranges and emits compact 0x50-byte CPU records.
+   Its indirect `vtable+0x48` call at `0x18054126f` is the first unresolved
+   backend boundary, not a proven API draw. `0x1805438e0` prepares a separate
+   temporary record; the vtable target and consumers of both record types are
    the next static recovery boundary.
    All six selected materials have `_IsSceneEffect=0` and
    `_EnableTransparentMV=0`, so `_VFXParams1` and transform history are safely

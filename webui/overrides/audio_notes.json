@@ -1,0 +1,20 @@
+{
+  "_schema": "audioNotes.v1",
+  "_note": "Manual searchable notes for Audio Event/media records. Keys use <LANG>:<events|media>:<record id>. Edited from the Audio page UI.",
+  "notes": {
+    "CN:media:700184795": "烘炉（零号委托OST（下））",
+    "CN:media:536126949": "编织光流 (For Your Name)",
+    "CN:media:988513667": "方兴\n零号委托OST（下）",
+    "CN:media:365527548": "踏寻往昔之风变奏(春晓时)",
+    "CN:media:883771684": "踏寻往昔之风变奏(春晓时)",
+    "CN:media:605803418": "Rekindled（危机合约）",
+    "CN:media:824724999": "万古流（寻遗散记OST）",
+    "CN:media:56426464": "万古流（寻遗散记OST）",
+    "CN:media:856135518": "Rekindled（伴奏版）（危机合约）",
+    "CN:media:651736496": "新壤（零号委托OST（下））",
+    "CN:media:592041274": "宜（伴奏版）",
+    "CN:media:1006934168": "寻暇日（零号委托OST（下））",
+    "CN:media:664606001": "向我们的舞台（唱响夜星）",
+    "CN:media:515441133": "向我们的舞台（唱响夜星）"
+  }
+}

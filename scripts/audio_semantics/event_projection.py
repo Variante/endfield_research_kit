@@ -13,6 +13,7 @@ EVENT_CATEGORY_PREFIXES = (
     ("au_sfx_", "sfx"),
     ("au_chr_", "sfx"),
     ("au_eny_", "sfx"),
+    ("au_npc_", "sfx"),
     ("au_monster_", "sfx"),
     ("au_int_", "sfx"),
     ("au_item_", "sfx"),
@@ -53,6 +54,15 @@ HIRC_OBJECT_TYPE_LABELS = {
     11: "musicTrack",
     12: "musicSwitchContainer",
     13: "musicRandomSequenceContainer",
+    14: "attenuation",
+    16: "effectShareSet",
+    17: "customPlugin",
+    18: "auxiliaryBus",
+    19: "lfoModulator",
+    20: "envelopeModulator",
+    21: "audioDevice",
+    22: "timeModulator",
+    8: "audioBus",
 }
 
 CUSTOM_FOOTSTEP_RUNTIME_VFX_WEIGHT_THRESHOLD = 0.5
@@ -147,15 +157,57 @@ def aggregate_custom_footstep_context_variants(
     return variants
 
 
-def event_category(event_id: Any) -> str:
-    value = str(event_id or "").strip().lower()
-    # Preserve the authored id verbatim elsewhere, but tolerate a serialized
-    # Timeline display-name delimiter when assigning the broad audio category.
-    value = value.lstrip(":")
+def _direct_event_category(value: str) -> str:
     for prefix, category in EVENT_CATEGORY_PREFIXES:
         if value.startswith(prefix):
             return category
     return "unknown"
+
+
+def event_category_with_evidence(event_id: Any) -> tuple[str, str]:
+    """Classify an authored Event name without claiming its runtime caller.
+
+    The normal ``au_*`` prefixes are the primary contract. A few shipped bank
+    naming families omit that prefix; their labels are only promoted when the
+    complete family marker is explicit (enemy, actor/UI, LevelSequence, or
+    the documented ``Play_au_*`` alias). The returned evidence string keeps
+    these conservative name-pattern classifications distinct from recovered
+    consumer contexts.
+    """
+    value = str(event_id or "").strip().lower()
+    # Preserve the authored id verbatim elsewhere, but tolerate a serialized
+    # Timeline display-name delimiter when assigning the broad audio category.
+    value = value.lstrip(":")
+    category = _direct_event_category(value)
+    if category != "unknown":
+        return category, "namePrefix"
+    if value.startswith("play_au_"):
+        nested_category = _direct_event_category(value[5:])
+        if nested_category != "unknown":
+            return nested_category, "authoredPlayAliasNamePattern"
+    if value.startswith("eny_"):
+        return "sfx", "authoredEnemyEventNamePattern"
+    if value.startswith(("a_actor_", "au_actor_")):
+        if "_ui_" in value:
+            return "ui", "authoredActorUiEventNamePattern"
+        return "sfx", "authoredActorEventNamePattern"
+    if value.startswith("levelseq_"):
+        return "cue", "authoredLevelSequenceEventNamePattern"
+    if value.startswith("stop_au_global_"):
+        return "control", "authoredGlobalStopEventNamePattern"
+    if value.startswith("au_gacha_"):
+        return "ui", "authoredGachaUiEventNamePattern"
+    if value.startswith((
+        "au_abilityentity_", "au_buff_", "au_effect_", "au_event_",
+        "au_fs_", "au_impact_", "au_reset_", "au_special_",
+        "general_foley_", "int_",
+    )):
+        return "sfx", "authoredGameplaySfxEventNamePattern"
+    return "unknown", "unclassified"
+
+
+def event_category(event_id: Any) -> str:
+    return event_category_with_evidence(event_id)[0]
 
 
 def compact_media(entry: dict[str, Any]) -> dict[str, Any]:
@@ -189,8 +241,93 @@ def compact_media(entry: dict[str, Any]) -> dict[str, Any]:
     return compact
 
 
-def compact_container_evidence(rows: Iterable[Any]) -> list[dict[str, Any]]:
+def _selector_id_hex(value: Any) -> str:
+    """Normalize a serialized Wwise selector id without assigning a name."""
+
+    if value in (None, ""):
+        return ""
+    try:
+        if isinstance(value, str):
+            text = value.strip().lower()
+            if text.startswith("0x"):
+                number = int(text, 16)
+            else:
+                number = int(text, 10)
+        else:
+            number = int(value)
+    except (TypeError, ValueError):
+        return str(value).strip().lower()
+    return f"0x{number & 0xFFFFFFFF:08x}"
+
+
+def _selector_group_catalog(
+    selector_groups: Iterable[dict[str, Any]] | None,
+) -> dict[str, dict[str, Any]]:
+    catalog: dict[str, dict[str, Any]] = {}
+    for raw_group in selector_groups or ():
+        if not isinstance(raw_group, dict):
+            continue
+        key = _selector_id_hex(raw_group.get("groupIdHex") or raw_group.get("groupId"))
+        if key:
+            catalog.setdefault(key, raw_group)
+    return catalog
+
+
+def _compact_selector_group(raw_group: dict[str, Any]) -> dict[str, Any]:
+    keys = (
+        "groupId", "groupIdHex", "groupType", "semanticRole", "semanticLabel",
+        "semanticEvidence", "recoveredName", "nameEvidence",
+        "authoredGroupNameStatus", "runtimeScope", "runtimeObservationStatus",
+    )
+    return {
+        key: raw_group[key]
+        for key in keys
+        if raw_group.get(key) not in (None, "", [])
+    }
+
+
+def _selector_value_ids(raw_value: dict[str, Any]) -> set[str]:
+    ids: set[str] = set()
+    for key in ("valueIdHex", "resolvedValueIdHex", "valueId", "resolvedValueId"):
+        value = _selector_id_hex(raw_value.get(key))
+        if value:
+            ids.add(value)
+    return ids
+
+
+def _compact_selector_value(raw_value: dict[str, Any]) -> dict[str, Any]:
+    keys = (
+        "valueId", "valueIdHex", "resolvedValueId", "resolvedValueIdHex",
+        "semanticName", "resolvedValueName", "semanticEvidence",
+        "resolutionEvidence", "semanticNameStatus", "member", "hashInput",
+        "resolution",
+    )
+    compact = {
+        key: raw_value[key]
+        for key in keys
+        if raw_value.get(key) not in (None, "", [])
+    }
+    # Metadata enum rows use ``member`` while native selector rows use
+    # ``semanticName``.  The member is an exact enum identity, not a Wwise
+    # authored-name guess, so expose it through the common display field.
+    if not compact.get("semanticName") and compact.get("member"):
+        compact["semanticName"] = compact["member"]
+    if not compact.get("semanticEvidence") and compact.get("resolution"):
+        compact["semanticEvidence"] = compact["resolution"]
+    return compact
+
+
+def _has_selector_value_semantics(raw_value: dict[str, Any]) -> bool:
+    compact = _compact_selector_value(raw_value)
+    return bool(compact.get("semanticName") or compact.get("resolvedValueName"))
+
+
+def compact_container_evidence(
+    rows: Iterable[Any],
+    selector_groups: Iterable[dict[str, Any]] | None = None,
+) -> list[dict[str, Any]]:
     summary: dict[tuple[int, str, str], dict[str, Any]] = {}
+    selector_catalog = _selector_group_catalog(selector_groups)
     for row in rows:
         if not isinstance(row, dict):
             continue
@@ -363,6 +500,15 @@ def compact_container_evidence(rows: Iterable[Any]) -> list[dict[str, Any]]:
             group_id = None
         if group_id is not None:
             target.setdefault("_selectorGroupIds", set()).add(group_id)
+        group_key = _selector_id_hex(group_id)
+        semantic_group = selector_catalog.get(group_key)
+        if semantic_group is not None:
+            target["selectorSemanticGroupMatchCount"] = int(
+                target.get("selectorSemanticGroupMatchCount") or 0
+            ) + 1
+            target.setdefault("_selectorGroupSemantics", {})[group_key] = (
+                _compact_selector_group(semantic_group)
+            )
         if selector.get("continuousValidation"):
             target["continuousValidationNodeCount"] = int(
                 target.get("continuousValidationNodeCount") or 0
@@ -386,6 +532,30 @@ def compact_container_evidence(rows: Iterable[Any]) -> list[dict[str, Any]]:
                 package_value_ids.add(int(package.get("valueId")) & 0xFFFFFFFF)
             except (TypeError, ValueError):
                 pass
+            if semantic_group is not None:
+                package_value_key = _selector_id_hex(package.get("valueId"))
+                semantic_value = next(
+                    (
+                        value
+                        for value in semantic_group.get("values") or ()
+                        if isinstance(value, dict)
+                        and package_value_key in _selector_value_ids(value)
+                    ),
+                    None,
+                )
+                if semantic_value is not None and _has_selector_value_semantics(
+                    semantic_value
+                ):
+                    target["selectorSemanticValueMatchCount"] = int(
+                        target.get("selectorSemanticValueMatchCount") or 0
+                    ) + 1
+                    target.setdefault("_selectorValueSemantics", {})[
+                        f"{group_key}:{package_value_key}"
+                    ] = {
+                        "groupIdHex": group_key,
+                        "valueIdHex": package_value_key,
+                        **_compact_selector_value(semantic_value),
+                    }
             if child_ids:
                 target["nonEmptySelectorPackageCount"] = int(
                     target.get("nonEmptySelectorPackageCount") or 0
@@ -459,6 +629,8 @@ def compact_container_evidence(rows: Iterable[Any]) -> list[dict[str, Any]]:
         group_type_counts = row.pop("_selectorGroupTypes", None)
         switch_mode_counts = row.pop("_selectorSwitchModes", None)
         group_ids = sorted(row.pop("_selectorGroupIds", set()))
+        group_semantics = row.pop("_selectorGroupSemantics", None)
+        value_semantics = row.pop("_selectorValueSemantics", None)
         if random_status_counts:
             row["randomSequenceParserStatuses"] = dict(
                 sorted(random_status_counts.items())
@@ -499,6 +671,15 @@ def compact_container_evidence(rows: Iterable[Any]) -> list[dict[str, Any]]:
             row["selectorGroupIdCount"] = len(group_ids)
             row["selectorGroupIdsHex"] = [f"0x{value:08x}" for value in group_ids[:24]]
             row["selectorGroupIdsTruncated"] = len(group_ids) > 24
+        if group_semantics:
+            row["selectorGroupSemantics"] = [
+                group_semantics[key] for key in sorted(group_semantics)
+            ]
+        if value_semantics:
+            values = [value_semantics[key] for key in sorted(value_semantics)]
+            row["selectorSemanticValueCount"] = len(values)
+            row["selectorSemanticValues"] = values[:24]
+            row["selectorSemanticValuesTruncated"] = len(values) > 24
         compact_rows.append({
             key: value for key, value in row.items()
             if value not in (None, "", [], {})
@@ -541,6 +722,171 @@ def exact_wwise_event_aliases(audio_index: dict[str, Any]) -> list[dict[str, Any
     )
 
 
+def _annotate_initial_rtpc_semantics(
+    post_process_summary: Any,
+    rtpc_names_by_hex: dict[str, str] | None,
+) -> dict[str, Any]:
+    """Attach exact metadata-literal names to serialized InitialRTPC rows."""
+
+    if not isinstance(post_process_summary, dict):
+        return {}
+    names = {
+        _selector_id_hex(key): str(value).strip()
+        for key, value in (rtpc_names_by_hex or {}).items()
+        if _selector_id_hex(key) and str(value).strip()
+    }
+
+    def annotate_row(raw_row: Any) -> dict[str, Any]:
+        if not isinstance(raw_row, dict):
+            return {}
+        row = dict(raw_row)
+        rtpc_hex = _selector_id_hex(row.get("rtpcIdHex") or row.get("rtpcId"))
+        name = names.get(rtpc_hex)
+        if name:
+            row.update({
+                "parameterName": name,
+                "semanticNameStatus": "exactManagedStringLiteralFNV1Utf16Hash",
+                "semanticEvidence": "exactInitialRtpcIdAndManagedStringLiteral",
+            })
+        return row
+
+    output = dict(post_process_summary)
+    if isinstance(output.get("rtpcIds"), list):
+        output["rtpcIds"] = [
+            annotate_row(row) for row in output["rtpcIds"]
+            if isinstance(row, dict)
+        ]
+    if isinstance(output.get("stateRtpcNodes"), list):
+        nodes: list[dict[str, Any]] = []
+        for raw_node in output["stateRtpcNodes"]:
+            if not isinstance(raw_node, dict):
+                continue
+            node = dict(raw_node)
+            curves = []
+            for raw_curve in raw_node.get("rtpcCurves") or ():
+                curve = annotate_row(raw_curve)
+                if curve:
+                    curves.append(curve)
+            if isinstance(raw_node.get("rtpcCurves"), list):
+                node["rtpcCurves"] = curves
+            nodes.append(node)
+        output["stateRtpcNodes"] = nodes
+    return output
+
+
+def build_initial_rtpc_parameter_catalog(
+    events: Iterable[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Aggregate exact named InitialRTPC curves with authored Event context."""
+
+    catalog: dict[str, dict[str, Any]] = {}
+    for event in events:
+        if not isinstance(event, dict):
+            continue
+        event_id = str(event.get("id") or "").strip()
+        for evidence in event.get("evidence") or ():
+            if not isinstance(evidence, dict):
+                continue
+            post_process = evidence.get("postProcessSummary") or {}
+            if not isinstance(post_process, dict):
+                continue
+            rtpc_rows = [
+                row for row in post_process.get("rtpcIds") or ()
+                if isinstance(row, dict) and row.get("parameterName")
+            ]
+            if not rtpc_rows:
+                continue
+            context_rows = [
+                context for context in event.get("contexts") or ()
+                if isinstance(context, dict)
+            ]
+            context_kinds = {
+                str(context.get("kind") or "unknown")
+                for context in context_rows
+                if str(context.get("kind") or "")
+            }
+            trigger_roles = {
+                str(context.get("triggerRole") or "")
+                for context in context_rows
+                if str(context.get("triggerRole") or "")
+            }
+            detailed_curves = [
+                curve
+                for node in post_process.get("stateRtpcNodes") or ()
+                if isinstance(node, dict)
+                for curve in node.get("rtpcCurves") or ()
+                if isinstance(curve, dict)
+            ]
+            for row in rtpc_rows:
+                rtpc_hex = _selector_id_hex(
+                    row.get("rtpcIdHex") or row.get("rtpcId")
+                )
+                if not rtpc_hex:
+                    continue
+                target = catalog.setdefault(rtpc_hex, {
+                    "rtpcId": row.get("rtpcId"),
+                    "rtpcIdHex": rtpc_hex,
+                    "parameterName": row.get("parameterName"),
+                    "semanticNameStatus": row.get("semanticNameStatus"),
+                    "semanticEvidence": row.get("semanticEvidence"),
+                    "runtimeRole": "authoredInitialRtpcCurveParameter",
+                    "curveCount": 0,
+                    "pointCount": 0,
+                    "eventIds": set(),
+                    "contextKinds": set(),
+                    "triggerRoles": set(),
+                    "controlledProperties": Counter(),
+                    "interpolationLabels": Counter(),
+                })
+                target["curveCount"] += int(row.get("curveCount") or 0)
+                if event_id:
+                    target["eventIds"].add(event_id)
+                target["contextKinds"].update(context_kinds)
+                target["triggerRoles"].update(trigger_roles)
+                matching_curves = [
+                    curve for curve in detailed_curves
+                    if _selector_id_hex(
+                        curve.get("rtpcIdHex") or curve.get("rtpcId")
+                    ) == rtpc_hex
+                ]
+                for curve in matching_curves:
+                    target["pointCount"] += len(curve.get("points") or [])
+                    property_label = str(curve.get("parameterLabel") or "").strip()
+                    if property_label:
+                        target["controlledProperties"][property_label] += 1
+                    interpolation_labels = target["interpolationLabels"]
+                    for point in curve.get("points") or ():
+                        label = str(point.get("interpolationLabel") or "").strip()
+                        if label:
+                            interpolation_labels[label] += 1
+
+    output: list[dict[str, Any]] = []
+    for rtpc_hex, row in sorted(catalog.items()):
+        output.append({
+            "rtpcId": row["rtpcId"],
+            "rtpcIdHex": rtpc_hex,
+            "parameterName": row["parameterName"],
+            "semanticNameStatus": row["semanticNameStatus"],
+            "semanticEvidence": row["semanticEvidence"],
+            "runtimeRole": row["runtimeRole"],
+            "curveCount": row["curveCount"],
+            "pointCount": row["pointCount"],
+            "eventCount": len(row["eventIds"]),
+            "eventIds": sorted(row["eventIds"])[:24],
+            "eventIdsTruncated": len(row["eventIds"]) > 24,
+            "contextKinds": sorted(row["contextKinds"]),
+            "triggerRoles": sorted(row["triggerRoles"]),
+            "controlledProperties": dict(sorted(row["controlledProperties"].items())),
+            "interpolationLabels": dict(sorted(row["interpolationLabels"].items())),
+            "evidenceBoundary": (
+                "Exact metadata-literal hash and serialized InitialRTPC curve rows; "
+                "Event/context ownership is authored placement, not live parameter "
+                "updates, selected media, or audible DSP output."
+            ),
+        })
+    return output
+
+
 def _evidence_object_types(evidence: dict[str, Any]) -> dict[str, int]:
     raw = evidence.get("objectTypeCounts")
     if isinstance(raw, dict):
@@ -552,8 +898,9 @@ def wwise_event_action_profile(evidence_rows: list[dict[str, Any]]) -> dict[str,
     """Classify complete current-bank Action objects by playback effect.
 
     Wwise v150 Play and Post Event are the only operations that introduce a
-    downward playback edge. Every other typed Action is library control even
-    when its exact family label has not yet been recovered. An Event with a
+    downward playback edge. Every other typed Action is library control; the
+    v150 bank reader now preserves its exact control tail when supported, while
+    unknown/truncated tails remain visibly fail-closed. An Event with a
     completely parsed zero-length Action list is an inert library definition,
     not unknown audio playback.
     """
@@ -618,9 +965,174 @@ def wwise_event_action_profile(evidence_rows: list[dict[str, Any]]) -> dict[str,
     }
 
 
+def annotate_wwise_action_control_evidence(
+    evidence_by_event: dict[str, list[dict[str, Any]]],
+    selector_groups: Iterable[dict[str, Any]] | None,
+    rtpc_names_by_hex: dict[str, str] | None = None,
+) -> dict[str, Any]:
+    """Attach conservative semantic names to serialized State/Switch actions.
+
+    The HIRC parser owns the raw IDs.  This join only uses selector groups and
+    values already backed by current-build native evidence; an absent group or
+    value remains explicitly unresolved rather than being guessed from an
+    event name.
+    """
+
+    groups_by_hex = _selector_group_catalog(selector_groups)
+    rtpc_names_by_hex = {
+        _selector_id_hex(key): str(value).strip()
+        for key, value in (rtpc_names_by_hex or {}).items()
+        if _selector_id_hex(key) and str(value).strip()
+    }
+    action_count = 0
+    typed_count = 0
+    group_reference_count = 0
+    group_match_count = 0
+    value_reference_count = 0
+    value_match_count = 0
+    shared_rtpc_parameter_id_match_count = 0
+    shared_rtpc_parameter_ids: set[int] = set()
+    named_initial_rtpc_match_count = 0
+    referenced_groups: dict[str, dict[str, Any]] = {}
+
+    for evidence_rows in evidence_by_event.values():
+        for evidence in evidence_rows:
+            raw_actions = evidence.get("actionEvidence") or []
+            if not isinstance(raw_actions, list):
+                continue
+            action_rows: list[dict[str, Any]] = []
+            for raw_action in raw_actions:
+                if not isinstance(raw_action, dict):
+                    continue
+                action = dict(raw_action)
+                operation = str(action.get("operation") or "")
+                if operation not in {"play", "playEvent"}:
+                    action_count += 1
+                    if action.get("actionControlParserStatus") == "typedExactV150":
+                        typed_count += 1
+                if operation in {"setState", "setSwitch"}:
+                    group_reference_count += 1
+                    group_hex = _selector_id_hex(
+                        action.get("groupIdHex") or action.get("groupId")
+                    )
+                    group = groups_by_hex.get(group_hex)
+                    if group is None:
+                        action["controlGroupSemanticStatus"] = "unresolvedGroupId"
+                    else:
+                        group_match_count += 1
+                        referenced_groups.setdefault(group_hex, {
+                            key: group.get(key)
+                            for key in (
+                                "groupId", "groupIdHex", "groupType", "semanticRole",
+                                "semanticLabel", "semanticEvidence",
+                                "authoredGroupNameStatus", "runtimeScope",
+                                "runtimeObservationStatus",
+                            )
+                            if group.get(key) is not None
+                        })
+                        action["controlGroupSemantic"] = _compact_selector_group(group)
+                        value_hex = _selector_id_hex((
+                            action.get("stateIdHex")
+                            if operation == "setState"
+                            else action.get("switchIdHex")
+                        ))
+                        if value_hex:
+                            value_reference_count += 1
+                            value_match = next(
+                                (
+                                    raw_value
+                                    for raw_value in group.get("values") or ()
+                                    if isinstance(raw_value, dict)
+                                    and value_hex in _selector_value_ids(raw_value)
+                                    and _has_selector_value_semantics(raw_value)
+                                ),
+                                None,
+                            )
+                            if value_match is None:
+                                action["controlValueSemanticStatus"] = "unresolvedValueId"
+                            else:
+                                value_match_count += 1
+                                action["controlValueSemantic"] = _compact_selector_value(
+                                    value_match
+                                )
+                if operation in {"setGameParameter", "resetGameParameter"}:
+                    parameter_hex = _selector_id_hex(
+                        action.get("idExtHex") or action.get("idExt")
+                    )
+                    post_process = evidence.get("postProcessSummary") or {}
+                    if not isinstance(post_process, dict):
+                        post_process = {}
+                    rtpc_match = next(
+                        (
+                            row for row in post_process.get("rtpcIds") or ()
+                            if isinstance(row, dict)
+                            and _selector_id_hex(
+                                row.get("rtpcIdHex") or row.get("rtpcId")
+                            ) == parameter_hex
+                        ),
+                        None,
+                    )
+                    if parameter_hex and rtpc_match is not None:
+                        shared_rtpc_parameter_id_match_count += 1
+                        try:
+                            shared_rtpc_parameter_ids.add(
+                                int(rtpc_match.get("rtpcId")) & 0xFFFFFFFF
+                            )
+                        except (TypeError, ValueError):
+                            pass
+                        parameter_name = rtpc_names_by_hex.get(parameter_hex)
+                        if parameter_name:
+                            named_initial_rtpc_match_count += 1
+                        action["initialRtpcSemantic"] = {
+                            "rtpcId": rtpc_match.get("rtpcId"),
+                            "rtpcIdHex": parameter_hex,
+                            "curveCount": int(rtpc_match.get("curveCount") or 0),
+                            "parameterName": parameter_name,
+                            "semanticNameStatus": (
+                                "exactManagedStringLiteralFNV1Utf16Hash"
+                                if parameter_name else "unresolvedGameParameterName"
+                            ),
+                            "semanticEvidence": (
+                                "sameEventInitialRtpcIdAndExactManagedStringLiteral"
+                                if parameter_name else "sameEventInitialRtpcId"
+                            ),
+                            "runtimeRole": "authoredInitialRtpcCurveTarget",
+                        }
+                action_rows.append(action)
+            evidence["actionEvidence"] = action_rows
+
+    return {
+        "schemaVersion": 1,
+        "actionCount": action_count,
+        "typedExactActionCount": typed_count,
+        "groupReferenceCount": group_reference_count,
+        "groupSemanticMatchCount": group_match_count,
+        "valueReferenceCount": value_reference_count,
+        "valueSemanticMatchCount": value_match_count,
+        "sharedRtpcParameterIdMatchCount": shared_rtpc_parameter_id_match_count,
+        "sharedRtpcParameterIdCount": len(shared_rtpc_parameter_ids),
+        "namedInitialRtpcMatchCount": named_initial_rtpc_match_count,
+        "referencedGroupCount": len(referenced_groups),
+        "referencedGroups": [
+            referenced_groups[key] for key in sorted(referenced_groups)
+        ],
+        "evidenceBoundary": (
+            "Group/value labels are joined only from current-build native selector "
+            "evidence; an unresolved ID remains numeric. Set/Reset GameParameter "
+            "rows may join the same event's exact InitialRTPC ID. A parameter name "
+            "is attached only when its FNV-1/UTF-16 hash matches an exact current "
+            "metadata literal; live values remain unresolved. Static catalog joins "
+            "do not observe live setter calls, selected branches, or runtime state."
+        ),
+    }
+
+
 def build_event_rows(
     audio_index: dict[str, Any],
     contexts: dict[str, list[dict[str, Any]]],
+    selector_groups: Iterable[dict[str, Any]] | None = None,
+    rtpc_names_by_hex: dict[str, str] | None = None,
+    metadata_event_symbols: Iterable[dict[str, Any]] | None = None,
 ) -> tuple[list[dict[str, Any]], dict[str, list[str]], list[dict[str, Any]]]:
     candidates: dict[str, list[dict[str, Any]]] = defaultdict(list)
     event_name_sources = {
@@ -630,6 +1142,29 @@ def build_event_rows(
     }
     candidate_seen: dict[str, set[tuple[str, str]]] = defaultdict(set)
     hashes: dict[str, int] = {}
+    authored_name_keys = {
+        str(value or "").strip().casefold()
+        for value in audio_index.get("eventNames") or []
+        if str(value or "").strip()
+    }
+    metadata_alias_by_hash: dict[int, dict[str, Any]] = {}
+    for raw_alias in metadata_event_symbols or ():
+        if not isinstance(raw_alias, dict):
+            continue
+        try:
+            event_hash = int(raw_alias.get("eventHash")) & 0xFFFFFFFF
+        except (TypeError, ValueError):
+            continue
+        name = str(raw_alias.get("name") or raw_alias.get("metadataField") or "").strip()
+        if not name:
+            continue
+        previous = metadata_alias_by_hash.get(event_hash)
+        if previous is not None and str(previous.get("name") or "").casefold() != name.casefold():
+            # The catalog is expected to have already failed closed, but keep
+            # this projection boundary defensive if called independently.
+            metadata_alias_by_hash.pop(event_hash, None)
+            continue
+        metadata_alias_by_hash[event_hash] = dict(raw_alias)
     for entry in audio_index.get("events") or []:
         if not isinstance(entry, dict):
             continue
@@ -681,8 +1216,15 @@ def build_event_rows(
             "mediaIds": evidence.get("mediaIds") or [],
             "objectTypeCounts": object_types,
             "selectionContainerTypes": selection_types,
-            "containerEvidence": compact_container_evidence(evidence.get("containerEvidence") or []),
+            "containerEvidence": compact_container_evidence(
+                evidence.get("containerEvidence") or [],
+                selector_groups,
+            ),
             "musicNodeEvidence": evidence.get("musicNodeEvidence") or [],
+            "postProcessSummary": _annotate_initial_rtpc_semantics(
+                evidence.get("postProcessSummary") or {},
+                rtpc_names_by_hex,
+            ),
             "sourceObjectSummary": evidence.get("sourceObjectSummary") or {},
             "nonMediaSourceEvidence": evidence.get("nonMediaSourceEvidence") or [],
             "unresolvedNodes": evidence.get("unresolvedNodes") or [],
@@ -742,6 +1284,20 @@ def build_event_rows(
         if key in managed_literals_without_event_or_consumer:
             continue
         hashes.setdefault(key, identifiers.audio_hash_generator_compute(display))
+    # Exact metadata field symbols are static Event identities. Seed them at
+    # the same stage as authored names so hash-only HIRC rows canonicalize to
+    # the symbol without pretending that a trigger/caller was recovered.
+    for event_hash, alias in metadata_alias_by_hash.items():
+        display = str(alias.get("name") or alias.get("metadataField") or "").strip()
+        if not display:
+            continue
+        key = display.lower()
+        hashes.setdefault(key, event_hash)
+        sources = event_name_sources.setdefault(key, [])
+        source = "il2cppMetadataFieldName"
+        if source not in sources:
+            sources.append(source)
+            sources.sort()
     for value in contexts:
         display = str(value or "").strip()
         if (
@@ -880,6 +1436,7 @@ def build_event_rows(
             "mediaIds": inventory.get("mediaIds") or [],
             "objectTypeCounts": object_types,
             "selectionContainerTypes": selection_types,
+            "postProcessSummary": inventory.get("postProcessSummary") or {},
             "sourceObjectSummary": inventory.get("sourceObjectSummary") or {},
             "nonMediaSourceEvidence": inventory.get("nonMediaSourceEvidence") or [],
             "unresolvedNodes": inventory.get("unresolvedNodeSamples") or [],
@@ -969,6 +1526,10 @@ def build_event_rows(
         if key in managed_literals_without_event_or_consumer:
             continue
         display_names.setdefault(key, display)
+    for alias in metadata_alias_by_hash.values():
+        display = str(alias.get("name") or alias.get("metadataField") or "").strip()
+        if display:
+            display_names.setdefault(display.lower(), display)
     for alias in exact_wwise_event_aliases(audio_index):
         if not isinstance(alias, dict):
             continue
@@ -1106,10 +1667,27 @@ def build_event_rows(
             hash_only_key = identifiers.hashed_event_key(event_hash)
             if hash_only_key != key:
                 event_contexts.extend(contexts.get(hash_only_key, []))
+        authored_custom_states = {
+            str(context.get("triggerCustomState") or "").casefold()
+            for context in event_contexts
+            if isinstance(context, dict)
+            and context.get("kind") == "interactiveComponentTrigger"
+            and context.get("triggerCustomState")
+        }
+        event_contexts = [
+            context for context in event_contexts
+            if not (
+                isinstance(context, dict)
+                and context.get("kind") == "nativeCustomStateCallsite"
+                and str(context.get("customStateName") or "").casefold()
+                not in authored_custom_states
+            )
+        ]
         evidence_rows = evidence_by_event.get(key, [])
         action_profile = wwise_event_action_profile(evidence_rows)
         playback_role = str(action_profile["role"])
         identity_alias = exact_alias_by_hash.get(event_hash) if event_hash is not None else None
+        metadata_alias = metadata_alias_by_hash.get(event_hash) if event_hash is not None else None
         character_animation_owner_ids = sorted({
             str(context.get("ownerId") or "")
             for context in event_contexts
@@ -1168,49 +1746,64 @@ def build_event_rows(
             runtime_selection = "multiplePossibleMediaUnresolved"
         else:
             runtime_selection = "unresolved"
-        category = event_category(key)
-        category_evidence = "namePrefix" if category != "unknown" else "unclassified"
-        if category != "unknown" and str(key).lstrip().startswith(":"):
-            category_evidence = "normalizedNamePrefix"
-        if category == "unknown" and (identity_alias or {}).get("dictionaryKind") == "skill_id":
+        category, category_evidence = event_category_with_evidence(key)
+        if metadata_alias and category != "unknown" and category_evidence in {
+            "namePrefix", "normalizedNamePrefix",
+        }:
+            category_evidence = "exactIl2CppMetadataFieldNamePrefix"
+        category_name_evidence = (
+            category_evidence
+            if category_evidence.startswith(("authored", "normalizedAuthored"))
+            else ""
+        )
+        if str(key).lstrip().startswith(":") and category != "unknown":
+            category_evidence = (
+                "normalizedNamePrefix"
+                if category_evidence == "namePrefix"
+                else f"normalized{category_evidence[0].upper()}{category_evidence[1:]}"
+            )
+        if (
+            (category == "unknown" or category_name_evidence)
+            and (identity_alias or {}).get("dictionaryKind") == "skill_id"
+        ):
             category = "sfx"
             category_evidence = "exactSkillIdDictionaryEventIdentity"
-        if category == "unknown" and any(
+        if (category == "unknown" or category_name_evidence) and any(
             context.get("kind") == "projectileSoundField"
             for context in event_contexts
             if isinstance(context, dict)
         ):
             category = "sfx"
             category_evidence = "exactProjectileSoundField"
-        if category == "unknown" and any(
+        if (category == "unknown" or category_name_evidence) and any(
             context.get("kind") == "spawnerPreWarnAudio"
             for context in event_contexts
             if isinstance(context, dict)
         ):
             category = "sfx"
             category_evidence = "exactSpawnerPreWarnAudioField"
-        if category == "unknown" and any(
+        if (category == "unknown" or category_name_evidence) and any(
             context.get("kind") == "patrolSubActionPlayAudio"
             for context in event_contexts
             if isinstance(context, dict)
         ):
             category = "sfx"
             category_evidence = "exactPatrolSubPlayAudioData"
-        if category == "unknown" and any(
+        if (category == "unknown" or category_name_evidence) and any(
             context.get("kind") == "charInteractAudioEvent"
             for context in event_contexts
             if isinstance(context, dict)
         ):
             category = "sfx"
             category_evidence = "exactCharInteractAudioEventField"
-        if category == "unknown" and any(
+        if (category == "unknown" or category_name_evidence) and any(
             context.get("kind") == "physicsAudioComponentEvent"
             for context in event_contexts
             if isinstance(context, dict)
         ):
             category = "sfx"
             category_evidence = "exactPhysicsAudioComponentEventField"
-        if category == "unknown" and any(
+        if (category == "unknown" or category_name_evidence) and any(
             context.get("kind") in {
                 "modelViewStateAudioEvent", "modelViewStatePositionAudioEvent"
             }
@@ -1219,7 +1812,9 @@ def build_event_rows(
         ):
             category = "sfx"
             category_evidence = "exactModelViewStateAudioBehavior"
-        if category == "unknown" and any(
+        if (
+            category == "unknown" or category_name_evidence
+        ) and any(
             context.get("kind") in {
                 "audioDialogVoiceDefinition", "responsiveDialogVoice", "voiceToneVariant",
                 "responsiveDialogToneVariant",
@@ -1244,7 +1839,7 @@ def build_event_rows(
                 )
                 else "exactAudioDialogVoiceIdentity"
             )
-        if category == "unknown" and any(
+        if (category == "unknown" or category_name_evidence) and any(
             context.get("kind") == "tableEventHash"
             and context.get("table") == "AudioDialogCustomEventTable"
             for context in event_contexts
@@ -1259,7 +1854,16 @@ def build_event_rows(
                 else "wwiseObjectWithoutRecoveredTriggerName"
             )
         else:
-            event_identity_status = "recoveredAuthoredName"
+            event_identity_status = (
+                "recoveredIl2CppMetadataEventSymbol"
+                if (
+                    metadata_alias
+                    and not identity_alias
+                    and key not in authored_name_keys
+                    and key not in context_authored_display_names
+                )
+                else "recoveredAuthoredName"
+            )
         (
             purpose_knowledge_status,
             purpose_investigation_priority,
@@ -1275,6 +1879,7 @@ def build_event_rows(
             "hash": event_hash,
             "category": category,
             "categoryEvidence": category_evidence,
+            "categoryNameEvidence": category_name_evidence,
             "foundInWwise": bool(evidence_rows),
             "audioLibraryResolutionStatus": (
                 "resolvedWwiseEventObject"
@@ -1282,13 +1887,21 @@ def build_event_rows(
                 else "eventHashAbsentFromScannedBankSet"
             ),
             "eventIdentityStatus": event_identity_status,
-            "eventNameEvidence": (identity_alias or {}).get("evidence"),
+            "eventNameEvidence": (
+                (identity_alias or {}).get("evidence")
+                or (metadata_alias or {}).get("evidence")
+            ),
             "eventNameSourceKind": (
                 "skillIdDictionary"
                 if (identity_alias or {}).get("dictionaryKind") == "skill_id"
+                else "il2CppMetadataField"
+                if metadata_alias
                 else None
             ),
             "eventNameCollectionSources": event_name_sources.get(key, []),
+            "eventNameMetadataField": (metadata_alias or {}).get("metadataField"),
+            "eventNameMetadataDeclaringType": (metadata_alias or {}).get("metadataDeclaringType"),
+            "eventNameMetadataFieldToken": (metadata_alias or {}).get("metadataFieldToken"),
             "identityOnlyPlaybackPlacementStatus": (identity_alias or {}).get("playbackPlacementStatus"),
             "identityNumericSkillIds": (identity_alias or {}).get("numericSkillIds") or [],
             "identityTableSources": (identity_alias or {}).get("tableSources") or [],

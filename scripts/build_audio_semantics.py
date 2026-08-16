@@ -100,8 +100,8 @@ PROJECTILE_SOUND_PHASES = {
 # authoritative value; these names are presentation labels, not a claim that
 # selection behavior was evaluated offline.
 SELECTION_HIRC_TYPES = frozenset({5, 6, 12, 13})
-AUDIO_SEMANTIC_SCHEMA_VERSION = 78
-TRIGGER_CONTEXT_SCHEMA_VERSION = 31
+AUDIO_SEMANTIC_SCHEMA_VERSION = 100
+TRIGGER_CONTEXT_SCHEMA_VERSION = 32
 
 MONO_BEHAVIOUR_AUDIO_EVENT_FIELD_NAMES = frozenset({
     "_spawnAudioEvent", "_finishAudioEvent", "_onHitAudioEvent",
@@ -118,7 +118,9 @@ MONO_BEHAVIOUR_AUDIO_EVENT_PREFILTERS = tuple(sorted(
     | {"soundBase.soundSpawn", "soundBase.soundFinish", "PlayLineSound"}
 ))
 MONO_BEHAVIOUR_AUDIO_CONTEXT_CACHE_SCHEMA_VERSION = 2
-RUNTIME_MODEL_CACHE_SCHEMA_VERSION = 15
+RUNTIME_MODEL_CACHE_SCHEMA_VERSION = 96
+METADATA_EVENT_SYMBOL_SCHEMA_VERSION = 1
+METADATA_EVENT_SYMBOL_RE = re.compile(r"^AU_[A-Z0-9_]+$")
 RADIO_MEDIA_CONTEXT_LIMIT = 64
 RADIO_MEDIA_SEARCH_LIMIT = 96
 RADIO_CATALOG_ITEM_LIMIT = 64
@@ -442,6 +444,31 @@ def native_playback_stage(
     if method_index is not None:
         row["methodIndex"] = method_index
     return row
+
+
+def native_unmapped_playback_entry(
+    role: str,
+    type_name: str,
+    method: str,
+    virtual_address: str,
+    relation: str,
+    evidence: str,
+) -> dict[str, Any]:
+    """Describe a current-build native entry point with no managed owner.
+
+    Some callers enter the bridge through compiler/native helpers that are not
+    represented by an IL2CPP method pointer (and are not recovered by the
+    generic-instantiation map).  Keep those helpers explicit without inventing
+    a managed token or method index.
+    """
+    return {
+        "role": role,
+        "type": type_name,
+        "method": method,
+        "virtualAddress": virtual_address,
+        "relation": relation,
+        "evidence": evidence,
+    }
 
 
 AUDIO_MUSIC_NATIVE_STATE_GROUPS = (
@@ -992,6 +1019,56 @@ AUDIO_RUNTIME_SELECTOR_GROUPS = (
 )
 
 
+def wwise_selector_group_catalog() -> tuple[dict[str, Any], ...]:
+    """Return runtime selector rows plus exact music-state enum joins.
+
+    The native selector rows above come from direct current-build setter or
+    correlation evidence.  Music state groups are a separate exact metadata
+    surface, but their hashes also occur in serialized v150 SetState actions
+    and type-6 selector packages.  Publishing them in the same catalog lets
+    both surfaces use the same conservative ID join without inventing Wwise
+    authored names.
+    """
+
+    rows: list[dict[str, Any]] = [dict(row) for row in AUDIO_RUNTIME_SELECTOR_GROUPS]
+    for raw in AUDIO_MUSIC_NATIVE_STATE_GROUPS:
+        row = dict(raw)
+        recovered_name = str(row.get("recoveredName") or "").strip()
+        role = str(row.get("role") or "musicState")
+        row.setdefault("groupType", "state")
+        row["semanticRole"] = f"musicState:{role}"
+        row["semanticLabel"] = (
+            f"Music state / {recovered_name}"
+            if recovered_name
+            else f"Music state / {role}"
+        )
+        row["semanticEvidence"] = "exactCurrentMetadataEnumAndNativeSetter"
+        row.setdefault(
+            "authoredGroupNameStatus",
+            "recoveredExactHash" if recovered_name else "unrecovered",
+        )
+        row.setdefault("runtimeScope", "global")
+        row.setdefault(
+            "runtimeObservationStatus",
+            "staticSetterCallsitesExactLiveStateNotObserved",
+        )
+        values: list[dict[str, Any]] = []
+        for raw_value in row.get("values") or ():
+            value = dict(raw_value)
+            member = str(value.get("member") or "").strip()
+            if member and not value.get("semanticName"):
+                value["semanticName"] = member
+            value.setdefault(
+                "semanticEvidence",
+                value.get("resolution")
+                or "exactCurrentMetadataEnumMemberFNV1Utf16Hash",
+            )
+            values.append(value)
+        row["values"] = values
+        rows.append(row)
+    return tuple(rows)
+
+
 AUDIO_MUSIC_NATIVE_TRANSITION_REGISTRATIONS = (
     {
         "stateMask": 0x00000040,
@@ -1206,6 +1283,21 @@ AUDIO_PLAYBACK_NATIVE_CALL_CHAINS = {
         "evidence": "exactCurrentGameAssemblyDirectCallsAndSharedNativeFunctionPointer",
         "gameAssemblySha256": CUSTOM_FOOTSTEP_GAME_ASSEMBLY_SHA256,
         "runtimeObservationStatus": "staticNativeCallChainNotLivePlaybackTrace",
+        "alternateEntryPoints": (
+            native_unmapped_playback_entry(
+                "stringCallbackEntry",
+                "Unmapped current-build native helper",
+                "string event + callback helper (managed owner unresolved)",
+                "0x183288d10",
+                (
+                    "Timeline and VoicePlayer callers pass eventName, audioObjectId, callbackType, "
+                    "and callback. The helper calls Beyond.Audio.AudioHashGenerator.Compute at "
+                    "0x18328dcd0, writes a zero cookie, then tail-jumps AudioAdapter._PostEvent "
+                    "at 0x18328a690."
+                ),
+                "decodedCurrentGameAssemblyBody;notInCodegenOrGenericMethodPointerTables",
+            ),
+        ),
         "stages": (
             native_playback_stage(
                 "request",
@@ -1384,6 +1476,60 @@ AUDIO_PLAYBACK_NATIVE_CALL_CHAINS = {
         "evidence": "exactCurrentGameAssemblyDirectCallsAndDistinctNativeFunctionPointer",
         "gameAssemblySha256": CUSTOM_FOOTSTEP_GAME_ASSEMBLY_SHA256,
         "runtimeObservationStatus": "staticNativeCallChainNotLivePlaybackTrace",
+        "alternateEntryPoints": (
+            native_unmapped_playback_entry(
+                "voiceExternalPreparation",
+                "Unmapped current-build native helper",
+                "VoicePlayer external-source preparation helper (managed owner unresolved)",
+                "0x183abef40",
+                (
+                    "VoicePlayer._PlayVoice supplies the resolver output from VoiceContext.voiceData.data "
+                    "(+0x60), wwiseEvent (+0x20), audioObjectId (+0x18), handleId (+0x10), and codec "
+                    "(+0x68), plus the Event/path context, and "
+                    "voice handle fields. The helper validates the Event/path objects, calls "
+                    "Beyond.Audio.AudioAdapter.PostEventExternal at 0x183abf0a0 with the incoming "
+                    "Event/object values, resolver output as externalSourceKey, fixed externalCookie "
+                    "0x24db9834, callback type 0x100001, the context handle as callback cookie, and "
+                    "the fifth stack argument as codec before entering _PostEventWithExternalSource."
+                ),
+                "decodedCurrentGameAssemblyBody;directCallToMappedPostEventExternal",
+            ),
+            native_unmapped_playback_entry(
+                "voiceExternalSourceKeyResolution",
+                "Unmapped current-build native helper",
+                "VoicePlayer external-source key/path resolver (managed owner unresolved)",
+                "0x183abe750",
+                (
+                    "VoicePlayer._PlayVoice passes VoiceContext.voiceData.data (+0x60) and an out pointer. The helper "
+                    "calls shared formatter target 0x182f25040, whose current body performs runtime/template UTF-16 "
+                    "placeholder expansion, stores its returned managed string through the out pointer, and "
+                    "tail-enters the write-barrier helper; the out value is then forwarded as "
+                    "PostEventExternal.externalSourceKey. The body does not itself read a file or post to Wwise. "
+                    "The same formatter target is called by VoiceI18n.GetVoicePath/GetDebugVoicePath "
+                    "(0x186b0296c/0x186b02b1c) and VFS path helpers, so it is not proven "
+                    "to be an AudioObject resolver."
+                ),
+                "decodedCurrentGameAssemblyBody;sharedVoiceI18nAndVfsPathCallers;callerAndOutParameterEvidence;templateExpansionAndStringCopy;sharedFormatterTarget0x182f25040",
+            ),
+            native_unmapped_playback_entry(
+                "nativeExternalDescriptor",
+                "AkSoundEngine native export",
+                "external PostEvent export CSharp_b533bd82e4996d0c1d5686812d0f2",
+                "0x1800285d0",
+                (
+                    "GameAssembly resolves this obfuscated AkSoundEngine export for the external-source overload. "
+                    "Its shared native body 0x1800c38b0 enters 0x1800c08d0 when cExternals is nonzero, copies each "
+                    "0x20-byte source descriptor, duplicates szFile (descriptor +0) into a native source record "
+                    "at record +0x10, and preserves codec/cookie "
+                    "plus the optional in-memory pointer/size. The in-memory branch validates RIFF/WAVE/PLUG/MIDI "
+                    "headers at 0x18011bf00. The copied allocation is carried through 0x1800c3990's event record "
+                    "+0x14 and into the source-manager constructor 0x1800e1320, which retains the copied external-descriptor "
+                    "allocation pointer at manager +0x38. No file-open call occurs in this descriptor path, and the later "
+                    "source-state key -> exact sourceInfo +0x10 instance join remains unproven."
+                ),
+                "currentAkSoundEngineExportHash;nativeExternalDescriptorCopy;szFileDescriptorPlus0ToNativeRecordPlus10;descriptorAllocationRetainedAtManagerPlus38;inMemoryWaveValidator;noFileOpenCallsite;sourceStateKeyConstructionKnown;sourceStateKeyContextPlus268;sourceStateKeyInstanceJoinUnproven",
+            ),
+        ),
         "stages": (
             native_playback_stage(
                 "request",
@@ -1413,13 +1559,22 @@ AUDIO_PLAYBACK_NATIVE_CALL_CHAINS = {
                 "Sets the authored external-source cookie separately from the Event id.",
             ),
             native_playback_stage(
+                "externalSourceCookieBankJoinAudit",
+                "Wwise External Source AkBankSourceData",
+                "sourceId -> iExternalSrcCookie",
+                None,
+                "",
+                "0x24db9834",
+                "The current CN v150 HIRC corpus contains 1,712 exact Wwise External Source source records (plugin 0x00080001); every record has sourceId 618371124 = 0x24db9834, the same constant written by the current VoicePlayer external-source helper at 0x183abefd9 before PostEventExternal. This closes the serialized source-cookie to managed AkExternalSourceInfo cookie identity and therefore the callback-family selection boundary. It does not identify the per-request externalSourceKey path, a particular sourceInfo +0x10 instance, or a live callback/file/PCM observation.",
+            ),
+            native_playback_stage(
                 "externalFile",
                 "AkExternalSourceInfo",
                 "set_szFile",
                 444128,
                 "0x0600015a",
                 "0x183abe850",
-                "Sets the external audio file path.",
+                "Sets the external audio file path directly from the externalSourceKey argument carried by _PostEventWithExternalSource; the managed key/path and the AkExternalSourceInfo.szFile field therefore share one value before native descriptor copying. This managed identity does not by itself prove the later native source-state key equals the registration serial.",
             ),
             native_playback_stage(
                 "externalCodec",
@@ -1431,13 +1586,256 @@ AUDIO_PLAYBACK_NATIVE_CALL_CHAINS = {
                 "Sets the codec id used by the external source.",
             ),
             native_playback_stage(
+                "externalCallbackPackage",
+                "AkCallbackManager+EventCallbackPackage",
+                "Create",
+                446969,
+                "0x06000c73",
+                "0x18328ca20",
+                "Wraps the bridge external callback and the external-playing mapping object; a successful package supplies callback flags 1 to the Wwise post.",
+            ),
+            native_playback_stage(
                 "wwise",
                 "AkSoundEngine",
                 "PostEvent external-source overload",
                 446376,
                 "0x06000a22",
                 "0x183abed90",
-                "Crosses dedicated native slot 0x18f361150; ordinary Event posting uses 0x18f361158.",
+                "Calls PostEvent(eventId, audioObjectId, flags=1, externalCallback, mappingCookie, cExternals=1, externalSourceArray) and crosses dedicated native slot 0x18f361150; ordinary Event posting uses 0x18f361158.",
+            ),
+            native_playback_stage(
+                "nativeSourceManager",
+                "AkSoundEngine native external-source manager",
+                "external source object construction",
+                None,
+                "",
+                "0x1800e1320",
+                "The wrapper 0x1800e12e0 passes the external context pointer/count plus callback, cookie, and flags into the native constructor. The constructor allocates and hash-links a source object, storing its constructor input id at +0x4c, callback at +0x50, cookie at +0x58, flags at +0x60, descriptor/context pointers at +0x28/+0x38/+0x40/+0x48, and chain-next at +0x68. For the shared external descriptor path, nativeSourceDescriptorManagerRetentionAudit below proves that +0x38 is the copied external-descriptor allocation pointer, while +0x40/+0x48 retain its companion fields. Every current constructor callsite reaches +0x4c from the internally generated registration serial written at 0x1800c3990 record +0xc (global lock-xadd result +1, via the 0x1800c3990/related paths), not from a direct managed external-key copy. The later source setup's exact-key join is covered by nativeSourceManagerJoinAudit below; this stage itself proves registration storage and callback metadata, not a live match or file open.",
+            ),
+            native_playback_stage(
+                "nativeSourceDescriptorManagerRetentionAudit",
+                "AkSoundEngine native external-source manager",
+                "copied external descriptor -> manager entry retention",
+                None,
+                "",
+                "0x1800c38b0",
+                "The shared external PostEvent body 0x1800c38b0 calls descriptor copier 0x1800c08d0 when cExternals is nonzero. On success it stores the copied allocation pointer in its local carrier at [rsp+0x50], passes a pointer to that carrier as c3990 stack argument 6, and 0x1800c3990 copies 0x14 bytes from that carrier into registration record +0x14/+0x24. The wrapper 0x1800e12e0 then passes record +0x14 to constructor 0x1800e1320; the constructor loads [record+0x14] into manager entry +0x38, so this path proves manager +0x38 is the copied external-descriptor allocation pointer, with +0x40/+0x48 as its copied companion fields. The same constructor stores the callback at +0x50 and cookie/context at +0x58. This is descriptor ownership/retention, not proof that manager +0x38 is a UTF-16 string, a selected sourceInfo instance, an opened handle, or PCM.",
+            ),
+            native_playback_stage(
+                "nativeSourceDescriptorManagerLifetimeAudit",
+                "AkSoundEngine native external-source manager",
+                "manager descriptor retention lifetime and release",
+                None,
+                "",
+                "0x1800e1770",
+                "Exact-key detach callers 0x1800e2a5e and 0x1800e2a8e enter teardown 0x1800e1770 after the source-state attachment array is empty. Teardown reads manager entry +0x38 only to pass the retained copied descriptor allocation to refcount release 0x1800c5f60, then clears/unlinks the entry; it does not dereference +0x38 as a path or feed the provider/codec. This bounds +0x38 as an ownership-retention field on the shared external path, not a direct sourceInfo/provider input.",
+            ),
+            native_playback_stage(
+                "nativeSourceRegistrationSerialAudit",
+                "AkSoundEngine native external-source manager",
+                "constructor wrapper and registration-serial coverage",
+                None,
+                "",
+                "0x1800e1320",
+                "An exhaustive direct-call scan of the selected AkSoundEngine .text finds two wrapper families into constructor 0x1800e1320: 0x1800e12e0 -> 0x1800e1320 at 0x1800e130b, and 0x1800e1490 -> 0x1800e1320 at 0x1800e14d2. The first wrapper has direct registration callers 0x1800c3516, 0x1800c3b31, and 0x1800c3e7e; the second has 0x1800c41cc and 0x1800c4472. These callers allocate/prepare the native records and use the c3990/related lock-xadd registration-serial paths before the wrapper passes the record's +8 dword into constructor field +0x4c. This closes constructor-wrapper coverage for the selected binary, but it still does not prove that the later source-state key equals that serial.",
+            ),
+            native_playback_stage(
+                "nativeSourceLookup",
+                "AkSoundEngine native external-source manager",
+                "external key lookup and callback dispatch",
+                None,
+                "",
+                "0x1800e2820",
+                "Uses the requested numeric key only for bucket selection (edx = key % manager bucket count), then walks the +0x68 chain and compares the exact key against object +0x4c; there is no additional hash transform in this body. It copies object +0x58/+0x28 plus the key and +0x24 into a resolver descriptor, then dispatches the stored +0x50 callback through 0x1800e19a0 with operation 0x10. Sibling lookup 0x1800e28d0 performs the analogous flag-0x20 operation. This is the exact native key-to-callback boundary, not a CreateFileW call.",
+            ),
+            native_playback_stage(
+                "nativeSourceCallbackBranches",
+                "AkSoundEngine native external-source manager",
+                "flag-gated resolver callback descriptor branches",
+                None,
+                "",
+                "0x1800e2820",
+                "The exact-key lookup has two flag-gated callback branches. 0x1800e2820 accepts a source object only when object +0x60 bit 0x10 is set, writes a resolver descriptor at the caller output (+0 cookie/context = object +0x58, +8 context = object +0x28, +0x10 requested key, +0x14 object +0x24), and invokes 0x1800e19a0 with operation 0x10. Sibling 0x1800e28d0 requires object +0x60 bit 0x20, builds the stack descriptor (+0x20 cookie, +0x28 context, +0x30 requested key, +0x34 object +0x24), invokes the stored callback directly with operation 0x20, and stores its return in manager +0x48. Generic invoker 0x1800e19a0 prepares the callback lock/state; fixed bridge 0x180002da0 maps op 0x10 to 0x1800030cf's no-op path and op 0x20 to the queued callback record at 0x180003430. This closes descriptor/operation transport only; it does not identify the managed path, opened handle, or PCM consumer.",
+            ),
+            native_playback_stage(
+                "nativeSourceExtendedCallbackBranches",
+                "AkSoundEngine native external-source manager",
+                "extended exact-key callback branches",
+                None,
+                "",
+                "0x1800e25f0",
+                "The same manager table has two additional exact-key branches. 0x1800e25f0 computes key % bucketCount, walks bucket +0x68, requires entry +0x60 bit 0x80, builds the callback descriptor from entry +0x58/+0x28/key/+0x24, invokes entry +0x50 with operation 0x80, stores the return at manager +0x48, and releases the temporary manager state; direct callsites are 0x1800347af, 0x1800356bf, and 0x18003578f. 0x1800e26f0 performs the same exact-key walk, requires bit 0x2000, copies the caller payload (0x20 bytes plus input +0x20), adds key/entry metadata and callback context, then invokes entry +0x50 with operation 0x2000; its direct caller 0x18004388b iterates range-matched slots at object +0x118. The fixed bridge 0x180002da0 maps op 0x80 to the common 0x30-byte queued record and op 0x2000 to the string-or-generic queued record builder at 0x180003169 -> 0x18000302b. These branches prove extended callback transport only; they do not select a UTF-16 path, open a handle, or deliver PCM.",
+            ),
+            native_playback_stage(
+                "nativeResolverCallback",
+                "AkSoundEngine native external-source resolver",
+                "resolver callback operation dispatch",
+                None,
+                "",
+                "0x1800e19a0",
+                "Prepares callback state and invokes the stored resolver callback with the output descriptor and operation length supplied by the source-manager lookup. The non-null PostEvent callback is normalized by export stub 0x1800285d0 to fixed native bridge 0x180002da0 before it is stored at +0x50; this boundary still does not call CreateFileW, ReadFileEx, or the embedded codec reader.",
+            ),
+            native_playback_stage(
+                "nativeSourceMediaLookup",
+                "AkSoundEngine native source/media state",
+                "external key -> source/media lookup",
+                None,
+                "",
+                "0x18010df60",
+                "Receives the source object and stream state, reads the requested numeric key from source-state +0, and calls 0x1800e2820 (or the fallback registry 0x1801398f0). In the voice/render path, 0x1801443e0 loads context +0x268 into a temporary dword at its local +0x10 and passes the address of that slot as stack argument 5 to 0x18018a5a0 (unless its flag branch clears the argument). The 0x18018a5a0 -> 0x1801898c0 path preserves that pointer in r8, and caller 0x180189a59 passes it as rcx to this lookup, so this callsite reads exactly context +0x268 as source-state key +0. The same lookup has separate mixer callers at 0x180189826, 0x180189e18, and 0x18018a2a8. A related voice/render path 0x180188ed0 -> 0x180188fae -> 0x1800e1ed0 uses the same key, requires source flags +0x60 bit 3, and invokes the stored callback with operation 0x8; fixed bridge 0x180002da0 routes that operation to 0x180002f31, which copies a 0x48-byte notification record and queues it through 0x180003430. That is source-state callback transport, not path opening or PCM delivery. The unrelated 0x1801443e0 local integer computed from temporary state/input +0x10 (initialized from build constant 0x200) and context +0x2a4 is not the key passed at 0x189a59. State-object initializer 0x1800d1f90 copies its +0x268 field from config +0x34. One concrete config-producing path at 0x180034e4f fills that +0x34 from an upstream record +0x14 before 0x1800365f0 calls the initializer; the other constructors 0x1800fc9e0 and 0x18018dba0 receive their config pointers through separate callers. The source-setup join is now closed separately: 0x1800350d7 passes the same source key into 0x1800e2cd0, whose bucket walk performs an exact numeric equality comparison directly against manager entry +0x4c (the 0x1800c3990 record +0xc serial); a successful runtime match and the later path/PCM handoff remain unobserved. no direct call-rel32 or field-dataflow edge proves the alternate mixer key slots' runtime matches. The manager lookup fills the output descriptor at the caller's stack +0x40 with object +0x58 (callback cookie/context), object +0x28 (source context), the requested key at +0x10, and object +0x24 at +0x14 before dispatching callback operation 0x10 through 0x1800e19a0. This statically joins source-state key -> callback descriptor metadata, but not the managed UTF-16 path or exact selected media; direct callers still contain no direct CreateFileW, ReadFileEx, or codec call. This is the precise static boundary before the unresolved virtual-I/O join.",
+            ),
+            native_playback_stage(
+                "nativeSourceProviderPrep",
+                "AkSoundEngine native source/provider preparation",
+                "source metadata -> file/key or memory provider",
+                None,
+                "",
+                "0x1801af7a0",
+                "Consumes owner +0x18 source metadata at +0x288. Flags at sourceInfo +0xc select the in-memory branch (owner +0x338/+0x340) or the file/key branch; in the latter, flag bit 9 selects sourceInfo +0x10 as the descriptor path pointer, while sourceInfo +4, +0x1a and flag-derived fields populate the remaining local descriptor. The registered provider path reaches 0x1800b5e30 -> 0x1800b9460 -> 0x1800b9530, where descriptor +0 is copied as a provider-owned UTF-16 path before default-device I/O queueing. This closes descriptor/path/provider transport, but not source-state key +0 -> this source metadata instance.",
+            ),
+            native_playback_stage(
+                "nativeSourceProviderDescriptorInputAudit",
+                "AkSoundEngine native source/provider preparation",
+                "sourceInfo path field -> provider descriptor input",
+                None,
+                "",
+                "0x1801af7a0",
+                "The exact source-preparation body loads owner +0x18 into r11 and sourceInfo from [r11 + 0x288]. In the file/key branch it initializes the local descriptor pointer from owner +0x338, then when sourceInfo flags select bit 9 it overwrites that pointer with [sourceInfo +0x10]; the remaining descriptor fields come from sourceInfo +4, +0x1a, and flag-derived locals. It passes the address of this local descriptor to the singleton provider vtable +0x28, which reaches 0x1800b5e30 and then 0x1800b9530; provider setup copies descriptor +0 into provider-owned UTF-16 storage. The call boundary carries no explicit manager entry, +0x38, or source-state key value, so this proves sourceInfo/provider input provenance while leaving identity with the copied external descriptor unresolved.",
+            ),
+            native_playback_stage(
+                "nativeSourceKeyCallsites",
+                "AkSoundEngine native source/media state",
+                "source-state key pointer callsites",
+                None,
+                "",
+                "0x18018a5a0",
+                "The shared source-state preparation helper consumes stack argument 5 as a pointer to a numeric key slot, preserves it as r8 into 0x1801898c0, and the 0x180189a59 lookup path passes that pointer to 0x18010df60, which reads the dword at pointer +0. Voice/render caller 0x1801451ea copies [r12+0x268] into local [rbp+0x190] and passes its address; caller 0x180144c1f instead passes r12+0x18 when r12+8 bit 4 is set, otherwise null; mixer/alternate caller 0x18017da06 passes a local zero slot only under its context flag. Thus the exact voice key source is [r12+0x268], while other branches can supply a distinct state field or no key; none is statically proven equal to manager serial +0x4c.",
+            ),
+            native_playback_stage(
+                "nativeSourceKeyWriteAudit",
+                "AkSoundEngine native source/media state",
+                "source-state +0x268 write audit",
+                None,
+                "",
+                "0x1800d2055",
+                "A complete direct-offset/overlap audit of the selected AkSoundEngine .text finds one source-state +0x268 writer: 0x1800d2055 copies config +0x34 into the source-state object. Exact-offset stores at 0x18008668c and 0x1800ac3bf copy larger structures, 0x1800ae238 bulk-clears an e38-sized container, and 0x18012d0fe initializes a separate 0x310-byte object; overlapping 16-byte zero stores at 0x18022ad9c, 0x18022b3f5, and 0x18022b83a begin at +0x264 inside separately allocated 0x320-byte auxiliary objects. All remaining +0x268 hits are stack locals or atomic refcount-like fields. The serial storage resolves to global 0x180344988; its only RIP-relative references are lock-xadd writers at 0x1800c3414, 0x1800c3af2, 0x1800c3e48, 0x1800c418e, and 0x1800c443d, with no direct RIP-relative read at the source-state constructors. No source-state setter copies the serial; the separate 0x1800350d7 -> 0x1800e2cd0 join now proves the key is compared against manager +0x4c, while successful runtime matching remains unobserved.",
+            ),
+            native_playback_stage(
+                "nativeSourceKeyConfigCallsiteAudit",
+                "AkSoundEngine native source/media state",
+                "config +0x34 producer and source-state key callsite coverage",
+                None,
+                "",
+                "0x180034db0",
+                "A byte-level direct-call scan of the selected AkSoundEngine .text finds one direct callsite, 0x18003def1 -> 0x180034db0. The caller passes the callee's stack argument 6 from the record returned by 0x180040350; that accessor returns nested [object +0x10] -> [+0x68] +0x18. Because the returned record is parent B +0x18, callee 0x180034e4f reads parent B +0x2c into config +0x34. Sibling accessor 0x1800404f0 reads the same B +0x2c directly; callsites 0x18003e35b and 0x18003e486 pass that value into source vtable +0x138, proving field reuse in native source/state operations. Source-state construction 0x1800365f0 and initializer 0x1800d1f90 later copy config +0x34 into source-state +0x268. This closes the direct config-producer/callsite and local-field-alias coverage for the selected binary, but parent B is not statically aliased to the 0x1800c3990 external-registration record and its +0xc serial; registration provenance and runtime match remain unproven.",
+            ),
+            native_playback_stage(
+                "nativeSourceStateMetadataProvenanceAudit",
+                "AkSoundEngine native source/media state",
+                "source-state +0x288 metadata provenance",
+                None,
+                "",
+                "0x1800d1f90",
+                "Initializer 0x1800d1f90 copies its incoming r9 directly to source-state +0x288, while copying config +0x34 to source-state +0x268. In the primary voice construction chain, 0x180034db0 forwards its incoming r8 through stack argument +0x20 to 0x1800365f0, which forwards it as r9 to the initializer; the sole direct caller 0x18003def1 supplies that r8 from the record returned by 0x180046580. That selector walks its own +0xe0 table and returns the matched record's +8 pointer. The alternate initializer callers 0x1800fca27 and 0x18018dbc5 receive their metadata pointer through separate call paths. The external-source manager constructor 0x1800e1320 instead stores its own incoming r9 at manager entry +0x38, and no direct call or field-dataflow edge in the selected AkSoundEngine joins that allocation to the 0x180046580 record or source-state +0x288. Therefore +0x288 provenance is now bounded, but sourceInfo identity, runtime key matching, path selection, and PCM delivery remain unobserved.",
+            ),
+            native_playback_stage(
+                "nativeSourceInfoInternalSelectionAudit",
+                "AkSoundEngine native source/media state",
+                "sourceInfo key/mode -> internal source selection registry",
+                None,
+                "",
+                "0x1800d2ed0",
+                "Source-state helper 0x1800d2ed0 dereferences source-state +0x288, then passes sourceInfo dword +0 and mode ((sourceInfo +0xc >> 2) & 0x1f) to 0x1800f5030 through global slot 0x180344a20. That selector walks its own table at +0x88 using bucket count +0x90 and compares entry +8 exactly against sourceInfo +0 before choosing an available candidate. The helper 0x1800f9780 then materializes a 0x20-byte local descriptor: +0 is the matched table entry, +8 is the type-2 candidate context (otherwise null), +0x10 is candidate +8, and +0x18 is candidate +0x10. The caller checks descriptor +0x10/+0x18 against source +0x328 +0x18, passes the candidate through 0x180143de0, then applies sourceInfo to source +0x328 through 0x180104720 before copying the descriptor into the source object. Slot 0x180344a20 is distinct from the external-source manager hash slot 0x1803449f8 and the key-to-decoder registry slot 0x1803449d0. This bounds sourceInfo +0 as an internal selection key that feeds provider/source setup; it is not statically shown to be the external manager serial +0x4c, and runtime values, path/handle choice, and PCM delivery remain unobserved.",
+            ),
+            native_playback_stage(
+                "nativeSourceInfoPathWriterAudit",
+                "AkSoundEngine native source/media state",
+                "sourceInfo +0x10 UTF-16 path writer and metadata-link provenance",
+                None,
+                "",
+                "0x180104630",
+                "The selected build has one direct caller of 0x180104630 at 0x1800e037e. Setter 0x180104630 copies the incoming UTF-16 pointer r8 into source record +0x10 after replacing the 16-byte identity block at +0 and sets the source mode at +0x18; its sibling 0x1801044f0 performs the same path role by measuring r9 with 0x18026b7f8, allocating UTF-16 storage, and copying the characters through 0x180263808 before storing the owned pointer at +0x10 and setting the owned-string flag. Caller 0x1800e037e walks the source-metadata records at r13 +0x20, matches the current source key [r12+4] against record +0, and takes either the direct-path branch (record +8 -> 0x1801044f0) or the alias branch when record +0x18 is nonzero and record +0x10 is present (record +0x10 -> r8 -> 0x180104630). This closes the native writer and UTF-16 storage provenance for sourceInfo +0x10, while no manager entry +0x38, managed external key, or source-state key appears in either writer boundary; exact copied-descriptor identity and runtime values remain unobserved.",
+            ),
+            native_playback_stage(
+                "nativeSourceInfoSerializedParserAudit",
+                "AkSoundEngine serialized sourceInfo-table parser",
+                "serialized cursor -> sourceInfo map key/identity",
+                None,
+                "",
+                "0x1800f5fc0",
+                "The only direct callers of sourceInfo-table parser 0x180047120 are 0x180039a28 and 0x180039b35; the parser itself gates the owning object on virtual type value 6, then consumes an internal serialized cursor. Parser 0x1800f5fc0 writes output +4 from the first cursor dword, output +8 and +0xc from the second dword, output +0x10 from the third dword, and derives output +0x14 flags; the caller passes output +8 as the map key (edx), output +4 as the mode (r8d), and copies output +8..+0x17 as the 16-byte identity block into 0x180045fd0/0x180045f30 records. This closes sourceInfo-table key/identity provenance to the owning object's serialized payload, distinct from Wwise External Source sourceId/cookie 0x24db9834 and the native manager registration serial +0x4c. No manager table, managed externalSourceKey, or source-state key is read at this parser/map-insertion boundary, so the exact sourceInfo instance selected for external playback remains unresolved.",
+            ),
+            native_playback_stage(
+                "nativeSourceManagerJoinAudit",
+                "AkSoundEngine native external-source manager",
+                "source key -> manager serial exact-compare join",
+                None,
+                "",
+                "0x1800e2cd0",
+                "The post-construction source setup at 0x1800350d7 passes edx = [r13 + 0x14], the same parent B +0x2c that feeds config +0x34 and source-state +0x268, into 0x1800e2cd0. That helper uses the manager table supplied in rcx (loaded from the native global handle slot at 0x1803449f8), computes key % bucketCount from manager +0x8, walks the bucket +0x68 chain, and compares entry +0x4c directly against edx with no hash transform. On a match it stores the source-state pointer and updates the manager entry's auxiliary state; the sibling setup callsite 0x180034762 follows the same helper. This closes the static source-key -> manager-entry +0x4c comparison path, while a successful runtime match, the manager instance's registration provenance at that invocation, and the later UTF-16 path/PCM handoff remain unobserved.",
+            ),
+            native_playback_stage(
+                "nativeSourceManagerJoinCallsiteAudit",
+                "AkSoundEngine native external-source manager",
+                "exact direct-call census for source-key manager joins",
+                None,
+                "",
+                "0x1800e2cd0",
+                "An exhaustive direct-call scan of the selected AkSoundEngine .text finds four valid callsites to exact-key join helper 0x1800e2cd0: 0x180034762 and 0x1800350d7 in the primary source/voice construction paths, plus 0x1800d35a8 and 0x1800e06ea in broader manager state transitions. The first passes edx = [r14 + 0x14], r8 = rbx + 0x18 (or null), and r9 = r15; the second passes edx = [r13 + 0x14], r8 = [rsi], and r9 = r14; the latter two pass edx = [rdi + 0x250], r8 = [rdi - 0x18], r9 = [rdi + 8], or edx = [r13 + 0x34], r8 = r14, r9 = [r14 + 0x20], respectively. This expands join coverage beyond the primary source setup, but only the two 0x034xxx callsites carry the parent-B/source-state key explanation; the broader callers do not by themselves prove external-source media selection, path opening, or PCM delivery.",
+            ),
+            native_playback_stage(
+                "nativeSourceManagerJoinPayloadBoundaryAudit",
+                "AkSoundEngine native external-source manager",
+                "exact-key join payload and attachment boundary",
+                None,
+                "",
+                "0x1800e2cd0",
+                "The exact 0x1800e2cd0 body proves that a key hit is an attachment operation, not path selection: after the +0x4c equality check it appends the supplied source-state pointer r8 to the manager entry dynamic array at +0x10, updates live count/capacity at +0x18/+0x1c, and, when absent, retains the auxiliary state pointer r9 at +0x30 while updating its reference/status fields. The join body does not read manager entry +0x38/+0x40, the constructor's descriptor-derived refcount/context companions, or the copied UTF-16 record at +0x10; those fields are consumed by separate callback/cleanup paths. Therefore the e2cd0 result closes source-state lifecycle registration only. The source-state key still needs a runtime-equal manager entry before the separate provider path can be joined to the managed UTF-16 path, file handle, or PCM consumer.",
+            ),
+            native_playback_stage(
+                "nativeSourceRegistrationKeyIndependenceAudit",
+                "AkSoundEngine native external-source manager",
+                "registration serial versus source-state key provenance",
+                None,
+                "",
+                "0x1800c3990",
+                "The selected-binary registration families generate manager-entry keys internally: 0x1800c3af2 lock-xadds global serial slot 0x180344988, stores serial+1 in record +0xc, and passes record +4 to wrapper 0x1800e12e0; the sibling family at 0x1800c3414/0x1800c3516 and the 0x1800e1490 callers at 0x1800c3e48/0x1800c443d use the same lock-xadd pattern before constructor storage at manager entry +0x4c. The primary source joins instead load edx = [r14 + 0x14] at 0x180034762 or edx = [r13 + 0x14] at 0x1800350d7, i.e. parent-B/source-state data, and the complete +0x268 writer audit finds no store sourced from the serial global. Therefore the exact-key comparison is proven, but key equality remains a runtime value question rather than a statically copied serial; path/handle selection and PCM delivery remain unobserved.",
+            ),
+            native_playback_stage(
+                "nativeSourceStateAttachmentLifecycle",
+                "AkSoundEngine native external-source manager",
+                "source-state attachment detach and cleanup",
+                None,
+                "",
+                "0x1800e29d0",
+                "The source-state pointer stored by 0x1800e2cd0 is retained in the matched manager entry's dynamic array at +0x10, with live count at +0x18 and capacity at +0x1c. Detach helper 0x1800e29d0 repeats the exact key bucket walk, scans that array for the supplied source-state pointer, removes it with a memmove and decrements +0x18, then calls 0x1800e1770; if no attached states remain, that path unlinks the entry, releases its +0x30 auxiliary state and +0x50 callback, and frees the record. Manager reset 0x1800e2e20 similarly clears every entry array (+0x10/+0x18/+0x1c) before releasing the hash table. These consumers only manage attachment lifetime; they do not read a path, issue file I/O, or feed the codec, so the e2cd0 hit remains a state-registration join rather than a media-selection edge.",
+            ),
+            native_playback_stage(
+                "nativeSourceKeyDecoderRegistry",
+                "AkSoundEngine source/provider decoder registry",
+                "source-state key -> active decoder association",
+                None,
+                "",
+                "0x18013f440",
+                "After source/provider preparation, 0x1801b0160 reads decoder +0x18 owner and passes owner +0x268 as the key, the decoder pointer as r8, and a status record as r9 to registry helper 0x18013f440. The registry object is supplied through global slot 0x1803449d0, distinct from the source-manager hash slot 0x1803449f8 used by 0x1800e2cd0. Its +0x10 dynamic table uses 0x18-byte records keyed by dword +0, stores the decoder pointer at +8, and updates status fields at +0x10/+0x14; helper 0x18013f440 exact-searches the key, updates an existing decoder record or grows/inserts a new one. Direct callers include 0x1801afab5 (provider/decoder preparation) and codec-side refreshes 0x1801c4932, 0x1801c4978, 0x1801c56f0, and 0x1801c570d. Teardown caller 0x180189041 reaches 0x18013f290 to remove a key+decoder pair. This statically joins the source-state key to an active decoder lifetime, not to the UTF-16 path value, ReadFileEx request, or PCM buffer.",
+            ),
+            native_playback_stage(
+                "nativeCallbackBridge",
+                "AkSoundEngine native callback bridge",
+                "external-source callback operation switch",
+                None,
+                "",
+                "0x180002da0",
+                "The PostEvent export stub 0x1800285d0 replaces a non-null managed callback with this fixed native bridge. Operation 0x10 takes the default no-op branch at 0x1800030cf; operation 0x20 packages the resolver descriptor (cookie/context/key/aux) into a 0x30-byte callback record and enqueues it through 0x180003430. Voice/render source path 0x180188ed0 -> 0x180188fae -> 0x1800e1ed0 invokes the same stored callback with operation 0x8; the bridge routes it to 0x180002f31, copies a 0x48-byte record, and queues it through 0x180003430. These branches establish callback transport, not file opening or PCM delivery.",
+            ),
+            native_playback_stage(
+                "nativeCallbackPump",
+                "AkCallbackManager",
+                "PostCallbacks",
+                446952,
+                "0x06000c62",
+                "0x18328b440",
+                "Resolves CSharp_b1b6b5807eef294 to native export 0x18002ea80 -> 0x180002d10, detaches the global native callback list, then reads each record cookie/type/info through CSharp_e6dab33ded3a701 (0x18002e310), CSharp_bd21aa4a6b071193c (0x18002e320), and CSharp_c5c6cb50efed2 (0x18002e330). Each record enters _ProcessEventCallback 0x18328cd90 and the registered managed callback package delegate. For source-manager operation 0x20 this proves callback transport and managed dispatch, not file opening.",
             ),
             native_playback_stage(
                 "callback",
@@ -1446,7 +1844,7 @@ AUDIO_PLAYBACK_NATIVE_CALL_CHAINS = {
                 480009,
                 "0x0600005e",
                 "0x1843c7930",
-                "Reads gameObjID and cookie; raw callback type 1 removes the external mapping and starts cleanup.",
+                "Receives the callback package after native queue transport and managed callback dispatch; raw callback type 1 removes the external mapping and starts cleanup. It is not a direct file-open implementation.",
             ),
             native_playback_stage(
                 "dispose",
@@ -1469,7 +1867,280 @@ AUDIO_PLAYBACK_NATIVE_CALL_CHAINS = {
         ),
         "boundary": (
             "The external file/cookie/codec route and EndOfEvent cleanup are exact and use a different native PostEvent slot from ordinary "
-            "Event media. No current live request, external filename, returned playing id, or decoded external-file content was observed."
+            "Event media. The native source-manager object, exact-key bucket lookup, and resolver callback dispatch are now also exact: "
+            "object +0x4c is compared through the +0x68 hash chain, +0x50 is invoked with operation 0x10 (or 0x20 in the sibling path), "
+            "and +0x58/+0x28 plus key metadata form the callback descriptor. The PostEvent export stub's fixed bridge is exact: operation "
+            "0x10 is a native no-op, while operation 0x20 queues a descriptor record. AkCallbackManager.PostCallbacks at 0x18328b440 "
+            "detaches that queue through 0x180002d10, decodes cookie/type/info with the three native getters, and dispatches through "
+            "_ProcessEventCallback at 0x18328cd90 into the registered managed delegate. Wwise's separate default I/O device and ReadFileEx "
+            "batch reader are exact in the stream-manager chain, but the external key/context is not statically joined to an opened file "
+            "handle or read request. The callback-to-codec join, live returned playing id, and decoded external-file content remain unobserved."
+        ),
+    },
+    "vfsPackageLoad": {
+        "id": "vfsBasePathToWwisePackage",
+        "label": "VFS base path -> selected PCK -> Wwise LoadFilePackage",
+        "evidence": "exactCurrentGameAssemblyDirectCallsAndManagedPathBridge",
+        "gameAssemblySha256": CUSTOM_FOOTSTEP_GAME_ASSEMBLY_SHA256,
+        "runtimeObservationStatus": "staticNativeCallChainNotLivePackageTrace",
+        "stages": (
+            native_playback_stage(
+                "vfsBasePath",
+                "Beyond.VFS.VirtualFileSystem",
+                "GetAkSoundEngineVFSBasePath",
+                295909,
+                "0x06000d80",
+                "0x184653ea0",
+                "Returns the VFS-derived base path consumed by audio initialization.",
+            ),
+            native_playback_stage(
+                "initBasePaths",
+                "Beyond.Audio.AudioVFSLoader",
+                "InitBasePaths",
+                480253,
+                "0x06000152",
+                "0x1846536a0",
+                "Obtains the VFS base path and initializes path-related loader state.",
+            ),
+            native_playback_stage(
+                "pckDispatch",
+                "Beyond.Audio.AudioVFSLoader",
+                "_DoLoadPcksFromVfs",
+                480258,
+                "0x06000157",
+                "0x183eb5100",
+                "Iterates selected VFS PCK records and dispatches single-package loads.",
+            ),
+            native_playback_stage(
+                "singlePck",
+                "Beyond.Audio.AudioVFSLoader",
+                "_DoLoadSinglePckFromVfs",
+                480259,
+                "0x06000158",
+                "0x183eb5a20",
+                "Resolves the VFS record/path and creates the package load record.",
+            ),
+            native_playback_stage(
+                "wwisePackage",
+                "AkSoundEngine",
+                "LoadFilePackage",
+                446704,
+                "0x06000b6a",
+                "0x183eb5cd0",
+                "Converts the managed package path to a native string and crosses the Wwise package bridge.",
+            ),
+        ),
+        "branches": (
+            {
+                "id": "initLanguageHotfix",
+                "label": "Init/language/hotfix PCKs",
+                "relation": (
+                    "TryLoadInitPck (480249), TryLoadLanguagePck (480251), and "
+                    "_DoLoadLanguageAndHotfixPck (480252) feed the same VFS package loop."
+                ),
+            },
+            {
+                "id": "extraPck",
+                "label": "Extra PCK path",
+                "relation": (
+                    "LoadExtraPckFromPath (480262, 0x18635f304) calls AddBasePath "
+                    "(446705, 0x184653e10) before LoadFilePackage."
+                ),
+            },
+            {
+                "id": "debugPck",
+                "label": "Debug bank path",
+                "relation": (
+                    "AudioBankManager debug add/load helpers call SetBasePath "
+                    "(446702, 0x1853d8d08) and then LoadFilePackage."
+                ),
+            },
+        ),
+        "boundary": (
+            "The managed VFS-to-Wwise package path is exact, but these wrappers only pass a native path into Wwise. "
+            "The native file read, bank parsing, and external-source callback-to-file-open path remain unobserved."
+        ),
+    },
+    "streamManagerIoPump": {
+        "id": "streamManagerIoPump",
+        "label": "AkSoundEngine.PerformStreamMgrIO -> registered native I/O-device vtable",
+        "evidence": "exactCurrentGameAssemblyToAkSoundEngineExportAndNativeVtableLoop",
+        "gameAssemblySha256": CUSTOM_FOOTSTEP_GAME_ASSEMBLY_SHA256,
+        "runtimeObservationStatus": "staticNativeIoDeviceDispatchNotLive",
+        "stages": (
+            native_playback_stage(
+                "managedBridge",
+                "AkSoundEngine",
+                "PerformStreamMgrIO",
+                446743,
+                "0x06000b91",
+                "0x1853d36c8",
+                "Lazily resolves the obfuscated native export hash e0f7cfc07dcaa207637ad91773d6 and jumps through the generated bridge.",
+            ),
+            native_playback_stage(
+                "nativeExport",
+                "AkSoundEngine native export",
+                "CSharp_e0f7cfc07dcaa207637ad91773d6",
+                446743,
+                "0x06000b91",
+                "0x180033d20",
+                "The installed AkSoundEngine export stub jumps to native stream-manager dispatch at 0x180007900.",
+            ),
+            native_playback_stage(
+                "nativePump",
+                "AkSoundEngine native stream manager",
+                "registered I/O-device pump",
+                None,
+                "",
+                "0x1800b6b80",
+                "Checks initialization, iterates the global registered stream-device pointer array, and invokes each device object's vtable slot +0x8 (implementation 0x1800bc1e0). Native Init export CSharp_d857bb8298429c59 (0x180006310) reaches setup 0x180023f90 -> 0x1800b5fc0, which allocates a 0x468-byte object, constructor 0x1800bb1b0 installs vtable 0x180292fc8, virtual +0x20 initializer 0x1800bc0b0 succeeds, and stores it in array 0x180344900/count 0x180344908; the pump itself dispatches the device and does not directly call a Windows file API.",
+            ),
+            native_playback_stage(
+                "sourceManager",
+                "AkSoundEngine stream source manager",
+                "source metadata -> decoder provider",
+                None,
+                "",
+                "0x1801af7a0",
+                "Codec source preparation 0x1801b03b8 calls 0x1801af7a0, which selects the branch from owner metadata at +0x288 and obtains singleton 0x1803448f0. Its vtable +0x20 allocates a memory provider (vtable 0x180292ec0), while +0x28 allocates one 0x110-byte file/key provider object through 0x1800b5e30. Constructor 0x1800bb160 installs the primary vtable 0x1802932e8 at the base and a decoder-facing secondary point 0x180293260 at base +0x90; the source manager returns that secondary point at decoder +0x58. Both interfaces therefore belong to one provider allocation: the codec uses the secondary +0x78/+0x80 queue methods, while the registered-device pump uses the primary +0x20 method and request context. The in-memory branch copies owner +0x338/+0x340 into decoder +0x60/+0x68 and enters codec +0x120/+0x130; the provider branch is the codec's source abstraction, not the Windows file handle itself.",
+            ),
+            native_playback_stage(
+                "sourceDescriptor",
+                "AkSoundEngine file/key source descriptor",
+                "descriptor UTF-16 path -> provider-owned storage",
+                None,
+                "",
+                "0x1800b9530",
+                "The file/key branch of 0x1801af7a0 builds a local source descriptor from owner metadata +0x288/+0x10 when its flag branch selects an external path, then passes it into singleton vtable +0x28 (0x1800b5e30 -> 0x1800b9460). Provider setup 0x1800b9530 treats descriptor +0 as a UTF-16 path pointer and copies it into provider-owned storage, then copies descriptor +0xc..+0x2b source metadata. This is an exact descriptor-to-path-buffer join; it does not yet identify which external key/context supplied that descriptor.",
+            ),
+            native_playback_stage(
+                "sourceProviderQueue",
+                "AkSoundEngine external/file source provider",
+                "provider GetBuffer -> registered device request",
+                None,
+                "",
+                "0x1800b85c0",
+                "The file/key provider's decoder-facing secondary vtable +0x78 enters 0x1800b85c0, consumes queued blocks through 0x1800b89b0, and when empty uses bound device +0x38 0x1800b8120; setup 0x1800b5d70 and 0x1800b7a40 bind the primary provider base into those queues. It releases consumed nodes through secondary +0x80 (0x1800b9a00), a release/advance-like operation. Source preparation 0x1801af960 passes that provider buffer/size into decoder address point 0x18029cde8 +0x130 (0x1801afc80), and stores the buffer at decoder +0x60, with refill/reset using decoder +0x120/+0x80. The pump's primary-provider request stores that same base object at request +0x48; completion 0x1800bf190 therefore receives the provider base that owns the codec-facing secondary point, recycles its request, and walks associated nodes through virtual +0x30. This closes fixed read completion to the provider allocation/queue, while the codec stream callback remains an indirect call.",
+            ),
+            native_playback_stage(
+                "requestAssembly",
+                "AkSoundEngine stream-manager request assembly",
+                "provider chunk -> 0x18-byte default-I/O descriptor",
+                None,
+                "",
+                "0x1800bc1e0",
+                "The registered-device method 0x1800bc1e0 selects each source provider through 0x1800ba0e0, calls primary provider +0x20 at 0x1800bc369 with descriptor/candidate/flag output slots, and assembles 0x18-byte descriptors before dispatching 0x1800bc4a5. The primary provider base is the base of the dual-interface object constructed by 0x1800bb160; its +0x20 implementation is 0x1800bc660, which may create a chunk/request through 0x1800bb970 -> 0x1800bb8e0. The decoder-facing secondary point is base +0x90 at vtable 0x180293260, whose +0x20 = 0x1800b8820 is serializer-only and does not write the candidate context or flag. For the ordinary branch, the pump forms descriptor +0x10 as the address of candidate +0x8, where candidate is the request returned through bb970/bb8e0. The resulting carrier view is exact: carrier +0 = request +0x8, +8 = request +0x10, +0x10 = request +0x18 buffer/source, +0x18 = request +0x20 static callback 0x1800bf190, +0x20 = request +0x28 self, and +0x28 = request +0x30 ring helper. The request constructor retains the primary provider base at request +0x48, so the fixed completion callback's provider identity is the same allocation as the codec-facing secondary +0x90 point. The state-2 helper 0x1800b97e0 remains a separate default-I/O filter/deferred callback path; branch-dependent provenance remains for its carrier. Init 0x180001060 installs active address point 0x18028c020 at stream-manager +0x428; its +0x28/+0x30/+0x38 slots resolve to 0x180005430, 0x180024270 (ReadFileEx), and 0x1800243e0 (WriteFileEx). The provider-filter callback 0x1800b92c0 -> 0x1800b8b00 is a queue/state transition, not the codec callback. This closes ordinary provider -> carrier -> ReadFileEx -> fixed request callback transport and joins the fixed callback to the codec provider allocation; the indirect codec stream callback target for other descriptors remains open, while the selected decoder output's 0x1801c4650 -> 0x1801c7ec0 -> 0x1801c481a/0x1801c483c path closes the float-to-signed-PCM16 handoff.",
+            ),
+            native_playback_stage(
+                "requestObject",
+                "AkSoundEngine asynchronous request object",
+                "free-list request -> caller-owned completion callback",
+                None,
+                "",
+                "0x1800bb8e0",
+                "Request constructor 0x1800bb8e0 takes an object from the stream-manager free list at +0x458 (decrementing +0x448), derives request +0x8 from the queue/chunk context at input +0x28 and caller offset, copies stack arguments into request +0x10/+0x14, stores caller-supplied r8 at request +0x18 as the buffer/source pointer, installs static callback 0x1800bf190 at +0x20, self at +0x28, clears +0x30, and retains the primary provider base at +0x48. The pump passes candidate +0x8 as the direct-read carrier, so ReadFileEx carrier +0x18 aliases request +0x20 and is exactly 0x1800bf190; carrier +0x10 aliases request +0x18, carrier +8 aliases request +0x10, and carrier +0x28 aliases request +0x30. Callers 0x1800bbad3 and 0x1800bca20 supply branch-specific source/offset inputs to this segment allocator; the first chunk record also exposes position/source-base/length fields to its indexer, while the second caller supplies [object +0xa0] + current offset. Because the primary base carries the decoder-facing secondary interface at base +0x90, completion 0x1800245b0 -> 0x1800bf190 is tied to the same provider allocation that supplies the codec queue, even though it does not directly call the codec's indirect stream callback.",
+            ),
+            native_playback_stage(
+                "providerDispatchBoundary",
+                "AkSoundEngine default-I/O provider dispatch",
+                "provider descriptor -> virtual device dispatch -> ReadFileEx ABI",
+                None,
+                "",
+                "0x180005430",
+                "The alternate provider-batch wrapper 0x180005430 filters provider pointers through vtable +0x38 (0x180005870), then calls 0x180024200 (+0x58 on the primary address point). Its accepted 0x70-byte state record is allocated by 0x1800b9530, with callback 0x1800b92c0 at record +0x18 and owner at +0x20; this resolves to queue/state transition 0x1800b92c0 -> 0x1800b8b00, not the codec callback. The active address point 0x18028c020 exposes +0x28=0x180005430, +0x30=0x180024270 ReadFileEx, and +0x38=0x1800243e0 WriteFileEx. ReadFileEx consumes 0x18-byte descriptors; descriptor +0 is provider (+0x10 supplies HANDLE) and descriptor +0x10 is the ordinary carrier at request +0x8. For request base R, carrier +0=R+8, +8=R+0x10 byte count, +0x10=R+0x18 buffer/source, +0x18=R+0x20 fixed callback 0x1800bf190, +0x20=R+0x28 self, and +0x28=R+0x30 ring helper. Completion 0x1800245b0 loads this carrier from ring slot +0x18 and tail-jumps carrier +0x18; because request +0x48 is the primary base whose secondary +0x90 is the codec provider interface, this closes the active pump -> ReadFileEx -> fixed request cleanup/release path to the codec provider allocation. It still does not resolve the generic stream-object +0 callback for other codec descriptors or the selected decoder's optional callback target.",
+            ),
+            native_playback_stage(
+                "nativeFileIo",
+                "AkSoundEngine default Wwise file-I/O object",
+                "open/path/queued batch-read interface",
+                None,
+                "",
+                "0x180005030",
+                "The `%u.bnk`/`%u.wem` interface table at 0x18028bfa0 points to path normalization 0x180005150, directory check 0x180005180, and open/size helper 0x180005030 (CreateFileW + GetFileSize). The composite object initialized at 0x180001060 retains active address point 0x18028c020 at stream-manager +0x428 (primary +0x60 also exposes 0x180024270); its +0x28/+0x30/+0x38 slots resolve to 0x180005430 (provider filter/state dispatch), 0x180024270 (ReadFileEx batch read), and 0x1800243e0 (WriteFileEx batch write). The pump method 0x1800bc1e0 selects the active address point; the ordinary provider +0x20 implementation is 0x1800bc660 with nested 0x1800bb970 -> 0x1800bb8e0 assembly, distinct from serializer 0x1800b8820. The batch reader consumes descriptor +0x10 as request +0x8; for request base R, carrier +0x10 is R+0x18 buffer/source, carrier +8 is R+0x10 byte count, carrier +0 is R+8 transfer scalar, carrier +0x18 is R+0x20 fixed callback 0x1800bf190, and carrier +0x28 is R+0x30 ring helper. Request +0x48 retains the primary provider base, whose secondary +0x90 is returned to the decoder, so the read completion and codec queue share one allocation. This closes the pump-to-ReadFileEx dispatch, active transport, and read-completion-to-provider-allocation callback; the selected decoder output's 0x1801c4650 -> 0x1801c7ec0 -> 0x1801c481a/0x1801c483c path also closes float-to-signed-PCM16 handoff. The generic stream-object +0 callback for other codec descriptors and the optional decoder callback remain unresolved.",
+            ),
+            native_playback_stage(
+                "nativeFileOpenPathTransportAudit",
+                "AkSoundEngine default Wwise file-I/O object",
+                "provider request descriptor -> normalized path -> CreateFileW",
+                None,
+                "",
+                "0x180024630",
+                "The concrete open wrapper 0x180024630 receives the registered-device descriptor, obtains its provider-side path/context through the object's vtable, and calls 0x180004a20 with the descriptor and returned path pointer. 0x180004a20 validates the descriptor state, calls 0x180004b40, and then dispatches the default file-I/O vtable slot 0 at 0x18028bfa0 to 0x180005030, whose CreateFileW/GetFileSize pair stores the handle/size result. 0x180004b40 selects the incoming path pointer or the file-I/O object's base path, normalizes it through vtable slot +0x8 at 0x180005150, and feeds that normalized path into the open object. This closes the provider-request-to-native-open ABI, while no external key, source-state key, or manager +0x38 value appears in this open boundary.",
+            ),
+            native_playback_stage(
+                "readCompletion",
+                "AkSoundEngine ReadFileEx completion",
+                "queued read completion transform and callback",
+                None,
+                "",
+                "0x1800245b0",
+                "The ReadFileEx completion routine 0x1800245b0 (passed as the OS completion argument by the batch reader) resolves the carrier through the completed ring slot's +0x18 pointer. On success it calls 0x1800092d0 -> 0x180009020 with the carrier for an in-place post-read transform, then tail-jumps to carrier +0x18 with rcx=carrier and status 1/2. For the ordinary pump carrier=request+0x8, carrier +0x18 aliases request +0x20 and is the fixed callback 0x1800bf190. That callback reads provider base Q=[request +0x48], locks Q's device/queue state at +0x60, recycles the request, and walks associated nodes through virtual +0x30 release/advance calls. Since the decoder owns Q+0x90 through the secondary provider vtable, this closes ReadFileEx -> request cleanup/release -> the codec provider allocation/queue; it is not a PCM decoder and does not directly invoke the codec stream object's indirect callback at +0.",
+            ),
+            native_playback_stage(
+                "codecReadBoundary",
+                "AkSoundEngine embedded codec path",
+                "stream callback -> Opus/packet parser",
+                None,
+                "",
+                "0x1801c9fa0",
+                "The generic codec stream reader at 0x1801c9fa0 keeps buffered bytes at stream-object +0x48 and inline stream state at +0x58, then calls the indirect function pointer at +0 with context +0x20, buffer, and length. Setup 0x1801ca710 copies the caller-provided 32-byte callback descriptor into the stream object before allocating its buffer. The exact `.rdata` descriptor literals reached by current calls are 0x1802b09d8 for Opus and 0x1802b1020 for the generic memory source. The selected Opus path 0x1801c5239 passes 0x1802b09d8; descriptor +0 is 0x1801c44d0, a memory-source copier that reads context +0x60 with available/offset fields at +0x68/+0x6c and calls source-provider vtable +0x80 only when releasing an exhausted buffer. A second native source path is also closed: 0x1801c4650 -> 0x1801ca9a0 -> 0x1801cfe80 constructs a 24-byte memory-stream context (source pointer, byte length, cursor) and four-function descriptor at its local +0x30; descriptor +0 = 0x1801cfd80 copies bytes and advances context +0x10, +0x8 = 0x1801cfe00 updates the cursor for seek modes, +0x10 = 0x18010ad90 returns the source pointer, and +0x18 = 0x1801cfd70 frees the stream wrapper. Thus both the selected Opus descriptor and this header-recognized generic memory descriptor have statically resolved stream callbacks; descriptors not reached by these current callers remain an evidence gap. The decoder-side provider handoff is exact: source prep 0x1801af960 gets provider +0x78 buffer/size, decoder address point 0x18029cde8 +0x130 resolves to 0x1801afc80, and that method stores the buffer at decoder +0x60; decoder +0x120 -> 0x1801aebf0 and reset 0x1801af740 release/advance through provider +0x80. The provider is the secondary +0x90 interface of the same base object retained by request +0x48, so the static file-read completion now joins the codec provider queue. Codec state path 0x1801c8d11 directly calls the stream reader; packet wrapper 0x1801c8b60 reaches 0x1801cc1b0 at 0x1801c8bda. Its callee-frame +0xf0 callback slot is populated by every direct 0x1801cc1f0 caller: 0x1801c6490 and 0x1801c6bf2 pass 0x1801c6f90, an integer-array transform, while wrapper 0x1801cc1e1 passes 0x1801cbff0, another integer-array transform. Those known callbacks are invoked at 0x1801cc4ce/0x1801cc532/0x1801cc57e, so this parser callback branch is not a PCM sink. The selected decoder output boundary is now statically closed: 0x1801c4650-0x1801c48cc calls generic decoder 0x1801c7ec0 at 0x1801c4770 with an output-pointer slot; after return it loads float samples through the returned pointer at 0x1801c481a, scales/clamps and converts with cvttss2si, then writes signed 16-bit samples to the caller PCM buffer at 0x1801c483c while advancing the byte count/pointer. This proves decoded float -> PCM16 handoff for this native decode path. The optional decoder callback context +0x2a08 is read only at 0x1801c8b64; no direct store to that field occurs in the current AkSoundEngine function table, so its initialization remains unresolved. The same path reaches exact OpusHead parser 0x1801cf560. The pump-to-ReadFileEx, read-completion-to-request-recycle, completion-to-provider-allocation, both resolved memory-stream descriptor paths, and selected decoder PCM handoff are statically closed; external key-to-path value correlation, any unobserved codec descriptor, and live invocation remain unproven.",
+            ),
+            native_playback_stage(
+                "nativeOptionalDecoderCallbackAudit",
+                "AkSoundEngine embedded codec decoder",
+                "optional decoder callback slot initialization audit",
+                None,
+                "",
+                "0x1801c8b64",
+                "A direct and overlap-aware audit of the selected AkSoundEngine .text function table covers decoder context offsets +0x29f0..+0x2a10. It finds stores at +0x29f8 and +0x29fc, plus a qword store at +0x2a00 that ends at +0x2a07, but no direct or overlapping write reaches +0x2a08. The only current access to that slot is the read at 0x1801c8b64 before the optional callback invocation branch. Therefore callback initialization/ownership is unresolved rather than proven absent; no target is promoted from this negative audit.",
+            ),
+            native_playback_stage(
+                "nativeCodecDescriptorCallsites",
+                "AkSoundEngine embedded codec stream setup",
+                "direct stream-descriptor callsite coverage",
+                None,
+                "",
+                "0x1801ca710",
+                "An exhaustive direct-call scan of the selected AkSoundEngine .text finds only two callsites to stream setup 0x1801ca710: 0x1801c7e3e and 0x1801caa1c. The first is reached by 0x1801c5255 -> 0x1801c7df0 and passes static descriptor 0x1802b09d8; the second is reached by 0x1801c46f9 -> 0x1801ca9a0 -> 0x1801cfe80 and passes the local four-entry generic memory descriptor (0x1801cfd80/0x1801cfe00/0x18010ad90/0x1801cfd70). No additional direct setup callsite or direct descriptor literal is present in the current executable; an address-taken indirect caller would remain outside this direct-call result.",
+            ),
+            native_playback_stage(
+                "nativeCodecIndirectSetupReferenceAudit",
+                "AkSoundEngine embedded codec stream setup",
+                "address-taken stream setup reference audit",
+                None,
+                "",
+                "0x1801ca710",
+                "A raw selected-build executable scan finds no absolute pointer literal in writable/read-only sections and no RIP-relative memory operand resolving to stream setup 0x1801ca710 or the generic reader 0x1801c9fa0. Together with the exhaustive direct-call result, this excludes an in-image static address reference for another setup caller or descriptor table in the scanned sections. It cannot exclude a runtime-computed function pointer, a pointer supplied by an external module, or a descriptor assembled through an indirect call, so other codec callbacks remain an evidence gap rather than proven absent.",
+            ),
+            native_playback_stage(
+                "nativeCodecReaderCallsiteAudit",
+                "AkSoundEngine embedded codec stream reader",
+                "generic stream reader direct-call census",
+                None,
+                "",
+                "0x1801c9fa0",
+                "An exhaustive direct-call scan of the selected AkSoundEngine .text finds ten valid callsites to generic reader 0x1801c9fa0: 0x1801c83fd in containing function 0x1801c8160, 0x1801c8d11 in 0x1801c8c60, 0x1801c96bf/0x1801c985a/0x1801c9909 in 0x1801c9670, 0x1801c9adb in 0x1801c9a00, 0x1801c9cca in 0x1801c9c80, 0x1801ca1eb in 0x1801ca110, and 0x1801cb8ee/0x1801cbd1b in 0x1801cb270. Each passes a stream object in rcx plus a caller-owned range/output descriptor; no other direct reader call exists in the selected .text. This expands read-consumer coverage beyond the two setup callsites, but does not by itself identify additional setup descriptors or prove the indirect callback target for any caller.",
+            ),
+            native_playback_stage(
+                "nativeCodecDecoderCallsiteAudit",
+                "AkSoundEngine embedded codec decoder",
+                "generic decoder direct-call census",
+                None,
+                "",
+                "0x1801c7ec0",
+                "An exhaustive direct-call scan of the selected AkSoundEngine .text finds three valid calls to generic decoder 0x1801c7ec0: 0x1801c477b in function 0x1801c4729, plus 0x1801c49bc and 0x1801c4a3e in function 0x1801c499c. The 0x1801c477b call receives local output-pointer/count slots and its returned float samples flow to the signed PCM16 writes at 0x1801c481a/0x1801c483c. The 0x1801c49bc call is the initial decode attempt; 0x1801c4a3e retries after provider refill 0x1801af960, and both return codes drive decoder state/consumption rather than independently proving a PCM sink. No other direct decoder call exists in the selected .text.",
+            ),
+        ),
+        "branches": (
+            {
+                "id": "uninitialized",
+                "label": "Stream manager unavailable",
+                "relation": "The native pump returns status 0x6d before walking devices when the stream manager has not been initialized.",
+            },
+        ),
+        "boundary": (
+            "This closes the Wwise package/media I/O boundary to a registered native I/O-device callback rather than the generic managed VFS low-I/O reader, and the selected native plugin now supplies direct CreateFileW/GetFileSize, queued ReadFileEx, read-completion transform, and embedded codec-parser evidence. "
+            "The current binary identifies the registration site, 0x468-byte device object, active composite address point, source-provider queue binding, virtual pump, the composite default file-I/O object at device +0x428, the concrete CreateFileW helper, provider/state dispatch 0x180005430 -> 0x180024200 -> 0x1800b92c0, and the direct pump call to 0x180024270 ReadFileEx. It also identifies the ordinary candidate carrier as request +0x8, maps carrier +0x18 to fixed callback 0x1800bf190, and closes ReadFileEx -> request-recycle/release into the same dual-interface provider allocation: primary base at request +0x48, codec-facing secondary at base +0x90. The provider +0x20 call remains branch-sensitive: active implementation 0x1800bc660 may assemble a segment through 0x1800bb970 -> 0x1800bb8e0, while alternate 0x1800b8820 does not populate candidate context/flag slots. The selected decoder's 0x1801c4650 -> 0x1801c7ec0 -> 0x1801c481a/0x1801c483c path now proves float-sample to signed PCM16 writes. The optional decoder callback slot has a complete negative direct/overlap write audit, but its initialization and target remain unresolved. Remaining static gaps are external-key-to-path value correlation, generic other-codec stream callback targets, and live invocation; no direct GameAssembly caller was found by the current static call-rel32 scan.",
         ),
     },
     "playingIdAction": {
@@ -1987,6 +2658,7 @@ RUNTIME_SYSTEM_SPECS = (
             "s_loadedLangPckInfo", "s_loadedHotfixPckInfo", "s_pendingLanguageBlock",
         ),
         methods=("TryLoadInitPck", "TryLoadMainPck", "TryLoadLanguagePck", "LoadExtraPckFromPath"),
+        native_call_chains=(AUDIO_PLAYBACK_NATIVE_CALL_CHAINS["vfsPackageLoad"],),
     ),
     runtime_spec(
         "Beyond.Audio.AudioBankManager",
@@ -1997,6 +2669,7 @@ RUNTIME_SYSTEM_SPECS = (
         ),
         fields=("s_loadedBankHandles",),
         methods=("LoadMainPCK", "LoadBankAsync", "UnloadBank", "UnloadAllBanks", "IsBankLoaded"),
+        native_call_chains=(AUDIO_PLAYBACK_NATIVE_CALL_CHAINS["vfsPackageLoad"],),
     ),
     runtime_spec(
         "Beyond.Audio.AudioAssetCache",
@@ -2099,11 +2772,13 @@ RUNTIME_SYSTEM_SPECS = (
         ),
         methods=(
             "PostEvent", "LoadBank", "PrepareEvent", "UnloadBank", "ExecuteActionOnPlayingID",
-            "SetState", "SetSwitch", "SetRTPCValue",
+            "SetState", "SetSwitch", "SetRTPCValue", "PerformStreamMgrIO",
         ),
         native_call_chains=(
             AUDIO_PLAYBACK_NATIVE_CALL_CHAINS["adapterPost"],
             AUDIO_PLAYBACK_NATIVE_CALL_CHAINS["externalSource"],
+            AUDIO_PLAYBACK_NATIVE_CALL_CHAINS["vfsPackageLoad"],
+            AUDIO_PLAYBACK_NATIVE_CALL_CHAINS["streamManagerIoPump"],
             AUDIO_PLAYBACK_NATIVE_CALL_CHAINS["playingIdAction"],
             AUDIO_PLAYBACK_NATIVE_CALL_CHAINS["switchSelector"],
             AUDIO_PLAYBACK_NATIVE_CALL_CHAINS["rtpcSelector"],
@@ -2857,6 +3532,107 @@ def _metadata_module() -> Any:
     sys.modules[spec.name] = module
     spec.loader.exec_module(module)
     return module
+
+
+def collect_metadata_event_symbol_aliases(
+    metadata_path: Path | None,
+    current_wwise_event_hashes: Iterable[int],
+) -> dict[str, Any]:
+    """Join exact ``AU_*`` IL2CPP field symbols to current Wwise Event IDs.
+
+    These fields are shipped game-side constants, not observed calls.  The
+    hash join therefore recovers an Event's symbol identity and conservative
+    name-prefix category, while leaving its runtime caller/trigger unresolved.
+    Hash collisions are excluded rather than choosing one field arbitrarily.
+    """
+
+    base: dict[str, Any] = {
+        "schemaVersion": METADATA_EVENT_SYMBOL_SCHEMA_VERSION,
+        "source": "Endfield_Data/il2cpp_data/Metadata/global-metadata.dat:string-field",
+        "evidence": "exactIl2CppMetadataFieldNameAudioHashAndCurrentWwiseEvent",
+        "metadataSha256": None,
+        "metadataSize": None,
+        "metadataVersion": None,
+        "status": "degraded",
+        "candidateCount": 0,
+        "matchCount": 0,
+        "ambiguousHashCount": 0,
+        "entries": [],
+        "evidenceBoundary": (
+            "An AU_* field name hashed with the current AudioHashGenerator and "
+            "matching a scanned Wwise Event proves a static game-side symbol to "
+            "uint32 Event identity join. It does not prove a runtime setter, "
+            "caller, execution, selected Wwise branch, or audibility."
+        ),
+    }
+    if metadata_path is None or not metadata_path.is_file():
+        base["reason"] = "Installed IL2CPP metadata was unavailable."
+        return base
+
+    current_hashes = {
+        int(value) & 0xFFFFFFFF
+        for value in current_wwise_event_hashes
+        if isinstance(value, int)
+    }
+    metadata_sha256 = file_sha256(metadata_path)
+    base.update({
+        "metadataSha256": metadata_sha256,
+        "metadataSize": metadata_path.stat().st_size,
+    })
+    module = _metadata_module()
+    md = module.Metadata(metadata_path)
+    base["metadataVersion"] = int(md.version)
+    by_hash: dict[int, list[dict[str, Any]]] = defaultdict(list)
+    for type_def in md.types:
+        declaring_type = md.type_full_name(type_def)
+        for field in md.fields_for(type_def):
+            field_name = str(md.string(field.name_index) or "").strip()
+            if not METADATA_EVENT_SYMBOL_RE.fullmatch(field_name):
+                continue
+            base["candidateCount"] += 1
+            event_hash = identifiers.audio_hash_generator_compute(field_name)
+            if event_hash not in current_hashes:
+                continue
+            by_hash[event_hash].append({
+                "eventHash": event_hash,
+                "eventHashHex": f"0x{event_hash:08x}",
+                "name": field_name,
+                "metadataField": field_name,
+                "metadataDeclaringType": declaring_type,
+                "metadataFieldIndex": int(field.index),
+                "metadataFieldToken": f"0x{int(field.token):08x}",
+                "metadataSha256": metadata_sha256,
+                "source": base["source"],
+                "evidence": base["evidence"],
+            })
+
+    entries: list[dict[str, Any]] = []
+    for event_hash, rows in by_hash.items():
+        identities = {
+            (str(row.get("name") or "").casefold(), str(row.get("metadataDeclaringType") or ""))
+            for row in rows
+        }
+        if len(identities) != 1:
+            continue
+        entries.append(sorted(rows, key=lambda row: (
+            str(row.get("name") or "").casefold(),
+            str(row.get("metadataDeclaringType") or ""),
+            int(row.get("metadataFieldIndex") or 0),
+        ))[0])
+    entries.sort(key=lambda row: (int(row.get("eventHash") or 0), str(row.get("name") or "")))
+    base.update({
+        "status": "complete",
+        "matchCount": len(entries),
+        "ambiguousHashCount": sum(
+            len({
+                (str(row.get("name") or "").casefold(), str(row.get("metadataDeclaringType") or ""))
+                for row in rows
+            }) > 1
+            for rows in by_hash.values()
+        ),
+        "entries": entries,
+    })
+    return base
 
 
 def _runtime_cache_hit(cache: dict[str, Any], sha256: str, size: int) -> dict[str, Any] | None:
@@ -9032,6 +9808,96 @@ def _build_managed_literal_callsite_trigger_contexts(
     return contexts
 
 
+def _build_native_custom_state_trigger_contexts(
+    event_rows: Iterable[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Expose exact native custom-state calls joined to authored Events."""
+
+    contexts: list[dict[str, Any]] = []
+    for event in event_rows:
+        if not isinstance(event, dict):
+            continue
+        event_id = str(event.get("id") or "").strip()
+        if not event_id:
+            continue
+        media_refs = [
+            ref for ref in (
+                _trigger_media_ref(row)
+                for row in event.get("media") or []
+                if isinstance(row, dict)
+            ) if ref
+        ]
+        for context in event.get("contexts") or []:
+            if not isinstance(context, dict) or context.get("kind") != "nativeCustomStateCallsite":
+                continue
+            callsite = str(context.get("callsiteVa") or "unknown")
+            contexts.append({
+                "triggerId": ":".join((
+                    "native-custom-state",
+                    event_id,
+                    str(context.get("methodIndex") or "unknown"),
+                    callsite,
+                )),
+                "semanticKind": "nativeCustomStateCallsite",
+                "triggerRole": context.get("triggerRole"),
+                "situation": {
+                    "eventId": event_id,
+                    "eventHash": event.get("hash"),
+                    "consumerType": context.get("consumerType"),
+                    "consumerMethod": context.get("consumerMethod"),
+                    "triggerRole": context.get("triggerRole"),
+                    "customStateName": context.get("customStateName"),
+                    "switchMethod": context.get("switchMethod"),
+                    "switchMethodVa": context.get("switchMethodVa"),
+                    "branchCondition": context.get("branchCondition"),
+                },
+                "meaning": {
+                    "eventId": event_id,
+                    "category": event.get("category"),
+                    "foundInWwise": bool(event.get("foundInWwise")),
+                    "playbackRole": event.get("playbackRole"),
+                    "possibleMediaCount": event.get("possibleMediaCount"),
+                },
+                "action": {
+                    "switchMethod": context.get("switchMethod"),
+                    "switchMethodVa": context.get("switchMethodVa"),
+                    "customStateName": context.get("customStateName"),
+                    "staticArgumentVa": context.get("staticArgumentVa"),
+                    "metadataUsageWord": context.get("metadataUsageWord"),
+                    "metadataStringLiteralIndex": context.get("metadataStringLiteralIndex"),
+                    "runtimeActivationStatus": "runtimeBranchExecutionUnobserved",
+                },
+                "owner": {
+                    key: context[key]
+                    for key in (
+                        "consumerType", "consumerMethod", "methodIndex", "methodVa",
+                        "callsiteVa", "staticArgumentVa", "metadataSha256", "gameAssemblySha256",
+                    ) if context.get(key) not in (None, "", [])
+                },
+                "selection": {
+                    "triggerBindingStatus": "exactCurrentBuildNativeCustomStateCallsite",
+                    "mediaSelectionStatus": "wwiseEventMediaCandidates",
+                    "runtimeSelectionStatus": "runtimeBranchExecutionUnobserved",
+                },
+                "mediaRefs": media_refs,
+                "evidence": {
+                    "definition": context.get("evidence"),
+                    "owner": "exactNativeSwitchAudioCustomStateCallsiteAndAuthoredInteractiveConfig",
+                    "media": "wwiseEventMediaCandidate",
+                    "runtimeExecution": "runtimeBranchExecutionUnobserved",
+                },
+                "runtimeActivationStatus": "runtimeBranchExecutionUnobserved",
+                "sourceRefs": [
+                    value for value in (
+                        context.get("source"), context.get("methodVa"),
+                        context.get("callsiteVa"), context.get("staticArgumentVa"),
+                        context.get("switchMethodVa"),
+                    ) if isinstance(value, str) and value
+                ],
+            })
+    return contexts
+
+
 def build_trigger_context_catalog(
     event_rows: Iterable[dict[str, Any]],
     media_rows: Iterable[dict[str, Any]],
@@ -9096,6 +9962,7 @@ def build_trigger_context_catalog(
         "animationVoiceTrigger": _build_animation_voice_trigger_contexts(event_rows),
         "interactivePropertyAudio": _build_interactive_property_audio_trigger_contexts(event_rows),
         "managedLiteralCallsite": _build_managed_literal_callsite_trigger_contexts(event_rows),
+        "nativeCustomStateCallsite": _build_native_custom_state_trigger_contexts(event_rows),
         "monoBehaviourAudioId": _build_mono_behaviour_audio_id_trigger_contexts(
             mono_event_rows or event_rows
         ),
@@ -9780,14 +10647,1272 @@ def managed_literal_contexts(
 
 
 
+def _media_route_marker(media: dict[str, Any]) -> str:
+    return str(
+        media.get("src")
+        or media.get("rel")
+        or media.get("mediaId")
+        or media.get("id")
+        or ""
+    )
+
+
+def _media_post_process_routes(
+    events: Iterable[dict[str, Any]],
+) -> dict[str, dict[str, Any]]:
+    """Project exact Event output-bus paths onto their possible media leaves.
+
+    The serialized Wwise graph proves that an Event branch reaches the listed
+    output bus.  It does not prove which random/switch/sequence branch was
+    selected at runtime, so this projection remains a possible-route summary.
+    Bus definitions stay in the top-level HIRC catalog; media rows carry only
+    stable IDs and resolution statuses to avoid duplicating plug-in payloads.
+    The compact State/RTPC rows below are the exception: they preserve the
+    authored control shape that explains a media leaf's processing without
+    copying the full Event evidence graph.
+    """
+
+    by_marker: dict[str, dict[str, Any]] = {}
+    for event in events:
+        if not isinstance(event, dict):
+            continue
+        event_id = str(event.get("id") or "").strip()
+        if not event_id:
+            continue
+        selection_status = str(event.get("runtimeSelection") or "unresolved")
+        for candidate in event.get("media") or ():
+            if not isinstance(candidate, dict):
+                continue
+            marker = _media_route_marker(candidate)
+            if not marker:
+                continue
+            target = by_marker.setdefault(marker, {
+                "routeKeys": set(),
+                "busPaths": set(),
+                "outputBusIds": set(),
+                "effectBusIds": set(),
+                "unresolvedBusIds": set(),
+                "selectionStatuses": set(),
+                "routeStatuses": set(),
+                "evidenceKeys": set(),
+                "parsedNodeCount": 0,
+                "outputBusNodeCount": 0,
+                "directEffects": {},
+                "directEffectOccurrences": 0,
+                "rtpcControls": {},
+                "stateControls": {},
+                "stateGroupIds": set(),
+                "auxSends": {},
+                "auxSendOccurrences": 0,
+                "auxBusRoutes": {},
+                "properties": {},
+                "propertyOccurrences": 0,
+                "rangedProperties": {},
+                "rangedPropertyOccurrences": 0,
+                "mediaRelationTypes": set(),
+                "mediaSelectionPaths": set(),
+                "mediaRootActionIds": set(),
+            })
+            target["selectionStatuses"].add(selection_status)
+            # ``wwiseMediaEvidence`` is copied from the typed HIRC traversal
+            # and retains the exact edge shape to this leaf.  Project only the
+            # compact relation/path identity here; full container payloads
+            # remain lazy Event-detail evidence.
+            for media_evidence in candidate.get("wwiseMediaEvidence") or ():
+                if not isinstance(media_evidence, dict):
+                    continue
+                target["mediaRelationTypes"].update(
+                    str(value)
+                    for value in media_evidence.get("relationTypes") or ()
+                    if str(value)
+                )
+                for raw_path in media_evidence.get("selectionPaths") or ():
+                    if not isinstance(raw_path, (list, tuple)):
+                        continue
+                    path = tuple(str(value) for value in raw_path if str(value))
+                    if path:
+                        target["mediaSelectionPaths"].add(path)
+                for value in media_evidence.get("rootActionIds") or ():
+                    try:
+                        target["mediaRootActionIds"].add(int(value))
+                    except (TypeError, ValueError):
+                        continue
+            for evidence in event.get("evidence") or ():
+                if not isinstance(evidence, dict):
+                    continue
+                post_process = evidence.get("postProcessSummary") or {}
+                if not isinstance(post_process, dict):
+                    continue
+                try:
+                    bank_id = int(evidence.get("bankId") or 0)
+                except (TypeError, ValueError):
+                    bank_id = 0
+                target["evidenceKeys"].add((event_id, bank_id))
+                target["parsedNodeCount"] += int(
+                    post_process.get("parsedNodeCount") or 0
+                )
+                for auxiliary_bus in post_process.get("auxiliaryBuses") or ():
+                    if not isinstance(auxiliary_bus, dict):
+                        continue
+                    aux_bus_id = str(
+                        auxiliary_bus.get("busIdHex")
+                        or auxiliary_bus.get("busId")
+                        or ""
+                    ).lower()
+                    if not aux_bus_id:
+                        continue
+                    route = {
+                        "sendKind": auxiliary_bus.get("sendKind"),
+                        "busIdHex": aux_bus_id,
+                        "resolutionStatus": auxiliary_bus.get("resolutionStatus"),
+                        "busPathIdHexes": [
+                            str(value).lower()
+                            for value in auxiliary_bus.get("busPathIdHexes") or ()
+                            if str(value)
+                        ][:16],
+                        "busPathResolutionStatus": auxiliary_bus.get(
+                            "busPathResolutionStatus"
+                        ),
+                        "effectBusIdHexes": [
+                            str(value).lower()
+                            for value in auxiliary_bus.get("effectBusIdHexes") or ()
+                            if str(value)
+                        ][:16],
+                        "unresolvedBusProcessingIdHexes": [
+                            str(value).lower()
+                            for value in auxiliary_bus.get(
+                                "unresolvedBusProcessingIdHexes"
+                            ) or ()
+                            if str(value)
+                        ][:16],
+                    }
+                    route = {
+                        key: value for key, value in route.items()
+                        if value not in (None, "", [])
+                    }
+                    route_key = tuple(
+                        (key, json.dumps(value, sort_keys=True, ensure_ascii=False))
+                        for key, value in sorted(route.items())
+                    )
+                    target["auxBusRoutes"].setdefault(aux_bus_id, {})[
+                        route_key
+                    ] = route
+                output_buses = list(post_process.get("outputBuses") or ())
+                target["outputBusNodeCount"] += int(
+                    post_process.get("outputBusNodeCount") or 0
+                )
+                for effect_node in post_process.get("effectNodes") or ():
+                    if not isinstance(effect_node, dict):
+                        continue
+                    for slot in effect_node.get("effects") or ():
+                        if not isinstance(slot, dict):
+                            continue
+                        effect_id = int(slot.get("effectId") or 0)
+                        if not effect_id:
+                            continue
+                        target["directEffectOccurrences"] += 1
+                        effect_id_hex = str(
+                            slot.get("effectIdHex") or f"0x{effect_id:08x}"
+                        ).lower()
+                        effect_row = {
+                            "effectIdHex": effect_id_hex,
+                            "slotIndex": slot.get("slotIndex"),
+                            "objectId": effect_node.get("objectId"),
+                            "pluginName": slot.get("pluginName"),
+                            "pluginClassIdHex": slot.get("pluginClassIdHex"),
+                            "parameterSummary": slot.get("parameterSummary"),
+                            "effectBypass": slot.get("effectBypass"),
+                            "effectShareSet": slot.get("effectShareSet"),
+                            "effectRendered": slot.get("effectRendered"),
+                            "resolutionStatus": slot.get("resolutionStatus"),
+                        }
+                        effect_row = {
+                            key: value for key, value in effect_row.items()
+                            if value not in (None, "", [])
+                        }
+                        effect_key = tuple(
+                            (key, str(value))
+                            for key, value in sorted(effect_row.items())
+                        )
+                        target["directEffects"].setdefault(effect_key, effect_row)
+                for property_node in post_process.get("propertyNodes") or ():
+                    if not isinstance(property_node, dict):
+                        continue
+                    source_type = str(property_node.get("objectTypeLabel") or "")
+                    for property_row in property_node.get("properties") or ():
+                        if not isinstance(property_row, dict):
+                            continue
+                        target["propertyOccurrences"] += 1
+                        property_key = tuple(
+                            str(property_row.get(key) or "")
+                            for key in (
+                                "propertyIdHex", "propertyLabel", "rawHex",
+                                "rawU32", "floatValue", "valueEncoding",
+                            )
+                        )
+                        compact_property = target["properties"].setdefault(
+                            property_key,
+                            {
+                                "propertyIdHex": property_row.get("propertyIdHex"),
+                                "propertyLabel": property_row.get("propertyLabel"),
+                                "rawHex": property_row.get("rawHex"),
+                                "rawU32": property_row.get("rawU32"),
+                                "floatValue": property_row.get("floatValue"),
+                                "valueEncoding": property_row.get("valueEncoding"),
+                                "sourceOccurrenceCount": 0,
+                                "sourceObjectTypeLabels": set(),
+                            },
+                        )
+                        compact_property["sourceOccurrenceCount"] += 1
+                        if source_type:
+                            compact_property["sourceObjectTypeLabels"].add(source_type)
+                    for range_row in property_node.get("rangedProperties") or ():
+                        if not isinstance(range_row, dict):
+                            continue
+                        target["rangedPropertyOccurrences"] += 1
+                        range_key = tuple(
+                            str(range_row.get(key) or "")
+                            for key in (
+                                "propertyIdHex", "propertyLabel", "minimumRawHex",
+                                "maximumRawHex", "minimumFloat", "maximumFloat",
+                                "valueEncoding",
+                            )
+                        )
+                        compact_range = target["rangedProperties"].setdefault(
+                            range_key,
+                            {
+                                "propertyIdHex": range_row.get("propertyIdHex"),
+                                "propertyLabel": range_row.get("propertyLabel"),
+                                "minimumRawHex": range_row.get("minimumRawHex"),
+                                "minimumRawU32": range_row.get("minimumRawU32"),
+                                "minimumFloat": range_row.get("minimumFloat"),
+                                "maximumRawHex": range_row.get("maximumRawHex"),
+                                "maximumRawU32": range_row.get("maximumRawU32"),
+                                "maximumFloat": range_row.get("maximumFloat"),
+                                "valueEncoding": range_row.get("valueEncoding"),
+                                "sourceOccurrenceCount": 0,
+                                "sourceObjectTypeLabels": set(),
+                            },
+                        )
+                        compact_range["sourceOccurrenceCount"] += 1
+                        if source_type:
+                            compact_range["sourceObjectTypeLabels"].add(source_type)
+                # StateChunk and InitialRTPC controls are exact serialized
+                # authored values on the Event's processing nodes.  Keep a
+                # bounded, deduplicated projection on each possible media
+                # leaf; this is not a claim about live setters or branch
+                # selection.
+                for control_node in post_process.get("stateRtpcNodes") or ():
+                    if not isinstance(control_node, dict):
+                        continue
+                    node_identity = {
+                        "objectId": control_node.get("objectId"),
+                        "objectType": control_node.get("objectType"),
+                        "objectTypeLabel": control_node.get("objectTypeLabel"),
+                    }
+                    for raw_curve in control_node.get("rtpcCurves") or ():
+                        if not isinstance(raw_curve, dict):
+                            continue
+                        points = [
+                            {
+                                key: point.get(key)
+                                for key in (
+                                    "pointIndex", "from", "to",
+                                    "interpolation", "interpolationLabel",
+                                )
+                                if point.get(key) is not None
+                            }
+                            for point in (raw_curve.get("points") or ())
+                            if isinstance(point, dict)
+                        ]
+                        point_limit = 8
+                        curve_row = {
+                            **node_identity,
+                            "rtpcId": raw_curve.get("rtpcId"),
+                            "rtpcIdHex": raw_curve.get("rtpcIdHex"),
+                            "parameterId": raw_curve.get("parameterId"),
+                            "parameterLabel": raw_curve.get("parameterLabel"),
+                            "rtpcType": raw_curve.get("rtpcType"),
+                            "rtpcTypeLabel": raw_curve.get("rtpcTypeLabel"),
+                            "accum": raw_curve.get("accum"),
+                            "accumLabel": raw_curve.get("accumLabel"),
+                            "scaling": raw_curve.get("scaling"),
+                            "scalingLabel": raw_curve.get("scalingLabel"),
+                            "pointCount": raw_curve.get("pointCount")
+                            if raw_curve.get("pointCount") is not None
+                            else len(points),
+                            "points": points[:point_limit],
+                            "pointsTruncated": len(points) > point_limit,
+                        }
+                        curve_row = {
+                            key: value for key, value in curve_row.items()
+                            if value not in (None, "", [])
+                        }
+                        curve_key = tuple(
+                            (key, json.dumps(value, sort_keys=True, ensure_ascii=False))
+                            for key, value in sorted(curve_row.items())
+                        )
+                        target["rtpcControls"].setdefault(curve_key, curve_row)
+                    for group in control_node.get("stateGroups") or ():
+                        if not isinstance(group, dict):
+                            continue
+                        group_hex = str(
+                            group.get("groupIdHex")
+                            or (
+                                f"0x{int(group.get('groupId')):08x}"
+                                if group.get("groupId") is not None else ""
+                            )
+                        ).lower()
+                        if group_hex:
+                            target["stateGroupIds"].add(group_hex)
+                        for state in group.get("states") or ():
+                            if not isinstance(state, dict):
+                                continue
+                            for raw_value in state.get("values") or ():
+                                if not isinstance(raw_value, dict):
+                                    continue
+                                state_row = {
+                                    **node_identity,
+                                    "groupId": group.get("groupId"),
+                                    "groupIdHex": group_hex,
+                                    "syncType": group.get("syncType"),
+                                    "syncTypeLabel": group.get("syncTypeLabel"),
+                                    "stateId": state.get("stateId"),
+                                    "stateIdHex": state.get("stateIdHex"),
+                                    "parameterId": raw_value.get("parameterId"),
+                                    "parameterLabel": raw_value.get("parameterLabel"),
+                                    "value": raw_value.get("value"),
+                                }
+                                state_row = {
+                                    key: value for key, value in state_row.items()
+                                    if value not in (None, "", [])
+                                }
+                                state_key = tuple(
+                                    (key, json.dumps(value, sort_keys=True, ensure_ascii=False))
+                                    for key, value in sorted(state_row.items())
+                                )
+                                target["stateControls"].setdefault(state_key, state_row)
+                for aux_node in post_process.get("auxSendNodes") or ():
+                    if not isinstance(aux_node, dict):
+                        continue
+                    for send in aux_node.get("userDefinedAuxSends") or ():
+                        if not isinstance(send, dict):
+                            continue
+                        bus_id = str(
+                            send.get("busIdHex") or send.get("busId") or ""
+                        ).lower()
+                        if not bus_id:
+                            continue
+                        target["auxSendOccurrences"] += 1
+                        slot_index = send.get("slotIndex")
+                        aux_key = (bus_id, str(slot_index or 0))
+                        aux_row = target["auxSends"].setdefault(aux_key, {
+                            "busIdHex": bus_id,
+                            "slotIndex": slot_index,
+                            "sourceObjectIds": set(),
+                            "sourceObjectTypeLabels": set(),
+                            "auxFlagsRawValues": set(),
+                            "overrideUserDefinedAuxSends": set(),
+                            "useGameDefinedAuxSends": set(),
+                            "serializationStatuses": set(),
+                            "gameDefinedAssignmentBoundaries": set(),
+                            "rootActionIds": set(),
+                        })
+                        if aux_node.get("objectId") is not None:
+                            aux_row["sourceObjectIds"].add(int(aux_node["objectId"]))
+                        object_type_label = str(aux_node.get("objectTypeLabel") or "")
+                        if object_type_label:
+                            aux_row["sourceObjectTypeLabels"].add(object_type_label)
+                        if aux_node.get("auxFlagsRaw") is not None:
+                            aux_row["auxFlagsRawValues"].add(int(aux_node["auxFlagsRaw"]))
+                        for field in (
+                            "overrideUserDefinedAuxSends", "useGameDefinedAuxSends"
+                        ):
+                            if aux_node.get(field) is not None:
+                                aux_row[field].add(bool(aux_node[field]))
+                        status = str(send.get("serializationStatus") or "")
+                        if status:
+                            aux_row["serializationStatuses"].add(status)
+                        boundary = str(
+                            aux_node.get("gameDefinedAssignmentBoundary") or ""
+                        )
+                        if boundary:
+                            aux_row["gameDefinedAssignmentBoundaries"].add(boundary)
+                        aux_row["rootActionIds"].update(
+                            int(value)
+                            for value in aux_node.get("rootActionIds") or ()
+                            if isinstance(value, int)
+                        )
+                if output_buses:
+                    target["routeStatuses"].add("exactSerializedOutputBusPath")
+                elif int(post_process.get("outputBusNodeCount") or 0) > 0:
+                    target["routeStatuses"].add("outputBusNodeUnresolved")
+                elif post_process.get("parserStatus"):
+                    target["routeStatuses"].add("noExplicitOutputBusSerialized")
+                for bus in output_buses:
+                    if not isinstance(bus, dict):
+                        continue
+                    path = tuple(
+                        str(value).lower()
+                        for value in (
+                            bus.get("busPathIdHexes")
+                            or ([bus.get("busIdHex")] if bus.get("busIdHex") else [])
+                        )
+                        if str(value)
+                    )
+                    if not path:
+                        continue
+                    route_key = (event_id, bank_id, path)
+                    target["routeKeys"].add(route_key)
+                    target["busPaths"].add(path)
+                    output_bus = str(bus.get("busIdHex") or "").lower()
+                    if output_bus:
+                        target["outputBusIds"].add(output_bus)
+                    target["effectBusIds"].update(
+                        str(value).lower()
+                        for value in bus.get("effectBusIdHexes") or ()
+                        if str(value)
+                    )
+                    target["unresolvedBusIds"].update(
+                        str(value).lower()
+                        for value in bus.get("unresolvedBusProcessingIdHexes") or ()
+                        if str(value)
+                    )
+
+    output: dict[str, dict[str, Any]] = {}
+    for marker, row in by_marker.items():
+        paths = sorted(row["busPaths"])
+        direct_effects = sorted(
+            row["directEffects"].values(),
+            key=lambda value: (
+                str(value.get("pluginName") or ""),
+                str(value.get("effectIdHex") or ""),
+                int(value.get("objectId") or 0),
+                int(value.get("slotIndex") or 0),
+                str(value.get("parameterSummary") or ""),
+            ),
+        )
+        rtpc_controls = sorted(
+            row["rtpcControls"].values(),
+            key=lambda value: (
+                str(value.get("parameterLabel") or ""),
+                str(value.get("rtpcIdHex") or ""),
+                int(value.get("objectId") or 0),
+                int(value.get("parameterId") or 0),
+            ),
+        )
+        state_controls = sorted(
+            row["stateControls"].values(),
+            key=lambda value: (
+                str(value.get("groupIdHex") or ""),
+                str(value.get("stateIdHex") or ""),
+                str(value.get("parameterLabel") or ""),
+                int(value.get("objectId") or 0),
+            ),
+        )
+        aux_sends = sorted(
+            row["auxSends"].values(),
+            key=lambda value: (
+                str(value.get("busIdHex") or ""),
+                int(value.get("slotIndex") or 0),
+            ),
+        )
+        properties = sorted(
+            row["properties"].values(),
+            key=lambda value: (
+                str(value.get("propertyLabel") or ""),
+                str(value.get("propertyIdHex") or ""),
+                str(value.get("rawHex") or ""),
+            ),
+        )
+        ranged_properties = sorted(
+            row["rangedProperties"].values(),
+            key=lambda value: (
+                str(value.get("propertyLabel") or ""),
+                str(value.get("propertyIdHex") or ""),
+                str(value.get("minimumRawHex") or ""),
+                str(value.get("maximumRawHex") or ""),
+            ),
+        )
+        compact_properties = []
+        for property_row in properties:
+            compact = {
+                key: value for key, value in property_row.items()
+                if key not in {"sourceObjectTypeLabels", "rawU32"}
+            }
+            # Float values are already losslessly represented by the decoded
+            # scalar plus encoding tag; retain rawHex for ID/typed-union rows.
+            if compact.get("valueEncoding") == "float":
+                compact.pop("rawHex", None)
+            compact_properties.append(compact)
+        compact_ranges = [
+            {
+                key: value for key, value in range_row.items()
+                if key not in {
+                    "sourceObjectTypeLabels", "minimumRawU32", "maximumRawU32"
+                }
+            }
+            for range_row in ranged_properties
+        ]
+        compact_aux_sends = []
+        for aux in aux_sends:
+            bus_routes = sorted(
+                row["auxBusRoutes"].get(aux["busIdHex"], {}).values(),
+                key=lambda value: (
+                    str(value.get("busPathIdHexes") or []),
+                    str(value.get("resolutionStatus") or ""),
+                ),
+            )
+            compact_aux_sends.append({
+                "busIdHex": aux["busIdHex"],
+                "slotIndex": aux.get("slotIndex"),
+                "sourceObjectCount": len(aux["sourceObjectIds"]),
+                "sourceObjectIds": sorted(aux["sourceObjectIds"])[:8],
+                "sourceObjectIdsTruncated": len(aux["sourceObjectIds"]) > 8,
+                "sourceObjectTypeLabels": sorted(aux["sourceObjectTypeLabels"])[:8],
+                "auxFlagsRawValues": sorted(aux["auxFlagsRawValues"]),
+                "overrideUserDefinedAuxSends": sorted(
+                    aux["overrideUserDefinedAuxSends"]
+                ),
+                "useGameDefinedAuxSends": sorted(aux["useGameDefinedAuxSends"]),
+                "serializationStatuses": sorted(aux["serializationStatuses"]),
+                "gameDefinedAssignmentBoundaries": sorted(
+                    aux["gameDefinedAssignmentBoundaries"]
+                ),
+                "rootActionIds": sorted(aux["rootActionIds"])[:8],
+                "rootActionIdsTruncated": len(aux["rootActionIds"]) > 8,
+                "busRoutes": bus_routes[:4],
+                "busRoutesTruncated": len(bus_routes) > 4,
+            })
+        media_relation_types = sorted(row["mediaRelationTypes"])
+        media_selection_paths = sorted(row["mediaSelectionPaths"])
+        media_root_action_ids = sorted(row["mediaRootActionIds"])
+        output[marker] = {
+            "postProcessRouteCount": len(row["routeKeys"]),
+            "postProcessBusPathCount": len(paths),
+            "postProcessBusPaths": [list(path) for path in paths[:32]],
+            "postProcessBusPathsTruncated": len(paths) > 32,
+            "postProcessOutputBusIds": sorted(row["outputBusIds"]),
+            "postProcessEffectBusIds": sorted(row["effectBusIds"]),
+            "postProcessUnresolvedBusProcessingIds": sorted(row["unresolvedBusIds"]),
+            "postProcessSelectionStatuses": sorted(row["selectionStatuses"]),
+            "postProcessRouteStatuses": sorted(row["routeStatuses"]),
+            "postProcessEvidenceEventCount": len(row["evidenceKeys"]),
+            "postProcessParsedNodeCount": row["parsedNodeCount"],
+            "postProcessOutputBusNodeCount": row["outputBusNodeCount"],
+            "postProcessDirectEffectCount": len(direct_effects),
+            "postProcessDirectEffects": direct_effects[:32],
+            "postProcessDirectEffectsTruncated": len(direct_effects) > 32,
+            "postProcessDirectEffectOccurrences": row["directEffectOccurrences"],
+            "postProcessDirectEffectEvidence": (
+                "exactSerializedEventNodeEffectJoin"
+                if direct_effects else None
+            ),
+            "postProcessRtpcControlCount": len(rtpc_controls),
+            "postProcessRtpcControls": rtpc_controls[:32],
+            "postProcessRtpcControlsTruncated": len(rtpc_controls) > 32,
+            "postProcessStateGroupIds": sorted(row["stateGroupIds"]),
+            "postProcessStateControlCount": len(state_controls),
+            "postProcessStateControls": state_controls[:32],
+            "postProcessStateControlsTruncated": len(state_controls) > 32,
+            "postProcessControlEvidence": (
+                "exactSerializedEventNodeStateRtpcJoin"
+                if rtpc_controls or state_controls else None
+            ),
+            "postProcessAuxSendCount": len(aux_sends),
+            "postProcessAuxSends": compact_aux_sends[:32],
+            "postProcessAuxSendsTruncated": len(aux_sends) > 32,
+            "postProcessAuxSendOccurrences": row["auxSendOccurrences"],
+            "postProcessAuxSendEvidence": (
+                "exactSerializedEventNodeUserDefinedAuxSendJoin"
+                if aux_sends else None
+            ),
+            "postProcessPropertyCount": len(properties),
+            "postProcessProperties": compact_properties[:32],
+            "postProcessPropertiesTruncated": len(properties) > 32,
+            "postProcessPropertyOccurrences": row["propertyOccurrences"],
+            "postProcessRangeCount": len(ranged_properties),
+            "postProcessRanges": compact_ranges[:32],
+            "postProcessRangesTruncated": len(ranged_properties) > 32,
+            "postProcessRangeOccurrences": row["rangedPropertyOccurrences"],
+            "postProcessPropertyEvidence": (
+                "exactSerializedEventNodePropertyJoin"
+                if properties or ranged_properties else None
+            ),
+            "wwiseMediaRelationTypes": media_relation_types[:32],
+            "wwiseMediaRelationTypesTruncated": len(media_relation_types) > 32,
+            "wwiseMediaSelectionPathCount": len(media_selection_paths),
+            "wwiseMediaSelectionPaths": [
+                list(path) for path in media_selection_paths[:32]
+            ],
+            "wwiseMediaSelectionPathsTruncated": len(media_selection_paths) > 32,
+            "wwiseMediaRootActionIds": media_root_action_ids[:32],
+            "wwiseMediaRootActionIdsTruncated": len(media_root_action_ids) > 32,
+            "wwiseMediaGraphEvidence": (
+                "exactSerializedWwiseEventMediaJoin"
+                if media_relation_types or media_selection_paths or media_root_action_ids
+                else None
+            ),
+            "postProcessRouteEvidence": "exactSerializedEventOutputBusJoin",
+        }
+    return output
+
+
+def annotate_media_post_process_effect_chains(
+    media_rows: Iterable[dict[str, Any]],
+    audio_index: dict[str, Any],
+    *,
+    limit: int = 64,
+) -> dict[str, int]:
+    """Attach a bounded authored direct-node + Bus effect chain to media.
+
+    ``postProcessBusPaths`` are serialized from the leaf/output Bus toward its
+    parent.  Direct node slots are emitted first because an Actor-Mixer/Blend
+    node's own effects precede the output-bus route in the authored graph;
+    Bus slots then follow each path in the serialized leaf-to-root order.
+    This is a compact explanation of authored processing evidence, not a
+    runtime DSP order claim: inherited platform values, live setters, branch
+    selection, and audibility remain unobserved.
+    """
+
+    post_process = (audio_index.get("hircSummary") or {}).get(
+        "postProcessSummary"
+    ) or {}
+    bus_definitions = {
+        str(row.get("busIdHex") or row.get("busId") or "").lower(): row
+        for row in post_process.get("busDefinitions") or ()
+        if isinstance(row, dict)
+        and str(row.get("busIdHex") or row.get("busId") or "")
+    }
+
+    attached = 0
+    chain_count = 0
+    for media in media_rows:
+        if not isinstance(media, dict):
+            continue
+        chain: list[dict[str, Any]] = []
+        seen: set[tuple[tuple[str, str], ...]] = set()
+        control_rows_by_bus: dict[str, dict[str, Any]] = {}
+        duck_rows_by_bus: dict[str, dict[str, Any]] = {}
+
+        # Direct node effects are already deduplicated and bounded on the
+        # media row.  Retain node/slot identity so two authored effect nodes
+        # with the same plug-in settings do not collapse together.
+        direct_effects = sorted(
+            (
+                direct for direct in media.get("postProcessDirectEffects") or ()
+                if isinstance(direct, dict)
+            ),
+            key=lambda direct: (
+                int(direct.get("objectId") or 0),
+                int(direct.get("slotIndex") or 0),
+                str(direct.get("effectIdHex") or ""),
+            ),
+        )
+        for direct in direct_effects:
+            row = {
+                "stage": "directNode",
+                "objectId": direct.get("objectId"),
+                "slotIndex": direct.get("slotIndex"),
+                "effectIdHex": direct.get("effectIdHex"),
+                "pluginName": direct.get("pluginName"),
+                "pluginClassIdHex": direct.get("pluginClassIdHex"),
+                "parameterSummary": direct.get("parameterSummary"),
+                "effectBypass": direct.get("effectBypass"),
+                "effectShareSet": direct.get("effectShareSet"),
+                "effectRendered": direct.get("effectRendered"),
+                "resolutionStatus": direct.get("resolutionStatus"),
+            }
+            row = {
+                key: value for key, value in row.items()
+                if value not in (None, "", [])
+            }
+            key = tuple(
+                (key, json.dumps(value, sort_keys=True, ensure_ascii=False))
+                for key, value in sorted(row.items())
+            )
+            if key not in seen:
+                seen.add(key)
+                chain.append(row)
+
+        # The path list is already deterministic and serialized leaf-to-root;
+        # preserve that order and the slot order inside each Bus definition.
+        for path_index, raw_path in enumerate(media.get("postProcessBusPaths") or ()):
+            if not isinstance(raw_path, (list, tuple)):
+                continue
+            for path_depth, raw_bus_id in enumerate(raw_path):
+                bus_id = str(raw_bus_id or "").lower()
+                if not bus_id:
+                    continue
+                definition = bus_definitions.get(bus_id)
+                state_rtpc = (definition or {}).get("serializedStateAndRtpc") or {}
+                if int((definition or {}).get("serializedDuckCount") or 0):
+                    duck_row = duck_rows_by_bus.setdefault(bus_id, {
+                        "busIdHex": bus_id,
+                        "pathIndexes": set(),
+                        "pathDepths": set(),
+                        "duckCount": int((definition or {}).get("serializedDuckCount") or 0),
+                        "maxDuckVolumeDb": (definition or {}).get("serializedMaxDuckVolumeDb"),
+                        "ducks": list((definition or {}).get("serializedDucks") or ()),
+                    })
+                    duck_row["pathIndexes"].add(path_index)
+                    duck_row["pathDepths"].add(path_depth)
+                if (
+                    int(state_rtpc.get("rtpcCurveCount") or 0)
+                    or int(state_rtpc.get("stateGroupCount") or 0)
+                ):
+                    control_row = control_rows_by_bus.setdefault(bus_id, {
+                        "busIdHex": bus_id,
+                        "pathIndexes": set(),
+                        "pathDepths": set(),
+                        "rtpcCurveCount": int(state_rtpc.get("rtpcCurveCount") or 0),
+                        "rtpcPointCount": int(state_rtpc.get("rtpcPointCount") or 0),
+                        "rtpcControls": [],
+                        "stateGroupCount": int(state_rtpc.get("stateGroupCount") or 0),
+                        "stateCount": int(state_rtpc.get("stateCount") or 0),
+                        "stateValueCount": int(state_rtpc.get("stateValueCount") or 0),
+                        "stateControls": [],
+                        "parserStatus": state_rtpc.get("parserStatus"),
+                    })
+                    control_row["pathIndexes"].add(path_index)
+                    control_row["pathDepths"].add(path_depth)
+                    if not control_row["rtpcControls"]:
+                        for curve in state_rtpc.get("rtpcCurves") or ():
+                            if not isinstance(curve, dict):
+                                continue
+                            points = [
+                                {
+                                    key: point.get(key)
+                                    for key in (
+                                        "pointIndex", "from", "to",
+                                        "interpolation", "interpolationLabel",
+                                    )
+                                    if point.get(key) is not None
+                                }
+                                for point in (curve.get("points") or ())
+                                if isinstance(point, dict)
+                            ]
+                            control_row["rtpcControls"].append({
+                                key: value for key, value in {
+                                    "rtpcIdHex": curve.get("rtpcIdHex"),
+                                    "parameterId": curve.get("parameterId"),
+                                    "parameterLabel": curve.get("parameterLabel"),
+                                    "rtpcTypeLabel": curve.get("rtpcTypeLabel"),
+                                    "accumLabel": curve.get("accumLabel"),
+                                    "scalingLabel": curve.get("scalingLabel"),
+                                    "pointCount": curve.get("pointCount")
+                                    if curve.get("pointCount") is not None
+                                    else len(points),
+                                    "points": points[:8],
+                                    "pointsTruncated": len(points) > 8,
+                                }.items()
+                                if value not in (None, "", [])
+                            })
+                    if not control_row["stateControls"]:
+                        for group in state_rtpc.get("stateGroups") or ():
+                            if not isinstance(group, dict):
+                                continue
+                            group_hex = str(
+                                group.get("groupIdHex")
+                                or group.get("groupId")
+                                or ""
+                            ).lower()
+                            for state in group.get("states") or ():
+                                if not isinstance(state, dict):
+                                    continue
+                                state_hex = str(
+                                    state.get("stateIdHex")
+                                    or state.get("stateId")
+                                    or ""
+                                ).lower()
+                                for value in state.get("values") or ():
+                                    if not isinstance(value, dict):
+                                        continue
+                                    control_row["stateControls"].append({
+                                        key: item for key, item in {
+                                            "groupIdHex": group_hex,
+                                            "syncTypeLabel": group.get("syncTypeLabel"),
+                                            "stateIdHex": state_hex,
+                                            "parameterId": value.get("parameterId"),
+                                            "parameterLabel": value.get("parameterLabel"),
+                                            "value": value.get("value"),
+                                        }.items()
+                                        if item not in (None, "", [])
+                                    })
+                for slot in (definition or {}).get("effects") or ():
+                    if not isinstance(slot, dict):
+                        continue
+                    # The top-level Bus catalog is the canonical payload for
+                    # plug-in names, parameters, and flags.  Media rows keep
+                    # only the stable slot/path reference to avoid copying a
+                    # long authored parameter summary for every possible leaf.
+                    row = {
+                        "stage": "bus",
+                        "busIdHex": bus_id,
+                        "pathIndex": path_index,
+                        "pathDepth": path_depth,
+                        "slotIndex": slot.get("slotIndex"),
+                        "effectIdHex": slot.get("effectIdHex"),
+                    }
+                    row = {
+                        key: value for key, value in row.items()
+                        if value not in (None, "", [])
+                    }
+                    key = tuple(
+                        (key, json.dumps(value, sort_keys=True, ensure_ascii=False))
+                        for key, value in sorted(row.items())
+                    )
+                    if key not in seen:
+                        seen.add(key)
+                        chain.append(row)
+
+        if not chain:
+            if not control_rows_by_bus and not duck_rows_by_bus:
+                continue
+        if chain:
+            attached += 1
+            chain_count += len(chain)
+            media["postProcessEffectChainCount"] = len(chain)
+            media["postProcessEffectChain"] = chain[:limit]
+            media["postProcessEffectChainTruncated"] = len(chain) > limit
+            media["postProcessEffectChainEvidence"] = (
+                "exactSerializedEventNodeAndBusEffectJoin"
+            )
+        control_rows = []
+        for row in control_rows_by_bus.values():
+            rtpc_ids = sorted({
+                str(curve.get("rtpcIdHex") or "").lower()
+                for curve in row["rtpcControls"]
+                if str(curve.get("rtpcIdHex") or "")
+            })
+            rtpc_parameter_labels = sorted({
+                str(curve.get("parameterLabel") or "")
+                for curve in row["rtpcControls"]
+                if str(curve.get("parameterLabel") or "")
+            })
+            state_controls = [
+                {
+                    key: value for key, value in state.items()
+                    if key in {
+                        "groupIdHex", "stateIdHex", "parameterLabel", "value"
+                    }
+                }
+                for state in row["stateControls"][:16]
+            ]
+            control_rows.append({
+                "busIdHex": row["busIdHex"],
+                "pathIndexes": sorted(row["pathIndexes"])[:32],
+                "pathDepths": sorted(row["pathDepths"])[:32],
+                "rtpcCurveCount": row["rtpcCurveCount"],
+                "rtpcPointCount": row["rtpcPointCount"],
+                "rtpcIds": rtpc_ids,
+                "rtpcParameterLabels": rtpc_parameter_labels,
+                "rtpcControlsTruncated": len(row["rtpcControls"]) > 8,
+                "stateGroupCount": row["stateGroupCount"],
+                "stateCount": row["stateCount"],
+                "stateValueCount": row["stateValueCount"],
+                "stateControls": state_controls,
+                "stateControlsTruncated": len(row["stateControls"]) > 16,
+            })
+        control_rows.sort(key=lambda row: (
+            row["pathIndexes"][0] if row["pathIndexes"] else 0,
+            row["pathDepths"][0] if row["pathDepths"] else 0,
+            row["busIdHex"],
+        ))
+        if control_rows:
+            media["postProcessBusControlCount"] = len(control_rows)
+            media["postProcessBusControls"] = control_rows[:32]
+            media["postProcessBusControlsTruncated"] = len(control_rows) > 32
+            media["postProcessBusControlEvidence"] = (
+                "exactSerializedBusInitialRtpcAndStateJoin"
+            )
+        duck_rows = []
+        for row in duck_rows_by_bus.values():
+            ducks = []
+            for duck in row["ducks"][:8]:
+                if not isinstance(duck, dict):
+                    continue
+                ducks.append({
+                    key: value for key, value in {
+                        "duckIndex": duck.get("duckIndex"),
+                        "targetBusIdHex": str(
+                            duck.get("busIdHex") or duck.get("busId") or ""
+                        ).lower(),
+                        "duckVolumeDb": duck.get("duckVolumeDb"),
+                        "fadeOutMs": duck.get("fadeOutMs"),
+                        "fadeInMs": duck.get("fadeInMs"),
+                        "fadeCurve": duck.get("fadeCurve"),
+                        "targetPropertyIdHex": duck.get("targetPropertyIdHex"),
+                        "targetPropertyLabel": duck.get("targetPropertyLabel"),
+                    }.items()
+                    if value not in (None, "", [])
+                })
+            duck_rows.append({
+                "busIdHex": row["busIdHex"],
+                "pathIndexes": sorted(row["pathIndexes"])[:32],
+                "pathDepths": sorted(row["pathDepths"])[:32],
+                "duckCount": row["duckCount"],
+                "maxDuckVolumeDb": row["maxDuckVolumeDb"],
+                "ducks": ducks,
+                "ducksTruncated": len(row["ducks"]) > 8,
+            })
+        duck_rows.sort(key=lambda row: (
+            row["pathIndexes"][0] if row["pathIndexes"] else 0,
+            row["pathDepths"][0] if row["pathDepths"] else 0,
+            row["busIdHex"],
+        ))
+        if duck_rows:
+            media["postProcessBusDuckCount"] = len(duck_rows)
+            media["postProcessBusDucks"] = duck_rows[:32]
+            media["postProcessBusDucksTruncated"] = len(duck_rows) > 32
+            media["postProcessBusDuckEvidence"] = (
+                "exactSerializedBusDuckingJoin"
+            )
+
+    return {
+        "mediaWithPostProcessEffectChain": attached,
+        "mediaPostProcessEffectChainCount": chain_count,
+    }
+
+
+def annotate_media_trigger_contexts(
+    media_rows: Iterable[dict[str, Any]],
+    trigger_context_catalog: dict[str, Any] | None,
+    *,
+    limit: int = 32,
+) -> dict[str, int]:
+    """Attach compact exact trigger-context summaries to media leaves.
+
+    Trigger contexts already carry full situation/owner/evidence records in
+    ``trigger_contexts.json``.  This pass only joins their serialized
+    ``mediaRefs`` back to the media shard, so a reader can understand why a
+    decoded leaf is present without loading the trigger catalog first.  It
+    deliberately preserves the context's runtime-selection and activation
+    boundaries; it does not turn an authored request into observed playback.
+    """
+
+    if not isinstance(trigger_context_catalog, dict):
+        return {"mediaWithTriggerContextSummary": 0, "triggerContextMediaRefs": 0}
+    by_marker: dict[str, dict[str, Any]] = {}
+    for index, context in enumerate(trigger_context_catalog.get("contexts") or ()):
+        if not isinstance(context, dict):
+            continue
+        trigger_id = str(context.get("triggerId") or f"context:{index}")
+        semantic_kind = str(context.get("semanticKind") or "unknown")
+        trigger_role = str(context.get("triggerRole") or "unknown")
+        runtime_status = str(context.get("runtimeActivationStatus") or "")
+        selection = context.get("selection") or {}
+        selection_statuses = {
+            str(selection.get(key) or "")
+            for key in (
+                "runtimeSelectionStatus", "eventSelectionStatus",
+                "mediaSelectionStatus",
+            )
+            if str(selection.get(key) or "")
+        }
+        owner = context.get("owner") or {}
+        owner_values = {
+            str(owner.get(key) or "")
+            for key in ("ownerId", "configId", "voiceId", "speakerActorId")
+            if str(owner.get(key) or "")
+        }
+        situation = context.get("situation") or {}
+        situation_values = {
+            str(situation.get(key) or "")
+            for key in (
+                "eventId", "dialogId", "dialogKey", "lineId", "triggerKey",
+                "remoteCommonId", "singleId", "levelScriptId",
+            )
+            if str(situation.get(key) or "")
+        }
+        for media_ref in context.get("mediaRefs") or ():
+            if not isinstance(media_ref, dict):
+                continue
+            marker = _media_route_marker(media_ref)
+            if not marker:
+                continue
+            target = by_marker.setdefault(marker, {
+                "triggerIds": set(),
+                "semanticKinds": set(),
+                "triggerRoles": set(),
+                "selectionStatuses": set(),
+                "runtimeStatuses": set(),
+                "ownerValues": set(),
+                "situationValues": set(),
+            })
+            target["triggerIds"].add(trigger_id)
+            target["semanticKinds"].add(semantic_kind)
+            target["triggerRoles"].add(trigger_role)
+            target["selectionStatuses"].update(selection_statuses)
+            if runtime_status:
+                target["runtimeStatuses"].add(runtime_status)
+            target["ownerValues"].update(owner_values)
+            target["situationValues"].update(situation_values)
+
+    attached = 0
+    ref_count = 0
+    for media in media_rows:
+        if not isinstance(media, dict):
+            continue
+        marker = _media_route_marker(media)
+        target = by_marker.get(marker)
+        if not target:
+            continue
+        attached += 1
+        ref_count += len(target["triggerIds"])
+        fields = {
+            "triggerContextCount": len(target["triggerIds"]),
+            "triggerSemanticKinds": sorted(target["semanticKinds"])[:limit],
+            "triggerRoles": sorted(target["triggerRoles"])[:limit],
+            "triggerSelectionStatuses": sorted(target["selectionStatuses"])[:limit],
+            "triggerRuntimeActivationStatuses": sorted(target["runtimeStatuses"])[:limit],
+            "triggerOwnerValues": sorted(target["ownerValues"])[:limit],
+            "triggerSituationValues": sorted(target["situationValues"])[:limit],
+            "triggerContextSummaryEvidence": "exactSerializedTriggerContextMediaJoin",
+        }
+        media.update(fields)
+        media["triggerContextSummaryTruncated"] = any(
+            len(target[key]) > limit
+            for key in (
+                "semanticKinds", "triggerRoles", "selectionStatuses",
+                "runtimeStatuses", "ownerValues", "situationValues",
+            )
+        )
+    return {
+        "mediaWithTriggerContextSummary": attached,
+        "triggerContextMediaRefs": ref_count,
+    }
+
+
+_MONO_BEHAVIOUR_SFX_FIELD_ROLES = frozenset({
+    "soundSpawn",
+    "_spawnAudioEvent",
+    "_onHitAudioEvent",
+    "startHitEvent",
+    "normalAudiId",
+    "soundFinish",
+    "_onEnableLoopAudioEvent",
+    "soundEvent",
+    "_onRotationGroundOneShotAudioEvent",
+    "_finishAudioEvent",
+    "_onStartMoveAudioEvent",
+    "notAimableSoundEvent",
+    "aimableSoundEvent",
+    "capacityCountLowEvent",
+})
+
+
+def annotate_media_trigger_semantic_categories(
+    media_rows: Iterable[dict[str, Any]],
+    trigger_context_catalog: dict[str, Any] | None,
+) -> dict[str, int]:
+    """Recover semantic categories from exact trigger-context ownership.
+
+    The physical Wwise path can remain ``unknown`` even when an authored
+    trigger context identifies the Event's category or an exact serialized
+    MonoBehaviour field role.  This pass adds a separate semantic label only
+    when the evidence is unambiguous.  It never rewrites ``audioCategory`` and
+    never resolves a random/switch branch or runtime activation.
+    """
+
+    if not isinstance(trigger_context_catalog, dict):
+        return {
+            "mediaWithSemanticCategoryFromTriggerContext": 0,
+            "mediaSemanticCategoryFromTriggerEventCategory": 0,
+            "mediaSemanticCategoryFromMonoBehaviourSfxField": 0,
+        }
+
+    by_marker: dict[str, dict[str, Any]] = {}
+    for index, context in enumerate(trigger_context_catalog.get("contexts") or ()):
+        if not isinstance(context, dict):
+            continue
+        trigger_id = str(context.get("triggerId") or f"context:{index}")
+        meaning = context.get("meaning") or {}
+        category = str(meaning.get("category") or "").strip().lower()
+        if category in {"", "unknown"}:
+            category = ""
+        semantic_kind = str(context.get("semanticKind") or "")
+        trigger_role = str(context.get("triggerRole") or "")
+        mono_sfx_role = (
+            semantic_kind == "monoBehaviourAudioIdField"
+            and trigger_role in _MONO_BEHAVIOUR_SFX_FIELD_ROLES
+        )
+        for media_ref in context.get("mediaRefs") or ():
+            if not isinstance(media_ref, dict):
+                continue
+            marker = _media_route_marker(media_ref)
+            if not marker:
+                continue
+            target = by_marker.setdefault(marker, {
+                "triggerIds": set(),
+                "categories": set(),
+                "monoSfxRoles": set(),
+            })
+            target["triggerIds"].add(trigger_id)
+            if category:
+                target["categories"].add(category)
+            if mono_sfx_role:
+                target["monoSfxRoles"].add(trigger_role)
+
+    attached = 0
+    from_event_category = 0
+    from_mono_sfx_field = 0
+    for media in media_rows:
+        if not isinstance(media, dict):
+            continue
+        marker = _media_route_marker(media)
+        target = by_marker.get(marker)
+        if not target:
+            continue
+        if str(media.get("audioCategory") or "unknown") != "unknown":
+            continue
+        if media.get("semanticCategory"):
+            continue
+        categories = sorted(target["categories"])
+        semantic_category = ""
+        evidence = ""
+        if len(categories) == 1:
+            semantic_category = categories[0]
+            evidence = "exactSerializedTriggerContextEventCategory"
+            from_event_category += 1
+            media["semanticCategoryContextCategories"] = categories
+        elif not categories and target["monoSfxRoles"]:
+            semantic_category = "sfx"
+            evidence = "exactSerializedMonoBehaviourAudioIdFieldRole"
+            from_mono_sfx_field += 1
+            media["semanticCategoryFieldRoles"] = sorted(target["monoSfxRoles"])
+        if not semantic_category:
+            continue
+        media["semanticCategory"] = semantic_category
+        media["semanticCategoryEvidence"] = evidence
+        attached += 1
+
+    return {
+        "mediaWithSemanticCategoryFromTriggerContext": attached,
+        "mediaSemanticCategoryFromTriggerEventCategory": from_event_category,
+        "mediaSemanticCategoryFromMonoBehaviourSfxField": from_mono_sfx_field,
+    }
+
+
+def annotate_media_event_contexts(
+    media_rows: Iterable[dict[str, Any]],
+    event_rows: Iterable[dict[str, Any]],
+    *,
+    limit: int = 32,
+) -> dict[str, int]:
+    """Attach Event-level authored contexts to their possible media leaves.
+
+    Unlike ``trigger_contexts.json`` mediaRefs, this join starts from the
+    Event's complete candidate media set.  It therefore explains who/what
+    authored the Event while explicitly retaining the runtime branch boundary:
+    a context can apply to several random/switch/sequence leaves.
+    """
+
+    by_marker: dict[str, dict[str, Any]] = {}
+    for event_index, event in enumerate(event_rows or ()):
+        if not isinstance(event, dict):
+            continue
+        event_id = str(event.get("id") or event.get("eventId") or "").strip()
+        if not event_id:
+            continue
+        contexts = [
+            context for context in event.get("contexts") or ()
+            if isinstance(context, dict)
+        ]
+        if not contexts:
+            continue
+        for candidate in event.get("media") or ():
+            if not isinstance(candidate, dict):
+                continue
+            marker = _media_route_marker(candidate)
+            if not marker:
+                continue
+            target = by_marker.setdefault(marker, {
+                "contextKeys": set(),
+                "eventIds": set(),
+                "kinds": set(),
+                "roles": set(),
+                "ownerValues": set(),
+                "situationValues": set(),
+                "selectionStatuses": set(),
+            })
+            target["eventIds"].add(event_id)
+            for context_index, context in enumerate(contexts):
+                target["contextKeys"].add((event_id, event_index, context_index))
+                kind = str(context.get("kind") or "unknown")
+                target["kinds"].add(kind)
+                role = str(context.get("triggerRole") or "").strip()
+                if role:
+                    target["roles"].add(role)
+                for key in (
+                    "ownerId", "configId", "voiceId", "speakerActorId",
+                    "skillId", "enemyId", "characterId",
+                ):
+                    value = str(context.get(key) or "").strip()
+                    if value:
+                        target["ownerValues"].add(f"{key}={value}")
+                for key in (
+                    "dialogId", "dialogKey", "lineId", "triggerKey",
+                    "remoteCommonId", "singleId", "levelScriptId",
+                    "path", "table", "source",
+                ):
+                    value = str(context.get(key) or "").strip()
+                    if value:
+                        target["situationValues"].add(f"{key}={value}")
+                for key in (
+                    "runtimeSelectionStatus", "eventSelectionStatus",
+                    "mediaSelectionStatus", "runtimeActivationStatus",
+                    "triggerBindingStatus",
+                ):
+                    value = str(context.get(key) or "").strip()
+                    if value:
+                        target["selectionStatuses"].add(value)
+
+    attached = 0
+    context_count = 0
+    for media in media_rows:
+        if not isinstance(media, dict):
+            continue
+        target = by_marker.get(_media_route_marker(media))
+        if not target:
+            continue
+        attached += 1
+        context_count += len(target["contextKeys"])
+        fields = {
+            "eventContextCount": len(target["contextKeys"]),
+            "eventContextEventIds": sorted(target["eventIds"])[:limit],
+            "eventContextKinds": sorted(target["kinds"])[:limit],
+            "eventContextRoles": sorted(target["roles"])[:limit],
+            "eventContextOwnerValues": sorted(target["ownerValues"])[:limit],
+            "eventContextSituationValues": sorted(target["situationValues"])[:limit],
+            "eventContextSelectionStatuses": sorted(target["selectionStatuses"])[:limit],
+            "eventContextSummaryEvidence": "exactSerializedEventContextToPossibleMediaJoin",
+        }
+        media.update(fields)
+        media["eventContextSummaryTruncated"] = any(
+            len(target[key]) > limit
+            for key in (
+                "eventIds", "kinds", "roles", "ownerValues",
+                "situationValues", "selectionStatuses",
+            )
+        )
+    return {
+        "mediaWithEventContextSummary": attached,
+        "mediaEventContextSummaryCount": context_count,
+    }
+
+
 def build_media_rows(
     audio_index: dict[str, Any],
     media_to_events: dict[str, list[str]],
     event_categories: dict[str, str] | None = None,
+    event_rows: Iterable[dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     event_categories = event_categories or {}
     seen: set[tuple[str, str]] = set()
+    event_rows = list(event_rows or ())
+    post_process_routes = _media_post_process_routes(event_rows)
     definition_evidence_by_media_id: dict[int, list[dict[str, Any]]] = defaultdict(list)
     authored_event_ids_by_bank: dict[tuple[str, int], set[str]] = defaultdict(set)
     for inventory in audio_index.get("wwiseEventInventory") or []:
@@ -9824,10 +11949,25 @@ def build_media_rows(
         compact["eventCount"] = len(event_ids)
         if event_ids:
             compact["eventIds"] = event_ids
-            compact["relatedEventCategories"] = sorted({
+            related_categories = sorted({
                 str(event_categories.get(event_id) or "unknown")
                 for event_id in event_ids
             })
+            compact["relatedEventCategories"] = related_categories
+            unique_known_categories = sorted({
+                value for value in related_categories if value not in {"", "unknown"}
+            })
+            if (
+                str(compact.get("audioCategory") or "unknown") == "unknown"
+                and len(unique_known_categories) == 1
+            ):
+                compact["semanticCategory"] = unique_known_categories[0]
+                compact["semanticCategoryEvidence"] = (
+                    "exactUniqueRelatedWwiseEventCategory"
+                )
+        route = post_process_routes.get(reverse_key)
+        if route:
+            compact.update(route)
         try:
             media_id = int(compact.get("mediaId") or compact.get("id"))
         except (TypeError, ValueError):
@@ -9848,6 +11988,8 @@ def build_media_rows(
                 compact["audioLibraryBankEventIds"] = bank_event_ids
                 compact["purposeHintStatus"] = "authoredEventBankColocationOnly"
         rows.append(compact)
+    annotate_media_event_contexts(rows, event_rows)
+    annotate_media_post_process_effect_chains(rows, audio_index)
     rows.sort(key=lambda row: (
         str(row.get("audioCategory") or "unknown"),
         str(row.get("id") or ""),
@@ -9894,6 +12036,10 @@ def build_audio_semantic_data(
         for row in audio_index.get("wwiseEventInventory") or []
         if isinstance(row, dict) and isinstance(row.get("eventHash"), int)
     }
+    metadata_event_symbol_catalog = collect_metadata_event_symbol_aliases(
+        metadata_path,
+        current_wwise_event_hashes,
+    )
     mono_behaviour_audio_id_semantics = collect_mono_behaviour_audio_id_contexts(
         export_root,
         current_wwise_event_hashes,
@@ -9923,6 +12069,20 @@ def build_audio_semantic_data(
         "evidence": "exactManagedStringLiteral",
         "wwiseEventStatus": "notApplicable",
     } for name in identifiers.collect_metadata_audio_literals(metadata_path) if identifiers.is_rtpc_parameter_name(name)]
+    rtpc_names_by_hex: dict[str, str] = {}
+    rtpc_name_collisions: set[str] = set()
+    for row in managed_rtpc_parameters:
+        parameter_name = str(row.get("parameterName") or "").strip()
+        if not parameter_name:
+            continue
+        parameter_hex = f"0x{identifiers.audio_hash_generator_compute(parameter_name):08x}"
+        previous = rtpc_names_by_hex.get(parameter_hex)
+        if previous and previous.casefold() != parameter_name.casefold():
+            rtpc_name_collisions.add(parameter_hex)
+        else:
+            rtpc_names_by_hex[parameter_hex] = parameter_name
+    for parameter_hex in rtpc_name_collisions:
+        rtpc_names_by_hex.pop(parameter_hex, None)
     levelscript_semantics = collect_levelscript_audio_semantics(
         export_root,
         cue_semantics=cue_semantics,
@@ -10085,11 +12245,37 @@ def build_audio_semantic_data(
             if isinstance(context, dict)
         }
     )
+    wwise_selector_groups = wwise_selector_group_catalog()
     events, media_to_events, banks = event_projection.build_event_rows(
-        audio_index, contexts
+        audio_index,
+        contexts,
+        selector_groups=wwise_selector_groups,
+        rtpc_names_by_hex=rtpc_names_by_hex,
+        metadata_event_symbols=metadata_event_symbol_catalog.get("entries") or [],
+    )
+    action_control_evidence_by_event = {
+        str(event.get("id") or ""): list(event.get("evidence") or [])
+        for event in events
+        if str(event.get("id") or "")
+    }
+    wwise_action_control_catalog = event_projection.annotate_wwise_action_control_evidence(
+        action_control_evidence_by_event,
+        wwise_selector_groups,
+        rtpc_names_by_hex,
+    )
+    wwise_initial_rtpc_catalog = event_projection.build_initial_rtpc_parameter_catalog(
+        events
     )
     shared_play_target_event_count = purpose.annotate_shared_wwise_play_targets(events)
     shared_media_leaf_event_count = purpose.annotate_shared_wwise_media_leaves(events)
+    shared_media_leaf_category_event_count = sum(
+        row.get("categoryEvidence") == "exactCompleteWwiseMediaLeafSetCategory"
+        for row in events
+    )
+    authored_name_category_event_count = sum(
+        bool(row.get("categoryNameEvidence"))
+        for row in events
+    )
     media = build_media_rows(
         audio_index,
         media_to_events,
@@ -10098,6 +12284,7 @@ def build_audio_semantic_data(
             for event in events
             if event.get("id")
         },
+        event_rows=events,
     )
     radio_catalog = attach_levelscript_radio_contexts(
         media,
@@ -10111,10 +12298,138 @@ def build_audio_semantic_data(
         language,
         export_root=export_root,
         levelscript_semantics=levelscript_semantics,
-        mono_behaviour_audio_id_contexts=(
+            mono_behaviour_audio_id_contexts=(
             mono_behaviour_audio_id_semantics.get("eventContexts") or {}
         ),
     )
+    media_trigger_context_counts = annotate_media_trigger_contexts(
+        media,
+        trigger_context_catalog,
+    )
+    media_trigger_semantic_category_counts = annotate_media_trigger_semantic_categories(
+        media,
+        trigger_context_catalog,
+    )
+    media_post_process_counts = {
+        "mediaWithPostProcessDirectEffects": sum(
+            bool(row.get("postProcessDirectEffectCount"))
+            for row in media
+        ),
+        "mediaPostProcessDirectEffectOccurrences": sum(
+            int(row.get("postProcessDirectEffectOccurrences") or 0)
+            for row in media
+        ),
+        "mediaWithPostProcessRtpcControls": sum(
+            bool(row.get("postProcessRtpcControlCount"))
+            for row in media
+        ),
+        "mediaPostProcessRtpcControlCount": sum(
+            int(row.get("postProcessRtpcControlCount") or 0)
+            for row in media
+        ),
+        "mediaWithPostProcessStateControls": sum(
+            bool(row.get("postProcessStateControlCount"))
+            for row in media
+        ),
+        "mediaPostProcessStateControlCount": sum(
+            int(row.get("postProcessStateControlCount") or 0)
+            for row in media
+        ),
+        "mediaWithPostProcessEffectChain": sum(
+            bool(row.get("postProcessEffectChainCount"))
+            for row in media
+        ),
+        "mediaPostProcessEffectChainCount": sum(
+            int(row.get("postProcessEffectChainCount") or 0)
+            for row in media
+        ),
+        "mediaWithPostProcessBusControls": sum(
+            bool(row.get("postProcessBusControlCount"))
+            for row in media
+        ),
+        "mediaPostProcessBusControlCount": sum(
+            int(row.get("postProcessBusControlCount") or 0)
+            for row in media
+        ),
+        "mediaPostProcessBusRtpcCurveCount": sum(
+            int(control.get("rtpcCurveCount") or 0)
+            for row in media
+            for control in row.get("postProcessBusControls") or ()
+            if isinstance(control, dict)
+        ),
+        "mediaPostProcessBusStateValueCount": sum(
+            int(control.get("stateValueCount") or 0)
+            for row in media
+            for control in row.get("postProcessBusControls") or ()
+            if isinstance(control, dict)
+        ),
+        "mediaWithPostProcessBusDucking": sum(
+            bool(row.get("postProcessBusDuckCount"))
+            for row in media
+        ),
+        "mediaPostProcessBusDuckBusCount": sum(
+            int(row.get("postProcessBusDuckCount") or 0)
+            for row in media
+        ),
+        "mediaPostProcessBusDuckReferenceCount": sum(
+            int(duck.get("duckCount") or 0)
+            for row in media
+            for duck in row.get("postProcessBusDucks") or ()
+            if isinstance(duck, dict)
+        ),
+        "mediaWithPostProcessAuxSends": sum(
+            bool(row.get("postProcessAuxSendCount"))
+            for row in media
+        ),
+        "mediaPostProcessAuxSendCount": sum(
+            int(row.get("postProcessAuxSendCount") or 0)
+            for row in media
+        ),
+        "mediaPostProcessAuxSendOccurrences": sum(
+            int(row.get("postProcessAuxSendOccurrences") or 0)
+            for row in media
+        ),
+        "mediaWithPostProcessProperties": sum(
+            bool(row.get("postProcessPropertyCount"))
+            for row in media
+        ),
+        "mediaPostProcessPropertyCount": sum(
+            int(row.get("postProcessPropertyCount") or 0)
+            for row in media
+        ),
+        "mediaPostProcessPropertyOccurrences": sum(
+            int(row.get("postProcessPropertyOccurrences") or 0)
+            for row in media
+        ),
+        "mediaWithPostProcessRanges": sum(
+            bool(row.get("postProcessRangeCount"))
+            for row in media
+        ),
+        "mediaPostProcessRangeCount": sum(
+            int(row.get("postProcessRangeCount") or 0)
+            for row in media
+        ),
+        "mediaPostProcessRangeOccurrences": sum(
+            int(row.get("postProcessRangeOccurrences") or 0)
+            for row in media
+        ),
+        "mediaWithWwiseMediaGraphEvidence": sum(
+            bool(row.get("wwiseMediaGraphEvidence"))
+            for row in media
+        ),
+        "mediaWwiseMediaSelectionPathCount": sum(
+            int(row.get("wwiseMediaSelectionPathCount") or 0)
+            for row in media
+        ),
+        "mediaWithEventContextSummary": sum(
+            bool(row.get("eventContextSummaryEvidence"))
+            for row in media
+        ),
+        "mediaEventContextSummaryCount": sum(
+            int(row.get("eventContextCount") or 0)
+            for row in media
+        ),
+    }
     media_playback_location_counts = purpose.annotate_media_playback_locations(
         media,
         events,
@@ -10172,6 +12487,9 @@ def build_audio_semantic_data(
     }
     event_categories = Counter(str(row.get("category") or "unknown") for row in events)
     media_categories = Counter(str(row.get("audioCategory") or "unknown") for row in media)
+    media_semantic_categories = Counter(
+        str(row.get("semanticCategory") or "unknown") for row in media
+    )
     media_relations = Counter(
         str(relation)
         for row in events
@@ -10294,6 +12612,7 @@ def build_audio_semantic_data(
             "eventEvidenceSchemaVersion": audio_index.get("eventEvidenceSchemaVersion"),
             "counts": audio_index.get("counts") or {},
         },
+        "metadataEventSymbolAliases": metadata_event_symbol_catalog,
         "shards": {"events": events_name, "media": media_name},
         "triggerContexts": {
             "shard": trigger_context_name,
@@ -10305,6 +12624,9 @@ def build_audio_semantic_data(
         "eventDetailShardCount": len(event_details),
         "counts": {
             "decodedMedia": len(media),
+            **media_trigger_context_counts,
+            **media_trigger_semantic_category_counts,
+            **media_post_process_counts,
             "eventRecords": len(events),
             "namedEvents": len(named_event_ids),
             "eventsFoundInWwise": linked_events,
@@ -10329,6 +12651,16 @@ def build_audio_semantic_data(
             ),
             "eventsWithAuthoredSharedPlayTargetSet": shared_play_target_event_count,
             "eventsWithAuthoredSharedMediaLeafSet": shared_media_leaf_event_count,
+            "eventsWithAuthoredSharedMediaLeafCategory": shared_media_leaf_category_event_count,
+            "eventsWithAuthoredNamePatternCategory": authored_name_category_event_count,
+            "mediaWithSemanticCategory": sum(
+                bool(row.get("semanticCategory")) for row in media
+            ),
+            "mediaWithSemanticCategoryFromRelatedEvent": sum(
+                row.get("semanticCategoryEvidence") == "exactUniqueRelatedWwiseEventCategory"
+                for row in media
+            ),
+            "mediaSemanticCategoryCounts": dict(sorted(media_semantic_categories.items())),
             "audioDialogWwiseEventAliases": len(
                 audio_index.get("audioDialogWwiseEventAliases") or []
             ),
@@ -10446,6 +12778,14 @@ def build_audio_semantic_data(
             "mediaWithEventRelationOnly": media_playback_location_counts.get("eventRelationOnly", 0),
             "mediaWithAuthoredEventContext": media_playback_location_counts.get("authoredEventContext", 0),
             "directDialogMedia": media_playback_location_counts.get("directDialogMedia", 0),
+            "mediaWithPostProcessRoutes": sum(
+                int(row.get("postProcessRouteCount") or 0) > 0
+                for row in media
+            ),
+            "mediaWithPostProcessUnresolvedBusPaths": sum(
+                bool(row.get("postProcessUnresolvedBusProcessingIds"))
+                for row in media
+            ),
             "eventPossibleMedia": sum(int(row.get("possibleMediaCount") or 0) for row in events),
             "eventMediaCandidates": sum(int(row.get("possibleMediaCount") or 0) for row in events),
             "banksWithIndexedEvents": len(banks),
@@ -10478,6 +12818,9 @@ def build_audio_semantic_data(
             ).get("parameterVariantCount", 0),
             "binaryManagedAudioLiterals": len(managed_literal_names),
             "binaryManagedLiteralWwiseEvents": managed_literal_hirc_matches,
+            "metadataEventSymbolAliases": int(
+                metadata_event_symbol_catalog.get("matchCount") or 0
+            ),
             "luaPostEventNames": context_kind_event_counts.get("luaPostEvent", 0),
             "luaPostEventContexts": context_kind_counts.get("luaPostEvent", 0),
             "luaPostEventNamesFoundInWwise": sum(
@@ -10800,9 +13143,23 @@ def build_audio_semantic_data(
                 "wwiseSelectorGroupsCensused": 56,
                 "wwiseSelectorGroupsWithRuntimeSetter": 2,
                 "wwiseSelectorGroupsWithSemanticInference": 3,
+                "wwiseSelectorGroupsPublished": len(wwise_selector_groups),
+                "wwiseMusicStateGroupsPublished": len(AUDIO_MUSIC_NATIVE_STATE_GROUPS),
                 "wwiseSelectorPackageValuesCensused": 234,
                 "wwiseSelectorValuesWithMetadataStringMatch": 67,
                 "wwiseSelectorValuesWithoutRecoveredString": 167,
+                "wwiseActionControlCount": wwise_action_control_catalog.get("actionCount", 0),
+                "wwiseActionControlTypedExactCount": wwise_action_control_catalog.get("typedExactActionCount", 0),
+                "wwiseActionControlGroupSemanticMatchCount": wwise_action_control_catalog.get("groupSemanticMatchCount", 0),
+                "wwiseActionControlValueSemanticMatchCount": wwise_action_control_catalog.get("valueSemanticMatchCount", 0),
+                "wwiseActionControlInitialRtpcIdMatchCount": wwise_action_control_catalog.get("sharedRtpcParameterIdMatchCount", 0),
+                "wwiseActionControlInitialRtpcIdCount": wwise_action_control_catalog.get("sharedRtpcParameterIdCount", 0),
+                "wwiseActionControlNamedInitialRtpcMatchCount": wwise_action_control_catalog.get("namedInitialRtpcMatchCount", 0),
+                "wwiseInitialRtpcNamedParameterCount": len(wwise_initial_rtpc_catalog),
+                "wwiseInitialRtpcNamedCurveCount": sum(
+                    int(row.get("curveCount") or 0)
+                    for row in wwise_initial_rtpc_catalog
+                ),
             },
             "audioCueDefinitions": [
                 {key: value for key, value in definition.items() if key not in {"behaviorEvents", "expressionOperands"}}
@@ -10831,14 +13188,18 @@ def build_audio_semantic_data(
                 dict(row) for row in LEVEL_EVENT_AUDIO_CONDITION_DEFINITIONS
             ],
             "wwiseSelectorGroups": [
-                dict(row) for row in AUDIO_RUNTIME_SELECTOR_GROUPS
+                dict(row) for row in wwise_selector_groups
             ],
-            "evidenceBoundary": "Cue behavior exprType=3 values, constant LevelScript Event parameters, LevelScript cue names joined by the native AudioHashGenerator to exact cue behavior expressions, non-empty PhysicsAudio Event properties, and normal ModelView Event/position hashes are authored requests. PhysicsAudio/ModelView RTPC names, ModelView spatial/custom-audio rows, cue/action execution, handler conditions, exprType=8 strings, dynamic Params, state/variable writes, playback handles, placeholder-music ids, unresolved cue hashes, and musicCue* values remain typed controls or unresolved runtime state. LevelEvent OnAudioStateChanged and OnMusicBeatEvent are current-build trigger-input definitions, not playback requests; exhaustive active-overlay scanning found zero authored occurrences. Two Wwise selector groups have exact native setter callsites; three more have high-confidence semantic correlation only. None reveal a live value, selected branch, or authored group name.",
+            "wwiseActionControls": wwise_action_control_catalog,
+            "wwiseInitialRtpcParameters": wwise_initial_rtpc_catalog,
+            "evidenceBoundary": "Cue behavior exprType=3 values, constant LevelScript Event parameters, LevelScript cue names joined by the native AudioHashGenerator to exact cue behavior expressions, non-empty PhysicsAudio Event properties, and normal ModelView Event/position hashes are authored requests. Metadata-named InitialRTPC rows are exact ID/hash joins that preserve authored curve targets and controlled properties; they do not observe live RTPC updates or audibility. PhysicsAudio/ModelView RTPC names, ModelView spatial/custom-audio rows, cue/action execution, handler conditions, exprType=8 strings, dynamic Params, state/variable writes, playback handles, placeholder-music ids, unresolved cue hashes, and musicCue* values remain typed controls or unresolved runtime state. LevelEvent OnAudioStateChanged and OnMusicBeatEvent are current-build trigger-input definitions, not playback requests; exhaustive active-overlay scanning found zero authored occurrences. Two non-music Wwise selector groups have exact native setter callsites; three more have high-confidence semantic correlation only, and ten music State groups have exact current-metadata/native-setter joins. None reveal a live value, selected branch, or authored group name.",
         },
         "runtimeModel": runtime_model,
         "evidenceBoundary": {
             "decodedMedia": "A decoded FLAC/WAV/WEM is a source media object, not proof that it played.",
             "eventMedia": "Possible media leaves use typed Wwise v150 Event -> Action -> reciprocal Children -> Sound/MusicTrack AkBankSourceData edges. Ordinary Codec sources may join decoded media; External Source codec and synthesized Source-plugin records remain non-media playback sources. Play roots and random/sequence/switch/layer relations are preserved; runtime selection and source instantiation are not evaluated. Unsupported plugins, music nodes, and unparsed child structures fail closed.",
+            "mediaPostProcess": "Media post-process route summaries join each possible Event media leaf to the Event evidence's exact serialized output-bus path. Bus IDs and unresolved processing IDs are references into the HIRC bus catalog; runtime branch selection, inherited effective settings, live bypass/RTPC/State values, platform DSP, and audibility remain unresolved.",
+            "mediaTriggerContexts": "Media rows join serialized trigger_contexts.json mediaRefs to exact trigger semantic kinds, roles, owner/situation values, and selection/activation statuses. This is an authored request or placement summary; runtime execution and live branch choice remain unobserved.",
             "authoredContext": "Table, Timeline, SkillData, and BuffData references prove authored consumers, not a live playback trace.",
             "animationOwnership": "An AnimationClip callback proves that the owned clip requests the Event. If the same Event is used by multiple playable characters, its complete Wwise leaf graph is a shared selector surface and is not character-specific media ownership.",
             "customFootstepCallbacks": custom_footstep_model.get("evidenceBoundary") or "",

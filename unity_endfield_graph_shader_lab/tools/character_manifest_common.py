@@ -1344,6 +1344,24 @@ def texture_info(
     name = str((asset or {}).get("Name") or f"Texture2D_{texture_path_id}")
     source_root = STREAMING if (asset or {}).get("_asset_root") == "StreamingAssets" else PERSISTENT
     exported = find_exported_asset_file(source_root, "Texture2D", name, (".png", ".tga", ".jpg", ".jpeg"))
+    if not exported and asset is None:
+        suffix = f"_p{texture_path_id & 0xFFFFFFFFFFFFFFFF:016X}"
+        for candidate_root in (STREAMING, PERSISTENT):
+            folder = candidate_root / "convert_by_type" / "Texture2D"
+            matches = sorted(
+                path
+                for extension in (".png", ".tga", ".jpg", ".jpeg")
+                for path in folder.glob(f"*{suffix}{extension}")
+            ) if folder.is_dir() else []
+            if len(matches) > 1:
+                raise ValueError(
+                    f"Texture2D PathID {texture_path_id} has multiple hashed exports under {folder}"
+                )
+            if matches:
+                exported = str(matches[0].resolve())
+                name = matches[0].name[: -len(matches[0].suffix) - len(suffix)]
+                source_root = candidate_root
+                break
     if not exported and source_root is not STREAMING:
         exported = find_exported_asset_file(STREAMING, "Texture2D", name, (".png", ".tga", ".jpg", ".jpeg"))
     if not exported and source_root is not PERSISTENT:
@@ -1664,8 +1682,12 @@ def find_material_json(name: str, path_id: int) -> Path | None:
             )
         if matches:
             return matches[0]
-    return find_json_by_type("Material", name) or find_json_by_type_path_id(
-        "Material", path_id
+    # Material names are not identities. Chen currently ships two distinct
+    # M_actor_chen_body_01 objects; name-first lookup silently selected the
+    # other material and projected Bounda's body textures onto Chen's legs.
+    # Preserve the renderer's exact PPtr whenever the hashed export exists.
+    return find_json_by_type_path_id("Material", path_id) or find_json_by_type(
+        "Material", name
     )
 
 
