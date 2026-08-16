@@ -2088,9 +2088,13 @@ only stable interpretation and priorities.
    `rbp=rsp+0x50`, the builder's `rbp+0xa08` reload is the same argument.
    Its terminal `vtable+0x210` receiver is therefore this dynamic
    resource/parameter-provider object, not backend status dword `+0x214`.
-   The external manager implementation, provider allocation, and concrete
-   vtable remain the strongest unresolved backend boundary; no CPU record
-   helper is a proven draw or submit.
+   The front-context vtable is `0x181dcb360`, and `+0xc28` now resolves to
+   `0x18092ec20..0x18092ef5a`. That method allocates a 0x20-byte
+   callback/resource node, calls its nested interface `+0xc18`, and writes the
+   returned provider to row `+0x10` at `0x18092ed78`; row `+0x18` remains zero
+   on this bounded path. The provider's nested concrete type and terminal
+   `+0x210` implementation remain the strongest unresolved backend boundary;
+   no CPU record helper is a proven draw or submit.
    The actor-composed Unity witness assigns one strictly monotonic
    `captureInvocationSerial` to every actual `Camera.Render()` call. Its 24
    anchors times seven aggregate/root lanes validate as 168 unique invocations,
@@ -2113,7 +2117,14 @@ only stable interpretation and priorities.
    composite/effects pairs are byte-identical; their stable effect contributors
    are queue-3704 `tiaodaifenwei_01 (7)` (~432k pixels),
    `fenweiqiliu_02 (3)` (~21k), and `shoutiaodai_01 (1)` (~3.5k), so the actor
-   adds no renderer in this queue range. Override-material coverage does not preserve
+   adds no renderer in this queue range.
+   The sidecar now derives its 960x540 internal extent from the actual
+   after-post depth attachment rather than incorrectly allocating at the
+   1920x1080 presentation size. Each positive frame publishes per-renderer
+   pixel counts plus inclusive internal and presentation-scaled bounding boxes;
+   validators require their summed counts to equal the raw nonzero total and
+   recheck every identity and bound.
+   Override-material coverage does not preserve
    source alpha clip/cull/discard, so this proves Unity diagnostic
    renderer admission/depth/sort ownership only; it is not retail pixel,
    native survivor, or final draw ownership and does not raise

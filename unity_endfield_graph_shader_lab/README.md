@@ -4184,9 +4184,12 @@ initializes `+0x10/+0x18` to zero, and registers callback `0x180542E10` through
 an external manager's vtable `+0xC28`. The manager populates row `+0x10`; the
 callback forwards it as Windows x64 argument six, and exact return-address and
 prologue accounting maps the builder's terminal `vtable+0x210` receiver back
-to that same dynamic resource/parameter-provider. Its external manager,
-allocation, and concrete vtable remain unresolved. None of these CPU record
-paths proves a graphics-API draw or submit.
+to that same dynamic resource/parameter-provider. Front-context vtable
+`0x181DCB360` resolves `+0xC28` to `0x18092EC20`; it allocates a 0x20-byte
+callback/resource node, calls nested interface `+0xC18`, and writes the result
+to row `+0x10` at `0x18092ED78`, while row `+0x18` remains zero on this path.
+The nested provider type and terminal `+0x210` implementation remain
+unresolved. None of these CPU record paths proves a graphics-API draw or submit.
 Retail queue 3704 belongs to the source-closed 3660--3740
 `AfterPostprocessTransparent` phase. In the exact SceneMV route that range is
 owned by the after-post callback, not main transparent. This isolated shader
@@ -4375,7 +4378,12 @@ material is active. Numeric red-channel IDs are local to one capture invocation;
 the ordinal hierarchy path plus material slot/name is the cross-frame identity.
 The stable later contributors are queue-3704 `tiaodaifenwei_01 (7)`,
 `fenweiqiliu_02 (3)`, and `shoutiaodai_01 (1)`; composite and effects-only are
-byte-identical at those four PTS values. Because the override shader does not reproduce
+byte-identical at those four PTS values.
+The attachment uses the actual 960x540 after-post depth extent, not the
+1920x1080 presentation extent. Every positive frame stores per-renderer pixel
+counts and inclusive internal plus presentation-scaled bounding boxes; their
+totals and identity mappings are validated against the RGBA32F payload.
+Because the override shader does not reproduce
 source alpha clip, cull, or discard, this is diagnostic renderer
 admission/depth/sort evidence only and keeps `visibleAdmission=false`.
 Four-corner background consensus remains stable when the animated coat crosses

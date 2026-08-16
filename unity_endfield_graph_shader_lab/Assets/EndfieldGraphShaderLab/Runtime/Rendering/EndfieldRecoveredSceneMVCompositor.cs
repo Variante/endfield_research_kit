@@ -418,8 +418,8 @@ namespace EndfieldGraphShaderLab
                 return;
 
             resources.Restore();
-            resources.width = Mathf.Max(camera.pixelWidth, 1);
-            resources.height = Mathf.Max(camera.pixelHeight, 1);
+            resources.width = 0;
+            resources.height = 0;
             Renderer[] renderers = UnityEngine.Object.FindObjectsOfType<Renderer>();
             Array.Sort(renderers, CompareRendererIds);
             var candidates = new List<RendererIdCandidate>();
@@ -1220,6 +1220,16 @@ namespace EndfieldGraphShaderLab
                     "after-post depth target is unavailable");
                 return;
             }
+            if (!depth.IsCreated() || depth.width <= 0 || depth.height <= 0)
+            {
+                PublishRendererIdSidecarFailure(
+                    activeCaptureInvocationSerial,
+                    resources,
+                    "after-post depth target has an invalid extent");
+                return;
+            }
+            resources.width = depth.width;
+            resources.height = depth.height;
             if (!resources.preparedBeforeCull)
             {
                 PublishRendererIdSidecarFailure(

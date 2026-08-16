@@ -997,6 +997,8 @@ namespace EndfieldGraphShaderLabEditor
                 ? "no renderer-ID sidecar capture was published"
                 : sidecarCapture.failure ?? string.Empty;
             long validatedSidecarNonZeroPixelCount = 0;
+            RendererIdPixelSummary[] validatedSidecarPixelSummaries =
+                Array.Empty<RendererIdPixelSummary>();
             if (sidecarAvailable)
             {
                 string sidecarValidationFailure;
@@ -1004,6 +1006,7 @@ namespace EndfieldGraphShaderLabEditor
                         sidecarCapture,
                         captureInvocationSerial,
                         out validatedSidecarNonZeroPixelCount,
+                        out validatedSidecarPixelSummaries,
                         out sidecarValidationFailure))
                 {
                     sidecarAvailable = false;
@@ -1067,7 +1070,12 @@ namespace EndfieldGraphShaderLabEditor
                 rendererIdSidecarAvailable = sidecarAvailable,
                 rendererIdSidecarRaw = RelativeOutputPath(sidecarRawPath),
                 rendererIdSidecarDictionary = RelativeOutputPath(sidecarDictionaryPath),
+                rendererIdSidecarWidth = sidecarAvailable ? sidecarCapture.width : 0,
+                rendererIdSidecarHeight = sidecarAvailable ? sidecarCapture.height : 0,
                 rendererIdSidecarNonZeroPixelCount = sidecarNonZeroPixelCount,
+                rendererIdSidecarPixelSummaries = sidecarAvailable
+                    ? validatedSidecarPixelSummaries
+                    : Array.Empty<RendererIdPixelSummary>(),
                 rendererIdSidecarFailure = sidecarFailure,
             };
         }
@@ -1084,9 +1092,11 @@ namespace EndfieldGraphShaderLabEditor
             EndfieldRendererIdSidecarCapture capture,
             long expectedSerial,
             out long nonZeroPixelCount,
+            out RendererIdPixelSummary[] pixelSummaries,
             out string failure)
         {
             nonZeroPixelCount = 0;
+            pixelSummaries = Array.Empty<RendererIdPixelSummary>();
             failure = string.Empty;
             if (capture.captureInvocationSerial != expectedSerial)
             {
@@ -1103,12 +1113,12 @@ namespace EndfieldGraphShaderLabEditor
                     "captureInvocationSerial-local";
                 return false;
             }
-            if (capture.width != Width || capture.height != Height)
+            if (capture.width <= 0 || capture.height <= 0)
             {
-                failure = "renderer-ID sidecar dimensions do not match the PNG";
+                failure = "renderer-ID sidecar dimensions are invalid";
                 return false;
             }
-            int expectedFloatCount = checked(Width * Height * 4);
+            int expectedFloatCount = checked(capture.width * capture.height * 4);
             if (capture.rgba == null || capture.rgba.Length != expectedFloatCount)
             {
                 failure = "renderer-ID sidecar RGBA32F raw length is not width*height*4";
@@ -1117,6 +1127,7 @@ namespace EndfieldGraphShaderLabEditor
             EndfieldRendererIdSidecarEntry[] entries = capture.entries ??
                 Array.Empty<EndfieldRendererIdSidecarEntry>();
             var ids = new HashSet<int>();
+            var entriesById = new Dictionary<int, EndfieldRendererIdSidecarEntry>();
             var stableRendererKeys = new HashSet<string>(StringComparer.Ordinal);
             for (int entryIndex = 0; entryIndex < entries.Length; entryIndex++)
             {
@@ -1145,7 +1156,9 @@ namespace EndfieldGraphShaderLabEditor
                         "are not valid, unique, and capture-local";
                     return false;
                 }
+                entriesById.Add(entry.id, entry);
             }
+            var summariesById = new Dictionary<int, RendererIdPixelSummary>();
             for (int pixel = 0; pixel < capture.rgba.Length; pixel += 4)
             {
                 float idValue = capture.rgba[pixel];
@@ -1170,9 +1183,101 @@ namespace EndfieldGraphShaderLabEditor
                         "or unmapped pixel ID";
                     return false;
                 }
+                int id = (int)rounded;
+                int pixelIndex = pixel / 4;
+                int x = pixelIndex % capture.width;
+                int y = pixelIndex / capture.width;
+                RendererIdPixelSummary summary;
+                if (!summariesById.TryGetValue(id, out summary))
+                {
+                    EndfieldRendererIdSidecarEntry entry = entriesById[id];
+                    summary = new RendererIdPixelSummary
+                    {
+                        id = id,
+                        stableRendererKey = entry.stableRendererKey,
+                        rendererPath = entry.rendererPath,
+                        rendererOrdinalPath = entry.rendererOrdinalPath,
+                        materialIndex = entry.materialIndex,
+                        materialName = entry.materialName,
+                        shaderName = entry.shaderName,
+                        renderQueue = entry.renderQueue,
+                        pixelCount = 0,
+                        internalMinX = x,
+                        internalMinY = y,
+                        internalMaxX = x,
+                        internalMaxY = y,
+                    };
+                }
+                summary.pixelCount++;
+                summary.internalMinX = Mathf.Min(summary.internalMinX, x);
+                summary.internalMinY = Mathf.Min(summary.internalMinY, y);
+                summary.internalMaxX = Mathf.Max(summary.internalMaxX, x);
+                summary.internalMaxY = Mathf.Max(summary.internalMaxY, y);
+                summariesById[id] = summary;
                 nonZeroPixelCount++;
             }
+            long summaryPixelCount = 0;
+            var orderedSummaries = new List<RendererIdPixelSummary>();
+            for (int entryIndex = 0; entryIndex < entries.Length; entryIndex++)
+            {
+                RendererIdPixelSummary summary;
+                if (!summariesById.TryGetValue(entries[entryIndex].id, out summary))
+                    continue;
+                if (summary.pixelCount <= 0 ||
+                    summary.internalMinX < 0 || summary.internalMinX >= capture.width ||
+                    summary.internalMinY < 0 || summary.internalMinY >= capture.height ||
+                    summary.internalMaxX < summary.internalMinX ||
+                    summary.internalMaxX >= capture.width ||
+                    summary.internalMaxY < summary.internalMinY ||
+                    summary.internalMaxY >= capture.height)
+                {
+                    failure =
+                        "renderer-ID sidecar pixel summary has invalid inclusive bounds";
+                    return false;
+                }
+                summary.pngMinX = ScaleInclusiveMin(
+                    summary.internalMinX, Width, capture.width);
+                summary.pngMinY = ScaleInclusiveMin(
+                    summary.internalMinY, Height, capture.height);
+                summary.pngMaxX = ScaleInclusiveMax(
+                    summary.internalMaxX, Width, capture.width);
+                summary.pngMaxY = ScaleInclusiveMax(
+                    summary.internalMaxY, Height, capture.height);
+                if (summary.pngMinX < 0 || summary.pngMinX > summary.pngMaxX ||
+                    summary.pngMaxX >= Width || summary.pngMinY < 0 ||
+                    summary.pngMinY > summary.pngMaxY || summary.pngMaxY >= Height)
+                {
+                    failure =
+                        "renderer-ID sidecar PNG-scaled pixel bounds are invalid";
+                    return false;
+                }
+                summaryPixelCount += summary.pixelCount;
+                orderedSummaries.Add(summary);
+            }
+            if (summaryPixelCount != nonZeroPixelCount)
+            {
+                failure =
+                    "renderer-ID sidecar pixel-summary total does not equal " +
+                    "the nonzero pixel count";
+                return false;
+            }
+            pixelSummaries = orderedSummaries.ToArray();
             return true;
+        }
+
+        private static int ScaleInclusiveMin(int value, int outputExtent, int inputExtent)
+        {
+            return Mathf.Clamp(
+                (int)((long)value * outputExtent / inputExtent),
+                0,
+                outputExtent - 1);
+        }
+
+        private static int ScaleInclusiveMax(int value, int outputExtent, int inputExtent)
+        {
+            long exclusive = ((long)value + 1L) * outputExtent;
+            int scaled = (int)((exclusive + inputExtent - 1L) / inputExtent - 1L);
+            return Mathf.Clamp(scaled, 0, outputExtent - 1);
         }
 
         private static Color32 SelectCornerConsensusBackground(Color32[] pixels)
@@ -1801,11 +1906,53 @@ namespace EndfieldGraphShaderLabEditor
                     "Renderer-ID sidecar files are missing for " + label +
                     " at PTS " + pts);
                 Require(new FileInfo(sidecarRaw).Length ==
-                    (long)Width * Height * 4 * sizeof(float) &&
+                    (long)frame.rendererIdSidecarWidth *
+                        frame.rendererIdSidecarHeight * 4 * sizeof(float) &&
                     frame.rendererIdSidecarNonZeroPixelCount >= 0 &&
                     frame.rendererIdSidecarNonZeroPixelCount <=
                         (long)Width * Height,
                     "Renderer-ID sidecar dimensions/count drifted for " + label +
+                        " at PTS " + pts);
+                RendererIdPixelSummary[] summaries =
+                    frame.rendererIdSidecarPixelSummaries ??
+                    Array.Empty<RendererIdPixelSummary>();
+                Require(frame.rendererIdSidecarWidth > 0 &&
+                    frame.rendererIdSidecarHeight > 0,
+                    "Renderer-ID sidecar extent is missing for " + label +
+                    " at PTS " + pts);
+                long summaryPixelCount = 0;
+                var summaryIds = new HashSet<int>();
+                var summaryKeys = new HashSet<string>(StringComparer.Ordinal);
+                for (int summaryIndex = 0;
+                     summaryIndex < summaries.Length;
+                     summaryIndex++)
+                {
+                    RendererIdPixelSummary summary = summaries[summaryIndex];
+                    Require(summary != null && summary.id > 0 &&
+                        summary.id < (1 << 24) &&
+                        summary.pixelCount > 0 &&
+                        summary.internalMinX >= 0 &&
+                        summary.internalMinX <= summary.internalMaxX &&
+                        summary.internalMaxX < frame.rendererIdSidecarWidth &&
+                        summary.internalMinY >= 0 &&
+                        summary.internalMinY <= summary.internalMaxY &&
+                        summary.internalMaxY < frame.rendererIdSidecarHeight &&
+                        summary.pngMinX >= 0 && summary.pngMinX <= summary.pngMaxX &&
+                        summary.pngMaxX < Width && summary.pngMinY >= 0 &&
+                        summary.pngMinY <= summary.pngMaxY && summary.pngMaxY < Height &&
+                        !string.IsNullOrEmpty(summary.stableRendererKey) &&
+                        !string.IsNullOrEmpty(summary.rendererPath) &&
+                        !string.IsNullOrEmpty(summary.materialName) &&
+                        summary.renderQueue >= 3660 &&
+                        summary.renderQueue <= 3740 &&
+                        summaryIds.Add(summary.id) &&
+                        summaryKeys.Add(summary.stableRendererKey),
+                        "Renderer-ID sidecar pixel summary identity/bounds drifted for " +
+                        label + " at PTS " + pts);
+                    summaryPixelCount += summary.pixelCount;
+                }
+                Require(summaryPixelCount == frame.rendererIdSidecarNonZeroPixelCount,
+                    "Renderer-ID sidecar pixel-summary total drifted for " + label +
                     " at PTS " + pts);
             }
             else
@@ -2216,8 +2363,33 @@ namespace EndfieldGraphShaderLabEditor
             public bool rendererIdSidecarAvailable;
             public string rendererIdSidecarRaw;
             public string rendererIdSidecarDictionary;
+            public int rendererIdSidecarWidth;
+            public int rendererIdSidecarHeight;
             public long rendererIdSidecarNonZeroPixelCount;
+            public RendererIdPixelSummary[] rendererIdSidecarPixelSummaries;
             public string rendererIdSidecarFailure;
+        }
+
+        [Serializable]
+        private sealed class RendererIdPixelSummary
+        {
+            public int id;
+            public string stableRendererKey;
+            public string rendererPath;
+            public string rendererOrdinalPath;
+            public int materialIndex;
+            public string materialName;
+            public string shaderName;
+            public int renderQueue;
+            public long pixelCount;
+            public int internalMinX;
+            public int internalMinY;
+            public int internalMaxX;
+            public int internalMaxY;
+            public int pngMinX;
+            public int pngMinY;
+            public int pngMaxX;
+            public int pngMaxY;
         }
 
         [Serializable]

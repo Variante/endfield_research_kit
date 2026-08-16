@@ -695,6 +695,13 @@
       "functionSha256": "51DD11EA018EEBD2CD14E31D05194222C5812236179D64C3003AE11031F42412"
     },
     {
+      "label": "stock RendererList front-context callback-row provider",
+      "va": "0x18092ec20",
+      "functionEnd": "0x18092ef5b",
+      "functionBytes": 827,
+      "functionSha256": "2600B80B9E0A824FB326E547414262BDB2FC8F552CBF9C0A766C3C8AEDA9C64B"
+    },
+    {
       "label": "HGShadingStateSystem GetOrCreatePerMaterialCBHandle icall",
       "va": "0x1801ee430",
       "functionEnd": "0x1801ee495",
@@ -2041,12 +2048,14 @@
     "classicNativeHandle": "ScriptableRenderContext.CreateRendererList_Internal_Injected at 0x1800ba8e0 calls 0x18052cf70 and returns a 16-byte opaque stock RendererList payload: context pointer +0x00, list/index word +0x08, generation/status +0x0c. Renderer identity remains behind the context/index backend rather than being copied as an HGMesh handle",
     "classicCommand": "CommandBuffer.Internal_DrawRendererList_Injected at 0x180062960 calls 0x1804c9230, which appends high-level opcode 0x4d plus the 16-byte RendererList payload. ExecuteCommandBuffer enters 0x18052d730 and the ready interpreter; signed-RVA dispatch table 0x1804d19c8 maps 0x4d to the in-interpreter branch at 0x1804ce406 (adjacent 0x4e and 0x55 branches are 0x1804ce43a and 0x1804ce4bd)",
     "classicPreparation": "registered icalls 3659/3660/3661 map PrepareRendererListsAsync, PrepareRendererListsAsyncRT, and PrepareRendererListsAsyncWithLightModePrefilter to 0x1800bac40/0x1800baf10/0x1800bb080. They unwrap 16-byte list records and enter 0x180535630/0x180535790/0x180535870 before command retirement. The direct routes call 0x18053fc90, store the 0x248-byte materialized object at context+0x10148[index], and set the 0x1a0-byte source row state at +0x194 to 1",
-    "classicMaterializedBackend": "0x18053fc90 copies the complete 0x1a0 source row into materialized object+0x60, retains the backend manager at +0x200, a registration/resource result at +0x210, and auxiliary resources at +0x220/+0x228. 0x18053f690 performs collection/filter association and retirement, not draw execution. The downstream 0x180540280 path consumes +0x200/+0x210/+0x220/+0x228 and +0x50. Full logical routine 0x180540510..0x18054160a filters source-row flags/IDs/ranges and emits 0x50-byte CPU records; 0x1805438e0..0x180543bd1 partitions/copies their ranges, while generic 0x180555180 emits a 0x18-byte index table stored at object+0x208 with count at +0x210. 0x180541680 allocates 0x190-byte callback rows, initializes +0x10/+0x18 to zero, installs callback 0x180542e10 through the external manager's vtable+0xc28, and that manager must populate row+0x10 before callback execution. 0x180542e10 consumes the generated indices and forwards row+0x10 as argument six to resource/parameter builder 0x1805419d0. Windows x64 entry-stack accounting (including the return address) maps the builder's rbp+0xa08 reload to argument six; its terminal object-vtable+0x210 call therefore targets the same dynamic resource/parameter-provider object. Its concrete external manager implementation, allocation, and vtable remain unresolved. None of these paths statically proves a graphics API draw or submit",
+    "classicMaterializedBackend": "0x18053fc90 copies the complete 0x1a0 source row into materialized object+0x60, retains the backend manager at +0x200, a registration/resource result at +0x210, and auxiliary resources at +0x220/+0x228. 0x18053f690 performs collection/filter association and retirement, not draw execution. The downstream 0x180540280 path consumes +0x200/+0x210/+0x220/+0x228 and +0x50. Full logical routine 0x180540510..0x18054160a filters source-row flags/IDs/ranges and emits 0x50-byte CPU records; 0x1805438e0..0x180543bd1 partitions/copies their ranges, while generic 0x180555180 emits a 0x18-byte index table stored at object+0x208 with count at +0x210. 0x180541680 allocates 0x190-byte callback rows and initializes +0x10/+0x18 to zero before calling TLS front-context vtable+0xc28. Vtable 0x181dcb360 resolves that slot to 0x18092ec20, which allocates a 0x20-byte callback/resource node, invokes its nested +0xc18 interface, and writes the returned provider to row+0x10 at 0x18092ed78; row+0x18 remains zero on this path. 0x180542e10 forwards row+0x10 as argument six to resource/parameter builder 0x1805419d0. Windows x64 entry-stack accounting maps the builder's rbp+0xa08 reload to the same argument, so its terminal object-vtable+0x210 call targets this provider. The provider's nested concrete type and final virtual target remain unresolved. None of these paths statically proves a graphics API draw or submit",
     "classicResourceParameterProvider": {
       "callbackRowBuilder": "0x180541680",
       "callbackRowStride": "0x190",
-      "externalManagerRegistration": "0x18054189a calls manager vtable+0xc28 with callback 0x180542e10",
-      "providerField": "callback row+0x10; zero at construction and populated before callback execution by the external manager",
+      "frontContextVtable": "0x181dcb360",
+      "frontContextProviderMethod": "vtable+0xc28 -> 0x18092ec20",
+      "providerField": "callback row+0x10; zero at construction, then written at 0x18092ed78 from the nested +0xc18 result",
+      "unusedOrUnprovenField": "callback row+0x18 remains zero on the bounded 0x18092ec20 path",
       "builderArgument": 6,
       "stackProof": "caller [rsp+0x28] at 0x180542ec5 -> callee entry rsp+0x30 after return-address push -> rbp+0xa08 after eight pushes, sub rsp,0x9e8, and lea rbp,[rsp+0x50]",
       "terminalCall": "0x180542c9c reloads rbp+0xa08; 0x180542cc4..0x180542ccd invokes provider vtable+0x210",
