@@ -4123,8 +4123,11 @@ inventing missing source PathIDs. Shader, render queue, geometry census,
 active/enabled state, and a transform-state hash are recorded and validated.
 The validator requires source/object/material identity to remain stable across
 the run while allowing dynamic particle geometry and transform state to vary.
-It reads `sharedMaterials` only. This is a local pre-render submission witness,
-not a skinned-pose digest, retail HGMesh identity, or proof that Unity issued a
+It reads `sharedMaterials` only. A separate non-mutating skinned-palette digest
+hashes `renderer.worldToLocal * bone.localToWorld * bindpose`; validation
+requires the bone/bindpose census to match and at least one actor renderer to
+change pose across the anchor set. This is still a local pre-render submission
+and pose witness, not retail HGMesh identity or proof that Unity issued a
 particular native draw.
 This local witness also sharpens, but does not close, the retail routing prior.
 The recovered Li roots use ordinary MeshRenderer and ParticleSystemRenderer
@@ -4136,6 +4139,17 @@ The retail AfterDOF callback calls classic `RenderForwardRendererList` at
 is therefore the source-backed likely route. HGMesh remains possible only via
 an unobserved runtime conversion/registration step, so neither branch is yet a
 positive Li draw attribution and `visibleAdmission` remains false.
+The stock native route is now pinned beyond that managed call.
+`CreateRendererList_Internal_Injected` at `0x1800BA8E0` calls
+`0x18052CF70` and returns a 16-byte payload containing render-context pointer,
+list/index, and generation/status. No Renderer instance ID or HGMesh handle is
+copied into it. `Internal_DrawRendererList_Injected` at `0x180062960` calls
+`0x1804C9230`, which records opcode `0x4D` plus this payload; command-buffer
+execution reaches the ready interpreter and its `0x18099F857..0x1809A00DB`
+handler. That handler keeps individual survivor identity behind the native
+context/list backend and has no static Li-specific Vulkan draw or queue-submit
+edge. This closes stock list construction and command transport, not final
+draw attribution.
 Retail queue 3704 belongs to the source-closed 3660--3740
 `AfterPostprocessTransparent` phase. In the exact SceneMV route that range is
 owned by the after-post callback, not main transparent. This isolated shader

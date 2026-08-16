@@ -520,6 +520,62 @@
       "functionSha256": "E97AE32DBA96720C667983B53657782F599CB1FAB260922AAE04B57D0C9D153F"
     },
     {
+      "label": "stock CreateRendererList injected adapter",
+      "va": "0x1800ba8e0",
+      "functionEnd": "0x1800ba969",
+      "functionBytes": 137,
+      "functionSha256": "29C86D2492E3B04AC53C737A066244BD4DB7A6D24978C7A4045633094C0516CB"
+    },
+    {
+      "label": "stock RendererList native construction core",
+      "va": "0x18052cf70",
+      "functionEnd": "0x18052d1e1",
+      "functionBytes": 625,
+      "functionSha256": "82FD11BAE95B94F15692C452C2CF57C06BD92DD1B8DEBCC390317A6937071741"
+    },
+    {
+      "label": "stock DrawRendererList injected adapter",
+      "va": "0x180062960",
+      "functionEnd": "0x1800629ea",
+      "functionBytes": 138,
+      "functionSha256": "2BA0043F3D946FCC94716C0C0B3099F4144BEDB8F98B3003445F08221494C9AF"
+    },
+    {
+      "label": "stock RendererList opcode-0x4d command append",
+      "va": "0x1804c9230",
+      "functionEnd": "0x1804c92ce",
+      "functionBytes": 158,
+      "functionSha256": "FAE0B5A274C3779E97786188905B06316D06FFC1638A4C8A86B4C013508148F4"
+    },
+    {
+      "label": "stock ExecuteCommandBuffer injected adapter",
+      "va": "0x1800b6f40",
+      "functionEnd": "0x1800b6fc2",
+      "functionBytes": 130,
+      "functionSha256": "4DC47BEBE7FC4506DD7E17F8E506EE41DB485F3FE4731CAF13CED4A21EAE76EC"
+    },
+    {
+      "label": "stock ExecuteCommandBuffer interpreter owner",
+      "va": "0x18052d730",
+      "functionEnd": "0x18052d7c3",
+      "functionBytes": 147,
+      "functionSha256": "7BDA3C03420F7F65C7819D3935D62B366F19AE99CDCCD89888B9A3AED8021291"
+    },
+    {
+      "label": "stock command-buffer ready interpreter",
+      "va": "0x1804cdf70",
+      "functionEnd": "0x1804cdfef",
+      "functionBytes": 127,
+      "functionSha256": "E991CEEE4946F844FADFA47296D67C81A5DF81F6D963FD4D3F54E932147B33C0"
+    },
+    {
+      "label": "stock RendererList opcode-0x4d handler",
+      "va": "0x18099f857",
+      "functionEnd": "0x1809a00db",
+      "functionBytes": 2180,
+      "functionSha256": "F48B7619404EE5165E3CA202BD4DD5E53A89B9DE8C35595577E35B678637C370"
+    },
+    {
       "label": "HGShadingStateSystem GetOrCreatePerMaterialCBHandle icall",
       "va": "0x1801ee430",
       "functionEnd": "0x1801ee495",
@@ -1242,6 +1298,21 @@
       "label": "HGMeshRendererData shadow-proxy runtime ID -> M1 handle lookup",
       "callsite": "0x181089036",
       "target": "0x1801f7410"
+    },
+    {
+      "label": "stock CreateRendererList injected adapter -> native list core",
+      "callsite": "0x1800ba94f",
+      "target": "0x18052cf70"
+    },
+    {
+      "label": "stock DrawRendererList injected adapter -> opcode-0x4d append",
+      "callsite": "0x1800629ac",
+      "target": "0x1804c9230"
+    },
+    {
+      "label": "stock ExecuteCommandBuffer injected adapter -> interpreter owner",
+      "callsite": "0x1800b6f87",
+      "target": "0x18052d730"
     }
   ],
   "decisiveCalls": [
@@ -1813,6 +1884,10 @@
     "opaqueArgument": false,
     "frameSettingsGate": "TransparentObjects",
     "classic": "CoreUtils.DrawRendererList(renderContext, cmd, rendererList)",
+    "classicNativeHandle": "ScriptableRenderContext.CreateRendererList_Internal_Injected at 0x1800ba8e0 calls 0x18052cf70 and returns a 16-byte opaque stock RendererList payload: context pointer +0x00, list/index word +0x08, generation/status +0x0c. Renderer identity remains behind the context/index backend rather than being copied as an HGMesh handle",
+    "classicCommand": "CommandBuffer.Internal_DrawRendererList_Injected at 0x180062960 calls 0x1804c9230, which appends high-level opcode 0x4d plus the 16-byte RendererList payload. ExecuteCommandBuffer enters 0x18052d730 and the ready interpreter; dispatch table 0x1804d19c8 maps 0x4d to handler 0x18099f857..0x1809a00db",
+    "classicBackendBoundary": "the opcode-0x4d handler expands internal list data but exposes no static Li renderer ID, Vulkan draw, queue submit or visible-pixel edge. This stock handle/command route is distinct from dedicated AddDrawECSMeshRendererList/HGMesh records",
+    "liClassicEligibility": "Li start_01/_02/_03 serialize ordinary enabled MeshRenderers and the peak roots serialize enabled ParticleSystemRenderers; queue 3704 is inside 3660..3740, ordinary GPU instancing is enabled while HG GPU instancing is disabled, and no source HGMeshRendererData exists. Classic submission is the strongest source-backed route, but runtime camera mask, exact LightMode tag, culling survivor and final draw remain unobserved",
     "ecs": "HGMeshRender.DrawECSRendererList(cmd, rendererListHandle)",
     "consumerResortingOrOverride": "none; descriptor/list construction owns filtering and order",
     "survivorIdentity": "runtime renderer-list and ECS handles pending"
