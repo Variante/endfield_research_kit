@@ -23,7 +23,7 @@ VIDEO_BYTES = 1_678_613_397
 WIDTH = 960
 HEIGHT = 540
 SAMPLES = (
-    (38000, "broad_effect_active"),
+    (38000, "lizhiyan_transition_visible_pre_distinct_teal"),
     (40000, "broad_teal_peak"),
     (42000, "broad_effect_late"),
     (43000, "compact_teal_trail"),
@@ -31,12 +31,13 @@ SAMPLES = (
     (46000, "settled_no_substantial_teal"),
 )
 TRANSITION_ANCHORS = (
-    (37650, "prior_actor_visible"),
-    (37683, "prior_actor_last_residual"),
+    (37667, "prior_actor_last_stable"),
+    (37683, "prior_actor_fade_first"),
     (37700, "blank_transition_first"),
-    (37867, "blank_transition_last"),
-    (37883, "lizhiyan_first_visible"),
-    (37950, "lizhiyan_opaque"),
+    (37950, "blank_transition_last"),
+    (37967, "lizhiyan_first_recognizable"),
+    (38167, "first_teal_edge_candidate"),
+    (38183, "first_unambiguous_teal_slab"),
 )
 ROIS = {
     "actorBody": (1350, 300, 2600, 2050),
@@ -187,12 +188,14 @@ def build(video: Path, ffmpeg: str) -> dict[str, Any]:
         },
         "transitionBoundary": {
             "evidenceClass": "exact_pts_frame_hash_plus_bounded_visual_annotation",
-            "lastPriorActorResidualPts": 37683,
+            "lastPriorActorStablePts": 37667,
+            "firstPriorActorFadePts": 37683,
             "firstBlankPts": 37700,
-            "lastBlankPts": 37867,
-            "firstLiZhiyanVisiblePts": 37883,
-            "firstLiZhiyanOpaquePts": 37950,
-            "candidateRestartPts": 37883,
+            "lastBlankPts": 37950,
+            "firstLiZhiyanRecognizablePts": 37967,
+            "firstTealEdgeCandidatePts": 38167,
+            "firstUnambiguousTealSlabPts": 38183,
+            "candidateRestartPts": 37967,
             "candidateRestartStatus": "visual_alignment_candidate_not_original_event_proof",
         },
         "tealPredicateRgb24": "g>=80 && b>=80 && g-r>=20 && b-r>=10",

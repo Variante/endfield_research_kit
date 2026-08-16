@@ -3969,11 +3969,12 @@ transition. The clip has no AnimationEvents. Current lab compatibility policy
 publishes the request in the same restart call and would create/destroy the
 finger effect at clip-local `0.895782073/3.229112073 s`; the original retail
 request producer and epoch remain unknown. Exact frames bound the transition:
-the prior actor's last residual is PTS 37683, blank frames span PTS
-37700..37867, Li first appears at PTS 37883, and is opaque by PTS 37950.
-Treating 37883 as a candidate restart aligns PTS 40000 with the compatibility
+the prior actor is last stable at PTS 37667 and starts fading at 37683; blank
+frames span PTS 37700..37950, and Li is first recognizable at PTS 37967. The
+first teal edge is tentative at PTS 38167 and the first unambiguous teal slab is
+PTS 38183. Treating 37967 as a candidate restart aligns PTS 40000 with the compatibility
 finger window, but PTS 42000 still contains measured teal after that root would
-have been destroyed at candidate PTS 41049. The one recovered finger effect
+have been destroyed at candidate PTS 41134. The one recovered finger effect
 therefore cannot explain the full retail teal chronology; eleven other
 serialized Li entrance requests remain unbound.
 

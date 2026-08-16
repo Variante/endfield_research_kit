@@ -183,7 +183,7 @@ namespace EndfieldGraphShaderLabEditor
                 Mathf.Abs(L.Float(compatibility, "effectCreateClipLocalSeconds") - 0.895782073f) < 0.000001f &&
                 Mathf.Abs(L.Float(compatibility, "effectDestroyClipLocalSeconds") - 3.229112073f) < 0.000001f &&
                 L.Str(retail, "evidenceClass") == "candidate_only" &&
-                L.Long(retail, "candidateRestartPts") == 37883 &&
+                L.Long(retail, "candidateRestartPts") == 37967 &&
                 L.Str(retail, "diagnosticMismatch").Contains("PTS 42000") &&
                 mapped.Count == 6 &&
                 L.Str(L.Dict(mapped[1]), "compatibilityFingerEffectWindow") == "active" &&
@@ -223,14 +223,16 @@ namespace EndfieldGraphShaderLabEditor
                 L.Str(source, "timeBase") == "1/1000" &&
                 L.Str(decode, "pixelFormat") == "rgb24" &&
                 L.Bool(decode, "exactInputPts") &&
-                L.Long(transition, "lastPriorActorResidualPts") == 37683 &&
+                L.Long(transition, "lastPriorActorStablePts") == 37667 &&
+                L.Long(transition, "firstPriorActorFadePts") == 37683 &&
                 L.Long(transition, "firstBlankPts") == 37700 &&
-                L.Long(transition, "lastBlankPts") == 37867 &&
-                L.Long(transition, "firstLiZhiyanVisiblePts") == 37883 &&
-                L.Long(transition, "firstLiZhiyanOpaquePts") == 37950 &&
+                L.Long(transition, "lastBlankPts") == 37950 &&
+                L.Long(transition, "firstLiZhiyanRecognizablePts") == 37967 &&
+                L.Long(transition, "firstTealEdgeCandidatePts") == 38167 &&
+                L.Long(transition, "firstUnambiguousTealSlabPts") == 38183 &&
                 L.Str(transition, "candidateRestartStatus") ==
                     "visual_alignment_candidate_not_original_event_proof" &&
-                anchors.Count == 6 &&
+                anchors.Count == 7 &&
                 samples.Count == expectedPts.Length &&
                 L.List(oracle["nonClaims"]).Count == 3,
                 "Li Zhiyan retail visual-oracle boundary drifted");
