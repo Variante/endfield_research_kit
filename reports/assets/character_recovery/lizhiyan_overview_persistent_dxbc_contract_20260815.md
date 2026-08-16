@@ -82,7 +82,7 @@ list`, and the callback executes global scene-color/vector/texture setup,
 fullscreen draw, the ordinary forward renderer list, then the ECS renderer
 list. The callback contains no constant-buffer publication. The generated
 native ABI contract is `lizhiyan_after_dof_native_abi.json`, SHA-256
-`6A73576511DE6FF071C05DDD6E6023C2A836358F2BB4841561BD9405BEB8B63A`.
+`1901DF863347CA110F29C3DEC2BD360A52FF792D83BED06B23E06B64970BDE2D`.
 
 The transparent-list descriptor is now statically closed before culling:
 sorting criteria is numeric `87` (`CommonTransparent | OptimizeStateChanges |
@@ -91,6 +91,21 @@ the nullable state block is absent, override material is null, and
 `excludeObjectMotionVectors` is false. The per-object request remains the live
 `bakedLightingConfig | GetPerObjectMotionVectorConfig(hgCamera)`. Screen-culling
 ratio/distance/mask and the resulting survivors remain runtime inputs.
+
+The normal current-build per-object request is now source-closed to `47`:
+pipeline construction and every normal `ConfigureKeywords` call write baked
+lighting flags `15`, while `get_enableMV` and
+`GetPerObjectMotionVectorConfig(non-null HGCamera)` produce `32`. IFix patch
+branches remain an explicit replacement boundary. Unity now requests the same
+combined `PerObjectData` value instead of motion vectors alone.
+
+HGCamera construction writes screen ratio `0.005` and distance `30.0`; its lazy
+mask getter builds a mask from 17 named layers. Update/BeginRender/view-constant
+methods do not rewrite the two floats. The selected Viewer camera has Unity
+culling mask `0xffffffff` and no serialized HG screen-culling overrides, but
+external mutation, the resolved mask value, and actual survivors remain live
+facts. Standard Unity `DrawRenderers` has no equivalent for HG's extra three
+screen-culling descriptor fields.
 
 ## Unity admission
 

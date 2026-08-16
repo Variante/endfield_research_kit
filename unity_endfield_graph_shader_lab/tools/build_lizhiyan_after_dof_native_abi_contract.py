@@ -20,19 +20,54 @@ OUTPUT = (
     "LiZhiyanOverviewFinger/lizhiyan_after_dof_native_abi.json"
 )
 SHADER_CONTRACT = OUTPUT.with_name("lizhiyan_overview_vfxbasev2_variants.json")
+VIEWER_SCENE = (
+    LAB / "Assets/EndfieldGraphShaderLab/Generated/Characters/Scenes/"
+    "CharacterRecoveryViewer.unity"
+)
 CODE_REGISTRATION = 0x18B9217D0
 EXPECTED = {
     "gameAssembly": "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE",
     "metadata": "90C58E26E87C7227A85DDA3FEDF6CE5ED0B06DC1F76E0ABBE75AB20750ADF97E",
     "shaderContract": "1191F96B45FD11C47D31C71681B25E77B3DF2CBD2179F21B4D2854D3AD90796B",
+    "viewerScene": "BC9F4FBF023F76FFD06AB2AE6283A03127027A83049DB580C9678B2A7B633761",
 }
 METHODS = [
+    (286728, "HG.Rendering.Runtime.HGCamera",
+     ".ctor", 0x1837DD570, 0x1837DDD44,
+     "00ACC65F4685738CB190BF536900D5AE7B421F4A2CAEDC25C3D2D0B7E2EB3162"),
+    (286724, "HG.Rendering.Runtime.HGCamera",
+     "get_screenCullingLayerMask", 0x183E68CB0, 0x183E68CD4,
+     "0D5928FA5F343C7F072A857C5B0FE6CA8943506877C71FA9A6257EF5F2983B7E"),
+    (286739, "HG.Rendering.Runtime.HGCamera",
+     "Update", 0x183100120, 0x183100171,
+     "B5A2AB43A40014751793CA227CD2F535AEF7470A1F3E71A93B24297ED9C40FCC"),
+    (286740, "HG.Rendering.Runtime.HGCamera",
+     "BeginRender", 0x189B720E0, 0x189B72162,
+     "525783A3D1731620269FBA6F156031EFDE5068FFA4ACC3FAFD1B4EFD0EA0948F"),
+    (286741, "HG.Rendering.Runtime.HGCamera",
+     "UpdateAllViewConstants", 0x189B74308, 0x189B74387,
+     "88DFB9FB0D8B0B867A507E41AB2123C6E2830262290A1AB10616FD3A55DA2421"),
+    (284150, "HG.Rendering.Runtime.HGRenderPipeline",
+     "GetPerObjectMotionVectorConfig", 0x189BC753C, 0x189BC759B,
+     "DA8AB25AC903EEAE24FED48535F016BEA19C3BE7A21A7628C67BED63C7C83922"),
+    (284093, "HG.Rendering.Runtime.HGRenderPipeline",
+     ".ctor", 0x183947230, 0x1839488E2,
+     "B0D85048FC518253694C8BD1FC9B9F40C7F14DAA87B95EB180419233B28DD59D"),
+    (284103, "HG.Rendering.Runtime.HGRenderPipeline",
+     "ConfigureKeywords", 0x189BC6A38, 0x189BC6B7E,
+     "BD2E3852A86737D9F2732283AF677FA2A0F4209DD3FFB3F9476C957C67125A10"),
+    (286702, "HG.Rendering.Runtime.HGCamera",
+     "get_enableMV", 0x189B74654, 0x189B7469F,
+     "8C1488DC4A09BEB9F142B4EA2DD5CB7B98770D5DE48DA545E94655EE3538B329"),
     (287274, "HG.Rendering.Runtime.ForwardPassUtils",
      "PrepareAfterDOFTranparentRendererList", 0x189BAB274, 0x189BAB4E2,
      "319799A95260B1717084D16AA8C2E0CCAD668CEDF3E52E9465B99A31EC44A5E0"),
     (287316, "HG.Rendering.Runtime.TransparentAfterDOFPassConstructor",
      "ConstructPass", 0x189BB2E40, 0x189BB346A,
      "D54DCF38AC17E6062573C476BF988FF8CBEE70E89F2B02FB341E5588DA3612CC"),
+    (288038, "HG.Rendering.Runtime.HGRenderPathScene",
+     "RenderPostProcessPhase1", 0x189BFFEB0, 0x189C009EF,
+     "4695B2B6C39CB3522C067976FCC2F2677BC94692382C5611EF9E2EA743F145C5"),
     (287324, "HG.Rendering.Runtime.TransparentAfterDOFPassConstructor+<>c",
      "<.cctor>b__10_0", 0x189BB5264, 0x189BB558A,
      "D49C4DE691A7B65184532D8C9E46E1209F35AF2A76C0E23FA82B8E35593011CC"),
@@ -57,6 +92,8 @@ CALLS = [
     (0x189C08967, 0x1832512C0, "CreateTransparentRendererListDesc -> Camera.get_cullingMask"),
     (0x189C0897E, 0x189B736B0, "CreateTransparentRendererListDesc -> RemoveWorldUILayer"),
     (0x189C089A4, 0x18B3F4A7C, "CreateTransparentRendererListDesc -> RendererListDesc.ctor"),
+    (0x189C0057C, 0x183E68CB0, "Phase1 -> HGCamera.get_screenCullingLayerMask"),
+    (0x189C00740, 0x189BB2E40, "Phase1 -> TransparentAfterDOF.ConstructPass"),
 ]
 
 
@@ -86,6 +123,12 @@ def build(game_root: Path) -> dict[str, Any]:
         require(sha256(path) == EXPECTED[key], f"selected native input drifted: {key}")
     require(sha256(SHADER_CONTRACT) == EXPECTED["shaderContract"],
             "Li Zhiyan shader ABI contract drifted")
+    require(sha256(VIEWER_SCENE) == EXPECTED["viewerScene"],
+            "selected CharacterRecoveryViewer scene drifted")
+    viewer_text = VIEWER_SCENE.read_text(encoding="utf-8")
+    require("--- !u!20 &1562276706" in viewer_text and
+            "m_Bits: 4294967295" in viewer_text,
+            "selected viewer camera identity/culling mask drifted")
 
     metadata_module = load_module(
         "lizhiyan_after_dof_metadata",
@@ -150,6 +193,8 @@ def build(game_root: Path) -> dict[str, Any]:
             "metadata": {"path": str(metadata), "sha256": EXPECTED["metadata"]},
             "shaderContract": {"path": SHADER_CONTRACT.relative_to(REPO).as_posix(),
                                "sha256": EXPECTED["shaderContract"]},
+            "viewerScene": {"path": VIEWER_SCENE.relative_to(REPO).as_posix(),
+                            "sha256": EXPECTED["viewerScene"]},
         },
         "codeRegistrationVA": f"0x{CODE_REGISTRATION:x}",
         "methods": methods,
@@ -164,10 +209,43 @@ def build(game_root: Path) -> dict[str, Any]:
             "stateBlock": {"hasValue": False, "source": "zero-initialized nullable"},
             "overrideMaterial": None,
             "excludeObjectMotionVectors": False,
-            "perObjectData": "bakedLightingConfig | GetPerObjectMotionVectorConfig(hgCamera)",
+            "perObjectData": {
+                "bakedLightingConfig": 15,
+                "motionVectorConfigForNonNullHGCamera": 32,
+                "combined": 47,
+                "expression": "m_CurrentRendererConfigurationBakedLighting | GetPerObjectMotionVectorConfig(hgCamera)",
+                "normalBranchEvidence": "pipeline ctor and ConfigureKeywords write 15; get_enableMV returns true; motion helper returns 32",
+                "ifixBoundary": "patch ids 568, 462, and 463 can replace the normal branches",
+            },
+            "screenCulling": {
+                "constructorDefaults": {"ratio": 0.005, "distance": 30.0},
+                "hgCameraOffsets": {"ratio": "0x9d8", "distance": "0x9dc"},
+                "layerNames": ["Default", "TransparentFX", "Ignore Raycast", "Water", "UI",
+                               "Walkable", "Climbable", "Trigger", "UIPP", "UIModel", "Building",
+                               "UIInteract", "WorldUI", "Projectile", "AbilityEntity", "Terrain", "IK"],
+                "layerMaskConstruction": "lazy LayerMask.GetMask of the 17 names",
+                "runtimeInstanceValues": "pending IFix/native mutation or selected-camera observation",
+                "unityEquivalent": "standard DrawRenderers exposes no HG screen-culling fields",
+            },
+            "passInputOffsets": {
+                "characterOutlineEnabled": "0x00",
+                "forwardTransparentAfterDOFECSList": "0x04",
+                "screenCullingLayerMask": "0x08",
+                "screenCullingRatio": "0x0c",
+                "screenCullingRatioDistance": "0x10",
+                "bakedLightConfig": "0x14",
+                "shadowResult": "0x18",
+                "cullingResults": "0x58",
+                "sceneColor": "0x68",
+                "sceneDepth": "0x78",
+                "sceneMV": "0x88",
+                "hgrp": "0x98",
+                "bytes": 160,
+            },
             "liveInputsPending": ["cullingResults", "camera", "screenCullingRatio",
                                   "screenCullingRatioDistance", "screenCullingLayerMask",
-                                  "outlineEnabled", "bakedLightingConfig", "survivorsAndSortOrder"],
+                                  "outlineEnabled", "screen-culling instance values",
+                                  "survivorsAndSortOrder"],
         },
         "attachments": shader["renderScheduling"]["attachments"],
         "callbackExecution": ["profiling", "sceneColor/global texture setup", "fullscreen draw",
@@ -206,6 +284,11 @@ def build(game_root: Path) -> dict[str, Any]:
             "vfxParams1PublicationRequiredForSelectedMaterials": False,
             "transformHistoryRequiredForSelectedMaterials": False,
             "reason": "all selected materials serialize _IsSceneEffect=0 and _EnableTransparentMV=0",
+            "selectedViewerCamera": {
+                "fileID": 1562276706,
+                "unityCullingMask": 4294967295,
+                "serializedHGScreenCullingOverrides": False,
+            },
         },
     }
 
