@@ -164,6 +164,8 @@ class CombatEnemyEvidenceTests(unittest.TestCase):
                 ("gameplay_skill:other_skill", "gameplay_skill", "other_skill"),
                 ("buff:buff_test", "buff", "buff_test"),
                 ("buff:unknown_test", "buff", "unknown_test"),
+                ("buff:buff_child", "buff", "buff_child"),
+                ("actor:unrelated", "actor", "unrelated"),
             ]
             connection.executemany(
                 "INSERT INTO nodes(id,kind,name,source,path,data) VALUES(?,?,?,?,?,?)",
@@ -172,6 +174,14 @@ class CombatEnemyEvidenceTests(unittest.TestCase):
             connection.executemany(
                 "INSERT INTO edges(src,dst,kind,source,evidence,data) VALUES(?,?,?,?,?,?)",
                 [
+                    (
+                        "actor:unrelated", "gameplay_skill:skill_test",
+                        "actor_speaks_line", "fixture", "unrelated.edge", "{}",
+                    ),
+                    (
+                        "gameplay_skill:skill_test", "gameplay_skill:skill_test",
+                        "skill_data_defines_skill", "fixture", "known.ignored", "{}",
+                    ),
                     (
                         "gameplay_skill:skill_test", "buff:buff_test",
                         "skill_data_references_buff", "fixture", "skill.buff", "{}",
@@ -183,6 +193,18 @@ class CombatEnemyEvidenceTests(unittest.TestCase):
                     (
                         "gameplay_skill:other_skill", "buff:buff_test",
                         "skill_data_references_effect", "fixture", "other.effect", "{}",
+                    ),
+                    (
+                        "gameplay_skill:other_skill", "buff:unknown_test",
+                        "skill_data_unrelated_unknown", "fixture", "other.unknown", "{}",
+                    ),
+                    (
+                        "buff:buff_test", "buff:buff_child",
+                        "buff_data_references_buff", "fixture", "buff.child", "{}",
+                    ),
+                    (
+                        "buff:buff_test", "buff:unknown_test",
+                        "buff_data_unknown_runtime_relation", "fixture", "buff.unknown", "{}",
                     ),
                 ],
             )
@@ -213,14 +235,21 @@ class CombatEnemyEvidenceTests(unittest.TestCase):
             edges,
         )
         self.assertEqual("partial", payload["graphEdgeContract"]["status"])
+        self.assertEqual("reachable_skill_buff_config_edges", payload["graphEdgeContract"]["scope"])
         expected = payload["graphEdgeContract"]["expectedKinds"]
         self.assertEqual(1, expected["skill_data_references_buff"]["observed"])
         self.assertEqual(1, expected["skill_data_references_buff"]["accepted"])
         self.assertEqual("accepted", expected["skill_data_references_buff"]["status"])
-        self.assertEqual("observed-only", expected["skill_data_references_effect"]["status"])
+        self.assertEqual("missing", expected["skill_data_references_effect"]["status"])
+        self.assertEqual(1, expected["buff_data_references_buff"]["observed"])
+        self.assertEqual(1, expected["buff_data_references_buff"]["accepted"])
         self.assertEqual(1, payload["graphEdgeContract"]["unexpectedKinds"]["skill_data_unknown_runtime_relation"])
-        self.assertEqual(1, payload["graphEdgeContract"]["unexpectedEdgeCount"])
-        self.assertEqual(6, SCHEMA_VERSION)
+        self.assertEqual(1, payload["graphEdgeContract"]["unexpectedKinds"]["buff_data_unknown_runtime_relation"])
+        self.assertNotIn("skill_data_unrelated_unknown", payload["graphEdgeContract"]["unexpectedKinds"])
+        self.assertEqual(2, payload["graphEdgeContract"]["unexpectedEdgeCount"])
+        self.assertNotIn("actor_speaks_line", payload["graphEdgeContract"]["unexpectedKinds"])
+        self.assertNotIn("skill_data_defines_skill", payload["graphEdgeContract"]["unexpectedKinds"])
+        self.assertEqual(7, SCHEMA_VERSION)
 
     def test_missing_graph_reports_unavailable_edge_contract(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
