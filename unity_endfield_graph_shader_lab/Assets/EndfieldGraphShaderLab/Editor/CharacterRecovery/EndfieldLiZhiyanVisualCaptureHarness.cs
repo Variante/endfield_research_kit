@@ -208,8 +208,8 @@ namespace EndfieldGraphShaderLabEditor
                 spec.clock.localTimeMapping ==
                 "localSeconds=(retailPts-37967)/1000",
                 "Capture spec clock contract drifted");
-            Require(spec.captures != null && spec.captures.Length == 19,
-                "Capture spec must contain exactly 19 anchors");
+            Require(spec.captures != null && spec.captures.Length == 24,
+                "Capture spec must contain exactly 24 anchors");
             Require(spec.effectLifetimes != null && spec.effectLifetimes.Length == 3,
                 "Capture spec effect lifetime census drifted");
             bool foundStart01 = false;
@@ -234,9 +234,9 @@ namespace EndfieldGraphShaderLabEditor
 
             int[] expectedPts =
             {
-                37967, 38000, 38167, 38183, 39934, 40000, 40167,
-                40834, 40867, 41967, 42000, 42467, 42967, 43000,
-                43900, 44000, 44334, 44967, 46000,
+                37967, 38000, 38167, 38183, 39367, 39934, 40000, 40167,
+                40834, 40867, 41434, 41967, 42000, 42467, 42967, 43000,
+                43200, 43600, 43867, 43900, 44000, 44334, 44967, 46000,
             };
             for (int index = 0; index < expectedPts.Length; index++)
             {

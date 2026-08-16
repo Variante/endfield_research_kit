@@ -18,6 +18,9 @@ def test_capture_pts_are_sorted_and_map_to_exact_local_milliseconds() -> None:
     assert list(M.MINIMAL_CAPTURE_PTS) == sorted(M.MINIMAL_CAPTURE_PTS)
     assert M.MINIMAL_CAPTURE_PTS[0] == M.RESTART_PTS
     assert (40834 - M.RESTART_PTS) / 1000.0 == 2.867
+    assert (39367 - M.RESTART_PTS) / 1000.0 == 1.4
+    assert (41434 - M.RESTART_PTS) / 1000.0 == 3.467
+    assert (43867 - M.RESTART_PTS) / 1000.0 == 5.9
     assert (44967 - M.RESTART_PTS) / 1000.0 == 7.0
 
 
@@ -29,6 +32,7 @@ def test_source_contracts_and_statuses_are_current() -> None:
     assert contract["visibleAdmission"] is False
     assert contract["clock"]["restartCandidatePts"] == 37967
     assert contract["minimalCapturePts"] == list(M.MINIMAL_CAPTURE_PTS)
+    assert len(contract["minimalCapturePts"]) == 24
     assert [row["endRetailPts"] for row in contract["effectLifetimes"]] == [40167, 42967, 44967]
     assert contract["sharedMaterialClip"]["nearestCapturePts"] == 44334
     assert contract["sources"]["timingAlignment"]["status"] == "source_timing_closed_retail_request_epoch_pending"

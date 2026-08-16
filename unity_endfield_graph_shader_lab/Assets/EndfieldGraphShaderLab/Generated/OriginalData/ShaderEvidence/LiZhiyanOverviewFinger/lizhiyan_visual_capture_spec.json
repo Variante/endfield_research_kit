@@ -132,16 +132,21 @@
     38000,
     38167,
     38183,
+    39367,
     39934,
     40000,
     40167,
     40834,
     40867,
+    41434,
     41967,
     42000,
     42467,
     42967,
     43000,
+    43200,
+    43600,
+    43867,
     43900,
     44000,
     44334,
@@ -174,6 +179,12 @@
       "phase": "start_01_first_unambiguous_teal_slab"
     },
     {
+      "retailPts": 39367,
+      "timeBase": "1/1000",
+      "localSeconds": 1.4,
+      "phase": "start_03_secondary_ribbon_first_dynamic_key"
+    },
+    {
       "retailPts": 39934,
       "timeBase": "1/1000",
       "localSeconds": 1.967,
@@ -204,6 +215,12 @@
       "phase": "start_02_first_dynamic_key_candidate_paths_0_1"
     },
     {
+      "retailPts": 41434,
+      "timeBase": "1/1000",
+      "localSeconds": 3.467,
+      "phase": "start_02_alpha_first_nonzero_candidate"
+    },
+    {
       "retailPts": 41967,
       "timeBase": "1/1000",
       "localSeconds": 4.0,
@@ -232,6 +249,24 @@
       "timeBase": "1/1000",
       "localSeconds": 5.033,
       "phase": "compact_teal_trail"
+    },
+    {
+      "retailPts": 43200,
+      "timeBase": "1/1000",
+      "localSeconds": 5.233,
+      "phase": "start_03_tail_alpha_peak_candidate"
+    },
+    {
+      "retailPts": 43600,
+      "timeBase": "1/1000",
+      "localSeconds": 5.633,
+      "phase": "start_03_primary_ribbon_first_dynamic_key"
+    },
+    {
+      "retailPts": 43867,
+      "timeBase": "1/1000",
+      "localSeconds": 5.9,
+      "phase": "start_03_primary_ribbon_alpha_fade_start"
     },
     {
       "retailPts": 43900,
