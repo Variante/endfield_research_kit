@@ -14,9 +14,8 @@ Material:
   m_ValidKeywords:
   - _SAMPLE_TEX0
   - _SAMPLE_TEX1
-  - _USE_FRESNEL
   - _USE_SOFTBLEND
-  m_InvalidKeywords:
+  m_InvalidKeywords: []
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
@@ -62,6 +61,10 @@ Material:
     - _DstBlend: 10
     - _ExpIntensity: 0
     - _ExpThreshold: 1
+    - _FresnelAffectOpacity: 1
+    - _FresnelBias: 0
+    - _FresnelFlip: 0.001
+    - _FresnelPower: 1
     - _IgnorePostExposure: 1
     - _IsSceneEffect: 0
     - _MVDstColorBlend: 6
@@ -69,23 +72,28 @@ Material:
     - _MainTexUseDisturb: 1
     - _ProcedureAlpha: 1
     - _Responsive: 0
+    - _SoftBias: 0
+    - _SoftDistance: 0.001
     - _SrcBlend: 1
     - _SurfaceType: 1
     - _TintColorAlpha: 0.05
     - _TintColorIntensity: 100
     - _UseBlend: 0
     - _UseDissolve: 1
+    - _UseFresnel: 0
     - _UseMainTexAsAlpha: 0
     - _UseMask: 1
     - _UseSampleTex0AsAlpha: 0
     - _UseSampleTex1AsAlpha: 0
     - _UseSampleTex2AsAlpha: 0
     - _UseSampleTex3AsAlpha: 1
+    - _UseSoftBlend: 0
     - _ZTest: 4
     - _ZWrite: 0
     m_Colors:
     - _BlendTint: {r: 3.576471, g: 5.9921575, b: 4.165259, a: 1}
     - _DissolveEmissiveColor: {r: 0, g: 0, b: 0, a: 0}
+    - _FresnelColor: {r: 1, g: 1, b: 1, a: 1}
     - _MainTexUVRotateMat: {r: 1, g: 0, b: 0, a: 1}
     - _MainTexUVSpeed: {r: 0, g: 0, b: 0, a: 0}
     - _MainTexUVWeights: {r: 1, g: 0, b: 0, a: 0}

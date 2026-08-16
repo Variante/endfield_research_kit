@@ -4475,6 +4475,18 @@ unchanged. D3D12 capture and validation pass, but PTS-40000 peak-only
 remains zero. M19 is not among the visible sidecar materials at that anchor,
 so its still-missing Fresnel branch is not the current raised-hand priority.
 This closes a real vertex-stream fidelity gap without claiming visual parity.
+The PTS-40000 visible-material census narrows the peak geometry further. M01
+is a one-pixel billboard, M22/M39 are smaller mesh contributors, while M23
+(PathID `-430604955415889784`) owns four Custom1 mesh renderers spanning about
+218,299 renderer-ID pixels and `x=0..959,y=58..410`, directly crossing the
+raised-hand ROI. Its exact payload enables `_SAMPLE_TEX0..3` plus
+`_USE_FRESNEL` with bias -0.23, flip 1, power 1, and opacity influence 1.
+SampleStack now executes the recovered biased N-dot-V, power, flip, color
+interpolation, and opacity multiplier using particle world position/normal.
+Validation passes, but composite raised-hand changes only 1,937 -> 1,949
+pixels and peak-only raised-hand remains zero. M23 geometry is present; its
+remaining high-value boundary is exact color/alpha sample-stack equivalence,
+not another mesh or the Fresnel branch alone.
 
 The actor-composed harness now also instantiates the exact recovered
 `P_fxui_lizhiyan_overview_trails_Bip001_R_Finger2Nub` prefab beneath the

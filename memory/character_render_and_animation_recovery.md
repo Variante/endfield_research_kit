@@ -2225,6 +2225,17 @@ only stable interpretation and priorities.
    visible material sidecar at that anchor, so the SampleStack's missing
    Fresnel branch is real but not the current raised-hand priority. Keep this
    as vertex-stream fidelity, not retail admission.
+   The peak sidecar now identifies M23 (PathID `-430604955415889784`) as the
+   only large PTS-40000 geometry crossing the raised-hand ROI: four Custom1
+   mesh renderers cover about 218,299 ID pixels and bounds
+   `x=0..959,y=58..410`. M01 is a one-pixel billboard and M22/M39 are smaller
+   mesh contributors. M23's exact payload enables `_SAMPLE_TEX0..3` and
+   `_USE_FRESNEL` with bias -0.23, flip/power 1, and opacity influence 1. The
+   diagnostic now executes the recovered biased N-dot-V/power/flip color and
+   opacity branch with world position/normal. It adds only 12 composite
+   raised-hand pixels (1,937 -> 1,949); peak-only raised-hand stays zero.
+   Geometry and Fresnel are therefore present. The next visual boundary is
+   M23's exact color/alpha sample-stack equivalence, not another mesh.
    The exact independently AssetMap-proven finger prefab is now executable in
    the same actor-composed diagnostic. It is mounted beneath the unique
    `Bip001_R_Finger2Nub`, keeps its source 0.83333-second delay and

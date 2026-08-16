@@ -48,6 +48,12 @@ Shader "Endfield/Recovered/VFXBaseV2SampleStack"
         _DissolveEdgeSharp ("Dissolve Edge Sharpness", Float) = 0.5
         _DissolveEmissiveEdge ("Dissolve Emissive Edge", Float) = 0.2
         [HDR] _DissolveEmissiveColor ("Dissolve Emissive Color", Color) = (0,0,0,0)
+        [Toggle(_USE_FRESNEL)] _UseFresnel ("Use Fresnel", Float) = 0
+        [HDR] _FresnelColor ("Fresnel Color", Color) = (1,1,1,1)
+        _FresnelBias ("Fresnel Bias", Float) = 0
+        _FresnelAffectOpacity ("Fresnel Affect Opacity", Float) = 1
+        _FresnelPower ("Fresnel Power", Float) = 1
+        _FresnelFlip ("Fresnel Flip", Float) = 0.001
         _UseSoftBlend ("Use Soft Blend", Float) = 0
         _SoftDistance ("Soft Distance", Float) = 0.001
         _SoftBias ("Soft Bias", Float) = 0
@@ -99,6 +105,7 @@ Shader "Endfield/Recovered/VFXBaseV2SampleStack"
             #pragma shader_feature_local_fragment _SAMPLE_TEX1
             #pragma shader_feature_local_fragment _SAMPLE_TEX2
             #pragma shader_feature_local_fragment _SAMPLE_TEX3
+            #pragma shader_feature_local_fragment _USE_FRESNEL
             #pragma shader_feature_local_fragment _USE_SOFTBLEND
             #include "UnityCG.cginc"
 
@@ -159,6 +166,12 @@ Shader "Endfield/Recovered/VFXBaseV2SampleStack"
             float _DissolveEdgeSharp;
             float _DissolveEmissiveEdge;
             float4 _DissolveEmissiveColor;
+            float _UseFresnel;
+            float4 _FresnelColor;
+            float _FresnelBias;
+            float _FresnelAffectOpacity;
+            float _FresnelPower;
+            float _FresnelFlip;
             float _UseSoftBlend;
             float _SoftDistance;
             float _SoftBias;
@@ -182,6 +195,7 @@ Shader "Endfield/Recovered/VFXBaseV2SampleStack"
             struct Attributes
             {
                 float4 vertex : POSITION;
+                float3 normal : NORMAL;
                 float4 color : COLOR;
                 // BakeMesh carries the source UV/UV2 pair in TEXCOORD0.xyzw
                 // and ParticleSystemVertexStream.Custom1XYZW in TEXCOORD1.
@@ -194,6 +208,8 @@ Shader "Endfield/Recovered/VFXBaseV2SampleStack"
             struct Varyings
             {
                 float4 positionCS : SV_POSITION;
+                float3 positionWS : TEXCOORD5;
+                float3 normalWS : TEXCOORD6;
                 float4 color : COLOR;
                 float2 mainUV : TEXCOORD0;
                 float2 sample0UV : TEXCOORD1;
@@ -235,6 +251,8 @@ Shader "Endfield/Recovered/VFXBaseV2SampleStack"
             {
                 Varyings output;
                 output.positionCS = UnityObjectToClipPos(input.vertex);
+                output.positionWS = mul(unity_ObjectToWorld, input.vertex).xyz;
+                output.normalWS = UnityObjectToWorldNormal(input.normal);
                 output.color = input.color;
                 output.mainUV = BuildSelectedUV(
                     input.uv0, input.custom, _MainTexUVWeights,
@@ -341,6 +359,28 @@ Shader "Endfield/Recovered/VFXBaseV2SampleStack"
                     max(_ExposureWithMiscParams.y, 0.0001),
                     saturate(_IgnorePostExposure));
                 float3 color = untinted / exposureDivisor;
+#if defined(_USE_FRESNEL)
+                // Exact recovered VFXBaseV2 Fresnel branch: powered biased
+                // N.V, optional flip, color interpolation, and authored
+                // opacity multiplier. M23 is visible at PTS40000 and carries
+                // this keyword/property payload.
+                float3 viewDirectionWS = normalize(
+                    _WorldSpaceCameraPos.xyz - input.positionWS);
+                float biasedNdotV = saturate(
+                    dot(viewDirectionWS, normalize(input.normalWS)) +
+                    _FresnelBias);
+                float poweredFresnel = pow(biasedNdotV, _FresnelPower);
+                float fresnel = lerp(
+                    1.0 - poweredFresnel,
+                    poweredFresnel,
+                    _FresnelFlip);
+                color = lerp(
+                    color,
+                    _FresnelColor.rgb,
+                    fresnel * _FresnelColor.a);
+#else
+                float fresnel = 1.0;
+#endif
                 color += max(color - _ExpThreshold, 0.0) * _ExpIntensity;
                 color = clamp(color, 0.0, 1000.0);
 
@@ -348,6 +388,9 @@ Shader "Endfield/Recovered/VFXBaseV2SampleStack"
                     mainAlpha * _TintColor.a * _TintColorAlpha *
                     input.color.a * mask);
                 alpha *= lerp(1.0, dissolveAlpha, dissolveEnabled);
+#if defined(_USE_FRESNEL)
+                alpha *= lerp(1.0, fresnel, _FresnelAffectOpacity);
+#endif
 #if defined(_USE_SOFTBLEND)
                 // Exact BaseV2 soft-blend path recovered from the shipped
                 // ForwardOnly blob: sample continuous pixel UV, linearize
