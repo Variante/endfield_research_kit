@@ -4166,10 +4166,18 @@ and non-indexed indirect variants, and cases 33/34 call direct/indirect
 dispatch. Loader `0x180747BAD..0x180747CC1` resolves and stores those function
 pointers, and each draw case forwards the decoded aligned payload with the
 resolved Vulkan command buffer. The generated native ABI contract hash is
-`019CCC74EBBA8251D4FE99095EE3E6D6F08286A0470CF4C0FD9AA4E381512C4E`.
+`11664A2E94479E609D59D3243C5060AF7CE1B872E2D269FDCDD0198B89321F27`.
 This closes general recorded-command-to-Vulkan execution only: no static edge
 yet assigns a Li RendererList, ordinary Renderer, or ParticleSystemRenderer to
 one of cases 29--32, its PSO/descriptors, or a final visible pixel.
+The adjacent generic queue boundary is explicit: `0x1808DE370..0x1808DE500`
+packages stream-backed opcode-5 records and `0x1808DE500..0x1808DE76D`
+executes them into that interpreter, but their fields expose no static
+Renderer/VFX identity. The classic 0x50-byte-record provider is concretely the
+front context built at `0x1809258C0`; its `+0x210` callback receives no record
+pointer or index and only records state opcode `0x2727` or updates an API-2
+state bit. That provider branch is closed negatively rather than retained as
+a candidate draw bridge.
 The pre-retirement lifecycle is now pinned separately. Registered icalls
 3659--3661 map the three `PrepareRendererListsAsync*` APIs to
 `0x1800BAC40`, `0x1800BAF10`, and `0x1800BB080`; their native paths enter
@@ -4468,13 +4476,19 @@ payloads only to transient diagnostic VFXBaseV2 materials, and bakes all seven
 billboard renderers without changing the fail-closed generated assets or
 normal viewer. The schema-v3 capture and validator pass. At PTS 40000 the
 finger layer raises composite `raisedHand` coverage from 0.603% to 5.529% and
-adds 5.120% in the effects-only lane, but retail is 28.526%. Its positive
-renderer-ID rows occupy the upper-right `x=634..771`, approximately
-`y=41..96`; the new pixels inside the current raised-hand ROI belong chiefly
-to existing start_01 renderer ID 4. The exact finger effect is therefore an
+adds 5.120% in the effects-only lane, but retail is 28.526%. A direct
+camera-space probe places the exact mount near PNG `(455.7,189.0)` and the
+baked finger bounds around `x=385..528,y=95..283`, horizontally left of the
+retail raised-hand ROI `x=537..737,y=162..337`; pixels inside that ROI belong
+chiefly to existing start_01 renderer ID 4. The exact finger effect is therefore an
 executed source layer, but it is not yet evidence that this prefab owns the
-large retail raised-hand feature. Camera/hierarchy composition, start_01
-shader behavior, or another source-owned layer remains open.
+large retail raised-hand feature. The skinning census rejects a name-based
+remap: visible skin renderers use the main `Root/Bip001/...` armature, the nub
+is the expected terminal unweighted child after weighted hand/finger bones,
+and same-named hands under `RecoveredProps` belong to accessory geometry.
+Applying the authored camera rotation as an actor rotation moves the mount
+farther away. Preserve the exact mount/timing; start_01 shader/geometry,
+retail camera framing, or another source-owned layer remains open.
 
 The exact managed LOD renderer bindings are now part of the playable-topology
 contract: start_01 has four non-null MeshRenderer PathIDs and start_02/start_03
