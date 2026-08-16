@@ -527,6 +527,41 @@
       "functionSha256": "8BF0F56A5B4FEA3557C92E752E58064FEB13226FB88B285A358D9053788475D7"
     },
     {
+      "label": "HG descriptor mode-2 resource-cache branch",
+      "va": "0x180623d80",
+      "functionEnd": "0x180623e67",
+      "functionBytes": 231,
+      "functionSha256": "90FE53497586BA16F03164CBDBA16F44337B9B38F2FC974801C40C40B6F0EDBB"
+    },
+    {
+      "label": "HG descriptor mode-2 fallback branch",
+      "va": "0x180623e70",
+      "functionEnd": "0x180623e9a",
+      "functionBytes": 42,
+      "functionSha256": "70B4ADE3CF5B7B8433EBEF9B0E9DFDFF2DD125F95CE2EC0796755991AB03BDBA"
+    },
+    {
+      "label": "HG 0x4e0 resource descriptor constructor",
+      "va": "0x180ac63f0",
+      "functionEnd": "0x180ac6724",
+      "functionBytes": 820,
+      "functionSha256": "75FCB43F0BA9BCA30B6D02043A0B4B3E9EDDD88E6CBED601E75D14B998AB7626"
+    },
+    {
+      "label": "HG descriptor mode builder",
+      "va": "0x180ba21b0",
+      "functionEnd": "0x180ba28e5",
+      "functionBytes": 1845,
+      "functionSha256": "94CE58944DD387DE564BE56087D07D1E164B92DC79118D9E5AC0BF123FD9BC78"
+    },
+    {
+      "label": "HG descriptor structure copier",
+      "va": "0x180390a20",
+      "functionEnd": "0x1803911ce",
+      "functionBytes": 1966,
+      "functionSha256": "836E6AF9C9BADEAD3C3C246B076135A884A989C68AF7361D632471C6EEF1EF3A"
+    },
+    {
       "label": "HG generic opcode 0x2731 producer candidate 1",
       "va": "0x1805a3790",
       "functionEnd": "0x1805a37ef",
@@ -1135,6 +1170,16 @@
             "frontEndHandoffEndVA": "0x181049007",
             "behavior": "consumes the CPU publication/result object, repeats its resource-table lookup, records 0x2748/0x274a, invokes resource-array builders, and has a descriptor-mode-conditional path to opcode 0x2730; neither Li's branch value nor a same-AfterDOF-interval 0x2731/particular draw identity is proven",
             "publicationResultLayout": "pair +0x00 is a 0x90-stride CPU-record base, +0x08 auxiliary resource/state, +0x10 count; each record keeps resource/object +0x08 and descriptor +0x10 among selector/payload fields",
+            "descriptorMode": {
+              "recordProvenance": "finalizer copies metadata+0x28 to publication+0x10; 0x181048660 obtains that descriptor as item-0x58 and 0x1810487e1 passes it to 0x180619cf0, which reads dword descriptor+0x450",
+              "originalRecordSeparation": "publication+0x84, not descriptor+0x450, receives original 64-byte record dword +0x20 packed resolver ID",
+              "mode0": "0x180619cf0 selects 0x180623ef0; that helper builds descriptor state and conditionally records 0x2730 when graphics-front +0x1fd1 is zero, otherwise immediately invokes backend +0xe90",
+              "mode2": "selects 0x180623d80 resource registration/cache or 0x180623e70 lookup/fallback, then clears the publication output and writes -1; neither branch records 0x2730/0x2731",
+              "otherModes": "clear publication output and write -1 without entering the three special helpers",
+              "constructorEvidence": "0x180ac63f0 constructs a matching 0x4e0 resource descriptor with +0x430/+0x450/+0x488 fields; its two direct construction callers 0x180a4bd4a and 0x180b3fab9 pass mode 0",
+              "builderEvidence": "0x180ba21b0 writes mode 0, propagated input mode, or mode 1; 0x180390a20 copies the +0x440..+0x460 field group including +0x450",
+              "aliasBoundary": "metadata+0x28 has not been statically aliased to the 0x180ac63f0 or 0x180ba21b0 products, so Li's selected mode remains unknown"
+            },
             "graphicsFront": {
               "contextGetterVA": "0x180725dc0",
               "constructorVA": "0x1809258c0",
@@ -1164,7 +1209,7 @@
               "batchBoundary": "begin recording selects the current buffer and enables append; end recording disables append and may emit 0x27cb; bounded-substream parser 0x1813aea00 repeatedly advances one shared cursor",
               "sequenceBoundary": "the HGMesh front has a descriptor-mode-conditional static path to 0x2730 on the same recorder family, but Li's branch value is unknown and no static producer edge proves a later 0x2731 occurs in the same AfterDOF recording interval or belongs to this draw-list",
               "handoffWriterOrder": "within each 0x90-byte HGMesh publication record, 0x181048848 invokes front +0x268 with record resource at +0x60, then 0x1810488dc invokes front +0x280 with its local serialized payload on the same graphics-front context",
-              "descriptorProducerRoute": "0x1810487e1 -> 0x180619cf0; descriptor+0x450 conditionally selects 0x180623d80, 0x180623e70, or 0x180623ef0. Only the 0x180623ef0 branch reacquires the graphics-front family through 0x180725dc0 and invokes vtable +0x2a0 at 0x1806243d3, the 0x2730 writer",
+              "descriptorProducerRoute": "0x1810487e1 -> 0x180619cf0; descriptor+0x450 value 0 selects 0x180623ef0, value 2 selects 0x180623d80/0x180623e70, and other values fail/clear. Only the mode-0 branch reacquires the graphics-front family through 0x180725dc0 and can invoke vtable +0x2a0 at 0x1806243d3, the 0x2730 writer",
               "resourceBuilderCalls": "0x181048dc7/0x181048f2f invoke vtable +0xda0 and 0x181048df8/0x181048f60 invoke +0x380; these enter the API-2 resource-array builder family rather than directly issuing a draw",
               "handoffExcludedWriter": "0x1810484e0..0x181049007 has no direct front +0x3e8 (0x2731) invocation; the +0x2a0 edge is indirect through 0x180619cf0 -> 0x180623ef0",
               "executeProducerCandidates": "getter-backed 0x1805a3790/0x1805a37f0 invoke +0x3e8 on the same recorder family, but no static edge places either call in this AfterDOF recording interval",
