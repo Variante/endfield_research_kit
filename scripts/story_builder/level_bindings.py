@@ -191,6 +191,277 @@ def _levelscript_file_sort_key(path: Path) -> tuple:
     return (1, stem)
 
 
+LEVELSCRIPT_ACTIVE_OVERLAY_SCHEMA = "levelScriptActiveOverlay.v1"
+
+
+def _default_levelscript_overlay_roots() -> tuple[Path, Path]:
+    """Return the original LevelScript roots in overlay precedence order."""
+    return (
+        LEVELSCRIPT_DIR,
+        PERSISTENT_DATA_JSON_DIR / "LevelScriptData",
+    )
+
+
+def _source_file_label(path: Path) -> str:
+    try:
+        return path.resolve().relative_to(ROOT.resolve()).as_posix()
+    except (OSError, ValueError):
+        return path.resolve().as_posix()
+
+
+def _levelscript_overlay_logical_path(path: Path, root: Path) -> str:
+    return path.relative_to(root).as_posix()
+
+
+def build_active_levelscript_overlay_index(
+    level_script_roots: tuple[Path, ...] | list[Path] | None = None,
+) -> dict:
+    """Select one active LevelScript source for every logical relative path.
+
+    Roots are ordered from fallback to override.  A later root replaces the
+    complete file from an earlier root; it is never merged with that file.
+    Identical copies are retained as shadow evidence but are decoded only once.
+    Missing optional roots are recorded, while an entirely missing corpus or a
+    duplicate logical path within one root fails closed.
+    """
+    roots = tuple(level_script_roots or _default_levelscript_overlay_roots())
+    failures: list[dict] = []
+    root_rows: list[dict] = []
+    seen_roots: set[str] = set()
+    candidates: dict[str, list[dict]] = defaultdict(list)
+    for precedence, raw_root in enumerate(roots):
+        root = Path(raw_root).resolve()
+        root_key = root.as_posix().casefold()
+        root_label = _source_file_label(root)
+        if root_key in seen_roots:
+            failures.append({
+                "validator": "levelScriptActiveOverlay",
+                "gate": "uniqueSourceRoots",
+                "sourceRoot": root_label,
+                "expected": "one root per precedence slot",
+                "actual": "duplicate_root",
+            })
+            root_rows.append({
+                "sourceRoot": root_label,
+                "precedence": precedence,
+                "status": "duplicate_fail_closed",
+                "fileCount": 0,
+            })
+            continue
+        seen_roots.add(root_key)
+        if not root.is_dir():
+            root_rows.append({
+                "sourceRoot": root_label,
+                "precedence": precedence,
+                "status": "missing_optional_root",
+                "fileCount": 0,
+            })
+            continue
+        file_count = 0
+        root_logical_paths: set[str] = set()
+        for path in sorted(
+            root.rglob("*.json"),
+            key=lambda item: _levelscript_overlay_logical_path(item, root),
+        ):
+            logical_path = _levelscript_overlay_logical_path(path, root)
+            if logical_path in root_logical_paths:
+                failures.append({
+                    "validator": "levelScriptActiveOverlay",
+                    "gate": "uniqueLogicalPathPerRoot",
+                    "sourceRoot": root_label,
+                    "logicalPath": logical_path,
+                    "expected": "one physical file",
+                    "actual": "duplicate_logical_path",
+                })
+                continue
+            root_logical_paths.add(logical_path)
+            try:
+                blob = read_bytes_cached(path)
+            except OSError as error:
+                failures.append({
+                    "validator": "levelScriptActiveOverlay",
+                    "gate": "sourceFileReadable",
+                    "sourceRoot": root_label,
+                    "logicalPath": logical_path,
+                    "sourceFile": _source_file_label(path),
+                    "expected": "readable",
+                    "actual": type(error).__name__,
+                })
+                continue
+            digest = hashlib.sha256(blob).hexdigest()
+            candidates[logical_path].append({
+                "logicalPath": logical_path,
+                "sourceFile": _source_file_label(path),
+                "sourceRoot": root_label,
+                "sourceRootPath": root.as_posix(),
+                "sha256": digest,
+                "precedence": precedence,
+            })
+            file_count += 1
+        root_rows.append({
+            "sourceRoot": root_label,
+            "precedence": precedence,
+            "status": "available",
+            "fileCount": file_count,
+        })
+
+    files: dict[str, dict] = {}
+    for logical_path, rows in sorted(candidates.items()):
+        rows = sorted(rows, key=lambda row: int(row["precedence"]))
+        chosen = dict(rows[-1])
+        shadowed: list[dict] = []
+        for row in rows[:-1]:
+            shadowed.append({
+                "sourceFile": row["sourceFile"],
+                "sourceRoot": row["sourceRoot"],
+                "sha256": row["sha256"],
+                "status": (
+                    "same_hash_deduped"
+                    if row["sha256"] == chosen["sha256"]
+                    else "changed_override"
+                ),
+            })
+        chosen["shadowed"] = shadowed
+        chosen["status"] = (
+            "fallback"
+            if len(rows) == 1 and int(chosen["precedence"]) == 0
+            else "persistent_only"
+            if len(rows) == 1 and int(chosen["precedence"]) > 0
+            else "same_hash_deduped"
+            if shadowed and all(row["status"] == "same_hash_deduped" for row in shadowed)
+            else "override"
+        )
+        files[logical_path] = chosen
+
+    available_roots = sum(row.get("status") == "available" for row in root_rows)
+    status = (
+        "unavailable_fail_closed"
+        if failures or not files
+        else "validated_active_overlay"
+    )
+    return {
+        "schema": LEVELSCRIPT_ACTIVE_OVERLAY_SCHEMA,
+        "status": status,
+        "roots": root_rows,
+        "availableRootCount": available_roots,
+        "fileCount": len(files),
+        "files": files,
+        "validationFailures": failures[:64],
+    }
+
+
+def resolve_active_levelscript_source(
+    source_file: str,
+    overlay_index: dict,
+) -> tuple[dict | None, dict | None]:
+    """Resolve a source path to its active overlay row, fail-closed."""
+    return resolve_active_levelscript_evidence(source_file, overlay_index)
+
+
+def resolve_active_levelscript_evidence(
+    source_file: str,
+    overlay_index: dict,
+    evidence_sha256: str | None = None,
+) -> tuple[dict | None, dict | None]:
+    """Resolve source evidence without laundering a changed shadow path.
+
+    An exact active path is accepted when its optional evidence hash agrees.
+    A shadow path is accepted only when its shadow bytes have the same hash as
+    the chosen active bytes. A changed shadow is rejected even when it carries
+    an old or merely copied hash; callers must supply a freshly decoded active
+    occurrence under the active source path instead.
+    """
+    # Never consume a partially constructed index.  In particular, callers
+    # must not be able to treat residual ``files`` from an unavailable build
+    # as validated active evidence.
+    if not isinstance(overlay_index, dict) or overlay_index.get(
+        "status"
+    ) != "validated_active_overlay":
+        return None, {
+            "validator": "levelScriptActiveOverlay",
+            "gate": "overlayStatus",
+            "expected": "validated_active_overlay",
+            "actual": (
+                overlay_index.get("status")
+                if isinstance(overlay_index, dict)
+                else None
+            ),
+            "validationFailures": (
+                list(overlay_index.get("validationFailures") or [])[:8]
+                if isinstance(overlay_index, dict)
+                else []
+            ),
+        }
+    value = str(source_file or "").replace("\\", "/")
+    marker = "LevelScriptData/"
+    marker_index = value.find(marker)
+    if marker_index < 0:
+        return None, {
+            "validator": "levelScriptActiveOverlay",
+            "gate": "logicalPath",
+            "sourceFile": value,
+            "expected": "LevelScriptData relative path",
+            "actual": "missing_levelscript_marker",
+        }
+    logical_path = value[marker_index + len(marker):]
+    row = (overlay_index.get("files") or {}).get(logical_path)
+    if not isinstance(row, dict):
+        return None, {
+            "validator": "levelScriptActiveOverlay",
+            "gate": "activeSourceExists",
+            "logicalPath": logical_path,
+            "sourceFile": value,
+            "expected": "active overlay row",
+            "actual": "missing",
+        }
+    chosen_hash = str(row.get("sha256") or "").casefold()
+    evidence_hash = str(evidence_sha256 or "").strip().casefold()
+    chosen_source = str(row.get("sourceFile") or "").replace("\\", "/")
+    source_value = value.replace("\\", "/")
+    if evidence_hash and evidence_hash != chosen_hash:
+        return None, {
+            "validator": "levelScriptActiveOverlay",
+            "gate": "activeEvidenceHash",
+            "logicalPath": logical_path,
+            "sourceFile": value,
+            "expected": chosen_hash,
+            "actual": evidence_hash,
+        }
+    if source_value == chosen_source:
+        return row, None
+    shadow = next(
+        (
+            item
+            for item in row.get("shadowed") or []
+            if isinstance(item, dict)
+            and str(item.get("sourceFile") or "").replace("\\", "/")
+            == source_value
+        ),
+        None,
+    )
+    if shadow and str(shadow.get("sha256") or "").casefold() == chosen_hash:
+        return {
+            **row,
+            "normalizedFromShadow": source_value,
+            "normalizationStatus": "same_hash_shadow",
+        }, None
+    return None, {
+        "validator": "levelScriptActiveOverlay",
+        "gate": "changedShadowEvidence",
+        "logicalPath": logical_path,
+        "sourceFile": value,
+        "expected": {
+            "chosenSourceFile": chosen_source,
+            "chosenSha256": chosen_hash,
+            "evidenceSha256Required": True,
+        },
+        "actual": {
+            "evidenceSha256": evidence_hash,
+            "shadowSha256": shadow.get("sha256") if shadow else "",
+        },
+    }
+
+
 def _load_levelscript_dialog_files(level_id: str) -> tuple[
     tuple[Path, tuple, bytes, tuple[str, ...]], ...
 ]:
@@ -3472,6 +3743,76 @@ def build_levelscript_action_story_occurrences(
     if use_default_cache:
         _LEVELSCRIPT_ACTION_STORY_OCCURRENCES_CACHE = result
     return result
+
+
+def build_active_levelscript_action_story_occurrences(
+    overlay_index: dict | None = None,
+) -> dict[str, list[dict]]:
+    """Decode Story actions from the selected active LevelScript overlay only."""
+    overlay = (
+        build_active_levelscript_overlay_index()
+        if overlay_index is None
+        else overlay_index
+    )
+    if overlay.get("status") == "unavailable_fail_closed":
+        return {}
+    selected_rows = [
+        row
+        for row in (overlay.get("files") or {}).values()
+        if isinstance(row, dict)
+    ]
+    rows_by_root: dict[str, set[str]] = defaultdict(set)
+    for row in selected_rows:
+        rows_by_root[str(row.get("sourceRootPath") or "")].add(
+            str(row.get("sourceFile") or "")
+        )
+    output: dict[str, list[dict]] = defaultdict(list)
+    for root_text, selected_sources in sorted(rows_by_root.items()):
+        if not root_text:
+            continue
+        root_occurrences = build_levelscript_action_story_occurrences(Path(root_text))
+        for story_key, occurrences in root_occurrences.items():
+            for occurrence in occurrences or []:
+                if not isinstance(occurrence, dict):
+                    continue
+                source_file = str(occurrence.get("sourceFile") or "")
+                if source_file not in selected_sources:
+                    continue
+                overlay_row, diagnostic = resolve_active_levelscript_source(
+                    source_file,
+                    overlay,
+                )
+                if diagnostic or not overlay_row:
+                    continue
+                source_path = Path(source_file)
+                if not source_path.is_absolute():
+                    source_path = ROOT / source_path
+                try:
+                    actual_hash = hashlib.sha256(
+                        read_bytes_cached(source_path)
+                    ).hexdigest()
+                except OSError:
+                    continue
+                if actual_hash != str(overlay_row.get("sha256") or ""):
+                    continue
+                enriched = dict(occurrence)
+                enriched.update({
+                    "activeOverlayLogicalPath": overlay_row.get("logicalPath"),
+                    "activeOverlaySourceRoot": overlay_row.get("sourceRoot"),
+                    "activeOverlaySourceSha256": overlay_row.get("sha256"),
+                    "activeOverlayStatus": overlay_row.get("status"),
+                    "activeOverlayShadowed": list(overlay_row.get("shadowed") or []),
+                    "sourceSha256": overlay_row.get("sha256"),
+                })
+                output[story_key].append(enriched)
+    for story_key in output:
+        output[story_key].sort(
+            key=lambda row: (
+                str(row.get("sourceFile") or ""),
+                int(row.get("recordOffset") or 0),
+            )
+        )
+    return dict(output)
 
 
 def build_levelscript_native_story_playback_index() -> dict[str, list[dict]]:

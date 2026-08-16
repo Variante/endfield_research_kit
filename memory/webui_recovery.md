@@ -67,6 +67,10 @@ data.
   and rejection diagnostics. Only a unique linear Story -> CallServer ->
   callback -> Story closure may enter the source-order graph; the current
   corpus has no such two-ended closure.
+- Mission Pipeline source-order evidence uses the active LevelScript overlay;
+  changed Persistent files replace shadowed StreamingAssets actions rather
+  than merging both versions. Rejected stale edges remain diagnostic instead
+  of being relabeled as active evidence.
 - Story reset restores Story sort and default filters while preserving expanded
   mission groups.
 - `sns_emoji_*` stays inline without hover/modal preview. Other SNS media keeps
