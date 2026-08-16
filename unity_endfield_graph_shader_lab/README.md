@@ -4036,6 +4036,21 @@ evaluation as unproven substitutes. The generated
 semantics, time-control callsites, static renderer payload, and final draw
 ownership are closed.
 
+The fixed-build ABI now distinguishes the advanced type from stock more
+concretely: stock mixer creation takes `normalizeWeights` and exposes an
+implicit Playable conversion; the advanced type exposes neither. Its default
+weights, null-playable transitions, input-count failures, and injected native
+body are still unknown. The same contract pins `SetManual(bool)`,
+`ManualEvaluate(float)`, `SyncProgress(float)`, time-scale/start-duration/start-
+scale setters, Stop, OnDisable, and OnRelease. Their decoded fallback bodies
+prove graph evaluation, progress-to-time delegation, forced root-speed
+refresh, stop, valid-graph destruction, and the corresponding
+`EffectInstance` forwarding routes. Each method also has an IFix dispatch
+gate, so an active patch may replace that fallback body. No Li-specific caller
+currently opts these three roots into manual evaluation, progress sync, or
+duration retiming; speed-one GameTime playback remains the only admitted
+timing statement.
+
 The two sibling roots are now source-closed as the remaining halves of that
 shared clip. `start_02` is a 5-second, three-renderer effect using one Plane009
 mesh and materials 12/13/14; `start_03` is a 7-second, three-renderer effect
