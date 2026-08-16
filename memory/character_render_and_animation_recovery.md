@@ -1910,8 +1910,12 @@ only stable interpretation and priorities.
    `descriptor+0x450`; only its `0x180623ef0` branch reaches the shared
    graphics-front `+0x2a0` writer for opcode `0x2730`, while Li's selected
    branch value remains unknown. The generic `0x2731` producer has a separate
-   runtime-callback `(1) -> 0x2731 -> (0)` bracket on the same recorder family,
-   but HGMesh has no static edge into it. The parser supplies no mandatory-next
+   runtime-callback `(1) -> 0x2731 -> (0)` bracket on the same recorder family.
+   Frame/status owner `0x18059f2f0` reads graphics status through singleton
+   vtable `+0x7b8`; status 0/1 reaches it at `0x18059f395`, and
+   `0x18059edd0` is an alternate status-zero entry. Its callback slot remains
+   runtime-populated with no static writer, and HGMesh has no static edge into
+   this owner. The parser supplies no mandatory-next
    flag or generation joining the independent `0x2730/0x2731` cases. The first
    missing positive joins are therefore Li selecting the `0x2730` branch, a
    later `0x2731` in the same after-DOF interval, and attribution of its
@@ -1925,8 +1929,12 @@ only stable interpretation and priorities.
    0x38-stride entries and must not be conflated with D. The original 64-byte
    record's packed resolver ID instead lands at publication `+0x84`. Mode 0 chooses the only
    descriptor-state/conditional-`0x2730` branch; mode 2 chooses resource-cache
-   or fallback paths and clears the result; other values also fail/clear. A
-   matching 0x4e0 descriptor constructor at `0x180ac63f0` has two direct callers
+   or fallback paths and clears the result; other values also fail/clear. The
+   exact 0x580-byte descriptor-state constructor `0x1806198f0` writes caller
+   mode to `+0x450` at `0x180619952`; `0x1805caf78` supplies mode 2 and
+   `0x1805cb225` supplies mode 0. It matches the field consumed by
+   `0x180619cf0`, but no static alias selects which instance is Li's M0
+   profile D. A matching 0x4e0 constructor at `0x180ac63f0` has two direct callers
    that pass mode 0, but it does not fill the M0 entry and is not statically
    aliased to D; `0x180ba21b0` and a similar 0x48-stride family are likewise
    excluded as proven producers. The chained-`.pdata` worker
@@ -1958,9 +1966,12 @@ only stable interpretation and priorities.
    shading-state resource to `entry+0x28` at `0x18109ca2f`; it then
    dereferences the same object through `+0x10` and material state fields. The
    two direct insertion callers are `0x1811e1a24` and `0x18131b76b`. Both are
-   now identified as `PPtr<HGSubsurfaceProfile>` resource paths through native
-   initializer `0x1805ff5e0` and vtable `0x181d87ef0`; neither is an ordinary
-   Unity Material registration or a Li-specific reference.
+   now identified as `PPtr<HGSubsurfaceProfile>` wrapper paths through native
+   initializer `0x1805ff5e0` and vtable `0x181d87ef0`. Insertion calls
+   `0x180600820`, which returns the nested descriptor stored at wrapper
+   `+0x140`; that descriptor, not the wrapper itself, becomes M0 entry
+   `+0x28`. Neither path is an ordinary Unity Material registration or a
+   Li-specific reference.
    Managed metadata still exposes the broader
    `GetMaterialHandle(int)->uint` / `GetMaterial(uint)->UnityEngine.Material`
    API. The primary profile owner resolves a Unity object reference through
@@ -1979,6 +1990,15 @@ only stable interpretation and priorities.
    boundary is therefore instance identity: a Li-specific M0 subsurface-profile
    handle/resource and M1 mesh-handle join. Until that join, Li's `D+0x450`
    mode stays fail-closed.
+   That join cannot be derived from serialized IDs. The recovered post-model
+   preserves 75 SkinnedMeshRenderers, 18 active LOD0 renderers and exact
+   Mesh/Material PathIDs, but has no serialized
+   HGMeshRenderer/HGMeshRendererData component. Retail Material/Mesh instance
+   IDs and M0/M1 slot-generation handles are assigned by the live player
+   registry, not computed from PathID, fileID, lab GUID or name. The video and
+   Player log contain none of those IDs; a positive join requires same-build
+   observation of instance ID/object fingerprint -> handle -> accepted record
+   -> draw.
    All six selected materials have `_IsSceneEffect=0` and
    `_EnableTransparentMV=0`, so `_VFXParams1` and transform history are safely
    bypassed rather than guessed. Exact inverse-VP soft depth, live
