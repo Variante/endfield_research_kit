@@ -30,6 +30,14 @@ SAMPLES = (
     (44000, "trail_decay"),
     (46000, "settled_no_substantial_teal"),
 )
+TRANSITION_ANCHORS = (
+    (37650, "prior_actor_visible"),
+    (37683, "prior_actor_last_residual"),
+    (37700, "blank_transition_first"),
+    (37867, "blank_transition_last"),
+    (37883, "lizhiyan_first_visible"),
+    (37950, "lizhiyan_opaque"),
+)
 ROIS = {
     "actorBody": (1350, 300, 2600, 2050),
     "broadTeal": (500, 450, 3100, 1800),
@@ -62,23 +70,24 @@ def _select_expression(samples: Iterable[tuple[int, str]]) -> str:
     return "+".join(f"eq(pts,{pts})" for pts, _ in samples)
 
 
-def decode_samples(video: Path, ffmpeg: str) -> list[bytes]:
+def decode_samples(video: Path, ffmpeg: str,
+                   samples: tuple[tuple[int, str], ...] = SAMPLES) -> list[bytes]:
     command = [
         ffmpeg, "-hide_banner", "-loglevel", "error",
         "-ss", "37.5", "-copyts", "-i", str(video), "-an",
         "-vf",
-        f"select='{_select_expression(SAMPLES)}',"
+        f"select='{_select_expression(samples)}',"
         f"scale={WIDTH}:{HEIGHT}:flags=lanczos,format=rgb24",
-        "-fps_mode", "passthrough", "-frames:v", str(len(SAMPLES)),
+        "-fps_mode", "passthrough", "-frames:v", str(len(samples)),
         "-f", "rawvideo", "-",
     ]
     completed = subprocess.run(command, check=False, capture_output=True)
     require(completed.returncode == 0, "ffmpeg_exit", 0, completed.returncode)
     frame_bytes = WIDTH * HEIGHT * 3
     require(
-        len(completed.stdout) == frame_bytes * len(SAMPLES),
+        len(completed.stdout) == frame_bytes * len(samples),
         "decoded_byte_count",
-        frame_bytes * len(SAMPLES),
+        frame_bytes * len(samples),
         len(completed.stdout),
     )
     return [
@@ -124,9 +133,12 @@ def build(video: Path, ffmpeg: str) -> dict[str, Any]:
     require(video.stat().st_size == VIDEO_BYTES, "video_bytes", VIDEO_BYTES, video.stat().st_size)
     digest = sha256_file(video)
     require(digest == VIDEO_SHA256, "video_sha256", VIDEO_SHA256, digest)
-    frames = decode_samples(video, ffmpeg)
+    requested = tuple(sorted(set(SAMPLES + TRANSITION_ANCHORS)))
+    frames = decode_samples(video, ffmpeg, requested)
+    by_pts = {sample[0]: frame for sample, frame in zip(requested, frames, strict=True)}
     samples = []
-    for (pts, phase), frame in zip(SAMPLES, frames, strict=True):
+    for pts, phase in SAMPLES:
+        frame = by_pts[pts]
         samples.append({
             "pts": pts,
             "timeBase": "1/1000",
@@ -134,6 +146,16 @@ def build(video: Path, ffmpeg: str) -> dict[str, Any]:
             "scaledRgb24Sha256": hashlib.sha256(frame).hexdigest().upper(),
             "scaledDimensions": [WIDTH, HEIGHT],
             "rois": {name: measure_roi(frame, bounds) for name, bounds in ROIS.items()},
+        })
+    transition_anchors = []
+    for pts, classification in TRANSITION_ANCHORS:
+        frame = by_pts[pts]
+        transition_anchors.append({
+            "pts": pts,
+            "timeBase": "1/1000",
+            "classification": classification,
+            "scaledRgb24Sha256": hashlib.sha256(frame).hexdigest().upper(),
+            "broadTeal": measure_roi(frame, ROIS["broadTeal"]),
         })
     return {
         "schema": SCHEMA,
@@ -163,7 +185,18 @@ def build(video: Path, ffmpeg: str) -> dict[str, Any]:
                 "The broad trails decay by PTS 44000 and no substantial teal layer remains at PTS 46000.",
             ],
         },
+        "transitionBoundary": {
+            "evidenceClass": "exact_pts_frame_hash_plus_bounded_visual_annotation",
+            "lastPriorActorResidualPts": 37683,
+            "firstBlankPts": 37700,
+            "lastBlankPts": 37867,
+            "firstLiZhiyanVisiblePts": 37883,
+            "firstLiZhiyanOpaquePts": 37950,
+            "candidateRestartPts": 37883,
+            "candidateRestartStatus": "visual_alignment_candidate_not_original_event_proof",
+        },
         "tealPredicateRgb24": "g>=80 && b>=80 && g-r>=20 && b-r>=10",
+        "transitionAnchors": transition_anchors,
         "samples": samples,
         "nonClaims": [
             "ROI teal coverage does not identify a material, renderer-list record, descriptor, draw, or submit.",

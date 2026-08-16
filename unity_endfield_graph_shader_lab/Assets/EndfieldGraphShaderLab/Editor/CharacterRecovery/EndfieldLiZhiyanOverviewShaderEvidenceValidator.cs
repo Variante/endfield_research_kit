@@ -30,6 +30,9 @@ namespace EndfieldGraphShaderLabEditor
         private const string RetailVisualOraclePath =
             "Assets/EndfieldGraphShaderLab/Generated/OriginalData/ShaderEvidence/" +
             "LiZhiyanOverviewFinger/lizhiyan_retail_visual_oracle.json";
+        private const string TimingAlignmentPath =
+            "Assets/EndfieldGraphShaderLab/Generated/OriginalData/ShaderEvidence/" +
+            "LiZhiyanOverviewFinger/lizhiyan_overview_timing_alignment.json";
         private const string Schema = "endfield.lizhiyan-overview-vfxbasev2-variants.v1";
         private const long ShaderPathId = -1430105248647086886L;
 
@@ -143,6 +146,51 @@ namespace EndfieldGraphShaderLabEditor
             ValidateNativeAbi();
             ValidateRetailDrawObservation();
             ValidateRetailVisualOracle();
+            ValidateOverviewTimingAlignment();
+        }
+
+        private static void ValidateOverviewTimingAlignment()
+        {
+            Dictionary<string, object> alignment = L.Dict(
+                ManifestMiniJson.Deserialize(File.ReadAllText(
+                    L.ProjectAbsolute(TimingAlignmentPath), Encoding.UTF8)));
+            Dictionary<string, object> controller =
+                L.Dict(alignment["sourceClosedControllerTiming"]);
+            Dictionary<string, object> effect =
+                L.Dict(alignment["sourceClosedEffectLocalTiming"]);
+            Dictionary<string, object> compatibility =
+                L.Dict(alignment["labCompatibilityChronology"]);
+            Dictionary<string, object> retail = L.Dict(alignment["retailVisualAlignment"]);
+            IList mapped = L.List(retail["mappedSamples"]);
+            L.Require(
+                L.Str(alignment, "schema") == "endfield.lizhiyan-overview-timing-alignment.v1" &&
+                L.Str(alignment, "status") ==
+                    "source_timing_closed_retail_request_epoch_pending" &&
+                !L.Bool(alignment, "visibleAdmission") &&
+                L.Str(controller, "startClip") == "A_actor_lizhiyan_ui_overview_start_01" &&
+                Mathf.Abs(L.Float(controller, "startClipLengthSeconds") - 10.7f) < 0.000001f &&
+                L.List(controller["animationEvents"]).Count == 0 &&
+                Mathf.Abs(L.Float(controller, "entryClipLocalSeconds") - 0.062452073f) < 0.000001f &&
+                Mathf.Abs(L.Float(controller, "exitClipLocalSeconds") - 10.68547903f) < 0.000001f &&
+                Mathf.Abs(L.Float(controller, "transitionDurationSeconds") - 0.014519697f) < 0.000001f &&
+                L.Str(effect, "effect") ==
+                    "P_fxui_lizhiyan_overview_trails_Bip001_R_Finger2Nub" &&
+                L.Str(effect, "mount") == "Bip001_R_Finger2Nub" &&
+                Mathf.Abs(L.Float(effect, "delaySeconds") - 0.83333f) < 0.000001f &&
+                Mathf.Abs(L.Float(effect, "durationSeconds") - 2.33333f) < 0.000001f &&
+                L.Str(compatibility, "evidenceClass") ==
+                    "current_lab_policy_not_original_request_chronology" &&
+                Mathf.Abs(L.Float(compatibility, "effectCreateClipLocalSeconds") - 0.895782073f) < 0.000001f &&
+                Mathf.Abs(L.Float(compatibility, "effectDestroyClipLocalSeconds") - 3.229112073f) < 0.000001f &&
+                L.Str(retail, "evidenceClass") == "candidate_only" &&
+                L.Long(retail, "candidateRestartPts") == 37883 &&
+                L.Str(retail, "diagnosticMismatch").Contains("PTS 42000") &&
+                mapped.Count == 6 &&
+                L.Str(L.Dict(mapped[1]), "compatibilityFingerEffectWindow") == "active" &&
+                L.Str(L.Dict(mapped[2]), "compatibilityFingerEffectWindow") == "inactive" &&
+                L.List(alignment["remainingEvidence"]).Count == 4 &&
+                L.List(alignment["nonClaims"]).Count == 3,
+                "Li Zhiyan Overview source/video timing alignment drifted");
         }
 
         private static void ValidateRetailVisualOracle()
@@ -152,6 +200,8 @@ namespace EndfieldGraphShaderLabEditor
                     L.ProjectAbsolute(RetailVisualOraclePath), Encoding.UTF8)));
             Dictionary<string, object> source = L.Dict(oracle["source"]);
             Dictionary<string, object> decode = L.Dict(oracle["decode"]);
+            Dictionary<string, object> transition = L.Dict(oracle["transitionBoundary"]);
+            IList anchors = L.List(oracle["transitionAnchors"]);
             IList samples = L.List(oracle["samples"]);
             long[] expectedPts = { 38000, 40000, 42000, 43000, 44000, 46000 };
             string[] expectedHashes =
@@ -173,6 +223,14 @@ namespace EndfieldGraphShaderLabEditor
                 L.Str(source, "timeBase") == "1/1000" &&
                 L.Str(decode, "pixelFormat") == "rgb24" &&
                 L.Bool(decode, "exactInputPts") &&
+                L.Long(transition, "lastPriorActorResidualPts") == 37683 &&
+                L.Long(transition, "firstBlankPts") == 37700 &&
+                L.Long(transition, "lastBlankPts") == 37867 &&
+                L.Long(transition, "firstLiZhiyanVisiblePts") == 37883 &&
+                L.Long(transition, "firstLiZhiyanOpaquePts") == 37950 &&
+                L.Str(transition, "candidateRestartStatus") ==
+                    "visual_alignment_candidate_not_original_event_proof" &&
+                anchors.Count == 6 &&
                 samples.Count == expectedPts.Length &&
                 L.List(oracle["nonClaims"]).Count == 3,
                 "Li Zhiyan retail visual-oracle boundary drifted");

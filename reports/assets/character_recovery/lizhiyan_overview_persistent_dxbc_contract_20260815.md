@@ -296,6 +296,19 @@ predicate. Broad-ROI teal coverage rises from `0.020755576` at PTS 38000 to
 repeatable phase anchors for Unity comparison, not material or draw ownership;
 the artifact remains diagnostic-only and non-admitting.
 
+The exact transition is now bounded one frame at a time. The prior actor's last
+residual is PTS 37683, the blank interval is PTS 37700..37867, Li first appears
+at PTS 37883, and is opaque by PTS 37950. Source controller data independently
+closes the 10.7-second start clip entry to clip-local `0.062452073 s`, exit to
+`10.68547903 s`, and normalized transition to `0.014519697 s`; the clip contains
+no AnimationEvents. `lizhiyan_overview_timing_alignment.json` keeps PTS 37883
+as a visual candidate restart only. Under current lab publication semantics the
+finger effect would exist from candidate PTS 38716 through 41049, which covers
+the PTS-40000 peak but not the measured teal at PTS 42000. This falsifies the
+idea that the one recovered finger prefab alone explains the full retail teal
+sequence and prioritizes the other eleven serialized entrance requests plus the
+original request producer.
+
 The next positive proof is now an explicit runtime-capture contract rather
 than a generic request for “a capture.” On this exact build it must join one
 `CreateRendererList` handle through opcode `0x4e`, a complete accepted/sorted
