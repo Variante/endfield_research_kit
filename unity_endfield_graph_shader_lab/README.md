@@ -4516,6 +4516,20 @@ remains unobserved,
 so retail/native visible admission stays false. Another source-owned layer is
 the next visual priority.
 
+The remaining Li entrance requests are now separated by execution family.
+`start_05/06/07/09/10` are absent from the actor-composed harness; `start_09`
+is not a particle prefab but a source-pinned
+`Beyond.Rendering.EntityVFXDissolveAsset` (PathID
+`6630846240525961646`) triggered for 10 seconds by EffectSetting PathID
+`4869158341031029158`. It references exact texture `T_fx_Totem_zr001_M`, uses
+renderer mask 10240, local +X cutoff, dissolve 1-to-0, edge 0.07, and a cutoff
+step to 1.05 at normalized time 0.67302644. Its serialized particle, Animator,
+and Renderer PPtrs are empty because runtime Entity-VFX registry selection
+owns the geometry/material targets. Retail Li is already fully visible before
+the large PTS-40000 teal slabs grow, so start_09 is a reveal-completeness task,
+not positive ownership of the raised-hand peak. Recover the mask-to-registry
+binding before executing it; do not apply the dissolve to all actor renderers.
+
 The exact managed LOD renderer bindings are now part of the playable-topology
 contract: start_01 has four non-null MeshRenderer PathIDs and start_02/start_03
 have three each. `EffectLodCfg.Play/Stop` owns their enabled lifecycle. This
