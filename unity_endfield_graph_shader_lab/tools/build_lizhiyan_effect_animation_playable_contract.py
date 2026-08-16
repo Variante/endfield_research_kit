@@ -113,6 +113,17 @@ def validate_unityplayer_native_contract(path: Path) -> dict[str, Any]:
             "nativeBodySha256": body_sha256,
         }
 
+    def validate_body(va: int, size: int, expected_sha256: str) -> dict[str, Any]:
+        offset = pe_file_offset(data, va)
+        body = data[offset:offset + size]
+        require(hashlib.sha256(body).hexdigest() == expected_sha256,
+                f"UnityPlayer body 0x{va:X} drifted")
+        return {
+            "va": f"0x{va:X}",
+            "bytes": size,
+            "sha256": expected_sha256,
+        }
+
     return {
         "source": external_artifact(path, "PinnedRetailUnityPlayer"),
         "advancedMixerCreate": validate_icall(
@@ -125,6 +136,26 @@ def validate_unityplayer_native_contract(path: Path) -> dict[str, Any]:
             1278, 0x20D4FA0, 0x20CD1F0, "UnityEngine.Renderer::get_entityID",
             0x1800E6C40, 324,
             "b9b416829ec0528693a48ec4116a2e71ed7d4d26893866fc807aa59c86045e79",
+        ),
+        "advancedMixerInputCount": validate_body(
+            0x18074EAA0, 121,
+            "0cd93353cb9280e457b88630ff0332c2c831dc666c8fdba57bb1bc889c98e2fb",
+        ),
+        "advancedMixerInputWeight": validate_body(
+            0x18074EB20, 38,
+            "8d84b5f59d398bbb9b7345b78bccba930f60930c27403fb9d54ca79363a90e99",
+        ),
+        "setInputCountDispatch": validate_body(
+            0x18075E9D0, 205,
+            "6b6ff53abbb2469c4a65b8cd1d9f0225f055582e3594371a4882020c2ef9e8bd",
+        ),
+        "advancedMixerInitializer": validate_body(
+            0x180AC6330, 42,
+            "0c83d36fb5450ae8fbc9930f7e56e23d1da17788bb6f80c37083eac60c525f72",
+        ),
+        "stockMixerInitializer": validate_body(
+            0x180AA5950, 137,
+            "c6cb43e0ea30297f92540a1c0705977a304087a0acc7254d28ff62e4fa932214",
         ),
     }
 
@@ -325,10 +356,9 @@ def build() -> dict[str, Any]:
                     "behavioralEquivalenceProven": False,
                 },
                 "unresolvedSemantics": [
-                    "default and normalized input weights",
-                    "null-playable state transitions and equality behavior",
-                    "accepted input-count range and failure behavior",
-                    "SetInputCount downstream initialization and allocation-failure behavior",
+                    "advanced-only vtable slots outside shared input count and weight operations",
+                    "null-playable type-specific transitions and equality behavior",
+                    "extreme allocation-failure behavior",
                 ],
             },
             "clipSlots": [
@@ -363,17 +393,43 @@ def build() -> dict[str, Any]:
                 "meaningfulBytes": 12,
                 "storageBytes": 16,
             },
-            "classification": "native_create_closed_stock_mixer_not_equivalent_weights_pending",
+            "sharedInputOperations": {
+                "setInputCount": unityplayer["advancedMixerInputCount"],
+                "setInputWeight": unityplayer["advancedMixerInputWeight"],
+                "dispatch": unityplayer["setInputCountDispatch"],
+                "advancedAndStockShareVirtualTargets": True,
+                "slotStrideBytes": 16,
+                "slotPlayablePointerOffset": 0,
+                "slotWeightOffset": 8,
+                "newAndReactivatedSlotsAreZeroed": True,
+                "defaultPlayable": "null",
+                "defaultWeight": 0.0,
+                "automaticNormalization": False,
+                "acceptedInputCount": "all_nonnegative_counts_subject_to_allocation",
+                "negativeInputCount": "diagnostic_Playable_input_count_cannot_be_negative",
+                "setWeightBounds": "writes_only_when_0_le_index_lt_current_count_and_weight_not_negative",
+                "nanWeightBehavior": "written_because_nan_does_not_satisfy_negative_test",
+            },
+            "initializers": {
+                "advanced": unityplayer["advancedMixerInitializer"],
+                "stock": unityplayer["stockMixerInitializer"],
+                "advancedCallsStockInitializer": True,
+                "advancedRootVtableVA": "0x181DDBD08",
+                "stockRootVtableVA": "0x181DDAC48",
+                "advancedExtraWordOffset": "0x170",
+                "advancedExtraWordValue": "0x0101",
+            },
+            "classification": "native_create_and_shared_input_semantics_closed_advanced_slots_pending",
             "provenBehavior": [
                 "validates a non-null graph handle and masked version",
                 "allocates and attaches a distinct native 0x178 playable node",
                 "materializes a native-pointer plus version PlayableHandle",
                 "CreateHandle applies inputCount only after injected creation through SetInputCount",
-                "creation does not initialize or normalize input weights",
+                "new input slots are null and zero-weight with no automatic normalization",
             ],
             "failureBoundary": (
-                "invalid graphs return false through the common diagnostic path; allocator failure and "
-                "SetInputCount rejection remain unresolved"
+                "invalid graphs and negative input counts reach diagnostics; extreme allocation failure "
+                "and advanced-only virtual slots remain unresolved"
             ),
         },
         "effectAnimationControlAbi": {
@@ -460,6 +516,10 @@ def build() -> dict[str, Any]:
                 "managedBackingPointerHelperVA": "0x180769270",
                 "nativeEntityIdOffset": "0x268",
                 "classification": "ordinary_renderer_native_entity_id_field_closed_semantic_join_pending",
+                "managedWrapperVA": "0x18302D0E0",
+                "directManagedCallersInGameAssemblyText": 0,
+                "nativeBodyEntityLoads": ["0x1800E6D16", "0x1800E6D38"],
+                "consumerClassification": "no_static_managed_consumer_or_hgtree_join",
             },
             "hgMeshRendererComparison": {
                 "getEntityManagedVA": "0x18B3FA3B0",
@@ -477,6 +537,7 @@ def build() -> dict[str, Any]:
                 "native ECS component slot 67 is not EffectLodCfg.renderer",
                 "ordinary Renderer native+0x268 is not proven equal to HGMeshRenderer native+0x50",
                 "generic HGTree renderer-list creation does not assign a Li Zhiyan PathID to a draw",
+                "HGTree vtable +0x268 calls are context methods, not Renderer native+0x268 field reads",
             ],
         },
         "labBoundary": {

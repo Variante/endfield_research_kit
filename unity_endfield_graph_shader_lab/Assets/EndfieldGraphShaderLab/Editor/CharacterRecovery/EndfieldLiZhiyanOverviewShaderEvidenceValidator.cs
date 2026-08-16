@@ -196,6 +196,10 @@ namespace EndfieldGraphShaderLabEditor
             Dictionary<string, object> nativeMixer =
                 L.Dict(contract["retailAdvancedMixerNative"]);
             Dictionary<string, object> handleLayout = L.Dict(nativeMixer["handleLayout"]);
+            Dictionary<string, object> sharedInputs =
+                L.Dict(nativeMixer["sharedInputOperations"]);
+            Dictionary<string, object> mixerInitializers =
+                L.Dict(nativeMixer["initializers"]);
             Dictionary<string, object> lodOwnership =
                 L.Dict(contract["effectLodRendererOwnership"]);
             Dictionary<string, object> lodField = L.Dict(lodOwnership["managedField"]);
@@ -225,14 +229,20 @@ namespace EndfieldGraphShaderLabEditor
                 !L.Bool(mixerComparison, "behavioralEquivalenceProven") &&
                 L.Bool(mixerComparison, "stockCreateHasNormalizeWeightsParameter") &&
                 !L.Bool(mixerComparison, "advancedCreateHasNormalizeWeightsParameter") &&
-                L.List(mixer["unresolvedSemantics"]).Count == 4 &&
+                L.List(mixer["unresolvedSemantics"]).Count == 3 &&
                 L.Long(nativeMixer, "tableIndex") == 501 &&
                 L.Str(nativeMixer, "nativeTargetVA") == "0x180158B30" &&
                 L.Str(nativeMixer, "advancedNodeTypeId") == "0x178" &&
                 L.Str(nativeMixer, "stockNodeTypeId") == "0x170" &&
                 L.Long(handleLayout, "meaningfulBytes") == 12 &&
+                L.Bool(sharedInputs, "advancedAndStockShareVirtualTargets") &&
+                L.Long(sharedInputs, "slotStrideBytes") == 16 &&
+                L.Str(sharedInputs, "defaultPlayable") == "null" &&
+                Mathf.Abs(L.Float(sharedInputs, "defaultWeight")) < 0.000001f &&
+                !L.Bool(sharedInputs, "automaticNormalization") &&
+                L.Str(mixerInitializers, "advancedExtraWordValue") == "0x0101" &&
                 L.Str(nativeMixer, "classification") ==
-                    "native_create_closed_stock_mixer_not_equivalent_weights_pending" &&
+                    "native_create_and_shared_input_semantics_closed_advanced_slots_pending" &&
                 L.List(topology["clipSlots"]).Count == 3 &&
                 L.Str(manualEvaluate, "token") == "0x060059D2" &&
                 L.Str(manualEvaluate, "va") == "0x187431CB0" &&
@@ -263,6 +273,9 @@ namespace EndfieldGraphShaderLabEditor
                 L.Long(ordinaryRenderer, "tableIndex") == 1278 &&
                 L.Str(ordinaryRenderer, "nativeTargetVA") == "0x1800E6C40" &&
                 L.Str(ordinaryRenderer, "nativeEntityIdOffset") == "0x268" &&
+                L.Long(ordinaryRenderer, "directManagedCallersInGameAssemblyText") == 0 &&
+                L.Str(ordinaryRenderer, "consumerClassification") ==
+                    "no_static_managed_consumer_or_hgtree_join" &&
                 L.Str(hgRenderer, "nativeEntityOffset") == "0x50" &&
                 !L.Bool(hgRenderer, "ordinaryRendererEquivalent") &&
                 retailMixer == null &&

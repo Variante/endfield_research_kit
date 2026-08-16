@@ -4043,8 +4043,12 @@ creation path is UnityPlayer internal-call entry 501 at `0x180158B30`: graph
 validation allocates/attaches native node type `0x178` and materializes a
 pointer/version handle. Stock creates node type `0x170` with a different
 initializer. Input count is applied afterward through `SetInputCount`, so
-default/null weights, input-count rejection, and allocation-failure behavior
-remain open. The same contract pins `SetManual(bool)`,
+Advanced and stock use the same count/weight virtual functions. Each 16-byte
+slot is cleared on growth or reactivation, producing a null playable and zero
+weight with no automatic normalization; negative counts diagnose. Advanced
+then differs by its root vtable and the `0x0101` word at node `+0x170`.
+Advanced-only slots, null transitions, and extreme allocation failure remain
+open. The same contract pins `SetManual(bool)`,
 `ManualEvaluate(float)`, `SyncProgress(float)`, time-scale/start-duration/start-
 scale setters, Stop, OnDisable, and OnRelease. Their decoded fallback bodies
 prove graph evaluation, progress-to-time delegation, forced root-speed
@@ -4078,6 +4082,11 @@ Ordinary `Renderer.get_entityID` is now pinned to internal-call entry 1278 and
 returns backing native Renderer `+0x268`; `HGMeshRenderer.GetEntity` instead
 returns its ECS qword at native `+0x50`. The serialized Li references are
 ordinary MeshRenderers, and these two fields are not treated as equivalent.
+The managed `Renderer.get_entityID` wrapper has zero direct callers in the
+current GameAssembly `.text`; similarly numbered HGTree vtable `+0x268` calls
+operate on HGTree contexts rather than Renderer objects. This rules out the
+obvious static identity bridge without claiming the runtime-indirect route is
+absent.
 
 The candidate retail epoch now produces exact material-key checkpoints rather
 than a broad visual guess: start_01 child `(7)` begins changing at PTS 38167,
