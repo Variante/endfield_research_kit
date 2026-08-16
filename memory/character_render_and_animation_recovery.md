@@ -1586,7 +1586,7 @@ only stable interpretation and priorities.
    reach indexed/non-indexed indirect draw, and 33/34 reach direct/indirect
    dispatch. Loader `0x180747BAD..0x180747CC1` resolves and stores the six
    Vulkan function pointers; the generated ABI hash is
-   `11664A2E94479E609D59D3243C5060AF7CE1B872E2D269FDCDD0198B89321F27`.
+   `B1CAC300CDC606AA89C36F31CB1C9D659CF15D160482042563B3E3481B213D20`.
    This is positive general recorded-command-to-Vulkan execution, not a Li or
    ParticleSystem ownership join. The next binary boundary remains one
    same-build renderer/object fingerprint reaching a concrete opcode-29--32
@@ -2216,6 +2216,15 @@ only stable interpretation and priorities.
    diagnostic: native VFXBaseV2 variant/descriptor/PSO, exact activation/LOD,
    renderer-list survivor, after-DOF ownership, and final compositing are still
    open, so `visibleAdmission` stays false.
+   Peak-particle vertex transport is now source-correct in the diagnostic:
+   UV2 is read from `TEXCOORD0.zw`, Custom1XYZW from `TEXCOORD1`, and particle
+   UV motion includes `speed.zw * Custom1.X`; static start_01 keeps its prior
+   secondary-UV route. M19 also preserves authored soft-blend/Fresnel keyword
+   state. The validated PTS-40000 peak-only `broadTeal` count changes only
+   about 9,983 -> 9,991 and `raisedHand` remains zero. M19 is absent from the
+   visible material sidecar at that anchor, so the SampleStack's missing
+   Fresnel branch is real but not the current raised-hand priority. Keep this
+   as vertex-stream fidelity, not retail admission.
    The exact independently AssetMap-proven finger prefab is now executable in
    the same actor-composed diagnostic. It is mounted beneath the unique
    `Bip001_R_Finger2Nub`, keeps its source 0.83333-second delay and
@@ -2281,6 +2290,14 @@ only stable interpretation and priorities.
    ownership. The exact recovery gap is rendererMask 10240 -> registry target
    renderers/material property binding; never dissolve every actor renderer as
    a substitute.
+   The selected-build generic consumer is now hash-pinned across
+   `EntityVFXDissolveController` InitData/GetRendererMask/OnSample and its
+   dissolve/shadow/schedule helpers, then
+   `EntityRenderHelperMaterialController._GetRenderersOfRendererMask`, nested
+   `MeshMaterialController._TryEnsureReplaceMaterial`, and the all-material
+   float/vector/texture writers. This proves replacement Unity Material
+   transport, not MaterialPropertyBlock. Only the mask-10240 registry row and
+   concrete Li renderer/material ownership remain open.
    All 12 controller requests are preserved; the other 11
    remain explicitly unbound. Its `38-47 s` retail slot, especially the
    hand-adjacent teal layer near 40 seconds, is the current strongest visual

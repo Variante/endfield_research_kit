@@ -246,8 +246,6 @@ namespace EndfieldGraphShaderLabEditor
                 EndfieldZhuangfyParticleEffectImporter.ApplyRecoveredMaterialPayload(
                     diagnosticMaterial, Dict(source["payload"]), context);
                 diagnosticMaterial.renderQueue = Int(source, "customRenderQueue");
-                if (diagnosticMaterial.HasProperty("_UseSoftBlend"))
-                    diagnosticMaterial.SetFloat("_UseSoftBlend", 0f);
                 EditorUtility.SetDirty(diagnosticMaterial);
             }
             foreach (object item in List(contract["meshes"]))

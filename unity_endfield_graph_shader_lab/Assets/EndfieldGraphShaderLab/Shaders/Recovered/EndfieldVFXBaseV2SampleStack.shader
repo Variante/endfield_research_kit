@@ -167,6 +167,7 @@ Shader "Endfield/Recovered/VFXBaseV2SampleStack"
             float _Responsive;
             float _IsSceneEffect;
             float _IgnorePostExposure;
+            float _InParticle;
             float4 _VFXParams1;
             float4 _VFXParams0;
             float4 _ExposureWithMiscParams;
@@ -182,8 +183,12 @@ Shader "Endfield/Recovered/VFXBaseV2SampleStack"
             {
                 float4 vertex : POSITION;
                 float4 color : COLOR;
-                float2 uv0 : TEXCOORD0;
-                float2 uv1 : TEXCOORD1;
+                // BakeMesh carries the source UV/UV2 pair in TEXCOORD0.xyzw
+                // and ParticleSystemVertexStream.Custom1XYZW in TEXCOORD1.
+                // Static start_01 meshes still use TEXCOORD1.xy as their
+                // authored secondary UV when _InParticle is zero.
+                float4 uv0 : TEXCOORD0;
+                float4 custom : TEXCOORD1;
             };
 
             struct Varyings
@@ -204,18 +209,22 @@ Shader "Endfield/Recovered/VFXBaseV2SampleStack"
             };
 
             float2 BuildSelectedUV(
-                float2 uv0,
-                float2 uv1,
+                float4 uv0,
+                float4 custom,
                 float4 weights,
                 float4 speed,
                 float4 rotateMat,
                 float4 textureST)
             {
-                // The selected original vertex programs combine UV0/UV1 by
-                // authored weights, add the XY-by-time speed before rotation,
-                // rotate around 0.5, then apply the texture ST.
-                float2 uv = uv0 * weights.x + uv1 * weights.y;
-                float2 centered = uv + speed.xy * _VFXParams0.w - 0.5;
+                // Retail VFXBaseV2 selects mesh UV1 for static geometry and
+                // the UV2 lane packed in UV0.zw for particles. Its particle
+                // path also advances UV by speed.zw * Custom1.X; this is the
+                // authored Custom1XYZW stream (renderer stream 34), not a
+                // second ordinary UV. Keep the static lane unchanged.
+                float2 secondaryUV = lerp(custom.xy, uv0.zw, _InParticle);
+                float2 uv = uv0.xy * weights.x + secondaryUV * weights.y;
+                float2 centered = uv + speed.xy * _VFXParams0.w +
+                    speed.zw * (custom.x * _InParticle) - 0.5;
                 float2 rotated = float2(
                     dot(centered, rotateMat.xz),
                     dot(centered, rotateMat.yw)) + 0.5;
@@ -228,19 +237,19 @@ Shader "Endfield/Recovered/VFXBaseV2SampleStack"
                 output.positionCS = UnityObjectToClipPos(input.vertex);
                 output.color = input.color;
                 output.mainUV = BuildSelectedUV(
-                    input.uv0, input.uv1, _MainTexUVWeights,
+                    input.uv0, input.custom, _MainTexUVWeights,
                     _MainTexUVSpeed, _MainTexUVRotateMat, _MainTex_ST);
                 output.sample0UV = BuildSelectedUV(
-                    input.uv0, input.uv1, _SampleTex0UVWeights,
+                    input.uv0, input.custom, _SampleTex0UVWeights,
                     _SampleTex0UVSpeed, _SampleTex0UVRotateMat, _SampleTex0_ST);
                 output.sample1UV = BuildSelectedUV(
-                    input.uv0, input.uv1, _SampleTex1UVWeights,
+                    input.uv0, input.custom, _SampleTex1UVWeights,
                     _SampleTex1UVSpeed, _SampleTex1UVRotateMat, _SampleTex1_ST);
                 output.sample2UV = BuildSelectedUV(
-                    input.uv0, input.uv1, _SampleTex2UVWeights,
+                    input.uv0, input.custom, _SampleTex2UVWeights,
                     _SampleTex2UVSpeed, _SampleTex2UVRotateMat, _SampleTex2_ST);
                 output.sample3UV = BuildSelectedUV(
-                    input.uv0, input.uv1, _SampleTex3UVWeights,
+                    input.uv0, input.custom, _SampleTex3UVWeights,
                     _SampleTex3UVSpeed, _SampleTex3UVRotateMat, _SampleTex3_ST);
                 return output;
             }

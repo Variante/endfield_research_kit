@@ -672,7 +672,7 @@ namespace EndfieldGraphShaderLabEditor
                 !L.Bool(importer, "injectedIntoRetailClient") &&
                 L.Bool(importer, "captureRequiresSeparateExplicitAuthorization") &&
                 L.Str(abi, "sha256") ==
-                    "11664A2E94479E609D59D3243C5060AF7CE1B872E2D269FDCDD0198B89321F27" &&
+                    "B1CAC300CDC606AA89C36F31CB1C9D659CF15D160482042563B3E3481B213D20" &&
                 L.Long(video, "bytes") == 1678613397L &&
                 L.Str(video, "sha256") ==
                     "2F542A3BE7CE3332295D3A841FD8613C62707E084F9E33A0F156DA8A06EBF5E7" &&
@@ -702,7 +702,7 @@ namespace EndfieldGraphShaderLabEditor
                     "endfield.lizhiyan-after-dof-native-abi.v1" &&
                 L.Str(native, "status") ==
                     "current_build_native_schedule_and_static_shader_abi_closed_live_draw_pending" &&
-                L.List(native["methods"]).Count == 24 &&
+                L.List(native["methods"]).Count == 35 &&
                 L.List(native["decisiveCalls"]).Count == 15,
                 "Li Zhiyan native after-DOF contract identity drifted");
             var expectedMethods = new Dictionary<long, string>
@@ -731,6 +731,17 @@ namespace EndfieldGraphShaderLabEditor
                 { 288225, "76DC5D1B4730F4A5BB937F3776A776DE2A8E960B4BB4A47B983BA5F264555879" },
                 { 288226, "BBA699B59C1081CDF6870E95B3B17469DD0D8791234E166D1D403D85786E6F42" },
                 { 288241, "08E90A05982967C1F0AA45950FDF24F069FA6B639238EE3F6429FEF2DE697163" },
+                { 49224, "3674A2ABC641CD6BA023B0C98CB61F7C9E3895BCB6E7B112F2A2DD940946254D" },
+                { 49226, "7501AB1A2E0EBFE0C535F594DDC12E2BC7714AB5454F6D206B870F40D6321003" },
+                { 49239, "01CEEF3F7A9798E9C145D87D66EFB124A3915997E300EFA75EF0F2BC36A740CE" },
+                { 49245, "49FDE1B693893B4F9348E75BD845408EC0DCB188A9813E4A07D12A87ACEB8245" },
+                { 49244, "3D1F5ABC0E7F3F377D5F8B657A357B802B5706B4B1F15C71A82079289EEC1E69" },
+                { 49246, "D20AA3F34C40DF33CEA62898160F52795B79D70FB616327A8A2BD5F3274B51B1" },
+                { 455408, "1EE5917A9CDFCA8B0DB1406D0621AF6E1A333CA0FBEA32F8190D1B9940932704" },
+                { 455473, "BD078E64F1917BA25B714755B843743F872D95EEA3874C2DA0BCAC99E000323A" },
+                { 455466, "AEAD3C22D1CDB1F022AEC5D2959EE6520A721B807F810A5376481EFF23AFC4C4" },
+                { 455468, "833BD5A7A4860CC2D047239EF901C14581F6A2F122D9A778A495CDC9DF63C3AD" },
+                { 455470, "1C11F6E495D564C9E7ACFFD34E324299A87653E56550DEEE8966577294768ECA" },
             };
             foreach (object item in L.List(native["methods"]))
             {
