@@ -39,6 +39,7 @@ from game_data.memorypack.tables import (
 EXPORT_ROOT = Path(os.environ.get("ENDFIELD_EXPORT_ROOT") or ROOT / "export_full")
 WEBUI_DATA = ROOT / "webui" / "data"
 MISSION_PIPELINE_ROOT = WEBUI_DATA / "mission_pipeline"
+SOURCE_GRAPH_SCHEMA_VERSION = "sourceGraph.v1"
 WEBUI_OPTION_OVERRIDES = ROOT / "webui" / "overrides" / "options.json"
 GAMEPLAY_CONFIG_ROOT = EXPORT_ROOT / "structured" / "StreamingAssets" / "Data" / "Json" / "GameplayConfig"
 NPC_PROXY_TABLE_PATH = GAMEPLAY_CONFIG_ROOT / "NpcProxyTable.json"
@@ -1179,6 +1180,25 @@ def read_json(path: Path, default: Any = None) -> Any:
             return json.load(handle)
     except (OSError, UnicodeDecodeError, json.JSONDecodeError):
         return default
+
+
+def asset_index_content_sha256(entries: Any) -> str | None:
+    """Hash the canonical Assets index entries used by Gameplay proof joins.
+
+    The generated index contains timestamps and other top-level bookkeeping;
+    only the deterministic ``entries`` array is part of the proof contract.
+    Keeping this helper local avoids making the source-graph builder depend on
+    the Gameplay entry point while retaining an identical serialization rule.
+    """
+    if not isinstance(entries, list):
+        return None
+    canonical = json.dumps(
+        entries,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha256(canonical).hexdigest()
 
 
 def dump_json(value: Any) -> str:
@@ -3122,6 +3142,7 @@ class SourceGraphBuilder:
         self.alias_count = 0
         self.asset_map_required_path_ids = 0
         self.asset_map_matched_path_ids = 0
+        self.asset_index_content_sha256: str | None = None
         self.active_config_manifest: list[dict[str, Any]] = []
 
     @property
@@ -3350,8 +3371,14 @@ class SourceGraphBuilder:
         try:
             self.db.execute("INSERT INTO meta(key, value) VALUES (?, ?)", ("generated", str(int(started))))
             self.db.execute("INSERT INTO meta(key, value) VALUES (?, ?)", ("language", self.language))
+            self.db.execute("INSERT INTO meta(key, value) VALUES (?, ?)", ("schemaVersion", SOURCE_GRAPH_SCHEMA_VERSION))
             self.db.execute("INSERT INTO meta(key, value) VALUES (?, ?)", ("asset_map_scope", self.asset_map_scope))
             self.ingest_assets()
+            if self.asset_index_content_sha256:
+                self.db.execute(
+                    "INSERT INTO meta(key, value) VALUES (?, ?)",
+                    ("assetIndexContentSha256", self.asset_index_content_sha256),
+                )
             self.commit_step("assets")
             self.ingest_skipped_vfs_block_audits()
             self.commit_step("skippedVfsBlocks")
@@ -3585,6 +3612,8 @@ class SourceGraphBuilder:
     def ingest_assets(self) -> None:
         path = WEBUI_DATA / "assets" / "index.json"
         payload = read_json(path, {})
+        if path.is_file() and isinstance(payload, dict):
+            self.asset_index_content_sha256 = asset_index_content_sha256(payload.get("entries"))
         root_node = self.add_node("dataset", "webui_assets", name="WebUI asset index", path=slash(path))
         asset_nodes_by_rel: dict[str, str] = {}
         asset_entity_key_by_model_rel: dict[str, tuple[str, str]] = {}

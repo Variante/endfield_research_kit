@@ -7,7 +7,10 @@ asset index just to render a thumbnail.
 """
 from __future__ import annotations
 
+import json
+import hashlib
 import re
+import sqlite3
 from collections import defaultdict
 from pathlib import Path
 from typing import Any, Iterable
@@ -18,7 +21,8 @@ else:
     from common import read_json, write_json
 
 
-SCHEMA_VERSION = "gameplayAssetRefs.v9"
+SCHEMA_VERSION = "gameplayAssetRefs.v10"
+SOURCE_GRAPH_SCHEMA_VERSION = "sourceGraph.v1"
 DEFAULT_OUTPUT = Path("webui/data/assets/gameplay_refs.json")
 PATH_ID_SUFFIX_RE = re.compile(r"_p[0-9a-f]{16}$", re.IGNORECASE)
 NON_ALNUM_RE = re.compile(r"[^a-z0-9]+", re.IGNORECASE)
@@ -72,6 +76,244 @@ def _asset_base_name(rel: Any) -> str:
     return PATH_ID_SUFFIX_RE.sub("", name)
 
 
+def _asset_representation(asset: dict[str, Any]) -> str:
+    """Return the stable exported representation directory, if present."""
+    rel = str(asset.get("r") or "").replace("\\", "/")
+    parts = rel.split("/")
+    return parts[1].lower() if len(parts) > 1 else ""
+
+
+def _asset_content_sha256(assets: Iterable[dict[str, Any]]) -> str:
+    """Fingerprint the deterministic Assets entries consumed by this builder."""
+    payload = [asset for asset in assets if isinstance(asset, dict)]
+    encoded = json.dumps(
+        payload,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def _strict_token_assets(
+    token: str,
+    assets_by_base: dict[str, list[dict[str, Any]]],
+) -> list[dict[str, Any]]:
+    """Match only an exact basename (after removing the PathID suffix)."""
+    seen: set[str] = set()
+    out: list[dict[str, Any]] = []
+    for variant in _token_variants(token):
+        for asset in assets_by_base.get(variant, []):
+            rel = str(asset.get("r") or "").replace("\\", "/")
+            if not rel or rel in seen:
+                continue
+            seen.add(rel)
+            out.append(asset)
+    return out
+
+
+def _source_graph_proof(
+    graph_path: Path | None,
+    assets_by_path: dict[str, dict[str, Any]],
+) -> tuple[dict[str, list[dict[str, Any]]], dict[str, Any]]:
+    """Read only validated ``uses_icon_asset`` edges from the graph.
+
+    The graph's visual-token bridge is evidence only when its token, path,
+    PathID and representation all agree with the current Assets index.
+    """
+    report: dict[str, Any] = {
+        "status": "unavailable",
+        "diagnostics": [],
+        "validatedEdgeCount": 0,
+    }
+    if graph_path is None or not graph_path.is_file():
+        report["diagnostics"].append({
+            "code": "source-graph-unavailable",
+            "message": "source graph file is missing",
+        })
+        return {}, report
+    proofs: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    try:
+        connection = sqlite3.connect(
+            f"file:{graph_path.resolve().as_posix()}?mode=ro", uri=True
+        )
+    except (OSError, sqlite3.Error) as exc:
+        report["status"] = "invalid"
+        report["diagnostics"].append({
+            "code": "source-graph-open-failed",
+            "actual": str(exc),
+        })
+        return {}, report
+    try:
+        try:
+            meta = {
+                str(key): str(value or "")
+                for key, value in connection.execute("SELECT key, value FROM meta")
+            }
+        except sqlite3.Error as exc:
+            report["status"] = "invalid"
+            report["diagnostics"].append({
+                "code": "source-graph-metadata-invalid",
+                "actual": str(exc),
+            })
+            return {}, report
+        report["schemaVersion"] = meta.get("schemaVersion")
+        required_meta = (
+            "schemaVersion",
+            "language",
+            "generated",
+            "assetIndexContentSha256",
+            "asset_map_scope",
+        )
+        for key in required_meta:
+            if not meta.get(key):
+                report["diagnostics"].append({
+                    "code": "source-graph-metadata-missing",
+                    "field": key,
+                })
+        if meta.get("schemaVersion") and meta.get("schemaVersion") != SOURCE_GRAPH_SCHEMA_VERSION:
+            report["diagnostics"].append({
+                "code": "source-graph-schema-mismatch",
+                "expected": SOURCE_GRAPH_SCHEMA_VERSION,
+                "actual": meta.get("schemaVersion"),
+            })
+        if meta.get("language") and meta.get("language").upper() != "CN":
+            report["diagnostics"].append({
+                "code": "source-graph-language-mismatch",
+                "expected": "CN",
+                "actual": meta.get("language"),
+            })
+        if meta.get("asset_map_scope") and meta.get("asset_map_scope") not in {"full", "relevant"}:
+            report["diagnostics"].append({
+                "code": "source-graph-asset-map-scope-invalid",
+                "expected": "full|relevant",
+                "actual": meta.get("asset_map_scope"),
+            })
+        try:
+            generated = int(meta.get("generated") or 0)
+            if generated <= 0:
+                raise ValueError("generated must be positive")
+        except (TypeError, ValueError) as exc:
+            report["diagnostics"].append({
+                "code": "source-graph-metadata-invalid",
+                "field": "generated",
+                "actual": str(exc),
+            })
+        scope = meta.get("asset_map_scope")
+        if scope == "relevant":
+            for key in ("asset_map_required_path_ids", "asset_map_matched_path_ids"):
+                if not meta.get(key):
+                    report["diagnostics"].append({
+                        "code": "source-graph-metadata-missing",
+                        "field": key,
+                    })
+            try:
+                required = int(meta.get("asset_map_required_path_ids") or 0)
+                matched = int(meta.get("asset_map_matched_path_ids") or 0)
+                if required < 0 or matched < 0 or matched < required:
+                    raise ValueError("invalid relevant asset-map coverage")
+            except (TypeError, ValueError) as exc:
+                report["diagnostics"].append({
+                    "code": "source-graph-metadata-invalid",
+                    "field": "asset_map_required_path_ids/asset_map_matched_path_ids",
+                    "actual": str(exc),
+                })
+
+        current_hash = _asset_content_sha256(list(assets_by_path.values()))
+        report["assetIndexContentSha256"] = current_hash
+        graph_hash = str(meta.get("assetIndexContentSha256") or "").lower()
+        if graph_hash and graph_hash != current_hash:
+            report["diagnostics"].append({
+                "code": "source-graph-stale-assets-index",
+                "field": "assetIndexContentSha256",
+                "expected": current_hash,
+                "actual": graph_hash,
+            })
+
+        metadata_valid = not report["diagnostics"]
+        rows = connection.execute(
+            """
+            SELECT e.src, e.dst, e.evidence, e.data, n.path, n.data
+            FROM edges AS e
+            JOIN nodes AS n ON n.id = e.dst
+            WHERE e.kind = 'uses_icon_asset' AND n.kind = 'asset'
+            ORDER BY e.src, e.dst
+            """
+        )
+        for src, dst, evidence, edge_data, node_path, node_data in rows:
+            try:
+                edge = json.loads(edge_data or "{}")
+            except (TypeError, ValueError) as exc:
+                report["diagnostics"].append({
+                    "code": "source-graph-edge-json-invalid",
+                    "src": str(src),
+                    "dst": str(dst),
+                    "actual": str(exc),
+                })
+                continue
+            token = _clean_token(edge.get("token"))
+            edge_path = str(edge.get("assetPath") or "").replace("\\", "/")
+            graph_node_path = str(node_path or "").replace("\\", "/")
+            if edge_path and graph_node_path and edge_path.lower() != graph_node_path.lower():
+                continue
+            path = graph_node_path or edge_path
+            asset = assets_by_path.get(path.lower())
+            if not token or asset is None:
+                continue
+            try:
+                node = json.loads(node_data or "{}")
+            except (TypeError, ValueError) as exc:
+                report["diagnostics"].append({
+                    "code": "source-graph-node-json-invalid",
+                    "src": str(src),
+                    "dst": str(dst),
+                    "actual": str(exc),
+                })
+                continue
+            graph_pid = str(node.get("pid") or "").lower()
+            asset_pid = str(asset.get("pid") or "").lower()
+            graph_representation = str(
+                edge.get("representation") or _asset_representation({"r": path})
+            ).lower()
+            if (
+                _asset_base_name(path) != token
+                or not graph_pid
+                or graph_pid != asset_pid
+                or graph_representation != _asset_representation(asset)
+            ):
+                continue
+            if not metadata_valid:
+                continue
+            proofs[token].append({
+                "source": "source_graph",
+                "edgeKind": "uses_icon_asset",
+                "src": str(src),
+                "dst": str(dst),
+                "evidence": str(evidence or ""),
+                "rel": path,
+                "pathId": str(asset.get("pid") or ""),
+                "representation": _asset_representation(asset),
+            })
+    except sqlite3.Error as exc:
+        report["status"] = "invalid"
+        report["diagnostics"].append({
+            "code": "source-graph-query-failed",
+            "actual": str(exc),
+        })
+        return {}, report
+    finally:
+        connection.close()
+    if report["diagnostics"]:
+        report["status"] = "stale" if any(
+            item.get("code") == "source-graph-stale-assets-index"
+            for item in report["diagnostics"]
+        ) else "invalid"
+    else:
+        report["status"] = "validated"
+    report["validatedEdgeCount"] = sum(len(rows) for rows in proofs.values())
+    return dict(proofs), report
+
+
 def _token_candidates(entry: dict[str, Any]) -> list[str]:
     values: list[Any] = [entry.get("id"), entry.get("iconId"), entry.get("iconCompositeId"), entry.get("modelKey")]
     model_path = str(entry.get("modelPath") or "").replace("\\", "/")
@@ -89,6 +331,18 @@ def _token_candidates(entry: dict[str, Any]) -> list[str]:
             continue
         seen.add(token)
         out.append(token)
+    return out
+
+
+def _entry_icon_tokens(entry: dict[str, Any]) -> list[str]:
+    """Return direct authored icon IDs, which require strict asset joins."""
+    out: list[str] = []
+    seen: set[str] = set()
+    for key in ("iconId", "iconCompositeId"):
+        token = _clean_token(entry.get(key))
+        if token and token not in seen:
+            seen.add(token)
+            out.append(token)
     return out
 
 
@@ -135,6 +389,32 @@ def _nested_asset_tokens(entry: dict[str, Any]) -> list[str]:
         if token and token not in seen:
             seen.add(token)
             out.append(token)
+    return out
+
+
+def _buff_icon_candidates(gameplay_payload: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
+    """Collect verified raw buff icon references without traversing opaque data."""
+    out: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    buffs = gameplay_payload.get("buffs")
+    if not isinstance(buffs, dict):
+        return out
+    for owner, buff in buffs.items():
+        if not isinstance(buff, dict) or buff.get("idStringVerified") is not True:
+            continue
+        refs = buff.get("refs")
+        if not isinstance(refs, list):
+            continue
+        source = buff.get("source") if isinstance(buff.get("source"), dict) else {}
+        for ref in refs:
+            token = _clean_token(ref)
+            if token.startswith("icon_"):
+                out[token].append({
+                    "owner": str(owner),
+                    "rawToken": str(ref),
+                    "sourcePath": str(source.get("path") or ""),
+                })
+    for rows in out.values():
+        rows.sort(key=lambda row: (row["owner"], row["rawToken"], row["sourcePath"]))
     return out
 
 
@@ -547,6 +827,7 @@ def build_gameplay_asset_refs(
     *,
     max_images: int = 4,
     max_models: int = 3,
+    source_graph_path: Path | None = None,
 ) -> dict[str, Any]:
     """Return representative image/model refs keyed by ``kind:id``.
 
@@ -555,8 +836,11 @@ def build_gameplay_asset_refs(
     preference only choose a useful preview among exported candidates.
     """
     entries = [entry for entry in gameplay_payload.get("entries") or [] if isinstance(entry, dict)]
+    assets_list = [asset for asset in asset_entries if isinstance(asset, dict)]
     tokens_by_key: dict[str, list[str]] = {}
     nested_tokens: set[str] = set()
+    raw_buff_icon_candidates = _buff_icon_candidates(gameplay_payload)
+    icon_tokens: set[str] = set(raw_buff_icon_candidates)
     all_tokens: set[str] = set()
     for entry in entries:
         key = f"{entry.get('kind', '')}:{entry.get('id', '')}"
@@ -564,16 +848,20 @@ def build_gameplay_asset_refs(
         if not key.endswith(":") and tokens:
             tokens_by_key[key] = tokens
             all_tokens.update(tokens)
-        nested_tokens.update(_nested_asset_tokens(entry))
+        entry_nested_tokens = _nested_asset_tokens(entry)
+        nested_tokens.update(entry_nested_tokens)
+        icon_tokens.update(
+            token for token in entry_nested_tokens
+            if token.startswith("icon_") or token.startswith("facskill_")
+        )
+    nested_tokens.update(icon_tokens)
     for token in nested_tokens:
         all_tokens.update(_token_variants(token))
 
     pattern = _token_pattern(all_tokens)
     assets_by_token: dict[str, list[dict[str, Any]]] = defaultdict(list)
     if pattern:
-        for asset in asset_entries:
-            if not isinstance(asset, dict):
-                continue
+        for asset in assets_list:
             rel = str(asset.get("r") or "").replace("\\", "/")
             if not rel:
                 continue
@@ -581,6 +869,16 @@ def build_gameplay_asset_refs(
             for match in pattern.finditer(base):
                 token = match.group(1).lower()
                 assets_by_token[token].append(asset)
+
+    assets_by_base: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    assets_by_path: dict[str, dict[str, Any]] = {}
+    for asset in assets_list:
+        rel = str(asset.get("r") or "").replace("\\", "/")
+        if not rel:
+            continue
+        assets_by_base[_asset_base_name(rel)].append(asset)
+        assets_by_path[rel.lower()] = asset
+    source_proofs, source_graph_report = _source_graph_proof(source_graph_path, assets_by_path)
 
     output: dict[str, dict[str, list[dict[str, Any]]]] = {}
     matched_images = 0
@@ -591,6 +889,13 @@ def build_gameplay_asset_refs(
         if not tokens:
             continue
         kind = str(entry.get("kind") or "")
+        direct_icon_tokens = _entry_icon_tokens(entry)
+        strict_icon_rels = {
+            str(asset.get("r") or "").replace("\\", "/")
+            for token in direct_icon_tokens
+            for asset in _strict_token_assets(token, assets_by_base)
+            if str(asset.get("k") or "") == "image"
+        }
         candidates: list[tuple[dict[str, Any], str]] = []
         seen: set[str] = set()
         for token in tokens:
@@ -598,10 +903,18 @@ def build_gameplay_asset_refs(
                 rel = str(asset.get("r") or "").replace("\\", "/")
                 if not rel or rel in seen:
                     continue
+                if str(asset.get("k") or "") == "image" and direct_icon_tokens:
+                    if strict_icon_rels:
+                        if rel not in strict_icon_rels:
+                            continue
+                    elif token in direct_icon_tokens:
+                        continue
                 seen.add(rel)
                 candidates.append((asset, token))
         image_candidates = [item for item in candidates if str(item[0].get("k") or "") == "image"]
         model_candidates = [item for item in candidates if str(item[0].get("k") or "") == "model"]
+        if direct_icon_tokens and not strict_icon_rels and kind in DISPLAY_ICON_KINDS:
+            image_candidates = []
         image_candidates.sort(key=lambda item: _asset_rank(item[0], kind, item[1]))
         model_candidates.sort(key=lambda item: _model_rank(item[0], item[1]))
         if kind == "character":
@@ -625,8 +938,11 @@ def build_gameplay_asset_refs(
             matched_models += bool(models)
 
     token_output: dict[str, dict[str, list[dict[str, Any]]]] = {}
+    token_evidence: dict[str, dict[str, Any]] = {}
+    evidence_counts: defaultdict[str, int] = defaultdict(int)
     for token in sorted(nested_tokens):
-        candidates: list[dict[str, Any]] = []
+        strict_candidates = _strict_token_assets(token, assets_by_base)
+        broad_candidates: list[dict[str, Any]] = []
         seen: set[str] = set()
         for variant in _token_variants(token):
             for asset in assets_by_token.get(variant, []):
@@ -634,14 +950,80 @@ def build_gameplay_asset_refs(
                 if not rel or rel in seen or str(asset.get("k") or "") != "image":
                     continue
                 seen.add(rel)
-                candidates.append(asset)
-        candidates.sort(key=lambda asset: _nested_image_rank(asset, _token_variants(token)[-1]))
+                broad_candidates.append(asset)
+        strict_candidates = [
+            asset for asset in strict_candidates
+            if str(asset.get("k") or "") == "image"
+        ]
+        strict_candidates.sort(key=lambda asset: _nested_image_rank(asset, _token_variants(token)[-1]))
+        broad_candidates.sort(key=lambda asset: _nested_image_rank(asset, _token_variants(token)[-1]))
+        if strict_candidates:
+            classification = (
+                "exact-unique" if len(strict_candidates) == 1
+                else "representation-pathid-multi"
+            )
+            evidence_candidates = strict_candidates
+        elif broad_candidates:
+            classification = "basename-only"
+            evidence_candidates = broad_candidates
+        else:
+            classification = "unresolved"
+            evidence_candidates = []
+        evidence_counts[classification] += 1
+        proof_rows = source_proofs.get(_clean_token(token), [])
+        proof_validated = source_graph_report.get("status") == "validated" and bool(proof_rows)
+        candidate_refs = [_path_ref(asset) for asset in evidence_candidates]
+        strict_rel = {
+            str(asset.get("r") or "").replace("\\", "/")
+            for asset in strict_candidates
+        }
+        rejected_refs = [
+            _path_ref(asset) for asset in broad_candidates
+            if str(asset.get("r") or "").replace("\\", "/") not in strict_rel
+        ]
+        preview = candidate_refs[0] if candidate_refs else None
+        # The selected Texture2D is a display policy, not source evidence.
+        for candidate in candidate_refs:
+            if candidate.get("rel", "").lower().split("/")[1:2] == ["texture2d"]:
+                preview = candidate
+                break
+        token_evidence[token] = {
+            "classification": classification,
+            "assetResolution": {
+                "classification": classification,
+                "candidates": candidate_refs,
+                "rejectedBasenameCandidates": rejected_refs,
+                "preview": preview,
+                "representationPolicy": "Texture2D" if preview else None,
+            },
+            "candidates": candidate_refs,
+            "rejectedBasenameCandidates": rejected_refs,
+            "sourceProof": {
+                "status": "validated" if proof_validated else "unproven",
+                "edges": proof_rows,
+                "diagnostics": list(source_graph_report.get("diagnostics") or [])
+                + ([] if proof_rows else [{
+                    "code": "source-proof-not-validated",
+                    "token": token,
+                }]),
+            },
+            "proofStatus": "validated" if proof_validated else "unproven",
+            "preview": preview,
+            "representationPolicy": "Texture2D" if preview else None,
+        }
         # One canonical icon per token avoids Sprite/Texture2D duplicates in
         # chips and skill headers.  The rank above prefers the highest original
-        # resolution while keeping square icon sources together.
+        # resolution while keeping square icon sources together.  This preview
+        # choice deliberately does not upgrade the evidence classification.
         max_token_images = 1
-        images = [_path_ref(asset) for asset in candidates[:max_token_images]]
+        images = [_path_ref(asset) for asset in strict_candidates[:max_token_images]]
         if images:
+            texture_images = [
+                image for image in images
+                if image.get("rel", "").lower().split("/")[1:2] == ["texture2d"]
+            ]
+            if texture_images:
+                images = texture_images[:max_token_images]
             token_output[token] = {"images": images}
 
     return {
@@ -653,9 +1035,22 @@ def build_gameplay_asset_refs(
             "withImages": matched_images,
             "withModels": matched_models,
             "tokenRefs": len(token_output),
+            "tokenEvidence": len(token_evidence),
+            "iconEvidence": len(icon_tokens),
+            "evidenceClassifications": dict(sorted(evidence_counts.items())),
         },
         "entries": output,
         "tokens": token_output,
+        "tokenEvidence": token_evidence,
+        "sourceGraph": source_graph_report,
+        "rawBuffIconCandidates": {
+            token: rows for token, rows in sorted(raw_buff_icon_candidates.items())
+        },
+        "iconEvidence": {
+            token: token_evidence[token]
+            for token in sorted(icon_tokens)
+            if token in token_evidence
+        },
     }
 
 
@@ -663,6 +1058,7 @@ def build_from_paths(
     gameplay_path: Path,
     asset_index_path: Path,
     output_path: Path = DEFAULT_OUTPUT,
+    source_graph_path: Path | None = None,
 ) -> dict[str, Any]:
     gameplay = read_json(gameplay_path, {})
     asset_index = read_json(asset_index_path, {})
@@ -670,7 +1066,17 @@ def build_from_paths(
         raise FileNotFoundError(f"Gameplay payload is missing or invalid: {gameplay_path}")
     if not isinstance(asset_index, dict):
         raise FileNotFoundError(f"Asset index is missing or invalid: {asset_index_path}")
-    payload = build_gameplay_asset_refs(gameplay, asset_index.get("entries") or [])
+    if source_graph_path is None:
+        # The source graph is optional because the normal WebUI phase may run
+        # before graph rebuild.  When present, it contributes proof only.
+        repo_root = asset_index_path.resolve().parents[3]
+        candidate_graph = repo_root / "reports" / "source_graph" / "endfield_source_graph.sqlite"
+        source_graph_path = candidate_graph if candidate_graph.is_file() else None
+    payload = build_gameplay_asset_refs(
+        gameplay,
+        asset_index.get("entries") or [],
+        source_graph_path=source_graph_path,
+    )
     payload["sourcePath"] = str(asset_index_path).replace("\\", "/")
     write_json(output_path, payload, trailing_newline=True)
     return payload
