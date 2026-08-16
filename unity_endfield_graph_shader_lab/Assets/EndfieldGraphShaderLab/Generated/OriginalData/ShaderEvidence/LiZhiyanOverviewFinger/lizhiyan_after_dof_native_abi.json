@@ -1133,7 +1133,7 @@
             "resultCallbackThunkVA": "0x180feaea0",
             "frontEndHandoffVA": "0x1810484e0",
             "frontEndHandoffEndVA": "0x181049007",
-            "behavior": "consumes the CPU publication/result object, repeats its resource-table lookup, records 0x2748/0x274a, invokes resource-array builders, and reaches opcode 0x2730 through a pinned helper chain; no same-AfterDOF-interval 0x2731 or particular draw identity is proven",
+            "behavior": "consumes the CPU publication/result object, repeats its resource-table lookup, records 0x2748/0x274a, invokes resource-array builders, and has a descriptor-mode-conditional path to opcode 0x2730; neither Li's branch value nor a same-AfterDOF-interval 0x2731/particular draw identity is proven",
             "publicationResultLayout": "pair +0x00 is a 0x90-stride CPU-record base, +0x08 auxiliary resource/state, +0x10 count; each record keeps resource/object +0x08 and descriptor +0x10 among selector/payload fields",
             "graphicsFront": {
               "contextGetterVA": "0x180725dc0",
@@ -1162,12 +1162,13 @@
               "opcode2730Layout": "u32 opcode, eight-byte alignment, seven u64 values, u32 element count, then count*u32 payload; dispatches to API-2 +0xe90",
               "opcode2731Layout": "u32 opcode only; dispatches to API-2 +0xde8 with no payload",
               "batchBoundary": "begin recording selects the current buffer and enables append; end recording disables append and may emit 0x27cb; bounded-substream parser 0x1813aea00 repeatedly advances one shared cursor",
-              "sequenceBoundary": "the HGMesh front has a static path to 0x2730 on the same recorder family, but no static producer edge proves a later 0x2731 occurs in the same AfterDOF recording interval or belongs to this draw-list",
+              "sequenceBoundary": "the HGMesh front has a descriptor-mode-conditional static path to 0x2730 on the same recorder family, but Li's branch value is unknown and no static producer edge proves a later 0x2731 occurs in the same AfterDOF recording interval or belongs to this draw-list",
               "handoffWriterOrder": "within each 0x90-byte HGMesh publication record, 0x181048848 invokes front +0x268 with record resource at +0x60, then 0x1810488dc invokes front +0x280 with its local serialized payload on the same graphics-front context",
-              "descriptorProducerRoute": "0x1810487e1 -> 0x180619cf0 -> 0x180623ef0; 0x180623f1d reacquires the graphics-front family through 0x180725dc0 and 0x1806243d3 invokes vtable +0x2a0, the 0x2730 writer",
+              "descriptorProducerRoute": "0x1810487e1 -> 0x180619cf0; descriptor+0x450 conditionally selects 0x180623d80, 0x180623e70, or 0x180623ef0. Only the 0x180623ef0 branch reacquires the graphics-front family through 0x180725dc0 and invokes vtable +0x2a0 at 0x1806243d3, the 0x2730 writer",
               "resourceBuilderCalls": "0x181048dc7/0x181048f2f invoke vtable +0xda0 and 0x181048df8/0x181048f60 invoke +0x380; these enter the API-2 resource-array builder family rather than directly issuing a draw",
               "handoffExcludedWriter": "0x1810484e0..0x181049007 has no direct front +0x3e8 (0x2731) invocation; the +0x2a0 edge is indirect through 0x180619cf0 -> 0x180623ef0",
               "executeProducerCandidates": "getter-backed 0x1805a3790/0x1805a37f0 invoke +0x3e8 on the same recorder family, but no static edge places either call in this AfterDOF recording interval",
+              "executeBracket": "0x1805a3790 success path invokes runtime callback [0x1821afd40](1), calls 0x1805a37f0 -> graphics-front +0x3e8/0x2731, then invokes the same callback with 0; the HGMesh callback has no static edge into this bracket",
               "resourceToBindingState": "0x2748 passes the original pointer unchanged; 0x180842370 resolves object-local maps at resource +0x20..+0x30/+0x50/+0x70 and writes descriptor-like state under S+0x2a0 plus payload backing under S+0x22d0",
               "provenBoundary": "both opcodes are API-2 resource/state operations, not draw opcodes; 0x2748 identity reaches backend binding state while the 0x274a qword semantics remain unresolved"
             },
@@ -1181,7 +1182,7 @@
             },
             "vulkanExecution": {
               "descriptorUpdateRoute": "opcode 0x2730 -> API-2 +0xe90 0x180843bf0 -> 0x18083f680 -> vkUpdateDescriptorSetWithTemplate at 0x18083f89d",
-              "descriptorIdentityBoundary": "the HGMesh front statically reaches the generic 0x2730 producer through 0x180619cf0 -> 0x180623ef0, and the handler packages S+0x22d0/S+0x22a8/S+0x2a0 into the Vulkan descriptor-update worker; the remaining boundary is the later 0x2731 interval/draw-list attribution",
+              "descriptorIdentityBoundary": "the HGMesh front conditionally reaches the generic 0x2730 producer when descriptor+0x450 selects 0x180623ef0, and the handler packages S+0x22d0/S+0x22a8/S+0x2a0 into the Vulkan descriptor-update worker; Li's selected branch and the later 0x2731 interval/draw-list attribution remain open",
               "callbackListBuilders": "API-2 +0xda0 0x18083e720 builds resource-binding and pipeline/descriptor-state child nodes; +0xda8 0x18083ec60 builds an indirect-draw child node; 0x180841c40 packages child heads +0x2b58/+0x2b60 into master nodes at +0x2b50",
               "resourceBindingNode": "0x68-byte node callback reaches 0x18082d6b0; payload includes wrapper/resource handle, index format/offset, vertex-buffer pointer range, and vertex offsets",
               "pipelineDescriptorNode": "0x40-byte node callback reaches 0x18082e660; payload includes pipeline, layout, stencil/depth state, descriptor-set array/count, and dynamic offsets",
@@ -1196,7 +1197,8 @@
                 "0x180844a09",
                 "0x180844bd3"
               ],
-              "remainingIdentityEdge": "proof that a later 0x2731 execution occurs in the same AfterDOF recorder interval and that the resulting +0x2b50 callback node is the particular HGMesh draw record rather than another shared-recorder command"
+              "commandStreamInvariantBoundary": "0x2730 and 0x2731 are independent parser cases on one cursor. 0x2730 stores no mandatory-next flag/generation; 0x2731 has no payload and does not read 0x2730 identity. API-2 +0xde8 can package and execute current child lists without a preceding 0x2730",
+              "remainingIdentityEdge": "proof that Li selects the 0x180623ef0/0x2730 descriptor branch, that a later 0x2731 execution occurs in the same AfterDOF recorder interval, and that the resulting +0x2b50 callback node is the particular HGMesh draw record rather than another shared-recorder command"
             },
             "d3d12StaticBoundary": "D3D12 is absent and the image contains 'D3D12 support not compiled in!'; D3D11 dynamic bootstrap/fallback code exists but is not the observed session backend",
             "observedRuntimeBackend": {

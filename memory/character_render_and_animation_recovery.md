@@ -1886,12 +1886,16 @@ only stable interpretation and priorities.
    arrays into `0x1810484e0`. That callback repeats the same key/selector and
    0x80-byte resource-table lookup, records `0x2748/0x274a`, invokes the
    `+0xda0/+0x380` API-2 resource-builder family, and has a positive static
-   descriptor-state path `0x1810487e1 -> 0x180619cf0 -> 0x180623ef0 ->`
-   the shared graphics-front `+0x2a0` writer for opcode `0x2730`. Thus the
-   resource publication-to-descriptor-recording join is closed. The first
-   missing positive join is now a later opcode `0x2731` in the same after-DOF
-   recorder interval and attribution of its `+0x2b50` callback node to the
-   particular HGMesh draw rather than another shared-recorder command.
+   descriptor-state path `0x1810487e1 -> 0x180619cf0`. That helper branches on
+   `descriptor+0x450`; only its `0x180623ef0` branch reaches the shared
+   graphics-front `+0x2a0` writer for opcode `0x2730`, while Li's selected
+   branch value remains unknown. The generic `0x2731` producer has a separate
+   runtime-callback `(1) -> 0x2731 -> (0)` bracket on the same recorder family,
+   but HGMesh has no static edge into it. The parser supplies no mandatory-next
+   flag or generation joining the independent `0x2730/0x2731` cases. The first
+   missing positive joins are therefore Li selecting the `0x2730` branch, a
+   later `0x2731` in the same after-DOF interval, and attribution of its
+   `+0x2b50` callback node to this HGMesh draw rather than another command.
    All six selected materials have `_IsSceneEffect=0` and
    `_EnableTransparentMV=0`, so `_VFXParams1` and transform history are safely
    bypassed rather than guessed. Exact inverse-VP soft depth, live
