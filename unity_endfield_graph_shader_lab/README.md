@@ -3990,9 +3990,22 @@ material payloads are pinned in `lizhiyan_overview_start_01_effect.json`.
 Start AnimationClip `A_fxui__lizhiyan_overview_start_01` (PathID
 `7360398354216100382`, 30 Hz, 6.366667 seconds, no AnimationEvents) and all
 eight referenced Texture2D identities plus converted PNGs are also closed.
-Native mesh/texture payload parity, selected shader variants, and a static-mesh runtime binding kind remain open,
+The clip still exposes 53 material float curves through 10 target-path hashes
+and seven material-property hashes whose source names are unavailable; those
+bindings are not yet mapped to the four reconstructed renderers.
+Native mesh/texture payload parity, selected shader variants, and an admitted static-mesh importer/binding remain open,
 so no prefab is materialized and visible admission stays false. Do not route
 this effect through the particle marker or invent ParticleSystems.
+
+The runtime now distinguishes `Particle` and `StaticMesh` bindings without
+changing the serialized default for existing particle effects. The new
+`EndfieldRecoveredStaticMeshEffectSource` carries the exact start_01 root,
+EffectSetting, Animator, animation-helper, clip, mesh-filter, renderer, mesh,
+and material identities. Its admission gate additionally requires the source
+aggregate, an empty blocker list, zero ParticleSystems, applied native
+mesh/texture/renderer payloads, and admitted exact shader variants. The current
+contract deliberately fails at `sourcePayloadApplied=false` and
+`visibleAdmission=false`; no start_01 prefab or controller binding is created.
 
 One original dialog facial asset is now executable as a bounded source fixture:
 Zhuang Fangyi's 2.15-second

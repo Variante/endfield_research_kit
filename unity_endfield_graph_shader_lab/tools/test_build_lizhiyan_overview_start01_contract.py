@@ -25,6 +25,9 @@ def test_current_source_contract() -> None:
     assert clip["sampleRate"] == 30.0
     assert clip["stopTime"] == 6.366667
     assert clip["events"] == []
+    assert clip["floatCurveBindings"]["count"] == 53
+    assert len(clip["floatCurveBindings"]["targetPathHashes"]) == 10
+    assert len(clip["floatCurveBindings"]["materialPropertyHashes"]) == 7
     assert set(M.MATERIAL_PATHS) == {
         -6912999194325832649, 2993445828574428557, 3282333668994552481
     }

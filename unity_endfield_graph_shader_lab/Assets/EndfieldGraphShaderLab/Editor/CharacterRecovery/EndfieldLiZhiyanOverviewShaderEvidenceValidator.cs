@@ -163,6 +163,8 @@ namespace EndfieldGraphShaderLabEditor
                 L.Dict(L.Dict(contract["effectSetting"])["timing"]);
             Dictionary<string, object> animation = L.Dict(contract["animation"]);
             Dictionary<string, object> startClip = L.Dict(animation["startAnimationClip"]);
+            Dictionary<string, object> curveBindings =
+                L.Dict(startClip["floatCurveBindings"]);
             Dictionary<string, object> mesh = L.Dict(contract["meshDependency"]);
             Dictionary<string, object> execution = L.Dict(contract["executionBoundary"]);
             IList nodes = L.List(contract["staticMeshNodes"]);
@@ -198,6 +200,12 @@ namespace EndfieldGraphShaderLabEditor
                 Mathf.Abs(L.Float(startClip, "sampleRate") - 30.0f) < 0.000001f &&
                 Mathf.Abs(L.Float(startClip, "stopTime") - 6.366667f) < 0.000001f &&
                 L.List(startClip["events"]).Count == 0 &&
+                L.Long(curveBindings, "count") == 53 &&
+                L.Long(curveBindings, "targetClassID") == 23 &&
+                L.List(curveBindings["targetPathHashes"]).Count == 10 &&
+                L.List(curveBindings["materialPropertyHashes"]).Count == 7 &&
+                L.Str(curveBindings, "status") ==
+                    "hash_only_target_paths_and_material_properties_unresolved" &&
                 L.List(contract["textureDependencies"]).Count == 8 &&
                 L.Long(mesh, "pathID") == -6840663686705882004L &&
                 materialIds.SetEquals(new long[] {
@@ -207,7 +215,7 @@ namespace EndfieldGraphShaderLabEditor
                 !L.Bool(execution, "sourceAnimationPayloadApplied") &&
                 L.Bool(execution, "rendererFailClosedForUnrecoveredShader") &&
                 !L.Bool(execution, "visibleAdmission") &&
-                L.List(execution["blockedBy"]).Count == 4,
+                L.List(execution["blockedBy"]).Count == 5,
                 "Li Zhiyan start_01 static-mesh fail-closed contract drifted");
         }
 

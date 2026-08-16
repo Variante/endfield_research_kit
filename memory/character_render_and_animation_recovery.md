@@ -1653,8 +1653,19 @@ only stable interpretation and priorities.
    material payloads. AnimationClip PathID `7360398354216100382` is now closed
    to `A_fxui__lizhiyan_overview_start_01` (30 Hz, 6.366667 seconds, no
    AnimationEvents), and the eight referenced Texture2D identities and
-   converted PNGs are pinned. Native mesh/texture import parity, exact selected shaders, and a static-mesh runtime
+   converted PNGs are pinned. Its 53 material curves still address 10 target
+   paths and seven material properties by unresolved hashes, so animation-file
+   closure is not yet executable curve-binding closure. Native mesh/texture import parity, exact selected shaders, and a static-mesh runtime
    binding remain open; do not force it through the particle importer.
+   The lab now has a separate `StaticMesh` binding kind and
+   `EndfieldRecoveredStaticMeshEffectSource` provenance marker. Existing
+   particle bindings remain enum value zero. Static admission requires the
+   exact root/component and four renderer/filter identity sets, zero
+   ParticleSystems, source contract visibility approval, applied
+   EffectSetting/animation/native mesh/texture/renderer payloads, and exact
+   non-fail-closed shaders. A Unity batch validator proves the current
+   start_01 contract is rejected before instantiation because its source and
+   visible-admission gates remain false; the actor keeps this request unbound.
    Downstream HGMesh workers now prove a real ordering/publication stage:
    accepted 64-byte records are sorted in place by `0x181043bd0` using
    comparator `0x180fe0740`, an unsigned lexicographic comparison over the
