@@ -186,11 +186,16 @@ namespace EndfieldGraphShaderLabEditor
                     Shader.GetGlobalFloat("_EndfieldSceneMVMRTReady");
                 float priorVfxGlobalsReady =
                     Shader.GetGlobalFloat("_EndfieldRecoveredVFXGlobalsReady");
+                float priorVfxSoftDepthReady =
+                    Shader.GetGlobalFloat("_EndfieldRecoveredVFXSoftDepthReady");
                 Vector4 priorExposureParams = Shader.GetGlobalVector("_ExposureParams");
                 try
                 {
                     Shader.SetGlobalFloat("_EndfieldSceneMVMRTReady", 1f);
                     Shader.SetGlobalFloat("_EndfieldRecoveredVFXGlobalsReady", 1f);
+                    // The diagnostic capture has no source-proven scene-depth
+                    // producer yet; keep BaseV2 soft blend fail-closed.
+                    Shader.SetGlobalFloat("_EndfieldRecoveredVFXSoftDepthReady", 0f);
                     Shader.SetGlobalVector(
                         "_ExposureParams", new Vector4(1f, 0f, 0f, 0f));
                     bundle = InstantiateBundle(
@@ -243,7 +248,7 @@ namespace EndfieldGraphShaderLabEditor
                         fingerParticleSimulationMode =
                             "exact_source_effect_delay_duration_under_Bip001_R_Finger2Nub; each_particle_system_simulate_effect_local_time_with_children_false_restart_true_fixed_time_then_play_without_time_advance_for_renderer_submission",
                         fingerParticleMaterialMode =
-                            "transient_vfxbasev2_sample_stack_with_contract_payload_and_converted_pngs_source_queue_3700_soft_blend_disabled; generated_finger_materials_remain_fail_closed",
+                            "transient_vfxbasev2_sample_stack_with_contract_payload_and_converted_pngs_source_queue_3700_soft_blend_authored_state_preserved_depth_gate_fail_closed; generated_finger_materials_remain_fail_closed",
                         peakParticleBatchmodeTransport =
                             "unity_particle_renderer_paused_buffer_bakemesh_billboard_proxy",
                         sourceSpec = SpecPath,
@@ -380,6 +385,8 @@ namespace EndfieldGraphShaderLabEditor
                         "_EndfieldSceneMVMRTReady", priorSceneMvReady);
                     Shader.SetGlobalFloat(
                         "_EndfieldRecoveredVFXGlobalsReady", priorVfxGlobalsReady);
+                    Shader.SetGlobalFloat(
+                        "_EndfieldRecoveredVFXSoftDepthReady", priorVfxSoftDepthReady);
                     Shader.SetGlobalVector("_ExposureParams", priorExposureParams);
                     Release(readback);
                     Release(target);
@@ -674,8 +681,6 @@ namespace EndfieldGraphShaderLabEditor
                 EndfieldZhuangfyParticleEffectImporter.ApplyRecoveredMaterialPayload(
                     material, AsDictionary(row["payload"], "finger material payload"), context);
                 material.renderQueue = AsInt(row["customRenderQueue"]);
-                if (material.HasProperty("_UseSoftBlend"))
-                    material.SetFloat("_UseSoftBlend", 0f);
                 materials.Add(pathId, material);
                 bundle.fingerDiagnosticMaterials.Add(material);
             }
