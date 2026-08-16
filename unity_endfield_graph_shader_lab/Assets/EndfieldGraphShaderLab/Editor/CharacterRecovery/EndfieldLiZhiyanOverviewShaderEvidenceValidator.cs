@@ -190,6 +190,7 @@ namespace EndfieldGraphShaderLabEditor
             Dictionary<string, object> screenDefaults = L.Dict(screenCulling["constructorDefaults"]);
             Dictionary<string, object> passInputOffsets = L.Dict(rendererList["passInputOffsets"]);
             Dictionary<string, object> ecsProducer = L.Dict(rendererList["ecsRendererListProducer"]);
+            Dictionary<string, object> nativeAdapter = L.Dict(ecsProducer["nativeAdapter"]);
             L.Require(L.Str(boundary, "callbackConstantBufferPublication") == "not_present" &&
                 L.Str(boundary, "callbackGlobalVectorAndTexturePublication") == "present" &&
                 !L.Bool(boundary, "serializedBindingsAreD3D12RootParameters") &&
@@ -207,6 +208,9 @@ namespace EndfieldGraphShaderLabEditor
                 L.Float(screenDefaults, "ratio") == 0.005f &&
                 L.Float(screenDefaults, "distance") == 30.0f &&
                 L.List(screenCulling["layerNames"]).Count == 17 &&
+                L.Str(screenCulling, "ratioDistanceWriters").Contains("ctor only") &&
+                L.List(screenCulling["layerMaskWriters"]).Count == 4 &&
+                L.Str(screenCulling, "runtimeInstanceValues").Contains("runtime-mutated") &&
                 L.Long(passInputOffsets, "bytes") == 160 &&
                 L.Str(passInputOffsets, "forwardTransparentAfterDOFECSList") == "0x04" &&
                 L.Str(passInputOffsets, "screenCullingLayerMask") == "0x08" &&
@@ -226,6 +230,11 @@ namespace EndfieldGraphShaderLabEditor
                 !L.Bool(ecsProducer, "noAlphaTest") &&
                 !L.Bool(ecsProducer, "excludeGPUDriven") &&
                 L.Str(ecsProducer, "forwardPath").Contains("never writes 0x1388") &&
+                L.Long(nativeAdapter, "registrationIndex") == 395 &&
+                L.Str(nativeAdapter, "unityPlayerVA") == "0x1801f1e40" &&
+                L.Long(nativeAdapter, "functionBytes") == 208 &&
+                L.Str(nativeAdapter, "internalBuilderVA") == "0x18104e7a0" &&
+                L.Str(nativeAdapter, "behavior").Contains("does not enumerate survivors") &&
                 !L.Bool(consumers, "opaqueArgument") &&
                 L.Str(consumers, "frameSettingsGate") == "TransparentObjects" &&
                 L.Str(consumers, "survivorIdentity") ==
