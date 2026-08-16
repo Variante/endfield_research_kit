@@ -581,7 +581,10 @@
           "slotIdOffset": "0x00",
           "slotStatePointerOffset": "0x08",
           "stateBytes": 48,
-          "stateCallbackVA": "0x1810398f0"
+          "stateCallbackVA": "0x1810398f0",
+          "registrationLifecycle": "reads the old count as the handle, grows through 0x1802ed7d0 -> 0x180662870 when required, increments count, zeroes the new slot, allocates a 0x30-byte state through 0x1802fd650, and stores it at slot +0x08",
+          "consumerMutation": "opcode 0x4e consumer 0x181005c10 reads slot +0x08 but does not modify the manager vector or count",
+          "resetAudit": "no count decrement, in-place reset, slot-clear loop, free, or reuse owner occurs in the pinned registration/interpreter/consumer spans; external context replacement or teardown remains possible"
         },
         "invalidRequestGate": "request[0] == 0xffffffff returns 0xffffffff without appending",
         "maskCombination": "view record +0x40/+0x48 OR request +0x50/+0x58",

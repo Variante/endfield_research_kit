@@ -195,6 +195,7 @@ namespace EndfieldGraphShaderLabEditor
             Dictionary<string, object> passInputOffsets = L.Dict(rendererList["passInputOffsets"]);
             Dictionary<string, object> ecsProducer = L.Dict(rendererList["ecsRendererListProducer"]);
             Dictionary<string, object> nativeAdapter = L.Dict(ecsProducer["nativeAdapter"]);
+            Dictionary<string, object> handleTable = L.Dict(nativeAdapter["handleTable"]);
             Dictionary<string, object> commandConsumer = L.Dict(nativeAdapter["commandConsumer"]);
             Dictionary<string, object> survivorSort = L.Dict(nativeAdapter["survivorSortPublication"]);
             L.Require(L.Str(boundary, "callbackConstantBufferPublication") == "not_present" &&
@@ -243,6 +244,11 @@ namespace EndfieldGraphShaderLabEditor
                 L.Str(nativeAdapter, "registrationCoreVA") == "0x18104e300" &&
                 L.Str(nativeAdapter, "resourceRecordBuilderVA") == "0x18104e920" &&
                 L.Str(nativeAdapter, "behavior").Contains("contains no entity iteration") &&
+                L.Str(handleTable, "registrationLifecycle") ==
+                    "reads the old count as the handle, grows through 0x1802ed7d0 -> 0x180662870 when required, increments count, zeroes the new slot, allocates a 0x30-byte state through 0x1802fd650, and stores it at slot +0x08" &&
+                L.Str(handleTable, "consumerMutation") ==
+                    "opcode 0x4e consumer 0x181005c10 reads slot +0x08 but does not modify the manager vector or count" &&
+                L.Str(handleTable, "resetAudit").Contains("external context replacement") &&
                 L.Str(commandConsumer, "opcode") == "0x4e" &&
                 L.Str(commandConsumer, "managerSingletonOffset") == "0xb0" &&
                 L.Long(commandConsumer, "slotStride") == 16 &&
