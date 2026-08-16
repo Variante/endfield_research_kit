@@ -9,6 +9,7 @@ from scripts import build_gameplay
 from pathlib import Path
 
 from scripts.gameplay_builder.recovery_audit import (
+    build_full_corpus_payload,
     build_report,
     content_sha256,
     iter_action_occurrences,
@@ -71,6 +72,134 @@ def fixture_payload() -> dict:
 
 
 class GameplayRecoveryAuditTests(unittest.TestCase):
+    def test_full_corpus_uses_persistent_overlay_and_records_manifests(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            export_root = Path(directory)
+            streaming = export_root / "structured" / "StreamingAssets" / "Data" / "Json" / "BuffData"
+            persistent = export_root / "structured" / "Persistent" / "Data" / "Json" / "BuffData"
+            streaming.mkdir(parents=True)
+            persistent.mkdir(parents=True)
+            (streaming / "buff_shared.json").write_text("stream", encoding="utf-8")
+            (streaming / "buff_stream_only.json").write_text("stream", encoding="utf-8")
+            (persistent / "buff_shared.json").write_text("persistent", encoding="utf-8")
+            (persistent / "buff_persist_only.json").write_text("persistent", encoding="utf-8")
+
+            def decode(path: Path) -> dict:
+                return {
+                    "id": path.stem,
+                    "status": "parsed-through-exact-tail",
+                    "abilityEventActions": [],
+                }
+
+            with patch("scripts.game_data.memorypack.buff.buff_gameplay_semantics", side_effect=decode):
+                payload, meta = build_full_corpus_payload(export_root)
+            self.assertEqual("ok", meta["status"])
+            self.assertEqual(["buff_persist_only", "buff_shared", "buff_stream_only"], meta["selected"])
+            self.assertEqual(["buff_shared"], [row["id"] for row in meta["shadowed"]])
+            self.assertEqual(["buff_persist_only"], meta["persistentOnly"])
+            self.assertEqual(["buff_stream_only"], meta["streamingOnly"])
+            self.assertEqual("Persistent", meta["selectedSources"]["buff_shared"])
+            self.assertEqual(2, meta["sourceFileCounts"]["Persistent"])
+            self.assertEqual(2, meta["sourceFileCounts"]["StreamingAssets"])
+            self.assertEqual(64, len(meta["manifestHashes"]["Persistent"]))
+            self.assertEqual("Persistent", payload["buffs"]["buff_shared"]["source"]["kind"])
+            shadow = meta["shadowed"][0]
+            self.assertEqual("Persistent", shadow["selectedSource"])
+            self.assertFalse(shadow["sameBytesAsSelected"])
+            self.assertEqual(4, len(meta["sourceManifest"]))
+            self.assertEqual(64, len(meta["selectedManifestSha256"]))
+            self.assertEqual(64, len(meta["allSourceManifestSha256"]))
+            report = build_report(payload, scope="full", full_corpus=meta)
+            self.assertEqual("full", report["scope"])
+            self.assertIn("fullCorpus", report)
+
+    def test_full_corpus_missing_root_and_decode_errors_are_bounded(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            export_root = Path(directory)
+            streaming = export_root / "structured" / "StreamingAssets" / "Data" / "Json" / "BuffData"
+            streaming.mkdir(parents=True)
+            (streaming / "buff_bad.json").write_text("bad", encoding="utf-8")
+            (streaming / "buff_good.json").write_text("good", encoding="utf-8")
+
+            def decode(path: Path) -> dict:
+                if path.stem == "buff_bad":
+                    raise OSError("unreadable")
+                return {"id": path.stem, "status": "unsupported-version", "abilityEventActions": []}
+
+            with patch("scripts.game_data.memorypack.buff.buff_gameplay_semantics", side_effect=decode):
+                payload, meta = build_full_corpus_payload(export_root)
+            self.assertEqual("error", meta["status"])
+            self.assertEqual(["Persistent"], meta["missingRoots"])
+            self.assertEqual(2, meta["errorCount"])
+            self.assertEqual(2, meta["invalidFileCount"])
+            self.assertEqual(["buff_bad", "buff_good"], meta["selected"])
+            self.assertEqual([], payload["buffs"]["buff_bad"]["abilityEventActions"])
+
+            source = export_root / "index.json"
+            output = export_root / "reports" / "gameplay_recovery_audit_full.json"
+            source.write_text("{}", encoding="utf-8")
+            with patch("scripts.game_data.memorypack.buff.buff_gameplay_semantics", side_effect=decode):
+                self.assertEqual(
+                    1,
+                    main([
+                        "--full-corpus", "--export-root", str(export_root),
+                        "--output", str(output),
+                    ]),
+                )
+            self.assertTrue(output.is_file())
+            written = json.loads(output.read_text(encoding="utf-8"))
+            self.assertEqual("full", written["scope"])
+            self.assertEqual("error", written["fullCorpus"]["status"])
+
+    def test_full_corpus_rejects_noncanonical_direct_filenames(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            export_root = Path(directory)
+            for source in ("StreamingAssets", "Persistent"):
+                root = export_root / "structured" / source / "Data" / "Json" / "BuffData"
+                root.mkdir(parents=True)
+            valid = export_root / "structured" / "StreamingAssets" / "Data" / "Json" / "BuffData" / "buff_valid.json"
+            valid.write_text("valid", encoding="utf-8")
+            invalid_root = export_root / "structured" / "Persistent" / "Data" / "Json" / "BuffData"
+            for name in ("Buff_upper.json", "buff_has.dot.json", "buff-no.json", "notes.txt"):
+                (invalid_root / name).write_text(name, encoding="utf-8")
+            with patch(
+                "scripts.game_data.memorypack.buff.buff_gameplay_semantics",
+                return_value={"id": "buff_valid", "status": "parsed-through-exact-tail", "abilityEventActions": []},
+            ):
+                payload, meta = build_full_corpus_payload(export_root)
+            self.assertEqual(["buff_valid"], meta["selected"])
+            self.assertEqual(4, meta["invalidFileCount"])
+            invalid = [row for row in meta["invalidFiles"] if row["kind"] == "invalid-filename"]
+            self.assertEqual(4, len(invalid))
+            self.assertTrue(all({"source", "relativePath", "expected", "actual", "size", "sha256"} <= row.keys() for row in invalid))
+            self.assertEqual("error", meta["status"])
+            report = build_report(payload, scope="full", full_corpus=meta)
+            self.assertEqual(0, report["counts"]["actionOccurrences"])
+
+    def test_full_baseline_scope_and_manifest_changes_fail_closed(self) -> None:
+        payload = fixture_payload()
+        full_meta = {
+            "selectedManifestSha256": "a" * 64,
+            "allSourceManifestSha256": "b" * 64,
+        }
+        previous = build_report(payload, scope="full", full_corpus=full_meta)
+        changed_meta = dict(full_meta, selectedManifestSha256="c" * 64)
+        current = build_report(payload, previous, scope="full", full_corpus=changed_meta)
+        self.assertEqual("compared", current["comparison"]["status"])
+        self.assertTrue(current["comparison"]["reviewRequired"])
+        self.assertIn("full-manifest-changed", {item["kind"] for item in current["changeDiagnostics"]})
+        scope_mismatch = build_report(payload, previous, scope="active")
+        self.assertEqual("error", scope_mismatch["comparison"]["status"])
+        self.assertIn("scope", scope_mismatch["comparison"]["reason"])
+
+    def test_build_gameplay_rejects_audit_options_without_audit_stage(self) -> None:
+        with self.assertRaises(SystemExit):
+            build_gameplay.parse_args(["--stage", "base", "--audit-scope", "full"])
+        with self.assertRaises(SystemExit):
+            build_gameplay.parse_args(["--stage", "projectiles", "--export-root", "export"])
+        with self.assertRaises(SystemExit):
+            build_gameplay.parse_args(["--stage", "audit", "--export-root", "export"])
+
     def test_walks_top_level_and_nested_action_data(self) -> None:
         rows = list(iter_action_occurrences(fixture_payload()))
         self.assertEqual(3, len(rows))
@@ -408,7 +537,7 @@ class GameplayRecoveryAuditTests(unittest.TestCase):
             source = root / "lang" / "CN" / "gameplay" / "index.json"
             source.parent.mkdir(parents=True)
             source.write_text(json.dumps(fixture_payload()), encoding="utf-8")
-            args = SimpleNamespace(languages=["CN"])
+            args = SimpleNamespace(languages=["CN"], audit_scope="active", export_root=None)
             with patch.object(build_gameplay, "WEBUI_DATA_ROOT", root), patch(
                 "scripts.gameplay_builder.recovery_audit.main", return_value=0
             ) as audit_main:
@@ -419,6 +548,12 @@ class GameplayRecoveryAuditTests(unittest.TestCase):
                 "scripts.gameplay_builder.recovery_audit.main", return_value=1
             ):
                 self.assertEqual(1, build_gameplay.run_stage("audit", args))
+
+    def test_build_gameplay_full_audit_runs_once_for_all_languages(self) -> None:
+        args = SimpleNamespace(languages=["CN", "EN"], audit_scope="full", export_root=Path("export"))
+        with patch("scripts.gameplay_builder.recovery_audit.main", return_value=0) as audit_main:
+            self.assertEqual(0, build_gameplay.run_stage("audit", args))
+        audit_main.assert_called_once_with(["--full-corpus", "--export-root", "export"])
 
 
 if __name__ == "__main__":

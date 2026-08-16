@@ -30,6 +30,8 @@ REPORT_SCHEMA_VERSION = "gameplay-recovery-audit.v2"
 BRANCH_FIELDS = ("conditionAction", "failActions", "succeedActions")
 HEX_TOKEN_RE = re.compile(r"^0x[0-9a-fA-F]+$")
 SHA256_RE = re.compile(r"^[0-9a-fA-F]{64}$")
+FULL_ERROR_SAMPLE_LIMIT = 64
+FULL_BUFF_FILENAME_RE = re.compile(r"^buff_[A-Za-z0-9_]+\.json$")
 
 
 def _json_path(parts: tuple[object, ...]) -> str:
@@ -371,7 +373,9 @@ def _pair_histogram(rows: list[dict[str, Any]], first: str, second: str) -> dict
     return {name: counts[name] for name in sorted(counts)}
 
 
-def _validate_previous(previous: Any, language: str) -> tuple[list[dict[str, Any]] | None, dict[str, Any]]:
+def _validate_previous(
+    previous: Any, language: str, scope: str,
+) -> tuple[list[dict[str, Any]] | None, dict[str, Any]]:
     if not isinstance(previous, dict):
         return None, {"status": "error", "reason": "previous report is not an object"}
     if previous.get("schemaVersion") != REPORT_SCHEMA_VERSION:
@@ -384,6 +388,11 @@ def _validate_previous(previous: Any, language: str) -> tuple[list[dict[str, Any
             "status": "error", "reason": "previous report language mismatch",
             "expected": language, "actual": previous.get("language", "<missing>"),
         }
+    if previous.get("scope") != scope:
+        return None, {
+            "status": "error", "reason": "previous report scope mismatch",
+            "expected": scope, "actual": previous.get("scope", "<missing>"),
+        }
     previous_content_hash = previous.get("contentSha256")
     if not isinstance(previous_content_hash, str) or SHA256_RE.fullmatch(previous_content_hash) is None:
         return None, {
@@ -391,6 +400,20 @@ def _validate_previous(previous: Any, language: str) -> tuple[list[dict[str, Any
             "expected": "64 hexadecimal characters",
             "actual": previous_content_hash if previous_content_hash is not None else "<missing>",
         }
+    if scope == "full":
+        previous_full = previous.get("fullCorpus")
+        if not isinstance(previous_full, dict):
+            return None, {
+                "status": "error", "reason": "previous full report fullCorpus is missing",
+            }
+        for field in ("selectedManifestSha256", "allSourceManifestSha256"):
+            value = previous_full.get(field)
+            if not isinstance(value, str) or SHA256_RE.fullmatch(value) is None:
+                return None, {
+                    "status": "error", "reason": f"previous full report {field} is invalid",
+                    "expected": "64 hexadecimal characters",
+                    "actual": value if value is not None else "<missing>",
+                }
     rows = previous.get("occurrences")
     if not isinstance(rows, list):
         return None, {"status": "error", "reason": "previous report occurrences is not a list"}
@@ -432,7 +455,7 @@ def _validate_previous(previous: Any, language: str) -> tuple[list[dict[str, Any
 
 def _diagnostics(
     current: list[dict[str, Any]], previous: dict[str, Any] | None, language: str,
-    content_sha256_value: str | None,
+    content_sha256_value: str | None, scope: str, full_corpus: dict[str, Any] | None,
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     current_hash = content_sha256_value or "<not-available>"
     previous_hash = (
@@ -447,12 +470,23 @@ def _diagnostics(
     }
     if previous is None:
         return [], {"status": "not-requested", "reviewRequired": False, **comparison_meta}
-    previous_rows, validation = _validate_previous(previous, language)
+    previous_rows, validation = _validate_previous(previous, language, scope)
     if previous_rows is None:
         return [], {**validation, "reviewRequired": True, **comparison_meta}
     previous_by_id = {str(row["id"]): row for row in previous_rows}
     current_by_id = {str(row["id"]): row for row in current}
     diagnostics: list[dict[str, Any]] = []
+    if scope == "full":
+        current_full = full_corpus or {}
+        previous_full = previous.get("fullCorpus") or {}
+        for field in ("selectedManifestSha256", "allSourceManifestSha256"):
+            current_manifest = current_full.get(field, "<missing>")
+            previous_manifest = previous_full.get(field, "<missing>")
+            if current_manifest != previous_manifest:
+                diagnostics.append({
+                    "kind": "full-manifest-changed", "severity": "warning",
+                    "field": field, "expected": previous_manifest, "actual": current_manifest,
+                })
     for occurrence_id in sorted(set(current_by_id) & set(previous_by_id)):
         old = previous_by_id[occurrence_id]
         new = current_by_id[occurrence_id]
@@ -558,14 +592,242 @@ def _diagnostics(
     }
 
 
+def build_full_corpus_payload(export_root: Path) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Decode every exported BuffData file with Persistent overlay precedence.
+
+    This is intentionally an audit-only view.  It never writes or mutates the
+    generated WebUI index and preserves bounded file/decode error samples.
+    """
+
+    if __package__ and __package__.startswith("scripts."):
+        from scripts.game_data.memorypack.buff import buff_gameplay_semantics
+    else:
+        from game_data.memorypack.buff import buff_gameplay_semantics
+
+    export_root = export_root.resolve()
+
+    source_roots = {
+        "StreamingAssets": export_root / "structured" / "StreamingAssets" / "Data" / "Json" / "BuffData",
+        "Persistent": export_root / "structured" / "Persistent" / "Data" / "Json" / "BuffData",
+    }
+    discovered: dict[str, dict[str, Path]] = {source: {} for source in source_roots}
+    file_meta: dict[str, dict[str, dict[str, Any]]] = {source: {} for source in source_roots}
+    manifest_hashes: dict[str, str] = {}
+    root_status: dict[str, dict[str, Any]] = {}
+    missing_roots: list[str] = []
+    invalid_files: list[dict[str, Any]] = []
+    error_samples: list[dict[str, Any]] = []
+    error_count = 0
+    invalid_file_count = 0
+    source_file_counts: dict[str, int] = {}
+    valid_file_counts: dict[str, int] = {}
+
+    def relative(path: Path) -> str:
+        return path.relative_to(export_root).as_posix() if path.is_relative_to(export_root) else path.as_posix()
+
+    def evidence(path: Path) -> tuple[int | str, str, str | None]:
+        try:
+            data = path.read_bytes()
+            return len(data), hashlib.sha256(data).hexdigest(), None
+        except OSError as exc:
+            return "<unavailable>", "<unavailable>", f"{type(exc).__name__}: {exc}"
+
+    def add_error(kind: str, source: str, path: Path, detail: str) -> None:
+        nonlocal error_count, invalid_file_count
+        error_count += 1
+        size, digest, _ = evidence(path)
+        sample = {
+            "kind": kind,
+            "source": source,
+            "file": relative(path),
+            "relativePath": relative(path),
+            "expected": "canonical BuffData file decodable by buff_gameplay_semantics",
+            "actual": str(detail)[:500],
+            "size": size,
+            "sha256": digest,
+            "detail": str(detail)[:500],
+        }
+        invalid_kind = kind in {"read-error", "unsupported-file", "parse-error", "decode-error"}
+        if invalid_kind:
+            invalid_file_count += 1
+        if len(error_samples) < FULL_ERROR_SAMPLE_LIMIT:
+            error_samples.append(sample)
+        if invalid_kind:
+            invalid_files.append(sample)
+
+    for source, root in source_roots.items():
+        root_path = root.relative_to(export_root).as_posix()
+        if not root.is_dir():
+            missing_roots.append(source)
+            root_status[source] = {"status": "missing", "path": root_path, "fileCount": 0}
+            source_file_counts[source] = 0
+            valid_file_counts[source] = 0
+            manifest_hashes[source] = hashlib.sha256(b"").hexdigest()
+            continue
+        try:
+            paths = sorted((path for path in root.iterdir() if path.is_file()), key=lambda path: path.name)
+        except OSError as exc:
+            root_status[source] = {"status": "error", "path": root_path, "fileCount": 0}
+            source_file_counts[source] = 0
+            valid_file_counts[source] = 0
+            add_error("read-error", source, root, f"{type(exc).__name__}: {exc}")
+            manifest_hashes[source] = hashlib.sha256(b"").hexdigest()
+            continue
+        source_file_counts[source] = len(paths)
+        valid_count = 0
+        manifest_rows: list[str] = []
+        for path in paths:
+            size, digest, read_detail = evidence(path)
+            manifest_rows.append(f"{path.name}\t{digest}")
+            if read_detail is not None:
+                add_error("read-error", source, path, read_detail)
+            if FULL_BUFF_FILENAME_RE.fullmatch(path.name) is None:
+                invalid_file_count += 1
+                error_count += 1
+                invalid_row = {
+                    "kind": "invalid-filename",
+                    "source": source,
+                    "relativePath": relative(path),
+                    "expected": FULL_BUFF_FILENAME_RE.pattern,
+                    "actual": path.name,
+                    "size": size,
+                    "sha256": digest,
+                }
+                invalid_files.append(invalid_row)
+                if len(error_samples) < FULL_ERROR_SAMPLE_LIMIT:
+                    error_samples.append(invalid_row)
+                continue
+            name = path.stem
+            valid_count += 1
+            discovered[source][name] = path
+            file_meta[source][name] = {
+                "source": source,
+                "id": name,
+                "path": relative(path),
+                "size": size,
+                "sha256": digest,
+            }
+        valid_file_counts[source] = valid_count
+        root_status[source] = {
+            "status": "present",
+            "path": root_path,
+            "fileCount": len(paths),
+            "validFileCount": valid_count,
+        }
+        manifest_hashes[source] = hashlib.sha256("\n".join(manifest_rows).encode("utf-8")).hexdigest()
+
+    streaming_names = set(discovered["StreamingAssets"])
+    persistent_names = set(discovered["Persistent"])
+    selected_names = sorted(streaming_names | persistent_names)
+    persistent_only = sorted(persistent_names - streaming_names)
+    streaming_only = sorted(streaming_names - persistent_names)
+    selected_records: dict[str, Any] = {}
+    selected_sources: dict[str, str] = {}
+    selected_statuses: dict[str, str] = {}
+
+    for name in selected_names:
+        source = "Persistent" if name in persistent_names else "StreamingAssets"
+        path = discovered[source][name]
+        selected_sources[name] = source
+        try:
+            record = buff_gameplay_semantics(path)
+            if not isinstance(record, dict):
+                add_error("decode-error", source, path, "decoder returned non-object")
+                record = {"id": name, "status": "decode-error", "evidenceStatus": "unresolved"}
+            status = str(record.get("status") or "")
+            if status.startswith("unsupported") or status in {"parse-error", "read-error"}:
+                add_error("unsupported-file" if status.startswith("unsupported") else status, source, path, status)
+        except OSError as exc:
+            add_error("read-error", source, path, f"{type(exc).__name__}: {exc}")
+            record = {"id": name, "status": "read-error", "evidenceStatus": "unresolved", "error": str(exc)}
+        except Exception as exc:  # bounded per-file audit failure; continue corpus scan
+            add_error("decode-error", source, path, f"{type(exc).__name__}: {exc}")
+            record = {"id": name, "status": "decode-error", "evidenceStatus": "unresolved", "error": str(exc)}
+        record.setdefault("abilityEventActions", [])
+        record["source"] = {"kind": source, "path": relative(path)}
+        selected_records[name] = record
+        selected_statuses[name] = str(record.get("status") or "<missing>")
+
+    source_manifest: list[dict[str, Any]] = []
+    shadowed: list[dict[str, Any]] = []
+    for source in ("StreamingAssets", "Persistent"):
+        for name in sorted(file_meta[source]):
+            meta = dict(file_meta[source][name])
+            meta["sha"] = meta["sha256"]
+            selected_source = selected_sources.get(name)
+            is_selected = selected_source == source
+            meta["status"] = selected_statuses.get(name, "shadowed") if is_selected else "shadowed"
+            meta["selection"] = "selected" if is_selected else "shadowed"
+            if not is_selected:
+                counterpart = file_meta[selected_source][name]  # type: ignore[index]
+                same_bytes = meta["sha256"] == counterpart["sha256"]
+                meta["selectedSource"] = selected_source
+                meta["selectedPath"] = counterpart["path"]
+                meta["selectedSha256"] = counterpart["sha256"]
+                meta["selectedCounterpart"] = {
+                    "source": selected_source,
+                    "id": name,
+                    "path": counterpart["path"],
+                    "size": counterpart["size"],
+                    "sha256": counterpart["sha256"],
+                }
+                meta["sameBytesAsSelected"] = same_bytes
+                shadowed.append({
+                    "id": name,
+                    "source": source,
+                    "path": meta["path"],
+                    "selectedSource": selected_source,
+                    "selectedPath": counterpart["path"],
+                    "sameBytesAsSelected": same_bytes,
+                })
+            source_manifest.append(meta)
+    source_manifest.sort(key=lambda row: (str(row["source"]), str(row["id"])))
+    selected_manifest = [row for row in source_manifest if row["selection"] == "selected"]
+
+    def manifest_digest(records: list[dict[str, Any]]) -> str:
+        canonical = {"scope": "full", "rootStatus": root_status, "records": records}
+        encoded = json.dumps(canonical, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        return hashlib.sha256(encoded).hexdigest()
+
+    full_meta = {
+        "status": "error" if missing_roots or error_count else "ok",
+        "rootStatus": root_status,
+        "sourceFileCounts": source_file_counts | {"selected": len(selected_names)},
+        "validSourceFileCounts": valid_file_counts,
+        "selected": selected_names,
+        "selectedSources": selected_sources,
+        "shadowed": shadowed,
+        "persistentOnly": persistent_only,
+        "streamingOnly": streaming_only,
+        "missingRoots": missing_roots,
+        "invalidFiles": invalid_files,
+        "invalidFileCount": invalid_file_count,
+        "errorSamples": error_samples,
+        "errorCount": error_count,
+        "manifestHashes": manifest_hashes,
+        "sourceManifest": source_manifest,
+        "selectedManifestSha256": manifest_digest(selected_manifest),
+        "allSourceManifestSha256": manifest_digest(source_manifest),
+    }
+    payload = {
+        "language": "FULL",
+        "buffs": selected_records,
+        "fullCorpus": full_meta,
+    }
+    return payload, full_meta
+
+
 def build_report(
     payload: dict[str, Any], previous: dict[str, Any] | None = None, *,
-    input_sha256: str | None = None,
+    input_sha256: str | None = None, scope: str = "active",
+    full_corpus: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     rows, sequence_nodes, structure_diagnostics = _collect_occurrences(payload)
     language = _value(payload.get("language"), "<missing>")
     content_hash = content_sha256(payload)
-    diagnostics, comparison = _diagnostics(rows, previous, language, content_hash)
+    diagnostics, comparison = _diagnostics(
+        rows, previous, language, content_hash, scope, full_corpus,
+    )
     authored = sum(int(node["authored"]) for node in sequence_nodes)
     materialized = sum(int(node["materialized"]) for node in sequence_nodes)
     unmaterialized = sum(int(node["unmaterialized"]) for node in sequence_nodes)
@@ -584,8 +846,9 @@ def build_report(
         "memberCounts": len(_histogram(rows, "memberCount")),
         "tags": len(_histogram(rows, "tag")),
     }
-    return {
+    report = {
         "schemaVersion": REPORT_SCHEMA_VERSION,
+        "scope": scope,
         "language": language,
         "inputGenerated": payload.get("generated"),
         "inputSha256": input_sha256 or "<not-available>",
@@ -612,6 +875,9 @@ def build_report(
         "occurrences": rows,
         "sequences": sequence_nodes,
     }
+    if full_corpus is not None:
+        report["fullCorpus"] = full_corpus
+    return report
 
 
 def render_markdown(report: dict[str, Any]) -> str:
@@ -625,6 +891,7 @@ def render_markdown(report: dict[str, Any]) -> str:
     lines = [
         "# Gameplay recovery coverage audit",
         "",
+        f"- Scope: {code(report.get('scope', 'active'))}",
         f"- Language: {code(report.get('language', '<missing>'))}",
         f"- Input generated: {code(report.get('inputGenerated', '<missing>'))}",
         f"- Input SHA-256: {code(report.get('inputSha256', '<missing>'))}",
@@ -636,6 +903,16 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- Owners: **{counts.get('owners', 0)}**",
         "",
     ]
+    full_corpus = report.get("fullCorpus") or {}
+    if full_corpus:
+        lines.extend([
+            f"- Full corpus status: {code(full_corpus.get('status', '<missing>'))}",
+            f"- Selected BuffData files: **{len(full_corpus.get('selected') or [])}**",
+            f"- Shadowed by Persistent: **{len(full_corpus.get('shadowed') or [])}**",
+            f"- Invalid files: **{full_corpus.get('invalidFileCount', 0)}**",
+            f"- Missing roots: {code(', '.join(full_corpus.get('missingRoots') or []) or '<none>')}",
+            "",
+        ])
     histograms = report.get("histograms") or {}
     for title, key in (
         ("Action type", "actionType"),
@@ -725,6 +1002,14 @@ def write_report(report: dict[str, Any], output: Path, markdown_output: Path) ->
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", type=Path, default=DEFAULT_INPUT, help="Generated Gameplay index JSON.")
+    parser.add_argument(
+        "--full-corpus", action="store_true",
+        help="Audit every exported BuffData file with Persistent overlay precedence.",
+    )
+    parser.add_argument(
+        "--export-root", type=Path, default=ROOT / "export_full",
+        help="Export root used by --full-corpus (default: export_full).",
+    )
     parser.add_argument("--previous", type=Path, help="Earlier audit JSON for regression/schema comparison.")
     parser.add_argument("--output", type=Path, help="Audit JSON output path.")
     parser.add_argument("--markdown-output", type=Path, help="Audit Markdown output path.")
@@ -733,12 +1018,29 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
-    payload = _read_json(args.input)
-    language = _value(payload.get("language"), "unknown").lower()
-    output = args.output or DEFAULT_REPORT_ROOT / f"gameplay_recovery_audit_{language}.json"
+    full_meta: dict[str, Any] | None = None
+    if args.full_corpus:
+        payload, full_meta = build_full_corpus_payload(args.export_root.resolve())
+        language = "full"
+        manifest_bytes = json.dumps(
+            full_meta.get("manifestHashes") or {}, sort_keys=True, separators=(",", ":")
+        ).encode("utf-8")
+        input_sha256 = hashlib.sha256(manifest_bytes).hexdigest()
+    else:
+        payload = _read_json(args.input)
+        language = _value(payload.get("language"), "unknown").lower()
+        input_sha256 = sha256_file(args.input)
+    output = args.output or DEFAULT_REPORT_ROOT / (
+        "gameplay_recovery_audit_full.json" if args.full_corpus
+        else f"gameplay_recovery_audit_{language}.json"
+    )
     markdown_output = args.markdown_output or output.with_suffix(".md")
     previous = _read_json(args.previous) if args.previous else None
-    report = build_report(payload, previous, input_sha256=sha256_file(args.input))
+    report = build_report(
+        payload, previous, input_sha256=input_sha256,
+        scope="full" if args.full_corpus else "active",
+        full_corpus=full_meta,
+    )
     write_report(report, output, markdown_output)
     print(
         f"Gameplay recovery audit: {report['counts']['actionOccurrences']} actions, "
@@ -753,7 +1055,8 @@ def main(argv: list[str] | None = None) -> int:
     change_error = any(
         item.get("severity") == "error" for item in report["changeDiagnostics"]
     )
-    return 1 if structure_error or comparison_error or review_required or change_error else 0
+    full_error = bool(full_meta and full_meta.get("status") == "error")
+    return 1 if structure_error or comparison_error or review_required or change_error or full_error else 0
 
 
 if __name__ == "__main__":
