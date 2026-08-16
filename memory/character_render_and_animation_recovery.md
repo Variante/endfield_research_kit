@@ -1707,6 +1707,14 @@ only stable interpretation and priorities.
    different implementations. Thus even the Li start-only graph cannot claim
    exact stock-mixer equivalence. Null-state transitions and extreme
    allocation failure remain open.
+   Their state protocol is now bounded: initialization starts at `1/1`; slot 3
+   clears `+0x171` on its first valid evaluation and calls `0x180a5a680`, then
+   computes evaluation time and calls `0x180a634d0` on later passes. Slot 4
+   resets `+0x174`, sets `+0x170`, then enters stock time/speed propagation;
+   slot 13 handles reset commands; slots 18/19 suppress generic callbacks only
+   when both bytes are zero. Exact scheduler ownership and the two runtime
+   callback semantics remain open, so a pure ScriptPlayable is not yet a
+   retail-faithful replacement.
    The managed graph control is now closed beyond construction. `_AddClip`
    connects each non-null clip from output port zero to mixer input
    `animationState-1`; Li's null loop/end return before connection. On every

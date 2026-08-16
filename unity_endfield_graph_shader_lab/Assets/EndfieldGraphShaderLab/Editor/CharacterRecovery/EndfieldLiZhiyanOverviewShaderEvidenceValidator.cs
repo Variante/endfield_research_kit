@@ -206,6 +206,9 @@ namespace EndfieldGraphShaderLabEditor
                 L.Dict(nativeMixer["initializers"]);
             Dictionary<string, object> advancedSlots =
                 L.Dict(nativeMixer["advancedOnlyStateSlots"]);
+            Dictionary<string, object> advancedStateFields =
+                L.Dict(advancedSlots["stateFields"]);
+            Dictionary<string, object> advancedSlot3 = L.Dict(advancedSlots["slot3"]);
             Dictionary<string, object> lodOwnership =
                 L.Dict(contract["effectLodRendererOwnership"]);
             Dictionary<string, object> lodField = L.Dict(lodOwnership["managedField"]);
@@ -247,7 +250,11 @@ namespace EndfieldGraphShaderLabEditor
                 Mathf.Abs(L.Float(sharedInputs, "defaultWeight")) < 0.000001f &&
                 !L.Bool(sharedInputs, "automaticNormalization") &&
                 L.Str(mixerInitializers, "advancedExtraWordValue") == "0x0101" &&
-                L.Str(L.Dict(advancedSlots["slot3"]), "va") == "0x180AD5230" &&
+                L.Str(advancedSlot3, "va") == "0x180AD5230" &&
+                L.Str(advancedSlot3, "firstHandshakeVA") == "0x180A5A680" &&
+                L.Str(advancedSlot3, "subsequentRuntimeVA") == "0x180A634D0" &&
+                L.Long(L.Dict(advancedStateFields["state170"]), "initialValue") == 1 &&
+                L.Long(L.Dict(advancedStateFields["state171"]), "initialValue") == 1 &&
                 L.Bool(advancedSlots, "stockImplementationsDiffer") &&
                 !L.Bool(advancedSlots, "restrictedStartOnlyStockEquivalenceProven") &&
                 L.Str(advancedSlots, "classification") ==
