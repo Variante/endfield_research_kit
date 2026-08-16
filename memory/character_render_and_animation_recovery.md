@@ -1497,13 +1497,24 @@ only stable interpretation and priorities.
    original BC7 payloads: every single-image 2D mip chain has zero stripped
    mips, exporter-validated byte layout, payload hash, dimensions, color-space,
    and serialized filter/aniso/bias/wrap settings pinned in contract schema v2.
+   The installed Persistent-VFS override of `HGRP/Effect/VFXBaseV2` is now the
+   selected shader source rather than its same-PathID StreamingAssets base
+   copy. Its 1,360 compiled D3D11 keyword signatures are uniquely stage-paired;
+   the six materials map exactly to three non-instanced VS/PS pairs (base,
+   `_USE_SOFTBLEND`, and `_SAMPLE_TEX0+_USE_SOFTBLEND`) plus their three
+   SRP-instanced pairs. Exact bytes, metadata, Ruri register signatures, dual
+   MRT outputs, Persistent source/chunk hashes, and the native-static queue
+   `3660..3740` after-DOF attachment contract are pinned and validated in the
+   Unity lab. `HG_ENABLE_MV` remains an implicit compiled keyword, not a
+   serialized material keyword.
    All 12 controller requests are preserved; the other 11
    remain explicitly unbound. Its `38-47 s` retail slot, especially the
    hand-adjacent teal layer near 40 seconds, is the current strongest visual
    acceptance window, but native bytes do not identify a draw. Visible
-   admission still requires the exact retail VFXBaseV2 specialization,
-   descriptor binding, PSO, ForwardOnly MRT/depth scheduling, and compositing
-   contract.
+   admission no longer lacks specialization identity or static scheduling;
+   it still requires the retail live descriptor table/root signature, PSO
+   overrides, renderer-list survivors/order, physical MRT/depth handles, and
+   final compositing contract.
    Wulfa `bishou_wind3` is next after that boundary because its visible
    purple/red wind trail mixes VFXRefract and VFXBaseV2 families.
 6. Add controller, grounding, facial, FX, and secondary systems behind

@@ -1,0 +1,193 @@
+cbuffer _13_15 : register(b0, space0)
+{
+    float4 _15_m0[28] : packoffset(c0);
+};
+
+cbuffer _19_21 : register(b0, space0)
+{
+    float4 _21_m0[28] : packoffset(c0);
+};
+
+cbuffer _24_26 : register(b1, space0)
+{
+    float4 _26_m0[105] : packoffset(c0);
+};
+
+cbuffer _29_31 : register(b1, space0)
+{
+    float4 _31_m0[105] : packoffset(c0);
+};
+
+cbuffer _34_36 : register(b2, space0)
+{
+    float4 _36_m0[5] : packoffset(c0);
+};
+
+cbuffer _39_41 : register(b3, space0)
+{
+    float4 _41_m0[22] : packoffset(c0);
+};
+
+cbuffer _44_46 : register(b3, space0)
+{
+    float4 _46_m0[22] : packoffset(c0);
+};
+
+Texture2D<float4> _8 : register(t0, space0);
+Texture2D<float4> _9 : register(t1, space0);
+SamplerState sampler_LinearClamp : register(s0, space0);
+SamplerState sampler_LinearRepeat : register(s1, space0);
+
+static float4 gl_FragCoord;
+static float3 TEXCOORD;
+static float4 TEXCOORD_2;
+static float3 TEXCOORD_3;
+static float3 TEXCOORD_4;
+static float4 SV_Target;
+static float4 SV_Target_1;
+
+struct SPIRV_Cross_Input
+{
+    float3 TEXCOORD : TEXCOORD1;
+    float4 TEXCOORD_2 : TEXCOORD3;
+    float3 TEXCOORD_3 : TEXCOORD4;
+    float3 TEXCOORD_4 : TEXCOORD5;
+    float4 gl_FragCoord : SV_Position;
+};
+
+struct SPIRV_Cross_Output
+{
+    float4 SV_Target : SV_Target0;
+    float4 SV_Target_1 : SV_Target1;
+};
+
+float _64(uint _63)
+{
+    return float(_63);
+}
+
+float _73(float2 _71, float2 _72)
+{
+    precise float _77 = _71.x * _72.x;
+    return mad(_71.y, _72.y, _77);
+}
+
+float _85(float3 _83, float3 _84)
+{
+    precise float _89 = _83.x * _84.x;
+    return mad(_83.z, _84.z, mad(_83.y, _84.y, _89));
+}
+
+float _97(uint _96)
+{
+    return float(int(_96));
+}
+
+void frag_main()
+{
+    uint4 _115 = asuint(_31_m0[0u]);
+    float _118 = asfloat(_115.z);
+    float _119 = asfloat(_115.w);
+    float _122 = mad(_64(uint(gl_FragCoord.x)) * _118, 2.0f, -1.0f);
+    float _126 = -mad(_64(uint(gl_FragCoord.y)) * _119, 2.0f, -1.0f);
+    uint4 _130 = asuint(_21_m0[25u]);
+    float _135 = asfloat(_130.x);
+    float _136 = asfloat(_130.y);
+    float _137 = asfloat(_130.z);
+    float _138 = asfloat(_130.w);
+    uint4 _146 = asuint(_21_m0[24u]);
+    float _151 = asfloat(_146.x);
+    float _152 = asfloat(_146.y);
+    float _153 = asfloat(_146.z);
+    float _154 = asfloat(_146.w);
+    float _159 = gl_FragCoord.x * _118;
+    float _160 = gl_FragCoord.y * _119;
+    float4 _167 = _8.SampleLevel(sampler_LinearClamp, float2(_159, _160), 0.0f);
+    float _169 = _167.x;
+    float _174 = mad(_159, 2.0f, -1.0f);
+    uint4 _179 = asuint(_21_m0[26u]);
+    float _184 = asfloat(_179.x);
+    float _185 = asfloat(_179.y);
+    float _186 = asfloat(_179.z);
+    float _187 = asfloat(_179.w);
+    uint4 _195 = asuint(_21_m0[27u]);
+    float _200 = asfloat(_195.x);
+    float _201 = asfloat(_195.y);
+    float _202 = asfloat(_195.z);
+    float _203 = asfloat(_195.w);
+    float _207 = mad(_187, _169, mad(_154, _122, _126 * _138)) + _203;
+    float _216 = asfloat(asuint(_15_m0[1u].z));
+    float _222 = asfloat(asuint(_15_m0[0u].z));
+    float _228 = asfloat(asuint(_15_m0[2u].z));
+    float _230 = -mad(_160, 2.0f, -1.0f);
+    float _248 = mad(_187, gl_FragCoord.z, mad(_154, _174, _230 * _138)) + _203;
+    float _259 = asfloat(asuint(_15_m0[3u].z));
+    float _262 = abs(mad(_228, (mad(_186, gl_FragCoord.z, mad(_153, _174, _230 * _137)) + _202) / _248, mad(_222, (mad(_184, gl_FragCoord.z, mad(_151, _174, _230 * _135)) + _200) / _248, ((mad(_185, gl_FragCoord.z, mad(_152, _174, _230 * _136)) + _201) / _248) * _216)) + _259);
+    float _305 = 1.0f - _46_m0[14u].w;
+    float _308 = mad(mad(1.0f - _46_m0[14u].z, _41_m0[17u].w * _41_m0[18u].w, mad(-_41_m0[17u].w, _41_m0[18u].w, 1.0f)), mad(TEXCOORD.z + _41_m0[18u].y, 2.019999980926513671875f, -0.0099999904632568359375f), -1.0f);
+    float _320 = clamp((_308 + _41_m0[18u].z) * _41_m0[18u].x, 0.0f, 1.0f);
+    float4 _338 = _9.SampleBias(sampler_LinearRepeat, float2(TEXCOORD.x, TEXCOORD.y), trunc(_41_m0[5u].z) + asfloat(asuint(_26_m0[26u].x)));
+    float _340 = _338.x;
+    float _341 = _338.y;
+    float _342 = _338.z;
+    float _343 = _338.w;
+    bool _360 = _41_m0[1u].y != 0.0f;
+    float _397 = _305 * (mad(_41_m0[5u].y, 1.0f - _340, _340) * (((_360 ? 1.0f : TEXCOORD_2.x) * _46_m0[4u].x) * _46_m0[1u].z));
+    float _398 = _305 * (mad(_41_m0[5u].y, 1.0f - _341, _341) * (((_360 ? 1.0f : TEXCOORD_2.y) * _46_m0[4u].y) * _46_m0[1u].z));
+    float _399 = _305 * (mad(_41_m0[5u].y, 1.0f - _342, _342) * (((_360 ? 1.0f : TEXCOORD_2.z) * _46_m0[4u].z) * _46_m0[1u].z));
+    float _400 = _305 * (mad(_41_m0[5u].y, _340 - _343, _343) * (((_360 ? 1.0f : TEXCOORD_2.w) * _46_m0[4u].w) * _46_m0[1u].w));
+    bool _405 = _41_m0[15u].y != 0.0f;
+    float _427 = clamp(((_41_m0[12u].x != 0.0f) ? (clamp((_262 - _41_m0[12u].w) / (_41_m0[13u].x - _41_m0[12u].w), 0.0f, 1.0f) * clamp((_262 - _41_m0[12u].y) / (_41_m0[12u].z - _41_m0[12u].y), 0.0f, 1.0f)) : 1.0f) * (clamp(((abs(mad(_228, (mad(_186, _169, mad(_153, _122, _126 * _137)) + _202) / _207, mad(_222, (mad(_184, _169, mad(_151, _122, _126 * _135)) + _200) / _207, ((mad(_185, _169, mad(_152, _122, _126 * _136)) + _201) / _207) * _216)) + _259) - _262) + _41_m0[11u].y) / _41_m0[11u].x, 0.0f, 1.0f) * (_405 ? (clamp((-_308) * _41_m0[18u].x, 0.0f, 1.0f) * _400) : _400)), 0.0f, 1.0f);
+    float _434 = (1.0f - asfloat(asuint(_36_m0[4u].y))) * _427;
+    float _443 = frac(frac(_73(float2(gl_FragCoord.x, gl_FragCoord.y), float2(0.067110560834407806396484375f, 0.005837149918079376220703125f))) * 52.98291778564453125f);
+    float _448 = asfloat(asuint(_36_m0[4u].x));
+    float _460 = ((_448 - ((_448 >= 0.0f) ? _443 : (-_443))) > 0.0f) ? 1.0f : (1.0f - _46_m0[0u].x);
+    float _462 = mad(-_434, _460, 1.0f);
+    float _463 = _460 * _434;
+    float _483 = _405 ? mad(_320, mad(_320 * _46_m0[21u].x, _41_m0[1u].z, -_397), _397) : _397;
+    float _484 = _405 ? mad(_320, mad(_320 * _46_m0[21u].y, _41_m0[1u].z, -_398), _398) : _398;
+    float _485 = _405 ? mad(_320, mad(_320 * _46_m0[21u].z, _41_m0[1u].z, -_399), _399) : _399;
+    float _509 = mad(asfloat(asuint(_26_m0[27u].y)), _41_m0[3u].x, 1.0f - _41_m0[3u].x);
+    float _513 = clamp(_509 * mad(max(_483 - _41_m0[2u].y, 0.0f), _41_m0[2u].z, _483), 0.0f, 1000.0f);
+    float _515 = clamp(_509 * mad(max(_484 - _41_m0[2u].y, 0.0f), _41_m0[2u].z, _484), 0.0f, 1000.0f);
+    float _516 = clamp(_509 * mad(max(_485 - _41_m0[2u].y, 0.0f), _41_m0[2u].z, _485), 0.0f, 1000.0f);
+    float _530 = (1.0f - _46_m0[0u].y) * _463;
+    SV_Target.w = _530;
+    bool _541 = _41_m0[0u].y == 2.0f;
+    float _542 = _541 ? mad(_513, _463, _462) : (_463 * _513);
+    float _543 = _541 ? mad(_515, _463, _462) : (_463 * _515);
+    float _544 = _541 ? mad(_516, _463, _462) : (_463 * _516);
+    float _546 = _85(float3(_542, _543, _544), float3(0.21267290413379669189453125f, 0.715152204036712646484375f, 0.072175003588199615478515625f));
+    float _554 = asfloat(asuint(_26_m0[104u].w));
+    uint4 _560 = asuint(_31_m0[104u]);
+    float _573 = 1.0f - _41_m0[2u].w;
+    SV_Target.x = mad(mad(_554, _542 - _546, _546) * asfloat(_560.x), _41_m0[2u].w, _542 * _573);
+    SV_Target.y = mad(mad(_554, _543 - _546, _546) * asfloat(_560.y), _41_m0[2u].w, _543 * _573);
+    SV_Target.z = mad(mad(_554, _544 - _546, _546) * asfloat(_560.z), _41_m0[2u].w, _544 * _573);
+    SV_Target_1.w = (clamp(max(_530, _463 * _85(float3(_513, _515, _516), float3(0.21267290413379669189453125f, 0.715152204036712646484375f, 0.072175003588199615478515625f))) * 10.0f, 0.0f, 1.0f) > 0.5f) ? (_41_m0[0u].x * _41_m0[0u].z) : 0.0f;
+    float _592 = max(TEXCOORD_3.z, 9.9999999392252902907785028219223e-09f);
+    float _599 = TEXCOORD_3.y / _592;
+    float _602 = max(TEXCOORD_4.z, 9.9999999392252902907785028219223e-09f);
+    float _608 = TEXCOORD_4.y / _602;
+    float _609 = (TEXCOORD_3.x / _592) - (TEXCOORD_4.x / _602);
+    float _611 = _608 - _599;
+    bool _643 = clamp((_41_m0[0u].w - _41_m0[0u].x) + 1.0f, 0.0f, 1.0f) > 0.5f;
+    SV_Target_1.x = min(_643 ? mad(_97(((_609 < 0.0f) ? 4294967295u : 0u) + uint(_609 > 0.0f)) * sqrt(sqrt(abs(_609 * 0.5f))), 0.5f, 0.5f) : 0.0f, 1.0f);
+    SV_Target_1.y = min(_643 ? mad(_97(uint(_611 > 0.0f) + ((_611 < 0.0f) ? 4294967295u : 0u)) * sqrt(sqrt(abs((_599 - _608) * (-0.5f)))), 0.5f, 0.5f) : 0.0f, 1.0f);
+    SV_Target_1.z = 1.0f;
+}
+
+SPIRV_Cross_Output main(SPIRV_Cross_Input stage_input)
+{
+    gl_FragCoord = stage_input.gl_FragCoord;
+    gl_FragCoord.w = 1.0 / gl_FragCoord.w;
+    TEXCOORD = stage_input.TEXCOORD;
+    TEXCOORD_2 = stage_input.TEXCOORD_2;
+    TEXCOORD_3 = stage_input.TEXCOORD_3;
+    TEXCOORD_4 = stage_input.TEXCOORD_4;
+    frag_main();
+    SPIRV_Cross_Output stage_output;
+    stage_output.SV_Target = SV_Target;
+    stage_output.SV_Target_1 = SV_Target_1;
+    return stage_output;
+}

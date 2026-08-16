@@ -45,6 +45,7 @@ namespace EndfieldGraphShaderLabEditor
                 L.Str(contract, "effectName") == ExpectedEffect &&
                 L.Str(contract, "mountPoint") == "Bip001_R_Finger2Nub",
                 "Li Zhiyan finger-effect contract identity drifted");
+            EndfieldLiZhiyanOverviewShaderEvidenceValidator.Validate(contract);
             L.EnsureFolder(GeneratedRoot);
             L.EnsureFolder(MaterialRoot);
 
