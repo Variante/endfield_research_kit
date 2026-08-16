@@ -17,9 +17,17 @@ EFFECT_INSTANCE_TARGETS = (
     REPO / "scratch/reverse_engineering/zhuangfy_lizi_lodfade_20260724/"
     "effect_instance_native.json"
 )
+EFFECT_LIFECYCLE_TARGETS = (
+    REPO / "scratch/reverse_engineering/zhuangfy_lizi_lodfade_20260724/"
+    "effect_lifecycle_native.json"
+)
 OWNER_REPORT = REPO / "reports/assets/character_recovery/overview_effect_owner_animator_negative_20260815.md"
 STATIC_CONTRACT = LAB / "Assets/EndfieldGraphShaderLab/Generated/OriginalData/Effects/lizhiyan_overview_start_01_effect.json"
 SIBLING_CONTRACT = LAB / "Assets/EndfieldGraphShaderLab/Generated/OriginalData/Effects/lizhiyan_overview_start_02_03_effects.json"
+INSTALLED_IFIX_STATE = (
+    LAB / "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/"
+    "installed_ifix_patch_state.json"
+)
 OUTPUT = (
     LAB / "Assets/EndfieldGraphShaderLab/Generated/OriginalData/ShaderEvidence/"
     "LiZhiyanOverviewFinger/lizhiyan_effect_animation_playable_topology.json"
@@ -117,27 +125,70 @@ def effect_instance_route(
     }
 
 
+def lod_method(body_targets: dict[str, Any], name: str, token: str, va: str) -> dict[str, str]:
+    rows = [
+        row for row in body_targets["bodyTargets"]
+        if row.get("type") == "Beyond.Gameplay.EffectLodCfg" and row.get("method") == name
+    ]
+    require(len(rows) == 1, f"EffectLodCfg.{name} body target missing or ambiguous")
+    row = rows[0]
+    require(row["token"].upper() == token.upper() and row["methodPointerVa"].upper() == va.upper(),
+            f"EffectLodCfg.{name} ABI drifted")
+    return {"token": token, "va": va}
+
+
+def renderer_ids(effect: dict[str, Any]) -> list[int]:
+    return [
+        int(row["renderer"]["m_PathID"])
+        for row in effect["effectSetting"]["fields"]["lodSetting"]
+        if int(row["renderer"]["m_PathID"]) != 0
+    ]
+
+
 def build() -> dict[str, Any]:
-    for path in (BODY_TARGETS, EFFECT_INSTANCE_TARGETS, OWNER_REPORT, STATIC_CONTRACT, SIBLING_CONTRACT):
+    for path in (
+        BODY_TARGETS, EFFECT_INSTANCE_TARGETS, EFFECT_LIFECYCLE_TARGETS, OWNER_REPORT, STATIC_CONTRACT,
+        SIBLING_CONTRACT, INSTALLED_IFIX_STATE,
+    ):
         require(path.is_file(), f"playable topology source missing: {path}")
     body_targets = json.loads(BODY_TARGETS.read_text(encoding="utf-8"))
     effect_instance_targets = json.loads(EFFECT_INSTANCE_TARGETS.read_text(encoding="utf-8"))
+    effect_lifecycle_targets = json.loads(EFFECT_LIFECYCLE_TARGETS.read_text(encoding="utf-8"))
     start01 = json.loads(STATIC_CONTRACT.read_text(encoding="utf-8"))
     siblings = json.loads(SIBLING_CONTRACT.read_text(encoding="utf-8"))
+    ifix_state = json.loads(INSTALLED_IFIX_STATE.read_text(encoding="utf-8"))
     require(start01["animation"]["startAnimationClip"]["pathID"] == 7360398354216100382,
             "start_01 shared clip identity drifted")
     require(siblings["sharedAnimation"]["pathID"] == 7360398354216100382,
             "sibling shared clip identity drifted")
+    patch_file = ifix_state["vfs_state"]["persistent_overlay"]["file"]
+    protected_types = {
+        "Beyond.Gameplay.EffectAnimation",
+        "Beyond.Gameplay.EffectInstance",
+        "Beyond.Gameplay.EffectLodCfg",
+    }
+    targets = ifix_state["targets"]
+    require(
+        patch_file["size"] == 86926
+        and patch_file["sha256"].upper()
+        == "BAA28AE497E64D94E152886622BBE5FB391199BCBF8366E2DF91591C9A9F172C"
+        and len(targets) == 32,
+        "installed Persistent IFix snapshot drifted",
+    )
+    protected_targets = [row for row in targets if row["type"] in protected_types]
+    require(not protected_targets, "installed IFix patch now targets EffectAnimation ownership")
     return {
         "schema": "endfield.lizhiyan-effect-animation-playable-topology.v1",
-        "status": "retail_topology_closed_editor_advanced_mixer_unavailable_visible_fail_closed",
+        "status": "retail_topology_and_installed_fallback_closed_editor_advanced_mixer_unavailable_visible_fail_closed",
         "visibleAdmission": False,
         "sources": {
             "nativeBodyTargets": artifact(BODY_TARGETS, "PinnedNativeBodyTargets"),
             "effectInstanceBodyTargets": artifact(EFFECT_INSTANCE_TARGETS, "PinnedEffectInstanceBodyTargets"),
+            "effectLifecycleBodyTargets": artifact(EFFECT_LIFECYCLE_TARGETS, "PinnedEffectLifecycleBodyTargets"),
             "ownerReport": artifact(OWNER_REPORT, "NativeOwnerReport"),
             "start01Contract": artifact(STATIC_CONTRACT, "Start01EffectContract"),
             "siblingContract": artifact(SIBLING_CONTRACT, "SiblingEffectContract"),
+            "installedIfixState": artifact(INSTALLED_IFIX_STATE, "InstalledIfixPatchState"),
         },
         "retailEffectAnimationTopology": {
             "updateMode": "GameTime",
@@ -213,10 +264,19 @@ def build() -> dict[str, Any]:
             "clipStopTimeSeconds": 6.366667,
         },
         "effectAnimationControlAbi": {
-            "runtimePatchBoundary": (
-                "each listed method checks an IFix dispatch ID; the decoded IL2CPP fallback body "
-                "does not prove the effective retail body when a patch is active"
-            ),
+            "installedPatchState": {
+                "patchSha256": patch_file["sha256"].upper(),
+                "patchBytes": patch_file["size"],
+                "targetCount": len(targets),
+                "protectedTypes": sorted(protected_types),
+                "matchingTargets": protected_targets,
+                "classification": "current_installed_persistent_patch_does_not_replace_effect_animation_chain",
+                "evidenceBoundary": (
+                    "proves the currently installed local Persistent VFS snapshot only; a later "
+                    "downloaded patch or live manager mutation remains outside offline evidence"
+                ),
+            },
+            "effectiveBodyForInstalledSnapshot": "decoded_il2cpp_fallback_body",
             "methods": {
                 "SetManual": body_method(body_targets, "SetManual", "0x060059C7", "0x187431E24", ["useManual"]),
                 "ManualEvaluate": body_method(body_targets, "ManualEvaluate", "0x060059D2", "0x187431CB0", ["evaluateTime"]),
@@ -249,6 +309,48 @@ def build() -> dict[str, Any]:
             },
             "liZhiyanCallerStatus": "no_asset_specific_caller_proven_for_optional_time_controls",
         },
+        "effectLodRendererOwnership": {
+            "managedField": {
+                "declaringType": "Beyond.Gameplay.EffectLodCfg",
+                "declaringTypeToken": "0x02000DB9",
+                "name": "renderer",
+                "fieldToken": "0x04004F24",
+                "fieldType": "UnityEngine.Renderer",
+            },
+            "lifecycle": {
+                "Play": lod_method(effect_lifecycle_targets, "Play", "0x06005C9E", "0x1834FC5E0"),
+                "Stop": lod_method(effect_lifecycle_targets, "Stop", "0x06005C9F", "0x18339BE80"),
+            },
+            "serializedBindings": [
+                {
+                    "effect": "P_fxui_lizhiyan_overview_start_01",
+                    "effectSettingPathID": start01["effectSetting"]["pathID"],
+                    "rendererPathIDs": renderer_ids(start01),
+                },
+                *[
+                    {
+                        "effect": effect["effectName"],
+                        "effectSettingPathID": effect["effectSetting"]["pathID"],
+                        "rendererPathIDs": renderer_ids(effect),
+                    }
+                    for effect in siblings["effects"]
+                ],
+            ],
+            "provenBehavior": (
+                "EffectLodCfg.Play enables its configured Renderer and EffectLodCfg.Stop disables "
+                "or resets the same managed lifecycle; each non-null lodSetting renderer is an exact "
+                "serialized Li Zhiyan MeshRenderer PathID"
+            ),
+            "nativeJoinStatus": "managed_renderer_to_hgtree_survivor_record_unresolved_fail_closed",
+            "remainingIdentityEdge": (
+                "a concrete UnityEngine.MeshRenderer pointer or instance id must be joined to the "
+                "native entity/renderer index and one accepted 64-byte HGTree record"
+            ),
+            "nonClaims": [
+                "native ECS component slot 67 is not EffectLodCfg.renderer",
+                "generic HGTree renderer-list creation does not assign a Li Zhiyan PathID to a draw",
+            ],
+        },
         "labBoundary": {
             "projectEditorVersion": "2022.3.62f3",
             "retailAdvancedMixerTypeExpectedInEditor": False,
@@ -262,7 +364,6 @@ def build() -> dict[str, Any]:
             "blockedBy": [
                 "retail AdvancedAnimationMixerPlayable is absent from stock Unity 2021/2022 editor AnimationModule assemblies",
                 "standard AnimationMixerPlayable equivalence is not proven",
-                "active IFix payload state is not closed for EffectAnimation control methods",
                 "asset-specific callers of optional time controls are not proven for these Li Zhiyan roots",
                 "static renderer identity is not joined to a final draw",
             ],

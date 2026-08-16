@@ -4046,7 +4046,11 @@ scale setters, Stop, OnDisable, and OnRelease. Their decoded fallback bodies
 prove graph evaluation, progress-to-time delegation, forced root-speed
 refresh, stop, valid-graph destruction, and the corresponding
 `EffectInstance` forwarding routes. Each method also has an IFix dispatch
-gate, so an active patch may replace that fallback body. No Li-specific caller
+gate, but the currently installed 86,926-byte Persistent patch is parsed to a
+unique 32-record target table and contains no `EffectAnimation`,
+`EffectInstance`, or `EffectLodCfg` target. The fallback bodies are therefore
+effective for this hash-pinned local snapshot; later downloads and live table
+mutation remain outside the offline contract. No Li-specific caller
 currently opts these three roots into manual evaluation, progress sync, or
 duration retiming; speed-one GameTime playback remains the only admitted
 timing statement.
@@ -4058,6 +4062,14 @@ using `S_fx_shoutiaodai_01` plus `S_fx_tuoweidisan_01` and materials 15/16/17.
 Both have root Animators, null controller/avatar, null particle LOD pointers,
 and the same start AnimationClip. Together they add six static renderers, reuse
 the same eight texture identities, and remain visibly fail-closed.
+
+The exact managed LOD renderer bindings are now part of the playable-topology
+contract: start_01 has four non-null MeshRenderer PathIDs and start_02/start_03
+have three each. `EffectLodCfg.Play/Stop` owns their enabled lifecycle. This
+does not yet identify a native HGTree survivor: the missing edge is a concrete
+managed Renderer pointer/instance id to the native entity/renderer index and
+one accepted 64-byte renderer record. ECS component slot 67 is independently
+classified LOD/culling state and is not substituted for that identity edge.
 
 The candidate retail epoch now produces exact material-key checkpoints rather
 than a broad visual guess: start_01 child `(7)` begins changing at PTS 38167,

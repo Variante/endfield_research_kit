@@ -1699,8 +1699,12 @@ only stable interpretation and priorities.
    `OnRelease` destroys only a valid graph. `EffectInstance` callers are
    closed for manual update, progress sync, ignore-global-time-scale, and
    active/play-state Play/Stop. Every relevant body first checks an IFix ID,
-   however, so these are proven fallback bodies rather than proof of the
-   active patched retail semantics. No serialized or native caller currently
+   but the current installed Persistent patch is now hash-pinned at 86,926
+   bytes (`baa28ae...172c`) and its unique terminal table contains 32 targets,
+   none in `EffectAnimation`, `EffectInstance`, or `EffectLodCfg`. The decoded
+   fallback bodies are therefore the effective bodies for this installed
+   offline snapshot; later downloads or live table mutation remain outside
+   that claim. No serialized or native caller currently
    proves that the optional manual/progress/duration controls are used by the
    three Li roots; keep their normal speed-one path and do not infer retiming.
    `P_fxui_lizhiyan_overview_start_02` and `_03` are now source-closed sibling
@@ -1713,6 +1717,12 @@ only stable interpretation and priorities.
    40834/40867, and 42467 align respectively with the early teal edge,
    later pillar phase, and next material wave. This is strong timing evidence
    but not screen-space renderer ownership or visible admission.
+   Their `lodSetting` rows now close the managed renderer identity itself:
+   start_01 names four non-null MeshRenderer PathIDs and start_02/start_03 name
+   three each, all under their exact EffectSetting. `EffectLodCfg.Play/Stop`
+   owns those managed references, but no static body joins a pointer or
+   instance id to an accepted 64-byte HGTree survivor/resource record. Native
+   ECS slot 67 is separate LOD/culling state and must not be used as that join.
    Downstream HGMesh workers now prove a real ordering/publication stage:
    accepted 64-byte records are sorted in place by `0x181043bd0` using
    comparator `0x180fe0740`, an unsigned lexicographic comparison over the
