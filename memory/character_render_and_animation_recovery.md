@@ -1547,6 +1547,17 @@ only stable interpretation and priorities.
    reuse appears in the pinned registration/interpreter/consumer spans.
    Context replacement/teardown remains the only open lifecycle boundary, so
    do not invent per-frame handle reuse.
+   That boundary is now addressable: `0x180fc5e60 -> 0x18030f100` reads
+   singleton table slot `0x14` at pointer cell `0x1821688a0`; its context keeps
+   HGMesh at `+0xb0` and HGTree separately at `+0xc0`. No cell writer/replacer
+   or destructor proven to own this exact `+0xb0` has been found.
+   The next runtime proof is bounded to five already pinned observation points:
+   `0x1801f1e40`, `0x18104e300`, `0x181005c10`, `0x18105e400`, and
+   `0x18105e350`. Acceptance requires a same-frame handle -> opcode `0x4e` ->
+   accepted/sorted record -> resolved resource -> final draw -> visible
+   Li Zhiyan pixel join, plus a Li-absent or Wulfa negative control. This
+   versioned contract does not authorize attaching/injecting into retail and
+   fails closed on protection refusal or binary/prologue drift.
    Runtime values and final survivor/order/lifetime capture remain required;
    do not synthesize a `Renderer[]` bridge from the integer ECS handle.
    Downstream HGMesh workers now prove a real ordering/publication stage:
@@ -1555,9 +1566,12 @@ only stable interpretation and priorities.
    first 16 record bytes. Publication skips `record+0x20 == 0xffffffff`,
    resolves IDs via `0x181059410`, and appends resource pointers through
    `0x18105e350`. Append helper `0x18105e400` copies the full record unchanged.
-   The four key dwords are source-closed to packed renderer-state bits,
-   selectors, source `+0x08/+0x0c/+0x22`, context byte state, a conditional
-   `0x01000000` marker, and `((~asuint(float)) >> 17) & 0x3fff`. All workers
+   The key layout is worker-family-dependent rather than one uniform field
+   ABI: one family places an `asuint(float)>>15` rank in dword 0, while another
+   starts with the masked 20-bit source lane and places a
+   `(~asuint(float)>>17)&0x3fff` rank in dword 3. Append preserves record order;
+   both layouts pack source/context/resource/type/index selectors and a
+   conditional `0x01000000` marker. All workers
    share exact source/context exclusion and inclusion masks, `0x60000`,
    `0x7f00`, and `0xc0` flag gates, a view-mask hit, and bit-45 rejection;
    four variants also require signed `source+0x2c > 0` on the bit-15 path.

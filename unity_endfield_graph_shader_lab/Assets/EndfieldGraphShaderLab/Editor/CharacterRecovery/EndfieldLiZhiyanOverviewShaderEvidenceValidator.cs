@@ -196,8 +196,11 @@ namespace EndfieldGraphShaderLabEditor
             Dictionary<string, object> ecsProducer = L.Dict(rendererList["ecsRendererListProducer"]);
             Dictionary<string, object> nativeAdapter = L.Dict(ecsProducer["nativeAdapter"]);
             Dictionary<string, object> handleTable = L.Dict(nativeAdapter["handleTable"]);
+            Dictionary<string, object> contextOwnership = L.Dict(handleTable["contextOwnership"]);
             Dictionary<string, object> commandConsumer = L.Dict(nativeAdapter["commandConsumer"]);
             Dictionary<string, object> survivorSort = L.Dict(nativeAdapter["survivorSortPublication"]);
+            Dictionary<string, object> workerKeyLayouts = L.Dict(survivorSort["workerKeyLayouts"]);
+            Dictionary<string, object> captureBoundary = L.Dict(nativeAdapter["runtimeCaptureBoundary"]);
             L.Require(L.Str(boundary, "callbackConstantBufferPublication") == "not_present" &&
                 L.Str(boundary, "callbackGlobalVectorAndTexturePublication") == "present" &&
                 !L.Bool(boundary, "serializedBindingsAreD3D12RootParameters") &&
@@ -249,6 +252,11 @@ namespace EndfieldGraphShaderLabEditor
                 L.Str(handleTable, "consumerMutation") ==
                     "opcode 0x4e consumer 0x181005c10 reads slot +0x08 but does not modify the manager vector or count" &&
                 L.Str(handleTable, "resetAudit").Contains("external context replacement") &&
+                L.Str(contextOwnership, "slotAccessorVA") == "0x180fc5e60" &&
+                L.Str(contextOwnership, "contextPointerCellVA") == "0x1821688a0" &&
+                L.Str(contextOwnership, "managerOffset") == "0xb0" &&
+                L.Str(contextOwnership, "parallelHGTreeOffset") == "0xc0" &&
+                L.Str(contextOwnership, "provenBoundary").Contains("no writer/replacer") &&
                 L.Str(commandConsumer, "opcode") == "0x4e" &&
                 L.Str(commandConsumer, "managerSingletonOffset") == "0xb0" &&
                 L.Long(commandConsumer, "slotStride") == 16 &&
@@ -260,11 +268,17 @@ namespace EndfieldGraphShaderLabEditor
                 L.Str(survivorSort, "comparator") ==
                     "unsigned-byte lexicographic order over record bytes 0x00..0x0f" &&
                 L.Str(survivorSort, "recordAppendVA") == "0x18105e400" &&
-                StringListEquals(survivorSort["keyConstruction"],
+                L.Str(survivorSort, "keyConstructionScope").Contains("worker-family-dependent") &&
+                StringListEquals(workerKeyLayouts["alternateFamily"],
                     "dword 0 packs a masked 20-bit source, another source shifted by 20, and a byte flag",
                     "dword 1 combines source +0x08, a byte selector, and a 16-bit source value",
                     "dword 2 combines source +0x0c, selector bits, and a conditional 0x01000000 marker",
                     "dword 3 combines context byte state, source +0x22 u16, and ((~asuint(float)) >> 17) & 0x3fff") &&
+                StringListEquals(workerKeyLayouts["standardFamily"],
+                    "dword 0 combines ((asuint(float) >> 15) & 0xffff) with a selector shifted by 16",
+                    "dword 1 packs a masked 20-bit source, another selector shifted by 20, then a byte lane",
+                    "dword 2 packs context/resource state plus a conditional 0x01000000 marker",
+                    "dword 3 packs type/context/index selectors") &&
                 L.Str(survivorSort, "semanticKey") ==
                     "opaque packed renderer-state key; byte/bit construction is proven but field names remain unresolved" &&
                 StringListEquals(survivorSort["commonAcceptanceGates"],
@@ -287,7 +301,12 @@ namespace EndfieldGraphShaderLabEditor
                     "semantic names of packed key fields",
                     "indirect draw",
                     "graphics backend submission",
-                    "manager frame reset/reuse owner") &&
+                    "slot-0x14 context writer/replacer/destructor owner") &&
+                L.Str(captureBoundary, "authorization").Contains("separate explicit authorization") &&
+                L.List(captureBoundary["observationOnlyHooks"]).Count == 5 &&
+                L.Str(captureBoundary, "requiredPositiveJoin").Contains("final draw -> visible Li Zhiyan") &&
+                L.Str(captureBoundary, "negativeControl").Contains("Wulfa") &&
+                L.Str(captureBoundary, "stopRule").Contains("never retry through evasion") &&
                 !L.Bool(consumers, "opaqueArgument") &&
                 L.Str(consumers, "frameSettingsGate") == "TransparentObjects" &&
                 L.Str(consumers, "survivorIdentity") ==

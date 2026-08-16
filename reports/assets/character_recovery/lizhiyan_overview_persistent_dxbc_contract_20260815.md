@@ -82,7 +82,7 @@ list`, and the callback executes global scene-color/vector/texture setup,
 fullscreen draw, the ordinary forward renderer list, then the ECS renderer
 list. The callback contains no constant-buffer publication. The generated
 native ABI contract is `lizhiyan_after_dof_native_abi.json`, SHA-256
-`4B6963A4BE824C6A8B8FA92AD36FCCEEFE677A541F69C5203BA35E6104E0AA46`.
+`53B809BE843B2696B5FB51227F70B54024FC93280D12559ABFFC75D921325BF4`.
 
 The deferred ECS producer is now closed as well. Current-build
 `HGRenderPathDeferred.OnPreRendering` recreates the 32-bit handle each camera
@@ -143,16 +143,25 @@ in-place reset, slot-clear loop, free, or reuse occurs in the pinned
 registration/interpreter/consumer spans. An external context replacement or
 teardown remains possible and is the next lifecycle boundary; per-frame reuse
 must not be invented from this append-only local path.
+Accessor `0x180fc5e60` supplies index `0x14` to generic table accessor
+`0x18030f100`, resolving singleton pointer cell `0x1821688a0`. The HGMesh and
+HGTree managers are separate context fields at `+0xb0` and `+0xc0`. No writer
+or replacer for that singleton cell, and no destructor demonstrably operating
+on this context's `+0xb0`, has been found; unrelated objects with their own
+`+0xb0` cleanup are not evidence for HGMesh teardown.
 
 The downstream ordering stage is now positively identified. Resource builder
 `0x18104e920` selects one of 14 post-filter workers. The workers assemble
 accepted 64-byte records and call in-place sorter `0x181043bd0`; comparator
 `0x180fe0740` lexicographically orders the first 16 bytes as unsigned bytes.
 Append helper `0x18105e400` copies each complete record without transforming
-it. The four key dwords are source-closed to packed renderer-state fields: a
-masked 20-bit source and shifted selectors/flags, source offsets `+0x08` and
-`+0x0c`, a conditional `0x01000000` marker, context byte state, source
-`+0x22` u16, and `((~asuint(float)) >> 17) & 0x3fff`.
+or reordering it. Key construction is worker-family-dependent, not one uniform
+four-dword field ABI. One family puts a 16-bit `asuint(float)>>15` rank plus a
+selector in dword 0, followed by the masked 20-bit source/selector lane;
+another starts with that source lane and puts a 14-bit
+`(~asuint(float)>>17)` rank into dword 3. Both also pack context/resource/type/
+index selectors and a conditional `0x01000000` marker. This difference is not
+a record-order reversal.
 All 14 workers require the two source/context mask tests, the `0x60000` and
 `0x7f00` flag groups, `(source+0x10 & 0xc0) == 0xc0`, a view-mask hit, and
 source bit 45 clear. Four variants additionally require signed
@@ -160,10 +169,21 @@ source bit 45 clear. Four variants additionally require signed
 The publication path skips records with `+0x20 == 0xffffffff`, resolves their
 IDs through `0x181059410`, and appends resolved pointers through
 `0x18105e350`. This proves a survivor-record → sort → resource-publication
-pipeline. The key is an opaque packed renderer-state key; its semantic field
-names remain unresolved, so this must not be called transparent depth sorting,
-material sorting, or batch sorting yet.
+pipeline. The key is an opaque, worker-variant packed renderer-state key; its
+semantic field names remain unresolved, so this must not be called transparent
+depth sorting, material sorting, or batch sorting yet.
 No indirect draw or backend queue submission has been reached.
+
+The next positive proof is now an explicit runtime-capture contract rather
+than a generic request for “a capture.” On this exact build it must join one
+`CreateRendererList` handle through opcode `0x4e`, a complete accepted/sorted
+64-byte record and resolved resource identity, to a same-frame final draw and
+visible Li Zhiyan after-DOF pixel. The bounded observation points are
+`0x1801f1e40`, `0x18104e300`, `0x181005c10`, `0x18105e400`, and
+`0x18105e350`; the strongest oracle remains the hand-adjacent teal layer near
+40 s. A Li-absent or Wulfa replacement capture is required as a negative
+control. The contract itself does not authorize retail attachment or injection,
+and mandates stopping on protection refusal or any build/prologue drift.
 
 The normal current-build per-object request is now source-closed to `47`:
 pipeline construction and every normal `ConfigureKeywords` call write baked

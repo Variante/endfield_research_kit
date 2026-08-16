@@ -371,6 +371,20 @@
       "functionEnd": "0x18105e4cc",
       "functionBytes": 204,
       "functionSha256": "62712E9CCFEF1F7614BCCD33785031DEFC6DB9AF132E78885DD5727CB515555F"
+    },
+    {
+      "label": "HG render context slot-0x14 accessor",
+      "va": "0x180fc5e60",
+      "functionEnd": "0x180fc5e6a",
+      "functionBytes": 10,
+      "functionSha256": "C247F5C67F284C727F1467D68F5AC5551A863009E47967951FAB800CFCB2DBC3"
+    },
+    {
+      "label": "HG singleton table indexed accessor",
+      "va": "0x18030f100",
+      "functionEnd": "0x18030f10f",
+      "functionBytes": 15,
+      "functionSha256": "E59255837C34F83D3AEC9902E38E1589F3F7BACBD138EEA3F31756783425E089"
     }
   ],
   "decisiveCalls": [
@@ -584,7 +598,17 @@
           "stateCallbackVA": "0x1810398f0",
           "registrationLifecycle": "reads the old count as the handle, grows through 0x1802ed7d0 -> 0x180662870 when required, increments count, zeroes the new slot, allocates a 0x30-byte state through 0x1802fd650, and stores it at slot +0x08",
           "consumerMutation": "opcode 0x4e consumer 0x181005c10 reads slot +0x08 but does not modify the manager vector or count",
-          "resetAudit": "no count decrement, in-place reset, slot-clear loop, free, or reuse owner occurs in the pinned registration/interpreter/consumer spans; external context replacement or teardown remains possible"
+          "resetAudit": "no count decrement, in-place reset, slot-clear loop, free, or reuse owner occurs in the pinned registration/interpreter/consumer spans; external context replacement or teardown remains possible",
+          "contextOwnership": {
+            "slotAccessorVA": "0x180fc5e60",
+            "indexedAccessorVA": "0x18030f100",
+            "singletonTableVA": "0x182168800",
+            "contextSlot": "0x14",
+            "contextPointerCellVA": "0x1821688a0",
+            "managerOffset": "0xb0",
+            "parallelHGTreeOffset": "0xc0",
+            "provenBoundary": "the accessor only reads singleton table slot 0x14; no writer/replacer for the cell and no destructor demonstrably operating on this context's +0xb0 manager has been found"
+          }
         },
         "invalidRequestGate": "request[0] == 0xffffffff returns 0xffffffff without appending",
         "maskCombination": "view record +0x40/+0x48 OR request +0x50/+0x58",
@@ -616,12 +640,21 @@
           "comparatorKeyBytes": 16,
           "comparator": "unsigned-byte lexicographic order over record bytes 0x00..0x0f",
           "recordAppendVA": "0x18105e400",
-          "keyConstruction": [
-            "dword 0 packs a masked 20-bit source, another source shifted by 20, and a byte flag",
-            "dword 1 combines source +0x08, a byte selector, and a 16-bit source value",
-            "dword 2 combines source +0x0c, selector bits, and a conditional 0x01000000 marker",
-            "dword 3 combines context byte state, source +0x22 u16, and ((~asuint(float)) >> 17) & 0x3fff"
-          ],
+          "keyConstructionScope": "worker-family-dependent packed layout; 0x18105e400 preserves record byte order, but the quantized-float rank is not assigned to one universal dword",
+          "workerKeyLayouts": {
+            "standardFamily": [
+              "dword 0 combines ((asuint(float) >> 15) & 0xffff) with a selector shifted by 16",
+              "dword 1 packs a masked 20-bit source, another selector shifted by 20, then a byte lane",
+              "dword 2 packs context/resource state plus a conditional 0x01000000 marker",
+              "dword 3 packs type/context/index selectors"
+            ],
+            "alternateFamily": [
+              "dword 0 packs a masked 20-bit source, another source shifted by 20, and a byte flag",
+              "dword 1 combines source +0x08, a byte selector, and a 16-bit source value",
+              "dword 2 combines source +0x0c, selector bits, and a conditional 0x01000000 marker",
+              "dword 3 combines context byte state, source +0x22 u16, and ((~asuint(float)) >> 17) & 0x3fff"
+            ]
+          },
           "semanticKey": "opaque packed renderer-state key; byte/bit construction is proven but field names remain unresolved",
           "commonAcceptanceGates": [
             "(source[0x10:0x20] & context[0x40:0x50]) == 0",
@@ -642,8 +675,27 @@
             "semantic names of packed key fields",
             "indirect draw",
             "graphics backend submission",
-            "manager frame reset/reuse owner"
+            "slot-0x14 context writer/replacer/destructor owner"
           ]
+        },
+        "runtimeCaptureBoundary": {
+          "authorization": "contract only; attaching or injecting into the retail process requires separate explicit authorization",
+          "retailOracle": "videos/2026-08-15_10-32-32.mkv, Li Zhiyan 38-47 s, strongest hand-adjacent teal layer near 40 s",
+          "observationOnlyHooks": [
+            "0x1801f1e40 CreateRendererList adapter",
+            "0x18104e300 registration core",
+            "0x181005c10 opcode-0x4e consumer",
+            "0x18105e400 complete 64-byte record append",
+            "0x18105e350 resolved-resource pointer append"
+          ],
+          "boundedFields": [
+            "session/PID/module hashes, monotonic timestamp, thread ID, and present interval",
+            "renderer-list handle, manager count, 16-byte slot, and 0x30-byte state",
+            "complete 64-byte record, first 16 key bytes, +0x20 marker, +0x22 u16, +0x2c signed field, and resolved resource pointer"
+          ],
+          "requiredPositiveJoin": "same build and frame: CreateRendererList handle -> opcode 0x4e consumer -> accepted/sorted 64-byte record -> resolved resource identity -> final draw -> visible Li Zhiyan after-DOF pixel",
+          "negativeControl": "repeat with Li Zhiyan absent or replaced by Wulfa; timing coincidence alone is insufficient",
+          "stopRule": "stop on attach refusal, protection termination, module/hash/prologue drift, or target instability; never retry through evasion"
         }
       }
     },
