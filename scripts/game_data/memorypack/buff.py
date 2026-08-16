@@ -345,109 +345,165 @@ def read_buff_member1_empty_tag_field(
 
 
 BUFF_ABILITY_ACTION_TAG_SOURCE_NOTE = (
-    "AbilityActionData union tags recovered from MemoryPack.Beyond formatter cctors with "
-    "GameAssembly CodeRegistration 0x18C439740; the current table is contiguous 0x0000..0x0181. "
+    "AbilityActionData union tags recovered from the selected current-build "
+    "MemoryPack.Beyond formatter cctor; the current table is contiguous 0x0000..0x0181. "
     "This compact map includes tags observed as first actions in current BuffData timelineActions."
 )
 
 
 BUFF_ABILITY_ACTION_TAG_NAMES = {
+    0x0006: "Core_AchieveSpecialGameEventAction_Data",
     0x0002: "Core_AbilityActions_FinishBuffAction_Data",
     0x0008: "Core_AddDynamicCcsAction_AddDynamicCcsActionData",
+    0x000a: "Core_AddGlobalCDTimer_Data",
     0x000b: "Core_AddTagAction_Data",
-    0x0015: "Core_AuraAction_Data",
-    0x0019: "Core_BlowOffCharacterAction_Data",
-    0x0020: "Core_CameraImpulseAction_CameraImpulseActionData",
-    0x002a: "Core_ChannelingAction_Data",
-    0x002f: "Core_CharHurtAnimAction_Data",
-    0x0036: "Core_CheckBuffStackNumAdvanced_Data",
-    0x0047: "Core_CompareFloat_Data",
-    0x004f: "Core_Conditions_CheckBuffStackNum_Data",
-    0x007c: "Core_ContinuousFindTargetAction_Data",
-    0x007e: "Core_ConvertToTargetContext_Data",
-    0x0082: "Core_CreateBuffAction_Data",
-    0x0089: "Core_CustomRootMotionAction_Data",
-    0x008a: "Core_DamageAction_DamageActionData",
-    0x008b: "Core_DebugPrintAction_Data",
-    0x0091: "Core_EffectAction_EffectActionData",
-    0x009f: "Core_FindTargetAction_FindTargetActionData",
-    0x00a1: "Core_FinishBuffAdvanced_Data",
-    0x00a3: "Core_FinishOwnerAction_Data",
-    0x00ac: "Core_GetAITransDataAction_Data",
-    0x00b2: "Core_HitStopAction_Data",
-    0x00b4: "Core_IfElseAction_IfElseActionData",
-    0x00bf: "Core_InterruptAction_Data",
-    0x00c8: "Core_LaunchProjectile_Data",
-    0x00ca: "Core_LockCameraAimAction_LockCameraAimActionData",
-    0x00d1: "Core_ModifyDynamicBlackboard_Data",
-    0x00db: "Core_MoveToAction_Data",
-    0x00e9: "Core_OverrideCameraFollowAction_OverrideCameraFollowActionData",
-    0x00ef: "Core_PatrolTeleport_Data",
-    0x00f8: "Core_PlayAnimationAction_PlayAnimationActionData",
+    0x0016: "Core_AuraAction_Data",
+    0x001c: "Core_BlowOffCharacterAction_Data",
+    0x0023: "Core_CameraImpulseAction_CameraImpulseActionData",
+    0x0026: "Core_CastSkill_Data",
+    0x002e: "Core_ChannelingAction_Data",
+    0x0034: "Core_CharHurtAnimAction_Data",
+    0x003b: "Core_CheckBuffStackNumAdvanced_Data",
+    0x003d: "Core_CheckConsumeBuffLayer_Data",
+    0x003f: "Core_CheckDistanceCondition_Data",
+    0x0041: "Core_CheckGlobalCDTimerAction_Data",
+    0x004d: "Core_CompareFloat_Data",
+    0x0053: "Core_Conditions_CheckBuffIdInContext_Data",
+    0x0054: "Core_Conditions_CheckBuffIdInContextAdvanced_Data",
+    0x0055: "Core_Conditions_CheckBuffStackNum_Data",
+    0x0058: "Core_Conditions_CheckDamageDecorateMask_Data",
+    0x005a: "Core_Conditions_CheckDamageType_Data",
+    0x0060: "Core_Conditions_CheckHp_Data",
+    0x0063: "Core_Conditions_CheckMainCharacterCondition_Data",
+    0x0064: "Core_Conditions_CheckObjectTypeMatch_Data",
+    0x0065: "Core_Conditions_CheckObtainAtbType_Data",
+    0x0069: "Core_Conditions_CheckPoiseValue_Data",
+    0x0071: "Core_Conditions_CheckSkillId_Data",
+    0x0075: "Core_Conditions_CheckSuperArmor_Data",
+    0x0076: "Core_Conditions_CheckTagMatch_Data",
+    0x007a: "Core_Conditions_CheckTargetsEqual_Data",
+    0x007b: "Core_Conditions_CheckTimedMarkerCondition_Data",
+    0x0082: "Core_Conditions_Probablity_Data",
+    0x0084: "Core_ContinuousFindTargetAction_Data",
+    0x0086: "Core_ConvertToTargetContext_Data",
+    0x008a: "Core_CreateBuffAction_Data",
+    0x008e: "Core_CreateTimedMarker_Data",
+    0x0091: "Core_CustomRootMotionAction_Data",
+    0x0092: "Core_DamageAction_DamageActionData",
+    0x0093: "Core_DebugPrintAction_Data",
+    0x009a: "Core_EffectAction_EffectActionData",
+    0x00a9: "Core_FindTargetAction_FindTargetActionData",
+    0x00ab: "Core_FinishBuffAdvanced_Data",
+    0x00ad: "Core_FinishOwnerAction_Data",
+    0x00b8: "Core_GetAITransDataAction_Data",
+    0x00be: "Core_HitStopAction_Data",
+    0x00c0: "Core_IfElseAction_IfElseActionData",
+    0x00cb: "Core_InterruptAction_Data",
+    0x00d5: "Core_LaunchProjectile_Data",
+    0x00d7: "Core_LockCameraAimAction_LockCameraAimActionData",
+    0x00e1: "Core_ModifyDynamicBlackboard_Data",
+    0x00eb: "Core_MoveToAction_Data",
+    0x00f2: "Core_NotNextCheckAction_Data",
+    0x00f3: "Core_ObtainCostAction_Data",
+    0x00f9: "Core_OverrideCameraFollowAction_OverrideCameraFollowActionData",
+    0x0100: "Core_PatrolTeleport_Data",
+    0x0109: "Core_PlayAnimationAction_PlayAnimationActionData",
     0x010d: "Core_PlaySoundAction_PlaySoundActionData",
-    0x00fe: "Core_PullAction_Data",
-    0x0108: "Core_RecoverFromPoiseBreak_Data",
-    0x010a: "Core_RecoverPoiseAction_Data",
-    0x011e: "Core_SelfRotateAction_Data",
+    0x0110: "Core_PullAction_Data",
+    0x011a: "Core_RecoverFromPoiseBreak_Data",
+    0x011c: "Core_RecoverPoiseAction_Data",
+    0x0131: "Core_SaveValueFromAIBlackboard_Data",
+    0x0133: "Core_SelfRotateAction_Data",
     0x0134: "Core_SendBattleSignalToLevel_Data",
-    0x0133: "Core_ShowComboRingQte_Data",
-    0x0135: "Core_ShowHideActorAction_ShowHideActorData",
-    0x013d: "Core_SpawnAbilityEntity_Data",
-    0x013e: "Core_SpawnEnemyAction_Data",
-    0x0140: "Core_SpellInfliction_Data",
-    0x014d: "Core_TeleportAction_Data",
-    0x0152: "Core_TickIntervalAction_Data",
-    0x0154: "Core_TimeDilationAction_Data",
+    0x0144: "Core_SetSkillCdAtOnce_Data",
+    0x014a: "Core_ShowComboRingQte_Data",
+    0x014c: "Core_ShowHideActorAction_ShowHideActorData",
+    0x014e: "Core_SimpleCalcBBAction_Data",
+    0x0154: "Core_SpawnAbilityEntity_Data",
+    0x0155: "Core_SpawnEnemyAction_Data",
+    0x0156: "Core_SpawnInteractiveGoldCoin_Data",
+    0x0158: "Core_SpellInfliction_Data",
+    0x0167: "Core_TeleportAction_Data",
+    0x016c: "Core_TickIntervalAction_Data",
+    0x016e: "Core_TimeDilationAction_Data",
 }
 
 
 BUFF_ABILITY_ACTION_TAG_MEMBER_COUNTS = {
+    0x0006: 5,
     0x0002: 12,
-    0x0008: 49,
+    0x0008: 50,
+    0x000a: 7,
     0x000b: 8,
-    0x0015: 23,
-    0x0019: 15,
-    0x0020: 12,
-    0x002a: 10,
-    0x002f: 15,
-    0x0036: 10,
-    0x0047: 7,
-    0x004f: 8,
-    0x007c: 19,
-    0x007e: 12,
-    0x0082: 17,
-    0x0089: 23,
-    0x008a: 11,
-    0x008b: 8,
-    0x0091: 15,
-    0x009f: 18,
-    0x00a1: 13,
-    0x00a3: 6,
-    0x00ac: 6,
-    0x00b2: 12,
-    0x00b4: 8,
-    0x00bf: 8,
-    0x00c8: 34,
-    0x00ca: 54,
-    0x00d1: 10,
-    0x00db: 42,
-    0x00e9: 12,
-    0x00ef: 6,
-    0x00f8: 12,
+    0x0016: 24,
+    0x001c: 15,
+    0x0023: 12,
+    0x0026: 9,
+    0x002e: 10,
+    0x0034: 15,
+    0x003b: 10,
+    0x003d: 7,
+    0x003f: 10,
+    0x0041: 6,
+    0x004d: 7,
+    0x0053: 8,
+    0x0054: 8,
+    0x0055: 8,
+    0x0058: 6,
+    0x005a: 5,
+    0x0060: 8,
+    0x0063: 5,
+    0x0064: 6,
+    0x0065: 8,
+    0x0069: 8,
+    0x0071: 5,
+    0x0075: 7,
+    0x0076: 6,
+    0x007a: 6,
+    0x007b: 9,
+    0x0082: 5,
+    0x0084: 19,
+    0x0086: 12,
+    0x008a: 19,
+    0x008e: 9,
+    0x0091: 23,
+    0x0092: 11,
+    0x0093: 9,
+    0x009a: 17,
+    0x00a9: 18,
+    0x00ab: 13,
+    0x00ad: 6,
+    0x00b8: 6,
+    0x00be: 12,
+    0x00c0: 8,
+    0x00cb: 8,
+    0x00d5: 34,
+    0x00d7: 14,
+    0x00e1: 10,
+    0x00eb: 43,
+    0x00f2: 4,
+    0x00f3: 18,
+    0x00f9: 12,
+    0x0100: 6,
+    0x0109: 16,
     0x010d: 22,
-    0x00fe: 17,
-    0x0108: 5,
-    0x010a: 11,
-    0x011e: 18,
+    0x0110: 18,
+    0x011a: 5,
+    0x011c: 11,
+    0x0131: 11,
+    0x0133: 18,
     0x0134: 6,
-    0x0133: 8,
-    0x0135: 10,
-    0x013d: 37,
-    0x013e: 15,
-    0x0140: 8,
-    0x014d: 13,
-    0x0152: 9,
-    0x0154: 16,
+    0x0144: 11,
+    0x014a: 8,
+    0x014c: 10,
+    0x014e: 8,
+    0x0154: 37,
+    0x0155: 15,
+    0x0156: 6,
+    0x0158: 8,
+    0x0167: 13,
+    0x016c: 9,
+    0x016e: 16,
 }
 
 
@@ -506,25 +562,70 @@ def read_buff_timeline_first_union_tag(
     return data[offset], 1, data[offset:offset + 1].hex(" ")
 
 
-BUFF_CONVERT_TO_TARGET_CONTEXT_ACTION_TAG = 0x007e
+BUFF_CONVERT_TO_TARGET_CONTEXT_ACTION_TAG = 0x0086
 
 
-BUFF_CREATE_BUFF_ACTION_TAG = 0x0082
+BUFF_CREATE_BUFF_ACTION_TAG = 0x008a
 
 
-BUFF_MODIFY_DYNAMIC_BLACKBOARD_ACTION_TAG = 0x00d1
+BUFF_MODIFY_DYNAMIC_BLACKBOARD_ACTION_TAG = 0x00e1
 
 
-BUFF_DEBUG_PRINT_ACTION_TAG = 0x008b
+BUFF_DEBUG_PRINT_ACTION_TAG = 0x0093
 
 
-BUFF_CAMERA_IMPULSE_ACTION_TAG = 0x0020
+BUFF_CAMERA_IMPULSE_ACTION_TAG = 0x0023
 
 
-BUFF_EFFECT_ACTION_TAG = 0x0091
+BUFF_EFFECT_ACTION_TAG = 0x009a
 
 
-BUFF_FIND_TARGET_ACTION_TAG = 0x009f
+BUFF_CHECK_SUPER_ARMOR_ACTION_TAG = 0x0075
+
+
+BUFF_CHECK_MAIN_CHARACTER_ACTION_TAG = 0x0063
+
+
+BUFF_FINISH_BUFF_ACTION_TAG = 0x0002
+
+
+BUFF_CREATE_TIMED_MARKER_ACTION_TAG = 0x008e
+
+
+BUFF_NOT_NEXT_CHECK_ACTION_TAG = 0x00f2
+
+
+BUFF_CHECK_DAMAGE_DECORATE_MASK_ACTION_TAG = 0x0058
+
+
+BUFF_CHECK_BUFF_ID_CONTEXT_ACTION_TAG = 0x0053
+BUFF_CHECK_BUFF_ID_CONTEXT_ADVANCED_ACTION_TAG = 0x0054
+BUFF_CHECK_HP_ACTION_TAG = 0x0060
+BUFF_CHECK_DAMAGE_TYPE_ACTION_TAG = 0x005a
+BUFF_CHECK_TAG_MATCH_ACTION_TAG = 0x0076
+BUFF_CHECK_TIMED_MARKER_ACTION_TAG = 0x007b
+BUFF_CHECK_OBJECT_TYPE_ACTION_TAG = 0x0064
+BUFF_CHECK_OBTAIN_ATB_TYPE_ACTION_TAG = 0x0065
+BUFF_PROBABILITY_ACTION_TAG = 0x0082
+BUFF_FINISH_OWNER_ACTION_TAG = 0x00ad
+BUFF_CHECK_BUFF_STACK_NUM_ADVANCED_ACTION_TAG = 0x003b
+BUFF_CHECK_BUFF_STACK_NUM_ACTION_TAG = 0x0055
+BUFF_FINISH_BUFF_ADVANCED_ACTION_TAG = 0x00ab
+BUFF_SPAWN_INTERACTIVE_GOLD_COIN_ACTION_TAG = 0x0156
+BUFF_SAVE_VALUE_FROM_AI_BLACKBOARD_ACTION_TAG = 0x0131
+BUFF_OBTAIN_COST_ACTION_TAG = 0x00f3
+BUFF_ACHIEVE_SPECIAL_GAME_EVENT_ACTION_TAG = 0x0006
+BUFF_ADD_GLOBAL_CD_TIMER_ACTION_TAG = 0x000a
+BUFF_CAST_SKILL_ACTION_TAG = 0x0026
+BUFF_CHECK_CONSUME_BUFF_LAYER_ACTION_TAG = 0x003d
+BUFF_CHECK_DISTANCE_ACTION_TAG = 0x003f
+BUFF_CHECK_GLOBAL_CD_TIMER_ACTION_TAG = 0x0041
+BUFF_CHECK_POISE_VALUE_ACTION_TAG = 0x0069
+BUFF_CHECK_TARGETS_EQUAL_ACTION_TAG = 0x007a
+BUFF_SIMPLE_CALC_BLACKBOARD_ACTION_TAG = 0x014e
+
+
+BUFF_FIND_TARGET_ACTION_TAG = 0x00a9
 
 
 BUFF_SEND_BATTLE_SIGNAL_TO_LEVEL_TAG = 0x0134
@@ -533,28 +634,34 @@ BUFF_SEND_BATTLE_SIGNAL_TO_LEVEL_TAG = 0x0134
 BUFF_PLAY_SOUND_ACTION_TAG = 0x010d
 
 
-BUFF_PATROL_TELEPORT_ACTION_TAG = 0x00ef
+BUFF_PATROL_TELEPORT_ACTION_TAG = 0x0100
 
 
-BUFF_PLAY_ANIMATION_ACTION_TAG = 0x00f8
+BUFF_PLAY_ANIMATION_ACTION_TAG = 0x0109
 
 
-BUFF_COMPARE_FLOAT_ACTION_TAG = 0x0047
+BUFF_COMPARE_FLOAT_ACTION_TAG = 0x004d
 
 
-BUFF_GET_AI_TRANS_DATA_ACTION_TAG = 0x00ac
+BUFF_GET_AI_TRANS_DATA_ACTION_TAG = 0x00b8
 
 
-BUFF_IF_ELSE_ACTION_TAG = 0x00b4
+BUFF_CHECK_SKILL_ID_ACTION_TAG = 0x0071
 
 
-BUFF_INTERRUPT_ACTION_TAG = 0x00bf
+BUFF_IF_ELSE_ACTION_TAG = 0x00c0
 
 
-BUFF_SPELL_INFLICTION_ACTION_TAG = 0x0140
+BUFF_INTERRUPT_ACTION_TAG = 0x00cb
 
 
-BUFF_DAMAGE_ACTION_TAG = 0x008a
+BUFF_SPELL_INFLICTION_ACTION_TAG = 0x0158
+
+
+BUFF_SET_SKILL_CD_AT_ONCE_ACTION_TAG = 0x0144
+
+
+BUFF_DAMAGE_ACTION_TAG = 0x0092
 
 
 BUFF_DAMAGE_UNIT_MEMBER_COUNT = 32
@@ -590,7 +697,7 @@ BUFF_CAMERA_IMPULSE_BOOL_TAIL_BYTES = 2
 BUFF_FIND_TARGET_OPAQUE_BODY_MAX_BYTES = 16 * 1024
 
 
-BUFF_TARGET_SETTINGS_ENVELOPE_TAIL_U32_CANDIDATES = (0, 1, 2, 4)
+BUFF_TARGET_SETTINGS_ENVELOPE_TAIL_U32_CANDIDATES = (0, 1, 2, 3, 4, 5)
 
 
 BUFF_ABILITY_ACTION_MAX_NESTED_DEPTH = 6
@@ -628,6 +735,50 @@ BUFF_MODIFY_DYNAMIC_BLACKBOARD_OPERATION_NAMES = {
     1: "Add",
     2: "Multiply",
     3: "Divide",
+    4: "Floor",
+    5: "Ceil",
+    6: "RoundToInt",
+}
+
+# Current-build native metadata names for
+# Beyond.Gameplay.Core.ModifyDynamicBlackboard+Data+CalculationType.
+# HpRatio is the only declared member in the selected GameAssembly /
+# global-metadata pair; unknown future enum values stay fail-closed.
+BUFF_MODIFY_DYNAMIC_BLACKBOARD_CALCULATION_TYPE_NAMES = {
+    0: "HpRatio",
+}
+
+BUFF_CONVERT_TO_TARGET_CONTEXT_OPERATION_NAMES = {
+    0: "None",
+    1: "ConvertEntityToPosition",
+    2: "TranslatePosition",
+    3: "ExcludeTarget",
+    4: "ConvertEntityToSlot",
+    5: "ConvertSlotToPosition",
+    6: "ConvertSlotToTarget",
+    7: "ConvertBlackboardValueToPosition",
+}
+
+BUFF_CONVERT_TO_TARGET_CONTEXT_TRANSLATE_OPERATION_NAMES = {
+    0: "Rotate180DegAroundRef",
+    1: "RotateAroundRefCW",
+}
+
+# Beyond.CompareType used by CompareFloat and the numeric Buff conditions.
+BUFF_COMPARE_TYPE_NAMES = {
+    0: "LT",
+    1: "LE",
+    2: "GT",
+    3: "GE",
+    4: "Equals",
+}
+
+BUFF_SPELL_INFLICTION_TYPE_NAMES = {
+    0: "Fire",
+    1: "Pulse",
+    2: "Cryst",
+    3: "Natural",
+    4: "Enum",
 }
 
 
@@ -732,6 +883,359 @@ def read_buff_blackboard_float_raw_field_exact(
         "rawValueU32": f"0x{raw_u32:08x}",
         "value": round(value, 6),
     }, offset
+
+
+def scan_buff_blackboard_float_candidates_before_id(
+    data: bytes,
+    id_marker_offset: int,
+    *,
+    max_candidates: int = 32,
+) -> list[dict[str, Any]]:
+    """Return exact BlackboardDouble-shaped values before the top-level id.
+
+    The surrounding pre-id BuffData fields are not fully decoded yet, so these
+    rows deliberately describe exact serialized values without assigning an
+    enclosing field.  Non-empty authored keys keep the scan useful while
+    excluding the many accidental empty-key byte alignments in opaque bodies.
+    """
+
+    limit = min(max(1, int(id_marker_offset)), len(data))
+    candidates: list[dict[str, Any]] = []
+    seen: set[tuple[str, float, bool]] = set()
+    for offset in range(1, limit):
+        try:
+            candidate, end = read_buff_blackboard_float_raw_field_exact(
+                data,
+                offset,
+                "preIdBlackboardCandidate",
+            )
+        except (struct.error, UnicodeDecodeError, ValueError):
+            continue
+        key = str(candidate.get("blackboardKey") or "")
+        if end > limit or not is_buff_param_string(key):
+            continue
+        dedupe_key = (
+            key,
+            float(candidate.get("value") or 0.0),
+            bool(candidate.get("useBlackboardKey")),
+        )
+        if dedupe_key in seen:
+            continue
+        seen.add(dedupe_key)
+        candidates.append(candidate)
+        if len(candidates) >= max_candidates:
+            break
+    return candidates
+
+
+def memorypack_signed_enum_value(raw: Any) -> int | None:
+    """Decode the one-byte MemoryPack zig-zag representation used by enums."""
+
+    if not isinstance(raw, int) or raw < 0:
+        return None
+    return -(raw // 2) - 1 if raw & 1 else raw // 2
+
+
+BUFF_LIFE_TYPE_NAMES = {-1: "Infinity", 0: "Limited"}
+BUFF_STACK_IDENTIFIER_TYPE_NAMES = {-1: "StackingKey", 0: "Id"}
+BUFF_STACKING_TYPE_NAMES = {
+    -6: "HighPriorityWithMaxStack",
+    -5: "OverwriteDuration",
+    -4: "Unique",
+    -3: "Extend",
+    -2: "Enhance",
+    -1: "HighPriority",
+    0: "Unlimited",
+    1: "Stack",
+    2: "Refresh",
+    3: "Modify",
+    4: "EnhanceAndRefresh",
+    5: "EnhanceAndOverwriteDuration",
+}
+
+
+def decode_buff_pre_id_modifier_prefix(
+    data: bytes,
+    id_marker_offset: int,
+) -> dict[str, Any]:
+    """Decode the exact BuffData prefix through its modifier fields.
+
+    A non-empty ``abilityEventAction`` contains nested action unions and is
+    accepted only when every map, sequence, and union item has a typed
+    consume-style decoder. Otherwise this decoder stops at the exact list
+    count instead of searching for a plausible later boundary. The following
+    setter order is deterministic: addingCooldown, packed applyTags ids, and
+    AttributeModifierData.
+    """
+
+    limit = min(max(0, int(id_marker_offset)), len(data))
+    result: dict[str, Any] = {
+        "status": "unresolved",
+        "source": (
+            "BuffData MemoryPack setter order; event actions require full typed "
+            "consumption before later modifier fields are published"
+        ),
+        "offset": "0x1",
+    }
+    try:
+        if not data or data[0] != BUFF_MEMBER_COUNT:
+            raise ValueError("member-count")
+        if limit <= 1:
+            raise ValueError("missing-id-boundary")
+        offset = 1
+        ability_event_action_count, offset = read_buff_u32_field(
+            data,
+            offset,
+            "abilityEventAction.count",
+        )
+        result["abilityEventActionCount"] = ability_event_action_count
+        ability_event_actions: list[dict[str, Any]] = []
+        if ability_event_action_count:
+            action_start = offset
+            try:
+                ability_event_actions, offset = consume_buff_ability_event_action_maps(
+                    data,
+                    offset,
+                    limit,
+                    ability_event_action_count,
+                )
+            except (struct.error, UnicodeDecodeError, ValueError) as exc:
+                result.update({
+                    "status": "blocked-nonempty-ability-event-actions",
+                    "endOffset": format_offset(action_start),
+                    "boundary": "stopped-after-exact-list-count",
+                    "abilityEventActionDecodeError": str(exc)[:240],
+                })
+                return result
+
+        adding_cooldown, offset = read_buff_blackboard_float_raw_field_exact(
+            data,
+            offset,
+            "addingCooldown",
+        )
+        if offset > limit:
+            raise ValueError("addingCooldown:past-id-boundary")
+
+        apply_tag_count, offset = read_buff_u32_field(data, offset, "applyTags.count")
+        if apply_tag_count > 1024:
+            raise ValueError(f"applyTags.count={apply_tag_count}")
+        apply_tags: list[str] = []
+        for index in range(apply_tag_count):
+            tag_id, offset = read_buff_u32_field(data, offset, f"applyTags[{index}]")
+            if offset > limit:
+                raise ValueError(f"applyTags[{index}]:past-id-boundary")
+            apply_tags.append(f"0x{tag_id:08x}")
+
+        attribute_start = offset
+        if offset >= limit:
+            raise ValueError("attributeModifier:truncated-member-count")
+        attribute_member_count = data[offset]
+        offset += 1
+        if attribute_member_count != 2:
+            raise ValueError(f"attributeModifier:member-count={attribute_member_count}")
+        modifier_count, offset = read_buff_u32_field(
+            data,
+            offset,
+            "attributeModifier.attributeModifiers.count",
+        )
+        if modifier_count > 256:
+            raise ValueError(f"attributeModifier.attributeModifiers.count={modifier_count}")
+        modifiers: list[dict[str, Any]] = []
+        for index in range(modifier_count):
+            item_start = offset
+            if offset >= limit:
+                raise ValueError(f"attributeModifiers[{index}]:truncated-member-count")
+            member_count = data[offset]
+            offset += 1
+            if member_count != 4:
+                raise ValueError(f"attributeModifiers[{index}]:member-count={member_count}")
+            attribute_type, offset = read_buff_u32_field(
+                data, offset, f"attributeModifiers[{index}].attributeType"
+            )
+            formula_item, offset = read_buff_u32_field(
+                data, offset, f"attributeModifiers[{index}].formulaItem"
+            )
+            modify_attribute_type, offset = read_buff_u32_field(
+                data, offset, f"attributeModifiers[{index}].modifyAttributeType"
+            )
+            param, offset = read_buff_blackboard_float_raw_field_exact(
+                data,
+                offset,
+                f"attributeModifiers[{index}].param",
+            )
+            if offset > limit:
+                raise ValueError(f"attributeModifiers[{index}]:past-id-boundary")
+            modifiers.append({
+                "memberCount": member_count,
+                "offset": format_offset(item_start),
+                "bytes": offset - item_start,
+                "attributeType": attribute_type,
+                "formulaItem": formula_item,
+                "modifyAttributeType": modify_attribute_type,
+                "param": param,
+            })
+        is_converted_attribute, offset = read_buff_bool_field(
+            data,
+            offset,
+            "attributeModifier.isConvertedAttribute",
+        )
+        if offset > limit:
+            raise ValueError("attributeModifier:past-id-boundary")
+        result.update({
+            "status": "parsed-through-attribute-modifier",
+            "boundary": "exact-prefix-consumption",
+            "abilityEventActions": ability_event_actions,
+            "addingCooldown": adding_cooldown,
+            "applyTags": {
+                "count": apply_tag_count,
+                "tagIds": apply_tags,
+            },
+            "attributeModifier": {
+                "memberCount": attribute_member_count,
+                "offset": format_offset(attribute_start),
+                "bytes": offset - attribute_start,
+                "isConvertedAttribute": is_converted_attribute,
+                "attributeModifiers": modifiers,
+            },
+            "endOffset": format_offset(offset),
+        })
+        return result
+    except (struct.error, UnicodeDecodeError, ValueError) as exc:
+        result.update({
+            "status": "parse-error",
+            "error": str(exc),
+        })
+        return result
+
+
+def buff_gameplay_semantics(path: Path) -> dict[str, Any]:
+    """Build the compact, fail-closed BuffData view consumed by Gameplay.
+
+    Post-id values are published only when the decoder reached the exact file
+    tail.  Pre-id BlackboardDouble rows remain explicitly scoped candidates;
+    only a unique authored ``duration`` key is promoted as a duration anchor.
+    """
+
+    data = path.read_bytes()
+    report = decode_buff_memorypack(path, data, len(data))
+    if not report:
+        return {
+            "id": path.stem,
+            "status": "unsupported-memorypack",
+            "evidenceStatus": "unresolved",
+        }
+    decoded = report.get("decoded") or {}
+    post = decoded.get("postIdPrefix") or {}
+    pre = decoded.get("preIdModifierPrefix") or {}
+    exact_tail = post.get("status") == "parsed-through-exact-tail"
+    id_offsets = length_prefixed_utf8_string_marker_info(data, path.stem)[1]
+    selected_id_marker = post.get("idMarkerOffset")
+    try:
+        selected_id_marker_offset = int(str(selected_id_marker), 0)
+    except (TypeError, ValueError):
+        selected_id_marker_offset = id_offsets[0] if id_offsets else None
+    candidates = (
+        scan_buff_blackboard_float_candidates_before_id(data, selected_id_marker_offset)
+        if selected_id_marker_offset is not None else []
+    )
+    duration_rows = [
+        row for row in candidates
+        if str(row.get("blackboardKey") or "").casefold() == "duration"
+    ]
+    duration = duration_rows[0] if len(duration_rows) == 1 else None
+
+    life_raw = post.get("lifeTypeRaw") if exact_tail else None
+    life_value = memorypack_signed_enum_value(life_raw)
+    stacking = post.get("stackingSettings") if exact_tail else {}
+    if not isinstance(stacking, dict):
+        stacking = {}
+    identifier_value = memorypack_signed_enum_value(stacking.get("identifierTypeRaw"))
+    stacking_value = memorypack_signed_enum_value(stacking.get("stackingTypeRaw"))
+
+    return {
+        "id": str(decoded.get("id") or path.stem),
+        "status": str(post.get("status") or "partial"),
+        "evidenceStatus": (
+            "exact-post-id-tail-partial-pre-id"
+            if exact_tail else "partial-memorypack"
+        ),
+        "idStringVerified": bool(decoded.get("idStringVerified")),
+        "lifeType": (
+            {
+                "raw": life_raw,
+                "value": life_value,
+                "name": BUFF_LIFE_TYPE_NAMES.get(life_value, "Unknown"),
+            }
+            if life_value is not None else None
+        ),
+        "duration": (
+            {
+                "blackboardKey": duration.get("blackboardKey"),
+                "useBlackboardKey": duration.get("useBlackboardKey"),
+                "value": duration.get("value"),
+                "status": "unique-authored-duration-key-before-id",
+            }
+            if duration else None
+        ),
+        "maxTriggerCnt": post.get("maxTriggerCnt") if exact_tail else None,
+        "triggerInterval": post.get("triggerInterval") if exact_tail else None,
+        "stacking": (
+            {
+                "identifierType": identifier_value,
+                "identifierTypeName": BUFF_STACK_IDENTIFIER_TYPE_NAMES.get(identifier_value, "Unknown"),
+                "stackingType": stacking_value,
+                "stackingTypeName": BUFF_STACKING_TYPE_NAMES.get(stacking_value, "Unknown"),
+                "maxStackCnt": stacking.get("maxStackCnt"),
+                "maxStackCntKey": stacking.get("maxStackCntKey"),
+                "useMaxStackCntKey": stacking.get("useMaxStackCntKey"),
+                "priority": stacking.get("priority"),
+                "priorityKey": stacking.get("priorityKey"),
+                "usePriorityKey": stacking.get("usePriorityKey"),
+                "negatePriority": stacking.get("negatePriority"),
+            }
+            if exact_tail else None
+        ),
+        "flags": (
+            {
+                "ignoreCooldownWhenAdding": post.get("ignoreCooldownWhenAdding"),
+                "ignoreTagImmune": post.get("ignoreTagImmune"),
+                "onlyUseSelfTimeDilation": post.get("onlyUseSelfTimeDilation"),
+                "useTimeDilationDt": post.get("useTimeDilationDt"),
+                "waitFirstTriggerInterval": post.get("waitFirstTriggerInterval"),
+            }
+            if exact_tail else None
+        ),
+        "abilityEventActionCount": pre.get("abilityEventActionCount"),
+        "abilityEventActions": (
+            list(pre.get("abilityEventActions") or [])
+            if pre.get("status") == "parsed-through-attribute-modifier" else []
+        ),
+        "addingCooldown": (
+            pre.get("addingCooldown")
+            if pre.get("status") == "parsed-through-attribute-modifier" else None
+        ),
+        "applyTags": (
+            pre.get("applyTags")
+            if pre.get("status") == "parsed-through-attribute-modifier" else None
+        ),
+        "attributeModifier": (
+            pre.get("attributeModifier")
+            if pre.get("status") == "parsed-through-attribute-modifier" else None
+        ),
+        "preIdModifierStatus": str(pre.get("status") or "unresolved"),
+        "blackboardCandidates": [
+            {
+                "key": row.get("blackboardKey"),
+                "value": row.get("value"),
+                "useBlackboardKey": row.get("useBlackboardKey"),
+                "status": "exact-value-enclosing-field-unresolved",
+            }
+            for row in candidates
+            if str(row.get("blackboardKey") or "").casefold() != "duration"
+        ],
+        "tags": list(decoded.get("tags") or []),
+        "refs": list(decoded.get("refs") or []),
+    }
 
 
 def read_buff_blackboard_float_raw_field_bounded(
@@ -901,10 +1405,26 @@ def buff_target_settings_envelope_limit(
     string_length = struct.unpack_from("<I", data, string_length_offset)[0]
     if string_length > BUFF_TARGET_SETTINGS_STRING_SLOT_MAX_BYTES:
         raise ValueError(f"{field_name}:string-slot-length={string_length}")
-    limit = base_end + string_length
-    if limit > max_limit:
-        raise ValueError(f"{field_name}:envelope-limit={format_offset(limit)} max={format_offset(max_limit)}")
-    return limit
+    nominal_limit = base_end + string_length
+    if nominal_limit > max_limit:
+        raise ValueError(
+            f"{field_name}:envelope-limit={format_offset(nominal_limit)} "
+            f"max={format_offset(max_limit)}"
+        )
+    # TargetSettings contains nested union-valued selectors. Their terminal
+    # tag occupies one or three bytes in current data, so the flattened
+    # envelope can extend up to three bytes beyond the common nominal shape.
+    # Select only a candidate whose final serialized enum is known; callers
+    # still validate the following field/action anchor.
+    for extra_bytes in range(4):
+        candidate = nominal_limit + extra_bytes
+        if candidate > max_limit or candidate - offset < 4:
+            continue
+        tail_u32 = struct.unpack_from("<I", data, candidate - 4)[0]
+        if tail_u32 in BUFF_TARGET_SETTINGS_ENVELOPE_TAIL_U32_CANDIDATES:
+            return candidate
+    tail_u32 = struct.unpack_from("<I", data, nominal_limit - 4)[0]
+    raise ValueError(f"{field_name}:tail-u32={tail_u32}")
 
 
 def read_buff_target_settings_partial(
@@ -981,8 +1501,20 @@ def read_buff_target_settings_envelope_partial(
     end still get the identical acceptance because they verify end-of-item
     afterwards.
     """
-    envelope_end = buff_target_settings_envelope_limit(data, offset, max_limit, field_name)
-    return read_buff_target_settings_partial(data, offset, envelope_end, field_name)
+    # The envelope boundary is independently proven from its serialized
+    # string-slot length and terminal selector enum.  Once that boundary is
+    # known, use the typed reader as well; it exposes the 13 TargetSettings
+    # members for the common selector shapes while retaining the bounded raw
+    # representation whenever an unknown nested selector subtype is met.
+    # Historically every caller used the ``...Partial`` helper here, which
+    # left even the all-default TargetSettings (the dominant current-build
+    # shape) needlessly opaque.
+    return read_buff_target_settings_full_or_partial(
+        data,
+        offset,
+        max_limit,
+        field_name,
+    )
 
 
 def read_buff_effect_action_cfg_partial(
@@ -997,7 +1529,7 @@ def read_buff_effect_action_cfg_partial(
     if byte_length < BUFF_EFFECT_ACTION_CFG_MIN_BYTES:
         raise ValueError(f"{field_name}:unexpected-bytes={byte_length}")
     member_count, _member_offset = read_buff_i32_field(data, offset, f"{field_name}.memberCountCandidate")
-    if member_count not in (74, 76):
+    if member_count not in (74, 76, 85):
         raise ValueError(f"{field_name}.memberCountCandidate={member_count}")
     raw = data[offset:limit]
     string_hits = scan_length_prefixed_utf8_string_hits(
@@ -1067,24 +1599,39 @@ def read_buff_create_buff_input_partial(
         raise ValueError(f"{field_name}:member-count={member_count}")
     flag_candidate, offset = read_buff_bool_field(data, offset, f"{field_name}.flagCandidate")
     reserved_u32, offset = read_buff_u32_field(data, offset, f"{field_name}.reservedU32")
-    if reserved_u32 != 0:
-        raise ValueError(f"{field_name}.reservedU32={reserved_u32}")
-    buff_id, offset = read_buff_memorypack_utf8_string_strict_bounded(
-        data,
-        offset,
-        limit,
-        f"{field_name}.buffId",
-        max_length=256,
-    )
-    if not buff_id or not buff_id.startswith("buff_"):
-        raise ValueError(f"{field_name}.buffId:unexpected={buff_id}")
-    tail_end = offset + BUFF_CREATE_BUFF_INPUT_TAIL_BYTES
-    if tail_end > limit:
-        raise ValueError(f"{field_name}:truncated-tail")
-    tail = data[offset:tail_end]
-    if tail != b"\x00" * BUFF_CREATE_BUFF_INPUT_TAIL_BYTES:
-        raise ValueError(f"{field_name}:tail={tail.hex(' ')}")
-    offset = tail_end
+    # CreateBuffActionInput flattens an inherited dynamic BuffId value.  The
+    # leading discriminator selects several blackboard expression shapes, so
+    # their inner byte length is not fixed.  Every current formatter branch
+    # terminates with the authored BuffId string and the same four zero u32
+    # fields.  Use both anchors and require one unique bounded candidate.
+    scan_end = min(limit, offset + 2048)
+    candidates: list[tuple[int, int, str]] = []
+    for marker in range(offset, max(offset, scan_end - 4)):
+        length = struct.unpack_from("<I", data, marker)[0]
+        if length < 5 or length > 256:
+            continue
+        string_end = marker + 4 + length
+        tail_end = string_end + BUFF_CREATE_BUFF_INPUT_TAIL_BYTES
+        if tail_end > scan_end:
+            continue
+        try:
+            value = data[marker + 4:string_end].decode("utf-8")
+        except UnicodeDecodeError:
+            continue
+        if re.fullmatch(r"buff_[A-Za-z0-9_]+", value) is None:
+            continue
+        if data[string_end:tail_end] != b"\x00" * BUFF_CREATE_BUFF_INPUT_TAIL_BYTES:
+            continue
+        candidates.append((marker, tail_end, value))
+    if not candidates:
+        raise ValueError(f"{field_name}.buffIdCandidates=0")
+    # The inherited expression payload precedes the authored fallback BuffId;
+    # later candidates can belong to following action fields/items because the
+    # outer action limit is intentionally broad.  The first terminal anchor is
+    # therefore the only candidate within this input's grammar.
+    marker, offset, buff_id = candidates[0]
+    inherited_value_raw = data[start + 6:marker]
+    tail = data[offset - BUFF_CREATE_BUFF_INPUT_TAIL_BYTES:offset]
     return {
         "status": "partial",
         "semanticStatus": "partial-create-buff-input-fields-opaque",
@@ -1094,6 +1641,16 @@ def read_buff_create_buff_input_partial(
         "flagCandidate": flag_candidate,
         "reservedU32": reserved_u32,
         "buffId": buff_id,
+        "boundedBuffIdCandidateCount": len(candidates),
+        "inheritedValueBytes": len(inherited_value_raw),
+        "inheritedValueRawSha256": hashlib.sha256(inherited_value_raw).hexdigest(),
+        "inheritedValueStringHits": scan_length_prefixed_utf8_string_hits(
+            inherited_value_raw,
+            start=0,
+            max_scan_bytes=len(inherited_value_raw),
+            max_samples=8,
+            max_length=256,
+        ),
         "tailRaw": tail.hex(" "),
     }, offset
 
@@ -1139,7 +1696,7 @@ def consume_buff_create_buff_action(
         raise ValueError("createBuff:tag-mismatch")
     if tag_width != 1:
         raise ValueError(f"createBuff:tag-width={tag_width}")
-    if member_count != 17:
+    if member_count != 19:
         raise ValueError(f"createBuff:member-count={member_count}")
     offset = item_start + tag_width + 1
     prefix, offset = read_buff_ability_action_common_prefix_bounded(
@@ -1179,6 +1736,11 @@ def consume_buff_create_buff_action(
         offset,
         "createBuff.count",
     )
+    finish_with_next_skill_if_not_inherited, offset = read_buff_bool_field(
+        data,
+        offset,
+        "createBuff.finishWithNextSkillIfNotInherited",
+    )
     inherit_skill_id_count, offset = read_buff_u32_field(
         data,
         offset,
@@ -1202,6 +1764,11 @@ def consume_buff_create_buff_action(
         offset,
         "createBuff.overrideBuffIconDuration",
     )
+    pass_target_groups_to_buff, offset = read_buff_bool_field(
+        data,
+        offset,
+        "createBuff.passTargetGroupsToBuff",
+    )
     target_settings, offset = read_buff_target_settings_envelope_partial(
         data,
         offset,
@@ -1213,9 +1780,10 @@ def consume_buff_create_buff_action(
         "decodeStatus": "partial",
         "semanticStatus": "partial-create-buff-input-tail-and-target-settings-opaque",
         "schemaSource": (
-            "MemoryPack setter order plus current byte evidence: AbilityActionData prefix, asChildBuff, "
+            "current-build MemoryPack setter order plus byte evidence: AbilityActionData prefix, asChildBuff, "
             "autoFinishByAction, buffIconDurationSource, buffs, buffSource, contextKey, count, "
-            "empty inheritSkillIdList, four boolean tail flags, targetSettings; buff input internals, "
+            "finishWithNextSkillIfNotInherited, empty inheritSkillIdList, four boolean tail flags, "
+            "passTargetGroupsToBuff, targetSettings; buff input internals, "
             "BlackboardDouble/count semantics, and TargetSettings internals remain partial"
         ),
         "byteLength": offset - item_start,
@@ -1227,11 +1795,13 @@ def consume_buff_create_buff_action(
         "buffSourceRaw": buff_source_raw,
         "contextKey": context_key or "",
         "countCandidate": count_candidate,
+        "finishWithNextSkillIfNotInherited": finish_with_next_skill_if_not_inherited,
         "inheritSkillIdListCount": inherit_skill_id_count,
         "inheritSourceSkillCastId": inherit_source_skill_cast_id,
         "inheritSourceSkillCastInfo": inherit_source_skill_cast_info,
         "isExtra": is_extra,
         "overrideBuffIconDuration": override_buff_icon_duration,
+        "passTargetGroupsToBuff": pass_target_groups_to_buff,
         "targetSettingsEnvelopePartial": target_settings,
     }, offset
 
@@ -1277,6 +1847,9 @@ def consume_buff_modify_dynamic_blackboard_action(
     )
     if abs(calculate_type) > 1_000:
         raise ValueError(f"modifyDynamicBlackboard.calculateType={calculate_type}")
+    calculate_type_name = BUFF_MODIFY_DYNAMIC_BLACKBOARD_CALCULATION_TYPE_NAMES.get(calculate_type)
+    if calculate_type_name is None:
+        raise ValueError(f"modifyDynamicBlackboard.calculateTypeUnknown={calculate_type}")
     calculation_target, offset = read_buff_target_settings_envelope_partial(
         data,
         offset,
@@ -1307,11 +1880,12 @@ def consume_buff_modify_dynamic_blackboard_action(
         "semanticStatus": "partial-calculation-target-settings-envelope-opaque",
         "schemaSource": (
             "MemoryPack setter order: AbilityActionData prefix, calculateType, calculationTarget, "
-            "directValue, key, operation, value; TargetSettings internals and calculateType enum remain partial"
+            "directValue, key, operation, value; TargetSettings internals are retained as exact-or-bounded"
         ),
         "byteLength": offset - item_start,
         "prefix": prefix,
         "calculateType": calculate_type,
+        "calculateTypeName": calculate_type_name,
         "calculationTargetEnvelopePartial": calculation_target,
         "directValue": direct_value,
         "key": key,
@@ -1390,7 +1964,7 @@ def consume_buff_effect_action(
         raise ValueError("effectAction:tag-mismatch")
     if tag_width != 1:
         raise ValueError(f"effectAction:tag-width={tag_width}")
-    if member_count != 15:
+    if member_count != 17:
         raise ValueError(f"effectAction:member-count={member_count}")
     offset = item_start + tag_width + 1
     prefix, offset = read_buff_ability_action_common_prefix_bounded(
@@ -1423,8 +1997,16 @@ def consume_buff_effect_action(
         "effectAction.effectSource",
     )
     bool_fields: dict[str, bool] = {}
+    bool_fields["forceMainBody"], offset = read_buff_bool_field(
+        data, offset, "effectAction.forceMainBody",
+    )
+    guard_lod_source, offset = read_buff_target_settings_envelope_partial(
+        data,
+        offset,
+        limit,
+        "effectAction.guardLodSource",
+    )
     for field_name in (
-        "forceMainBody",
         "isCreateWithSourceModelActive",
         "isMainCharacterActive",
         "isShowBigEffect",
@@ -1450,13 +2032,17 @@ def consume_buff_effect_action(
         limit,
         "effectAction.targetSettings",
     )
+    bool_fields["useGuardLodSourceOverride"], offset = read_buff_bool_field(
+        data, offset, "effectAction.useGuardLodSourceOverride",
+    )
     return {
         "type": BUFF_ABILITY_ACTION_TAG_NAMES[BUFF_EFFECT_ACTION_TAG],
         "decodeStatus": "partial",
         "semanticStatus": "partial-effect-action-cfg-and-target-settings-opaque",
         "schemaSource": (
-            "MemoryPack setter order: AbilityActionData prefix, bigEffectName, effectActionCfg, "
-            "effectSource, six boolean flags, saveEffectIdToBlackboard, targetSettings; "
+            "current-build MemoryPack setter order: AbilityActionData prefix, bigEffectName, "
+            "effectActionCfg, effectSource, forceMainBody, guardLodSource, five boolean flags, "
+            "saveEffectIdToBlackboard, targetSettings, useGuardLodSourceOverride; "
             "EffectActionCfg and TargetSettings internals remain partial"
         ),
         "byteLength": offset - item_start,
@@ -1464,6 +2050,7 @@ def consume_buff_effect_action(
         "bigEffectName": big_effect_name or "",
         "effectActionCfgPartial": effect_action_cfg,
         "effectSourceEnvelopePartial": effect_source,
+        "guardLodSourceEnvelopePartial": guard_lod_source,
         **bool_fields,
         "saveEffectIdToBlackboard": save_effect_id_to_blackboard or "",
         "targetSettingsEnvelopePartial": target_settings,
@@ -1528,6 +2115,16 @@ def consume_buff_convert_to_target_context_action(
     ):
         if abs(value) > 1_000_000:
             raise ValueError(f"{field_name}:implausible={value}")
+    operation_type_name = BUFF_CONVERT_TO_TARGET_CONTEXT_OPERATION_NAMES.get(operation_type)
+    translate_operation_name = BUFF_CONVERT_TO_TARGET_CONTEXT_TRANSLATE_OPERATION_NAMES.get(
+        translate_operation
+    )
+    if operation_type_name is None:
+        raise ValueError(f"convertToTargetContext.operationTypeUnknown={operation_type}")
+    if translate_operation_name is None:
+        raise ValueError(
+            f"convertToTargetContext.translateOperationUnknown={translate_operation}"
+        )
     if translation_deg < -100_000 or translation_deg > 100_000:
         raise ValueError(f"convertToTargetContext.translationDeg:out-of-range={translation_deg}")
     return {
@@ -1545,8 +2142,10 @@ def consume_buff_convert_to_target_context_action(
         "convertFromTargetSettingsEnvelopePartial": convert_from,
         "excludeTarget": exclude_target,
         "operationType": operation_type,
+        "operationTypeName": operation_type_name,
         "targetGroupKey": target_group_key,
         "translateOperation": translate_operation,
+        "translateOperationName": translate_operation_name,
         "translationDeg": round(translation_deg, 6),
         "translationRef": translation_ref,
     }, offset
@@ -2045,7 +2644,7 @@ def consume_buff_compare_float_action(
         "compareFloat.prefix",
     )
     compare, offset = read_buff_i32_field(data, offset, "compareFloat.compare")
-    if compare < 0 or compare > 16:
+    if compare not in BUFF_COMPARE_TYPE_NAMES:
         raise ValueError(f"compareFloat.compare={compare}")
     value_a, offset = read_buff_blackboard_float_raw_field_exact(
         data,
@@ -2060,13 +2659,15 @@ def consume_buff_compare_float_action(
     return {
         "type": BUFF_ABILITY_ACTION_TAG_NAMES[BUFF_COMPARE_FLOAT_ACTION_TAG],
         "decodeStatus": "exact",
+        "semanticStatus": "exact-compare-float-action",
         "schemaSource": (
             "MemoryPack setter order: AbilityActionData prefix, compare, valueA, valueB; "
-            "valueA/valueB are member-count-3 BlackboardFloat wrappers; compare enum labels are unmapped"
+            "valueA/valueB are member-count-3 BlackboardFloat wrappers; compare names come from Beyond.CompareType"
         ),
         "byteLength": offset - item_start,
         "prefix": prefix,
         "compare": compare,
+        "compareName": BUFF_COMPARE_TYPE_NAMES[compare],
         "valueA": value_a,
         "valueB": value_b,
     }, offset
@@ -2208,8 +2809,9 @@ def consume_buff_spell_infliction_action(
         "spellInfliction.prefix",
     )
     infliction_type, offset = read_buff_i32_field(data, offset, "spellInfliction.inflictionType")
-    if infliction_type < 0 or infliction_type > 1_000:
+    if infliction_type not in BUFF_SPELL_INFLICTION_TYPE_NAMES:
         raise ValueError(f"spellInfliction.inflictionType={infliction_type}")
+    infliction_type_name = BUFF_SPELL_INFLICTION_TYPE_NAMES[infliction_type]
     is_extra, offset = read_buff_bool_field(data, offset, "spellInfliction.isExtra")
     source, offset = read_buff_target_settings_envelope_partial(
         data,
@@ -2229,11 +2831,12 @@ def consume_buff_spell_infliction_action(
         "semanticStatus": "partial-source-target-settings-envelopes-opaque",
         "schemaSource": (
             "MemoryPack setter order: AbilityActionData prefix, inflictionType, isExtra, source, target; "
-            "both TargetSettings envelopes remain partial and inflictionType enum labels are unmapped"
+            "both TargetSettings envelopes remain partial; inflictionType names come from EnergyShardType"
         ),
         "byteLength": offset - item_start,
         "prefix": prefix,
         "inflictionType": infliction_type,
+        "inflictionTypeName": infliction_type_name,
         "isExtra": is_extra,
         "sourceEnvelopePartial": source,
         "targetEnvelopePartial": target,
@@ -2626,8 +3229,9 @@ BUFF_SELECTOR_FINDER_SUBTYPES: dict[int, tuple[str, tuple | None]] = {
     0x09: ("MainTargetFinder", ()),
     0x0A: ("OwnerPartsFinder", (("partQuery", "tagquery"),)),
     0x0B: ("OwnerSpawnedEntityFinder", (("spawnedObjectType", "i32"),)),
-    0x0C: ("PointFinder", (("positionOffset", "bbvector3"),
-                           ("rotationOffset", "bbvector3"))),
+    # Current formatter serializes only positionOffset even though the runtime
+    # Data type also retains a rotationOffset field.
+    0x0C: ("PointFinder", (("positionOffset", "bbvector3"),)),
     0x0D: ("RandomPointFinder", (("angle", "bbparam"),
                                  ("localPlaneRotationEulers", "bbvector3"),
                                  ("minRadius", "bbparam"), ("pointNum", "bbparam"),
@@ -2817,8 +3421,16 @@ def read_buff_selector_tag_query(
     if not present:
         return None, offset
     query_type, offset = read_buff_selector_i32(data, offset, limit, f"{field_name}.queryType")
-    tags, offset = read_buff_selector_list(
-        data, offset, limit, f"{field_name}.tags", read_buff_selector_gameplay_tag,
+    tag_ids, offset = read_buff_selector_list(
+        data, offset, limit, f"{field_name}.tags", read_buff_selector_list_i32_element,
+    )
+    tags = (
+        None
+        if tag_ids is None
+        else [
+            {"tagId": value, "tagIdHex": f"0x{value & 0xffffffff:08x}"}
+            for value in tag_ids
+        ]
     )
     return {"queryType": query_type, "tags": tags}, offset
 
@@ -3189,7 +3801,7 @@ def read_buff_selector_member(
     raise ValueError(f"{field_name}:unknown-member-kind={kind}")
 
 
-BUFF_CONTINUOUS_FIND_TARGET_ACTION_TAG = 0x007C
+BUFF_CONTINUOUS_FIND_TARGET_ACTION_TAG = 0x0084
 
 
 BUFF_FIND_TARGET_ACTION_VARIANTS = {
@@ -3834,8 +4446,8 @@ def build_buff_ability_action_item_summary(
         if decoded is not None:
             summary["decodeStatus"] = str(decoded.get("decodeStatus") or "exact")
             summary["decoded"] = decoded
-        elif tag in BUFF_ABILITY_ACTION_BEST_EFFORT_SINGLE_ITEM_TAGS:
-            _best_effort_decoded, best_effort_error = decode_buff_best_effort_single_action_item(
+        elif tag in BUFF_ABILITY_ACTION_CONSUME_DECODERS:
+            best_effort_decoded, best_effort_error = decode_buff_best_effort_single_action_item(
                 data,
                 item_start,
                 item_end,
@@ -3843,7 +4455,12 @@ def build_buff_ability_action_item_summary(
                 tag_width,
                 member_count,
             )
-            if best_effort_error:
+            if best_effort_decoded is not None:
+                summary["decodeStatus"] = str(
+                    best_effort_decoded.get("decodeStatus") or "exact"
+                )
+                summary["decoded"] = best_effort_decoded
+            elif best_effort_error:
                 summary["bestEffortDecodeProbeNote"] = best_effort_error
     return summary
 
@@ -3973,6 +4590,1376 @@ def consume_buff_sequence_action_data(
     }, offset
 
 
+def read_buff_gameplay_tag_query_exact(
+    data: bytes,
+    offset: int,
+    limit: int,
+    field_name: str,
+) -> tuple[dict[str, Any], int]:
+    """Read GameplayTagQuery(memberCount=2, queryType, raw tag-id array)."""
+
+    start = offset
+    if offset >= limit:
+        raise ValueError(f"{field_name}:truncated-member-count")
+    member_count = data[offset]
+    offset += 1
+    if member_count != 2:
+        raise ValueError(f"{field_name}:member-count={member_count}")
+    query_type, offset = read_buff_i32_field_bounded(
+        data, offset, limit, f"{field_name}.queryType",
+    )
+    tag_count, offset = read_buff_u32_field_bounded(
+        data, offset, limit, f"{field_name}.tags.count",
+    )
+    if tag_count > 256:
+        raise ValueError(f"{field_name}.tags.count={tag_count}")
+    tag_ids: list[str] = []
+    for index in range(tag_count):
+        tag_id, offset = read_buff_u32_field_bounded(
+            data, offset, limit, f"{field_name}.tags[{index}]",
+        )
+        tag_ids.append(f"0x{tag_id:08x}")
+    return {
+        "memberCount": member_count,
+        "offset": format_offset(start),
+        "bytes": offset - start,
+        "queryType": query_type,
+        "tagIds": tag_ids,
+    }, offset
+
+
+def read_buff_find_settings_exact(
+    data: bytes,
+    offset: int,
+    limit: int,
+    field_name: str,
+) -> tuple[dict[str, Any], int]:
+    """Read BuffFindSettings(memberCount=3) in generated setter order."""
+
+    start = offset
+    if offset >= limit:
+        raise ValueError(f"{field_name}:truncated-member-count")
+    member_count = data[offset]
+    offset += 1
+    if member_count != 3:
+        raise ValueError(f"{field_name}:member-count={member_count}")
+    count, offset = read_buff_u32_field_bounded(
+        data, offset, limit, f"{field_name}.buffIdList.count",
+    )
+    if count > 64:
+        raise ValueError(f"{field_name}.buffIdList.count={count}")
+    buff_ids: list[str] = []
+    for index in range(count):
+        buff_id, offset = read_buff_memorypack_utf8_string_strict_bounded(
+            data,
+            offset,
+            limit,
+            f"{field_name}.buffIdList[{index}]",
+            max_length=256,
+        )
+        if not buff_id:
+            raise ValueError(f"{field_name}.buffIdList[{index}]:empty")
+        buff_ids.append(buff_id)
+    check_type, offset = read_buff_i32_field_bounded(
+        data, offset, limit, f"{field_name}.checkType",
+    )
+    tag_query, offset = read_buff_gameplay_tag_query_exact(
+        data, offset, limit, f"{field_name}.tagQuery",
+    )
+    return {
+        "memberCount": member_count,
+        "offset": format_offset(start),
+        "bytes": offset - start,
+        "buffIds": buff_ids,
+        "checkType": check_type,
+        "tagQuery": tag_query,
+    }, offset
+
+
+def read_buff_blackboard_int_field_exact(
+    data: bytes,
+    offset: int,
+    limit: int,
+    field_name: str,
+) -> tuple[dict[str, Any], int]:
+    start = offset
+    if offset >= limit:
+        raise ValueError(f"{field_name}:truncated-member-count")
+    member_count = data[offset]
+    offset += 1
+    if member_count != 3:
+        raise ValueError(f"{field_name}:member-count={member_count}")
+    key, offset = read_buff_memorypack_utf8_string_strict_bounded(
+        data, offset, limit, f"{field_name}.blackboardKey", max_length=256,
+    )
+    use_key, offset = read_buff_bool_field_bounded(
+        data, offset, limit, f"{field_name}.useBlackboardKey",
+    )
+    value, offset = read_buff_i32_field_bounded(
+        data, offset, limit, f"{field_name}.value",
+    )
+    return {
+        "memberCount": member_count,
+        "offset": format_offset(start),
+        "blackboardKey": key or "",
+        "useBlackboardKey": use_key,
+        "value": value,
+    }, offset
+
+
+def consume_buff_check_super_armor_action(
+    data: bytes,
+    item_start: int,
+    limit: int,
+    tag_width: int,
+    member_count: int,
+) -> tuple[dict[str, Any], int]:
+    """Consume the current CheckSuperArmor condition in exact setter order."""
+
+    tag, actual_tag_width, _raw = read_buff_timeline_first_union_tag(data, item_start, limit)
+    if tag != BUFF_CHECK_SUPER_ARMOR_ACTION_TAG or actual_tag_width != tag_width:
+        raise ValueError("checkSuperArmor:tag-mismatch")
+    if tag_width != 1:
+        raise ValueError(f"checkSuperArmor:tag-width={tag_width}")
+    if member_count != 7:
+        raise ValueError(f"checkSuperArmor:member-count={member_count}")
+    offset = item_start + tag_width + 1
+    prefix, offset = read_buff_ability_action_common_prefix_bounded(
+        data,
+        offset,
+        limit,
+        "checkSuperArmor.prefix",
+    )
+    check_target, offset = read_buff_target_settings_envelope_partial(
+        data,
+        offset,
+        limit,
+        "checkSuperArmor.checkTarget",
+    )
+    compare_type, offset = read_buff_i32_field_bounded(
+        data,
+        offset,
+        limit,
+        "checkSuperArmor.compareType",
+    )
+    value, offset = read_buff_blackboard_float_raw_field_exact(
+        data,
+        offset,
+        "checkSuperArmor.value",
+    )
+    if offset > limit:
+        raise ValueError("checkSuperArmor.value:past-limit")
+    return {
+        "type": BUFF_ABILITY_ACTION_TAG_NAMES[BUFF_CHECK_SUPER_ARMOR_ACTION_TAG],
+        "decodeStatus": "exact",
+        "semanticStatus": "exact-super-armor-condition",
+        "schemaSource": (
+            "current-build AbilityActionData union registration, runtime field types, "
+            "and exact MemoryPack setter order"
+        ),
+        "byteLength": offset - item_start,
+        "prefix": prefix,
+        "checkTarget": check_target,
+        "compareType": compare_type,
+        "value": value,
+    }, offset
+
+
+def consume_buff_check_main_character_action(
+    data: bytes,
+    item_start: int,
+    limit: int,
+    tag_width: int,
+    member_count: int,
+) -> tuple[dict[str, Any], int]:
+    """Consume the current CheckMainCharacterCondition target selector."""
+
+    tag, actual_tag_width, _raw = read_buff_timeline_first_union_tag(data, item_start, limit)
+    if tag != BUFF_CHECK_MAIN_CHARACTER_ACTION_TAG or actual_tag_width != tag_width:
+        raise ValueError("checkMainCharacter:tag-mismatch")
+    if tag_width != 1:
+        raise ValueError(f"checkMainCharacter:tag-width={tag_width}")
+    if member_count != 5:
+        raise ValueError(f"checkMainCharacter:member-count={member_count}")
+    offset = item_start + tag_width + 1
+    prefix, offset = read_buff_ability_action_common_prefix_bounded(
+        data,
+        offset,
+        limit,
+        "checkMainCharacter.prefix",
+    )
+    check_target, offset = read_buff_target_settings_envelope_partial(
+        data,
+        offset,
+        limit,
+        "checkMainCharacter.checkTarget",
+    )
+    return {
+        "type": BUFF_ABILITY_ACTION_TAG_NAMES[BUFF_CHECK_MAIN_CHARACTER_ACTION_TAG],
+        "decodeStatus": "exact",
+        "semanticStatus": "exact-main-character-target-condition",
+        "schemaSource": (
+            "current-build AbilityActionData union registration, runtime field type, "
+            "and exact MemoryPack setter order"
+        ),
+        "byteLength": offset - item_start,
+        "prefix": prefix,
+        "checkTarget": check_target,
+    }, offset
+
+
+def consume_buff_finish_buff_action(
+    data: bytes,
+    item_start: int,
+    limit: int,
+    tag_width: int,
+    member_count: int,
+) -> tuple[dict[str, Any], int]:
+    """Consume FinishBuffAction, including its explicit BuffId list."""
+
+    tag, actual_tag_width, _raw = read_buff_timeline_first_union_tag(data, item_start, limit)
+    if tag != BUFF_FINISH_BUFF_ACTION_TAG or actual_tag_width != tag_width:
+        raise ValueError("finishBuff:tag-mismatch")
+    if tag_width != 1:
+        raise ValueError(f"finishBuff:tag-width={tag_width}")
+    if member_count != 12:
+        raise ValueError(f"finishBuff:member-count={member_count}")
+    offset = item_start + tag_width + 1
+    prefix, offset = read_buff_ability_action_common_prefix_bounded(
+        data,
+        offset,
+        limit,
+        "finishBuff.prefix",
+    )
+    buff_id_count, offset = read_buff_u32_field_bounded(
+        data,
+        offset,
+        limit,
+        "finishBuff.buffIds.count",
+    )
+    if buff_id_count > 64:
+        raise ValueError(f"finishBuff.buffIds.count={buff_id_count}")
+    buff_ids: list[str] = []
+    for index in range(buff_id_count):
+        if offset >= limit or data[offset] != 1:
+            actual = "truncated" if offset >= limit else str(data[offset])
+            raise ValueError(f"finishBuff.buffIds[{index}].memberCount={actual}")
+        offset += 1
+        buff_id, offset = read_buff_memorypack_utf8_string_strict_bounded(
+            data,
+            offset,
+            limit,
+            f"finishBuff.buffIds[{index}].value",
+            max_length=256,
+        )
+        if not buff_id:
+            raise ValueError(f"finishBuff.buffIds[{index}].value:empty")
+        buff_ids.append(buff_id)
+    buff_owner, offset = read_buff_target_settings_envelope_partial(
+        data,
+        offset,
+        limit,
+        "finishBuff.buffOwner",
+    )
+    buff_source, offset = read_buff_target_settings_envelope_partial(
+        data,
+        offset,
+        limit,
+        "finishBuff.buffSource",
+    )
+    finish_all, offset = read_buff_bool_field(data, offset, "finishBuff.finishAll")
+    finish_layer_cnt, offset = read_buff_blackboard_float_raw_field_exact(
+        data,
+        offset,
+        "finishBuff.finishLayerCnt",
+    )
+    if offset > limit:
+        raise ValueError("finishBuff.finishLayerCnt:past-limit")
+    finish_source, offset = read_buff_target_settings_envelope_partial(
+        data,
+        offset,
+        limit,
+        "finishBuff.finishSource",
+    )
+    is_finished_early, offset = read_buff_bool_field(
+        data,
+        offset,
+        "finishBuff.isFinishedEarly",
+    )
+    limit_source, offset = read_buff_bool_field(data, offset, "finishBuff.limitSource")
+    return {
+        "type": BUFF_ABILITY_ACTION_TAG_NAMES[BUFF_FINISH_BUFF_ACTION_TAG],
+        "decodeStatus": "exact",
+        "semanticStatus": "exact-finish-buff-action",
+        "schemaSource": (
+            "current-build AbilityActionData union registration, runtime field types, "
+            "and exact MemoryPack setter order"
+        ),
+        "byteLength": offset - item_start,
+        "prefix": prefix,
+        "buffIds": buff_ids,
+        "buffOwner": buff_owner,
+        "buffSource": buff_source,
+        "finishAll": finish_all,
+        "finishLayerCnt": finish_layer_cnt,
+        "finishSource": finish_source,
+        "isFinishedEarly": is_finished_early,
+        "limitSource": limit_source,
+    }, offset
+
+
+def consume_buff_create_timed_marker_action(
+    data: bytes,
+    item_start: int,
+    limit: int,
+    tag_width: int,
+    member_count: int,
+) -> tuple[dict[str, Any], int]:
+    """Consume CreateTimedMarker and expose its marker id and duration."""
+
+    tag, actual_tag_width, _raw = read_buff_timeline_first_union_tag(data, item_start, limit)
+    if tag != BUFF_CREATE_TIMED_MARKER_ACTION_TAG or actual_tag_width != tag_width:
+        raise ValueError("createTimedMarker:tag-mismatch")
+    if tag_width != 1:
+        raise ValueError(f"createTimedMarker:tag-width={tag_width}")
+    if member_count != 9:
+        raise ValueError(f"createTimedMarker:member-count={member_count}")
+    offset = item_start + tag_width + 1
+    prefix, offset = read_buff_ability_action_common_prefix_bounded(
+        data,
+        offset,
+        limit,
+        "createTimedMarker.prefix",
+    )
+    auto_finish_by_action, offset = read_buff_bool_field(
+        data,
+        offset,
+        "createTimedMarker.autoFinishByAction",
+    )
+    duration, offset = read_buff_blackboard_float_raw_field_exact(
+        data,
+        offset,
+        "createTimedMarker.duration",
+    )
+    marker_id, offset = read_buff_blackboard_string_field_exact(
+        data,
+        offset,
+        "createTimedMarker.markerId",
+    )
+    target_settings, offset = read_buff_target_settings_envelope_partial(
+        data,
+        offset,
+        limit,
+        "createTimedMarker.targetSettings",
+    )
+    use_time_dilation_dt, offset = read_buff_bool_field(
+        data,
+        offset,
+        "createTimedMarker.useTimeDilationDt",
+    )
+    if offset > limit:
+        raise ValueError("createTimedMarker:past-limit")
+    return {
+        "type": BUFF_ABILITY_ACTION_TAG_NAMES[BUFF_CREATE_TIMED_MARKER_ACTION_TAG],
+        "decodeStatus": "exact",
+        "semanticStatus": "exact-create-timed-marker-action",
+        "schemaSource": (
+            "current-build AbilityActionData union registration, runtime field types, "
+            "and exact MemoryPack setter order"
+        ),
+        "byteLength": offset - item_start,
+        "prefix": prefix,
+        "autoFinishByAction": auto_finish_by_action,
+        "duration": duration,
+        "markerId": marker_id,
+        "targetSettings": target_settings,
+        "useTimeDilationDt": use_time_dilation_dt,
+    }, offset
+
+
+def consume_buff_not_next_check_action(
+    data: bytes,
+    item_start: int,
+    limit: int,
+    tag_width: int,
+    member_count: int,
+) -> tuple[dict[str, Any], int]:
+    """Consume the fieldless NotNextCheckAction control marker."""
+
+    tag, actual_tag_width, _raw = read_buff_timeline_first_union_tag(data, item_start, limit)
+    if tag != BUFF_NOT_NEXT_CHECK_ACTION_TAG or actual_tag_width != tag_width:
+        raise ValueError("notNextCheck:tag-mismatch")
+    if tag_width != 1:
+        raise ValueError(f"notNextCheck:tag-width={tag_width}")
+    if member_count != 4:
+        raise ValueError(f"notNextCheck:member-count={member_count}")
+    offset = item_start + tag_width + 1
+    prefix, offset = read_buff_ability_action_common_prefix_bounded(
+        data,
+        offset,
+        limit,
+        "notNextCheck.prefix",
+    )
+    return {
+        "type": BUFF_ABILITY_ACTION_TAG_NAMES[BUFF_NOT_NEXT_CHECK_ACTION_TAG],
+        "decodeStatus": "exact",
+        "semanticStatus": "exact-not-next-check-control-action",
+        "schemaSource": (
+            "current-build AbilityActionData union registration and fieldless derived runtime type"
+        ),
+        "byteLength": offset - item_start,
+        "prefix": prefix,
+    }, offset
+
+
+def consume_buff_check_damage_decorate_mask_action(
+    data: bytes,
+    item_start: int,
+    limit: int,
+    tag_width: int,
+    member_count: int,
+) -> tuple[dict[str, Any], int]:
+    """Consume the damage-decoration mask condition."""
+
+    tag, actual_tag_width, _raw = read_buff_timeline_first_union_tag(data, item_start, limit)
+    if tag != BUFF_CHECK_DAMAGE_DECORATE_MASK_ACTION_TAG or actual_tag_width != tag_width:
+        raise ValueError("checkDamageDecorateMask:tag-mismatch")
+    if tag_width != 1:
+        raise ValueError(f"checkDamageDecorateMask:tag-width={tag_width}")
+    if member_count != 6:
+        raise ValueError(f"checkDamageDecorateMask:member-count={member_count}")
+    offset = item_start + tag_width + 1
+    prefix, offset = read_buff_ability_action_common_prefix_bounded(
+        data,
+        offset,
+        limit,
+        "checkDamageDecorateMask.prefix",
+    )
+    check_type, offset = read_buff_i32_field_bounded(
+        data,
+        offset,
+        limit,
+        "checkDamageDecorateMask.checkType",
+    )
+    if offset + 8 > limit:
+        raise ValueError("checkDamageDecorateMask.mask:truncated-i64")
+    mask = struct.unpack_from("<q", data, offset)[0]
+    offset += 8
+    return {
+        "type": BUFF_ABILITY_ACTION_TAG_NAMES[BUFF_CHECK_DAMAGE_DECORATE_MASK_ACTION_TAG],
+        "decodeStatus": "exact",
+        "semanticStatus": "exact-damage-decorate-mask-condition",
+        "schemaSource": (
+            "current-build AbilityActionData union registration, runtime field types, "
+            "and exact MemoryPack setter order"
+        ),
+        "byteLength": offset - item_start,
+        "prefix": prefix,
+        "checkType": check_type,
+        "mask": mask,
+        "maskHex": f"0x{mask & 0xffffffffffffffff:016x}",
+    }, offset
+
+
+def consume_buff_check_buff_id_context_action(
+    data: bytes,
+    item_start: int,
+    limit: int,
+    tag_width: int,
+    member_count: int,
+) -> tuple[dict[str, Any], int]:
+    tag, actual_tag_width, _raw = read_buff_timeline_first_union_tag(data, item_start, limit)
+    if tag not in {BUFF_CHECK_BUFF_ID_CONTEXT_ACTION_TAG, BUFF_CHECK_BUFF_ID_CONTEXT_ADVANCED_ACTION_TAG}:
+        raise ValueError("checkBuffIdInContext:tag-mismatch")
+    if actual_tag_width != tag_width or tag_width != 1:
+        raise ValueError(f"checkBuffIdInContext:tag-width={tag_width}")
+    if member_count != 8:
+        raise ValueError(f"checkBuffIdInContext:member-count={member_count}")
+    advanced = tag == BUFF_CHECK_BUFF_ID_CONTEXT_ADVANCED_ACTION_TAG
+    offset = item_start + tag_width + 1
+    prefix, offset = read_buff_ability_action_common_prefix_bounded(
+        data, offset, limit, "checkBuffIdInContext.prefix",
+    )
+    blackboard_key, offset = read_buff_memorypack_utf8_string_strict_bounded(
+        data, offset, limit, "checkBuffIdInContext.blackboardKey", max_length=256,
+    )
+    count, offset = read_buff_u32_field_bounded(
+        data, offset, limit, "checkBuffIdInContext.buffIdList.count",
+    )
+    if count > 64:
+        raise ValueError(f"checkBuffIdInContext.buffIdList.count={count}")
+    buff_ids: list[dict[str, Any]] = []
+    for index in range(count):
+        if advanced:
+            value, offset = read_buff_blackboard_string_field_exact(
+                data, offset, f"checkBuffIdInContext.buffIdList[{index}]",
+            )
+            if offset > limit:
+                raise ValueError(f"checkBuffIdInContext.buffIdList[{index}]:past-limit")
+            buff_ids.append(value)
+        else:
+            if offset >= limit or data[offset] != 1:
+                actual = "truncated" if offset >= limit else str(data[offset])
+                raise ValueError(f"checkBuffIdInContext.buffIdList[{index}].memberCount={actual}")
+            offset += 1
+            value, offset = read_buff_memorypack_utf8_string_strict_bounded(
+                data, offset, limit, f"checkBuffIdInContext.buffIdList[{index}].value", max_length=256,
+            )
+            buff_ids.append({"memberCount": 1, "value": value})
+    check_type, offset = read_buff_i32_field_bounded(
+        data, offset, limit, "checkBuffIdInContext.checkType",
+    )
+    query, offset = read_buff_gameplay_tag_query_exact(
+        data, offset, limit, "checkBuffIdInContext.query",
+    )
+    return {
+        "type": BUFF_ABILITY_ACTION_TAG_NAMES[tag],
+        "decodeStatus": "exact",
+        "semanticStatus": "exact-buff-id-context-condition",
+        "schemaSource": "current-build runtime fields and exact MemoryPack setter order",
+        "byteLength": offset - item_start,
+        "prefix": prefix,
+        "advanced": advanced,
+        "blackboardKey": blackboard_key or "",
+        "buffIdList": buff_ids,
+        "checkType": check_type,
+        "query": query,
+    }, offset
+
+
+def consume_buff_check_hp_action(
+    data: bytes, item_start: int, limit: int, tag_width: int, member_count: int,
+) -> tuple[dict[str, Any], int]:
+    tag, actual_tag_width, _raw = read_buff_timeline_first_union_tag(data, item_start, limit)
+    if tag != BUFF_CHECK_HP_ACTION_TAG or actual_tag_width != tag_width:
+        raise ValueError("checkHp:tag-mismatch")
+    if tag_width != 1 or member_count != 8:
+        raise ValueError(f"checkHp:header={tag_width}/{member_count}")
+    offset = item_start + tag_width + 1
+    prefix, offset = read_buff_ability_action_common_prefix_bounded(data, offset, limit, "checkHp.prefix")
+    compare_type, offset = read_buff_i32_field_bounded(data, offset, limit, "checkHp.compare")
+    hp_owner, offset = read_buff_target_settings_envelope_partial(data, offset, limit, "checkHp.hpOwner")
+    is_ratio, offset = read_buff_bool_field(data, offset, "checkHp.isRatio")
+    value, offset = read_buff_blackboard_float_raw_field_exact(data, offset, "checkHp.value")
+    if offset > limit:
+        raise ValueError("checkHp.value:past-limit")
+    return {
+        "type": BUFF_ABILITY_ACTION_TAG_NAMES[tag], "decodeStatus": "exact",
+        "semanticStatus": "exact-hp-condition", "schemaSource": "current-build runtime fields and exact MemoryPack setter order",
+        "byteLength": offset - item_start, "prefix": prefix, "compareType": compare_type,
+        "hpOwner": hp_owner, "isRatio": is_ratio, "value": value,
+    }, offset
+
+
+def consume_buff_check_damage_type_action(
+    data: bytes, item_start: int, limit: int, tag_width: int, member_count: int,
+) -> tuple[dict[str, Any], int]:
+    tag, actual_tag_width, _raw = read_buff_timeline_first_union_tag(data, item_start, limit)
+    if tag != BUFF_CHECK_DAMAGE_TYPE_ACTION_TAG or actual_tag_width != tag_width:
+        raise ValueError("checkDamageType:tag-mismatch")
+    if tag_width != 1 or member_count != 5:
+        raise ValueError(f"checkDamageType:header={tag_width}/{member_count}")
+    offset = item_start + tag_width + 1
+    prefix, offset = read_buff_ability_action_common_prefix_bounded(data, offset, limit, "checkDamageType.prefix")
+    damage_type, offset = read_buff_i32_field_bounded(data, offset, limit, "checkDamageType.damageType")
+    return {
+        "type": BUFF_ABILITY_ACTION_TAG_NAMES[tag], "decodeStatus": "exact",
+        "semanticStatus": "exact-damage-type-condition", "schemaSource": "current-build runtime fields and exact MemoryPack setter order",
+        "byteLength": offset - item_start, "prefix": prefix, "damageType": damage_type,
+    }, offset
+
+
+def consume_buff_check_tag_match_action(
+    data: bytes, item_start: int, limit: int, tag_width: int, member_count: int,
+) -> tuple[dict[str, Any], int]:
+    tag, actual_tag_width, _raw = read_buff_timeline_first_union_tag(data, item_start, limit)
+    if tag != BUFF_CHECK_TAG_MATCH_ACTION_TAG or actual_tag_width != tag_width:
+        raise ValueError("checkTagMatch:tag-mismatch")
+    if tag_width != 1 or member_count != 6:
+        raise ValueError(f"checkTagMatch:header={tag_width}/{member_count}")
+    offset = item_start + tag_width + 1
+    prefix, offset = read_buff_ability_action_common_prefix_bounded(data, offset, limit, "checkTagMatch.prefix")
+    check_target, offset = read_buff_target_settings_envelope_partial(data, offset, limit, "checkTagMatch.checkTarget")
+    query, offset = read_buff_gameplay_tag_query_exact(data, offset, limit, "checkTagMatch.query")
+    return {
+        "type": BUFF_ABILITY_ACTION_TAG_NAMES[tag], "decodeStatus": "exact",
+        "semanticStatus": "exact-gameplay-tag-condition", "schemaSource": "current-build runtime fields and exact MemoryPack setter order",
+        "byteLength": offset - item_start, "prefix": prefix, "checkTarget": check_target, "query": query,
+    }, offset
+
+
+def consume_buff_check_timed_marker_action(
+    data: bytes, item_start: int, limit: int, tag_width: int, member_count: int,
+) -> tuple[dict[str, Any], int]:
+    tag, actual_tag_width, _raw = read_buff_timeline_first_union_tag(data, item_start, limit)
+    if tag != BUFF_CHECK_TIMED_MARKER_ACTION_TAG or actual_tag_width != tag_width:
+        raise ValueError("checkTimedMarker:tag-mismatch")
+    if tag_width != 1 or member_count != 9:
+        raise ValueError(f"checkTimedMarker:header={tag_width}/{member_count}")
+    offset = item_start + tag_width + 1
+    prefix, offset = read_buff_ability_action_common_prefix_bounded(data, offset, limit, "checkTimedMarker.prefix")
+    blackboard_key, offset = read_buff_memorypack_utf8_string_strict_bounded(data, offset, limit, "checkTimedMarker.blackboardKey", max_length=256)
+    check_target, offset = read_buff_target_settings_envelope_partial(data, offset, limit, "checkTimedMarker.checkTarget")
+    marker_id, offset = read_buff_memorypack_utf8_string_strict_bounded(data, offset, limit, "checkTimedMarker.id", max_length=256)
+    return_true_if_not_exists, offset = read_buff_bool_field(data, offset, "checkTimedMarker.returnTrueIfNotExists")
+    use_blackboard_key, offset = read_buff_bool_field(data, offset, "checkTimedMarker.useBlackboardKey")
+    if offset > limit:
+        raise ValueError("checkTimedMarker:past-limit")
+    return {
+        "type": BUFF_ABILITY_ACTION_TAG_NAMES[tag], "decodeStatus": "exact",
+        "semanticStatus": "exact-timed-marker-condition", "schemaSource": "current-build runtime fields and exact MemoryPack setter order",
+        "byteLength": offset - item_start, "prefix": prefix, "blackboardKey": blackboard_key or "",
+        "checkTarget": check_target, "markerId": marker_id or "", "returnTrueIfNotExists": return_true_if_not_exists,
+        "useBlackboardKey": use_blackboard_key,
+    }, offset
+
+
+def consume_buff_check_object_type_action(
+    data: bytes, item_start: int, limit: int, tag_width: int, member_count: int,
+) -> tuple[dict[str, Any], int]:
+    tag, actual_tag_width, _raw = read_buff_timeline_first_union_tag(data, item_start, limit)
+    if tag != BUFF_CHECK_OBJECT_TYPE_ACTION_TAG or actual_tag_width != tag_width:
+        raise ValueError("checkObjectType:tag-mismatch")
+    if tag_width != 1 or member_count != 6:
+        raise ValueError(f"checkObjectType:header={tag_width}/{member_count}")
+    offset = item_start + tag_width + 1
+    prefix, offset = read_buff_ability_action_common_prefix_bounded(data, offset, limit, "checkObjectType.prefix")
+    object_type_mask, offset = read_buff_i32_field_bounded(data, offset, limit, "checkObjectType.objectTypeMask")
+    target, offset = read_buff_target_settings_envelope_partial(data, offset, limit, "checkObjectType.target")
+    return {
+        "type": BUFF_ABILITY_ACTION_TAG_NAMES[tag], "decodeStatus": "exact",
+        "semanticStatus": "exact-object-type-condition", "schemaSource": "current-build runtime fields and exact MemoryPack setter order",
+        "byteLength": offset - item_start, "prefix": prefix, "objectTypeMask": object_type_mask, "target": target,
+    }, offset
+
+
+def consume_buff_check_obtain_atb_type_action(
+    data: bytes, item_start: int, limit: int, tag_width: int, member_count: int,
+) -> tuple[dict[str, Any], int]:
+    tag, actual_tag_width, _raw = read_buff_timeline_first_union_tag(data, item_start, limit)
+    if tag != BUFF_CHECK_OBTAIN_ATB_TYPE_ACTION_TAG or actual_tag_width != tag_width:
+        raise ValueError("checkObtainAtbType:tag-mismatch")
+    if tag_width != 1 or member_count != 8:
+        raise ValueError(f"checkObtainAtbType:header={tag_width}/{member_count}")
+    offset = item_start + tag_width + 1
+    prefix, offset = read_buff_ability_action_common_prefix_bounded(data, offset, limit, "checkObtainAtbType.prefix")
+    check_obtain_method, offset = read_buff_bool_field(data, offset, "checkObtainAtbType.checkObtainMethod")
+    check_obtain_type, offset = read_buff_bool_field(data, offset, "checkObtainAtbType.checkObtainType")
+    method_count, offset = read_buff_u32_field_bounded(data, offset, limit, "checkObtainAtbType.obtainMethodList.count")
+    if method_count > 32:
+        raise ValueError(f"checkObtainAtbType.obtainMethodList.count={method_count}")
+    obtain_methods = []
+    for index in range(method_count):
+        value, offset = read_buff_i32_field_bounded(data, offset, limit, f"checkObtainAtbType.obtainMethodList[{index}]")
+        obtain_methods.append(value)
+    type_count, offset = read_buff_u32_field_bounded(data, offset, limit, "checkObtainAtbType.obtainTypeList.count")
+    if type_count > 32:
+        raise ValueError(f"checkObtainAtbType.obtainTypeList.count={type_count}")
+    obtain_types = []
+    for index in range(type_count):
+        value, offset = read_buff_i32_field_bounded(data, offset, limit, f"checkObtainAtbType.obtainTypeList[{index}]")
+        obtain_types.append(value)
+    return {
+        "type": BUFF_ABILITY_ACTION_TAG_NAMES[tag], "decodeStatus": "exact",
+        "semanticStatus": "exact-obtain-atb-type-condition", "schemaSource": "current-build runtime fields and exact MemoryPack setter order",
+        "byteLength": offset - item_start, "prefix": prefix, "checkObtainMethod": check_obtain_method,
+        "checkObtainType": check_obtain_type, "obtainMethodList": obtain_methods, "obtainTypeList": obtain_types,
+    }, offset
+
+
+def consume_buff_probability_action(
+    data: bytes, item_start: int, limit: int, tag_width: int, member_count: int,
+) -> tuple[dict[str, Any], int]:
+    tag, actual_tag_width, _raw = read_buff_timeline_first_union_tag(data, item_start, limit)
+    if tag != BUFF_PROBABILITY_ACTION_TAG or actual_tag_width != tag_width:
+        raise ValueError("probability:tag-mismatch")
+    if tag_width != 1 or member_count != 5:
+        raise ValueError(f"probability:header={tag_width}/{member_count}")
+    offset = item_start + tag_width + 1
+    prefix, offset = read_buff_ability_action_common_prefix_bounded(data, offset, limit, "probability.prefix")
+    probability, offset = read_buff_blackboard_float_raw_field_exact(data, offset, "probability.prob")
+    if offset > limit:
+        raise ValueError("probability.prob:past-limit")
+    return {
+        "type": BUFF_ABILITY_ACTION_TAG_NAMES[tag], "decodeStatus": "exact",
+        "semanticStatus": "exact-probability-condition", "schemaSource": "current-build runtime fields and exact MemoryPack setter order",
+        "byteLength": offset - item_start, "prefix": prefix, "probability": probability,
+    }, offset
+
+
+def consume_buff_finish_owner_action(
+    data: bytes, item_start: int, limit: int, tag_width: int, member_count: int,
+) -> tuple[dict[str, Any], int]:
+    tag, actual_tag_width, _raw = read_buff_timeline_first_union_tag(data, item_start, limit)
+    if tag != BUFF_FINISH_OWNER_ACTION_TAG or actual_tag_width != tag_width:
+        raise ValueError("finishOwner:tag-mismatch")
+    if tag_width != 1 or member_count != 6:
+        raise ValueError(f"finishOwner:header={tag_width}/{member_count}")
+    offset = item_start + tag_width + 1
+    prefix, offset = read_buff_ability_action_common_prefix_bounded(data, offset, limit, "finishOwner.prefix")
+    owner, offset = read_buff_target_settings_envelope_partial(data, offset, limit, "finishOwner.owner")
+    skip_die_display, offset = read_buff_bool_field(data, offset, "finishOwner.skipDieDisplay")
+    if offset > limit:
+        raise ValueError("finishOwner:past-limit")
+    return {
+        "type": BUFF_ABILITY_ACTION_TAG_NAMES[tag], "decodeStatus": "exact",
+        "semanticStatus": "exact-finish-owner-action", "schemaSource": "current-build runtime fields and exact MemoryPack setter order",
+        "byteLength": offset - item_start, "prefix": prefix, "owner": owner, "skipDieDisplay": skip_die_display,
+    }, offset
+
+
+def consume_buff_check_buff_stack_num_action(
+    data: bytes, item_start: int, limit: int, tag_width: int, member_count: int,
+) -> tuple[dict[str, Any], int]:
+    tag, actual_tag_width, _raw = read_buff_timeline_first_union_tag(data, item_start, limit)
+    if tag != BUFF_CHECK_BUFF_STACK_NUM_ACTION_TAG or actual_tag_width != tag_width:
+        raise ValueError("checkBuffStackNum:tag-mismatch")
+    if tag_width != 1 or member_count != 8:
+        raise ValueError(f"checkBuffStackNum:header={tag_width}/{member_count}")
+    offset = item_start + tag_width + 1
+    prefix, offset = read_buff_ability_action_common_prefix_bounded(
+        data, offset, limit, "checkBuffStackNum.prefix",
+    )
+    if offset >= limit or data[offset] != 1:
+        actual = "truncated" if offset >= limit else str(data[offset])
+        raise ValueError(f"checkBuffStackNum.buffId.memberCount={actual}")
+    offset += 1
+    buff_id, offset = read_buff_memorypack_utf8_string_strict_bounded(
+        data, offset, limit, "checkBuffStackNum.buffId.value", max_length=256,
+    )
+    if not buff_id:
+        raise ValueError("checkBuffStackNum.buffId.value:empty")
+    check_target, offset = read_buff_target_settings_envelope_partial(
+        data, offset, limit, "checkBuffStackNum.checkTarget",
+    )
+    compare_type, offset = read_buff_i32_field_bounded(
+        data, offset, limit, "checkBuffStackNum.compareType",
+    )
+    value, offset = read_buff_blackboard_float_raw_field_exact(
+        data, offset, "checkBuffStackNum.value",
+    )
+    if offset > limit:
+        raise ValueError("checkBuffStackNum.value:past-limit")
+    return {
+        "type": BUFF_ABILITY_ACTION_TAG_NAMES[tag],
+        "decodeStatus": "exact",
+        "semanticStatus": "exact-buff-stack-condition",
+        "schemaSource": "current-build runtime fields and exact MemoryPack setter order",
+        "byteLength": offset - item_start,
+        "prefix": prefix,
+        "advanced": False,
+        "buffId": buff_id,
+        "compareType": compare_type,
+        "checkTarget": check_target,
+        "value": value,
+    }, offset
+
+
+def consume_buff_check_buff_stack_num_advanced_action(
+    data: bytes, item_start: int, limit: int, tag_width: int, member_count: int,
+) -> tuple[dict[str, Any], int]:
+    tag, actual_tag_width, _raw = read_buff_timeline_first_union_tag(data, item_start, limit)
+    if tag != BUFF_CHECK_BUFF_STACK_NUM_ADVANCED_ACTION_TAG or actual_tag_width != tag_width:
+        raise ValueError("checkBuffStackNumAdvanced:tag-mismatch")
+    if tag_width != 1 or member_count != 10:
+        raise ValueError(f"checkBuffStackNumAdvanced:header={tag_width}/{member_count}")
+    offset = item_start + tag_width + 1
+    prefix, offset = read_buff_ability_action_common_prefix_bounded(
+        data, offset, limit, "checkBuffStackNumAdvanced.prefix",
+    )
+    buff_settings, offset = read_buff_find_settings_exact(
+        data, offset, limit, "checkBuffStackNumAdvanced.buffSettings",
+    )
+    stack_num_type, offset = read_buff_i32_field_bounded(
+        data, offset, limit, "checkBuffStackNumAdvanced.buffStackNumType",
+    )
+    check_target, offset = read_buff_target_settings_envelope_partial(
+        data, offset, limit, "checkBuffStackNumAdvanced.checkTarget",
+    )
+    compare_type, offset = read_buff_i32_field_bounded(
+        data, offset, limit, "checkBuffStackNumAdvanced.compareType",
+    )
+    limit_skill_cast_id, offset = read_buff_bool_field_bounded(
+        data, offset, limit, "checkBuffStackNumAdvanced.limitSkillCastId",
+    )
+    value, offset = read_buff_blackboard_float_raw_field_exact(
+        data, offset, "checkBuffStackNumAdvanced.value",
+    )
+    if offset > limit:
+        raise ValueError("checkBuffStackNumAdvanced.value:past-limit")
+    return {
+        "type": BUFF_ABILITY_ACTION_TAG_NAMES[tag],
+        "decodeStatus": "exact",
+        "semanticStatus": "exact-buff-stack-condition",
+        "schemaSource": "current-build runtime fields and exact MemoryPack setter order",
+        "byteLength": offset - item_start,
+        "prefix": prefix,
+        "advanced": True,
+        "buffSettings": buff_settings,
+        "buffStackNumType": stack_num_type,
+        "checkTarget": check_target,
+        "compareType": compare_type,
+        "limitSkillCastId": limit_skill_cast_id,
+        "value": value,
+    }, offset
+
+
+def consume_buff_finish_buff_advanced_action(
+    data: bytes, item_start: int, limit: int, tag_width: int, member_count: int,
+) -> tuple[dict[str, Any], int]:
+    tag, actual_tag_width, _raw = read_buff_timeline_first_union_tag(data, item_start, limit)
+    if tag != BUFF_FINISH_BUFF_ADVANCED_ACTION_TAG or actual_tag_width != tag_width:
+        raise ValueError("finishBuffAdvanced:tag-mismatch")
+    if tag_width != 1 or member_count != 13:
+        raise ValueError(f"finishBuffAdvanced:header={tag_width}/{member_count}")
+    offset = item_start + tag_width + 1
+    prefix, offset = read_buff_ability_action_common_prefix_bounded(
+        data, offset, limit, "finishBuffAdvanced.prefix",
+    )
+    buff_owner, offset = read_buff_target_settings_envelope_partial(
+        data, offset, limit, "finishBuffAdvanced.buffOwner",
+    )
+    buff_settings, offset = read_buff_find_settings_exact(
+        data, offset, limit, "finishBuffAdvanced.buffSettings",
+    )
+    buff_source, offset = read_buff_target_settings_envelope_partial(
+        data, offset, limit, "finishBuffAdvanced.buffSource",
+    )
+    finish_all, offset = read_buff_bool_field_bounded(
+        data, offset, limit, "finishBuffAdvanced.finishAll",
+    )
+    finish_layer_cnt, offset = read_buff_blackboard_float_raw_field_exact(
+        data, offset, "finishBuffAdvanced.finishLayerCnt",
+    )
+    finish_source, offset = read_buff_target_settings_envelope_partial(
+        data, offset, limit, "finishBuffAdvanced.finishSource",
+    )
+    is_absorbed, offset = read_buff_bool_field_bounded(
+        data, offset, limit, "finishBuffAdvanced.isAbsorbed",
+    )
+    is_finished_early, offset = read_buff_bool_field_bounded(
+        data, offset, limit, "finishBuffAdvanced.isFinishedEarly",
+    )
+    limit_source, offset = read_buff_bool_field_bounded(
+        data, offset, limit, "finishBuffAdvanced.limitSource",
+    )
+    return {
+        "type": BUFF_ABILITY_ACTION_TAG_NAMES[tag],
+        "decodeStatus": "exact",
+        "semanticStatus": "exact-finish-buff-advanced-action",
+        "schemaSource": "current-build runtime fields and exact MemoryPack setter order",
+        "byteLength": offset - item_start,
+        "prefix": prefix,
+        "buffOwner": buff_owner,
+        "buffSettings": buff_settings,
+        "buffSource": buff_source,
+        "finishAll": finish_all,
+        "finishLayerCnt": finish_layer_cnt,
+        "finishSource": finish_source,
+        "isAbsorbed": is_absorbed,
+        "isFinishedEarly": is_finished_early,
+        "limitSource": limit_source,
+    }, offset
+
+
+def consume_buff_spawn_interactive_gold_coin_action(
+    data: bytes, item_start: int, limit: int, tag_width: int, member_count: int,
+) -> tuple[dict[str, Any], int]:
+    tag, actual_tag_width, _raw = read_buff_timeline_first_union_tag(data, item_start, limit)
+    if tag != BUFF_SPAWN_INTERACTIVE_GOLD_COIN_ACTION_TAG or actual_tag_width != tag_width:
+        raise ValueError("spawnInteractiveGoldCoin:tag-mismatch")
+    if tag_width != 3 or member_count != 6:
+        raise ValueError(f"spawnInteractiveGoldCoin:header={tag_width}/{member_count}")
+    offset = item_start + tag_width + 1
+    prefix, offset = read_buff_ability_action_common_prefix_bounded(
+        data, offset, limit, "spawnInteractiveGoldCoin.prefix",
+    )
+    count, offset = read_buff_blackboard_int_field_exact(
+        data, offset, limit, "spawnInteractiveGoldCoin.count",
+    )
+    spawn_pos, offset = read_buff_target_settings_envelope_partial(
+        data, offset, limit, "spawnInteractiveGoldCoin.spawnPos",
+    )
+    return {
+        "type": BUFF_ABILITY_ACTION_TAG_NAMES[tag],
+        "decodeStatus": "exact",
+        "semanticStatus": "exact-spawn-interactive-gold-coin-action",
+        "schemaSource": "current-build runtime fields and exact MemoryPack setter order",
+        "byteLength": offset - item_start,
+        "prefix": prefix,
+        "count": count,
+        "spawnPos": spawn_pos,
+    }, offset
+
+
+def consume_buff_save_value_from_ai_blackboard_action(
+    data: bytes, item_start: int, limit: int, tag_width: int, member_count: int,
+) -> tuple[dict[str, Any], int]:
+    tag, actual_tag_width, _raw = read_buff_timeline_first_union_tag(data, item_start, limit)
+    if tag != BUFF_SAVE_VALUE_FROM_AI_BLACKBOARD_ACTION_TAG or actual_tag_width != tag_width:
+        raise ValueError("saveValueFromAIBlackboard:tag-mismatch")
+    if tag_width != 3 or member_count != 11:
+        raise ValueError(f"saveValueFromAIBlackboard:header={tag_width}/{member_count}")
+    offset = item_start + tag_width + 1
+    prefix, offset = read_buff_ability_action_common_prefix_bounded(
+        data, offset, limit, "saveValueFromAIBlackboard.prefix",
+    )
+    ai_bb_key, offset = read_buff_memorypack_utf8_string_strict_bounded(
+        data, offset, limit, "saveValueFromAIBlackboard.aiBBKey", max_length=256,
+    )
+    bb_owner, offset = read_buff_target_settings_envelope_partial(
+        data, offset, limit, "saveValueFromAIBlackboard.bbOwner",
+    )
+    keys: dict[str, str] = {}
+    for field in ("skillBBKey", "skillXKey", "skillYKey", "skillZKey"):
+        value, offset = read_buff_memorypack_utf8_string_strict_bounded(
+            data, offset, limit, f"saveValueFromAIBlackboard.{field}", max_length=256,
+        )
+        keys[field] = value or ""
+    value_type, offset = read_buff_i32_field_bounded(
+        data, offset, limit, "saveValueFromAIBlackboard.valueType",
+    )
+    return {
+        "type": BUFF_ABILITY_ACTION_TAG_NAMES[tag],
+        "decodeStatus": "exact",
+        "semanticStatus": "exact-save-ai-blackboard-value-action",
+        "schemaSource": "current-build runtime fields and exact MemoryPack setter order",
+        "byteLength": offset - item_start,
+        "prefix": prefix,
+        "aiBBKey": ai_bb_key or "",
+        "bbOwner": bb_owner,
+        **keys,
+        "valueType": value_type,
+    }, offset
+
+
+def consume_buff_obtain_cost_action(
+    data: bytes, item_start: int, limit: int, tag_width: int, member_count: int,
+) -> tuple[dict[str, Any], int]:
+    tag, actual_tag_width, _raw = read_buff_timeline_first_union_tag(data, item_start, limit)
+    if tag != BUFF_OBTAIN_COST_ACTION_TAG or actual_tag_width != tag_width:
+        raise ValueError("obtainCost:tag-mismatch")
+    if tag_width != 1 or member_count != 18:
+        raise ValueError(f"obtainCost:header={tag_width}/{member_count}")
+    offset = item_start + tag_width + 1
+    prefix, offset = read_buff_ability_action_common_prefix_bounded(
+        data, offset, limit, "obtainCost.prefix",
+    )
+    atb_gain_method, offset = read_buff_i32_field_bounded(
+        data, offset, limit, "obtainCost.atbGainMethod",
+    )
+    atb_only_main_char, offset = read_buff_bool_field_bounded(
+        data, offset, limit, "obtainCost.atbOnlyMainChar",
+    )
+    atb_source_type, offset = read_buff_i32_field_bounded(
+        data, offset, limit, "obtainCost.atbSourceType",
+    )
+    coefficient, offset = read_buff_blackboard_float_raw_field_exact(
+        data, offset, "obtainCost.coefficient",
+    )
+    cost_type, offset = read_buff_i32_field_bounded(
+        data, offset, limit, "obtainCost.costType",
+    )
+    cost_value, offset = read_buff_blackboard_float_raw_field_exact(
+        data, offset, "obtainCost.costValue",
+    )
+    ignore_usp_gain_scalar, offset = read_buff_bool_field_bounded(
+        data, offset, limit, "obtainCost.ignoreUspGainScalar",
+    )
+    is_percent_value, offset = read_buff_bool_field_bounded(
+        data, offset, limit, "obtainCost.isPercentValue",
+    )
+    play_obtain_atb_audio, offset = read_buff_bool_field_bounded(
+        data, offset, limit, "obtainCost.playObtainAtbAudio",
+    )
+    play_obtain_atb_effect, offset = read_buff_bool_field_bounded(
+        data, offset, limit, "obtainCost.playObtainAtbEffect",
+    )
+    source, offset = read_buff_target_settings_envelope_partial(
+        data, offset, limit, "obtainCost.source",
+    )
+    target, offset = read_buff_target_settings_envelope_partial(
+        data, offset, limit, "obtainCost.target",
+    )
+    use_usp_recover_tag, offset = read_buff_bool_field_bounded(
+        data, offset, limit, "obtainCost.useUspRecoverTag",
+    )
+    usp_recover_tag_id, offset = read_buff_i32_field_bounded(
+        data, offset, limit, "obtainCost.uspRecoverTag.tagId",
+    )
+    return {
+        "type": BUFF_ABILITY_ACTION_TAG_NAMES[tag],
+        "decodeStatus": "exact",
+        "semanticStatus": "exact-obtain-cost-action",
+        "schemaSource": "current-build runtime fields and exact MemoryPack setter order",
+        "byteLength": offset - item_start,
+        "prefix": prefix,
+        "atbGainMethod": atb_gain_method,
+        "atbOnlyMainChar": atb_only_main_char,
+        "atbSourceType": atb_source_type,
+        "coefficient": coefficient,
+        "costType": cost_type,
+        "costValue": cost_value,
+        "ignoreUspGainScalar": ignore_usp_gain_scalar,
+        "isPercentValue": is_percent_value,
+        "playObtainAtbAudio": play_obtain_atb_audio,
+        "playObtainAtbEffect": play_obtain_atb_effect,
+        "source": source,
+        "target": target,
+        "useUspRecoverTag": use_usp_recover_tag,
+        "uspRecoverTagId": f"0x{usp_recover_tag_id & 0xffffffff:08x}",
+    }, offset
+
+
+def consume_buff_achieve_special_game_event_action(
+    data: bytes, item_start: int, limit: int, tag_width: int, member_count: int,
+) -> tuple[dict[str, Any], int]:
+    tag, actual_tag_width, _raw = read_buff_timeline_first_union_tag(data, item_start, limit)
+    if tag != BUFF_ACHIEVE_SPECIAL_GAME_EVENT_ACTION_TAG or actual_tag_width != tag_width:
+        raise ValueError("achieveSpecialGameEvent:tag-mismatch")
+    if tag_width != 1 or member_count != 5:
+        raise ValueError(f"achieveSpecialGameEvent:header={tag_width}/{member_count}")
+    offset = item_start + tag_width + 1
+    prefix, offset = read_buff_ability_action_common_prefix_bounded(
+        data, offset, limit, "achieveSpecialGameEvent.prefix",
+    )
+    event_type, offset = read_buff_i32_field_bounded(
+        data, offset, limit, "achieveSpecialGameEvent.specialGameEventType",
+    )
+    return {
+        "type": BUFF_ABILITY_ACTION_TAG_NAMES[tag], "decodeStatus": "exact",
+        "semanticStatus": "exact-special-game-event-action",
+        "schemaSource": "current-build union registration, runtime field type, and exact MemoryPack setter order",
+        "byteLength": offset - item_start, "prefix": prefix,
+        "specialGameEventType": event_type,
+    }, offset
+
+
+def consume_buff_add_global_cd_timer_action(
+    data: bytes, item_start: int, limit: int, tag_width: int, member_count: int,
+) -> tuple[dict[str, Any], int]:
+    tag, actual_tag_width, _raw = read_buff_timeline_first_union_tag(data, item_start, limit)
+    if tag != BUFF_ADD_GLOBAL_CD_TIMER_ACTION_TAG or actual_tag_width != tag_width:
+        raise ValueError("addGlobalCdTimer:tag-mismatch")
+    if tag_width != 1 or member_count != 7:
+        raise ValueError(f"addGlobalCdTimer:header={tag_width}/{member_count}")
+    offset = item_start + tag_width + 1
+    prefix, offset = read_buff_ability_action_common_prefix_bounded(
+        data, offset, limit, "addGlobalCdTimer.prefix",
+    )
+    buff_id, offset = read_buff_memorypack_utf8_string_strict_bounded(
+        data, offset, limit, "addGlobalCdTimer.buffId", max_length=256,
+    )
+    if not buff_id:
+        raise ValueError("addGlobalCdTimer.buffId:empty")
+    cd_time, offset = read_buff_blackboard_float_raw_field_exact(
+        data, offset, "addGlobalCdTimer.cdTime",
+    )
+    target, offset = read_buff_target_settings_envelope_partial(
+        data, offset, limit, "addGlobalCdTimer.target",
+    )
+    return {
+        "type": BUFF_ABILITY_ACTION_TAG_NAMES[tag], "decodeStatus": "exact",
+        "semanticStatus": "exact-add-global-cooldown-action",
+        "schemaSource": "current-build union registration, runtime fields, and exact MemoryPack setter order",
+        "byteLength": offset - item_start, "prefix": prefix,
+        "buffId": buff_id, "cdTime": cd_time, "target": target,
+    }, offset
+
+
+def consume_buff_cast_skill_action(
+    data: bytes, item_start: int, limit: int, tag_width: int, member_count: int,
+) -> tuple[dict[str, Any], int]:
+    tag, actual_tag_width, _raw = read_buff_timeline_first_union_tag(data, item_start, limit)
+    if tag != BUFF_CAST_SKILL_ACTION_TAG or actual_tag_width != tag_width:
+        raise ValueError("castSkill:tag-mismatch")
+    if tag_width != 1 or member_count != 9:
+        raise ValueError(f"castSkill:header={tag_width}/{member_count}")
+    offset = item_start + tag_width + 1
+    prefix, offset = read_buff_ability_action_common_prefix_bounded(
+        data, offset, limit, "castSkill.prefix",
+    )
+    caster, offset = read_buff_target_settings_envelope_partial(
+        data, offset, limit, "castSkill.caster",
+    )
+    inherit_source_skill_cast_id, offset = read_buff_bool_field_bounded(
+        data, offset, limit, "castSkill.inheritSourceSkillCastId",
+    )
+    skill_id, offset = read_buff_blackboard_string_field_exact(
+        data, offset, "castSkill.skillId",
+    )
+    if offset > limit:
+        raise ValueError("castSkill.skillId:past-limit")
+    skip_apply_cost, offset = read_buff_bool_field_bounded(
+        data, offset, limit, "castSkill.skipApplyCost",
+    )
+    target, offset = read_buff_target_settings_envelope_partial(
+        data, offset, limit, "castSkill.target",
+    )
+    return {
+        "type": BUFF_ABILITY_ACTION_TAG_NAMES[tag], "decodeStatus": "exact",
+        "semanticStatus": "exact-cast-skill-action",
+        "schemaSource": "current-build union registration, runtime fields, and exact MemoryPack setter order",
+        "byteLength": offset - item_start, "prefix": prefix,
+        "caster": caster, "inheritSourceSkillCastId": inherit_source_skill_cast_id,
+        "skillId": skill_id, "skipApplyCost": skip_apply_cost, "target": target,
+    }, offset
+
+
+def consume_buff_check_consume_buff_layer_action(
+    data: bytes, item_start: int, limit: int, tag_width: int, member_count: int,
+) -> tuple[dict[str, Any], int]:
+    tag, actual_tag_width, _raw = read_buff_timeline_first_union_tag(data, item_start, limit)
+    if tag != BUFF_CHECK_CONSUME_BUFF_LAYER_ACTION_TAG or actual_tag_width != tag_width:
+        raise ValueError("checkConsumeBuffLayer:tag-mismatch")
+    if tag_width != 1 or member_count != 7:
+        raise ValueError(f"checkConsumeBuffLayer:header={tag_width}/{member_count}")
+    offset = item_start + tag_width + 1
+    prefix, offset = read_buff_ability_action_common_prefix_bounded(
+        data, offset, limit, "checkConsumeBuffLayer.prefix",
+    )
+    compare_type, offset = read_buff_i32_field_bounded(
+        data, offset, limit, "checkConsumeBuffLayer.compareType",
+    )
+    num, offset = read_buff_blackboard_int_field_exact(
+        data, offset, limit, "checkConsumeBuffLayer.num",
+    )
+    store_key, offset = read_buff_memorypack_utf8_string_strict_bounded(
+        data, offset, limit, "checkConsumeBuffLayer.storeKey", max_length=256,
+    )
+    return {
+        "type": BUFF_ABILITY_ACTION_TAG_NAMES[tag], "decodeStatus": "exact",
+        "semanticStatus": "exact-consume-buff-layer-condition",
+        "schemaSource": "current-build union registration, runtime fields, and exact MemoryPack setter order",
+        "byteLength": offset - item_start, "prefix": prefix,
+        "compareType": compare_type, "num": num, "storeKey": store_key or "",
+    }, offset
+
+
+def consume_buff_check_distance_action(
+    data: bytes, item_start: int, limit: int, tag_width: int, member_count: int,
+) -> tuple[dict[str, Any], int]:
+    tag, actual_tag_width, _raw = read_buff_timeline_first_union_tag(data, item_start, limit)
+    if tag != BUFF_CHECK_DISTANCE_ACTION_TAG or actual_tag_width != tag_width:
+        raise ValueError("checkDistance:tag-mismatch")
+    if tag_width != 1 or member_count != 10:
+        raise ValueError(f"checkDistance:header={tag_width}/{member_count}")
+    offset = item_start + tag_width + 1
+    prefix, offset = read_buff_ability_action_common_prefix_bounded(
+        data, offset, limit, "checkDistance.prefix",
+    )
+    contains_hittable_obj, offset = read_buff_bool_field_bounded(
+        data, offset, limit, "checkDistance.containsHittableObj",
+    )
+    distance, offset = read_buff_f32_field(data, offset, "checkDistance.distance")
+    if not math.isfinite(distance) or distance < 0 or distance > 100_000:
+        raise ValueError(f"checkDistance.distance:out-of-range={distance}")
+    include_target_radius, offset = read_buff_bool_field_bounded(
+        data, offset, limit, "checkDistance.includeTargetRadius",
+    )
+    less_than, offset = read_buff_bool_field_bounded(
+        data, offset, limit, "checkDistance.lessThan",
+    )
+    source, offset = read_buff_target_settings_envelope_partial(
+        data, offset, limit, "checkDistance.source",
+    )
+    target, offset = read_buff_target_settings_envelope_partial(
+        data, offset, limit, "checkDistance.target",
+    )
+    return {
+        "type": BUFF_ABILITY_ACTION_TAG_NAMES[tag], "decodeStatus": "exact",
+        "semanticStatus": "exact-distance-condition",
+        "schemaSource": "current-build union registration, runtime fields, and exact MemoryPack setter order",
+        "byteLength": offset - item_start, "prefix": prefix,
+        "containsHittableObj": contains_hittable_obj, "distance": round(distance, 6),
+        "includeTargetRadius": include_target_radius, "lessThan": less_than,
+        "source": source, "target": target,
+    }, offset
+
+
+def consume_buff_check_global_cd_timer_action(
+    data: bytes, item_start: int, limit: int, tag_width: int, member_count: int,
+) -> tuple[dict[str, Any], int]:
+    tag, actual_tag_width, _raw = read_buff_timeline_first_union_tag(data, item_start, limit)
+    if tag != BUFF_CHECK_GLOBAL_CD_TIMER_ACTION_TAG or actual_tag_width != tag_width:
+        raise ValueError("checkGlobalCdTimer:tag-mismatch")
+    if tag_width != 1 or member_count != 6:
+        raise ValueError(f"checkGlobalCdTimer:header={tag_width}/{member_count}")
+    offset = item_start + tag_width + 1
+    prefix, offset = read_buff_ability_action_common_prefix_bounded(
+        data, offset, limit, "checkGlobalCdTimer.prefix",
+    )
+    buff_id, offset = read_buff_memorypack_utf8_string_strict_bounded(
+        data, offset, limit, "checkGlobalCdTimer.buffId", max_length=256,
+    )
+    if not buff_id:
+        raise ValueError("checkGlobalCdTimer.buffId:empty")
+    target, offset = read_buff_target_settings_envelope_partial(
+        data, offset, limit, "checkGlobalCdTimer.target",
+    )
+    return {
+        "type": BUFF_ABILITY_ACTION_TAG_NAMES[tag], "decodeStatus": "exact",
+        "semanticStatus": "exact-global-cooldown-condition",
+        "schemaSource": "current-build union registration, runtime fields, and exact MemoryPack setter order",
+        "byteLength": offset - item_start, "prefix": prefix,
+        "buffId": buff_id, "target": target,
+    }, offset
+
+
+def consume_buff_check_poise_value_action(
+    data: bytes, item_start: int, limit: int, tag_width: int, member_count: int,
+) -> tuple[dict[str, Any], int]:
+    tag, actual_tag_width, _raw = read_buff_timeline_first_union_tag(data, item_start, limit)
+    if tag != BUFF_CHECK_POISE_VALUE_ACTION_TAG or actual_tag_width != tag_width:
+        raise ValueError("checkPoiseValue:tag-mismatch")
+    if tag_width != 1 or member_count != 8:
+        raise ValueError(f"checkPoiseValue:header={tag_width}/{member_count}")
+    offset = item_start + tag_width + 1
+    prefix, offset = read_buff_ability_action_common_prefix_bounded(
+        data, offset, limit, "checkPoiseValue.prefix",
+    )
+    compare_type, offset = read_buff_i32_field_bounded(
+        data, offset, limit, "checkPoiseValue.compare",
+    )
+    poise_owner, offset = read_buff_target_settings_envelope_partial(
+        data, offset, limit, "checkPoiseValue.poiseOwner",
+    )
+    return_if_missing, offset = read_buff_bool_field_bounded(
+        data, offset, limit, "checkPoiseValue.returnValueIfDontHavePoise",
+    )
+    value, offset = read_buff_blackboard_float_raw_field_exact(
+        data, offset, "checkPoiseValue.value",
+    )
+    if offset > limit:
+        raise ValueError("checkPoiseValue.value:past-limit")
+    return {
+        "type": BUFF_ABILITY_ACTION_TAG_NAMES[tag], "decodeStatus": "exact",
+        "semanticStatus": "exact-poise-value-condition",
+        "schemaSource": "current-build union registration, runtime fields, and exact MemoryPack setter order",
+        "byteLength": offset - item_start, "prefix": prefix,
+        "compareType": compare_type, "poiseOwner": poise_owner,
+        "returnValueIfDontHavePoise": return_if_missing, "value": value,
+    }, offset
+
+
+def consume_buff_check_targets_equal_action(
+    data: bytes, item_start: int, limit: int, tag_width: int, member_count: int,
+) -> tuple[dict[str, Any], int]:
+    tag, actual_tag_width, _raw = read_buff_timeline_first_union_tag(data, item_start, limit)
+    if tag != BUFF_CHECK_TARGETS_EQUAL_ACTION_TAG or actual_tag_width != tag_width:
+        raise ValueError("checkTargetsEqual:tag-mismatch")
+    if tag_width != 1 or member_count != 6:
+        raise ValueError(f"checkTargetsEqual:header={tag_width}/{member_count}")
+    offset = item_start + tag_width + 1
+    prefix, offset = read_buff_ability_action_common_prefix_bounded(
+        data, offset, limit, "checkTargetsEqual.prefix",
+    )
+    first_target, offset = read_buff_target_settings_envelope_partial(
+        data, offset, limit, "checkTargetsEqual.firstTargetSettings",
+    )
+    second_target, offset = read_buff_target_settings_envelope_partial(
+        data, offset, limit, "checkTargetsEqual.secondTargetSettings",
+    )
+    return {
+        "type": BUFF_ABILITY_ACTION_TAG_NAMES[tag], "decodeStatus": "exact",
+        "semanticStatus": "exact-targets-equal-condition",
+        "schemaSource": "current-build union registration, runtime fields, and exact MemoryPack setter order",
+        "byteLength": offset - item_start, "prefix": prefix,
+        "firstTarget": first_target, "secondTarget": second_target,
+    }, offset
+
+
+def consume_buff_simple_calc_blackboard_action(
+    data: bytes, item_start: int, limit: int, tag_width: int, member_count: int,
+) -> tuple[dict[str, Any], int]:
+    tag, actual_tag_width, _raw = read_buff_timeline_first_union_tag(data, item_start, limit)
+    if tag != BUFF_SIMPLE_CALC_BLACKBOARD_ACTION_TAG or actual_tag_width != tag_width:
+        raise ValueError("simpleCalcBlackboard:tag-mismatch")
+    if tag_width != 3 or member_count != 8:
+        raise ValueError(f"simpleCalcBlackboard:header={tag_width}/{member_count}")
+    offset = item_start + tag_width + 1
+    prefix, offset = read_buff_ability_action_common_prefix_bounded(
+        data, offset, limit, "simpleCalcBlackboard.prefix",
+    )
+    key, offset = read_buff_memorypack_utf8_string_strict_bounded(
+        data, offset, limit, "simpleCalcBlackboard.key", max_length=256,
+    )
+    operation, offset = read_buff_i32_field_bounded(
+        data, offset, limit, "simpleCalcBlackboard.operation",
+    )
+    operation_name = BUFF_MODIFY_DYNAMIC_BLACKBOARD_OPERATION_NAMES.get(operation)
+    if operation_name is None:
+        raise ValueError(f"simpleCalcBlackboard.operationUnknown={operation}")
+    value1, offset = read_buff_blackboard_float_raw_field_exact(
+        data, offset, "simpleCalcBlackboard.value1",
+    )
+    value2, offset = read_buff_blackboard_float_raw_field_exact(
+        data, offset, "simpleCalcBlackboard.value2",
+    )
+    if offset > limit:
+        raise ValueError("simpleCalcBlackboard:past-limit")
+    return {
+        "type": BUFF_ABILITY_ACTION_TAG_NAMES[tag], "decodeStatus": "exact",
+        "semanticStatus": "exact-simple-blackboard-calculation-action",
+        "schemaSource": "current-build union registration, runtime fields, and exact MemoryPack setter order",
+        "byteLength": offset - item_start, "prefix": prefix,
+        "key": key or "", "operation": operation, "operationName": operation_name,
+        "value1": value1, "value2": value2,
+    }, offset
+
+
+def consume_buff_ability_event_action_maps(
+    data: bytes,
+    offset: int,
+    limit: int,
+    count: int,
+) -> tuple[list[dict[str, Any]], int]:
+    if count > 64:
+        raise ValueError(f"abilityEventAction.count={count}")
+    maps: list[dict[str, Any]] = []
+    for map_index in range(count):
+        start = offset
+        if offset >= limit or data[offset] != 2:
+            actual = "truncated" if offset >= limit else str(data[offset])
+            raise ValueError(
+                f"abilityEventAction[{map_index}].memberCount={actual}"
+            )
+        offset += 1
+        event_value, offset = read_buff_i32_field_bounded(
+            data, offset, limit, f"abilityEventAction[{map_index}].abilityEvent",
+        )
+        sequence_count, offset = read_buff_u32_field_bounded(
+            data, offset, limit, f"abilityEventAction[{map_index}].actions.count",
+        )
+        if sequence_count > 64:
+            raise ValueError(
+                f"abilityEventAction[{map_index}].actions.count={sequence_count}"
+            )
+        sequences: list[dict[str, Any]] = []
+        for sequence_index in range(sequence_count):
+            sequence, offset = consume_buff_sequence_action_data(
+                data,
+                offset,
+                limit,
+                f"abilityEventAction[{map_index}].actions[{sequence_index}]",
+                0,
+            )
+            if offset > limit:
+                raise ValueError(
+                    f"abilityEventAction[{map_index}].actions[{sequence_index}]:past-limit"
+                )
+            sequences.append(sequence)
+        maps.append({
+            "index": map_index,
+            "memberCount": 2,
+            "offset": format_offset(start),
+            "bytes": offset - start,
+            "abilityEvent": event_value,
+            "actions": sequences,
+        })
+    return maps, offset
+
+
 def consume_buff_if_else_action(
     data: bytes,
     item_start: int,
@@ -4037,13 +6024,153 @@ def consume_buff_if_else_action(
     }, offset
 
 
+def consume_buff_check_skill_id_action(
+    data: bytes,
+    item_start: int,
+    limit: int,
+    tag_width: int,
+    member_count: int,
+) -> tuple[dict[str, Any], int]:
+    tag, actual_tag_width, _raw = read_buff_timeline_first_union_tag(
+        data, item_start, limit,
+    )
+    if tag != BUFF_CHECK_SKILL_ID_ACTION_TAG or actual_tag_width != tag_width:
+        raise ValueError("checkSkillIdAction:tag-mismatch")
+    if member_count != 5:
+        raise ValueError(f"checkSkillIdAction:member-count={member_count}")
+    offset = item_start + tag_width + 1
+    prefix, offset = read_buff_ability_action_common_prefix_bounded(
+        data, offset, limit, "checkSkillIdAction.prefix",
+    )
+    count, offset = read_buff_u32_field_bounded(
+        data, offset, limit, "checkSkillIdAction.skillIdList.count",
+    )
+    if count > 64:
+        raise ValueError(f"checkSkillIdAction.skillIdList.count={count}")
+    skill_ids: list[dict[str, Any]] = []
+    for index in range(count):
+        value, offset = read_buff_blackboard_string_field_exact(
+            data, offset, f"checkSkillIdAction.skillIdList[{index}]",
+        )
+        if offset > limit:
+            raise ValueError(
+                f"checkSkillIdAction.skillIdList[{index}]:past-limit"
+            )
+        skill_ids.append(value)
+    return {
+        "type": BUFF_ABILITY_ACTION_TAG_NAMES[BUFF_CHECK_SKILL_ID_ACTION_TAG],
+        "decodeStatus": "exact",
+        "semanticStatus": "exact-skill-id-condition",
+        "schemaSource": (
+            "current-build AbilityActionData union registration plus MemoryPack setter "
+            "order: common prefix, counted BlackboardString skillIdList"
+        ),
+        "byteLength": offset - item_start,
+        "prefix": prefix,
+        "skillIdList": skill_ids,
+    }, offset
+
+
+def consume_buff_set_skill_cd_at_once_action(
+    data: bytes,
+    item_start: int,
+    limit: int,
+    tag_width: int,
+    member_count: int,
+) -> tuple[dict[str, Any], int]:
+    tag, actual_tag_width, _raw = read_buff_timeline_first_union_tag(
+        data, item_start, limit,
+    )
+    if tag != BUFF_SET_SKILL_CD_AT_ONCE_ACTION_TAG or actual_tag_width != tag_width:
+        raise ValueError("setSkillCdAtOnceAction:tag-mismatch")
+    if member_count != 11:
+        raise ValueError(f"setSkillCdAtOnceAction:member-count={member_count}")
+    offset = item_start + tag_width + 1
+    prefix, offset = read_buff_ability_action_common_prefix_bounded(
+        data, offset, limit, "setSkillCdAtOnceAction.prefix",
+    )
+    use_skill_type, offset = read_buff_bool_field_bounded(
+        data, offset, limit, "setSkillCdAtOnceAction.useSkillType",
+    )
+    skill_type_mask, offset = read_buff_i32_field_bounded(
+        data, offset, limit, "setSkillCdAtOnceAction.skillTypeMask",
+    )
+    skill_id, offset = read_buff_memorypack_utf8_string_strict_bounded(
+        data, offset, limit, "setSkillCdAtOnceAction.skillId", max_length=256,
+    )
+    function_type, offset = read_buff_i32_field_bounded(
+        data, offset, limit, "setSkillCdAtOnceAction.functionType",
+    )
+    target, offset = read_buff_target_settings_full_or_partial(
+        data, offset, limit, "setSkillCdAtOnceAction.target",
+    )
+    is_percentage, offset = read_buff_bool_field_bounded(
+        data, offset, limit, "setSkillCdAtOnceAction.isPercentage",
+    )
+    value, offset = read_buff_blackboard_float_raw_field_bounded(
+        data, offset, limit, "setSkillCdAtOnceAction.value",
+    )
+    return {
+        "type": BUFF_ABILITY_ACTION_TAG_NAMES[BUFF_SET_SKILL_CD_AT_ONCE_ACTION_TAG],
+        "decodeStatus": "exact",
+        "semanticStatus": "exact-skill-cooldown-operation",
+        "schemaSource": (
+            "current-build AbilityActionData union registration, runtime field types, "
+            "and exact MemoryPack setter order"
+        ),
+        "byteLength": offset - item_start,
+        "prefix": prefix,
+        "useSkillType": use_skill_type,
+        "skillTypeMask": skill_type_mask,
+        "skillId": skill_id or "",
+        "functionType": function_type,
+        "target": target,
+        "isPercentage": is_percentage,
+        "value": value,
+    }, offset
+
+
 BUFF_ABILITY_ACTION_CONSUME_DECODERS = {
+    BUFF_ACHIEVE_SPECIAL_GAME_EVENT_ACTION_TAG: consume_buff_achieve_special_game_event_action,
+    BUFF_ADD_GLOBAL_CD_TIMER_ACTION_TAG: consume_buff_add_global_cd_timer_action,
+    BUFF_CHECK_BUFF_ID_CONTEXT_ACTION_TAG: consume_buff_check_buff_id_context_action,
+    BUFF_CHECK_BUFF_ID_CONTEXT_ADVANCED_ACTION_TAG: consume_buff_check_buff_id_context_action,
+    BUFF_CHECK_BUFF_STACK_NUM_ACTION_TAG: consume_buff_check_buff_stack_num_action,
+    BUFF_CHECK_BUFF_STACK_NUM_ADVANCED_ACTION_TAG: consume_buff_check_buff_stack_num_advanced_action,
+    BUFF_CHECK_DAMAGE_DECORATE_MASK_ACTION_TAG: consume_buff_check_damage_decorate_mask_action,
+    BUFF_CHECK_CONSUME_BUFF_LAYER_ACTION_TAG: consume_buff_check_consume_buff_layer_action,
+    BUFF_CHECK_DISTANCE_ACTION_TAG: consume_buff_check_distance_action,
+    BUFF_CHECK_DAMAGE_TYPE_ACTION_TAG: consume_buff_check_damage_type_action,
+    BUFF_CHECK_HP_ACTION_TAG: consume_buff_check_hp_action,
+    BUFF_CHECK_GLOBAL_CD_TIMER_ACTION_TAG: consume_buff_check_global_cd_timer_action,
+    BUFF_CHECK_MAIN_CHARACTER_ACTION_TAG: consume_buff_check_main_character_action,
+    BUFF_CHECK_OBJECT_TYPE_ACTION_TAG: consume_buff_check_object_type_action,
+    BUFF_CHECK_OBTAIN_ATB_TYPE_ACTION_TAG: consume_buff_check_obtain_atb_type_action,
+    BUFF_CHECK_POISE_VALUE_ACTION_TAG: consume_buff_check_poise_value_action,
+    BUFF_CHECK_SUPER_ARMOR_ACTION_TAG: consume_buff_check_super_armor_action,
+    BUFF_CHECK_TAG_MATCH_ACTION_TAG: consume_buff_check_tag_match_action,
+    BUFF_CHECK_TARGETS_EQUAL_ACTION_TAG: consume_buff_check_targets_equal_action,
+    BUFF_CHECK_TIMED_MARKER_ACTION_TAG: consume_buff_check_timed_marker_action,
+    BUFF_CREATE_TIMED_MARKER_ACTION_TAG: consume_buff_create_timed_marker_action,
+    BUFF_FINISH_BUFF_ACTION_TAG: consume_buff_finish_buff_action,
+    BUFF_FINISH_BUFF_ADVANCED_ACTION_TAG: consume_buff_finish_buff_advanced_action,
+    BUFF_FINISH_OWNER_ACTION_TAG: consume_buff_finish_owner_action,
+    BUFF_NOT_NEXT_CHECK_ACTION_TAG: consume_buff_not_next_check_action,
+    BUFF_OBTAIN_COST_ACTION_TAG: consume_buff_obtain_cost_action,
+    BUFF_PROBABILITY_ACTION_TAG: consume_buff_probability_action,
+    BUFF_CHECK_SKILL_ID_ACTION_TAG: consume_buff_check_skill_id_action,
     BUFF_COMPARE_FLOAT_ACTION_TAG: consume_buff_compare_float_action,
     BUFF_CAMERA_IMPULSE_ACTION_TAG: consume_buff_camera_impulse_action,
+    BUFF_CAST_SKILL_ACTION_TAG: consume_buff_cast_skill_action,
     BUFF_CONTINUOUS_FIND_TARGET_ACTION_TAG: consume_buff_find_target_action,
     BUFF_CONVERT_TO_TARGET_CONTEXT_ACTION_TAG: consume_buff_convert_to_target_context_action,
     BUFF_CREATE_BUFF_ACTION_TAG: consume_buff_create_buff_action,
-    BUFF_DAMAGE_ACTION_TAG: consume_buff_damage_action,
+    # DamageAction keeps a useful item-bounded partial decoder, but its
+    # DamageUnit body has no self-delimiting boundary yet.  Do not register it
+    # as a streaming consumer: scanning for the following TargetSettings tail
+    # could otherwise land on look-alike bytes inside a DamageUnit and shift
+    # every later action/field.  It may only be decoded by callers that already
+    # possess an independently proven item end.
     BUFF_DEBUG_PRINT_ACTION_TAG: consume_buff_debug_print_action,
     BUFF_EFFECT_ACTION_TAG: consume_buff_effect_action,
     BUFF_FIND_TARGET_ACTION_TAG: consume_buff_find_target_action,
@@ -4055,7 +6182,11 @@ BUFF_ABILITY_ACTION_CONSUME_DECODERS = {
     BUFF_PLAY_ANIMATION_ACTION_TAG: consume_buff_play_animation_action,
     BUFF_PLAY_SOUND_ACTION_TAG: consume_buff_play_sound_action,
     BUFF_SEND_BATTLE_SIGNAL_TO_LEVEL_TAG: consume_buff_send_battle_signal_to_level_action,
+    BUFF_SAVE_VALUE_FROM_AI_BLACKBOARD_ACTION_TAG: consume_buff_save_value_from_ai_blackboard_action,
+    BUFF_SET_SKILL_CD_AT_ONCE_ACTION_TAG: consume_buff_set_skill_cd_at_once_action,
+    BUFF_SIMPLE_CALC_BLACKBOARD_ACTION_TAG: consume_buff_simple_calc_blackboard_action,
     BUFF_SPELL_INFLICTION_ACTION_TAG: consume_buff_spell_infliction_action,
+    BUFF_SPAWN_INTERACTIVE_GOLD_COIN_ACTION_TAG: consume_buff_spawn_interactive_gold_coin_action,
 }
 
 
@@ -6128,6 +8259,15 @@ def decode_buff_memorypack(path: Path, data: bytes, size: int) -> dict[str, Any]
     id_value = stem if id_verified else next((value for value in strings if value.startswith("buff_")), "")
     value_fields, complex_fields = buff_schema_field_groups(schema)
     post_id_prefix = decode_buff_post_id_prefix(data, id_value, id_marker_count, id_marker_offsets)
+    selected_id_marker = post_id_prefix.get("idMarkerOffset")
+    try:
+        selected_id_marker_offset = int(str(selected_id_marker), 0)
+    except (TypeError, ValueError):
+        selected_id_marker_offset = id_marker_offsets[0] if id_marker_offsets else None
+    pre_id_modifier_prefix = (
+        decode_buff_pre_id_modifier_prefix(data, selected_id_marker_offset)
+        if selected_id_marker_offset is not None else {"status": "missing-id-boundary"}
+    )
 
     tags = unique_strings(
         [value for value in strings if "/" in value and not value.startswith(("Assets/", "assets/"))],
@@ -6195,6 +8335,7 @@ def decode_buff_memorypack(path: Path, data: bytes, size: int) -> dict[str, Any]
                 "fieldTypes",
                 "idMarkerOffsets",
                 "postIdPrefix",
+                "preIdModifierPrefix",
                 "lengthPrefixedStrings",
             ],
             "id": id_value,
@@ -6205,6 +8346,7 @@ def decode_buff_memorypack(path: Path, data: bytes, size: int) -> dict[str, Any]
             "scalarFlagOrIdFields": value_fields,
             "complexOrListFields": complex_fields,
             "postIdPrefix": post_id_prefix,
+            "preIdModifierPrefix": pre_id_modifier_prefix,
             "stringCount": len(strings),
             "tags": tags,
             "params": params,

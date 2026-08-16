@@ -95,6 +95,13 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default="CN",
         help="Default language for the localized stages (default: CN).",
     )
+    parser.add_argument(
+        "--runtime-tag-capture",
+        type=Path,
+        help=(
+            "Hash-gated GameplayTag runtime JSONL to merge during the base stage."
+        ),
+    )
     return parser.parse_args(argv)
 
 
@@ -114,6 +121,11 @@ def run_stage(stage: str, args: argparse.Namespace) -> int:
                     *languages,
                     "--default-language",
                     args.default_language,
+                    *(
+                        ["--runtime-tag-capture", str(args.runtime_tag_capture)]
+                        if args.runtime_tag_capture
+                        else []
+                    ),
                 ]
             )
             or 0
