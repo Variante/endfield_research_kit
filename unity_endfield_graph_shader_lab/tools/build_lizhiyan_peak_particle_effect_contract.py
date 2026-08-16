@@ -244,7 +244,7 @@ def main() -> int:
         "meshes": mesh_rows,
         "shader": {"pathID": SHADER_PATH_ID, "name": "HGRP/Effect/VFXBaseV2",
                    "convertedSource": derived_artifact(shader_files[0], "ShaderConvertedSource", SHADER_PATH_ID)},
-        "executionBoundary": "Serialized hierarchy, particle modules, renderer/material/mesh ownership, material payloads, converted textures, converted mesh geometry, and shader identity are source-closed. Converted PNG/OBJ payloads are diagnostic derivatives. Retail EffectSetting execution, selected DXBC variant, descriptors, draw/PSO/MRT/depth, after-DOF survivor ownership, and final compositing remain unproven; visibleAdmission stays false.",
+        "executionBoundary": "Serialized hierarchy/TRS, particle modules, renderer/material/mesh ownership, material payloads, converted textures, converted mesh geometry, and shader identity are source-closed. Filtered GameObject convenience JSON omits m_IsActive; manual diagnostics default those nodes active while retail activation remains owned by unrecovered EffectSetting/EffectLodCfg execution. Converted PNG/OBJ payloads are diagnostic derivatives. Retail EffectSetting execution, selected DXBC variant, descriptors, draw/PSO/MRT/depth, after-DOF survivor ownership, and final compositing remain unproven; visibleAdmission stays false.",
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(output, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

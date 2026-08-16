@@ -1,0 +1,103 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: M_fxui__lizhiyan_overview_01.DiagnosticSampleStack
+  m_Shader: {fileID: 4800000, guid: 4f51465842ae477fa62e4608f3e795f2, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: 3700
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _MainTex:
+        m_Texture: {fileID: 2800000, guid: 946fe1033b2e3554e8a0957df496a563, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _SampleTex0:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _SampleTex1:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _SampleTex2:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _SampleTex3:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _AlphaDstBlend: 10
+    - _AlphaSrcBlend: 1
+    - _BlendMode: 0
+    - _CullMode: 0
+    - _DissolveEdgeSharp: 2
+    - _DissolveEmissiveEdge: 0
+    - _DissolveScheduleOffset: 0
+    - _DisturbTex1Normal: 0
+    - _DisturbUIntensity1: 0
+    - _DisturbVIntensity1: 0
+    - _DstBlend: 10
+    - _ExpIntensity: 100
+    - _ExpThreshold: 1
+    - _IgnorePostExposure: 1
+    - _IsSceneEffect: 0
+    - _MVDstColorBlend: 6
+    - _MVSrcColorBlend: 3
+    - _MainTexUseDisturb: 0
+    - _ProcedureAlpha: 1
+    - _Responsive: 1
+    - _SrcBlend: 1
+    - _SurfaceType: 1
+    - _TintColorAlpha: 10
+    - _TintColorIntensity: 100
+    - _UseBlend: 0
+    - _UseDissolve: 0
+    - _UseMainTexAsAlpha: 1
+    - _UseMask: 0
+    - _UseSampleTex0AsAlpha: 1
+    - _UseSampleTex1AsAlpha: 1
+    - _UseSampleTex2AsAlpha: 1
+    - _UseSampleTex3AsAlpha: 1
+    - _ZTest: 4
+    - _ZWrite: 0
+    m_Colors:
+    - _BlendTint: {r: 1, g: 1, b: 1, a: 1}
+    - _DissolveEmissiveColor: {r: 0, g: 0, b: 0, a: 0}
+    - _MainTexUVRotateMat: {r: 1, g: 0, b: 0, a: 1}
+    - _MainTexUVSpeed: {r: 0, g: 0, b: 0, a: 0}
+    - _MainTexUVWeights: {r: 1, g: 0, b: 0, a: 0}
+    - _RecoveredLODFade: {r: 1000, g: 0, b: 0, a: 0}
+    - _SampleTex0UVRotateMat: {r: 1, g: 0, b: 0, a: 1}
+    - _SampleTex0UVSpeed: {r: 0, g: 0, b: 0, a: 0}
+    - _SampleTex0UVWeights: {r: 1, g: 0, b: 0, a: 0}
+    - _SampleTex1UVRotateMat: {r: 1, g: 0, b: 0, a: 1}
+    - _SampleTex1UVSpeed: {r: 0, g: 0, b: 0, a: 0}
+    - _SampleTex1UVWeights: {r: 0, g: 0, b: 0, a: 0}
+    - _SampleTex2UVRotateMat: {r: 1, g: 0, b: 0, a: 1}
+    - _SampleTex2UVSpeed: {r: 0, g: 0, b: 0, a: 0}
+    - _SampleTex2UVWeights: {r: 0, g: 0, b: 0, a: 0}
+    - _SampleTex3UVRotateMat: {r: 1, g: 0, b: 0, a: 1}
+    - _SampleTex3UVSpeed: {r: 0, g: 0, b: 0, a: 0}
+    - _SampleTex3UVWeights: {r: 0, g: 0, b: 0, a: 0}
+    - _TintColor: {r: 0, g: 0.6577854, b: 1, a: 1}
+    - _VFXParams1: {r: 1, g: 1, b: 1, a: 1}
+  m_BuildTextureStacks: []

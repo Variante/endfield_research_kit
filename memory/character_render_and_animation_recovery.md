@@ -1841,8 +1841,9 @@ only stable interpretation and priorities.
    actor-safe four-corner background consensus fixes the old single-corner
    coverage ambiguity when the animated coat crosses pixel zero. Predicate-only
    comparison shows the source camera/actor composition is usable but the
-   broad peak is still missing: at PTS 40000 the retail `broadTeal` ROI is
-   21.699% teal versus 3.499% composite and 1.454% effects-only; PTS 43000 is
+   broad peak was still missing from the static-effect-only pass: at PTS 40000
+   the retail `broadTeal` ROI is 21.699% teal versus 3.499% composite and
+   1.454% effects-only; PTS 43000 is
    closer at 9.972% versus 7.618% composite. PTS 46000 has zero effects-only
    coverage while the actor remains visible. This isolates the dominant gap to
    peak effect/material/admission composition rather than gross camera or actor
@@ -1955,9 +1956,22 @@ only stable interpretation and priorities.
    MonoScript edge is `Beyond.Gameplay.EffectSetting` from
    `Gameplay.Beyond.dll`; its absence does not block manual diagnostic
    particle sampling, but retail activation/LOD behavior cannot be claimed.
-   Unity prefab materialization and actor-composed peak capture are the next
-   visual steps; `visibleAdmission` stays false until the native shader/draw
-   and after-DOF ownership gates close.
+   The contract now materializes three source-identity Unity particle prefabs,
+   14 renderer/module pairs, eight fail-closed source materials plus diagnostic
+   SampleStack variants, three PathID-distinct meshes, and 13 textures. Filtered
+   GameObject JSON omits `m_IsActive`, so the manual diagnostic explicitly
+   defaults those nodes active without claiming retail `EffectSetting` or
+   `EffectLodCfg` activation. Command-line ParticleSystemRenderer submission is
+   blank for the paused sampled buffer; the capture therefore uses Unity
+   `BakeMesh` billboard expansion, preserves source material queues, supplies
+   the recovered pipeline's exposure/global gates, and keeps this transport
+   named in the manifest. At PTS 40000, 26 particles are alive, the peak-only
+   frame contains 15,962 non-background pixels and 4.548% `broadTeal`
+   coverage, and actor-composed coverage rises to 7.572% versus 21.699%
+   retail. The independently validated run remains predicate-only and
+   diagnostic: native VFXBaseV2 variant/descriptor/PSO, exact activation/LOD,
+   renderer-list survivor, after-DOF ownership, and final compositing are still
+   open, so `visibleAdmission` stays false.
    All 12 controller requests are preserved; the other 11
    remain explicitly unbound. Its `38-47 s` retail slot, especially the
    hand-adjacent teal layer near 40 seconds, is the current strongest visual

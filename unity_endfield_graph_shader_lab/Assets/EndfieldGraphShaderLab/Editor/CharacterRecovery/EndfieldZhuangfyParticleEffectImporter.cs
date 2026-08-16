@@ -3664,7 +3664,7 @@ namespace EndfieldGraphShaderLabEditor
             }
         }
 
-        private static void ApplyRecoveredMaterialPayload(
+        internal static void ApplyRecoveredMaterialPayload(
             Material material,
             Dictionary<string, object> materialJson,
             Context context)

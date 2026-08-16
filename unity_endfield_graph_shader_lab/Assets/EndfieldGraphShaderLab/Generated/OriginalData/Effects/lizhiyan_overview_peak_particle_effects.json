@@ -29823,5 +29823,5 @@
       "pathID": -1430105248647086886
     }
   },
-  "executionBoundary": "Serialized hierarchy, particle modules, renderer/material/mesh ownership, material payloads, converted textures, converted mesh geometry, and shader identity are source-closed. Converted PNG/OBJ payloads are diagnostic derivatives. Retail EffectSetting execution, selected DXBC variant, descriptors, draw/PSO/MRT/depth, after-DOF survivor ownership, and final compositing remain unproven; visibleAdmission stays false."
+  "executionBoundary": "Serialized hierarchy/TRS, particle modules, renderer/material/mesh ownership, material payloads, converted textures, converted mesh geometry, and shader identity are source-closed. Filtered GameObject convenience JSON omits m_IsActive; manual diagnostics default those nodes active while retail activation remains owned by unrecovered EffectSetting/EffectLodCfg execution. Converted PNG/OBJ payloads are diagnostic derivatives. Retail EffectSetting execution, selected DXBC variant, descriptors, draw/PSO/MRT/depth, after-DOF survivor ownership, and final compositing remain unproven; visibleAdmission stays false."
 }
