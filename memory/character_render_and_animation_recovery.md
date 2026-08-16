@@ -1548,9 +1548,16 @@ only stable interpretation and priorities.
    comparator `0x180fe0740`, an unsigned lexicographic comparison over the
    first 16 record bytes. Publication skips `record+0x20 == 0xffffffff`,
    resolves IDs via `0x181059410`, and appends resource pointers through
-   `0x18105e350`. The key's semantic meaning and exact pre-sort survivor
-   predicate remain unresolved, as do indirect draw and backend submission;
-   do not relabel this proven key order as transparent-depth order yet.
+   `0x18105e350`. Append helper `0x18105e400` copies the full record unchanged.
+   The four key dwords are source-closed to packed renderer-state bits,
+   selectors, source `+0x08/+0x0c/+0x22`, context byte state, a conditional
+   `0x01000000` marker, and `((~asuint(float)) >> 17) & 0x3fff`. All workers
+   share exact source/context exclusion and inclusion masks, `0x60000`,
+   `0x7f00`, and `0xc0` flag gates, a view-mask hit, and bit-45 rejection;
+   four variants also require signed `source+0x2c > 0` on the bit-15 path.
+   Semantic field names remain unresolved, as do indirect draw and backend
+   submission; do not relabel this opaque key order as transparent-depth,
+   material, or batch order yet.
    All six selected materials have `_IsSceneEffect=0` and
    `_EnableTransparentMV=0`, so `_VFXParams1` and transform history are safely
    bypassed rather than guessed. Exact inverse-VP soft depth, live

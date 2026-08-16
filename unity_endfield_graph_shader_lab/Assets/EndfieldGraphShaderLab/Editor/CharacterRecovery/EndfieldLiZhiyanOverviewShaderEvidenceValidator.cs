@@ -247,6 +247,10 @@ namespace EndfieldGraphShaderLabEditor
                 L.Long(survivorSort, "recordStride") == 64 &&
                 L.Long(survivorSort, "comparatorKeyBytes") == 16 &&
                 L.Str(survivorSort, "sortVA") == "0x181043bd0" &&
+                L.Str(survivorSort, "recordAppendVA") == "0x18105e400" &&
+                L.List(survivorSort["keyConstruction"]).Count == 4 &&
+                L.List(survivorSort["commonAcceptanceGates"]).Count == 7 &&
+                L.Str(survivorSort, "variantGate").Contains("source+0x2c > 0") &&
                 L.Str(survivorSort, "semanticKey").Contains("unresolved") &&
                 L.List(survivorSort["notYetProven"]).Count == 4 &&
                 !L.Bool(consumers, "opaqueArgument") &&

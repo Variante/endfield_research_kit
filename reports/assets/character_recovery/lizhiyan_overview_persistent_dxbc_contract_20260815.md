@@ -82,7 +82,7 @@ list`, and the callback executes global scene-color/vector/texture setup,
 fullscreen draw, the ordinary forward renderer list, then the ECS renderer
 list. The callback contains no constant-buffer publication. The generated
 native ABI contract is `lizhiyan_after_dof_native_abi.json`, SHA-256
-`A95237D602EE51E6673898417E9910AB3A92029F8D24FD06AE9F513CAAE14169`.
+`56741911150B050CBFD96B242C9F4386D05421B65007419A640B4DFA96A150FD`.
 
 The deferred ECS producer is now closed as well. Current-build
 `HGRenderPathDeferred.OnPreRendering` recreates the 32-bit handle each camera
@@ -138,11 +138,21 @@ The downstream ordering stage is now positively identified. Resource builder
 `0x18104e920` selects one of 14 post-filter workers. The workers assemble
 accepted 64-byte records and call in-place sorter `0x181043bd0`; comparator
 `0x180fe0740` lexicographically orders the first 16 bytes as unsigned bytes.
+Append helper `0x18105e400` copies each complete record without transforming
+it. The four key dwords are source-closed to packed renderer-state fields: a
+masked 20-bit source and shifted selectors/flags, source offsets `+0x08` and
+`+0x0c`, a conditional `0x01000000` marker, context byte state, source
+`+0x22` u16, and `((~asuint(float)) >> 17) & 0x3fff`.
+All 14 workers require the two source/context mask tests, the `0x60000` and
+`0x7f00` flag groups, `(source+0x10 & 0xc0) == 0xc0`, a view-mask hit, and
+source bit 45 clear. Four variants additionally require signed
+`source+0x2c > 0` on the source `+0x18` bit-15 path.
 The publication path skips records with `+0x20 == 0xffffffff`, resolves their
 IDs through `0x181059410`, and appends resolved pointers through
 `0x18105e350`. This proves a survivor-record → sort → resource-publication
-pipeline. The 16-byte key's meaning is not yet recovered, so this must not be
-called transparent depth sorting, material sorting, or batch sorting yet.
+pipeline. The key is an opaque packed renderer-state key; its semantic field
+names remain unresolved, so this must not be called transparent depth sorting,
+material sorting, or batch sorting yet.
 No indirect draw or backend queue submission has been reached.
 
 The normal current-build per-object request is now source-closed to `47`:
