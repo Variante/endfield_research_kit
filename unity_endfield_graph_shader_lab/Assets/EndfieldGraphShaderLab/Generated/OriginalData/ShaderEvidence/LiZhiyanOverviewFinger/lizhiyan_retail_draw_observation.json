@@ -1,0 +1,70 @@
+{
+  "schema": "endfield.lizhiyan-retail-draw-observation.v1",
+  "status": "proof_pending",
+  "visibleAdmission": false,
+  "importerBoundary": {
+    "offlineOnly": true,
+    "launchedRetailClient": false,
+    "attachedToRetailClient": false,
+    "injectedIntoRetailClient": false,
+    "captureRequiresSeparateExplicitAuthorization": true
+  },
+  "sources": {
+    "abiContract": {
+      "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/ShaderEvidence/LiZhiyanOverviewFinger/lizhiyan_after_dof_native_abi.json",
+      "sha256": "7C89778C66C816F4343E843B7B18B26E395DA0E95379EDD33305228DF173F33C"
+    },
+    "video": {
+      "path": "videos/2026-08-15_10-32-32.mkv",
+      "bytes": 1678613397,
+      "sha256": "2F542A3BE7CE3332295D3A841FD8613C62707E084F9E33A0F156DA8A06EBF5E7",
+      "streamIndex": 0,
+      "codec": "h264",
+      "profile": "High",
+      "dimensions": [
+        3840,
+        2160
+      ],
+      "pixelFormat": "yuv420p",
+      "colorRange": "tv",
+      "colorSpace": "bt709",
+      "timeBase": "1/1000",
+      "averageFrameRate": "60/1",
+      "nominalFrameRate": "60/1",
+      "durationSeconds": 378.367,
+      "ptsRule": "integer stream PTS in 1/1000-second units; never derive timecode as frameIndex/60",
+      "oracleIntervalPts": [
+        38000,
+        47000
+      ],
+      "strongestFeaturePts": 40000,
+      "strongestFeature": "hand-adjacent teal after-DOF layer"
+    },
+    "traces": []
+  },
+  "positiveJoin": null,
+  "negativeControl": null,
+  "requirements": [
+    "renderer_list_register",
+    "opcode_4e_consumer",
+    "survivor_record_append",
+    "resource_publication",
+    "opcode_2748_decode",
+    "descriptor_update",
+    "opcode_2731_execute",
+    "descriptor_bind",
+    "draw",
+    "queue_submit",
+    "present_pixel"
+  ],
+  "blockedBy": [
+    "authorized Li Zhiyan runtime observation trace is absent",
+    "same-build Li-absent or Wulfa negative-control trace is absent"
+  ],
+  "nonClaims": [
+    "video metadata or teal pixels alone do not identify a Vulkan draw",
+    "generic API-2 descriptor, indirect-draw, or submit events are not HGMesh ownership",
+    "pointer equality without resource generation and stable identity is not a join",
+    "timestamps do not replace event sequence, frame, recorder, command-buffer, and present identities"
+  ]
+}

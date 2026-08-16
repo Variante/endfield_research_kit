@@ -3935,6 +3935,22 @@ explicit root-motion application, and secondary hair/cloth/tail dynamics still
 need dedicated runtime systems. All three piaodai materials serialize
 `_IsSceneEffect=0`, so the selected source program bypasses `_VFXParams1`.
 
+Li Zhiyan's retail video oracle is imported separately from draw ownership:
+
+```bat
+python tools\build_lizhiyan_retail_draw_observation_contract.py
+```
+
+The current fixture pins `videos/2026-08-15_10-32-32.mkv` by byte count and
+SHA-256, validates its 3840x2160 H.264/BT.709 stream and integer 1/1000 PTS
+time base, and keeps `visibleAdmission=false`. Optional positive and negative
+trace inputs are offline imports only; producing them requires separate
+explicit authorization. Admission requires the complete HGMesh handle,
+64-byte survivor record, stable resource generation, `0x2748`, descriptor
+state, `0x2731`, descriptor bind, draw, submit, and exact retail pixel chain,
+plus a same-build Li-absent or Wulfa control. Generic API-2 events, pointer
+equality, timestamps, or teal pixels alone never admit the effect.
+
 One original dialog facial asset is now executable as a bounded source fixture:
 Zhuang Fangyi's 2.15-second
 `dlgtl_e10m2_5_sub_1_npc_chr_0030_zhuangfy_2`. It evaluates 12 original named

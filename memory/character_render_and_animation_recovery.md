@@ -1613,6 +1613,17 @@ only stable interpretation and priorities.
    API-2 capabilities; ordinary HGMesh wrappers have no static indirect-draw
    or submit edge, so they must not be attributed to characters without live
    identity values.
+   A stdlib-only offline importer now makes that runtime boundary executable:
+   `tools/build_lizhiyan_retail_draw_observation_contract.py` pins the retail
+   MKV (1,678,613,397 bytes, SHA-256 `2F542A3B...EBF5E7`), verifies its
+   3840x2160 H.264 High/BT.709 limited-range stream and integer 1/1000 PTS,
+   and publishes `lizhiyan_retail_draw_observation.json`. With no separately
+   authorized traces it stays `proof_pending`, `visibleAdmission=false`.
+   Admission requires an ordered same-frame/session/recorder/resource chain
+   through register, opcode `0x4e`, full survivor record, publication,
+   `0x2748`, derived descriptor-state hash, descriptor update/bind, `0x2731`,
+   draw, submit, and exact video PTS/pixel, plus a comparable Li-absent or
+   Wulfa negative control. Pointer or timestamp equality is rejected.
    Runtime values and final survivor/order/lifetime capture remain required;
    do not synthesize a `Renderer[]` bridge from the integer ECS handle.
    Downstream HGMesh workers now prove a real ordering/publication stage:
