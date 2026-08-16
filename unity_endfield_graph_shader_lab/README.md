@@ -4159,6 +4159,22 @@ retirement path, not the missing draw expansion, and it provides no static
 Li-specific Vulkan draw or queue-submit edge. The result closes stock list
 construction, materialization, command transport, and retirement semantics,
 not final draw attribution.
+The pre-retirement lifecycle is now pinned separately. Registered icalls
+3659--3661 map the three `PrepareRendererListsAsync*` APIs to
+`0x1800BAC40`, `0x1800BAF10`, and `0x1800BB080`; their native paths enter
+`0x180535630`, `0x180535790`, and `0x180535870`. The direct preparation paths
+materialize each 0x1a0-byte source row through logical function
+`0x18053FC90..0x18054027D`, store its 0x248-byte backend object in
+`context+0x10148[index]`, and change source-row state `+0x194` from 0 to 1.
+The materialized object contains the copied source row at `+0x60`, backend
+manager at `+0x200`, registration/resource state at `+0x210`, and auxiliary
+resources at `+0x220/+0x228`. `0x18053F690` performs collection/filter
+association rather than draw execution. The strongest bounded downstream
+consumer, `0x180540280`, uses those fields plus `+0x50`, calls
+`0x180540510` and `0x1805438E0`, and prepares temporary/resource records;
+there is still no static graphics-API draw or submit edge. The next native
+queue is therefore the records produced by those two callees and their first
+graphics-backend consumer, not further expansion of opcode `0x4D`.
 Retail queue 3704 belongs to the source-closed 3660--3740
 `AfterPostprocessTransparent` phase. In the exact SceneMV route that range is
 owned by the after-post callback, not main transparent. This isolated shader
