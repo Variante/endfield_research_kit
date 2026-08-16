@@ -1882,10 +1882,16 @@ only stable interpretation and priorities.
    selector zero returns the row base and selector one returns `+0x78`. This is
    not ordinary Renderer entityID `+0x268` or HGMeshRenderer entity `+0x50`.
    Common helper `0x1810469a0` only packs 0x90-stride CPU publication/result
-   arrays. Its bounded path contains no per-draw resolver, material/queue
-   identity, descriptor/PSO update, draw, or submit edge. The first missing
-   positive join is therefore one same-recorder resource identity through
-   `0x2748 -> 0x2730 -> 0x2731` into a concrete Vulkan callback/draw node.
+   arrays, but six finalizer trampolines attach `0x180feaea0` and pass those
+   arrays into `0x1810484e0`. That callback repeats the same key/selector and
+   0x80-byte resource-table lookup, records `0x2748/0x274a`, invokes the
+   `+0xda0/+0x380` API-2 resource-builder family, and has a positive static
+   descriptor-state path `0x1810487e1 -> 0x180619cf0 -> 0x180623ef0 ->`
+   the shared graphics-front `+0x2a0` writer for opcode `0x2730`. Thus the
+   resource publication-to-descriptor-recording join is closed. The first
+   missing positive join is now a later opcode `0x2731` in the same after-DOF
+   recorder interval and attribution of its `+0x2b50` callback node to the
+   particular HGMesh draw rather than another shared-recorder command.
    All six selected materials have `_IsSceneEffect=0` and
    `_EnableTransparentMV=0`, so `_VFXParams1` and transform history are safely
    bypassed rather than guessed. Exact inverse-VP soft depth, live
