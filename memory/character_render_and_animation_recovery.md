@@ -1565,8 +1565,19 @@ only stable interpretation and priorities.
    generic front-end handoff `0x180feaea0 -> 0x1810484e0..0x181049007`, but no
    GPU descriptor/indirect-buffer/draw identity is proven. The installed
    UnityPlayer explicitly says `D3D12 support not compiled in!` and carries no
-   D3D12 command backend surface; active backend selection/submission remains
-   unresolved, and generic Vulkan/API-2 wrappers are excluded until joined.
+   D3D12 command backend surface. A bounded 2026-08-15 `Player-prev.log`
+   snapshot positively observes the installed client creating a Vulkan 1.4.341
+   device on the RTX 5080. Because that log has no UnityPlayer hash and does
+   not identify the Li Zhiyan frame, exact image/session and HGMesh-to-Vulkan
+   command joins remain open; generic Vulkan/API-2 wrappers stay excluded
+   until resource identity reaches them.
+   The graphics-front context/vtable are now pinned at `0x180725dc0` and
+   `0x181dcb360`; resource paths record opcodes `0x2748/0x274a`. Internal
+   backend ID 2 selects factory `0x180891210` and table `0x181dbc098` (not
+   Unity's public enum value). Its `+0xde8` flush reaches
+   `0x18083f1e0 -> 0x180843d60` and resolves Vulkan bind/draw/indirect/submit
+   commands. Backend selection is closed; the unresolved edge is the HGMesh
+   resource identity reaching one specific Vulkan draw and visible pixel.
    Runtime values and final survivor/order/lifetime capture remain required;
    do not synthesize a `Renderer[]` bridge from the integer ECS handle.
    Downstream HGMesh workers now prove a real ordering/publication stage:

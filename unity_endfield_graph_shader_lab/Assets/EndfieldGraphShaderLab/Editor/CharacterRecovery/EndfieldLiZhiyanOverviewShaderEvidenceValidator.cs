@@ -201,6 +201,10 @@ namespace EndfieldGraphShaderLabEditor
             Dictionary<string, object> survivorSort = L.Dict(nativeAdapter["survivorSortPublication"]);
             Dictionary<string, object> workerKeyLayouts = L.Dict(survivorSort["workerKeyLayouts"]);
             Dictionary<string, object> backendBoundary = L.Dict(survivorSort["backendBoundary"]);
+            Dictionary<string, object> observedBackend = L.Dict(backendBoundary["observedRuntimeBackend"]);
+            Dictionary<string, object> observedBackendSession = L.Dict(observedBackend["session"]);
+            Dictionary<string, object> graphicsFront = L.Dict(backendBoundary["graphicsFront"]);
+            Dictionary<string, object> backendSelection = L.Dict(backendBoundary["backendSelection"]);
             Dictionary<string, object> captureBoundary = L.Dict(nativeAdapter["runtimeCaptureBoundary"]);
             L.Require(L.Str(boundary, "callbackConstantBufferPublication") == "not_present" &&
                 L.Str(boundary, "callbackGlobalVectorAndTexturePublication") == "present" &&
@@ -303,17 +307,27 @@ namespace EndfieldGraphShaderLabEditor
                     "post-filter 64-byte records -> in-place key sort -> invalid-record skip -> ID/resource resolve -> pointer-vector publication" &&
                 StringListEquals(survivorSort["notYetProven"],
                     "semantic names of packed key fields",
-                    "indirect draw",
-                    "active graphics backend submission",
+                    "HGMesh resource identity reaching a specific Vulkan draw/submit",
                     "slot-0x14 context construction semantics and +0xb0 destructor internals") &&
                 L.Str(backendBoundary, "resultCallbackThunkVA") == "0x180feaea0" &&
                 L.Str(backendBoundary, "frontEndHandoffVA") == "0x1810484e0" &&
                 L.Str(backendBoundary, "behavior").Contains("generic front-end virtual dispatch") &&
+                L.Str(graphicsFront, "vtableVA") == "0x181dcb360" &&
+                L.Str(graphicsFront, "resourceAppendSlot").Contains("opcode 0x2748") &&
+                L.Str(backendSelection, "api2TableVA") == "0x181dbc098" &&
+                L.Str(backendSelection, "api2Meaning").Contains("not Unity's public") &&
+                L.Str(backendSelection, "vulkanDrawFlush").Contains("0x180843d60") &&
+                L.Str(backendSelection, "vulkanCommandCells").Contains("vkQueueSubmit") &&
                 L.Str(backendBoundary, "d3d12StaticBoundary").Contains("D3D12 support not compiled in!") &&
-                L.Str(backendBoundary, "activeBackend").StartsWith("unresolved") &&
+                L.Str(observedBackend, "classification") == "observed_runtime_log" &&
+                L.Str(observedBackendSession, "graphicsBackend") == "Vulkan" &&
+                L.Str(observedBackendSession, "engineVersion") == "2021.3.34f5 (0)" &&
+                L.Str(observedBackendSession, "physicalDevice") == "NVIDIA GeForce RTX 5080" &&
+                L.List(observedBackend["nonClaims"]).Count == 3 &&
+                L.Str(backendBoundary, "activeBackend").StartsWith("Vulkan is proven") &&
                 L.Str(captureBoundary, "authorization").Contains("separate explicit authorization") &&
                 L.List(captureBoundary["observationOnlyHooks"]).Count == 5 &&
-                L.Str(captureBoundary, "requiredPositiveJoin").Contains("final draw -> visible Li Zhiyan") &&
+                L.Str(captureBoundary, "requiredPositiveJoin").Contains("specific Vulkan draw/submit") &&
                 L.Str(captureBoundary, "negativeControl").Contains("Wulfa") &&
                 L.Str(captureBoundary, "stopRule").Contains("never retry through evasion") &&
                 !L.Bool(consumers, "opaqueArgument") &&
