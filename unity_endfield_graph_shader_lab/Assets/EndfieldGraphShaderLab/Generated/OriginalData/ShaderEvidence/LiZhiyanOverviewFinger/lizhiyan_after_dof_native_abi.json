@@ -294,6 +294,41 @@
       "functionEnd": "0x18104ec17",
       "functionBytes": 759,
       "functionSha256": "02F2E295CF8BB8247824AA7A3EE6B4E0BAD7D58C1C06D59ECD155CAB6E3C81BD"
+    },
+    {
+      "label": "CommandBuffer AddDrawECSMeshRendererList icall",
+      "va": "0x180063180",
+      "functionEnd": "0x180063209",
+      "functionBytes": 137,
+      "functionSha256": "2C36DF6649DEF8EB9748739C336F0F33371C81A0892BDCD3100D12BC69E0443F"
+    },
+    {
+      "label": "AddDrawECSMeshRendererList opcode writer",
+      "va": "0x1804c77b0",
+      "functionEnd": "0x1804c7850",
+      "functionBytes": 160,
+      "functionSha256": "F7D90308048F1EA0A2410C600FB241039B44F14ED278966060F64DBDCE34F8BF"
+    },
+    {
+      "label": "HGMesh renderer-list command consumer",
+      "va": "0x181005c10",
+      "functionEnd": "0x181005e53",
+      "functionBytes": 579,
+      "functionSha256": "3448107F9F252D1388D908D576542FF6B66E7C0D2B3450CDB9915BC58E2D65C2"
+    },
+    {
+      "label": "HGMesh renderer-list resource callback thunk",
+      "va": "0x180feade0",
+      "functionEnd": "0x180feade5",
+      "functionBytes": 5,
+      "functionSha256": "263BDC075313E7654E4E3AECE30F98F04B90E34A187ADFC10BE71BF3D7E7472F"
+    },
+    {
+      "label": "HGMesh renderer-list resource callback",
+      "va": "0x181047160",
+      "functionEnd": "0x181047280",
+      "functionBytes": 288,
+      "functionSha256": "51FF1225A752F4309247DAFA545ABB237FEF2E9A38BFD1579BDCE6F0A07ADAE6"
     }
   ],
   "decisiveCalls": [
@@ -508,7 +543,22 @@
         },
         "invalidRequestGate": "request[0] == 0xffffffff returns 0xffffffff without appending",
         "maskCombination": "view record +0x40/+0x48 OR request +0x50/+0x58",
-        "nextConsumerBoundary": "0x18106aae0 validates the index after AddDrawECSRendererList; survivor/order/lifetime remain downstream"
+        "nextConsumerBoundary": "HGMesh opcode 0x4e reaches 0x181005c10; survivor/order/final draw remain downstream of its resource callback",
+        "commandConsumer": {
+          "family": "HGMeshRender (distinct from HGTree opcode 0x55)",
+          "commandBufferIcallVA": "0x180063180",
+          "opcodeWriterVA": "0x1804c77b0",
+          "opcode": "0x4e",
+          "interpreterCaseVA": "0x1804ce43a",
+          "managerSingletonOffset": "0xb0",
+          "consumerVA": "0x181005c10",
+          "slotStride": 16,
+          "slotStatePointerOffset": "0x08",
+          "callbackThunkVA": "0x180feade0",
+          "callbackVA": "0x181047160",
+          "behavior": "validates the 0xffffffff sentinel, resolves the same 16-byte HGMesh slot, constructs command/resource state, and installs a resource-lifetime callback; no entity iteration, survivor write, sort loop, indirect draw, or queue submission is present",
+          "excludedParallelFamily": "HGTree uses CommandBuffer opcode 0x55, singleton +0xc0, 24-byte slots, and consumer 0x18106aae0"
+        }
       }
     },
     "liveInputsPending": [

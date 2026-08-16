@@ -1536,9 +1536,13 @@ only stable interpretation and priorities.
    `0x18104e300`. The core appends a 16-byte manager slot and returns its old
    count as the zero-based UInt32 handle; it does not iterate entities, write
    survivors, sort, dispatch multi-draw, or draw. Those operations remain
-   downstream of consumer boundary `0x18106aae0`. Runtime values and final
-   survivor/order/lifetime capture remain required; do not synthesize a
-   `Renderer[]` bridge from the integer ECS handle.
+   downstream. The correct HGMesh consumer is CommandBuffer opcode `0x4e` ->
+   singleton `+0xb0` -> `0x181005c10`, which resolves the same 16-byte slot and
+   installs resource callback `0x180feade0 -> 0x181047160`; it still contains no
+   survivor loop, sort, indirect draw, or queue submit. HGTree opcode `0x55`,
+   singleton `+0xc0`, 24-byte slots, and `0x18106aae0` are a distinct family.
+   Runtime values and final survivor/order/lifetime capture remain required;
+   do not synthesize a `Renderer[]` bridge from the integer ECS handle.
    All six selected materials have `_IsSceneEffect=0` and
    `_EnableTransparentMV=0`, so `_VFXParams1` and transform history are safely
    bypassed rather than guessed. Exact inverse-VP soft depth, live

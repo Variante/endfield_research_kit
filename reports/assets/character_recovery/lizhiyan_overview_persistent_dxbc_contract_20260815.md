@@ -82,7 +82,7 @@ list`, and the callback executes global scene-color/vector/texture setup,
 fullscreen draw, the ordinary forward renderer list, then the ECS renderer
 list. The callback contains no constant-buffer publication. The generated
 native ABI contract is `lizhiyan_after_dof_native_abi.json`, SHA-256
-`2EB27DBB1B1F9D1A6A2F1DD9C26E69595DEF960A6F8E9C9D69AD1950DBC338C2`.
+`C1B6D052DB9A564C7A25691C08B9809990AEF523259E970591484D79136B38B9`.
 
 The deferred ECS producer is now closed as well. Current-build
 `HGRenderPathDeferred.OnPreRendering` recreates the 32-bit handle each camera
@@ -123,8 +123,16 @@ count) and returns the old count as a zero-based UInt32 handle. Slot `+0x08`
 points to a 48-byte state record; helper `0x18104e920` builds its downstream
 resource record. These functions contain no entity iteration, survivor write,
 sort loop, multi-draw dispatch, or final draw. Final ECS membership, order, and
-frame lifetime remain downstream of consumer boundary `0x18106aae0` and cannot
-be represented safely as `Renderer[]`.
+frame lifetime remain downstream and cannot be represented safely as
+`Renderer[]`. The correct ordinary HGMesh command chain is now separated from
+HGTree: `AddDrawECSMeshRendererList` icall `0x180063180` records opcode `0x4e`
+through `0x1804c77b0`; interpreter case `0x1804ce43a` selects singleton
+`+0xb0` and consumer `0x181005c10`, which indexes the same 16-byte slots and
+reads state pointer `+0x08`. Its callback thunk `0x180feade0` reaches resource
+handler `0x181047160`. This chain constructs command/resource state but still
+contains no survivor loop, transparent sort, indirect draw, or queue submit.
+HGTree opcode `0x55`, singleton `+0xc0`, 24-byte slots, and consumer
+`0x18106aae0` are a separate family and are not evidence for HGMesh execution.
 
 The normal current-build per-object request is now source-closed to `47`:
 pipeline construction and every normal `ConfigureKeywords` call write baked
