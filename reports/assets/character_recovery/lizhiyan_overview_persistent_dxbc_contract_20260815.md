@@ -310,6 +310,17 @@ idea that the one recovered finger prefab alone explains the full retail teal
 sequence and prioritizes the other eleven serialized entrance requests plus the
 original request producer.
 
+The next root request is now classified rather than left as a generic missing
+effect. `P_fxui_lizhiyan_overview_start_01` is a source-closed five-node static
+mesh hierarchy with four MeshFilter/MeshRenderer pairs, zero ParticleSystems,
+duration `2.2`, delay `0`, one shared mesh PathID `-6840663686705882004`, and
+three material PathIDs mapping exactly to `M_fxui__lizhiyan_overview_09/_10/_11`.
+The converted OBJ and serialized queue-3704 VFXBaseV2 material payloads exist.
+Animation-helper start clip PathID `7360398354216100382` remains an unavailable
+external target, and native mesh/shader/draw admission is not closed. The lab
+therefore records a `static_mesh_animated` contract but does not fabricate a
+particle prefab or install a runtime binding.
+
 The next positive proof is now an explicit runtime-capture contract rather
 than a generic request for “a capture.” On this exact build it must join one
 `CreateRendererList` handle through opcode `0x4e`, a complete accepted/sorted
