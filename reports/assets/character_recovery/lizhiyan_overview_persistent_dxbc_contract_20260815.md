@@ -30,12 +30,24 @@ non-instanced pair and a unique `SRP_INSTANCING_ON` pair:
 
 `HG_ENABLE_MV` is an implicit compiled pipeline keyword and is deliberately not
 added to the serialized material keyword sets. Every selected fragment writes
-both `SV_Target0` and `SV_Target1`. Exact selected DXBC bytes, metadata, Ruri
-HLSL, register declarations, and material mappings are now pinned under
+both `SV_Target0` and `SV_Target1`. Exact selected DXBC bytes, metadata, FXC
+assembly, Ruri HLSL, register declarations, and material mappings are pinned under
 `Generated/OriginalData/ShaderEvidence/LiZhiyanOverviewFinger`.
 
+The exact pixel-stage ABI is closed at the bytecode boundary. All three
+variants use `b0[28]`, `b1[105]`, and `b2[5]`; `b3` is respectively 21, 22,
+and 28 float4 registers. The base variant samples `t0/s0`; soft blend adds
+`t1/s1`; sample-texture plus soft blend adds `t2/s2`. Static shader deltas and
+coordinate use identify `_MainTex`, scene depth, and `_SampleTex0` with the
+applicable LinearClamp/LinearRepeat/LinearMirror samplers. `b0` and `b1`
+structurally match TransformVariables and ShaderVariablesGlobal; `b3` is the
+material packet, but its lane names are not fully joined. `b2` remains an
+unresolved per-draw/particle auxiliary packet because its actual `c4.x/y`
+reads do not match the one known `_PerPassConstants` field offset. This
+identifies the shader ABI, not the identity of a live retail descriptor table.
+
 The generated contract SHA-256 is
-`49811A79A27149F5D1AFA889B16B4EC07AC9C0F203FC11D6930463185E27D61E`.
+`AFEC07998EAC58529E70AD646AC10B43D906C586F0DB0B48BFFE7A1526A0B717`.
 
 ## Scheduling boundary
 
@@ -57,8 +69,9 @@ per-particle order, and final compositing remain uncaptured.
 
 An editor-only validator now verifies the source overlay, shader/program
 identity, complete compiled census, six-to-three material mapping, artifact
-hashes, fragment register signature, dual outputs, and after-DOF queue
-contract. The effect importer calls this validator before building the prefab.
+hashes, exact assembly, constant-buffer lengths, texture/sampler pair counts,
+fragment register signature, dual outputs, and after-DOF queue contract. The
+effect importer calls this validator before building the prefab.
 
 All six generated materials remain on `VFXUnavailableFailClosed`. Exact DXBC
 identity is necessary evidence, but it does not prove that a particular retail
@@ -66,8 +79,16 @@ draw used a particular live descriptor table or PSO.
 
 ## Remaining work
 
+The offline ABI audit also found that the lab's after-DOF color/depth/sceneMV
+attachment schedule matches the static retail pass, while explicit
+`_VFXParams1` publication and exact inverse-VP soft-depth behavior remain
+missing. Li's six materials disable transparent motion vectors, so zeroed
+previous/non-jittered transform fields are safe only for this selected set;
+they are not a general VFX motion contract.
+
 The highest-value evidence is a retail D3D12 capture in the recorded
 `38-47 s` Li Zhiyan window, around the hand-adjacent teal layer near 40 s.
-Without such a capture, the next offline step is to map the selected DXBC
-`t0..t2`, `s0..s2`, and `b0..b3` ABI to the native after-DOF root-signature and
-descriptor construction path. Static guesses must not unlock visible pixels.
+Without such a capture, the remaining offline step is the live native
+root-signature/descriptor/PSO join and renderer-list survivor identity. Static
+resource names, neutral `_VFXParams1`, or attachment parity must not unlock
+visible pixels.

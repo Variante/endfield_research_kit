@@ -100,8 +100,8 @@ namespace EndfieldGraphShaderLabEditor
                         "Li Zhiyan material-to-DXBC mapping drifted: " + name);
                 }
                 Dictionary<string, object> stages = L.Dict(variant["stages"]);
-                ValidateStage(L.Dict(stages["vertex"]), "vertex", false);
-                ValidateStage(L.Dict(stages["fragment"]), "fragment", true);
+                ValidateStage(L.Dict(stages["vertex"]), "vertex", false, signature);
+                ValidateStage(L.Dict(stages["fragment"]), "fragment", true, signature);
             }
             L.Require(seen.SetEquals(expectedMaterials.Keys),
                 "Li Zhiyan shader evidence does not cover all six materials");
@@ -110,13 +110,16 @@ namespace EndfieldGraphShaderLabEditor
         private static void ValidateStage(
             Dictionary<string, object> stage,
             string expectedStage,
-            bool fragment)
+            bool fragment,
+            string materialSignature)
         {
             L.Require(L.Str(stage, "decodedProgramStage") == expectedStage &&
                 L.Str(stage, "sourcePass") == "ForwardOnly",
                 "Li Zhiyan DXBC stage/pass drifted");
             ValidateArtifact(L.Dict(stage["dxbc"]));
             ValidateArtifact(L.Dict(stage["metadata"]));
+            Dictionary<string, object> assembly = L.Dict(stage["exactAssembly"]);
+            ValidateArtifact(L.Dict(assembly["artifact"]));
             if (!fragment)
                 return;
             ValidateArtifact(L.Dict(stage["ruriHlsl"]));
@@ -128,6 +131,23 @@ namespace EndfieldGraphShaderLabEditor
                 L.List(registers["resources"]).Count >= 2 &&
                 L.List(registers["constantBuffers"]).Count >= 3,
                 "Li Zhiyan fragment register/MRT signature drifted");
+            Dictionary<string, object> lengths =
+                L.Dict(assembly["constantBufferFloat4Lengths"]);
+            long expectedMaterialLength = materialSignature == "" ? 21 :
+                materialSignature == "_USE_SOFTBLEND" ? 22 : 28;
+            L.Require(L.Str(assembly, "shaderModel") == "ps_5_0" &&
+                L.Long(lengths, "0") == 28 && L.Long(lengths, "1") == 105 &&
+                L.Long(lengths, "2") == 5 && L.Long(lengths, "3") == expectedMaterialLength,
+                "Li Zhiyan exact DXBC constant-buffer ABI drifted");
+            Dictionary<string, object> semantics =
+                L.Dict(stage["staticResourceSemantics"]);
+            int expectedPairs = materialSignature == "" ? 1 :
+                materialSignature == "_USE_SOFTBLEND" ? 2 : 3;
+            L.Require(L.Str(semantics, "status") ==
+                    "variant_delta_and_coordinate_use_closed_live_descriptor_identity_pending" &&
+                L.List(semantics["texturesAndSamplers"]).Count == expectedPairs &&
+                L.List(assembly["textureSamplerPairs"]).Count == expectedPairs,
+                "Li Zhiyan texture/sampler ABI drifted");
         }
 
         private static void ValidateArtifact(Dictionary<string, object> artifact)

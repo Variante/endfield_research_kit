@@ -16,6 +16,10 @@
     "shaderChunkSha256": "BDB0DD43442A795FE67D0722667D0F3B9A33AFBD42BC477C5DA63CC4391CA556",
     "overlaySelection": "Persistent VFS overrides the same StreamingAssets Shader PathID for the installed client"
   },
+  "tools": {
+    "fxc": "C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.26100.0\\x64\\fxc.exe",
+    "fxcSha256": "005EFF830845789C7EFB2831A0B41950EE6954E9BCD93BAF50DE67AD537728B2"
+  },
   "summary": {
     "materials": 6,
     "compiledKeywordSignatures": 1360,
@@ -61,7 +65,66 @@
             "HG_ENABLE_MV"
           ],
           "debugName": "subshader0/pass0:ForwardOnly/vertex/blob1256/33",
-          "descriptorReflectionBoundary": "serialized metadata is partial; live D3D descriptor-table contents are not captured"
+          "descriptorReflectionBoundary": "serialized metadata is partial; live D3D descriptor-table contents are not captured",
+          "exactAssembly": {
+            "artifact": {
+              "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/ShaderEvidence/LiZhiyanOverviewFinger/base.vertex.dxbc.asm.txt",
+              "bytes": 9453,
+              "sha256": "3D945FAFE6A28AF1F05FF9759A29354467F9EA985896DF22EA0DC5AFFAC2FFD7"
+            },
+            "shaderModel": "vs_5_0",
+            "constantBufferFloat4Lengths": {
+              "0": 2,
+              "1": 82,
+              "2": 104,
+              "3": 14,
+              "4": 10
+            },
+            "constantBufferAccessedIndices": {
+              "0": [
+                1
+              ],
+              "1": [
+                32,
+                33,
+                34,
+                35,
+                44,
+                57,
+                58,
+                59,
+                60,
+                81
+              ],
+              "2": [
+                19,
+                103
+              ],
+              "3": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                13
+              ],
+              "4": [
+                1,
+                3,
+                6,
+                7,
+                8,
+                9
+              ]
+            },
+            "textureSamplerPairs": []
+          }
         },
         "fragment": {
           "dxbc": {
@@ -81,6 +144,62 @@
           ],
           "debugName": "subshader0/pass0:ForwardOnly/vertex/blob1256/33",
           "descriptorReflectionBoundary": "serialized metadata is partial; live D3D descriptor-table contents are not captured",
+          "exactAssembly": {
+            "artifact": {
+              "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/ShaderEvidence/LiZhiyanOverviewFinger/base.fragment.dxbc.asm.txt",
+              "bytes": 5565,
+              "sha256": "F3FF7C740EC17C08EC03FD5E1D46AF88177C25472E2E633642FA017CA3BAEAAC"
+            },
+            "shaderModel": "ps_5_0",
+            "constantBufferFloat4Lengths": {
+              "0": 28,
+              "1": 105,
+              "2": 5,
+              "3": 21
+            },
+            "constantBufferAccessedIndices": {
+              "0": [
+                0,
+                1,
+                2,
+                3,
+                24,
+                25,
+                26,
+                27
+              ],
+              "1": [
+                0,
+                26,
+                27,
+                104
+              ],
+              "2": [
+                4
+              ],
+              "3": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                11,
+                12,
+                13,
+                14,
+                16,
+                17,
+                20
+              ]
+            },
+            "textureSamplerPairs": [
+              {
+                "textureRegister": 0,
+                "samplerRegister": 0
+              }
+            ]
+          },
           "ruriHlsl": {
             "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/ShaderEvidence/LiZhiyanOverviewFinger/base.fragment.ruri.hlsl.txt",
             "bytes": 7379,
@@ -135,6 +254,23 @@
               "SV_Target_1"
             ],
             "hasDiscard": false
+          },
+          "staticResourceSemantics": {
+            "status": "variant_delta_and_coordinate_use_closed_live_descriptor_identity_pending",
+            "constantBuffers": {
+              "b0": "_TransformVariables_structural_match",
+              "b1": "ShaderVariablesGlobal_structural_match",
+              "b2": "unresolved_auxiliary_particle_or_per_draw",
+              "b3": "UnityPerMaterial_semantic_match_lane_names_unresolved"
+            },
+            "texturesAndSamplers": [
+              {
+                "textureRegister": 0,
+                "samplerRegister": 0,
+                "texture": "_MainTex",
+                "sampler": "LinearClamp"
+              }
+            ]
           }
         }
       }
@@ -189,7 +325,76 @@
             "_USE_SOFTBLEND"
           ],
           "debugName": "subshader0/pass0:ForwardOnly/vertex/blob1400/33",
-          "descriptorReflectionBoundary": "serialized metadata is partial; live D3D descriptor-table contents are not captured"
+          "descriptorReflectionBoundary": "serialized metadata is partial; live D3D descriptor-table contents are not captured",
+          "exactAssembly": {
+            "artifact": {
+              "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/ShaderEvidence/LiZhiyanOverviewFinger/sample_tex0___use_softblend.vertex.dxbc.asm.txt",
+              "bytes": 10091,
+              "sha256": "43F07E7E2DA7B91FD3B7E8F7910489DB306E4931E96C09C757E64DA9DC26C8B6"
+            },
+            "shaderModel": "vs_5_0",
+            "constantBufferFloat4Lengths": {
+              "0": 2,
+              "1": 82,
+              "2": 104,
+              "3": 14,
+              "4": 34
+            },
+            "constantBufferAccessedIndices": {
+              "0": [
+                1
+              ],
+              "1": [
+                32,
+                33,
+                34,
+                35,
+                44,
+                57,
+                58,
+                59,
+                60,
+                81
+              ],
+              "2": [
+                19,
+                103
+              ],
+              "3": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                13
+              ],
+              "4": [
+                1,
+                3,
+                6,
+                7,
+                8,
+                9,
+                12,
+                13,
+                14,
+                15,
+                16,
+                28,
+                30,
+                31,
+                32,
+                33
+              ]
+            },
+            "textureSamplerPairs": []
+          }
         },
         "fragment": {
           "dxbc": {
@@ -211,6 +416,76 @@
           ],
           "debugName": "subshader0/pass0:ForwardOnly/vertex/blob1400/33",
           "descriptorReflectionBoundary": "serialized metadata is partial; live D3D descriptor-table contents are not captured",
+          "exactAssembly": {
+            "artifact": {
+              "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/ShaderEvidence/LiZhiyanOverviewFinger/sample_tex0___use_softblend.fragment.dxbc.asm.txt",
+              "bytes": 7457,
+              "sha256": "27BB153972AC897B6E5249CDA173A36C0081A623F8F74F3D6EF25C9DEDA21739"
+            },
+            "shaderModel": "ps_5_0",
+            "constantBufferFloat4Lengths": {
+              "0": 28,
+              "1": 105,
+              "2": 5,
+              "3": 28
+            },
+            "constantBufferAccessedIndices": {
+              "0": [
+                0,
+                1,
+                2,
+                3,
+                24,
+                25,
+                26,
+                27
+              ],
+              "1": [
+                0,
+                26,
+                27,
+                104
+              ],
+              "2": [
+                4
+              ],
+              "3": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                11,
+                12,
+                13,
+                17,
+                18,
+                19,
+                20,
+                21,
+                22,
+                23,
+                24,
+                26,
+                27
+              ]
+            },
+            "textureSamplerPairs": [
+              {
+                "textureRegister": 0,
+                "samplerRegister": 0
+              },
+              {
+                "textureRegister": 1,
+                "samplerRegister": 1
+              },
+              {
+                "textureRegister": 2,
+                "samplerRegister": 2
+              }
+            ]
+          },
           "ruriHlsl": {
             "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/ShaderEvidence/LiZhiyanOverviewFinger/sample_tex0___use_softblend.fragment.ruri.hlsl.txt",
             "bytes": 10427,
@@ -285,6 +560,35 @@
               "SV_Target_1"
             ],
             "hasDiscard": false
+          },
+          "staticResourceSemantics": {
+            "status": "variant_delta_and_coordinate_use_closed_live_descriptor_identity_pending",
+            "constantBuffers": {
+              "b0": "_TransformVariables_structural_match",
+              "b1": "ShaderVariablesGlobal_structural_match",
+              "b2": "unresolved_auxiliary_particle_or_per_draw",
+              "b3": "UnityPerMaterial_semantic_match_lane_names_unresolved"
+            },
+            "texturesAndSamplers": [
+              {
+                "textureRegister": 0,
+                "samplerRegister": 0,
+                "texture": "_CameraDepthTexture",
+                "sampler": "LinearClamp"
+              },
+              {
+                "textureRegister": 1,
+                "samplerRegister": 1,
+                "texture": "_MainTex",
+                "sampler": "LinearRepeat"
+              },
+              {
+                "textureRegister": 2,
+                "samplerRegister": 2,
+                "texture": "_SampleTex0",
+                "sampler": "LinearMirror"
+              }
+            ]
           }
         }
       }
@@ -327,7 +631,66 @@
             "_USE_SOFTBLEND"
           ],
           "debugName": "subshader0/pass0:ForwardOnly/vertex/blob1397/33",
-          "descriptorReflectionBoundary": "serialized metadata is partial; live D3D descriptor-table contents are not captured"
+          "descriptorReflectionBoundary": "serialized metadata is partial; live D3D descriptor-table contents are not captured",
+          "exactAssembly": {
+            "artifact": {
+              "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/ShaderEvidence/LiZhiyanOverviewFinger/use_softblend.vertex.dxbc.asm.txt",
+              "bytes": 9453,
+              "sha256": "3D945FAFE6A28AF1F05FF9759A29354467F9EA985896DF22EA0DC5AFFAC2FFD7"
+            },
+            "shaderModel": "vs_5_0",
+            "constantBufferFloat4Lengths": {
+              "0": 2,
+              "1": 82,
+              "2": 104,
+              "3": 14,
+              "4": 10
+            },
+            "constantBufferAccessedIndices": {
+              "0": [
+                1
+              ],
+              "1": [
+                32,
+                33,
+                34,
+                35,
+                44,
+                57,
+                58,
+                59,
+                60,
+                81
+              ],
+              "2": [
+                19,
+                103
+              ],
+              "3": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                13
+              ],
+              "4": [
+                1,
+                3,
+                6,
+                7,
+                8,
+                9
+              ]
+            },
+            "textureSamplerPairs": []
+          }
         },
         "fragment": {
           "dxbc": {
@@ -348,6 +711,67 @@
           ],
           "debugName": "subshader0/pass0:ForwardOnly/vertex/blob1397/33",
           "descriptorReflectionBoundary": "serialized metadata is partial; live D3D descriptor-table contents are not captured",
+          "exactAssembly": {
+            "artifact": {
+              "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/ShaderEvidence/LiZhiyanOverviewFinger/use_softblend.fragment.dxbc.asm.txt",
+              "bytes": 6305,
+              "sha256": "EC6640FB4BE94A3C36FD81226AA89801D60E2CEF3BA0BD287B66130D558BB17A"
+            },
+            "shaderModel": "ps_5_0",
+            "constantBufferFloat4Lengths": {
+              "0": 28,
+              "1": 105,
+              "2": 5,
+              "3": 22
+            },
+            "constantBufferAccessedIndices": {
+              "0": [
+                0,
+                1,
+                2,
+                3,
+                24,
+                25,
+                26,
+                27
+              ],
+              "1": [
+                0,
+                26,
+                27,
+                104
+              ],
+              "2": [
+                4
+              ],
+              "3": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                11,
+                12,
+                13,
+                14,
+                15,
+                17,
+                18,
+                21
+              ]
+            },
+            "textureSamplerPairs": [
+              {
+                "textureRegister": 0,
+                "samplerRegister": 0
+              },
+              {
+                "textureRegister": 1,
+                "samplerRegister": 1
+              }
+            ]
+          },
           "ruriHlsl": {
             "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/ShaderEvidence/LiZhiyanOverviewFinger/use_softblend.fragment.ruri.hlsl.txt",
             "bytes": 8719,
@@ -412,6 +836,29 @@
               "SV_Target_1"
             ],
             "hasDiscard": false
+          },
+          "staticResourceSemantics": {
+            "status": "variant_delta_and_coordinate_use_closed_live_descriptor_identity_pending",
+            "constantBuffers": {
+              "b0": "_TransformVariables_structural_match",
+              "b1": "ShaderVariablesGlobal_structural_match",
+              "b2": "unresolved_auxiliary_particle_or_per_draw",
+              "b3": "UnityPerMaterial_semantic_match_lane_names_unresolved"
+            },
+            "texturesAndSamplers": [
+              {
+                "textureRegister": 0,
+                "samplerRegister": 0,
+                "texture": "_CameraDepthTexture",
+                "sampler": "LinearClamp"
+              },
+              {
+                "textureRegister": 1,
+                "samplerRegister": 1,
+                "texture": "_MainTex",
+                "sampler": "LinearRepeat"
+              }
+            ]
           }
         }
       }
