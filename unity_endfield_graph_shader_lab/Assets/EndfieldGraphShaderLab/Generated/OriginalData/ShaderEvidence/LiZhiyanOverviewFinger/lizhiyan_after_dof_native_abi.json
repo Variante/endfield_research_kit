@@ -10,6 +10,10 @@
       "path": "D:\\Program Files\\Endfield Game\\Endfield_Data\\il2cpp_data\\Metadata\\global-metadata.dat",
       "sha256": "90C58E26E87C7227A85DDA3FEDF6CE5ED0B06DC1F76E0ABBE75AB20750ADF97E"
     },
+    "unityPlayer": {
+      "path": "D:\\Program Files\\Endfield Game\\UnityPlayer.dll",
+      "sha256": "B47728BA10F09C46E8A107B4C7055E48CFE402D3D8C88A4529074981F9672AA2"
+    },
     "shaderContract": {
       "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/ShaderEvidence/LiZhiyanOverviewFinger/lizhiyan_overview_vfxbasev2_variants.json",
       "sha256": "1191F96B45FD11C47D31C71681B25E77B3DF2CBD2179F21B4D2854D3AD90796B"
@@ -30,6 +34,26 @@
       "functionEnd": "0x1837ddd44",
       "functionBytes": 2004,
       "functionSha256": "00ACC65F4685738CB190BF536900D5AE7B421F4A2CAEDC25C3D2D0B7E2EB3162"
+    },
+    {
+      "methodIndex": 286732,
+      "type": "HG.Rendering.Runtime.HGCamera",
+      "name": "DoECSCullingCPP",
+      "token": "0x06000e88",
+      "va": "0x1834502d0",
+      "functionEnd": "0x1834503ce",
+      "functionBytes": 254,
+      "functionSha256": "56CC43CF0F18122D3DE44731D2680F6951F48104A5A2986B9F35161CC883EC7F"
+    },
+    {
+      "methodIndex": 286733,
+      "type": "HG.Rendering.Runtime.HGCamera",
+      "name": "DoECSCulling",
+      "token": "0x06000e89",
+      "va": "0x189b721cc",
+      "functionEnd": "0x189b72a1d",
+      "functionBytes": 2129,
+      "functionSha256": "ECD06129C7B75CF85A127A5D5E543C956CC9FA4B23C1846A893CAE9464A3AD3E"
     },
     {
       "methodIndex": 286724,
@@ -100,6 +124,26 @@
       "functionEnd": "0x189bc6b7e",
       "functionBytes": 326,
       "functionSha256": "BD2E3852A86737D9F2732283AF677FA2A0F4209DD3FFB3F9476C957C67125A10"
+    },
+    {
+      "methodIndex": 284106,
+      "type": "HG.Rendering.Runtime.HGRenderPipeline",
+      "name": "Render",
+      "token": "0x06000446",
+      "va": "0x183455030",
+      "functionEnd": "0x18345a6e4",
+      "functionBytes": 22196,
+      "functionSha256": "08CA0296209FB21E02AFC9E2F5B02B06F0CA86A699A26BCD9951099D93F6926A"
+    },
+    {
+      "methodIndex": 284111,
+      "type": "HG.Rendering.Runtime.HGRenderPipeline",
+      "name": "ExecuteRenderRequestCPP",
+      "token": "0x0600044b",
+      "va": "0x183106970",
+      "functionEnd": "0x183113581",
+      "functionBytes": 52241,
+      "functionSha256": "6EFA8CEFFB982A2B6E4944B79DDDEBD5853166DC3B7CD0A10E8188048E27A6E0"
     },
     {
       "methodIndex": 286702,
@@ -337,7 +381,8 @@
       },
       "hgCameraOffsets": {
         "ratio": "0x9d8",
-        "distance": "0x9dc"
+        "distance": "0x9dc",
+        "layerMask": "0xa20"
       },
       "layerNames": [
         "Default",
@@ -359,7 +404,16 @@
         "IK"
       ],
       "layerMaskConstruction": "lazy LayerMask.GetMask of the 17 names",
-      "runtimeInstanceValues": "pending IFix/native mutation or selected-camera observation",
+      "ratioDistanceWriters": "HGCamera..ctor only among mapped HG.RenderPipelines.Runtime methods",
+      "layerMaskWriters": [
+        "HGCamera..ctor initializes 0xffffffff",
+        "HGCamera.DoECSCullingCPP copies lightweight-camera results +0x168/+0x16c",
+        "HGCamera.DoECSCulling rewrites current/lightweight camera masks",
+        "HGRenderPipeline.Render propagates lightweight-camera results"
+      ],
+      "requestPropagation": "ExecuteRenderRequestCPP copies ratio/distance to request +0x68/+0x6c, then reads the layer-mask getter",
+      "descriptorBoundary": "values travel through custom request/PassInput data; ordinary Unity RendererListDesc has no equivalent fields",
+      "runtimeInstanceValues": "pending selected-camera observation; layer mask is runtime-mutated and cannot be assumed to remain 0xffffffff",
       "unityEquivalent": "standard DrawRenderers exposes no HG screen-culling fields"
     },
     "passInputOffsets": {
@@ -399,7 +453,17 @@
       "excludeGPUDriven": false,
       "lifecycle": "recreated or reset to 0xffffffff by deferred OnPreRendering each camera frame",
       "phase1ReadVA": "0x189c00568",
-      "forwardPath": "HGRenderPathForward.OnPreRendering creates ordinary transparent/opaque/pre-Z lists but never writes 0x1388 or creates a 0x4400/0x4000 AfterPP list"
+      "forwardPath": "HGRenderPathForward.OnPreRendering creates ordinary transparent/opaque/pre-Z lists but never writes 0x1388 or creates a 0x4400/0x4000 AfterPP list",
+      "nativeAdapter": {
+        "icallSignature": "UnityEngine.HyperGryph.HGMeshRender::CreateRendererList(System.UInt32,System.UInt32,System.UInt32,System.UInt32,System.UInt16,System.IntPtr,System.Boolean,System.Boolean,System.UInt32,System.Boolean,System.UInt32*,System.Boolean)",
+        "registrationIndex": 395,
+        "unityPlayerVA": "0x1801f1e40",
+        "functionEnd": "0x1801f1f10",
+        "functionBytes": 208,
+        "functionSha256": "F4D6BF057A673684D69BFEB616D922B9A57F537F35DD845C972946F85FC93F5D",
+        "internalBuilderVA": "0x18104e7a0",
+        "behavior": "canonicalizes trailing booleans and forwards all flags/arguments; does not enumerate survivors, sort, or expose a handle table"
+      }
     },
     "liveInputsPending": [
       "cullingResults",

@@ -82,7 +82,7 @@ list`, and the callback executes global scene-color/vector/texture setup,
 fullscreen draw, the ordinary forward renderer list, then the ECS renderer
 list. The callback contains no constant-buffer publication. The generated
 native ABI contract is `lizhiyan_after_dof_native_abi.json`, SHA-256
-`24171CCA5D4F535F8068E720E8C7CE61110E68F689301700F9C2D10E0C88381D`.
+`5C5ED6171D130C867343562A1DD9562B2E6FCBC85B7DE3276138EA94ACA0E9B5`.
 
 The deferred ECS producer is now closed as well. Current-build
 `HGRenderPathDeferred.OnPreRendering` recreates the 32-bit handle each camera
@@ -106,6 +106,22 @@ the nullable state block is absent, override material is null, and
 `bakedLightingConfig | GetPerObjectMotionVectorConfig(hgCamera)`. Screen-culling
 ratio/distance/mask and the resulting survivors remain runtime inputs.
 
+The current-build writer audit narrows those inputs further. `HGCamera..ctor`
+is the only mapped HG runtime writer of ratio `+0x9d8` (`0.005`) and distance
+`+0x9dc` (`30.0`). Mask `+0xa20` is different: `DoECSCullingCPP`,
+`DoECSCulling`, and `HGRenderPipeline.Render` overwrite it from
+lightweight-camera culling results. `ExecuteRenderRequestCPP` copies the two
+floats into request `+0x68/+0x6c`, then reads the mask getter. These are custom
+request/PassInput values, not fields of ordinary Unity `RendererListDesc`.
+
+The exact HGMeshRender internal call is registered at UnityPlayer table index
+395 and targets `0x1801f1e40` (208 bytes, SHA-256
+`F4D6BF05...FC93F5D`). It is only an ABI adapter: trailing booleans are
+canonicalized and all arguments are forwarded to internal builder
+`0x18104e7a0`. It does not enumerate survivors, apply a visible sort, or expose
+a handle table. Final ECS membership, order, and handle lifetime remain
+runtime/native-builder work and cannot be represented safely as `Renderer[]`.
+
 The normal current-build per-object request is now source-closed to `47`:
 pipeline construction and every normal `ConfigureKeywords` call write baked
 lighting flags `15`, while `get_enableMV` and
@@ -114,12 +130,11 @@ branches remain an explicit replacement boundary. Unity now requests the same
 combined `PerObjectData` value instead of motion vectors alone.
 
 HGCamera construction writes screen ratio `0.005` and distance `30.0`; its lazy
-mask getter builds a mask from 17 named layers. Update/BeginRender/view-constant
-methods do not rewrite the two floats. The selected Viewer camera has Unity
-culling mask `0xffffffff` and no serialized HG screen-culling overrides, but
-external mutation, the resolved mask value, and actual survivors remain live
-facts. Standard Unity `DrawRenderers` has no equivalent for HG's extra three
-screen-culling descriptor fields.
+mask getter builds a mask from 17 named layers. The selected Viewer camera has
+Unity culling mask `0xffffffff` and no serialized HG screen-culling overrides,
+but the runtime ECS/lightweight-camera path rewrites the HG mask and actual
+survivors remain live facts. Standard Unity `DrawRenderers` has no equivalent
+for HG's extra three screen-culling descriptor fields.
 
 ## Unity admission
 

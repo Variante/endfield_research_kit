@@ -1527,6 +1527,15 @@ only stable interpretation and priorities.
    `this+0x1388`, and writes `0xffffffff` when its feature/camera gate fails.
    The current Forward render path creates only ordinary transparent/opaque/
    pre-Z ECS lists and leaves this constructor-initialized sentinel unchanged.
+   The static screen-culling writer boundary is narrower: `HGCamera..ctor` is
+   the only mapped HG runtime writer of ratio `+0x9d8` (`0.005`) and distance
+   `+0x9dc` (`30.0`), while mask `+0xa20` is rewritten by ECS/lightweight-camera
+   culling paths and propagated through custom request/PassInput data. The
+   exact UnityPlayer `HGMeshRender::CreateRendererList` registration resolves
+   to adapter `0x1801f1e40`, which forwards into builder `0x18104e7a0` without
+   itself exposing survivors, sorting, or handle storage. Runtime values and
+   final survivor/order capture remain required; do not synthesize a
+   `Renderer[]` bridge from the integer ECS handle.
    All six selected materials have `_IsSceneEffect=0` and
    `_EnableTransparentMV=0`, so `_VFXParams1` and transform history are safely
    bypassed rather than guessed. Exact inverse-VP soft depth, live

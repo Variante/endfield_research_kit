@@ -28,6 +28,7 @@ CODE_REGISTRATION = 0x18B9217D0
 EXPECTED = {
     "gameAssembly": "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE",
     "metadata": "90C58E26E87C7227A85DDA3FEDF6CE5ED0B06DC1F76E0ABBE75AB20750ADF97E",
+    "unityPlayer": "B47728BA10F09C46E8A107B4C7055E48CFE402D3D8C88A4529074981F9672AA2",
     "shaderContract": "1191F96B45FD11C47D31C71681B25E77B3DF2CBD2179F21B4D2854D3AD90796B",
     "viewerScene": "BC9F4FBF023F76FFD06AB2AE6283A03127027A83049DB580C9678B2A7B633761",
 }
@@ -35,6 +36,12 @@ METHODS = [
     (286728, "HG.Rendering.Runtime.HGCamera",
      ".ctor", 0x1837DD570, 0x1837DDD44,
      "00ACC65F4685738CB190BF536900D5AE7B421F4A2CAEDC25C3D2D0B7E2EB3162"),
+    (286732, "HG.Rendering.Runtime.HGCamera",
+     "DoECSCullingCPP", 0x1834502D0, 0x1834503CE,
+     "56CC43CF0F18122D3DE44731D2680F6951F48104A5A2986B9F35161CC883EC7F"),
+    (286733, "HG.Rendering.Runtime.HGCamera",
+     "DoECSCulling", 0x189B721CC, 0x189B72A1D,
+     "ECD06129C7B75CF85A127A5D5E543C956CC9FA4B23C1846A893CAE9464A3AD3E"),
     (286724, "HG.Rendering.Runtime.HGCamera",
      "get_screenCullingLayerMask", 0x183E68CB0, 0x183E68CD4,
      "0D5928FA5F343C7F072A857C5B0FE6CA8943506877C71FA9A6257EF5F2983B7E"),
@@ -56,6 +63,12 @@ METHODS = [
     (284103, "HG.Rendering.Runtime.HGRenderPipeline",
      "ConfigureKeywords", 0x189BC6A38, 0x189BC6B7E,
      "BD2E3852A86737D9F2732283AF677FA2A0F4209DD3FFB3F9476C957C67125A10"),
+    (284106, "HG.Rendering.Runtime.HGRenderPipeline",
+     "Render", 0x183455030, 0x18345A6E4,
+     "08CA0296209FB21E02AFC9E2F5B02B06F0CA86A699A26BCD9951099D93F6926A"),
+    (284111, "HG.Rendering.Runtime.HGRenderPipeline",
+     "ExecuteRenderRequestCPP", 0x183106970, 0x183113581,
+     "6EFA8CEFFB982A2B6E4944B79DDDEBD5853166DC3B7CD0A10E8188048E27A6E0"),
     (286702, "HG.Rendering.Runtime.HGCamera",
      "get_enableMV", 0x189B74654, 0x189B7469F,
      "8C1488DC4A09BEB9F142B4EA2DD5CB7B98770D5DE48DA545E94655EE3538B329"),
@@ -132,8 +145,10 @@ def load_module(name: str, path: Path) -> Any:
 
 def build(game_root: Path) -> dict[str, Any]:
     game_assembly = game_root / "GameAssembly.dll"
+    unity_player = game_root / "UnityPlayer.dll"
     metadata = game_root / "Endfield_Data/il2cpp_data/Metadata/global-metadata.dat"
-    for key, path in (("gameAssembly", game_assembly), ("metadata", metadata)):
+    for key, path in (("gameAssembly", game_assembly), ("metadata", metadata),
+                      ("unityPlayer", unity_player)):
         require(path.is_file(), f"missing explicitly selected native input: {path}")
         require(sha256(path) == EXPECTED[key], f"selected native input drifted: {key}")
     require(sha256(SHADER_CONTRACT) == EXPECTED["shaderContract"],
@@ -153,6 +168,7 @@ def build(game_root: Path) -> dict[str, Any]:
         REPO / "tools/endfield-il2cpp/map_body_targets_to_gameassembly.py")
     md = metadata_module.Metadata(metadata)
     pe = mapper.PeImage(game_assembly)
+    unity_pe = mapper.PeImage(unity_player)
     modules = mapper.parse_codegen_modules(pe, CODE_REGISTRATION)
     image_ranges = mapper.image_method_ranges(md)
     pointers, _ = mapper.build_pointer_indexes(pe, md, modules, image_ranges)
@@ -199,6 +215,11 @@ def build(game_root: Path) -> dict[str, Any]:
         calls.append({"label": label, "callsite": f"0x{callsite:x}",
                       "target": f"0x{target:x}"})
 
+    icall_body = unity_pe.bytes_at_va(0x1801F1E40, 0xD0)
+    require(hashlib.sha256(icall_body).hexdigest().upper() ==
+            "F4D6BF057A673684D69BFEB616D922B9A57F537F35DD845C972946F85FC93F5D",
+            "UnityPlayer HGMeshRender.CreateRendererList adapter drifted")
+
     shader = json.loads(SHADER_CONTRACT.read_text(encoding="utf-8"))
     return {
         "schema": "endfield.lizhiyan-after-dof-native-abi.v1",
@@ -206,6 +227,7 @@ def build(game_root: Path) -> dict[str, Any]:
         "sources": {
             "gameAssembly": {"path": str(game_assembly), "sha256": EXPECTED["gameAssembly"]},
             "metadata": {"path": str(metadata), "sha256": EXPECTED["metadata"]},
+            "unityPlayer": {"path": str(unity_player), "sha256": EXPECTED["unityPlayer"]},
             "shaderContract": {"path": SHADER_CONTRACT.relative_to(REPO).as_posix(),
                                "sha256": EXPECTED["shaderContract"]},
             "viewerScene": {"path": VIEWER_SCENE.relative_to(REPO).as_posix(),
@@ -234,12 +256,21 @@ def build(game_root: Path) -> dict[str, Any]:
             },
             "screenCulling": {
                 "constructorDefaults": {"ratio": 0.005, "distance": 30.0},
-                "hgCameraOffsets": {"ratio": "0x9d8", "distance": "0x9dc"},
+                "hgCameraOffsets": {"ratio": "0x9d8", "distance": "0x9dc", "layerMask": "0xa20"},
                 "layerNames": ["Default", "TransparentFX", "Ignore Raycast", "Water", "UI",
                                "Walkable", "Climbable", "Trigger", "UIPP", "UIModel", "Building",
                                "UIInteract", "WorldUI", "Projectile", "AbilityEntity", "Terrain", "IK"],
                 "layerMaskConstruction": "lazy LayerMask.GetMask of the 17 names",
-                "runtimeInstanceValues": "pending IFix/native mutation or selected-camera observation",
+                "ratioDistanceWriters": "HGCamera..ctor only among mapped HG.RenderPipelines.Runtime methods",
+                "layerMaskWriters": [
+                    "HGCamera..ctor initializes 0xffffffff",
+                    "HGCamera.DoECSCullingCPP copies lightweight-camera results +0x168/+0x16c",
+                    "HGCamera.DoECSCulling rewrites current/lightweight camera masks",
+                    "HGRenderPipeline.Render propagates lightweight-camera results",
+                ],
+                "requestPropagation": "ExecuteRenderRequestCPP copies ratio/distance to request +0x68/+0x6c, then reads the layer-mask getter",
+                "descriptorBoundary": "values travel through custom request/PassInput data; ordinary Unity RendererListDesc has no equivalent fields",
+                "runtimeInstanceValues": "pending selected-camera observation; layer mask is runtime-mutated and cannot be assumed to remain 0xffffffff",
                 "unityEquivalent": "standard DrawRenderers exposes no HG screen-culling fields",
             },
             "passInputOffsets": {
@@ -280,6 +311,16 @@ def build(game_root: Path) -> dict[str, Any]:
                 "lifecycle": "recreated or reset to 0xffffffff by deferred OnPreRendering each camera frame",
                 "phase1ReadVA": "0x189c00568",
                 "forwardPath": "HGRenderPathForward.OnPreRendering creates ordinary transparent/opaque/pre-Z lists but never writes 0x1388 or creates a 0x4400/0x4000 AfterPP list",
+                "nativeAdapter": {
+                    "icallSignature": "UnityEngine.HyperGryph.HGMeshRender::CreateRendererList(System.UInt32,System.UInt32,System.UInt32,System.UInt32,System.UInt16,System.IntPtr,System.Boolean,System.Boolean,System.UInt32,System.Boolean,System.UInt32*,System.Boolean)",
+                    "registrationIndex": 395,
+                    "unityPlayerVA": "0x1801f1e40",
+                    "functionEnd": "0x1801f1f10",
+                    "functionBytes": 208,
+                    "functionSha256": "F4D6BF057A673684D69BFEB616D922B9A57F537F35DD845C972946F85FC93F5D",
+                    "internalBuilderVA": "0x18104e7a0",
+                    "behavior": "canonicalizes trailing booleans and forwards all flags/arguments; does not enumerate survivors, sort, or expose a handle table",
+                },
             },
             "liveInputsPending": ["cullingResults", "camera", "screenCullingRatio",
                                   "screenCullingRatioDistance", "screenCullingLayerMask",
