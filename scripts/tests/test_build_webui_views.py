@@ -70,6 +70,23 @@ class WebuiViewPlanTests(unittest.TestCase):
         for task_name in ("mission_pipeline", "characters", "gameplay", "projectiles"):
             self.assertEqual(commands_for(phases, task_name)[-1][1], "-m")
 
+    def test_gameplay_base_is_followed_by_recovery_audit_in_same_task(self) -> None:
+        args = build_webui_views.parse_args([])
+        gameplay_task = next(
+            task
+            for _, tasks in build_webui_views.build_phases(args)
+            for task in tasks
+            if task.name == "gameplay"
+        )
+        stages = [
+            command.argv[command.argv.index("--stage") + 1]
+            for command in gameplay_task.commands
+        ]
+        self.assertEqual(["base", "audit"], stages)
+        for command in gameplay_task.commands:
+            self.assertIn("--languages", command.argv)
+            self.assertIn("--default-language", command.argv)
+
     def test_asset_plan_joins_character_and_refs_after_fresh_asset_index(self) -> None:
         args = build_webui_views.parse_args(
             ["--with-assets", "--asset-mode", "debug", "--decode-audio"]

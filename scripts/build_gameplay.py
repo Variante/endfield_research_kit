@@ -25,13 +25,14 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 ROOT = SCRIPT_DIR.parent
 WEBUI_DATA_ROOT = ROOT / "webui" / "data"
 
-STAGES = ("base", "projectiles", "asset-refs", "combat")
+STAGES = ("base", "projectiles", "asset-refs", "combat", "audit")
 
 STAGE_HELP = {
     "base": "Gameplay base index (data/lang/<LANG>/gameplay/index.json).",
     "projectiles": "Exact projectile behavior and event hashes (data/gameplay/projectiles.json).",
     "asset-refs": "Compact Gameplay-to-Assets sidecar; needs a current Assets index.",
     "combat": "Debug-only combat relationships; needs a current source graph.",
+    "audit": "Gameplay recovery coverage/schema audit reports (read-only).",
 }
 
 
@@ -146,6 +147,26 @@ def run_stage(stage: str, args: argparse.Namespace) -> int:
             from gameplay_builder import combat_relationships
 
         return int(combat_relationships.main([]) or 0)
+    if stage == "audit":
+        if __package__:
+            from .gameplay_builder import recovery_audit
+        else:
+            from gameplay_builder import recovery_audit
+
+        for language in languages:
+            input_path = (
+                WEBUI_DATA_ROOT / "lang" / str(language).upper() / "gameplay" / "index.json"
+            )
+            if not input_path.is_file():
+                print(
+                    f"{language}: Gameplay recovery audit input missing: {input_path}",
+                    file=sys.stderr,
+                )
+                return 1
+            result = int(recovery_audit.main(["--input", str(input_path)]) or 0)
+            if result:
+                return result
+        return 0
     raise ValueError(f"unknown gameplay stage: {stage}")
 
 

@@ -113,6 +113,15 @@ def build_phases(args: argparse.Namespace) -> list[tuple[str, list[TaskSpec]]]:
                 "--default-language",
                 "CN",
             ),
+            module(
+                "scripts.build_gameplay",
+                "--stage",
+                "audit",
+                "--languages",
+                "CN",
+                "--default-language",
+                "CN",
+            ),
         ),
     )
     projectile = TaskSpec(
