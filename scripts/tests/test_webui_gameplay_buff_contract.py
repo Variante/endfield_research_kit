@@ -152,11 +152,12 @@ class GameplayBuffFrontendContractTests(unittest.TestCase):
         source = GAMEPLAY.read_text(encoding="utf-8")
         self.assertIn("function buffTargetSettingsSummary", source)
         self.assertIn("buffTargetSettingsSummary(decoded.targetSettingsEnvelopePartial)", source)
-        self.assertIn("buffTargetSettingsSummary(decoded.calculationTargetEnvelopePartial)", source)
+        self.assertIn("buffTargetSettingsSummary(decoded.calculationTarget)", source)
         self.assertIn("buffTargetSettingsSummary(decoded.targetSettingsEnvelopePartial)", source)
 
     def test_modify_dynamic_blackboard_surfaces_calculation_type_and_operation(self) -> None:
         source = GAMEPLAY.read_text(encoding="utf-8")
+        self.assertIn('"exact-modify-dynamic-blackboard-action"', source)
         self.assertIn("decoded.calculateTypeName || formatValue(decoded.calculateType)", source)
         self.assertIn("[decoded.key, calculationType, operation, target]", source)
 
