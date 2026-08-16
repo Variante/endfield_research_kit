@@ -672,7 +672,7 @@ namespace EndfieldGraphShaderLabEditor
                 !L.Bool(importer, "injectedIntoRetailClient") &&
                 L.Bool(importer, "captureRequiresSeparateExplicitAuthorization") &&
                 L.Str(abi, "sha256") ==
-                    "83C1C0C1EFD182CC7AB383BF3C77BB640DF3D0015DD49A6B98862A66C3A12ECA" &&
+                    "9D8216BC8CB16B672B1375244C924478D59036DF1C24C698FDE1E68A073AB607" &&
                 L.Long(video, "bytes") == 1678613397L &&
                 L.Str(video, "sha256") ==
                     "2F542A3BE7CE3332295D3A841FD8613C62707E084F9E33A0F156DA8A06EBF5E7" &&
@@ -761,8 +761,29 @@ namespace EndfieldGraphShaderLabEditor
                 L.Str(groupMap, "functionSha256") ==
                     "79BEA9E2FEE0A5188F3F900744D2FBCC7B645D2EE00587C79E088A0706CAD6AB",
                 "Li Zhiyan HGMesh upstream worker/group-map identity drifted");
+            L.Require(
+                unityNativeMethods.TryGetValue(
+                    "HGMesh survivor job descriptor initializer",
+                    out Dictionary<string, object> jobInitializer) &&
+                L.Str(jobInitializer, "functionSha256") ==
+                    "FF3DEB0F1031611C32924BA99FF3F00A3C9B70BA62CCD477B2EAD6FD79D181BB" &&
+                unityNativeMethods.TryGetValue(
+                    "HGMesh survivor job construction and scheduling owner",
+                    out Dictionary<string, object> jobOwner) &&
+                L.Str(jobOwner, "va") == "0x18104ef90" &&
+                L.Str(jobOwner, "functionEnd") == "0x18104f16c" &&
+                L.Long(jobOwner, "functionBytes") == 476 &&
+                L.Str(jobOwner, "functionSha256") ==
+                    "2797231E1B3801B780D526E513E27CADCA54834A6D49C90C3BCA64189CCAC728" &&
+                unityNativeMethods.TryGetValue(
+                    "HGMesh CreateRendererListFromEntities icall adapter",
+                    out Dictionary<string, object> entityAdapter) &&
+                L.Str(entityAdapter, "va") == "0x1801f20f0" &&
+                L.Str(entityAdapter, "functionSha256") ==
+                    "CA97F2AD6D958078B68FEC88EDB666A64CCEA3F8E3F2155414384E175B842619",
+                "Li Zhiyan HGMesh survivor-job construction identity drifted");
             IList unityCalls = L.List(native["unityPlayerDecisiveCalls"]);
-            L.Require(unityCalls.Count == 3 &&
+            L.Require(unityCalls.Count == 9 &&
                 unityCalls.Cast<object>().Select(L.Dict).Any(row =>
                     L.Str(row, "callsite") == "0x180ff82b5" &&
                     L.Str(row, "target") == "0x1810442f0") &&
@@ -771,7 +792,25 @@ namespace EndfieldGraphShaderLabEditor
                     L.Str(row, "target") == "0x181043bd0") &&
                 unityCalls.Cast<object>().Select(L.Dict).Any(row =>
                     L.Str(row, "callsite") == "0x180ff8592" &&
-                    L.Str(row, "target") == "0x181039e90"),
+                    L.Str(row, "target") == "0x181039e90") &&
+                unityCalls.Cast<object>().Select(L.Dict).Any(row =>
+                    L.Str(row, "callsite") == "0x18104efd6" &&
+                    L.Str(row, "target") == "0x1802fd650") &&
+                unityCalls.Cast<object>().Select(L.Dict).Any(row =>
+                    L.Str(row, "callsite") == "0x18104efe3" &&
+                    L.Str(row, "target") == "0x181045590") &&
+                unityCalls.Cast<object>().Select(L.Dict).Any(row =>
+                    L.Str(row, "callsite") == "0x18104f121" &&
+                    L.Str(row, "target") == "0x180555d30") &&
+                unityCalls.Cast<object>().Select(L.Dict).Any(row =>
+                    L.Str(row, "callsite") == "0x1810463a0" &&
+                    L.Str(row, "target") == "0x18104ef90") &&
+                unityCalls.Cast<object>().Select(L.Dict).Any(row =>
+                    L.Str(row, "callsite") == "0x18104ef33" &&
+                    L.Str(row, "target") == "0x18104ef90") &&
+                unityCalls.Cast<object>().Select(L.Dict).Any(row =>
+                    L.Str(row, "callsite") == "0x1801f2163" &&
+                    L.Str(row, "target") == "0x18104ec20"),
                 "Li Zhiyan HGMesh upstream call graph drifted");
             Dictionary<string, object> boundary = L.Dict(native["nativeBoundary"]);
             Dictionary<string, object> decision = L.Dict(native["unityDecision"]);
@@ -790,6 +829,8 @@ namespace EndfieldGraphShaderLabEditor
             Dictionary<string, object> survivorSort = L.Dict(nativeAdapter["survivorSortPublication"]);
             Dictionary<string, object> upstreamWorker =
                 L.Dict(survivorSort["upstreamWorkerBoundary"]);
+            Dictionary<string, object> jobConstruction =
+                L.Dict(upstreamWorker["jobConstruction"]);
             Dictionary<string, object> workerKeyLayouts = L.Dict(survivorSort["workerKeyLayouts"]);
             Dictionary<string, object> backendBoundary = L.Dict(survivorSort["backendBoundary"]);
             Dictionary<string, object> descriptorMode =
@@ -922,7 +963,20 @@ namespace EndfieldGraphShaderLabEditor
                 L.Str(upstreamWorker, "temporaryGroupMapBoundary").Contains(
                     "does not populate M0's 0x60-byte entry") &&
                 L.Str(upstreamWorker, "remainingProducerBoundary").Contains(
-                    "worker argument object's +0x00/+0x08") &&
+                    "population of those already-existing tables") &&
+                L.Str(jobConstruction, "ownerVA") == "0x18104ef90" &&
+                L.Str(jobConstruction, "ownerEndVA") == "0x18104f16c" &&
+                L.Str(jobConstruction, "allocation").Contains("0xf0 bytes") &&
+                L.Str(jobConstruction, "argumentStores").Contains(
+                    "arg2/rdx -> descriptor+0x00 (M0)") &&
+                L.Str(jobConstruction, "workerReference").Contains(
+                    "sole confirmed code reference") &&
+                L.Str(jobConstruction, "schedulerRoute").Contains(
+                    "0x180555d30 -> 0x1805573d0 -> 0x180559520") &&
+                L.Str(jobConstruction, "explicitEntityCaller").Contains(
+                    "CreateRendererListFromEntities_Injected") &&
+                L.Str(jobConstruction, "identityBoundary").Contains(
+                    "not who populates the M0/M1 tables") &&
                 StringListEquals(survivorSort["notYetProven"],
                     "semantic names of packed key fields",
                     "HGMesh-derived descriptor state reaching one specific Vulkan draw/submit and visible pixel",
@@ -933,7 +987,7 @@ namespace EndfieldGraphShaderLabEditor
                 L.Str(descriptorMode, "ownerPopulationBoundary").Contains(
                     "temporary 0x30-stride group-to-int32-index-vector map") &&
                 L.Str(descriptorMode, "ownerPopulationBoundary").Contains(
-                    "earlier creator/populator") &&
+                    "before 0x18104ef90") &&
                 L.Str(graphicsFront, "vtableVA") == "0x181dcb360" &&
                 L.Str(graphicsFront, "resourceAppendSlot").Contains("opcode 0x2748") &&
                 L.Str(graphicsFront, "descriptorUpdateSlot").Contains("opcode 0x2730") &&
