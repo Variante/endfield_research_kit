@@ -210,6 +210,29 @@
       "slot1And2Behavior": "weights_written_zero_no_clip_operation",
       "crossFade": false,
       "classification": "retail_start_only_graph_control_closed"
+    },
+    "liZhiyanAdvancedApplicability": {
+      "advancedMixerCreation": "proven_applicable",
+      "threeInputGraph": "proven_applicable",
+      "startOnlyConnectAndOneHotControl": "proven_applicable",
+      "customStageTimelineRuntimeExists": true,
+      "customStageTimelineLiActivation": "not_proven_fail_closed",
+      "serializedStageProducer": "not_found_in_start01_start02_start03_effect_roots",
+      "serializedFacts": {
+        "rootAnimator": true,
+        "effectAnimationHelper": true,
+        "controller": null,
+        "avatar": null,
+        "effectSettingLifetimesSeconds": [
+          2.2,
+          5.0,
+          7.0
+        ],
+        "sharedClipLengthSeconds": 6.366667
+      },
+      "lifetimeInterpretation": "EffectSetting destruction boundaries do not prove mixer stage count, clip retiming, or native custom-timeline population",
+      "backendDecision": "do not inject custom stage behavior into Li; stock mixer may host an explicitly labeled proven-external-behavior simulation but is not retail ABI equivalent",
+      "visibleAdmission": false
     }
   },
   "retailAdvancedMixerNative": {

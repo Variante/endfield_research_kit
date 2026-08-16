@@ -4067,6 +4067,15 @@ flags. The exact mode names and unique scheduler dispatch remain open. This
 cannot be expressed as retail ABI through public Playable APIs; an exact path
 requires a native custom node/shim, while a full managed rewrite must remain
 labeled behavioral simulation.
+For Li specifically, the evidence now separates the main graph from that
+optional native consumer. Advanced creation, the three slots, and start-only
+one-hot control are proven applicable. No serialized producer for the native
+context active gate/stage table was found in the start_01/_02/_03 roots, so
+custom-stage activation remains `not_proven_fail_closed`. Their 2.2/5/7-second
+lifetimes are destruction boundaries, not proof of mixer stages or retiming.
+The lab must not inject the custom timeline; any stock-mixer driver is an
+explicit external-behavior simulation, not a retail-ABI backend, and cannot
+raise `visibleAdmission`.
 The same contract pins `SetManual(bool)`, `ManualEvaluate(float)`,
 `SyncProgress(float)`, time-scale/start-duration/start-
 scale setters, Stop, OnDisable, and OnRelease. Their decoded fallback bodies
