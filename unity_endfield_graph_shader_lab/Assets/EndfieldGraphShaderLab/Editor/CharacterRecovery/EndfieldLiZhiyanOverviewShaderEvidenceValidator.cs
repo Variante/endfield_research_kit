@@ -39,6 +39,9 @@ namespace EndfieldGraphShaderLabEditor
         private const string Start01ResolvedAnimationPath =
             "Assets/EndfieldGraphShaderLab/Generated/OriginalData/Effects/" +
             "A_fxui__lizhiyan_overview_start_01.anim";
+        private const string StaticSiblingContractPath =
+            "Assets/EndfieldGraphShaderLab/Generated/OriginalData/Effects/" +
+            "lizhiyan_overview_start_02_03_effects.json";
         private const string Schema = "endfield.lizhiyan-overview-vfxbasev2-variants.v1";
         private const long ShaderPathId = -1430105248647086886L;
 
@@ -154,6 +157,83 @@ namespace EndfieldGraphShaderLabEditor
             ValidateRetailVisualOracle();
             ValidateOverviewTimingAlignment();
             ValidateOverviewStart01Contract();
+            ValidateOverviewStaticSiblingContracts();
+        }
+
+        private static void ValidateOverviewStaticSiblingContracts()
+        {
+            Dictionary<string, object> contract = L.Dict(
+                ManifestMiniJson.Deserialize(File.ReadAllText(
+                    L.ProjectAbsolute(StaticSiblingContractPath), Encoding.UTF8)));
+            Dictionary<string, object> summary = L.Dict(contract["summary"]);
+            Dictionary<string, object> sharedAnimation = L.Dict(contract["sharedAnimation"]);
+            ValidateArtifact(L.Dict(sharedAnimation["resolvedUnityAnim"]));
+            var effects = L.List(contract["effects"]).Cast<object>().Select(L.Dict)
+                .ToDictionary(row => L.Str(row, "effectName"), StringComparer.Ordinal);
+            L.Require(
+                L.Str(contract, "schema") ==
+                    "endfield.lizhiyan-overview-static-sibling-effects.v1" &&
+                L.Str(contract, "status") ==
+                    "start02_start03_serialized_sources_closed_visible_fail_closed" &&
+                L.Long(summary, "effects") == 2 &&
+                L.Long(summary, "staticMeshNodes") == 6 &&
+                L.Long(summary, "uniqueTextureReferences") == 8 &&
+                L.Str(summary, "sourceAggregateSha256") ==
+                    "AB587FDA1E0AEC1761A10F334959541FA0217347E595D18415850791AE33545B" &&
+                L.Long(sharedAnimation, "pathID") == 7360398354216100382L &&
+                L.Str(sharedAnimation, "bindingStatus") ==
+                    "all_hashes_resolved_shared_start01_start02_start03_clip" &&
+                L.List(contract["textureDependencies"]).Count == 8 &&
+                effects.Count == 2,
+                "Li Zhiyan start_02/_03 contract identity drifted");
+            ValidateStaticSiblingEffect(
+                effects["P_fxui_lizhiyan_overview_start_02"],
+                5.0f,
+                new long[] { 7032717393607757449L },
+                new long[] { -481371258366057841L, 2540816063756981481L,
+                    -2434886401441015548L });
+            ValidateStaticSiblingEffect(
+                effects["P_fxui_lizhiyan_overview_start_03"],
+                7.0f,
+                new long[] { -4003364140602261775L, 3893791131891476371L },
+                new long[] { -7438264461631060117L, 9120706159938786131L,
+                    -6772801081383272744L });
+        }
+
+        private static void ValidateStaticSiblingEffect(
+            Dictionary<string, object> effect,
+            float expectedDuration,
+            IEnumerable<long> expectedMeshes,
+            IEnumerable<long> expectedMaterials)
+        {
+            Dictionary<string, object> summary = L.Dict(effect["summary"]);
+            Dictionary<string, object> timing =
+                L.Dict(L.Dict(effect["effectSetting"])["timing"]);
+            Dictionary<string, object> animation = L.Dict(effect["animation"]);
+            Dictionary<string, object> startClip = L.Dict(animation["startAnimationClip"]);
+            Dictionary<string, object> execution = L.Dict(effect["executionBoundary"]);
+            var meshIds = new HashSet<long>(L.List(effect["meshDependencies"])
+                .Cast<object>().Select(row => L.Long(L.Dict(row), "pathID")));
+            var materialIds = new HashSet<long>(L.List(effect["materials"])
+                .Cast<object>().Select(row => L.Long(L.Dict(row), "pathID")));
+            L.Require(
+                L.Str(effect, "mountPoint") == string.Empty &&
+                L.Long(summary, "hierarchyNodes") == 4 &&
+                L.Long(summary, "staticMeshNodes") == 3 &&
+                L.Long(summary, "particleSystems") == 0 &&
+                L.Long(summary, "materials") == 3 &&
+                Mathf.Abs(L.Float(timing, "duration") - expectedDuration) < 0.000001f &&
+                Mathf.Abs(L.Float(timing, "delay")) < 0.000001f &&
+                L.Long(startClip, "pathID") == 7360398354216100382L &&
+                meshIds.SetEquals(expectedMeshes) && materialIds.SetEquals(expectedMaterials) &&
+                L.Str(execution, "bindingKind") == "static_mesh_animated" &&
+                !L.Bool(execution, "sourcePayloadApplied") &&
+                !L.Bool(execution, "sourceAnimationPayloadApplied") &&
+                L.Bool(execution, "rendererFailClosedForUnrecoveredShader") &&
+                !L.Bool(execution, "visibleAdmission") &&
+                L.List(execution["blockedBy"]).Count == 4,
+                "Li Zhiyan static sibling effect drifted: " +
+                    L.Str(effect, "effectName"));
         }
 
         private static void ValidateOverviewStart01Contract()
@@ -261,6 +341,13 @@ namespace EndfieldGraphShaderLabEditor
                 L.Dict(alignment["sourceClosedEffectLocalTiming"]);
             Dictionary<string, object> compatibility =
                 L.Dict(alignment["labCompatibilityChronology"]);
+            Dictionary<string, object> staticChronology =
+                L.Dict(alignment["sourceClosedStaticEffectMaterialChronology"]);
+            Dictionary<string, object> staticLifetimes =
+                L.Dict(staticChronology["effectLifetimesSeconds"]);
+            var staticWindows = L.List(staticChronology["targetWindows"])
+                .Cast<object>().Select(L.Dict)
+                .ToDictionary(row => L.Str(row, "targetPath"), StringComparer.Ordinal);
             Dictionary<string, object> retail = L.Dict(alignment["retailVisualAlignment"]);
             IList mapped = L.List(retail["mappedSamples"]);
             L.Require(
@@ -283,6 +370,23 @@ namespace EndfieldGraphShaderLabEditor
                     "current_lab_policy_not_original_request_chronology" &&
                 Mathf.Abs(L.Float(compatibility, "effectCreateClipLocalSeconds") - 0.895782073f) < 0.000001f &&
                 Mathf.Abs(L.Float(compatibility, "effectDestroyClipLocalSeconds") - 3.229112073f) < 0.000001f &&
+                L.Str(staticChronology, "sharedClip") ==
+                    "A_fxui__lizhiyan_overview_start_01" &&
+                L.Long(staticChronology, "curveCount") == 53 &&
+                Mathf.Abs(L.Float(staticLifetimes,
+                    "P_fxui_lizhiyan_overview_start_01") - 2.2f) < 0.000001f &&
+                Mathf.Abs(L.Float(staticLifetimes,
+                    "P_fxui_lizhiyan_overview_start_02") - 5.0f) < 0.000001f &&
+                Mathf.Abs(L.Float(staticLifetimes,
+                    "P_fxui_lizhiyan_overview_start_03") - 7.0f) < 0.000001f &&
+                staticWindows.Count == 10 &&
+                Convert.ToInt64(L.List(staticWindows[
+                    "S_fx_lzy_tiaodaifenwei_01 (7)"]["candidateDynamicWindowPts"])[0]) == 38167 &&
+                Convert.ToInt64(L.List(staticWindows[
+                    "S_fx_lzy_fenweiqiliu_02 (3)"]["candidateDynamicWindowPts"])[0]) == 40834 &&
+                Convert.ToInt64(L.List(staticWindows[
+                    "S_fx_tuoweidisan_01"]["candidateDynamicWindowPts"])[0]) == 42467 &&
+                !L.Bool(staticChronology, "visibleAdmission") &&
                 L.Str(retail, "evidenceClass") == "candidate_only" &&
                 L.Long(retail, "candidateRestartPts") == 37967 &&
                 L.Str(retail, "diagnosticMismatch").Contains("PTS 42000") &&

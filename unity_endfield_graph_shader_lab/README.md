@@ -4023,6 +4023,23 @@ invented AnimatorController and makes an EffectAnimation-compatible playable
 driver the intended lab implementation. The renderer pointer has not yet been
 joined to a specific renderer-list/API-2 record or final draw.
 
+The two sibling roots are now source-closed as the remaining halves of that
+shared clip. `start_02` is a 5-second, three-renderer effect using one Plane009
+mesh and materials 12/13/14; `start_03` is a 7-second, three-renderer effect
+using `S_fx_shoutiaodai_01` plus `S_fx_tuoweidisan_01` and materials 15/16/17.
+Both have root Animators, null controller/avatar, null particle LOD pointers,
+and the same start AnimationClip. Together they add six static renderers, reuse
+the same eight texture identities, and remain visibly fail-closed.
+
+The candidate retail epoch now produces exact material-key checkpoints rather
+than a broad visual guess: start_01 child `(7)` begins changing at PTS 38167,
+matching the first tentative teal edge; the other start_01 slabs begin at
+38234/38267; start_02 begins at 40834/40867, adjacent to the observed 40900
+pillar phase; and `start_03/S_fx_tuoweidisan_01` begins at 42467. These are
+candidate time alignments, not proof that a particular screen-space bar belongs
+to one renderer. The 2.2/5/7-second EffectSetting lifetimes deliberately expose
+different portions of the same 6.366667-second clip at speed one.
+
 One original dialog facial asset is now executable as a bounded source fixture:
 Zhuang Fangyi's 2.15-second
 `dlgtl_e10m2_5_sub_1_npc_chr_0030_zhuangfy_2`. It evaluates 12 original named

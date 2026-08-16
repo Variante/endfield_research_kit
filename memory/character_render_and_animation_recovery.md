@@ -1678,6 +1678,16 @@ only stable interpretation and priorities.
    `EffectLodCfg.renderer` identity reaching a specific renderer-list,
    descriptor/PSO, draw, submit, and visible pixel; generic HGMesh/API-2
    evidence does not prove that attribution.
+   `P_fxui_lizhiyan_overview_start_02` and `_03` are now source-closed sibling
+   static effects: each has a root Animator and three MeshRenderers with zero
+   particles; their lifetimes are 5 and 7 seconds. `_02` uses one shared mesh
+   and materials 12/13/14; `_03` uses two meshes and materials 15/16/17. They
+   reference the same 6.366667-second material clip as `_01`, so the 2.2/5/7
+   EffectSetting lifetimes select different portions without clip retiming.
+   Under the visual candidate epoch, exact first dynamic keys at PTS 38167,
+   40834/40867, and 42467 align respectively with the early teal edge,
+   later pillar phase, and next material wave. This is strong timing evidence
+   but not screen-space renderer ownership or visible admission.
    Downstream HGMesh workers now prove a real ordering/publication stage:
    accepted 64-byte records are sorted in place by `0x181043bd0` using
    comparator `0x180fe0740`, an unsigned lexicographic comparison over the

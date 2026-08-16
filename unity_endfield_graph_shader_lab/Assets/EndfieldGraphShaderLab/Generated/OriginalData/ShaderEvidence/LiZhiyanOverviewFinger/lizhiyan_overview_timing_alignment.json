@@ -18,6 +18,18 @@
     "visualOracle": {
       "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/ShaderEvidence/LiZhiyanOverviewFinger/lizhiyan_retail_visual_oracle.json",
       "sha256": "D6C8640AFCD28C00FA27597AF8E9A9D1EA90A1707D77099FD47EEC7CA50D0DDD"
+    },
+    "staticStart01": {
+      "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/Effects/lizhiyan_overview_start_01_effect.json",
+      "sha256": "EF68E7B93DECC8988904406C957F8F0FD51A0D677AD061E7E2EEB820878A6CB4"
+    },
+    "staticSiblings": {
+      "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/Effects/lizhiyan_overview_start_02_03_effects.json",
+      "sha256": "14C875115B8354C6A4066FC47C77E4912532016DEDEE829DAF700729FD8663F6"
+    },
+    "staticAnimation": {
+      "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/Effects/A_fxui__lizhiyan_overview_start_01.anim",
+      "sha256": "C1D7846FB29A9AF720B2760BA2EEA97B870CAC8DF101DADE797A2301778FF920"
     }
   },
   "sourceClosedControllerTiming": {
@@ -49,6 +61,224 @@
     "effectDestroyClipLocalSeconds": 3.229112073,
     "usesScaledWaitForSeconds": true,
     "finishWhenExit": false
+  },
+  "sourceClosedStaticEffectMaterialChronology": {
+    "sharedClip": "A_fxui__lizhiyan_overview_start_01",
+    "sampleRate": 30.0,
+    "stopTimeSeconds": 6.366667,
+    "curveCount": 53,
+    "effectLifetimesSeconds": {
+      "P_fxui_lizhiyan_overview_start_01": 2.2,
+      "P_fxui_lizhiyan_overview_start_02": 5.0,
+      "P_fxui_lizhiyan_overview_start_03": 7.0
+    },
+    "targetWindows": [
+      {
+        "effectRoot": "P_fxui_lizhiyan_overview_start_02",
+        "targetPath": "S_fx_lzy_fenweiqiliu_02",
+        "curveCount": 5,
+        "dynamicCurveCount": 2,
+        "firstDynamicKeySeconds": 2.9,
+        "lastDynamicKeySeconds": 4.0,
+        "candidateDynamicWindowPts": [
+          40867,
+          41967
+        ],
+        "properties": [
+          "material._MainTex_ST.w",
+          "material._MainTex_ST.x",
+          "material._MainTex_ST.y",
+          "material._MainTex_ST.z",
+          "material._TintColorAlpha"
+        ],
+        "visibleAdmission": false
+      },
+      {
+        "effectRoot": "P_fxui_lizhiyan_overview_start_02",
+        "targetPath": "S_fx_lzy_fenweiqiliu_02 (1)",
+        "curveCount": 5,
+        "dynamicCurveCount": 2,
+        "firstDynamicKeySeconds": 2.9,
+        "lastDynamicKeySeconds": 4.0,
+        "candidateDynamicWindowPts": [
+          40867,
+          41967
+        ],
+        "properties": [
+          "material._MainTex_ST.w",
+          "material._MainTex_ST.x",
+          "material._MainTex_ST.y",
+          "material._MainTex_ST.z",
+          "material._TintColorAlpha"
+        ],
+        "visibleAdmission": false
+      },
+      {
+        "effectRoot": "P_fxui_lizhiyan_overview_start_02",
+        "targetPath": "S_fx_lzy_fenweiqiliu_02 (3)",
+        "curveCount": 5,
+        "dynamicCurveCount": 2,
+        "firstDynamicKeySeconds": 2.8666666,
+        "lastDynamicKeySeconds": 4.0,
+        "candidateDynamicWindowPts": [
+          40834,
+          41967
+        ],
+        "properties": [
+          "material._MainTex_ST.w",
+          "material._MainTex_ST.x",
+          "material._MainTex_ST.y",
+          "material._MainTex_ST.z",
+          "material._TintColorAlpha"
+        ],
+        "visibleAdmission": false
+      },
+      {
+        "effectRoot": "P_fxui_lizhiyan_overview_start_01",
+        "targetPath": "S_fx_lzy_tiaodaifenwei_01 (4)",
+        "curveCount": 5,
+        "dynamicCurveCount": 2,
+        "firstDynamicKeySeconds": 0.3,
+        "lastDynamicKeySeconds": 1.9666667,
+        "candidateDynamicWindowPts": [
+          38267,
+          39934
+        ],
+        "properties": [
+          "material._MainTex_ST.w",
+          "material._MainTex_ST.x",
+          "material._MainTex_ST.y",
+          "material._MainTex_ST.z",
+          "material._TintColorAlpha"
+        ],
+        "visibleAdmission": false
+      },
+      {
+        "effectRoot": "P_fxui_lizhiyan_overview_start_01",
+        "targetPath": "S_fx_lzy_tiaodaifenwei_01 (5)",
+        "curveCount": 5,
+        "dynamicCurveCount": 2,
+        "firstDynamicKeySeconds": 0.3,
+        "lastDynamicKeySeconds": 1.6666666,
+        "candidateDynamicWindowPts": [
+          38267,
+          39634
+        ],
+        "properties": [
+          "material._MainTex_ST.w",
+          "material._MainTex_ST.x",
+          "material._MainTex_ST.y",
+          "material._MainTex_ST.z",
+          "material._TintColorAlpha"
+        ],
+        "visibleAdmission": false
+      },
+      {
+        "effectRoot": "P_fxui_lizhiyan_overview_start_01",
+        "targetPath": "S_fx_lzy_tiaodaifenwei_01 (6)",
+        "curveCount": 5,
+        "dynamicCurveCount": 2,
+        "firstDynamicKeySeconds": 0.26666668,
+        "lastDynamicKeySeconds": 1.6333333,
+        "candidateDynamicWindowPts": [
+          38234,
+          39600
+        ],
+        "properties": [
+          "material._MainTex_ST.w",
+          "material._MainTex_ST.x",
+          "material._MainTex_ST.y",
+          "material._MainTex_ST.z",
+          "material._TintColorAlpha"
+        ],
+        "visibleAdmission": false
+      },
+      {
+        "effectRoot": "P_fxui_lizhiyan_overview_start_01",
+        "targetPath": "S_fx_lzy_tiaodaifenwei_01 (7)",
+        "curveCount": 6,
+        "dynamicCurveCount": 2,
+        "firstDynamicKeySeconds": 0.2,
+        "lastDynamicKeySeconds": 1.4333333,
+        "candidateDynamicWindowPts": [
+          38167,
+          39400
+        ],
+        "properties": [
+          "material._DisturbUIntensity1",
+          "material._MainTex_ST.w",
+          "material._MainTex_ST.x",
+          "material._MainTex_ST.y",
+          "material._MainTex_ST.z",
+          "material._TintColorAlpha"
+        ],
+        "visibleAdmission": false
+      },
+      {
+        "effectRoot": "P_fxui_lizhiyan_overview_start_03",
+        "targetPath": "S_fx_shoutiaodai_01",
+        "curveCount": 6,
+        "dynamicCurveCount": 4,
+        "firstDynamicKeySeconds": 5.633333,
+        "lastDynamicKeySeconds": 6.366667,
+        "candidateDynamicWindowPts": [
+          43600,
+          44334
+        ],
+        "properties": [
+          "material._DissolveScheduleOffset",
+          "material._MainTex_ST.w",
+          "material._MainTex_ST.x",
+          "material._MainTex_ST.y",
+          "material._MainTex_ST.z",
+          "material._TintColorAlpha"
+        ],
+        "visibleAdmission": false
+      },
+      {
+        "effectRoot": "P_fxui_lizhiyan_overview_start_03",
+        "targetPath": "S_fx_shoutiaodai_01 (1)",
+        "curveCount": 6,
+        "dynamicCurveCount": 4,
+        "firstDynamicKeySeconds": 1.4,
+        "lastDynamicKeySeconds": 6.366667,
+        "candidateDynamicWindowPts": [
+          39367,
+          44334
+        ],
+        "properties": [
+          "material._DissolveScheduleOffset",
+          "material._MainTex_ST.w",
+          "material._MainTex_ST.x",
+          "material._MainTex_ST.y",
+          "material._MainTex_ST.z",
+          "material._TintColorAlpha"
+        ],
+        "visibleAdmission": false
+      },
+      {
+        "effectRoot": "P_fxui_lizhiyan_overview_start_03",
+        "targetPath": "S_fx_tuoweidisan_01",
+        "curveCount": 5,
+        "dynamicCurveCount": 2,
+        "firstDynamicKeySeconds": 4.5,
+        "lastDynamicKeySeconds": 5.9333334,
+        "candidateDynamicWindowPts": [
+          42467,
+          43900
+        ],
+        "properties": [
+          "material._MainTex_ST.w",
+          "material._MainTex_ST.x",
+          "material._MainTex_ST.y",
+          "material._MainTex_ST.z",
+          "material._TintColorAlpha"
+        ],
+        "visibleAdmission": false
+      }
+    ],
+    "candidateEpochStatus": "visual_alignment_candidate_not_original_event_proof",
+    "visibleAdmission": false
   },
   "retailVisualAlignment": {
     "evidenceClass": "candidate_only",

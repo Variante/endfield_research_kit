@@ -19,6 +19,7 @@ def test_current_sources_and_alignment() -> None:
     controller = contract["sourceClosedControllerTiming"]
     compatibility = contract["labCompatibilityChronology"]
     samples = contract["retailVisualAlignment"]["mappedSamples"]
+    static = contract["sourceClosedStaticEffectMaterialChronology"]
     assert controller["entryClipLocalSeconds"] == 0.062452073
     assert controller["exitClipLocalSeconds"] == 10.68547903
     assert controller["transitionDurationSeconds"] == 0.014519697
@@ -28,6 +29,13 @@ def test_current_sources_and_alignment() -> None:
         "inactive", "active", "inactive", "inactive", "inactive", "inactive"
     ]
     assert contract["visibleAdmission"] is False
+    assert static["curveCount"] == 53
+    assert len(static["targetWindows"]) == 10
+    assert {row["effectRoot"] for row in static["targetWindows"]} == {
+        "P_fxui_lizhiyan_overview_start_01",
+        "P_fxui_lizhiyan_overview_start_02",
+        "P_fxui_lizhiyan_overview_start_03",
+    }
 
 
 if __name__ == "__main__":

@@ -17,6 +17,9 @@ CHARACTER = LAB / "Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/L
 PREFAB = CHARACTER / "Prefabs/Lizhiyan.prefab"
 START_CLIP = CHARACTER / "Animations/A_actor_lizhiyan_ui_overview_start_01.anim"
 EFFECT = LAB / "Assets/EndfieldGraphShaderLab/Generated/OriginalData/Effects/lizhiyan_overview_finger_effect.json"
+STATIC_START01 = LAB / "Assets/EndfieldGraphShaderLab/Generated/OriginalData/Effects/lizhiyan_overview_start_01_effect.json"
+STATIC_SIBLINGS = LAB / "Assets/EndfieldGraphShaderLab/Generated/OriginalData/Effects/lizhiyan_overview_start_02_03_effects.json"
+STATIC_ANIMATION = LAB / "Assets/EndfieldGraphShaderLab/Generated/OriginalData/Effects/A_fxui__lizhiyan_overview_start_01.anim"
 ORACLE = (
     LAB / "Assets/EndfieldGraphShaderLab/Generated/OriginalData/ShaderEvidence/"
     "LiZhiyanOverviewFinger/lizhiyan_retail_visual_oracle.json"
@@ -47,13 +50,67 @@ def unique_float(text: str, name: str) -> float:
     return float(matches[0])
 
 
+def material_curve_windows(
+    text: str, target_roots: dict[str, str], candidate_restart: int
+) -> list[dict[str, Any]]:
+    curves: list[dict[str, Any]] = []
+    times: list[float] = []
+    values: list[float] = []
+    attribute = ""
+    path = ""
+    for line in text.splitlines():
+        if line == "  - curve:":
+            times, values, attribute, path = [], [], "", ""
+        elif line.startswith("        time: "):
+            times.append(float(line.split(": ", 1)[1]))
+        elif line.startswith("        value: "):
+            values.append(float(line.split(": ", 1)[1]))
+        elif line.startswith("    attribute: "):
+            attribute = line.split(": ", 1)[1]
+        elif line.startswith("    path: "):
+            path = line.split(": ", 1)[1]
+        elif line == "    classID: 23":
+            require(path in target_roots, "static_curve_target_root", "known path", path)
+            require(len(times) == len(values) and len(times) >= 2,
+                    "static_curve_key_shape", "paired keys", [len(times), len(values)])
+            curves.append({"path": path, "effectRoot": target_roots[path],
+                           "property": attribute, "times": times, "values": values})
+    require(len(curves) == 53, "static_material_curve_count", 53, len(curves))
+    rows = []
+    for path in sorted(target_roots):
+        target_curves = [row for row in curves if row["path"] == path]
+        dynamic = [row for row in target_curves
+                   if max(row["values"]) - min(row["values"]) > 1e-9]
+        require(dynamic, "static_dynamic_curve_presence", True, path)
+        first = min(min(row["times"]) for row in dynamic)
+        last = max(max(row["times"]) for row in dynamic)
+        rows.append({
+            "effectRoot": target_roots[path],
+            "targetPath": path,
+            "curveCount": len(target_curves),
+            "dynamicCurveCount": len(dynamic),
+            "firstDynamicKeySeconds": round(first, 9),
+            "lastDynamicKeySeconds": round(last, 9),
+            "candidateDynamicWindowPts": [
+                round(candidate_restart + first * 1000.0),
+                round(candidate_restart + last * 1000.0),
+            ],
+            "properties": sorted({row["property"] for row in target_curves}),
+            "visibleAdmission": False,
+        })
+    return rows
+
+
 def build() -> dict[str, Any]:
-    for path in (PREFAB, START_CLIP, EFFECT, ORACLE):
+    for path in (PREFAB, START_CLIP, EFFECT, ORACLE, STATIC_START01,
+                 STATIC_SIBLINGS, STATIC_ANIMATION):
         require(path.is_file(), "source_exists", True, path)
     prefab_text = PREFAB.read_text(encoding="utf-8")
     clip_text = START_CLIP.read_text(encoding="utf-8")
     effect = json.loads(EFFECT.read_text(encoding="utf-8"))
     oracle = json.loads(ORACLE.read_text(encoding="utf-8"))
+    static_start01 = json.loads(STATIC_START01.read_text(encoding="utf-8"))
+    static_siblings = json.loads(STATIC_SIBLINGS.read_text(encoding="utf-8"))
 
     entry = unique_float(prefab_text, "entryNormalizedOffset")
     exit_time = unique_float(prefab_text, "exitNormalizedTime")
@@ -79,6 +136,11 @@ def build() -> dict[str, Any]:
     effect_start = delay
     effect_end = delay + duration
     candidate_restart = int(boundary["candidateRestartPts"])
+    binding_rows = static_start01["animation"]["startAnimationClip"]["floatCurveBindings"]
+    target_roots = {row["path"]: row["effectRoot"] for row in binding_rows["targetPaths"]}
+    require(len(target_roots) == 10, "static_target_path_count", 10, len(target_roots))
+    static_windows = material_curve_windows(
+        STATIC_ANIMATION.read_text(encoding="utf-8"), target_roots, candidate_restart)
     candidate_effect_start_pts = round(candidate_restart + effect_start * 1000.0)
     candidate_effect_end_pts = round(candidate_restart + effect_end * 1000.0)
     mapped_samples = []
@@ -104,6 +166,9 @@ def build() -> dict[str, Any]:
             "startClip": {"path": START_CLIP.relative_to(REPO).as_posix(), "sha256": sha256(START_CLIP)},
             "effect": {"path": EFFECT.relative_to(REPO).as_posix(), "sha256": sha256(EFFECT)},
             "visualOracle": {"path": ORACLE.relative_to(REPO).as_posix(), "sha256": sha256(ORACLE)},
+            "staticStart01": {"path": STATIC_START01.relative_to(REPO).as_posix(), "sha256": sha256(STATIC_START01)},
+            "staticSiblings": {"path": STATIC_SIBLINGS.relative_to(REPO).as_posix(), "sha256": sha256(STATIC_SIBLINGS)},
+            "staticAnimation": {"path": STATIC_ANIMATION.relative_to(REPO).as_posix(), "sha256": sha256(STATIC_ANIMATION)},
         },
         "sourceClosedControllerTiming": {
             "startClip": "A_actor_lizhiyan_ui_overview_start_01",
@@ -134,6 +199,20 @@ def build() -> dict[str, Any]:
             "effectDestroyClipLocalSeconds": round(entry_seconds + effect_end, 9),
             "usesScaledWaitForSeconds": True,
             "finishWhenExit": False,
+        },
+        "sourceClosedStaticEffectMaterialChronology": {
+            "sharedClip": "A_fxui__lizhiyan_overview_start_01",
+            "sampleRate": 30.0,
+            "stopTimeSeconds": 6.366667,
+            "curveCount": 53,
+            "effectLifetimesSeconds": {
+                "P_fxui_lizhiyan_overview_start_01": 2.2,
+                "P_fxui_lizhiyan_overview_start_02": 5.0,
+                "P_fxui_lizhiyan_overview_start_03": 7.0,
+            },
+            "targetWindows": static_windows,
+            "candidateEpochStatus": "visual_alignment_candidate_not_original_event_proof",
+            "visibleAdmission": False,
         },
         "retailVisualAlignment": {
             "evidenceClass": "candidate_only",
