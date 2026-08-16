@@ -1586,11 +1586,20 @@ only stable interpretation and priorities.
    reach indexed/non-indexed indirect draw, and 33/34 reach direct/indirect
    dispatch. Loader `0x180747BAD..0x180747CC1` resolves and stores the six
    Vulkan function pointers; the generated ABI hash is
-   `019CCC74EBBA8251D4FE99095EE3E6D6F08286A0470CF4C0FD9AA4E381512C4E`.
+   `11664A2E94479E609D59D3243C5060AF7CE1B872E2D269FDCDD0198B89321F27`.
    This is positive general recorded-command-to-Vulkan execution, not a Li or
    ParticleSystem ownership join. The next binary boundary remains one
    same-build renderer/object fingerprint reaching a concrete opcode-29--32
    producer, PSO/descriptors, and visible draw.
+   The generic queue is bounded at `0x1808DE370..0x1808DE500` for
+   stream-backed opcode-5 packaging and `0x1808DE500..0x1808DE76D` for
+   execution into the Vulkan interpreter; its record fields expose no static
+   Renderer, ParticleSystem, RendererList, VFX, or Li identity. The classic
+   0x50-byte-record provider is the `0x181DCB360` front context constructed by
+   `0x1809258C0`. Its `+0x210` callback receives `rdx=0`, not the record or an
+   index, and only records state opcode `0x2727` or updates an API-2 state bit.
+   Retire that provider branch as a candidate draw bridge; seek a runtime
+   object fingerprint at the generic queue producer instead.
    The graphics-front context/vtable are now pinned at `0x180725dc0` and
    `0x181dcb360`; resource paths record opcodes `0x2748/0x274a`. Internal
    backend ID 2 selects factory `0x180891210` and table `0x181dbc098` (not
@@ -2216,14 +2225,22 @@ only stable interpretation and priorities.
    capture and validator pass while generated source materials and normal
    viewer admission remain fail-closed. At PTS 40000 it moves composite
    `raisedHand` coverage from 0.603% to 5.529% and effects-only coverage from
-   zero to 5.120%, versus 28.526% retail. Its positive renderer-ID bounds are
-   instead in the upper-right (`x=634..771`, about `y=41..96`); the added
-   pixels in the current raised-hand ROI are chiefly start_01 renderer ID 4.
+   zero to 5.120%, versus 28.526% retail. A direct camera-space probe places
+   the exact mount near PNG `(455.7,189.0)` and baked finger bounds around
+   `x=385..528,y=95..283`, horizontally left of retail ROI
+   `x=537..737,y=162..337`; pixels inside that ROI are chiefly start_01
+   renderer ID 4.
    Treat the finger effect as a recovered visible contributor, not as proven
    ownership of the remaining retail raised-hand layer. The next visual join
    is the exact camera/hierarchy composition and start_01 shader/another
    source-layer explanation for that ROI, without retiming or stretching the
-   proven finger prefab.
+   proven finger prefab. The skinning census rules out a name-based remap:
+   visible skin renderers bind the main `Root/Bip001/...` armature, the nub is
+   the normal terminal unweighted child after weighted hand/finger bones, and
+   duplicate hands under `RecoveredProps` own accessory geometry. Applying
+   the authored camera rotation as an actor transform worsens the mismatch.
+   Preserve the exact mount and timing; prioritize start_01 shader/geometry,
+   retail camera framing, or another source-owned layer.
    All 12 controller requests are preserved; the other 11
    remain explicitly unbound. Its `38-47 s` retail slot, especially the
    hand-adjacent teal layer near 40 seconds, is the current strongest visual

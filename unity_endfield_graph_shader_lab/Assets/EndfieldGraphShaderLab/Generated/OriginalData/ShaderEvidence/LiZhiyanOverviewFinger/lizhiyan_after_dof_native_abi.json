@@ -821,6 +821,34 @@
       "functionSha256": "949BF7D89D5B72DA6C623D92C08D85105F8844E23FA86CB7A91758E8C413247F"
     },
     {
+      "label": "Vulkan generic command-record builder",
+      "va": "0x1808de370",
+      "functionEnd": "0x1808de500",
+      "functionBytes": 400,
+      "functionSha256": "B14EF574349A796CD5B4DBB03A2F3E02EC9E4679CC55D7A1B654DC0E1A1EFBAA"
+    },
+    {
+      "label": "Vulkan generic command-record executor",
+      "va": "0x1808de500",
+      "functionEnd": "0x1808de76d",
+      "functionBytes": 621,
+      "functionSha256": "ABBE90C4ACA61ED5090D8C244079C8E7116B680DBF8654A143D62C247C006280"
+    },
+    {
+      "label": "graphics front-context constructor",
+      "va": "0x1809258c0",
+      "functionEnd": "0x180925d8a",
+      "functionBytes": 1226,
+      "functionSha256": "8E7E7E1CCF6632A033616E82D9F83ED565C9278AC98E17A26CBE882A44FCF7C9"
+    },
+    {
+      "label": "classic record provider state callback",
+      "va": "0x180937b70",
+      "functionEnd": "0x180937c6b",
+      "functionBytes": 251,
+      "functionSha256": "D74315FCCF9056EAE972C0FA826A6F62B3E2FBBE0533230CFF783FDC588704FA"
+    },
+    {
       "label": "HGShadingStateSystem GetOrCreatePerMaterialCBHandle icall",
       "va": "0x1801ee430",
       "functionEnd": "0x1801ee495",
@@ -2209,7 +2237,9 @@
       "functionPointerLoader": "0x180747bad..0x180747cc1 resolves vkCmdDraw*/vkCmdDispatch* through 0x181ca0480 and stores the function pointers at 0x1821d35b0..0x1821d35d8",
       "commandBufferArgument": "each draw case sets rcx=r13, the resolved Vulkan command buffer, and forwards decoded aligned stream fields to the Vulkan function pointer",
       "proven": "general recorded-command to Vulkan draw/indexed/indirect execution",
-      "notProven": "Li Zhiyan RendererList or ParticleSystemRenderer ownership of opcodes 29..32, their producer, selected PSO/descriptors, or final visible pixels"
+      "notProven": "Li Zhiyan RendererList or ParticleSystemRenderer ownership of opcodes 29..32, their producer, selected PSO/descriptors, or final visible pixels",
+      "genericQueueBoundary": "0x1808de370..0x1808de500 packages generic stream-backed opcode-5 records and 0x1808de500..0x1808de76d executes record pointers into the Vulkan stream interpreter; the record layout exposes stream/cleanup/execution fields but no static ordinary Renderer, ParticleSystemRenderer, RendererList, VFX, or Li identity",
+      "classicRecordNegativeBoundary": "the classic 0x50-byte record builder's concrete provider is the 0x181dcb360 front-context constructed by 0x1809258c0. Its +0x210 implementation 0x180937b70 receives rdx=0 rather than a record pointer/index and only records state opcode 0x2727 or updates API-2 state through 0x1808539d0; it is not the bridge to Vulkan draw opcodes 29..32"
     },
     "liClassicEligibility": "Li start_01/_02/_03 serialize ordinary enabled MeshRenderers and the peak roots serialize enabled ParticleSystemRenderers; queue 3704 is inside 3660..3740, ordinary GPU instancing is enabled while HG GPU instancing is disabled, and no source HGMeshRendererData exists. Classic submission is the strongest source-backed route, but runtime camera mask, exact LightMode tag, culling survivor and final draw remain unobserved",
     "ecs": "HGMeshRender.DrawECSRendererList(cmd, rendererListHandle)",
