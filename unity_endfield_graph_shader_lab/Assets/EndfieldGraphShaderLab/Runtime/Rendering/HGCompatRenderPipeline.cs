@@ -162,6 +162,10 @@ namespace EndfieldGraphShaderLab
             Shader.PropertyToID("_EndfieldRecoveredRefractionSceneColor");
         private static readonly int SceneDepthId = Shader.PropertyToID("_SceneDepth");
         private static readonly int SceneDepthTexelSizeId = Shader.PropertyToID("_SceneDepth_TexelSize");
+        private static readonly int CameraDepthTextureId =
+            Shader.PropertyToID("_CameraDepthTexture");
+        private static readonly int CameraDepthTextureTexelSizeId =
+            Shader.PropertyToID("_CameraDepthTexture_TexelSize");
         private static readonly int RecoveredVFXSoftDepthReadyId =
             Shader.PropertyToID("_EndfieldRecoveredVFXSoftDepthReady");
         private static readonly int RecoveredPostUberWorldUiReadyId =
@@ -1017,8 +1021,18 @@ namespace EndfieldGraphShaderLab
                 commandBuffer.SetGlobalTexture(
                     SceneDepthId,
                     recoveredPrimarySceneDepth);
+                commandBuffer.SetGlobalTexture(
+                    CameraDepthTextureId,
+                    recoveredPrimarySceneDepth);
                 commandBuffer.SetGlobalVector(
                     SceneDepthTexelSizeId,
+                    new Vector4(
+                        1.0f / renderWidth,
+                        1.0f / renderHeight,
+                        renderWidth,
+                        renderHeight));
+                commandBuffer.SetGlobalVector(
+                    CameraDepthTextureTexelSizeId,
                     new Vector4(
                         1.0f / renderWidth,
                         1.0f / renderHeight,
@@ -1027,7 +1041,10 @@ namespace EndfieldGraphShaderLab
                 commandBuffer.SetGlobalFloat(RecoveredVFXSoftDepthReadyId, 1.0f);
             }
             else if (recoveredPostUberWorldUiRequested)
+            {
                 commandBuffer.SetGlobalTexture(SceneDepthId, Texture2D.blackTexture);
+                commandBuffer.SetGlobalTexture(CameraDepthTextureId, Texture2D.blackTexture);
+            }
             float recoveredVFXExposure = liveAutoExposureState != null
                 ? liveAutoExposureState.CurrentExposure
                 : Shader.GetGlobalVector(ExposureParamsId).x;
@@ -1982,6 +1999,7 @@ namespace EndfieldGraphShaderLab
                     0.0f);
                 commandBuffer.SetGlobalTexture(SceneColorTextureId, Texture2D.blackTexture);
                 commandBuffer.SetGlobalTexture(SceneDepthId, Texture2D.blackTexture);
+                commandBuffer.SetGlobalTexture(CameraDepthTextureId, Texture2D.blackTexture);
                 commandBuffer.SetGlobalFloat(RecoveredVFXSoftDepthReadyId, 0.0f);
                 if (recoveredSceneColorPingAllocated)
                 {
