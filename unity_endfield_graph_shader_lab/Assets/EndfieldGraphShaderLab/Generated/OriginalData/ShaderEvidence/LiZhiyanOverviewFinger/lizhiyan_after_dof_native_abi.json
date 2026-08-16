@@ -373,6 +373,20 @@
       "functionSha256": "62712E9CCFEF1F7614BCCD33785031DEFC6DB9AF132E78885DD5727CB515555F"
     },
     {
+      "label": "HGMesh survivor worker with inherited publication tables",
+      "va": "0x180ff8020",
+      "functionEnd": "0x180ff8702",
+      "functionBytes": 1762,
+      "functionSha256": "E80AF9084ED30D59CA2B65A4B925CBE31EB31FBF6F617792E89BB271948DF49E"
+    },
+    {
+      "label": "HGMesh temporary group-to-index-vector map insertion",
+      "va": "0x1810442f0",
+      "functionEnd": "0x181044592",
+      "functionBytes": 674,
+      "functionSha256": "79BEA9E2FEE0A5188F3F900744D2FBCC7B645D2EE00587C79E088A0706CAD6AB"
+    },
+    {
       "label": "HG render context slot-0x14 accessor",
       "va": "0x180fc5e60",
       "functionEnd": "0x180fc5e6a",
@@ -828,6 +842,23 @@
       "functionSha256": "38FB333878F3D2883A14B148AE9D6432B1345303AAA9414C8FF95AA2C506A46E"
     }
   ],
+  "unityPlayerDecisiveCalls": [
+    {
+      "label": "HGMesh survivor worker -> temporary group-index map insertion",
+      "callsite": "0x180ff82b5",
+      "target": "0x1810442f0"
+    },
+    {
+      "label": "HGMesh survivor worker -> 64-byte record sort",
+      "callsite": "0x180ff856c",
+      "target": "0x181043bd0"
+    },
+    {
+      "label": "HGMesh survivor worker -> publication finalizer",
+      "callsite": "0x180ff8592",
+      "target": "0x181039e90"
+    }
+  ],
   "decisiveCalls": [
     {
       "label": "PrepareAfterDOF -> CreateTransparentRendererListDesc",
@@ -1140,6 +1171,20 @@
             "identityBoundary": "this is an internal ID-table selector, not ordinary Renderer entityID +0x268 or HGMeshRenderer entity +0x50"
           },
           "pointerAppendVA": "0x18105e350",
+          "upstreamWorkerBoundary": {
+            "workerVA": "0x180ff8020",
+            "workerEndVA": "0x180ff8702",
+            "outerContextInheritance": "worker saves [arg+0x00] and [arg+0x08] at entry and passes those same values as rcx/rdx to 0x181039e90 after record construction and sorting",
+            "sourceRecordStride": 576,
+            "sourceRecordIndexing": "grouped source index is multiplied by 9 then shifted left 6, yielding a 0x240-byte source-record stride",
+            "temporaryGroupMapVA": "0x1810442f0",
+            "temporaryGroupMapEndVA": "0x181044592",
+            "temporaryGroupEntryStride": 48,
+            "temporaryGroupValue": "owned vector of 4-byte source indices",
+            "temporaryGroupMapBoundary": "0x1810442f0 inserts or finds 0x30-byte grouping entries and copies an int32 index vector; it does not populate M0's 0x60-byte entry or write descriptor D at entry+0x28",
+            "finalizerCall": "0x180ff8592 -> 0x181039e90 with inherited outer [arg+0x00]/[arg+0x08], r8=0, arg+0x10, the sorted 64-byte record base/count, and arg+0x70",
+            "remainingProducerBoundary": "the unresolved producer is now upstream of this worker: creation/population of the worker argument object's +0x00/+0x08 publication tables, not the temporary grouping helper"
+          },
           "cpuPublicationBoundary": {
             "helperVA": "0x1810469a0",
             "behavior": "packs CPU publication/result arrays and derived resource pairs; downstream outputs use 0x90-byte stride",
@@ -1180,7 +1225,7 @@
               "otherModes": "clear publication output and write -1 without entering the three special helpers",
               "constructorEvidence": "0x180ac63f0 constructs a layout-compatible 0x4e0 object with +0x430/+0x450/+0x488 fields and two mode-0 callers, but it does not populate an M0 0x60-stride entry and has no static alias to D",
               "builderEvidence": "0x180ba21b0 writes mode 0, propagated input mode, or mode 1 and 0x180390a20 copies the +0x440..+0x460 field group; neither has a static producer edge into the M0 entry. A superficially similar 0x180ac6740 record uses 0x48 stride and is also excluded",
-              "ownerPopulationBoundary": "0x180ff80e7 allocates a 0x100-byte upstream object, 0x180ff82b5 calls 0x1810442f0 population, and 0x180ff8592 enters 0x181039e90 finalization; the runtime/indirect producer that fills the M0 0x60-stride entry+0x28 descriptor remains unresolved",
+              "ownerPopulationBoundary": "0x180ff8020 inherits M0/M1 from worker argument +0x00/+0x08 and passes them unchanged to 0x181039e90. Its 0x180ff82b5 -> 0x1810442f0 helper only populates a temporary 0x30-stride group-to-int32-index-vector map; it is not M0 and never writes M0 entry+0x28 descriptor D. The remaining producer is the earlier creator/populator of the worker argument object's +0x00/+0x08 tables",
               "aliasBoundary": "M0 entry+0x28 has not been statically aliased to any candidate descriptor constructor/builder, so Li's selected mode remains unknown"
             },
             "graphicsFront": {

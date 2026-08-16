@@ -672,7 +672,7 @@ namespace EndfieldGraphShaderLabEditor
                 !L.Bool(importer, "injectedIntoRetailClient") &&
                 L.Bool(importer, "captureRequiresSeparateExplicitAuthorization") &&
                 L.Str(abi, "sha256") ==
-                    "7C89778C66C816F4343E843B7B18B26E395DA0E95379EDD33305228DF173F33C" &&
+                    "83C1C0C1EFD182CC7AB383BF3C77BB640DF3D0015DD49A6B98862A66C3A12ECA" &&
                 L.Long(video, "bytes") == 1678613397L &&
                 L.Str(video, "sha256") ==
                     "2F542A3BE7CE3332295D3A841FD8613C62707E084F9E33A0F156DA8A06EBF5E7" &&
@@ -740,6 +740,39 @@ namespace EndfieldGraphShaderLabEditor
                     L.Str(method, "functionSha256") == bodyHash,
                     "Li Zhiyan native method body identity drifted: " + index);
             }
+            var unityNativeMethods = L.List(native["unityPlayerNativeMethods"])
+                .Cast<object>().Select(L.Dict).ToDictionary(
+                    row => L.Str(row, "label"), StringComparer.Ordinal);
+            L.Require(
+                unityNativeMethods.TryGetValue(
+                    "HGMesh survivor worker with inherited publication tables",
+                    out Dictionary<string, object> survivorWorker) &&
+                L.Str(survivorWorker, "va") == "0x180ff8020" &&
+                L.Str(survivorWorker, "functionEnd") == "0x180ff8702" &&
+                L.Long(survivorWorker, "functionBytes") == 1762 &&
+                L.Str(survivorWorker, "functionSha256") ==
+                    "E80AF9084ED30D59CA2B65A4B925CBE31EB31FBF6F617792E89BB271948DF49E" &&
+                unityNativeMethods.TryGetValue(
+                    "HGMesh temporary group-to-index-vector map insertion",
+                    out Dictionary<string, object> groupMap) &&
+                L.Str(groupMap, "va") == "0x1810442f0" &&
+                L.Str(groupMap, "functionEnd") == "0x181044592" &&
+                L.Long(groupMap, "functionBytes") == 674 &&
+                L.Str(groupMap, "functionSha256") ==
+                    "79BEA9E2FEE0A5188F3F900744D2FBCC7B645D2EE00587C79E088A0706CAD6AB",
+                "Li Zhiyan HGMesh upstream worker/group-map identity drifted");
+            IList unityCalls = L.List(native["unityPlayerDecisiveCalls"]);
+            L.Require(unityCalls.Count == 3 &&
+                unityCalls.Cast<object>().Select(L.Dict).Any(row =>
+                    L.Str(row, "callsite") == "0x180ff82b5" &&
+                    L.Str(row, "target") == "0x1810442f0") &&
+                unityCalls.Cast<object>().Select(L.Dict).Any(row =>
+                    L.Str(row, "callsite") == "0x180ff856c" &&
+                    L.Str(row, "target") == "0x181043bd0") &&
+                unityCalls.Cast<object>().Select(L.Dict).Any(row =>
+                    L.Str(row, "callsite") == "0x180ff8592" &&
+                    L.Str(row, "target") == "0x181039e90"),
+                "Li Zhiyan HGMesh upstream call graph drifted");
             Dictionary<string, object> boundary = L.Dict(native["nativeBoundary"]);
             Dictionary<string, object> decision = L.Dict(native["unityDecision"]);
             Dictionary<string, object> rendererList = L.Dict(native["rendererList"]);
@@ -755,8 +788,12 @@ namespace EndfieldGraphShaderLabEditor
             Dictionary<string, object> contextOwnership = L.Dict(handleTable["contextOwnership"]);
             Dictionary<string, object> commandConsumer = L.Dict(nativeAdapter["commandConsumer"]);
             Dictionary<string, object> survivorSort = L.Dict(nativeAdapter["survivorSortPublication"]);
+            Dictionary<string, object> upstreamWorker =
+                L.Dict(survivorSort["upstreamWorkerBoundary"]);
             Dictionary<string, object> workerKeyLayouts = L.Dict(survivorSort["workerKeyLayouts"]);
             Dictionary<string, object> backendBoundary = L.Dict(survivorSort["backendBoundary"]);
+            Dictionary<string, object> descriptorMode =
+                L.Dict(backendBoundary["descriptorMode"]);
             Dictionary<string, object> observedBackend = L.Dict(backendBoundary["observedRuntimeBackend"]);
             Dictionary<string, object> observedBackendSession = L.Dict(observedBackend["session"]);
             Dictionary<string, object> graphicsFront = L.Dict(backendBoundary["graphicsFront"]);
@@ -876,13 +913,27 @@ namespace EndfieldGraphShaderLabEditor
                     "publication skips record +0x20 == 0xffffffff" &&
                 L.Str(survivorSort, "provenPipeline") ==
                     "post-filter 64-byte records -> in-place key sort -> invalid-record skip -> ID/resource resolve -> pointer-vector publication" &&
+                L.Str(upstreamWorker, "workerVA") == "0x180ff8020" &&
+                L.Str(upstreamWorker, "workerEndVA") == "0x180ff8702" &&
+                L.Long(upstreamWorker, "sourceRecordStride") == 576 &&
+                L.Long(upstreamWorker, "temporaryGroupEntryStride") == 48 &&
+                L.Str(upstreamWorker, "temporaryGroupValue") ==
+                    "owned vector of 4-byte source indices" &&
+                L.Str(upstreamWorker, "temporaryGroupMapBoundary").Contains(
+                    "does not populate M0's 0x60-byte entry") &&
+                L.Str(upstreamWorker, "remainingProducerBoundary").Contains(
+                    "worker argument object's +0x00/+0x08") &&
                 StringListEquals(survivorSort["notYetProven"],
                     "semantic names of packed key fields",
                     "HGMesh-derived descriptor state reaching one specific Vulkan draw/submit and visible pixel",
                     "slot-0x14 registry factory identity") &&
                 L.Str(backendBoundary, "resultCallbackThunkVA") == "0x180feaea0" &&
                 L.Str(backendBoundary, "frontEndHandoffVA") == "0x1810484e0" &&
-                L.Str(backendBoundary, "behavior").Contains("generic front-end virtual dispatch") &&
+                L.Str(backendBoundary, "behavior").Contains("descriptor-mode-conditional path") &&
+                L.Str(descriptorMode, "ownerPopulationBoundary").Contains(
+                    "temporary 0x30-stride group-to-int32-index-vector map") &&
+                L.Str(descriptorMode, "ownerPopulationBoundary").Contains(
+                    "earlier creator/populator") &&
                 L.Str(graphicsFront, "vtableVA") == "0x181dcb360" &&
                 L.Str(graphicsFront, "resourceAppendSlot").Contains("opcode 0x2748") &&
                 L.Str(graphicsFront, "descriptorUpdateSlot").Contains("opcode 0x2730") &&
@@ -900,11 +951,11 @@ namespace EndfieldGraphShaderLabEditor
                 L.Str(commandInterpreter, "opcode2730Layout").Contains("seven u64") &&
                 L.Str(commandInterpreter, "opcode2731Layout").Contains("no payload") &&
                 L.Str(commandInterpreter, "batchBoundary").Contains("0x1813aea00") &&
-                L.Str(commandInterpreter, "sequenceBoundary").Contains("no static producer edge guarantees") &&
+                L.Str(commandInterpreter, "sequenceBoundary").Contains("no static producer edge proves") &&
                 L.Str(commandInterpreter, "handoffWriterOrder").Contains("0x181048848") &&
                 L.Str(commandInterpreter, "handoffWriterOrder").Contains("0x1810488dc") &&
-                L.Str(commandInterpreter, "handoffExcludedWriters").Contains("no front +0x2a0") &&
-                L.Str(commandInterpreter, "separateProducerCandidates").Contains("none shares a proven") &&
+                L.Str(commandInterpreter, "handoffExcludedWriter").Contains("no direct front +0x3e8") &&
+                L.Str(commandInterpreter, "executeProducerCandidates").Contains("no static edge") &&
                 L.Str(commandInterpreter, "resourceToBindingState").Contains("original pointer unchanged") &&
                 L.Str(commandInterpreter, "resourceToBindingState").Contains("S+0x2a0") &&
                 L.Str(commandInterpreter, "provenBoundary").Contains("not draw opcodes") &&
@@ -913,7 +964,7 @@ namespace EndfieldGraphShaderLabEditor
                 L.Str(backendSelection, "vulkanDrawFlush").Contains("0x180843d60") &&
                 L.Str(backendSelection, "vulkanCommandCells").Contains("vkQueueSubmit") &&
                 L.Str(vulkanExecution, "descriptorUpdateRoute").Contains("vkUpdateDescriptorSetWithTemplate") &&
-                L.Str(vulkanExecution, "descriptorIdentityBoundary").Contains("HGMesh handoff itself emits no 0x2730") &&
+                L.Str(vulkanExecution, "descriptorIdentityBoundary").Contains("conditionally reaches the generic 0x2730 producer") &&
                 L.Str(vulkanExecution, "callbackListBuilders").Contains("+0xda8") &&
                 L.Str(vulkanExecution, "resourceBindingNode").Contains("index format") &&
                 L.Str(vulkanExecution, "pipelineDescriptorNode").Contains("descriptor-set") &&
@@ -924,7 +975,7 @@ namespace EndfieldGraphShaderLabEditor
                 L.Str(vulkanExecution, "indirectDraw").Contains("vkCmdDrawIndexedIndirect") &&
                 L.Str(vulkanExecution, "directDraw").Contains("vkCmdDraw(3,1,0,0)") &&
                 L.List(vulkanExecution["queueSubmitCallsites"]).Count == 2 &&
-                L.Str(vulkanExecution, "remainingIdentityEdge").Contains("same HGMesh publication resource") &&
+                L.Str(vulkanExecution, "remainingIdentityEdge").Contains("particular HGMesh draw record") &&
                 L.Str(backendBoundary, "d3d12StaticBoundary").Contains("D3D12 support not compiled in!") &&
                 L.Str(observedBackend, "classification") == "observed_runtime_log" &&
                 L.Str(observedBackendSession, "graphicsBackend") == "Vulkan" &&

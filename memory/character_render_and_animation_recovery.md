@@ -1929,8 +1929,15 @@ only stable interpretation and priorities.
    matching 0x4e0 descriptor constructor at `0x180ac63f0` has two direct callers
    that pass mode 0, but it does not fill the M0 entry and is not statically
    aliased to D; `0x180ba21b0` and a similar 0x48-stride family are likewise
-   excluded as proven producers. The missing edge is the runtime/indirect
-   population of M0's 0x60-stride `entry+0x28`, not handoff identity loss.
+   excluded as proven producers. The chained-`.pdata` worker
+   `0x180ff8020..0x180ff8702` inherits M0/M1 directly from its argument
+   `+0x00/+0x08`, builds and sorts the accepted 64-byte records, then passes
+   those same tables to `0x181039e90`. Its
+   `0x180ff82b5 -> 0x1810442f0` helper is only a temporary 0x30-stride
+   group-to-int32-index-vector map over 0x240-byte source records; it is not
+   M0 and never writes M0 `entry+0x28`. The missing producer has therefore
+   moved one level earlier to creation/population of the worker argument's
+   `+0x00/+0x08` tables, not handoff identity loss or the grouping helper.
    All six selected materials have `_IsSceneEffect=0` and
    `_EnableTransparentMV=0`, so `_VFXParams1` and transform history are safely
    bypassed rather than guessed. Exact inverse-VP soft depth, live
