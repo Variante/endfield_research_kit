@@ -38,21 +38,21 @@ VARIANT_FILES = {
 FRAGMENT_RESOURCE_SEMANTICS = {
     "": [
         {"textureRegister": 0, "samplerRegister": 0,
-         "texture": "_MainTex", "sampler": "LinearClamp"},
+         "texture": "_MainTex", "compiledSamplerSymbol": "LinearClamp"},
     ],
     "_USE_SOFTBLEND": [
         {"textureRegister": 0, "samplerRegister": 0,
-         "texture": "_CameraDepthTexture", "sampler": "LinearClamp"},
+         "texture": "_CameraDepthTexture", "compiledSamplerSymbol": "LinearClamp"},
         {"textureRegister": 1, "samplerRegister": 1,
-         "texture": "_MainTex", "sampler": "LinearRepeat"},
+         "texture": "_MainTex", "compiledSamplerSymbol": "LinearRepeat"},
     ],
     "_SAMPLE_TEX0+_USE_SOFTBLEND": [
         {"textureRegister": 0, "samplerRegister": 0,
-         "texture": "_CameraDepthTexture", "sampler": "LinearClamp"},
+         "texture": "_CameraDepthTexture", "compiledSamplerSymbol": "LinearClamp"},
         {"textureRegister": 1, "samplerRegister": 1,
-         "texture": "_MainTex", "sampler": "LinearRepeat"},
+         "texture": "_MainTex", "compiledSamplerSymbol": "LinearRepeat"},
         {"textureRegister": 2, "samplerRegister": 2,
-         "texture": "_SampleTex0", "sampler": "LinearMirror"},
+         "texture": "_SampleTex0", "compiledSamplerSymbol": "LinearMirror"},
     ],
 }
 RUNTIME_ROOT = (
@@ -81,6 +81,10 @@ def sha256(path: Path) -> str:
 
 def signature(values: list[str]) -> str:
     return "+".join(sorted(values))
+
+
+def material_float(material: dict[str, Any], name: str) -> float:
+    return float(material["payload"]["m_SavedProperties"]["m_Floats"][name])
 
 
 def copy_artifact(source: Path, name: str) -> dict[str, Any]:
@@ -184,6 +188,18 @@ def main() -> int:
     require(effect.get("schema") == "endfield.lizhiyan-overview-finger-effect.v2", "effect schema drifted")
     require(effect["summary"]["materials"] == 6, "Li Zhiyan material census drifted")
     require({int(row["shaderPathID"]) for row in effect["materials"]} == {SHADER_PATH_ID}, "shader identity drifted")
+    selected_gates = {
+        "_RenderTransparentAfterDOF": 1.0,
+        "_EnableTransparentMV": 0.0,
+        "_IsSceneEffect": 0.0,
+        "_IgnorePostExposure": 1.0,
+        "_Responsive": 1.0,
+        "_InParticle": 1.0,
+    }
+    for row in effect["materials"]:
+        for name, expected in selected_gates.items():
+            require(material_float(row, name) == expected,
+                    f"selected material gate drifted: {row['name']} {name}")
     runtime_artifacts = []
     for name, expected in RUNTIME_SOURCES.items():
         path = RUNTIME_ROOT / name
@@ -272,8 +288,9 @@ def main() -> int:
                 "b0": "_TransformVariables_structural_match",
                 "b1": "ShaderVariablesGlobal_structural_match",
                 "b2": "unresolved_auxiliary_particle_or_per_draw",
-                "b3": "UnityPerMaterial_semantic_match_lane_names_unresolved",
+                "b3": "UnityPerMaterial_exact_partial_c0_to_c5_later_lanes_unresolved",
             },
+            "liveSamplerDescriptorState": "unresolved_compiled_symbols_are_not_runtime_descriptors",
             "texturesAndSamplers": semantic_pairs,
         }
         output_variants.append({
@@ -305,6 +322,12 @@ def main() -> int:
         "summary": {"materials": 6, "compiledKeywordSignatures": 1360,
                     "materialKeywordSignatures": 3, "exactNonInstancedDxbcPairs": 3,
                     "verifiedInstancedDxbcPairs": 3},
+        "selectedMaterialGates": {
+            "values": selected_gates,
+            "vfxParams1Required": False,
+            "transformHistoryRequired": False,
+            "reason": "all six selected materials use _IsSceneEffect=0 and _EnableTransparentMV=0",
+        },
         "variants": output_variants,
         "renderScheduling": {
             "sourceArtifacts": runtime_artifacts,

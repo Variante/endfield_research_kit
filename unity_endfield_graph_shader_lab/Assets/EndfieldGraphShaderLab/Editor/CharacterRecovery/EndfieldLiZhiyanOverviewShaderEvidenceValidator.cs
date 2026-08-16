@@ -21,6 +21,9 @@ namespace EndfieldGraphShaderLabEditor
         private const string ContractPath =
             "Assets/EndfieldGraphShaderLab/Generated/OriginalData/ShaderEvidence/" +
             "LiZhiyanOverviewFinger/lizhiyan_overview_vfxbasev2_variants.json";
+        private const string NativeContractPath =
+            "Assets/EndfieldGraphShaderLab/Generated/OriginalData/ShaderEvidence/" +
+            "LiZhiyanOverviewFinger/lizhiyan_after_dof_native_abi.json";
         private const string Schema = "endfield.lizhiyan-overview-vfxbasev2-variants.v1";
         private const long ShaderPathId = -1430105248647086886L;
 
@@ -60,12 +63,27 @@ namespace EndfieldGraphShaderLabEditor
                 "Li Zhiyan compiled-shader census drifted");
             Dictionary<string, object> scheduling = L.Dict(contract["renderScheduling"]);
             Dictionary<string, object> queueRange = L.Dict(scheduling["queueRange"]);
+            Dictionary<string, object> attachments = L.Dict(scheduling["attachments"]);
             L.Require(L.Long(scheduling, "materialQueue") == 3700 &&
                 L.Long(queueRange, "first") == 3660 &&
                 L.Long(queueRange, "last") == 3740 &&
                 L.Str(scheduling, "pass") == "ForwardOnly in Forward Transparent After DOF" &&
+                L.Str(attachments, "color0") == "new sceneColor clone, store" &&
+                L.Str(attachments, "color1") == "incoming sceneMV when valid, load/store" &&
+                L.Str(attachments, "depth") == "incoming sceneDepth, read" &&
                 L.List(scheduling["sourceArtifacts"]).Count == 3,
                 "Li Zhiyan after-DOF scheduling contract drifted");
+
+            Dictionary<string, object> selectedGates =
+                L.Dict(contract["selectedMaterialGates"]);
+            Dictionary<string, object> selectedGateValues =
+                L.Dict(selectedGates["values"]);
+            L.Require(!L.Bool(selectedGates, "vfxParams1Required") &&
+                !L.Bool(selectedGates, "transformHistoryRequired") &&
+                L.Float(selectedGateValues, "_RenderTransparentAfterDOF") == 1.0f &&
+                L.Float(selectedGateValues, "_EnableTransparentMV") == 0.0f &&
+                L.Float(selectedGateValues, "_IsSceneEffect") == 0.0f,
+                "Li Zhiyan selected-material global/history gate drifted");
 
             var expectedMaterials = L.List(effect["materials"]).Cast<object>()
                 .Select(L.Dict).ToDictionary(
@@ -74,9 +92,20 @@ namespace EndfieldGraphShaderLabEditor
                     {
                         PathId = L.Long(row, "pathID"),
                         Signature = Signature(L.List(row["validKeywords"]) .Cast<object>()
-                            .Select(value => Convert.ToString(value)))
+                            .Select(value => Convert.ToString(value))),
+                        Floats = L.Dict(L.Dict(L.Dict(row["payload"])["m_SavedProperties"])["m_Floats"])
                     });
             L.Require(expectedMaterials.Count == 6, "Li Zhiyan source material census drifted");
+            foreach (var expected in expectedMaterials.Values)
+            {
+                L.Require(L.Float(expected.Floats, "_RenderTransparentAfterDOF") == 1.0f &&
+                    L.Float(expected.Floats, "_EnableTransparentMV") == 0.0f &&
+                    L.Float(expected.Floats, "_IsSceneEffect") == 0.0f &&
+                    L.Float(expected.Floats, "_IgnorePostExposure") == 1.0f &&
+                    L.Float(expected.Floats, "_Responsive") == 1.0f &&
+                    L.Float(expected.Floats, "_InParticle") == 1.0f,
+                    "Li Zhiyan selected material escaped the fail-closed global/history gate");
+            }
 
             var seen = new HashSet<string>(StringComparer.Ordinal);
             IList variants = L.List(contract["variants"]);
@@ -105,6 +134,44 @@ namespace EndfieldGraphShaderLabEditor
             }
             L.Require(seen.SetEquals(expectedMaterials.Keys),
                 "Li Zhiyan shader evidence does not cover all six materials");
+            ValidateNativeAbi();
+        }
+
+        private static void ValidateNativeAbi()
+        {
+            Dictionary<string, object> native = L.Dict(
+                ManifestMiniJson.Deserialize(File.ReadAllText(
+                    L.ProjectAbsolute(NativeContractPath), Encoding.UTF8)));
+            L.Require(L.Str(native, "schema") ==
+                    "endfield.lizhiyan-after-dof-native-abi.v1" &&
+                L.Str(native, "status") ==
+                    "current_build_native_schedule_and_static_shader_abi_closed_live_draw_pending" &&
+                L.List(native["methods"]).Count == 3 &&
+                L.List(native["decisiveCalls"]).Count == 6,
+                "Li Zhiyan native after-DOF contract identity drifted");
+            var expectedMethods = new Dictionary<long, string>
+            {
+                { 287274, "319799A95260B1717084D16AA8C2E0CCAD668CEDF3E52E9465B99A31EC44A5E0" },
+                { 287316, "D54DCF38AC17E6062573C476BF988FF8CBEE70E89F2B02FB341E5588DA3612CC" },
+                { 287324, "D49C4DE691A7B65184532D8C9E46E1209F35AF2A76C0E23FA82B8E35593011CC" },
+            };
+            foreach (object item in L.List(native["methods"]))
+            {
+                Dictionary<string, object> method = L.Dict(item);
+                long index = L.Long(method, "methodIndex");
+                L.Require(expectedMethods.TryGetValue(index, out string bodyHash) &&
+                    L.Str(method, "functionSha256") == bodyHash,
+                    "Li Zhiyan native method body identity drifted: " + index);
+            }
+            Dictionary<string, object> boundary = L.Dict(native["nativeBoundary"]);
+            Dictionary<string, object> decision = L.Dict(native["unityDecision"]);
+            L.Require(L.Str(boundary, "callbackConstantBufferPublication") == "not_present" &&
+                L.Str(boundary, "callbackGlobalVectorAndTexturePublication") == "present" &&
+                !L.Bool(boundary, "serializedBindingsAreD3D12RootParameters") &&
+                !L.Bool(decision, "visibleAdmission") &&
+                !L.Bool(decision, "vfxParams1PublicationRequiredForSelectedMaterials") &&
+                !L.Bool(decision, "transformHistoryRequiredForSelectedMaterials"),
+                "Li Zhiyan native-to-Unity fail-closed decision drifted");
         }
 
         private static void ValidateStage(

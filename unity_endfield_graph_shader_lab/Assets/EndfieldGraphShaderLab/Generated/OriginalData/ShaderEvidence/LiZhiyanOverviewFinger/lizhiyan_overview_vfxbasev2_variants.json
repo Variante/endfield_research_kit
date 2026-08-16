@@ -27,6 +27,19 @@
     "exactNonInstancedDxbcPairs": 3,
     "verifiedInstancedDxbcPairs": 3
   },
+  "selectedMaterialGates": {
+    "values": {
+      "_RenderTransparentAfterDOF": 1.0,
+      "_EnableTransparentMV": 0.0,
+      "_IsSceneEffect": 0.0,
+      "_IgnorePostExposure": 1.0,
+      "_Responsive": 1.0,
+      "_InParticle": 1.0
+    },
+    "vfxParams1Required": false,
+    "transformHistoryRequired": false,
+    "reason": "all six selected materials use _IsSceneEffect=0 and _EnableTransparentMV=0"
+  },
   "variants": [
     {
       "materialKeywords": [],
@@ -261,14 +274,15 @@
               "b0": "_TransformVariables_structural_match",
               "b1": "ShaderVariablesGlobal_structural_match",
               "b2": "unresolved_auxiliary_particle_or_per_draw",
-              "b3": "UnityPerMaterial_semantic_match_lane_names_unresolved"
+              "b3": "UnityPerMaterial_exact_partial_c0_to_c5_later_lanes_unresolved"
             },
+            "liveSamplerDescriptorState": "unresolved_compiled_symbols_are_not_runtime_descriptors",
             "texturesAndSamplers": [
               {
                 "textureRegister": 0,
                 "samplerRegister": 0,
                 "texture": "_MainTex",
-                "sampler": "LinearClamp"
+                "compiledSamplerSymbol": "LinearClamp"
               }
             ]
           }
@@ -567,26 +581,27 @@
               "b0": "_TransformVariables_structural_match",
               "b1": "ShaderVariablesGlobal_structural_match",
               "b2": "unresolved_auxiliary_particle_or_per_draw",
-              "b3": "UnityPerMaterial_semantic_match_lane_names_unresolved"
+              "b3": "UnityPerMaterial_exact_partial_c0_to_c5_later_lanes_unresolved"
             },
+            "liveSamplerDescriptorState": "unresolved_compiled_symbols_are_not_runtime_descriptors",
             "texturesAndSamplers": [
               {
                 "textureRegister": 0,
                 "samplerRegister": 0,
                 "texture": "_CameraDepthTexture",
-                "sampler": "LinearClamp"
+                "compiledSamplerSymbol": "LinearClamp"
               },
               {
                 "textureRegister": 1,
                 "samplerRegister": 1,
                 "texture": "_MainTex",
-                "sampler": "LinearRepeat"
+                "compiledSamplerSymbol": "LinearRepeat"
               },
               {
                 "textureRegister": 2,
                 "samplerRegister": 2,
                 "texture": "_SampleTex0",
-                "sampler": "LinearMirror"
+                "compiledSamplerSymbol": "LinearMirror"
               }
             ]
           }
@@ -843,20 +858,21 @@
               "b0": "_TransformVariables_structural_match",
               "b1": "ShaderVariablesGlobal_structural_match",
               "b2": "unresolved_auxiliary_particle_or_per_draw",
-              "b3": "UnityPerMaterial_semantic_match_lane_names_unresolved"
+              "b3": "UnityPerMaterial_exact_partial_c0_to_c5_later_lanes_unresolved"
             },
+            "liveSamplerDescriptorState": "unresolved_compiled_symbols_are_not_runtime_descriptors",
             "texturesAndSamplers": [
               {
                 "textureRegister": 0,
                 "samplerRegister": 0,
                 "texture": "_CameraDepthTexture",
-                "sampler": "LinearClamp"
+                "compiledSamplerSymbol": "LinearClamp"
               },
               {
                 "textureRegister": 1,
                 "samplerRegister": 1,
                 "texture": "_MainTex",
-                "sampler": "LinearRepeat"
+                "compiledSamplerSymbol": "LinearRepeat"
               }
             ]
           }

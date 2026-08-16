@@ -1508,9 +1508,14 @@ only stable interpretation and priorities.
    Unity lab. The pixel ABI is now exact: common `b0[28]/b1[105]/b2[5]`,
    variant `b3[21/22/28]`, and one/two/three exact `tN/sN` sample pairs.
    This closes static resource semantics but not the live descriptor identity.
-   The lab's after-DOF attachments match the source schedule; explicit
-   `_VFXParams1`, exact inverse-VP soft depth, live root-signature/PSO, and
-   renderer-list survivor identity remain missing. `HG_ENABLE_MV` remains an
+   The lab's after-DOF attachments match the source schedule. Exact `.pdata`
+   bodies now pin the current-build renderer-list preparer, pass constructor,
+   and callback, including the callback's fullscreen -> ordinary list -> ECS
+   list chain. All six selected materials have `_IsSceneEffect=0` and
+   `_EnableTransparentMV=0`, so `_VFXParams1` and transform history are safely
+   bypassed rather than guessed. Exact inverse-VP soft depth, live
+   root-signature/PSO, and renderer-list survivor identity remain missing.
+   `HG_ENABLE_MV` remains an
    implicit compiled keyword, not a serialized material keyword.
    All 12 controller requests are preserved; the other 11
    remain explicitly unbound. Its `38-47 s` retail slot, especially the
