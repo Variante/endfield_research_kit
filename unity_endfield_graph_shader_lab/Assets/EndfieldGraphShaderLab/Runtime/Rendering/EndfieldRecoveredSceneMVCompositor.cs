@@ -629,7 +629,7 @@ namespace EndfieldGraphShaderLab
                 new RenderQueueRange(3000, 3000),
                 MainTransparentPasses,
                 true,
-                layerMask,
+                RemoveWorldUILayer(layerMask),
                 dynamicBatching,
                 gpuInstancing,
                 fallbackSceneColorReady,
@@ -751,7 +751,7 @@ namespace EndfieldGraphShaderLab
                 new RenderQueueRange(3660, 3740),
                 AfterPostPasses,
                 true,
-                layerMask,
+                RemoveWorldUILayer(layerMask),
                 dynamicBatching,
                 gpuInstancing,
                 false,
@@ -894,6 +894,7 @@ namespace EndfieldGraphShaderLab
                         cullingResults,
                         queueRange,
                         SortingCriteria.CommonTransparent |
+                            SortingCriteria.OptimizeStateChanges |
                             SortingCriteria.RendererPriority,
                         layerMask,
                         shaderPasses,
@@ -956,6 +957,18 @@ namespace EndfieldGraphShaderLab
                 left.enableRandomWrite == right.enableRandomWrite &&
                 left.sRGB == right.sRGB &&
                 left.useDynamicScale == right.useDynamicScale;
+        }
+
+        private static int RemoveWorldUILayer(int layerMask)
+        {
+            // Retail HGRendererListUtils calls HGCamera.RemoveWorldUILayer on
+            // camera.cullingMask before building every transparent descriptor.
+            // Resolve the named layer instead of copying the current client's
+            // numeric index into this standalone Unity project.
+            int worldUiLayer = LayerMask.NameToLayer("WorldUI");
+            return worldUiLayer >= 0
+                ? layerMask & ~(1 << worldUiLayer)
+                : layerMask;
         }
 
         private static void DrawRenderers(

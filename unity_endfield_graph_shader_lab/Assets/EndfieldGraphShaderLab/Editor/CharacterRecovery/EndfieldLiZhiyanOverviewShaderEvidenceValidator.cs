@@ -146,14 +146,17 @@ namespace EndfieldGraphShaderLabEditor
                     "endfield.lizhiyan-after-dof-native-abi.v1" &&
                 L.Str(native, "status") ==
                     "current_build_native_schedule_and_static_shader_abi_closed_live_draw_pending" &&
-                L.List(native["methods"]).Count == 3 &&
-                L.List(native["decisiveCalls"]).Count == 6,
+                L.List(native["methods"]).Count == 6 &&
+                L.List(native["decisiveCalls"]).Count == 10,
                 "Li Zhiyan native after-DOF contract identity drifted");
             var expectedMethods = new Dictionary<long, string>
             {
                 { 287274, "319799A95260B1717084D16AA8C2E0CCAD668CEDF3E52E9465B99A31EC44A5E0" },
                 { 287316, "D54DCF38AC17E6062573C476BF988FF8CBEE70E89F2B02FB341E5588DA3612CC" },
                 { 287324, "D49C4DE691A7B65184532D8C9E46E1209F35AF2A76C0E23FA82B8E35593011CC" },
+                { 288225, "76DC5D1B4730F4A5BB937F3776A776DE2A8E960B4BB4A47B983BA5F264555879" },
+                { 288226, "BBA699B59C1081CDF6870E95B3B17469DD0D8791234E166D1D403D85786E6F42" },
+                { 288241, "08E90A05982967C1F0AA45950FDF24F069FA6B639238EE3F6429FEF2DE697163" },
             };
             foreach (object item in L.List(native["methods"]))
             {
@@ -165,9 +168,24 @@ namespace EndfieldGraphShaderLabEditor
             }
             Dictionary<string, object> boundary = L.Dict(native["nativeBoundary"]);
             Dictionary<string, object> decision = L.Dict(native["unityDecision"]);
+            Dictionary<string, object> rendererList = L.Dict(native["rendererList"]);
+            Dictionary<string, object> stateBlock = L.Dict(rendererList["stateBlock"]);
+            Dictionary<string, object> consumers = L.Dict(native["rendererConsumers"]);
             L.Require(L.Str(boundary, "callbackConstantBufferPublication") == "not_present" &&
                 L.Str(boundary, "callbackGlobalVectorAndTexturePublication") == "present" &&
                 !L.Bool(boundary, "serializedBindingsAreD3D12RootParameters") &&
+                L.Long(rendererList, "sortingCriteria") == 87 &&
+                L.Str(rendererList, "sortingSemantic") ==
+                    "CommonTransparent | OptimizeStateChanges | RendererPriority" &&
+                L.Str(rendererList, "layerMask") ==
+                    "RemoveWorldUILayer(camera.cullingMask)" &&
+                !L.Bool(stateBlock, "hasValue") &&
+                rendererList["overrideMaterial"] == null &&
+                !L.Bool(rendererList, "excludeObjectMotionVectors") &&
+                !L.Bool(consumers, "opaqueArgument") &&
+                L.Str(consumers, "frameSettingsGate") == "TransparentObjects" &&
+                L.Str(consumers, "survivorIdentity") ==
+                    "runtime renderer-list and ECS handles pending" &&
                 !L.Bool(decision, "visibleAdmission") &&
                 !L.Bool(decision, "vfxParams1PublicationRequiredForSelectedMaterials") &&
                 !L.Bool(decision, "transformHistoryRequiredForSelectedMaterials"),

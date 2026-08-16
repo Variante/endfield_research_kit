@@ -46,9 +46,44 @@
       "functionEnd": "0x189bb558a",
       "functionBytes": 806,
       "functionSha256": "D49C4DE691A7B65184532D8C9E46E1209F35AF2A76C0E23FA82B8E35593011CC"
+    },
+    {
+      "methodIndex": 288225,
+      "type": "HG.Rendering.Runtime.HGRendererListUtils",
+      "name": "RenderForwardRendererList",
+      "token": "0x0600145d",
+      "va": "0x189c0a6ec",
+      "functionEnd": "0x189c0a7cc",
+      "functionBytes": 224,
+      "functionSha256": "76DC5D1B4730F4A5BB937F3776A776DE2A8E960B4BB4A47B983BA5F264555879"
+    },
+    {
+      "methodIndex": 288226,
+      "type": "HG.Rendering.Runtime.HGRendererListUtils",
+      "name": "RenderForwardECSRendererList",
+      "token": "0x0600145e",
+      "va": "0x189c0a628",
+      "functionEnd": "0x189c0a6ea",
+      "functionBytes": 194,
+      "functionSha256": "BBA699B59C1081CDF6870E95B3B17469DD0D8791234E166D1D403D85786E6F42"
+    },
+    {
+      "methodIndex": 288241,
+      "type": "HG.Rendering.Runtime.HGRendererListUtils",
+      "name": "CreateTransparentRendererListDesc",
+      "token": "0x0600146d",
+      "va": "0x189c08904",
+      "functionEnd": "0x189c08bc8",
+      "functionBytes": 708,
+      "functionSha256": "08E90A05982967C1F0AA45950FDF24F069FA6B639238EE3F6429FEF2DE697163"
     }
   ],
   "decisiveCalls": [
+    {
+      "label": "PrepareAfterDOF -> CreateTransparentRendererListDesc",
+      "callsite": "0x189bab3c2",
+      "target": "0x189c08904"
+    },
     {
       "label": "ConstructPass -> PrepareAfterDOFTranparentRendererList",
       "callsite": "0x189bb3299",
@@ -78,6 +113,21 @@
       "label": "callback -> DrawFullScreen",
       "callsite": "0x189bb5401",
       "target": "0x18b2de0cc"
+    },
+    {
+      "label": "CreateTransparentRendererListDesc -> Camera.get_cullingMask",
+      "callsite": "0x189c08967",
+      "target": "0x1832512c0"
+    },
+    {
+      "label": "CreateTransparentRendererListDesc -> RemoveWorldUILayer",
+      "callsite": "0x189c0897e",
+      "target": "0x189b736b0"
+    },
+    {
+      "label": "CreateTransparentRendererListDesc -> RendererListDesc.ctor",
+      "callsite": "0x189c089a4",
+      "target": "0x18b3f4a7c"
     }
   ],
   "rendererList": {
@@ -86,6 +136,8 @@
       "default": 3700,
       "last": 3740
     },
+    "sortingCriteria": 87,
+    "sortingSemantic": "CommonTransparent | OptimizeStateChanges | RendererPriority",
     "shaderTagsWithoutOutline": [
       "TransparentBackface",
       "ForwardOnly",
@@ -94,6 +146,13 @@
       "SRPDefaultUnlit",
       "Distortion"
     ],
+    "layerMask": "RemoveWorldUILayer(camera.cullingMask)",
+    "stateBlock": {
+      "hasValue": false,
+      "source": "zero-initialized nullable"
+    },
+    "overrideMaterial": null,
+    "excludeObjectMotionVectors": false,
     "perObjectData": "bakedLightingConfig | GetPerObjectMotionVectorConfig(hgCamera)",
     "liveInputsPending": [
       "cullingResults",
@@ -118,6 +177,14 @@
     "forward renderer list",
     "forward ECS renderer list"
   ],
+  "rendererConsumers": {
+    "opaqueArgument": false,
+    "frameSettingsGate": "TransparentObjects",
+    "classic": "CoreUtils.DrawRendererList(renderContext, cmd, rendererList)",
+    "ecs": "HGMeshRender.DrawECSRendererList(cmd, rendererListHandle)",
+    "consumerResortingOrOverride": "none; descriptor/list construction owns filtering and order",
+    "survivorIdentity": "runtime renderer-list and ECS handles pending"
+  },
   "shaderAbi": {
     "selectedMaterialGates": {
       "values": {
