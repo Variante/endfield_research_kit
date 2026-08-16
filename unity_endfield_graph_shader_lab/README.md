@@ -4175,9 +4175,14 @@ consumer, `0x180540280`, uses those fields plus `+0x50`. The full logical
 then emits a compact 0x50-byte CPU record stream. Its indirect call at
 `0x18054126F` through `vtable+0x48` is the first unresolved backend boundary,
 not a proven graphics-API call. `0x1805438E0` prepares a separate temporary
-record; there is still no static graphics-API draw or submit edge. The next
-native queue is therefore that vtable target and the consumers of both record
-types, not further expansion of opcode `0x4D`.
+record whose `0x18054396F..0x180543BD1` continuation partitions and copies
+0x50-byte ranges. Generic `0x180555180` produces a 0x18-byte index table stored
+at backend object `+0x208`, with count at `+0x210`; indirect consumer
+`0x180542E10` uses those indices to enter resource/parameter builder
+`0x1805419D0`. That builder's terminal object-vtable `+0x210` call is now the
+strongest unresolved backend boundary. None of these CPU record paths proves a
+graphics-API draw or submit. The next native queue is the concrete target and
+object provenance of that vtable call, not further opcode `0x4D` expansion.
 Retail queue 3704 belongs to the source-closed 3660--3740
 `AfterPostprocessTransparent` phase. In the exact SceneMV route that range is
 owned by the after-post callback, not main transparent. This isolated shader
@@ -4347,6 +4352,12 @@ and per-root images to
 Li overview-start actor clip and all three effects on one explicit clock, uses
 the source overview position/LookAt/FOV/clip planes, and records the authored
 camera quaternion separately from its inferred hierarchy LookRotation.
+Each real `Camera.Render()` carries a harness-owned, strictly monotonic
+`captureInvocationSerial`: 24 anchors times four aggregate lanes plus three
+root-only lanes produce 168 unique invocations. This avoids misusing
+`Time.frameCount` when several explicit renders occur in one Editor frame. The
+serial is a Unity diagnostic capture identity only, not a native frame,
+command-buffer generation, or retail RendererList identity.
 Four-corner background consensus remains stable when the animated coat crosses
 a frame corner. Predicate-only retail ROI comparison showed the static-only
 `broadTeal` peak at PTS 40000 was 3.499% composite versus 21.699% retail, while

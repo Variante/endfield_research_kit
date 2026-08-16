@@ -198,7 +198,9 @@ namespace EndfieldGraphShaderLabEditor
                         eventOriginProven = false,
                         nativeRendererIdentityProven = false,
                         rendererFingerprintWitnessBoundary =
-                            "single_capture_session_before_camera_render_sharedmaterials_only; actor_hierarchy_and_runtime_ids_only; static_effect_source_pathids_and_runtime_ids; peak_source_pathids_source_particle_ids_and_runtime_proxy_ids; transform_hash_is_not_a_skinned_pose_digest; no_retail_hgmesh_identity_or_draw_proof",
+                            "single_capture_session_before_camera_render_sharedmaterials_only; actor_hierarchy_runtime_ids_and_skinned_palette_hash; static_effect_source_pathids_and_runtime_ids; peak_source_pathids_source_particle_ids_and_runtime_proxy_ids; no_retail_hgmesh_identity_or_draw_proof",
+                        captureInvocationSerialBoundary =
+                            "harness_monotonic_serial_one_per_camera_render; 168_invocations_for_24_anchors_times_7_lanes; independent_of_unity_frame_count; no_native_frame_or_command_buffer_identity",
                         actorAnimationRetailAbiEquivalent = false,
                         comparesRetailPixels = false,
                         retailHashEquality = false,
@@ -1365,7 +1367,9 @@ namespace EndfieldGraphShaderLabEditor
                 !manifest.comparesRetailPixels && !manifest.retailHashEquality,
                 "Actor-composed manifest flags are not fail-closed");
             Require(manifest.rendererFingerprintWitnessBoundary ==
-                "single_capture_session_before_camera_render_sharedmaterials_only; actor_hierarchy_and_runtime_ids_only; static_effect_source_pathids_and_runtime_ids; peak_source_pathids_source_particle_ids_and_runtime_proxy_ids; transform_hash_is_not_a_skinned_pose_digest; no_retail_hgmesh_identity_or_draw_proof",
+                "single_capture_session_before_camera_render_sharedmaterials_only; actor_hierarchy_runtime_ids_and_skinned_palette_hash; static_effect_source_pathids_and_runtime_ids; peak_source_pathids_source_particle_ids_and_runtime_proxy_ids; no_retail_hgmesh_identity_or_draw_proof" &&
+                manifest.captureInvocationSerialBoundary ==
+                "harness_monotonic_serial_one_per_camera_render; 168_invocations_for_24_anchors_times_7_lanes; independent_of_unity_frame_count; no_native_frame_or_command_buffer_identity",
                 "Actor-composed renderer fingerprint boundary drifted");
             Require(manifest.width == Width && manifest.height == Height &&
                 manifest.captures != null && manifest.captures.Length == Anchors.Length &&
@@ -1844,6 +1848,7 @@ namespace EndfieldGraphShaderLabEditor
             public bool eventOriginProven;
             public bool nativeRendererIdentityProven;
             public string rendererFingerprintWitnessBoundary;
+            public string captureInvocationSerialBoundary;
             public bool actorAnimationRetailAbiEquivalent;
             public bool comparesRetailPixels;
             public bool retailHashEquality;
