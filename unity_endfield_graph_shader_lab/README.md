@@ -4164,11 +4164,27 @@ manager `+0x50/+0x58`, closing their transport through the job and finalizer.
 M0 entry population is now source-closed. `0x1810B9990` performs
 material-handle lookup/insertion, clears a new 0x60-byte entry, and calls
 `0x18109C9D0` at `0x1810B9C5C`. That function repeats the M0 hash lookup and
-writes its native material/shading-state object to `entry+0x28` at
+writes its native shading-state resource to `entry+0x28` at
 `0x18109CA2F`; the two direct insertion callers are `0x1811E1A24` and
-`0x18131B76B`. `GetOrCreatePerMaterialCBHandle` is a downstream consumer.
-M1 concrete population and the Li-specific M0 handle/object-to-`D+0x450` mode
-join remain fail-closed, so the Li branch stays deliberately unselected.
+`0x18131B76B`. Both resolve a native resource initialized by `0x1805FF5E0`
+with vtable `0x181D87EF0` and embedded type text
+`PPtr<HGSubsurfaceProfile>`; neither is an ordinary Unity Material
+registration or Li-specific reference. `GetOrCreatePerMaterialCBHandle` is a
+downstream consumer.
+Managed metadata separately names the broader `GetMaterialHandle(int)` and
+`GetMaterial(uint)->UnityEngine.Material` API; the primary profile owner also
+resolves a Unity object reference before insertion. Those facts establish the
+public handle bridge, not a Li-specific Material/profile identity.
+M1 population is now source-closed too. Mesh-owner bridge `0x1813727B0`
+reads owner `+0x08`, resolves root `+0xA0`, and tail-jumps at `0x18137284A`
+to insertion function `0x1810941F0`. New handles call `0x18108B1C0` at
+`0x18109441E`; that core writes the resolved geometry resource to entry
+`+0x18`, source mesh `+0x40` to entry `+0x20`, and builds the `+0x28/+0x30`
+geometry caches. `0x18108B560` replaces the same state while preserving
+generation; `0x18108B8F0` releases/clears it and increments generation. The
+remaining boundary is a Li-specific M0 subsurface-profile handle/resource and
+M1 mesh-handle join. Until then the Li `D+0x450` mode and
+branch stay deliberately unselected.
 The same contract pins `SetManual(bool)`, `ManualEvaluate(float)`,
 `SyncProgress(float)`, time-scale/start-duration/start-
 scale setters, Stop, OnDisable, and OnRelease. Their decoded fallback bodies

@@ -672,7 +672,7 @@ namespace EndfieldGraphShaderLabEditor
                 !L.Bool(importer, "injectedIntoRetailClient") &&
                 L.Bool(importer, "captureRequiresSeparateExplicitAuthorization") &&
                 L.Str(abi, "sha256") ==
-                    "0104C079824302BAA453B9A8E1E1625FFC73C82C9F043B676DBDD7BCD96D2C57" &&
+                    "11D2E8735EDCEDA0BBDCBF62BB6CD9FB42761EB16859FF0890ED10D01C25F5CF" &&
                 L.Long(video, "bytes") == 1678613397L &&
                 L.Str(video, "sha256") ==
                     "2F542A3BE7CE3332295D3A841FD8613C62707E084F9E33A0F156DA8A06EBF5E7" &&
@@ -783,7 +783,7 @@ namespace EndfieldGraphShaderLabEditor
                     "CA97F2AD6D958078B68FEC88EDB666A64CCEA3F8E3F2155414384E175B842619",
                 "Li Zhiyan HGMesh survivor-job construction identity drifted");
             IList unityCalls = L.List(native["unityPlayerDecisiveCalls"]);
-            L.Require(unityCalls.Count == 18 &&
+            L.Require(unityCalls.Count == 21 &&
                 unityCalls.Cast<object>().Select(L.Dict).Any(row =>
                     L.Str(row, "callsite") == "0x180ff82b5" &&
                     L.Str(row, "target") == "0x1810442f0") &&
@@ -837,7 +837,16 @@ namespace EndfieldGraphShaderLabEditor
                     L.Str(row, "target") == "0x1810b9990") &&
                 unityCalls.Cast<object>().Select(L.Dict).Any(row =>
                     L.Str(row, "callsite") == "0x18131b76b" &&
-                    L.Str(row, "target") == "0x1810b9990"),
+                    L.Str(row, "target") == "0x1810b9990") &&
+                unityCalls.Cast<object>().Select(L.Dict).Any(row =>
+                    L.Str(row, "callsite") == "0x18109441e" &&
+                    L.Str(row, "target") == "0x18108b1c0") &&
+                unityCalls.Cast<object>().Select(L.Dict).Any(row =>
+                    L.Str(row, "callsite") == "0x181097fd6" &&
+                    L.Str(row, "target") == "0x18108b560") &&
+                unityCalls.Cast<object>().Select(L.Dict).Any(row =>
+                    L.Str(row, "callsite") == "0x181098c71" &&
+                    L.Str(row, "target") == "0x18108b8f0"),
                 "Li Zhiyan HGMesh upstream call graph drifted");
             Dictionary<string, object> boundary = L.Dict(native["nativeBoundary"]);
             Dictionary<string, object> decision = L.Dict(native["unityDecision"]);
@@ -1026,10 +1035,38 @@ namespace EndfieldGraphShaderLabEditor
                     "entry+0x28") &&
                 L.Str(rootSubsystemTables, "materialInsertionCallers").Contains(
                     "0x1811e1a24") &&
+                L.Str(rootSubsystemTables, "descriptorDIdentity").Contains(
+                    "PPtr<HGSubsurfaceProfile>") &&
+                L.Str(rootSubsystemTables, "descriptorDIdentity").Contains(
+                    "0x181d87ef0") &&
+                L.Str(rootSubsystemTables, "managedMaterialApi").Contains(
+                    "GetMaterialHandle(int instanceId)") &&
+                L.Str(rootSubsystemTables, "managedMaterialApi").Contains(
+                    "does not override") &&
+                L.Str(rootSubsystemTables, "unityObjectOrigin").Contains(
+                    "0x1811e170a") &&
+                L.Str(rootSubsystemTables, "unityObjectOrigin").Contains(
+                    "not Li-specific identity") &&
+                L.Str(rootSubsystemTables, "ordinaryMaterialBoundary").Contains(
+                    "no direct Li Zhiyan") &&
                 L.Str(rootSubsystemTables, "perMaterialCbBoundary").Contains(
                     "downstream per-material-CB consumer") &&
+                L.Str(rootSubsystemTables, "geometryInsertion").Contains(
+                    "0x18137284a") &&
+                L.Str(rootSubsystemTables, "geometryInsertion").Contains(
+                    "0x18109441e") &&
+                L.Str(rootSubsystemTables, "geometryEntryWriter").Contains(
+                    "entry+0x18") &&
+                L.Str(rootSubsystemTables, "geometryEntryWriter").Contains(
+                    "entry+0x28/+0x30") &&
+                L.Str(rootSubsystemTables, "geometryEntryLifecycle").Contains(
+                    "0x18108b560") &&
+                L.Str(rootSubsystemTables, "geometryEntryLifecycle").Contains(
+                    "increments generation") &&
+                L.Str(rootSubsystemTables, "geometryIdentity").Contains(
+                    "0x18012be60") &&
                 L.Str(rootSubsystemTables, "remainingPopulationBoundary").Contains(
-                    "Li-specific M0 handle/object selection") &&
+                    "Li-specific profile handle/resource") &&
                 StringListEquals(survivorSort["notYetProven"],
                     "semantic names of packed key fields",
                     "HGMesh-derived descriptor state reaching one specific Vulkan draw/submit and visible pixel",
@@ -1042,7 +1079,7 @@ namespace EndfieldGraphShaderLabEditor
                 L.Str(descriptorMode, "ownerPopulationBoundary").Contains(
                     "entry+0x28") &&
                 L.Str(descriptorMode, "aliasBoundary").Contains(
-                    "native material/shading-state object") &&
+                    "PPtr<HGSubsurfaceProfile>") &&
                 L.Str(graphicsFront, "vtableVA") == "0x181dcb360" &&
                 L.Str(graphicsFront, "resourceAppendSlot").Contains("opcode 0x2748") &&
                 L.Str(graphicsFront, "descriptorUpdateSlot").Contains("opcode 0x2730") &&
