@@ -21,9 +21,10 @@ Exact evidence:
 - head mesh: `S_fx_lastrite_head901`, PathID `3275334214857909696`
 - six materials use `HGRP/Effect/VFXBaseV2`, shader PathID `-1430105248647086886`
 
-The generated contract embeds the mesh and serialized component payloads, so
-Unity rebuilding does not depend on scratch files. Exact material
-specializations and textures remain open; all six use the ColorMask-0
-unavailable shader and stay invisible. Unity 2022.3.62f3 batch validation
-passed for both importer and actor binding. This is execution progress, not
-retail visual parity.
+Contract schema v2 embeds the mesh, serialized component payloads, and all six
+full Material payloads. Its 12 unique texture PathIDs now resolve uniquely to
+AssetMap rows and current converted PNGs with pinned hashes. Native BC/mip
+sampling and the retail ForwardOnly/MRT scheduling remain open, so all six use
+the ColorMask-0 unavailable shader and stay invisible. Unity 2022.3.62f3 batch
+validation passed for both importer and actor binding. This is execution
+progress, not retail visual parity.

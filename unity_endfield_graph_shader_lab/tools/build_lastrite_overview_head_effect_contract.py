@@ -19,6 +19,8 @@ DEFAULT_OUTPUT = (
     / "Assets/EndfieldGraphShaderLab/Generated/OriginalData/Effects"
     / "lastrite_overview_head_effect.json"
 )
+ASSET_MAP = REPO_ROOT / "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json"
+CONVERTED_TEXTURE_ROOT = REPO_ROOT / "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D"
 EFFECT_NAME = "P_fxui_lastrite_ui_overview_start_01_01"
 
 
@@ -66,6 +68,15 @@ def artifact(path: Path, object_type: str) -> dict[str, Any]:
     }
 
 
+def file_artifact(path: Path, object_type: str) -> dict[str, Any]:
+    return {
+        "path": path.resolve().relative_to(REPO_ROOT.resolve()).as_posix(),
+        "bytes": path.stat().st_size,
+        "sha256": sha256(path),
+        "objectType": object_type,
+    }
+
+
 def load_type(root: Path, name: str) -> dict[int, tuple[Path, dict[str, Any]]]:
     result: dict[int, tuple[Path, dict[str, Any]]] = {}
     for path in sorted((root / name).glob("*.json")):
@@ -84,6 +95,56 @@ def source_payload(data: dict[str, Any]) -> dict[str, Any]:
         for key, value in data.items()
         if key not in {"$animestudio", "Name"}
     }
+
+
+def iter_asset_entries(path: Path):
+    inside_entries = False
+    buffer: list[str] = []
+    with path.open("r", encoding="utf-8", errors="replace") as handle:
+        for line in handle:
+            stripped = line.strip()
+            if not inside_entries:
+                inside_entries = stripped == '"AssetEntries": ['
+                continue
+            if stripped == "]":
+                break
+            if not buffer:
+                if stripped.startswith("{"):
+                    buffer.append(line)
+                continue
+            buffer.append(line)
+            if stripped.startswith("}"):
+                yield json.loads("".join(buffer).rstrip().rstrip(","))
+                buffer = []
+
+
+def resolve_textures(path_ids: set[int]) -> list[dict[str, Any]]:
+    matches: dict[int, dict[str, Any]] = {}
+    for row in iter_asset_entries(ASSET_MAP):
+        identity = int(row.get("PathID") or 0)
+        if identity not in path_ids or row.get("Type") != "Texture2D":
+            continue
+        require(identity not in matches, f"ambiguous Texture2D AssetMap PathID {identity}")
+        matches[identity] = row
+    require(set(matches) == path_ids, "texture AssetMap dependency closure drifted")
+    output = []
+    for identity in sorted(matches):
+        row = matches[identity]
+        suffix = f"{identity & ((1 << 64) - 1):016X}"
+        converted = CONVERTED_TEXTURE_ROOT / f"{row['Name']}_p{suffix}.png"
+        require(converted.is_file(), f"converted Texture2D is missing: {converted}")
+        output.append(
+            {
+                "pathID": identity,
+                "name": row.get("Name"),
+                "assetMap": {
+                    key: row.get(key)
+                    for key in ("Container", "Source", "Offset", "Hash", "Type")
+                },
+                "convertedPng": file_artifact(converted, "Texture2DConvertedPNG"),
+            }
+        )
+    return output
 
 
 def main() -> int:
@@ -232,8 +293,26 @@ def main() -> int:
     artifact_paths.extend((mesh_renderer_path, mesh_filter_path))
 
     material_rows = []
+    texture_reference_ids: set[int] = set()
     for identity in sorted(materials):
         path, data = materials[identity]
+        texture_references = []
+        texture_environments = ((data.get("m_SavedProperties") or {}).get("m_TexEnvs") or {})
+        for property_name, environment in sorted(texture_environments.items()):
+            texture = (environment or {}).get("m_Texture") or {}
+            texture_path_id = int(texture.get("m_PathID") or 0)
+            if not texture_path_id:
+                continue
+            texture_reference_ids.add(texture_path_id)
+            texture_references.append(
+                {
+                    "property": property_name,
+                    "fileID": int(texture.get("m_FileID") or 0),
+                    "pathID": texture_path_id,
+                    "scale": environment.get("m_Scale"),
+                    "offset": environment.get("m_Offset"),
+                }
+            )
         material_rows.append(
             {
                 "pathID": identity,
@@ -242,11 +321,18 @@ def main() -> int:
                 "validKeywords": data.get("m_ValidKeywords") or [],
                 "invalidKeywords": data.get("m_InvalidKeywords") or [],
                 "customRenderQueue": int(data.get("m_CustomRenderQueue") or 0),
+                "textureReferences": texture_references,
+                "payload": source_payload(data),
                 "source": artifact(path, "Material"),
             }
         )
         artifact_paths.append(path)
     require({row["shaderPathID"] for row in material_rows} == {-1430105248647086886}, "shader identity drifted")
+    require(len(texture_reference_ids) == 12, "material texture dependency census drifted")
+    texture_dependencies = resolve_textures(texture_reference_ids)
+    artifact_paths.extend(
+        REPO_ROOT / row["convertedPng"]["path"] for row in texture_dependencies
+    )
 
     mesh_path, mesh = meshes[referenced_mesh]
     artifact_paths.append(mesh_path)
@@ -257,13 +343,14 @@ def main() -> int:
         aggregate.update(bytes.fromhex(sha256(path)))
 
     output = {
-        "schema": "endfield.lastrite-overview-head-effect.v1",
+        "schema": "endfield.lastrite-overview-head-effect.v2",
         "status": "source_serialized_payload_closed_visual_shaders_fail_closed",
         "effectName": EFFECT_NAME,
         "summary": {
             "hierarchyNodes": len(hierarchy_nodes),
             "particlePairs": len(particle_pairs),
             "materials": len(material_rows),
+            "uniqueTextureReferences": len(texture_reference_ids),
             "meshRenderers": 1,
             "sourceAggregateSha256": aggregate.hexdigest().upper(),
         },
@@ -292,6 +379,11 @@ def main() -> int:
             },
         },
         "materials": material_rows,
+        "textureDependencyBoundary": {
+            "uniquePathIDs": sorted(texture_reference_ids),
+            "textures": texture_dependencies,
+            "status": "assetmap_identity_and_converted_png_closed_native_mip_payload_pending",
+        },
         "executionBoundary": (
             "Hierarchy, local transforms, EffectSetting timing, ParticleSystem and renderer payloads, "
             "head mesh, and material/shader identities are source-closed. All six materials remain "

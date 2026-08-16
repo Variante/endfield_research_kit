@@ -1468,8 +1468,12 @@ only stable interpretation and priorities.
    particle pairs, head mesh, exact 3.5/13.5 timing, eight ordered controller
    requests, and unique `Bip001_HeadNub` binding pass Unity validation. Its six
    VFXBaseV2 materials remain ColorMask-0 fail-closed, and the other seven
-   Last Rite requests remain explicitly unbound. Continue with those material
-   specializations/textures and Li Zhiyan/Wulfa for retail
+   Last Rite requests remain explicitly unbound. Their complete serialized
+   Material payloads and 12/12 AssetMap-resolved converted texture PNGs are now
+   pinned in contract schema v2; both compiled keyword pairs are also known.
+   The remaining material gate is retail PSO/descriptor/native mip and
+   ForwardOnly MRT/scene-depth scheduling, not missing converted texture
+   pixels. Continue with that binary draw boundary and Li Zhiyan/Wulfa for retail
    visual acceptance, preserving each exact prefab, mount, delay, duration,
    and teardown contract; recover full hierarchy/PPtr mounts before Pograni's
    eight ambiguous entries; and
@@ -1482,6 +1486,9 @@ only stable interpretation and priorities.
    no retail `.rdc` exists yet; Unity auto-capture and the Frida renderer-list
    trace are not substitutes. Stop if normal attachment is rejected and keep
    the PathID-to-draw correlation boundary explicit.
+   Last Rite's retail slot is `269.25-283.25 s`, but it is a weak per-effect
+   oracle: no head/hand/thigh/ear particle pass is independently visible over
+   the animation, costume/weapon geometry, cyan hair, and transition haze.
 6. Add controller, grounding, facial, FX, and secondary systems behind
    source-validated fail-closed gates.
 7. Upgrade representative non-playable families before broad parity claims.
