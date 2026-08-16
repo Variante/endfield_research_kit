@@ -4146,9 +4146,16 @@ builders populates M0's entry. The complete chained-`.pdata` worker
 `+0x00/+0x08` and passes them unchanged to finalization. Its
 `0x180FF82B5 -> 0x1810442F0` helper owns a temporary 0x30-byte
 group-to-int32-index-vector map over 0x240-byte source records; it is not M0
-and does not write M0 `entry+0x28`. The remaining alias boundary is now the
-earlier creator/populator of those worker-argument tables, so the Li branch
-remains deliberately unselected.
+and does not write M0 `entry+0x28`. `0x18104EF90` now closes the next owner:
+it allocates and initializes the 0xF0-byte job descriptor, copies caller
+`rdx/r8/r9` into `+0x00/+0x08/+0x70`, selects graphics context `+0x10`, loads
+the sole confirmed `0x180FF8020` callback reference, and registers it through
+`0x180555D30 -> 0x1805573D0 -> 0x180559520`. The primary path supplies source
+`+0x00/+0x08/+0x10`; internal-call index 399,
+`HGMeshRender.CreateRendererListFromEntities_Injected`, reaches the same owner
+through `0x18104EC20`. Only population of the caller-supplied M0/M1 tables
+before this owner remains unresolved, so the Li branch stays deliberately
+unselected.
 The same contract pins `SetManual(bool)`, `ManualEvaluate(float)`,
 `SyncProgress(float)`, time-scale/start-duration/start-
 scale setters, Stop, OnDisable, and OnRelease. Their decoded fallback bodies

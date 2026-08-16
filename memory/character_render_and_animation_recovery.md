@@ -1935,9 +1935,17 @@ only stable interpretation and priorities.
    those same tables to `0x181039e90`. Its
    `0x180ff82b5 -> 0x1810442f0` helper is only a temporary 0x30-stride
    group-to-int32-index-vector map over 0x240-byte source records; it is not
-   M0 and never writes M0 `entry+0x28`. The missing producer has therefore
-   moved one level earlier to creation/population of the worker argument's
-   `+0x00/+0x08` tables, not handoff identity loss or the grouping helper.
+   M0 and never writes M0 `entry+0x28`. Descriptor creation is now closed:
+   `0x18104ef90` allocates and initializes the 0xf0-byte job object, copies
+   caller `rdx/r8/r9` to object `+0x00/+0x08/+0x70`, selects the graphics
+   context at `+0x10`, loads the sole confirmed `0x180ff8020` code reference,
+   and registers callback plus object through
+   `0x180555d30 -> 0x1805573d0 -> 0x180559520`. Its primary caller copies
+   source `+0x00/+0x08/+0x10`; the parallel
+   `HGMeshRender.CreateRendererListFromEntities_Injected` route reaches the
+   same owner through `0x18104ec20`. The missing producer is therefore only
+   population of the caller-supplied M0/M1 tables before `0x18104ef90`, not
+   descriptor construction, handoff identity, or the grouping helper.
    All six selected materials have `_IsSceneEffect=0` and
    `_EnableTransparentMV=0`, so `_VFXParams1` and transform history are safely
    bypassed rather than guessed. Exact inverse-VP soft depth, live
