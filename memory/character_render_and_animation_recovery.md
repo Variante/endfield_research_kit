@@ -2049,11 +2049,17 @@ only stable interpretation and priorities.
    context, list/index, and generation/status rather than a copied Renderer or
    HGMesh ID. `Internal_DrawRendererList_Injected` at `0x180062960` calls
    `0x1804c9230`, appending opcode `0x4d` plus that payload. ExecuteCommandBuffer
-   reaches the ready interpreter and dispatches `0x4d` into
-   `0x18099f857..0x1809a00db`. This distinguishes the classic stock-handle
-   route from custom ECS commands, but the handler still leaves renderer
-   identity inside the context/list backend and exposes no static Li-to-Vulkan
-   draw or submit edge.
+   reaches the ready interpreter. The signed-RVA table at `0x1804d19c8`
+   dispatches `0x4d` to the in-interpreter branch `0x1804ce406`; the earlier
+   `0x18099f857..0x1809a00db` attribution was an unrelated geometry helper and
+   has been withdrawn. The true branch validates the payload context/index,
+   resolves `context+0x10148[index]`, releases that backend row through
+   `0x18053d640`, and writes state 2 to the 0x1a0-byte entry's `+0x194`.
+   Payload `+0x0c` is not read here, so this path does not prove generation
+   validation. This distinguishes the classic stock-handle route from custom
+   ECS commands, but it is a retirement path, not the missing draw expansion;
+   renderer identity remains behind the context/list backend and no static
+   Li-to-Vulkan draw or submit edge is exposed.
    All six selected materials have `_IsSceneEffect=0` and
    `_EnableTransparentMV=0`, so `_VFXParams1` and transform history are safely
    bypassed rather than guessed. Exact inverse-VP soft depth, live
