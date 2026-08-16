@@ -25,7 +25,7 @@ EXPORT_ROOT = Path(os.environ.get("ENDFIELD_EXPORT_ROOT") or ROOT / "export_full
 DEFAULT_DATA_ROOT = ROOT / "webui" / "data" / "lang"
 DEFAULT_GRAPH = ROOT / "reports" / "source_graph" / "endfield_source_graph.sqlite"
 DEFAULT_ANIMESTUDIO_ROOT = EXPORT_ROOT / "recovered" / "AnimeStudio-cli"
-SCHEMA_VERSION = 6
+SCHEMA_VERSION = 7
 
 GRAPH_EDGE_TYPES = {
     "skill_data_has_param_string",
@@ -36,6 +36,16 @@ GRAPH_EDGE_TYPES = {
     "buff_data_references_effect",
     "buff_data_references_audio",
 }
+IGNORED_CONFIG_GRAPH_EDGE_TYPES = {
+    "skill_data_defines_skill",
+    "skill_data_has_tag_string",
+    "skill_data_references_icon",
+    "buff_data_defines_buff",
+    "buff_data_has_param_string",
+    "buff_data_has_tag_string",
+    "buff_data_references_icon",
+}
+KNOWN_CONFIG_GRAPH_EDGE_TYPES = GRAPH_EDGE_TYPES | IGNORED_CONFIG_GRAPH_EDGE_TYPES
 HEURISTIC_CONFIG_GRAPH_EDGE_TYPES = frozenset(GRAPH_EDGE_TYPES)
 INFERRED_GRAPH_EDGE_TYPES = {
     "asset_used_by_gameplay",
@@ -169,25 +179,23 @@ class PayloadBuilder:
         self.graph_edge_contract_unexpected: dict[str, int] = {}
 
     def inspect_graph_edge_contract(self) -> None:
-        """Record the graph edge vocabulary before consuming any graph rows.
+        """Reset the edge contract before inspecting reachable graph rows.
 
-        Graphs are shared across builders and may contain many unrelated edge
-        kinds.  Only GRAPH_EDGE_TYPES are eligible for direct Gameplay
-        relationships; unknown kinds remain diagnostic evidence, never an
-        implicit SkillData relationship.
+        Rows are recorded while traversing current Gameplay skill roots and
+        their accepted BuffData descendants.  Unrelated graph domains and
+        unreachable skills/buffs are outside this consumer contract.
         """
-        if self.graph is None:
+        self.graph_edge_contract_observed = {}
+        self.graph_edge_contract_accepted = {}
+        self.graph_edge_contract_unexpected = {}
+
+    def inspect_graph_edge_row(self, row: tuple[Any, ...]) -> None:
+        kind = str(row[2])
+        if not kind.startswith(("skill_data_", "buff_data_")):
             return
-        rows = self.graph.execute(
-            "SELECT kind, COUNT(*) FROM edges GROUP BY kind ORDER BY kind"
-        ).fetchall()
-        observed = {str(kind): int(count) for kind, count in rows}
-        self.graph_edge_contract_observed = observed
-        self.graph_edge_contract_unexpected = {
-            kind: count
-            for kind, count in observed.items()
-            if kind not in GRAPH_EDGE_TYPES
-        }
+        self.graph_edge_contract_observed[kind] = self.graph_edge_contract_observed.get(kind, 0) + 1
+        if kind not in KNOWN_CONFIG_GRAPH_EDGE_TYPES:
+            self.graph_edge_contract_unexpected[kind] = self.graph_edge_contract_unexpected.get(kind, 0) + 1
 
     def add_node(self, node_id: str, kind: str, label: str = "", **values: Any) -> None:
         node = self.nodes.setdefault(node_id, {"id": node_id, "kind": kind, "label": label or node_id.split(":", 1)[-1]})
@@ -1009,6 +1017,7 @@ class PayloadBuilder:
                 (skill_id,),
             )
             for row in rows:
+                self.inspect_graph_edge_row(row)
                 if row[2] == "skill_data_has_param_string" and not str(row[1]).startswith("skill_parameter:projectile_"):
                     continue
                 if row[2] in GRAPH_EDGE_TYPES:
@@ -1029,6 +1038,7 @@ class PayloadBuilder:
             ))
             before = set(self.buff_ids)
             for row in rows:
+                self.inspect_graph_edge_row(row)
                 if row[2] in GRAPH_EDGE_TYPES:
                     self.add_graph_edge(row)
             for discovered in sorted(self.buff_ids - before):
@@ -1148,11 +1158,13 @@ class PayloadBuilder:
                 "note": "Only exact-consumed TargetSettings reachable from curated character roots are displayed. Enum/hash names and runtime evaluator order remain unclaimed; avatar-template records without Gameplay roots are counted but not assigned.",
             },
             "graphEdgeContract": {
+                "scope": "reachable_skill_buff_config_edges",
                 "status": (
                     "unavailable"
                     if not graph_available
                     else "partial"
-                    if any(
+                    if self.graph_edge_contract_unexpected
+                    or any(
                         self.graph_edge_contract_accepted.get(kind, 0) == 0
                         for kind in sorted(GRAPH_EDGE_TYPES)
                     )
@@ -1176,8 +1188,9 @@ class PayloadBuilder:
                 "unexpectedEdgeCount": sum(self.graph_edge_contract_unexpected.values()),
                 "unexpectedKinds": dict(sorted(self.graph_edge_contract_unexpected.items())),
                 "note": (
-                    "Expected SkillData/BuffData string-scan edge kinds are accepted only as inferred candidates; "
-                    "unexpected or missing kinds are reported and never promoted to Gameplay relationships."
+                    "Expected SkillData/BuffData string-scan edge kinds are accepted only as inferred candidates. "
+                    "Known definition/tag/icon/unused-param kinds and unrelated graph domains are outside this "
+                    "consumer contract; unknown SkillData/BuffData kinds are reported and never promoted."
                 ),
             },
             "counts": {
