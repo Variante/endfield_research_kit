@@ -1626,6 +1626,13 @@ only stable interpretation and priorities.
    Wulfa negative control. Pointer or timestamp equality is rejected.
    Runtime values and final survivor/order/lifetime capture remain required;
    do not synthesize a `Renderer[]` bridge from the integer ECS handle.
+   A separate offline visual oracle pins exact retail PTS
+   `38000/40000/42000/43000/44000/46000` as deterministic 960x540 RGB24
+   hashes and fixed ROI measurements. Broad teal coverage peaks at PTS 40000
+   (`0.216991352`) and reaches the settled baseline at PTS 46000
+   (`0.006558944`). This enables repeatable Unity camera/timing/compositing
+   comparisons but remains `diagnostic_only`, `visibleAdmission=false`, and
+   proves no material or draw ownership.
    Downstream HGMesh workers now prove a real ordering/publication stage:
    accepted 64-byte records are sorted in place by `0x181043bd0` using
    comparator `0x180fe0740`, an unsigned lexicographic comparison over the
