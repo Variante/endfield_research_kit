@@ -4479,16 +4479,29 @@ finger layer raises composite `raisedHand` coverage from 0.603% to 5.529% and
 adds 5.120% in the effects-only lane, but retail is 28.526%. A direct
 camera-space probe places the exact mount near PNG `(455.7,189.0)` and the
 baked finger bounds around `x=385..528,y=95..283`, horizontally left of the
-retail raised-hand ROI `x=537..737,y=162..337`; pixels inside that ROI belong
-chiefly to existing start_01 renderer ID 4. The exact finger effect is therefore an
+retail raised-hand ROI `x=537..737,y=162..337`. A later isolated-color check
+corrected the renderer-ID interpretation: start_01 ID 4 is
+`S_fx_lzy_tiaodaifenwei_01 (7)`, but its sampled `_TintColorAlpha` is zero and
+all three start-root-only PTS-40000 images are blank in this ROI. Its broad
+renderer-ID footprint is diagnostic ownership without visible color, not
+visual attribution. The exact finger effect is therefore the only currently
+rendered raised-hand contributor and an
 executed source layer, but it is not yet evidence that this prefab owns the
 large retail raised-hand feature. The skinning census rejects a name-based
 remap: visible skin renderers use the main `Root/Bip001/...` armature, the nub
 is the expected terminal unweighted child after weighted hand/finger bones,
 and same-named hands under `RecoveredProps` belong to accessory geometry.
 Applying the authored camera rotation as an actor rotation moves the mount
-farther away. Preserve the exact mount/timing; start_01 shader/geometry,
-retail camera framing, or another source-owned layer remains open.
+farther away. Preserve the exact mount/timing. Four finger materials author
+`_USE_SOFTBLEND`. The tracked SampleStack diagnostic now implements the exact
+source-backed path using point-clamped `_SceneDepth`, linearized scene and
+particle depths, `_SoftBias`, and `_SoftDistance`, behind
+`_EndfieldRecoveredVFXSoftDepthReady`. Finger transient materials preserve
+their authored keyword/property state, but the current capture sets readiness
+to zero because it has no source-proven scene-depth producer. As expected, the
+validated PTS-40000 ROI is unchanged. Recovering the real scene-depth
+production/binding is the next bounded task; another source-owned layer
+remains possible.
 
 The exact managed LOD renderer bindings are now part of the playable-topology
 contract: start_01 has four non-null MeshRenderer PathIDs and start_02/start_03

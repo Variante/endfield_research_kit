@@ -2228,8 +2228,11 @@ only stable interpretation and priorities.
    zero to 5.120%, versus 28.526% retail. A direct camera-space probe places
    the exact mount near PNG `(455.7,189.0)` and baked finger bounds around
    `x=385..528,y=95..283`, horizontally left of retail ROI
-   `x=537..737,y=162..337`; pixels inside that ROI are chiefly start_01
-   renderer ID 4.
+   `x=537..737,y=162..337`. Isolated color lanes correct the earlier sidecar
+   attribution: start_01 ID 4 is `S_fx_lzy_tiaodaifenwei_01 (7)`, but its
+   sampled `_TintColorAlpha` is zero and every start-root-only PTS-40000 image
+   is blank in this ROI. The full-frame renderer-ID footprint is ownership
+   without visible color, not evidence that ID 4 supplies the retail layer.
    Treat the finger effect as a recovered visible contributor, not as proven
    ownership of the remaining retail raised-hand layer. The next visual join
    is the exact camera/hierarchy composition and start_01 shader/another
@@ -2239,8 +2242,18 @@ only stable interpretation and priorities.
    the normal terminal unweighted child after weighted hand/finger bones, and
    duplicate hands under `RecoveredProps` own accessory geometry. Applying
    the authored camera rotation as an actor transform worsens the mismatch.
-   Preserve the exact mount and timing; prioritize start_01 shader/geometry,
-   retail camera framing, or another source-owned layer.
+   Preserve the exact mount and timing. Four finger materials author
+   `_USE_SOFTBLEND`. The tracked SampleStack diagnostic now implements the
+   exact source equation: point-clamp `_SceneDepth`, linearize scene and
+   particle depth, then multiply alpha by
+   `saturate((scene-particle+_SoftBias)/_SoftDistance)`. A separate
+   `_EndfieldRecoveredVFXSoftDepthReady` gate prevents absent or invented
+   depth from changing normal assets. Finger transient materials preserve the
+   authored keyword/property state; the current capture deliberately supplies
+   readiness zero because it has no proven scene-depth producer, so the
+   validated PTS-40000 ROI delta is zero. Recover the actual depth
+   production/binding next; another source-owned layer remains possible if
+   that path cannot explain the gap.
    All 12 controller requests are preserved; the other 11
    remain explicitly unbound. Its `38-47 s` retail slot, especially the
    hand-adjacent teal layer near 40 seconds, is the current strongest visual
