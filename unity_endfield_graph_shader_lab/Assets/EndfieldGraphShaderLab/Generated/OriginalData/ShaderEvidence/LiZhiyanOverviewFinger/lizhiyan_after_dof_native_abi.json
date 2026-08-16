@@ -112,6 +112,46 @@
       "functionSha256": "8C1488DC4A09BEB9F142B4EA2DD5CB7B98770D5DE48DA545E94655EE3538B329"
     },
     {
+      "methodIndex": 287999,
+      "type": "HG.Rendering.Runtime.HGRenderPathDeferred",
+      "name": "OnPreRendering",
+      "token": "0x0600137b",
+      "va": "0x189bf6cbc",
+      "functionEnd": "0x189bf7a9d",
+      "functionBytes": 3553,
+      "functionSha256": "E1E497BAD2F5AA44B25F7E6D0F7ECA208CD81F4C49AE8D64070A4FB1D0E6187A"
+    },
+    {
+      "methodIndex": 478062,
+      "type": "UnityEngine.HyperGryph.HGMeshRender",
+      "name": "CreateRendererList",
+      "token": "0x0600010a",
+      "va": "0x18b3fa0a4",
+      "functionEnd": "0x18b3fa10f",
+      "functionBytes": 107,
+      "functionSha256": "8C8113556AB580A5337118F93A8B5E7A38BD79A8F656128FE768CF22B727261F"
+    },
+    {
+      "methodIndex": 288027,
+      "type": "HG.Rendering.Runtime.HGRenderPathScene",
+      "name": ".ctor",
+      "token": "0x06001397",
+      "va": "0x182ed94e0",
+      "functionEnd": "0x182ed991d",
+      "functionBytes": 1085,
+      "functionSha256": "C0D8BACD8084FAA9D608A95C2F56076A9FBC3FB57AB450AA8A2F403614C11E98"
+    },
+    {
+      "methodIndex": 288006,
+      "type": "HG.Rendering.Runtime.HGRenderPathForward",
+      "name": "OnPreRendering",
+      "token": "0x06001382",
+      "va": "0x189bf7bdc",
+      "functionEnd": "0x189bf7f2b",
+      "functionBytes": 847,
+      "functionSha256": "499191DAF06A7B6985A8684B1435D6CC8DA7ECEA1A3C0623CFBAF8EC671ABCD5"
+    },
+    {
       "methodIndex": 287274,
       "type": "HG.Rendering.Runtime.ForwardPassUtils",
       "name": "PrepareAfterDOFTranparentRendererList",
@@ -242,6 +282,21 @@
       "label": "Phase1 -> TransparentAfterDOF.ConstructPass",
       "callsite": "0x189c00740",
       "target": "0x189bb2e40"
+    },
+    {
+      "label": "Deferred.OnPreRendering -> RemoveWorldUILayer(-1)",
+      "callsite": "0x189bf7684",
+      "target": "0x189b73644"
+    },
+    {
+      "label": "Deferred.OnPreRendering -> get_enableTransparentAfterDOF",
+      "callsite": "0x189bf7823",
+      "target": "0x189b7470c"
+    },
+    {
+      "label": "Deferred.OnPreRendering -> CreateRendererList(TransparentAfterPP)",
+      "callsite": "0x189bf789f",
+      "target": "0x18b3fa0a4"
     }
   ],
   "rendererList": {
@@ -321,6 +376,30 @@
       "sceneMV": "0x88",
       "hgrp": "0x98",
       "bytes": 160
+    },
+    "ecsRendererListProducer": {
+      "owner": "HGRenderPathDeferred.OnPreRendering",
+      "field": "m_forwardTransparentAfterDOFECSList",
+      "fieldOffset": "0x1388",
+      "handleType": "System.UInt32",
+      "constructorSentinelWriteVA": "0x182ed9507",
+      "validGate": "HGGraphicsFeatureManager.forwardTransparent.enabled && hgCamera.enableTransparentAfterDOF",
+      "invalidSentinel": 4294967295,
+      "createCallVA": "0x189bf789f",
+      "createTargetVA": "0x18b3fa0a4",
+      "viewHandle": "hgCamera.cullingViewHandle",
+      "renderFlagsMask": "0x4400 (TransparentAfterPP | ShadowOnly)",
+      "renderFlagsValue": "0x4000 (TransparentAfterPP)",
+      "lightModeMask": "0x20e0 | (characterOutlineState << 9)",
+      "globalKeywords": 0,
+      "multiDraw": true,
+      "transparentSorting": true,
+      "cullingLayerMask": "HGCamera.RemoveWorldUILayer(0xffffffff)",
+      "noAlphaTest": false,
+      "excludeGPUDriven": false,
+      "lifecycle": "recreated or reset to 0xffffffff by deferred OnPreRendering each camera frame",
+      "phase1ReadVA": "0x189c00568",
+      "forwardPath": "HGRenderPathForward.OnPreRendering creates ordinary transparent/opaque/pre-Z lists but never writes 0x1388 or creates a 0x4400/0x4000 AfterPP list"
     },
     "liveInputsPending": [
       "cullingResults",
