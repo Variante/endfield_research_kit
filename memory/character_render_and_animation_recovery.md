@@ -2244,16 +2244,24 @@ only stable interpretation and priorities.
    the authored camera rotation as an actor transform worsens the mismatch.
    Preserve the exact mount and timing. Four finger materials author
    `_USE_SOFTBLEND`. The tracked SampleStack diagnostic now implements the
-   exact source equation: point-clamp `_SceneDepth`, linearize scene and
+   exact Li-variant equation: linear-clamp `_SceneDepth`, linearize scene and
    particle depth, then multiply alpha by
    `saturate((scene-particle+_SoftBias)/_SoftDistance)`. A separate
    `_EndfieldRecoveredVFXSoftDepthReady` gate prevents absent or invented
    depth from changing normal assets. Finger transient materials preserve the
-   authored keyword/property state; the current capture deliberately supplies
-   readiness zero because it has no proven scene-depth producer, so the
-   validated PTS-40000 ROI delta is zero. Recover the actual depth
-   production/binding next; another source-owned layer remains possible if
-   that path cannot explain the gap.
+   authored keyword/property state. HGCompat now publishes readiness only
+   after its real primary depth attachment has been written by the opaque
+   owner pass and bound as `_SceneDepth`; ordinary, failed, and cleanup routes
+   publish zero. At PTS 40000 this adds only two composite `raisedHand` pixels
+   and 90 `broadTeal` pixels, with no effects-only delta because that lane has
+   no actor depth. Soft depth executes but does not explain the retail gap.
+   Native evidence independently closes the attachment owner:
+   `TransparentAfterDOFPassConstructor.ConstructPass` reads the 160-byte
+   `PassInput.sceneDepth` at `+0x78` and calls `SetDepthAttachment`
+   `0x189B365EC..0x189B366D0` with read access, between sceneColor `+0x68` and
+   sceneMV `+0x88`. The live `_SceneDepth`/`_CameraDepthTexture` SRV descriptor
+   immediately before a particular VFX draw remains unobserved, so do not
+   promote native or visible admission. Prioritize another source-owned layer.
    All 12 controller requests are preserved; the other 11
    remain explicitly unbound. Its `38-47 s` retail slot, especially the
    hand-adjacent teal layer near 40 seconds, is the current strongest visual

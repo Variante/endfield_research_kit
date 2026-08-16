@@ -4494,14 +4494,21 @@ and same-named hands under `RecoveredProps` belong to accessory geometry.
 Applying the authored camera rotation as an actor rotation moves the mount
 farther away. Preserve the exact mount/timing. Four finger materials author
 `_USE_SOFTBLEND`. The tracked SampleStack diagnostic now implements the exact
-source-backed path using point-clamped `_SceneDepth`, linearized scene and
+Li-variant path using linear-clamped `_SceneDepth`, linearized scene and
 particle depths, `_SoftBias`, and `_SoftDistance`, behind
 `_EndfieldRecoveredVFXSoftDepthReady`. Finger transient materials preserve
-their authored keyword/property state, but the current capture sets readiness
-to zero because it has no source-proven scene-depth producer. As expected, the
-validated PTS-40000 ROI is unchanged. Recovering the real scene-depth
-production/binding is the next bounded task; another source-owned layer
-remains possible.
+their authored keyword/property state. The HGCompat path now publishes
+readiness only after its real primary depth attachment has been written by the
+opaque owner pass and bound as `_SceneDepth`; ordinary, failed, and cleanup
+routes publish zero. At PTS 40000 this changes composite `raisedHand` by only
+two pixels and `broadTeal` by 90 pixels, while effects-only is unchanged
+because it contains no actor depth. Soft depth is therefore executing but does
+not explain the large retail gap. Native evidence independently pins
+`TransparentAfterDOFPassConstructor.ConstructPass` input `+0x78` as the
+read-only incoming scene-depth attachment through `SetDepthAttachment` at
+`0x189B365EC`; a particular VFX draw's live SRV descriptor remains unobserved,
+so retail/native visible admission stays false. Another source-owned layer is
+the next visual priority.
 
 The exact managed LOD renderer bindings are now part of the playable-topology
 contract: start_01 has four non-null MeshRenderer PathIDs and start_02/start_03
