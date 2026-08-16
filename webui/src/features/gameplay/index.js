@@ -2,7 +2,7 @@
   const FILTER_PANEL_STORAGE_KEY = "gameplay_filters_collapsed";
   const COLLAPSED_KINDS_STORAGE_KEY = "gameplay_collapsed_kinds";
   const LEVEL_FRACTION_STORAGE_KEY = "gameplay_level_fraction";
-  const GAMEPLAY_DATA_VERSION = "20260809-gp10";
+  const GAMEPLAY_DATA_VERSION = "20260814-gp13";
   const GAMEPLAY_INTEGRATION_VERSION = "20260813-projectile-audio1";
   const MOBILE_LAYOUT_QUERY = "(max-width: 760px)";
   const GAMEPLAY_INLINE_AUDIO_LIMIT = 20;
@@ -441,6 +441,56 @@
     return rows.length ? `<div class="gameplay-blackboard">${rows.join("")}</div>` : "";
   }
 
+  function renderGameplayTagDetails(details) {
+    const rows = (details || [])
+      .filter((item) => item && item.id)
+      .map((item) => {
+        const names = (item.names || []).filter(Boolean);
+        const contexts = (item.contexts || [])
+          .map((context) => context?.name || "")
+          .filter(Boolean);
+        const label = names.length ? names.join(" / ") : text("id");
+        const contextSuffix = contexts.length
+          ? ` · ${text("gameplayTagContext")}: ${contexts.join(" / ")}`
+          : "";
+        const cls = item.evidenceStatus === "unresolved" ? " gameplay-tag-unresolved" : "";
+        const evidenceReason = item.evidenceStatus === "unresolved"
+          ? (item.unresolvedReason || "")
+          : "";
+        const evidenceTitle = item.evidenceStatus === "unresolved"
+          ? text("gameplayTagUnresolvedReason")
+          : "";
+        const title = evidenceTitle ? ` title="${escapeHtml(evidenceTitle)}"` : "";
+        const reason = evidenceReason
+          ? ` data-unresolved-reason="${escapeHtml(evidenceReason)}"`
+          : "";
+        return `<span class="gameplay-value-chip${cls}"${title}${reason}><b>${escapeHtml(label)}</b>${escapeHtml(`${item.id}${contextSuffix}`)}</span>`;
+      });
+    return rows.length ? `<div class="gameplay-blackboard">${rows.join("")}</div>` : "";
+  }
+
+  function renderGameplayTagQuery(query) {
+    const details = query?.tagDetails || [];
+    return details.length
+      ? renderGameplayTagDetails(details)
+      : renderIdChips(query?.tagIds || []);
+  }
+
+  function gameplayTagQueryValues(query) {
+    const details = query?.tagDetails || [];
+    if (details.length) {
+      return details.map((item) => {
+        const names = (item.names || []).filter(Boolean);
+        const contexts = (item.contexts || [])
+          .map((context) => context?.name || "")
+          .filter(Boolean);
+        if (names.length) return `${names.join(" / ")} (${item.id})`;
+        return contexts.length ? `${item.id} [${contexts.join(" / ")}]` : item.id;
+      });
+    }
+    return query?.tagIds || [];
+  }
+
   function gameplayTargetForItem(item) {
     const id = String(item?.id || "").trim();
     if (!id) return null;
@@ -515,17 +565,18 @@
   const ATTR_TYPE_KEYS = {
     0: "level", 1: "hp", 2: "atk", 3: "def",
     4: "physical_damage_taken", 5: "fire_damage_taken", 6: "pulse_damage_taken", 7: "cryst_damage_taken",
-    9: "critical_rate", 17: "normal_attack_efficiency", 28: "ultimate_skill_efficiency",
+    9: "critical_rate", 13: "move_speed", 17: "normal_attack_efficiency",
+    20: "max_poise", 21: "poise_recovery_time", 28: "ultimate_skill_efficiency",
     29: "heal_output", 30: "heal_taken", 31: "healing_taken_scalar",
     32: "skill_damage", 33: "combo_skill_damage", 34: "normal_attack_damage",
     35: "fire_burst_damage", 36: "pulse_burst_damage", 37: "cryst_burst_damage", 38: "natural_burst_damage",
     39: "str", 40: "agi", 41: "wis", 42: "will",
-    44: "ultimate_sp_gain", 48: "natural_damage_taken",
-    50: "physical_damage", 51: "fire_damage", 52: "pulse_damage", 53: "cryst_damage", 54: "natural_damage",
+    44: "ultimate_sp_gain", 47: "combo_skill_cooldown", 48: "natural_damage_taken",
+    50: "physical_damage", 51: "fire_damage", 52: "pulse_damage", 53: "cryst_damage", 54: "natural_damage", 55: "ether_damage",
     60: "ether_damage_taken", 61: "broken_unit_damage",
     80: "physical_damage_taken_scalar", 81: "natural_damage_taken_scalar", 82: "cryst_damage_taken_scalar",
     83: "pulse_damage_taken_scalar", 84: "fire_damage_taken_scalar", 85: "ether_damage_taken_scalar",
-    87: "infliction",
+    87: "infliction", 91: "in_air_move_speed",
   };
 
   function statAttrLabel(attr) {
@@ -995,6 +1046,14 @@
     for (const skill of group.skills || []) {
       const level = levelForSkill(skill, levelValue);
       if (!level) continue;
+      const cooldown = Number(level.coolDown);
+      if (Number.isFinite(cooldown) && cooldown > 0) {
+        const key = `cooldown ${cooldown}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          chips.push(`<span class="gameplay-value-chip"><b>${escapeHtml(text("cooldown"))}</b>${escapeHtml(`${formatValue(cooldown)} ${text("secondsShort")}`)}</span>`);
+        }
+      }
       for (const item of level.blackboard || []) {
         if (!item || !item.key) continue;
         const key = `bb ${item.key} ${item.value}`;
@@ -2032,16 +2091,469 @@
     return rows ? `<div class="gameplay-card-grid">${rows}</div>` : "";
   }
 
+  const BUFF_STACKING_LABEL_KEYS = {
+    HighPriorityWithMaxStack: "buffStackHighPriorityWithMaxStack",
+    OverwriteDuration: "buffStackOverwriteDuration",
+    Unique: "buffStackUnique",
+    Extend: "buffStackExtend",
+    Enhance: "buffStackEnhance",
+    HighPriority: "buffStackHighPriority",
+    Unlimited: "buffStackUnlimited",
+    Stack: "buffStackStack",
+    Refresh: "buffStackRefresh",
+    Modify: "buffStackModify",
+    EnhanceAndRefresh: "buffStackEnhanceAndRefresh",
+    EnhanceAndOverwriteDuration: "buffStackEnhanceAndOverwriteDuration",
+  };
+
+  const MODIFIER_LABEL_KEYS = {
+    Addition: "modifierAddition",
+    Multiplier: "modifierMultiplier",
+    FinalAddition: "modifierFinalAddition",
+    FinalMultiplier: "modifierFinalMultiplier",
+    BaseAddition: "modifierBaseAddition",
+    BaseMultiplier: "modifierBaseMultiplier",
+    BaseFinalAddition: "modifierBaseFinalAddition",
+    BaseFinalMultiplier: "modifierBaseFinalMultiplier",
+    None: "modifierNone",
+    Enum: "modifierEnum",
+  };
+
+  const MODIFIER_TARGET_LABEL_KEYS = {
+    Specific: "modifierTargetSpecific",
+    Main: "modifierTargetMain",
+    Sub: "modifierTargetSub",
+    All: "modifierTargetAll",
+  };
+
+  const BUFF_FLAG_LABEL_KEYS = {
+    ignoreCooldownWhenAdding: "buffFlagIgnoreAddingCooldown",
+    ignoreTagImmune: "buffFlagIgnoreTagImmune",
+    onlyUseSelfTimeDilation: "buffFlagSelfTimeDilationOnly",
+    useTimeDilationDt: "buffFlagUseTimeDilationDt",
+    waitFirstTriggerInterval: "buffFlagWaitFirstInterval",
+  };
+
+  const BUFF_ABILITY_EVENT_LABEL_KEYS = {
+    OnOwnerHpZero: "buffEventOwnerHpZero",
+    OnTakeDamage: "buffEventTakeDamage",
+    OnBeforeCastSkill: "buffEventBeforeCastSkill",
+    OnSkillEnd: "buffEventSkillEnd",
+    OnAfterOutputWeaknessTriggered: "buffEventAfterWeaknessTriggered",
+  };
+
+  const BUFF_BRANCH_LABEL_KEYS = {
+    condition: "buffActionBranchCondition",
+    fail: "buffActionBranchFail",
+    succeed: "buffActionBranchSucceed",
+  };
+
+  // Keep branch provenance beside each decoded object while retaining the
+  // existing semantic rendering checks below.  A WeakMap avoids mutating the
+  // generated data payload with frontend-only state.
+  const buffActionBranchByDecoded = new WeakMap();
+
+  function buffRecord(id) {
+    return STATE.index?.buffs?.[String(id || "")] || null;
+  }
+
+  function buffIdentifierHint(id) {
+    const value = String(id || "").toLowerCase();
+    const rules = [
+      [/damage_immune|dmg_immune|invincible|_wudi|full_immune/, "buffHintDamageImmune"],
+      [/shield/, "buffHintShield"],
+      [/reducecd|cooldown|nocd|_cd_|cdreset/, "buffHintCooldown"],
+      [/slow|speed_down/, "buffHintSlow"],
+      [/superarmor|super_armor/, "buffHintSuperArmor"],
+      [/resilience|poise|fragile/, "buffHintPoise"],
+      [/explode_on_death|deathskill|realdead|undeadable|_dead/, "buffHintDeathAction"],
+      [/addtag|add_tag/, "buffHintAddTag"],
+      [/born_fx|bornfx|endinggame_vfx|effect_asset|vfx|_fx|lighting_fx/, "buffHintVisual"],
+      [/settlement/, "buffHintSettlement"],
+      [/take_power_attack_only/, "buffHintPowerAttackOnly"],
+      [/norootmotion/, "buffHintNoRootMotion"],
+      [/teleport/, "buffHintTeleport"],
+      [/deduct_hp|checkhp|hp_listener/, "buffHintHpCondition"],
+      [/counter|behit_counter/, "buffHintCounter"],
+      [/absorb/, "buffHintAbsorb"],
+      [/summon|minion/, "buffHintSummon"],
+      [/dung_coin|minibreak_coin/, "buffHintDungeonCoin"],
+      [/camera/, "buffHintCamera"],
+      [/interrupt/, "buffHintInterrupt"],
+      [/angry/, "buffHintAngry"],
+      [/support/, "buffHintSupport"],
+      [/phantom/, "buffHintPhantom"],
+      [/born|_race|hdg\d|_hard|_quest|prolog|_train|_dg\d|e\d+m\d/, "buffHintModeState"],
+    ];
+    const match = rules.find(([pattern]) => pattern.test(value));
+    return text(match ? match[1] : "buffHintInternal");
+  }
+
+  function buffLifeLabel(lifeType) {
+    if (!lifeType) return "";
+    if (lifeType.name === "Infinity") return text("buffLifeInfinity");
+    if (lifeType.name === "Limited") return text("buffLifeLimited");
+    return lifeType.name || formatValue(lifeType.value);
+  }
+
+  function blackboardValue(row) {
+    if (!row) return "";
+    const value = row.value;
+    return row.useBlackboardKey && row.blackboardKey
+      ? `${row.blackboardKey} (${formatValue(value)})`
+      : formatValue(value);
+  }
+
+  function buffCompareLabel(value) {
+    return ({ 0: "<", 1: "≤", 2: ">", 3: "≥", 4: "=" })[Number(value)]
+      || `${text("buffCompareType")} ${formatValue(value)}`;
+  }
+
+  function buffTargetSettingsSummary(settings) {
+    if (!settings || settings.status !== "exact") return "";
+    const parts = [];
+    if (settings.targetGroupKey) parts.push(`group=${settings.targetGroupKey}`);
+    if (settings.targetContextKey) parts.push(`context=${settings.targetContextKey}`);
+    if (settings.ownerContextKey) parts.push(`owner=${settings.ownerContextKey}`);
+    if (Number.isFinite(Number(settings.targetSource))) parts.push(`source=${formatValue(settings.targetSource)}`);
+    if (Number.isFinite(Number(settings.target))) parts.push(`target=${formatValue(settings.target)}`);
+    if (Number.isFinite(Number(settings.selectorOwner))) parts.push(`selector=${formatValue(settings.selectorOwner)}`);
+    if (Number.isFinite(Number(settings.selectorDirection))) parts.push(`direction=${formatValue(settings.selectorDirection)}`);
+    return parts.join(", ");
+  }
+
+  function buffDecodedActions(sequence) {
+    const rows = [];
+    const visitSequence = (candidate, branch = "") => {
+      (candidate?.actionDataItems || []).forEach((item) => {
+        const decoded = item?.decoded || {};
+        buffActionBranchByDecoded.set(decoded, branch);
+        rows.push(decoded);
+        visitSequence(decoded.conditionAction, branch ? `${branch}.condition` : "condition");
+        visitSequence(decoded.failActions, branch ? `${branch}.fail` : "fail");
+        visitSequence(decoded.succeedActions, branch ? `${branch}.succeed` : "succeed");
+      });
+    };
+    visitSequence(sequence);
+    return rows;
+  }
+
+  function buffAttributeModifierPairs(record) {
+    return ((record.attributeModifier || {}).attributeModifiers || []).map((modifier) => {
+      if (!modifier) return null;
+      const attributeLabel = statAttrLabel({
+        type: modifier.attributeType,
+        key: `attr_${modifier.attributeType}`,
+        label: modifier.attributeTypeName,
+      });
+      const targetLabel = modifier.modifyAttributeTypeName
+        ? text(MODIFIER_TARGET_LABEL_KEYS[modifier.modifyAttributeTypeName] || "modifierTargetUnknown")
+        : `${text("modifierTargetUnknown")} ${formatValue(modifier.modifyAttributeType)}`;
+      const formulaLabel = modifier.formulaItemName
+        ? text(MODIFIER_LABEL_KEYS[modifier.formulaItemName] || "modifierUnknown")
+        : `${text("modifierType")} ${formatValue(modifier.formulaItem)}`;
+      return {
+        label: [attributeLabel, targetLabel, formulaLabel].filter(Boolean).join(" / "),
+        value: blackboardValue(modifier.param),
+      };
+    }).filter(Boolean);
+  }
+
+  function renderBuffAbilityEventActions(record) {
+    const actionGroupCount = (record.abilityEventActions || []).length;
+    const groups = (record.abilityEventActions || []).map((eventMap, groupIndex) => {
+      if (!eventMap) return "";
+      const rows = [];
+      let activeBranch = "";
+      const rawPush = rows.push.bind(rows);
+      rows.push = (row) => rawPush({ ...row, branch: activeBranch });
+      (eventMap.actions || []).forEach((sequence) => {
+        buffDecodedActions(sequence).forEach((decoded) => {
+          activeBranch = buffActionBranchByDecoded.get(decoded) || "";
+          if (decoded.semanticStatus === "exact-skill-id-condition") {
+            const ids = (decoded.skillIdList || []).map((entry) => blackboardValue(entry)).filter(Boolean);
+            if (ids.length) rows.push({ label: text("buffActionCheckSkillId"), value: ids.join(", ") });
+          }
+          if (decoded.semanticStatus === "exact-skill-cooldown-operation") {
+            const operation = decoded.functionTypeName === "Set"
+              ? text("buffActionSetCooldown")
+              : decoded.functionTypeName === "Reduce"
+                ? text("buffActionReduceCooldown")
+                : `${text("buffActionUnknownCooldown")}: ${formatValue(decoded.functionTypeName ?? decoded.functionType)}`;
+            const target = decoded.useSkillType
+              ? (decoded.skillTypeMaskName || formatValue(decoded.skillTypeMask))
+              : decoded.skillId;
+            const rawAmount = blackboardValue(decoded.value);
+            const amount = decoded.isPercentage
+              ? `${rawAmount}%`
+              : `${rawAmount} ${text("secondsShort")}`;
+            rows.push({ label: operation, value: target ? `${target}: ${amount}` : amount });
+          }
+          if (decoded.semanticStatus === "exact-super-armor-condition") {
+            rows.push({
+              label: text("buffActionCheckSuperArmor"),
+              value: `${buffCompareLabel(decoded.compareType)} ${blackboardValue(decoded.value)}`,
+            });
+          }
+          if (decoded.semanticStatus === "exact-buff-id-context-condition") {
+            const ids = (decoded.buffIdList || []).map((entry) => entry?.value || blackboardValue(entry)).filter(Boolean);
+            const tags = gameplayTagQueryValues(decoded.query);
+            rows.push({ label: text("buffActionCheckBuffId"), value: [...ids, ...tags].join(", ") || text("buffActionContextBuff") });
+          }
+          if (decoded.semanticStatus === "exact-buff-stack-condition") {
+            const ids = decoded.advanced ? (decoded.buffSettings?.buffIds || []) : [decoded.buffId].filter(Boolean);
+            rows.push({
+              label: text("buffActionCheckBuffStack"),
+              value: `${ids.join(", ") || text("buffActionTargetBuff")} ${buffCompareLabel(decoded.compareType)} ${blackboardValue(decoded.value)}`,
+            });
+          }
+          if (decoded.semanticStatus === "exact-hp-condition") {
+            const threshold = blackboardValue(decoded.value);
+            rows.push({ label: decoded.isRatio ? text("buffActionCheckHpRatio") : text("buffActionCheckHp"), value: `${buffCompareLabel(decoded.compareType)} ${threshold}${decoded.isRatio ? "%" : ""}` });
+          }
+          if (decoded.semanticStatus === "exact-poise-value-condition") {
+            rows.push({ label: text("buffActionCheckPoise"), value: `${buffCompareLabel(decoded.compareType)} ${blackboardValue(decoded.value)}` });
+          }
+          if (decoded.semanticStatus === "exact-damage-type-condition") {
+            const damageName = ({ 0: text("damagePhysical"), 1: text("damageReal"), 2: text("damageFire"), 3: text("damagePulse"), 4: text("damageCryst"), 5: text("damageLifeDrain"), 6: text("damageNatural"), 7: text("damageEther") })[Number(decoded.damageType)];
+            rows.push({ label: text("buffActionCheckDamageType"), value: damageName || formatValue(decoded.damageType) });
+          }
+          if (decoded.semanticStatus === "exact-gameplay-tag-condition") {
+            rows.push({ label: text("buffActionCheckTag"), value: gameplayTagQueryValues(decoded.query).join(", ") || text("buffActionConfiguredTagQuery") });
+          }
+          if (decoded.semanticStatus === "exact-timed-marker-condition") {
+            rows.push({ label: text("buffActionCheckTimedMarker"), value: decoded.useBlackboardKey ? decoded.blackboardKey : decoded.markerId });
+          }
+          if (decoded.semanticStatus === "exact-object-type-condition") {
+            rows.push({ label: text("buffActionCheckObjectType"), value: formatValue(decoded.objectTypeMask) });
+          }
+          if (decoded.semanticStatus === "exact-probability-condition") {
+            const probability = Number(decoded.probability?.value);
+            rows.push({ label: text("buffActionProbability"), value: Number.isFinite(probability) ? `${formatValue(probability * 100)}%` : blackboardValue(decoded.probability) });
+          }
+          if (decoded.semanticStatus === "exact-distance-condition") {
+            rows.push({ label: text("buffActionCheckDistance"), value: `${decoded.lessThan ? "<" : "≥"} ${formatValue(decoded.distance)}` });
+          }
+          if (decoded.semanticStatus === "exact-consume-buff-layer-condition") {
+            rows.push({ label: text("buffActionConsumeBuffLayer"), value: `${buffCompareLabel(decoded.compareType)} ${blackboardValue(decoded.num)}` });
+          }
+          if (decoded.semanticStatus === "exact-global-cooldown-condition") {
+            rows.push({ label: text("buffActionCheckGlobalCooldown"), value: decoded.buffId });
+          }
+          if (decoded.semanticStatus === "exact-targets-equal-condition") {
+            rows.push({ label: text("buffActionCheckTargetsEqual"), value: text("enabled") });
+          }
+          if (decoded.semanticStatus === "exact-main-character-target-condition") {
+            rows.push({ label: text("buffActionCheckMainCharacter"), value: text("enabled") });
+          }
+          if (decoded.semanticStatus === "exact-damage-decorate-mask-condition") {
+            rows.push({
+              label: text("buffActionCheckDamageMask"),
+              value: `${decoded.maskHex || formatValue(decoded.mask)} (${text("buffCompareType")} ${formatValue(decoded.checkType)})`,
+            });
+          }
+          if (decoded.semanticStatus === "exact-create-timed-marker-action") {
+            const markerId = blackboardValue(decoded.markerId);
+            const duration = blackboardValue(decoded.duration);
+            rows.push({
+              label: text("buffActionCreateTimedMarker"),
+              value: [markerId, duration ? `${duration} ${text("secondsShort")}` : ""].filter(Boolean).join(": "),
+            });
+          }
+          if (decoded.semanticStatus === "partial-effect-action-cfg-and-target-settings-opaque") {
+            const effectIds = (decoded.effectActionCfgPartial?.stringHits || [])
+              .map((entry) => String(entry?.value || ""))
+              .filter(Boolean);
+            const effectName = effectIds[0] || decoded.bigEffectName || text("buffActionEffectConfigured");
+            const target = buffTargetSettingsSummary(decoded.targetSettingsEnvelopePartial);
+            rows.push({ label: text("buffActionPlayEffect"), value: [effectName, target].filter(Boolean).join(" · ") });
+          }
+          if (decoded.semanticStatus === "partial-create-buff-input-tail-and-target-settings-opaque") {
+            const buffIds = (decoded.buffsPartial?.items || []).map((entry) => entry?.buffId).filter(Boolean);
+            const target = buffTargetSettingsSummary(decoded.targetSettingsEnvelopePartial);
+            if (buffIds.length) rows.push({ label: text("buffActionCreateBuff"), value: [buffIds.join(", "), target].filter(Boolean).join(" · ") });
+          }
+          if (decoded.semanticStatus === "exact-finish-buff-action") {
+            const buffIds = (decoded.buffIds || []).filter(Boolean);
+            rows.push({
+              label: text("buffActionFinishBuff"),
+              value: decoded.finishAll ? `${buffIds.join(", ") || text("buffActionTargetBuff")} (${text("buffFinishAll")})` : (buffIds.join(", ") || text("buffActionTargetBuff")),
+            });
+          }
+          if (decoded.semanticStatus === "exact-finish-buff-advanced-action") {
+            rows.push({ label: text("buffActionFinishBuff"), value: (decoded.buffSettings?.buffIds || []).join(", ") || text("buffActionConfiguredBuffQuery") });
+          }
+          if (decoded.semanticStatus === "exact-finish-owner-action") {
+            rows.push({ label: text("buffActionFinishOwner"), value: decoded.skipDieDisplay ? text("buffActionSkipDeathDisplay") : text("enabled") });
+          }
+          if (decoded.semanticStatus === "exact-add-global-cooldown-action") {
+            rows.push({ label: text("buffActionAddGlobalCooldown"), value: `${decoded.buffId}: ${blackboardValue(decoded.cdTime)} ${text("secondsShort")}` });
+          }
+          if (decoded.semanticStatus === "exact-cast-skill-action") {
+            rows.push({ label: text("buffActionCastSkill"), value: blackboardValue(decoded.skillId) });
+          }
+          if (decoded.semanticStatus === "exact-obtain-cost-action") {
+            const costType = Number(decoded.costType) === 1 ? text("buffResourceAtb") : text("buffResourceUltimateSp");
+            rows.push({ label: text("buffActionObtainCost"), value: `${costType}: ${blackboardValue(decoded.costValue)} × ${blackboardValue(decoded.coefficient)}` });
+          }
+          if (decoded.semanticStatus === "exact-spawn-interactive-gold-coin-action") {
+            rows.push({ label: text("buffActionSpawnGoldCoin"), value: blackboardValue(decoded.count) });
+          }
+          if (decoded.semanticStatus === "exact-save-ai-blackboard-value-action") {
+            rows.push({ label: text("buffActionSaveAiBlackboard"), value: `${decoded.aiBBKey} → ${decoded.skillBBKey || decoded.skillXKey || decoded.skillYKey || decoded.skillZKey}` });
+          }
+          if (decoded.semanticStatus === "exact-simple-blackboard-calculation-action") {
+            const operation = decoded.operationName || formatValue(decoded.operation);
+            rows.push({ label: text("buffActionCalculateBlackboard"), value: `${decoded.key}: ${blackboardValue(decoded.value1)} ${operation} ${blackboardValue(decoded.value2)}` });
+          }
+          if (decoded.semanticStatus === "exact-compare-float-action") {
+            const compare = decoded.compareName || buffCompareLabel(decoded.compare);
+            rows.push({
+              label: text("buffActionCompareBlackboard"),
+              value: `${blackboardValue(decoded.valueA)} ${compare} ${blackboardValue(decoded.valueB)}`,
+            });
+          }
+          if (decoded.semanticStatus === "exact-special-game-event-action") {
+            rows.push({ label: text("buffActionSpecialGameEvent"), value: formatValue(decoded.specialGameEventType) });
+          }
+          if (decoded.semanticStatus === "partial-damage-units-opaque-hit-env-bounded") {
+            const target = buffTargetSettingsSummary(decoded.targetSettingsEnvelopePartial);
+            rows.push({ label: text("buffActionDealDamage"), value: [text("buffDamageValueOpaque"), target].filter(Boolean).join(" · ") });
+          }
+          if (decoded.semanticStatus === "partial-calculation-target-settings-envelope-opaque") {
+            const target = buffTargetSettingsSummary(decoded.calculationTargetEnvelopePartial);
+            const operation = decoded.operationName || formatValue(decoded.operation);
+            const calculationType = decoded.calculateTypeName || formatValue(decoded.calculateType);
+            rows.push({
+              label: text("buffActionCalculateBlackboard"),
+              value: [decoded.key, calculationType, operation, target].filter(Boolean).join(" · "),
+            });
+          }
+          if (decoded.semanticStatus === "partial-convert-from-target-settings-envelope-opaque") {
+            const operation = decoded.operationTypeName || formatValue(decoded.operationType);
+            const translate = decoded.translateOperationName || formatValue(decoded.translateOperation);
+            const target = decoded.targetGroupKey || text("buffActionTargetBuff");
+            rows.push({
+              label: text("buffActionConvertTargetContext"),
+              value: [operation, translate, target].filter(Boolean).join(" · "),
+            });
+          }
+          if (decoded.semanticStatus === "partial-source-target-settings-envelopes-opaque") {
+            rows.push({
+              label: text("buffActionSpellInfliction"),
+              value: [decoded.inflictionTypeName || formatValue(decoded.inflictionType), decoded.isExtra ? text("enabled") : ""].filter(Boolean).join(" · "),
+            });
+          }
+          if (decoded.semanticStatus === "exact-not-next-check-control-action") {
+            rows.push({ label: text("buffActionStopNextCheck"), value: text("enabled") });
+          }
+        });
+      });
+      if (!rows.length) return "";
+      const eventName = eventMap.abilityEventName
+        ? text(BUFF_ABILITY_EVENT_LABEL_KEYS[eventMap.abilityEventName] || eventMap.abilityEventName)
+        : formatValue(eventMap.abilityEvent);
+      const chain = actionGroupCount > 1
+        ? ` · ${text("buffAbilityEventChain")} ${groupIndex + 1}/${actionGroupCount}`
+        : "";
+      const rowsWithBranchContext = rows.map((row) => {
+        const branch = row && row.branch;
+        if (!branch) return row;
+        const branchLabel = branch
+          .split(".")
+          .map((key) => text(BUFF_BRANCH_LABEL_KEYS[key] || key))
+          .join(" / ");
+        return {
+          ...row,
+          label: `${branchLabel}: ${row.label}`,
+        };
+      });
+      return `<div class="gameplay-buff-action-group"><div class="gameplay-subheading">${escapeHtml(text("buffAbilityEvent"))}: ${escapeHtml(eventName)}${escapeHtml(chain)}</div>${renderChipPairs(rowsWithBranchContext)}</div>`;
+    }).filter(Boolean);
+    return groups.join("");
+  }
+
+  function renderBuffCard(id, highlight) {
+    const record = buffRecord(id);
+    const diffClass = highlight && highlight.has(id) ? " gameplay-diff" : "";
+    if (!record || record.evidenceStatus === "unresolved") {
+      return `<details class="gameplay-buff-card${diffClass}"><summary><code>${escapeHtml(id)}</code></summary><p class="muted">${escapeHtml(text("buffDecodeUnavailable"))}</p></details>`;
+    }
+    const stacking = record.stacking || {};
+    const stackingLabel = text(BUFF_STACKING_LABEL_KEYS[stacking.stackingTypeName] || "buffStackUnknown");
+    const trigger = record.triggerInterval || {};
+    const maxTriggers = record.maxTriggerCnt || {};
+    const duration = record.duration || null;
+    const addingCooldown = record.addingCooldown || null;
+    const abilityEventActionCount = Number(record.abilityEventActionCount || 0);
+    const abilityEventActions = renderBuffAbilityEventActions(record);
+    const facts = [
+      { label: text("buffLifeType"), value: buffLifeLabel(record.lifeType) },
+      duration ? { label: text("buffDuration"), value: Number(duration.value) < 0 ? text("buffLifeInfinity") : `${formatValue(duration.value)} ${text("secondsShort")}` } : null,
+      { label: text("buffStackingType"), value: stackingLabel },
+      { label: text("buffIdentifierType"), value: stacking.identifierTypeName === "StackingKey" ? text("buffIdentifierStackingKey") : text("buffIdentifierId") },
+      Number(stacking.maxStackCnt) > 0 ? { label: text("buffMaxStack"), value: stacking.maxStackCnt } : null,
+      Number(stacking.priority) !== 0 || stacking.usePriorityKey ? { label: text("buffPriority"), value: stacking.usePriorityKey ? `${stacking.priorityKey} (${formatValue(stacking.priority)})` : stacking.priority } : null,
+      Number(trigger.value) >= 0 || trigger.useBlackboardKey ? { label: text("buffTriggerInterval"), value: blackboardValue(trigger) } : null,
+      Number(maxTriggers.value) !== 0 || maxTriggers.useBlackboardKey ? { label: text("buffMaxTriggers"), value: Number(maxTriggers.value) < 0 ? text("buffLifeInfinity") : blackboardValue(maxTriggers) } : null,
+      addingCooldown && (addingCooldown.useBlackboardKey || Number(addingCooldown.value) !== 0)
+        ? { label: text("buffAddingCooldown"), value: blackboardValue(addingCooldown) }
+        : null,
+      abilityEventActionCount > 0
+        ? { label: text("buffAbilityEventActions"), value: abilityEventActionCount }
+        : null,
+    ].filter(Boolean);
+    const attributeModifiers = renderChipPairs(buffAttributeModifierPairs(record));
+    const appliedTagIds = (record.applyTags || {}).tagIds || [];
+    const appliedTagDetails = (record.applyTags || {}).tagDetails || [];
+    const appliedTags = appliedTagDetails.length
+      ? renderGameplayTagQuery(record.applyTags)
+      : appliedTagIds.length
+        ? renderIdChips(appliedTagIds)
+      : "";
+    const params = renderChipPairs((record.blackboardCandidates || []).map((row) => ({ label: row.key, value: row.value })));
+    const refs = renderIdChips(record.refs || []);
+    const hint = buffIdentifierHint(id);
+    const flags = Object.entries(record.flags || {})
+      .filter(([, value]) => value)
+      .map(([key]) => ({ label: text(BUFF_FLAG_LABEL_KEYS[key] || key), value: text("enabled") }));
+    return `<details class="gameplay-buff-card${diffClass}">
+      <summary><code>${escapeHtml(id)}</code>${hint ? `<span>${escapeHtml(text("buffIdentifierHint"))}: ${escapeHtml(hint)}</span>` : ""}</summary>
+      ${renderChipPairs(facts)}
+      ${abilityEventActions}
+      ${abilityEventActionCount > 0 ? `<p class="gameplay-evidence-note muted">${escapeHtml(text(abilityEventActions ? "buffAbilityEventActionExactBoundary" : "buffAbilityEventActionBoundary"))}</p>` : ""}
+      ${attributeModifiers ? `<div class="gameplay-subheading">${escapeHtml(text("buffAttributeModifiers"))}</div>${attributeModifiers}<p class="gameplay-evidence-note muted">${escapeHtml(text("buffAttributeModifierBoundary"))}</p>` : ""}
+      ${appliedTags ? `<div class="gameplay-subheading">${escapeHtml(text("buffAppliedTags"))}</div>${appliedTags}<p class="gameplay-evidence-note muted">${escapeHtml(text("buffAppliedTagBoundary"))}</p>` : ""}
+      ${params ? `<div class="gameplay-subheading">${escapeHtml(text("buffParameterCandidates"))}</div>${params}` : ""}
+      ${flags.length ? `<div class="gameplay-subheading">${escapeHtml(text("buffFlags"))}</div>${renderChipPairs(flags)}` : ""}
+      ${refs ? `<div class="gameplay-subheading">${escapeHtml(text("buffReferences"))}</div>${refs}` : ""}
+      <p class="gameplay-buff-source muted">${escapeHtml(text("source"))}: ${escapeHtml(record.source?.path || "")}</p>
+    </details>`;
+  }
+
+  function renderBuffCards(ids, opts = {}) {
+    const rows = [...new Set((ids || []).filter(Boolean))].map((id) => renderBuffCard(id, opts.highlight));
+    if (!rows.length) return "";
+    return `<p class="gameplay-evidence-note muted">${escapeHtml(text("buffEvidenceBoundary"))}</p><div class="gameplay-buff-grid">${rows.join("")}</div>`;
+  }
+
   function enemyModifierPairs(source) {
     return (source.attrModifiers || []).map((modifier) => {
       if (!modifier) return null;
-      const label = [statAttrLabel(modifier), modifier.modifierType !== undefined ? `type ${formatValue(modifier.modifierType)}` : ""].filter(Boolean).join(" / ");
+      const modifierLabel = modifier.modifierTypeName
+        ? text(MODIFIER_LABEL_KEYS[modifier.modifierTypeName] || "modifierUnknown")
+        : `${text("modifierType")} ${formatValue(modifier.modifierType)}`;
+      const targetLabel = modifier.modifyAttributeTypeName
+        ? text(MODIFIER_TARGET_LABEL_KEYS[modifier.modifyAttributeTypeName] || "modifierTargetUnknown")
+        : "";
+      const label = [statAttrLabel(modifier), targetLabel, modifierLabel].filter(Boolean).join(" / ");
       return { label, value: modifier.value };
     }).filter(Boolean);
   }
 
   function renderEnemyModifierRows(entry, diffLabels) {
-    return renderChipPairs(enemyModifierPairs(entry), { diffLabels });
+    const rows = renderChipPairs(enemyModifierPairs(entry), { diffLabels });
+    return rows ? `${rows}<p class="gameplay-evidence-note muted">${escapeHtml(text("enemyModifierBoundary"))}</p>` : "";
   }
 
   function variantDetailPairs(variant) {
@@ -2105,7 +2617,7 @@
 
   function variantPaneBody(variant, diffLabels, buffDiff) {
     const details = renderChipPairs(variantDetailPairs(variant), { diffLabels });
-    const buffs = renderIdChips(variant.bornBuffs || [], { highlight: buffDiff });
+    const buffs = renderBuffCards(variant.bornBuffs || [], { highlight: buffDiff });
     const modifiers = renderEnemyModifierRows(variant, diffLabels);
     return `<div class="gameplay-skill-meta">${escapeHtml([variant.id, variant.displayTypeLabel].filter(Boolean).join(" / "))}</div>
       ${details}
@@ -2244,7 +2756,7 @@
     if (independent) blocks.push(`<div class="gameplay-subheading">${escapeHtml(text("independentAttributes"))}</div>${independent}`);
     const modifiers = renderEnemyModifierRows(entry);
     if (modifiers) blocks.push(`<div class="gameplay-subheading">${escapeHtml(text("attrModifiers"))}</div>${modifiers}`);
-    const bornBuffs = renderIdChips(entry.bornBuffs || []);
+    const bornBuffs = renderBuffCards(entry.bornBuffs || []);
     if (bornBuffs) blocks.push(`<div class="gameplay-subheading">${escapeHtml(text("bornBuffs"))}</div>${bornBuffs}`);
     return blocks.join("");
   }

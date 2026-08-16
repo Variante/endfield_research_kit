@@ -1,0 +1,68 @@
+{
+  "schema": "gameplayTagRuntimeTrace.hooks.v1",
+  "gameBuild": "endfield-2026-07-11-gameassembly-0c557367",
+  "processName": "Endfield.exe",
+  "moduleName": "GameAssembly.dll",
+  "files": {
+    "executable": {
+      "relativePath": "Endfield.exe",
+      "bytes": 827448,
+      "sha256": "a9726459d9ab90cf01d7536a4250315e85ebfe12da493ac16f7bad3b68e7df99"
+    },
+    "gameAssembly": {
+      "relativePath": "GameAssembly.dll",
+      "bytes": 280436712,
+      "sha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
+    },
+    "metadata": {
+      "relativePath": "Endfield_Data/il2cpp_data/Metadata/global-metadata.dat",
+      "bytes": 62925560,
+      "sha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
+    }
+  },
+  "hooks": [
+    {
+      "name": "GameplayTag.RequestTag(string)",
+      "kind": "request",
+      "sourceKind": "GameplayTag.RequestTag",
+      "rva": "0x47741d0",
+      "stringArgIndex": 0,
+      "required": true
+    },
+    {
+      "name": "GameplayTag.get_tagName()",
+      "kind": "name",
+      "sourceKind": "GameplayTag.get_tagName",
+      "rva": "0x36b0180",
+      "required": true
+    },
+    {
+      "name": "GameplayTagManager.RequestGameplayTag(string,bool)",
+      "kind": "request",
+      "sourceKind": "GameplayTagManager.RequestGameplayTag",
+      "rva": "0x3917710",
+      "stringArgIndex": 0,
+      "required": true
+    },
+    {
+      "name": "GameplayTagManager.GetGameplayTagById(int,bool)",
+      "kind": "lookup",
+      "sourceKind": "GameplayTagManager.GetGameplayTagById",
+      "rva": "0x4774240",
+      "tagIdArgIndex": 0,
+      "required": true
+    },
+    {
+      "name": "GameplayTagConfigSet._Build()",
+      "kind": "build",
+      "sourceKind": "GameplayTagConfigSet._Build",
+      "rva": "0x34e5e80",
+      "required": true
+    }
+  ],
+  "evidenceBoundary": {
+    "status": "runtime-read-only",
+    "description": "Exact tag name/id pairs observed through the current-build GameplayTag methods after the verified GameAssembly and metadata pair is loaded. The capture does not mutate arguments or game state.",
+    "hashAlgorithm": "crc32-utf8-full-path"
+  }
+}

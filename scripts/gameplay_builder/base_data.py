@@ -12,18 +12,53 @@ import json
 import re
 import sys
 import time
+import zlib
 from pathlib import Path
 from typing import Any
 
 if __package__ == "scripts.gameplay_builder":
-    from ..common import EXPORT_ROOT, LANG_DIR, rel_path, write_json
+    from ..common import EXPORT_ROOT, LANG_DIR, check_installed_native_inputs, rel_path, write_json
+    from ..game_data.memorypack.buff import buff_gameplay_semantics
+    from ..story_builder.native_protocol import il2cpp
 else:
-    from common import EXPORT_ROOT, LANG_DIR, rel_path, write_json
+    from common import EXPORT_ROOT, LANG_DIR, check_installed_native_inputs, rel_path, write_json
+    from game_data.memorypack.buff import buff_gameplay_semantics
+    from story_builder.native_protocol import il2cpp
 
 
 DEFAULT_TABLE_SOURCE_RELS = (
     ("StreamingAssets", Path("structured") / "StreamingAssets" / "Table"),
     ("Persistent", Path("structured") / "Persistent" / "Table"),
+)
+DEFAULT_GAMEPLAY_CONFIG_SOURCE_RELS = (
+    (
+        "StreamingAssets",
+        Path("structured") / "StreamingAssets" / "Data" / "Json" / "GameplayConfig",
+    ),
+    (
+        "Persistent",
+        Path("structured") / "Persistent" / "Data" / "Json" / "GameplayConfig",
+    ),
+)
+DEFAULT_GAMEPLAY_TAG_INDEX_RELS = (
+    (
+        "StreamingAssets",
+        Path("recovered")
+        / "AnimeStudio-cli"
+        / "StreamingAssets"
+        / "object_index"
+        / "parts"
+        / "StreamingAssets_animestudio_json_by_type_MonoBehaviour.jsonl",
+    ),
+    (
+        "Persistent",
+        Path("recovered")
+        / "AnimeStudio-cli"
+        / "Persistent"
+        / "object_index"
+        / "parts"
+        / "Persistent_animestudio_json_by_type_MonoBehaviour.jsonl",
+    ),
 )
 PLACEHOLDER_RE = re.compile(r"\{([^}:]+)(?::([^}]+))?\}")
 TAG_RE = re.compile(r"</?@[^>]*>|</>|<#[^>]+>")
@@ -105,6 +140,15 @@ ENEMY_RESILIENCE_FIELDS = (
     ("resilienceFullRecoverTime", "Full recovery time"),
     ("pushedBackCoefficient", "Pushed-back coefficient"),
 )
+NATIVE_METADATA_HELPER = Path(__file__).resolve().parents[2] / "tools" / "endfield-il2cpp" / "catalog_option_flow_metadata.py"
+NATIVE_MODIFIER_ENUM_TYPES = {
+    "attributeTypes": "Beyond.GEnums.AttributeType",
+    "modifierTypes": "Beyond.GEnums.ModifierType",
+    "modifyAttributeTypes": "Beyond.GEnums.ModifyAttributeType",
+    "abilityEvents": "Beyond.Gameplay.Core.AbilitySystem+Event",
+    "skillCooldownFunctionTypes": "Beyond.Gameplay.Core.SetSkillCdAtOnce+FunctionType",
+    "skillTypeMasks": "Beyond.Gameplay.SkillTypeMask",
+}
 STAT_ATTR_KEYS = {
     1: "hp",
     2: "atk",
@@ -271,6 +315,14 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default=LANG_DIR,
         help="WebUI language data directory.",
     )
+    parser.add_argument(
+        "--runtime-tag-capture",
+        type=Path,
+        help=(
+            "Hash-gated JSONL produced by capture_runtime_tags.py; merge exact "
+            "runtime GameplayTag name/id observations."
+        ),
+    )
     return parser.parse_args(argv)
 
 
@@ -321,6 +373,489 @@ def normalize_id(value: Any) -> str:
     if value in (None, ""):
         return ""
     return str(value)
+
+
+def gameplay_tag_id_hex(value: Any) -> str:
+    """Normalize signed/unsigned GameplayTag ids to the WebUI hex form."""
+
+    if value in (None, "") or isinstance(value, bool):
+        return ""
+    try:
+        text = str(value).strip()
+        parsed = int(text, 16) if text.lower().startswith("0x") else int(text, 10)
+    except (TypeError, ValueError):
+        return ""
+    return f"0x{parsed & 0xffffffff:08x}"
+
+
+def _gameplay_tag_ids(value: Any) -> list[str]:
+    """Collect tag ids from a config/query tree without assigning semantics."""
+
+    found: list[str] = []
+
+    def visit(node: Any) -> None:
+        if isinstance(node, dict):
+            if "tagId" in node:
+                tag_id = gameplay_tag_id_hex(node.get("tagId"))
+                if tag_id:
+                    found.append(tag_id)
+            for child in node.values():
+                visit(child)
+        elif isinstance(node, list):
+            for child in node:
+                visit(child)
+
+    visit(value)
+    return list(dict.fromkeys(found))
+
+
+def _load_gameplay_tag_config_names(
+    export_root: Path,
+) -> tuple[
+    dict[str, list[str]],
+    list[dict[str, str]],
+    dict[str, int],
+]:
+    """Read exact GameplayTagConfig paths from the generated object index.
+
+    The serialized GameplayTag value stores only its integer id.  The Unity
+    object index retains the source ``GameplayTagConfig`` string paths, while
+    the current client derives ids as CRC32(UTF-8 path).  This is deliberately
+    a narrow evidence join: only objects whose ``m_Script`` points at the
+    current-build GameplayTagConfig script are considered.
+    """
+
+    names: dict[str, list[str]] = {}
+    sources: list[dict[str, str]] = []
+    evidence = {
+        "matchedObjectCount": 0,
+        "serializedPathCount": 0,
+    }
+    script_path_ids: set[str] = set()
+    script_glob = (
+        export_root
+        / "recovered"
+        / "AnimeStudio-cli"
+    ).glob("*/json_by_type/MonoScript/GameplayTagConfig_p*.json")
+    for script_path in script_glob:
+        try:
+            script_row = json.loads(script_path.read_text(encoding="utf-8"))
+            path_id = script_row.get("$animestudio", {}).get("pathId")
+            if path_id not in (None, ""):
+                script_path_ids.add(str(path_id))
+        except (OSError, TypeError, ValueError):
+            continue
+    if not script_path_ids:
+        return names, sources, evidence
+    matched_objects: set[tuple[str, str]] = set()
+    for label, relative in DEFAULT_GAMEPLAY_TAG_INDEX_RELS:
+        path = export_root / relative
+        if not path.is_file():
+            continue
+        source = {"kind": label, "path": rel_path(path)}
+        sources.append(source)
+        try:
+            handle = path.open("r", encoding="utf-8")
+        except OSError:
+            continue
+        with handle:
+            for line in handle:
+                if (
+                    '"recordType":"object"' not in line
+                    or not any(path_id in line for path_id in script_path_ids)
+                ):
+                    continue
+                try:
+                    row = json.loads(line)
+                except (TypeError, ValueError):
+                    continue
+                pptrs = row.get("pptrs") or []
+                if not any(
+                    str(pptr.get("pathId")) in script_path_ids
+                    for pptr in pptrs
+                    if isinstance(pptr, dict)
+                ):
+                    continue
+                object_ref = row.get("object") or {}
+                object_key = (
+                    str(object_ref.get("serializedFile") or source["path"]),
+                    str(object_ref.get("pathId") or ""),
+                )
+                if object_key not in matched_objects:
+                    matched_objects.add(object_key)
+                    evidence["matchedObjectCount"] += 1
+                for scalar in row.get("scalars") or []:
+                    if not isinstance(scalar, list) or len(scalar) < 3:
+                        continue
+                    field_path, value_type, value = scalar[:3]
+                    if value_type != "s" or not isinstance(value, str):
+                        continue
+                    if not (
+                        ".allTags._keyData[" in str(field_path)
+                        or ".obsoletes[" in str(field_path)
+                    ):
+                        continue
+                    evidence["serializedPathCount"] += 1
+                    tag_id = f"0x{zlib.crc32(value.encode('utf-8')) & 0xffffffff:08x}"
+                    rows = names.setdefault(tag_id, [])
+                    if value not in rows:
+                        rows.append(value)
+    for values in names.values():
+        values.sort()
+    return names, sources, evidence
+
+
+def _load_runtime_gameplay_tag_names(
+    capture_path: Path | None,
+) -> tuple[dict[str, list[str]], list[dict[str, str]], dict[str, Any]]:
+    """Load a hash-gated runtime name/id capture without guessing semantics."""
+
+    if capture_path is None:
+        return {}, [], {}
+    path = Path(capture_path).resolve()
+    if not path.is_file():
+        raise FileNotFoundError(f"GameplayTag runtime capture not found: {path}")
+    session: dict[str, Any] | None = None
+    names: dict[str, list[str]] = {}
+    mapping_count = 0
+    with path.open("r", encoding="utf-8") as handle:
+        for line_number, line in enumerate(handle, 1):
+            if not line.strip():
+                continue
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError as exc:
+                raise ValueError(f"invalid GameplayTag runtime capture JSON at {path}:{line_number}") from exc
+            if not isinstance(row, dict):
+                raise ValueError(f"GameplayTag runtime capture row is not an object at {path}:{line_number}")
+            if row.get("kind") == "session_start":
+                if session is not None:
+                    raise ValueError(f"GameplayTag runtime capture has duplicate session_start: {path}")
+                session = row
+                continue
+            if row.get("kind") != "tag_mapping":
+                continue
+            tag_id = gameplay_tag_id_hex(row.get("tagIdHex") or row.get("tagId"))
+            tag_name = row.get("tagName")
+            if not tag_id or not isinstance(tag_name, str) or not tag_name:
+                continue
+            values = names.setdefault(tag_id, [])
+            if tag_name not in values:
+                values.append(tag_name)
+                mapping_count += 1
+    if not session:
+        raise ValueError(f"GameplayTag runtime capture has no session_start: {path}")
+    gameassembly_sha256 = str(session.get("gameAssemblySha256") or "").strip()
+    metadata_sha256 = str(session.get("metadataSha256") or "").strip()
+    if len(gameassembly_sha256) != 64 or len(metadata_sha256) != 64:
+        raise ValueError(
+            "GameplayTag runtime capture lacks the required GameAssembly/metadata hashes"
+        )
+    native = check_installed_native_inputs(
+        expected_gameassembly_sha256=gameassembly_sha256,
+        expected_metadata_sha256=metadata_sha256,
+    )
+    if native.status != "validated":
+        raise ValueError(
+            "GameplayTag runtime capture was not produced by the selected current native pair: "
+            + native.detail
+        )
+    for values in names.values():
+        values.sort()
+    return (
+        names,
+        [{"kind": "runtime-gameplay-tag-capture", "path": rel_path(path)}],
+        {
+            "mappingCount": mapping_count,
+            "sessionId": session.get("sessionId") or "",
+            "gameBuild": session.get("gameBuild") or "",
+        },
+    )
+
+
+def _derive_gameplay_tag_context_names(
+    config: dict[str, Any],
+) -> tuple[dict[str, list[str]], list[dict[str, str]]]:
+    """Derive only names proven by an exact ``tagName2Immune`` context.
+
+    ``GameplayTagPredefineTable`` stores the relationship between a status
+    query and its immunity tag ids, but some immunity names are absent from
+    the serialized ``GameplayTagConfig`` path list.  The current client uses
+    CRC32 of the full path for GameplayTag ids.  For the explicitly observed
+    context namespaces below, the corresponding immunity path is therefore a
+    proof only when its CRC32 is one of the exact ids in the context.  This is
+    deliberately narrower than searching arbitrary names or Buff ids and
+    leaves all other ids unresolved.
+    """
+
+    names: dict[str, list[str]] = {}
+    proofs: list[dict[str, str]] = []
+    for context_name, value in (config.get("tagName2Immune") or {}).items():
+        if not isinstance(context_name, str):
+            continue
+        candidate_paths: list[str] = []
+        parts = context_name.split("/")
+        if (
+            len(parts) == 3
+            and parts[0] == "Status"
+            and parts[1] in {"Immobilized", "Unmovable"}
+            and parts[2]
+        ):
+            candidate_paths.append(f"Immune/{parts[2]}")
+        elif context_name.startswith("Skill/Enemy/Common/SpellInflictOnChar/"):
+            suffix = context_name.removeprefix("Skill/Enemy/Common/SpellInflictOnChar/")
+            if suffix and "/" not in suffix:
+                candidate_paths.append(f"Immune/SpellInflictOnChar/{suffix}")
+        if not candidate_paths:
+            continue
+        context_ids = _gameplay_tag_ids(value)
+        for candidate in candidate_paths:
+            candidate_id = f"0x{zlib.crc32(candidate.encode('utf-8')) & 0xffffffff:08x}"
+            if candidate_id not in context_ids:
+                continue
+            values = names.setdefault(candidate_id, [])
+            if candidate not in values:
+                values.append(candidate)
+            proofs.append(
+                {
+                    "id": candidate_id,
+                    "name": candidate,
+                    "context": context_name,
+                    "evidenceStatus": "exact-context-derived",
+                }
+            )
+    for values in names.values():
+        values.sort()
+    proofs.sort(key=lambda item: (item["id"], item["name"], item["context"]))
+    return names, proofs
+
+
+def load_gameplay_tag_registry(
+    export_root: Path,
+    runtime_capture: Path | None = None,
+) -> dict[str, Any]:
+    """Load exact current-build GameplayTag names and contexts."""
+
+    config_roots = [
+        (label, export_root / relative)
+        for label, relative in DEFAULT_GAMEPLAY_CONFIG_SOURCE_RELS
+        if (export_root / relative).is_dir()
+    ]
+    config = load_merged_table(config_roots, "GameplayTagPredefineTable.json", {})
+    if not isinstance(config, dict):
+        config = {}
+
+    source = [
+        {
+            "kind": label,
+            "path": rel_path(root / "GameplayTagPredefineTable.json"),
+        }
+        for label, root in config_roots
+        if (root / "GameplayTagPredefineTable.json").is_file()
+    ]
+    direct: dict[str, dict[str, Any]] = {}
+    for name, row in (config.get("predefinedTags") or {}).items():
+        if not isinstance(row, dict):
+            continue
+        tag_id = gameplay_tag_id_hex(row.get("tagId"))
+        if not tag_id:
+            continue
+        entry = direct.setdefault(
+            tag_id,
+            {
+                "id": tag_id,
+                "names": [],
+                "displayNames": [],
+                "rawTagIds": [],
+                "evidenceStatus": "exact-predefined",
+            },
+        )
+        if str(name) not in entry["names"]:
+            entry["names"].append(str(name))
+        if str(name) not in entry["displayNames"]:
+            entry["displayNames"].append(str(name))
+        try:
+            raw_tag_id = int(row.get("tagId"))
+        except (TypeError, ValueError):
+            raw_tag_id = None
+        if raw_tag_id is not None and raw_tag_id not in entry["rawTagIds"]:
+            entry["rawTagIds"].append(raw_tag_id)
+
+    contexts: dict[str, list[dict[str, str]]] = {}
+
+    def add_context(kind: str, name: str, value: Any) -> None:
+        for tag_id in _gameplay_tag_ids(value):
+            rows = contexts.setdefault(tag_id, [])
+            context = {"kind": kind, "name": str(name)}
+            if context not in rows:
+                rows.append(context)
+
+    for name, value in (config.get("predefinedQuery") or {}).items():
+        add_context("predefinedQuery", str(name), value)
+    for name, value in (config.get("tagName2Immune") or {}).items():
+        add_context("tagName2Immune", str(name), value)
+
+    derived_names, derived_proofs = _derive_gameplay_tag_context_names(config)
+    config_names, config_sources, config_evidence = _load_gameplay_tag_config_names(export_root)
+    runtime_names, runtime_sources, runtime_evidence = _load_runtime_gameplay_tag_names(runtime_capture)
+    source.extend(
+        {
+            "kind": f"{item['kind']}-gameplay-tag-config",
+            "path": item["path"],
+        }
+        for item in config_sources
+    )
+    source.extend(runtime_sources)
+    for tag_id, names in config_names.items():
+        entry = direct.setdefault(
+            tag_id,
+            {
+                "id": tag_id,
+                "names": [],
+                "displayNames": [],
+                "rawTagIds": [],
+                "evidenceStatus": "exact-config",
+            },
+        )
+        for name in names:
+            if name not in entry["names"]:
+                entry["names"].append(name)
+        # Keep the stronger, directly serialized predefined evidence when a
+        # path happens to be present in both sources.
+        if entry.get("evidenceStatus") != "exact-predefined":
+            entry["evidenceStatus"] = "exact-config"
+
+    for tag_id, names in derived_names.items():
+        entry = direct.setdefault(
+            tag_id,
+            {
+                "id": tag_id,
+                "names": [],
+                "displayNames": [],
+                "rawTagIds": [],
+                "evidenceStatus": "exact-context-derived",
+            },
+        )
+        for name in names:
+            if name not in entry["names"]:
+                entry["names"].append(name)
+        # Keep directly serialized/predefined evidence stronger than the
+        # context-derived fallback when both cover the same id.
+        if entry.get("evidenceStatus") not in {"exact-predefined", "exact-config"}:
+            entry["evidenceStatus"] = "exact-context-derived"
+
+    for tag_id, names in runtime_names.items():
+        entry = direct.setdefault(
+            tag_id,
+            {
+                "id": tag_id,
+                "names": [],
+                "displayNames": [],
+                "rawTagIds": [],
+                "evidenceStatus": "exact-runtime",
+            },
+        )
+        for name in names:
+            if name not in entry["names"]:
+                entry["names"].append(name)
+        if entry.get("evidenceStatus") not in {"exact-predefined", "exact-config"}:
+            entry["evidenceStatus"] = "exact-runtime"
+
+    for tag_id, entry in direct.items():
+        entry["names"].sort()
+        entry["displayNames"].sort()
+        entry["name"] = " / ".join(entry["displayNames"] or entry["names"])
+        entry.pop("displayNames", None)
+        entry["contexts"] = sorted(
+            contexts.get(tag_id, []),
+            key=lambda item: (item["kind"], item["name"]),
+        )
+
+    if config_names and direct:
+        status = "exact-config-and-predefined"
+    elif runtime_names and direct:
+        status = "exact-runtime-and-predefined"
+    elif derived_names and direct:
+        status = "exact-context-derived-and-predefined"
+    elif direct:
+        status = "exact-predefined-partial"
+    else:
+        status = "unavailable"
+    if runtime_names:
+        unresolved_reason = "not-in-current-serialized-or-runtime-gameplay-tag-registry"
+    elif config_names or derived_names:
+        unresolved_reason = "not-in-current-serialized-gameplay-tag-config"
+    elif direct:
+        unresolved_reason = "serialized-gameplay-tag-config-unavailable"
+    else:
+        unresolved_reason = "gameplay-tag-registry-unavailable"
+    return {
+        "status": status,
+        "hashAlgorithm": "crc32-utf8-full-path" if (config_names or derived_names) else None,
+        "unresolvedReason": unresolved_reason,
+        "configEvidence": config_evidence,
+        "derivedEvidence": derived_proofs,
+        "runtimeEvidence": runtime_evidence,
+        "source": source,
+        "counts": {
+            "predefinedTags": len((config.get("predefinedTags") or {})),
+            "mappedTagIds": len(direct),
+            "configTagNames": len(config_names),
+            "derivedContextTagNames": len(derived_names),
+            "configSources": len(config_sources),
+            "predefinedQueries": len((config.get("predefinedQuery") or {})),
+            "tagName2Immune": len((config.get("tagName2Immune") or {})),
+            "contextTagIds": len(contexts),
+        },
+        "tags": direct,
+        "contexts": contexts,
+    }
+
+
+def enrich_buff_gameplay_tag_details(
+    record: dict[str, Any],
+    gameplay_tag_registry: dict[str, Any] | None,
+) -> None:
+    """Attach exact registry evidence while retaining every raw tag id."""
+
+    registry = gameplay_tag_registry or {}
+    known = registry.get("tags") or {}
+
+    def visit(node: Any) -> None:
+        if isinstance(node, dict):
+            tag_ids = node.get("tagIds")
+            if isinstance(tag_ids, list):
+                details = []
+                for raw_tag_id in tag_ids:
+                    tag_id = gameplay_tag_id_hex(raw_tag_id) or str(raw_tag_id)
+                    mapped = known.get(tag_id)
+                    if mapped:
+                        details.append({
+                            "id": tag_id,
+                            "name": mapped.get("name") or "",
+                            "names": list(mapped.get("names") or []),
+                            "contexts": list(mapped.get("contexts") or []),
+                            "evidenceStatus": mapped.get("evidenceStatus")
+                            or "exact-predefined",
+                        })
+                    else:
+                        details.append({
+                            "id": tag_id,
+                            "name": "",
+                            "names": [],
+                            "contexts": list((registry.get("contexts") or {}).get(tag_id) or []),
+                            "evidenceStatus": "unresolved",
+                            "unresolvedReason": registry.get("unresolvedReason")
+                            or "gameplay-tag-registry-unavailable",
+                        })
+                node["tagDetails"] = details
+            for child in node.values():
+                visit(child)
+        elif isinstance(node, list):
+            for child in node:
+                visit(child)
+
+    visit(record)
 
 
 def i18n_text(i18n: dict[str, Any], node: Any, fallback_i18n: dict[str, Any] | None = None) -> str:
@@ -895,7 +1430,14 @@ def enemy_attr_list_payload(node: Any, attr_meta: dict[str, Any]) -> list[dict[s
     return [stat_attr_payload(attr_type, values[attr_type], attr_meta) for attr_type in sorted(values)]
 
 
-def enemy_modifier_payload(items: Any, attr_meta: dict[str, Any]) -> list[dict[str, Any]]:
+def enemy_modifier_payload(
+    items: Any,
+    attr_meta: dict[str, Any],
+    native_semantics: dict[str, Any] | None = None,
+) -> list[dict[str, Any]]:
+    native_semantics = native_semantics or {}
+    modifier_names = native_semantics.get("modifierTypes") or {}
+    target_names = native_semantics.get("modifyAttributeTypes") or {}
     out = []
     for item in items or []:
         if not isinstance(item, dict):
@@ -908,9 +1450,192 @@ def enemy_modifier_payload(items: Any, attr_meta: dict[str, Any]) -> list[dict[s
             "label": attr.get("label"),
             "value": item.get("attrValue"),
             "modifierType": item.get("modifierType"),
+            "modifierTypeName": modifier_names.get(str(item.get("modifierType"))),
             "modifyAttributeType": item.get("modifyAttributeType"),
+            "modifyAttributeTypeName": target_names.get(str(item.get("modifyAttributeType"))),
         })
     return out
+
+
+def load_native_gameplay_semantics() -> dict[str, Any]:
+    """Read current enum meanings only after the selected native pair passes."""
+
+    gate = check_installed_native_inputs()
+    evidence = {
+        "status": gate.status,
+        "detail": gate.detail,
+        "source": "selected GameAssembly.dll + global-metadata.dat",
+    }
+    if not gate.validated:
+        return {"evidence": evidence}
+    if not NATIVE_METADATA_HELPER.is_file():
+        evidence.update({
+            "status": "missing",
+            "detail": f"metadata helper missing: {NATIVE_METADATA_HELPER}",
+        })
+        return {"evidence": evidence}
+    try:
+        helper = il2cpp.load_metadata_helper(NATIVE_METADATA_HELPER)
+        metadata = helper.Metadata(gate.metadata)
+        defaults = il2cpp.field_defaults(metadata)
+        result: dict[str, Any] = {"evidence": evidence}
+        for output_key, type_name in NATIVE_MODIFIER_ENUM_TYPES.items():
+            result[output_key] = {
+                str(row["id"]): str(row["name"])
+                for row in il2cpp.enum_members(metadata, defaults, type_name)
+            }
+        evidence["coverage"] = (
+            "current attribute-modifier, ability-event, skill-cooldown function, "
+            "and skill-type enum constants"
+        )
+        return result
+    except Exception as exc:
+        # Native semantics are optional enrichment.  A corrupt/stale helper or
+        # an unexpected metadata layout must degrade this step, never abort the
+        # build-independent Gameplay datasets.  Process-control exceptions
+        # (KeyboardInterrupt/SystemExit) remain outside Exception.
+        evidence.update({
+            "status": "parse-error",
+            "detail": f"{type(exc).__name__}: {exc}",
+        })
+        return {"evidence": evidence}
+
+
+def collect_gameplay_buff_ids(value: Any) -> list[str]:
+    """Collect exact buff identifiers already referenced by Gameplay rows."""
+
+    found: set[str] = set()
+
+    def visit(node: Any) -> None:
+        if isinstance(node, dict):
+            born_buffs = node.get("bornBuffs")
+            if isinstance(born_buffs, list):
+                found.update(
+                    item for item in born_buffs
+                    if isinstance(item, str) and re.fullmatch(r"buff_[A-Za-z0-9_]+", item)
+                )
+            buff_id = node.get("buffId")
+            if isinstance(buff_id, str) and re.fullmatch(r"buff_[A-Za-z0-9_]+", buff_id):
+                found.add(buff_id)
+            effect_id = node.get("id")
+            if node.get("type") == "buff" and isinstance(effect_id, str) and re.fullmatch(r"buff_[A-Za-z0-9_]+", effect_id):
+                found.add(effect_id)
+            for child in node.values():
+                visit(child)
+            return
+        if isinstance(node, list):
+            for child in node:
+                visit(child)
+
+    visit(value)
+    return sorted(found)
+
+
+def enrich_buff_native_modifier_names(
+    record: dict[str, Any],
+    native_semantics: dict[str, Any] | None,
+) -> None:
+    """Attach names only from the current, gated native enum tables."""
+
+    native_semantics = native_semantics or {}
+    attribute_names = native_semantics.get("attributeTypes") or {}
+    formula_names = native_semantics.get("modifierTypes") or {}
+    target_names = native_semantics.get("modifyAttributeTypes") or {}
+    attribute_modifier = record.get("attributeModifier") or {}
+    for item in attribute_modifier.get("attributeModifiers") or []:
+        if not isinstance(item, dict):
+            continue
+        item["attributeTypeName"] = attribute_names.get(str(item.get("attributeType")))
+        item["formulaItemName"] = formula_names.get(str(item.get("formulaItem")))
+        item["modifyAttributeTypeName"] = target_names.get(
+            str(item.get("modifyAttributeType"))
+        )
+
+
+def enrich_buff_native_action_names(
+    record: dict[str, Any],
+    native_semantics: dict[str, Any] | None,
+) -> None:
+    """Attach current-build event/cooldown enum names to exact action rows."""
+
+    native_semantics = native_semantics or {}
+    event_names = native_semantics.get("abilityEvents") or {}
+    function_names = native_semantics.get("skillCooldownFunctionTypes") or {}
+    skill_type_names = native_semantics.get("skillTypeMasks") or {}
+
+    def visit_action_item(item: Any) -> None:
+        if not isinstance(item, dict):
+            return
+        decoded = item.get("decoded") or {}
+        if isinstance(decoded, dict) and decoded.get("semanticStatus") == "exact-skill-cooldown-operation":
+            decoded["functionTypeName"] = function_names.get(
+                str(decoded.get("functionType"))
+            )
+            decoded["skillTypeMaskName"] = skill_type_names.get(
+                str(decoded.get("skillTypeMask"))
+            )
+        if not isinstance(decoded, dict):
+            return
+        for key in ("conditionAction", "failActions", "succeedActions"):
+            sequence = decoded.get(key) or {}
+            for child in sequence.get("actionDataItems") or []:
+                visit_action_item(child)
+
+    for event_map in record.get("abilityEventActions") or []:
+        if not isinstance(event_map, dict):
+            continue
+        event_map["abilityEventName"] = event_names.get(
+            str(event_map.get("abilityEvent"))
+        )
+        for sequence in event_map.get("actions") or []:
+            if not isinstance(sequence, dict):
+                continue
+            for item in sequence.get("actionDataItems") or []:
+                visit_action_item(item)
+
+
+def build_gameplay_buff_catalog(
+    export_root: Path,
+    buff_ids: list[str],
+    native_semantics: dict[str, Any] | None = None,
+    gameplay_tag_registry: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Resolve referenced BuffData with Persistent overlay precedence."""
+
+    source_roots = (
+        ("StreamingAssets", export_root / "structured" / "StreamingAssets" / "Data" / "Json" / "BuffData"),
+        ("Persistent", export_root / "structured" / "Persistent" / "Data" / "Json" / "BuffData"),
+    )
+    catalog: dict[str, Any] = {}
+    for buff_id in buff_ids:
+        selected: tuple[str, Path] | None = None
+        for source, root in source_roots:
+            path = root / f"{buff_id}.json"
+            if path.is_file():
+                selected = (source, path)
+        if selected is None:
+            catalog[buff_id] = {
+                "id": buff_id,
+                "status": "missing",
+                "evidenceStatus": "unresolved",
+            }
+            continue
+        source, path = selected
+        try:
+            record = buff_gameplay_semantics(path)
+        except OSError as exc:
+            record = {
+                "id": buff_id,
+                "status": "read-error",
+                "evidenceStatus": "unresolved",
+                "error": str(exc),
+            }
+        enrich_buff_native_modifier_names(record, native_semantics)
+        enrich_buff_native_action_names(record, native_semantics)
+        enrich_buff_gameplay_tag_details(record, gameplay_tag_registry)
+        record["source"] = {"kind": source, "path": rel_path(path)}
+        catalog[buff_id] = record
+    return catalog
 
 
 def labeled_value_payload(row: dict[str, Any], fields: tuple[tuple[str, str], ...]) -> list[dict[str, Any]]:
@@ -2116,6 +2841,7 @@ def build_enemy_entries(
     i18n: dict[str, Any],
     fallback_i18n: dict[str, Any],
     story_wiki_titles: dict[str, str] | None = None,
+    native_semantics: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
     enemies = tables.get("EnemyTable.json") or {}
     attr_templates = tables.get("EnemyAttributeTemplateTable.json") or {}
@@ -2193,7 +2919,11 @@ def build_enemy_entries(
             variant_display_type = first_non_empty(variant_display.get("displayType"), display_type)
             variant_display_type_label = row_label_lookup(display_types, variant_display_type, i18n, fallback_i18n) or display_type_label
             variant_buffs = [normalize_id(value) for value in variant_row.get("bornBuffs") or [] if normalize_id(value)]
-            variant_modifiers = enemy_modifier_payload(variant_row.get("attrModifiers") or [], attr_meta)
+            variant_modifiers = enemy_modifier_payload(
+                variant_row.get("attrModifiers") or [],
+                attr_meta,
+                native_semantics,
+            )
             born_buffs.extend(variant_buffs)
             attr_modifiers.extend(variant_modifiers)
             variant_ids.append(variant_id)
@@ -2487,6 +3217,9 @@ def build_language_payload(
     fallback_language: str,
     story_wiki_keys: set[str] | None = None,
     story_wiki_titles: dict[str, str] | None = None,
+    export_root: Path | None = None,
+    native_semantics: dict[str, Any] | None = None,
+    runtime_tag_capture: Path | None = None,
 ) -> dict[str, Any]:
     fallback_i18n = load_merged_table(table_roots, f"I18nTextTable_{fallback_language}.json", {})
     i18n = fallback_i18n if language == fallback_language else load_merged_table(table_roots, f"I18nTextTable_{language}.json", fallback_i18n)
@@ -2546,11 +3279,29 @@ def build_language_payload(
     weapons = build_weapon_entries(tables, i18n, fallback_i18n)
     equipment = build_equipment_entries(tables, i18n, fallback_i18n)
     characters = build_character_entries(tables, i18n, fallback_i18n)
-    enemies = build_enemy_entries(tables, i18n, fallback_i18n, story_wiki_titles)
+    enemies = build_enemy_entries(
+        tables,
+        i18n,
+        fallback_i18n,
+        story_wiki_titles,
+        native_semantics,
+    )
     usable_items = build_usable_item_entries(tables, i18n, fallback_i18n, story_wiki_titles)
     entries = sorted(
         [*weapons, *equipment, *characters, *enemies, *usable_items],
         key=lambda item: ({"weapon": 0, "equipment": 1, "character": 2, "enemy": 3, "item": 4}.get(str(item.get("kind") or ""), 9), str(item.get("group") or ""), str(item.get("title") or "")),
+    )
+    gameplay_buff_ids = collect_gameplay_buff_ids(entries)
+    resolved_export_root = export_root or table_roots[0][1].parents[2]
+    gameplay_tag_registry = load_gameplay_tag_registry(
+        resolved_export_root,
+        runtime_tag_capture,
+    )
+    buffs = build_gameplay_buff_catalog(
+        resolved_export_root,
+        gameplay_buff_ids,
+        native_semantics,
+        gameplay_tag_registry,
     )
     story_wiki_link_count = apply_story_wiki_keys(entries, story_wiki_keys or set())
     enemy_stat_templates = {
@@ -2564,7 +3315,27 @@ def build_language_payload(
         "sourceRoot": ", ".join(rel_path(root) for _label, root in table_roots),
         "sourceRoots": [{"source": label, "root": rel_path(root)} for label, root in table_roots],
         "tables": table_names,
+        "gameplayTagRegistry": gameplay_tag_registry,
         "currencyItems": currency_items,
+        "buffs": buffs,
+        "buffEvidence": {
+            "status": "partial-memorypack-semantics",
+            "coverage": (
+                "Referenced BuffData ids, exact post-id lifecycle/stacking/trigger tail, "
+                "exact empty-ability-event prefix tags/attribute modifiers, exact "
+                "predefined GameplayTag names where the current registry covers them, "
+                "and keyed pre-id BlackboardDouble candidates"
+            ),
+            "boundary": (
+                "Non-empty pre-id ability-event action bodies remain unresolved; "
+                "a duration is shown only when one unique authored duration key is present; "
+                "GameplayTag ids absent from the predefined registry remain raw."
+            ),
+        },
+        "nativeEvidence": (native_semantics or {}).get("evidence") or {
+            "status": "not-requested",
+            "detail": "native modifier enum meanings were not loaded",
+        },
         "counts": {
             "entries": len(entries),
             "weapons": len(weapons),
@@ -2589,6 +3360,15 @@ def build_language_payload(
             "enemyAbilities": sum(len(item.get("abilities") or []) for item in enemies),
             "enemyVariants": sum(len(item.get("variants") or []) for item in enemies),
             "enemyBornBuffs": sum(len(item.get("bornBuffs") or []) for item in enemies),
+            "gameplayBuffs": len(gameplay_buff_ids),
+            "resolvedGameplayBuffs": sum(
+                1 for record in buffs.values()
+                if record.get("evidenceStatus") != "unresolved"
+            ),
+            "gameplayBuffAttributeModifiers": sum(
+                len(((record.get("attributeModifier") or {}).get("attributeModifiers") or []))
+                for record in buffs.values()
+            ),
             "usableItemActions": sum(len(((item.get("useData") or {}).get("actions") or [])) for item in usable_items),
             "usableItemRewards": sum(len(((item.get("chestData") or {}).get("rewards") or [])) for item in usable_items),
             "weaponBreakthroughRows": sum(len((item.get("breakthrough") or {}).get("rows") or []) for item in weapons),
@@ -2605,6 +3385,13 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Missing table directories under: {args.export_root / 'structured'}", file=sys.stderr)
         return 2
 
+    native_semantics = load_native_gameplay_semantics()
+    if (native_semantics.get("evidence") or {}).get("status") != "validated":
+        print(
+            "Gameplay native modifier semantics skipped: "
+            + str((native_semantics.get("evidence") or {}).get("detail") or "native gate unavailable"),
+            file=sys.stderr,
+        )
     outputs = []
     for language in args.languages:
         code = str(language).strip().upper()
@@ -2612,7 +3399,16 @@ def main(argv: list[str] | None = None) -> int:
             continue
         story_wiki_titles = load_story_wiki_titles(args.out_dir, code)
         story_wiki_keys = set(story_wiki_titles)
-        payload = build_language_payload(code, table_roots, str(args.default_language).strip().upper(), story_wiki_keys, story_wiki_titles)
+        payload = build_language_payload(
+            code,
+            table_roots,
+            str(args.default_language).strip().upper(),
+            story_wiki_keys,
+            story_wiki_titles,
+            args.export_root,
+            native_semantics,
+            args.runtime_tag_capture,
+        )
         out_path = args.out_dir / code / "gameplay" / "index.json"
         write_json(out_path, payload)
         outputs.append((code, out_path, payload["counts"]))

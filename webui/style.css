@@ -4904,6 +4904,49 @@ body.is-resizing-filter * {
   margin-bottom: 8px;
 }
 
+.gameplay-buff-grid {
+  display: grid;
+  gap: 6px;
+}
+
+.gameplay-buff-card {
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid rgba(var(--fg-rgb), 0.12);
+  border-radius: 7px;
+  background: rgba(var(--fg-rgb), 0.025);
+}
+
+.gameplay-buff-card.gameplay-diff {
+  border-color: rgba(var(--accent-rgb), 0.5);
+  background: rgba(var(--accent-rgb), 0.08);
+}
+
+.gameplay-buff-card summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  align-items: baseline;
+  cursor: pointer;
+}
+
+.gameplay-buff-card summary span,
+.gameplay-buff-source,
+.gameplay-evidence-note {
+  font-size: 11px;
+}
+
+.gameplay-buff-card > .gameplay-blackboard,
+.gameplay-buff-card > .gameplay-subheading {
+  margin-top: 8px;
+}
+
+.gameplay-buff-source,
+.gameplay-evidence-note {
+  margin: 7px 0 0;
+  overflow-wrap: anywhere;
+}
+
 .gameplay-skill-title,
 .gameplay-group-title {
   font-weight: 700;
@@ -5055,6 +5098,11 @@ body.is-resizing-filter * {
 }
 .gameplay-value-chip.gameplay-diff > b {
   color: var(--accent);
+}
+
+.gameplay-value-chip.gameplay-tag-unresolved {
+  border-style: dashed;
+  color: var(--muted);
 }
 
 .gameplay-value-chip b {

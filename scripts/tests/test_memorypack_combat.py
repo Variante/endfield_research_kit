@@ -17,6 +17,299 @@ from scripts.game_data.memorypack.schemas import (
 
 
 class CombatMemoryPackSchemaTests(unittest.TestCase):
+    def test_damage_action_is_not_a_streaming_consumer_without_item_boundary(self) -> None:
+        self.assertNotIn(
+            memorypack_buff.BUFF_DAMAGE_ACTION_TAG,
+            memorypack_buff.BUFF_ABILITY_ACTION_CONSUME_DECODERS,
+        )
+
+    def test_single_item_uses_registered_consumer_with_proven_end(self) -> None:
+        skill_id = b"eny_fixture_skill"
+        blackboard_skill_id = (
+            b"\x03" + struct.pack("<I", 0) + b"\x00"
+            + struct.pack("<I", len(skill_id)) + skill_id
+        )
+        payload = b"".join((
+            b"\x71\x05",
+            b"\x01" + struct.pack("<iii", 0, 0, 0),
+            struct.pack("<I", 1),
+            blackboard_skill_id,
+        ))
+
+        status, items, note = memorypack_buff.split_buff_ability_action_items_opaque(
+            payload, 0, len(payload), 1,
+        )
+
+        self.assertEqual("single-item", status)
+        self.assertEqual("", note)
+        self.assertEqual("exact", items[0]["decodeStatus"])
+        self.assertEqual("exact-skill-id-condition", items[0]["decoded"]["semanticStatus"])
+
+    def test_buff_gameplay_enum_values_follow_memorypack_zigzag(self) -> None:
+        self.assertEqual(0, memorypack_buff.memorypack_signed_enum_value(0))
+        self.assertEqual(-1, memorypack_buff.memorypack_signed_enum_value(1))
+        self.assertEqual(1, memorypack_buff.memorypack_signed_enum_value(2))
+        self.assertEqual(-6, memorypack_buff.memorypack_signed_enum_value(11))
+
+    def test_create_buff_input_uses_first_bounded_authored_id_anchor(self) -> None:
+        first_id = b"buff_chr_test_dynamic"
+        later_id = b"buff_should_not_be_consumed"
+        inherited_dynamic_value = b"\x01\x02\x00\x00\x00dynamic-value"
+        first = b"".join((
+            b"\x05\x01",
+            struct.pack("<I", 2),
+            inherited_dynamic_value,
+            struct.pack("<I", len(first_id)),
+            first_id,
+            b"\x00" * memorypack_buff.BUFF_CREATE_BUFF_INPUT_TAIL_BYTES,
+        ))
+        later = b"".join((
+            struct.pack("<I", len(later_id)),
+            later_id,
+            b"\x00" * memorypack_buff.BUFF_CREATE_BUFF_INPUT_TAIL_BYTES,
+        ))
+
+        decoded, end = memorypack_buff.read_buff_create_buff_input_partial(
+            first + later,
+            0,
+            len(first + later),
+            "createBuffInput",
+        )
+
+        self.assertEqual("buff_chr_test_dynamic", decoded["buffId"])
+        self.assertEqual(len(first), end)
+        self.assertGreaterEqual(decoded["boundedBuffIdCandidateCount"], 2)
+
+    def test_target_settings_envelope_callers_expose_typed_default_fields(self) -> None:
+        raw = bytes.fromhex(
+            "0d 08 01 00 00 00 00 00 00 ff 00 00 00 00 ff 00 "
+            "00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 "
+            "00 03 ff 00 00 00 00 00 00 00 00 00 00 00 00 01 "
+            "00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 04 "
+            "00 00 00"
+        )
+        decoded, end = memorypack_buff.read_buff_target_settings_envelope_partial(
+            raw, 0, len(raw), "fixture.targetSettings"
+        )
+        self.assertEqual(len(raw), end)
+        self.assertEqual("exact", decoded["status"])
+        self.assertEqual(4, decoded["targetSource"])
+        self.assertEqual(1, decoded["selectorOwner"])
+        self.assertEqual("exact-target-settings-selector-data", decoded["semanticStatus"])
+
+    def test_modify_dynamic_blackboard_uses_current_native_enum_names(self) -> None:
+        self.assertEqual(
+            {
+                0: "Assign",
+                1: "Add",
+                2: "Multiply",
+                3: "Divide",
+                4: "Floor",
+                5: "Ceil",
+                6: "RoundToInt",
+            },
+            memorypack_buff.BUFF_MODIFY_DYNAMIC_BLACKBOARD_OPERATION_NAMES,
+        )
+        self.assertEqual(
+            {0: "HpRatio"},
+            memorypack_buff.BUFF_MODIFY_DYNAMIC_BLACKBOARD_CALCULATION_TYPE_NAMES,
+        )
+
+    def test_convert_to_target_context_uses_current_native_enum_names(self) -> None:
+        self.assertEqual("ConvertEntityToPosition", memorypack_buff.BUFF_CONVERT_TO_TARGET_CONTEXT_OPERATION_NAMES[1])
+        self.assertEqual("ConvertBlackboardValueToPosition", memorypack_buff.BUFF_CONVERT_TO_TARGET_CONTEXT_OPERATION_NAMES[7])
+        self.assertEqual("RotateAroundRefCW", memorypack_buff.BUFF_CONVERT_TO_TARGET_CONTEXT_TRANSLATE_OPERATION_NAMES[1])
+
+    def test_compare_float_uses_current_native_compare_type_names(self) -> None:
+        self.assertEqual(
+            {0: "LT", 1: "LE", 2: "GT", 3: "GE", 4: "Equals"},
+            memorypack_buff.BUFF_COMPARE_TYPE_NAMES,
+        )
+
+    def test_simple_calc_blackboard_reuses_current_operation_names(self) -> None:
+        self.assertEqual("Add", memorypack_buff.BUFF_MODIFY_DYNAMIC_BLACKBOARD_OPERATION_NAMES[1])
+        self.assertEqual("RoundToInt", memorypack_buff.BUFF_MODIFY_DYNAMIC_BLACKBOARD_OPERATION_NAMES[6])
+
+    def test_spell_infliction_uses_current_energy_shard_names(self) -> None:
+        self.assertEqual("Fire", memorypack_buff.BUFF_SPELL_INFLICTION_TYPE_NAMES[0])
+        self.assertEqual("Natural", memorypack_buff.BUFF_SPELL_INFLICTION_TYPE_NAMES[3])
+        self.assertEqual("Enum", memorypack_buff.BUFF_SPELL_INFLICTION_TYPE_NAMES[4])
+
+    def test_selector_tag_query_reads_current_raw_tag_ids(self) -> None:
+        data = b"".join((
+            b"\x02",
+            struct.pack("<i", 1),
+            struct.pack("<I", 2),
+            struct.pack("<ii", 0x10203040, -1),
+        ))
+
+        decoded, end = memorypack_buff.read_buff_selector_tag_query(
+            data, 0, len(data), "query",
+        )
+
+        self.assertEqual(len(data), end)
+        self.assertEqual([0x10203040, -1], [row["tagId"] for row in decoded["tags"]])
+
+    def test_buff_empty_action_prefix_decodes_tags_and_attribute_modifiers_exactly(self) -> None:
+        param_key = b"slow_ratio"
+        data = b"".join((
+            bytes([BUFF_MEMBER_COUNT]),
+            struct.pack("<I", 0),  # abilityEventAction count
+            b"\x03" + struct.pack("<I", 0) + b"\x00" + struct.pack("<f", 0.0),
+            struct.pack("<I", 2),
+            struct.pack("<II", 0x9A4868A1, 0x2E9DA07C),
+            b"\x02",  # AttributeModifierData member count
+            struct.pack("<I", 1),
+            b"\x04",  # AttributeModifier member count
+            struct.pack("<III", 13, 4, 0),
+            b"\x03" + struct.pack("<I", len(param_key)) + param_key + b"\x01" + struct.pack("<f", 0.75),
+            b"\x00",  # isConvertedAttribute
+            b"opaque-before-id",
+        ))
+        id_boundary = len(data)
+
+        decoded = memorypack_buff.decode_buff_pre_id_modifier_prefix(data, id_boundary)
+
+        self.assertEqual("parsed-through-attribute-modifier", decoded["status"])
+        self.assertEqual(["0x9a4868a1", "0x2e9da07c"], decoded["applyTags"]["tagIds"])
+        modifier = decoded["attributeModifier"]["attributeModifiers"][0]
+        self.assertEqual((13, 4, 0), (
+            modifier["attributeType"],
+            modifier["formulaItem"],
+            modifier["modifyAttributeType"],
+        ))
+        self.assertEqual("slow_ratio", modifier["param"]["blackboardKey"])
+        self.assertEqual(0.75, modifier["param"]["value"])
+
+    def test_buff_nonempty_action_prefix_stops_at_exact_count(self) -> None:
+        data = bytes([BUFF_MEMBER_COUNT]) + struct.pack("<I", 3) + b"opaque"
+
+        decoded = memorypack_buff.decode_buff_pre_id_modifier_prefix(data, len(data))
+
+        self.assertEqual("blocked-nonempty-ability-event-actions", decoded["status"])
+        self.assertEqual(3, decoded["abilityEventActionCount"])
+        self.assertNotIn("attributeModifier", decoded)
+
+    def test_buff_skill_end_cooldown_chain_is_consumed_exactly(self) -> None:
+        skill_id = b"eny_0090_wgabyss_skill03"
+        blackboard_skill_id = (
+            b"\x03" + struct.pack("<I", 0) + b"\x00"
+            + struct.pack("<I", len(skill_id)) + skill_id
+        )
+        target_settings = bytes.fromhex(
+            "0d 08 01 00 00 00 00 00 00 ff 00 00 00 00 ff 00 "
+            "00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 "
+            "00 03 ff 00 00 00 00 00 00 00 00 00 00 00 00 01 "
+            "00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 04 "
+            "00 00 00"
+        )
+        common_prefix = b"\x01" + struct.pack("<iii", 0, 0, 0)
+        check_skill = b"".join((
+            b"\x71\x05",
+            common_prefix,
+            struct.pack("<I", 1),
+            blackboard_skill_id,
+        ))
+        set_cooldown = b"".join((
+            b"\xfa" + struct.pack("<H", 0x0144) + b"\x0b",
+            b"\x01" + struct.pack("<iii", 0, 0, 1),
+            b"\x00",  # useSkillType
+            struct.pack("<i", 0),  # SkillTypeMask.None
+            struct.pack("<I", len(skill_id)) + skill_id,
+            struct.pack("<i", 0),  # FunctionType.Reduce
+            target_settings,
+            b"\x00",  # isPercentage
+            b"\x03" + struct.pack("<I", 0) + b"\x00" + struct.pack("<f", 5.0),
+        ))
+        data = b"".join((
+            bytes([BUFF_MEMBER_COUNT]),
+            struct.pack("<I", 1),
+            b"\x02" + struct.pack("<iI", 31, 1),  # OnSkillEnd, one sequence
+            b"\x03" + struct.pack("<I", 2) + check_skill + set_cooldown + b"\x00\x00",
+            b"\x03" + struct.pack("<I", 0) + b"\x00" + struct.pack("<f", 0.0),
+            struct.pack("<I", 0),
+            b"\x02" + struct.pack("<I", 0) + b"\x00",
+        ))
+
+        decoded = memorypack_buff.decode_buff_pre_id_modifier_prefix(data, len(data))
+
+        self.assertEqual("parsed-through-attribute-modifier", decoded["status"])
+        event_map = decoded["abilityEventActions"][0]
+        self.assertEqual(31, event_map["abilityEvent"])
+        items = event_map["actions"][0]["actionDataItems"]
+        self.assertEqual("eny_0090_wgabyss_skill03", items[0]["decoded"]["skillIdList"][0]["value"])
+        cooldown = items[1]["decoded"]
+        self.assertEqual("eny_0090_wgabyss_skill03", cooldown["skillId"])
+        self.assertFalse(cooldown["isPercentage"])
+        self.assertEqual(5.0, cooldown["value"]["value"])
+
+    def test_buff_super_armor_marker_chain_is_consumed_exactly(self) -> None:
+        target_settings = bytes.fromhex(
+            "0d 08 01 00 00 00 00 00 00 ff 00 00 00 00 ff 00 "
+            "00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 "
+            "00 03 ff 00 00 00 00 00 00 00 00 00 00 00 00 01 "
+            "00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 04 "
+            "00 00 00"
+        )
+        common_prefix = b"\x01" + struct.pack("<iii", 0, 0, 0)
+        super_armor_key = b"superarmor"
+        check_super_armor = b"".join((
+            b"\x75\x07",
+            common_prefix,
+            target_settings,
+            struct.pack("<i", 3),
+            b"\x03" + struct.pack("<I", len(super_armor_key)) + super_armor_key
+            + b"\x01" + struct.pack("<f", 30.0),
+        ))
+        marker_id = b"hit_flash_cd"
+        create_marker = b"".join((
+            b"\x8e\x09",
+            b"\x01" + struct.pack("<iii", 0, 0, 1),
+            b"\x00",
+            b"\x03" + struct.pack("<I", 0) + b"\x00" + struct.pack("<f", 0.25),
+            b"\x03" + struct.pack("<I", 0) + b"\x00"
+            + struct.pack("<I", len(marker_id)) + marker_id,
+            target_settings,
+            b"\x00",
+        ))
+        data = b"".join((
+            bytes([BUFF_MEMBER_COUNT]),
+            struct.pack("<I", 1),
+            b"\x02" + struct.pack("<iI", 12, 1),
+            b"\x03" + struct.pack("<I", 2) + check_super_armor + create_marker + b"\x00\x00",
+            b"\x03" + struct.pack("<I", 0) + b"\x00" + struct.pack("<f", 0.0),
+            struct.pack("<I", 0),
+            b"\x02" + struct.pack("<I", 0) + b"\x00",
+        ))
+
+        decoded = memorypack_buff.decode_buff_pre_id_modifier_prefix(data, len(data))
+
+        self.assertEqual("parsed-through-attribute-modifier", decoded["status"])
+        items = decoded["abilityEventActions"][0]["actions"][0]["actionDataItems"]
+        self.assertEqual(30.0, items[0]["decoded"]["value"]["value"])
+        self.assertEqual("hit_flash_cd", items[1]["decoded"]["markerId"]["value"])
+        self.assertEqual(0.25, items[1]["decoded"]["duration"]["value"])
+
+    def test_keyed_blackboard_scan_keeps_exact_pre_id_values_only(self) -> None:
+        key = b"duration"
+        field = b"".join((
+            b"\x03",
+            struct.pack("<I", len(key)),
+            key,
+            b"\x01",
+            struct.pack("<f", 15.0),
+        ))
+        data = b"\x1e" + field + b"opaque-id-tail"
+
+        rows = memorypack_buff.scan_buff_blackboard_float_candidates_before_id(
+            data,
+            1 + len(field),
+        )
+
+        self.assertEqual(1, len(rows))
+        self.assertEqual("duration", rows[0]["blackboardKey"])
+        self.assertEqual(15.0, rows[0]["value"])
+
     def test_shared_string_sampling_primitives_are_bounded(self) -> None:
         data = b"prefix" + struct.pack("<I", 5) + b"Alpha" + b"tail"
 
