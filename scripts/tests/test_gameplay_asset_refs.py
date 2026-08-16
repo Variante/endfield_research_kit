@@ -1,8 +1,16 @@
 from __future__ import annotations
 
+import json
+import sqlite3
+import tempfile
 import unittest
+from pathlib import Path
 
-from scripts.asset_builder.gameplay_refs import build_gameplay_asset_refs
+from scripts.asset_builder.gameplay_refs import (
+    SOURCE_GRAPH_SCHEMA_VERSION,
+    _asset_content_sha256,
+    build_gameplay_asset_refs,
+)
 
 
 class GameplayAssetRefsTests(unittest.TestCase):
@@ -760,6 +768,341 @@ class GameplayAssetRefsTests(unittest.TestCase):
             "StreamingAssets/Sprite/item_gold_p3333333333333333.png",
             result["tokens"]["item_gold"]["images"][0]["rel"],
         )
+
+    def test_collects_buff_icons_and_rejects_line_grey_basename_variants(self) -> None:
+        payload = {
+            "entries": [{
+                "id": "chr_0017_yvonne",
+                "kind": "character",
+                "skillGroups": [{"iconId": "icon_skill_demo"}],
+            }],
+            "buffs": {
+                "buff_demo": {
+                    "idStringVerified": True,
+                    "refs": ["icon_battle_buff_demo"],
+                },
+            },
+        }
+        assets = [
+            {
+                "k": "image",
+                "r": "StreamingAssets/Sprite/icon_skill_demo_p1111111111111111.png",
+                "ic": "icon",
+            },
+            {
+                "k": "image",
+                "r": "StreamingAssets/Texture2D/icon_skill_demo_p2222222222222222.png",
+                "ic": "icon",
+            },
+            {
+                "k": "image",
+                "r": "StreamingAssets/Sprite/icon_skill_demo_line_p3333333333333333.png",
+                "ic": "icon",
+            },
+            {
+                "k": "image",
+                "r": "StreamingAssets/Sprite/icon_battle_buff_demo_grey_p4444444444444444.png",
+                "ic": "icon",
+            },
+            {
+                "k": "image",
+                "r": "StreamingAssets/Texture2D/icon_battle_buff_demo_p5555555555555555.png",
+                "ic": "icon",
+            },
+        ]
+
+        result = build_gameplay_asset_refs(payload, assets)
+
+        self.assertEqual(
+            {"icon_skill_demo", "icon_battle_buff_demo"},
+            set(result["iconEvidence"]),
+        )
+        skill = result["iconEvidence"]["icon_skill_demo"]
+        self.assertEqual("representation-pathid-multi", skill["classification"])
+        self.assertEqual(2, len(skill["candidates"]))
+        self.assertTrue(all("_line_" not in row["rel"] for row in skill["candidates"]))
+        self.assertEqual(1, len(skill["rejectedBasenameCandidates"]))
+        self.assertIn("_line_", skill["rejectedBasenameCandidates"][0]["rel"])
+        self.assertEqual("Texture2D", skill["representationPolicy"])
+        self.assertEqual("unproven", skill["sourceProof"]["status"])
+
+        buff = result["iconEvidence"]["icon_battle_buff_demo"]
+        self.assertEqual("exact-unique", buff["classification"])
+        self.assertEqual(
+            "StreamingAssets/Texture2D/icon_battle_buff_demo_p5555555555555555.png",
+            result["tokens"]["icon_battle_buff_demo"]["images"][0]["rel"],
+        )
+        self.assertTrue(all("_grey_" not in row["rel"] for row in buff["candidates"]))
+        self.assertEqual(
+            "icon_battle_buff_demo",
+            result["rawBuffIconCandidates"]["icon_battle_buff_demo"][0]["rawToken"],
+        )
+
+    def test_top_level_icon_uses_exact_canonical_pair_only(self) -> None:
+        payload = {
+            "entries": [{
+                "id": "item_demo",
+                "kind": "item",
+                "iconId": "icon_top_demo",
+            }],
+        }
+        assets = [
+            {
+                "k": "image",
+                "r": "StreamingAssets/Sprite/icon_top_demo_p1111111111111111.png",
+                "ic": "icon",
+            },
+            {
+                "k": "image",
+                "r": "StreamingAssets/Texture2D/icon_top_demo_p2222222222222222.png",
+                "ic": "icon",
+                "iw": 2048,
+                "ih": 2048,
+            },
+            {
+                "k": "image",
+                "r": "StreamingAssets/Texture2D/icon_top_demo_line_p3333333333333333.png",
+                "ic": "icon",
+                "iw": 4096,
+                "ih": 4096,
+            },
+        ]
+
+        result = build_gameplay_asset_refs(payload, assets)
+        images = result["entries"]["item:item_demo"]["images"]
+
+        self.assertEqual(1, len(images))
+        self.assertIn("icon_top_demo_p", images[0]["rel"])
+        self.assertNotIn("_line_", images[0]["rel"])
+
+    def test_unverified_or_malformed_buff_does_not_create_icon_evidence(self) -> None:
+        payload = {
+            "entries": [],
+            "buffs": {
+                "buff_unverified": {
+                    "idStringVerified": False,
+                    "refs": ["icon_unverified"],
+                },
+                "buff_malformed": {
+                    "idStringVerified": True,
+                    "refs": "icon_malformed",
+                },
+            },
+        }
+        assets = [{
+            "k": "image",
+            "r": "StreamingAssets/Texture2D/icon_unverified_p1111111111111111.png",
+            "ic": "icon",
+        }]
+
+        result = build_gameplay_asset_refs(payload, assets)
+
+        self.assertEqual({}, result["rawBuffIconCandidates"])
+        self.assertNotIn("icon_unverified", result["iconEvidence"])
+        self.assertNotIn("icon_malformed", result["iconEvidence"])
+
+    def test_token_evidence_classifies_basename_only_and_unresolved(self) -> None:
+        payload = {
+            "entries": [{
+                "id": "chr_demo",
+                "kind": "character",
+                "skillGroups": [{"iconId": token} for token in (
+                    "icon_exact_unique",
+                    "icon_exact_multi",
+                    "icon_basename_only",
+                    "icon_unresolved",
+                )],
+            }],
+        }
+        assets = [
+            {
+                "k": "image",
+                "r": "StreamingAssets/Texture2D/icon_exact_unique_p1111111111111111.png",
+                "ic": "icon",
+            },
+            {
+                "k": "image",
+                "r": "StreamingAssets/Sprite/icon_exact_multi_p2222222222222222.png",
+                "ic": "icon",
+            },
+            {
+                "k": "image",
+                "r": "StreamingAssets/Texture2D/icon_exact_multi_p3333333333333333.png",
+                "ic": "icon",
+            },
+            {
+                "k": "image",
+                "r": "StreamingAssets/Sprite/icon_basename_only_line_p4444444444444444.png",
+                "ic": "icon",
+            },
+        ]
+
+        result = build_gameplay_asset_refs(payload, assets)
+        evidence = result["tokenEvidence"]
+
+        self.assertEqual("exact-unique", evidence["icon_exact_unique"]["classification"])
+        self.assertEqual("representation-pathid-multi", evidence["icon_exact_multi"]["classification"])
+        self.assertEqual("basename-only", evidence["icon_basename_only"]["classification"])
+        self.assertEqual("unresolved", evidence["icon_unresolved"]["classification"])
+        self.assertNotIn("icon_basename_only", result["tokens"])
+        self.assertEqual(
+            {
+                "basename-only": 1,
+                "exact-unique": 1,
+                "representation-pathid-multi": 1,
+                "unresolved": 1,
+            },
+            result["counts"]["evidenceClassifications"],
+        )
+
+    def test_source_graph_proof_requires_path_pathid_and_representation(self) -> None:
+        payload = {
+            "entries": [{
+                "id": "chr_demo",
+                "kind": "character",
+                "skillGroups": [{"iconId": "icon_graph_demo"}],
+            }],
+        }
+        rel = "StreamingAssets/Texture2D/icon_graph_demo_p1111111111111111.png"
+        assets = [{
+            "k": "image",
+            "r": rel,
+            "pid": "1111111111111111",
+            "ic": "icon",
+        }]
+        with tempfile.TemporaryDirectory() as temp_dir:
+            graph = Path(temp_dir) / "graph.sqlite"
+            connection = sqlite3.connect(graph)
+            connection.executescript(
+                """
+                CREATE TABLE nodes (id TEXT PRIMARY KEY, kind TEXT NOT NULL,
+                    name TEXT, source TEXT, path TEXT, data TEXT);
+                CREATE TABLE edges (id INTEGER PRIMARY KEY, src TEXT NOT NULL,
+                    dst TEXT NOT NULL, kind TEXT NOT NULL, source TEXT,
+                    evidence TEXT, data TEXT);
+                CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT);
+                """
+            )
+            connection.execute(
+                "INSERT INTO nodes VALUES (?, 'asset', ?, 'webui/assets', ?, ?)",
+                (f"asset:{rel}", Path(rel).name, rel, json.dumps({"pid": "1111111111111111", "type": "image"})),
+            )
+            connection.execute(
+                "INSERT INTO edges VALUES (1, ?, ?, 'uses_icon_asset', 'source_graph/visual_token_bridge', 'iconId', ?)",
+                (
+                    "gameplay_skill_level:demo:1",
+                    f"asset:{rel}",
+                    json.dumps({"token": "icon_graph_demo", "assetPath": rel}),
+                ),
+            )
+            connection.execute(
+                "INSERT INTO edges VALUES (2, ?, ?, 'skill_data_references_icon', 'Persistent', '0x10', ?)",
+                (
+                    "gameplay_skill:demo",
+                    f"asset:{rel}",
+                    json.dumps({"value": "icon_graph_demo"}),
+                ),
+            )
+            metadata = {
+                "schemaVersion": SOURCE_GRAPH_SCHEMA_VERSION,
+                "language": "CN",
+                "generated": "1",
+                "assetIndexContentSha256": _asset_content_sha256(assets),
+                "asset_map_scope": "relevant",
+                "asset_map_required_path_ids": "1",
+                "asset_map_matched_path_ids": "1",
+            }
+            connection.executemany(
+                "INSERT INTO meta(key, value) VALUES (?, ?)",
+                metadata.items(),
+            )
+            connection.commit()
+            connection.close()
+
+            result = build_gameplay_asset_refs(
+                payload,
+                assets,
+                source_graph_path=graph,
+            )
+
+            proof = result["tokenEvidence"]["icon_graph_demo"]["sourceProof"]
+            self.assertEqual("validated", proof["status"])
+            self.assertEqual(1, len(proof["edges"]))
+            self.assertEqual(rel, proof["edges"][0]["rel"])
+
+            connection = sqlite3.connect(graph)
+            connection.execute("UPDATE meta SET value = 'full' WHERE key = 'asset_map_scope'")
+            connection.execute(
+                "DELETE FROM meta WHERE key IN ('asset_map_required_path_ids', 'asset_map_matched_path_ids')"
+            )
+            connection.commit()
+            connection.close()
+            full_scope = build_gameplay_asset_refs(
+                payload,
+                assets,
+                source_graph_path=graph,
+            )
+            self.assertEqual(
+                "validated",
+                full_scope["tokenEvidence"]["icon_graph_demo"]["sourceProof"]["status"],
+            )
+
+            connection = sqlite3.connect(graph)
+            connection.execute("UPDATE meta SET value = 'relevant' WHERE key = 'asset_map_scope'")
+            connection.commit()
+            connection.close()
+            missing_relevant_coverage = build_gameplay_asset_refs(
+                payload,
+                assets,
+                source_graph_path=graph,
+            )
+            self.assertEqual(
+                "unproven",
+                missing_relevant_coverage["tokenEvidence"]["icon_graph_demo"]["sourceProof"]["status"],
+            )
+            self.assertTrue(any(
+                diagnostic["code"] == "source-graph-metadata-missing"
+                and diagnostic["field"] == "asset_map_required_path_ids"
+                for diagnostic in missing_relevant_coverage["sourceGraph"]["diagnostics"]
+            ))
+
+            connection = sqlite3.connect(graph)
+            connection.execute(
+                "INSERT INTO edges VALUES (3, ?, ?, 'uses_icon_asset', 'source_graph/visual_token_bridge', 'iconId', ?)",
+                ("gameplay_skill:malformed", f"asset:{rel}", "{bad-json"),
+            )
+            connection.commit()
+            connection.close()
+            malformed = build_gameplay_asset_refs(
+                payload,
+                assets,
+                source_graph_path=graph,
+            )
+            self.assertEqual(
+                "unproven",
+                malformed["tokenEvidence"]["icon_graph_demo"]["sourceProof"]["status"],
+            )
+            self.assertTrue(any(
+                diagnostic["code"] == "source-graph-edge-json-invalid"
+                for diagnostic in malformed["sourceGraph"]["diagnostics"]
+            ))
+
+            connection = sqlite3.connect(graph)
+            connection.execute(
+                "UPDATE nodes SET data = ?",
+                (json.dumps({"pid": "2222222222222222", "type": "image"}),),
+            )
+            connection.commit()
+            connection.close()
+            mismatched_pid = build_gameplay_asset_refs(
+                payload,
+                assets,
+                source_graph_path=graph,
+            )
+            self.assertEqual(
+                "unproven",
+                mismatched_pid["tokenEvidence"]["icon_graph_demo"]["sourceProof"]["status"],
+            )
 
 
 if __name__ == "__main__":

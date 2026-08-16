@@ -9,12 +9,47 @@ from unittest.mock import patch
 
 from tools.endfield_source_graph import (
     SourceGraphBuilder,
+    SOURCE_GRAPH_SCHEMA_VERSION,
+    asset_index_content_sha256,
     classify_story_audio_reference,
     story_line_audio_candidates,
 )
 
 
 class SourceGraphSchemaTests(unittest.TestCase):
+    def test_asset_index_content_hash_is_deterministic_and_ingest_captures_it(self) -> None:
+        entries = [
+            {"r": "Texture2D/icon_a.png", "k": "image", "s": 12},
+            {"r": "Texture2D/icon_b.png", "k": "image", "s": 18},
+        ]
+        first = asset_index_content_sha256(entries)
+        self.assertIsNotNone(first)
+        self.assertEqual(first, asset_index_content_sha256(json.loads(json.dumps(entries))))
+        self.assertIsNone(asset_index_content_sha256({"entries": entries}))
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp = Path(temp_dir)
+            assets_root = temp / "webui/data/assets"
+            assets_root.mkdir(parents=True)
+            (assets_root / "index.json").write_text(
+                json.dumps({"generated": "changes", "entries": entries}),
+                encoding="utf-8",
+            )
+            builder = SourceGraphBuilder(
+                db_path=temp / "graph.sqlite",
+                root=temp,
+                export_root=temp / "export_full",
+                include_asset_maps=False,
+            )
+            builder.open()
+            try:
+                with patch("tools.endfield_source_graph.WEBUI_DATA", temp / "webui/data"):
+                    builder.ingest_assets()
+                self.assertEqual(SOURCE_GRAPH_SCHEMA_VERSION, "sourceGraph.v1")
+                self.assertEqual(first, builder.asset_index_content_sha256)
+            finally:
+                builder.close()
+
     def test_active_config_overlays_only_matching_legacy_path(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             temp = Path(temp_dir)
