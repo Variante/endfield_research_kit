@@ -146,12 +146,14 @@ namespace EndfieldGraphShaderLabEditor
                     "endfield.lizhiyan-after-dof-native-abi.v1" &&
                 L.Str(native, "status") ==
                     "current_build_native_schedule_and_static_shader_abi_closed_live_draw_pending" &&
-                L.List(native["methods"]).Count == 20 &&
+                L.List(native["methods"]).Count == 24 &&
                 L.List(native["decisiveCalls"]).Count == 15,
                 "Li Zhiyan native after-DOF contract identity drifted");
             var expectedMethods = new Dictionary<long, string>
             {
                 { 286728, "00ACC65F4685738CB190BF536900D5AE7B421F4A2CAEDC25C3D2D0B7E2EB3162" },
+                { 286732, "56CC43CF0F18122D3DE44731D2680F6951F48104A5A2986B9F35161CC883EC7F" },
+                { 286733, "ECD06129C7B75CF85A127A5D5E543C956CC9FA4B23C1846A893CAE9464A3AD3E" },
                 { 286724, "0D5928FA5F343C7F072A857C5B0FE6CA8943506877C71FA9A6257EF5F2983B7E" },
                 { 286739, "B5A2AB43A40014751793CA227CD2F535AEF7470A1F3E71A93B24297ED9C40FCC" },
                 { 286740, "525783A3D1731620269FBA6F156031EFDE5068FFA4ACC3FAFD1B4EFD0EA0948F" },
@@ -159,6 +161,8 @@ namespace EndfieldGraphShaderLabEditor
                 { 284150, "DA8AB25AC903EEAE24FED48535F016BEA19C3BE7A21A7628C67BED63C7C83922" },
                 { 284093, "B0D85048FC518253694C8BD1FC9B9F40C7F14DAA87B95EB180419233B28DD59D" },
                 { 284103, "BD2E3852A86737D9F2732283AF677FA2A0F4209DD3FFB3F9476C957C67125A10" },
+                { 284106, "08CA0296209FB21E02AFC9E2F5B02B06F0CA86A699A26BCD9951099D93F6926A" },
+                { 284111, "6EFA8CEFFB982A2B6E4944B79DDDEBD5853166DC3B7CD0A10E8188048E27A6E0" },
                 { 286702, "8C1488DC4A09BEB9F142B4EA2DD5CB7B98770D5DE48DA545E94655EE3538B329" },
                 { 287999, "E1E497BAD2F5AA44B25F7E6D0F7ECA208CD81F4C49AE8D64070A4FB1D0E6187A" },
                 { 478062, "8C8113556AB580A5337118F93A8B5E7A38BD79A8F656128FE768CF22B727261F" },
@@ -247,12 +251,37 @@ namespace EndfieldGraphShaderLabEditor
                 L.Long(survivorSort, "recordStride") == 64 &&
                 L.Long(survivorSort, "comparatorKeyBytes") == 16 &&
                 L.Str(survivorSort, "sortVA") == "0x181043bd0" &&
+                L.Str(survivorSort, "comparator") ==
+                    "unsigned-byte lexicographic order over record bytes 0x00..0x0f" &&
                 L.Str(survivorSort, "recordAppendVA") == "0x18105e400" &&
-                L.List(survivorSort["keyConstruction"]).Count == 4 &&
-                L.List(survivorSort["commonAcceptanceGates"]).Count == 7 &&
-                L.Str(survivorSort, "variantGate").Contains("source+0x2c > 0") &&
-                L.Str(survivorSort, "semanticKey").Contains("unresolved") &&
-                L.List(survivorSort["notYetProven"]).Count == 4 &&
+                StringListEquals(survivorSort["keyConstruction"],
+                    "dword 0 packs a masked 20-bit source, another source shifted by 20, and a byte flag",
+                    "dword 1 combines source +0x08, a byte selector, and a 16-bit source value",
+                    "dword 2 combines source +0x0c, selector bits, and a conditional 0x01000000 marker",
+                    "dword 3 combines context byte state, source +0x22 u16, and ((~asuint(float)) >> 17) & 0x3fff") &&
+                L.Str(survivorSort, "semanticKey") ==
+                    "opaque packed renderer-state key; byte/bit construction is proven but field names remain unresolved" &&
+                StringListEquals(survivorSort["commonAcceptanceGates"],
+                    "(source[0x10:0x20] & context[0x40:0x50]) == 0",
+                    "(source+0x10 qword & context+0x50 qword) != 0",
+                    "source+0x10 has at least one 0x60000 bit",
+                    "source+0x10 has at least one 0x7f00 bit",
+                    "(source+0x10 & 0xc0) == 0xc0",
+                    "context+0x34 & viewMask[index] != 0",
+                    "source bit 45 is clear") &&
+                L.Str(survivorSort, "variantGate") ==
+                    "four resource-state worker variants additionally require signed dword source+0x2c > 0 in the source+0x18 bit-15 path" &&
+                L.Str(survivorSort, "workerSelectionFields") ==
+                    "request +0x28 multiDraw, +0x29 transparentSorting, +0x30 noAlphaTest plus live resource presence; excludeGPUDriven is request +0x40 and is not independently reread as a worker-local Boolean" &&
+                L.Str(survivorSort, "invalidRecordGate") ==
+                    "publication skips record +0x20 == 0xffffffff" &&
+                L.Str(survivorSort, "provenPipeline") ==
+                    "post-filter 64-byte records -> in-place key sort -> invalid-record skip -> ID/resource resolve -> pointer-vector publication" &&
+                StringListEquals(survivorSort["notYetProven"],
+                    "semantic names of packed key fields",
+                    "indirect draw",
+                    "graphics backend submission",
+                    "manager frame reset/reuse owner") &&
                 !L.Bool(consumers, "opaqueArgument") &&
                 L.Str(consumers, "frameSettingsGate") == "TransparentObjects" &&
                 L.Str(consumers, "survivorIdentity") ==
@@ -261,6 +290,14 @@ namespace EndfieldGraphShaderLabEditor
                 !L.Bool(decision, "vfxParams1PublicationRequiredForSelectedMaterials") &&
                 !L.Bool(decision, "transformHistoryRequiredForSelectedMaterials"),
                 "Li Zhiyan native-to-Unity fail-closed decision drifted");
+        }
+
+        private static bool StringListEquals(object value, params string[] expected)
+        {
+            IList actual = L.List(value);
+            return actual.Count == expected.Length && actual.Cast<object>()
+                .Select(item => Convert.ToString(item))
+                .SequenceEqual(expected);
         }
 
         private static void ValidateStage(
