@@ -41,6 +41,12 @@ def test_topology() -> None:
     assert advanced_slots["stateFields"]["state170"]["initialValue"] == 1
     assert advanced_slots["stateFields"]["state171"]["initialValue"] == 1
     assert advanced_slots["slot13"]["commands"]["1"] == "state170=1_and_state171=1"
+    callbacks = advanced_slots["runtimeCallbacks"]
+    assert callbacks["reset"]["va"] == "0x180A5A680"
+    assert callbacks["update"]["stageProcessorVA"] == "0x180AC4A90"
+    assert callbacks["update"]["stageRecordStrideBytes"] == 28
+    assert callbacks["stageProcessor"]["modes"] == [0, 1, 2, 3]
+    assert callbacks["publicPlayableApiEquivalent"] is False
     assert advanced_slots["stockImplementationsDiffer"] is True
     assert advanced_slots["restrictedStartOnlyStockEquivalenceProven"] is False
     assert [row["pathID"] for row in topology["clipSlots"]] == [
