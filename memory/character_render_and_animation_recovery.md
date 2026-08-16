@@ -2079,15 +2079,35 @@ only stable interpretation and priorities.
    copies 0x50-byte ranges. Generic `0x180555180` emits a 0x18-byte index table
    at backend object `+0x208` with count at `+0x210`. Indirect consumer
    `0x180542e10` resolves those indices and enters resource/parameter builder
-   `0x1805419d0`, whose terminal object-vtable `+0x210` call is now the
-   strongest unresolved backend boundary. Concrete target/object provenance
-   for that call is the next static recovery queue; no CPU record helper is a
-   proven draw or submit.
+   `0x1805419d0`. Callback-row builder `0x180541680` allocates 0x190-byte
+   rows, initializes `+0x10/+0x18` to zero, and registers callback
+   `0x180542e10` through an external manager's vtable `+0xc28`. That manager
+   must populate row `+0x10` before callback execution. The callback forwards
+   it as Windows x64 argument six at `0x180542ec5`; after accounting for the
+   call return address, eight pushes, `sub rsp,0x9e8`, and
+   `rbp=rsp+0x50`, the builder's `rbp+0xa08` reload is the same argument.
+   Its terminal `vtable+0x210` receiver is therefore this dynamic
+   resource/parameter-provider object, not backend status dword `+0x214`.
+   The external manager implementation, provider allocation, and concrete
+   vtable remain the strongest unresolved backend boundary; no CPU record
+   helper is a proven draw or submit.
    The actor-composed Unity witness assigns one strictly monotonic
    `captureInvocationSerial` to every actual `Camera.Render()` call. Its 24
    anchors times seven aggregate/root lanes validate as 168 unique invocations,
    independently of `Time.frameCount`. This is a stable join key for the
    planned renderer-ID sidecar, not a retail/native frame or command-buffer ID.
+   The first real D3D12 RGBA32F renderer-ID sidecar capture now reuses the
+   exact after-post `CullingResults`, queue 3660--3740, depth, layer mask, and
+   transparent sorting. Twelve serial-keyed reads are positive across the
+   composite/effects/peak lanes at retail PTS 39367, 39934, 40000, and 40167,
+   with roughly 258k--485k nonzero ID pixels. The other 156 invocations remain
+   unavailable because the existing SceneMV admission gate rejects visible
+   frames containing the diagnostic piaodai queue-3702 material or because no
+   eligible renderer is present. Override-material coverage does not preserve
+   source alpha clip/cull/discard, so this proves Unity diagnostic
+   renderer admission/depth/sort ownership only; it is not retail pixel,
+   native survivor, or final draw ownership and does not raise
+   `visibleAdmission`.
    All six selected materials have `_IsSceneEffect=0` and
    `_EnableTransparentMV=0`, so `_VFXParams1` and transform history are safely
    bypassed rather than guessed. Exact inverse-VP soft depth, live

@@ -753,6 +753,7 @@ namespace EndfieldGraphShaderLab
                     camera,
                     logicalDrawsBeforeCull);
             }
+            recoveredSceneMVCompositor.PrepareRendererIdSidecarBeforeCulling(camera);
 
             EndfieldRecoveredDirectionalCSMProducer.CullingOverride
                 directionalCSMCullingOverride =
@@ -1980,6 +1981,7 @@ namespace EndfieldGraphShaderLab
                 commandBuffer.Release();
             }
             context.Submit();
+            recoveredSceneMVCompositor.FinalizeRendererIdSidecarAfterSubmit();
             EndfieldRecoveredSceneMVCompositor.ReleaseRenderTexture(
                 recoveredSceneMV);
             ReleaseRecoveredPrimarySceneDepth(recoveredPrimarySceneDepth);
