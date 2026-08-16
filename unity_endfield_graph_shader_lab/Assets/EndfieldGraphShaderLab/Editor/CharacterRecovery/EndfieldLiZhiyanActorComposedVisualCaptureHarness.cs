@@ -61,7 +61,7 @@ namespace EndfieldGraphShaderLabEditor
         private const string ExpectedOracleSchema =
             "endfield.lizhiyan-retail-visual-oracle.v1";
         private const string ExpectedManifestSchema =
-            "endfield.lizhiyan-actor-composed-diagnostic-capture.v1";
+            "endfield.lizhiyan-actor-composed-diagnostic-capture.v2";
         private const long SharedClipPathId = 7360398354216100382L;
         private const string SharedClipName = "A_fxui__lizhiyan_overview_start_01";
         private const float SharedClipStopTime = 6.366667f;
@@ -197,6 +197,8 @@ namespace EndfieldGraphShaderLabEditor
                         visibleAdmission = false,
                         eventOriginProven = false,
                         nativeRendererIdentityProven = false,
+                        rendererFingerprintWitnessBoundary =
+                            "single_capture_session_before_camera_render_sharedmaterials_only; actor_hierarchy_and_runtime_ids_only; static_effect_source_pathids_and_runtime_ids; peak_source_pathids_source_particle_ids_and_runtime_proxy_ids; transform_hash_is_not_a_skinned_pose_digest; no_retail_hgmesh_identity_or_draw_proof",
                         actorAnimationRetailAbiEquivalent = false,
                         comparesRetailPixels = false,
                         retailHashEquality = false,
@@ -282,6 +284,8 @@ namespace EndfieldGraphShaderLabEditor
                         };
 
                         ConfigureVisibility(bundle, localSeconds, true, -1);
+                        capture.rendererFingerprintWitness =
+                            CaptureRendererFingerprintWitness(bundle);
                         capture.composite = CaptureNamedFrame(
                             camera, target, readback, outputDirectory,
                             "composite_" + Pts(anchor.retailPts) + ".png", oracleSample);
@@ -452,6 +456,10 @@ namespace EndfieldGraphShaderLabEditor
                 foreach (ParticleSystemRenderer sourceRenderer in
                     effect.GetComponentsInChildren<ParticleSystemRenderer>(true))
                 {
+                    EndfieldRecoveredParticleNodeSource sourceNode =
+                        marker.particleNodes.Single(node =>
+                            FindHierarchy(effect.transform, node.hierarchy) ==
+                            sourceRenderer.transform);
                     GameObject proxyObject = new GameObject(
                         sourceRenderer.gameObject.name + ".PeakBatchmodeBakeProxy");
                     SceneManager.MoveGameObjectToScene(proxyObject, captureScene);
@@ -470,6 +478,7 @@ namespace EndfieldGraphShaderLabEditor
                         rootIndex = index,
                         system = sourceRenderer.GetComponent<ParticleSystem>(),
                         sourceRenderer = sourceRenderer,
+                        sourceNode = sourceNode,
                         proxyObject = proxyObject,
                         proxyRenderer = proxyRenderer,
                         mesh = mesh,
@@ -656,6 +665,174 @@ namespace EndfieldGraphShaderLabEditor
                 foreach (ParticleSystem system in root.GetComponentsInChildren<ParticleSystem>(true))
                     count += system.particleCount;
             return count;
+        }
+
+        private static RendererFingerprintRecord[] CaptureRendererFingerprintWitness(
+            ActorBundle bundle)
+        {
+            var rows = new List<RendererFingerprintRecord>();
+            for (int actorIndex = 0; actorIndex < bundle.actorRenderers.Length; actorIndex++)
+            {
+                Renderer renderer = bundle.actorRenderers[actorIndex];
+                Mesh mesh = RendererMesh(renderer);
+                RendererFingerprintRecord row = BuildRendererFingerprint(
+                    "actor", "actor", RelativeHierarchy(bundle.actor.transform,
+                        renderer.transform), 0L, Array.Empty<long>(), Array.Empty<long>(), renderer,
+                    mesh, 0, 0);
+                row.identityKey += ":" + actorIndex.ToString(
+                    CultureInfo.InvariantCulture);
+                rows.Add(row);
+            }
+            for (int rootIndex = 0; rootIndex < bundle.markers.Length; rootIndex++)
+            {
+                foreach (EndfieldRecoveredStaticMeshNodeSource node in
+                    bundle.markers[rootIndex].staticMeshNodes)
+                {
+                    rows.Add(BuildRendererFingerprint(
+                        "static_effect", Roots[rootIndex].key, node.hierarchy,
+                        node.meshRendererPathId, new[] { node.meshPathId },
+                        node.materialPathIds, node.generatedMeshRenderer,
+                        RequiredStaticMesh(node), 0, 0));
+                }
+            }
+            foreach (PeakBakeProxy proxy in bundle.peakBakeProxies)
+            {
+                Require(proxy != null && proxy.sourceNode != null &&
+                    proxy.sourceRenderer != null && proxy.system != null &&
+                    proxy.proxyRenderer != null && proxy.mesh != null,
+                    "Peak fingerprint proxy source is incomplete");
+                rows.Add(BuildRendererFingerprint(
+                    "peak_particle_proxy", PeakEffectRoots[proxy.rootIndex],
+                    proxy.sourceNode.hierarchy,
+                    proxy.sourceNode.particleRendererPathId,
+                    proxy.sourceNode.meshPathIds,
+                    proxy.sourceNode.materialPathIds, proxy.proxyRenderer, proxy.mesh,
+                    proxy.sourceRenderer.GetInstanceID(), proxy.system.GetInstanceID()));
+            }
+            return rows.OrderBy(row => row.identityKey, StringComparer.Ordinal).ToArray();
+        }
+
+        private static RendererFingerprintRecord BuildRendererFingerprint(
+            string role,
+            string sourceRoot,
+            string hierarchy,
+            long sourceRendererPathId,
+            long[] sourceMeshPathIds,
+            long[] sourceMaterialPathIds,
+            Renderer renderer,
+            Mesh mesh,
+            int sourceRendererInstanceId,
+            int sourceParticleSystemInstanceId)
+        {
+            Require(renderer != null, "Fingerprint renderer is missing: " + hierarchy);
+            Material[] materials = renderer.sharedMaterials;
+            Require(role == "actor" || sourceMaterialPathIds != null &&
+                sourceMaterialPathIds.Length == materials.Length,
+                "Fingerprint source material census drifted: " + hierarchy);
+            long[] normalizedSourceMaterialPathIds = sourceMaterialPathIds != null &&
+                sourceMaterialPathIds.Length == materials.Length
+                ? (long[])sourceMaterialPathIds.Clone()
+                : new long[materials.Length];
+            var materialRows = new MaterialFingerprintRecord[materials.Length];
+            for (int index = 0; index < materials.Length; index++)
+            {
+                Material material = materials[index];
+                Require(material != null, "Fingerprint material is missing: " + hierarchy);
+                materialRows[index] = new MaterialFingerprintRecord
+                {
+                    slot = index,
+                    sourceMaterialPathId = normalizedSourceMaterialPathIds[index],
+                    unityMaterialInstanceId = material.GetInstanceID(),
+                    name = material.name,
+                    shaderName = material.shader != null ? material.shader.name : string.Empty,
+                    renderQueue = material.renderQueue,
+                };
+            }
+            return new RendererFingerprintRecord
+            {
+                identityKey = role + ":" + sourceRoot + ":" + hierarchy,
+                role = role,
+                sourceRoot = sourceRoot,
+                hierarchy = hierarchy,
+                sourceRendererPathId = sourceRendererPathId,
+                sourceMeshPathIds = sourceMeshPathIds ?? Array.Empty<long>(),
+                sourceMaterialPathIds = normalizedSourceMaterialPathIds,
+                unityRendererInstanceId = renderer.GetInstanceID(),
+                sourceRendererInstanceId = sourceRendererInstanceId,
+                sourceParticleSystemInstanceId = sourceParticleSystemInstanceId,
+                unityMeshInstanceId = mesh != null ? mesh.GetInstanceID() : 0,
+                activeInHierarchy = renderer.gameObject.activeInHierarchy,
+                rendererEnabled = renderer.enabled,
+                meshVertexCount = mesh != null ? mesh.vertexCount : 0,
+                meshSubMeshCount = mesh != null ? mesh.subMeshCount : 0,
+                meshIndexCount = MeshIndexCount(mesh),
+                localToWorldStateSha256 = MatrixSha256(renderer.localToWorldMatrix),
+                materials = materialRows,
+            };
+        }
+
+        private static Mesh RendererMesh(Renderer renderer)
+        {
+            SkinnedMeshRenderer skinned = renderer as SkinnedMeshRenderer;
+            if (skinned != null)
+                return skinned.sharedMesh;
+            MeshFilter filter = renderer.GetComponent<MeshFilter>();
+            return filter != null ? filter.sharedMesh : null;
+        }
+
+        private static Mesh RequiredStaticMesh(EndfieldRecoveredStaticMeshNodeSource node)
+        {
+            Require(node != null && node.generatedMeshFilter != null &&
+                node.generatedMeshRenderer != null &&
+                node.generatedMeshFilter.sharedMesh != null,
+                "Static fingerprint source is incomplete");
+            return node.generatedMeshFilter.sharedMesh;
+        }
+
+        private static long MeshIndexCount(Mesh mesh)
+        {
+            if (mesh == null)
+                return 0L;
+            long total = 0L;
+            for (int index = 0; index < mesh.subMeshCount; index++)
+                total += mesh.GetIndexCount(index);
+            return total;
+        }
+
+        private static string MatrixSha256(Matrix4x4 matrix)
+        {
+            byte[] bytes = new byte[16 * sizeof(float)];
+            int offset = 0;
+            for (int row = 0; row < 4; row++)
+            {
+                for (int column = 0; column < 4; column++)
+                {
+                    byte[] value = BitConverter.GetBytes(matrix[row, column]);
+                    Buffer.BlockCopy(value, 0, bytes, offset, value.Length);
+                    offset += value.Length;
+                }
+            }
+            using (SHA256 digest = SHA256.Create())
+            {
+                return string.Concat(digest.ComputeHash(bytes).Select(
+                    value => value.ToString("x2", CultureInfo.InvariantCulture)));
+            }
+        }
+
+        private static string RelativeHierarchy(Transform root, Transform target)
+        {
+            if (target == root)
+                return root.name;
+            var parts = new List<string>();
+            Transform cursor = target;
+            while (cursor != null && cursor != root)
+            {
+                parts.Add(cursor.name);
+                cursor = cursor.parent;
+            }
+            Require(cursor == root, "Fingerprint renderer is outside source root");
+            parts.Reverse();
+            return parts.Count == 0 ? "<root>" : string.Join("/", parts);
         }
 
         private static void SetActorRenderersEnabled(Renderer[] renderers, bool enabled)
@@ -1136,6 +1313,9 @@ namespace EndfieldGraphShaderLabEditor
                 !manifest.actorAnimationRetailAbiEquivalent &&
                 !manifest.comparesRetailPixels && !manifest.retailHashEquality,
                 "Actor-composed manifest flags are not fail-closed");
+            Require(manifest.rendererFingerprintWitnessBoundary ==
+                "single_capture_session_before_camera_render_sharedmaterials_only; actor_hierarchy_and_runtime_ids_only; static_effect_source_pathids_and_runtime_ids; peak_source_pathids_source_particle_ids_and_runtime_proxy_ids; transform_hash_is_not_a_skinned_pose_digest; no_retail_hgmesh_identity_or_draw_proof",
+                "Actor-composed renderer fingerprint boundary drifted");
             Require(manifest.width == Width && manifest.height == Height &&
                 manifest.captures != null && manifest.captures.Length == Anchors.Length &&
                 manifest.graphicsDeviceType != GraphicsDeviceType.Null.ToString() &&
@@ -1168,6 +1348,7 @@ namespace EndfieldGraphShaderLabEditor
             bool[] foundVisibleRoot = new bool[Roots.Length];
             bool foundVisibleActor = false;
             bool foundVisiblePeakParticles = false;
+            Dictionary<string, string> stableRendererFingerprints = null;
             for (int anchorIndex = 0; anchorIndex < Anchors.Length; anchorIndex++)
             {
                 CaptureAnchor expected = Anchors[anchorIndex];
@@ -1177,8 +1358,11 @@ namespace EndfieldGraphShaderLabEditor
                     capture.composite != null && capture.actorOnly != null &&
                     capture.effectsOnly != null && capture.peakParticlesOnly != null &&
                     capture.peakParticleAliveCount >= 0 && capture.roots != null &&
-                    capture.roots.Length == Roots.Length,
+                    capture.roots.Length == Roots.Length &&
+                    capture.rendererFingerprintWitness != null,
                     "Actor-composed capture timing/shape drifted at PTS " + expected.retailPts);
+                ValidateRendererFingerprintWitness(
+                    capture, ref stableRendererFingerprints);
                 ValidateFrame(capture.composite, outputDirectory, expected.retailPts, "composite");
                 ValidateFrame(capture.actorOnly, outputDirectory, expected.retailPts, "actor_only");
                 ValidateFrame(capture.effectsOnly, outputDirectory, expected.retailPts, "effects_only");
@@ -1223,6 +1407,97 @@ namespace EndfieldGraphShaderLabEditor
             for (int index = 0; index < Roots.Length; index++)
                 Require(foundVisibleRoot[index],
                     "No root-only capture produced visible pixels for " + Roots[index].key);
+        }
+
+        private static void ValidateRendererFingerprintWitness(
+            ActorComposedCaptureRecord capture,
+            ref Dictionary<string, string> stableFingerprints)
+        {
+            RendererFingerprintRecord[] rows = capture.rendererFingerprintWitness;
+            int pts = capture.retailPts;
+            int expectedActorRows = 0;
+            int expectedStaticRows = 0;
+            int expectedPeakRows = 0;
+            var current = new Dictionary<string, string>(StringComparer.Ordinal);
+            foreach (RendererFingerprintRecord row in rows)
+            {
+                Require(row != null && !string.IsNullOrEmpty(row.identityKey) &&
+                    !current.ContainsKey(row.identityKey) &&
+                    row.unityRendererInstanceId != 0 &&
+                    row.materials != null && row.localToWorldStateSha256 != null &&
+                    row.localToWorldStateSha256.Length == 64,
+                    "Renderer fingerprint identity drifted at PTS " + pts);
+                if (row.role == "static_effect")
+                {
+                    expectedStaticRows++;
+                    Require(row.sourceRendererPathId != 0 &&
+                        row.sourceMeshPathIds != null &&
+                        row.sourceMeshPathIds.Length == 1 &&
+                        row.sourceMeshPathIds[0] != 0,
+                        "Static-effect source identity is incomplete at PTS " + pts);
+                    RootDefinition root = Roots.Single(value => value.key == row.sourceRoot);
+                    Require(row.activeInHierarchy ==
+                        (capture.actorActive && IsEffectActive(root, capture.localSeconds)),
+                        "Static-effect witness lifecycle drifted at PTS " + pts);
+                }
+                else if (row.role == "peak_particle_proxy")
+                {
+                    expectedPeakRows++;
+                    Require(row.sourceRendererPathId != 0 &&
+                        row.sourceRendererInstanceId != 0 &&
+                        row.sourceParticleSystemInstanceId != 0 &&
+                        row.unityMeshInstanceId != 0,
+                        "Peak proxy identity is incomplete at PTS " + pts);
+                    Require(row.activeInHierarchy && row.rendererEnabled ==
+                        (capture.actorActive && row.meshVertexCount > 0),
+                        "Peak proxy witness lifecycle drifted at PTS " + pts);
+                }
+                else
+                {
+                    Require(row.role == "actor",
+                        "Unknown renderer fingerprint role at PTS " + pts);
+                    expectedActorRows++;
+                    Require(row.activeInHierarchy == capture.actorActive,
+                        "Actor witness lifecycle drifted at PTS " + pts);
+                }
+                Require(row.sourceMaterialPathIds != null &&
+                    row.materials.Length == row.sourceMaterialPathIds.Length,
+                    "Renderer material/source slot census drifted at PTS " + pts);
+                string materialIdentity = string.Join(",", row.materials.Select(material =>
+                {
+                    Require(material != null && material.unityMaterialInstanceId != 0,
+                        "Renderer material instance ID is zero at PTS " + pts);
+                    return material.sourceMaterialPathId.ToString(CultureInfo.InvariantCulture) +
+                        "/" + material.unityMaterialInstanceId.ToString(
+                            CultureInfo.InvariantCulture) + "/" + material.shaderName +
+                        "/" + material.renderQueue.ToString(CultureInfo.InvariantCulture);
+                }));
+                current.Add(row.identityKey,
+                    row.sourceRendererPathId.ToString(CultureInfo.InvariantCulture) + ":" +
+                    string.Join(",", row.sourceMeshPathIds.Select(value =>
+                        value.ToString(CultureInfo.InvariantCulture))) + ":" +
+                    row.unityRendererInstanceId.ToString(CultureInfo.InvariantCulture) + ":" +
+                    row.unityMeshInstanceId.ToString(CultureInfo.InvariantCulture) + ":" +
+                    row.sourceRendererInstanceId.ToString(CultureInfo.InvariantCulture) + ":" +
+                    row.sourceParticleSystemInstanceId.ToString(CultureInfo.InvariantCulture) + ":" +
+                    (row.role == "peak_particle_proxy" ? "dynamic_geometry" :
+                        row.meshVertexCount.ToString(CultureInfo.InvariantCulture) + "/" +
+                        row.meshSubMeshCount.ToString(CultureInfo.InvariantCulture) + "/" +
+                        row.meshIndexCount.ToString(CultureInfo.InvariantCulture)) + ":" +
+                    materialIdentity);
+            }
+            Require(expectedActorRows == 21 && expectedStaticRows == 10 &&
+                expectedPeakRows == 14,
+                "Renderer fingerprint source census drifted at PTS " + pts);
+            if (stableFingerprints == null)
+            {
+                stableFingerprints = current;
+                return;
+            }
+            Require(stableFingerprints.Count == current.Count &&
+                stableFingerprints.All(pair => current.TryGetValue(pair.Key, out string value) &&
+                    value == pair.Value),
+                "Renderer/mesh/material instance IDs changed between anchors at PTS " + pts);
         }
 
         private static void ValidateFrame(
@@ -1378,6 +1653,7 @@ namespace EndfieldGraphShaderLabEditor
             public int rootIndex;
             public ParticleSystem system;
             public ParticleSystemRenderer sourceRenderer;
+            public EndfieldRecoveredParticleNodeSource sourceNode;
             public GameObject proxyObject;
             public MeshRenderer proxyRenderer;
             public Mesh mesh;
@@ -1482,6 +1758,7 @@ namespace EndfieldGraphShaderLabEditor
             public bool visibleAdmission;
             public bool eventOriginProven;
             public bool nativeRendererIdentityProven;
+            public string rendererFingerprintWitnessBoundary;
             public bool actorAnimationRetailAbiEquivalent;
             public bool comparesRetailPixels;
             public bool retailHashEquality;
@@ -1560,12 +1837,47 @@ namespace EndfieldGraphShaderLabEditor
             public bool actorClipClampedAfterEnd;
             public bool effectsAllInactive;
             public int peakParticleAliveCount;
+            public RendererFingerprintRecord[] rendererFingerprintWitness;
             public FrameRecord composite;
             public FrameRecord actorOnly;
             public FrameRecord effectsOnly;
             public FrameRecord peakParticlesOnly;
             public RootCaptureRecord[] roots;
             public RetailRoiComparison[] roiComparisons;
+        }
+
+        [Serializable]
+        private sealed class RendererFingerprintRecord
+        {
+            public string identityKey;
+            public string role;
+            public string sourceRoot;
+            public string hierarchy;
+            public long sourceRendererPathId;
+            public long[] sourceMeshPathIds;
+            public long[] sourceMaterialPathIds;
+            public int unityRendererInstanceId;
+            public int sourceRendererInstanceId;
+            public int sourceParticleSystemInstanceId;
+            public int unityMeshInstanceId;
+            public bool activeInHierarchy;
+            public bool rendererEnabled;
+            public int meshVertexCount;
+            public int meshSubMeshCount;
+            public long meshIndexCount;
+            public string localToWorldStateSha256;
+            public MaterialFingerprintRecord[] materials;
+        }
+
+        [Serializable]
+        private sealed class MaterialFingerprintRecord
+        {
+            public int slot;
+            public long sourceMaterialPathId;
+            public int unityMaterialInstanceId;
+            public string name;
+            public string shaderName;
+            public int renderQueue;
         }
 
         [Serializable]

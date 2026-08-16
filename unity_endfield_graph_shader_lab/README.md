@@ -4113,6 +4113,29 @@ visible active frames. The capture preserves source queue 3704 and
 only disables soft blend on transient materials because no retail scene depth
 exists. It is diagnostic-only, does not compare retail pixels, and does not
 raise visible admission.
+The actor-composed harness manifest v2 also records a renderer fingerprint
+witness at every anchor after sampling and composite visibility, immediately
+before `Camera.Render()`. Static effects join recovered renderer/mesh/material
+PathIDs to capture-session Unity instance IDs; peak particles additionally
+separate source ParticleSystemRenderer/System IDs from the baked proxy
+Renderer/Mesh IDs; actor rows use canonical hierarchy and runtime IDs without
+inventing missing source PathIDs. Shader, render queue, geometry census,
+active/enabled state, and a transform-state hash are recorded and validated.
+The validator requires source/object/material identity to remain stable across
+the run while allowing dynamic particle geometry and transform state to vary.
+It reads `sharedMaterials` only. This is a local pre-render submission witness,
+not a skinned-pose digest, retail HGMesh identity, or proof that Unity issued a
+particular native draw.
+This local witness also sharpens, but does not close, the retail routing prior.
+The recovered Li roots use ordinary MeshRenderer and ParticleSystemRenderer
+components, enable ordinary particle GPU instancing, disable HG GPU
+instancing, and contain no serialized HGMeshRenderer/HGMeshRendererData.
+The retail AfterDOF callback calls classic `RenderForwardRendererList` at
+`0x189BB54F1` and the separate ECS list at `0x189BB5541`; its classic
+3660--3740 descriptor admits Li's queue 3704. Classic renderer-list submission
+is therefore the source-backed likely route. HGMesh remains possible only via
+an unobserved runtime conversion/registration step, so neither branch is yet a
+positive Li draw attribution and `visibleAdmission` remains false.
 Retail queue 3704 belongs to the source-closed 3660--3740
 `AfterPostprocessTransparent` phase. In the exact SceneMV route that range is
 owned by the after-post callback, not main transparent. This isolated shader
