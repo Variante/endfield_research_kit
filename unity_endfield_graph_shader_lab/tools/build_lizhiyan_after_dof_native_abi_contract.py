@@ -215,10 +215,25 @@ def build(game_root: Path) -> dict[str, Any]:
         calls.append({"label": label, "callsite": f"0x{callsite:x}",
                       "target": f"0x{target:x}"})
 
-    icall_body = unity_pe.bytes_at_va(0x1801F1E40, 0xD0)
-    require(hashlib.sha256(icall_body).hexdigest().upper() ==
-            "F4D6BF057A673684D69BFEB616D922B9A57F537F35DD845C972946F85FC93F5D",
-            "UnityPlayer HGMeshRender.CreateRendererList adapter drifted")
+    unity_native_spans = [
+        ("HGMeshRender.CreateRendererList icall adapter", 0x1801F1E40, 0x1801F1F0E,
+         "EB9B02F891CD670E726D8EF73C52D62D40FDC6756BE41BCE76ED8EA901AC153C"),
+        ("HGMeshRender renderer-list request packer", 0x18104E7A0, 0x18104E856,
+         "8125E686DC149173B7CB2A9FF3D0BA40E41162E72E1D9BC4353BD211ECAF1C7E"),
+        ("HGMeshRender renderer-list registration core", 0x18104E300, 0x18104E7A0,
+         "9FC913F47D5E88710E13D9C555F2C81F7DAAEBA22C6AEB22F2FAA969170ACC80"),
+        ("HGMeshRender renderer-list resource record builder", 0x18104E920, 0x18104EC17,
+         "02F2E295CF8BB8247824AA7A3EE6B4E0BAD7D58C1C06D59ECD155CAB6E3C81BD"),
+    ]
+    unity_native_methods = []
+    for label, va, end, expected_hash in unity_native_spans:
+        body = unity_pe.bytes_at_va(va, end - va)
+        body_hash = hashlib.sha256(body).hexdigest().upper()
+        require(body_hash == expected_hash, f"UnityPlayer native span drifted: {label}")
+        unity_native_methods.append({"label": label, "va": f"0x{va:x}",
+                                     "functionEnd": f"0x{end:x}",
+                                     "functionBytes": len(body),
+                                     "functionSha256": body_hash})
 
     shader = json.loads(SHADER_CONTRACT.read_text(encoding="utf-8"))
     return {
@@ -235,6 +250,7 @@ def build(game_root: Path) -> dict[str, Any]:
         },
         "codeRegistrationVA": f"0x{CODE_REGISTRATION:x}",
         "methods": methods,
+        "unityPlayerNativeMethods": unity_native_methods,
         "decisiveCalls": calls,
         "rendererList": {
             "queue": {"first": 3660, "default": 3700, "last": 3740},
@@ -315,11 +331,27 @@ def build(game_root: Path) -> dict[str, Any]:
                     "icallSignature": "UnityEngine.HyperGryph.HGMeshRender::CreateRendererList(System.UInt32,System.UInt32,System.UInt32,System.UInt32,System.UInt16,System.IntPtr,System.Boolean,System.Boolean,System.UInt32,System.Boolean,System.UInt32*,System.Boolean)",
                     "registrationIndex": 395,
                     "unityPlayerVA": "0x1801f1e40",
-                    "functionEnd": "0x1801f1f10",
-                    "functionBytes": 208,
-                    "functionSha256": "F4D6BF057A673684D69BFEB616D922B9A57F537F35DD845C972946F85FC93F5D",
-                    "internalBuilderVA": "0x18104e7a0",
-                    "behavior": "canonicalizes trailing booleans and forwards all flags/arguments; does not enumerate survivors, sort, or expose a handle table",
+                    "functionEnd": "0x1801f1f0e",
+                    "functionBytes": 206,
+                    "functionSha256": "EB9B02F891CD670E726D8EF73C52D62D40FDC6756BE41BCE76ED8EA901AC153C",
+                    "requestPackerVA": "0x18104e7a0",
+                    "registrationCoreVA": "0x18104e300",
+                    "resourceRecordBuilderVA": "0x18104e920",
+                    "behavior": "canonicalizes arguments, packs a 0x68-byte request, and registers a list handle; contains no entity iteration, survivor writes, sort loop, multi-draw dispatch, or final draw",
+                    "handleTable": {
+                        "vectorBaseOffset": "0x08",
+                        "countOffset": "0x18",
+                        "encodedCapacityOffset": "0x20",
+                        "slotStride": 16,
+                        "returnedHandle": "zero-based append index (old count)",
+                        "slotIdOffset": "0x00",
+                        "slotStatePointerOffset": "0x08",
+                        "stateBytes": 48,
+                        "stateCallbackVA": "0x1810398f0",
+                    },
+                    "invalidRequestGate": "request[0] == 0xffffffff returns 0xffffffff without appending",
+                    "maskCombination": "view record +0x40/+0x48 OR request +0x50/+0x58",
+                    "nextConsumerBoundary": "0x18106aae0 validates the index after AddDrawECSRendererList; survivor/order/lifetime remain downstream",
                 },
             },
             "liveInputsPending": ["cullingResults", "camera", "screenCullingRatio",
