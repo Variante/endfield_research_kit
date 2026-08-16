@@ -15,7 +15,7 @@ namespace EndfieldGraphShaderLabEditor
     /// <summary>
     /// Materializes Li Zhiyan's exact finger-mounted Overview particle prefab.
     /// Its source VFXBaseV2 materials remain ColorMask-0 until the retail draw
-    /// and native texture-sampling contracts are independently admitted.
+    /// variant/draw/PSO/MRT contracts are independently admitted.
     /// </summary>
     public static class EndfieldLiZhiyanOverviewFingerEffectImporter
     {
@@ -31,7 +31,7 @@ namespace EndfieldGraphShaderLabEditor
         private const string FailClosedShaderName =
             "Hidden/Endfield/Recovered/VFXUnavailableFailClosed";
         private const string ExpectedSchema =
-            "endfield.lizhiyan-overview-finger-effect.v1";
+            "endfield.lizhiyan-overview-finger-effect.v2";
         private const string ExpectedEffect =
             "P_fxui_lizhiyan_overview_trails_Bip001_R_Finger2Nub";
 
@@ -78,9 +78,10 @@ namespace EndfieldGraphShaderLabEditor
             L.Require(context.materials.Count == 6, "Li Zhiyan material census drifted");
             Dictionary<string, object> textureBoundary = L.Dict(contract["textureDependencyBoundary"]);
             L.Require(L.Str(textureBoundary, "status") ==
-                    "assetmap_identity_and_converted_png_closed_native_mip_payload_pending" &&
+                    "assetmap_converted_png_and_bc7_native_mip_sampling_metadata_closed" &&
                 L.List(textureBoundary["uniquePathIDs"]).Count == 8 &&
-                L.List(textureBoundary["textures"]).Count == 8,
+                L.List(textureBoundary["textures"]).Count == 8 &&
+                L.List(textureBoundary["nativePayloads"]).Count == 8,
                 "Li Zhiyan texture evidence boundary drifted");
 
             IList nodeRows = L.List(contract["hierarchyNodes"]);

@@ -1,5 +1,5 @@
 {
-  "schema": "endfield.lizhiyan-overview-finger-effect.v1",
+  "schema": "endfield.lizhiyan-overview-finger-effect.v2",
   "status": "source_serialized_payload_closed_visual_shaders_fail_closed",
   "effectName": "P_fxui_lizhiyan_overview_trails_Bip001_R_Finger2Nub",
   "mountPoint": "Bip001_R_Finger2Nub",
@@ -8,7 +8,7 @@
     "particlePairs": 7,
     "materials": 6,
     "uniqueTextureReferences": 8,
-    "sourceAggregateSha256": "C14DFFC21B2C748D950F18FC0DF11FA94378FD18C21AE29BBF9D6AC672F8EBB1"
+    "sourceAggregateSha256": "ED06C415C6C2F630FE76D7382156F1D2AF413829371BB48E011F664A3CDC6E33"
   },
   "effectSetting": {
     "source": {
@@ -13855,7 +13855,803 @@
         }
       }
     ],
-    "status": "assetmap_identity_and_converted_png_closed_native_mip_payload_pending"
+    "nativePayloads": [
+      {
+        "pathID": -8780463972570209577,
+        "name": "T_fx_star_304_D",
+        "format": "BC7",
+        "width": 256,
+        "height": 128,
+        "mipCount": 9,
+        "colorSpace": 1,
+        "textureSettings": {
+          "filterMode": 1,
+          "aniso": 1,
+          "mipBias": 0.0,
+          "wrapU": 0,
+          "wrapV": 0,
+          "wrapW": 0
+        },
+        "payload": {
+          "path": "scratch/character_recovery/lizhiyan_native_textures/export/Texture2D/T_fx_star_304_D_p86258689AFD662D7.texture2d.bc7",
+          "bytes": 43728,
+          "sha256": "4F93BF4890E3422AFC15FBA4B5A1805364ACD8EA9D1303050130789891BA2796",
+          "objectType": "Texture2DNativePayload",
+          "pathID": -8780463972570209577
+        },
+        "manifest": {
+          "path": "scratch/character_recovery/lizhiyan_native_textures/export/Texture2D/T_fx_star_304_D_p86258689AFD662D7.texture2d.bc7.manifest.json",
+          "bytes": 2460,
+          "sha256": "AFA06093D47FBC13E143C63A780DB68D8BEB8B883B41A29544037899FA746D57",
+          "objectType": "Texture2DNativePayloadManifest",
+          "pathID": -8780463972570209577,
+          "sourceFile": null,
+          "sourceOffset": null,
+          "rawDataLength": null,
+          "rawDataSha256": null,
+          "typeTreeSource": null
+        },
+        "mipDimensions": [
+          {
+            "mip": 0,
+            "width": 256,
+            "height": 128,
+            "offset": 0,
+            "byteSize": 32768
+          },
+          {
+            "mip": 1,
+            "width": 128,
+            "height": 64,
+            "offset": 32768,
+            "byteSize": 8192
+          },
+          {
+            "mip": 2,
+            "width": 64,
+            "height": 32,
+            "offset": 40960,
+            "byteSize": 2048
+          },
+          {
+            "mip": 3,
+            "width": 32,
+            "height": 16,
+            "offset": 43008,
+            "byteSize": 512
+          },
+          {
+            "mip": 4,
+            "width": 16,
+            "height": 8,
+            "offset": 43520,
+            "byteSize": 128
+          },
+          {
+            "mip": 5,
+            "width": 8,
+            "height": 4,
+            "offset": 43648,
+            "byteSize": 32
+          },
+          {
+            "mip": 6,
+            "width": 4,
+            "height": 2,
+            "offset": 43680,
+            "byteSize": 16
+          },
+          {
+            "mip": 7,
+            "width": 2,
+            "height": 1,
+            "offset": 43696,
+            "byteSize": 16
+          },
+          {
+            "mip": 8,
+            "width": 1,
+            "height": 1,
+            "offset": 43712,
+            "byteSize": 16
+          }
+        ]
+      },
+      {
+        "pathID": -4264460850771065058,
+        "name": "T_fx_trail_zt_001_D",
+        "format": "BC7",
+        "width": 128,
+        "height": 128,
+        "mipCount": 8,
+        "colorSpace": 1,
+        "textureSettings": {
+          "filterMode": 1,
+          "aniso": 1,
+          "mipBias": 0.0,
+          "wrapU": 1,
+          "wrapV": 1,
+          "wrapW": 1
+        },
+        "payload": {
+          "path": "scratch/character_recovery/lizhiyan_native_textures/export/Texture2D/T_fx_trail_zt_001_D_pC4D19773473B071E.texture2d.bc7",
+          "bytes": 21872,
+          "sha256": "FD3F19FFE5EBAE176C1D3D58D5CEFED2A6B5BBD81C582EFC47CCA16FE64FECED",
+          "objectType": "Texture2DNativePayload",
+          "pathID": -4264460850771065058
+        },
+        "manifest": {
+          "path": "scratch/character_recovery/lizhiyan_native_textures/export/Texture2D/T_fx_trail_zt_001_D_pC4D19773473B071E.texture2d.bc7.manifest.json",
+          "bytes": 2334,
+          "sha256": "E2A88C8A66C546043461911F1920EFC2BDEE5FC541C7E998A33F5A41D9898C79",
+          "objectType": "Texture2DNativePayloadManifest",
+          "pathID": -4264460850771065058,
+          "sourceFile": null,
+          "sourceOffset": null,
+          "rawDataLength": null,
+          "rawDataSha256": null,
+          "typeTreeSource": null
+        },
+        "mipDimensions": [
+          {
+            "mip": 0,
+            "width": 128,
+            "height": 128,
+            "offset": 0,
+            "byteSize": 16384
+          },
+          {
+            "mip": 1,
+            "width": 64,
+            "height": 64,
+            "offset": 16384,
+            "byteSize": 4096
+          },
+          {
+            "mip": 2,
+            "width": 32,
+            "height": 32,
+            "offset": 20480,
+            "byteSize": 1024
+          },
+          {
+            "mip": 3,
+            "width": 16,
+            "height": 16,
+            "offset": 21504,
+            "byteSize": 256
+          },
+          {
+            "mip": 4,
+            "width": 8,
+            "height": 8,
+            "offset": 21760,
+            "byteSize": 64
+          },
+          {
+            "mip": 5,
+            "width": 4,
+            "height": 4,
+            "offset": 21824,
+            "byteSize": 16
+          },
+          {
+            "mip": 6,
+            "width": 2,
+            "height": 2,
+            "offset": 21840,
+            "byteSize": 16
+          },
+          {
+            "mip": 7,
+            "width": 1,
+            "height": 1,
+            "offset": 21856,
+            "byteSize": 16
+          }
+        ]
+      },
+      {
+        "pathID": -3776577565772200876,
+        "name": "T_fx_star_508_D",
+        "format": "BC7",
+        "width": 256,
+        "height": 256,
+        "mipCount": 9,
+        "colorSpace": 1,
+        "textureSettings": {
+          "filterMode": 1,
+          "aniso": 1,
+          "mipBias": 0.0,
+          "wrapU": 0,
+          "wrapV": 0,
+          "wrapW": 0
+        },
+        "payload": {
+          "path": "scratch/character_recovery/lizhiyan_native_textures/export/Texture2D/T_fx_star_508_D_pCB96E6B68D704454.texture2d.bc7",
+          "bytes": 87408,
+          "sha256": "6BDC1D89BC2CDC14D97F3FA6962507163F212F1A82013C5E7A2530915AB97BCC",
+          "objectType": "Texture2DNativePayload",
+          "pathID": -3776577565772200876
+        },
+        "manifest": {
+          "path": "scratch/character_recovery/lizhiyan_native_textures/export/Texture2D/T_fx_star_508_D_pCB96E6B68D704454.texture2d.bc7.manifest.json",
+          "bytes": 2464,
+          "sha256": "09A1CBA6390D95FFD1BE0EBE5114E97694D779EF665C1E46651CEE35A56E7CAB",
+          "objectType": "Texture2DNativePayloadManifest",
+          "pathID": -3776577565772200876,
+          "sourceFile": null,
+          "sourceOffset": null,
+          "rawDataLength": null,
+          "rawDataSha256": null,
+          "typeTreeSource": null
+        },
+        "mipDimensions": [
+          {
+            "mip": 0,
+            "width": 256,
+            "height": 256,
+            "offset": 0,
+            "byteSize": 65536
+          },
+          {
+            "mip": 1,
+            "width": 128,
+            "height": 128,
+            "offset": 65536,
+            "byteSize": 16384
+          },
+          {
+            "mip": 2,
+            "width": 64,
+            "height": 64,
+            "offset": 81920,
+            "byteSize": 4096
+          },
+          {
+            "mip": 3,
+            "width": 32,
+            "height": 32,
+            "offset": 86016,
+            "byteSize": 1024
+          },
+          {
+            "mip": 4,
+            "width": 16,
+            "height": 16,
+            "offset": 87040,
+            "byteSize": 256
+          },
+          {
+            "mip": 5,
+            "width": 8,
+            "height": 8,
+            "offset": 87296,
+            "byteSize": 64
+          },
+          {
+            "mip": 6,
+            "width": 4,
+            "height": 4,
+            "offset": 87360,
+            "byteSize": 16
+          },
+          {
+            "mip": 7,
+            "width": 2,
+            "height": 2,
+            "offset": 87376,
+            "byteSize": 16
+          },
+          {
+            "mip": 8,
+            "width": 1,
+            "height": 1,
+            "offset": 87392,
+            "byteSize": 16
+          }
+        ]
+      },
+      {
+        "pathID": -3733323216135433311,
+        "name": "T_fx_flow_2503_D",
+        "format": "BC7",
+        "width": 256,
+        "height": 256,
+        "mipCount": 9,
+        "colorSpace": 1,
+        "textureSettings": {
+          "filterMode": 1,
+          "aniso": 1,
+          "mipBias": 0.0,
+          "wrapU": 0,
+          "wrapV": 0,
+          "wrapW": 0
+        },
+        "payload": {
+          "path": "scratch/character_recovery/lizhiyan_native_textures/export/Texture2D/T_fx_flow_2503_D_pCC3092509E8753A1.texture2d.bc7",
+          "bytes": 87408,
+          "sha256": "99330BF4FFFBCD70F7F512B5F098EB7184E209D997BD02947C4FE5A6EC9333EA",
+          "objectType": "Texture2DNativePayload",
+          "pathID": -3733323216135433311
+        },
+        "manifest": {
+          "path": "scratch/character_recovery/lizhiyan_native_textures/export/Texture2D/T_fx_flow_2503_D_pCC3092509E8753A1.texture2d.bc7.manifest.json",
+          "bytes": 2466,
+          "sha256": "5308B0889DD1BD8DA1B3C36F0AB6BF872E6064E02CB308EE04A204FA8596AEFE",
+          "objectType": "Texture2DNativePayloadManifest",
+          "pathID": -3733323216135433311,
+          "sourceFile": null,
+          "sourceOffset": null,
+          "rawDataLength": null,
+          "rawDataSha256": null,
+          "typeTreeSource": null
+        },
+        "mipDimensions": [
+          {
+            "mip": 0,
+            "width": 256,
+            "height": 256,
+            "offset": 0,
+            "byteSize": 65536
+          },
+          {
+            "mip": 1,
+            "width": 128,
+            "height": 128,
+            "offset": 65536,
+            "byteSize": 16384
+          },
+          {
+            "mip": 2,
+            "width": 64,
+            "height": 64,
+            "offset": 81920,
+            "byteSize": 4096
+          },
+          {
+            "mip": 3,
+            "width": 32,
+            "height": 32,
+            "offset": 86016,
+            "byteSize": 1024
+          },
+          {
+            "mip": 4,
+            "width": 16,
+            "height": 16,
+            "offset": 87040,
+            "byteSize": 256
+          },
+          {
+            "mip": 5,
+            "width": 8,
+            "height": 8,
+            "offset": 87296,
+            "byteSize": 64
+          },
+          {
+            "mip": 6,
+            "width": 4,
+            "height": 4,
+            "offset": 87360,
+            "byteSize": 16
+          },
+          {
+            "mip": 7,
+            "width": 2,
+            "height": 2,
+            "offset": 87376,
+            "byteSize": 16
+          },
+          {
+            "mip": 8,
+            "width": 1,
+            "height": 1,
+            "offset": 87392,
+            "byteSize": 16
+          }
+        ]
+      },
+      {
+        "pathID": -3572425692505003389,
+        "name": "T_fx_star_516_D",
+        "format": "BC7",
+        "width": 256,
+        "height": 256,
+        "mipCount": 9,
+        "colorSpace": 1,
+        "textureSettings": {
+          "filterMode": 1,
+          "aniso": 1,
+          "mipBias": 0.0,
+          "wrapU": 0,
+          "wrapV": 0,
+          "wrapW": 0
+        },
+        "payload": {
+          "path": "scratch/character_recovery/lizhiyan_native_textures/export/Texture2D/T_fx_star_516_D_pCE6C31C29BC2AA83.texture2d.bc7",
+          "bytes": 87408,
+          "sha256": "42B902CD52989AEBFA428533AAEF0AB7A1A6DA1B4EB49A0B575F11F6F6B38513",
+          "objectType": "Texture2DNativePayload",
+          "pathID": -3572425692505003389
+        },
+        "manifest": {
+          "path": "scratch/character_recovery/lizhiyan_native_textures/export/Texture2D/T_fx_star_516_D_pCE6C31C29BC2AA83.texture2d.bc7.manifest.json",
+          "bytes": 2464,
+          "sha256": "8FC3CF2E1241B95FBC2A86429217A27BF977223D952368C6B50965979D962A2E",
+          "objectType": "Texture2DNativePayloadManifest",
+          "pathID": -3572425692505003389,
+          "sourceFile": null,
+          "sourceOffset": null,
+          "rawDataLength": null,
+          "rawDataSha256": null,
+          "typeTreeSource": null
+        },
+        "mipDimensions": [
+          {
+            "mip": 0,
+            "width": 256,
+            "height": 256,
+            "offset": 0,
+            "byteSize": 65536
+          },
+          {
+            "mip": 1,
+            "width": 128,
+            "height": 128,
+            "offset": 65536,
+            "byteSize": 16384
+          },
+          {
+            "mip": 2,
+            "width": 64,
+            "height": 64,
+            "offset": 81920,
+            "byteSize": 4096
+          },
+          {
+            "mip": 3,
+            "width": 32,
+            "height": 32,
+            "offset": 86016,
+            "byteSize": 1024
+          },
+          {
+            "mip": 4,
+            "width": 16,
+            "height": 16,
+            "offset": 87040,
+            "byteSize": 256
+          },
+          {
+            "mip": 5,
+            "width": 8,
+            "height": 8,
+            "offset": 87296,
+            "byteSize": 64
+          },
+          {
+            "mip": 6,
+            "width": 4,
+            "height": 4,
+            "offset": 87360,
+            "byteSize": 16
+          },
+          {
+            "mip": 7,
+            "width": 2,
+            "height": 2,
+            "offset": 87376,
+            "byteSize": 16
+          },
+          {
+            "mip": 8,
+            "width": 1,
+            "height": 1,
+            "offset": 87392,
+            "byteSize": 16
+          }
+        ]
+      },
+      {
+        "pathID": -2733301107692760106,
+        "name": "T_fx_star_01_b_D",
+        "format": "BC7",
+        "width": 256,
+        "height": 256,
+        "mipCount": 9,
+        "colorSpace": 1,
+        "textureSettings": {
+          "filterMode": 1,
+          "aniso": 1,
+          "mipBias": 0.0,
+          "wrapU": 0,
+          "wrapV": 0,
+          "wrapW": 0
+        },
+        "payload": {
+          "path": "scratch/character_recovery/lizhiyan_native_textures/export/Texture2D/T_fx_star_01_b_D_pDA115D1FCBCA93D6.texture2d.bc7",
+          "bytes": 87408,
+          "sha256": "8385246C695B4C94377B57455B759273C14010598B401B67ECEBFCCC4A830C77",
+          "objectType": "Texture2DNativePayload",
+          "pathID": -2733301107692760106
+        },
+        "manifest": {
+          "path": "scratch/character_recovery/lizhiyan_native_textures/export/Texture2D/T_fx_star_01_b_D_pDA115D1FCBCA93D6.texture2d.bc7.manifest.json",
+          "bytes": 2466,
+          "sha256": "05CDD414BD4FB18F3DD591F932FFCB899C4F100886E104CFAAACD64D2C9543C4",
+          "objectType": "Texture2DNativePayloadManifest",
+          "pathID": -2733301107692760106,
+          "sourceFile": null,
+          "sourceOffset": null,
+          "rawDataLength": null,
+          "rawDataSha256": null,
+          "typeTreeSource": null
+        },
+        "mipDimensions": [
+          {
+            "mip": 0,
+            "width": 256,
+            "height": 256,
+            "offset": 0,
+            "byteSize": 65536
+          },
+          {
+            "mip": 1,
+            "width": 128,
+            "height": 128,
+            "offset": 65536,
+            "byteSize": 16384
+          },
+          {
+            "mip": 2,
+            "width": 64,
+            "height": 64,
+            "offset": 81920,
+            "byteSize": 4096
+          },
+          {
+            "mip": 3,
+            "width": 32,
+            "height": 32,
+            "offset": 86016,
+            "byteSize": 1024
+          },
+          {
+            "mip": 4,
+            "width": 16,
+            "height": 16,
+            "offset": 87040,
+            "byteSize": 256
+          },
+          {
+            "mip": 5,
+            "width": 8,
+            "height": 8,
+            "offset": 87296,
+            "byteSize": 64
+          },
+          {
+            "mip": 6,
+            "width": 4,
+            "height": 4,
+            "offset": 87360,
+            "byteSize": 16
+          },
+          {
+            "mip": 7,
+            "width": 2,
+            "height": 2,
+            "offset": 87376,
+            "byteSize": 16
+          },
+          {
+            "mip": 8,
+            "width": 1,
+            "height": 1,
+            "offset": 87392,
+            "byteSize": 16
+          }
+        ]
+      },
+      {
+        "pathID": -1669202248667910099,
+        "name": "T_fx_star_401_D",
+        "format": "BC7",
+        "width": 128,
+        "height": 128,
+        "mipCount": 8,
+        "colorSpace": 1,
+        "textureSettings": {
+          "filterMode": 1,
+          "aniso": 1,
+          "mipBias": 0.0,
+          "wrapU": 0,
+          "wrapV": 0,
+          "wrapW": 0
+        },
+        "payload": {
+          "path": "scratch/character_recovery/lizhiyan_native_textures/export/Texture2D/T_fx_star_401_D_pE8D5CD660DDDB02D.texture2d.bc7",
+          "bytes": 21872,
+          "sha256": "842B1BBDBD98149F650D6A09502A24F9E7D94A32A0C8A82BADD4042275ECB338",
+          "objectType": "Texture2DNativePayload",
+          "pathID": -1669202248667910099
+        },
+        "manifest": {
+          "path": "scratch/character_recovery/lizhiyan_native_textures/export/Texture2D/T_fx_star_401_D_pE8D5CD660DDDB02D.texture2d.bc7.manifest.json",
+          "bytes": 2326,
+          "sha256": "5BA64B9FCACD08E23F3EEA5A1E507003C36E69B84257F0A67A05511804AB2F60",
+          "objectType": "Texture2DNativePayloadManifest",
+          "pathID": -1669202248667910099,
+          "sourceFile": null,
+          "sourceOffset": null,
+          "rawDataLength": null,
+          "rawDataSha256": null,
+          "typeTreeSource": null
+        },
+        "mipDimensions": [
+          {
+            "mip": 0,
+            "width": 128,
+            "height": 128,
+            "offset": 0,
+            "byteSize": 16384
+          },
+          {
+            "mip": 1,
+            "width": 64,
+            "height": 64,
+            "offset": 16384,
+            "byteSize": 4096
+          },
+          {
+            "mip": 2,
+            "width": 32,
+            "height": 32,
+            "offset": 20480,
+            "byteSize": 1024
+          },
+          {
+            "mip": 3,
+            "width": 16,
+            "height": 16,
+            "offset": 21504,
+            "byteSize": 256
+          },
+          {
+            "mip": 4,
+            "width": 8,
+            "height": 8,
+            "offset": 21760,
+            "byteSize": 64
+          },
+          {
+            "mip": 5,
+            "width": 4,
+            "height": 4,
+            "offset": 21824,
+            "byteSize": 16
+          },
+          {
+            "mip": 6,
+            "width": 2,
+            "height": 2,
+            "offset": 21840,
+            "byteSize": 16
+          },
+          {
+            "mip": 7,
+            "width": 1,
+            "height": 1,
+            "offset": 21856,
+            "byteSize": 16
+          }
+        ]
+      },
+      {
+        "pathID": 1604816268850813995,
+        "name": "T_fx_trail_zr001_D",
+        "format": "BC7",
+        "width": 256,
+        "height": 256,
+        "mipCount": 9,
+        "colorSpace": 1,
+        "textureSettings": {
+          "filterMode": 1,
+          "aniso": 1,
+          "mipBias": 0.0,
+          "wrapU": 0,
+          "wrapV": 1,
+          "wrapW": 0
+        },
+        "payload": {
+          "path": "scratch/character_recovery/lizhiyan_native_textures/export/Texture2D/T_fx_trail_zr001_D_p164573E4D29EDC2B.texture2d.bc7",
+          "bytes": 87408,
+          "sha256": "11A9F0BDC3BEDB2630067D9CA0F6E691538A393233EF0BF1A9C579A54C2F364F",
+          "objectType": "Texture2DNativePayload",
+          "pathID": 1604816268850813995
+        },
+        "manifest": {
+          "path": "scratch/character_recovery/lizhiyan_native_textures/export/Texture2D/T_fx_trail_zr001_D_p164573E4D29EDC2B.texture2d.bc7.manifest.json",
+          "bytes": 2469,
+          "sha256": "5AC4E75007BD33327EFF643B1D517798D028D9E2D1087FE932EFFF0DAFDF16C7",
+          "objectType": "Texture2DNativePayloadManifest",
+          "pathID": 1604816268850813995,
+          "sourceFile": null,
+          "sourceOffset": null,
+          "rawDataLength": null,
+          "rawDataSha256": null,
+          "typeTreeSource": null
+        },
+        "mipDimensions": [
+          {
+            "mip": 0,
+            "width": 256,
+            "height": 256,
+            "offset": 0,
+            "byteSize": 65536
+          },
+          {
+            "mip": 1,
+            "width": 128,
+            "height": 128,
+            "offset": 65536,
+            "byteSize": 16384
+          },
+          {
+            "mip": 2,
+            "width": 64,
+            "height": 64,
+            "offset": 81920,
+            "byteSize": 4096
+          },
+          {
+            "mip": 3,
+            "width": 32,
+            "height": 32,
+            "offset": 86016,
+            "byteSize": 1024
+          },
+          {
+            "mip": 4,
+            "width": 16,
+            "height": 16,
+            "offset": 87040,
+            "byteSize": 256
+          },
+          {
+            "mip": 5,
+            "width": 8,
+            "height": 8,
+            "offset": 87296,
+            "byteSize": 64
+          },
+          {
+            "mip": 6,
+            "width": 4,
+            "height": 4,
+            "offset": 87360,
+            "byteSize": 16
+          },
+          {
+            "mip": 7,
+            "width": 2,
+            "height": 2,
+            "offset": 87376,
+            "byteSize": 16
+          },
+          {
+            "mip": 8,
+            "width": 1,
+            "height": 1,
+            "offset": 87392,
+            "byteSize": 16
+          }
+        ]
+      }
+    ],
+    "status": "assetmap_converted_png_and_bc7_native_mip_sampling_metadata_closed"
   },
-  "executionBoundary": "Hierarchy, transforms, timing, particle payloads, material payloads, and converted texture identities are source-closed. Materials remain ColorMask-0 until the selected retail VFXBaseV2 draw/PSO/MRT and native sampling contract is admitted."
+  "executionBoundary": "Hierarchy, transforms, timing, particle payloads, material payloads, converted texture identities, original BC7 mip chains, and serialized sampler settings are source-closed. Materials remain ColorMask-0 until the selected retail VFXBaseV2 variant, descriptors, draw/PSO/MRT, depth, and compositing contract is admitted."
 }
