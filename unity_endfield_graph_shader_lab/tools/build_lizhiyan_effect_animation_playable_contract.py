@@ -29,6 +29,10 @@ INSTALLED_IFIX_STATE = (
     LAB / "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/"
     "installed_ifix_patch_state.json"
 )
+PACKED_FLAGS_RECOVERY = (
+    LAB / "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/"
+    "packed_flags_producer_recovery.json"
+)
 OUTPUT = (
     LAB / "Assets/EndfieldGraphShaderLab/Generated/OriginalData/ShaderEvidence/"
     "LiZhiyanOverviewFinger/lizhiyan_effect_animation_playable_topology.json"
@@ -256,7 +260,7 @@ def renderer_ids(effect: dict[str, Any]) -> list[int]:
 def build() -> dict[str, Any]:
     for path in (
         BODY_TARGETS, EFFECT_INSTANCE_TARGETS, EFFECT_LIFECYCLE_TARGETS, OWNER_REPORT, STATIC_CONTRACT,
-        SIBLING_CONTRACT, INSTALLED_IFIX_STATE,
+        SIBLING_CONTRACT, INSTALLED_IFIX_STATE, PACKED_FLAGS_RECOVERY,
     ):
         require(path.is_file(), f"playable topology source missing: {path}")
     body_targets = json.loads(BODY_TARGETS.read_text(encoding="utf-8"))
@@ -265,6 +269,22 @@ def build() -> dict[str, Any]:
     start01 = json.loads(STATIC_CONTRACT.read_text(encoding="utf-8"))
     siblings = json.loads(SIBLING_CONTRACT.read_text(encoding="utf-8"))
     ifix_state = json.loads(INSTALLED_IFIX_STATE.read_text(encoding="utf-8"))
+    packed_flags = json.loads(PACKED_FLAGS_RECOVERY.read_text(encoding="utf-8"))
+    ordinary_resource = packed_flags["producer_audit"]["custom_per_draw_channel"][
+        "unity_native_implementation"
+    ]
+    require(
+        ordinary_resource["registration_pair"]["function_pointer"] == "0x1800fe590"
+        and ordinary_resource["registration_pair"]["implementation_body_pointer"] ==
+        "0x180430680"
+        and ordinary_resource["renderer_storage"]["formula"] ==
+        "*(Vector4*)(native_renderer + 0x140 + 0x10 * index)"
+        and ordinary_resource["resource_update"]["resource_lookup"] ==
+        "UnityPlayer 0x180fc5e60 followed by 0x1804255f0"
+        and ordinary_resource["resource_update"]["formula"] ==
+        "*(Vector4*)(returned_resource + 0xb0 + 0x10 * index)",
+        "ordinary Renderer persistent-resource route drifted",
+    )
     unityplayer_path = Path(ifix_state["source_build"]["game_assembly"]["path_at_recovery"]).parent / "UnityPlayer.dll"
     require(unityplayer_path.is_file(), f"installed UnityPlayer missing: {unityplayer_path}")
     unityplayer = validate_unityplayer_native_contract(unityplayer_path)
@@ -300,6 +320,9 @@ def build() -> dict[str, Any]:
             "start01Contract": artifact(STATIC_CONTRACT, "Start01EffectContract"),
             "siblingContract": artifact(SIBLING_CONTRACT, "SiblingEffectContract"),
             "installedIfixState": artifact(INSTALLED_IFIX_STATE, "InstalledIfixPatchState"),
+            "packedFlagsRecovery": artifact(
+                PACKED_FLAGS_RECOVERY, "PackedFlagsProducerRecovery"
+            ),
         },
         "retailEffectAnimationTopology": {
             "updateMode": "GameTime",
@@ -701,6 +724,24 @@ def build() -> dict[str, Any]:
                 "directManagedCallersInGameAssemblyText": 0,
                 "nativeBodyEntityLoads": ["0x1800E6D16", "0x1800E6D38"],
                 "consumerClassification": "no_static_managed_consumer_or_hgtree_join",
+                "persistentResourceRoute": {
+                    "setterInjectedVA": "0x1800FE590",
+                    "implementationVA": "0x180430680",
+                    "rendererCache": "native_renderer+0x140+index*0x10",
+                    "componentKeyOffset": "0x268",
+                    "componentValidityOffset": "0x26C",
+                    "resolverVA": "0x1804255F0",
+                    "resourceDestination": "resolved_resource+0xB0+index*0x10",
+                    "characterParamsIndex": 2,
+                    "characterParamsRendererOffset": "0x160",
+                    "characterParamsResourceOffset": "0xD0",
+                    "classification": (
+                        "ordinary_renderer_component_key_reaches_persistent_per_draw_resource_"
+                        "but_not_hgtree_identity"
+                    ),
+                    "hgtreeContextArrayEquivalent": False,
+                    "resourceToDescriptorUploadProven": False,
+                },
             },
             "hgMeshRendererComparison": {
                 "getEntityManagedVA": "0x18B3FA3B0",
@@ -726,6 +767,23 @@ def build() -> dict[str, Any]:
             "retailAdvancedMixerTypeExpectedInEditor": False,
             "standardAnimationMixerPlayableIsExactSubstitute": False,
             "driverStatus": "exact_retail_mixer_type_unavailable_do_not_start_graph",
+            "behavioralSimulation": {
+                "implementation": (
+                    "EndfieldGraphShaderLab.EndfieldLiZhiyanBehavioralAnimationSimulation"
+                ),
+                "mode": "behavioral_simulation",
+                "backend": "stock AnimationMixerPlayable",
+                "allowedBehavior": (
+                    "GameTime three-input graph; connect slot zero only; weights [1,0,0]; "
+                    "Play and SetTime(0) at speed one; destroy at EffectSetting lifetime"
+                ),
+                "rendererProbe": (
+                    "source Renderer PathID plus hierarchy, Unity instance ID, and frame only"
+                ),
+                "retailAbiEquivalent": False,
+                "nativeRendererMappingClaimed": False,
+                "visibleAdmission": False,
+            },
             "requiredBehavior": (
                 "validate admitted source marker; create GameTime graph; target the null-controller/null-avatar "
                 "Animator; use the exact three-input advanced mixer; connect only start clip; write weights "

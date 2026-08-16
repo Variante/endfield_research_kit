@@ -44,6 +44,12 @@
       "bytes": 19509,
       "sha256": "CA4E750748A6D0664A0B0ABBED5F246116D239FB5A44AADA67AB98521CC2CBE9",
       "objectType": "InstalledIfixPatchState"
+    },
+    "packedFlagsRecovery": {
+      "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/packed_flags_producer_recovery.json",
+      "bytes": 249576,
+      "sha256": "73ABD61BC7A7860CD102324EE517A49E8D543A83EA768E4F20AD60823C1B41D0",
+      "objectType": "PackedFlagsProducerRecovery"
     }
   },
   "retailEffectAnimationTopology": {
@@ -804,7 +810,22 @@
         "0x1800E6D16",
         "0x1800E6D38"
       ],
-      "consumerClassification": "no_static_managed_consumer_or_hgtree_join"
+      "consumerClassification": "no_static_managed_consumer_or_hgtree_join",
+      "persistentResourceRoute": {
+        "setterInjectedVA": "0x1800FE590",
+        "implementationVA": "0x180430680",
+        "rendererCache": "native_renderer+0x140+index*0x10",
+        "componentKeyOffset": "0x268",
+        "componentValidityOffset": "0x26C",
+        "resolverVA": "0x1804255F0",
+        "resourceDestination": "resolved_resource+0xB0+index*0x10",
+        "characterParamsIndex": 2,
+        "characterParamsRendererOffset": "0x160",
+        "characterParamsResourceOffset": "0xD0",
+        "classification": "ordinary_renderer_component_key_reaches_persistent_per_draw_resource_but_not_hgtree_identity",
+        "hgtreeContextArrayEquivalent": false,
+        "resourceToDescriptorUploadProven": false
+      }
     },
     "hgMeshRendererComparison": {
       "getEntityManagedVA": "0x18B3FA3B0",
@@ -830,6 +851,16 @@
     "retailAdvancedMixerTypeExpectedInEditor": false,
     "standardAnimationMixerPlayableIsExactSubstitute": false,
     "driverStatus": "exact_retail_mixer_type_unavailable_do_not_start_graph",
+    "behavioralSimulation": {
+      "implementation": "EndfieldGraphShaderLab.EndfieldLiZhiyanBehavioralAnimationSimulation",
+      "mode": "behavioral_simulation",
+      "backend": "stock AnimationMixerPlayable",
+      "allowedBehavior": "GameTime three-input graph; connect slot zero only; weights [1,0,0]; Play and SetTime(0) at speed one; destroy at EffectSetting lifetime",
+      "rendererProbe": "source Renderer PathID plus hierarchy, Unity instance ID, and frame only",
+      "retailAbiEquivalent": false,
+      "nativeRendererMappingClaimed": false,
+      "visibleAdmission": false
+    },
     "requiredBehavior": "validate admitted source marker; create GameTime graph; target the null-controller/null-avatar Animator; use the exact three-input advanced mixer; connect only start clip; write weights one-hot as 1/0/0; Play and reset start to time zero at speed one; destroy graph at each EffectSetting lifetime",
     "blockedBy": [
       "retail AdvancedAnimationMixerPlayable is absent from stock Unity 2021/2022 editor AnimationModule assemblies",

@@ -199,6 +199,8 @@ namespace EndfieldGraphShaderLabEditor
             Dictionary<string, object> manualUpdate =
                 L.Dict(instanceRoutes["ManualUpdateAnimation"]);
             Dictionary<string, object> lab = L.Dict(contract["labBoundary"]);
+            Dictionary<string, object> behavioralSimulation =
+                L.Dict(lab["behavioralSimulation"]);
             Dictionary<string, object> nativeMixer =
                 L.Dict(contract["retailAdvancedMixerNative"]);
             Dictionary<string, object> handleLayout = L.Dict(nativeMixer["handleLayout"]);
@@ -220,6 +222,8 @@ namespace EndfieldGraphShaderLabEditor
             Dictionary<string, object> lodField = L.Dict(lodOwnership["managedField"]);
             Dictionary<string, object> ordinaryRenderer =
                 L.Dict(lodOwnership["ordinaryRendererNativeIdentity"]);
+            Dictionary<string, object> ordinaryResourceRoute =
+                L.Dict(ordinaryRenderer["persistentResourceRoute"]);
             Dictionary<string, object> hgRenderer =
                 L.Dict(lodOwnership["hgMeshRendererComparison"]);
             IList lodBindings = L.List(lodOwnership["serializedBindings"]);
@@ -318,6 +322,18 @@ namespace EndfieldGraphShaderLabEditor
                 L.Long(ordinaryRenderer, "directManagedCallersInGameAssemblyText") == 0 &&
                 L.Str(ordinaryRenderer, "consumerClassification") ==
                     "no_static_managed_consumer_or_hgtree_join" &&
+                L.Str(ordinaryResourceRoute, "rendererCache") ==
+                    "native_renderer+0x140+index*0x10" &&
+                L.Str(ordinaryResourceRoute, "componentKeyOffset") == "0x268" &&
+                L.Str(ordinaryResourceRoute, "componentValidityOffset") == "0x26C" &&
+                L.Str(ordinaryResourceRoute, "resolverVA") == "0x1804255F0" &&
+                L.Str(ordinaryResourceRoute, "resourceDestination") ==
+                    "resolved_resource+0xB0+index*0x10" &&
+                L.Long(ordinaryResourceRoute, "characterParamsIndex") == 2 &&
+                L.Str(ordinaryResourceRoute, "characterParamsRendererOffset") == "0x160" &&
+                L.Str(ordinaryResourceRoute, "characterParamsResourceOffset") == "0xD0" &&
+                !L.Bool(ordinaryResourceRoute, "hgtreeContextArrayEquivalent") &&
+                !L.Bool(ordinaryResourceRoute, "resourceToDescriptorUploadProven") &&
                 L.Str(hgRenderer, "nativeEntityOffset") == "0x50" &&
                 !L.Bool(hgRenderer, "ordinaryRendererEquivalent") &&
                 retailMixer == null &&
@@ -326,6 +342,12 @@ namespace EndfieldGraphShaderLabEditor
                 !L.Bool(lab, "standardAnimationMixerPlayableIsExactSubstitute") &&
                 L.Str(lab, "driverStatus") ==
                     "exact_retail_mixer_type_unavailable_do_not_start_graph" &&
+                L.Str(behavioralSimulation, "mode") == "behavioral_simulation" &&
+                L.Str(behavioralSimulation, "backend") ==
+                    "stock AnimationMixerPlayable" &&
+                !L.Bool(behavioralSimulation, "retailAbiEquivalent") &&
+                !L.Bool(behavioralSimulation, "nativeRendererMappingClaimed") &&
+                !L.Bool(behavioralSimulation, "visibleAdmission") &&
                 L.List(lab["blockedBy"]).Count == 4 &&
                 L.List(contract["nonClaims"]).Count == 3,
                 "Li Zhiyan retail EffectAnimation playable topology drifted");

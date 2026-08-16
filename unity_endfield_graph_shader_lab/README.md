@@ -4076,6 +4076,14 @@ lifetimes are destruction boundaries, not proof of mixer stages or retiming.
 The lab must not inject the custom timeline; any stock-mixer driver is an
 explicit external-behavior simulation, not a retail-ABI backend, and cannot
 raise `visibleAdmission`.
+`EndfieldLiZhiyanBehavioralAnimationSimulation` implements that isolated
+preview path. It uses a stock GameTime three-input graph, connects only slot
+zero, applies `[1,0,0]`, plays/resets the shared clip at speed one, and destroys
+the graph at the configured EffectSetting lifetime. The component permanently
+reports non-equivalence and no visible admission. Its optional renderer probe
+records only source PathID, hierarchy, Unity instance ID, and frame for a
+future compatible capture; those values are not treated as native/HGTree
+identity.
 The same contract pins `SetManual(bool)`, `ManualEvaluate(float)`,
 `SyncProgress(float)`, time-scale/start-duration/start-
 scale setters, Stop, OnDisable, and OnRelease. Their decoded fallback bodies
@@ -4090,6 +4098,15 @@ mutation remain outside the offline contract. No Li-specific caller
 currently opts these three roots into manual evaluation, progress sync, or
 duration retiming; speed-one GameTime playback remains the only admitted
 timing statement.
+
+The ordinary Renderer identity boundary is narrower as well. The native
+`+0x268` value is consumed as a component key by the persistent per-draw
+resource resolver: `SetCustomPerDrawData_Injected` stores five Vector4 lanes at
+renderer `+0x140..+0x180`, resolves through `0x1804255F0`, and mirrors them to
+resource `+0xB0..+0xF0`. This is a positive ordinary-renderer resource route,
+not an HGTree join. The bounded resolver and lifecycle census finds no equality
+with HGTree's context-owned renderer array and no descriptor/upload consumer,
+so Li PathID-to-survivor ownership remains fail-closed.
 
 The graph's visible state control is exact as well. `_AddClip` connects each
 non-null clip output zero to mixer input `animationState-1`; null loop/end clips

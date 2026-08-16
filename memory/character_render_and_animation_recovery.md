@@ -1733,6 +1733,15 @@ only stable interpretation and priorities.
    not evidence of mixer stages or clip retiming. Do not inject that stage
    behavior into Li; a stock-mixer implementation may only be an explicitly
    labeled external-behavior simulation and cannot raise visible admission.
+   The lab now has that isolated simulation in
+   `EndfieldLiZhiyanBehavioralAnimationSimulation`. It constructs a stock
+   GameTime three-input graph, connects only slot zero, writes `[1,0,0]`,
+   plays and resets the shared clip at speed one, and destroys the graph at
+   the configured EffectSetting lifetime. It permanently reports
+   `retailAbiEquivalent=false` and `visibleAdmission=false`. Its read-only
+   renderer probe records source PathID, hierarchy, Unity instance ID, and
+   frame solely to support a future compatible runtime capture; it makes no
+   native/HGTree mapping claim.
    The managed graph control is now closed beyond construction. `_AddClip`
    connects each non-null clip from output port zero to mixer input
    `animationState-1`; Li's null loop/end return before connection. On every
@@ -1782,6 +1791,15 @@ only stable interpretation and priorities.
    vtable slot also numbered `+0x268` are context methods, not reads from an
    ordinary Renderer object. The required link is therefore runtime-indirect
    or absent from this managed route, not a missed direct caller.
+   The ordinary `+0x268` value now has a bounded positive consumer without
+   changing that conclusion. `Renderer.SetCustomPerDrawData_Injected` reaches
+   `0x180430680`, stores five Vector4 lanes at renderer `+0x140..+0x180`, and
+   uses `+0x268` as a component key for resolver `0x1804255f0`; the resolved
+   persistent resource receives the same lanes at `+0xb0..+0xf0`. The complete
+   resolver/lifecycle census finds no equality with HGTree's context-owned
+   renderer/resource array and no HGTree, descriptor, or upload consumer.
+   Therefore `+0x268` is useful ordinary per-draw resource identity, but not
+   the missing Li-to-HGTree survivor identity.
    Downstream HGMesh workers now prove a real ordering/publication stage:
    accepted 64-byte records are sorted in place by `0x181043bd0` using
    comparator `0x180fe0740`, an unsigned lexicographic comparison over the
