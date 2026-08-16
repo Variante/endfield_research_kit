@@ -1876,6 +1876,16 @@ only stable interpretation and priorities.
    Semantic field names remain unresolved, as do indirect draw and backend
    submission; do not relabel this opaque key order as transparent-depth,
    material, or batch order yet.
+   The ID/resource boundary is now narrower. `0x181059410` decodes
+   `record+0x20` as `key=dword>>1` and `selector=dword&1`, searches an internal
+   table through `0x1801f7410`, then indexes an 0x80-byte resource table;
+   selector zero returns the row base and selector one returns `+0x78`. This is
+   not ordinary Renderer entityID `+0x268` or HGMeshRenderer entity `+0x50`.
+   Common helper `0x1810469a0` only packs 0x90-stride CPU publication/result
+   arrays. Its bounded path contains no per-draw resolver, material/queue
+   identity, descriptor/PSO update, draw, or submit edge. The first missing
+   positive join is therefore one same-recorder resource identity through
+   `0x2748 -> 0x2730 -> 0x2731` into a concrete Vulkan callback/draw node.
    All six selected materials have `_IsSceneEffect=0` and
    `_EnableTransparentMV=0`, so `_VFXParams1` and transform history are safely
    bypassed rather than guessed. Exact inverse-VP soft depth, live
