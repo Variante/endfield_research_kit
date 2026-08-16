@@ -1943,20 +1943,25 @@ only stable interpretation and priorities.
    `0x180555d30 -> 0x1805573d0 -> 0x180559520`. Its primary caller copies
    source `+0x00/+0x08/+0x10`; the parallel
    `HGMeshRender.CreateRendererListFromEntities_Injected` route reaches the
-   same owner through `0x18104ec20`. The missing producer is therefore only
-   population of the caller-supplied M0/M1 tables before `0x18104ef90`, not
-   descriptor construction, handoff identity, or the grouping helper.
+   same owner through `0x18104ec20`. This job path transports
+   already-populated M0/M1 tables; it does not construct their entries.
    Those tables now have native subsystem identities as well. Slot-0x14 root
    `+0x90` is `HGShadingStateSystem`: `0x1810afc80` constructs it and
    `0x1810aeea0` initializes its `+0x28` hash table, whose finalizer access is
    0x60-stride. Root `+0xa0` is `HGGeometrySystem`: `0x181091dc0` constructs
    it and `0x1810914a0` initializes the matching 0x38-stride table. Root
    construction injects them into HGMesh manager `+0x50/+0x58`, closing the
-   subsystem-to-manager-to-job-to-finalizer transport. The maintained
-   `GetOrCreatePerMaterialCBHandle` route selects the same M0 entry but only
-   reads its resource state; it does not identify the `entry+0x28` descriptor
-   D writer. Concrete shading/geometry entry population remains the next
-   producer boundary.
+   subsystem-to-manager-to-job-to-finalizer transport. The M0 producer is now
+   closed: `0x1810b9990` performs material-handle lookup/insertion, clears a
+   new 0x60-byte entry, and calls `0x18109c9d0` once at `0x1810b9c5c`. That
+   core repeats the M0 `+0x28/+0x40/+0x44` hash lookup and writes its native
+   material/shading-state object to `entry+0x28` at `0x18109ca2f`; it then
+   dereferences the same object through `+0x10` and material state fields. The
+   two direct insertion callers are `0x1811e1a24` and `0x18131b76b`.
+   `GetOrCreatePerMaterialCBHandle` is therefore a downstream consumer. The
+   next producer boundary is M1 concrete entry population plus a Li-specific
+   M0 handle/object join; until that join, Li's `D+0x450` mode stays
+   fail-closed.
    All six selected materials have `_IsSceneEffect=0` and
    `_EnableTransparentMV=0`, so `_VFXParams1` and transform history are safely
    bypassed rather than guessed. Exact inverse-VP soft depth, live

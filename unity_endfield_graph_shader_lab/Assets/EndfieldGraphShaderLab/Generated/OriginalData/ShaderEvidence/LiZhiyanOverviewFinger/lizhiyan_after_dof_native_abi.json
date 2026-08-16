@@ -464,6 +464,20 @@
       "functionSha256": "F32A62188F132A3D0BEC44FFE8D190E6C8B25771F37B2E95B38B69A44DEE8E11"
     },
     {
+      "label": "HG shading-state M0 material-handle lookup and insertion",
+      "va": "0x1810b9990",
+      "functionEnd": "0x1810b9cbf",
+      "functionBytes": 815,
+      "functionSha256": "7F6FBF486B9CEECAA9A4DF9C63CE0AD80DE6F044485E26272DDAC57F442C0016"
+    },
+    {
+      "label": "HG shading-state M0 entry population core",
+      "va": "0x18109c9d0",
+      "functionEnd": "0x18109d4d3",
+      "functionBytes": 2819,
+      "functionSha256": "2E9108FC57E9B01F2B9B3F00B6DAC9A092FDB5C84ED57397BCD66A83F2403F70"
+    },
+    {
       "label": "HG render context slot-0x14 accessor",
       "va": "0x180fc5e60",
       "functionEnd": "0x180fc5e6a",
@@ -994,6 +1008,21 @@
       "label": "HGShadingStateSystem.GetOrCreatePerMaterialCBHandle -> M0 entry consumer",
       "callsite": "0x1801ee46a",
       "target": "0x1810c2ff0"
+    },
+    {
+      "label": "HG shading-state M0 material insertion -> entry population core",
+      "callsite": "0x1810b9c5c",
+      "target": "0x18109c9d0"
+    },
+    {
+      "label": "runtime material owner -> HG shading-state material-handle insertion",
+      "callsite": "0x1811e1a24",
+      "target": "0x1810b9990"
+    },
+    {
+      "label": "alternate material owner -> HG shading-state material-handle insertion",
+      "callsite": "0x18131b76b",
+      "target": "0x1810b9990"
     }
   ],
   "decisiveCalls": [
@@ -1330,7 +1359,7 @@
               "schedulerRoute": "0x18104f121 -> 0x180555d30 -> 0x1805573d0 -> 0x180559520, with worker callback in r8 and the 0xf0-byte descriptor in r9 at the first call",
               "primaryCaller": "0x1810462c0 passes source+0x00/source+0x08/source+0x10 as owner rdx/r8/r9 at 0x1810463a0",
               "explicitEntityCaller": "HG internal-call table index 399, HGMeshRender.CreateRendererListFromEntities_Injected at 0x1801f20f0, resolves singleton+0xb0 and calls 0x18104ec20; its 0x18104ef33 branch calls the same owner with rdx=[manager+0x50], r8=[manager+0x58], and an output record pointer in r9",
-              "identityBoundary": "this closes descriptor construction and scheduler registration, not who populates the M0/M1 tables, Li renderer membership, accepted-record identity, or final draw ownership",
+              "identityBoundary": "this closes descriptor construction and scheduler registration; M0 material entry population is separately closed below, while M1 entry population, Li renderer membership, accepted-record identity, and final draw ownership remain open",
               "rootSubsystemTables": {
                 "rootOwner": "slot-0x14 HG render context returned by 0x180fc5e60",
                 "m0Identity": "root+0x90 is HGShadingStateSystem, constructed by 0x1810afc80; HG internal-call indexes 294-299 expose GetMaterialHandle/GetMaterial/GetOrCreatePerMaterialCBHandle/Flush callbacks",
@@ -1339,8 +1368,11 @@
                 "m1Table": "0x181091dc0 initializes M1+0x28 through 0x1810914a0; finalizer indexing proves M1+0x28 base, +0x40/+0x44 shift/mask, and 0x38-byte entries",
                 "managerInjection": "0x180fc7487 passes root+0x90 as r9 and root+0xa0 as stack arg5 to 0x1810454c0, which stores them at HGMesh manager+0x50/+0x58",
                 "explicitEntityFlow": "manager+0x50/+0x58 -> 0x18104ec20 rdx/r8 -> 0x18104ef90 descriptor+0/+8 -> 0x180ff8020 -> 0x181039e90 M0/M1",
-                "perMaterialCbBoundary": "HGShadingStateSystem.GetOrCreatePerMaterialCBHandle at 0x1801ee430 enters 0x1810c2ff0 and selects the same 0x60-byte M0 entry, but the inspected route reads entry resource state and does not prove the entry+0x28 descriptor-D writer",
-                "remainingPopulationBoundary": "M0/M1 allocation, subsystem identity, table shape, manager injection, job transport, and finalizer consumption are closed; concrete entry population and especially M0 entry+0x28 descriptor D ownership remain unresolved"
+                "materialInsertion": "0x1810b9990 performs material-handle lookup/insertion in the M0-owned registry; on a miss it allocates or clears one 0x60-byte table entry and calls 0x18109c9d0 exactly once at 0x1810b9c5c",
+                "descriptorDWriter": "0x18109c9d0 repeats the M0 +0x28/+0x40/+0x44 hash lookup and at 0x18109ca2f writes its r9 native material/shading-state object to the selected 0x60-byte entry+0x28; the same object is immediately dereferenced through +0x10 and later material state fields",
+                "materialInsertionCallers": "0x1811e1a24 and 0x18131b76b are the two direct calls to 0x1810b9990 found in the pinned UnityPlayer image; both pass an owner-held material ID in edx",
+                "perMaterialCbBoundary": "HGShadingStateSystem.GetOrCreatePerMaterialCBHandle at 0x1801ee430 enters 0x1810c2ff0 and selects the same populated 0x60-byte M0 entry, but it is a downstream per-material-CB consumer rather than the descriptor-D writer",
+                "remainingPopulationBoundary": "M0 allocation, material insertion, entry+0x28 native-object ownership, manager injection, job transport, and finalizer consumption are closed; M1 concrete entry population and a Li-specific M0 handle/object selection remain unresolved"
               }
             }
           },
@@ -1384,8 +1416,8 @@
               "otherModes": "clear publication output and write -1 without entering the three special helpers",
               "constructorEvidence": "0x180ac63f0 constructs a layout-compatible 0x4e0 object with +0x430/+0x450/+0x488 fields and two mode-0 callers, but it does not populate an M0 0x60-stride entry and has no static alias to D",
               "builderEvidence": "0x180ba21b0 writes mode 0, propagated input mode, or mode 1 and 0x180390a20 copies the +0x440..+0x460 field group; neither has a static producer edge into the M0 entry. A superficially similar 0x180ac6740 record uses 0x48 stride and is also excluded",
-              "ownerPopulationBoundary": "0x18104ef90 creates the 0xf0-byte worker descriptor and copies caller rdx/r8 to +0x00/+0x08 as M0/M1; 0x180ff8020 later passes them unchanged to 0x181039e90. Its 0x180ff82b5 -> 0x1810442f0 helper only populates a temporary 0x30-stride group-to-int32-index-vector map; it is not M0 and never writes M0 entry+0x28 descriptor D. The remaining producer is population of the caller-supplied M0/M1 tables before 0x18104ef90",
-              "aliasBoundary": "M0 entry+0x28 has not been statically aliased to any candidate descriptor constructor/builder, so Li's selected mode remains unknown"
+              "ownerPopulationBoundary": "0x18104ef90 transports existing M0/M1 pointers through the worker. M0 is populated earlier by 0x1810b9990 -> 0x18109c9d0, whose 0x18109ca2f store places the native material/shading-state object at entry+0x28. The worker-local 0x1810442f0 map remains unrelated",
+              "aliasBoundary": "M0 entry+0x28 is now statically identified as the native material/shading-state object passed to 0x18109c9d0, but no static join yet proves which inserted handle/object is Li Zhiyan or its +0x450 mode"
             },
             "graphicsFront": {
               "contextGetterVA": "0x180725dc0",
