@@ -107,7 +107,7 @@ Shader "Endfield/Recovered/VFXBaseV2SampleStack"
             sampler2D _SampleTex1;
             sampler2D _SampleTex2;
             sampler2D _SampleTex3;
-            Texture2D<float> _SceneDepth;
+            Texture2D<float> _CameraDepthTexture;
             // The Li Zhiyan _USE_SOFTBLEND DXBC variants bind the scene-depth
             // input with the static linear-clamp sampler (s0), not a material
             // texture sampler.
@@ -117,7 +117,7 @@ Shader "Endfield/Recovered/VFXBaseV2SampleStack"
             float4 _SampleTex1_ST;
             float4 _SampleTex2_ST;
             float4 _SampleTex3_ST;
-            float4 _SceneDepth_TexelSize;
+            float4 _CameraDepthTexture_TexelSize;
 
             float4 _TintColor;
             float _TintColorIntensity;
@@ -175,7 +175,7 @@ Shader "Endfield/Recovered/VFXBaseV2SampleStack"
             float _EndfieldRecoveredVFXGlobalsReady;
             // Diagnostic-only admission gate. The authored soft-blend
             // keyword/property remain intact, but no depth read is allowed
-            // until the capture binds the exact _SceneDepth input.
+            // until the capture binds the exact _CameraDepthTexture input.
             float _EndfieldRecoveredVFXSoftDepthReady;
 
             struct Attributes
@@ -344,13 +344,13 @@ Shader "Endfield/Recovered/VFXBaseV2SampleStack"
                 // ForwardOnly blob: sample continuous pixel UV, linearize
                 // scene and particle depth, then apply the authored bias and
                 // distance. The extra readiness gate is diagnostic-only and
-                // keeps normal assets fail-closed when _SceneDepth is absent.
+                // keeps normal assets fail-closed when _CameraDepthTexture is absent.
                 if (_EndfieldRecoveredVFXSoftDepthReady > 0.5 &&
                     _SoftDistance > 0.0)
                 {
                     float2 particlePixelUV = input.positionCS.xy *
-                        _SceneDepth_TexelSize.xy;
-                    float sceneRawDepth = _SceneDepth.SampleLevel(
+                        _CameraDepthTexture_TexelSize.xy;
+                    float sceneRawDepth = _CameraDepthTexture.SampleLevel(
                         sampler_LinearClamp, particlePixelUV, 0.0);
                     float sceneAbsoluteViewZ =
                         LinearEyeDepth(sceneRawDepth);
