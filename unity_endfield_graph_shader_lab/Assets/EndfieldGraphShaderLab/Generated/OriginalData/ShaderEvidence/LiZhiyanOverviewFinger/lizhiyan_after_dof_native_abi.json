@@ -422,6 +422,48 @@
       "functionSha256": "CA97F2AD6D958078B68FEC88EDB666A64CCEA3F8E3F2155414384E175B842619"
     },
     {
+      "label": "HG shading-state M0 subsystem constructor",
+      "va": "0x1810afc80",
+      "functionEnd": "0x1810b00f5",
+      "functionBytes": 1141,
+      "functionSha256": "91F56EB85AD78E053D8EC85486AD7A3C72CC933CD3AA4DAECF7F1DCEF1CF7BC5"
+    },
+    {
+      "label": "HG shading-state M0 0x60-stride table initializer",
+      "va": "0x1810aeea0",
+      "functionEnd": "0x1810af080",
+      "functionBytes": 480,
+      "functionSha256": "A18A9E1E9E15ED7B409531D3BCE6B1690F075163BE2898CBDCD3CF1491DC43A3"
+    },
+    {
+      "label": "HG geometry M1 subsystem constructor",
+      "va": "0x181091dc0",
+      "functionEnd": "0x181091f1f",
+      "functionBytes": 351,
+      "functionSha256": "6CBB5472220EBA7D53E7BF579D499C918C682F8583A3269A6ADF4A537B17D0C9"
+    },
+    {
+      "label": "HG geometry M1 0x38-stride table initializer",
+      "va": "0x1810914a0",
+      "functionEnd": "0x181091668",
+      "functionBytes": 456,
+      "functionSha256": "03BA3603297A43DA3CF0EAF58AC24ACDF7B6BB5558FF2F2D86BEF9773686B5E8"
+    },
+    {
+      "label": "HGShadingStateSystem GetOrCreatePerMaterialCBHandle icall",
+      "va": "0x1801ee430",
+      "functionEnd": "0x1801ee495",
+      "functionBytes": 101,
+      "functionSha256": "ED3B889B63CFE54F14652ADC1F6A3AE50C49504A25DF8D739096957EFFFB99FD"
+    },
+    {
+      "label": "HG shading-state per-material CB entry consumer",
+      "va": "0x1810c2ff0",
+      "functionEnd": "0x1810c3092",
+      "functionBytes": 162,
+      "functionSha256": "F32A62188F132A3D0BEC44FFE8D190E6C8B25771F37B2E95B38B69A44DEE8E11"
+    },
+    {
       "label": "HG render context slot-0x14 accessor",
       "va": "0x180fc5e60",
       "functionEnd": "0x180fc5e6a",
@@ -922,6 +964,36 @@
       "label": "HGMesh CreateRendererListFromEntities icall -> explicit-entity core",
       "callsite": "0x1801f2163",
       "target": "0x18104ec20"
+    },
+    {
+      "label": "HG root construction -> shading-state/M0 subsystem",
+      "callsite": "0x180fc724e",
+      "target": "0x1810afc80"
+    },
+    {
+      "label": "HG root construction -> geometry/M1 subsystem",
+      "callsite": "0x180fc72c0",
+      "target": "0x181091dc0"
+    },
+    {
+      "label": "HG root construction -> HGMesh manager with subsystem tables",
+      "callsite": "0x180fc7487",
+      "target": "0x1810454c0"
+    },
+    {
+      "label": "HG shading-state/M0 construction -> 0x60-stride table initialization",
+      "callsite": "0x1810afccc",
+      "target": "0x1810aeea0"
+    },
+    {
+      "label": "HG geometry/M1 construction -> 0x38-stride table initialization",
+      "callsite": "0x181091e02",
+      "target": "0x1810914a0"
+    },
+    {
+      "label": "HGShadingStateSystem.GetOrCreatePerMaterialCBHandle -> M0 entry consumer",
+      "callsite": "0x1801ee46a",
+      "target": "0x1810c2ff0"
     }
   ],
   "decisiveCalls": [
@@ -1258,7 +1330,18 @@
               "schedulerRoute": "0x18104f121 -> 0x180555d30 -> 0x1805573d0 -> 0x180559520, with worker callback in r8 and the 0xf0-byte descriptor in r9 at the first call",
               "primaryCaller": "0x1810462c0 passes source+0x00/source+0x08/source+0x10 as owner rdx/r8/r9 at 0x1810463a0",
               "explicitEntityCaller": "HG internal-call table index 399, HGMeshRender.CreateRendererListFromEntities_Injected at 0x1801f20f0, resolves singleton+0xb0 and calls 0x18104ec20; its 0x18104ef33 branch calls the same owner with rdx=[manager+0x50], r8=[manager+0x58], and an output record pointer in r9",
-              "identityBoundary": "this closes descriptor construction and scheduler registration, not who populates the M0/M1 tables, Li renderer membership, accepted-record identity, or final draw ownership"
+              "identityBoundary": "this closes descriptor construction and scheduler registration, not who populates the M0/M1 tables, Li renderer membership, accepted-record identity, or final draw ownership",
+              "rootSubsystemTables": {
+                "rootOwner": "slot-0x14 HG render context returned by 0x180fc5e60",
+                "m0Identity": "root+0x90 is HGShadingStateSystem, constructed by 0x1810afc80; HG internal-call indexes 294-299 expose GetMaterialHandle/GetMaterial/GetOrCreatePerMaterialCBHandle/Flush callbacks",
+                "m0Table": "0x1810afc80 initializes M0+0x28 through 0x1810aeea0; finalizer indexing proves M0+0x28 base, +0x40/+0x44 shift/mask, and 0x60-byte entries",
+                "m1Identity": "root+0xa0 is HGGeometrySystem, constructed by 0x181091dc0; HG internal-call indexes 300-301 expose GetGeometryHandle/GetMesh",
+                "m1Table": "0x181091dc0 initializes M1+0x28 through 0x1810914a0; finalizer indexing proves M1+0x28 base, +0x40/+0x44 shift/mask, and 0x38-byte entries",
+                "managerInjection": "0x180fc7487 passes root+0x90 as r9 and root+0xa0 as stack arg5 to 0x1810454c0, which stores them at HGMesh manager+0x50/+0x58",
+                "explicitEntityFlow": "manager+0x50/+0x58 -> 0x18104ec20 rdx/r8 -> 0x18104ef90 descriptor+0/+8 -> 0x180ff8020 -> 0x181039e90 M0/M1",
+                "perMaterialCbBoundary": "HGShadingStateSystem.GetOrCreatePerMaterialCBHandle at 0x1801ee430 enters 0x1810c2ff0 and selects the same 0x60-byte M0 entry, but the inspected route reads entry resource state and does not prove the entry+0x28 descriptor-D writer",
+                "remainingPopulationBoundary": "M0/M1 allocation, subsystem identity, table shape, manager injection, job transport, and finalizer consumption are closed; concrete entry population and especially M0 entry+0x28 descriptor D ownership remain unresolved"
+              }
             }
           },
           "cpuPublicationBoundary": {
