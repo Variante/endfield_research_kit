@@ -55,6 +55,12 @@ def animation_clip_contract(path: Path) -> dict[str, Any]:
     sample_rate = re.search(r"(?m)^  m_SampleRate: ([0-9.]+)$", text)
     stop_time = re.search(r"(?m)^    m_StopTime: ([0-9.]+)$", text)
     events = re.search(r"(?m)^  m_Events: \[\]$", text)
+    bindings = re.findall(
+        r"(?m)^    attribute: material\.(\d+)\r?\n"
+        r"    path: path_(\d+)\r?\n"
+        r"    classID: (\d+)$",
+        text,
+    )
     require(name and name.group(1) == "A_fxui__lizhiyan_overview_start_01",
             "start_01 AnimationClip name drifted")
     require(sample_rate and float(sample_rate.group(1)) == 30.0,
@@ -62,11 +68,25 @@ def animation_clip_contract(path: Path) -> dict[str, Any]:
     require(stop_time and abs(float(stop_time.group(1)) - 6.366667) < 1e-7,
             "start_01 AnimationClip stop time drifted")
     require(events is not None, "start_01 AnimationClip events drifted")
+    require(len(bindings) == 53, "start_01 AnimationClip float-curve census drifted")
+    require({int(row[2]) for row in bindings} == {23},
+            "start_01 AnimationClip target class drifted")
+    path_hashes = sorted({int(row[1]) for row in bindings})
+    property_hashes = sorted({int(row[0]) for row in bindings})
+    require(len(path_hashes) == 10 and len(property_hashes) == 7,
+            "start_01 AnimationClip hashed binding census drifted")
     return {
         "name": name.group(1),
         "sampleRate": float(sample_rate.group(1)),
         "stopTime": float(stop_time.group(1)),
         "events": [],
+        "floatCurveBindings": {
+            "count": len(bindings),
+            "targetClassID": 23,
+            "targetPathHashes": path_hashes,
+            "materialPropertyHashes": property_hashes,
+            "status": "hash_only_target_paths_and_material_properties_unresolved",
+        },
         "convertedAnim": file_artifact(path, "AnimationClipYaml"),
     }
 
@@ -303,6 +323,7 @@ def main() -> int:
             "blockedBy": [
                 "native Mesh payload and Unity import parity are not pinned",
                 "native Texture2D mip payloads and Unity import parity are not pinned",
+                "AnimationClip curve target-path and material-property hashes are not mapped to the four reconstructed renderers",
                 "three VFXBaseV2 material variants lack exact selected DXBC/descriptor/draw admission",
                 "static-mesh effect runtime binding kind is not implemented",
             ],

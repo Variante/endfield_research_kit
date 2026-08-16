@@ -327,6 +327,32 @@
       "sampleRate": 30.0,
       "stopTime": 6.366667,
       "events": [],
+      "floatCurveBindings": {
+        "count": 53,
+        "targetClassID": 23,
+        "targetPathHashes": [
+          100733734,
+          524802392,
+          1182372393,
+          1485209883,
+          1600299880,
+          1834271210,
+          1951396011,
+          2367030625,
+          2832407953,
+          3206572003
+        ],
+        "materialPropertyHashes": [
+          109495689,
+          377931145,
+          646366601,
+          914802057,
+          2250381253,
+          2292127880,
+          2316997392
+        ],
+        "status": "hash_only_target_paths_and_material_properties_unresolved"
+      },
       "convertedAnim": {
         "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/AnimationClip/A_fxui__lizhiyan_overview_start_01_p6625634E5C6BA21E.anim",
         "bytes": 50328,
@@ -5105,6 +5131,7 @@
     "blockedBy": [
       "native Mesh payload and Unity import parity are not pinned",
       "native Texture2D mip payloads and Unity import parity are not pinned",
+      "AnimationClip curve target-path and material-property hashes are not mapped to the four reconstructed renderers",
       "three VFXBaseV2 material variants lack exact selected DXBC/descriptor/draw admission",
       "static-mesh effect runtime binding kind is not implemented"
     ]

@@ -319,10 +319,27 @@ The converted OBJ and serialized queue-3704 VFXBaseV2 material payloads exist.
 Animation-helper start clip PathID `7360398354216100382` resolves to converted
 `A_fxui__lizhiyan_overview_start_01` at 30 Hz with stop time 6.366667 and no
 AnimationEvents. All eight serialized Texture2D dependencies resolve through
-the AssetMap to converted PNGs. Native mesh/texture import parity and
+the AssetMap to converted PNGs. The clip contains 53 material float curves,
+but its 10 target paths and seven material properties survive only as hashes;
+mapping those bindings to the four reconstructed renderers remains required.
+Native mesh/texture import parity and
 shader/draw admission are not closed. The lab
 therefore records a `static_mesh_animated` contract but does not fabricate a
 particle prefab or install a runtime binding.
+
+The lab runtime now represents that distinction explicitly through
+`BindingKind.StaticMesh` and `EndfieldRecoveredStaticMeshEffectSource`.
+Runtime validation pins the exact start_01 root, EffectSetting, Animator,
+animation helper, clip, four MeshFilter/MeshRenderer pairs, shared mesh, and
+three-material identity set; it also requires zero ParticleSystems and every
+native/import/shader gate. The current negative Unity validator exits
+successfully only when the contract is refused at `sourcePayloadApplied=false`
+and `visibleAdmission=false`. No prefab or Li controller binding was added.
+
+A requested English-only Claude Code second-opinion audit produced no output
+within roughly eight minutes and was terminated. It contributes no evidence;
+the remaining native-consumer question stays open under the local fail-closed
+boundary.
 
 The next positive proof is now an explicit runtime-capture contract rather
 than a generic request for “a capture.” On this exact build it must join one

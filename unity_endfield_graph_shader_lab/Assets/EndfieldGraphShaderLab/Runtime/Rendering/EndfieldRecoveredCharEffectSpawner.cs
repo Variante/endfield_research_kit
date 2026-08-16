@@ -7,7 +7,7 @@ namespace EndfieldGraphShaderLab
 {
     /// <summary>
     /// Shared Overview entrance-effect adapter for generated, source-closed
-    /// ParticleSystem prefabs.  The component is intentionally data-driven:
+    /// particle or static-mesh prefabs. The component is intentionally data-driven:
     /// no prefab-name fallback, EffectSetting emulation, or HGRP shader
     /// approximation is performed here.
     /// </summary>
@@ -21,6 +21,12 @@ namespace EndfieldGraphShaderLab
         public const string CharInfoContractSchema =
             "endfield.charinfo-char-effect-particle.v1";
 
+        public enum BindingKind
+        {
+            Particle = 0,
+            StaticMesh = 1,
+        }
+
         public static bool IsSupportedContractSchema(string schema)
         {
             return string.Equals(schema, ExpectedContractSchema, StringComparison.Ordinal) ||
@@ -30,6 +36,9 @@ namespace EndfieldGraphShaderLab
         [Serializable]
         public sealed class Binding
         {
+            [Tooltip("Serialized effect representation. Existing bindings default to Particle.")]
+            public BindingKind bindingKind;
+
             [Tooltip("Exact EndfieldOverviewEffectRequest.prefabName.")]
             public string requestPrefabName;
 
@@ -174,12 +183,11 @@ namespace EndfieldGraphShaderLab
             instance.name = binding.prefab.name + "__OverviewRuntime";
             instance.SetActive(false);
 
-            ParticleSystem[] systems =
-                instance.GetComponentsInChildren<ParticleSystem>(true);
+            ParticleSystem[] systems = binding.bindingKind == BindingKind.Particle
+                ? instance.GetComponentsInChildren<ParticleSystem>(true)
+                : Array.Empty<ParticleSystem>();
             foreach (ParticleSystem system in systems)
-            {
                 system.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-            }
 
             activeEffects[request.prefabName] = instance;
             instance.SetActive(true);
@@ -364,6 +372,14 @@ namespace EndfieldGraphShaderLab
                 return false;
             }
 
+            if (binding.bindingKind == BindingKind.StaticMesh)
+                return TryValidateStaticMeshBinding(binding, out reason);
+            if (binding.bindingKind != BindingKind.Particle)
+            {
+                reason = "Unsupported effect binding kind.";
+                return false;
+            }
+
             EndfieldRecoveredParticleEffectSource marker =
                 binding.prefab.GetComponent<EndfieldRecoveredParticleEffectSource>();
             if (marker == null)
@@ -463,6 +479,165 @@ namespace EndfieldGraphShaderLab
                         return false;
                     }
                 }
+            }
+            return true;
+        }
+
+        public static bool TryValidateBindingForRecoveryAudit(
+            Binding binding,
+            EndfieldOverviewEffectRequest request,
+            out string reason)
+        {
+            return TryValidateBinding(binding, request, out reason);
+        }
+
+        private static bool TryValidateStaticMeshBinding(Binding binding, out string reason)
+        {
+            reason = string.Empty;
+            EndfieldRecoveredStaticMeshEffectSource marker =
+                binding.prefab.GetComponent<EndfieldRecoveredStaticMeshEffectSource>();
+            if (marker == null)
+            {
+                reason = "Prefab has no source static-mesh contract marker.";
+                return false;
+            }
+            if (!string.Equals(
+                marker.contractSchema,
+                EndfieldRecoveredStaticMeshEffectSource.LiZhiyanStart01ContractSchema,
+                StringComparison.Ordinal))
+            {
+                reason = "Unsupported or unknown static-mesh contract schema.";
+                return false;
+            }
+            if (!string.Equals(
+                    marker.effectRoot,
+                    "P_fxui_lizhiyan_overview_start_01",
+                    StringComparison.Ordinal) ||
+                (!string.IsNullOrEmpty(binding.expectedEffectRoot) &&
+                    marker.effectRoot != binding.expectedEffectRoot))
+            {
+                reason = "Static-mesh source effectRoot is absent or mismatched.";
+                return false;
+            }
+            if (!marker.sourcePayloadApplied || !marker.visibleAdmission ||
+                marker.blockedBy == null || marker.blockedBy.Length != 0 ||
+                string.IsNullOrEmpty(marker.sourceAggregateSha256))
+            {
+                reason = "Static-mesh source contract has not admitted runtime visibility.";
+                return false;
+            }
+            if (!Mathf.Approximately(binding.expectedDuration, marker.sourceEffectDuration) ||
+                !Mathf.Approximately(binding.expectedDelay, marker.sourceEffectDelay))
+            {
+                reason = "Static-mesh source timing does not match the explicit binding.";
+                return false;
+            }
+            if (!marker.sourceEffectSettingPayloadApplied ||
+                !marker.sourceAnimationPayloadApplied || marker.sourceStartAnimationClipPathId == 0 ||
+                marker.sourceStartAnimationClip == null ||
+                marker.sourceStartAnimationClipName != "A_fxui__lizhiyan_overview_start_01" ||
+                !Mathf.Approximately(marker.sourceStartAnimationSampleRate, 30.0f) ||
+                !Mathf.Approximately(marker.sourceStartAnimationStopTime, 6.366667f) ||
+                marker.sourceAnimationTargetPathHashes == null ||
+                marker.sourceAnimationTargetPathHashes.Length != 10 ||
+                marker.sourceAnimationMaterialPropertyHashes == null ||
+                marker.sourceAnimationMaterialPropertyHashes.Length != 7 ||
+                !marker.sourceAnimationBindingsResolved)
+            {
+                reason = "Static-mesh EffectSetting or animation payload is not applied.";
+                return false;
+            }
+            if (marker.sourceGameObjectPathId != 1314393592276219621L ||
+                marker.sourceTransformPathId != 4995983695754262245L ||
+                marker.sourceEffectSettingPathId != 2305038813790631653L ||
+                marker.sourceAnimatorPathId != -7686199192497981723L ||
+                marker.sourceAnimationHelperPathId != -8633596874860955931L ||
+                marker.sourceStartAnimationClipPathId != 7360398354216100382L)
+            {
+                reason = "Li Zhiyan start_01 source component identities drifted.";
+                return false;
+            }
+            if (marker.staticMeshNodes == null || marker.staticMeshNodes.Length == 0)
+            {
+                reason = "Source marker has no static-mesh nodes.";
+                return false;
+            }
+            if (marker.staticMeshNodes.Length != 4)
+            {
+                reason = "Li Zhiyan start_01 must contain exactly four static-mesh nodes.";
+                return false;
+            }
+            var expectedFilterIds = new HashSet<long> {
+                8907211204029478629L, -3027743468593580315L,
+                3101834544805148389L, -9078621906017421595L };
+            var expectedRendererIds = new HashSet<long> {
+                -1741348596941359387L, 4708942470875150053L,
+                8270785745755535077L, -6436609233402104091L };
+            var observedFilterIds = new HashSet<long>();
+            var observedRendererIds = new HashSet<long>();
+            var observedMaterialIds = new HashSet<long>();
+            MeshFilter[] filters = binding.prefab.GetComponentsInChildren<MeshFilter>(true);
+            MeshRenderer[] renderers = binding.prefab.GetComponentsInChildren<MeshRenderer>(true);
+            if (binding.prefab.GetComponentsInChildren<ParticleSystem>(true).Length != 0)
+            {
+                reason = "Static-mesh source unexpectedly contains ParticleSystems.";
+                return false;
+            }
+            if (filters.Length != marker.staticMeshNodes.Length ||
+                renderers.Length != marker.staticMeshNodes.Length)
+            {
+                reason = "Generated static mesh/renderer counts drifted from the source marker.";
+                return false;
+            }
+            foreach (EndfieldRecoveredStaticMeshNodeSource node in marker.staticMeshNodes)
+            {
+                if (node == null || node.generatedMeshFilter == null ||
+                    node.generatedMeshRenderer == null || node.meshPathId == 0 ||
+                    node.materialPathIds == null || node.materialPathIds.Length == 0 ||
+                    !node.nativeMeshPayloadApplied || !node.nativeRendererPayloadApplied ||
+                    !node.nativeTexturePayloadsApplied || !node.exactShaderVariantsApplied ||
+                    node.rendererFailClosedForUnrecoveredShader)
+                {
+                    reason = "At least one static-mesh node is incomplete or fail-closed.";
+                    return false;
+                }
+                if (node.meshPathId != -6840663686705882004L ||
+                    !observedFilterIds.Add(node.meshFilterPathId) ||
+                    !observedRendererIds.Add(node.meshRendererPathId))
+                {
+                    reason = "Static-mesh source identity is duplicated or mismatched.";
+                    return false;
+                }
+                foreach (long materialPathId in node.materialPathIds)
+                    observedMaterialIds.Add(materialPathId);
+                if (node.generatedMeshFilter.sharedMesh == null ||
+                    node.generatedMeshRenderer.enabled != node.sourceRendererEnabled ||
+                    node.generatedMeshRenderer.sharedMaterials == null ||
+                    node.generatedMeshRenderer.sharedMaterials.Length != node.materialPathIds.Length)
+                {
+                    reason = "Static mesh, renderer state, or material count drifted.";
+                    return false;
+                }
+                foreach (Material material in node.generatedMeshRenderer.sharedMaterials)
+                {
+                    if (material == null || material.shader == null ||
+                        material.shader.name.IndexOf("Unavailable", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                        material.shader.name.IndexOf("FailClosed", StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        reason = "Static-mesh material/shader is unresolved or fail-closed.";
+                        return false;
+                    }
+                }
+            }
+            if (!observedFilterIds.SetEquals(expectedFilterIds) ||
+                !observedRendererIds.SetEquals(expectedRendererIds) ||
+                !observedMaterialIds.SetEquals(new long[] {
+                    -6912999194325832649L,
+                    2993445828574428557L,
+                    3282333668994552481L }))
+            {
+                reason = "Li Zhiyan start_01 renderer/filter identity set drifted.";
+                return false;
             }
             return true;
         }
