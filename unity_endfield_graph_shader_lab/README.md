@@ -4394,9 +4394,18 @@ refreshed 168-call capture has 99 positive sidecars: 23/24 composite, 23/24
 effects-only, 7/24 peak-only, plus every active root-only frame (start_01 8/8,
 start_02 15/15, start_03 23/23). The remaining 69 calls explicitly report no
 exact selected MRT material. Root-only override coverage is time-invariant at
-432,119/289,686/227,641 pixels respectively, so it proves static geometry
-ownership only: source material AnimationClip curves are not yet applied to the
-cloned diagnostic instances. Numeric red-channel IDs are local to one capture invocation;
+432,119/289,686/227,641 pixels respectively, so the sidecar proves static
+geometry ownership only. A direct Unity probe showed that `SampleAnimation`
+writes the classID-23 `material.*` values into each renderer's
+`MaterialPropertyBlock`, not into `sharedMaterials` or `renderer.material`.
+The actor-composed capture now reads the exact editor curves by hierarchy path
+and mirrors all 21/15/17 resolved start_01/_02/_03 bindings into both the cloned
+diagnostic material and its preserved MPB, without using AnimationMode or
+changing generated prefabs/normal-viewer behavior. Validators require complete
+active binding census, fail-closed inactive samples, selected dynamic-anchor
+state changes, and more than one root-only PNG hash. The refreshed capture has
+4/3/9 distinct active PNG hashes for start_01/_02/_03, while sidecar geometry
+remains intentionally invariant. Numeric red-channel IDs are local to one capture invocation;
 the ordinal hierarchy path plus material slot/name is the cross-frame identity.
 The stable later contributors are queue-3704 `tiaodaifenwei_01 (7)`,
 `fenweiqiliu_02 (3)`, and `shoutiaodai_01 (1)`; composite and effects-only are
@@ -4412,7 +4421,8 @@ admission/depth/sort evidence only and keeps `visibleAdmission=false`.
 Four-corner background consensus remains stable when the animated coat crosses
 a frame corner. Predicate-only retail ROI comparison showed the static-only
 `broadTeal` peak at PTS 40000 was 3.499% composite versus 21.699% retail, while
-PTS 43000 is 7.618% versus 9.972%; effects are blank at PTS 46000 while the
+PTS 43000 is now 7.104% versus 9.972% after source material-curve sampling;
+effects are blank at PTS 46000 while the
 actor remains visible. These are diagnostic composition metrics, not retail
 pixels, renderer-list ownership, or native shader parity.
 

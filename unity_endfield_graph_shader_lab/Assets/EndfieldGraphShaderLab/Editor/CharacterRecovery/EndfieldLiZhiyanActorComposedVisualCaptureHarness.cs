@@ -262,6 +262,11 @@ namespace EndfieldGraphShaderLabEditor
                         sharedClipName = SharedClipName,
                         sharedClipPathId = SharedClipPathId,
                         sharedClipStopTimeSeconds = SharedClipStopTime,
+                        materialCurveSampling =
+                            "AnimationUtility.GetEditorCurve classID23 material.*; " +
+                            "SampleAnimation MPB preserved; evaluated values mirrored " +
+                            "to cloned diagnostic Materials and MPBs; no AnimationMode; " +
+                            "renderer-ID sidecar geometry remains source-static ownership",
                         roots = BuildRootManifestRows(),
                         captures = new ActorComposedCaptureRecord[Anchors.Length],
                     };
@@ -313,16 +318,22 @@ namespace EndfieldGraphShaderLabEditor
                         for (int rootIndex = 0; rootIndex < Roots.Length; rootIndex++)
                         {
                             ConfigureVisibility(bundle, localSeconds, false, rootIndex);
+                            bool rootActive = IsEffectActive(Roots[rootIndex], localSeconds);
+                            MaterialCurveSample materialCurveSample = rootActive
+                                ? bundle.materialCurveSamples[rootIndex]
+                                : MaterialCurveSample.Inactive(
+                                    bundle.materialCurveSamplers[rootIndex].BindingCount);
                             string fileName = Roots[rootIndex].key + "_only_" +
                                 Pts(anchor.retailPts) + ".png";
                             capture.roots[rootIndex] = new RootCaptureRecord
                             {
                                 key = Roots[rootIndex].key,
                                 effectRoot = Roots[rootIndex].effectRoot,
-                                effectActive = IsEffectActive(Roots[rootIndex], localSeconds),
+                                effectActive = rootActive,
                                 effectState = StateFor(Roots[rootIndex], localSeconds),
                                 clipSampleSeconds = ClipSampleTime(localSeconds),
                                 clipClampedAfterEnd = localSeconds > SharedClipStopTime,
+                                materialCurveSample = materialCurveSample,
                                 frame = CaptureNamedFrame(
                                     camera, target, readback, outputDirectory,
                                     fileName, oracleSample,
@@ -418,6 +429,8 @@ namespace EndfieldGraphShaderLabEditor
                 actorRenderers = actorRenderers,
                 effects = new GameObject[Roots.Length],
                 markers = new EndfieldRecoveredStaticMeshEffectSource[Roots.Length],
+                materialCurveSamplers = new EndfieldLiZhiyanMaterialCurveSampler[Roots.Length],
+                materialCurveSamples = new MaterialCurveSample[Roots.Length],
                 peakEffects = new GameObject[PeakEffectRoots.Length],
                 peakMarkers = new EndfieldRecoveredParticleEffectSource[PeakEffectRoots.Length],
                 peakBakeProxies = new List<PeakBakeProxy>(),
@@ -441,6 +454,11 @@ namespace EndfieldGraphShaderLabEditor
                 bundle.markers[index] = marker;
                 DisableAutonomousPlayback(effect);
                 CloneDiagnosticMaterials(effect, Roots[index]);
+                bundle.materialCurveSamplers[index] =
+                    EndfieldLiZhiyanMaterialCurveSampler.Build(
+                        effect, marker.sourceStartAnimationClip);
+                Require(bundle.materialCurveSamplers[index].BindingCount > 0,
+                    "No material AnimationClip curves resolved for " + Roots[index].key);
             }
             for (int index = 0; index < PeakEffectRoots.Length; index++)
             {
@@ -601,9 +619,15 @@ namespace EndfieldGraphShaderLabEditor
             for (int index = 0; index < Roots.Length; index++)
             {
                 if (!IsEffectActive(Roots[index], localSeconds))
+                {
+                    bundle.materialCurveSamples[index] = null;
                     continue;
+                }
                 bundle.markers[index].sourceStartAnimationClip.SampleAnimation(
                     bundle.effects[index], ClipSampleTime(localSeconds));
+                bundle.materialCurveSamples[index] =
+                    bundle.materialCurveSamplers[index].Apply(
+                        ClipSampleTime(localSeconds));
             }
             for (int rootIndex = 0; rootIndex < bundle.peakEffects.Length; rootIndex++)
             {
@@ -1620,6 +1644,21 @@ namespace EndfieldGraphShaderLabEditor
             return Mathf.Clamp(localSeconds, 0f, SharedClipStopTime);
         }
 
+        private static int ExpectedMaterialCurveBindingCount(int rootIndex)
+        {
+            // The shared clip has 21 start_01, 15 start_02, and 17 start_03
+            // classID 23 material.* bindings.  Keep this census explicit so a
+            // missing path or silently unsupported shader property cannot make
+            // a capture look successful while sampling only a subset.
+            switch (rootIndex)
+            {
+                case 0: return 21;
+                case 1: return 15;
+                case 2: return 17;
+                default: throw new ArgumentOutOfRangeException(nameof(rootIndex));
+            }
+        }
+
         private static RootManifestRow[] BuildRootManifestRows()
         {
             RootManifestRow[] rows = new RootManifestRow[Roots.Length];
@@ -1663,6 +1702,10 @@ namespace EndfieldGraphShaderLabEditor
                 manifest.backgroundMeasurement ==
                     "closest_pair_of_four_frame_corners_actor_safe",
                 "Actor-composed manifest dimensions/backend/anchor count drifted");
+            Require(manifest.materialCurveSampling != null &&
+                manifest.materialCurveSampling.Contains("AnimationUtility.GetEditorCurve") &&
+                manifest.materialCurveSampling.Contains("no AnimationMode"),
+                "Actor-composed material curve sampling provenance drifted");
             Require(string.Equals(manifest.sourceSpecSha256,
                 Sha256File(ProjectAbsolute(SpecPath)), StringComparison.OrdinalIgnoreCase),
                 "Actor-composed source spec hash drifted");
@@ -1689,6 +1732,13 @@ namespace EndfieldGraphShaderLabEditor
             bool[] foundVisibleRoot = new bool[Roots.Length];
             bool foundVisibleActor = false;
             bool foundVisiblePeakParticles = false;
+            var materialCurveStateHashes = new HashSet<string>[Roots.Length];
+            var rootPngHashes = new HashSet<string>[Roots.Length];
+            for (int index = 0; index < Roots.Length; index++)
+            {
+                materialCurveStateHashes[index] = new HashSet<string>(StringComparer.Ordinal);
+                rootPngHashes[index] = new HashSet<string>(StringComparer.Ordinal);
+            }
             Dictionary<string, string> stableRendererFingerprints = null;
             var actorPoseHashes = new Dictionary<string, HashSet<string>>(
                 StringComparer.Ordinal);
@@ -1728,6 +1778,37 @@ namespace EndfieldGraphShaderLabEditor
                         root.effectActive == expectedActive && root.frame != null,
                         "Actor-composed root lifecycle drifted for " + Roots[rootIndex].key +
                         " at PTS " + expected.retailPts);
+                    int expectedMaterialCurveCount =
+                        ExpectedMaterialCurveBindingCount(rootIndex);
+                    Require(root.materialCurveSample != null &&
+                        root.materialCurveSample.sourceBindingCount ==
+                            expectedMaterialCurveCount,
+                        "Material curve source census drifted for " +
+                        Roots[rootIndex].key + " at PTS " + expected.retailPts);
+                    if (expectedActive)
+                    {
+                        Require(root.materialCurveSample.appliedBindingCount ==
+                            expectedMaterialCurveCount &&
+                            root.materialCurveSample.values != null &&
+                            root.materialCurveSample.values.Length ==
+                                expectedMaterialCurveCount &&
+                            !string.IsNullOrEmpty(root.materialCurveSample.stateSha256) &&
+                            root.materialCurveSample.stateSha256 != "inactive",
+                            "Active material curves were not fully applied for " +
+                            Roots[rootIndex].key + " at PTS " + expected.retailPts);
+                        materialCurveStateHashes[rootIndex].Add(
+                            root.materialCurveSample.stateSha256);
+                        rootPngHashes[rootIndex].Add(root.frame.pngSha256);
+                    }
+                    else
+                    {
+                        Require(root.materialCurveSample.appliedBindingCount == 0 &&
+                            root.materialCurveSample.values != null &&
+                            root.materialCurveSample.values.Length == 0 &&
+                            root.materialCurveSample.stateSha256 == "inactive",
+                            "Inactive material curve state is not fail-closed for " +
+                            Roots[rootIndex].key);
+                    }
                     ValidateFrame(root.frame, outputDirectory, expected.retailPts,
                         Roots[rootIndex].key + "_only", expectedCaptureInvocationSerial++);
                     if (!expectedActive)
@@ -1763,12 +1844,45 @@ namespace EndfieldGraphShaderLabEditor
             for (int index = 0; index < Roots.Length; index++)
                 Require(foundVisibleRoot[index],
                     "No root-only capture produced visible pixels for " + Roots[index].key);
+            for (int index = 0; index < Roots.Length; index++)
+                Require(materialCurveStateHashes[index].Count > 1,
+                    "Material curve state did not change across active anchors for " +
+                    Roots[index].key);
+            for (int index = 0; index < Roots.Length; index++)
+                Require(rootPngHashes[index].Count > 1,
+                    "Rendered root PNG did not change across active anchors for " +
+                    Roots[index].key + "; material curves changed but visual output did not");
+            Require(MaterialCurveStateDiffersAtAnchors(
+                    manifest, 0, 38167, 38183) &&
+                MaterialCurveStateDiffersAtAnchors(
+                    manifest, 1, 40834, 40867) &&
+                MaterialCurveStateDiffersAtAnchors(
+                    manifest, 2, 43200, 43600),
+                "Material curve state did not change at the expected dynamic anchors");
             Require(actorPoseHashes.Count > 0 &&
                 actorPoseHashes.Values.Any(values => values.Count > 1),
                 "Actor skinned-pose witness did not change across capture anchors");
             Require(expectedCaptureInvocationSerial ==
                 1L + Anchors.Length * (4 + Roots.Length),
                 "Actor-composed capture invocation serial census drifted");
+        }
+
+        private static bool MaterialCurveStateDiffersAtAnchors(
+            ActorComposedManifest manifest,
+            int rootIndex,
+            int firstPts,
+            int secondPts)
+        {
+            ActorComposedCaptureRecord first = manifest.captures.Single(
+                value => value != null && value.retailPts == firstPts);
+            ActorComposedCaptureRecord second = manifest.captures.Single(
+                value => value != null && value.retailPts == secondPts);
+            return first.roots[rootIndex].effectActive &&
+                second.roots[rootIndex].effectActive &&
+                first.roots[rootIndex].materialCurveSample != null &&
+                second.roots[rootIndex].materialCurveSample != null &&
+                first.roots[rootIndex].materialCurveSample.stateSha256 !=
+                    second.roots[rootIndex].materialCurveSample.stateSha256;
         }
 
         private static void ValidateRendererFingerprintWitness(
@@ -2073,6 +2187,8 @@ namespace EndfieldGraphShaderLabEditor
             public Renderer[] actorRenderers;
             public GameObject[] effects;
             public EndfieldRecoveredStaticMeshEffectSource[] markers;
+            public EndfieldLiZhiyanMaterialCurveSampler[] materialCurveSamplers;
+            public MaterialCurveSample[] materialCurveSamples;
             public GameObject[] peakEffects;
             public EndfieldRecoveredParticleEffectSource[] peakMarkers;
             public List<PeakBakeProxy> peakBakeProxies;
@@ -2268,6 +2384,7 @@ namespace EndfieldGraphShaderLabEditor
             public string sharedClipName;
             public long sharedClipPathId;
             public float sharedClipStopTimeSeconds;
+            public string materialCurveSampling;
             public RootManifestRow[] roots;
             public ActorComposedCaptureRecord[] captures;
         }
@@ -2350,6 +2467,7 @@ namespace EndfieldGraphShaderLabEditor
             public string effectState;
             public float clipSampleSeconds;
             public bool clipClampedAfterEnd;
+            public MaterialCurveSample materialCurveSample;
             public FrameRecord frame;
         }
 
