@@ -82,7 +82,7 @@ list`, and the callback executes global scene-color/vector/texture setup,
 fullscreen draw, the ordinary forward renderer list, then the ECS renderer
 list. The callback contains no constant-buffer publication. The generated
 native ABI contract is `lizhiyan_after_dof_native_abi.json`, SHA-256
-`C1B6D052DB9A564C7A25691C08B9809990AEF523259E970591484D79136B38B9`.
+`A95237D602EE51E6673898417E9910AB3A92029F8D24FD06AE9F513CAAE14169`.
 
 The deferred ECS producer is now closed as well. Current-build
 `HGRenderPathDeferred.OnPreRendering` recreates the 32-bit handle each camera
@@ -133,6 +133,17 @@ handler `0x181047160`. This chain constructs command/resource state but still
 contains no survivor loop, transparent sort, indirect draw, or queue submit.
 HGTree opcode `0x55`, singleton `+0xc0`, 24-byte slots, and consumer
 `0x18106aae0` are a separate family and are not evidence for HGMesh execution.
+
+The downstream ordering stage is now positively identified. Resource builder
+`0x18104e920` selects one of 14 post-filter workers. The workers assemble
+accepted 64-byte records and call in-place sorter `0x181043bd0`; comparator
+`0x180fe0740` lexicographically orders the first 16 bytes as unsigned bytes.
+The publication path skips records with `+0x20 == 0xffffffff`, resolves their
+IDs through `0x181059410`, and appends resolved pointers through
+`0x18105e350`. This proves a survivor-record → sort → resource-publication
+pipeline. The 16-byte key's meaning is not yet recovered, so this must not be
+called transparent depth sorting, material sorting, or batch sorting yet.
+No indirect draw or backend queue submission has been reached.
 
 The normal current-build per-object request is now source-closed to `47`:
 pipeline construction and every normal `ConfigureKeywords` call write baked
