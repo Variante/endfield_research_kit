@@ -4673,9 +4673,8 @@ body.is-resizing-filter * {
   cursor: pointer;
   font-size: 12px;
   font-weight: 800;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.02em;
   list-style: none;
-  text-transform: uppercase;
   user-select: none;
 }
 
@@ -4737,23 +4736,22 @@ body.is-resizing-filter * {
 .gameplay-active-skill-header,
 .gameplay-active-skill-row {
   display: grid;
-  grid-template-columns: minmax(220px, 1.2fr) minmax(200px, 1fr) minmax(190px, 0.9fr);
-  gap: 14px;
+  grid-template-columns: minmax(300px, 1.35fr) minmax(260px, 1fr) minmax(240px, 0.9fr);
+  gap: 18px;
 }
 
 .gameplay-active-skill-header {
-  padding: 8px 14px;
+  padding: 10px 16px;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   background: rgba(var(--fg-rgb), 0.03);
   border-bottom: 1px solid var(--border);
 }
 
 .gameplay-active-skill-row {
-  padding: 14px;
+  padding: 18px 16px;
   background: var(--bg-3);
 }
 
@@ -4791,14 +4789,15 @@ body.is-resizing-filter * {
 .gameplay-section h2 {
   margin: 0 0 10px;
   color: var(--accent);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 .gameplay-description {
   margin: 0;
+  font-size: 13px;
+  line-height: 1.7;
   overflow-wrap: anywhere;
 }
 
@@ -4911,7 +4910,7 @@ body.is-resizing-filter * {
 
 .gameplay-buff-card {
   min-width: 0;
-  padding: 8px 10px;
+  padding: 10px 12px;
   border: 1px solid rgba(var(--fg-rgb), 0.12);
   border-radius: 7px;
   background: rgba(var(--fg-rgb), 0.025);
@@ -4933,7 +4932,7 @@ body.is-resizing-filter * {
 .gameplay-buff-card summary span,
 .gameplay-buff-source,
 .gameplay-evidence-note {
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .gameplay-buff-card > .gameplay-blackboard,
@@ -5091,13 +5090,13 @@ body.is-resizing-filter * {
   display: inline-flex;
   max-width: 100%;
   gap: 5px;
-  padding: 2px 7px;
+  padding: 3px 8px;
   border: 1px solid rgba(var(--fg-rgb), 0.11);
   border-radius: 999px;
   background: rgba(var(--fg-rgb), 0.035);
   color: var(--text);
   font-family: ui-monospace, Consolas, monospace;
-  font-size: 11px;
+  font-size: 12px;
   overflow-wrap: anywhere;
 }
 
@@ -5150,10 +5149,84 @@ body.is-resizing-filter * {
 .gameplay-subheading {
   margin: 12px 0 6px;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.gameplay-subheading-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.gameplay-status-badge,
+.gameplay-projectile-status,
+.gameplay-integration-confidence {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  padding: 2px 7px;
+  border: 1px solid rgba(var(--fg-rgb), 0.16);
+  border-radius: 999px;
+  color: var(--muted);
+  background: var(--bg-3);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.gameplay-status-badge.is-exact,
+.gameplay-projectile-status.is-complete,
+.gameplay-integration-confidence.is-direct {
+  border-color: rgba(var(--accent-2-rgb), 0.34);
+  color: var(--accent-2);
+  background: rgba(var(--accent-2-rgb), 0.06);
+}
+
+.gameplay-status-badge.is-partial,
+.gameplay-integration-confidence.is-inferred {
+  border-color: rgba(var(--accent-rgb), 0.34);
+  color: var(--accent);
+  background: rgba(var(--accent-rgb), 0.06);
+}
+
+.gameplay-status-badge.is-unresolved {
+  border-style: dashed;
+}
+
+.gameplay-evidence-status-row {
+  display: flex;
+  margin-top: 8px;
+}
+
+.gameplay-guidance {
+  margin: 0;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(var(--accent-rgb), 0.035);
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.gameplay-guidance > summary {
+  cursor: pointer;
+  color: var(--text);
+  font-weight: 700;
+}
+
+.gameplay-guidance > p {
+  max-width: 920px;
+  margin: 8px 0 2px;
+  line-height: 1.65;
+}
+
+.gameplay-buff-guidance {
+  margin-bottom: 8px;
+  border: 1px solid rgba(var(--fg-rgb), 0.1);
+  border-radius: 7px;
 }
 
 .gameplay-character-asset-strip {
@@ -8282,12 +8355,7 @@ table {
 }
 
 .gameplay-integration-confidence {
-  padding: 2px 5px;
-  border: 1px solid rgba(var(--fg-rgb), 0.14);
-  border-radius: 4px;
-  color: var(--muted);
-  font-size: 10px;
-  white-space: nowrap;
+  font-size: 11px;
 }
 
 .gameplay-integration-confidence.is-direct {
@@ -8377,12 +8445,8 @@ table {
 
 .gameplay-projectile-status {
   flex: 0 0 auto;
-  padding: 2px 5px;
-  border: 1px solid rgba(var(--accent-rgb), 0.3);
-  border-radius: 4px;
   color: var(--accent);
-  font-size: 10px;
-  white-space: nowrap;
+  font-size: 11px;
 }
 
 .gameplay-projectile-status.is-complete {
