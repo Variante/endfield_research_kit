@@ -2268,6 +2268,19 @@ only stable interpretation and priorities.
    physical Vulkan image-view/descriptor immediately before a particular VFX
    draw remains unobserved, so do not
    promote native or visible admission. Prioritize another source-owned layer.
+   The remaining unbound Li requests are `start_05/06/07/09/10`. `start_09`
+   is source-closed as `Beyond.Rendering.EntityVFXDissolveAsset` PathID
+   `6630846240525961646`, owned by the 10-second EffectSetting PathID
+   `4869158341031029158`. It references exact texture
+   `T_fx_Totem_zr001_M`, renderer mask 10240, local +X cutoff, dissolve 1-to-0,
+   edge 0.07, and a cutoff step to 1.05 at normalized time 0.67302644. Its
+   particle/Animator/Renderer PPtrs are intentionally empty: a runtime
+   Entity-VFX registry maps the renderer mask to geometry/material targets.
+   Retail frames show Li fully visible before the PTS-40000 teal slabs grow,
+   so classify start_09 as missing reveal completeness rather than raised-hand
+   ownership. The exact recovery gap is rendererMask 10240 -> registry target
+   renderers/material property binding; never dissolve every actor renderer as
+   a substitute.
    All 12 controller requests are preserved; the other 11
    remain explicitly unbound. Its `38-47 s` retail slot, especially the
    hand-adjacent teal layer near 40 seconds, is the current strongest visual
