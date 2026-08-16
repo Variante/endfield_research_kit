@@ -33,7 +33,8 @@ namespace EndfieldGraphShaderLabEditor
         private const string MaterialRoot = GeneratedRoot + "/Materials";
         private const string PrefabPath = GeneratedRoot + "/Prefabs/" +
             "P_fxui_lizhiyan_overview_start_01_DIAGNOSTIC.prefab";
-        private const string ShaderName = "Endfield/Recovered/VFXBaseV2SampleStack";
+        private const string ShaderName =
+            "Endfield/Recovered/LiZhiyanStart01Diagnostic";
         private const string ExpectedSchema =
             "endfield.lizhiyan-overview-start01-effect.v1";
         private const string ExpectedEffect =
@@ -322,8 +323,23 @@ namespace EndfieldGraphShaderLabEditor
                 : keywords.Cast<object>()
                     .Select(value => Convert.ToString(value, CultureInfo.InvariantCulture))
                     .ToArray();
+            Require(material.HasProperty("_LiMaterialMode"),
+                "Li diagnostic shader lost _LiMaterialMode");
+            material.SetFloat("_LiMaterialMode", MaterialMode(name));
             EditorUtility.SetDirty(material);
             return material;
+        }
+
+        private static float MaterialMode(string materialName)
+        {
+            if (materialName.EndsWith("_09", StringComparison.Ordinal))
+                return 9f;
+            if (materialName.EndsWith("_10", StringComparison.Ordinal))
+                return 10f;
+            if (materialName.EndsWith("_11", StringComparison.Ordinal))
+                return 11f;
+            throw new InvalidOperationException(
+                "Unexpected Li Zhiyan diagnostic material identity: " + materialName);
         }
 
         private static void ApplyFloats(
@@ -543,7 +559,10 @@ namespace EndfieldGraphShaderLabEditor
             marker.sourceAnimationTargetPaths = targetPaths;
             marker.sourceAnimationMaterialPropertyHashes = propertyHashes;
             marker.sourceAnimationMaterialProperties = properties;
-            marker.sourceAnimationBindingsResolved = true;
+            // The clip asset is imported and attached, but only 21 of the 53
+            // source curve records are represented by this static diagnostic
+            // route. Keep the binding gate closed explicitly.
+            marker.sourceAnimationBindingsResolved = false;
             marker.sourceAnimationPayloadApplied = false;
             marker.sourceAggregateSha256 = ExpectedAggregateSha256;
             marker.visibleAdmission = false;
@@ -553,10 +572,12 @@ namespace EndfieldGraphShaderLabEditor
                 "native Texture2D mip payloads and Unity import parity are not pinned",
                 "three VFXBaseV2 material variants lack exact selected DXBC/descriptor/draw admission",
                 "normal runtime binding remains intentionally disabled for this diagnostic prefab",
+                "animation bindings remain partial: 21/53 source curves represented",
             };
             marker.materialExecutionBoundary =
                 "diagnostic_approximation_only: shader-supported serialized properties " +
-                "applied to Endfield/Recovered/VFXBaseV2SampleStack; exact variants not admitted";
+                "applied to Endfield/Recovered/LiZhiyanStart01Diagnostic; " +
+                "animation_bindings=21/53_partial; exact variants not admitted";
             marker.hierarchyNodes = markerNodes.ToArray();
             marker.staticMeshNodes = markerMeshNodes.ToArray();
 

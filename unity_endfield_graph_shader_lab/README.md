@@ -4088,16 +4088,34 @@ The separate start_01 diagnostic prefab importer now hash-checks and imports
 the exact shared OBJ, matching Animator FBX, eight converted textures, and
 resolved animation clip. It reconstructs the four serialized nodes and their
 Renderer/Filter/Material PathIDs, then applies supported material properties
-to `VFXBaseV2SampleStack`. The current build applies 171 properties and reports
-726 unsupported entries. This prefab is never registered as a normal actor
-effect and keeps source/native payload, exact shader, and visible admission
-false.
+to the Li-specific `LiZhiyanStart01Diagnostic` approximation. M09/M10 route
+Mask/Blend/Dissolve through Sample0/1/2; M11 routes
+Disturb/Mask/Blend/Dissolve through Sample0/1/2/3. The current build applies
+213 properties and reports 684 unsupported entries. Only 21/53 shared-clip
+curves bind to this start_01 hierarchy; the rest address start_02/start_03, so
+the marker and validator keep animation binding partial. This prefab is never
+registered as a normal actor effect and keeps source/native payload, exact
+shader, and visible admission false.
 
 `tools/build_lizhiyan_visual_capture_spec.py` pins the deterministic comparison
 clock and 19 retail PTS anchors. Candidate PTS 37967 maps to local zero;
 start_01/_02/_03 end at 40167/42967/44967, and the shared clip ends nearest
 44334. These are diagnostic alignment coordinates, not proof of the original
 request timestamp or draw ownership.
+`EndfieldLiZhiyanVisualCaptureHarness` samples those anchors on a deterministic
+camera using a real graphics backend. Do not pass `-nographics`: the harness
+rejects Unity's Null device because it writes blank PNGs without rasterizing.
+On D3D12, start_01 is visibly cyan at PTS 37967--38183 with about 4.06% frame
+coverage, is fully dissolved by PTS 39934, and remains blank after its lifetime;
+the 19-frame set has three hashes. The capture preserves source queue 3704 and
+only disables soft blend on transient materials because no retail scene depth
+exists. It is diagnostic-only, does not compare retail pixels, and does not
+raise visible admission.
+Retail queue 3704 belongs to the source-closed 3660--3740
+`AfterPostprocessTransparent` phase. In the exact SceneMV route that range is
+owned by the after-post callback, not main transparent. This isolated shader
+does not request the exact MRT route; preserving 3704 here therefore proves a
+diagnostic draw only, not native after-DOF ECS-list or HGMesh-record ownership.
 The same contract pins `SetManual(bool)`, `ManualEvaluate(float)`,
 `SyncProgress(float)`, time-scale/start-duration/start-
 scale setters, Stop, OnDisable, and OnRelease. Their decoded fallback bodies

@@ -1746,14 +1746,35 @@ only stable interpretation and priorities.
    from normal actor bindings. Its importer hash-checks the exact shared OBJ,
    matching Animator FBX, eight PNGs, and resolved `.anim`; rebuilds the four
    serialized child transforms and Renderer/Filter/Material PathIDs; and uses
-   `VFXBaseV2SampleStack` only as a labeled visual approximation. Unity applies
-   171 supported serialized material properties and reports 726 unsupported
-   properties. Native payload, exact shader, retail ABI, HGTree ownership, and
-   visible admission all remain false.
+   the Li-specific `LiZhiyanStart01Diagnostic` shader only as a labeled visual
+   approximation. Its explicit routing preserves the source distinction:
+   M09/M10 map Sample0/1/2 to Mask/Blend/Dissolve, while M11 maps
+   Sample0/1/2/3 to Disturb/Mask/Blend/Dissolve. Unity applies 213 supported
+   serialized material properties and reports 684 unsupported properties.
+   Only 21 of the shared clip's 53 curves bind to start_01; the remaining paths
+   belong to start_02/start_03, so the binding gate remains explicitly partial.
+   Native payload, exact shader, retail ABI, HGTree ownership, and visible
+   admission all remain false.
    Deterministic comparison uses candidate PTS 37967 as diagnostic local zero
    and publishes 19 capture anchors through the start_01/_02/_03 lifetime and
    shared-clip endpoints. This mapping is a repeatable video alignment, not
    proof of the original effect-request epoch.
+   The GPU-backed capture harness now proves a narrow visible start_01 loop:
+   D3D12 renders non-background pixels at PTS 37967--38183 (about 4.06% frame
+   coverage) and the source material curves have fully dissolved by PTS 39934.
+   Nineteen captures produce three hashes; all post-lifetime frames are blank.
+   The harness rejects Unity's Null graphics backend because `-nographics`
+   produces valid-looking PNG files without executing rasterization. It keeps
+   source queue 3704 and disables soft blend only in transient capture materials
+   because the isolated scene has no retail depth buffer. These captures do not
+   compare retail pixels and cannot raise visible admission.
+   Queue 3704 itself is source-closed as the native
+   `AfterPostprocessTransparent` (3660--3740) phase. The recovered SceneMV path
+   likewise excludes that range from main transparent and assigns it to its
+   after-post callback. The isolated Li shader does not request that exact MRT
+   path, so its successful ordinary-transparent capture at 3704 proves only the
+   diagnostic draw. It does not prove that Li enters the native after-DOF ECS
+   renderer list or produces an accepted 64-byte HGMesh record.
    The managed graph control is now closed beyond construction. `_AddClip`
    connects each non-null clip from output port zero to mixer input
    `animationState-1`; Li's null loop/end return before connection. On every
