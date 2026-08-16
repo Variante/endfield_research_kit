@@ -270,13 +270,16 @@ namespace EndfieldGraphShaderLabEditor
                 L.Str(contextOwnership, "nestedCleanupVA") == "0x18031af80" &&
                 L.Str(contextOwnership, "contextVtableVA") == "0x181e1c328" &&
                 L.Str(contextOwnership, "contextDestructorVA") == "0x180fc2e00" &&
-                L.Str(contextOwnership, "contextConstructionVA") == "0x180fc3500" &&
+                L.Str(contextOwnership, "contextConstructorVA") == "0x180fc21d0" &&
+                L.Str(contextOwnership, "contextInitializationVA") == "0x180fc3500" &&
                 L.Str(contextOwnership, "managerAllocation").Contains("0x70 bytes") &&
                 L.Str(contextOwnership, "managerAllocation").Contains("0xb5") &&
                 L.Str(contextOwnership, "managerResetVA") == "0x181060330" &&
                 L.Str(contextOwnership, "managerDestructionVA") == "0x1810459f0" &&
                 L.Str(contextOwnership, "managerNestedEntryDestructionVA") == "0x18105fe30" &&
-                L.Str(contextOwnership, "provenBoundary").Contains("registry factory identity") &&
+                L.Str(contextOwnership, "registryFactoryPath").Contains("[descriptor+0x08]") &&
+                L.Str(contextOwnership, "registryFactoryBoundary").Contains("initialized dynamically") &&
+                L.Str(contextOwnership, "provenBoundary").Contains("allocator callback identity") &&
                 L.Str(commandConsumer, "opcode") == "0x4e" &&
                 L.Str(commandConsumer, "managerSingletonOffset") == "0xb0" &&
                 L.Long(commandConsumer, "slotStride") == 16 &&
@@ -342,6 +345,10 @@ namespace EndfieldGraphShaderLabEditor
                 L.Str(commandInterpreter, "opcode2731Layout").Contains("no payload") &&
                 L.Str(commandInterpreter, "batchBoundary").Contains("0x1813aea00") &&
                 L.Str(commandInterpreter, "sequenceBoundary").Contains("no static producer edge guarantees") &&
+                L.Str(commandInterpreter, "handoffWriterOrder").Contains("0x181048848") &&
+                L.Str(commandInterpreter, "handoffWriterOrder").Contains("0x1810488dc") &&
+                L.Str(commandInterpreter, "handoffExcludedWriters").Contains("no front +0x2a0") &&
+                L.Str(commandInterpreter, "separateProducerCandidates").Contains("none shares a proven") &&
                 L.Str(commandInterpreter, "resourceToBindingState").Contains("original pointer unchanged") &&
                 L.Str(commandInterpreter, "resourceToBindingState").Contains("S+0x2a0") &&
                 L.Str(commandInterpreter, "provenBoundary").Contains("not draw opcodes") &&
@@ -350,17 +357,18 @@ namespace EndfieldGraphShaderLabEditor
                 L.Str(backendSelection, "vulkanDrawFlush").Contains("0x180843d60") &&
                 L.Str(backendSelection, "vulkanCommandCells").Contains("vkQueueSubmit") &&
                 L.Str(vulkanExecution, "descriptorUpdateRoute").Contains("vkUpdateDescriptorSetWithTemplate") &&
-                L.Str(vulkanExecution, "descriptorIdentityBoundary").Contains("0x2748 object") &&
+                L.Str(vulkanExecution, "descriptorIdentityBoundary").Contains("HGMesh handoff itself emits no 0x2730") &&
                 L.Str(vulkanExecution, "callbackListBuilders").Contains("+0xda8") &&
                 L.Str(vulkanExecution, "resourceBindingNode").Contains("index format") &&
                 L.Str(vulkanExecution, "pipelineDescriptorNode").Contains("descriptor-set") &&
                 L.Str(vulkanExecution, "indirectDrawNode").Contains("draw count 1") &&
+                L.Str(vulkanExecution, "hgmeshAttributionBoundary").Contains("must not be attributed") &&
                 L.Str(vulkanExecution, "masterList").Contains("+0x2b50") &&
                 L.Str(vulkanExecution, "resourceBinding").Contains("index and vertex") &&
                 L.Str(vulkanExecution, "indirectDraw").Contains("vkCmdDrawIndexedIndirect") &&
                 L.Str(vulkanExecution, "directDraw").Contains("vkCmdDraw(3,1,0,0)") &&
                 L.List(vulkanExecution["queueSubmitCallsites"]).Count == 2 &&
-                L.Str(vulkanExecution, "remainingIdentityEdge").Contains("particular 0x2731") &&
+                L.Str(vulkanExecution, "remainingIdentityEdge").Contains("same HGMesh publication resource") &&
                 L.Str(backendBoundary, "d3d12StaticBoundary").Contains("D3D12 support not compiled in!") &&
                 L.Str(observedBackend, "classification") == "observed_runtime_log" &&
                 L.Str(observedBackendSession, "graphicsBackend") == "Vulkan" &&
