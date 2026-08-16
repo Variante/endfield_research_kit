@@ -992,10 +992,11 @@ namespace EndfieldGraphShaderLab
             {
                 enableDynamicBatching = dynamicBatching,
                 enableInstancing = gpuInstancing,
-                // This is the exact retail HGRenderPipeline request. Unity
-                // then supplies unity_MatrixPreviousM and the motion-vector
-                // validity parameters through its engine-owned per-draw ABI.
-                perObjectData = PerObjectData.MotionVectors
+                // Retail initializes m_CurrentRendererConfigurationBakedLighting
+                // to 15 and GetPerObjectMotionVectorConfig returns 32 for every
+                // non-null HGCamera. Preserve the exact combined descriptor
+                // request (47); Unity owns the corresponding per-draw payloads.
+                perObjectData = (PerObjectData)47
             };
             for (int i = 1; i < shaderPasses.Length; i++)
                 drawingSettings.SetShaderPassName(i, shaderPasses[i]);

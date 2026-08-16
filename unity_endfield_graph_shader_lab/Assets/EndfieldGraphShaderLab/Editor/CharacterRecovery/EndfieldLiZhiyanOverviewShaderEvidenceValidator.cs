@@ -146,13 +146,23 @@ namespace EndfieldGraphShaderLabEditor
                     "endfield.lizhiyan-after-dof-native-abi.v1" &&
                 L.Str(native, "status") ==
                     "current_build_native_schedule_and_static_shader_abi_closed_live_draw_pending" &&
-                L.List(native["methods"]).Count == 6 &&
-                L.List(native["decisiveCalls"]).Count == 10,
+                L.List(native["methods"]).Count == 16 &&
+                L.List(native["decisiveCalls"]).Count == 12,
                 "Li Zhiyan native after-DOF contract identity drifted");
             var expectedMethods = new Dictionary<long, string>
             {
+                { 286728, "00ACC65F4685738CB190BF536900D5AE7B421F4A2CAEDC25C3D2D0B7E2EB3162" },
+                { 286724, "0D5928FA5F343C7F072A857C5B0FE6CA8943506877C71FA9A6257EF5F2983B7E" },
+                { 286739, "B5A2AB43A40014751793CA227CD2F535AEF7470A1F3E71A93B24297ED9C40FCC" },
+                { 286740, "525783A3D1731620269FBA6F156031EFDE5068FFA4ACC3FAFD1B4EFD0EA0948F" },
+                { 286741, "88DFB9FB0D8B0B867A507E41AB2123C6E2830262290A1AB10616FD3A55DA2421" },
+                { 284150, "DA8AB25AC903EEAE24FED48535F016BEA19C3BE7A21A7628C67BED63C7C83922" },
+                { 284093, "B0D85048FC518253694C8BD1FC9B9F40C7F14DAA87B95EB180419233B28DD59D" },
+                { 284103, "BD2E3852A86737D9F2732283AF677FA2A0F4209DD3FFB3F9476C957C67125A10" },
+                { 286702, "8C1488DC4A09BEB9F142B4EA2DD5CB7B98770D5DE48DA545E94655EE3538B329" },
                 { 287274, "319799A95260B1717084D16AA8C2E0CCAD668CEDF3E52E9465B99A31EC44A5E0" },
                 { 287316, "D54DCF38AC17E6062573C476BF988FF8CBEE70E89F2B02FB341E5588DA3612CC" },
+                { 288038, "4695B2B6C39CB3522C067976FCC2F2677BC94692382C5611EF9E2EA743F145C5" },
                 { 287324, "D49C4DE691A7B65184532D8C9E46E1209F35AF2A76C0E23FA82B8E35593011CC" },
                 { 288225, "76DC5D1B4730F4A5BB937F3776A776DE2A8E960B4BB4A47B983BA5F264555879" },
                 { 288226, "BBA699B59C1081CDF6870E95B3B17469DD0D8791234E166D1D403D85786E6F42" },
@@ -171,6 +181,10 @@ namespace EndfieldGraphShaderLabEditor
             Dictionary<string, object> rendererList = L.Dict(native["rendererList"]);
             Dictionary<string, object> stateBlock = L.Dict(rendererList["stateBlock"]);
             Dictionary<string, object> consumers = L.Dict(native["rendererConsumers"]);
+            Dictionary<string, object> perObjectData = L.Dict(rendererList["perObjectData"]);
+            Dictionary<string, object> screenCulling = L.Dict(rendererList["screenCulling"]);
+            Dictionary<string, object> screenDefaults = L.Dict(screenCulling["constructorDefaults"]);
+            Dictionary<string, object> passInputOffsets = L.Dict(rendererList["passInputOffsets"]);
             L.Require(L.Str(boundary, "callbackConstantBufferPublication") == "not_present" &&
                 L.Str(boundary, "callbackGlobalVectorAndTexturePublication") == "present" &&
                 !L.Bool(boundary, "serializedBindingsAreD3D12RootParameters") &&
@@ -182,6 +196,16 @@ namespace EndfieldGraphShaderLabEditor
                 !L.Bool(stateBlock, "hasValue") &&
                 rendererList["overrideMaterial"] == null &&
                 !L.Bool(rendererList, "excludeObjectMotionVectors") &&
+                L.Long(perObjectData, "bakedLightingConfig") == 15 &&
+                L.Long(perObjectData, "motionVectorConfigForNonNullHGCamera") == 32 &&
+                L.Long(perObjectData, "combined") == 47 &&
+                L.Float(screenDefaults, "ratio") == 0.005f &&
+                L.Float(screenDefaults, "distance") == 30.0f &&
+                L.List(screenCulling["layerNames"]).Count == 17 &&
+                L.Long(passInputOffsets, "bytes") == 160 &&
+                L.Str(passInputOffsets, "forwardTransparentAfterDOFECSList") == "0x04" &&
+                L.Str(passInputOffsets, "screenCullingLayerMask") == "0x08" &&
+                L.Str(passInputOffsets, "hgrp") == "0x98" &&
                 !L.Bool(consumers, "opaqueArgument") &&
                 L.Str(consumers, "frameSettingsGate") == "TransparentObjects" &&
                 L.Str(consumers, "survivorIdentity") ==

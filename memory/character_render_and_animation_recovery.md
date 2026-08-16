@@ -1513,10 +1513,15 @@ only stable interpretation and priorities.
    and callback, including the callback's fullscreen -> ordinary list -> ECS
    list chain. The downstream transparent descriptor is also closed before
    runtime culling: sorting `87`, named WorldUI removal, absent state block,
-   null override material, and false motion-vector exclusion. Unity now uses
+   null override material, and false motion-vector exclusion. Its normal
+   per-object flags are now exact `15 | 32 = 47`; Unity publishes the same
+   request. HGCamera defaults are ratio `0.005`, distance `30`, and a lazy mask
+   over 17 named layers. The selected Viewer camera has `0xffffffff` Unity
+   culling and no serialized HG override, but external mutation and the actual
+   lazy mask remain runtime facts. Unity now uses
    the matching optimized transparent sorting and named-layer policy. HG
-   screen-culling fields, live baked/motion per-object flags, ECS consumption,
-   and final survivors remain open. All six selected materials have `_IsSceneEffect=0` and
+   screen-culling instance values, the ECS-list producer, and final survivors
+   remain open. All six selected materials have `_IsSceneEffect=0` and
    `_EnableTransparentMV=0`, so `_VFXParams1` and transform history are safely
    bypassed rather than guessed. Exact inverse-VP soft depth, live
    root-signature/PSO, and renderer-list survivor identity remain missing.

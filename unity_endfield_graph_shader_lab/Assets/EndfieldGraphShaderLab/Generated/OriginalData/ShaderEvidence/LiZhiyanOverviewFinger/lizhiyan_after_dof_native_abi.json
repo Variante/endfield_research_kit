@@ -13,10 +13,104 @@
     "shaderContract": {
       "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/ShaderEvidence/LiZhiyanOverviewFinger/lizhiyan_overview_vfxbasev2_variants.json",
       "sha256": "1191F96B45FD11C47D31C71681B25E77B3DF2CBD2179F21B4D2854D3AD90796B"
+    },
+    "viewerScene": {
+      "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/Characters/Scenes/CharacterRecoveryViewer.unity",
+      "sha256": "BC9F4FBF023F76FFD06AB2AE6283A03127027A83049DB580C9678B2A7B633761"
     }
   },
   "codeRegistrationVA": "0x18b9217d0",
   "methods": [
+    {
+      "methodIndex": 286728,
+      "type": "HG.Rendering.Runtime.HGCamera",
+      "name": ".ctor",
+      "token": "0x06000e84",
+      "va": "0x1837dd570",
+      "functionEnd": "0x1837ddd44",
+      "functionBytes": 2004,
+      "functionSha256": "00ACC65F4685738CB190BF536900D5AE7B421F4A2CAEDC25C3D2D0B7E2EB3162"
+    },
+    {
+      "methodIndex": 286724,
+      "type": "HG.Rendering.Runtime.HGCamera",
+      "name": "get_screenCullingLayerMask",
+      "token": "0x06000e80",
+      "va": "0x183e68cb0",
+      "functionEnd": "0x183e68cd4",
+      "functionBytes": 36,
+      "functionSha256": "0D5928FA5F343C7F072A857C5B0FE6CA8943506877C71FA9A6257EF5F2983B7E"
+    },
+    {
+      "methodIndex": 286739,
+      "type": "HG.Rendering.Runtime.HGCamera",
+      "name": "Update",
+      "token": "0x06000e8f",
+      "va": "0x183100120",
+      "functionEnd": "0x183100171",
+      "functionBytes": 81,
+      "functionSha256": "B5A2AB43A40014751793CA227CD2F535AEF7470A1F3E71A93B24297ED9C40FCC"
+    },
+    {
+      "methodIndex": 286740,
+      "type": "HG.Rendering.Runtime.HGCamera",
+      "name": "BeginRender",
+      "token": "0x06000e90",
+      "va": "0x189b720e0",
+      "functionEnd": "0x189b72162",
+      "functionBytes": 130,
+      "functionSha256": "525783A3D1731620269FBA6F156031EFDE5068FFA4ACC3FAFD1B4EFD0EA0948F"
+    },
+    {
+      "methodIndex": 286741,
+      "type": "HG.Rendering.Runtime.HGCamera",
+      "name": "UpdateAllViewConstants",
+      "token": "0x06000e91",
+      "va": "0x189b74308",
+      "functionEnd": "0x189b74387",
+      "functionBytes": 127,
+      "functionSha256": "88DFB9FB0D8B0B867A507E41AB2123C6E2830262290A1AB10616FD3A55DA2421"
+    },
+    {
+      "methodIndex": 284150,
+      "type": "HG.Rendering.Runtime.HGRenderPipeline",
+      "name": "GetPerObjectMotionVectorConfig",
+      "token": "0x06000472",
+      "va": "0x189bc753c",
+      "functionEnd": "0x189bc759b",
+      "functionBytes": 95,
+      "functionSha256": "DA8AB25AC903EEAE24FED48535F016BEA19C3BE7A21A7628C67BED63C7C83922"
+    },
+    {
+      "methodIndex": 284093,
+      "type": "HG.Rendering.Runtime.HGRenderPipeline",
+      "name": ".ctor",
+      "token": "0x06000439",
+      "va": "0x183947230",
+      "functionEnd": "0x1839488e2",
+      "functionBytes": 5810,
+      "functionSha256": "B0D85048FC518253694C8BD1FC9B9F40C7F14DAA87B95EB180419233B28DD59D"
+    },
+    {
+      "methodIndex": 284103,
+      "type": "HG.Rendering.Runtime.HGRenderPipeline",
+      "name": "ConfigureKeywords",
+      "token": "0x06000443",
+      "va": "0x189bc6a38",
+      "functionEnd": "0x189bc6b7e",
+      "functionBytes": 326,
+      "functionSha256": "BD2E3852A86737D9F2732283AF677FA2A0F4209DD3FFB3F9476C957C67125A10"
+    },
+    {
+      "methodIndex": 286702,
+      "type": "HG.Rendering.Runtime.HGCamera",
+      "name": "get_enableMV",
+      "token": "0x06000e6a",
+      "va": "0x189b74654",
+      "functionEnd": "0x189b7469f",
+      "functionBytes": 75,
+      "functionSha256": "8C1488DC4A09BEB9F142B4EA2DD5CB7B98770D5DE48DA545E94655EE3538B329"
+    },
     {
       "methodIndex": 287274,
       "type": "HG.Rendering.Runtime.ForwardPassUtils",
@@ -36,6 +130,16 @@
       "functionEnd": "0x189bb346a",
       "functionBytes": 1578,
       "functionSha256": "D54DCF38AC17E6062573C476BF988FF8CBEE70E89F2B02FB341E5588DA3612CC"
+    },
+    {
+      "methodIndex": 288038,
+      "type": "HG.Rendering.Runtime.HGRenderPathScene",
+      "name": "RenderPostProcessPhase1",
+      "token": "0x060013a2",
+      "va": "0x189bffeb0",
+      "functionEnd": "0x189c009ef",
+      "functionBytes": 2879,
+      "functionSha256": "4695B2B6C39CB3522C067976FCC2F2677BC94692382C5611EF9E2EA743F145C5"
     },
     {
       "methodIndex": 287324,
@@ -128,6 +232,16 @@
       "label": "CreateTransparentRendererListDesc -> RendererListDesc.ctor",
       "callsite": "0x189c089a4",
       "target": "0x18b3f4a7c"
+    },
+    {
+      "label": "Phase1 -> HGCamera.get_screenCullingLayerMask",
+      "callsite": "0x189c0057c",
+      "target": "0x183e68cb0"
+    },
+    {
+      "label": "Phase1 -> TransparentAfterDOF.ConstructPass",
+      "callsite": "0x189c00740",
+      "target": "0x189bb2e40"
     }
   ],
   "rendererList": {
@@ -153,7 +267,61 @@
     },
     "overrideMaterial": null,
     "excludeObjectMotionVectors": false,
-    "perObjectData": "bakedLightingConfig | GetPerObjectMotionVectorConfig(hgCamera)",
+    "perObjectData": {
+      "bakedLightingConfig": 15,
+      "motionVectorConfigForNonNullHGCamera": 32,
+      "combined": 47,
+      "expression": "m_CurrentRendererConfigurationBakedLighting | GetPerObjectMotionVectorConfig(hgCamera)",
+      "normalBranchEvidence": "pipeline ctor and ConfigureKeywords write 15; get_enableMV returns true; motion helper returns 32",
+      "ifixBoundary": "patch ids 568, 462, and 463 can replace the normal branches"
+    },
+    "screenCulling": {
+      "constructorDefaults": {
+        "ratio": 0.005,
+        "distance": 30.0
+      },
+      "hgCameraOffsets": {
+        "ratio": "0x9d8",
+        "distance": "0x9dc"
+      },
+      "layerNames": [
+        "Default",
+        "TransparentFX",
+        "Ignore Raycast",
+        "Water",
+        "UI",
+        "Walkable",
+        "Climbable",
+        "Trigger",
+        "UIPP",
+        "UIModel",
+        "Building",
+        "UIInteract",
+        "WorldUI",
+        "Projectile",
+        "AbilityEntity",
+        "Terrain",
+        "IK"
+      ],
+      "layerMaskConstruction": "lazy LayerMask.GetMask of the 17 names",
+      "runtimeInstanceValues": "pending IFix/native mutation or selected-camera observation",
+      "unityEquivalent": "standard DrawRenderers exposes no HG screen-culling fields"
+    },
+    "passInputOffsets": {
+      "characterOutlineEnabled": "0x00",
+      "forwardTransparentAfterDOFECSList": "0x04",
+      "screenCullingLayerMask": "0x08",
+      "screenCullingRatio": "0x0c",
+      "screenCullingRatioDistance": "0x10",
+      "bakedLightConfig": "0x14",
+      "shadowResult": "0x18",
+      "cullingResults": "0x58",
+      "sceneColor": "0x68",
+      "sceneDepth": "0x78",
+      "sceneMV": "0x88",
+      "hgrp": "0x98",
+      "bytes": 160
+    },
     "liveInputsPending": [
       "cullingResults",
       "camera",
@@ -161,7 +329,7 @@
       "screenCullingRatioDistance",
       "screenCullingLayerMask",
       "outlineEnabled",
-      "bakedLightingConfig",
+      "screen-culling instance values",
       "survivorsAndSortOrder"
     ]
   },
@@ -283,6 +451,11 @@
     "visibleAdmission": false,
     "vfxParams1PublicationRequiredForSelectedMaterials": false,
     "transformHistoryRequiredForSelectedMaterials": false,
-    "reason": "all selected materials serialize _IsSceneEffect=0 and _EnableTransparentMV=0"
+    "reason": "all selected materials serialize _IsSceneEffect=0 and _EnableTransparentMV=0",
+    "selectedViewerCamera": {
+      "fileID": 1562276706,
+      "unityCullingMask": 4294967295,
+      "serializedHGScreenCullingOverrides": false
+    }
   }
 }
