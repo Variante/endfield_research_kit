@@ -319,9 +319,13 @@ The converted OBJ and serialized queue-3704 VFXBaseV2 material payloads exist.
 Animation-helper start clip PathID `7360398354216100382` resolves to converted
 `A_fxui__lizhiyan_overview_start_01` at 30 Hz with stop time 6.366667 and no
 AnimationEvents. All eight serialized Texture2D dependencies resolve through
-the AssetMap to converted PNGs. The clip contains 53 material float curves,
-but its 10 target paths and seven material properties survive only as hashes;
-mapping those bindings to the four reconstructed renderers remains required.
+the AssetMap to converted PNGs. The clip's 53 material float curves are now
+fully named: Unity `Animator.StringToHash` resolves four targets to start_01
+and six to start_02/start_03, while AnimeStudio's CRC28-plus-channel encoding
+resolves `_MainTex_ST.x/y/z/w`, `_TintColorAlpha`,
+`_DissolveScheduleOffset`, and `_DisturbUIntensity1`. The generated resolved
+clip imports as exactly 53 MeshRenderer curves with the expected ten paths and
+seven properties.
 Native mesh/texture import parity and
 shader/draw admission are not closed. The lab
 therefore records a `static_mesh_animated` contract but does not fabricate a
@@ -340,6 +344,30 @@ A requested English-only Claude Code second-opinion audit produced no output
 within roughly eight minutes and was terminated. It contributes no evidence;
 the remaining native-consumer question stays open under the local fail-closed
 boundary.
+
+The fixed-build managed consumer question is now narrower than that earlier
+boundary. Exact metadata/body mapping proves this chain:
+
+| Method | Token | VA | Role |
+|---|---:|---:|---|
+| `AnimatorBehaviourPlayEffect.OnStateEnter` | `0x06000DEF` | `0x186B85E54` | consumes the authored controller effect record |
+| `AnimatorBehaviourPlayEffectHelper.Add` | `0x06000DFA` | `0x186B859F4` | owns the live effect entry and starts its instance |
+| `EffectSetting.Init` | `0x06005C6D` | `0x183963ED0` | initializes the serialized EffectSetting |
+| `EffectSetting._InitLodData` | `0x06005C75` | `0x18339D530` | initializes animator/renderer/particle LOD rows |
+| `EffectSetting.PlayEffect` | `0x06005C7C` | `0x1834FC4D0` | dispatches `EffectLodCfg.Play` |
+| `EffectAnimation.Play` | `0x060059DA` | `0x1831DDA80` | drives the effect animation |
+| `EffectAnimation._CreatePlayableGraph` | `0x060059D0` | `0x183437F90` | constructs PlayableGraph, AnimationPlayableOutput, and mixer |
+| `EffectAnimation._AddClip` | `0x060059CD` | `0x183437D60` | creates AnimationClipPlayable |
+| `EffectAnimation._PlayAnimation` | `0x060059D1` | `0x183436AD0` | samples and advances the clip |
+
+The full build gate and broader lifecycle census remain in
+`overview_effect_owner_animator_negative_20260815.md`. For start_01, exact
+serialized LOD entries contain a root Animator and four MeshRenderers with all
+particle pointers null. This proves the managed static-mesh animation owner;
+it still does not join `EffectLodCfg.renderer` to a specific renderer-list,
+API-2 resource, descriptor, PSO, Vulkan draw/submit, or visible pixel. The
+published native catalog has exact VAs, bounded spans, head bytes, and direct
+calls but no per-method body SHA-256 values, so none are claimed here.
 
 The next positive proof is now an explicit runtime-capture contract rather
 than a generic request for “a capture.” On this exact build it must join one

@@ -32,6 +32,10 @@ ANIMATION_CLIP = (
     EXPORT / "convert_by_type/AnimationClip/"
     "A_fxui__lizhiyan_overview_start_01_p6625634E5C6BA21E.anim"
 )
+RESOLVED_ANIMATION_CLIP = (
+    LAB / "Assets/EndfieldGraphShaderLab/Generated/OriginalData/Effects/"
+    "A_fxui__lizhiyan_overview_start_01.anim"
+)
 OUTPUT = (
     LAB / "Assets/EndfieldGraphShaderLab/Generated/OriginalData/Effects/"
     "lizhiyan_overview_start_01_effect.json"
@@ -46,9 +50,32 @@ MATERIAL_PATHS = {
 }
 MESH_PATH_ID = -6840663686705882004
 ANIMATION_CLIP_PATH_ID = 7360398354216100382
+ANIMATION_TARGET_PATHS = {
+    100733734: ("P_fxui_lizhiyan_overview_start_03", "S_fx_shoutiaodai_01"),
+    524802392: ("P_fxui_lizhiyan_overview_start_02", "S_fx_lzy_fenweiqiliu_02"),
+    1182372393: (EFFECT_NAME, "S_fx_lzy_tiaodaifenwei_01 (4)"),
+    1485209883: ("P_fxui_lizhiyan_overview_start_03", "S_fx_shoutiaodai_01 (1)"),
+    1600299880: (EFFECT_NAME, "S_fx_lzy_tiaodaifenwei_01 (5)"),
+    1834271210: (EFFECT_NAME, "S_fx_lzy_tiaodaifenwei_01 (7)"),
+    1951396011: (EFFECT_NAME, "S_fx_lzy_tiaodaifenwei_01 (6)"),
+    2367030625: ("P_fxui_lizhiyan_overview_start_02", "S_fx_lzy_fenweiqiliu_02 (1)"),
+    2832407953: ("P_fxui_lizhiyan_overview_start_03", "S_fx_tuoweidisan_01"),
+    3206572003: ("P_fxui_lizhiyan_overview_start_02", "S_fx_lzy_fenweiqiliu_02 (3)"),
+}
+ANIMATION_MATERIAL_PROPERTIES = {
+    109495689: "_MainTex_ST.x",
+    377931145: "_MainTex_ST.y",
+    646366601: "_MainTex_ST.z",
+    914802057: "_MainTex_ST.w",
+    2250381253: "_DisturbUIntensity1",
+    2292127880: "_TintColorAlpha",
+    2316997392: "_DissolveScheduleOffset",
+}
 
 
-def animation_clip_contract(path: Path) -> dict[str, Any]:
+def animation_clip_contract(
+    path: Path, resolved_path: Path = RESOLVED_ANIMATION_CLIP, check: bool = False
+) -> dict[str, Any]:
     require(path.is_file(), f"start_01 converted AnimationClip missing: {path}")
     text = path.read_text(encoding="utf-8")
     name = re.search(r"(?m)^  m_Name: (.+)$", text)
@@ -75,6 +102,25 @@ def animation_clip_contract(path: Path) -> dict[str, Any]:
     property_hashes = sorted({int(row[0]) for row in bindings})
     require(len(path_hashes) == 10 and len(property_hashes) == 7,
             "start_01 AnimationClip hashed binding census drifted")
+    require(set(path_hashes) == set(ANIMATION_TARGET_PATHS),
+            "start_01 AnimationClip target-path mapping drifted")
+    require(set(property_hashes) == set(ANIMATION_MATERIAL_PROPERTIES),
+            "start_01 AnimationClip material-property mapping drifted")
+    resolved = text
+    for value, (_, target_path) in ANIMATION_TARGET_PATHS.items():
+        resolved = resolved.replace(f"path_{value}", target_path)
+    for value, property_name in ANIMATION_MATERIAL_PROPERTIES.items():
+        resolved = resolved.replace(f"material.{value}", f"material.{property_name}")
+    require("path_" not in resolved and
+            not re.search(r"attribute: material\.\d+", resolved),
+            "start_01 AnimationClip resolved binding output is incomplete")
+    if check:
+        require(resolved_path.is_file() and
+                resolved_path.read_text(encoding="utf-8") == resolved,
+                "start_01 resolved AnimationClip drifted")
+    else:
+        resolved_path.parent.mkdir(parents=True, exist_ok=True)
+        resolved_path.write_text(resolved, encoding="utf-8")
     return {
         "name": name.group(1),
         "sampleRate": float(sample_rate.group(1)),
@@ -85,9 +131,21 @@ def animation_clip_contract(path: Path) -> dict[str, Any]:
             "targetClassID": 23,
             "targetPathHashes": path_hashes,
             "materialPropertyHashes": property_hashes,
-            "status": "hash_only_target_paths_and_material_properties_unresolved",
+            "targetPaths": [
+                {"hash": value, "effectRoot": ANIMATION_TARGET_PATHS[value][0],
+                 "path": ANIMATION_TARGET_PATHS[value][1]}
+                for value in path_hashes
+            ],
+            "materialProperties": [
+                {"hash": value, "property": ANIMATION_MATERIAL_PROPERTIES[value]}
+                for value in property_hashes
+            ],
+            "currentEffectTargetPaths": 4,
+            "siblingEffectTargetPaths": 6,
+            "status": "all_hashes_resolved_shared_start01_start02_start03_clip",
         },
         "convertedAnim": file_artifact(path, "AnimationClipYaml"),
+        "resolvedUnityAnim": file_artifact(resolved_path, "ResolvedAnimationClipYaml"),
     }
 
 
@@ -256,7 +314,7 @@ def main() -> int:
     require(len(texture_reference_ids) == 8, "start_01 texture dependency census drifted")
     texture_dependencies = resolve_textures(texture_reference_ids)
     artifacts.extend(REPO_ROOT / row["convertedPng"]["path"] for row in texture_dependencies)
-    clip = animation_clip_contract(ANIMATION_CLIP)
+    clip = animation_clip_contract(ANIMATION_CLIP, check=args.check)
     artifacts.append(ANIMATION_CLIP)
 
     animator_id, (animator_path, animator) = next(iter(animators.items()))
@@ -323,7 +381,6 @@ def main() -> int:
             "blockedBy": [
                 "native Mesh payload and Unity import parity are not pinned",
                 "native Texture2D mip payloads and Unity import parity are not pinned",
-                "AnimationClip curve target-path and material-property hashes are not mapped to the four reconstructed renderers",
                 "three VFXBaseV2 material variants lack exact selected DXBC/descriptor/draw admission",
                 "static-mesh effect runtime binding kind is not implemented",
             ],

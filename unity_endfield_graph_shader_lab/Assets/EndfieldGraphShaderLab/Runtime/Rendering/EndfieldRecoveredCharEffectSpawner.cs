@@ -540,11 +540,30 @@ namespace EndfieldGraphShaderLab
                 !Mathf.Approximately(marker.sourceStartAnimationStopTime, 6.366667f) ||
                 marker.sourceAnimationTargetPathHashes == null ||
                 marker.sourceAnimationTargetPathHashes.Length != 10 ||
+                marker.sourceAnimationTargetPaths == null ||
+                marker.sourceAnimationTargetPaths.Length != 10 ||
                 marker.sourceAnimationMaterialPropertyHashes == null ||
                 marker.sourceAnimationMaterialPropertyHashes.Length != 7 ||
+                marker.sourceAnimationMaterialProperties == null ||
+                marker.sourceAnimationMaterialProperties.Length != 7 ||
                 !marker.sourceAnimationBindingsResolved)
             {
                 reason = "Static-mesh EffectSetting or animation payload is not applied.";
+                return false;
+            }
+            var expectedAnimationPaths = new HashSet<string>(new[] {
+                "S_fx_shoutiaodai_01", "S_fx_lzy_fenweiqiliu_02",
+                "S_fx_lzy_tiaodaifenwei_01 (4)", "S_fx_shoutiaodai_01 (1)",
+                "S_fx_lzy_tiaodaifenwei_01 (5)", "S_fx_lzy_tiaodaifenwei_01 (7)",
+                "S_fx_lzy_tiaodaifenwei_01 (6)", "S_fx_lzy_fenweiqiliu_02 (1)",
+                "S_fx_tuoweidisan_01", "S_fx_lzy_fenweiqiliu_02 (3)" });
+            var expectedAnimationProperties = new HashSet<string>(new[] {
+                "_MainTex_ST.x", "_MainTex_ST.y", "_MainTex_ST.z", "_MainTex_ST.w",
+                "_DisturbUIntensity1", "_TintColorAlpha", "_DissolveScheduleOffset" });
+            if (!expectedAnimationPaths.SetEquals(marker.sourceAnimationTargetPaths) ||
+                !expectedAnimationProperties.SetEquals(marker.sourceAnimationMaterialProperties))
+            {
+                reason = "Static-mesh animation path or material-property mapping drifted.";
                 return false;
             }
             if (marker.sourceGameObjectPathId != 1314393592276219621L ||

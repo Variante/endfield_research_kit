@@ -3990,9 +3990,14 @@ material payloads are pinned in `lizhiyan_overview_start_01_effect.json`.
 Start AnimationClip `A_fxui__lizhiyan_overview_start_01` (PathID
 `7360398354216100382`, 30 Hz, 6.366667 seconds, no AnimationEvents) and all
 eight referenced Texture2D identities plus converted PNGs are also closed.
-The clip still exposes 53 material float curves through 10 target-path hashes
-and seven material-property hashes whose source names are unavailable; those
-bindings are not yet mapped to the four reconstructed renderers.
+All 53 material float curves are now resolved. Unity's own
+`Animator.StringToHash` maps four paths to the start_01 renderers and six to
+the sibling start_02/start_03 mesh-effect roots, proving the three effects
+share this clip. AnimeStudio's CRC28-plus-channel encoding resolves the seven
+attributes to `_MainTex_ST.x/y/z/w`, `_TintColorAlpha`,
+`_DissolveScheduleOffset`, and `_DisturbUIntensity1`. The builder publishes a
+name-complete `.anim`, and Unity `AnimationUtility` imports exactly 53
+MeshRenderer curves with all ten paths and seven properties intact.
 Native mesh/texture payload parity, selected shader variants, and an admitted static-mesh importer/binding remain open,
 so no prefab is materialized and visible admission stays false. Do not route
 this effect through the particle marker or invent ParticleSystems.
@@ -4006,6 +4011,17 @@ aggregate, an empty blocker list, zero ParticleSystems, applied native
 mesh/texture/renderer payloads, and admitted exact shader variants. The current
 contract deliberately fails at `sourcePayloadApplied=false` and
 `visibleAdmission=false`; no start_01 prefab or controller binding is created.
+
+The pinned IL2CPP build now closes the managed consumer chain:
+`AnimatorBehaviourPlayEffect.OnStateEnter` publishes the authored request,
+`AnimatorBehaviourPlayEffectHelper.Add` creates/starts the effect instance,
+`EffectSetting` initializes and plays `EffectLodCfg`, and `EffectAnimation`
+builds a PlayableGraph with AnimationPlayableOutput and
+AnimationClipPlayable. For start_01 the serialized LOD rows prove a root
+Animator plus four MeshRenderers and null particle pointers. This rules out an
+invented AnimatorController and makes an EffectAnimation-compatible playable
+driver the intended lab implementation. The renderer pointer has not yet been
+joined to a specific renderer-list/API-2 record or final draw.
 
 One original dialog facial asset is now executable as a bounded source fixture:
 Zhuang Fangyi's 2.15-second

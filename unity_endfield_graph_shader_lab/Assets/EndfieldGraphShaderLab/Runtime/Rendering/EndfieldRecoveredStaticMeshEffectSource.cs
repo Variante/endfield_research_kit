@@ -34,7 +34,9 @@ namespace EndfieldGraphShaderLab
         public float sourceStartAnimationSampleRate;
         public float sourceStartAnimationStopTime;
         public long[] sourceAnimationTargetPathHashes = Array.Empty<long>();
+        public string[] sourceAnimationTargetPaths = Array.Empty<string>();
         public long[] sourceAnimationMaterialPropertyHashes = Array.Empty<long>();
+        public string[] sourceAnimationMaterialProperties = Array.Empty<string>();
         public bool sourceAnimationBindingsResolved;
         public bool sourceAnimationPayloadApplied;
         public string sourceAggregateSha256;

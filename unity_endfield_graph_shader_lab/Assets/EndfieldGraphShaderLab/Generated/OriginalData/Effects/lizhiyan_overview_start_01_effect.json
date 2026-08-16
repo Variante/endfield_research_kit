@@ -351,13 +351,103 @@
           2292127880,
           2316997392
         ],
-        "status": "hash_only_target_paths_and_material_properties_unresolved"
+        "targetPaths": [
+          {
+            "hash": 100733734,
+            "effectRoot": "P_fxui_lizhiyan_overview_start_03",
+            "path": "S_fx_shoutiaodai_01"
+          },
+          {
+            "hash": 524802392,
+            "effectRoot": "P_fxui_lizhiyan_overview_start_02",
+            "path": "S_fx_lzy_fenweiqiliu_02"
+          },
+          {
+            "hash": 1182372393,
+            "effectRoot": "P_fxui_lizhiyan_overview_start_01",
+            "path": "S_fx_lzy_tiaodaifenwei_01 (4)"
+          },
+          {
+            "hash": 1485209883,
+            "effectRoot": "P_fxui_lizhiyan_overview_start_03",
+            "path": "S_fx_shoutiaodai_01 (1)"
+          },
+          {
+            "hash": 1600299880,
+            "effectRoot": "P_fxui_lizhiyan_overview_start_01",
+            "path": "S_fx_lzy_tiaodaifenwei_01 (5)"
+          },
+          {
+            "hash": 1834271210,
+            "effectRoot": "P_fxui_lizhiyan_overview_start_01",
+            "path": "S_fx_lzy_tiaodaifenwei_01 (7)"
+          },
+          {
+            "hash": 1951396011,
+            "effectRoot": "P_fxui_lizhiyan_overview_start_01",
+            "path": "S_fx_lzy_tiaodaifenwei_01 (6)"
+          },
+          {
+            "hash": 2367030625,
+            "effectRoot": "P_fxui_lizhiyan_overview_start_02",
+            "path": "S_fx_lzy_fenweiqiliu_02 (1)"
+          },
+          {
+            "hash": 2832407953,
+            "effectRoot": "P_fxui_lizhiyan_overview_start_03",
+            "path": "S_fx_tuoweidisan_01"
+          },
+          {
+            "hash": 3206572003,
+            "effectRoot": "P_fxui_lizhiyan_overview_start_02",
+            "path": "S_fx_lzy_fenweiqiliu_02 (3)"
+          }
+        ],
+        "materialProperties": [
+          {
+            "hash": 109495689,
+            "property": "_MainTex_ST.x"
+          },
+          {
+            "hash": 377931145,
+            "property": "_MainTex_ST.y"
+          },
+          {
+            "hash": 646366601,
+            "property": "_MainTex_ST.z"
+          },
+          {
+            "hash": 914802057,
+            "property": "_MainTex_ST.w"
+          },
+          {
+            "hash": 2250381253,
+            "property": "_DisturbUIntensity1"
+          },
+          {
+            "hash": 2292127880,
+            "property": "_TintColorAlpha"
+          },
+          {
+            "hash": 2316997392,
+            "property": "_DissolveScheduleOffset"
+          }
+        ],
+        "currentEffectTargetPaths": 4,
+        "siblingEffectTargetPaths": 6,
+        "status": "all_hashes_resolved_shared_start01_start02_start03_clip"
       },
       "convertedAnim": {
         "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/AnimationClip/A_fxui__lizhiyan_overview_start_01_p6625634E5C6BA21E.anim",
         "bytes": 50328,
         "sha256": "A38212EF4C417647C3375EFA4432284E6F59E1221AE6C069452EC95A92734EA0",
         "objectType": "AnimationClipYaml"
+      },
+      "resolvedUnityAnim": {
+        "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/Effects/A_fxui__lizhiyan_overview_start_01.anim",
+        "bytes": 53313,
+        "sha256": "C1D7846FB29A9AF720B2760BA2EEA97B870CAC8DF101DADE797A2301778FF920",
+        "objectType": "ResolvedAnimationClipYaml"
       }
     },
     "loopAnimationClip": null,
@@ -5131,7 +5221,6 @@
     "blockedBy": [
       "native Mesh payload and Unity import parity are not pinned",
       "native Texture2D mip payloads and Unity import parity are not pinned",
-      "AnimationClip curve target-path and material-property hashes are not mapped to the four reconstructed renderers",
       "three VFXBaseV2 material variants lack exact selected DXBC/descriptor/draw admission",
       "static-mesh effect runtime binding kind is not implemented"
     ]
