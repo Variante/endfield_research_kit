@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -16,6 +17,7 @@ from build_lastrite_overview_head_effect_contract import (
     path_id,
     pptr,
     require,
+    resolve_textures,
     sha256,
     source_payload,
 )
@@ -26,6 +28,10 @@ SOURCE = REPO_ROOT / "scratch/character_recovery/next_effect_candidates/prefabs"
 EXPORT = REPO_ROOT / "export_full/recovered/AnimeStudio-cli/StreamingAssets"
 MATERIAL_ROOT = EXPORT / "json_by_type/Material"
 MESH = EXPORT / "convert_by_type/Mesh/S_fx_lzy_tiaodaifenwei_01_pA111149ECDFB5C6C.obj"
+ANIMATION_CLIP = (
+    EXPORT / "convert_by_type/AnimationClip/"
+    "A_fxui__lizhiyan_overview_start_01_p6625634E5C6BA21E.anim"
+)
 OUTPUT = (
     LAB / "Assets/EndfieldGraphShaderLab/Generated/OriginalData/Effects/"
     "lizhiyan_overview_start_01_effect.json"
@@ -40,6 +46,29 @@ MATERIAL_PATHS = {
 }
 MESH_PATH_ID = -6840663686705882004
 ANIMATION_CLIP_PATH_ID = 7360398354216100382
+
+
+def animation_clip_contract(path: Path) -> dict[str, Any]:
+    require(path.is_file(), f"start_01 converted AnimationClip missing: {path}")
+    text = path.read_text(encoding="utf-8")
+    name = re.search(r"(?m)^  m_Name: (.+)$", text)
+    sample_rate = re.search(r"(?m)^  m_SampleRate: ([0-9.]+)$", text)
+    stop_time = re.search(r"(?m)^    m_StopTime: ([0-9.]+)$", text)
+    events = re.search(r"(?m)^  m_Events: \[\]$", text)
+    require(name and name.group(1) == "A_fxui__lizhiyan_overview_start_01",
+            "start_01 AnimationClip name drifted")
+    require(sample_rate and float(sample_rate.group(1)) == 30.0,
+            "start_01 AnimationClip sample rate drifted")
+    require(stop_time and abs(float(stop_time.group(1)) - 6.366667) < 1e-7,
+            "start_01 AnimationClip stop time drifted")
+    require(events is not None, "start_01 AnimationClip events drifted")
+    return {
+        "name": name.group(1),
+        "sampleRate": float(sample_rate.group(1)),
+        "stopTime": float(stop_time.group(1)),
+        "events": [],
+        "convertedAnim": file_artifact(path, "AnimationClipYaml"),
+    }
 
 
 def load(path: Path) -> dict[str, Any]:
@@ -169,6 +198,7 @@ def main() -> int:
     artifacts.append(MESH)
 
     material_rows = []
+    texture_reference_ids: set[int] = set()
     for identity, path in sorted(MATERIAL_PATHS.items()):
         require(path.is_file(), f"start_01 material {identity} missing")
         data = load(path)
@@ -176,16 +206,38 @@ def main() -> int:
                 pptr(data.get("m_Shader")) == -1430105248647086886 and
                 int(data.get("m_CustomRenderQueue") or 0) == 3704,
                 f"start_01 material {identity} ABI drifted")
+        texture_references = []
+        texture_environments = ((data.get("m_SavedProperties") or {}).get("m_TexEnvs") or {})
+        for property_name, environment in sorted(texture_environments.items()):
+            texture = (environment or {}).get("m_Texture") or {}
+            texture_id = int(texture.get("m_PathID") or 0)
+            if not texture_id:
+                continue
+            texture_reference_ids.add(texture_id)
+            texture_references.append({
+                "property": property_name,
+                "fileID": int(texture.get("m_FileID") or 0),
+                "pathID": texture_id,
+                "scale": environment.get("m_Scale"),
+                "offset": environment.get("m_Offset"),
+            })
         material_rows.append({
             "pathID": identity,
             "name": data.get("m_Name"),
             "shaderPathID": pptr(data.get("m_Shader")),
             "customRenderQueue": int(data.get("m_CustomRenderQueue") or 0),
             "validKeywords": data.get("m_ValidKeywords") or [],
+            "textureReferences": texture_references,
             "payload": source_payload(data),
             "source": artifact(path, "Material"),
         })
         artifacts.append(path)
+
+    require(len(texture_reference_ids) == 8, "start_01 texture dependency census drifted")
+    texture_dependencies = resolve_textures(texture_reference_ids)
+    artifacts.extend(REPO_ROOT / row["convertedPng"]["path"] for row in texture_dependencies)
+    clip = animation_clip_contract(ANIMATION_CLIP)
+    artifacts.append(ANIMATION_CLIP)
 
     animator_id, (animator_path, animator) = next(iter(animators.items()))
     require(pptr(animator.get("m_GameObject")) == root_id, "start_01 Animator owner drifted")
@@ -198,7 +250,7 @@ def main() -> int:
 
     contract = {
         "schema": SCHEMA,
-        "status": "static_mesh_payload_closed_animation_clip_external_pending_visible_fail_closed",
+        "status": "static_mesh_animation_and_texture_sources_closed_visible_fail_closed",
         "effectName": EFFECT_NAME,
         "mountPoint": "",
         "summary": {
@@ -207,6 +259,7 @@ def main() -> int:
             "particleSystems": 0,
             "materials": 3,
             "uniqueMeshes": 1,
+            "uniqueTextureReferences": 8,
             "sourceAggregateSha256": aggregate.hexdigest().upper(),
         },
         "effectSetting": {
@@ -225,7 +278,8 @@ def main() -> int:
             "startAnimationClip": {
                 "fileID": int(animation_helper["startAnimationClip"]["m_FileID"]),
                 "pathID": ANIMATION_CLIP_PATH_ID,
-                "status": "external_target_unavailable",
+                "status": "converted_source_payload_closed",
+                **clip,
             },
             "loopAnimationClip": None,
             "endAnimationClip": None,
@@ -239,6 +293,7 @@ def main() -> int:
             "nativePayloadStatus": "converted_obj_present_native_mesh_payload_not_pinned",
         },
         "materials": material_rows,
+        "textureDependencies": texture_dependencies,
         "executionBoundary": {
             "bindingKind": "static_mesh_animated",
             "sourcePayloadApplied": False,
@@ -246,8 +301,8 @@ def main() -> int:
             "rendererFailClosedForUnrecoveredShader": True,
             "visibleAdmission": False,
             "blockedBy": [
-                "external start AnimationClip PathID 7360398354216100382 is unresolved",
                 "native Mesh payload and Unity import parity are not pinned",
+                "native Texture2D mip payloads and Unity import parity are not pinned",
                 "three VFXBaseV2 material variants lack exact selected DXBC/descriptor/draw admission",
                 "static-mesh effect runtime binding kind is not implemented",
             ],

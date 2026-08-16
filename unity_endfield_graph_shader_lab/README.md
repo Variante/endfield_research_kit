@@ -3987,8 +3987,10 @@ MeshFilter/MeshRenderer pairs, no ParticleSystems, one shared mesh
 `M_fxui__lizhiyan_overview_09/_10/_11` at queue 3704. Its EffectSetting,
 transforms, renderer state, converted OBJ, and three serialized VFXBaseV2
 material payloads are pinned in `lizhiyan_overview_start_01_effect.json`.
-External start AnimationClip PathID `7360398354216100382`, native mesh payload,
-selected shader variants, and a static-mesh runtime binding kind remain open,
+Start AnimationClip `A_fxui__lizhiyan_overview_start_01` (PathID
+`7360398354216100382`, 30 Hz, 6.366667 seconds, no AnimationEvents) and all
+eight referenced Texture2D identities plus converted PNGs are also closed.
+Native mesh/texture payload parity, selected shader variants, and a static-mesh runtime binding kind remain open,
 so no prefab is materialized and visible admission stays false. Do not route
 this effect through the particle marker or invent ParticleSystems.
 

@@ -179,20 +179,26 @@ namespace EndfieldGraphShaderLabEditor
             L.Require(
                 L.Str(contract, "schema") == "endfield.lizhiyan-overview-start01-effect.v1" &&
                 L.Str(contract, "status") ==
-                    "static_mesh_payload_closed_animation_clip_external_pending_visible_fail_closed" &&
+                    "static_mesh_animation_and_texture_sources_closed_visible_fail_closed" &&
                 L.Str(contract, "effectName") == "P_fxui_lizhiyan_overview_start_01" &&
                 L.Str(contract, "mountPoint") == string.Empty &&
                 L.Long(summary, "hierarchyNodes") == 5 &&
                 L.Long(summary, "staticMeshNodes") == 4 &&
                 L.Long(summary, "particleSystems") == 0 &&
                 L.Long(summary, "materials") == 3 &&
+                L.Long(summary, "uniqueTextureReferences") == 8 &&
                 L.Str(summary, "sourceAggregateSha256") ==
-                    "97B99E3B23FDFA6EE75B6009FC2E4B90D7DEA1F5EEB40A9822FEDC6396E0C4D8" &&
+                    "5B83D031736E9CE864F1D2BE021C0E1A04BCA29D11291A506AD9740ADC047511" &&
                 Mathf.Abs(L.Float(timing, "duration") - 2.2f) < 0.000001f &&
                 Mathf.Abs(L.Float(timing, "delay")) < 0.000001f &&
                 L.Long(startClip, "fileID") == 3 &&
                 L.Long(startClip, "pathID") == 7360398354216100382L &&
-                L.Str(startClip, "status") == "external_target_unavailable" &&
+                L.Str(startClip, "status") == "converted_source_payload_closed" &&
+                L.Str(startClip, "name") == "A_fxui__lizhiyan_overview_start_01" &&
+                Mathf.Abs(L.Float(startClip, "sampleRate") - 30.0f) < 0.000001f &&
+                Mathf.Abs(L.Float(startClip, "stopTime") - 6.366667f) < 0.000001f &&
+                L.List(startClip["events"]).Count == 0 &&
+                L.List(contract["textureDependencies"]).Count == 8 &&
                 L.Long(mesh, "pathID") == -6840663686705882004L &&
                 materialIds.SetEquals(new long[] {
                     -6912999194325832649L, 2993445828574428557L, 3282333668994552481L }) &&

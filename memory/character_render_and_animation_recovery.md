@@ -1650,8 +1650,10 @@ only stable interpretation and priorities.
    `S_fx_lzy_tiaodaifenwei_01`, and exact queue-3704 materials
    `M_fxui__lizhiyan_overview_09/_10/_11`. The source contract pins hierarchy,
    transforms, EffectSetting, renderer/filter payloads, converted OBJ, and
-   material payloads. External AnimationClip PathID `7360398354216100382`,
-   native mesh payload, exact selected shaders, and a static-mesh runtime
+   material payloads. AnimationClip PathID `7360398354216100382` is now closed
+   to `A_fxui__lizhiyan_overview_start_01` (30 Hz, 6.366667 seconds, no
+   AnimationEvents), and the eight referenced Texture2D identities and
+   converted PNGs are pinned. Native mesh/texture import parity, exact selected shaders, and a static-mesh runtime
    binding remain open; do not force it through the particle importer.
    Downstream HGMesh workers now prove a real ordering/publication stage:
    accepted 64-byte records are sorted in place by `0x181043bd0` using
