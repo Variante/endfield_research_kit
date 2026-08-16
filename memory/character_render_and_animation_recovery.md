@@ -1696,8 +1696,13 @@ only stable interpretation and priorities.
    playable node type `0x178`, attaches it, and returns a pointer/version
    handle. Stock mixer creation uses distinct node type `0x170` and a distinct
    initializer, proving it is not exact. Input count is applied afterward by
-   `SetInputCount`; default/null weights, input-count rejection, and allocator
-   failure behavior remain unresolved.
+   `SetInputCount`. Advanced and stock share the exact count/weight virtuals:
+   16-byte slots are zeroed on growth/reactivation, so each begins with a null
+   playable and weight zero; there is no automatic normalization. Nonnegative
+   counts are accepted subject to allocation, while negative counts diagnose.
+   The advanced initializer first runs stock initialization, then installs its
+   own root vtable and writes `0x0101` at node `+0x170`. Advanced-only virtual
+   slots, null-state transitions, and extreme allocation failure remain open.
    The complete control ABI is now pinned as well. `ManualEvaluate(float)`
    evaluates the graph, `SyncProgress(float)` derives a time and delegates to
    it, duration/scale setters refresh root speed, `OnDisable` stops, and
@@ -1734,6 +1739,11 @@ only stable interpretation and priorities.
    and requires `+0x50/+0x54` nonzero. The Li fields are ordinary
    MeshRenderers, and no evidence equates these offsets, so this is a stronger
    typed boundary rather than the missing HGTree identity join.
+   A complete direct-call census finds no GameAssembly `.text` caller of the
+   managed `Renderer.get_entityID` wrapper. UnityPlayer HGTree sites using a
+   vtable slot also numbered `+0x268` are context methods, not reads from an
+   ordinary Renderer object. The required link is therefore runtime-indirect
+   or absent from this managed route, not a missed direct caller.
    Downstream HGMesh workers now prove a real ordering/publication stage:
    accepted 64-byte records are sorted in place by `0x181043bd0` using
    comparator `0x180fe0740`, an unsigned lexicographic comparison over the

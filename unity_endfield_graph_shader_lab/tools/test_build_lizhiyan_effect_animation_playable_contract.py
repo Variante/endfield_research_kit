@@ -27,6 +27,13 @@ def test_topology() -> None:
     assert native_mixer["advancedNodeTypeId"] == "0x178"
     assert native_mixer["stockNodeTypeId"] == "0x170"
     assert native_mixer["handleLayout"]["meaningfulBytes"] == 12
+    inputs = native_mixer["sharedInputOperations"]
+    assert inputs["advancedAndStockShareVirtualTargets"] is True
+    assert inputs["slotStrideBytes"] == 16
+    assert inputs["defaultPlayable"] == "null"
+    assert inputs["defaultWeight"] == 0.0
+    assert inputs["automaticNormalization"] is False
+    assert native_mixer["initializers"]["advancedExtraWordValue"] == "0x0101"
     assert [row["pathID"] for row in topology["clipSlots"]] == [
         7360398354216100382, 0, 0
     ]
@@ -52,6 +59,7 @@ def test_topology() -> None:
     assert ownership["managedField"]["fieldToken"] == "0x04004F24"
     assert ownership["ordinaryRendererNativeIdentity"]["tableIndex"] == 1278
     assert ownership["ordinaryRendererNativeIdentity"]["nativeEntityIdOffset"] == "0x268"
+    assert ownership["ordinaryRendererNativeIdentity"]["directManagedCallersInGameAssemblyText"] == 0
     assert ownership["hgMeshRendererComparison"]["nativeEntityOffset"] == "0x50"
     assert ownership["hgMeshRendererComparison"]["ordinaryRendererEquivalent"] is False
     assert [row["rendererPathIDs"] for row in ownership["serializedBindings"]] == [
