@@ -1,7 +1,9 @@
 import json
+import io
 import tempfile
 import unittest
 from copy import deepcopy
+from contextlib import redirect_stderr
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -486,6 +488,54 @@ class GameplayRecoveryAuditTests(unittest.TestCase):
                 ]),
             )
             self.assertTrue(output.is_file())
+
+    def test_previous_occurrence_format_validation_fails_closed(self) -> None:
+        payload = fixture_payload()
+        previous = build_report(payload)
+        cases = (
+            ("status", "not-a-status"),
+            ("decodeStatus", "not-a-status"),
+            ("offset", "not-hex"),
+            ("bytes", 10),
+            ("tag", "not-hex"),
+            ("memberCount", 3),
+        )
+        for field, value in cases:
+            with self.subTest(field=field):
+                malformed = deepcopy(previous)
+                malformed["occurrences"][0][field] = value
+                report = build_report(payload, malformed)
+                self.assertEqual("error", report["comparison"]["status"])
+                self.assertIn("malformed", report["comparison"]["reason"])
+                self.assertEqual(field, report["comparison"]["field"])
+
+    def test_malformed_previous_json_writes_error_report_without_traceback(self) -> None:
+        payload = fixture_payload()
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "current.json"
+            previous = root / "previous.json"
+            output = root / "audit.json"
+            markdown = root / "audit.md"
+            source.write_text(json.dumps(payload), encoding="utf-8")
+            previous.write_text('{"schemaVersion":', encoding="utf-8")
+            stderr = io.StringIO()
+            with redirect_stderr(stderr):
+                result = main([
+                    "--input", str(source), "--previous", str(previous),
+                    "--output", str(output), "--markdown-output", str(markdown),
+                ])
+            self.assertEqual(1, result)
+            self.assertTrue(output.is_file())
+            self.assertTrue(markdown.is_file())
+            report = json.loads(output.read_text(encoding="utf-8"))
+            comparison = report["comparison"]
+            self.assertEqual("error", comparison["status"])
+            self.assertEqual("previous-report-load-failed", comparison["code"])
+            self.assertEqual(str(previous), comparison["path"])
+            self.assertIn("JSONDecodeError", comparison["actual"])
+            self.assertIn("comparison error", stderr.getvalue())
+            self.assertIn("previous-report-load-failed", stderr.getvalue())
 
     def test_comparison_reports_exact_to_partial_new_tag_and_member_count(self) -> None:
         previous_payload = fixture_payload()

@@ -18,6 +18,7 @@ import argparse
 import hashlib
 import json
 import re
+import sys
 from collections import Counter
 from pathlib import Path
 from typing import Any, Iterator
@@ -32,6 +33,15 @@ HEX_TOKEN_RE = re.compile(r"^0x[0-9a-fA-F]+$")
 SHA256_RE = re.compile(r"^[0-9a-fA-F]{64}$")
 FULL_ERROR_SAMPLE_LIMIT = 64
 FULL_BUFF_FILENAME_RE = re.compile(r"^buff_[A-Za-z0-9_]+\.json$")
+ACTION_STATUS_VALUES = frozenset({
+    "exact",
+    "partial",
+    "opaque",
+    "typed-failed",
+    "typed-decoder-failed",
+    "unknown",
+})
+DECIMAL_TEXT_RE = re.compile(r"^[0-9]+$")
 
 
 def _json_path(parts: tuple[object, ...]) -> str:
@@ -376,6 +386,17 @@ def _pair_histogram(rows: list[dict[str, Any]], first: str, second: str) -> dict
 def _validate_previous(
     previous: Any, language: str, scope: str,
 ) -> tuple[list[dict[str, Any]] | None, dict[str, Any]]:
+    if isinstance(previous, dict) and "__previousLoadError" in previous:
+        load_error = previous.get("__previousLoadError")
+        if not isinstance(load_error, dict):
+            load_error = {"actual": load_error}
+        return None, {
+            "status": "error",
+            "code": "previous-report-load-failed",
+            "reason": "previous report could not be loaded",
+            "path": load_error.get("path", "<unknown>"),
+            "actual": load_error.get("actual", "<unknown>"),
+        }
     if not isinstance(previous, dict):
         return None, {"status": "error", "reason": "previous report is not an object"}
     if previous.get("schemaVersion") != REPORT_SCHEMA_VERSION:
@@ -420,7 +441,7 @@ def _validate_previous(
     seen: set[str] = set()
     required = (
         "owner", "offset", "bytes", "tag", "actionType", "status",
-        "semanticStatus", "memberCount", "boundaryProof",
+        "decodeStatus", "semanticStatus", "memberCount", "boundaryProof",
     )
     for index, row in enumerate(rows):
         if not isinstance(row, dict):
@@ -431,6 +452,28 @@ def _validate_previous(
             return None, {
                 "status": "error", "reason": "previous occurrence is malformed",
                 "index": index, "missing": missing,
+            }
+        field_rules = (
+            ("offset", lambda value: isinstance(value, str) and HEX_TOKEN_RE.fullmatch(value) is not None, "hex string (0x...)"),
+            ("bytes", lambda value: isinstance(value, str) and DECIMAL_TEXT_RE.fullmatch(value) is not None, "non-negative decimal string"),
+            ("tag", lambda value: isinstance(value, str) and HEX_TOKEN_RE.fullmatch(value) is not None, "hex string (0x...)"),
+            ("memberCount", lambda value: isinstance(value, str) and DECIMAL_TEXT_RE.fullmatch(value) is not None, "non-negative decimal string"),
+            ("status", lambda value: isinstance(value, str) and value in ACTION_STATUS_VALUES, "known action decode status"),
+            ("decodeStatus", lambda value: isinstance(value, str) and value in ACTION_STATUS_VALUES, "known action decode status"),
+        )
+        for field, valid, expected in field_rules:
+            value = row.get(field)
+            if not valid(value):
+                return None, {
+                    "status": "error", "reason": "previous occurrence is malformed",
+                    "index": index, "field": field, "expected": expected,
+                    "actual": value,
+                }
+        if row["status"] != row["decodeStatus"]:
+            return None, {
+                "status": "error", "reason": "previous occurrence is malformed",
+                "index": index, "field": "status/decodeStatus",
+                "expected": row["status"], "actual": row["decodeStatus"],
             }
         if row.get("status") == "exact" and row.get("boundaryProof") != "typed-consumption":
             return None, {
@@ -949,7 +992,12 @@ def render_markdown(report: dict[str, Any]) -> str:
         )
         lines.append("")
     if comparison.get("status") in {"unavailable", "error"}:
-        lines.append(f"Previous report comparison failed: {escape(comparison.get('reason', 'unknown reason'))}.")
+        failure = comparison.get("reason", "unknown reason")
+        if comparison.get("path"):
+            failure = f"{failure} (path={comparison['path']})"
+        if comparison.get("actual"):
+            failure = f"{failure}; actual={comparison['actual']}"
+        lines.append(f"Previous report comparison failed: {escape(failure)}.")
     elif comparison.get("status") == "not-requested":
         lines.append("No previous report supplied.")
     elif not report.get("changeDiagnostics"):
@@ -1035,7 +1083,17 @@ def main(argv: list[str] | None = None) -> int:
         else f"gameplay_recovery_audit_{language}.json"
     )
     markdown_output = args.markdown_output or output.with_suffix(".md")
-    previous = _read_json(args.previous) if args.previous else None
+    previous = None
+    if args.previous:
+        try:
+            previous = _read_json(args.previous)
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
+            previous = {
+                "__previousLoadError": {
+                    "path": str(args.previous),
+                    "actual": f"{type(exc).__name__}: {exc}",
+                },
+            }
     report = build_report(
         payload, previous, input_sha256=input_sha256,
         scope="full" if args.full_corpus else "active",
@@ -1047,6 +1105,16 @@ def main(argv: list[str] | None = None) -> int:
         f"{len(report['structureDiagnostics'])} structural and "
         f"{len(report['changeDiagnostics'])} baseline diagnostics -> {output}"
     )
+    if report["comparison"].get("status") in {"unavailable", "error"}:
+        comparison = report["comparison"]
+        print(
+            "Gameplay recovery audit comparison error: "
+            f"{comparison.get('reason', 'unknown reason')} "
+            f"(code={comparison.get('code', 'comparison-invalid')}, "
+            f"path={comparison.get('path', '<unknown>')}, "
+            f"actual={comparison.get('actual', '<unknown>')})",
+            file=sys.stderr,
+        )
     structure_error = any(
         item.get("severity") == "error" for item in report["structureDiagnostics"]
     )
