@@ -36,6 +36,11 @@ def test_topology() -> None:
     assert native_mixer["initializers"]["advancedExtraWordValue"] == "0x0101"
     advanced_slots = native_mixer["advancedOnlyStateSlots"]
     assert advanced_slots["slot3"]["va"] == "0x180AD5230"
+    assert advanced_slots["slot3"]["firstHandshakeVA"] == "0x180A5A680"
+    assert advanced_slots["slot3"]["subsequentRuntimeVA"] == "0x180A634D0"
+    assert advanced_slots["stateFields"]["state170"]["initialValue"] == 1
+    assert advanced_slots["stateFields"]["state171"]["initialValue"] == 1
+    assert advanced_slots["slot13"]["commands"]["1"] == "state170=1_and_state171=1"
     assert advanced_slots["stockImplementationsDiffer"] is True
     assert advanced_slots["restrictedStartOnlyStockEquivalenceProven"] is False
     assert [row["pathID"] for row in topology["clipSlots"]] == [

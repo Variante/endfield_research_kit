@@ -285,33 +285,58 @@
       "advancedExtraWordValue": "0x0101"
     },
     "advancedOnlyStateSlots": {
-      "stateBytes": [
-        "0x170",
-        "0x171"
-      ],
+      "stateFields": {
+        "state170": {
+          "offset": "0x170",
+          "initialValue": 1
+        },
+        "state171": {
+          "offset": "0x171",
+          "initialValue": 1
+        },
+        "word174": {
+          "offset": "0x174",
+          "initialValue": "initializer_dependent"
+        }
+      },
       "slot3": {
         "va": "0x180AD5230",
-        "behavior": "reads_and_writes_state_bytes_and_calls_animation_runtime"
+        "stockVA": "0x180076890",
+        "stockBehavior": "no_op",
+        "behavior": "validates input/runtime context; computes double evaluation time from source float+0x40 times double+0x08; invalid context sets state170=1; first valid call with state171=1 clears state171 and calls 0x180A5A680; later calls 0x180A634D0(context,time,source,&state170)",
+        "firstHandshakeVA": "0x180A5A680",
+        "subsequentRuntimeVA": "0x180A634D0"
       },
       "slot4": {
         "va": "0x180AD87C0",
-        "behavior": "writes_state_byte_0x170_to_one"
+        "stockVA": "0x18074F180",
+        "behavior": "sets word174=0 and state170=1 then tail-calls stock time/speed propagation"
       },
       "slot13": {
         "va": "0x180AD43E0",
-        "behavior": "restores_state_word_0x0101"
+        "stockVA": "0x180076890",
+        "stockBehavior": "no_op",
+        "commands": {
+          "0": "word174=0",
+          "1": "state170=1_and_state171=1",
+          "other": "no_op"
+        }
       },
       "slot18": {
         "va": "0x180AD59F0",
-        "behavior": "gates_stock_path_on_state_bytes"
+        "stockVA": "0x180AA8230",
+        "behavior": "tail_call_stock_only_when_state170_or_state171_nonzero"
       },
       "slot19": {
         "va": "0x180AD5460",
-        "behavior": "gates_stock_path_on_state_bytes"
+        "stockVA": "0x180AA7B10",
+        "behavior": "tail_call_stock_only_when_state170_or_state171_nonzero"
       },
       "stockImplementationsDiffer": true,
       "restrictedStartOnlyStockEquivalenceProven": false,
-      "classification": "advanced_runtime_state_gate_not_reproducible_with_stock_mixer"
+      "classification": "advanced_runtime_state_gate_not_reproducible_with_stock_mixer",
+      "nativeSchedulerBoundary": "managed EffectAnimation does not call these slots directly; PlayableGraph native evaluation dispatches them indirectly, and exact named scheduler callsites remain open",
+      "unity2022EmulationDecision": "stock AnimationMixerPlayable reproduces topology/weights/clip control only; a ScriptPlayable cannot be retail-faithful until the 0x180A5A680 and 0x180A634D0 runtime callbacks and scheduler contract are reproduced"
     },
     "classification": "native_create_and_shared_input_semantics_closed_advanced_slots_pending",
     "provenBehavior": [

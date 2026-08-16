@@ -4051,9 +4051,16 @@ Advanced-only slots 3/4/13/18/19 read or mutate `+0x170/+0x171` and gate
 animation-runtime behavior, while stock uses no-ops or different methods.
 Consequently a stock mixer with explicit weights is only a labeled visual
 approximation even for the start-only Li graph, not a retail-equivalent
-backend. Null transitions and extreme allocation failure remain open. The
-same contract pins `SetManual(bool)`,
-`ManualEvaluate(float)`, `SyncProgress(float)`, time-scale/start-duration/start-
+backend. Null transitions and extreme allocation failure remain open.
+The initial state is `1/1`: slot 3 performs a first-valid-evaluation handshake
+through `0x180A5A680`, clears `+0x171`, then uses computed evaluation time with
+`0x180A634D0` on later passes. Slot 4 sets `+0x170` before stock time/speed
+propagation; slot 13 handles state-reset commands; slots 18/19 suppress generic
+runtime callbacks only when both bytes are zero. Native scheduler ownership
+and those two runtime callback semantics are not yet closed, so a
+`ScriptPlayable<PlayableBehaviour>` cannot currently be labeled exact.
+The same contract pins `SetManual(bool)`, `ManualEvaluate(float)`,
+`SyncProgress(float)`, time-scale/start-duration/start-
 scale setters, Stop, OnDisable, and OnRelease. Their decoded fallback bodies
 prove graph evaluation, progress-to-time delegation, forced root-speed
 refresh, stop, valid-graph destruction, and the corresponding
