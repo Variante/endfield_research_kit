@@ -4193,8 +4193,15 @@ Allocator `0x180936560` returns a pooled/new 0x2A00 front context. Its
 `0x1808539D0`, which only updates state bit `0x40` at
 `[backend+0x2E48]+0xBC`. The recorded route continues through front `+0xEB0`,
 opcode `0x273D`, a state copy, and dynamic context `+0x70` vtable `+0x5D0`.
-That interface is the next unresolved boundary; no graphics draw or submit is
-proven.
+The broad API-2 vtable candidate `0x181DBC098` resolves `+0x5D0` to
+`0x180833940`, which constructs/processes diagnostic `0xD0B`, cleans up with
+`0x20D`, and returns false. Front-context `+0x5D0` instead records opcode
+`0x2769` or forwards to backend `+0x650`; the type-4 candidate forwards through
+`+0x5C0` into state allocation/update and backend `+0x5C8`. All bounded
+candidates remain state/error transport with no graphics draw or submit. The
+next native boundary is therefore the separate classic RendererList draw
+expansion or a runtime-observed concrete receiver, not another assumption that
+this state route is the draw.
 Retail queue 3704 belongs to the source-closed 3660--3740
 `AfterPostprocessTransparent` phase. In the exact SceneMV route that range is
 owned by the after-post callback, not main transparent. This isolated shader
@@ -4375,11 +4382,21 @@ records a separate RGBA32F renderer-ID pass using the same after-post cull,
 depth, queue 3660--3740, layer mask, and transparent sort. SampleStack admission
 keeps Zhuang Fangyi's three exact piaodai materials at queue 3700, but separately
 recognizes only source-named Li diagnostic/actor-composed instances and preserves
-their source queues; material 18 therefore remains queue 3702. The current D3D12
-run has 21 positive serial joins in composite/effects/peak lanes at PTS 38000,
-38167, 38183, 39367, 39934, 40000, and 40167, with about 258k--498k nonzero ID
-pixels. The other 147 calls explicitly report that no exact selected MRT
-material is active. Numeric red-channel IDs are local to one capture invocation;
+their source queues; material 18 therefore remains queue 3702. The first D3D12
+run had 21 positive serial joins in composite/effects/peak lanes. Root-only
+lanes had no sidecar because their `LiZhiyanStart01Diagnostic` materials do not
+claim retail MRT admission, while sibling SampleStack materials incidentally
+opened the AfterPost route in aggregate lanes. Explicit positive capture serials
+now admit only source-named actor-composed diagnostic instances as a
+renderer-ID-only route request. This does not change queues or lifetimes, is
+inactive in the normal viewer, and does not promote retail MRT admission. The
+refreshed 168-call capture has 99 positive sidecars: 23/24 composite, 23/24
+effects-only, 7/24 peak-only, plus every active root-only frame (start_01 8/8,
+start_02 15/15, start_03 23/23). The remaining 69 calls explicitly report no
+exact selected MRT material. Root-only override coverage is time-invariant at
+432,119/289,686/227,641 pixels respectively, so it proves static geometry
+ownership only: source material AnimationClip curves are not yet applied to the
+cloned diagnostic instances. Numeric red-channel IDs are local to one capture invocation;
 the ordinal hierarchy path plus material slot/name is the cross-frame identity.
 The stable later contributors are queue-3704 `tiaodaifenwei_01 (7)`,
 `fenweiqiliu_02 (3)`, and `shoutiaodai_01 (1)`; composite and effects-only are

@@ -1735,7 +1735,16 @@ namespace EndfieldGraphShaderLabEditor
                             "Inactive root is not blank: " + Roots[rootIndex].key +
                             " at PTS " + expected.retailPts);
                     else
+                    {
+                        Require(root.frame.rendererIdSidecarAvailable &&
+                            root.frame.rendererIdSidecarNonZeroPixelCount > 0 &&
+                            root.frame.rendererIdSidecarPixelSummaries != null &&
+                            root.frame.rendererIdSidecarPixelSummaries.Length > 0,
+                            "Active root has no renderer-ID sidecar ownership: " +
+                            Roots[rootIndex].key + " at PTS " + expected.retailPts +
+                            "; failure=" + root.frame.rendererIdSidecarFailure);
                         foundVisibleRoot[rootIndex] |= root.frame.nonBackgroundCoverage > 0f;
+                    }
                 }
 
                 if (capture.effectsAllInactive)
