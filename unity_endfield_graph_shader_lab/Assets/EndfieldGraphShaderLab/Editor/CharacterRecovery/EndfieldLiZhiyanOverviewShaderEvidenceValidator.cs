@@ -232,9 +232,11 @@ namespace EndfieldGraphShaderLabEditor
                 L.Str(ecsProducer, "forwardPath").Contains("never writes 0x1388") &&
                 L.Long(nativeAdapter, "registrationIndex") == 395 &&
                 L.Str(nativeAdapter, "unityPlayerVA") == "0x1801f1e40" &&
-                L.Long(nativeAdapter, "functionBytes") == 208 &&
-                L.Str(nativeAdapter, "internalBuilderVA") == "0x18104e7a0" &&
-                L.Str(nativeAdapter, "behavior").Contains("does not enumerate survivors") &&
+                L.Long(nativeAdapter, "functionBytes") == 206 &&
+                L.Str(nativeAdapter, "requestPackerVA") == "0x18104e7a0" &&
+                L.Str(nativeAdapter, "registrationCoreVA") == "0x18104e300" &&
+                L.Str(nativeAdapter, "resourceRecordBuilderVA") == "0x18104e920" &&
+                L.Str(nativeAdapter, "behavior").Contains("contains no entity iteration") &&
                 !L.Bool(consumers, "opaqueArgument") &&
                 L.Str(consumers, "frameSettingsGate") == "TransparentObjects" &&
                 L.Str(consumers, "survivorIdentity") ==

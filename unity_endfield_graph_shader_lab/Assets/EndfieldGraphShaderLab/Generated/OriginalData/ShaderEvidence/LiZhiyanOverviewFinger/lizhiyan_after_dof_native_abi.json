@@ -266,6 +266,36 @@
       "functionSha256": "08E90A05982967C1F0AA45950FDF24F069FA6B639238EE3F6429FEF2DE697163"
     }
   ],
+  "unityPlayerNativeMethods": [
+    {
+      "label": "HGMeshRender.CreateRendererList icall adapter",
+      "va": "0x1801f1e40",
+      "functionEnd": "0x1801f1f0e",
+      "functionBytes": 206,
+      "functionSha256": "EB9B02F891CD670E726D8EF73C52D62D40FDC6756BE41BCE76ED8EA901AC153C"
+    },
+    {
+      "label": "HGMeshRender renderer-list request packer",
+      "va": "0x18104e7a0",
+      "functionEnd": "0x18104e856",
+      "functionBytes": 182,
+      "functionSha256": "8125E686DC149173B7CB2A9FF3D0BA40E41162E72E1D9BC4353BD211ECAF1C7E"
+    },
+    {
+      "label": "HGMeshRender renderer-list registration core",
+      "va": "0x18104e300",
+      "functionEnd": "0x18104e7a0",
+      "functionBytes": 1184,
+      "functionSha256": "9FC913F47D5E88710E13D9C555F2C81F7DAAEBA22C6AEB22F2FAA969170ACC80"
+    },
+    {
+      "label": "HGMeshRender renderer-list resource record builder",
+      "va": "0x18104e920",
+      "functionEnd": "0x18104ec17",
+      "functionBytes": 759,
+      "functionSha256": "02F2E295CF8BB8247824AA7A3EE6B4E0BAD7D58C1C06D59ECD155CAB6E3C81BD"
+    }
+  ],
   "decisiveCalls": [
     {
       "label": "PrepareAfterDOF -> CreateTransparentRendererListDesc",
@@ -458,11 +488,27 @@
         "icallSignature": "UnityEngine.HyperGryph.HGMeshRender::CreateRendererList(System.UInt32,System.UInt32,System.UInt32,System.UInt32,System.UInt16,System.IntPtr,System.Boolean,System.Boolean,System.UInt32,System.Boolean,System.UInt32*,System.Boolean)",
         "registrationIndex": 395,
         "unityPlayerVA": "0x1801f1e40",
-        "functionEnd": "0x1801f1f10",
-        "functionBytes": 208,
-        "functionSha256": "F4D6BF057A673684D69BFEB616D922B9A57F537F35DD845C972946F85FC93F5D",
-        "internalBuilderVA": "0x18104e7a0",
-        "behavior": "canonicalizes trailing booleans and forwards all flags/arguments; does not enumerate survivors, sort, or expose a handle table"
+        "functionEnd": "0x1801f1f0e",
+        "functionBytes": 206,
+        "functionSha256": "EB9B02F891CD670E726D8EF73C52D62D40FDC6756BE41BCE76ED8EA901AC153C",
+        "requestPackerVA": "0x18104e7a0",
+        "registrationCoreVA": "0x18104e300",
+        "resourceRecordBuilderVA": "0x18104e920",
+        "behavior": "canonicalizes arguments, packs a 0x68-byte request, and registers a list handle; contains no entity iteration, survivor writes, sort loop, multi-draw dispatch, or final draw",
+        "handleTable": {
+          "vectorBaseOffset": "0x08",
+          "countOffset": "0x18",
+          "encodedCapacityOffset": "0x20",
+          "slotStride": 16,
+          "returnedHandle": "zero-based append index (old count)",
+          "slotIdOffset": "0x00",
+          "slotStatePointerOffset": "0x08",
+          "stateBytes": 48,
+          "stateCallbackVA": "0x1810398f0"
+        },
+        "invalidRequestGate": "request[0] == 0xffffffff returns 0xffffffff without appending",
+        "maskCombination": "view record +0x40/+0x48 OR request +0x50/+0x58",
+        "nextConsumerBoundary": "0x18106aae0 validates the index after AddDrawECSRendererList; survivor/order/lifetime remain downstream"
       }
     },
     "liveInputsPending": [

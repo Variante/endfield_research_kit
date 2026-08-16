@@ -82,7 +82,7 @@ list`, and the callback executes global scene-color/vector/texture setup,
 fullscreen draw, the ordinary forward renderer list, then the ECS renderer
 list. The callback contains no constant-buffer publication. The generated
 native ABI contract is `lizhiyan_after_dof_native_abi.json`, SHA-256
-`5C5ED6171D130C867343562A1DD9562B2E6FCBC85B7DE3276138EA94ACA0E9B5`.
+`2EB27DBB1B1F9D1A6A2F1DD9C26E69595DEF960A6F8E9C9D69AD1950DBC338C2`.
 
 The deferred ECS producer is now closed as well. Current-build
 `HGRenderPathDeferred.OnPreRendering` recreates the 32-bit handle each camera
@@ -115,12 +115,16 @@ floats into request `+0x68/+0x6c`, then reads the mask getter. These are custom
 request/PassInput values, not fields of ordinary Unity `RendererListDesc`.
 
 The exact HGMeshRender internal call is registered at UnityPlayer table index
-395 and targets `0x1801f1e40` (208 bytes, SHA-256
-`F4D6BF05...FC93F5D`). It is only an ABI adapter: trailing booleans are
-canonicalized and all arguments are forwarded to internal builder
-`0x18104e7a0`. It does not enumerate survivors, apply a visible sort, or expose
-a handle table. Final ECS membership, order, and handle lifetime remain
-runtime/native-builder work and cannot be represented safely as `Renderer[]`.
+395 and targets `0x1801f1e40` (206-byte pdata body, SHA-256
+`EB9B02F8...1AC153C`). It forwards through request packer `0x18104e7a0` to
+registration core `0x18104e300`. The core rejects request index `0xffffffff`,
+otherwise appends a 16-byte slot to the manager vector (`+0x08` base, `+0x18`
+count) and returns the old count as a zero-based UInt32 handle. Slot `+0x08`
+points to a 48-byte state record; helper `0x18104e920` builds its downstream
+resource record. These functions contain no entity iteration, survivor write,
+sort loop, multi-draw dispatch, or final draw. Final ECS membership, order, and
+frame lifetime remain downstream of consumer boundary `0x18106aae0` and cannot
+be represented safely as `Renderer[]`.
 
 The normal current-build per-object request is now source-closed to `47`:
 pipeline construction and every normal `ConfigureKeywords` call write baked

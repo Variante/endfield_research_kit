@@ -1532,9 +1532,12 @@ only stable interpretation and priorities.
    `+0x9dc` (`30.0`), while mask `+0xa20` is rewritten by ECS/lightweight-camera
    culling paths and propagated through custom request/PassInput data. The
    exact UnityPlayer `HGMeshRender::CreateRendererList` registration resolves
-   to adapter `0x1801f1e40`, which forwards into builder `0x18104e7a0` without
-   itself exposing survivors, sorting, or handle storage. Runtime values and
-   final survivor/order capture remain required; do not synthesize a
+   to adapter `0x1801f1e40`, request packer `0x18104e7a0`, and registration core
+   `0x18104e300`. The core appends a 16-byte manager slot and returns its old
+   count as the zero-based UInt32 handle; it does not iterate entities, write
+   survivors, sort, dispatch multi-draw, or draw. Those operations remain
+   downstream of consumer boundary `0x18106aae0`. Runtime values and final
+   survivor/order/lifetime capture remain required; do not synthesize a
    `Renderer[]` bridge from the integer ECS handle.
    All six selected materials have `_IsSceneEffect=0` and
    `_EnableTransparentMV=0`, so `_VFXParams1` and transform history are safely
