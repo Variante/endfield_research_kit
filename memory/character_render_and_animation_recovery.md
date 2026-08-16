@@ -1816,6 +1816,18 @@ only stable interpretation and priorities.
    684 unsupported serialized properties. Both reuse the shared clip, retain
    false native payload/exact-shader/animation-payload gates, and remain outside
    normal actor binding with `visibleAdmission=false`.
+   A combined GPU harness now instantiates all three diagnostic roots, samples
+   the 24 shared-clock anchors, and applies the independent 2.2/5/7-second
+   lifetimes. D3D12 produces 14 unique composite hashes. start_01 is visible in
+   five active captures; start_02 becomes visible at its PTS 41434 alpha-onset
+   anchor (about 0.87% root coverage); start_03 remains visible through the
+   later wave, peaking near PTS 43000 at about 2.78% composite coverage and
+   decaying to 0.41% by PTS 44000. The shared clip is visually empty by PTS
+   44334 even though start_03 remains alive until 44967, and the all-inactive
+   PTS 46000 composite is blank. Validation requires at least one visible frame
+   per root and blank frames for inactive roots/all-inactive composites. These
+   are deterministic standalone-camera results, not retail pixel comparisons
+   or native after-DOF ownership proof.
    Under the visual candidate epoch, exact first dynamic keys at PTS 38167,
    40834/40867, and 42467 align respectively with the early teal edge,
    later pillar phase, and next material wave. This is strong timing evidence

@@ -4165,6 +4165,16 @@ keeping native Mesh parity false. Each sibling import applies 213 serialized
 properties and reports 684 unsupported entries. Both reuse the shared clip and
 keep native payload, exact shader, animation payload, normal actor binding, and
 visible admission false.
+`EndfieldLiZhiyanCombinedVisualCaptureHarness` instantiates all three generated
+prefabs and samples the 24-anchor shared clock with independent 2.2/5/7-second
+lifetimes. On D3D12 it yields 14 unique composite hashes: start_02 first becomes
+visible at the PTS 41434 alpha boundary, and start_03 forms the broad late
+ribbon near PTS 43000 before decaying through 44000. The clip is visually empty
+at 44334 while start_03 is still alive, and the all-inactive 46000 frame is
+blank. Its validator requires visible evidence from every root plus blank
+inactive frames. The deterministic shared camera is not the retail actor/camera
+composition, so the manifest keeps `comparesRetailPixels=false` and cannot
+raise native or visible admission.
 
 The exact managed LOD renderer bindings are now part of the playable-topology
 contract: start_01 has four non-null MeshRenderer PathIDs and start_02/start_03
