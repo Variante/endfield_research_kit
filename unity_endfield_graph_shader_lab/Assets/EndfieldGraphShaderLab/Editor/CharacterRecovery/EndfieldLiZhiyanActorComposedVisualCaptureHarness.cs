@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -42,6 +43,15 @@ namespace EndfieldGraphShaderLabEditor
         private const string Start03PrefabPath =
             "Assets/EndfieldGraphShaderLab/Generated/Diagnostics/LiZhiyanStart03/" +
             "Prefabs/P_fxui_lizhiyan_overview_start_03_DIAGNOSTIC.prefab";
+        private const string FingerEffectPrefabPath =
+            "Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Lizhiyan/" +
+            "Effects/OverviewFinger/P_fxui_lizhiyan_overview_trails_Bip001_R_Finger2Nub.prefab";
+        private const string FingerEffectContractPath =
+            "Assets/EndfieldGraphShaderLab/Generated/OriginalData/Effects/" +
+            "lizhiyan_overview_finger_effect.json";
+        private const string FingerMountHierarchy = "Bip001_R_Finger2Nub";
+        private const float FingerEffectDelaySeconds = 0.83333f;
+        private const float FingerEffectDurationSeconds = 2.33333f;
         private const string SpecPath =
             "Assets/EndfieldGraphShaderLab/Generated/OriginalData/ShaderEvidence/" +
             "LiZhiyanOverviewFinger/lizhiyan_visual_capture_spec.json";
@@ -61,7 +71,7 @@ namespace EndfieldGraphShaderLabEditor
         private const string ExpectedOracleSchema =
             "endfield.lizhiyan-retail-visual-oracle.v1";
         private const string ExpectedManifestSchema =
-            "endfield.lizhiyan-actor-composed-diagnostic-capture.v2";
+            "endfield.lizhiyan-actor-composed-diagnostic-capture.v3";
         private const long SharedClipPathId = 7360398354216100382L;
         private const string SharedClipName = "A_fxui__lizhiyan_overview_start_01";
         private const float SharedClipStopTime = 6.366667f;
@@ -155,6 +165,7 @@ namespace EndfieldGraphShaderLabEditor
                 Require(actorPrefab != null, "Li Zhiyan actor prefab is missing: " + ActorPrefabPath);
                 GameObject[] effectPrefabs = LoadEffectPrefabs();
                 GameObject[] peakEffectPrefabs = LoadPeakEffectPrefabs();
+                GameObject fingerEffectPrefab = LoadFingerEffectPrefab();
                 AnimationClip actorClip = AssetDatabase.LoadAssetAtPath<AnimationClip>(ActorClipPath);
                 Require(actorClip != null, "Li Zhiyan actor clip is missing: " + ActorClipPath);
                 CharacterRecoveryPresentationProfile profile =
@@ -183,7 +194,8 @@ namespace EndfieldGraphShaderLabEditor
                     Shader.SetGlobalVector(
                         "_ExposureParams", new Vector4(1f, 0f, 0f, 0f));
                     bundle = InstantiateBundle(
-                        actorPrefab, effectPrefabs, peakEffectPrefabs, actorClip, captureScene);
+                        actorPrefab, effectPrefabs, peakEffectPrefabs, fingerEffectPrefab,
+                        actorClip, captureScene);
                     ValidateEffectContracts(bundle);
                     Camera camera = CreateSourceCamera(bundle.actor.transform, profile, out cameraObject);
                     target = CreateTarget();
@@ -198,7 +210,7 @@ namespace EndfieldGraphShaderLabEditor
                         eventOriginProven = false,
                         nativeRendererIdentityProven = false,
                         rendererFingerprintWitnessBoundary =
-                            "single_capture_session_before_camera_render_sharedmaterials_only; actor_hierarchy_runtime_ids_and_skinned_palette_hash; static_effect_source_pathids_and_runtime_ids; peak_source_pathids_source_particle_ids_and_runtime_proxy_ids; no_retail_hgmesh_identity_or_draw_proof",
+                            "single_capture_session_before_camera_render_sharedmaterials_only; actor_hierarchy_runtime_ids_and_skinned_palette_hash; static_effect_source_pathids_and_runtime_ids; peak_source_pathids_source_particle_ids_and_runtime_proxy_ids; finger_source_pathids_source_particle_ids_and_runtime_proxy_ids; no_retail_hgmesh_identity_or_draw_proof",
                         captureInvocationSerialBoundary =
                             "harness_monotonic_serial_one_per_camera_render; 168_invocations_for_24_anchors_times_7_lanes; independent_of_unity_frame_count; no_native_frame_or_command_buffer_identity",
                         actorAnimationRetailAbiEquivalent = false,
@@ -217,11 +229,21 @@ namespace EndfieldGraphShaderLabEditor
                             EndfieldLiZhiyanOverviewPeakParticleEffectImporter.ContractPath)),
                         sourcePeakParticlePrefabs = PeakEffectRoots.Select(
                             EndfieldLiZhiyanOverviewPeakParticleEffectImporter.PrefabPath).ToArray(),
+                        sourceFingerEffectContract = FingerEffectContractPath,
+                        sourceFingerEffectContractSha256 = Sha256File(ProjectAbsolute(FingerEffectContractPath)),
+                        sourceFingerEffectPrefab = FingerEffectPrefabPath,
+                        fingerEffectMount = FingerMountHierarchy,
+                        fingerEffectDelaySeconds = FingerEffectDelaySeconds,
+                        fingerEffectDurationSeconds = FingerEffectDurationSeconds,
                         manualPeakParticleSimulation = true,
                         peakParticleSimulationMode =
                             "each_particle_system_simulate_local_time_with_children_false_restart_true_fixed_time_then_play_without_time_advance_for_renderer_submission",
                         peakParticleMaterialMode =
                             "diagnostic_vfxbasev2_sample_stack_source_queue_soft_blend_disabled",
+                        fingerParticleSimulationMode =
+                            "exact_source_effect_delay_duration_under_Bip001_R_Finger2Nub; each_particle_system_simulate_effect_local_time_with_children_false_restart_true_fixed_time_then_play_without_time_advance_for_renderer_submission",
+                        fingerParticleMaterialMode =
+                            "transient_vfxbasev2_sample_stack_with_contract_payload_and_converted_pngs_source_queue_3700_soft_blend_disabled; generated_finger_materials_remain_fail_closed",
                         peakParticleBatchmodeTransport =
                             "unity_particle_renderer_paused_buffer_bakemesh_billboard_proxy",
                         sourceSpec = SpecPath,
@@ -401,6 +423,7 @@ namespace EndfieldGraphShaderLabEditor
             GameObject actorPrefab,
             GameObject[] effectPrefabs,
             GameObject[] peakEffectPrefabs,
+            GameObject fingerEffectPrefab,
             AnimationClip actorClip,
             Scene captureScene)
         {
@@ -434,6 +457,9 @@ namespace EndfieldGraphShaderLabEditor
                 peakEffects = new GameObject[PeakEffectRoots.Length],
                 peakMarkers = new EndfieldRecoveredParticleEffectSource[PeakEffectRoots.Length],
                 peakBakeProxies = new List<PeakBakeProxy>(),
+                fingerBakeProxies = new List<FingerBakeProxy>(),
+                fingerDiagnosticMaterials = new List<Material>(),
+                fingerDiagnosticTextures = new List<Texture2D>(),
             };
 
             for (int index = 0; index < Roots.Length; index++)
@@ -511,6 +537,60 @@ namespace EndfieldGraphShaderLabEditor
                     });
                 }
             }
+            bundle.fingerEffect = PrefabUtility.InstantiatePrefab(
+                fingerEffectPrefab, captureScene) as GameObject;
+            Require(bundle.fingerEffect != null,
+                "Could not instantiate exact finger effect prefab: " + FingerEffectPrefabPath);
+            Transform[] fingerMounts = actor.GetComponentsInChildren<Transform>(true)
+                .Where(value => value.name == FingerMountHierarchy).ToArray();
+            Require(fingerMounts.Length == 1,
+                "Li Zhiyan actor exact finger mount census drifted: " + fingerMounts.Length);
+            Transform fingerMount = fingerMounts[0];
+            Require(fingerMount != null, "Li Zhiyan actor is missing exact finger mount: " +
+                FingerMountHierarchy);
+            bundle.fingerEffect.transform.SetParent(fingerMount, false);
+            bundle.fingerEffect.transform.localPosition = Vector3.zero;
+            bundle.fingerEffect.transform.localRotation = Quaternion.identity;
+            bundle.fingerEffect.transform.localScale = Vector3.one;
+            bundle.fingerMarker = bundle.fingerEffect.GetComponent<EndfieldRecoveredParticleEffectSource>();
+            Require(bundle.fingerMarker != null &&
+                bundle.fingerMarker.effectRoot == "P_fxui_lizhiyan_overview_trails_Bip001_R_Finger2Nub" &&
+                bundle.fingerMarker.particleNodes != null &&
+                bundle.fingerMarker.particleNodes.Length == 7 &&
+                Mathf.Abs(bundle.fingerMarker.sourceEffectDelay - FingerEffectDelaySeconds) < 0.00001f &&
+                Mathf.Abs(bundle.fingerMarker.sourceEffectDuration - FingerEffectDurationSeconds) < 0.00001f,
+                "Exact finger effect source contract drifted");
+            DisablePeakAutonomousPlayback(bundle.fingerEffect);
+            ApplyFingerDiagnosticMaterials(bundle);
+            foreach (ParticleSystemRenderer sourceRenderer in
+                bundle.fingerEffect.GetComponentsInChildren<ParticleSystemRenderer>(true))
+            {
+                EndfieldRecoveredParticleNodeSource sourceNode = bundle.fingerMarker.particleNodes.Single(
+                    node => FindHierarchy(bundle.fingerEffect.transform, node.hierarchy) ==
+                        sourceRenderer.transform);
+                GameObject proxyObject = new GameObject(
+                    sourceRenderer.gameObject.name + ".FingerBatchmodeBakeProxy");
+                SceneManager.MoveGameObjectToScene(proxyObject, captureScene);
+                MeshFilter filter = proxyObject.AddComponent<MeshFilter>();
+                MeshRenderer proxyRenderer = proxyObject.AddComponent<MeshRenderer>();
+                Mesh mesh = new Mesh
+                {
+                    name = sourceRenderer.gameObject.name + ".FingerBakedParticles",
+                };
+                filter.sharedMesh = mesh;
+                proxyRenderer.sharedMaterials = sourceRenderer.sharedMaterials;
+                proxyRenderer.enabled = false;
+                sourceRenderer.enabled = false;
+                bundle.fingerBakeProxies.Add(new FingerBakeProxy
+                {
+                    system = sourceRenderer.GetComponent<ParticleSystem>(),
+                    sourceRenderer = sourceRenderer,
+                    sourceNode = sourceNode,
+                    proxyObject = proxyObject,
+                    proxyRenderer = proxyRenderer,
+                    mesh = mesh,
+                });
+            }
             return bundle;
         }
 
@@ -547,6 +627,103 @@ namespace EndfieldGraphShaderLabEditor
                 }
                 renderer.sharedMaterials = replacements;
             }
+        }
+
+        private static void ApplyFingerDiagnosticMaterials(ActorBundle bundle)
+        {
+            string absoluteContract = ProjectAbsolute(FingerEffectContractPath);
+            Require(File.Exists(absoluteContract), "Exact finger effect contract is missing: " +
+                absoluteContract);
+            Dictionary<string, object> contract = AsDictionary(ManifestMiniJson.Deserialize(
+                File.ReadAllText(absoluteContract, Encoding.UTF8)), "finger contract");
+            Dictionary<string, object> dependency = AsDictionary(
+                contract["textureDependencyBoundary"], "finger texture dependency boundary");
+            var context = new EndfieldZhuangfyParticleEffectImporter.Context();
+            foreach (object item in AsList(dependency["textures"], "finger textures"))
+            {
+                Dictionary<string, object> row = AsDictionary(item, "finger texture row");
+                long pathId = AsLong(row["pathID"]);
+                Dictionary<string, object> converted = AsDictionary(
+                    row["convertedPng"], "finger converted texture " + pathId);
+                string repositoryPath = RepositoryAbsolute(AsString(converted["path"]));
+                Require(File.Exists(repositoryPath), "Exact finger texture PNG is missing: " +
+                    repositoryPath);
+                Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, false, false)
+                {
+                    name = AsString(row["name"]) + ".TransientDiagnostic",
+                    hideFlags = HideFlags.HideAndDontSave,
+                };
+                Require(texture.LoadImage(File.ReadAllBytes(repositoryPath), true),
+                    "Could not decode exact finger texture: " + repositoryPath);
+                context.textures[pathId] = texture;
+                bundle.fingerDiagnosticTextures.Add(texture);
+            }
+            Shader diagnosticShader = Shader.Find("Endfield/Recovered/VFXBaseV2SampleStack");
+            Require(diagnosticShader != null, "Missing diagnostic VFXBaseV2 SampleStack shader");
+            var materials = new Dictionary<long, Material>();
+            foreach (object item in AsList(contract["materials"], "finger materials"))
+            {
+                Dictionary<string, object> row = AsDictionary(item, "finger material row");
+                long pathId = AsLong(row["pathID"]);
+                Material material = new Material(diagnosticShader)
+                {
+                    name = AsString(row["name"]) + ".DiagnosticSampleStack",
+                    renderQueue = AsInt(row["customRenderQueue"]),
+                    hideFlags = HideFlags.HideAndDontSave,
+                };
+                EndfieldZhuangfyParticleEffectImporter.ApplyRecoveredMaterialPayload(
+                    material, AsDictionary(row["payload"], "finger material payload"), context);
+                material.renderQueue = AsInt(row["customRenderQueue"]);
+                if (material.HasProperty("_UseSoftBlend"))
+                    material.SetFloat("_UseSoftBlend", 0f);
+                materials.Add(pathId, material);
+                bundle.fingerDiagnosticMaterials.Add(material);
+            }
+            foreach (EndfieldRecoveredParticleNodeSource node in bundle.fingerMarker.particleNodes)
+            {
+                Transform host = FindHierarchy(bundle.fingerEffect.transform, node.hierarchy);
+                Require(host != null, "Exact finger particle hierarchy is missing: " + node.hierarchy);
+                ParticleSystemRenderer renderer = host.GetComponent<ParticleSystemRenderer>();
+                Require(renderer != null && renderer.sharedMaterials.Length == node.materialPathIds.Length,
+                    "Exact finger material census drifted: " + node.hierarchy);
+                Material[] replacements = new Material[node.materialPathIds.Length];
+                for (int index = 0; index < replacements.Length; index++)
+                {
+                    Require(materials.TryGetValue(node.materialPathIds[index], out Material material),
+                        "Exact finger material PathID is unresolved: " + node.materialPathIds[index]);
+                    replacements[index] = material;
+                }
+                renderer.sharedMaterials = replacements;
+            }
+        }
+
+        private static Dictionary<string, object> AsDictionary(object value, string context)
+        {
+            var result = value as Dictionary<string, object>;
+            Require(result != null, "Expected JSON object for " + context);
+            return result;
+        }
+
+        private static IList AsList(object value, string context)
+        {
+            var result = value as IList;
+            Require(result != null, "Expected JSON array for " + context);
+            return result;
+        }
+
+        private static long AsLong(object value)
+        {
+            return Convert.ToInt64(value, CultureInfo.InvariantCulture);
+        }
+
+        private static int AsInt(object value)
+        {
+            return Convert.ToInt32(value, CultureInfo.InvariantCulture);
+        }
+
+        private static string AsString(object value)
+        {
+            return Convert.ToString(value, CultureInfo.InvariantCulture);
         }
 
         private static Transform FindHierarchy(Transform root, string hierarchy)
@@ -642,10 +819,38 @@ namespace EndfieldGraphShaderLabEditor
                         system.Play(false);
                 }
             }
+            bool fingerActive = actorActive && IsFingerEffectActive(localSeconds);
+            bundle.fingerEffect.SetActive(fingerActive);
+            foreach (Transform child in bundle.fingerEffect.GetComponentsInChildren<Transform>(true))
+                if (child != bundle.fingerEffect.transform)
+                    child.gameObject.SetActive(fingerActive);
+            float fingerLocalSeconds = localSeconds - FingerEffectDelaySeconds;
+            foreach (ParticleSystem system in
+                bundle.fingerEffect.GetComponentsInChildren<ParticleSystem>(true))
+            {
+                system.Stop(false, ParticleSystemStopBehavior.StopEmittingAndClear);
+                if (fingerActive)
+                    system.Simulate(Mathf.Max(0f, fingerLocalSeconds), false, true, true);
+                if (fingerActive && system.particleCount > 0)
+                    system.Play(false);
+            }
             foreach (PeakBakeProxy proxy in bundle.peakBakeProxies)
             {
                 proxy.mesh.Clear();
                 if (actorActive && proxy.system.particleCount > 0)
+                {
+                    proxy.sourceRenderer.BakeMesh(
+                        proxy.mesh,
+                        camera,
+                        ParticleSystemBakeMeshOptions.BakePosition |
+                            ParticleSystemBakeMeshOptions.BakeRotationAndScale);
+                }
+                proxy.hasGeometry = proxy.mesh.vertexCount > 0;
+            }
+            foreach (FingerBakeProxy proxy in bundle.fingerBakeProxies)
+            {
+                proxy.mesh.Clear();
+                if (fingerActive && proxy.system.particleCount > 0)
                 {
                     proxy.sourceRenderer.BakeMesh(
                         proxy.mesh,
@@ -688,6 +893,18 @@ namespace EndfieldGraphShaderLabEditor
                 (composite || effectSelection == -3 || effectSelection == -4);
             foreach (PeakBakeProxy proxy in bundle.peakBakeProxies)
                 proxy.proxyRenderer.enabled = peakVisible && proxy.hasGeometry;
+            bool fingerVisible = actorActive && IsFingerEffectActive(localSeconds) &&
+                (composite || effectSelection == -3);
+            bundle.fingerEffect.SetActive(fingerVisible);
+            foreach (FingerBakeProxy proxy in bundle.fingerBakeProxies)
+                proxy.proxyRenderer.enabled = fingerVisible && proxy.hasGeometry;
+        }
+
+        private static bool IsFingerEffectActive(float localSeconds)
+        {
+            float fingerLocalSeconds = localSeconds - FingerEffectDelaySeconds;
+            return fingerLocalSeconds >= -ActiveEndpointEpsilon &&
+                fingerLocalSeconds <= FingerEffectDurationSeconds + ActiveEndpointEpsilon;
         }
 
         private static int CountPeakParticles(ActorBundle bundle)
@@ -735,6 +952,20 @@ namespace EndfieldGraphShaderLabEditor
                     "Peak fingerprint proxy source is incomplete");
                 rows.Add(BuildRendererFingerprint(
                     "peak_particle_proxy", PeakEffectRoots[proxy.rootIndex],
+                    proxy.sourceNode.hierarchy,
+                    proxy.sourceNode.particleRendererPathId,
+                    proxy.sourceNode.meshPathIds,
+                    proxy.sourceNode.materialPathIds, proxy.proxyRenderer, proxy.mesh,
+                    proxy.sourceRenderer.GetInstanceID(), proxy.system.GetInstanceID()));
+            }
+            foreach (FingerBakeProxy proxy in bundle.fingerBakeProxies)
+            {
+                Require(proxy != null && proxy.sourceNode != null &&
+                    proxy.sourceRenderer != null && proxy.system != null &&
+                    proxy.proxyRenderer != null && proxy.mesh != null,
+                    "Exact finger fingerprint proxy source is incomplete");
+                rows.Add(BuildRendererFingerprint(
+                    "finger_particle_proxy", bundle.fingerMarker.effectRoot,
                     proxy.sourceNode.hierarchy,
                     proxy.sourceNode.particleRendererPathId,
                     proxy.sourceNode.meshPathIds,
@@ -1575,6 +1806,13 @@ namespace EndfieldGraphShaderLabEditor
             return prefabs;
         }
 
+        private static GameObject LoadFingerEffectPrefab()
+        {
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(FingerEffectPrefabPath);
+            Require(prefab != null, "Exact finger effect prefab is missing: " + FingerEffectPrefabPath);
+            return prefab;
+        }
+
         private static void ValidateEffectContracts(ActorBundle bundle)
         {
             AnimationClip sharedClip = null;
@@ -1692,7 +1930,7 @@ namespace EndfieldGraphShaderLabEditor
                 !manifest.comparesRetailPixels && !manifest.retailHashEquality,
                 "Actor-composed manifest flags are not fail-closed");
             Require(manifest.rendererFingerprintWitnessBoundary ==
-                "single_capture_session_before_camera_render_sharedmaterials_only; actor_hierarchy_runtime_ids_and_skinned_palette_hash; static_effect_source_pathids_and_runtime_ids; peak_source_pathids_source_particle_ids_and_runtime_proxy_ids; no_retail_hgmesh_identity_or_draw_proof" &&
+                "single_capture_session_before_camera_render_sharedmaterials_only; actor_hierarchy_runtime_ids_and_skinned_palette_hash; static_effect_source_pathids_and_runtime_ids; peak_source_pathids_source_particle_ids_and_runtime_proxy_ids; finger_source_pathids_source_particle_ids_and_runtime_proxy_ids; no_retail_hgmesh_identity_or_draw_proof" &&
                 manifest.captureInvocationSerialBoundary ==
                 "harness_monotonic_serial_one_per_camera_render; 168_invocations_for_24_anchors_times_7_lanes; independent_of_unity_frame_count; no_native_frame_or_command_buffer_identity",
                 "Actor-composed renderer fingerprint boundary drifted");
@@ -1720,6 +1958,17 @@ namespace EndfieldGraphShaderLabEditor
                         EndfieldLiZhiyanOverviewPeakParticleEffectImporter.ContractPath)),
                     StringComparison.OrdinalIgnoreCase),
                 "Actor-composed peak-particle source/gate drifted");
+            Require(manifest.sourceFingerEffectContract == FingerEffectContractPath &&
+                string.Equals(manifest.sourceFingerEffectContractSha256,
+                    Sha256File(ProjectAbsolute(FingerEffectContractPath)),
+                    StringComparison.OrdinalIgnoreCase) &&
+                manifest.sourceFingerEffectPrefab == FingerEffectPrefabPath &&
+                manifest.fingerEffectMount == FingerMountHierarchy &&
+                Mathf.Abs(manifest.fingerEffectDelaySeconds - FingerEffectDelaySeconds) < 0.00001f &&
+                Mathf.Abs(manifest.fingerEffectDurationSeconds - FingerEffectDurationSeconds) < 0.00001f &&
+                manifest.fingerParticleSimulationMode != null &&
+                manifest.fingerParticleMaterialMode != null,
+                "Actor-composed exact finger source/gate drifted");
 
             string baselinePath = RepositoryAbsolute(BaselineManifestRelativePath);
             Require(manifest.baselinePreserved &&
@@ -1895,6 +2144,7 @@ namespace EndfieldGraphShaderLabEditor
             int expectedActorRows = 0;
             int expectedStaticRows = 0;
             int expectedPeakRows = 0;
+            int expectedFingerRows = 0;
             var current = new Dictionary<string, string>(StringComparer.Ordinal);
             foreach (RendererFingerprintRecord row in rows)
             {
@@ -1928,6 +2178,19 @@ namespace EndfieldGraphShaderLabEditor
                     Require(row.activeInHierarchy && row.rendererEnabled ==
                         (capture.actorActive && row.meshVertexCount > 0),
                         "Peak proxy witness lifecycle drifted at PTS " + pts);
+                }
+                else if (row.role == "finger_particle_proxy")
+                {
+                    expectedFingerRows++;
+                    Require(row.sourceRendererPathId != 0 &&
+                        row.sourceRendererInstanceId != 0 &&
+                        row.sourceParticleSystemInstanceId != 0 &&
+                        row.unityMeshInstanceId != 0,
+                        "Exact finger proxy identity is incomplete at PTS " + pts);
+                    Require(row.activeInHierarchy && row.rendererEnabled ==
+                        (capture.actorActive && IsFingerEffectActive(capture.localSeconds) &&
+                            row.meshVertexCount > 0),
+                        "Exact finger proxy witness lifecycle drifted at PTS " + pts);
                 }
                 else
                 {
@@ -1975,7 +2238,7 @@ namespace EndfieldGraphShaderLabEditor
                     row.unityMeshInstanceId.ToString(CultureInfo.InvariantCulture) + ":" +
                     row.sourceRendererInstanceId.ToString(CultureInfo.InvariantCulture) + ":" +
                     row.sourceParticleSystemInstanceId.ToString(CultureInfo.InvariantCulture) + ":" +
-                    (row.role == "peak_particle_proxy" ? "dynamic_geometry" :
+                    (row.role == "peak_particle_proxy" || row.role == "finger_particle_proxy" ? "dynamic_geometry" :
                         row.meshVertexCount.ToString(CultureInfo.InvariantCulture) + "/" +
                         row.meshSubMeshCount.ToString(CultureInfo.InvariantCulture) + "/" +
                         row.meshIndexCount.ToString(CultureInfo.InvariantCulture) + "/" +
@@ -1983,7 +2246,7 @@ namespace EndfieldGraphShaderLabEditor
                     materialIdentity);
             }
             Require(expectedActorRows == 21 && expectedStaticRows == 10 &&
-                expectedPeakRows == 14,
+                expectedPeakRows == 14 && expectedFingerRows == 7,
                 "Renderer fingerprint source census drifted at PTS " + pts);
             if (stableFingerprints == null)
             {
@@ -2192,6 +2455,11 @@ namespace EndfieldGraphShaderLabEditor
             public GameObject[] peakEffects;
             public EndfieldRecoveredParticleEffectSource[] peakMarkers;
             public List<PeakBakeProxy> peakBakeProxies;
+            public GameObject fingerEffect;
+            public EndfieldRecoveredParticleEffectSource fingerMarker;
+            public List<FingerBakeProxy> fingerBakeProxies;
+            public List<Material> fingerDiagnosticMaterials;
+            public List<Texture2D> fingerDiagnosticTextures;
 
             public void Release()
             {
@@ -2217,6 +2485,30 @@ namespace EndfieldGraphShaderLabEditor
                             UnityEngine.Object.DestroyImmediate(proxy.mesh);
                     }
                 }
+                if (fingerBakeProxies != null)
+                {
+                    foreach (FingerBakeProxy proxy in fingerBakeProxies)
+                    {
+                        if (proxy.proxyObject != null)
+                            UnityEngine.Object.DestroyImmediate(proxy.proxyObject);
+                        if (proxy.mesh != null)
+                            UnityEngine.Object.DestroyImmediate(proxy.mesh);
+                    }
+                }
+                if (fingerEffect != null)
+                    UnityEngine.Object.DestroyImmediate(fingerEffect);
+                if (fingerDiagnosticMaterials != null)
+                {
+                    foreach (Material material in fingerDiagnosticMaterials)
+                        if (material != null)
+                            UnityEngine.Object.DestroyImmediate(material);
+                }
+                if (fingerDiagnosticTextures != null)
+                {
+                    foreach (Texture2D texture in fingerDiagnosticTextures)
+                        if (texture != null)
+                            UnityEngine.Object.DestroyImmediate(texture);
+                }
                 if (actor != null)
                     UnityEngine.Object.DestroyImmediate(actor);
             }
@@ -2225,6 +2517,17 @@ namespace EndfieldGraphShaderLabEditor
         private sealed class PeakBakeProxy
         {
             public int rootIndex;
+            public ParticleSystem system;
+            public ParticleSystemRenderer sourceRenderer;
+            public EndfieldRecoveredParticleNodeSource sourceNode;
+            public GameObject proxyObject;
+            public MeshRenderer proxyRenderer;
+            public Mesh mesh;
+            public bool hasGeometry;
+        }
+
+        private sealed class FingerBakeProxy
+        {
             public ParticleSystem system;
             public ParticleSystemRenderer sourceRenderer;
             public EndfieldRecoveredParticleNodeSource sourceNode;
@@ -2344,10 +2647,18 @@ namespace EndfieldGraphShaderLabEditor
             public string sourcePeakParticleContract;
             public string sourcePeakParticleContractSha256;
             public string[] sourcePeakParticlePrefabs;
+            public string sourceFingerEffectContract;
+            public string sourceFingerEffectContractSha256;
+            public string sourceFingerEffectPrefab;
+            public string fingerEffectMount;
+            public float fingerEffectDelaySeconds;
+            public float fingerEffectDurationSeconds;
             public bool manualPeakParticleSimulation;
             public string peakParticleSimulationMode;
             public string peakParticleBatchmodeTransport;
             public string peakParticleMaterialMode;
+            public string fingerParticleSimulationMode;
+            public string fingerParticleMaterialMode;
             public string sourceSpec;
             public string sourceSpecSha256;
             public string retailOracle;
