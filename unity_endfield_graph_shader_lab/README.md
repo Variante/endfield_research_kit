@@ -4128,7 +4128,10 @@ resource lookup, records `0x2748/0x274A`, invokes the API-2 resource builders,
 and reaches `0x180619CF0`. Its `descriptor+0x450` branch selects among three
 helpers; only `0x180623EF0` reaches the same-recorder `+0x2A0`/opcode-`0x2730`
 writer, and Li's selected branch is not statically known. The generic `0x2731`
-producer uses a separate runtime-callback bracket, while the parser carries no
+producer uses a separate runtime-callback bracket owned by frame/status
+function `0x18059F2F0`; status 0/1 reaches it at `0x18059F395`, and
+`0x18059EDD0` is an alternate status-zero entry. Its callback slot is
+runtime-populated with no static writer, while the parser carries no
 mandatory-next flag or generation between the independent `0x2730/0x2731`
 cases. Admission still requires the Li branch value, a later `0x2731` in the
 same after-DOF interval, and concrete attribution of the resulting `+0x2B50`
@@ -4139,8 +4142,11 @@ to publication `+0x10`. The callback preserves D while using `D+0x450` for
 mode and `D+0x60` for the opcode-`0x2748` resource. D is distinct from the
 original 64-byte record's packed resolver ID at publication `+0x84`. Mode 0 is the only
 descriptor-state/conditional-`0x2730` path, mode 2 selects cache/fallback and
-clears the output, and other modes also fail/clear. A matching 0x4E0 descriptor
-constructor has two mode-0 callers, but neither it nor the other inspected
+clears the output, and other modes also fail/clear. The exact 0x580-byte state
+constructor `0x1806198F0` writes caller mode to `+0x450` at `0x180619952`;
+`0x1805CAF78` supplies mode 2 and `0x1805CB225` supplies mode 0. It matches the
+field consumed by `0x180619CF0`, but no static alias selects which instance is
+Li's M0 profile D. A matching 0x4E0 constructor has two mode-0 callers, but neither it nor the other inspected
 builders populates M0's entry. The complete chained-`.pdata` worker
 `0x180FF8020..0x180FF8702` instead inherits M0/M1 from its argument
 `+0x00/+0x08` and passes them unchanged to finalization. Its
@@ -4166,11 +4172,12 @@ material-handle lookup/insertion, clears a new 0x60-byte entry, and calls
 `0x18109C9D0` at `0x1810B9C5C`. That function repeats the M0 hash lookup and
 writes its native shading-state resource to `entry+0x28` at
 `0x18109CA2F`; the two direct insertion callers are `0x1811E1A24` and
-`0x18131B76B`. Both resolve a native resource initialized by `0x1805FF5E0`
-with vtable `0x181D87EF0` and embedded type text
-`PPtr<HGSubsurfaceProfile>`; neither is an ordinary Unity Material
-registration or Li-specific reference. `GetOrCreatePerMaterialCBHandle` is a
-downstream consumer.
+`0x18131B76B`. Both resolve a wrapper initialized by `0x1805FF5E0` with
+vtable `0x181D87EF0` and embedded type text `PPtr<HGSubsurfaceProfile>`.
+Insertion calls `0x180600820`, which returns the nested descriptor held at
+wrapper `+0x140`; that descriptor, not the wrapper itself, becomes M0 entry
+`+0x28`. Neither path is an ordinary Unity Material registration or Li-specific
+reference. `GetOrCreatePerMaterialCBHandle` is a downstream consumer.
 Managed metadata separately names the broader `GetMaterialHandle(int)` and
 `GetMaterial(uint)->UnityEngine.Material` API; the primary profile owner also
 resolves a Unity object reference before insertion. Those facts establish the
@@ -4185,6 +4192,13 @@ generation; `0x18108B8F0` releases/clears it and increments generation. The
 remaining boundary is a Li-specific M0 subsurface-profile handle/resource and
 M1 mesh-handle join. Until then the Li `D+0x450` mode and
 branch stay deliberately unselected.
+The static Li graph rules out an ID shortcut: 75 SkinnedMeshRenderers and 18
+active LOD0 renderers retain exact Mesh/Material PathIDs, but no serialized
+HGMeshRenderer/HGMeshRendererData. Retail Material/Mesh instance IDs and
+M0/M1 slot-generation handles are assigned by the live player registry and
+cannot be derived from PathID, fileID, lab GUID, or asset name. Positive proof
+therefore requires a same-build instanceID/object-fingerprint -> M0/M1 handle
+-> accepted record -> draw observation.
 The same contract pins `SetManual(bool)`, `ManualEvaluate(float)`,
 `SyncProgress(float)`, time-scale/start-duration/start-
 scale setters, Stop, OnDisable, and OnRelease. Their decoded fallback bodies
