@@ -1552,12 +1552,15 @@ only stable interpretation and priorities.
    HGMesh at `+0xb0` and HGTree separately at `+0xc0`. Generic setter
    `0x18030f5b0` writes the table, bulk registrar `0x180319e60` reaches slot
    `0x14`, and global teardown `0x18058cc20` necessarily cleans and clears it.
-   Context vtable `0x181e1c328` resolves construction/destruction to
-   `0x180fc3500/0x180fc2e00`. Construction allocates the 0x70-byte `+0xb0`
+   Constructor `0x180fc21d0` installs context vtable `0x181e1c328`;
+   initialization/destruction are `0x180fc3500/0x180fc2e00`.
+   Initialization allocates the 0x70-byte `+0xb0`
    manager, initializes category `0xb5` through `0x1810454c0`; teardown uses
    `0x1810459f0 -> 0x18105fe30` to destroy 16-byte entries and free storage.
-   Logical reset is `0x181060330`. Only the slot-0x14 registry factory identity
-   remains unknown.
+   Logical reset is `0x181060330`. The registry boundary is descriptor -> type
+   ID (`0x1807c5240`) -> lookup (`0x18012be60`) -> dynamically initialized
+   allocator callback `[descriptor+0x08]` (`0x18031a370`); its readable name
+   and callback identity remain unknown.
    The next runtime proof is bounded to eight already pinned observation points:
    `0x1801f1e40`, `0x18104e300`, `0x181005c10`, `0x18105e400`, and
    `0x18105e350`, plus `0x1813b1624`, `0x18083f89d`, and `0x1813afed9`.
@@ -1592,10 +1595,11 @@ only stable interpretation and priorities.
    context `+0x2b50`; verified callback families bind vertex/index data,
    pipeline/descriptors, issue direct or indirect draws, and submit. The
    original `0x2748` pointer is preserved into backend binding state at
-   `S+0x2a0/S+0x22d0`; later opcode `0x2730` packages those regions through
-   API-2 `+0xe90` and reaches `vkUpdateDescriptorSetWithTemplate` at
-   `0x18083f89d`. The remaining identity edge is specifically that descriptor
-   update to a particular later `0x2731`, `+0x2b50` callback, and draw record.
+   `S+0x2a0/S+0x22d0`; if a later generic `0x2730` occurs on the same API-2
+   context, it packages those regions through `+0xe90` and can reach
+   `vkUpdateDescriptorSetWithTemplate` at `0x18083f89d`. The HGMesh handoff
+   itself emits no `0x2730`, so this is conditional shared state, not a
+   per-record descriptor identity.
    All four opcodes share one per-instance recorder; append order equals call
    order between begin/end recording, but no static producer edge guarantees
    `0x2748 -> 0x2730 -> 0x2731`. API-2 `+0xda0/+0xda8` construct the concrete
@@ -1603,6 +1607,12 @@ only stable interpretation and priorities.
    `0x180841c40` packages them into the `+0x2b50` master list. The original
    pointer is not retained in those nodes, leaving derived-state association
    as the final runtime identity gap.
+   Direct handoff audit proves only `0x181048848: +0x268 (0x2748)` followed by
+   `0x1810488dc: +0x280 (0x274a)` for one 0x90-byte result record and front
+   context. No `+0x2a0/+0x3e8` call exists there. The callback nodes are generic
+   API-2 capabilities; ordinary HGMesh wrappers have no static indirect-draw
+   or submit edge, so they must not be attributed to characters without live
+   identity values.
    Runtime values and final survivor/order/lifetime capture remain required;
    do not synthesize a `Renderer[]` bridge from the integer ECS handle.
    Downstream HGMesh workers now prove a real ordering/publication stage:

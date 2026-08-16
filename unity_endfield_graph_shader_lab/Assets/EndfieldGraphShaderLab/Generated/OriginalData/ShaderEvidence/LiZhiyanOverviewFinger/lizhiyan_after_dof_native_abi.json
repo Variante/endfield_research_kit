@@ -429,6 +429,13 @@
       "functionSha256": "BDA27AB011238775BB5D588AAF32197902484074443D642CBC86339E222F2B82"
     },
     {
+      "label": "HG slot-0x14 context constructor",
+      "va": "0x180fc21d0",
+      "functionEnd": "0x180fc25f0",
+      "functionBytes": 1056,
+      "functionSha256": "0E99AAD0009FCCFF7F7904242EC234EFBEC22693757291606560219BA43B7452"
+    },
+    {
       "label": "HG slot-0x14 context destructor",
       "va": "0x180fc2e00",
       "functionEnd": "0x180fc2e8f",
@@ -483,6 +490,48 @@
       "functionEnd": "0x181060413",
       "functionBytes": 227,
       "functionSha256": "3ED02EBE6DAF9221ED85DA089938B8872ED68DAE8CA9CE68CD78742FA584B7AB"
+    },
+    {
+      "label": "HG runtime manager type-ID resolver",
+      "va": "0x1807c5240",
+      "functionEnd": "0x1807c52c1",
+      "functionBytes": 129,
+      "functionSha256": "62833856294ED99CDBF08D4BDA73FFD80A38766750F883B80E1B0A3A658A38C3"
+    },
+    {
+      "label": "HG runtime manager registry lookup",
+      "va": "0x18012be60",
+      "functionEnd": "0x18012bed0",
+      "functionBytes": 112,
+      "functionSha256": "A5997AAFF12FB476035C292B92984AF9951750FDB2CD32C15CFD16B701F23DC2"
+    },
+    {
+      "label": "HG runtime manager indirect allocator",
+      "va": "0x18031a370",
+      "functionEnd": "0x18031a569",
+      "functionBytes": 505,
+      "functionSha256": "70DE6C7E28EB5FE8E6EAFC081FBABAD1790B858051AE073859FC485D96B1B3E6"
+    },
+    {
+      "label": "HG generic opcode 0x2730 producer helper",
+      "va": "0x180623ef0",
+      "functionEnd": "0x180624654",
+      "functionBytes": 1892,
+      "functionSha256": "707E05C87AC50FACCF48FA9D3B2A726B4632DD98AB399EDFBB03721839249CFC"
+    },
+    {
+      "label": "HG generic opcode 0x2731 producer candidate 1",
+      "va": "0x1805a3790",
+      "functionEnd": "0x1805a37ef",
+      "functionBytes": 95,
+      "functionSha256": "83703481F4250CA18BF24D88A288476F4A3870A35C7010110C2340A8CF589909"
+    },
+    {
+      "label": "HG generic opcode 0x2731 producer candidate 2",
+      "va": "0x1805a37f0",
+      "functionEnd": "0x1805a388c",
+      "functionBytes": 156,
+      "functionSha256": "29AF35733B2986E351A9694ED04F496C6F10576438E189ACCCB548281C44D212"
     },
     {
       "label": "HGMesh publication result callback thunk",
@@ -967,7 +1016,8 @@
             "genericCleanupBehavior": "releases object +0x10 through nested cleanup, then invokes object vtable slot 0 before the singleton cell is cleared",
             "contextVtableVA": "0x181e1c328",
             "contextDestructorVA": "0x180fc2e00",
-            "contextConstructionVA": "0x180fc3500",
+            "contextConstructorVA": "0x180fc21d0",
+            "contextInitializationVA": "0x180fc3500",
             "subobjectConstructionVA": "0x180fc7030",
             "managerAllocation": "0x180fc7030 allocates 0x70 bytes, calls 0x1810454c0 with type/category 0xb5, and stores the result at context +0xb0",
             "managerLayout": "+0x00 type/category 0xb5, +0x08 entry vector base, +0x18 count, +0x28 auxiliary allocation; entries are 16 bytes",
@@ -975,7 +1025,9 @@
             "managerDestructionVA": "0x1810459f0",
             "managerNestedEntryDestructionVA": "0x18105fe30",
             "managerDestruction": "context cleanup 0x180fc3fc0 calls 0x1810459f0; it destroys nested entries, frees +0x28 and +0x08 storage, clears count, and frees the 0x70-byte manager",
-            "provenBoundary": "slot-0x14 context vtable/construction/destruction, +0xb0 HGMesh-manager allocation/reset/nested-entry destruction, and global cell clearing are proven; only the registry factory identity that initially supplies slot 0x14 remains unresolved"
+            "registryFactoryPath": "bulk registrar 0x180319e60 resolves a binary descriptor to a runtime type ID through 0x1807c5240, looks it up through 0x18012be60, and ultimately allocates through runtime descriptor callback [descriptor+0x08] at 0x18031a370",
+            "registryFactoryBoundary": "the slot-0x14 descriptor is an unreadable globalgamemanagers binary prefix and its allocator callback is initialized dynamically; no static type-name or callback identity is proven",
+            "provenBoundary": "slot-0x14 context vtable/constructor/initialization/destruction, +0xb0 HGMesh-manager allocation/reset/nested-entry destruction, and global cell clearing are proven; the runtime registry descriptor name and allocator callback identity remain unresolved"
           }
         },
         "invalidRequestGate": "request[0] == 0xffffffff returns 0xffffffff without appending",
@@ -1073,6 +1125,9 @@
               "opcode2731Layout": "u32 opcode only; dispatches to API-2 +0xde8 with no payload",
               "batchBoundary": "begin recording selects the current buffer and enables append; end recording disables append and may emit 0x27cb; bounded-substream parser 0x1813aea00 repeatedly advances one shared cursor",
               "sequenceBoundary": "same-instance records are conditionally consumed in append order, but no static producer edge guarantees 0x2748 -> 0x2730 -> 0x2731 or even that all three occur before the same recording end",
+              "handoffWriterOrder": "within each 0x90-byte HGMesh publication record, 0x181048848 invokes front +0x268 with record resource at +0x60, then 0x1810488dc invokes front +0x280 with its local serialized payload on the same graphics-front context",
+              "handoffExcludedWriters": "0x1810484e0..0x181049007 and its bounded direct callees contain no front +0x2a0 (0x2730) or +0x3e8 (0x2731) invocation",
+              "separateProducerCandidates": "generic helper 0x180623ef0 can invoke +0x2a0; getter-backed 0x1805a3790/0x1805a37f0 can invoke +0x3e8, but none shares a proven resource/result identity or recorder interval with the HGMesh handoff",
               "resourceToBindingState": "0x2748 passes the original pointer unchanged; 0x180842370 resolves object-local maps at resource +0x20..+0x30/+0x50/+0x70 and writes descriptor-like state under S+0x2a0 plus payload backing under S+0x22d0",
               "provenBoundary": "both opcodes are API-2 resource/state operations, not draw opcodes; 0x2748 identity reaches backend binding state while the 0x274a qword semantics remain unresolved"
             },
@@ -1086,11 +1141,12 @@
             },
             "vulkanExecution": {
               "descriptorUpdateRoute": "opcode 0x2730 -> API-2 +0xe90 0x180843bf0 -> 0x18083f680 -> vkUpdateDescriptorSetWithTemplate at 0x18083f89d",
-              "descriptorIdentityBoundary": "the state populated from the unchanged 0x2748 object is packaged from S+0x22d0/S+0x22a8/S+0x2a0 into the Vulkan descriptor-update worker",
+              "descriptorIdentityBoundary": "if a later generic 0x2730 occurs on the same API-2 context, it packages S+0x22d0/S+0x22a8/S+0x2a0 into the Vulkan descriptor-update worker; the HGMesh handoff itself emits no 0x2730 and does not prove this condition",
               "callbackListBuilders": "API-2 +0xda0 0x18083e720 builds resource-binding and pipeline/descriptor-state child nodes; +0xda8 0x18083ec60 builds an indirect-draw child node; 0x180841c40 packages child heads +0x2b58/+0x2b60 into master nodes at +0x2b50",
               "resourceBindingNode": "0x68-byte node callback reaches 0x18082d6b0; payload includes wrapper/resource handle, index format/offset, vertex-buffer pointer range, and vertex offsets",
               "pipelineDescriptorNode": "0x40-byte node callback reaches 0x18082e660; payload includes pipeline, layout, stencil/depth state, descriptor-set array/count, and dynamic offsets",
               "indirectDrawNode": "0x50-byte node callback reaches 0x18082e820; payload adds indirect buffer/resource +0x30 and byte offset +0x38, draw count 1, stride 0",
+              "hgmeshAttributionBoundary": "the ordinary HGMesh renderer-list wrappers and publication handoff contain no static +0xda8, +0xde8, indirect-draw, or queue-submit edge; +0xda0/+0xda8 nodes are generic API-2 capabilities and must not be attributed to HGMesh without runtime identity",
               "masterList": "context +0x2b50; callbacks are invoked through [node+0x08] with payload node+0x10 by 0x180843d60",
               "resourceBinding": "0x18082d6b0 binds index and vertex buffers",
               "pipelineDescriptorState": "0x18082e660 binds pipeline/descriptors and sets depth bias/stencil reference",
@@ -1100,7 +1156,7 @@
                 "0x180844a09",
                 "0x180844bd3"
               ],
-              "remainingIdentityEdge": "same-stream/same-frame association from the 0x2748-populated descriptor state and later 0x2730 descriptor update into a particular 0x2731 execution, +0x2b50 callback node, and specific draw record"
+              "remainingIdentityEdge": "runtime proof that the same HGMesh publication resource participates in a later generic 0x2730 descriptor update and 0x2731 execution, then reaches a particular +0x2b50 callback node and specific draw record"
             },
             "d3d12StaticBoundary": "D3D12 is absent and the image contains 'D3D12 support not compiled in!'; D3D11 dynamic bootstrap/fallback code exists but is not the observed session backend",
             "observedRuntimeBackend": {

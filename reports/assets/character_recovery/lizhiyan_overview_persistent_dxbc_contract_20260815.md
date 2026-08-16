@@ -82,7 +82,7 @@ list`, and the callback executes global scene-color/vector/texture setup,
 fullscreen draw, the ordinary forward renderer list, then the ECS renderer
 list. The callback contains no constant-buffer publication. The generated
 native ABI contract is `lizhiyan_after_dof_native_abi.json`, SHA-256
-`35EBFDFD89D6D8D92B82A0EB5EE7281A12CC6A08F5276065E03C743ABA8669A4`.
+`7C89778C66C816F4343E843B7B18B26E395DA0E95379EDD33305228DF173F33C`.
 
 The deferred ECS producer is now closed as well. Current-build
 `HGRenderPathDeferred.OnPreRendering` recreates the 32-bit handle each camera
@@ -149,14 +149,20 @@ HGTree managers are separate context fields at `+0xb0` and `+0xc0`. Generic
 setter `0x18030f5b0` owns table writes; bulk registrar `0x180319e60` loops
 indices `0..0x15` and conditionally registers slot `0x14`. Global teardown
 `0x18058cc20` walks indices `0x1a..1`, invokes object cleanup, and necessarily
-clears slot `0x14`. The context vtable is `0x181e1c328`; construction
-`0x180fc3500 -> 0x180fc7030` allocates a 0x70-byte manager, initializes it
+clears slot `0x14`. Constructor `0x180fc21d0` installs context vtable
+`0x181e1c328`; initialization `0x180fc3500 -> 0x180fc7030` allocates a
+0x70-byte manager and initializes it
 through `0x1810454c0` with type/category `0xb5`, and stores it at `+0xb0`.
 Context teardown `0x180fc2e00 -> 0x180fc3fc0 -> 0x1810459f0` destroys its
 16-byte nested entries through `0x18105fe30`, frees its `+0x28/+0x08`
 allocations, clears the count, and frees the manager. Logical reset uses
 `0x181060330`. Only the registry factory identity that initially supplies
-slot `0x14` remains unresolved.
+slot `0x14` remains unresolved. More precisely, `0x180319e60` resolves its
+binary descriptor to a type ID through `0x1807c5240`, looks it up through
+`0x18012be60`, and `0x18031a370` ultimately calls the dynamically initialized
+allocator at `[runtime_type_descriptor+0x08]`. The globalgamemanagers
+descriptor has no readable class name, so neither that name nor callback
+identity is statically proven.
 
 The downstream ordering stage is now positively identified. Resource builder
 `0x18104e920` selects one of 14 post-filter workers. The workers assemble
@@ -223,8 +229,9 @@ For `0x2748`, the decoder preserves the original object pointer unchanged.
 and writes payload backing under `S+0x22d0`. A later opcode `0x2730` calls
 API-2 `+0xe90` (`0x180843bf0`), which packages those exact state regions for
 `0x18083f680`; its call at `0x18083f89d` reaches
-`vkUpdateDescriptorSetWithTemplate`. This is a positive static HG resource to
-Vulkan descriptor-update edge. It is not yet a resource-to-draw identity.
+`vkUpdateDescriptorSetWithTemplate`. This is a conditional shared-API-2-state
+route, not a per-record HGMesh-to-descriptor identity: the HGMesh handoff
+itself never emits `0x2730`.
 
 The later Vulkan executor consumes a separate master callback list at
 `context+0x2b50`. Its verified callbacks bind index/vertex buffers
@@ -244,6 +251,11 @@ recording are front slots `+0xf78/+0x880`, and bounded-substream wrapper
 `0x1813aea00` advances one shared parser cursor. This proves append order equals
 invocation order inside one recorder interval, but no producer call edge
 guarantees `0x2748 -> 0x2730 -> 0x2731` or that all three share an interval.
+Direct handoff audit proves only `0x181048848: +0x268 (0x2748)` followed by
+`0x1810488dc: +0x280 (0x274a)` for the same 0x90-byte result record and front
+context. No `+0x2a0/+0x3e8` call occurs in the handoff or its bounded direct
+callees. Known `0x2730/0x2731` producers are separate generic helpers without
+a proven shared resource identity or recorder interval.
 
 API-2 `+0xda0` constructs 0x68-byte resource-binding and 0x40-byte
 pipeline/descriptor-state child nodes; `+0xda8` constructs a 0x50-byte
@@ -252,6 +264,10 @@ into master nodes at `+0x2b50`. The indirect payload contains its buffer at
 `+0x30`, byte offset at `+0x38`, draw count 1, and stride 0. The original
 `0x2748` pointer itself is not copied into these nodes, so derived-state
 association still requires runtime values or a capture.
+These nodes are generic API-2 capabilities. Ordinary HGMesh renderer-list
+wrappers and the publication handoff contain no static `+0xda8`, `+0xde8`,
+indirect-draw, or queue-submit edge, so they must not be attributed to the
+character path without runtime identity.
 
 Global singleton teardown is now closed through the concrete slot-0x14 context
 vtable and `+0xb0` manager destruction chain described above; it is no longer
