@@ -1511,7 +1511,12 @@ only stable interpretation and priorities.
    The lab's after-DOF attachments match the source schedule. Exact `.pdata`
    bodies now pin the current-build renderer-list preparer, pass constructor,
    and callback, including the callback's fullscreen -> ordinary list -> ECS
-   list chain. All six selected materials have `_IsSceneEffect=0` and
+   list chain. The downstream transparent descriptor is also closed before
+   runtime culling: sorting `87`, named WorldUI removal, absent state block,
+   null override material, and false motion-vector exclusion. Unity now uses
+   the matching optimized transparent sorting and named-layer policy. HG
+   screen-culling fields, live baked/motion per-object flags, ECS consumption,
+   and final survivors remain open. All six selected materials have `_IsSceneEffect=0` and
    `_EnableTransparentMV=0`, so `_VFXParams1` and transform history are safely
    bypassed rather than guessed. Exact inverse-VP soft depth, live
    root-signature/PSO, and renderer-list survivor identity remain missing.

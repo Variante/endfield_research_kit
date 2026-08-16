@@ -36,14 +36,27 @@ METHODS = [
     (287324, "HG.Rendering.Runtime.TransparentAfterDOFPassConstructor+<>c",
      "<.cctor>b__10_0", 0x189BB5264, 0x189BB558A,
      "D49C4DE691A7B65184532D8C9E46E1209F35AF2A76C0E23FA82B8E35593011CC"),
+    (288225, "HG.Rendering.Runtime.HGRendererListUtils",
+     "RenderForwardRendererList", 0x189C0A6EC, 0x189C0A7CC,
+     "76DC5D1B4730F4A5BB937F3776A776DE2A8E960B4BB4A47B983BA5F264555879"),
+    (288226, "HG.Rendering.Runtime.HGRendererListUtils",
+     "RenderForwardECSRendererList", 0x189C0A628, 0x189C0A6EA,
+     "BBA699B59C1081CDF6870E95B3B17469DD0D8791234E166D1D403D85786E6F42"),
+    (288241, "HG.Rendering.Runtime.HGRendererListUtils",
+     "CreateTransparentRendererListDesc", 0x189C08904, 0x189C08BC8,
+     "08E90A05982967C1F0AA45950FDF24F069FA6B639238EE3F6429FEF2DE697163"),
 ]
 CALLS = [
+    (0x189BAB3C2, 0x189C08904, "PrepareAfterDOF -> CreateTransparentRendererListDesc"),
     (0x189BB3299, 0x189BAB274, "ConstructPass -> PrepareAfterDOFTranparentRendererList"),
     (0x189BB332B, 0x189B2AB5C, "ConstructPass -> CreateRendererList"),
     (0x189BB334B, 0x189B36820, "ConstructPass -> UseRendererList"),
     (0x189BB54F1, 0x189C0A6EC, "callback -> RenderForwardRendererList"),
     (0x189BB5541, 0x189C0A628, "callback -> RenderForwardECSRendererList"),
     (0x189BB5401, 0x18B2DE0CC, "callback -> DrawFullScreen"),
+    (0x189C08967, 0x1832512C0, "CreateTransparentRendererListDesc -> Camera.get_cullingMask"),
+    (0x189C0897E, 0x189B736B0, "CreateTransparentRendererListDesc -> RemoveWorldUILayer"),
+    (0x189C089A4, 0x18B3F4A7C, "CreateTransparentRendererListDesc -> RendererListDesc.ctor"),
 ]
 
 
@@ -143,8 +156,14 @@ def build(game_root: Path) -> dict[str, Any]:
         "decisiveCalls": calls,
         "rendererList": {
             "queue": {"first": 3660, "default": 3700, "last": 3740},
+            "sortingCriteria": 87,
+            "sortingSemantic": "CommonTransparent | OptimizeStateChanges | RendererPriority",
             "shaderTagsWithoutOutline": ["TransparentBackface", "ForwardOnly", "Forward",
                                           "ForwardCharacterOnly", "SRPDefaultUnlit", "Distortion"],
+            "layerMask": "RemoveWorldUILayer(camera.cullingMask)",
+            "stateBlock": {"hasValue": False, "source": "zero-initialized nullable"},
+            "overrideMaterial": None,
+            "excludeObjectMotionVectors": False,
             "perObjectData": "bakedLightingConfig | GetPerObjectMotionVectorConfig(hgCamera)",
             "liveInputsPending": ["cullingResults", "camera", "screenCullingRatio",
                                   "screenCullingRatioDistance", "screenCullingLayerMask",
@@ -153,6 +172,14 @@ def build(game_root: Path) -> dict[str, Any]:
         "attachments": shader["renderScheduling"]["attachments"],
         "callbackExecution": ["profiling", "sceneColor/global texture setup", "fullscreen draw",
                               "forward renderer list", "forward ECS renderer list"],
+        "rendererConsumers": {
+            "opaqueArgument": False,
+            "frameSettingsGate": "TransparentObjects",
+            "classic": "CoreUtils.DrawRendererList(renderContext, cmd, rendererList)",
+            "ecs": "HGMeshRender.DrawECSRendererList(cmd, rendererListHandle)",
+            "consumerResortingOrOverride": "none; descriptor/list construction owns filtering and order",
+            "survivorIdentity": "runtime renderer-list and ECS handles pending",
+        },
         "shaderAbi": {
             "selectedMaterialGates": shader["selectedMaterialGates"],
             "variantCount": len(shader["variants"]),

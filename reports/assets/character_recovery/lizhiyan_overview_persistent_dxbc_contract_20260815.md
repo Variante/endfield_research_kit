@@ -73,13 +73,24 @@ boundaries rather than method-to-next-pointer scan ranges:
 | `PrepareAfterDOFTranparentRendererList` | `0x189bab274` | 622 | `319799A9...A5E0` |
 | `TransparentAfterDOFPassConstructor.ConstructPass` | `0x189bb2e40` | 1,578 | `D54DCF38...12CC` |
 | after-DOF render callback | `0x189bb5264` | 806 | `D49C4DE6...11CC` |
+| `CreateTransparentRendererListDesc` | `0x189c08904` | 708 | `08E90A05...7163` |
+| `RenderForwardRendererList` | `0x189c0a6ec` | 224 | `76DC5D1B...5879` |
+| `RenderForwardECSRendererList` | `0x189c0a628` | 194 | `BBA699B5...6F42` |
 
 Rel32 call gates prove `ConstructPass -> prepare list -> create list -> use
 list`, and the callback executes global scene-color/vector/texture setup,
 fullscreen draw, the ordinary forward renderer list, then the ECS renderer
 list. The callback contains no constant-buffer publication. The generated
 native ABI contract is `lizhiyan_after_dof_native_abi.json`, SHA-256
-`B4BD646A630E07290E917076B34D72072DCE3BB7E9E6F98FC1DBE3F74B260E22`.
+`6A73576511DE6FF071C05DDD6E6023C2A836358F2BB4841561BD9405BEB8B63A`.
+
+The transparent-list descriptor is now statically closed before culling:
+sorting criteria is numeric `87` (`CommonTransparent | OptimizeStateChanges |
+RendererPriority`), the layer mask is `RemoveWorldUILayer(camera.cullingMask)`,
+the nullable state block is absent, override material is null, and
+`excludeObjectMotionVectors` is false. The per-object request remains the live
+`bakedLightingConfig | GetPerObjectMotionVectorConfig(hgCamera)`. Screen-culling
+ratio/distance/mask and the resulting survivors remain runtime inputs.
 
 ## Unity admission
 
@@ -92,6 +103,12 @@ effect importer calls this validator before building the prefab.
 All six generated materials remain on `VFXUnavailableFailClosed`. Exact DXBC
 identity is necessary evidence, but it does not prove that a particular retail
 draw used a particular live descriptor table or PSO.
+
+The lab after-post list now uses numeric-equivalent sorting criteria `87` and
+removes a named `WorldUI` layer when that layer exists, without copying the
+installed client's numeric layer index. It still has no HG ECS renderer-list
+consumer and no equivalent for HG's screen-culling fields; both remain visible
+diagnostic gaps rather than inferred behavior.
 
 ## Remaining work
 
