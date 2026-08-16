@@ -4574,7 +4574,12 @@ def consume_buff_sequence_action_data(
     if offset >= limit or data[offset] != BUFF_SEQUENCE_ACTION_DATA_MEMBER_COUNT:
         raise ValueError(f"{field_name}:sequence-member-count")
     offset += 1
-    count, offset = read_buff_u32_field(data, offset, f"{field_name}.actionDataCount")
+    count, offset = read_buff_u32_field_bounded(
+        data,
+        offset,
+        limit,
+        f"{field_name}.actionDataCount",
+    )
     if count > 64:
         raise ValueError(f"{field_name}.actionDataCount={count}")
     items: list[dict[str, Any]] = []
@@ -4587,16 +4592,20 @@ def consume_buff_sequence_action_data(
             depth + 1,
         )
         items.append(summary)
-    only_guard, offset = read_buff_bool_field(
+    only_guard, offset = read_buff_bool_field_bounded(
         data,
         offset,
+        limit,
         f"{field_name}.onlyExecuteWhenSourceIsGuard",
     )
-    only_main_char, offset = read_buff_bool_field(
+    only_main_char, offset = read_buff_bool_field_bounded(
         data,
         offset,
+        limit,
         f"{field_name}.onlyExecuteWhenSourceIsMainChar",
     )
+    if offset > limit:
+        raise ValueError(f"{field_name}:consumed-past-limit={format_offset(offset)}")
     return {
         "memberCount": BUFF_SEQUENCE_ACTION_DATA_MEMBER_COUNT,
         "offset": format_offset(start),
@@ -4606,6 +4615,28 @@ def consume_buff_sequence_action_data(
         "onlyExecuteWhenSourceIsGuard": only_guard,
         "onlyExecuteWhenSourceIsMainChar": only_main_char,
     }, offset
+
+
+def buff_sequence_action_data_is_exact(sequence: Any) -> bool:
+    """Return whether a sequence was fully consumed by typed action readers."""
+    if not isinstance(sequence, dict):
+        return False
+    if sequence.get("memberCount") != BUFF_SEQUENCE_ACTION_DATA_MEMBER_COUNT:
+        return False
+    items = sequence.get("actionDataItems")
+    count = sequence.get("actionDataCount")
+    if not isinstance(items, list) or not isinstance(count, int) or count != len(items):
+        return False
+    if not isinstance(sequence.get("onlyExecuteWhenSourceIsGuard"), bool):
+        return False
+    if not isinstance(sequence.get("onlyExecuteWhenSourceIsMainChar"), bool):
+        return False
+    return all(
+        isinstance(item, dict)
+        and item.get("decodeStatus") == "exact"
+        and item.get("boundaryProof") == "typed-consumption"
+        for item in items
+    )
 
 
 def read_buff_gameplay_tag_query_exact(
@@ -6000,7 +6031,12 @@ def consume_buff_if_else_action(
         limit,
         "ifElseAction.prefix",
     )
-    always_next, offset = read_buff_bool_field(data, offset, "ifElseAction.alwaysNext")
+    always_next, offset = read_buff_bool_field_bounded(
+        data,
+        offset,
+        limit,
+        "ifElseAction.alwaysNext",
+    )
     condition_action, offset = consume_buff_sequence_action_data(
         data,
         offset,
@@ -6022,10 +6058,19 @@ def consume_buff_if_else_action(
         "ifElseAction.succeedActions",
         depth,
     )
+    branches_exact = all(
+        buff_sequence_action_data_is_exact(sequence)
+        for sequence in (condition_action, fail_actions, succeed_actions)
+    )
+    semantic_kind = "exact-if-else-action" if branches_exact else None
     return {
         "type": BUFF_ABILITY_ACTION_TAG_NAMES[BUFF_IF_ELSE_ACTION_TAG],
-        "decodeStatus": "partial",
-        "semanticStatus": "partial-nested-action-payloads-and-target-settings-opaque",
+        "decodeStatus": "exact" if branches_exact else "partial",
+        "semanticStatus": (
+            "exact-if-else-action"
+            if branches_exact
+            else "partial-nested-action-payloads-and-target-settings-opaque"
+        ),
         "schemaSource": (
             "MemoryPack setter order: AbilityActionData prefix, alwaysNext, conditionAction, "
             "failActions, succeedActions; each branch is a SequenceActionData envelope "
@@ -6039,6 +6084,7 @@ def consume_buff_if_else_action(
         "conditionAction": condition_action,
         "failActions": fail_actions,
         "succeedActions": succeed_actions,
+        **({"semanticKind": semantic_kind} if semantic_kind else {}),
     }, offset
 
 

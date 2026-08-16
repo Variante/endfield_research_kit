@@ -193,6 +193,83 @@ class CombatMemoryPackSchemaTests(unittest.TestCase):
                 exact_raw + b"\x00", 0, len(exact_raw) + 1, 1, 10,
             )
 
+    def test_if_else_promotes_only_when_all_three_branches_are_typed_exact(self) -> None:
+        skill_id = b"eny_fixture_skill"
+        check_skill = b"".join((
+            b"\x71\x05",
+            b"\x01" + struct.pack("<iii", 0, 0, 0),
+            struct.pack("<I", 1),
+            b"\x03" + struct.pack("<I", 0) + b"\x00"
+            + struct.pack("<I", len(skill_id)) + skill_id,
+        ))
+        sequence = b"\x03" + struct.pack("<I", 1) + check_skill + b"\x00\x00"
+        raw = b"".join((
+            bytes([memorypack_buff.BUFF_IF_ELSE_ACTION_TAG, 8]),
+            b"\x01" + struct.pack("<iii", 0, 0, 0),
+            b"\x00",
+            sequence,
+            sequence,
+            sequence,
+        ))
+
+        decoded, error = memorypack_buff.decode_buff_best_effort_single_action_item(
+            raw, 0, len(raw), memorypack_buff.BUFF_IF_ELSE_ACTION_TAG, 1, 8,
+        )
+        self.assertEqual("", error)
+        self.assertEqual("exact", decoded["decodeStatus"])
+        self.assertEqual("exact-if-else-action", decoded["semanticKind"])
+        self.assertEqual("exact-if-else-action", decoded["semanticStatus"])
+        self.assertTrue(
+            all(
+                memorypack_buff.buff_sequence_action_data_is_exact(decoded[key])
+                for key in ("conditionAction", "failActions", "succeedActions")
+            )
+        )
+
+        self.assertFalse(memorypack_buff.buff_sequence_action_data_is_exact({
+            **decoded["conditionAction"],
+            "actionDataItems": [{"decodeStatus": "partial", "boundaryProof": "typed-consumption"}],
+        }))
+
+        trailing_decoded, trailing_error = memorypack_buff.decode_buff_best_effort_single_action_item(
+            raw + b"\x00", 0, len(raw) + 1,
+            memorypack_buff.BUFF_IF_ELSE_ACTION_TAG, 1, 8,
+        )
+        self.assertIsNone(trailing_decoded)
+        self.assertIn("end-mismatch", trailing_error)
+
+        truncated_decoded, truncated_error = memorypack_buff.decode_buff_best_effort_single_action_item(
+            raw[:15], 0, 15,
+            memorypack_buff.BUFF_IF_ELSE_ACTION_TAG, 1, 8,
+        )
+        self.assertIsNone(truncated_decoded)
+        self.assertIn("ifElseAction.alwaysNext", truncated_error)
+
+        two_action_sequence = (
+            b"\x03" + struct.pack("<I", 2) + check_skill + check_skill + b"\x00\x00"
+        )
+        chained_if_else = b"".join((
+            bytes([memorypack_buff.BUFF_IF_ELSE_ACTION_TAG, 8]),
+            b"\x01" + struct.pack("<iii", 0, 0, 0),
+            b"\x00",
+            two_action_sequence,
+            sequence,
+            two_action_sequence,
+        ))
+        outer_chain = chained_if_else + check_skill
+        first, first_end = memorypack_buff.consume_buff_ability_action_item(
+            outer_chain, 0, len(outer_chain), 0, 0,
+        )
+        second, second_end = memorypack_buff.consume_buff_ability_action_item(
+            outer_chain, first_end, len(outer_chain), 1, 0,
+        )
+        self.assertEqual("exact-if-else-action", first["decoded"]["semanticKind"])
+        self.assertEqual(2, first["decoded"]["conditionAction"]["actionDataCount"])
+        self.assertEqual(2, first["decoded"]["succeedActions"]["actionDataCount"])
+        self.assertEqual("exact", second["decodeStatus"])
+        self.assertEqual("Core_Conditions_CheckSkillId_Data", second["name"])
+        self.assertEqual(len(outer_chain), second_end)
+
     def test_convert_to_target_context_uses_current_native_enum_names(self) -> None:
         self.assertEqual("ConvertEntityToPosition", memorypack_buff.BUFF_CONVERT_TO_TARGET_CONTEXT_OPERATION_NAMES[1])
         self.assertEqual("ConvertBlackboardValueToPosition", memorypack_buff.BUFF_CONVERT_TO_TARGET_CONTEXT_OPERATION_NAMES[7])
