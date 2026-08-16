@@ -273,6 +273,20 @@ Global singleton teardown is now closed through the concrete slot-0x14 context
 vtable and `+0xb0` manager destruction chain described above; it is no longer
 part of the live-draw recovery gap.
 
+The live-draw gap now has an executable offline intake contract rather than a
+prose-only request. `build_lizhiyan_retail_draw_observation_contract.py` pins
+the 1,678,613,397-byte retail MKV at SHA-256
+`2F542A3BE7CE3332295D3A841FD8613C62707E084F9E33A0F156DA8A06EBF5E7`,
+validates its 3840x2160 H.264 High, yuv420p, BT.709 limited-range stream, and
+uses integer millisecond PTS instead of `frameIndex/60`. The generated fixture
+is deliberately `proof_pending` with no trace inputs and
+`visibleAdmission=false`. A future offline import admits only an ordered,
+same-session/frame/recorder chain across the full HGMesh record and stable
+resource generation, `0x2748`, identical derived-state hash, descriptor
+update/bind, `0x2731`, draw, submit, and exact decoded retail pixel, plus a
+same-build Li-absent or Wulfa control. Pointer equality, timestamps, generic
+API-2 events, or teal pixels alone fail closed.
+
 The next positive proof is now an explicit runtime-capture contract rather
 than a generic request for “a capture.” On this exact build it must join one
 `CreateRendererList` handle through opcode `0x4e`, a complete accepted/sorted

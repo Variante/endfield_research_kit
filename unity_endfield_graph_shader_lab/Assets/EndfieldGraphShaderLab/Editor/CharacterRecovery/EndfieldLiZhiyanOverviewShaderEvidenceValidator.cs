@@ -24,6 +24,9 @@ namespace EndfieldGraphShaderLabEditor
         private const string NativeContractPath =
             "Assets/EndfieldGraphShaderLab/Generated/OriginalData/ShaderEvidence/" +
             "LiZhiyanOverviewFinger/lizhiyan_after_dof_native_abi.json";
+        private const string RetailDrawObservationPath =
+            "Assets/EndfieldGraphShaderLab/Generated/OriginalData/ShaderEvidence/" +
+            "LiZhiyanOverviewFinger/lizhiyan_retail_draw_observation.json";
         private const string Schema = "endfield.lizhiyan-overview-vfxbasev2-variants.v1";
         private const long ShaderPathId = -1430105248647086886L;
 
@@ -135,6 +138,47 @@ namespace EndfieldGraphShaderLabEditor
             L.Require(seen.SetEquals(expectedMaterials.Keys),
                 "Li Zhiyan shader evidence does not cover all six materials");
             ValidateNativeAbi();
+            ValidateRetailDrawObservation();
+        }
+
+        private static void ValidateRetailDrawObservation()
+        {
+            Dictionary<string, object> observation = L.Dict(
+                ManifestMiniJson.Deserialize(File.ReadAllText(
+                    L.ProjectAbsolute(RetailDrawObservationPath), Encoding.UTF8)));
+            Dictionary<string, object> importer = L.Dict(observation["importerBoundary"]);
+            Dictionary<string, object> sources = L.Dict(observation["sources"]);
+            Dictionary<string, object> abi = L.Dict(sources["abiContract"]);
+            Dictionary<string, object> video = L.Dict(sources["video"]);
+            L.Require(
+                L.Str(observation, "schema") == "endfield.lizhiyan-retail-draw-observation.v1" &&
+                L.Str(observation, "status") == "proof_pending" &&
+                !L.Bool(observation, "visibleAdmission") &&
+                L.Bool(importer, "offlineOnly") &&
+                !L.Bool(importer, "launchedRetailClient") &&
+                !L.Bool(importer, "attachedToRetailClient") &&
+                !L.Bool(importer, "injectedIntoRetailClient") &&
+                L.Bool(importer, "captureRequiresSeparateExplicitAuthorization") &&
+                L.Str(abi, "sha256") ==
+                    "7C89778C66C816F4343E843B7B18B26E395DA0E95379EDD33305228DF173F33C" &&
+                L.Long(video, "bytes") == 1678613397L &&
+                L.Str(video, "sha256") ==
+                    "2F542A3BE7CE3332295D3A841FD8613C62707E084F9E33A0F156DA8A06EBF5E7" &&
+                L.Long(video, "streamIndex") == 0 &&
+                L.Str(video, "codec") == "h264" &&
+                L.Str(video, "profile") == "High" &&
+                L.Str(video, "pixelFormat") == "yuv420p" &&
+                L.Str(video, "colorRange") == "tv" &&
+                L.Str(video, "colorSpace") == "bt709" &&
+                L.Str(video, "timeBase") == "1/1000" &&
+                L.Str(video, "ptsRule").Contains("never derive timecode") &&
+                L.List(sources["traces"]).Count == 0 &&
+                observation["positiveJoin"] == null &&
+                observation["negativeControl"] == null &&
+                L.List(observation["requirements"]).Count == 11 &&
+                L.List(observation["blockedBy"]).Count == 2 &&
+                L.List(observation["nonClaims"]).Count == 4,
+                "Li Zhiyan retail draw/video observation boundary drifted");
         }
 
         private static void ValidateNativeAbi()
