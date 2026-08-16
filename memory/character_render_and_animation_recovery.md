@@ -1520,8 +1520,14 @@ only stable interpretation and priorities.
    culling and no serialized HG override, but external mutation and the actual
    lazy mask remain runtime facts. Unity now uses
    the matching optimized transparent sorting and named-layer policy. HG
-   screen-culling instance values, the ECS-list producer, and final survivors
-   remain open. All six selected materials have `_IsSceneEffect=0` and
+   screen-culling instance values and final survivors remain open. The
+   deferred ECS producer is closed to
+   `HGRenderPathDeferred.OnPreRendering`: it creates a per-camera-frame UInt32
+   list with `TransparentAfterPP` mask/value `0x4400/0x4000`, stores it at
+   `this+0x1388`, and writes `0xffffffff` when its feature/camera gate fails.
+   The current Forward render path creates only ordinary transparent/opaque/
+   pre-Z ECS lists and leaves this constructor-initialized sentinel unchanged.
+   All six selected materials have `_IsSceneEffect=0` and
    `_EnableTransparentMV=0`, so `_VFXParams1` and transform history are safely
    bypassed rather than guessed. Exact inverse-VP soft depth, live
    root-signature/PSO, and renderer-list survivor identity remain missing.

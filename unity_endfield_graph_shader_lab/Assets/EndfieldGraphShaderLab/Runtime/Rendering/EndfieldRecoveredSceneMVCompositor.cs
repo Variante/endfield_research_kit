@@ -900,6 +900,10 @@ namespace EndfieldGraphShaderLab
                         shaderPasses,
                         dynamicBatching,
                         gpuInstancing);
+                    // Retail appends a separate HGMeshRender ECS handle here.
+                    // Its deferred producer is source-closed, but Unity has no
+                    // equivalent HG GPU-driven handle/consumer. Keep that lane
+                    // absent instead of merging ECS records into DrawRenderers.
                     success = true;
                 }
                 finally

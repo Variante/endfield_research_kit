@@ -146,8 +146,8 @@ namespace EndfieldGraphShaderLabEditor
                     "endfield.lizhiyan-after-dof-native-abi.v1" &&
                 L.Str(native, "status") ==
                     "current_build_native_schedule_and_static_shader_abi_closed_live_draw_pending" &&
-                L.List(native["methods"]).Count == 16 &&
-                L.List(native["decisiveCalls"]).Count == 12,
+                L.List(native["methods"]).Count == 20 &&
+                L.List(native["decisiveCalls"]).Count == 15,
                 "Li Zhiyan native after-DOF contract identity drifted");
             var expectedMethods = new Dictionary<long, string>
             {
@@ -160,6 +160,10 @@ namespace EndfieldGraphShaderLabEditor
                 { 284093, "B0D85048FC518253694C8BD1FC9B9F40C7F14DAA87B95EB180419233B28DD59D" },
                 { 284103, "BD2E3852A86737D9F2732283AF677FA2A0F4209DD3FFB3F9476C957C67125A10" },
                 { 286702, "8C1488DC4A09BEB9F142B4EA2DD5CB7B98770D5DE48DA545E94655EE3538B329" },
+                { 287999, "E1E497BAD2F5AA44B25F7E6D0F7ECA208CD81F4C49AE8D64070A4FB1D0E6187A" },
+                { 478062, "8C8113556AB580A5337118F93A8B5E7A38BD79A8F656128FE768CF22B727261F" },
+                { 288027, "C0D8BACD8084FAA9D608A95C2F56076A9FBC3FB57AB450AA8A2F403614C11E98" },
+                { 288006, "499191DAF06A7B6985A8684B1435D6CC8DA7ECEA1A3C0623CFBAF8EC671ABCD5" },
                 { 287274, "319799A95260B1717084D16AA8C2E0CCAD668CEDF3E52E9465B99A31EC44A5E0" },
                 { 287316, "D54DCF38AC17E6062573C476BF988FF8CBEE70E89F2B02FB341E5588DA3612CC" },
                 { 288038, "4695B2B6C39CB3522C067976FCC2F2677BC94692382C5611EF9E2EA743F145C5" },
@@ -185,6 +189,7 @@ namespace EndfieldGraphShaderLabEditor
             Dictionary<string, object> screenCulling = L.Dict(rendererList["screenCulling"]);
             Dictionary<string, object> screenDefaults = L.Dict(screenCulling["constructorDefaults"]);
             Dictionary<string, object> passInputOffsets = L.Dict(rendererList["passInputOffsets"]);
+            Dictionary<string, object> ecsProducer = L.Dict(rendererList["ecsRendererListProducer"]);
             L.Require(L.Str(boundary, "callbackConstantBufferPublication") == "not_present" &&
                 L.Str(boundary, "callbackGlobalVectorAndTexturePublication") == "present" &&
                 !L.Bool(boundary, "serializedBindingsAreD3D12RootParameters") &&
@@ -206,6 +211,21 @@ namespace EndfieldGraphShaderLabEditor
                 L.Str(passInputOffsets, "forwardTransparentAfterDOFECSList") == "0x04" &&
                 L.Str(passInputOffsets, "screenCullingLayerMask") == "0x08" &&
                 L.Str(passInputOffsets, "hgrp") == "0x98" &&
+                L.Str(ecsProducer, "owner") == "HGRenderPathDeferred.OnPreRendering" &&
+                L.Str(ecsProducer, "fieldOffset") == "0x1388" &&
+                L.Str(ecsProducer, "handleType") == "System.UInt32" &&
+                L.Long(ecsProducer, "invalidSentinel") == 4294967295L &&
+                L.Str(ecsProducer, "constructorSentinelWriteVA") == "0x182ed9507" &&
+                L.Str(ecsProducer, "phase1ReadVA") == "0x189c00568" &&
+                L.Str(ecsProducer, "renderFlagsMask") ==
+                    "0x4400 (TransparentAfterPP | ShadowOnly)" &&
+                L.Str(ecsProducer, "renderFlagsValue") ==
+                    "0x4000 (TransparentAfterPP)" &&
+                L.Bool(ecsProducer, "multiDraw") &&
+                L.Bool(ecsProducer, "transparentSorting") &&
+                !L.Bool(ecsProducer, "noAlphaTest") &&
+                !L.Bool(ecsProducer, "excludeGPUDriven") &&
+                L.Str(ecsProducer, "forwardPath").Contains("never writes 0x1388") &&
                 !L.Bool(consumers, "opaqueArgument") &&
                 L.Str(consumers, "frameSettingsGate") == "TransparentObjects" &&
                 L.Str(consumers, "survivorIdentity") ==

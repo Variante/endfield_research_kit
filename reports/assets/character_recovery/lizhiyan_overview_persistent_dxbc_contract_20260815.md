@@ -82,7 +82,21 @@ list`, and the callback executes global scene-color/vector/texture setup,
 fullscreen draw, the ordinary forward renderer list, then the ECS renderer
 list. The callback contains no constant-buffer publication. The generated
 native ABI contract is `lizhiyan_after_dof_native_abi.json`, SHA-256
-`1901DF863347CA110F29C3DEC2BD360A52FF792D83BED06B23E06B64970BDE2D`.
+`24171CCA5D4F535F8068E720E8C7CE61110E68F689301700F9C2D10E0C88381D`.
+
+The deferred ECS producer is now closed as well. Current-build
+`HGRenderPathDeferred.OnPreRendering` recreates the 32-bit handle each camera
+frame when the `forwardTransparent` feature and camera after-DOF gate are both
+enabled, otherwise storing `0xffffffff`. The exact creation call uses the
+camera culling-view handle, mask/value `0x4400/0x4000`
+(`TransparentAfterPP | ShadowOnly` / `TransparentAfterPP`), light-mode mask
+`0x20e0 | (outlineState << 9)`, multi-draw and transparent sorting enabled,
+and `RemoveWorldUILayer(0xffffffff)`. The result is stored at render-path
+offset `0x1388`, copied into PassInput offset `0x04`, and consumed only after
+the ordinary list. `HGRenderPathForward.OnPreRendering` creates ordinary
+transparent/opaque/pre-Z ECS lists but has no `0x4400/0x4000` AfterPP call and
+never writes `0x1388`, so its constructor sentinel remains. Live deferred ECS
+survivors remain unobserved.
 
 The transparent-list descriptor is now statically closed before culling:
 sorting criteria is numeric `87` (`CommonTransparent | OptimizeStateChanges |

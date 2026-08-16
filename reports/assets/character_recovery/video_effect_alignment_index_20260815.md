@@ -156,3 +156,29 @@ states`；完整 Viewer prefab catalog 仍有 Endminm 缺口（此前 verifier �
 
 本报告没有修改 Unity、memory 或任何源数据，也没有将视频外观推断为
 未闭合的 owner。
+
+## After-DOF transparent acceptance windows
+
+The recording is also a bounded visual oracle for the newly recovered
+after-DOF ordering, without proving which native renderer list owns each
+pixel. High-value windows (absolute video PTS, manual sampling uncertainty
+about `0.1-0.2 s`) are:
+
+| PTS | Observable layer | Admission boundary |
+|---:|---|---|
+| `15.3-17.0 s` | teal parallel ribbons crossing in front of and behind the moving actor | strong transparent-depth/sort oracle; not proof of ECS ownership |
+| `26.0-28.6 s` | bat-like fragments, large red cape, and red luminous trail | separate fragments/trail from the opaque body |
+| `64.0-66.8 s` | pink body-synchronous ring during a rotating entrance | useful sort and motion-vector comparison |
+| `76.8-79.0 s` | purple-white trail extending beyond actor and floating vehicle | large-area transparent survivor oracle |
+| `102.2-103.6 s` | white/green trail followed by local horizontal slicing | trail is a renderer candidate; slicing remains material/post-process ambiguous |
+| `118.4-119.6 s` | pink sphere plus full-screen purple scan/whiteout | keep object transparency separate from screen-space scan |
+| `185.2-186.4 s` | body-fragment assembly and independent red wing/trail | repeated body-versus-transparent layering pattern |
+| `270.2-271.2 s` | blue-white fog and edge trails around hair/weapon motion | layered fog/trail/body acceptance target |
+
+Across the capture, entrance transparency normally occupies roughly
+`0.4-1.5 s`, while a settled pose usually appears `1-2 s` after entry. Local
+horizontal slicing at about `220.7-221.4`, `254.4-255.2`, `296.2-296.9`,
+`339.8-340.8`, and `370.9-371.5 s` must remain a separate uncertain material
+or screen-space route. The video cannot establish depth, layer masks,
+motion-vector writes, or ECS membership; those require a retail GPU/runtime
+capture.
