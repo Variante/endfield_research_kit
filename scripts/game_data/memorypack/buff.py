@@ -1840,9 +1840,10 @@ def consume_buff_modify_dynamic_blackboard_action(
         limit,
         "modifyDynamicBlackboard.prefix",
     )
-    calculate_type, offset = read_buff_i32_field(
+    calculate_type, offset = read_buff_i32_field_bounded(
         data,
         offset,
+        limit,
         "modifyDynamicBlackboard.calculateType",
     )
     if abs(calculate_type) > 1_000:
@@ -1856,7 +1857,9 @@ def consume_buff_modify_dynamic_blackboard_action(
         limit,
         "modifyDynamicBlackboard.calculationTarget",
     )
-    direct_value, offset = read_buff_bool_field(data, offset, "modifyDynamicBlackboard.directValue")
+    direct_value, offset = read_buff_bool_field_bounded(
+        data, offset, limit, "modifyDynamicBlackboard.directValue",
+    )
     key, offset = read_buff_memorypack_utf8_string_strict_bounded(
         data,
         offset,
@@ -1866,27 +1869,36 @@ def consume_buff_modify_dynamic_blackboard_action(
     )
     if not key:
         raise ValueError("modifyDynamicBlackboard.key:empty")
-    operation, offset = read_buff_i32_field(data, offset, "modifyDynamicBlackboard.operation")
+    operation, offset = read_buff_i32_field_bounded(
+        data, offset, limit, "modifyDynamicBlackboard.operation",
+    )
     if operation not in BUFF_MODIFY_DYNAMIC_BLACKBOARD_OPERATION_NAMES:
         raise ValueError(f"modifyDynamicBlackboard.operation={operation}")
-    value, offset = read_buff_blackboard_float_raw_field_exact(
+    value, offset = read_buff_blackboard_float_raw_field_bounded(
         data,
         offset,
+        limit,
         "modifyDynamicBlackboard.value",
     )
+    target_is_exact = calculation_target.get("status") == "exact"
     return {
         "type": BUFF_ABILITY_ACTION_TAG_NAMES[BUFF_MODIFY_DYNAMIC_BLACKBOARD_ACTION_TAG],
-        "decodeStatus": "partial",
-        "semanticStatus": "partial-calculation-target-settings-envelope-opaque",
+        "decodeStatus": "exact" if target_is_exact else "partial",
+        "semanticStatus": (
+            "exact-modify-dynamic-blackboard-action"
+            if target_is_exact
+            else "partial-calculation-target-settings-envelope-opaque"
+        ),
         "schemaSource": (
             "MemoryPack setter order: AbilityActionData prefix, calculateType, calculationTarget, "
-            "directValue, key, operation, value; TargetSettings internals are retained as exact-or-bounded"
+            "directValue, key, operation, value; TargetSettings is promoted only when its typed reader "
+            "consumes the independently bounded envelope exactly"
         ),
         "byteLength": offset - item_start,
         "prefix": prefix,
         "calculateType": calculate_type,
         "calculateTypeName": calculate_type_name,
-        "calculationTargetEnvelopePartial": calculation_target,
+        "calculationTarget": calculation_target,
         "directValue": direct_value,
         "key": key,
         "operation": operation,
@@ -3675,39 +3687,45 @@ def read_buff_target_settings_full_or_partial(
     max_limit: int,
     field_name: str,
 ) -> tuple[dict[str, Any], int]:
-    """Decode a TargetSettings object when its typed body lands exactly.
+    """Decode TargetSettings from its typed cursor, with bounded fallback.
 
-    The envelope length is independently derived from the current bounded
-    MemoryPack bytes.  The typed reader is accepted only when it consumes that
-    exact envelope; otherwise the pre-existing opaque representation is
-    returned.  This keeps future/unknown selector subtypes fail-closed while
-    exposing the proven TargetSettings fields for the current build.
+    Exact status is cursor-derived: the 13-member typed reader and its nested
+    union readers determine the end without first receiving a heuristic
+    envelope candidate.  The legacy prefix/string/tail envelope rules then
+    validate that exact cursor.  Unknown nested selector types fall back to
+    the bounded partial envelope and never inherit exact status.
     """
+    try:
+        decoded, decoded_end = read_buff_target_settings_full(
+            data, offset, max_limit, field_name, 0,
+        )
+    except (IndexError, UnicodeDecodeError, ValueError, struct.error):
+        decoded = None
+        decoded_end = offset
+    if decoded is not None and offset < decoded_end <= max_limit:
+        try:
+            partial, verified_end = read_buff_target_settings_partial(
+                data, offset, decoded_end, field_name,
+            )
+        except (IndexError, UnicodeDecodeError, ValueError, struct.error):
+            decoded = None
+        else:
+            if verified_end == decoded_end:
+                return {
+                    **partial,
+                    **decoded,
+                    "status": "exact",
+                    "semanticStatus": "exact-target-settings-selector-data",
+                    "schemaSource": BUFF_SELECTOR_SCHEMA_SOURCE_NOTE,
+                    "boundarySource": "typed-member-cursor-validated-by-envelope",
+                }, decoded_end
+
     envelope_end = buff_target_settings_envelope_limit(
         data, offset, max_limit, field_name,
     )
-    partial, _ = read_buff_target_settings_partial(
+    return read_buff_target_settings_partial(
         data, offset, envelope_end, field_name,
     )
-    try:
-        decoded, decoded_end = read_buff_target_settings_full(
-            data, offset, envelope_end, field_name, 0,
-        )
-    except (IndexError, UnicodeDecodeError, ValueError, struct.error):
-        return partial, envelope_end
-    if decoded_end != envelope_end or decoded is None:
-        return partial, envelope_end
-
-    # Preserve the bounded raw evidence and the string/tail diagnostics from
-    # the partial reader alongside the typed fields.  Consumers can therefore
-    # distinguish exact field recovery from a merely recognized envelope.
-    return {
-        **partial,
-        **decoded,
-        "status": "exact",
-        "semanticStatus": "exact-target-settings-selector-data",
-        "schemaSource": BUFF_SELECTOR_SCHEMA_SOURCE_NOTE,
-    }, envelope_end
 
 
 def read_buff_direction_settings_full(

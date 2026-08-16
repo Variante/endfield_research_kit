@@ -2420,8 +2420,8 @@
             const target = buffTargetSettingsSummary(decoded.targetSettingsEnvelopePartial);
             rows.push({ label: text("buffActionDealDamage"), value: [text("buffDamageValueOpaque"), target].filter(Boolean).join(" · ") });
           }
-          if (decoded.semanticStatus === "partial-calculation-target-settings-envelope-opaque") {
-            const target = buffTargetSettingsSummary(decoded.calculationTargetEnvelopePartial);
+          if (["exact-modify-dynamic-blackboard-action", "partial-calculation-target-settings-envelope-opaque"].includes(decoded.semanticStatus)) {
+            const target = buffTargetSettingsSummary(decoded.calculationTarget);
             const operation = decoded.operationName || formatValue(decoded.operation);
             const calculationType = decoded.calculateTypeName || formatValue(decoded.calculateType);
             rows.push({

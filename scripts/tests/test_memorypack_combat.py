@@ -115,6 +115,84 @@ class CombatMemoryPackSchemaTests(unittest.TestCase):
             memorypack_buff.BUFF_MODIFY_DYNAMIC_BLACKBOARD_CALCULATION_TYPE_NAMES,
         )
 
+    def test_modify_dynamic_blackboard_promotes_only_exact_target_settings(self) -> None:
+        target_settings = bytearray.fromhex(
+            "0d 08 01 00 00 00 00 00 00 ff 00 00 00 00 ff 00 "
+            "00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 "
+            "00 03 ff 00 00 00 00 00 00 00 00 00 00 00 00 01 "
+            "00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 04 "
+            "00 00 00"
+        )
+
+        def action(target: bytes) -> bytes:
+            key = b"curr_duration"
+            return b"".join((
+                bytes([memorypack_buff.BUFF_MODIFY_DYNAMIC_BLACKBOARD_ACTION_TAG, 10]),
+                b"\x01" + struct.pack("<iii", 0, 0, 0),
+                struct.pack("<i", 0),
+                target,
+                b"\x01",
+                struct.pack("<I", len(key)) + key,
+                struct.pack("<i", 1),
+                b"\x03" + struct.pack("<I", 0) + b"\x00" + struct.pack("<f", 0.5),
+            ))
+
+        exact_raw = action(bytes(target_settings))
+        exact = memorypack_buff.decode_buff_modify_dynamic_blackboard_action(
+            exact_raw, 0, len(exact_raw), 1, 10,
+        )
+        self.assertEqual("exact", exact["decodeStatus"])
+        self.assertEqual("exact-modify-dynamic-blackboard-action", exact["semanticStatus"])
+        self.assertEqual("exact", exact["calculationTarget"]["status"])
+        self.assertEqual(
+            "typed-member-cursor-validated-by-envelope",
+            exact["calculationTarget"]["boundarySource"],
+        )
+        self.assertEqual("HpRatio", exact["calculateTypeName"])
+        self.assertEqual("Add", exact["operationName"])
+        chained = exact_raw + b"\x71\x05" + b"\x01" + struct.pack("<iii", 0, 0, 0)
+        chained_decoded, chained_end = memorypack_buff.consume_buff_modify_dynamic_blackboard_action(
+            chained, 0, len(chained), 1, 10,
+        )
+        self.assertEqual(len(exact_raw), chained_end)
+        self.assertEqual("exact", chained_decoded["decodeStatus"])
+        skill_id = b"eny_fixture_skill"
+        check_skill = b"".join((
+            b"\x71\x05",
+            b"\x01" + struct.pack("<iii", 0, 0, 0),
+            struct.pack("<I", 1),
+            b"\x03" + struct.pack("<I", 0) + b"\x00"
+            + struct.pack("<I", len(skill_id)) + skill_id,
+        ))
+        chain_status, chain_items, chain_note = memorypack_buff.split_buff_ability_action_items_opaque(
+            exact_raw + check_skill, 0, len(exact_raw + check_skill), 2,
+        )
+        self.assertEqual("typed-chain-items", chain_status)
+        self.assertEqual("", chain_note)
+        self.assertEqual(
+            ["exact-modify-dynamic-blackboard-action", "exact-skill-id-condition"],
+            [item["decoded"]["semanticStatus"] for item in chain_items],
+        )
+
+        for cutoff in (18, 86, 107, len(exact_raw) - 1):
+            with self.subTest(cutoff=cutoff), self.assertRaises(ValueError):
+                memorypack_buff.consume_buff_modify_dynamic_blackboard_action(
+                    exact_raw + b"\xff" * 32, 0, cutoff, 1, 10,
+                )
+
+        target_settings[33] = 4  # Invalid SelectorData member count; bounded envelope remains known.
+        partial_raw = action(bytes(target_settings))
+        partial = memorypack_buff.decode_buff_modify_dynamic_blackboard_action(
+            partial_raw, 0, len(partial_raw), 1, 10,
+        )
+        self.assertEqual("partial", partial["decodeStatus"])
+        self.assertEqual("partial-calculation-target-settings-envelope-opaque", partial["semanticStatus"])
+        self.assertEqual("partial", partial["calculationTarget"]["status"])
+        with self.assertRaisesRegex(ValueError, "tail-at"):
+            memorypack_buff.decode_buff_modify_dynamic_blackboard_action(
+                exact_raw + b"\x00", 0, len(exact_raw) + 1, 1, 10,
+            )
+
     def test_convert_to_target_context_uses_current_native_enum_names(self) -> None:
         self.assertEqual("ConvertEntityToPosition", memorypack_buff.BUFF_CONVERT_TO_TARGET_CONTEXT_OPERATION_NAMES[1])
         self.assertEqual("ConvertBlackboardValueToPosition", memorypack_buff.BUFF_CONVERT_TO_TARGET_CONTEXT_OPERATION_NAMES[7])
