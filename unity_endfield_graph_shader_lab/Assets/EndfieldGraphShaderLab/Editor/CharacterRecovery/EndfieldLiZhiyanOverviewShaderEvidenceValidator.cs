@@ -36,6 +36,9 @@ namespace EndfieldGraphShaderLabEditor
         private const string Start01ContractPath =
             "Assets/EndfieldGraphShaderLab/Generated/OriginalData/Effects/" +
             "lizhiyan_overview_start_01_effect.json";
+        private const string Start01ResolvedAnimationPath =
+            "Assets/EndfieldGraphShaderLab/Generated/OriginalData/Effects/" +
+            "A_fxui__lizhiyan_overview_start_01.anim";
         private const string Schema = "endfield.lizhiyan-overview-vfxbasev2-variants.v1";
         private const long ShaderPathId = -1430105248647086886L;
 
@@ -168,6 +171,28 @@ namespace EndfieldGraphShaderLabEditor
             Dictionary<string, object> mesh = L.Dict(contract["meshDependency"]);
             Dictionary<string, object> execution = L.Dict(contract["executionBoundary"]);
             IList nodes = L.List(contract["staticMeshNodes"]);
+            ValidateArtifact(L.Dict(startClip["resolvedUnityAnim"]));
+            AnimationClip resolvedClip =
+                AssetDatabase.LoadAssetAtPath<AnimationClip>(Start01ResolvedAnimationPath);
+            EditorCurveBinding[] importedBindings = resolvedClip == null
+                ? Array.Empty<EditorCurveBinding>()
+                : AnimationUtility.GetCurveBindings(resolvedClip);
+            var importedPaths = new HashSet<string>(
+                importedBindings.Select(value => value.path), StringComparer.Ordinal);
+            var importedProperties = new HashSet<string>(
+                importedBindings.Select(value => value.propertyName), StringComparer.Ordinal);
+            var expectedPaths = new HashSet<string>(new[] {
+                "S_fx_shoutiaodai_01", "S_fx_lzy_fenweiqiliu_02",
+                "S_fx_lzy_tiaodaifenwei_01 (4)", "S_fx_shoutiaodai_01 (1)",
+                "S_fx_lzy_tiaodaifenwei_01 (5)", "S_fx_lzy_tiaodaifenwei_01 (7)",
+                "S_fx_lzy_tiaodaifenwei_01 (6)", "S_fx_lzy_fenweiqiliu_02 (1)",
+                "S_fx_tuoweidisan_01", "S_fx_lzy_fenweiqiliu_02 (3)" },
+                StringComparer.Ordinal);
+            var expectedProperties = new HashSet<string>(new[] {
+                "material._MainTex_ST.x", "material._MainTex_ST.y",
+                "material._MainTex_ST.z", "material._MainTex_ST.w",
+                "material._DisturbUIntensity1", "material._TintColorAlpha",
+                "material._DissolveScheduleOffset" }, StringComparer.Ordinal);
             var materialIds = new HashSet<long>();
             foreach (object item in nodes)
             {
@@ -204,8 +229,14 @@ namespace EndfieldGraphShaderLabEditor
                 L.Long(curveBindings, "targetClassID") == 23 &&
                 L.List(curveBindings["targetPathHashes"]).Count == 10 &&
                 L.List(curveBindings["materialPropertyHashes"]).Count == 7 &&
+                L.Long(curveBindings, "currentEffectTargetPaths") == 4 &&
+                L.Long(curveBindings, "siblingEffectTargetPaths") == 6 &&
                 L.Str(curveBindings, "status") ==
-                    "hash_only_target_paths_and_material_properties_unresolved" &&
+                    "all_hashes_resolved_shared_start01_start02_start03_clip" &&
+                importedBindings.Length == 53 &&
+                importedBindings.All(value => value.type == typeof(MeshRenderer)) &&
+                importedPaths.SetEquals(expectedPaths) &&
+                importedProperties.SetEquals(expectedProperties) &&
                 L.List(contract["textureDependencies"]).Count == 8 &&
                 L.Long(mesh, "pathID") == -6840663686705882004L &&
                 materialIds.SetEquals(new long[] {
@@ -215,7 +246,7 @@ namespace EndfieldGraphShaderLabEditor
                 !L.Bool(execution, "sourceAnimationPayloadApplied") &&
                 L.Bool(execution, "rendererFailClosedForUnrecoveredShader") &&
                 !L.Bool(execution, "visibleAdmission") &&
-                L.List(execution["blockedBy"]).Count == 5,
+                L.List(execution["blockedBy"]).Count == 4,
                 "Li Zhiyan start_01 static-mesh fail-closed contract drifted");
         }
 

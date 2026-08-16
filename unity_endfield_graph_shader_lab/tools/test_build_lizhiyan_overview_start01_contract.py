@@ -20,7 +20,7 @@ def test_current_source_contract() -> None:
     assert M.EFFECT_NAME == "P_fxui_lizhiyan_overview_start_01"
     assert M.MESH_PATH_ID == -6840663686705882004
     assert M.ANIMATION_CLIP_PATH_ID == 7360398354216100382
-    clip = M.animation_clip_contract(M.ANIMATION_CLIP)
+    clip = M.animation_clip_contract(M.ANIMATION_CLIP, check=True)
     assert clip["name"] == "A_fxui__lizhiyan_overview_start_01"
     assert clip["sampleRate"] == 30.0
     assert clip["stopTime"] == 6.366667
@@ -28,6 +28,10 @@ def test_current_source_contract() -> None:
     assert clip["floatCurveBindings"]["count"] == 53
     assert len(clip["floatCurveBindings"]["targetPathHashes"]) == 10
     assert len(clip["floatCurveBindings"]["materialPropertyHashes"]) == 7
+    assert clip["floatCurveBindings"]["currentEffectTargetPaths"] == 4
+    assert clip["floatCurveBindings"]["siblingEffectTargetPaths"] == 6
+    assert clip["floatCurveBindings"]["status"] == \
+        "all_hashes_resolved_shared_start01_start02_start03_clip"
     assert set(M.MATERIAL_PATHS) == {
         -6912999194325832649, 2993445828574428557, 3282333668994552481
     }
