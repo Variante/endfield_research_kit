@@ -82,7 +82,7 @@ list`, and the callback executes global scene-color/vector/texture setup,
 fullscreen draw, the ordinary forward renderer list, then the ECS renderer
 list. The callback contains no constant-buffer publication. The generated
 native ABI contract is `lizhiyan_after_dof_native_abi.json`, SHA-256
-`8B98B0DFBB517AFE09B758197FEB7CCE127F0B56723B02FFE71312808BCE5932`.
+`35EBFDFD89D6D8D92B82A0EB5EE7281A12CC6A08F5276065E03C743ABA8669A4`.
 
 The deferred ECS producer is now closed as well. Current-build
 `HGRenderPathDeferred.OnPreRendering` recreates the 32-bit handle each camera
@@ -149,9 +149,14 @@ HGTree managers are separate context fields at `+0xb0` and `+0xc0`. Generic
 setter `0x18030f5b0` owns table writes; bulk registrar `0x180319e60` loops
 indices `0..0x15` and conditionally registers slot `0x14`. Global teardown
 `0x18058cc20` walks indices `0x1a..1`, invokes object cleanup, and necessarily
-clears slot `0x14`. Context construction semantics and the destructor internals
-for this exact `+0xb0` manager remain unresolved; unrelated objects with their
-own `+0xb0` cleanup are not evidence for HGMesh teardown.
+clears slot `0x14`. The context vtable is `0x181e1c328`; construction
+`0x180fc3500 -> 0x180fc7030` allocates a 0x70-byte manager, initializes it
+through `0x1810454c0` with type/category `0xb5`, and stores it at `+0xb0`.
+Context teardown `0x180fc2e00 -> 0x180fc3fc0 -> 0x1810459f0` destroys its
+16-byte nested entries through `0x18105fe30`, frees its `+0x28/+0x08`
+allocations, clears the count, and frees the manager. Logical reset uses
+`0x181060330`. Only the registry factory identity that initially supplies
+slot `0x14` remains unresolved.
 
 The downstream ordering stage is now positively identified. Resource builder
 `0x18104e920` selects one of 14 post-filter workers. The workers assemble
@@ -231,12 +236,26 @@ edge is therefore the same-stream/same-frame association from the
 `0x2731` execution, `+0x2b50` callback node, and draw record—not a generic
 uncertainty about which graphics API is active.
 
-Global singleton teardown is also bounded more precisely. Generic cleanup
-`0x18031aec0` first enters nested-resource cleanup `0x18031af80`, then invokes
-virtual slot 0 of the slot object before the singleton cell is cleared. This
-proves slot-0x14 generic virtual destruction, but its concrete target remains
-indirect through `[slot14_object->vtable]`; it still does not identify a
-specific destructor for the HGMesh manager at context `+0xb0`.
+All four front writers use the same per-instance recorder state at context
+`+0x2711/+0x2720`; buffer base/cursor/capacity are `+0x140/+0x148/+0x14c`.
+Opcode `0x2730` records seven qwords plus a counted u32 payload and dispatches
+to `+0xe90`; `0x2731` has no payload and dispatches to `+0xde8`. Begin/end
+recording are front slots `+0xf78/+0x880`, and bounded-substream wrapper
+`0x1813aea00` advances one shared parser cursor. This proves append order equals
+invocation order inside one recorder interval, but no producer call edge
+guarantees `0x2748 -> 0x2730 -> 0x2731` or that all three share an interval.
+
+API-2 `+0xda0` constructs 0x68-byte resource-binding and 0x40-byte
+pipeline/descriptor-state child nodes; `+0xda8` constructs a 0x50-byte
+indirect-draw node. `0x180841c40` packages the child heads at `+0x2b58/+0x2b60`
+into master nodes at `+0x2b50`. The indirect payload contains its buffer at
+`+0x30`, byte offset at `+0x38`, draw count 1, and stride 0. The original
+`0x2748` pointer itself is not copied into these nodes, so derived-state
+association still requires runtime values or a capture.
+
+Global singleton teardown is now closed through the concrete slot-0x14 context
+vtable and `+0xb0` manager destruction chain described above; it is no longer
+part of the live-draw recovery gap.
 
 The next positive proof is now an explicit runtime-capture contract rather
 than a generic request for “a capture.” On this exact build it must join one
@@ -244,7 +263,8 @@ than a generic request for “a capture.” On this exact build it must join one
 64-byte record and resolved resource identity, to a same-frame final draw and
 visible Li Zhiyan after-DOF pixel. The bounded observation points are
 `0x1801f1e40`, `0x18104e300`, `0x181005c10`, `0x18105e400`, and
-`0x18105e350`; the strongest oracle remains the hand-adjacent teal layer near
+`0x18105e350`, plus `0x1813b1624`, `0x18083f89d`, and `0x1813afed9`; the
+strongest oracle remains the hand-adjacent teal layer near
 40 s. A Li-absent or Wulfa replacement capture is required as a negative
 control. The contract itself does not authorize retail attachment or injection,
 and mandates stopping on protection refusal or any build/prologue drift.
