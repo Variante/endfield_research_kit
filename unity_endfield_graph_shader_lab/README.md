@@ -4059,6 +4059,14 @@ propagation; slot 13 handles state-reset commands; slots 18/19 suppress generic
 runtime callbacks only when both bytes are zero. Native scheduler ownership
 and those two runtime callback semantics are not yet closed, so a
 `ScriptPlayable<PlayableBehaviour>` cannot currently be labeled exact.
+The callback bodies are no longer opaque: `0x180A5A680` resets the packed
+context state at `+0x9E8..+0xA0C`; `0x180A634D0` selects a 28-byte stage record
+and calls `0x180AC4A90`, a four-mode custom timeline state machine that advances
+time, changes stages, writes time back at boundaries, and updates node/state
+flags. The exact mode names and unique scheduler dispatch remain open. This
+cannot be expressed as retail ABI through public Playable APIs; an exact path
+requires a native custom node/shim, while a full managed rewrite must remain
+labeled behavioral simulation.
 The same contract pins `SetManual(bool)`, `ManualEvaluate(float)`,
 `SyncProgress(float)`, time-scale/start-duration/start-
 scale setters, Stop, OnDisable, and OnRelease. Their decoded fallback bodies

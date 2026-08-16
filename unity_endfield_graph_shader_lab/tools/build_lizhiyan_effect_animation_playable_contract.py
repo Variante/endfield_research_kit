@@ -532,6 +532,48 @@ def build() -> dict[str, Any]:
                     "ScriptPlayable cannot be retail-faithful until the 0x180A5A680 and 0x180A634D0 "
                     "runtime callbacks and scheduler contract are reproduced"
                 ),
+                "runtimeCallbacks": {
+                    "reset": {
+                        "va": "0x180A5A680",
+                        "bytes": 45,
+                        "writes": {
+                            "context+0x9E8..0x9FF": "zero",
+                            "context+0xA04": 0,
+                            "context+0xA08": "0x00010101",
+                            "context+0xA0C": 0,
+                        },
+                        "classification": "advanced_animation_state_record_reset",
+                    },
+                    "update": {
+                        "va": "0x180A634D0",
+                        "stageProcessorVA": "0x180AC4A90",
+                        "stageRecordStrideBytes": 28,
+                        "stageTableOffset": "0x748",
+                        "stageIndexOffset": "0x768",
+                        "stageCountOffset": "0x758",
+                        "stateRecordOffset": "0x9E8",
+                        "requiresContextEnabledOffset": "0x744",
+                        "classification": "gated_per_stage_custom_animation_timeline_update",
+                    },
+                    "stageProcessor": {
+                        "va": "0x180AC4A90",
+                        "modes": [0, 1, 2, 3],
+                        "provenEffects": [
+                            "advances double time and float accumulator",
+                            "increments stage count and selects 28-byte stage records",
+                            "writes time back to the caller at stage boundaries",
+                            "sets node state170 and packed state flags",
+                            "handles mode-specific jump_loop_transition_or_end flags",
+                        ],
+                        "semanticNames": "not_uniquely_recovered_do_not_label_modes",
+                    },
+                    "additionalDirectUpdateCallers": ["0x180AD52C0", "0x180ADA2D0"],
+                    "publicPlayableApiEquivalent": False,
+                    "exactBackendRequirement": (
+                        "native custom playable node/shim, or a complete managed rewrite explicitly "
+                        "classified as behavioral simulation rather than retail ABI equivalence"
+                    ),
+                },
             },
             "classification": "native_create_and_shared_input_semantics_closed_advanced_slots_pending",
             "provenBehavior": [

@@ -1715,6 +1715,15 @@ only stable interpretation and priorities.
    when both bytes are zero. Exact scheduler ownership and the two runtime
    callback semantics remain open, so a pure ScriptPlayable is not yet a
    retail-faithful replacement.
+   Those callbacks are now structurally closed. `0x180a5a680` resets the
+   context state record at `+0x9e8..+0xa0c` and installs packed value
+   `0x00010101`. `0x180a634d0` selects a 28-byte stage record from the table at
+   context `+0x748` and invokes `0x180ac4a90`, a four-mode custom animation
+   timeline state machine that advances accumulated time, selects stages,
+   writes time back at boundaries, and mutates node/state flags. Mode labels
+   and the unique native scheduler dispatch remain unresolved. Public Playable
+   APIs cannot represent this ABI; exact recovery requires a native custom
+   node/shim or a complete managed behavioral rewrite labeled non-ABI-equivalent.
    The managed graph control is now closed beyond construction. `_AddClip`
    connects each non-null clip from output port zero to mixer input
    `animationState-1`; Li's null loop/end return before connection. On every
