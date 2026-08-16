@@ -4145,11 +4145,20 @@ The stock native route is now pinned beyond that managed call.
 list/index, and generation/status. No Renderer instance ID or HGMesh handle is
 copied into it. `Internal_DrawRendererList_Injected` at `0x180062960` calls
 `0x1804C9230`, which records opcode `0x4D` plus this payload; command-buffer
-execution reaches the ready interpreter and its `0x18099F857..0x1809A00DB`
-handler. That handler keeps individual survivor identity behind the native
-context/list backend and has no static Li-specific Vulkan draw or queue-submit
-edge. This closes stock list construction and command transport, not final
-draw attribution.
+execution reaches the ready interpreter. Its signed-RVA dispatch table at
+`0x1804D19C8` maps opcode `0x4D` to the in-interpreter branch
+`0x1804CE406` (the adjacent `0x4E` and `0x55` entries land at
+`0x1804CE43A` and `0x1804CE4BD`). The previously attributed
+`0x18099F857..0x1809A00DB` span is an unrelated geometry helper and is not a
+RendererList command handler. The `0x4D` branch reads the aligned 16-byte
+payload, validates its context and index in `0x18052E050`, resolves
+`context+0x10148[index]`, releases that backend row through `0x18053D640`, and
+writes state 2 to the 0x1a0-byte entry's `+0x194`. Payload `+0x0C` is not read
+on this path, so generation validation must not be claimed. This is a list-row
+retirement path, not the missing draw expansion, and it provides no static
+Li-specific Vulkan draw or queue-submit edge. The result closes stock list
+construction, materialization, command transport, and retirement semantics,
+not final draw attribution.
 Retail queue 3704 belongs to the source-closed 3660--3740
 `AfterPostprocessTransparent` phase. In the exact SceneMV route that range is
 owned by the after-post callback, not main transparent. This isolated shader
