@@ -79,6 +79,12 @@ leave only the report/CLI surface in recovery.
 
 - Serialized action maps, UIDs, action lists, callbacks, and target carriers are
   accepted only through versioned parsers and bounded validation.
+- CallServer callback recovery preserves exact typed reverse paths from a
+  preceding Story action and exact forward paths from the callback header. A
+  strong cross-Story edge requires one complete linear source path, one target,
+  and no branch, loop, merge, truncation, or graph-shape mismatch. The current
+  corpus has one accepted preceding path but no two-ended Story callback
+  closure, so this evidence currently adds no order edge.
 - Native facts are locked to exact `GameAssembly.dll` and metadata hashes.
   Missing or mismatched inputs skip that evidence instead of reusing stale
   addresses.
@@ -146,6 +152,8 @@ per-run proof belong in reports rather than this file.
 
 - Connect exact native playback to mission/quest activation without proximity
   inference.
+- Close the remaining CallServer callbacks across typed event/task successors;
+  do not relax the current unique linear-path gate.
 - Recover more typed server-placeholder producers and bounded successor logic.
 - Expand exact LevelScript/Timeline action schemas and callback ownership.
 - Improve cutscene root activation, subtitle, and audio-lane evidence.

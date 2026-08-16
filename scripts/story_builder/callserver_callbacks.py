@@ -170,6 +170,214 @@ def _callback_control_graph(
     }
 
 
+def _preceding_story_context(
+    *,
+    source_file: str,
+    callserver_local_id: int,
+    data: bytes,
+    membership: dict[int, str],
+    context: dict[str, Any],
+    story_by_record: dict[tuple[str, int], list[str]],
+) -> dict[str, Any]:
+    """Find exact Story action ancestors of one CallServer action.
+
+    This is deliberately the reverse of the serialized action graph used by
+    ``_callback_control_graph``.  It follows only typed ActionBase/control
+    successors, never physical record order or a shared event root.  A Story
+    is admitted only when its action is an ancestor of the specific CallServer
+    slot, so sibling Split arms and unrelated headers remain unresolved.
+    """
+    action_by_local = context.get("actionByLocal") or {}
+    callserver = action_by_local.get(callserver_local_id)
+    if callserver is None:
+        return {
+            "status": "callserver_action_missing",
+            "storyKeys": [],
+            "paths": [],
+            "truncated": False,
+        }
+    decoded_cache = context.get("decodedByStart") or {}
+    next_starts = context.get("nextStarts") or {}
+
+    def detail(record: dict[str, Any]) -> dict[str, Any]:
+        start = int(record.get("start") or 0)
+        if start not in decoded_cache:
+            decoded_cache[start] = decode_levelscript_record_payload(
+                data,
+                record,
+                next_start=next_starts.get(start),
+                action_map_role=str(membership.get(start) or ""),
+            )
+        return decoded_cache[start]
+
+    predecessors: dict[int, list[tuple[int, str]]] = defaultdict(list)
+    successors_by_local: dict[int, list[tuple[str, int]]] = {}
+    unsupported_path_reasons: dict[int, list[str]] = {}
+    loop_names = (
+        "split",
+        "ifelse",
+        "while",
+        "repeat",
+        "switch",
+        "branch",
+    )
+    for local_id, record in action_by_local.items():
+        successors = _levelscript_native_action_successors(
+            record,
+            detail(record),
+        )
+        successors_by_local[local_id] = successors
+        reasons: list[str] = []
+        action_name = levelscript_native_action_name(record).casefold()
+        if len(successors) > 1:
+            reasons.append("branching_control")
+        if any(
+            token in action_name
+            for token in loop_names
+        ):
+            reasons.append("unsupported_control_family")
+        if any(target_id not in action_by_local for _, target_id in successors):
+            reasons.append("unresolved_control_target")
+        if reasons:
+            unsupported_path_reasons[local_id] = sorted(set(reasons))
+        for edge_name, target_id in successors:
+            if target_id in action_by_local:
+                predecessors[target_id].append((local_id, edge_name))
+    for values in predecessors.values():
+        values.sort(key=lambda item: (item[0], item[1]))
+    merge_nodes = {
+        local_id
+        for local_id, values in predecessors.items()
+        if len(values) != 1
+    }
+    merge_reasons = {
+        local_id: ["alternate_predecessor_merge"]
+        for local_id in merge_nodes
+    }
+    unsupported_path_reasons.update(merge_reasons)
+
+    queue: deque[
+        tuple[int, tuple[int, ...], tuple[tuple[int, int, str], ...]]
+    ] = deque([
+        (callserver_local_id, (callserver_local_id,), tuple())
+    ])
+    visited: set[
+        tuple[int, tuple[int, ...], tuple[tuple[int, int, str], ...]]
+    ] = set()
+    story_paths: dict[tuple[str, tuple[int, ...]], dict[str, Any]] = {}
+    rejected_paths: list[dict[str, Any]] = []
+    truncated = False
+    while queue and len(visited) < 512:
+        local_id, path, path_edges = queue.popleft()
+        state = (local_id, path, path_edges)
+        if state in visited:
+            continue
+        visited.add(state)
+        for previous_id, edge_name in predecessors.get(local_id, []):
+            if previous_id in path:
+                continue
+            previous = action_by_local.get(previous_id)
+            if previous is None:
+                continue
+            previous_path = (previous_id, *path)
+            previous_edges = ((previous_id, local_id, edge_name), *path_edges)
+            reasons = sorted({
+                reason
+                for node_id in previous_path
+                for reason in unsupported_path_reasons.get(node_id, [])
+            })
+            previous_start = int(previous.get("start") or 0)
+            for story_key in story_by_record.get(
+                (source_file, previous_start),
+                [],
+            ):
+                path_row = {
+                    "storyKey": story_key,
+                    "storyActionLocalId": previous_id,
+                    "storyActionName": levelscript_native_action_name(previous),
+                    "pathLocalIds": list(previous_path),
+                    "pathEdges": [
+                        {
+                            "sourceLocalId": source_id,
+                            "targetLocalId": target_id,
+                            "edge": edge,
+                        }
+                        for source_id, target_id, edge in previous_edges
+                    ],
+                }
+                if reasons:
+                    path_row["status"] = "rejected_unsupported_control_path"
+                    path_row["rejectionReasons"] = reasons
+                    rejected_paths.append(path_row)
+                else:
+                    path_row["status"] = "exact_linear_preceding_story_path"
+                    story_paths[(story_key, previous_path)] = path_row
+            if len(visited) + len(queue) >= 512:
+                truncated = True
+                break
+            queue.append((previous_id, previous_path, previous_edges))
+
+    paths = sorted(
+        story_paths.values(),
+        key=lambda row: (
+            str(row.get("storyKey") or ""),
+            tuple(row.get("pathLocalIds") or []),
+        ),
+    )
+    all_paths = sorted(
+        [*paths, *rejected_paths],
+        key=lambda row: (
+            str(row.get("storyKey") or ""),
+            tuple(row.get("pathLocalIds") or []),
+            str(row.get("status") or ""),
+        ),
+    )
+    story_keys = sorted({row["storyKey"] for row in all_paths})
+    status = "no_exact_preceding_story"
+    diagnostics: list[dict[str, Any]] = []
+    if truncated:
+        status = "truncated_preceding_story_search"
+        diagnostics.append({
+            "gate": "boundedReverseControlTraversal",
+            "expected": {"visitedStatesLessThan": 512},
+            "actual": {"visitedStates": len(visited)},
+        })
+    elif rejected_paths and not paths:
+        status = "unsupported_preceding_control_path"
+        diagnostics.append({
+            "gate": "linearPrecedingControlPath",
+            "expected": [],
+            "actual": sorted({
+                reason
+                for row in rejected_paths
+                for reason in row.get("rejectionReasons") or []
+            }),
+        })
+    elif paths:
+        status = (
+            "ambiguous_preceding_story_path"
+            if len(paths) != 1 or len(story_keys) != 1
+            else "exact_preceding_story_path"
+        )
+        if status == "ambiguous_preceding_story_path":
+            diagnostics.append({
+                "gate": "uniqueLinearPrecedingStoryPath",
+                "expected": {"pathCount": 1, "storyKeyCount": 1},
+                "actual": {
+                    "pathCount": len(paths),
+                    "storyKeyCount": len(story_keys),
+                },
+            })
+    return {
+        "status": status,
+        "storyKeys": story_keys,
+        "paths": all_paths[:128],
+        "diagnostics": diagnostics,
+        "truncated": truncated,
+        "callServerLocalId": callserver_local_id,
+    }
+
+
 def validate_callserver_serialized_contract(
     call_server: dict[str, Any],
     *,
@@ -466,6 +674,14 @@ def build_report(
                     context=context,
                     story_by_record=story_by_record,
                 )
+                preceding_story = _preceding_story_context(
+                    source_file=normalized_source,
+                    callserver_local_id=int(record.get("localId") or 0),
+                    data=data,
+                    membership=membership,
+                    context=context,
+                    story_by_record=story_by_record,
+                )
                 callback_event_types[event_type] += 1
                 counts["exactCallbackHeaders"] += 1
                 counts["callbackControlActions"] += graph["actionCount"]
@@ -474,6 +690,11 @@ def build_report(
                 if graph["storyKeys"]:
                     counts["callbackHeadersReachingStory"] += 1
                     counts["callbackStoryTargets"] += len(graph["storyKeys"])
+                if preceding_story["status"] == "exact_preceding_story_path":
+                    counts["callbackHeadersWithPrecedingStory"] += 1
+                    counts["callbackStorySources"] += len(
+                        preceding_story["storyKeys"]
+                    )
                 for action in graph["actions"]:
                     action_name = str(action.get("actionName") or "")
                     if action_name:
@@ -485,6 +706,7 @@ def build_report(
                     "eventType": event_type,
                     "eventKey": event_key,
                     "controlGraph": graph,
+                    "precedingStory": preceding_story,
                 })
                 callback_rows.append(callback)
             rows.append({
@@ -551,10 +773,11 @@ def build_report(
             "possible sub-executor header UID. Exact UID/event/header/action links prove "
             "conditional callback topology inside one LevelScript. Missing UIDs remain "
             "dangling, and neither a callback nor its local actions identify a mission "
-            "owner. Ten exact callback headers do reach Story playback actions, but "
-            "none of their CallServer actions are themselves downstream of an earlier "
-            "Story playback in the local typed graph, so they do not create a recovered "
-            "Story-to-Story order edge. The audit retains all six serialized "
+            "owner. Exact callback headers retain a reverse typed action path when "
+            "one reaches a preceding Story action. Only when both that path and the "
+            "forward callback path reach Story actions may a caller promote a "
+            "same-LevelScript Story-to-Story order edge; absence remains unresolved. "
+            "The audit retains all six serialized "
             "CallServer fields for every decoded action; their exact values are "
             "runtime handoff parameters, not mission identity unless an independent "
             "original-data contract proves that interpretation."
@@ -576,6 +799,8 @@ def markdown_report(report: dict[str, Any]) -> str:
         f"- exact callback headers: `{summary.get('exactCallbackHeaders', 0)}`",
         f"- unresolved callback outputs: `{summary.get('unresolvedCallbackOutputs', 0)}`",
         f"- callback headers reaching Story playback: `{summary.get('callbackHeadersReachingStory', 0)}`",
+        f"- callback headers with an exact preceding Story path: `{summary.get('callbackHeadersWithPrecedingStory', 0)}` "
+        f"(`{summary.get('callbackStorySources', 0)}` source Story keys)",
         f"- validation failures: `{summary.get('validationFailures', 0)}`",
         f"- event-name identities: `{json.dumps(summary.get('eventNameIdentityDistribution', {}), sort_keys=True)}`",
         f"- event argument path values: `{json.dumps(summary.get('eventArgsPathValueDistribution', {}), sort_keys=True)}`",

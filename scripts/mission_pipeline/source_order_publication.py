@@ -234,6 +234,7 @@ def publish_source_story_partial_order(
     schema_version: str,
     story_order_override_path: Path,
     story_order_ocr_path: Path,
+    callserver_callback_audit: dict[str, Any] | None = None,
 ) -> dict[str, Any] | None:
     """Publish strict Story ordering evidence into lazy mission payloads."""
     story_index = story_data_root / language / "index.json"
@@ -260,6 +261,7 @@ def publish_source_story_partial_order(
         story_data_root=story_data_root,
         quest_succeed_lifecycle_contract=quest_succeed_contract,
         extra_thread_scheduler_contract=extra_thread_contract,
+        callserver_callback_audit=callserver_callback_audit,
     )
     quest_start = state_contract.get("questStartApplication") or {}
     topology_consumers = state_contract.get("questTopologyFieldConsumers") or {}

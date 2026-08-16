@@ -5787,6 +5787,11 @@ def build_story_binding_coverage(
                 "callbackHeaderUid": callback.get("headerUid"),
                 "callbackHeaderLocalId": callback.get("headerLocalId"),
                 "storyKeys": graph.get("storyKeys") or [],
+                "precedingStory": callback.get("precedingStory") or {},
+                "precedingStoryKeys": (
+                    (callback.get("precedingStory") or {}).get("storyKeys")
+                    or []
+                ),
                 "actionCount": graph.get("actionCount", 0),
                 "branchPointCount": graph.get("branchPointCount", 0),
             })
@@ -7949,20 +7954,10 @@ def main() -> int:
                 output_root,
             )
             write_json(output_root / "index.json", index)
-    order_report = source_order_publication.publish_source_story_partial_order(
-        index,
-        output_root,
-        args.story_data_root.resolve(),
-        args.story_language,
-        DEFAULT_ORDER_REPORT_ROOT,
-        schema_version=SCHEMA_VERSION,
-        story_order_override_path=DEFAULT_STORY_ORDER_OVERRIDE,
-        story_order_ocr_path=DEFAULT_STORY_ORDER_OCR,
-    )
-    # The complete-corpus callback audit is generated once for the canonical
-    # pipeline. Reduced fixture outputs never overwrite or silently consume it.
+    # Build the complete-corpus callback audit before the partial-order report
+    # so exact same-LevelScript Story -> CallServer -> Story bridges can be
+    # admitted without consuming a stale previous report.
     callserver_callback_audit: dict[str, Any] = {}
-    timeline_embedded_runtime_audit: dict[str, Any] = {}
     if output_root == DEFAULT_OUTPUT_ROOT.resolve():
         callserver_callback_audit = build_callserver_callback_audit_report()
         write_report_json(
@@ -7975,6 +7970,21 @@ def main() -> int:
                 callserver_callback_audit
             ),
         )
+    order_report = source_order_publication.publish_source_story_partial_order(
+        index,
+        output_root,
+        args.story_data_root.resolve(),
+        args.story_language,
+        DEFAULT_ORDER_REPORT_ROOT,
+        schema_version=SCHEMA_VERSION,
+        story_order_override_path=DEFAULT_STORY_ORDER_OVERRIDE,
+        story_order_ocr_path=DEFAULT_STORY_ORDER_OCR,
+        callserver_callback_audit=callserver_callback_audit,
+    )
+    # The complete-corpus callback audit is generated once for the canonical
+    # pipeline. Reduced fixture outputs never overwrite or silently consume it.
+    timeline_embedded_runtime_audit: dict[str, Any] = {}
+    if output_root == DEFAULT_OUTPUT_ROOT.resolve():
         try:
             timeline_embedded_runtime_audit = (
                 build_timeline_embedded_runtime_report()

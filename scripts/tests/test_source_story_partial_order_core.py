@@ -114,6 +114,268 @@ def mission_payload(
 
 
 class SourceStoryPartialOrderTests(unittest.TestCase):
+    def test_callserver_callback_bridge_requires_both_exact_story_paths(self) -> None:
+        audit = {
+            "status": "validated_complete_corpus",
+            "validationFailures": [],
+            "rows": [{
+                "sourceFile": "export_full/structured/LevelScriptData/test/1.json",
+                "levelId": "test",
+                "scriptId": "1",
+                "callServerLocalId": 7,
+                "callServerUid": "call-uid",
+                "callbackOutputs": [{
+                    "status": "exact_callback_header_control_path",
+                    "headerUid": "header-uid",
+                    "headerLocalId": 3,
+                    "controlGraph": {
+                        "storyKeys": ["radio_after"],
+                        "actions": [{"storyKeys": ["radio_after"]}],
+                        "edges": [],
+                        "branchPointCount": 0,
+                        "cycleCount": 0,
+                        "truncated": False,
+                    },
+                    "precedingStory": {
+                        "status": "exact_preceding_story_path",
+                        "storyKeys": ["radio_before"],
+                        "truncated": False,
+                        "paths": [{
+                            "storyKey": "radio_before",
+                            "pathLocalIds": [2, 7],
+                            "status": "exact_linear_preceding_story_path",
+                        }],
+                    },
+                }],
+            }],
+        }
+        edges, warnings = partial_order._callserver_callback_story_edges(
+            {"radio_before", "radio_after"},
+            audit,
+        )
+        self.assertEqual(warnings, [])
+        self.assertEqual(len(edges), 1)
+        self.assertEqual(
+            (edges[0]["from"], edges[0]["to"]),
+            ("radio_before", "radio_after"),
+        )
+        self.assertEqual(edges[0]["kind"], "levelscriptCallServerCallback")
+
+        audit["rows"][0]["callbackOutputs"][0]["precedingStory"][
+            "truncated"
+        ] = True
+        edges, warnings = partial_order._callserver_callback_story_edges(
+            {"radio_before", "radio_after"},
+            audit,
+        )
+        self.assertEqual(edges, [])
+        self.assertEqual(warnings[0]["gate"], "completeLinearCallbackPaths")
+
+    def test_callserver_callback_bridge_rejects_branching_endpoints_and_paths(self) -> None:
+        def audit(*, sources, targets, branch_points=0, preceding_status="exact_preceding_story_path", truncated=False):
+            return {
+                "status": "validated_complete_corpus",
+                "validationFailures": [],
+                "rows": [{
+                    "sourceFile": "level/test.json",
+                    "callServerLocalId": 7,
+                    "callbackOutputs": [{
+                        "status": "exact_callback_header_control_path",
+                        "headerUid": "header",
+                        "controlGraph": {
+                            "storyKeys": targets,
+                            "actions": [{"storyKeys": targets}],
+                            "edges": [],
+                            "branchPointCount": branch_points,
+                            "cycleCount": 0,
+                            "truncated": False,
+                        },
+                        "precedingStory": {
+                            "status": preceding_status,
+                            "storyKeys": sources,
+                            "truncated": truncated,
+                            "paths": [
+                                {
+                                    "storyKey": source,
+                                    "status": "exact_linear_preceding_story_path",
+                                }
+                                for source in sources
+                            ],
+                        },
+                    }],
+                }],
+            }
+
+        for kwargs, gate in (
+            ({"sources": ["before"], "targets": ["after"], "branch_points": 1}, "linearCallbackControlPaths"),
+            ({"sources": ["before", "other"], "targets": ["after"]}, "uniqueStoryEndpoints"),
+            ({"sources": ["before"], "targets": ["after", "other"]}, "uniqueStoryEndpoints"),
+            ({"sources": ["before"], "targets": ["after"], "preceding_status": "unsupported_preceding_control_path"}, "completeLinearCallbackPaths"),
+            ({"sources": ["before"], "targets": ["after"], "truncated": True}, "completeLinearCallbackPaths"),
+        ):
+            with self.subTest(kwargs=kwargs):
+                edges, warnings = partial_order._callserver_callback_story_edges(
+                    {"before", "after", "other"},
+                    audit(**kwargs),
+                )
+                self.assertEqual(edges, [])
+                self.assertEqual(warnings[0]["gate"], gate)
+
+    def test_callserver_callback_bridge_fails_closed_on_invalid_audit(self) -> None:
+        edges, warnings = partial_order._callserver_callback_story_edges(
+            {"radio_before", "radio_after"},
+            {"status": "validation_failed", "validationFailures": [{"gate": "x"}]},
+        )
+        self.assertEqual(edges, [])
+        self.assertEqual(warnings[0]["validator"], "levelscriptCallServerCallback")
+        self.assertEqual(warnings[0]["gate"], "completeCallbackAudit")
+
+    def test_preceding_story_context_rejects_if_split_and_while_paths(self) -> None:
+        records = {
+            1: {"localId": 1, "start": 1},
+            2: {"localId": 2, "start": 2},
+            3: {"localId": 3, "start": 3},
+        }
+        successor_cases = {
+            "IfElseAction": {
+                1: [("IfElseAction.trueAction", 2), ("IfElseAction.falseAction", 2)],
+                2: [("ActionBase.nextId", 3)],
+                3: [],
+            },
+            "Split": {
+                1: [("Split.actions[0]", 2), ("Split.actions[1]", 2)],
+                2: [("ActionBase.nextId", 3)],
+                3: [],
+            },
+            "WhileAction": {
+                1: [("WhileAction.body", 1), ("ActionBase.nextId", 2)],
+                2: [("ActionBase.nextId", 3)],
+                3: [],
+            },
+        }
+        from scripts.story_builder import callserver_callbacks
+        for action_name, successors in successor_cases.items():
+            with self.subTest(action_name=action_name), patch.object(
+                callserver_callbacks, "_levelscript_native_action_successors",
+                side_effect=lambda record, detail: successors[record["localId"]],
+            ), patch(
+                "scripts.story_builder.callserver_callbacks.decode_levelscript_record_payload",
+                return_value={},
+            ), patch(
+                "scripts.story_builder.callserver_callbacks.levelscript_native_action_name",
+                side_effect=lambda record: action_name if record["localId"] == 1 else "PlayRadio",
+            ):
+                # Import the production helper lazily to keep this core suite's
+                # normal source-order namespace independent of the audit module.
+                context = callserver_callbacks._preceding_story_context(
+                    source_file="source",
+                    callserver_local_id=3,
+                    data=b"fixture",
+                    membership={1: "actionList#1", 2: "actionList#2", 3: "actionList#3"},
+                    context={
+                        "actionByLocal": records,
+                        "decodedByStart": {},
+                        "nextStarts": {},
+                    },
+                    story_by_record={("source", 1): ["before"]},
+                )
+            self.assertEqual(context["status"], "unsupported_preceding_control_path")
+            self.assertIn(
+                "unsupported_control_family" if action_name != "IfElseAction" else "branching_control",
+                context["diagnostics"][0]["actual"],
+            )
+
+    def test_preceding_story_context_rejects_alternate_merge_arms(self) -> None:
+        records = {
+            local_id: {"localId": local_id, "start": local_id}
+            for local_id in (1, 2, 3, 4, 5)
+        }
+        successors = {
+            1: [("ActionBase.nextId", 2)],
+            2: [("ActionBase.nextId", 5)],
+            3: [("ActionBase.nextId", 5)],
+            4: [("ActionBase.nextId", 3)],
+            5: [],
+        }
+        from scripts.story_builder import callserver_callbacks
+        with patch.object(
+            callserver_callbacks,
+            "_levelscript_native_action_successors",
+            side_effect=lambda record, detail: successors[record["localId"]],
+        ), patch(
+            "scripts.story_builder.callserver_callbacks.decode_levelscript_record_payload",
+            return_value={},
+        ), patch(
+            "scripts.story_builder.callserver_callbacks.levelscript_native_action_name",
+            side_effect=lambda record: "PlayRadio",
+        ):
+            context = callserver_callbacks._preceding_story_context(
+                source_file="source",
+                callserver_local_id=5,
+                data=b"fixture",
+                membership={local_id: f"actionList#{local_id}" for local_id in records},
+                context={"actionByLocal": records, "decodedByStart": {}, "nextStarts": {}},
+                story_by_record={
+                    ("source", 1): ["before"],
+                    ("source", 4): ["alternate"],
+                },
+            )
+        self.assertEqual(context["status"], "unsupported_preceding_control_path")
+        self.assertIn(
+            "alternate_predecessor_merge",
+            context["diagnostics"][0]["actual"],
+        )
+        self.assertEqual(set(context["storyKeys"]), {"before", "alternate"})
+
+    def test_callback_bridge_rejects_story_key_path_mismatch_and_malformed_graph(self) -> None:
+        base = {
+            "status": "validated_complete_corpus",
+            "validationFailures": [],
+            "rows": [{
+                "sourceFile": "level/test.json",
+                "callServerLocalId": 7,
+                "callbackOutputs": [{
+                    "status": "exact_callback_header_control_path",
+                    "headerUid": "header",
+                    "controlGraph": {
+                        "storyKeys": ["after"],
+                        "actions": [{"storyKeys": ["after"]}],
+                        "edges": [],
+                        "branchPointCount": 0,
+                        "cycleCount": 0,
+                        "truncated": False,
+                    },
+                    "precedingStory": {
+                        "status": "exact_preceding_story_path",
+                        "storyKeys": ["before"],
+                        "paths": [{
+                            "storyKey": "different",
+                            "status": "exact_linear_preceding_story_path",
+                        }],
+                        "truncated": False,
+                    },
+                }],
+            }],
+        }
+        edges, warnings = partial_order._callserver_callback_story_edges(
+            {"before", "after"}, base,
+        )
+        self.assertEqual(edges, [])
+        self.assertEqual(warnings[0]["gate"], "precedingStoryKeysMatchPaths")
+
+        malformed = copy.deepcopy(base)
+        malformed["rows"][0]["callbackOutputs"][0]["precedingStory"][
+            "paths"
+        ][0]["storyKey"] = "before"
+        del malformed["rows"][0]["callbackOutputs"][0]["controlGraph"][
+            "branchPointCount"
+        ]
+        edges, warnings = partial_order._callserver_callback_story_edges(
+            {"before", "after"}, malformed,
+        )
+        self.assertEqual(edges, [])
+        self.assertEqual(warnings[0]["gate"], "completeCallbackGraphShape")
+
     def test_dialog_tree_conditional_branch_is_value_independent(self) -> None:
         """The branch adapter must discover arbitrary corpus values."""
         with tempfile.TemporaryDirectory() as temporary:
