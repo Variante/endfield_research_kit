@@ -1289,6 +1289,15 @@
     return Number.isFinite(numeric) && numeric !== 0 ? numeric >>> 0 : null;
   }
 
+  function renderEvidenceBadge(labelKey, detailKey, tone = "exact") {
+    const detail = text(detailKey);
+    return `<span class="gameplay-status-badge is-${escapeHtml(tone)}" title="${escapeHtml(detail)}">${escapeHtml(text(labelKey))}</span>`;
+  }
+
+  function renderBuffSubheading(labelKey, badge = "") {
+    return `<div class="gameplay-subheading gameplay-subheading-row"><span>${escapeHtml(text(labelKey))}</span>${badge}</div>`;
+  }
+
   function projectileAudioIndexKey(projectileId, field, eventHash) {
     return `${String(projectileId || "")}\u0000${String(field || "")}\u0000${Number(eventHash) >>> 0}`;
   }
@@ -2002,7 +2011,7 @@
       facts,
       body: [
         section(text("characterAssets"), `${variantControl}${characterAssets}`),
-        section(text("characterSkills"), skillRows || unresolvedProjectiles ? `${skillRows ? `<div class="gameplay-active-skill-table${STATE.showDebug ? " is-debug" : ""}">${renderActiveSkillTableHeader()}<p class="gameplay-projectile-coverage-note">${escapeHtml(text("projectileCoverageNote"))}</p>${skillRows}</div>` : ""}${unresolvedProjectiles}` : ""),
+        section(text("characterSkills"), skillRows || unresolvedProjectiles ? `${skillRows ? `<div class="gameplay-active-skill-table${STATE.showDebug ? " is-debug" : ""}">${renderActiveSkillTableHeader()}<details class="gameplay-guidance"><summary>${escapeHtml(text("projectileCoverageHelp"))}</summary><p>${escapeHtml(text("projectileCoverageNote"))}</p></details>${skillRows}</div>` : ""}${unresolvedProjectiles}` : ""),
         section(text("talents"), talentGroups || (talentCards ? `<div class="gameplay-card-grid">${talentCards}</div>` : "")),
         section(text("characterBreakthroughs"), renderCharacterBreakthroughs(entry)),
         section(text("characterPotentials"), renderCharacterPotentials(entry)),
@@ -2592,7 +2601,7 @@
     const record = buffRecord(id);
     const diffClass = highlight && highlight.has(id) ? " gameplay-diff" : "";
     if (!record || record.evidenceStatus === "unresolved") {
-      return `<details class="gameplay-buff-card${diffClass}"><summary><code>${escapeHtml(id)}</code></summary><p class="muted">${escapeHtml(text("buffDecodeUnavailable"))}</p></details>`;
+      return `<details class="gameplay-buff-card${diffClass}"><summary><code>${escapeHtml(id)}</code>${renderEvidenceBadge("recoveryUnavailable", "buffDecodeUnavailable", "unresolved")}</summary><p class="muted">${escapeHtml(text("buffDecodeUnavailable"))}</p></details>`;
     }
     const stacking = record.stacking || {};
     const stackingLabel = text(BUFF_STACKING_LABEL_KEYS[stacking.stackingTypeName] || "buffStackUnknown");
@@ -2612,6 +2621,23 @@
       : actionCoverage.total > 0
         ? "buffAbilityEventActionPartialBoundary"
         : "buffAbilityEventActionBoundary";
+    const actionStatusKey = actionCoverage.total > 0
+      && actionCoverage.partial === 0
+      && actionCoverage.unresolved === 0
+      ? "recoveryExact"
+      : actionCoverage.total > 0
+        ? "recoveryPartial"
+        : "recoveryUnavailable";
+    const actionStatusTone = actionCoverage.total > 0
+      && actionCoverage.partial === 0
+      && actionCoverage.unresolved === 0
+      ? "exact"
+      : actionCoverage.total > 0
+        ? "partial"
+        : "unresolved";
+    const summaryStatusKey = actionCoverage.total > 0 ? actionStatusKey : "recoveryStructured";
+    const summaryStatusTone = actionCoverage.total > 0 ? actionStatusTone : "exact";
+    const summaryStatusDetail = actionCoverage.total > 0 ? actionBoundaryKey : "buffEvidenceBoundary";
     const facts = [
       { label: text("buffLifeType"), value: buffLifeLabel(record.lifeType) },
       duration ? { label: text("buffDuration"), value: Number(duration.value) < 0 ? text("buffLifeInfinity") : `${formatValue(duration.value)} ${text("secondsShort")}` } : null,
@@ -2643,15 +2669,15 @@
       .filter(([, value]) => value)
       .map(([key]) => ({ label: text(BUFF_FLAG_LABEL_KEYS[key] || key), value: text("enabled") }));
     return `<details class="gameplay-buff-card${diffClass}">
-      <summary><code>${escapeHtml(id)}</code>${hint ? `<span>${escapeHtml(text("buffIdentifierHint"))}: ${escapeHtml(hint)}</span>` : ""}</summary>
+      <summary><code>${escapeHtml(id)}</code>${renderEvidenceBadge(summaryStatusKey, summaryStatusDetail, summaryStatusTone)}${hint ? `<span>${escapeHtml(text("buffIdentifierHint"))}: ${escapeHtml(hint)}</span>` : ""}</summary>
       ${renderChipPairs(facts)}
       ${abilityEventActions}
-      ${abilityEventActionCount > 0 || hasActionGroup ? `<p class="gameplay-evidence-note muted">${escapeHtml(text(actionBoundaryKey))}</p>` : ""}
-      ${attributeModifiers ? `<div class="gameplay-subheading">${escapeHtml(text("buffAttributeModifiers"))}</div>${attributeModifiers}<p class="gameplay-evidence-note muted">${escapeHtml(text("buffAttributeModifierBoundary"))}</p>` : ""}
-      ${appliedTags ? `<div class="gameplay-subheading">${escapeHtml(text("buffAppliedTags"))}</div>${appliedTags}<p class="gameplay-evidence-note muted">${escapeHtml(text("buffAppliedTagBoundary"))}</p>` : ""}
-      ${params ? `<div class="gameplay-subheading">${escapeHtml(text("buffParameterCandidates"))}</div>${params}` : ""}
-      ${flags.length ? `<div class="gameplay-subheading">${escapeHtml(text("buffFlags"))}</div>${renderChipPairs(flags)}` : ""}
-      ${refs ? `<div class="gameplay-subheading">${escapeHtml(text("buffReferences"))}</div>${refs}` : ""}
+      ${abilityEventActionCount > 0 || hasActionGroup ? `<div class="gameplay-evidence-status-row">${renderEvidenceBadge(actionStatusKey, actionBoundaryKey, actionStatusTone)}</div>` : ""}
+      ${attributeModifiers ? `${renderBuffSubheading("buffAttributeModifiers", renderEvidenceBadge("recoveryExact", "buffAttributeModifierBoundary"))}${attributeModifiers}` : ""}
+      ${appliedTags ? `${renderBuffSubheading("buffAppliedTags", renderEvidenceBadge("recoveryExact", "buffAppliedTagBoundary"))}${appliedTags}` : ""}
+      ${params ? renderBuffSubheading("buffParameterCandidates") + params : ""}
+      ${flags.length ? renderBuffSubheading("buffFlags") + renderChipPairs(flags) : ""}
+      ${refs ? renderBuffSubheading("buffReferences") + refs : ""}
       ${STATE.showDebug && record.source?.path ? `<p class="gameplay-buff-source muted">${escapeHtml(text("source"))}: ${escapeHtml(record.source.path)}</p>` : ""}
     </details>`;
   }
@@ -2659,7 +2685,7 @@
   function renderBuffCards(ids, opts = {}) {
     const rows = [...new Set((ids || []).filter(Boolean))].map((id) => renderBuffCard(id, opts.highlight));
     if (!rows.length) return "";
-    return `<p class="gameplay-evidence-note muted">${escapeHtml(text("buffEvidenceBoundary"))}</p><div class="gameplay-buff-grid">${rows.join("")}</div>`;
+    return `<details class="gameplay-guidance gameplay-buff-guidance"><summary>${escapeHtml(text("buffEvidenceHelp"))}</summary><p>${escapeHtml(text("buffEvidenceBoundary"))}</p></details><div class="gameplay-buff-grid">${rows.join("")}</div>`;
   }
 
   function enemyModifierPairs(source) {

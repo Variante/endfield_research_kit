@@ -43,8 +43,8 @@ class GameplayBuffFrontendContractTests(unittest.TestCase):
         self.assertIn("record.applyTags", source)
         self.assertIn("tagDetails", source)
         self.assertIn("record.attributeModifier", source)
-        self.assertIn('text("buffAttributeModifierBoundary")', source)
-        self.assertIn('text("buffAppliedTagBoundary")', source)
+        self.assertIn('renderEvidenceBadge("recoveryExact", "buffAttributeModifierBoundary")', source)
+        self.assertIn('renderEvidenceBadge("recoveryExact", "buffAppliedTagBoundary")', source)
         self.assertIn('text("gameplayTagContext")', source)
         self.assertIn('text("gameplayTagUnresolvedReason")', source)
         self.assertIn("item.unresolvedReason", source)
@@ -55,6 +55,20 @@ class GameplayBuffFrontendContractTests(unittest.TestCase):
         self.assertIn("gameplayTagContext:", labels)
         self.assertIn("gameplayTagUnresolvedReason:", labels)
         self.assertIn("buffAbilityEventActionBoundary:", labels)
+
+    def test_gameplay_evidence_uses_compact_status_and_collapsed_guidance(self) -> None:
+        source = GAMEPLAY.read_text(encoding="utf-8")
+        labels = LABELS.read_text(encoding="utf-8")
+
+        self.assertIn("function renderEvidenceBadge", source)
+        self.assertIn('class="gameplay-guidance gameplay-buff-guidance"', source)
+        self.assertIn('class="gameplay-guidance"', source)
+        self.assertIn("recoveryExact:", labels)
+        self.assertIn("recoveryPartial:", labels)
+        self.assertIn("recoveryUnavailable:", labels)
+        self.assertIn("recoveryStructured:", labels)
+        self.assertIn("buffEvidenceHelp:", labels)
+        self.assertIn("projectileCoverageHelp:", labels)
 
     def test_exact_buff_skill_cooldown_actions_are_rendered(self) -> None:
         source = GAMEPLAY.read_text(encoding="utf-8")
