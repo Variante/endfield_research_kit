@@ -268,8 +268,15 @@ namespace EndfieldGraphShaderLabEditor
                 L.Str(contextOwnership, "globalTeardownVA") == "0x18058cc20" &&
                 L.Str(contextOwnership, "genericCleanupVA") == "0x18031aec0" &&
                 L.Str(contextOwnership, "nestedCleanupVA") == "0x18031af80" &&
-                L.Str(contextOwnership, "concreteDestructorTarget").Contains("indirect") &&
-                L.Str(contextOwnership, "provenBoundary").Contains("generic virtual destruction") &&
+                L.Str(contextOwnership, "contextVtableVA") == "0x181e1c328" &&
+                L.Str(contextOwnership, "contextDestructorVA") == "0x180fc2e00" &&
+                L.Str(contextOwnership, "contextConstructionVA") == "0x180fc3500" &&
+                L.Str(contextOwnership, "managerAllocation").Contains("0x70 bytes") &&
+                L.Str(contextOwnership, "managerAllocation").Contains("0xb5") &&
+                L.Str(contextOwnership, "managerResetVA") == "0x181060330" &&
+                L.Str(contextOwnership, "managerDestructionVA") == "0x1810459f0" &&
+                L.Str(contextOwnership, "managerNestedEntryDestructionVA") == "0x18105fe30" &&
+                L.Str(contextOwnership, "provenBoundary").Contains("registry factory identity") &&
                 L.Str(commandConsumer, "opcode") == "0x4e" &&
                 L.Str(commandConsumer, "managerSingletonOffset") == "0xb0" &&
                 L.Long(commandConsumer, "slotStride") == 16 &&
@@ -312,13 +319,17 @@ namespace EndfieldGraphShaderLabEditor
                     "post-filter 64-byte records -> in-place key sort -> invalid-record skip -> ID/resource resolve -> pointer-vector publication" &&
                 StringListEquals(survivorSort["notYetProven"],
                     "semantic names of packed key fields",
-                    "HGMesh resource identity reaching a specific Vulkan draw/submit",
-                    "slot-0x14 context construction semantics and +0xb0 destructor internals") &&
+                    "HGMesh-derived descriptor state reaching one specific Vulkan draw/submit and visible pixel",
+                    "slot-0x14 registry factory identity") &&
                 L.Str(backendBoundary, "resultCallbackThunkVA") == "0x180feaea0" &&
                 L.Str(backendBoundary, "frontEndHandoffVA") == "0x1810484e0" &&
                 L.Str(backendBoundary, "behavior").Contains("generic front-end virtual dispatch") &&
                 L.Str(graphicsFront, "vtableVA") == "0x181dcb360" &&
                 L.Str(graphicsFront, "resourceAppendSlot").Contains("opcode 0x2748") &&
+                L.Str(graphicsFront, "descriptorUpdateSlot").Contains("opcode 0x2730") &&
+                L.Str(graphicsFront, "executeSlot").Contains("opcode 0x2731") &&
+                L.Str(graphicsFront, "beginRecordingSlot").Contains("+0x2711") &&
+                L.Str(graphicsFront, "endRecordingSlot").Contains("0x27cb") &&
                 L.Str(commandInterpreter, "interpreterVA") == "0x1813aee90" &&
                 L.Str(commandInterpreter, "dispatchTableVA") == "0x1813bb574" &&
                 L.Str(commandInterpreter, "opcode2748CaseVA") == "0x1813b1624" &&
@@ -326,6 +337,11 @@ namespace EndfieldGraphShaderLabEditor
                 L.Str(commandInterpreter, "opcode274aCaseVA") == "0x1813b16f0" &&
                 L.Str(commandInterpreter, "opcode274aRoute").Contains("mode 0") &&
                 L.Str(commandInterpreter, "api2ResourceCollection").Contains("+0x2e48") &&
+                L.Str(commandInterpreter, "sharedRecorder").Contains("append order equals invocation order") &&
+                L.Str(commandInterpreter, "opcode2730Layout").Contains("seven u64") &&
+                L.Str(commandInterpreter, "opcode2731Layout").Contains("no payload") &&
+                L.Str(commandInterpreter, "batchBoundary").Contains("0x1813aea00") &&
+                L.Str(commandInterpreter, "sequenceBoundary").Contains("no static producer edge guarantees") &&
                 L.Str(commandInterpreter, "resourceToBindingState").Contains("original pointer unchanged") &&
                 L.Str(commandInterpreter, "resourceToBindingState").Contains("S+0x2a0") &&
                 L.Str(commandInterpreter, "provenBoundary").Contains("not draw opcodes") &&
@@ -335,6 +351,10 @@ namespace EndfieldGraphShaderLabEditor
                 L.Str(backendSelection, "vulkanCommandCells").Contains("vkQueueSubmit") &&
                 L.Str(vulkanExecution, "descriptorUpdateRoute").Contains("vkUpdateDescriptorSetWithTemplate") &&
                 L.Str(vulkanExecution, "descriptorIdentityBoundary").Contains("0x2748 object") &&
+                L.Str(vulkanExecution, "callbackListBuilders").Contains("+0xda8") &&
+                L.Str(vulkanExecution, "resourceBindingNode").Contains("index format") &&
+                L.Str(vulkanExecution, "pipelineDescriptorNode").Contains("descriptor-set") &&
+                L.Str(vulkanExecution, "indirectDrawNode").Contains("draw count 1") &&
                 L.Str(vulkanExecution, "masterList").Contains("+0x2b50") &&
                 L.Str(vulkanExecution, "resourceBinding").Contains("index and vertex") &&
                 L.Str(vulkanExecution, "indirectDraw").Contains("vkCmdDrawIndexedIndirect") &&

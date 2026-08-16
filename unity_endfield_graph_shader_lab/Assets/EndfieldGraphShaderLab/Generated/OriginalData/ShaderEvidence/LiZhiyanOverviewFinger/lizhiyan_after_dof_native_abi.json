@@ -422,6 +422,69 @@
       "functionSha256": "F02609397543ECC6B0CCECAE38BA64426BB1BF711C10D5FD4AE197505A42C9D1"
     },
     {
+      "label": "HG slot-0x14 context vtable",
+      "va": "0x181e1c328",
+      "functionEnd": "0x181e1c3e0",
+      "functionBytes": 184,
+      "functionSha256": "BDA27AB011238775BB5D588AAF32197902484074443D642CBC86339E222F2B82"
+    },
+    {
+      "label": "HG slot-0x14 context destructor",
+      "va": "0x180fc2e00",
+      "functionEnd": "0x180fc2e8f",
+      "functionBytes": 143,
+      "functionSha256": "834A1FE2E1C2A1D22E32A563AB66022295151C5E767DC8B3B52291C264C33042"
+    },
+    {
+      "label": "HG slot-0x14 context construction",
+      "va": "0x180fc3500",
+      "functionEnd": "0x180fc36a1",
+      "functionBytes": 417,
+      "functionSha256": "47CA93DDAC12DF93FA32FFC7D2C5D7CCC7FCD4240F5618A418CF240E303B7187"
+    },
+    {
+      "label": "HG slot-0x14 context subobject construction",
+      "va": "0x180fc7030",
+      "functionEnd": "0x180fc807e",
+      "functionBytes": 4174,
+      "functionSha256": "9AD6623C33CC7D7A5FE619F2057703327AE89328512E68C53E7605D86F5DDEDA"
+    },
+    {
+      "label": "HGMesh manager construction",
+      "va": "0x1810454c0",
+      "functionEnd": "0x18104558c",
+      "functionBytes": 204,
+      "functionSha256": "802256A241F4135D1E6F3A06AC0F0EE07AC245E1A248935EF5350155075DCEDF"
+    },
+    {
+      "label": "HG slot-0x14 context subobject destruction",
+      "va": "0x180fc3fc0",
+      "functionEnd": "0x180fc4c0f",
+      "functionBytes": 3151,
+      "functionSha256": "C017D07CB2739600899091DE97D782C1FABD069E76097927E489EB29D8B0BD4B"
+    },
+    {
+      "label": "HGMesh manager destruction",
+      "va": "0x1810459f0",
+      "functionEnd": "0x181045a17",
+      "functionBytes": 39,
+      "functionSha256": "87D830A411690C6DDDA9CF86DDA74FA125848EC92FFD0A19EBD2BAC9DAA3C488"
+    },
+    {
+      "label": "HGMesh manager nested-entry destruction",
+      "va": "0x18105fe30",
+      "functionEnd": "0x181060027",
+      "functionBytes": 503,
+      "functionSha256": "E5EEA4CCDC4117C5C6A3E70AF43A3DF6EA0D9C583C3D2B71FB27549EF2CF4739"
+    },
+    {
+      "label": "HGMesh manager logical reset",
+      "va": "0x181060330",
+      "functionEnd": "0x181060413",
+      "functionBytes": 227,
+      "functionSha256": "3ED02EBE6DAF9221ED85DA089938B8872ED68DAE8CA9CE68CD78742FA584B7AB"
+    },
+    {
       "label": "HGMesh publication result callback thunk",
       "va": "0x180feaea0",
       "functionEnd": "0x180feaeb0",
@@ -555,6 +618,48 @@
       "functionSha256": "F5280DEC414D0CFF6B8C2DF5BE3DF60A04F9FE40E720BBCA03EA048E62198410"
     },
     {
+      "label": "HG opcode 0x2731 execute handler",
+      "va": "0x1813afecf",
+      "functionEnd": "0x1813afee4",
+      "functionBytes": 21,
+      "functionSha256": "0D2414D9A9FDB7CC1D270C248CEA88060A483226C01531AE64D43F50497F0A6D"
+    },
+    {
+      "label": "HG graphics-front opcode 0x2730 writer",
+      "va": "0x18093ae10",
+      "functionEnd": "0x18093b762",
+      "functionBytes": 2386,
+      "functionSha256": "A200B3D694C08C7F99A9D7BAEF230D72435D204368476F4BE4D611882E0698DD"
+    },
+    {
+      "label": "HG graphics-front opcode 0x2731 writer",
+      "va": "0x18092e350",
+      "functionEnd": "0x18092e639",
+      "functionBytes": 745,
+      "functionSha256": "7B4E200A34EA1C9DB6A1EEF25F8B8B815904C348A59F6F3DBF07D8F5C5E838A0"
+    },
+    {
+      "label": "HG graphics-front recording begin",
+      "va": "0x180926f60",
+      "functionEnd": "0x180927001",
+      "functionBytes": 161,
+      "functionSha256": "94394D9001A438CC009BD87D52CF273E7EE477BB7CEDE0240AF533845A601B7C"
+    },
+    {
+      "label": "HG graphics-front recording end",
+      "va": "0x1809261b0",
+      "functionEnd": "0x1809262ae",
+      "functionBytes": 254,
+      "functionSha256": "A960E088B16052E8F53F15F84CD6C04B39BFBC2AD10F5E7FC103C29D06FE1CB2"
+    },
+    {
+      "label": "HG bounded-substream parser wrapper",
+      "va": "0x1813aea00",
+      "functionEnd": "0x1813aea89",
+      "functionBytes": 137,
+      "functionSha256": "53C4234D8425270041E02D8546F0D41987E13BCBF5AED45CE51FC7EEDD24A1E9"
+    },
+    {
       "label": "HG API-2 descriptor-state wrapper",
       "va": "0x180843bf0",
       "functionEnd": "0x180843cda",
@@ -609,6 +714,27 @@
       "functionEnd": "0x180845386",
       "functionBytes": 5212,
       "functionSha256": "63A20255D99B7ABD9D3C6B18D7991F8DD391409D505E5C6993A0EB714156BF7B"
+    },
+    {
+      "label": "HG Vulkan resource-state callback-list builder",
+      "va": "0x18083e720",
+      "functionEnd": "0x18083ec58",
+      "functionBytes": 1336,
+      "functionSha256": "072B6F87A4052722F182F63C05894B84FB3833646983DF0268747C497B0C3F46"
+    },
+    {
+      "label": "HG Vulkan indirect-draw callback-list builder",
+      "va": "0x18083ec60",
+      "functionEnd": "0x18083f13e",
+      "functionBytes": 1246,
+      "functionSha256": "06E17D305BFA04AD6D1F1B2630BF8DF6CEA7833CB3DFC786832B600690153B63"
+    },
+    {
+      "label": "HG Vulkan master-node packager",
+      "va": "0x180841c40",
+      "functionEnd": "0x180841d4a",
+      "functionBytes": 266,
+      "functionSha256": "38FB333878F3D2883A14B148AE9D6432B1345303AAA9414C8FF95AA2C506A46E"
     }
   ],
   "decisiveCalls": [
@@ -839,8 +965,17 @@
             "genericCleanupVA": "0x18031aec0",
             "nestedCleanupVA": "0x18031af80",
             "genericCleanupBehavior": "releases object +0x10 through nested cleanup, then invokes object vtable slot 0 before the singleton cell is cleared",
-            "concreteDestructorTarget": "indirect [slot14_object->vtable + 0]; no pinned static edge identifies a +0xb0 HGMesh-manager destructor",
-            "provenBoundary": "slot-0x14 registration, generic virtual destruction, and global cell clearing are proven; context construction semantics and the concrete +0xb0 HGMesh-manager destructor remain unresolved"
+            "contextVtableVA": "0x181e1c328",
+            "contextDestructorVA": "0x180fc2e00",
+            "contextConstructionVA": "0x180fc3500",
+            "subobjectConstructionVA": "0x180fc7030",
+            "managerAllocation": "0x180fc7030 allocates 0x70 bytes, calls 0x1810454c0 with type/category 0xb5, and stores the result at context +0xb0",
+            "managerLayout": "+0x00 type/category 0xb5, +0x08 entry vector base, +0x18 count, +0x28 auxiliary allocation; entries are 16 bytes",
+            "managerResetVA": "0x181060330",
+            "managerDestructionVA": "0x1810459f0",
+            "managerNestedEntryDestructionVA": "0x18105fe30",
+            "managerDestruction": "context cleanup 0x180fc3fc0 calls 0x1810459f0; it destroys nested entries, frees +0x28 and +0x08 storage, clears count, and frees the 0x70-byte manager",
+            "provenBoundary": "slot-0x14 context vtable/construction/destruction, +0xb0 HGMesh-manager allocation/reset/nested-entry destruction, and global cell clearing are proven; only the registry factory identity that initially supplies slot 0x14 remains unresolved"
           }
         },
         "invalidRequestGate": "request[0] == 0xffffffff returns 0xffffffff without appending",
@@ -917,7 +1052,11 @@
               "backendObjectOffset": "0x2708",
               "recordingModeOffset": "0x2711",
               "resourceAppendSlot": "vtable +0x268 -> 0x180939640, opcode 0x2748",
-              "resourceBindSlot": "vtable +0x280 -> 0x18093a920, opcode 0x274a"
+              "resourceBindSlot": "vtable +0x280 -> 0x18093a920, opcode 0x274a",
+              "descriptorUpdateSlot": "vtable +0x2a0 -> 0x18093ae10, opcode 0x2730",
+              "executeSlot": "vtable +0x3e8 -> 0x18092e350, opcode 0x2731",
+              "beginRecordingSlot": "vtable +0xf78 -> 0x180926f60 sets context +0x2711 and selects context +0x2720",
+              "endRecordingSlot": "vtable +0x880 -> 0x1809261b0 clears context +0x2711 and may append control opcode 0x27cb"
             },
             "commandInterpreter": {
               "interpreterVA": "0x1813aee90",
@@ -929,6 +1068,11 @@
               "opcode274aLayout": "u32 opcode, alignment/padding, u64 token-or-length-like result of 0x1805d1e80, then variable serialized payload",
               "opcode274aRoute": "front +0x280 -> record 0x274a -> interpreter -> selected backend +0x280 -> 0x180855200 -> mode 0 at 0x180842370",
               "api2ResourceCollection": "context +0x2e48, 16-byte records holding payload/key at +0x00 and type/key at +0x08",
+              "sharedRecorder": "all 0x2748/0x274a/0x2730/0x2731 writers for one graphics-front instance share context +0x2711 recording flag, +0x2720 command buffer, buffer +0x140 base, +0x148 cursor, and +0x14c capacity; append order equals invocation order",
+              "opcode2730Layout": "u32 opcode, eight-byte alignment, seven u64 values, u32 element count, then count*u32 payload; dispatches to API-2 +0xe90",
+              "opcode2731Layout": "u32 opcode only; dispatches to API-2 +0xde8 with no payload",
+              "batchBoundary": "begin recording selects the current buffer and enables append; end recording disables append and may emit 0x27cb; bounded-substream parser 0x1813aea00 repeatedly advances one shared cursor",
+              "sequenceBoundary": "same-instance records are conditionally consumed in append order, but no static producer edge guarantees 0x2748 -> 0x2730 -> 0x2731 or even that all three occur before the same recording end",
               "resourceToBindingState": "0x2748 passes the original pointer unchanged; 0x180842370 resolves object-local maps at resource +0x20..+0x30/+0x50/+0x70 and writes descriptor-like state under S+0x2a0 plus payload backing under S+0x22d0",
               "provenBoundary": "both opcodes are API-2 resource/state operations, not draw opcodes; 0x2748 identity reaches backend binding state while the 0x274a qword semantics remain unresolved"
             },
@@ -943,6 +1087,10 @@
             "vulkanExecution": {
               "descriptorUpdateRoute": "opcode 0x2730 -> API-2 +0xe90 0x180843bf0 -> 0x18083f680 -> vkUpdateDescriptorSetWithTemplate at 0x18083f89d",
               "descriptorIdentityBoundary": "the state populated from the unchanged 0x2748 object is packaged from S+0x22d0/S+0x22a8/S+0x2a0 into the Vulkan descriptor-update worker",
+              "callbackListBuilders": "API-2 +0xda0 0x18083e720 builds resource-binding and pipeline/descriptor-state child nodes; +0xda8 0x18083ec60 builds an indirect-draw child node; 0x180841c40 packages child heads +0x2b58/+0x2b60 into master nodes at +0x2b50",
+              "resourceBindingNode": "0x68-byte node callback reaches 0x18082d6b0; payload includes wrapper/resource handle, index format/offset, vertex-buffer pointer range, and vertex offsets",
+              "pipelineDescriptorNode": "0x40-byte node callback reaches 0x18082e660; payload includes pipeline, layout, stencil/depth state, descriptor-set array/count, and dynamic offsets",
+              "indirectDrawNode": "0x50-byte node callback reaches 0x18082e820; payload adds indirect buffer/resource +0x30 and byte offset +0x38, draw count 1, stride 0",
               "masterList": "context +0x2b50; callbacks are invoked through [node+0x08] with payload node+0x10 by 0x180843d60",
               "resourceBinding": "0x18082d6b0 binds index and vertex buffers",
               "pipelineDescriptorState": "0x18082e660 binds pipeline/descriptors and sets depth bias/stencil reference",
@@ -992,8 +1140,8 @@
           },
           "notYetProven": [
             "semantic names of packed key fields",
-            "HGMesh resource identity reaching a specific Vulkan draw/submit",
-            "slot-0x14 context construction semantics and +0xb0 destructor internals"
+            "HGMesh-derived descriptor state reaching one specific Vulkan draw/submit and visible pixel",
+            "slot-0x14 registry factory identity"
           ]
         },
         "runtimeCaptureBoundary": {

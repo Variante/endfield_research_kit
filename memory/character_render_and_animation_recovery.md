@@ -1552,18 +1552,24 @@ only stable interpretation and priorities.
    HGMesh at `+0xb0` and HGTree separately at `+0xc0`. Generic setter
    `0x18030f5b0` writes the table, bulk registrar `0x180319e60` reaches slot
    `0x14`, and global teardown `0x18058cc20` necessarily cleans and clears it.
-   Construction semantics and this exact `+0xb0` destructor internals remain
-   open.
-   The next runtime proof is bounded to five already pinned observation points:
+   Context vtable `0x181e1c328` resolves construction/destruction to
+   `0x180fc3500/0x180fc2e00`. Construction allocates the 0x70-byte `+0xb0`
+   manager, initializes category `0xb5` through `0x1810454c0`; teardown uses
+   `0x1810459f0 -> 0x18105fe30` to destroy 16-byte entries and free storage.
+   Logical reset is `0x181060330`. Only the slot-0x14 registry factory identity
+   remains unknown.
+   The next runtime proof is bounded to eight already pinned observation points:
    `0x1801f1e40`, `0x18104e300`, `0x181005c10`, `0x18105e400`, and
-   `0x18105e350`. Acceptance requires a same-frame handle -> opcode `0x4e` ->
+   `0x18105e350`, plus `0x1813b1624`, `0x18083f89d`, and `0x1813afed9`.
+   Acceptance requires a same-frame handle -> opcode `0x4e` ->
    accepted/sorted record -> resolved resource -> final draw -> visible
    Li Zhiyan pixel join, plus a Li-absent or Wulfa negative control. This
    versioned contract does not authorize attaching/injecting into retail and
    fails closed on protection refusal or binary/prologue drift.
    Downstream, resolved pointers reach a CPU publication/result object and
-   generic front-end handoff `0x180feaea0 -> 0x1810484e0..0x181049007`, but no
-   GPU descriptor/indirect-buffer/draw identity is proven. The installed
+   generic front-end handoff `0x180feaea0 -> 0x1810484e0..0x181049007`.
+   Resource identity now reaches derived GPU descriptor state but not one
+   particular indirect buffer/draw. The installed
    UnityPlayer explicitly says `D3D12 support not compiled in!` and carries no
    D3D12 command backend surface. A bounded 2026-08-15 `Player-prev.log`
    snapshot positively observes the installed client creating a Vulkan 1.4.341
@@ -1590,10 +1596,13 @@ only stable interpretation and priorities.
    API-2 `+0xe90` and reaches `vkUpdateDescriptorSetWithTemplate` at
    `0x18083f89d`. The remaining identity edge is specifically that descriptor
    update to a particular later `0x2731`, `+0x2b50` callback, and draw record.
-   Slot-0x14 teardown is also closed through generic cleanup `0x18031aec0`
-   and nested cleanup `0x18031af80`, followed by indirect virtual slot-0
-   destruction and cell clearing. The concrete context `+0xb0` HGMesh-manager
-   destructor target is still not statically identified.
+   All four opcodes share one per-instance recorder; append order equals call
+   order between begin/end recording, but no static producer edge guarantees
+   `0x2748 -> 0x2730 -> 0x2731`. API-2 `+0xda0/+0xda8` construct the concrete
+   resource, pipeline/descriptor, and indirect-draw child nodes, and
+   `0x180841c40` packages them into the `+0x2b50` master list. The original
+   pointer is not retained in those nodes, leaving derived-state association
+   as the final runtime identity gap.
    Runtime values and final survivor/order/lifetime capture remain required;
    do not synthesize a `Renderer[]` bridge from the integer ECS handle.
    Downstream HGMesh workers now prove a real ordering/publication stage:
