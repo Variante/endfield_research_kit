@@ -162,6 +162,8 @@ namespace EndfieldGraphShaderLab
             Shader.PropertyToID("_EndfieldRecoveredRefractionSceneColor");
         private static readonly int SceneDepthId = Shader.PropertyToID("_SceneDepth");
         private static readonly int SceneDepthTexelSizeId = Shader.PropertyToID("_SceneDepth_TexelSize");
+        private static readonly int RecoveredVFXSoftDepthReadyId =
+            Shader.PropertyToID("_EndfieldRecoveredVFXSoftDepthReady");
         private static readonly int RecoveredPostUberWorldUiReadyId =
             Shader.PropertyToID("_EndfieldRecoveredPostUberWorldUiReady");
         private static readonly int RecoveredCameraDepthTextureId =
@@ -970,6 +972,10 @@ namespace EndfieldGraphShaderLab
                 }
             }
             commandBuffer.SetGlobalFloat(RecoveredCameraDepthReadyId, 0.0f);
+            // Soft-blend admission is published only after the source-backed
+            // primary scene depth has been selected below. This remains zero
+            // for ordinary cameras and every failed/degraded route.
+            commandBuffer.SetGlobalFloat(RecoveredVFXSoftDepthReadyId, 0.0f);
             commandBuffer.SetGlobalFloat(RecoveredPostUberWorldUiReadyId, 0.0f);
             commandBuffer.SetGlobalFloat(
                 EndfieldRecoveredSceneMVCompositor.SceneMVMRTReadyId,
@@ -1018,6 +1024,7 @@ namespace EndfieldGraphShaderLab
                         1.0f / renderHeight,
                         renderWidth,
                         renderHeight));
+                commandBuffer.SetGlobalFloat(RecoveredVFXSoftDepthReadyId, 1.0f);
             }
             else if (recoveredPostUberWorldUiRequested)
                 commandBuffer.SetGlobalTexture(SceneDepthId, Texture2D.blackTexture);
@@ -1975,6 +1982,7 @@ namespace EndfieldGraphShaderLab
                     0.0f);
                 commandBuffer.SetGlobalTexture(SceneColorTextureId, Texture2D.blackTexture);
                 commandBuffer.SetGlobalTexture(SceneDepthId, Texture2D.blackTexture);
+                commandBuffer.SetGlobalFloat(RecoveredVFXSoftDepthReadyId, 0.0f);
                 if (recoveredSceneColorPingAllocated)
                 {
                     commandBuffer.ReleaseTemporaryRT(

@@ -108,9 +108,10 @@ Shader "Endfield/Recovered/VFXBaseV2SampleStack"
             sampler2D _SampleTex2;
             sampler2D _SampleTex3;
             Texture2D<float> _SceneDepth;
-            // The recovered BaseV2 DXBC uses the static point-clamp sampler
-            // for its scene-depth input (not a material texture sampler).
-            SamplerState s_point_clamp_float_sampler;
+            // The Li Zhiyan _USE_SOFTBLEND DXBC variants bind the scene-depth
+            // input with the static linear-clamp sampler (s0), not a material
+            // texture sampler.
+            SamplerState sampler_LinearClamp;
             float4 _MainTex_ST;
             float4 _SampleTex0_ST;
             float4 _SampleTex1_ST;
@@ -350,7 +351,7 @@ Shader "Endfield/Recovered/VFXBaseV2SampleStack"
                     float2 particlePixelUV = input.positionCS.xy *
                         _SceneDepth_TexelSize.xy;
                     float sceneRawDepth = _SceneDepth.SampleLevel(
-                        s_point_clamp_float_sampler, particlePixelUV, 0.0);
+                        sampler_LinearClamp, particlePixelUV, 0.0);
                     float sceneAbsoluteViewZ =
                         LinearEyeDepth(sceneRawDepth);
                     float particleAbsoluteViewZ =

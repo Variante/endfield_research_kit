@@ -193,8 +193,9 @@ namespace EndfieldGraphShaderLabEditor
                 {
                     Shader.SetGlobalFloat("_EndfieldSceneMVMRTReady", 1f);
                     Shader.SetGlobalFloat("_EndfieldRecoveredVFXGlobalsReady", 1f);
-                    // The diagnostic capture has no source-proven scene-depth
-                    // producer yet; keep BaseV2 soft blend fail-closed.
+                    // Start each diagnostic camera render fail-closed; the
+                    // HGCompat source-depth route replaces this with 1 only
+                    // after binding the real primary scene-depth SRV.
                     Shader.SetGlobalFloat("_EndfieldRecoveredVFXSoftDepthReady", 0f);
                     Shader.SetGlobalVector(
                         "_ExposureParams", new Vector4(1f, 0f, 0f, 0f));
@@ -248,7 +249,7 @@ namespace EndfieldGraphShaderLabEditor
                         fingerParticleSimulationMode =
                             "exact_source_effect_delay_duration_under_Bip001_R_Finger2Nub; each_particle_system_simulate_effect_local_time_with_children_false_restart_true_fixed_time_then_play_without_time_advance_for_renderer_submission",
                         fingerParticleMaterialMode =
-                            "transient_vfxbasev2_sample_stack_with_contract_payload_and_converted_pngs_source_queue_3700_soft_blend_authored_state_preserved_depth_gate_fail_closed; generated_finger_materials_remain_fail_closed",
+                            "transient_vfxbasev2_sample_stack_with_contract_payload_and_converted_pngs_source_queue_3700_soft_blend_authored_state_preserved_source_scene_depth_gate; generated_finger_materials_remain_fail_closed",
                         peakParticleBatchmodeTransport =
                             "unity_particle_renderer_paused_buffer_bakemesh_billboard_proxy",
                         sourceSpec = SpecPath,
