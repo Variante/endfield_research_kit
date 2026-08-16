@@ -63,6 +63,10 @@ data.
   page and normalizes the URL.
 - Story issue and recovery-method filters remain visible; raw source blocks,
   Timeline evidence, cutscene diagnostics, and order tools remain debug-only.
+- Mission Pipeline CallServer rows retain exact preceding-Story path context
+  and rejection diagnostics. Only a unique linear Story -> CallServer ->
+  callback -> Story closure may enter the source-order graph; the current
+  corpus has no such two-ended closure.
 - Story reset restores Story sort and default filters while preserving expanded
   mission groups.
 - `sns_emoji_*` stays inline without hover/modal preview. Other SNS media keeps

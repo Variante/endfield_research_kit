@@ -174,6 +174,7 @@ PROVEN_ORDER_EDGE_KINDS = (
     "levelscriptNativeControlPath",
     "levelscriptNativeOrderedSequence",
     "levelscriptQuestStateActionPath",
+    "levelscriptCallServerCallback",
     "questSucceedLifecycle",
     "spawnerWaveGroupPartKilled",
     "spawnerWavePartKilled",
@@ -223,6 +224,9 @@ EDGE_EVIDENCE_FIELDS = (
     "childArmLineIds",
     "nativeConsumers",
     "gameAssemblySha256",
+    "callbackHeaderUid",
+    "callServerUid",
+    "precedingStory",
 )
 
 
@@ -5394,6 +5398,258 @@ def _native_related_action_topologies(
     return rows
 
 
+def _callserver_callback_story_edges(
+    candidate_keys: set[str],
+    callback_audit: dict[str, Any] | None,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Join exact same-LevelScript Story ancestors to callback Story targets.
+
+    The callback audit is a complete-corpus native contract, but it does not
+    itself establish mission ownership.  This join therefore requires both
+    Story keys to already be candidates of the current mission.  It also
+    requires the audit and both typed path projections to validate; missing or
+    truncated paths remain diagnostics and never become edges.
+    """
+    if not isinstance(callback_audit, dict):
+        return [], []
+    if callback_audit.get("status") != "validated_complete_corpus":
+        return [], [{
+            "validator": "levelscriptCallServerCallback",
+            "gate": "completeCallbackAudit",
+            "expected": "validated_complete_corpus",
+            "actual": callback_audit.get("status"),
+        }]
+    if callback_audit.get("validationFailures"):
+        return [], [{
+            "validator": "levelscriptCallServerCallback",
+            "gate": "callbackAuditValidationFailuresEmpty",
+            "expected": [],
+            "actual": (callback_audit.get("validationFailures") or [])[:4],
+        }]
+    edges: dict[tuple[str, str, str, int, str], dict[str, Any]] = {}
+    warnings: list[dict[str, Any]] = []
+    for row in callback_audit.get("rows") or []:
+        if not isinstance(row, dict):
+            continue
+        source_file = safe_key(row.get("sourceFile"))
+        level_id = safe_key(row.get("levelId"))
+        script_id = safe_key(row.get("scriptId"))
+        for callback in row.get("callbackOutputs") or []:
+            if not isinstance(callback, dict):
+                continue
+            if callback.get("status") != "exact_callback_header_control_path":
+                continue
+            graph = callback.get("controlGraph") or {}
+            preceding = callback.get("precedingStory") or {}
+            required_graph_fields = {
+                "storyKeys",
+                "actions",
+                "edges",
+                "branchPointCount",
+                "cycleCount",
+                "truncated",
+            }
+            missing_graph_fields = sorted(
+                required_graph_fields - set(graph)
+            )
+            raw_targets = sorted({
+                safe_key(value) for value in graph.get("storyKeys") or []
+            }, key=natural_key)
+            raw_sources = sorted({
+                safe_key(value) for value in preceding.get("storyKeys") or []
+            }, key=natural_key)
+            if (
+                missing_graph_fields
+                or not isinstance(graph.get("branchPointCount"), int)
+                or not isinstance(graph.get("cycleCount"), int)
+                or not isinstance(graph.get("truncated"), bool)
+                or (
+                    isinstance(graph.get("actions"), list)
+                    and sorted({
+                        safe_key(value)
+                        for action in graph.get("actions")
+                        if isinstance(action, dict)
+                        for value in action.get("storyKeys") or []
+                    }, key=natural_key)
+                    != raw_targets
+                )
+            ):
+                if set(raw_targets) & candidate_keys or set(raw_sources) & candidate_keys:
+                    warnings.append({
+                        "validator": "levelscriptCallServerCallback",
+                        "gate": "completeCallbackGraphShape",
+                        "sourceFile": source_file,
+                        "callServerLocalId": row.get("callServerLocalId"),
+                        "callbackHeaderUid": callback.get("headerUid"),
+                        "expected": {
+                            "requiredFields": sorted(required_graph_fields),
+                            "actionStoryKeysMatchGraphStoryKeys": True,
+                        },
+                        "actual": {
+                            "missingFields": missing_graph_fields,
+                            "branchPointCount": graph.get("branchPointCount"),
+                            "cycleCount": graph.get("cycleCount"),
+                            "truncated": graph.get("truncated"),
+                            "graphStoryKeys": raw_targets[:16],
+                            "actionStoryKeys": sorted({
+                                safe_key(value)
+                                for action in graph.get("actions") or []
+                                if isinstance(action, dict)
+                                for value in action.get("storyKeys") or []
+                            }, key=natural_key)[:16],
+                        },
+                    })
+                continue
+            preceding_path_story_keys = sorted({
+                safe_key(path.get("storyKey"))
+                for path in preceding.get("paths") or []
+                if isinstance(path, dict)
+            }, key=natural_key)
+            if preceding_path_story_keys != raw_sources:
+                if set(raw_targets) & candidate_keys or set(raw_sources) & candidate_keys:
+                    warnings.append({
+                        "validator": "levelscriptCallServerCallback",
+                        "gate": "precedingStoryKeysMatchPaths",
+                        "sourceFile": source_file,
+                        "callServerLocalId": row.get("callServerLocalId"),
+                        "callbackHeaderUid": callback.get("headerUid"),
+                        "expected": {"pathStoryKeys": raw_sources},
+                        "actual": {"pathStoryKeys": preceding_path_story_keys},
+                    })
+                continue
+            if (
+                graph.get("truncated")
+                or preceding.get("truncated")
+                or preceding.get("status") != "exact_preceding_story_path"
+            ):
+                if (
+                    set(raw_targets) & candidate_keys
+                    or set(raw_sources) & candidate_keys
+                ):
+                    warnings.append({
+                        "validator": "levelscriptCallServerCallback",
+                        "gate": "completeLinearCallbackPaths",
+                        "sourceFile": source_file,
+                        "callServerLocalId": row.get("callServerLocalId"),
+                        "callbackHeaderUid": callback.get("headerUid"),
+                        "expected": {
+                            "callbackTruncated": False,
+                            "precedingTruncated": False,
+                            "precedingStatus": "exact_preceding_story_path",
+                        },
+                        "actual": {
+                            "callbackTruncated": bool(graph.get("truncated")),
+                            "precedingTruncated": bool(preceding.get("truncated")),
+                            "precedingStatus": preceding.get("status"),
+                        },
+                    })
+                continue
+            source_candidates = [
+                value for value in raw_sources if value in candidate_keys
+            ]
+            target_candidates = [
+                value for value in raw_targets if value in candidate_keys
+            ]
+            if not source_candidates or not target_candidates:
+                continue
+            diagnostic_base = {
+                "validator": "levelscriptCallServerCallback",
+                "sourceFile": source_file,
+                "callServerLocalId": row.get("callServerLocalId"),
+                "callbackHeaderUid": callback.get("headerUid"),
+            }
+            if len(raw_sources) != 1 or len(raw_targets) != 1:
+                warnings.append({
+                    **diagnostic_base,
+                    "gate": "uniqueStoryEndpoints",
+                    "expected": {"sourceCount": 1, "targetCount": 1},
+                    "actual": {
+                        "sourceCount": len(raw_sources),
+                        "targetCount": len(raw_targets),
+                        "sourceKeys": raw_sources[:16],
+                        "targetKeys": raw_targets[:16],
+                    },
+                })
+                continue
+            if (
+                graph.get("branchPointCount", 0)
+                or graph.get("cycleCount", 0)
+                or len(preceding.get("paths") or []) != 1
+                or (preceding.get("paths") or [{}])[0].get("status")
+                != "exact_linear_preceding_story_path"
+            ):
+                warnings.append({
+                    **diagnostic_base,
+                    "gate": "linearCallbackControlPaths",
+                    "expected": {
+                        "branchPointCount": 0,
+                        "cycleCount": 0,
+                        "precedingPathCount": 1,
+                    },
+                    "actual": {
+                        "branchPointCount": graph.get("branchPointCount", 0),
+                        "cycleCount": graph.get("cycleCount", 0),
+                        "precedingPathCount": len(preceding.get("paths") or []),
+                        "precedingStatus": preceding.get("status"),
+                    },
+                })
+                continue
+            source_key = raw_sources[0]
+            target_key = raw_targets[0]
+            if source_key == target_key:
+                continue
+            if source_key not in candidate_keys or target_key not in candidate_keys:
+                continue
+            signature = (
+                source_key,
+                target_key,
+                source_file,
+                int(row.get("callServerLocalId") or 0),
+                safe_key(callback.get("headerUid")),
+            )
+            edges[signature] = {
+                "from": source_key,
+                "to": target_key,
+                "kind": "levelscriptCallServerCallback",
+                "tier": "strong",
+                "source": (
+                    "exact typed Story action ancestor -> CallServer "
+                    "-> exact custom-event callback header -> typed Story "
+                    "continuation"
+                ),
+                "sourceFiles": [source_file] if source_file else [],
+                "levelIds": [level_id] if level_id else [],
+                "scriptIds": [script_id] if script_id else [],
+                "callServerLocalId": row.get("callServerLocalId"),
+                "callServerUid": row.get("callServerUid"),
+                "callbackHeaderUid": callback.get("headerUid"),
+                "callbackHeaderLocalId": callback.get("headerLocalId"),
+                "precedingStory": {
+                    "status": preceding.get("status"),
+                    "storyKey": source_key,
+                    "paths": [preceding["paths"][0]],
+                },
+                "callbackStoryKeys": [target_key],
+                "evidenceBoundary": (
+                    "Both Story endpoints are exact actionList playback records "
+                    "in the same serialized LevelScript. This edge proves local "
+                    "linear control-path chronology only; it does not assign a "
+                    "mission outside the candidate set or prove that a server "
+                    "callback occurred in a particular session."
+                ),
+            }
+    return sorted(
+        edges.values(),
+        key=lambda edge: (
+            natural_key(edge["from"]),
+            natural_key(edge["to"]),
+            natural_key(edge.get("sourceFiles", [""])[0]),
+            int(edge.get("callServerLocalId") or 0),
+            safe_key(edge.get("callbackHeaderUid")),
+        ),
+    ), warnings
+
+
 def _native_ordered_branch_sequences(
     flow: dict[str, Any],
     candidate_keys: set[str],
@@ -7300,6 +7556,7 @@ def build_mission_partial_order(
     reading_popup_sha256: str = "",
     quest_succeed_lifecycle_contract: dict[str, Any] | None = None,
     extra_thread_scheduler_contract: dict[str, Any] | None = None,
+    callserver_callback_audit: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Build one source-only mission partial order from generated source evidence."""
     mission_payload = mission_payload if isinstance(mission_payload, dict) else {}
@@ -7439,6 +7696,13 @@ def build_mission_partial_order(
         dialog_tree_static_port_control_warnings,
     ) = _dialog_tree_local_static_port_controls(dialog_payloads)
     direct_edges.extend(dialog_tree_conditional_edges)
+    callserver_callback_edges, callserver_callback_warnings = (
+        _callserver_callback_story_edges(
+            candidate_keys,
+            callserver_callback_audit,
+        )
+    )
+    direct_edges.extend(callserver_callback_edges)
     mission_source = safe_key(
         (((timeline.get("metadata") or {}).get("source") or {}).get("file"))
     )
@@ -7928,6 +8192,9 @@ def build_mission_partial_order(
                 for edge in admitted_lifecycle_edges
                 for quest_id in edge.get("questIds") or []
             }),
+            "callserverCallbackStoryEdgeCount": len(
+                callserver_callback_edges
+            ),
             "questStartActionDefinitionCount": len(lifecycle_definition_rows),
             "questStartActionDefinitionStoryCount": len({
                 row["storyKey"] for row in lifecycle_definition_rows
@@ -8125,6 +8392,7 @@ def build_mission_partial_order(
             *dialog_tree_static_port_control_warnings,
             *narrative_containment_warnings,
             *open_ui_containment_warnings,
+            *callserver_callback_warnings,
             *lifecycle_warnings,
             *native_branch_arm_coverage_diagnostics,
         ],
@@ -8195,6 +8463,7 @@ def build_report(
     story_data_root: Path | None = None,
     quest_succeed_lifecycle_contract: dict[str, Any] | None = None,
     extra_thread_scheduler_contract: dict[str, Any] | None = None,
+    callserver_callback_audit: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     lang_root = (story_data_root or (ROOT / "webui" / "data" / "lang")) / language
     index_path = lang_root / "index.json"
@@ -8328,6 +8597,7 @@ def build_report(
             reading_popup_sha256,
             quest_succeed_lifecycle_contract,
             extra_thread_scheduler_contract,
+            callserver_callback_audit,
         )
         row["missionData"] = (
             mission_path.relative_to(ROOT).as_posix() if mission_path.is_file() else ""
@@ -8540,6 +8810,9 @@ def build_report(
             "dialogTreeStaticPortValidationFailureCount"
         ]
         totals["missingMissionBundles"] += int("missingMissionBundle" in row["warnings"])
+        totals["callserverCallbackStoryEdges"] += summary[
+            "callserverCallbackStoryEdgeCount"
+        ]
         totals["missionsWithStrongEdges"] += int(summary["strongEdgeCount"] > 0)
         totals["missionsWithCycles"] += int(summary["cycleCount"] > 0)
         edge_kind_totals.update(summary["edgeKinds"])
@@ -8711,6 +8984,8 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"`{summary.get('questSucceedLifecycleEdges', 0)}` exact Story edges across "
         f"`{summary.get('questSucceedLifecycleQuests', 0)}` quests in "
         f"`{summary.get('questSucceedLifecycleMissions', 0)}` missions",
+        f"- exact CallServer callback bridges: `{summary.get('callserverCallbackStoryEdges', 0)}` Story-to-Story edges "
+        "from a same-LevelScript typed predecessor and callback continuation",
         f"- reduced component edges: `{summary.get('reducedComponentEdges', 0)}`",
         f"- cyclic components: `{summary.get('cycles', 0)}` across "
         f"`{summary.get('missionsWithCycles', 0)}` missions",
