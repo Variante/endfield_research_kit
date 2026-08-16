@@ -62,7 +62,7 @@ class WebuiViewPlanTests(unittest.TestCase):
                 ],
                 ["gameplay_asset_refs"],
                 ["source_graph"],
-                ["combat_relationships"],
+                ["gameplay_asset_refs_after_graph", "combat_relationships"],
             ],
         )
         self.assertIn("--relevant-asset-maps", commands_for(phases, "source_graph")[0])
@@ -86,6 +86,35 @@ class WebuiViewPlanTests(unittest.TestCase):
         for command in gameplay_task.commands:
             self.assertIn("--languages", command.argv)
             self.assertIn("--default-language", command.argv)
+
+    def test_graph_refreshes_gameplay_asset_refs_without_rebuilding_base(self) -> None:
+        args = build_webui_views.parse_args([])
+        phases = build_webui_views.build_phases(args)
+        phase_names = [name for name, _ in phases]
+        graph_index = phase_names.index("source_graph")
+        consumer_index = phase_names.index("graph_consumers")
+        self.assertLess(graph_index, consumer_index)
+
+        asset_ref_tasks = [
+            task
+            for _, tasks in phases
+            for task in tasks
+            if task.name.startswith("gameplay_asset_refs")
+        ]
+        self.assertEqual(
+            [task.name for task in asset_ref_tasks],
+            ["gameplay_asset_refs", "gameplay_asset_refs_after_graph"],
+        )
+        for task in asset_ref_tasks:
+            self.assertEqual(len(task.commands), 1)
+            command = task.commands[0].argv
+            self.assertEqual(command[command.index("--stage") + 1], "asset-refs")
+
+        gameplay_commands = commands_for(phases, "gameplay")
+        self.assertEqual(
+            [command[command.index("--stage") + 1] for command in gameplay_commands],
+            ["base", "audit"],
+        )
 
     def test_asset_plan_joins_character_and_refs_after_fresh_asset_index(self) -> None:
         args = build_webui_views.parse_args(

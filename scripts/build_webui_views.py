@@ -147,18 +147,21 @@ def build_phases(args: argparse.Namespace) -> list[tuple[str, list[TaskSpec]]]:
         phase_one.append(character)
     phase_one.extend((gameplay, projectile))
 
-    gameplay_refs = TaskSpec(
-        "gameplay_asset_refs",
-        (
-            module(
-                "scripts.build_gameplay",
-                "--stage",
-                "asset-refs",
-                "--default-language",
-                "CN",
+    def gameplay_asset_refs_task(name: str) -> TaskSpec:
+        return TaskSpec(
+            name,
+            (
+                module(
+                    "scripts.build_gameplay",
+                    "--stage",
+                    "asset-refs",
+                    "--default-language",
+                    "CN",
+                ),
             ),
-        ),
-    )
+        )
+
+    gameplay_refs = gameplay_asset_refs_task("gameplay_asset_refs")
     phase_two = [gameplay_refs]
     if args.with_assets:
         audio_args: list[str] = []
@@ -187,6 +190,7 @@ def build_phases(args: argparse.Namespace) -> list[tuple[str, list[TaskSpec]]]:
         (command("tools/endfield_source_graph.py", *graph_args),),
     )
     consumers = [
+        gameplay_asset_refs_task("gameplay_asset_refs_after_graph"),
         TaskSpec(
             "combat_relationships",
             (
