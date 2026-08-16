@@ -2017,6 +2017,29 @@ only stable interpretation and priorities.
    `m_ShadowProxyMeshes +0x98` through M0/M1 and writes runtime-record
    `+0x04/+0x08/+0x0c`. These edges identify exact future observation sites;
    they do not supply Li's live IDs offline.
+   The Unity actor-composed capture now emits a per-anchor local submission
+   witness immediately after deterministic sampling/composite visibility and
+   before `Camera.Render()`. It records canonical hierarchy, recovered source
+   PathIDs where available, capture-session Renderer/Mesh/Material instance
+   IDs, shader/queue, geometry census, enabled/active state, and transform-state
+   hash for actor, static-effect, and baked peak-particle proxy renderers.
+   Validation requires stable object/source/material identity across all
+   anchors and exact lifecycle state while allowing particle geometry and
+   transform state to vary. Actor rows deliberately have hierarchy/runtime IDs
+   only; their transform hash is not a skinned-pose digest. The witness uses
+   `sharedMaterials` and remains local diagnostic evidence, not a retail
+   HGMesh accepted-record or draw join.
+   The static routing prior now favors the classic renderer-list half of the
+   AfterDOF callback. Li's start_01/_02/_03 roots contain ten ordinary
+   MeshRenderers; the peak roots contain 14 ParticleSystemRenderers with
+   ordinary GPU instancing enabled and HG GPU instancing disabled. No source
+   root serializes HGMeshRenderer/HGMeshRendererData. The callback executes
+   classic `RenderForwardRendererList` at `0x189bb54f1` before the separate ECS
+   call at `0x189bb5541`, and the classic descriptor's 3660--3740 range admits
+   Li queue 3704. HGMesh remains possible only through an unproven runtime
+   conversion/registration step. Treat classic submission as likely, not a
+   positive Li routing proof; observation must still distinguish which of the
+   callback's two submissions contains the draw.
    All six selected materials have `_IsSceneEffect=0` and
    `_EnableTransparentMV=0`, so `_VFXParams1` and transform history are safely
    bypassed rather than guessed. Exact inverse-VP soft depth, live
