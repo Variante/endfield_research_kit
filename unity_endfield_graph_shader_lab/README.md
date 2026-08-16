@@ -4159,6 +4159,17 @@ retirement path, not the missing draw expansion, and it provides no static
 Li-specific Vulkan draw or queue-submit edge. The result closes stock list
 construction, materialization, command transport, and retirement semantics,
 not final draw attribution.
+The pinned player's final recorded-command backend is now positively bounded
+as Vulkan. Interpreter `0x1808E4583..0x1808E57CE` validates opcodes 0--39;
+cases 29/30 call `vkCmdDrawIndexed`/`vkCmdDraw`, cases 31/32 call their indexed
+and non-indexed indirect variants, and cases 33/34 call direct/indirect
+dispatch. Loader `0x180747BAD..0x180747CC1` resolves and stores those function
+pointers, and each draw case forwards the decoded aligned payload with the
+resolved Vulkan command buffer. The generated native ABI contract hash is
+`019CCC74EBBA8251D4FE99095EE3E6D6F08286A0470CF4C0FD9AA4E381512C4E`.
+This closes general recorded-command-to-Vulkan execution only: no static edge
+yet assigns a Li RendererList, ordinary Renderer, or ParticleSystemRenderer to
+one of cases 29--32, its PSO/descriptors, or a final visible pixel.
 The pre-retirement lifecycle is now pinned separately. Registered icalls
 3659--3661 map the three `PrepareRendererListsAsync*` APIs to
 `0x1800BAC40`, `0x1800BAF10`, and `0x1800BB080`; their native paths enter
@@ -4447,6 +4458,23 @@ paused-buffer submission boundary. At PTS 40000 it records 26 live particles,
 composite coverage rises to 7.572% but remains below 21.699% retail. Separate
 manifest validation passes, while every native/retail admission flag remains
 false.
+
+The actor-composed harness now also instantiates the exact recovered
+`P_fxui_lizhiyan_overview_trails_Bip001_R_Finger2Nub` prefab beneath the
+unique actor `Bip001_R_Finger2Nub` mount. It preserves the source
+`0.83333 s` delay and `2.33333 s` duration, resolves all eight texture PathIDs
+through the contract's converted-PNG joins, applies the serialized material
+payloads only to transient diagnostic VFXBaseV2 materials, and bakes all seven
+billboard renderers without changing the fail-closed generated assets or
+normal viewer. The schema-v3 capture and validator pass. At PTS 40000 the
+finger layer raises composite `raisedHand` coverage from 0.603% to 5.529% and
+adds 5.120% in the effects-only lane, but retail is 28.526%. Its positive
+renderer-ID rows occupy the upper-right `x=634..771`, approximately
+`y=41..96`; the new pixels inside the current raised-hand ROI belong chiefly
+to existing start_01 renderer ID 4. The exact finger effect is therefore an
+executed source layer, but it is not yet evidence that this prefab owns the
+large retail raised-hand feature. Camera/hierarchy composition, start_01
+shader behavior, or another source-owned layer remains open.
 
 The exact managed LOD renderer bindings are now part of the playable-topology
 contract: start_01 has four non-null MeshRenderer PathIDs and start_02/start_03

@@ -1580,6 +1580,17 @@ only stable interpretation and priorities.
    not identify the Li Zhiyan frame, exact image/session and HGMesh-to-Vulkan
    command joins remain open; generic Vulkan/API-2 wrappers stay excluded
    until resource identity reaches them.
+   The hash-pinned command interpreter now closes that generic backend one
+   step further. `0x1808E4583..0x1808E57CE` dispatches aligned stream opcodes
+   through a 40-entry table: 29/30 reach `vkCmdDrawIndexed`/`vkCmdDraw`, 31/32
+   reach indexed/non-indexed indirect draw, and 33/34 reach direct/indirect
+   dispatch. Loader `0x180747BAD..0x180747CC1` resolves and stores the six
+   Vulkan function pointers; the generated ABI hash is
+   `019CCC74EBBA8251D4FE99095EE3E6D6F08286A0470CF4C0FD9AA4E381512C4E`.
+   This is positive general recorded-command-to-Vulkan execution, not a Li or
+   ParticleSystem ownership join. The next binary boundary remains one
+   same-build renderer/object fingerprint reaching a concrete opcode-29--32
+   producer, PSO/descriptors, and visible draw.
    The graphics-front context/vtable are now pinned at `0x180725dc0` and
    `0x181dcb360`; resource paths record opcodes `0x2748/0x274a`. Internal
    backend ID 2 selects factory `0x180891210` and table `0x181dbc098` (not
@@ -2196,6 +2207,23 @@ only stable interpretation and priorities.
    diagnostic: native VFXBaseV2 variant/descriptor/PSO, exact activation/LOD,
    renderer-list survivor, after-DOF ownership, and final compositing are still
    open, so `visibleAdmission` stays false.
+   The exact independently AssetMap-proven finger prefab is now executable in
+   the same actor-composed diagnostic. It is mounted beneath the unique
+   `Bip001_R_Finger2Nub`, keeps its source 0.83333-second delay and
+   2.33333-second lifetime, resolves all eight texture PathIDs through exact
+   converted-PNG joins, and expands all seven billboard renderers through the
+   explicitly labeled Unity `BakeMesh` proxy route. The schema-v3 D3D12 lab
+   capture and validator pass while generated source materials and normal
+   viewer admission remain fail-closed. At PTS 40000 it moves composite
+   `raisedHand` coverage from 0.603% to 5.529% and effects-only coverage from
+   zero to 5.120%, versus 28.526% retail. Its positive renderer-ID bounds are
+   instead in the upper-right (`x=634..771`, about `y=41..96`); the added
+   pixels in the current raised-hand ROI are chiefly start_01 renderer ID 4.
+   Treat the finger effect as a recovered visible contributor, not as proven
+   ownership of the remaining retail raised-hand layer. The next visual join
+   is the exact camera/hierarchy composition and start_01 shader/another
+   source-layer explanation for that ROI, without retiming or stretching the
+   proven finger prefab.
    All 12 controller requests are preserved; the other 11
    remain explicitly unbound. Its `38-47 s` retail slot, especially the
    hand-adjacent teal layer near 40 seconds, is the current strongest visual
