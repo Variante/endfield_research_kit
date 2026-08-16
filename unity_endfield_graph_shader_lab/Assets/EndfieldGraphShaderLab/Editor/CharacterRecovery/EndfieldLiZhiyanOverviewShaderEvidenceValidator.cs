@@ -200,6 +200,7 @@ namespace EndfieldGraphShaderLabEditor
             Dictionary<string, object> commandConsumer = L.Dict(nativeAdapter["commandConsumer"]);
             Dictionary<string, object> survivorSort = L.Dict(nativeAdapter["survivorSortPublication"]);
             Dictionary<string, object> workerKeyLayouts = L.Dict(survivorSort["workerKeyLayouts"]);
+            Dictionary<string, object> backendBoundary = L.Dict(survivorSort["backendBoundary"]);
             Dictionary<string, object> captureBoundary = L.Dict(nativeAdapter["runtimeCaptureBoundary"]);
             L.Require(L.Str(boundary, "callbackConstantBufferPublication") == "not_present" &&
                 L.Str(boundary, "callbackGlobalVectorAndTexturePublication") == "present" &&
@@ -256,7 +257,10 @@ namespace EndfieldGraphShaderLabEditor
                 L.Str(contextOwnership, "contextPointerCellVA") == "0x1821688a0" &&
                 L.Str(contextOwnership, "managerOffset") == "0xb0" &&
                 L.Str(contextOwnership, "parallelHGTreeOffset") == "0xc0" &&
-                L.Str(contextOwnership, "provenBoundary").Contains("no writer/replacer") &&
+                L.Str(contextOwnership, "genericSetterVA") == "0x18030f5b0" &&
+                L.Str(contextOwnership, "bulkRegistrarVA") == "0x180319e60" &&
+                L.Str(contextOwnership, "globalTeardownVA") == "0x18058cc20" &&
+                L.Str(contextOwnership, "provenBoundary").Contains("registration and global cell clearing are proven") &&
                 L.Str(commandConsumer, "opcode") == "0x4e" &&
                 L.Str(commandConsumer, "managerSingletonOffset") == "0xb0" &&
                 L.Long(commandConsumer, "slotStride") == 16 &&
@@ -300,8 +304,13 @@ namespace EndfieldGraphShaderLabEditor
                 StringListEquals(survivorSort["notYetProven"],
                     "semantic names of packed key fields",
                     "indirect draw",
-                    "graphics backend submission",
-                    "slot-0x14 context writer/replacer/destructor owner") &&
+                    "active graphics backend submission",
+                    "slot-0x14 context construction semantics and +0xb0 destructor internals") &&
+                L.Str(backendBoundary, "resultCallbackThunkVA") == "0x180feaea0" &&
+                L.Str(backendBoundary, "frontEndHandoffVA") == "0x1810484e0" &&
+                L.Str(backendBoundary, "behavior").Contains("generic front-end virtual dispatch") &&
+                L.Str(backendBoundary, "d3d12StaticBoundary").Contains("D3D12 support not compiled in!") &&
+                L.Str(backendBoundary, "activeBackend").StartsWith("unresolved") &&
                 L.Str(captureBoundary, "authorization").Contains("separate explicit authorization") &&
                 L.List(captureBoundary["observationOnlyHooks"]).Count == 5 &&
                 L.Str(captureBoundary, "requiredPositiveJoin").Contains("final draw -> visible Li Zhiyan") &&
