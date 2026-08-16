@@ -51,6 +51,11 @@ namespace EndfieldGraphShaderLabEditor
                 Mathf.Abs(marker.sourceStartAnimationSampleRate - 30f) < 0.0001f &&
                 Mathf.Abs(marker.sourceStartAnimationStopTime - 6.366667f) < 0.0001f,
                 "Generated Li Zhiyan animation source identity drifted");
+            Require(!marker.sourceAnimationBindingsResolved &&
+                marker.materialExecutionBoundary != null &&
+                marker.materialExecutionBoundary.Contains("21/53_partial") &&
+                marker.blockedBy.Any(value => value != null && value.Contains("21/53")),
+                "Generated Li Zhiyan animation binding boundary drifted");
             Require(marker.hierarchyNodes != null && marker.hierarchyNodes.Length == 5 &&
                 marker.staticMeshNodes != null && marker.staticMeshNodes.Length == 4,
                 "Generated Li Zhiyan hierarchy census drifted");
@@ -110,8 +115,17 @@ namespace EndfieldGraphShaderLabEditor
                 renderer.sharedMaterials[0] != null &&
                 renderer.sharedMaterials[0].shader != null &&
                 renderer.sharedMaterials[0].shader.name ==
-                    "Endfield/Recovered/VFXBaseV2SampleStack"),
+                    "Endfield/Recovered/LiZhiyanStart01Diagnostic"),
                 "Generated Li Zhiyan diagnostic material/shader identity drifted");
+            float[] expectedMaterialModes = { 9f, 9f, 10f, 11f };
+            for (int index = 0; index < marker.staticMeshNodes.Length; index++)
+            {
+                MeshRenderer renderer = marker.staticMeshNodes[index].generatedMeshRenderer;
+                Require(renderer != null && renderer.sharedMaterials.Length == 1 &&
+                    Mathf.Abs(renderer.sharedMaterials[0].GetFloat("_LiMaterialMode") -
+                        expectedMaterialModes[index]) < 0.001f,
+                    "Generated Li Zhiyan diagnostic material mode drifted at index " + index);
+            }
             Require(marker.staticMeshNodes.All(node =>
                 node != null && node.generatedMeshFilter != null &&
                 node.generatedMeshRenderer != null &&
