@@ -2152,6 +2152,10 @@
   // existing semantic rendering checks below.  A WeakMap avoids mutating the
   // generated data payload with frontend-only state.
   const buffActionBranchByDecoded = new WeakMap();
+  // Action summaries are frontend-only as well.  Keep the bounded technical
+  // coordinates beside decoded objects without publishing them into the
+  // generated payload or rendering raw byte dumps in normal mode.
+  const buffActionSummaryByDecoded = new WeakMap();
 
   function buffRecord(id) {
     return STATE.index?.buffs?.[String(id || "")] || null;
@@ -2222,12 +2226,73 @@
     return parts.join(", ");
   }
 
+  function buffActionCoverageStatus(decoded, item) {
+    const decodedStatus = decoded && typeof decoded === "object" ? decoded.decodeStatus : "";
+    const status = decodedStatus || (item && item.decodeStatus);
+    if (status === "exact") return "exact";
+    if (status === "partial") return "partial";
+    return "unresolved";
+  }
+
+  function buffActionSummary(decoded, item) {
+    const source = decoded && typeof decoded === "object" ? decoded : {};
+    const summary = {
+      status: buffActionCoverageStatus(decoded, item),
+      type: source.type || item?.name || "",
+      tag: item?.tag || "",
+      memberCount: item?.memberCount ?? source.memberCount,
+      semanticStatus: source.semanticStatus || "",
+      offset: item?.offset || source.offset || "",
+      bytes: item?.bytes ?? source.byteLength,
+      boundaryProof: item?.boundaryProof || source.boundaryProof || "",
+      decoded: source,
+    };
+    return summary;
+  }
+
+  function buffActionDebugStats(value, path = "", out = [], depth = 0) {
+    if (!value || typeof value !== "object" || depth > 3 || out.length >= 8) return out;
+    if (Array.isArray(value)) return out;
+    for (const [key, child] of Object.entries(value)) {
+      const childPath = path ? `${path}.${key}` : key;
+      if (typeof child === "string" && /sha256$/i.test(key) && /^[0-9a-f]{64}$/i.test(child)) {
+        out.push({ label: `${childPath} SHA-256`, value: child });
+        continue;
+      }
+      if (Array.isArray(child)) {
+        out.push({ label: `${childPath} count`, value: child.length });
+        continue;
+      }
+      if (child && typeof child === "object") buffActionDebugStats(child, childPath, out, depth + 1);
+      if (out.length >= 8) break;
+    }
+    return out;
+  }
+
+  function renderBuffActionTechnical(summary) {
+    if (!STATE.showDebug || !summary || summary.status === "exact") return "";
+    const pairs = [
+      { label: text("buffActionTechnicalType"), value: summary.type },
+      { label: text("buffActionTechnicalTag"), value: summary.tag },
+      { label: text("buffActionTechnicalMemberCount"), value: summary.memberCount },
+      { label: text("buffActionTechnicalStatus"), value: summary.status },
+      { label: text("buffActionTechnicalSemanticStatus"), value: summary.semanticStatus },
+      { label: text("buffActionTechnicalOffset"), value: summary.offset },
+      { label: text("buffActionTechnicalBytes"), value: summary.bytes },
+      ...buffActionDebugStats(summary.decoded),
+    ].filter((item) => item.value !== undefined && item.value !== null && item.value !== "");
+    if (!pairs.length) return "";
+    return `<details class="gameplay-buff-action-technical"><summary>${escapeHtml(text("buffActionTechnical"))}</summary>${renderChipPairs(pairs)}</details>`;
+  }
+
   function buffDecodedActions(sequence) {
     const rows = [];
     const visitSequence = (candidate, branch = "") => {
       (candidate?.actionDataItems || []).forEach((item) => {
-        const decoded = item?.decoded || {};
+        const decoded = item?.decoded && typeof item.decoded === "object" ? item.decoded : {};
+        const summary = buffActionSummary(decoded, item);
         buffActionBranchByDecoded.set(decoded, branch);
+        buffActionSummaryByDecoded.set(decoded, summary);
         rows.push(decoded);
         visitSequence(decoded.conditionAction, branch ? `${branch}.condition` : "condition");
         visitSequence(decoded.failActions, branch ? `${branch}.fail` : "fail");
@@ -2261,14 +2326,28 @@
 
   function renderBuffAbilityEventActions(record) {
     const actionGroupCount = (record.abilityEventActions || []).length;
+    const coverage = { exact: 0, partial: 0, unresolved: 0, total: 0 };
     const groups = (record.abilityEventActions || []).map((eventMap, groupIndex) => {
       if (!eventMap) return "";
       const rows = [];
       let activeBranch = "";
+      let activeSummary = null;
+      let activeCoverage = "unresolved";
       const rawPush = rows.push.bind(rows);
-      rows.push = (row) => rawPush({ ...row, branch: activeBranch });
+      rows.push = (row) => rawPush({
+        ...row,
+        branch: activeBranch,
+        coverage: row.coverage || activeCoverage,
+        actionSummary: row.actionSummary || activeSummary,
+      });
       (eventMap.actions || []).forEach((sequence) => {
         buffDecodedActions(sequence).forEach((decoded) => {
+          const summary = buffActionSummaryByDecoded.get(decoded) || buffActionSummary(decoded, null);
+          activeSummary = summary;
+          activeCoverage = summary.status;
+          coverage[summary.status] += 1;
+          coverage.total += 1;
+          const rowStart = rows.length;
           activeBranch = buffActionBranchByDecoded.get(decoded) || "";
           if (decoded.semanticStatus === "exact-skill-id-condition") {
             const ids = (decoded.skillIdList || []).map((entry) => blackboardValue(entry)).filter(Boolean);
@@ -2364,14 +2443,14 @@
             const effectIds = (decoded.effectActionCfgPartial?.stringHits || [])
               .map((entry) => String(entry?.value || ""))
               .filter(Boolean);
-            const effectName = effectIds[0] || decoded.bigEffectName || text("buffActionEffectConfigured");
+            const effectName = effectIds[0] || decoded.bigEffectName || text("buffActionOpaquePayload");
             const target = buffTargetSettingsSummary(decoded.targetSettingsEnvelopePartial);
-            rows.push({ label: text("buffActionPlayEffect"), value: [effectName, target].filter(Boolean).join(" · ") });
+            rows.push({ label: text("buffActionConfiguredCandidate"), value: [effectName, target].filter(Boolean).join(" · ") });
           }
           if (decoded.semanticStatus === "partial-create-buff-input-tail-and-target-settings-opaque") {
             const buffIds = (decoded.buffsPartial?.items || []).map((entry) => entry?.buffId).filter(Boolean);
             const target = buffTargetSettingsSummary(decoded.targetSettingsEnvelopePartial);
-            if (buffIds.length) rows.push({ label: text("buffActionCreateBuff"), value: [buffIds.join(", "), target].filter(Boolean).join(" · ") });
+            if (buffIds.length) rows.push({ label: text("buffActionRecoveredBuffIds"), value: [buffIds.join(", "), target].filter(Boolean).join(" · ") });
           }
           if (decoded.semanticStatus === "exact-finish-buff-action") {
             const buffIds = (decoded.buffIds || []).filter(Boolean);
@@ -2416,6 +2495,15 @@
           if (decoded.semanticStatus === "exact-special-game-event-action") {
             rows.push({ label: text("buffActionSpecialGameEvent"), value: formatValue(decoded.specialGameEventType) });
           }
+          if (decoded.semanticStatus === "exact-obtain-atb-type-condition") {
+            rows.push({
+              label: text("buffActionCheckObtainAtbType"),
+              value: [
+                decoded.checkObtainMethod ? `${text("buffActionObtainMethod")}: ${(decoded.obtainMethodList || []).join(", ")}` : "",
+                decoded.checkObtainType ? `${text("buffActionObtainType")}: ${(decoded.obtainTypeList || []).join(", ")}` : "",
+              ].filter(Boolean).join(" · "),
+            });
+          }
           if (decoded.semanticStatus === "partial-damage-units-opaque-hit-env-bounded") {
             const target = buffTargetSettingsSummary(decoded.targetSettingsEnvelopePartial);
             rows.push({ label: text("buffActionDealDamage"), value: [text("buffDamageValueOpaque"), target].filter(Boolean).join(" · ") });
@@ -2447,6 +2535,26 @@
           if (decoded.semanticStatus === "exact-not-next-check-control-action") {
             rows.push({ label: text("buffActionStopNextCheck"), value: text("enabled") });
           }
+          const isExactIfElse = summary.status === "exact"
+            && summary.semanticStatus === "exact-if-else-action";
+          const hasNestedIfElseItems = ["conditionAction", "failActions", "succeedActions"]
+            .some((key) => (decoded[key]?.actionDataItems || []).length > 0);
+          if (isExactIfElse && !hasNestedIfElseItems && rows.length === rowStart) {
+            rows.push({
+              label: text("buffActionIfElseExact"),
+              value: text("buffActionIfElseExactSummary"),
+            });
+          } else if (rows.length === rowStart && !isExactIfElse) {
+            const isIfElse = /IfElseAction/i.test(String(summary.type || decoded.type || ""));
+            rows.push({
+              label: isIfElse && summary.status === "partial"
+                ? text("buffActionIfElsePartial")
+                : summary.status === "partial"
+                  ? text("buffActionPartialPayload")
+                  : text("buffActionUnresolvedPayload"),
+              value: summary.type || summary.semanticStatus || text("buffActionOpaquePayload"),
+            });
+          }
         });
       });
       if (!rows.length) return "";
@@ -2458,19 +2566,26 @@
         : "";
       const rowsWithBranchContext = rows.map((row) => {
         const branch = row && row.branch;
-        if (!branch) return row;
         const branchLabel = branch
           .split(".")
           .map((key) => text(BUFF_BRANCH_LABEL_KEYS[key] || key))
           .join(" / ");
+        const coverageLabel = row.coverage === "partial"
+          ? text("buffActionPartialMarker")
+          : row.coverage === "unresolved"
+            ? text("buffActionUnresolvedMarker")
+            : "";
         return {
           ...row,
-          label: `${branchLabel}: ${row.label}`,
+          label: [branchLabel, coverageLabel, row.label].filter(Boolean).join(": "),
         };
       });
-      return `<div class="gameplay-buff-action-group"><div class="gameplay-subheading">${escapeHtml(text("buffAbilityEvent"))}: ${escapeHtml(eventName)}${escapeHtml(chain)}</div>${renderChipPairs(rowsWithBranchContext)}</div>`;
+      const technical = [...new Set(rowsWithBranchContext.map((row) => row.actionSummary).filter(Boolean))]
+        .map(renderBuffActionTechnical)
+        .join("");
+      return `<div class="gameplay-buff-action-group"><div class="gameplay-subheading">${escapeHtml(text("buffAbilityEvent"))}: ${escapeHtml(eventName)}${escapeHtml(chain)}</div>${renderChipPairs(rowsWithBranchContext)}${technical}</div>`;
     }).filter(Boolean);
-    return groups.join("");
+    return { html: groups.join(""), coverage };
   }
 
   function renderBuffCard(id, highlight) {
@@ -2486,7 +2601,17 @@
     const duration = record.duration || null;
     const addingCooldown = record.addingCooldown || null;
     const abilityEventActionCount = Number(record.abilityEventActionCount || 0);
-    const abilityEventActions = renderBuffAbilityEventActions(record);
+    const abilityEventRender = renderBuffAbilityEventActions(record);
+    const abilityEventActions = abilityEventRender.html;
+    const actionCoverage = abilityEventRender.coverage;
+    const hasActionGroup = Array.isArray(record.abilityEventActions) && record.abilityEventActions.length > 0;
+    const actionBoundaryKey = actionCoverage.total > 0
+      && actionCoverage.partial === 0
+      && actionCoverage.unresolved === 0
+      ? "buffAbilityEventActionExactBoundary"
+      : actionCoverage.total > 0
+        ? "buffAbilityEventActionPartialBoundary"
+        : "buffAbilityEventActionBoundary";
     const facts = [
       { label: text("buffLifeType"), value: buffLifeLabel(record.lifeType) },
       duration ? { label: text("buffDuration"), value: Number(duration.value) < 0 ? text("buffLifeInfinity") : `${formatValue(duration.value)} ${text("secondsShort")}` } : null,
@@ -2521,13 +2646,13 @@
       <summary><code>${escapeHtml(id)}</code>${hint ? `<span>${escapeHtml(text("buffIdentifierHint"))}: ${escapeHtml(hint)}</span>` : ""}</summary>
       ${renderChipPairs(facts)}
       ${abilityEventActions}
-      ${abilityEventActionCount > 0 ? `<p class="gameplay-evidence-note muted">${escapeHtml(text(abilityEventActions ? "buffAbilityEventActionExactBoundary" : "buffAbilityEventActionBoundary"))}</p>` : ""}
+      ${abilityEventActionCount > 0 || hasActionGroup ? `<p class="gameplay-evidence-note muted">${escapeHtml(text(actionBoundaryKey))}</p>` : ""}
       ${attributeModifiers ? `<div class="gameplay-subheading">${escapeHtml(text("buffAttributeModifiers"))}</div>${attributeModifiers}<p class="gameplay-evidence-note muted">${escapeHtml(text("buffAttributeModifierBoundary"))}</p>` : ""}
       ${appliedTags ? `<div class="gameplay-subheading">${escapeHtml(text("buffAppliedTags"))}</div>${appliedTags}<p class="gameplay-evidence-note muted">${escapeHtml(text("buffAppliedTagBoundary"))}</p>` : ""}
       ${params ? `<div class="gameplay-subheading">${escapeHtml(text("buffParameterCandidates"))}</div>${params}` : ""}
       ${flags.length ? `<div class="gameplay-subheading">${escapeHtml(text("buffFlags"))}</div>${renderChipPairs(flags)}` : ""}
       ${refs ? `<div class="gameplay-subheading">${escapeHtml(text("buffReferences"))}</div>${refs}` : ""}
-      <p class="gameplay-buff-source muted">${escapeHtml(text("source"))}: ${escapeHtml(record.source?.path || "")}</p>
+      ${STATE.showDebug && record.source?.path ? `<p class="gameplay-buff-source muted">${escapeHtml(text("source"))}: ${escapeHtml(record.source.path)}</p>` : ""}
     </details>`;
   }
 
