@@ -204,6 +204,27 @@ def read_buff_u32_field(data: bytes, offset: int, field_name: str) -> tuple[int,
     return struct.unpack_from("<I", data, offset)[0], offset + 4
 
 
+def validate_buff_read_limit(
+    data: bytes,
+    offset: int,
+    limit: int,
+    field_name: str,
+) -> None:
+    """Validate the shared bounded-reader contract before touching bytes."""
+
+    if (
+        not isinstance(limit, int)
+        or isinstance(limit, bool)
+        or limit < 0
+        or limit > len(data)
+        or offset < 0
+        or offset > limit
+    ):
+        raise ValueError(
+            f"{field_name}:invalid-limit={limit} offset={offset} dataLength={len(data)}"
+        )
+
+
 def read_buff_bool_field(data: bytes, offset: int, field_name: str) -> tuple[bool, int]:
     if offset >= len(data):
         raise ValueError(f"{field_name}:truncated-bool")
@@ -523,8 +544,10 @@ def read_buff_timeline_force_sync_anim_data(
     offset += 1
     if member_count != 4:
         raise ValueError(f"{field_name}:member-count={member_count}")
-    force_sync, offset = read_buff_bool_field(data, offset, f"{field_name}.forceSync")
-    montage_name, offset, error = read_memorypack_utf8_string(data, offset, max_length=512)
+    force_sync, offset = read_buff_bool_field_bounded(data, offset, limit, f"{field_name}.forceSync")
+    montage_name, offset, error = read_buff_memorypack_utf8_string_permissive_bounded(
+        data, offset, limit, max_length=512,
+    )
     if error:
         raise ValueError(f"{field_name}.montageName:{error}")
     if offset + 8 > limit:
@@ -830,6 +853,7 @@ def read_buff_memorypack_utf8_string_strict_bounded(
     *,
     max_length: int = 512,
 ) -> tuple[str | None, int]:
+    validate_buff_read_limit(data, offset, limit, field_name)
     if offset + 4 > limit:
         raise ValueError(f"{field_name}:truncated-length")
     length = struct.unpack_from("<I", data, offset)[0]
@@ -846,6 +870,28 @@ def read_buff_memorypack_utf8_string_strict_bounded(
     if any(ord(ch) < 32 for ch in value):
         raise ValueError(f"{field_name}:control-char")
     return value, offset + length
+
+
+def read_buff_memorypack_utf8_string_permissive_bounded(
+    data: bytes,
+    offset: int,
+    limit: int,
+    *,
+    max_length: int = 16_384,
+) -> tuple[str | None, int, str | None]:
+    """Read a permissive MemoryPack string without crossing ``limit``."""
+
+    validate_buff_read_limit(data, offset, limit, "memorypackUtf8")
+    if offset + 4 > limit:
+        return None, offset, "truncated-length"
+    length = struct.unpack_from("<I", data, offset)[0]
+    offset += 4
+    if length == MEMORYPACK_NULL_COUNT:
+        return None, offset, None
+    if length > max_length or offset + length > limit:
+        return None, offset, f"invalid-length={length}"
+    raw = data[offset:offset + length]
+    return raw.decode("utf-8", "replace"), offset + length, None
 
 
 def read_buff_blackboard_float_raw_field_exact(
@@ -904,9 +950,10 @@ def scan_buff_blackboard_float_candidates_before_id(
     seen: set[tuple[str, float, bool]] = set()
     for offset in range(1, limit):
         try:
-            candidate, end = read_buff_blackboard_float_raw_field_exact(
+            candidate, end = read_buff_blackboard_float_raw_field_bounded(
                 data,
                 offset,
+                limit,
                 "preIdBlackboardCandidate",
             )
         except (struct.error, UnicodeDecodeError, ValueError):
@@ -1244,6 +1291,11 @@ def read_buff_blackboard_float_raw_field_bounded(
     limit: int,
     field_name: str,
 ) -> tuple[dict[str, Any], int]:
+    # Validate the enclosing bound before touching the MemoryPack member
+    # count.  This compound reader is also called directly by the pre-ID
+    # candidate scanner, so relying on a nested primitive reader would leave
+    # malformed limits reporting a misleading member-count failure.
+    validate_buff_read_limit(data, offset, limit, field_name)
     start = offset
     if offset >= limit:
         raise ValueError(f"{field_name}:truncated-member-count")
@@ -1308,6 +1360,34 @@ def read_buff_blackboard_vector3_field_exact(
     }, offset
 
 
+def read_buff_blackboard_vector3_field_bounded(
+    data: bytes,
+    offset: int,
+    limit: int,
+    field_name: str,
+) -> tuple[dict[str, Any], int]:
+    validate_buff_read_limit(data, offset, limit, field_name)
+    start = offset
+    if offset >= limit:
+        raise ValueError(f"{field_name}:truncated-member-count")
+    member_count = data[offset]
+    offset += 1
+    if member_count != 3:
+        raise ValueError(f"{field_name}:member-count={member_count}")
+    x, offset = read_buff_blackboard_float_raw_field_bounded(data, offset, limit, f"{field_name}.x")
+    y, offset = read_buff_blackboard_float_raw_field_bounded(data, offset, limit, f"{field_name}.y")
+    z, offset = read_buff_blackboard_float_raw_field_bounded(data, offset, limit, f"{field_name}.z")
+    return {
+        "memberCount": member_count,
+        "offset": format_offset(start),
+        "bytes": offset - start,
+        "x": x,
+        "y": y,
+        "z": z,
+        "value": [x["value"], y["value"], z["value"]],
+    }, offset
+
+
 def read_buff_blackboard_string_field_exact(
     data: bytes,
     offset: int,
@@ -1332,6 +1412,38 @@ def read_buff_blackboard_string_field_exact(
         offset,
         f"{field_name}.value",
         max_length=512,
+    )
+    return {
+        "memberCount": member_count,
+        "offset": format_offset(start),
+        "blackboardKey": key or "",
+        "useBlackboardKey": use_blackboard_key,
+        "value": value or "",
+    }, offset
+
+
+def read_buff_blackboard_string_field_bounded(
+    data: bytes,
+    offset: int,
+    limit: int,
+    field_name: str,
+) -> tuple[dict[str, Any], int]:
+    validate_buff_read_limit(data, offset, limit, field_name)
+    start = offset
+    if offset >= limit:
+        raise ValueError(f"{field_name}:truncated-member-count")
+    member_count = data[offset]
+    offset += 1
+    if member_count != 3:
+        raise ValueError(f"{field_name}:member-count={member_count}")
+    key, offset = read_buff_memorypack_utf8_string_strict_bounded(
+        data, offset, limit, f"{field_name}.blackboardKey", max_length=256,
+    )
+    use_blackboard_key, offset = read_buff_bool_field_bounded(
+        data, offset, limit, f"{field_name}.useBlackboardKey",
+    )
+    value, offset = read_buff_memorypack_utf8_string_strict_bounded(
+        data, offset, limit, f"{field_name}.value", max_length=512,
     )
     return {
         "memberCount": member_count,
@@ -1398,6 +1510,7 @@ def buff_target_settings_envelope_limit(
     max_limit: int,
     field_name: str,
 ) -> int:
+    validate_buff_read_limit(data, offset, max_limit, field_name)
     base_end = offset + BUFF_TARGET_SETTINGS_ENVELOPE_BASE_BYTES
     string_length_offset = offset + BUFF_TARGET_SETTINGS_STRING_SLOT_OFFSET
     if base_end > max_limit or string_length_offset + 4 > max_limit:
@@ -1435,8 +1548,7 @@ def read_buff_target_settings_partial(
     *,
     allowed_tail_u32s: tuple[int, ...] = BUFF_TARGET_SETTINGS_ENVELOPE_TAIL_U32_CANDIDATES,
 ) -> tuple[dict[str, Any], int]:
-    if limit < offset:
-        raise ValueError(f"{field_name}:invalid-bounds")
+    validate_buff_read_limit(data, offset, limit, field_name)
     expected_limit = buff_target_settings_envelope_limit(data, offset, limit, field_name)
     if expected_limit != limit:
         raise ValueError(
@@ -1506,6 +1618,7 @@ def read_buff_target_settings_envelope_partial(
     # known, use the typed reader as well; it exposes the 13 TargetSettings
     # members for the common selector shapes while retaining the bounded raw
     # representation whenever an unknown nested selector subtype is met.
+    validate_buff_read_limit(data, offset, max_limit, field_name)
     # Historically every caller used the ``...Partial`` helper here, which
     # left even the all-default TargetSettings (the dominant current-build
     # shape) needlessly opaque.
@@ -1528,7 +1641,9 @@ def read_buff_effect_action_cfg_partial(
     byte_length = limit - offset
     if byte_length < BUFF_EFFECT_ACTION_CFG_MIN_BYTES:
         raise ValueError(f"{field_name}:unexpected-bytes={byte_length}")
-    member_count, _member_offset = read_buff_i32_field(data, offset, f"{field_name}.memberCountCandidate")
+    member_count, _member_offset = read_buff_i32_field_bounded(
+        data, offset, limit, f"{field_name}.memberCountCandidate",
+    )
     if member_count not in (74, 76, 85):
         raise ValueError(f"{field_name}.memberCountCandidate={member_count}")
     raw = data[offset:limit]
@@ -1597,8 +1712,8 @@ def read_buff_create_buff_input_partial(
     offset += 1
     if member_count != 5:
         raise ValueError(f"{field_name}:member-count={member_count}")
-    flag_candidate, offset = read_buff_bool_field(data, offset, f"{field_name}.flagCandidate")
-    reserved_u32, offset = read_buff_u32_field(data, offset, f"{field_name}.reservedU32")
+    flag_candidate, offset = read_buff_bool_field_bounded(data, offset, limit, f"{field_name}.flagCandidate")
+    reserved_u32, offset = read_buff_u32_field_bounded(data, offset, limit, f"{field_name}.reservedU32")
     # CreateBuffActionInput flattens an inherited dynamic BuffId value.  The
     # leading discriminator selects several blackboard expression shapes, so
     # their inner byte length is not fixed.  Every current formatter branch
@@ -1662,7 +1777,7 @@ def read_buff_create_buff_list_partial(
     field_name: str,
 ) -> tuple[dict[str, Any], int]:
     start = offset
-    count, offset = read_buff_u32_field(data, offset, f"{field_name}.count")
+    count, offset = read_buff_u32_field_bounded(data, offset, limit, f"{field_name}.count")
     if count <= 0 or count > BUFF_CREATE_BUFF_MAX_BUFF_IDS:
         raise ValueError(f"{field_name}.count={count}")
     items: list[dict[str, Any]] = []
@@ -1705,8 +1820,8 @@ def consume_buff_create_buff_action(
         limit,
         "createBuff.prefix",
     )
-    as_child_buff, offset = read_buff_bool_field(data, offset, "createBuff.asChildBuff")
-    auto_finish_by_action, offset = read_buff_bool_field(data, offset, "createBuff.autoFinishByAction")
+    as_child_buff, offset = read_buff_bool_field_bounded(data, offset, limit, "createBuff.asChildBuff")
+    auto_finish_by_action, offset = read_buff_bool_field_bounded(data, offset, limit, "createBuff.autoFinishByAction")
     buff_icon_duration_source, offset = read_buff_create_buff_icon_duration_source_partial(
         data,
         offset,
@@ -1719,7 +1834,7 @@ def consume_buff_create_buff_action(
         limit,
         "createBuff.buffs",
     )
-    buff_source_raw, offset = read_buff_u32_field(data, offset, "createBuff.buffSourceRaw")
+    buff_source_raw, offset = read_buff_u32_field_bounded(data, offset, limit, "createBuff.buffSourceRaw")
     if buff_source_raw > 1_000_000:
         raise ValueError(f"createBuff.buffSourceRaw={buff_source_raw}")
     context_key, offset = read_buff_memorypack_utf8_string_strict_bounded(
@@ -1731,42 +1846,49 @@ def consume_buff_create_buff_action(
     )
     if offset + 10 > limit:
         raise ValueError("createBuff.count:truncated")
-    count_candidate, offset = read_buff_blackboard_float_raw_field_exact(
+    count_candidate, offset = read_buff_blackboard_float_raw_field_bounded(
         data,
         offset,
+        limit,
         "createBuff.count",
     )
-    finish_with_next_skill_if_not_inherited, offset = read_buff_bool_field(
+    finish_with_next_skill_if_not_inherited, offset = read_buff_bool_field_bounded(
         data,
         offset,
+        limit,
         "createBuff.finishWithNextSkillIfNotInherited",
     )
-    inherit_skill_id_count, offset = read_buff_u32_field(
+    inherit_skill_id_count, offset = read_buff_u32_field_bounded(
         data,
         offset,
+        limit,
         "createBuff.inheritSkillIdList.count",
     )
     if inherit_skill_id_count != 0:
         raise ValueError(f"createBuff.inheritSkillIdList.count={inherit_skill_id_count}")
-    inherit_source_skill_cast_id, offset = read_buff_bool_field(
+    inherit_source_skill_cast_id, offset = read_buff_bool_field_bounded(
         data,
         offset,
+        limit,
         "createBuff.inheritSourceSkillCastId",
     )
-    inherit_source_skill_cast_info, offset = read_buff_bool_field(
+    inherit_source_skill_cast_info, offset = read_buff_bool_field_bounded(
         data,
         offset,
+        limit,
         "createBuff.inheritSourceSkillCastInfo",
     )
-    is_extra, offset = read_buff_bool_field(data, offset, "createBuff.isExtra")
-    override_buff_icon_duration, offset = read_buff_bool_field(
+    is_extra, offset = read_buff_bool_field_bounded(data, offset, limit, "createBuff.isExtra")
+    override_buff_icon_duration, offset = read_buff_bool_field_bounded(
         data,
         offset,
+        limit,
         "createBuff.overrideBuffIconDuration",
     )
-    pass_target_groups_to_buff, offset = read_buff_bool_field(
+    pass_target_groups_to_buff, offset = read_buff_bool_field_bounded(
         data,
         offset,
+        limit,
         "createBuff.passTargetGroupsToBuff",
     )
     target_settings, offset = read_buff_target_settings_envelope_partial(
@@ -2009,8 +2131,8 @@ def consume_buff_effect_action(
         "effectAction.effectSource",
     )
     bool_fields: dict[str, bool] = {}
-    bool_fields["forceMainBody"], offset = read_buff_bool_field(
-        data, offset, "effectAction.forceMainBody",
+    bool_fields["forceMainBody"], offset = read_buff_bool_field_bounded(
+        data, offset, limit, "effectAction.forceMainBody",
     )
     guard_lod_source, offset = read_buff_target_settings_envelope_partial(
         data,
@@ -2025,7 +2147,9 @@ def consume_buff_effect_action(
         "isTargetMainCharacterActive",
         "playOnHittableObjects",
     ):
-        bool_fields[field_name], offset = read_buff_bool_field(data, offset, f"effectAction.{field_name}")
+        bool_fields[field_name], offset = read_buff_bool_field_bounded(
+            data, offset, limit, f"effectAction.{field_name}"
+        )
     save_effect_id_to_blackboard, offset = read_buff_memorypack_utf8_string_strict_bounded(
         data,
         offset,
@@ -2044,8 +2168,8 @@ def consume_buff_effect_action(
         limit,
         "effectAction.targetSettings",
     )
-    bool_fields["useGuardLodSourceOverride"], offset = read_buff_bool_field(
-        data, offset, "effectAction.useGuardLodSourceOverride",
+    bool_fields["useGuardLodSourceOverride"], offset = read_buff_bool_field_bounded(
+        data, offset, limit, "effectAction.useGuardLodSourceOverride",
     )
     return {
         "type": BUFF_ABILITY_ACTION_TAG_NAMES[BUFF_EFFECT_ACTION_TAG],
@@ -2090,10 +2214,8 @@ def consume_buff_convert_to_target_context_action(
         limit,
         "convertToTargetContext.prefix",
     )
-    blackboard_vector3, offset = read_buff_blackboard_vector3_field_exact(
-        data,
-        offset,
-        "convertToTargetContext.blackboardVector3",
+    blackboard_vector3, offset = read_buff_blackboard_vector3_field_bounded(
+        data, offset, limit, "convertToTargetContext.blackboardVector3",
     )
     convert_from, offset = read_buff_target_settings_envelope_partial(
         data,
@@ -2101,8 +2223,8 @@ def consume_buff_convert_to_target_context_action(
         limit,
         "convertToTargetContext.convertFrom",
     )
-    exclude_target, offset = read_buff_i32_field(data, offset, "convertToTargetContext.excludeTarget")
-    operation_type, offset = read_buff_i32_field(data, offset, "convertToTargetContext.operationType")
+    exclude_target, offset = read_buff_i32_field_bounded(data, offset, limit, "convertToTargetContext.excludeTarget")
+    operation_type, offset = read_buff_i32_field_bounded(data, offset, limit, "convertToTargetContext.operationType")
     target_group_key, offset = read_buff_memorypack_utf8_string_strict_bounded(
         data,
         offset,
@@ -2112,13 +2234,14 @@ def consume_buff_convert_to_target_context_action(
     )
     if not target_group_key:
         raise ValueError("convertToTargetContext.targetGroupKey:empty")
-    translate_operation, offset = read_buff_i32_field(
+    translate_operation, offset = read_buff_i32_field_bounded(
         data,
         offset,
+        limit,
         "convertToTargetContext.translateOperation",
     )
-    translation_deg, offset = read_buff_f32_field(data, offset, "convertToTargetContext.translationDeg")
-    translation_ref, offset = read_buff_i32_field(data, offset, "convertToTargetContext.translationRef")
+    translation_deg, offset = read_buff_f32_field_bounded(data, offset, limit, "convertToTargetContext.translationDeg")
+    translation_ref, offset = read_buff_i32_field_bounded(data, offset, limit, "convertToTargetContext.translationRef")
     for field_name, value in (
         ("convertToTargetContext.excludeTarget", exclude_target),
         ("convertToTargetContext.operationType", operation_type),
@@ -2221,7 +2344,7 @@ def consume_buff_debug_print_action(
     )
     if not identifier:
         raise ValueError("debugPrint.identifier:empty")
-    log_type, offset = read_buff_i32_field(data, offset, "debugPrint.logType")
+    log_type, offset = read_buff_i32_field_bounded(data, offset, limit, "debugPrint.logType")
     log_type_names = {0: "TargetSetting", 1: "BlackboardItem"}
     if log_type not in log_type_names:
         raise ValueError(f"debugPrint.logType={log_type}")
@@ -2283,25 +2406,27 @@ def consume_buff_play_animation_action(
         limit,
         "playAnimation.prefix",
     )
-    anim_name, offset = read_buff_memorypack_utf8_string_strict(
+    anim_name, offset = read_buff_memorypack_utf8_string_strict_bounded(
         data,
         offset,
+        limit,
         "playAnimation.animName",
         max_length=256,
     )
     if not anim_name:
         raise ValueError("playAnimation.animName:empty")
-    blend_duration, offset = read_buff_f32_field(data, offset, "playAnimation.blendDuration")
-    blend_out, offset = read_buff_f32_field(data, offset, "playAnimation.blendOut")
-    blend_out_next_state_hash, offset = read_buff_i32_field(
+    blend_duration, offset = read_buff_f32_field_bounded(data, offset, limit, "playAnimation.blendDuration")
+    blend_out, offset = read_buff_f32_field_bounded(data, offset, limit, "playAnimation.blendOut")
+    blend_out_next_state_hash, offset = read_buff_i32_field_bounded(
         data,
         offset,
+        limit,
         "playAnimation.blendOutNextStateHash",
     )
-    duration, offset = read_buff_f32_field(data, offset, "playAnimation.duration")
-    exit_to_idle, offset = read_buff_bool_field(data, offset, "playAnimation.exitToIdle")
-    playback_speed, offset = read_buff_f32_field(data, offset, "playAnimation.playbackSpeed")
-    start_time, offset = read_buff_f32_field(data, offset, "playAnimation.startTime")
+    duration, offset = read_buff_f32_field_bounded(data, offset, limit, "playAnimation.duration")
+    exit_to_idle, offset = read_buff_bool_field_bounded(data, offset, limit, "playAnimation.exitToIdle")
+    playback_speed, offset = read_buff_f32_field_bounded(data, offset, limit, "playAnimation.playbackSpeed")
+    start_time, offset = read_buff_f32_field_bounded(data, offset, limit, "playAnimation.startTime")
     for field_name, value in (
         ("playAnimation.blendDuration", blend_duration),
         ("playAnimation.blendOut", blend_out),
@@ -2374,7 +2499,7 @@ def consume_buff_patrol_teleport_action(
     )
     if not save_to:
         raise ValueError("patrolTeleport.saveTo:empty")
-    teleport_dis, offset = read_buff_f32_field(data, offset, "patrolTeleport.teleportDis")
+    teleport_dis, offset = read_buff_f32_field_bounded(data, offset, limit, "patrolTeleport.teleportDis")
     if teleport_dis < 0 or teleport_dis > 100_000:
         raise ValueError(f"patrolTeleport.teleportDis:out-of-range={teleport_dis}")
     return {
@@ -2428,9 +2553,9 @@ def consume_buff_play_sound_action(
         limit,
         "playSound.prefix",
     )
-    can_interrupt_time_ms, offset = read_buff_i32_field(data, offset, "playSound.canInterruptTimeMs")
-    intrpt_fade_duration_ms, offset = read_buff_i32_field(data, offset, "playSound.intrptFadeDurationMs")
-    jump_to_when_play_ms, offset = read_buff_i32_field(data, offset, "playSound.jumpToWhenPlayMs")
+    can_interrupt_time_ms, offset = read_buff_i32_field_bounded(data, offset, limit, "playSound.canInterruptTimeMs")
+    intrpt_fade_duration_ms, offset = read_buff_i32_field_bounded(data, offset, limit, "playSound.intrptFadeDurationMs")
+    jump_to_when_play_ms, offset = read_buff_i32_field_bounded(data, offset, limit, "playSound.jumpToWhenPlayMs")
     for field_name, value in (
         ("playSound.canInterruptTimeMs", can_interrupt_time_ms),
         ("playSound.intrptFadeDurationMs", intrpt_fade_duration_ms),
@@ -2451,11 +2576,11 @@ def consume_buff_play_sound_action(
     ) is None:
         raise ValueError(f"playSound.soundEvent:unexpected={sound_event or ''}")
 
-    stop_fade_duration_ms, offset = read_buff_i32_field(data, offset, "playSound.stopFadeDurationMs")
+    stop_fade_duration_ms, offset = read_buff_i32_field_bounded(data, offset, limit, "playSound.stopFadeDurationMs")
     validate_buff_nonnegative_ms(stop_fade_duration_ms, "playSound.stopFadeDurationMs")
-    stop_on_end, offset = read_buff_bool_field(data, offset, "playSound.stopOnEnd")
-    use_temp_emitter, offset = read_buff_bool_field(data, offset, "playSound.useTempEmitter")
-    follow_mount_point, offset = read_buff_bool_field(data, offset, "playSound.followMountPoint")
+    stop_on_end, offset = read_buff_bool_field_bounded(data, offset, limit, "playSound.stopOnEnd")
+    use_temp_emitter, offset = read_buff_bool_field_bounded(data, offset, limit, "playSound.useTempEmitter")
+    follow_mount_point, offset = read_buff_bool_field_bounded(data, offset, limit, "playSound.followMountPoint")
     mount_point, offset = read_buff_memorypack_utf8_string_strict_bounded(
         data,
         offset,
@@ -2471,32 +2596,36 @@ def consume_buff_play_sound_action(
         "playSound.targetSettings",
     )
 
-    time_dilation_fade_in_duration_ms, offset = read_buff_i32_field(
+    time_dilation_fade_in_duration_ms, offset = read_buff_i32_field_bounded(
         data,
         offset,
+        limit,
         "playSound.timeDilationFadeInDurationMs",
     )
     validate_buff_nonnegative_ms(
         time_dilation_fade_in_duration_ms,
         "playSound.timeDilationFadeInDurationMs",
     )
-    time_dilation_fade_out_duration_ms, offset = read_buff_i32_field(
+    time_dilation_fade_out_duration_ms, offset = read_buff_i32_field_bounded(
         data,
         offset,
+        limit,
         "playSound.timeDilationFadeOutDurationMs",
     )
     validate_buff_nonnegative_ms(
         time_dilation_fade_out_duration_ms,
         "playSound.timeDilationFadeOutDurationMs",
     )
-    time_dilation_pause_threshold, offset = read_buff_f32_field(
+    time_dilation_pause_threshold, offset = read_buff_f32_field_bounded(
         data,
         offset,
+        limit,
         "playSound.timeDilationPauseThreshold",
     )
-    time_dilation_seek_threshold, offset = read_buff_f32_field(
+    time_dilation_seek_threshold, offset = read_buff_f32_field_bounded(
         data,
         offset,
+        limit,
         "playSound.timeDilationSeekThreshold",
     )
     for field_name, value in (
@@ -2505,17 +2634,19 @@ def consume_buff_play_sound_action(
     ):
         if value < 0 or value > 10:
             raise ValueError(f"{field_name}:out-of-range={value}")
-    use_time_dilation_pause_and_seek, offset = read_buff_bool_field(
+    use_time_dilation_pause_and_seek, offset = read_buff_bool_field_bounded(
         data,
         offset,
+        limit,
         "playSound.useTimeDilationPauseAndSeek",
     )
-    use_weapon_mount_point, offset = read_buff_bool_field(
+    use_weapon_mount_point, offset = read_buff_bool_field_bounded(
         data,
         offset,
+        limit,
         "playSound.useWeaponMountPoint",
     )
-    weapon_index, offset = read_buff_i32_field(data, offset, "playSound.weaponIndex")
+    weapon_index, offset = read_buff_i32_field_bounded(data, offset, limit, "playSound.weaponIndex")
     if abs(weapon_index) > 1_000_000:
         raise ValueError(f"playSound.weaponIndex:implausible={weapon_index}")
     weapon_mount_point, offset = read_buff_memorypack_utf8_string_strict_bounded(
@@ -2591,14 +2722,16 @@ def consume_buff_send_battle_signal_to_level_action(
         limit,
         "sendBattleSignal.prefix",
     )
-    double_value, offset = read_buff_blackboard_float_raw_field_exact(
+    double_value, offset = read_buff_blackboard_float_raw_field_bounded(
         data,
         offset,
+        limit,
         "sendBattleSignal.doubleValue",
     )
-    signal_id, offset = read_buff_blackboard_string_field_exact(
+    signal_id, offset = read_buff_blackboard_string_field_bounded(
         data,
         offset,
+        limit,
         "sendBattleSignal.signalId",
     )
     return {
@@ -2655,17 +2788,19 @@ def consume_buff_compare_float_action(
         limit,
         "compareFloat.prefix",
     )
-    compare, offset = read_buff_i32_field(data, offset, "compareFloat.compare")
+    compare, offset = read_buff_i32_field_bounded(data, offset, limit, "compareFloat.compare")
     if compare not in BUFF_COMPARE_TYPE_NAMES:
         raise ValueError(f"compareFloat.compare={compare}")
-    value_a, offset = read_buff_blackboard_float_raw_field_exact(
+    value_a, offset = read_buff_blackboard_float_raw_field_bounded(
         data,
         offset,
+        limit,
         "compareFloat.valueA",
     )
-    value_b, offset = read_buff_blackboard_float_raw_field_exact(
+    value_b, offset = read_buff_blackboard_float_raw_field_bounded(
         data,
         offset,
+        limit,
         "compareFloat.valueB",
     )
     return {
@@ -2770,12 +2905,13 @@ def consume_buff_interrupt_action(
         limit,
         "interruptAction.defender",
     )
-    immobilized_time, offset = read_buff_f32_field(data, offset, "interruptAction.immobilizedTime")
+    immobilized_time, offset = read_buff_f32_field_bounded(data, offset, limit, "interruptAction.immobilizedTime")
     if immobilized_time < 0 or immobilized_time > 10_000:
         raise ValueError(f"interruptAction.immobilizedTime:out-of-range={immobilized_time}")
-    override_super_armor_limit, offset = read_buff_i32_field(
+    override_super_armor_limit, offset = read_buff_i32_field_bounded(
         data,
         offset,
+        limit,
         "interruptAction.overrideSuperArmorLimit",
     )
     if override_super_armor_limit < -1 or override_super_armor_limit > 1_000_000:
@@ -2820,11 +2956,11 @@ def consume_buff_spell_infliction_action(
         limit,
         "spellInfliction.prefix",
     )
-    infliction_type, offset = read_buff_i32_field(data, offset, "spellInfliction.inflictionType")
+    infliction_type, offset = read_buff_i32_field_bounded(data, offset, limit, "spellInfliction.inflictionType")
     if infliction_type not in BUFF_SPELL_INFLICTION_TYPE_NAMES:
         raise ValueError(f"spellInfliction.inflictionType={infliction_type}")
     infliction_type_name = BUFF_SPELL_INFLICTION_TYPE_NAMES[infliction_type]
-    is_extra, offset = read_buff_bool_field(data, offset, "spellInfliction.isExtra")
+    is_extra, offset = read_buff_bool_field_bounded(data, offset, limit, "spellInfliction.isExtra")
     source, offset = read_buff_target_settings_envelope_partial(
         data,
         offset,
@@ -2861,9 +2997,25 @@ def read_buff_bool_field_bounded(
     limit: int,
     field_name: str,
 ) -> tuple[bool, int]:
+    validate_buff_read_limit(data, offset, limit, field_name)
     if offset >= limit:
         raise ValueError(f"{field_name}:truncated-bool")
     return read_buff_bool_field(data, offset, field_name)
+
+
+def read_buff_f32_field_bounded(
+    data: bytes,
+    offset: int,
+    limit: int,
+    field_name: str,
+) -> tuple[float, int]:
+    validate_buff_read_limit(data, offset, limit, field_name)
+    if offset + 4 > limit:
+        raise ValueError(f"{field_name}:truncated-f32")
+    value = struct.unpack_from("<f", data, offset)[0]
+    if not math.isfinite(value):
+        raise ValueError(f"{field_name}:non-finite")
+    return value, offset + 4
 
 
 def read_buff_i32_field_bounded(
@@ -2872,6 +3024,7 @@ def read_buff_i32_field_bounded(
     limit: int,
     field_name: str,
 ) -> tuple[int, int]:
+    validate_buff_read_limit(data, offset, limit, field_name)
     if offset + 4 > limit:
         raise ValueError(f"{field_name}:truncated-i32")
     return struct.unpack_from("<i", data, offset)[0], offset + 4
@@ -2883,6 +3036,7 @@ def read_buff_u32_field_bounded(
     limit: int,
     field_name: str,
 ) -> tuple[int, int]:
+    validate_buff_read_limit(data, offset, limit, field_name)
     if offset + 4 > limit:
         raise ValueError(f"{field_name}:truncated-u32")
     return struct.unpack_from("<I", data, offset)[0], offset + 4
@@ -2894,6 +3048,7 @@ def try_read_buff_target_settings_envelope_partial(
     limit: int,
     field_name: str,
 ) -> tuple[dict[str, Any], int] | None:
+    validate_buff_read_limit(data, offset, limit, field_name)
     try:
         return read_buff_target_settings_envelope_partial(data, offset, limit, field_name)
     except (struct.error, UnicodeDecodeError, ValueError):
@@ -3321,6 +3476,7 @@ def read_buff_selector_object_header(
     field_name: str,
 ) -> tuple[bool, int]:
     """Read a MemoryPack object header byte. Returns (present, next_offset)."""
+    validate_buff_read_limit(data, offset, limit, field_name)
     if offset >= limit:
         raise ValueError(f"{field_name}:truncated-member-count")
     header = data[offset]
@@ -3633,6 +3789,7 @@ def read_buff_target_settings_full(
 ) -> tuple[dict[str, Any] | None, int]:
     # Beyond.Gameplay.Core.TargetSettings, 13 serialized members, alphabetical
     # (static Default excluded).
+    validate_buff_read_limit(data, offset, limit, field_name)
     if depth > BUFF_SELECTOR_MAX_NESTED_DEPTH:
         raise ValueError(f"{field_name}:selector-depth-exceeded")
     present, offset = read_buff_selector_object_header(data, offset, limit, 13, field_name)
@@ -3695,6 +3852,7 @@ def read_buff_target_settings_full_or_partial(
     validate that exact cursor.  Unknown nested selector types fall back to
     the bounded partial envelope and never inherit exact status.
     """
+    validate_buff_read_limit(data, offset, max_limit, field_name)
     try:
         decoded, decoded_end = read_buff_target_settings_full(
             data, offset, max_limit, field_name, 0,
@@ -4647,6 +4805,7 @@ def read_buff_gameplay_tag_query_exact(
 ) -> tuple[dict[str, Any], int]:
     """Read GameplayTagQuery(memberCount=2, queryType, raw tag-id array)."""
 
+    validate_buff_read_limit(data, offset, limit, field_name)
     start = offset
     if offset >= limit:
         raise ValueError(f"{field_name}:truncated-member-count")
@@ -4685,6 +4844,7 @@ def read_buff_find_settings_exact(
 ) -> tuple[dict[str, Any], int]:
     """Read BuffFindSettings(memberCount=3) in generated setter order."""
 
+    validate_buff_read_limit(data, offset, limit, field_name)
     start = offset
     if offset >= limit:
         raise ValueError(f"{field_name}:truncated-member-count")
@@ -4731,6 +4891,7 @@ def read_buff_blackboard_int_field_exact(
     limit: int,
     field_name: str,
 ) -> tuple[dict[str, Any], int]:
+    validate_buff_read_limit(data, offset, limit, field_name)
     start = offset
     if offset >= limit:
         raise ValueError(f"{field_name}:truncated-member-count")
@@ -4791,9 +4952,10 @@ def consume_buff_check_super_armor_action(
         limit,
         "checkSuperArmor.compareType",
     )
-    value, offset = read_buff_blackboard_float_raw_field_exact(
+    value, offset = read_buff_blackboard_float_raw_field_bounded(
         data,
         offset,
+        limit,
         "checkSuperArmor.value",
     )
     if offset > limit:
@@ -4916,10 +5078,11 @@ def consume_buff_finish_buff_action(
         limit,
         "finishBuff.buffSource",
     )
-    finish_all, offset = read_buff_bool_field(data, offset, "finishBuff.finishAll")
-    finish_layer_cnt, offset = read_buff_blackboard_float_raw_field_exact(
+    finish_all, offset = read_buff_bool_field_bounded(data, offset, limit, "finishBuff.finishAll")
+    finish_layer_cnt, offset = read_buff_blackboard_float_raw_field_bounded(
         data,
         offset,
+        limit,
         "finishBuff.finishLayerCnt",
     )
     if offset > limit:
@@ -4930,12 +5093,13 @@ def consume_buff_finish_buff_action(
         limit,
         "finishBuff.finishSource",
     )
-    is_finished_early, offset = read_buff_bool_field(
+    is_finished_early, offset = read_buff_bool_field_bounded(
         data,
         offset,
+        limit,
         "finishBuff.isFinishedEarly",
     )
-    limit_source, offset = read_buff_bool_field(data, offset, "finishBuff.limitSource")
+    limit_source, offset = read_buff_bool_field_bounded(data, offset, limit, "finishBuff.limitSource")
     return {
         "type": BUFF_ABILITY_ACTION_TAG_NAMES[BUFF_FINISH_BUFF_ACTION_TAG],
         "decodeStatus": "exact",
@@ -4980,19 +5144,22 @@ def consume_buff_create_timed_marker_action(
         limit,
         "createTimedMarker.prefix",
     )
-    auto_finish_by_action, offset = read_buff_bool_field(
+    auto_finish_by_action, offset = read_buff_bool_field_bounded(
         data,
         offset,
+        limit,
         "createTimedMarker.autoFinishByAction",
     )
-    duration, offset = read_buff_blackboard_float_raw_field_exact(
+    duration, offset = read_buff_blackboard_float_raw_field_bounded(
         data,
         offset,
+        limit,
         "createTimedMarker.duration",
     )
-    marker_id, offset = read_buff_blackboard_string_field_exact(
+    marker_id, offset = read_buff_blackboard_string_field_bounded(
         data,
         offset,
+        limit,
         "createTimedMarker.markerId",
     )
     target_settings, offset = read_buff_target_settings_envelope_partial(
@@ -5001,9 +5168,10 @@ def consume_buff_create_timed_marker_action(
         limit,
         "createTimedMarker.targetSettings",
     )
-    use_time_dilation_dt, offset = read_buff_bool_field(
+    use_time_dilation_dt, offset = read_buff_bool_field_bounded(
         data,
         offset,
+        limit,
         "createTimedMarker.useTimeDilationDt",
     )
     if offset > limit:
@@ -5140,8 +5308,8 @@ def consume_buff_check_buff_id_context_action(
     buff_ids: list[dict[str, Any]] = []
     for index in range(count):
         if advanced:
-            value, offset = read_buff_blackboard_string_field_exact(
-                data, offset, f"checkBuffIdInContext.buffIdList[{index}]",
+            value, offset = read_buff_blackboard_string_field_bounded(
+                data, offset, limit, f"checkBuffIdInContext.buffIdList[{index}]",
             )
             if offset > limit:
                 raise ValueError(f"checkBuffIdInContext.buffIdList[{index}]:past-limit")
@@ -5188,8 +5356,8 @@ def consume_buff_check_hp_action(
     prefix, offset = read_buff_ability_action_common_prefix_bounded(data, offset, limit, "checkHp.prefix")
     compare_type, offset = read_buff_i32_field_bounded(data, offset, limit, "checkHp.compare")
     hp_owner, offset = read_buff_target_settings_envelope_partial(data, offset, limit, "checkHp.hpOwner")
-    is_ratio, offset = read_buff_bool_field(data, offset, "checkHp.isRatio")
-    value, offset = read_buff_blackboard_float_raw_field_exact(data, offset, "checkHp.value")
+    is_ratio, offset = read_buff_bool_field_bounded(data, offset, limit, "checkHp.isRatio")
+    value, offset = read_buff_blackboard_float_raw_field_bounded(data, offset, limit, "checkHp.value")
     if offset > limit:
         raise ValueError("checkHp.value:past-limit")
     return {
@@ -5250,8 +5418,8 @@ def consume_buff_check_timed_marker_action(
     blackboard_key, offset = read_buff_memorypack_utf8_string_strict_bounded(data, offset, limit, "checkTimedMarker.blackboardKey", max_length=256)
     check_target, offset = read_buff_target_settings_envelope_partial(data, offset, limit, "checkTimedMarker.checkTarget")
     marker_id, offset = read_buff_memorypack_utf8_string_strict_bounded(data, offset, limit, "checkTimedMarker.id", max_length=256)
-    return_true_if_not_exists, offset = read_buff_bool_field(data, offset, "checkTimedMarker.returnTrueIfNotExists")
-    use_blackboard_key, offset = read_buff_bool_field(data, offset, "checkTimedMarker.useBlackboardKey")
+    return_true_if_not_exists, offset = read_buff_bool_field_bounded(data, offset, limit, "checkTimedMarker.returnTrueIfNotExists")
+    use_blackboard_key, offset = read_buff_bool_field_bounded(data, offset, limit, "checkTimedMarker.useBlackboardKey")
     if offset > limit:
         raise ValueError("checkTimedMarker:past-limit")
     return {
@@ -5292,8 +5460,8 @@ def consume_buff_check_obtain_atb_type_action(
         raise ValueError(f"checkObtainAtbType:header={tag_width}/{member_count}")
     offset = item_start + tag_width + 1
     prefix, offset = read_buff_ability_action_common_prefix_bounded(data, offset, limit, "checkObtainAtbType.prefix")
-    check_obtain_method, offset = read_buff_bool_field(data, offset, "checkObtainAtbType.checkObtainMethod")
-    check_obtain_type, offset = read_buff_bool_field(data, offset, "checkObtainAtbType.checkObtainType")
+    check_obtain_method, offset = read_buff_bool_field_bounded(data, offset, limit, "checkObtainAtbType.checkObtainMethod")
+    check_obtain_type, offset = read_buff_bool_field_bounded(data, offset, limit, "checkObtainAtbType.checkObtainType")
     method_count, offset = read_buff_u32_field_bounded(data, offset, limit, "checkObtainAtbType.obtainMethodList.count")
     if method_count > 32:
         raise ValueError(f"checkObtainAtbType.obtainMethodList.count={method_count}")
@@ -5326,7 +5494,7 @@ def consume_buff_probability_action(
         raise ValueError(f"probability:header={tag_width}/{member_count}")
     offset = item_start + tag_width + 1
     prefix, offset = read_buff_ability_action_common_prefix_bounded(data, offset, limit, "probability.prefix")
-    probability, offset = read_buff_blackboard_float_raw_field_exact(data, offset, "probability.prob")
+    probability, offset = read_buff_blackboard_float_raw_field_bounded(data, offset, limit, "probability.prob")
     if offset > limit:
         raise ValueError("probability.prob:past-limit")
     return {
@@ -5347,7 +5515,7 @@ def consume_buff_finish_owner_action(
     offset = item_start + tag_width + 1
     prefix, offset = read_buff_ability_action_common_prefix_bounded(data, offset, limit, "finishOwner.prefix")
     owner, offset = read_buff_target_settings_envelope_partial(data, offset, limit, "finishOwner.owner")
-    skip_die_display, offset = read_buff_bool_field(data, offset, "finishOwner.skipDieDisplay")
+    skip_die_display, offset = read_buff_bool_field_bounded(data, offset, limit, "finishOwner.skipDieDisplay")
     if offset > limit:
         raise ValueError("finishOwner:past-limit")
     return {
@@ -5384,8 +5552,8 @@ def consume_buff_check_buff_stack_num_action(
     compare_type, offset = read_buff_i32_field_bounded(
         data, offset, limit, "checkBuffStackNum.compareType",
     )
-    value, offset = read_buff_blackboard_float_raw_field_exact(
-        data, offset, "checkBuffStackNum.value",
+    value, offset = read_buff_blackboard_float_raw_field_bounded(
+        data, offset, limit, "checkBuffStackNum.value",
     )
     if offset > limit:
         raise ValueError("checkBuffStackNum.value:past-limit")
@@ -5431,8 +5599,8 @@ def consume_buff_check_buff_stack_num_advanced_action(
     limit_skill_cast_id, offset = read_buff_bool_field_bounded(
         data, offset, limit, "checkBuffStackNumAdvanced.limitSkillCastId",
     )
-    value, offset = read_buff_blackboard_float_raw_field_exact(
-        data, offset, "checkBuffStackNumAdvanced.value",
+    value, offset = read_buff_blackboard_float_raw_field_bounded(
+        data, offset, limit, "checkBuffStackNumAdvanced.value",
     )
     if offset > limit:
         raise ValueError("checkBuffStackNumAdvanced.value:past-limit")
@@ -5477,8 +5645,8 @@ def consume_buff_finish_buff_advanced_action(
     finish_all, offset = read_buff_bool_field_bounded(
         data, offset, limit, "finishBuffAdvanced.finishAll",
     )
-    finish_layer_cnt, offset = read_buff_blackboard_float_raw_field_exact(
-        data, offset, "finishBuffAdvanced.finishLayerCnt",
+    finish_layer_cnt, offset = read_buff_blackboard_float_raw_field_bounded(
+        data, offset, limit, "finishBuffAdvanced.finishLayerCnt",
     )
     finish_source, offset = read_buff_target_settings_envelope_partial(
         data, offset, limit, "finishBuffAdvanced.finishSource",
@@ -5603,14 +5771,14 @@ def consume_buff_obtain_cost_action(
     atb_source_type, offset = read_buff_i32_field_bounded(
         data, offset, limit, "obtainCost.atbSourceType",
     )
-    coefficient, offset = read_buff_blackboard_float_raw_field_exact(
-        data, offset, "obtainCost.coefficient",
+    coefficient, offset = read_buff_blackboard_float_raw_field_bounded(
+        data, offset, limit, "obtainCost.coefficient",
     )
     cost_type, offset = read_buff_i32_field_bounded(
         data, offset, limit, "obtainCost.costType",
     )
-    cost_value, offset = read_buff_blackboard_float_raw_field_exact(
-        data, offset, "obtainCost.costValue",
+    cost_value, offset = read_buff_blackboard_float_raw_field_bounded(
+        data, offset, limit, "obtainCost.costValue",
     )
     ignore_usp_gain_scalar, offset = read_buff_bool_field_bounded(
         data, offset, limit, "obtainCost.ignoreUspGainScalar",
@@ -5701,8 +5869,8 @@ def consume_buff_add_global_cd_timer_action(
     )
     if not buff_id:
         raise ValueError("addGlobalCdTimer.buffId:empty")
-    cd_time, offset = read_buff_blackboard_float_raw_field_exact(
-        data, offset, "addGlobalCdTimer.cdTime",
+    cd_time, offset = read_buff_blackboard_float_raw_field_bounded(
+        data, offset, limit, "addGlobalCdTimer.cdTime",
     )
     target, offset = read_buff_target_settings_envelope_partial(
         data, offset, limit, "addGlobalCdTimer.target",
@@ -5734,8 +5902,8 @@ def consume_buff_cast_skill_action(
     inherit_source_skill_cast_id, offset = read_buff_bool_field_bounded(
         data, offset, limit, "castSkill.inheritSourceSkillCastId",
     )
-    skill_id, offset = read_buff_blackboard_string_field_exact(
-        data, offset, "castSkill.skillId",
+    skill_id, offset = read_buff_blackboard_string_field_bounded(
+        data, offset, limit, "castSkill.skillId",
     )
     if offset > limit:
         raise ValueError("castSkill.skillId:past-limit")
@@ -5800,7 +5968,7 @@ def consume_buff_check_distance_action(
     contains_hittable_obj, offset = read_buff_bool_field_bounded(
         data, offset, limit, "checkDistance.containsHittableObj",
     )
-    distance, offset = read_buff_f32_field(data, offset, "checkDistance.distance")
+    distance, offset = read_buff_f32_field_bounded(data, offset, limit, "checkDistance.distance")
     if not math.isfinite(distance) or distance < 0 or distance > 100_000:
         raise ValueError(f"checkDistance.distance:out-of-range={distance}")
     include_target_radius, offset = read_buff_bool_field_bounded(
@@ -5876,8 +6044,8 @@ def consume_buff_check_poise_value_action(
     return_if_missing, offset = read_buff_bool_field_bounded(
         data, offset, limit, "checkPoiseValue.returnValueIfDontHavePoise",
     )
-    value, offset = read_buff_blackboard_float_raw_field_exact(
-        data, offset, "checkPoiseValue.value",
+    value, offset = read_buff_blackboard_float_raw_field_bounded(
+        data, offset, limit, "checkPoiseValue.value",
     )
     if offset > limit:
         raise ValueError("checkPoiseValue.value:past-limit")
@@ -5939,11 +6107,11 @@ def consume_buff_simple_calc_blackboard_action(
     operation_name = BUFF_MODIFY_DYNAMIC_BLACKBOARD_OPERATION_NAMES.get(operation)
     if operation_name is None:
         raise ValueError(f"simpleCalcBlackboard.operationUnknown={operation}")
-    value1, offset = read_buff_blackboard_float_raw_field_exact(
-        data, offset, "simpleCalcBlackboard.value1",
+    value1, offset = read_buff_blackboard_float_raw_field_bounded(
+        data, offset, limit, "simpleCalcBlackboard.value1",
     )
-    value2, offset = read_buff_blackboard_float_raw_field_exact(
-        data, offset, "simpleCalcBlackboard.value2",
+    value2, offset = read_buff_blackboard_float_raw_field_bounded(
+        data, offset, limit, "simpleCalcBlackboard.value2",
     )
     if offset > limit:
         raise ValueError("simpleCalcBlackboard:past-limit")
@@ -6113,8 +6281,8 @@ def consume_buff_check_skill_id_action(
         raise ValueError(f"checkSkillIdAction.skillIdList.count={count}")
     skill_ids: list[dict[str, Any]] = []
     for index in range(count):
-        value, offset = read_buff_blackboard_string_field_exact(
-            data, offset, f"checkSkillIdAction.skillIdList[{index}]",
+        value, offset = read_buff_blackboard_string_field_bounded(
+            data, offset, limit, f"checkSkillIdAction.skillIdList[{index}]",
         )
         if offset > limit:
             raise ValueError(
