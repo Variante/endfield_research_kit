@@ -4157,6 +4157,14 @@ using `S_fx_shoutiaodai_01` plus `S_fx_tuoweidisan_01` and materials 15/16/17.
 Both have root Animators, null controller/avatar, null particle LOD pointers,
 and the same start AnimationClip. Together they add six static renderers, reuse
 the same eight texture identities, and remain visibly fail-closed.
+Their isolated diagnostic prefab importers and validators are now executable.
+start_02 maps M12/M13 to mode 9 and M14 to mode 11 while labeling Plane009 as
+provisional converted geometry. start_03 maps M15/M16/M17 to mode 9 and uses
+the two PathID-matched converted OBJs as exact converted-source geometry, while
+keeping native Mesh parity false. Each sibling import applies 213 serialized
+properties and reports 684 unsupported entries. Both reuse the shared clip and
+keep native payload, exact shader, animation payload, normal actor binding, and
+visible admission false.
 
 The exact managed LOD renderer bindings are now part of the playable-topology
 contract: start_01 has four non-null MeshRenderer PathIDs and start_02/start_03

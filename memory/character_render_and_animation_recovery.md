@@ -1806,6 +1806,16 @@ only stable interpretation and priorities.
    and materials 12/13/14; `_03` uses two meshes and materials 15/16/17. They
    reference the same 6.366667-second material clip as `_01`, so the 2.2/5/7
    EffectSetting lifetimes select different portions without clip retiming.
+   Both sibling roots now also have isolated generated diagnostic prefabs and
+   validators. start_02 reconstructs three Plane009 renderers with M12/M13 in
+   Mask-Blend-Dissolve mode 9 and M14 in Disturb-Mask-Blend-Dissolve mode 11;
+   Plane009 remains explicitly provisional converted geometry. start_03
+   reconstructs three renderers from the two PathID-matched converted OBJs and
+   M15/M16/M17 in mode 9; this is exact converted-source geometry, not admitted
+   native Mesh parity. Each sibling material import reports 213 supported and
+   684 unsupported serialized properties. Both reuse the shared clip, retain
+   false native payload/exact-shader/animation-payload gates, and remain outside
+   normal actor binding with `visibleAdmission=false`.
    Under the visual candidate epoch, exact first dynamic keys at PTS 38167,
    40834/40867, and 42467 align respectively with the early teal edge,
    later pillar phase, and next material wave. This is strong timing evidence
