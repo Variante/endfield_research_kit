@@ -12,6 +12,7 @@ from unittest.mock import patch
 
 
 from scripts.story_builder import source_story_partial_order as partial_order
+from scripts.story_builder import level_bindings
 
 
 def mp_string(value: str | None) -> bytes:
@@ -114,6 +115,296 @@ def mission_payload(
 
 
 class SourceStoryPartialOrderTests(unittest.TestCase):
+
+    def _overlay_fixture(self, *, streaming: bytes | None, persistent: bytes | None):
+        temp_dir = Path(tempfile.mkdtemp())
+        roots = []
+        for name, blob in (("StreamingAssets", streaming), ("Persistent", persistent)):
+            root = temp_dir / name / "Data" / "Json" / "LevelScriptData"
+            roots.append(root)
+            if blob is not None:
+                path = root / "map_test" / "70000000001.json"
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(blob)
+        return temp_dir, tuple(roots)
+
+    def test_active_levelscript_overlay_fallback_and_persistent_only(self) -> None:
+        temp_dir, (streaming, persistent) = self._overlay_fixture(
+            streaming=b"stream",
+            persistent=None,
+        )
+        try:
+            overlay = level_bindings.build_active_levelscript_overlay_index(
+                (streaming, persistent),
+            )
+            row = overlay["files"]["map_test/70000000001.json"]
+            self.assertEqual(overlay["status"], "validated_active_overlay")
+            self.assertEqual(row["status"], "fallback")
+            self.assertEqual(row["sourceRoot"], streaming.as_posix())
+
+            temp_dir2, (streaming2, persistent2) = self._overlay_fixture(
+                streaming=None,
+                persistent=b"persistent",
+            )
+            try:
+                overlay2 = level_bindings.build_active_levelscript_overlay_index(
+                    (streaming2, persistent2),
+                )
+                row2 = overlay2["files"]["map_test/70000000001.json"]
+                self.assertEqual(row2["sourceRoot"], persistent2.as_posix())
+                self.assertEqual(row2["status"], "persistent_only")
+            finally:
+                import shutil
+                shutil.rmtree(temp_dir2)
+        finally:
+            import shutil
+            shutil.rmtree(temp_dir)
+
+    def test_active_levelscript_overlay_same_hash_and_changed_override(self) -> None:
+        temp_dir, (streaming, persistent) = self._overlay_fixture(
+            streaming=b"same",
+            persistent=b"same",
+        )
+        try:
+            same = level_bindings.build_active_levelscript_overlay_index(
+                (streaming, persistent),
+            )
+            row = same["files"]["map_test/70000000001.json"]
+            self.assertEqual(row["status"], "same_hash_deduped")
+            self.assertEqual(row["shadowed"][0]["status"], "same_hash_deduped")
+
+            (persistent / "map_test" / "70000000001.json").write_bytes(b"new")
+            changed = level_bindings.build_active_levelscript_overlay_index(
+                (streaming, persistent),
+            )
+            changed_row = changed["files"]["map_test/70000000001.json"]
+            self.assertEqual(changed_row["status"], "override")
+            self.assertEqual(changed_row["shadowed"][0]["status"], "changed_override")
+            self.assertEqual(changed_row["sha256"], hashlib.sha256(b"new").hexdigest())
+        finally:
+            import shutil
+            shutil.rmtree(temp_dir)
+
+    def test_active_levelscript_overlay_changed_override_drops_stale_story(self) -> None:
+        temp_dir, (streaming, persistent) = self._overlay_fixture(
+            streaming=b"old",
+            persistent=b"new",
+        )
+        old_source = (streaming / "map_test" / "70000000001.json").as_posix()
+        new_source = (persistent / "map_test" / "70000000001.json").as_posix()
+        old_occurrences = {"dlg_old": [{"sourceFile": old_source, "recordOffset": 1}]}
+        new_occurrences = {"dlg_new": [{"sourceFile": new_source, "recordOffset": 2}]}
+        try:
+            overlay = level_bindings.build_active_levelscript_overlay_index(
+                (streaming, persistent),
+            )
+            with patch.object(
+                level_bindings,
+                "build_levelscript_action_story_occurrences",
+                side_effect=lambda root: (
+                    old_occurrences
+                    if root.resolve() == streaming.resolve()
+                    else new_occurrences
+                ),
+            ):
+                active = level_bindings.build_active_levelscript_action_story_occurrences(
+                    overlay,
+                )
+            self.assertEqual(sorted(active), ["dlg_new"])
+            self.assertEqual(active["dlg_new"][0]["activeOverlayStatus"], "override")
+            self.assertEqual(active["dlg_new"][0]["activeOverlaySourceSha256"], hashlib.sha256(b"new").hexdigest())
+        finally:
+            import shutil
+            shutil.rmtree(temp_dir)
+
+    def test_active_levelscript_overlay_duplicate_root_fails_closed(self) -> None:
+        temp_dir, (streaming, _persistent) = self._overlay_fixture(
+            streaming=b"one",
+            persistent=None,
+        )
+        try:
+            overlay = level_bindings.build_active_levelscript_overlay_index(
+                (streaming, streaming),
+            )
+            self.assertEqual(overlay["status"], "unavailable_fail_closed")
+            self.assertEqual(
+                overlay["validationFailures"][0]["gate"],
+                "uniqueSourceRoots",
+            )
+        finally:
+            import shutil
+            shutil.rmtree(temp_dir)
+
+    def test_active_levelscript_overlay_resolver_rejects_missing_logical_path(self) -> None:
+        temp_dir, roots = self._overlay_fixture(streaming=None, persistent=b"one")
+        try:
+            overlay = level_bindings.build_active_levelscript_overlay_index(roots)
+            row, diagnostic = level_bindings.resolve_active_levelscript_source(
+                "export_full/structured/Persistent/Data/Json/LevelScriptData/map_test/missing.json",
+                overlay,
+            )
+            self.assertIsNone(row)
+            self.assertEqual(diagnostic["gate"], "activeSourceExists")
+        finally:
+            import shutil
+            shutil.rmtree(temp_dir)
+
+    def test_active_levelscript_overlay_resolver_rejects_unavailable_status_with_residual_files(self) -> None:
+        temp_dir, roots = self._overlay_fixture(streaming=None, persistent=b"one")
+        try:
+            overlay = level_bindings.build_active_levelscript_overlay_index(roots)
+            # Keep the rows to model a partially built index left by a failed
+            # scan.  The status gate must take precedence over residual files.
+            overlay["status"] = "unavailable_fail_closed"
+            overlay["validationFailures"] = [{
+                "validator": "levelScriptActiveOverlay",
+                "gate": "syntheticFailure",
+            }]
+            source_file = next(iter(overlay["files"].values()))["sourceFile"]
+            row, diagnostic = level_bindings.resolve_active_levelscript_evidence(
+                source_file,
+                overlay,
+            )
+            self.assertIsNone(row)
+            self.assertEqual(diagnostic["gate"], "overlayStatus")
+            self.assertEqual(
+                diagnostic["validationFailures"][0]["gate"],
+                "syntheticFailure",
+            )
+        finally:
+            import shutil
+            shutil.rmtree(temp_dir)
+
+    def test_full_native_branch_context_rejects_missing_active_overlay_source(self) -> None:
+        temp_dir, roots = self._overlay_fixture(streaming=None, persistent=b"one")
+        try:
+            overlay = level_bindings.build_active_levelscript_overlay_index(roots)
+            branch = {
+                "kind": "ifElse",
+                "branchLocalId": 4,
+                "nativeMappingId": "expected",
+                "sourceFiles": [
+                    "export_full/structured/Persistent/Data/Json/LevelScriptData/map_test/missing.json",
+                ],
+                "arms": [],
+            }
+            rows, diagnostics = partial_order._full_native_branch_arm_context(
+                "m1",
+                [branch],
+                None,
+                overlay,
+            )
+            self.assertEqual(rows[0]["fullArmCoverageStatus"], "unavailable_fail_closed")
+            self.assertEqual(diagnostics[0]["gate"], "activeSourceResolution")
+        finally:
+            import shutil
+            shutil.rmtree(temp_dir)
+
+    def test_active_overlay_publication_rejects_changed_stale_edge(self) -> None:
+        temp_dir, (streaming, persistent) = self._overlay_fixture(
+            streaming=b"old",
+            persistent=b"new",
+        )
+        try:
+            overlay = level_bindings.build_active_levelscript_overlay_index(
+                (streaming, persistent),
+            )
+            stale = (streaming / "map_test" / "70000000001.json").as_posix()
+            edge, diagnostic = partial_order._active_levelscript_edge(
+                {
+                    "from": "dlg_a",
+                    "to": "dlg_b",
+                    "kind": "levelscriptDialogExit",
+                    "sourceFiles": [stale],
+                },
+                overlay,
+            )
+            self.assertIsNone(edge)
+            self.assertEqual(diagnostic["gate"], "activeLevelScriptEvidence")
+
+            active_hash = hashlib.sha256(b"new").hexdigest()
+            rejected_with_hash, rejected_hash_diagnostic = partial_order._active_levelscript_edge(
+                {
+                    "from": "dlg_a",
+                    "to": "dlg_b",
+                    "kind": "levelscriptDialogExit",
+                    "sourceFiles": [stale],
+                    "sourceSha256": {stale: active_hash},
+                },
+                overlay,
+            )
+            self.assertIsNone(rejected_with_hash)
+            self.assertEqual(rejected_hash_diagnostic["gate"], "activeLevelScriptEvidence")
+        finally:
+            import shutil
+            shutil.rmtree(temp_dir)
+
+    def test_active_overlay_publication_allows_same_hash_shadow_and_records_it(self) -> None:
+        temp_dir, (streaming, persistent) = self._overlay_fixture(
+            streaming=b"same",
+            persistent=b"same",
+        )
+        try:
+            overlay = level_bindings.build_active_levelscript_overlay_index(
+                (streaming, persistent),
+            )
+            shadow = (streaming / "map_test" / "70000000001.json").as_posix()
+            accepted, diagnostic = partial_order._active_levelscript_edge(
+                {
+                    "from": "dlg_a",
+                    "to": "dlg_b",
+                    "kind": "levelscriptQuestStateActionPath",
+                    "sourceFiles": [shadow],
+                },
+                overlay,
+            )
+            self.assertIsNone(diagnostic)
+            self.assertEqual(
+                accepted["sourceFiles"],
+                [(persistent / "map_test" / "70000000001.json").as_posix()],
+            )
+            self.assertEqual(len(accepted["activeOverlayShadowed"]), 1)
+        finally:
+            import shutil
+            shutil.rmtree(temp_dir)
+
+    def test_native_event_paths_reject_changed_stale_source_without_hash(self) -> None:
+        temp_dir, (streaming, persistent) = self._overlay_fixture(
+            streaming=b"old",
+            persistent=b"new",
+        )
+        try:
+            overlay = level_bindings.build_active_levelscript_overlay_index(
+                (streaming, persistent),
+            )
+            stale = (streaming / "map_test" / "70000000001.json").as_posix()
+            flow = {
+                "missionStoryConnections": [{
+                    "key": "radio_m1_1",
+                    "levelScriptOccurrences": [{
+                        "sourceFile": stale,
+                        "recordClass": "play_radio",
+                        "nativeEventOwners": [{
+                            "status": "exact_serialized_control_path",
+                            "headerLocalId": 4,
+                            "headerName": "ScriptEvent_OnCustomEvent",
+                            "path": [{"localId": 5, "edge": "ActionHeader.nextId"}],
+                        }],
+                    }],
+                }],
+            }
+            diagnostics = []
+            paths = partial_order._native_event_story_paths(
+                flow,
+                {"radio_m1_1"},
+                active_overlay_index=overlay,
+                active_overlay_diagnostics=diagnostics,
+            )
+            self.assertEqual(paths, {})
+            self.assertEqual(diagnostics[0]["edgeKind"], "levelscriptNativeControlPath")
+        finally:
+            import shutil
+            shutil.rmtree(temp_dir)
     def test_callserver_callback_bridge_requires_both_exact_story_paths(self) -> None:
         audit = {
             "status": "validated_complete_corpus",
@@ -170,6 +461,62 @@ class SourceStoryPartialOrderTests(unittest.TestCase):
         )
         self.assertEqual(edges, [])
         self.assertEqual(warnings[0]["gate"], "completeLinearCallbackPaths")
+
+    def test_callserver_callback_bridge_accepts_same_hash_shadow_source(self) -> None:
+        temp_dir, (streaming, persistent) = self._overlay_fixture(
+            streaming=b"same",
+            persistent=b"same",
+        )
+        source_file = (streaming / "map_test" / "70000000001.json").as_posix()
+        try:
+            overlay = level_bindings.build_active_levelscript_overlay_index(
+                (streaming, persistent),
+            )
+            audit = {
+                "status": "validated_complete_corpus",
+                "validationFailures": [],
+                "rows": [{
+                    "sourceFile": source_file,
+                    "levelId": "test",
+                    "scriptId": "1",
+                    "callServerLocalId": 7,
+                    "callbackOutputs": [{
+                        "status": "exact_callback_header_control_path",
+                        "headerUid": "header-uid",
+                        "controlGraph": {
+                            "storyKeys": ["after"],
+                            "actions": [{"storyKeys": ["after"]}],
+                            "edges": [],
+                            "branchPointCount": 0,
+                            "cycleCount": 0,
+                            "truncated": False,
+                        },
+                        "precedingStory": {
+                            "status": "exact_preceding_story_path",
+                            "storyKeys": ["before"],
+                            "truncated": False,
+                            "paths": [{
+                                "storyKey": "before",
+                                "status": "exact_linear_preceding_story_path",
+                            }],
+                        },
+                    }],
+                }],
+            }
+            edges, warnings = partial_order._callserver_callback_story_edges(
+                {"before", "after"},
+                audit,
+                active_overlay_index=overlay,
+            )
+            self.assertEqual(warnings, [])
+            self.assertEqual(len(edges), 1)
+            self.assertEqual(
+                edges[0]["sourceFiles"],
+                [persistent.joinpath("map_test", "70000000001.json").as_posix()],
+            )
+        finally:
+            import shutil
+            shutil.rmtree(temp_dir)
 
     def test_callserver_callback_bridge_rejects_branching_endpoints_and_paths(self) -> None:
         def audit(*, sources, targets, branch_points=0, preceding_status="exact_preceding_story_path", truncated=False):

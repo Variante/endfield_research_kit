@@ -85,6 +85,11 @@ leave only the report/CLI surface in recovery.
   and no branch, loop, merge, truncation, or graph-shape mismatch. The current
   corpus has one accepted preceding path but no two-ended Story callback
   closure, so this evidence currently adds no order edge.
+- Active LevelScript evidence uses one logical-path overlay: StreamingAssets is
+  the fallback and Persistent replaces the complete file. Same-hash shadow
+  evidence may normalize to the active path; changed shadow evidence must be
+  decoded again from the active bytes or is rejected. Every order-bearing
+  LevelScript edge passes this source/hash gate before publication.
 - Native facts are locked to exact `GameAssembly.dll` and metadata hashes.
   Missing or mismatched inputs skip that evidence instead of reusing stale
   addresses.
