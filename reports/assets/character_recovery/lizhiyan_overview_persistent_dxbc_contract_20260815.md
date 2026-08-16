@@ -82,7 +82,7 @@ list`, and the callback executes global scene-color/vector/texture setup,
 fullscreen draw, the ordinary forward renderer list, then the ECS renderer
 list. The callback contains no constant-buffer publication. The generated
 native ABI contract is `lizhiyan_after_dof_native_abi.json`, SHA-256
-`6C26208B607F1BD7B2F5553C7779801EE8B616A7F6525C4F0FBB898B845EA33B`.
+`9A6898C562E941516EE7E576063A81D0EA50EC8BBAE0E0D7927B6FF058600832`.
 
 The deferred ECS producer is now closed as well. Current-build
 `HGRenderPathDeferred.OnPreRendering` recreates the 32-bit handle each camera
@@ -183,8 +183,24 @@ dispatch, but no pointer identity is proven to enter a GPU descriptor, indirect
 buffer, or draw command. This UnityPlayer imports no D3D12/D3D11 command API,
 contains no D3D12 command-method strings, and explicitly contains
 `D3D12 support not compiled in!`; a D3D12 backend cannot be recovered inside
-this image. The active backend remains unresolved, and generic Vulkan/API-2
-wrappers are not HGMesh evidence by themselves.
+this image. A bounded snapshot of `Player-prev.log` from 2026-08-15 positively
+observes this installed-client session creating a threaded Vulkan device on an
+RTX 5080 with Vulkan API 1.4.341. The log records the same installed-data path
+and Unity 2021.3.34f5, but no UnityPlayer hash, so it is not a cryptographic
+join to the pinned image or proof of the exact Li Zhiyan video frame. Generic
+Vulkan/API-2 wrappers still are not HGMesh evidence until resource identity is
+joined to a Vulkan command.
+
+The generic front-end is now structurally identified. Getter `0x180725dc0`
+returns the context whose constructor `0x1809258c0` installs vtable
+`0x181dcb360`; the publication handoff's resource paths record opcodes `0x2748`
+and `0x274a`. Backend selector `0x18072f7e0` routes internal backend ID 2 to
+factory `0x180891210` and table `0x181dbc098`. This ID is an internal HG family,
+not Unity's public `GraphicsDeviceType` value. API-2 slot `+0xde8` reaches
+`0x18083f1e0 -> 0x180843d60`, which resolves Vulkan pipeline, descriptor,
+draw, and queue operations including `vkCmdDraw`, indirect variants, and
+`vkQueueSubmit`. This closes backend family and submission capability, not the
+remaining HGMesh resource-identity edge into one specific Vulkan draw.
 
 The next positive proof is now an explicit runtime-capture contract rather
 than a generic request for “a capture.” On this exact build it must join one

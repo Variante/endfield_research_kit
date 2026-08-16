@@ -434,6 +434,41 @@
       "functionEnd": "0x181049007",
       "functionBytes": 96,
       "functionSha256": "FCDFB6FED884A3C3A411D7766740A2FE13D2C59A9C16B841C2DA66E8C4861AA7"
+    },
+    {
+      "label": "HG graphics backend selector",
+      "va": "0x18072f7e0",
+      "functionEnd": "0x18072f810",
+      "functionBytes": 48,
+      "functionSha256": "BC8214BAE9562674E4E4CB569AE070858C910E735F85E65D705A1C88803BCEDC"
+    },
+    {
+      "label": "HG API-2 backend factory",
+      "va": "0x180891210",
+      "functionEnd": "0x180891318",
+      "functionBytes": 264,
+      "functionSha256": "0AB4290E23A9DF80B96304DE3859208FFD9F0E66A010CA2D8103D08FE7B9D7C2"
+    },
+    {
+      "label": "HG graphics-front context constructor",
+      "va": "0x1809258c0",
+      "functionEnd": "0x180925900",
+      "functionBytes": 64,
+      "functionSha256": "0EA52075DDB56042F1EF9D9CAB8EFFAFA307D85FE64B5748C598896391FEC621"
+    },
+    {
+      "label": "HG graphics-front vtable",
+      "va": "0x181dcb360",
+      "functionEnd": "0x181dcb6e8",
+      "functionBytes": 904,
+      "functionSha256": "8EC9781EC1C410B80E11A79D405528E9F8C0FD65EF9EB5AA7C02C7EA1D020132"
+    },
+    {
+      "label": "HG API-2 backend table",
+      "va": "0x181dbc098",
+      "functionEnd": "0x181dbcfc8",
+      "functionBytes": 3888,
+      "functionSha256": "86EECEFB04596DAB252D480476864310EF833556C4F614C2BEE103E1A86C4E08"
     }
   ],
   "decisiveCalls": [
@@ -730,13 +765,63 @@
             "frontEndHandoffVA": "0x1810484e0",
             "frontEndHandoffEndVA": "0x181049007",
             "behavior": "consumes the CPU publication/result object and reaches generic front-end virtual dispatch; no resolved pointer identity is proven to enter a GPU descriptor, indirect buffer, or draw command",
-            "d3d12StaticBoundary": "this UnityPlayer has no d3d12/d3d11 imports or D3D12 command-method strings and contains 'D3D12 support not compiled in!'; no compiled D3D12 backend can be joined inside this image",
-            "activeBackend": "unresolved; generic Vulkan/API-2 wrappers are not HGMesh evidence without resource-identity dataflow or runtime capture"
+            "publicationResultLayout": "pair +0x00 is a 0x90-stride CPU-record base, +0x08 auxiliary resource/state, +0x10 count; each record keeps resource/object +0x08 and descriptor +0x10 among selector/payload fields",
+            "graphicsFront": {
+              "contextGetterVA": "0x180725dc0",
+              "constructorVA": "0x1809258c0",
+              "vtableVA": "0x181dcb360",
+              "backendObjectOffset": "0x2708",
+              "recordingModeOffset": "0x2711",
+              "resourceAppendSlot": "vtable +0x268 -> 0x180939640, opcode 0x2748",
+              "resourceBindSlot": "vtable +0x280 -> 0x18093a920, opcode 0x274a"
+            },
+            "backendSelection": {
+              "selectorVA": "0x18072f7e0",
+              "api2FactoryVA": "0x180891210",
+              "api2TableVA": "0x181dbc098",
+              "api2Meaning": "internal Hypergryph backend-family ID, not Unity's public GraphicsDeviceType numeric enum",
+              "vulkanDrawFlush": "API-2 +0xde8 -> 0x18083f1e0 -> 0x180843d60 resolves Vulkan pipeline/descriptor/draw/queue operations",
+              "vulkanCommandCells": "vkCmdDraw 0x1821d35b0, vkCmdDrawIndirect 0x1821d35c0, vkCmdDrawIndexedIndirect 0x1821d35c8, vkQueueSubmit 0x1821d32c0"
+            },
+            "d3d12StaticBoundary": "D3D12 is absent and the image contains 'D3D12 support not compiled in!'; D3D11 dynamic bootstrap/fallback code exists but is not the observed session backend",
+            "observedRuntimeBackend": {
+              "schema": "endfield.retail-graphics-backend-observation.v1",
+              "classification": "observed_runtime_log",
+              "source": {
+                "path": "%USERPROFILE%/AppData/LocalLow/Hypergryph/Endfield/Player-prev.log",
+                "bytes": 34644,
+                "sha256": "4B8AF8424F62F820997499DF32BF23A69A576D5D8A3B51F538920B7423BC6BD5",
+                "lastWriteLocal": "2026-08-15T12:39:12-04:00"
+              },
+              "session": {
+                "installedDataPath": "D:/Program Files/Endfield Game/Endfield_Data/UnitySubsystems",
+                "engineVersion": "2021.3.34f5 (0)",
+                "graphicsBackend": "Vulkan",
+                "threadedDevice": true,
+                "jobifiedDevice": false,
+                "physicalDevice": "NVIDIA GeForce RTX 5080",
+                "vendorID": "0x10de",
+                "deviceID": "0x2c02",
+                "vulkanApiVersion": "1.4.341"
+              },
+              "evidenceLines": [
+                "2: Initialize engine version: 2021.3.34f5 (0)",
+                "3: [Subsystems] Discovering subsystems at path D:/Program Files/Endfield Game/Endfield_Data/UnitySubsystems",
+                "4: GfxDevice: creating device client; threaded=1; jobified=0",
+                "5: vulkan instance layer:, VK_LAYER_NV_optimus",
+                "34: [Vulkan init] Physical Device 0000000120691370 [0]: \"NVIDIA GeForce RTX 5080\" deviceType=2 vendorID=10de deviceID=2c02, apiVersion=1.4.341"
+              ],
+              "nonClaims": [
+                "The log does not record the UnityPlayer.dll SHA-256, so it is not a cryptographic join to the pinned binary image.",
+                "The timestamp and installed-data path do not prove that this is the exact 38-47 s Li Zhiyan video frame.",
+                "Backend observation does not identify the HGMesh final draw, descriptors, command buffer, or visible pixels."
+              ]
+            },
+            "activeBackend": "Vulkan is proven by the recorded 2026-08-15 installed-client log session and the API-2 table resolves Vulkan draw/submit operations; the log lacks a UnityPlayer hash and no HGMesh resource identity is yet joined to a specific Vulkan command"
           },
           "notYetProven": [
             "semantic names of packed key fields",
-            "indirect draw",
-            "active graphics backend submission",
+            "HGMesh resource identity reaching a specific Vulkan draw/submit",
             "slot-0x14 context construction semantics and +0xb0 destructor internals"
           ]
         },
@@ -755,7 +840,7 @@
             "renderer-list handle, manager count, 16-byte slot, and 0x30-byte state",
             "complete 64-byte record, first 16 key bytes, +0x20 marker, +0x22 u16, +0x2c signed field, and resolved resource pointer"
           ],
-          "requiredPositiveJoin": "same build and frame: CreateRendererList handle -> opcode 0x4e consumer -> accepted/sorted 64-byte record -> resolved resource identity -> final draw -> visible Li Zhiyan after-DOF pixel",
+          "requiredPositiveJoin": "same build and frame: CreateRendererList handle -> opcode 0x4e consumer -> accepted/sorted 64-byte record -> resolved resource identity -> specific Vulkan draw/submit -> visible Li Zhiyan after-DOF pixel",
           "negativeControl": "repeat with Li Zhiyan absent or replaced by Wulfa; timing coincidence alone is insufficient",
           "stopRule": "stop on attach refusal, protection termination, module/hash/prologue drift, or target instability; never retry through evasion"
         }

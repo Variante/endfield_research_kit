@@ -20,6 +20,7 @@ OUTPUT = (
     "LiZhiyanOverviewFinger/lizhiyan_after_dof_native_abi.json"
 )
 SHADER_CONTRACT = OUTPUT.with_name("lizhiyan_overview_vfxbasev2_variants.json")
+BACKEND_OBSERVATION = OUTPUT.with_name("lizhiyan_retail_backend_observation.json")
 VIEWER_SCENE = (
     LAB / "Assets/EndfieldGraphShaderLab/Generated/Characters/Scenes/"
     "CharacterRecoveryViewer.unity"
@@ -31,6 +32,7 @@ EXPECTED = {
     "unityPlayer": "B47728BA10F09C46E8A107B4C7055E48CFE402D3D8C88A4529074981F9672AA2",
     "shaderContract": "1191F96B45FD11C47D31C71681B25E77B3DF2CBD2179F21B4D2854D3AD90796B",
     "viewerScene": "BC9F4FBF023F76FFD06AB2AE6283A03127027A83049DB580C9678B2A7B633761",
+    "backendObservation": "058A57833EB75815963693E4FCCCC4210F8F8EA2AF22BE13B084017657D14EE3",
 }
 METHODS = [
     (286728, "HG.Rendering.Runtime.HGCamera",
@@ -155,6 +157,9 @@ def build(game_root: Path) -> dict[str, Any]:
             "Li Zhiyan shader ABI contract drifted")
     require(sha256(VIEWER_SCENE) == EXPECTED["viewerScene"],
             "selected CharacterRecoveryViewer scene drifted")
+    require(sha256(BACKEND_OBSERVATION) == EXPECTED["backendObservation"],
+            "retail graphics-backend observation drifted")
+    backend_observation = json.loads(BACKEND_OBSERVATION.read_text(encoding="utf-8"))
     viewer_text = VIEWER_SCENE.read_text(encoding="utf-8")
     require("--- !u!20 &1562276706" in viewer_text and
             "m_Bits: 4294967295" in viewer_text,
@@ -264,6 +269,16 @@ def build(game_root: Path) -> dict[str, Any]:
          "3D78BF5375EFA462134EDEE4DD2E8046E5D3F879D14C17B63E52F9818829A046"),
         ("HGMesh publication front-end handoff part 3", 0x181048FA7, 0x181049007,
          "FCDFB6FED884A3C3A411D7766740A2FE13D2C59A9C16B841C2DA66E8C4861AA7"),
+        ("HG graphics backend selector", 0x18072F7E0, 0x18072F810,
+         "BC8214BAE9562674E4E4CB569AE070858C910E735F85E65D705A1C88803BCEDC"),
+        ("HG API-2 backend factory", 0x180891210, 0x180891318,
+         "0AB4290E23A9DF80B96304DE3859208FFD9F0E66A010CA2D8103D08FE7B9D7C2"),
+        ("HG graphics-front context constructor", 0x1809258C0, 0x180925900,
+         "0EA52075DDB56042F1EF9D9CAB8EFFAFA307D85FE64B5748C598896391FEC621"),
+        ("HG graphics-front vtable", 0x181DCB360, 0x181DCB6E8,
+         "8EC9781EC1C410B80E11A79D405528E9F8C0FD65EF9EB5AA7C02C7EA1D020132"),
+        ("HG API-2 backend table", 0x181DBC098, 0x181DBCFC8,
+         "86EECEFB04596DAB252D480476864310EF833556C4F614C2BEE103E1A86C4E08"),
     ]
     unity_native_methods = []
     for label, va, end, expected_hash in unity_native_spans:
@@ -470,10 +485,29 @@ def build(game_root: Path) -> dict[str, Any]:
                             "frontEndHandoffVA": "0x1810484e0",
                             "frontEndHandoffEndVA": "0x181049007",
                             "behavior": "consumes the CPU publication/result object and reaches generic front-end virtual dispatch; no resolved pointer identity is proven to enter a GPU descriptor, indirect buffer, or draw command",
-                            "d3d12StaticBoundary": "this UnityPlayer has no d3d12/d3d11 imports or D3D12 command-method strings and contains 'D3D12 support not compiled in!'; no compiled D3D12 backend can be joined inside this image",
-                            "activeBackend": "unresolved; generic Vulkan/API-2 wrappers are not HGMesh evidence without resource-identity dataflow or runtime capture",
+                            "publicationResultLayout": "pair +0x00 is a 0x90-stride CPU-record base, +0x08 auxiliary resource/state, +0x10 count; each record keeps resource/object +0x08 and descriptor +0x10 among selector/payload fields",
+                            "graphicsFront": {
+                                "contextGetterVA": "0x180725dc0",
+                                "constructorVA": "0x1809258c0",
+                                "vtableVA": "0x181dcb360",
+                                "backendObjectOffset": "0x2708",
+                                "recordingModeOffset": "0x2711",
+                                "resourceAppendSlot": "vtable +0x268 -> 0x180939640, opcode 0x2748",
+                                "resourceBindSlot": "vtable +0x280 -> 0x18093a920, opcode 0x274a",
+                            },
+                            "backendSelection": {
+                                "selectorVA": "0x18072f7e0",
+                                "api2FactoryVA": "0x180891210",
+                                "api2TableVA": "0x181dbc098",
+                                "api2Meaning": "internal Hypergryph backend-family ID, not Unity's public GraphicsDeviceType numeric enum",
+                                "vulkanDrawFlush": "API-2 +0xde8 -> 0x18083f1e0 -> 0x180843d60 resolves Vulkan pipeline/descriptor/draw/queue operations",
+                                "vulkanCommandCells": "vkCmdDraw 0x1821d35b0, vkCmdDrawIndirect 0x1821d35c0, vkCmdDrawIndexedIndirect 0x1821d35c8, vkQueueSubmit 0x1821d32c0",
+                            },
+                            "d3d12StaticBoundary": "D3D12 is absent and the image contains 'D3D12 support not compiled in!'; D3D11 dynamic bootstrap/fallback code exists but is not the observed session backend",
+                            "observedRuntimeBackend": backend_observation,
+                            "activeBackend": "Vulkan is proven by the recorded 2026-08-15 installed-client log session and the API-2 table resolves Vulkan draw/submit operations; the log lacks a UnityPlayer hash and no HGMesh resource identity is yet joined to a specific Vulkan command",
                         },
-                        "notYetProven": ["semantic names of packed key fields", "indirect draw", "active graphics backend submission", "slot-0x14 context construction semantics and +0xb0 destructor internals"],
+                        "notYetProven": ["semantic names of packed key fields", "HGMesh resource identity reaching a specific Vulkan draw/submit", "slot-0x14 context construction semantics and +0xb0 destructor internals"],
                     },
                     "runtimeCaptureBoundary": {
                         "authorization": "contract only; attaching or injecting into the retail process requires separate explicit authorization",
@@ -490,7 +524,7 @@ def build(game_root: Path) -> dict[str, Any]:
                             "renderer-list handle, manager count, 16-byte slot, and 0x30-byte state",
                             "complete 64-byte record, first 16 key bytes, +0x20 marker, +0x22 u16, +0x2c signed field, and resolved resource pointer",
                         ],
-                        "requiredPositiveJoin": "same build and frame: CreateRendererList handle -> opcode 0x4e consumer -> accepted/sorted 64-byte record -> resolved resource identity -> final draw -> visible Li Zhiyan after-DOF pixel",
+                        "requiredPositiveJoin": "same build and frame: CreateRendererList handle -> opcode 0x4e consumer -> accepted/sorted 64-byte record -> resolved resource identity -> specific Vulkan draw/submit -> visible Li Zhiyan after-DOF pixel",
                         "negativeControl": "repeat with Li Zhiyan absent or replaced by Wulfa; timing coincidence alone is insufficient",
                         "stopRule": "stop on attach refusal, protection termination, module/hash/prologue drift, or target instability; never retry through evasion",
                     },
