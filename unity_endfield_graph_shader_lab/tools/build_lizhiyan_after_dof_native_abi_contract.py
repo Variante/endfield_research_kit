@@ -31,7 +31,7 @@ EXPECTED = {
     "metadata": "90C58E26E87C7227A85DDA3FEDF6CE5ED0B06DC1F76E0ABBE75AB20750ADF97E",
     "unityPlayer": "B47728BA10F09C46E8A107B4C7055E48CFE402D3D8C88A4529074981F9672AA2",
     "shaderContract": "1191F96B45FD11C47D31C71681B25E77B3DF2CBD2179F21B4D2854D3AD90796B",
-    "viewerScene": "BC9F4FBF023F76FFD06AB2AE6283A03127027A83049DB580C9678B2A7B633761",
+    "viewerScene": "593CD693538F30CAC0BB381AB31FB160D21212B8C6682072325328DE6CB0B027",
     "backendObservation": "058A57833EB75815963693E4FCCCC4210F8F8EA2AF22BE13B084017657D14EE3",
 }
 METHODS = [
@@ -584,7 +584,29 @@ def build(game_root: Path) -> dict[str, Any]:
                         "workerSelectionFields": "request +0x28 multiDraw, +0x29 transparentSorting, +0x30 noAlphaTest plus live resource presence; excludeGPUDriven is request +0x40 and is not independently reread as a worker-local Boolean",
                         "invalidRecordGate": "publication skips record +0x20 == 0xffffffff",
                         "idResolverVA": "0x181059410",
+                        "idResolverSemantics": {
+                            "inputEncoding": "key=record_dword_0x20>>1; selector=record_dword_0x20&1",
+                            "lookup": "0x1801f7410 searches the ctx+0x18 table whose bounded size is derived from ctx+0x20",
+                            "resourceTable": "the found entry +0x08 indexes ctx+0x10 at 0x80-byte stride",
+                            "selector0": "returns the 0x80-byte resource record base",
+                            "selector1": "returns resource record +0x78",
+                            "identityBoundary": "this is an internal ID-table selector, not ordinary Renderer entityID +0x268 or HGMeshRenderer entity +0x50",
+                        },
                         "pointerAppendVA": "0x18105e350",
+                        "cpuPublicationBoundary": {
+                            "helperVA": "0x1810469a0",
+                            "behavior": "packs CPU publication/result arrays and derived resource pairs; downstream outputs use 0x90-byte stride",
+                            "excludedDirectEdges": [
+                                "ordinary per-draw resolver 0x1804255f0",
+                                "Renderer +0x268",
+                                "HGMeshRenderer +0x50",
+                                "material identity",
+                                "queue 3704",
+                                "descriptor or PSO update",
+                                "draw or queue submit",
+                            ],
+                            "result": "record publication reaches an internal 0x80-byte resource table and CPU arrays, but no same-record GPU identity is statically proven",
+                        },
                         "provenPipeline": "post-filter 64-byte records -> in-place key sort -> invalid-record skip -> ID/resource resolve -> pointer-vector publication",
                         "backendBoundary": {
                             "resultCallbackThunkVA": "0x180feaea0",
