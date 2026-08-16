@@ -25,7 +25,7 @@ EXPORT_ROOT = Path(os.environ.get("ENDFIELD_EXPORT_ROOT") or ROOT / "export_full
 DEFAULT_DATA_ROOT = ROOT / "webui" / "data" / "lang"
 DEFAULT_GRAPH = ROOT / "reports" / "source_graph" / "endfield_source_graph.sqlite"
 DEFAULT_ANIMESTUDIO_ROOT = EXPORT_ROOT / "recovered" / "AnimeStudio-cli"
-SCHEMA_VERSION = 5
+SCHEMA_VERSION = 6
 
 GRAPH_EDGE_TYPES = {
     "skill_data_has_param_string",
@@ -36,10 +36,11 @@ GRAPH_EDGE_TYPES = {
     "buff_data_references_effect",
     "buff_data_references_audio",
 }
+HEURISTIC_CONFIG_GRAPH_EDGE_TYPES = frozenset(GRAPH_EDGE_TYPES)
 INFERRED_GRAPH_EDGE_TYPES = {
     "asset_used_by_gameplay",
     "effect_name_matches_export_base_asset",
-}
+} | HEURISTIC_CONFIG_GRAPH_EDGE_TYPES
 PROJECTILE_TOKEN_RE = re.compile(r"(?:projectile|bullet|missile)", re.IGNORECASE)
 SELECTOR_COUNT_RE = re.compile(r"(?:^|,)(find|select|query):(\d+)")
 
@@ -1175,8 +1176,8 @@ class PayloadBuilder:
                 "unexpectedEdgeCount": sum(self.graph_edge_contract_unexpected.values()),
                 "unexpectedKinds": dict(sorted(self.graph_edge_contract_unexpected.items())),
                 "note": (
-                    "Only expected graph edge kinds are eligible for direct Gameplay relationships; "
-                    "unexpected or missing kinds are reported and never promoted to direct SkillData edges."
+                    "Expected SkillData/BuffData string-scan edge kinds are accepted only as inferred candidates; "
+                    "unexpected or missing kinds are reported and never promoted to Gameplay relationships."
                 ),
             },
             "counts": {

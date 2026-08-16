@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from tools.endfield_source_graph import (
     SourceGraphBuilder,
@@ -13,6 +15,180 @@ from tools.endfield_source_graph import (
 
 
 class SourceGraphSchemaTests(unittest.TestCase):
+    def test_active_config_overlays_only_matching_legacy_path(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp = Path(temp_dir)
+            export_root = temp / "export_full"
+            active_root = export_root / "structured/Persistent/Data/Json/SkillData"
+            active_root.mkdir(parents=True)
+            (active_root / "skill_active.json").write_bytes(b"active")
+            group_root = temp / "webui/data/game_data/groups"
+            group_root.mkdir(parents=True)
+            (group_root / "Json_SkillData.json").write_text(
+                json.dumps({
+                    "group": "SkillData",
+                    "entries": [
+                        {"g": "SkillData", "p": "legacy\\skilldata\\SKILL_ACTIVE.JSON", "dp": "unrelated/location.json"},
+                        {"g": "SkillData", "p": "legacy/skill_fallback.json", "dp": "Json/SkillData/skill_fallback.json"},
+                    ],
+                }),
+                encoding="utf-8",
+            )
+            builder = SourceGraphBuilder(db_path=temp / "graph.sqlite", root=temp, export_root=export_root)
+            builder.open()
+            try:
+                with (
+                    patch("tools.endfield_source_graph.WEBUI_DATA", temp / "webui/data"),
+                    patch.object(builder, "add_decoded_config_entry") as add_entry,
+                ):
+                    builder.ingest_decoded_config_semantics()
+                paths = [safe_call.args[1]["p"] for safe_call in add_entry.call_args_list]
+                self.assertIn("legacy/skill_fallback.json", paths)
+                self.assertIn("Persistent/Data/Json/SkillData/skill_active.json", paths)
+                self.assertNotIn("legacy\\skilldata\\SKILL_ACTIVE.JSON", paths)
+                self.assertEqual(2, len(paths))
+            finally:
+                builder.close()
+
+    def test_unverified_active_config_does_not_define_skill_or_buff(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp = Path(temp_dir)
+            builder = SourceGraphBuilder(db_path=temp / "graph.sqlite", root=temp, export_root=temp / "export_full")
+            builder.open()
+            try:
+                file_node = builder.add_node("decoded_config_file", "fixture")
+                with (
+                    patch("tools.endfield_source_graph.extract_skill_data_summary", return_value=None),
+                    patch("tools.endfield_source_graph.extract_buff_data_summary", return_value={"buffId": "buff_bad", "idStringVerified": False}),
+                ):
+                    builder.add_skill_data_config_edges(file_node, {"p": "SkillData/skill_bad.json"})
+                    builder.add_buff_data_config_edges(file_node, {"p": "BuffData/buff_bad.json"})
+                self.assertEqual(
+                    0,
+                    builder.db.execute(
+                        "SELECT COUNT(*) FROM edges WHERE kind IN ('skill_data_defines_skill','buff_data_defines_buff')"
+                    ).fetchone()[0],
+                )
+            finally:
+                builder.close()
+
+    def test_legacy_skill_group_remains_fallback_without_active_raw_files(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp = Path(temp_dir)
+            group_root = temp / "webui/data/game_data/groups"
+            group_root.mkdir(parents=True)
+            (group_root / "Json_SkillData.json").write_text(
+                json.dumps({"group": "SkillData", "entries": [{"g": "SkillData", "p": "legacy_skill.json"}]}),
+                encoding="utf-8",
+            )
+            builder = SourceGraphBuilder(
+                db_path=temp / "graph.sqlite",
+                root=temp,
+                export_root=temp / "export_full",
+            )
+            builder.open()
+            try:
+                with (
+                    patch("tools.endfield_source_graph.WEBUI_DATA", temp / "webui/data"),
+                    patch.object(builder, "add_decoded_config_entry") as add_entry,
+                ):
+                    builder.ingest_decoded_config_semantics()
+                add_entry.assert_called_once()
+                self.assertEqual("SkillData", add_entry.call_args.kwargs["subtype"])
+            finally:
+                builder.close()
+
+    def test_active_skill_buff_manifest_applies_persistent_overlay_and_real_source(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp = Path(temp_dir)
+            export_root = temp / "export_full"
+            streaming_skill = export_root / "structured/StreamingAssets/Data/Json/SkillData"
+            persistent_skill = export_root / "structured/Persistent/Data/Json/SkillData"
+            persistent_buff = export_root / "structured/Persistent/Data/Json/BuffData"
+            streaming_skill.mkdir(parents=True)
+            persistent_skill.mkdir(parents=True)
+            persistent_buff.mkdir(parents=True)
+            (streaming_skill / "skill_shared.json").write_bytes(b"streaming")
+            (persistent_skill / "skill_shared.json").write_bytes(b"persistent")
+            (streaming_skill / "skill_stream.json").write_bytes(b"stream-only")
+            (persistent_buff / "buff_target.json").write_bytes(b"buff")
+
+            builder = SourceGraphBuilder(
+                db_path=temp / "graph.sqlite",
+                root=temp,
+                export_root=export_root,
+            )
+            builder.open()
+            try:
+                with (
+                    patch(
+                        "tools.endfield_source_graph.extract_skill_data_summary",
+                        side_effect=lambda entry, data: {
+                            "skillId": Path(str(entry["p"])).stem,
+                            "idStringVerified": True,
+                            "refs": {
+                                "linked_buff": [{"value": "buff_target", "offset": "0x10"}],
+                            },
+                            "selectedBytes": data.decode("ascii"),
+                        },
+                    ),
+                    patch(
+                        "tools.endfield_source_graph.extract_buff_data_summary",
+                        return_value={"buffId": "buff_target", "idStringVerified": True, "refs": {}},
+                    ),
+                ):
+                    builder.ingest_active_decoded_config_semantics()
+
+                manifest = {
+                    (row["family"], row["id"]): row
+                    for row in builder.active_config_manifest
+                }
+                shared = manifest[("SkillData", "skill_shared")]
+                self.assertEqual("Persistent", shared["selectedSource"])
+                self.assertEqual(2, len(shared["overlayPaths"]))
+                self.assertEqual(1, len(shared["shadowedPaths"]))
+                stream_only = manifest[("SkillData", "skill_stream")]
+                self.assertEqual("StreamingAssets", stream_only["selectedSource"])
+
+                skill_data = json.loads(builder.db.execute(
+                    "SELECT data FROM nodes WHERE id = ?",
+                    ("gameplay_skill:skill_shared",),
+                ).fetchone()[0])
+                self.assertEqual(
+                    hashlib.sha256(b"persistent").hexdigest(),
+                    skill_data["hash"],
+                )
+                edge = builder.db.execute(
+                    "SELECT source, evidence FROM edges WHERE src = ? AND dst = ? AND kind = ?",
+                    (
+                        "gameplay_skill:skill_shared",
+                        "buff:buff_target",
+                        "skill_data_references_buff",
+                    ),
+                ).fetchone()
+                self.assertEqual(("export_full/structured/Persistent", "0x10"), edge)
+                edge_data = json.loads(builder.db.execute(
+                    "SELECT data FROM edges WHERE src = ? AND dst = ? AND kind = ?",
+                    (
+                        "gameplay_skill:skill_shared",
+                        "buff:buff_target",
+                        "skill_data_references_buff",
+                    ),
+                ).fetchone()[0])
+                self.assertEqual(
+                    "length_prefixed_string_candidate",
+                    edge_data["evidenceClass"],
+                )
+                self.assertEqual(
+                    1,
+                    builder.db.execute(
+                        "SELECT COUNT(*) FROM edges WHERE dst = ? AND kind = ?",
+                        ("gameplay_skill:skill_shared", "skill_data_defines_skill"),
+                    ).fetchone()[0],
+                )
+            finally:
+                builder.close()
+
     def test_pathless_story_audio_classification_keeps_evidence_separate(self) -> None:
         self.assertEqual(
             classify_story_audio_reference(

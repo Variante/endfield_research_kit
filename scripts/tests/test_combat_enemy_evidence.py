@@ -204,6 +204,10 @@ class CombatEnemyEvidenceTests(unittest.TestCase):
             ("gameplay_skill:skill_test", "buff:buff_test", "skill_data_references_buff"),
             edges,
         )
+        self.assertEqual(
+            "inferred",
+            edges[("gameplay_skill:skill_test", "buff:buff_test", "skill_data_references_buff")]["confidence"],
+        )
         self.assertNotIn(
             ("gameplay_skill:skill_test", "buff:unknown_test", "skill_data_unknown_runtime_relation"),
             edges,
@@ -216,7 +220,7 @@ class CombatEnemyEvidenceTests(unittest.TestCase):
         self.assertEqual("observed-only", expected["skill_data_references_effect"]["status"])
         self.assertEqual(1, payload["graphEdgeContract"]["unexpectedKinds"]["skill_data_unknown_runtime_relation"])
         self.assertEqual(1, payload["graphEdgeContract"]["unexpectedEdgeCount"])
-        self.assertEqual(5, SCHEMA_VERSION)
+        self.assertEqual(6, SCHEMA_VERSION)
 
     def test_missing_graph_reports_unavailable_edge_contract(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

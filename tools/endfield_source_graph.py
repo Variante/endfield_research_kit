@@ -936,6 +936,21 @@ DECODED_CONFIG_GROUP_FILES = (
     "Json_LevelGenForRuntime.json",
     "Json_UILevelMapLoadConfig.json",
 )
+ACTIVE_DECODED_CONFIG_FAMILIES = ("SkillData", "BuffData")
+
+
+def decoded_config_relative_paths(entry: dict[str, Any], family: str) -> set[str]:
+    """Return normalized family-relative paths from every legacy path field."""
+    marker = f"/{family.casefold()}/"
+    relative_paths: set[str] = set()
+    for raw_path in (entry.get("dp"), entry.get("p")):
+        normalized = safe_key(raw_path).replace("\\", "/").strip("/")
+        lowered = f"/{normalized.casefold()}"
+        if marker in lowered:
+            relative_paths.add(lowered.split(marker, 1)[1])
+    return relative_paths
+
+
 GAMEPLAY_CONFIG_MAP_LEVEL_LOOKUP_PATHS = frozenset(
     {
         "Json/GameplayConfig/MapIdTable.json",
@@ -3107,6 +3122,7 @@ class SourceGraphBuilder:
         self.alias_count = 0
         self.asset_map_required_path_ids = 0
         self.asset_map_matched_path_ids = 0
+        self.active_config_manifest: list[dict[str, Any]] = []
 
     @property
     def db(self) -> sqlite3.Connection:
@@ -4720,14 +4736,19 @@ class SourceGraphBuilder:
                 "fields": entry.get("a"),
                 "sample": entry.get("t"),
                 "hash": entry.get("hash"),
+                "sha256": entry.get("sha256"),
                 "size": entry.get("s"),
+                "selectedSource": entry.get("selectedSource"),
+                "selectedPath": entry.get("selectedPath"),
+                "overlayPaths": entry.get("overlayPaths"),
+                "shadowedPaths": entry.get("shadowedPaths"),
             },
             depth=3,
         )
 
     def decoded_config_raw_path(self, entry: dict[str, Any]) -> Path:
         rel = safe_key(entry.get("p"))
-        return EXPORT_ROOT / "structured" / Path(rel)
+        return self.export_root / "structured" / Path(rel)
 
     def read_decoded_config_bytes(self, entry: dict[str, Any]) -> bytes:
         path = self.decoded_config_raw_path(entry)
@@ -4735,6 +4756,10 @@ class SourceGraphBuilder:
             return path.read_bytes()
         except OSError:
             return b""
+
+    @staticmethod
+    def decoded_config_graph_source(entry: dict[str, Any]) -> str:
+        return safe_key(entry.get("graphSource")) or "webui/game_data"
 
     def add_model_asset_entity_edges(self, owner_node: str, tokens: Iterable[Any], *, edge_kind: str, source: str, evidence: str) -> None:
         reverse_kind = {
@@ -4787,6 +4812,11 @@ class SourceGraphBuilder:
     def ingest_decoded_config_semantics(self) -> None:
         group_root = WEBUI_DATA / "game_data" / "groups"
         dataset = self.add_node("dataset", "webui_game_data_decoded_configs", name="WebUI decoded game-data configs", path=slash(group_root))
+        active_manifest = self.active_decoded_config_manifest()
+        active_paths = {
+            (safe_key(item.get("family")).casefold(), safe_key(item.get("relativeDataPath")).casefold())
+            for item in active_manifest
+        }
         for group_name in DECODED_CONFIG_GROUP_FILES:
             group_path = group_root / group_name
             payload = read_json(group_path, {})
@@ -4834,7 +4864,116 @@ class SourceGraphBuilder:
                     subtype = "UILevelMapLoadConfig"
                 if subtype not in DECODED_CONFIG_TARGET_TYPES:
                     continue
+                if subtype in ACTIVE_DECODED_CONFIG_FAMILIES:
+                    if any(
+                        (subtype.casefold(), relative_path) in active_paths
+                        for relative_path in decoded_config_relative_paths(entry, subtype)
+                    ):
+                        continue
                 self.add_decoded_config_entry(group_node, entry, subtype=subtype)
+        self.ingest_active_decoded_config_semantics(active_manifest)
+
+    def active_decoded_config_manifest(self) -> list[dict[str, Any]]:
+        """Return the in-memory overlay manifest for active SkillData/BuffData.
+
+        Persistent has precedence over StreamingAssets for the same relative
+        path.  All paths in the manifest are export-root-relative, so the
+        selected source remains auditable without depending on module globals.
+        """
+        manifest: list[dict[str, Any]] = []
+        for family in ACTIVE_DECODED_CONFIG_FAMILIES:
+            candidates: dict[str, list[tuple[str, Path]]] = defaultdict(list)
+            for source in ("StreamingAssets", "Persistent"):
+                family_root = self.export_root / "structured" / source / "Data" / "Json" / family
+                if not family_root.is_dir():
+                    continue
+                try:
+                    paths = sorted(path for path in family_root.rglob("*.json") if path.is_file())
+                except OSError:
+                    continue
+                for path in paths:
+                    try:
+                        relative_path = path.relative_to(family_root).as_posix()
+                    except ValueError:
+                        continue
+                    candidates[relative_path].append((source, path))
+            for relative_path, source_paths in sorted(candidates.items()):
+                selected_source, selected_path = max(
+                    source_paths,
+                    key=lambda item: (item[0] == "Persistent", item[0], slash(item[1])),
+                )
+                try:
+                    payload = selected_path.read_bytes()
+                except OSError:
+                    continue
+                selected_export_path = (Path("structured") / selected_source / "Data" / "Json" / family / relative_path).as_posix()
+                overlay_paths = [
+                    (Path("structured") / source / "Data" / "Json" / family / rel).as_posix()
+                    for source, path in source_paths
+                    for rel in [relative_path]
+                ]
+                shadowed_paths = [path for path in overlay_paths if path != selected_export_path]
+                manifest.append(
+                    {
+                        "family": family,
+                        "id": Path(relative_path).stem,
+                        "relativeDataPath": relative_path,
+                        "selectedSource": selected_source,
+                        "selectedPath": selected_export_path,
+                        "overlayPaths": overlay_paths,
+                        "shadowedPaths": shadowed_paths,
+                        "size": len(payload),
+                        "sha256": hashlib.sha256(payload).hexdigest(),
+                    }
+                )
+        manifest.sort(key=lambda item: (item["family"], item["id"], item["selectedPath"]))
+        self.active_config_manifest = manifest
+        return manifest
+
+    def ingest_active_decoded_config_semantics(self, manifest: list[dict[str, Any]] | None = None) -> None:
+        if manifest is None:
+            manifest = self.active_decoded_config_manifest()
+        dataset = self.add_node(
+            "dataset",
+            "active_gameplay_config_data",
+            name="Active SkillData/BuffData",
+            source="export_full/structured",
+            path=slash(self.export_root / "structured"),
+            data={"entryCount": len(manifest), "families": list(ACTIVE_DECODED_CONFIG_FAMILIES)},
+        )
+        for family in ACTIVE_DECODED_CONFIG_FAMILIES:
+            family_entries = [item for item in manifest if item["family"] == family]
+            group_node = self.add_node(
+                "decoded_config_group",
+                f"active_{family}",
+                name=family,
+                source="export_full/structured",
+                path=slash(self.export_root / "structured"),
+                data={"entryCount": len(family_entries), "family": family, "active": True},
+            )
+            self.add_edge(dataset, group_node, "has_decoded_config_group", source="export_full/structured", evidence=family)
+            for item in family_entries:
+                relative_path = item["relativeDataPath"]
+                selected_source = item["selectedSource"]
+                entry = {
+                    "p": f"{selected_source}/Data/Json/{family}/{relative_path}",
+                    "dp": f"Data/Json/{family}/{relative_path}",
+                    "source": selected_source,
+                    "graphSource": f"export_full/structured/{selected_source}",
+                    "domain": "export_full/structured",
+                    "g": family,
+                    "q": family,
+                    "k": "memorypack",
+                    "s": item["size"],
+                    "hash": item["sha256"],
+                    "sha256": item["sha256"],
+                    "selectedSource": item["selectedSource"],
+                    "selectedPath": item["selectedPath"],
+                    "overlayPaths": item["overlayPaths"],
+                    "shadowedPaths": item["shadowedPaths"],
+                    "id": item["id"],
+                }
+                self.add_decoded_config_entry(group_node, entry, subtype=family)
 
     def ingest_selector_formatter_tag_audit(self) -> None:
         path = self.root / "reports" / "mission_order" / "selector_formatter_tag_audit.json"
@@ -5478,20 +5617,21 @@ class SourceGraphBuilder:
         entry_path = safe_key(entry.get("p"))
         if not entry_path:
             return
+        graph_source = self.decoded_config_graph_source(entry)
         file_node = self.add_node(
             "decoded_config_file",
             entry_path,
             name=Path(entry_path).name,
-            source="webui/game_data",
+            source=graph_source,
             path=entry_path,
             data=self.decoded_config_entry_data(entry),
         )
-        self.add_edge(group_node, file_node, "has_decoded_config_file", source="webui/game_data", evidence=subtype)
-        self.add_alias(entry.get("dp"), file_node, kind="decoded_config_path", source="webui/game_data")
-        self.add_alias(entry_path, file_node, kind="decoded_config_path", source="webui/game_data")
-        self.add_file(entry_path, kind="decoded_game_data", source=safe_key(entry.get("source")) or "webui/game_data", size=entry.get("s"), data={"subtype": subtype, "rows": entry.get("r"), "hash": entry.get("hash")})
-        family_node = self.add_node("decoded_config_family", subtype, name=subtype, source="webui/game_data")
-        self.add_edge(file_node, family_node, "decoded_as_config_family", source="webui/game_data", evidence=safe_key(entry.get("q")))
+        self.add_edge(group_node, file_node, "has_decoded_config_file", source=graph_source, evidence=subtype)
+        self.add_alias(entry.get("dp"), file_node, kind="decoded_config_path", source=graph_source)
+        self.add_alias(entry_path, file_node, kind="decoded_config_path", source=graph_source)
+        self.add_file(entry_path, kind="decoded_game_data", source=graph_source, size=entry.get("s"), data={"subtype": subtype, "rows": entry.get("r"), "hash": entry.get("hash")})
+        family_node = self.add_node("decoded_config_family", subtype, name=subtype, source=graph_source)
+        self.add_edge(file_node, family_node, "decoded_as_config_family", source=graph_source, evidence=safe_key(entry.get("q")))
         if subtype == "AIConfigEnemyTemplateDataSummary":
             self.add_ai_config_enemy_template_summary_edges(file_node, entry)
         elif subtype == "MapConfig":
@@ -6056,22 +6196,23 @@ class SourceGraphBuilder:
                     self.add_edge(montage_node, owner_node, f"level_script_montage_used_by_{edge_prefix}", source=source, evidence=evidence, data=data)
 
     def add_buff_data_config_edges(self, file_node: str, entry: dict[str, Any]) -> None:
+        source = self.decoded_config_graph_source(entry)
         decoded = extract_buff_data_summary(entry, self.read_decoded_config_bytes(entry))
-        buff_id = safe_key(decoded.get("buffId") if decoded else "") or buff_data_id_from_entry(entry)
+        if not decoded or not decoded.get("idStringVerified"):
+            return
+        buff_id = safe_key(decoded.get("buffId"))
         if not buff_id:
             return
-        buff_node = self.add_buff_ref_node(buff_id, source="webui/game_data")
+        buff_node = self.add_buff_ref_node(buff_id, source=source)
         self.update_node_details(
             buff_node,
             name=buff_id,
-            source="webui/game_data",
+            source=source,
             data=compact_payload({**self.decoded_config_entry_data(entry), "decoded": decoded or {}}, depth=3),
         )
-        self.add_edge(file_node, buff_node, "buff_data_defines_buff", source="webui/game_data", evidence=safe_key(entry.get("dp")))
-        self.add_alias(entry.get("dp"), buff_node, kind="buff_config_path", source="webui/game_data")
-        self.add_alias(entry.get("p"), buff_node, kind="buff_data_path", source="webui/game_data")
-        if not decoded:
-            return
+        self.add_edge(file_node, buff_node, "buff_data_defines_buff", source=source, evidence=safe_key(entry.get("dp")))
+        self.add_alias(entry.get("dp"), buff_node, kind="buff_config_path", source=source)
+        self.add_alias(entry.get("p"), buff_node, kind="buff_data_path", source=source)
         refs = decoded.get("refs") if isinstance(decoded.get("refs"), dict) else {}
         for ref_kind, values in refs.items():
             if not isinstance(values, list):
@@ -6083,45 +6224,52 @@ class SourceGraphBuilder:
                 if not value:
                     continue
                 evidence = safe_key(ref.get("offset")) or f"strings[{ref.get('index')}]"
-                data = {"index": ref.get("index"), "offset": ref.get("offset"), "length": ref.get("length"), "value": value}
+                data = {
+                    "index": ref.get("index"),
+                    "offset": ref.get("offset"),
+                    "length": ref.get("length"),
+                    "value": value,
+                    "evidenceClass": "length_prefixed_string_candidate",
+                }
                 if ref_kind == "linked_buff":
-                    target_node = self.add_buff_ref_node(value, source="webui/game_data")
-                    self.add_edge(buff_node, target_node, "buff_data_references_buff", source="webui/game_data", evidence=evidence, data=data)
-                    self.add_edge(target_node, buff_node, "buff_used_by_buff_data", source="webui/game_data", evidence=evidence, data=data)
+                    target_node = self.add_buff_ref_node(value, source=source)
+                    self.add_edge(buff_node, target_node, "buff_data_references_buff", source=source, evidence=evidence, data=data)
+                    self.add_edge(target_node, buff_node, "buff_used_by_buff_data", source=source, evidence=evidence, data=data)
                 elif ref_kind == "tag":
-                    target_node = self.add_gameplay_tag_node(value, source="webui/game_data")
-                    self.add_edge(buff_node, target_node, "buff_data_has_tag_string", source="webui/game_data", evidence=evidence, data=data)
+                    target_node = self.add_gameplay_tag_node(value, source=source)
+                    self.add_edge(buff_node, target_node, "buff_data_has_tag_string", source=source, evidence=evidence, data=data)
                 elif ref_kind == "param":
-                    target_node = self.add_buff_parameter_node(value, source="webui/game_data")
-                    self.add_edge(buff_node, target_node, "buff_data_has_param_string", source="webui/game_data", evidence=evidence, data=data)
+                    target_node = self.add_buff_parameter_node(value, source=source)
+                    self.add_edge(buff_node, target_node, "buff_data_has_param_string", source=source, evidence=evidence, data=data)
                 elif ref_kind == "effect":
-                    target_node = self.add_node("gameplay_effect", value, name=value, source="webui/game_data")
-                    self.add_alias(value, target_node, kind="gameplay_effect_id", source="webui/game_data")
-                    self.add_edge(buff_node, target_node, "buff_data_references_effect", source="webui/game_data", evidence=evidence, data=data)
-                    self.add_edge(target_node, buff_node, "gameplay_effect_used_by_buff_data", source="webui/game_data", evidence=evidence, data=data)
+                    target_node = self.add_node("gameplay_effect", value, name=value, source=source)
+                    self.add_alias(value, target_node, kind="gameplay_effect_id", source=source)
+                    self.add_edge(buff_node, target_node, "buff_data_references_effect", source=source, evidence=evidence, data=data)
+                    self.add_edge(target_node, buff_node, "gameplay_effect_used_by_buff_data", source=source, evidence=evidence, data=data)
                 elif ref_kind == "audio":
-                    self.add_audio_target_edge(buff_node, value, edge_kind="buff_data_references_audio", source="webui/game_data", evidence=evidence, reverse_edge_kind="audio_used_by_buff_data")
+                    self.add_audio_target_edge(buff_node, value, edge_kind="buff_data_references_audio", source=source, evidence=evidence, reverse_edge_kind="audio_used_by_buff_data")
                 elif ref_kind == "icon":
-                    target_node = self.add_buff_icon_node(value, source="webui/game_data")
-                    self.add_edge(buff_node, target_node, "buff_data_references_icon", source="webui/game_data", evidence=evidence, data=data)
+                    target_node = self.add_buff_icon_node(value, source=source)
+                    self.add_edge(buff_node, target_node, "buff_data_references_icon", source=source, evidence=evidence, data=data)
 
     def add_skill_data_config_edges(self, file_node: str, entry: dict[str, Any]) -> None:
+        source = self.decoded_config_graph_source(entry)
         decoded = extract_skill_data_summary(entry, self.read_decoded_config_bytes(entry))
-        skill_id = safe_key(decoded.get("skillId") if decoded else "") or skill_data_id_from_entry(entry)
+        if not decoded or not decoded.get("idStringVerified"):
+            return
+        skill_id = safe_key(decoded.get("skillId"))
         if not skill_id:
             return
-        skill_node = self.add_gameplay_skill_ref_node(skill_id, source="webui/game_data")
+        skill_node = self.add_gameplay_skill_ref_node(skill_id, source=source)
         self.update_node_details(
             skill_node,
             name=skill_id,
-            source="webui/game_data",
+            source=source,
             data=compact_payload({**self.decoded_config_entry_data(entry), "decoded": decoded or {}}, depth=3),
         )
-        self.add_edge(file_node, skill_node, "skill_data_defines_skill", source="webui/game_data", evidence=safe_key(entry.get("dp")))
-        self.add_alias(entry.get("dp"), skill_node, kind="skill_config_path", source="webui/game_data")
-        self.add_alias(entry.get("p"), skill_node, kind="skill_data_path", source="webui/game_data")
-        if not decoded:
-            return
+        self.add_edge(file_node, skill_node, "skill_data_defines_skill", source=source, evidence=safe_key(entry.get("dp")))
+        self.add_alias(entry.get("dp"), skill_node, kind="skill_config_path", source=source)
+        self.add_alias(entry.get("p"), skill_node, kind="skill_data_path", source=source)
         refs = decoded.get("refs") if isinstance(decoded.get("refs"), dict) else {}
         for ref_kind, values in refs.items():
             if not isinstance(values, list):
@@ -6133,27 +6281,33 @@ class SourceGraphBuilder:
                 if not value:
                     continue
                 evidence = safe_key(ref.get("offset")) or f"strings[{ref.get('index')}]"
-                data = {"index": ref.get("index"), "offset": ref.get("offset"), "length": ref.get("length"), "value": value}
+                data = {
+                    "index": ref.get("index"),
+                    "offset": ref.get("offset"),
+                    "length": ref.get("length"),
+                    "value": value,
+                    "evidenceClass": "length_prefixed_string_candidate",
+                }
                 if ref_kind == "linked_buff":
-                    target_node = self.add_buff_ref_node(value, source="webui/game_data")
-                    self.add_edge(skill_node, target_node, "skill_data_references_buff", source="webui/game_data", evidence=evidence, data=data)
-                    self.add_edge(target_node, skill_node, "buff_used_by_skill_data", source="webui/game_data", evidence=evidence, data=data)
+                    target_node = self.add_buff_ref_node(value, source=source)
+                    self.add_edge(skill_node, target_node, "skill_data_references_buff", source=source, evidence=evidence, data=data)
+                    self.add_edge(target_node, skill_node, "buff_used_by_skill_data", source=source, evidence=evidence, data=data)
                 elif ref_kind == "tag":
-                    target_node = self.add_gameplay_tag_node(value, source="webui/game_data")
-                    self.add_edge(skill_node, target_node, "skill_data_has_tag_string", source="webui/game_data", evidence=evidence, data=data)
+                    target_node = self.add_gameplay_tag_node(value, source=source)
+                    self.add_edge(skill_node, target_node, "skill_data_has_tag_string", source=source, evidence=evidence, data=data)
                 elif ref_kind == "param":
-                    target_node = self.add_skill_parameter_node(value, source="webui/game_data")
-                    self.add_edge(skill_node, target_node, "skill_data_has_param_string", source="webui/game_data", evidence=evidence, data=data)
+                    target_node = self.add_skill_parameter_node(value, source=source)
+                    self.add_edge(skill_node, target_node, "skill_data_has_param_string", source=source, evidence=evidence, data=data)
                 elif ref_kind == "effect":
-                    target_node = self.add_node("gameplay_effect", value, name=value, source="webui/game_data")
-                    self.add_alias(value, target_node, kind="gameplay_effect_id", source="webui/game_data")
-                    self.add_edge(skill_node, target_node, "skill_data_references_effect", source="webui/game_data", evidence=evidence, data=data)
-                    self.add_edge(target_node, skill_node, "gameplay_effect_used_by_skill_data", source="webui/game_data", evidence=evidence, data=data)
+                    target_node = self.add_node("gameplay_effect", value, name=value, source=source)
+                    self.add_alias(value, target_node, kind="gameplay_effect_id", source=source)
+                    self.add_edge(skill_node, target_node, "skill_data_references_effect", source=source, evidence=evidence, data=data)
+                    self.add_edge(target_node, skill_node, "gameplay_effect_used_by_skill_data", source=source, evidence=evidence, data=data)
                 elif ref_kind == "audio":
-                    self.add_audio_target_edge(skill_node, value, edge_kind="skill_data_references_audio", source="webui/game_data", evidence=evidence, reverse_edge_kind="audio_used_by_skill_data")
+                    self.add_audio_target_edge(skill_node, value, edge_kind="skill_data_references_audio", source=source, evidence=evidence, reverse_edge_kind="audio_used_by_skill_data")
                 elif ref_kind == "icon":
-                    target_node = self.add_skill_icon_node(value, source="webui/game_data")
-                    self.add_edge(skill_node, target_node, "skill_data_references_icon", source="webui/game_data", evidence=evidence, data=data)
+                    target_node = self.add_skill_icon_node(value, source=source)
+                    self.add_edge(skill_node, target_node, "skill_data_references_icon", source=source, evidence=evidence, data=data)
 
     def add_spawner_config_edges(self, file_node: str, entry: dict[str, Any]) -> None:
         decoded = extract_spawner_config_rows(self.read_decoded_config_bytes(entry))
