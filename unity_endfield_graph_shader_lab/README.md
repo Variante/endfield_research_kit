@@ -3939,6 +3939,7 @@ Li Zhiyan's retail video oracle is imported separately from draw ownership:
 
 ```bat
 python tools\build_lizhiyan_retail_draw_observation_contract.py
+python tools\build_lizhiyan_retail_visual_oracle.py
 ```
 
 The current fixture pins `videos/2026-08-15_10-32-32.mkv` by byte count and
@@ -3950,6 +3951,14 @@ explicit authorization. Admission requires the complete HGMesh handle,
 state, `0x2731`, descriptor bind, draw, submit, and exact retail pixel chain,
 plus a same-build Li-absent or Wulfa control. Generic API-2 events, pointer
 equality, timestamps, or teal pixels alone never admit the effect.
+
+The visual-oracle builder separately decodes exact PTS
+`38000/40000/42000/43000/44000/46000`, scales each frame deterministically to
+960x540 RGB24, and pins frame hashes plus fixed actor/teal ROI measurements.
+It records the broad teal peak at PTS 40000 and the below-one-percent settled
+baseline at PTS 46000. This is only a camera/timing/compositing regression
+target: it stays `diagnostic_only`, keeps `visibleAdmission=false`, and cannot
+unlock the seven fail-closed particle renderers.
 
 One original dialog facial asset is now executable as a bounded source fixture:
 Zhuang Fangyi's 2.15-second

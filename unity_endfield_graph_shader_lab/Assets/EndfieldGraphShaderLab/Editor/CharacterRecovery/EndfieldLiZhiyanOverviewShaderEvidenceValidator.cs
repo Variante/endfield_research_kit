@@ -27,6 +27,9 @@ namespace EndfieldGraphShaderLabEditor
         private const string RetailDrawObservationPath =
             "Assets/EndfieldGraphShaderLab/Generated/OriginalData/ShaderEvidence/" +
             "LiZhiyanOverviewFinger/lizhiyan_retail_draw_observation.json";
+        private const string RetailVisualOraclePath =
+            "Assets/EndfieldGraphShaderLab/Generated/OriginalData/ShaderEvidence/" +
+            "LiZhiyanOverviewFinger/lizhiyan_retail_visual_oracle.json";
         private const string Schema = "endfield.lizhiyan-overview-vfxbasev2-variants.v1";
         private const long ShaderPathId = -1430105248647086886L;
 
@@ -139,6 +142,57 @@ namespace EndfieldGraphShaderLabEditor
                 "Li Zhiyan shader evidence does not cover all six materials");
             ValidateNativeAbi();
             ValidateRetailDrawObservation();
+            ValidateRetailVisualOracle();
+        }
+
+        private static void ValidateRetailVisualOracle()
+        {
+            Dictionary<string, object> oracle = L.Dict(
+                ManifestMiniJson.Deserialize(File.ReadAllText(
+                    L.ProjectAbsolute(RetailVisualOraclePath), Encoding.UTF8)));
+            Dictionary<string, object> source = L.Dict(oracle["source"]);
+            Dictionary<string, object> decode = L.Dict(oracle["decode"]);
+            IList samples = L.List(oracle["samples"]);
+            long[] expectedPts = { 38000, 40000, 42000, 43000, 44000, 46000 };
+            string[] expectedHashes =
+            {
+                "C17C726C803E335013E9FFFAD596F6A1B4F76D47DA528F78F5860F7008530BEC",
+                "8880B3DA3072178F599B5111A533F2F0C55862867E56FFADFB7285E1444E2AD5",
+                "F4B3ABD86689977F0A4DBE7700E9B0BD8E03B674FD5699473933D6A7BF226DB4",
+                "7C9E40EC2AE58A15CD9C127CFF2AA1AAFCB581BC6189E220662C81B0252BCC71",
+                "4773EAD0EB3B40EA358C0B1AA00763107DEB6DACAF9DA4A44F1325C7B862CA1D",
+                "993A496929A7D819DDDE16337DB140DA0926829007FDE51D769CE9F7A6B05161",
+            };
+            L.Require(
+                L.Str(oracle, "schema") == "endfield.lizhiyan-retail-visual-oracle.v1" &&
+                L.Str(oracle, "status") == "diagnostic_only" &&
+                !L.Bool(oracle, "visibleAdmission") &&
+                L.Long(source, "bytes") == 1678613397L &&
+                L.Str(source, "sha256") ==
+                    "2F542A3BE7CE3332295D3A841FD8613C62707E084F9E33A0F156DA8A06EBF5E7" &&
+                L.Str(source, "timeBase") == "1/1000" &&
+                L.Str(decode, "pixelFormat") == "rgb24" &&
+                L.Bool(decode, "exactInputPts") &&
+                samples.Count == expectedPts.Length &&
+                L.List(oracle["nonClaims"]).Count == 3,
+                "Li Zhiyan retail visual-oracle boundary drifted");
+            for (int index = 0; index < samples.Count; index++)
+            {
+                Dictionary<string, object> sample = L.Dict(samples[index]);
+                L.Require(
+                    L.Long(sample, "pts") == expectedPts[index] &&
+                    L.Str(sample, "timeBase") == "1/1000" &&
+                    L.Str(sample, "scaledRgb24Sha256") == expectedHashes[index] &&
+                    L.List(sample["scaledDimensions"]).Count == 2 &&
+                    L.Dict(sample["rois"]).Count == 4,
+                    "Li Zhiyan retail visual-oracle sample drifted: " + index);
+            }
+            Dictionary<string, object> peakRois = L.Dict(L.Dict(samples[1])["rois"]);
+            Dictionary<string, object> settledRois = L.Dict(L.Dict(samples[5])["rois"]);
+            L.Require(
+                L.Float(L.Dict(peakRois["broadTeal"]), "tealCoverage") > 0.20f &&
+                L.Float(L.Dict(settledRois["broadTeal"]), "tealCoverage") < 0.01f,
+                "Li Zhiyan retail visual-oracle teal phase separation drifted");
         }
 
         private static void ValidateRetailDrawObservation()

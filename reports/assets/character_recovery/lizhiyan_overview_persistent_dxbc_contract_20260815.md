@@ -287,6 +287,15 @@ update/bind, `0x2731`, draw, submit, and exact decoded retail pixel, plus a
 same-build Li-absent or Wulfa control. Pointer equality, timestamps, generic
 API-2 events, or teal pixels alone fail closed.
 
+`lizhiyan_retail_visual_oracle.json` now supplies the separate deterministic
+visual regression contract. It decodes exact input PTS
+`38000/40000/42000/43000/44000/46000` to 960x540 RGB24, pins every scaled-frame
+hash, and measures four fixed source-space ROIs with one predeclared teal
+predicate. Broad-ROI teal coverage rises from `0.020755576` at PTS 38000 to
+`0.216991352` at PTS 40000 and falls to `0.006558944` at PTS 46000. This closes
+repeatable phase anchors for Unity comparison, not material or draw ownership;
+the artifact remains diagnostic-only and non-admitting.
+
 The next positive proof is now an explicit runtime-capture contract rather
 than a generic request for “a capture.” On this exact build it must join one
 `CreateRendererList` handle through opcode `0x4e`, a complete accepted/sorted
@@ -347,3 +356,9 @@ Without such a capture, the remaining offline step is the live native
 root-signature/descriptor/PSO join and renderer-list survivor identity. Static
 resource names, neutral `_VFXParams1`, or attachment parity must not unlock
 visible pixels.
+
+Before any authorized runtime capture, render the current Li Zhiyan entrance at
+the six oracle PTS-equivalent phases and compare the same fixed ROIs. Camera,
+controller-event chronology, background, depth/blur, and final compositing must
+be closed independently; do not replace the six original VFXBaseV2 materials
+with an approximate visible shader merely to reduce the image difference.
