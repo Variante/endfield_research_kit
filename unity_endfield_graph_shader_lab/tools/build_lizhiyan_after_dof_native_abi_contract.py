@@ -126,6 +126,15 @@ CALLS = [
     (0x189BF789F, 0x18B3FA0A4, "Deferred.OnPreRendering -> CreateRendererList(TransparentAfterPP)"),
 ]
 
+UNITY_CALLS = [
+    (0x180FF82B5, 0x1810442F0,
+     "HGMesh survivor worker -> temporary group-index map insertion"),
+    (0x180FF856C, 0x181043BD0,
+     "HGMesh survivor worker -> 64-byte record sort"),
+    (0x180FF8592, 0x181039E90,
+     "HGMesh survivor worker -> publication finalizer"),
+]
+
 
 def require(value: bool, message: str) -> None:
     if not value:
@@ -251,6 +260,12 @@ def build(game_root: Path) -> dict[str, Any]:
          "A53FE724C2528138F922D4923A10DB06489DF710A8B8AC0D891EE28A41A3EBA4"),
         ("HGMesh 64-byte survivor-record append", 0x18105E400, 0x18105E4CC,
          "62712E9CCFEF1F7614BCCD33785031DEFC6DB9AF132E78885DD5727CB515555F"),
+        ("HGMesh survivor worker with inherited publication tables", 0x180FF8020,
+         0x180FF8702,
+         "E80AF9084ED30D59CA2B65A4B925CBE31EB31FBF6F617792E89BB271948DF49E"),
+        ("HGMesh temporary group-to-index-vector map insertion", 0x1810442F0,
+         0x181044592,
+         "79BEA9E2FEE0A5188F3F900744D2FBCC7B645D2EE00587C79E088A0706CAD6AB"),
         ("HG render context slot-0x14 accessor", 0x180FC5E60, 0x180FC5E6A,
          "C247F5C67F284C727F1467D68F5AC5551A863009E47967951FAB800CFCB2DBC3"),
         ("HG singleton table indexed accessor", 0x18030F100, 0x18030F10F,
@@ -392,6 +407,16 @@ def build(game_root: Path) -> dict[str, Any]:
                                      "functionBytes": len(body),
                                      "functionSha256": body_hash})
 
+    unity_calls = []
+    for callsite, expected_target, label in UNITY_CALLS:
+        data = unity_pe.bytes_at_va(callsite, 5)
+        require(len(data) == 5 and data[0] == 0xE8,
+                f"missing UnityPlayer rel32 call: {label}")
+        target = callsite + 5 + struct.unpack_from("<i", data, 1)[0]
+        require(target == expected_target, f"UnityPlayer call target drift: {label}")
+        unity_calls.append({"label": label, "callsite": f"0x{callsite:x}",
+                            "target": f"0x{target:x}"})
+
     shader = json.loads(SHADER_CONTRACT.read_text(encoding="utf-8"))
     return {
         "schema": "endfield.lizhiyan-after-dof-native-abi.v1",
@@ -408,6 +433,7 @@ def build(game_root: Path) -> dict[str, Any]:
         "codeRegistrationVA": f"0x{CODE_REGISTRATION:x}",
         "methods": methods,
         "unityPlayerNativeMethods": unity_native_methods,
+        "unityPlayerDecisiveCalls": unity_calls,
         "decisiveCalls": calls,
         "rendererList": {
             "queue": {"first": 3660, "default": 3700, "last": 3740},
@@ -605,6 +631,20 @@ def build(game_root: Path) -> dict[str, Any]:
                             "identityBoundary": "this is an internal ID-table selector, not ordinary Renderer entityID +0x268 or HGMeshRenderer entity +0x50",
                         },
                         "pointerAppendVA": "0x18105e350",
+                        "upstreamWorkerBoundary": {
+                            "workerVA": "0x180ff8020",
+                            "workerEndVA": "0x180ff8702",
+                            "outerContextInheritance": "worker saves [arg+0x00] and [arg+0x08] at entry and passes those same values as rcx/rdx to 0x181039e90 after record construction and sorting",
+                            "sourceRecordStride": 576,
+                            "sourceRecordIndexing": "grouped source index is multiplied by 9 then shifted left 6, yielding a 0x240-byte source-record stride",
+                            "temporaryGroupMapVA": "0x1810442f0",
+                            "temporaryGroupMapEndVA": "0x181044592",
+                            "temporaryGroupEntryStride": 48,
+                            "temporaryGroupValue": "owned vector of 4-byte source indices",
+                            "temporaryGroupMapBoundary": "0x1810442f0 inserts or finds 0x30-byte grouping entries and copies an int32 index vector; it does not populate M0's 0x60-byte entry or write descriptor D at entry+0x28",
+                            "finalizerCall": "0x180ff8592 -> 0x181039e90 with inherited outer [arg+0x00]/[arg+0x08], r8=0, arg+0x10, the sorted 64-byte record base/count, and arg+0x70",
+                            "remainingProducerBoundary": "the unresolved producer is now upstream of this worker: creation/population of the worker argument object's +0x00/+0x08 publication tables, not the temporary grouping helper",
+                        },
                         "cpuPublicationBoundary": {
                             "helperVA": "0x1810469a0",
                             "behavior": "packs CPU publication/result arrays and derived resource pairs; downstream outputs use 0x90-byte stride",
@@ -638,7 +678,7 @@ def build(game_root: Path) -> dict[str, Any]:
                                 "otherModes": "clear publication output and write -1 without entering the three special helpers",
                                 "constructorEvidence": "0x180ac63f0 constructs a layout-compatible 0x4e0 object with +0x430/+0x450/+0x488 fields and two mode-0 callers, but it does not populate an M0 0x60-stride entry and has no static alias to D",
                                 "builderEvidence": "0x180ba21b0 writes mode 0, propagated input mode, or mode 1 and 0x180390a20 copies the +0x440..+0x460 field group; neither has a static producer edge into the M0 entry. A superficially similar 0x180ac6740 record uses 0x48 stride and is also excluded",
-                                "ownerPopulationBoundary": "0x180ff80e7 allocates a 0x100-byte upstream object, 0x180ff82b5 calls 0x1810442f0 population, and 0x180ff8592 enters 0x181039e90 finalization; the runtime/indirect producer that fills the M0 0x60-stride entry+0x28 descriptor remains unresolved",
+                                "ownerPopulationBoundary": "0x180ff8020 inherits M0/M1 from worker argument +0x00/+0x08 and passes them unchanged to 0x181039e90. Its 0x180ff82b5 -> 0x1810442f0 helper only populates a temporary 0x30-stride group-to-int32-index-vector map; it is not M0 and never writes M0 entry+0x28 descriptor D. The remaining producer is the earlier creator/populator of the worker argument object's +0x00/+0x08 tables",
                                 "aliasBoundary": "M0 entry+0x28 has not been statically aliased to any candidate descriptor constructor/builder, so Li's selected mode remains unknown",
                             },
                             "graphicsFront": {

@@ -4141,8 +4141,14 @@ original 64-byte record's packed resolver ID at publication `+0x84`. Mode 0 is t
 descriptor-state/conditional-`0x2730` path, mode 2 selects cache/fallback and
 clears the output, and other modes also fail/clear. A matching 0x4E0 descriptor
 constructor has two mode-0 callers, but neither it nor the other inspected
-builders populates M0's entry. That runtime/indirect owner-table population is
-the remaining alias boundary, so the Li branch remains deliberately unselected.
+builders populates M0's entry. The complete chained-`.pdata` worker
+`0x180FF8020..0x180FF8702` instead inherits M0/M1 from its argument
+`+0x00/+0x08` and passes them unchanged to finalization. Its
+`0x180FF82B5 -> 0x1810442F0` helper owns a temporary 0x30-byte
+group-to-int32-index-vector map over 0x240-byte source records; it is not M0
+and does not write M0 `entry+0x28`. The remaining alias boundary is now the
+earlier creator/populator of those worker-argument tables, so the Li branch
+remains deliberately unselected.
 The same contract pins `SetManual(bool)`, `ManualEvaluate(float)`,
 `SyncProgress(float)`, time-scale/start-duration/start-
 scale setters, Stop, OnDisable, and OnRelease. Their decoded fallback bodies
