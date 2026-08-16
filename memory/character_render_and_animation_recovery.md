@@ -1828,6 +1828,25 @@ only stable interpretation and priorities.
    per root and blank frames for inactive roots/all-inactive composites. These
    are deterministic standalone-camera results, not retail pixel comparisons
    or native after-DOF ownership proof.
+   A separate actor-composed D3D12 harness now preserves that effects-only
+   baseline while instantiating the recovered `Lizhiyan.prefab`, explicitly
+   sampling the 10.7-second/60 Hz overview-start actor clip, and root-mounting
+   the three static effects at identity. It uses the source overview camera
+   position `(-0.177,0.998,3.5)`, hierarchy-derived LookAt
+   `(0.022,1.225,0)`, FOV `20.007383`, and near/far `0.1/50`; the final
+   LookRotation remains labeled inferred because gyroscope input and one legacy
+   camera Animation object are not recovered. The 24-anchor real-D3D12 run
+   writes actor-only, effects-only, composite, and per-root frames and validates
+   all lifetimes while keeping every retail/native admission false. Its
+   actor-safe four-corner background consensus fixes the old single-corner
+   coverage ambiguity when the animated coat crosses pixel zero. Predicate-only
+   comparison shows the source camera/actor composition is usable but the
+   broad peak is still missing: at PTS 40000 the retail `broadTeal` ROI is
+   21.699% teal versus 3.499% composite and 1.454% effects-only; PTS 43000 is
+   closer at 9.972% versus 7.618% composite. PTS 46000 has zero effects-only
+   coverage while the actor remains visible. This isolates the dominant gap to
+   peak effect/material/admission composition rather than gross camera or actor
+   absence; the comparison is not pixel equality.
    Under the visual candidate epoch, exact first dynamic keys at PTS 38167,
    40834/40867, and 42467 align respectively with the early teal edge,
    later pillar phase, and next material wave. This is strong timing evidence
