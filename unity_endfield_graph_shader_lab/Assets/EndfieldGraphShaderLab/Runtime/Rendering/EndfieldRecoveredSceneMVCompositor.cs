@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using Unity.Collections;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
@@ -7,6 +8,36 @@ using UnityEngine.Rendering;
 
 namespace EndfieldGraphShaderLab
 {
+    [Serializable]
+    public sealed class EndfieldRendererIdSidecarEntry
+    {
+        public int id;
+        public int rendererInstanceId;
+        public string rendererPath;
+        public int materialIndex;
+        public string materialName;
+        public string shaderName;
+        public int renderQueue;
+    }
+
+    public sealed class EndfieldRendererIdSidecarCapture
+    {
+        public long captureInvocationSerial;
+        public int frame;
+        public int width;
+        public int height;
+        public bool available;
+        public string failure;
+        public float[] rgba;
+        public EndfieldRendererIdSidecarEntry[] entries;
+    }
+
+    [Serializable]
+    public sealed class EndfieldRendererIdSidecarDictionary
+    {
+        public EndfieldRendererIdSidecarEntry[] entries;
+    }
+
     internal readonly struct EndfieldRecoveredSceneColorHandle
     {
         internal readonly int identifier;
@@ -47,6 +78,33 @@ namespace EndfieldGraphShaderLab
         }
     }
 
+    public static class EndfieldRecoveredRendererIdSidecarCaptureBridge
+    {
+        public static void Begin(long serial)
+        {
+            EndfieldRecoveredSceneMVCompositor.BeginRendererIdSidecarCapture(serial);
+        }
+
+        public static void End()
+        {
+            EndfieldRecoveredSceneMVCompositor.EndRendererIdSidecarCapture();
+        }
+
+        public static void WaitForReadback()
+        {
+            EndfieldRecoveredSceneMVCompositor.WaitForRendererIdSidecarReadback();
+        }
+
+        public static bool TryTake(
+            long serial,
+            out EndfieldRendererIdSidecarCapture capture)
+        {
+            return EndfieldRecoveredSceneMVCompositor.TryTakeRendererIdSidecarCapture(
+                serial,
+                out capture);
+        }
+    }
+
     /// <summary>
     /// Surgical native-render-pass implementation of the source-closed
     /// current-frame sceneMV contract used by the seven admitted particle VFX
@@ -55,6 +113,17 @@ namespace EndfieldGraphShaderLab
     /// </summary>
     internal sealed class EndfieldRecoveredSceneMVCompositor : IDisposable
     {
+        internal const string RendererIdSidecarEnvironmentVariable =
+            "ENDFIELD_RECOVERED_RENDERER_ID_SIDECAR";
+        internal const string RendererIdSidecarCommandLineArgument =
+            "-endfield-recovered-renderer-id-sidecar";
+        internal const GraphicsFormat RendererIdSidecarFormat =
+            GraphicsFormat.R32G32B32A32_SFloat;
+        private const string RendererIdSidecarShaderResource =
+            "EndfieldRecoveredRendererIdSidecar";
+        internal static readonly int RendererIdSidecarPropertyId =
+            Shader.PropertyToID("_EndfieldRecoveredRendererIdSidecar");
+
         internal const GraphicsFormat SceneMVFormat =
             GraphicsFormat.A2B10G10R10_UNormPack32;
         internal static readonly Color SceneMVNeutral =
@@ -123,28 +192,264 @@ namespace EndfieldGraphShaderLab
         };
 
         private readonly Material copyMaterial;
+        private readonly Material rendererIdSidecarMaterial;
+        private readonly bool rendererIdSidecarRequested;
+        private readonly Dictionary<Camera, RendererIdSidecarResources>
+            rendererIdSidecarResources =
+                new Dictionary<Camera, RendererIdSidecarResources>();
+        private static long activeCaptureInvocationSerial;
+        private static readonly Dictionary<long, EndfieldRendererIdSidecarCapture>
+            completedRendererIdSidecars =
+                new Dictionary<long, EndfieldRendererIdSidecarCapture>();
+
+        private sealed class RendererIdPropertyBlockRestore
+        {
+            internal Renderer renderer;
+            internal int materialIndex;
+            internal MaterialPropertyBlock original;
+            internal bool originalWasEmpty;
+        }
+
+        private sealed class RendererIdSidecarResources : IDisposable
+        {
+            internal int width;
+            internal int height;
+            internal RenderTexture sidecar;
+            internal readonly List<EndfieldRendererIdSidecarEntry> entries =
+                new List<EndfieldRendererIdSidecarEntry>();
+            internal readonly List<RendererIdPropertyBlockRestore> restores =
+                new List<RendererIdPropertyBlockRestore>();
+            internal bool preparedBeforeCull;
+            internal bool readbackPending;
+            internal bool disposeRequested;
+
+            public void Dispose()
+            {
+                Restore();
+                disposeRequested = true;
+                if (!readbackPending)
+                    ReleaseSidecar();
+            }
+
+            internal void ReleaseSidecar()
+            {
+                if (sidecar == null)
+                    return;
+                if (sidecar.IsCreated())
+                    sidecar.Release();
+                if (Application.isPlaying)
+                    UnityEngine.Object.Destroy(sidecar);
+                else
+                    UnityEngine.Object.DestroyImmediate(sidecar);
+                sidecar = null;
+            }
+
+            internal void Restore()
+            {
+                for (int i = restores.Count - 1; i >= 0; i--)
+                {
+                    RendererIdPropertyBlockRestore restore = restores[i];
+                    if (restore == null || restore.renderer == null)
+                        continue;
+                    restore.renderer.SetPropertyBlock(
+                        restore.originalWasEmpty ? null : restore.original,
+                        restore.materialIndex);
+                }
+                restores.Clear();
+                entries.Clear();
+                preparedBeforeCull = false;
+            }
+        }
+
+        private sealed class RendererIdSidecarPendingReadback
+        {
+            internal RendererIdSidecarResources resources;
+            internal long captureInvocationSerial;
+            internal int frame;
+            internal int width;
+            internal int height;
+            internal EndfieldRendererIdSidecarEntry[] entries;
+        }
 
         internal EndfieldRecoveredSceneMVCompositor()
         {
+            rendererIdSidecarRequested = IsRequested(
+                RendererIdSidecarEnvironmentVariable,
+                RendererIdSidecarCommandLineArgument);
             Shader shader = Resources.Load<Shader>(CopyShaderResource);
-            if (shader == null || !shader.isSupported)
-                return;
-
-            copyMaterial = new Material(shader)
+            if (shader != null && shader.isSupported)
             {
-                name = "Endfield exact scene-color copy (Pipeline)",
-                hideFlags = HideFlags.HideAndDontSave
-            };
+                copyMaterial = new Material(shader)
+                {
+                    name = "Endfield exact scene-color copy (Pipeline)",
+                    hideFlags = HideFlags.HideAndDontSave
+                };
+            }
+            Shader sidecarShader = Resources.Load<Shader>(
+                RendererIdSidecarShaderResource);
+            if (sidecarShader != null && sidecarShader.isSupported)
+            {
+                rendererIdSidecarMaterial = new Material(sidecarShader)
+                {
+                    name = "Endfield renderer-ID sidecar (Pipeline)",
+                    hideFlags = HideFlags.HideAndDontSave
+                };
+            }
+        }
+
+        internal static void BeginRendererIdSidecarCapture(long serial)
+        {
+            activeCaptureInvocationSerial = serial;
+        }
+
+        internal static void EndRendererIdSidecarCapture()
+        {
+            activeCaptureInvocationSerial = 0;
+        }
+
+        internal static void WaitForRendererIdSidecarReadback()
+        {
+            AsyncGPUReadback.WaitAllRequests();
+        }
+
+        internal static bool TryTakeRendererIdSidecarCapture(
+            long serial,
+            out EndfieldRendererIdSidecarCapture capture)
+        {
+            if (completedRendererIdSidecars.TryGetValue(serial, out capture))
+            {
+                completedRendererIdSidecars.Remove(serial);
+                return true;
+            }
+            capture = null;
+            return false;
         }
 
         public void Dispose()
         {
-            if (copyMaterial == null)
+            if (copyMaterial != null)
+            {
+                if (Application.isPlaying)
+                    UnityEngine.Object.Destroy(copyMaterial);
+                else
+                    UnityEngine.Object.DestroyImmediate(copyMaterial);
+            }
+            if (rendererIdSidecarMaterial != null)
+            {
+                if (Application.isPlaying)
+                    UnityEngine.Object.Destroy(rendererIdSidecarMaterial);
+                else
+                    UnityEngine.Object.DestroyImmediate(rendererIdSidecarMaterial);
+            }
+            foreach (RendererIdSidecarResources resources in
+                     rendererIdSidecarResources.Values)
+                resources.Dispose();
+            rendererIdSidecarResources.Clear();
+        }
+
+        internal void PrepareRendererIdSidecarBeforeCulling(Camera camera)
+        {
+            if (camera == null ||
+                (!rendererIdSidecarRequested && activeCaptureInvocationSerial <= 0))
                 return;
-            if (Application.isPlaying)
-                UnityEngine.Object.Destroy(copyMaterial);
-            else
-                UnityEngine.Object.DestroyImmediate(copyMaterial);
+
+            RendererIdSidecarResources resources;
+            if (!rendererIdSidecarResources.TryGetValue(camera, out resources))
+            {
+                resources = new RendererIdSidecarResources();
+                rendererIdSidecarResources.Add(camera, resources);
+            }
+            if (resources.readbackPending)
+                return;
+
+            resources.Restore();
+            resources.width = Mathf.Max(camera.pixelWidth, 1);
+            resources.height = Mathf.Max(camera.pixelHeight, 1);
+            Renderer[] renderers = UnityEngine.Object.FindObjectsOfType<Renderer>();
+            Array.Sort(renderers, CompareRendererIds);
+            var candidates = new List<RendererIdCandidate>();
+            for (int rendererIndex = 0; rendererIndex < renderers.Length; rendererIndex++)
+            {
+                Renderer renderer = renderers[rendererIndex];
+                if (renderer == null || !renderer.enabled ||
+                    !renderer.gameObject.activeInHierarchy ||
+                    (camera.cullingMask & (1 << renderer.gameObject.layer)) == 0)
+                    continue;
+                Material[] materials = renderer.sharedMaterials;
+                for (int materialIndex = 0;
+                     materialIndex < materials.Length;
+                     materialIndex++)
+                {
+                    Material material = materials[materialIndex];
+                    if (material == null || material.shader == null ||
+                        material.renderQueue < 3660 || material.renderQueue > 3740)
+                        continue;
+                    candidates.Add(new RendererIdCandidate
+                    {
+                        renderer = renderer,
+                        material = material,
+                        materialIndex = materialIndex,
+                        sortKey = BuildRendererPath(renderer) + "/" +
+                            materialIndex.ToString("D4", CultureInfo.InvariantCulture) + "/" +
+                            material.name,
+                        rendererInstanceId = renderer.GetInstanceID()
+                    });
+                }
+            }
+            candidates.Sort(CompareRendererIdCandidates);
+            if (candidates.Count >= (1 << 24))
+                return;
+
+            for (int index = 0; index < candidates.Count; index++)
+            {
+                RendererIdCandidate candidate = candidates[index];
+                var original = new MaterialPropertyBlock();
+                candidate.renderer.GetPropertyBlock(
+                    original, candidate.materialIndex);
+                resources.restores.Add(new RendererIdPropertyBlockRestore
+                {
+                    renderer = candidate.renderer,
+                    materialIndex = candidate.materialIndex,
+                    original = original,
+                    originalWasEmpty = original.isEmpty
+                });
+                var applied = new MaterialPropertyBlock();
+                candidate.renderer.GetPropertyBlock(
+                    applied, candidate.materialIndex);
+                applied.SetFloat(RendererIdSidecarPropertyId, index + 1);
+                candidate.renderer.SetPropertyBlock(
+                    applied, candidate.materialIndex);
+                resources.entries.Add(new EndfieldRendererIdSidecarEntry
+                {
+                    id = index + 1,
+                    rendererInstanceId = candidate.renderer.GetInstanceID(),
+                    rendererPath = BuildRendererPath(candidate.renderer),
+                    materialIndex = candidate.materialIndex,
+                    materialName = candidate.material.name,
+                    shaderName = candidate.material.shader.name,
+                    renderQueue = candidate.material.renderQueue
+                });
+            }
+            resources.preparedBeforeCull = true;
+        }
+
+        private sealed class RendererIdCandidate
+        {
+            internal Renderer renderer;
+            internal Material material;
+            internal int materialIndex;
+            internal string sortKey;
+            internal int rendererInstanceId;
+        }
+
+        private static int CompareRendererIdCandidates(
+            RendererIdCandidate left,
+            RendererIdCandidate right)
+        {
+            int key = string.CompareOrdinal(left.sortKey, right.sortKey);
+            if (key != 0)
+                return key;
+            return left.rendererInstanceId.CompareTo(right.rendererInstanceId);
         }
 
         internal EndfieldRecoveredSceneMVRequest CollectRequest(Camera camera)
@@ -761,11 +1066,298 @@ namespace EndfieldGraphShaderLab
                 out failure);
             if (ready)
             {
+                RenderRendererIdSidecar(
+                    context,
+                    camera,
+                    cullingResults,
+                    depth,
+                    depthFormat,
+                    RemoveWorldUILayer(layerMask),
+                    dynamicBatching,
+                    gpuInstancing);
                 HDRenderPipeline.ReportRecoveredAfterPostDescriptors(
                     output.descriptor.graphicsFormat,
                     DescriptorsMatch(input.descriptor, output.descriptor));
             }
+            else
+            {
+                PublishRendererIdSidecarFailureForCamera(
+                    camera,
+                    "after-post compositor rejected the frame: " + failure);
+            }
             return ready;
+        }
+
+        internal void FinalizeRendererIdSidecarAfterSubmit()
+        {
+            foreach (RendererIdSidecarResources resources in
+                     rendererIdSidecarResources.Values)
+                resources.Restore();
+        }
+
+        private void RenderRendererIdSidecar(
+            ScriptableRenderContext context,
+            Camera camera,
+            CullingResults cullingResults,
+            RenderTexture depth,
+            GraphicsFormat depthFormat,
+            int layerMask,
+            bool dynamicBatching,
+            bool gpuInstancing)
+        {
+            if (camera == null ||
+                (!rendererIdSidecarRequested && activeCaptureInvocationSerial <= 0))
+                return;
+            RendererIdSidecarResources resources;
+            if (!rendererIdSidecarResources.TryGetValue(camera, out resources))
+                return;
+            if (rendererIdSidecarMaterial == null)
+            {
+                PublishRendererIdSidecarFailure(
+                    activeCaptureInvocationSerial,
+                    resources,
+                    "renderer-ID sidecar shader is missing or unsupported");
+                return;
+            }
+            if (depth == null)
+            {
+                PublishRendererIdSidecarFailure(
+                    activeCaptureInvocationSerial,
+                    resources,
+                    "after-post depth target is unavailable");
+                return;
+            }
+            if (!resources.preparedBeforeCull)
+            {
+                PublishRendererIdSidecarFailure(
+                    activeCaptureInvocationSerial,
+                    resources,
+                    "renderer-ID properties were not prepared before culling");
+                return;
+            }
+            if (resources.entries.Count == 0)
+            {
+                PublishRendererIdSidecarFailure(
+                    activeCaptureInvocationSerial,
+                    resources,
+                    "no active queue-3660..3740 renderer/material slots were eligible");
+                return;
+            }
+            if (resources.readbackPending)
+                return;
+            if (!SystemInfo.supportsAsyncGPUReadback ||
+                !SystemInfo.IsFormatSupported(
+                    RendererIdSidecarFormat, FormatUsage.Render))
+            {
+                PublishRendererIdSidecarFailure(
+                    activeCaptureInvocationSerial,
+                    resources,
+                    "RGBA32F render or async GPU readback is unsupported");
+                return;
+            }
+            if (resources.sidecar == null ||
+                !resources.sidecar.IsCreated() ||
+                resources.sidecar.width != resources.width ||
+                resources.sidecar.height != resources.height)
+            {
+                if (resources.sidecar != null)
+                {
+                    if (resources.sidecar.IsCreated())
+                        resources.sidecar.Release();
+                    if (Application.isPlaying)
+                        UnityEngine.Object.Destroy(resources.sidecar);
+                    else
+                        UnityEngine.Object.DestroyImmediate(resources.sidecar);
+                }
+                var descriptor = new RenderTextureDescriptor(
+                    resources.width,
+                    resources.height)
+                {
+                    graphicsFormat = RendererIdSidecarFormat,
+                    depthStencilFormat = GraphicsFormat.None,
+                    depthBufferBits = 0,
+                    dimension = TextureDimension.Tex2D,
+                    volumeDepth = 1,
+                    msaaSamples = 1,
+                    bindMS = false,
+                    useMipMap = false,
+                    autoGenerateMips = false,
+                    enableRandomWrite = false,
+                    sRGB = false,
+                    useDynamicScale = false
+                };
+                resources.sidecar = new RenderTexture(descriptor)
+                {
+                    name = "Recovered Renderer-ID Sidecar RGBA32F",
+                    hideFlags = HideFlags.HideAndDontSave,
+                    filterMode = FilterMode.Point,
+                    wrapMode = TextureWrapMode.Clamp
+                };
+                resources.sidecar.Create();
+            }
+            if (!resources.sidecar.IsCreated() ||
+                resources.sidecar.graphicsFormat != RendererIdSidecarFormat)
+                return;
+
+            bool renderPassBegun = false;
+            bool subPassBegun = false;
+            bool sidecarDrawRecorded = false;
+            var attachments = new NativeArray<AttachmentDescriptor>(2, Allocator.Temp);
+            var colors = new NativeArray<int>(1, Allocator.Temp);
+            try
+            {
+                var sidecarAttachment = new AttachmentDescriptor(
+                    RendererIdSidecarFormat);
+                sidecarAttachment.ConfigureTarget(resources.sidecar, false, true);
+                sidecarAttachment.ConfigureClear(Color.clear);
+                attachments[0] = sidecarAttachment;
+                var depthAttachment = new AttachmentDescriptor(depthFormat);
+                depthAttachment.ConfigureTarget(depth, true, true);
+                attachments[1] = depthAttachment;
+                colors[0] = 0;
+                context.BeginRenderPass(
+                    resources.width,
+                    resources.height,
+                    1,
+                    attachments,
+                    1);
+                renderPassBegun = true;
+                context.BeginSubPass(colors, true, true);
+                subPassBegun = true;
+                DrawRenderers(
+                    context,
+                    camera,
+                    cullingResults,
+                    new RenderQueueRange(3660, 3740),
+                    SortingCriteria.CommonTransparent |
+                        SortingCriteria.OptimizeStateChanges |
+                        SortingCriteria.RendererPriority,
+                    layerMask,
+                    AfterPostPasses,
+                    dynamicBatching,
+                    gpuInstancing,
+                    rendererIdSidecarMaterial,
+                    0);
+                sidecarDrawRecorded = true;
+            }
+            catch (Exception exception)
+            {
+                PublishRendererIdSidecarFailure(
+                    activeCaptureInvocationSerial,
+                    resources,
+                    exception.Message);
+            }
+            finally
+            {
+                if (subPassBegun)
+                    context.EndSubPass();
+                if (renderPassBegun)
+                    context.EndRenderPass();
+                colors.Dispose();
+                attachments.Dispose();
+            }
+
+            if (!sidecarDrawRecorded)
+                return;
+
+            long serial = activeCaptureInvocationSerial;
+            if (serial <= 0)
+                return;
+            var pending = new RendererIdSidecarPendingReadback
+            {
+                resources = resources,
+                captureInvocationSerial = serial,
+                frame = Time.frameCount,
+                width = resources.width,
+                height = resources.height,
+                entries = resources.entries.ToArray()
+            };
+            resources.readbackPending = true;
+            var readback = new CommandBuffer
+            {
+                name = "Recovered renderer-ID sidecar RGBA32F readback"
+            };
+            readback.RequestAsyncReadback(
+                resources.sidecar,
+                0,
+                request => CompleteRendererIdSidecarReadback(pending, request));
+            context.ExecuteCommandBuffer(readback);
+            readback.Release();
+        }
+
+        private static void CompleteRendererIdSidecarReadback(
+            RendererIdSidecarPendingReadback pending,
+            AsyncGPUReadbackRequest request)
+        {
+            var capture = new EndfieldRendererIdSidecarCapture
+            {
+                captureInvocationSerial = pending.captureInvocationSerial,
+                frame = pending.frame,
+                width = pending.width,
+                height = pending.height,
+                entries = pending.entries,
+                available = !request.hasError,
+                failure = request.hasError
+                    ? "RGBA32F renderer-ID sidecar readback failed"
+                    : string.Empty
+            };
+            if (!request.hasError)
+            {
+                try
+                {
+                    var data = request.GetData<float>();
+                    capture.rgba = new float[data.Length];
+                    for (int i = 0; i < data.Length; i++)
+                        capture.rgba[i] = data[i];
+                }
+                catch (Exception exception)
+                {
+                    capture.available = false;
+                    capture.failure =
+                        "RGBA32F renderer-ID sidecar readback exception: " +
+                        exception.Message;
+                }
+            }
+            pending.resources.readbackPending = false;
+            if (pending.resources.disposeRequested)
+                pending.resources.ReleaseSidecar();
+            completedRendererIdSidecars[pending.captureInvocationSerial] = capture;
+        }
+
+        private static void PublishRendererIdSidecarFailure(
+            long serial,
+            RendererIdSidecarResources resources,
+            string failure)
+        {
+            if (serial <= 0)
+                return;
+            resources.readbackPending = false;
+            completedRendererIdSidecars[serial] =
+                new EndfieldRendererIdSidecarCapture
+                {
+                    captureInvocationSerial = serial,
+                    frame = Time.frameCount,
+                    width = resources.width,
+                    height = resources.height,
+                    available = false,
+                    failure = failure ?? "renderer-ID sidecar failed closed",
+                    entries = resources.entries.ToArray()
+                };
+        }
+
+        private void PublishRendererIdSidecarFailureForCamera(
+            Camera camera,
+            string failure)
+        {
+            if (activeCaptureInvocationSerial <= 0 || camera == null)
+                return;
+            RendererIdSidecarResources resources;
+            if (!rendererIdSidecarResources.TryGetValue(camera, out resources))
+                return;
+            PublishRendererIdSidecarFailure(
+                activeCaptureInvocationSerial,
+                resources,
+                failure);
         }
 
         private bool Composite(
@@ -986,6 +1578,33 @@ namespace EndfieldGraphShaderLab
             bool dynamicBatching,
             bool gpuInstancing)
         {
+            DrawRenderers(
+                context,
+                camera,
+                cullingResults,
+                queueRange,
+                sortingCriteria,
+                layerMask,
+                shaderPasses,
+                dynamicBatching,
+                gpuInstancing,
+                null,
+                -1);
+        }
+
+        private static void DrawRenderers(
+            ScriptableRenderContext context,
+            Camera camera,
+            CullingResults cullingResults,
+            RenderQueueRange queueRange,
+            SortingCriteria sortingCriteria,
+            int layerMask,
+            ShaderTagId[] shaderPasses,
+            bool dynamicBatching,
+            bool gpuInstancing,
+            Material overrideMaterial,
+            int overrideMaterialPassIndex)
+        {
             var sortingSettings = new SortingSettings(camera)
             {
                 criteria = sortingCriteria
@@ -1002,6 +1621,12 @@ namespace EndfieldGraphShaderLab
                 // request (47); Unity owns the corresponding per-draw payloads.
                 perObjectData = (PerObjectData)47
             };
+            if (overrideMaterial != null)
+            {
+                drawingSettings.overrideMaterial = overrideMaterial;
+                drawingSettings.overrideMaterialPassIndex =
+                    overrideMaterialPassIndex;
+            }
             for (int i = 1; i < shaderPasses.Length; i++)
                 drawingSettings.SetShaderPassName(i, shaderPasses[i]);
             var filteringSettings = new FilteringSettings(queueRange, layerMask);
@@ -1009,6 +1634,67 @@ namespace EndfieldGraphShaderLab
                 cullingResults,
                 ref drawingSettings,
                 ref filteringSettings);
+        }
+
+        private static int CompareRendererIds(Renderer left, Renderer right)
+        {
+            int path = string.CompareOrdinal(
+                BuildRendererPath(left), BuildRendererPath(right));
+            if (path != 0)
+                return path;
+            return left.GetInstanceID().CompareTo(right.GetInstanceID());
+        }
+
+        private static string BuildRendererPath(Renderer renderer)
+        {
+            if (renderer == null)
+                return string.Empty;
+            var names = new List<string>();
+            Transform current = renderer.transform;
+            while (current != null)
+            {
+                names.Add(current.name);
+                current = current.parent;
+            }
+            names.Reverse();
+            return string.Join("/", names.ToArray());
+        }
+
+        private static bool IsRequested(
+            string environmentVariable,
+            string commandLineArgument)
+        {
+            string value = Environment.GetEnvironmentVariable(environmentVariable);
+            if (IsEnabled(value))
+                return true;
+            string[] arguments = Environment.GetCommandLineArgs();
+            for (int i = 0; i < arguments.Length; i++)
+            {
+                string argument = arguments[i];
+                if (string.Equals(
+                        argument,
+                        commandLineArgument,
+                        StringComparison.OrdinalIgnoreCase))
+                    return true;
+                string prefix = commandLineArgument + "=";
+                if (argument.StartsWith(
+                        prefix,
+                        StringComparison.OrdinalIgnoreCase) &&
+                    IsEnabled(argument.Substring(prefix.Length)))
+                    return true;
+            }
+            return false;
+        }
+
+        private static bool IsEnabled(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return false;
+            string normalized = value.Trim();
+            return string.Equals(normalized, "1", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(normalized, "true", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(normalized, "yes", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(normalized, "on", StringComparison.OrdinalIgnoreCase);
         }
 
         private static void RestoreTarget(

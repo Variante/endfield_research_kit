@@ -946,7 +946,17 @@ namespace EndfieldGraphShaderLabEditor
             {
                 camera.targetTexture = target;
                 RenderTexture.active = target;
-                camera.Render();
+                EndfieldRecoveredRendererIdSidecarCaptureBridge.Begin(
+                    captureInvocationSerial);
+                try
+                {
+                    camera.Render();
+                }
+                finally
+                {
+                    EndfieldRecoveredRendererIdSidecarCaptureBridge.End();
+                }
+                EndfieldRecoveredRendererIdSidecarCaptureBridge.WaitForReadback();
                 readback.ReadPixels(new Rect(0, 0, Width, Height), 0, 0, false);
                 readback.Apply(false, false);
                 File.WriteAllBytes(outputPath, readback.EncodeToPNG());
@@ -973,6 +983,64 @@ namespace EndfieldGraphShaderLabEditor
                     nonBackgroundPixels++;
             }
 
+            EndfieldRendererIdSidecarCapture sidecarCapture;
+            bool sidecarAvailable =
+                EndfieldRecoveredRendererIdSidecarCaptureBridge.TryTake(
+                    captureInvocationSerial,
+                    out sidecarCapture) &&
+                sidecarCapture != null && sidecarCapture.available &&
+                sidecarCapture.rgba != null;
+            string sidecarRawPath = string.Empty;
+            string sidecarDictionaryPath = string.Empty;
+            long sidecarNonZeroPixelCount = 0;
+            string sidecarFailure = sidecarCapture == null
+                ? "no renderer-ID sidecar capture was published"
+                : sidecarCapture.failure ?? string.Empty;
+            long validatedSidecarNonZeroPixelCount = 0;
+            if (sidecarAvailable)
+            {
+                string sidecarValidationFailure;
+                if (!TryValidateRendererIdSidecarCapture(
+                        sidecarCapture,
+                        captureInvocationSerial,
+                        out validatedSidecarNonZeroPixelCount,
+                        out sidecarValidationFailure))
+                {
+                    sidecarAvailable = false;
+                    sidecarFailure = sidecarValidationFailure;
+                }
+            }
+            if (sidecarAvailable)
+            {
+                string sidecarStem = Path.GetFileNameWithoutExtension(fileName) +
+                    "_renderer_ids";
+                sidecarRawPath = Path.Combine(outputDirectory, sidecarStem + ".raw");
+                sidecarDictionaryPath = Path.Combine(
+                    outputDirectory,
+                    sidecarStem + ".json");
+                byte[] sidecarBytes = new byte[
+                    sidecarCapture.rgba.Length * sizeof(float)];
+                Buffer.BlockCopy(
+                    sidecarCapture.rgba,
+                    0,
+                    sidecarBytes,
+                    0,
+                    sidecarBytes.Length);
+                File.WriteAllBytes(sidecarRawPath, sidecarBytes);
+                File.WriteAllText(
+                    sidecarDictionaryPath,
+                    JsonUtility.ToJson(
+                        new EndfieldRendererIdSidecarDictionary
+                        {
+                            entries = sidecarCapture.entries ??
+                                Array.Empty<EndfieldRendererIdSidecarEntry>()
+                        },
+                        true),
+                    new UTF8Encoding(false));
+                sidecarNonZeroPixelCount = validatedSidecarNonZeroPixelCount;
+                sidecarFailure = string.Empty;
+            }
+
             return new FrameRecord
             {
                 captureInvocationSerial = captureInvocationSerial,
@@ -991,7 +1059,91 @@ namespace EndfieldGraphShaderLabEditor
                     (int)background.b, (int)background.a,
                 },
                 roiMeasurements = MeasureRois(pixels, oracleSample),
+                rendererIdSidecarAvailable = sidecarAvailable,
+                rendererIdSidecarRaw = RelativeOutputPath(sidecarRawPath),
+                rendererIdSidecarDictionary = RelativeOutputPath(sidecarDictionaryPath),
+                rendererIdSidecarNonZeroPixelCount = sidecarNonZeroPixelCount,
+                rendererIdSidecarFailure = sidecarFailure,
             };
+        }
+
+        private static string RelativeOutputPath(string path)
+        {
+            return string.IsNullOrEmpty(path)
+                ? string.Empty
+                : OutputDirectoryRelativePath + "/" +
+                    Path.GetFileName(path);
+        }
+
+        private static bool TryValidateRendererIdSidecarCapture(
+            EndfieldRendererIdSidecarCapture capture,
+            long expectedSerial,
+            out long nonZeroPixelCount,
+            out string failure)
+        {
+            nonZeroPixelCount = 0;
+            failure = string.Empty;
+            if (capture.captureInvocationSerial != expectedSerial)
+            {
+                failure = "renderer-ID sidecar capture serial does not match the PNG";
+                return false;
+            }
+            if (capture.width != Width || capture.height != Height)
+            {
+                failure = "renderer-ID sidecar dimensions do not match the PNG";
+                return false;
+            }
+            int expectedFloatCount = checked(Width * Height * 4);
+            if (capture.rgba == null || capture.rgba.Length != expectedFloatCount)
+            {
+                failure = "renderer-ID sidecar RGBA32F raw length is not width*height*4";
+                return false;
+            }
+            EndfieldRendererIdSidecarEntry[] entries = capture.entries ??
+                Array.Empty<EndfieldRendererIdSidecarEntry>();
+            var ids = new HashSet<int>();
+            for (int entryIndex = 0; entryIndex < entries.Length; entryIndex++)
+            {
+                EndfieldRendererIdSidecarEntry entry = entries[entryIndex];
+                if (entry == null || entry.id != entryIndex + 1 ||
+                    entry.id <= 0 || entry.id >= (1 << 24) ||
+                    entry.rendererInstanceId == 0 ||
+                    string.IsNullOrEmpty(entry.rendererPath) ||
+                    !ids.Add(entry.id))
+                {
+                    failure =
+                        "renderer-ID sidecar dictionary IDs are not unique contiguous " +
+                        "values in [1,2^24)";
+                    return false;
+                }
+            }
+            for (int pixel = 0; pixel < capture.rgba.Length; pixel += 4)
+            {
+                float idValue = capture.rgba[pixel];
+                for (int channel = 0; channel < 4; channel++)
+                {
+                    if (float.IsNaN(capture.rgba[pixel + channel]) ||
+                        float.IsInfinity(capture.rgba[pixel + channel]))
+                    {
+                        failure = "renderer-ID sidecar contains a non-finite value";
+                        return false;
+                    }
+                }
+                if (idValue <= 0.5f)
+                    continue;
+                float rounded = Mathf.Round(idValue);
+                if (Mathf.Abs(idValue - rounded) > 1.0e-4f ||
+                    rounded <= 0.0f || rounded >= (1 << 24) ||
+                    !ids.Contains((int)rounded))
+                {
+                    failure =
+                        "renderer-ID sidecar contains a non-integral, out-of-range, " +
+                        "or unmapped pixel ID";
+                    return false;
+                }
+                nonZeroPixelCount++;
+            }
+            return true;
         }
 
         private static Color32 SelectCornerConsensusBackground(Color32[] pixels)
@@ -1602,6 +1754,31 @@ namespace EndfieldGraphShaderLabEditor
                 string.Equals(frame.pngSha256, Sha256File(path),
                     StringComparison.OrdinalIgnoreCase),
                 "Frame hash/size drifted for " + label + " at PTS " + pts);
+            if (frame.rendererIdSidecarAvailable)
+            {
+                string sidecarRaw = Path.Combine(
+                    outputDirectory,
+                    Path.GetFileName(frame.rendererIdSidecarRaw));
+                string sidecarDictionary = Path.Combine(
+                    outputDirectory,
+                    Path.GetFileName(frame.rendererIdSidecarDictionary));
+                Require(File.Exists(sidecarRaw) && File.Exists(sidecarDictionary),
+                    "Renderer-ID sidecar files are missing for " + label +
+                    " at PTS " + pts);
+                Require(new FileInfo(sidecarRaw).Length ==
+                    (long)Width * Height * 4 * sizeof(float) &&
+                    frame.rendererIdSidecarNonZeroPixelCount >= 0 &&
+                    frame.rendererIdSidecarNonZeroPixelCount <=
+                        (long)Width * Height,
+                    "Renderer-ID sidecar dimensions/count drifted for " + label +
+                    " at PTS " + pts);
+            }
+            else
+            {
+                Require(!string.IsNullOrEmpty(frame.rendererIdSidecarFailure),
+                    "Renderer-ID sidecar failed without a diagnostic for " +
+                    label + " at PTS " + pts);
+            }
         }
 
         private static void DeletePreviousCaptureFiles(string directory)
@@ -1613,6 +1790,7 @@ namespace EndfieldGraphShaderLabEditor
                 "composite_*.png", "actor_only_*.png", "effects_only_*.png",
                 "peak_particles_only_*.png",
                 "start_01_only_*.png", "start_02_only_*.png", "start_03_only_*.png",
+                "*_renderer_ids.raw", "*_renderer_ids.json",
             };
             for (int patternIndex = 0; patternIndex < patterns.Length; patternIndex++)
             {
@@ -1999,6 +2177,11 @@ namespace EndfieldGraphShaderLabEditor
             public float nonBackgroundCoverage;
             public int[] measuredBackgroundRgba;
             public RoiMeasurement[] roiMeasurements;
+            public bool rendererIdSidecarAvailable;
+            public string rendererIdSidecarRaw;
+            public string rendererIdSidecarDictionary;
+            public long rendererIdSidecarNonZeroPixelCount;
+            public string rendererIdSidecarFailure;
         }
 
         [Serializable]

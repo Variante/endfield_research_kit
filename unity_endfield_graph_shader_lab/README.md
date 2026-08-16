@@ -4179,10 +4179,14 @@ record whose `0x18054396F..0x180543BD1` continuation partitions and copies
 0x50-byte ranges. Generic `0x180555180` produces a 0x18-byte index table stored
 at backend object `+0x208`, with count at `+0x210`; indirect consumer
 `0x180542E10` uses those indices to enter resource/parameter builder
-`0x1805419D0`. That builder's terminal object-vtable `+0x210` call is now the
-strongest unresolved backend boundary. None of these CPU record paths proves a
-graphics-API draw or submit. The next native queue is the concrete target and
-object provenance of that vtable call, not further opcode `0x4D` expansion.
+`0x1805419D0`. Callback-row builder `0x180541680` allocates 0x190-byte rows,
+initializes `+0x10/+0x18` to zero, and registers callback `0x180542E10` through
+an external manager's vtable `+0xC28`. The manager populates row `+0x10`; the
+callback forwards it as Windows x64 argument six, and exact return-address and
+prologue accounting maps the builder's terminal `vtable+0x210` receiver back
+to that same dynamic resource/parameter-provider. Its external manager,
+allocation, and concrete vtable remain unresolved. None of these CPU record
+paths proves a graphics-API draw or submit.
 Retail queue 3704 belongs to the source-closed 3660--3740
 `AfterPostprocessTransparent` phase. In the exact SceneMV route that range is
 owned by the after-post callback, not main transparent. This isolated shader
@@ -4358,6 +4362,15 @@ root-only lanes produce 168 unique invocations. This avoids misusing
 `Time.frameCount` when several explicit renders occur in one Editor frame. The
 serial is a Unity diagnostic capture identity only, not a native frame,
 command-buffer generation, or retail RendererList identity.
+With `-endfield-recovered-renderer-id-sidecar`, the actor-composed harness also
+records a separate RGBA32F renderer-ID pass using the same after-post cull,
+depth, queue 3660--3740, layer mask, and transparent sort. The first D3D12 run
+has 12 positive serial joins in composite/effects/peak lanes at PTS 39367,
+39934, 40000, and 40167, with about 258k--485k nonzero ID pixels. The remaining
+156 calls stay unavailable behind the existing SceneMV/piaodai queue-3702 gate
+or have no eligible renderer. Because the override shader does not reproduce
+source alpha clip, cull, or discard, this is diagnostic renderer
+admission/depth/sort evidence only and keeps `visibleAdmission=false`.
 Four-corner background consensus remains stable when the animated coat crosses
 a frame corner. Predicate-only retail ROI comparison showed the static-only
 `broadTeal` peak at PTS 40000 was 3.499% composite versus 21.699% retail, while
