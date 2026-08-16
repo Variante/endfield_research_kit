@@ -2092,9 +2092,15 @@ only stable interpretation and priorities.
    `0x18092ec20..0x18092ef5a`. That method allocates a 0x20-byte
    callback/resource node, calls its nested interface `+0xc18`, and writes the
    returned provider to row `+0x10` at `0x18092ed78`; row `+0x18` remains zero
-   on this bounded path. The provider's nested concrete type and terminal
-   `+0x210` implementation remain the strongest unresolved backend boundary;
-   no CPU record helper is a proven draw or submit.
+   on this bounded path. Provider allocator `0x180936560` returns a pooled or
+   newly constructed 0x2A00 front context with the same vtable. Its terminal
+   `+0x210` is `0x180937b70`: recording mode emits opcode `0x2727`, while
+   immediate mode reaches API-2 backend `+0x210` at `0x1808539d0`, which only
+   replaces state bit `0x40` in `[backend+0x2e48]+0xbc`. Recorded `0x2727`
+   dispatches through front `+0xeb0`, opcode `0x273d`, a 0x38-byte state copy,
+   and then dynamic context `+0x70` vtable `+0x5d0`. That last interface is the
+   next unresolved boundary; this chain is state transport, not a proven draw
+   or submit.
    The actor-composed Unity witness assigns one strictly monotonic
    `captureInvocationSerial` to every actual `Camera.Render()` call. Its 24
    anchors times seven aggregate/root lanes validate as 168 unique invocations,
@@ -2118,10 +2124,11 @@ only stable interpretation and priorities.
    are queue-3704 `tiaodaifenwei_01 (7)` (~432k pixels),
    `fenweiqiliu_02 (3)` (~21k), and `shoutiaodai_01 (1)` (~3.5k), so the actor
    adds no renderer in this queue range.
-   The sidecar now derives its 960x540 internal extent from the actual
-   after-post depth attachment rather than incorrectly allocating at the
-   1920x1080 presentation size. Each positive frame publishes per-renderer
-   pixel counts plus inclusive internal and presentation-scaled bounding boxes;
+   The sidecar now derives its 960x540 extent from the actual after-post depth
+   attachment rather than the Editor/HiDPI-sensitive camera pixel dimensions,
+   which had incorrectly allocated a 1920x1080 raw target for the 960x540
+   capture. Each positive frame publishes per-renderer pixel counts plus
+   inclusive internal and capture-scaled bounding boxes;
    validators require their summed counts to equal the raw nonzero total and
    recheck every identity and bound.
    Override-material coverage does not preserve
