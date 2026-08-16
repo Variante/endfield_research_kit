@@ -2128,10 +2128,15 @@ only stable interpretation and priorities.
    refreshed 168-call capture has 99 positive sidecars and 69 explicit
    no-selected-material results. Every active root-only frame is positive:
    start_01 8/8 at 432,119 pixels, start_02 15/15 at 289,686, and start_03
-   23/23 at 227,641. Each root's coverage and bounds remain constant over its
-   active anchors, proving static geometry ownership but also showing that the
-   source material AnimationClip curves are not yet applied to cloned diagnostic
-   instances. Red-channel IDs are local to one `captureInvocationSerial`;
+   23/23 at 227,641. Sidecar coverage and bounds remain constant because that
+   override measures geometry ownership. A direct probe established that
+   `SampleAnimation` writes classID-23 `material.*` curves into renderer MPBs,
+   not `sharedMaterials` or `renderer.material`. The capture now resolves the
+   exact editor curves by hierarchy path and mirrors all 21/15/17 start_01/_02/
+   _03 bindings into the cloned diagnostic material plus preserved MPB, without
+   AnimationMode or normal-viewer mutation. Active curve states and root PNGs
+   must vary while inactive samples stay fail-closed; the validated capture has
+   4/3/9 distinct active PNG hashes respectively. Red-channel IDs are local to one `captureInvocationSerial`;
    cross-frame joins use the stored ordinal hierarchy path, material slot/name,
    and stable renderer key rather than comparing numeric IDs. The four later
    composite/effects pairs are byte-identical; their stable effect contributors
