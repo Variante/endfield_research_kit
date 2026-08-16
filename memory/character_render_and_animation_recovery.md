@@ -1543,6 +1543,14 @@ only stable interpretation and priorities.
    singleton `+0xc0`, 24-byte slots, and `0x18106aae0` are a distinct family.
    Runtime values and final survivor/order/lifetime capture remain required;
    do not synthesize a `Renderer[]` bridge from the integer ECS handle.
+   Downstream HGMesh workers now prove a real ordering/publication stage:
+   accepted 64-byte records are sorted in place by `0x181043bd0` using
+   comparator `0x180fe0740`, an unsigned lexicographic comparison over the
+   first 16 record bytes. Publication skips `record+0x20 == 0xffffffff`,
+   resolves IDs via `0x181059410`, and appends resource pointers through
+   `0x18105e350`. The key's semantic meaning and exact pre-sort survivor
+   predicate remain unresolved, as do indirect draw and backend submission;
+   do not relabel this proven key order as transparent-depth order yet.
    All six selected materials have `_IsSceneEffect=0` and
    `_EnableTransparentMV=0`, so `_VFXParams1` and transform history are safely
    bypassed rather than guessed. Exact inverse-VP soft depth, live

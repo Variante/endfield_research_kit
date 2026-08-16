@@ -192,6 +192,7 @@ namespace EndfieldGraphShaderLabEditor
             Dictionary<string, object> ecsProducer = L.Dict(rendererList["ecsRendererListProducer"]);
             Dictionary<string, object> nativeAdapter = L.Dict(ecsProducer["nativeAdapter"]);
             Dictionary<string, object> commandConsumer = L.Dict(nativeAdapter["commandConsumer"]);
+            Dictionary<string, object> survivorSort = L.Dict(nativeAdapter["survivorSortPublication"]);
             L.Require(L.Str(boundary, "callbackConstantBufferPublication") == "not_present" &&
                 L.Str(boundary, "callbackGlobalVectorAndTexturePublication") == "present" &&
                 !L.Bool(boundary, "serializedBindingsAreD3D12RootParameters") &&
@@ -243,6 +244,11 @@ namespace EndfieldGraphShaderLabEditor
                 L.Long(commandConsumer, "slotStride") == 16 &&
                 L.Str(commandConsumer, "consumerVA") == "0x181005c10" &&
                 L.Str(commandConsumer, "excludedParallelFamily").Contains("HGTree") &&
+                L.Long(survivorSort, "recordStride") == 64 &&
+                L.Long(survivorSort, "comparatorKeyBytes") == 16 &&
+                L.Str(survivorSort, "sortVA") == "0x181043bd0" &&
+                L.Str(survivorSort, "semanticKey").Contains("unresolved") &&
+                L.List(survivorSort["notYetProven"]).Count == 4 &&
                 !L.Bool(consumers, "opaqueArgument") &&
                 L.Str(consumers, "frameSettingsGate") == "TransparentObjects" &&
                 L.Str(consumers, "survivorIdentity") ==
