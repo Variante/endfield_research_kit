@@ -9,6 +9,12 @@
       "sha256": "2805FA0420A0DE9A5DC15A4CAFBFE41CF92DCF11ED2B6BB66FD55AC653EB69B1",
       "objectType": "PinnedNativeBodyTargets"
     },
+    "effectInstanceBodyTargets": {
+      "path": "scratch/reverse_engineering/zhuangfy_lizi_lodfade_20260724/effect_instance_native.json",
+      "bytes": 6832004,
+      "sha256": "DA3C45020BBC0CA6EDA73448A7F069B77C2AD0D28177E829C44B9E583BA0B1E7",
+      "objectType": "PinnedEffectInstanceBodyTargets"
+    },
     "ownerReport": {
       "path": "reports/assets/character_recovery/overview_effect_owner_animator_negative_20260815.md",
       "bytes": 9501,
@@ -66,6 +72,12 @@
         "m_Handle",
         "m_NullPlayable"
       ],
+      "fieldTokens": {
+        "m_Handle": "0x04000151",
+        "m_NullPlayable": "0x04000152"
+      },
+      "createSignature": "Create(PlayableGraph graph, inputCount)",
+      "injectedBoundary": "CreateHandleInternal_Injected carries internal-call metadata, but its native body and exact by-reference/value lowering are not recovered",
       "methodTokens": {
         "Create": "0x06000339",
         "CreateHandle": "0x0600033A",
@@ -75,7 +87,22 @@
         "CreateHandleInternal": "0x0600033E",
         "staticConstructor": "0x0600033F",
         "CreateHandleInternal_Injected": "0x06000340"
-      }
+      },
+      "stockAnimationMixerComparison": {
+        "stockTypeToken": "0x02000057",
+        "stockCreateToken": "0x06000371",
+        "stockCreateHasNormalizeWeightsParameter": true,
+        "advancedCreateHasNormalizeWeightsParameter": false,
+        "stockHasImplicitPlayableConversion": true,
+        "advancedHasImplicitPlayableConversion": false,
+        "behavioralEquivalenceProven": false
+      },
+      "unresolvedSemantics": [
+        "default and normalized input weights",
+        "null-playable state transitions and equality behavior",
+        "accepted input-count range and failure behavior",
+        "native CreateHandleInternal_Injected implementation"
+      ]
     },
     "clipSlots": [
       {
@@ -101,6 +128,312 @@
     },
     "clipStopTimeSeconds": 6.366667
   },
+  "effectAnimationControlAbi": {
+    "runtimePatchBoundary": "each listed method checks an IFix dispatch ID; the decoded IL2CPP fallback body does not prove the effective retail body when a patch is active",
+    "methods": {
+      "SetManual": {
+        "token": "0x060059C7",
+        "va": "0x187431E24",
+        "parameters": [
+          "useManual"
+        ],
+        "ifFixDispatchIds": [
+          "0x64ca"
+        ],
+        "directCallees": [
+          "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_144",
+          "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_16",
+          "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_29",
+          "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_3",
+          "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_33",
+          "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_35",
+          "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_5",
+          "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_51",
+          "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_79",
+          "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_8",
+          "IFix.WrappersManagerImpl.GetPatch",
+          "IFix.WrappersManagerImpl.IsPatched"
+        ]
+      },
+      "ManualEvaluate": {
+        "token": "0x060059D2",
+        "va": "0x187431CB0",
+        "parameters": [
+          "evaluateTime"
+        ],
+        "ifFixDispatchIds": [
+          "0x1608"
+        ],
+        "directCallees": [
+          "Beyond.Gameplay.EffectAnimation.get_playableGraph",
+          "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_1",
+          "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_138",
+          "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_15",
+          "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_2",
+          "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_261",
+          "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_33",
+          "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_43",
+          "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_62",
+          "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_7",
+          "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_8",
+          "IFix.WrappersManagerImpl.GetPatch",
+          "IFix.WrappersManagerImpl.IsPatched",
+          "UnityEngine.Playables.PlayableGraph.Evaluate_Injected"
+        ]
+      },
+      "SyncProgress": {
+        "token": "0x060059D3",
+        "va": "0x187431FF4",
+        "parameters": [
+          "progress"
+        ],
+        "ifFixDispatchIds": [
+          "0x64d1"
+        ],
+        "directCallees": [
+          "Beyond.Gameplay.EffectAnimation.ManualEvaluate",
+          "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_1",
+          "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_138",
+          "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_15",
+          "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_2",
+          "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_261",
+          "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_33",
+          "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_43",
+          "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_62",
+          "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_7",
+          "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_8",
+          "IFix.WrappersManagerImpl.GetPatch",
+          "IFix.WrappersManagerImpl.IsPatched"
+        ]
+      },
+      "SetTimeScale": {
+        "token": "0x060059D5",
+        "va": "0x1831DD6B0",
+        "parameters": [
+          "curTimeScale"
+        ],
+        "ifFixDispatchIds": [
+          "0x5ac"
+        ],
+        "directCallees": [
+          "Beyond.Gameplay.EffectAnimation._RefreshRootPlayableTimeScale",
+          "IFix.WrappersManagerImpl.IsPatched"
+        ]
+      },
+      "SetIgnoreGlobalTimeScale": {
+        "token": "0x060059D6",
+        "va": "0x1834FBFE0",
+        "parameters": [
+          "ignoreGlobalTimeScale"
+        ],
+        "ifFixDispatchIds": [
+          "0x5b4"
+        ],
+        "directCallees": [
+          "IFix.WrappersManagerImpl.IsPatched"
+        ]
+      },
+      "SetStartAnimationDuration": {
+        "token": "0x060059D7",
+        "va": "0x187431E80",
+        "parameters": [
+          "duration"
+        ],
+        "ifFixDispatchIds": [
+          "0x64d3"
+        ],
+        "directCallees": [
+          "Beyond.Gameplay.EffectAnimation._RefreshRootPlayableTimeScale",
+          "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_1",
+          "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_138",
+          "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_15",
+          "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_2",
+          "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_261",
+          "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_33",
+          "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_43",
+          "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_62",
+          "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_7",
+          "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_8",
+          "IFix.WrappersManagerImpl.GetPatch",
+          "IFix.WrappersManagerImpl.IsPatched",
+          "UnityEngine.AnimationClip.get_length",
+          "UnityEngine.Object.op_Inequality"
+        ]
+      },
+      "SetStartAnimationScale": {
+        "token": "0x060059D8",
+        "va": "0x187431F60",
+        "parameters": [
+          "scale"
+        ],
+        "ifFixDispatchIds": [
+          "0x64d4"
+        ],
+        "directCallees": [
+          "Beyond.Gameplay.EffectAnimation._RefreshRootPlayableTimeScale",
+          "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_1",
+          "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_138",
+          "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_15",
+          "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_2",
+          "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_261",
+          "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_33",
+          "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_43",
+          "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_62",
+          "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_7",
+          "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_8",
+          "IFix.WrappersManagerImpl.GetPatch",
+          "IFix.WrappersManagerImpl.IsPatched"
+        ]
+      },
+      "RefreshRootPlayableTimeScale": {
+        "token": "0x060059D9",
+        "va": "0x183434F90",
+        "parameters": [
+          "force"
+        ],
+        "ifFixDispatchIds": [
+          "0x5ad"
+        ],
+        "directCallees": [
+          "IFix.WrappersManagerImpl.IsPatched"
+        ]
+      },
+      "Stop": {
+        "token": "0x060059DB",
+        "va": "0x1831DC580",
+        "parameters": [],
+        "ifFixDispatchIds": [
+          "0x64ce"
+        ],
+        "directCallees": [
+          "Beyond.Gameplay.EffectAnimation.SetTimeScale",
+          "Beyond.TickableMono._SyncTickFunctionsEnabled",
+          "IFix.WrappersManagerImpl.IsPatched",
+          "UnityEngine.Animator.set_cullingMode",
+          "UnityEngine.Application.get_isPlaying",
+          "UnityEngine.Playables.PlayableGraph.IsValid_Injected",
+          "UnityEngine.Playables.PlayableGraph.Stop_Injected"
+        ]
+      },
+      "OnDisable": {
+        "token": "0x060059C9",
+        "va": "0x18450FE60",
+        "parameters": [],
+        "ifFixDispatchIds": [
+          "0x64cd"
+        ],
+        "directCallees": [
+          "Beyond.Gameplay.EffectAnimation.Stop",
+          "IFix.WrappersManagerImpl.IsPatched"
+        ]
+      },
+      "OnRelease": {
+        "token": "0x060059CA",
+        "va": "0x1846107B0",
+        "parameters": [],
+        "ifFixDispatchIds": [
+          "0x64cf"
+        ],
+        "directCallees": [
+          "IFix.WrappersManagerImpl.IsPatched",
+          "UnityEngine.Playables.PlayableGraph.Destroy_Injected",
+          "UnityEngine.Playables.PlayableGraph.IsValid_Injected"
+        ]
+      }
+    },
+    "fallbackBodyFacts": [
+      "SetManual(bool) sets manual-active true in the fallback body; honoring false is visible only through the IFix path",
+      "ManualEvaluate(float evaluateTime) requires positive current clip length and calls PlayableGraph.Evaluate_Injected",
+      "SyncProgress(float progress) derives an evaluate time from progress/current clip state and delegates to ManualEvaluate",
+      "SetStartAnimationDuration and SetStartAnimationScale require positive inputs and force root playable time-scale refresh",
+      "SetIgnoreGlobalTimeScale forwards the Boolean to the owning entity when present",
+      "OnDisable calls Stop and clears manual-active state",
+      "OnRelease destroys the PlayableGraph only when PlayableGraph.IsValid_Injected succeeds"
+    ],
+    "effectInstanceCallerRoutes": {
+      "ManualSyncTime": {
+        "token": "0x06005ADD",
+        "va": "0x18743E6E0",
+        "parameters": [
+          "deltaTime"
+        ],
+        "calls": {
+          "ManualUpdateAnimation": [
+            "0x49",
+            "0x57",
+            "0x103"
+          ]
+        }
+      },
+      "ManualUpdateAnimation": {
+        "token": "0x06005ADC",
+        "va": "0x18743E838",
+        "parameters": [
+          "deltaTime"
+        ],
+        "calls": {
+          "ManualEvaluate": [
+            "0x5C"
+          ]
+        }
+      },
+      "SyncAnimationProgress": {
+        "token": "0x06005ADE",
+        "va": "0x18743F1D0",
+        "parameters": [
+          "progress"
+        ],
+        "calls": {
+          "SyncProgress": [
+            "0x3B"
+          ]
+        }
+      },
+      "SetAnimationIgnoreGlobalTimeScale": {
+        "token": "0x06005A8E",
+        "va": "0x1834FAA30",
+        "parameters": [
+          "ignoreGlobalTimeScale"
+        ],
+        "calls": {
+          "SetIgnoreGlobalTimeScale": [
+            "0x84"
+          ]
+        }
+      },
+      "SetActive": {
+        "token": "0x06005AA1",
+        "va": "0x18302A920",
+        "parameters": [
+          "active"
+        ],
+        "calls": {
+          "Play": [
+            "0x19B"
+          ],
+          "Stop": [
+            "0x1DA"
+          ]
+        }
+      },
+      "SetEffectPlayState": {
+        "token": "0x06005AA2",
+        "va": "0x18743EBA0",
+        "parameters": [
+          "play"
+        ],
+        "calls": {
+          "Stop": [
+            "0x107"
+          ],
+          "Play": [
+            "0x131"
+          ]
+        }
+      }
+    },
+    "liZhiyanCallerStatus": "no_asset_specific_caller_proven_for_optional_time_controls"
+  },
   "labBoundary": {
     "projectEditorVersion": "2022.3.62f3",
     "retailAdvancedMixerTypeExpectedInEditor": false,
@@ -110,7 +443,8 @@
     "blockedBy": [
       "retail AdvancedAnimationMixerPlayable is absent from stock Unity 2021/2022 editor AnimationModule assemblies",
       "standard AnimationMixerPlayable equivalence is not proven",
-      "SetStartAnimationDuration, SetManual, and SetIgnoreGlobalTimeScale callsites are not closed for these assets",
+      "active IFix payload state is not closed for EffectAnimation control methods",
+      "asset-specific callers of optional time controls are not proven for these Li Zhiyan roots",
       "static renderer identity is not joined to a final draw"
     ]
   },

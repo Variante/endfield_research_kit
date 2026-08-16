@@ -176,6 +176,20 @@ namespace EndfieldGraphShaderLabEditor
                 L.Dict(contract["retailEffectAnimationTopology"]);
             Dictionary<string, object> create = L.Dict(topology["createPlayableGraph"]);
             Dictionary<string, object> mixer = L.Dict(topology["mixer"]);
+            Dictionary<string, object> mixerComparison =
+                L.Dict(mixer["stockAnimationMixerComparison"]);
+            Dictionary<string, object> controlAbi =
+                L.Dict(contract["effectAnimationControlAbi"]);
+            Dictionary<string, object> controlMethods = L.Dict(controlAbi["methods"]);
+            Dictionary<string, object> manualEvaluate =
+                L.Dict(controlMethods["ManualEvaluate"]);
+            Dictionary<string, object> syncProgress =
+                L.Dict(controlMethods["SyncProgress"]);
+            Dictionary<string, object> setManual = L.Dict(controlMethods["SetManual"]);
+            Dictionary<string, object> instanceRoutes =
+                L.Dict(controlAbi["effectInstanceCallerRoutes"]);
+            Dictionary<string, object> manualUpdate =
+                L.Dict(instanceRoutes["ManualUpdateAnimation"]);
             Dictionary<string, object> lab = L.Dict(contract["labBoundary"]);
             Type retailMixer = Type.GetType(
                 "UnityEngine.Animations.AdvancedAnimationMixerPlayable, UnityEngine.AnimationModule",
@@ -195,14 +209,29 @@ namespace EndfieldGraphShaderLabEditor
                     "UnityEngine.Animations.AdvancedAnimationMixerPlayable" &&
                 L.Str(mixer, "typeToken") == "0x02000053" &&
                 L.Long(mixer, "inputCount") == 3 &&
+                !L.Bool(mixerComparison, "behavioralEquivalenceProven") &&
+                L.Bool(mixerComparison, "stockCreateHasNormalizeWeightsParameter") &&
+                !L.Bool(mixerComparison, "advancedCreateHasNormalizeWeightsParameter") &&
+                L.List(mixer["unresolvedSemantics"]).Count == 4 &&
                 L.List(topology["clipSlots"]).Count == 3 &&
+                L.Str(manualEvaluate, "token") == "0x060059D2" &&
+                L.Str(manualEvaluate, "va") == "0x187431CB0" &&
+                L.List(manualEvaluate["parameters"]).Count == 1 &&
+                L.Str(syncProgress, "token") == "0x060059D3" &&
+                L.List(syncProgress["parameters"]).Count == 1 &&
+                L.List(setManual["ifFixDispatchIds"]).Count == 1 &&
+                L.Str(manualUpdate, "token") == "0x06005ADC" &&
+                L.Dict(manualUpdate["calls"]).Count == 1 &&
+                L.List(controlAbi["fallbackBodyFacts"]).Count == 7 &&
+                L.Str(controlAbi, "liZhiyanCallerStatus") ==
+                    "no_asset_specific_caller_proven_for_optional_time_controls" &&
                 retailMixer == null &&
                 typeof(UnityEngine.Animations.AnimationMixerPlayable) != null &&
                 !L.Bool(lab, "retailAdvancedMixerTypeExpectedInEditor") &&
                 !L.Bool(lab, "standardAnimationMixerPlayableIsExactSubstitute") &&
                 L.Str(lab, "driverStatus") ==
                     "exact_retail_mixer_type_unavailable_do_not_start_graph" &&
-                L.List(lab["blockedBy"]).Count == 4 &&
+                L.List(lab["blockedBy"]).Count == 5 &&
                 L.List(contract["nonClaims"]).Count == 3,
                 "Li Zhiyan retail EffectAnimation playable topology drifted");
         }

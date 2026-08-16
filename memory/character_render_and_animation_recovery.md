@@ -1688,8 +1688,21 @@ only stable interpretation and priorities.
    `AnimationMixerPlayable`, Timeline mixers, and an invented controller are
    therefore rejected as exact substitutes. The generated topology contract
    and Unity validator keep graph creation and visible admission fail-closed
-   until an equivalent retail backend and the unresolved time-control
-   callsites are proven.
+   until an equivalent retail backend is proven. The advanced type is also
+   ABI-distinct from stock: stock `Create` accepts `normalizeWeights` and has
+   an implicit Playable conversion, while the advanced type has neither.
+   Default/null weights, null-playable transitions, input-count failure
+   behavior, and its internal-call native body remain unresolved.
+   The complete control ABI is now pinned as well. `ManualEvaluate(float)`
+   evaluates the graph, `SyncProgress(float)` derives a time and delegates to
+   it, duration/scale setters refresh root speed, `OnDisable` stops, and
+   `OnRelease` destroys only a valid graph. `EffectInstance` callers are
+   closed for manual update, progress sync, ignore-global-time-scale, and
+   active/play-state Play/Stop. Every relevant body first checks an IFix ID,
+   however, so these are proven fallback bodies rather than proof of the
+   active patched retail semantics. No serialized or native caller currently
+   proves that the optional manual/progress/duration controls are used by the
+   three Li roots; keep their normal speed-one path and do not infer retiming.
    `P_fxui_lizhiyan_overview_start_02` and `_03` are now source-closed sibling
    static effects: each has a root Animator and three MeshRenderers with zero
    particles; their lifetimes are 5 and 7 seconds. `_02` uses one shared mesh
