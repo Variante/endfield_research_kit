@@ -1,12 +1,80 @@
 from __future__ import annotations
 
+import sqlite3
 import tempfile
 import unittest
 from pathlib import Path
 
-from scripts.gameplay_builder.combat_relationships import PayloadBuilder
+from scripts.gameplay_builder.combat_relationships import PayloadBuilder, SCHEMA_VERSION
 
 class CombatEnemyEvidenceTests(unittest.TestCase):
+    def test_projectile_name_classification_keeps_exact_graph_kind(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp = Path(temp_dir)
+            payload = PayloadBuilder(
+                "CN",
+                {},
+                temp / "missing.sqlite",
+                "fixture graph disabled",
+                temp / "missing-animestudio",
+                0,
+                0,
+            )
+            payload.graph_node = lambda node_id: {
+                "id": node_id,
+                "kind": "gameplay_effect",
+                "label": "projectile_unit_fx",
+                "_graphData": {},
+            }
+
+            payload.merge_graph_node("gameplay_effect:projectile_unit_fx")
+
+            node = payload.nodes["gameplay_effect:projectile_unit_fx"]
+            self.assertEqual("gameplay_effect", node["kind"])
+            self.assertNotEqual("projectile_effect", node["kind"])
+            self.assertEqual(
+                {
+                    "confidence": "inferred",
+                    "basis": "identifier contains projectile, bullet, or missile",
+                    "graphKind": "gameplay_effect",
+                },
+                node["classification"],
+            )
+
+    def test_projectile_identifier_edge_stays_inferred(self) -> None:
+        class FixtureGraph:
+            def execute(self, _query: str):
+                return [("gameplay_effect:projectile_unit_fx", "projectile_unit_fx")]
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp = Path(temp_dir)
+            payload = PayloadBuilder(
+                "CN",
+                {},
+                temp / "missing.sqlite",
+                "fixture graph disabled",
+                temp / "missing-animestudio",
+                0,
+                0,
+            )
+            payload.graph = FixtureGraph()
+            payload.roots = ["character:char_test_unit"]
+            payload.add_node("character:char_test_unit", "character", "Test unit")
+            payload.graph_node = lambda node_id: {
+                "id": node_id,
+                "kind": "gameplay_effect",
+                "label": "projectile_unit_fx",
+                "_graphData": {},
+            }
+
+            payload.add_inferred_projectile_effects()
+
+            node = payload.nodes["gameplay_effect:projectile_unit_fx"]
+            self.assertEqual("gameplay_effect", node["kind"])
+            edge = next(iter(payload.edges.values()))
+            self.assertEqual("identifier_matches_projectile_effect", edge["type"])
+            self.assertEqual("inferred", edge["confidence"])
+
     def test_enemy_links_retain_variant_source_coordinates_and_semantics(self) -> None:
         gameplay = {"entries": [{
             "id": "eny_test",
@@ -46,6 +114,16 @@ class CombatEnemyEvidenceTests(unittest.TestCase):
         nodes = {node["id"]: node for node in payload["nodes"]}
         edges = {(edge["source"], edge["target"], edge["type"]): edge for edge in payload["edges"]}
 
+        description = nodes["ability_description:ability_test"]
+        self.assertEqual("ability_description", description["kind"])
+        self.assertIn("executable SkillData not proven", description["semanticStatus"])
+        self.assertEqual("ability_test", description["raw"]["descriptionId"])
+        self.assertEqual("gameplay_skill:ability_test", description["raw"]["legacySkillNodeId"])
+        description_edge = edges[("enemy:eny_test", "ability_description:ability_test", "has_ability_description")]
+        self.assertEqual("direct", description_edge["confidence"])
+        self.assertIn("does not prove an executable SkillData", description_edge["note"])
+        self.assertNotIn("gameplay_skill:ability_test", nodes)
+
         variant = nodes["enemy_variant:eny_test_hard"]
         self.assertEqual("exact authored EnemyTable row", variant["semanticStatus"])
         self.assertEqual(
@@ -57,6 +135,105 @@ class CombatEnemyEvidenceTests(unittest.TestCase):
             edges[("enemy_variant:eny_test_hard", "buff:buff_test", "starts_with_buff")]["evidence"]["path"],
         )
         self.assertEqual(3, nodes["enemy_attr_template:attr_test"]["raw"]["statPointCount"])
+
+    def test_graph_edge_contract_accepts_only_expected_skill_edges(self) -> None:
+        gameplay = {"entries": [{
+            "id": "chr_test",
+            "kind": "character",
+            "title": "Test character",
+            "skillGroups": [{"id": "group_test", "actionSkillIds": ["skill_test"]}],
+        }]}
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp = Path(temp_dir)
+            graph_path = temp / "graph.sqlite"
+            connection = sqlite3.connect(graph_path)
+            connection.executescript(
+                """
+                CREATE TABLE nodes (
+                    id TEXT PRIMARY KEY, kind TEXT, name TEXT, source TEXT,
+                    path TEXT, data TEXT
+                );
+                CREATE TABLE edges (
+                    src TEXT, dst TEXT, kind TEXT, source TEXT,
+                    evidence TEXT, data TEXT
+                );
+                """
+            )
+            nodes = [
+                ("gameplay_skill:skill_test", "gameplay_skill", "skill_test"),
+                ("gameplay_skill:other_skill", "gameplay_skill", "other_skill"),
+                ("buff:buff_test", "buff", "buff_test"),
+                ("buff:unknown_test", "buff", "unknown_test"),
+            ]
+            connection.executemany(
+                "INSERT INTO nodes(id,kind,name,source,path,data) VALUES(?,?,?,?,?,?)",
+                [(node_id, kind, name, "fixture", "fixture", "{}") for node_id, kind, name in nodes],
+            )
+            connection.executemany(
+                "INSERT INTO edges(src,dst,kind,source,evidence,data) VALUES(?,?,?,?,?,?)",
+                [
+                    (
+                        "gameplay_skill:skill_test", "buff:buff_test",
+                        "skill_data_references_buff", "fixture", "skill.buff", "{}",
+                    ),
+                    (
+                        "gameplay_skill:skill_test", "buff:unknown_test",
+                        "skill_data_unknown_runtime_relation", "fixture", "skill.unknown", "{}",
+                    ),
+                    (
+                        "gameplay_skill:other_skill", "buff:buff_test",
+                        "skill_data_references_effect", "fixture", "other.effect", "{}",
+                    ),
+                ],
+            )
+            connection.commit()
+            connection.close()
+
+            payload = PayloadBuilder(
+                "CN",
+                gameplay,
+                graph_path,
+                "",
+                temp / "missing-animestudio",
+                0,
+                0,
+            ).payload()
+
+        edges = {(edge["source"], edge["target"], edge["type"]): edge for edge in payload["edges"]}
+        self.assertIn(
+            ("gameplay_skill:skill_test", "buff:buff_test", "skill_data_references_buff"),
+            edges,
+        )
+        self.assertNotIn(
+            ("gameplay_skill:skill_test", "buff:unknown_test", "skill_data_unknown_runtime_relation"),
+            edges,
+        )
+        self.assertEqual("partial", payload["graphEdgeContract"]["status"])
+        expected = payload["graphEdgeContract"]["expectedKinds"]
+        self.assertEqual(1, expected["skill_data_references_buff"]["observed"])
+        self.assertEqual(1, expected["skill_data_references_buff"]["accepted"])
+        self.assertEqual("accepted", expected["skill_data_references_buff"]["status"])
+        self.assertEqual("observed-only", expected["skill_data_references_effect"]["status"])
+        self.assertEqual(1, payload["graphEdgeContract"]["unexpectedKinds"]["skill_data_unknown_runtime_relation"])
+        self.assertEqual(1, payload["graphEdgeContract"]["unexpectedEdgeCount"])
+        self.assertEqual(5, SCHEMA_VERSION)
+
+    def test_missing_graph_reports_unavailable_edge_contract(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp = Path(temp_dir)
+            payload = PayloadBuilder(
+                "CN",
+                {"entries": []},
+                temp / "missing.sqlite",
+                "",
+                temp / "missing-animestudio",
+                0,
+                0,
+            ).payload()
+
+        self.assertFalse(payload["graph"]["available"])
+        self.assertEqual("unavailable", payload["graphEdgeContract"]["status"])
+        self.assertEqual({}, payload["graphEdgeContract"]["unexpectedKinds"])
 
 
 if __name__ == "__main__":

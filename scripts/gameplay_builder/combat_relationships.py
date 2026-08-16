@@ -25,7 +25,7 @@ EXPORT_ROOT = Path(os.environ.get("ENDFIELD_EXPORT_ROOT") or ROOT / "export_full
 DEFAULT_DATA_ROOT = ROOT / "webui" / "data" / "lang"
 DEFAULT_GRAPH = ROOT / "reports" / "source_graph" / "endfield_source_graph.sqlite"
 DEFAULT_ANIMESTUDIO_ROOT = EXPORT_ROOT / "recovered" / "AnimeStudio-cli"
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 5
 
 GRAPH_EDGE_TYPES = {
     "skill_data_has_param_string",
@@ -163,6 +163,30 @@ class PayloadBuilder:
         self.target_settings_records = 0
         self.target_settings_attached = 0
         self.target_selector_links = 0
+        self.graph_edge_contract_observed: dict[str, int] = {}
+        self.graph_edge_contract_accepted: dict[str, int] = {}
+        self.graph_edge_contract_unexpected: dict[str, int] = {}
+
+    def inspect_graph_edge_contract(self) -> None:
+        """Record the graph edge vocabulary before consuming any graph rows.
+
+        Graphs are shared across builders and may contain many unrelated edge
+        kinds.  Only GRAPH_EDGE_TYPES are eligible for direct Gameplay
+        relationships; unknown kinds remain diagnostic evidence, never an
+        implicit SkillData relationship.
+        """
+        if self.graph is None:
+            return
+        rows = self.graph.execute(
+            "SELECT kind, COUNT(*) FROM edges GROUP BY kind ORDER BY kind"
+        ).fetchall()
+        observed = {str(kind): int(count) for kind, count in rows}
+        self.graph_edge_contract_observed = observed
+        self.graph_edge_contract_unexpected = {
+            kind: count
+            for kind, count in observed.items()
+            if kind not in GRAPH_EDGE_TYPES
+        }
 
     def add_node(self, node_id: str, kind: str, label: str = "", **values: Any) -> None:
         node = self.nodes.setdefault(node_id, {"id": node_id, "kind": kind, "label": label or node_id.split(":", 1)[-1]})
@@ -303,24 +327,33 @@ class PayloadBuilder:
             key = str(ability.get("id") or "").strip()
             if not key:
                 continue
-            ability_id = f"gameplay_skill:{key}"
-            self.skill_ids.add(key)
+            # EnemyTemplateDisplayInfoTable.abilityDescIds is a localized
+            # presentation reference.  It is not a SkillData/action id, so
+            # do not put it in the executable-skill namespace or feed it to
+            # source-graph SkillData enrichment.
+            description_id = f"ability_description:{key}"
             self.add_node(
-                ability_id,
-                "ability",
+                description_id,
+                "ability_description",
                 str(ability.get("name") or key),
                 key=key,
-                raw={"description": ability.get("description")} if ability.get("description") else None,
+                semanticStatus="exact display-table ability-description reference; executable SkillData not proven",
+                source={"table": display_table, "id": display_key, "field": "abilityDescIds"},
+                raw={
+                    "description": ability.get("description"),
+                    "descriptionId": key,
+                    "legacySkillNodeId": f"gameplay_skill:{key}",
+                },
             )
             self.add_edge(
                 enemy_id,
-                ability_id,
-                "has_enemy_ability",
+                description_id,
+                "has_ability_description",
                 confidence="direct",
                 evidence_source=display_table,
                 evidence_path=f"{display_key}.abilityDescIds[{index}]",
                 raw=key,
-                note="The enemy display table directly lists this localized ability description ID.",
+                note="The display table directly lists this localized ability-description ID; this does not prove an executable SkillData/action relationship.",
             )
 
         variants = [variant for variant in entry.get("variants") or [] if isinstance(variant, dict)]
@@ -866,11 +899,10 @@ class PayloadBuilder:
         if display_kind == "gameplay_skill":
             display_kind = "ability"
         elif display_kind == "gameplay_effect" and PROJECTILE_TOKEN_RE.search(str(node.get("label") or "")):
-            display_kind = "projectile_effect"
             node["classification"] = {
                 "confidence": "inferred",
                 "basis": "identifier contains projectile, bullet, or missile",
-                "graphKind": "gameplay_effect",
+                "graphKind": display_kind,
             }
         self.add_node(node_id, display_kind, str(node.pop("label")), **node)
         return data if isinstance(data, dict) else None
@@ -904,6 +936,11 @@ class PayloadBuilder:
 
     def add_graph_edge(self, row: tuple[Any, ...]) -> None:
         source, target, edge_type, evidence_source, evidence_path, raw_json = row
+        edge_type = str(edge_type)
+        if edge_type in GRAPH_EDGE_TYPES:
+            self.graph_edge_contract_accepted[edge_type] = (
+                self.graph_edge_contract_accepted.get(edge_type, 0) + 1
+            )
         self.merge_graph_node(str(target))
         if str(target).startswith("buff:"):
             self.buff_ids.add(str(target).split(":", 1)[1])
@@ -960,6 +997,7 @@ class PayloadBuilder:
     def enrich_graph(self) -> bool:
         if not self.open_graph():
             return False
+        self.inspect_graph_edge_contract()
 
         for skill_key in sorted(self.skill_ids):
             skill_id = f"gameplay_skill:{skill_key}"
@@ -1107,6 +1145,39 @@ class PayloadBuilder:
                 "unattachedRecords": self.target_settings_records - self.target_settings_attached,
                 "managedSelectorLinks": self.target_selector_links,
                 "note": "Only exact-consumed TargetSettings reachable from curated character roots are displayed. Enum/hash names and runtime evaluator order remain unclaimed; avatar-template records without Gameplay roots are counted but not assigned.",
+            },
+            "graphEdgeContract": {
+                "status": (
+                    "unavailable"
+                    if not graph_available
+                    else "partial"
+                    if any(
+                        self.graph_edge_contract_accepted.get(kind, 0) == 0
+                        for kind in sorted(GRAPH_EDGE_TYPES)
+                    )
+                    else "validated"
+                ),
+                "expectedKinds": {
+                    kind: {
+                        "observed": self.graph_edge_contract_observed.get(kind, 0),
+                        "accepted": self.graph_edge_contract_accepted.get(kind, 0),
+                        "status": (
+                            "accepted"
+                            if self.graph_edge_contract_accepted.get(kind, 0)
+                            else "observed-only"
+                            if self.graph_edge_contract_observed.get(kind, 0)
+                            else "missing"
+                        ),
+                    }
+                    for kind in sorted(GRAPH_EDGE_TYPES)
+                },
+                "unexpectedKindCount": len(self.graph_edge_contract_unexpected),
+                "unexpectedEdgeCount": sum(self.graph_edge_contract_unexpected.values()),
+                "unexpectedKinds": dict(sorted(self.graph_edge_contract_unexpected.items())),
+                "note": (
+                    "Only expected graph edge kinds are eligible for direct Gameplay relationships; "
+                    "unexpected or missing kinds are reported and never promoted to direct SkillData edges."
+                ),
             },
             "counts": {
                 "roots": len(self.roots),
