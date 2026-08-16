@@ -1,6 +1,6 @@
 {
   "schema": "endfield.lizhiyan-overview-start01-effect.v1",
-  "status": "static_mesh_payload_closed_animation_clip_external_pending_visible_fail_closed",
+  "status": "static_mesh_animation_and_texture_sources_closed_visible_fail_closed",
   "effectName": "P_fxui_lizhiyan_overview_start_01",
   "mountPoint": "",
   "summary": {
@@ -9,7 +9,8 @@
     "particleSystems": 0,
     "materials": 3,
     "uniqueMeshes": 1,
-    "sourceAggregateSha256": "97B99E3B23FDFA6EE75B6009FC2E4B90D7DEA1F5EEB40A9822FEDC6396E0C4D8"
+    "uniqueTextureReferences": 8,
+    "sourceAggregateSha256": "5B83D031736E9CE864F1D2BE021C0E1A04BCA29D11291A506AD9740ADC047511"
   },
   "effectSetting": {
     "pathID": 2305038813790631653,
@@ -321,7 +322,17 @@
     "startAnimationClip": {
       "fileID": 3,
       "pathID": 7360398354216100382,
-      "status": "external_target_unavailable"
+      "status": "converted_source_payload_closed",
+      "name": "A_fxui__lizhiyan_overview_start_01",
+      "sampleRate": 30.0,
+      "stopTime": 6.366667,
+      "events": [],
+      "convertedAnim": {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/AnimationClip/A_fxui__lizhiyan_overview_start_01_p6625634E5C6BA21E.anim",
+        "bytes": 50328,
+        "sha256": "A38212EF4C417647C3375EFA4432284E6F59E1221AE6C069452EC95A92734EA0",
+        "objectType": "AnimationClipYaml"
+      }
     },
     "loopAnimationClip": null,
     "endAnimationClip": null
@@ -2104,6 +2115,125 @@
         "_SAMPLE_TEX3",
         "_USE_SOFTBLEND"
       ],
+      "textureReferences": [
+        {
+          "property": "_BlendTex",
+          "fileID": 2,
+          "pathID": 5503065527579778695,
+          "scale": {
+            "X": 13.0,
+            "Y": 1.0
+          },
+          "offset": {
+            "X": 0.0,
+            "Y": 0.0
+          }
+        },
+        {
+          "property": "_DissolveTex",
+          "fileID": 3,
+          "pathID": -1647025128171678556,
+          "scale": {
+            "X": 2.0,
+            "Y": 1.0
+          },
+          "offset": {
+            "X": 0.0,
+            "Y": 0.0
+          }
+        },
+        {
+          "property": "_DisturbTex1",
+          "fileID": 4,
+          "pathID": -2436663960397463630,
+          "scale": {
+            "X": 2.0,
+            "Y": 3.0
+          },
+          "offset": {
+            "X": 0.0,
+            "Y": 0.0
+          }
+        },
+        {
+          "property": "_MainTex",
+          "fileID": 5,
+          "pathID": 1332343754204177352,
+          "scale": {
+            "X": 1.0,
+            "Y": 1.0
+          },
+          "offset": {
+            "X": 0.81,
+            "Y": 0.0
+          }
+        },
+        {
+          "property": "_MaskTex",
+          "fileID": 6,
+          "pathID": 2432870227437740027,
+          "scale": {
+            "X": 3.0,
+            "Y": 1.0
+          },
+          "offset": {
+            "X": 0.0,
+            "Y": 0.0
+          }
+        },
+        {
+          "property": "_SampleTex0",
+          "fileID": 4,
+          "pathID": -2436663960397463630,
+          "scale": {
+            "X": 2.0,
+            "Y": 3.0
+          },
+          "offset": {
+            "X": 0.0,
+            "Y": 0.0
+          }
+        },
+        {
+          "property": "_SampleTex1",
+          "fileID": 6,
+          "pathID": 2432870227437740027,
+          "scale": {
+            "X": 3.0,
+            "Y": 1.0
+          },
+          "offset": {
+            "X": 0.0,
+            "Y": 0.0
+          }
+        },
+        {
+          "property": "_SampleTex2",
+          "fileID": 2,
+          "pathID": 5503065527579778695,
+          "scale": {
+            "X": 13.0,
+            "Y": 1.0
+          },
+          "offset": {
+            "X": 0.0,
+            "Y": 0.0
+          }
+        },
+        {
+          "property": "_SampleTex3",
+          "fileID": 3,
+          "pathID": -1647025128171678556,
+          "scale": {
+            "X": 2.0,
+            "Y": 1.0
+          },
+          "offset": {
+            "X": 0.0,
+            "Y": 0.0
+          }
+        }
+      ],
       "payload": {
         "m_Shader": {
           "m_FileID": 1,
@@ -2954,6 +3084,99 @@
         "_SAMPLE_TEX2",
         "_USE_SOFTBLEND"
       ],
+      "textureReferences": [
+        {
+          "property": "_BlendTex",
+          "fileID": 2,
+          "pathID": 5503065527579778695,
+          "scale": {
+            "X": 13.0,
+            "Y": 1.0
+          },
+          "offset": {
+            "X": 0.0,
+            "Y": 0.0
+          }
+        },
+        {
+          "property": "_DissolveTex",
+          "fileID": 3,
+          "pathID": -1647025128171678556,
+          "scale": {
+            "X": 2.0,
+            "Y": 1.0
+          },
+          "offset": {
+            "X": 0.0,
+            "Y": 0.0
+          }
+        },
+        {
+          "property": "_MainTex",
+          "fileID": 9,
+          "pathID": 7553184953741353081,
+          "scale": {
+            "X": 1.0,
+            "Y": 1.0
+          },
+          "offset": {
+            "X": 0.38,
+            "Y": 0.0
+          }
+        },
+        {
+          "property": "_MaskTex",
+          "fileID": 7,
+          "pathID": 5707730051549422076,
+          "scale": {
+            "X": 1.35,
+            "Y": 0.45
+          },
+          "offset": {
+            "X": 0.0,
+            "Y": 0.32
+          }
+        },
+        {
+          "property": "_SampleTex0",
+          "fileID": 7,
+          "pathID": 5707730051549422076,
+          "scale": {
+            "X": 1.35,
+            "Y": 0.45
+          },
+          "offset": {
+            "X": 0.0,
+            "Y": 0.32
+          }
+        },
+        {
+          "property": "_SampleTex1",
+          "fileID": 2,
+          "pathID": 5503065527579778695,
+          "scale": {
+            "X": 13.0,
+            "Y": 1.0
+          },
+          "offset": {
+            "X": 0.0,
+            "Y": 0.0
+          }
+        },
+        {
+          "property": "_SampleTex2",
+          "fileID": 3,
+          "pathID": -1647025128171678556,
+          "scale": {
+            "X": 2.0,
+            "Y": 1.0
+          },
+          "offset": {
+            "X": 0.0,
+            "Y": 0.0
+          }
+        }
+      ],
       "payload": {
         "m_Shader": {
           "m_FileID": 1,
@@ -3803,6 +4026,99 @@
         "_SAMPLE_TEX2",
         "_USE_SOFTBLEND"
       ],
+      "textureReferences": [
+        {
+          "property": "_BlendTex",
+          "fileID": 2,
+          "pathID": 5503065527579778695,
+          "scale": {
+            "X": 13.0,
+            "Y": 1.0
+          },
+          "offset": {
+            "X": 0.0,
+            "Y": 0.0
+          }
+        },
+        {
+          "property": "_DissolveTex",
+          "fileID": 3,
+          "pathID": -1647025128171678556,
+          "scale": {
+            "X": 2.0,
+            "Y": 1.0
+          },
+          "offset": {
+            "X": 0.0,
+            "Y": 0.0
+          }
+        },
+        {
+          "property": "_MainTex",
+          "fileID": 8,
+          "pathID": -3788096699771536442,
+          "scale": {
+            "X": 0.2,
+            "Y": 1.0
+          },
+          "offset": {
+            "X": 1.0,
+            "Y": 0.0
+          }
+        },
+        {
+          "property": "_MaskTex",
+          "fileID": 7,
+          "pathID": 5707730051549422076,
+          "scale": {
+            "X": 1.35,
+            "Y": 0.45
+          },
+          "offset": {
+            "X": 0.0,
+            "Y": 0.32
+          }
+        },
+        {
+          "property": "_SampleTex0",
+          "fileID": 7,
+          "pathID": 5707730051549422076,
+          "scale": {
+            "X": 1.35,
+            "Y": 0.45
+          },
+          "offset": {
+            "X": 0.0,
+            "Y": 0.32
+          }
+        },
+        {
+          "property": "_SampleTex1",
+          "fileID": 2,
+          "pathID": 5503065527579778695,
+          "scale": {
+            "X": 13.0,
+            "Y": 1.0
+          },
+          "offset": {
+            "X": 0.0,
+            "Y": 0.0
+          }
+        },
+        {
+          "property": "_SampleTex2",
+          "fileID": 3,
+          "pathID": -1647025128171678556,
+          "scale": {
+            "X": 2.0,
+            "Y": 1.0
+          },
+          "offset": {
+            "X": 0.0,
+            "Y": 0.0
+          }
+        }
+      ],
       "payload": {
         "m_Shader": {
           "m_FileID": 1,
@@ -4642,6 +4958,144 @@
       }
     }
   ],
+  "textureDependencies": [
+    {
+      "pathID": -3788096699771536442,
+      "name": "T_fx_trail_gfx_26",
+      "assetMap": {
+        "Container": "assets/beyond/arts/effects/commonassets/arts/t_texture/mask/trail/t_fx_trail_gfx_26.tga",
+        "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\B428C352B17C75CA29122CAACC037A59.chk",
+        "Offset": 130422095,
+        "Hash": "5fc8807f5bf72258",
+        "Type": "Texture2D"
+      },
+      "convertedPng": {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_trail_gfx_26_pCB6DFA1F2B49BBC6.png",
+        "bytes": 5799,
+        "sha256": "5A06D651A020EA4ECF2C06EEF1A73EF795DCEAF194E970A82244A4980B7730BB",
+        "objectType": "Texture2DConvertedPNG"
+      }
+    },
+    {
+      "pathID": -2436663960397463630,
+      "name": "T_fx_flow_08_M",
+      "assetMap": {
+        "Container": "assets/beyond/dynamicassets/gameplay/interactives/postmodels/int_dungeon_entry_hard_postmodel.prefab",
+        "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+        "Offset": 613544752,
+        "Hash": "65380ded9a38e2ea",
+        "Type": "Texture2D"
+      },
+      "convertedPng": {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_flow_08_M_pDE2F3B09BB833FB2.png",
+        "bytes": 31955,
+        "sha256": "0C1782D2B4B6471F89ACF98FB910A4229D5B326C59922CE5453C9B5F397737A1",
+        "objectType": "Texture2DConvertedPNG"
+      }
+    },
+    {
+      "pathID": -1647025128171678556,
+      "name": "T_fx_flow_01_M",
+      "assetMap": {
+        "Container": "assets/beyond/dynamicassets/gameplay/effects/prefabs/p_aglina_skill_ult_start_02_range.prefab",
+        "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\4A65D5C2457B9C4DBE29646A23A14004.chk",
+        "Offset": 619265653,
+        "Hash": "4b8d23b525b4f814",
+        "Type": "Texture2D"
+      },
+      "convertedPng": {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_flow_01_M_pE924975F4B2F54A4.png",
+        "bytes": 84655,
+        "sha256": "FD335206B2DE7D4578B941CEB2BCEC79E56541017F07B3EB9F6655AD76450939",
+        "objectType": "Texture2DConvertedPNG"
+      }
+    },
+    {
+      "pathID": 1332343754204177352,
+      "name": "T_fx_trail_gfx_27",
+      "assetMap": {
+        "Container": "assets/beyond/arts/effects/commonassets/arts/t_texture/mask/trail/t_fx_trail_gfx_27.tga",
+        "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\B428C352B17C75CA29122CAACC037A59.chk",
+        "Offset": 200675159,
+        "Hash": "529ade0add571182",
+        "Type": "Texture2D"
+      },
+      "convertedPng": {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_trail_gfx_27_p127D6F95DC0CE3C8.png",
+        "bytes": 14315,
+        "sha256": "2A8A730813AA6C003ADE0FF96D30D8A0B83F530C9710A5BC13E4F70B6E615275",
+        "objectType": "Texture2DConvertedPNG"
+      }
+    },
+    {
+      "pathID": 2432870227437740027,
+      "name": "T_fx_trail_zrx_11_M",
+      "assetMap": {
+        "Container": "assets/beyond/arts/effects/commonassets/arts/t_texture/mask/trail/t_fx_trail_zrx_11_m.png",
+        "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\B428C352B17C75CA29122CAACC037A59.chk",
+        "Offset": 776461316,
+        "Hash": "415ff7b406265c5e",
+        "Type": "Texture2D"
+      },
+      "convertedPng": {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_trail_zrx_11_M_p21C34A94FB0CDFFB.png",
+        "bytes": 96911,
+        "sha256": "AEF872A21AD20A4F249D015DDDC955E7184D208ED00BB9FF682FBFF9C6C40FD1",
+        "objectType": "Texture2DConvertedPNG"
+      }
+    },
+    {
+      "pathID": 5503065527579778695,
+      "name": "T_fx_trail_gfx_25",
+      "assetMap": {
+        "Container": "assets/beyond/arts/effects/commonassets/arts/t_texture/mask/trail/t_fx_trail_gfx_25.tga",
+        "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\B428C352B17C75CA29122CAACC037A59.chk",
+        "Offset": 499113758,
+        "Hash": "fd15df5d3ec004f6",
+        "Type": "Texture2D"
+      },
+      "convertedPng": {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_trail_gfx_25_p4C5ED0F0DB171E87.png",
+        "bytes": 133457,
+        "sha256": "AFE500C2B365D83840FF095D0A069C4079D2B7C1098451B1A94B8CABE38E97F2",
+        "objectType": "Texture2DConvertedPNG"
+      }
+    },
+    {
+      "pathID": 5707730051549422076,
+      "name": "T_fx_trail_170_D",
+      "assetMap": {
+        "Container": "assets/beyond/arts/effects/commonassets/arts/t_texture/color/trail/t_fx_trail_170_d.tga",
+        "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+        "Offset": 974150411,
+        "Hash": "b35967a77166f9fc",
+        "Type": "Texture2D"
+      },
+      "convertedPng": {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_trail_170_D_p4F35EE3DB46CE1FC.png",
+        "bytes": 24523,
+        "sha256": "C2541AA64B2992E47501B997B0707D1282F41A02C2486C63EC9089F0048B6B84",
+        "objectType": "Texture2DConvertedPNG"
+      }
+    },
+    {
+      "pathID": 7553184953741353081,
+      "name": "T_fx_trail_gfx_24",
+      "assetMap": {
+        "Container": "assets/beyond/arts/effects/cutscene/e11m3_1_vfx/materials/m_fx_cs_e11m3_1_252.mat",
+        "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\B428C352B17C75CA29122CAACC037A59.chk",
+        "Offset": 204896120,
+        "Hash": "c6adb683000370af",
+        "Type": "Texture2D"
+      },
+      "convertedPng": {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_trail_gfx_24_p68D24DB26A942079.png",
+        "bytes": 18885,
+        "sha256": "24F5CE1613BCE50CF61A983136C9DC9169E6D9F70743164DCE3D4C26ACAD4701",
+        "objectType": "Texture2DConvertedPNG"
+      }
+    }
+  ],
   "executionBoundary": {
     "bindingKind": "static_mesh_animated",
     "sourcePayloadApplied": false,
@@ -4649,8 +5103,8 @@
     "rendererFailClosedForUnrecoveredShader": true,
     "visibleAdmission": false,
     "blockedBy": [
-      "external start AnimationClip PathID 7360398354216100382 is unresolved",
       "native Mesh payload and Unity import parity are not pinned",
+      "native Texture2D mip payloads and Unity import parity are not pinned",
       "three VFXBaseV2 material variants lack exact selected DXBC/descriptor/draw admission",
       "static-mesh effect runtime binding kind is not implemented"
     ]

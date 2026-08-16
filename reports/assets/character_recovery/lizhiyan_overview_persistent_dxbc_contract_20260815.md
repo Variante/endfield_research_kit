@@ -316,8 +316,11 @@ mesh hierarchy with four MeshFilter/MeshRenderer pairs, zero ParticleSystems,
 duration `2.2`, delay `0`, one shared mesh PathID `-6840663686705882004`, and
 three material PathIDs mapping exactly to `M_fxui__lizhiyan_overview_09/_10/_11`.
 The converted OBJ and serialized queue-3704 VFXBaseV2 material payloads exist.
-Animation-helper start clip PathID `7360398354216100382` remains an unavailable
-external target, and native mesh/shader/draw admission is not closed. The lab
+Animation-helper start clip PathID `7360398354216100382` resolves to converted
+`A_fxui__lizhiyan_overview_start_01` at 30 Hz with stop time 6.366667 and no
+AnimationEvents. All eight serialized Texture2D dependencies resolve through
+the AssetMap to converted PNGs. Native mesh/texture import parity and
+shader/draw admission are not closed. The lab
 therefore records a `static_mesh_animated` contract but does not fabricate a
 particle prefab or install a runtime binding.
 
