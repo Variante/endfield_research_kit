@@ -1541,6 +1541,12 @@ only stable interpretation and priorities.
    installs resource callback `0x180feade0 -> 0x181047160`; it still contains no
    survivor loop, sort, indirect draw, or queue submit. HGTree opcode `0x55`,
    singleton `+0xc0`, 24-byte slots, and `0x18106aae0` are a distinct family.
+   Registration locally grows the HGMesh vector, increments its count, zeroes
+   a new slot, and allocates/stores a 0x30-byte state; opcode `0x4e` reads it
+   without mutating count or storage. No decrement, reset, clear loop, free, or
+   reuse appears in the pinned registration/interpreter/consumer spans.
+   Context replacement/teardown remains the only open lifecycle boundary, so
+   do not invent per-frame handle reuse.
    Runtime values and final survivor/order/lifetime capture remain required;
    do not synthesize a `Renderer[]` bridge from the integer ECS handle.
    Downstream HGMesh workers now prove a real ordering/publication stage:

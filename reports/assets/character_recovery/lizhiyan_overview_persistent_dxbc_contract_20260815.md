@@ -82,7 +82,7 @@ list`, and the callback executes global scene-color/vector/texture setup,
 fullscreen draw, the ordinary forward renderer list, then the ECS renderer
 list. The callback contains no constant-buffer publication. The generated
 native ABI contract is `lizhiyan_after_dof_native_abi.json`, SHA-256
-`56741911150B050CBFD96B242C9F4386D05421B65007419A640B4DFA96A150FD`.
+`4B6963A4BE824C6A8B8FA92AD36FCCEEFE677A541F69C5203BA35E6104E0AA46`.
 
 The deferred ECS producer is now closed as well. Current-build
 `HGRenderPathDeferred.OnPreRendering` recreates the 32-bit handle each camera
@@ -133,6 +133,16 @@ handler `0x181047160`. This chain constructs command/resource state but still
 contains no survivor loop, transparent sort, indirect draw, or queue submit.
 HGTree opcode `0x55`, singleton `+0xc0`, 24-byte slots, and consumer
 `0x18106aae0` are a separate family and are not evidence for HGMesh execution.
+
+The manager lifecycle is bounded more tightly within this chain. Registration
+grows the vector through `0x1802ed7d0 -> 0x180662870` when needed, increments
+the count, zeroes the new slot, allocates its 0x30-byte state through
+`0x1802fd650`, and stores that pointer at slot `+0x08`. Opcode `0x4e` consumes
+the state pointer without changing the vector or count. No count decrement,
+in-place reset, slot-clear loop, free, or reuse occurs in the pinned
+registration/interpreter/consumer spans. An external context replacement or
+teardown remains possible and is the next lifecycle boundary; per-frame reuse
+must not be invented from this append-only local path.
 
 The downstream ordering stage is now positively identified. Resource builder
 `0x18104e920` selects one of 14 post-filter workers. The workers assemble
