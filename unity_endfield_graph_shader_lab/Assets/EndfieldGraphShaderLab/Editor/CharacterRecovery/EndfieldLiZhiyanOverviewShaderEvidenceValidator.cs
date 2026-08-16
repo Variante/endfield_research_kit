@@ -672,7 +672,7 @@ namespace EndfieldGraphShaderLabEditor
                 !L.Bool(importer, "injectedIntoRetailClient") &&
                 L.Bool(importer, "captureRequiresSeparateExplicitAuthorization") &&
                 L.Str(abi, "sha256") ==
-                    "F4C3F8EC4E2BC31849BD9101C9BF3186A16A39FC45B90CC10640091FE155EEEF" &&
+                    "9D1179ED33D498DDFF788CA4303FED78A46E9BEC8304560945F125A9CD26A535" &&
                 L.Long(video, "bytes") == 1678613397L &&
                 L.Str(video, "sha256") ==
                     "2F542A3BE7CE3332295D3A841FD8613C62707E084F9E33A0F156DA8A06EBF5E7" &&
@@ -783,7 +783,7 @@ namespace EndfieldGraphShaderLabEditor
                     "CA97F2AD6D958078B68FEC88EDB666A64CCEA3F8E3F2155414384E175B842619",
                 "Li Zhiyan HGMesh survivor-job construction identity drifted");
             IList unityCalls = L.List(native["unityPlayerDecisiveCalls"]);
-            L.Require(unityCalls.Count == 26 &&
+            L.Require(unityCalls.Count == 31 &&
                 unityCalls.Cast<object>().Select(L.Dict).Any(row =>
                     L.Str(row, "callsite") == "0x180ff82b5" &&
                     L.Str(row, "target") == "0x1810442f0") &&
@@ -861,7 +861,22 @@ namespace EndfieldGraphShaderLabEditor
                     L.Str(row, "target") == "0x180600820") &&
                 unityCalls.Cast<object>().Select(L.Dict).Any(row =>
                     L.Str(row, "callsite") == "0x180619915" &&
-                    L.Str(row, "target") == "0x1806230b0"),
+                    L.Str(row, "target") == "0x1806230b0") &&
+                unityCalls.Cast<object>().Select(L.Dict).Any(row =>
+                    L.Str(row, "callsite") == "0x1801ee287" &&
+                    L.Str(row, "target") == "0x1801f7410") &&
+                unityCalls.Cast<object>().Select(L.Dict).Any(row =>
+                    L.Str(row, "callsite") == "0x1801ee587" &&
+                    L.Str(row, "target") == "0x1801f7410") &&
+                unityCalls.Cast<object>().Select(L.Dict).Any(row =>
+                    L.Str(row, "callsite") == "0x181088f20" &&
+                    L.Str(row, "target") == "0x1801f7410") &&
+                unityCalls.Cast<object>().Select(L.Dict).Any(row =>
+                    L.Str(row, "callsite") == "0x181088fb8" &&
+                    L.Str(row, "target") == "0x1801f7410") &&
+                unityCalls.Cast<object>().Select(L.Dict).Any(row =>
+                    L.Str(row, "callsite") == "0x181089036" &&
+                    L.Str(row, "target") == "0x1801f7410"),
                 "Li Zhiyan HGMesh upstream call graph drifted");
             Dictionary<string, object> boundary = L.Dict(native["nativeBoundary"]);
             Dictionary<string, object> decision = L.Dict(native["unityDecision"]);

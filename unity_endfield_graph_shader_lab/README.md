@@ -4136,6 +4136,11 @@ mandatory-next flag or generation between the independent `0x2730/0x2731`
 cases. Admission still requires the Li branch value, a later `0x2731` in the
 same after-DOF interval, and concrete attribution of the resulting `+0x2B50`
 Vulkan callback/draw node to this HGMesh draw-list.
+Recorder setup `0x1809258C0` initializes their shared `+0x2710/+0x2711`
+admission state and `+0x2720` stream, but has no frame counter, generation, or
+per-frame reset; end slot `+0x880` only flushes and clears `+0x2711`. The
+shared recorder and append order are therefore proven, while same-frame and
+same-AfterDOF attribution remain deliberately fail-closed.
 The selector object itself is now source-bounded. Finalizer argument M0 owns a
 hash table at `M0+0x28`; a 0x60-stride entry's `+0x28` descriptor D is copied
 to publication `+0x10`. The callback preserves D while using `D+0x450` for
@@ -4199,6 +4204,17 @@ M0/M1 slot-generation handles are assigned by the live player registry and
 cannot be derived from PathID, fileID, lab GUID, or asset name. Positive proof
 therefore requires a same-build instanceID/object-fingerprint -> M0/M1 handle
 -> accepted record -> draw observation.
+The instance-ID bridge is now pinned exactly. UnityPlayer adapter
+`0x1801EE250..0x1801EE2CE` implements
+`HGShadingStateSystem.GetMaterialHandle`, while
+`0x1801EE550..0x1801EE5CE` implements
+`HGGeometrySystem.GetGeometryHandle`; each searches a 12-byte key/value map
+and returns the full packed M0/M1 handle. `GetMesh` adapter `0x1801EE5D0`
+performs the reverse M1 lookup using the low 24-bit slot. In the concrete
+`HGMeshRendererData` route, initializer `0x181088D80` maps native materials,
+meshes, and shadow-proxy meshes from `+0x58/+0x78/+0x98` and writes runtime
+record `+0x04/+0x08/+0x0C`. These are exact capture hooks, not an offline
+substitute for Li's live runtime IDs.
 The same contract pins `SetManual(bool)`, `ManualEvaluate(float)`,
 `SyncProgress(float)`, time-scale/start-duration/start-
 scale setters, Stop, OnDisable, and OnRelease. Their decoded fallback bodies
