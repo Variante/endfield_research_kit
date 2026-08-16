@@ -1,0 +1,221 @@
+{
+  "schema": "endfield.lizhiyan-after-dof-native-abi.v1",
+  "status": "current_build_native_schedule_and_static_shader_abi_closed_live_draw_pending",
+  "sources": {
+    "gameAssembly": {
+      "path": "D:\\Program Files\\Endfield Game\\GameAssembly.dll",
+      "sha256": "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
+    },
+    "metadata": {
+      "path": "D:\\Program Files\\Endfield Game\\Endfield_Data\\il2cpp_data\\Metadata\\global-metadata.dat",
+      "sha256": "90C58E26E87C7227A85DDA3FEDF6CE5ED0B06DC1F76E0ABBE75AB20750ADF97E"
+    },
+    "shaderContract": {
+      "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/ShaderEvidence/LiZhiyanOverviewFinger/lizhiyan_overview_vfxbasev2_variants.json",
+      "sha256": "1191F96B45FD11C47D31C71681B25E77B3DF2CBD2179F21B4D2854D3AD90796B"
+    }
+  },
+  "codeRegistrationVA": "0x18b9217d0",
+  "methods": [
+    {
+      "methodIndex": 287274,
+      "type": "HG.Rendering.Runtime.ForwardPassUtils",
+      "name": "PrepareAfterDOFTranparentRendererList",
+      "token": "0x060010a6",
+      "va": "0x189bab274",
+      "functionEnd": "0x189bab4e2",
+      "functionBytes": 622,
+      "functionSha256": "319799A95260B1717084D16AA8C2E0CCAD668CEDF3E52E9465B99A31EC44A5E0"
+    },
+    {
+      "methodIndex": 287316,
+      "type": "HG.Rendering.Runtime.TransparentAfterDOFPassConstructor",
+      "name": "ConstructPass",
+      "token": "0x060010d0",
+      "va": "0x189bb2e40",
+      "functionEnd": "0x189bb346a",
+      "functionBytes": 1578,
+      "functionSha256": "D54DCF38AC17E6062573C476BF988FF8CBEE70E89F2B02FB341E5588DA3612CC"
+    },
+    {
+      "methodIndex": 287324,
+      "type": "HG.Rendering.Runtime.TransparentAfterDOFPassConstructor+<>c",
+      "name": "<.cctor>b__10_0",
+      "token": "0x060010d8",
+      "va": "0x189bb5264",
+      "functionEnd": "0x189bb558a",
+      "functionBytes": 806,
+      "functionSha256": "D49C4DE691A7B65184532D8C9E46E1209F35AF2A76C0E23FA82B8E35593011CC"
+    }
+  ],
+  "decisiveCalls": [
+    {
+      "label": "ConstructPass -> PrepareAfterDOFTranparentRendererList",
+      "callsite": "0x189bb3299",
+      "target": "0x189bab274"
+    },
+    {
+      "label": "ConstructPass -> CreateRendererList",
+      "callsite": "0x189bb332b",
+      "target": "0x189b2ab5c"
+    },
+    {
+      "label": "ConstructPass -> UseRendererList",
+      "callsite": "0x189bb334b",
+      "target": "0x189b36820"
+    },
+    {
+      "label": "callback -> RenderForwardRendererList",
+      "callsite": "0x189bb54f1",
+      "target": "0x189c0a6ec"
+    },
+    {
+      "label": "callback -> RenderForwardECSRendererList",
+      "callsite": "0x189bb5541",
+      "target": "0x189c0a628"
+    },
+    {
+      "label": "callback -> DrawFullScreen",
+      "callsite": "0x189bb5401",
+      "target": "0x18b2de0cc"
+    }
+  ],
+  "rendererList": {
+    "queue": {
+      "first": 3660,
+      "default": 3700,
+      "last": 3740
+    },
+    "shaderTagsWithoutOutline": [
+      "TransparentBackface",
+      "ForwardOnly",
+      "Forward",
+      "ForwardCharacterOnly",
+      "SRPDefaultUnlit",
+      "Distortion"
+    ],
+    "perObjectData": "bakedLightingConfig | GetPerObjectMotionVectorConfig(hgCamera)",
+    "liveInputsPending": [
+      "cullingResults",
+      "camera",
+      "screenCullingRatio",
+      "screenCullingRatioDistance",
+      "screenCullingLayerMask",
+      "outlineEnabled",
+      "bakedLightingConfig",
+      "survivorsAndSortOrder"
+    ]
+  },
+  "attachments": {
+    "color0": "new sceneColor clone, store",
+    "color1": "incoming sceneMV when valid, load/store",
+    "depth": "incoming sceneDepth, read"
+  },
+  "callbackExecution": [
+    "profiling",
+    "sceneColor/global texture setup",
+    "fullscreen draw",
+    "forward renderer list",
+    "forward ECS renderer list"
+  ],
+  "shaderAbi": {
+    "selectedMaterialGates": {
+      "values": {
+        "_RenderTransparentAfterDOF": 1.0,
+        "_EnableTransparentMV": 0.0,
+        "_IsSceneEffect": 0.0,
+        "_IgnorePostExposure": 1.0,
+        "_Responsive": 1.0,
+        "_InParticle": 1.0
+      },
+      "vfxParams1Required": false,
+      "transformHistoryRequired": false,
+      "reason": "all six selected materials use _IsSceneEffect=0 and _EnableTransparentMV=0"
+    },
+    "variantCount": 3,
+    "constantBuffers": {
+      "b0": "_TransformVariables_structural_match",
+      "b1": "ShaderVariablesGlobal_structural_match",
+      "b2": "unresolved_auxiliary_particle_or_per_draw",
+      "b3": "UnityPerMaterial_exact_partial_c0_to_c5_later_lanes_unresolved"
+    },
+    "variantResources": [
+      {
+        "materialKeywords": [],
+        "texturesAndSamplers": [
+          {
+            "textureRegister": 0,
+            "samplerRegister": 0,
+            "texture": "_MainTex",
+            "compiledSamplerSymbol": "LinearClamp"
+          }
+        ]
+      },
+      {
+        "materialKeywords": [
+          "_SAMPLE_TEX0",
+          "_USE_SOFTBLEND"
+        ],
+        "texturesAndSamplers": [
+          {
+            "textureRegister": 0,
+            "samplerRegister": 0,
+            "texture": "_CameraDepthTexture",
+            "compiledSamplerSymbol": "LinearClamp"
+          },
+          {
+            "textureRegister": 1,
+            "samplerRegister": 1,
+            "texture": "_MainTex",
+            "compiledSamplerSymbol": "LinearRepeat"
+          },
+          {
+            "textureRegister": 2,
+            "samplerRegister": 2,
+            "texture": "_SampleTex0",
+            "compiledSamplerSymbol": "LinearMirror"
+          }
+        ]
+      },
+      {
+        "materialKeywords": [
+          "_USE_SOFTBLEND"
+        ],
+        "texturesAndSamplers": [
+          {
+            "textureRegister": 0,
+            "samplerRegister": 0,
+            "texture": "_CameraDepthTexture",
+            "compiledSamplerSymbol": "LinearClamp"
+          },
+          {
+            "textureRegister": 1,
+            "samplerRegister": 1,
+            "texture": "_MainTex",
+            "compiledSamplerSymbol": "LinearRepeat"
+          }
+        ]
+      }
+    ]
+  },
+  "nativeBoundary": {
+    "callbackConstantBufferPublication": "not_present",
+    "callbackGlobalVectorAndTexturePublication": "present",
+    "serializedBindingsAreD3D12RootParameters": false,
+    "pending": [
+      "live descriptor-table handles",
+      "root-parameter mapping",
+      "PSO overrides",
+      "physical MRT/depth descriptors",
+      "feature-switch values",
+      "renderer-list survivors/order",
+      "final compositing"
+    ]
+  },
+  "unityDecision": {
+    "visibleAdmission": false,
+    "vfxParams1PublicationRequiredForSelectedMaterials": false,
+    "transformHistoryRequiredForSelectedMaterials": false,
+    "reason": "all selected materials serialize _IsSceneEffect=0 and _EnableTransparentMV=0"
+  }
+}

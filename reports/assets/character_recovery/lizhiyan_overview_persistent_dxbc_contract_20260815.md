@@ -47,7 +47,7 @@ reads do not match the one known `_PerPassConstants` field offset. This
 identifies the shader ABI, not the identity of a live retail descriptor table.
 
 The generated contract SHA-256 is
-`AFEC07998EAC58529E70AD646AC10B43D906C586F0DB0B48BFFE7A1526A0B717`.
+`1191F96B45FD11C47D31C71681B25E77B3DF2CBD2179F21B4D2854D3AD90796B`.
 
 ## Scheduling boundary
 
@@ -65,6 +65,22 @@ compositor has the corresponding structural lane, but the retail live handles,
 descriptor table, root signature, PSO overrides, renderer-list survivors,
 per-particle order, and final compositing remain uncaptured.
 
+The current installed binary is now pinned through exact `.pdata` function
+boundaries rather than method-to-next-pointer scan ranges:
+
+| Method | VA | bytes | function SHA-256 |
+| --- | --- | ---: | --- |
+| `PrepareAfterDOFTranparentRendererList` | `0x189bab274` | 622 | `319799A9...A5E0` |
+| `TransparentAfterDOFPassConstructor.ConstructPass` | `0x189bb2e40` | 1,578 | `D54DCF38...12CC` |
+| after-DOF render callback | `0x189bb5264` | 806 | `D49C4DE6...11CC` |
+
+Rel32 call gates prove `ConstructPass -> prepare list -> create list -> use
+list`, and the callback executes global scene-color/vector/texture setup,
+fullscreen draw, the ordinary forward renderer list, then the ECS renderer
+list. The callback contains no constant-buffer publication. The generated
+native ABI contract is `lizhiyan_after_dof_native_abi.json`, SHA-256
+`B4BD646A630E07290E917076B34D72072DCE3BB7E9E6F98FC1DBE3F74B260E22`.
+
 ## Unity admission
 
 An editor-only validator now verifies the source overlay, shader/program
@@ -80,11 +96,12 @@ draw used a particular live descriptor table or PSO.
 ## Remaining work
 
 The offline ABI audit also found that the lab's after-DOF color/depth/sceneMV
-attachment schedule matches the static retail pass, while explicit
-`_VFXParams1` publication and exact inverse-VP soft-depth behavior remain
-missing. Li's six materials disable transparent motion vectors, so zeroed
-previous/non-jittered transform fields are safe only for this selected set;
-they are not a general VFX motion contract.
+attachment schedule matches the static retail pass. All six selected materials
+serialize `_IsSceneEffect=0` and `_EnableTransparentMV=0`; the exact fragment
+therefore bypasses `_VFXParams1` and motion-history output. Publishing a guessed
+neutral `_VFXParams1` or fabricated previous-frame matrices would be a less
+accurate recovery. Exact inverse-VP soft-depth behavior remains missing, and
+the selected-material gates do not form a general VFX motion contract.
 
 The highest-value evidence is a retail D3D12 capture in the recorded
 `38-47 s` Li Zhiyan window, around the hand-adjacent teal layer near 40 s.
