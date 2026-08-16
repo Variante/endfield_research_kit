@@ -658,6 +658,7 @@ namespace EndfieldGraphShaderLab
             }
         }
 
+
         private bool CaptureOriginalRendererMaterials()
         {
             foreach (Renderer renderer in exactEligibleRenderers)

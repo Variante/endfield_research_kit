@@ -205,6 +205,22 @@
   white-space: nowrap;
 }
 
+.audio-row-note-marker {
+  flex: 0 0 auto;
+  color: var(--accent-text);
+  font-size: 13px;
+  line-height: 1;
+}
+
+.audio-row-note-title {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--accent-text);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .audio-row-meta {
   margin-top: 4px;
   overflow: hidden;
@@ -231,6 +247,64 @@
   border-bottom: 1px solid var(--border);
   background: color-mix(in srgb, var(--bg) 94%, transparent);
   backdrop-filter: blur(8px);
+}
+
+.audio-manual-note {
+  display: grid;
+  gap: 7px;
+  margin: 12px 0 16px;
+}
+
+.audio-manual-note label {
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.audio-manual-note textarea {
+  width: 100%;
+  min-height: 72px;
+  padding: 9px 10px;
+  resize: vertical;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-2);
+  color: var(--text);
+  font: inherit;
+  line-height: 1.45;
+}
+
+.audio-manual-note-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.audio-manual-note-save {
+  padding: 6px 11px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: rgba(var(--accent-rgb), 0.12);
+  color: var(--accent-text);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.audio-manual-note-save:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.audio-manual-note-status {
+  min-height: 1em;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.audio-manual-note-status.is-error {
+  color: var(--danger, #d66);
 }
 
 .audio-detail-eyebrow {

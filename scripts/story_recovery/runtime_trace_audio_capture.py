@@ -65,6 +65,18 @@ def load_manifest(path: Path) -> dict[str, Any]:
     for required in ("executable", "gameAssembly", "metadata"):
         if required not in files:
             raise core.CaptureConfigurationError(f"audio manifest is missing files.{required}")
+    native_module_name = value.get("nativeModuleName")
+    native_hooks = value.get("nativeHooks", [])
+    if native_module_name is not None and (
+        not isinstance(native_module_name, str) or not native_module_name.strip()
+    ):
+        raise core.CaptureConfigurationError("manifest nativeModuleName must be a non-empty string")
+    if not isinstance(native_hooks, list):
+        raise core.CaptureConfigurationError("audio manifest nativeHooks must be a list")
+    if native_hooks and "akSoundEngine" not in files:
+        raise core.CaptureConfigurationError(
+            "audio manifest nativeHooks require files.akSoundEngine"
+        )
     hooks = value.get("hooks")
     if not isinstance(hooks, list) or not hooks:
         raise core.CaptureConfigurationError("audio manifest hooks must be a non-empty list")
@@ -94,6 +106,56 @@ def load_manifest(path: Path) -> dict[str, Any]:
             raise core.CaptureConfigurationError(f"hooks[{index}] sourceKind is required")
         if "required" in hook and not isinstance(hook["required"], bool):
             raise core.CaptureConfigurationError(f"hooks[{index}] required must be boolean")
+    native_names: set[str] = set()
+    for index, hook in enumerate(native_hooks):
+        if not isinstance(hook, dict):
+            raise core.CaptureConfigurationError(f"nativeHooks[{index}] must be an object")
+        name = hook.get("name")
+        if not isinstance(name, str) or not name.strip() or name in native_names:
+            raise core.CaptureConfigurationError(f"nativeHooks[{index}] has a duplicate/invalid name")
+        native_names.add(name)
+        rva = hook.get("rva")
+        if not isinstance(rva, str) or not rva.lower().startswith("0x"):
+            raise core.CaptureConfigurationError(f"nativeHooks[{index}] has an invalid RVA")
+        try:
+            if int(rva, 16) < 0:
+                raise ValueError
+        except ValueError as exc:
+            raise core.CaptureConfigurationError(
+                f"nativeHooks[{index}] has an invalid RVA: {rva!r}"
+            ) from exc
+        if not isinstance(hook.get("sourceKind"), str) or not hook["sourceKind"].strip():
+            raise core.CaptureConfigurationError(f"nativeHooks[{index}] sourceKind is required")
+        if "required" in hook and not isinstance(hook["required"], bool):
+            raise core.CaptureConfigurationError(f"nativeHooks[{index}] required must be boolean")
+        memory = hook.get("memory")
+        if memory is not None and not isinstance(memory, list):
+            raise core.CaptureConfigurationError(f"nativeHooks[{index}] memory must be a list")
+        for mem_index, spec in enumerate(memory or []):
+            if not isinstance(spec, dict) or not isinstance(spec.get("name"), str):
+                raise core.CaptureConfigurationError(
+                    f"nativeHooks[{index}].memory[{mem_index}] must name a field"
+                )
+            if not isinstance(spec.get("argIndex"), int) or spec["argIndex"] < 0:
+                raise core.CaptureConfigurationError(
+                    f"nativeHooks[{index}].memory[{mem_index}] argIndex must be non-negative"
+                )
+            if not isinstance(spec.get("offset", 0), int) or spec.get("offset", 0) < 0:
+                raise core.CaptureConfigurationError(
+                    f"nativeHooks[{index}].memory[{mem_index}] offset must be non-negative"
+                )
+            if spec.get("kind", "pointer") not in {
+                "pointer",
+                "u32",
+                "i32",
+                "u64",
+                "utf16",
+            }:
+                raise core.CaptureConfigurationError(
+                    f"nativeHooks[{index}].memory[{mem_index}] has unsupported kind"
+                )
+    if native_hooks and not native_module_name:
+        raise core.CaptureConfigurationError("nativeHooks require nativeModuleName")
     if not isinstance(value.get("evidenceBoundary"), dict):
         raise core.CaptureConfigurationError("audio manifest evidenceBoundary must be an object")
     return value
@@ -107,13 +169,19 @@ def render_agent_source(path: Path, manifest: dict[str, Any]) -> str:
             "gameBuild": manifest["gameBuild"],
             "moduleName": manifest["moduleName"],
             "hooks": manifest["hooks"],
+            "nativeModuleName": manifest.get("nativeModuleName"),
+            "nativeHooks": manifest.get("nativeHooks", []),
             "evidenceBoundary": manifest["evidenceBoundary"],
         },
         "audio",
     )
 
 
-def validate_hook_ranges(manifest: dict[str, Any], game_assembly: Path) -> None:
+def validate_hook_ranges(
+    manifest: dict[str, Any],
+    game_assembly: Path,
+    native_module: Path | None = None,
+) -> None:
     """Reject stale manifest RVAs before Frida is allowed to attach hooks."""
     try:
         module_size = game_assembly.stat().st_size
@@ -132,8 +200,59 @@ def validate_hook_ranges(manifest: dict[str, Any], game_assembly: Path) -> None:
             f"(0x0..0x{module_size - 1:x}): {', '.join(invalid)}"
         )
 
+    native_hooks = manifest.get("nativeHooks", [])
+    if not native_hooks:
+        return
+    if native_module is None:
+        raise core.CaptureConfigurationError(
+            "native hook range validation requires the verified AkSoundEngine module"
+        )
+    try:
+        native_size = native_module.stat().st_size
+    except OSError as exc:
+        raise core.CaptureConfigurationError(
+            f"cannot stat AkSoundEngine for audio hook range validation: {native_module}"
+        ) from exc
+    invalid_native = []
+    for hook in native_hooks:
+        rva = int(hook["rva"], 16)
+        if rva <= 0 or rva >= native_size:
+            invalid_native.append(f"{hook['name']}={hook['rva']}")
+    if invalid_native:
+        raise core.CaptureConfigurationError(
+            "audio native hook RVA is outside the verified AkSoundEngine range "
+            f"(0x0..0x{native_size - 1:x}): {', '.join(invalid_native)}"
+        )
+
 
 validate_attached_module = core.validate_attached_module
+
+
+def validate_attached_native_module(
+    ready_payload: dict[str, Any], expected_module: Path
+) -> dict[str, Any]:
+    actual_path = ready_payload.get("nativeModulePath")
+    actual_size = ready_payload.get("nativeModuleSize")
+    expected_path = expected_module.resolve()
+    expected_size = expected_path.stat().st_size
+    if not isinstance(actual_path, str) or not actual_path.strip():
+        raise RuntimeError("Frida agent did not report the attached AkSoundEngine path")
+    if isinstance(actual_size, bool) or not isinstance(actual_size, int) or actual_size <= 0:
+        raise RuntimeError("Frida agent did not report a valid attached AkSoundEngine size")
+    facts = {
+        "expectedNativeModulePath": str(expected_path),
+        "expectedNativeModuleSize": expected_size,
+        "attachedNativeModulePath": actual_path,
+        "attachedNativeModuleSize": actual_size,
+        "nativeModulePathMatch": core.normalized_path(actual_path) == core.normalized_path(expected_path),
+        "nativeModuleSizeMatch": actual_size == expected_size,
+    }
+    if not facts["nativeModulePathMatch"] or not facts["nativeModuleSizeMatch"]:
+        raise RuntimeError(
+            "attached AkSoundEngine does not match the hash-verified module: "
+            f"pathMatch={facts['nativeModulePathMatch']}, sizeMatch={facts['nativeModuleSizeMatch']}"
+        )
+    return facts
 
 
 class AudioEventWriter(core.EventWriter):
@@ -178,6 +297,13 @@ def run_capture(
             "language": manifest.get("language", ""),
             "expectedModulePath": str(verified["gameAssembly"].resolve()),
             "expectedModuleSize": verified["gameAssembly"].stat().st_size,
+            "expectedModuleSha256": manifest["files"]["gameAssembly"]["sha256"],
+            "expectedNativeModulePath": str(verified["akSoundEngine"].resolve())
+            if "akSoundEngine" in verified else None,
+            "expectedNativeModuleSize": verified["akSoundEngine"].stat().st_size
+            if "akSoundEngine" in verified else None,
+            "expectedNativeModuleSha256": manifest["files"]["akSoundEngine"]["sha256"]
+            if "akSoundEngine" in verified else None,
             "evidenceBoundary": manifest["evidenceBoundary"],
         },
     )
@@ -229,7 +355,10 @@ def run_capture(
             writer.event("session_end")
             raise RuntimeError(f"normal Frida attach was refused for PID {process.pid}: {exc}") from exc
         session.on("detached", on_detached)
-        core.wait_for_modules(session, [manifest["moduleName"]])
+        module_names = [manifest["moduleName"]]
+        if manifest.get("nativeHooks"):
+            module_names.append(manifest["nativeModuleName"])
+        core.wait_for_modules(session, module_names)
         script = session.create_script(agent_source, name="audio-runtime-trace")
         script.on("message", on_message)
         script.load()
@@ -249,10 +378,30 @@ def run_capture(
                 },
             )
             raise
+        if manifest.get("nativeHooks"):
+            try:
+                module_facts.update(
+                    validate_attached_native_module(ready_payload, verified["akSoundEngine"])
+                )
+            except RuntimeError as exc:
+                writer.diagnostic(
+                    "attached_native_module_mismatch",
+                    {
+                        "error": str(exc),
+                        "expectedNativeModulePath": str(verified["akSoundEngine"].resolve()),
+                        "expectedNativeModuleSize": verified["akSoundEngine"].stat().st_size,
+                        "attachedNativeModulePath": ready_payload.get("nativeModulePath"),
+                        "attachedNativeModuleSize": ready_payload.get("nativeModuleSize"),
+                    },
+                )
+                raise
         writer.diagnostic("attached_module_verified", module_facts)
         hooks = ready_payload.get("hooks", {})
         if not isinstance(hooks, dict):
             raise RuntimeError("audio hook agent returned an invalid hook status payload")
+        native_hooks = ready_payload.get("nativeHooks", {})
+        if not isinstance(native_hooks, dict):
+            raise RuntimeError("audio hook agent returned an invalid native hook status payload")
         manifest_hooks = {hook["name"]: hook for hook in manifest["hooks"]}
         required_names = {
             name
@@ -269,16 +418,25 @@ def run_capture(
             for name, state in hooks.items()
             if state != "attached" and name not in required_names
         }
+        native_failed = {
+            name: native_hooks.get(name, "missing")
+            for name in (hook["name"] for hook in manifest.get("nativeHooks", []))
+            if native_hooks.get(name) != "attached"
+        }
+        if native_failed:
+            writer.diagnostic("optional_audio_native_hook_failed", {"hooks": native_failed})
         if optional_failed:
             writer.diagnostic("optional_audio_hook_failed", {"hooks": optional_failed})
         if failed:
             raise RuntimeError(f"one or more audio hooks failed to attach: {failed}")
         attached_count = sum(state == "attached" for state in hooks.values())
+        native_attached_count = sum(state == "attached" for state in native_hooks.values())
         optional_failure_text = (
             f"Optional hook failures: {optional_failed}\n" if optional_failed else ""
         )
         print(
-            f"Capture armed: {attached_count}/{len(hooks)} audio hooks attached.\n"
+            f"Capture armed: {attached_count}/{len(hooks)} managed + "
+            f"{native_attached_count}/{len(native_hooks)} native audio hooks attached.\n"
             + optional_failure_text
             + f"Audio events: {output}\nDiagnostics: {writer.diagnostics}\n"
             + "Play through a target scene/skill, then press Ctrl+C to stop.",
@@ -314,7 +472,11 @@ def capture(args: argparse.Namespace) -> int:
     try:
         manifest = load_manifest(args.manifest.resolve())
         verified = core.verify_game_files(args.game_root.resolve(), manifest)
-        validate_hook_ranges(manifest, verified["gameAssembly"])
+        validate_hook_ranges(
+            manifest,
+            verified["gameAssembly"],
+            verified.get("akSoundEngine"),
+        )
         agent_source = render_agent_source(args.agent.resolve(), manifest)
         print(
             f"Verified {manifest['gameBuild']}: "

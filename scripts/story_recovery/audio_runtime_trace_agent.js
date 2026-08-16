@@ -4,13 +4,21 @@
 const CONFIG = __AUDIO_TRACE_CONFIG__;
 
 const gameAssembly = Process.getModuleByName(CONFIG.moduleName);
+const nativeModule = CONFIG.nativeModuleName
+  ? Process.getModuleByName(CONFIG.nativeModuleName)
+  : null;
 const hookStats = {};
+const nativeHookStats = {};
 const contextStacks = new Map();
 const callStacks = new Map();
 let captureCounter = 0;
 
 function rva(value) {
   return gameAssembly.base.add(parseInt(String(value), 16));
+}
+
+function nativeRva(value) {
+  return nativeModule.base.add(parseInt(String(value), 16));
 }
 
 function currentThreadId() {
@@ -107,6 +115,8 @@ function readValue(value, kind) {
     switch (kind || "pointer") {
       case "string":
         return readIl2CppString(value);
+      case "utf16":
+        return !value || value.isNull() ? "" : (value.readUtf16String(4096) || "");
       case "u32":
         return value.toUInt32();
       case "i32":
@@ -142,6 +152,79 @@ function readArguments(hook, args) {
 function readReturn(value, kind) {
   if (!kind || kind === "void") return null;
   return readValue(value, kind);
+}
+
+function readNativeMemoryValue(pointer, kind) {
+  try {
+    if (!pointer || pointer.isNull()) return null;
+    switch (kind || "pointer") {
+      case "u32":
+        return pointer.readU32();
+      case "i32":
+        return pointer.readS32();
+      case "u64":
+        return pointer.readU64().toString();
+      case "utf16":
+        {
+          const stringPointer = pointer.readPointer();
+          return stringPointer.isNull() ? "" : (stringPointer.readUtf16String(4096) || "");
+        }
+      case "pointer":
+      default:
+        return pointerString(pointer.readPointer());
+    }
+  } catch (_) {
+    return null;
+  }
+}
+
+function readNativeMemory(hook, args) {
+  const values = {};
+  for (const spec of hook.memory || []) {
+    if (!spec || typeof spec.name !== "string" || typeof spec.argIndex !== "number") continue;
+    try {
+      const base = args[spec.argIndex];
+      if (!base || base.isNull()) {
+        values[spec.name] = null;
+        continue;
+      }
+      let target = base;
+      if (typeof spec.pointerOffset === "number") {
+        target = target.add(spec.pointerOffset).readPointer();
+        if (!target || target.isNull()) {
+          values[spec.name] = null;
+          continue;
+        }
+      }
+      values[spec.name] = readNativeMemoryValue(
+        target.add(spec.offset || 0),
+        spec.kind || "pointer",
+      );
+    } catch (_) {
+      values[spec.name] = null;
+    }
+  }
+  return values;
+}
+
+function readNativeArguments(args) {
+  const values = {};
+  for (let index = 0; index < 6; index += 1) {
+    try {
+      values[`arg${index}`] = pointerString(args[index]);
+    } catch (_) {
+      values[`arg${index}`] = null;
+    }
+  }
+  return values;
+}
+
+function readNativeDecodedArguments(hook, args) {
+  try {
+    return readArguments(hook, args);
+  } catch (_) {
+    return {};
+  }
 }
 
 function activeContexts(threadId) {
@@ -266,7 +349,61 @@ function attachHook(hook) {
   }
 }
 
+function attachNativeHook(hook) {
+  const address = nativeRva(hook.rva);
+  try {
+    Interceptor.attach(address, {
+      onEnter(args) {
+        this.nativeCaptureId = `audio-native-${Process.id}-${++captureCounter}`;
+        this.nativeArgs = [];
+        for (let index = 0; index < 6; index += 1) {
+          try {
+            this.nativeArgs[index] = args[index];
+          } catch (_) {
+            this.nativeArgs[index] = null;
+          }
+        }
+        event("audio_native_call", {
+          native: true,
+          moduleName: nativeModule.name,
+          nativeCaptureId: this.nativeCaptureId,
+          hookName: hook.name,
+          sourceKind: hook.sourceKind,
+          rva: hook.rva,
+          arguments: readNativeArguments(args),
+          decodedArguments: readNativeDecodedArguments(hook, args),
+          memory: readNativeMemory(hook, args),
+        });
+      },
+      onLeave(retval) {
+        event("audio_native_result", {
+          native: true,
+          moduleName: nativeModule.name,
+          nativeCaptureId: this.nativeCaptureId || null,
+          hookName: hook.name,
+          sourceKind: hook.sourceKind,
+          rva: hook.rva,
+          returnValue: readReturn(retval, hook.returnKind),
+          decodedArgumentsAfter: readNativeDecodedArguments(hook, this.nativeArgs || []),
+          memoryAfter: readNativeMemory(hook, this.nativeArgs || []),
+        });
+      },
+    });
+    nativeHookStats[hook.name] = "attached";
+  } catch (error) {
+    nativeHookStats[hook.name] = `failed: ${error}`;
+    diagnostic("audio_native_hook_attach_failed", {
+      hookName: hook.name,
+      rva: hook.rva,
+      error: String(error),
+    });
+  }
+}
+
 for (const hook of CONFIG.hooks || []) attachHook(hook);
+if (nativeModule) {
+  for (const hook of CONFIG.nativeHooks || []) attachNativeHook(hook);
+}
 
 transmit("ready", {
   ready: {
@@ -276,6 +413,11 @@ transmit("ready", {
     moduleBase: String(gameAssembly.base),
     moduleSize: gameAssembly.size,
     hooks: hookStats,
+    nativeModuleName: nativeModule ? nativeModule.name : null,
+    nativeModulePath: nativeModule ? nativeModule.path : null,
+    nativeModuleBase: nativeModule ? String(nativeModule.base) : null,
+    nativeModuleSize: nativeModule ? nativeModule.size : null,
+    nativeHooks: nativeHookStats,
     evidenceBoundary: CONFIG.evidenceBoundary,
   },
 });

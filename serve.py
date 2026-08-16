@@ -29,6 +29,7 @@ DEFAULT_DATA_EXPORT_ROOT = EXPORT_FULL_ROOT / "structured" / "StreamingAssets" /
 STORY_ORDER_OVERRIDE_PATH = WEBUI_ROOT / "overrides" / "story_order.json"
 CHARACTER_MERGES_OVERRIDE_PATH = WEBUI_ROOT / "overrides" / "character_merges.json"
 CHARACTER_NAME_OVERRIDES_PATH = WEBUI_ROOT / "overrides" / "character_name_overrides.json"
+AUDIO_NOTES_OVERRIDE_PATH = WEBUI_ROOT / "overrides" / "audio_notes.json"
 MAX_WRITE_BYTES = 5 * 1024 * 1024
 
 
@@ -186,6 +187,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         "/overrides/story_order.json": (STORY_ORDER_OVERRIDE_PATH, "validate_story_order_payload"),
         "/overrides/character_merges.json": (CHARACTER_MERGES_OVERRIDE_PATH, "validate_character_merges_payload"),
         "/overrides/character_name_overrides.json": (CHARACTER_NAME_OVERRIDES_PATH, "validate_character_name_overrides_payload"),
+        "/overrides/audio_notes.json": (AUDIO_NOTES_OVERRIDE_PATH, "validate_audio_notes_payload"),
     }
 
     def do_PUT(self) -> None:
@@ -432,6 +434,24 @@ def validate_character_name_overrides_payload(payload: object) -> str:
             return "Character name override ids must be non-empty strings"
         if not isinstance(name, str) or not name.strip():
             return f"Character name override for {character_id!r} must be a non-empty string"
+    return ""
+
+
+def validate_audio_notes_payload(payload: object) -> str:
+    if not isinstance(payload, dict):
+        return "Audio notes payload must be a JSON object"
+    notes = payload.get("notes")
+    if not isinstance(notes, dict):
+        return "Audio notes payload must contain a notes object"
+    for record_key, note in notes.items():
+        if not isinstance(record_key, str) or not record_key.strip():
+            return "Audio note record keys must be non-empty strings"
+        if len(record_key) > 1024:
+            return f"Audio note record key is too long: {record_key[:80]!r}"
+        if not isinstance(note, str) or not note.strip():
+            return f"Audio note for {record_key!r} must be a non-empty string"
+        if len(note) > 10000:
+            return f"Audio note for {record_key!r} exceeds 10000 characters"
     return ""
 
 

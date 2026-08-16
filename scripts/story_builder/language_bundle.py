@@ -2059,6 +2059,7 @@ def build_language_bundle(
         "FactoryBuildingPanelLock.json"
     )
     character_rows = load_effective_table("CharacterTable.json")
+    character_tag_desc_rows = load_effective_table("CharacterTagDesTable.json")
     item_rows = load_effective_table("ItemTable.json")
     weapon_basic = load_effective_table("WeaponBasicTable.json")
     enemy_display_info = load_effective_table("EnemyDisplayInfoTable.json")
@@ -6540,7 +6541,16 @@ def build_language_bundle(
         if search_text:
             entry["x"] = search_text
         index_entries.append(entry)
-    operator_archive_rows = [row for row in character_rows.values() if isinstance(row, dict) and ((row.get("profileRecord") or []) or (row.get("profileVoice") or []))]
+    operator_archive_rows = [
+        row
+        for char_id, row in character_rows.items()
+        if isinstance(row, dict)
+        and (
+            (row.get("profileRecord") or [])
+            or (row.get("profileVoice") or [])
+            or ((character_tag_desc_rows.get(char_id) or {}).get("tagDesc") or {})
+        )
+    ]
     print(f"Writing {len(operator_archive_rows)} operator archive pages...")
     for char_id, row in sorted(
         ((char_id, row) for char_id, row in character_rows.items() if isinstance(row, dict)),
@@ -6548,7 +6558,13 @@ def build_language_bundle(
     ):
         profile_records = [item for item in (row.get("profileRecord") or []) if isinstance(item, dict)]
         profile_voice = [item for item in (row.get("profileVoice") or []) if isinstance(item, dict)]
-        if not profile_records and not profile_voice:
+        tag_desc = (character_tag_desc_rows.get(char_id) or {}).get("tagDesc") or {}
+        tag_desc_items = [
+            (tag_id, item)
+            for tag_id, item in tag_desc.items()
+            if isinstance(item, dict) and t((item.get("desc") or {}).get("id"))
+        ] if isinstance(tag_desc, dict) else []
+        if not profile_records and not profile_voice and not tag_desc_items:
             continue
         actor_id = char_id.split("_", 2)[-1] if char_id.startswith("chr_") else char_id
         char_name = (
@@ -6560,6 +6576,7 @@ def build_language_bundle(
         extra_mission_names[char_id] = char_name
         title = char_name
         summary_rows: list[dict] = []
+        summary_rows.append({"text": f"Character tags: {len(tag_desc_items)}"})
         summary_rows.append({"text": f"Profile sections: {len(profile_records)}"})
         summary_rows.append({"text": f"Voice entries: {len(profile_voice)}"})
         if department := str(row.get("department") or ""):
@@ -6577,6 +6594,30 @@ def build_language_bundle(
             weapon_name = brace_text(t((weapon_item_row.get("name") or {}).get("id"))) or default_weapon_id
             summary_rows.append({"text": f"Default weapon: {weapon_name}"})
         lines: list[dict] = []
+        for tag_id, tag in sorted(tag_desc_items, key=lambda item: item[0]):
+            localized = t((tag.get("desc") or {}).get("id")).strip()
+            tag_title, separator, description = localized.partition("\n")
+            lines.append({
+                "id": str(tag.get("tagId") or tag_id),
+                "text": description.strip() if separator else localized,
+                "hint": tag_title.strip() if separator else str(tag.get("tagId") or tag_id),
+                "_debug": {
+                    **source_ref(
+                        "CharacterTagDesTable.tagDesc",
+                        char_id,
+                        pick_fields(tag, "desc", "tagId"),
+                        nodeId=tag_id,
+                    ),
+                    "fields": {
+                        "text": text_trace(
+                            "CharacterTagDesTable.tagDesc",
+                            char_id,
+                            str(tag_id),
+                            tag.get("desc"),
+                        ),
+                    },
+                },
+            })
         for record in sorted(profile_records, key=lambda item: (int(item.get("recordIndex") or 0), str(item.get("id") or ""))):
             record_text = t((record.get("recordDesc") or {}).get("id"))
             if not record_text:
@@ -6643,6 +6684,11 @@ def build_language_bundle(
                     char_id,
                     pick_fields(row, "charId", "cvName", "defaultWeaponId", "department", "name", "profileRecord", "profileVoice", "rarity", "sortOrder"),
                 ),
+                "characterTagDescriptionSource": source_ref(
+                    "CharacterTagDesTable",
+                    char_id,
+                    character_tag_desc_rows.get(char_id) or {},
+                ),
             },
         }
         if summary_rows:
@@ -6670,6 +6716,7 @@ def build_language_bundle(
                 str(row.get("department") or ""),
                 str(row.get("charTypeId") or ""),
                 str(row.get("defaultWeaponId") or ""),
+                " ".join(str(tag_id) for tag_id, _tag in tag_desc_items),
                 " ".join(line.get("hint") or "" for line in lines),
                 " ".join(line.get("text") or "" for line in lines),
             ]

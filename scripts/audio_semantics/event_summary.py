@@ -28,7 +28,7 @@ def semantic_context_group(kind: Any) -> str:
         "interactiveComponentPropertyAudio", "interactivePropertyMapAudio",
         "interactiveTemplateConfigAudio", "interactiveTemplateActionAudio",
         "interactiveEmbeddedActionAudio",
-        "binaryManagedLiteralCallsite",
+        "binaryManagedLiteralCallsite", "nativeCustomStateCallsite",
         "audioGlobalConfigEvent", "audioGlobalConfigEventHash",
         "audioCueBehaviorEvent", "audioGlobalMusicCueBehaviorEvent",
         "spawnerPreWarnAudio", "patrolSubActionPlayAudio", "charInteractAudioEvent", "physicsAudioComponentEvent",
@@ -124,6 +124,8 @@ def event_summary_row(row: dict[str, Any], detail_shard: str) -> dict[str, Any]:
             "recordIndex", "recordStart", "recordUid", "recordLocalId",
             "actionMapRole", "unionTag", "serializedMemberCount",
             "nativeMappingId", "payloadShape", "eventName", "triggerRole",
+            "customStateName", "switchMethod", "switchMethodVa", "callsiteVa",
+            "staticArgumentVa", "metadataUsageWord", "metadataStringLiteralIndex",
             "sourceField", "definitionOwnerId", "templatePath", "componentTag",
             "componentTagHex", "componentEndOffset", "propertyCount",
             "componentOccurrenceIndex",
@@ -214,9 +216,11 @@ def event_summary_row(row: dict[str, Any], detail_shard: str) -> dict[str, Any]:
                 if source.get(key) not in (None, ""):
                     context_search.add(str(source[key]))
     keys = (
-        "id", "name", "hash", "category", "categoryEvidence", "foundInWwise",
+        "id", "name", "hash", "category", "categoryEvidence", "categoryNameEvidence", "foundInWwise",
         "audioLibraryResolutionStatus", "eventIdentityStatus", "eventNameEvidence",
         "eventNameSourceKind", "identityOnlyPlaybackPlacementStatus",
+        "eventNameMetadataField", "eventNameMetadataDeclaringType",
+        "eventNameMetadataFieldToken",
         "identityNumericSkillIds", "identityTableSources", "identitySkillDataSources", "playbackRole",
         "wwiseActionOperationTypes", "wwiseActionOperationTypesHex",
         "wwiseActionOperations", "wwiseActionOperationRows", "wwiseUntypedActionCount",

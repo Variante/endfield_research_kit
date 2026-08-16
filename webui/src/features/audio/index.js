@@ -5,6 +5,8 @@
   const PANE_STORAGE_KEY = "webui_audio_splitter_width";
   const FILTER_HEIGHT_STORAGE_KEY = "webui_filter_splitter_height_audio";
   const FILTER_PANEL_STORAGE_KEY = "audio_browser_filters_collapsed";
+  const NOTES_OVERRIDE_PATH = "overrides/audio_notes.json";
+  const NOTES_OVERRIDE_SCHEMA = "audioNotes.v1";
   const PLAYER_COLLAPSE_THRESHOLD = 20;
   const MOBILE_LAYOUT_QUERY = "(max-width: 760px)";
 
@@ -19,7 +21,15 @@
       showFilters: "Show filters",
       reset: "Reset filters",
       basicFilters: "Basic filters",
-      search: "Search event / media / bank / category",
+      search: "Search event / media / bank / category / manual note",
+      manualNote: "Manual note",
+      manualNotePlaceholder: "Add a note for this audio record, then choose Save note.",
+      manualNoteSave: "Save note",
+      manualNoteUnsaved: "Unsaved changes",
+      manualNoteSaving: "Saving override…",
+      manualNoteSaved: "Saved to override",
+      manualNoteStorageError: "Could not save overrides/audio_notes.json.",
+      hasManualNote: "Has manual note",
       sort: "Sort",
       sortPurposePriority: "Unknown purpose first",
       sortTitle: "File title (A-Z)",
@@ -76,6 +86,8 @@
       levelScriptDynamicControls: "LevelScript dynamic control bindings",
       levelEventConditions: "LevelEvent audio conditions",
       wwiseSelectorGroups: "Wwise selector runtime joins",
+      wwiseInitialRtpcParameters: "Named Initial RTPC curve parameters",
+      wwiseActionControls: "Wwise Action control joins",
       levelScriptRadioCatalog: "LevelScript radio triggers",
       unresolvedRadioIds: "Unresolved radio IDs",
       unresolvedRadioLines: "Unresolved radio lines",
@@ -89,6 +101,38 @@
       details: "Details",
       playableMedia: "Playable media",
       playbackLocation: "Playback location",
+      postProcessRoutes: "Serialized post-process routes",
+      postProcessBuses: "Output bus paths",
+      postProcessBusSemantics: "Serialized Bus processing",
+      postProcessEffects: "Effect buses",
+      postProcessDirectEffects: "Direct node effects",
+      postProcessEffectChain: "Serialized effect chain",
+      postProcessBusControls: "Serialized Bus controls",
+      postProcessBusDucks: "Serialized Bus ducking",
+      postProcessAuxSends: "Serialized Aux sends",
+      postProcessProperties: "Serialized node properties",
+      postProcessRanges: "Serialized property ranges",
+      postProcessRtpcControls: "Serialized RTPC controls",
+      postProcessStateControls: "Serialized State overrides",
+      wwiseMediaRelations: "Serialized Wwise media edges",
+      wwiseMediaPaths: "Serialized selection paths",
+      wwiseMediaRootActions: "Serialized root Actions",
+      postProcessUnresolved: "Unresolved bus processing",
+      postProcessSelection: "Runtime selection boundary",
+      postProcessStatus: "Serialized route status",
+      postProcessNoExplicitBus: "No explicit output Bus was serialized; default or parent routing remains unresolved.",
+      postProcessBusUnresolved: "An output-bus node was serialized, but its typed route was not resolved.",
+      triggerContexts: "Serialized trigger contexts",
+      triggerKinds: "Trigger semantic kinds",
+      triggerRoles: "Trigger roles",
+      triggerOwners: "Trigger owners",
+      triggerSituations: "Trigger situations",
+      triggerSelection: "Trigger selection boundary",
+      eventContextSummary: "Event context (possible media set)",
+      eventContextKinds: "Event context kinds",
+      eventContextRoles: "Event context roles",
+      eventContextOwners: "Event context owners",
+      eventContextSituations: "Event context situations",
       storyLineBindings: "Exact story-line bindings",
       purposeStatus: "Purpose status",
       libraryBankEvent: "Authored Event in the same bank",
@@ -169,6 +213,7 @@
       contextAudioCueTrigger: "Audio cue behavior Event",
       contextAuthoredConfig: "Authored config",
       contextManagedRuntime: "Managed-code literal",
+      contextNativeTrigger: "Native custom-state callsite",
       contextLuaRuntime: "Lua PostEvent callsite",
       contextWwiseObjectOnly: "Wwise Event object; authored trigger unknown",
       contextDialogMedia: "Dialog media",
@@ -238,7 +283,15 @@
       showFilters: "\u663e\u793a\u7b5b\u9009",
       reset: "\u91cd\u7f6e\u7b5b\u9009",
       basicFilters: "\u57fa\u7840\u7b5b\u9009",
-      search: "\u641c\u7d22\u4e8b\u4ef6 / \u5a92\u4f53 / \u97f3\u9891\u5305 / \u5206\u7c7b",
+      search: "\u641c\u7d22\u4e8b\u4ef6 / \u5a92\u4f53 / \u97f3\u9891\u5305 / \u5206\u7c7b / \u624b\u52a8\u5907\u6ce8",
+      manualNote: "\u624b\u52a8\u5907\u6ce8",
+      manualNotePlaceholder: "\u4e3a\u8fd9\u6761\u97f3\u9891\u6dfb\u52a0\u5907\u6ce8\uff0c\u7136\u540e\u70b9\u51fb\u4fdd\u5b58\u5907\u6ce8\u3002",
+      manualNoteSave: "\u4fdd\u5b58\u5907\u6ce8",
+      manualNoteUnsaved: "\u6709\u672a\u4fdd\u5b58\u7684\u66f4\u6539",
+      manualNoteSaving: "\u6b63\u5728\u4fdd\u5b58 override\u2026",
+      manualNoteSaved: "\u5df2\u4fdd\u5b58\u5230 override",
+      manualNoteStorageError: "\u65e0\u6cd5\u4fdd\u5b58 overrides/audio_notes.json\u3002",
+      hasManualNote: "\u6709\u624b\u52a8\u5907\u6ce8",
       sort: "\u6392\u5e8f",
       sortPurposePriority: "\u672a\u77e5\u7528\u9014\u4f18\u5148",
       sortTitle: "\u6587\u4ef6\u6807\u9898 (A-Z)",
@@ -295,6 +348,8 @@
       levelScriptDynamicControls: "LevelScript \u52a8\u6001\u63a7\u5236\u7ed1\u5b9a",
       levelEventConditions: "LevelEvent \u97f3\u9891\u6761\u4ef6",
       wwiseSelectorGroups: "Wwise \u9009\u62e9\u5668\u8fd0\u884c\u65f6\u8fde\u63a5",
+      wwiseInitialRtpcParameters: "\u5df2\u547d\u540d\u7684 Initial RTPC \u66f2\u7ebf\u53c2\u6570",
+      wwiseActionControls: "Wwise Action \u63a7\u5236\u8bed\u4e49\u8fde\u63a5",
       levelScriptRadioCatalog: "LevelScript \u65e0\u7ebf\u7535\u89e6\u53d1",
       unresolvedRadioIds: "\u672a\u89e3\u6790\u7684\u65e0\u7ebf\u7535 ID",
       unresolvedRadioLines: "\u672a\u89e3\u6790\u7684\u65e0\u7ebf\u7535\u53f0\u8bcd",
@@ -308,6 +363,38 @@
       details: "\u8be6\u7ec6\u4fe1\u606f",
       playableMedia: "\u53ef\u64ad\u653e\u5a92\u4f53",
       playbackLocation: "\u64ad\u653e\u4f4d\u7f6e",
+      postProcessRoutes: "\u5df2\u5e8f\u5217\u5316\u540e\u5904\u7406\u8def\u7531",
+      postProcessBuses: "\u8f93\u51fa Bus \u8def\u5f84",
+      postProcessBusSemantics: "\u5df2\u5e8f\u5217\u5316 Bus \u5904\u7406",
+      postProcessEffects: "\u6548\u679c Bus",
+      postProcessDirectEffects: "\u8282\u70b9\u76f4\u63a5\u6548\u679c",
+      postProcessEffectChain: "\u5e8f\u5217\u5316\u6548\u679c\u94fe",
+      postProcessBusControls: "\u5e8f\u5217\u5316 Bus \u63a7\u5236",
+      postProcessBusDucks: "\u5e8f\u5217\u5316 Bus \u538b\u4f4e",
+      postProcessAuxSends: "\u5e8f\u5217\u5316 Aux \u53d1\u9001",
+      postProcessProperties: "\u5e8f\u5217\u5316\u8282\u70b9\u5c5e\u6027",
+      postProcessRanges: "\u5e8f\u5217\u5316\u5c5e\u6027\u8303\u56f4",
+      postProcessRtpcControls: "\u5e8f\u5217\u5316 RTPC \u63a7\u5236",
+      postProcessStateControls: "\u5e8f\u5217\u5316 State \u8986\u76d6",
+      eventContextSummary: "Event \u4e0a\u4e0b\u6587（\u53ef\u80fd\u5a92\u4f53\u96c6\u5408）",
+      eventContextKinds: "Event \u4e0a\u4e0b\u6587\u7c7b\u578b",
+      eventContextRoles: "Event \u4e0a\u4e0b\u6587\u89d2\u8272",
+      eventContextOwners: "Event \u4e0a\u4e0b\u6587\u6240\u6709\u8005",
+      eventContextSituations: "Event \u4e0a\u4e0b\u6587\u60c5\u5883",
+      wwiseMediaRelations: "\u5e8f\u5217\u5316 Wwise \u5a92\u4f53\u8fb9",
+      wwiseMediaPaths: "\u5e8f\u5217\u5316\u9009\u62e9\u8def\u5f84",
+      wwiseMediaRootActions: "\u5e8f\u5217\u5316\u6839 Action",
+      postProcessUnresolved: "\u672a\u89e3\u6790\u7684 Bus \u5904\u7406",
+      postProcessSelection: "\u8fd0\u884c\u65f6\u9009\u62e9\u8bc1\u636e\u8fb9\u754c",
+      postProcessStatus: "\u5df2\u5e8f\u5217\u5316\u8def\u7531\u72b6\u6001",
+      postProcessNoExplicitBus: "\u5e8f\u5217\u5316\u6570\u636e\u4e2d\u6ca1\u6709\u663e\u5f0f\u8f93\u51fa Bus\uff1b\u9ed8\u8ba4\u6216\u7236\u7ea7\u8def\u7531\u4ecd\u672a\u89e3\u6790\u3002",
+      postProcessBusUnresolved: "\u5df2\u5e8f\u5217\u5316\u8f93\u51fa Bus \u8282\u70b9\uff0c\u4f46\u5176\u7c7b\u578b\u5316\u8def\u7531\u672a\u89e3\u6790\u3002",
+      triggerContexts: "\u5df2\u5e8f\u5217\u5316\u89e6\u53d1\u4e0a\u4e0b\u6587",
+      triggerKinds: "\u89e6\u53d1\u8bed\u4e49类型",
+      triggerRoles: "\u89e6\u53d1\u89d2\u8272",
+      triggerOwners: "\u89e6\u53d1所有者",
+      triggerSituations: "\u89e6\u53d1情境",
+      triggerSelection: "\u89e6\u53d1选\u62e9证据\u8fb9\u754c",
       storyLineBindings: "\u7cbe\u786e\u5267\u60c5\u53f0\u8bcd\u7ed1\u5b9a",
       purposeStatus: "\u7528\u9014\u72b6\u6001",
       libraryBankEvent: "\u540c\u4e00 bank \u5185\u7684\u521b\u4f5c Event",
@@ -388,6 +475,7 @@
       contextAudioCueTrigger: "Audio Cue \u884c\u4e3a Event",
       contextAuthoredConfig: "\u914d\u7f6e\u8868",
       contextManagedRuntime: "\u6258\u7ba1\u4ee3\u7801\u5b57\u9762\u91cf",
+      contextNativeTrigger: "原生自定义状态调用点",
       contextLuaRuntime: "Lua PostEvent \u8c03\u7528\u4f4d\u7f6e",
       contextWwiseObjectOnly: "Wwise Event \u5bf9\u8c61\uff0c\u521b\u4f5c\u89e6\u53d1\u672a\u77e5",
       contextDialogMedia: "\u5bf9\u8bdd\u5a92\u4f53",
@@ -469,8 +557,11 @@
     sort: "purpose-priority",
     filters: { categories: new Set(), contexts: new Set(), relations: new Set(), recovery: new Set(), scopes: new Set(), sources: new Set() },
     eventTaxonomyById: new Map(),
+    gameParameterNameById: new Map(),
     eventDetailCache: new Map(),
     eventDetailPromises: new Map(),
+    notes: {},
+    notesPromise: null,
     filterPanel: null,
     renderFrame: 0,
   };
@@ -565,7 +656,71 @@
   }
 
   function recordCategory(record) {
-    return normalize(record?.eventCategory ?? record?.audioCategory ?? record?.category ?? record?.kind) || t("unknown");
+    return normalize(record?.eventCategory ?? record?.semanticCategory ?? record?.audioCategory ?? record?.category ?? record?.kind) || t("unknown");
+  }
+
+  async function loadNotes(force = false) {
+    if (state.notesPromise && !force) return state.notesPromise;
+    const promise = (async () => {
+      try {
+        const response = await fetch(NOTES_OVERRIDE_PATH, { cache: "no-store" });
+        if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+        const payload = await response.json();
+        state.notes = payload?.notes && typeof payload.notes === "object" && !Array.isArray(payload.notes) ? { ...payload.notes } : {};
+      } catch (error) {
+        console.warn(`Unable to load ${NOTES_OVERRIDE_PATH}`, error);
+        state.notes = state.notes || {};
+      }
+      return state.notes;
+    })().finally(() => {
+      state.notesPromise = null;
+    });
+    state.notesPromise = promise;
+    return promise;
+  }
+
+  async function persistNotes(notes = state.notes) {
+    const payload = {
+      _schema: NOTES_OVERRIDE_SCHEMA,
+      _note: "Manual searchable notes for Audio Event/media records. Keys use <LANG>:<events|media>:<record id>. Edited from the Audio page UI.",
+      notes,
+    };
+    const response = await fetch(NOTES_OVERRIDE_PATH, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json; charset=utf-8" },
+      body: `${JSON.stringify(payload, null, 2)}\n`,
+    });
+    if (!response.ok) {
+      let message = "";
+      try {
+        message = String((await response.json())?.error || "");
+      } catch (_error) {
+        message = "";
+      }
+      throw new Error(message || `HTTP ${response.status}`);
+    }
+    return true;
+  }
+
+  function noteKey(record) {
+    return `${state.language}:${record?.kind || state.mode}:${record?.key || ""}`;
+  }
+
+  function recordNote(record) {
+    return normalize(state.notes[noteKey(record)]);
+  }
+
+  function notesWithRecordUpdate(record, value) {
+    const notes = { ...state.notes };
+    const key = noteKey(record);
+    const note = normalize(value);
+    if (note) notes[key] = note;
+    else delete notes[key];
+    return notes;
+  }
+
+  function firstNoteLine(record) {
+    return recordNote(record).split(/\r?\n/, 1)[0].trim();
   }
 
   const CATEGORY_LABEL_KEYS = {
@@ -715,7 +870,7 @@
     if (kind === "timelineAudioCueBehaviorEvent") return "timeline";
     if (["characterAnimation", "enemyAnimation", "animationCallbackOwnerUnresolved"].includes(kind)) return "animation";
     if (["levelScriptAudioAction", "levelScriptAudioCueBehaviorEvent", "levelScriptRadioTrigger"].includes(kind)) return "scripted";
-    if (["table", "tableEventHash", "dialogLifecycle", "interactiveAudioTrigger", "interactiveComponentTrigger", "interactiveComponentPropertyAudio", "interactivePropertyMapAudio", "interactiveTemplateConfigAudio", "interactiveTemplateActionAudio", "interactiveEmbeddedActionAudio", "binaryManagedLiteralCallsite", "physicsAudioComponentEvent", "modelViewStateAudioEvent", "modelViewStatePositionAudioEvent", "monoBehaviourAudioIdField", "audioGlobalConfigEvent", "audioGlobalConfigEventHash", "audioCueBehaviorEvent", "audioGlobalMusicCueBehaviorEvent", "spawnerPreWarnAudio", "patrolSubActionPlayAudio", "charInteractAudioEvent", "audioDialogVoiceDefinition", "responsiveDialogVoice", "voiceToneVariant", "voiceDefaultWwiseEvent", "voiceNarratingChannelEvent", "voiceRadioChannelEvent", "audioDialogOverrideWwiseEvent", "responsiveVoiceEventTemplate", "voiceTableWwiseEvent", "uiAnimationOpenEvent", "activityPushPopupBgmEvent", "activityCenterBgmEvent", "uiVideoAudioEvent", "domainRegionSwitchEvent", "domainUpgradeAnimationEvent", "typedUiTableWwiseEvent", "snsVoiceMessageEvent"].includes(kind)) return "authoredConfig";
+    if (["table", "tableEventHash", "dialogLifecycle", "interactiveAudioTrigger", "interactiveComponentTrigger", "interactiveComponentPropertyAudio", "interactivePropertyMapAudio", "interactiveTemplateConfigAudio", "interactiveTemplateActionAudio", "interactiveEmbeddedActionAudio", "binaryManagedLiteralCallsite", "nativeCustomStateCallsite", "physicsAudioComponentEvent", "modelViewStateAudioEvent", "modelViewStatePositionAudioEvent", "monoBehaviourAudioIdField", "audioGlobalConfigEvent", "audioGlobalConfigEventHash", "audioCueBehaviorEvent", "audioGlobalMusicCueBehaviorEvent", "spawnerPreWarnAudio", "patrolSubActionPlayAudio", "charInteractAudioEvent", "audioDialogVoiceDefinition", "responsiveDialogVoice", "voiceToneVariant", "voiceDefaultWwiseEvent", "voiceNarratingChannelEvent", "voiceRadioChannelEvent", "audioDialogOverrideWwiseEvent", "responsiveVoiceEventTemplate", "voiceTableWwiseEvent", "uiAnimationOpenEvent", "activityPushPopupBgmEvent", "activityCenterBgmEvent", "uiVideoAudioEvent", "domainRegionSwitchEvent", "domainUpgradeAnimationEvent", "typedUiTableWwiseEvent", "snsVoiceMessageEvent"].includes(kind)) return "authoredConfig";
     if (kind === "binaryManagedLiteral") return "managedRuntime";
     if (kind === "luaPostEvent") return "luaRuntime";
     return "";
@@ -747,6 +902,7 @@
       if (["levelScriptAudioAction", "levelScriptAudioCueBehaviorEvent", "levelScriptRadioTrigger"].includes(contextKind)) tags.add("levelScriptTrigger");
       if (contextKind === "levelScriptRadioTrigger") tags.add("radioTrigger");
       if (contextKind === "luaPostEvent") tags.add("luaRuntime");
+      if (contextKind === "nativeCustomStateCallsite") tags.add("nativeTrigger");
     };
     for (const contextKind of asArray(record?.contextKinds)) addContextKindTags(contextKind);
     for (const status of asArray(record?.triggerBindingStatuses)) {
@@ -892,6 +1048,8 @@
       ...asArray(record?.contexts).flatMap((context) => context && typeof context === "object" ? [
         context.kind, context.ownerId, context.groupId, context.storyKey, context.table, context.path,
         context.consumerType, context.consumerMethod, context.playbackCall, context.triggerRole,
+        context.customStateName, context.switchMethod, context.switchMethodVa, context.callsiteVa,
+        context.staticArgumentVa, context.metadataUsageWord, context.metadataStringLiteralIndex,
         context.selectorType, context.selectorMethod, context.selectorMethodVa, context.selectorLoadVa, context.selectorCallVa,
         context.selectorField, context.selectorFieldOffset, context.additionalConsumerMethod,
         context.additionalMethodVa, context.additionalSelectorLoadVa, context.additionalSelectorCallVa, context.additionalPlaybackCallVa,
@@ -1160,6 +1318,7 @@
     state.datasets = { events: null, media: null };
     state.datasetPromises = { events: null, media: null };
     state.eventTaxonomyById = new Map();
+    state.gameParameterNameById = new Map();
     state.eventDetailCache = new Map();
     state.eventDetailPromises = new Map();
     state.selected = null;
@@ -1174,6 +1333,7 @@
 
     const promise = (async () => {
       try {
+        await loadNotes(force);
         const path = INDEX_PATH(nextLanguage);
         const response = await window.WebUI.fetchWithProgress(path, {
           signal: state.indexController.signal,
@@ -1184,6 +1344,12 @@
         const payload = await response.json();
         if (token !== state.loadToken) return null;
         state.index = payload && typeof payload === "object" ? payload : {};
+        state.gameParameterNameById = new Map(asArray(
+          state.index?.hircSummary?.postProcessSummary?.gameParameterNameEvidence?.entries,
+        ).filter((row) => row && typeof row === "object").map((row) => [
+          Number(row.parameterId),
+          String(row.metadataField || "").split(".").pop() || "GameParameter",
+        ]).filter(([id]) => Number.isFinite(id)));
         applyIndexHeader();
         renderDetail();
         await ensureDataset("events", { token, force, progressBase: 0.25, progressSpan: 0.75 });
@@ -1621,7 +1787,8 @@
     const records = state.datasets[state.mode] || [];
     const tokens = normalizeLower(state.query).split(/\s+/).filter(Boolean);
     state.filtered = records.filter((record) => {
-      if (tokens.length && !tokens.every((token) => record.search.includes(token))) return false;
+      const searchable = `${record.search}\n${normalizeLower(recordNote(record))}`;
+      if (tokens.length && !tokens.every((token) => searchable.includes(token))) return false;
       if (state.filters.categories.size && !state.filters.categories.has(record.category)) return false;
       if (state.filters.contexts.size && !record.contextTags.some((value) => state.filters.contexts.has(value))) return false;
       if (state.filters.relations.size && !record.relationTags.some((value) => state.filters.relations.has(value))) return false;
@@ -1693,7 +1860,10 @@
       button.style.top = `${row.top}px`;
       button.style.height = `${ROW_HEIGHT}px`;
       const fileStats = row.record.fileStats ? `<span class="audio-row-file-stats">${esc(row.record.fileStats)}</span>` : "";
-      button.innerHTML = `<span class="audio-row-title-line"><span class="audio-row-kind">${esc(state.mode === "events" ? t("event") : t("mediaItem"))}</span><span class="audio-row-title">${esc(row.record.title)}</span>${fileStats}</span><span class="audio-row-meta">${esc(row.record.listMeta)}</span>`;
+      const noteLine = firstNoteLine(row.record);
+      const noteMarker = noteLine ? `<span class="audio-row-note-marker" title="${esc(t("hasManualNote"))}" aria-label="${esc(t("hasManualNote"))}">\u270e</span>` : "";
+      const noteTitle = noteLine ? `<span class="audio-row-note-title">\u2014 ${esc(noteLine)}</span>` : "";
+      button.innerHTML = `<span class="audio-row-title-line"><span class="audio-row-kind">${esc(state.mode === "events" ? t("event") : t("mediaItem"))}</span><span class="audio-row-title">${esc(row.record.title)}</span>${noteTitle}${noteMarker}${fileStats}</span><span class="audio-row-meta">${esc(row.record.listMeta)}</span>`;
       fragment.appendChild(button);
       index += 1;
     }
@@ -1842,6 +2012,20 @@
     if (components.length) panel.appendChild(chipSection(t("runtimeComponents"), components));
     const hirc = state.index?.hircSummary;
     if (hirc && typeof hirc === "object" && Object.keys(hirc).length) panel.appendChild(hircInventorySection(hirc));
+    const metadataEventSymbols = state.index?.metadataEventSymbolAliases;
+    if (metadataEventSymbols && typeof metadataEventSymbols === "object") {
+      const entries = asArray(metadataEventSymbols.entries).map((row) => [
+        row.eventHashHex || "?",
+        row.name || row.metadataField || "Event",
+        row.metadataDeclaringType || "",
+      ].filter(Boolean).join(" / "));
+      if (entries.length) {
+        panel.appendChild(chipSection("Named Event symbols (IL2CPP field evidence)", entries));
+        if (metadataEventSymbols.evidenceBoundary) {
+          panel.appendChild(noteSection("Event symbol evidence boundary", metadataEventSymbols.evidenceBoundary));
+        }
+      }
+    }
     const controlCatalog = state.index?.controlCatalog;
     if (controlCatalog && typeof controlCatalog === "object") panel.appendChild(controlCatalogSection(controlCatalog));
     const physicsAudioCatalog = state.index?.triggerCatalog?.physicsAudio;
@@ -1899,6 +2083,113 @@
     const labels = hirc.objectTypeLabels || {};
     const typeCounts = Object.entries(hirc.objectTypeCounts || {}).map(([type, count]) => `${labels[type] || `type${type}`} (${type}): ${formatNumber(count)}`);
     if (typeCounts.length) section.appendChild(chipSection("Object families", typeCounts));
+    const processing = hirc.postProcessSummary && typeof hirc.postProcessSummary === "object" ? hirc.postProcessSummary : {};
+    if (processing.parserStatus) {
+      const processingFacts = [
+        ["Direct-processing nodes", processing.parsedNodeCount],
+        ["Nodes with effects", processing.effectNodeCount],
+        ["Effect slots", processing.effectSlotCount],
+        ["Plug-in references", processing.effectReferenceCount],
+        ["Authored effect bypass bits", processing.effectBypassSlotCount],
+        ["Authored effect ShareSet bits", processing.effectShareSetSlotCount],
+        ["Authored effect rendered bits", processing.effectRenderedSlotCount],
+        ["Effect slots with unknown flag bits", processing.effectUnknownFlagBitsCount],
+        ["Decoded effect parameters", processing.decodedEffectParameterDefinitionCount],
+        ["Exact authored semantics", processing.exactEffectParameterDefinitionCount],
+        ["Partial authored semantics", processing.partialEffectParameterDefinitionCount],
+        ["Opaque effect parameters", processing.opaqueEffectParameterDefinitionCount],
+        ["Effect definitions with plug-in media", processing.pluginMediaDependencyDefinitionCount],
+        ["Plug-in media definition occurrences", processing.pluginMediaDependencyDefinitionOccurrenceCount],
+        ["Plug-in media dependency occurrences", processing.pluginMediaDependencyReferenceOccurrenceCount],
+        ["Unique plug-in media IDs", processing.uniquePluginMediaIdCount],
+        ["Decoded parameter references", processing.decodedEffectParameterReferenceCount],
+        ["Exact semantic references", processing.exactEffectParameterReferenceCount],
+        ["Partial semantic references", processing.partialEffectParameterReferenceCount],
+        ["Empty effect slots", processing.emptyEffectSlotCount],
+        ["Explicit output-bus routes", processing.outputBusNodeCount],
+        ["Unique output buses", processing.uniqueOutputBusIds],
+        ["Typed Aux Send nodes", processing.auxSendParserStatusCounts?.typedExactV150NodeAuxParams],
+        ["Game-Defined send use bits", processing.gameDefinedAuxSendUseBitNodeCount],
+        ["Game-Defined send override bits", processing.gameDefinedAuxSendOverrideBitNodeCount],
+        ["User-Defined Aux slot nodes", processing.userDefinedAuxSlotNodeCount],
+        ["User-Defined Aux Bus references", processing.userDefinedAuxBusReferenceCount],
+        ["Unique User-Defined Aux Buses", processing.uniqueUserDefinedAuxBusIds],
+        ["Early Reflections Aux Bus references", processing.reflectionsAuxBusReferenceCount],
+        ["Authored base property values", processing.authoredPropertyValueCount],
+        ["Authored base property ranges", processing.authoredRangedPropertyValueCount],
+        ["Nodes with authored base properties", processing.authoredPropertyNodeCount],
+        ["Typed State/RTPC nodes", processing.stateRtpcParserStatusCounts?.typedExactV150NodeStateAndRtpc],
+        ["State Group references", processing.stateGroupReferenceCount],
+        ["Unique State Group IDs", processing.uniqueStateGroupIds],
+        ["Authored State values", processing.stateValueCount],
+        ["Initial RTPC curves", processing.rtpcCurveCount],
+        ["Initial RTPC curve points", processing.rtpcPointCount],
+        ["Unique RTPC IDs", processing.uniqueRtpcIds],
+        ["Audio/Aux Bus definitions", processing.busDefinitionCount],
+        ["Recovered bus effect slots", processing.busEffectSlotCount],
+        ["Bus effect bypass bits", processing.busEffectBypassSlotCount],
+        ["Bus effect ShareSet bits", processing.busEffectShareSetSlotCount],
+        ["Bus effect rendered bits", processing.busEffectRenderedSlotCount],
+        ["Bus effect slots with unknown flag bits", processing.busEffectUnknownFlagBitsCount],
+        ["Decoded bus effect settings", processing.decodedBusEffectParameterCount],
+        ["Typed Bus State/RTPC definitions", processing.busStateRtpcParserStatusCounts?.typedExactV150BusInitialRtpcAndState],
+        ["Bus Initial RTPC curves", processing.busRtpcCurveCount],
+        ["Bus Initial RTPC curve points", processing.busRtpcPointCount],
+        ["Bus State groups", processing.busStateGroupCount],
+        ["Bus authored State values", processing.busStateValueCount],
+      ];
+      for (const [label, value] of processingFacts) if (value !== undefined && value !== null) grid.appendChild(statNode(label, formatNumber(value)));
+      const plugins = Object.entries(processing.effectPluginReferenceCounts || {}).map(([name, count]) => `${name}: ${formatNumber(count)}`);
+      if (plugins.length) section.appendChild(chipSection("Recovered DSP plug-ins", plugins));
+      const parameterSchemas = Object.entries(processing.effectParameterSchemaCounts || {}).map(([name, count]) => `${humanize(name)}: ${formatNumber(count)}`);
+      if (parameterSchemas.length) section.appendChild(chipSection("Decoded authored DSP settings", parameterSchemas));
+      const pluginMedia = asArray(processing.pluginMediaDependencies).map((row) => [
+        row.pluginName || row.pluginClassIdHex || "plug-in",
+        `data ${row.pluginDataIndex ?? "?"}`,
+        row.mediaIdHex || row.mediaId,
+        humanize(row.semanticRole || "plugin media"),
+      ].filter((value) => value !== undefined && value !== null && value !== "").join(" / "));
+      if (pluginMedia.length) section.appendChild(chipSection("Plug-in media dependencies (not playable WEM)", pluginMedia));
+      const resolutions = Object.entries(processing.effectResolutionCounts || {}).map(([status, count]) => `${humanize(status)}: ${formatNumber(count)}`);
+      if (resolutions.length) section.appendChild(chipSection("Effect definition resolution", resolutions));
+      const busParents = Object.entries(processing.busParentResolutionCounts || {}).map(([status, count]) => `${humanize(status)}: ${formatNumber(count)}`);
+      if (busParents.length) section.appendChild(chipSection("Bus hierarchy resolution", busParents));
+      const auxResolutions = Object.entries(processing.auxiliaryBusResolutionCounts || {}).map(([status, count]) => `${humanize(status)}: ${formatNumber(count)}`);
+      if (auxResolutions.length) section.appendChild(chipSection("Auxiliary Send bus resolution", auxResolutions));
+      const stateParameters = Object.entries(processing.stateParameterCounts || {}).map(([name, count]) => `${parameterLabelText(name)}: ${formatNumber(count)}`);
+      if (stateParameters.length) section.appendChild(chipSection("Authored State-controlled properties", stateParameters));
+      const rtpcTypes = Object.entries(processing.rtpcTypeCounts || {}).map(([name, count]) => `${humanize(name)}: ${formatNumber(count)}`);
+      if (rtpcTypes.length) section.appendChild(chipSection("Initial RTPC control types", rtpcTypes));
+      const rtpcParameters = Object.entries(processing.rtpcParameterCounts || {}).map(([name, count]) => `${parameterLabelText(name)}: ${formatNumber(count)}`);
+      if (rtpcParameters.length) section.appendChild(chipSection("RTPC-controlled properties", rtpcParameters));
+      const namedGameParameters = asArray(processing.gameParameterNameEvidence?.entries).map((row) => {
+        const field = String(row.metadataField || "").split(".").pop() || "GameParameter";
+        const nodeCurves = formatNumber(row.nodeRtpcCurveCount || 0);
+        const busCurves = formatNumber(row.busRtpcCurveCount || 0);
+        return `${row.parameterIdHex || "?"} / ${field} / node curves ${nodeCurves} / bus curves ${busCurves}`;
+      });
+      if (namedGameParameters.length) {
+        section.appendChild(chipSection("Named GameParameter IDs (IL2CPP field evidence)", namedGameParameters));
+        if (processing.gameParameterNameEvidence?.evidenceBoundary) {
+          section.appendChild(noteSection("GameParameter evidence boundary", processing.gameParameterNameEvidence.evidenceBoundary));
+        }
+      }
+      const authoredProperties = Object.entries(processing.authoredPropertyCounts || {}).map(([name, count]) => `${humanize(name)}: ${formatNumber(count)}`);
+      if (authoredProperties.length) section.appendChild(chipSection("Authored base properties", authoredProperties));
+      const authoredPropertyRanges = Object.entries(processing.authoredRangedPropertyCounts || {}).map(([name, count]) => `${humanize(name)}: ${formatNumber(count)}`);
+      if (authoredPropertyRanges.length) section.appendChild(chipSection("Authored base property ranges", authoredPropertyRanges));
+      const busEffectParsers = Object.entries(processing.busEffectParserCounts || {}).map(([status, count]) => `${humanize(status)}: ${formatNumber(count)}`);
+      if (busEffectParsers.length) section.appendChild(chipSection("Bus effect recovery", busEffectParsers));
+      const busStateRtpcParsers = Object.entries(processing.busStateRtpcParserStatusCounts || {}).map(([status, count]) => `${humanize(status)}: ${formatNumber(count)}`);
+      if (busStateRtpcParsers.length) section.appendChild(chipSection("Bus State/RTPC recovery", busStateRtpcParsers));
+      const busStateParameters = Object.entries(processing.busStateParameterCounts || {}).map(([name, count]) => `${parameterLabelText(name)}: ${formatNumber(count)}`);
+      if (busStateParameters.length) section.appendChild(chipSection("Bus State-controlled properties", busStateParameters));
+      const busRtpcParameters = Object.entries(processing.busRtpcParameterCounts || {}).map(([name, count]) => `${parameterLabelText(name)}: ${formatNumber(count)}`);
+      if (busRtpcParameters.length) section.appendChild(chipSection("Bus RTPC-controlled properties", busRtpcParameters));
+      const busPlugins = Object.entries(processing.busEffectPluginCounts || {}).map(([name, count]) => `${name}: ${formatNumber(count)}`);
+      if (busPlugins.length) section.appendChild(chipSection("Recovered bus DSP plug-ins", busPlugins));
+      if (processing.evidenceBoundary) section.appendChild(noteSection(t("runtimeBoundary"), processing.evidenceBoundary));
+    }
     const packages = asArray(hirc.packageInventory).map((row) => [
       row.blockType || row.vfsSource || "export",
       row.fileName || row.source,
@@ -1959,6 +2250,15 @@
         });
         return `${row.groupIdHex || "?"} / ${row.semanticLabel || humanize(row.semanticRole || "unknown")} / ${humanize(row.semanticEvidence || "unknown")} / ${humanize(row.groupType || "unknown")} / ${humanize(row.runtimeScope || "scope unresolved")}${values.length ? ` / values ${values.join(", ")}` : ""} / ${humanize(row.runtimeObservationStatus || "")}`;
       }],
+      ["wwiseInitialRtpcParameters", asArray(catalog.wwiseInitialRtpcParameters), (row) => [
+        row.rtpcIdHex || "?",
+        row.parameterName || humanize(row.semanticNameStatus || "unresolved"),
+        `${formatNumber(row.curveCount || 0)} curves / ${formatNumber(row.pointCount || 0)} points`,
+        asArray(row.eventIds).slice(0, 4).join(", "),
+        Object.entries(row.controlledProperties || {}).map(([key, value]) => `${key} ${formatNumber(value)}`).join(" / "),
+        asArray(row.triggerRoles).join(" / "),
+      ].filter(Boolean).join(" / ")],
+      ["wwiseActionControls", asArray(catalog.wwiseActionControls?.referencedGroups), (row) => `${row.groupIdHex || "?"} / ${row.semanticLabel || humanize(row.semanticRole || "unknown")} / ${humanize(row.groupType || "unknown")} / ${humanize(row.runtimeObservationStatus || "")}`],
     ];
     for (const [labelKey, rows, formatRow] of groups) {
       if (!rows.length) continue;
@@ -2439,6 +2739,8 @@
           chainCard.className = "audio-runtime-call-chain";
           const label = normalize(chain.label ?? chain.id) || "Native call chain";
           const stages = asArray(chain.stages).filter((row) => row && typeof row === "object");
+          const alternateEntryPoints = asArray(chain.alternateEntryPoints)
+            .filter((row) => row && typeof row === "object");
           const branches = asArray(chain.branches).filter((row) => row && typeof row === "object");
           const title = document.createElement("strong");
           title.textContent = `${label}${stages.length ? ` · ${stages.length} stages` : ""}`;
@@ -2455,6 +2757,16 @@
             chip.textContent = [
               humanize(stage.role || "stage"), identity, anchor, normalize(stage.relation),
             ].filter(Boolean).join(" · ");
+            stageList.appendChild(chip);
+          }
+          for (const entry of alternateEntryPoints) {
+            const chip = document.createElement("span");
+            chip.textContent = [
+              `alternate ${humanize(entry.role || "entry point")}`,
+              [normalize(entry.type), normalize(entry.method)].filter(Boolean).join("."),
+              normalize(entry.virtualAddress) ? `VA ${entry.virtualAddress}` : "",
+              normalize(entry.relation),
+            ].filter(Boolean).join(" 路 ");
             stageList.appendChild(chip);
           }
           for (const branch of branches) {
@@ -2694,6 +3006,7 @@
     if (context?.stopOnRelease !== undefined) parts.push(`stop on release ${String(Boolean(context.stopOnRelease))}`);
     if (context?.targetBindingKind) parts.push(`target ${context.targetBindingKind} / source ${context.targetParamSource ?? "?"}`);
     if (context?.consumerType || context?.consumerMethod) parts.push(`${context.consumerType || "managed consumer"}.${context.consumerMethod || "?"}`);
+    if (context?.customStateName) parts.push(`custom state ${context.customStateName} / switch ${context.switchMethod || "?"} ${context.switchMethodVa || "?"} / callsite ${context.callsiteVa || "?"}`);
     if (context?.selectorType || context?.selectorMethod) parts.push(`selector ${context.selectorType || "managed selector"}.${context.selectorMethod || "?"} ${context.selectorMethodVa || "?"} / load ${context.selectorLoadVa || "?"} / call ${context.selectorCallVa || "?"}`);
     if (context?.selectorField) parts.push(`selector field ${context.selectorField} ${context.selectorFieldOffset || "?"}`);
     if (context?.additionalConsumerMethod) parts.push(`additional path ${context.additionalConsumerMethod} ${context.additionalMethodVa || "?"} / load ${context.additionalSelectorLoadVa || "?"} / selector call ${context.additionalSelectorCallVa || "?"} / playback call ${context.additionalPlaybackCallVa || "?"}`);
@@ -2863,6 +3176,7 @@
     const containers = new Map();
     const musicNodes = new Map();
     const actionDetails = [];
+    let initialRtpcActionJoins = 0;
     const selector = {
       nodes: 0, exact: 0, unresolved: 0, continuous: 0,
       packages: 0, nonEmptyPackages: 0, strictSubsetPackages: 0,
@@ -2871,6 +3185,8 @@
       defaultMissing: 0, outsideChildren: 0, unmappedChildren: 0,
       groupTypes: new Map(), switchModes: new Map(), parserStatuses: new Map(),
       groupIds: new Set(), groupIdsTruncated: false,
+      semanticGroupMatches: 0, semanticValueMatches: 0,
+      semanticValues: new Map(), semanticValuesTruncated: false,
     };
     const randomSequence = {
       nodes: 0, exact: 0, unresolved: 0, playlistItems: 0,
@@ -2888,6 +3204,27 @@
       assignments: new Map(), rtpcTypes: new Map(), rtpcIds: new Set(),
       rtpcIdsTruncated: false,
     };
+    const postProcess = {
+      parsedNodes: 0, effectNodes: 0, effectSlots: 0, effectReferences: 0,
+      effectBypassSlots: 0, effectShareSetSlots: 0, effectRenderedSlots: 0,
+      effectUnknownFlagBits: 0,
+      decodedParameterReferences: 0, exactParameterReferences: 0,
+      partialParameterReferences: 0, emptySlots: 0, outputBusNodes: 0, metadataSlots: 0,
+      parsedAuxNodes: 0, failedAuxNodes: 0, authoredAuxFlagNodes: 0,
+      gameDefinedUseNodes: 0, userDefinedReferences: 0, reflectionsReferences: 0,
+      parsedStateRtpcNodes: 0, failedStateRtpcNodes: 0, stateRtpcNodes: 0,
+      stateGroupReferences: 0, stateValues: 0, rtpcCurves: 0, rtpcPoints: 0,
+      authoredPropertyValues: 0, authoredRangedPropertyValues: 0,
+      plugins: new Map(), resolutions: new Map(), busResolutions: new Map(),
+      auxBusResolutions: new Map(), parameterSchemas: new Map(), buses: new Map(),
+      auxiliaryBuses: new Map(), stateGroups: new Map(), rtpcIds: new Map(),
+      rtpcTypes: new Map(), rtpcParameters: new Map(), propertyCounts: new Map(),
+      rangedPropertyCounts: new Map(),
+      effectRows: [], auxRows: [], propertyRows: [], stateRtpcRows: [], boundaries: new Set(),
+    };
+    const busDefinitions = new Map(asArray(state.index?.hircSummary?.postProcessSummary?.busDefinitions)
+      .filter((row) => row && typeof row === "object" && (row.busIdHex || row.busId))
+      .map((row) => [normalize(row.busIdHex || row.busId).toLowerCase(), row]));
     let unresolved = 0;
     for (const evidence of asArray(record?.evidence)) {
       const dispatch = evidence?.actionDispatchEvidence;
@@ -2895,6 +3232,9 @@
         actionDetails.push([
           `${t("actionDispatch")}: ${humanize(dispatch.timingClass)}`,
           `${formatNumber(dispatch.playbackActionCount || 0)} playback actions`,
+          dispatch.controlActionCount ? `${formatNumber(dispatch.controlActionCount)} control actions` : "",
+          dispatch.typedControlActionCount ? `${formatNumber(dispatch.typedControlActionCount)} control payloads exact` : "",
+          dispatch.failedControlActionCount ? `${formatNumber(dispatch.failedControlActionCount)} control payloads unresolved` : "",
           dispatch.explicitDelayActionCount ? `${formatNumber(dispatch.explicitDelayActionCount)} delayed` : "",
           dispatch.explicitTransitionActionCount ? `${formatNumber(dispatch.explicitTransitionActionCount)} transitions` : "",
           dispatch.probabilityGatedActionCount ? `${formatNumber(dispatch.probabilityGatedActionCount)} probability gates` : "",
@@ -2903,6 +3243,44 @@
       for (const action of asArray(evidence?.actionEvidence)) {
         const operation = humanize(action?.operation || "unknown action");
         actions.set(operation, (actions.get(operation) || 0) + 1);
+        const serializedPath = asArray(action?.serializedPathTypeLabels)
+          .map((value) => humanize(value))
+          .join(" -> ");
+        const target = action?.targetTypeLabel
+          ? `target ${humanize(action.targetTypeLabel)}${action.targetId !== undefined && action.targetId !== null ? ` 0x${Number(action.targetId).toString(16)}` : ""}`
+          : "";
+        const pathEvidence = [target, serializedPath ? `serialized path ${serializedPath}` : ""]
+          .filter(Boolean)
+          .join(" / ");
+        if (action?.actionControlParserStatus === "typedExactV150") {
+          const groupSemantic = action?.controlGroupSemantic || {};
+          const valueSemantic = action?.controlValueSemantic || {};
+          const groupLabel = groupSemantic.semanticLabel
+            ? `${groupSemantic.semanticLabel} (${action.groupIdHex || "?"})`
+            : (action.groupIdHex || "?");
+          const valueLabel = valueSemantic.resolvedValueName || valueSemantic.semanticName
+            ? `${valueSemantic.resolvedValueName || valueSemantic.semanticName} (${action.stateIdHex || action.switchIdHex || "?"})`
+            : (action.stateIdHex || action.switchIdHex || "?");
+          const control = action?.operation === "setState"
+            ? `state group ${groupLabel} -> ${valueLabel}`
+            : action?.operation === "setSwitch"
+              ? `switch group ${groupLabel} -> ${valueLabel}`
+              : action?.operation === "setGameParameter" || action?.operation === "resetGameParameter"
+                ? `parameter ${action.idExtHex || "?"} / ${action.valueRange ? `${action.valueRange.base} (${action.valueMeaningLabel || "value"})` : "reset"}`
+                : action?.operation === "setBypassFXSlot" || action?.operation === "resetBypassFXSlot"
+                  ? `FX slot ${action.fxSlot ?? "?"} / bypass ${action.bypass ? "on" : "off"}`
+                  : action?.operation === "stop" || action?.operation === "pause" || action?.operation === "resume"
+                    ? `flags 0x${Number(action.actionBitVectorRaw || 0).toString(16).padStart(2, "0")}`
+                    : action?.operation === "seek"
+                      ? `seek ${action.seekValue ?? "?"}${action.seekRelativeToDuration ? " relative" : ""}`
+                    : action?.operation;
+          const initialRtpc = action?.initialRtpcSemantic;
+          if (initialRtpc && typeof initialRtpc === "object") initialRtpcActionJoins += 1;
+          const initialRtpcEvidence = initialRtpc
+            ? `Initial RTPC ${initialRtpc.rtpcIdHex || "?"} / ${formatNumber(initialRtpc.curveCount || 0)} curve${Number(initialRtpc.curveCount || 0) === 1 ? "" : "s"}`
+            : "";
+          actionDetails.push(`${t("actionOrdinal")} ${Number(action.eventActionOrdinal || 0) + 1} (${operation}): ${control}${pathEvidence ? ` / ${pathEvidence}` : ""}${initialRtpcEvidence ? ` / ${initialRtpcEvidence}` : ""}`);
+        }
         if (action?.actionParserStatus !== "typedExactV150" || !["play", "playEvent"].includes(action?.operation)) continue;
         const delay = asArray(action?.delay?.baseValuesMs);
         const delayRanges = asArray(action?.delay?.modifierRangesMs);
@@ -2914,6 +3292,7 @@
           transition.length ? `${t("transitionTime")} ${transition.join(" / ")} ms` : "",
           probability.length ? `${t("probabilityGate")} ${probability.join(" / ")}%` : "",
           action?.fade?.curveLabel ? `${t("fadeCurve")} ${action.fade.curveLabel}` : "",
+          pathEvidence,
         ].filter(Boolean).join(" / ");
         actionDetails.push(`${t("actionOrdinal")} ${Number(action.eventActionOrdinal || 0) + 1} (${operation}): ${detail}`);
       }
@@ -2951,6 +3330,14 @@
         }
         for (const groupId of asArray(container?.selectorGroupIdsHex)) selector.groupIds.add(groupId);
         selector.groupIdsTruncated ||= !!container?.selectorGroupIdsTruncated;
+        selector.semanticGroupMatches += Number(container?.selectorSemanticGroupMatchCount || 0);
+        selector.semanticValueMatches += Number(container?.selectorSemanticValueMatchCount || 0);
+        selector.semanticValuesTruncated ||= !!container?.selectorSemanticValuesTruncated;
+        for (const semanticValue of asArray(container?.selectorSemanticValues)) {
+          if (!semanticValue || typeof semanticValue !== "object") continue;
+          const key = `${normalize(semanticValue.groupIdHex || "?").toLowerCase()}:${normalize(semanticValue.valueIdHex || "?").toLowerCase()}`;
+          selector.semanticValues.set(key, semanticValue);
+        }
         randomSequence.nodes += Number(container?.randomSequenceNodeCount || 0);
         randomSequence.exact += Number(container?.typedRandomSequenceNodeCount || 0);
         randomSequence.unresolved += Number(container?.unresolvedRandomSequenceNodeCount || 0);
@@ -3032,6 +3419,129 @@
         for (const label of asArray(node?.selectionTypeLabels).filter(Boolean)) current.selectionTypes.add(humanize(label));
         musicNodes.set(kind, current);
       }
+      const processing = evidence?.postProcessSummary;
+      if (processing && typeof processing === "object") {
+        postProcess.parsedNodes += Number(processing.parsedNodeCount || 0);
+        postProcess.effectNodes += Number(processing.effectNodeCount || 0);
+        postProcess.effectSlots += Number(processing.effectSlotCount || 0);
+        postProcess.effectReferences += Number(processing.effectReferenceCount || 0);
+        postProcess.effectBypassSlots += Number(processing.effectBypassSlotCount || 0);
+        postProcess.effectShareSetSlots += Number(processing.effectShareSetSlotCount || 0);
+        postProcess.effectRenderedSlots += Number(processing.effectRenderedSlotCount || 0);
+        postProcess.effectUnknownFlagBits += Number(processing.effectUnknownFlagBitsCount || 0);
+        postProcess.decodedParameterReferences += Number(processing.decodedEffectParameterReferenceCount || 0);
+        postProcess.exactParameterReferences += Number(processing.exactEffectParameterReferenceCount || 0);
+        postProcess.partialParameterReferences += Number(processing.partialEffectParameterReferenceCount || 0);
+        postProcess.emptySlots += Number(processing.emptyEffectSlotCount || 0);
+        postProcess.outputBusNodes += Number(processing.outputBusNodeCount || 0);
+        postProcess.metadataSlots += Number(processing.metadataSlotCount || 0);
+        postProcess.parsedAuxNodes += Number(processing.parsedAuxSendNodeCount || 0);
+        postProcess.failedAuxNodes += Number(processing.failedAuxSendNodeCount || 0);
+        postProcess.authoredAuxFlagNodes += Number(processing.authoredAuxFlagNodeCount || 0);
+        postProcess.gameDefinedUseNodes += Number(processing.gameDefinedAuxSendUseBitNodeCount || 0);
+        postProcess.userDefinedReferences += Number(processing.userDefinedAuxSendReferenceCount || 0);
+        postProcess.reflectionsReferences += Number(processing.earlyReflectionsAuxSendReferenceCount || 0);
+        postProcess.parsedStateRtpcNodes += Number(processing.parsedStateRtpcNodeCount || 0);
+        postProcess.failedStateRtpcNodes += Number(processing.failedStateRtpcNodeCount || 0);
+        postProcess.stateRtpcNodes += Number(processing.stateRtpcNodeCount || 0);
+        postProcess.stateGroupReferences += Number(processing.stateGroupReferenceCount || 0);
+        postProcess.stateValues += Number(processing.stateValueCount || 0);
+        postProcess.rtpcCurves += Number(processing.rtpcCurveCount || 0);
+        postProcess.rtpcPoints += Number(processing.rtpcPointCount || 0);
+        postProcess.authoredPropertyValues += Number(processing.authoredPropertyValueCount || 0);
+        postProcess.authoredRangedPropertyValues += Number(processing.authoredRangedPropertyValueCount || 0);
+        for (const [key, count] of Object.entries(processing.effectPluginReferenceCounts || {})) {
+          postProcess.plugins.set(key, (postProcess.plugins.get(key) || 0) + Number(count || 0));
+        }
+        for (const [key, count] of Object.entries(processing.effectResolutionCounts || {})) {
+          postProcess.resolutions.set(key, (postProcess.resolutions.get(key) || 0) + Number(count || 0));
+        }
+        for (const [key, count] of Object.entries(processing.effectParameterSchemaReferenceCounts || {})) {
+          postProcess.parameterSchemas.set(key, (postProcess.parameterSchemas.get(key) || 0) + Number(count || 0));
+        }
+        for (const [key, count] of Object.entries(processing.outputBusResolutionCounts || {})) {
+          postProcess.busResolutions.set(key, (postProcess.busResolutions.get(key) || 0) + Number(count || 0));
+        }
+        for (const [key, count] of Object.entries(processing.auxiliaryBusResolutionCounts || {})) {
+          postProcess.auxBusResolutions.set(key, (postProcess.auxBusResolutions.get(key) || 0) + Number(count || 0));
+        }
+        for (const [key, count] of Object.entries(processing.rtpcTypeCounts || {})) {
+          postProcess.rtpcTypes.set(key, (postProcess.rtpcTypes.get(key) || 0) + Number(count || 0));
+        }
+        for (const [key, count] of Object.entries(processing.rtpcParameterCounts || {})) {
+          postProcess.rtpcParameters.set(key, (postProcess.rtpcParameters.get(key) || 0) + Number(count || 0));
+        }
+        for (const [key, count] of Object.entries(processing.authoredPropertyCounts || {})) {
+          postProcess.propertyCounts.set(key, (postProcess.propertyCounts.get(key) || 0) + Number(count || 0));
+        }
+        for (const [key, count] of Object.entries(processing.authoredRangedPropertyCounts || {})) {
+          postProcess.rangedPropertyCounts.set(key, (postProcess.rangedPropertyCounts.get(key) || 0) + Number(count || 0));
+        }
+        for (const bus of asArray(processing.outputBuses)) {
+          if (!bus || typeof bus !== "object") continue;
+          const key = normalize(bus.busIdHex || bus.busId || "unknown");
+          const current = postProcess.buses.get(key) || {
+            count: 0,
+            status: bus.resolutionStatus,
+            labels: bus.objectTypeLabels,
+            path: asArray(bus.busPathIdHexes),
+            pathStatus: bus.busPathResolutionStatus,
+            unresolvedProcessing: asArray(bus.unresolvedBusProcessingIdHexes),
+          };
+          current.count += Number(bus.nodeCount || 0);
+          postProcess.buses.set(key, current);
+        }
+        for (const bus of asArray(processing.auxiliaryBuses)) {
+          if (!bus || typeof bus !== "object") continue;
+          const busId = normalize(bus.busIdHex || bus.busId || "unknown");
+          const key = `${normalize(bus.sendKind || "auxiliary")}:${busId}`;
+          const current = postProcess.auxiliaryBuses.get(key) || {
+            sendKind: normalize(bus.sendKind || "auxiliary"),
+            busId,
+            count: 0,
+            status: bus.resolutionStatus,
+            labels: bus.objectTypeLabels,
+            path: asArray(bus.busPathIdHexes),
+            pathStatus: bus.busPathResolutionStatus,
+            unresolvedProcessing: asArray(bus.unresolvedBusProcessingIdHexes),
+          };
+          current.count += Number(bus.referenceCount || 0);
+          postProcess.auxiliaryBuses.set(key, current);
+        }
+        for (const node of asArray(processing.auxSendNodes)) {
+          if (node && typeof node === "object") postProcess.auxRows.push(node);
+        }
+        for (const node of asArray(processing.propertyNodes)) {
+          if (node && typeof node === "object") postProcess.propertyRows.push(node);
+        }
+        for (const group of asArray(processing.stateGroups)) {
+          if (!group || typeof group !== "object") continue;
+          const key = normalize(group.groupIdHex || group.groupId || "unknown");
+          const current = postProcess.stateGroups.get(key) || { nodeCount: 0, valueCount: 0 };
+          current.nodeCount += Number(group.nodeCount || 0);
+          current.valueCount += Number(group.valueCount || 0);
+          postProcess.stateGroups.set(key, current);
+        }
+        for (const rtpc of asArray(processing.rtpcIds)) {
+          if (!rtpc || typeof rtpc !== "object") continue;
+          const key = normalize(rtpc.rtpcIdHex || rtpc.rtpcId || "unknown");
+          postProcess.rtpcIds.set(key, (postProcess.rtpcIds.get(key) || 0) + Number(rtpc.curveCount || 0));
+        }
+        for (const node of asArray(processing.stateRtpcNodes)) {
+          if (node && typeof node === "object") postProcess.stateRtpcRows.push(node);
+        }
+        for (const node of asArray(processing.effectNodes)) {
+          if (node && typeof node === "object") {
+            postProcess.effectRows.push(node);
+            for (const slot of asArray(node.effects)) {
+              if (slot?.parameterSemanticBoundary) {
+                postProcess.boundaries.add(slot.parameterSemanticBoundary);
+              }
+            }
+          }
+        }
+        if (processing.evidenceBoundary) postProcess.boundaries.add(processing.evidenceBoundary);
+      }
       unresolved += asArray(evidence?.unresolvedNodes).length;
     }
     const values = [...actions].map(([operation, count]) => `${operation} × ${formatNumber(count)}`);
@@ -3054,6 +3564,16 @@
         selector.continuous ? `${formatNumber(selector.continuous)} continuous-validation` : "",
         statuses,
       ].filter(Boolean).join(" / "));
+      if (selector.semanticGroupMatches || selector.semanticValueMatches) {
+        values.push([
+          `Native semantic selector joins: ${formatNumber(selector.semanticGroupMatches)} group mappings`,
+          `${formatNumber(selector.semanticValueMatches)} package values`,
+          [...selector.semanticValues.values()].slice(0, 12).map((row) =>
+            `${row.groupIdHex || "?"} -> ${row.semanticName || row.resolvedValueName || row.valueIdHex || "?"}`
+          ).join(" / "),
+          selector.semanticValuesTruncated || selector.semanticValues.size > 12 ? "more omitted" : "",
+        ].filter(Boolean).join(" / "));
+      }
       values.push([
         `Selector packages: ${formatNumber(selector.packages)}`,
         `${formatNumber(selector.nonEmptyPackages)} non-empty`,
@@ -3140,6 +3660,261 @@
         values.push(`Layer RTPC ids: ${rtpcIds.slice(0, 12).join(" / ")}${layerBlend.rtpcIdsTruncated || rtpcIds.length > 12 ? " / more omitted" : ""}`);
       }
       values.push("Layer curves prove authored RTPC-driven blend/crossfade policy. The live RTPC value, per-child gain, audible layers, and selected media were not observed; zero-layer assignments remain structural child relations only.");
+    }
+    if (initialRtpcActionJoins) {
+      values.push(`Initial RTPC same-ID joins: ${formatNumber(initialRtpcActionJoins)} action${initialRtpcActionJoins === 1 ? "" : "s"} -> authored curve target`);
+    }
+    if (postProcess.effectSlots || postProcess.outputBusNodes || postProcess.metadataSlots || postProcess.authoredAuxFlagNodes || postProcess.authoredPropertyValues || postProcess.authoredRangedPropertyValues || postProcess.stateRtpcNodes) {
+      const counted = (items) => [...items]
+        .map(([key, count]) => `${humanize(key)} ${formatNumber(count)}`)
+        .join(" / ");
+      values.push([
+        `Wwise direct processing: ${formatNumber(postProcess.parsedNodes)} nodes`,
+        `${formatNumber(postProcess.effectNodes)} nodes with ${formatNumber(postProcess.effectSlots)} effect slots`,
+        `${formatNumber(postProcess.effectReferences)} plug-in references`,
+        postProcess.effectBypassSlots ? `${formatNumber(postProcess.effectBypassSlots)} effect bypass bits` : "",
+        postProcess.effectShareSetSlots ? `${formatNumber(postProcess.effectShareSetSlots)} effect ShareSet bits` : "",
+        postProcess.effectRenderedSlots ? `${formatNumber(postProcess.effectRenderedSlots)} effect rendered bits` : "",
+        postProcess.effectUnknownFlagBits ? `${formatNumber(postProcess.effectUnknownFlagBits)} effect slots with unknown flag bits` : "",
+        postProcess.emptySlots ? `${formatNumber(postProcess.emptySlots)} empty slots` : "",
+        postProcess.metadataSlots ? `${formatNumber(postProcess.metadataSlots)} metadata slots` : "",
+        `${formatNumber(postProcess.outputBusNodes)} explicit output-bus routes`,
+        postProcess.authoredAuxFlagNodes ? `${formatNumber(postProcess.authoredAuxFlagNodes)} nodes with authored Aux flags` : "",
+        postProcess.gameDefinedUseNodes ? `${formatNumber(postProcess.gameDefinedUseNodes)} Game-Defined send use bits` : "",
+        postProcess.userDefinedReferences ? `${formatNumber(postProcess.userDefinedReferences)} User-Defined Aux Bus references` : "",
+        postProcess.reflectionsReferences ? `${formatNumber(postProcess.reflectionsReferences)} Early Reflections Aux Bus references` : "",
+        postProcess.failedAuxNodes ? `${formatNumber(postProcess.failedAuxNodes)} Aux parsers failed closed` : "",
+        postProcess.authoredPropertyValues ? `${formatNumber(postProcess.authoredPropertyValues)} authored base property values` : "",
+        postProcess.authoredRangedPropertyValues ? `${formatNumber(postProcess.authoredRangedPropertyValues)} authored base property ranges` : "",
+        postProcess.stateRtpcNodes ? `${formatNumber(postProcess.stateRtpcNodes)} nodes with State/RTPC control` : "",
+        postProcess.stateGroupReferences ? `${formatNumber(postProcess.stateGroupReferences)} State Group references / ${formatNumber(postProcess.stateValues)} values` : "",
+        postProcess.rtpcCurves ? `${formatNumber(postProcess.rtpcCurves)} Initial RTPC curves / ${formatNumber(postProcess.rtpcPoints)} points` : "",
+        postProcess.failedStateRtpcNodes ? `${formatNumber(postProcess.failedStateRtpcNodes)} State/RTPC parsers failed closed` : "",
+      ].filter(Boolean).join(" / "));
+      if (postProcess.plugins.size) values.push(`DSP plug-ins: ${counted(postProcess.plugins)}`);
+      if (postProcess.decodedParameterReferences) values.push(
+        `Decoded authored DSP settings: ${formatNumber(postProcess.decodedParameterReferences)} references`
+        + (postProcess.partialParameterReferences
+          ? ` / ${formatNumber(postProcess.exactParameterReferences)} exact semantics / ${formatNumber(postProcess.partialParameterReferences)} partial semantics`
+          : "")
+        + ` / ${counted(postProcess.parameterSchemas)}`
+      );
+      if (postProcess.resolutions.size) values.push(`Effect definition resolution: ${counted(postProcess.resolutions)}`);
+      const busRows = [...postProcess.buses].slice(0, 16).map(([busId, bus]) => {
+        const path = bus.path.length ? bus.path : [busId];
+        const chain = path.map((pathId) => {
+          const definition = busDefinitions.get(normalize(pathId).toLowerCase());
+          if (!definition) return pathId;
+          const effects = asArray(definition.effects).map((slot) => [
+            `slot ${slot.slotIndex ?? slot.ordinal ?? "?"}`,
+            slot.pluginName || slot.pluginClassIdHex || slot.effectIdHex || "effect",
+            slot.parameterSummary || "",
+          ].filter(Boolean).join(" / "));
+          const details = [
+            humanize(definition.objectTypeLabel || "bus"),
+            effects.length ? effects.join("; ") : "",
+            ["nonEmptyEffectChunkNotLocated", "ambiguousCrossCorrelatedEffectChunks"].includes(definition.effectParserStatus) ? "effect list unresolved" : "",
+            definition.effectParserStatus === "exactTypedV150EffectChunkWithUnresolvedReferences" ? "effect reference unresolved" : "",
+            ["exactCrossCorrelatedEmptyEffectChunk", "exactTypedV150EmptyEffectChunk"].includes(definition.effectParserStatus) ? "serialized effect list empty" : "",
+            definition.serializedDuckCount ? `${formatNumber(definition.serializedDuckCount)} authored duck(s)` : "",
+          ].filter(Boolean);
+          return details.length ? `${pathId} [${details.join(" / ")}]` : pathId;
+        }).join(" → ");
+        return `${formatNumber(bus.count)} nodes / ${chain} / ${humanize(bus.pathStatus || bus.status || "unknown")}`;
+      });
+      if (busRows.length) values.push(`Output buses: ${busRows.join(" / ")}${postProcess.buses.size > 16 ? " / more omitted" : ""}`);
+      const auxBusRows = [...postProcess.auxiliaryBuses.values()].slice(0, 16).map((bus) => {
+        const path = bus.path.length ? bus.path : [bus.busId];
+        const chain = path.map((pathId) => {
+          const definition = busDefinitions.get(normalize(pathId).toLowerCase());
+          if (!definition) return pathId;
+          const effects = asArray(definition.effects).map((slot) => [
+            `slot ${slot.slotIndex ?? slot.ordinal ?? "?"}`,
+            slot.pluginName || slot.pluginClassIdHex || slot.effectIdHex || "effect",
+            slot.parameterSummary || "",
+          ].filter(Boolean).join(" / "));
+          const details = [
+            humanize(definition.objectTypeLabel || "bus"),
+            effects.length ? effects.join("; ") : "",
+            ["nonEmptyEffectChunkNotLocated", "ambiguousCrossCorrelatedEffectChunks"].includes(definition.effectParserStatus) ? "effect list unresolved" : "",
+            definition.effectParserStatus === "exactTypedV150EffectChunkWithUnresolvedReferences" ? "effect reference unresolved" : "",
+            ["exactCrossCorrelatedEmptyEffectChunk", "exactTypedV150EmptyEffectChunk"].includes(definition.effectParserStatus) ? "serialized effect list empty" : "",
+            definition.serializedDuckCount ? `${formatNumber(definition.serializedDuckCount)} authored duck(s)` : "",
+          ].filter(Boolean);
+          return details.length ? `${pathId} [${details.join(" / ")}]` : pathId;
+        }).join(" -> ");
+        return `${humanize(bus.sendKind)} x ${formatNumber(bus.count)} / ${chain} / ${humanize(bus.pathStatus || bus.status || "unknown")}`;
+      });
+      if (auxBusRows.length) values.push(`Serialized Auxiliary Send slots: ${auxBusRows.join(" / ")}${postProcess.auxiliaryBuses.size > 16 ? " / more omitted" : ""}`);
+      if (postProcess.gameDefinedUseNodes) values.push("Game-Defined send enablement is authored here; the runtime assigns Aux Bus IDs, listeners, and control values, so no static wet path is invented.");
+      if (postProcess.propertyCounts.size) values.push(`Authored base properties: ${counted(postProcess.propertyCounts)}`);
+      if (postProcess.rangedPropertyCounts.size) values.push(`Authored base property ranges: ${counted(postProcess.rangedPropertyCounts)}`);
+      const formatPropertyValue = (prop) => {
+        const label = prop.propertyLabel || prop.propertyIdHex || `property ${prop.propertyId ?? "?"}`;
+        const floatValue = prop.floatValue;
+        const value = String(prop.valueEncoding || "").startsWith("u32")
+          ? `${prop.rawU32 ?? "?"}${prop.valueEncoding === "u32Id" && prop.rawHex ? ` (${prop.rawHex})` : ""}`
+          : floatValue !== null && floatValue !== undefined && Number.isFinite(Number(floatValue))
+            ? Number(floatValue).toPrecision(7).replace(/\.?0+$/, "")
+            : prop.rawHex || prop.rawU32 || "?";
+        return `${label} ${value}`;
+      };
+      const formatPropertyRange = (prop) => {
+        const label = prop.propertyLabel || prop.propertyIdHex || `property ${prop.propertyId ?? "?"}`;
+        const minimum = prop.minimumFloat !== null && prop.minimumFloat !== undefined && Number.isFinite(Number(prop.minimumFloat))
+          ? Number(prop.minimumFloat).toPrecision(7).replace(/\.?0+$/, "")
+          : prop.minimumRawHex || "?";
+        const maximum = prop.maximumFloat !== null && prop.maximumFloat !== undefined && Number.isFinite(Number(prop.maximumFloat))
+          ? Number(prop.maximumFloat).toPrecision(7).replace(/\.?0+$/, "")
+          : prop.maximumRawHex || "?";
+        return `${label} ${minimum}..${maximum}`;
+      };
+      for (const node of postProcess.propertyRows.slice(0, 20)) {
+        const properties = asArray(node.properties).map(formatPropertyValue);
+        const ranges = asArray(node.rangedProperties).map(formatPropertyRange);
+        values.push([
+          `Base-property node ${node.objectId ?? "?"} (${humanize(node.objectTypeLabel || `type ${node.objectType ?? "?"}`)})`,
+          properties.length ? properties.join(", ") : "",
+          ranges.length ? `ranges ${ranges.join(", ")}` : "",
+        ].filter(Boolean).join(" / "));
+      }
+      if (postProcess.propertyRows.length > 20) values.push(`${formatNumber(postProcess.propertyRows.length - 20)} more base-property nodes omitted from this compact view.`);
+      for (const node of postProcess.auxRows.slice(0, 20)) {
+        const sends = asArray(node.userDefinedAuxSends).map((send) => `slot ${send.slotIndex ?? "?"} -> ${send.busIdHex || send.busId}`).join("; ");
+        values.push([
+          `Aux node ${node.objectId ?? "?"} (${humanize(node.objectTypeLabel || `type ${node.objectType ?? "?"}`)})`,
+          `flags 0x${Number(node.auxFlagsRaw || 0).toString(16).padStart(2, "0")}`,
+          node.overrideUserDefinedAuxSends ? "User-Defined override bit on" : "User-Defined override bit off",
+          sends || "no populated User-Defined slots",
+          node.useGameDefinedAuxSends ? "Game-Defined sends enabled (runtime target)" : "",
+          node.overrideEarlyReflectionsAuxBus ? "override Early Reflections bus" : "",
+        ].filter(Boolean).join(" / "));
+      }
+      if (postProcess.auxRows.length > 20) values.push(`${formatNumber(postProcess.auxRows.length - 20)} more Aux nodes omitted from this compact view.`);
+      if (postProcess.stateRtpcNodes) {
+        const selectorGroups = new Map(asArray(state.index?.controlCatalog?.wwiseSelectorGroups)
+          .filter((row) => row && typeof row === "object" && row.groupIdHex)
+          .map((row) => [normalize(row.groupIdHex).toLowerCase(), row]));
+        const knownRtpcNames = new Map();
+        const fnv1Hex = (name) => {
+          let hash = 0x811c9dc5;
+          for (const character of String(name || "").toLowerCase()) {
+            const code = character.codePointAt(0);
+            if (code > 0x7f) return "";
+            hash = Math.imul(hash, 0x01000193) >>> 0;
+            hash = (hash ^ code) >>> 0;
+          }
+          return `0x${hash.toString(16).padStart(8, "0")}`;
+        };
+        for (const key of ["rtpcParameters", "physicsAudioRtpcParameters", "modelViewStateRtpcParameters"]) {
+          for (const row of asArray(state.index?.controlCatalog?.[key])) {
+            const name = normalize(row?.parameterName);
+            const hash = fnv1Hex(name);
+            if (!name || !hash) continue;
+            if (!knownRtpcNames.has(hash)) knownRtpcNames.set(hash, name);
+            else if (knownRtpcNames.get(hash) !== name) knownRtpcNames.set(hash, "");
+          }
+        }
+        const stateGroupRows = [...postProcess.stateGroups].slice(0, 16).map(([groupId, group]) => {
+          const catalog = selectorGroups.get(normalize(groupId).toLowerCase());
+          return [
+            groupId,
+            catalog?.semanticLabel || humanize(catalog?.semanticRole || ""),
+            `${formatNumber(group.nodeCount)} nodes`,
+            `${formatNumber(group.valueCount)} property values`,
+          ].filter(Boolean).join(" / ");
+        });
+        if (stateGroupRows.length) values.push(`State Groups: ${stateGroupRows.join("; ")}${postProcess.stateGroups.size > 16 ? "; more omitted" : ""}`);
+        const rtpcRows = [...postProcess.rtpcIds].slice(0, 20).map(([rtpcId, count]) => {
+          const name = knownRtpcNames.get(normalize(rtpcId).toLowerCase());
+          return `${rtpcId}${name ? ` (${name})` : ""} / ${formatNumber(count)} curves`;
+        });
+        if (rtpcRows.length) values.push(`Initial RTPC IDs: ${rtpcRows.join("; ")}${postProcess.rtpcIds.size > 20 ? "; more omitted" : ""}`);
+        if (postProcess.rtpcTypes.size) values.push(`Initial RTPC control types: ${counted(postProcess.rtpcTypes)}`);
+        if (postProcess.rtpcParameters.size) values.push(`RTPC-controlled properties: ${counted(postProcess.rtpcParameters)}`);
+        for (const node of postProcess.stateRtpcRows.slice(0, 20)) {
+          const groupDetails = asArray(node.stateGroups).map((group) => {
+            const groupId = normalize(group.groupIdHex || group.groupId || "unknown");
+            const catalog = selectorGroups.get(groupId.toLowerCase());
+            const valueNames = new Map(asArray(catalog?.values)
+              .filter((row) => row && typeof row === "object" && row.valueIdHex)
+              .map((row) => [normalize(row.valueIdHex).toLowerCase(), row.semanticName || row.semanticNameStatus || ""]));
+            const states = asArray(group.states).map((stateRow) => {
+              const stateId = normalize(stateRow.stateIdHex || stateRow.stateId || "unknown");
+              const stateName = valueNames.get(stateId.toLowerCase());
+              const properties = asArray(stateRow.values).map((entry) => `${rtpcParameterText(entry)} ${Number(entry.value).toPrecision(6).replace(/\.?0+$/, "")}`).join(", ");
+              return `${stateId}${stateName ? ` (${stateName})` : ""}: ${properties || "no property values"}`;
+            });
+            return `${groupId}${catalog?.semanticLabel ? ` (${catalog.semanticLabel})` : ""} / ${humanize(group.syncTypeLabel || "unknown sync")} / ${states.join("; ") || "no active state rows"}`;
+          });
+          const curves = asArray(node.rtpcCurves).map((curve) => {
+            const rtpcId = normalize(curve.rtpcIdHex || curve.rtpcId || "unknown");
+            const name = knownRtpcNames.get(rtpcId.toLowerCase());
+            const points = asArray(curve.points).map((point) => `${Number(point.from).toPrecision(6).replace(/\.?0+$/, "")} -> ${Number(point.to).toPrecision(6).replace(/\.?0+$/, "")} ${humanize(point.interpolationLabel || "")}`).join(", ");
+            return `${rtpcId}${name ? ` (${name})` : ""} / ${humanize(curve.rtpcTypeLabel || "unknown")} / ${rtpcParameterText(curve)} / ${humanize(curve.accumLabel || "unknown")} / ${humanize(curve.scalingLabel || "none")} / ${points}`;
+          });
+          values.push([
+            `State/RTPC node ${node.objectId ?? "?"} (${humanize(node.objectTypeLabel || `type ${node.objectType ?? "?"}`)})`,
+            groupDetails.length ? `State ${groupDetails.join(" | ")}` : "",
+            curves.length ? `RTPC ${curves.join(" | ")}` : "",
+          ].filter(Boolean).join(": "));
+        }
+        if (postProcess.stateRtpcRows.length > 20) values.push(`${formatNumber(postProcess.stateRtpcRows.length - 20)} more State/RTPC nodes omitted from this compact view.`);
+        values.push("State and RTPC rows are authored control policy. Live values, inherited effective properties, effect bypass, and audibility were not observed.");
+      }
+      for (const node of postProcess.effectRows.slice(0, 20)) {
+        const slots = asArray(node.effects).map((slot) => {
+          const pluginMedia = asArray(slot.pluginMediaDependencies)
+            .map((row) => `${row.mediaIdHex || row.mediaId} (${humanize(row.semanticRole || "plugin media")})`)
+            .join(" + ");
+          const nativeTuning = [
+            ...asArray(slot.parameterValues?.internalTuningParameters),
+            ...asArray(slot.parameterValues?.unresolvedParameters),
+          ]
+            .filter((row, index, rows) => row && row.nativeUseRole
+              && rows.findIndex((candidate) => candidate === row) === index)
+            .map((row) => {
+              const value = Number.isFinite(Number(row.value))
+                ? Number(row.value).toPrecision(6).replace(/\.?0+$/, "")
+                : row.value ?? (row.rawCode !== undefined ? `0x${Number(row.rawCode).toString(16)}` : "?");
+              const consumers = asArray(row.nativeConsumerRvas).join(", ");
+              const setParam = row.setParamId === null || row.setParamId === undefined
+                ? `byte ${row.serializedOffset ?? "?"}`
+                : `SetParam ${row.setParamId}`;
+              const nativeOffset = row.nativeStructOffset !== undefined
+                ? ` native +0x${Number(row.nativeStructOffset).toString(16)}`
+                : "";
+              const wrapperOffset = row.wrapperOffset !== undefined
+                ? ` wrapper +0x${Number(row.wrapperOffset).toString(16)}`
+                : "";
+              const status = row.nativeUseStatus && row.nativeUseStatus !== "exactNativeUseRolePublicNameUnresolved"
+                ? ` / ${humanize(row.nativeUseStatus)}`
+                : "";
+              const detail = row.nativeUseDetail ? ` — ${row.nativeUseDetail}` : "";
+              return `${setParam}=${value}${nativeOffset}${wrapperOffset}: ${humanize(row.nativeUseRole)}${status}`
+                + (consumers ? ` (${consumers})` : "")
+                + detail;
+            })
+            .join("; ");
+          return [
+            `slot ${slot.slotIndex ?? slot.ordinal ?? "?"}`,
+            slot.pluginName || slot.pluginClassIdHex || slot.effectIdHex || "empty",
+            humanize(slot.objectTypeLabel || slot.resolutionStatus || "unknown"),
+            slot.parameterByteLength !== undefined ? `${formatNumber(slot.parameterByteLength)} parameter bytes` : "",
+            slot.parameterSummary || "",
+            pluginMedia ? `plug-in media ${pluginMedia}` : "",
+            nativeTuning ? `native tuning ${nativeTuning}` : "",
+            slot.effectBypass !== undefined ? `bypass ${slot.effectBypass ? "on" : "off"}` : "",
+            slot.effectShareSet !== undefined ? (slot.effectShareSet ? "ShareSet" : "custom/inline") : "",
+            slot.effectRendered !== undefined && slot.effectRendered !== null ? `rendered ${slot.effectRendered ? "on" : "off"}` : "",
+            slot.unknownFlagBits ? `unknown flag bits 0x${Number(slot.unknownFlagBits).toString(16)}` : "",
+            `flags ${slot.flagsRaw ?? "?"}`,
+          ].filter(Boolean).join(" / ");
+        });
+        values.push(`Node ${node.objectId ?? "?"} (${humanize(node.objectTypeLabel || `type ${node.objectType ?? "?"}`)}): ${slots.join("; ")}`);
+      }
+      if (postProcess.effectRows.length > 20) values.push(`${formatNumber(postProcess.effectRows.length - 20)} more effect nodes omitted from this compact view.`);
+      for (const boundary of postProcess.boundaries) values.push(boundary);
     }
     for (const detail of actionDetails) values.push(detail);
     for (const [kind, value] of musicNodes) {
@@ -3241,6 +4016,232 @@
     return values;
   }
 
+  function mediaPostProcessEffectSummary(raw) {
+    const ids = asArray(raw?.postProcessEffectBusIds).map((value) => normalize(value).toLowerCase()).filter(Boolean);
+    if (!ids.length) return [];
+    const definitions = new Map(asArray(state.index?.hircSummary?.postProcessSummary?.busDefinitions)
+      .filter((row) => row && typeof row === "object")
+      .map((row) => [normalize(row.busIdHex || row.busId).toLowerCase(), row]));
+    const rows = [];
+    const seen = new Set();
+    for (const id of ids) {
+      const definition = definitions.get(id);
+      for (const slot of asArray(definition?.effects)) {
+        if (!slot || typeof slot !== "object") continue;
+        const label = [
+          id,
+          `slot ${slot.slotIndex ?? "?"}`,
+          slot.pluginName || slot.pluginClassIdHex || slot.effectIdHex || "effect",
+          slot.parameterSummary || "authored parameters unavailable",
+        ].join(" / ");
+        if (!seen.has(label)) {
+          seen.add(label);
+          rows.push(label);
+        }
+      }
+    }
+    return rows;
+  }
+
+  function mediaPostProcessDirectEffectSummary(raw) {
+    return asArray(raw?.postProcessDirectEffects)
+      .filter((row) => row && typeof row === "object")
+      .map((row) => [
+        row.effectIdHex || "effect",
+        row.pluginName || row.pluginClassIdHex || "plugin",
+        row.slotIndex !== undefined ? `slot ${row.slotIndex}` : "",
+        row.objectId !== undefined ? `node ${row.objectId}` : "",
+        row.effectBypass !== undefined ? `bypass ${row.effectBypass ? "on" : "off"}` : "",
+        row.effectShareSet !== undefined ? `ShareSet ${row.effectShareSet ? "on" : "off"}` : "",
+        row.effectRendered !== undefined ? `rendered ${row.effectRendered ? "on" : "off"}` : "",
+        row.parameterSummary || "authored parameters unavailable",
+      ].filter(Boolean).join(" / "));
+  }
+
+  function mediaPostProcessEffectChainSummary(raw) {
+    const definitions = new Map(asArray(state.index?.hircSummary?.postProcessSummary?.busDefinitions)
+      .filter((row) => row && typeof row === "object")
+      .map((row) => [normalize(row.busIdHex || row.busId).toLowerCase(), row]));
+    return asArray(raw?.postProcessEffectChain)
+      .filter((row) => row && typeof row === "object")
+      .map((row) => {
+        const busSlot = row.stage === "bus"
+          ? asArray(definitions.get(normalize(row.busIdHex).toLowerCase())?.effects)
+            .find((slot) => slot && typeof slot === "object"
+              && (row.slotIndex === undefined || Number(slot.slotIndex) === Number(row.slotIndex))
+              && (!row.effectIdHex || normalize(slot.effectIdHex).toLowerCase() === normalize(row.effectIdHex).toLowerCase()))
+          : null;
+        const effect = busSlot || row;
+        return [
+          row.stage === "bus" ? "Bus" : "direct node",
+          row.stage === "bus" ? (row.busIdHex || "bus") : (row.objectId !== undefined ? `node ${row.objectId}` : "node"),
+          row.stage === "bus" && row.pathDepth !== undefined ? `depth ${row.pathDepth}` : "",
+          row.slotIndex !== undefined ? `slot ${row.slotIndex}` : "",
+          effect.pluginName || effect.pluginClassIdHex || row.effectIdHex || "effect",
+          effect.effectBypass !== undefined ? `bypass ${effect.effectBypass ? "on" : "off"}` : "",
+          effect.effectShareSet !== undefined ? `ShareSet ${effect.effectShareSet ? "on" : "off"}` : "",
+          effect.effectRendered !== undefined ? `rendered ${effect.effectRendered ? "on" : "off"}` : "",
+          effect.parameterSummary || "authored parameters in Bus catalog",
+        ].filter(Boolean).join(" / ");
+      });
+  }
+
+  function mediaPostProcessBusControlSummary(raw) {
+    const definitions = new Map(asArray(state.index?.hircSummary?.postProcessSummary?.busDefinitions)
+      .filter((row) => row && typeof row === "object")
+      .map((row) => [normalize(row.busIdHex || row.busId).toLowerCase(), row]));
+    return asArray(raw?.postProcessBusControls)
+      .filter((row) => row && typeof row === "object")
+      .map((row) => {
+        const pathIndexes = asArray(row.pathIndexes).map((value) => `#${value}`).join(", ");
+        const pathDepths = asArray(row.pathDepths).map((value) => `d${value}`).join(", ");
+        const definitionCurves = asArray(definitions.get(normalize(row.busIdHex).toLowerCase())
+          ?.serializedStateAndRtpc?.rtpcCurves);
+        const rtpc = (definitionCurves.length ? definitionCurves : asArray(row.rtpcIds).map((id) => ({ rtpcIdHex: id }))).map((curve) => [
+          curve.rtpcIdHex || "RTPC",
+          rtpcParameterText(curve),
+          `${formatNumber(curve.pointCount || 0)}pt`,
+        ].filter(Boolean).join(" ")).join(", ");
+        const states = asArray(row.stateControls).map((state) => [
+          state.groupIdHex || "group",
+          state.stateIdHex || "state",
+          rtpcParameterText(state),
+          state.value !== undefined && state.value !== null ? String(state.value) : "",
+        ].filter(Boolean).join(" ")).join(", ");
+        return [
+          row.busIdHex || "bus",
+          pathIndexes ? `paths ${pathIndexes}` : "",
+          pathDepths ? `depths ${pathDepths}` : "",
+          row.rtpcCurveCount ? `RTPC ${formatNumber(row.rtpcCurveCount)} / ${formatNumber(row.rtpcPointCount || 0)}pt` : "",
+          rtpc ? `[${rtpc}${row.rtpcControlsTruncated ? ", ..." : ""}]` : "",
+          row.stateGroupCount ? `State ${formatNumber(row.stateGroupCount)} groups / ${formatNumber(row.stateValueCount || 0)} values` : "",
+          states ? `[${states}${row.stateControlsTruncated ? ", ..." : ""}]` : "",
+        ].filter(Boolean).join(" / ");
+      });
+  }
+
+  function mediaPostProcessBusDuckSummary(raw) {
+    return asArray(raw?.postProcessBusDucks)
+      .filter((row) => row && typeof row === "object")
+      .map((row) => {
+        const pathIndexes = asArray(row.pathIndexes).map((value) => `#${value}`).join(", ");
+        const pathDepths = asArray(row.pathDepths).map((value) => `d${value}`).join(", ");
+        const ducks = asArray(row.ducks).map((duck) => [
+          duck.targetBusIdHex || "target bus",
+          duck.duckVolumeDb !== undefined ? `${duck.duckVolumeDb} dB` : "",
+          duck.targetPropertyLabel || duck.targetPropertyIdHex || "",
+          duck.fadeOutMs !== undefined || duck.fadeInMs !== undefined
+            ? `fade ${duck.fadeOutMs ?? "?"}/${duck.fadeInMs ?? "?"} ms`
+            : "",
+          duck.fadeCurve !== undefined ? `curve ${duck.fadeCurve}` : "",
+        ].filter(Boolean).join(" ")).join(", ");
+        return [
+          row.busIdHex || "bus",
+          pathIndexes ? `paths ${pathIndexes}` : "",
+          pathDepths ? `depths ${pathDepths}` : "",
+          `${formatNumber(row.duckCount || 0)} duck(s)`,
+          row.maxDuckVolumeDb !== undefined ? `max ${row.maxDuckVolumeDb} dB` : "",
+          ducks ? `[${ducks}${row.ducksTruncated ? ", ..." : ""}]` : "",
+        ].filter(Boolean).join(" / ");
+      });
+  }
+
+  function mediaPostProcessAuxSendSummary(raw) {
+    return asArray(raw?.postProcessAuxSends)
+      .filter((row) => row && typeof row === "object")
+      .map((row) => {
+        const routes = asArray(row.busRoutes).map((route) => [
+          asArray(route.busPathIdHexes).join(" -> "),
+          asArray(route.effectBusIdHexes).length
+            ? `effect ${asArray(route.effectBusIdHexes).join(",")}`
+            : "",
+          route.busPathResolutionStatus || route.resolutionStatus || "",
+        ].filter(Boolean).join(" ")).join(", ");
+        return [
+          row.busIdHex || "Aux Bus",
+          row.slotIndex !== undefined ? `slot ${row.slotIndex}` : "",
+          row.sourceObjectCount ? `${formatNumber(row.sourceObjectCount)} source node(s)` : "",
+          asArray(row.sourceObjectTypeLabels).join(", "),
+          asArray(row.auxFlagsRawValues).length
+            ? `flags ${asArray(row.auxFlagsRawValues).join(", ")}`
+            : "",
+          asArray(row.overrideUserDefinedAuxSends).length
+            ? `override ${asArray(row.overrideUserDefinedAuxSends).join(", ")}`
+            : "",
+          asArray(row.useGameDefinedAuxSends).length
+            ? `game-defined ${asArray(row.useGameDefinedAuxSends).join(", ")}`
+            : "",
+          asArray(row.serializationStatuses).join(", "),
+          routes ? `route ${routes}` : "",
+        ].filter(Boolean).join(" / ");
+      });
+  }
+
+  function mediaPostProcessPropertySummary(raw) {
+    return asArray(raw?.postProcessProperties)
+      .filter((row) => row && typeof row === "object")
+      .map((row) => [
+        row.propertyLabel || row.propertyIdHex || "property",
+        row.valueEncoding === "float" && row.floatValue !== undefined && row.floatValue !== null
+          ? String(row.floatValue)
+          : (row.rawHex || row.rawU32 || ""),
+        row.valueEncoding || "",
+        row.sourceOccurrenceCount ? `${formatNumber(row.sourceOccurrenceCount)} occurrence(s)` : "",
+      ].filter(Boolean).join(" / "));
+  }
+
+  function mediaPostProcessRangeSummary(raw) {
+    return asArray(raw?.postProcessRanges)
+      .filter((row) => row && typeof row === "object")
+      .map((row) => [
+        row.propertyLabel || row.propertyIdHex || "range",
+        `${row.minimumFloat ?? row.minimumRawHex ?? "?"}..${row.maximumFloat ?? row.maximumRawHex ?? "?"}`,
+        row.valueEncoding || "",
+        row.sourceOccurrenceCount ? `${formatNumber(row.sourceOccurrenceCount)} occurrence(s)` : "",
+      ].filter(Boolean).join(" / "));
+  }
+
+  function mediaPostProcessRtpcSummary(raw) {
+    return asArray(raw?.postProcessRtpcControls)
+      .filter((row) => row && typeof row === "object")
+      .map((row) => {
+        const points = asArray(row.points).map((point) => {
+          if (!point || typeof point !== "object") return "";
+          const from = point.from !== undefined ? Number(point.from).toPrecision(5) : "?";
+          const to = point.to !== undefined ? Number(point.to).toPrecision(5) : "?";
+          return `${point.pointIndex ?? "?"}: ${from}->${to}${point.interpolationLabel ? ` ${point.interpolationLabel}` : ""}`;
+        }).filter(Boolean).join(", ");
+        return [
+          row.rtpcIdHex || "RTPC",
+          row.objectTypeLabel || (row.objectId !== undefined ? `node ${row.objectId}` : "node"),
+          row.objectId !== undefined ? `node ${row.objectId}` : "",
+          rtpcParameterText(row),
+          row.rtpcTypeLabel || "",
+          row.accumLabel || "",
+          row.scalingLabel || "",
+          `${formatNumber(row.pointCount || 0)} pt${row.pointsTruncated ? " (points truncated)" : ""}`,
+          points ? `[${points}]` : "",
+        ].filter(Boolean).join(" / ");
+      });
+  }
+
+  function mediaPostProcessStateSummary(raw) {
+    return asArray(raw?.postProcessStateControls)
+      .filter((row) => row && typeof row === "object")
+      .map((row) => {
+        const value = row.value !== undefined && row.value !== null
+          ? Number(row.value).toPrecision(6).replace(/\.?0+$/, "")
+          : "?";
+        return [
+          row.groupIdHex || "group",
+          row.stateIdHex || "state",
+          row.objectId !== undefined ? `node ${row.objectId}` : "",
+          rtpcParameterText(row),
+          value,
+        ].filter(Boolean).join(" / ");
+      });
+  }
+
   function recordPanel(record) {
     const panel = document.createElement("section");
     panel.className = "audio-panel";
@@ -3248,10 +4249,31 @@
     heading.textContent = t("details");
     panel.appendChild(heading);
     const raw = record.raw;
+    const players = playableRecords(raw, record.kind);
+    const playerSection = document.createElement("section");
+    playerSection.style.marginTop = "14px";
+    const playerHeading = document.createElement("h3");
+    playerHeading.textContent = t("playableMedia");
+    playerSection.appendChild(playerHeading);
+    if (raw.detailShard && !raw._detailLoaded) {
+      const note = document.createElement("p");
+      note.className = "audio-detail-note";
+      note.textContent = t("loadingEvents");
+      playerSection.appendChild(note);
+    } else if (players.length) renderPlayers(playerSection, players, { eager: record.kind === "media" });
+    else {
+      const note = document.createElement("p");
+      note.className = "audio-detail-note";
+      note.textContent = t("noPlayableMedia");
+      playerSection.appendChild(note);
+    }
+    panel.appendChild(playerSection);
+    panel.appendChild(manualNoteSection(record));
     const facts = record.kind === "events"
       ? [
           [t("recordType"), t(record.objectType)], [t("id"), raw.eventId ?? raw.id], [t("hash"), raw.eventHash ?? raw.hash], [t("eventType"), categoryLabel(record.category)],
           ["Category evidence", raw.categoryEvidence],
+          ["Name category evidence", raw.categoryNameEvidence],
           ["Library resolution", humanize(raw.audioLibraryResolutionStatus || "")],
           ["Wwise playback role", humanize(raw.playbackRole || "")],
           ["Wwise Action operations", asArray(raw.wwiseActionOperations).map(humanize).join(" / ")],
@@ -3261,6 +4283,9 @@
           ["Event identity", humanize(raw.eventIdentityStatus || "")],
           ["Event name evidence", humanize(raw.eventNameEvidence || "")],
           ["Event name source", humanize(raw.eventNameSourceKind || "")],
+          ["IL2CPP metadata field", raw.eventNameMetadataField],
+          ["IL2CPP declaring type", raw.eventNameMetadataDeclaringType],
+          ["IL2CPP field token", raw.eventNameMetadataFieldToken],
           ["Event collection sources", asArray(raw.eventNameCollectionSources).map(humanize).join(" / ")],
           ["Library output relation", humanize(raw.audioLibraryPlaybackTargetStatus || "")],
           ["Equivalent authored Events", asArray(raw.audioLibraryEquivalentEventIds).join(" / ")],
@@ -3286,6 +4311,9 @@
         ]
       : [
           [t("recordType"), t(record.objectType)], [t("id"), raw.mediaId ?? raw.id], [t("mediaPurpose"), categoryLabel(record.category)],
+          ["Semantic category evidence", raw.semanticCategoryEvidence],
+          ["Trigger-context categories", asArray(raw.semanticCategoryContextCategories).map(categoryLabel).join(" / ")],
+          ["Semantic field roles", asArray(raw.semanticCategoryFieldRoles).join(" / ")],
           [t("relatedEventTypes"), asArray(raw.relatedEventCategories).map(categoryLabel).join(" / ")], [t("scope"), record.scope],
           [t("source"), record.source], [t("path"), raw.rel ?? raw.path ?? raw.src], [t("format"), raw.format],
           [t("duration"), formatDuration(recordDuration(raw))], [t("bitrate"), formatBitrate(recordBitrate(raw))],
@@ -3303,6 +4331,50 @@
           [t("radioTriggerContextCoverage"), raw.radioTriggerContextCount !== undefined
             ? `${formatNumber(raw.radioTriggerContextStoredCount || 0)} stored / ${formatNumber(raw.radioTriggerContextCount || 0)} total${raw.radioTriggerContextsTruncated ? " / truncated" : ""}`
             : ""],
+          [t("triggerContexts"), raw.triggerContextCount !== undefined
+            ? `${formatNumber(raw.triggerContextCount)} context(s)${raw.triggerContextSummaryTruncated ? " / truncated" : ""}`
+            : ""],
+          [t("eventContextSummary"), raw.eventContextCount
+            ? `${formatNumber(raw.eventContextCount)} context(s)${raw.eventContextSummaryTruncated ? " / truncated" : ""}`
+            : ""],
+          [t("wwiseMediaRelations"), asArray(raw.wwiseMediaRelationTypes).join(" / ")],
+          [t("wwiseMediaPaths"), raw.wwiseMediaSelectionPathCount
+            ? `${formatNumber(raw.wwiseMediaSelectionPathCount)} path(s)${raw.wwiseMediaSelectionPathsTruncated ? " / truncated" : ""}`
+            : ""],
+          [t("wwiseMediaRootActions"), asArray(raw.wwiseMediaRootActionIds).join(" / ")],
+          [t("postProcessRoutes"), raw.postProcessRouteCount
+            ? `${formatNumber(raw.postProcessRouteCount)} route(s) / ${formatNumber(raw.postProcessBusPathCount || 0)} bus path(s)`
+            : asArray(raw.postProcessRouteStatuses).map(humanize).join(" / ")],
+          [t("postProcessEffects"), asArray(raw.postProcessEffectBusIds).join(" / ")],
+          [t("postProcessDirectEffects"), raw.postProcessDirectEffectCount
+            ? `${formatNumber(raw.postProcessDirectEffectCount)} effect(s) / ${formatNumber(raw.postProcessDirectEffectOccurrences || 0)} slot occurrence(s)`
+            : ""],
+          [t("postProcessEffectChain"), raw.postProcessEffectChainCount
+            ? `${formatNumber(raw.postProcessEffectChainCount)} authored stage(s)${raw.postProcessEffectChainTruncated ? " / truncated" : ""}`
+            : ""],
+          [t("postProcessBusControls"), raw.postProcessBusControlCount
+            ? `${formatNumber(raw.postProcessBusControlCount)} Bus control set(s)${raw.postProcessBusControlsTruncated ? " / truncated" : ""}`
+            : ""],
+          [t("postProcessBusDucks"), raw.postProcessBusDuckCount
+            ? `${formatNumber(raw.postProcessBusDuckCount)} ducking Bus(es)`
+            : ""],
+          [t("postProcessAuxSends"), raw.postProcessAuxSendCount
+            ? `${formatNumber(raw.postProcessAuxSendCount)} Aux target(s) / ${formatNumber(raw.postProcessAuxSendOccurrences || 0)} occurrence(s)${raw.postProcessAuxSendsTruncated ? " / truncated" : ""}`
+            : ""],
+          [t("postProcessProperties"), raw.postProcessPropertyCount
+            ? `${formatNumber(raw.postProcessPropertyCount)} value signature(s) / ${formatNumber(raw.postProcessPropertyOccurrences || 0)} occurrence(s)${raw.postProcessPropertiesTruncated ? " / truncated" : ""}`
+            : ""],
+          [t("postProcessRanges"), raw.postProcessRangeCount
+            ? `${formatNumber(raw.postProcessRangeCount)} range signature(s) / ${formatNumber(raw.postProcessRangeOccurrences || 0)} occurrence(s)${raw.postProcessRangesTruncated ? " / truncated" : ""}`
+            : ""],
+          [t("postProcessRtpcControls"), raw.postProcessRtpcControlCount
+            ? `${formatNumber(raw.postProcessRtpcControlCount)} curve(s)${raw.postProcessRtpcControlsTruncated ? " / truncated" : ""}`
+            : ""],
+          [t("postProcessStateControls"), raw.postProcessStateControlCount
+            ? `${formatNumber(raw.postProcessStateControlCount)} override(s)${raw.postProcessStateControlsTruncated ? " / truncated" : ""}`
+            : ""],
+          [t("postProcessUnresolved"), asArray(raw.postProcessUnresolvedBusProcessingIds).join(" / ")],
+          [t("postProcessSelection"), asArray(raw.postProcessSelectionStatuses).map(humanize).join(" / ")],
         ];
     const grid = document.createElement("div");
     grid.className = "audio-facts";
@@ -3313,6 +4385,260 @@
     if (record.relationTags.length) panel.appendChild(chipSection(t("relation"), record.relationTags.map(taxonomyLabel)));
     if (record.kind === "media" && asArray(raw.relatedEventCategories).length) {
       panel.appendChild(chipSection(t("relatedEventTypes"), asArray(raw.relatedEventCategories).map(categoryLabel)));
+    }
+    if (record.kind === "media" && asArray(raw.triggerSemanticKinds).length) {
+      panel.appendChild(chipSection(t("triggerKinds"), asArray(raw.triggerSemanticKinds).map(humanize)));
+    }
+    if (record.kind === "media" && asArray(raw.triggerRoles).length) {
+      panel.appendChild(chipSection(t("triggerRoles"), asArray(raw.triggerRoles).map(humanize)));
+    }
+    if (record.kind === "media" && asArray(raw.triggerOwnerValues).length) {
+      panel.appendChild(chipSection(t("triggerOwners"), asArray(raw.triggerOwnerValues)));
+    }
+    if (record.kind === "media" && asArray(raw.triggerSituationValues).length) {
+      panel.appendChild(chipSection(t("triggerSituations"), asArray(raw.triggerSituationValues)));
+    }
+    if (record.kind === "media" && asArray(raw.eventContextKinds).length) {
+      panel.appendChild(chipSection(
+        `${t("eventContextKinds")}${raw.eventContextSummaryTruncated ? " (truncated)" : ""}`,
+        asArray(raw.eventContextKinds).map(humanize),
+      ));
+    }
+    if (record.kind === "media" && asArray(raw.eventContextRoles).length) {
+      panel.appendChild(chipSection(t("eventContextRoles"), asArray(raw.eventContextRoles).map(humanize)));
+    }
+    if (record.kind === "media" && asArray(raw.eventContextOwnerValues).length) {
+      panel.appendChild(chipSection(t("eventContextOwners"), asArray(raw.eventContextOwnerValues)));
+    }
+    if (record.kind === "media" && asArray(raw.eventContextSituationValues).length) {
+      panel.appendChild(chipSection(t("eventContextSituations"), asArray(raw.eventContextSituationValues)));
+    }
+    if (record.kind === "media" && asArray(raw.wwiseMediaRelationTypes).length) {
+      panel.appendChild(chipSection(
+        `${t("wwiseMediaRelations")}${raw.wwiseMediaRelationTypesTruncated ? " (truncated)" : ""}`,
+        asArray(raw.wwiseMediaRelationTypes).map(humanize),
+      ));
+    }
+    if (record.kind === "media" && asArray(raw.wwiseMediaSelectionPaths).length) {
+      panel.appendChild(chipSection(
+        `${t("wwiseMediaPaths")}${raw.wwiseMediaSelectionPathsTruncated ? " (truncated)" : ""}`,
+        asArray(raw.wwiseMediaSelectionPaths).map((path) => (
+          Array.isArray(path) ? path.join(" -> ") : String(path || "")
+        )).filter(Boolean),
+      ));
+    }
+    if (record.kind === "media" && asArray(raw.wwiseMediaRootActionIds).length) {
+      panel.appendChild(chipSection(
+        `${t("wwiseMediaRootActions")}${raw.wwiseMediaRootActionIdsTruncated ? " (truncated)" : ""}`,
+        asArray(raw.wwiseMediaRootActionIds).map((value) => `0x${Number(value).toString(16).padStart(8, "0")}`),
+      ));
+    }
+    if (record.kind === "media" && asArray(raw.postProcessBusPaths).length) {
+      const pathRows = asArray(raw.postProcessBusPaths).map((path) => (
+        Array.isArray(path) ? path.join(" -> ") : String(path || "")
+      )).filter(Boolean);
+      if (pathRows.length) {
+        panel.appendChild(chipSection(
+          `${t("postProcessBuses")}${raw.postProcessBusPathsTruncated ? " (truncated)" : ""}`,
+          pathRows,
+        ));
+      }
+      const mediaBusDefinitions = new Map(asArray(state.index?.hircSummary?.postProcessSummary?.busDefinitions)
+        .filter((row) => row && typeof row === "object")
+        .map((row) => [normalize(row.busIdHex || row.busId).toLowerCase(), row]));
+      const busIds = [...new Set(asArray(raw.postProcessBusPaths)
+        .flatMap((path) => Array.isArray(path) ? path : [path])
+        .map((value) => normalize(value).toLowerCase())
+        .filter(Boolean))];
+      const busSemanticRows = busIds.map((busId) => {
+        const definition = mediaBusDefinitions.get(busId);
+        if (!definition) return `${busId} / definition unavailable`;
+        const properties = asArray(definition.serializedProperties).map((prop) => {
+          const label = prop.propertyLabel || prop.propertyIdHex || `property ${prop.propertyId ?? "?"}`;
+          const value = String(prop.valueEncoding || "").startsWith("u32")
+            ? (prop.rawHex || prop.rawU32 || "?")
+            : prop.floatValue !== null && prop.floatValue !== undefined
+              ? Number(prop.floatValue).toPrecision(6).replace(/\.?0+$/, "")
+              : (prop.rawHex || "?");
+          return `${label} ${value}`;
+        }).slice(0, 8);
+        const status = definition.effectParserStatus === "exactTypedV150EmptyEffectChunk"
+          ? "serialized InitialFX empty"
+          : definition.effectParserStatus === "exactTypedV150NonEmptyEffectChunk"
+            ? `${formatNumber(definition.effectSlotCount || 0)} serialized InitialFX slot(s)`
+            : humanize(definition.effectParserStatus || "unknown");
+        const stateRtpc = definition.serializedStateAndRtpc || {};
+        const stateRtpcParts = [];
+        if (stateRtpc.parserStatus === "typedExactV150BusInitialRtpcAndState") {
+          if (stateRtpc.rtpcCurveCount) {
+            const rtpcLabels = asArray(stateRtpc.rtpcCurves)
+              .map((curve) => `${rtpcParameterText(curve)} ${formatNumber(curve.pointCount || 0)}pt`)
+              .slice(0, 4);
+            stateRtpcParts.push(`RTPC ${formatNumber(stateRtpc.rtpcCurveCount)}${rtpcLabels.length ? ` (${rtpcLabels.join(", ")})` : ""}`);
+          }
+          if (stateRtpc.stateGroupCount) {
+            stateRtpcParts.push(`State ${formatNumber(stateRtpc.stateGroupCount)} group(s) / ${formatNumber(stateRtpc.stateCount || 0)} state(s)`);
+          }
+        } else if (stateRtpc.parserStatus) {
+          stateRtpcParts.push(`State/RTPC ${humanize(stateRtpc.parserStatus)}`);
+        }
+        return [
+          busId,
+          humanize(definition.objectTypeLabel || "bus"),
+          status,
+          definition.serializedDuckCount ? `${formatNumber(definition.serializedDuckCount)} duck(s)` : "",
+          definition.serializedMaxDuckVolumeDb !== undefined ? `max duck ${definition.serializedMaxDuckVolumeDb} dB` : "",
+          properties.length ? properties.join(", ") : "",
+          ...stateRtpcParts,
+        ].filter(Boolean).join(" / ");
+      });
+      if (busSemanticRows.length) {
+        panel.appendChild(chipSection(
+          t("postProcessBusSemantics"),
+          busSemanticRows.slice(0, 32),
+        ));
+      }
+    }
+    if (record.kind === "media" && asArray(raw.postProcessRouteStatuses).length) {
+      panel.appendChild(chipSection(
+        t("postProcessStatus"),
+        asArray(raw.postProcessRouteStatuses).map(humanize),
+      ));
+    }
+    if (record.kind === "media") {
+      const effectRows = mediaPostProcessEffectSummary(raw);
+      if (effectRows.length) panel.appendChild(chipSection(t("postProcessEffects"), effectRows));
+      const effectChainRows = mediaPostProcessEffectChainSummary(raw);
+      if (effectChainRows.length) {
+        panel.appendChild(chipSection(
+          `${t("postProcessEffectChain")}${raw.postProcessEffectChainTruncated ? " (truncated)" : ""}`,
+          effectChainRows,
+        ));
+      }
+      const busControlRows = mediaPostProcessBusControlSummary(raw);
+      if (busControlRows.length) {
+        panel.appendChild(chipSection(
+          `${t("postProcessBusControls")}${raw.postProcessBusControlsTruncated ? " (truncated)" : ""}`,
+          busControlRows,
+        ));
+      }
+      const busDuckRows = mediaPostProcessBusDuckSummary(raw);
+      if (busDuckRows.length) {
+        panel.appendChild(chipSection(
+          `${t("postProcessBusDucks")}${raw.postProcessBusDucksTruncated ? " (truncated)" : ""}`,
+          busDuckRows,
+        ));
+      }
+      const auxSendRows = mediaPostProcessAuxSendSummary(raw);
+      if (auxSendRows.length) {
+        panel.appendChild(chipSection(
+          `${t("postProcessAuxSends")}${raw.postProcessAuxSendsTruncated ? " (truncated)" : ""}`,
+          auxSendRows,
+        ));
+      }
+      const propertyRows = mediaPostProcessPropertySummary(raw);
+      if (propertyRows.length) {
+        panel.appendChild(chipSection(
+          `${t("postProcessProperties")}${raw.postProcessPropertiesTruncated ? " (truncated)" : ""}`,
+          propertyRows,
+        ));
+      }
+      const rangeRows = mediaPostProcessRangeSummary(raw);
+      if (rangeRows.length) {
+        panel.appendChild(chipSection(
+          `${t("postProcessRanges")}${raw.postProcessRangesTruncated ? " (truncated)" : ""}`,
+          rangeRows,
+        ));
+      }
+      const directEffectRows = mediaPostProcessDirectEffectSummary(raw);
+      if (directEffectRows.length) {
+        panel.appendChild(chipSection(
+          `${t("postProcessDirectEffects")}${raw.postProcessDirectEffectsTruncated ? " (truncated)" : ""}`,
+          directEffectRows,
+        ));
+      }
+      const rtpcRows = mediaPostProcessRtpcSummary(raw);
+      if (rtpcRows.length) {
+        panel.appendChild(chipSection(
+          `${t("postProcessRtpcControls")}${raw.postProcessRtpcControlsTruncated ? " (truncated)" : ""}`,
+          rtpcRows,
+        ));
+      }
+      const stateRows = mediaPostProcessStateSummary(raw);
+      if (stateRows.length) {
+        panel.appendChild(chipSection(
+          `${t("postProcessStateControls")}${raw.postProcessStateControlsTruncated ? " (truncated)" : ""}`,
+          stateRows,
+        ));
+      }
+    }
+    if (record.kind === "media" && raw.postProcessRouteEvidence) {
+      const routeStatuses = asArray(raw.postProcessRouteStatuses);
+      const boundary = routeStatuses.includes("noExplicitOutputBusSerialized")
+        ? t("postProcessNoExplicitBus")
+        : routeStatuses.includes("outputBusNodeUnresolved")
+          ? t("postProcessBusUnresolved")
+          : "The route is an authored Event-graph relation; live branch choice and audibility were not observed.";
+      panel.appendChild(noteSection(
+        t("postProcessRoutes"),
+        `${raw.postProcessRouteEvidence}: ${t("postProcessSelection")} ${asArray(raw.postProcessSelectionStatuses).map(humanize).join(" / ") || humanize("unresolved")}. `
+          + boundary,
+      ));
+    }
+    if (record.kind === "media" && raw.postProcessEffectChainEvidence) {
+      panel.appendChild(noteSection(
+        t("postProcessEffectChain"),
+        `${raw.postProcessEffectChainEvidence}: direct-node effects precede each serialized leaf-to-root Bus path and Bus slots keep serialized order; this is authored evidence, not observed runtime DSP order, inherited values, branch choice, or audibility.`,
+      ));
+    }
+    if (record.kind === "media" && raw.postProcessBusControlEvidence) {
+      panel.appendChild(noteSection(
+        t("postProcessBusControls"),
+        `${raw.postProcessBusControlEvidence}: Bus InitialRTPC curves and State values are exact serialized control shapes attached to a possible media route; live parameter values, inherited resolution, selected branches, platform DSP, and audibility were not observed.`,
+      ));
+    }
+    if (record.kind === "media" && raw.postProcessBusDuckEvidence) {
+      panel.appendChild(noteSection(
+        t("postProcessBusDucks"),
+        `${raw.postProcessBusDuckEvidence}: Bus duck targets, attenuation, fades, and target properties are exact serialized authored records on a possible route; the runtime triggering Bus, active duck state, inherited values, and audible result were not observed.`,
+      ));
+    }
+    if (record.kind === "media" && raw.postProcessAuxSendEvidence) {
+      panel.appendChild(noteSection(
+        t("postProcessAuxSends"),
+        `${raw.postProcessAuxSendEvidence}: User-Defined Aux Bus IDs are exact serialized NodeBase send slots projected onto the Event's possible media set; Game-Defined Aux IDs, live send levels, runtime activation, inherited values, and audibility were not observed.`,
+      ));
+    }
+    if (record.kind === "media" && raw.postProcessPropertyEvidence) {
+      panel.appendChild(noteSection(
+        `${t("postProcessProperties")} / ${t("postProcessRanges")}`,
+        `${raw.postProcessPropertyEvidence}: authored NodeBase property values and ranges are exact serialized settings on a possible Event path; inherited resolution, live modifiers, branch selection, platform DSP, and audibility were not observed.`,
+      ));
+    }
+    if (record.kind === "media" && raw.postProcessControlEvidence) {
+      panel.appendChild(noteSection(
+        `${t("postProcessRtpcControls")} / ${t("postProcessStateControls")}`,
+        `${raw.postProcessControlEvidence}: these are authored serialized State/InitialRTPC controls on a possible Event path; live parameter updates, branch selection, inherited values, platform DSP, and audibility were not observed.`,
+      ));
+    }
+    if (record.kind === "media" && raw.wwiseMediaGraphEvidence) {
+      panel.appendChild(noteSection(
+        t("wwiseMediaRelations"),
+        `${raw.wwiseMediaGraphEvidence}: the edge/path is exact serialized Wwise graph evidence; runtime branch choice, caller identity, and audibility were not observed.`,
+      ));
+    }
+    if (record.kind === "media" && raw.eventContextSummaryEvidence) {
+      panel.appendChild(noteSection(
+        t("eventContextSummary"),
+        `${raw.eventContextSummaryEvidence}: the authored context belongs to the Event's possible media set; the specific selected leaf and runtime execution were not observed.`,
+      ));
+    }
+    if (record.kind === "media" && raw.triggerContextSummaryEvidence) {
+      panel.appendChild(noteSection(
+        t("triggerContexts"),
+        `${raw.triggerContextSummaryEvidence}: ${t("triggerSelection")} ${asArray(raw.triggerSelectionStatuses).map(humanize).join(" / ") || humanize("unresolved")}. `
+          + "The serialized context identifies an authored request or placement; runtime execution and live branch choice were not observed.",
+      ));
     }
     const selectorEvidence = selectorEvidenceSummary(raw);
     if (selectorEvidence.length) panel.appendChild(chipSection(t("selectorEvidence"), selectorEvidence));
@@ -3370,26 +4696,6 @@
       const radioBoundary = state.index?.triggerCatalog?.levelScriptRadio?.evidenceBoundary;
       if (radioBoundary) panel.appendChild(noteSection(t("runtimeBoundary"), radioBoundary));
     }
-
-    const players = playableRecords(raw, record.kind);
-    const playerSection = document.createElement("section");
-    playerSection.style.marginTop = "14px";
-    const playerHeading = document.createElement("h3");
-    playerHeading.textContent = t("playableMedia");
-    playerSection.appendChild(playerHeading);
-    if (raw.detailShard && !raw._detailLoaded) {
-      const note = document.createElement("p");
-      note.className = "audio-detail-note";
-      note.textContent = t("loadingEvents");
-      playerSection.appendChild(note);
-    } else if (players.length) renderPlayers(playerSection, players, { eager: record.kind === "media" });
-    else {
-      const note = document.createElement("p");
-      note.className = "audio-detail-note";
-      note.textContent = t("noPlayableMedia");
-      playerSection.appendChild(note);
-    }
-    panel.appendChild(playerSection);
 
     const details = document.createElement("details");
     details.style.marginTop = "14px";
@@ -3528,7 +4834,9 @@
         audio.preload = "none";
         audio.controls = true;
         audio.src = candidate.src;
-        const player = window.WebUI?.createMediaPlayer ? window.WebUI.createMediaPlayer(audio) : audio;
+        const player = window.WebUI?.createMediaPlayer
+          ? window.WebUI.createMediaPlayer(audio, { waveform: true })
+          : audio;
         const sourceLink = document.createElement("a");
         sourceLink.className = "audio-source-link";
         sourceLink.href = candidate.src;
@@ -3608,6 +4916,92 @@
 
   function humanize(value) {
     return String(value || "").replace(/[_-]+/g, " ").replace(/([a-z0-9])([A-Z])/g, "$1 $2").trim();
+  }
+
+  function manualNoteSection(record) {
+    const section = document.createElement("section");
+    section.className = "audio-manual-note";
+    const label = document.createElement("label");
+    label.htmlFor = "audio-manual-note-input";
+    label.textContent = t("manualNote");
+    const textarea = document.createElement("textarea");
+    textarea.id = "audio-manual-note-input";
+    textarea.rows = 3;
+    textarea.placeholder = t("manualNotePlaceholder");
+    textarea.value = recordNote(record);
+    let savedValue = textarea.value;
+    const actions = document.createElement("div");
+    actions.className = "audio-manual-note-actions";
+    const save = document.createElement("button");
+    save.type = "button";
+    save.className = "audio-manual-note-save";
+    save.textContent = t("manualNoteSave");
+    save.disabled = true;
+    const status = document.createElement("span");
+    status.className = "audio-manual-note-status";
+    textarea.addEventListener("input", () => {
+      const dirty = textarea.value !== savedValue;
+      save.disabled = !dirty;
+      status.textContent = dirty ? t("manualNoteUnsaved") : "";
+      status.classList.remove("is-error");
+    });
+    save.addEventListener("click", async () => {
+      const value = textarea.value;
+      const nextNotes = notesWithRecordUpdate(record, value);
+      save.disabled = true;
+      status.textContent = t("manualNoteSaving");
+      status.classList.remove("is-error");
+      try {
+        await persistNotes(nextNotes);
+        state.notes = nextNotes;
+        savedValue = value;
+        const dirty = textarea.value !== savedValue;
+        save.disabled = !dirty;
+        status.textContent = dirty ? t("manualNoteUnsaved") : t("manualNoteSaved");
+        applyFilters();
+      } catch (error) {
+        console.warn(`Unable to save ${NOTES_OVERRIDE_PATH}`, error);
+        status.textContent = `${t("manualNoteStorageError")} ${normalize(error?.message || error)}`;
+        status.classList.add("is-error");
+        save.disabled = textarea.value === savedValue;
+      }
+    });
+    actions.append(save, status);
+    section.append(label, textarea, actions);
+    return section;
+  }
+
+  function rtpcParameterText(row) {
+    const label = normalize(row?.parameterLabel);
+    const parameterId = Number(row?.parameterId);
+    const rtpcId = Number(row?.rtpcId);
+    const rtpcIdHex = normalize(row?.rtpcIdHex).toLowerCase();
+    const namedGameParameter = Number.isFinite(rtpcId)
+      ? state.gameParameterNameById.get(rtpcId)
+      : (rtpcIdHex.startsWith("0x")
+        ? state.gameParameterNameById.get(Number.parseInt(rtpcIdHex, 16))
+        : "");
+    const gameParameterSuffix = namedGameParameter
+      ? ` / GameParameter ${namedGameParameter}`
+      : "";
+    if (!Number.isFinite(parameterId)) return `${label || "parameter ?"}${gameParameterSuffix}`;
+    if (label && !/^parameter\d+$/i.test(label)) return `${label}${gameParameterSuffix}`;
+    const hex = `0x${Math.trunc(parameterId).toString(16).padStart(4, "0")}`;
+    // Wwise v150's standard AkPropID table ends at 0x55.  Preserve higher
+    // values as an explicit custom/internal boundary instead of inventing a
+    // DSP property name from a coincidental numeric ID.
+    return `${label || `parameter ${Math.trunc(parameterId)}`} [custom/internal ${hex}]${gameParameterSuffix}`;
+  }
+
+  function parameterLabelText(label) {
+    const value = normalize(label);
+    const match = /^parameter(\d+)$/i.exec(value);
+    if (!match) return humanize(value);
+    const parameterId = Number(match[1]);
+    const hex = Number.isFinite(parameterId)
+      ? `0x${Math.trunc(parameterId).toString(16).padStart(4, "0")}`
+      : "?";
+    return `${value} [custom/internal ${hex}]`;
   }
 
   function fileName(value) {

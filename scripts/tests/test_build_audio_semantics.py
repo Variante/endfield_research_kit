@@ -1699,6 +1699,328 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertEqual(rows[0]["purposeKnowledgeStatus"], "unknownUse")
         self.assertEqual(rows[0]["purposeInvestigationPriority"], "highest")
 
+    def test_metadata_event_symbol_alias_recovers_hash_identity_without_trigger(self) -> None:
+        event_name = "AU_INT_BELT_START"
+        event_hash = identifiers.audio_hash_generator_compute(event_name)
+        rows, _, banks = event_projection.build_event_rows(
+            {
+                "eventNames": [],
+                "events": [],
+                "eventEvidence": [],
+                "wwiseEventInventory": [{
+                    "eventHash": event_hash,
+                    "bankId": 7,
+                    "bankVersion": 150,
+                    "bank": "default_banks.pck",
+                    "mediaIds": [],
+                    "traversalStatus": "complete",
+                }],
+            },
+            {},
+            metadata_event_symbols=[{
+                "eventHash": event_hash,
+                "name": event_name,
+                "metadataField": event_name,
+                "metadataDeclaringType": "Beyond.Gameplay.Audio.AudioGameplayConstants+GameplayConveyor",
+                "metadataFieldToken": "0x04001234",
+                "evidence": "exactIl2CppMetadataFieldNameAudioHashAndCurrentWwiseEvent",
+            }],
+        )
+
+        self.assertEqual(len(rows), 1)
+        row = rows[0]
+        self.assertEqual(row["id"], event_name.lower())
+        self.assertEqual(row["name"], event_name)
+        self.assertEqual(row["eventIdentityStatus"], "recoveredIl2CppMetadataEventSymbol")
+        self.assertEqual(row["eventNameSourceKind"], "il2CppMetadataField")
+        self.assertEqual(row["eventNameMetadataField"], event_name)
+        self.assertEqual(row["eventNameMetadataDeclaringType"], "Beyond.Gameplay.Audio.AudioGameplayConstants+GameplayConveyor")
+        self.assertEqual(row["category"], "sfx")
+        self.assertEqual(row["categoryEvidence"], "exactIl2CppMetadataFieldNamePrefix")
+        self.assertEqual(row["contextCount"], 0)
+        self.assertEqual(banks[0]["namedEventCount"], 1)
+
+    def test_native_custom_state_callsite_requires_authored_interactive_state_join(self) -> None:
+        event_name = "au_int_rotateplatform_port_extense"
+        event_hash = identifiers.audio_hash_generator_compute(event_name)
+        audio_index = {
+            "eventNames": [event_name],
+            "events": [{"eventId": event_name, "eventHash": event_hash}],
+            "eventEvidence": [],
+            "wwiseEventInventory": [{"eventHash": event_hash}],
+        }
+        native = {
+            "kind": "nativeCustomStateCallsite",
+            "customStateName": "PortExtense",
+            "callsiteVa": "0x1871fe1cd",
+        }
+        rows, _, _ = event_projection.build_event_rows(
+            audio_index,
+            {event_name: [native]},
+        )
+        self.assertEqual(rows[0]["contextCount"], 0)
+        rows, _, _ = event_projection.build_event_rows(
+            audio_index,
+            {event_name: [
+                {"kind": "interactiveComponentTrigger", "triggerCustomState": "PortExtense"},
+                native,
+            ]},
+        )
+        self.assertEqual(rows[0]["contextCount"], 2)
+        self.assertEqual(rows[0]["contexts"][1]["kind"], "nativeCustomStateCallsite")
+
+    def test_metadata_event_symbol_catalog_matches_only_current_hashes(self) -> None:
+        from types import SimpleNamespace
+
+        class FakeMetadata:
+            version = 29
+            types = [SimpleNamespace(index=1)]
+
+            def type_full_name(self, _type_def):
+                return "Fixture.AudioConstants"
+
+            def fields_for(self, _type_def):
+                return [
+                    SimpleNamespace(index=3, name_index=1, token=0x04000003),
+                    SimpleNamespace(index=4, name_index=2, token=0x04000004),
+                ]
+
+            def string(self, index):
+                return {1: "AU_INT_FIXTURE", 2: "AU_INT_OTHER"}[index]
+
+        fake_module = SimpleNamespace(Metadata=lambda _path: FakeMetadata())
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "global-metadata.dat"
+            path.write_bytes(b"fixture")
+            with patch.object(audio_semantics, "_metadata_module", return_value=fake_module):
+                payload = audio_semantics.collect_metadata_event_symbol_aliases(
+                    path,
+                    {identifiers.audio_hash_generator_compute("AU_INT_FIXTURE")},
+                )
+
+        self.assertEqual(payload["status"], "complete")
+        self.assertEqual(payload["matchCount"], 1)
+        self.assertEqual(payload["entries"][0]["name"], "AU_INT_FIXTURE")
+        self.assertEqual(payload["entries"][0]["metadataDeclaringType"], "Fixture.AudioConstants")
+
+    def test_action_control_ids_join_only_exact_selector_catalog_values(self) -> None:
+        evidence_by_event = {
+            "au_global_fixture": [{
+                "actionEvidence": [
+                    {
+                        "operation": "setState",
+                        "actionControlParserStatus": "typedExactV150",
+                        "groupIdHex": "0x11111111",
+                        "stateIdHex": "0x22222222",
+                    },
+                    {
+                        "operation": "setSwitch",
+                        "actionControlParserStatus": "typedExactV150",
+                        "groupIdHex": "0x99999999",
+                        "switchIdHex": "0x33333333",
+                    },
+                ],
+            }],
+        }
+        catalog = [{
+            "groupIdHex": "0x11111111",
+            "groupType": "state",
+            "semanticRole": "fixtureState",
+            "semanticLabel": "Fixture state",
+            "semanticEvidence": "exactNativeFixture",
+            "runtimeObservationStatus": "staticOnly",
+            "values": [{
+                "valueIdHex": "0x22222222",
+                "semanticName": "Ready",
+                "semanticEvidence": "exactNativeFixture",
+            }],
+        }]
+
+        summary = event_projection.annotate_wwise_action_control_evidence(
+            evidence_by_event, catalog
+        )
+        rows = evidence_by_event["au_global_fixture"][0]["actionEvidence"]
+        self.assertEqual(summary["actionCount"], 2)
+        self.assertEqual(summary["typedExactActionCount"], 2)
+        self.assertEqual(summary["groupSemanticMatchCount"], 1)
+        self.assertEqual(summary["valueSemanticMatchCount"], 1)
+        self.assertEqual(rows[0]["controlGroupSemantic"]["semanticLabel"], "Fixture state")
+        self.assertEqual(rows[0]["controlValueSemantic"]["semanticName"], "Ready")
+        self.assertEqual(rows[1]["controlGroupSemanticStatus"], "unresolvedGroupId")
+
+    def test_music_state_catalog_joins_exact_action_enum_members(self) -> None:
+        evidence_by_event = {
+            "au_music_fixture": [{
+                "actionEvidence": [{
+                    "operation": "setState",
+                    "actionControlParserStatus": "typedExactV150",
+                    "groupIdHex": "0xe414d158",
+                    "stateIdHex": "0x468283e1",
+                }],
+            }],
+        }
+
+        catalog = audio_semantics.wwise_selector_group_catalog()
+        summary = event_projection.annotate_wwise_action_control_evidence(
+            evidence_by_event, catalog
+        )
+        row = evidence_by_event["au_music_fixture"][0]["actionEvidence"][0]
+
+        self.assertGreaterEqual(summary["groupSemanticMatchCount"], 1)
+        self.assertGreaterEqual(summary["valueSemanticMatchCount"], 1)
+        self.assertEqual(
+            row["controlGroupSemantic"]["semanticLabel"],
+            "Music state / music_state",
+        )
+        self.assertEqual(row["controlValueSemantic"]["semanticName"], "CUTSCENE")
+        self.assertEqual(
+            row["controlValueSemantic"]["semanticEvidence"],
+            "exactCurrentMetadataEnumMemberFNV1Utf16Hash",
+        )
+
+    def test_selector_package_compaction_keeps_native_value_semantics(self) -> None:
+        rows = [{
+            "objectType": 6,
+            "edgeKind": "switchCandidate",
+            "childCount": 2,
+            "switchMappingEvidence": {
+                "parserStatus": "typedExactV150FlatPackages",
+                "groupType": "state",
+                "groupId": 0xF6699CF4,
+                "defaultValueId": 0x2CA33BDB,
+                "packages": [
+                    {"valueId": 0x1A9FC91F, "childIds": [1]},
+                    {"valueId": 0x2CA33BDB, "childIds": [2]},
+                ],
+                "associations": [],
+            },
+        }]
+
+        compact = event_projection.compact_container_evidence(
+            rows, audio_semantics.wwise_selector_group_catalog()
+        )
+        selector = compact[0]
+
+        self.assertEqual(selector["selectorSemanticGroupMatchCount"], 1)
+        self.assertEqual(selector["selectorSemanticValueMatchCount"], 1)
+        self.assertEqual(selector["selectorSemanticValueCount"], 1)
+        self.assertEqual(
+            selector["selectorSemanticValues"][0]["semanticName"],
+            "XInput",
+        )
+
+    def test_game_parameter_action_joins_same_event_initial_rtpc_id(self) -> None:
+        evidence_by_event = {
+            "au_rtpc_fixture": [{
+                "postProcessSummary": {
+                    "rtpcIds": [{
+                        "rtpcId": 0x379123CC,
+                        "rtpcIdHex": "0x379123cc",
+                        "curveCount": 2,
+                    }],
+                },
+                "actionEvidence": [{
+                    "operation": "setGameParameter",
+                    "actionControlParserStatus": "typedExactV150",
+                    "idExt": 0x379123CC,
+                    "idExtHex": "0x379123cc",
+                    "valueRange": {"base": 100.0},
+                }],
+            }],
+        }
+
+        summary = event_projection.annotate_wwise_action_control_evidence(
+            evidence_by_event,
+            [],
+            {"0x379123cc": "au_rtpc_fixture"},
+        )
+        row = evidence_by_event["au_rtpc_fixture"][0]["actionEvidence"][0]
+
+        self.assertEqual(summary["sharedRtpcParameterIdMatchCount"], 1)
+        self.assertEqual(summary["sharedRtpcParameterIdCount"], 1)
+        self.assertEqual(row["initialRtpcSemantic"]["rtpcIdHex"], "0x379123cc")
+        self.assertEqual(row["initialRtpcSemantic"]["curveCount"], 2)
+        self.assertEqual(
+            row["initialRtpcSemantic"]["semanticNameStatus"],
+            "exactManagedStringLiteralFNV1Utf16Hash",
+        )
+        self.assertEqual(
+            row["initialRtpcSemantic"]["parameterName"],
+            "au_rtpc_fixture",
+        )
+        self.assertEqual(summary["namedInitialRtpcMatchCount"], 1)
+
+    def test_event_projection_names_initial_rtpc_from_exact_metadata_hash(self) -> None:
+        rows, _, _ = event_projection.build_event_rows(
+            {
+                "events": [],
+                "eventEvidence": [{
+                    "eventId": "au_rtpc_fixture",
+                    "eventHash": 0x12345678,
+                    "bankId": 1,
+                    "bank": "fixture.bnk",
+                    "traversalStatus": "complete",
+                    "postProcessSummary": {
+                        "rtpcIds": [{
+                            "rtpcId": 0x80560CC1,
+                            "rtpcIdHex": "0x80560cc1",
+                            "curveCount": 2,
+                        }],
+                    },
+                }],
+            },
+            {},
+            rtpc_names_by_hex={"0x80560cc1": "au_rtpc_fixture_speed"},
+        )
+
+        rtpc_row = rows[0]["evidence"][0]["postProcessSummary"]["rtpcIds"][0]
+        self.assertEqual(rtpc_row["parameterName"], "au_rtpc_fixture_speed")
+        self.assertEqual(
+            rtpc_row["semanticEvidence"],
+            "exactInitialRtpcIdAndManagedStringLiteral",
+        )
+
+    def test_named_initial_rtpc_catalog_preserves_trigger_and_postprocess_semantics(self) -> None:
+        catalog = event_projection.build_initial_rtpc_parameter_catalog([{
+            "id": "au_seesaw_start",
+            "contexts": [{
+                "kind": "binaryManagedLiteralCallsite",
+                "triggerRole": "seesawStart",
+            }],
+            "evidence": [{
+                "postProcessSummary": {
+                    "rtpcIds": [{
+                        "rtpcId": 0x2B99882E,
+                        "rtpcIdHex": "0x2b99882e",
+                        "curveCount": 1,
+                        "parameterName": "au_rtpc_angular_velocity",
+                        "semanticNameStatus": "exactManagedStringLiteralFNV1Utf16Hash",
+                        "semanticEvidence": "exactInitialRtpcIdAndManagedStringLiteral",
+                    }],
+                    "stateRtpcNodes": [{
+                        "rtpcCurves": [{
+                            "rtpcId": 0x2B99882E,
+                            "rtpcIdHex": "0x2b99882e",
+                            "parameterLabel": "BusVolume",
+                            "points": [
+                                {"interpolationLabel": "Linear"},
+                                {"interpolationLabel": "Linear"},
+                            ],
+                        }],
+                    }],
+                },
+            }],
+        }])
+
+        self.assertEqual(len(catalog), 1)
+        row = catalog[0]
+        self.assertEqual(row["parameterName"], "au_rtpc_angular_velocity")
+        self.assertEqual(row["eventIds"], ["au_seesaw_start"])
+        self.assertEqual(row["triggerRoles"], ["seesawStart"])
+        self.assertEqual(row["controlledProperties"], {"BusVolume": 1})
+        self.assertEqual(row["pointCount"], 2)
+        self.assertEqual(row["interpolationLabels"], {"Linear": 2})
+
     def test_shared_wwise_play_target_recovers_output_category_not_trigger(self) -> None:
         bank = "default_banks.pck"
         known = {
@@ -1769,7 +2091,7 @@ class AudioSemanticDataTests(unittest.TestCase):
         )
         self.assertNotIn("audioLibraryPlaybackTargetStatus", anonymous)
 
-    def test_complete_shared_wwise_media_set_records_leaf_equivalence_only(self) -> None:
+    def test_complete_shared_wwise_media_set_recovers_uniform_category_only(self) -> None:
         known = {
             "id": "au_ui_known",
             "category": "ui",
@@ -1800,7 +2122,11 @@ class AudioSemanticDataTests(unittest.TestCase):
         )
         self.assertEqual(unknown["audioLibraryMediaEquivalentEventIds"], ["au_ui_known"])
         self.assertEqual(unknown["audioLibrarySharedMediaIds"], [100, 200])
-        self.assertEqual(unknown["category"], "unknown")
+        self.assertEqual(unknown["category"], "ui")
+        self.assertEqual(
+            unknown["categoryEvidence"],
+            "exactCompleteWwiseMediaLeafSetCategory",
+        )
         self.assertEqual(unknown["purposeKnowledgeStatus"], "unknownUse")
         self.assertEqual(unknown["purposeInvestigationPriority"], "highest")
 
@@ -1825,6 +2151,38 @@ class AudioSemanticDataTests(unittest.TestCase):
             0,
         )
         self.assertNotIn("audioLibraryMediaLeafStatus", unknown)
+
+    def test_complete_shared_wwise_media_set_does_not_choose_mixed_category(self) -> None:
+        known_ui = {
+            "id": "au_ui_known",
+            "category": "ui",
+            "purposeKnowledgeStatus": "authoredContextKnown",
+            "purposeInvestigationPriority": "resolved",
+            "media": [{"mediaId": 100, "bank": "default_banks.pck"}],
+        }
+        known_sfx = {
+            "id": "au_sfx_known",
+            "category": "sfx",
+            "purposeKnowledgeStatus": "authoredContextKnown",
+            "purposeInvestigationPriority": "resolved",
+            "media": [{"mediaId": 100, "bank": "default_banks.pck"}],
+        }
+        unknown = {
+            "id": "hashed-event:0x12345679",
+            "category": "unknown",
+            "purposeKnowledgeStatus": "unknownUse",
+            "purposeInvestigationPriority": "highest",
+            "media": [{"mediaId": 100, "bank": "default_banks.pck"}],
+        }
+
+        self.assertEqual(
+            purpose.annotate_shared_wwise_media_leaves(
+                [known_ui, known_sfx, unknown]
+            ),
+            1,
+        )
+        self.assertEqual(unknown["category"], "unknown")
+        self.assertNotIn("categoryEvidence", unknown)
 
     def test_managed_literal_without_wwise_object_or_consumer_is_not_an_event(self) -> None:
         rows, _, _ = event_projection.build_event_rows({
@@ -2070,6 +2428,741 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertEqual(media[0]["audioCategory"], "sfx")
         self.assertEqual(media[0]["relatedEventCategories"], ["music", "sfx"])
 
+    def test_media_rows_derive_unique_semantic_category_for_unknown_physical_path(self) -> None:
+        src = "/export_full/structured/Audio/shared/wwise/unknown/2.flac"
+        audio_index = {"entries": [{
+            "id": "2",
+            "rel": "wwise/unknown/2.flac",
+            "src": src,
+            "storageRoot": "shared",
+            "audioCategory": "unknown",
+        }]}
+
+        media = audio_semantics.build_media_rows(
+            audio_index,
+            {src: ["au_ui_fixture"]},
+            {"au_ui_fixture": "ui"},
+        )
+
+        self.assertEqual(media[0]["audioCategory"], "unknown")
+        self.assertEqual(media[0]["semanticCategory"], "ui")
+        self.assertEqual(
+            media[0]["semanticCategoryEvidence"],
+            "exactUniqueRelatedWwiseEventCategory",
+        )
+
+    def test_media_rows_do_not_choose_semantic_category_for_mixed_event_types(self) -> None:
+        src = "/export_full/structured/Audio/shared/wwise/unknown/3.flac"
+        audio_index = {"entries": [{
+            "id": "3",
+            "rel": "wwise/unknown/3.flac",
+            "src": src,
+            "storageRoot": "shared",
+            "audioCategory": "unknown",
+        }]}
+
+        media = audio_semantics.build_media_rows(
+            audio_index,
+            {src: ["au_ui_fixture", "au_sfx_fixture"]},
+            {"au_ui_fixture": "ui", "au_sfx_fixture": "sfx"},
+        )
+
+        self.assertNotIn("semanticCategory", media[0])
+
+    def test_media_rows_project_exact_wwise_selection_path(self) -> None:
+        src = "/export_full/structured/Audio/shared/wwise/sfx/6.flac"
+        audio_index = {"entries": [{
+            "id": "6",
+            "rel": "wwise/sfx/6.flac",
+            "src": src,
+            "storageRoot": "shared",
+            "audioCategory": "sfx",
+        }]}
+        events = [{
+            "id": "hashed-event:0x12345678",
+            "runtimeSelection": "runtimeBranchUnresolved",
+            "media": [{
+                "mediaId": 6,
+                "src": src,
+                "wwiseMediaEvidence": [{
+                    "rootActionIds": [77],
+                    "relationTypes": ["layerChild", "randomAlternative"],
+                    "selectionPaths": [["layerChild", "randomAlternative"]],
+                }],
+            }],
+            "evidence": [],
+        }]
+
+        media = audio_semantics.build_media_rows(
+            audio_index,
+            {src: ["hashed-event:0x12345678"]},
+            {"hashed-event:0x12345678": "sfx"},
+            event_rows=events,
+        )
+
+        self.assertEqual(
+            media[0]["wwiseMediaRelationTypes"],
+            ["layerChild", "randomAlternative"],
+        )
+        self.assertEqual(
+            media[0]["wwiseMediaSelectionPaths"],
+            [["layerChild", "randomAlternative"]],
+        )
+        self.assertEqual(media[0]["wwiseMediaRootActionIds"], [77])
+        self.assertEqual(
+            media[0]["wwiseMediaGraphEvidence"],
+            "exactSerializedWwiseEventMediaJoin",
+        )
+
+    def test_media_rows_project_event_context_to_possible_media_boundary(self) -> None:
+        src = "/export_full/structured/Audio/shared/wwise/sfx/7.flac"
+        audio_index = {"entries": [{
+            "id": "7",
+            "rel": "wwise/sfx/7.flac",
+            "src": src,
+            "storageRoot": "shared",
+            "audioCategory": "sfx",
+        }]}
+        events = [{
+            "id": "au_sfx_context_fixture",
+            "runtimeSelection": "runtimeBranchUnresolved",
+            "media": [{"mediaId": 7, "src": src}],
+            "contexts": [{
+                "kind": "characterSkill",
+                "triggerRole": "skillCast",
+                "ownerId": "chr_fixture",
+                "skillId": "skill_fixture",
+                "path": "SkillData.Audio",
+            }],
+            "evidence": [],
+        }]
+
+        media = audio_semantics.build_media_rows(
+            audio_index,
+            {src: ["au_sfx_context_fixture"]},
+            {"au_sfx_context_fixture": "sfx"},
+            event_rows=events,
+        )
+
+        self.assertEqual(media[0]["eventContextCount"], 1)
+        self.assertEqual(media[0]["eventContextKinds"], ["characterSkill"])
+        self.assertEqual(media[0]["eventContextRoles"], ["skillCast"])
+        self.assertEqual(media[0]["eventContextOwnerValues"], ["ownerId=chr_fixture", "skillId=skill_fixture"])
+        self.assertEqual(media[0]["eventContextSituationValues"], ["path=SkillData.Audio"])
+        self.assertEqual(
+            media[0]["eventContextSummaryEvidence"],
+            "exactSerializedEventContextToPossibleMediaJoin",
+        )
+
+    def test_media_rows_project_serialized_event_output_bus_routes(self) -> None:
+        src = "/export_full/structured/Audio/shared/wwise/sfx/2.flac"
+        audio_index = {"entries": [{
+            "id": "2",
+            "rel": "wwise/sfx/2.flac",
+            "src": src,
+            "storageRoot": "shared",
+            "audioCategory": "sfx",
+        }]}
+        events = [{
+            "id": "au_sfx_route_fixture",
+            "runtimeSelection": "runtimeBranchUnresolved",
+            "media": [{"mediaId": 2, "src": src}],
+            "evidence": [{
+                "bankId": 7,
+                "postProcessSummary": {"outputBuses": [{
+                    "busIdHex": "0x01020304",
+                    "busPathIdHexes": ["0x01020304", "0x05060708"],
+                    "effectBusIdHexes": ["0x05060708"],
+                    "unresolvedBusProcessingIdHexes": ["0x01020304"],
+                }]},
+            }],
+        }]
+
+        media = audio_semantics.build_media_rows(
+            audio_index,
+            {src: ["au_sfx_route_fixture"]},
+            {"au_sfx_route_fixture": "sfx"},
+            event_rows=events,
+        )
+
+        self.assertEqual(media[0]["postProcessRouteCount"], 1)
+        self.assertEqual(
+            media[0]["postProcessBusPaths"],
+            [["0x01020304", "0x05060708"]],
+        )
+        self.assertEqual(media[0]["postProcessEffectBusIds"], ["0x05060708"])
+        self.assertEqual(
+            media[0]["postProcessUnresolvedBusProcessingIds"], ["0x01020304"]
+        )
+        self.assertEqual(
+            media[0]["postProcessRouteEvidence"],
+            "exactSerializedEventOutputBusJoin",
+        )
+        self.assertEqual(
+            media[0]["postProcessRouteStatuses"],
+            ["exactSerializedOutputBusPath"],
+        )
+
+    def test_media_rows_distinguish_no_explicit_output_bus_from_parse_failure(self) -> None:
+        src = "/export_full/structured/Audio/shared/wwise/sfx/3.flac"
+        audio_index = {"entries": [{
+            "id": "3",
+            "rel": "wwise/sfx/3.flac",
+            "src": src,
+            "storageRoot": "shared",
+            "audioCategory": "sfx",
+        }]}
+        events = [{
+            "id": "au_sfx_default_bus_fixture",
+            "runtimeSelection": "singlePossibleMedia",
+            "media": [{"mediaId": 3, "src": src}],
+            "evidence": [{
+                "bankId": 8,
+                "postProcessSummary": {
+                    "parserStatus": "typedExactV150NodeBaseProcessingPrefix",
+                    "parsedNodeCount": 2,
+                    "outputBusNodeCount": 0,
+                    "outputBuses": [],
+                },
+            }],
+        }]
+        media = audio_semantics.build_media_rows(
+            audio_index,
+            {src: ["au_sfx_default_bus_fixture"]},
+            {"au_sfx_default_bus_fixture": "sfx"},
+            event_rows=events,
+        )
+
+        self.assertEqual(media[0]["postProcessRouteCount"], 0)
+        self.assertEqual(
+            media[0]["postProcessRouteStatuses"],
+            ["noExplicitOutputBusSerialized"],
+        )
+        self.assertEqual(media[0]["postProcessEvidenceEventCount"], 1)
+        self.assertEqual(media[0]["postProcessParsedNodeCount"], 2)
+        self.assertEqual(media[0]["postProcessOutputBusNodeCount"], 0)
+
+    def test_media_rows_project_direct_node_effects_separately_from_bus_effects(self) -> None:
+        src = "/export_full/structured/Audio/shared/wwise/sfx/4.flac"
+        audio_index = {"entries": [{
+            "id": "4",
+            "rel": "wwise/sfx/4.flac",
+            "src": src,
+            "storageRoot": "shared",
+            "audioCategory": "sfx",
+        }]}
+        events = [{
+            "id": "au_sfx_direct_effect_fixture",
+            "runtimeSelection": "singlePossibleMedia",
+            "media": [{"mediaId": 4, "src": src}],
+            "evidence": [{
+                "bankId": 9,
+                "postProcessSummary": {
+                    "parserStatus": "typedExactV150NodeBaseProcessingPrefix",
+                    "parsedNodeCount": 1,
+                    "outputBusNodeCount": 0,
+                    "outputBuses": [],
+                    "effectNodes": [{
+                        "objectId": 44,
+                        "effects": [{
+                            "effectId": 0x12345678,
+                            "effectIdHex": "0x12345678",
+                            "slotIndex": 0,
+                            "pluginName": "Parametric EQ",
+                            "pluginClassIdHex": "0x008b0003",
+                            "parameterSummary": "B1 High Pass 70 Hz",
+                            "resolutionStatus": "exactUniquePluginDefinition",
+                        }],
+                    }],
+                    "auxSendNodes": [{
+                        "objectId": 44,
+                        "objectType": 2,
+                        "objectTypeLabel": "sound",
+                        "parentId": 45,
+                        "auxFlagsRaw": 8,
+                        "overrideUserDefinedAuxSends": False,
+                        "useGameDefinedAuxSends": False,
+                        "userDefinedAuxSends": [{
+                            "slotIndex": 0,
+                            "busIdHex": "0x00000040",
+                            "serializationStatus": "exactAuthoredUserDefinedAuxBusId",
+                        }],
+                    }],
+                    "auxiliaryBuses": [{
+                        "sendKind": "userDefined",
+                        "busIdHex": "0x00000040",
+                        "resolutionStatus": "exactGlobalAuxiliaryBusDefinition",
+                        "busPathIdHexes": ["0x00000040", "0x00000050"],
+                        "busPathResolutionStatus": "exactGlobalBusParentPath",
+                        "effectBusIdHexes": ["0x00000040"],
+                    }],
+                    "propertyNodes": [{
+                        "objectId": 44,
+                        "objectType": 2,
+                        "objectTypeLabel": "sound",
+                        "properties": [{
+                            "propertyIdHex": "0x00",
+                            "propertyLabel": "Volume",
+                            "rawU32": 3212836864,
+                            "rawHex": "0xbf800000",
+                            "floatValue": -1.0,
+                            "valueEncoding": "float",
+                        }],
+                        "rangedProperties": [{
+                            "propertyIdHex": "0x01",
+                            "propertyLabel": "Pitch",
+                            "minimumRawU32": 3259498496,
+                            "minimumRawHex": "0xc2480000",
+                            "minimumFloat": -50.0,
+                            "maximumRawU32": 1112014848,
+                            "maximumRawHex": "0x42480000",
+                            "maximumFloat": 50.0,
+                            "valueEncoding": "floatOrTypedUnionRawU32",
+                        }],
+                    }],
+                },
+            }],
+        }]
+
+        media = audio_semantics.build_media_rows(
+            audio_index,
+            {src: ["au_sfx_direct_effect_fixture"]},
+            {"au_sfx_direct_effect_fixture": "sfx"},
+            event_rows=events,
+        )
+
+        self.assertEqual(media[0]["postProcessDirectEffectCount"], 1)
+        self.assertEqual(media[0]["postProcessDirectEffectOccurrences"], 1)
+        self.assertEqual(
+            media[0]["postProcessDirectEffects"][0]["pluginName"],
+            "Parametric EQ",
+        )
+        self.assertEqual(
+            media[0]["postProcessDirectEffectEvidence"],
+            "exactSerializedEventNodeEffectJoin",
+        )
+
+    def test_media_rows_project_compact_serialized_direct_and_bus_effect_chain(self) -> None:
+        src = "/export_full/structured/Audio/shared/wwise/sfx/40.flac"
+        audio_index = {
+            "entries": [{
+                "id": "40",
+                "rel": "wwise/sfx/40.flac",
+                "src": src,
+                "storageRoot": "shared",
+                "audioCategory": "sfx",
+            }],
+            "hircSummary": {"postProcessSummary": {"busDefinitions": [{
+                "busIdHex": "0x00000010",
+                "serializedStateAndRtpc": {
+                    "parserStatus": "typedExactV150BusInitialRtpcAndState",
+                    "rtpcCurveCount": 1,
+                    "rtpcPointCount": 2,
+                    "rtpcCurves": [{
+                        "rtpcIdHex": "0x00000031",
+                        "parameterId": 0,
+                        "parameterLabel": "Volume",
+                        "rtpcTypeLabel": "gameParameter",
+                        "accumLabel": "additive",
+                        "scalingLabel": "decibel",
+                        "pointCount": 2,
+                        "points": [
+                            {"pointIndex": 0, "from": 0.0, "to": -1.0, "interpolationLabel": "Linear"},
+                            {"pointIndex": 1, "from": 1.0, "to": 0.0, "interpolationLabel": "Linear"},
+                        ],
+                    }],
+                    "stateGroupCount": 1,
+                    "stateCount": 1,
+                    "stateValueCount": 1,
+                    "stateGroups": [{
+                        "groupIdHex": "0x00000032",
+                        "syncTypeLabel": "immediate",
+                        "states": [{
+                            "stateIdHex": "0x00000033",
+                            "values": [{"parameterId": 4, "parameterLabel": "HPF", "value": -3.0}],
+                        }],
+                    }],
+                },
+                "serializedDuckCount": 1,
+                "serializedMaxDuckVolumeDb": -96.0,
+                "serializedDucks": [{
+                    "duckIndex": 0,
+                    "busIdHex": "0x00000040",
+                    "duckVolumeDb": -6.0,
+                    "fadeOutMs": 200,
+                    "fadeInMs": 500,
+                    "fadeCurve": 4,
+                    "targetPropertyIdHex": "0x00",
+                    "targetPropertyLabel": "Volume",
+                }],
+                "effects": [{
+                    "slotIndex": 0,
+                    "effectIdHex": "0x00000011",
+                    "pluginName": "Compressor",
+                    "pluginClassIdHex": "0x00820003",
+                    "parameterSummary": "threshold -12 dB",
+                    "effectBypass": False,
+                    "effectShareSet": False,
+                    "effectRendered": False,
+                    "resolutionStatus": "exactUniquePluginDefinition",
+                }],
+            }, {
+                "busIdHex": "0x00000020",
+                "effects": [{
+                    "slotIndex": 0,
+                    "effectIdHex": "0x00000021",
+                    "pluginName": "Parametric EQ",
+                    "parameterSummary": "B1 +3 dB",
+                    "resolutionStatus": "exactUniquePluginDefinition",
+                }],
+            }] }},
+        }
+        events = [{
+            "id": "au_sfx_chain_fixture",
+            "runtimeSelection": "singlePossibleMedia",
+            "media": [{"mediaId": 40, "src": src}],
+            "evidence": [{
+                "bankId": 11,
+                "postProcessSummary": {
+                    "outputBuses": [{
+                        "busIdHex": "0x00000010",
+                        "busPathIdHexes": ["0x00000010", "0x00000020"],
+                    }],
+                    "effectNodes": [{
+                        "objectId": 44,
+                        "effects": [{
+                            "effectId": 1,
+                            "effectIdHex": "0x00000001",
+                            "slotIndex": 0,
+                            "pluginName": "Meter",
+                            "parameterSummary": "RMS",
+                            "resolutionStatus": "exactUniquePluginDefinition",
+                        }],
+                    }],
+                    "auxiliaryBuses": [{
+                        "sendKind": "userDefined",
+                        "busIdHex": "0x00000040",
+                        "resolutionStatus": "exactGlobalAuxiliaryBusDefinition",
+                        "busPathIdHexes": ["0x00000040", "0x00000050"],
+                        "busPathResolutionStatus": "exactGlobalBusParentPath",
+                        "effectBusIdHexes": ["0x00000040"],
+                    }],
+                    "auxSendNodes": [{
+                        "objectId": 44,
+                        "objectType": 2,
+                        "objectTypeLabel": "sound",
+                        "parentId": 45,
+                        "auxFlagsRaw": 8,
+                        "overrideUserDefinedAuxSends": False,
+                        "useGameDefinedAuxSends": False,
+                        "userDefinedAuxSends": [{
+                            "slotIndex": 0,
+                            "busIdHex": "0x00000040",
+                            "serializationStatus": "exactAuthoredUserDefinedAuxBusId",
+                        }],
+                    }],
+                    "propertyNodes": [{
+                        "objectId": 44,
+                        "objectType": 2,
+                        "objectTypeLabel": "sound",
+                        "properties": [{
+                            "propertyIdHex": "0x00",
+                            "propertyLabel": "Volume",
+                            "rawU32": 3212836864,
+                            "rawHex": "0xbf800000",
+                            "floatValue": -1.0,
+                            "valueEncoding": "float",
+                        }],
+                        "rangedProperties": [{
+                            "propertyIdHex": "0x01",
+                            "propertyLabel": "Pitch",
+                            "minimumRawU32": 3259498496,
+                            "minimumRawHex": "0xc2480000",
+                            "minimumFloat": -50.0,
+                            "maximumRawU32": 1112014848,
+                            "maximumRawHex": "0x42480000",
+                            "maximumFloat": 50.0,
+                            "valueEncoding": "floatOrTypedUnionRawU32",
+                        }],
+                    }],
+                },
+            }],
+        }]
+
+        media = audio_semantics.build_media_rows(
+            audio_index,
+            {src: ["au_sfx_chain_fixture"]},
+            {"au_sfx_chain_fixture": "sfx"},
+            event_rows=events,
+        )
+
+        chain = media[0]["postProcessEffectChain"]
+        self.assertEqual(media[0]["postProcessEffectChainCount"], 3)
+        self.assertEqual([row["stage"] for row in chain], ["directNode", "bus", "bus"])
+        self.assertEqual(chain[0]["objectId"], 44)
+        self.assertEqual(chain[1]["busIdHex"], "0x00000010")
+        self.assertEqual(chain[1]["pathDepth"], 0)
+        self.assertEqual(chain[2]["busIdHex"], "0x00000020")
+        self.assertEqual(chain[2]["pathDepth"], 1)
+        self.assertEqual(media[0]["postProcessBusControlCount"], 1)
+        self.assertEqual(media[0]["postProcessBusControls"][0]["busIdHex"], "0x00000010")
+        self.assertEqual(
+            media[0]["postProcessBusControls"][0]["rtpcIds"],
+            ["0x00000031"],
+        )
+        self.assertEqual(
+            media[0]["postProcessBusControls"][0]["rtpcParameterLabels"],
+            ["Volume"],
+        )
+        self.assertNotIn("points", media[0]["postProcessBusControls"][0])
+        self.assertEqual(
+            media[0]["postProcessBusControls"][0]["stateControls"][0]["parameterLabel"],
+            "HPF",
+        )
+        self.assertEqual(
+            media[0]["postProcessBusControlEvidence"],
+            "exactSerializedBusInitialRtpcAndStateJoin",
+        )
+        self.assertEqual(media[0]["postProcessBusDuckCount"], 1)
+        self.assertEqual(
+            media[0]["postProcessBusDucks"][0]["ducks"][0]["targetBusIdHex"],
+            "0x00000040",
+        )
+        self.assertEqual(
+            media[0]["postProcessBusDuckEvidence"],
+            "exactSerializedBusDuckingJoin",
+        )
+        self.assertEqual(media[0]["postProcessAuxSendCount"], 1)
+        self.assertEqual(
+            media[0]["postProcessAuxSends"][0]["busIdHex"],
+            "0x00000040",
+        )
+        self.assertEqual(
+            media[0]["postProcessAuxSendEvidence"],
+            "exactSerializedEventNodeUserDefinedAuxSendJoin",
+        )
+        self.assertEqual(
+            media[0]["postProcessAuxSends"][0]["busRoutes"][0]["busPathIdHexes"],
+            ["0x00000040", "0x00000050"],
+        )
+        self.assertEqual(media[0]["postProcessPropertyCount"], 1)
+        self.assertEqual(media[0]["postProcessProperties"][0]["propertyLabel"], "Volume")
+        self.assertEqual(media[0]["postProcessPropertyOccurrences"], 1)
+        self.assertEqual(media[0]["postProcessRangeCount"], 1)
+        self.assertEqual(media[0]["postProcessRanges"][0]["propertyLabel"], "Pitch")
+        self.assertEqual(media[0]["postProcessRangeOccurrences"], 1)
+        self.assertEqual(
+            media[0]["postProcessPropertyEvidence"],
+            "exactSerializedEventNodePropertyJoin",
+        )
+        self.assertEqual(
+            media[0]["postProcessEffectChainEvidence"],
+            "exactSerializedEventNodeAndBusEffectJoin",
+        )
+
+    def test_media_rows_project_serialized_state_and_rtpc_controls(self) -> None:
+        src = "/export_full/structured/Audio/shared/wwise/sfx/5.flac"
+        audio_index = {"entries": [{
+            "id": "5",
+            "rel": "wwise/sfx/5.flac",
+            "src": src,
+            "storageRoot": "shared",
+            "audioCategory": "sfx",
+        }]}
+        events = [{
+            "id": "au_sfx_control_fixture",
+            "runtimeSelection": "runtimeBranchUnresolved",
+            "media": [{"mediaId": 5, "src": src}],
+            "evidence": [{
+                "bankId": 10,
+                "postProcessSummary": {
+                    "stateRtpcNodes": [{
+                        "objectId": 55,
+                        "objectType": 7,
+                        "objectTypeLabel": "Actor-Mixer",
+                        "stateGroups": [{
+                            "groupId": 0x01020304,
+                            "groupIdHex": "0x01020304",
+                            "syncTypeLabel": "gameObject",
+                            "states": [{
+                                "stateId": 0x05060708,
+                                "stateIdHex": "0x05060708",
+                                "values": [{
+                                    "parameterId": 0x10,
+                                    "parameterLabel": "BusVolume",
+                                    "value": -3.5,
+                                }],
+                            }],
+                        }],
+                        "rtpcCurves": [{
+                            "rtpcId": 0x11223344,
+                            "rtpcIdHex": "0x11223344",
+                            "parameterId": 0x0E,
+                            "parameterLabel": "LPF",
+                            "rtpcTypeLabel": "GameParameter",
+                            "accumLabel": "Add",
+                            "scalingLabel": "None",
+                            "pointCount": 2,
+                            "points": [
+                                {"pointIndex": 0, "from": 0.0, "to": 1.0, "interpolationLabel": "Linear"},
+                                {"pointIndex": 1, "from": 1.0, "to": 0.0, "interpolationLabel": "Linear"},
+                            ],
+                        }],
+                    }],
+                },
+            }],
+        }]
+
+        events[0]["evidence"][0]["postProcessSummary"]["stateRtpcNodes"][0]["rtpcCurves"][0]["points"] = [
+            {"pointIndex": index, "from": float(index), "to": float(index + 1), "interpolationLabel": "Linear"}
+            for index in range(10)
+        ]
+        events[0]["evidence"][0]["postProcessSummary"]["stateRtpcNodes"][0]["rtpcCurves"][0]["pointCount"] = 10
+
+        media = audio_semantics.build_media_rows(
+            audio_index,
+            {src: ["au_sfx_control_fixture"]},
+            {"au_sfx_control_fixture": "sfx"},
+            event_rows=events,
+        )
+
+        self.assertEqual(media[0]["postProcessRtpcControlCount"], 1)
+        self.assertEqual(media[0]["postProcessRtpcControls"][0]["parameterLabel"], "LPF")
+        self.assertEqual(media[0]["postProcessRtpcControls"][0]["points"][7]["to"], 8.0)
+        self.assertEqual(len(media[0]["postProcessRtpcControls"][0]["points"]), 8)
+        self.assertTrue(media[0]["postProcessRtpcControls"][0]["pointsTruncated"])
+        self.assertEqual(media[0]["postProcessStateControlCount"], 1)
+        self.assertEqual(media[0]["postProcessStateGroupIds"], ["0x01020304"])
+        self.assertEqual(media[0]["postProcessStateControls"][0]["value"], -3.5)
+        self.assertEqual(
+            media[0]["postProcessControlEvidence"],
+            "exactSerializedEventNodeStateRtpcJoin",
+        )
+
+    def test_media_trigger_context_summary_keeps_authored_selection_boundary(self) -> None:
+        media = [{
+            "id": "7",
+            "src": "/audio/trigger.flac",
+            "rel": "wwise/sfx/7.flac",
+        }]
+        catalog = {
+            "contexts": [{
+                "triggerId": "abilityVoiceTrigger:fixture",
+                "semanticKind": "abilityVoiceTriggerAction",
+                "triggerRole": "authoredAbilityVoiceResponseTrigger",
+                "situation": {
+                    "eventId": "au_voice_fixture",
+                    "ownerId": "chr_fixture",
+                    "triggerKey": "combat_attack",
+                },
+                "owner": {
+                    "ownerId": "chr_fixture",
+                    "configId": "skill_fixture",
+                },
+                "selection": {
+                    "eventSelectionStatus": "uniqueEvent",
+                    "runtimeSelectionStatus": "responsiveRuntimeSelectionUnobserved",
+                },
+                "runtimeActivationStatus": "abilityActionExecutionUnobserved",
+                "mediaRefs": [{
+                    "id": "7",
+                    "src": "/audio/trigger.flac",
+                    "rel": "wwise/sfx/7.flac",
+                }],
+            }],
+        }
+
+        counts = audio_semantics.annotate_media_trigger_contexts(media, catalog)
+
+        self.assertEqual(
+            counts,
+            {"mediaWithTriggerContextSummary": 1, "triggerContextMediaRefs": 1},
+        )
+        self.assertEqual(media[0]["triggerContextCount"], 1)
+        self.assertEqual(media[0]["triggerSemanticKinds"], ["abilityVoiceTriggerAction"])
+        self.assertEqual(media[0]["triggerRoles"], ["authoredAbilityVoiceResponseTrigger"])
+        self.assertEqual(media[0]["triggerOwnerValues"], ["chr_fixture", "skill_fixture"])
+        self.assertEqual(
+            media[0]["triggerSelectionStatuses"],
+            ["responsiveRuntimeSelectionUnobserved", "uniqueEvent"],
+        )
+        self.assertEqual(
+            media[0]["triggerContextSummaryEvidence"],
+            "exactSerializedTriggerContextMediaJoin",
+        )
+        self.assertFalse(media[0]["triggerContextSummaryTruncated"])
+
+    def test_trigger_context_event_category_recovers_unknown_media_semantics(self) -> None:
+        media = [{
+            "id": "8",
+            "audioCategory": "unknown",
+            "src": "/audio/voice.flac",
+            "rel": "wwise/unknown/8.flac",
+        }]
+        catalog = {
+            "contexts": [{
+                "triggerId": "responsive:fixture",
+                "semanticKind": "responsiveDialogVoice",
+                "triggerRole": "authoredResponsiveVoiceCandidate",
+                "meaning": {"category": "voice"},
+                "mediaRefs": [{
+                    "id": "8",
+                    "src": "/audio/voice.flac",
+                    "rel": "wwise/unknown/8.flac",
+                }],
+            }],
+        }
+
+        counts = audio_semantics.annotate_media_trigger_semantic_categories(media, catalog)
+
+        self.assertEqual(
+            counts,
+            {
+                "mediaWithSemanticCategoryFromTriggerContext": 1,
+                "mediaSemanticCategoryFromTriggerEventCategory": 1,
+                "mediaSemanticCategoryFromMonoBehaviourSfxField": 0,
+            },
+        )
+        self.assertEqual(media[0]["semanticCategory"], "voice")
+        self.assertEqual(
+            media[0]["semanticCategoryEvidence"],
+            "exactSerializedTriggerContextEventCategory",
+        )
+        self.assertEqual(media[0]["semanticCategoryContextCategories"], ["voice"])
+
+    def test_mono_behaviour_audio_field_recovers_unknown_sfx_semantics(self) -> None:
+        media = [{
+            "id": "9",
+            "audioCategory": "unknown",
+            "src": "/audio/sfx.flac",
+            "rel": "wwise/unknown/9.flac",
+        }]
+        catalog = {
+            "contexts": [{
+                "triggerId": "mono:fixture",
+                "semanticKind": "monoBehaviourAudioIdField",
+                "triggerRole": "soundSpawn",
+                "meaning": {"category": "unknown"},
+                "mediaRefs": [{
+                    "id": "9",
+                    "src": "/audio/sfx.flac",
+                    "rel": "wwise/unknown/9.flac",
+                }],
+            }],
+        }
+
+        counts = audio_semantics.annotate_media_trigger_semantic_categories(media, catalog)
+
+        self.assertEqual(counts["mediaWithSemanticCategoryFromTriggerContext"], 1)
+        self.assertEqual(counts["mediaSemanticCategoryFromTriggerEventCategory"], 0)
+        self.assertEqual(counts["mediaSemanticCategoryFromMonoBehaviourSfxField"], 1)
+        self.assertEqual(media[0]["semanticCategory"], "sfx")
+        self.assertEqual(
+            media[0]["semanticCategoryEvidence"],
+            "exactSerializedMonoBehaviourAudioIdFieldRole",
+        )
+        self.assertEqual(media[0]["semanticCategoryFieldRoles"], ["soundSpawn"])
+
     def test_control_only_event_role_uses_serialized_action_type(self) -> None:
         event_name = "au_ui_fixture_control"
         event_hash = identifiers.audio_hash_generator_compute(event_name)
@@ -2214,6 +3307,9 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertTrue(rows[0]["foundInWwise"])
         self.assertEqual(rows[0]["eventIdentityStatus"], "recoveredAuthoredName")
         self.assertEqual(rows[0]["contexts"][0]["kind"], "responsiveDialogVoice")
+        self.assertEqual(rows[0]["category"], "voice")
+        self.assertEqual(rows[0]["categoryEvidence"], "exactAudioDialogVoiceIdentity")
+        self.assertEqual(rows[0]["categoryNameEvidence"], "authoredEnemyEventNamePattern")
         self.assertEqual(banks[0]["namedEventCount"], 1)
 
     def test_voice_table_alias_names_inventory_and_preserves_unobserved_route(self) -> None:
@@ -2385,7 +3481,6 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertEqual(rows[0]["identityNumericSkillIds"], ["7"])
         self.assertEqual(rows[0]["purposeKnowledgeStatus"], "identityOnlyNoConsumer")
         self.assertEqual(rows[0]["purposeInvestigationPriority"], "highest")
-        self.assertEqual(rows[0]["playbackLocationStatus"], "unknown")
 
     def test_responsive_voice_contexts_preserve_trigger_and_tone_selection_boundaries(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:
@@ -3032,7 +4127,17 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertEqual(event_projection.event_category(":au_music_test"), "music")
         self.assertEqual(event_projection.event_category("au_ul_popup_close"), "ui")
         self.assertEqual(event_projection.event_category("player_fol_cloth_fallover"), "sfx")
+        self.assertEqual(event_projection.event_category("eny_0125_skill_01_shoot"), "sfx")
+        self.assertEqual(event_projection.event_category("a_actor_camille_ui_overview_start"), "ui")
+        self.assertEqual(event_projection.event_category("Play_au_ui_button_confirm"), "ui")
+        self.assertEqual(event_projection.event_category("levelseq_map02_audio"), "cue")
+        self.assertEqual(event_projection.event_category("int_loading_portal_idle"), "sfx")
         self.assertEqual(event_projection.event_category("unproven_name"), "unknown")
+
+        self.assertEqual(
+            event_projection.event_category_with_evidence("Play_au_ui_button_confirm"),
+            ("ui", "authoredPlayAliasNamePattern"),
+        )
 
     def test_audio_dialog_custom_event_hash_is_control_context(self) -> None:
         event_hash = 0x35B925DA
@@ -3168,9 +4273,19 @@ class AudioSemanticDataTests(unittest.TestCase):
         callback_manager = specs["AkCallbackManager"]
         factory_bridge = specs["Beyond.Gameplay.Audio.AudioRemoteFactoryBridge"]
         gamepad_manager = specs["Beyond.Gameplay.Audio.AudioGamePadManager"]
+        vfs_loader = specs["Beyond.Audio.AudioVFSLoader"]
+        bank_manager = specs["Beyond.Audio.AudioBankManager"]
 
         adapter_chains = {row["id"]: row for row in adapter["nativeCallChains"]}
         post = adapter_chains["adapterPostEventToWwise"]
+        alternate = post["alternateEntryPoints"]
+        self.assertEqual(len(alternate), 1)
+        self.assertEqual(alternate[0]["role"], "stringCallbackEntry")
+        self.assertEqual(alternate[0]["virtualAddress"], "0x183288d10")
+        self.assertNotIn("methodIndex", alternate[0])
+        self.assertIn("AudioHashGenerator.Compute", alternate[0]["relation"])
+        self.assertIn("tail-jumps AudioAdapter._PostEvent", alternate[0]["relation"])
+        self.assertIn("notInCodegenOrGenericMethodPointerTables", alternate[0]["evidence"])
         self.assertEqual(
             [row["methodIndex"] for row in post["stages"]],
             [
@@ -3206,11 +4321,625 @@ class AudioSemanticDataTests(unittest.TestCase):
         callback_roles = {row["role"] for row in callback_manager["nativeAnchors"]}
         self.assertTrue({"eventId", "durationMediaId", "playlistSelection", "sourceChange"} <= callback_roles)
         external = adapter_chains["externalSourcePostToWwise"]
+        external_alternates = external["alternateEntryPoints"]
         self.assertEqual(
-            [row["methodIndex"] for row in external["stages"]],
-            [479931, 480011, 444124, 444128, 444126, 446376, 480009, 39041, 39052],
+            [row["virtualAddress"] for row in external_alternates],
+            ["0x183abef40", "0x183abe750", "0x1800285d0"],
         )
-        self.assertIn("0x18f361150", external["stages"][5]["relation"])
+        self.assertIn("PostEventExternal", external_alternates[0]["relation"])
+        self.assertIn("voiceData.data (+0x60)", external_alternates[0]["relation"])
+        self.assertIn("wwiseEvent (+0x20)", external_alternates[0]["relation"])
+        self.assertIn("codec (+0x68)", external_alternates[0]["relation"])
+        self.assertIn("externalCookie 0x24db9834", external_alternates[0]["relation"])
+        self.assertIn("callback type 0x100001", external_alternates[0]["relation"])
+        external_cookie_join = next(
+            row
+            for row in external["stages"]
+            if row["role"] == "externalSourceCookieBankJoinAudit"
+        )
+        self.assertEqual(external_cookie_join["virtualAddress"], "0x24db9834")
+        self.assertIn("1,712 exact Wwise External Source source records", external_cookie_join["relation"])
+        self.assertIn("plugin 0x00080001", external_cookie_join["relation"])
+        self.assertIn("sourceId 618371124 = 0x24db9834", external_cookie_join["relation"])
+        self.assertIn("0x183abefd9", external_cookie_join["relation"])
+        self.assertIn("callback-family selection boundary", external_cookie_join["relation"])
+        self.assertIn("per-request externalSourceKey path", external_cookie_join["relation"])
+        self.assertEqual(
+            external_alternates[1]["role"],
+            "voiceExternalSourceKeyResolution",
+        )
+        self.assertIn("externalSourceKey", external_alternates[1]["relation"])
+        self.assertIn("voiceData.data (+0x60)", external_alternates[1]["relation"])
+        self.assertIn("0x182f25040", external_alternates[1]["relation"])
+        self.assertIn("template UTF-16 placeholder expansion", external_alternates[1]["relation"])
+        descriptor_alternate = external_alternates[2]
+        self.assertIn("record +0x10", descriptor_alternate["relation"])
+        self.assertIn("0x1800c3990", descriptor_alternate["relation"])
+        self.assertIn("manager +0x38", descriptor_alternate["relation"])
+        self.assertIn("sourceInfo +0x10 instance join remains unproven", descriptor_alternate["relation"])
+        self.assertIn("does not itself read a file", external_alternates[1]["relation"])
+        self.assertIn("VoiceI18n.GetVoicePath", external_alternates[1]["relation"])
+        self.assertEqual(external_alternates[2]["role"], "nativeExternalDescriptor")
+        self.assertIn("cExternals", external_alternates[2]["relation"])
+        self.assertIn("duplicates szFile", external_alternates[2]["relation"])
+        self.assertIn("0x18011bf00", external_alternates[2]["relation"])
+        self.assertIn("copied external-descriptor allocation pointer at manager +0x38", external_alternates[2]["relation"])
+        self.assertIn("noFileOpenCallsite", external_alternates[2]["evidence"])
+        self.assertNotIn("methodIndex", external_alternates[0])
+        self.assertEqual(
+            [row["methodIndex"] for row in external["stages"] if "methodIndex" in row],
+            [479931, 480011, 444124, 444128, 444126, 446969, 446376, 446952, 480009, 39041, 39052],
+        )
+        self.assertIn(
+            "0x18f361150",
+            next(row for row in external["stages"] if row["role"] == "wwise")["relation"],
+        )
+        external_package = next(row for row in external["stages"] if row["role"] == "externalCallbackPackage")
+        self.assertEqual(external_package["methodIndex"], 446969)
+        self.assertEqual(external_package["virtualAddress"], "0x18328ca20")
+        self.assertIn("mapping object", external_package["relation"])
+        external_wwise = next(row for row in external["stages"] if row["role"] == "wwise")
+        self.assertIn("cExternals=1", external_wwise["relation"])
+        self.assertIn("mappingCookie", external_wwise["relation"])
+        external_file = next(row for row in external["stages"] if row["role"] == "externalFile")
+        self.assertIn("directly from the externalSourceKey argument", external_file["relation"])
+        self.assertIn("managed key/path", external_file["relation"])
+        self.assertIn("native source-state key equals the registration serial", external_file["relation"])
+        source_manager = next(row for row in external["stages"] if row["role"] == "nativeSourceManager")
+        self.assertEqual(source_manager["virtualAddress"], "0x1800e1320")
+        self.assertIn("+0x4c", source_manager["relation"])
+        self.assertIn("+0x50", source_manager["relation"])
+        self.assertIn("+0x68", source_manager["relation"])
+        self.assertIn("internally generated registration serial written at 0x1800c3990 record +0xc", source_manager["relation"])
+        self.assertIn("nativeSourceManagerJoinAudit below", source_manager["relation"])
+        self.assertIn("nativeSourceDescriptorManagerRetentionAudit below", source_manager["relation"])
+        descriptor_retention = next(
+            row
+            for row in external["stages"]
+            if row["role"] == "nativeSourceDescriptorManagerRetentionAudit"
+        )
+        self.assertEqual(descriptor_retention["virtualAddress"], "0x1800c38b0")
+        self.assertIn("0x1800c08d0", descriptor_retention["relation"])
+        self.assertIn("local carrier at [rsp+0x50]", descriptor_retention["relation"])
+        self.assertIn("c3990 stack argument 6", descriptor_retention["relation"])
+        self.assertIn("registration record +0x14/+0x24", descriptor_retention["relation"])
+        self.assertIn("manager entry +0x38", descriptor_retention["relation"])
+        self.assertIn("copied external-descriptor allocation pointer", descriptor_retention["relation"])
+        self.assertIn("not proof that manager +0x38 is a UTF-16 string", descriptor_retention["relation"])
+        descriptor_lifetime = next(
+            row
+            for row in external["stages"]
+            if row["role"] == "nativeSourceDescriptorManagerLifetimeAudit"
+        )
+        self.assertEqual(descriptor_lifetime["virtualAddress"], "0x1800e1770")
+        self.assertIn("0x1800e2a5e", descriptor_lifetime["relation"])
+        self.assertIn("0x1800e2a8e", descriptor_lifetime["relation"])
+        self.assertIn("reads manager entry +0x38 only", descriptor_lifetime["relation"])
+        self.assertIn("refcount release 0x1800c5f60", descriptor_lifetime["relation"])
+        self.assertIn("not a direct sourceInfo/provider input", descriptor_lifetime["relation"])
+        serial_audit = next(
+            row
+            for row in external["stages"]
+            if row["role"] == "nativeSourceRegistrationSerialAudit"
+        )
+        self.assertEqual(serial_audit["virtualAddress"], "0x1800e1320")
+        self.assertIn("two wrapper families", serial_audit["relation"])
+        self.assertIn("0x1800e130b", serial_audit["relation"])
+        self.assertIn("0x1800e14d2", serial_audit["relation"])
+        self.assertIn("0x1800c3516", serial_audit["relation"])
+        self.assertIn("0x1800c4472", serial_audit["relation"])
+        self.assertIn("does not prove that the later source-state key equals that serial", serial_audit["relation"])
+        source_lookup = next(row for row in external["stages"] if row["role"] == "nativeSourceLookup")
+        self.assertEqual(source_lookup["virtualAddress"], "0x1800e2820")
+        self.assertIn("0x1800e19a0", source_lookup["relation"])
+        self.assertIn("operation 0x10", source_lookup["relation"])
+        self.assertIn("0x1800e28d0", source_lookup["relation"])
+        self.assertIn("key % manager bucket count", source_lookup["relation"])
+        self.assertIn("no additional hash transform", source_lookup["relation"])
+        callback_branches = next(
+            row
+            for row in external["stages"]
+            if row["role"] == "nativeSourceCallbackBranches"
+        )
+        self.assertEqual(callback_branches["virtualAddress"], "0x1800e2820")
+        self.assertIn("object +0x60 bit 0x10", callback_branches["relation"])
+        self.assertIn("object +0x60 bit 0x20", callback_branches["relation"])
+        self.assertIn("operation 0x10", callback_branches["relation"])
+        self.assertIn("operation 0x20", callback_branches["relation"])
+        self.assertIn("manager +0x48", callback_branches["relation"])
+        self.assertIn("0x1800030cf", callback_branches["relation"])
+        self.assertIn("0x180003430", callback_branches["relation"])
+        self.assertIn("does not identify the managed path", callback_branches["relation"])
+        extended_callback_branches = next(
+            row
+            for row in external["stages"]
+            if row["role"] == "nativeSourceExtendedCallbackBranches"
+        )
+        self.assertEqual(extended_callback_branches["virtualAddress"], "0x1800e25f0")
+        self.assertIn("operation 0x80", extended_callback_branches["relation"])
+        self.assertIn("operation 0x2000", extended_callback_branches["relation"])
+        self.assertIn("0x1800347af", extended_callback_branches["relation"])
+        self.assertIn("0x18003578f", extended_callback_branches["relation"])
+        self.assertIn("0x18004388b", extended_callback_branches["relation"])
+        self.assertIn("0x180003169", extended_callback_branches["relation"])
+        self.assertIn("do not select a UTF-16 path", extended_callback_branches["relation"])
+        source_media = next(row for row in external["stages"] if row["role"] == "nativeSourceMediaLookup")
+        self.assertEqual(source_media["virtualAddress"], "0x18010df60")
+        self.assertIn("source-state +0", source_media["relation"])
+        self.assertIn("exact numeric equality", source_media["relation"])
+        self.assertIn("0x1800c3990 record +0xc serial", source_media["relation"])
+        self.assertIn("stack +0x40", source_media["relation"])
+        self.assertIn("object +0x58", source_media["relation"])
+        self.assertIn("object +0x28", source_media["relation"])
+        self.assertIn("managed UTF-16 path", source_media["relation"])
+        self.assertIn("0x1801443e0", source_media["relation"])
+        self.assertIn("context +0x268", source_media["relation"])
+        self.assertIn("0x180189a59", source_media["relation"])
+        self.assertIn("temporary dword at its local +0x10", source_media["relation"])
+        self.assertIn("separate mixer callers", source_media["relation"])
+        self.assertIn("0x180189826", source_media["relation"])
+        self.assertIn("0x180188ed0", source_media["relation"])
+        self.assertIn("operation 0x8", source_media["relation"])
+        self.assertIn("0x180002f31", source_media["relation"])
+        self.assertIn("0x180003430", source_media["relation"])
+        self.assertIn("no direct call-rel32 or field-dataflow edge proves", source_media["relation"])
+        self.assertIn("0x180034e4f", source_media["relation"])
+        self.assertIn("upstream record +0x14", source_media["relation"])
+        self.assertIn("0x1800365f0", source_media["relation"])
+        self.assertIn("field-dataflow edge", source_media["relation"])
+        source_key_callsites = next(
+            row for row in external["stages"] if row["role"] == "nativeSourceKeyCallsites"
+        )
+        self.assertEqual(source_key_callsites["virtualAddress"], "0x18018a5a0")
+        self.assertIn("0x1801451ea", source_key_callsites["relation"])
+        self.assertIn("[r12+0x268]", source_key_callsites["relation"])
+        self.assertIn("0x180144c1f", source_key_callsites["relation"])
+        self.assertIn("r12+0x18", source_key_callsites["relation"])
+        self.assertIn("no key", source_key_callsites["relation"])
+        source_key_writes = next(
+            row for row in external["stages"] if row["role"] == "nativeSourceKeyWriteAudit"
+        )
+        self.assertEqual(source_key_writes["virtualAddress"], "0x1800d2055")
+        self.assertIn("direct-offset/overlap audit", source_key_writes["relation"])
+        self.assertIn("0x18008668c", source_key_writes["relation"])
+        self.assertIn("0x1800ac3bf", source_key_writes["relation"])
+        self.assertIn("0x1800ae238", source_key_writes["relation"])
+        self.assertIn("0x18012d0fe", source_key_writes["relation"])
+        self.assertIn("0x18022ad9c", source_key_writes["relation"])
+        self.assertIn("0x18022b3f5", source_key_writes["relation"])
+        self.assertIn("0x18022b83a", source_key_writes["relation"])
+        self.assertIn("global 0x180344988", source_key_writes["relation"])
+        self.assertIn("0x1800c3414", source_key_writes["relation"])
+        self.assertIn("0x1800c443d", source_key_writes["relation"])
+        self.assertIn("no direct RIP-relative read", source_key_writes["relation"])
+        self.assertIn("No source-state setter copies the serial", source_key_writes["relation"])
+        source_key_config = next(
+            row
+            for row in external["stages"]
+            if row["role"] == "nativeSourceKeyConfigCallsiteAudit"
+        )
+        self.assertEqual(source_key_config["virtualAddress"], "0x180034db0")
+        self.assertIn("one direct callsite", source_key_config["relation"])
+        self.assertIn("0x18003def1", source_key_config["relation"])
+        self.assertIn("0x180040350", source_key_config["relation"])
+        self.assertIn("parent B +0x18", source_key_config["relation"])
+        self.assertIn("parent B +0x2c", source_key_config["relation"])
+        self.assertIn("0x1800404f0", source_key_config["relation"])
+        self.assertIn("0x18003e35b", source_key_config["relation"])
+        self.assertIn("source vtable +0x138", source_key_config["relation"])
+        self.assertIn("stack argument 6", source_key_config["relation"])
+        self.assertIn("config +0x34", source_key_config["relation"])
+        self.assertIn("source-state +0x268", source_key_config["relation"])
+        self.assertIn("not statically aliased", source_key_config["relation"])
+        source_metadata = next(
+            row
+            for row in external["stages"]
+            if row["role"] == "nativeSourceStateMetadataProvenanceAudit"
+        )
+        self.assertEqual(source_metadata["virtualAddress"], "0x1800d1f90")
+        self.assertIn("incoming r9 directly to source-state +0x288", source_metadata["relation"])
+        self.assertIn("0x18003def1", source_metadata["relation"])
+        self.assertIn("0x180046580", source_metadata["relation"])
+        self.assertIn("alternate initializer callers", source_metadata["relation"])
+        self.assertIn("manager entry +0x38", source_metadata["relation"])
+        self.assertIn("no direct call or field-dataflow edge", source_metadata["relation"])
+        self.assertIn("PCM delivery remain unobserved", source_metadata["relation"])
+        source_info_selection = next(
+            row
+            for row in external["stages"]
+            if row["role"] == "nativeSourceInfoInternalSelectionAudit"
+        )
+        self.assertEqual(source_info_selection["virtualAddress"], "0x1800d2ed0")
+        self.assertIn("sourceInfo dword +0", source_info_selection["relation"])
+        self.assertIn("0x1800f5030", source_info_selection["relation"])
+        self.assertIn("0x180344a20", source_info_selection["relation"])
+        self.assertIn("entry +8", source_info_selection["relation"])
+        self.assertIn("0x1800f9780", source_info_selection["relation"])
+        self.assertIn("0x20-byte local descriptor", source_info_selection["relation"])
+        self.assertIn("candidate +8", source_info_selection["relation"])
+        self.assertIn("candidate +0x10", source_info_selection["relation"])
+        self.assertIn("0x180143de0", source_info_selection["relation"])
+        self.assertIn("0x180104720", source_info_selection["relation"])
+        self.assertIn("source +0x328", source_info_selection["relation"])
+        self.assertIn("0x1803449f8", source_info_selection["relation"])
+        self.assertIn("0x1803449d0", source_info_selection["relation"])
+        self.assertIn("internal selection key", source_info_selection["relation"])
+        self.assertIn("PCM delivery remain unobserved", source_info_selection["relation"])
+        source_info_path = next(
+            row
+            for row in external["stages"]
+            if row["role"] == "nativeSourceInfoPathWriterAudit"
+        )
+        self.assertEqual(source_info_path["virtualAddress"], "0x180104630")
+        self.assertIn("one direct caller", source_info_path["relation"])
+        self.assertIn("0x1800e037e", source_info_path["relation"])
+        self.assertIn("incoming UTF-16 pointer r8", source_info_path["relation"])
+        self.assertIn("0x1801044f0", source_info_path["relation"])
+        self.assertIn("0x18026b7f8", source_info_path["relation"])
+        self.assertIn("0x180263808", source_info_path["relation"])
+        self.assertIn("direct-path branch", source_info_path["relation"])
+        self.assertIn("alias branch", source_info_path["relation"])
+        self.assertIn("exact copied-descriptor identity", source_info_path["relation"])
+        source_info_parser = next(
+            row
+            for row in external["stages"]
+            if row["role"] == "nativeSourceInfoSerializedParserAudit"
+        )
+        self.assertEqual(source_info_parser["virtualAddress"], "0x1800f5fc0")
+        self.assertIn("0x180047120", source_info_parser["relation"])
+        self.assertIn("0x180039a28", source_info_parser["relation"])
+        self.assertIn("0x180039b35", source_info_parser["relation"])
+        self.assertIn("virtual type value 6", source_info_parser["relation"])
+        self.assertIn("output +8 as the map key", source_info_parser["relation"])
+        self.assertIn("16-byte identity block", source_info_parser["relation"])
+        self.assertIn("sourceId/cookie 0x24db9834", source_info_parser["relation"])
+        self.assertIn("registration serial +0x4c", source_info_parser["relation"])
+        self.assertIn("managed externalSourceKey", source_info_parser["relation"])
+        source_manager_join = next(
+            row
+            for row in external["stages"]
+            if row["role"] == "nativeSourceManagerJoinAudit"
+        )
+        self.assertEqual(source_manager_join["virtualAddress"], "0x1800e2cd0")
+        self.assertIn("0x1800350d7", source_manager_join["relation"])
+        self.assertIn("parent B +0x2c", source_manager_join["relation"])
+        self.assertIn("0x1803449f8", source_manager_join["relation"])
+        self.assertIn("entry +0x4c", source_manager_join["relation"])
+        self.assertIn("no hash transform", source_manager_join["relation"])
+        self.assertIn("successful runtime match", source_manager_join["relation"])
+        source_manager_join_callsites = next(
+            row
+            for row in external["stages"]
+            if row["role"] == "nativeSourceManagerJoinCallsiteAudit"
+        )
+        self.assertEqual(source_manager_join_callsites["virtualAddress"], "0x1800e2cd0")
+        self.assertIn("four valid callsites", source_manager_join_callsites["relation"])
+        self.assertIn("0x180034762", source_manager_join_callsites["relation"])
+        self.assertIn("0x1800350d7", source_manager_join_callsites["relation"])
+        self.assertIn("0x1800d35a8", source_manager_join_callsites["relation"])
+        self.assertIn("0x1800e06ea", source_manager_join_callsites["relation"])
+        self.assertIn("only the two 0x034xxx callsites", source_manager_join_callsites["relation"])
+        self.assertIn("do not by themselves prove external-source media selection", source_manager_join_callsites["relation"])
+        source_manager_payload = next(
+            row
+            for row in external["stages"]
+            if row["role"] == "nativeSourceManagerJoinPayloadBoundaryAudit"
+        )
+        self.assertEqual(source_manager_payload["virtualAddress"], "0x1800e2cd0")
+        self.assertIn("attachment operation, not path selection", source_manager_payload["relation"])
+        self.assertIn("dynamic array at +0x10", source_manager_payload["relation"])
+        self.assertIn("+0x18/+0x1c", source_manager_payload["relation"])
+        self.assertIn("auxiliary state pointer r9 at +0x30", source_manager_payload["relation"])
+        self.assertIn("does not read manager entry +0x38/+0x40", source_manager_payload["relation"])
+        self.assertIn("copied UTF-16 record at +0x10", source_manager_payload["relation"])
+        self.assertIn("source-state lifecycle registration only", source_manager_payload["relation"])
+        self.assertIn("file handle, or PCM consumer", source_manager_payload["relation"])
+        source_registration_key = next(
+            row
+            for row in external["stages"]
+            if row["role"] == "nativeSourceRegistrationKeyIndependenceAudit"
+        )
+        self.assertEqual(source_registration_key["virtualAddress"], "0x1800c3990")
+        self.assertIn("global serial slot 0x180344988", source_registration_key["relation"])
+        self.assertIn("0x1800c3af2", source_registration_key["relation"])
+        self.assertIn("record +0xc", source_registration_key["relation"])
+        self.assertIn("manager entry +0x4c", source_registration_key["relation"])
+        self.assertIn("0x180034762", source_registration_key["relation"])
+        self.assertIn("0x1800350d7", source_registration_key["relation"])
+        self.assertIn("no store sourced from the serial global", source_registration_key["relation"])
+        self.assertIn("key equality remains a runtime value question", source_registration_key["relation"])
+        source_state_lifecycle = next(
+            row
+            for row in external["stages"]
+            if row["role"] == "nativeSourceStateAttachmentLifecycle"
+        )
+        self.assertEqual(source_state_lifecycle["virtualAddress"], "0x1800e29d0")
+        self.assertIn("dynamic array at +0x10", source_state_lifecycle["relation"])
+        self.assertIn("live count at +0x18", source_state_lifecycle["relation"])
+        self.assertIn("0x1800e1770", source_state_lifecycle["relation"])
+        self.assertIn("0x1800e2e20", source_state_lifecycle["relation"])
+        self.assertIn("do not read a path", source_state_lifecycle["relation"])
+        source_decoder_registry = next(
+            row
+            for row in external["stages"]
+            if row["role"] == "nativeSourceKeyDecoderRegistry"
+        )
+        self.assertEqual(source_decoder_registry["virtualAddress"], "0x18013f440")
+        self.assertIn("0x1801b0160", source_decoder_registry["relation"])
+        self.assertIn("owner +0x268", source_decoder_registry["relation"])
+        self.assertIn("0x1803449d0", source_decoder_registry["relation"])
+        self.assertIn("0x1803449f8", source_decoder_registry["relation"])
+        self.assertIn("0x18-byte records", source_decoder_registry["relation"])
+        self.assertIn("0x180189041", source_decoder_registry["relation"])
+        self.assertIn("not to the UTF-16 path value", source_decoder_registry["relation"])
+        source_provider = next(
+            row for row in external["stages"] if row["role"] == "nativeSourceProviderPrep"
+        )
+        self.assertEqual(source_provider["virtualAddress"], "0x1801af7a0")
+        self.assertIn("sourceInfo +0x10", source_provider["relation"])
+        self.assertIn("0x1800b9530", source_provider["relation"])
+        self.assertIn("provider-owned UTF-16 path", source_provider["relation"])
+        self.assertIn("source-state key +0", source_provider["relation"])
+        source_provider_input = next(
+            row
+            for row in external["stages"]
+            if row["role"] == "nativeSourceProviderDescriptorInputAudit"
+        )
+        self.assertEqual(source_provider_input["virtualAddress"], "0x1801af7a0")
+        self.assertIn("owner +0x18", source_provider_input["relation"])
+        self.assertIn("[sourceInfo +0x10]", source_provider_input["relation"])
+        self.assertIn("singleton provider vtable +0x28", source_provider_input["relation"])
+        self.assertIn("no explicit manager entry, +0x38, or source-state key value", source_provider_input["relation"])
+        self.assertIn("identity with the copied external descriptor unresolved", source_provider_input["relation"])
+        resolver_callback = next(row for row in external["stages"] if row["role"] == "nativeResolverCallback")
+        self.assertEqual(resolver_callback["virtualAddress"], "0x1800e19a0")
+        self.assertIn("fixed native bridge 0x180002da0", resolver_callback["relation"])
+        native_callback_bridge = next(
+            row for row in external["stages"] if row["role"] == "nativeCallbackBridge"
+        )
+        self.assertEqual(native_callback_bridge["virtualAddress"], "0x180002da0")
+        self.assertIn("0x1800030cf", native_callback_bridge["relation"])
+        self.assertIn("0x180003430", native_callback_bridge["relation"])
+        self.assertIn("0x180002f31", native_callback_bridge["relation"])
+        self.assertIn("0x180188fae", native_callback_bridge["relation"])
+        native_callback_pump = next(
+            row for row in external["stages"] if row["role"] == "nativeCallbackPump"
+        )
+        self.assertEqual(native_callback_pump["methodIndex"], 446952)
+        self.assertEqual(native_callback_pump["virtualAddress"], "0x18328b440")
+        self.assertIn("CSharp_b1b6b5807eef294", native_callback_pump["relation"])
+        self.assertIn("0x180002d10", native_callback_pump["relation"])
+        self.assertIn("0x18328cd90", native_callback_pump["relation"])
+        self.assertIn("managed dispatch", native_callback_pump["relation"])
+        self.assertIn("not statically joined", external["boundary"])
+        package_chain = vfs_loader["nativeCallChains"][0]
+        self.assertEqual(package_chain["id"], "vfsBasePathToWwisePackage")
+        self.assertEqual(
+            [row["methodIndex"] for row in package_chain["stages"]],
+            [295909, 480253, 480258, 480259, 446704],
+        )
+        self.assertEqual(package_chain["stages"][0]["virtualAddress"], "0x184653ea0")
+        self.assertIn("native file read", package_chain["boundary"])
+        self.assertEqual(bank_manager["nativeCallChains"][0]["id"], package_chain["id"])
+        self.assertTrue(any(row["id"] == "extraPck" for row in package_chain["branches"]))
+        stream_chain = next(
+            row for row in wwise["nativeCallChains"]
+            if row["id"] == "streamManagerIoPump"
+        )
+        self.assertEqual(
+            [row["methodIndex"] for row in stream_chain["stages"] if "methodIndex" in row],
+            [446743, 446743],
+        )
+        self.assertEqual(stream_chain["stages"][0]["virtualAddress"], "0x1853d36c8")
+        self.assertEqual(stream_chain["stages"][1]["virtualAddress"], "0x180033d20")
+        self.assertEqual(stream_chain["stages"][2]["virtualAddress"], "0x1800b6b80")
+        self.assertIn("vtable slot +0x8", stream_chain["stages"][2]["relation"])
+        self.assertIn("0x1800bc1e0", stream_chain["stages"][2]["relation"])
+        self.assertIn("0x1800b5fc0", stream_chain["stages"][2]["relation"])
+        self.assertIn("0x180292fc8", stream_chain["stages"][2]["relation"])
+        self.assertIn("0x180344900", stream_chain["stages"][2]["relation"])
+        source_manager = next(
+            row for row in stream_chain["stages"] if row["role"] == "sourceManager"
+        )
+        self.assertEqual(source_manager["virtualAddress"], "0x1801af7a0")
+        self.assertIn("0x1803448f0", source_manager["relation"])
+        self.assertIn("0x1801b03b8", source_manager["relation"])
+        self.assertIn("0x180292ec0", source_manager["relation"])
+        self.assertIn("0x180293260", source_manager["relation"])
+        source_descriptor = next(
+            row for row in stream_chain["stages"] if row["role"] == "sourceDescriptor"
+        )
+        self.assertEqual(source_descriptor["virtualAddress"], "0x1800b9530")
+        self.assertIn("0x1800b5e30", source_descriptor["relation"])
+        self.assertIn("0x1800b9460", source_descriptor["relation"])
+        self.assertIn("+0x288/+0x10", source_descriptor["relation"])
+        self.assertIn("UTF-16 path pointer", source_descriptor["relation"])
+        self.assertIn("external key/context", source_descriptor["relation"])
+        source_provider = next(
+            row for row in stream_chain["stages"] if row["role"] == "sourceProviderQueue"
+        )
+        self.assertEqual(source_provider["virtualAddress"], "0x1800b85c0")
+        self.assertIn("0x1800b89b0", source_provider["relation"])
+        self.assertIn("0x1800b8120", source_provider["relation"])
+        self.assertIn("0x1800b7a40", source_provider["relation"])
+        self.assertIn("release/advance-like", source_provider["relation"])
+        self.assertIn("0x1801af960", source_provider["relation"])
+        self.assertIn("0x18029cde8", source_provider["relation"])
+        self.assertIn("0x1801afc80", source_provider["relation"])
+        self.assertIn("decoder +0x60", source_provider["relation"])
+        self.assertIn("completion 0x1800bf190", source_provider["relation"])
+        self.assertIn("one provider allocation", source_manager["relation"])
+        self.assertIn("provider allocation/queue", source_provider["relation"])
+        request_assembly = next(
+            row for row in stream_chain["stages"] if row["role"] == "requestAssembly"
+        )
+        self.assertEqual(request_assembly["virtualAddress"], "0x1800bc1e0")
+        self.assertIn("0x1800bc660", request_assembly["relation"])
+        self.assertIn("0x1800bc4a5", request_assembly["relation"])
+        self.assertIn("0x18-byte descriptor", request_assembly["relation"])
+        self.assertIn("address of candidate +0x8", request_assembly["relation"])
+        self.assertIn("branch-dependent provenance", request_assembly["relation"])
+        self.assertIn("does not write the candidate context", request_assembly["relation"])
+        request_object = next(
+            row for row in stream_chain["stages"] if row["role"] == "requestObject"
+        )
+        self.assertEqual(request_object["virtualAddress"], "0x1800bb8e0")
+        self.assertIn("0x1800bbad3", request_object["relation"])
+        self.assertIn("0x1800bca20", request_object["relation"])
+        self.assertIn("request +0x18", request_object["relation"])
+        self.assertIn("0x1800bf190", request_object["relation"])
+        self.assertIn("position/source-base/length", request_object["relation"])
+        self.assertIn("[object +0xa0] + current offset", request_object["relation"])
+        self.assertIn("carrier +0x18 aliases request +0x20", request_object["relation"])
+        self.assertIn("same provider allocation", request_object["relation"])
+        self.assertIn("primary provider base", request_object["relation"])
+        self.assertIn("secondary interface at base +0x90", request_object["relation"])
+        native_file_io = next(row for row in stream_chain["stages"] if row["role"] == "nativeFileIo")
+        self.assertEqual(native_file_io["virtualAddress"], "0x180005030")
+        self.assertIn("CreateFileW", native_file_io["relation"])
+        self.assertIn("ReadFileEx", native_file_io["relation"])
+        self.assertIn("0x180024270", native_file_io["relation"])
+        self.assertIn("+0x60", native_file_io["relation"])
+        self.assertIn("WriteFileEx", native_file_io["relation"])
+        self.assertIn("pump-to-ReadFileEx dispatch", native_file_io["relation"])
+        self.assertIn("+0x428", native_file_io["relation"])
+        self.assertIn("0x1800bc1e0", native_file_io["relation"])
+        self.assertIn("descriptor +0x10 as request +0x8", native_file_io["relation"])
+        self.assertIn("request +0x8", native_file_io["relation"])
+        self.assertIn("fixed callback 0x1800bf190", native_file_io["relation"])
+        native_file_open = next(
+            row
+            for row in stream_chain["stages"]
+            if row["role"] == "nativeFileOpenPathTransportAudit"
+        )
+        self.assertEqual(native_file_open["virtualAddress"], "0x180024630")
+        self.assertIn("0x180004a20", native_file_open["relation"])
+        self.assertIn("0x180004b40", native_file_open["relation"])
+        self.assertIn("0x180005030", native_file_open["relation"])
+        self.assertIn("CreateFileW/GetFileSize", native_file_open["relation"])
+        self.assertIn("0x180005150", native_file_open["relation"])
+        self.assertIn("no external key, source-state key, or manager +0x38", native_file_open["relation"])
+        read_completion = next(
+            row for row in stream_chain["stages"] if row["role"] == "readCompletion"
+        )
+        self.assertEqual(read_completion["virtualAddress"], "0x1800245b0")
+        self.assertIn("0x1800092d0", read_completion["relation"])
+        self.assertIn("carrier +0x18", read_completion["relation"])
+        self.assertIn("0x1800bf190", read_completion["relation"])
+        self.assertIn("rcx=carrier", read_completion["relation"])
+        self.assertIn("request cleanup/release", read_completion["relation"])
+        self.assertIn("codec provider allocation/queue", read_completion["relation"])
+        self.assertIn("not a PCM decoder", read_completion["relation"])
+        codec_boundary = next(
+            row for row in stream_chain["stages"] if row["role"] == "codecReadBoundary"
+        )
+        self.assertEqual(codec_boundary["virtualAddress"], "0x1801c9fa0")
+        self.assertIn("0x1801ca710", codec_boundary["relation"])
+        self.assertIn("indirect function pointer", codec_boundary["relation"])
+        self.assertIn("0x1802b09d8", codec_boundary["relation"])
+        self.assertIn("0x1801c44d0", codec_boundary["relation"])
+        self.assertIn("memory-source copier", codec_boundary["relation"])
+        self.assertIn("0x1801cf560", codec_boundary["relation"])
+        self.assertIn("0x1801c8d11", codec_boundary["relation"])
+        self.assertIn("0x1801c8bda", codec_boundary["relation"])
+        self.assertIn("0x1801cc4ce/0x1801cc532/0x1801cc57e", codec_boundary["relation"])
+        self.assertIn("callee-frame +0xf0", codec_boundary["relation"])
+        self.assertIn("0x1801c6490", codec_boundary["relation"])
+        self.assertIn("0x1801c6bf2", codec_boundary["relation"])
+        self.assertIn("0x1801c6f90", codec_boundary["relation"])
+        self.assertIn("0x1801cbff0", codec_boundary["relation"])
+        self.assertIn("integer-array transform", codec_boundary["relation"])
+        self.assertIn("not a PCM sink", codec_boundary["relation"])
+        self.assertIn("releasing an exhausted buffer", codec_boundary["relation"])
+        self.assertIn("decoder-side provider handoff is exact", codec_boundary["relation"])
+        self.assertIn("0x1801afc80", codec_boundary["relation"])
+        self.assertIn("0x1801aebf0", codec_boundary["relation"])
+        self.assertIn("pump-to-ReadFileEx", codec_boundary["relation"])
+        self.assertIn("read-completion-to-request-recycle", codec_boundary["relation"])
+        self.assertIn("completion-to-provider-allocation", codec_boundary["relation"])
+        self.assertIn("external key-to-path value correlation", codec_boundary["relation"])
+        self.assertIn("0x1801c4650", codec_boundary["relation"])
+        self.assertIn("0x1801c4770", codec_boundary["relation"])
+        self.assertIn("0x1801c481a", codec_boundary["relation"])
+        self.assertIn("0x1801c483c", codec_boundary["relation"])
+        self.assertIn("PCM16", codec_boundary["relation"])
+        self.assertIn("0x1801cfe80", codec_boundary["relation"])
+        self.assertIn("0x1802b1020", codec_boundary["relation"])
+        self.assertIn("0x1801cfd80", codec_boundary["relation"])
+        self.assertIn("0x1801cfe00", codec_boundary["relation"])
+        self.assertIn("0x18010ad90", codec_boundary["relation"])
+        self.assertIn("0x1801cfd70", codec_boundary["relation"])
+        self.assertIn("optional decoder callback context +0x2a08", codec_boundary["relation"])
+        optional_callback_audit = next(
+            row
+            for row in stream_chain["stages"]
+            if row["role"] == "nativeOptionalDecoderCallbackAudit"
+        )
+        self.assertEqual(optional_callback_audit["virtualAddress"], "0x1801c8b64")
+        self.assertIn("overlap-aware audit", optional_callback_audit["relation"])
+        self.assertIn("no direct or overlapping write reaches +0x2a08", optional_callback_audit["relation"])
+        self.assertIn("unresolved rather than proven absent", optional_callback_audit["relation"])
+        descriptor_callsites = next(
+            row
+            for row in stream_chain["stages"]
+            if row["role"] == "nativeCodecDescriptorCallsites"
+        )
+        self.assertEqual(descriptor_callsites["virtualAddress"], "0x1801ca710")
+        self.assertIn("only two callsites", descriptor_callsites["relation"])
+        self.assertIn("0x1801c7e3e", descriptor_callsites["relation"])
+        self.assertIn("0x1801caa1c", descriptor_callsites["relation"])
+        self.assertIn("0x1802b09d8", descriptor_callsites["relation"])
+        self.assertIn("0x1801cfe80", descriptor_callsites["relation"])
+        self.assertIn("No additional direct setup callsite", descriptor_callsites["relation"])
+        indirect_setup = next(
+            row
+            for row in stream_chain["stages"]
+            if row["role"] == "nativeCodecIndirectSetupReferenceAudit"
+        )
+        self.assertEqual(indirect_setup["virtualAddress"], "0x1801ca710")
+        self.assertIn("no absolute pointer literal", indirect_setup["relation"])
+        self.assertIn("no RIP-relative memory operand", indirect_setup["relation"])
+        self.assertIn("runtime-computed function pointer", indirect_setup["relation"])
+        self.assertIn("remain an evidence gap", indirect_setup["relation"])
+        reader_callsites = next(
+            row
+            for row in stream_chain["stages"]
+            if row["role"] == "nativeCodecReaderCallsiteAudit"
+        )
+        self.assertEqual(reader_callsites["virtualAddress"], "0x1801c9fa0")
+        self.assertIn("ten valid callsites", reader_callsites["relation"])
+        for callsite in (
+            "0x1801c83fd",
+            "0x1801c8d11",
+            "0x1801c96bf/0x1801c985a/0x1801c9909",
+            "0x1801c9adb",
+            "0x1801c9cca",
+            "0x1801ca1eb",
+            "0x1801cb8ee/0x1801cbd1b",
+        ):
+            self.assertIn(callsite, reader_callsites["relation"])
+        self.assertIn("no other direct reader call", reader_callsites["relation"])
+        self.assertIn("additional setup descriptors", reader_callsites["relation"])
+        decoder_callsites = next(
+            row
+            for row in stream_chain["stages"]
+            if row["role"] == "nativeCodecDecoderCallsiteAudit"
+        )
+        self.assertEqual(decoder_callsites["virtualAddress"], "0x1801c7ec0")
+        self.assertIn("three valid calls", decoder_callsites["relation"])
+        for callsite in ("0x1801c477b", "0x1801c49bc", "0x1801c4a3e"):
+            self.assertIn(callsite, decoder_callsites["relation"])
+        self.assertIn("0x1801af960", decoder_callsites["relation"])
+        self.assertIn("signed PCM16", decoder_callsites["relation"])
+        self.assertIn("return codes drive decoder state", decoder_callsites["relation"])
+        self.assertIn("No other direct decoder call", decoder_callsites["relation"])
+        boundary = " ".join(stream_chain["boundary"])
+        self.assertIn("registered native I/O-device", boundary)
+        self.assertIn("registration site", boundary)
+        self.assertIn("source-provider queue binding", boundary)
+        self.assertIn("dual-interface provider allocation", boundary)
+        self.assertIn("selected decoder's 0x1801c4650 -> 0x1801c7ec0", boundary)
+        self.assertIn("signed PCM16 writes", boundary)
         action = adapter_chains["playingIdActionQueueToWwise"]
         self.assertEqual(
             [row["methodIndex"] for row in action["stages"]],
@@ -3219,7 +4948,8 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertEqual(len(animator["nativeCallChains"]), 2)
         self.assertEqual(skill["nativeCallChains"][0]["id"], "skillPlaySoundActionRouting")
         self.assertEqual(levelscript["nativeCallChains"][0]["id"], "levelScriptAudioActionRouting")
-        self.assertEqual(len(wwise["nativeCallChains"]), 7)
+        self.assertEqual(len(wwise["nativeCallChains"]), 9)
+        self.assertIn("PerformStreamMgrIO", wwise["methods"])
         switch_chain = next(
             row for row in audio_manager["nativeCallChains"]
             if row["id"] == "audioObjectSwitchToWwise"
@@ -3408,6 +5138,154 @@ class AudioSemanticDataTests(unittest.TestCase):
         )
         self.assertEqual(context["runtimeExecutionStatus"], "runtimeBranchExecutionUnobserved")
 
+    def test_promotes_snapshot_pause_resume_managed_audio_callsites(self) -> None:
+        event_names = ["au_gameplay_pause_spidle", "au_gameplay_resume_spidle"]
+        with patch.object(
+            identifiers,
+            "collect_metadata_audio_literals",
+            return_value=event_names,
+        ):
+            contexts, _ = managed_literals.collect_contexts(
+                Path("metadata"),
+                native_context=validated_native_context(),
+                current_wwise_event_hashes={
+                    identifiers.audio_hash_generator_compute(name)
+                    for name in event_names
+                },
+            )
+        pause = contexts["au_gameplay_pause_spidle"][0]
+        self.assertEqual(pause["consumerMethod"], "PauseAction")
+        self.assertEqual(pause["literalArgumentRegister"], "rdx")
+        self.assertEqual(pause["playbackCallVa"], "0x1873f78a7")
+        self.assertEqual(pause["targetBinding"], "snapshotActionEntity")
+        resume = contexts["au_gameplay_resume_spidle"][0]
+        self.assertEqual(resume["consumerMethod"], "_RemoveActionTimeScaleModifier")
+        self.assertEqual(resume["literalLoadVa"], "0x1873fffd8")
+        self.assertEqual(resume["playbackCallVa"], "0x1873fffe2")
+        self.assertEqual(
+            resume["triggerRole"],
+            "snapshotActionResumeAfterTimeScaleModifierRemoval",
+        )
+
+    def test_promotes_native_custom_state_callsites(self) -> None:
+        event_names = (
+            "au_int_rotateplatform_port_extense",
+            "au_int_rotateplatform_rotate_normal_start",
+            "au_int_rotateplatform_rotate_over_start",
+            "au_int_rotateplatform_rotate_normal_loop",
+            "au_int_crane_rotating_start",
+            "au_int_crane_vertical_start",
+            "au_int_crane_horizontal_start",
+            "au_int_crane_rotating_end",
+            "au_int_crane_vertical_end",
+            "au_int_crane_horizontal_end",
+            "au_int_electric_fence_hit",
+            "au_int_forge_iron_smoke",
+            "au_int_forge_iron_smoke_stop",
+            "au_int_lifter_button_interact_failure",
+            "au_int_movingplat_start",
+            "au_int_movingplat_end",
+        )
+        contexts, _ = managed_literals.collect_contexts(
+            Path("metadata"),
+            native_context=validated_native_context(),
+            current_wwise_event_hashes={
+                identifiers.audio_hash_generator_compute(name)
+                for name in event_names
+            },
+        )
+        expected = {
+            "au_int_rotateplatform_port_extense": (
+                "PortExtense", "0x1871fe1cd", "0xA000A919",
+            ),
+            "au_int_rotateplatform_rotate_normal_start": (
+                "RotateNormalStart", "0x1871fe0af", "0xA000B4FF",
+            ),
+            "au_int_rotateplatform_rotate_over_start": (
+                "RotateOverStart", "0x1871fe0af", "0xA000B503",
+            ),
+            "au_int_rotateplatform_rotate_normal_loop": (
+                "RotateNormalLoop", "0x18720008f", "0xA000B4FD",
+            ),
+            "au_int_crane_rotating_start": (
+                "start_r", "0x18714537d", "0xA001CF5B",
+            ),
+            "au_int_crane_vertical_start": (
+                "start_ver", "0x1871453cf", "0xA001CF65",
+            ),
+            "au_int_crane_horizontal_start": (
+                "start_hor", "0x18714541b", "0xA001CF3F",
+            ),
+            "au_int_crane_rotating_end": (
+                "end_r", "0x18714520d", "0xA00127A5",
+            ),
+            "au_int_crane_vertical_end": (
+                "end_ver", "0x18714525f", "0xA00127A9",
+            ),
+            "au_int_crane_horizontal_end": (
+                "end_hor", "0x1871452ab", "0xA0012797",
+            ),
+            "au_int_electric_fence_hit": (
+                "onHit", "0x1871d1d50", "0xA0019993",
+            ),
+            "au_int_forge_iron_smoke": (
+                "begin_produce_smoke", "0x1871e2b9f", "0xA00113F3",
+            ),
+            "au_int_forge_iron_smoke_stop": (
+                "stop_produce_smoke", "0x1871e2e86", "0xA001CFFD",
+            ),
+            "au_int_lifter_button_interact_failure": (
+                "failure", "0x1871efdd9", "0xA0012AA7",
+            ),
+            "au_int_movingplat_start": (
+                "start_move", "0x1871f7baa", "0xA001CF45",
+            ),
+            "au_int_movingplat_end": (
+                "stop", "0x1871f7f69", "0xA001CFF5",
+            ),
+        }
+        for event_name, (state_name, callsite, usage_word) in expected.items():
+            context = contexts[event_name][0]
+            self.assertEqual(context["kind"], "nativeCustomStateCallsite")
+            self.assertEqual(context["customStateName"], state_name)
+            self.assertEqual(context["switchMethod"], "Beyond.Gameplay.InteractiveLogicBase.SwitchAudioCustomState")
+            self.assertEqual(context["callsiteVa"], callsite)
+            self.assertEqual(context["metadataUsageWord"], usage_word)
+            self.assertEqual(context["playbackPlacementStatus"], "exactManagedNativePlaybackCallsite")
+
+    def test_native_custom_state_trigger_projection_keeps_runtime_boundary(self) -> None:
+        rows = [{
+            "id": "au_int_rotateplatform_port_retract",
+            "hash": identifiers.audio_hash_generator_compute("au_int_rotateplatform_port_retract"),
+            "category": "sfx",
+            "foundInWwise": True,
+            "playbackRole": "playback",
+            "possibleMediaCount": 1,
+            "media": [{"src": "Audio/CN/sfx/rotate.flac"}],
+            "contexts": [{
+                "kind": "nativeCustomStateCallsite",
+                "consumerType": "Beyond.Gameplay.InteractiveLogicRotatePlatform",
+                "consumerMethod": "_EnterStopCargoState",
+                "methodIndex": 10138,
+                "methodVa": "0x1871fe340",
+                "callsiteVa": "0x1871fe401",
+                "switchMethod": "Beyond.Gameplay.InteractiveLogicBase.SwitchAudioCustomState",
+                "switchMethodVa": "0x187138eac",
+                "customStateName": "PortRetract",
+                "metadataUsageWord": "0xA000A921",
+                "metadataStringLiteralIndex": "0x5490",
+                "triggerRole": "rotatePlatformStopCargoPortRetract",
+                "evidence": "exactCurrentBuildSwitchAudioCustomStateCallsiteAndAuthoredInteractiveCustomStateEvent",
+                "metadataSha256": "metadata",
+                "gameAssemblySha256": "gameassembly",
+            }],
+        }]
+        projected = audio_semantics._build_native_custom_state_trigger_contexts(rows)
+        self.assertEqual(len(projected), 1)
+        self.assertEqual(projected[0]["semanticKind"], "nativeCustomStateCallsite")
+        self.assertEqual(projected[0]["action"]["customStateName"], "PortRetract")
+        self.assertEqual(projected[0]["selection"]["runtimeSelectionStatus"], "runtimeBranchExecutionUnobserved")
+
     def test_builds_managed_audio_callsite_trigger_context(self) -> None:
         rows = audio_semantics._build_managed_literal_callsite_trigger_contexts([{
             "id": "au_int_box_collision",
@@ -3445,7 +5323,7 @@ class AudioSemanticDataTests(unittest.TestCase):
 
     def test_managed_audio_callsite_catalog_keeps_exact_argument_contracts(self) -> None:
         catalog = managed_literals.MANAGED_AUDIO_CALLSITE_CONTEXTS
-        self.assertGreaterEqual(len(catalog), 134)
+        self.assertGreaterEqual(len(catalog), 136)
         self.assertEqual(
             catalog["au_ui_button_hyperlink"]["playbackParameter"],
             "eventName",
@@ -3739,6 +5617,30 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertEqual(
             catalog["au_int_medicalstation_start"]["triggerRole"],
             "mainCharacterEnteredMedicalTowerRange",
+        )
+        self.assertEqual(
+            catalog["au_gameplay_pause_spidle"]["consumerMethod"],
+            "PauseAction",
+        )
+        self.assertEqual(
+            catalog["au_gameplay_pause_spidle"]["playbackCallVa"],
+            "0x1873f78a7",
+        )
+        self.assertEqual(
+            catalog["au_gameplay_pause_spidle"]["targetBinding"],
+            "snapshotActionEntity",
+        )
+        self.assertEqual(
+            catalog["au_gameplay_resume_spidle"]["consumerMethod"],
+            "_RemoveActionTimeScaleModifier",
+        )
+        self.assertEqual(
+            catalog["au_gameplay_resume_spidle"]["playbackCallVa"],
+            "0x1873fffe2",
+        )
+        self.assertEqual(
+            catalog["au_gameplay_resume_spidle"]["triggerRole"],
+            "snapshotActionResumeAfterTimeScaleModifierRemoval",
         )
         self.assertEqual(
             catalog["au_ui_hud_tacticalmedicationrecovery"]["consumerMethod"],
@@ -4719,6 +6621,8 @@ class AudioSemanticDataTests(unittest.TestCase):
             selector_catalog = payload["controlCatalog"]
             self.assertEqual(selector_catalog["counts"]["wwiseSelectorGroupsCensused"], 56)
             self.assertEqual(selector_catalog["counts"]["wwiseSelectorGroupsWithRuntimeSetter"], 2)
+            self.assertEqual(selector_catalog["counts"]["wwiseSelectorGroupsPublished"], 15)
+            self.assertEqual(selector_catalog["counts"]["wwiseMusicStateGroupsPublished"], 10)
             selector_groups = {
                 row["groupId"]: row for row in selector_catalog["wwiseSelectorGroups"]
             }
@@ -6008,6 +7912,14 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertIn("catalog.dynamicRadioBindings", source)
         self.assertIn("catalog.unresolvedRadioIds", source)
         self.assertIn("catalog.unresolvedRadioLines", source)
+        self.assertLess(
+            record_panel_body.index('playerHeading.textContent = t("playableMedia")'),
+            record_panel_body.index('const facts = record.kind === "events"'),
+        )
+        self.assertLess(
+            record_panel_body.index('playerHeading.textContent = t("playableMedia")'),
+            record_panel_body.index("panel.appendChild(manualNoteSection(record))"),
+        )
 
         direct_media_check = 'if (record?.audioDialogKey || record?.audioDialogPath) return ["directDialogMedia"]'
         self.assertIn(direct_media_check, relation_body)
@@ -6071,6 +7983,8 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertIn("stage.methodIndex", body)
         self.assertIn("stage.virtualAddress", body)
         self.assertIn("stage.relation", body)
+        self.assertIn("chain.alternateEntryPoints", body)
+        self.assertIn("alternateEntryPoints", body)
         self.assertIn("chain.branches", body)
         self.assertIn("branch.relation", body)
         self.assertIn("chain.boundary", body)

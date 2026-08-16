@@ -4,7 +4,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
-from struct import pack
+from struct import pack, pack_into
 from unittest import mock
 
 from scripts import build_audio
@@ -29,7 +29,1350 @@ def sound_source_data(
     return source + bytes(4) + pack("<II", 0, parent_id)
 
 
+def roomverb_parameter_data() -> bytes:
+    payload = bytearray(186)
+    for offset, value in (
+        (0, 1.2), (4, 2.25), (8, 100.0), (12, 180.0),
+        (16, -6.0), (20, 300.0), (24, 1.0),
+        (28, 3.0), (32, 1000.0), (36, 0.7),
+        (40, -2.0), (44, 8000.0), (48, 1.0),
+        (52, 0.0), (56, -3.0), (60, -6.0), (64, -96.3),
+        (68, -1.0), (72, -20.0), (76, -9.0),
+        (85, 25.0), (89, 100.0), (93, 40.0),
+        (97, 80.0), (101, 100.0),
+        (134, 0.0), (138, -96.3),
+        (142, 8.0), (146, 50.0), (150, 2.0), (154, 0.1),
+        (158, 0.8), (162, 66.0), (166, 15.0), (170, 5.0),
+        (174, 40.0), (178, 100.0), (182, 50.0),
+    ):
+        pack_into("<f", payload, offset, value)
+    payload[80] = 1
+    pack_into("<I", payload, 81, 23)
+    pack_into("<I", payload, 105, 8)
+    payload[109] = 1
+    for offset, insert, curve in ((110, 3, 0), (118, 2, 1), (126, 1, 2)):
+        pack_into("<II", payload, offset, insert, curve)
+    return bytes(payload)
+
+
+def convolution_reverb_parameter_data() -> bytes:
+    return pack(
+        "<12fIfB",
+        30.0, 0.0,
+        180.0, 0.0, -96.3, 0.0,
+        0.0, 0.0, -9.0, -96.3,
+        -14.3, 3.0,
+        0, -60.0, 2,
+    )
+
+
+def guitar_distortion_parameter_data() -> bytes:
+    return b"".join((
+        pack("<IfffB", 3, 0.0, 1000.0, 1.0, 0),
+        pack("<IfffB", 5, 0.0, 476.0, 0.1, 0),
+        pack("<IfffB", 4, 0.0, 347.0, 1.0, 1),
+        pack("<IfffB", 3, 0.0, 4660.0, 1.0, 1),
+        pack("<IfffB", 0, 0.0, 1000.0, 1.0, 0),
+        pack("<IfffB", 4, -13.0, 591.0, 1.0, 1),
+        pack("<I5f", 3, 61.0, 50.0, 0.0, 0.0, 100.0),
+    ))
+
+
+def mastering_suite_parameter_data() -> bytes:
+    payload = bytearray(304)
+    payload[0:4] = bytes((1, 1, 0, 1))
+    pack_into("<I", payload, 4, 4)
+    payload[8:14] = bytes((1, 1, 0, 1, 0, 0))
+    eq_bands = (
+        (2, 40.0, 0.2469136, 1.0),
+        (3, 200.0, -1.5, 1.0),
+        (3, 889.3164, 0.0, 1.0),
+        (4, 4800.0, 1.2, 0.5),
+        (3, 3000.0, 0.0, 1.0),
+        (4, 6000.0, -3.0, 1.0),
+    )
+    for index, band in enumerate(eq_bands):
+        pack_into("<Ifff", payload, 14 + index * 16, *band)
+    pack_into("<IIf", payload, 110, 1, 1, 0.0)
+    payload[122:127] = bytes((0, 1, 0, 0, 0))
+    pack_into("<3f", payload, 127, 161.78, 503.9016, 3033.549)
+    compressor_bands = (
+        (-18.0, 1.8, 0.12, 0.08, 3.0, 0.0),
+        (-40.0, 1.5, 0.05, 0.2, 2.4, 3.6),
+        (-36.0, 1.2, 0.1, 0.1, 3.0, 0.0),
+        (-40.0, 1.5, 0.05, 0.02, 2.4, 3.6),
+    )
+    for index, band in enumerate(compressor_bands):
+        pack_into("<6f", payload, 139 + index * 24, *band)
+    pack_into("<f12f", payload, 231, 3.6, *([-0.2] * 12))
+    pack_into("<IfffIB", payload, 283, 2, -3.0, 0.0, 0.0, 0, 1)
+    return bytes(payload)
+
+
 class AudioCategoryTests(unittest.TestCase):
+    def test_hirc_node_base_recovers_direct_effect_slots_and_output_bus(self) -> None:
+        effect_id = 956324002
+        bus_id = 0xE611314A
+        parent_id = 386813193
+        data = (
+            bytes([1, 2, 0])
+            + bytes([0]) + pack("<I", 0) + bytes([4])
+            + bytes([1]) + pack("<I", effect_id) + bytes([0])
+            + bytes([0, 0])
+            + pack("<II", bus_id, parent_id)
+        )
+
+        node, end = build_audio._hirc_v150_node_base(data, 0)
+
+        self.assertEqual(end, len(data))
+        self.assertTrue(node["overrideParentFx"])
+        self.assertFalse(node["bypassAll"])
+        self.assertEqual(node["overrideBusId"], bus_id)
+        self.assertEqual(node["parentId"], parent_id)
+        self.assertEqual(node["effects"][0]["referenceStatus"], "emptyEffectSlot")
+        self.assertEqual(node["effects"][1]["effectId"], effect_id)
+        self.assertEqual(node["effects"][1]["flagsRaw"], 0)
+        self.assertFalse(node["effects"][1]["effectBypass"])
+        self.assertFalse(node["effects"][1]["effectShareSet"])
+        self.assertFalse(node["effects"][1]["effectRendered"])
+        self.assertEqual(node["effects"][1]["unknownFlagBits"], 0)
+
+    def test_hirc_v150_aux_sends_decode_counted_prefix_and_four_slots(self) -> None:
+        bus_ids = [0x10203040, 0, 0x50607080, 0]
+        reflections_bus_id = 0x90A0B0C0
+        data = (
+            bytes([0x21])
+            + bytes([1, 8]) + pack("<f", -6.0)
+            + bytes([1, 5]) + pack("<ff", -1.0, 1.0)
+            + bytes([0])
+            + bytes([0x0F])
+            + pack("<4I", *bus_ids)
+            + pack("<I", reflections_bus_id)
+        )
+
+        aux = build_audio._hirc_v150_node_aux_sends(data, 0)
+
+        self.assertEqual(aux["parserStatus"], "typedExactV150NodeAuxParams")
+        self.assertEqual(aux["propertyIds"], [8])
+        self.assertEqual(aux["properties"][0]["propertyLabel"], "UserAuxSendVolume0")
+        self.assertEqual(aux["properties"][0]["floatValue"], -6.0)
+        self.assertEqual(aux["properties"][0]["rawHex"], "0xc0c00000")
+        self.assertEqual(aux["properties"][0]["valueEncoding"], "float")
+        self.assertEqual(aux["rangedPropertyIds"], [5])
+        self.assertEqual(aux["rangedProperties"][0]["propertyLabel"], "MakeUpGain")
+        self.assertEqual(aux["rangedProperties"][0]["minimumFloat"], -1.0)
+        self.assertEqual(aux["rangedProperties"][0]["maximumFloat"], 1.0)
+        self.assertEqual(aux["auxParamsOffset"], 18)
+        self.assertTrue(aux["overrideGameDefinedAuxSends"])
+        self.assertTrue(aux["useGameDefinedAuxSends"])
+        self.assertTrue(aux["overrideUserDefinedAuxSends"])
+        self.assertTrue(aux["hasUserDefinedAuxSendSlots"])
+        self.assertEqual(aux["userDefinedAuxBusIds"], bus_ids)
+        self.assertEqual(
+            [row["slotIndex"] for row in aux["userDefinedAuxSends"]], [0, 2]
+        )
+        self.assertEqual(aux["reflectionsAuxBusId"], reflections_bus_id)
+
+    def test_hirc_v150_aux_sends_preserves_integer_union_values(self) -> None:
+        data = (
+            bytes([0, 1, 0x54]) + pack("<I", 0x14)
+            + bytes([0, 0, 0]) + pack("<I", 0)
+        )
+
+        aux = build_audio._hirc_v150_node_aux_sends(data, 0)
+
+        self.assertEqual(aux["properties"][0]["propertyLabel"], "Loop")
+        self.assertEqual(aux["properties"][0]["rawU32"], 0x14)
+        self.assertEqual(aux["properties"][0]["valueEncoding"], "u32Likely")
+
+    def test_hirc_v150_aux_sends_decode_runtime_game_defined_flag_without_ids(self) -> None:
+        data = bytes([0, 0, 0, 0, 0x03]) + pack("<I", 0)
+
+        aux = build_audio._hirc_v150_node_aux_sends(data, 0)
+
+        self.assertTrue(aux["overrideGameDefinedAuxSends"])
+        self.assertTrue(aux["useGameDefinedAuxSends"])
+        self.assertFalse(aux["hasUserDefinedAuxSendSlots"])
+        self.assertEqual(aux["userDefinedAuxBusIds"], [])
+        self.assertEqual(
+            aux["gameDefinedAssignmentBoundary"],
+            "runtimeAuxBusIdsAndControlValuesNotSerialized",
+        )
+
+    def test_hirc_v150_aux_sends_fail_closed_with_field_diagnostic(self) -> None:
+        data = bytes([0, 0, 0, 0, 0x08]) + pack("<I", 0x10203040)
+
+        with self.assertRaisesRegex(
+            ValueError,
+            r"userDefinedSlots truncated: offset=5 required=16 remaining=4",
+        ):
+            build_audio._hirc_v150_node_aux_sends(data, 0)
+
+    def test_hirc_v150_node_state_and_rtpc_decode_exact_layout(self) -> None:
+        state_group_id = 0xF6699CF4
+        first_state_id = 0x1A9FC91F
+        second_state_id = 0x1B9ABDB1
+        game_parameter_id = 0x2B99882E
+        modulator_id = 0x10CE34A1
+        data = b"".join((
+            pack("<BBHBB", 0x1B, 2, 12, 3, 0x0D),
+            bytes([2, 0, 2, 1, 43, 1, 1]),
+            bytes([1]),
+            pack("<IBB", state_group_id, 0, 2),
+            pack("<IH", first_state_id, 2),
+            pack("<HHff", 0, 43, -6.0, -3.0),
+            pack("<IH", second_state_id, 1),
+            pack("<Hf", 3, 45.0),
+            pack("<H", 2),
+            pack("<IBBBIBH", game_parameter_id, 0, 1, 42, 7, 2, 2),
+            pack("<ffIffI", 0.0, -96.0, 4, 1.0, 0.0, 8),
+            pack("<IBB", modulator_id, 4, 2),
+            bytes([0x82, 0x30]),
+            pack("<IBHffI", 8, 0, 1, 0.0, 1.0, 4),
+        ))
+
+        parsed = build_audio._hirc_v150_node_state_rtpc(data, 0)
+
+        self.assertEqual(parsed["parserStatus"], "typedExactV150NodeStateAndRtpc")
+        self.assertEqual(parsed["nodeBaseEndOffset"], len(data))
+        self.assertEqual(parsed["remainingSubtypeByteLength"], 0)
+        self.assertEqual(parsed["advSettings"]["virtualQueueBehaviorLabel"], "resume")
+        self.assertEqual(parsed["advSettings"]["belowThresholdBehaviorLabel"], "killIfOneShotElseVirtual")
+        self.assertEqual(parsed["statePropertyCount"], 2)
+        self.assertEqual(parsed["stateProperties"][1]["parameterLabel"], "OutputBusVolume")
+        self.assertEqual(parsed["stateGroups"][0]["groupId"], state_group_id)
+        self.assertEqual(parsed["stateGroups"][0]["states"][0]["values"][0]["value"], -6.0)
+        self.assertEqual(parsed["rtpcCurveCount"], 2)
+        self.assertEqual(parsed["rtpcPointCount"], 3)
+        self.assertEqual(parsed["rtpcCurves"][0]["rtpcTypeLabel"], "gameParameter")
+        self.assertEqual(parsed["rtpcCurves"][0]["parameterLabel"], "UserAuxSendVolume3")
+        self.assertEqual(parsed["rtpcCurves"][1]["parameterId"], 6146)
+        self.assertEqual(parsed["rtpcCurves"][1]["rtpcTypeLabel"], "modulator")
+
+    def test_hirc_v150_node_state_and_rtpc_fail_closed_with_diagnostic(self) -> None:
+        data = pack("<BBHBB", 0, 0, 0, 0, 0) + bytes([0, 0]) + pack("<H", 1)
+
+        with self.assertRaisesRegex(
+            ValueError,
+            r"rtpcId truncated: offset=10 required=4 remaining=0",
+        ):
+            build_audio._hirc_v150_node_state_rtpc(data, 0)
+
+    def test_hirc_node_processing_summary_preserves_state_rtpc_curves(self) -> None:
+        group_id = 0xF6699CF4
+        rtpc_id = 0x2B99882E
+        summary = build_audio.summarize_hirc_node_processing({
+            7: {
+                "objectId": 7,
+                "objectType": 2,
+                "objectTypeLabel": "sound",
+                "rootActionIds": [3],
+                "stateAndRtpc": {
+                    "parserStatus": "typedExactV150NodeStateAndRtpc",
+                    "advSettings": {"virtualQueueBehaviorLabel": "fromBeginning"},
+                    "stateProperties": [{"parameterId": 0, "parameterLabel": "Volume"}],
+                    "stateGroups": [{
+                        "groupId": group_id,
+                        "groupIdHex": f"0x{group_id:08x}",
+                        "states": [{"values": [{"parameterLabel": "Volume", "value": -6.0}]}],
+                    }],
+                    "rtpcCurves": [{
+                        "rtpcId": rtpc_id,
+                        "rtpcIdHex": f"0x{rtpc_id:08x}",
+                        "rtpcTypeLabel": "gameParameter",
+                        "parameterLabel": "BusVolume",
+                        "points": [{"from": 0.0, "to": -96.0}],
+                    }],
+                    "evidenceBoundary": "runtime values unobserved",
+                },
+            },
+        })
+
+        self.assertEqual(summary["parsedStateRtpcNodeCount"], 1)
+        self.assertEqual(summary["failedStateRtpcNodeCount"], 0)
+        self.assertEqual(summary["stateGroupReferenceCount"], 1)
+        self.assertEqual(summary["stateValueCount"], 1)
+        self.assertEqual(summary["rtpcCurveCount"], 1)
+        self.assertEqual(summary["rtpcPointCount"], 1)
+        self.assertEqual(summary["stateGroups"][0]["groupId"], group_id)
+        self.assertEqual(summary["rtpcIds"][0]["rtpcId"], rtpc_id)
+        self.assertIn("runtime values unobserved", str(summary["stateRtpcNodes"]))
+
+    def test_hirc_node_processing_summary_counts_authored_effect_flags(self) -> None:
+        summary = build_audio.summarize_hirc_node_processing({
+            7: {
+                "objectId": 7,
+                "objectType": 2,
+                "objectTypeLabel": "sound",
+                "effects": [{
+                    "effectId": 1,
+                    "effectBypass": True,
+                    "effectShareSet": False,
+                    "effectRendered": True,
+                    "unknownFlagBits": 0,
+                }, {
+                    "effectId": 2,
+                    "effectBypass": False,
+                    "effectShareSet": True,
+                    "effectRendered": False,
+                    "unknownFlagBits": 0,
+                }],
+            },
+        })
+
+        self.assertEqual(summary["effectBypassSlotCount"], 1)
+        self.assertEqual(summary["effectShareSetSlotCount"], 1)
+        self.assertEqual(summary["effectRenderedSlotCount"], 1)
+        self.assertEqual(summary["effectUnknownFlagBitsCount"], 0)
+
+    def test_hirc_node_processing_summary_preserves_authored_aux_boundary(self) -> None:
+        bus_id = 0x50607080
+        summary = build_audio.summarize_hirc_node_processing({
+            7: {
+                "objectId": 7,
+                "objectType": 2,
+                "objectTypeLabel": "sound",
+                "rootActionIds": [3],
+                "parentId": 9,
+                "auxSends": {
+                    "parserStatus": "typedExactV150NodeAuxParams",
+                    "auxParamsOffset": 4,
+                    "auxFlagsRaw": 0x0F,
+                    "overrideGameDefinedAuxSends": True,
+                    "useGameDefinedAuxSends": True,
+                    "overrideUserDefinedAuxSends": True,
+                    "hasUserDefinedAuxSendSlots": True,
+                    "overrideEarlyReflectionsAuxBus": False,
+                    "userDefinedAuxSends": [{
+                        "slotIndex": 0,
+                        "busId": bus_id,
+                        "busIdHex": f"0x{bus_id:08x}",
+                    }],
+                    "reflectionsAuxBusId": 0,
+                    "gameDefinedAssignmentBoundary": (
+                        "runtimeAuxBusIdsAndControlValuesNotSerialized"
+                    ),
+                },
+            },
+        })
+
+        self.assertEqual(summary["parsedAuxSendNodeCount"], 1)
+        self.assertEqual(summary["failedAuxSendNodeCount"], 0)
+        self.assertEqual(summary["gameDefinedAuxSendUseBitNodeCount"], 1)
+        self.assertEqual(summary["userDefinedAuxSendReferenceCount"], 1)
+        self.assertEqual(summary["auxiliaryBuses"][0]["busId"], bus_id)
+        self.assertIn(
+            "runtimeAuxBusIdsAndControlValuesNotSerialized",
+            str(summary["auxSendNodes"]),
+        )
+
+    def test_hirc_node_processing_summary_preserves_authored_base_properties(self) -> None:
+        summary = build_audio.summarize_hirc_node_processing({
+            7: {
+                "objectId": 7,
+                "objectType": 2,
+                "objectTypeLabel": "sound",
+                "rootActionIds": [3],
+                "parentId": 9,
+                "auxSends": {
+                    "parserStatus": "typedExactV150NodeAuxParams",
+                    "properties": [{
+                        "propertyId": 0,
+                        "propertyLabel": "Volume",
+                        "rawU32": 0xC0C00000,
+                        "rawHex": "0xc0c00000",
+                        "floatValue": -6.0,
+                    }, {
+                        "propertyId": 0x0D,
+                        "propertyLabel": "OutputBusVolume",
+                        "rawU32": 0xC0400000,
+                        "rawHex": "0xc0400000",
+                        "floatValue": -3.0,
+                    }],
+                    "rangedProperties": [{
+                        "propertyId": 0x02,
+                        "propertyLabel": "LPF",
+                        "minimumFloat": 0.0,
+                        "maximumFloat": 1.0,
+                        "minimumRawHex": "0x00000000",
+                        "maximumRawHex": "0x3f800000",
+                    }],
+                },
+            },
+        })
+
+        self.assertEqual(summary["authoredPropertyNodeCount"], 1)
+        self.assertEqual(summary["authoredPropertyValueCount"], 2)
+        self.assertEqual(summary["authoredRangedPropertyValueCount"], 1)
+        self.assertEqual(summary["authoredPropertyCounts"], {
+            "OutputBusVolume": 1,
+            "Volume": 1,
+        })
+        self.assertEqual(summary["authoredRangedPropertyCounts"], {"LPF": 1})
+        self.assertEqual(summary["propertyNodes"][0]["properties"][1]["propertyLabel"], "OutputBusVolume")
+
+    def test_hirc_effect_definition_recovers_builtin_plugin_identity(self) -> None:
+        data = pack("<II", 0x00690003, 4) + b"abcd" + b"tail"
+
+        definition = build_audio.hirc_v150_effect_definition(17, data)
+
+        self.assertIsNotNone(definition)
+        self.assertEqual(definition["pluginTypeLabel"], "effect")
+        self.assertEqual(definition["pluginId"], 105)
+        self.assertEqual(definition["pluginName"], "Parametric EQ")
+        self.assertEqual(definition["parameterByteLength"], 4)
+        self.assertEqual(definition["trailingByteLength"], 4)
+
+    def test_hirc_effect_definition_rejects_custom_source_plugin(self) -> None:
+        data = pack("<II", 0x00650002, 12) + bytes(12)
+
+        self.assertIsNone(build_audio.hirc_v150_effect_definition(17, data))
+
+    def test_hirc_gain_parameters_decode_exact_shipped_layout(self) -> None:
+        decoded = build_audio.decode_hirc_v150_effect_parameters(
+            0x008B0003, pack("<ff", -6.0, -96.3)
+        )
+
+        self.assertIsNotNone(decoded)
+        self.assertEqual(decoded["parameterSchema"], "wwiseGainFxParamsV1")
+        self.assertAlmostEqual(decoded["parameterValues"]["fullBandGainDb"], -6.0)
+        self.assertAlmostEqual(decoded["parameterValues"]["lfeGainDb"], -96.3, places=3)
+
+    def test_hirc_delay_parameters_decode_exact_shipped_layout(self) -> None:
+        decoded = build_audio.decode_hirc_v150_effect_parameters(
+            0x006A0003, pack("<ffffBB", 0.25, 15.0, 20.0, -3.0, 1, 0)
+        )
+
+        self.assertIsNotNone(decoded)
+        self.assertEqual(decoded["parameterValues"]["delayTimeSeconds"], 0.25)
+        self.assertEqual(decoded["parameterValues"]["feedbackPercent"], 15.0)
+        self.assertTrue(decoded["parameterValues"]["feedbackEnabled"])
+        self.assertFalse(decoded["parameterValues"]["processLfe"])
+
+    def test_hirc_dynamics_parameters_decode_shared_shipped_layout(self) -> None:
+        payload = pack("<fffffBB", -24.0, 4.0, 0.02, 0.4, 3.0, 1, 1)
+        compressor = build_audio.decode_hirc_v150_effect_parameters(
+            0x006C0003, payload
+        )
+        expander = build_audio.decode_hirc_v150_effect_parameters(
+            0x006D0003, payload
+        )
+
+        self.assertIsNotNone(compressor)
+        self.assertIsNotNone(expander)
+        self.assertEqual(compressor["parameterValues"], expander["parameterValues"])
+        self.assertEqual(compressor["parameterValues"]["ratio"], 4.0)
+        self.assertTrue(compressor["parameterValues"]["channelLink"])
+
+    def test_hirc_parametric_eq_parameters_decode_three_packed_bands(self) -> None:
+        payload = b"".join((
+            pack("<IfffB", 4, -6.0, 120.0, 1.0, 1),
+            pack("<IfffB", 6, 3.0, 1000.0, 0.7, 1),
+            pack("<IfffB", 5, -2.0, 8000.0, 1.0, 0),
+            pack("<fB", 1.5, 1),
+        ))
+
+        decoded = build_audio.decode_hirc_v150_effect_parameters(
+            0x00690003, payload
+        )
+
+        self.assertIsNotNone(decoded)
+        values = decoded["parameterValues"]
+        self.assertEqual(len(payload), 56)
+        self.assertEqual(values["bands"][0]["filterTypeLabel"], "Low Shelf")
+        self.assertEqual(values["bands"][1]["filterTypeLabel"], "Peaking")
+        self.assertFalse(values["bands"][2]["enabled"])
+        self.assertEqual(values["outputGainDb"], 1.5)
+        self.assertTrue(values["processLfe"])
+
+    def test_hirc_meter_parameters_decode_mode_scope_and_output_rtpc(self) -> None:
+        payload = pack(
+            "<fffffBBBBI", 0.0, 0.1, -48.0, 0.0, 0.25,
+            0, 1, 0, 1, 0x12345678,
+        )
+
+        decoded = build_audio.decode_hirc_v150_effect_parameters(
+            0x00810003, payload
+        )
+
+        self.assertIsNotNone(decoded)
+        values = decoded["parameterValues"]
+        self.assertEqual(values["modeLabel"], "RMS")
+        self.assertEqual(values["scopeLabel"], "Global")
+        self.assertTrue(values["applyDownstreamVolume"])
+        self.assertEqual(values["outputGameParameterIdHex"], "0x12345678")
+
+    def test_hirc_pitch_shifter_parameters_decode_exact_shipped_layout(self) -> None:
+        payload = (
+            pack("<IfffBBfIfff", 0, -96.0, 0.0, 50.0, 1, 0,
+                 -1200.0, 7, 2.5, 1800.0, 0.7)
+        )
+
+        decoded = build_audio.decode_hirc_v150_effect_parameters(
+            0x00880003, payload
+        )
+
+        self.assertIsNotNone(decoded)
+        self.assertEqual(len(payload), 38)
+        self.assertEqual(decoded["parameterSchema"], "wwisePitchShifterFxParamsV1")
+        values = decoded["parameterValues"]
+        self.assertEqual(values["inputSelectionLabel"], "As Input")
+        self.assertEqual(values["pitchShiftCents"], -1200.0)
+        self.assertEqual(values["filterTypeLabel"], "Peaking")
+        self.assertTrue(values["delayDry"])
+        self.assertFalse(values["processLfe"])
+
+    def test_hirc_harmonizer_parameters_decode_two_voice_blocks(self) -> None:
+        payload = b"".join((
+            pack("<BffIfff", 1, 700.0, -3.0, 0, 0.0, 1000.0, 1.0),
+            pack("<BffIfff", 0, -1200.0, -6.0, 6, 2.0, 4000.0, 0.8),
+            pack("<IffIBB", 0, -12.0, 1.5, 2048, 1, 1),
+        ))
+
+        decoded = build_audio.decode_hirc_v150_effect_parameters(
+            0x008A0003, payload
+        )
+
+        self.assertIsNotNone(decoded)
+        self.assertEqual(len(payload), 68)
+        self.assertEqual(decoded["parameterSchema"], "wwiseHarmonizerFxParamsV1")
+        values = decoded["parameterValues"]
+        self.assertEqual(len(values["voices"]), 2)
+        self.assertTrue(values["voices"][0]["enabled"])
+        self.assertFalse(values["voices"][1]["enabled"])
+        self.assertEqual(values["voices"][1]["filterTypeLabel"], "High Shelf")
+        self.assertEqual(values["windowSizeSamples"], 2048)
+        self.assertTrue(values["processLfe"])
+
+    def test_hirc_stereo_delay_parameters_decode_exact_shipped_layout(self) -> None:
+        payload = pack(
+            "<IfffIfffIffffffBB",
+            0, 0.9, -12.0, -13.9,
+            0, 0.8, -12.0, -14.3,
+            3, -8.0, 849.0, 1.0,
+            0.0, 3.0, -100.0, 1, 1,
+        )
+
+        decoded = build_audio.decode_hirc_v150_effect_parameters(
+            0x00870003, payload
+        )
+
+        self.assertIsNotNone(decoded)
+        self.assertEqual(len(payload), 62)
+        self.assertEqual(decoded["parameterSchema"], "wwiseStereoDelayFxParamsV1")
+        values = decoded["parameterValues"]
+        self.assertEqual(values["filterTypeLabel"], "Band Pass")
+        self.assertAlmostEqual(values["leftDelayTimeSeconds"], 0.9, places=5)
+        self.assertEqual(values["frontRearBalance"], -100.0)
+        self.assertTrue(values["crossfeedEnabled"])
+        self.assertTrue(values["feedbackEnabled"])
+
+    def test_hirc_roomverb_parameters_decode_public_authoring_contract(self) -> None:
+        payload = roomverb_parameter_data()
+
+        decoded = build_audio.decode_hirc_v150_effect_parameters(
+            0x00760003, payload
+        )
+
+        self.assertIsNotNone(decoded)
+        self.assertEqual(len(payload), 186)
+        self.assertEqual(decoded["parameterSchema"], "wwiseRoomVerbFxParamsV1")
+        self.assertEqual(
+            decoded["parameterBoundary"],
+            "typedExactLayoutPartialAuthoredSemantics",
+        )
+        values = decoded["parameterValues"]
+        self.assertEqual(values["earlyReflections"]["patternLabel"], "Large Room")
+        self.assertEqual(values["earlyReflections"]["roomSizePercent"], 100.0)
+        self.assertEqual(values["earlyReflections"]["rearDelayMilliseconds"], 40.0)
+        self.assertEqual(values["reverb"]["preDelayMilliseconds"], 25.0)
+        self.assertEqual(values["reverb"]["qualityReverberations"], 8)
+        self.assertEqual(values["tone"]["bands"][1]["insertLabel"], "Reverb Only")
+        self.assertEqual(values["tone"]["bands"][2]["curveLabel"], "High Shelf")
+        self.assertEqual(values["outputLevelsDb"]["reverb"], -9.0)
+        self.assertEqual(len(values["internalTuningParameters"]), 11)
+        self.assertEqual(
+            values["internalTuningParameters"][0]["semanticStatus"],
+            "exactValueMeaningUnresolved",
+        )
+        self.assertEqual(
+            values["internalTuningParameters"][0]["nativeUseRole"],
+            "earlyReflectionTapPatternSynthesisInputs",
+        )
+        self.assertEqual(
+            values["internalTuningParameters"][4]["nativeConsumerRvas"],
+            ["0x00229b60"],
+        )
+        self.assertIn(
+            "seeded per-tap variation",
+            values["internalTuningParameters"][0]["nativeUseDetail"],
+        )
+        self.assertEqual(
+            values["internalTuningParameters"][5]["nativeUseStatus"],
+            "exactNativeReadBoundaryNoDirectReadObserved",
+        )
+        self.assertEqual(
+            values["internalTuningParameters"][8]["nativeUseRole"],
+            "sixChannelCoefficientDerivationInput",
+        )
+        self.assertEqual(
+            values["internalTuningParameters"][10]["nativeConsumerRvas"],
+            ["0x00229e20"],
+        )
+        self.assertIn(
+            "secondary ER pattern",
+            values["internalTuningParameters"][10]["nativeUseDetail"],
+        )
+        self.assertIn(
+            "six coefficients",
+            values["internalTuningParameters"][8]["nativeUseDetail"],
+        )
+
+    def test_hirc_roomverb_definition_preserves_partial_semantic_boundary(self) -> None:
+        payload = roomverb_parameter_data()
+        data = pack("<II", 0x00760003, len(payload)) + payload
+
+        definition = build_audio.hirc_v150_effect_definition(17, data)
+
+        self.assertIsNotNone(definition)
+        self.assertEqual(
+            definition["parameterBoundary"],
+            "typedExactLayoutPartialAuthoredSemantics",
+        )
+        self.assertIn("IDs 100..110", definition["parameterSemanticBoundary"])
+
+    def test_hirc_guitar_distortion_parameters_decode_full_public_contract(self) -> None:
+        payload = guitar_distortion_parameter_data()
+
+        decoded = build_audio.decode_hirc_v150_effect_parameters(
+            0x007E0003, payload
+        )
+
+        self.assertIsNotNone(decoded)
+        self.assertEqual(len(payload), 126)
+        self.assertEqual(
+            decoded["parameterSchema"], "wwiseGuitarDistortionFxParamsV1"
+        )
+        self.assertEqual(
+            decoded["parameterBoundary"], "typedExactAuthoredBaseValues"
+        )
+        values = decoded["parameterValues"]
+        self.assertEqual(values["distortionTypeLabel"], "Clip")
+        self.assertEqual(values["drivePercent"], 61.0)
+        self.assertEqual(values["tonePercent"], 50.0)
+        self.assertEqual(values["rectificationPercent"], 0.0)
+        self.assertEqual(values["outputGainDb"], 0.0)
+        self.assertEqual(values["wetDryMixPercent"], 100.0)
+        self.assertEqual(len(values["preDistortionEqBands"]), 3)
+        self.assertEqual(len(values["postDistortionEqBands"]), 3)
+        self.assertEqual(
+            values["preDistortionEqBands"][2]["filterTypeLabel"], "Low Shelf"
+        )
+        self.assertTrue(values["preDistortionEqBands"][2]["enabled"])
+        self.assertEqual(values["postDistortionEqBands"][2]["gainDb"], -13.0)
+
+    def test_hirc_convolution_reverb_parameters_decode_public_runtime_contract(self) -> None:
+        payload = convolution_reverb_parameter_data()
+
+        decoded = build_audio.decode_hirc_v150_effect_parameters(
+            0x007F0003, payload
+        )
+
+        self.assertIsNotNone(decoded)
+        self.assertEqual(len(payload), 57)
+        self.assertEqual(
+            decoded["parameterSchema"], "wwiseConvolutionReverbFxParamsV1"
+        )
+        self.assertEqual(
+            decoded["parameterBoundary"],
+            "typedExactLayoutPartialAuthoredSemantics",
+        )
+        values = decoded["parameterValues"]
+        self.assertEqual(values["reverbTypeLabel"], "Reverb")
+        self.assertEqual(values["preDelayMilliseconds"], 30.0)
+        self.assertEqual(values["outputSpreadDegrees"], 180.0)
+        self.assertEqual(values["inputSpreadDegrees"], 0.0)
+        self.assertEqual(values["reverbLevelsDb"]["center"], -9.0)
+        self.assertEqual(values["outputLevelsDb"]["reverb"], 3.0)
+        self.assertEqual(values["unresolvedParameters"][0]["setParamId"], 34)
+        private_scalar = values["unresolvedParameters"][0]
+        self.assertEqual(private_scalar["serializedOffset"], 52)
+        self.assertEqual(private_scalar["nativeStructOffset"], 60)
+        self.assertEqual(private_scalar["wrapperOffset"], 76)
+        self.assertEqual(
+            private_scalar["nativeUseRole"],
+            "privateRuntimeScalarForwardedToConvolutionEngineProcess",
+        )
+        self.assertEqual(
+            private_scalar["nativeUseStatus"],
+            "exactForwardedScalarEngineReadUnobserved",
+        )
+        self.assertEqual(
+            private_scalar["nativeConsumerRvas"],
+            ["0x00254a83", "0x00254bd8", "0x00258520"],
+        )
+        self.assertIn(
+            "fifth float",
+            private_scalar["nativeUseDetail"],
+        )
+        private_byte = values["unresolvedParameters"][1]
+        self.assertEqual(private_byte["serializedOffset"], 56)
+        self.assertEqual(private_byte["nativeStructOffset"], 64)
+        self.assertEqual(private_byte["wrapperOffset"], 80)
+        self.assertEqual(
+            private_byte["nativeUseRole"],
+            "serializedByteForwardedToConvolutionRuntimeState",
+        )
+        self.assertEqual(
+            private_byte["nativeConsumerRvas"], ["0x00254d27"]
+        )
+        self.assertIn(
+            "runtime state +0x8c",
+            private_byte["nativeUseDetail"],
+        )
+        self.assertEqual(values["unresolvedParameters"][1]["rawCode"], 2)
+
+    def test_hirc_convolution_contract_pins_private_native_forwarding_boundary(self) -> None:
+        contract = build_audio.HIRC_EFFECT_PARAMETER_CONTRACT["schemas"][0x007F0003]
+        evidence = contract["privateTuningNativeEvidence"]
+        self.assertEqual(
+            evidence["status"],
+            "exactForwardedPrivateFieldsPublicNamesUnresolved",
+        )
+        self.assertEqual(evidence["ranges"][0]["wrapperOffsets"], [76])
+        self.assertEqual(evidence["ranges"][1]["wrapperOffsets"], [80])
+        self.assertIn("does not read", evidence["ranges"][0]["evidenceBoundary"])
+
+    def test_hirc_mastering_suite_parameters_decode_public_module_contract(self) -> None:
+        payload = mastering_suite_parameter_data()
+
+        decoded = build_audio.decode_hirc_v150_effect_parameters(
+            0x00BA0003, payload
+        )
+
+        self.assertIsNotNone(decoded)
+        self.assertEqual(len(payload), 304)
+        self.assertEqual(
+            decoded["parameterSchema"], "wwiseMasteringSuiteFxParamsV1"
+        )
+        self.assertEqual(
+            decoded["parameterBoundary"],
+            "typedExactLayoutPartialAuthoredSemantics",
+        )
+        values = decoded["parameterValues"]
+        self.assertTrue(values["moduleEnabled"]["parametricEq"])
+        self.assertFalse(values["moduleEnabled"]["masterVolume"])
+        self.assertEqual(len(values["parametricEq"]["bands"]), 6)
+        self.assertEqual(
+            values["parametricEq"]["bands"][0]["filterModeLabel"],
+            "High Pass Resonant (Two-Pole)",
+        )
+        compressor = values["multibandCompressor"]
+        self.assertEqual(compressor["channelLinkModeLabel"], "All Channels")
+        self.assertEqual(len(compressor["bands"]), 4)
+        self.assertTrue(compressor["bands"][0]["enabled"])
+        self.assertEqual(compressor["bands"][0]["thresholdDb"], -18.0)
+        self.assertAlmostEqual(
+            compressor["crossoverFrequenciesHz"][1], 503.9016, places=3
+        )
+        self.assertAlmostEqual(values["masterVolume"]["gainDb"], 3.6, places=5)
+        self.assertEqual(len(values["masterVolume"]["channelGainsDb"]), 12)
+        self.assertEqual(
+            [row["serializedOffset"] for row in values["masterVolume"]["channelGainsDb"]],
+            [235, 239, 243, 247, 251, 255, 259, 263, 267, 271, 275, 279],
+        )
+        self.assertEqual(
+            [row["nativeStructOffset"] for row in values["masterVolume"]["channelGainsDb"]],
+            [280, 284, 288, 292, 296, 300, 304, 308, 312, 316, 320, 324],
+        )
+        self.assertEqual(values["limiter"]["modeLabel"], "Advanced")
+        self.assertTrue(values["limiter"]["linkChannels"])
+        self.assertEqual(
+            [row["setParamId"] for row in values["unresolvedParameters"]],
+            [100, 200],
+        )
+        self.assertEqual(
+            [row["nativeStructOffset"] for row in values["unresolvedParameters"]],
+            [24, 136],
+        )
+        self.assertEqual(
+            [row["nativeUseStatus"] for row in values["unresolvedParameters"]],
+            [
+                "nativeSetParamStorageOnlyNoDirectReadObserved",
+                "nativeSetParamStorageOnlyNoDirectReadObserved",
+            ],
+        )
+        self.assertEqual(
+            [row["nativeConsumerRvas"] for row in values["unresolvedParameters"]],
+            [[], []],
+        )
+
+    def test_hirc_mastering_suite_contract_pins_storage_only_private_native_boundary(self) -> None:
+        contract = build_audio.HIRC_EFFECT_PARAMETER_CONTRACT["schemas"][0x00BA0003]
+        evidence = contract["privateTuningNativeEvidence"]
+        self.assertEqual(
+            evidence["status"],
+            "exactSetParamStorageOnlyPublicNamesUnresolved",
+        )
+        self.assertEqual(evidence["ranges"][0]["nativeStructOffsets"], [24])
+        self.assertEqual(evidence["ranges"][1]["nativeStructOffsets"], [136])
+        self.assertEqual(evidence["ranges"][0]["consumerRvas"], [])
+        self.assertIn("No direct read", evidence["ranges"][0]["evidenceBoundary"])
+        self.assertEqual(
+            contract["channelGainNativeMapping"]["serializedOffsets"],
+            [235, 239, 243, 247, 251, 255, 259, 263, 267, 271, 275, 279],
+        )
+
+    def test_hirc_convolution_reverb_definition_recovers_ir_media_dependency(self) -> None:
+        payload = convolution_reverb_parameter_data()
+        media_id = 0x2F3A77AB
+        data = (
+            pack("<II", 0x007F0003, len(payload))
+            + payload
+            + bytes([1, 0])
+            + pack("<I", media_id)
+            + b"after"
+        )
+
+        definition = build_audio.hirc_v150_effect_definition(17, data)
+
+        self.assertIsNotNone(definition)
+        self.assertEqual(definition["pluginMediaDependencyCount"], 1)
+        self.assertEqual(definition["pluginMediaPrefixByteLength"], 6)
+        self.assertEqual(definition["postPluginMediaTrailingByteLength"], 5)
+        dependency = definition["pluginMediaDependencies"][0]
+        self.assertEqual(dependency["pluginDataIndex"], 0)
+        self.assertEqual(dependency["mediaId"], media_id)
+        self.assertEqual(dependency["semanticRole"], "impulseResponseMedia")
+        self.assertIn("not playable", definition["pluginMediaBoundary"])
+
+    def test_hirc_plugin_media_dependency_prefix_fails_closed_when_truncated(self) -> None:
+        truncated = bytes([2, 0]) + pack("<I", 0x2F3A77AB)
+
+        self.assertIsNone(
+            build_audio._hirc_v150_plugin_media_dependency_prefix(
+                0x007F0003, truncated
+            )
+        )
+
+    def test_hirc_effect_catalog_keeps_distinct_plugin_media_dependencies(self) -> None:
+        payload = convolution_reverb_parameter_data()
+        candidates = {}
+        for media_id in (0x2F3A77AB, 0x0CB425ED):
+            definition = build_audio.hirc_v150_effect_definition(
+                17,
+                pack("<II", 0x007F0003, len(payload))
+                + payload
+                + bytes([1, 0])
+                + pack("<I", media_id),
+            )
+            self.assertIsNotNone(definition)
+            build_audio.add_hirc_effect_definition_candidate(
+                candidates, 1234, definition, bank_id=7
+            )
+
+        effects, _buses = build_audio.finalize_hirc_post_process_catalog(
+            candidates, {}
+        )
+
+        self.assertEqual(
+            effects[1234]["resolutionStatus"], "ambiguousPluginDefinitions"
+        )
+        self.assertEqual(effects[1234]["definitionCount"], 2)
+
+    def test_hirc_matrix_reverb_parameters_decode_custom_delay_array(self) -> None:
+        payload = (
+            pack("<ffIfffBI", 3.0, 5.5, 8, -96.3, -35.0, 0.02, 1, 1)
+            + pack("<8f", 13.62, 15.66, 17.52, 19.02, 20.83, 22.6, 24.05, 24.78)
+        )
+
+        decoded = build_audio.decode_hirc_v150_effect_parameters(
+            0x00730003, payload
+        )
+
+        self.assertIsNotNone(decoded)
+        values = decoded["parameterValues"]
+        self.assertEqual(len(payload), 61)
+        self.assertEqual(values["numberOfDelays"], 8)
+        self.assertTrue(values["customDelayTimes"])
+        self.assertEqual(len(values["delayTimesMilliseconds"]), 8)
+
+    def test_hirc_effect_parameter_decoders_fail_closed_on_layout_drift(self) -> None:
+        self.assertIsNone(build_audio.decode_hirc_v150_effect_parameters(
+            0x006A0003, pack("<ffffBB", 0.5, 10.0, 50.0, 0.0, 2, 1)
+        ))
+        self.assertIsNone(build_audio.decode_hirc_v150_effect_parameters(
+            0x00730003, pack("<ffIfffBI", 3.0, 5.5, 8, -96.3, -35.0, 0.0, 1, 1)
+        ))
+        self.assertIsNone(build_audio.decode_hirc_v150_effect_parameters(
+            0x00880003,
+            pack("<IfffBBfIfff", 99, -96.0, 0.0, 50.0, 1, 0,
+                 0.0, 0, 0.0, 1000.0, 1.0),
+        ))
+        self.assertIsNone(build_audio.decode_hirc_v150_effect_parameters(
+            0x008A0003,
+            pack("<BffIfffBffIfffIffIBB", 1, 0.0, 0.0, 0, 0.0, 1000.0, 1.0,
+                 0, 0.0, 0.0, 0, 0.0, 1000.0, 1.0,
+                 0, 0.0, 0.0, 777, 0, 1),
+        ))
+        self.assertIsNone(build_audio.decode_hirc_v150_effect_parameters(
+            0x00870003,
+            pack("<IfffIfffIffffffBB", 0, 0.5, -12.0, -20.0,
+                 0, 0.5, -12.0, -20.0, 0, 0.0, 1000.0, 1.0,
+                 0.0, 0.0, -100.0, 2, 1),
+        ))
+        invalid_roomverb = bytearray(roomverb_parameter_data())
+        pack_into("<I", invalid_roomverb, 81, 31)
+        self.assertIsNone(build_audio.decode_hirc_v150_effect_parameters(
+            0x00760003, bytes(invalid_roomverb)
+        ))
+        invalid_roomverb = bytearray(roomverb_parameter_data())
+        pack_into("<I", invalid_roomverb, 110, 4)
+        self.assertIsNone(build_audio.decode_hirc_v150_effect_parameters(
+            0x00760003, bytes(invalid_roomverb)
+        ))
+        invalid_roomverb = bytearray(roomverb_parameter_data())
+        invalid_roomverb[109] = 2
+        self.assertIsNone(build_audio.decode_hirc_v150_effect_parameters(
+            0x00760003, bytes(invalid_roomverb)
+        ))
+        invalid_convolution = bytearray(convolution_reverb_parameter_data())
+        pack_into("<I", invalid_convolution, 48, 2)
+        self.assertIsNone(build_audio.decode_hirc_v150_effect_parameters(
+            0x007F0003, bytes(invalid_convolution)
+        ))
+        invalid_convolution = bytearray(convolution_reverb_parameter_data())
+        pack_into("<f", invalid_convolution, 20, 181.0)
+        self.assertIsNone(build_audio.decode_hirc_v150_effect_parameters(
+            0x007F0003, bytes(invalid_convolution)
+        ))
+        invalid_convolution = bytearray(convolution_reverb_parameter_data())
+        pack_into("<f", invalid_convolution, 12, 1.0)
+        self.assertIsNone(build_audio.decode_hirc_v150_effect_parameters(
+            0x007F0003, bytes(invalid_convolution)
+        ))
+        invalid_convolution = bytearray(convolution_reverb_parameter_data())
+        pack_into("<f", invalid_convolution, 0, 1001.0)
+        self.assertIsNone(build_audio.decode_hirc_v150_effect_parameters(
+            0x007F0003, bytes(invalid_convolution)
+        ))
+        invalid_convolution = bytearray(convolution_reverb_parameter_data())
+        pack_into("<f", invalid_convolution, 52, float("nan"))
+        self.assertIsNone(build_audio.decode_hirc_v150_effect_parameters(
+            0x007F0003, bytes(invalid_convolution)
+        ))
+        invalid_guitar = bytearray(guitar_distortion_parameter_data())
+        pack_into("<I", invalid_guitar, 102, 5)
+        self.assertIsNone(build_audio.decode_hirc_v150_effect_parameters(
+            0x007E0003, bytes(invalid_guitar)
+        ))
+        invalid_mastering = bytearray(mastering_suite_parameter_data())
+        invalid_mastering[2] = 2
+        self.assertIsNone(build_audio.decode_hirc_v150_effect_parameters(
+            0x00BA0003, bytes(invalid_mastering)
+        ))
+        invalid_mastering = bytearray(mastering_suite_parameter_data())
+        pack_into("<I", invalid_mastering, 14, 8)
+        self.assertIsNone(build_audio.decode_hirc_v150_effect_parameters(
+            0x00BA0003, bytes(invalid_mastering)
+        ))
+        invalid_mastering = bytearray(mastering_suite_parameter_data())
+        pack_into("<I", invalid_mastering, 114, 3)
+        self.assertIsNone(build_audio.decode_hirc_v150_effect_parameters(
+            0x00BA0003, bytes(invalid_mastering)
+        ))
+        invalid_mastering = bytearray(mastering_suite_parameter_data())
+        pack_into("<I", invalid_mastering, 283, 3)
+        self.assertIsNone(build_audio.decode_hirc_v150_effect_parameters(
+            0x00BA0003, bytes(invalid_mastering)
+        ))
+        invalid_guitar = bytearray(guitar_distortion_parameter_data())
+        pack_into("<f", invalid_guitar, 8, 19.0)
+        self.assertIsNone(build_audio.decode_hirc_v150_effect_parameters(
+            0x007E0003, bytes(invalid_guitar)
+        ))
+        invalid_guitar = bytearray(guitar_distortion_parameter_data())
+        invalid_guitar[16] = 2
+        self.assertIsNone(build_audio.decode_hirc_v150_effect_parameters(
+            0x007E0003, bytes(invalid_guitar)
+        ))
+
+    def test_hirc_post_process_catalog_resolves_effect_and_audio_bus(self) -> None:
+        effect_id = 956324002
+        definition = build_audio.hirc_v150_effect_definition(
+            17, pack("<II", 0x008B0003, 8) + bytes(8)
+        )
+        self.assertIsNotNone(definition)
+        candidates = {}
+        build_audio.add_hirc_effect_definition_candidate(
+            candidates, effect_id, definition, bank_id=7
+        )
+        effects, buses = build_audio.finalize_hirc_post_process_catalog(
+            candidates, {0xE611314A: build_audio.Counter({8: 2})}
+        )
+        summary = {
+            "effectNodes": [{"effects": [{"effectId": effect_id}]}],
+            "outputBuses": [{"busId": 0xE611314A, "nodeCount": 3}],
+        }
+
+        build_audio.resolve_hirc_post_process_summary(summary, effects, buses)
+
+        slot = summary["effectNodes"][0]["effects"][0]
+        self.assertEqual(slot["pluginName"], "Gain")
+        self.assertEqual(slot["resolutionStatus"], "exactUniquePluginDefinition")
+        self.assertEqual(slot["parameterSchema"], "wwiseGainFxParamsV1")
+        self.assertIn("full band", slot["parameterSummary"])
+        self.assertEqual(summary["decodedEffectParameterReferenceCount"], 1)
+        self.assertEqual(summary["exactEffectParameterReferenceCount"], 1)
+        self.assertEqual(summary["partialEffectParameterReferenceCount"], 0)
+        self.assertEqual(
+            summary["outputBuses"][0]["resolutionStatus"],
+            "exactGlobalAudioBusDefinition",
+        )
+
+    def test_hirc_bus_processing_recovers_parent_and_nonempty_effect_slots(self) -> None:
+        first_effect_id = 0x12345678
+        second_effect_id = 0x87654321
+        data = (
+            pack("<I", 0x10203040)
+            + bytes([0xAA, 0xBB, 0xCC])
+            + bytes([2, 1])
+            + bytes([0]) + pack("<I", first_effect_id) + bytes([2])
+            + bytes([3]) + pack("<I", second_effect_id) + bytes([1])
+            + bytes(5)
+        )
+
+        parsed = build_audio.hirc_v150_bus_processing(
+            18, data, {first_effect_id, second_effect_id}
+        )
+
+        self.assertIsNotNone(parsed)
+        self.assertEqual(parsed["parentBusId"], 0x10203040)
+        self.assertEqual(
+            parsed["effectParserStatus"],
+            "exactCrossCorrelatedNonEmptyEffectChunk",
+        )
+        self.assertTrue(parsed["bypassAll"])
+        self.assertEqual(
+            [row["slotIndex"] for row in parsed["effects"]], [0, 3]
+        )
+        self.assertEqual(
+            [row["effectId"] for row in parsed["effects"]],
+            [first_effect_id, second_effect_id],
+        )
+        self.assertTrue(parsed["effects"][0]["effectShareSet"])
+        self.assertFalse(parsed["effects"][0]["effectBypass"])
+        self.assertTrue(parsed["effects"][1]["effectBypass"])
+        self.assertFalse(parsed["effects"][1]["effectShareSet"])
+        self.assertIsNone(parsed["effects"][0]["effectRendered"])
+
+    def test_hirc_bus_processing_does_not_call_missing_chunk_empty(self) -> None:
+        parsed = build_audio.hirc_v150_bus_processing(
+            8, pack("<I", 0) + bytes(32), {0x12345678}
+        )
+
+        self.assertIsNotNone(parsed)
+        self.assertEqual(parsed["parentBusId"], 0)
+        self.assertEqual(parsed["effectParserStatus"], "nonEmptyEffectChunkNotLocated")
+        self.assertIsNone(parsed["effectSlotCount"])
+        self.assertEqual(parsed["effects"], [])
+
+    def test_hirc_bus_processing_cross_correlates_explicit_zero_effect_chunk(self) -> None:
+        effect_id = 0x12345678
+        prefix = bytes([0xAA, 0xBB, 0xCC])
+        suffix = bytes(5)
+        non_empty = (
+            pack("<I", 0x10203040)
+            + prefix
+            + bytes([1, 0, 0])
+            + pack("<I", effect_id)
+            + bytes([0])
+            + suffix
+        )
+        empty = pack("<I", 0x50607080) + prefix + bytes([0]) + suffix
+        schema = {
+            "objectType": 18,
+            "prefix": prefix,
+            "suffix": suffix,
+            "fingerprint": "test-schema",
+            "siblingCount": 3,
+        }
+
+        parsed_non_empty = build_audio.hirc_v150_bus_processing(
+            18, non_empty, {effect_id}
+        )
+        parsed_empty = build_audio.hirc_v150_bus_processing(
+            18, empty, {effect_id}, empty_effect_schemas=(schema,)
+        )
+
+        self.assertEqual(
+            parsed_non_empty["effectParserStatus"],
+            "exactCrossCorrelatedNonEmptyEffectChunk",
+        )
+        self.assertEqual(
+            parsed_empty["effectParserStatus"],
+            "exactCrossCorrelatedEmptyEffectChunk",
+        )
+        self.assertEqual(parsed_empty["effectChunkOffset"], 7)
+        self.assertEqual(parsed_empty["effectChunkByteLength"], 1)
+        self.assertEqual(parsed_empty["effectSlotCount"], 0)
+        self.assertEqual(parsed_empty["effects"], [])
+        self.assertEqual(parsed_empty["emptyEffectSchemaFingerprint"], "test-schema")
+        self.assertEqual(parsed_empty["emptyEffectSchemaSiblingCount"], 3)
+
+    def test_hirc_bus_processing_consumes_typed_v150_bus_layout(self) -> None:
+        effect_id = 0x12345678
+
+        def bus_payload(effect_count: int) -> bytes:
+            return (
+                pack("<I", 0x10203040)  # OverrideBusId / DirectParentID
+                + bytes([1, 0x1B])        # one AkPropID: HDR threshold
+                + pack("<I", 0)
+                + bytes([1, 0x15])        # positioning, Aux flags
+                + pack("<I", 0)           # reflections Aux Bus
+                + bytes([0])               # bus flags
+                + pack("<H", 0)           # max instances
+                + pack("<I", 0)           # channel config
+                + bytes([2])               # bus state flags
+                + pack("<i", 1000)        # recovery time
+                + pack("<f", -96.0)       # max duck volume
+                + pack("<I", 0)            # duck count
+                + bytes([effect_count])
+                + (
+                    bytes([0])
+                    + bytes([0])
+                    + pack("<I", effect_id)
+                    + bytes([2])
+                    if effect_count
+                    else b""
+                )
+                + bytes([0])               # metadata count
+                + pack("<H", 1)             # one InitialRTPC curve
+                + pack("<I", 0x11223344)   # RTPC ID
+                + bytes([0, 0, 0x2B])       # type, accum, OutputBusVolume
+                + pack("<I", 0x55667788)   # curve ID
+                + bytes([2])                # decibel scaling
+                + pack("<H", 1)             # one curve point
+                + pack("<ffI", 0.0, 1.0, 4) # linear point
+                + bytes([1, 0x2B, 2, 1])    # state prop: OutputBusVolume
+                + bytes([1])                # one state group
+                + pack("<I", 0x99AABBCC)   # group ID
+                + bytes([0, 1])             # immediate, one state
+                + pack("<I", 0xDDEEFF00)   # state ID
+                + pack("<H", 1)             # one state value
+                + pack("<Hf", 0x2B, -6.0)
+            )
+
+        parsed_non_empty = build_audio.hirc_v150_bus_processing(
+            8, bus_payload(1), {effect_id}
+        )
+        parsed_empty = build_audio.hirc_v150_bus_processing(
+            8, bus_payload(0), {effect_id}
+        )
+
+        self.assertEqual(
+            parsed_non_empty["effectParserStatus"],
+            "exactTypedV150NonEmptyEffectChunk",
+        )
+        self.assertEqual(parsed_non_empty["serializedBusParserStatus"],
+                         "typedExactV150BusInitialValues")
+        self.assertEqual(parsed_non_empty["effectChunkOffset"], 36)
+        self.assertEqual(parsed_non_empty["serializedRecoveryTimeMs"], 1000)
+        self.assertEqual(parsed_non_empty["serializedMaxDuckVolumeDb"], -96.0)
+        state_rtpc = parsed_non_empty["serializedStateAndRtpc"]
+        self.assertEqual(
+            state_rtpc["parserStatus"],
+            "typedExactV150BusInitialRtpcAndState",
+        )
+        self.assertEqual(state_rtpc["rtpcCurveCount"], 1)
+        self.assertEqual(state_rtpc["rtpcPointCount"], 1)
+        self.assertEqual(state_rtpc["rtpcCurves"][0]["parameterLabel"], "OutputBusVolume")
+        self.assertEqual(state_rtpc["stateGroupCount"], 1)
+        self.assertEqual(state_rtpc["stateValueCount"], 1)
+        self.assertEqual(
+            state_rtpc["stateGroups"][0]["states"][0]["values"][0]["value"],
+            -6.0,
+        )
+        self.assertEqual(parsed_non_empty["effectSlotCount"], 1)
+        self.assertEqual(
+            parsed_empty["effectParserStatus"],
+            "exactTypedV150EmptyEffectChunk",
+        )
+        self.assertEqual(parsed_empty["effectSlotCount"], 0)
+
+    def test_hirc_bus_rtpc_state_suffix_fails_closed_on_truncation(self) -> None:
+        parsed = build_audio._hirc_v150_bus_rtpc_state(bytes([0, 0, 1]), 0)
+
+        self.assertEqual(parsed["parserStatus"], "failedClosed")
+        self.assertIn("truncated", parsed["diagnostic"])
+
+    def test_hirc_bus_catalog_resolves_parent_path_and_bus_effect_plugin(self) -> None:
+        root_bus_id = 0x10203040
+        aux_bus_id = 0x50607080
+        empty_aux_bus_id = 0x50607081
+        effect_id = 0x90A0B0C0
+        definition = build_audio.hirc_v150_effect_definition(
+            17, pack("<II", 0x008B0003, 8) + bytes(8)
+        )
+        self.assertIsNotNone(definition)
+        effect_candidates = {}
+        build_audio.add_hirc_effect_definition_candidate(
+            effect_candidates, effect_id, definition, bank_id=7, bank_name="init.pck"
+        )
+        bus_candidates = {}
+        build_audio.add_hirc_bus_definition_candidate(
+            bus_candidates,
+            root_bus_id,
+            8,
+            pack("<I", 0) + bytes(20),
+            bank_id=7,
+            bank_name="init.pck",
+        )
+        build_audio.add_hirc_bus_definition_candidate(
+            bus_candidates,
+            aux_bus_id,
+            18,
+            pack("<I", root_bus_id)
+            + bytes([0xAA, 0xBB])
+            + bytes([1, 0, 2])
+            + pack("<I", effect_id)
+            + bytes([2, 0, 0]),
+            bank_id=7,
+            bank_name="init.pck",
+        )
+        build_audio.add_hirc_bus_definition_candidate(
+            bus_candidates,
+            empty_aux_bus_id,
+            18,
+            pack("<I", root_bus_id)
+            + bytes([0xAA, 0xBB])
+            + bytes([0, 0, 0]),
+            bank_id=7,
+            bank_name="init.pck",
+        )
+
+        effects, buses = build_audio.finalize_hirc_post_process_catalog(
+            effect_candidates,
+            {
+                root_bus_id: build_audio.Counter({8: 1}),
+                aux_bus_id: build_audio.Counter({18: 1}),
+                empty_aux_bus_id: build_audio.Counter({18: 1}),
+            },
+            bus_candidates,
+        )
+        path = build_audio.hirc_bus_parent_path(aux_bus_id, buses)
+
+        self.assertEqual(
+            buses[aux_bus_id]["resolutionStatus"],
+            "exactGlobalAuxiliaryBusDefinition",
+        )
+        self.assertEqual(
+            buses[aux_bus_id]["parentResolutionStatus"], "exactGlobalBusParent"
+        )
+        self.assertEqual(
+            buses[empty_aux_bus_id]["effectParserStatus"],
+            "exactCrossCorrelatedEmptyEffectChunk",
+        )
+        self.assertEqual(buses[empty_aux_bus_id]["effectSlotCount"], 0)
+        self.assertEqual(
+            build_audio.hirc_bus_parent_path(empty_aux_bus_id, buses)[
+                "unresolvedBusProcessingIds"
+            ],
+            [root_bus_id],
+        )
+        self.assertEqual(buses[aux_bus_id]["effects"][0]["pluginName"], "Gain")
+        self.assertEqual(
+            buses[aux_bus_id]["effects"][0]["parameterValues"]["fullBandGainDb"],
+            0.0,
+        )
+        self.assertEqual(path["busPathIds"], [aux_bus_id, root_bus_id])
+        self.assertEqual(path["busPathResolutionStatus"], "exactGlobalBusParentPath")
+        self.assertEqual(path["effectBusIds"], [aux_bus_id])
+        self.assertEqual(path["unresolvedBusProcessingIds"], [root_bus_id])
+
+        summary = {
+            "effectNodes": [],
+            "outputBuses": [],
+            "auxiliaryBuses": [{
+                "sendKind": "userDefined",
+                "busId": aux_bus_id,
+                "referenceCount": 2,
+            }],
+        }
+        build_audio.resolve_hirc_post_process_summary(summary, effects, buses)
+        send = summary["auxiliaryBuses"][0]
+        self.assertEqual(
+            send["resolutionStatus"], "exactGlobalAuxiliaryBusDefinition"
+        )
+        self.assertEqual(send["busPathIds"], [aux_bus_id, root_bus_id])
+        self.assertEqual(send["effectBusIds"], [aux_bus_id])
+        self.assertEqual(
+            summary["auxiliaryBusResolutionCounts"],
+            {"exactGlobalAuxiliaryBusDefinition": 2},
+        )
+
+    def test_hirc_post_process_catalog_counts_roomverb_as_partial_semantics(self) -> None:
+        effect_id = 704228860
+        payload = roomverb_parameter_data()
+        definition = build_audio.hirc_v150_effect_definition(
+            17, pack("<II", 0x00760003, len(payload)) + payload
+        )
+        self.assertIsNotNone(definition)
+        candidates = {}
+        build_audio.add_hirc_effect_definition_candidate(
+            candidates, effect_id, definition, bank_id=7
+        )
+        effects, buses = build_audio.finalize_hirc_post_process_catalog(
+            candidates, {}
+        )
+        summary = {
+            "effectNodes": [{"effects": [{"effectId": effect_id}]}],
+            "outputBuses": [],
+        }
+
+        build_audio.resolve_hirc_post_process_summary(summary, effects, buses)
+
+        slot = summary["effectNodes"][0]["effects"][0]
+        self.assertEqual(slot["pluginName"], "RoomVerb")
+        self.assertIn("IDs 100..110", slot["parameterSemanticBoundary"])
+        self.assertEqual(summary["decodedEffectParameterReferenceCount"], 1)
+        self.assertEqual(summary["exactEffectParameterReferenceCount"], 0)
+        self.assertEqual(summary["partialEffectParameterReferenceCount"], 1)
+
+    def test_hirc_post_process_catalog_prefers_exact_bank_package_definition(self) -> None:
+        effect_id = 479364165
+        candidates = {}
+        for bank_name, payload in (("base.pck", b"first"), ("patch.pck", b"other")):
+            definition = build_audio.hirc_v150_effect_definition(
+                17, pack("<II", 0x00690003, len(payload)) + payload
+            )
+            self.assertIsNotNone(definition)
+            build_audio.add_hirc_effect_definition_candidate(
+                candidates,
+                effect_id,
+                definition,
+                bank_id=7,
+                bank_name=bank_name,
+            )
+        effects, buses = build_audio.finalize_hirc_post_process_catalog(
+            candidates, {}
+        )
+        summary = {
+            "effectNodes": [{"effects": [{"effectId": effect_id}]}],
+            "outputBuses": [],
+        }
+
+        build_audio.resolve_hirc_post_process_summary(
+            summary, effects, buses, bank_id=7, bank_name="base.pck"
+        )
+
+        slot = summary["effectNodes"][0]["effects"][0]
+        self.assertEqual(slot["pluginName"], "Parametric EQ")
+        self.assertEqual(
+            slot["resolutionStatus"],
+            "exactSameBankPackagePluginDefinition",
+        )
+
     def test_hirc_container_parent_decodes_variable_fx_prefix(self) -> None:
         parent_id = 386813193
         # NodeBase: override FX, one authored effect row, metadata header,
@@ -857,6 +2200,11 @@ class AudioCategoryTests(unittest.TestCase):
         ):
             with self.subTest(option=option), mock.patch("sys.stderr"), self.assertRaises(SystemExit):
                 build_audio.parse_args([option, value])
+        with mock.patch("sys.stderr"), self.assertRaises(SystemExit):
+            build_audio.parse_args(["--refresh-hirc"])
+        refreshed = build_audio.parse_args(["--skip-decode", "--refresh-hirc"])
+        self.assertTrue(refreshed.skip_decode)
+        self.assertTrue(refreshed.refresh_hirc)
 
     def test_dialog_path_uses_requested_browser_extension(self) -> None:
         self.assertEqual(
@@ -982,6 +2330,60 @@ class AudioCategoryTests(unittest.TestCase):
         )
         self.assertNotIn("delay", failed)
 
+    def test_v150_control_actions_decode_state_switch_and_game_parameter_tails(self) -> None:
+        state = b"".join([
+            pack("<HI", 0x1204, 1234),
+            bytes([0, 0, 0]),
+            pack("<II", 0x11223344, 0x55667788),
+        ])
+        state_result = build_audio.hirc_v150_control_action(state, 150)
+        self.assertEqual(state_result["actionControlParserStatus"], "typedExactV150")
+        self.assertEqual(state_result["groupIdHex"], "0x11223344")
+        self.assertEqual(state_result["stateIdHex"], "0x55667788")
+
+        switch = b"".join([
+            pack("<HI", 0x1901, 1234),
+            bytes([0, 0, 0]),
+            pack("<II", 0x01020304, 0x05060708),
+        ])
+        switch_result = build_audio.hirc_v150_control_action(switch, 150)
+        self.assertEqual(switch_result["actionControlParserStatus"], "typedExactV150")
+        self.assertEqual(switch_result["groupIdHex"], "0x01020304")
+        self.assertEqual(switch_result["switchIdHex"], "0x05060708")
+
+        game_parameter = b"".join([
+            pack("<HI", 0x1302, 1234),
+            bytes([0, 0, 0]),
+            bytes([0x04, 0x01, 0x02]),
+            pack("<fff", 1.5, -2.0, 3.25),
+            bytes([0]),
+        ])
+        game_parameter_result = build_audio.hirc_v150_control_action(game_parameter, 150)
+        self.assertEqual(game_parameter_result["actionControlParserStatus"], "typedExactV150")
+        self.assertEqual(game_parameter_result["fadeCurveId"], 4)
+        self.assertTrue(game_parameter_result["bypassTransition"])
+        self.assertEqual(game_parameter_result["valueMeaningLabel"], "offset")
+        self.assertEqual(game_parameter_result["valueRange"]["base"], 1.5)
+        self.assertEqual(game_parameter_result["exceptions"], [])
+
+    def test_v150_control_actions_decode_active_flags_and_fail_closed(self) -> None:
+        stop = b"".join([
+            pack("<HI", 0x0103, 1234),
+            bytes([0, 0, 0]),
+            bytes([0x06, 0x06]),
+            bytes([0]),
+        ])
+        result = build_audio.hirc_v150_control_action(stop, 150)
+        self.assertEqual(result["actionControlParserStatus"], "typedExactV150")
+        self.assertTrue(result["applyToStateTransitions"])
+        self.assertTrue(result["applyToDynamicSequence"])
+        self.assertEqual(result["exceptions"], [])
+
+        failed = build_audio.hirc_v150_control_action(stop[:-1], 150)
+        self.assertEqual(failed["actionControlParserStatus"], "failedClosed")
+        self.assertEqual(failed["actionControlParserFailure"]["reason"], "truncatedExceptionCount")
+        self.assertNotIn("actionControlEvidenceBoundary", failed)
+
     def test_v150_playback_action_failures_are_bounded_and_claim_no_timing(self) -> None:
         valid_empty_play = b"".join([
             pack("<HI", 0x0403, 1234),
@@ -1055,6 +2457,13 @@ class AudioCategoryTests(unittest.TestCase):
         self.assertEqual(result["actionDispatchEvidence"]["typedPlaybackActionCount"], 2)
         self.assertEqual(result["actionDispatchEvidence"]["failedPlaybackActionCount"], 0)
         self.assertTrue(result["actionDispatchEvidence"]["simultaneityCandidate"])
+        self.assertEqual(result["actionEvidence"][0]["serializedPathIds"], [1, 2])
+        self.assertEqual(
+            result["actionEvidence"][0]["serializedPathTypeLabels"],
+            ["event", "action"],
+        )
+        self.assertEqual(result["actionEvidence"][0]["targetTypeLabel"], "sound")
+        self.assertEqual(result["actionEvidence"][0]["serializedPathRelations"], [])
 
         objects[3] = {"type": 3, "data": play(4, 350)}
         staggered = build_audio.traverse_hirc_event(1, objects, {777}, bank_version=150)
@@ -1863,6 +3272,26 @@ class AudioCategoryTests(unittest.TestCase):
             [row["mediaLocationStatus"] for row in result["nonMediaSourceEvidence"]],
             ["unresolvedExternalSource", "synthesizedSource"],
         )
+
+
+class GameParameterEvidenceTests(unittest.TestCase):
+    def test_metadata_game_parameter_catalog_is_pinned_and_cross_matchable(self) -> None:
+        catalog = build_audio.HIRC_GAME_PARAMETER_NAME_EVIDENCE
+        self.assertEqual(
+            catalog["source"],
+            "il2cpp_data/Metadata/global-metadata.dat",
+        )
+        self.assertEqual(len(catalog["metadataSha256"]), 64)
+        entries = {row["parameterIdHex"]: row for row in catalog["entries"]}
+        self.assertEqual(
+            entries["0x590f4cd1"]["metadataField"].split(".")[-1],
+            "AU_RTPC_CINE_CTRL_VOL_MU",
+        )
+        self.assertEqual(
+            entries["0x52aabb05"]["metadataField"].split(".")[-1],
+            "AU_RTPC_CINE_CTRL_VOL_SFX",
+        )
+        self.assertIn("6146/6148", catalog["evidenceBoundary"])
 
 
 class AudioDumperTests(unittest.TestCase):

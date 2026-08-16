@@ -187,9 +187,18 @@ def annotate_shared_wwise_media_leaves(events: list[dict[str, Any]]) -> int:
         event["audioLibraryMediaLeafStatus"] = "exactCompleteWwiseMediaIdSetWithAuthoredEvent"
         event["audioLibraryMediaEquivalentEventIds"] = sorted(matches)[:24]
         event["audioLibraryMediaEquivalentEventCount"] = len(matches)
-        event["audioLibraryMediaEquivalentCategories"] = sorted({
+        categories = sorted({
             str(row.get("category") or "") for row in matches.values()
         } - {"", "unknown"})
+        event["audioLibraryMediaEquivalentCategories"] = categories
+        # A complete media-leaf set is not a trigger proof, but when every
+        # authored Event with that exact set agrees on one non-unknown broad
+        # category, the anonymous Event's library output can safely inherit
+        # that category. Keep purpose/placement unknown and expose a distinct
+        # evidence label so this cannot be mistaken for caller recovery.
+        if event.get("category") == "unknown" and len(categories) == 1:
+            event["category"] = categories[0]
+            event["categoryEvidence"] = "exactCompleteWwiseMediaLeafSetCategory"
         event["audioLibrarySharedMediaIds"] = [media_id for _bank, media_id in signature][:64]
         event["audioLibrarySharedMediaPackages"] = sorted({bank for bank, _media_id in signature if bank})
         event["audioLibraryMediaPurposeHintStatus"] = (

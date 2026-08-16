@@ -584,6 +584,43 @@ namespace EndfieldGraphShaderLabEditor
                 $"materials={materialCount}; existing material/texture GUIDs preserved.");
         }
 
+        public static void RefreshSelectedPlayableCharacterMaterials()
+        {
+            EnsureFolders();
+            TextureImportCache.Clear();
+            ManifestCharacterSpec[] selected = FilterPreviewCharacters(
+                PlayableCatalogCharacters());
+            if (selected.Length == 0)
+                throw new InvalidOperationException(
+                    "ENDFIELD_PREVIEW_ACTORS selected no playable characters.");
+
+            int materialCount = 0;
+            foreach (ManifestCharacterSpec character in selected)
+            {
+                var manifest = Dict(ManifestMiniJson.Deserialize(File.ReadAllText(
+                    Path.Combine(Directory.GetCurrentDirectory(), character.ManifestAssetPath),
+                    Encoding.UTF8)));
+                string actorPrefix = Str(
+                    manifest.TryGetValue("model", out object modelObj) ? modelObj : null,
+                    character.RootName);
+                string actorRoot = ActorGeneratedRoot(
+                    character.ManifestAssetPath,
+                    character.RootName);
+                EnsureActorFolders(actorRoot, clearGeneratedAssets: false);
+                materialCount += BuildMaterials(
+                    Dict(manifest["materials"]),
+                    actorPrefix,
+                    actorRoot).Count;
+            }
+            ApplyGeneratedTextureImportProfiles(
+                selected.Select(CharacterGeneratedAssetRoot).ToArray());
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            Debug.Log(
+                $"Targeted character material refresh complete: actors={selected.Length}, " +
+                $"materials={materialCount}.");
+        }
+
         public static void BuildSharedViewer()
         {
             BuildCharacterViewer(
@@ -3148,7 +3185,8 @@ namespace EndfieldGraphShaderLabEditor
 
             try
             {
-                ManifestCharacterSpec[] characters = PlayableCatalogCharacters();
+                ManifestCharacterSpec[] characters = FilterPreviewCharacters(
+                    PlayableCatalogCharacters());
                 report.character_count = characters.Length;
                 var expectedPngNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 foreach (ManifestCharacterSpec character in characters)
@@ -3196,7 +3234,8 @@ namespace EndfieldGraphShaderLabEditor
                 Transform lightingRoot = FindSceneGameObject("Lighting")?.transform;
                 ConfigurePreviewLighting(scene, lightingRoot);
                 ApplyGeneratedMaterialProfileFlags();
-                ApplyGeneratedTextureImportProfiles();
+                ApplyGeneratedTextureImportProfiles(
+                    characters.Select(CharacterGeneratedAssetRoot).ToArray());
                 ClearPlayableCharacterPreviewActors(charactersRoot);
                 AssertPlayableCharacterPreviewIsolation(charactersRoot, null);
                 EditorUtility.UnloadUnusedAssetsImmediate();
@@ -3290,6 +3329,57 @@ namespace EndfieldGraphShaderLabEditor
             Debug.Log(
                 $"Rendered {report.succeeded} playable-character previews: " +
                 $"{outputDirectory}");
+        }
+
+        private static ManifestCharacterSpec[] FilterPreviewCharacters(
+            ManifestCharacterSpec[] characters)
+        {
+            string raw = Environment.GetEnvironmentVariable(
+                "ENDFIELD_PREVIEW_ACTORS") ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(raw))
+                return characters ?? Array.Empty<ManifestCharacterSpec>();
+
+            var requested = new HashSet<string>(
+                raw.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(value => value.Trim())
+                    .Where(value => !string.IsNullOrEmpty(value)),
+                StringComparer.OrdinalIgnoreCase);
+            ManifestCharacterSpec[] selected = (characters ?? Array.Empty<ManifestCharacterSpec>())
+                .Where(character =>
+                    requested.Contains(character.RootName) ||
+                    requested.Contains(character.DisplayName))
+                .ToArray();
+            if (selected.Length != requested.Count)
+            {
+                var matched = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                foreach (ManifestCharacterSpec character in selected)
+                {
+                    matched.Add(character.RootName);
+                    matched.Add(character.DisplayName);
+                }
+                string[] missing = requested.Where(value => !matched.Contains(value)).ToArray();
+                if (missing.Length > 0)
+                    throw new InvalidDataException(
+                        "Requested preview actors are absent from the playable catalog: " +
+                        string.Join(", ", missing));
+            }
+            return selected;
+        }
+
+        private static string CharacterGeneratedAssetRoot(
+            ManifestCharacterSpec character)
+        {
+            string prefabPath = character != null
+                ? character.PrefabAssetPath ?? string.Empty
+                : string.Empty;
+            int marker = prefabPath.IndexOf(
+                "/Prefabs/",
+                StringComparison.OrdinalIgnoreCase);
+            if (marker <= 0)
+                throw new InvalidDataException(
+                    "Playable-character prefab path has no generated actor root: " +
+                    prefabPath);
+            return prefabPath.Substring(0, marker);
         }
 
         [MenuItem("Endfield/Character Recovery Lab/Render Source-Bound Item Widget Previews")]
@@ -11023,7 +11113,12 @@ namespace EndfieldGraphShaderLabEditor
             GameObjectUtility.RemoveMonoBehavioursWithMissingScript(catalogObject);
             var catalog = catalogObject.AddComponent<CharacterRecoveryActorCatalog>();
             catalog.spawnParent = layout.CharactersRoot;
-            catalog.keepAllModelsResident = true;
+            // The shared viewer is a selector, not a resident gallery. Keeping
+            // all 31 prefab references and instances resident makes opening the
+            // scene import every mesh, texture, material, and animation before
+            // the first frame. Runtime selection resolves prefabAssetPath in
+            // the editor and keeps only the selected actor alive.
+            catalog.keepAllModelsResident = false;
             catalog.horizontalSpacing = CharacterLineupHorizontalSpacing;
             var entries = new List<CharacterRecoveryActorCatalogEntry>();
             foreach (ActorBuildResult actor in actors)
@@ -11059,7 +11154,7 @@ namespace EndfieldGraphShaderLabEditor
                     displayName = actor.DisplayName,
                     rootName = actor.RootName,
                     prefabAssetPath = actor.PrefabAssetPath,
-                    prefab = prefab,
+                    prefab = null,
                     presentationProfile = presentationProfile,
                 });
             }
@@ -11174,9 +11269,14 @@ namespace EndfieldGraphShaderLabEditor
                 throw new InvalidOperationException(
                     "Character viewer resident lineup contains no actors.");
 
-            var expectedRootNames = new HashSet<string>(
-                ordered.Select(actor => actor.RootName),
-                StringComparer.OrdinalIgnoreCase);
+            ActorBuildResult activeActor = ordered.FirstOrDefault(
+                actor => string.Equals(
+                    actor.RootName,
+                    preferredActiveRootName,
+                    StringComparison.OrdinalIgnoreCase)) ?? ordered[0];
+
+            // Keep one scene instance. The catalog retains paths for every
+            // other actor, which CharacterRecoveryViewerUI loads on demand.
             for (int childIndex = layout.CharactersRoot.childCount - 1;
                  childIndex >= 0;
                  childIndex--)
@@ -11184,7 +11284,10 @@ namespace EndfieldGraphShaderLabEditor
                 Transform child = layout.CharactersRoot.GetChild(childIndex);
                 if (child == null ||
                     child.GetComponent<CharacterRecoveryRig>() == null ||
-                    expectedRootNames.Contains(child.name))
+                    string.Equals(
+                        child.name,
+                        activeActor.RootName,
+                        StringComparison.OrdinalIgnoreCase))
                     continue;
                 UnityEngine.Object.DestroyImmediate(child.gameObject);
             }
@@ -11192,6 +11295,11 @@ namespace EndfieldGraphShaderLabEditor
             for (int index = 0; index < ordered.Count; index++)
             {
                 ActorBuildResult actor = ordered[index];
+                if (actor != activeActor)
+                {
+                    actor.Root = null;
+                    continue;
+                }
                 GameObject root = actor.Root;
                 if (root == null || root.scene != scene)
                 {
@@ -11220,12 +11328,9 @@ namespace EndfieldGraphShaderLabEditor
                 }
 
                 root.transform.SetParent(layout.CharactersRoot, false);
-                root.transform.localPosition = new Vector3(
-                    (index - (ordered.Count - 1) * 0.5f) *
-                        CharacterLineupHorizontalSpacing,
-                    0f,
-                    0f);
-                root.transform.SetSiblingIndex(index);
+                root.transform.localPosition = Vector3.zero;
+                root.transform.localRotation = Quaternion.identity;
+                root.transform.SetSiblingIndex(0);
                 root.SetActive(true);
                 CharacterRecoveryRig rig = root.GetComponent<CharacterRecoveryRig>();
                 if (rig == null)
@@ -11237,12 +11342,6 @@ namespace EndfieldGraphShaderLabEditor
                     rig.displayName = actor.DisplayName;
                 if (PrefabUtility.IsPartOfPrefabInstance(root))
                 {
-                    // Most generated character prefab roots intentionally keep
-                    // their legacy single-viewer active flag. The resident
-                    // lineup overrides that flag in the scene. Record the
-                    // override explicitly so a later targeted prefab rebuild
-                    // (for example Zhuangfy's gacha runtime) cannot silently
-                    // revert one resident actor to the prefab's inactive state.
                     PrefabUtility.RecordPrefabInstancePropertyModifications(root);
                     PrefabUtility.RecordPrefabInstancePropertyModifications(root.transform);
                     PrefabUtility.RecordPrefabInstancePropertyModifications(rig);
@@ -11252,12 +11351,7 @@ namespace EndfieldGraphShaderLabEditor
                 EditorUtility.SetDirty(rig);
             }
 
-            ActorBuildResult activeActor = ordered.FirstOrDefault(
-                actor => string.Equals(
-                    actor.RootName,
-                    preferredActiveRootName,
-                    StringComparison.OrdinalIgnoreCase));
-            return activeActor ?? ordered[0];
+            return activeActor;
         }
 
         private static void EnsureCharacterRecoveryViewerUi(ViewerSceneLayout layout = null)

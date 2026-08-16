@@ -7,7 +7,9 @@ import argparse
 import base64
 import hashlib
 import json
+import math
 import re
+import struct
 import subprocess
 import tempfile
 import time
@@ -197,7 +199,7 @@ EVENT_BANK_VFS_BLOCK_TYPES = (
     "audio-korean",
 )
 EVENT_BANK_FILE_REGEX = r"(^|[\\/])(?:[^\\/]*banks|hotfix[^\\/]*)\.pck$"
-EVENT_EVIDENCE_SCHEMA_VERSION = 27
+EVENT_EVIDENCE_SCHEMA_VERSION = 43
 HASHED_EVENT_KEY_RE = re.compile(r"^hashed-event:0x([0-9a-f]{8})$", re.IGNORECASE)
 
 # Wwise 2024.1 / bank version 150 HIRC action operations.  The serialized
@@ -209,14 +211,37 @@ HIRC_ACTION_OPERATION_LABELS = {
     0x0200: "pause",
     0x0300: "resume",
     0x0400: "play",
+    0x0800: "setPitch",
+    0x0900: "resetPitch",
+    0x0A00: "setVolume",
+    0x0B00: "resetVolume",
+    0x0C00: "setBusVolume",
+    0x0D00: "resetBusVolume",
+    0x0E00: "setLPF",
+    0x0F00: "resetLPF",
+    0x1000: "useState",
+    0x1100: "unuseState",
     0x0600: "mute",
     0x0700: "unmute",
     0x1200: "setState",
     0x1300: "setGameParameter",
     0x1400: "resetGameParameter",
     0x1900: "setSwitch",
+    0x1A00: "break",
     0x1B00: "trigger",
+    0x1E00: "seek",
+    0x1F00: "release",
     0x2100: "playEvent",
+    0x2200: "resetPlaylist",
+    0x2000: "setHPF",
+    0x3000: "resetHPF",
+    0x3100: "setFX",
+    0x3200: "resetFX",
+    0x3300: "setBypassFXSlot",
+    0x3400: "resetBypassFXSlot",
+    0x3500: "setBypassAllFX",
+    0x3600: "resetBypassAllFX",
+    0x3700: "resetAllBypassFX",
 }
 HIRC_PLAYBACK_ACTION_OPERATIONS = frozenset({0x0400, 0x2100})
 HIRC_ACTION_PROPERTY_LABELS = {
@@ -250,6 +275,692 @@ HIRC_MUSIC_CHILD_TYPES = {
 }
 HIRC_TYPED_CHILD_CONTAINER_TYPES = frozenset({5, 6, 7, 9, *HIRC_MUSIC_PARENT_NODE_TYPES})
 HIRC_AUDIO_NODE_TYPES = frozenset({2, 5, 6, 7, 9, *HIRC_MUSIC_NODE_TYPES})
+HIRC_RTPC_TYPE_LABELS = {
+    0: "gameParameter",
+    1: "midiParameter",
+    2: "switch",
+    3: "state",
+    4: "modulator",
+}
+HIRC_ACTION_VALUE_MEANING_LABELS = {
+    0: "default",
+    1: "independent",
+    2: "offset",
+}
+HIRC_RTPC_ACCUM_LABELS = {
+    0: "none",
+    1: "exclusive",
+    2: "additive",
+    3: "multiply",
+    4: "boolean",
+    5: "maximum",
+    6: "filter",
+}
+HIRC_RTPC_SCALING_LABELS = {
+    0: "none",
+    2: "decibel",
+    3: "logarithmic",
+    4: "decibelToLinear",
+}
+HIRC_STATE_SYNC_TYPE_LABELS = {
+    0: "immediate",
+    1: "nextGrid",
+    2: "nextBar",
+    3: "nextBeat",
+    4: "nextMarker",
+    5: "nextUserMarker",
+    6: "entryMarker",
+    7: "exitMarker",
+    8: "exitNever",
+    9: "lastExitPosition",
+}
+HIRC_RTPC_PARAMETER_LABELS = {
+    0x00: "Volume",
+    0x01: "LFE",
+    0x02: "Pitch",
+    0x03: "LPF",
+    0x04: "HPF",
+    0x05: "BusVolume",
+    0x06: "InitialDelay",
+    0x07: "MakeUpGain",
+    0x08: "DeprecatedFeedbackVolume",
+    0x09: "DeprecatedFeedbackLowpass",
+    0x0A: "DeprecatedFeedbackPitch",
+    0x0B: "MidiTransposition",
+    0x0C: "MidiVelocityOffset",
+    0x0D: "PlaybackSpeed",
+    0x0E: "MuteRatio",
+    0x0F: "PlayMechanismSpecialTransitionsValue",
+    0x10: "MaxNumInstances",
+    0x11: "Priority",
+    0x12: "PositionPanX2D",
+    0x13: "PositionPanY2D",
+    0x14: "PositionPanX3D",
+    0x15: "PositionPanY3D",
+    0x16: "PositionPanZ3D",
+    0x17: "PositioningTypeBlend",
+    0x18: "PositioningDivergenceCenterPercent",
+    0x19: "PositioningConeAttenuationOnOff",
+    0x1A: "PositioningConeAttenuation",
+    0x1B: "PositioningConeLPF",
+    0x1C: "PositioningConeHPF",
+    0x1D: "BypassFX0",
+    0x1E: "BypassFX1",
+    0x1F: "BypassFX2",
+    0x20: "BypassFX3",
+    0x21: "BypassAllFX",
+    0x22: "HDRBusThreshold",
+    0x23: "HDRBusReleaseTime",
+    0x24: "HDRBusRatio",
+    0x25: "HDRActiveRange",
+    0x26: "GameAuxSendVolume",
+    0x27: "UserAuxSendVolume0",
+    0x28: "UserAuxSendVolume1",
+    0x29: "UserAuxSendVolume2",
+    0x2A: "UserAuxSendVolume3",
+    0x2B: "OutputBusVolume",
+    0x2C: "OutputBusHPF",
+    0x2D: "OutputBusLPF",
+    0x2E: "PositioningEnableAttenuation",
+    0x2F: "ReflectionsVolume",
+    0x30: "UserAuxSendLPF0",
+    0x31: "UserAuxSendLPF1",
+    0x32: "UserAuxSendLPF2",
+    0x33: "UserAuxSendLPF3",
+    0x34: "UserAuxSendHPF0",
+    0x35: "UserAuxSendHPF1",
+    0x36: "UserAuxSendHPF2",
+    0x37: "UserAuxSendHPF3",
+    0x38: "GameAuxSendLPF",
+    0x39: "GameAuxSendHPF",
+    0x3A: "PositionPanZ2D",
+    0x3B: "BypassAllMetadata",
+}
+# A small set of GameParameter names recovered from the installed client's
+# IL2CPP metadata and cross-matched against serialized HIRC RTPC IDs.  Keep
+# these separate from Wwise property labels: these are game-side parameter
+# symbols, not DSP/property names.  The metadata hash pins this catalog to the
+# audited client build; an absent HIRC match is intentionally not invented.
+HIRC_GAME_PARAMETER_NAME_EVIDENCE = {
+    "source": "il2cpp_data/Metadata/global-metadata.dat",
+    "metadataSha256": (
+        "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
+    ),
+    "evidence": "exactStaticFieldValueCrossMatchedToSerializedHircRtpcId",
+    "entries": (
+        {
+            "parameterId": 0x6B7DC358,
+            "parameterIdHex": "0x6b7dc358",
+            "metadataField": (
+                "Beyond.Gameplay.Audio.AudioGameplayConstants+GameParameters."
+                "AU_RTPC_CINE_CTRL_VOL_AMB"
+            ),
+        },
+        {
+            "parameterId": 0x590F4CD1,
+            "parameterIdHex": "0x590f4cd1",
+            "metadataField": (
+                "Beyond.Gameplay.Audio.AudioGameplayConstants+GameParameters."
+                "AU_RTPC_CINE_CTRL_VOL_MU"
+            ),
+        },
+        {
+            "parameterId": 0x52AABB05,
+            "parameterIdHex": "0x52aabb05",
+            "metadataField": (
+                "Beyond.Gameplay.Audio.AudioGameplayConstants+GameParameters."
+                "AU_RTPC_CINE_CTRL_VOL_SFX"
+            ),
+        },
+        {
+            "parameterId": 0xBA4A40B7,
+            "parameterIdHex": "0xba4a40b7",
+            "metadataField": (
+                "Beyond.Gameplay.Audio.AudioGameplayConstants+GameParameters."
+                "AU_RTPC_IS_MUTE_BY_SDK_WEBVIEW"
+            ),
+        },
+        {
+            "parameterId": 0x7EC2F9AA,
+            "parameterIdHex": "0x7ec2f9aa",
+            "metadataField": (
+                "Beyond.Gameplay.Audio.AudioGameplayConstants+GameParameters."
+                "AU_RTPC_IS_SURROUND_CHANNELS"
+            ),
+        },
+        {
+            "parameterId": 0x3794392F,
+            "parameterIdHex": "0x3794392f",
+            "metadataField": (
+                "Beyond.Gameplay.Audio.AudioGameplayConstants+GameParameters."
+                "AU_RTPC_GLOBAL_VOL_MASTER_IOS_WORKAROUND"
+            ),
+        },
+    ),
+    "evidenceBoundary": (
+        "The six field names and 32-bit values are exact for the pinned metadata "
+        "file and each value is present in the exported HIRC RTPC inventory. "
+        "This catalog does not name Wwise property IDs 6146/6148, and it does "
+        "not infer runtime setter order, live values, or audibility."
+    ),
+}
+# v150 InitialParams uses AkPropID, whose numbering is distinct from the
+# RTPC/state parameter IDs above.  Keep this table separate so authored base
+# values are not mislabeled as runtime RTPC targets.
+HIRC_INITIAL_PROPERTY_LABELS = {
+    0x00: "Volume",
+    0x01: "Pitch",
+    0x02: "LPF",
+    0x03: "HPF",
+    0x04: "BusVolume",
+    0x05: "MakeUpGain",
+    0x06: "Priority",
+    0x07: "MuteRatio",
+    0x08: "UserAuxSendVolume0",
+    0x09: "UserAuxSendVolume1",
+    0x0A: "UserAuxSendVolume2",
+    0x0B: "UserAuxSendVolume3",
+    0x0C: "GameAuxSendVolume",
+    0x0D: "OutputBusVolume",
+    0x0E: "OutputBusHPF",
+    0x0F: "OutputBusLPF",
+    0x10: "UserAuxSendLPF0",
+    0x11: "UserAuxSendLPF1",
+    0x12: "UserAuxSendLPF2",
+    0x13: "UserAuxSendLPF3",
+    0x14: "UserAuxSendHPF0",
+    0x15: "UserAuxSendHPF1",
+    0x16: "UserAuxSendHPF2",
+    0x17: "UserAuxSendHPF3",
+    0x18: "GameAuxSendLPF",
+    0x19: "GameAuxSendHPF",
+    0x1A: "ReflectionBusVolume",
+    0x1B: "HDRBusThreshold",
+    0x1C: "HDRBusRatio",
+    0x1D: "HDRBusReleaseTime",
+    0x1E: "HDRActiveRange",
+    0x1F: "MidiTransposition",
+    0x20: "MidiVelocityOffset",
+    0x21: "PlaybackSpeed",
+    0x22: "InitialDelay",
+    0x23: "PositionPanX2D",
+    0x24: "PositionPanY2D",
+    0x25: "PositionPanZ2D",
+    0x26: "PositionPanX3D",
+    0x27: "PositionPanY3D",
+    0x28: "PositionPanZ3D",
+    0x29: "PositioningCenterPercent",
+    0x2A: "PositioningTypeBlend",
+    0x2B: "PositioningEnableAttenuation",
+    0x2C: "PositioningConeAttenuationOnOff",
+    0x2D: "PositioningConeAttenuation",
+    0x2E: "PositioningConeLPF",
+    0x2F: "PositioningConeHPF",
+    0x30: "BypassFX",
+    0x31: "BypassAllFX",
+    0x32: "Available0",
+    0x33: "Available1",
+    0x34: "Available2",
+    0x35: "MaxNumInstances",
+    0x36: "BypassAllMetadata",
+    0x37: "PlayMechanismSpecialTransitionsValue",
+    0x38: "PriorityDistanceOffset",
+    0x39: "DelayTime",
+    0x3A: "TransitionTime",
+    0x3B: "Probability",
+    0x3C: "DialogueMode",
+    0x3D: "HDRBusGameParam",
+    0x3E: "HDRBusGameParamMin",
+    0x3F: "HDRBusGameParamMax",
+    0x40: "LoopStart",
+    0x41: "LoopEnd",
+    0x42: "TrimInTime",
+    0x43: "TrimOutTime",
+    0x44: "FadeInTime",
+    0x45: "FadeOutTime",
+    0x46: "FadeInCurve",
+    0x47: "FadeOutCurve",
+    0x48: "LoopCrossfadeDuration",
+    0x49: "CrossfadeUpCurve",
+    0x4A: "CrossfadeDownCurve",
+    0x4B: "MidiTrackingRootNote",
+    0x4C: "MidiPlayOnNoteType",
+    0x4D: "MidiKeyRangeMin",
+    0x4E: "MidiKeyRangeMax",
+    0x4F: "MidiVelocityRangeMin",
+    0x50: "MidiVelocityRangeMax",
+    0x51: "MidiChannelMask",
+    0x52: "MidiTempoSource",
+    0x53: "MidiTargetNode",
+    0x54: "Loop",
+    0x55: "AttenuationID",
+}
+HIRC_INITIAL_PROPERTY_U32_LABELS = frozenset({"AttenuationID"})
+
+# Encoded Wwise plug-in class IDs use the low nibble for AkPluginType, the
+# following 12 bits for company ID, and the high 16 bits for plug-in ID.  The
+# built-in effect names below are pinned by the registration records and
+# factory source paths embedded in the shipped AkSoundEngine.dll.  Unknown or
+# third-party IDs remain numeric instead of being guessed from parameter size.
+HIRC_BUILTIN_EFFECT_PLUGIN_LABELS = {
+    0x00690003: "Parametric EQ",
+    0x006A0003: "Delay",
+    0x006C0003: "Compressor",
+    0x006D0003: "Expander",
+    0x006E0003: "Peak Limiter",
+    0x00730003: "Matrix Reverb",
+    0x00760003: "RoomVerb",
+    0x007D0003: "Flanger",
+    0x007E0003: "Guitar Distortion",
+    0x007F0003: "Convolution Reverb",
+    0x00810003: "Meter",
+    0x00820003: "Time Stretch",
+    0x00830003: "Tremolo",
+    0x00840003: "Recorder",
+    0x00870003: "Stereo Delay",
+    0x00880003: "Pitch Shifter",
+    0x008A0003: "Harmonizer",
+    0x008B0003: "Gain",
+    0x00AB0003: "Reflect",
+    0x00BA0003: "Mastering Suite",
+    0x00BE0003: "3D Audio Bed Mixer",
+}
+
+# Exact current-client SetParamsBlock contracts for the effect payloads below.
+# The RVAs are recorded against the shipped AkSoundEngine.dll SHA-256 and are
+# evidence for field order/type, not code that is invoked by the builder.
+# Every decoder also requires the exact serialized size and rejects non-finite
+# floats or invalid booleans/enums.  Raw payload hashes remain available even
+# when a later or unsupported plug-in schema stays opaque.
+HIRC_EFFECT_PARAMETER_CONTRACT = {
+    "akSoundEngineSha256": "b33c3c71e44c305fb1c3903942308f2ab55a7854d68c719fe55e7de323e7dba2",
+    "akSoundEngineFileSize": 3586536,
+    "evidence": "shippedAkSoundEngineSetParamsBlockDisassembly",
+    "schemas": {
+        0x00690003: {
+            "schema": "wwiseParametricEqFxParamsV1",
+            "parameterByteLengths": [56],
+            "setParamsBlockRva": "0x00218860",
+        },
+        0x006A0003: {
+            "schema": "wwiseDelayFxParamsV1",
+            "parameterByteLengths": [18],
+            "setParamsBlockRva": "0x001ed030",
+        },
+        0x006C0003: {
+            "schema": "wwiseCompressorFxParamsV1",
+            "parameterByteLengths": [22],
+            "setParamsBlockRva": "0x001eb650",
+        },
+        0x006D0003: {
+            "schema": "wwiseExpanderFxParamsV1",
+            "parameterByteLengths": [22],
+            "setParamsBlockRva": "0x001eb650",
+        },
+        0x00760003: {
+            "schema": "wwiseRoomVerbFxParamsV1",
+            "parameterByteLengths": [186],
+            "setParamsBlockRva": "0x00231d50",
+            "setParamRva": "0x00231590",
+            "defaultInitRva": "0x00231430",
+            "runtimeErUpdateRva": "0x0022b070",
+            "privateTuningNativeEvidence": {
+                "status": "exactNativeUseRolesPublicNamesUnresolved",
+                "nativeStructOffsetDelta": 14,
+                "ranges": [
+                    {
+                        "setParamIds": [100, 101, 102, 103, 104],
+                        "serializedOffsets": [142, 146, 150, 154, 158],
+                        "nativeStructOffsets": [156, 160, 164, 168, 172],
+                        "role": "earlyReflectionTapPatternSynthesisInputs",
+                        "detail": (
+                            "0x00229b60 reads the five contiguous floats as two "
+                            "endpoint pairs plus a middle variation input, applies "
+                            "linear interpolation and seeded per-tap variation, "
+                            "then 0x0022a010 normalizes the generated values into "
+                            "the ER grid used by per-unit setup."
+                        ),
+                        "consumerRvas": ["0x00229b60"],
+                        "evidenceBoundary": (
+                            "RuntimeErUpdate calls the native pattern generator with "
+                            "the five contiguous values as bounded/randomized tap "
+                            "inputs; the public authoring names remain unresolved."
+                        ),
+                    },
+                    {
+                        "setParamIds": [105, 106, 107],
+                        "serializedOffsets": [162, 166, 170],
+                        "nativeStructOffsets": [176, 180, 184],
+                        "role": "nativeRoleUnobservedInAuditedRoomVerbPath",
+                        "consumerRvas": [],
+                        "evidenceBoundary": (
+                            "The current RoomVerb native region shows exact SetParam, "
+                            "default-initialization, and copy accesses for these fields "
+                            "but no direct read in the audited update helpers."
+                        ),
+                    },
+                    {
+                        "setParamIds": [108],
+                        "serializedOffsets": [174],
+                        "nativeStructOffsets": [188],
+                        "role": "sixChannelCoefficientDerivationInput",
+                        "detail": (
+                            "0x0022ab2e scales the value by 2*pi and a native "
+                            "divisor, then writes six coefficients of the form "
+                            "1 - (2*pi * value / divisor) for ER/reverb unit "
+                            "initialization."
+                        ),
+                        "consumerRvas": ["0x0022ab2e"],
+                        "evidenceBoundary": (
+                            "Runtime initialization multiplies this value by a native "
+                            "constant and derives six channel coefficients; no public "
+                            "parameter name is inferred."
+                        ),
+                    },
+                    {
+                        "setParamIds": [109, 110],
+                        "serializedOffsets": [178, 182],
+                        "nativeStructOffsets": [192, 196],
+                        "role": "earlyReflectionSecondaryPatternInputs",
+                        "detail": (
+                            "0x00229e20 reads the two values as a secondary ER "
+                            "pattern range/spread, builds seeded four-lane values "
+                            "per unit, and the caller converts them into the "
+                            "secondary per-unit pattern before allocation."
+                        ),
+                        "consumerRvas": ["0x00229e20"],
+                        "evidenceBoundary": (
+                            "RuntimeErUpdate calls a second native pattern generator "
+                            "that reads these two values; the public authoring names "
+                            "remain unresolved."
+                        ),
+                    },
+                ],
+            },
+            "semanticBoundary": (
+                "all 37 public authoring properties are identified; exact "
+                "SetParam IDs 100..110 retain exact values; native update-role "
+                "evidence is available for three groups, while public names remain "
+                "unresolved"
+            ),
+        },
+        0x007E0003: {
+            "schema": "wwiseGuitarDistortionFxParamsV1",
+            "parameterByteLengths": [126],
+            "setParamsBlockRva": "0x001f6650",
+            "setParamRva": "0x001f6270",
+            "defaultInitRva": "0x001f5f70",
+            "semanticBoundary": (
+                "all six pre/post EQ bands and six public distortion/output "
+                "properties are identified"
+            ),
+        },
+        0x007F0003: {
+            "schema": "wwiseConvolutionReverbFxParamsV1",
+            "parameterByteLengths": [57],
+            "setParamsBlockRva": "0x00258340",
+            "setParamRva": "0x00257fd0",
+            "defaultInitRva": "0x00257f10",
+            "privateTuningNativeEvidence": {
+                "status": "exactForwardedPrivateFieldsPublicNamesUnresolved",
+                "ranges": [
+                    {
+                        "setParamIds": [34],
+                        "serializedOffsets": [52],
+                        "nativeStructOffsets": [60],
+                        "wrapperOffsets": [76],
+                        "role": "privateRuntimeScalarForwardedToConvolutionEngineProcess",
+                        "detail": (
+                            "SetParam ID 34 writes native +0x3c; wrapper code copies "
+                            "it to +0x4c and passes it as the fifth float to the "
+                            "convolution processor's virtual method."
+                        ),
+                        "consumerRvas": [
+                            "0x00254a83",
+                            "0x00254bd8",
+                            "0x00258520",
+                        ],
+                        "status": "exactForwardedScalarEngineReadUnobserved",
+                        "evidenceBoundary": (
+                            "SetParam ID 34 writes native +0x3c; the wrapper copies it "
+                            "to +0x4c and forwards it as the fifth floating-point "
+                            "argument on both convolution processing paths. The "
+                            "current CPU engine method at 0x00258520 does not read "
+                            "that register in the audited body, so no public name or "
+                            "DSP effect is inferred."
+                        ),
+                    },
+                    {
+                        "setParamIds": [None],
+                        "serializedOffsets": [56],
+                        "nativeStructOffsets": [64],
+                        "wrapperOffsets": [80],
+                        "role": "serializedByteForwardedToConvolutionRuntimeState",
+                        "detail": (
+                            "Serialized byte 56 is copied through native +0x40 and "
+                            "wrapper +0x50 into runtime state +0x8c before the "
+                            "convolution state update."
+                        ),
+                        "consumerRvas": ["0x00254d27"],
+                        "status": "exactForwardedRolePublicNameUnresolved",
+                        "evidenceBoundary": (
+                            "The final serialized byte is copied to native +0x40, "
+                            "then to wrapper +0x50 and onward to wrapper state +0x8c. "
+                            "The current binary does not expose a stable public "
+                            "parameter name for this byte."
+                        ),
+                    },
+                ],
+            },
+            "semanticBoundary": (
+                "13 public runtime properties are identified; SetParam ID 34 "
+                "and serialized byte 56 retain exact values with native forwarding "
+                "evidence, but their public names and final DSP roles remain "
+                "unresolved"
+            ),
+        },
+        0x00BA0003: {
+            "schema": "wwiseMasteringSuiteFxParamsV1",
+            "parameterByteLengths": [304],
+            "setParamsBlockRva": "0x00249fd0",
+            "setParamRva": "0x00249a50",
+            "defaultInitRva": "0x00249630",
+            "channelGainNativeMapping": {
+                "serializedOffsets": [235, 239, 243, 247, 251, 255, 259, 263, 267, 271, 275, 279],
+                "nativeStructOffsets": [280, 284, 288, 292, 296, 300, 304, 308, 312, 316, 320, 324],
+                "status": "exactSetParamsBlockSlotMappingSpeakerNamesUnresolved",
+            },
+            "privateTuningNativeEvidence": {
+                "status": "exactSetParamStorageOnlyPublicNamesUnresolved",
+                "ranges": [
+                    {
+                        "setParamIds": [100],
+                        "serializedOffsets": [4],
+                        "nativeStructOffsets": [24],
+                        "role": "privateUint32StoredAtNativeStructOffset",
+                        "consumerRvas": [],
+                        "nativeUseStatus": (
+                            "nativeSetParamStorageOnlyNoDirectReadObserved"
+                        ),
+                        "evidenceBoundary": (
+                            "SetParam 100 copies the exact uint32 from serialized "
+                            "offset 4 to native +0x18; SetParamsBlock and the "
+                            "parameter copy path preserve the same field. No "
+                            "direct read was observed in the audited Mastering "
+                            "Suite runtime region, so its public name and DSP "
+                            "role remain unresolved."
+                        ),
+                    },
+                    {
+                        "setParamIds": [200],
+                        "serializedOffsets": [110],
+                        "nativeStructOffsets": [136],
+                        "role": "privateUint32StoredAtNativeStructOffset",
+                        "consumerRvas": [],
+                        "nativeUseStatus": (
+                            "nativeSetParamStorageOnlyNoDirectReadObserved"
+                        ),
+                        "evidenceBoundary": (
+                            "SetParam 200 copies the exact uint32 from serialized "
+                            "offset 110 to native +0x88; SetParamsBlock and the "
+                            "parameter copy path preserve the same field. No "
+                            "direct read was observed in the audited Mastering "
+                            "Suite runtime region, so its public name and DSP "
+                            "role remain unresolved."
+                        ),
+                    },
+                ],
+            },
+            "semanticBoundary": (
+                "the four public modules, six EQ bands, four compressor bands, "
+                "master/channel gains, and limiter controls are identified; "
+                "SetParam IDs 100 and 200 retain exact unnamed codes with "
+                "storage-only native evidence"
+            ),
+        },
+        0x00730003: {
+            "schema": "wwiseMatrixReverbFxParamsV1",
+            "parameterByteLengths": [29, 45, 61, 77, 93],
+            "setParamsBlockRva": "0x002158f0",
+        },
+        0x00810003: {
+            "schema": "wwiseMeterFxParamsV1",
+            "parameterByteLengths": [28],
+            "setParamsBlockRva": "0x00216f90",
+        },
+        0x00870003: {
+            "schema": "wwiseStereoDelayFxParamsV1",
+            "parameterByteLengths": [62],
+            "setParamsBlockRva": "0x002350c0",
+        },
+        0x00880003: {
+            "schema": "wwisePitchShifterFxParamsV1",
+            "parameterByteLengths": [38],
+            "setParamsBlockRva": "0x0021b520",
+        },
+        0x008A0003: {
+            "schema": "wwiseHarmonizerFxParamsV1",
+            "parameterByteLengths": [68],
+            "setParamsBlockRva": "0x001fa760",
+        },
+        0x008B0003: {
+            "schema": "wwiseGainFxParamsV1",
+            "parameterByteLengths": [8],
+            "setParamsBlockRva": "0x001f5560",
+        },
+    },
+}
+HIRC_PARAMETRIC_EQ_FILTER_LABELS = {
+    0: "Low Pass",
+    1: "High Pass",
+    2: "Band Pass",
+    3: "Notch",
+    4: "Low Shelf",
+    5: "High Shelf",
+    6: "Peaking",
+}
+HIRC_METER_MODE_LABELS = {0: "Peak", 1: "RMS"}
+HIRC_METER_SCOPE_LABELS = {0: "Global", 1: "Game Object"}
+HIRC_EFFECT_FILTER_LABELS = {
+    0: "None",
+    1: "Low Pass",
+    2: "High Pass",
+    3: "Band Pass",
+    4: "Notch",
+    5: "Low Shelf",
+    6: "High Shelf",
+    7: "Peaking",
+}
+HIRC_PITCH_INPUT_LABELS = {
+    0: "As Input",
+    1: "Mono - Center",
+    2: "Stereo",
+    3: "L-R-C",
+    4: "L-R-Ls-Rs",
+    5: "L-R-C-Ls-Rs",
+}
+HIRC_HARMONIZER_INPUT_LABELS = {
+    **HIRC_PITCH_INPUT_LABELS,
+    6: "Left Only",
+}
+HIRC_STEREO_DELAY_INPUT_LABELS = {
+    0: "Left/Right",
+    1: "Center",
+    2: "Left/Right + Center",
+    3: "None",
+}
+HIRC_ROOMVERB_ER_PATTERN_LABELS = {
+    0: "Bright Chamber",
+    1: "Dark Chamber",
+    2: "Concrete Venue 1",
+    3: "Concrete Venue 2",
+    4: "Night Club",
+    5: "Warehouse",
+    6: "Small Church",
+    7: "Medium Church",
+    8: "Large Church",
+    9: "Cathedral",
+    10: "Short Dark Hall",
+    11: "Long Dark Hall",
+    12: "Bright Hall",
+    13: "Small Hall",
+    14: "Medium Hall",
+    15: "Large Hall",
+    16: "Lecture Hall",
+    17: "Recital Hall",
+    18: "Small Plate",
+    19: "Medium Plate",
+    20: "Large Plate",
+    21: "Vocal Plate",
+    22: "Small Room",
+    23: "Large Room",
+    24: "Bathroom",
+    25: "Bedroom",
+    26: "Tiled Room",
+    27: "Phone Booth",
+    28: "Pool",
+    29: "Gym",
+    30: "Garage",
+}
+HIRC_ROOMVERB_TONE_INSERT_LABELS = {
+    0: "Off",
+    1: "ER Only",
+    2: "Reverb Only",
+    3: "ER + Reverb",
+}
+HIRC_ROOMVERB_TONE_CURVE_LABELS = {
+    0: "Low Shelf",
+    1: "Peaking",
+    2: "High Shelf",
+}
+HIRC_CONVOLUTION_REVERB_TYPE_LABELS = {0: "Reverb", 1: "Filter"}
+HIRC_GUITAR_DISTORTION_TYPE_LABELS = {
+    0: "None",
+    1: "Overdrive",
+    2: "Heavy",
+    3: "Clip",
+    4: "Fuzz",
+}
+HIRC_MASTERING_EQ_FILTER_LABELS = {
+    0: "Off",
+    1: "Low Pass Resonant (Two-Pole)",
+    2: "High Pass Resonant (Two-Pole)",
+    3: "Peak (Notch)",
+    4: "High Shelf",
+    5: "Low Shelf",
+    6: "Low Pass (One-Pole)",
+    7: "High Pass (One-Pole)",
+}
+HIRC_MASTERING_COMPRESSOR_LINK_LABELS = {
+    0: "No Link",
+    1: "All Channels",
+    2: "Partial Link",
+}
+HIRC_MASTERING_LIMITER_MODE_LABELS = {
+    0: "Soft-Knee",
+    1: "Hard-Knee",
+    2: "Advanced",
+}
 
 LANGUAGE_AUDIO_BLOCKS = ("voice",)
 SHARED_AUDIO_STORAGE = "shared"
@@ -2287,6 +2998,10 @@ def link_gameplay_audio(
                 "playbackActionCount": int(dispatch.get("playbackActionCount") or 0),
                 "typedPlaybackActionCount": int(dispatch.get("typedPlaybackActionCount") or 0),
                 "failedPlaybackActionCount": int(dispatch.get("failedPlaybackActionCount") or 0),
+                "controlActionCount": int(dispatch.get("controlActionCount") or 0),
+                "typedControlActionCount": int(dispatch.get("typedControlActionCount") or 0),
+                "failedControlActionCount": int(dispatch.get("failedControlActionCount") or 0),
+                "controlOperationCounts": dispatch.get("controlOperationCounts") or {},
                 "multiPlayback": bool(dispatch.get("multiPlayback")),
                 "simultaneityCandidate": bool(dispatch.get("simultaneityCandidate")),
                 "explicitDelayActionCount": int(dispatch.get("explicitDelayActionCount") or 0),
@@ -3999,6 +4714,401 @@ def hirc_v150_playback_action(data: bytes, bank_version: int | None) -> dict[str
     return evidence
 
 
+def hirc_v150_control_action(data: bytes, bank_version: int | None) -> dict[str, Any]:
+    """Decode v150 non-playback Action payloads as authored control evidence.
+
+    Action headers and the two property bundles are shared by every v150
+    Action.  The operation-specific tails below follow the bank reader layout
+    (state/switch IDs, GameParameter values, active-action flags, FX slots and
+    exception lists).  A tail is published only when it consumes the complete
+    object; otherwise the result is fail-closed with a bounded offset.
+    """
+
+    def failed(reason: str, offset: int = 0, expected_bytes: int | None = None) -> dict[str, Any]:
+        failure: dict[str, Any] = {
+            "reason": reason,
+            "offset": offset,
+            "dataSize": len(data),
+            "remainingBytes": max(0, len(data) - offset),
+        }
+        if expected_bytes is not None:
+            failure["expectedBytes"] = expected_bytes
+        return {
+            "actionControlParserStatus": "failedClosed",
+            "actionControlParserFailure": failure,
+        }
+
+    if bank_version != 150:
+        result = failed("unsupportedBankVersion")
+        result["actionControlParserFailure"]["bankVersion"] = bank_version
+        return result
+    if len(data) < 7:
+        return failed("truncatedActionHeader", 0, 7)
+
+    action_type = unpack_from("<H", data, 0)[0]
+    operation = action_type & 0xFF00
+    if operation in HIRC_PLAYBACK_ACTION_OPERATIONS:
+        return failed("playbackOperationHandledByPlaybackParser", 0)
+    supported_operations = {
+        0x0100, 0x0200, 0x0300, 0x0600, 0x0700,
+        0x0800, 0x0900, 0x0A00, 0x0B00, 0x0C00, 0x0D00,
+        0x0E00, 0x0F00, 0x1000, 0x1100, 0x1200, 0x1300,
+        0x1400, 0x1900, 0x1A00, 0x1B00, 0x1E00, 0x1F00,
+        0x2000, 0x2200, 0x3000, 0x3100, 0x3200, 0x3300,
+        0x3400, 0x3500, 0x3600, 0x3700, 0x6100,
+    }
+    if operation not in supported_operations:
+        result = failed("unsupportedControlOperation")
+        result["actionControlParserFailure"]["operation"] = operation
+        return result
+
+    def read_count(offset: int, reason: str) -> tuple[int, int] | dict[str, Any]:
+        if offset >= len(data):
+            return failed(reason, offset, 1)
+        return data[offset], offset + 1
+
+    pos = 7
+    scalar_count_row = read_count(pos, "truncatedScalarPropertyCount")
+    if isinstance(scalar_count_row, dict):
+        return scalar_count_row
+    scalar_count, pos = scalar_count_row
+    if pos + scalar_count > len(data):
+        return failed("truncatedScalarPropertyIds", pos, scalar_count)
+    scalar_ids = list(data[pos : pos + scalar_count])
+    pos += scalar_count
+    scalar_bytes = scalar_count * 4
+    if pos + scalar_bytes > len(data):
+        return failed("truncatedScalarPropertyValues", pos, scalar_bytes)
+    properties: list[dict[str, Any]] = []
+    for property_id in scalar_ids:
+        value = _hirc_v150_action_property_value(property_id, data[pos : pos + 4])
+        properties.append({
+            "propertyId": property_id,
+            "propertyName": HIRC_ACTION_PROPERTY_LABELS.get(
+                property_id, f"property0x{property_id:02x}"
+            ),
+            **value,
+        })
+        pos += 4
+
+    range_count_row = read_count(pos, "truncatedRangePropertyCount")
+    if isinstance(range_count_row, dict):
+        return range_count_row
+    range_count, pos = range_count_row
+    if pos + range_count > len(data):
+        return failed("truncatedRangePropertyIds", pos, range_count)
+    range_ids = list(data[pos : pos + range_count])
+    pos += range_count
+    range_bytes = range_count * 8
+    if pos + range_bytes > len(data):
+        return failed("truncatedRangePropertyValues", pos, range_bytes)
+    ranged_modifiers: list[dict[str, Any]] = []
+    for property_id in range_ids:
+        minimum = _hirc_v150_action_property_value(property_id, data[pos : pos + 4])
+        maximum = _hirc_v150_action_property_value(property_id, data[pos + 4 : pos + 8])
+        ranged_modifiers.append({
+            "propertyId": property_id,
+            "propertyName": HIRC_ACTION_PROPERTY_LABELS.get(
+                property_id, f"property0x{property_id:02x}"
+            ),
+            "encoding": minimum["encoding"],
+            "minimum": minimum,
+            "maximum": maximum,
+            "runtimeSelection": "boundedModifierUnresolved",
+        })
+        pos += 8
+
+    def read_u8(offset: int, reason: str) -> tuple[int, int] | dict[str, Any]:
+        if offset >= len(data):
+            return failed(reason, offset, 1)
+        return data[offset], offset + 1
+
+    def read_u32(offset: int, reason: str) -> tuple[int, int] | dict[str, Any]:
+        if offset + 4 > len(data):
+            return failed(reason, offset, 4)
+        return unpack_from("<I", data, offset)[0], offset + 4
+
+    def read_f32(offset: int, reason: str) -> tuple[float, int] | dict[str, Any]:
+        if offset + 4 > len(data):
+            return failed(reason, offset, 4)
+        return unpack_from("<f", data, offset)[0], offset + 4
+
+    def read_varuint(offset: int, reason: str) -> tuple[int, int] | dict[str, Any]:
+        value = 0
+        shift = 0
+        for _ in range(5):
+            if offset >= len(data):
+                return failed(reason, offset, 1)
+            byte = data[offset]
+            offset += 1
+            value |= (byte & 0x7F) << shift
+            if not byte & 0x80:
+                return value, offset
+            shift += 7
+        return failed("invalidVarUInt", offset, 1)
+
+    def read_exceptions(offset: int) -> tuple[list[dict[str, Any]], int] | dict[str, Any]:
+        count_row = read_varuint(offset, "truncatedExceptionCount")
+        if isinstance(count_row, dict):
+            return count_row
+        count, offset = count_row
+        if count > (len(data) - offset) // 5:
+            return failed("truncatedExceptionRows", offset, count * 5)
+        rows: list[dict[str, Any]] = []
+        for _ in range(count):
+            exception_id = unpack_from("<I", data, offset)[0]
+            is_bus = bool(data[offset + 4])
+            rows.append({
+                "id": exception_id,
+                "idHex": f"0x{exception_id:08x}",
+                "isBus": is_bus,
+            })
+            offset += 5
+        return rows, offset
+
+    evidence: dict[str, Any] = {
+        "actionControlParserStatus": "typedExactV150",
+        "idExt": unpack_from("<I", data, 2)[0],
+        "idExtHex": f"0x{unpack_from('<I', data, 2)[0]:08x}",
+        "targetFlagsRaw": data[6],
+        "targetIsBus": bool(data[6] & 0x01),
+        "properties": properties,
+        "rangedModifiers": ranged_modifiers,
+    }
+
+    # State and Switch carry two FNV IDs and no exception list.
+    if operation in {0x1200, 0x1900}:
+        ids = []
+        for name in ("groupId", "stateId") if operation == 0x1200 else ("groupId", "switchId"):
+            value_row = read_u32(pos, f"truncated{name}")
+            if isinstance(value_row, dict):
+                return value_row
+            value, pos = value_row
+            ids.append((name, value))
+        for name, value in ids:
+            evidence[name] = value
+            evidence[f"{name}Hex"] = f"0x{value:08x}"
+
+    elif operation in {0x1300, 0x1400}:
+        # Set/ResetGameParameter uses SetValue's fade byte followed by the
+        # GameParameter-specific bypass/value-meaning/ranged float tuple.
+        fade_row = read_u8(pos, "truncatedFadeFlags")
+        if isinstance(fade_row, dict):
+            return fade_row
+        fade_flags, pos = fade_row
+        bypass_row = read_u8(pos, "truncatedBypassTransition")
+        if isinstance(bypass_row, dict):
+            return bypass_row
+        bypass_transition, pos = bypass_row
+        meaning_row = read_u8(pos, "truncatedValueMeaning")
+        if isinstance(meaning_row, dict):
+            return meaning_row
+        meaning, pos = meaning_row
+        floats: list[float] = []
+        for label in ("base", "minimum", "maximum"):
+            value_row = read_f32(pos, f"truncated{label.title()}Value")
+            if isinstance(value_row, dict):
+                return value_row
+            value, pos = value_row
+            floats.append(value)
+        evidence["fadeFlagsRaw"] = fade_flags
+        evidence["fadeCurveId"] = fade_flags & 0x1F
+        evidence["fadeCurveLabel"] = HIRC_FADE_CURVE_LABELS.get(
+            fade_flags & 0x1F, f"curve{fade_flags & 0x1F}"
+        )
+        evidence["bypassTransition"] = bool(bypass_transition)
+        evidence["bypassTransitionRaw"] = bypass_transition
+        evidence["valueMeaning"] = meaning
+        evidence["valueMeaningLabel"] = HIRC_ACTION_VALUE_MEANING_LABELS.get(
+            meaning, f"meaning{meaning}"
+        )
+        evidence["valueRange"] = {
+            "base": floats[0], "minimum": floats[1], "maximum": floats[2],
+        }
+        exceptions_row = read_exceptions(pos)
+        if isinstance(exceptions_row, dict):
+            return exceptions_row
+        evidence["exceptions"], pos = exceptions_row
+
+    elif operation == 0x6100:
+        rtpc_row = read_u32(pos, "truncatedRtpcId")
+        if isinstance(rtpc_row, dict):
+            return rtpc_row
+        rtpc_id, pos = rtpc_row
+        value_row = read_f32(pos, "truncatedRtpcValue")
+        if isinstance(value_row, dict):
+            return value_row
+        value, pos = value_row
+        evidence.update({
+            "rtpcId": rtpc_id,
+            "rtpcIdHex": f"0x{rtpc_id:08x}",
+            "rtpcValue": value,
+        })
+
+    elif operation in {0x0100, 0x0200, 0x0300}:
+        fade_row = read_u8(pos, "truncatedFadeFlags")
+        if isinstance(fade_row, dict):
+            return fade_row
+        fade_flags, pos = fade_row
+        bit_row = read_u8(pos, "truncatedActionBitVector")
+        if isinstance(bit_row, dict):
+            return bit_row
+        bits, pos = bit_row
+        evidence["fadeFlagsRaw"] = fade_flags
+        evidence["fadeCurveId"] = fade_flags & 0x1F
+        evidence["fadeCurveLabel"] = HIRC_FADE_CURVE_LABELS.get(
+            fade_flags & 0x1F, f"curve{fade_flags & 0x1F}"
+        )
+        evidence["actionBitVectorRaw"] = bits
+        if operation == 0x0100:
+            evidence["applyToStateTransitions"] = bool(bits & 0x02)
+            evidence["applyToDynamicSequence"] = bool(bits & 0x04)
+        elif operation == 0x0200:
+            evidence["includePendingResume"] = bool(bits & 0x01)
+            evidence["applyToStateTransitions"] = bool(bits & 0x02)
+            evidence["applyToDynamicSequence"] = bool(bits & 0x04)
+        else:
+            evidence["isMasterResume"] = bool(bits & 0x01)
+            evidence["applyToStateTransitions"] = bool(bits & 0x02)
+            evidence["applyToDynamicSequence"] = bool(bits & 0x04)
+        exceptions_row = read_exceptions(pos)
+        if isinstance(exceptions_row, dict):
+            return exceptions_row
+        evidence["exceptions"], pos = exceptions_row
+
+    elif operation in {
+        0x0600, 0x0700, 0x0800, 0x0900, 0x0A00, 0x0B00,
+        0x0C00, 0x0D00, 0x0E00, 0x0F00, 0x2000, 0x3000,
+    }:
+        fade_row = read_u8(pos, "truncatedFadeFlags")
+        if isinstance(fade_row, dict):
+            return fade_row
+        fade_flags, pos = fade_row
+        evidence["fadeFlagsRaw"] = fade_flags
+        evidence["fadeCurveId"] = fade_flags & 0x1F
+        evidence["fadeCurveLabel"] = HIRC_FADE_CURVE_LABELS.get(
+            fade_flags & 0x1F, f"curve{fade_flags & 0x1F}"
+        )
+        if operation not in {0x0600, 0x0700}:
+            meaning_row = read_u8(pos, "truncatedValueMeaning")
+            if isinstance(meaning_row, dict):
+                return meaning_row
+            meaning, pos = meaning_row
+            values: list[float] = []
+            for label in ("base", "minimum", "maximum"):
+                value_row = read_f32(pos, f"truncated{label.title()}Value")
+                if isinstance(value_row, dict):
+                    return value_row
+                value, pos = value_row
+                values.append(value)
+            evidence["valueMeaning"] = meaning
+            evidence["valueMeaningLabel"] = HIRC_ACTION_VALUE_MEANING_LABELS.get(
+                meaning, f"meaning{meaning}"
+            )
+            evidence["valueRange"] = {
+                "base": values[0], "minimum": values[1], "maximum": values[2],
+            }
+        exceptions_row = read_exceptions(pos)
+        if isinstance(exceptions_row, dict):
+            return exceptions_row
+        evidence["exceptions"], pos = exceptions_row
+
+    elif operation in {0x3100, 0x3200}:
+        rows = []
+        for label, size in (("isAudioDeviceElement", 1), ("slotIndex", 1), ("fxId", 4), ("isShared", 1)):
+            if size == 1:
+                value_row = read_u8(pos, f"truncated{label.title()}")
+            else:
+                value_row = read_u32(pos, f"truncated{label.title()}")
+            if isinstance(value_row, dict):
+                return value_row
+            value, pos = value_row
+            rows.append((label, value))
+        for label, value in rows:
+            evidence[label] = bool(value) if label.startswith("is") else value
+            if label == "fxId":
+                evidence["fxIdHex"] = f"0x{value:08x}"
+        exceptions_row = read_exceptions(pos)
+        if isinstance(exceptions_row, dict):
+            return exceptions_row
+        evidence["exceptions"], pos = exceptions_row
+
+    elif operation in {0x3300, 0x3400, 0x3500, 0x3600, 0x3700}:
+        bypass_row = read_u8(pos, "truncatedBypassValue")
+        if isinstance(bypass_row, dict):
+            return bypass_row
+        bypass, pos = bypass_row
+        slot_row = read_u8(pos, "truncatedFxSlot")
+        if isinstance(slot_row, dict):
+            return slot_row
+        slot, pos = slot_row
+        evidence.update({
+            "bypass": bool(bypass),
+            "bypassRaw": bypass,
+            "fxSlot": slot,
+        })
+        exceptions_row = read_exceptions(pos)
+        if isinstance(exceptions_row, dict):
+            return exceptions_row
+        evidence["exceptions"], pos = exceptions_row
+
+    elif operation == 0x1E00:
+        relative_row = read_u8(pos, "truncatedSeekRelative")
+        if isinstance(relative_row, dict):
+            return relative_row
+        relative, pos = relative_row
+        values: list[float] = []
+        for label in ("seekValue", "seekMinimum", "seekMaximum"):
+            value_row = read_f32(pos, f"truncated{label.title()}")
+            if isinstance(value_row, dict):
+                return value_row
+            value, pos = value_row
+            values.append(value)
+        snap_row = read_u8(pos, "truncatedSeekSnap")
+        if isinstance(snap_row, dict):
+            return snap_row
+        snap, pos = snap_row
+        evidence.update({
+            "seekRelativeToDuration": bool(relative),
+            "seekRelativeRaw": relative,
+            "seekValue": values[0], "seekMinimum": values[1], "seekMaximum": values[2],
+            "snapToNearestMarker": bool(snap), "snapToNearestMarkerRaw": snap,
+        })
+        exceptions_row = read_exceptions(pos)
+        if isinstance(exceptions_row, dict):
+            return exceptions_row
+        evidence["exceptions"], pos = exceptions_row
+
+    elif operation in {0x2200}:
+        fade_row = read_u8(pos, "truncatedFadeFlags")
+        if isinstance(fade_row, dict):
+            return fade_row
+        fade_flags, pos = fade_row
+        evidence.update({
+            "fadeFlagsRaw": fade_flags,
+            "fadeCurveId": fade_flags & 0x1F,
+            "fadeCurveLabel": HIRC_FADE_CURVE_LABELS.get(
+                fade_flags & 0x1F, f"curve{fade_flags & 0x1F}"
+            ),
+        })
+        exceptions_row = read_exceptions(pos)
+        if isinstance(exceptions_row, dict):
+            return exceptions_row
+        evidence["exceptions"], pos = exceptions_row
+
+    elif operation in {0x1000, 0x1100, 0x1A00, 0x1B00, 0x1F00}:
+        # These actions carry only the common header/property bundles in v150.
+        pass
+
+    if pos != len(data):
+        return failed("unexpectedControlTrailingBytes", pos, 0)
+    evidence["actionControlEvidenceBoundary"] = (
+        "authoredActionControlPayload; state/switch/parameter values are triggers, "
+        "not evaluated runtime state or effective DSP"
+    )
+    return evidence
+
+
 HIRC_PLUGIN_TYPE_LABELS = {
     0: "none",
     1: "codec",
@@ -4165,39 +5275,1173 @@ def _hirc_v150_u32(data: bytes, offset: int) -> tuple[int, int]:
     return unpack_from("<I", data, offset)[0], offset + 4
 
 
-def _hirc_v150_node_base_parent(data: bytes, offset: int) -> tuple[int, int]:
-    """Decode the v150 NodeBase prefix through its DirectParentID field.
+def _hirc_v150_effect_slot_flags(
+    flags_raw: int,
+    *,
+    include_rendered: bool,
+) -> dict[str, Any]:
+    """Decode the v150 FX-slot bit vector without inferring runtime audibility.
 
-    FX and metadata lists are variable length.  Reading their authored counts is
-    required before the bus and parent IDs; treating the parent as an arbitrary
-    U32 at a guessed offset would make reciprocal child proof circular.
+    ``AkParameterNode`` stores bypass/share-set/rendered in bits 0/1/2.  Owned
+    Audio/Aux Bus slots use bits 0/1; bit 2 is retained as an unknown/reserved
+    value there.  These are authored slot flags, distinct from NodeBase's
+    ``bypassAll`` and from runtime RTPC/State bypass controls.
     """
 
+    flags_raw = int(flags_raw) & 0xFF
+    known_mask = 0x07 if include_rendered else 0x03
+    return {
+        "flagsRaw": flags_raw,
+        "effectBypass": bool(flags_raw & 0x01),
+        "effectShareSet": bool(flags_raw & 0x02),
+        "effectRendered": bool(flags_raw & 0x04) if include_rendered else None,
+        "unknownFlagBits": flags_raw & ~known_mask,
+        "flagSemanticBoundary": (
+            "typedExactV150NodeEffectFlags: bit0=bypass, bit1=shareSet, "
+            "bit2=rendered"
+            if include_rendered
+            else
+            "typedExactV150BusEffectFlags: bit0=bypass, bit1=shareSet; "
+            "bit2=reservedOrUnknown"
+        ),
+    }
+
+
+def _hirc_v150_node_base(
+    data: bytes,
+    offset: int,
+) -> tuple[dict[str, Any], int]:
+    """Decode the v150 NodeBase prefix through DirectParentID.
+
+    This common prefix is also the authored direct-processing boundary for a
+    Sound/container node: inherited-FX override, ordered effect slots, metadata
+    plug-ins, explicit output-bus override, and the hierarchy parent.  Effect
+    slot flag bits are preserved raw because the current corpus proves their
+    correlation with custom/ShareSet objects but not every individual runtime
+    meaning.  A zero effect object ID remains an explicit empty slot.
+    """
+
+    start = offset
     if offset < 0 or offset + 2 > len(data):
         raise ValueError("truncated v150 initial FX header")
-    offset += 1  # bIsOverrideParentFX
-    effect_count = data[offset]
-    offset += 1
+    override_parent_fx_raw = data[offset]
+    effect_count = data[offset + 1]
+    offset += 2
+    if override_parent_fx_raw not in (0, 1):
+        raise ValueError("invalid v150 override-parent-FX flag")
+
+    bypass_all_raw: int | None = None
+    effects: list[dict[str, Any]] = []
     if effect_count:
-        offset += 1  # bBypassAll
-        effect_bytes = effect_count * 6  # U8 index + U32 ID + U8 flags
+        if offset >= len(data):
+            raise ValueError("truncated v150 FX bypass flag")
+        bypass_all_raw = data[offset]
+        offset += 1
+        effect_bytes = effect_count * 6  # U8 slot + U32 object ID + U8 flags
         if offset + effect_bytes > len(data):
             raise ValueError("truncated v150 initial FX list")
-        offset += effect_bytes
+        for ordinal in range(effect_count):
+            slot_index = data[offset]
+            effect_id = unpack_from("<I", data, offset + 1)[0]
+            flags_raw = data[offset + 5]
+            effects.append({
+                "ordinal": ordinal,
+                "slotIndex": slot_index,
+                "effectId": effect_id,
+                "effectIdHex": f"0x{effect_id:08x}",
+                **_hirc_v150_effect_slot_flags(
+                    flags_raw, include_rendered=True
+                ),
+                "referenceStatus": (
+                    "authoredEffectObjectId" if effect_id else "emptyEffectSlot"
+                ),
+            })
+            offset += 6
 
     if offset + 2 > len(data):
         raise ValueError("truncated v150 metadata header")
-    offset += 1  # bIsOverrideParentMetadata
-    metadata_count = data[offset]
-    offset += 1
-    metadata_bytes = metadata_count * 6  # U8 index + U32 ID + U8 share-set flag
+    override_parent_metadata_raw = data[offset]
+    metadata_count = data[offset + 1]
+    offset += 2
+    if override_parent_metadata_raw not in (0, 1):
+        raise ValueError("invalid v150 override-parent-metadata flag")
+    metadata: list[dict[str, Any]] = []
+    metadata_bytes = metadata_count * 6  # U8 slot + U32 ID + U8 share-set flag
     if offset + metadata_bytes > len(data):
         raise ValueError("truncated v150 metadata list")
-    offset += metadata_bytes
+    for ordinal in range(metadata_count):
+        slot_index = data[offset]
+        metadata_id = unpack_from("<I", data, offset + 1)[0]
+        share_set_raw = data[offset + 5]
+        metadata.append({
+            "ordinal": ordinal,
+            "slotIndex": slot_index,
+            "metadataId": metadata_id,
+            "metadataIdHex": f"0x{metadata_id:08x}",
+            "shareSetRaw": share_set_raw,
+        })
+        offset += 6
 
-    _override_bus_id, offset = _hirc_v150_u32(data, offset)
+    override_bus_id, offset = _hirc_v150_u32(data, offset)
     parent_id, offset = _hirc_v150_u32(data, offset)
-    return parent_id, offset
+    return {
+        "parserStatus": "typedExactV150NodeBaseProcessingPrefix",
+        "prefixOffset": start,
+        "prefixByteLength": offset - start,
+        "overrideParentFxRaw": override_parent_fx_raw,
+        "overrideParentFx": bool(override_parent_fx_raw),
+        "effectSlotCount": effect_count,
+        "bypassAllRaw": bypass_all_raw,
+        "bypassAll": bool(bypass_all_raw) if bypass_all_raw is not None else None,
+        "effects": effects,
+        "overrideParentMetadataRaw": override_parent_metadata_raw,
+        "overrideParentMetadata": bool(override_parent_metadata_raw),
+        "metadataSlotCount": metadata_count,
+        "metadata": metadata,
+        "overrideBusId": override_bus_id,
+        "overrideBusIdHex": f"0x{override_bus_id:08x}" if override_bus_id else None,
+        "parentId": parent_id,
+    }, offset
+
+
+def _hirc_v150_node_base_parent(data: bytes, offset: int) -> tuple[int, int]:
+    node_base, end = _hirc_v150_node_base(data, offset)
+    return int(node_base["parentId"]), end
+
+
+def _hirc_effect_float(data: bytes, offset: int) -> float:
+    if offset < 0 or offset + 4 > len(data):
+        raise ValueError("truncated effect float")
+    value = float(unpack_from("<f", data, offset)[0])
+    if not math.isfinite(value):
+        raise ValueError("non-finite effect float")
+    return value
+
+
+def _hirc_effect_bool(data: bytes, offset: int) -> bool:
+    if offset < 0 or offset >= len(data) or data[offset] not in (0, 1):
+        raise ValueError("invalid effect boolean")
+    return bool(data[offset])
+
+
+def _hirc_effect_float_range(
+    data: bytes,
+    offset: int,
+    minimum: float,
+    maximum: float,
+    label: str,
+) -> float:
+    value = _hirc_effect_float(data, offset)
+    if value < minimum - 0.0001 or value > maximum + 0.0001:
+        raise ValueError(f"invalid {label}")
+    return value
+
+
+def _hirc_effect_number(value: float) -> str:
+    return f"{value:.6g}"
+
+
+def decode_hirc_v150_effect_parameters(
+    plugin_class_id: int,
+    parameter_data: bytes,
+) -> dict[str, Any] | None:
+    """Decode current shipped Wwise effect parameter blocks fail-closed.
+
+    Field offsets and primitive widths are pinned by each parameter class's
+    SetParamsBlock implementation in the shipped AkSoundEngine.dll.  The
+    returned values are authored bank base values; runtime RTPC/State changes,
+    slot bypass, platform DSP, and audibility are intentionally not inferred.
+    """
+
+    contract = HIRC_EFFECT_PARAMETER_CONTRACT["schemas"].get(plugin_class_id)
+    if not contract or len(parameter_data) not in contract["parameterByteLengths"]:
+        return None
+    parser_status = "typedExactShippedAkSoundEngineSetParamsBlock"
+    parameter_boundary = "typedExactAuthoredBaseValues"
+    semantic_boundary = ""
+    try:
+        values: dict[str, Any]
+        summary: str
+        if plugin_class_id == 0x008B0003:  # Gain
+            values = {
+                "fullBandGainDb": _hirc_effect_float(parameter_data, 0),
+                "lfeGainDb": _hirc_effect_float(parameter_data, 4),
+            }
+            summary = (
+                f"full band {_hirc_effect_number(values['fullBandGainDb'])} dB; "
+                f"LFE {_hirc_effect_number(values['lfeGainDb'])} dB"
+            )
+        elif plugin_class_id == 0x006A0003:  # Delay
+            values = {
+                "delayTimeSeconds": _hirc_effect_float(parameter_data, 0),
+                "feedbackPercent": _hirc_effect_float(parameter_data, 4),
+                "wetDryMixPercent": _hirc_effect_float(parameter_data, 8),
+                "outputLevelDb": _hirc_effect_float(parameter_data, 12),
+                "feedbackEnabled": _hirc_effect_bool(parameter_data, 16),
+                "processLfe": _hirc_effect_bool(parameter_data, 17),
+            }
+            summary = (
+                f"{_hirc_effect_number(values['delayTimeSeconds'])} s; "
+                f"feedback {_hirc_effect_number(values['feedbackPercent'])}% "
+                f"{'on' if values['feedbackEnabled'] else 'off'}; wet/dry "
+                f"{_hirc_effect_number(values['wetDryMixPercent'])}%; output "
+                f"{_hirc_effect_number(values['outputLevelDb'])} dB; LFE "
+                f"{'on' if values['processLfe'] else 'off'}"
+            )
+        elif plugin_class_id in (0x006C0003, 0x006D0003):
+            values = {
+                "thresholdDb": _hirc_effect_float(parameter_data, 0),
+                "ratio": _hirc_effect_float(parameter_data, 4),
+                "attackSeconds": _hirc_effect_float(parameter_data, 8),
+                "releaseSeconds": _hirc_effect_float(parameter_data, 12),
+                "outputGainDb": _hirc_effect_float(parameter_data, 16),
+                "processLfe": _hirc_effect_bool(parameter_data, 20),
+                "channelLink": _hirc_effect_bool(parameter_data, 21),
+            }
+            summary = (
+                f"threshold {_hirc_effect_number(values['thresholdDb'])} dB; "
+                f"ratio {_hirc_effect_number(values['ratio'])}:1; attack "
+                f"{_hirc_effect_number(values['attackSeconds'])} s; release "
+                f"{_hirc_effect_number(values['releaseSeconds'])} s; output "
+                f"{_hirc_effect_number(values['outputGainDb'])} dB; LFE "
+                f"{'on' if values['processLfe'] else 'off'}; channels "
+                f"{'linked' if values['channelLink'] else 'independent'}"
+            )
+        elif plugin_class_id == 0x00690003:  # Parametric EQ
+            bands: list[dict[str, Any]] = []
+            band_summaries: list[str] = []
+            for index in range(3):
+                offset = index * 17
+                filter_type = unpack_from("<I", parameter_data, offset)[0]
+                if filter_type not in HIRC_PARAMETRIC_EQ_FILTER_LABELS:
+                    raise ValueError("invalid Parametric EQ filter type")
+                band = {
+                    "band": index + 1,
+                    "filterType": filter_type,
+                    "filterTypeLabel": HIRC_PARAMETRIC_EQ_FILTER_LABELS[filter_type],
+                    "gainDb": _hirc_effect_float(parameter_data, offset + 4),
+                    "frequencyHz": _hirc_effect_float(parameter_data, offset + 8),
+                    "qualityFactor": _hirc_effect_float(parameter_data, offset + 12),
+                    "enabled": _hirc_effect_bool(parameter_data, offset + 16),
+                }
+                bands.append(band)
+                band_summaries.append(
+                    f"B{index + 1} "
+                    + (
+                        f"{band['filterTypeLabel']} "
+                        f"{_hirc_effect_number(band['frequencyHz'])} Hz "
+                        f"{_hirc_effect_number(band['gainDb'])} dB "
+                        f"Q {_hirc_effect_number(band['qualityFactor'])}"
+                        if band["enabled"] else "off"
+                    )
+                )
+            output_gain = _hirc_effect_float(parameter_data, 51)
+            process_lfe = _hirc_effect_bool(parameter_data, 55)
+            values = {
+                "bands": bands,
+                "outputGainDb": output_gain,
+                "processLfe": process_lfe,
+            }
+            summary = (
+                "; ".join(band_summaries)
+                + f"; output {_hirc_effect_number(output_gain)} dB; LFE "
+                + ("on" if process_lfe else "off")
+            )
+        elif plugin_class_id == 0x00810003:  # Meter
+            mode = parameter_data[21]
+            scope = parameter_data[22]
+            if mode not in HIRC_METER_MODE_LABELS or scope not in HIRC_METER_SCOPE_LABELS:
+                raise ValueError("invalid Meter mode or scope")
+            output_game_parameter_id = unpack_from("<I", parameter_data, 24)[0]
+            values = {
+                "attackSeconds": _hirc_effect_float(parameter_data, 0),
+                "releaseSeconds": _hirc_effect_float(parameter_data, 4),
+                "minimumDb": _hirc_effect_float(parameter_data, 8),
+                "maximumDb": _hirc_effect_float(parameter_data, 12),
+                "holdSeconds": _hirc_effect_float(parameter_data, 16),
+                "infiniteHold": _hirc_effect_bool(parameter_data, 20),
+                "mode": mode,
+                "modeLabel": HIRC_METER_MODE_LABELS[mode],
+                "scope": scope,
+                "scopeLabel": HIRC_METER_SCOPE_LABELS[scope],
+                "applyDownstreamVolume": _hirc_effect_bool(parameter_data, 23),
+                "outputGameParameterId": output_game_parameter_id,
+                "outputGameParameterIdHex": f"0x{output_game_parameter_id:08x}",
+            }
+            summary = (
+                f"{values['modeLabel']} / {values['scopeLabel']}; attack "
+                f"{_hirc_effect_number(values['attackSeconds'])} s; release "
+                f"{_hirc_effect_number(values['releaseSeconds'])} s; hold "
+                f"{'infinite' if values['infiniteHold'] else _hirc_effect_number(values['holdSeconds']) + ' s'}; "
+                f"range {_hirc_effect_number(values['minimumDb'])}.."
+                f"{_hirc_effect_number(values['maximumDb'])} dB; output RTPC "
+                f"{values['outputGameParameterIdHex']}"
+            )
+        elif plugin_class_id == 0x00880003:  # Pitch Shifter
+            input_selection = unpack_from("<I", parameter_data, 0)[0]
+            filter_type = unpack_from("<I", parameter_data, 22)[0]
+            if input_selection not in HIRC_PITCH_INPUT_LABELS:
+                raise ValueError("invalid Pitch Shifter input selection")
+            if filter_type not in HIRC_EFFECT_FILTER_LABELS:
+                raise ValueError("invalid Pitch Shifter filter type")
+            values = {
+                "inputSelection": input_selection,
+                "inputSelectionLabel": HIRC_PITCH_INPUT_LABELS[input_selection],
+                "dryLevelDb": _hirc_effect_float(parameter_data, 4),
+                "wetLevelDb": _hirc_effect_float(parameter_data, 8),
+                "delayTimeMilliseconds": _hirc_effect_float(parameter_data, 12),
+                "delayDry": _hirc_effect_bool(parameter_data, 16),
+                "processLfe": _hirc_effect_bool(parameter_data, 17),
+                "pitchShiftCents": _hirc_effect_float(parameter_data, 18),
+                "filterType": filter_type,
+                "filterTypeLabel": HIRC_EFFECT_FILTER_LABELS[filter_type],
+                "filterGainDb": _hirc_effect_float(parameter_data, 26),
+                "filterFrequencyHz": _hirc_effect_float(parameter_data, 30),
+                "filterQualityFactor": _hirc_effect_float(parameter_data, 34),
+            }
+            summary = (
+                f"pitch {_hirc_effect_number(values['pitchShiftCents'])} cents; "
+                f"{values['inputSelectionLabel']}; dry "
+                f"{_hirc_effect_number(values['dryLevelDb'])} dB; wet "
+                f"{_hirc_effect_number(values['wetLevelDb'])} dB; delay "
+                f"{_hirc_effect_number(values['delayTimeMilliseconds'])} ms"
+                + (" with dry aligned" if values["delayDry"] else "")
+                + f"; {values['filterTypeLabel']} filter; LFE "
+                + ("on" if values["processLfe"] else "off")
+            )
+        elif plugin_class_id == 0x008A0003:  # Harmonizer
+            voices: list[dict[str, Any]] = []
+            voice_summaries: list[str] = []
+            for index, offset in enumerate((0, 25), start=1):
+                filter_type = unpack_from("<I", parameter_data, offset + 9)[0]
+                if filter_type not in HIRC_EFFECT_FILTER_LABELS:
+                    raise ValueError("invalid Harmonizer filter type")
+                voice = {
+                    "voice": index,
+                    "enabled": _hirc_effect_bool(parameter_data, offset),
+                    "pitchShiftCents": _hirc_effect_float(parameter_data, offset + 1),
+                    "gainDb": _hirc_effect_float(parameter_data, offset + 5),
+                    "filterType": filter_type,
+                    "filterTypeLabel": HIRC_EFFECT_FILTER_LABELS[filter_type],
+                    "filterGainDb": _hirc_effect_float(parameter_data, offset + 13),
+                    "filterFrequencyHz": _hirc_effect_float(parameter_data, offset + 17),
+                    "filterQualityFactor": _hirc_effect_float(parameter_data, offset + 21),
+                }
+                voices.append(voice)
+                voice_summaries.append(
+                    f"V{index} "
+                    + (
+                        f"{_hirc_effect_number(voice['pitchShiftCents'])} cents, "
+                        f"{_hirc_effect_number(voice['gainDb'])} dB"
+                        if voice["enabled"] else "off"
+                    )
+                )
+            input_selection = unpack_from("<I", parameter_data, 50)[0]
+            window_size_samples = unpack_from("<I", parameter_data, 62)[0]
+            if input_selection not in HIRC_HARMONIZER_INPUT_LABELS:
+                raise ValueError("invalid Harmonizer input selection")
+            if window_size_samples not in (256, 512, 1024, 2048, 4096):
+                raise ValueError("invalid Harmonizer window size")
+            values = {
+                "voices": voices,
+                "inputSelection": input_selection,
+                "inputSelectionLabel": HIRC_HARMONIZER_INPUT_LABELS[input_selection],
+                "dryLevelDb": _hirc_effect_float(parameter_data, 54),
+                "wetLevelDb": _hirc_effect_float(parameter_data, 58),
+                "windowSizeSamples": window_size_samples,
+                "processLfe": _hirc_effect_bool(parameter_data, 66),
+                "delayDry": _hirc_effect_bool(parameter_data, 67),
+            }
+            summary = (
+                "; ".join(voice_summaries)
+                + f"; {values['inputSelectionLabel']}; dry "
+                f"{_hirc_effect_number(values['dryLevelDb'])} dB; wet "
+                f"{_hirc_effect_number(values['wetLevelDb'])} dB; window "
+                f"{window_size_samples} samples"
+                + ("; dry aligned" if values["delayDry"] else "")
+                + "; LFE " + ("on" if values["processLfe"] else "off")
+            )
+        elif plugin_class_id == 0x00870003:  # Stereo Delay
+            left_input = unpack_from("<I", parameter_data, 0)[0]
+            right_input = unpack_from("<I", parameter_data, 16)[0]
+            filter_type = unpack_from("<I", parameter_data, 32)[0]
+            if left_input not in HIRC_STEREO_DELAY_INPUT_LABELS:
+                raise ValueError("invalid Stereo Delay left input")
+            if right_input not in HIRC_STEREO_DELAY_INPUT_LABELS:
+                raise ValueError("invalid Stereo Delay right input")
+            if filter_type not in HIRC_EFFECT_FILTER_LABELS:
+                raise ValueError("invalid Stereo Delay filter type")
+            values = {
+                "leftInput": left_input,
+                "leftInputLabel": HIRC_STEREO_DELAY_INPUT_LABELS[left_input],
+                "leftDelayTimeSeconds": _hirc_effect_float(parameter_data, 4),
+                "leftFeedbackDb": _hirc_effect_float(parameter_data, 8),
+                "leftCrossfeedDb": _hirc_effect_float(parameter_data, 12),
+                "rightInput": right_input,
+                "rightInputLabel": HIRC_STEREO_DELAY_INPUT_LABELS[right_input],
+                "rightDelayTimeSeconds": _hirc_effect_float(parameter_data, 20),
+                "rightFeedbackDb": _hirc_effect_float(parameter_data, 24),
+                "rightCrossfeedDb": _hirc_effect_float(parameter_data, 28),
+                "filterType": filter_type,
+                "filterTypeLabel": HIRC_EFFECT_FILTER_LABELS[filter_type],
+                "filterGainDb": _hirc_effect_float(parameter_data, 36),
+                "filterFrequencyHz": _hirc_effect_float(parameter_data, 40),
+                "filterQualityFactor": _hirc_effect_float(parameter_data, 44),
+                "dryLevelDb": _hirc_effect_float(parameter_data, 48),
+                "wetLevelDb": _hirc_effect_float(parameter_data, 52),
+                "frontRearBalance": _hirc_effect_float(parameter_data, 56),
+                "crossfeedEnabled": _hirc_effect_bool(parameter_data, 60),
+                "feedbackEnabled": _hirc_effect_bool(parameter_data, 61),
+            }
+            summary = (
+                f"L {_hirc_effect_number(values['leftDelayTimeSeconds'])} s / "
+                f"R {_hirc_effect_number(values['rightDelayTimeSeconds'])} s; feedback "
+                f"{'on' if values['feedbackEnabled'] else 'off'}; crossfeed "
+                f"{'on' if values['crossfeedEnabled'] else 'off'}; "
+                f"{values['filterTypeLabel']} "
+                f"{_hirc_effect_number(values['filterFrequencyHz'])} Hz; dry "
+                f"{_hirc_effect_number(values['dryLevelDb'])} dB; wet "
+                f"{_hirc_effect_number(values['wetLevelDb'])} dB; front/rear "
+                f"{_hirc_effect_number(values['frontRearBalance'])}"
+            )
+        elif plugin_class_id == 0x00760003:  # RoomVerb
+            er_pattern = unpack_from("<I", parameter_data, 81)[0]
+            quality = unpack_from("<I", parameter_data, 105)[0]
+            if er_pattern not in HIRC_ROOMVERB_ER_PATTERN_LABELS:
+                raise ValueError("invalid RoomVerb ER pattern")
+            if quality not in (2, 4, 6, 8, 10, 12, 14, 16):
+                raise ValueError("invalid RoomVerb quality")
+
+            tone_bands: list[dict[str, Any]] = []
+            tone_summaries: list[str] = []
+            for index, (value_offset, enum_offset) in enumerate(
+                ((16, 110), (28, 118), (40, 126)), start=1
+            ):
+                insert = unpack_from("<I", parameter_data, enum_offset)[0]
+                curve = unpack_from("<I", parameter_data, enum_offset + 4)[0]
+                if insert not in HIRC_ROOMVERB_TONE_INSERT_LABELS:
+                    raise ValueError("invalid RoomVerb tone insertion")
+                if curve not in HIRC_ROOMVERB_TONE_CURVE_LABELS:
+                    raise ValueError("invalid RoomVerb tone curve")
+                band = {
+                    "band": index,
+                    "insert": insert,
+                    "insertLabel": HIRC_ROOMVERB_TONE_INSERT_LABELS[insert],
+                    "curve": curve,
+                    "curveLabel": HIRC_ROOMVERB_TONE_CURVE_LABELS[curve],
+                    "gainDb": _hirc_effect_float(parameter_data, value_offset),
+                    "frequencyHz": _hirc_effect_float(
+                        parameter_data, value_offset + 4
+                    ),
+                    "qualityFactor": _hirc_effect_float(
+                        parameter_data, value_offset + 8
+                    ),
+                }
+                tone_bands.append(band)
+                tone_summaries.append(
+                    f"B{index} "
+                    + (
+                        f"{band['insertLabel']} {band['curveLabel']} "
+                        f"{_hirc_effect_number(band['frequencyHz'])} Hz "
+                        f"{_hirc_effect_number(band['gainDb'])} dB "
+                        f"Q {_hirc_effect_number(band['qualityFactor'])}"
+                        if insert else "off"
+                    )
+                )
+
+            private_native_ranges = (
+                (0, 5, "earlyReflectionTapPatternSynthesisInputs", ["0x00229b60"],
+                 "exactNativeUseRolePublicNameUnresolved",
+                 "0x00229b60 reads the five contiguous floats as two endpoint pairs plus a middle variation input, applies linear interpolation and seeded per-tap variation, then 0x0022a010 normalizes the generated values into the ER grid used by per-unit setup."),
+                (5, 3, "nativeRoleUnobservedInAuditedRoomVerbPath", [],
+                 "exactNativeReadBoundaryNoDirectReadObserved", ""),
+                (8, 1, "sixChannelCoefficientDerivationInput", ["0x0022ab2e"],
+                 "exactNativeUseRolePublicNameUnresolved",
+                 "0x0022ab2e scales the value by 2*pi and a native divisor, then writes six coefficients of the form 1 - (2*pi * value / divisor) for ER/reverb unit initialization."),
+                (9, 2, "earlyReflectionSecondaryPatternInputs", ["0x00229e20"],
+                 "exactNativeUseRolePublicNameUnresolved",
+                 "0x00229e20 reads the two values as a secondary ER pattern range/spread, builds seeded four-lane values per unit, and the caller converts them into the secondary per-unit pattern before allocation."),
+            )
+            private_native_rows: dict[int, dict[str, Any]] = {}
+            for start_index, count, role, consumers, native_status, detail in private_native_ranges:
+                for index in range(start_index, start_index + count):
+                    private_native_rows[index] = {
+                        "nativeStructOffset": 0x9C + index * 4,
+                        "nativeUseRole": role,
+                        "nativeUseStatus": native_status,
+                        "nativeUseDetail": detail,
+                        "nativeConsumerRvas": consumers,
+                    }
+            internal_tuning = []
+            for index in range(11):
+                serialized_offset = 142 + index * 4
+                internal_tuning.append({
+                    "setParamId": 100 + index,
+                    "serializedOffset": serialized_offset,
+                    "value": _hirc_effect_float(parameter_data, serialized_offset),
+                    "semanticStatus": "exactValueMeaningUnresolved",
+                    **private_native_rows[index],
+                })
+            values = {
+                "reverb": {
+                    "preDelayMilliseconds": _hirc_effect_float(parameter_data, 85),
+                    "decayTimeSeconds": _hirc_effect_float(parameter_data, 0),
+                    "highFrequencyDamping": _hirc_effect_float(parameter_data, 4),
+                    "densityPercent": _hirc_effect_float(parameter_data, 97),
+                    "roomShapePercent": _hirc_effect_float(parameter_data, 101),
+                    "qualityReverberations": quality,
+                    "diffusionPercent": _hirc_effect_float(parameter_data, 8),
+                    "stereoWidthDegrees": _hirc_effect_float(parameter_data, 12),
+                },
+                "earlyReflections": {
+                    "enabled": _hirc_effect_bool(parameter_data, 80),
+                    "patternId": er_pattern,
+                    "patternLabel": HIRC_ROOMVERB_ER_PATTERN_LABELS[er_pattern],
+                    "roomSizePercent": _hirc_effect_float(parameter_data, 89),
+                    "rearDelayMilliseconds": _hirc_effect_float(parameter_data, 93),
+                },
+                "tone": {
+                    "enabled": _hirc_effect_bool(parameter_data, 109),
+                    "bands": tone_bands,
+                },
+                "inputLevelsDb": {
+                    "center": _hirc_effect_float(parameter_data, 134),
+                    "lfe": _hirc_effect_float(parameter_data, 138),
+                },
+                "reverbLevelsDb": {
+                    "front": _hirc_effect_float(parameter_data, 52),
+                    "rear": _hirc_effect_float(parameter_data, 56),
+                    "center": _hirc_effect_float(parameter_data, 60),
+                    "lfe": _hirc_effect_float(parameter_data, 64),
+                },
+                "outputLevelsDb": {
+                    "dry": _hirc_effect_float(parameter_data, 68),
+                    "earlyReflections": _hirc_effect_float(parameter_data, 72),
+                    "reverb": _hirc_effect_float(parameter_data, 76),
+                },
+                "internalTuningParameters": internal_tuning,
+            }
+            reverb = values["reverb"]
+            early_reflections = values["earlyReflections"]
+            output_levels = values["outputLevelsDb"]
+            summary = (
+                f"decay {_hirc_effect_number(reverb['decayTimeSeconds'])} s; "
+                f"HF damping {_hirc_effect_number(reverb['highFrequencyDamping'])}; "
+                f"density {_hirc_effect_number(reverb['densityPercent'])}%; "
+                f"diffusion {_hirc_effect_number(reverb['diffusionPercent'])}%; "
+                f"stereo {_hirc_effect_number(reverb['stereoWidthDegrees'])} deg; "
+                f"pre-delay {_hirc_effect_number(reverb['preDelayMilliseconds'])} ms; ER "
+                + (
+                    f"{early_reflections['patternLabel']}, size "
+                    f"{_hirc_effect_number(early_reflections['roomSizePercent'])}%, rear "
+                    f"{_hirc_effect_number(early_reflections['rearDelayMilliseconds'])} ms"
+                    if early_reflections["enabled"] else "off"
+                )
+                + f"; dry {_hirc_effect_number(output_levels['dry'])} dB; ER "
+                f"{_hirc_effect_number(output_levels['earlyReflections'])} dB; reverb "
+                f"{_hirc_effect_number(output_levels['reverb'])} dB; tone "
+                + (
+                    ", ".join(tone_summaries)
+                    if values["tone"]["enabled"] else "off"
+                )
+            )
+            parser_status = (
+                "typedExactLayoutPartialSemanticsShippedAkSoundEngineSetParamsBlock"
+            )
+            parameter_boundary = "typedExactLayoutPartialAuthoredSemantics"
+            semantic_boundary = (
+                "All 37 public RoomVerb authoring properties are identified from "
+                "SetParam dispatch plus runtime use. Native update-role evidence "
+                "classifies IDs 100..104, 108, and 109..110 by exact consumer "
+                "functions, while IDs 105..107 have no direct read in the audited "
+                "RoomVerb update helpers; IDs 100..110 retain exact values and "
+                "public parameter names remain unresolved."
+            )
+        elif plugin_class_id == 0x007E0003:  # Guitar Distortion
+            eq_bands: list[dict[str, Any]] = []
+            eq_summaries: dict[str, list[str]] = {
+                "preDistortion": [],
+                "postDistortion": [],
+            }
+            for index in range(6):
+                offset = index * 17
+                filter_type = unpack_from("<I", parameter_data, offset)[0]
+                if filter_type not in HIRC_PARAMETRIC_EQ_FILTER_LABELS:
+                    raise ValueError("invalid Guitar Distortion EQ filter type")
+                section = "preDistortion" if index < 3 else "postDistortion"
+                band_number = index + 1 if index < 3 else index - 2
+                band = {
+                    "section": section,
+                    "band": band_number,
+                    "filterType": filter_type,
+                    "filterTypeLabel": HIRC_PARAMETRIC_EQ_FILTER_LABELS[
+                        filter_type
+                    ],
+                    "gainDb": _hirc_effect_float_range(
+                        parameter_data, offset + 4, -48.0, 48.0,
+                        "Guitar Distortion EQ gain",
+                    ),
+                    "frequencyHz": _hirc_effect_float_range(
+                        parameter_data, offset + 8, 20.0, 20000.0,
+                        "Guitar Distortion EQ frequency",
+                    ),
+                    "qualityFactor": _hirc_effect_float_range(
+                        parameter_data, offset + 12, 0.1, 20.0,
+                        "Guitar Distortion EQ quality factor",
+                    ),
+                    "enabled": _hirc_effect_bool(parameter_data, offset + 16),
+                }
+                eq_bands.append(band)
+                eq_summaries[section].append(
+                    f"B{band_number} "
+                    + (
+                        f"{band['filterTypeLabel']} "
+                        f"{_hirc_effect_number(band['frequencyHz'])} Hz "
+                        f"{_hirc_effect_number(band['gainDb'])} dB "
+                        f"Q {_hirc_effect_number(band['qualityFactor'])}"
+                        if band["enabled"] else "off"
+                    )
+                )
+
+            distortion_type = unpack_from("<I", parameter_data, 102)[0]
+            if distortion_type not in HIRC_GUITAR_DISTORTION_TYPE_LABELS:
+                raise ValueError("invalid Guitar Distortion type")
+            values = {
+                "preDistortionEqBands": eq_bands[:3],
+                "postDistortionEqBands": eq_bands[3:],
+                "distortionType": distortion_type,
+                "distortionTypeLabel": HIRC_GUITAR_DISTORTION_TYPE_LABELS[
+                    distortion_type
+                ],
+                "drivePercent": _hirc_effect_float_range(
+                    parameter_data, 106, 0.0, 100.0,
+                    "Guitar Distortion drive",
+                ),
+                "tonePercent": _hirc_effect_float_range(
+                    parameter_data, 110, 0.0, 100.0,
+                    "Guitar Distortion tone",
+                ),
+                "rectificationPercent": _hirc_effect_float_range(
+                    parameter_data, 114, 0.0, 100.0,
+                    "Guitar Distortion rectification",
+                ),
+                "outputGainDb": _hirc_effect_float_range(
+                    parameter_data, 118, -24.0, 24.0,
+                    "Guitar Distortion output gain",
+                ),
+                "wetDryMixPercent": _hirc_effect_float_range(
+                    parameter_data, 122, 0.0, 100.0,
+                    "Guitar Distortion wet/dry mix",
+                ),
+            }
+            summary = (
+                f"{values['distortionTypeLabel']}; drive "
+                f"{_hirc_effect_number(values['drivePercent'])}%; tone "
+                f"{_hirc_effect_number(values['tonePercent'])}%; rectification "
+                f"{_hirc_effect_number(values['rectificationPercent'])}%; output "
+                f"{_hirc_effect_number(values['outputGainDb'])} dB; wet/dry "
+                f"{_hirc_effect_number(values['wetDryMixPercent'])}%; pre EQ "
+                + ", ".join(eq_summaries["preDistortion"])
+                + "; post EQ "
+                + ", ".join(eq_summaries["postDistortion"])
+            )
+        elif plugin_class_id == 0x007F0003:  # Convolution Reverb
+            pre_delay_ms = _hirc_effect_float_range(
+                parameter_data, 0, 0.0, 1000.0,
+                "Convolution Reverb pre-delay",
+            )
+            rear_delay_ms = _hirc_effect_float_range(
+                parameter_data, 4, 0.0, 200.0,
+                "Convolution Reverb rear delay",
+            )
+            reverb_type = unpack_from("<I", parameter_data, 48)[0]
+            if reverb_type not in HIRC_CONVOLUTION_REVERB_TYPE_LABELS:
+                raise ValueError("invalid Convolution Reverb type")
+            private_native_rows = [
+                {
+                    "setParamId": 34,
+                    "serializedOffset": 52,
+                    "nativeStructOffset": 60,
+                    "wrapperOffset": 76,
+                    "value": _hirc_effect_float(parameter_data, 52),
+                    "semanticStatus": "exactValueMeaningUnresolved",
+                    "nativeUseRole": (
+                        "privateRuntimeScalarForwardedToConvolutionEngineProcess"
+                    ),
+                    "nativeUseDetail": (
+                        "SetParam ID 34 writes native +0x3c; wrapper code copies it "
+                        "to +0x4c and passes it as the fifth float to the "
+                        "convolution processor's virtual method."
+                    ),
+                    "nativeUseStatus": "exactForwardedScalarEngineReadUnobserved",
+                    "nativeConsumerRvas": [
+                        "0x00254a83",
+                        "0x00254bd8",
+                        "0x00258520",
+                    ],
+                },
+                {
+                    "setParamId": None,
+                    "serializedOffset": 56,
+                    "nativeStructOffset": 64,
+                    "wrapperOffset": 80,
+                    "rawCode": parameter_data[56],
+                    "semanticStatus": "exactValueMeaningUnresolved",
+                    "nativeUseRole": "serializedByteForwardedToConvolutionRuntimeState",
+                    "nativeUseDetail": (
+                        "Serialized byte 56 is copied through native +0x40 and "
+                        "wrapper +0x50 into runtime state +0x8c before the "
+                        "convolution state update."
+                    ),
+                    "nativeUseStatus": "exactForwardedRolePublicNameUnresolved",
+                    "nativeConsumerRvas": ["0x00254d27"],
+                },
+            ]
+            values = {
+                "preDelayMilliseconds": pre_delay_ms,
+                "rearDelayMilliseconds": rear_delay_ms,
+                "inputLevelsDb": {
+                    "center": _hirc_effect_float_range(
+                        parameter_data, 12, -96.3, 0.0,
+                        "Convolution Reverb center input level",
+                    ),
+                    "lfe": _hirc_effect_float_range(
+                        parameter_data, 16, -96.3, 0.0,
+                        "Convolution Reverb LFE input level",
+                    ),
+                },
+                "inputSpreadDegrees": _hirc_effect_float_range(
+                    parameter_data, 20, 0.0, 180.0,
+                    "Convolution Reverb input spread",
+                ),
+                "reverbLevelsDb": {
+                    "front": _hirc_effect_float_range(
+                        parameter_data, 24, -96.3, 0.0,
+                        "Convolution Reverb front level",
+                    ),
+                    "rear": _hirc_effect_float_range(
+                        parameter_data, 28, -96.3, 0.0,
+                        "Convolution Reverb rear level",
+                    ),
+                    "center": _hirc_effect_float_range(
+                        parameter_data, 32, -96.3, 0.0,
+                        "Convolution Reverb center level",
+                    ),
+                    "lfe": _hirc_effect_float_range(
+                        parameter_data, 36, -96.3, 0.0,
+                        "Convolution Reverb LFE level",
+                    ),
+                },
+                "outputLevelsDb": {
+                    "dry": _hirc_effect_float_range(
+                        parameter_data, 40, -96.3, 24.0,
+                        "Convolution Reverb dry level",
+                    ),
+                    "reverb": _hirc_effect_float_range(
+                        parameter_data, 44, -96.3, 24.0,
+                        "Convolution Reverb output level",
+                    ),
+                },
+                "outputSpreadDegrees": _hirc_effect_float_range(
+                    parameter_data, 8, 0.0, 180.0,
+                    "Convolution Reverb output spread",
+                ),
+                "reverbType": reverb_type,
+                "reverbTypeLabel": HIRC_CONVOLUTION_REVERB_TYPE_LABELS[reverb_type],
+                "unresolvedParameters": private_native_rows,
+            }
+            input_levels = values["inputLevelsDb"]
+            reverb_levels = values["reverbLevelsDb"]
+            output_levels = values["outputLevelsDb"]
+            summary = (
+                f"{values['reverbTypeLabel']}; pre-delay "
+                f"{_hirc_effect_number(pre_delay_ms)} ms; rear delay "
+                f"{_hirc_effect_number(rear_delay_ms)} ms; input spread "
+                f"{_hirc_effect_number(values['inputSpreadDegrees'])} deg; "
+                f"input C {_hirc_effect_number(input_levels['center'])} dB / LFE "
+                f"{_hirc_effect_number(input_levels['lfe'])} dB; reverb F "
+                f"{_hirc_effect_number(reverb_levels['front'])} / R "
+                f"{_hirc_effect_number(reverb_levels['rear'])} / C "
+                f"{_hirc_effect_number(reverb_levels['center'])} / LFE "
+                f"{_hirc_effect_number(reverb_levels['lfe'])} dB; dry "
+                f"{_hirc_effect_number(output_levels['dry'])} dB; reverb "
+                f"{_hirc_effect_number(output_levels['reverb'])} dB; output spread "
+                f"{_hirc_effect_number(values['outputSpreadDegrees'])} deg"
+            )
+            parser_status = (
+                "typedExactLayoutPartialSemanticsShippedAkSoundEngineSetParamsBlock"
+            )
+            parameter_boundary = "typedExactLayoutPartialAuthoredSemantics"
+            semantic_boundary = (
+                "The 13 public Convolution Reverb runtime properties are identified "
+                "from the shipped SetParamsBlock/SetParam layout, property groups, "
+                "and enforced ranges. SetParam ID 34 and serialized byte 56 retain "
+                "exact values with native forwarding roles: the scalar is forwarded "
+                "to both convolution processing paths while the current CPU engine "
+                "body does not expose a read of that argument, and the final byte is "
+                "copied into runtime state; public names and final DSP roles remain "
+                "unresolved."
+            )
+        elif plugin_class_id == 0x00BA0003:  # Mastering Suite
+            module_names = (
+                "parametricEq", "multibandCompressor", "masterVolume", "limiter"
+            )
+            module_enabled = {
+                name: _hirc_effect_bool(parameter_data, index)
+                for index, name in enumerate(module_names)
+            }
+
+            eq_bands: list[dict[str, Any]] = []
+            eq_summaries: list[str] = []
+            for index in range(6):
+                offset = 14 + index * 16
+                filter_mode = unpack_from("<I", parameter_data, offset)[0]
+                if filter_mode not in HIRC_MASTERING_EQ_FILTER_LABELS:
+                    raise ValueError("invalid Mastering Suite EQ filter mode")
+                band = {
+                    "band": index + 1,
+                    "enabled": _hirc_effect_bool(parameter_data, 8 + index),
+                    "filterMode": filter_mode,
+                    "filterModeLabel": HIRC_MASTERING_EQ_FILTER_LABELS[filter_mode],
+                    "frequencyHz": _hirc_effect_float(parameter_data, offset + 4),
+                    "gainDb": _hirc_effect_float(parameter_data, offset + 8),
+                    "qualityFactor": _hirc_effect_float(parameter_data, offset + 12),
+                }
+                if band["frequencyHz"] <= 0.0 or band["qualityFactor"] <= 0.0:
+                    raise ValueError("invalid Mastering Suite EQ frequency or Q")
+                eq_bands.append(band)
+                eq_summaries.append(
+                    f"B{index + 1} "
+                    + (
+                        f"{band['filterModeLabel']} "
+                        f"{_hirc_effect_number(band['frequencyHz'])} Hz "
+                        f"{_hirc_effect_number(band['gainDb'])} dB "
+                        f"Q {_hirc_effect_number(band['qualityFactor'])}"
+                        if band["enabled"] else "off"
+                    )
+                )
+
+            compressor_link_mode = unpack_from("<I", parameter_data, 114)[0]
+            if compressor_link_mode not in HIRC_MASTERING_COMPRESSOR_LINK_LABELS:
+                raise ValueError("invalid Mastering Suite compressor link mode")
+            link_strength = _hirc_effect_float_range(
+                parameter_data, 118, 0.0, 100.0,
+                "Mastering Suite compressor link strength",
+            )
+            crossover_frequencies = [
+                _hirc_effect_float(parameter_data, 127 + index * 4)
+                for index in range(3)
+            ]
+            if (
+                any(value <= 0.0 for value in crossover_frequencies)
+                or crossover_frequencies != sorted(crossover_frequencies)
+            ):
+                raise ValueError("invalid Mastering Suite compressor crossovers")
+
+            compressor_bands: list[dict[str, Any]] = []
+            compressor_summaries: list[str] = []
+            for index in range(4):
+                offset = 139 + index * 24
+                band = {
+                    "band": index + 1,
+                    "enabled": _hirc_effect_bool(parameter_data, 123 + index),
+                    "thresholdDb": _hirc_effect_float(parameter_data, offset),
+                    "ratio": _hirc_effect_float(parameter_data, offset + 4),
+                    "attackSeconds": _hirc_effect_float(parameter_data, offset + 8),
+                    "releaseSeconds": _hirc_effect_float(parameter_data, offset + 12),
+                    "knee": _hirc_effect_float(parameter_data, offset + 16),
+                    "makeupGainDb": _hirc_effect_float(parameter_data, offset + 20),
+                }
+                if (
+                    band["ratio"] <= 0.0
+                    or band["attackSeconds"] < 0.0
+                    or band["releaseSeconds"] < 0.0
+                    or band["knee"] < 0.0
+                ):
+                    raise ValueError("invalid Mastering Suite compressor band")
+                compressor_bands.append(band)
+                compressor_summaries.append(
+                    f"B{index + 1} "
+                    + (
+                        f"{_hirc_effect_number(band['thresholdDb'])} dB, "
+                        f"{_hirc_effect_number(band['ratio'])}:1"
+                        if band["enabled"] else "off"
+                    )
+                )
+
+            channel_gains = [
+                {
+                    "channelIndex": index,
+                    "serializedOffset": 235 + index * 4,
+                    "nativeStructOffset": 0x118 + index * 4,
+                    "gainDb": _hirc_effect_float(parameter_data, 235 + index * 4),
+                }
+                for index in range(12)
+            ]
+            limiter_mode = unpack_from("<I", parameter_data, 283)[0]
+            if limiter_mode not in HIRC_MASTERING_LIMITER_MODE_LABELS:
+                raise ValueError("invalid Mastering Suite limiter mode")
+            values = {
+                "moduleEnabled": module_enabled,
+                "parametricEq": {
+                    "bands": eq_bands,
+                },
+                "multibandCompressor": {
+                    "channelLinkMode": compressor_link_mode,
+                    "channelLinkModeLabel": HIRC_MASTERING_COMPRESSOR_LINK_LABELS[
+                        compressor_link_mode
+                    ],
+                    "linkStrengthPercent": link_strength,
+                    "stereoLink": _hirc_effect_bool(parameter_data, 122),
+                    "crossoverFrequenciesHz": crossover_frequencies,
+                    "bands": compressor_bands,
+                },
+                "masterVolume": {
+                    "gainDb": _hirc_effect_float(parameter_data, 231),
+                    "channelGainsDb": channel_gains,
+                    "channelOrderStatus": "serializedWwiseChannelIndex",
+                },
+                "limiter": {
+                    "mode": limiter_mode,
+                    "modeLabel": HIRC_MASTERING_LIMITER_MODE_LABELS[limiter_mode],
+                    "thresholdDb": _hirc_effect_float(parameter_data, 287),
+                    "attackSeconds": _hirc_effect_float(parameter_data, 291),
+                    "releaseSeconds": _hirc_effect_float(parameter_data, 295),
+                    "outputGainDb": _hirc_effect_float(parameter_data, 299),
+                    "linkChannels": _hirc_effect_bool(parameter_data, 303),
+                },
+                "unresolvedParameters": [
+                    {
+                        "setParamId": 100,
+                        "serializedOffset": 4,
+                        "nativeStructOffset": 24,
+                        "rawCode": unpack_from("<I", parameter_data, 4)[0],
+                        "semanticStatus": "exactValueMeaningUnresolved",
+                        "nativeUseRole": "privateUint32StoredAtNativeStructOffset",
+                        "nativeUseStatus": (
+                            "nativeSetParamStorageOnlyNoDirectReadObserved"
+                        ),
+                        "nativeConsumerRvas": [],
+                    },
+                    {
+                        "setParamId": 200,
+                        "serializedOffset": 110,
+                        "nativeStructOffset": 136,
+                        "rawCode": unpack_from("<I", parameter_data, 110)[0],
+                        "semanticStatus": "exactValueMeaningUnresolved",
+                        "nativeUseRole": "privateUint32StoredAtNativeStructOffset",
+                        "nativeUseStatus": (
+                            "nativeSetParamStorageOnlyNoDirectReadObserved"
+                        ),
+                        "nativeConsumerRvas": [],
+                    },
+                ],
+            }
+            enabled_modules = [
+                name for name, enabled in module_enabled.items() if enabled
+            ]
+            compressor = values["multibandCompressor"]
+            master_volume = values["masterVolume"]
+            limiter = values["limiter"]
+            summary = (
+                "modules " + ", ".join(enabled_modules or ["all bypassed"])
+                + "; EQ " + ", ".join(eq_summaries)
+                + "; compressor " + ", ".join(compressor_summaries)
+                + f"; {compressor['channelLinkModeLabel']}, strength "
+                f"{_hirc_effect_number(compressor['linkStrengthPercent'])}%, stereo "
+                + ("linked" if compressor["stereoLink"] else "independent")
+                + f"; master {_hirc_effect_number(master_volume['gainDb'])} dB; "
+                f"limiter {limiter['modeLabel']} at "
+                f"{_hirc_effect_number(limiter['thresholdDb'])} dB, channels "
+                + ("linked" if limiter["linkChannels"] else "independent")
+            )
+            parser_status = (
+                "typedExactLayoutPartialSemanticsShippedAkSoundEngineSetParamsBlock"
+            )
+            parameter_boundary = "typedExactLayoutPartialAuthoredSemantics"
+            semantic_boundary = (
+                "The four public Mastering Suite modules, six EQ bands, four "
+                "multiband-compressor bands, master/channel gains, and limiter "
+                "controls are identified from the shipped SetParamsBlock/SetParam "
+                "layout and public module contract. SetParam IDs 100 and 200 "
+                "retain exact uint32 values with exact native storage-only evidence "
+                "but no direct read observed in the audited runtime; their private "
+                "meanings remain unresolved. SetParamsBlock maps serialized channel "
+                "gains 235..279 to native +0x118..+0x144 with stride 4, but speaker "
+                "names are not inferred for those 12 slots."
+            )
+        elif plugin_class_id == 0x00730003:  # Matrix Reverb
+            number_of_delays = unpack_from("<I", parameter_data, 8)[0]
+            if number_of_delays not in (4, 8, 12, 16):
+                raise ValueError("invalid Matrix Reverb delay count")
+            custom_delay_times_raw = unpack_from("<I", parameter_data, 25)[0]
+            if custom_delay_times_raw not in (0, 1):
+                raise ValueError("invalid Matrix Reverb custom-delay flag")
+            expected_size = 29 + (number_of_delays * 4 if custom_delay_times_raw else 0)
+            if len(parameter_data) != expected_size:
+                raise ValueError("Matrix Reverb parameter size does not match delay mode")
+            delay_times_ms = [
+                _hirc_effect_float(parameter_data, 29 + index * 4)
+                for index in range(number_of_delays)
+            ] if custom_delay_times_raw else []
+            values = {
+                "reverbTimeSeconds": _hirc_effect_float(parameter_data, 0),
+                "highFrequencyRatio": _hirc_effect_float(parameter_data, 4),
+                "numberOfDelays": number_of_delays,
+                "dryLevelDb": _hirc_effect_float(parameter_data, 12),
+                "wetLevelDb": _hirc_effect_float(parameter_data, 16),
+                "preDelaySeconds": _hirc_effect_float(parameter_data, 20),
+                "processLfe": _hirc_effect_bool(parameter_data, 24),
+                "customDelayTimes": bool(custom_delay_times_raw),
+                "delayTimesMilliseconds": delay_times_ms,
+            }
+            summary = (
+                f"reverb {_hirc_effect_number(values['reverbTimeSeconds'])} s; HF ratio "
+                f"{_hirc_effect_number(values['highFrequencyRatio'])}; "
+                f"{number_of_delays} delays"
+                + (" custom" if custom_delay_times_raw else " built-in")
+                + f"; dry {_hirc_effect_number(values['dryLevelDb'])} dB; wet "
+                f"{_hirc_effect_number(values['wetLevelDb'])} dB; pre-delay "
+                f"{_hirc_effect_number(values['preDelaySeconds'])} s; LFE "
+                + ("on" if values["processLfe"] else "off")
+            )
+        else:
+            return None
+    except (ValueError, IndexError):
+        return None
+
+    return {
+        "parameterParserStatus": parser_status,
+        "parameterSchema": contract["schema"],
+        "parameterValues": values,
+        "parameterSummary": summary,
+        "parameterSetParamsBlockRva": contract["setParamsBlockRva"],
+        "parameterBoundary": parameter_boundary,
+        **({"parameterSemanticBoundary": semantic_boundary} if semantic_boundary else {}),
+        "parameterRuntimeBoundary": (
+            "authoredBaseValuesOnly; live RTPC/State changes, bypass, platform "
+            "DSP, and audibility are not observed"
+        ),
+    }
+
+
+def _hirc_v150_plugin_media_dependency_prefix(
+    plugin_class_id: int,
+    trailing_data: bytes,
+) -> dict[str, Any] | None:
+    """Decode the bounded v150 plug-in media dependency prefix.
+
+    Each row is one U8 plug-in data index followed by one U32 media ID.  These
+    IDs are plug-in inputs (for example, a Convolution Reverb impulse response),
+    not Sound-source WEM leaves and therefore never enter playable media links.
+    """
+
+    if not trailing_data:
+        return None
+    dependency_count = trailing_data[0]
+    prefix_byte_length = 1 + dependency_count * 5
+    if prefix_byte_length > len(trailing_data):
+        return None
+    semantic_role = (
+        "impulseResponseMedia"
+        if plugin_class_id == 0x007F0003
+        else "pluginDataMedia"
+    )
+    dependencies = []
+    for index in range(dependency_count):
+        offset = 1 + index * 5
+        plugin_data_index = trailing_data[offset]
+        media_id = unpack_from("<I", trailing_data, offset + 1)[0]
+        dependencies.append({
+            "pluginDataIndex": plugin_data_index,
+            "mediaId": media_id,
+            "mediaIdHex": f"0x{media_id:08x}",
+            "semanticRole": semantic_role,
+        })
+    return {
+        "pluginMediaParserStatus": "typedExactV150PluginMediaDependencyPrefix",
+        "pluginMediaDependencyCount": dependency_count,
+        "pluginMediaDependencies": dependencies,
+        "pluginMediaPrefixByteLength": prefix_byte_length,
+        "postPluginMediaTrailingByteLength": (
+            len(trailing_data) - prefix_byte_length
+        ),
+        "pluginMediaBoundary": (
+            "Exact bank plug-in data dependencies; IDs are not playable Sound "
+            "WEM leaves, and runtime loading, DSP use, and audibility are not observed."
+        ),
+    }
+
+
+def hirc_v150_effect_definition(
+    object_type: int,
+    data: bytes,
+) -> dict[str, Any] | None:
+    """Decode exact class, parameter, and bounded media-dependency prefixes.
+
+    HIRC types 16 and 17 use the same bounded plug-in class ID plus parameter
+    blob prefix.  Parameter bytes stay fingerprinted until a plug-in-specific
+    writer contract is available.  A valid trailing media prefix is kept as
+    plug-in data and never promoted to a playable Sound-source leaf.
+    """
+
+    if object_type not in (16, 17) or len(data) < 8:
+        return None
+    plugin_class_id = unpack_from("<I", data, 0)[0]
+    parameter_size = unpack_from("<I", data, 4)[0]
+    if parameter_size > len(data) - 8:
+        return None
+    parameter_data = data[8 : 8 + parameter_size]
+    trailing_data = data[8 + parameter_size :]
+    plugin_type = plugin_class_id & 0x0F
+    if plugin_type != 3:
+        # HIRC type 17 also carries custom source plug-ins in the current
+        # corpus.  They are playback sources, not post-processing effects, and
+        # must not pollute the direct-FX definition catalog.
+        return None
+    company_id = (plugin_class_id >> 4) & 0x0FFF
+    plugin_id = plugin_class_id >> 16
+    if plugin_class_id in HIRC_BUILTIN_EFFECT_PLUGIN_LABELS:
+        plugin_name = HIRC_BUILTIN_EFFECT_PLUGIN_LABELS[plugin_class_id]
+        name_evidence = "shippedAkSoundEngineRegistrationClassId"
+    else:
+        plugin_name = HIRC_SOURCE_PLUGIN_LABELS.get(plugin_class_id)
+        name_evidence = "knownWwiseSourceClassId" if plugin_name else None
+    definition = {
+        "parserStatus": "typedExactV150PluginParameterPrefix",
+        "objectType": object_type,
+        "objectTypeLabel": HIRC_OBJECT_TYPE_LABELS.get(
+            object_type, f"type{object_type}"
+        ),
+        "pluginClassId": plugin_class_id,
+        "pluginClassIdHex": f"0x{plugin_class_id:08x}",
+        "pluginType": plugin_type,
+        "pluginTypeLabel": HIRC_PLUGIN_TYPE_LABELS.get(
+            plugin_type, f"pluginType{plugin_type}"
+        ),
+        "companyId": company_id,
+        "pluginId": plugin_id,
+        "pluginName": plugin_name,
+        "pluginNameEvidence": name_evidence,
+        "parameterByteLength": parameter_size,
+        "parameterSha256": hashlib.sha256(parameter_data).hexdigest(),
+        "trailingByteLength": len(trailing_data),
+        "parameterBoundary": "opaquePluginSpecificPayload",
+    }
+    plugin_media = _hirc_v150_plugin_media_dependency_prefix(
+        plugin_class_id, trailing_data
+    )
+    if plugin_media is not None:
+        definition.update(plugin_media)
+    decoded_parameters = decode_hirc_v150_effect_parameters(
+        plugin_class_id, parameter_data
+    )
+    if decoded_parameters is not None:
+        definition.update(decoded_parameters)
+        definition["parameterBoundary"] = decoded_parameters.get(
+            "parameterBoundary", "typedExactAuthoredBaseValues"
+        )
+    return definition
 
 
 def hirc_v150_music_track(data: bytes) -> dict[str, Any] | None:
@@ -4295,6 +6539,2072 @@ def hirc_object_parent_id(object_type: int, data: bytes) -> int | None:
             return None
     else:
         return None
+
+
+def _hirc_v150_node_base_offset(
+    object_type: int,
+    data: bytes,
+) -> int | None:
+    """Return the type-defined NodeBase offset for a v150 audio node."""
+
+    if object_type == 2:
+        source = hirc_v150_sound_source(data)
+        return int(source["nodeBaseOffset"]) if source else None
+    if object_type == 11:
+        track = hirc_v150_music_track(data)
+        return int(track["nodeBaseOffset"]) if track else None
+    if object_type in HIRC_MUSIC_PARENT_NODE_TYPES:
+        return 1
+    if object_type in HIRC_TYPED_CHILD_CONTAINER_TYPES:
+        return 0
+    return None
+
+
+def _hirc_v150_node_aux_sends(
+    data: bytes,
+    node_base_end: int,
+) -> dict[str, Any]:
+    """Decode v150 NodeBase fields through authored Auxiliary Sends.
+
+    The variable prefix is bounded by its own serialized counts.  Field-level
+    diagnostics deliberately identify the failed gate and byte offset so a
+    layout drift cannot silently turn arbitrary node-tail bytes into routes.
+    """
+
+    offset = node_base_end
+    if offset >= len(data):
+        raise ValueError(
+            f"v150 Aux Send gate priorityFlags truncated at offset {offset}"
+        )
+    priority_flags_raw = data[offset]
+    offset += 1
+
+    if offset >= len(data):
+        raise ValueError(
+            f"v150 Aux Send gate propertyCount truncated at offset {offset}"
+        )
+    property_count = data[offset]
+    offset += 1
+    property_bytes = property_count * 5
+    if offset + property_bytes > len(data):
+        raise ValueError(
+            "v150 Aux Send gate propertyBundle truncated: "
+            f"count={property_count} offset={offset} "
+            f"required={property_bytes} remaining={len(data) - offset}"
+        )
+    property_id_offset = offset
+    property_ids = list(data[offset:offset + property_count])
+    property_value_offset = property_id_offset + property_count
+    properties: list[dict[str, Any]] = []
+    for index, property_id in enumerate(property_ids):
+        raw = unpack_from("<I", data, property_value_offset + index * 4)[0]
+        float_value = unpack_from("<f", data, property_value_offset + index * 4)[0]
+        property_label = HIRC_INITIAL_PROPERTY_LABELS.get(
+            property_id, f"property{property_id}"
+        )
+        value_encoding = "float"
+        if property_label in HIRC_INITIAL_PROPERTY_U32_LABELS:
+            value_encoding = "u32Id"
+        elif raw <= 0x00100000 and math.isfinite(float_value) and abs(float_value) < 1e-20:
+            value_encoding = "u32Likely"
+        properties.append({
+            "propertyIndex": index,
+            "propertyId": property_id,
+            "propertyIdHex": f"0x{property_id:02x}",
+            "propertyLabel": property_label,
+            "rawU32": raw,
+            "rawHex": f"0x{raw:08x}",
+            "floatValue": float_value if math.isfinite(float_value) else None,
+            "valueEncoding": value_encoding,
+        })
+    offset += property_count + property_count * 4
+
+    if offset >= len(data):
+        raise ValueError(
+            f"v150 Aux Send gate rangedPropertyCount truncated at offset {offset}"
+        )
+    ranged_property_count = data[offset]
+    offset += 1
+    ranged_property_bytes = ranged_property_count * 9
+    if offset + ranged_property_bytes > len(data):
+        raise ValueError(
+            "v150 Aux Send gate rangedPropertyBundle truncated: "
+            f"count={ranged_property_count} offset={offset} "
+            f"required={ranged_property_bytes} remaining={len(data) - offset}"
+        )
+    ranged_property_id_offset = offset
+    ranged_property_ids = list(data[offset:offset + ranged_property_count])
+    ranged_property_value_offset = ranged_property_id_offset + ranged_property_count
+    ranged_properties: list[dict[str, Any]] = []
+    for index, property_id in enumerate(ranged_property_ids):
+        minimum_raw = unpack_from(
+            "<I", data, ranged_property_value_offset + index * 8
+        )[0]
+        maximum_raw = unpack_from(
+            "<I", data, ranged_property_value_offset + index * 8 + 4
+        )[0]
+        minimum_float = unpack_from(
+            "<f", data, ranged_property_value_offset + index * 8
+        )[0]
+        maximum_float = unpack_from(
+            "<f", data, ranged_property_value_offset + index * 8 + 4
+        )[0]
+        ranged_properties.append({
+            "propertyIndex": index,
+            "propertyId": property_id,
+            "propertyIdHex": f"0x{property_id:02x}",
+            "propertyLabel": HIRC_INITIAL_PROPERTY_LABELS.get(
+                property_id, f"property{property_id}"
+            ),
+            "minimumRawU32": minimum_raw,
+            "minimumRawHex": f"0x{minimum_raw:08x}",
+            "minimumFloat": minimum_float if math.isfinite(minimum_float) else None,
+            "maximumRawU32": maximum_raw,
+            "maximumRawHex": f"0x{maximum_raw:08x}",
+            "maximumFloat": maximum_float if math.isfinite(maximum_float) else None,
+            "valueEncoding": "floatOrTypedUnionRawU32",
+        })
+    offset += ranged_property_count + ranged_property_count * 8
+
+    positioning_offset = offset
+    if offset >= len(data):
+        raise ValueError(
+            f"v150 Aux Send gate positioningBits truncated at offset {offset}"
+        )
+    positioning_bits_raw = data[offset]
+    offset += 1
+    override_positioning = bool(positioning_bits_raw & 0x01)
+    listener_relative_routing = bool(positioning_bits_raw & 0x02)
+    positioning_3d_bits_raw: int | None = None
+    automation_vertex_count = 0
+    automation_playlist_item_count = 0
+    if override_positioning and listener_relative_routing:
+        if offset >= len(data):
+            raise ValueError(
+                f"v150 Aux Send gate positioning3dBits truncated at offset {offset}"
+            )
+        positioning_3d_bits_raw = data[offset]
+        offset += 1
+        position_type = (positioning_bits_raw >> 5) & 0x03
+        if position_type:
+            fixed_automation_bytes = 1 + 4 + 4
+            if offset + fixed_automation_bytes > len(data):
+                raise ValueError(
+                    "v150 Aux Send gate positioningAutomationHeader truncated: "
+                    f"offset={offset} required={fixed_automation_bytes} "
+                    f"remaining={len(data) - offset}"
+                )
+            offset += 1 + 4
+            automation_vertex_count = unpack_from("<I", data, offset)[0]
+            offset += 4
+            vertex_bytes = automation_vertex_count * 16
+            if offset + vertex_bytes + 4 > len(data):
+                raise ValueError(
+                    "v150 Aux Send gate positioningVertices truncated: "
+                    f"count={automation_vertex_count} offset={offset} "
+                    f"requiredWithPlaylistCount={vertex_bytes + 4} "
+                    f"remaining={len(data) - offset}"
+                )
+            offset += vertex_bytes
+            automation_playlist_item_count = unpack_from("<I", data, offset)[0]
+            offset += 4
+            playlist_bytes = automation_playlist_item_count * 20
+            if offset + playlist_bytes > len(data):
+                raise ValueError(
+                    "v150 Aux Send gate positioningPlaylist truncated: "
+                    f"count={automation_playlist_item_count} offset={offset} "
+                    f"required={playlist_bytes} remaining={len(data) - offset}"
+                )
+            offset += playlist_bytes
+
+    aux_params_offset = offset
+    if offset >= len(data):
+        raise ValueError(
+            f"v150 Aux Send gate auxFlags truncated at offset {offset}"
+        )
+    aux_flags_raw = data[offset]
+    offset += 1
+    unknown_aux_flag_bits = aux_flags_raw & ~0x1F
+    if unknown_aux_flag_bits:
+        raise ValueError(
+            "v150 Aux Send gate auxFlags unknown bits: "
+            f"offset={aux_params_offset} value=0x{aux_flags_raw:02x} "
+            f"unknown=0x{unknown_aux_flag_bits:02x}"
+        )
+
+    has_user_aux_slots = bool(aux_flags_raw & 0x08)
+    user_aux_bus_ids: list[int] = []
+    user_defined_aux_sends: list[dict[str, Any]] = []
+    if has_user_aux_slots:
+        required = 4 * 4
+        if offset + required > len(data):
+            raise ValueError(
+                "v150 Aux Send gate userDefinedSlots truncated: "
+                f"offset={offset} required={required} remaining={len(data) - offset}"
+            )
+        user_aux_bus_ids = [
+            unpack_from("<I", data, offset + slot_index * 4)[0]
+            for slot_index in range(4)
+        ]
+        user_defined_aux_sends = [
+            {
+                "slotIndex": slot_index,
+                "busId": bus_id,
+                "busIdHex": f"0x{bus_id:08x}",
+                "serializationStatus": "exactAuthoredUserDefinedAuxBusId",
+            }
+            for slot_index, bus_id in enumerate(user_aux_bus_ids)
+            if bus_id
+        ]
+        offset += required
+
+    reflections_aux_bus_id, offset = _hirc_v150_u32(data, offset)
+    return {
+        "parserStatus": "typedExactV150NodeAuxParams",
+        "priorityFlagsRaw": priority_flags_raw,
+        "propertyCount": property_count,
+        "propertyIds": property_ids,
+        "properties": properties,
+        "rangedPropertyCount": ranged_property_count,
+        "rangedPropertyIds": ranged_property_ids,
+        "rangedProperties": ranged_properties,
+        "positioningOffset": positioning_offset,
+        "positioningBitsRaw": positioning_bits_raw,
+        "overridePositioning": override_positioning,
+        "listenerRelativeRouting": listener_relative_routing,
+        "positioning3dBitsRaw": positioning_3d_bits_raw,
+        "automationVertexCount": automation_vertex_count,
+        "automationPlaylistItemCount": automation_playlist_item_count,
+        "auxParamsOffset": aux_params_offset,
+        "auxParamsByteLength": offset - aux_params_offset,
+        "auxParamsEndOffset": offset,
+        "auxFlagsRaw": aux_flags_raw,
+        "overrideGameDefinedAuxSends": bool(aux_flags_raw & 0x01),
+        "useGameDefinedAuxSends": bool(aux_flags_raw & 0x02),
+        "overrideUserDefinedAuxSends": bool(aux_flags_raw & 0x04),
+        "hasUserDefinedAuxSendSlots": has_user_aux_slots,
+        "overrideEarlyReflectionsAuxBus": bool(aux_flags_raw & 0x10),
+        "userDefinedAuxBusIds": user_aux_bus_ids,
+        "userDefinedAuxBusIdHexes": [
+            f"0x{bus_id:08x}" if bus_id else None for bus_id in user_aux_bus_ids
+        ],
+        "userDefinedAuxSends": user_defined_aux_sends,
+        "reflectionsAuxBusId": reflections_aux_bus_id,
+        "reflectionsAuxBusIdHex": (
+            f"0x{reflections_aux_bus_id:08x}" if reflections_aux_bus_id else None
+        ),
+        "gameDefinedAssignmentBoundary": (
+            "runtimeAuxBusIdsAndControlValuesNotSerialized"
+            if aux_flags_raw & 0x02 else "gameDefinedAuxSendsDisabledAtThisNode"
+        ),
+        "flagSemanticBoundary": (
+            "bits2To4ExactCurrentLayout;Bits0To1NamedByLegacyFieldOrderContinuity"
+        ),
+    }
+
+
+def _hirc_v150_node_state_rtpc(
+    data: bytes,
+    post_aux_offset: int,
+) -> dict[str, Any]:
+    """Decode v150 AdvSettings, StateChunk, and InitialRTPC fail-closed."""
+
+    offset = post_aux_offset
+
+    def need(size: int, label: str) -> None:
+        if offset + size > len(data):
+            raise ValueError(
+                f"v150 State/RTPC gate {label} truncated: offset={offset} "
+                f"required={size} remaining={len(data) - offset}"
+            )
+
+    def take_u8(label: str) -> int:
+        nonlocal offset
+        need(1, label)
+        value = data[offset]
+        offset += 1
+        return value
+
+    def take_u16(label: str) -> int:
+        nonlocal offset
+        need(2, label)
+        value = unpack_from("<H", data, offset)[0]
+        offset += 2
+        return value
+
+    def take_u32(label: str) -> int:
+        nonlocal offset
+        need(4, label)
+        value = unpack_from("<I", data, offset)[0]
+        offset += 4
+        return value
+
+    def take_f32(label: str) -> float:
+        nonlocal offset
+        need(4, label)
+        value = float(unpack_from("<f", data, offset)[0])
+        value_offset = offset
+        offset += 4
+        if not math.isfinite(value):
+            raise ValueError(
+                f"v150 State/RTPC gate {label} non-finite at offset {value_offset}"
+            )
+        return value
+
+    def take_varuint(label: str) -> int:
+        start = offset
+        value = 0
+        for index in range(5):
+            byte = take_u8(label)
+            value |= (byte & 0x7F) << (index * 7)
+            if not byte & 0x80:
+                return value
+        raise ValueError(
+            f"v150 State/RTPC gate {label} invalid varuint at offset {start}"
+        )
+
+    adv_settings_offset = offset
+    adv_flags_raw = take_u8("advFlags")
+    virtual_queue_behavior = take_u8("virtualQueueBehavior")
+    max_num_instances = take_u16("maxNumInstances")
+    below_threshold_behavior = take_u8("belowThresholdBehavior")
+    analysis_flags_raw = take_u8("analysisFlags")
+    if virtual_queue_behavior > 2:
+        raise ValueError(
+            "v150 State/RTPC gate virtualQueueBehavior invalid: "
+            f"offset={adv_settings_offset + 1} value={virtual_queue_behavior}"
+        )
+    if below_threshold_behavior > 3:
+        raise ValueError(
+            "v150 State/RTPC gate belowThresholdBehavior invalid: "
+            f"offset={adv_settings_offset + 4} value={below_threshold_behavior}"
+        )
+    adv_settings = {
+        "offset": adv_settings_offset,
+        "byteLength": 6,
+        "flagsRaw": adv_flags_raw,
+        "killNewest": bool(adv_flags_raw & 0x01),
+        "useVirtualBehavior": bool(adv_flags_raw & 0x02),
+        "ignoreParentMaxNumInstances": bool(adv_flags_raw & 0x08),
+        "overrideParentVirtualVoiceBehavior": bool(adv_flags_raw & 0x10),
+        "unknownFlagBits": adv_flags_raw & ~0x1B,
+        "virtualQueueBehavior": virtual_queue_behavior,
+        "virtualQueueBehaviorLabel": {
+            0: "fromBeginning", 1: "fromElapsedTime", 2: "resume",
+        }[virtual_queue_behavior],
+        "maxNumInstances": max_num_instances,
+        "belowThresholdBehavior": below_threshold_behavior,
+        "belowThresholdBehaviorLabel": {
+            0: "continueToPlay",
+            1: "killVoice",
+            2: "setAsVirtualVoice",
+            3: "killIfOneShotElseVirtual",
+        }[below_threshold_behavior],
+        "analysisFlagsRaw": analysis_flags_raw,
+        "overrideHdrEnvelope": bool(analysis_flags_raw & 0x01),
+        "overrideAnalysis": bool(analysis_flags_raw & 0x02),
+        "normalizeLoudness": bool(analysis_flags_raw & 0x04),
+        "enableEnvelope": bool(analysis_flags_raw & 0x08),
+        "unknownAnalysisFlagBits": analysis_flags_raw & ~0x0F,
+    }
+
+    state_chunk_offset = offset
+    state_property_count = take_varuint("statePropertyCount")
+    state_properties: list[dict[str, Any]] = []
+    for property_index in range(state_property_count):
+        parameter_id = take_varuint("statePropertyId")
+        accum = take_u8("statePropertyAccum")
+        in_db_raw = take_u8("statePropertyInDb")
+        if accum not in HIRC_RTPC_ACCUM_LABELS or in_db_raw not in (0, 1):
+            raise ValueError(
+                "v150 State/RTPC gate stateProperty invalid: "
+                f"index={property_index} parameterId={parameter_id} "
+                f"accum={accum} inDb={in_db_raw} offset={offset - 2}"
+            )
+        state_properties.append({
+            "propertyIndex": property_index,
+            "parameterId": parameter_id,
+            "parameterLabel": HIRC_RTPC_PARAMETER_LABELS.get(
+                parameter_id, f"parameter{parameter_id}"
+            ),
+            "accum": accum,
+            "accumLabel": HIRC_RTPC_ACCUM_LABELS[accum],
+            "inDb": bool(in_db_raw),
+            "inDbRaw": in_db_raw,
+        })
+
+    state_group_count = take_varuint("stateGroupCount")
+    state_groups: list[dict[str, Any]] = []
+    state_count = 0
+    state_value_count = 0
+    for group_index in range(state_group_count):
+        group_id = take_u32("stateGroupId")
+        sync_type = take_u8("stateGroupSyncType")
+        if sync_type not in HIRC_STATE_SYNC_TYPE_LABELS:
+            raise ValueError(
+                "v150 State/RTPC gate stateGroupSyncType invalid: "
+                f"groupIndex={group_index} value={sync_type} offset={offset - 1}"
+            )
+        group_state_count = take_varuint("stateCount")
+        states: list[dict[str, Any]] = []
+        for state_index in range(group_state_count):
+            state_id = take_u32("stateId")
+            value_count = take_u16("stateValueCount")
+            need(value_count * 6, "stateValues")
+            property_ids = [
+                take_u16("stateValuePropertyId") for _ in range(value_count)
+            ]
+            values = [take_f32("stateValue") for _ in range(value_count)]
+            state_values = [
+                {
+                    "valueIndex": value_index,
+                    "parameterId": parameter_id,
+                    "parameterLabel": HIRC_RTPC_PARAMETER_LABELS.get(
+                        parameter_id, f"parameter{parameter_id}"
+                    ),
+                    "value": values[value_index],
+                }
+                for value_index, parameter_id in enumerate(property_ids)
+            ]
+            states.append({
+                "stateIndex": state_index,
+                "stateId": state_id,
+                "stateIdHex": f"0x{state_id:08x}",
+                "valueCount": value_count,
+                "values": state_values,
+            })
+            state_value_count += value_count
+        state_groups.append({
+            "groupIndex": group_index,
+            "groupId": group_id,
+            "groupIdHex": f"0x{group_id:08x}",
+            "syncType": sync_type,
+            "syncTypeLabel": HIRC_STATE_SYNC_TYPE_LABELS[sync_type],
+            "stateCount": group_state_count,
+            "states": states,
+        })
+        state_count += group_state_count
+
+    initial_rtpc_offset = offset
+    rtpc_curve_count = take_u16("rtpcCurveCount")
+    rtpc_curves: list[dict[str, Any]] = []
+    rtpc_point_count = 0
+    for curve_index in range(rtpc_curve_count):
+        rtpc_id = take_u32("rtpcId")
+        rtpc_type = take_u8("rtpcType")
+        accum = take_u8("rtpcAccum")
+        parameter_id = take_varuint("rtpcParameterId")
+        curve_id = take_u32("rtpcCurveId")
+        scaling = take_u8("rtpcScaling")
+        point_count = take_u16("rtpcPointCount")
+        if (
+            rtpc_type not in HIRC_RTPC_TYPE_LABELS
+            or accum not in HIRC_RTPC_ACCUM_LABELS
+            or scaling not in HIRC_RTPC_SCALING_LABELS
+        ):
+            raise ValueError(
+                "v150 State/RTPC gate rtpcHeader invalid: "
+                f"curveIndex={curve_index} rtpcType={rtpc_type} accum={accum} "
+                f"parameterId={parameter_id} scaling={scaling} offset={offset - 3}"
+            )
+        points: list[dict[str, Any]] = []
+        for point_index in range(point_count):
+            from_value = take_f32("rtpcPointFrom")
+            to_value = take_f32("rtpcPointTo")
+            interpolation = take_u32("rtpcPointInterpolation")
+            if interpolation not in HIRC_FADE_CURVE_LABELS:
+                raise ValueError(
+                    "v150 State/RTPC gate rtpcPointInterpolation invalid: "
+                    f"curveIndex={curve_index} pointIndex={point_index} "
+                    f"value={interpolation} offset={offset - 4}"
+                )
+            points.append({
+                "pointIndex": point_index,
+                "from": from_value,
+                "to": to_value,
+                "interpolation": interpolation,
+                "interpolationLabel": HIRC_FADE_CURVE_LABELS[interpolation],
+            })
+        rtpc_curves.append({
+            "curveIndex": curve_index,
+            "rtpcId": rtpc_id,
+            "rtpcIdHex": f"0x{rtpc_id:08x}",
+            "rtpcType": rtpc_type,
+            "rtpcTypeLabel": HIRC_RTPC_TYPE_LABELS[rtpc_type],
+            "accum": accum,
+            "accumLabel": HIRC_RTPC_ACCUM_LABELS[accum],
+            "parameterId": parameter_id,
+            "parameterLabel": HIRC_RTPC_PARAMETER_LABELS.get(
+                parameter_id, f"parameter{parameter_id}"
+            ),
+            "curveId": curve_id,
+            "curveIdHex": f"0x{curve_id:08x}",
+            "scaling": scaling,
+            "scalingLabel": HIRC_RTPC_SCALING_LABELS[scaling],
+            "pointCount": point_count,
+            "points": points,
+        })
+        rtpc_point_count += point_count
+
+    return {
+        "parserStatus": "typedExactV150NodeStateAndRtpc",
+        "advSettings": adv_settings,
+        "stateChunkOffset": state_chunk_offset,
+        "statePropertyCount": state_property_count,
+        "stateProperties": state_properties,
+        "stateGroupCount": state_group_count,
+        "stateCount": state_count,
+        "stateValueCount": state_value_count,
+        "stateGroups": state_groups,
+        "initialRtpcOffset": initial_rtpc_offset,
+        "rtpcCurveCount": rtpc_curve_count,
+        "rtpcPointCount": rtpc_point_count,
+        "rtpcCurves": rtpc_curves,
+        "nodeBaseEndOffset": offset,
+        "remainingSubtypeByteLength": len(data) - offset,
+        "evidenceBoundary": (
+            "Exact authored StateChunk values and InitialRTPC curves. Runtime State/"
+            "GameParameter/Modulator values, inherited effective properties, effect "
+            "bypass decisions, and the audible result are not observed."
+        ),
+    }
+
+
+def hirc_v150_node_processing(
+    object_type: int,
+    data: bytes,
+) -> dict[str, Any] | None:
+    """Return the common direct-processing prefix for one audio node."""
+
+    try:
+        offset = _hirc_v150_node_base_offset(object_type, data)
+        if offset is None:
+            return None
+        node_base, node_base_end = _hirc_v150_node_base(data, offset)
+        try:
+            node_base["auxSends"] = _hirc_v150_node_aux_sends(
+                data, node_base_end
+            )
+        except (ValueError, OverflowError, TypeError) as exc:
+            node_base["auxSends"] = {
+                "parserStatus": "failedClosed",
+                "diagnostic": str(exc),
+                "nodeBaseEndOffset": node_base_end,
+                "payloadByteLength": len(data),
+            }
+        aux_sends = node_base["auxSends"]
+        if aux_sends.get("parserStatus") == "typedExactV150NodeAuxParams":
+            try:
+                node_base["stateAndRtpc"] = _hirc_v150_node_state_rtpc(
+                    data, int(aux_sends["auxParamsEndOffset"])
+                )
+            except (ValueError, OverflowError, TypeError) as exc:
+                node_base["stateAndRtpc"] = {
+                    "parserStatus": "failedClosed",
+                    "diagnostic": str(exc),
+                    "postAuxOffset": aux_sends.get("auxParamsEndOffset"),
+                    "payloadByteLength": len(data),
+                }
+        return node_base
+    except (ValueError, OverflowError, TypeError):
+        return None
+
+
+def summarize_hirc_node_processing(
+    rows_by_object_id: dict[int, dict[str, Any]],
+) -> dict[str, Any]:
+    """Compact exact NodeBase processing rows without losing effect chains."""
+
+    rows = [rows_by_object_id[key] for key in sorted(rows_by_object_id)]
+    output_bus_counts: Counter[int] = Counter()
+    node_type_counts: Counter[int] = Counter()
+    effect_nodes: list[dict[str, Any]] = []
+    metadata_nodes: list[dict[str, Any]] = []
+    aux_send_nodes: list[dict[str, Any]] = []
+    aux_send_failures: list[dict[str, Any]] = []
+    auxiliary_bus_counts: Counter[tuple[str, int]] = Counter()
+    parsed_aux_send_node_count = 0
+    state_rtpc_nodes: list[dict[str, Any]] = []
+    state_rtpc_failures: list[dict[str, Any]] = []
+    property_nodes: list[dict[str, Any]] = []
+    property_counts: Counter[str] = Counter()
+    ranged_property_counts: Counter[str] = Counter()
+    state_group_counts: Counter[int] = Counter()
+    state_value_counts: Counter[int] = Counter()
+    rtpc_id_counts: Counter[int] = Counter()
+    rtpc_type_counts: Counter[str] = Counter()
+    rtpc_parameter_counts: Counter[str] = Counter()
+    parsed_state_rtpc_node_count = 0
+    for row in rows:
+        object_type = int(row.get("objectType") or 0)
+        node_type_counts[object_type] += 1
+        bus_id = int(row.get("overrideBusId") or 0)
+        if bus_id:
+            output_bus_counts[bus_id] += 1
+        if row.get("effects"):
+            effect_nodes.append({
+                key: row[key]
+                for key in (
+                    "objectId", "objectType", "objectTypeLabel", "rootActionIds",
+                    "overrideParentFxRaw", "overrideParentFx", "bypassAllRaw",
+                    "bypassAll", "overrideBusId", "overrideBusIdHex", "effects",
+                )
+                if row.get(key) not in (None, "", [])
+            })
+        if row.get("metadata"):
+            metadata_nodes.append({
+                key: row[key]
+                for key in (
+                    "objectId", "objectType", "objectTypeLabel", "rootActionIds",
+                    "overrideParentMetadataRaw", "overrideParentMetadata", "metadata",
+                )
+                if row.get(key) not in (None, "", [])
+            })
+        aux_sends = row.get("auxSends") or {}
+        if aux_sends.get("parserStatus") == "typedExactV150NodeAuxParams":
+            parsed_aux_send_node_count += 1
+            if aux_sends.get("properties") or aux_sends.get("rangedProperties"):
+                for prop in aux_sends.get("properties") or []:
+                    property_counts[str(prop.get("propertyLabel") or "unknown")] += 1
+                for prop in aux_sends.get("rangedProperties") or []:
+                    ranged_property_counts[
+                        str(prop.get("propertyLabel") or "unknown")
+                    ] += 1
+                property_nodes.append({
+                    key: value
+                    for key, value in {
+                        "objectId": row.get("objectId"),
+                        "objectType": row.get("objectType"),
+                        "objectTypeLabel": row.get("objectTypeLabel"),
+                        "rootActionIds": row.get("rootActionIds"),
+                        "parentId": row.get("parentId"),
+                        "properties": aux_sends.get("properties"),
+                        "rangedProperties": aux_sends.get("rangedProperties"),
+                    }.items()
+                    if value not in (None, "", [])
+                })
+            for send in aux_sends.get("userDefinedAuxSends") or []:
+                auxiliary_bus_counts[
+                    ("userDefined", int(send.get("busId") or 0))
+                ] += 1
+            reflections_bus_id = int(
+                aux_sends.get("reflectionsAuxBusId") or 0
+            )
+            if reflections_bus_id:
+                auxiliary_bus_counts[("earlyReflections", reflections_bus_id)] += 1
+            if int(aux_sends.get("auxFlagsRaw") or 0):
+                aux_send_nodes.append({
+                    key: value
+                    for key, value in {
+                        "objectId": row.get("objectId"),
+                        "objectType": row.get("objectType"),
+                        "objectTypeLabel": row.get("objectTypeLabel"),
+                        "rootActionIds": row.get("rootActionIds"),
+                        "parentId": row.get("parentId"),
+                        "auxParamsOffset": aux_sends.get("auxParamsOffset"),
+                        "auxFlagsRaw": aux_sends.get("auxFlagsRaw"),
+                        "overrideGameDefinedAuxSends": aux_sends.get(
+                            "overrideGameDefinedAuxSends"
+                        ),
+                        "useGameDefinedAuxSends": aux_sends.get(
+                            "useGameDefinedAuxSends"
+                        ),
+                        "overrideUserDefinedAuxSends": aux_sends.get(
+                            "overrideUserDefinedAuxSends"
+                        ),
+                        "hasUserDefinedAuxSendSlots": aux_sends.get(
+                            "hasUserDefinedAuxSendSlots"
+                        ),
+                        "overrideEarlyReflectionsAuxBus": aux_sends.get(
+                            "overrideEarlyReflectionsAuxBus"
+                        ),
+                        "userDefinedAuxSends": aux_sends.get(
+                            "userDefinedAuxSends"
+                        ),
+                        "reflectionsAuxBusId": reflections_bus_id,
+                        "reflectionsAuxBusIdHex": aux_sends.get(
+                            "reflectionsAuxBusIdHex"
+                        ),
+                        "gameDefinedAssignmentBoundary": aux_sends.get(
+                            "gameDefinedAssignmentBoundary"
+                        ),
+                        "flagSemanticBoundary": aux_sends.get(
+                            "flagSemanticBoundary"
+                        ),
+                    }.items()
+                    if value not in (None, "", [])
+                })
+        elif aux_sends:
+            aux_send_failures.append({
+                key: value
+                for key, value in {
+                    "objectId": row.get("objectId"),
+                    "objectType": row.get("objectType"),
+                    "objectTypeLabel": row.get("objectTypeLabel"),
+                    "diagnostic": aux_sends.get("diagnostic"),
+                    "nodeBaseEndOffset": aux_sends.get("nodeBaseEndOffset"),
+                    "payloadByteLength": aux_sends.get("payloadByteLength"),
+                }.items()
+                if value not in (None, "", [])
+            })
+        state_rtpc = row.get("stateAndRtpc") or {}
+        if state_rtpc.get("parserStatus") == "typedExactV150NodeStateAndRtpc":
+            parsed_state_rtpc_node_count += 1
+            for group in state_rtpc.get("stateGroups") or []:
+                group_id = int(group.get("groupId") or 0)
+                state_group_counts[group_id] += 1
+                state_value_counts[group_id] += sum(
+                    len(state.get("values") or [])
+                    for state in group.get("states") or []
+                )
+            for curve in state_rtpc.get("rtpcCurves") or []:
+                rtpc_id_counts[int(curve.get("rtpcId") or 0)] += 1
+                rtpc_type_counts[str(curve.get("rtpcTypeLabel") or "unknown")] += 1
+                rtpc_parameter_counts[
+                    str(curve.get("parameterLabel") or "unknown")
+                ] += 1
+            if state_rtpc.get("stateGroups") or state_rtpc.get("rtpcCurves"):
+                state_rtpc_nodes.append({
+                    key: value
+                    for key, value in {
+                        "objectId": row.get("objectId"),
+                        "objectType": row.get("objectType"),
+                        "objectTypeLabel": row.get("objectTypeLabel"),
+                        "rootActionIds": row.get("rootActionIds"),
+                        "advSettings": state_rtpc.get("advSettings"),
+                        "stateProperties": state_rtpc.get("stateProperties"),
+                        "stateGroups": state_rtpc.get("stateGroups"),
+                        "rtpcCurves": state_rtpc.get("rtpcCurves"),
+                        "evidenceBoundary": state_rtpc.get("evidenceBoundary"),
+                    }.items()
+                    if value not in (None, "", [])
+                })
+        elif state_rtpc:
+            state_rtpc_failures.append({
+                key: value
+                for key, value in {
+                    "objectId": row.get("objectId"),
+                    "objectType": row.get("objectType"),
+                    "objectTypeLabel": row.get("objectTypeLabel"),
+                    "diagnostic": state_rtpc.get("diagnostic"),
+                    "postAuxOffset": state_rtpc.get("postAuxOffset"),
+                    "payloadByteLength": state_rtpc.get("payloadByteLength"),
+                }.items()
+                if value not in (None, "", [])
+            })
+    effect_slots = [
+        slot
+        for row in effect_nodes
+        for slot in row.get("effects") or []
+        if isinstance(slot, dict)
+    ]
+    effect_bypass_slot_count = sum(
+        bool(slot.get("effectBypass")) for slot in effect_slots
+    )
+    effect_share_set_slot_count = sum(
+        bool(slot.get("effectShareSet")) for slot in effect_slots
+    )
+    effect_rendered_slot_count = sum(
+        bool(slot.get("effectRendered")) for slot in effect_slots
+    )
+    effect_unknown_flag_bits = sum(
+        bool(int(slot.get("unknownFlagBits") or 0)) for slot in effect_slots
+    )
+    return {
+        "parserStatus": "typedExactV150NodeBaseProcessingPrefix",
+        "parsedNodeCount": len(rows),
+        "nodeTypeCounts": {
+            str(key): value for key, value in sorted(node_type_counts.items())
+        },
+        "overrideParentFxNodeCount": sum(bool(row.get("overrideParentFx")) for row in rows),
+        "effectNodeCount": len(effect_nodes),
+        "effectSlotCount": len(effect_slots),
+        "effectReferenceCount": sum(bool(int(row.get("effectId") or 0)) for row in effect_slots),
+        "emptyEffectSlotCount": sum(not int(row.get("effectId") or 0) for row in effect_slots),
+        "effectBypassSlotCount": effect_bypass_slot_count,
+        "effectShareSetSlotCount": effect_share_set_slot_count,
+        "effectRenderedSlotCount": effect_rendered_slot_count,
+        "effectUnknownFlagBitsCount": effect_unknown_flag_bits,
+        "bypassAllNodeCount": sum(bool(row.get("bypassAll")) for row in rows),
+        "overrideParentMetadataNodeCount": sum(
+            bool(row.get("overrideParentMetadata")) for row in rows
+        ),
+        "metadataNodeCount": len(metadata_nodes),
+        "metadataSlotCount": sum(len(row.get("metadata") or []) for row in metadata_nodes),
+        "parsedAuxSendNodeCount": parsed_aux_send_node_count,
+        "failedAuxSendNodeCount": len(aux_send_failures),
+        "authoredAuxFlagNodeCount": len(aux_send_nodes),
+        "gameDefinedAuxSendUseBitNodeCount": sum(
+            bool(row.get("useGameDefinedAuxSends")) for row in aux_send_nodes
+        ),
+        "userDefinedAuxSendReferenceCount": sum(
+            count
+            for (send_kind, _bus_id), count in auxiliary_bus_counts.items()
+            if send_kind == "userDefined"
+        ),
+        "earlyReflectionsAuxSendReferenceCount": sum(
+            count
+            for (send_kind, _bus_id), count in auxiliary_bus_counts.items()
+            if send_kind == "earlyReflections"
+        ),
+        "authoredPropertyNodeCount": len(property_nodes),
+        "authoredPropertyValueCount": sum(property_counts.values()),
+        "authoredRangedPropertyValueCount": sum(ranged_property_counts.values()),
+        "authoredPropertyCounts": dict(sorted(property_counts.items())),
+        "authoredRangedPropertyCounts": dict(sorted(ranged_property_counts.items())),
+        "parsedStateRtpcNodeCount": parsed_state_rtpc_node_count,
+        "failedStateRtpcNodeCount": len(state_rtpc_failures),
+        "stateRtpcNodeCount": len(state_rtpc_nodes),
+        "stateGroupReferenceCount": sum(state_group_counts.values()),
+        "uniqueStateGroupIds": len(state_group_counts),
+        "stateValueCount": sum(state_value_counts.values()),
+        "rtpcCurveCount": sum(rtpc_id_counts.values()),
+        "rtpcPointCount": sum(
+            len(curve.get("points") or [])
+            for node in state_rtpc_nodes
+            for curve in node.get("rtpcCurves") or []
+        ),
+        "uniqueRtpcIds": len(rtpc_id_counts),
+        "rtpcTypeCounts": dict(sorted(rtpc_type_counts.items())),
+        "rtpcParameterCounts": dict(sorted(rtpc_parameter_counts.items())),
+        "stateGroups": [
+            {
+                "groupId": group_id,
+                "groupIdHex": f"0x{group_id:08x}",
+                "nodeCount": count,
+                "valueCount": state_value_counts[group_id],
+            }
+            for group_id, count in sorted(state_group_counts.items())
+        ],
+        "rtpcIds": [
+            {
+                "rtpcId": rtpc_id,
+                "rtpcIdHex": f"0x{rtpc_id:08x}",
+                "curveCount": count,
+            }
+            for rtpc_id, count in sorted(rtpc_id_counts.items())
+        ],
+        "auxiliaryBuses": [
+            {
+                "sendKind": send_kind,
+                "busId": bus_id,
+                "busIdHex": f"0x{bus_id:08x}",
+                "referenceCount": count,
+            }
+            for (send_kind, bus_id), count in sorted(auxiliary_bus_counts.items())
+            if bus_id
+        ],
+        "outputBusNodeCount": sum(output_bus_counts.values()),
+        "outputBuses": [
+            {
+                "busId": bus_id,
+                "busIdHex": f"0x{bus_id:08x}",
+                "nodeCount": count,
+            }
+            for bus_id, count in sorted(output_bus_counts.items())
+        ],
+        "effectNodes": effect_nodes,
+        "metadataNodes": metadata_nodes,
+        "auxSendNodes": aux_send_nodes,
+        "auxSendFailures": aux_send_failures,
+        "propertyNodes": property_nodes,
+        "stateRtpcNodes": state_rtpc_nodes,
+        "stateRtpcFailures": state_rtpc_failures,
+        "evidenceBoundary": (
+            "Exact direct NodeBase effect slots and output-bus IDs. Supported "
+            "plug-in schemas expose authored base values from shipped "
+            "AkSoundEngine SetParamsBlock layouts; unsupported payloads remain "
+            "opaque. Authored User Aux slots and Game-Defined use/override bits "
+            "are direct; live Game-Defined bus assignments and control values, "
+            "authored StateChunk values and InitialRTPC curves are exact; live "
+            "control values, inherited effective properties, bypass decisions, "
+            "platform DSP, and audibility are unresolved."
+        ),
+    }
+
+
+def add_hirc_effect_definition_candidate(
+    candidates: dict[int, dict[tuple[Any, ...], dict[str, Any]]],
+    effect_id: int,
+    definition: dict[str, Any],
+    *,
+    bank_id: int,
+    bank_name: str = "",
+) -> None:
+    """Merge byte-identical plug-in definitions while retaining ambiguity."""
+
+    signature = (
+        int(definition.get("objectType") or 0),
+        int(definition.get("pluginClassId") or 0),
+        int(definition.get("parameterByteLength") or 0),
+        str(definition.get("parameterSha256") or ""),
+        int(definition.get("trailingByteLength") or 0),
+        tuple(
+            (
+                int(dependency.get("pluginDataIndex") or 0),
+                int(dependency.get("mediaId") or 0),
+            )
+            for dependency in definition.get("pluginMediaDependencies") or []
+            if isinstance(dependency, dict)
+        ),
+    )
+    row = candidates.setdefault(effect_id, {}).setdefault(signature, {
+        **definition,
+        "effectId": effect_id,
+        "effectIdHex": f"0x{effect_id:08x}",
+        "definitionOccurrenceCount": 0,
+        "bankIds": set(),
+        "bankScopes": set(),
+    })
+    row["definitionOccurrenceCount"] += 1
+    row["bankIds"].add(bank_id)
+    row["bankScopes"].add((bank_name, bank_id))
+
+
+def add_hirc_bus_definition_candidate(
+    candidates: dict[int, dict[tuple[int, str], dict[str, Any]]],
+    bus_id: int,
+    object_type: int,
+    data: bytes,
+    *,
+    bank_id: int,
+    bank_name: str = "",
+) -> None:
+    """Retain one exact type-8/type-18 payload per unique bank signature."""
+
+    if object_type not in (8, 18) or len(data) < 4:
+        return
+    digest = hashlib.sha256(data).hexdigest()
+    signature = (object_type, digest)
+    row = candidates.setdefault(bus_id, {}).setdefault(signature, {
+        "busId": bus_id,
+        "busIdHex": f"0x{bus_id:08x}",
+        "objectType": object_type,
+        "objectTypeLabel": HIRC_OBJECT_TYPE_LABELS[object_type],
+        "payloadByteLength": len(data),
+        "payloadSha256": digest,
+        "definitionOccurrenceCount": 0,
+        "bankIds": set(),
+        "bankScopes": set(),
+        "_payload": data,
+    })
+    row["definitionOccurrenceCount"] += 1
+    row["bankIds"].add(bank_id)
+    row["bankScopes"].add((bank_name, bank_id))
+
+
+def _hirc_v150_bus_rtpc_state(
+    data: bytes,
+    offset: int,
+) -> dict[str, Any]:
+    """Decode the v150 CAkBus InitialRTPC and StateChunk suffix.
+
+    ``CAkBus::SetInitialValues`` writes the RTPC curves before the
+    ``CAkStateAware`` state chunk.  The common NodeBase parser has the inverse
+    order, so Bus payloads need their own bounded reader.  Returning an
+    explicit failed-closed row keeps the exact InitialValues prefix useful for
+    synthetic or future-version fixtures without promoting an unverified tail.
+    """
+
+    start_offset = int(offset)
+
+    def require(length: int, label: str) -> None:
+        if length < 0 or offset + length > len(data):
+            raise ValueError(
+                f"v150 Bus RTPC/State {label} truncated at offset {offset}: "
+                f"need={length} remaining={len(data) - offset}"
+            )
+
+    def take_u8(label: str) -> int:
+        nonlocal offset
+        require(1, label)
+        value = data[offset]
+        offset += 1
+        return value
+
+    def take_u16(label: str) -> int:
+        nonlocal offset
+        require(2, label)
+        value = unpack_from("<H", data, offset)[0]
+        offset += 2
+        return value
+
+    def take_u32(label: str) -> int:
+        nonlocal offset
+        require(4, label)
+        value = unpack_from("<I", data, offset)[0]
+        offset += 4
+        return value
+
+    def take_f32(label: str) -> float:
+        nonlocal offset
+        require(4, label)
+        value = float(unpack_from("<f", data, offset)[0])
+        value_offset = offset
+        offset += 4
+        if not math.isfinite(value):
+            raise ValueError(
+                f"v150 Bus RTPC/State {label} non-finite at offset "
+                f"{value_offset}"
+            )
+        return value
+
+    def take_varuint(label: str) -> int:
+        start = offset
+        value = 0
+        for index in range(5):
+            byte = take_u8(label)
+            value |= (byte & 0x7F) << (index * 7)
+            if not byte & 0x80:
+                return value
+        raise ValueError(
+            f"v150 Bus RTPC/State {label} invalid varuint at offset {start}"
+        )
+
+    try:
+        initial_rtpc_offset = offset
+        rtpc_curve_count = take_u16("rtpcCurveCount")
+        rtpc_curves: list[dict[str, Any]] = []
+        rtpc_point_count = 0
+        for curve_index in range(rtpc_curve_count):
+            rtpc_id = take_u32("rtpcId")
+            rtpc_type = take_u8("rtpcType")
+            accum = take_u8("rtpcAccum")
+            parameter_id = take_varuint("rtpcParameterId")
+            curve_id = take_u32("rtpcCurveId")
+            scaling = take_u8("rtpcScaling")
+            point_count = take_u16("rtpcPointCount")
+            if (
+                rtpc_type not in HIRC_RTPC_TYPE_LABELS
+                or accum not in HIRC_RTPC_ACCUM_LABELS
+                or scaling not in HIRC_RTPC_SCALING_LABELS
+            ):
+                raise ValueError(
+                    "v150 Bus RTPC/State rtpcHeader invalid: "
+                    f"curveIndex={curve_index} rtpcType={rtpc_type} "
+                    f"accum={accum} scaling={scaling} offset={offset - 3}"
+                )
+            points: list[dict[str, Any]] = []
+            for point_index in range(point_count):
+                from_value = take_f32("rtpcPointFrom")
+                to_value = take_f32("rtpcPointTo")
+                interpolation = take_u32("rtpcPointInterpolation")
+                if interpolation not in HIRC_FADE_CURVE_LABELS:
+                    raise ValueError(
+                        "v150 Bus RTPC/State rtpcPointInterpolation invalid: "
+                        f"curveIndex={curve_index} pointIndex={point_index} "
+                        f"value={interpolation} offset={offset - 4}"
+                    )
+                points.append({
+                    "pointIndex": point_index,
+                    "from": from_value,
+                    "to": to_value,
+                    "interpolation": interpolation,
+                    "interpolationLabel": HIRC_FADE_CURVE_LABELS[interpolation],
+                })
+            rtpc_curves.append({
+                "curveIndex": curve_index,
+                "rtpcId": rtpc_id,
+                "rtpcIdHex": f"0x{rtpc_id:08x}",
+                "rtpcType": rtpc_type,
+                "rtpcTypeLabel": HIRC_RTPC_TYPE_LABELS[rtpc_type],
+                "accum": accum,
+                "accumLabel": HIRC_RTPC_ACCUM_LABELS[accum],
+                "parameterId": parameter_id,
+                "parameterLabel": HIRC_RTPC_PARAMETER_LABELS.get(
+                    parameter_id, f"parameter{parameter_id}"
+                ),
+                "curveId": curve_id,
+                "curveIdHex": f"0x{curve_id:08x}",
+                "scaling": scaling,
+                "scalingLabel": HIRC_RTPC_SCALING_LABELS[scaling],
+                "pointCount": point_count,
+                "points": points,
+            })
+            rtpc_point_count += point_count
+
+        state_chunk_offset = offset
+        state_property_count = take_varuint("statePropertyCount")
+        state_properties: list[dict[str, Any]] = []
+        for property_index in range(state_property_count):
+            parameter_id = take_varuint("statePropertyId")
+            accum = take_u8("statePropertyAccum")
+            in_db_raw = take_u8("statePropertyInDb")
+            if accum not in HIRC_RTPC_ACCUM_LABELS or in_db_raw not in (0, 1):
+                raise ValueError(
+                    "v150 Bus RTPC/State stateProperty invalid: "
+                    f"index={property_index} parameterId={parameter_id} "
+                    f"accum={accum} inDb={in_db_raw} offset={offset - 2}"
+                )
+            state_properties.append({
+                "propertyIndex": property_index,
+                "parameterId": parameter_id,
+                "parameterLabel": HIRC_RTPC_PARAMETER_LABELS.get(
+                    parameter_id, f"parameter{parameter_id}"
+                ),
+                "accum": accum,
+                "accumLabel": HIRC_RTPC_ACCUM_LABELS[accum],
+                "inDb": bool(in_db_raw),
+                "inDbRaw": in_db_raw,
+            })
+
+        state_group_count = take_varuint("stateGroupCount")
+        state_groups: list[dict[str, Any]] = []
+        state_count = 0
+        state_value_count = 0
+        for group_index in range(state_group_count):
+            group_id = take_u32("stateGroupId")
+            sync_type = take_u8("stateGroupSyncType")
+            if sync_type not in HIRC_STATE_SYNC_TYPE_LABELS:
+                raise ValueError(
+                    "v150 Bus RTPC/State stateGroupSyncType invalid: "
+                    f"groupIndex={group_index} value={sync_type} "
+                    f"offset={offset - 1}"
+                )
+            group_state_count = take_varuint("stateCount")
+            states: list[dict[str, Any]] = []
+            for state_index in range(group_state_count):
+                state_id = take_u32("stateId")
+                value_count = take_u16("stateValueCount")
+                property_ids = [
+                    take_u16("stateValuePropertyId")
+                    for _ in range(value_count)
+                ]
+                values = [
+                    take_f32("stateValue") for _ in range(value_count)
+                ]
+                state_values = [
+                    {
+                        "valueIndex": value_index,
+                        "parameterId": parameter_id,
+                        "parameterLabel": HIRC_RTPC_PARAMETER_LABELS.get(
+                            parameter_id, f"parameter{parameter_id}"
+                        ),
+                        "value": values[value_index],
+                    }
+                    for value_index, parameter_id in enumerate(property_ids)
+                ]
+                states.append({
+                    "stateIndex": state_index,
+                    "stateId": state_id,
+                    "stateIdHex": f"0x{state_id:08x}",
+                    "valueCount": value_count,
+                    "values": state_values,
+                })
+                state_value_count += value_count
+            state_groups.append({
+                "groupIndex": group_index,
+                "groupId": group_id,
+                "groupIdHex": f"0x{group_id:08x}",
+                "syncType": sync_type,
+                "syncTypeLabel": HIRC_STATE_SYNC_TYPE_LABELS[sync_type],
+                "stateCount": group_state_count,
+                "states": states,
+            })
+            state_count += group_state_count
+
+        if offset != len(data):
+            raise ValueError(
+                "v150 Bus RTPC/State suffix has unknown trailing bytes: "
+                f"offset={offset} length={len(data)}"
+            )
+        return {
+            "parserStatus": "typedExactV150BusInitialRtpcAndState",
+            "initialRtpcOffset": initial_rtpc_offset,
+            "rtpcCurveCount": rtpc_curve_count,
+            "rtpcPointCount": rtpc_point_count,
+            "rtpcCurves": rtpc_curves,
+            "stateChunkOffset": state_chunk_offset,
+            "statePropertyCount": state_property_count,
+            "stateProperties": state_properties,
+            "stateGroupCount": state_group_count,
+            "stateCount": state_count,
+            "stateValueCount": state_value_count,
+            "stateGroups": state_groups,
+            "endOffset": offset,
+            "remainingByteLength": 0,
+            "evidenceBoundary": (
+                "Exact authored Bus InitialRTPC curves and StateChunk values. "
+                "Runtime GameParameter/State values, inherited effective "
+                "properties, effect bypass decisions, platform DSP, and the "
+                "audible result are not observed."
+            ),
+        }
+    except (ValueError, OverflowError, struct.error) as exc:
+        return {
+            "parserStatus": "failedClosed",
+            "diagnostic": str(exc),
+            "startOffset": start_offset,
+            "endOffset": offset,
+            "remainingByteLength": max(0, len(data) - offset),
+        }
+
+
+def _hirc_v150_bus_serialized_layout(
+    data: bytes,
+) -> dict[str, Any] | None:
+    """Decode the current v150 ``CAkBus`` layout through InitialFX.
+
+    Wwise Bus objects do not put ``InitialFX`` immediately after the parent
+    ID.  The current client serializes the property bundle, positioning and
+    auxiliary flags, bus limits, duck records, and only then the owned effect
+    slots.  A byte scanner therefore mistakes duck/state data for effect
+    counts on a large subset of otherwise valid Bus objects.  This parser is
+    deliberately bounded to the v150 field order and returns ``None`` on any
+    gate failure so the older correlation scanner can remain as a fixture and
+    fallback for synthetic/non-v150 payloads.
+    """
+
+    if len(data) < 4:
+        return None
+    offset = 0
+
+    def require(length: int, label: str) -> None:
+        if length < 0 or offset + length > len(data):
+            raise ValueError(
+                f"v150 Bus {label} truncated at offset {offset}: "
+                f"need={length} remaining={len(data) - offset}"
+            )
+
+    def take_u8(label: str) -> int:
+        nonlocal offset
+        require(1, label)
+        value = data[offset]
+        offset += 1
+        return value
+
+    def take_u16(label: str) -> int:
+        nonlocal offset
+        require(2, label)
+        value = unpack_from("<H", data, offset)[0]
+        offset += 2
+        return value
+
+    def take_u32(label: str) -> int:
+        nonlocal offset
+        require(4, label)
+        value = unpack_from("<I", data, offset)[0]
+        offset += 4
+        return value
+
+    def take_s32(label: str) -> int:
+        nonlocal offset
+        require(4, label)
+        value = unpack_from("<i", data, offset)[0]
+        offset += 4
+        return value
+
+    def take_f32(label: str) -> float:
+        nonlocal offset
+        require(4, label)
+        value = float(unpack_from("<f", data, offset)[0])
+        offset += 4
+        if not math.isfinite(value):
+            raise ValueError(f"v150 Bus {label} is non-finite")
+        return value
+
+    def skip(count: int, label: str) -> None:
+        nonlocal offset
+        require(count, label)
+        offset += count
+
+    try:
+        parent_bus_id = take_u32("OverrideBusId")
+        device_share_set_id: int | None = None
+        if parent_bus_id == 0:
+            # v127+ root buses carry a device ShareSet ID in this slot.
+            device_share_set_id = take_u32("deviceShareSetId")
+
+        property_count = take_u8("propertyCount")
+        property_ids = [
+            take_u8("propertyId") for _ in range(property_count)
+        ]
+        if any(property_id not in HIRC_INITIAL_PROPERTY_LABELS for property_id in property_ids):
+            raise ValueError("v150 Bus property bundle contains an unknown AkPropID")
+        property_values: list[dict[str, Any]] = []
+        for index, property_id in enumerate(property_ids):
+            raw_value = take_u32("propertyValue")
+            float_value = unpack_from("<f", data, offset - 4)[0]
+            property_label = HIRC_INITIAL_PROPERTY_LABELS[property_id]
+            value_encoding = "float"
+            if property_label in HIRC_INITIAL_PROPERTY_U32_LABELS:
+                value_encoding = "u32Id"
+            elif (
+                raw_value <= 0x00100000
+                and math.isfinite(float_value)
+                and abs(float_value) < 1e-20
+            ):
+                value_encoding = "u32Likely"
+            property_values.append({
+                "propertyIndex": index,
+                "propertyId": property_id,
+                "propertyIdHex": f"0x{property_id:02x}",
+                "propertyLabel": property_label,
+                "rawU32": raw_value,
+                "rawHex": f"0x{raw_value:08x}",
+                "floatValue": float_value if math.isfinite(float_value) else None,
+                "valueEncoding": value_encoding,
+            })
+
+        positioning_bits_raw = take_u8("positioningBits")
+        positioning_3d_bits_raw: int | None = None
+        if positioning_bits_raw & 0x01 and positioning_bits_raw & 0x02:
+            positioning_3d_bits_raw = take_u8("positioning3dBits")
+            position_type = (positioning_bits_raw >> 5) & 0x03
+            if position_type:
+                take_u8("automationPathMode")
+                take_s32("automationTransitionTime")
+                vertex_count = take_u32("automationVertexCount")
+                skip(vertex_count * 16, "automationVertices")
+                playlist_count = take_u32("automationPlaylistCount")
+                skip(playlist_count * 8, "automationPlaylist")
+                # v150 stores one automation-parameter triplet per playlist
+                # item in this path representation.
+                skip(playlist_count * 12, "automationParameters")
+
+        aux_flags_raw = take_u8("auxFlags")
+        if aux_flags_raw & ~0x1F:
+            raise ValueError(
+                f"v150 Bus Aux flags contain unknown bits: 0x{aux_flags_raw:02x}"
+            )
+        user_aux_bus_ids: list[int] = []
+        if aux_flags_raw & 0x08:
+            user_aux_bus_ids = [take_u32("userAuxBusId") for _ in range(4)]
+        reflections_aux_bus_id = take_u32("reflectionsAuxBusId")
+
+        bus_flags_raw = take_u8("busFlags")
+        max_instances = take_u16("maxInstances")
+        channel_config = take_u32("channelConfig")
+        bus_state_flags_raw = take_u8("busStateFlags")
+        recovery_time_ms = take_s32("recoveryTime")
+        max_duck_volume_db = take_f32("maxDuckVolume")
+        duck_count = take_u32("duckCount")
+        ducks: list[dict[str, Any]] = []
+        for index in range(duck_count):
+            duck_bus_id = take_u32("duckBusId")
+            duck_volume_db = take_f32("duckVolume")
+            fade_out_ms = take_s32("duckFadeOut")
+            fade_in_ms = take_s32("duckFadeIn")
+            fade_curve = take_u8("duckFadeCurve")
+            target_property = take_u8("duckTargetProperty")
+            ducks.append({
+                "duckIndex": index,
+                "busId": duck_bus_id,
+                "busIdHex": f"0x{duck_bus_id:08x}",
+                "duckVolumeDb": duck_volume_db,
+                "fadeOutMs": fade_out_ms,
+                "fadeInMs": fade_in_ms,
+                "fadeCurve": fade_curve,
+                "targetPropertyId": target_property,
+                "targetPropertyIdHex": f"0x{target_property:02x}",
+                "targetPropertyLabel": HIRC_INITIAL_PROPERTY_LABELS.get(
+                    target_property, f"property{target_property}"
+                ),
+            })
+
+        effect_chunk_offset = offset
+        effect_slot_count = take_u8("initialFxCount")
+        bypass_all_raw: int | None = None
+        effects: list[dict[str, Any]] = []
+        if effect_slot_count:
+            bypass_all_raw = take_u8("initialFxBypassAll")
+            for ordinal in range(effect_slot_count):
+                slot_index = take_u8("initialFxSlotIndex")
+                effect_id = take_u32("initialFxObjectId")
+                flags_raw = take_u8("initialFxFlags")
+                effects.append({
+                    "ordinal": ordinal,
+                    "slotIndex": slot_index,
+                    "effectId": effect_id,
+                    "effectIdHex": f"0x{effect_id:08x}",
+                    **_hirc_v150_effect_slot_flags(
+                        flags_raw, include_rendered=False
+                    ),
+                    "referenceStatus": "authoredEffectObjectId",
+                })
+        effect_chunk_end_offset = offset
+
+        metadata_chunk_offset = offset
+        metadata_count = take_u8("metadataCount")
+        metadata: list[dict[str, Any]] = []
+        for ordinal in range(metadata_count):
+            metadata.append({
+                "ordinal": ordinal,
+                "slotIndex": take_u8("metadataSlotIndex"),
+                "metadataId": take_u32("metadataObjectId"),
+                "shareSetRaw": take_u8("metadataShareSet"),
+            })
+        serialized_state_rtpc = _hirc_v150_bus_rtpc_state(data, offset)
+
+        return {
+            "serializedBusParserStatus": "typedExactV150BusInitialValues",
+            "serializedDeviceShareSetId": device_share_set_id,
+            "serializedDeviceShareSetIdHex": (
+                f"0x{device_share_set_id:08x}"
+                if device_share_set_id else None
+            ),
+            "serializedPropertyCount": property_count,
+            "serializedProperties": property_values,
+            "serializedPositioningBitsRaw": positioning_bits_raw,
+            "serializedPositioning3dBitsRaw": positioning_3d_bits_raw,
+            "serializedAuxFlagsRaw": aux_flags_raw,
+            "serializedUserAuxBusIds": user_aux_bus_ids,
+            "serializedUserAuxBusIdHexes": [
+                f"0x{bus_id:08x}" if bus_id else None
+                for bus_id in user_aux_bus_ids
+            ],
+            "serializedReflectionsAuxBusId": reflections_aux_bus_id,
+            "serializedReflectionsAuxBusIdHex": (
+                f"0x{reflections_aux_bus_id:08x}"
+                if reflections_aux_bus_id else None
+            ),
+            "serializedBusFlagsRaw": bus_flags_raw,
+            "serializedMaxInstances": max_instances,
+            "serializedChannelConfig": channel_config,
+            "serializedBusStateFlagsRaw": bus_state_flags_raw,
+            "serializedRecoveryTimeMs": recovery_time_ms,
+            "serializedMaxDuckVolumeDb": max_duck_volume_db,
+            "serializedDuckCount": duck_count,
+            "serializedDucks": ducks,
+            "effectChunkOffset": effect_chunk_offset,
+            "effectChunkByteLength": effect_chunk_end_offset - effect_chunk_offset,
+            "effectChunkEndOffset": effect_chunk_end_offset,
+            "effectChunkCandidateCount": 1,
+            "nestedSuffixCandidateCount": 0,
+            "bypassAllRaw": bypass_all_raw,
+            "bypassAll": bool(bypass_all_raw) if bypass_all_raw is not None else None,
+            "effectSlotCount": effect_slot_count,
+            "effects": effects,
+            "metadataChunkOffset": metadata_chunk_offset,
+            "metadataSlotCount": metadata_count,
+            "metadata": metadata,
+            "remainingSubtypeByteLength": len(data) - offset,
+            "serializedStateAndRtpc": serialized_state_rtpc,
+            "parentBusId": parent_bus_id,
+            "parentBusIdHex": f"0x{parent_bus_id:08x}" if parent_bus_id else None,
+            "parentParserStatus": "typedExactV150BusFirstU32",
+        }
+    except (ValueError, OverflowError, struct.error):
+        return None
+
+
+def hirc_v150_bus_processing(
+    object_type: int,
+    data: bytes,
+    effect_ids: set[int] | frozenset[int],
+    *,
+    empty_effect_schemas: tuple[dict[str, Any], ...] = (),
+) -> dict[str, Any] | None:
+    """Recover a v150 bus parent and its authored InitialFX slots.
+
+    The first U32 is accepted as DirectParentID only for type 8/18. Across the
+    current corpus every nonzero value resolves to another bus definition and
+    the three zero values are hierarchy roots. Current bank version 150 Bus
+    payloads are first consumed with the typed ``CAkBus`` field order through
+    InitialFX. That direct layout proves both zero-count and non-empty chunks;
+    effect IDs that have no complete HIRC plug-in definition remain visible as
+    unresolved references. Synthetic/non-v150 payloads use the older bounded
+    correlation scanner, and an absent candidate there still does not prove an
+    empty effect list unless a separate exact sibling-payload schema matches.
+    """
+
+    if object_type not in (8, 18) or len(data) < 4:
+        return None
+    typed_layout = _hirc_v150_bus_serialized_layout(data)
+    if typed_layout is not None:
+        effect_ids_in_layout = {
+            int(row.get("effectId") or 0)
+            for row in typed_layout.get("effects") or []
+        }
+        if not typed_layout.get("effectSlotCount"):
+            typed_layout.update({
+                "parserStatus": (
+                    "typedExactV150BusParentAndSerializedEmptyEffects"
+                ),
+                "effectParserStatus": "exactTypedV150EmptyEffectChunk",
+                "effectEvidenceBoundary": (
+                    "The current bank is v150 and the complete typed CAkBus InitialValues layout reaches an explicit InitialFX count byte of zero. This proves the bus-local serialized FX list is empty; parent inheritance and runtime processing remain unresolved."
+                ),
+            })
+        elif effect_ids_in_layout <= set(effect_ids):
+            typed_layout.update({
+                "parserStatus": (
+                    "typedExactV150BusParentAndSerializedEffects"
+                ),
+                "effectParserStatus": "exactTypedV150NonEmptyEffectChunk",
+                "effectEvidenceBoundary": (
+                    "The current bank is v150 and the complete typed CAkBus InitialValues layout reaches an ordered non-empty InitialFX array. Every serialized effect object ID cross-correlates to an exact HIRC plug-in definition; authored base parameters remain distinct from live runtime changes."
+                ),
+            })
+        else:
+            typed_layout.update({
+                "parserStatus": (
+                    "typedExactV150BusParentAndSerializedEffects"
+                ),
+                "effectParserStatus": (
+                    "exactTypedV150EffectChunkWithUnresolvedReferences"
+                ),
+                "effectEvidenceBoundary": (
+                    "The current bank is v150 and the complete typed CAkBus InitialValues layout reaches an ordered non-empty InitialFX array, but at least one serialized effect object ID has no complete HIRC plug-in definition in the streamed corpus. The slot identity and flags are exact; plug-in parameters remain unresolved."
+                ),
+            })
+        return typed_layout
+    parent_id = unpack_from("<I", data, 0)[0]
+    candidates: list[dict[str, Any]] = []
+    for offset in range(4, max(4, len(data) - 7)):
+        effect_count = data[offset]
+        if not 1 <= effect_count <= 16 or data[offset + 1] not in (0, 1):
+            continue
+        end = offset + 2 + effect_count * 6
+        if end > len(data):
+            continue
+        effects: list[dict[str, Any]] = []
+        slots: list[int] = []
+        for ordinal in range(effect_count):
+            row_offset = offset + 2 + ordinal * 6
+            slot_index = data[row_offset]
+            effect_id = unpack_from("<I", data, row_offset + 1)[0]
+            flags_raw = data[row_offset + 5]
+            if slot_index > 15 or effect_id not in effect_ids:
+                effects = []
+                break
+            slots.append(slot_index)
+            effects.append({
+                "ordinal": ordinal,
+                "slotIndex": slot_index,
+                "effectId": effect_id,
+                "effectIdHex": f"0x{effect_id:08x}",
+                **_hirc_v150_effect_slot_flags(
+                    flags_raw, include_rendered=False
+                ),
+                "referenceStatus": "authoredEffectObjectId",
+            })
+        if not effects or slots != sorted(set(slots)):
+            continue
+        candidates.append({
+            "effectChunkOffset": offset,
+            "effectChunkByteLength": end - offset,
+            "effectChunkEndOffset": end,
+            "bypassAllRaw": data[offset + 1],
+            "bypassAll": bool(data[offset + 1]),
+            "effectSlotCount": effect_count,
+            "effects": effects,
+        })
+
+    base = {
+        "parentBusId": parent_id,
+        "parentBusIdHex": f"0x{parent_id:08x}" if parent_id else None,
+        "parentParserStatus": "typedExactV150BusFirstU32",
+    }
+    if not candidates:
+        empty_matches: list[dict[str, Any]] = []
+        for schema in empty_effect_schemas:
+            if int(schema.get("objectType") or 0) != object_type:
+                continue
+            prefix = schema.get("prefix")
+            suffix = schema.get("suffix")
+            if not isinstance(prefix, bytes) or not isinstance(suffix, bytes):
+                continue
+            effect_offset = 4 + len(prefix)
+            if (
+                effect_offset >= len(data)
+                or data[4:effect_offset] != prefix
+                or data[effect_offset] != 0
+                or data[effect_offset + 1:] != suffix
+            ):
+                continue
+            empty_matches.append(schema)
+        if len(empty_matches) == 1:
+            schema = empty_matches[0]
+            effect_offset = 4 + len(schema["prefix"])
+            return {
+                **base,
+                "parserStatus": (
+                    "typedExactV150BusParentAndCrossCorrelatedEmptyEffects"
+                ),
+                "effectParserStatus": "exactCrossCorrelatedEmptyEffectChunk",
+                "effectChunkOffset": effect_offset,
+                "effectChunkByteLength": 1,
+                "effectChunkEndOffset": effect_offset + 1,
+                "effectChunkCandidateCount": 1,
+                "nestedSuffixCandidateCount": 0,
+                "effectSlotCount": 0,
+                "effects": [],
+                "emptyEffectSchemaFingerprint": schema.get("fingerprint"),
+                "emptyEffectSchemaSiblingCount": int(
+                    schema.get("siblingCount") or 0
+                ),
+                "effectEvidenceBoundary": (
+                    "The serialized InitialFX count byte is explicitly zero, and "
+                    "the complete prefix/suffix layout exactly matches a sibling "
+                    "bus payload whose non-empty FX slots were decoded. This proves "
+                    "the bus-local serialized FX list is empty for this layout; "
+                    "parent inheritance and runtime processing remain unresolved."
+                ),
+            }
+        return {
+            **base,
+            "parserStatus": "typedExactV150BusParentOnly",
+            "effectParserStatus": "nonEmptyEffectChunkNotLocated",
+            "effectSlotCount": None,
+            "effects": [],
+            "effectEvidenceBoundary": (
+                "No cross-correlated non-empty InitialFX chunk was located; "
+                "this does not prove that the authored bus has zero effects."
+            ),
+        }
+    candidates.sort(key=lambda row: (
+        int(row["effectChunkOffset"]), -int(row["effectChunkByteLength"])
+    ))
+    chosen = candidates[0]
+    chosen_start = int(chosen["effectChunkOffset"])
+    chosen_end = int(chosen["effectChunkEndOffset"])
+    nested_suffixes = all(
+        chosen_start <= int(candidate["effectChunkOffset"])
+        and int(candidate["effectChunkEndOffset"]) == chosen_end
+        for candidate in candidates
+    )
+    if not nested_suffixes:
+        return {
+            **base,
+            "parserStatus": "typedExactV150BusParentOnly",
+            "effectParserStatus": "ambiguousCrossCorrelatedEffectChunks",
+            "effectSlotCount": None,
+            "effects": [],
+            "effectChunkCandidateCount": len(candidates),
+            "effectEvidenceBoundary": (
+                "Multiple non-nested serialized effect-chunk candidates resolve "
+                "to HIRC effect definitions; no bus effect list was selected."
+            ),
+        }
+    return {
+        **base,
+        **chosen,
+        "parserStatus": "typedExactV150BusParentAndCrossCorrelatedEffects",
+        "effectParserStatus": "exactCrossCorrelatedNonEmptyEffectChunk",
+        "effectChunkCandidateCount": len(candidates),
+        "nestedSuffixCandidateCount": len(candidates) - 1,
+        "effectEvidenceBoundary": (
+            "Ordered non-empty bus effect slots are cross-correlated against "
+            "exact HIRC effect definitions. A missing chunk remains unresolved "
+            "rather than being classified as an empty effect list."
+        ),
+    }
+
+
+def _hirc_v150_bus_effect_schemas(
+    bus_candidates: dict[int, dict[tuple[int, str], dict[str, Any]]],
+    effect_ids: set[int] | frozenset[int],
+) -> tuple[dict[str, Any], ...]:
+    """Collect exact prefix/suffix schemas that contain non-empty FX slots.
+
+    A zero-count bus is classified only when its payload has the same complete
+    bytes before and after InitialFX as a known non-empty sibling schema. The
+    raw prefix/suffix bytes stay internal; the public catalog receives only a
+    fingerprint and sibling count.
+    """
+
+    schemas: dict[tuple[int, bytes, bytes], dict[str, Any]] = {}
+    for bus_id, candidates in bus_candidates.items():
+        for candidate in candidates.values():
+            object_type = int(candidate.get("objectType") or 0)
+            data = candidate.get("_payload")
+            if object_type not in (8, 18) or not isinstance(data, bytes):
+                continue
+            processing = hirc_v150_bus_processing(
+                object_type, data, effect_ids
+            )
+            if not processing or processing.get("effectParserStatus") not in {
+                "exactCrossCorrelatedNonEmptyEffectChunk",
+                "exactTypedV150NonEmptyEffectChunk",
+            }:
+                continue
+            effect_offset = int(processing["effectChunkOffset"])
+            effect_end = int(processing["effectChunkEndOffset"])
+            prefix = data[4:effect_offset]
+            suffix = data[effect_end:]
+            key = (object_type, prefix, suffix)
+            row = schemas.setdefault(key, {
+                "objectType": object_type,
+                "prefix": prefix,
+                "suffix": suffix,
+                "fingerprint": hashlib.sha256(
+                    bytes([object_type]) + prefix + suffix
+                ).hexdigest(),
+                "siblingBusIds": set(),
+            })
+            row["siblingBusIds"].add(int(bus_id))
+    output: list[dict[str, Any]] = []
+    for row in schemas.values():
+        output.append({
+            key: value
+            for key, value in row.items()
+            if key != "siblingBusIds"
+        } | {
+            "siblingCount": len(row["siblingBusIds"]),
+        })
+    output.sort(key=lambda row: (
+        int(row["objectType"]), str(row["fingerprint"])
+    ))
+    return tuple(output)
+
+
+def finalize_hirc_post_process_catalog(
+    effect_candidates: dict[int, dict[tuple[Any, ...], dict[str, Any]]],
+    bus_definition_types: dict[int, Counter[int]],
+    bus_candidates: dict[int, dict[tuple[int, str], dict[str, Any]]] | None = None,
+) -> tuple[dict[int, dict[str, Any]], dict[int, dict[str, Any]]]:
+    effect_catalog: dict[int, dict[str, Any]] = {}
+    for effect_id, definitions in sorted(effect_candidates.items()):
+        choices = []
+        for row in definitions.values():
+            choices.append({
+                **row,
+                "bankIds": sorted(row.get("bankIds") or []),
+                "bankScopes": [
+                    {"bank": bank_name, "bankId": bank_id}
+                    for bank_name, bank_id in sorted(row.get("bankScopes") or [])
+                ],
+            })
+        choices.sort(key=lambda row: (
+            int(row.get("objectType") or 0),
+            int(row.get("pluginClassId") or 0),
+            str(row.get("parameterSha256") or ""),
+        ))
+        if len(choices) == 1:
+            effect_catalog[effect_id] = {
+                **choices[0],
+                "resolutionStatus": "exactUniquePluginDefinition",
+            }
+        else:
+            effect_catalog[effect_id] = {
+                "effectId": effect_id,
+                "effectIdHex": f"0x{effect_id:08x}",
+                "resolutionStatus": "ambiguousPluginDefinitions",
+                "definitionCount": len(choices),
+                "definitions": choices,
+            }
+
+    bus_candidates = bus_candidates or {}
+    empty_effect_schemas = _hirc_v150_bus_effect_schemas(
+        bus_candidates, frozenset(effect_catalog)
+    )
+    bus_catalog: dict[int, dict[str, Any]] = {}
+    for bus_id, type_counts in sorted(bus_definition_types.items()):
+        object_types = sorted(type_counts)
+        base = {
+            "busId": bus_id,
+            "busIdHex": f"0x{bus_id:08x}",
+            "objectTypes": object_types,
+            "objectTypeLabels": [
+                HIRC_OBJECT_TYPE_LABELS.get(value, f"type{value}")
+                for value in object_types
+            ],
+            "definitionOccurrenceCount": sum(type_counts.values()),
+            "resolutionStatus": (
+                "exactGlobalAudioBusDefinition"
+                if object_types == [8]
+                else "ambiguousBusDefinitions"
+            ),
+        }
+        definitions = []
+        for candidate in bus_candidates.get(bus_id, {}).values():
+            processing = hirc_v150_bus_processing(
+                int(candidate["objectType"]),
+                candidate["_payload"],
+                frozenset(effect_catalog),
+                empty_effect_schemas=empty_effect_schemas,
+            )
+            definitions.append({
+                **{
+                    key: value for key, value in candidate.items()
+                    if key != "_payload"
+                },
+                "bankIds": sorted(candidate.get("bankIds") or []),
+                "bankScopes": [
+                    {"bank": bank_name, "bankId": bank_id}
+                    for bank_name, bank_id in sorted(
+                        candidate.get("bankScopes") or []
+                    )
+                ],
+                **(processing or {}),
+            })
+        definitions.sort(key=lambda row: (
+            int(row.get("objectType") or 0), str(row.get("payloadSha256") or "")
+        ))
+        if len(definitions) == 1:
+            definition = definitions[0]
+            base.update(definition)
+            base["resolutionStatus"] = (
+                "exactGlobalAudioBusDefinition"
+                if object_types == [8]
+                else "exactGlobalAuxiliaryBusDefinition"
+                if object_types == [18]
+                else "ambiguousBusDefinitions"
+            )
+        elif definitions:
+            base.update({
+                "resolutionStatus": "ambiguousBusDefinitions",
+                "definitionCount": len(definitions),
+                "definitions": definitions,
+            })
+        bus_catalog[bus_id] = base
+
+    for definition in bus_catalog.values():
+        parent_id = int(definition.get("parentBusId") or 0)
+        if definition.get("resolutionStatus") == "ambiguousBusDefinitions":
+            definition["parentResolutionStatus"] = "ambiguousBusDefinition"
+        elif not parent_id:
+            definition["parentResolutionStatus"] = "exactRootBus"
+        elif parent_id in bus_catalog:
+            definition["parentResolutionStatus"] = "exactGlobalBusParent"
+        else:
+            definition["parentResolutionStatus"] = "parentBusDefinitionNotFound"
+        for slot in definition.get("effects") or []:
+            effect_id = int(slot.get("effectId") or 0)
+            effect_definition = effect_catalog.get(effect_id)
+            status = str(
+                (effect_definition or {}).get("resolutionStatus")
+                or "effectDefinitionNotFound"
+            )
+            slot["resolutionStatus"] = status
+            if status != "exactUniquePluginDefinition":
+                continue
+            for key in (
+                "objectType", "objectTypeLabel", "pluginClassId",
+                "pluginClassIdHex", "pluginType", "pluginTypeLabel",
+                "companyId", "pluginId", "pluginName", "pluginNameEvidence",
+                "parameterByteLength", "parameterSha256", "parameterParserStatus",
+                "parameterSchema", "parameterSummary", "parameterBoundary",
+                "parameterSemanticBoundary", "parameterRuntimeBoundary",
+                "pluginMediaDependencies", "pluginMediaDependencyCount",
+                "parameterValues", "parameterSetParamsBlockRva",
+            ):
+                if effect_definition.get(key) not in (None, "", []):
+                    slot[key] = effect_definition[key]
+    return effect_catalog, bus_catalog
+
+
+def hirc_bus_parent_path(
+    bus_id: int,
+    bus_catalog: dict[int, dict[str, Any]],
+) -> dict[str, Any]:
+    """Follow one globally resolved bus hierarchy to a root, fail-closed."""
+
+    path_ids: list[int] = []
+    effect_bus_ids: list[int] = []
+    unresolved_processing_ids: list[int] = []
+    seen: set[int] = set()
+    current_id = bus_id
+    status = "exactGlobalBusParentPath"
+    while current_id:
+        if current_id in seen:
+            status = "busParentCycle"
+            break
+        seen.add(current_id)
+        definition = bus_catalog.get(current_id)
+        if not definition:
+            path_ids.append(current_id)
+            status = "busDefinitionNotFoundInParentPath"
+            break
+        path_ids.append(current_id)
+        if definition.get("effects"):
+            effect_bus_ids.append(current_id)
+        if definition.get("effectParserStatus") not in {
+            "exactCrossCorrelatedNonEmptyEffectChunk",
+            "exactCrossCorrelatedEmptyEffectChunk",
+            "exactTypedV150NonEmptyEffectChunk",
+            "exactTypedV150EmptyEffectChunk",
+            "exactTypedV150EffectChunkWithUnresolvedReferences",
+        }:
+            unresolved_processing_ids.append(current_id)
+        if definition.get("resolutionStatus") == "ambiguousBusDefinitions":
+            status = "ambiguousBusDefinitionInParentPath"
+            break
+        parent_status = str(definition.get("parentResolutionStatus") or "")
+        if parent_status == "exactRootBus":
+            break
+        if parent_status != "exactGlobalBusParent":
+            status = parent_status or "unresolvedBusParent"
+            break
+        current_id = int(definition.get("parentBusId") or 0)
+        if len(path_ids) > len(bus_catalog):
+            status = "busParentPathExceededCatalog"
+            break
+    return {
+        "busPathIds": path_ids,
+        "busPathIdHexes": [f"0x{value:08x}" for value in path_ids],
+        "busPathResolutionStatus": status,
+        "effectBusIds": effect_bus_ids,
+        "effectBusIdHexes": [f"0x{value:08x}" for value in effect_bus_ids],
+        "unresolvedBusProcessingIds": unresolved_processing_ids,
+        "unresolvedBusProcessingIdHexes": [
+            f"0x{value:08x}" for value in unresolved_processing_ids
+        ],
+    }
+
+
+def resolve_hirc_post_process_summary(
+    summary: dict[str, Any],
+    effect_catalog: dict[int, dict[str, Any]],
+    bus_catalog: dict[int, dict[str, Any]],
+    *,
+    bank_id: int | None = None,
+    bank_name: str = "",
+) -> None:
+    """Attach global plug-in/bus definitions to one Event's exact IDs."""
+
+    plugin_reference_counts: Counter[str] = Counter()
+    parameter_schema_reference_counts: Counter[str] = Counter()
+    resolution_counts: Counter[str] = Counter()
+    for node in summary.get("effectNodes") or []:
+        for slot in node.get("effects") or []:
+            effect_id = int(slot.get("effectId") or 0)
+            if not effect_id:
+                slot["resolutionStatus"] = "emptyEffectSlot"
+                resolution_counts["emptyEffectSlot"] += 1
+                continue
+            definition = effect_catalog.get(effect_id)
+            if not definition:
+                slot["resolutionStatus"] = "effectDefinitionNotFound"
+                resolution_counts["effectDefinitionNotFound"] += 1
+                continue
+            status = str(definition.get("resolutionStatus") or "unknown")
+            if status == "ambiguousPluginDefinitions" and bank_id is not None:
+                same_bank = [
+                    row
+                    for row in definition.get("definitions") or []
+                    if any(
+                        int(scope.get("bankId") or 0) == bank_id
+                        and str(scope.get("bank") or "") == bank_name
+                        for scope in row.get("bankScopes") or []
+                        if isinstance(scope, dict)
+                    )
+                ]
+                if len(same_bank) == 1:
+                    definition = {
+                        **same_bank[0],
+                        "resolutionStatus": "exactSameBankPackagePluginDefinition",
+                    }
+                    status = "exactSameBankPackagePluginDefinition"
+            slot["resolutionStatus"] = status
+            resolution_counts[status] += 1
+            if status not in {
+                "exactUniquePluginDefinition",
+                "exactSameBankPackagePluginDefinition",
+            }:
+                slot["definitionCount"] = int(definition.get("definitionCount") or 0)
+                continue
+            for key in (
+                "objectType", "objectTypeLabel", "pluginClassId",
+                "pluginClassIdHex", "pluginType", "pluginTypeLabel",
+                "companyId", "pluginId", "pluginName", "pluginNameEvidence",
+                "parameterByteLength", "parameterSha256", "trailingByteLength",
+                "pluginMediaParserStatus", "pluginMediaDependencyCount",
+                "pluginMediaDependencies", "pluginMediaPrefixByteLength",
+                "postPluginMediaTrailingByteLength", "pluginMediaBoundary",
+                "parameterBoundary", "parameterParserStatus", "parameterSchema",
+                "parameterValues", "parameterSummary", "parameterSetParamsBlockRva",
+                "parameterSemanticBoundary", "parameterRuntimeBoundary",
+                "definitionOccurrenceCount",
+            ):
+                if definition.get(key) not in (None, "", []):
+                    slot[key] = definition[key]
+            plugin_key = str(
+                definition.get("pluginName")
+                or definition.get("pluginClassIdHex")
+                or "unknown"
+            )
+            plugin_reference_counts[plugin_key] += 1
+            parameter_schema = str(definition.get("parameterSchema") or "")
+            if parameter_schema:
+                parameter_schema_reference_counts[parameter_schema] += 1
+
+    bus_resolution_counts: Counter[str] = Counter()
+    for output_bus in summary.get("outputBuses") or []:
+        bus_id = int(output_bus.get("busId") or 0)
+        definition = bus_catalog.get(bus_id)
+        if not definition:
+            output_bus["resolutionStatus"] = "audioBusDefinitionNotFound"
+            bus_resolution_counts["audioBusDefinitionNotFound"] += 1
+            continue
+        output_bus.update({
+            key: definition[key]
+            for key in (
+                "objectTypes", "objectTypeLabels", "definitionOccurrenceCount",
+                "resolutionStatus",
+            )
+            if definition.get(key) not in (None, "", [])
+        })
+        output_bus.update(hirc_bus_parent_path(bus_id, bus_catalog))
+        bus_resolution_counts[str(definition.get("resolutionStatus") or "unknown")] += 1
+    aux_bus_resolution_counts: Counter[str] = Counter()
+    for auxiliary_bus in summary.get("auxiliaryBuses") or []:
+        bus_id = int(auxiliary_bus.get("busId") or 0)
+        definition = bus_catalog.get(bus_id)
+        if not definition:
+            auxiliary_bus["resolutionStatus"] = "auxiliaryBusDefinitionNotFound"
+            aux_bus_resolution_counts["auxiliaryBusDefinitionNotFound"] += int(
+                auxiliary_bus.get("referenceCount") or 1
+            )
+            continue
+        auxiliary_bus.update({
+            key: definition[key]
+            for key in (
+                "objectTypes", "objectTypeLabels", "definitionOccurrenceCount",
+                "resolutionStatus",
+            )
+            if definition.get(key) not in (None, "", [])
+        })
+        auxiliary_bus.update(hirc_bus_parent_path(bus_id, bus_catalog))
+        aux_bus_resolution_counts[
+            str(definition.get("resolutionStatus") or "unknown")
+        ] += int(auxiliary_bus.get("referenceCount") or 1)
+    summary["effectResolutionCounts"] = dict(sorted(resolution_counts.items()))
+    summary["effectPluginReferenceCounts"] = dict(
+        sorted(plugin_reference_counts.items())
+    )
+    summary["decodedEffectParameterReferenceCount"] = sum(
+        parameter_schema_reference_counts.values()
+    )
+    summary["partialEffectParameterReferenceCount"] = sum(
+        1
+        for node in summary.get("effectNodes") or []
+        for slot in node.get("effects") or []
+        if str(slot.get("parameterParserStatus") or "").startswith(
+            "typedExactLayoutPartialSemantics"
+        )
+    )
+    summary["exactEffectParameterReferenceCount"] = (
+        summary["decodedEffectParameterReferenceCount"]
+        - summary["partialEffectParameterReferenceCount"]
+    )
+    summary["effectParameterSchemaReferenceCounts"] = dict(
+        sorted(parameter_schema_reference_counts.items())
+    )
+    summary["outputBusResolutionCounts"] = dict(
+        sorted(bus_resolution_counts.items())
+    )
+    summary["auxiliaryBusResolutionCounts"] = dict(
+        sorted(aux_bus_resolution_counts.items())
+    )
+    summary["evidenceBoundary"] = (
+        "Exact direct NodeBase effect slots and explicit output-bus IDs are "
+        "combined with the reciprocal global Audio/Aux Bus parent path. "
+        "Serialized User-Defined Aux slots and Early Reflections bus IDs use "
+        "the same catalog paths; Game-Defined use/override bits are authored, "
+        "but their runtime bus IDs and control values are not serialized. "
+        "Current v150 Bus objects are consumed through the typed CAkBus field "
+        "order through InitialFX, proving explicit zero-count and non-empty "
+        "serialized arrays; the legacy bounded correlation path is retained "
+        "for non-v150/synthetic payloads. Supported plug-in schemas expose "
+        "authored base values, and the v150 AkPropID bundle preserves each "
+        "property ID, raw U32, and finite-float interpretation. Initial "
+        "BypassFX/BypassAllFX property IDs are absent in the current corpus; "
+        "the direct NodeBase bypass flag is separate. Effective inherited "
+        "sends, live bypass/RTPC/State values, platform DSP, and audibility "
+        "are not observed."
+    )
 
 
 def hirc_reciprocal_child_list(
@@ -5451,6 +9761,11 @@ def summarize_hirc_action_dispatch(
         for row in root_rows
         if row.get("operation") in {"play", "playEvent"}
     ]
+    control_rows = [
+        row
+        for row in root_rows
+        if row.get("operation") not in {"play", "playEvent"}
+    ]
     playback_count = len(playback_rows)
     if not playback_count:
         timing_class = "noPlayback"
@@ -5499,9 +9814,22 @@ def summarize_hirc_action_dispatch(
         "explicitDelayActionCount": explicit_property_count("delay"),
         "explicitTransitionActionCount": explicit_property_count("transition"),
         "probabilityGatedActionCount": explicit_property_count("probability"),
+        "controlActionCount": len(control_rows),
+        "typedControlActionCount": sum(
+            row.get("actionControlParserStatus") == "typedExactV150"
+            for row in control_rows
+        ),
+        "failedControlActionCount": sum(
+            row.get("actionControlParserStatus") == "failedClosed"
+            for row in control_rows
+        ),
+        "controlOperationCounts": dict(sorted(
+            Counter(str(row.get("operation") or "unknown") for row in control_rows).items()
+        )),
         "evidenceBoundary": (
             "Action ordinals prove serialized Event membership, not sequential "
-            "execution or sample-accurate simultaneous audible onset."
+            "execution or sample-accurate simultaneous audible onset; typed control "
+            "payloads prove authored trigger parameters, not evaluated runtime state."
         ),
     }
 
@@ -5532,6 +9860,7 @@ def traverse_hirc_event(
     container_evidence: list[dict[str, Any]] = []
     music_node_evidence: list[dict[str, Any]] = []
     source_object_evidence: list[dict[str, Any]] = []
+    node_processing_by_object_id: dict[int, dict[str, Any]] = {}
     unresolved_nodes: list[dict[str, Any]] = []
 
     def record_media(
@@ -5578,6 +9907,8 @@ def traverse_hirc_event(
         object_type: int,
         root_action_id: int,
         relations: tuple[str, ...],
+        serialized_path_ids: tuple[int, ...],
+        serialized_path_types: tuple[int, ...],
     ) -> None:
         source_kind = str(source.get("sourceKind") or "unsupportedPluginSource")
         source_id = int(source.get("sourceId") or 0)
@@ -5598,6 +9929,11 @@ def traverse_hirc_event(
             "objectType": object_type,
             "rootActionId": root_action_id,
             "relationTypes": list(relations),
+            "serializedPathIds": list(serialized_path_ids),
+            "serializedPathTypeLabels": [
+                HIRC_OBJECT_TYPE_LABELS.get(value, f"type{value}")
+                for value in serialized_path_types
+            ],
             "decodedMediaMatch": decoded_match,
             "mediaLocationStatus": location_status,
             "playbackBoundary": (
@@ -5632,6 +9968,19 @@ def traverse_hirc_event(
         data = obj.get("data") or b""
         current_path_ids = (*path_ids, object_id)
         current_path_types = (*path_types, object_type)
+
+        node_processing = hirc_v150_node_processing(object_type, data)
+        if node_processing is not None:
+            processing_row = node_processing_by_object_id.setdefault(object_id, {
+                **node_processing,
+                "objectId": object_id,
+                "objectType": object_type,
+                "objectTypeLabel": HIRC_OBJECT_TYPE_LABELS.get(
+                    object_type, f"type{object_type}"
+                ),
+                "rootActionIds": set(),
+            })
+            processing_row["rootActionIds"].add(root_action_id)
 
         if object_type in HIRC_MUSIC_NODE_TYPES and bank_version != 150:
             unresolved_nodes.append({
@@ -5673,10 +10022,22 @@ def traverse_hirc_event(
                 "scope": (action_type & 0x00FF) if action_type is not None else None,
                 "targetId": target_id,
                 "targetType": target_type or None,
+                "targetTypeLabel": (
+                    HIRC_OBJECT_TYPE_LABELS.get(target_type, f"type{target_type}")
+                    if target_type else None
+                ),
+                "serializedPathIds": list(current_path_ids),
+                "serializedPathTypeLabels": [
+                    HIRC_OBJECT_TYPE_LABELS.get(value, f"type{value}")
+                    for value in current_path_types
+                ],
+                "serializedPathRelations": list(path_relations),
                 "traversed": traversed,
             }
             if operation in HIRC_PLAYBACK_ACTION_OPERATIONS:
                 action_row.update(hirc_v150_playback_action(data, bank_version))
+            else:
+                action_row.update(hirc_v150_control_action(data, bank_version))
             action_evidence.append(action_row)
             if traversed:
                 queue.append((
@@ -5701,7 +10062,10 @@ def traverse_hirc_event(
                 })
                 continue
             relations = tuple(path_relations) or ("directSound",)
-            record_source(source, object_id, object_type, root_action_id, relations)
+            record_source(
+                source, object_id, object_type, root_action_id, relations,
+                current_path_ids, current_path_types,
+            )
             if source.get("sourceKind") == "codecMedia":
                 record_media(
                     int(source["sourceId"]), object_id, object_type,
@@ -5736,7 +10100,10 @@ def traverse_hirc_event(
             })
             relations = (*path_relations, "musicTrackSource")
             for source in track["sources"]:
-                record_source(source, object_id, object_type, root_action_id, relations)
+                record_source(
+                    source, object_id, object_type, root_action_id, relations,
+                    current_path_ids, current_path_types,
+                )
                 media_id = int(source.get("sourceId") or 0)
                 if media_id and source.get("sourceKind") == "codecMedia":
                     record_media(
@@ -6002,6 +10369,11 @@ def traverse_hirc_event(
     action_dispatch_evidence = summarize_hirc_action_dispatch(
         event_id, root_action_ids, action_evidence
     )
+    for processing_row in node_processing_by_object_id.values():
+        processing_row["rootActionIds"] = sorted(processing_row["rootActionIds"])
+    post_process_summary = summarize_hirc_node_processing(
+        node_processing_by_object_id
+    )
     return {
         "actionIds": root_action_ids,
         "rootPlayActionCount": action_dispatch_evidence["playbackActionCount"],
@@ -6017,6 +10389,7 @@ def traverse_hirc_event(
         "actionDispatchEvidence": action_dispatch_evidence,
         "containerEvidence": container_evidence,
         "musicNodeEvidence": music_node_evidence,
+        "postProcessSummary": post_process_summary,
         "sourceObjectSummary": source_object_summary,
         "nonMediaSourceEvidence": non_media_source_evidence,
         "unresolvedNodes": unresolved_nodes,
@@ -7794,6 +12167,37 @@ def collect_event_audio_index(
     package_inventory: list[dict[str, Any]] = []
     decoded_sound_definitions: list[dict[str, Any]] = []
     event_reached_media_ids: set[int] = set()
+    effect_definition_candidates: dict[
+        int, dict[tuple[Any, ...], dict[str, Any]]
+    ] = {}
+    bus_definition_types: dict[int, Counter[int]] = defaultdict(Counter)
+    bus_definition_candidates: dict[
+        int, dict[tuple[int, str], dict[str, Any]]
+    ] = {}
+    corpus_processing_counts: Counter[str] = Counter()
+    corpus_effect_reference_counts: Counter[tuple[str, int, int]] = Counter()
+    corpus_output_bus_counts: Counter[int] = Counter()
+    corpus_aux_parser_status_counts: Counter[str] = Counter()
+    corpus_aux_flag_counts: Counter[int] = Counter()
+    corpus_user_aux_bus_counts: Counter[int] = Counter()
+    corpus_reflections_aux_bus_counts: Counter[int] = Counter()
+    corpus_state_rtpc_parser_status_counts: Counter[str] = Counter()
+    corpus_state_group_counts: Counter[int] = Counter()
+    corpus_state_id_counts: Counter[int] = Counter()
+    corpus_state_parameter_counts: Counter[str] = Counter()
+    corpus_rtpc_id_counts: Counter[int] = Counter()
+    corpus_rtpc_type_counts: Counter[str] = Counter()
+    corpus_rtpc_parameter_counts: Counter[str] = Counter()
+    corpus_property_counts: Counter[str] = Counter()
+    corpus_ranged_property_counts: Counter[str] = Counter()
+    corpus_action_control_status_counts: Counter[str] = Counter()
+    corpus_action_control_operation_counts: Counter[str] = Counter()
+    corpus_action_control_failure_counts: Counter[str] = Counter()
+    corpus_action_control_typed_count = 0
+    corpus_action_control_count = 0
+    corpus_property_node_count = 0
+    corpus_effect_flag_counts: Counter[int] = Counter()
+    post_process_summaries: list[tuple[str, int, dict[str, Any]]] = []
     for bank_name, bank_data in package_payloads:
         package_row: dict[str, Any] = {
             "source": bank_name,
@@ -7839,6 +12243,148 @@ def collect_event_audio_index(
             summary_type_counts.update(
                 int(obj.get("type") or 0) for obj in objects.values()
             )
+            for object_id, obj in objects.items():
+                object_type = int(obj.get("type") or 0)
+                data = obj.get("data") or b""
+                if object_type in (8, 18):
+                    bus_definition_types[int(object_id)][object_type] += 1
+                    add_hirc_bus_definition_candidate(
+                        bus_definition_candidates,
+                        int(object_id),
+                        object_type,
+                        data,
+                        bank_id=bank_id,
+                        bank_name=bank_name,
+                    )
+                effect_definition = hirc_v150_effect_definition(
+                    object_type, data
+                )
+                if effect_definition is not None:
+                    add_hirc_effect_definition_candidate(
+                        effect_definition_candidates,
+                        int(object_id),
+                        effect_definition,
+                        bank_id=bank_id,
+                        bank_name=bank_name,
+                    )
+                node_processing = hirc_v150_node_processing(object_type, data)
+                if node_processing is None:
+                    continue
+                corpus_processing_counts["parsedNodeCount"] += 1
+                if node_processing.get("overrideParentFx"):
+                    corpus_processing_counts["overrideParentFxNodeCount"] += 1
+                effects = node_processing.get("effects") or []
+                if effects:
+                    corpus_processing_counts["effectNodeCount"] += 1
+                    corpus_processing_counts["effectSlotCount"] += len(effects)
+                if node_processing.get("bypassAll"):
+                    corpus_processing_counts["bypassAllNodeCount"] += 1
+                for effect in effects:
+                    effect_id = int(effect.get("effectId") or 0)
+                    flags_raw = int(effect.get("flagsRaw") or 0)
+                    corpus_effect_flag_counts[flags_raw] += 1
+                    if effect.get("effectBypass"):
+                        corpus_processing_counts["effectBypassSlotCount"] += 1
+                    if effect.get("effectShareSet"):
+                        corpus_processing_counts["effectShareSetSlotCount"] += 1
+                    if effect.get("effectRendered"):
+                        corpus_processing_counts["effectRenderedSlotCount"] += 1
+                    if int(effect.get("unknownFlagBits") or 0):
+                        corpus_processing_counts[
+                            "effectUnknownFlagBitsCount"
+                        ] += 1
+                    if effect_id:
+                        corpus_processing_counts["effectReferenceCount"] += 1
+                        corpus_effect_reference_counts[
+                            (bank_name, bank_id, effect_id)
+                        ] += 1
+                    else:
+                        corpus_processing_counts["emptyEffectSlotCount"] += 1
+                if node_processing.get("overrideParentMetadata"):
+                    corpus_processing_counts["overrideParentMetadataNodeCount"] += 1
+                metadata = node_processing.get("metadata") or []
+                if metadata:
+                    corpus_processing_counts["metadataNodeCount"] += 1
+                    corpus_processing_counts["metadataSlotCount"] += len(metadata)
+                aux_sends = node_processing.get("auxSends") or {}
+                aux_parser_status = str(
+                    aux_sends.get("parserStatus") or "notParsed"
+                )
+                corpus_aux_parser_status_counts[aux_parser_status] += 1
+                if aux_parser_status == "typedExactV150NodeAuxParams":
+                    if aux_sends.get("properties") or aux_sends.get("rangedProperties"):
+                        corpus_property_node_count += 1
+                    for prop in aux_sends.get("properties") or []:
+                        corpus_property_counts[
+                            str(prop.get("propertyLabel") or "unknown")
+                        ] += 1
+                    for prop in aux_sends.get("rangedProperties") or []:
+                        corpus_ranged_property_counts[
+                            str(prop.get("propertyLabel") or "unknown")
+                        ] += 1
+                    aux_flags_raw = int(aux_sends.get("auxFlagsRaw") or 0)
+                    corpus_aux_flag_counts[aux_flags_raw] += 1
+                    if aux_sends.get("useGameDefinedAuxSends"):
+                        corpus_processing_counts[
+                            "gameDefinedAuxSendUseBitNodeCount"
+                        ] += 1
+                    if aux_sends.get("overrideGameDefinedAuxSends"):
+                        corpus_processing_counts[
+                            "gameDefinedAuxSendOverrideBitNodeCount"
+                        ] += 1
+                    if aux_sends.get("hasUserDefinedAuxSendSlots"):
+                        corpus_processing_counts[
+                            "userDefinedAuxSlotNodeCount"
+                        ] += 1
+                    if aux_sends.get("overrideUserDefinedAuxSends"):
+                        corpus_processing_counts[
+                            "userDefinedAuxSendOverrideBitNodeCount"
+                        ] += 1
+                    for user_send in aux_sends.get("userDefinedAuxSends") or []:
+                        bus_id = int(user_send.get("busId") or 0)
+                        if bus_id:
+                            corpus_user_aux_bus_counts[bus_id] += 1
+                    reflections_bus_id = int(
+                        aux_sends.get("reflectionsAuxBusId") or 0
+                    )
+                    if reflections_bus_id:
+                        corpus_reflections_aux_bus_counts[
+                            reflections_bus_id
+                        ] += 1
+                state_rtpc = node_processing.get("stateAndRtpc") or {}
+                state_rtpc_status = str(
+                    state_rtpc.get("parserStatus") or "notParsed"
+                )
+                corpus_state_rtpc_parser_status_counts[state_rtpc_status] += 1
+                if state_rtpc_status == "typedExactV150NodeStateAndRtpc":
+                    if state_rtpc.get("stateGroups") or state_rtpc.get("rtpcCurves"):
+                        corpus_processing_counts["stateRtpcNodeCount"] += 1
+                    for group in state_rtpc.get("stateGroups") or []:
+                        group_id = int(group.get("groupId") or 0)
+                        corpus_state_group_counts[group_id] += 1
+                        for state in group.get("states") or []:
+                            corpus_state_id_counts[int(state.get("stateId") or 0)] += 1
+                            for value in state.get("values") or []:
+                                corpus_processing_counts["stateValueCount"] += 1
+                                corpus_state_parameter_counts[
+                                    str(value.get("parameterLabel") or "unknown")
+                                ] += 1
+                    for curve in state_rtpc.get("rtpcCurves") or []:
+                        rtpc_id = int(curve.get("rtpcId") or 0)
+                        corpus_rtpc_id_counts[rtpc_id] += 1
+                        corpus_rtpc_type_counts[
+                            str(curve.get("rtpcTypeLabel") or "unknown")
+                        ] += 1
+                        corpus_rtpc_parameter_counts[
+                            str(curve.get("parameterLabel") or "unknown")
+                        ] += 1
+                        corpus_processing_counts["rtpcPointCount"] += len(
+                            curve.get("points") or []
+                        )
+                override_bus_id = int(node_processing.get("overrideBusId") or 0)
+                if override_bus_id:
+                    corpus_processing_counts["outputBusNodeCount"] += 1
+                    corpus_output_bus_counts[override_bus_id] += 1
             decoded_sound_definitions.extend(collect_hirc_decoded_sound_definitions(
                 objects,
                 numeric_audio_ids,
@@ -7859,6 +12405,26 @@ def collect_event_audio_index(
                     numeric_audio_ids,
                     bank_version=bank_version,
                 )
+                for action in traversal["actionEvidence"]:
+                    if action.get("operation") in {"play", "playEvent"}:
+                        continue
+                    corpus_action_control_count += 1
+                    operation_label = str(action.get("operation") or "unknown")
+                    corpus_action_control_operation_counts[operation_label] += 1
+                    status = str(
+                        action.get("actionControlParserStatus") or "missing"
+                    )
+                    corpus_action_control_status_counts[status] += 1
+                    if status == "typedExactV150":
+                        corpus_action_control_typed_count += 1
+                    failure = action.get("actionControlParserFailure") or {}
+                    if isinstance(failure, dict) and failure.get("reason"):
+                        corpus_action_control_failure_counts[
+                            str(failure["reason"])
+                        ] += 1
+                post_process_summaries.append((
+                    bank_name, bank_id, traversal["postProcessSummary"]
+                ))
                 action_ids = traversal["actionIds"]
                 visited = set(traversal["visitedObjectIds"])
                 media_ids = traversal["mediaIds"]
@@ -7900,6 +12466,7 @@ def collect_event_audio_index(
                             if str(relation)
                         }),
                         "sourceObjectSummary": traversal["sourceObjectSummary"],
+                        "postProcessSummary": traversal["postProcessSummary"],
                         "nonMediaSourceEvidence": traversal["nonMediaSourceEvidence"],
                         "sourceMediaIds": traversal["sourceMediaIds"],
                         "mediaIds": media_ids,
@@ -7921,7 +12488,7 @@ def collect_event_audio_index(
                     "actionIds": action_ids,
                     "actionEvidence": traversal["actionEvidence"],
                     "actionDispatchEvidence": traversal["actionDispatchEvidence"],
-                    "actionParser": "wwise150TypedPlaybackActionBundles",
+                    "actionParser": "wwise150TypedPlaybackAndControlActionPayloads",
                     "rootPlayActionCount": traversal["rootPlayActionCount"],
                     "rootStopActionCount": traversal["rootStopActionCount"],
                     "visitedObjectIds": sorted(visited),
@@ -7930,6 +12497,7 @@ def collect_event_audio_index(
                     "selectionObjectTypes": selection_object_types,
                     "containerEvidence": traversal["containerEvidence"],
                     "musicNodeEvidence": traversal["musicNodeEvidence"],
+                    "postProcessSummary": traversal["postProcessSummary"],
                     "sourceObjectSummary": traversal["sourceObjectSummary"],
                     "nonMediaSourceEvidence": traversal["nonMediaSourceEvidence"],
                     "mediaEvidence": traversal["mediaEvidence"],
@@ -7988,6 +12556,277 @@ def collect_event_audio_index(
                     linked_by_key[link_key] = linked
         package_inventory.append(package_row)
 
+    effect_catalog, bus_catalog = finalize_hirc_post_process_catalog(
+        effect_definition_candidates,
+        bus_definition_types,
+        bus_definition_candidates,
+    )
+    for definition in bus_catalog.values():
+        definition.update(hirc_bus_parent_path(
+            int(definition.get("busId") or 0), bus_catalog
+        ))
+    for summary_bank_name, summary_bank_id, post_process_summary in post_process_summaries:
+        resolve_hirc_post_process_summary(
+            post_process_summary,
+            effect_catalog,
+            bus_catalog,
+            bank_id=summary_bank_id,
+            bank_name=summary_bank_name,
+        )
+
+    corpus_plugin_reference_counts: Counter[str] = Counter()
+    corpus_effect_resolution_counts: Counter[str] = Counter()
+    corpus_parameter_schema_reference_counts: Counter[str] = Counter()
+    corpus_decoded_parameter_reference_count = 0
+    corpus_partial_parameter_reference_count = 0
+    for (
+        reference_bank_name, reference_bank_id, effect_id
+    ), reference_count in corpus_effect_reference_counts.items():
+        definition = effect_catalog.get(effect_id)
+        status = str(
+            (definition or {}).get("resolutionStatus")
+            or "effectDefinitionNotFound"
+        )
+        if status == "ambiguousPluginDefinitions":
+            same_bank = [
+                row
+                for row in definition.get("definitions") or []
+                if any(
+                    int(scope.get("bankId") or 0) == reference_bank_id
+                    and str(scope.get("bank") or "") == reference_bank_name
+                    for scope in row.get("bankScopes") or []
+                    if isinstance(scope, dict)
+                )
+            ]
+            if len(same_bank) == 1:
+                definition = {
+                    **same_bank[0],
+                    "resolutionStatus": "exactSameBankPackagePluginDefinition",
+                }
+                status = "exactSameBankPackagePluginDefinition"
+        corpus_effect_resolution_counts[status] += reference_count
+        if status in {
+            "exactUniquePluginDefinition",
+            "exactSameBankPackagePluginDefinition",
+        }:
+            plugin_key = str(
+                definition.get("pluginName")
+                or definition.get("pluginClassIdHex")
+                or "unknown"
+            )
+            corpus_plugin_reference_counts[plugin_key] += reference_count
+            parameter_schema = str(definition.get("parameterSchema") or "")
+            if parameter_schema:
+                corpus_decoded_parameter_reference_count += reference_count
+                corpus_parameter_schema_reference_counts[parameter_schema] += reference_count
+                if str(definition.get("parameterParserStatus") or "").startswith(
+                    "typedExactLayoutPartialSemantics"
+                ):
+                    corpus_partial_parameter_reference_count += reference_count
+    corpus_bus_resolution_counts: Counter[str] = Counter()
+    for bus_id, node_count in corpus_output_bus_counts.items():
+        status = str(
+            (bus_catalog.get(bus_id) or {}).get("resolutionStatus")
+            or "audioBusDefinitionNotFound"
+        )
+        corpus_bus_resolution_counts[status] += node_count
+    corpus_aux_bus_resolution_counts: Counter[str] = Counter()
+    for bus_id, reference_count in (
+        corpus_user_aux_bus_counts + corpus_reflections_aux_bus_counts
+    ).items():
+        status = str(
+            (bus_catalog.get(bus_id) or {}).get("resolutionStatus")
+            or "auxiliaryBusDefinitionNotFound"
+        )
+        corpus_aux_bus_resolution_counts[status] += reference_count
+
+    unique_effect_definitions = [
+        definition
+        for definitions in effect_definition_candidates.values()
+        for definition in definitions.values()
+    ]
+    effect_definition_plugin_counts: Counter[str] = Counter()
+    effect_parameter_schema_counts: Counter[str] = Counter()
+    partial_effect_parameter_definition_count = 0
+    plugin_media_dependency_plugin_counts: Counter[str] = Counter()
+    plugin_media_dependency_definition_count = 0
+    plugin_media_dependency_occurrence_count = 0
+    plugin_media_dependency_reference_occurrence_count = 0
+    unique_plugin_media_dependencies: dict[
+        tuple[int, int, int], dict[str, Any]
+    ] = {}
+    for definition in unique_effect_definitions:
+        plugin_key = str(
+            definition.get("pluginName")
+            or definition.get("pluginClassIdHex")
+            or "unknown"
+        )
+        effect_definition_plugin_counts[plugin_key] += 1
+        parameter_schema = str(definition.get("parameterSchema") or "")
+        if parameter_schema:
+            effect_parameter_schema_counts[parameter_schema] += 1
+            if str(definition.get("parameterParserStatus") or "").startswith(
+                "typedExactLayoutPartialSemantics"
+            ):
+                partial_effect_parameter_definition_count += 1
+        dependencies = definition.get("pluginMediaDependencies") or []
+        if dependencies:
+            occurrence_count = int(
+                definition.get("definitionOccurrenceCount") or 1
+            )
+            plugin_media_dependency_definition_count += 1
+            plugin_media_dependency_occurrence_count += occurrence_count
+            plugin_media_dependency_reference_occurrence_count += (
+                len(dependencies) * occurrence_count
+            )
+            plugin_media_dependency_plugin_counts[plugin_key] += len(dependencies)
+            for dependency in dependencies:
+                key = (
+                    int(definition.get("pluginClassId") or 0),
+                    int(dependency.get("pluginDataIndex") or 0),
+                    int(dependency.get("mediaId") or 0),
+                )
+                unique_plugin_media_dependencies.setdefault(key, {
+                    "pluginClassIdHex": definition.get("pluginClassIdHex"),
+                    "pluginName": definition.get("pluginName"),
+                    **dependency,
+                })
+
+    bus_parent_resolution_counts: Counter[str] = Counter()
+    bus_effect_parser_counts: Counter[str] = Counter()
+    bus_effect_plugin_counts: Counter[str] = Counter()
+    bus_effect_slot_count = 0
+    bus_effect_parameter_count = 0
+    bus_effect_bypass_slot_count = 0
+    bus_effect_share_set_slot_count = 0
+    bus_effect_rendered_slot_count = 0
+    bus_effect_unknown_flag_bits_count = 0
+    bus_state_rtpc_parser_counts: Counter[str] = Counter()
+    bus_rtpc_curve_count = 0
+    bus_rtpc_point_count = 0
+    bus_state_property_count = 0
+    bus_state_group_count = 0
+    bus_state_count = 0
+    bus_state_value_count = 0
+    bus_rtpc_id_counts: Counter[int] = Counter()
+    bus_rtpc_parameter_counts: Counter[str] = Counter()
+    bus_state_parameter_counts: Counter[str] = Counter()
+    bus_state_group_id_counts: Counter[int] = Counter()
+    bus_state_id_counts: Counter[int] = Counter()
+    for definition in bus_catalog.values():
+        bus_parent_resolution_counts[str(
+            definition.get("parentResolutionStatus") or "unknown"
+        )] += 1
+        bus_effect_parser_counts[str(
+            definition.get("effectParserStatus") or "notParsed"
+        )] += 1
+        for slot in definition.get("effects") or []:
+            bus_effect_slot_count += 1
+            bus_effect_bypass_slot_count += bool(slot.get("effectBypass"))
+            bus_effect_share_set_slot_count += bool(slot.get("effectShareSet"))
+            bus_effect_rendered_slot_count += bool(slot.get("effectRendered"))
+            bus_effect_unknown_flag_bits_count += bool(
+                int(slot.get("unknownFlagBits") or 0)
+            )
+            plugin_key = str(
+                slot.get("pluginName")
+                or slot.get("pluginClassIdHex")
+                or slot.get("effectIdHex")
+                or "unknown"
+            )
+            bus_effect_plugin_counts[plugin_key] += 1
+            if slot.get("parameterSchema"):
+                bus_effect_parameter_count += 1
+        serialized_state_rtpc = definition.get("serializedStateAndRtpc") or {}
+        parser_status = str(
+            serialized_state_rtpc.get("parserStatus") or "notParsed"
+        )
+        bus_state_rtpc_parser_counts[parser_status] += 1
+        if parser_status != "typedExactV150BusInitialRtpcAndState":
+            continue
+        bus_rtpc_curve_count += int(
+            serialized_state_rtpc.get("rtpcCurveCount") or 0
+        )
+        bus_rtpc_point_count += int(
+            serialized_state_rtpc.get("rtpcPointCount") or 0
+        )
+        bus_state_property_count += int(
+            serialized_state_rtpc.get("statePropertyCount") or 0
+        )
+        bus_state_group_count += int(
+            serialized_state_rtpc.get("stateGroupCount") or 0
+        )
+        bus_state_count += int(serialized_state_rtpc.get("stateCount") or 0)
+        bus_state_value_count += int(
+            serialized_state_rtpc.get("stateValueCount") or 0
+        )
+        for curve in serialized_state_rtpc.get("rtpcCurves") or []:
+            bus_rtpc_id_counts[int(curve.get("rtpcId") or 0)] += 1
+            bus_rtpc_parameter_counts[str(
+                curve.get("parameterLabel") or "unknown"
+            )] += 1
+        for prop in serialized_state_rtpc.get("stateProperties") or []:
+            bus_state_parameter_counts[str(
+                prop.get("parameterLabel") or "unknown"
+            )] += 1
+        for group in serialized_state_rtpc.get("stateGroups") or []:
+            bus_state_group_id_counts[int(group.get("groupId") or 0)] += 1
+            for state in group.get("states") or []:
+                bus_state_id_counts[int(state.get("stateId") or 0)] += 1
+
+    public_bus_definitions = []
+    for definition in sorted(
+        bus_catalog.values(), key=lambda row: int(row.get("busId") or 0)
+    ):
+        public_bus_definitions.append({
+            key: definition[key]
+            for key in (
+                "busId", "busIdHex", "objectType", "objectTypeLabel",
+                "objectTypes", "objectTypeLabels", "payloadByteLength",
+                "payloadSha256", "definitionOccurrenceCount",
+                "resolutionStatus", "parentBusId", "parentBusIdHex",
+                "parentParserStatus", "parentResolutionStatus", "parserStatus",
+                "effectParserStatus", "effectChunkOffset",
+                "effectChunkByteLength", "bypassAllRaw", "bypassAll",
+                "effectSlotCount", "effects", "effectChunkCandidateCount",
+                "nestedSuffixCandidateCount", "effectEvidenceBoundary",
+                "serializedBusParserStatus", "serializedDeviceShareSetId",
+                "serializedDeviceShareSetIdHex", "serializedPropertyCount",
+                "serializedProperties", "serializedPositioningBitsRaw",
+                "serializedPositioning3dBitsRaw", "serializedAuxFlagsRaw",
+                "serializedUserAuxBusIds", "serializedUserAuxBusIdHexes",
+                "serializedReflectionsAuxBusId",
+                "serializedReflectionsAuxBusIdHex", "serializedBusFlagsRaw",
+                "serializedMaxInstances", "serializedChannelConfig",
+                "serializedBusStateFlagsRaw", "serializedRecoveryTimeMs",
+                "serializedMaxDuckVolumeDb", "serializedDuckCount",
+                "serializedDucks", "metadataChunkOffset", "metadataSlotCount",
+                "metadata", "remainingSubtypeByteLength",
+                "serializedStateAndRtpc",
+                "emptyEffectSchemaFingerprint", "emptyEffectSchemaSiblingCount",
+                "busPathIds", "busPathIdHexes", "busPathResolutionStatus",
+                "effectBusIds", "effectBusIdHexes",
+                "unresolvedBusProcessingIds",
+                "unresolvedBusProcessingIdHexes",
+            )
+            if definition.get(key) is not None
+        })
+
+    game_parameter_name_evidence = []
+    for source_row in HIRC_GAME_PARAMETER_NAME_EVIDENCE["entries"]:
+        row = dict(source_row)
+        parameter_id = int(row["parameterId"])
+        row["nodeRtpcCurveCount"] = int(
+            corpus_rtpc_id_counts.get(parameter_id, 0)
+        )
+        row["busRtpcCurveCount"] = int(
+            bus_rtpc_id_counts.get(parameter_id, 0)
+        )
+        row["serializedHircMatch"] = bool(
+            row["nodeRtpcCurveCount"] or row["busRtpcCurveCount"]
+        )
+        game_parameter_name_evidence.append(row)
+
     if hirc_summary is not None:
         definition_only_media_objects = [
             row for row in decoded_sound_definitions
@@ -8017,6 +12856,219 @@ def collect_event_audio_index(
                 int(row["mediaId"]) for row in definition_only_media_objects
             }),
             "definitionOnlyDecodedSoundObjects": definition_only_media_objects,
+            "postProcessSummary": {
+                "parserStatus": (
+                    "typedExactV150NodeBaseAuxSendsBusHierarchyBusStateRtpcAndSelectedPluginParameters"
+                ),
+                **dict(sorted(corpus_processing_counts.items())),
+                "uniqueEffectObjectIds": len(effect_catalog),
+                "uniqueEffectDefinitionCount": len(unique_effect_definitions),
+                "ambiguousEffectObjectIdCount": sum(
+                    row.get("resolutionStatus") == "ambiguousPluginDefinitions"
+                    for row in effect_catalog.values()
+                ),
+                "effectDefinitionPluginCounts": dict(
+                    sorted(effect_definition_plugin_counts.items())
+                ),
+                "decodedEffectParameterDefinitionCount": sum(
+                    effect_parameter_schema_counts.values()
+                ),
+                "exactEffectParameterDefinitionCount": (
+                    sum(effect_parameter_schema_counts.values())
+                    - partial_effect_parameter_definition_count
+                ),
+                "partialEffectParameterDefinitionCount": (
+                    partial_effect_parameter_definition_count
+                ),
+                "opaqueEffectParameterDefinitionCount": (
+                    len(unique_effect_definitions)
+                    - sum(effect_parameter_schema_counts.values())
+                ),
+                "decodedEffectParameterReferenceCount": (
+                    corpus_decoded_parameter_reference_count
+                ),
+                "exactEffectParameterReferenceCount": (
+                    corpus_decoded_parameter_reference_count
+                    - corpus_partial_parameter_reference_count
+                ),
+                "partialEffectParameterReferenceCount": (
+                    corpus_partial_parameter_reference_count
+                ),
+                "effectParameterSchemaCounts": dict(
+                    sorted(effect_parameter_schema_counts.items())
+                ),
+                "effectParameterSchemaReferenceCounts": dict(
+                    sorted(corpus_parameter_schema_reference_counts.items())
+                ),
+                "pluginMediaDependencyDefinitionCount": (
+                    plugin_media_dependency_definition_count
+                ),
+                "pluginMediaDependencyDefinitionOccurrenceCount": (
+                    plugin_media_dependency_occurrence_count
+                ),
+                "pluginMediaDependencyReferenceOccurrenceCount": (
+                    plugin_media_dependency_reference_occurrence_count
+                ),
+                "uniquePluginMediaIdCount": len({
+                    int(row.get("mediaId") or 0)
+                    for row in unique_plugin_media_dependencies.values()
+                }),
+                "pluginMediaDependencyPluginCounts": dict(
+                    sorted(plugin_media_dependency_plugin_counts.items())
+                ),
+                "pluginMediaDependencies": [
+                    unique_plugin_media_dependencies[key]
+                    for key in sorted(unique_plugin_media_dependencies)
+                ],
+                "effectParameterBinaryContract": HIRC_EFFECT_PARAMETER_CONTRACT,
+                "effectPluginReferenceCounts": dict(
+                    sorted(corpus_plugin_reference_counts.items())
+                ),
+                "effectResolutionCounts": dict(
+                    sorted(corpus_effect_resolution_counts.items())
+                ),
+                "effectSlotFlagCounts": {
+                    str(key): value
+                    for key, value in sorted(corpus_effect_flag_counts.items())
+                },
+                "uniqueOutputBusIds": len(corpus_output_bus_counts),
+                "auxSendParserStatusCounts": dict(
+                    sorted(corpus_aux_parser_status_counts.items())
+                ),
+                "auxSendFlagCounts": {
+                    f"0x{key:02x}": value
+                    for key, value in sorted(corpus_aux_flag_counts.items())
+                },
+                "userDefinedAuxBusReferenceCount": sum(
+                    corpus_user_aux_bus_counts.values()
+                ),
+                "uniqueUserDefinedAuxBusIds": len(corpus_user_aux_bus_counts),
+                "reflectionsAuxBusReferenceCount": sum(
+                    corpus_reflections_aux_bus_counts.values()
+                ),
+                "uniqueReflectionsAuxBusIds": len(
+                    corpus_reflections_aux_bus_counts
+                ),
+                "auxiliaryBusResolutionCounts": dict(
+                    sorted(corpus_aux_bus_resolution_counts.items())
+                ),
+                "stateRtpcParserStatusCounts": dict(
+                    sorted(corpus_state_rtpc_parser_status_counts.items())
+                ),
+                "stateGroupReferenceCount": sum(corpus_state_group_counts.values()),
+                "uniqueStateGroupIds": len(corpus_state_group_counts),
+                "uniqueStateIds": len(corpus_state_id_counts),
+                "stateParameterCounts": dict(
+                    sorted(corpus_state_parameter_counts.items())
+                ),
+                "authoredPropertyValueCount": sum(corpus_property_counts.values()),
+                "authoredRangedPropertyValueCount": sum(
+                    corpus_ranged_property_counts.values()
+                ),
+                "authoredPropertyNodeCount": corpus_property_node_count,
+                "eventActionControlCount": corpus_action_control_count,
+                "eventActionControlTypedExactCount": corpus_action_control_typed_count,
+                "eventActionControlStatusCounts": dict(
+                    sorted(corpus_action_control_status_counts.items())
+                ),
+                "eventActionControlOperationCounts": dict(
+                    sorted(corpus_action_control_operation_counts.items())
+                ),
+                "eventActionControlFailureCounts": dict(
+                    sorted(corpus_action_control_failure_counts.items())
+                ),
+                "authoredPropertyCounts": dict(
+                    sorted(corpus_property_counts.items())
+                ),
+                "authoredRangedPropertyCounts": dict(
+                    sorted(corpus_ranged_property_counts.items())
+                ),
+                "rtpcCurveCount": sum(corpus_rtpc_id_counts.values()),
+                "uniqueRtpcIds": len(corpus_rtpc_id_counts),
+                "rtpcTypeCounts": dict(sorted(corpus_rtpc_type_counts.items())),
+                "rtpcParameterCounts": dict(
+                    sorted(corpus_rtpc_parameter_counts.items())
+                ),
+                "gameParameterNameEvidence": {
+                    "source": HIRC_GAME_PARAMETER_NAME_EVIDENCE["source"],
+                    "metadataSha256": HIRC_GAME_PARAMETER_NAME_EVIDENCE[
+                        "metadataSha256"
+                    ],
+                    "evidence": HIRC_GAME_PARAMETER_NAME_EVIDENCE["evidence"],
+                    "entries": game_parameter_name_evidence,
+                    "evidenceBoundary": HIRC_GAME_PARAMETER_NAME_EVIDENCE[
+                        "evidenceBoundary"
+                    ],
+                },
+                "knownBusObjectIds": len(bus_catalog),
+                "busDefinitionCount": len(public_bus_definitions),
+                "busParentResolutionCounts": dict(
+                    sorted(bus_parent_resolution_counts.items())
+                ),
+                "busEffectParserCounts": dict(
+                    sorted(bus_effect_parser_counts.items())
+                ),
+                "busEffectSlotCount": bus_effect_slot_count,
+                "decodedBusEffectParameterCount": bus_effect_parameter_count,
+                "busEffectBypassSlotCount": bus_effect_bypass_slot_count,
+                "busEffectShareSetSlotCount": bus_effect_share_set_slot_count,
+                "busEffectRenderedSlotCount": bus_effect_rendered_slot_count,
+                "busEffectUnknownFlagBitsCount": bus_effect_unknown_flag_bits_count,
+                "busEffectPluginCounts": dict(
+                    sorted(bus_effect_plugin_counts.items())
+                ),
+                "busStateRtpcParserStatusCounts": dict(
+                    sorted(bus_state_rtpc_parser_counts.items())
+                ),
+                "busRtpcCurveCount": bus_rtpc_curve_count,
+                "busRtpcPointCount": bus_rtpc_point_count,
+                "busStatePropertyCount": bus_state_property_count,
+                "busStateGroupCount": bus_state_group_count,
+                "busStateCount": bus_state_count,
+                "busStateValueCount": bus_state_value_count,
+                "busUniqueRtpcIds": len(bus_rtpc_id_counts),
+                "busRtpcParameterCounts": dict(
+                    sorted(bus_rtpc_parameter_counts.items())
+                ),
+                "busStateParameterCounts": dict(
+                    sorted(bus_state_parameter_counts.items())
+                ),
+                "busUniqueStateGroupIds": len(bus_state_group_id_counts),
+                "busUniqueStateIds": len(bus_state_id_counts),
+                "busDefinitions": public_bus_definitions,
+                "outputBusResolutionCounts": dict(
+                    sorted(corpus_bus_resolution_counts.items())
+                ),
+                "pluginNameEvidence": (
+                    "Built-in class IDs are pinned by registration objects and "
+                    "factory source paths embedded in the shipped AkSoundEngine.dll."
+                ),
+                "evidenceBoundary": (
+                    "The bank proves ordered direct effect slots, plug-in class "
+                    "identity, parameter bytes, exact plug-in media dependency IDs, "
+                    "explicit output-bus IDs, and the complete reciprocal Audio/Aux "
+                    "Bus parent hierarchy. It also proves serialized User-Defined "
+                    "Aux slots, Early Reflections bus IDs, and authored Game-Defined "
+                    "use/override bits. Runtime Game-Defined bus IDs/control values "
+                    "are not serialized. Current v150 Bus objects are consumed "
+                    "through the typed CAkBus field order through InitialFX and the "
+                    "InitialRTPC-before-StateChunk suffix, which proves explicit "
+                    "zero-count/non-empty arrays plus authored Bus control curves "
+                    "and State overrides; "
+                    "the legacy sibling prefix/suffix correlation remains only for "
+                    "non-v150 or synthetic payloads. Fourteen "
+                    "current-client SetParamsBlock schemas decode authored base "
+                    "values; the v150 AkPropID bundle also preserves exact raw U32 "
+                    "and finite-float base-property values. Initial BypassFX/"
+                    "BypassAllFX property IDs are absent in this corpus; direct "
+                    "NodeBase bypass remains a separate field. Other plug-in "
+                    "payloads remain opaque. Plug-in media IDs are not treated as "
+                    "playable Sound WEM leaves. Effective inherited "
+                    "sends, live RTPC/State/modulator values, effective inherited "
+                    "properties, bypass decisions, platform DSP, and audibility are "
+                    "not observed."
+                ),
+            },
             "bankVersions": {
                 str(version): count
                 for version, count in sorted(summary_bank_versions.items())
@@ -9214,7 +14266,7 @@ def build_audio(args: argparse.Namespace) -> int:
             expected_format=AUDIO_OUTPUT_FORMAT,
             expected_media_inventory_fingerprint=media_inventory_fingerprint,
         )
-        if args.skip_decode
+        if args.skip_decode and not args.refresh_hirc
         else None
     )
     hirc_summary: dict[str, Any] = {}
@@ -9483,6 +14535,14 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("--skip-decode", action="store_true", help="Only rebuild the audio index and story links.")
     parser.add_argument(
+        "--refresh-hirc",
+        action="store_true",
+        help=(
+            "Reparse original Wwise bank HIRC evidence while reusing decoded "
+            "audio files; requires --skip-decode."
+        ),
+    )
+    parser.add_argument(
         "--refresh-lua-audio",
         action="store_true",
         help="Refresh decrypted Lua audio-call evidence even when --skip-decode is used.",
@@ -9511,6 +14571,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         args.fallback_assets = args.game_root / "Persistent"
     if args.audio_root is None:
         args.audio_root = args.export_root / "structured" / "Audio"
+    if args.refresh_hirc and not args.skip_decode:
+        parser.error("--refresh-hirc requires --skip-decode")
     return args
 
 

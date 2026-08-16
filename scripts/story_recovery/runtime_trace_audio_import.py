@@ -29,12 +29,15 @@ EVENT_KINDS = {
     "audio_control_result",
     "audio_carrier_enter",
     "audio_carrier_leave",
+    "audio_native_call",
+    "audio_native_result",
     "session_end",
 }
 DEFAULT_OUTPUT = ROOT / "reports" / "story" / "recovery" / "audio_runtime_trace.json"
 DEFAULT_INDEX = ROOT / "export_full" / "structured" / "Audio" / "CN" / "index.json"
 DEFAULT_TRIGGER_CONTEXTS = ROOT / "webui" / "data" / "lang" / "CN" / "audio" / "trigger_contexts.json"
 MAX_TRIGGER_CONTEXT_SAMPLES = 12
+MAX_NATIVE_POINTER_SAMPLES = 64
 TRIGGER_CONTEXT_SCHEMA_VERSION = 4
 
 
@@ -109,11 +112,18 @@ def normalize_event(row: dict[str, Any], source: str) -> dict[str, Any]:
             if value is None:
                 raise fail(source, f"{key} is required for session_start")
             event[key] = value
-        for key in ("exportFingerprint", "language", "expectedModulePath", "attachedModulePath"):
+        for key in (
+            "exportFingerprint", "language", "expectedModulePath", "attachedModulePath",
+            "expectedModuleSha256", "expectedNativeModulePath", "attachedNativeModulePath",
+            "expectedNativeModuleSha256",
+        ):
             value = optional_text(row, key, source)
             if value is not None:
                 event[key] = value
-        for key in ("expectedModuleSize", "attachedModuleSize"):
+        for key in (
+            "expectedModuleSize", "attachedModuleSize",
+            "expectedNativeModuleSize", "attachedNativeModuleSize",
+        ):
             value = row.get(key)
             if value is not None:
                 if isinstance(value, bool) or not isinstance(value, int) or value < 0:
@@ -124,17 +134,20 @@ def normalize_event(row: dict[str, Any], source: str) -> dict[str, Any]:
                 raise fail(source, "evidenceBoundary must be an object")
             event["evidenceBoundary"] = row["evidenceBoundary"]
     elif kind == "session_end":
-        for key in ("attachedModulePath",):
+        for key in ("attachedModulePath", "attachedNativeModulePath"):
             value = optional_text(row, key, source)
             if value is not None:
                 event[key] = value
-        for key in ("attachedModuleSize",):
+        for key in ("attachedModuleSize", "attachedNativeModuleSize"):
             value = row.get(key)
             if value is not None:
                 if isinstance(value, bool) or not isinstance(value, int) or value < 0:
                     raise fail(source, f"{key} must be a non-negative integer")
                 event[key] = value
-        for key in ("modulePathMatch", "moduleSizeMatch"):
+        for key in (
+            "modulePathMatch", "moduleSizeMatch",
+            "nativeModulePathMatch", "nativeModuleSizeMatch",
+        ):
             value = row.get(key)
             if value is not None:
                 if not isinstance(value, bool):
@@ -160,6 +173,14 @@ def normalize_event(row: dict[str, Any], source: str) -> dict[str, Any]:
             if not isinstance(row["arguments"], dict):
                 raise fail(source, "arguments must be an object")
             event["arguments"] = row["arguments"]
+        if row.get("decodedArguments") is not None:
+            if not isinstance(row["decodedArguments"], dict):
+                raise fail(source, "decodedArguments must be an object")
+            event["decodedArguments"] = row["decodedArguments"]
+        if row.get("decodedArgumentsAfter") is not None:
+            if not isinstance(row["decodedArgumentsAfter"], dict):
+                raise fail(source, "decodedArgumentsAfter must be an object")
+            event["decodedArgumentsAfter"] = row["decodedArgumentsAfter"]
         if row.get("activeContexts") is not None:
             if not isinstance(row["activeContexts"], list):
                 raise fail(source, "activeContexts must be a list")
@@ -168,6 +189,22 @@ def normalize_event(row: dict[str, Any], source: str) -> dict[str, Any]:
             event["instancePointer"] = str(row["instancePointer"])
         if row.get("returnValue") is not None:
             event["returnValue"] = row["returnValue"]
+        if row.get("native") is not None:
+            if not isinstance(row["native"], bool):
+                raise fail(source, "native must be boolean")
+            event["native"] = row["native"]
+        for key in ("moduleName", "nativeCaptureId"):
+            value = optional_text(row, key, source)
+            if value is not None:
+                event[key] = value
+        if row.get("memory") is not None:
+            if not isinstance(row["memory"], dict):
+                raise fail(source, "memory must be an object")
+            event["memory"] = row["memory"]
+        if row.get("memoryAfter") is not None:
+            if not isinstance(row["memoryAfter"], dict):
+                raise fail(source, "memoryAfter must be an object")
+            event["memoryAfter"] = row["memoryAfter"]
         if row.get("requestArguments") is not None:
             if not isinstance(row["requestArguments"], dict):
                 raise fail(source, "requestArguments must be an object")
@@ -477,6 +514,303 @@ def event_resolution(event: dict[str, Any], lookup: dict[int, dict[str, Any]]) -
     return result
 
 
+def native_key_values(event: dict[str, Any]) -> set[int]:
+    """Extract only explicitly decoded native key fields for bounded joins."""
+    values: set[int] = set()
+    for container_name in (
+        "decodedArguments", "decodedArgumentsAfter", "memory", "memoryAfter",
+        "nativeCallDecodedArguments", "nativeCallMemory",
+    ):
+        container = event.get(container_name)
+        if not isinstance(container, dict):
+            continue
+        for field_name in (
+            "externalKey", "sourceKey", "descriptorKey",
+            "sourceStateKey", "sourceStateKey268",
+        ):
+            value = numeric_event_id(container.get(field_name))
+            if value is not None:
+                values.add(value)
+    return values
+
+
+def _native_text_values(event: dict[str, Any], field_name: str) -> set[str]:
+    values: set[str] = set()
+    for container_name in (
+        "decodedArguments", "decodedArgumentsAfter", "memory", "memoryAfter",
+        "nativeCallDecodedArguments", "nativeCallMemory",
+    ):
+        container = event.get(container_name)
+        if not isinstance(container, dict):
+            continue
+        value = container.get(field_name)
+        if isinstance(value, str) and value:
+            values.add(value)
+    return values
+
+
+def _native_numeric_values(event: dict[str, Any], field_name: str) -> set[int]:
+    values: set[int] = set()
+    for container_name in (
+        "decodedArguments", "decodedArgumentsAfter", "memory", "memoryAfter",
+        "nativeCallDecodedArguments", "nativeCallMemory",
+    ):
+        container = event.get(container_name)
+        if not isinstance(container, dict):
+            continue
+        value = container.get(field_name)
+        if isinstance(value, bool):
+            continue
+        if isinstance(value, int):
+            values.add(value)
+        elif isinstance(value, str):
+            try:
+                values.add(int(value, 0))
+            except ValueError:
+                continue
+    return values
+
+
+def summarize_native_key_lifecycle(
+    observations: list[dict[str, Any]],
+    session_order: list[str],
+) -> list[dict[str, Any]]:
+    """Summarize runtime key transport without inventing a file/PCM join.
+
+    The source-manager join and decoder registry are deliberately reported as
+    separate boundaries. A shared integer is useful evidence, but the trace
+    still needs pointer/handle and read/codec correlation before it can claim
+    that one external path produced one decoded stream.
+    """
+    field_sets = (
+        ("externalSourceRegistration", "sourceKey", "registrationKeys"),
+        ("externalSourceLookup", "externalKey", "externalLookupKeys"),
+        ("externalSourceLookup", "descriptorKey", "externalDescriptorKeys"),
+        ("externalSourceManagerJoin", "sourceKey", "managerJoinRequestedKeys"),
+        ("externalSourceManagerJoin", "sourceStateKey", "managerJoinStateKeys"),
+        ("externalSourceManagerJoin", "sourceStateKey268", "managerJoinStateKeys268"),
+        ("sourceKeyDecoderRegistry", "sourceKey", "decoderRegistryKeys"),
+        ("wwiseSourceMediaLookup", "sourceKey", "sourceMediaLookupKeys"),
+    )
+    summaries: dict[str, dict[str, Any]] = {}
+    for event in observations:
+        if event.get("kind") not in {"audio_native_call", "audio_native_result"}:
+            continue
+        session_id = event.get("sessionId")
+        source_kind = event.get("sourceKind")
+        if not isinstance(session_id, str) or not isinstance(source_kind, str):
+            continue
+        fields = [item for item in field_sets if item[0] == source_kind]
+        if not fields and source_kind not in {
+            "wwiseSourceProviderPreparation", "externalDescriptorCopy",
+            "wwiseDefaultIoOpenDispatch",
+        }:
+            continue
+        summary = summaries.setdefault(
+            session_id,
+            {
+                "sessionId": session_id,
+                "registrationKeys": set(),
+                "externalLookupKeys": set(),
+                "externalDescriptorKeys": set(),
+                "managerJoinRequestedKeys": set(),
+                "managerJoinStateKeys": set(),
+                "managerJoinStateKeys268": set(),
+                "decoderRegistryKeys": set(),
+                "sourceMediaLookupKeys": set(),
+                "decoderPointers": set(),
+                "sourceProviderPaths": set(),
+                "externalDescriptorFiles": set(),
+                "fileOpenPaths": set(),
+            },
+        )
+        for _boundary, field_name, output_name in fields:
+            summary[output_name].update(_native_numeric_values(event, field_name))
+        if source_kind == "sourceKeyDecoderRegistry":
+            summary["decoderPointers"].update(_native_text_values(event, "decoder"))
+        elif source_kind == "wwiseSourceProviderPreparation":
+            summary["sourceProviderPaths"].update(_native_text_values(event, "sourceInfoPath"))
+        elif source_kind == "externalDescriptorCopy":
+            summary["externalDescriptorFiles"].update(_native_text_values(event, "externalFile"))
+        elif source_kind == "wwiseDefaultIoOpenDispatch":
+            summary["fileOpenPaths"].update(_native_text_values(event, "filePath"))
+
+    result: list[dict[str, Any]] = []
+    for session_id in session_order:
+        summary = summaries.get(session_id)
+        if summary is None:
+            continue
+        row = {"sessionId": session_id}
+        for field_name in (
+            "registrationKeys", "externalLookupKeys", "externalDescriptorKeys",
+            "managerJoinRequestedKeys", "managerJoinStateKeys",
+            "managerJoinStateKeys268", "decoderRegistryKeys", "sourceMediaLookupKeys",
+        ):
+            row[field_name] = sorted(summary[field_name])
+        for field_name in (
+            "decoderPointers", "sourceProviderPaths", "externalDescriptorFiles",
+            "fileOpenPaths",
+        ):
+            values = sorted(summary[field_name])
+            row[field_name] = values[:MAX_NATIVE_POINTER_SAMPLES]
+            row[f"{field_name}Truncated"] = len(values) > MAX_NATIVE_POINTER_SAMPLES
+        row["sameJoinArgumentAndStateKeys"] = sorted(
+            summary["managerJoinRequestedKeys"] & summary["managerJoinStateKeys"]
+        )
+        row["sameJoinArgumentAndStateKeys268"] = sorted(
+            summary["managerJoinRequestedKeys"] & summary["managerJoinStateKeys268"]
+        )
+        row["sharedManagerJoinDecoderKeys"] = sorted(
+            summary["managerJoinRequestedKeys"] & summary["decoderRegistryKeys"]
+        )
+        row["sharedStateMediaLookupKeys"] = sorted(
+            summary["managerJoinStateKeys268"] & summary["sourceMediaLookupKeys"]
+        )
+        row["sharedExternalLookupManagerKeys"] = sorted(
+            summary["externalLookupKeys"] & summary["managerJoinRequestedKeys"]
+        )
+        row["sharedProviderOpenPaths"] = sorted(
+            summary["sourceProviderPaths"] & summary["fileOpenPaths"]
+        )
+        row["sharedDescriptorOpenPaths"] = sorted(
+            summary["externalDescriptorFiles"] & summary["fileOpenPaths"]
+        )
+        row["evidenceBoundary"] = (
+            "Same-session numeric key intersections are bounded runtime evidence "
+            "across the named native boundaries. They do not prove one manager "
+            "entry, file handle, read request, codec stream, or audible PCM; "
+            "descriptor paths and file-open paths remain separately observed."
+        )
+        result.append(row)
+    return result
+
+
+def summarize_codec_stream_callbacks(
+    observations: list[dict[str, Any]],
+    session_order: list[str],
+) -> list[dict[str, Any]]:
+    """Summarize indirect codec callback observations without inferring I/O."""
+    summaries: dict[str, dict[str, Any]] = {}
+    for event in observations:
+        if event.get("sourceKind") != "wwiseCodecStreamRead":
+            continue
+        session_id = event.get("sessionId")
+        if not isinstance(session_id, str):
+            continue
+        summary = summaries.setdefault(
+            session_id,
+            {
+                "sessionId": session_id,
+                "callCount": 0,
+                "resultCount": 0,
+                "callbackPointers": set(),
+                "contextPointers": set(),
+                "bufferPointers": set(),
+                "streamCapacities": set(),
+                "streamCursors": set(),
+                "requestedBytes": set(),
+            },
+        )
+        if event.get("kind") == "audio_native_call":
+            summary["callCount"] += 1
+        elif event.get("kind") == "audio_native_result":
+            summary["resultCount"] += 1
+        for field_name, output_name in (
+            ("streamCallback", "callbackPointers"),
+            ("streamCallbackContext", "contextPointers"),
+            ("streamBuffer", "bufferPointers"),
+        ):
+            summary[output_name].update(_native_text_values(event, field_name))
+        for field_name, output_name in (
+            ("streamCapacity", "streamCapacities"),
+            ("streamCursor", "streamCursors"),
+        ):
+            summary[output_name].update(_native_numeric_values(event, field_name))
+        summary["requestedBytes"].update(_native_numeric_values(event, "requestedBytes"))
+
+    result: list[dict[str, Any]] = []
+    for session_id in session_order:
+        summary = summaries.get(session_id)
+        if summary is None:
+            continue
+        row = dict(summary)
+        for field_name in ("callbackPointers", "contextPointers", "bufferPointers"):
+            values = sorted(row[field_name])
+            row[field_name] = values[:MAX_NATIVE_POINTER_SAMPLES]
+            row[f"{field_name}Truncated"] = len(values) > MAX_NATIVE_POINTER_SAMPLES
+        for field_name in ("streamCapacities", "streamCursors", "requestedBytes"):
+            values = sorted(row[field_name])
+            row[field_name] = values[:MAX_NATIVE_POINTER_SAMPLES]
+            row[f"{field_name}Truncated"] = len(values) > MAX_NATIVE_POINTER_SAMPLES
+        row["evidenceBoundary"] = (
+            "Indirect callback/context and bounded stream-state observations; "
+            "pointer identity is not proof of the default I/O object, external-key "
+            "ownership, or decoded PCM."
+        )
+        result.append(row)
+    return result
+
+
+def summarize_codec_memory_source_copies(
+    observations: list[dict[str, Any]],
+    session_order: list[str],
+) -> list[dict[str, Any]]:
+    """Summarize the bounded memory-source copier/refill boundary."""
+    summaries: dict[str, dict[str, Any]] = {}
+    for event in observations:
+        if event.get("sourceKind") != "wwiseCodecMemorySourceCopy":
+            continue
+        session_id = event.get("sessionId")
+        if not isinstance(session_id, str):
+            continue
+        summary = summaries.setdefault(
+            session_id,
+            {
+                "sessionId": session_id,
+                "callCount": 0,
+                "resultCount": 0,
+                "sourceBufferPointers": set(),
+                "refillObjectPointers": set(),
+                "sourceAvailable": set(),
+                "sourceOffsets": set(),
+                "requestedBytes": set(),
+            },
+        )
+        if event.get("kind") == "audio_native_call":
+            summary["callCount"] += 1
+        elif event.get("kind") == "audio_native_result":
+            summary["resultCount"] += 1
+        summary["sourceBufferPointers"].update(_native_text_values(event, "sourceBuffer"))
+        summary["refillObjectPointers"].update(_native_text_values(event, "refillObject"))
+        for field_name, output_name in (
+            ("sourceAvailable", "sourceAvailable"),
+            ("sourceOffset", "sourceOffsets"),
+            ("requestedBytes", "requestedBytes"),
+        ):
+            summary[output_name].update(_native_numeric_values(event, field_name))
+
+    result: list[dict[str, Any]] = []
+    for session_id in session_order:
+        summary = summaries.get(session_id)
+        if summary is None:
+            continue
+        row = dict(summary)
+        for field_name in ("sourceBufferPointers", "refillObjectPointers"):
+            values = sorted(row[field_name])
+            row[field_name] = values[:MAX_NATIVE_POINTER_SAMPLES]
+            row[f"{field_name}Truncated"] = len(values) > MAX_NATIVE_POINTER_SAMPLES
+        for field_name in ("sourceAvailable", "sourceOffsets", "requestedBytes"):
+            values = sorted(row[field_name])
+            row[field_name] = values[:MAX_NATIVE_POINTER_SAMPLES]
+            row[f"{field_name}Truncated"] = len(values) > MAX_NATIVE_POINTER_SAMPLES
+        row["evidenceBoundary"] = (
+            "Memory-source copy/refill observations only; the indirect refill "
+            "vtable and source ownership are not identified by these rows."
+        )
+        result.append(row)
+    return result
+
+
 def build_bundle(
     events: list[dict[str, Any]],
     sources: list[str],
@@ -488,6 +822,7 @@ def build_bundle(
     last_seq: dict[str, int] = {}
     closed: set[str] = set()
     by_capture: dict[tuple[str, str], dict[str, Any]] = {}
+    by_native_capture: dict[tuple[str, str], dict[str, Any]] = {}
     observations: list[dict[str, Any]] = []
     counts = Counter()
     trace_languages = sorted({
@@ -515,6 +850,8 @@ def build_bundle(
     join_status = "ready" if all(item.get("status") == "ready" for item in join_inputs) else "degraded"
     trigger_context_matches = 0
     trigger_context_candidates = 0
+    native_pairs = 0
+    native_unpaired_results = 0
 
     for event in events:
         session_id = event["sessionId"]
@@ -529,8 +866,14 @@ def build_bundle(
                 "language": event.get("language"),
                 "expectedModulePath": event.get("expectedModulePath"),
                 "expectedModuleSize": event.get("expectedModuleSize"),
+                "expectedModuleSha256": event.get("expectedModuleSha256"),
                 "attachedModulePath": event.get("attachedModulePath"),
                 "attachedModuleSize": event.get("attachedModuleSize"),
+                "expectedNativeModulePath": event.get("expectedNativeModulePath"),
+                "expectedNativeModuleSize": event.get("expectedNativeModuleSize"),
+                "expectedNativeModuleSha256": event.get("expectedNativeModuleSha256"),
+                "attachedNativeModulePath": event.get("attachedNativeModulePath"),
+                "attachedNativeModuleSize": event.get("attachedNativeModuleSize"),
                 "eventCount": 0,
                 "closed": False,
             }
@@ -546,7 +889,11 @@ def build_bundle(
         sessions[session_id]["eventCount"] += 1
         counts[kind] += 1
         if kind == "session_end":
-            for key in ("attachedModulePath", "attachedModuleSize", "modulePathMatch", "moduleSizeMatch"):
+            for key in (
+                "attachedModulePath", "attachedModuleSize", "modulePathMatch", "moduleSizeMatch",
+                "attachedNativeModulePath", "attachedNativeModuleSize",
+                "nativeModulePathMatch", "nativeModuleSizeMatch",
+            ):
                 if key in event:
                     sessions[session_id][key] = event[key]
             closed.add(session_id)
@@ -563,6 +910,24 @@ def build_bundle(
                 event["requestArguments"] = request["arguments"]
                 event["requestSourceKind"] = request.get("sourceKind")
                 event["requestHookName"] = request.get("hookName")
+        if kind == "audio_native_call":
+            native_capture_id = event.get("nativeCaptureId")
+            if isinstance(native_capture_id, str) and native_capture_id:
+                by_native_capture[(session_id, native_capture_id)] = event
+        if kind == "audio_native_result":
+            native_capture_id = event.get("nativeCaptureId")
+            native_call = (
+                by_native_capture.get((session_id, native_capture_id))
+                if isinstance(native_capture_id, str) else None
+            )
+            if native_call:
+                native_pairs += 1
+                event["nativeCallArguments"] = native_call.get("arguments")
+                event["nativeCallDecodedArguments"] = native_call.get("decodedArguments")
+                event["nativeCallMemory"] = native_call.get("memory")
+                event["nativeCallHookName"] = native_call.get("hookName")
+            else:
+                native_unpaired_results += 1
         if kind not in {"session_start", "session_end"}:
             resolution = event_resolution(event, lookup)
             if resolution:
@@ -581,7 +946,10 @@ def build_bundle(
         session = sessions[session_id]
         facts = {
             key: session[key]
-            for key in ("modulePathMatch", "moduleSizeMatch")
+            for key in (
+                "modulePathMatch", "moduleSizeMatch",
+                "nativeModulePathMatch", "nativeModuleSizeMatch",
+            )
             if key in session
         }
         if facts:
@@ -598,6 +966,48 @@ def build_bundle(
         runtime_evidence_status = "verified"
     else:
         runtime_evidence_status = "degraded"
+    native_rows = [
+        row for row in module_verification_rows
+        if "nativeModulePathMatch" in row or "nativeModuleSizeMatch" in row
+    ]
+    if not native_rows:
+        native_runtime_evidence_status = "notRecorded"
+    elif all(
+        row.get("nativeModulePathMatch") is True and row.get("nativeModuleSizeMatch") is True
+        for row in native_rows
+    ):
+        native_runtime_evidence_status = "verified"
+    else:
+        native_runtime_evidence_status = "degraded"
+    native_key_sets: dict[str, dict[str, set[int]]] = defaultdict(lambda: defaultdict(set))
+    for event in observations:
+        if event.get("kind") not in {"audio_native_call", "audio_native_result"}:
+            continue
+        source_kind = event.get("sourceKind")
+        if not isinstance(source_kind, str):
+            continue
+        keys = native_key_values(event)
+        if keys:
+            for key in keys:
+                native_key_sets[event["sessionId"]][source_kind].add(key)
+    native_key_correlations = []
+    for session_id in session_order:
+        source_sets = native_key_sets.get(session_id, {})
+        external_keys = source_sets.get("externalSourceLookup", set())
+        source_media_keys = source_sets.get("wwiseSourceMediaLookup", set())
+        shared_keys = external_keys & source_media_keys
+        if not external_keys and not source_media_keys:
+            continue
+        native_key_correlations.append({
+            "sessionId": session_id,
+            "externalSourceLookupKeys": sorted(external_keys),
+            "wwiseSourceMediaLookupKeys": sorted(source_media_keys),
+            "sharedKeys": sorted(shared_keys),
+            "evidenceBoundary": "same decoded numeric key observed at two native boundaries; not proof of one handle, read request, or decoded stream",
+        })
+    native_key_lifecycle = summarize_native_key_lifecycle(observations, session_order)
+    codec_stream_callbacks = summarize_codec_stream_callbacks(observations, session_order)
+    codec_memory_source_copies = summarize_codec_memory_source_copies(observations, session_order)
     unresolved = Counter()
     resolved = Counter()
     for event in observations:
@@ -619,6 +1029,16 @@ def build_bundle(
         "audioIndexInput": audio_index_input,
         "joinStatus": join_status,
         "runtimeEvidenceStatus": runtime_evidence_status,
+        "nativeRuntimeEvidenceStatus": native_runtime_evidence_status,
+        "nativePairing": {
+            "pairedCallResultCount": native_pairs,
+            "unpairedResultCount": native_unpaired_results,
+            "keyCorrelations": native_key_correlations,
+            "keyLifecycle": native_key_lifecycle,
+            "codecStreamCallbacks": codec_stream_callbacks,
+            "codecMemorySourceCopies": codec_memory_source_copies,
+            "evidenceBoundary": "call/result pairing uses the probe's capture id; key correlations are bounded native observations, not a file-handle or PCM join",
+        },
         "moduleVerification": module_verification_rows,
         "sessions": [sessions[session_id] for session_id in session_order],
         "countsByKind": dict(sorted(counts.items())),
@@ -638,6 +1058,8 @@ def build_bundle(
         "evidenceBoundary": {
             "runtimeExecution": "carrier and Adapter hook entries are observed managed execution",
             "moduleVerification": "runtime observations are verified only when the attached module path and size match the hash-locked GameAssembly; missing or mismatched facts are not equivalent to verified runtime evidence",
+            "nativeModuleVerification": "native observations are verified only when the attached AkSoundEngine path and size match the hash-locked file; they do not by themselves correlate an external key to a file handle or decoded PCM",
+            "nativeKeyLifecycle": "same-session key intersections across registration, manager join, decoder registry, source-media lookup, and observed path boundaries are bounded evidence only; pointer, handle, read, codec, and PCM identity must still be correlated",
             "adapterBoundary": "AudioAdapter request entry is observed request evidence, not proof of Wwise acceptance",
             "eventHashJoin": "eventHash-to-name/media is a static exported-index candidate join",
             "joinInputs": "missing, malformed, language-mismatched, or schema-mismatched static inputs produce degraded status and no candidates from that input",
@@ -657,6 +1079,10 @@ def markdown(bundle: dict[str, Any]) -> str:
         f"- observations with static trigger-context candidates: {bundle['triggerContexts']['matchedObservationCount']}",
         f"- static join status: `{bundle['joinStatus']}`",
         f"- runtime evidence status: `{bundle['runtimeEvidenceStatus']}`",
+        f"- native module evidence status: `{bundle['nativeRuntimeEvidenceStatus']}`",
+        f"- paired native call/results: `{bundle['nativePairing']['pairedCallResultCount']}`",
+        f"- sessions with codec stream callback observations: `{len(bundle['nativePairing']['codecStreamCallbacks'])}`",
+        f"- sessions with codec memory-source copy observations: `{len(bundle['nativePairing']['codecMemorySourceCopies'])}`",
         "",
         "## Counts",
         "",
@@ -671,7 +1097,12 @@ def markdown(bundle: dict[str, Any]) -> str:
         "Event hashes are joined to exported names/media only as static candidates; "
         "the trace does not prove Wwise acceptance, branch selection, or audibility. "
         "Trigger-context matches are static candidate joins only. Missing or "
-        "incompatible static inputs are reported as degraded.",
+        "incompatible static inputs are reported as degraded. Native calls are "
+        "accepted only from the hash-locked AkSoundEngine module and still need "
+        "capture-time correlation before they establish a key-to-file mapping. "
+        "Codec stream callback summaries preserve indirect callback/context and "
+        "buffer-state observations without treating them as decoded PCM. Memory-source "
+        "copy summaries remain separate from the unresolved refill producer.",
         "",
     ])
     return "\n".join(lines)

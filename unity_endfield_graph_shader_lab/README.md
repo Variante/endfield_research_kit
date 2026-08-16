@@ -4170,11 +4170,14 @@ The materialized object contains the copied source row at `+0x60`, backend
 manager at `+0x200`, registration/resource state at `+0x210`, and auxiliary
 resources at `+0x220/+0x228`. `0x18053F690` performs collection/filter
 association rather than draw execution. The strongest bounded downstream
-consumer, `0x180540280`, uses those fields plus `+0x50`, calls
-`0x180540510` and `0x1805438E0`, and prepares temporary/resource records;
-there is still no static graphics-API draw or submit edge. The next native
-queue is therefore the records produced by those two callees and their first
-graphics-backend consumer, not further expansion of opcode `0x4D`.
+consumer, `0x180540280`, uses those fields plus `+0x50`. The full logical
+`0x180540510..0x18054160A` routine filters source-row flags, IDs, and ranges,
+then emits a compact 0x50-byte CPU record stream. Its indirect call at
+`0x18054126F` through `vtable+0x48` is the first unresolved backend boundary,
+not a proven graphics-API call. `0x1805438E0` prepares a separate temporary
+record; there is still no static graphics-API draw or submit edge. The next
+native queue is therefore that vtable target and the consumers of both record
+types, not further expansion of opcode `0x4D`.
 Retail queue 3704 belongs to the source-closed 3660--3740
 `AfterPostprocessTransparent` phase. In the exact SceneMV route that range is
 owned by the after-post callback, not main transparent. This isolated shader

@@ -3,6 +3,7 @@
   "gameBuild": "endfield-2026-07-11-gameassembly-0c557367",
   "processName": "Endfield.exe",
   "moduleName": "GameAssembly.dll",
+  "nativeModuleName": "AkSoundEngine.dll",
   "language": "CN",
   "files": {
     "executable": {
@@ -19,6 +20,11 @@
       "relativePath": "Endfield_Data/il2cpp_data/Metadata/global-metadata.dat",
       "bytes": 62925560,
       "sha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
+    },
+    "akSoundEngine": {
+      "relativePath": "Endfield_Data/Plugins/x86_64/AkSoundEngine.dll",
+      "bytes": 3586536,
+      "sha256": "b33c3c71e44c305fb1c3903942308f2ab55a7854d68c719fe55e7de323e7dba2"
     }
   },
   "hooks": [
@@ -51,6 +57,21 @@
       "returnKind": "u32"
     },
     {
+      "name": "AudioAdapter._PostEventWithExternalSource",
+      "sourceKind": "adapterExternalSourcePostEvent",
+      "mode": "request",
+      "token": "0x06000060",
+      "methodIndex": 480011,
+      "rva": "0x3abea70",
+      "args": {
+        "eventId": {"index": 0, "kind": "u32"},
+        "audioObjectId": {"index": 1, "kind": "u64"},
+        "externalSourceKey": {"index": 2, "kind": "string"},
+        "externalCookie": {"index": 3, "kind": "u32"}
+      },
+      "returnKind": "u32"
+    },
+    {
       "name": "AudioAdapter._OnEventPreparedDoPostEvent",
       "sourceKind": "adapterPreparedPostEvent",
       "mode": "request",
@@ -62,6 +83,56 @@
         "arg1": {"index": 1, "kind": "u64"},
         "preparationResult": {"index": 2, "kind": "u32"},
         "cookie": {"index": 3, "kind": "u64"}
+      },
+      "returnKind": "void"
+    },
+    {
+      "name": "AkCallbackManager.PostCallbacks",
+      "sourceKind": "wwiseCallbackPump",
+      "mode": "request",
+      "token": "0x06000c62",
+      "methodIndex": 446952,
+      "rva": "0x328b440",
+      "returnKind": "void"
+    },
+    {
+      "name": "AkCallbackManager._ProcessEventCallback",
+      "sourceKind": "wwiseCallbackDispatch",
+      "mode": "request",
+      "token": "0x06000c64",
+      "methodIndex": 446954,
+      "rva": "0x328cd90",
+      "args": {
+        "callbackType": {"index": 0, "kind": "u32"},
+        "callbackInfo": {"index": 1, "kind": "u64"}
+      },
+      "returnKind": "void"
+    },
+    {
+      "name": "AudioAdapter._OnEventCallback",
+      "sourceKind": "adapterEventCallback",
+      "mode": "request",
+      "token": "0x0600005d",
+      "methodIndex": 480008,
+      "rva": "0x328d3e0",
+      "args": {
+        "callbackCookie": {"index": 0, "kind": "u64"},
+        "callbackType": {"index": 1, "kind": "u32"},
+        "callbackInfo": {"index": 2, "kind": "u64"}
+      },
+      "returnKind": "void"
+    },
+    {
+      "name": "AudioAdapter._OnExternalSourceEventCallback",
+      "sourceKind": "adapterExternalSourceCallback",
+      "mode": "request",
+      "token": "0x0600005e",
+      "methodIndex": 480009,
+      "rva": "0x43c7930",
+      "args": {
+        "callbackCookie": {"index": 0, "kind": "u64"},
+        "callbackType": {"index": 1, "kind": "u32"},
+        "callbackInfo": {"index": 2, "kind": "u64"}
       },
       "returnKind": "void"
     },
@@ -286,9 +357,325 @@
       "returnKind": "void"
     }
   ],
+  "nativeHooks": [
+    {
+      "name": "AkSoundEngine.ExternalDescriptorPostEvent",
+      "sourceKind": "externalDescriptorPostEvent",
+      "rva": "0xc38b0"
+    },
+    {
+      "name": "AkSoundEngine.ExternalDescriptorCopy",
+      "sourceKind": "externalDescriptorCopy",
+      "rva": "0xc08d0",
+      "args": {
+        "externalCount": {"index": 0, "kind": "u32"},
+        "descriptorArray": {"index": 1, "kind": "u64"},
+        "outputPointer": {"index": 2, "kind": "u64"},
+        "statusPointer": {"index": 3, "kind": "u64"}
+      },
+      "memory": [
+        {"name": "externalCookie", "argIndex": 1, "offset": 0, "kind": "u32"},
+        {"name": "externalCodec", "argIndex": 1, "offset": 4, "kind": "u32"},
+        {"name": "externalFile", "argIndex": 1, "offset": 8, "kind": "utf16"},
+        {"name": "externalMemoryPointer", "argIndex": 1, "offset": 16, "kind": "pointer"},
+        {"name": "externalMemorySize", "argIndex": 1, "offset": 24, "kind": "u32"}
+      ]
+    },
+    {
+      "name": "AkSoundEngine.ExternalSourceManagerConstructor",
+      "sourceKind": "externalSourceRegistration",
+      "rva": "0xe1320",
+      "args": {
+        "managerContext": {"index": 0, "kind": "pointer"},
+        "sourceKey": {"index": 1, "kind": "u32"},
+        "sourceContextOrObjectId": {"index": 2, "kind": "u64"},
+        "descriptorInfo": {"index": 3, "kind": "pointer"}
+      },
+      "memory": [
+        {"name": "descriptorAllocationBase", "argIndex": 3, "offset": 0, "kind": "pointer"},
+        {"name": "descriptorContext", "argIndex": 3, "offset": 8, "kind": "pointer"},
+        {"name": "descriptorFlags", "argIndex": 3, "offset": 16, "kind": "u32"}
+      ]
+    },
+    {
+      "name": "AkSoundEngine.ExternalSourceManagerLookup",
+      "sourceKind": "externalSourceLookup",
+      "rva": "0xe2820",
+      "returnKind": "bool",
+      "args": {
+        "externalKey": {"index": 1, "kind": "u32"}
+      },
+      "memory": [
+        {"name": "descriptor0", "argIndex": 2, "offset": 0, "kind": "pointer"},
+        {"name": "descriptor8", "argIndex": 2, "offset": 8, "kind": "pointer"},
+        {"name": "descriptorKey", "argIndex": 2, "offset": 16, "kind": "u32"},
+        {"name": "descriptorFlags", "argIndex": 2, "offset": 20, "kind": "u32"}
+      ]
+    },
+    {
+      "name": "AkSoundEngine.ExternalSourceManagerSiblingLookup",
+      "sourceKind": "externalSourceSiblingLookup",
+      "rva": "0xe28d0"
+    },
+    {
+      "name": "AkSoundEngine.ExternalSourceManagerJoin",
+      "sourceKind": "externalSourceManagerJoin",
+      "rva": "0xe2cd0",
+      "args": {
+        "manager": {"index": 0, "kind": "pointer"},
+        "sourceKey": {"index": 1, "kind": "u32"},
+        "sourceState": {"index": 2, "kind": "pointer"},
+        "callbackContext": {"index": 3, "kind": "pointer"}
+      },
+      "returnKind": "u32",
+      "memory": [
+        {"name": "sourceStateKey", "argIndex": 2, "offset": 0, "kind": "u32"},
+        {"name": "sourceStateKey268", "argIndex": 2, "offset": 616, "kind": "u32"}
+      ]
+    },
+    {
+      "name": "AkSoundEngine.SourceKeyDecoderRegistry",
+      "sourceKind": "sourceKeyDecoderRegistry",
+      "rva": "0x13f440",
+      "args": {
+        "registry": {"index": 0, "kind": "pointer"},
+        "sourceKey": {"index": 1, "kind": "u32"},
+        "decoder": {"index": 2, "kind": "pointer"},
+        "status": {"index": 3, "kind": "pointer"}
+      },
+      "returnKind": "u32"
+    },
+    {
+      "name": "AkSoundEngine.SourceProviderPreparation",
+      "sourceKind": "wwiseSourceProviderPreparation",
+      "rva": "0x1af7a0",
+      "args": {
+        "decoder": {"index": 0, "kind": "pointer"},
+        "sourceRequest": {"index": 1, "kind": "pointer"}
+      },
+      "returnKind": "u32",
+      "memory": [
+        {"name": "sourceOwner", "argIndex": 0, "pointerOffset": 24, "offset": 0, "kind": "pointer"},
+        {"name": "sourceInfoPointer", "argIndex": 0, "pointerOffset": 24, "offset": 648, "kind": "pointer"},
+        {"name": "sourceInfoFlags", "argIndex": 0, "pointerOffset": 24, "offset": 660, "kind": "u32"},
+        {"name": "sourceInfoPath", "argIndex": 0, "pointerOffset": 24, "offset": 664, "kind": "utf16"},
+        {"name": "sourceInfoAux", "argIndex": 0, "pointerOffset": 24, "offset": 652, "kind": "u32"}
+      ]
+    },
+    {
+      "name": "AkSoundEngine.ExternalSourceResolverCallback",
+      "sourceKind": "externalSourceResolverCallback",
+      "rva": "0xe19a0",
+      "args": {
+        "operation": {"index": 2, "kind": "u32"}
+      },
+      "memory": [
+        {"name": "descriptor0", "argIndex": 3, "offset": 0, "kind": "pointer"},
+        {"name": "descriptor8", "argIndex": 3, "offset": 8, "kind": "pointer"},
+        {"name": "descriptorKey", "argIndex": 3, "offset": 16, "kind": "u32"},
+        {"name": "descriptorFlags", "argIndex": 3, "offset": 20, "kind": "u32"}
+      ]
+    },
+    {
+      "name": "AkSoundEngine.NativeCallbackBridge",
+      "sourceKind": "externalSourceCallbackBridge",
+      "rva": "0x2da0",
+      "args": {
+        "operation": {"index": 0, "kind": "u32"}
+      },
+      "memory": [
+        {"name": "descriptor0", "argIndex": 1, "offset": 0, "kind": "pointer"},
+        {"name": "descriptor8", "argIndex": 1, "offset": 8, "kind": "pointer"},
+        {"name": "descriptorKey", "argIndex": 1, "offset": 16, "kind": "u32"},
+        {"name": "descriptorFlags", "argIndex": 1, "offset": 20, "kind": "u32"}
+      ]
+    },
+    {
+      "name": "AkSoundEngine.NativeCallbackQueueAppend",
+      "sourceKind": "externalSourceCallbackQueueAppend",
+      "rva": "0x3430",
+      "memory": [
+        {"name": "record0", "argIndex": 0, "offset": 0, "kind": "pointer"},
+        {"name": "record8", "argIndex": 0, "offset": 8, "kind": "pointer"},
+        {"name": "recordOperation", "argIndex": 0, "offset": 16, "kind": "u32"},
+        {"name": "record18", "argIndex": 0, "offset": 24, "kind": "pointer"},
+        {"name": "record20", "argIndex": 0, "offset": 32, "kind": "pointer"},
+        {"name": "record28", "argIndex": 0, "offset": 40, "kind": "u32"},
+        {"name": "record2c", "argIndex": 0, "offset": 44, "kind": "u32"}
+      ]
+    },
+    {
+      "name": "AkSoundEngine.NativeCallbackQueueDetach",
+      "sourceKind": "externalSourceCallbackQueueDetach",
+      "rva": "0x2d10"
+    },
+    {
+      "name": "AkSoundEngine.SourceMediaLookup",
+      "sourceKind": "wwiseSourceMediaLookup",
+      "rva": "0x10df60",
+      "args": {
+        "sourceState": {"index": 0, "kind": "pointer"},
+        "streamManager": {"index": 1, "kind": "pointer"}
+      },
+      "returnKind": "bool",
+      "memory": [
+        {"name": "sourceKey", "argIndex": 0, "offset": 0, "kind": "u32"}
+      ]
+    },
+    {
+      "name": "AkSoundEngine.FileOpenHelper",
+      "sourceKind": "wwiseFileOpenHelper",
+      "rva": "0x4a20",
+      "returnKind": "u32",
+      "memory": [
+        {"name": "open0", "argIndex": 1, "offset": 0, "kind": "pointer"},
+        {"name": "open8", "argIndex": 1, "offset": 8, "kind": "pointer"},
+        {"name": "open14", "argIndex": 1, "offset": 20, "kind": "u32"}
+      ]
+    },
+    {
+      "name": "AkSoundEngine.DefaultIoOpenVtable",
+      "sourceKind": "wwiseDefaultIoOpenVtable",
+      "rva": "0x24630",
+      "returnKind": "u32"
+    },
+    {
+      "name": "AkSoundEngine.FileOpenDataBuilder",
+      "sourceKind": "wwiseFileOpenDataBuilder",
+      "rva": "0x4b40"
+    },
+    {
+      "name": "AkSoundEngine.DefaultIoOpenDispatch",
+      "sourceKind": "wwiseDefaultIoOpenDispatch",
+      "rva": "0x5030",
+      "args": {
+        "filePath": {"index": 1, "kind": "utf16"},
+        "openMode": {"index": 2, "kind": "u32"},
+        "async": {"index": 3, "kind": "bool"}
+      },
+      "returnKind": "u32"
+    },
+    {
+      "name": "AkSoundEngine.DeviceQueueDispatch",
+      "sourceKind": "wwiseDeviceQueueDispatch",
+      "rva": "0x24200",
+      "args": {
+        "device": {"index": 0, "kind": "pointer"},
+        "requestCount": {"index": 1, "kind": "u32"},
+        "providerArray": {"index": 2, "kind": "pointer"}
+      },
+      "memory": [
+        {"name": "provider0", "argIndex": 2, "offset": 0, "kind": "pointer"},
+        {"name": "provider1", "argIndex": 2, "offset": 8, "kind": "pointer"}
+      ]
+    },
+    {
+      "name": "AkSoundEngine.DefaultIoProviderBatchDispatch",
+      "sourceKind": "wwiseDefaultIoProviderBatchDispatch",
+      "rva": "0x5430",
+      "args": {
+        "device": {"index": 0, "kind": "pointer"},
+        "requestCount": {"index": 1, "kind": "u32"},
+        "providerArray": {"index": 2, "kind": "pointer"}
+      },
+      "memory": [
+        {"name": "provider0", "argIndex": 2, "offset": 0, "kind": "pointer"},
+        {"name": "provider1", "argIndex": 2, "offset": 8, "kind": "pointer"}
+      ]
+    },
+    {
+      "name": "AkSoundEngine.AsyncBatchRead",
+      "sourceKind": "wwiseAsyncBatchRead",
+      "rva": "0x24270",
+      "args": {
+        "device": {"index": 0, "kind": "pointer"},
+        "requestCount": {"index": 1, "kind": "u32"},
+        "requestArray": {"index": 2, "kind": "pointer"}
+      },
+      "memory": [
+        {"name": "requestBufferOrOffset", "argIndex": 2, "offset": 0, "kind": "pointer"},
+        {"name": "requestSizeOrOffsetHigh", "argIndex": 2, "offset": 8, "kind": "u64"},
+        {"name": "requestTransfer", "argIndex": 2, "offset": 16, "kind": "pointer"},
+        {"name": "descriptorProviderObject", "argIndex": 2, "offset": 0, "kind": "pointer"},
+        {"name": "descriptorTransferScalar", "argIndex": 2, "offset": 8, "kind": "u64"},
+        {"name": "descriptorRequestContext", "argIndex": 2, "offset": 16, "kind": "pointer"}
+      ]
+    },
+    {
+      "name": "AkSoundEngine.AsyncBatchReadAlternate",
+      "sourceKind": "wwiseAsyncBatchReadAlternate",
+      "rva": "0x243e0",
+      "args": {
+        "device": {"index": 0, "kind": "pointer"},
+        "requestCount": {"index": 1, "kind": "u32"},
+        "requestArray": {"index": 2, "kind": "pointer"}
+      },
+      "memory": [
+        {"name": "requestBufferOrOffset", "argIndex": 2, "offset": 0, "kind": "pointer"},
+        {"name": "requestSizeOrOffsetHigh", "argIndex": 2, "offset": 8, "kind": "u64"},
+        {"name": "requestTransfer", "argIndex": 2, "offset": 16, "kind": "pointer"},
+        {"name": "descriptorProviderObject", "argIndex": 2, "offset": 0, "kind": "pointer"},
+        {"name": "descriptorTransferScalar", "argIndex": 2, "offset": 8, "kind": "u64"},
+        {"name": "descriptorRequestContext", "argIndex": 2, "offset": 16, "kind": "pointer"}
+      ]
+    },
+    {
+      "name": "AkSoundEngine.AsyncReadCompletion",
+      "sourceKind": "wwiseAsyncReadCompletion",
+      "rva": "0x245b0",
+      "args": {
+        "status": {"index": 0, "kind": "u32"},
+        "completionContext": {"index": 2, "kind": "pointer"}
+      },
+      "memory": [
+        {"name": "requestTransfer", "argIndex": 2, "offset": 24, "kind": "pointer"},
+        {"name": "completionRingSlot", "argIndex": 2, "offset": 0, "kind": "u32"},
+        {"name": "completionRingOverlapped", "argIndex": 2, "offset": 8, "kind": "u64"},
+        {"name": "completionRequestBuffer", "argIndex": 2, "offset": 16, "kind": "pointer"},
+        {"name": "completionRequestCallback", "argIndex": 2, "offset": 24, "kind": "pointer"},
+        {"name": "completionRequestHelper", "argIndex": 2, "offset": 40, "kind": "pointer"}
+      ]
+    },
+    {
+      "name": "AkSoundEngine.CodecStreamRead",
+      "sourceKind": "wwiseCodecStreamRead",
+      "rva": "0x1c9fa0",
+      "args": {
+        "streamObject": {"index": 0, "kind": "pointer"},
+        "bufferArgument": {"index": 1, "kind": "pointer"},
+        "requestedBytes": {"index": 2, "kind": "u64"}
+      },
+      "memory": [
+        {"name": "streamCallback", "argIndex": 0, "offset": 0, "kind": "pointer"},
+        {"name": "streamCallbackContext", "argIndex": 0, "offset": 32, "kind": "pointer"},
+        {"name": "bufferedBytes", "argIndex": 0, "offset": 72, "kind": "u64"},
+        {"name": "streamBuffer", "argIndex": 0, "offset": 88, "kind": "pointer"},
+        {"name": "streamCapacity", "argIndex": 0, "offset": 96, "kind": "u32"},
+        {"name": "streamCursor", "argIndex": 0, "offset": 100, "kind": "u32"}
+      ]
+    },
+    {
+      "name": "AkSoundEngine.CodecMemorySourceCopy",
+      "sourceKind": "wwiseCodecMemorySourceCopy",
+      "rva": "0x1c44d0",
+      "args": {
+        "sourceContext": {"index": 0, "kind": "pointer"},
+        "destinationBuffer": {"index": 1, "kind": "pointer"},
+        "requestedBytes": {"index": 2, "kind": "u32"}
+      },
+      "returnKind": "i32",
+      "memory": [
+        {"name": "sourceBuffer", "argIndex": 0, "offset": 96, "kind": "pointer"},
+        {"name": "sourceAvailable", "argIndex": 0, "offset": 104, "kind": "u32"},
+        {"name": "sourceOffset", "argIndex": 0, "offset": 108, "kind": "u32"},
+        {"name": "refillObject", "argIndex": 0, "offset": 88, "kind": "pointer"}
+      ]
+    }
+  ],
   "evidenceBoundary": {
     "classification": "observed_runtime_request",
     "description": "A carrier hook proves that the managed request or carrier method executed in the attached process; an AudioAdapter hook proves that an integer Event request reached the adapter. Neither alone proves Wwise acceptance, selected media, or audibility.",
-    "eventIdJoin": "eventHash against the current language Audio index is a static name/media candidate join, not an observed Wwise selection."
+    "eventIdJoin": "eventHash against the current language Audio index is a static name/media candidate join, not an observed Wwise selection.",
+    "nativeTrace": "Native observations are accepted only from the hash-locked AkSoundEngine.dll. External-source descriptors, the source-manager key join, key-to-decoder registry, and Wwise open/read calls are execution evidence, but a capture must still show their correlation before claiming a key-to-file mapping. Provider-array dispatch, ReadFileEx descriptor fields, completion request fields, and codec callback pointers are captured as bounded ABI evidence; none alone proves a key-to-file join, decoded PCM, or audibility."
   }
 }
