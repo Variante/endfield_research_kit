@@ -4364,11 +4364,18 @@ serial is a Unity diagnostic capture identity only, not a native frame,
 command-buffer generation, or retail RendererList identity.
 With `-endfield-recovered-renderer-id-sidecar`, the actor-composed harness also
 records a separate RGBA32F renderer-ID pass using the same after-post cull,
-depth, queue 3660--3740, layer mask, and transparent sort. The first D3D12 run
-has 12 positive serial joins in composite/effects/peak lanes at PTS 39367,
-39934, 40000, and 40167, with about 258k--485k nonzero ID pixels. The remaining
-156 calls stay unavailable behind the existing SceneMV/piaodai queue-3702 gate
-or have no eligible renderer. Because the override shader does not reproduce
+depth, queue 3660--3740, layer mask, and transparent sort. SampleStack admission
+keeps Zhuang Fangyi's three exact piaodai materials at queue 3700, but separately
+recognizes only source-named Li diagnostic/actor-composed instances and preserves
+their source queues; material 18 therefore remains queue 3702. The current D3D12
+run has 21 positive serial joins in composite/effects/peak lanes at PTS 38000,
+38167, 38183, 39367, 39934, 40000, and 40167, with about 258k--498k nonzero ID
+pixels. The other 147 calls explicitly report that no exact selected MRT
+material is active. Numeric red-channel IDs are local to one capture invocation;
+the ordinal hierarchy path plus material slot/name is the cross-frame identity.
+The stable later contributors are queue-3704 `tiaodaifenwei_01 (7)`,
+`fenweiqiliu_02 (3)`, and `shoutiaodai_01 (1)`; composite and effects-only are
+byte-identical at those four PTS values. Because the override shader does not reproduce
 source alpha clip, cull, or discard, this is diagnostic renderer
 admission/depth/sort evidence only and keeps `visibleAdmission=false`.
 Four-corner background consensus remains stable when the animated coat crosses

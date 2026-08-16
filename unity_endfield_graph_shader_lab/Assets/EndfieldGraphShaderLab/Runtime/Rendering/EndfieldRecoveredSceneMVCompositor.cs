@@ -14,6 +14,8 @@ namespace EndfieldGraphShaderLab
         public int id;
         public int rendererInstanceId;
         public string rendererPath;
+        public string rendererOrdinalPath;
+        public string stableRendererKey;
         public int materialIndex;
         public string materialName;
         public string shaderName;
@@ -22,6 +24,7 @@ namespace EndfieldGraphShaderLab
 
     public sealed class EndfieldRendererIdSidecarCapture
     {
+        public string redChannelIdScope;
         public long captureInvocationSerial;
         public int frame;
         public int width;
@@ -35,6 +38,7 @@ namespace EndfieldGraphShaderLab
     [Serializable]
     public sealed class EndfieldRendererIdSidecarDictionary
     {
+        public string redChannelIdScope;
         public EndfieldRendererIdSidecarEntry[] entries;
     }
 
@@ -80,6 +84,21 @@ namespace EndfieldGraphShaderLab
 
     public static class EndfieldRecoveredRendererIdSidecarCaptureBridge
     {
+        public const string RedChannelIdScope =
+            "captureInvocationSerial-local";
+
+        public static string BuildStableRendererKey(
+            string rendererOrdinalPath,
+            int materialIndex,
+            string materialName)
+        {
+            return (rendererOrdinalPath ?? string.Empty) +
+                "|materialSlot=" +
+                materialIndex.ToString(CultureInfo.InvariantCulture) +
+                "|materialName=" +
+                (materialName ?? string.Empty);
+        }
+
         public static void Begin(long serial)
         {
             EndfieldRecoveredSceneMVCompositor.BeginRendererIdSidecarCapture(serial);
@@ -166,6 +185,42 @@ namespace EndfieldGraphShaderLab
             "Hidden/Endfield/Recovered/Zhuangfy/VFXRefractMRT";
         private const string PiaodaiShaderName =
             "Endfield/Recovered/VFXBaseV2SampleStack";
+        private const string LiZhiyanSampleStackMaterialPrefix =
+            "M_fxui__lizhiyan_overview_";
+        private const string LiZhiyanDiagnosticMaterialSuffix =
+            ".DiagnosticSampleStack";
+        private const string LiZhiyanComposedMaterialSuffix =
+            ".LiZhiyanActorComposedInstance";
+
+        private static bool IsExactZhuangfyPiaodaiMaterial(Material material)
+        {
+            if (material == null)
+                return false;
+
+            string name = material.name;
+            return name == "M_fx_ui_zhangfy_piaodai_01" ||
+                name == "M_fx_ui_zhangfy_piaodai_02" ||
+                name == "M_fx_ui_zhangfy_piaodai_03";
+        }
+
+        private static bool IsLiZhiyanSampleStackDiagnosticMaterial(Material material)
+        {
+            if (material == null)
+                return false;
+
+            string name = material.name;
+            if (string.IsNullOrEmpty(name) ||
+                !name.StartsWith(LiZhiyanSampleStackMaterialPrefix,
+                    System.StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            return name.EndsWith(LiZhiyanDiagnosticMaterialSuffix,
+                       System.StringComparison.Ordinal) ||
+                name.EndsWith(LiZhiyanComposedMaterialSuffix,
+                    System.StringComparison.Ordinal);
+        }
 
         private static readonly ShaderTagId[] MainTransparentPasses =
         {
@@ -384,14 +439,22 @@ namespace EndfieldGraphShaderLab
                     if (material == null || material.shader == null ||
                         material.renderQueue < 3660 || material.renderQueue > 3740)
                         continue;
+                    string rendererPath = BuildRendererPath(renderer);
+                    string rendererOrdinalPath =
+                        BuildRendererOrdinalPath(renderer);
+                    string materialName = material.name;
+                    string stableRendererKey =
+                        EndfieldRecoveredRendererIdSidecarCaptureBridge
+                            .BuildStableRendererKey(
+                                rendererOrdinalPath, materialIndex, materialName);
                     candidates.Add(new RendererIdCandidate
                     {
                         renderer = renderer,
                         material = material,
                         materialIndex = materialIndex,
-                        sortKey = BuildRendererPath(renderer) + "/" +
-                            materialIndex.ToString("D4", CultureInfo.InvariantCulture) + "/" +
-                            material.name,
+                        sortKey = stableRendererKey,
+                        rendererOrdinalPath = rendererOrdinalPath,
+                        stableRendererKey = stableRendererKey,
                         rendererInstanceId = renderer.GetInstanceID()
                     });
                 }
@@ -424,6 +487,8 @@ namespace EndfieldGraphShaderLab
                     id = index + 1,
                     rendererInstanceId = candidate.renderer.GetInstanceID(),
                     rendererPath = BuildRendererPath(candidate.renderer),
+                    rendererOrdinalPath = candidate.rendererOrdinalPath,
+                    stableRendererKey = candidate.stableRendererKey,
                     materialIndex = candidate.materialIndex,
                     materialName = candidate.material.name,
                     shaderName = candidate.material.shader.name,
@@ -439,6 +504,8 @@ namespace EndfieldGraphShaderLab
             internal Material material;
             internal int materialIndex;
             internal string sortKey;
+            internal string rendererOrdinalPath;
+            internal string stableRendererKey;
             internal int rendererInstanceId;
         }
 
@@ -478,11 +545,26 @@ namespace EndfieldGraphShaderLab
 
                     string shaderName = material.shader.name;
                     bool isBase = shaderName == BaseShaderName;
-                    bool isPiaodai = shaderName == PiaodaiShaderName;
+                    bool isSampleStack = shaderName == PiaodaiShaderName;
+                    bool isExactZhuangfyPiaodai = isSampleStack &&
+                        IsExactZhuangfyPiaodaiMaterial(material);
+                    bool isLiZhiyanSampleStackDiagnostic = isSampleStack &&
+                        IsLiZhiyanSampleStackDiagnosticMaterial(material);
+                    if (isSampleStack && !isExactZhuangfyPiaodai &&
+                        !isLiZhiyanSampleStackDiagnostic)
+                    {
+                        return new EndfieldRecoveredSceneMVRequest(
+                            true,
+                            false,
+                            false,
+                            $"SampleStack material '{material.name}' has no source-closed classification");
+                    }
+                    bool isPiaodai = isExactZhuangfyPiaodai;
                     bool isDistortion =
                         shaderName == RadialBlurShaderName ||
                         shaderName == RefractShaderName;
-                    if (!isBase && !isPiaodai && !isDistortion)
+                    if (!isBase && !isPiaodai &&
+                        !isLiZhiyanSampleStackDiagnostic && !isDistortion)
                     {
                         if (material.renderQueue == 3005)
                         {
@@ -496,7 +578,8 @@ namespace EndfieldGraphShaderLab
                     }
 
                     requested = true;
-                    string expectedTag = isPiaodai
+                    string expectedTag = isPiaodai ||
+                        isLiZhiyanSampleStackDiagnostic
                         ? ExactPiaodaiShaderTag
                         : ExactShaderTag;
                     if (material.GetTag(
@@ -538,6 +621,16 @@ namespace EndfieldGraphShaderLab
                             false,
                             false,
                             $"piaodai material '{material.name}' has unsupported queue {queue}");
+                    }
+                    if (isLiZhiyanSampleStackDiagnostic &&
+                        (queue < 3660 || queue > 3740))
+                    {
+                        return new EndfieldRecoveredSceneMVRequest(
+                            true,
+                            false,
+                            false,
+                            $"Li Zhiyan SampleStack diagnostic material '{material.name}' " +
+                            $"has unsupported preserved queue {queue}");
                     }
                     if (isBase && queue != 3000 && queue != 3005 &&
                         (queue < 3660 || queue > 3740))
@@ -1081,7 +1174,7 @@ namespace EndfieldGraphShaderLab
             }
             else
             {
-                PublishRendererIdSidecarFailureForCamera(
+                PublishRendererIdSidecarFailureForCurrentCapture(
                     camera,
                     "after-post compositor rejected the frame: " + failure);
             }
@@ -1292,6 +1385,8 @@ namespace EndfieldGraphShaderLab
             var capture = new EndfieldRendererIdSidecarCapture
             {
                 captureInvocationSerial = pending.captureInvocationSerial,
+                redChannelIdScope =
+                    EndfieldRecoveredRendererIdSidecarCaptureBridge.RedChannelIdScope,
                 frame = pending.frame,
                 width = pending.width,
                 height = pending.height,
@@ -1331,11 +1426,19 @@ namespace EndfieldGraphShaderLab
         {
             if (serial <= 0)
                 return;
+            EndfieldRendererIdSidecarCapture existing;
+            if (completedRendererIdSidecars.TryGetValue(serial, out existing) &&
+                existing != null && existing.available)
+            {
+                return;
+            }
             resources.readbackPending = false;
             completedRendererIdSidecars[serial] =
                 new EndfieldRendererIdSidecarCapture
                 {
                     captureInvocationSerial = serial,
+                    redChannelIdScope =
+                        EndfieldRecoveredRendererIdSidecarCaptureBridge.RedChannelIdScope,
                     frame = Time.frameCount,
                     width = resources.width,
                     height = resources.height,
@@ -1345,7 +1448,7 @@ namespace EndfieldGraphShaderLab
                 };
         }
 
-        private void PublishRendererIdSidecarFailureForCamera(
+        internal void PublishRendererIdSidecarFailureForCurrentCapture(
             Camera camera,
             string failure)
         {
@@ -1658,6 +1761,23 @@ namespace EndfieldGraphShaderLab
             }
             names.Reverse();
             return string.Join("/", names.ToArray());
+        }
+
+        private static string BuildRendererOrdinalPath(Renderer renderer)
+        {
+            if (renderer == null)
+                return string.Empty;
+            var segments = new List<string>();
+            Transform current = renderer.transform;
+            while (current != null)
+            {
+                segments.Add(current.name + "[" +
+                    current.GetSiblingIndex().ToString(
+                        CultureInfo.InvariantCulture) + "]");
+                current = current.parent;
+            }
+            segments.Reverse();
+            return string.Join("/", segments.ToArray());
         }
 
         private static bool IsRequested(

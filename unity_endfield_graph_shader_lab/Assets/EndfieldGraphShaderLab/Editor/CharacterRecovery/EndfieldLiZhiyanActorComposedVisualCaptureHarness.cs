@@ -1032,6 +1032,9 @@ namespace EndfieldGraphShaderLabEditor
                     JsonUtility.ToJson(
                         new EndfieldRendererIdSidecarDictionary
                         {
+                            redChannelIdScope =
+                                EndfieldRecoveredRendererIdSidecarCaptureBridge
+                                    .RedChannelIdScope,
                             entries = sidecarCapture.entries ??
                                 Array.Empty<EndfieldRendererIdSidecarEntry>()
                         },
@@ -1059,6 +1062,8 @@ namespace EndfieldGraphShaderLabEditor
                     (int)background.b, (int)background.a,
                 },
                 roiMeasurements = MeasureRois(pixels, oracleSample),
+                rendererIdSidecarRedChannelIdScope =
+                    EndfieldRecoveredRendererIdSidecarCaptureBridge.RedChannelIdScope,
                 rendererIdSidecarAvailable = sidecarAvailable,
                 rendererIdSidecarRaw = RelativeOutputPath(sidecarRawPath),
                 rendererIdSidecarDictionary = RelativeOutputPath(sidecarDictionaryPath),
@@ -1088,6 +1093,16 @@ namespace EndfieldGraphShaderLabEditor
                 failure = "renderer-ID sidecar capture serial does not match the PNG";
                 return false;
             }
+            if (!string.Equals(
+                    capture.redChannelIdScope,
+                    EndfieldRecoveredRendererIdSidecarCaptureBridge.RedChannelIdScope,
+                    StringComparison.Ordinal))
+            {
+                failure =
+                    "renderer-ID sidecar red-channel IDs are not explicitly " +
+                    "captureInvocationSerial-local";
+                return false;
+            }
             if (capture.width != Width || capture.height != Height)
             {
                 failure = "renderer-ID sidecar dimensions do not match the PNG";
@@ -1102,6 +1117,7 @@ namespace EndfieldGraphShaderLabEditor
             EndfieldRendererIdSidecarEntry[] entries = capture.entries ??
                 Array.Empty<EndfieldRendererIdSidecarEntry>();
             var ids = new HashSet<int>();
+            var stableRendererKeys = new HashSet<string>(StringComparer.Ordinal);
             for (int entryIndex = 0; entryIndex < entries.Length; entryIndex++)
             {
                 EndfieldRendererIdSidecarEntry entry = entries[entryIndex];
@@ -1109,11 +1125,24 @@ namespace EndfieldGraphShaderLabEditor
                     entry.id <= 0 || entry.id >= (1 << 24) ||
                     entry.rendererInstanceId == 0 ||
                     string.IsNullOrEmpty(entry.rendererPath) ||
-                    !ids.Add(entry.id))
+                    string.IsNullOrEmpty(entry.rendererOrdinalPath) ||
+                    entry.materialIndex < 0 ||
+                    string.IsNullOrEmpty(entry.materialName) ||
+                    string.IsNullOrEmpty(entry.stableRendererKey) ||
+                    !string.Equals(
+                        entry.stableRendererKey,
+                        EndfieldRecoveredRendererIdSidecarCaptureBridge
+                            .BuildStableRendererKey(
+                                entry.rendererOrdinalPath,
+                                entry.materialIndex,
+                                entry.materialName),
+                        StringComparison.Ordinal) ||
+                    !ids.Add(entry.id) ||
+                    !stableRendererKeys.Add(entry.stableRendererKey))
                 {
                     failure =
-                        "renderer-ID sidecar dictionary IDs are not unique contiguous " +
-                        "values in [1,2^24)";
+                        "renderer-ID sidecar dictionary IDs/stableRendererKey values " +
+                        "are not valid, unique, and capture-local";
                     return false;
                 }
             }
@@ -1748,6 +1777,12 @@ namespace EndfieldGraphShaderLabEditor
                 frame.alphaCoverage >= 0f && frame.alphaCoverage <= 1f &&
                 frame.nonBackgroundCoverage >= 0f && frame.nonBackgroundCoverage <= 1f,
                 "Frame coverage/dimensions drifted for " + label + " at PTS " + pts);
+            Require(string.Equals(
+                    frame.rendererIdSidecarRedChannelIdScope,
+                    EndfieldRecoveredRendererIdSidecarCaptureBridge.RedChannelIdScope,
+                    StringComparison.Ordinal),
+                "Renderer-ID sidecar red-channel scope is not explicitly " +
+                "captureInvocationSerial-local for " + label + " at PTS " + pts);
             string path = Path.Combine(outputDirectory, Path.GetFileName(frame.png));
             Require(File.Exists(path), "Frame PNG is missing: " + path);
             Require(frame.pngBytes == new FileInfo(path).Length &&
@@ -2177,6 +2212,7 @@ namespace EndfieldGraphShaderLabEditor
             public float nonBackgroundCoverage;
             public int[] measuredBackgroundRgba;
             public RoiMeasurement[] roiMeasurements;
+            public string rendererIdSidecarRedChannelIdScope;
             public bool rendererIdSidecarAvailable;
             public string rendererIdSidecarRaw;
             public string rendererIdSidecarDictionary;

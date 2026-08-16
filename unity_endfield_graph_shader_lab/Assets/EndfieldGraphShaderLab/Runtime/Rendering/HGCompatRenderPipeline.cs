@@ -862,6 +862,20 @@ namespace EndfieldGraphShaderLab
                 recoveredSceneMVFailure =
                     "the owned physical-HDR/post scene-color chain is disabled";
             }
+            if (!useRecoveredSceneMV)
+            {
+                string sidecarFailure = recoveredSceneMVFailure;
+                if (string.IsNullOrEmpty(sidecarFailure))
+                {
+                    sidecarFailure = recoveredSceneMVRequest.requested
+                        ? "recovered SceneMV was not used after request evaluation"
+                        : "no exact selected MRT material is active";
+                }
+                recoveredSceneMVCompositor
+                    .PublishRendererIdSidecarFailureForCurrentCapture(
+                        camera,
+                        sidecarFailure);
+            }
             if (recoveredSceneMVRequest.requested &&
                 !useRecoveredSceneMV &&
                 !loggedRecoveredSceneMVFailure)
