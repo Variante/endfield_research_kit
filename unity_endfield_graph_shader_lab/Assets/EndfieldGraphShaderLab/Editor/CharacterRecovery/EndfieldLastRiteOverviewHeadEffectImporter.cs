@@ -31,7 +31,7 @@ namespace EndfieldGraphShaderLabEditor
         private const string FailClosedShaderName =
             "Hidden/Endfield/Recovered/VFXUnavailableFailClosed";
         private const string ExpectedSchema =
-            "endfield.lastrite-overview-head-effect.v1";
+            "endfield.lastrite-overview-head-effect.v2";
         private const string ExpectedEffect =
             "P_fxui_lastrite_ui_overview_start_01_01";
 
@@ -79,6 +79,13 @@ namespace EndfieldGraphShaderLabEditor
             }
             Require(context.materials.Count == 6,
                 "Last Rite material dependency census drifted");
+            Dictionary<string, object> textureBoundary =
+                Dict(contract["textureDependencyBoundary"]);
+            Require(Str(textureBoundary, "status") ==
+                    "assetmap_identity_and_converted_png_closed_native_mip_payload_pending" &&
+                List(textureBoundary["uniquePathIDs"]).Count == 12 &&
+                List(textureBoundary["textures"]).Count == 12,
+                "Last Rite texture evidence boundary drifted");
 
             Dictionary<string, object> meshRenderer = Dict(contract["meshRenderer"]);
             Dictionary<string, object> meshSource = Dict(meshRenderer["mesh"]);
