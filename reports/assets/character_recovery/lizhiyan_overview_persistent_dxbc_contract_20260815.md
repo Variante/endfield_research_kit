@@ -369,6 +369,24 @@ API-2 resource, descriptor, PSO, Vulkan draw/submit, or visible pixel. The
 published native catalog has exact VAs, bounded spans, head bytes, and direct
 calls but no per-method body SHA-256 values, so none are claimed here.
 
+`lizhiyan_overview_start_02_03_effects.json` closes the remaining six targets
+of the shared material clip. `start_02` has duration 5, three renderers, one
+Plane009 mesh, and materials 12/13/14. `start_03` has duration 7, three
+renderers, two meshes (`S_fx_shoutiaodai_01` and
+`S_fx_tuoweidisan_01`), and materials 15/16/17. Both roots have null
+controller/avatar Animators, no particles, and the same start clip PathID
+`7360398354216100382`; the six materials reuse eight exact texture identities.
+The combined contract aggregate is
+`AB587FDA1E0AEC1761A10F334959541FA0217347E595D18415850791AE33545B`.
+
+The timing alignment now derives per-target dynamic curve windows from the
+resolved 53-curve clip. With PTS 37967 retained only as a candidate restart,
+start_01 child `(7)` begins at PTS 38167, the other early slabs at 38234/38267,
+start_02 at 40834/40867, and start_03 tail mesh at 42467. The first two groups
+line up with the independently observed teal edge/slab and 40900 pillar phases.
+This supports a single speed-one shared clip gated by EffectSetting lifetimes
+2.2/5/7; it does not assign screen pixels to renderers or admit shaders.
+
 The next positive proof is now an explicit runtime-capture contract rather
 than a generic request for “a capture.” On this exact build it must join one
 `CreateRendererList` handle through opcode `0x4e`, a complete accepted/sorted
