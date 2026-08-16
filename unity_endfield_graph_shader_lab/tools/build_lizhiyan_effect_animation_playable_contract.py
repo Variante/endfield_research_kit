@@ -312,11 +312,17 @@ def build() -> dict[str, Any]:
                 "graphCreateCallOffset": "0x74",
                 "animationPlayableOutputCreateVA": "0x183438077",
                 "advancedMixerCreateVA": "0x1834380BA",
+                "setSourcePlayableCallOffset": "0x15F",
+                "setSourcePlayableVA": "0x1834380EF",
             },
             "addClip": {
                 "token": "0x060059CD",
                 "va": "0x183437D60",
                 "animationClipPlayableCreateVA": "0x183437E02",
+                "connectCallOffset": "0x129",
+                "connectCallVA": "0x183437E89",
+                "operation": "graph.Connect(clipPlayable,0,mixer,animationState-1)",
+                "nullClipBehavior": "return_before_create_and_connect",
             },
             "playAnimation": {"token": "0x060059D1", "va": "0x183436AD0"},
             "manualEvaluate": {"token": "0x060059D2", "va": "0x187431CB0"},
@@ -372,6 +378,57 @@ def build() -> dict[str, Any]:
                 "P_fxui_lizhiyan_overview_start_03": 7.0,
             },
             "clipStopTimeSeconds": 6.366667,
+            "playAnimationStateMachine": {
+                "methodToken": "0x060059D1",
+                "methodVA": "0x183436AD0",
+                "targetInput": "animationState-1",
+                "loopInputs": [0, 1, 2],
+                "operations": [
+                    {
+                        "callOffset": "0x447",
+                        "callVA": "0x183436F17",
+                        "identity": "PlayableExtensions.SetInputWeight<AdvancedAnimationMixerPlayable>",
+                        "arguments": "mixer,inputIndex,(inputIndex==targetInput?1.0:0.0)",
+                    },
+                    {
+                        "callOffset": "0x482",
+                        "callVA": "0x183436F52",
+                        "identity": "PlayableExtensions.IsValid<AnimationClipPlayable>",
+                        "arguments": "clipPlayable[inputIndex]",
+                    },
+                    {
+                        "callOffset": "0x4A0",
+                        "callVA": "0x183436F70",
+                        "identity": "PlayableExtensions.Pause<AnimationClipPlayable>",
+                        "condition": "inputIndex!=targetInput_and_valid",
+                    },
+                    {
+                        "callOffset": "0x4AE",
+                        "callVA": "0x183436F7E",
+                        "identity": "PlayableExtensions.Play<AnimationClipPlayable>",
+                        "condition": "inputIndex==targetInput_and_valid",
+                    },
+                    {
+                        "callOffset": "0x4C6",
+                        "callVA": "0x183436F96",
+                        "identity": "PlayableExtensions.SetTime<AnimationClipPlayable>",
+                        "arguments": "clipPlayable[inputIndex],0.0",
+                        "condition": "valid_after_Play_or_Pause",
+                    },
+                ],
+                "weightMode": "one_hot_no_cross_fade",
+                "validClipTimeResetSeconds": 0.0,
+                "currentPlayableFieldOffset": "0xC8",
+            },
+            "liZhiyanStartOnlyEffectiveRoute": {
+                "connectedInputs": [0],
+                "unconnectedInputs": [1, 2],
+                "weightsOnStart": [1.0, 0.0, 0.0],
+                "slot0Operations": ["Play", "SetTime(0.0)"],
+                "slot1And2Behavior": "weights_written_zero_no_clip_operation",
+                "crossFade": False,
+                "classification": "retail_start_only_graph_control_closed",
+            },
         },
         "retailAdvancedMixerNative": {
             **unityplayer["advancedMixerCreate"],
@@ -558,7 +615,8 @@ def build() -> dict[str, Any]:
             "driverStatus": "exact_retail_mixer_type_unavailable_do_not_start_graph",
             "requiredBehavior": (
                 "validate admitted source marker; create GameTime graph; target the null-controller/null-avatar "
-                "Animator; use the exact three-input advanced mixer; connect only start clip at speed one; "
+                "Animator; use the exact three-input advanced mixer; connect only start clip; write weights "
+                "one-hot as 1/0/0; Play and reset start to time zero at speed one; "
                 "destroy graph at each EffectSetting lifetime"
             ),
             "blockedBy": [

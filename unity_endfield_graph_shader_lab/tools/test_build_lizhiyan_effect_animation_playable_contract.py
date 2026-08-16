@@ -41,6 +41,15 @@ def test_topology() -> None:
     assert [row["pathID"] for row in topology["clipSlots"]] == [
         7360398354216100382, 0, 0
     ]
+    state_machine = topology["playAnimationStateMachine"]
+    assert [row["callOffset"] for row in state_machine["operations"]] == [
+        "0x447", "0x482", "0x4A0", "0x4AE", "0x4C6"
+    ]
+    assert state_machine["weightMode"] == "one_hot_no_cross_fade"
+    start_only = topology["liZhiyanStartOnlyEffectiveRoute"]
+    assert start_only["weightsOnStart"] == [1.0, 0.0, 0.0]
+    assert start_only["slot0Operations"] == ["Play", "SetTime(0.0)"]
+    assert start_only["crossFade"] is False
     assert contract["labBoundary"]["standardAnimationMixerPlayableIsExactSubstitute"] is False
     abi = contract["effectAnimationControlAbi"]
     patch = abi["installedPatchState"]
