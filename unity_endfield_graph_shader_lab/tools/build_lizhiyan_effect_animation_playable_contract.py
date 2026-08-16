@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import struct
 from pathlib import Path
 from typing import Any
 
@@ -49,6 +50,82 @@ def artifact(path: Path, kind: str) -> dict[str, Any]:
         "bytes": path.stat().st_size,
         "sha256": sha256(path),
         "objectType": kind,
+    }
+
+
+def external_artifact(path: Path, kind: str) -> dict[str, Any]:
+    return {
+        "pathAtRecovery": path.resolve().as_posix(),
+        "bytes": path.stat().st_size,
+        "sha256": sha256(path),
+        "objectType": kind,
+    }
+
+
+def pe_file_offset(data: bytes, virtual_address: int) -> int:
+    pe = struct.unpack_from("<I", data, 0x3C)[0]
+    section_count = struct.unpack_from("<H", data, pe + 6)[0]
+    optional = pe + 24
+    image_base = struct.unpack_from("<Q", data, optional + 24)[0]
+    section = optional + struct.unpack_from("<H", data, pe + 20)[0]
+    rva = virtual_address - image_base
+    for index in range(section_count):
+        offset = section + index * 40
+        virtual_size, section_rva, raw_size, raw_offset = struct.unpack_from(
+            "<IIII", data, offset + 8
+        )
+        if section_rva <= rva < section_rva + max(virtual_size, raw_size):
+            return raw_offset + rva - section_rva
+    raise RuntimeError(f"VA 0x{virtual_address:X} is outside the PE image")
+
+
+def validate_unityplayer_native_contract(path: Path) -> dict[str, Any]:
+    data = path.read_bytes()
+    require(
+        len(data) == 38194232
+        and hashlib.sha256(data).hexdigest().upper()
+        == "B47728BA10F09C46E8A107B4C7055E48CFE402D3D8C88A4529074981F9672AA2",
+        "installed UnityPlayer build drifted",
+    )
+
+    def validate_icall(
+        index: int, name_slot: int, function_slot: int, expected_name: str,
+        expected_target: int, body_size: int, body_sha256: str,
+    ) -> dict[str, Any]:
+        name_pointer = struct.unpack_from("<Q", data, name_slot)[0]
+        target = struct.unpack_from("<Q", data, function_slot)[0]
+        name_offset = pe_file_offset(data, name_pointer)
+        end = data.index(b"\0", name_offset)
+        name = data[name_offset:end].decode("ascii")
+        require(name == expected_name and target == expected_target,
+                f"UnityPlayer internal call {expected_name} drifted")
+        body_offset = pe_file_offset(data, target)
+        body = data[body_offset:body_offset + body_size]
+        require(hashlib.sha256(body).hexdigest() == body_sha256,
+                f"UnityPlayer body {expected_name} drifted")
+        return {
+            "tableIndex": index,
+            "name": name,
+            "namePointerSlotFileOffset": f"0x{name_slot:X}",
+            "functionPointerSlotFileOffset": f"0x{function_slot:X}",
+            "nativeTargetVA": f"0x{target:X}",
+            "nativeBodyBytes": body_size,
+            "nativeBodySha256": body_sha256,
+        }
+
+    return {
+        "source": external_artifact(path, "PinnedRetailUnityPlayer"),
+        "advancedMixerCreate": validate_icall(
+            501, 0x20DD608, 0x20DF118,
+            "UnityEngine.Animations.AdvancedAnimationMixerPlayable::CreateHandleInternal_Injected",
+            0x180158B30, 66,
+            "a1344805c7af26cc4c405b18c770e862a7a3c3108d06d9efaa170ce57e71be25",
+        ),
+        "rendererEntityId": validate_icall(
+            1278, 0x20D4FA0, 0x20CD1F0, "UnityEngine.Renderer::get_entityID",
+            0x1800E6C40, 324,
+            "b9b416829ec0528693a48ec4116a2e71ed7d4d26893866fc807aa59c86045e79",
+        ),
     }
 
 
@@ -157,6 +234,9 @@ def build() -> dict[str, Any]:
     start01 = json.loads(STATIC_CONTRACT.read_text(encoding="utf-8"))
     siblings = json.loads(SIBLING_CONTRACT.read_text(encoding="utf-8"))
     ifix_state = json.loads(INSTALLED_IFIX_STATE.read_text(encoding="utf-8"))
+    unityplayer_path = Path(ifix_state["source_build"]["game_assembly"]["path_at_recovery"]).parent / "UnityPlayer.dll"
+    require(unityplayer_path.is_file(), f"installed UnityPlayer missing: {unityplayer_path}")
+    unityplayer = validate_unityplayer_native_contract(unityplayer_path)
     require(start01["animation"]["startAnimationClip"]["pathID"] == 7360398354216100382,
             "start_01 shared clip identity drifted")
     require(siblings["sharedAnimation"]["pathID"] == 7360398354216100382,
@@ -222,8 +302,8 @@ def build() -> dict[str, Any]:
                 },
                 "createSignature": "Create(PlayableGraph graph, inputCount)",
                 "injectedBoundary": (
-                    "CreateHandleInternal_Injected carries internal-call metadata, but its native body and "
-                    "exact by-reference/value lowering are not recovered"
+                    "CreateHandleInternal_Injected is bound to UnityPlayer 0x180158B30 and creates the "
+                    "retail 0x178 native node; input count and weights are handled later"
                 ),
                 "methodTokens": {
                     "Create": "0x06000339",
@@ -248,7 +328,7 @@ def build() -> dict[str, Any]:
                     "default and normalized input weights",
                     "null-playable state transitions and equality behavior",
                     "accepted input-count range and failure behavior",
-                    "native CreateHandleInternal_Injected implementation",
+                    "SetInputCount downstream initialization and allocation-failure behavior",
                 ],
             },
             "clipSlots": [
@@ -262,6 +342,39 @@ def build() -> dict[str, Any]:
                 "P_fxui_lizhiyan_overview_start_03": 7.0,
             },
             "clipStopTimeSeconds": 6.366667,
+        },
+        "retailAdvancedMixerNative": {
+            **unityplayer["advancedMixerCreate"],
+            "managedWrappers": {
+                "Create": "0x183E0F350",
+                "CreateHandle": "0x183E0F450",
+                "CreateHandleInternal": "0x183E0F5C0",
+                "CreateHandleInternal_Injected": "0x183E0FA30",
+                "SetInputCount": "0x183E0F8D0",
+                "SetInputCount_Injected": "0x183E0F910",
+            },
+            "nativeCreateHelperVA": "0x180B3E5C0",
+            "invalidGraphDiagnosticVA": "0x1807791C0",
+            "advancedNodeTypeId": "0x178",
+            "stockNodeTypeId": "0x170",
+            "handleLayout": {
+                "nativePointerOffset": 0,
+                "versionOffset": 8,
+                "meaningfulBytes": 12,
+                "storageBytes": 16,
+            },
+            "classification": "native_create_closed_stock_mixer_not_equivalent_weights_pending",
+            "provenBehavior": [
+                "validates a non-null graph handle and masked version",
+                "allocates and attaches a distinct native 0x178 playable node",
+                "materializes a native-pointer plus version PlayableHandle",
+                "CreateHandle applies inputCount only after injected creation through SetInputCount",
+                "creation does not initialize or normalize input weights",
+            ],
+            "failureBoundary": (
+                "invalid graphs return false through the common diagnostic path; allocator failure and "
+                "SetInputCount rejection remain unresolved"
+            ),
         },
         "effectAnimationControlAbi": {
             "installedPatchState": {
@@ -342,12 +455,27 @@ def build() -> dict[str, Any]:
                 "serialized Li Zhiyan MeshRenderer PathID"
             ),
             "nativeJoinStatus": "managed_renderer_to_hgtree_survivor_record_unresolved_fail_closed",
+            "ordinaryRendererNativeIdentity": {
+                **unityplayer["rendererEntityId"],
+                "managedBackingPointerHelperVA": "0x180769270",
+                "nativeEntityIdOffset": "0x268",
+                "classification": "ordinary_renderer_native_entity_id_field_closed_semantic_join_pending",
+            },
+            "hgMeshRendererComparison": {
+                "getEntityManagedVA": "0x18B3FA3B0",
+                "getEntityInjectedUnityPlayerVA": "0x1801E04E0",
+                "hasEntityUnityPlayerVA": "0x1801E0340",
+                "nativeEntityOffset": "0x50",
+                "requiresNonzeroOffsets": ["0x50", "0x54"],
+                "ordinaryRendererEquivalent": False,
+            },
             "remainingIdentityEdge": (
                 "a concrete UnityEngine.MeshRenderer pointer or instance id must be joined to the "
                 "native entity/renderer index and one accepted 64-byte HGTree record"
             ),
             "nonClaims": [
                 "native ECS component slot 67 is not EffectLodCfg.renderer",
+                "ordinary Renderer native+0x268 is not proven equal to HGMeshRenderer native+0x50",
                 "generic HGTree renderer-list creation does not assign a Li Zhiyan PathID to a draw",
             ],
         },

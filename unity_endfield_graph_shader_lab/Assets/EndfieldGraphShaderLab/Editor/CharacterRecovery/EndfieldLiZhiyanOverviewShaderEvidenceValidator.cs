@@ -193,9 +193,16 @@ namespace EndfieldGraphShaderLabEditor
             Dictionary<string, object> manualUpdate =
                 L.Dict(instanceRoutes["ManualUpdateAnimation"]);
             Dictionary<string, object> lab = L.Dict(contract["labBoundary"]);
+            Dictionary<string, object> nativeMixer =
+                L.Dict(contract["retailAdvancedMixerNative"]);
+            Dictionary<string, object> handleLayout = L.Dict(nativeMixer["handleLayout"]);
             Dictionary<string, object> lodOwnership =
                 L.Dict(contract["effectLodRendererOwnership"]);
             Dictionary<string, object> lodField = L.Dict(lodOwnership["managedField"]);
+            Dictionary<string, object> ordinaryRenderer =
+                L.Dict(lodOwnership["ordinaryRendererNativeIdentity"]);
+            Dictionary<string, object> hgRenderer =
+                L.Dict(lodOwnership["hgMeshRendererComparison"]);
             IList lodBindings = L.List(lodOwnership["serializedBindings"]);
             Type retailMixer = Type.GetType(
                 "UnityEngine.Animations.AdvancedAnimationMixerPlayable, UnityEngine.AnimationModule",
@@ -219,6 +226,13 @@ namespace EndfieldGraphShaderLabEditor
                 L.Bool(mixerComparison, "stockCreateHasNormalizeWeightsParameter") &&
                 !L.Bool(mixerComparison, "advancedCreateHasNormalizeWeightsParameter") &&
                 L.List(mixer["unresolvedSemantics"]).Count == 4 &&
+                L.Long(nativeMixer, "tableIndex") == 501 &&
+                L.Str(nativeMixer, "nativeTargetVA") == "0x180158B30" &&
+                L.Str(nativeMixer, "advancedNodeTypeId") == "0x178" &&
+                L.Str(nativeMixer, "stockNodeTypeId") == "0x170" &&
+                L.Long(handleLayout, "meaningfulBytes") == 12 &&
+                L.Str(nativeMixer, "classification") ==
+                    "native_create_closed_stock_mixer_not_equivalent_weights_pending" &&
                 L.List(topology["clipSlots"]).Count == 3 &&
                 L.Str(manualEvaluate, "token") == "0x060059D2" &&
                 L.Str(manualEvaluate, "va") == "0x187431CB0" &&
@@ -246,6 +260,11 @@ namespace EndfieldGraphShaderLabEditor
                 L.List(L.Dict(lodBindings[2])["rendererPathIDs"]).Count == 3 &&
                 L.Str(lodOwnership, "nativeJoinStatus") ==
                     "managed_renderer_to_hgtree_survivor_record_unresolved_fail_closed" &&
+                L.Long(ordinaryRenderer, "tableIndex") == 1278 &&
+                L.Str(ordinaryRenderer, "nativeTargetVA") == "0x1800E6C40" &&
+                L.Str(ordinaryRenderer, "nativeEntityIdOffset") == "0x268" &&
+                L.Str(hgRenderer, "nativeEntityOffset") == "0x50" &&
+                !L.Bool(hgRenderer, "ordinaryRendererEquivalent") &&
                 retailMixer == null &&
                 typeof(UnityEngine.Animations.AnimationMixerPlayable) != null &&
                 !L.Bool(lab, "retailAdvancedMixerTypeExpectedInEditor") &&

@@ -4038,9 +4038,13 @@ ownership are closed.
 
 The fixed-build ABI now distinguishes the advanced type from stock more
 concretely: stock mixer creation takes `normalizeWeights` and exposes an
-implicit Playable conversion; the advanced type exposes neither. Its default
-weights, null-playable transitions, input-count failures, and injected native
-body are still unknown. The same contract pins `SetManual(bool)`,
+implicit Playable conversion; the advanced type exposes neither. Its injected
+creation path is UnityPlayer internal-call entry 501 at `0x180158B30`: graph
+validation allocates/attaches native node type `0x178` and materializes a
+pointer/version handle. Stock creates node type `0x170` with a different
+initializer. Input count is applied afterward through `SetInputCount`, so
+default/null weights, input-count rejection, and allocation-failure behavior
+remain open. The same contract pins `SetManual(bool)`,
 `ManualEvaluate(float)`, `SyncProgress(float)`, time-scale/start-duration/start-
 scale setters, Stop, OnDisable, and OnRelease. Their decoded fallback bodies
 prove graph evaluation, progress-to-time delegation, forced root-speed
@@ -4070,6 +4074,10 @@ does not yet identify a native HGTree survivor: the missing edge is a concrete
 managed Renderer pointer/instance id to the native entity/renderer index and
 one accepted 64-byte renderer record. ECS component slot 67 is independently
 classified LOD/culling state and is not substituted for that identity edge.
+Ordinary `Renderer.get_entityID` is now pinned to internal-call entry 1278 and
+returns backing native Renderer `+0x268`; `HGMeshRenderer.GetEntity` instead
+returns its ECS qword at native `+0x50`. The serialized Li references are
+ordinary MeshRenderers, and these two fields are not treated as equivalent.
 
 The candidate retail epoch now produces exact material-key checkpoints rather
 than a broad visual guess: start_01 child `(7)` begins changing at PTS 38167,
