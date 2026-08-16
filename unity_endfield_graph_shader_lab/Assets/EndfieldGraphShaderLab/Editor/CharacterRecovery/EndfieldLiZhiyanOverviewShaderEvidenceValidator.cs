@@ -672,7 +672,7 @@ namespace EndfieldGraphShaderLabEditor
                 !L.Bool(importer, "injectedIntoRetailClient") &&
                 L.Bool(importer, "captureRequiresSeparateExplicitAuthorization") &&
                 L.Str(abi, "sha256") ==
-                    "DE22B779B16F198F2E3B8B9939C22A5433FFD2713201BC0BF8FDD4B7EE0B6EF4" &&
+                    "A5DA36E2AA02BE47147854A4F4834742A99BAFCF661315010E4B3620BC54DD2F" &&
                 L.Long(video, "bytes") == 1678613397L &&
                 L.Str(video, "sha256") ==
                     "2F542A3BE7CE3332295D3A841FD8613C62707E084F9E33A0F156DA8A06EBF5E7" &&

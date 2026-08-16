@@ -702,6 +702,48 @@
       "functionSha256": "2600B80B9E0A824FB326E547414262BDB2FC8F552CBF9C0A766C3C8AEDA9C64B"
     },
     {
+      "label": "graphics front-context pooled allocator",
+      "va": "0x180936560",
+      "functionEnd": "0x180936654",
+      "functionBytes": 244,
+      "functionSha256": "5D78ABD020982BF0F549EA9A77D87D42A4744938F5C25C689F35CEA34798C295"
+    },
+    {
+      "label": "graphics front-context opcode-0x2727 or backend +0x210 writer",
+      "va": "0x180937b70",
+      "functionEnd": "0x180937c6b",
+      "functionBytes": 251,
+      "functionSha256": "D74315FCCF9056EAE972C0FA826A6F62B3E2FBBE0533230CFF783FDC588704FA"
+    },
+    {
+      "label": "API-2 backend +0x210 state-bit updater",
+      "va": "0x1808539d0",
+      "functionEnd": "0x1808539fa",
+      "functionBytes": 42,
+      "functionSha256": "04E684BF5DDE9DD2DF2D5B6258A3AF00FFBB310305948316F72B3D7E96F56136"
+    },
+    {
+      "label": "opcode-0x2727 interpreter bridge",
+      "va": "0x1813b13d1",
+      "functionEnd": "0x1813b13e6",
+      "functionBytes": 21,
+      "functionSha256": "1BE94F6DAC13C9C2BB2DE45EC210FCAD237CF4AAD3839AF179DBB1E7898BDED9"
+    },
+    {
+      "label": "graphics front-context opcode-0x273d or backend +0xeb0 writer",
+      "va": "0x180930b70",
+      "functionEnd": "0x180930bfb",
+      "functionBytes": 139,
+      "functionSha256": "454261A5AE40CEA1B93F7DF64E876B83C4A57EA009E162EA944E2889460E6453"
+    },
+    {
+      "label": "opcode-0x273d state-copy interpreter case",
+      "va": "0x1813b2d45",
+      "functionEnd": "0x1813b2e09",
+      "functionBytes": 196,
+      "functionSha256": "BFB4F8006A110AFEB19CD5F5117D03258EED91984C9F63F1586BFE554FDB76FE"
+    },
+    {
       "label": "HGShadingStateSystem GetOrCreatePerMaterialCBHandle icall",
       "va": "0x1801ee430",
       "functionEnd": "0x1801ee495",
@@ -2056,10 +2098,15 @@
       "frontContextProviderMethod": "vtable+0xc28 -> 0x18092ec20",
       "providerField": "callback row+0x10; zero at construction, then written at 0x18092ed78 from the nested +0xc18 result",
       "unusedOrUnprovenField": "callback row+0x18 remains zero on the bounded 0x18092ec20 path",
+      "providerAllocation": "0x180936560 reuses a pooled 0x2a00 front context or allocates it and calls constructor 0x1809258c0; returned vtable is 0x181dcb360",
       "builderArgument": 6,
       "stackProof": "caller [rsp+0x28] at 0x180542ec5 -> callee entry rsp+0x30 after return-address push -> rbp+0xa08 after eight pushes, sub rsp,0x9e8, and lea rbp,[rsp+0x50]",
-      "terminalCall": "0x180542c9c reloads rbp+0xa08; 0x180542cc4..0x180542ccd invokes provider vtable+0x210",
-      "concreteProviderType": null,
+      "terminalCall": "0x180542c9c reloads rbp+0xa08; 0x180542cc4..0x180542ccd invokes front-context vtable+0x210 -> 0x180937b70",
+      "frontContextMethod": "0x180937b70 records opcode 0x2727 plus a one-byte payload when context+0x2711 is enabled; otherwise it tail-dispatches to context+0x2708 backend vtable+0x210",
+      "api2BackendMethod": "vtable 0x181dbc098 +0x210 -> 0x1808539d0; clears state bit 0x40 and replaces it from the one-byte argument at [backend+0x2e48]+0xbc, with no device/draw call",
+      "recordedStateRoute": "opcode 0x2727 -> interpreter 0x1813b13d1 -> front +0xeb0 0x180930b70 -> opcode 0x273d -> interpreter 0x1813b2d45 state copy -> dynamic context+0x70 vtable+0x5d0",
+      "nextDynamicBoundary": "opcode-0x273d consumer context+0x70 vtable+0x5d0",
+      "concreteProviderType": "0x2a00 graphics front context with vtable 0x181dcb360",
       "graphicsApiDrawOrSubmitProven": false
     },
     "classicBackendBoundary": "opcode 0x4d validates payload context/index, resolves context+0x10148[index], releases that backend row through 0x18053d640, and writes state 2 to context+0x10108+index*0x1a0+0x194. Payload+0x0c is not read here, so this path does not prove generation validation. It exposes no static Li renderer ID, Vulkan draw, queue submit or visible-pixel edge and is a retirement path, not the missing draw expansion. The stock handle route remains distinct from dedicated AddDrawECSMeshRendererList/HGMesh records",

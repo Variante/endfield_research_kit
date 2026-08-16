@@ -4188,8 +4188,13 @@ to that same dynamic resource/parameter-provider. Front-context vtable
 `0x181DCB360` resolves `+0xC28` to `0x18092EC20`; it allocates a 0x20-byte
 callback/resource node, calls nested interface `+0xC18`, and writes the result
 to row `+0x10` at `0x18092ED78`, while row `+0x18` remains zero on this path.
-The nested provider type and terminal `+0x210` implementation remain
-unresolved. None of these CPU record paths proves a graphics-API draw or submit.
+Allocator `0x180936560` returns a pooled/new 0x2A00 front context. Its
+`+0x210` target `0x180937B70` records opcode `0x2727` or reaches API-2 backend
+`0x1808539D0`, which only updates state bit `0x40` at
+`[backend+0x2E48]+0xBC`. The recorded route continues through front `+0xEB0`,
+opcode `0x273D`, a state copy, and dynamic context `+0x70` vtable `+0x5D0`.
+That interface is the next unresolved boundary; no graphics draw or submit is
+proven.
 Retail queue 3704 belongs to the source-closed 3660--3740
 `AfterPostprocessTransparent` phase. In the exact SceneMV route that range is
 owned by the after-post callback, not main transparent. This isolated shader
@@ -4379,9 +4384,10 @@ the ordinal hierarchy path plus material slot/name is the cross-frame identity.
 The stable later contributors are queue-3704 `tiaodaifenwei_01 (7)`,
 `fenweiqiliu_02 (3)`, and `shoutiaodai_01 (1)`; composite and effects-only are
 byte-identical at those four PTS values.
-The attachment uses the actual 960x540 after-post depth extent, not the
-1920x1080 presentation extent. Every positive frame stores per-renderer pixel
-counts and inclusive internal plus presentation-scaled bounding boxes; their
+The attachment uses the actual 960x540 after-post depth extent instead of the
+Editor/HiDPI-sensitive camera pixel size, which previously allocated a
+1920x1080 raw target for this 960x540 capture. Every positive frame stores
+per-renderer pixel counts and inclusive internal plus capture-scaled bounding boxes; their
 totals and identity mappings are validated against the RGBA32F payload.
 Because the override shader does not reproduce
 source alpha clip, cull, or discard, this is diagnostic renderer
