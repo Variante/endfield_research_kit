@@ -17,6 +17,9 @@ to an individual pixel layer until its prefab, material, lifetime, and render
 path close independently.
 
 Li Zhiyan is the next strongest retail high-energy target; Wulfa is second.
-Camille and Last Rite remain better choices for broad source-backed effect
-materialization because their catalog mounts are unambiguous, even though the
-video alignment above is stronger for Li Zhiyan and Wulfa.
+Camille and Last Rite have unambiguous catalog mounts, but only an exact
+AssetMap container/object row can promote an individual requested name to a
+materialization candidate. Follow-up inspection proves such a standalone row
+for Last Rite's head effect; controller scalar repetition alone does not prove
+Camille's effect-prefab availability. The video alignment remains stronger for
+Li Zhiyan and Wulfa.

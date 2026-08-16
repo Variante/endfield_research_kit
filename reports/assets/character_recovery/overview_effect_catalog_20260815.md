@@ -7,10 +7,12 @@ The fixed-build controller audit contains 31 playable Overview controllers,
 `AnimatorBehaviourPlayEffect` records. Those records contain 369 effect
 entries and 304 unique effect names.
 
-The existing MonoBehaviour object index contains exact-name rows for 223 of
-the 304 names, covering 288 of the 369 entries. This is source-object
-availability, not a complete prefab/material/lifetime or pixel-equivalence
-claim.
+The existing MonoBehaviour object index repeats 223 of the 304 names in
+`.effectName` scalar rows, covering 288 of the 369 entries. This is controller
+string indexing only: it does **not** prove an independently serialized effect
+prefab or asset. Independent existence must come from an exact AssetMap
+container/object row. The earlier `source-backed` label for this count was
+incorrect and is superseded by this boundary.
 
 The current Unity lab has three standalone generated Overview effect prefabs:
 
@@ -30,13 +32,19 @@ is concentrated in Aurora (`Bip001_R_Foot`), Yvonne (`move_jnt`), and Pograni
 unique; future recovery should prefer the serialized full hierarchy/PPtr when
 names collide.
 
-Highest-value source-backed materialization batches are:
+The original name-count heuristic ranked these investigation batches:
 
-1. `camille`: 36 entries, 33 source-backed names, no mount ambiguity.
-2. `lastrite`: 17 entries, 16 source-backed names, no mount ambiguity.
-3. `pograni`: 15 entries, all source-backed, but 8 ambiguous mounts requiring
+1. `camille`: 36 entries and no mount ambiguity.
+2. `lastrite`: 17 entries and no mount ambiguity.
+3. `pograni`: 15 entries, but 8 ambiguous mounts requiring
    exact hierarchy recovery first.
 
-The census was reproduced from the existing controller audit, the exact
-MonoBehaviour object index, and generated actor/effect prefab markers. It did
-not run a second broad AnimeStudio export.
+This ranking is a controller workload heuristic, not an asset-availability
+ranking. Follow-up AssetMap inspection independently proves
+`P_fxui_lastrite_ui_overview_start_01_01` has its own effect-prefab container;
+Camille's similarly indexed strings do not by themselves prove such a root.
+
+The census was reproduced from the existing controller audit, MonoBehaviour
+object index, and generated actor/effect prefab markers. It did not run a
+second broad AnimeStudio export. Use the object index only for the fields it
+actually contains, not as an effect-prefab catalog.

@@ -292,12 +292,15 @@ cannot silently drift or become admitted. This remains independent of the Gacha
 Timeline owner even though the underlying effect assets are shared.
 
 Across all 31 controllers, the 165 behaviour records contain 369 entries and
-304 unique effect names. The object index has exact-name evidence for 223
-unique names/288 entries; Unity currently materializes only the three
+304 unique effect names. The MonoBehaviour object index repeats 223 unique
+names/288 entries in controller scalar rows, which is not independent prefab
+availability evidence; only exact AssetMap container/object rows can close
+that boundary. Unity currently materializes only the three
 standalone Zhuang Fangyi particle prefabs plus embedded `piaodai`. Of 228
 non-root mounts, 217 resolve uniquely, 11 are ambiguous, and none are missing.
-Camille (33 source-backed names) and Last Rite (16) are the cleanest next
-materialization batches; Li Zhiyan (`38-47 s`) and Wulfa (`48-55 s`) have the
+Last Rite's head effect now has an independently proven standalone AssetMap
+prefab; Camille remains a controller-workload candidate rather than a proven
+prefab batch. Li Zhiyan (`38-47 s`) and Wulfa (`48-55 s`) have the
 strongest next retail-video acceptance joins, while Dapan (`283-296 s`) is the
 low-VFX prop-animation regression target.
 
@@ -1460,8 +1463,13 @@ only stable interpretation and priorities.
    render state; next capture its D3D12 pixels and close final PSO overrides,
    survivor ordering, physical aliases, and live descriptors. Generalize the
    now-closed `AnimatorBehaviourPlayEffect._effects[]` owner path from Zhuang
-   Fangyi to the remaining controller records, starting with Camille/Last Rite
-   for unambiguous source-backed materialization and Li Zhiyan/Wulfa for retail
+   Fangyi to the remaining controller records. Last Rite's independently
+   AssetMap-proven head effect is now executable: its 8-node hierarchy, five
+   particle pairs, head mesh, exact 3.5/13.5 timing, eight ordered controller
+   requests, and unique `Bip001_HeadNub` binding pass Unity validation. Its six
+   VFXBaseV2 materials remain ColorMask-0 fail-closed, and the other seven
+   Last Rite requests remain explicitly unbound. Continue with those material
+   specializations/textures and Li Zhiyan/Wulfa for retail
    visual acceptance, preserving each exact prefab, mount, delay, duration,
    and teardown contract; recover full hierarchy/PPtr mounts before Pograni's
    eight ambiguous entries; and
@@ -1470,7 +1478,10 @@ only stable interpretation and priorities.
    as visual acceptance bounds without promoting them to ownership evidence.
    use the now-complete 31-prefab Viewer catalog for the next shared-Viewer
    visual capture; generated Gacha-runtime validation remains independently
-   green.
+   green. RenderDoc 1.45 provides a real retail D3D12 attach/inject path, but
+   no retail `.rdc` exists yet; Unity auto-capture and the Frida renderer-list
+   trace are not substitutes. Stop if normal attachment is rejected and keep
+   the PathID-to-draw correlation boundary explicit.
 6. Add controller, grounding, facial, FX, and secondary systems behind
    source-validated fail-closed gates.
 7. Upgrade representative non-playable families before broad parity claims.
