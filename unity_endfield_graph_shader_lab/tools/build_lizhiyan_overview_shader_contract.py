@@ -7,6 +7,7 @@ import hashlib
 import json
 import re
 import shutil
+import subprocess
 from collections import Counter
 from pathlib import Path
 from typing import Any
@@ -24,6 +25,8 @@ SHADER_CHUNK_SHA256 = "BDB0DD43442A795FE67D0722667D0F3B9A33AFBD42BC477C5DA63CC43
 OUT = LAB / "Assets/EndfieldGraphShaderLab/Generated/OriginalData/ShaderEvidence/LiZhiyanOverviewFinger"
 CONTRACT = OUT / "lizhiyan_overview_vfxbasev2_variants.json"
 SHADER_PATH_ID = -1430105248647086886
+FXC = Path(r"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\fxc.exe")
+FXC_SHA256 = "005EFF830845789C7EFB2831A0B41950EE6954E9BCD93BAF50DE67AD537728B2"
 VARIANT_FILES = {
     "": {"slug": "base", "hlsl": "base", "vertex": "0000", "fragment": "0001"},
     "_USE_SOFTBLEND": {"slug": "use_softblend", "hlsl": "use_softblend", "vertex": "0846", "fragment": "0847"},
@@ -31,6 +34,26 @@ VARIANT_FILES = {
         "slug": "sample_tex0___use_softblend", "hlsl": "sample_tex0_use_softblend",
         "vertex": "0864", "fragment": "0865"
     },
+}
+FRAGMENT_RESOURCE_SEMANTICS = {
+    "": [
+        {"textureRegister": 0, "samplerRegister": 0,
+         "texture": "_MainTex", "sampler": "LinearClamp"},
+    ],
+    "_USE_SOFTBLEND": [
+        {"textureRegister": 0, "samplerRegister": 0,
+         "texture": "_CameraDepthTexture", "sampler": "LinearClamp"},
+        {"textureRegister": 1, "samplerRegister": 1,
+         "texture": "_MainTex", "sampler": "LinearRepeat"},
+    ],
+    "_SAMPLE_TEX0+_USE_SOFTBLEND": [
+        {"textureRegister": 0, "samplerRegister": 0,
+         "texture": "_CameraDepthTexture", "sampler": "LinearClamp"},
+        {"textureRegister": 1, "samplerRegister": 1,
+         "texture": "_MainTex", "sampler": "LinearRepeat"},
+        {"textureRegister": 2, "samplerRegister": 2,
+         "texture": "_SampleTex0", "sampler": "LinearMirror"},
+    ],
 }
 RUNTIME_ROOT = (
     REPO / "tools/FractalMiner/Assets/Project/EndField/HGRP/packages/"
@@ -96,9 +119,57 @@ def hlsl_signature(path: Path) -> dict[str, Any]:
     }
 
 
+def exact_dxbc_assembly(binary: Path, output: Path) -> dict[str, Any]:
+    output.parent.mkdir(parents=True, exist_ok=True)
+    subprocess.run(
+        [str(FXC), "/dumpbin", "/Fc", str(output), str(binary)],
+        check=True,
+        cwd=REPO,
+        stdout=subprocess.DEVNULL,
+    )
+    text = output.read_text(encoding="utf-8-sig", errors="strict")
+    text = "\n".join(line.rstrip() for line in text.splitlines()) + "\n"
+    output.write_text(text, encoding="utf-8", newline="\n")
+    cbuffers = {
+        int(register): int(length)
+        for register, length in re.findall(
+            r"^dcl_constantbuffer CB(\d+)\[(\d+)\]", text, re.MULTILINE
+        )
+    }
+    accesses: dict[int, set[int]] = {}
+    for register, index in re.findall(r"\bcb(\d+)\[(\d+)\]", text):
+        accesses.setdefault(int(register), set()).add(int(index))
+    sample_pairs = sorted({
+        (int(texture), int(sampler))
+        for texture, sampler in re.findall(
+            r"^sample\w*[^\n]*\bt(\d+)(?:\.[xyzw]+)?,\s*s(\d+)\b",
+            text,
+            re.MULTILINE,
+        )
+    })
+    return {
+        "artifact": {
+            "path": output.resolve().relative_to(REPO.resolve()).as_posix(),
+            "bytes": output.stat().st_size,
+            "sha256": sha256(output),
+        },
+        "shaderModel": next((line.strip() for line in text.splitlines()
+                             if re.fullmatch(r"[vp]s_\d+_\d+", line.strip())), None),
+        "constantBufferFloat4Lengths": {str(key): value for key, value in sorted(cbuffers.items())},
+        "constantBufferAccessedIndices": {
+            str(key): sorted(value) for key, value in sorted(accesses.items())
+        },
+        "textureSamplerPairs": [
+            {"textureRegister": texture, "samplerRegister": sampler}
+            for texture, sampler in sample_pairs
+        ],
+    }
+
+
 def main() -> int:
     require(sha256(SOURCE) == SOURCE_SHA256, "Persistent VFXBaseV2 shader export drifted")
     require(sha256(SHADER_CHUNK) == SHADER_CHUNK_SHA256, "Persistent shader CHK drifted")
+    require(sha256(FXC) == FXC_SHA256, "Windows SDK FXC drifted")
     shader_text = SOURCE.read_text(encoding="utf-8-sig", errors="strict")
     require('Name "ForwardOnly"' in shader_text and "GpuProgramID 59433" in shader_text,
             "Persistent VFXBaseV2 pass identity drifted")
@@ -182,10 +253,29 @@ def main() -> int:
                 "debugName": meta.get("DebugName"),
                 "descriptorReflectionBoundary": "serialized metadata is partial; live D3D descriptor-table contents are not captured",
             }
+            stages[stage]["exactAssembly"] = exact_dxbc_assembly(
+                binary, OUT / f"{slug}.{stage}.dxbc.asm.txt"
+            )
         hlsl = HLSL_ROOT / f"{files['hlsl']}.fragment.hlsl"
         require(hlsl.is_file(), "Persistent Ruri output is missing")
         stages["fragment"]["ruriHlsl"] = copy_artifact(hlsl, f"{slug}.fragment.ruri.hlsl.txt")
         stages["fragment"]["registerSignature"] = hlsl_signature(hlsl)
+        actual_pairs = stages["fragment"]["exactAssembly"]["textureSamplerPairs"]
+        semantic_pairs = FRAGMENT_RESOURCE_SEMANTICS[key]
+        require(actual_pairs == [
+            {"textureRegister": row["textureRegister"], "samplerRegister": row["samplerRegister"]}
+            for row in semantic_pairs
+        ], f"fragment texture/sampler ABI drifted for {key or 'BASE'}")
+        stages["fragment"]["staticResourceSemantics"] = {
+            "status": "variant_delta_and_coordinate_use_closed_live_descriptor_identity_pending",
+            "constantBuffers": {
+                "b0": "_TransformVariables_structural_match",
+                "b1": "ShaderVariablesGlobal_structural_match",
+                "b2": "unresolved_auxiliary_particle_or_per_draw",
+                "b3": "UnityPerMaterial_semantic_match_lane_names_unresolved",
+            },
+            "texturesAndSamplers": semantic_pairs,
+        }
         output_variants.append({
             "materialKeywords": [item for item in key.split("+") if item],
             "materials": [
@@ -211,6 +301,7 @@ def main() -> int:
             "shaderChunkSha256": sha256(SHADER_CHUNK),
             "overlaySelection": "Persistent VFS overrides the same StreamingAssets Shader PathID for the installed client",
         },
+        "tools": {"fxc": str(FXC), "fxcSha256": sha256(FXC)},
         "summary": {"materials": 6, "compiledKeywordSignatures": 1360,
                     "materialKeywordSignatures": 3, "exactNonInstancedDxbcPairs": 3,
                     "verifiedInstancedDxbcPairs": 3},

@@ -1502,11 +1502,16 @@ only stable interpretation and priorities.
    copy. Its 1,360 compiled D3D11 keyword signatures are uniquely stage-paired;
    the six materials map exactly to three non-instanced VS/PS pairs (base,
    `_USE_SOFTBLEND`, and `_SAMPLE_TEX0+_USE_SOFTBLEND`) plus their three
-   SRP-instanced pairs. Exact bytes, metadata, Ruri register signatures, dual
-   MRT outputs, Persistent source/chunk hashes, and the native-static queue
+   SRP-instanced pairs. Exact bytes, FXC assembly, metadata, Ruri register
+   signatures, dual MRT outputs, Persistent source/chunk hashes, and the native-static queue
    `3660..3740` after-DOF attachment contract are pinned and validated in the
-   Unity lab. `HG_ENABLE_MV` remains an implicit compiled keyword, not a
-   serialized material keyword.
+   Unity lab. The pixel ABI is now exact: common `b0[28]/b1[105]/b2[5]`,
+   variant `b3[21/22/28]`, and one/two/three exact `tN/sN` sample pairs.
+   This closes static resource semantics but not the live descriptor identity.
+   The lab's after-DOF attachments match the source schedule; explicit
+   `_VFXParams1`, exact inverse-VP soft depth, live root-signature/PSO, and
+   renderer-list survivor identity remain missing. `HG_ENABLE_MV` remains an
+   implicit compiled keyword, not a serialized material keyword.
    All 12 controller requests are preserved; the other 11
    remain explicitly unbound. Its `38-47 s` retail slot, especially the
    hand-adjacent teal layer near 40 seconds, is the current strongest visual
