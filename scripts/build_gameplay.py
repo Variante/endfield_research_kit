@@ -103,7 +103,24 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
             "Hash-gated GameplayTag runtime JSONL to merge during the base stage."
         ),
     )
-    return parser.parse_args(argv)
+    parser.add_argument(
+        "--audit-scope",
+        choices=("active", "full"),
+        default="active",
+        help="Audit scope for the audit stage (default: active; full scans exported BuffData).",
+    )
+    parser.add_argument(
+        "--export-root",
+        type=Path,
+        help="Export root for --audit-scope full.",
+    )
+    args = parser.parse_args(argv)
+    selected_stages = set(args.stage or STAGES)
+    if args.export_root is not None and args.audit_scope != "full":
+        parser.error("--export-root requires --audit-scope full")
+    if (args.audit_scope != "active" or args.export_root is not None) and "audit" not in selected_stages:
+        parser.error("--audit-scope/--export-root require the audit stage to be selected")
+    return args
 
 
 def run_stage(stage: str, args: argparse.Namespace) -> int:
@@ -153,6 +170,13 @@ def run_stage(stage: str, args: argparse.Namespace) -> int:
         else:
             from gameplay_builder import recovery_audit
 
+        audit_scope = getattr(args, "audit_scope", "active")
+        if audit_scope == "full":
+            audit_args = ["--full-corpus"]
+            export_root = getattr(args, "export_root", None)
+            if export_root:
+                audit_args.extend(("--export-root", str(export_root)))
+            return int(recovery_audit.main(audit_args) or 0)
         for language in languages:
             input_path = (
                 WEBUI_DATA_ROOT / "lang" / str(language).upper() / "gameplay" / "index.json"
@@ -163,7 +187,8 @@ def run_stage(stage: str, args: argparse.Namespace) -> int:
                     file=sys.stderr,
                 )
                 return 1
-            result = int(recovery_audit.main(["--input", str(input_path)]) or 0)
+            audit_args = ["--input", str(input_path)]
+            result = int(recovery_audit.main(audit_args) or 0)
             if result:
                 return result
         return 0
