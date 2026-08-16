@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using EndfieldGraphShaderLab;
@@ -100,6 +101,13 @@ namespace EndfieldGraphShaderLabEditor
             },
         };
 
+        private static readonly string[] PeakEffectRoots =
+        {
+            "P_fxui_lizhiyan_overview_start_04",
+            "P_fxui_lizhiyan_overview_start_04_1",
+            "P_fxui_lizhiyan_overview_start_04_2",
+        };
+
         private static readonly CaptureAnchor[] Anchors =
         {
             Anchor(37967, "candidate_restart"),
@@ -146,6 +154,7 @@ namespace EndfieldGraphShaderLabEditor
                 GameObject actorPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(ActorPrefabPath);
                 Require(actorPrefab != null, "Li Zhiyan actor prefab is missing: " + ActorPrefabPath);
                 GameObject[] effectPrefabs = LoadEffectPrefabs();
+                GameObject[] peakEffectPrefabs = LoadPeakEffectPrefabs();
                 AnimationClip actorClip = AssetDatabase.LoadAssetAtPath<AnimationClip>(ActorClipPath);
                 Require(actorClip != null, "Li Zhiyan actor clip is missing: " + ActorClipPath);
                 CharacterRecoveryPresentationProfile profile =
@@ -162,9 +171,19 @@ namespace EndfieldGraphShaderLabEditor
                 GameObject cameraObject = null;
                 RenderTexture target = null;
                 Texture2D readback = null;
+                float priorSceneMvReady =
+                    Shader.GetGlobalFloat("_EndfieldSceneMVMRTReady");
+                float priorVfxGlobalsReady =
+                    Shader.GetGlobalFloat("_EndfieldRecoveredVFXGlobalsReady");
+                Vector4 priorExposureParams = Shader.GetGlobalVector("_ExposureParams");
                 try
                 {
-                    bundle = InstantiateBundle(actorPrefab, effectPrefabs, actorClip, captureScene);
+                    Shader.SetGlobalFloat("_EndfieldSceneMVMRTReady", 1f);
+                    Shader.SetGlobalFloat("_EndfieldRecoveredVFXGlobalsReady", 1f);
+                    Shader.SetGlobalVector(
+                        "_ExposureParams", new Vector4(1f, 0f, 0f, 0f));
+                    bundle = InstantiateBundle(
+                        actorPrefab, effectPrefabs, peakEffectPrefabs, actorClip, captureScene);
                     ValidateEffectContracts(bundle);
                     Camera camera = CreateSourceCamera(bundle.actor.transform, profile, out cameraObject);
                     target = CreateTarget();
@@ -188,6 +207,19 @@ namespace EndfieldGraphShaderLabEditor
                         {
                             Start01PrefabPath, Start02PrefabPath, Start03PrefabPath,
                         },
+                        sourcePeakParticleContract =
+                            EndfieldLiZhiyanOverviewPeakParticleEffectImporter.ContractPath,
+                        sourcePeakParticleContractSha256 = Sha256File(ProjectAbsolute(
+                            EndfieldLiZhiyanOverviewPeakParticleEffectImporter.ContractPath)),
+                        sourcePeakParticlePrefabs = PeakEffectRoots.Select(
+                            EndfieldLiZhiyanOverviewPeakParticleEffectImporter.PrefabPath).ToArray(),
+                        manualPeakParticleSimulation = true,
+                        peakParticleSimulationMode =
+                            "each_particle_system_simulate_local_time_with_children_false_restart_true_fixed_time_then_play_without_time_advance_for_renderer_submission",
+                        peakParticleMaterialMode =
+                            "diagnostic_vfxbasev2_sample_stack_source_queue_soft_blend_disabled",
+                        peakParticleBatchmodeTransport =
+                            "unity_particle_renderer_paused_buffer_bakemesh_billboard_proxy",
                         sourceSpec = SpecPath,
                         sourceSpecSha256 = Sha256File(ProjectAbsolute(SpecPath)),
                         retailOracle = RetailOraclePath,
@@ -234,7 +266,7 @@ namespace EndfieldGraphShaderLabEditor
                     {
                         CaptureAnchor anchor = Anchors[anchorIndex];
                         float localSeconds = anchor.localSeconds;
-                        SampleBundle(bundle, localSeconds);
+                        SampleBundle(bundle, camera, localSeconds);
                         RetailSample oracleSample = FindOracleSample(oracle, anchor.retailPts);
                         ActorComposedCaptureRecord capture = new ActorComposedCaptureRecord
                         {
@@ -246,6 +278,7 @@ namespace EndfieldGraphShaderLabEditor
                             actorClipSampleSeconds = ActorClipSampleTime(bundle, localSeconds),
                             actorClipClampedAfterEnd = localSeconds > actorClip.length,
                             effectsAllInactive = !AnyEffectActive(localSeconds),
+                            peakParticleAliveCount = CountPeakParticles(bundle),
                         };
 
                         ConfigureVisibility(bundle, localSeconds, true, -1);
@@ -260,6 +293,10 @@ namespace EndfieldGraphShaderLabEditor
                         capture.effectsOnly = CaptureNamedFrame(
                             camera, target, readback, outputDirectory,
                             "effects_only_" + Pts(anchor.retailPts) + ".png", oracleSample);
+                        ConfigureVisibility(bundle, localSeconds, false, -4);
+                        capture.peakParticlesOnly = CaptureNamedFrame(
+                            camera, target, readback, outputDirectory,
+                            "peak_particles_only_" + Pts(anchor.retailPts) + ".png", oracleSample);
 
                         capture.roots = new RootCaptureRecord[Roots.Length];
                         for (int rootIndex = 0; rootIndex < Roots.Length; rootIndex++)
@@ -294,6 +331,11 @@ namespace EndfieldGraphShaderLabEditor
                 }
                 finally
                 {
+                    Shader.SetGlobalFloat(
+                        "_EndfieldSceneMVMRTReady", priorSceneMvReady);
+                    Shader.SetGlobalFloat(
+                        "_EndfieldRecoveredVFXGlobalsReady", priorVfxGlobalsReady);
+                    Shader.SetGlobalVector("_ExposureParams", priorExposureParams);
                     Release(readback);
                     Release(target);
                     if (cameraObject != null)
@@ -335,6 +377,7 @@ namespace EndfieldGraphShaderLabEditor
         private static ActorBundle InstantiateBundle(
             GameObject actorPrefab,
             GameObject[] effectPrefabs,
+            GameObject[] peakEffectPrefabs,
             AnimationClip actorClip,
             Scene captureScene)
         {
@@ -363,6 +406,9 @@ namespace EndfieldGraphShaderLabEditor
                 actorRenderers = actorRenderers,
                 effects = new GameObject[Roots.Length],
                 markers = new EndfieldRecoveredStaticMeshEffectSource[Roots.Length],
+                peakEffects = new GameObject[PeakEffectRoots.Length],
+                peakMarkers = new EndfieldRecoveredParticleEffectSource[PeakEffectRoots.Length],
+                peakBakeProxies = new List<PeakBakeProxy>(),
             };
 
             for (int index = 0; index < Roots.Length; index++)
@@ -384,7 +430,99 @@ namespace EndfieldGraphShaderLabEditor
                 DisableAutonomousPlayback(effect);
                 CloneDiagnosticMaterials(effect, Roots[index]);
             }
+            for (int index = 0; index < PeakEffectRoots.Length; index++)
+            {
+                GameObject effect = PrefabUtility.InstantiatePrefab(
+                    peakEffectPrefabs[index], captureScene) as GameObject;
+                Require(effect != null, "Could not instantiate peak particle prefab: " +
+                    PeakEffectRoots[index]);
+                effect.name = PeakEffectRoots[index];
+                effect.transform.SetParent(actor.transform, false);
+                effect.transform.localPosition = Vector3.zero;
+                effect.transform.localRotation = Quaternion.identity;
+                effect.transform.localScale = Vector3.one;
+                EndfieldRecoveredParticleEffectSource marker =
+                    effect.GetComponent<EndfieldRecoveredParticleEffectSource>();
+                Require(marker != null && marker.effectRoot == PeakEffectRoots[index],
+                    "Peak particle marker identity drifted");
+                DisablePeakAutonomousPlayback(effect);
+                ApplyPeakDiagnosticMaterials(effect, marker);
+                bundle.peakEffects[index] = effect;
+                bundle.peakMarkers[index] = marker;
+                foreach (ParticleSystemRenderer sourceRenderer in
+                    effect.GetComponentsInChildren<ParticleSystemRenderer>(true))
+                {
+                    GameObject proxyObject = new GameObject(
+                        sourceRenderer.gameObject.name + ".PeakBatchmodeBakeProxy");
+                    SceneManager.MoveGameObjectToScene(proxyObject, captureScene);
+                    MeshFilter filter = proxyObject.AddComponent<MeshFilter>();
+                    MeshRenderer proxyRenderer = proxyObject.AddComponent<MeshRenderer>();
+                    Mesh mesh = new Mesh
+                    {
+                        name = sourceRenderer.gameObject.name + ".PeakBakedParticles",
+                    };
+                    filter.sharedMesh = mesh;
+                    proxyRenderer.sharedMaterials = sourceRenderer.sharedMaterials;
+                    proxyRenderer.enabled = false;
+                    sourceRenderer.enabled = false;
+                    bundle.peakBakeProxies.Add(new PeakBakeProxy
+                    {
+                        rootIndex = index,
+                        system = sourceRenderer.GetComponent<ParticleSystem>(),
+                        sourceRenderer = sourceRenderer,
+                        proxyObject = proxyObject,
+                        proxyRenderer = proxyRenderer,
+                        mesh = mesh,
+                    });
+                }
+            }
             return bundle;
+        }
+
+        private static void DisablePeakAutonomousPlayback(GameObject root)
+        {
+            foreach (ParticleSystem system in root.GetComponentsInChildren<ParticleSystem>(true))
+            {
+                ParticleSystem.MainModule main = system.main;
+                main.playOnAwake = false;
+                system.Stop(false, ParticleSystemStopBehavior.StopEmittingAndClear);
+            }
+        }
+
+        private static void ApplyPeakDiagnosticMaterials(
+            GameObject root,
+            EndfieldRecoveredParticleEffectSource marker)
+        {
+            foreach (EndfieldRecoveredParticleNodeSource node in marker.particleNodes)
+            {
+                Transform host = FindHierarchy(root.transform, node.hierarchy);
+                Require(host != null, "Peak particle hierarchy is missing: " + node.hierarchy);
+                ParticleSystemRenderer renderer = host.GetComponent<ParticleSystemRenderer>();
+                Require(renderer != null && renderer.sharedMaterials.Length == node.materialPathIds.Length,
+                    "Peak particle material census drifted: " + node.hierarchy);
+                Material[] replacements = new Material[node.materialPathIds.Length];
+                for (int index = 0; index < replacements.Length; index++)
+                {
+                    Material source = renderer.sharedMaterials[index];
+                    string path = EndfieldLiZhiyanOverviewPeakParticleEffectImporter.DiagnosticMaterialPath(
+                        source.name, node.materialPathIds[index]);
+                    replacements[index] = AssetDatabase.LoadAssetAtPath<Material>(path);
+                    Require(replacements[index] != null,
+                        "Peak diagnostic material is missing: " + path);
+                }
+                renderer.sharedMaterials = replacements;
+            }
+        }
+
+        private static Transform FindHierarchy(Transform root, string hierarchy)
+        {
+            string[] parts = hierarchy.Split('/');
+            Require(parts.Length > 0 && parts[0] == root.name,
+                "Peak hierarchy root drifted: " + hierarchy);
+            Transform cursor = root;
+            for (int index = 1; index < parts.Length && cursor != null; index++)
+                cursor = cursor.Find(parts[index]);
+            return cursor;
         }
 
         private static void DisableAutonomousPlayback(GameObject root)
@@ -428,7 +566,8 @@ namespace EndfieldGraphShaderLabEditor
             }
         }
 
-        private static void SampleBundle(ActorBundle bundle, float localSeconds)
+        private static void SampleBundle(
+            ActorBundle bundle, Camera camera, float localSeconds)
         {
             bool actorActive = IsActorActive(bundle, localSeconds);
             bundle.actor.SetActive(actorActive);
@@ -449,6 +588,32 @@ namespace EndfieldGraphShaderLabEditor
                 bundle.markers[index].sourceStartAnimationClip.SampleAnimation(
                     bundle.effects[index], ClipSampleTime(localSeconds));
             }
+            for (int rootIndex = 0; rootIndex < bundle.peakEffects.Length; rootIndex++)
+            {
+                GameObject peak = bundle.peakEffects[rootIndex];
+                peak.SetActive(actorActive);
+                foreach (ParticleSystem system in peak.GetComponentsInChildren<ParticleSystem>(true))
+                {
+                    system.Stop(false, ParticleSystemStopBehavior.StopEmittingAndClear);
+                    if (actorActive)
+                        system.Simulate(Mathf.Max(0f, localSeconds), false, true, true);
+                    if (actorActive && system.particleCount > 0)
+                        system.Play(false);
+                }
+            }
+            foreach (PeakBakeProxy proxy in bundle.peakBakeProxies)
+            {
+                proxy.mesh.Clear();
+                if (actorActive && proxy.system.particleCount > 0)
+                {
+                    proxy.sourceRenderer.BakeMesh(
+                        proxy.mesh,
+                        camera,
+                        ParticleSystemBakeMeshOptions.BakePosition |
+                            ParticleSystemBakeMeshOptions.BakeRotationAndScale);
+                }
+                proxy.hasGeometry = proxy.mesh.vertexCount > 0;
+            }
         }
 
         private static void ConfigureVisibility(
@@ -468,8 +633,29 @@ namespace EndfieldGraphShaderLabEditor
                     active &= effectSelection == index;
                 else if (effectSelection == -2)
                     active = false;
+                else if (effectSelection == -4)
+                    active = false;
                 bundle.effects[index].SetActive(active);
             }
+            for (int index = 0; index < bundle.peakEffects.Length; index++)
+            {
+                bool active = actorActive &&
+                    (composite || effectSelection == -3 || effectSelection == -4);
+                bundle.peakEffects[index].SetActive(active);
+            }
+            bool peakVisible = actorActive &&
+                (composite || effectSelection == -3 || effectSelection == -4);
+            foreach (PeakBakeProxy proxy in bundle.peakBakeProxies)
+                proxy.proxyRenderer.enabled = peakVisible && proxy.hasGeometry;
+        }
+
+        private static int CountPeakParticles(ActorBundle bundle)
+        {
+            int count = 0;
+            foreach (GameObject root in bundle.peakEffects)
+                foreach (ParticleSystem system in root.GetComponentsInChildren<ParticleSystem>(true))
+                    count += system.particleCount;
+            return count;
         }
 
         private static void SetActorRenderersEnabled(Renderer[] renderers, bool enabled)
@@ -835,6 +1021,20 @@ namespace EndfieldGraphShaderLabEditor
             return prefabs;
         }
 
+        private static GameObject[] LoadPeakEffectPrefabs()
+        {
+            GameObject[] prefabs = new GameObject[PeakEffectRoots.Length];
+            for (int index = 0; index < PeakEffectRoots.Length; index++)
+            {
+                string path = EndfieldLiZhiyanOverviewPeakParticleEffectImporter.PrefabPath(
+                    PeakEffectRoots[index]);
+                prefabs[index] = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                Require(prefabs[index] != null,
+                    "Peak particle prefab is missing: " + path);
+            }
+            return prefabs;
+        }
+
         private static void ValidateEffectContracts(ActorBundle bundle)
         {
             AnimationClip sharedClip = null;
@@ -948,6 +1148,14 @@ namespace EndfieldGraphShaderLabEditor
             Require(string.Equals(manifest.retailOracleSha256,
                 Sha256File(ProjectAbsolute(RetailOraclePath)), StringComparison.OrdinalIgnoreCase),
                 "Actor-composed retail oracle hash drifted");
+            Require(manifest.manualPeakParticleSimulation &&
+                manifest.sourcePeakParticlePrefabs != null &&
+                manifest.sourcePeakParticlePrefabs.Length == PeakEffectRoots.Length &&
+                string.Equals(manifest.sourcePeakParticleContractSha256,
+                    Sha256File(ProjectAbsolute(
+                        EndfieldLiZhiyanOverviewPeakParticleEffectImporter.ContractPath)),
+                    StringComparison.OrdinalIgnoreCase),
+                "Actor-composed peak-particle source/gate drifted");
 
             string baselinePath = RepositoryAbsolute(BaselineManifestRelativePath);
             Require(manifest.baselinePreserved &&
@@ -959,6 +1167,7 @@ namespace EndfieldGraphShaderLabEditor
             string outputDirectory = RepositoryAbsolute(OutputDirectoryRelativePath);
             bool[] foundVisibleRoot = new bool[Roots.Length];
             bool foundVisibleActor = false;
+            bool foundVisiblePeakParticles = false;
             for (int anchorIndex = 0; anchorIndex < Anchors.Length; anchorIndex++)
             {
                 CaptureAnchor expected = Anchors[anchorIndex];
@@ -966,13 +1175,18 @@ namespace EndfieldGraphShaderLabEditor
                 Require(capture != null && capture.retailPts == expected.retailPts &&
                     Mathf.Abs(capture.localSeconds - expected.localSeconds) < 0.00001f &&
                     capture.composite != null && capture.actorOnly != null &&
-                    capture.effectsOnly != null && capture.roots != null &&
+                    capture.effectsOnly != null && capture.peakParticlesOnly != null &&
+                    capture.peakParticleAliveCount >= 0 && capture.roots != null &&
                     capture.roots.Length == Roots.Length,
                     "Actor-composed capture timing/shape drifted at PTS " + expected.retailPts);
                 ValidateFrame(capture.composite, outputDirectory, expected.retailPts, "composite");
                 ValidateFrame(capture.actorOnly, outputDirectory, expected.retailPts, "actor_only");
                 ValidateFrame(capture.effectsOnly, outputDirectory, expected.retailPts, "effects_only");
+                ValidateFrame(capture.peakParticlesOnly, outputDirectory, expected.retailPts,
+                    "peak_particles_only");
                 foundVisibleActor |= capture.actorOnly.nonBackgroundCoverage > 0f;
+                foundVisiblePeakParticles |= capture.peakParticleAliveCount > 0 &&
+                    capture.peakParticlesOnly.nonBackgroundCoverage > 0f;
 
                 for (int rootIndex = 0; rootIndex < Roots.Length; rootIndex++)
                 {
@@ -1004,6 +1218,8 @@ namespace EndfieldGraphShaderLabEditor
                         "Retail ROI comparison rows missing at PTS " + expected.retailPts);
             }
             Require(foundVisibleActor, "No actor-only capture produced visible pixels");
+            Require(foundVisiblePeakParticles,
+                "No live peak-particle capture produced visible pixels");
             for (int index = 0; index < Roots.Length; index++)
                 Require(foundVisibleRoot[index],
                     "No root-only capture produced visible pixels for " + Roots[index].key);
@@ -1031,6 +1247,7 @@ namespace EndfieldGraphShaderLabEditor
             string[] patterns =
             {
                 "composite_*.png", "actor_only_*.png", "effects_only_*.png",
+                "peak_particles_only_*.png",
                 "start_01_only_*.png", "start_02_only_*.png", "start_03_only_*.png",
             };
             for (int patternIndex = 0; patternIndex < patterns.Length; patternIndex++)
@@ -1123,6 +1340,9 @@ namespace EndfieldGraphShaderLabEditor
             public Renderer[] actorRenderers;
             public GameObject[] effects;
             public EndfieldRecoveredStaticMeshEffectSource[] markers;
+            public GameObject[] peakEffects;
+            public EndfieldRecoveredParticleEffectSource[] peakMarkers;
+            public List<PeakBakeProxy> peakBakeProxies;
 
             public void Release()
             {
@@ -1132,9 +1352,36 @@ namespace EndfieldGraphShaderLabEditor
                         if (effects[index] != null)
                             UnityEngine.Object.DestroyImmediate(effects[index]);
                 }
+                if (peakEffects != null)
+                {
+                    for (int index = 0; index < peakEffects.Length; index++)
+                        if (peakEffects[index] != null)
+                            UnityEngine.Object.DestroyImmediate(peakEffects[index]);
+                }
+                if (peakBakeProxies != null)
+                {
+                    foreach (PeakBakeProxy proxy in peakBakeProxies)
+                    {
+                        if (proxy.proxyObject != null)
+                            UnityEngine.Object.DestroyImmediate(proxy.proxyObject);
+                        if (proxy.mesh != null)
+                            UnityEngine.Object.DestroyImmediate(proxy.mesh);
+                    }
+                }
                 if (actor != null)
                     UnityEngine.Object.DestroyImmediate(actor);
             }
+        }
+
+        private sealed class PeakBakeProxy
+        {
+            public int rootIndex;
+            public ParticleSystem system;
+            public ParticleSystemRenderer sourceRenderer;
+            public GameObject proxyObject;
+            public MeshRenderer proxyRenderer;
+            public Mesh mesh;
+            public bool hasGeometry;
         }
 
         [Serializable]
@@ -1242,6 +1489,13 @@ namespace EndfieldGraphShaderLabEditor
             public string sourceActorClip;
             public string sourceProfile;
             public string[] sourceEffectPrefabs;
+            public string sourcePeakParticleContract;
+            public string sourcePeakParticleContractSha256;
+            public string[] sourcePeakParticlePrefabs;
+            public bool manualPeakParticleSimulation;
+            public string peakParticleSimulationMode;
+            public string peakParticleBatchmodeTransport;
+            public string peakParticleMaterialMode;
             public string sourceSpec;
             public string sourceSpecSha256;
             public string retailOracle;
@@ -1305,9 +1559,11 @@ namespace EndfieldGraphShaderLabEditor
             public float actorClipSampleSeconds;
             public bool actorClipClampedAfterEnd;
             public bool effectsAllInactive;
+            public int peakParticleAliveCount;
             public FrameRecord composite;
             public FrameRecord actorOnly;
             public FrameRecord effectsOnly;
+            public FrameRecord peakParticlesOnly;
             public RootCaptureRecord[] roots;
             public RetailRoiComparison[] roiComparisons;
         }

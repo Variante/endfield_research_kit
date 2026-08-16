@@ -4211,8 +4211,8 @@ Li overview-start actor clip and all three effects on one explicit clock, uses
 the source overview position/LookAt/FOV/clip planes, and records the authored
 camera quaternion separately from its inferred hierarchy LookRotation.
 Four-corner background consensus remains stable when the animated coat crosses
-a frame corner. Predicate-only retail ROI comparison shows the current
-`broadTeal` peak at PTS 40000 is 3.499% composite versus 21.699% retail, while
+a frame corner. Predicate-only retail ROI comparison showed the static-only
+`broadTeal` peak at PTS 40000 was 3.499% composite versus 21.699% retail, while
 PTS 43000 is 7.618% versus 9.972%; effects are blank at PTS 46000 while the
 actor remains visible. These are diagnostic composition metrics, not retail
 pixels, renderer-list ownership, or native shader parity.
@@ -4225,9 +4225,19 @@ and publishes 17 hierarchy nodes, 14 particle/renderer pairs, eight materials,
 `Generated/OriginalData/Effects/lizhiyan_overview_peak_particle_effects.json`.
 The contract preserves converted-resource hashes and renderer ownership while
 keeping retail `EffectSetting`, selected VFXBaseV2 DXBC/descriptors, native
-after-DOF draw identity, and visible admission explicitly unproven. The next
-step is to materialize its three diagnostic particle prefabs and add them to
-the actor-composed D3D12 peak capture.
+after-DOF draw identity, and visible admission explicitly unproven.
+`EndfieldLiZhiyanOverviewPeakParticleEffectImporter` now materializes the three
+source-identity prefabs, their 14 particle/render pairs, eight fail-closed
+source materials plus diagnostic SampleStack variants, three meshes, and 13
+textures. Because filtered GameObject JSON omits `m_IsActive`, manual capture
+defaults those nodes active and records that retail activation remains
+unproven. The actor-composed D3D12 harness manually samples each particle
+system and uses Unity `BakeMesh` billboard proxies for the known command-line
+paused-buffer submission boundary. At PTS 40000 it records 26 live particles,
+15,962 peak-only non-background pixels, and 4.548% peak-only `broadTeal`;
+composite coverage rises to 7.572% but remains below 21.699% retail. Separate
+manifest validation passes, while every native/retail admission flag remains
+false.
 
 The exact managed LOD renderer bindings are now part of the playable-topology
 contract: start_01 has four non-null MeshRenderer PathIDs and start_02/start_03
