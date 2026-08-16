@@ -1896,16 +1896,21 @@ only stable interpretation and priorities.
    missing positive joins are therefore Li selecting the `0x2730` branch, a
    later `0x2731` in the same after-DOF interval, and attribution of its
    `+0x2b50` callback node to this HGMesh draw rather than another command.
-   The descriptor selector is now traced back through the publication layout:
-   finalizers copy `metadata+0x28` to each 0x90-byte record's `+0x10`, and
-   `0x1810484e0` passes that object to `0x180619cf0`, which reads its dword
-   `+0x450`. The original 64-byte record's packed resolver ID instead lands at
-   publication `+0x84`, so these are distinct fields. Mode 0 chooses the only
+   The descriptor selector is now traced back through the publication layout.
+   Finalizer argument M0 owns a hash table at `M0+0x28`; shift/mask fields at
+   `+0x40/+0x44` select a 0x60-stride entry, whose `+0x28` descriptor D is
+   copied to each 0x90-byte publication record's `+0x10`. `0x1810484e0`
+   preserves D in `r13`: `D+0x450` selects mode while `D+0x60` supplies the
+   resource recorded by opcode `0x2748`. The independent M1 table uses
+   0x38-stride entries and must not be conflated with D. The original 64-byte
+   record's packed resolver ID instead lands at publication `+0x84`. Mode 0 chooses the only
    descriptor-state/conditional-`0x2730` branch; mode 2 chooses resource-cache
    or fallback paths and clears the result; other values also fail/clear. A
    matching 0x4e0 descriptor constructor at `0x180ac63f0` has two direct callers
-   that pass mode 0, but `metadata+0x28` is not yet statically aliased to those
-   products. This is strong layout evidence, not permission to assume Li mode 0.
+   that pass mode 0, but it does not fill the M0 entry and is not statically
+   aliased to D; `0x180ba21b0` and a similar 0x48-stride family are likewise
+   excluded as proven producers. The missing edge is the runtime/indirect
+   population of M0's 0x60-stride `entry+0x28`, not handoff identity loss.
    All six selected materials have `_IsSceneEffect=0` and
    `_EnableTransparentMV=0`, so `_VFXParams1` and transform history are safely
    bypassed rather than guessed. Exact inverse-VP soft depth, live
