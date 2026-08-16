@@ -4133,6 +4133,14 @@ mandatory-next flag or generation between the independent `0x2730/0x2731`
 cases. Admission still requires the Li branch value, a later `0x2731` in the
 same after-DOF interval, and concrete attribution of the resulting `+0x2B50`
 Vulkan callback/draw node to this HGMesh draw-list.
+The selector object itself is now source-bounded: finalizers copy
+`metadata+0x28` into publication record `+0x10`, and the callback passes that
+descriptor to `0x180619CF0`; its `+0x450` is distinct from the original
+64-byte record's packed resolver ID at publication `+0x84`. Mode 0 is the only
+descriptor-state/conditional-`0x2730` path, mode 2 selects cache/fallback and
+clears the output, and other modes also fail/clear. A matching 0x4E0 descriptor
+constructor has two mode-0 callers, but no static alias yet joins its product
+to `metadata+0x28`, so the Li branch remains deliberately unselected.
 The same contract pins `SetManual(bool)`, `ManualEvaluate(float)`,
 `SyncProgress(float)`, time-scale/start-duration/start-
 scale setters, Stop, OnDisable, and OnRelease. Their decoded fallback bodies
