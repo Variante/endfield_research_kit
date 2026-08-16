@@ -178,6 +178,10 @@ namespace EndfieldGraphShaderLabEditor
             Dictionary<string, object> mixer = L.Dict(topology["mixer"]);
             Dictionary<string, object> mixerComparison =
                 L.Dict(mixer["stockAnimationMixerComparison"]);
+            Dictionary<string, object> stateMachine =
+                L.Dict(topology["playAnimationStateMachine"]);
+            Dictionary<string, object> startOnly =
+                L.Dict(topology["liZhiyanStartOnlyEffectiveRoute"]);
             Dictionary<string, object> controlAbi =
                 L.Dict(contract["effectAnimationControlAbi"]);
             Dictionary<string, object> controlMethods = L.Dict(controlAbi["methods"]);
@@ -251,6 +255,14 @@ namespace EndfieldGraphShaderLabEditor
                 L.Str(nativeMixer, "classification") ==
                     "native_create_and_shared_input_semantics_closed_advanced_slots_pending" &&
                 L.List(topology["clipSlots"]).Count == 3 &&
+                L.List(stateMachine["operations"]).Count == 5 &&
+                L.Str(stateMachine, "weightMode") == "one_hot_no_cross_fade" &&
+                Mathf.Abs(L.Float(stateMachine, "validClipTimeResetSeconds")) < 0.000001f &&
+                L.List(startOnly["connectedInputs"]).Count == 1 &&
+                L.List(startOnly["weightsOnStart"]).Count == 3 &&
+                Mathf.Abs(Convert.ToSingle(L.List(startOnly["weightsOnStart"])[0]) - 1.0f) < 0.000001f &&
+                !L.Bool(startOnly, "crossFade") &&
+                L.Str(startOnly, "classification") == "retail_start_only_graph_control_closed" &&
                 L.Str(manualEvaluate, "token") == "0x060059D2" &&
                 L.Str(manualEvaluate, "va") == "0x187431CB0" &&
                 L.List(manualEvaluate["parameters"]).Count == 1 &&

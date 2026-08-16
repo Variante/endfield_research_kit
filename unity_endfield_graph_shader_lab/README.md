@@ -4067,6 +4067,14 @@ currently opts these three roots into manual evaluation, progress sync, or
 duration retiming; speed-one GameTime playback remains the only admitted
 timing statement.
 
+The graph's visible state control is exact as well. `_AddClip` connects each
+non-null clip output zero to mixer input `animationState-1`; null loop/end clips
+return before creation or connection. `_PlayAnimation` writes all three input
+weights one-hot, plays the selected valid clip, pauses every other valid clip,
+and resets each valid clip to time zero. Thus Li's start-only route connects
+only slot zero, writes `[1,0,0]`, then performs `Play` and `SetTime(0)` on the
+start playable. It does not cross-fade or synthesize loop/end playables.
+
 The two sibling roots are now source-closed as the remaining halves of that
 shared clip. `start_02` is a 5-second, three-renderer effect using one Plane009
 mesh and materials 12/13/14; `start_03` is a 7-second, three-renderer effect

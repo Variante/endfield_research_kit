@@ -1707,6 +1707,14 @@ only stable interpretation and priorities.
    different implementations. Thus even the Li start-only graph cannot claim
    exact stock-mixer equivalence. Null-state transitions and extreme
    allocation failure remain open.
+   The managed graph control is now closed beyond construction. `_AddClip`
+   connects each non-null clip from output port zero to mixer input
+   `animationState-1`; Li's null loop/end return before connection. On every
+   state change `_PlayAnimation` writes all three mixer weights one-hot, tests
+   each stored clip, plays the target, pauses other valid clips, resets every
+   valid clip to time zero, and retains the current playable. Li start therefore
+   writes `[1,0,0]`, plays slot zero, resets it to zero, and performs no clip
+   operation for slots one/two. There is no cross-fade in this path.
    The complete control ABI is now pinned as well. `ManualEvaluate(float)`
    evaluates the graph, `SyncProgress(float)` derives a time and delegates to
    it, duration/scale setters refresh root speed, `OnDisable` stops, and
