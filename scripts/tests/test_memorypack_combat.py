@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import ast
 import struct
 import unittest
+from pathlib import Path
 
 from scripts.game_data.memorypack import buff as memorypack_buff
 from scripts.game_data.memorypack.core import (
@@ -17,6 +19,168 @@ from scripts.game_data.memorypack.schemas import (
 
 
 class CombatMemoryPackSchemaTests(unittest.TestCase):
+    def test_bounded_primitives_and_compounds_reject_data_after_limit(self) -> None:
+        with self.assertRaisesRegex(ValueError, "truncated-i32"):
+            memorypack_buff.read_buff_i32_field_bounded(b"\x00" * 8, 0, 3, "fixture.i32")
+        with self.assertRaisesRegex(ValueError, "truncated-f32"):
+            memorypack_buff.read_buff_f32_field_bounded(b"\x00" * 8, 0, 3, "fixture.f32")
+
+        blackboard_float = b"\x03" + struct.pack("<I", 0) + b"\x00" + struct.pack("<f", 1.5)
+        exact, exact_end = memorypack_buff.read_buff_blackboard_float_raw_field_exact(
+            blackboard_float + b"sentinel", 0, "fixture.value",
+        )
+        bounded, bounded_end = memorypack_buff.read_buff_blackboard_float_raw_field_bounded(
+            blackboard_float + b"sentinel", 0, len(blackboard_float), "fixture.value",
+        )
+        self.assertEqual(exact, bounded)
+        self.assertEqual(exact_end, bounded_end)
+        with self.assertRaisesRegex(ValueError, "truncated-f32"):
+            memorypack_buff.read_buff_blackboard_float_raw_field_bounded(
+                blackboard_float + b"sentinel", 0, len(blackboard_float) - 1, "fixture.value",
+            )
+
+    def test_bounded_readers_reject_limit_beyond_data_with_field_diagnostic(self) -> None:
+        data = b"\x00" * 32
+        cases = (
+            (memorypack_buff.read_buff_bool_field_bounded, (data, 0, len(data) + 1, "fixture.bool")),
+            (memorypack_buff.read_buff_i32_field_bounded, (data, 0, len(data) + 1, "fixture.i32")),
+            (memorypack_buff.read_buff_u32_field_bounded, (data, 0, len(data) + 1, "fixture.u32")),
+            (memorypack_buff.read_buff_f32_field_bounded, (data, 0, len(data) + 1, "fixture.f32")),
+            (memorypack_buff.read_buff_memorypack_utf8_string_strict_bounded, (data, 0, len(data) + 1, "fixture.string")),
+            (memorypack_buff.read_buff_blackboard_float_raw_field_bounded, (data, 0, len(data) + 1, "fixture.float")),
+            (memorypack_buff.read_buff_blackboard_string_field_bounded, (data, 0, len(data) + 1, "fixture.stringField")),
+            (memorypack_buff.read_buff_blackboard_vector3_field_bounded, (data, 0, len(data) + 1, "fixture.vector")),
+        )
+        for reader, args in cases:
+            with self.subTest(reader=reader.__name__), self.assertRaisesRegex(ValueError, "fixture.*invalid-limit"):
+                reader(*args)
+        with self.assertRaisesRegex(ValueError, "memorypackUtf8:invalid-limit"):
+            memorypack_buff.read_buff_memorypack_utf8_string_permissive_bounded(
+                data, 0, len(data) + 1,
+            )
+        with self.assertRaisesRegex(ValueError, "fixture.i32:invalid-limit"):
+            memorypack_buff.read_buff_i32_field_bounded(data, 0, -1, "fixture.i32")
+
+    def test_bounded_blackboard_string_and_permissive_string_preserve_semantics(self) -> None:
+        key = b"bb_key"
+        value = b"bb_value"
+        raw = b"\x03" + struct.pack("<I", len(key)) + key + b"\x01" + struct.pack("<I", len(value)) + value
+        exact, exact_end = memorypack_buff.read_buff_blackboard_string_field_exact(raw, 0, "fixture.string")
+        bounded, bounded_end = memorypack_buff.read_buff_blackboard_string_field_bounded(raw + b"sentinel", 0, len(raw), "fixture.string")
+        self.assertEqual(exact, bounded)
+        self.assertEqual(exact_end, bounded_end)
+        value, end, error = memorypack_buff.read_buff_memorypack_utf8_string_permissive_bounded(
+            struct.pack("<I", 4) + b"ab" + b"sentinel", 0, 6,
+        )
+        self.assertIsNone(value)
+        self.assertEqual(4, end)
+        self.assertEqual("invalid-length=4", error)
+        valid, valid_end, valid_error = memorypack_buff.read_buff_memorypack_utf8_string_permissive_bounded(
+            struct.pack("<I", 3) + b"abc" + b"sentinel", 0, 7,
+        )
+        self.assertEqual("abc", valid)
+        self.assertEqual(7, valid_end)
+        self.assertIsNone(valid_error)
+        null, null_end, null_error = memorypack_buff.read_buff_memorypack_utf8_string_permissive_bounded(
+            struct.pack("<I", MEMORYPACK_NULL_COUNT) + b"sentinel", 0, 4,
+        )
+        self.assertIsNone(null)
+        self.assertEqual(4, null_end)
+        self.assertIsNone(null_error)
+        invalid_utf8, invalid_end, invalid_error = memorypack_buff.read_buff_memorypack_utf8_string_permissive_bounded(
+            struct.pack("<I", 2) + b"\xff\xfe" + b"sentinel", 0, 6,
+        )
+        self.assertEqual("��", invalid_utf8)
+        self.assertEqual(6, invalid_end)
+        self.assertIsNone(invalid_error)
+
+        component = b"\x03" + struct.pack("<I", 0) + b"\x00" + struct.pack("<f", 1.0)
+        vector = b"\x03" + component + component + component
+        decoded, end = memorypack_buff.read_buff_blackboard_vector3_field_bounded(
+            vector + b"sentinel", 0, len(vector), "fixture.vector",
+        )
+        self.assertEqual([1.0, 1.0, 1.0], decoded["value"])
+        self.assertEqual(len(vector), end)
+        with self.assertRaisesRegex(ValueError, "truncated-f32"):
+            memorypack_buff.read_buff_blackboard_vector3_field_bounded(
+                vector + b"sentinel", 0, len(vector) - 1, "fixture.vector",
+            )
+
+    def test_bounded_registered_exact_and_partial_paths_reject_cutoff(self) -> None:
+        skill_id = b"eny_fixture_skill"
+        check_skill = b"".join((
+            b"\x71\x05",
+            b"\x01" + struct.pack("<iii", 0, 0, 0),
+            struct.pack("<I", 1),
+            b"\x03" + struct.pack("<I", 0) + b"\x00"
+            + struct.pack("<I", len(skill_id)) + skill_id,
+        ))
+        with self.assertRaisesRegex(ValueError, "invalid-length"):
+            memorypack_buff.consume_buff_check_skill_id_action(
+                check_skill + b"sentinel", 0, len(check_skill) - 1, 1, 5,
+            )
+
+        partial_input = b"\x05\x01" + struct.pack("<I", 0) + b"\x00" * 32
+        with self.assertRaises(ValueError):
+            memorypack_buff.read_buff_create_buff_input_partial(
+                partial_input + b"sentinel", 0, len(partial_input) - 1, "fixture.partial",
+            )
+
+        target_settings = bytes.fromhex(
+            "0d 08 01 00 00 00 00 00 00 ff 00 00 00 00 ff 00 "
+            "00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 "
+            "00 03 ff 00 00 00 00 00 00 00 00 00 00 00 00 01 "
+            "00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 04 "
+            "00 00 00"
+        )
+        interrupt = (
+            bytes([memorypack_buff.BUFF_INTERRUPT_ACTION_TAG, 8])
+            + b"\x01" + struct.pack("<iii", 0, 0, 0)
+            + target_settings + target_settings + struct.pack("<fi", 1.0, 0)
+        )
+        decoded, end = memorypack_buff.consume_buff_interrupt_action(
+            interrupt + b"sentinel", 0, len(interrupt), 1, 8,
+        )
+        self.assertEqual("partial", decoded["decodeStatus"])
+        self.assertEqual(len(interrupt), end)
+        with self.assertRaisesRegex(ValueError, "truncated-f32"):
+            memorypack_buff.consume_buff_interrupt_action(
+                interrupt + b"sentinel", 0, len(interrupt) - 6, 1, 8,
+            )
+
+    def test_registered_consumers_and_bounded_helpers_have_no_direct_unbounded_reads(self) -> None:
+        source = Path(memorypack_buff.__file__).read_text(encoding="utf-8")
+        tree = ast.parse(source)
+        registered = {
+            value.__name__ for value in memorypack_buff.BUFF_ABILITY_ACTION_CONSUME_DECODERS.values()
+        }
+        helper_allowlist = {
+            "read_buff_timeline_force_sync_anim_data",
+            "read_buff_effect_action_cfg_partial",
+            "read_buff_create_buff_input_partial",
+            "read_buff_create_buff_list_partial",
+            "scan_buff_blackboard_float_candidates_before_id",
+        }
+        checked = registered | helper_allowlist
+        forbidden = {
+            "read_buff_i32_field", "read_buff_u32_field", "read_buff_bool_field",
+            "read_buff_f32_field", "read_buff_memorypack_utf8_string_strict",
+            "read_memorypack_utf8_string", "read_buff_blackboard_float_raw_field_exact",
+            "read_buff_blackboard_string_field_exact", "read_buff_blackboard_vector3_field_exact",
+        }
+        violations: list[str] = []
+        for node in tree.body:
+            if not isinstance(node, ast.FunctionDef) or node.name not in checked:
+                continue
+            if "limit" not in {arg.arg for arg in node.args.args}:
+                continue
+            for call in ast.walk(node):
+                if isinstance(call, ast.Call) and isinstance(call.func, ast.Name) and call.func.id in forbidden:
+                    if node.name == "read_buff_bool_field_bounded":
+                        continue
+                    violations.append(f"{node.name}:{call.lineno}->{call.func.id}")
+        self.assertEqual([], violations, "; ".join(violations))
+
     def test_damage_action_is_not_a_streaming_consumer_without_item_boundary(self) -> None:
         self.assertNotIn(
             memorypack_buff.BUFF_DAMAGE_ACTION_TAG,
@@ -96,6 +260,30 @@ class CombatMemoryPackSchemaTests(unittest.TestCase):
         self.assertEqual(4, decoded["targetSource"])
         self.assertEqual(1, decoded["selectorOwner"])
         self.assertEqual("exact-target-settings-selector-data", decoded["semanticStatus"])
+
+    def test_target_settings_bounded_entries_validate_before_null_selector(self) -> None:
+        raw = bytes.fromhex(
+            "0d 08 01 00 00 00 00 00 00 ff 00 00 00 00 ff 00 "
+            "00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 "
+            "00 03 ff 00 00 00 00 00 00 00 00 00 00 00 00 01 "
+            "00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 04 "
+            "00 00 00"
+        )
+        over_limit = len(raw) + 1
+        cases = (
+            (memorypack_buff.buff_target_settings_envelope_limit, (raw, 0, over_limit, "fixture.targetSettings")),
+            (memorypack_buff.read_buff_target_settings_partial, (raw, 0, over_limit, "fixture.targetSettings")),
+            (memorypack_buff.read_buff_target_settings_envelope_partial, (raw, 0, over_limit, "fixture.targetSettings")),
+            (memorypack_buff.read_buff_target_settings_full, (raw, 0, over_limit, "fixture.targetSettings", 0)),
+            (memorypack_buff.read_buff_target_settings_full_or_partial, (raw, 0, over_limit, "fixture.targetSettings")),
+            (memorypack_buff.try_read_buff_target_settings_envelope_partial, (raw, 0, over_limit, "fixture.targetSettings")),
+            (memorypack_buff.read_buff_selector_object_header, (b"\xff", 0, 2, 3, "fixture.selector")),
+        )
+        for reader, args in cases:
+            with self.subTest(reader=reader.__name__), self.assertRaisesRegex(ValueError, "invalid-limit"):
+                reader(*args)
+        with self.assertRaisesRegex(ValueError, "fixture.targetSettings:invalid-limit"):
+            memorypack_buff.read_buff_target_settings_full(raw, 0, -1, "fixture.targetSettings", 0)
 
     def test_modify_dynamic_blackboard_uses_current_native_enum_names(self) -> None:
         self.assertEqual(
