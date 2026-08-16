@@ -734,6 +734,9 @@ namespace EndfieldGraphShaderLabEditor
                 ? (long[])sourceMaterialPathIds.Clone()
                 : new long[materials.Length];
             var materialRows = new MaterialFingerprintRecord[materials.Length];
+            int skinnedBoneCount;
+            string skinnedPoseSha256 = SkinnedPoseSha256(
+                renderer as SkinnedMeshRenderer, out skinnedBoneCount);
             for (int index = 0; index < materials.Length; index++)
             {
                 Material material = materials[index];
@@ -767,6 +770,8 @@ namespace EndfieldGraphShaderLabEditor
                 meshSubMeshCount = mesh != null ? mesh.subMeshCount : 0,
                 meshIndexCount = MeshIndexCount(mesh),
                 localToWorldStateSha256 = MatrixSha256(renderer.localToWorldMatrix),
+                skinnedBoneCount = skinnedBoneCount,
+                skinnedPoseSha256 = skinnedPoseSha256,
                 materials = materialRows,
             };
         }
@@ -810,6 +815,43 @@ namespace EndfieldGraphShaderLabEditor
                     byte[] value = BitConverter.GetBytes(matrix[row, column]);
                     Buffer.BlockCopy(value, 0, bytes, offset, value.Length);
                     offset += value.Length;
+                }
+            }
+            using (SHA256 digest = SHA256.Create())
+            {
+                return string.Concat(digest.ComputeHash(bytes).Select(
+                    value => value.ToString("x2", CultureInfo.InvariantCulture)));
+            }
+        }
+
+        private static string SkinnedPoseSha256(
+            SkinnedMeshRenderer renderer,
+            out int boneCount)
+        {
+            boneCount = 0;
+            if (renderer == null || renderer.sharedMesh == null)
+                return string.Empty;
+            Transform[] bones = renderer.bones;
+            Matrix4x4[] bindposes = renderer.sharedMesh.bindposes;
+            Require(bones != null && bindposes != null &&
+                bones.Length == bindposes.Length && bones.All(bone => bone != null),
+                "Skinned fingerprint bone/bindpose census drifted: " + renderer.name);
+            boneCount = bones.Length;
+            byte[] bytes = new byte[boneCount * 16 * sizeof(float)];
+            int offset = 0;
+            Matrix4x4 worldToRenderer = renderer.transform.worldToLocalMatrix;
+            for (int boneIndex = 0; boneIndex < boneCount; boneIndex++)
+            {
+                Matrix4x4 skinMatrix = worldToRenderer *
+                    bones[boneIndex].localToWorldMatrix * bindposes[boneIndex];
+                for (int row = 0; row < 4; row++)
+                {
+                    for (int column = 0; column < 4; column++)
+                    {
+                        byte[] value = BitConverter.GetBytes(skinMatrix[row, column]);
+                        Buffer.BlockCopy(value, 0, bytes, offset, value.Length);
+                        offset += value.Length;
+                    }
                 }
             }
             using (SHA256 digest = SHA256.Create())
@@ -1349,6 +1391,8 @@ namespace EndfieldGraphShaderLabEditor
             bool foundVisibleActor = false;
             bool foundVisiblePeakParticles = false;
             Dictionary<string, string> stableRendererFingerprints = null;
+            var actorPoseHashes = new Dictionary<string, HashSet<string>>(
+                StringComparer.Ordinal);
             for (int anchorIndex = 0; anchorIndex < Anchors.Length; anchorIndex++)
             {
                 CaptureAnchor expected = Anchors[anchorIndex];
@@ -1362,7 +1406,7 @@ namespace EndfieldGraphShaderLabEditor
                     capture.rendererFingerprintWitness != null,
                     "Actor-composed capture timing/shape drifted at PTS " + expected.retailPts);
                 ValidateRendererFingerprintWitness(
-                    capture, ref stableRendererFingerprints);
+                    capture, ref stableRendererFingerprints, actorPoseHashes);
                 ValidateFrame(capture.composite, outputDirectory, expected.retailPts, "composite");
                 ValidateFrame(capture.actorOnly, outputDirectory, expected.retailPts, "actor_only");
                 ValidateFrame(capture.effectsOnly, outputDirectory, expected.retailPts, "effects_only");
@@ -1407,11 +1451,15 @@ namespace EndfieldGraphShaderLabEditor
             for (int index = 0; index < Roots.Length; index++)
                 Require(foundVisibleRoot[index],
                     "No root-only capture produced visible pixels for " + Roots[index].key);
+            Require(actorPoseHashes.Count > 0 &&
+                actorPoseHashes.Values.Any(values => values.Count > 1),
+                "Actor skinned-pose witness did not change across capture anchors");
         }
 
         private static void ValidateRendererFingerprintWitness(
             ActorComposedCaptureRecord capture,
-            ref Dictionary<string, string> stableFingerprints)
+            ref Dictionary<string, string> stableFingerprints,
+            Dictionary<string, HashSet<string>> actorPoseHashes)
         {
             RendererFingerprintRecord[] rows = capture.rendererFingerprintWitness;
             int pts = capture.retailPts;
@@ -1459,6 +1507,24 @@ namespace EndfieldGraphShaderLabEditor
                     expectedActorRows++;
                     Require(row.activeInHierarchy == capture.actorActive,
                         "Actor witness lifecycle drifted at PTS " + pts);
+                    if (row.skinnedBoneCount > 0)
+                    {
+                        Require(row.skinnedPoseSha256 != null &&
+                            row.skinnedPoseSha256.Length == 64,
+                            "Actor skinned-pose hash drifted at PTS " + pts);
+                        if (!actorPoseHashes.TryGetValue(row.identityKey,
+                            out HashSet<string> hashes))
+                        {
+                            hashes = new HashSet<string>(StringComparer.Ordinal);
+                            actorPoseHashes.Add(row.identityKey, hashes);
+                        }
+                        hashes.Add(row.skinnedPoseSha256);
+                    }
+                    else
+                    {
+                        Require(string.IsNullOrEmpty(row.skinnedPoseSha256),
+                            "Non-skinned actor renderer has a pose hash at PTS " + pts);
+                    }
                 }
                 Require(row.sourceMaterialPathIds != null &&
                     row.materials.Length == row.sourceMaterialPathIds.Length,
@@ -1483,7 +1549,8 @@ namespace EndfieldGraphShaderLabEditor
                     (row.role == "peak_particle_proxy" ? "dynamic_geometry" :
                         row.meshVertexCount.ToString(CultureInfo.InvariantCulture) + "/" +
                         row.meshSubMeshCount.ToString(CultureInfo.InvariantCulture) + "/" +
-                        row.meshIndexCount.ToString(CultureInfo.InvariantCulture)) + ":" +
+                        row.meshIndexCount.ToString(CultureInfo.InvariantCulture) + "/" +
+                        row.skinnedBoneCount.ToString(CultureInfo.InvariantCulture)) + ":" +
                     materialIdentity);
             }
             Require(expectedActorRows == 21 && expectedStaticRows == 10 &&
@@ -1866,6 +1933,8 @@ namespace EndfieldGraphShaderLabEditor
             public int meshSubMeshCount;
             public long meshIndexCount;
             public string localToWorldStateSha256;
+            public int skinnedBoneCount;
+            public string skinnedPoseSha256;
             public MaterialFingerprintRecord[] materials;
         }
 

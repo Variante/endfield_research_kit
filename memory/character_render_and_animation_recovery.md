@@ -2026,7 +2026,10 @@ only stable interpretation and priorities.
    Validation requires stable object/source/material identity across all
    anchors and exact lifecycle state while allowing particle geometry and
    transform state to vary. Actor rows deliberately have hierarchy/runtime IDs
-   only; their transform hash is not a skinned-pose digest. The witness uses
+   only. Their separate skinned-pose witness hashes the non-mutating palette
+   `renderer.worldToLocal * bone.localToWorld * bindpose`, validates the
+   bone/bindpose census, and proves pose changes across the anchor set; the
+   ordinary transform-state hash remains distinct. The witness uses
    `sharedMaterials` and remains local diagnostic evidence, not a retail
    HGMesh accepted-record or draw join.
    The static routing prior now favors the classic renderer-list half of the
@@ -2040,6 +2043,17 @@ only stable interpretation and priorities.
    conversion/registration step. Treat classic submission as likely, not a
    positive Li routing proof; observation must still distinguish which of the
    callback's two submissions contains the draw.
+   The classic native path is now closed through command recording.
+   `CreateRendererList_Internal_Injected` at `0x1800ba8e0` enters
+   `0x18052cf70`, which returns a 16-byte stock handle containing render
+   context, list/index, and generation/status rather than a copied Renderer or
+   HGMesh ID. `Internal_DrawRendererList_Injected` at `0x180062960` calls
+   `0x1804c9230`, appending opcode `0x4d` plus that payload. ExecuteCommandBuffer
+   reaches the ready interpreter and dispatches `0x4d` into
+   `0x18099f857..0x1809a00db`. This distinguishes the classic stock-handle
+   route from custom ECS commands, but the handler still leaves renderer
+   identity inside the context/list backend and exposes no static Li-to-Vulkan
+   draw or submit edge.
    All six selected materials have `_IsSceneEffect=0` and
    `_EnableTransparentMV=0`, so `_VFXParams1` and transform history are safely
    bypassed rather than guessed. Exact inverse-VP soft depth, live
