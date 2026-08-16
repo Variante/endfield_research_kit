@@ -4098,7 +4098,7 @@ registered as a normal actor effect and keeps source/native payload, exact
 shader, and visible admission false.
 
 `tools/build_lizhiyan_visual_capture_spec.py` pins the deterministic comparison
-clock and 19 retail PTS anchors. Candidate PTS 37967 maps to local zero;
+clock and 24 retail PTS anchors. Candidate PTS 37967 maps to local zero;
 start_01/_02/_03 end at 40167/42967/44967, and the shared clip ends nearest
 44334. These are diagnostic alignment coordinates, not proof of the original
 request timestamp or draw ownership.
@@ -4106,8 +4106,10 @@ request timestamp or draw ownership.
 camera using a real graphics backend. Do not pass `-nographics`: the harness
 rejects Unity's Null device because it writes blank PNGs without rasterizing.
 On D3D12, start_01 is visibly cyan at PTS 37967--38183 with about 4.06% frame
-coverage, is fully dissolved by PTS 39934, and remains blank after its lifetime;
-the 19-frame set has three hashes. The capture preserves source queue 3704 and
+coverage, is fully dissolved by PTS 39934, and remains blank after its lifetime.
+The expanded 24-frame set adds sibling curve boundaries at PTS
+39367/41434/43200/43600/43867; start_01 alone yields four hashes and five
+visible active frames. The capture preserves source queue 3704 and
 only disables soft blend on transient materials because no retail scene depth
 exists. It is diagnostic-only, does not compare retail pixels, and does not
 raise visible admission.

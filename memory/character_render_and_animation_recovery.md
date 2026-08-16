@@ -1756,13 +1756,16 @@ only stable interpretation and priorities.
    Native payload, exact shader, retail ABI, HGTree ownership, and visible
    admission all remain false.
    Deterministic comparison uses candidate PTS 37967 as diagnostic local zero
-   and publishes 19 capture anchors through the start_01/_02/_03 lifetime and
+   and publishes 24 capture anchors through the start_01/_02/_03 lifetime and
    shared-clip endpoints. This mapping is a repeatable video alignment, not
    proof of the original effect-request epoch.
    The GPU-backed capture harness now proves a narrow visible start_01 loop:
    D3D12 renders non-background pixels at PTS 37967--38183 (about 4.06% frame
    coverage) and the source material curves have fully dissolved by PTS 39934.
-   Nineteen captures produce three hashes; all post-lifetime frames are blank.
+   The expanded set adds PTS 39367/41434/43200/43600/43867 at sibling UV,
+   alpha-appearance, alpha-peak, primary-wave, and fade boundaries. In the
+   start_01-only capture these 24 frames produce four hashes and five visible
+   active frames; all post-lifetime frames are blank.
    The harness rejects Unity's Null graphics backend because `-nographics`
    produces valid-looking PNG files without executing rasterization. It keeps
    source queue 3704 and disables soft blend only in transient capture materials
