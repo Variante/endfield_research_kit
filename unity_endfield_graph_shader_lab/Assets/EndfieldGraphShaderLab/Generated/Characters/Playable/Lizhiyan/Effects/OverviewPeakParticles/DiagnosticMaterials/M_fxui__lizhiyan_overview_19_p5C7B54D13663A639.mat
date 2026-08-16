@@ -14,9 +14,9 @@ Material:
   m_ValidKeywords:
   - _SAMPLE_TEX0
   - _SAMPLE_TEX1
-  m_InvalidKeywords:
   - _USE_FRESNEL
   - _USE_SOFTBLEND
+  m_InvalidKeywords:
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0

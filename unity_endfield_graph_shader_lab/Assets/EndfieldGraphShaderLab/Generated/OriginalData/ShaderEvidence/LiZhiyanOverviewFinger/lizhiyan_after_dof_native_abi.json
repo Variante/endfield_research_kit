@@ -264,6 +264,116 @@
       "functionEnd": "0x189c08bc8",
       "functionBytes": 708,
       "functionSha256": "08E90A05982967C1F0AA45950FDF24F069FA6B639238EE3F6429FEF2DE697163"
+    },
+    {
+      "methodIndex": 49224,
+      "type": "Beyond.Gameplay.View.EntityVFXDissolveController",
+      "name": "InitData",
+      "token": "0x0600c049",
+      "va": "0x1846da250",
+      "functionEnd": "0x1846da2b3",
+      "functionBytes": 99,
+      "functionSha256": "3674A2ABC641CD6BA023B0C98CB61F7C9E3895BCB6E7B112F2A2DD940946254D"
+    },
+    {
+      "methodIndex": 49226,
+      "type": "Beyond.Gameplay.View.EntityVFXDissolveController",
+      "name": "GetRendererMask",
+      "token": "0x0600c04b",
+      "va": "0x1849b1970",
+      "functionEnd": "0x1849b1999",
+      "functionBytes": 41,
+      "functionSha256": "7501AB1A2E0EBFE0C535F594DDC12E2BC7714AB5454F6D206B870F40D6321003"
+    },
+    {
+      "methodIndex": 49239,
+      "type": "Beyond.Gameplay.View.EntityVFXDissolveController",
+      "name": "OnSample",
+      "token": "0x0600c058",
+      "va": "0x186c20490",
+      "functionEnd": "0x186c20533",
+      "functionBytes": 163,
+      "functionSha256": "01CEEF3F7A9798E9C145D87D66EFB124A3915997E300EFA75EF0F2BC36A740CE"
+    },
+    {
+      "methodIndex": 49245,
+      "type": "Beyond.Gameplay.View.EntityVFXDissolveController",
+      "name": "_UpdateDissolveValue",
+      "token": "0x0600c05e",
+      "va": "0x183579ca0",
+      "functionEnd": "0x18357a47e",
+      "functionBytes": 2014,
+      "functionSha256": "49FDE1B693893B4F9348E75BD845408EC0DCB188A9813E4A07D12A87ACEB8245"
+    },
+    {
+      "methodIndex": 49244,
+      "type": "Beyond.Gameplay.View.EntityVFXDissolveController",
+      "name": "_UpdateShadowCasting",
+      "token": "0x0600c05d",
+      "va": "0x183579c10",
+      "functionEnd": "0x183579c9c",
+      "functionBytes": 140,
+      "functionSha256": "3D1F5ABC0E7F3F377D5F8B657A357B802B5706B4B1F15C71A82079289EEC1E69"
+    },
+    {
+      "methodIndex": 49246,
+      "type": "Beyond.Gameplay.View.EntityVFXDissolveController",
+      "name": "_ApplyDissolveScheduleOffset",
+      "token": "0x0600c05f",
+      "va": "0x18357a480",
+      "functionEnd": "0x18357a548",
+      "functionBytes": 200,
+      "functionSha256": "D20AA3F34C40DF33CEA62898160F52795B79D70FB616327A8A2BD5F3274B51B1"
+    },
+    {
+      "methodIndex": 455408,
+      "type": "Beyond.Rendering.EntityRenderHelperMaterialController",
+      "name": "_GetRenderersOfRendererMask",
+      "token": "0x060000f8",
+      "va": "0x183578850",
+      "functionEnd": "0x183578aeb",
+      "functionBytes": 667,
+      "functionSha256": "1EE5917A9CDFCA8B0DB1406D0621AF6E1A333CA0FBEA32F8190D1B9940932704"
+    },
+    {
+      "methodIndex": 455473,
+      "type": "Beyond.Rendering.EntityRenderHelperMaterialController+MeshMaterialController",
+      "name": "_TryEnsureReplaceMaterial",
+      "token": "0x06000139",
+      "va": "0x182e5e5a0",
+      "functionEnd": "0x182e5e6f7",
+      "functionBytes": 343,
+      "functionSha256": "BD078E64F1917BA25B714755B843743F872D95EEA3874C2DA0BCAC99E000323A"
+    },
+    {
+      "methodIndex": 455466,
+      "type": "Beyond.Rendering.EntityRenderHelperMaterialController+MeshMaterialController",
+      "name": "SetFloatToAllMaterial",
+      "token": "0x06000132",
+      "va": "0x1834dfda0",
+      "functionEnd": "0x1834e0323",
+      "functionBytes": 1411,
+      "functionSha256": "AEAD3C22D1CDB1F022AEC5D2959EE6520A721B807F810A5376481EFF23AFC4C4"
+    },
+    {
+      "methodIndex": 455468,
+      "type": "Beyond.Rendering.EntityRenderHelperMaterialController+MeshMaterialController",
+      "name": "SetVectorToAllMaterial",
+      "token": "0x06000134",
+      "va": "0x18357b570",
+      "functionEnd": "0x18357bb85",
+      "functionBytes": 1557,
+      "functionSha256": "833BD5A7A4860CC2D047239EF901C14581F6A2F122D9A778A495CDC9DF63C3AD"
+    },
+    {
+      "methodIndex": 455470,
+      "type": "Beyond.Rendering.EntityRenderHelperMaterialController+MeshMaterialController",
+      "name": "SetTextureToAllMaterial",
+      "token": "0x06000136",
+      "va": "0x1839411c0",
+      "functionEnd": "0x1839416c8",
+      "functionBytes": 1288,
+      "functionSha256": "1C11F6E495D564C9E7ACFFD34E324299A87653E56550DEEE8966577294768ECA"
     }
   ],
   "unityPlayerNativeMethods": [
@@ -1700,6 +1810,22 @@
       "target": "0x18b3fa0a4"
     }
   ],
+  "entityVfxDissolve": {
+    "selectedLiRequest": {
+      "effect": "P_fxui_lizhiyan_overview_start_09",
+      "assetType": "Beyond.Rendering.EntityVFXDissolveAsset",
+      "assetPathId": 6630846240525961646,
+      "effectSettingPathId": 4869158341031029158,
+      "durationSeconds": 10.0,
+      "rendererMask": 10240,
+      "dissolveTexture": "T_fx_Totem_zr001_M"
+    },
+    "consumerBoundary": "EntityVFXDissolveController InitData/GetRendererMask/OnSample drives dissolve, shadow-casting, and schedule-offset updates; EntityRenderHelperMaterialController selects renderers by mask, ensures replacement materials, then writes float/vector/texture properties to all selected materials",
+    "materialTransport": "replacement Unity Materials through MeshMaterialController; no selected-build proof that this path uses MaterialPropertyBlock",
+    "proven": "hash-pinned generic Entity-VFX dissolve consumer and replacement-material path for the selected build",
+    "notProven": "rendererMask 10240 to Li concrete renderer/material slots, PathIDs, accepted render record, Vulkan draw, or visible pixels",
+    "failClosedRule": "do not apply start_09 dissolve to every actor renderer and do not infer renderer-mask bits from names or serialized order"
+  },
   "rendererList": {
     "queue": {
       "first": 3660,

@@ -4166,7 +4166,7 @@ and non-indexed indirect variants, and cases 33/34 call direct/indirect
 dispatch. Loader `0x180747BAD..0x180747CC1` resolves and stores those function
 pointers, and each draw case forwards the decoded aligned payload with the
 resolved Vulkan command buffer. The generated native ABI contract hash is
-`11664A2E94479E609D59D3243C5060AF7CE1B872E2D269FDCDD0198B89321F27`.
+`B1CAC300CDC606AA89C36F31CB1C9D659CF15D160482042563B3E3481B213D20`.
 This closes general recorded-command-to-Vulkan execution only: no static edge
 yet assigns a Li RendererList, ordinary Renderer, or ParticleSystemRenderer to
 one of cases 29--32, its PSO/descriptors, or a final visible pixel.
@@ -4466,6 +4466,15 @@ paused-buffer submission boundary. At PTS 40000 it records 26 live particles,
 composite coverage rises to 7.572% but remains below 21.699% retail. Separate
 manifest validation passes, while every native/retail admission flag remains
 false.
+The peak diagnostic now preserves M19's authored soft-blend/Fresnel keyword
+state and the SampleStack vertex path consumes the recovered particle streams:
+UV2 from `TEXCOORD0.zw`, Custom1XYZW from `TEXCOORD1`, and
+`speed.zw * Custom1.X` in particle mode while leaving static start_01 UVs
+unchanged. D3D12 capture and validation pass, but PTS-40000 peak-only
+`broadTeal` moves only from about 9,983 to 9,991 pixels and `raisedHand`
+remains zero. M19 is not among the visible sidecar materials at that anchor,
+so its still-missing Fresnel branch is not the current raised-hand priority.
+This closes a real vertex-stream fidelity gap without claiming visual parity.
 
 The actor-composed harness now also instantiates the exact recovered
 `P_fxui_lizhiyan_overview_trails_Bip001_R_Finger2Nub` prefab beneath the
@@ -4529,6 +4538,13 @@ owns the geometry/material targets. Retail Li is already fully visible before
 the large PTS-40000 teal slabs grow, so start_09 is a reveal-completeness task,
 not positive ownership of the raised-hand peak. Recover the mask-to-registry
 binding before executing it; do not apply the dissolve to all actor renderers.
+The selected-build consumer is now hash-pinned through
+`EntityVFXDissolveController` sampling and
+`EntityRenderHelperMaterialController._GetRenderersOfRendererMask`, then
+through nested `MeshMaterialController` replacement-material creation and its
+float/vector/texture writers. This is a replacement Unity Material route, not
+a proven MaterialPropertyBlock route. The registry row for mask 10240 remains
+the sole Li-specific ownership gap.
 
 The exact managed LOD renderer bindings are now part of the playable-topology
 contract: start_01 has four non-null MeshRenderer PathIDs and start_02/start_03
