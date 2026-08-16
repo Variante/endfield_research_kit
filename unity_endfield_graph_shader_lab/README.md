@@ -4217,6 +4217,18 @@ PTS 43000 is 7.618% versus 9.972%; effects are blank at PTS 46000 while the
 actor remains visible. These are diagnostic composition metrics, not retail
 pixels, renderer-list ownership, or native shader parity.
 
+The next peak-effect layer is now source-contracted rather than inventory-only.
+`tools/build_lizhiyan_peak_particle_effect_contract.py` consumes the exact
+filtered AnimeStudio outputs for `start_04`, `start_04_1`, and `start_04_2`
+and publishes 17 hierarchy nodes, 14 particle/renderer pairs, eight materials,
+13 unique texture dependencies, and three PathID-distinct meshes to
+`Generated/OriginalData/Effects/lizhiyan_overview_peak_particle_effects.json`.
+The contract preserves converted-resource hashes and renderer ownership while
+keeping retail `EffectSetting`, selected VFXBaseV2 DXBC/descriptors, native
+after-DOF draw identity, and visible admission explicitly unproven. The next
+step is to materialize its three diagnostic particle prefabs and add them to
+the actor-composed D3D12 peak capture.
+
 The exact managed LOD renderer bindings are now part of the playable-topology
 contract: start_01 has four non-null MeshRenderer PathIDs and start_02/start_03
 have three each. `EffectLodCfg.Play/Stop` owns their enabled lifecycle. This

@@ -1936,6 +1936,28 @@ only stable interpretation and priorities.
    root-signature/PSO, and renderer-list survivor identity remain missing.
    `HG_ENABLE_MV` remains an
    implicit compiled keyword, not a serialized material keyword.
+   The missing PTS-40000 peak-effect source boundary is now materially
+   narrower. Exact filtered AnimeStudio exports for
+   `P_fxui_lizhiyan_overview_start_04`, `_04_1`, and `_04_2` recover 17
+   GameObjects/Transforms, 14 ParticleSystems, 14 ParticleSystemRenderers,
+   eight VFXBaseV2 materials, three distinct Mesh PathIDs, and 13 unique
+   non-null texture PathIDs with no per-object export errors. All 13 texture
+   identities resolve uniquely through the installed AssetMap and convert to
+   PNG; the three meshes convert to OBJ, including two same-named
+   `S_fx_lzy_xishou_01` objects that remain distinct by CAB and PathID. The
+   recovered 35.4 MB shader source preserves exact
+   `HGRP/Effect/VFXBaseV2` identity, while the selected DXBC variant and live
+   draw state remain closed. A deterministic source contract now records the
+   three hierarchies, particle modules, renderer-to-material/mesh ownership,
+   material queues, texture bindings, hashes, and the fail-closed execution
+   boundary. `p_shoulizi (9)` has a source-null Mesh and is intentionally a
+   billboard/default-geometry particle, not an unresolved mesh. The remaining
+   MonoScript edge is `Beyond.Gameplay.EffectSetting` from
+   `Gameplay.Beyond.dll`; its absence does not block manual diagnostic
+   particle sampling, but retail activation/LOD behavior cannot be claimed.
+   Unity prefab materialization and actor-composed peak capture are the next
+   visual steps; `visibleAdmission` stays false until the native shader/draw
+   and after-DOF ownership gates close.
    All 12 controller requests are preserved; the other 11
    remain explicitly unbound. Its `38-47 s` retail slot, especially the
    hand-adjacent teal layer near 40 seconds, is the current strongest visual
