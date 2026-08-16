@@ -204,7 +204,9 @@ namespace EndfieldGraphShaderLabEditor
             Dictionary<string, object> observedBackend = L.Dict(backendBoundary["observedRuntimeBackend"]);
             Dictionary<string, object> observedBackendSession = L.Dict(observedBackend["session"]);
             Dictionary<string, object> graphicsFront = L.Dict(backendBoundary["graphicsFront"]);
+            Dictionary<string, object> commandInterpreter = L.Dict(backendBoundary["commandInterpreter"]);
             Dictionary<string, object> backendSelection = L.Dict(backendBoundary["backendSelection"]);
+            Dictionary<string, object> vulkanExecution = L.Dict(backendBoundary["vulkanExecution"]);
             Dictionary<string, object> captureBoundary = L.Dict(nativeAdapter["runtimeCaptureBoundary"]);
             L.Require(L.Str(boundary, "callbackConstantBufferPublication") == "not_present" &&
                 L.Str(boundary, "callbackGlobalVectorAndTexturePublication") == "present" &&
@@ -264,7 +266,10 @@ namespace EndfieldGraphShaderLabEditor
                 L.Str(contextOwnership, "genericSetterVA") == "0x18030f5b0" &&
                 L.Str(contextOwnership, "bulkRegistrarVA") == "0x180319e60" &&
                 L.Str(contextOwnership, "globalTeardownVA") == "0x18058cc20" &&
-                L.Str(contextOwnership, "provenBoundary").Contains("registration and global cell clearing are proven") &&
+                L.Str(contextOwnership, "genericCleanupVA") == "0x18031aec0" &&
+                L.Str(contextOwnership, "nestedCleanupVA") == "0x18031af80" &&
+                L.Str(contextOwnership, "concreteDestructorTarget").Contains("indirect") &&
+                L.Str(contextOwnership, "provenBoundary").Contains("generic virtual destruction") &&
                 L.Str(commandConsumer, "opcode") == "0x4e" &&
                 L.Str(commandConsumer, "managerSingletonOffset") == "0xb0" &&
                 L.Long(commandConsumer, "slotStride") == 16 &&
@@ -314,10 +319,28 @@ namespace EndfieldGraphShaderLabEditor
                 L.Str(backendBoundary, "behavior").Contains("generic front-end virtual dispatch") &&
                 L.Str(graphicsFront, "vtableVA") == "0x181dcb360" &&
                 L.Str(graphicsFront, "resourceAppendSlot").Contains("opcode 0x2748") &&
+                L.Str(commandInterpreter, "interpreterVA") == "0x1813aee90" &&
+                L.Str(commandInterpreter, "dispatchTableVA") == "0x1813bb574" &&
+                L.Str(commandInterpreter, "opcode2748CaseVA") == "0x1813b1624" &&
+                L.Str(commandInterpreter, "opcode2748Route").Contains("mode 1") &&
+                L.Str(commandInterpreter, "opcode274aCaseVA") == "0x1813b16f0" &&
+                L.Str(commandInterpreter, "opcode274aRoute").Contains("mode 0") &&
+                L.Str(commandInterpreter, "api2ResourceCollection").Contains("+0x2e48") &&
+                L.Str(commandInterpreter, "resourceToBindingState").Contains("original pointer unchanged") &&
+                L.Str(commandInterpreter, "resourceToBindingState").Contains("S+0x2a0") &&
+                L.Str(commandInterpreter, "provenBoundary").Contains("not draw opcodes") &&
                 L.Str(backendSelection, "api2TableVA") == "0x181dbc098" &&
                 L.Str(backendSelection, "api2Meaning").Contains("not Unity's public") &&
                 L.Str(backendSelection, "vulkanDrawFlush").Contains("0x180843d60") &&
                 L.Str(backendSelection, "vulkanCommandCells").Contains("vkQueueSubmit") &&
+                L.Str(vulkanExecution, "descriptorUpdateRoute").Contains("vkUpdateDescriptorSetWithTemplate") &&
+                L.Str(vulkanExecution, "descriptorIdentityBoundary").Contains("0x2748 object") &&
+                L.Str(vulkanExecution, "masterList").Contains("+0x2b50") &&
+                L.Str(vulkanExecution, "resourceBinding").Contains("index and vertex") &&
+                L.Str(vulkanExecution, "indirectDraw").Contains("vkCmdDrawIndexedIndirect") &&
+                L.Str(vulkanExecution, "directDraw").Contains("vkCmdDraw(3,1,0,0)") &&
+                L.List(vulkanExecution["queueSubmitCallsites"]).Count == 2 &&
+                L.Str(vulkanExecution, "remainingIdentityEdge").Contains("particular 0x2731") &&
                 L.Str(backendBoundary, "d3d12StaticBoundary").Contains("D3D12 support not compiled in!") &&
                 L.Str(observedBackend, "classification") == "observed_runtime_log" &&
                 L.Str(observedBackendSession, "graphicsBackend") == "Vulkan" &&
@@ -326,7 +349,8 @@ namespace EndfieldGraphShaderLabEditor
                 L.List(observedBackend["nonClaims"]).Count == 3 &&
                 L.Str(backendBoundary, "activeBackend").StartsWith("Vulkan is proven") &&
                 L.Str(captureBoundary, "authorization").Contains("separate explicit authorization") &&
-                L.List(captureBoundary["observationOnlyHooks"]).Count == 5 &&
+                L.List(captureBoundary["observationOnlyHooks"]).Count == 8 &&
+                L.List(captureBoundary["boundedFields"]).Count == 4 &&
                 L.Str(captureBoundary, "requiredPositiveJoin").Contains("specific Vulkan draw/submit") &&
                 L.Str(captureBoundary, "negativeControl").Contains("Wulfa") &&
                 L.Str(captureBoundary, "stopRule").Contains("never retry through evasion") &&

@@ -82,7 +82,7 @@ list`, and the callback executes global scene-color/vector/texture setup,
 fullscreen draw, the ordinary forward renderer list, then the ECS renderer
 list. The callback contains no constant-buffer publication. The generated
 native ABI contract is `lizhiyan_after_dof_native_abi.json`, SHA-256
-`9A6898C562E941516EE7E576063A81D0EA50EC8BBAE0E0D7927B6FF058600832`.
+`8B98B0DFBB517AFE09B758197FEB7CCE127F0B56723B02FFE71312808BCE5932`.
 
 The deferred ECS producer is now closed as well. Current-build
 `HGRenderPathDeferred.OnPreRendering` recreates the 32-bit handle each camera
@@ -201,6 +201,42 @@ not Unity's public `GraphicsDeviceType` value. API-2 slot `+0xde8` reaches
 draw, and queue operations including `vkCmdDraw`, indirect variants, and
 `vkQueueSubmit`. This closes backend family and submission capability, not the
 remaining HGMesh resource-identity edge into one specific Vulkan draw.
+
+The graphics command stream is now decoded one layer farther. Front slot
+`+0x268` writes aligned opcode `0x2748` records containing the resource-object
+pointer and increments its `+0x0c` reference field; slot `+0x280` writes
+variable opcode `0x274a` records containing an opaque token/length-like qword
+and serialized payload. Interpreter `0x1813aee90`, through dispatch table
+`0x1813bb574`, routes cases `0x1813b1624/0x1813b16f0` back to API-2 slots
+`+0x268/+0x280`. Both converge on `0x180842370` with modes 1 and 0 and operate
+on the API-2 `context+0x2e48` collection of 16-byte resource/state records.
+They are resource/state operations, not Vulkan draw opcodes.
+
+For `0x2748`, the decoder preserves the original object pointer unchanged.
+`0x180842370` resolves object-local maps at resource offsets
+`+0x20..+0x30/+0x50/+0x70`, writes descriptor-like entries under `S+0x2a0`,
+and writes payload backing under `S+0x22d0`. A later opcode `0x2730` calls
+API-2 `+0xe90` (`0x180843bf0`), which packages those exact state regions for
+`0x18083f680`; its call at `0x18083f89d` reaches
+`vkUpdateDescriptorSetWithTemplate`. This is a positive static HG resource to
+Vulkan descriptor-update edge. It is not yet a resource-to-draw identity.
+
+The later Vulkan executor consumes a separate master callback list at
+`context+0x2b50`. Its verified callbacks bind index/vertex buffers
+(`0x18082d6b0`), bind pipeline/descriptors and dynamic state (`0x18082e660`),
+issue indirect draws (`0x18082e820`), or issue the bounded fullscreen-style
+`vkCmdDraw(3,1,0,0)` helper (`0x18083d264`). The exact remaining static/runtime
+edge is therefore the same-stream/same-frame association from the
+`0x2748`-populated state and `0x2730` descriptor update into a particular
+`0x2731` execution, `+0x2b50` callback node, and draw record—not a generic
+uncertainty about which graphics API is active.
+
+Global singleton teardown is also bounded more precisely. Generic cleanup
+`0x18031aec0` first enters nested-resource cleanup `0x18031af80`, then invokes
+virtual slot 0 of the slot object before the singleton cell is cleared. This
+proves slot-0x14 generic virtual destruction, but its concrete target remains
+indirect through `[slot14_object->vtable]`; it still does not identify a
+specific destructor for the HGMesh manager at context `+0xb0`.
 
 The next positive proof is now an explicit runtime-capture contract rather
 than a generic request for “a capture.” On this exact build it must join one
