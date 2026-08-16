@@ -2098,9 +2098,14 @@ only stable interpretation and priorities.
    immediate mode reaches API-2 backend `+0x210` at `0x1808539d0`, which only
    replaces state bit `0x40` in `[backend+0x2e48]+0xbc`. Recorded `0x2727`
    dispatches through front `+0xeb0`, opcode `0x273d`, a 0x38-byte state copy,
-   and then dynamic context `+0x70` vtable `+0x5d0`. That last interface is the
-   next unresolved boundary; this chain is state transport, not a proven draw
-   or submit.
+   and then dynamic context `+0x70` vtable `+0x5d0`. The broad API-2 candidate
+   resolves that slot to `0x180833940`, a diagnostic-`0xd0b` failure handler;
+   front-context `+0x5d0` records opcode `0x2769`/backend `+0x650`, while the
+   type-4 candidate forwards through `+0x5c0` into state update/backend `+0x5c8`.
+   These bounded candidates close as state/error transport, not a proven draw
+   or submit. The next binary boundary is the separate classic RendererList draw
+   expansion or a runtime concrete receiver rather than further assuming this
+   state route is the draw.
    The actor-composed Unity witness assigns one strictly monotonic
    `captureInvocationSerial` to every actual `Camera.Render()` call. Its 24
    anchors times seven aggregate/root lanes validate as 168 unique invocations,
@@ -2113,11 +2118,20 @@ only stable interpretation and priorities.
    material 18's queue 3702 is instead source-serialized and remains unchanged;
    only source-named Li diagnostic/actor-composed SampleStack instances now
    admit their preserved 3660--3740 queues, while unknown instances still fail
-   closed. Twenty-one serial-keyed reads are positive across the
-   composite/effects/peak lanes at retail PTS 38000, 38167, 38183, 39367,
-   39934, 40000, and 40167, with roughly 258k--498k nonzero ID pixels. The
-   other 147 invocations explicitly report that no exact selected MRT material
-   is active. Red-channel IDs are local to one `captureInvocationSerial`;
+   closed. The first run produced 21 serial-keyed reads in aggregate lanes.
+   Root-only lanes initially had no sidecar because their dedicated diagnostic
+   shader does not claim retail MRT admission; sibling SampleStack materials
+   incidentally opened the route in aggregate lanes. During an explicit positive
+   capture serial only, source-named actor-composed diagnostic instances now
+   request the renderer-ID AfterPost route without changing queues/lifetimes or
+   normal-viewer behavior and without acquiring retail MRT admission. The
+   refreshed 168-call capture has 99 positive sidecars and 69 explicit
+   no-selected-material results. Every active root-only frame is positive:
+   start_01 8/8 at 432,119 pixels, start_02 15/15 at 289,686, and start_03
+   23/23 at 227,641. Each root's coverage and bounds remain constant over its
+   active anchors, proving static geometry ownership but also showing that the
+   source material AnimationClip curves are not yet applied to cloned diagnostic
+   instances. Red-channel IDs are local to one `captureInvocationSerial`;
    cross-frame joins use the stored ordinal hierarchy path, material slot/name,
    and stable renderer key rather than comparing numeric IDs. The four later
    composite/effects pairs are byte-identical; their stable effect contributors

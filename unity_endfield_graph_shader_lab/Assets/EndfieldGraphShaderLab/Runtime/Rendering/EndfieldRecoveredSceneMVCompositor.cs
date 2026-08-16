@@ -185,6 +185,8 @@ namespace EndfieldGraphShaderLab
             "Hidden/Endfield/Recovered/Zhuangfy/VFXRefractMRT";
         private const string PiaodaiShaderName =
             "Endfield/Recovered/VFXBaseV2SampleStack";
+        private const string LiZhiyanDiagnosticShaderName =
+            "Endfield/Recovered/LiZhiyanStart01Diagnostic";
         private const string LiZhiyanSampleStackMaterialPrefix =
             "M_fxui__lizhiyan_overview_";
         private const string LiZhiyanDiagnosticMaterialSuffix =
@@ -218,6 +220,22 @@ namespace EndfieldGraphShaderLab
 
             return name.EndsWith(LiZhiyanDiagnosticMaterialSuffix,
                        System.StringComparison.Ordinal) ||
+                name.EndsWith(LiZhiyanComposedMaterialSuffix,
+                    System.StringComparison.Ordinal);
+        }
+
+        private static bool IsLiZhiyanRendererIdOnlyDiagnosticMaterial(
+            Material material)
+        {
+            if (activeCaptureInvocationSerial <= 0 || material == null ||
+                material.shader == null ||
+                material.shader.name != LiZhiyanDiagnosticShaderName)
+                return false;
+
+            string name = material.name;
+            return !string.IsNullOrEmpty(name) &&
+                name.StartsWith(LiZhiyanSampleStackMaterialPrefix,
+                    System.StringComparison.Ordinal) &&
                 name.EndsWith(LiZhiyanComposedMaterialSuffix,
                     System.StringComparison.Ordinal);
         }
@@ -524,6 +542,7 @@ namespace EndfieldGraphShaderLab
             bool requested = false;
             bool hasDistortion = false;
             bool hasGlow902Queue3005 = false;
+            bool hasRendererIdOnlyDiagnostic = false;
             Renderer[] renderers = UnityEngine.Object.FindObjectsOfType<Renderer>();
             for (int rendererIndex = 0; rendererIndex < renderers.Length; rendererIndex++)
             {
@@ -550,6 +569,19 @@ namespace EndfieldGraphShaderLab
                         IsExactZhuangfyPiaodaiMaterial(material);
                     bool isLiZhiyanSampleStackDiagnostic = isSampleStack &&
                         IsLiZhiyanSampleStackDiagnosticMaterial(material);
+                    if (IsLiZhiyanRendererIdOnlyDiagnosticMaterial(material))
+                    {
+                        // This shader deliberately does not claim retail MRT
+                        // admission. During an explicit sidecar capture,
+                        // nevertheless keep the camera on the recovered
+                        // scene-color/AfterPost route so the shared
+                        // cullingResults and depth attachment can feed the
+                        // diagnostic renderer-ID draw. The ordinary viewer
+                        // never enters this branch because the capture serial
+                        // is zero outside the harness.
+                        hasRendererIdOnlyDiagnostic = true;
+                        continue;
+                    }
                     if (isSampleStack && !isExactZhuangfyPiaodai &&
                         !isLiZhiyanSampleStackDiagnostic)
                     {
@@ -653,11 +685,15 @@ namespace EndfieldGraphShaderLab
                 }
             }
 
+            bool rendererIdOnlyRequest =
+                !requested && hasRendererIdOnlyDiagnostic;
             return new EndfieldRecoveredSceneMVRequest(
-                requested,
-                requested,
+                requested || rendererIdOnlyRequest,
+                requested || rendererIdOnlyRequest,
                 hasDistortion,
-                requested ? string.Empty : "no exact selected MRT material is active",
+                requested || rendererIdOnlyRequest
+                    ? string.Empty
+                    : "no exact selected MRT material is active",
                 hasGlow902Queue3005);
         }
 
