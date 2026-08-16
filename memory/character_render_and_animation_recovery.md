@@ -1955,13 +1955,30 @@ only stable interpretation and priorities.
    closed: `0x1810b9990` performs material-handle lookup/insertion, clears a
    new 0x60-byte entry, and calls `0x18109c9d0` once at `0x1810b9c5c`. That
    core repeats the M0 `+0x28/+0x40/+0x44` hash lookup and writes its native
-   material/shading-state object to `entry+0x28` at `0x18109ca2f`; it then
+   shading-state resource to `entry+0x28` at `0x18109ca2f`; it then
    dereferences the same object through `+0x10` and material state fields. The
-   two direct insertion callers are `0x1811e1a24` and `0x18131b76b`.
+   two direct insertion callers are `0x1811e1a24` and `0x18131b76b`. Both are
+   now identified as `PPtr<HGSubsurfaceProfile>` resource paths through native
+   initializer `0x1805ff5e0` and vtable `0x181d87ef0`; neither is an ordinary
+   Unity Material registration or a Li-specific reference.
+   Managed metadata still exposes the broader
+   `GetMaterialHandle(int)->uint` / `GetMaterial(uint)->UnityEngine.Material`
+   API. The primary profile owner resolves a Unity object reference through
+   `0x18012be60` before inserting its native ID, but neither fact changes the
+   concrete profile identity or supplies a Li-specific join.
    `GetOrCreatePerMaterialCBHandle` is therefore a downstream consumer. The
-   next producer boundary is M1 concrete entry population plus a Li-specific
-   M0 handle/object join; until that join, Li's `D+0x450` mode stays
-   fail-closed.
+   M1 is now closed as well. Mesh-owner bridge `0x1813727b0` reads the mesh ID
+   from owner `+0x08`, resolves root `+0xa0`, and tail-jumps at `0x18137284a`
+   to insertion function `0x1810941f0`. A new handle calls `0x18108b1c0` at
+   `0x18109441e`; that core repeats the M1 hash lookup, writes the resolved
+   geometry resource to entry `+0x18`, source mesh `+0x40` to entry `+0x20`,
+   and builds the `+0x28/+0x30` geometry caches. Replacement core
+   `0x18108b560` repopulates the same fields while preserving generation;
+   removal core `0x18108b8f0` releases those resources, clears the entry, and
+   increments generation. The remaining producer
+   boundary is therefore instance identity: a Li-specific M0 subsurface-profile
+   handle/resource and M1 mesh-handle join. Until that join, Li's `D+0x450`
+   mode stays fail-closed.
    All six selected materials have `_IsSceneEffect=0` and
    `_EnableTransparentMV=0`, so `_VFXParams1` and transform history are safely
    bypassed rather than guessed. Exact inverse-VP soft depth, live
