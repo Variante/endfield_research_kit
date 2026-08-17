@@ -2322,9 +2322,12 @@ only stable interpretation and priorities.
    and only the reciprocal-exposure component set to 1,
    the exact fragment produces 175/256 RGB-and-alpha pixels with maximum HDR
    `[0.660757,2.68497,2.79676,1]`. This proves the exact real-texture color
-   path and identifies the necessary global input. Selected-frame particle
-   color, per-draw attenuation, exposure history, UVs, and neutral high slots
-   remain open; recover them before claiming material or visual parity.
+   path and identifies the necessary global input. All four renderers using
+   this exact material enable custom vertex streams `[0,1,3,4,5,34]`, including
+   the Color stream, and their serialized start-color and Color-over-Lifetime
+   RGB are white. White RGB is therefore source-backed rather than arbitrary;
+   selected-frame particle alpha, per-draw attenuation, exposure history, UVs,
+   and neutral high slots remain open before claiming material or visual parity.
    The exact independently AssetMap-proven finger prefab is now executable in
    the same actor-composed diagnostic. It is mounted beneath the unique
    `Bip001_R_Finger2Nub`, keeps its source 0.83333-second delay and

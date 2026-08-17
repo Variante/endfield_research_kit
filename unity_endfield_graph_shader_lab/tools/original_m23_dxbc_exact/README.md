@@ -67,6 +67,10 @@ path. Exact 0138 shows that fragment TEXCOORD5 is VS `o6`, selected between
 input COLOR0 and `COLOR0 * (1 - cb3[13])`. Selected-frame vertex color,
 attenuation, exposure history, UVs, and neutral high slots remain diagnostic
 or runtime-open rather than recovered fidelity values.
+All four particle renderers using the exact material serialize custom vertex
+streams `[0,1,3,4,5,34]`, including Color, and their start/color-over-lifetime
+RGB is white. White RGB is source-backed; selected-frame alpha and `cb3[13]`
+are still runtime-open.
 
 All buffers are zero-initialized. Unresolved b4 high-slot semantics are not
 inferred. The validator explicitly binds every object, verifies identity with
