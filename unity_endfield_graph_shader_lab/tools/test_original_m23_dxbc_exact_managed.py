@@ -70,6 +70,19 @@ def check_source_contract():
     require(not missing, "managed ABI exports missing from native source: " + ", ".join(missing))
     require("OriginalM23DxbcExactDiagnostic" in builder and "BuildPipeline.BuildPlayer" in builder,
             "builder does not produce isolated diagnostic player")
+    for token in (
+        "CaptureRealDrawState(eventId == 5)",
+        "EndfieldOriginalM23DxbcBridgeGetRealDrawBeforeBindingMask",
+        "EndfieldOriginalM23DxbcBridgeGetRealDrawAfterVertexStrideAt",
+        "EndfieldOriginalM23DxbcBridgeGetRealDrawAfterIndexFormat",
+        "EndfieldOriginalM23DxbcBridgeGetRealDrawObserverDidNotClearState",
+    ):
+        require(token in native, "native real-draw observer contract is missing " + token)
+    require("eventId == 4 || eventId == 5" in native and
+            "observerDidNotClearState" in native,
+            "native real-draw observer lacks its non-destructive event boundary")
+    require("GetRealDrawObservationNoStateClear" not in native,
+            "native observer still exposes the misleading no-state-clear claim")
     require("EndfieldM23CB0" in shader and "register(b4)" in shader and
             "register(t4)" in shader and "register(s4)" in shader,
             "shader shell does not expose M23 five-slot ABI")

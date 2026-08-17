@@ -49,6 +49,23 @@ foreach ($requiredExport in @(
     "EndfieldOriginalM23DxbcBridgeCopyNativeReadback",
     "EndfieldOriginalM23DxbcBridgeGetVisualGridValid",
     "EndfieldOriginalM23DxbcBridgeCopyVisualGrid",
+    "EndfieldOriginalM23DxbcBridgeGetRealDrawBeforeCount",
+    "EndfieldOriginalM23DxbcBridgeGetRealDrawAfterCount",
+    "EndfieldOriginalM23DxbcBridgeGetRealDrawBeforeBindingMask",
+    "EndfieldOriginalM23DxbcBridgeGetRealDrawAfterBindingMask",
+    "EndfieldOriginalM23DxbcBridgeGetRealDrawAfterVertexConstantBufferMask",
+    "EndfieldOriginalM23DxbcBridgeGetRealDrawAfterVertexShaderResourceMask",
+    "EndfieldOriginalM23DxbcBridgeGetRealDrawAfterPixelConstantBufferMask",
+    "EndfieldOriginalM23DxbcBridgeGetRealDrawAfterPixelShaderResourceMask",
+    "EndfieldOriginalM23DxbcBridgeGetRealDrawAfterPixelSamplerMask",
+    "EndfieldOriginalM23DxbcBridgeGetRealDrawAfterVertexStride",
+    "EndfieldOriginalM23DxbcBridgeGetRealDrawAfterVertexOffset",
+    "EndfieldOriginalM23DxbcBridgeGetRealDrawAfterVertexBufferMask",
+    "EndfieldOriginalM23DxbcBridgeGetRealDrawAfterVertexStrideAt",
+    "EndfieldOriginalM23DxbcBridgeGetRealDrawAfterVertexOffsetAt",
+    "EndfieldOriginalM23DxbcBridgeGetRealDrawAfterIndexBufferBound",
+    "EndfieldOriginalM23DxbcBridgeGetRealDrawAfterIndexFormat",
+    "EndfieldOriginalM23DxbcBridgeGetRealDrawObserverDidNotClearState",
     "EndfieldOriginalM23DxbcValidateExactTexturesHighNeutralRgbGateWithGrid"
 )) {
     if (-not ($exportListing -match [regex]::Escape($requiredExport))) {

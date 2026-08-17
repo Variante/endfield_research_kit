@@ -4611,6 +4611,29 @@ simulates on its effect-local clock, and records per-renderer baked COLOR0
 alpha min/max/mean. The refreshed D3D12 capture and stricter validator pass;
 the older v3 capture must not be used as corrected-clock evidence.
 
+The first exact actor-input experiment failed closed and its BakeMesh-direct
+managed implementation was removed. For the four M23 renderers, deterministic
+BakeMesh expansion and the per-particle mesh-index vertex census are proven,
+but UV0/UV1 match no public Custom1 XYZ components (component masks `0` and
+`8`), and BakeMesh contains no blend inputs. The full 0138 input ABI remains
+the 136-byte POSITION/NORMAL/TANGENT/COLOR/TEXCOORD0/TEXCOORD1/TEXCOORD4/
+BLENDWEIGHTS/BLENDINDICES layout at offsets
+`0/12/24/40/56/72/88/104/120`; TEXCOORD4 is not proven to own Custom1.
+Already-transformed BakeMesh positions must not be submitted as source
+POSITION and transformed again. The active recovery queue is to expand each
+particle's selected source mesh in public particle order, validate particle
+TRS against its BakeMesh segment, carry public Custom1/currentColor without
+guessing their remaining runtime binding, and recover Draw cb3 before issuing
+a visual comparison draw.
+
+Native render events 4/5 now provide observation-only D3D11 snapshots around
+that future DrawMesh: shader identity, CB/SRV/sampler masks, IA vertex slots,
+strides/offsets, index format, topology, viewport, and target. They neither
+run the synthetic fixture nor call `ClearState`; that is an observer guarantee,
+not a claim that Unity preserves all state. The plugin build validates every
+observer export and the WARP and managed source-contract suites pass. Real-draw
+evidence remains pending a semantically valid source-row/Draw-cb3 bridge.
+
 The actor-composed harness now also instantiates the exact recovered
 `P_fxui_lizhiyan_overview_trails_Bip001_R_Finger2Nub` prefab beneath the
 unique actor `Bip001_R_Finger2Nub` mount. It preserves the source
