@@ -28,12 +28,19 @@ struct EndfieldM23DxbcValidation {
     std::uint32_t diagnosticVsCompiledHashMask;
     char diagnosticVsSourceSha256[65];
     char diagnosticVsCompiledSha256[65];
+    std::uint32_t namedLowMaterialHashMask, namedLowContractHashMask, namedLowComponentMapMask;
+    char namedLowMaterialSha256[65];
+    char namedLowContractSha256[65];
+    char namedLowComponentMap[1024];
+    std::uint32_t readbackChangedFromZero;
     float readback[4];
 };
 
 extern "C" HRESULT __cdecl EndfieldOriginalM23DxbcValidate(
     ID3D11Device*, ID3D11DeviceContext*, EndfieldM23DxbcValidation*);
 extern "C" HRESULT __cdecl EndfieldOriginalM23DxbcValidateDiagnosticVs(
+    ID3D11Device*, ID3D11DeviceContext*, EndfieldM23DxbcValidation*);
+extern "C" HRESULT __cdecl EndfieldOriginalM23DxbcValidateDiagnosticVsNamedLow(
     ID3D11Device*, ID3D11DeviceContext*, EndfieldM23DxbcValidation*);
 
 int main(int argc, char** argv) {
@@ -50,9 +57,11 @@ int main(int argc, char** argv) {
     }
 
     EndfieldM23DxbcValidation report = {};
-    const bool diagnosticVs = argc > 2 && std::strcmp(argv[2], "--diagnostic-vs") == 0;
-    hr = diagnosticVs ? EndfieldOriginalM23DxbcValidateDiagnosticVs(device, context, &report)
-                      : EndfieldOriginalM23DxbcValidate(device, context, &report);
+    const bool namedLow = argc > 2 && std::strcmp(argv[2], "--named-low") == 0;
+    const bool diagnosticVs = namedLow || (argc > 2 && std::strcmp(argv[2], "--diagnostic-vs") == 0);
+    hr = namedLow ? EndfieldOriginalM23DxbcValidateDiagnosticVsNamedLow(device, context, &report)
+                  : (diagnosticVs ? EndfieldOriginalM23DxbcValidateDiagnosticVs(device, context, &report)
+                                  : EndfieldOriginalM23DxbcValidate(device, context, &report));
     std::printf(
         "mode=%s feature_level=0x%x result=0x%08lx shaders=0x%x input=0x%x vb=0x%x "
         "vs_cb_creation=0x%x ps_cb_creation=0x%x srv_creation=0x%x "
@@ -61,7 +70,7 @@ int main(int argc, char** argv) {
         "srv_bind=0x%x sampler_bind=0x%x state_bind=0x%x vs_srv_create=0x%x "
         "vs_srv_bind=0x%x rt_bind=0x%x topology=0x%x viewport=0x%x "
         "draw=%u finite=%u changed=%u fidelity=%u readback=[%.9g,%.9g,%.9g,%.9g]\n",
-        diagnosticVs ? "diagnostic_vs_exact_ps" : "exact_pair",
+        namedLow ? "diagnostic_vs_exact_ps_named_low" : (diagnosticVs ? "diagnostic_vs_exact_ps" : "exact_pair"),
         static_cast<unsigned int>(featureLevel), static_cast<unsigned long>(hr),
         report.shaderMask, report.inputLayoutMask, report.vertexBufferMask,
         report.vertexConstantBufferMask, report.pixelConstantBufferMask,
@@ -82,7 +91,7 @@ int main(int argc, char** argv) {
         std::ofstream output(argv[1], std::ios::binary | std::ios::trunc);
         output << "{\n"
             << "  \"schema\": \"endfield.original-m23-dxbc-exact.v3\",\n"
-            << "  \"mode\": \"" << (diagnosticVs ? "diagnostic_vs_exact_ps" : "exact_pair") << "\",\n"
+            << "  \"mode\": \"" << (namedLow ? "diagnostic_vs_exact_ps_named_low" : (diagnosticVs ? "diagnostic_vs_exact_ps" : "exact_pair")) << "\",\n"
             << "  \"status\": \"" << (SUCCEEDED(hr) ? "pass" : "fail") << "\",\n"
             << "  \"vertex_sha256\": \"7d0a508f7b1e5c9aef0b89489feae97f8669a8cddaba1de0ccc0e26fd0eb2ca0\",\n"
             << "  \"pixel_sha256\": \"0ff508aa08112122c14a3ece17d12f15778eaf39ad0c639c946512dc996b6f83\",\n"
@@ -91,6 +100,12 @@ int main(int argc, char** argv) {
             << "  \"diagnostic_vs_source_hash_mask\": \"0x" << report.diagnosticVsSourceHashMask << "\",\n"
             << "  \"diagnostic_vs_compiled_sha256\": \"" << report.diagnosticVsCompiledSha256 << "\",\n"
             << "  \"diagnostic_vs_compiled_hash_mask\": \"0x" << report.diagnosticVsCompiledHashMask << "\",\n"
+            << "  \"named_low_material_sha256\": \"" << report.namedLowMaterialSha256 << "\",\n"
+            << "  \"named_low_contract_sha256\": \"" << report.namedLowContractSha256 << "\",\n"
+            << "  \"named_low_material_hash_mask\": \"0x" << report.namedLowMaterialHashMask << "\",\n"
+            << "  \"named_low_contract_hash_mask\": \"0x" << report.namedLowContractHashMask << "\",\n"
+            << "  \"named_low_component_map_mask\": \"0x" << report.namedLowComponentMapMask << "\",\n"
+            << "  \"named_low_component_map\": \"" << report.namedLowComponentMap << "\",\n"
             << "  \"shader_creation_mask\": \"0x" << std::hex << report.shaderMask << "\",\n"
             << "  \"input_layout_creation_mask\": \"0x" << report.inputLayoutMask << "\",\n"
             << "  \"vertex_buffer_creation_mask\": \"0x" << report.vertexBufferMask << "\",\n"
@@ -118,6 +133,7 @@ int main(int argc, char** argv) {
             << "  \"draw_issued\": " << std::dec << report.drawIssued << ",\n"
             << "  \"readback_finite\": " << report.readbackFinite << ",\n"
             << "  \"readback_changed_from_sentinel\": " << report.readbackChanged << ",\n"
+            << "  \"readback_changed_from_zero\": " << report.readbackChangedFromZero << ",\n"
             << "  \"visual_fidelity_claim\": " << report.visualFidelityClaim << ",\n"
             << "  \"b4_high_semantics\": \"zero_or_sentinel_only_non_fidelity\",\n"
             << "  \"readback\": [" << report.readback[0] << "," << report.readback[1] << "," << report.readback[2] << "," << report.readback[3] << "]\n}\n";
@@ -141,7 +157,15 @@ int main(int argc, char** argv) {
         report.topologyBindingMask == 0x1u &&
         report.viewportBindingMask == 0x1u && report.drawIssued == 1u &&
         report.readbackFinite == 1u && report.visualFidelityClaim == 0u;
-    const bool complete = common && (diagnosticVs
+    const bool complete = common && (namedLow
+        ? (report.inputLayoutMask == 0u && report.vertexBufferMask == 0u &&
+           report.vertexShaderResourceCreationMask == 0u &&
+           report.vertexShaderResourceBindingMask == 0u &&
+           report.diagnosticVsSignatureMask == 1u && report.diagnosticVsSourceHashMask == 1u &&
+           report.diagnosticVsCompiledHashMask == 1u &&
+           report.namedLowMaterialHashMask == 1u && report.namedLowContractHashMask == 1u &&
+           report.namedLowComponentMapMask == 1u)
+        : diagnosticVs
         ? (report.inputLayoutMask == 0u && report.vertexBufferMask == 0u &&
            report.vertexShaderResourceCreationMask == 0u &&
            report.vertexShaderResourceBindingMask == 0u &&

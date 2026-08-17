@@ -4523,6 +4523,13 @@ constants it changes the sentinel to finite `[0,0,0,0]`, proving that exact
 0139 executes and writes rather than discarding. The exact-pair unchanged
 pixel is therefore upstream VS/raster coverage; this diagnostic substitution
 does not claim vertex or visual fidelity.
+`diagnostic_vs_exact_ps_named_low` additionally uploads only the exact
+source-backed cb4[0..9] named components after checking the material and
+generated peak-contract files against their pinned hashes. With all unnamed
+components and cb4[10..43] still zero, its WARP readback remains
+`[0,0,0,0]`, identical to the zero-constant diagnostic. The low named prefix
+alone is not a visibility fix; the next recovery boundary is a causal map of
+the unresolved high slots followed by the exact texture inputs.
 
 The actor-composed harness now also instantiates the exact recovered
 `P_fxui_lizhiyan_overview_trails_Bip001_R_Finger2Nub` prefab beneath the

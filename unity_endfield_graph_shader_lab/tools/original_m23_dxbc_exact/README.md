@@ -26,6 +26,13 @@ the exact PS and its b0..b4/t0..t4/s0..s4 resources but creates no 0138 VS,
 input layout, vertex buffer, or VS structured resource. The source hash and
 signature contract are fail-closed report gates.
 
+`diagnostic_vs_exact_ps_named_low` uses the same diagnostic VS and exact PS,
+but initializes only source-backed PS `cb4[0..9]` named components from the
+M23 material. Unnamed components and `cb4[10..43]` remain zero. The material
+hash and generated M23 contract hash are checked from their source files by
+`build_plugin.ps1` before compilation; their embedded pins and the serialized
+component map are then reported and gated. Synthetic textures remain in use.
+
 All buffers are zero-initialized. Unresolved b4 high-slot semantics are not
 inferred. The validator explicitly binds every object, verifies identity with
 VSGet*/PSGet*/IAGet*/OMGet* masks, draws three vertices into a controlled 1x1
