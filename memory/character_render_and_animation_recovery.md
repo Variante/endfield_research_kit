@@ -2460,6 +2460,28 @@ only stable interpretation and priorities.
    independently green and the observer publishes no bytes. The next capture
    must intercept the actual D3D11 Draw/constant-buffer binding path or use an
    external API capture keyed to exact shader and material identity.
+   The supported external path is now proven with the installed Windows
+   Graphics Diagnostics `DXCap.exe`. Frame 0 of the isolated player produces a
+   replayable `.vsglog`; `DXCap -toXML` exports 18,269 API calls and two draws.
+   The maintained streaming parser rejects the Unity shell draw and uniquely
+   identifies moment 9748 as the exact diagnostic candidate: `Draw(3,0)`, VS
+   handle 8343, PS handle 8344, one 136-byte IA stream, and five VS constant
+   buffers. This replaces the unsafe context hook for draw identification.
+   DXCap XML contains handles and shader bytecode lengths but not resource
+   bytes, so it does not yet close the 136-byte vertex row or 224-byte `cb3`.
+   The next capture boundary is an actual M23 `ParticleSystemRenderer` draw,
+   followed by supported resource inspection or upstream packing evidence.
+   A standalone D3D11 source-renderer probe now isolates
+   `start_04_2/xuanzhuan03` without BakeMesh or a MeshRenderer proxy. Unity
+   compilation and player build pass, and runtime identity closes the exact
+   ParticleSystem/renderer/mesh/material PathIDs, seed 7930, two live
+   particles, and streams `[0,1,3,4,5,34]`. DXCap frames 3 and 6 contain only
+   three unrelated six-index shell draws: Unity reports the target renderer
+   not visible despite finite in-frustum bounds. Zeroing its serialized
+   `m_SortingFudge=NaN` or disabling authored GPU instancing does not admit a
+   draw, so neither is the causal bridge. The next boundary is Unity's normal
+   runtime particle-renderer admission/culling state, not another BakeMesh or
+   context-hook attempt.
    A narrower immediate-context object-vtable experiment is also rejected. It
    shadowed the complete 115-slot `ID3D11DeviceContext` table only inside the
    isolated player, filtered Draw variants by the retained exact VS/PS
