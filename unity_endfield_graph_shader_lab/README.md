@@ -4503,6 +4503,11 @@ Direct DXBC container validation also pins ISGN/OSGN/SHEX and the absence of
 RDEF. SHEX uses 44 b4 float4 registers through cb4[43], but matching DXBC and
 Vulkan reflection is partial at 432 bytes; cb4[10..43] names must come from a
 separate layout source rather than this binary.
+A targeted AnimeStudio `Shader:Both` JSON probe recovers all 296 serialized
+properties, but its UnityPerMaterial table is the same 432-byte partial view.
+Three guarded property-order packing models fail the known low offsets and
+the 704-byte SHEX size, so property declaration order must not be used to name
+cb4[10..43]. The probe hash and negative gates are part of `m23ShaderAbi`.
 
 The actor-composed harness now also instantiates the exact recovered
 `P_fxui_lizhiyan_overview_trails_Bip001_R_Finger2Nub` prefab beneath the

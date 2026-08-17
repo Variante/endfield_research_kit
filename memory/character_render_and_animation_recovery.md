@@ -2254,6 +2254,13 @@ only stable interpretation and priorities.
    (704 bytes) and reaches cb4[43], while every matching DXBC/Vulkan sidecar
    exposes only a 432-byte partial reflection. Names for cb4[10..43] therefore
    require a separate layout source; they are not hidden in this binary.
+   A single-object AnimeStudio `Shader:Both` JSON probe at the exact AssetMap
+   source/offset recovers 296 serialized properties but confirms the same
+   432-byte partial UnityPerMaterial table. Property-order packing is not a
+   valid substitute: active properties diverge at `_VertCameraOffset`
+   (candidate byte 8 versus known 52) and total 144/160 bytes, while all 277
+   numeric properties total 1,840 bytes and diverge before `_SurfaceType`.
+   None matches both the known low layout and the 704-byte SHEX b4 range.
    The exact independently AssetMap-proven finger prefab is now executable in
    the same actor-composed diagnostic. It is mounted beneath the unique
    `Bip001_R_Finger2Nub`, keeps its source 0.83333-second delay and
