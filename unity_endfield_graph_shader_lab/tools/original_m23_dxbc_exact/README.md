@@ -57,10 +57,16 @@ The texture VS now labels its TEXCOORD5 particle-color input explicitly as
 diagnostic white. With high-neutral constants alone, RGB still remains zero.
 The bounded `exact-textures-high-neutral-rgb` mode then sets only PS
 `cb1[27].y=1`, the global multiplier selected by the proven low
-`cb4[3].x=1`. It produces 175/256 RGB-and-alpha pixels with maximum HDR RGBA
+`cb4[3].x=1`. Exported metadata identifies it as
+`ShaderVariablesGlobal._ExposureWithMiscParams.y` at byte offset 436; the
+recovered native producer defines it as reciprocal camera exposure, and 1 is
+the constructor default and neutral 0-EV value. It produces 175/256
+RGB-and-alpha pixels with maximum HDR RGBA
 `[0.660757,2.68497,2.79676,1]`. This isolates a real texture/color execution
-path, but the white vertex color, global multiplier, UVs, and neutral high
-slots remain diagnostic inputs rather than recovered runtime values.
+path. Exact 0138 shows that fragment TEXCOORD5 is VS `o6`, selected between
+input COLOR0 and `COLOR0 * (1 - cb3[13])`. Selected-frame vertex color,
+attenuation, exposure history, UVs, and neutral high slots remain diagnostic
+or runtime-open rather than recovered fidelity values.
 
 All buffers are zero-initialized. Unresolved b4 high-slot semantics are not
 inferred. The validator explicitly binds every object, verifies identity with
