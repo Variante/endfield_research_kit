@@ -185,10 +185,15 @@ namespace EndfieldGraphShaderLab
                 command.SetRenderTarget(target);
                 command.ClearRenderTarget(false, true, sentinel);
                 command.SetRenderTarget(target, depth);
-                command.DrawMesh(mesh, Matrix4x4.identity, material, 0, 0);
                 IntPtr eventFunction = Native.GetRenderEventFunc();
                 if (eventFunction == IntPtr.Zero)
                     throw new InvalidOperationException("M23 bridge render event is absent.");
+                // Event 4/5 are observation-only callbacks placed immediately
+                // around this real Unity DrawMesh. They copy only VS b3 into a
+                // staging readback when its recovered 224-byte contract holds.
+                command.IssuePluginEvent(eventFunction, 4);
+                command.DrawMesh(mesh, Matrix4x4.identity, material, 0, 0);
+                command.IssuePluginEvent(eventFunction, 5);
                 command.IssuePluginEvent(eventFunction, 1);
                 command.IssuePluginEvent(eventFunction, 2);
                 Graphics.ExecuteCommandBuffer(command);
@@ -212,6 +217,7 @@ namespace EndfieldGraphShaderLab
                 uint psCb = Native.GetPixelConstantBufferMask();
                 uint psSrv = Native.GetPixelShaderResourceMask();
                 uint psSampler = Native.GetPixelSamplerMask();
+                RealDrawObservation realDraw = ReadRealDrawObservation();
                 Color pixel = readback.GetPixel(0, 0);
                 var cleanup = new CommandBuffer { name = "Endfield Original M23 DXBC Cleanup" };
                 cleanup.IssuePluginEvent(eventFunction, 3);
@@ -222,7 +228,7 @@ namespace EndfieldGraphShaderLab
                 armed = false;
                 bool executionGate = callback == 2 && unarmed == 0 && platformBlocked == 0 &&
                     shellInputObserved == 2 && blocked == 0 && vertexSwap == 1 && pixelSwap == 1 &&
-                    failures == 0 && hresult == 0 && events == 2 && ignoredEvents == 0 &&
+                    failures == 0 && hresult == 0 && events == 4 && ignoredEvents == 0 &&
                     nativeExecution == 1 && exactBound && vsCb == 0x1Fu &&
                     vsSrv == (visualGrid ? 0u : 1u) &&
                     psCb == 0x1Fu && psSrv == 0x1Fu && psSampler == 0x1Fu &&
@@ -233,7 +239,7 @@ namespace EndfieldGraphShaderLab
                     pixelSwap, failures, hresult, events, ignoredEvents, nativeExecution,
                     cleanupCount, cleanupPending, exactBound, vsCb, vsSrv, psCb, psSrv,
                     psSampler, ColorFinite(pixel), pixel, HashFloatColor(pixel),
-                    HashFloatColor(sentinel), executionGate);
+                    HashFloatColor(sentinel), executionGate, realDraw);
             }
             finally
             {
@@ -475,6 +481,42 @@ namespace EndfieldGraphShaderLab
             File.WriteAllBytes(path, value);
         }
 
+        private static RealDrawObservation ReadRealDrawObservation()
+        {
+            var result = new RealDrawObservation
+            {
+                BeforeCount = Native.GetRealDrawBeforeCount(),
+                AfterCount = Native.GetRealDrawAfterCount(),
+                BeforeByteWidth = Native.GetRealDrawBeforeVsCb3ByteWidth(),
+                AfterByteWidth = Native.GetRealDrawAfterVsCb3ByteWidth(),
+                BeforeValid = Native.GetRealDrawBeforeVsCb3Valid() == 1u,
+                AfterValid = Native.GetRealDrawAfterVsCb3Valid() == 1u,
+            };
+            byte[] before = new byte[RealDrawObservation.VsCb3ByteCount];
+            byte[] after = new byte[RealDrawObservation.VsCb3ByteCount];
+            uint beforeCopied = Native.CopyRealDrawBeforeVsCb3(before, (uint)before.Length);
+            uint afterCopied = Native.CopyRealDrawAfterVsCb3(after, (uint)after.Length);
+            result.BeforeBytesCopied = beforeCopied;
+            result.AfterBytesCopied = afterCopied;
+            if (beforeCopied == before.Length) result.BeforeHex = Hex(before);
+            if (afterCopied == after.Length) result.AfterHex = Hex(after);
+            result.Passed = result.BeforeCount == 1 && result.AfterCount == 1 &&
+                result.BeforeByteWidth == RealDrawObservation.VsCb3ByteCount &&
+                result.AfterByteWidth == RealDrawObservation.VsCb3ByteCount &&
+                result.BeforeValid && result.AfterValid &&
+                beforeCopied == before.Length && afterCopied == after.Length;
+            result.Error = result.Passed ? string.Empty :
+                "real DrawMesh VS cb3 observation was unavailable or failed closed";
+            return result;
+        }
+
+        private static string Hex(byte[] bytes)
+        {
+            var result = new StringBuilder(bytes.Length * 2);
+            foreach (byte value in bytes) result.Append(value.ToString("x2", CultureInfo.InvariantCulture));
+            return result.ToString();
+        }
+
         private static string RenderReport(Result value, VisualGridData visual)
         {
             bool syntheticGrid = visual != null;
@@ -509,6 +551,18 @@ namespace EndfieldGraphShaderLab
                 "  \"pixel_constant_buffer_mask\": " + value.PixelConstantBufferMask + ",\n" +
                 "  \"pixel_shader_resource_mask\": " + value.PixelShaderResourceMask + ",\n" +
                 "  \"pixel_sampler_mask\": " + value.PixelSamplerMask + ",\n" +
+                "  \"real_draw_before_count\": " + value.RealDraw.BeforeCount + ",\n" +
+                "  \"real_draw_after_count\": " + value.RealDraw.AfterCount + ",\n" +
+                "  \"real_draw_before_vs_cb3_byte_width\": " + value.RealDraw.BeforeByteWidth + ",\n" +
+                "  \"real_draw_after_vs_cb3_byte_width\": " + value.RealDraw.AfterByteWidth + ",\n" +
+                "  \"real_draw_before_vs_cb3_valid\": " + Bool(value.RealDraw.BeforeValid) + ",\n" +
+                "  \"real_draw_after_vs_cb3_valid\": " + Bool(value.RealDraw.AfterValid) + ",\n" +
+                "  \"real_draw_before_vs_cb3_bytes_copied\": " + value.RealDraw.BeforeBytesCopied + ",\n" +
+                "  \"real_draw_after_vs_cb3_bytes_copied\": " + value.RealDraw.AfterBytesCopied + ",\n" +
+                "  \"real_draw_before_vs_cb3_hex\": \"" + value.RealDraw.BeforeHex + "\",\n" +
+                "  \"real_draw_after_vs_cb3_hex\": \"" + value.RealDraw.AfterHex + "\",\n" +
+                "  \"real_draw_observation_passed\": " + Bool(value.RealDraw.Passed) + ",\n" +
+                "  \"real_draw_observation_error\": \"" + Escape(value.RealDraw.Error) + "\",\n" +
                 "  \"execution_binding_compatible\": " + Bool(value.ExecutionBindingCompatible) + ",\n" +
                 "  \"numeric_finite\": " + Bool(value.NumericFinite) + ",\n" +
                 "  \"synthetic_grid\": " + Bool(syntheticGrid) + ",\n" +
@@ -562,6 +616,17 @@ namespace EndfieldGraphShaderLab
         private static void Release(RenderTexture value) { if (value == null) return; value.Release(); DisposeUnityObject(value); }
         private static void DisposeUnityObject(UnityEngine.Object value) { if (value == null) return; if (Application.isPlaying) Destroy(value); else DestroyImmediate(value); }
 
+        private sealed class RealDrawObservation
+        {
+            internal const int VsCb3ByteCount = 14 * 16;
+            internal uint BeforeCount, AfterCount, BeforeByteWidth, AfterByteWidth;
+            internal uint BeforeBytesCopied, AfterBytesCopied;
+            internal bool BeforeValid, AfterValid, Passed;
+            internal string BeforeHex = string.Empty, AfterHex = string.Empty, Error = string.Empty;
+            internal static RealDrawObservation Empty => new RealDrawObservation
+            { Error = "real DrawMesh VS cb3 observation was not captured" };
+        }
+
         private sealed class VisualGridData
         {
             internal bool Valid;
@@ -603,9 +668,10 @@ namespace EndfieldGraphShaderLab
             internal readonly uint CallbackCount, UnarmedCallbackCount, PlatformBlockedCount, ShellInputObservedCount, BlockedCount, VertexSwapCount, PixelSwapCount, FailureCount, RenderEventCount, IgnoredRenderEventCount, CleanupCount, CleanupPending, NativeExecutionCount, VertexConstantBufferMask, VertexShaderResourceMask, PixelConstantBufferMask, PixelShaderResourceMask, PixelSamplerMask;
             internal readonly int LastResult;
             internal readonly Color Pixel;
-            internal Result(bool passed, string error, uint callback, uint unarmed, uint platformBlocked, uint shellInputObserved, uint blocked, uint vertexSwap, uint pixelSwap, uint failures, int lastResult, uint events, uint ignored, uint nativeExecution, uint cleanupCount, uint cleanupPending, bool exactBound, uint vsCb, uint vsSrv, uint psCb, uint psSrv, uint psSampler, bool finite, Color pixel, string pixelSha, string sentinelSha, bool execution)
-            { Passed = passed; Error = error ?? string.Empty; CallbackCount = callback; UnarmedCallbackCount = unarmed; PlatformBlockedCount = platformBlocked; ShellInputObservedCount = shellInputObserved; BlockedCount = blocked; VertexSwapCount = vertexSwap; PixelSwapCount = pixelSwap; FailureCount = failures; LastResult = lastResult; RenderEventCount = events; IgnoredRenderEventCount = ignored; NativeExecutionCount = nativeExecution; CleanupCount = cleanupCount; CleanupPending = cleanupPending; ExactShaderBound = exactBound; VertexConstantBufferMask = vsCb; VertexShaderResourceMask = vsSrv; PixelConstantBufferMask = psCb; PixelShaderResourceMask = psSrv; PixelSamplerMask = psSampler; NumericFinite = finite; Pixel = pixel; PixelSha256 = pixelSha; SentinelSha256 = sentinelSha; ExecutionBindingCompatible = execution; }
-            internal static Result Failed(string error) => new Result(false, error, 0, 0, 0, 0, 0, 0, 0, 0, unchecked((int)0x80004005), 0, 0, 0, 0, 0, false, 0, 0, 0, 0, 0, false, Color.clear, string.Empty, string.Empty, false);
+            internal readonly RealDrawObservation RealDraw;
+            internal Result(bool passed, string error, uint callback, uint unarmed, uint platformBlocked, uint shellInputObserved, uint blocked, uint vertexSwap, uint pixelSwap, uint failures, int lastResult, uint events, uint ignored, uint nativeExecution, uint cleanupCount, uint cleanupPending, bool exactBound, uint vsCb, uint vsSrv, uint psCb, uint psSrv, uint psSampler, bool finite, Color pixel, string pixelSha, string sentinelSha, bool execution, RealDrawObservation realDraw)
+            { Passed = passed; Error = error ?? string.Empty; CallbackCount = callback; UnarmedCallbackCount = unarmed; PlatformBlockedCount = platformBlocked; ShellInputObservedCount = shellInputObserved; BlockedCount = blocked; VertexSwapCount = vertexSwap; PixelSwapCount = pixelSwap; FailureCount = failures; LastResult = lastResult; RenderEventCount = events; IgnoredRenderEventCount = ignored; NativeExecutionCount = nativeExecution; CleanupCount = cleanupCount; CleanupPending = cleanupPending; ExactShaderBound = exactBound; VertexConstantBufferMask = vsCb; VertexShaderResourceMask = vsSrv; PixelConstantBufferMask = psCb; PixelShaderResourceMask = psSrv; PixelSamplerMask = psSampler; NumericFinite = finite; Pixel = pixel; PixelSha256 = pixelSha; SentinelSha256 = sentinelSha; ExecutionBindingCompatible = execution; RealDraw = realDraw ?? RealDrawObservation.Empty; }
+            internal static Result Failed(string error) => new Result(false, error, 0, 0, 0, 0, 0, 0, 0, 0, unchecked((int)0x80004005), 0, 0, 0, 0, 0, false, 0, 0, 0, 0, 0, false, Color.clear, string.Empty, string.Empty, false, RealDrawObservation.Empty);
         }
 
         private static class Native
@@ -639,6 +705,14 @@ namespace EndfieldGraphShaderLab
             [DllImport(Library, EntryPoint = "EndfieldOriginalM23DxbcBridgeGetPixelConstantBufferMask", CallingConvention = CallingConvention.Cdecl)] internal static extern uint GetPixelConstantBufferMask();
             [DllImport(Library, EntryPoint = "EndfieldOriginalM23DxbcBridgeGetPixelShaderResourceMask", CallingConvention = CallingConvention.Cdecl)] internal static extern uint GetPixelShaderResourceMask();
             [DllImport(Library, EntryPoint = "EndfieldOriginalM23DxbcBridgeGetPixelSamplerMask", CallingConvention = CallingConvention.Cdecl)] internal static extern uint GetPixelSamplerMask();
+            [DllImport(Library, EntryPoint = "EndfieldOriginalM23DxbcBridgeGetRealDrawBeforeCount", CallingConvention = CallingConvention.Cdecl)] internal static extern uint GetRealDrawBeforeCount();
+            [DllImport(Library, EntryPoint = "EndfieldOriginalM23DxbcBridgeGetRealDrawAfterCount", CallingConvention = CallingConvention.Cdecl)] internal static extern uint GetRealDrawAfterCount();
+            [DllImport(Library, EntryPoint = "EndfieldOriginalM23DxbcBridgeGetRealDrawBeforeVsCb3Valid", CallingConvention = CallingConvention.Cdecl)] internal static extern uint GetRealDrawBeforeVsCb3Valid();
+            [DllImport(Library, EntryPoint = "EndfieldOriginalM23DxbcBridgeGetRealDrawAfterVsCb3Valid", CallingConvention = CallingConvention.Cdecl)] internal static extern uint GetRealDrawAfterVsCb3Valid();
+            [DllImport(Library, EntryPoint = "EndfieldOriginalM23DxbcBridgeGetRealDrawBeforeVsCb3ByteWidth", CallingConvention = CallingConvention.Cdecl)] internal static extern uint GetRealDrawBeforeVsCb3ByteWidth();
+            [DllImport(Library, EntryPoint = "EndfieldOriginalM23DxbcBridgeGetRealDrawAfterVsCb3ByteWidth", CallingConvention = CallingConvention.Cdecl)] internal static extern uint GetRealDrawAfterVsCb3ByteWidth();
+            [DllImport(Library, EntryPoint = "EndfieldOriginalM23DxbcBridgeCopyRealDrawBeforeVsCb3", CallingConvention = CallingConvention.Cdecl)] internal static extern uint CopyRealDrawBeforeVsCb3([Out] byte[] outputBytes, uint outputByteCount);
+            [DllImport(Library, EntryPoint = "EndfieldOriginalM23DxbcBridgeCopyRealDrawAfterVsCb3", CallingConvention = CallingConvention.Cdecl)] internal static extern uint CopyRealDrawAfterVsCb3([Out] byte[] outputBytes, uint outputByteCount);
             [DllImport(Library, EntryPoint = "EndfieldOriginalM23DxbcBridgeGetVisualGridValid", CallingConvention = CallingConvention.Cdecl)] internal static extern uint GetVisualGridValid();
             [DllImport(Library, EntryPoint = "EndfieldOriginalM23DxbcBridgeGetVisualConfigMask", CallingConvention = CallingConvention.Cdecl)] internal static extern uint GetVisualConfigMask();
             [DllImport(Library, EntryPoint = "EndfieldOriginalM23DxbcBridgeGetVisualGridSize", CallingConvention = CallingConvention.Cdecl)] internal static extern uint GetVisualGridSize();

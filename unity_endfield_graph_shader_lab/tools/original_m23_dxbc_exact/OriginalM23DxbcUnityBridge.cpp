@@ -33,6 +33,10 @@ constexpr std::uint32_t kVisualModeControlledExact = 0u;
 constexpr std::uint32_t kVisualModeExactTexturesHighNeutralRgb = 1u;
 constexpr std::uint32_t kVisualGridSize = 16u;
 constexpr std::uint32_t kVisualGridFloatCount = kVisualGridSize * kVisualGridSize * 4u;
+// The recovered M23 VS declares cb3[14]. Observation is deliberately
+// fail-closed: a different-sized slot is reported as unavailable rather than
+// truncating or guessing at the draw-time payload.
+constexpr std::uint32_t kRealDrawVsCb3ByteCount = 14u * 16u;
 // Source hash, PNG decode, high-neutral domain, b2 gate, neutral reciprocal
 // exposure, white COLOR0 input, and the causal RGB gate.
 constexpr std::uint32_t kVisualConfigAllBits = 0x7fu;
@@ -109,6 +113,9 @@ struct RealDrawSnapshot {
     std::uint32_t viewport = 0;
     std::uint32_t vertexStride = 0;
     std::uint32_t vertexOffset = 0;
+    std::uint32_t vertexCb3ByteWidth = 0;
+    std::uint32_t vertexCb3CaptureStatus = 0;
+    std::array<std::uint8_t, kRealDrawVsCb3ByteCount> vertexCb3Bytes{};
     // Observer-owned guarantee only: event 4/5 never calls ClearState. This
     // does not claim that Unity preserves every binding across DrawMesh.
     std::uint32_t observerDidNotClearState = 1;
@@ -441,6 +448,8 @@ void CaptureRealDrawState(bool afterDraw)
     context->PSGetConstantBuffers(0, 5, psBuffers);
     context->PSGetShaderResources(0, 5, psResources);
     context->PSGetSamplers(0, 5, psSamplers);
+    ID3D11Buffer* vertexCb3 = vsBuffers[3];
+    if (vertexCb3 != nullptr) vertexCb3->AddRef();
     for (std::uint32_t i = 0; i < 5; ++i) {
         if (vsBuffers[i] != nullptr) { snapshot.vertexConstantBufferMask |= 1u << i; vsBuffers[i]->Release(); }
         if (psBuffers[i] != nullptr) { snapshot.pixelConstantBufferMask |= 1u << i; psBuffers[i]->Release(); }
@@ -448,6 +457,43 @@ void CaptureRealDrawState(bool afterDraw)
         if (psSamplers[i] != nullptr) { snapshot.pixelSamplerMask |= 1u << i; psSamplers[i]->Release(); }
     }
     if (vsResources[0] != nullptr) { snapshot.vertexShaderResourceMask = 1u; vsResources[0]->Release(); }
+
+    // Read only the VS b3 resource observed at this exact event boundary.
+    // CopyResource/Map operate on a staging buffer and do not bind, clear, or
+    // otherwise mutate the Unity context. Require the recovered 224-byte
+    // contract before publishing any bytes.
+    if (vertexCb3 != nullptr) {
+        D3D11_BUFFER_DESC sourceDescription = {};
+        vertexCb3->GetDesc(&sourceDescription);
+        snapshot.vertexCb3ByteWidth = sourceDescription.ByteWidth;
+        if (sourceDescription.ByteWidth == kRealDrawVsCb3ByteCount) {
+            D3D11_BUFFER_DESC stagingDescription = {};
+            stagingDescription.ByteWidth = kRealDrawVsCb3ByteCount;
+            stagingDescription.Usage = D3D11_USAGE_STAGING;
+            stagingDescription.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+            ID3D11Buffer* staging = nullptr;
+            const HRESULT createResult = device->CreateBuffer(&stagingDescription, nullptr, &staging);
+            if (SUCCEEDED(createResult) && staging != nullptr) {
+                context->CopyResource(staging, vertexCb3);
+                D3D11_MAPPED_SUBRESOURCE mapped = {};
+                const HRESULT mapResult = context->Map(staging, 0, D3D11_MAP_READ, 0, &mapped);
+                if (SUCCEEDED(mapResult) && mapped.pData != nullptr) {
+                    std::memcpy(snapshot.vertexCb3Bytes.data(), mapped.pData,
+                                kRealDrawVsCb3ByteCount);
+                    snapshot.vertexCb3CaptureStatus = 1u;
+                    context->Unmap(staging, 0);
+                } else {
+                    snapshot.vertexCb3CaptureStatus = 3u;
+                }
+                staging->Release();
+            } else {
+                snapshot.vertexCb3CaptureStatus = 3u;
+            }
+        } else {
+            snapshot.vertexCb3CaptureStatus = 2u;
+        }
+        vertexCb3->Release();
+    }
 
     ID3D11InputLayout* inputLayout = nullptr;
     ID3D11Buffer* vertexBuffers[8] = {};
@@ -891,6 +937,54 @@ EndfieldOriginalM23DxbcBridgeGetRealDrawAfterIndexFormat()
 {
     std::lock_guard<std::mutex> lock(g_realDrawMutex);
     return g_realDrawAfter.indexFormat;
+}
+extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalM23DxbcBridgeGetRealDrawBeforeVsCb3Valid()
+{
+    std::lock_guard<std::mutex> lock(g_realDrawMutex);
+    return g_realDrawBefore.vertexCb3CaptureStatus == 1u ? 1u : 0u;
+}
+extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalM23DxbcBridgeGetRealDrawAfterVsCb3Valid()
+{
+    std::lock_guard<std::mutex> lock(g_realDrawMutex);
+    return g_realDrawAfter.vertexCb3CaptureStatus == 1u ? 1u : 0u;
+}
+extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalM23DxbcBridgeGetRealDrawBeforeVsCb3ByteWidth()
+{
+    std::lock_guard<std::mutex> lock(g_realDrawMutex);
+    return g_realDrawBefore.vertexCb3ByteWidth;
+}
+extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalM23DxbcBridgeGetRealDrawAfterVsCb3ByteWidth()
+{
+    std::lock_guard<std::mutex> lock(g_realDrawMutex);
+    return g_realDrawAfter.vertexCb3ByteWidth;
+}
+extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalM23DxbcBridgeCopyRealDrawBeforeVsCb3(
+    std::uint8_t* outputBytes, std::uint32_t outputByteCount)
+{
+    if (outputBytes == nullptr) return 0u;
+    std::lock_guard<std::mutex> lock(g_realDrawMutex);
+    if (g_realDrawBefore.vertexCb3CaptureStatus != 1u) return 0u;
+    const std::uint32_t count = outputByteCount < kRealDrawVsCb3ByteCount
+        ? outputByteCount : kRealDrawVsCb3ByteCount;
+    std::memcpy(outputBytes, g_realDrawBefore.vertexCb3Bytes.data(), count);
+    return count;
+}
+extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalM23DxbcBridgeCopyRealDrawAfterVsCb3(
+    std::uint8_t* outputBytes, std::uint32_t outputByteCount)
+{
+    if (outputBytes == nullptr) return 0u;
+    std::lock_guard<std::mutex> lock(g_realDrawMutex);
+    if (g_realDrawAfter.vertexCb3CaptureStatus != 1u) return 0u;
+    const std::uint32_t count = outputByteCount < kRealDrawVsCb3ByteCount
+        ? outputByteCount : kRealDrawVsCb3ByteCount;
+    std::memcpy(outputBytes, g_realDrawAfter.vertexCb3Bytes.data(), count);
+    return count;
 }
 extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
 EndfieldOriginalM23DxbcBridgeGetRealDrawObserverDidNotClearState()
