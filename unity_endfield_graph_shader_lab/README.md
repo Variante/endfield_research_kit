@@ -4692,6 +4692,20 @@ and renderer lists, while `HGParticleMeshInstanceRenderer` exposes no managed
 field, method, parameter, or caller in current metadata. Continue at its
 UnityPlayer/HG-native implementation or a supported real-draw resource
 capture; do not infer the packer from EffectManager or HG material wrappers.
+Run `python tools/audit_m23_hg_native_boundary.py` to validate the pinned
+UnityPlayer-native boundary. It verifies the stripped
+`HGParticleMeshInstanceRenderer` registration row plus the
+`HGMeshRendererData` initializer/helper bodies. The registration exposes no
+constructor/vtable/method pointer, and the initializer emits only 24-byte
+material/main-mesh/shadow-mesh handle records; both stride-136 and draw-time
+cb3 producer admission remain false.
+`validate_m23_external_correlation.py` joins already-exported DXCap evidence
+to a manifest from `capture_original_client_external_telemetry.ps1`. A pass
+means only one pinned client process and a shader-length/stride candidate in
+the same capture boundary. Actor/HG identity, exact shader bytes, vertex-buffer
+bytes, cb3 bytes, and visual admission remain unavailable. The validator
+rejects attach/debug/injection/patch/process-memory/module inspection and any
+manifest outside the `external_telemetry_only` policy.
 At PTS 40000 it proves two live particles each for `xuanzhuan03` (388 source
 vertices, 776 baked) and `xuanzhuan03_02` (768 source vertices, 1,536 baked),
 while both `xuanzhuan04*` renderers are present but empty. Source normals and
