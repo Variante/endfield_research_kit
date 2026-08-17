@@ -2541,6 +2541,17 @@ only stable interpretation and priorities.
    Color32/UV/UV2/Custom1 width is exactly 60 bytes. The 136-byte 0138 ABI
    additionally requires tangent, float4 color/UV lanes, and blend lanes, so
    it cannot be a serialized OBJ or direct authored-stream layout.
+   A complete D3D11 `VFXBaseV2` census now corrects the runtime-selection
+   boundary. Sidecars 0138/0139 are blob1277, the unique non-instanced pair
+   matching M23's serialized valid keywords plus `HG_ENABLE_MV`; blob1956
+   (4212/4213) is the otherwise matching `SRP_INSTANCING_ON` alternative. The
+   export does not capture the retail fork/HG instancing decision, so neither
+   pair is a proven M23 draw binding. None of 1,358 D3D11 pairs across 14
+   input-signature families accepts the authored six-stream/60-byte semantic
+   set: every family also requires blend lanes. Runtime mesh/particle
+   conversion therefore remains mandatory whichever pair is selected; the
+   smaller selection gap is an actual-draw shader identity/length or PSO
+   capture.
    GameAssembly's HGMesh audit also excludes its managed layer: current
    `HGMeshRendererData` callers only manage ECS mesh/material handles, bounds,
    dither, and renderer lists. `HGParticleMeshInstanceRenderer` has no managed

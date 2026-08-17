@@ -48,6 +48,12 @@ def test_m23_abi_constants_and_generated_contract() -> None:
     assert abi["shader"]["pass"] == "ForwardOnly"
     assert abi["shader"]["keywords"] == M.M23_VARIANT_KEYWORDS
     assert abi["material"]["pathID"] == M.M23_PATH_ID
+    assert abi["selectionBoundary"] == {
+        "serializedNonInstancedPair": "blob1277 / sidecars 0138+0139",
+        "srpInstancedAlternative": "blob1956 / sidecars 4212+4213; adds SRP_INSTANCING_ON",
+        "retailDrawVariantCaptured": False,
+        "interpretation": "material valid keywords plus HG_ENABLE_MV uniquely select blob1277 only when SRP_INSTANCING_ON is absent; serialized GPU-instancing flags do not prove that runtime fork/HG decision",
+    }
     assert abi["variants"]["vertex"]["blob"]["bytes"] == 10720
     assert abi["variants"]["fragment"]["blob"]["bytes"] == 8100
     assert abi["texcoordPacking"] == M.M23_TEXCOORD_PACKING
@@ -112,6 +118,7 @@ def test_m23_abi_constants_and_generated_contract() -> None:
         },
     ]
     assert M.m23_shader_json_evidence() == shader_json
+    assert "Runtime selection between that pair and the blob1956" in data["executionBoundary"]
 
 
 if __name__ == "__main__":

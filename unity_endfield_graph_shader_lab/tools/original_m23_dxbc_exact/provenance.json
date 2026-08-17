@@ -4,6 +4,17 @@
   "shader": "HGRP/Effect/VFXBaseV2",
   "pass": "ForwardOnly",
   "material_path_id": -430604955415889784,
+  "runtime_selection": {
+    "captured": false,
+    "serialized_non_instanced_candidate": "blob1277 / sidecars 0138+0139",
+    "srp_instanced_alternative": {
+      "program_blob_index": 1956,
+      "sidecars": [4212, 4213],
+      "bytes": [11016, 8188],
+      "sha256": ["3d25b7d2e557cd1a292851556ef5db6b03594fd82b63b05d1c18a1ae9e2d41e0", "23c0bef565c6f30b4d5bd094848655768408d308a179e9cd0f067b599ba310d7"]
+    },
+    "interpretation": "blob1277 matches the serialized material keywords only when SRP_INSTANCING_ON is absent; the retail fork/HG draw decision is not captured"
+  },
   "vertex": {
     "file": "scratch/character_recovery/vfx_shader_variants/shader_export/Shader/HGRP_Effect_VFXBaseV2_pEC273EDA76F7FCDA.shader.bytecode/0138_endfield_dxbc_0.dxbc",
     "bytes": 10720,
@@ -95,6 +106,7 @@
   "does_not_prove": [
     "Unity integration",
     "HGParticleMeshInstanceRenderer packer identity",
+    "retail selection between blob1277 and blob1956",
     "vertex-buffer or draw-time cb3 bytes from external telemetry/DXCap XML",
     "material or visual fidelity"
   ]
