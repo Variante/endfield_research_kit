@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import tempfile
 import unittest
 from pathlib import Path
@@ -2213,6 +2214,656 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
             area_row["operandSources"][0]["kind"],
         )
         self.assertNotIn("missionRuntimeOperandConsumers", area_row)
+
+
+    @staticmethod
+    def _trigger_fixture_index(story_files: list[dict]) -> dict:
+        return {
+            "storyCoverage": {
+                "missionlessNativeRuntimeNodes": [{
+                    "eventName": "ScriptEvent_OnLeaderEnterTriggerVolume",
+                    "selector": {
+                        "levelId": "map_fixture",
+                        "listenerScriptId": "1001",
+                        "listenerHeaderLocalId": 7,
+                    },
+                    "storyFiles": story_files,
+                }]
+            }
+        }
+
+    @staticmethod
+    def _trigger_overlay(source_file: Path, *, shadowed: list[dict] | None = None) -> dict:
+        source = source_file.resolve().as_posix()
+        return {
+            "schema": "levelScriptActiveOverlay.v1",
+            "status": "validated_active_overlay",
+            "availableRootCount": 1,
+            "fileCount": 1,
+            "validationFailures": [],
+            "files": {
+                "map_fixture/1001.json": {
+                    "logicalPath": "map_fixture/1001.json",
+                    "sourceFile": source,
+                    "sourceRoot": source_file.parent.parent.as_posix(),
+                    "sha256": hashlib.sha256(source_file.read_bytes()).hexdigest(),
+                    "status": "fallback",
+                    "shadowed": shadowed or [],
+                }
+            },
+        }
+
+    @staticmethod
+    def _exact_topology(event_name: str, detail: dict) -> tuple[dict, None]:
+        return ({
+            "status": "exact_complete_action_map",
+            "eventRoots": [{
+                "localId": 7,
+                "headerName": event_name,
+                "eventDetail": detail,
+            }],
+        }, None)
+
+    def test_story_trigger_zone_exact_local_volume_includes_shape_and_hash(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            source = Path(temporary) / "LevelScriptData" / "map_fixture" / "1001.json"
+            source.parent.mkdir(parents=True)
+            source.write_bytes(b"active")
+            volume = {
+                "slotId": 80001,
+                "triggerVolumeType": "Leader",
+                "shapeList": {
+                    "status": "present",
+                    "parseStatus": "decoded",
+                    "shapes": [{"shapeType": "Box", "size": {"x": 3}}],
+                },
+            }
+            with mock.patch.object(
+                frontier,
+                "decode_levelscript_native_action_topology",
+                return_value=self._exact_topology(
+                    "ScriptEvent_OnLeaderEnterTriggerVolume",
+                    {
+                        "triggerSlotIdFilter": 80001,
+                        "payloadSchemaStatus": "exact_current_build_memorypack_fields",
+                    },
+                ),
+            ), mock.patch.object(
+                frontier,
+                "decode_levelscript_binary_summary",
+                return_value={
+                    "scriptIdVerified": True,
+                    "triggerVolumesDetails": {
+                        "volumes": [{"slotId": 80001}],
+                    },
+                },
+            ), mock.patch.object(
+                frontier,
+                "classify_local_trigger_volume_context",
+                return_value={
+                    "status": "exact_local_levelscript_trigger_volume_without_foreign_identity",
+                    "triggerVolumes": [volume],
+                    "missingSlotIds": [],
+                    "ambiguousSlotIds": [],
+                },
+            ):
+                report = frontier.build_story_trigger_zone_coverage(
+                    self._trigger_fixture_index([{
+                        "key": "radio_fixture_1",
+                        "sourceFiles": [source.resolve().as_posix()],
+                    }]),
+                    overlay_index=self._trigger_overlay(source),
+                )
+        row = report["rows"][0]
+        observation = row["observations"][0]
+        self.assertEqual("exact_local_trigger_volume", row["status"])
+        self.assertEqual(80001, observation["triggerSlotIdFilter"])
+        self.assertEqual("Leader", observation["triggerVolumeType"])
+        self.assertEqual(volume["shapeList"]["shapes"], observation["decodedShape"])
+        self.assertRegex(observation["sourceSha256"], r"^[0-9a-f]{64}$")
+        self.assertFalse(row["ownership"])
+
+    def test_story_trigger_zone_shared_zone_is_exact_for_each_story_without_fanout(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            source = Path(temporary) / "LevelScriptData" / "map_fixture" / "1001.json"
+            source.parent.mkdir(parents=True)
+            source.write_bytes(b"active")
+            with mock.patch.object(
+                frontier,
+                "decode_levelscript_native_action_topology",
+                return_value=self._exact_topology(
+                    "ScriptEvent_OnLeaderEnterTriggerVolume",
+                    {
+                        "triggerSlotIdFilter": 80001,
+                        "payloadSchemaStatus": "exact_current_build_memorypack_fields",
+                    },
+                ),
+            ), mock.patch.object(
+                frontier,
+                "decode_levelscript_binary_summary",
+                return_value={
+                    "scriptIdVerified": True,
+                    "triggerVolumesDetails": {
+                        "volumes": [{"slotId": 80001}],
+                    },
+                },
+            ), mock.patch.object(
+                frontier,
+                "classify_local_trigger_volume_context",
+                return_value={
+                    "status": "exact_local_levelscript_trigger_volume_without_foreign_identity",
+                    "triggerVolumes": [{
+                        "slotId": 80001,
+                        "triggerVolumeType": "Leader",
+                        "shapeList": {"shapes": [{"shapeType": "Sphere"}]},
+                    }],
+                },
+            ):
+                report = frontier.build_story_trigger_zone_coverage(
+                    self._trigger_fixture_index([
+                        {"key": "radio_fixture_1", "sourceFiles": [source.resolve().as_posix()]},
+                        {"key": "radio_fixture_2", "sourceFiles": [source.resolve().as_posix()]},
+                    ]),
+                    overlay_index=self._trigger_overlay(source),
+                )
+        self.assertEqual(2, report["counts"]["storyFiles"])
+        self.assertEqual(
+            ["exact_local_trigger_volume", "exact_local_trigger_volume"],
+            [row["status"] for row in report["rows"]],
+        )
+        self.assertTrue(all(not row["ownership"] for row in report["rows"]))
+
+    def test_story_trigger_zone_exact_non_spatial_event_is_not_a_zone(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            source = Path(temporary) / "LevelScriptData" / "map_fixture" / "1001.json"
+            source.parent.mkdir(parents=True)
+            source.write_bytes(b"active")
+            with mock.patch.object(
+                frontier,
+                "decode_levelscript_native_action_topology",
+                return_value=self._exact_topology(
+                    "ScriptEvent_OnCustomEvent",
+                    {
+                        "eventKey": "OnFixture",
+                        "payloadSchemaStatus": "exact_current_build_memorypack_fields",
+                    },
+                ),
+            ):
+                report = frontier.build_story_trigger_zone_coverage(
+                    self._trigger_fixture_index([
+                        {"key": "radio_fixture", "sourceFiles": [source.resolve().as_posix()]}
+                    ]),
+                    overlay_index=self._trigger_overlay(source),
+                )
+        observation = report["rows"][0]["observations"][0]
+        self.assertEqual("exact_non_spatial_event_trigger", report["rows"][0]["status"])
+        self.assertFalse(observation.get("spatiallyApplicable"))
+        self.assertEqual(0, report["rows"][0]["exactZoneCount"])
+
+    def test_story_trigger_zone_missing_shape_is_spatially_unresolved(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            source = Path(temporary) / "LevelScriptData" / "map_fixture" / "1001.json"
+            source.parent.mkdir(parents=True)
+            source.write_bytes(b"active")
+            with mock.patch.object(
+                frontier,
+                "decode_levelscript_native_action_topology",
+                return_value=self._exact_topology(
+                    "ScriptEvent_OnLeaderEnterTriggerVolume",
+                    {"triggerSlotIdFilter": 80001},
+                ),
+            ), mock.patch.object(
+                frontier,
+                "decode_levelscript_binary_summary",
+                return_value={"scriptIdVerified": True},
+            ), mock.patch.object(
+                frontier,
+                "classify_local_trigger_volume_context",
+                return_value={
+                    "status": "unresolved_local_levelscript_trigger_volume",
+                    "missingSlotIds": [80001],
+                    "ambiguousSlotIds": [],
+                    "triggerVolumesStatus": "present",
+                    "triggerVolumesParseStatus": "decoded",
+                },
+            ):
+                report = frontier.build_story_trigger_zone_coverage(
+                    self._trigger_fixture_index([
+                        {"key": "radio_fixture", "sourceFiles": [source.resolve().as_posix()]}
+                    ]),
+                    overlay_index=self._trigger_overlay(source),
+                )
+        row = report["rows"][0]
+        self.assertEqual("trigger_event_known_spatial_unresolved", row["status"])
+        self.assertEqual("uniqueDecodedLocalTriggerVolume", row["observations"][0]["diagnostics"][0]["gate"])
+
+    def test_story_trigger_zone_changed_shadow_fails_closed_without_stale_decode(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            active = root / "Persistent" / "LevelScriptData" / "map_fixture" / "1001.json"
+            active.parent.mkdir(parents=True)
+            active.write_bytes(b"active")
+            stale = root / "StreamingAssets" / "LevelScriptData" / "map_fixture" / "1001.json"
+            stale.parent.mkdir(parents=True)
+            stale.write_bytes(b"stale")
+            overlay = self._trigger_overlay(active, shadowed=[{
+                "sourceFile": stale.resolve().as_posix(),
+                "sourceRoot": stale.parent.parent.as_posix(),
+                "sha256": "b" * 64,
+                "status": "changed_override",
+            }])
+            with mock.patch.object(
+                frontier,
+                "decode_levelscript_native_action_topology",
+            ) as decoder, mock.patch.object(
+                frontier,
+                "build_active_levelscript_action_story_occurrences",
+                return_value={},
+            ):
+                report = frontier.build_story_trigger_zone_coverage(
+                    self._trigger_fixture_index([
+                        {"key": "radio_fixture", "sourceFiles": [stale.resolve().as_posix()]}
+                    ]),
+                    overlay_index=overlay,
+                )
+        row = report["rows"][0]
+        self.assertEqual("active_overlay_unavailable", row["status"])
+        self.assertEqual("activeHeaderPlaybackRemap", row["observations"][0]["diagnostics"][0]["gate"])
+        decoder.assert_not_called()
+
+    def test_story_trigger_zone_preload_only_placement_is_excluded(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            source = Path(temporary) / "LevelScriptData" / "map_fixture" / "1001.json"
+            source.parent.mkdir(parents=True)
+            source.write_bytes(b"active")
+            index = self._trigger_fixture_index([{
+                "key": "cutscene_preload_only",
+                "nativeActions": ["PreloadCutsceneAction"],
+                "sourceFiles": [source.resolve().as_posix()],
+            }])
+            with mock.patch.object(frontier, "decode_levelscript_native_action_topology") as decoder:
+                report = frontier.build_story_trigger_zone_coverage(
+                    index,
+                    overlay_index=self._trigger_overlay(source),
+                )
+        row = report["rows"][0]
+        self.assertEqual("preload_only_excluded", row["status"])
+        self.assertEqual(0, row["observationCount"])
+        self.assertEqual(1, report["counts"]["preloadExcludedPlacementCount"])
+        decoder.assert_not_called()
+
+    def test_story_trigger_zone_entity_target_slot_requires_exact_positive_selector(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            source = Path(temporary) / "LevelScriptData" / "map_fixture" / "1001.json"
+            source.parent.mkdir(parents=True)
+            source.write_bytes(b"active")
+            index = self._trigger_fixture_index([{
+                "key": "radio_entity_slot",
+                "sourceFiles": [source.resolve().as_posix()],
+            }])
+            topology = self._exact_topology(
+                "EntityEvent_OnLeaderEnterTrigger",
+                {
+                    "entityEventScope": "specified-entity",
+                    "triggerTarget": "SPECIFY_ENTITY",
+                    "targetEntity": {
+                        "logicId": 0,
+                        "useSlotId": True,
+                        "slotId": 80001,
+                    },
+                    "targetEntityListPresent": False,
+                    "targetEntityListOutputPresent": False,
+                    "transport": "local-authored-trigger-volume-event",
+                    "serverExchange": False,
+                    "serializedMissionOrQuestId": False,
+                    "payloadSchemaStatus": "exact_current_build_memorypack_fields",
+                    "payloadSchemaMappingId": frontier.LEVELSCRIPT_NATIVE_EVENT_PAYLOAD_MAPPING_ID,
+                    "validateParam": {"constValue": True},
+                },
+            )
+            volume = {
+                "slotId": 80001,
+                "triggerVolumeType": "Leader",
+                "shapeList": {"shapes": [{"shapeType": "Box"}]},
+            }
+            with mock.patch.object(
+                frontier,
+                "decode_levelscript_native_action_topology",
+                return_value=topology,
+            ), mock.patch.object(
+                frontier,
+                "decode_levelscript_binary_summary",
+                return_value={
+                    "scriptIdVerified": True,
+                    "triggerVolumesDetails": {
+                        "volumes": [{"slotId": 80001}],
+                    },
+                },
+            ), mock.patch.object(
+                frontier,
+                "classify_local_trigger_volume_context",
+                return_value={
+                    "status": "exact_local_levelscript_trigger_volume_without_foreign_identity",
+                    "triggerVolumes": [volume],
+                },
+            ) as classifier:
+                report = frontier.build_story_trigger_zone_coverage(
+                    index,
+                    overlay_index=self._trigger_overlay(source),
+                )
+        self.assertEqual("exact_local_trigger_volume", report["rows"][0]["status"])
+        self.assertEqual(
+            "eventDetail.targetEntity.slotId",
+            report["rows"][0]["observations"][0]["triggerSelectorKind"],
+        )
+        self.assertEqual([80001], classifier.call_args.args[1])
+
+    def test_story_trigger_zone_entity_target_slot_rejects_non_exact_selector(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            source = Path(temporary) / "LevelScriptData" / "map_fixture" / "1001.json"
+            source.parent.mkdir(parents=True)
+            source.write_bytes(b"active")
+            topology = self._exact_topology(
+                "EntityEvent_OnLeaderEnterTrigger",
+                {
+                    "entityEventScope": "specified-entity",
+                    "triggerTarget": "SPECIFY_ENTITY",
+                    "targetEntity": {
+                        "logicId": 0,
+                        "useSlotId": False,
+                        "slotId": 80001,
+                    },
+                    "targetEntityListPresent": False,
+                    "targetEntityListOutputPresent": False,
+                    "transport": "local-authored-trigger-volume-event",
+                    "serverExchange": False,
+                    "serializedMissionOrQuestId": False,
+                    "payloadSchemaStatus": "exact_current_build_memorypack_fields",
+                    "payloadSchemaMappingId": frontier.LEVELSCRIPT_NATIVE_EVENT_PAYLOAD_MAPPING_ID,
+                    "validateParam": {"constValue": True},
+                },
+            )
+            with mock.patch.object(
+                frontier,
+                "decode_levelscript_native_action_topology",
+                return_value=topology,
+            ), mock.patch.object(
+                frontier,
+                "decode_levelscript_binary_summary",
+                return_value={
+                    "scriptIdVerified": True,
+                    "triggerVolumesDetails": {"volumes": [{"slotId": 80001}]},
+                },
+            ), mock.patch.object(
+                frontier,
+                "classify_local_trigger_volume_context",
+                return_value={
+                    "status": "unresolved_local_levelscript_trigger_volume",
+                    "missingSlotIds": [],
+                    "ambiguousSlotIds": [],
+                },
+            ):
+                report = frontier.build_story_trigger_zone_coverage(
+                    self._trigger_fixture_index([{
+                        "key": "radio_entity_slot_bad",
+                        "sourceFiles": [source.resolve().as_posix()],
+                    }]),
+                    overlay_index=self._trigger_overlay(source),
+                )
+        observation = report["rows"][0]["observations"][0]
+        self.assertEqual(
+            "trigger_event_known_spatial_unresolved",
+            report["rows"][0]["status"],
+        )
+        self.assertIsNone(observation["triggerSlotIdFilter"])
+
+    def test_story_trigger_zone_entity_target_contract_rejects_each_non_exact_field(self) -> None:
+        valid = {
+            "entityEventScope": "specified-entity",
+            "triggerTarget": "SPECIFY_ENTITY",
+            "targetEntity": {"logicId": 0, "useSlotId": True, "slotId": 80001},
+            "targetEntityListPresent": False,
+            "targetEntityListOutputPresent": False,
+            "transport": "local-authored-trigger-volume-event",
+            "serverExchange": False,
+            "serializedMissionOrQuestId": False,
+            "payloadSchemaStatus": "exact_current_build_memorypack_fields",
+            "payloadSchemaMappingId": frontier.LEVELSCRIPT_NATIVE_EVENT_PAYLOAD_MAPPING_ID,
+            "validateParam": {"constValue": True},
+        }
+        variants = {
+            "logicId": {"targetEntity": {"logicId": 123}},
+            "scope": {"entityEventScope": "selected-entity"},
+            "target": {"triggerTarget": "OTHER"},
+            "transport": {"transport": "local-entity-runtime-event"},
+            "server": {"serverExchange": True},
+            "mapping": {"payloadSchemaMappingId": "wrong"},
+            "list": {"targetEntityListPresent": True},
+            "validate": {"validateParam": {"constValue": False}},
+        }
+        for name, changes in variants.items():
+            with self.subTest(field=name), tempfile.TemporaryDirectory() as temporary:
+                source = Path(temporary) / "LevelScriptData" / "map_fixture" / "1001.json"
+                source.parent.mkdir(parents=True)
+                source.write_bytes(b"active")
+                detail = {
+                    **valid,
+                    "targetEntity": dict(valid["targetEntity"]),
+                    "validateParam": dict(valid["validateParam"]),
+                }
+                detail.update(changes)
+                topology = self._exact_topology("EntityEvent_OnLeaderEnterTrigger", detail)
+                with mock.patch.object(
+                    frontier,
+                    "decode_levelscript_native_action_topology",
+                    return_value=topology,
+                ), mock.patch.object(
+                    frontier,
+                    "decode_levelscript_binary_summary",
+                    return_value={
+                        "scriptIdVerified": True,
+                        "triggerVolumesDetails": {"volumes": [{"slotId": 80001}]},
+                    },
+                ), mock.patch.object(
+                    frontier,
+                    "classify_local_trigger_volume_context",
+                ) as classifier:
+                    report = frontier.build_story_trigger_zone_coverage(
+                        self._trigger_fixture_index([{
+                            "key": f"radio_entity_contract_{name}",
+                            "sourceFiles": [source.resolve().as_posix()],
+                        }]),
+                        overlay_index=self._trigger_overlay(source),
+                    )
+                observation = report["rows"][0]["observations"][0]
+                self.assertEqual(
+                    "trigger_event_known_spatial_unresolved",
+                    report["rows"][0]["status"],
+                )
+                self.assertEqual(
+                    "exactEntityTriggerSelectorContract",
+                    observation["diagnostics"][0]["gate"],
+                )
+                classifier.assert_not_called()
+
+    def test_story_trigger_zone_changed_shadow_rederives_active_header_and_playback(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            active = root / "Persistent" / "LevelScriptData" / "map_fixture" / "1001.json"
+            active.parent.mkdir(parents=True)
+            active.write_bytes(b"active")
+            stale = root / "StreamingAssets" / "LevelScriptData" / "map_fixture" / "1001.json"
+            stale.parent.mkdir(parents=True)
+            stale.write_bytes(b"stale")
+            active_source = active.resolve().as_posix()
+            old_source = stale.resolve().as_posix()
+            active_hash = hashlib.sha256(active.read_bytes()).hexdigest()
+            overlay = self._trigger_overlay(active, shadowed=[{
+                "sourceFile": old_source,
+                "sourceRoot": stale.parent.parent.as_posix(),
+                "sha256": hashlib.sha256(stale.read_bytes()).hexdigest(),
+                "status": "changed_override",
+            }])
+            topology = self._exact_topology(
+                "LevelEvent_OnBattleSignal",
+                {
+                    "signalId": "active_signal",
+                    "payloadSchemaStatus": "exact_current_build_memorypack_fields",
+                },
+            )
+            occurrence = {
+                "levelId": "map_fixture",
+                "scriptId": "1001",
+                "sourceFile": active_source,
+                "activeOverlaySourceSha256": active_hash,
+                "actionName": "PlayRadio",
+                "recordClass": "play_radio",
+                "localId": 9,
+                "nativeEventOwners": [{
+                    "status": "exact_serialized_control_path",
+                    "headerName": "LevelEvent_OnBattleSignal",
+                    "headerLocalId": 12,
+                    "eventDetail": topology[0]["eventRoots"][0]["eventDetail"],
+                    "path": [{"localId": 9}],
+                }],
+            }
+            topology[0]["eventRoots"][0]["localId"] = 12
+            topology[0]["actions"] = [{
+                "localId": 9,
+                "actionName": "PlayRadio",
+                "texts": ["radio_active_remap"],
+            }]
+            index = self._trigger_fixture_index([{
+                "key": "radio_active_remap",
+                "nativeActions": ["PlayRadio"],
+                "sourceFiles": [old_source],
+            }])
+            with mock.patch.object(
+                frontier,
+                "build_active_levelscript_action_story_occurrences",
+                return_value={"radio_active_remap": [occurrence]},
+            ), mock.patch.object(
+                frontier,
+                "decode_levelscript_native_action_topology",
+                return_value=topology,
+            ):
+                report = frontier.build_story_trigger_zone_coverage(
+                    index,
+                    overlay_index=overlay,
+                )
+        observation = report["rows"][0]["observations"][0]
+        self.assertEqual("exact_non_spatial_event_trigger", report["rows"][0]["status"])
+        self.assertTrue(observation["activeHeaderRemapped"])
+        self.assertEqual(12, observation["listenerHeaderLocalId"])
+        self.assertEqual(old_source, observation["originalSourceFile"])
+        self.assertEqual(12, observation["activeHeaderRemap"]["toHeaderLocalId"])
+        self.assertEqual(active_source, observation["sourceFile"])
+        self.assertEqual(active_hash, observation["sourceSha256"])
+
+    def test_story_trigger_zone_cross_script_same_key_is_multiple_not_fanned_out(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            sources = []
+            overlay_files = {}
+            for script_id in ("1001", "1002"):
+                source = root / "LevelScriptData" / "map_fixture" / f"{script_id}.json"
+                source.parent.mkdir(parents=True, exist_ok=True)
+                source.write_bytes(script_id.encode("ascii"))
+                source_text = source.resolve().as_posix()
+                sources.append(source_text)
+                overlay_files[f"map_fixture/{script_id}.json"] = {
+                    "logicalPath": f"map_fixture/{script_id}.json",
+                    "sourceFile": source_text,
+                    "sourceRoot": source.parent.parent.as_posix(),
+                    "sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
+                    "status": "fallback",
+                    "shadowed": [],
+                }
+            overlay = self._trigger_overlay(Path(sources[0]))
+            overlay["files"] = overlay_files
+            nodes = []
+            for index, script_id in enumerate(("1001", "1002")):
+                nodes.append({
+                    "eventName": "ScriptEvent_OnLeaderEnterTriggerVolume",
+                    "selector": {
+                        "levelId": "map_fixture",
+                        "listenerScriptId": script_id,
+                        "listenerHeaderLocalId": 7,
+                    },
+                    "storyFiles": [{
+                        "key": "radio_shared_cross_script",
+                        "nativeActions": ["PlayRadio"],
+                        "sourceFiles": [sources[index]],
+                    }],
+                })
+            index_payload = {
+                "storyCoverage": {
+                    "missionlessNativeRuntimeNodes": nodes,
+                }
+            }
+            with mock.patch.object(
+                frontier,
+                "decode_levelscript_native_action_topology",
+                return_value=self._exact_topology(
+                    "ScriptEvent_OnLeaderEnterTriggerVolume",
+                    {"triggerSlotIdFilter": 80001},
+                ),
+            ), mock.patch.object(
+                frontier,
+                "decode_levelscript_binary_summary",
+                return_value={"scriptIdVerified": True},
+            ), mock.patch.object(
+                frontier,
+                "classify_local_trigger_volume_context",
+                side_effect=[
+                    {
+                        "status": "exact_local_levelscript_trigger_volume_without_foreign_identity",
+                        "triggerVolumes": [{
+                            "slotId": 80001,
+                            "triggerVolumeType": "Leader",
+                            "shapeList": {"shapes": [{"shapeType": "Box"}]},
+                        }],
+                    },
+                    {
+                        "status": "exact_local_levelscript_trigger_volume_without_foreign_identity",
+                        "triggerVolumes": [{
+                            "slotId": 80001,
+                            "triggerVolumeType": "Leader",
+                            "shapeList": {"shapes": [{"shapeType": "Sphere"}]},
+                        }],
+                    },
+                ],
+            ):
+                report = frontier.build_story_trigger_zone_coverage(
+                    index_payload,
+                    overlay_index=overlay,
+                )
+        row = report["rows"][0]
+        self.assertEqual("multiple_or_ambiguous_trigger_zones", row["status"])
+        self.assertEqual(2, row["uniqueZoneCount"])
+        self.assertEqual(2, row["observationCount"])
+
+    def test_story_trigger_zone_current_corpus_aggregate_is_active_and_complete(self) -> None:
+        pipeline_index = ROOT / "webui" / "data" / "mission_pipeline" / "index.json"
+        if not pipeline_index.is_file():
+            self.skipTest("generated Mission Pipeline index is unavailable")
+        report = frontier.build_story_trigger_zone_coverage(
+            json.loads(pipeline_index.read_text(encoding="utf-8"))
+        )
+        self.assertEqual("validated_active_overlay", report["overlay"]["status"])
+        self.assertEqual(152, report["counts"]["storyFiles"])
+        self.assertEqual(66, report["counts"]["status"]["exact_local_trigger_volume"])
+        self.assertEqual(2, report["counts"]["status"]["multiple_or_ambiguous_trigger_zones"])
+        self.assertEqual(84, report["counts"]["status"]["exact_non_spatial_event_trigger"])
+        self.assertNotIn("active_overlay_unavailable", report["counts"]["status"])
+        self.assertNotIn("trigger_event_known_spatial_unresolved", report["counts"]["status"])
+        remapped = [
+            observation
+            for row in report["rows"]
+            for observation in row["observations"]
+            if observation.get("activeHeaderRemapped")
+        ]
+        self.assertEqual(7, len(remapped))
 
 
 if __name__ == "__main__":

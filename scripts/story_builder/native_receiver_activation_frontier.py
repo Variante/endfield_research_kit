@@ -65,13 +65,19 @@ from .context import (
 from .level_bindings import (
     _native_vector_close,
     _parse_leveldata_mission_host_name,
+    build_active_levelscript_overlay_index,
+    build_active_levelscript_action_story_occurrences,
     build_leveldata_mission_area_script_host_index,
     decode_levelscript_native_action_topology,
     parse_leveldata_levelscript_brief_dictionary,
+    resolve_active_levelscript_evidence,
 )
 from .levelscript_binary import (
+    LEVELSCRIPT_NATIVE_EVENT_PAYLOAD_MAPPING_ID,
+    classify_local_trigger_volume_context,
     decode_levelscript_task_conditions,
     decode_levelscript_binary_file,
+    decode_levelscript_binary_summary,
 )
 from .levelscript_manual_control import (
     build_manual_control_index,
@@ -82,7 +88,29 @@ from .mission_recovery import (
 )
 
 
-SCHEMA = "nativeReceiverActivationFrontier.v28"
+SCHEMA = "nativeReceiverActivationFrontier.v29"
+
+STORY_TRIGGER_ZONE_SCHEMA = "nativeReceiverStoryTriggerZone.v1"
+_SPATIAL_TRIGGER_EVENT_NAMES = frozenset({
+    "EntityEvent_OnLeaderEnterTrigger",
+    "EntityEvent_OnLeaderLeaveTrigger",
+    "ScriptEvent_OnLeaderEnterTriggerVolume",
+    "ScriptEvent_OnLeaderLeaveTriggerVolume",
+})
+_PLAYBACK_ACTION_NAMES = frozenset({
+    "Play3DRadio",
+    "Play3DRadioAndWait",
+    "PlayCutsceneAction",
+    "PlayFmvAction",
+    "PlayRadio",
+    "PlayRadioAndWait",
+    "PlayRemoteComm",
+    "NarrativeBlackScreenAction",
+    "StartCutsceneAndTeleportAction",
+    "StartDialogAction",
+    "StartDialogAndTeleportAction",
+    "StartNarrativeBlackScreenAndTeleport",
+})
 
 TELEPORT_FINISH_CORRELATION_MAPPING_ID = (
     "gameassembly-2026-08-02-teleport-finish-action-id-correlation-v1"
@@ -474,6 +502,7 @@ def _receiver_story_context_index(
                         row.get("missionOwnerStatus")
                     ) or "unresolved",
                     "relatedOriginalFiles": related_files,
+                    "triggerZoneConfirmations": [],
                     "ownership": False,
                     "activation": False,
                     "storyPlayback": False,
@@ -510,6 +539,30 @@ def _receiver_story_context_index(
             )
             context["receiverToStoryPlacementCount"] += int(
                 row.get("receiverToStoryPlacementCount") or 0
+            )
+            confirmation_rows = [
+                confirmation
+                for confirmation in row.get(
+                    "storyTriggerZoneConfirmations"
+                )
+                or []
+                if isinstance(confirmation, dict)
+                and safe_text(confirmation.get("storyKey")) == story_key
+            ]
+            context["triggerZoneConfirmations"] = sorted(
+                {
+                    json.dumps(confirmation, sort_keys=True): confirmation
+                    for confirmation in [
+                        *(context.get("triggerZoneConfirmations") or []),
+                        *confirmation_rows,
+                    ]
+                }.values(),
+                key=lambda item: (
+                    safe_text(item.get("levelId")),
+                    safe_text(item.get("scriptId")),
+                    str(item.get("status")),
+                    json.dumps(item, sort_keys=True),
+                ),
             )
             file_map = {
                 (
@@ -1669,6 +1722,821 @@ def receiver_script_rows(index_payload: dict[str, Any]) -> list[dict[str, Any]]:
         )
     rows.sort(key=lambda row: (row["levelId"], int(row["scriptId"])))
     return rows
+
+
+def build_story_trigger_zone_coverage(
+    index_payload: dict[str, Any],
+    *,
+    overlay_index: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Confirm the local trigger carrier for every native Story placement.
+
+    This is a per-Story presentation join, not an ownership or order edge.  A
+    Story placement is admitted only when its exact receiver header is found in
+    the selected active LevelScript bytes.  Spatial headers then require the
+    typed trigger slot and the complete current-build Leader volume decoder;
+    all other exact headers are retained as non-spatial event context.
+
+    The active overlay is deliberately a hard gate.  In particular, a changed
+    StreamingAssets shadow is not decoded merely because the old source path is
+    still present in ``missionlessNativeRuntimeNodes``.
+    """
+    overlay = (
+        build_active_levelscript_overlay_index()
+        if overlay_index is None
+        else overlay_index
+    )
+    nodes = (
+        (index_payload.get("storyCoverage") or {}).get(
+            "missionlessNativeRuntimeNodes"
+        )
+        or []
+    )
+    story_entries: dict[str, dict[tuple[Any, ...], dict[str, Any]]] = defaultdict(dict)
+    preload_excluded_story_keys: Counter[str] = Counter()
+    topology_cache: dict[str, tuple[dict[str, Any], dict[str, Any] | None]] = {}
+    binary_cache: dict[str, dict[str, Any]] = {}
+    active_occurrences_by_story: dict[str, list[dict[str, Any]]] | None = None
+
+    def repo_path(source_file: str) -> Path:
+        path = Path(source_file)
+        return path if path.is_absolute() else ROOT / path
+
+    def add_observation(story_key: str, observation: dict[str, Any]) -> None:
+        identity = (
+            safe_text(observation.get("sourceFile")),
+            safe_text(observation.get("sourceSha256")),
+            observation.get("listenerHeaderLocalId"),
+            safe_text(observation.get("eventName")),
+        )
+        story_entries[story_key][identity] = observation
+
+    def active_header_remap_candidates(
+        story_key: str,
+        level_id: str,
+        script_id: str,
+        original_source_file: str,
+    ) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
+        """Re-derive a changed-shadow header from active playback bytes only."""
+        nonlocal active_occurrences_by_story
+        if active_occurrences_by_story is None:
+            active_occurrences_by_story = (
+                build_active_levelscript_action_story_occurrences(overlay)
+            )
+        candidates: list[dict[str, Any]] = []
+        for occurrence in active_occurrences_by_story.get(story_key) or []:
+            if not isinstance(occurrence, dict):
+                continue
+            if (
+                safe_text(occurrence.get("levelId")) != level_id
+                or safe_text(occurrence.get("scriptId")) != script_id
+                or safe_text(occurrence.get("actionName"))
+                not in _PLAYBACK_ACTION_NAMES
+                or safe_text(occurrence.get("recordClass"))
+                in {"preload_cutscene", "preload"}
+            ):
+                continue
+            active_source = safe_text(occurrence.get("sourceFile"))
+            active_hash = safe_text(
+                occurrence.get("activeOverlaySourceSha256")
+            )
+            active_row, diagnostic = resolve_active_levelscript_evidence(
+                active_source,
+                overlay,
+                active_hash,
+            )
+            if diagnostic or not active_row:
+                continue
+            owners = [
+                owner for owner in occurrence.get("nativeEventOwners") or []
+                if isinstance(owner, dict)
+                and safe_text(owner.get("status"))
+                == "exact_serialized_control_path"
+            ]
+            if len(owners) != 1:
+                continue
+            owner = owners[0]
+            header_id = owner.get("headerLocalId")
+            local_id = occurrence.get("localId")
+            if not isinstance(header_id, int) or not isinstance(local_id, int):
+                continue
+            topology, topology_diagnostic = topology_cache.get(
+                active_source,
+                ({}, None),
+            )
+            if active_source not in topology_cache:
+                try:
+                    data = read_bytes_cached(repo_path(active_source))
+                except OSError:
+                    continue
+                actual_hash = hashlib.sha256(data).hexdigest()
+                if active_hash and actual_hash != active_hash:
+                    continue
+                topology, topology_diagnostic = (
+                    *decode_levelscript_native_action_topology(data),
+                )
+                topology_cache[active_source] = (
+                    topology,
+                    topology_diagnostic,
+                )
+            if topology_diagnostic or not str(
+                topology.get("status") or ""
+            ).startswith("exact_"):
+                continue
+            event = next(
+                (
+                    item for item in topology.get("eventRoots") or []
+                    if isinstance(item, dict)
+                    and item.get("localId") == header_id
+                ),
+                None,
+            )
+            action = next(
+                (
+                    item for item in topology.get("actions") or []
+                    if isinstance(item, dict)
+                    and item.get("localId") == local_id
+                    and safe_text(item.get("actionName"))
+                    == safe_text(occurrence.get("actionName"))
+                    and story_key in {
+                        safe_text(text)
+                        for text in item.get("texts") or []
+                    }
+                ),
+                None,
+            )
+            path_ids = {
+                item.get("localId")
+                for item in owner.get("path") or []
+                if isinstance(item, dict)
+            }
+            if (
+                not event
+                or not action
+                or local_id not in path_ids
+            ):
+                continue
+            candidates.append({
+                "activeRow": active_row,
+                "activeSource": active_source,
+                "activeHash": active_hash,
+                "event": event,
+                "topology": topology,
+                "action": action,
+                "owner": owner,
+                "originalSourceFile": original_source_file,
+            })
+        if not candidates:
+            return [], {
+                "validator": "nativeReceiverStoryTriggerZone",
+                "gate": "activeHeaderPlaybackRemap",
+                "sourceFile": original_source_file,
+                "identity": f"{level_id}/{script_id}/{story_key}",
+                "expected": (
+                    "one active exact eventRoot to reachable playback action "
+                    "for the original Story key"
+                ),
+                "actual": "no_candidate",
+            }
+        return candidates, None
+
+    for node_index, node in enumerate(nodes):
+        if not isinstance(node, dict):
+            continue
+        selector = node.get("selector") or {}
+        level_id = safe_text(selector.get("levelId"))
+        script_id = safe_text(selector.get("listenerScriptId"))
+        header_id = selector.get("listenerHeaderLocalId")
+        if not level_id or not script_id or not isinstance(header_id, int):
+            continue
+        story_files = [
+            item for item in node.get("storyFiles") or []
+            if isinstance(item, dict) and safe_text(item.get("key"))
+        ]
+        for story_file in story_files:
+            header_id = selector.get("listenerHeaderLocalId")
+            story_key = safe_text(story_file.get("key"))
+            native_actions = {
+                safe_text(action)
+                for action in story_file.get("nativeActions") or []
+                if safe_text(action)
+            }
+            if native_actions and native_actions <= {"PreloadCutsceneAction"}:
+                # A preload carrier is not playback evidence.  Do not let its
+                # event/volume inflate a Story's trigger-zone confirmation;
+                # retain a bounded count for diagnostics if it is the only
+                # placement seen for a future Story key.
+                preload_excluded_story_keys[story_key] += 1
+                continue
+            source_files = sorted({
+                safe_text(source_file).replace("\\", "/")
+                for source_file in story_file.get("sourceFiles") or []
+                if safe_text(source_file)
+            })
+            if not source_files:
+                add_observation(story_key, {
+                    "status": "active_overlay_unavailable",
+                    "storyKey": story_key,
+                    "levelId": level_id,
+                    "scriptId": script_id,
+                    "listenerHeaderLocalId": header_id,
+                    "eventName": safe_text(node.get("eventName")),
+                    "sourceFile": "",
+                    "sourceSha256": "",
+                    "diagnostics": [{
+                        "validator": "nativeReceiverStoryTriggerZone",
+                        "gate": "storySourceFile",
+                        "identity": (
+                            f"{level_id}/{script_id}#{header_id}/"
+                            f"{story_key}"
+                        ),
+                        "expected": "exact LevelScript source file",
+                        "actual": "missing",
+                    }],
+                })
+                continue
+            for source_file in source_files:
+                active_row, overlay_diagnostic = resolve_active_levelscript_evidence(
+                    source_file,
+                    overlay,
+                )
+                original_header_id = header_id
+                remapped_candidate: dict[str, Any] | None = None
+                if (
+                    overlay_diagnostic
+                    and overlay_diagnostic.get("gate") == "changedShadowEvidence"
+                ):
+                    remap_candidates, remap_diagnostic = (
+                        active_header_remap_candidates(
+                            story_key,
+                            level_id,
+                            script_id,
+                            source_file,
+                        )
+                    )
+                    if len(remap_candidates) == 1:
+                        remapped_candidate = remap_candidates[0]
+                        active_row = remapped_candidate["activeRow"]
+                        overlay_diagnostic = None
+                        header_id = int(
+                            remapped_candidate["event"].get("localId")
+                        )
+                    else:
+                        overlay_diagnostic = {
+                            **(remap_diagnostic or overlay_diagnostic),
+                            "originalHeaderLocalId": original_header_id,
+                            "candidateCount": len(remap_candidates),
+                        }
+                base = {
+                    "storyKey": story_key,
+                    "levelId": level_id,
+                    "scriptId": script_id,
+                    "listenerHeaderLocalId": header_id,
+                    "eventName": safe_text(node.get("eventName")),
+                    "sourceFile": source_file,
+                    "sourceSha256": "",
+                }
+                if overlay_diagnostic or not active_row:
+                    add_observation(story_key, {
+                        **base,
+                        "status": "active_overlay_unavailable",
+                        "diagnostics": [
+                            {
+                                **(overlay_diagnostic or {}),
+                                "identity": (
+                                    f"{level_id}/{script_id}#{header_id}/"
+                                    f"{story_key}"
+                                ),
+                            }
+                        ],
+                    })
+                    header_id = original_header_id
+                    continue
+                active_source = safe_text(active_row.get("sourceFile"))
+                active_hash = safe_text(active_row.get("sha256"))
+                base.update({
+                    "sourceFile": active_source,
+                    "sourceSha256": active_hash,
+                    "activeOverlayLogicalPath": safe_text(
+                        active_row.get("logicalPath")
+                    ),
+                    "activeOverlaySourceRoot": safe_text(
+                        active_row.get("sourceRoot")
+                    ),
+                    "activeOverlayStatus": safe_text(
+                        active_row.get("status")
+                    ),
+                    "activeOverlayNormalizationStatus": safe_text(
+                        active_row.get("normalizationStatus")
+                    ),
+                    "activeOverlayShadowed": list(
+                        active_row.get("shadowed") or []
+                    ),
+                })
+                if remapped_candidate:
+                    base.update({
+                        "originalSourceFile": source_file,
+                        "originalListenerHeaderLocalId": original_header_id,
+                        "activeHeaderRemapped": True,
+                        "activeHeaderRemap": {
+                            "fromHeaderLocalId": original_header_id,
+                            "toHeaderLocalId": header_id,
+                            "playbackActionLocalId": (
+                                remapped_candidate["action"].get("localId")
+                            ),
+                            "playbackActionName": safe_text(
+                                remapped_candidate["action"].get("actionName")
+                            ),
+                            "relationship": (
+                                "active_event_root_to_reachable_playback_action"
+                            ),
+                        },
+                    })
+                if active_source not in topology_cache:
+                    try:
+                        data = read_bytes_cached(repo_path(active_source))
+                    except OSError as error:
+                        topology_cache[active_source] = ({}, {
+                            "validator": "nativeReceiverStoryTriggerZone",
+                            "gate": "activeSourceReadable",
+                            "sourceFile": active_source,
+                            "expected": "readable active LevelScript bytes",
+                            "actual": f"{type(error).__name__}: {error}",
+                        })
+                    else:
+                        actual_hash = hashlib.sha256(data).hexdigest()
+                        if active_hash and actual_hash != active_hash:
+                            topology_cache[active_source] = ({}, {
+                                "validator": "nativeReceiverStoryTriggerZone",
+                                "gate": "activeSourceHash",
+                                "sourceFile": active_source,
+                                "expected": active_hash,
+                                "actual": actual_hash,
+                            })
+                        else:
+                            topology_cache[active_source] = (
+                                *decode_levelscript_native_action_topology(data),
+                            )
+                topology, topology_diagnostic = topology_cache[active_source]
+                if topology_diagnostic or not str(
+                    topology.get("status") or ""
+                ).startswith("exact_"):
+                    add_observation(story_key, {
+                        **base,
+                        "status": "trigger_event_known_spatial_unresolved",
+                        "diagnostics": [{
+                            "validator": "nativeReceiverStoryTriggerZone",
+                            "gate": "exactActiveActionTopology",
+                            "sourceFile": active_source,
+                            "expected": "exact_* topology without diagnostic",
+                            "actual": {
+                                "status": topology.get("status"),
+                                "diagnostic": topology_diagnostic,
+                            },
+                        }],
+                    })
+                    continue
+                event = (
+                    remapped_candidate.get("event")
+                    if remapped_candidate
+                    else None
+                ) or next(
+                    (
+                        item for item in topology.get("eventRoots") or []
+                        if isinstance(item, dict)
+                        and item.get("localId") == header_id
+                    ),
+                    None,
+                )
+                if not event:
+                    add_observation(story_key, {
+                        **base,
+                        "status": "trigger_event_known_spatial_unresolved",
+                        "diagnostics": [{
+                            "validator": "nativeReceiverStoryTriggerZone",
+                            "gate": "exactEventHeader",
+                            "sourceFile": active_source,
+                            "identity": f"{level_id}/{script_id}#{header_id}",
+                            "expected": "one exact event root",
+                            "actual": "missing",
+                        }],
+                    })
+                    continue
+                event_name = safe_text(event.get("headerName"))
+                event_detail = event.get("eventDetail") or {}
+                base.update({
+                    "eventName": event_name,
+                    "eventSummary": safe_text(event_detail.get("summary")),
+                    "eventDetail": event_detail,
+                })
+                if event_name in _SPATIAL_TRIGGER_EVENT_NAMES:
+                    selector_kind = "triggerSlotIdFilter"
+                    slot_id = event_detail.get("triggerSlotIdFilter")
+                    entity_selector_failures: list[dict[str, Any]] = []
+                    if event_name in {
+                        "EntityEvent_OnLeaderEnterTrigger",
+                        "EntityEvent_OnLeaderLeaveTrigger",
+                    }:
+                        selector_kind = "eventDetail.targetEntity.slotId"
+                        target_entity = event_detail.get("targetEntity")
+                        target_slot_id = (
+                            target_entity.get("slotId")
+                            if isinstance(target_entity, dict)
+                            else None
+                        )
+                        exact_entity_selector = True
+                        entity_checks = (
+                            (
+                                "entityEventScope",
+                                event_detail.get("entityEventScope"),
+                                "specified-entity",
+                            ),
+                            (
+                                "triggerTarget",
+                                event_detail.get("triggerTarget"),
+                                "SPECIFY_ENTITY",
+                            ),
+                            (
+                                "targetEntity.logicId",
+                                (target_entity or {}).get("logicId"),
+                                0,
+                            ),
+                            (
+                                "targetEntity.useSlotId",
+                                (target_entity or {}).get("useSlotId"),
+                                True,
+                            ),
+                            (
+                                "targetEntityListPresent",
+                                event_detail.get("targetEntityListPresent"),
+                                False,
+                            ),
+                            (
+                                "targetEntityListOutputPresent",
+                                event_detail.get(
+                                    "targetEntityListOutputPresent"
+                                ),
+                                False,
+                            ),
+                            (
+                                "transport",
+                                event_detail.get("transport"),
+                                "local-authored-trigger-volume-event",
+                            ),
+                            (
+                                "serverExchange",
+                                event_detail.get("serverExchange"),
+                                False,
+                            ),
+                            (
+                                "serializedMissionOrQuestId",
+                                event_detail.get("serializedMissionOrQuestId"),
+                                False,
+                            ),
+                            (
+                                "payloadSchemaStatus",
+                                event_detail.get("payloadSchemaStatus"),
+                                "exact_current_build_memorypack_fields",
+                            ),
+                            (
+                                "payloadSchemaMappingId",
+                                event_detail.get("payloadSchemaMappingId"),
+                                LEVELSCRIPT_NATIVE_EVENT_PAYLOAD_MAPPING_ID,
+                            ),
+                            (
+                                "validateParam.constValue",
+                                (event_detail.get("validateParam") or {}).get(
+                                    "constValue"
+                                ),
+                                True,
+                            ),
+                        )
+                        for field, actual, expected in entity_checks:
+                            if actual != expected:
+                                exact_entity_selector = False
+                                entity_selector_failures.append({
+                                    "field": field,
+                                    "expected": expected,
+                                    "actual": actual,
+                                })
+                        for field, actual in (
+                            (
+                                "targetEntity.logicId",
+                                (target_entity or {}).get("logicId"),
+                            ),
+                            (
+                                "targetEntity.useSlotId",
+                                (target_entity or {}).get("useSlotId"),
+                            ),
+                            (
+                                "targetEntityListPresent",
+                                event_detail.get("targetEntityListPresent"),
+                            ),
+                            (
+                                "targetEntityListOutputPresent",
+                                event_detail.get(
+                                    "targetEntityListOutputPresent"
+                                ),
+                            ),
+                            (
+                                "serverExchange",
+                                event_detail.get("serverExchange"),
+                            ),
+                            (
+                                "serializedMissionOrQuestId",
+                                event_detail.get("serializedMissionOrQuestId"),
+                            ),
+                            (
+                                "validateParam.constValue",
+                                (event_detail.get("validateParam") or {}).get(
+                                    "constValue"
+                                ),
+                            ),
+                        ):
+                            expected_type = int if field == "targetEntity.logicId" else bool
+                            if (
+                                type(actual) is not expected_type
+                                or (
+                                    field == "targetEntity.logicId"
+                                    and actual != 0
+                                )
+                            ):
+                                exact_entity_selector = False
+                                entity_selector_failures.append({
+                                    "field": field,
+                                    "expected": (
+                                        "integer 0"
+                                        if field == "targetEntity.logicId"
+                                        else "boolean exact value"
+                                    ),
+                                    "actual": actual,
+                                })
+                        if not (
+                            isinstance(target_slot_id, int)
+                            and not isinstance(target_slot_id, bool)
+                            and target_slot_id > 0
+                        ):
+                            exact_entity_selector = False
+                            entity_selector_failures.append({
+                                "field": "targetEntity.slotId",
+                                "expected": "positive integer",
+                                "actual": target_slot_id,
+                            })
+                        slot_id = (
+                            target_slot_id if exact_entity_selector else None
+                        )
+                    if active_source not in binary_cache:
+                        try:
+                            data = read_bytes_cached(repo_path(active_source))
+                            binary_cache[active_source] = decode_levelscript_binary_summary(
+                                data,
+                                int(script_id),
+                            )
+                        except (OSError, ValueError, TypeError) as error:
+                            binary_cache[active_source] = {
+                                "status": "unavailable",
+                                "diagnostic": f"{type(error).__name__}: {error}",
+                            }
+                    decoded = binary_cache[active_source]
+                    if event_name in {
+                        "EntityEvent_OnLeaderEnterTrigger",
+                        "EntityEvent_OnLeaderLeaveTrigger",
+                    } and exact_entity_selector:
+                        domain_slots = {
+                            volume.get("slotId")
+                            for volume in (
+                                (decoded.get("triggerVolumesDetails") or {}).get(
+                                    "volumes"
+                                )
+                                or []
+                            )
+                            if isinstance(volume, dict)
+                            and isinstance(volume.get("slotId"), int)
+                            and not isinstance(volume.get("slotId"), bool)
+                        }
+                        if slot_id not in domain_slots:
+                            exact_entity_selector = False
+                            entity_selector_failures.append({
+                                "field": "targetEntity.slotId",
+                                "expected": "slot present in decoded trigger-volume domain",
+                                "actual": {
+                                    "slotId": slot_id,
+                                    "decodedSlotIds": sorted(domain_slots),
+                                },
+                            })
+                            slot_id = None
+                    if entity_selector_failures:
+                        add_observation(story_key, {
+                            **base,
+                            "status": "trigger_event_known_spatial_unresolved",
+                            "triggerSlotIdFilter": slot_id,
+                            "triggerSelectorKind": selector_kind,
+                            "triggerVolumeContext": {},
+                            "diagnostics": [{
+                                "validator": "nativeReceiverStoryTriggerZone",
+                                "gate": "exactEntityTriggerSelectorContract",
+                                "sourceFile": active_source,
+                                "expected": (
+                                    "exact specified-entity authored trigger-volume "
+                                    "payload and slot in decoded trigger domain"
+                                ),
+                                "actual": entity_selector_failures,
+                            }],
+                        })
+                        continue
+                    context = classify_local_trigger_volume_context(
+                        decoded,
+                        [slot_id] if isinstance(slot_id, int) else [],
+                    )
+                    if context.get("status") == (
+                        "exact_local_levelscript_trigger_volume_without_foreign_identity"
+                    ):
+                        volume = (context.get("triggerVolumes") or [None])[0]
+                        add_observation(story_key, {
+                            **base,
+                            "status": "exact_local_trigger_volume",
+                            "triggerSlotIdFilter": slot_id,
+                            "triggerSelectorKind": selector_kind,
+                            "triggerVolumeType": safe_text(
+                                (volume or {}).get("triggerVolumeType")
+                            ),
+                            "triggerVolume": volume or {},
+                            "decodedShape": (
+                                ((volume or {}).get("shapeList") or {}).get(
+                                    "shapes"
+                                )
+                                or []
+                            ),
+                            "triggerVolumeContext": context,
+                            "diagnostics": [],
+                        })
+                    else:
+                        add_observation(story_key, {
+                            **base,
+                            "status": "trigger_event_known_spatial_unresolved",
+                            "triggerSlotIdFilter": slot_id,
+                            "triggerSelectorKind": selector_kind,
+                            "triggerVolumeContext": context,
+                            "diagnostics": [{
+                                "validator": "nativeReceiverStoryTriggerZone",
+                                "gate": "uniqueDecodedLocalTriggerVolume",
+                                "sourceFile": active_source,
+                                "expected": (
+                                    "one Leader trigger volume with exact slot, "
+                                    "type, and decoded shape"
+                                ),
+                                "actual": {
+                                    "status": context.get("status"),
+                                    "slotId": slot_id,
+                                    "missingSlotIds": context.get(
+                                        "missingSlotIds"
+                                    ),
+                                    "ambiguousSlotIds": context.get(
+                                        "ambiguousSlotIds"
+                                    ),
+                                    "triggerVolumesStatus": context.get(
+                                        "triggerVolumesStatus"
+                                    ),
+                                    "triggerVolumesParseStatus": context.get(
+                                        "triggerVolumesParseStatus"
+                                    ),
+                                },
+                            }],
+                        })
+                else:
+                    exact_non_spatial = bool(
+                        event_detail
+                        and safe_text(event_detail.get("payloadSchemaStatus"))
+                        == "exact_current_build_memorypack_fields"
+                    )
+                    add_observation(story_key, {
+                        **base,
+                        "status": (
+                            "exact_non_spatial_event_trigger"
+                            if exact_non_spatial
+                            else "trigger_event_known_spatial_unresolved"
+                        ),
+                        "spatiallyApplicable": False,
+                        "diagnostics": [] if exact_non_spatial else [{
+                            "validator": "nativeReceiverStoryTriggerZone",
+                            "gate": "exactNonSpatialEventPayload",
+                            "sourceFile": active_source,
+                            "expected": "exact current-build event payload",
+                            "actual": event_detail,
+                        }],
+                    })
+
+    rows: list[dict[str, Any]] = []
+    status_counts: Counter[str] = Counter()
+    story_keys = sorted({
+        *story_entries,
+        *preload_excluded_story_keys,
+    })
+    for story_key in story_keys:
+        observations = [
+            story_entries[story_key][identity]
+            for identity in sorted(story_entries[story_key], key=str)
+        ]
+        exact_zones = [
+            row for row in observations
+            if row.get("status") == "exact_local_trigger_volume"
+        ]
+        unresolved_spatial = [
+            row for row in observations
+            if row.get("status") == "trigger_event_known_spatial_unresolved"
+        ]
+        overlay_failures = [
+            row for row in observations
+            if row.get("status") == "active_overlay_unavailable"
+        ]
+        zone_identities = {
+            (
+                safe_text(row.get("sourceSha256")),
+                row.get("triggerSlotIdFilter"),
+                json.dumps(row.get("decodedShape") or [], sort_keys=True),
+            )
+            for row in exact_zones
+        }
+        if not observations and preload_excluded_story_keys.get(story_key):
+            status = "preload_only_excluded"
+        elif overlay_failures:
+            status = "active_overlay_unavailable"
+        elif len(zone_identities) > 1 or (exact_zones and unresolved_spatial):
+            status = "multiple_or_ambiguous_trigger_zones"
+        elif exact_zones:
+            status = "exact_local_trigger_volume"
+        elif unresolved_spatial:
+            status = "trigger_event_known_spatial_unresolved"
+        elif observations and all(
+            row.get("status") == "exact_non_spatial_event_trigger"
+            for row in observations
+        ):
+            status = "exact_non_spatial_event_trigger"
+        else:
+            status = "trigger_event_known_spatial_unresolved"
+        status_counts[status] += 1
+        rows.append({
+            "storyKey": story_key,
+            "status": status,
+            "observationCount": len(observations),
+            "preloadExcludedPlacementCount": preload_excluded_story_keys.get(
+                story_key,
+                0,
+            ),
+            "exactZoneCount": len(exact_zones),
+            "uniqueZoneCount": len(zone_identities),
+            "diagnosticCount": sum(
+                len(row.get("diagnostics") or []) for row in observations
+            ),
+            "observations": observations,
+            "ownership": False,
+            "activation": False,
+            "orderEvidence": False,
+            "evidenceBoundary": (
+                "This confirms only the exact local LevelScript event carrier, "
+                "or records why its spatial zone is unresolved. It does not "
+                "identify mission ownership, quest selection, event firing, "
+                "branch choice, or Story order."
+            ),
+        })
+    return {
+        "schema": STORY_TRIGGER_ZONE_SCHEMA,
+        "overlay": {
+            "schema": overlay.get("schema") if isinstance(overlay, dict) else "",
+            "status": overlay.get("status") if isinstance(overlay, dict) else "",
+            "availableRootCount": (
+                overlay.get("availableRootCount")
+                if isinstance(overlay, dict)
+                else 0
+            ),
+            "fileCount": (
+                overlay.get("fileCount") if isinstance(overlay, dict) else 0
+            ),
+            "validationFailures": (
+                list(overlay.get("validationFailures") or [])[:8]
+                if isinstance(overlay, dict)
+                else []
+            ),
+        },
+        "rows": rows,
+        "counts": {
+            "storyFiles": len(rows),
+            "observationCount": sum(row["observationCount"] for row in rows),
+            "preloadExcludedPlacementCount": sum(
+                row.get("preloadExcludedPlacementCount") or 0
+                for row in rows
+            ),
+            "status": dict(sorted(status_counts.items())),
+        },
+        "ownership": False,
+        "activation": False,
+        "orderEvidence": False,
+        "evidenceBoundary": (
+            "Active LevelScript overlay and exact serialized event/volume fields "
+            "are required. This is local trigger context only; no mission or "
+            "quest ownership or inter-Story order is inferred."
+        ),
+    }
 
 
 def subgame_script_bindings(
@@ -3547,6 +4415,7 @@ def build_report(
     ),
     dungeon_table_path: Path = DEFAULT_DUNGEON_TABLE,
     structured_json_root: Path = DEFAULT_STRUCTURED_JSON_ROOT,
+    active_levelscript_overlay: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     known_mission_ids = {
         safe_text(row.get("id"))
@@ -3637,6 +4506,15 @@ def build_report(
         condition_source=rel_path(game_mechanic_condition_table_path),
     )
     receiver_sources = receiver_script_rows(index_payload)
+    story_trigger_zone_coverage = build_story_trigger_zone_coverage(
+        index_payload,
+        overlay_index=active_levelscript_overlay,
+    )
+    story_trigger_zone_by_story = {
+        safe_text(row.get("storyKey")): row
+        for row in story_trigger_zone_coverage.get("rows") or []
+        if isinstance(row, dict) and safe_text(row.get("storyKey"))
+    }
     receiver_pairs = {
         (safe_text(row.get("levelId")), safe_text(row.get("scriptId")))
         for row in receiver_sources
@@ -4072,6 +4950,14 @@ def build_report(
                 "subGameBindings": subgames,
                 "dungeonSceneContexts": dungeon_contexts,
                 "missionRuntimeScriptConsumers": consumers,
+                "storyTriggerZoneConfirmations": [
+                    story_trigger_zone_by_story[story_key]
+                    for story_key in sorted({
+                        safe_text(key)
+                        for key in receiver["storyKeys"]
+                        if safe_text(key) in story_trigger_zone_by_story
+                    })
+                ],
                 "missionAreaLevelDataShellContext": (
                     mission_area_leveldata_shell
                 ),
@@ -4872,6 +5758,7 @@ def build_report(
             "validation": mission_area_shell_validation,
         },
         "manualControlIndexSummary": manual_control_index.summary,
+        "storyTriggerZoneCoverage": story_trigger_zone_coverage,
         "rows": rows,
     }
 
@@ -4913,6 +5800,9 @@ def publish_to_pipeline_index(
     # Keep a compact Story-key lookup beside the full receiver nodes.  The
     # WebUI uses this to show exact native receiver files on unassigned Story
     # cards without copying the entire activation contract into every card.
+    coverage["nativeReceiverStoryTriggerZoneCoverage"] = (
+        report.get("storyTriggerZoneCoverage") or {}
+    )
     coverage["nativeReceiverStoryContextIndex"] = _receiver_story_context_index(
         report
     )
@@ -4935,6 +5825,16 @@ def publish_to_pipeline_index(
         if not row:
             continue
         levelscript = row.get("levelScript") or {}
+        trigger_zone_confirmations = [
+            confirmation
+            for confirmation in row.get("storyTriggerZoneConfirmations") or []
+            if isinstance(confirmation, dict)
+            and safe_text(confirmation.get("storyKey")) in {
+                safe_text(story_file.get("key"))
+                for story_file in node.get("storyFiles") or []
+                if isinstance(story_file, dict)
+            }
+        ]
         node["activationFrontier"] = {
             "activationClass": safe_text(row.get("activationClass")),
             "startTypeName": safe_text(levelscript.get("startTypeName")),
@@ -4949,6 +5849,7 @@ def publish_to_pipeline_index(
             "activeShapeListCount": levelscript.get("activeShapeListCount"),
             "taskMapStatus": safe_text(levelscript.get("taskMapStatus")),
             "taskMapCount": levelscript.get("taskMapCount"),
+            "triggerZoneConfirmations": trigger_zone_confirmations,
             "levelDataHosts": [
                 {
                     "fileName": safe_text(host.get("fileName")),
@@ -5762,6 +6663,8 @@ def markdown_report(payload: dict[str, Any]) -> str:
     identity_census = payload.get("structuredIdentityCarrierCensus") or {}
     mission_area_census = payload.get("missionAreaLevelDataShellCensus") or {}
     teleport_census = payload.get("teleportFinishCorrelationCensus") or {}
+    trigger_zone_coverage = payload.get("storyTriggerZoneCoverage") or {}
+    trigger_zone_counts = trigger_zone_coverage.get("counts") or {}
     lines = [
         "# Native Receiver Activation Frontier",
         "",
@@ -5776,6 +6679,18 @@ def markdown_report(payload: dict[str, Any]) -> str:
             f"`{counts.get('receiverToStoryPlacements')}`"
         ),
         f"- Unique Story keys: `{counts.get('storyKeys')}`",
+        (
+            "- Per-Story trigger-zone confirmation files / observations: "
+            f"`{trigger_zone_counts.get('storyFiles')}` / "
+            f"`{trigger_zone_counts.get('observationCount')}`; active overlay "
+            f"`{(trigger_zone_coverage.get('overlay') or {}).get('status')}`; "
+            "preload-only placements excluded "
+            f"`{trigger_zone_counts.get('preloadExcludedPlacementCount')}`"
+        ),
+        (
+            "- Per-Story trigger-zone statuses: "
+            f"`{trigger_zone_counts.get('status')}`"
+        ),
         f"- Start types: `{counts.get('startTypes')}`",
         (
             "- Teleport-finish corpus files / listeners / distinct filters: "
@@ -6074,6 +6989,37 @@ def markdown_report(payload: dict[str, Any]) -> str:
             ).get("storyCandidates") or []
         )
     ]
+    lines.extend([
+        "",
+        "## Per-Story trigger-zone confirmation",
+        "",
+        (
+            "These rows are exact local event/volume context only. Changed "
+            "overlay shadows remain unresolved and no row adds mission ownership "
+            "or Story order."
+        ),
+        "",
+        "| Story key | Status | Observations | Exact zones | Unique zones | Diagnostics |",
+        "| --- | --- | ---: | ---: | ---: | ---: |",
+    ])
+    for trigger_row in trigger_zone_coverage.get("rows") or []:
+        if not isinstance(trigger_row, dict):
+            continue
+        lines.append(
+            "| "
+            + " | ".join(
+                md_escape(value)
+                for value in (
+                    trigger_row.get("storyKey"),
+                    trigger_row.get("status"),
+                    trigger_row.get("observationCount"),
+                    trigger_row.get("exactZoneCount"),
+                    trigger_row.get("uniqueZoneCount"),
+                    trigger_row.get("diagnosticCount"),
+                )
+            )
+            + " |"
+        )
     lines.extend([
         "",
         "## Black playback static nominal-owner checks",

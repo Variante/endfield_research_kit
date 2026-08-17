@@ -14,7 +14,10 @@ audio, and update comparisons build reproducibly from a current
 Mission Pipeline currently keeps 152 exact native-playback Story files visibly
 unowned. Current reverse-PPtr, carrier, LevelData/SubGame, MissionRuntime,
 IFix, and protobuf evidence closes playback context but supplies no promotable
-mission/quest owner; the UI must retain that ownership gap.
+mission/quest owner; the UI must retain that ownership gap. Each file now also
+shows its active-overlay trigger confirmation: exact local volume geometry when
+spatial, or the exact non-spatial event carrier, together with source/hash
+evidence. These confirmations remain explicitly non-owning and non-ordering.
 
 Retired Progression and Combat & Projectiles pages stay retired. Their useful
 progression, projectile, asset, and sound information lives in Gameplay.

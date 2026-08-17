@@ -420,6 +420,10 @@ Story definitions, mission ownership, activation, and playback.
 - Native registration or code-address order never implies mission order.
 - Definition-only rows remain distinct from activation evidence.
 - Unlinked native playback keeps an explicit ownership gap.
+- Unlinked native playback rows show per-Story active-overlay trigger
+  confirmation, including decoded slot/shape and source hash for spatial
+  volumes or the exact event carrier for non-spatial triggers. This is local
+  context only, not proof of ownership, firing, branch choice, or order.
 - Strong and weak graph edges remain visually and semantically separate.
 - Manual/OCR order may guide research but does not upgrade source evidence.
 

@@ -6614,6 +6614,8 @@
         <div class="mp-missionless-runtime-grid">${receiverNodes.map((row) => {
           const selector = row.selector || {};
           const activation = row.activationFrontier || {};
+          const triggerZoneConfirmations = (activation.triggerZoneConfirmations || [])
+            .filter((confirmation) => confirmation && confirmation.storyKey);
           const activationRelatedFiles = [...new Map(
             (activation.relatedOriginalFiles || [])
               .filter((related) => related && related.sourceFile)
@@ -6769,6 +6771,29 @@
               ${taskRuntimeAuthority.validation?.status === "validated" ? `<div class="is-boundary"><span>${esc(t("taskRuntimeAuthority"))}</span><i aria-hidden="true">↔</i><code>${esc((taskRuntimeAuthority.identityFields || []).join(" + "))}</code><b>${esc((taskRuntimeAuthority.messages || []).map((message) => message.messageId).join(" / "))}</b><small>${esc(taskRuntimeAuthority.finding || t("taskRuntimeAuthorityBoundary"))}</small></div><small>${esc(taskRuntimeAuthority.evidenceBoundary || t("taskRuntimeAuthorityBoundary"))}</small>` : ""}
               <div><span>${esc(t("activationClass"))}</span><i aria-hidden="true">→</i><code>${esc(String(activation.activationClass).replaceAll("_", " "))}</code><b>${esc(t("noMissionOwner"))}</b></div>
               <div><span>${esc(t("startPolicy"))}</span><i aria-hidden="true">→</i><code>${esc(`${activation.startTypeName || "unresolved"} · shapes ${activation.startShapeListStatus || "unresolved"}/${activation.startShapeListCount ?? 0} · taskMap ${activation.taskMapStatus || "unresolved"}/${activation.taskMapCount ?? 0}`)}</code></div>
+              ${triggerZoneConfirmations.flatMap((confirmation) => (confirmation.observations || []).map((observation) => {
+                const shapes = (observation.decodedShape || []).map((shape) => {
+                  const position = shape.position || {};
+                  const size = shape.size || {};
+                  const positionText = [position.x, position.y, position.z].every((value) => value !== undefined)
+                    ? `center ${position.x}/${position.y}/${position.z}` : "";
+                  const sizeText = [size.x, size.y, size.z].every((value) => value !== undefined)
+                    ? `size ${size.x}/${size.y}/${size.z}`
+                    : (shape.radius !== undefined ? `radius ${shape.radius}` : "");
+                  return [shape.shapeType || "shape", positionText, sizeText].filter(Boolean).join(" · ");
+                });
+                const identity = `${confirmation.storyKey} · ${observation.levelId || "?"}/${observation.scriptId || "?"}#${observation.listenerHeaderLocalId ?? "?"}`;
+                const detail = [
+                  observation.eventName || "",
+                  observation.triggerSlotIdFilter !== null && observation.triggerSlotIdFilter !== undefined ? `slot ${observation.triggerSlotIdFilter}` : "",
+                  observation.triggerVolumeType || "",
+                  ...shapes,
+                  observation.sourceFile || "",
+                  observation.sourceSha256 ? `SHA-256 ${observation.sourceSha256}` : "",
+                ].filter(Boolean).join(" · ");
+                return `<div class="is-boundary"><span>Story trigger zone</span><i aria-hidden="true">→</i><code>${esc(identity)}</code><b>${esc(String(observation.status || confirmation.status || "unresolved").replaceAll("_", " "))}</b><small>${esc(detail)}</small></div>`;
+              })).join("")}
+              ${triggerZoneConfirmations.length ? `<small>Confirms only the exact local event carrier and decoded authored volume; not mission ownership, event firing, branch choice, or Story order.</small>` : ""}
               ${startRuntimePolicy.validation?.status === "validated" ? `<div><span>${esc(t("binaryStartPolicy"))}</span><i aria-hidden="true">→</i><code>Active + unfinished + SameWithActive</code><b>PreStart</b><small>${esc([startRuntimePolicy.finding || "", `UpdateRuntimeState ${startRuntimePolicy.methods?.UpdateRuntimeState?.methodPointerVa || ""}`, `startType=${startRuntimePolicy.startTypeGates?.SameWithActive?.comparedValue ?? "?"}`, `state=${startRuntimePolicy.activeStateGate?.comparedValue ?? "?"}`, `PreStart=${startRuntimePolicy.preStartTransition?.runtimeStateValue ?? "?"}`].filter(Boolean).join(" · "))}</small></div><small>${esc(startRuntimePolicy.evidenceBoundary || t("binaryStartPolicyBoundary"))}</small>` : ""}
               ${manualSelfControl.validation?.status === "validated" && manualSelfControls.length ? manualSelfControls.map((control) => `<div><span>${esc(t("binaryManualSelfControl"))}</span><i aria-hidden="true">→</i><code>CURRENT_LEVEL_ID + CURRENT_SCRIPT_ID</code><b>ManualStart → PreStart</b><small>${esc([manualSelfControl.finding || "", `event local ${control.headerLinkedEvent?.localId ?? "?"} → action local ${control.localId ?? "?"}`, `sources=${control.parameterSources?.levelId ?? "?"}/${control.parameterSources?.scriptId ?? "?"}`, `Execute ${manualSelfControl.methods?.Execute?.methodPointerVa || ""}`, `ManualStart ${manualSelfControl.methods?.ManualStart?.methodPointerVa || ""}`].filter(Boolean).join(" · "))}</small></div>`).join("") + `<small>${esc(manualSelfControl.evidenceBoundary || t("binaryManualSelfControlBoundary"))}</small>` : ""}
               ${publicStateControl.validation?.status === "validated" ? `<div class="is-boundary"><span>${esc(t("binaryPublicStateControl"))}</span><i aria-hidden="true">→</i><code>SC ${esc(publicStateControl.selfSceneInfoMessageId ?? "?")} levelScripts[] → ServerSync | SC ${esc(publicStateControl.stateNotifyMessageId ?? "?")} state notify → UpdateState</code><b>server → public state</b><small>${esc([`snapshot ${publicStateControl.selfSceneInfoHandlerMethod?.methodPointerVa || "?"}`, `incremental ${publicStateControl.handlerMethod?.methodPointerVa || "?"}`, `entry callers ${(publicStateSources.managerStateShortDirectCallers || []).length}`, `state writers ${(publicStateSources.publicStateSetterDirectCallers || []).length}`, publicStateControl.publicStateFlow?.setterBeforeRuntimeEvaluation ? "state setter → runtime evaluation" : "unresolved state application"].join(" · "))}</small></div><small>${esc(publicStateControl.evidenceBoundary || t("binaryPublicStateControlBoundary"))}</small>` : ""}
