@@ -2460,6 +2460,17 @@ only stable interpretation and priorities.
    independently green and the observer publishes no bytes. The next capture
    must intercept the actual D3D11 Draw/constant-buffer binding path or use an
    external API capture keyed to exact shader and material identity.
+   A narrower immediate-context object-vtable experiment is also rejected. It
+   shadowed the complete 115-slot `ID3D11DeviceContext` table only inside the
+   isolated player, filtered Draw variants by the retained exact VS/PS
+   pointers, and restored the original object vptr after the command. The
+   player crashed inside `Graphics.ExecuteCommandBuffer` before producing a
+   report both with a transient and a process-lifetime shadow table, while the
+   unchanged native/WARP suite passed. Unity/driver code therefore cannot be
+   assumed to tolerate object-vptr replacement. The experiment was removed
+   and the safe observer DLL rebuilt to its pinned hash. Do not retry COM
+   vtable shadowing; use a supported external capture/API layer or recover the
+   upstream renderer packing path instead.
    Video acceptance must distinguish Unity anchors from nearest retail PTS:
    39934 maps to retail 39933 and 40834 to 40833, while 40000/40867 are exact.
    At PTS 40000 the current composite raised-hand coverage is 4.863% versus
