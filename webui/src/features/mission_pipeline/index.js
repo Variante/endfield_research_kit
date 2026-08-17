@@ -532,6 +532,10 @@
       spatialCarrier: "LevelScript carrier",
       spatialExactInteractionTrigger: "exact map interaction trigger",
       spatialExactWorldEntityTrigger: "exact world-entity event trigger",
+      spatialExactAuthoredTriggerVolume: "exact authored trigger volume",
+      spatialExactTriggerVolumes: "exact trigger volumes",
+      spatialNonSpatialTriggers: "Confirmed non-spatial event triggers",
+      spatialNonSpatialTriggersHint: "These files have an exact local event carrier, but that event has no authored spatial volume to draw on the map.",
       spatialCoordinates: "world X/Y/Z",
       spatialNearestQuest: "nearest mission point",
       spatialProximityOnly: "spatial context only; not quest ownership or Story order",
@@ -2107,6 +2111,10 @@
       spatialCarrier: "LevelScript \u8f7d\u4f53",
       spatialExactInteractionTrigger: "\u7cbe\u786e\u5730\u56fe\u4ea4\u4e92\u89e6\u53d1",
       spatialExactWorldEntityTrigger: "\u7cbe\u786e\u4e16\u754c\u5b9e\u4f53\u4e8b\u4ef6\u89e6\u53d1",
+      spatialExactAuthoredTriggerVolume: "\u7cbe\u786e\u521b\u4f5c\u89e6\u53d1\u533a\u57df",
+      spatialExactTriggerVolumes: "\u7cbe\u786e trigger zone",
+      spatialNonSpatialTriggers: "\u5df2\u786e\u8ba4\u7684\u975e\u7a7a\u95f4\u4e8b\u4ef6\u89e6\u53d1",
+      spatialNonSpatialTriggersHint: "\u8fd9\u4e9b\u6587\u4ef6\u5df2\u6709\u7cbe\u786e\u7684\u672c\u5730\u4e8b\u4ef6\u8f7d\u4f53\uff0c\u4f46\u4e8b\u4ef6\u6ca1\u6709\u53ef\u7ed8\u5236\u7684\u521b\u4f5c\u7a7a\u95f4\u4f53\u79ef\u3002",
       spatialCoordinates: "\u4e16\u754c X/Y/Z",
       spatialNearestQuest: "\u6700\u8fd1\u4efb\u52a1\u70b9",
       spatialProximityOnly: "\u4ec5\u4e3a\u7a7a\u95f4\u4e0a\u4e0b\u6587\uff1b\u4e0d\u8bc1\u660e\u4efb\u52a1\u5f52\u5c5e\u6216 Story \u987a\u5e8f",
@@ -4853,6 +4861,65 @@
       matches: rows.sort(weakMatchSort),
     })).sort((a, b) => a.key.localeCompare(b.key, undefined, { numeric: true }));
     const exactPositionedKeys = new Set();
+    const exactTriggerZones = [];
+    const nonSpatialTriggerKeys = new Map();
+    const triggerZoneCoverage = coverage.nativeReceiverStoryTriggerZoneCoverage || {};
+    for (const confirmation of triggerZoneCoverage.rows || []) {
+      const key = String(confirmation?.storyKey || "");
+      if (!key || !sceneKeys.has(key)) continue;
+      for (const observation of confirmation.observations || []) {
+        if (observation?.status === "exact_non_spatial_event_trigger") {
+          nonSpatialTriggerKeys.set(key, {
+            key,
+            kind: String(nodeByKey.get(key)?.kind || storyDisplayKind({ key })),
+            eventName: String(observation.eventName || "event"),
+            scriptId: String(observation.scriptId || "?"),
+            headerId: observation.listenerHeaderLocalId,
+          });
+          continue;
+        }
+        if (observation?.status !== "exact_local_trigger_volume") continue;
+        for (const shape of observation.decodedShape || []) {
+          const position = finiteSpatialPosition(shape?.position);
+          if (!position) continue;
+          exactPositionedKeys.add(key);
+          const zone = {
+            key,
+            kind: String(nodeByKey.get(key)?.kind || storyDisplayKind({ key })),
+            levelId: String(observation.levelId || "?"),
+            scriptId: String(observation.scriptId || "?"),
+            headerId: observation.listenerHeaderLocalId,
+            slotId: observation.triggerSlotIdFilter,
+            eventName: String(observation.eventName || "event"),
+            sourceFile: String(observation.sourceFile || ""),
+            sourceSha256: String(observation.sourceSha256 || ""),
+            shapeType: String(shape.shapeType || "Unknown"),
+            position,
+            size: shape.size || {},
+            radius: Number(shape.radius),
+            rotationY: Number(shape.rotation?.y || 0),
+          };
+          exactTriggerZones.push(zone);
+          const signature = [zone.levelId, zone.scriptId, zone.headerId ?? "?", zone.slotId ?? "?", position.x.toFixed(3), position.z.toFixed(3)].join("\u0000");
+          if (!clusters.has(signature)) {
+            clusters.set(signature, {
+              levelId: zone.levelId,
+              scriptId: zone.scriptId,
+              position,
+              questIds: new Set(),
+              files: new Map(),
+              sourceKind: "exact_authored_trigger_volume",
+            });
+          }
+          clusters.get(signature).files.set(key, {
+            key,
+            kind: zone.kind,
+            distance3d: null,
+            triggerStatus: `${t("spatialExactAuthoredTriggerVolume")} · ${zone.eventName} / slot ${zone.slotId ?? "?"}`,
+          });
+        }
+      }
+    }
 
     for (const key of sceneKeys) {
       const recoveryRow = (
@@ -4957,7 +5024,7 @@
     const otherUnpositioned = [];
     for (const node of orderNodes) {
       const key = String(node.key);
-      if (positionedKeys.has(key)) continue;
+      if (positionedKeys.has(key) || nonSpatialTriggerKeys.has(key)) continue;
       const manifestRow = manifest[key] || {};
       const hasRecoveredContext = Boolean(
         exactNativeKeys.has(key)
@@ -4976,6 +5043,8 @@
     const byKey = (a, b) => a.key.localeCompare(b.key, undefined, { numeric: true });
     triggerUnknown.sort(byKey);
     otherUnpositioned.sort(byKey);
+    const nonSpatialTriggers = [...nonSpatialTriggerKeys.values()]
+      .sort(byKey);
 
     const questPoints = tracks.map((track) => ({
       questId: String(track.questId),
@@ -5010,6 +5079,8 @@
       questPoints,
       alternateWeakPositions: alternateWeakPositions.filter((row) => !exactPositionedKeys.has(row.key)),
       inheritedWeakPositions: inheritedWeakPositions.filter((row) => !exactPositionedKeys.has(row.key)),
+      exactTriggerZones,
+      nonSpatialTriggers,
       triggerUnknown,
       otherUnpositioned,
       bounds: {
@@ -5033,6 +5104,25 @@
       x: pad + ((position.x - model.bounds.minX) / rangeX) * (width - pad * 2),
       y: height - pad - ((position.z - model.bounds.minZ) / rangeZ) * (height - pad * 2),
     });
+    const zoneOutlines = model.exactTriggerZones.map((zone) => {
+      const title = `${zone.key} · ${zone.eventName} · slot ${zone.slotId ?? "?"} · ${zone.shapeType} · X/Y/Z ${zone.position.x}/${zone.position.y ?? "?"}/${zone.position.z}`;
+      if (zone.shapeType.toLowerCase() === "sphere" && Number.isFinite(zone.radius)) {
+        const center = plot(zone.position);
+        const rx = Math.max(2, zone.radius / rangeX * (width - pad * 2));
+        const rz = Math.max(2, zone.radius / rangeZ * (height - pad * 2));
+        return `<ellipse class="mp-spatial-trigger-zone" cx="${center.x.toFixed(2)}" cy="${center.y.toFixed(2)}" rx="${rx.toFixed(2)}" ry="${rz.toFixed(2)}"><title>${esc(title)}</title></ellipse>`;
+      }
+      const sizeX = Number(zone.size?.x);
+      const sizeZ = Number(zone.size?.z);
+      if (!Number.isFinite(sizeX) || !Number.isFinite(sizeZ)) return "";
+      const angle = zone.rotationY * Math.PI / 180;
+      const corners = [[-sizeX / 2, -sizeZ / 2], [sizeX / 2, -sizeZ / 2], [sizeX / 2, sizeZ / 2], [-sizeX / 2, sizeZ / 2]];
+      const points = corners.map(([dx, dz]) => plot({
+        x: zone.position.x + dx * Math.cos(angle) - dz * Math.sin(angle),
+        z: zone.position.z + dx * Math.sin(angle) + dz * Math.cos(angle),
+      })).map((point) => `${point.x.toFixed(2)},${point.y.toFixed(2)}`).join(" ");
+      return `<polygon class="mp-spatial-trigger-zone" points="${points}"><title>${esc(title)}</title></polygon>`;
+    }).join("");
     const routeSegments = model.questPoints.slice(1).map((point, index) => {
       const previous = model.questPoints[index];
       const from = plot(previous.position);
@@ -5066,7 +5156,8 @@
           : "";
       const side = point.x > width * .72 ? " is-left" : "";
       const vertical = point.y < height * .28 ? " is-below" : "";
-      return `<div class="mp-spatial-cluster${side}${vertical}" style="left:${((point.x / width) * 100).toFixed(3)}%;top:${((point.y / height) * 100).toFixed(3)}%;--cluster-offset-x:${offsetX}px;--cluster-offset-y:${offsetY}px">
+      const exactZoneClass = cluster.sourceKind === "exact_authored_trigger_volume" ? " is-exact-trigger-zone" : "";
+      return `<div class="mp-spatial-cluster${side}${vertical}${exactZoneClass}" style="left:${((point.x / width) * 100).toFixed(3)}%;top:${((point.y / height) * 100).toFixed(3)}%;--cluster-offset-x:${offsetX}px;--cluster-offset-y:${offsetY}px">
         <button type="button" class="mp-spatial-cluster-pin" aria-label="${esc(`${t("spatialCarrier")} ${cluster.scriptId}, ${cluster.files.length} ${t("spatialPositionedFiles")}`)}"><span>${cluster.files.length}</span></button>
         <div class="mp-spatial-cluster-popover"><header><strong>${esc(t("spatialCarrier"))}</strong><code>${esc(cluster.levelId)} / ${esc(cluster.scriptId)}</code></header><small>${esc(t("spatialCoordinates"))}: <code>${esc(coordinates)}</code>${questContext ? ` \u00b7 ${questContext}` : ""}</small><div>${files}</div></div>
       </div>`;
@@ -5084,12 +5175,13 @@
       <p>${esc(t("spatialStoryMapHint"))}</p>
       <div class="mp-order-metrics mp-spatial-metrics"><span><b>${model.positionedKeys.size.toLocaleString()}</b>${esc(t("spatialPositionedFiles"))}</span><span><b>${model.clusters.length.toLocaleString()}</b>${esc(t("spatialSourceClusters"))}</span><span><b>${model.questPoints.length.toLocaleString()}</b>${esc(t("spatialQuestPins"))}</span><span class="is-unresolved"><b>${model.triggerUnknown.length.toLocaleString()}</b>${esc(t("spatialTriggerUnknown"))}</span></div>
       <div class="mp-spatial-map-frame">
-        <svg class="mp-spatial-map-plot" viewBox="0 0 ${width} ${height}" role="img" aria-label="${esc(t("spatialStoryMap"))}"><g class="mp-spatial-grid"><path d="M ${pad} ${pad} V ${height - pad} H ${width - pad}"/><text x="${width - pad - 18}" y="${height - pad + 30}">X</text><text x="${pad - 27}" y="${pad + 8}">Z</text></g>${routeSegments}${questPins}</svg>
+        <svg class="mp-spatial-map-plot" viewBox="0 0 ${width} ${height}" role="img" aria-label="${esc(t("spatialStoryMap"))}"><g class="mp-spatial-grid"><path d="M ${pad} ${pad} V ${height - pad} H ${width - pad}"/><text x="${width - pad - 18}" y="${height - pad + 30}">X</text><text x="${pad - 27}" y="${pad + 8}">Z</text></g>${zoneOutlines}${routeSegments}${questPins}</svg>
         <div class="mp-spatial-clusters">${clusterPins}</div>
       </div>
-      <div class="mp-spatial-map-legend"><span class="is-quest">${esc(t("spatialQuestPins"))}</span><span class="is-carrier">${esc(t("spatialCarrier"))}</span><small>${esc(t("spatialHoverHint"))}</small></div>
+      <div class="mp-spatial-map-legend"><span class="is-quest">${esc(t("spatialQuestPins"))}</span><span class="is-carrier">${esc(t("spatialCarrier"))}</span><span class="is-trigger-zone">${esc(t("spatialExactTriggerVolumes"))}</span><small>${esc(t("spatialHoverHint"))}</small></div>
       ${model.alternateWeakPositions.length ? `<details class="mp-spatial-unpositioned"><summary>${esc(t("spatialAlternateWeakPositions"))} <span>${model.alternateWeakPositions.length}</span></summary><p>${esc(t("spatialAlternateWeakPositionsHint"))}</p><div>${foldedPositionRows(model.alternateWeakPositions, t("spatialDirectWeak"))}</div></details>` : ""}
       ${model.inheritedWeakPositions.length ? `<details class="mp-spatial-unpositioned"><summary>${esc(t("spatialInheritedWeakPositions"))} <span>${model.inheritedWeakPositions.length}</span></summary><p>${esc(t("spatialInheritedWeakPositionsHint"))}</p><div>${foldedPositionRows(model.inheritedWeakPositions, t("spatialInheritedWeakPositions"))}</div></details>` : ""}
+      ${model.nonSpatialTriggers.length ? `<details class="mp-spatial-unpositioned"><summary>${esc(t("spatialNonSpatialTriggers"))} <span>${model.nonSpatialTriggers.length}</span></summary><p>${esc(t("spatialNonSpatialTriggersHint"))}</p><div>${model.nonSpatialTriggers.map((row) => `<span>${spatialStoryLink(row.key, `${row.eventName} · ${row.scriptId}#${row.headerId ?? "?"}`, row.kind)}<small><code>${esc(`${row.eventName} · ${row.scriptId}#${row.headerId ?? "?"}`)}</code></small></span>`).join("")}</div></details>` : ""}
       ${model.triggerUnknown.length ? `<section class="mp-spatial-unpositioned is-unresolved"><header><h4>${esc(t("spatialTriggerUnknown"))} <span>${model.triggerUnknown.length}</span></h4><p>${esc(t("spatialTriggerUnknownHint"))}</p></header><div>${fileTray(model.triggerUnknown, t("spatialTriggerUnknown"))}</div></section>` : ""}
       ${model.otherUnpositioned.length ? `<details class="mp-spatial-unpositioned"><summary>${esc(t("spatialOtherUnpositioned"))} <span>${model.otherUnpositioned.length}</span></summary><p>${esc(t("spatialOtherUnpositionedHint"))}</p><div>${fileTray(model.otherUnpositioned, t("spatialOtherUnpositioned"))}</div></details>` : ""}
       <small class="mp-spatial-boundary">${esc(t("spatialStoryMapBoundary"))}</small>

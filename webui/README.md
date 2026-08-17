@@ -192,6 +192,9 @@ keyed by language and record identity, persist through
 first note line is shown beside the record filename in the list. These user
 annotations are not generated game-data evidence.
 
+In a selected Audio record, the playable-media section is rendered first,
+before Details, manual notes, and the longer evidence list.
+
 Expanded Audio-page files load with their waveform visible by default. Groups
 with more than 20 possible files retain lazy collapsed players and load each
 waveform only when that file is expanded.
@@ -424,6 +427,9 @@ Story definitions, mission ownership, activation, and playback.
   confirmation, including decoded slot/shape and source hash for spatial
   volumes or the exact event carrier for non-spatial triggers. This is local
   context only, not proof of ownership, firing, branch choice, or order.
+- The Mission Pipeline spatial map draws exact authored trigger volumes from
+  decoded X/Z position, size/radius, and rotation. Exact non-spatial event
+  carriers and files with no trigger lead remain separate named lists.
 - Strong and weak graph edges remain visually and semantically separate.
 - Manual/OCR order may guide research but does not upgrade source evidence.
 

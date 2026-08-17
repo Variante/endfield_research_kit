@@ -3192,6 +3192,14 @@ body:not(.show-debug) .mp-mission-properties { display: none; }
   stroke-dasharray: 9 8;
 }
 
+.mp-spatial-trigger-zone {
+  fill: rgba(211, 113, 38, 0.12);
+  stroke: rgba(211, 113, 38, 0.92);
+  stroke-width: 2.5;
+  stroke-dasharray: 7 4;
+  vector-effect: non-scaling-stroke;
+}
+
 .mp-spatial-quest-pin circle {
   fill: var(--mp-client);
   stroke: white;
@@ -3238,6 +3246,10 @@ body:not(.show-debug) .mp-mission-properties { display: none; }
   font-size: 8px;
   font-weight: 850;
   font-variant-numeric: tabular-nums;
+}
+
+.mp-spatial-cluster.is-exact-trigger-zone .mp-spatial-cluster-pin {
+  background: #d37126;
 }
 
 .mp-spatial-cluster-pin:hover,
@@ -3351,6 +3363,11 @@ body:not(.show-debug) .mp-mission-properties { display: none; }
 }
 
 .mp-spatial-map-legend > .is-carrier::before { background: var(--mp-dependency); }
+.mp-spatial-map-legend > .is-trigger-zone::before {
+  border: 2px solid #d37126;
+  border-radius: 2px;
+  background: rgba(211, 113, 38, 0.12);
+}
 .mp-spatial-map-legend > small { margin-left: auto; }
 
 .mp-spatial-unpositioned {
