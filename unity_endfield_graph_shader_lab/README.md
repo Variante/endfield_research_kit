@@ -4547,6 +4547,13 @@ diagnostic produces 175/256 alpha pixels with maximum `[0,0,0,1]`. Exact 0139
 therefore has a working real-texture alpha path. Its RGB chain is still zero,
 and the diagnostic UV/high constants must not be presented as recovered
 vertex, material, or visual fidelity.
+RGB activation is now isolated as well. The exact tail selects PS cb1[27].y
+because the proven material has cb4[3].x=1; leaving global cb1 zero therefore
+erased color. A diagnostic white TEXCOORD5 particle color plus cb1[27].y=1
+produces 175/256 RGB-and-alpha pixels and maximum HDR RGBA
+`[0.660757,2.68497,2.79676,1]`. This proves the exact 0139 real-texture color
+path, but those diagnostic vertex/global/high-slot values still need their
+runtime producers recovered before Unity visual comparison is meaningful.
 
 The actor-composed harness now also instantiates the exact recovered
 `P_fxui_lizhiyan_overview_trails_Bip001_R_Finger2Nub` prefab beneath the

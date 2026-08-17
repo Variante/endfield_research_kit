@@ -47,6 +47,9 @@ struct EndfieldM23DxbcValidation {
     char exactTextureVsSourceSha256[65], exactTextureVsCompiledSha256[65];
     std::uint32_t exactTextureGridFinitePixels, exactTextureGridNonzeroPixels, exactTextureGridSize;
     float exactTextureGridMax[4];
+    std::uint32_t exactTextureCausalOverrideMask;
+    std::uint32_t exactTextureGridRgbNonzeroPixels, exactTextureGridAlphaNonzeroPixels;
+    float exactTextureGridRgbMax[3], exactTextureGridRgbMin[3];
     float readback[4];
 };
 
@@ -67,6 +70,8 @@ extern "C" HRESULT __cdecl EndfieldOriginalM23DxbcValidateHighNeutralOverride(
 extern "C" HRESULT __cdecl EndfieldOriginalM23DxbcValidateExactTexturesNamedLow(
     ID3D11Device*, ID3D11DeviceContext*, EndfieldM23DxbcValidation*);
 extern "C" HRESULT __cdecl EndfieldOriginalM23DxbcValidateExactTexturesHighNeutral(
+    ID3D11Device*, ID3D11DeviceContext*, EndfieldM23DxbcValidation*);
+extern "C" HRESULT __cdecl EndfieldOriginalM23DxbcValidateExactTexturesHighNeutralRgbGate(
     ID3D11Device*, ID3D11DeviceContext*, EndfieldM23DxbcValidation*);
 
 int main(int argc, char** argv) {
@@ -90,6 +95,7 @@ int main(int argc, char** argv) {
     const bool highNeutralOverride = argc > 2 && std::strcmp(argv[2], "--high-neutral-override") == 0;
     const bool exactTexturesNamedLow = argc > 2 && std::strcmp(argv[2], "--exact-textures-named-low") == 0;
     const bool exactTexturesHighNeutral = argc > 2 && std::strcmp(argv[2], "--exact-textures-high-neutral") == 0;
+    const bool exactTexturesHighNeutralRgb = argc > 2 && std::strcmp(argv[2], "--exact-textures-high-neutral-rgb") == 0;
     std::uint32_t neutralOverrideMask = highNeutralOverride && argc > 3 ? static_cast<std::uint32_t>(std::strtoul(argv[3], nullptr, 0)) : 0u;
     std::uint32_t ablationGroupMask = highBaseline && argc > 3 ? static_cast<std::uint32_t>(std::strtoul(argv[3], nullptr, 0)) : 0u;
     std::uint32_t probeRegister = 0, probeComponent = 0;
@@ -101,8 +107,9 @@ int main(int argc, char** argv) {
         hr = E_INVALIDARG;
     }
     const bool namedLow = argc > 2 && std::strcmp(argv[2], "--named-low") == 0;
-    const bool diagnosticVs = namedLow || highProbe || highBaseline || highNeutral || highNeutralOverride || exactTexturesNamedLow || exactTexturesHighNeutral || (argc > 2 && std::strcmp(argv[2], "--diagnostic-vs") == 0);
-    if (exactTexturesNamedLow) hr = EndfieldOriginalM23DxbcValidateExactTexturesNamedLow(device, context, &report);
+    const bool diagnosticVs = namedLow || highProbe || highBaseline || highNeutral || highNeutralOverride || exactTexturesNamedLow || exactTexturesHighNeutral || exactTexturesHighNeutralRgb || (argc > 2 && std::strcmp(argv[2], "--diagnostic-vs") == 0);
+    if (exactTexturesHighNeutralRgb) hr = EndfieldOriginalM23DxbcValidateExactTexturesHighNeutralRgbGate(device, context, &report);
+    else if (exactTexturesNamedLow) hr = EndfieldOriginalM23DxbcValidateExactTexturesNamedLow(device, context, &report);
     else if (exactTexturesHighNeutral) hr = EndfieldOriginalM23DxbcValidateExactTexturesHighNeutral(device, context, &report);
     else if (highNeutralOverride) hr = EndfieldOriginalM23DxbcValidateHighNeutralOverride(device, context, &report, neutralOverrideMask);
     else if (highNeutral) hr = EndfieldOriginalM23DxbcValidateHighNeutral(device, context, &report);
@@ -119,7 +126,7 @@ int main(int argc, char** argv) {
         "srv_bind=0x%x sampler_bind=0x%x state_bind=0x%x vs_srv_create=0x%x "
         "vs_srv_bind=0x%x rt_bind=0x%x topology=0x%x viewport=0x%x "
         "draw=%u finite=%u changed=%u fidelity=%u readback=[%.9g,%.9g,%.9g,%.9g]\n",
-        exactTexturesNamedLow ? "diagnostic_vs_exact_ps_exact_textures_named_low" : (exactTexturesHighNeutral ? "diagnostic_vs_exact_ps_exact_textures_high_neutral" : (highNeutralOverride ? "diagnostic_vs_exact_ps_high_neutral_override" : (highNeutral ? "diagnostic_vs_exact_ps_high_neutral" : (highBaseline ? "diagnostic_vs_exact_ps_high_baseline" : (highProbe ? "diagnostic_vs_exact_ps_high_probe" : (namedLow ? "diagnostic_vs_exact_ps_named_low" : (diagnosticVs ? "diagnostic_vs_exact_ps" : "exact_pair"))))))),
+        exactTexturesHighNeutralRgb ? "diagnostic_vs_exact_ps_exact_textures_high_neutral_rgb_gate" : (exactTexturesNamedLow ? "diagnostic_vs_exact_ps_exact_textures_named_low" : (exactTexturesHighNeutral ? "diagnostic_vs_exact_ps_exact_textures_high_neutral" : (highNeutralOverride ? "diagnostic_vs_exact_ps_high_neutral_override" : (highNeutral ? "diagnostic_vs_exact_ps_high_neutral" : (highBaseline ? "diagnostic_vs_exact_ps_high_baseline" : (highProbe ? "diagnostic_vs_exact_ps_high_probe" : (namedLow ? "diagnostic_vs_exact_ps_named_low" : (diagnosticVs ? "diagnostic_vs_exact_ps" : "exact_pair")))))))),
         static_cast<unsigned int>(featureLevel), static_cast<unsigned long>(hr),
         report.shaderMask, report.inputLayoutMask, report.vertexBufferMask,
         report.vertexConstantBufferMask, report.pixelConstantBufferMask,
@@ -140,7 +147,7 @@ int main(int argc, char** argv) {
         std::ofstream output(argv[1], std::ios::binary | std::ios::trunc);
         output << "{\n"
             << "  \"schema\": \"endfield.original-m23-dxbc-exact.v3\",\n"
-            << "  \"mode\": \"" << (exactTexturesNamedLow ? "diagnostic_vs_exact_ps_exact_textures_named_low" : (exactTexturesHighNeutral ? "diagnostic_vs_exact_ps_exact_textures_high_neutral" : (highNeutralOverride ? "diagnostic_vs_exact_ps_high_neutral_override" : (highNeutral ? "diagnostic_vs_exact_ps_high_neutral" : (highBaseline ? "diagnostic_vs_exact_ps_high_baseline" : (highProbe ? "diagnostic_vs_exact_ps_high_probe" : (namedLow ? "diagnostic_vs_exact_ps_named_low" : (diagnosticVs ? "diagnostic_vs_exact_ps" : "exact_pair")))))))) << "\",\n"
+            << "  \"mode\": \"" << (exactTexturesHighNeutralRgb ? "diagnostic_vs_exact_ps_exact_textures_high_neutral_rgb_gate" : (exactTexturesNamedLow ? "diagnostic_vs_exact_ps_exact_textures_named_low" : (exactTexturesHighNeutral ? "diagnostic_vs_exact_ps_exact_textures_high_neutral" : (highNeutralOverride ? "diagnostic_vs_exact_ps_high_neutral_override" : (highNeutral ? "diagnostic_vs_exact_ps_high_neutral" : (highBaseline ? "diagnostic_vs_exact_ps_high_baseline" : (highProbe ? "diagnostic_vs_exact_ps_high_probe" : (namedLow ? "diagnostic_vs_exact_ps_named_low" : (diagnosticVs ? "diagnostic_vs_exact_ps" : "exact_pair"))))))))) << "\",\n"
             << "  \"status\": \"" << (SUCCEEDED(hr) ? "pass" : "fail") << "\",\n"
             << "  \"vertex_sha256\": \"7d0a508f7b1e5c9aef0b89489feae97f8669a8cddaba1de0ccc0e26fd0eb2ca0\",\n"
             << "  \"pixel_sha256\": \"0ff508aa08112122c14a3ece17d12f15778eaf39ad0c639c946512dc996b6f83\",\n"
@@ -207,6 +214,11 @@ int main(int argc, char** argv) {
             << "  \"exact_texture_grid_finite_pixels\": " << report.exactTextureGridFinitePixels << ",\n"
             << "  \"exact_texture_grid_nonzero_pixels\": " << report.exactTextureGridNonzeroPixels << ",\n"
             << "  \"exact_texture_grid_max_rgba\": [" << report.exactTextureGridMax[0] << "," << report.exactTextureGridMax[1] << "," << report.exactTextureGridMax[2] << "," << report.exactTextureGridMax[3] << "],\n"
+            << "  \"exact_texture_causal_override_mask\": \"0x" << report.exactTextureCausalOverrideMask << "\",\n"
+            << "  \"exact_texture_grid_rgb_nonzero_pixels\": " << report.exactTextureGridRgbNonzeroPixels << ",\n"
+            << "  \"exact_texture_grid_alpha_nonzero_pixels\": " << report.exactTextureGridAlphaNonzeroPixels << ",\n"
+            << "  \"exact_texture_grid_rgb_max\": [" << report.exactTextureGridRgbMax[0] << "," << report.exactTextureGridRgbMax[1] << "," << report.exactTextureGridRgbMax[2] << "],\n"
+            << "  \"exact_texture_grid_rgb_min\": [" << report.exactTextureGridRgbMin[0] << "," << report.exactTextureGridRgbMin[1] << "," << report.exactTextureGridRgbMin[2] << "],\n"
             << "  \"exact_texture_color_space_assumption\": \"WIC 32bpp RGBA uploaded as UNORM; no sRGB transform\",\n"
             << "  \"visual_fidelity_claim\": " << report.visualFidelityClaim << ",\n"
             << "  \"b4_high_semantics\": \"zero_or_sentinel_only_non_fidelity\",\n"
@@ -232,13 +244,14 @@ int main(int argc, char** argv) {
         report.topologyBindingMask == 0x1u &&
         report.viewportBindingMask == 0x1u && report.drawIssued == 1u &&
         report.readbackFinite == 1u && report.visualFidelityClaim == 0u;
-    const bool complete = common && (exactTexturesNamedLow || exactTexturesHighNeutral
+    const bool complete = common && (exactTexturesNamedLow || exactTexturesHighNeutral || exactTexturesHighNeutralRgb
         ? (report.inputLayoutMask == 0u && report.vertexBufferMask == 0u &&
            report.vertexShaderResourceCreationMask == 0u && report.vertexShaderResourceBindingMask == 0u &&
            report.exactTextureSourceHashMask == 0x1fu && report.exactTextureDecodeMask == 0x1fu &&
            report.exactTextureVsSignatureMask == 1u && report.exactTextureVsSourceHashMask == 1u &&
            report.exactTextureVsCompiledHashMask == 1u && report.exactTextureGridSize == 16u &&
-           report.exactTextureGridFinitePixels == 256u)
+           report.exactTextureGridFinitePixels == 256u &&
+           (!exactTexturesHighNeutralRgb || report.exactTextureCausalOverrideMask == 1u))
         : highNeutralOverride
         ? (report.inputLayoutMask == 0u && report.vertexBufferMask == 0u &&
            report.vertexShaderResourceCreationMask == 0u && report.vertexShaderResourceBindingMask == 0u &&

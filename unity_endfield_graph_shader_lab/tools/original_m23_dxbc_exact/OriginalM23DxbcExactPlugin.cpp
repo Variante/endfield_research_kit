@@ -14,6 +14,7 @@
 #include <filesystem>
 #include <cstdio>
 #include <vector>
+#include <limits>
 
 #ifdef max
 #undef max
@@ -87,6 +88,11 @@ struct EndfieldM23DxbcValidation {
     std::uint32_t exactTextureGridNonzeroPixels;
     std::uint32_t exactTextureGridSize;
     float exactTextureGridMax[4];
+    std::uint32_t exactTextureCausalOverrideMask;
+    std::uint32_t exactTextureGridRgbNonzeroPixels;
+    std::uint32_t exactTextureGridAlphaNonzeroPixels;
+    float exactTextureGridRgbMax[3];
+    float exactTextureGridRgbMin[3];
     float readback[4];
 };
 
@@ -104,8 +110,8 @@ constexpr std::uint32_t kPsConstantBufferFloats4[kResourceCount] = {45, 105, 5, 
 constexpr char kDiagnosticVsCompiledSha256[] = "51f0011ff8f7fbeaa9f0dfb60d95de82f010a3cbef77c14393313d425d16e707";
 constexpr char kM23MaterialSha256[] = "81b920be11d13b3662a97851c97c8a41ef98333478578eacd2a164d4befe98fa";
 constexpr char kM23ContractSha256[] = "41402be441ad98c7823d021fb86c1fc3e48ecd6515a58d46eedfd0be6eea7eeb";
-constexpr char kDiagnosticTextureVsSourceSha256[] = "efb22fa85a07df2950eac097ec94c1c512149f7b80ee37065e74ef6f03b811e5";
-constexpr char kDiagnosticTextureVsCompiledSha256[] = "887600e39176727c1037497c7cf4f8eacaa10ed94b5c93a5a2752b2a3844fa24";
+constexpr char kDiagnosticTextureVsSourceSha256[] = "5ec3bb5d81428c0b7d2eb678c9e15b7091742809a78da66208cce2a730e3e36a";
+constexpr char kDiagnosticTextureVsCompiledSha256[] = "130d66ca0335b677612623cdc2e54f92d211f3fc76230d3d23ddb0c67762660c";
 constexpr const wchar_t* kExactTexturePaths[5] = {
     L"..\\..\\..\\scratch\\animestudio\\lizhiyan_peak_particles\\texture_shader_convert\\Texture2D\\T_fx_trail_gfx_28_pC67A395BF6E95B9E.png",
     L"..\\..\\..\\scratch\\animestudio\\lizhiyan_peak_particles\\texture_shader_convert\\Texture2D\\T_fx_flow_08_M_pDE2F3B09BB833FB2.png",
@@ -282,14 +288,16 @@ static HRESULT RunValidation(ID3D11Device* device, ID3D11DeviceContext* context,
                              EndfieldM23DxbcValidation* report,
                              bool diagnosticVs, bool namedLow, bool highProbe,
                              bool highBaseline, bool highNeutral, bool exactTextures,
-                             std::uint32_t highNeutralOverrideMask,
+                             bool exactTextureRgbGate, std::uint32_t highNeutralOverrideMask,
                              std::uint32_t probeRegister,
                              std::uint32_t probeComponent, std::uint32_t ablationGroupMask) {
     if (report == nullptr || device == nullptr || context == nullptr) {
         return E_INVALIDARG;
     }
     std::memset(report, 0, sizeof(*report));
-    report->mode = exactTextures ? (highNeutral ? 8u : 7u) : (highNeutralOverrideMask ? 6u : (highNeutral ? 5u : (highBaseline ? 4u : (highProbe ? 3u : (namedLow ? 2u : (diagnosticVs ? 1u : 0u))))));
+    for (float& value : report->exactTextureGridRgbMin) value = std::numeric_limits<float>::max();
+    report->mode = exactTextureRgbGate ? 9u : (exactTextures ? (highNeutral ? 8u : 7u) : (highNeutralOverrideMask ? 6u : (highNeutral ? 5u : (highBaseline ? 4u : (highProbe ? 3u : (namedLow ? 2u : (diagnosticVs ? 1u : 0u)))))));
+    report->exactTextureCausalOverrideMask = exactTextureRgbGate ? 1u : 0u;
     report->highAblationGroupMask = ablationGroupMask;
     report->highNeutralOverrideMask = highNeutralOverrideMask;
     if (highProbe) {
@@ -404,6 +412,8 @@ static HRESULT RunValidation(ID3D11Device* device, ID3D11DeviceContext* context,
     }
     ComObject<ID3D11Buffer> pixelConstantBuffers[kResourceCount];
     float namedLowCb4[50 * 4] = {};
+    float exactTextureCb1[105 * 4] = {};
+    if (exactTextureRgbGate) exactTextureCb1[27 * 4 + 1] = 1.0f; // PS cb1[27].y evidence gate for _780
     if (namedLow || highProbe || highNeutral) {
         namedLowCb4[0] = 1.0f; namedLowCb4[1] = 0.0f; namedLowCb4[2] = 0.0f; namedLowCb4[3] = 0.0f;
         namedLowCb4[4] = 1.0f; namedLowCb4[5] = 0.0f; namedLowCb4[6] = 4.0f; namedLowCb4[7] = 4.14f;
@@ -486,7 +496,8 @@ static HRESULT RunValidation(ID3D11Device* device, ID3D11DeviceContext* context,
             report->diagnosticB2GateMask = 1u;
         }
         const void* initial = (namedLow || highProbe || highBaseline || exactTextures) && i == 4 ? namedLowCb4 :
-                              ((highBaseline || highNeutral || exactTextures) && i == 2 ? b2Gate : nullptr);
+                              ((highBaseline || highNeutral || exactTextures) && i == 2 ? b2Gate :
+                              (exactTextureRgbGate && i == 1 ? exactTextureCb1 : nullptr));
         hr = CreateConstantBuffer(device, kPsConstantBufferFloats4[i], &pixelConstantBuffers[i], initial);
         if (FAILED(hr)) {
             return hr;
@@ -689,6 +700,26 @@ static HRESULT RunValidation(ID3D11Device* device, ID3D11DeviceContext* context,
     report->drawIssued = 1u; context->Draw(3, 0); context->Flush();
     D3D11_TEXTURE2D_DESC stagingDesc = targetDesc; stagingDesc.Usage = D3D11_USAGE_STAGING; stagingDesc.BindFlags = 0; stagingDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
     ComObject<ID3D11Texture2D> staging; hr = device->CreateTexture2D(&stagingDesc, nullptr, staging.Put()); if (FAILED(hr)) return hr; context->CopyResource(staging.Get(), target.Get()); context->Flush(); D3D11_MAPPED_SUBRESOURCE mapped = {}; hr = context->Map(staging.Get(), 0, D3D11_MAP_READ, 0, &mapped); if (SUCCEEDED(hr)) { std::memcpy(report->readback, mapped.pData, sizeof(report->readback)); report->readbackFinite = 1u; report->readbackChanged = (std::memcmp(report->readback, sentinel, sizeof(sentinel)) != 0) ? 1u : 0u; const float zero[4] = {}; report->readbackChangedFromZero = (std::memcmp(report->readback, zero, sizeof(zero)) != 0) ? 1u : 0u; if (exactTextures) { for (UINT y = 0; y < gridSize; ++y) { const float* row = reinterpret_cast<const float*>(static_cast<const unsigned char*>(mapped.pData) + y * mapped.RowPitch); for (UINT x = 0; x < gridSize; ++x) { const float* pixel = row + x * 4u; bool finite = true, nonzero = false; for (int c = 0; c < 4; ++c) { finite = finite && std::isfinite(pixel[c]); nonzero = nonzero || pixel[c] != 0.0f; report->exactTextureGridMax[c] = std::max(report->exactTextureGridMax[c], pixel[c]); } if (finite) ++report->exactTextureGridFinitePixels; if (nonzero) ++report->exactTextureGridNonzeroPixels; } } } else { report->readbackFinite = (std::isfinite(report->readback[0]) && std::isfinite(report->readback[1]) && std::isfinite(report->readback[2]) && std::isfinite(report->readback[3])) ? 1u : 0u; } context->Unmap(staging.Get(), 0); }
+    if (exactTextures) {
+        D3D11_MAPPED_SUBRESOURCE gridMapped = {};
+        if (SUCCEEDED(context->Map(staging.Get(), 0, D3D11_MAP_READ, 0, &gridMapped))) {
+            for (UINT y = 0; y < gridSize; ++y) {
+                const float* row = reinterpret_cast<const float*>(static_cast<const unsigned char*>(gridMapped.pData) + y * gridMapped.RowPitch);
+                for (UINT x = 0; x < gridSize; ++x) {
+                    const float* pixel = row + x * 4u;
+                    bool rgbNonzero = false;
+                    for (int c = 0; c < 3; ++c) {
+                        rgbNonzero = rgbNonzero || pixel[c] != 0.0f;
+                        report->exactTextureGridRgbMax[c] = (std::max)(report->exactTextureGridRgbMax[c], pixel[c]);
+                        report->exactTextureGridRgbMin[c] = (std::min)(report->exactTextureGridRgbMin[c], pixel[c]);
+                    }
+                    if (rgbNonzero) ++report->exactTextureGridRgbNonzeroPixels;
+                    if (pixel[3] != 0.0f) ++report->exactTextureGridAlphaNonzeroPixels;
+                }
+            }
+            context->Unmap(staging.Get(), 0);
+        }
+    }
     report->visualFidelityClaim = 0u;
     if (highProbe || highBaseline) report->highProbeExecutionMask = report->readbackFinite == 1u ? 1u : 0u;
     const bool commonComplete = report->shaderMask == 3u &&
@@ -731,72 +762,81 @@ static HRESULT RunValidation(ID3D11Device* device, ID3D11DeviceContext* context,
     const bool exactTextureDiagnosticComplete = commonComplete && report->inputLayoutMask == 0u &&
         report->vertexBufferMask == 0u && report->vertexShaderResourceCreationMask == 0u &&
         report->vertexShaderResourceBindingMask == 0u;
-    const bool exactTextureComplete = exactTextureDiagnosticComplete && (report->mode == 7u || report->mode == 8u) &&
+    const bool exactTextureComplete = exactTextureDiagnosticComplete &&
+        (report->mode == 7u || report->mode == 8u || report->mode == 9u) &&
         report->exactTextureSourceHashMask == 0x1fu && report->exactTextureDecodeMask == 0x1fu &&
         report->exactTextureVsSignatureMask == 1u && report->exactTextureVsSourceHashMask == 1u &&
         report->exactTextureVsCompiledHashMask == 1u && report->exactTextureGridSize == 16u &&
-        report->exactTextureGridFinitePixels == 256u;
+        report->exactTextureGridFinitePixels == 256u &&
+        (report->mode != 9u || report->exactTextureCausalOverrideMask == 1u);
     return (exactTextures ? exactTextureComplete : (highNeutralOverrideMask ? highNeutralOverrideComplete : (highNeutral ? highNeutralComplete : (highBaseline ? highBaselineComplete : (highProbe ? highProbeComplete : (namedLow ? namedLowComplete : (diagnosticVs ? diagnosticComplete : exactComplete))))))) ? S_OK : E_FAIL;
 }
 
 extern "C" __declspec(dllexport) HRESULT __cdecl EndfieldOriginalM23DxbcValidate(
     ID3D11Device* device, ID3D11DeviceContext* context,
     EndfieldM23DxbcValidation* report) {
-    return RunValidation(device, context, report, false, false, false, false, false, false, 0, 0, 0, 0);
+    return RunValidation(device, context, report, false, false, false, false, false, false, false, 0, 0, 0, 0);
 }
 
 extern "C" __declspec(dllexport) HRESULT __cdecl EndfieldOriginalM23DxbcValidateDiagnosticVs(
     ID3D11Device* device, ID3D11DeviceContext* context,
     EndfieldM23DxbcValidation* report) {
-    return RunValidation(device, context, report, true, false, false, false, false, false, 0, 0, 0, 0);
+    return RunValidation(device, context, report, true, false, false, false, false, false, false, 0, 0, 0, 0);
 }
 
 extern "C" __declspec(dllexport) HRESULT __cdecl EndfieldOriginalM23DxbcValidateDiagnosticVsNamedLow(
     ID3D11Device* device, ID3D11DeviceContext* context,
     EndfieldM23DxbcValidation* report) {
-    return RunValidation(device, context, report, true, true, false, false, false, false, 0, 0, 0, 0);
+    return RunValidation(device, context, report, true, true, false, false, false, false, false, 0, 0, 0, 0);
 }
 
 extern "C" __declspec(dllexport) HRESULT __cdecl EndfieldOriginalM23DxbcValidateHighProbe(
     ID3D11Device* device, ID3D11DeviceContext* context,
     EndfieldM23DxbcValidation* report, std::uint32_t probeRegister,
     std::uint32_t probeComponent) {
-    return RunValidation(device, context, report, true, false, true, false, false, false, 0,
+    return RunValidation(device, context, report, true, false, true, false, false, false, false, 0,
                          probeRegister, probeComponent, 0);
 }
 
 extern "C" __declspec(dllexport) HRESULT __cdecl EndfieldOriginalM23DxbcValidateHighBaseline(
     ID3D11Device* device, ID3D11DeviceContext* context,
     EndfieldM23DxbcValidation* report, std::uint32_t ablationGroupMask) {
-    return RunValidation(device, context, report, true, false, false, true, false, false, 0,
+    return RunValidation(device, context, report, true, false, false, true, false, false, false, 0,
                          0, 0, ablationGroupMask);
 }
 
 extern "C" __declspec(dllexport) HRESULT __cdecl EndfieldOriginalM23DxbcValidateHighNeutral(
     ID3D11Device* device, ID3D11DeviceContext* context,
     EndfieldM23DxbcValidation* report) {
-    return RunValidation(device, context, report, true, false, false, false, true, false, 0,
+    return RunValidation(device, context, report, true, false, false, false, true, false, false, 0,
                          0, 0, 0);
 }
 
 extern "C" __declspec(dllexport) HRESULT __cdecl EndfieldOriginalM23DxbcValidateHighNeutralOverride(
     ID3D11Device* device, ID3D11DeviceContext* context,
     EndfieldM23DxbcValidation* report, std::uint32_t overrideMask) {
-    return RunValidation(device, context, report, true, false, false, false, true, false, overrideMask,
+    return RunValidation(device, context, report, true, false, false, false, true, false, false, overrideMask,
                          0, 0, 0);
 }
 
 extern "C" __declspec(dllexport) HRESULT __cdecl EndfieldOriginalM23DxbcValidateExactTexturesNamedLow(
     ID3D11Device* device, ID3D11DeviceContext* context,
     EndfieldM23DxbcValidation* report) {
-    return RunValidation(device, context, report, true, true, false, false, false, true, 0,
+    return RunValidation(device, context, report, true, true, false, false, false, true, false, 0,
                          0, 0, 0);
 }
 
 extern "C" __declspec(dllexport) HRESULT __cdecl EndfieldOriginalM23DxbcValidateExactTexturesHighNeutral(
     ID3D11Device* device, ID3D11DeviceContext* context,
     EndfieldM23DxbcValidation* report) {
-    return RunValidation(device, context, report, true, false, false, false, true, true, 0,
+    return RunValidation(device, context, report, true, false, false, false, true, true, false, 0,
+                         0, 0, 0);
+}
+
+extern "C" __declspec(dllexport) HRESULT __cdecl EndfieldOriginalM23DxbcValidateExactTexturesHighNeutralRgbGate(
+    ID3D11Device* device, ID3D11DeviceContext* context,
+    EndfieldM23DxbcValidation* report) {
+    return RunValidation(device, context, report, true, false, false, false, true, true, true, 0,
                          0, 0, 0);
 }
 

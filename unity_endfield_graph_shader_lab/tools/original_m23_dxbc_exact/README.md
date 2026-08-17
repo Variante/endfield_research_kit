@@ -53,6 +53,15 @@ with maximum RGBA `[0,0,0,1]`. This is the first exact-PS alpha activation;
 RGB remains unresolved and the diagnostic UV/high-slot inputs are not vertex,
 material, or visual fidelity.
 
+The texture VS now labels its TEXCOORD5 particle-color input explicitly as
+diagnostic white. With high-neutral constants alone, RGB still remains zero.
+The bounded `exact-textures-high-neutral-rgb` mode then sets only PS
+`cb1[27].y=1`, the global multiplier selected by the proven low
+`cb4[3].x=1`. It produces 175/256 RGB-and-alpha pixels with maximum HDR RGBA
+`[0.660757,2.68497,2.79676,1]`. This isolates a real texture/color execution
+path, but the white vertex color, global multiplier, UVs, and neutral high
+slots remain diagnostic inputs rather than recovered runtime values.
+
 All buffers are zero-initialized. Unresolved b4 high-slot semantics are not
 inferred. The validator explicitly binds every object, verifies identity with
 VSGet*/PSGet*/IAGet*/OMGet* masks, draws three vertices into a controlled 1x1

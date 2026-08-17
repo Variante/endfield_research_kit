@@ -58,7 +58,7 @@ foreach ($mask in 1,2,3) {
 $exactTextureReports = @()
 Push-Location $toolRoot
 try {
-    foreach ($textureMode in @("named-low","high-neutral")) {
+    foreach ($textureMode in @("named-low","high-neutral","high-neutral-rgb")) {
         $textureReport = Join-Path $buildRoot "m23_exact_textures_$($textureMode.Replace('-','_')).json"
         & $validator $textureReport "--exact-textures-$textureMode"
         if ($LASTEXITCODE -ne 0) { throw "WARP rejected M23 exact-texture $textureMode mode." }
