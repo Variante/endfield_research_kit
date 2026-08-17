@@ -8,7 +8,7 @@
     "materials": 8,
     "uniqueTextures": 13,
     "meshes": 3,
-    "sourceAggregateSha256": "584E616B9014208F530484B7B928053C55CEAB8A8DF48BFDE1FFE06C28B65D3A"
+    "sourceAggregateSha256": "E56CE31ED9F2686B84307F6E11749C8E0EDBB6F21310D9CA97A9F19E0C2642FF"
   },
   "effects": [
     {
@@ -29823,5 +29823,148 @@
       "pathID": -1430105248647086886
     }
   },
-  "executionBoundary": "Serialized hierarchy/TRS, particle modules, renderer/material/mesh ownership, material payloads, converted textures, converted mesh geometry, and shader identity are source-closed. Filtered GameObject convenience JSON omits m_IsActive; manual diagnostics default those nodes active while retail activation remains owned by unrecovered EffectSetting/EffectLodCfg execution. Converted PNG/OBJ payloads are diagnostic derivatives. Retail EffectSetting execution, selected DXBC variant, descriptors, draw/PSO/MRT/depth, after-DOF survivor ownership, and final compositing remain unproven; visibleAdmission stays false."
+  "m23ShaderAbi": {
+    "material": {
+      "pathID": -430604955415889784,
+      "source": {
+        "path": "scratch/animestudio/lizhiyan_peak_particles/dependency_json/Material/M_fxui__lizhiyan_overview_23_pFA062F1311E9B888.json",
+        "bytes": 19640,
+        "sha256": "81B920BE11D13B3662A97851C97C8A41EF98333478578EACD2A164D4BEFE98FA",
+        "objectType": "Material",
+        "pathID": -430604955415889784,
+        "sourceFile": null,
+        "sourceOffset": null,
+        "rawDataLength": null,
+        "rawDataSha256": null,
+        "typeTreeSource": null
+      },
+      "validKeywords": [
+        "_SAMPLE_TEX0",
+        "_SAMPLE_TEX1",
+        "_SAMPLE_TEX2",
+        "_SAMPLE_TEX3",
+        "_USE_FRESNEL"
+      ]
+    },
+    "shader": {
+      "pathID": -1430105248647086886,
+      "name": "HGRP/Effect/VFXBaseV2",
+      "pass": "ForwardOnly",
+      "keywords": [
+        "HG_ENABLE_MV",
+        "_SAMPLE_TEX0",
+        "_SAMPLE_TEX1",
+        "_SAMPLE_TEX2",
+        "_SAMPLE_TEX3",
+        "_USE_FRESNEL"
+      ]
+    },
+    "variants": {
+      "vertex": {
+        "blob": {
+          "path": "scratch/character_recovery/vfx_shader_variants/shader_export/Shader/HGRP_Effect_VFXBaseV2_pEC273EDA76F7FCDA.shader.bytecode/0138_endfield_dxbc_0.dxbc",
+          "bytes": 10720,
+          "sha256": "7D0A508F7B1E5C9AEF0B89489FEAE97F8669A8CDDABA1DE0CCC0E26FD0EB2CA0",
+          "objectType": "ShaderDXBC",
+          "pathID": -1430105248647086886
+        },
+        "metadata": {
+          "path": "scratch/character_recovery/vfx_shader_variants/shader_export/Shader/HGRP_Effect_VFXBaseV2_pEC273EDA76F7FCDA.shader.bytecode/0138_endfield_dxbc_0.dxbc.metadata.json",
+          "bytes": 11441,
+          "sha256": "88BCDA60C60FC495EFF93337E6D5041FAD2BDEE9369EB76EDF49CF83D0730859",
+          "objectType": "ShaderDXBCMetadata",
+          "pathID": -1430105248647086886
+        },
+        "pass": "ForwardOnly",
+        "keywords": [
+          "HG_ENABLE_MV",
+          "_SAMPLE_TEX0",
+          "_SAMPLE_TEX1",
+          "_SAMPLE_TEX2",
+          "_SAMPLE_TEX3",
+          "_USE_FRESNEL"
+        ]
+      },
+      "fragment": {
+        "blob": {
+          "path": "scratch/character_recovery/vfx_shader_variants/shader_export/Shader/HGRP_Effect_VFXBaseV2_pEC273EDA76F7FCDA.shader.bytecode/0139_endfield_dxbc_1.dxbc",
+          "bytes": 8100,
+          "sha256": "0FF508AA08112122C14A3ECE17D12F15778EAF39AD0C639C946512DC996B6F83",
+          "objectType": "ShaderDXBC",
+          "pathID": -1430105248647086886
+        },
+        "metadata": {
+          "path": "scratch/character_recovery/vfx_shader_variants/shader_export/Shader/HGRP_Effect_VFXBaseV2_pEC273EDA76F7FCDA.shader.bytecode/0139_endfield_dxbc_1.dxbc.metadata.json",
+          "bytes": 11443,
+          "sha256": "B21E6CDC3C866D07FCE608BA163D84999C33C10B23A2C722437625DFA4A6CEDE",
+          "objectType": "ShaderDXBCMetadata",
+          "pathID": -1430105248647086886
+        },
+        "pass": "ForwardOnly",
+        "keywords": [
+          "HG_ENABLE_MV",
+          "_SAMPLE_TEX0",
+          "_SAMPLE_TEX1",
+          "_SAMPLE_TEX2",
+          "_SAMPLE_TEX3",
+          "_USE_FRESNEL"
+        ]
+      }
+    },
+    "texcoordPacking": {
+      "vertexInputs": {
+        "v4": "TEXCOORD0",
+        "v5": "TEXCOORD1"
+      },
+      "vertexOutputs": {
+        "o1.xy": "mainUV",
+        "o2.xy": "sample0UV",
+        "o2.zw": "sample1UV",
+        "o3.xy": "sample2UV",
+        "o3.zw": "sample3UV"
+      },
+      "fragmentInputs": {
+        "v1": "TEXCOORD0/mainUV",
+        "v2": "TEXCOORD1/sample0.xy+sample1.zw",
+        "v3": "TEXCOORD2/sample2.xy+sample3.zw"
+      },
+      "secondaryUV": "lerp(v5.xy, v4.zw, _InParticle [cb4[1].x])",
+      "motionLanes": {
+        "main": "v5.x",
+        "samples": "v5.y"
+      }
+    },
+    "lowCbufferMappings": {
+      "cb4[0].x": "_SurfaceType",
+      "cb4[0].y": "_BlendMode",
+      "cb4[0].z": "_Responsive",
+      "cb4[0].w": "_EnableTransparentMV",
+      "cb4[1].x": "_InParticle",
+      "cb4[1].y": "_DisableVertColor",
+      "cb4[1].z": "_TintColorIntensity",
+      "cb4[1].w": "_TintColorAlpha",
+      "cb4[2].y": "_ExpThreshold",
+      "cb4[2].z": "_ExpIntensity",
+      "cb4[2].w": "_IsSceneEffect",
+      "cb4[3].x": "_IgnorePostExposure",
+      "cb4[3].y": "_VertCameraOffset",
+      "cb4[4]": "_TintColor",
+      "cb4[5].x": "_MainTexUseDisturb",
+      "cb4[5].y": "_UseMainTexAsAlpha",
+      "cb4[5].z": "_MainTexMipmapBias",
+      "cb4[6]": "_MainTexUVSpeed",
+      "cb4[7]": "_MainTexUVRotateMat",
+      "cb4[8]": "_MainTexUVWeights",
+      "cb4[9]": "_MainTex_ST"
+    },
+    "unresolvedCbufferSlots": [
+      "cb4[11..12]",
+      "cb4[16..18]",
+      "cb4[17..18]",
+      "cb4[23..24]",
+      "cb4[28..29]",
+      "cb4[33..43]"
+    ]
+  },
+  "executionBoundary": "Serialized hierarchy/TRS, particle modules, renderer/material/mesh ownership, material payloads, converted textures, converted mesh geometry, shader identity, and M23's exact ForwardOnly vertex/fragment DXBC variant are source-closed. M23 TEXCOORD packing and the named low UnityPerMaterial slots are instruction/metadata-closed; high sample/mask/blend/dissolve/Fresnel cbuffer property names remain explicitly unresolved. Filtered GameObject convenience JSON omits m_IsActive; manual diagnostics default those nodes active while retail activation remains owned by unrecovered EffectSetting/EffectLodCfg execution. Converted PNG/OBJ payloads are diagnostic derivatives. Retail EffectSetting execution, descriptor binding, draw/PSO/MRT/depth, after-DOF survivor ownership, and final compositing remain unproven; visibleAdmission stays false."
 }

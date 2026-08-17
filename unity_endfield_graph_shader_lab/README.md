@@ -4495,6 +4495,10 @@ with `t3` used by the blend route and `t4.x` by dissolve. A trial that inferred
 a different non-polar routing collapsed peak-only output to one pixel and was
 reverted. Do not alter this path again until TEXCOORD1/2 lanes and cbuffer
 weights have exact exported-property joins.
+The peak-effect builder now publishes this as `m23ShaderAbi` and fails closed
+on the material and both DXBC hashes, pass/keyword identity, proven TEXCOORD
+packing, and named low UnityPerMaterial slots. Higher cbuffer groups remain
+explicitly unresolved until another layout source supplies their names.
 
 The actor-composed harness now also instantiates the exact recovered
 `P_fxui_lizhiyan_overview_trails_Bip001_R_Finger2Nub` prefab beneath the

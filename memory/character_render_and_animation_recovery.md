@@ -2245,6 +2245,10 @@ only stable interpretation and priorities.
    peak-only output to one pixel and was discarded. The remaining exact task
    is to map the fragment's TEXCOORD1/2 lanes and cbuffer weights to exported
    property names before changing the SampleStack again.
+   The generated peak contract now fail-closes on the exact M23 material and
+   vertex/fragment blob hashes, pass/keyword identity, UV packing, and named
+   low UnityPerMaterial slots. It records higher sample/mask/blend/dissolve/
+   Fresnel slot groups as unresolved instead of inventing property names.
    The exact independently AssetMap-proven finger prefab is now executable in
    the same actor-composed diagnostic. It is mounted beneath the unique
    `Bip001_R_Finger2Nub`, keeps its source 0.83333-second delay and
