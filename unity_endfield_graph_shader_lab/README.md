@@ -4634,6 +4634,25 @@ not a claim that Unity preserves all state. The plugin build validates every
 observer export and the WARP and managed source-contract suites pass. Real-draw
 evidence remains pending a semantically valid source-row/Draw-cb3 bridge.
 
+Run the first source-row boundary oracle with
+`EndfieldGraphShaderLabEditor.EndfieldLiZhiyanM23SourceMeshOracle.RunAndWriteEvidence`.
+At PTS 40000 it proves two live particles each for `xuanzhuan03` (388 source
+vertices, 776 baked) and `xuanzhuan03_02` (768 source vertices, 1,536 baked),
+while both `xuanzhuan04*` renderers are present but empty. Source normals and
+Unity-computed Mikk tangents are complete; source COLOR is absent and remains
+an explicit ABI gap rather than being filled. The JSON under
+`scratch/character_recovery/lizhiyan_m23_source_mesh_oracle/` records particle,
+Custom1, source-channel, and BakeMesh segment hashes and remains diagnostic,
+not generated admission data. Next add particle-TRS/normal agreement and a
+second-camera invariance gate before constructing any exact draw rows.
+
+0138 instruction tracing now fixes current Draw transform cb3[0..3], previous/
+motion transform cb3[6..9], history selectors cb3[10].xy, and particle-color
+complement cb3[13]. Its skin predicate is carried by cb3[4].w; cb4[3].z only
+selects raw versus attenuated COLOR. The M23 source graph strongly selects the
+non-skin route, but native draw-time cb3 bytes are still required before that
+inference becomes a captured runtime fact.
+
 The actor-composed harness now also instantiates the exact recovered
 `P_fxui_lizhiyan_overview_trails_Bip001_R_Finger2Nub` prefab beneath the
 unique actor `Bip001_R_Finger2Nub` mount. It preserves the source

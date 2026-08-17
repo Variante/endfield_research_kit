@@ -2401,6 +2401,28 @@ only stable interpretation and priorities.
    observer export census, WARP suite, and managed source-contract test pass;
    real-draw evidence remains pending until the source-row/cb3 bridge can issue
    a semantically valid draw.
+   The standalone `EndfieldLiZhiyanM23SourceMeshOracle` now executes this first
+   bridge boundary at retail PTS 40000 (effect-local `0.19966698 s`) without
+   touching the visual harness. It reruns the maintained generated-prefab
+   validator, gates the four exact renderer/component/mesh/material identities,
+   captures public Particle/Custom1 state, and proves per-particle BakeMesh
+   segment ranges. `xuanzhuan03` has 2 particles over the 388-vertex mesh
+   (776 baked vertices/3,456 indices); `xuanzhuan03_02` has 2 over the
+   768-vertex mesh (1,536/3,456); both `xuanzhuan04*` renderers have zero live
+   particles at this frame. The source meshes have imported normals and stable
+   Unity Mikk tangents but no COLOR channel. No default COLOR, blend, or other
+   missing ABI row is synthesized. Live segments reproduce the earlier
+   Custom1 masks UV0=`0`, UV1=`8` independently. The next oracle revision must
+   validate the local particle TRS and inverse-transpose normal transform
+   against every BakeMesh segment, including a second-camera invariance gate.
+   Exact 0138 also closes the relevant Draw cb3 arithmetic: cb3[0..2].xyz are
+   the current transform basis columns, cb3[3].xyz is translation, cb3[6..8]
+   plus cb3[9] are the previous/motion basis and translation, cb3[10].xy select
+   history inputs, and cb3[13] is `1-particleCurrentColor`. The actual skin
+   predicate is encoded in cb3[4].w; high-confidence source evidence says these
+   ordinary mesh particles take the non-skin path, but draw-time bytes remain
+   unobserved. Contrary to the earlier tentative interpretation, cb4[3].z is a
+   raw-versus-attenuated COLOR selector, not a position/skin gate.
    Video acceptance must distinguish Unity anchors from nearest retail PTS:
    39934 maps to retail 39933 and 40834 to 40833, while 40000/40867 are exact.
    At PTS 40000 the current composite raised-hand coverage is 4.863% versus
