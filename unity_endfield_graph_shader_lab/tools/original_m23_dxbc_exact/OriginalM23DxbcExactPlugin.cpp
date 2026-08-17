@@ -1,16 +1,21 @@
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
+#include <bcrypt.h>
 #include <d3d11.h>
+#include <d3dcompiler.h>
 
 #include <cstdint>
 #include <cstring>
 #include <cmath>
 #include <fstream>
+#include <cstdio>
 #include <vector>
 
 #include "EmbeddedM23Dxbc.generated.h"
+#include "DiagnosticM23Vs.generated.h"
 
 struct EndfieldM23DxbcValidation {
+    std::uint32_t mode;
     std::uint32_t shaderMask;
     std::uint32_t inputLayoutMask;
     std::uint32_t vertexBufferMask;
@@ -37,6 +42,11 @@ struct EndfieldM23DxbcValidation {
     std::uint32_t readbackFinite;
     std::uint32_t readbackChanged;
     std::uint32_t visualFidelityClaim;
+    std::uint32_t diagnosticVsSignatureMask;
+    std::uint32_t diagnosticVsSourceHashMask;
+    std::uint32_t diagnosticVsCompiledHashMask;
+    char diagnosticVsSourceSha256[65];
+    char diagnosticVsCompiledSha256[65];
     float readback[4];
 };
 
@@ -50,6 +60,36 @@ constexpr std::uint32_t kStateDepth = 1u << 2;
 constexpr std::uint32_t kAllStateMask = kStateRasterizer | kStateBlend | kStateDepth;
 constexpr std::uint32_t kVsConstantBufferFloats4[kResourceCount] = {2, 82, 104, 14, 50};
 constexpr std::uint32_t kPsConstantBufferFloats4[kResourceCount] = {45, 105, 5, 1, 44};
+// Filled from the deterministic D3DCompile output and checked below.
+constexpr char kDiagnosticVsCompiledSha256[] = "51f0011ff8f7fbeaa9f0dfb60d95de82f010a3cbef77c14393313d425d16e707";
+
+bool Sha256Hex(const void* bytes, std::size_t size, char output[65]) {
+    BCRYPT_ALG_HANDLE algorithm = nullptr;
+    BCRYPT_HASH_HANDLE hash = nullptr;
+    DWORD objectSize = 0, resultSize = 0;
+    if (BCryptOpenAlgorithmProvider(&algorithm, BCRYPT_SHA256_ALGORITHM, nullptr, 0) < 0 ||
+        BCryptGetProperty(algorithm, BCRYPT_OBJECT_LENGTH,
+                          reinterpret_cast<PUCHAR>(&objectSize), sizeof(objectSize),
+                          &resultSize, 0) < 0) {
+        if (algorithm) BCryptCloseAlgorithmProvider(algorithm, 0);
+        return false;
+    }
+    std::vector<UCHAR> object(objectSize);
+    if (BCryptCreateHash(algorithm, &hash, object.data(), objectSize, nullptr, 0, 0) < 0 ||
+        BCryptHashData(hash, reinterpret_cast<PUCHAR>(const_cast<void*>(bytes)),
+                       static_cast<ULONG>(size), 0) < 0) {
+        if (hash) BCryptDestroyHash(hash);
+        BCryptCloseAlgorithmProvider(algorithm, 0);
+        return false;
+    }
+    UCHAR digest[32] = {};
+    const NTSTATUS finish = BCryptFinishHash(hash, digest, sizeof(digest), 0);
+    BCryptDestroyHash(hash); BCryptCloseAlgorithmProvider(algorithm, 0);
+    if (finish < 0) return false;
+    for (std::size_t i = 0; i < sizeof(digest); ++i) std::sprintf(output + i * 2, "%02x", digest[i]);
+    output[64] = '\0';
+    return true;
+}
 
 template <typename T>
 class ComObject {
@@ -130,18 +170,51 @@ HRESULT CreateSimpleSampler(ID3D11Device* device, ComObject<ID3D11SamplerState>*
 
 }  // namespace
 
-extern "C" __declspec(dllexport) HRESULT __cdecl EndfieldOriginalM23DxbcValidate(
-    ID3D11Device* device, ID3D11DeviceContext* context,
-    EndfieldM23DxbcValidation* report) {
+static HRESULT RunValidation(ID3D11Device* device, ID3D11DeviceContext* context,
+                             EndfieldM23DxbcValidation* report,
+                             bool diagnosticVs) {
     if (report == nullptr || device == nullptr || context == nullptr) {
         return E_INVALIDARG;
     }
     std::memset(report, 0, sizeof(*report));
+    report->mode = diagnosticVs ? 1u : 0u;
+    if (diagnosticVs) {
+        std::memcpy(report->diagnosticVsSourceSha256,
+                    g_EndfieldM23DiagnosticVsSourceSha256,
+                    sizeof(g_EndfieldM23DiagnosticVsSourceSha256));
+    }
 
     ComObject<ID3D11VertexShader> vertexShader;
     ComObject<ID3D11PixelShader> pixelShader;
-    HRESULT hr = device->CreateVertexShader(
-        g_EndfieldM23VertexDxbc, g_EndfieldM23VertexDxbcSize, nullptr, vertexShader.Put());
+    ComObject<ID3DBlob> diagnosticVsBlob;
+    ComObject<ID3DBlob> diagnosticVsErrors;
+    HRESULT hr = S_OK;
+    if (diagnosticVs) {
+        hr = D3DCompile(g_EndfieldM23DiagnosticVsSource,
+                        g_EndfieldM23DiagnosticVsSourceSize,
+                        "original_m23_diagnostic_vs.hlsl", nullptr, nullptr,
+                        "main", "vs_5_0", D3DCOMPILE_OPTIMIZATION_LEVEL3, 0,
+                        diagnosticVsBlob.Put(), diagnosticVsErrors.Put());
+        if (FAILED(hr)) return hr;
+        hr = device->CreateVertexShader(diagnosticVsBlob->GetBufferPointer(),
+                                        diagnosticVsBlob->GetBufferSize(), nullptr,
+                                        vertexShader.Put());
+        report->diagnosticVsSourceHashMask =
+            (std::memcmp(report->diagnosticVsSourceSha256,
+                         g_EndfieldM23DiagnosticVsSourceSha256,
+                         sizeof(g_EndfieldM23DiagnosticVsSourceSha256)) == 0) ? 1u : 0u;
+        if (Sha256Hex(diagnosticVsBlob->GetBufferPointer(), diagnosticVsBlob->GetBufferSize(),
+                      report->diagnosticVsCompiledSha256)) {
+            report->diagnosticVsCompiledHashMask =
+                std::strcmp(report->diagnosticVsCompiledSha256, kDiagnosticVsCompiledSha256) == 0 ? 1u : 0u;
+        }
+        // The source has one SV_Position plus TEXCOORD0..7, with the exact
+        // 0xf/0x7 component masks recovered from 0139's PS ISGN chunk.
+        report->diagnosticVsSignatureMask = 1u;
+    } else {
+        hr = device->CreateVertexShader(
+            g_EndfieldM23VertexDxbc, g_EndfieldM23VertexDxbcSize, nullptr, vertexShader.Put());
+    }
     if (FAILED(hr)) {
         return hr;
     }
@@ -168,13 +241,13 @@ extern "C" __declspec(dllexport) HRESULT __cdecl EndfieldOriginalM23DxbcValidate
         {"BLENDINDICES", 0, DXGI_FORMAT_R32G32B32A32_UINT, 0, 120, D3D11_INPUT_PER_VERTEX_DATA, 0},
     };
     ComObject<ID3D11InputLayout> inputLayout;
-    hr = device->CreateInputLayout(input, static_cast<UINT>(_countof(input)),
-                                   g_EndfieldM23VertexDxbc, g_EndfieldM23VertexDxbcSize,
-                                   inputLayout.Put());
-    if (FAILED(hr)) {
-        return hr;
+    if (!diagnosticVs) {
+        hr = device->CreateInputLayout(input, static_cast<UINT>(_countof(input)),
+                                       g_EndfieldM23VertexDxbc, g_EndfieldM23VertexDxbcSize,
+                                       inputLayout.Put());
+        if (FAILED(hr)) return hr;
+        report->inputLayoutMask = 1u;
     }
-    report->inputLayoutMask = 1u;
 
     const Vertex vertices[3] = {
         {{-0.5f, -0.5f, 0.0f}, {0, 0, 1}, {1, 0, 0, 1}, {1, 1, 1, 1},
@@ -190,11 +263,11 @@ extern "C" __declspec(dllexport) HRESULT __cdecl EndfieldOriginalM23DxbcValidate
     vertexDescription.BindFlags = D3D11_BIND_VERTEX_BUFFER;
     D3D11_SUBRESOURCE_DATA vertexData = {vertices, 0, 0};
     ComObject<ID3D11Buffer> vertexBuffer;
-    hr = device->CreateBuffer(&vertexDescription, &vertexData, vertexBuffer.Put());
-    if (FAILED(hr)) {
-        return hr;
+    if (!diagnosticVs) {
+        hr = device->CreateBuffer(&vertexDescription, &vertexData, vertexBuffer.Put());
+        if (FAILED(hr)) return hr;
+        report->vertexBufferMask = 1u;
     }
-    report->vertexBufferMask = 1u;
 
     ComObject<ID3D11Buffer> vertexConstantBuffers[kResourceCount];
     for (std::uint32_t i = 0; i < kResourceCount; ++i) {
@@ -224,17 +297,21 @@ extern "C" __declspec(dllexport) HRESULT __cdecl EndfieldOriginalM23DxbcValidate
     const float skinData[4] = {1, 0, 0, 0};
     D3D11_SUBRESOURCE_DATA skinInit = {skinData, 0, 0};
     ComObject<ID3D11Buffer> vertexSkinBuffer;
-    hr = device->CreateBuffer(&skinDescription, &skinInit, vertexSkinBuffer.Put());
-    if (FAILED(hr)) return hr;
+    if (!diagnosticVs) {
+        hr = device->CreateBuffer(&skinDescription, &skinInit, vertexSkinBuffer.Put());
+        if (FAILED(hr)) return hr;
+    }
     D3D11_SHADER_RESOURCE_VIEW_DESC skinViewDescription = {};
     skinViewDescription.Format = DXGI_FORMAT_UNKNOWN;
     skinViewDescription.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
     skinViewDescription.Buffer.FirstElement = 0;
     skinViewDescription.Buffer.NumElements = 1;
     ComObject<ID3D11ShaderResourceView> vertexSkinResource;
-    hr = device->CreateShaderResourceView(vertexSkinBuffer.Get(), &skinViewDescription, vertexSkinResource.Put());
-    if (FAILED(hr)) return hr;
-    report->vertexShaderResourceCreationMask = 1u;
+    if (!diagnosticVs) {
+        hr = device->CreateShaderResourceView(vertexSkinBuffer.Get(), &skinViewDescription, vertexSkinResource.Put());
+        if (FAILED(hr)) return hr;
+        report->vertexShaderResourceCreationMask = 1u;
+    }
 
     ComObject<ID3D11ShaderResourceView> shaderResources[kResourceCount];
     ComObject<ID3D11SamplerState> samplers[kResourceCount];
@@ -288,13 +365,14 @@ extern "C" __declspec(dllexport) HRESULT __cdecl EndfieldOriginalM23DxbcValidate
     // from the D3D11 getter APIs, not merely setter bookkeeping.
     UINT stride = sizeof(Vertex), offset = 0;
     ID3D11Buffer* vb = vertexBuffer.Get();
+    ID3D11Buffer* noVertexBuffer = nullptr;
     context->IASetInputLayout(inputLayout.Get());
-    context->IASetVertexBuffers(0, 1, &vb, &stride, &offset);
+    context->IASetVertexBuffers(0, 1, diagnosticVs ? &noVertexBuffer : &vb, &stride, &offset);
     context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     context->VSSetShader(vertexShader.Get(), nullptr, 0);
     context->PSSetShader(pixelShader.Get(), nullptr, 0);
     ID3D11ShaderResourceView* vertexSkinView = vertexSkinResource.Get();
-    context->VSSetShaderResources(0, 1, &vertexSkinView);
+    if (!diagnosticVs) context->VSSetShaderResources(0, 1, &vertexSkinView);
     ID3D11Buffer* vsBuffers[kResourceCount] = {};
     ID3D11Buffer* psBuffers[kResourceCount] = {};
     ID3D11ShaderResourceView* resourceViews[kResourceCount] = {};
@@ -319,7 +397,8 @@ extern "C" __declspec(dllexport) HRESULT __cdecl EndfieldOriginalM23DxbcValidate
     context->VSGetShader(&gotVs, nullptr, nullptr); context->PSGetShader(&gotPs, nullptr, nullptr);
     context->IAGetInputLayout(&gotLayout); context->IAGetVertexBuffers(0, 1, &gotVb, &stride, &offset);
     report->vsBindingMask = same(gotVs, vertexShader.Get()); report->psBindingMask = same(gotPs, pixelShader.Get());
-    report->inputBindingMask = same(gotLayout, inputLayout.Get()); report->vertexBindingMask = same(gotVb, vertexBuffer.Get());
+    report->inputBindingMask = diagnosticVs ? (gotLayout == nullptr ? 1u : 0u) : same(gotLayout, inputLayout.Get());
+    report->vertexBindingMask = diagnosticVs ? (gotVb == nullptr ? 1u : 0u) : same(gotVb, vertexBuffer.Get());
     if (gotVs) gotVs->Release(); if (gotPs) gotPs->Release(); if (gotLayout) gotLayout->Release(); if (gotVb) gotVb->Release();
     ID3D11Buffer* gotVsBuffers[kResourceCount] = {}; ID3D11Buffer* gotPsBuffers[kResourceCount] = {};
     context->VSGetConstantBuffers(0, kResourceCount, gotVsBuffers); context->PSGetConstantBuffers(0, kResourceCount, gotPsBuffers);
@@ -327,10 +406,12 @@ extern "C" __declspec(dllexport) HRESULT __cdecl EndfieldOriginalM23DxbcValidate
     ID3D11ShaderResourceView* gotResources[kResourceCount] = {}; ID3D11SamplerState* gotSamplers[kResourceCount] = {};
     context->PSGetShaderResources(0, kResourceCount, gotResources); context->PSGetSamplers(0, kResourceCount, gotSamplers);
     for (std::uint32_t i = 0; i < kResourceCount; ++i) { if (same(gotResources[i], resourceViews[i])) report->shaderResourceBindingMask |= 1u << i; if (same(gotSamplers[i], samplerStates[i])) report->samplerBindingMask |= 1u << i; if (gotResources[i]) gotResources[i]->Release(); if (gotSamplers[i]) gotSamplers[i]->Release(); }
-    ID3D11ShaderResourceView* gotVertexSkin = nullptr;
-    context->VSGetShaderResources(0, 1, &gotVertexSkin);
-    if (same(gotVertexSkin, vertexSkinResource.Get())) report->vertexShaderResourceBindingMask = 1u;
-    if (gotVertexSkin) gotVertexSkin->Release();
+    if (!diagnosticVs) {
+        ID3D11ShaderResourceView* gotVertexSkin = nullptr;
+        context->VSGetShaderResources(0, 1, &gotVertexSkin);
+        if (same(gotVertexSkin, vertexSkinResource.Get())) report->vertexShaderResourceBindingMask = 1u;
+        if (gotVertexSkin) gotVertexSkin->Release();
+    }
     D3D11_PRIMITIVE_TOPOLOGY gotTopology = D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
     context->IAGetPrimitiveTopology(&gotTopology);
     if (gotTopology == D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST) report->topologyBindingMask = 1u;
@@ -352,28 +433,43 @@ extern "C" __declspec(dllexport) HRESULT __cdecl EndfieldOriginalM23DxbcValidate
     D3D11_TEXTURE2D_DESC stagingDesc = targetDesc; stagingDesc.Usage = D3D11_USAGE_STAGING; stagingDesc.BindFlags = 0; stagingDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
     ComObject<ID3D11Texture2D> staging; hr = device->CreateTexture2D(&stagingDesc, nullptr, staging.Put()); if (FAILED(hr)) return hr; context->CopyResource(staging.Get(), target.Get()); context->Flush(); D3D11_MAPPED_SUBRESOURCE mapped = {}; hr = context->Map(staging.Get(), 0, D3D11_MAP_READ, 0, &mapped); if (SUCCEEDED(hr)) { std::memcpy(report->readback, mapped.pData, sizeof(report->readback)); context->Unmap(staging.Get(), 0); report->readbackFinite = (std::isfinite(report->readback[0]) && std::isfinite(report->readback[1]) && std::isfinite(report->readback[2]) && std::isfinite(report->readback[3])) ? 1u : 0u; report->readbackChanged = (std::memcmp(report->readback, sentinel, sizeof(sentinel)) != 0) ? 1u : 0u; }
     report->visualFidelityClaim = 0u;
-    return (report->shaderMask == 3u && report->inputLayoutMask == 1u &&
-            report->vertexBufferMask == 1u &&
+    const bool commonComplete = report->shaderMask == 3u &&
             report->vertexConstantBufferMask == kAllResourcesMask &&
             report->pixelConstantBufferMask == kAllResourcesMask &&
             report->shaderResourceMask == kAllResourcesMask &&
             report->samplerMask == kAllResourcesMask &&
             report->stateMask == kAllStateMask &&
-            report->vertexShaderResourceCreationMask == 1u &&
             report->vsBindingMask == 1u && report->psBindingMask == 1u &&
             report->inputBindingMask == 1u && report->vertexBindingMask == 1u &&
             report->vsConstantBufferBindingMask == kAllResourcesMask &&
             report->psConstantBufferBindingMask == kAllResourcesMask &&
             report->shaderResourceBindingMask == kAllResourcesMask &&
             report->samplerBindingMask == kAllResourcesMask &&
-            report->vertexShaderResourceBindingMask == 1u &&
             report->stateBindingMask == kAllStateMask &&
             report->renderTargetBindingMask == 1u &&
             report->topologyBindingMask == 1u &&
             report->viewportBindingMask == 1u && report->drawIssued == 1u &&
-            report->readbackFinite == 1u && report->visualFidelityClaim == 0u)
-               ? S_OK
-               : E_FAIL;
+            report->readbackFinite == 1u && report->visualFidelityClaim == 0u;
+    const bool exactComplete = commonComplete && report->inputLayoutMask == 1u &&
+        report->vertexBufferMask == 1u && report->vertexShaderResourceCreationMask == 1u &&
+        report->vertexShaderResourceBindingMask == 1u;
+    const bool diagnosticComplete = commonComplete && report->inputLayoutMask == 0u &&
+        report->vertexBufferMask == 0u && report->vertexShaderResourceCreationMask == 0u &&
+        report->vertexShaderResourceBindingMask == 0u && report->diagnosticVsSignatureMask == 1u &&
+        report->diagnosticVsSourceHashMask == 1u && report->diagnosticVsCompiledHashMask == 1u;
+    return (diagnosticVs ? diagnosticComplete : exactComplete) ? S_OK : E_FAIL;
+}
+
+extern "C" __declspec(dllexport) HRESULT __cdecl EndfieldOriginalM23DxbcValidate(
+    ID3D11Device* device, ID3D11DeviceContext* context,
+    EndfieldM23DxbcValidation* report) {
+    return RunValidation(device, context, report, false);
+}
+
+extern "C" __declspec(dllexport) HRESULT __cdecl EndfieldOriginalM23DxbcValidateDiagnosticVs(
+    ID3D11Device* device, ID3D11DeviceContext* context,
+    EndfieldM23DxbcValidation* report) {
+    return RunValidation(device, context, report, true);
 }
 
 extern "C" __declspec(dllexport) std::uint32_t __cdecl EndfieldOriginalM23DxbcGetVsConstantBufferCount() {

@@ -2272,6 +2272,13 @@ only stable interpretation and priorities.
    mask passes. Zero unresolved constants leave the sentinel pixel unchanged,
    so material constants, visible output, and Unity integration remain the
    next boundary; no visual-fidelity claim exists.
+   A second `diagnostic_vs_exact_ps` oracle now bypasses only the unresolved
+   0138 skin/transform path with a source- and compiled-hash-pinned fullscreen
+   VS that emits the exact 0139 ISGN. With the same zero PS constants and
+   resources, exact 0139 changes the sentinel to finite transparent black
+   `[0,0,0,0]`. The fragment executes and writes rather than discarding; the
+   exact-pair unchanged sentinel is therefore an upstream VS/raster-coverage
+   boundary. This oracle is explicitly not vertex or visual fidelity.
    The exact independently AssetMap-proven finger prefab is now executable in
    the same actor-composed diagnostic. It is mounted beneath the unique
    `Bip001_R_Finger2Nub`, keeps its source 0.83333-second delay and
