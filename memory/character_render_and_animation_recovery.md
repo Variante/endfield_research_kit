@@ -2360,6 +2360,26 @@ only stable interpretation and priorities.
    exact textures, high-neutral material constants, reciprocal exposure, and
    corrected COLOR0 clock into a visual output mode; ordinary viewer admission
    remains false.
+   Visual mode 1 now executes the exact-texture high-neutral RGB fixture inside
+   that Unity player. It hash-gates and WIC-decodes all five M23 PNGs, sets the
+   causal reciprocal-exposure lane and white TEXCOORD5/COLOR0, and copies the
+   full 16x16 RGBA-float grid through the plugin ABI. The live result is stable:
+   config mask `0x7f`, 256 finite pixels, 175 RGB/alpha-nonzero pixels, and
+   float SHA-256
+   `d0a9a84f48ba7bd750244b122234ad73589c005e1dbce2edbe1c8105cfc069fb`.
+   Its PNG is only a clamped preview. Reports explicitly keep
+   `synthetic_grid=true`, `actor_particle_input=false`, and
+   `visual_fidelity_claim=false`; this closes texture/color transport, not the
+   particle draw. The next implementation step is a capture-session DrawMesh
+   path for the four exact-M23 renderers using their baked 136-byte streams and
+   corrected effect-local COLOR0 alpha.
+   Video acceptance must distinguish Unity anchors from nearest retail PTS:
+   39934 maps to retail 39933 and 40834 to 40833, while 40000/40867 are exact.
+   At PTS 40000 the current composite raised-hand coverage is 4.863% versus
+   retail 28.526%; at 40834 it is already 69.580% versus retail 26.074% at
+   40833. Therefore success is not simply more particles: fill the 40000 gap,
+   reduce the late overshoot to about +/-5 percentage points, and preserve the
+   near-settled 46000 frame.
    The exact independently AssetMap-proven finger prefab is now executable in
    the same actor-composed diagnostic. It is mounted beneath the unique
    `Bip001_R_Finger2Nub`, keeps its source 0.83333-second delay and
