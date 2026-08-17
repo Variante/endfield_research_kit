@@ -12,9 +12,10 @@ using UnityEngine.SceneManagement;
 namespace EndfieldGraphShaderLabEditor
 {
     /// <summary>
-    /// Builds a disposable D3D11 player whose only enabled M23 particle draw is
-    /// the source ParticleSystemRenderer target.  The generated scene is a
-    /// probe artifact; the authored prefab is never modified.
+    /// Builds a disposable D3D11 player whose source target remains a real
+    /// ParticleSystemRenderer. The runtime also creates one same-scene positive
+    /// control with the known-good compatibility material. The generated scene
+    /// is a probe artifact; the authored prefab is never modified.
     /// </summary>
     public static class EndfieldLiZhiyanM23ParticleRendererCaptureBuilder
     {
@@ -24,6 +25,8 @@ namespace EndfieldGraphShaderLabEditor
         private const string GeneratedRoot =
             "Assets/EndfieldGraphShaderLab/Generated/Diagnostics/LiZhiyanM23ParticleRendererCapture";
         private const string ScenePath = GeneratedRoot + "/LiZhiyanM23ParticleRendererCapture.unity";
+        private const string CompatibilityMaterialPath =
+            GeneratedRoot + "/M23ParticleSubmissionCompatibility.mat";
         private const string OutputRoot = "scratch/reverse_engineering/lizhiyan_m23_particle_renderer_capture";
         private const string TargetHierarchy = "P_fxui_lizhiyan_overview_start_04_2/xuanzhuan03";
         private const long TargetMaterialPathId = -430604955415889784L;
@@ -83,6 +86,7 @@ namespace EndfieldGraphShaderLabEditor
                 targetRenderer.sharedMaterials = new[] { diagnostic };
 
             var runtime = instance.AddComponent<EndfieldLiZhiyanM23ParticleRendererCaptureRuntime>();
+            runtime.ConfigureCompatibilityMaterial(BuildCompatibilityMaterial());
             runtime.enabled = true;
             SetLayerRecursively(instance.transform, 30);
 
@@ -158,6 +162,32 @@ namespace EndfieldGraphShaderLabEditor
             return AssetDatabase.LoadAssetAtPath<Material>(path);
         }
 
+        private static Material BuildCompatibilityMaterial()
+        {
+            Shader shader = Shader.Find("Endfield/CharacterRecovery/ReferenceBackdrop");
+            Require(shader != null && shader.isSupported,
+                "The SRPDefaultUnlit compatibility shader is missing or unsupported.");
+            Material material = AssetDatabase.LoadAssetAtPath<Material>(
+                CompatibilityMaterialPath);
+            if (material == null)
+            {
+                material = new Material(shader)
+                {
+                    name = "M23ParticleSubmissionCompatibility"
+                };
+                AssetDatabase.CreateAsset(material, CompatibilityMaterialPath);
+            }
+            else
+            {
+                material.shader = shader;
+            }
+            material.renderQueue = 3000;
+            material.SetColor("_TopColor", Color.white);
+            material.SetColor("_BottomColor", Color.white);
+            EditorUtility.SetDirty(material);
+            return material;
+        }
+
         private static EndfieldRecoveredParticleNodeSource FindNode(
             EndfieldRecoveredParticleEffectSource marker, string hierarchy)
         {
@@ -201,6 +231,7 @@ namespace EndfieldGraphShaderLabEditor
                 "  \"target_mesh_path_id\": 5776537116290261507,\n" +
                 "  \"target_material_path_id\": -430604955415889784,\n" +
                 "  \"diagnostic_material_assigned\": " + (diagnosticMaterial ? "true" : "false") + ",\n" +
+                "  \"positive_control\": \"runtime ParticleSystemRenderer with one emitted particle and the known-good compatibility material\",\n" +
                 "  \"no_bake_mesh\": true,\n" +
                 "  \"no_mesh_renderer_proxy\": true,\n" +
                 "  \"dxcap_command\": \"DXCap.exe -file <capture.vsglog> -frame 0+1 -terminateonsave -c <player.exe> -endfield-m23-particle-renderer-capture -endfield-m23-particle-renderer-mode=positive -endfield-m23-particle-renderer-output=<report.json> -endfield-m23-particle-renderer-quit\"\n" +

@@ -2477,11 +2477,28 @@ only stable interpretation and priorities.
    ParticleSystem/renderer/mesh/material PathIDs, seed 7930, two live
    particles, and streams `[0,1,3,4,5,34]`. DXCap frames 3 and 6 contain only
    three unrelated six-index shell draws: Unity reports the target renderer
-   not visible despite finite in-frustum bounds. Zeroing its serialized
-   `m_SortingFudge=NaN` or disabling authored GPU instancing does not admit a
-   draw, so neither is the causal bridge. The next boundary is Unity's normal
-   runtime particle-renderer admission/culling state, not another BakeMesh or
-   context-hook attempt.
+   not visible despite finite in-frustum bounds. A bounded causal matrix also
+   remains negative after zeroing serialized `m_SortingFudge=NaN`, disabling
+   authored GPU instancing, disabling renderer or camera occlusion, replacing
+   Mesh mode with Billboard, substituting a supported queue-3000
+   `SRPDefaultUnlit` material, reducing streams to Position/Normal/Color/UV,
+   using ordinary `Play` instead of manual simulation, and moving the target
+   to layer 0 with a full camera mask. None is a sufficient admission bridge.
+   A stronger same-scene control now creates a standard runtime Billboard
+   `ParticleSystemRenderer` with that compatibility material. It has one live
+   particle, finite in-frustum bounds, and no MeshRenderer/MeshFilter proxy,
+   but is also not visible; a fresh DXCap frame still contains exactly the
+   previous three unrelated draws. This changes the working boundary from a
+   source-prefab defect to a global HGCompat/Unity particle culling or
+   submission gap. First prove an ordinary particle draw through this SRP,
+   then compare the source renderer; do not guess more M23 fields meanwhile.
+   The selected installed UnityPlayer independently pins one direct caller of
+   its exact `DrawMeshParticles<4>` body. One byte flag selects the draw path,
+   while an adjacent flag controls the alternate route, and the callee checks
+   the particle record/count plus runtime packing template. Their semantic
+   field names and whether this lab renderer reaches the caller remain
+   unresolved; keep them as unnamed branch gates until a runtime or schema
+   differential closes the join.
    A narrower immediate-context object-vtable experiment is also rejected. It
    shadowed the complete 115-slot `ID3D11DeviceContext` table only inside the
    isolated player, filtered Draw variants by the retained exact VS/PS
