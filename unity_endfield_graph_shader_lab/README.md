@@ -4559,6 +4559,10 @@ produces 175/256 RGB-and-alpha pixels and maximum HDR RGBA
 path, but selected-frame vertex color, attenuation, exposure history, and the
 diagnostic high-slot values remain open before Unity visual comparison is
 meaningful.
+All four exact-material particle renderers enable custom vertex streams
+`[0,1,3,4,5,34]`, including Color, and their serialized start/color-over-
+lifetime RGB is white. The white RGB input is thus source-backed; its target-
+frame alpha and the exact per-draw attenuation remain runtime-dependent.
 
 The actor-composed harness now also instantiates the exact recovered
 `P_fxui_lizhiyan_overview_trails_Bip001_R_Finger2Nub` prefab beneath the
