@@ -4695,6 +4695,13 @@ exact-keyword candidates are non-instanced blob1277 (0138/0139) and the
 keywords prove blob1277 only if that runtime keyword is absent. Until an
 actual M23 draw captures shader identity/length or PSO state, treat 0138/0139
 as the serialized non-instanced candidate, not a retail draw-proven binding.
+The two exact pairs are also instruction-diff closed. The SRP form adds
+`SV_InstanceID`/no-interpolation `TEXCOORD9` and indexes 16-float4 per-instance
+records; it introduces no additional material branch or resource family.
+`tools/original_m23_dxbc_exact/dxcap_xml_evidence.py` now classifies either
+unique byte-length pair at a stride-136 draw and rejects mixed VS/PS pairs.
+This makes a new real-source DXCap capture the shortest supported route to
+close selection; it does not recover vertex-buffer or cb3 contents.
 The current GameAssembly HGMesh layer is also a negative boundary:
 `HGMeshRendererData` callers manage ECS mesh/material handles, bounds, dither,
 and renderer lists, while `HGParticleMeshInstanceRenderer` exposes no managed

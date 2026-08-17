@@ -15,6 +15,13 @@
     },
     "interpretation": "blob1277 matches the serialized material keywords only when SRP_INSTANCING_ON is absent; the retail fork/HG draw decision is not captured"
   },
+  "variant_binary_delta": {
+    "blob1277_shex": {"vertex_tokens": 2528, "vertex_instructions": 322, "pixel_tokens": 1929, "pixel_instructions": 245},
+    "blob1956_shex": {"vertex_tokens": 2587, "vertex_instructions": 324, "pixel_tokens": 1945, "pixel_instructions": 247},
+    "srp_vertex_additions": "SV_InstanceID input, TEXCOORD9 instance output, instance-relative 16-float4 b3 records; b3 arrays grow from 14 to 4096 float4",
+    "srp_pixel_additions": "nointerpolation uint TEXCOORD9 input and instance-relative b2 reads; b2 grows from 5 to 4096 float4",
+    "minimal_dxcap_discriminator": "track CreateVertexShader/CreatePixelShader bytecode lengths through VSSetShader/PSSetShader; require stride 136; 10720/8100 selects blob1277 and 11016/8188 selects blob1956"
+  },
   "vertex": {
     "file": "scratch/character_recovery/vfx_shader_variants/shader_export/Shader/HGRP_Effect_VFXBaseV2_pEC273EDA76F7FCDA.shader.bytecode/0138_endfield_dxbc_0.dxbc",
     "bytes": 10720,

@@ -151,6 +151,12 @@ The exact diagnostic candidate requires the known VS/PS bytecode lengths and
 the 136-byte IA stride. It never promotes object handles or bytecode lengths
 to byte hashes.
 
+The parser recognizes both unique M23 length pairs: blob1277/non-instanced is
+VS 10,720 plus PS 8,100 bytes, while blob1956/`SRP_INSTANCING_ON` is VS 11,016
+plus PS 8,188 bytes. It tracks the created handles to the draw, still requires
+stride 136, and rejects mixed pairs. This classifies a compiled variant
+candidate, not actor identity or vertex/constant-buffer contents.
+
 The current isolated capture locates one exact candidate at moment 9748:
 `Draw(3,0)`, VS handle 8343, PS handle 8344, IA stride 136, and five VS
 constant-buffer handles 8347 through 8351. The XML does not inline vertex- or

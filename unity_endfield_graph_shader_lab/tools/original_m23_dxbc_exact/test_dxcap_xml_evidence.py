@@ -30,6 +30,7 @@ class DxcapEvidenceTests(unittest.TestCase):
         self.assertEqual(draw["topology"], "D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST")
         self.assertEqual(draw["viewport"]["width"], 1280)
         self.assertTrue(draw["m23_candidate"]["exact_m23_candidate"])
+        self.assertEqual(draw["m23_candidate"]["variant"], "blob1277_non_instanced")
         self.assertFalse(draw["m23_candidate"]["byte_hashes_available"])
         self.assertFalse(report["byte_hashes_available"])
 
@@ -38,6 +39,19 @@ class DxcapEvidenceTests(unittest.TestCase):
         draw = EVIDENCE.parse_dxcap(io.StringIO(xml))["draw_calls"][0]
         self.assertFalse(draw["m23_candidate"]["exact_m23_candidate"])
         self.assertFalse(draw["m23_candidate"]["checks"]["ia_stride_136"])
+
+    def test_srp_instanced_lengths_classify_blob1956(self):
+        xml = """<Capture><Call name='CreateVertexShader'><Arg name='BytecodeLength'>11016</Arg><Arg name='ppVertexShader'>vs</Arg></Call><Call name='CreatePixelShader'><Arg name='BytecodeLength'>8188</Arg><Arg name='ppPixelShader'>ps</Arg></Call><Call name='VSSetShader'><Arg name='shader'>vs</Arg></Call><Call name='PSSetShader'><Arg name='shader'>ps</Arg></Call><Call name='IASetVertexBuffers'><Buffer slot='0' stride='136' handle='vb'/></Call><Call name='DrawIndexed'><Arg name='IndexCount'>36</Arg></Call></Capture>"""
+        draw = EVIDENCE.parse_dxcap(io.StringIO(xml))["draw_calls"][0]
+        self.assertTrue(draw["m23_candidate"]["exact_m23_candidate"])
+        self.assertEqual(draw["m23_candidate"]["variant"], "blob1956_srp_instanced")
+
+    def test_mixed_pair_fails_closed(self):
+        xml = """<Capture><Call name='CreateVertexShader'><Arg name='BytecodeLength'>10720</Arg><Arg name='ppVertexShader'>vs</Arg></Call><Call name='CreatePixelShader'><Arg name='BytecodeLength'>8188</Arg><Arg name='ppPixelShader'>ps</Arg></Call><Call name='VSSetShader'><Arg name='shader'>vs</Arg></Call><Call name='PSSetShader'><Arg name='shader'>ps</Arg></Call><Call name='IASetVertexBuffers'><Buffer slot='0' stride='136' handle='vb'/></Call><Call name='Draw'/></Capture>"""
+        candidate = EVIDENCE.parse_dxcap(io.StringIO(xml))["draw_calls"][0]["m23_candidate"]
+        self.assertFalse(candidate["exact_m23_candidate"])
+        self.assertIsNone(candidate["variant"])
+        self.assertFalse(candidate["checks"]["recognized_m23_variant_pair"])
 
     def test_windows_dxcap_fragment_schema(self):
         xml = """<Moment value='90'/>

@@ -2552,6 +2552,16 @@ only stable interpretation and priorities.
    conversion therefore remains mandatory whichever pair is selected; the
    smaller selection gap is an actual-draw shader identity/length or PSO
    capture.
+   The two binaries are now instruction-diff closed. The SRP pair adds
+   `SV_InstanceID`, carries it as no-interpolation `TEXCOORD9`, changes fixed
+   particle b3 accesses into instance-relative 16-float4 records, and expands
+   VS b3 and PS b2 arrays to 4,096 float4 entries; the remaining resources and
+   material control flow are unchanged. Their byte-length pairs are unique in
+   the 1,358-pair census. The maintained DXCap XML parser now recognizes both
+   10,720/8,100 and 11,016/8,188, tracks their handles to a draw, requires
+   stride 136, and rejects mixed pairs. This can close variant choice in a
+   future real M23 capture without injection, but cannot establish actor
+   identity or publish VB/cb bytes by itself.
    GameAssembly's HGMesh audit also excludes its managed layer: current
    `HGMeshRendererData` callers only manage ECS mesh/material handles, bounds,
    dither, and renderer lists. `HGParticleMeshInstanceRenderer` has no managed
