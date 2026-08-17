@@ -219,7 +219,9 @@ static HRESULT RunValidation(ID3D11Device* device, ID3D11DeviceContext* context,
                              bool highBaseline, bool highNeutral, bool exactTextures,
                              bool exactTextureRgbGate, std::uint32_t highNeutralOverrideMask,
                              std::uint32_t probeRegister,
-                             std::uint32_t probeComponent, std::uint32_t ablationGroupMask) {
+                             std::uint32_t probeComponent, std::uint32_t ablationGroupMask,
+                             float* exactTextureGridOutput = nullptr,
+                             std::uint32_t exactTextureGridOutputFloats = 0) {
     if (report == nullptr || device == nullptr || context == nullptr) {
         return E_INVALIDARG;
     }
@@ -640,6 +642,11 @@ static HRESULT RunValidation(ID3D11Device* device, ID3D11DeviceContext* context,
                 const float* row = reinterpret_cast<const float*>(static_cast<const unsigned char*>(gridMapped.pData) + y * gridMapped.RowPitch);
                 for (UINT x = 0; x < gridSize; ++x) {
                     const float* pixel = row + x * 4u;
+                    const std::uint32_t outputIndex = (y * gridSize + x) * 4u;
+                    if (exactTextureGridOutput != nullptr &&
+                        outputIndex + 4u <= exactTextureGridOutputFloats)
+                        std::memcpy(exactTextureGridOutput + outputIndex, pixel,
+                                    sizeof(float) * 4u);
                     bool rgbNonzero = false;
                     for (int c = 0; c < 3; ++c) {
                         rgbNonzero = rgbNonzero || pixel[c] != 0.0f;
@@ -771,6 +778,21 @@ extern "C" __declspec(dllexport) HRESULT __cdecl EndfieldOriginalM23DxbcValidate
     EndfieldM23DxbcValidation* report) {
     return RunValidation(device, context, report, true, false, false, false, true, true, true, 0,
                          0, 0, 0);
+}
+
+// The opt-in Unity render-event bridge needs the complete 16x16 output while
+// the original report ABI intentionally exposes only aggregate grid fields.
+// Keep this as a separate entry point so all existing offline validation
+// exports remain byte/ABI compatible.
+extern "C" __declspec(dllexport) HRESULT __cdecl
+EndfieldOriginalM23DxbcValidateExactTexturesHighNeutralRgbGateWithGrid(
+    ID3D11Device* device, ID3D11DeviceContext* context,
+    EndfieldM23DxbcValidation* report, float* outputFloats,
+    std::uint32_t outputFloatCount) {
+    if (outputFloats == nullptr || outputFloatCount < 16u * 16u * 4u)
+        return E_INVALIDARG;
+    return RunValidation(device, context, report, true, false, false, false, true, true, true, 0,
+                         0, 0, 0, outputFloats, outputFloatCount);
 }
 
 extern "C" __declspec(dllexport) std::uint32_t __cdecl EndfieldOriginalM23DxbcGetVsConstantBufferCount() {

@@ -27,6 +27,8 @@ namespace EndfieldGraphShaderLab
             "-endfield-original-m23-dxbc-diagnostic";
         public const string OutputArgument =
             "-endfield-original-m23-dxbc-output";
+        public const string VisualGridArgument =
+            "-endfield-original-m23-dxbc-visual-grid";
         public const string VertexSha256 =
             "7d0a508f7b1e5c9aef0b89489feae97f8669a8cddaba1de0ccc0e26fd0eb2ca0";
         public const string PixelSha256 =
@@ -34,6 +36,10 @@ namespace EndfieldGraphShaderLab
 
         private static readonly int[] SharedConstantBufferFloat4Counts =
             { 45, 105, 104, 14, 50 };
+        private const uint VisualGridMode = 1u;
+        private const uint VisualGridSize = 16u;
+        private const int VisualGridFloatCount = 16 * 16 * 4;
+        private const uint VisualGridConfigAllBits = 0x7fu;
 
         [SerializeField] private Shader diagnosticShader;
 
@@ -49,7 +55,8 @@ namespace EndfieldGraphShaderLab
             if (string.IsNullOrWhiteSpace(output))
                 output = Path.Combine(Application.persistentDataPath,
                     "original_m23_dxbc_exact_standalone_validation.json");
-            bool passed = RunAndWrite(diagnosticShader, output);
+            bool visualGrid = HasArgument(Environment.GetCommandLineArgs(), VisualGridArgument);
+            bool passed = RunAndWrite(diagnosticShader, output, visualGrid);
             Debug.Log("Original M23 DXBC bridge: " + (passed ? "PASS" : "FAIL") +
                       "; report=" + output);
             Application.Quit(passed ? 0 : 7);
@@ -57,17 +64,39 @@ namespace EndfieldGraphShaderLab
 
         public static bool RunAndWrite(Shader shader, string outputPath)
         {
+            return RunAndWrite(shader, outputPath, false);
+        }
+
+        public static bool RunAndWrite(Shader shader, string outputPath, bool visualGrid)
+        {
             Result result;
+            VisualGridData visual = null;
             try
             {
-                result = Run(shader);
+                result = Run(shader, visualGrid);
+                if (visualGrid)
+                {
+                    visual = CaptureVisualGrid(outputPath);
+                    if (!visual.Valid)
+                        result = Result.Failed("M23 visual grid validation failed: " + visual.Error);
+                }
             }
             catch (Exception exception)
             {
                 TryDisarmAndCleanup();
                 result = Result.Failed(exception.GetType().FullName + ": " + exception.Message);
+                if (visualGrid && visual == null)
+                    visual = new VisualGridData { Error = result.Error };
             }
-            WriteText(outputPath, RenderReport(result));
+            finally
+            {
+                if (visualGrid)
+                {
+                    try { Native.SetVisualMode(0); }
+                    catch { }
+                }
+            }
+            WriteText(outputPath, RenderReport(result, visual));
             if (!result.Passed)
                 Debug.LogError("Original M23 DXBC bridge: " + result.Error);
             return result.Passed;
@@ -103,7 +132,7 @@ namespace EndfieldGraphShaderLab
             return passed;
         }
 
-        private static Result Run(Shader shader)
+        private static Result Run(Shader shader, bool visualGrid)
         {
             string[] args = Environment.GetCommandLineArgs();
             if (!args.Contains(ActivationArgument, StringComparer.Ordinal))
@@ -118,6 +147,8 @@ namespace EndfieldGraphShaderLab
             if (Native.GetContractVersion() != 1 || Native.GetArmed() != 0 ||
                 Native.GetPluginLoadCount() == 0 || Native.GetConfigureCount() == 0)
                 throw new InvalidOperationException("M23 native bridge contract is absent or already armed.");
+            if (Native.SetVisualMode(visualGrid ? VisualGridMode : 0u) != 1u)
+                throw new InvalidOperationException("M23 visual mode could not be selected while disarmed.");
 
             var material = new Material(shader)
             {
@@ -192,7 +223,8 @@ namespace EndfieldGraphShaderLab
                 bool executionGate = callback == 2 && unarmed == 0 && platformBlocked == 0 &&
                     shellInputObserved == 2 && blocked == 0 && vertexSwap == 1 && pixelSwap == 1 &&
                     failures == 0 && hresult == 0 && events == 2 && ignoredEvents == 0 &&
-                    nativeExecution == 1 && exactBound && vsCb == 0x1Fu && vsSrv == 1u &&
+                    nativeExecution == 1 && exactBound && vsCb == 0x1Fu &&
+                    vsSrv == (visualGrid ? 0u : 1u) &&
                     psCb == 0x1Fu && psSrv == 0x1Fu && psSampler == 0x1Fu &&
                     cleanupCount == 1 && cleanupPending == 0;
                 return new Result(executionGate,
@@ -341,8 +373,111 @@ namespace EndfieldGraphShaderLab
             texture.SetPixel(0, 0, value); texture.Apply(false, true); return texture;
         }
 
-        private static string RenderReport(Result value)
+        private static VisualGridData CaptureVisualGrid(string outputPath)
         {
+            var result = new VisualGridData
+            {
+                FloatCount = VisualGridFloatCount,
+            };
+            float[] values = new float[VisualGridFloatCount];
+            try
+            {
+                result.ConfigMask = Native.GetVisualConfigMask();
+                result.Size = Native.GetVisualGridSize();
+                result.FinitePixels = Native.GetVisualGridFinitePixels();
+                result.NonzeroPixels = Native.GetVisualGridNonzeroPixels();
+                result.RgbNonzeroPixels = Native.GetVisualGridRgbNonzeroPixels();
+                result.AlphaNonzeroPixels = Native.GetVisualGridAlphaNonzeroPixels();
+                if (Native.GetVisualMode() != VisualGridMode)
+                    throw new InvalidOperationException("native visual mode is not 1");
+                if (result.Size != VisualGridSize)
+                    throw new InvalidOperationException("unexpected visual grid size=" + result.Size);
+                if (result.ConfigMask != VisualGridConfigAllBits)
+                    throw new InvalidOperationException("unexpected visual config mask=" + result.ConfigMask);
+                if (Native.GetVisualGridValid() != 1u)
+                    throw new InvalidOperationException("native visual grid is not valid");
+                uint copied = Native.CopyVisualGrid(values, VisualGridFloatCount);
+                if (copied != VisualGridFloatCount)
+                    throw new InvalidOperationException("visual grid copy count=" + copied);
+                for (int i = 0; i < values.Length; i++)
+                {
+                    if (!IsFinite(values[i]))
+                        throw new InvalidOperationException("visual grid contains non-finite float at index=" + i);
+                    if (Mathf.Abs(values[i]) > 1000000f)
+                        throw new InvalidOperationException("visual grid float is unbounded at index=" + i);
+                }
+                if (result.FinitePixels != VisualGridSize * VisualGridSize)
+                    throw new InvalidOperationException("native finite-pixel count=" + result.FinitePixels);
+                result.FloatSha256 = HashFloatArray(values);
+                result.PngPath = TryWriteVisualPng(outputPath, values, out string pngError);
+                result.PngEncoding = string.IsNullOrEmpty(result.PngPath)
+                    ? string.Empty : "Unity Texture2D RGBAFloat EncodeToPNG (clamped preview)";
+                result.Error = pngError;
+                result.Valid = true;
+                return result;
+            }
+            catch (Exception exception)
+            {
+                result.Error = exception.GetType().FullName + ": " + exception.Message;
+                result.Valid = false;
+                return result;
+            }
+        }
+
+        private static string HashFloatArray(float[] values)
+        {
+            byte[] bytes = new byte[sizeof(float) * values.Length];
+            Buffer.BlockCopy(values, 0, bytes, 0, bytes.Length);
+            using (SHA256 sha = SHA256.Create()) return ToHex(sha.ComputeHash(bytes));
+        }
+
+        private static string TryWriteVisualPng(string outputPath, float[] values, out string error)
+        {
+            error = string.Empty;
+            Texture2D texture = null;
+            try
+            {
+                texture = new Texture2D((int)VisualGridSize, (int)VisualGridSize,
+                    TextureFormat.RGBAFloat, false, true)
+                { name = "Endfield M23 Synthetic Visual Grid", hideFlags = HideFlags.HideAndDontSave,
+                    filterMode = FilterMode.Point, wrapMode = TextureWrapMode.Clamp };
+                var pixels = new Color[(int)(VisualGridSize * VisualGridSize)];
+                for (int pixel = 0; pixel < pixels.Length; pixel++)
+                {
+                    int offset = pixel * 4;
+                    pixels[pixel] = new Color(values[offset], values[offset + 1],
+                        values[offset + 2], values[offset + 3]);
+                }
+                texture.SetPixels(pixels);
+                texture.Apply(false, false);
+                byte[] png = texture.EncodeToPNG();
+                if (png == null || png.Length == 0)
+                    throw new InvalidOperationException("Texture2D.EncodeToPNG returned no bytes");
+                string path = Path.ChangeExtension(outputPath, ".png");
+                WriteBytes(path, png);
+                return path;
+            }
+            catch (Exception exception)
+            {
+                error = "PNG preview unavailable: " + exception.GetType().FullName + ": " + exception.Message;
+                return string.Empty;
+            }
+            finally
+            {
+                DisposeUnityObject(texture);
+            }
+        }
+
+        private static void WriteBytes(string path, byte[] value)
+        {
+            string directory = Path.GetDirectoryName(path);
+            if (!string.IsNullOrEmpty(directory)) Directory.CreateDirectory(directory);
+            File.WriteAllBytes(path, value);
+        }
+
+        private static string RenderReport(Result value, VisualGridData visual)
+        {
+            bool syntheticGrid = visual != null;
             return "{\n" +
                 "  \"schema\": \"endfield.original-m23-dxbc-exact-live.v1\",\n" +
                 "  \"status\": \"" + (value.Passed ? "pass" : "fail") + "\",\n" +
@@ -376,7 +511,22 @@ namespace EndfieldGraphShaderLab
                 "  \"pixel_sampler_mask\": " + value.PixelSamplerMask + ",\n" +
                 "  \"execution_binding_compatible\": " + Bool(value.ExecutionBindingCompatible) + ",\n" +
                 "  \"numeric_finite\": " + Bool(value.NumericFinite) + ",\n" +
+                "  \"synthetic_grid\": " + Bool(syntheticGrid) + ",\n" +
+                "  \"actor_particle_input\": false,\n" +
                 "  \"visual_fidelity_claim\": false,\n" +
+                "  \"visual_grid_mode\": " + (syntheticGrid ? VisualGridMode.ToString(CultureInfo.InvariantCulture) : "0") + ",\n" +
+                "  \"visual_grid_valid\": " + Bool(visual != null && visual.Valid) + ",\n" +
+                "  \"visual_grid_config_mask\": " + (visual == null ? "0" : visual.ConfigMask.ToString(CultureInfo.InvariantCulture)) + ",\n" +
+                "  \"visual_grid_size\": " + (visual == null ? "0" : visual.Size.ToString(CultureInfo.InvariantCulture)) + ",\n" +
+                "  \"visual_grid_float_count\": " + (visual == null ? "0" : visual.FloatCount.ToString(CultureInfo.InvariantCulture)) + ",\n" +
+                "  \"visual_grid_finite_pixels\": " + (visual == null ? "0" : visual.FinitePixels.ToString(CultureInfo.InvariantCulture)) + ",\n" +
+                "  \"visual_grid_nonzero_pixels\": " + (visual == null ? "0" : visual.NonzeroPixels.ToString(CultureInfo.InvariantCulture)) + ",\n" +
+                "  \"visual_grid_rgb_nonzero_pixels\": " + (visual == null ? "0" : visual.RgbNonzeroPixels.ToString(CultureInfo.InvariantCulture)) + ",\n" +
+                "  \"visual_grid_alpha_nonzero_pixels\": " + (visual == null ? "0" : visual.AlphaNonzeroPixels.ToString(CultureInfo.InvariantCulture)) + ",\n" +
+                "  \"visual_grid_float_sha256\": \"" + Escape(visual == null ? string.Empty : visual.FloatSha256) + "\",\n" +
+                "  \"visual_grid_png\": \"" + Escape(visual == null ? string.Empty : visual.PngPath) + "\",\n" +
+                "  \"visual_grid_png_encoding\": \"" + Escape(visual == null ? string.Empty : visual.PngEncoding) + "\",\n" +
+                "  \"visual_grid_error\": \"" + Escape(visual == null ? string.Empty : visual.Error) + "\",\n" +
                 "  \"pixel\": " + RenderColor(value.Pixel) + ",\n" +
                 "  \"pixel_sha256\": \"" + value.PixelSha256 + "\",\n" +
                 "  \"sentinel_sha256\": \"" + value.SentinelSha256 + "\",\n" +
@@ -392,6 +542,7 @@ namespace EndfieldGraphShaderLab
         { var values = new[] { value.r, value.g, value.b, value.a }; var bytes = new byte[sizeof(float) * 4]; Buffer.BlockCopy(values, 0, bytes, 0, bytes.Length); using (SHA256 sha = SHA256.Create()) return ToHex(sha.ComputeHash(bytes)); }
         private static string ToHex(byte[] bytes) { var result = new StringBuilder(bytes.Length * 2); foreach (byte value in bytes) result.Append(value.ToString("x2", CultureInfo.InvariantCulture)); return result.ToString(); }
         private static string Escape(string value) => (value ?? string.Empty).Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\r", "\\r").Replace("\n", "\\n");
+        private static bool HasArgument(string[] args, string name) { return args != null && args.Contains(name, StringComparer.Ordinal); }
         private static string ReadArgument(string[] args, string name) { for (int i = 0; i + 1 < args.Length; i++) if (string.Equals(args[i], name, StringComparison.Ordinal)) return args[i + 1]; return null; }
         private static void WriteText(string path, string value) { string directory = Path.GetDirectoryName(path); if (!string.IsNullOrEmpty(directory)) Directory.CreateDirectory(directory); File.WriteAllText(path, value, new UTF8Encoding(false)); }
         private static void TryDisarmAndCleanup()
@@ -410,6 +561,14 @@ namespace EndfieldGraphShaderLab
         }
         private static void Release(RenderTexture value) { if (value == null) return; value.Release(); DisposeUnityObject(value); }
         private static void DisposeUnityObject(UnityEngine.Object value) { if (value == null) return; if (Application.isPlaying) Destroy(value); else DestroyImmediate(value); }
+
+        private sealed class VisualGridData
+        {
+            internal bool Valid;
+            internal uint ConfigMask, Size, FinitePixels, NonzeroPixels, RgbNonzeroPixels, AlphaNonzeroPixels;
+            internal int FloatCount;
+            internal string FloatSha256 = string.Empty, PngPath = string.Empty, PngEncoding = string.Empty, Error = string.Empty;
+        }
 
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         private struct M23VertexStream0
@@ -455,6 +614,8 @@ namespace EndfieldGraphShaderLab
             [DllImport(Library, EntryPoint = "EndfieldOriginalM23DxbcBridgeGetContractVersion", CallingConvention = CallingConvention.Cdecl)] internal static extern uint GetContractVersion();
             [DllImport(Library, EntryPoint = "EndfieldOriginalM23DxbcBridgeGetPluginLoadCount", CallingConvention = CallingConvention.Cdecl)] internal static extern uint GetPluginLoadCount();
             [DllImport(Library, EntryPoint = "EndfieldOriginalM23DxbcBridgeGetConfigureCount", CallingConvention = CallingConvention.Cdecl)] internal static extern uint GetConfigureCount();
+            [DllImport(Library, EntryPoint = "EndfieldOriginalM23DxbcBridgeSetVisualMode", CallingConvention = CallingConvention.Cdecl)] internal static extern uint SetVisualMode(uint mode);
+            [DllImport(Library, EntryPoint = "EndfieldOriginalM23DxbcBridgeGetVisualMode", CallingConvention = CallingConvention.Cdecl)] internal static extern uint GetVisualMode();
             [DllImport(Library, EntryPoint = "EndfieldOriginalM23DxbcBridgeSetArmed", CallingConvention = CallingConvention.Cdecl)] internal static extern uint SetArmed(uint armed);
             [DllImport(Library, EntryPoint = "EndfieldOriginalM23DxbcBridgeGetArmed", CallingConvention = CallingConvention.Cdecl)] internal static extern uint GetArmed();
             [DllImport(Library, EntryPoint = "EndfieldOriginalM23DxbcBridgeGetCallbackCount", CallingConvention = CallingConvention.Cdecl)] internal static extern uint GetCallbackCount();
@@ -478,6 +639,14 @@ namespace EndfieldGraphShaderLab
             [DllImport(Library, EntryPoint = "EndfieldOriginalM23DxbcBridgeGetPixelConstantBufferMask", CallingConvention = CallingConvention.Cdecl)] internal static extern uint GetPixelConstantBufferMask();
             [DllImport(Library, EntryPoint = "EndfieldOriginalM23DxbcBridgeGetPixelShaderResourceMask", CallingConvention = CallingConvention.Cdecl)] internal static extern uint GetPixelShaderResourceMask();
             [DllImport(Library, EntryPoint = "EndfieldOriginalM23DxbcBridgeGetPixelSamplerMask", CallingConvention = CallingConvention.Cdecl)] internal static extern uint GetPixelSamplerMask();
+            [DllImport(Library, EntryPoint = "EndfieldOriginalM23DxbcBridgeGetVisualGridValid", CallingConvention = CallingConvention.Cdecl)] internal static extern uint GetVisualGridValid();
+            [DllImport(Library, EntryPoint = "EndfieldOriginalM23DxbcBridgeGetVisualConfigMask", CallingConvention = CallingConvention.Cdecl)] internal static extern uint GetVisualConfigMask();
+            [DllImport(Library, EntryPoint = "EndfieldOriginalM23DxbcBridgeGetVisualGridSize", CallingConvention = CallingConvention.Cdecl)] internal static extern uint GetVisualGridSize();
+            [DllImport(Library, EntryPoint = "EndfieldOriginalM23DxbcBridgeGetVisualGridFinitePixels", CallingConvention = CallingConvention.Cdecl)] internal static extern uint GetVisualGridFinitePixels();
+            [DllImport(Library, EntryPoint = "EndfieldOriginalM23DxbcBridgeGetVisualGridNonzeroPixels", CallingConvention = CallingConvention.Cdecl)] internal static extern uint GetVisualGridNonzeroPixels();
+            [DllImport(Library, EntryPoint = "EndfieldOriginalM23DxbcBridgeGetVisualGridRgbNonzeroPixels", CallingConvention = CallingConvention.Cdecl)] internal static extern uint GetVisualGridRgbNonzeroPixels();
+            [DllImport(Library, EntryPoint = "EndfieldOriginalM23DxbcBridgeGetVisualGridAlphaNonzeroPixels", CallingConvention = CallingConvention.Cdecl)] internal static extern uint GetVisualGridAlphaNonzeroPixels();
+            [DllImport(Library, EntryPoint = "EndfieldOriginalM23DxbcBridgeCopyVisualGrid", CallingConvention = CallingConvention.Cdecl)] internal static extern uint CopyVisualGrid([Out] float[] outputFloats, uint outputFloatCount);
         }
     }
 }

@@ -42,10 +42,14 @@ foreach ($requiredExport in @(
     "UnityPluginLoad",
     "UnityShaderCompilerExtEvent",
     "EndfieldOriginalM23DxbcBridgeSetArmed",
+    "EndfieldOriginalM23DxbcBridgeSetVisualMode",
     "EndfieldOriginalM23DxbcBridgeGetRenderEventFunc",
     "EndfieldOriginalM23DxbcBridgeGetCleanupCount",
     "EndfieldOriginalM23DxbcBridgeGetNativeDrawIssued",
-    "EndfieldOriginalM23DxbcBridgeCopyNativeReadback"
+    "EndfieldOriginalM23DxbcBridgeCopyNativeReadback",
+    "EndfieldOriginalM23DxbcBridgeGetVisualGridValid",
+    "EndfieldOriginalM23DxbcBridgeCopyVisualGrid",
+    "EndfieldOriginalM23DxbcValidateExactTexturesHighNeutralRgbGateWithGrid"
 )) {
     if (-not ($exportListing -match [regex]::Escape($requiredExport))) {
         throw "M23 Unity plugin export missing: $requiredExport"
@@ -93,7 +97,18 @@ try {
 } finally {
     Pop-Location
 }
-$reports = @($report,$diagnosticReport,$namedLowReport,$highProbeReport,$highBaselineReport,$highNeutralReport) + $overrideReports + $exactTextureReports
+# Exercise the bridge-only grid export ABI in the same WARP build. The JSON
+# report remains the original stable validation shape; the executable's
+# success additionally proves all 1024 output floats were finite and copied.
+$visualGridReport = Join-Path $buildRoot "m23_exact_textures_high_neutral_rgb_grid.json"
+Push-Location $toolRoot
+try {
+    & $validator $visualGridReport "--exact-textures-high-neutral-rgb-grid"
+    if ($LASTEXITCODE -ne 0) { throw "WARP rejected M23 exact-texture visual grid export." }
+} finally {
+    Pop-Location
+}
+$reports = @($report,$diagnosticReport,$namedLowReport,$highProbeReport,$highBaselineReport,$highNeutralReport,$visualGridReport) + $overrideReports + $exactTextureReports
 foreach ($nativeReport in $reports) {
     python (Join-Path $toolRoot "validate_diagnostic.py") --report $nativeReport
     if ($LASTEXITCODE -ne 0) { throw "M23 report validation failed: $nativeReport" }

@@ -4484,6 +4484,27 @@ fixture intentionally preserves its sentinel output, so this proves Unity
 execution and binding compatibility, not visual fidelity. The next step is to
 feed recovered peak-particle vertices, exact textures, high-neutral constants,
 reciprocal exposure, and corrected COLOR0 timing into a visual output mode.
+
+Pass `--visual-grid` to exercise the next bounded color-path gate. It runs the
+five hash-pinned M23 textures with the high-neutral domain, reciprocal exposure
+one, and white COLOR0 through exact 0139, then copies all 1024 RGBA floats to
+managed code and writes a clamped 16x16 PNG preview. The current grid has 256
+finite pixels, 175 RGB-and-alpha nonzero pixels, config mask `0x7f`, and float
+SHA-256
+`d0a9a84f48ba7bd750244b122234ad73589c005e1dbce2edbe1c8105cfc069fb`.
+It is deliberately labeled `synthetic_grid=true`,
+`actor_particle_input=false`, and `visual_fidelity_claim=false`: this proves
+the Unity-to-native exact texture/color transport but does not consume the
+actor harness's baked particle mesh.
+
+The next visual gate uses the four M23 renderers under
+`P_fxui_lizhiyan_overview_start_04_2`, their custom streams
+`[0,1,3,4,5,34]`, and the corrected effect-local simulation. Acceptance must
+not optimize only PTS 40000: current raised-hand coverage is 4.863% versus
+retail 28.526% there, but at Unity anchor 40834 it is already 69.580% versus
+retail 26.074% at nearest source PTS 40833. Fill the early gap while bringing
+the late overshoot within roughly five percentage points and keeping the
+near-settled PTS 46000 baseline stable.
 The peak diagnostic now preserves M19's authored soft-blend/Fresnel keyword
 state and the SampleStack vertex path consumes the recovered particle streams:
 UV2 from `TEXCOORD0.zw`, Custom1XYZW from `TEXCOORD1`, and

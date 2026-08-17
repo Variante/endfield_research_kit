@@ -17,6 +17,10 @@
 extern "C" HRESULT __cdecl EndfieldOriginalM23DxbcValidate(
     ID3D11Device* device, ID3D11DeviceContext* context,
     EndfieldM23DxbcValidation* report);
+extern "C" HRESULT __cdecl EndfieldOriginalM23DxbcValidateExactTexturesHighNeutralRgbGateWithGrid(
+    ID3D11Device* device, ID3D11DeviceContext* context,
+    EndfieldM23DxbcValidation* report, float* outputFloats,
+    std::uint32_t outputFloatCount);
 
 // This file is deliberately separate from OriginalM23DxbcExactPlugin.cpp.
 // The latter is the offline WARP fixture and its ABI/report must remain
@@ -25,6 +29,13 @@ namespace {
 
 constexpr char kReservedKeyword[] = "ENDFIELD_ORIGINAL_M23_DXBC_EXACT";
 constexpr std::uint32_t kContractVersion = 1u;
+constexpr std::uint32_t kVisualModeControlledExact = 0u;
+constexpr std::uint32_t kVisualModeExactTexturesHighNeutralRgb = 1u;
+constexpr std::uint32_t kVisualGridSize = 16u;
+constexpr std::uint32_t kVisualGridFloatCount = kVisualGridSize * kVisualGridSize * 4u;
+// Source hash, PNG decode, high-neutral domain, b2 gate, neutral reciprocal
+// exposure, white COLOR0 input, and the causal RGB gate.
+constexpr std::uint32_t kVisualConfigAllBits = 0x7fu;
 
 IUnityInterfaces* g_unityInterfaces = nullptr;
 std::atomic<bool> g_armed{false};
@@ -57,10 +68,19 @@ std::atomic<std::uint32_t> g_pixelSamplerMask{0};
 std::atomic<std::uint32_t> g_lastEventId{0};
 std::atomic<std::uint32_t> g_cleanupCount{0};
 std::atomic<bool> g_cleanupPending{false};
+std::atomic<std::uint32_t> g_visualMode{kVisualModeControlledExact};
+std::atomic<std::uint32_t> g_visualConfigMask{0};
+std::atomic<std::uint32_t> g_visualGridSize{0};
+std::atomic<std::uint32_t> g_visualGridFinitePixels{0};
+std::atomic<std::uint32_t> g_visualGridNonzeroPixels{0};
+std::atomic<std::uint32_t> g_visualGridRgbNonzeroPixels{0};
+std::atomic<std::uint32_t> g_visualGridAlphaNonzeroPixels{0};
+std::atomic<std::uint32_t> g_visualGridValid{0};
 
 std::mutex g_shaderMutex;
 std::mutex g_readbackMutex;
 std::array<float, 4> g_nativeReadback{};
+std::array<float, kVisualGridFloatCount> g_visualGrid{};
 ID3D11VertexShader* g_lastVertexShader = nullptr;
 ID3D11PixelShader* g_lastPixelShader = nullptr;
 bool g_vertexClaimed = false;
@@ -112,6 +132,7 @@ void ResetArmedState()
     {
         std::lock_guard<std::mutex> lock(g_readbackMutex);
         g_nativeReadback.fill(0.0f);
+        g_visualGrid.fill(0.0f);
     }
     g_exactShaderBound.store(0, std::memory_order_relaxed);
     g_vertexConstantBufferMask.store(0, std::memory_order_relaxed);
@@ -122,6 +143,13 @@ void ResetArmedState()
     g_lastEventId.store(0, std::memory_order_relaxed);
     g_cleanupCount.store(0, std::memory_order_relaxed);
     g_cleanupPending.store(false, std::memory_order_relaxed);
+    g_visualConfigMask.store(0, std::memory_order_relaxed);
+    g_visualGridSize.store(0, std::memory_order_relaxed);
+    g_visualGridFinitePixels.store(0, std::memory_order_relaxed);
+    g_visualGridNonzeroPixels.store(0, std::memory_order_relaxed);
+    g_visualGridRgbNonzeroPixels.store(0, std::memory_order_relaxed);
+    g_visualGridAlphaNonzeroPixels.store(0, std::memory_order_relaxed);
+    g_visualGridValid.store(0, std::memory_order_relaxed);
 }
 
 void ReplaceD3D11Shader(
@@ -236,13 +264,18 @@ void ExecuteNativeExactDraw()
         return;
     }
 
-    // Reuse the already-pinned exact-pair fixture. It creates the M23 input
-    // layout/triangle, VS+PS b0..b4, VS skin t0, PS t0..t4/s0..s4, controlled
-    // raster/blend/depth state, float RT, draw, and staging readback. This is
-    // deliberately a separate controlled pass rather than an observation of
-    // Unity's transient state, which Unity may unbind before event callbacks.
+    // Reuse the already-pinned fixture. Mode 0 is the original one-pixel exact
+    // pair diagnostic. Mode 1 is the first visual path: real five PNG
+    // textures, recovered high-neutral b4/b2 constants, neutral reciprocal
+    // exposure, and white COLOR0/TEXCOORD5 input into the exact PS. It writes
+    // a deterministic 16x16 float grid which is copied through the bridge ABI.
     EndfieldM23DxbcValidation report = {};
-    HRESULT result = EndfieldOriginalM23DxbcValidate(device, context, &report);
+    std::array<float, kVisualGridFloatCount> visualGrid{};
+    const std::uint32_t visualMode = g_visualMode.load(std::memory_order_acquire);
+    HRESULT result = visualMode == kVisualModeExactTexturesHighNeutralRgb
+        ? EndfieldOriginalM23DxbcValidateExactTexturesHighNeutralRgbGateWithGrid(
+            device, context, &report, visualGrid.data(), kVisualGridFloatCount)
+        : EndfieldOriginalM23DxbcValidate(device, context, &report);
     g_lastResult.store(result, std::memory_order_relaxed);
     g_nativeDrawIssued.store(report.drawIssued, std::memory_order_relaxed);
     g_nativeReadbackFinite.store(report.readbackFinite, std::memory_order_relaxed);
@@ -271,6 +304,36 @@ void ExecuteNativeExactDraw()
         std::lock_guard<std::mutex> lock(g_readbackMutex);
         std::memcpy(g_nativeReadback.data(), report.readback,
                     sizeof(report.readback));
+        if (visualMode == kVisualModeExactTexturesHighNeutralRgb)
+            std::memcpy(g_visualGrid.data(), visualGrid.data(),
+                        sizeof(float) * kVisualGridFloatCount);
+    }
+    if (visualMode == kVisualModeExactTexturesHighNeutralRgb) {
+        const std::uint32_t configMask =
+            (report.exactTextureSourceHashMask == 0x1fu ? 1u : 0u) |
+            (report.exactTextureDecodeMask == 0x1fu ? 2u : 0u) |
+            (report.highNeutralDomainMask == 1u ? 4u : 0u) |
+            (report.diagnosticB2GateMask == 1u ? 8u : 0u) |
+            16u | // reciprocal exposure = 1, the recovered neutral producer
+            32u | // diagnostic VS COLOR0/TEXCOORD5 = white
+            (report.exactTextureCausalOverrideMask == 1u ? 64u : 0u);
+        g_visualConfigMask.store(configMask, std::memory_order_relaxed);
+        g_visualGridSize.store(report.exactTextureGridSize,
+                                std::memory_order_relaxed);
+        g_visualGridFinitePixels.store(report.exactTextureGridFinitePixels,
+                                       std::memory_order_relaxed);
+        g_visualGridNonzeroPixels.store(report.exactTextureGridNonzeroPixels,
+                                        std::memory_order_relaxed);
+        g_visualGridRgbNonzeroPixels.store(report.exactTextureGridRgbNonzeroPixels,
+                                           std::memory_order_relaxed);
+        g_visualGridAlphaNonzeroPixels.store(report.exactTextureGridAlphaNonzeroPixels,
+                                             std::memory_order_relaxed);
+        g_visualGridValid.store(
+            SUCCEEDED(result) && configMask == kVisualConfigAllBits &&
+            report.exactTextureGridSize == kVisualGridSize &&
+            report.exactTextureGridFinitePixels == kVisualGridSize * kVisualGridSize
+                ? 1u : 0u,
+            std::memory_order_relaxed);
     }
     g_exactShaderBound.store(
         report.vsBindingMask == 1u && report.psBindingMask == 1u ? 1u : 0u,
@@ -435,6 +498,20 @@ EndfieldOriginalM23DxbcBridgeGetPluginLoadCount() { return g_pluginLoadCount.loa
 extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
 EndfieldOriginalM23DxbcBridgeGetConfigureCount() { return g_configureCount.load(); }
 extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalM23DxbcBridgeSetVisualMode(std::uint32_t mode)
+{
+    // Mode changes are only accepted while disarmed. This prevents a managed
+    // caller from changing the fixture contract between shader compilation
+    // and the render event that consumes it.
+    if (mode > kVisualModeExactTexturesHighNeutralRgb ||
+        g_armed.load(std::memory_order_acquire))
+        return 0u;
+    g_visualMode.store(mode, std::memory_order_release);
+    return 1u;
+}
+extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalM23DxbcBridgeGetVisualMode() { return g_visualMode.load(); }
+extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
 EndfieldOriginalM23DxbcBridgeSetArmed(std::uint32_t armed)
 {
     if (armed != 0u) {
@@ -499,6 +576,33 @@ EndfieldOriginalM23DxbcBridgeCopyNativeReadback(float* outputFourFloats)
     if (outputFourFloats == nullptr) return;
     std::lock_guard<std::mutex> lock(g_readbackMutex);
     std::memcpy(outputFourFloats, g_nativeReadback.data(), sizeof(float) * 4u);
+}
+extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalM23DxbcBridgeGetVisualGridSize() { return g_visualGridSize.load(); }
+extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalM23DxbcBridgeGetVisualGridValid() { return g_visualGridValid.load(); }
+extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalM23DxbcBridgeGetVisualConfigMask() { return g_visualConfigMask.load(); }
+extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalM23DxbcBridgeGetVisualGridFinitePixels() { return g_visualGridFinitePixels.load(); }
+extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalM23DxbcBridgeGetVisualGridNonzeroPixels() { return g_visualGridNonzeroPixels.load(); }
+extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalM23DxbcBridgeGetVisualGridRgbNonzeroPixels() { return g_visualGridRgbNonzeroPixels.load(); }
+extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalM23DxbcBridgeGetVisualGridAlphaNonzeroPixels() { return g_visualGridAlphaNonzeroPixels.load(); }
+extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalM23DxbcBridgeCopyVisualGrid(float* outputFloats,
+                                             std::uint32_t outputFloatCount)
+{
+    if (outputFloats == nullptr ||
+        g_visualGridValid.load(std::memory_order_acquire) == 0u)
+        return 0u;
+    const std::uint32_t count = outputFloatCount < kVisualGridFloatCount
+        ? outputFloatCount : kVisualGridFloatCount;
+    std::lock_guard<std::mutex> lock(g_readbackMutex);
+    std::memcpy(outputFloats, g_visualGrid.data(), sizeof(float) * count);
+    return count;
 }
 extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
 EndfieldOriginalM23DxbcBridgeGetExactShaderBound() { return g_exactShaderBound.load(); }
