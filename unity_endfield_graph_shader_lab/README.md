@@ -4702,6 +4702,15 @@ records; it introduces no additional material branch or resource family.
 unique byte-length pair at a stride-136 draw and rejects mixed VS/PS pairs.
 This makes a new real-source DXCap capture the shortest supported route to
 close selection; it does not recover vertex-buffer or cb3 contents.
+Run `capture_m23_source_dxcap.bat` for the maintained foreground source
+baseline. It builds no proxy and performs no BakeMesh; the current 4.25-second
+contract requires the runtime identity/window gates plus exactly one
+`DrawIndexed(3456)` with stride 60 and the local SampleStack 3,036/3,956-byte
+shader pair. It also requires that no 136-byte exact candidate is present.
+This is intentionally a negative retail-shader boundary: the source player
+substitutes `Endfield/Recovered/VFXBaseV2SampleStack`, so a pass must not be
+cited as blob1277/blob1956 selection evidence. Use `-PreflightOnly` to verify
+the player, DXCap, parser, and validator without opening a capture window.
 The current GameAssembly HGMesh layer is also a negative boundary:
 `HGMeshRendererData` callers manage ECS mesh/material handles, bounds, dither,
 and renderer lists, while `HGParticleMeshInstanceRenderer` exposes no managed

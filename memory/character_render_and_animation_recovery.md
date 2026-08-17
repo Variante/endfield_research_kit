@@ -2562,6 +2562,16 @@ only stable interpretation and priorities.
    stride 136, and rejects mixed pairs. This can close variant choice in a
    future real M23 capture without injection, but cannot establish actor
    identity or publish VB/cb bytes by itself.
+   The foreground source baseline is now reproducible through
+   `capture_m23_source_dxcap.bat`. A validated 4.25-second run joins the runtime
+   identity/window/no-proxy gates to one `DrawIndexed(3456)` using stride 60
+   and the 3,036/3,956-byte local SampleStack pair. The validator explicitly
+   requires zero exact 136-byte candidates. This closes an important negative
+   boundary: the lab source player preserves the real ParticleSystemRenderer,
+   mesh and authored streams but deliberately substitutes the diagnostic
+   material, so it cannot prove retail blob1277/blob1956 selection. The next
+   positive comparison needs a source-identity player capable of binding the
+   retail shader without reusing the synthetic exact-DXBC triangle.
    GameAssembly's HGMesh audit also excludes its managed layer: current
    `HGMeshRendererData` callers only manage ECS mesh/material handles, bounds,
    dither, and renderer lists. `HGParticleMeshInstanceRenderer` has no managed
