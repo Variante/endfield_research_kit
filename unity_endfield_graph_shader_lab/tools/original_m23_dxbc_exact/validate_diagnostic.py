@@ -69,6 +69,7 @@ def validate_report(path: Path) -> dict:
     exact_textures = mode in {
         "diagnostic_vs_exact_ps_exact_textures_named_low",
         "diagnostic_vs_exact_ps_exact_textures_high_neutral",
+        "diagnostic_vs_exact_ps_exact_textures_high_neutral_rgb_gate",
     }
     required = {
         "schema": "endfield.original-m23-dxbc-exact.v3",
@@ -152,6 +153,8 @@ def validate_report(path: Path) -> dict:
             "exact_texture_grid_finite_pixels": 256,
             "exact_texture_color_space_assumption": "WIC 32bpp RGBA uploaded as UNORM; no sRGB transform",
         })
+        if mode == "diagnostic_vs_exact_ps_exact_textures_high_neutral_rgb_gate":
+            required["exact_texture_causal_override_mask"] = "0x1"
     if not diagnostic:
         required.update({
             "input_layout_creation_mask": "0x1",

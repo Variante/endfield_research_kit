@@ -23,7 +23,7 @@ DiagnosticTextureVsOutput main(uint vertexId : SV_VertexID)
     output.texcoord2 = float4(uv, 0.0, 1.0);
     output.texcoord3 = float3(0.0, 0.0, 0.0);
     output.texcoord4 = float4(uv, 0.0, 1.0);
-    output.texcoord5 = float4(0.0, 0.0, 0.0, 1.0);
+    output.texcoord5 = float4(1.0, 1.0, 1.0, 1.0);
     output.texcoord6 = float3(0.0, 0.0, 1.0);
     output.texcoord7 = float3(0.0, 0.0, 1.0);
     return output;
