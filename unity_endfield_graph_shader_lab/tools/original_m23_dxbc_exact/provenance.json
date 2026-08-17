@@ -1,0 +1,34 @@
+{
+  "schema": "endfield.original-m23-dxbc-creation-provenance.v1",
+  "activation_policy": "native-warp-creation-contract-only",
+  "shader": "HGRP/Effect/VFXBaseV2",
+  "pass": "ForwardOnly",
+  "material_path_id": -430604955415889784,
+  "vertex": {
+    "file": "scratch/character_recovery/vfx_shader_variants/shader_export/Shader/HGRP_Effect_VFXBaseV2_pEC273EDA76F7FCDA.shader.bytecode/0138_endfield_dxbc_0.dxbc",
+    "bytes": 10720,
+    "sha256": "7d0a508f7b1e5c9aef0b89489feae97f8669a8cddaba1de0ccc0e26fd0eb2ca0",
+    "constant_buffer_float4_counts": [2, 82, 104, 14, 50]
+  },
+  "pixel": {
+    "file": "scratch/character_recovery/vfx_shader_variants/shader_export/Shader/HGRP_Effect_VFXBaseV2_pEC273EDA76F7FCDA.shader.bytecode/0139_endfield_dxbc_1.dxbc",
+    "bytes": 8100,
+    "sha256": "0ff508aa08112122c14a3ece17d12f15778eaf39ad0c639c946512dc996b6f83",
+    "constant_buffer_float4_counts": [45, 105, 5, 1, 44],
+    "shader_resource_slots": [0, 1, 2, 3, 4],
+    "sampler_slots": [0, 1, 2, 3, 4]
+  },
+  "creation_contract": {
+    "input_stride_bytes": 136,
+    "separate_stage_constant_buffers": true,
+    "controlled_state_creation": ["rasterizer", "blend", "depth_stencil"],
+    "b4_high_semantics": "zero_or_sentinel_only_non_fidelity"
+  },
+  "does_not_prove": [
+    "resource binding",
+    "draw execution",
+    "GPU readback",
+    "Unity integration",
+    "material or visual fidelity"
+  ]
+}

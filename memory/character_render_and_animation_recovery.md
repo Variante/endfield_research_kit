@@ -2261,6 +2261,13 @@ only stable interpretation and priorities.
    (candidate byte 8 versus known 52) and total 144/160 bytes, while all 277
    numeric properties total 1,840 bytes and diverge before `_SurfaceType`.
    None matches both the known low layout and the 704-byte SHEX b4 range.
+   The lab now has a separate D3D11/WARP M23 exact-DXBC creation fixture. It
+   hash-embeds the exact 0138/0139 pair and creates the full 136-byte ISGN
+   layout, vertex buffer, separate VS b0..b4 sizes `[2,82,104,14,50]`, PS
+   sizes `[45,105,5,1,44]`, five SRVs/samplers, and controlled raster/blend/
+   depth states. Native validation passes with every creation mask complete.
+   It deliberately performs no binding, draw, readback, or Unity integration;
+   those are the next execution boundary and no visual-fidelity claim exists.
    The exact independently AssetMap-proven finger prefab is now executable in
    the same actor-composed diagnostic. It is mounted beneath the unique
    `Bip001_R_Finger2Nub`, keeps its source 0.83333-second delay and
