@@ -4505,6 +4505,13 @@ retail 28.526% there, but at Unity anchor 40834 it is already 69.580% versus
 retail 26.074% at nearest source PTS 40833. Fill the early gap while bringing
 the late overshoot within roughly five percentage points and keeping the
 near-settled PTS 46000 baseline stable.
+Use integer 1/1000 PTS over the bounded 37667-46000 entry interval, not
+`frameIndex / 60`. Evaluate the fixed `broadTeal`, `raisedHand`, and
+`lowerLeftRibbon` ROIs with
+`g >= 80 && b >= 80 && g-r >= 20 && b-r >= 10`, recording mask coverage,
+bounds, centroid, Dice/IoU, mean RGB, G-R, and B-R against retail. A
+same-camera effect-off clean plate is required so background teal cannot pass
+the VFX gate; PTS 46000 must remain below one-percent raised-hand coverage.
 The peak diagnostic now preserves M19's authored soft-blend/Fresnel keyword
 state and the SampleStack vertex path consumes the recovered particle streams:
 UV2 from `TEXCOORD0.zw`, Custom1XYZW from `TEXCOORD1`, and
@@ -4636,6 +4643,28 @@ evidence remains pending a semantically valid source-row/Draw-cb3 bridge.
 
 Run the first source-row boundary oracle with
 `EndfieldGraphShaderLabEditor.EndfieldLiZhiyanM23SourceMeshOracle.RunAndWriteEvidence`.
+For the next bridge step, run
+`EndfieldGraphShaderLabEditor.EndfieldLiZhiyanM23ManagedParticlePacketCensus.RunAndWriteEvidence`.
+It writes a managed public-input sidecar under
+`scratch/character_recovery/lizhiyan_m23_packet_census/pts_40000.json`, including
+all live particle fields, Custom1, source mesh channels/indices, and candidate
+per-vertex transforms. The sidecar is deliberately non-admitting: it records
+the recovered 136-byte field plan but sets exact packed-row parity and candidate
+packet admission false until Unity's internal renderer expansion and draw-time
+cb3 are captured.
+The census is validated by an actual Unity 2022.3.62f3 batch run. Its report
+must remain `status=incomplete`, with `packetStrideBytes=136`, four public live
+rows across the two active `xuanzhuan03*` renderers, and all of
+`exactPackedRowParity`, `candidatePacketAdmission`, `drawTimeCb3Available`,
+and `visualAdmission` false. A successful process exit does not turn this
+diagnostic input inventory into a production draw contract.
+The pinned native `DrawMeshParticles<4>` body proves the separate packed-color
+producer: it reads an indexed RGBA8 row, divides by 255, and writes
+`cb3[13] = 1 - packedRGBA`. BakeMesh hashes close `COLOR0` alpha as 51/70 for
+the two live rows while public `GetCurrentColor()` reports 51/71, so the public
+color is census evidence only and must not be copied into an exact packet.
+Likewise TEXCOORD4 remains the alternate-position input selected by runtime
+`cb3[10].x`, not a proven unconditional Custom1 alias.
 At PTS 40000 it proves two live particles each for `xuanzhuan03` (388 source
 vertices, 776 baked) and `xuanzhuan03_02` (768 source vertices, 1,536 baked),
 while both `xuanzhuan04*` renderers are present but empty. Source normals and
