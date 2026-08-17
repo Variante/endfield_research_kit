@@ -4487,6 +4487,14 @@ Validation passes, but composite raised-hand changes only 1,937 -> 1,949
 pixels and peak-only raised-hand remains zero. M23 geometry is present; its
 remaining high-value boundary is exact color/alpha sample-stack equivalence,
 not another mesh or the Fresnel branch alone.
+The exact M23 ForwardOnly fragment is now pinned as
+`0139_endfield_dxbc_1.dxbc` (8,100 bytes, SHA-256
+`0FF508AA08112122C14A3ECE17D12F15778EAF39AD0C639C946512DC996B6F83`,
+program hash `9c652c08ade940c2`). It directly proves SampleTex0..3 at `t1..t4`,
+with `t3` used by the blend route and `t4.x` by dissolve. A trial that inferred
+a different non-polar routing collapsed peak-only output to one pixel and was
+reverted. Do not alter this path again until TEXCOORD1/2 lanes and cbuffer
+weights have exact exported-property joins.
 
 The actor-composed harness now also instantiates the exact recovered
 `P_fxui_lizhiyan_overview_trails_Bip001_R_Finger2Nub` prefab beneath the
