@@ -4683,6 +4683,16 @@ events therefore cannot close draw-time constants; the next route must hook
 the actual D3D11 Draw/constant-buffer binding path or use an external API
 capture keyed to the exact shader/material identity.
 
+An isolated immediate-context shadow-vtable attempt is deliberately removed.
+It copied all 115 `ID3D11DeviceContext` slots, hooked only Draw variants,
+filtered by the retained exact VS/PS pointers, and restored the object vptr,
+but the player crashed inside `Graphics.ExecuteCommandBuffer` before it could
+publish a report with either transient or process-lifetime table storage. The
+native/WARP fixture remained green, so this is a Unity/driver integration
+rejection rather than shader failure. Do not patch the context object's vptr
+again; use a supported graphics capture/API layer or upstream renderer-packing
+evidence.
+
 The actor-composed harness now also instantiates the exact recovered
 `P_fxui_lizhiyan_overview_trails_Bip001_R_Finger2Nub` prefab beneath the
 unique actor `Bip001_R_Finger2Nub` mount. It preserves the source

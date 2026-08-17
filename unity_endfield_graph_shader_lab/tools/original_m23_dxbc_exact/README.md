@@ -122,6 +122,13 @@ negative result does not weaken the independent exact-shader execution gate.
 Capturing a real particle draw therefore requires a draw/API hook or external
 graphics capture rather than another adjacent plugin event.
 
+Do not replace the immediate context object's COM vptr to obtain that draw
+boundary. A bounded isolated-player experiment shadowed the complete 115-slot
+table, intercepted only Draw variants, and filtered by the exact retained
+VS/PS objects. Unity crashed inside `Graphics.ExecuteCommandBuffer` before a
+report on two storage-lifetime variants. The experiment was removed and the
+published plugin rebuilt from the safe observer source.
+
 Event 2 intentionally owns and clears Unity's immediate-context state for the
 duration of the isolated diagnostic pass; it is not safe to interleave with a
 normal viewer frame. The managed diagnostic gate invokes it only in the
