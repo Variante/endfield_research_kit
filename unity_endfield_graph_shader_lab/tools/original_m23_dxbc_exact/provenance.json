@@ -94,6 +94,8 @@
   },
   "does_not_prove": [
     "Unity integration",
+    "HGParticleMeshInstanceRenderer packer identity",
+    "vertex-buffer or draw-time cb3 bytes from external telemetry/DXCap XML",
     "material or visual fidelity"
   ]
 }

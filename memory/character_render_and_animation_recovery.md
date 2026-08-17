@@ -2548,6 +2548,20 @@ only stable interpretation and priorities.
    queue is now its UnityPlayer/HG-native implementation or a supported
    real-draw resource capture; EffectManager/HGMaterialController wrappers are
    no longer useful packer candidates.
+   The UnityPlayer-native registration boundary is now executable and
+   hash-pinned. `HGParticleMeshInstanceRenderer` has one generic type-table
+   row and no recoverable constructor, destructor, vtable, or method pointer;
+   the name has no direct executable xref. The separately pinned
+   `HGMeshRendererData` initializer and five helpers only resolve material,
+   main-mesh, and shadow-mesh handles into 24-byte CPU records. They never
+   allocate/upload vertex data or bind a constant buffer. Keep both
+   `hgParticlePackerResolved` and `drawTimeCb3ProducerResolved` false.
+   Safe external telemetry is now joined to DXCap through a separate
+   fail-closed contract. It can correlate one pinned client process with a
+   length/stride candidate draw, but cannot identify the actor/HG object,
+   hash shader bytes, or read VB/cb3 contents. Any attach, debugger,
+   injection, patch, process-memory/module inspection, input/network capture,
+   or non-external telemetry boundary rejects the join.
    `tools/validate_m23_packet_contract.py` now joins the managed census,
    source/BakeMesh oracle, and exact-DXBC fixture with deterministic
    diagnostics. Its current 225 checks close the four public rows and recover
@@ -2556,6 +2570,11 @@ only stable interpretation and priorities.
    `tools/audit_m23_source_vertex_layout.py` maintains the separate 60-versus-
    136 asset/stream exclusion gate and fails deterministically on missing OBJ,
    renderer identity, stream tuple, mesh binding, or HG-instancing drift.
+   `tools/audit_m23_hg_native_boundary.py` pins the native registration and
+   handle-initializer bodies. `tools/validate_m23_external_correlation.py`
+   records the maximum claim available from supported external telemetry plus
+   DXCap XML; neither tool upgrades source, packet, cb3, actor, or visual
+   admission.
    A narrower immediate-context object-vtable experiment is also rejected. It
    shadowed the complete 115-slot `ID3D11DeviceContext` table only inside the
    isolated player, filtered Draw variants by the retained exact VS/PS
