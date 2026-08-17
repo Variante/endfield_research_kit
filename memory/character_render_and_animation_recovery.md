@@ -2472,33 +2472,35 @@ only stable interpretation and priorities.
    The next capture boundary is an actual M23 `ParticleSystemRenderer` draw,
    followed by supported resource inspection or upstream packing evidence.
    A standalone D3D11 source-renderer probe now isolates
-   `start_04_2/xuanzhuan03` without BakeMesh or a MeshRenderer proxy. Unity
-   compilation and player build pass, and runtime identity closes the exact
-   ParticleSystem/renderer/mesh/material PathIDs, seed 7930, two live
-   particles, and streams `[0,1,3,4,5,34]`. DXCap frames 3 and 6 contain only
-   three unrelated six-index shell draws: Unity reports the target renderer
-   not visible despite finite in-frustum bounds. A bounded causal matrix also
-   remains negative after zeroing serialized `m_SortingFudge=NaN`, disabling
-   authored GPU instancing, disabling renderer or camera occlusion, replacing
-   Mesh mode with Billboard, substituting a supported queue-3000
-   `SRPDefaultUnlit` material, reducing streams to Position/Normal/Color/UV,
-   using ordinary `Play` instead of manual simulation, and moving the target
-   to layer 0 with a full camera mask. None is a sufficient admission bridge.
-   A stronger same-scene control now creates a standard runtime Billboard
-   `ParticleSystemRenderer` with that compatibility material. It has one live
-   particle, finite in-frustum bounds, and no MeshRenderer/MeshFilter proxy,
-   but is also not visible; a fresh DXCap frame still contains exactly the
-   previous three unrelated draws. This changes the working boundary from a
-   source-prefab defect to a global HGCompat/Unity particle culling or
-   submission gap. First prove an ordinary particle draw through this SRP,
-   then compare the source renderer; do not guess more M23 fields meanwhile.
-   The selected installed UnityPlayer independently pins one direct caller of
-   its exact `DrawMeshParticles<4>` body. One byte flag selects the draw path,
-   while an adjacent flag controls the alternate route, and the callee checks
-   the particle record/count plus runtime packing template. Their semantic
-   field names and whether this lab renderer reaches the caller remain
-   unresolved; keep them as unnamed branch gates until a runtime or schema
-   differential closes the join.
+   `start_04_2/xuanzhuan03` without BakeMesh or a MeshRenderer proxy. The old
+   hidden-window captures were invalid for renderer admission: Unity skipped
+   normal camera rendering while the player window was hidden. Restore/show
+   the window and use a time-based DXCap frame (currently 7 seconds), then gate
+   every capture with its matching runtime JSON. Under that protocol the
+   serialized camera sentinel, ordinary Billboard control, and exact-source
+   Mesh control all submit. The exact source mesh produces 1,728 indices for
+   one control particle, so HGCompat, Mesh particle mode, and the mesh asset
+   are not the missing boundary.
+   The exact source ParticleSystem/renderer/mesh also submits after one manual
+   particle is installed. More decisively, the two original simulated particle
+   rows and their Custom1 values can be captured and republished through
+   `Clear`, `SetParticles`, and `SetCustomParticleData` with strict before/after
+   public-value equality; DXCap then records the expected two-particle
+   `DrawIndexed(3456)` at stride 36. Lifetime, size, rotation, and Custom1
+   single-family variants produce the same submission, while color and
+   velocity are already white and zero. Therefore no tested public field value
+   is causal: public-API republishing rebuilds renderer-consumable internal
+   particle state that the recovered `Simulate` path leaves absent.
+   The selected installed UnityPlayer independently transfers
+   `ParticleSystemRenderer::PrepareForRenderThreaded` to
+   `0xBA28F0..0xBA2C20`. Its caller at `0x1457615` immediately tests the
+   still-unnamed record count at `rcx+0x160`; a non-positive value exits before
+   mode-4 dispatch through `0x1425650` and the selected
+   `DrawMeshParticles<4>` route. This is a record-building boundary, not a
+   camera-culling classification. Next recover which internal simulated-row
+   flag/container differs before and after identical `SetParticles`, then
+   reproduce that initialization in the maintained source importer/runtime;
+   do not paper over it with changed particle values or a BakeMesh proxy.
    A narrower immediate-context object-vtable experiment is also rejected. It
    shadowed the complete 115-slot `ID3D11DeviceContext` table only inside the
    isolated player, filtered Draw variants by the retained exact VS/PS
