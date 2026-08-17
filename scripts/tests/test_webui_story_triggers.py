@@ -212,6 +212,14 @@ for (const [key, category] of [
         self.assertIn("context.relatedOriginalFiles", source)
         self.assertIn("nativeReceiverStoryContextHint", source)
 
+    def test_mission_pipeline_surfaces_per_story_trigger_zone_confirmations(self) -> None:
+        source = MISSION_PIPELINE.read_text(encoding="utf-8")
+        self.assertIn("activation.triggerZoneConfirmations", source)
+        self.assertIn("observation.decodedShape", source)
+        self.assertIn("observation.triggerSlotIdFilter", source)
+        self.assertIn("observation.sourceSha256", source)
+        self.assertIn("not mission ownership, event firing, branch choice, or Story order", source)
+
     def test_mission_pipeline_surfaces_timeline_runtime_and_exact_activation_boundary(self) -> None:
         source = MISSION_PIPELINE.read_text(encoding="utf-8")
         self.assertIn("timelineEmbeddedStoryRuntimeAudit", source)

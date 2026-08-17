@@ -98,6 +98,13 @@ leave only the report/CLI surface in recovery.
   activation or Wwise playback.
 - Weak LevelScript placement is diagnostic and cannot enter accepted chronology
   unless a typed route closes the gap.
+- Every one of the 152 exact-native-playback ownership gaps now has an
+  active-overlay, source-hash-gated trigger classification. The current corpus
+  resolves 66 to one exact authored local trigger volume, 2 to multiple exact
+  authored volumes, and 84 to exact non-spatial local event carriers, with no
+  unresolved spatial selector. This identifies the per-file local trigger
+  carrier only; it does not prove mission ownership, event firing, branch
+  choice, activation, or Story order.
 - Current offline client-static ownership recovery is exhausted at the known
   native receiver frontier: reverse PPtr, GameObject/carrier, LevelData,
   SubGame, MissionRuntime operand, IFix, and recursive protobuf scans produce no
