@@ -2312,13 +2312,19 @@ only stable interpretation and priorities.
    The remaining RGB zero is now causal rather than opaque. Exact 0139
    multiplies its final color by `_780 = mad(PS cb1[27].y, cb4[3].x,
    1-cb4[3].x)`; the proven material has cb4[3].x=1, so the fixture's zeroed
-   global cb1 forced RGB to zero. With the texture diagnostic VS explicitly
-   supplying white TEXCOORD5 particle color and only PS cb1[27].y set to 1,
+   global cb1 forced RGB to zero. Shader metadata directly identifies
+   cb1[27].y (byte offset 436) as
+   `ShaderVariablesGlobal._ExposureWithMiscParams.y`; the recovered native
+   producer is `1/HGCamera.exposureAdaptation`, with constructor and neutral
+   0-EV value 1. Exact 0138 also proves fragment TEXCOORD5 is VS `o6`, selected
+   between input COLOR0 and COLOR0 multiplied by a per-draw attenuation. With
+   the texture diagnostic VS explicitly supplying white vertex/particle color
+   and only the reciprocal-exposure component set to 1,
    the exact fragment produces 175/256 RGB-and-alpha pixels with maximum HDR
    `[0.660757,2.68497,2.79676,1]`. This proves the exact real-texture color
-   path and identifies one necessary global input. White particle color,
-   unit global multiplier, UVs, and neutral high slots remain diagnostic;
-   recover their runtime producers before claiming material or visual parity.
+   path and identifies the necessary global input. Selected-frame particle
+   color, per-draw attenuation, exposure history, UVs, and neutral high slots
+   remain open; recover them before claiming material or visual parity.
    The exact independently AssetMap-proven finger prefab is now executable in
    the same actor-composed diagnostic. It is mounted beneath the unique
    `Bip001_R_Finger2Nub`, keeps its source 0.83333-second delay and

@@ -413,7 +413,11 @@ static HRESULT RunValidation(ID3D11Device* device, ID3D11DeviceContext* context,
     ComObject<ID3D11Buffer> pixelConstantBuffers[kResourceCount];
     float namedLowCb4[50 * 4] = {};
     float exactTextureCb1[105 * 4] = {};
-    if (exactTextureRgbGate) exactTextureCb1[27 * 4 + 1] = 1.0f; // PS cb1[27].y evidence gate for _780
+    // Metadata identifies PS cb1[27].y (byte 436) as
+    // ShaderVariablesGlobal._ExposureWithMiscParams.y. The recovered native
+    // producer is reciprocal exposure; 1 is its neutral/default value, not a
+    // selected-frame fidelity claim.
+    if (exactTextureRgbGate) exactTextureCb1[27 * 4 + 1] = 1.0f;
     if (namedLow || highProbe || highNeutral) {
         namedLowCb4[0] = 1.0f; namedLowCb4[1] = 0.0f; namedLowCb4[2] = 0.0f; namedLowCb4[3] = 0.0f;
         namedLowCb4[4] = 1.0f; namedLowCb4[5] = 0.0f; namedLowCb4[6] = 4.0f; namedLowCb4[7] = 4.14f;
