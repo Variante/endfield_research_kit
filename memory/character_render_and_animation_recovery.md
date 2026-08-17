@@ -2506,6 +2506,25 @@ only stable interpretation and priorities.
    IA layout and 10,720/8,100-byte exact DXBC pair, then recover the open
    draw-time `cb3` semantics. Do not add a lifetime workaround, forced Pause,
    or BakeMesh proxy to production recovery.
+   A managed PTS-40000 packet census now makes that join reproducible without
+   pretending Unity's private expansion is known. It records all four live
+   public particle rows, Custom1, renderer streams/configuration/material
+   identity, complete source-mesh channels and indices, and per-source-vertex
+   candidate position/normal/tangent transforms. Unity 2022.3.62f3 executes
+   the census successfully. Its 136-byte field plan is provenance-tagged and deliberately leaves
+   `exactPackedRowParity`, `candidatePacketAdmission`, draw-time `cb3`, and
+   visual admission false. COLOR0, its separate packed-RGBA producer,
+   TEXCOORD routing/selectors, and the template portion of `cb3` remain the
+   exact-render bridge queue; the sidecar is an input census, not a recovered
+   vertex buffer.
+   The pinned `DrawMeshParticles<4>` body now closes the color producer more
+   narrowly: it reads one indexed RGBA8 row, divides each channel by 255, and
+   writes `cb3[13] = 1 - packedRGBA` at record offset `+0xD0`. Independent
+   BakeMesh hashes identify renderer `COLOR0` as repeated alpha 51/70 for the
+   two live rows, whereas public `GetCurrentColor()` returns 51/71. Therefore
+   public color cannot be copied into the exact packet. TEXCOORD4 remains an
+   alternate-position input controlled by runtime `cb3[10].x`, not an
+   unconditional alias for Custom1.
    A narrower immediate-context object-vtable experiment is also rejected. It
    shadowed the complete 115-slot `ID3D11DeviceContext` table only inside the
    isolated player, filtered Draw variants by the retained exact VS/PS
@@ -2524,6 +2543,14 @@ only stable interpretation and priorities.
    40833. Therefore success is not simply more particles: fill the 40000 gap,
    reduce the late overshoot to about +/-5 percentage points, and preserve the
    near-settled 46000 frame.
+   Use integer 1/1000 PTS over the bounded 37667-46000 entry interval, not
+   `frameIndex / 60`. At each anchor compare the fixed broad-teal,
+   raised-hand, and lower-left-ribbon ROIs with
+   `g>=80 && b>=80 && g-r>=20 && b-r>=10`, recording coverage, bbox,
+   centroid, Dice/IoU, mean RGB, G-R, and B-R. Keep a same-camera effect-off
+   clean plate so background teal cannot satisfy the VFX gate. PTS 46000 must
+   remain below one-percent raised-hand coverage while the PTS-40833/40834
+   error converges to about +/-5 percentage points.
    The exact independently AssetMap-proven finger prefab is now executable in
    the same actor-composed diagnostic. It is mounted beneath the unique
    `Bip001_R_Finger2Nub`, keeps its source 0.83333-second delay and
