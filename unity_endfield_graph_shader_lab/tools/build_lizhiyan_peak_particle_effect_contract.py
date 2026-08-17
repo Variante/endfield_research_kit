@@ -391,6 +391,12 @@ def m23_shader_abi(materials: dict[int, tuple[Path, dict[str, Any]]]) -> dict[st
         },
         "shader": {"pathID": SHADER_PATH_ID, "name": "HGRP/Effect/VFXBaseV2",
                    "pass": M23_VARIANT_PASS, "keywords": M23_VARIANT_KEYWORDS},
+        "selectionBoundary": {
+            "serializedNonInstancedPair": "blob1277 / sidecars 0138+0139",
+            "srpInstancedAlternative": "blob1956 / sidecars 4212+4213; adds SRP_INSTANCING_ON",
+            "retailDrawVariantCaptured": False,
+            "interpretation": "material valid keywords plus HG_ENABLE_MV uniquely select blob1277 only when SRP_INSTANCING_ON is absent; serialized GPU-instancing flags do not prove that runtime fork/HG decision",
+        },
         "variants": variants,
         "texcoordPacking": M23_TEXCOORD_PACKING,
         "lowCbufferMappings": M23_LOW_CBUFFER_MAPPINGS,
@@ -560,7 +566,7 @@ def main() -> int:
         "shader": {"pathID": SHADER_PATH_ID, "name": "HGRP/Effect/VFXBaseV2",
                    "convertedSource": derived_artifact(shader_files[0], "ShaderConvertedSource", SHADER_PATH_ID)},
         "m23ShaderAbi": m23_abi,
-        "executionBoundary": "Serialized hierarchy/TRS, particle modules, renderer/material/mesh ownership, material payloads, converted textures, converted mesh geometry, shader identity, and M23's exact ForwardOnly vertex/fragment DXBC variant are source-closed. M23 TEXCOORD packing and the named low UnityPerMaterial slots are instruction/metadata-closed; high sample/mask/blend/dissolve/Fresnel cbuffer property names remain explicitly unresolved. Filtered GameObject convenience JSON omits m_IsActive; manual diagnostics default those nodes active while retail activation remains owned by unrecovered EffectSetting/EffectLodCfg execution. Converted PNG/OBJ payloads are diagnostic derivatives. Retail EffectSetting execution, descriptor binding, draw/PSO/MRT/depth, after-DOF survivor ownership, and final compositing remain unproven; visibleAdmission stays false.",
+        "executionBoundary": "Serialized hierarchy/TRS, particle modules, renderer/material/mesh ownership, material payloads, converted textures, converted mesh geometry, shader identity, and the non-instanced blob1277 ForwardOnly DXBC pair matching the serialized material keywords plus HG_ENABLE_MV are source-closed. Runtime selection between that pair and the blob1956 SRP_INSTANCING_ON alternative is not draw-captured. M23 TEXCOORD packing and the named low UnityPerMaterial slots are instruction/metadata-closed; high sample/mask/blend/dissolve/Fresnel cbuffer property names remain explicitly unresolved. Filtered GameObject convenience JSON omits m_IsActive; manual diagnostics default those nodes active while retail activation remains owned by unrecovered EffectSetting/EffectLodCfg execution. Converted PNG/OBJ payloads are diagnostic derivatives. Retail EffectSetting execution, runtime variant/descriptor binding, draw/PSO/MRT/depth, after-DOF survivor ownership, and final compositing remain unproven; visibleAdmission stays false.",
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(output, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

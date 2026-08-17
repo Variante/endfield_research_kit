@@ -4686,6 +4686,15 @@ Those OBJs contain only position/normal/UV geometry, while streams
 `[0,1,3,4,5,34]` total exactly 60 bytes. The exact 0138 float4/tangent/blend
 layout totals 136 bytes, so neither the source OBJ nor the authored stock
 particle stream can be cited as its producer.
+`python tools/audit_m23_vfxbasev2_variants.py` audits the complete exported
+D3D11 variant set without relying on decompiler text. It finds 1,358 pairs in
+14 input-signature families and zero pairs compatible with the authored
+six-stream/60-byte semantic set; every family requires blend lanes. The two
+exact-keyword candidates are non-instanced blob1277 (0138/0139) and the
+`SRP_INSTANCING_ON` blob1956 alternative (4212/4213). Serialized material
+keywords prove blob1277 only if that runtime keyword is absent. Until an
+actual M23 draw captures shader identity/length or PSO state, treat 0138/0139
+as the serialized non-instanced candidate, not a retail draw-proven binding.
 The current GameAssembly HGMesh layer is also a negative boundary:
 `HGMeshRendererData` callers manage ECS mesh/material handles, bounds, dither,
 and renderer lists, while `HGParticleMeshInstanceRenderer` exposes no managed
