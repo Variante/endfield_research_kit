@@ -18,6 +18,8 @@ mission/quest owner; the UI must retain that ownership gap. Each file now also
 shows its active-overlay trigger confirmation: exact local volume geometry when
 spatial, or the exact non-spatial event carrier, together with source/hash
 evidence. These confirmations remain explicitly non-owning and non-ordering.
+The spatial Story map renders decoded authored volume outlines and keeps exact
+non-spatial carriers separate from the actionable no-trigger-lead queue.
 
 Retired Progression and Combat & Projectiles pages stay retired. Their useful
 progression, projectile, asset, and sound information lives in Gameplay.

@@ -220,6 +220,15 @@ for (const [key, category] of [
         self.assertIn("observation.sourceSha256", source)
         self.assertIn("not mission ownership, event firing, branch choice, or Story order", source)
 
+    def test_mission_pipeline_draws_exact_trigger_volumes_and_separates_non_spatial_events(self) -> None:
+        source = MISSION_PIPELINE.read_text(encoding="utf-8")
+        self.assertIn("nativeReceiverStoryTriggerZoneCoverage", source)
+        self.assertIn("exactTriggerZones", source)
+        self.assertIn('class="mp-spatial-trigger-zone"', source)
+        self.assertIn("zone.rotationY", source)
+        self.assertIn("nonSpatialTriggers", source)
+        self.assertIn('t("spatialNonSpatialTriggers")', source)
+
     def test_mission_pipeline_surfaces_timeline_runtime_and_exact_activation_boundary(self) -> None:
         source = MISSION_PIPELINE.read_text(encoding="utf-8")
         self.assertIn("timelineEmbeddedStoryRuntimeAudit", source)
