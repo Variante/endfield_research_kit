@@ -24,9 +24,13 @@ from pathlib import Path
 from typing import Any, Iterable, Iterator, Mapping, TextIO
 
 
-SCHEMA = "endfield.dxcap-d3d11-evidence.v1"
-M23_VS_BYTECODE_LENGTH = 10720
-M23_PS_BYTECODE_LENGTH = 8100
+SCHEMA = "endfield.dxcap-d3d11-evidence.v2"
+M23_VARIANTS = {
+    "blob1277_non_instanced": {"vs": 10720, "ps": 8100},
+    "blob1956_srp_instanced": {"vs": 11016, "ps": 8188},
+}
+M23_VS_BYTECODE_LENGTH = M23_VARIANTS["blob1277_non_instanced"]["vs"]
+M23_PS_BYTECODE_LENGTH = M23_VARIANTS["blob1277_non_instanced"]["ps"]
 M23_IA_STRIDE = 136
 
 
@@ -338,15 +342,24 @@ def _candidate(state: _State) -> dict[str, Any]:
     vs = state.shaders.get(state.vs_handle or "")
     ps = state.shaders.get(state.ps_handle or "")
     strides = sorted({row.get("stride") for row in state.vertex_buffers if isinstance(row.get("stride"), int)})
+    vs_length = vs.get("bytecode_length") if vs else None
+    ps_length = ps.get("bytecode_length") if ps else None
+    matching_variants = [
+        name for name, lengths in M23_VARIANTS.items()
+        if vs_length == lengths["vs"] and ps_length == lengths["ps"]
+    ]
+    variant = matching_variants[0] if len(matching_variants) == 1 else None
     checks = {
         "vs_handle_known": bool(vs),
         "ps_handle_known": bool(ps),
-        "vs_bytecode_length": bool(vs and vs.get("bytecode_length") == M23_VS_BYTECODE_LENGTH),
-        "ps_bytecode_length": bool(ps and ps.get("bytecode_length") == M23_PS_BYTECODE_LENGTH),
+        "recognized_m23_variant_pair": variant is not None,
         "ia_stride_136": M23_IA_STRIDE in strides,
     }
     return {
         "exact_m23_candidate": all(checks.values()),
+        "variant": variant,
+        "vs_bytecode_length": vs_length,
+        "ps_bytecode_length": ps_length,
         "checks": checks,
         "reason": "all required handle/length/IA-stride evidence present" if all(checks.values()) else "insufficient evidence; no exact M23 claim",
         "byte_hashes_available": False,

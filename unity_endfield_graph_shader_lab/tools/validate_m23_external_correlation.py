@@ -25,7 +25,7 @@ from typing import Any, Mapping
 
 
 SCHEMA = "endfield.m23-external-correlation.v1"
-DXCAP_SCHEMA = "endfield.dxcap-d3d11-evidence.v1"
+DXCAP_SCHEMA = "endfield.dxcap-d3d11-evidence.v2"
 LAB_ROOT = Path(__file__).resolve().parents[1]
 
 _FORBIDDEN_ATTESTATION_FLAGS = (
