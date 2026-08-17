@@ -4696,23 +4696,35 @@ constant-buffer bytes, so the complete source-row ABI and the 224-byte VS
 supported resource-byte inspection or upstream renderer-packing join.
 
 The standalone Li M23 source-renderer capture probe now isolates
-`start_04_2/xuanzhuan03` in a normal D3D11 player. It preserves the exact
-source prefab, enables only the real `ParticleSystemRenderer`, and explicitly
-forbids BakeMesh and MeshRenderer proxies. Runtime validation closes the exact
-PathIDs, serialized seed 7930, two particles at local time 0.199667, and active
-streams `[0,1,3,4,5,34]`. The first DXCap frames contain no target draw and the
-renderer remains not visible even after bounds-based camera framing. The
-single-variable admission matrix remains negative for sorting-fudge, GPU
-instancing, renderer/camera occlusion, Mesh-versus-Billboard mode, a known-good
-queue-3000 `SRPDefaultUnlit` material, basic vertex streams, natural playback,
-and layer-0/full-camera-mask substitution. A runtime-created standard
-Billboard control in the same camera and HGCompat pipeline also has one live
-particle, finite in-frustum bounds, and a supported material, yet remains not
-visible. Its DXCap frame still has only the same three unrelated shell draws.
-The active defect is therefore global HGCompat/Unity particle culling or
-submission until a control draw proves otherwise, rather than a demonstrated
-M23 prefab field defect. Keep the source renderer unmodified and do not use the
-existing BakeMesh proxy as the target draw.
+`start_04_2/xuanzhuan03` in a normal D3D11 player and explicitly forbids
+BakeMesh and MeshRenderer proxies. Hidden-window runs are not valid admission
+evidence because Unity does not execute normal camera rendering there. Use the
+opt-in foreground-window flag, a time-based DXCap frame (currently 7 seconds),
+and the matching runtime JSON. With that protocol the serialized camera
+sentinel, ordinary Billboard control, exact-source-mesh control, and a manual
+particle on the exact source component all submit normally.
+
+The decisive mode is `source-republish-identical`. It captures the two original
+simulated particle rows plus Custom1, clears the system, republishes the same
+values through `SetParticles`/`SetCustomParticleData`, and fails closed unless
+all reported public values remain exactly equal. Its runtime report passes and
+DXCap adds the expected two-particle `DrawIndexed(3456)` at stride 36. Separate
+lifetime, size, rotation, and Custom1 modes produce the same draw; color and
+velocity are already white and zero. The missing boundary is therefore not a
+tested public particle value, SRP, Mesh mode, or the source mesh. Identical
+public-API republishing reconstructs internal renderer-consumable state that
+the recovered simulation path does not establish.
+
+The installed UnityPlayer maps
+`ParticleSystemRenderer::PrepareForRenderThreaded` to
+`0xBA28F0..0xBA2C20`; its selected caller tests an unnamed record count at
+`rcx+0x160` immediately after the call and exits before mode-4 dispatch when
+the count is non-positive. Keep this classified as a record-building boundary,
+not camera culling. The next recovery target is the internal simulated-row
+state changed by an identical `SetParticles` round trip, followed by a faithful
+initializer in the importer/runtime. The exact retail M23 shader submission
+still requires the 136-byte IA layout and 10,720/8,100-byte shader pair; the
+compatibility-material draws above prove admission only, not visual parity.
 
 An isolated immediate-context shadow-vtable attempt is deliberately removed.
 It copied all 115 `ID3D11DeviceContext` slots, hooked only Draw variants,

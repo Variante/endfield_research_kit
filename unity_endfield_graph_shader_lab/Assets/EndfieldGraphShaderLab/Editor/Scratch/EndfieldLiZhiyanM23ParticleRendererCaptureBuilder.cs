@@ -27,11 +27,15 @@ namespace EndfieldGraphShaderLabEditor
         private const string ScenePath = GeneratedRoot + "/LiZhiyanM23ParticleRendererCapture.unity";
         private const string CompatibilityMaterialPath =
             GeneratedRoot + "/M23ParticleSubmissionCompatibility.mat";
+        private const string BuiltinCompatibilityMaterialPath =
+            GeneratedRoot + "/M23ParticleBuiltinCompatibility.mat";
         private const string OutputRoot = "scratch/reverse_engineering/lizhiyan_m23_particle_renderer_capture";
         private const string TargetHierarchy = "P_fxui_lizhiyan_overview_start_04_2/xuanzhuan03";
         private const long TargetMaterialPathId = -430604955415889784L;
         private const string ActivationArgument =
             EndfieldLiZhiyanM23ParticleRendererCaptureRuntime.ActivationArgument;
+        private const string ForegroundWindowArgument =
+            EndfieldLiZhiyanM23ParticleRendererCaptureRuntime.ForegroundWindowArgument;
 
         [MenuItem("Endfield/Character Recovery Lab/Build Li Zhiyan M23 Source Particle Renderer Capture")]
         public static void BuildAndValidate()
@@ -86,7 +90,26 @@ namespace EndfieldGraphShaderLabEditor
                 targetRenderer.sharedMaterials = new[] { diagnostic };
 
             var runtime = instance.AddComponent<EndfieldLiZhiyanM23ParticleRendererCaptureRuntime>();
-            runtime.ConfigureCompatibilityMaterial(BuildCompatibilityMaterial());
+            Material compatibilityMaterial = BuildCompatibilityMaterial();
+            runtime.ConfigureCompatibilityMaterial(compatibilityMaterial);
+            runtime.ConfigureBuiltinCompatibilityMaterial(BuildBuiltinCompatibilityMaterial());
+            ParticleSystem serializedControlSystem;
+            ParticleSystemRenderer serializedControlRenderer;
+            BuildSerializedControl(
+                instance,
+                compatibilityMaterial,
+                out serializedControlSystem,
+                out serializedControlRenderer);
+            runtime.ConfigureSerializedControl(
+                serializedControlSystem, serializedControlRenderer);
+            MeshFilter sentinelFilter;
+            MeshRenderer sentinelRenderer;
+            BuildSerializedSentinel(
+                instance,
+                compatibilityMaterial,
+                out sentinelFilter,
+                out sentinelRenderer);
+            runtime.ConfigureSerializedSentinel(sentinelFilter, sentinelRenderer);
             runtime.enabled = true;
             SetLayerRecursively(instance.transform, 30);
 
@@ -188,6 +211,90 @@ namespace EndfieldGraphShaderLabEditor
             return material;
         }
 
+        private static Material BuildBuiltinCompatibilityMaterial()
+        {
+            Shader shader = Shader.Find("Unlit/Color");
+            Require(shader != null && shader.isSupported,
+                "The built-in Unlit/Color compatibility shader is missing or unsupported.");
+            Material material = AssetDatabase.LoadAssetAtPath<Material>(
+                BuiltinCompatibilityMaterialPath);
+            if (material == null)
+            {
+                material = new Material(shader)
+                {
+                    name = "M23ParticleBuiltinCompatibility"
+                };
+                AssetDatabase.CreateAsset(material, BuiltinCompatibilityMaterialPath);
+            }
+            else
+            {
+                material.shader = shader;
+            }
+            material.renderQueue = 3000;
+            material.color = Color.white;
+            EditorUtility.SetDirty(material);
+            return material;
+        }
+
+        private static void BuildSerializedControl(
+            GameObject sourceInstance,
+            Material compatibilityMaterial,
+            out ParticleSystem system,
+            out ParticleSystemRenderer renderer)
+        {
+            GameObject controlObject = new GameObject(
+                "M23ParticleRendererSerializedAdmissionControl");
+            SceneManager.MoveGameObjectToScene(controlObject, sourceInstance.scene);
+            controlObject.layer = 30;
+            controlObject.transform.SetPositionAndRotation(
+                new Vector3(-0.086f, 1.064f, 0.5f), Quaternion.identity);
+            system = controlObject.AddComponent<ParticleSystem>();
+            renderer = controlObject.GetComponent<ParticleSystemRenderer>();
+            Require(renderer != null, "Could not create serialized control renderer.");
+
+            ParticleSystem.MainModule main = system.main;
+            main.playOnAwake = false;
+            main.loop = false;
+            main.startDelay = 0.0f;
+            main.startLifetime = 10.0f;
+            main.startSpeed = 0.0f;
+            main.startSize = 1.0f;
+            main.maxParticles = 1;
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+            ParticleSystem.EmissionModule emission = system.emission;
+            emission.enabled = false;
+            renderer.renderMode = ParticleSystemRenderMode.Billboard;
+            renderer.sharedMaterial = compatibilityMaterial;
+            renderer.enableGPUInstancing = false;
+            renderer.allowOcclusionWhenDynamic = false;
+            renderer.sortingFudge = 0.0f;
+            renderer.enabled = true;
+        }
+
+        private static void BuildSerializedSentinel(
+            GameObject sourceInstance,
+            Material compatibilityMaterial,
+            out MeshFilter filter,
+            out MeshRenderer renderer)
+        {
+            GameObject sentinel = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            sentinel.name = "M23ParticleRendererCameraCullingSentinel";
+            SceneManager.MoveGameObjectToScene(sentinel, sourceInstance.scene);
+            sentinel.layer = 30;
+            sentinel.transform.SetPositionAndRotation(
+                new Vector3(-0.086f, 1.064f, 0.5f), Quaternion.identity);
+            sentinel.transform.localScale = Vector3.one * 0.75f;
+            filter = sentinel.GetComponent<MeshFilter>();
+            renderer = sentinel.GetComponent<MeshRenderer>();
+            Require(filter != null && renderer != null,
+                "Could not create serialized MeshRenderer camera/culling sentinel.");
+            renderer.sharedMaterial = compatibilityMaterial;
+            renderer.enabled = true;
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+            renderer.allowOcclusionWhenDynamic = false;
+        }
+
         private static EndfieldRecoveredParticleNodeSource FindNode(
             EndfieldRecoveredParticleEffectSource marker, string hierarchy)
         {
@@ -232,9 +339,31 @@ namespace EndfieldGraphShaderLabEditor
                 "  \"target_material_path_id\": -430604955415889784,\n" +
                 "  \"diagnostic_material_assigned\": " + (diagnosticMaterial ? "true" : "false") + ",\n" +
                 "  \"positive_control\": \"runtime ParticleSystemRenderer with one emitted particle and the known-good compatibility material\",\n" +
+                "  \"builtin_differential_mode\": \"clears GraphicsSettings and QualitySettings render pipelines; uses Unlit/Color control only; shader parity not claimed\",\n" +
                 "  \"no_bake_mesh\": true,\n" +
                 "  \"no_mesh_renderer_proxy\": true,\n" +
-                "  \"dxcap_command\": \"DXCap.exe -file <capture.vsglog> -frame 0+1 -terminateonsave -c <player.exe> -endfield-m23-particle-renderer-capture -endfield-m23-particle-renderer-mode=positive -endfield-m23-particle-renderer-output=<report.json> -endfield-m23-particle-renderer-quit\"\n" +
+                "  \"dxcap_command\": \"DXCap.exe -file <capture.vsglog> -frame 0+1 -terminateonsave -c <player.exe> -endfield-m23-particle-renderer-capture -endfield-m23-particle-renderer-mode=positive -endfield-m23-particle-renderer-output=<report.json> -endfield-m23-particle-renderer-quit\",\n" +
+                "  \"foreground_window_command\": \"DXCap.exe -file <foreground-window.vsglog> -frame 0+1 -terminateonsave -c <player.exe> -endfield-m23-particle-renderer-capture -endfield-m23-particle-renderer-mode=positive " + ForegroundWindowArgument + " -endfield-m23-particle-renderer-output=<foreground-window.json> -endfield-m23-particle-renderer-quit\",\n" +
+                "  \"builtin_differential_command\": \"<player.exe> -force-d3d11 -endfield-m23-particle-renderer-capture -endfield-m23-particle-renderer-mode=builtin-pipeline -endfield-m23-particle-renderer-output=<report.json> -endfield-m23-particle-renderer-quit\",\n" +
+                "  \"control_disabled_command\": \"DXCap.exe -file <control-disabled.vsglog> -frame 0+1 -terminateonsave -c <player.exe> -endfield-m23-particle-renderer-capture -endfield-m23-particle-renderer-mode=control-disabled -endfield-m23-particle-renderer-output=<control-disabled.json> -endfield-m23-particle-renderer-quit\",\n" +
+                "  \"serialized_control_command\": \"DXCap.exe -file <serialized-control.vsglog> -frame 0+1 -terminateonsave -c <player.exe> -endfield-m23-particle-renderer-capture -endfield-m23-particle-renderer-mode=serialized-control -endfield-m23-particle-renderer-output=<serialized-control.json> -endfield-m23-particle-renderer-quit\",\n" +
+                "  \"serialized_control_disabled_command\": \"DXCap.exe -file <serialized-control-disabled.vsglog> -frame 0+1 -terminateonsave -c <player.exe> -endfield-m23-particle-renderer-capture -endfield-m23-particle-renderer-mode=serialized-control-disabled -endfield-m23-particle-renderer-output=<serialized-control-disabled.json> -endfield-m23-particle-renderer-quit\",\n" +
+                "  \"sentinel_enabled_command\": \"DXCap.exe -file <sentinel-enabled.vsglog> -frame 0+1 -terminateonsave -c <player.exe> -endfield-m23-particle-renderer-capture -endfield-m23-particle-renderer-mode=sentinel-enabled -endfield-m23-particle-renderer-output=<sentinel-enabled.json> -endfield-m23-particle-renderer-quit\",\n" +
+                "  \"sentinel_disabled_command\": \"DXCap.exe -file <sentinel-disabled.vsglog> -frame 0+1 -terminateonsave -c <player.exe> -endfield-m23-particle-renderer-capture -endfield-m23-particle-renderer-mode=sentinel-disabled -endfield-m23-particle-renderer-output=<sentinel-disabled.json> -endfield-m23-particle-renderer-quit\",\n" +
+                "  \"mesh_control_command\": \"DXCap.exe -file <mesh-control.vsglog> -frame 0+1 -terminateonsave -c <player.exe> -endfield-m23-particle-renderer-capture -endfield-m23-particle-renderer-mode=mesh-control -endfield-m23-particle-renderer-frames=2 " + ForegroundWindowArgument + " -endfield-m23-particle-renderer-output=<mesh-control.json> -endfield-m23-particle-renderer-quit\",\n" +
+                "  \"mesh_control_time_guidance\": \"This is a time-based player-loop diagnostic: use the foreground flag, allow the player to advance two setup frames, and compare the resulting DXCap frame against the disabled/control baseline; do not claim source shader parity.\",\n" +
+                "  \"source_manual_particle_command\": \"DXCap.exe -file <source-manual-particle.vsglog> -frame 0+1 -terminateonsave -c <player.exe> -endfield-m23-particle-renderer-capture -endfield-m23-particle-renderer-mode=source-manual-particle -endfield-m23-particle-renderer-frames=2 " + ForegroundWindowArgument + " -endfield-m23-particle-renderer-output=<source-manual-particle.json> -endfield-m23-particle-renderer-quit\",\n" +
+                "  \"source_manual_particle_time_guidance\": \"Use a time-based player-loop capture: foreground the standalone player, advance two setup frames, then inspect the captured frame and report together; this tests component admission only, not source visual parity.\",\n" +
+                "  \"source_field_matrix_guidance\": \"Run each source-field-* mode separately from the same build with the foreground flag, 30 setup frames, and DXCap -frame 7s; pair the XML with its runtime report, which fails closed if an unrelated family changes.\",\n" +
+                "  \"source_field_lifetime_command\": \"DXCap.exe -file <source-field-lifetime.vsglog> -frame 7s -terminateonsave -c <player.exe> -endfield-m23-particle-renderer-capture -endfield-m23-particle-renderer-mode=source-field-lifetime -endfield-m23-particle-renderer-frames=30 " + ForegroundWindowArgument + " -endfield-m23-particle-renderer-output=<source-field-lifetime.json>\",\n" +
+                "  \"source_field_size_command\": \"DXCap.exe -file <source-field-size.vsglog> -frame 7s -terminateonsave -c <player.exe> -endfield-m23-particle-renderer-capture -endfield-m23-particle-renderer-mode=source-field-size -endfield-m23-particle-renderer-frames=30 " + ForegroundWindowArgument + " -endfield-m23-particle-renderer-output=<source-field-size.json>\",\n" +
+                "  \"source_field_color_command\": \"DXCap.exe -file <source-field-color.vsglog> -frame 7s -terminateonsave -c <player.exe> -endfield-m23-particle-renderer-capture -endfield-m23-particle-renderer-mode=source-field-color -endfield-m23-particle-renderer-frames=30 " + ForegroundWindowArgument + " -endfield-m23-particle-renderer-output=<source-field-color.json>\",\n" +
+                "  \"source_field_rotation_command\": \"DXCap.exe -file <source-field-rotation.vsglog> -frame 7s -terminateonsave -c <player.exe> -endfield-m23-particle-renderer-capture -endfield-m23-particle-renderer-mode=source-field-rotation -endfield-m23-particle-renderer-frames=30 " + ForegroundWindowArgument + " -endfield-m23-particle-renderer-output=<source-field-rotation.json>\",\n" +
+                "  \"source_field_velocity_command\": \"DXCap.exe -file <source-field-velocity.vsglog> -frame 7s -terminateonsave -c <player.exe> -endfield-m23-particle-renderer-capture -endfield-m23-particle-renderer-mode=source-field-velocity -endfield-m23-particle-renderer-frames=30 " + ForegroundWindowArgument + " -endfield-m23-particle-renderer-output=<source-field-velocity.json>\",\n" +
+                "  \"source_field_custom1_command\": \"DXCap.exe -file <source-field-custom1.vsglog> -frame 7s -terminateonsave -c <player.exe> -endfield-m23-particle-renderer-capture -endfield-m23-particle-renderer-mode=source-field-custom1 -endfield-m23-particle-renderer-frames=30 " + ForegroundWindowArgument + " -endfield-m23-particle-renderer-output=<source-field-custom1.json>\",\n" +
+                "  \"source_republish_identical_command\": \"DXCap.exe -file <source-republish-identical.vsglog> -frame 7s -terminateonsave -c <player.exe> -endfield-m23-particle-renderer-capture -endfield-m23-particle-renderer-mode=source-republish-identical -endfield-m23-particle-renderer-frames=30 " + ForegroundWindowArgument + " -endfield-m23-particle-renderer-output=<source-republish-identical.json>\",\n" +
+                "  \"source_republish_identical_guidance\": \"Capture the original simulated rows, Clear, SetParticles and SetCustomParticleData with the same values, then require strict before/after value equality; this is a component-admission differential, not source visual parity.\",\n" +
+                "  \"explicit_camera_render_command\": \"DXCap.exe -file <explicit-camera-render.vsglog> -frame 0+1 -terminateonsave -c <player.exe> -endfield-m23-particle-renderer-capture -endfield-m23-particle-renderer-mode=explicit-camera-render -endfield-m23-particle-renderer-output=<explicit-camera-render.json> -endfield-m23-particle-renderer-quit\"\n" +
                 "}\n";
         }
 
