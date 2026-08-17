@@ -2236,6 +2236,15 @@ only stable interpretation and priorities.
    raised-hand pixels (1,937 -> 1,949); peak-only raised-hand stays zero.
    Geometry and Fresnel are therefore present. The next visual boundary is
    M23's exact color/alpha sample-stack equivalence, not another mesh.
+   That boundary now has an exact shipped fragment anchor: ForwardOnly blob
+   `0139_endfield_dxbc_1.dxbc`, 8,100 bytes, SHA-256
+   `0FF508AA08112122C14A3ECE17D12F15778EAF39AD0C639C946512DC996B6F83`
+   (program hash `9c652c08ade940c2`). It proves `t1..t4` sample
+   SampleTex0..3, with `t3` contributing the blend route and `t4.x` the
+   dissolve route. A speculative non-polar reroute instead collapsed
+   peak-only output to one pixel and was discarded. The remaining exact task
+   is to map the fragment's TEXCOORD1/2 lanes and cbuffer weights to exported
+   property names before changing the SampleStack again.
    The exact independently AssetMap-proven finger prefab is now executable in
    the same actor-composed diagnostic. It is mounted beneath the unique
    `Bip001_R_Finger2Nub`, keeps its source 0.83333-second delay and
