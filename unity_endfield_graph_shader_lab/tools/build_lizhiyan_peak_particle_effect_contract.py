@@ -33,6 +33,80 @@ EFFECTS = {
     264787144: "P_fxui_lizhiyan_overview_start_04_2",
 }
 SHADER_PATH_ID = -1430105248647086886
+M23_PATH_ID = -430604955415889784
+M23_MATERIAL_SHA256 = "81B920BE11D13B3662A97851C97C8A41EF98333478578EACD2A164D4BEFE98FA"
+M23_VARIANT_KEYWORDS = [
+    "HG_ENABLE_MV",
+    "_SAMPLE_TEX0",
+    "_SAMPLE_TEX1",
+    "_SAMPLE_TEX2",
+    "_SAMPLE_TEX3",
+    "_USE_FRESNEL",
+]
+M23_VARIANT_PASS = "ForwardOnly"
+M23_VARIANT_ROOT = (
+    REPO_ROOT
+    / "scratch/character_recovery/vfx_shader_variants/shader_export/Shader"
+    / "HGRP_Effect_VFXBaseV2_pEC273EDA76F7FCDA.shader.bytecode"
+)
+M23_VARIANT_FILES = {
+    "vertex": {
+        "blob": "0138_endfield_dxbc_0.dxbc",
+        "metadata": "0138_endfield_dxbc_0.dxbc.metadata.json",
+        "bytes": 10720,
+        "sha256": "7D0A508F7B1E5C9AEF0B89489FEAE97F8669A8CDDABA1DE0CCC0E26FD0EB2CA0",
+    },
+    "fragment": {
+        "blob": "0139_endfield_dxbc_1.dxbc",
+        "metadata": "0139_endfield_dxbc_1.dxbc.metadata.json",
+        "bytes": 8100,
+        "sha256": "0FF508AA08112122C14A3ECE17D12F15778EAF39AD0C639C946512DC996B6F83",
+    },
+}
+M23_TEXCOORD_PACKING = {
+    "vertexInputs": {"v4": "TEXCOORD0", "v5": "TEXCOORD1"},
+    "vertexOutputs": {
+        "o1.xy": "mainUV",
+        "o2.xy": "sample0UV",
+        "o2.zw": "sample1UV",
+        "o3.xy": "sample2UV",
+        "o3.zw": "sample3UV",
+    },
+    "fragmentInputs": {
+        "v1": "TEXCOORD0/mainUV",
+        "v2": "TEXCOORD1/sample0.xy+sample1.zw",
+        "v3": "TEXCOORD2/sample2.xy+sample3.zw",
+    },
+    "secondaryUV": "lerp(v5.xy, v4.zw, _InParticle [cb4[1].x])",
+    "motionLanes": {"main": "v5.x", "samples": "v5.y"},
+}
+M23_LOW_CBUFFER_MAPPINGS = {
+    "cb4[0].x": "_SurfaceType",
+    "cb4[0].y": "_BlendMode",
+    "cb4[0].z": "_Responsive",
+    "cb4[0].w": "_EnableTransparentMV",
+    "cb4[1].x": "_InParticle",
+    "cb4[1].y": "_DisableVertColor",
+    "cb4[1].z": "_TintColorIntensity",
+    "cb4[1].w": "_TintColorAlpha",
+    "cb4[2].y": "_ExpThreshold",
+    "cb4[2].z": "_ExpIntensity",
+    "cb4[2].w": "_IsSceneEffect",
+    "cb4[3].x": "_IgnorePostExposure",
+    "cb4[3].y": "_VertCameraOffset",
+    "cb4[4]": "_TintColor",
+    "cb4[5].x": "_MainTexUseDisturb",
+    "cb4[5].y": "_UseMainTexAsAlpha",
+    "cb4[5].z": "_MainTexMipmapBias",
+    "cb4[6]": "_MainTexUVSpeed",
+    "cb4[7]": "_MainTexUVRotateMat",
+    "cb4[8]": "_MainTexUVWeights",
+    "cb4[9]": "_MainTex_ST",
+}
+M23_UNRESOLVED_CBUFFER_SLOTS = [
+    "cb4[11..12]", "cb4[16..18]", "cb4[17..18]",
+    "cb4[23..24]", "cb4[28..29]", "cb4[33..43]",
+]
 
 
 def metadata(data: dict[str, Any]) -> dict[str, Any]:
@@ -88,6 +162,51 @@ def hierarchy_for_group(
     for identity in game_objects:
         hierarchy(identity)
     return cache, transform_by_go
+
+
+def m23_shader_abi(materials: dict[int, tuple[Path, dict[str, Any]]]) -> dict[str, Any]:
+    require(M23_PATH_ID in materials, "M23 material is missing")
+    material_path, material = materials[M23_PATH_ID]
+    require(sha256(material_path) == M23_MATERIAL_SHA256, "M23 material SHA-256 drifted")
+    require(pptr(material.get("m_Shader")) == SHADER_PATH_ID, "M23 shader identity drifted")
+    require(material.get("m_ValidKeywords") == M23_VARIANT_KEYWORDS[1:],
+            "M23 serialized keyword signature drifted")
+    variants: dict[str, Any] = {}
+    for stage, expected in M23_VARIANT_FILES.items():
+        blob = M23_VARIANT_ROOT / expected["blob"]
+        metadata_path = M23_VARIANT_ROOT / expected["metadata"]
+        require(blob.is_file() and metadata_path.is_file(),
+                f"M23 {stage} DXBC artifacts are missing")
+        require(blob.stat().st_size == expected["bytes"],
+                f"M23 {stage} DXBC size drifted")
+        require(sha256(blob) == expected["sha256"],
+                f"M23 {stage} DXBC SHA-256 drifted")
+        compiled = json.loads(metadata_path.read_text(encoding="utf-8"))
+        require(compiled.get("SourcePassName") == M23_VARIANT_PASS,
+                f"M23 {stage} pass drifted")
+        require(compiled.get("SourceCompiledKeywords") == M23_VARIANT_KEYWORDS,
+                f"M23 {stage} keyword signature drifted")
+        require(compiled.get("DecodedProgramStage") == stage,
+                f"M23 {stage} decoded stage drifted")
+        variants[stage] = {
+            "blob": derived_artifact(blob, "ShaderDXBC", SHADER_PATH_ID),
+            "metadata": derived_artifact(metadata_path, "ShaderDXBCMetadata", SHADER_PATH_ID),
+            "pass": M23_VARIANT_PASS,
+            "keywords": M23_VARIANT_KEYWORDS,
+        }
+    return {
+        "material": {
+            "pathID": M23_PATH_ID,
+            "source": artifact(material_path, "Material"),
+            "validKeywords": M23_VARIANT_KEYWORDS[1:],
+        },
+        "shader": {"pathID": SHADER_PATH_ID, "name": "HGRP/Effect/VFXBaseV2",
+                   "pass": M23_VARIANT_PASS, "keywords": M23_VARIANT_KEYWORDS},
+        "variants": variants,
+        "texcoordPacking": M23_TEXCOORD_PACKING,
+        "lowCbufferMappings": M23_LOW_CBUFFER_MAPPINGS,
+        "unresolvedCbufferSlots": M23_UNRESOLVED_CBUFFER_SLOTS,
+    }
 
 
 def main() -> int:
@@ -212,6 +331,10 @@ def main() -> int:
                               "textureReferences": refs, "payload": source_payload(data),
                               "source": artifact(path, "Material")})
         artifact_paths.append(path)
+    m23_abi = m23_shader_abi(materials)
+    for expected in M23_VARIANT_FILES.values():
+        artifact_paths.extend((M23_VARIANT_ROOT / expected["blob"],
+                               M23_VARIANT_ROOT / expected["metadata"]))
     texture_rows = []
     for identity in sorted(texture_ids):
         path = locate_by_path_id(texture_root, identity, ".png")
@@ -244,7 +367,8 @@ def main() -> int:
         "meshes": mesh_rows,
         "shader": {"pathID": SHADER_PATH_ID, "name": "HGRP/Effect/VFXBaseV2",
                    "convertedSource": derived_artifact(shader_files[0], "ShaderConvertedSource", SHADER_PATH_ID)},
-        "executionBoundary": "Serialized hierarchy/TRS, particle modules, renderer/material/mesh ownership, material payloads, converted textures, converted mesh geometry, and shader identity are source-closed. Filtered GameObject convenience JSON omits m_IsActive; manual diagnostics default those nodes active while retail activation remains owned by unrecovered EffectSetting/EffectLodCfg execution. Converted PNG/OBJ payloads are diagnostic derivatives. Retail EffectSetting execution, selected DXBC variant, descriptors, draw/PSO/MRT/depth, after-DOF survivor ownership, and final compositing remain unproven; visibleAdmission stays false.",
+        "m23ShaderAbi": m23_abi,
+        "executionBoundary": "Serialized hierarchy/TRS, particle modules, renderer/material/mesh ownership, material payloads, converted textures, converted mesh geometry, shader identity, and M23's exact ForwardOnly vertex/fragment DXBC variant are source-closed. M23 TEXCOORD packing and the named low UnityPerMaterial slots are instruction/metadata-closed; high sample/mask/blend/dissolve/Fresnel cbuffer property names remain explicitly unresolved. Filtered GameObject convenience JSON omits m_IsActive; manual diagnostics default those nodes active while retail activation remains owned by unrecovered EffectSetting/EffectLodCfg execution. Converted PNG/OBJ payloads are diagnostic derivatives. Retail EffectSetting execution, descriptor binding, draw/PSO/MRT/depth, after-DOF survivor ownership, and final compositing remain unproven; visibleAdmission stays false.",
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(output, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
