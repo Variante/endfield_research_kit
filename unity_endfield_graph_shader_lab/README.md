@@ -4530,6 +4530,15 @@ components and cb4[10..43] still zero, its WARP readback remains
 `[0,0,0,0]`, identical to the zero-constant diagnostic. The low named prefix
 alone is not a visibility fix; the next recovery boundary is a causal map of
 the unresolved high slots followed by the exact texture inputs.
+The exact-PS oracle now covers all 57 high-slot components actually read by
+0139 across registers 11, 12, 17, 18, 23, 24, 28, 29, 33-40, 42, and 43. It
+tests single, combined, numerical-domain-neutral, and bounded override inputs,
+opens the separate PS b2[4].x dither gate, and staging-verifies the synthetic
+t0 resource. Every combination and an all-ones varying diagnostic still
+writes `[0,0,0,0]`; these are negative register-level results, not recovered
+property values. A tentative final-output operand patch was rejected because
+the modified DXBC no longer disassembled, so the next step is supported shader
+tracing/token decoding or exact texture/global-buffer substitution.
 
 The actor-composed harness now also instantiates the exact recovered
 `P_fxui_lizhiyan_overview_trails_Bip001_R_Finger2Nub` prefab beneath the

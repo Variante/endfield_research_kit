@@ -38,8 +38,32 @@ if ($LASTEXITCODE -ne 0) { throw "WARP rejected the M23 diagnostic-VS exact-PS c
 $namedLowReport = Join-Path $buildRoot "m23_diagnostic_vs_named_low_validation.json"
 & $validator $namedLowReport --named-low
 if ($LASTEXITCODE -ne 0) { throw "WARP rejected the M23 named-low exact-PS contract." }
+$highProbeReport = Join-Path $buildRoot "m23_high_probe_validation.json"
+& $validator $highProbeReport --high-probe "b4[33].x"
+if ($LASTEXITCODE -ne 0) { throw "WARP rejected the M23 high-slot probe contract." }
+$highBaselineReport = Join-Path $buildRoot "m23_high_baseline_validation.json"
+& $validator $highBaselineReport --high-baseline 0
+if ($LASTEXITCODE -ne 0) { throw "WARP rejected the M23 high-slot baseline contract." }
+$highNeutralReport = Join-Path $buildRoot "m23_high_neutral_validation.json"
+& $validator $highNeutralReport --high-neutral
+if ($LASTEXITCODE -ne 0) { throw "WARP rejected the M23 high-slot neutral-domain contract." }
+$overrideReports = @()
+foreach ($mask in 1,2,3) {
+    $overrideReport = Join-Path $buildRoot "m23_high_neutral_override_$mask.json"
+    & $validator $overrideReport --high-neutral-override $mask
+    if ($LASTEXITCODE -ne 0) { throw "WARP rejected M23 high-neutral override $mask." }
+    $overrideReports += $overrideReport
+}
+$reports = @($report,$diagnosticReport,$namedLowReport,$highProbeReport,$highBaselineReport,$highNeutralReport) + $overrideReports
+foreach ($nativeReport in $reports) {
+    python (Join-Path $toolRoot "validate_diagnostic.py") --report $nativeReport
+    if ($LASTEXITCODE -ne 0) { throw "M23 report validation failed: $nativeReport" }
+}
 Remove-Item -Force -ErrorAction SilentlyContinue $obj,$validatorObj
 Write-Output "native_creation_fixture=$dll"
 Write-Output "native_validation_report=$report"
 Write-Output "native_diagnostic_validation_report=$diagnosticReport"
 Write-Output "native_named_low_validation_report=$namedLowReport"
+Write-Output "native_high_probe_validation_report=$highProbeReport"
+Write-Output "native_high_baseline_validation_report=$highBaselineReport"
+Write-Output "native_high_neutral_validation_report=$highNeutralReport"

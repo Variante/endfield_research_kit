@@ -63,11 +63,12 @@ def validate_blobs() -> None:
 
 def validate_report(path: Path) -> dict:
     report = json.loads(path.read_text(encoding="utf-8-sig"))
-    named_low = report.get("mode") == "diagnostic_vs_exact_ps_named_low"
-    diagnostic = report.get("mode") == "diagnostic_vs_exact_ps" or named_low
+    mode = report.get("mode")
+    named_low = mode == "diagnostic_vs_exact_ps_named_low"
+    diagnostic = isinstance(mode, str) and mode.startswith("diagnostic_vs_exact_ps")
     required = {
         "schema": "endfield.original-m23-dxbc-exact.v3",
-        "mode": "diagnostic_vs_exact_ps_named_low" if named_low else ("diagnostic_vs_exact_ps" if diagnostic else "exact_pair"),
+        "mode": mode,
         "vertex_sha256": EXPECTED["vertex"][2],
         "pixel_sha256": EXPECTED["pixel"][2],
         "vs_constant_buffer_creation_mask": "0x1f",
@@ -109,6 +110,30 @@ def validate_report(path: Path) -> dict:
             "named_low_component_map_mask": "0x1",
             "named_low_component_map": NAMED_LOW_COMPONENT_MAP,
         })
+    if mode == "diagnostic_vs_exact_ps_high_probe":
+        required.update({"high_probe_execution_mask": "0x1"})
+    if mode == "diagnostic_vs_exact_ps_high_baseline":
+        required.update({
+            "input_layout_creation_mask": "0x0", "vertex_buffer_creation_mask": "0x0",
+            "no_input_layout_binding_mask": "0x1", "no_vertex_buffer_binding_mask": "0x1",
+            "diagnostic_vs_source_sha256": DIAGNOSTIC_VS_SOURCE_SHA256,
+            "diagnostic_vs_compiled_sha256": DIAGNOSTIC_VS_COMPILED_SHA256,
+            "diagnostic_vs_compiled_hash_mask": "0x1", "diagnostic_vs_signature_mask": "0x1",
+            "diagnostic_vs_source_hash_mask": "0x1", "high_baseline_value_mask": "0x1",
+            "high_probe_execution_mask": "0x1", "diagnostic_b2_gate_mask": "0x1",
+        })
+    if mode == "diagnostic_vs_exact_ps_high_neutral":
+        required.update({
+            "high_neutral_domain_mask": "0x1", "diagnostic_b2_gate_mask": "0x1",
+            "synthetic_t0_readback_mask": "0x1", "synthetic_t0_hash_mask": "0x1",
+        })
+    if mode == "diagnostic_vs_exact_ps_high_neutral_override":
+        required.update({
+            "high_neutral_domain_mask": "0x1", "diagnostic_b2_gate_mask": "0x1",
+            "synthetic_t0_readback_mask": "0x1", "synthetic_t0_hash_mask": "0x1",
+        })
+        if report.get("high_neutral_override_mask") not in {"0x1", "0x2", "0x3"}:
+            raise AssertionError("invalid high-neutral override mask")
     if not diagnostic:
         required.update({
             "input_layout_creation_mask": "0x1",

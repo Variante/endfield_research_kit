@@ -33,6 +33,16 @@ hash and generated M23 contract hash are checked from their source files by
 `build_plugin.ps1` before compilation; their embedded pins and the serialized
 component map are then reported and gated. Synthetic textures remain in use.
 
+The build also runs bounded register-only diagnostics for the 57 high-slot
+components read by exact 0139. A single-component probe, an all-active
+baseline, a numerical-domain-neutral baseline, and three low-component
+overrides all retain the exact PS and report `visual_fidelity_claim=false`.
+The high baselines set diagnostic PS `b2[4].x=1` to pass the explicit dither
+gate and independently staging-read/hash the synthetic t0 resource. Every
+current combination still writes transparent black. This proves only that
+the tested inputs are insufficient; it does not name high slots or recover
+material values. The build executes and validates every maintained mode.
+
 All buffers are zero-initialized. Unresolved b4 high-slot semantics are not
 inferred. The validator explicitly binds every object, verifies identity with
 VSGet*/PSGet*/IAGet*/OMGet* masks, draws three vertices into a controlled 1x1

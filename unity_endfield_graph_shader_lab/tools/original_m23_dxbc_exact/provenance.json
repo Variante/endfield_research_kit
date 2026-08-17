@@ -45,6 +45,16 @@
     "readback_zero_comparison": true,
     "visual_fidelity_claim": false
   },
+  "high_slot_diagnostics": {
+    "read_component_count": 57,
+    "read_registers": [11, 12, 17, 18, 23, 24, 28, 29, 33, 34, 35, 36, 37, 38, 39, 40, 42, 43],
+    "diagnostic_ps_b2_4_x": 1.0,
+    "synthetic_t0_sha256": "79d150341d202e41e084c9464cd650984e62925427e18291cd750ecaa2cdbf03",
+    "tested_modes": ["single_component", "all_active", "neutral_domain", "neutral_override_1", "neutral_override_2", "neutral_override_3"],
+    "readback": [0.0, 0.0, 0.0, 0.0],
+    "property_names_resolved": false,
+    "visual_fidelity_claim": false
+  },
   "creation_contract": {
     "input_stride_bytes": 136,
     "separate_stage_constant_buffers": true,

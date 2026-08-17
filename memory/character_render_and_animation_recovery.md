@@ -2287,6 +2287,18 @@ only stable interpretation and priorities.
    known low material prefix is therefore insufficient to make M23 visible.
    Recover the causal high-slot gates and real texture contribution next;
    do not reinterpret this negative result as a property-name mapping.
+   Exact 0139 reads only 57 components across high registers 11, 12, 17, 18,
+   23, 24, 28, 29, 33-40, 42, and 43. The native oracle now exercises and
+   validates a single-component probe, an all-active baseline, a neutral
+   numerical-domain baseline, and three bounded overrides. It explicitly
+   opens PS `b2[4].x`'s dither gate and independently staging-verifies the
+   synthetic t0 bytes (SHA-256 `79D15034...AA2CDBF03`), yet every run remains
+   transparent black. All-ones varyings also remain black. Exact-DXBC operand
+   patching was stopped fail-closed: the final `mov o0.w,r0.y` is uniquely at
+   SHEX offset `0x17c0`, but changing apparent operand words makes
+   `D3DDisassemble` reject the container. The next useful boundary is a
+   supported shader-trace/token decoder or the exact texture/global-buffer
+   inputs, not more isolated b4 guesses.
    The exact independently AssetMap-proven finger prefab is now executable in
    the same actor-composed diagnostic. It is mounted beneath the unique
    `Bip001_R_Finger2Nub`, keeps its source 0.83333-second delay and
