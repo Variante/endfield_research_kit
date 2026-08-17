@@ -5,6 +5,8 @@
 #include <d3dcompiler.h>
 
 #include <cstdint>
+#include <algorithm>
+#include <iterator>
 #include <cstring>
 #include <cmath>
 #include <fstream>
@@ -54,6 +56,17 @@ struct EndfieldM23DxbcValidation {
     char namedLowContractSha256[65];
     char namedLowComponentMap[1024];
     std::uint32_t readbackChangedFromZero;
+    std::uint32_t highProbeExecutionMask;
+    std::uint32_t highProbeRegister;
+    std::uint32_t highProbeComponent;
+    std::uint32_t highBaselineValueMask;
+    std::uint32_t highAblationGroupMask;
+    std::uint32_t highNeutralDomainMask;
+    std::uint32_t diagnosticB2GateMask;
+    std::uint32_t highNeutralOverrideMask;
+    std::uint32_t syntheticT0ReadbackMask;
+    std::uint32_t syntheticT0HashMask;
+    char syntheticT0Sha256[65];
     float readback[4];
 };
 
@@ -155,7 +168,8 @@ HRESULT CreateConstantBuffer(ID3D11Device* device, std::uint32_t float4Count,
 }
 
 HRESULT CreateSimpleTextureAndView(ID3D11Device* device, std::uint32_t index,
-                                   ComObject<ID3D11ShaderResourceView>* view) {
+                                   ComObject<ID3D11ShaderResourceView>* view,
+                                   ComObject<ID3D11Texture2D>* texture) {
     D3D11_TEXTURE2D_DESC description = {};
     description.Width = 1;
     description.Height = 1;
@@ -167,10 +181,9 @@ HRESULT CreateSimpleTextureAndView(ID3D11Device* device, std::uint32_t index,
     description.BindFlags = D3D11_BIND_SHADER_RESOURCE;
     const float pixel[4] = {0.2f + 0.1f * static_cast<float>(index), 0.3f, 0.5f, 1.0f};
     D3D11_SUBRESOURCE_DATA data = {pixel, sizeof(pixel), 0};
-    ComObject<ID3D11Texture2D> texture;
-    HRESULT hr = device->CreateTexture2D(&description, &data, texture.Put());
+    HRESULT hr = device->CreateTexture2D(&description, &data, texture->Put());
     if (SUCCEEDED(hr)) {
-        hr = device->CreateShaderResourceView(texture.Get(), nullptr, view->Put());
+        hr = device->CreateShaderResourceView(texture->Get(), nullptr, view->Put());
     }
     return hr;
 }
@@ -191,16 +204,24 @@ HRESULT CreateSimpleSampler(ID3D11Device* device, ComObject<ID3D11SamplerState>*
 
 static HRESULT RunValidation(ID3D11Device* device, ID3D11DeviceContext* context,
                              EndfieldM23DxbcValidation* report,
-                             bool diagnosticVs, bool namedLow) {
+                             bool diagnosticVs, bool namedLow, bool highProbe,
+                             bool highBaseline, bool highNeutral, std::uint32_t highNeutralOverrideMask,
+                             std::uint32_t probeRegister,
+                             std::uint32_t probeComponent, std::uint32_t ablationGroupMask) {
     if (report == nullptr || device == nullptr || context == nullptr) {
         return E_INVALIDARG;
     }
     std::memset(report, 0, sizeof(*report));
-    report->mode = namedLow ? 2u : (diagnosticVs ? 1u : 0u);
+    report->mode = highNeutralOverrideMask ? 6u : (highNeutral ? 5u : (highBaseline ? 4u : (highProbe ? 3u : (namedLow ? 2u : (diagnosticVs ? 1u : 0u)))));
+    report->highAblationGroupMask = ablationGroupMask;
+    report->highNeutralOverrideMask = highNeutralOverrideMask;
+    if (highProbe) {
+        report->highProbeRegister = probeRegister;
+        report->highProbeComponent = probeComponent;
+    }
     if (diagnosticVs) {
-        std::memcpy(report->diagnosticVsSourceSha256,
-                    g_EndfieldM23DiagnosticVsSourceSha256,
-                    sizeof(g_EndfieldM23DiagnosticVsSourceSha256));
+        const char* sourceHash = g_EndfieldM23DiagnosticVsSourceSha256;
+        std::memcpy(report->diagnosticVsSourceSha256, sourceHash, sizeof(g_EndfieldM23DiagnosticVsSourceSha256));
     }
 
     ComObject<ID3D11VertexShader> vertexShader;
@@ -209,8 +230,7 @@ static HRESULT RunValidation(ID3D11Device* device, ID3D11DeviceContext* context,
     ComObject<ID3DBlob> diagnosticVsErrors;
     HRESULT hr = S_OK;
     if (diagnosticVs) {
-        hr = D3DCompile(g_EndfieldM23DiagnosticVsSource,
-                        g_EndfieldM23DiagnosticVsSourceSize,
+        hr = D3DCompile(g_EndfieldM23DiagnosticVsSource, g_EndfieldM23DiagnosticVsSourceSize,
                         "original_m23_diagnostic_vs.hlsl", nullptr, nullptr,
                         "main", "vs_5_0", D3DCOMPILE_OPTIMIZATION_LEVEL3, 0,
                         diagnosticVsBlob.Put(), diagnosticVsErrors.Put());
@@ -298,7 +318,7 @@ static HRESULT RunValidation(ID3D11Device* device, ID3D11DeviceContext* context,
     }
     ComObject<ID3D11Buffer> pixelConstantBuffers[kResourceCount];
     float namedLowCb4[50 * 4] = {};
-    if (namedLow) {
+    if (namedLow || highProbe || highNeutral) {
         namedLowCb4[0] = 1.0f; namedLowCb4[1] = 0.0f; namedLowCb4[2] = 0.0f; namedLowCb4[3] = 0.0f;
         namedLowCb4[4] = 1.0f; namedLowCb4[5] = 0.0f; namedLowCb4[6] = 4.0f; namedLowCb4[7] = 4.14f;
         namedLowCb4[9] = 1.0f;
@@ -311,9 +331,77 @@ static HRESULT RunValidation(ID3D11Device* device, ID3D11DeviceContext* context,
         namedLowCb4[32] = 1.0f;
         namedLowCb4[36] = -1.0f; namedLowCb4[37] = 1.5f; namedLowCb4[38] = 0.82f; namedLowCb4[39] = -0.1f;
     }
+    if (highProbe) {
+        if (probeRegister < 10u || probeRegister >= 44u || probeComponent >= 4u) return E_INVALIDARG;
+        std::fill(std::begin(namedLowCb4), std::end(namedLowCb4), 0.0f);
+        namedLowCb4[probeRegister * 4u + probeComponent] = 1.0f;
+    }
+    if (highBaseline) {
+        std::fill(std::begin(namedLowCb4), std::end(namedLowCb4), 0.0f);
+        // Keep the already-proven low cb4 contract fixed while probing only
+        // high register/component effects.
+        namedLowCb4[0] = 1.0f;
+        namedLowCb4[4] = 1.0f; namedLowCb4[6] = 4.0f; namedLowCb4[7] = 4.14f;
+        namedLowCb4[9] = 1.0f;
+        namedLowCb4[12] = 1.0f;
+        namedLowCb4[16] = 0.3080313f; namedLowCb4[17] = 0.83496046f; namedLowCb4[18] = 0.9547169f; namedLowCb4[19] = 1.0f;
+        namedLowCb4[22] = 1.0f;
+        namedLowCb4[24] = 0.0f; namedLowCb4[25] = 0.0f; namedLowCb4[26] = 1.0f; namedLowCb4[27] = 0.0f;
+        namedLowCb4[28] = -1.0f; namedLowCb4[29] = 8.742278e-08f; namedLowCb4[30] = -8.742278e-08f; namedLowCb4[31] = -1.0f;
+        namedLowCb4[32] = 1.0f;
+        namedLowCb4[36] = -1.0f; namedLowCb4[37] = 1.5f; namedLowCb4[38] = 0.82f; namedLowCb4[39] = -0.1f;
+        const std::uint32_t reads[][2] = {
+            {11,0},{11,2},{12,0},{12,1},{17,0},{17,1},{17,2},{18,0},{18,1},{18,2},
+            {23,0},{23,1},{23,2},{24,0},{24,1},{24,2},{28,0},{28,1},{28,2},{29,0},{29,1},{29,2},
+            {33,0},{33,1},{33,2},{33,3},{34,0},{34,1},{34,2},{34,3},{35,0},
+            {36,0},{36,1},{36,2},{36,3},{37,1},{37,2},{37,3},{38,0},{38,1},{38,2},{38,3},
+            {39,0},{39,1},{39,2},{39,3},{40,0},{40,1},{40,2},{40,3},
+            {42,0},{42,1},{42,2},{42,3},{43,0},{43,1},{43,2}
+        };
+        for (const auto& read : reads) namedLowCb4[read[0] * 4u + read[1]] = 1.0f;
+        // Keep the only reflected interpolation denominator finite while
+        // retaining a register-level numerical probe (not a property value).
+        namedLowCb4[34 * 4u + 1] = 0.0f;
+        namedLowCb4[34 * 4u + 2] = 1.0f;
+        namedLowCb4[34 * 4u + 3] = 0.0f;
+        namedLowCb4[35 * 4u + 0] = 1.0f;
+        auto clearGroup = [&](std::uint32_t first, std::uint32_t last) {
+            for (std::uint32_t index = first; index <= last; ++index)
+                for (std::uint32_t component = 0; component < 4; ++component)
+                    namedLowCb4[index * 4u + component] = 0.0f;
+        };
+        if (ablationGroupMask & 1u) clearGroup(11, 29);
+        if (ablationGroupMask & 2u) clearGroup(33, 40);
+        if (ablationGroupMask & 4u) clearGroup(42, 43);
+        report->highBaselineValueMask = 1u;
+    }
+    if (highNeutral) {
+        // Numerical-domain baseline from the decompiled causal chain only:
+        // retain named-low cb4[0..9], then set the minimum finite/nonzero
+        // high-register combination. These are register probes, not material
+        // property recovery claims.
+        namedLowCb4[33 * 4u + 0] = 1.0f;
+        namedLowCb4[33 * 4u + 2] = 1.0f;
+        namedLowCb4[34 * 4u + 0] = 0.0f;
+        namedLowCb4[36 * 4u + 3] = 0.0f;
+        namedLowCb4[37 * 4u + 1] = 0.0f;
+        namedLowCb4[42 * 4u + 3] = 1.0f;
+        report->highNeutralDomainMask = 1u;
+    }
+    if (highNeutralOverrideMask) {
+        if (highNeutralOverrideMask & ~3u) return E_INVALIDARG;
+        if (highNeutralOverrideMask & 1u) namedLowCb4[1 * 4u + 1] = 1.0f; // A: force r6=1
+        if (highNeutralOverrideMask & 2u) namedLowCb4[0] = 0.0f; // B: bypass dither fallback
+    }
     for (std::uint32_t i = 0; i < kResourceCount; ++i) {
-        hr = CreateConstantBuffer(device, kPsConstantBufferFloats4[i], &pixelConstantBuffers[i],
-                                  namedLow && i == 4 ? namedLowCb4 : nullptr);
+        float b2Gate[5 * 4] = {};
+        if (highBaseline || highNeutral) {
+            b2Gate[4 * 4] = 1.0f; // exact PS b2[4].x dither gate, not a material guess
+            report->diagnosticB2GateMask = 1u;
+        }
+        const void* initial = (namedLow || highProbe || highBaseline) && i == 4 ? namedLowCb4 :
+                              ((highBaseline || highNeutral) && i == 2 ? b2Gate : nullptr);
+        hr = CreateConstantBuffer(device, kPsConstantBufferFloats4[i], &pixelConstantBuffers[i], initial);
         if (FAILED(hr)) {
             return hr;
         }
@@ -356,9 +444,10 @@ static HRESULT RunValidation(ID3D11Device* device, ID3D11DeviceContext* context,
     }
 
     ComObject<ID3D11ShaderResourceView> shaderResources[kResourceCount];
+    ComObject<ID3D11Texture2D> textureResources[kResourceCount];
     ComObject<ID3D11SamplerState> samplers[kResourceCount];
     for (std::uint32_t i = 0; i < kResourceCount; ++i) {
-        hr = CreateSimpleTextureAndView(device, i, &shaderResources[i]);
+        hr = CreateSimpleTextureAndView(device, i, &shaderResources[i], &textureResources[i]);
         if (FAILED(hr)) {
             return hr;
         }
@@ -368,6 +457,27 @@ static HRESULT RunValidation(ID3D11Device* device, ID3D11DeviceContext* context,
             return hr;
         }
         report->samplerMask |= 1u << i;
+    }
+    // Verify the synthetic PS t0 upload independently of shader execution by
+    // copying its R32G32B32A32_FLOAT texel through a staging resource.
+    D3D11_TEXTURE2D_DESC t0Desc = {};
+    textureResources[0]->GetDesc(&t0Desc);
+    t0Desc.Usage = D3D11_USAGE_STAGING;
+    t0Desc.BindFlags = 0;
+    t0Desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+    ComObject<ID3D11Texture2D> t0Staging;
+    hr = device->CreateTexture2D(&t0Desc, nullptr, t0Staging.Put());
+    if (FAILED(hr)) return hr;
+    context->CopyResource(t0Staging.Get(), textureResources[0].Get());
+    context->Flush();
+    D3D11_MAPPED_SUBRESOURCE t0Mapped = {};
+    hr = context->Map(t0Staging.Get(), 0, D3D11_MAP_READ, 0, &t0Mapped);
+    if (SUCCEEDED(hr)) {
+        const float expectedT0[4] = {0.2f, 0.3f, 0.5f, 1.0f};
+        report->syntheticT0ReadbackMask = std::memcmp(t0Mapped.pData, expectedT0, sizeof(expectedT0)) == 0 ? 1u : 0u;
+        report->syntheticT0HashMask = Sha256Hex(t0Mapped.pData, sizeof(expectedT0), report->syntheticT0Sha256) &&
+            std::strcmp(report->syntheticT0Sha256, "79d150341d202e41e084c9464cd650984e62925427e18291cd750ecaa2cdbf03") == 0 ? 1u : 0u;
+        context->Unmap(t0Staging.Get(), 0);
     }
 
     D3D11_RASTERIZER_DESC rasterizerDescription = {};
@@ -475,6 +585,7 @@ static HRESULT RunValidation(ID3D11Device* device, ID3D11DeviceContext* context,
     D3D11_TEXTURE2D_DESC stagingDesc = targetDesc; stagingDesc.Usage = D3D11_USAGE_STAGING; stagingDesc.BindFlags = 0; stagingDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
     ComObject<ID3D11Texture2D> staging; hr = device->CreateTexture2D(&stagingDesc, nullptr, staging.Put()); if (FAILED(hr)) return hr; context->CopyResource(staging.Get(), target.Get()); context->Flush(); D3D11_MAPPED_SUBRESOURCE mapped = {}; hr = context->Map(staging.Get(), 0, D3D11_MAP_READ, 0, &mapped); if (SUCCEEDED(hr)) { std::memcpy(report->readback, mapped.pData, sizeof(report->readback)); context->Unmap(staging.Get(), 0); report->readbackFinite = (std::isfinite(report->readback[0]) && std::isfinite(report->readback[1]) && std::isfinite(report->readback[2]) && std::isfinite(report->readback[3])) ? 1u : 0u; report->readbackChanged = (std::memcmp(report->readback, sentinel, sizeof(sentinel)) != 0) ? 1u : 0u; const float zero[4] = {}; report->readbackChangedFromZero = (std::memcmp(report->readback, zero, sizeof(zero)) != 0) ? 1u : 0u; }
     report->visualFidelityClaim = 0u;
+    if (highProbe || highBaseline) report->highProbeExecutionMask = report->readbackFinite == 1u ? 1u : 0u;
     const bool commonComplete = report->shaderMask == 3u &&
             report->vertexConstantBufferMask == kAllResourcesMask &&
             report->pixelConstantBufferMask == kAllResourcesMask &&
@@ -502,25 +613,64 @@ static HRESULT RunValidation(ID3D11Device* device, ID3D11DeviceContext* context,
     const bool namedLowComplete = diagnosticComplete && report->mode == 2u &&
         report->namedLowMaterialHashMask == 1u && report->namedLowContractHashMask == 1u &&
         report->namedLowComponentMapMask == 1u;
-    return (namedLow ? namedLowComplete : (diagnosticVs ? diagnosticComplete : exactComplete)) ? S_OK : E_FAIL;
+    const bool highProbeComplete = diagnosticComplete && report->mode == 3u &&
+        report->highProbeExecutionMask == 1u;
+    const bool highBaselineComplete = diagnosticComplete && report->mode == 4u &&
+        report->highProbeExecutionMask == 1u && report->highBaselineValueMask == 1u &&
+        report->diagnosticB2GateMask == 1u;
+    const bool highNeutralComplete = diagnosticComplete && report->mode == 5u &&
+        report->highNeutralDomainMask == 1u && report->diagnosticB2GateMask == 1u;
+    const bool highNeutralOverrideComplete = diagnosticComplete && report->mode == 6u &&
+        report->highNeutralDomainMask == 1u && report->highNeutralOverrideMask != 0u &&
+        report->diagnosticB2GateMask == 1u;
+    return (highNeutralOverrideMask ? highNeutralOverrideComplete : (highNeutral ? highNeutralComplete : (highBaseline ? highBaselineComplete : (highProbe ? highProbeComplete : (namedLow ? namedLowComplete : (diagnosticVs ? diagnosticComplete : exactComplete)))))) ? S_OK : E_FAIL;
 }
 
 extern "C" __declspec(dllexport) HRESULT __cdecl EndfieldOriginalM23DxbcValidate(
     ID3D11Device* device, ID3D11DeviceContext* context,
     EndfieldM23DxbcValidation* report) {
-    return RunValidation(device, context, report, false, false);
+    return RunValidation(device, context, report, false, false, false, false, false, 0, 0, 0, 0);
 }
 
 extern "C" __declspec(dllexport) HRESULT __cdecl EndfieldOriginalM23DxbcValidateDiagnosticVs(
     ID3D11Device* device, ID3D11DeviceContext* context,
     EndfieldM23DxbcValidation* report) {
-    return RunValidation(device, context, report, true, false);
+    return RunValidation(device, context, report, true, false, false, false, false, 0, 0, 0, 0);
 }
 
 extern "C" __declspec(dllexport) HRESULT __cdecl EndfieldOriginalM23DxbcValidateDiagnosticVsNamedLow(
     ID3D11Device* device, ID3D11DeviceContext* context,
     EndfieldM23DxbcValidation* report) {
-    return RunValidation(device, context, report, true, true);
+    return RunValidation(device, context, report, true, true, false, false, false, 0, 0, 0, 0);
+}
+
+extern "C" __declspec(dllexport) HRESULT __cdecl EndfieldOriginalM23DxbcValidateHighProbe(
+    ID3D11Device* device, ID3D11DeviceContext* context,
+    EndfieldM23DxbcValidation* report, std::uint32_t probeRegister,
+    std::uint32_t probeComponent) {
+    return RunValidation(device, context, report, true, false, true, false, false, 0,
+                         probeRegister, probeComponent, 0);
+}
+
+extern "C" __declspec(dllexport) HRESULT __cdecl EndfieldOriginalM23DxbcValidateHighBaseline(
+    ID3D11Device* device, ID3D11DeviceContext* context,
+    EndfieldM23DxbcValidation* report, std::uint32_t ablationGroupMask) {
+    return RunValidation(device, context, report, true, false, false, true, false, 0,
+                         0, 0, ablationGroupMask);
+}
+
+extern "C" __declspec(dllexport) HRESULT __cdecl EndfieldOriginalM23DxbcValidateHighNeutral(
+    ID3D11Device* device, ID3D11DeviceContext* context,
+    EndfieldM23DxbcValidation* report) {
+    return RunValidation(device, context, report, true, false, false, false, true, 0,
+                         0, 0, 0);
+}
+
+extern "C" __declspec(dllexport) HRESULT __cdecl EndfieldOriginalM23DxbcValidateHighNeutralOverride(
+    ID3D11Device* device, ID3D11DeviceContext* context,
+    EndfieldM23DxbcValidation* report, std::uint32_t overrideMask) {
+    return RunValidation(device, context, report, true, false, false, false, true, overrideMask,
+                         0, 0, 0);
 }
 
 extern "C" __declspec(dllexport) std::uint32_t __cdecl EndfieldOriginalM23DxbcGetVsConstantBufferCount() {
