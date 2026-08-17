@@ -222,6 +222,35 @@ namespace EndfieldGraphShaderLab
             public bool sourceRepublishNoFieldChanges;
             public bool sourceRepublishAdmission;
             public string sourceRepublishContract;
+            public bool sourceOperationMode;
+            public string sourceOperationKind;
+            public string sourceOperationSequence;
+            public bool sourceOperationOriginalCaptured;
+            public bool sourceOperationAfterCaptured;
+            public bool sourceOperationParticleValuesEqual;
+            public bool sourceOperationCustom1Equal;
+            public bool sourceOperationNoPublicValueChanges;
+            public bool sourceOperationMeshReferenceSame;
+            public bool sourceOperationMaterialReferenceSame;
+            public bool sourceOperationRendererEnabledAfter;
+            public bool sourceOperationAdmission;
+            public bool sourceCombinationMode;
+            public string sourceCombinationKind;
+            public string sourceCombinationSequence;
+            public bool sourceCombinationMaterialRequested;
+            public bool sourceCombinationGpuInstancingOffRequested;
+            public bool sourceCombinationBasicStreamsRequested;
+            public bool sourceCombinationMaterialSetupClosed;
+            public bool sourceCombinationGpuSetupClosed;
+            public bool sourceCombinationStreamsSetupClosed;
+            public bool sourceCombinationAdmission;
+            public bool sourceReadSyncMode;
+            public string sourceReadSyncOperation;
+            public string sourceReadSyncSequence;
+            public bool sourceReadSyncOperationCompleted;
+            public int sourceReadSyncReturnedCount;
+            public bool sourceReadSyncRendererSetupClosed;
+            public bool sourceReadSyncAdmission;
             public int particleCount;
             public int[] activeVertexStreamIds;
             public string[] activeVertexStreams;
@@ -289,6 +318,9 @@ namespace EndfieldGraphShaderLab
         private ParticleSystem targetSystem;
         private ParticleSystemRenderer targetRenderer;
         private Mesh sourceMeshBeforeOverride;
+        private Material sourceOperationMaterialReference;
+        private bool sourceReadSyncOperationCompleted;
+        private int sourceReadSyncReturnedCount = -1;
         private ParticleSystem.Particle sourceManualParticle;
         private bool sourceManualParticlePublished;
         private ParticleSystem.Particle[] sourceFieldOriginalParticles;
@@ -400,6 +432,20 @@ namespace EndfieldGraphShaderLab
             SourceFieldVelocity,
             SourceFieldCustom1,
             SourceRepublishIdentical,
+            SourceOperationSetParticlesIdentical,
+            SourceOperationSetCustom1Identical,
+            SourceOperationRendererToggle,
+            SourceOperationMeshReassign,
+            SourceOperationMaterialReassign,
+            SourceOperationPausePlay,
+            SourceOperationNone,
+            SourceCombinationMaterialGpu,
+            SourceCombinationMaterialStreams,
+            SourceCombinationGpuStreams,
+            SourceCombinationAll,
+            SourceReadParticles,
+            SourceReadCustom1,
+            SourceReadPause,
         }
 
         private enum SourceFieldFamily
@@ -642,12 +688,24 @@ namespace EndfieldGraphShaderLab
                     ? 0.0f
                     : TargetLocalSeconds;
                 serializedRandomSeed = targetSystem.randomSeed;
-                if (captureMode == CaptureMode.SourceRepublishIdentical)
+                if (IsSourceReadSyncMode(captureMode))
+                {
+                    ResetAndSimulate(targetSystem, simulationSeconds);
+                    ApplySourceCombination(CaptureMode.SourceCombinationAll);
+                    ApplySourceReadSync(captureMode);
+                }
+                else if (IsSourceCombinationMode(captureMode))
+                {
+                    ResetAndSimulate(targetSystem, simulationSeconds);
+                    ApplySourceCombination(captureMode);
+                }
+                else if (IsSourceOperationMode(captureMode))
                 {
                     PrepareSourceFieldRenderer();
                     ResetAndSimulate(targetSystem, simulationSeconds);
+                    targetSystem.Pause(false);
                     CaptureOriginalSourceFieldParticles();
-                    RepublishOriginalSourceParticles();
+                    ApplySourceOperation(captureMode);
                 }
                 else if (IsSourceFieldAblationMode(captureMode))
                 {
@@ -670,7 +728,9 @@ namespace EndfieldGraphShaderLab
                     ResetAndSimulate(targetSystem, simulationSeconds);
                 else
                     setupPassed = true;
-                if (captureMode == CaptureMode.SourceRepublishIdentical ||
+                if (IsSourceReadSyncMode(captureMode) ||
+                    IsSourceCombinationMode(captureMode) ||
+                    IsSourceOperationMode(captureMode) ||
                     IsSourceFieldAblationMode(captureMode) ||
                     captureMode == CaptureMode.SourceManualParticle)
                 {
@@ -884,6 +944,7 @@ namespace EndfieldGraphShaderLab
                 "The source field-ablation compatibility material is missing or unsupported.");
             targetRenderer.enabled = true;
             targetRenderer.sharedMaterial = compatibilityMaterial;
+            sourceOperationMaterialReference = targetRenderer.sharedMaterial;
             targetRenderer.enableGPUInstancing = false;
             targetRenderer.SetActiveVertexStreams(
                 new List<ParticleSystemVertexStream>
@@ -999,6 +1060,108 @@ namespace EndfieldGraphShaderLab
                 ParticleSystemCustomData.Custom1);
             targetSystem.Play(false);
             targetSystem.Pause(false);
+        }
+
+        private void ApplySourceOperation(CaptureMode captureMode)
+        {
+            switch (captureMode)
+            {
+                case CaptureMode.SourceRepublishIdentical:
+                    RepublishOriginalSourceParticles();
+                    return;
+                case CaptureMode.SourceOperationSetParticlesIdentical:
+                    targetSystem.SetParticles(
+                        sourceFieldOriginalParticles, sourceFieldOriginalParticles.Length);
+                    return;
+                case CaptureMode.SourceOperationSetCustom1Identical:
+                    targetSystem.SetCustomParticleData(
+                        sourceFieldOriginalCustom1 != null
+                            ? new List<Vector4>(sourceFieldOriginalCustom1)
+                            : new List<Vector4>(),
+                        ParticleSystemCustomData.Custom1);
+                    return;
+                case CaptureMode.SourceOperationRendererToggle:
+                    targetRenderer.enabled = false;
+                    targetRenderer.enabled = true;
+                    return;
+                case CaptureMode.SourceOperationMeshReassign:
+                    targetRenderer.mesh = sourceMeshBeforeOverride;
+                    return;
+                case CaptureMode.SourceOperationMaterialReassign:
+                    targetRenderer.sharedMaterial = sourceOperationMaterialReference;
+                    return;
+                case CaptureMode.SourceOperationPausePlay:
+                    targetSystem.Pause(false);
+                    targetSystem.Play(false);
+                    targetSystem.Pause(false);
+                    return;
+                case CaptureMode.SourceOperationNone:
+                    return;
+                default:
+                    throw new InvalidOperationException(
+                        "Unsupported source operation mode: " + captureMode);
+            }
+        }
+
+        private void ApplySourceCombination(CaptureMode captureMode)
+        {
+            bool material = SourceCombinationUsesMaterial(captureMode);
+            bool gpuOff = SourceCombinationUsesGpuOff(captureMode);
+            bool streams = SourceCombinationUsesBasicStreams(captureMode);
+            if (material)
+            {
+                Require(compatibilityMaterial != null && compatibilityMaterial.shader != null &&
+                    compatibilityMaterial.shader.isSupported,
+                    "The source combination compatibility material is missing or unsupported.");
+                targetRenderer.sharedMaterial = compatibilityMaterial;
+            }
+            if (gpuOff)
+                targetRenderer.enableGPUInstancing = false;
+            if (streams)
+            {
+                targetRenderer.SetActiveVertexStreams(
+                    new List<ParticleSystemVertexStream>
+                    {
+                        ParticleSystemVertexStream.Position,
+                        ParticleSystemVertexStream.Normal,
+                        ParticleSystemVertexStream.Color,
+                        ParticleSystemVertexStream.UV,
+                    });
+            }
+        }
+
+        private void ApplySourceReadSync(CaptureMode captureMode)
+        {
+            sourceReadSyncOperationCompleted = false;
+            sourceReadSyncReturnedCount = -1;
+            switch (captureMode)
+            {
+                case CaptureMode.SourceReadParticles:
+                    ParticleSystem.Particle[] particles =
+                        new ParticleSystem.Particle[MaximumSourceFieldParticles];
+                    sourceReadSyncReturnedCount = targetSystem.GetParticles(particles);
+                    Require(sourceReadSyncReturnedCount >= 0 &&
+                        sourceReadSyncReturnedCount <= MaximumSourceFieldParticles,
+                        "The bounded GetParticles read exceeded its limit.");
+                    sourceReadSyncOperationCompleted = true;
+                    return;
+                case CaptureMode.SourceReadCustom1:
+                    List<Vector4> custom1 = new List<Vector4>(MaximumSourceFieldParticles);
+                    sourceReadSyncReturnedCount = targetSystem.GetCustomParticleData(
+                        custom1, ParticleSystemCustomData.Custom1);
+                    Require(sourceReadSyncReturnedCount >= 0 &&
+                        sourceReadSyncReturnedCount <= MaximumSourceFieldParticles,
+                        "The bounded Custom1 read exceeded its limit.");
+                    sourceReadSyncOperationCompleted = true;
+                    return;
+                case CaptureMode.SourceReadPause:
+                    targetSystem.Pause(false);
+                    sourceReadSyncOperationCompleted = true;
+                    return;
+                default:
+                    throw new InvalidOperationException(
+                        "Unsupported source read/sync mode: " + captureMode);
+            }
         }
 
         private void PrepareSourceManualParticle()
@@ -1187,7 +1350,8 @@ namespace EndfieldGraphShaderLab
                 captureMode == CaptureMode.CompatibilityMaterial ||
                 captureMode == CaptureMode.SourceManualParticle ||
                 captureMode == CaptureMode.SourceRepublishIdentical ||
-                IsSourceFieldAblationMode(captureMode);
+                IsSourceFieldAblationMode(captureMode) ||
+                IsSourceOperationMode(captureMode);
             report.diagnosticBasicVertexStreamsOverride =
                 captureMode == CaptureMode.BasicVertexStreams;
             report.diagnosticNaturalPlaybackOverride =
@@ -1297,21 +1461,115 @@ namespace EndfieldGraphShaderLab
             report.targetUsesDiagnosticMaterial = UsesDiagnosticMaterial(targetRenderer);
             FillSourceManualParticleReport(report, captureMode);
             FillSourceFieldReport(report, captureMode);
+            FillSourceCombinationReport(report, captureMode);
+            FillSourceReadSyncReport(report, captureMode);
             FillControlReport(report, captureCamera, captureMode);
+        }
+
+        private void FillSourceReadSyncReport(CaptureReport report, CaptureMode captureMode)
+        {
+            bool active = IsSourceReadSyncMode(captureMode);
+            report.sourceReadSyncMode = active;
+            report.sourceReadSyncOperation = active
+                ? SourceReadSyncOperationName(captureMode)
+                : string.Empty;
+            report.sourceReadSyncSequence = active
+                ? SourceReadSyncSequence(captureMode)
+                : string.Empty;
+            report.sourceReadSyncOperationCompleted = active &&
+                sourceReadSyncOperationCompleted;
+            report.sourceReadSyncReturnedCount = active
+                ? sourceReadSyncReturnedCount
+                : -1;
+            if (!active)
+                return;
+
+            bool materialClosed = targetRenderer.sharedMaterial == compatibilityMaterial;
+            bool gpuClosed = !targetRenderer.enableGPUInstancing;
+            bool streamsClosed = report.activeVertexStreamIds.SequenceEqual(
+                new[] { 0, 1, 3, 4 });
+            report.sourceReadSyncRendererSetupClosed = materialClosed && gpuClosed &&
+                streamsClosed;
+            bool returnedCountClosed = captureMode == CaptureMode.SourceReadPause
+                ? sourceReadSyncReturnedCount == -1
+                : sourceReadSyncReturnedCount >= 0 &&
+                    sourceReadSyncReturnedCount <= MaximumSourceFieldParticles &&
+                    (captureMode != CaptureMode.SourceReadParticles ||
+                     sourceReadSyncReturnedCount == report.particleCount);
+            report.sourceReadSyncAdmission =
+                report.graphicsDeviceType == GraphicsDeviceType.Direct3D11.ToString() &&
+                !report.applicationIsBatchMode && report.sourceReadSyncOperationCompleted &&
+                returnedCountClosed && report.sourceReadSyncRendererSetupClosed &&
+                report.exactIdentityClosed && report.noBakeMeshContract &&
+                report.noProxyContract && !report.targetHasMeshFilter &&
+                !report.targetHasMeshRenderer && report.targetGameObjectActive &&
+                report.targetRendererEnabled && report.particleCount > 0 &&
+                sourceMeshBeforeOverride != null && targetRenderer.mesh == sourceMeshBeforeOverride &&
+                report.materialShaderSupported && report.materialPassCount > 0 &&
+                IsFinite(report.targetBoundsCenter) && IsFinite(report.targetBoundsExtents) &&
+                report.publicFrustumIntersectsBounds && report.targetRendererVisible;
+        }
+
+        private void FillSourceCombinationReport(CaptureReport report, CaptureMode captureMode)
+        {
+            bool active = IsSourceCombinationMode(captureMode);
+            report.sourceCombinationMode = active;
+            report.sourceCombinationKind = active
+                ? SourceCombinationKindName(captureMode)
+                : string.Empty;
+            report.sourceCombinationSequence = active
+                ? SourceCombinationSequence(captureMode)
+                : string.Empty;
+            if (!active)
+                return;
+
+            report.sourceCombinationMaterialRequested =
+                SourceCombinationUsesMaterial(captureMode);
+            report.sourceCombinationGpuInstancingOffRequested =
+                SourceCombinationUsesGpuOff(captureMode);
+            report.sourceCombinationBasicStreamsRequested =
+                SourceCombinationUsesBasicStreams(captureMode);
+            report.sourceCombinationMaterialSetupClosed =
+                !report.sourceCombinationMaterialRequested ||
+                targetRenderer.sharedMaterial == compatibilityMaterial;
+            report.sourceCombinationGpuSetupClosed =
+                !report.sourceCombinationGpuInstancingOffRequested ||
+                !targetRenderer.enableGPUInstancing;
+            report.sourceCombinationStreamsSetupClosed =
+                !report.sourceCombinationBasicStreamsRequested ||
+                report.activeVertexStreamIds.SequenceEqual(new[] { 0, 1, 3, 4 });
+            report.sourceCombinationAdmission =
+                report.graphicsDeviceType == GraphicsDeviceType.Direct3D11.ToString() &&
+                !report.applicationIsBatchMode && report.exactIdentityClosed &&
+                report.noBakeMeshContract && report.noProxyContract &&
+                !report.targetHasMeshFilter && !report.targetHasMeshRenderer &&
+                report.targetGameObjectActive && report.targetRendererEnabled &&
+                report.particleCount > 0 && sourceMeshBeforeOverride != null &&
+                targetRenderer.mesh == sourceMeshBeforeOverride &&
+                report.sourceCombinationMaterialSetupClosed &&
+                report.sourceCombinationGpuSetupClosed &&
+                report.sourceCombinationStreamsSetupClosed &&
+                report.materialShaderSupported && report.materialPassCount > 0 &&
+                IsFinite(report.targetBoundsCenter) && IsFinite(report.targetBoundsExtents) &&
+                report.publicFrustumIntersectsBounds && report.targetRendererVisible;
         }
 
         private void FillSourceFieldReport(CaptureReport report, CaptureMode captureMode)
         {
             bool republish = captureMode == CaptureMode.SourceRepublishIdentical;
-            bool active = IsSourceFieldAblationMode(captureMode) || republish;
+            bool operation = IsSourceOperationMode(captureMode);
+            bool active = IsSourceFieldAblationMode(captureMode) || operation;
             report.sourceFieldFamily = republish
                 ? "republish-identical"
                 : active ? SourceFieldFamilyName(SourceFieldFamilyForMode(captureMode)) : string.Empty;
             report.sourceRepublishIdenticalMode = republish;
+            report.sourceOperationMode = operation;
+            report.sourceOperationKind = operation ? SourceOperationKindName(captureMode) : string.Empty;
+            report.sourceOperationSequence = operation ? SourceOperationSequence(captureMode) : string.Empty;
             report.sourceFieldContract =
                 "exact source ParticleSystem/ParticleSystemRenderer/mesh; original simulated " +
-                (republish
-                    ? "particles captured before identical public-API republish; "
+                (operation
+                    ? "particles captured before one operation-only public-API sequence; "
                     : "particles captured before one-family public-API ablation; ") +
                 "compatibility material; " +
                 "GPU instancing off; basic Position/Normal/Color/UV streams; bounded to " +
@@ -1375,6 +1633,25 @@ namespace EndfieldGraphShaderLab
                     "Clear; SetParticles(original rows); SetCustomParticleData(original Custom1); " +
                     "no public particle field mutation; exact component/mesh/material/stream admission";
             }
+            if (operation)
+            {
+                report.sourceOperationOriginalCaptured = report.sourceFieldOriginalCaptured;
+                report.sourceOperationAfterCaptured = report.sourceFieldAfterCaptured;
+                report.sourceOperationParticleValuesEqual =
+                    ParticleSnapshotsExactlyEqual(
+                        report.sourceFieldBefore, report.sourceFieldAfter);
+                report.sourceOperationCustom1Equal = CustomDataExactlyEqual(
+                    report.sourceFieldCustom1Before, report.sourceFieldCustom1After);
+                report.sourceOperationNoPublicValueChanges =
+                    report.sourceOperationParticleValuesEqual &&
+                    report.sourceOperationCustom1Equal;
+                report.sourceOperationMeshReferenceSame = targetRenderer != null &&
+                    targetRenderer.mesh == sourceMeshBeforeOverride;
+                report.sourceOperationMaterialReferenceSame = targetRenderer != null &&
+                    targetRenderer.sharedMaterial == sourceOperationMaterialReference;
+                report.sourceOperationRendererEnabledAfter = targetRenderer != null &&
+                    targetRenderer.enabled;
+            }
             report.sourceFieldAdmission = report.sourceFieldOriginalCaptured &&
                 !republish &&
                 report.sourceFieldAfterCaptured && report.sourceFieldRequestedFamilyChanged &&
@@ -1400,6 +1677,21 @@ namespace EndfieldGraphShaderLab
                 report.particleCount == sourceFieldOriginalParticleCount &&
                 sourceMeshBeforeOverride != null && targetRenderer.mesh == sourceMeshBeforeOverride &&
                 report.diagnosticCompatibilityMaterialOverride &&
+                report.materialShaderSupported && report.materialPassCount > 0 &&
+                !targetRenderer.enableGPUInstancing &&
+                report.activeVertexStreamIds.SequenceEqual(new[] { 0, 1, 3, 4 }) &&
+                IsFinite(report.targetBoundsCenter) && IsFinite(report.targetBoundsExtents) &&
+                report.publicFrustumIntersectsBounds && report.targetRendererVisible;
+            report.sourceOperationAdmission = operation &&
+                report.sourceOperationOriginalCaptured && report.sourceOperationAfterCaptured &&
+                report.sourceOperationNoPublicValueChanges && report.exactIdentityClosed &&
+                report.noBakeMeshContract && report.noProxyContract &&
+                !report.targetHasMeshFilter && !report.targetHasMeshRenderer &&
+                report.targetGameObjectActive && report.targetRendererEnabled &&
+                report.particleCount == sourceFieldOriginalParticleCount &&
+                report.sourceOperationMeshReferenceSame &&
+                report.sourceOperationMaterialReferenceSame &&
+                report.sourceOperationRendererEnabledAfter &&
                 report.materialShaderSupported && report.materialPassCount > 0 &&
                 !targetRenderer.enableGPUInstancing &&
                 report.activeVertexStreamIds.SequenceEqual(new[] { 0, 1, 3, 4 }) &&
@@ -2004,6 +2296,15 @@ namespace EndfieldGraphShaderLab
             if (captureMode == CaptureMode.SourceRepublishIdentical)
                 return report.graphicsDeviceType == GraphicsDeviceType.Direct3D11.ToString() &&
                     !report.applicationIsBatchMode && report.sourceRepublishAdmission;
+            if (IsSourceOperationMode(captureMode))
+                return report.graphicsDeviceType == GraphicsDeviceType.Direct3D11.ToString() &&
+                    !report.applicationIsBatchMode && report.sourceOperationAdmission;
+            if (IsSourceCombinationMode(captureMode))
+                return report.graphicsDeviceType == GraphicsDeviceType.Direct3D11.ToString() &&
+                    !report.applicationIsBatchMode && report.sourceCombinationAdmission;
+            if (IsSourceReadSyncMode(captureMode))
+                return report.graphicsDeviceType == GraphicsDeviceType.Direct3D11.ToString() &&
+                    !report.applicationIsBatchMode && report.sourceReadSyncAdmission;
             if (captureMode == CaptureMode.Positive ||
                 captureMode == CaptureMode.SortingFudgeZero ||
                 captureMode == CaptureMode.GpuInstancingOff ||
@@ -2140,6 +2441,20 @@ namespace EndfieldGraphShaderLab
                 case "source-field-velocity": return CaptureMode.SourceFieldVelocity;
                 case "source-field-custom1": return CaptureMode.SourceFieldCustom1;
                 case "source-republish-identical": return CaptureMode.SourceRepublishIdentical;
+                case "source-operation-setparticles-identical": return CaptureMode.SourceOperationSetParticlesIdentical;
+                case "source-operation-custom1-identical": return CaptureMode.SourceOperationSetCustom1Identical;
+                case "source-operation-renderer-toggle": return CaptureMode.SourceOperationRendererToggle;
+                case "source-operation-mesh-reassign": return CaptureMode.SourceOperationMeshReassign;
+                case "source-operation-material-reassign": return CaptureMode.SourceOperationMaterialReassign;
+                case "source-operation-pause-play": return CaptureMode.SourceOperationPausePlay;
+                case "source-operation-none": return CaptureMode.SourceOperationNone;
+                case "source-combination-material-gpu": return CaptureMode.SourceCombinationMaterialGpu;
+                case "source-combination-material-streams": return CaptureMode.SourceCombinationMaterialStreams;
+                case "source-combination-gpu-streams": return CaptureMode.SourceCombinationGpuStreams;
+                case "source-combination-all": return CaptureMode.SourceCombinationAll;
+                case "source-read-particles": return CaptureMode.SourceReadParticles;
+                case "source-read-custom1": return CaptureMode.SourceReadCustom1;
+                case "source-read-pause": return CaptureMode.SourceReadPause;
                 default: return CaptureMode.Positive;
             }
         }
@@ -2152,6 +2467,147 @@ namespace EndfieldGraphShaderLab
                 captureMode == CaptureMode.SourceFieldRotation ||
                 captureMode == CaptureMode.SourceFieldVelocity ||
                 captureMode == CaptureMode.SourceFieldCustom1;
+        }
+
+        private static bool IsSourceOperationMode(CaptureMode captureMode)
+        {
+            return captureMode == CaptureMode.SourceRepublishIdentical ||
+                captureMode == CaptureMode.SourceOperationSetParticlesIdentical ||
+                captureMode == CaptureMode.SourceOperationSetCustom1Identical ||
+                captureMode == CaptureMode.SourceOperationRendererToggle ||
+                captureMode == CaptureMode.SourceOperationMeshReassign ||
+                captureMode == CaptureMode.SourceOperationMaterialReassign ||
+                captureMode == CaptureMode.SourceOperationPausePlay ||
+                captureMode == CaptureMode.SourceOperationNone;
+        }
+
+        private static bool IsSourceCombinationMode(CaptureMode captureMode)
+        {
+            return captureMode == CaptureMode.SourceCombinationMaterialGpu ||
+                captureMode == CaptureMode.SourceCombinationMaterialStreams ||
+                captureMode == CaptureMode.SourceCombinationGpuStreams ||
+                captureMode == CaptureMode.SourceCombinationAll;
+        }
+
+        private static bool IsSourceReadSyncMode(CaptureMode captureMode)
+        {
+            return captureMode == CaptureMode.SourceReadParticles ||
+                captureMode == CaptureMode.SourceReadCustom1 ||
+                captureMode == CaptureMode.SourceReadPause;
+        }
+
+        private static string SourceReadSyncOperationName(CaptureMode captureMode)
+        {
+            switch (captureMode)
+            {
+                case CaptureMode.SourceReadParticles: return "GetParticles-bounded";
+                case CaptureMode.SourceReadCustom1: return "GetCustomParticleData-Custom1-bounded";
+                case CaptureMode.SourceReadPause: return "Pause-only";
+                default: return string.Empty;
+            }
+        }
+
+        private static string SourceReadSyncSequence(CaptureMode captureMode)
+        {
+            switch (captureMode)
+            {
+                case CaptureMode.SourceReadParticles:
+                    return "ResetAndSimulate; setup(material+gpu-off+basic-streams); GetParticles(bounded)";
+                case CaptureMode.SourceReadCustom1:
+                    return "ResetAndSimulate; setup(material+gpu-off+basic-streams); GetCustomParticleData(Custom1,bounded)";
+                case CaptureMode.SourceReadPause:
+                    return "ResetAndSimulate; setup(material+gpu-off+basic-streams); Pause(false)";
+                default: return string.Empty;
+            }
+        }
+
+        private static bool SourceCombinationUsesMaterial(CaptureMode captureMode)
+        {
+            return captureMode == CaptureMode.SourceCombinationMaterialGpu ||
+                captureMode == CaptureMode.SourceCombinationMaterialStreams ||
+                captureMode == CaptureMode.SourceCombinationAll;
+        }
+
+        private static bool SourceCombinationUsesGpuOff(CaptureMode captureMode)
+        {
+            return captureMode == CaptureMode.SourceCombinationMaterialGpu ||
+                captureMode == CaptureMode.SourceCombinationGpuStreams ||
+                captureMode == CaptureMode.SourceCombinationAll;
+        }
+
+        private static bool SourceCombinationUsesBasicStreams(CaptureMode captureMode)
+        {
+            return captureMode == CaptureMode.SourceCombinationMaterialStreams ||
+                captureMode == CaptureMode.SourceCombinationGpuStreams ||
+                captureMode == CaptureMode.SourceCombinationAll;
+        }
+
+        private static string SourceCombinationKindName(CaptureMode captureMode)
+        {
+            switch (captureMode)
+            {
+                case CaptureMode.SourceCombinationMaterialGpu: return "material+gpu-off";
+                case CaptureMode.SourceCombinationMaterialStreams: return "material+basic-streams";
+                case CaptureMode.SourceCombinationGpuStreams: return "gpu-off+basic-streams";
+                case CaptureMode.SourceCombinationAll: return "material+gpu-off+basic-streams";
+                default: return string.Empty;
+            }
+        }
+
+        private static string SourceCombinationSequence(CaptureMode captureMode)
+        {
+            switch (captureMode)
+            {
+                case CaptureMode.SourceCombinationMaterialGpu:
+                    return "ResetAndSimulate; sharedMaterial=compatibility; enableGPUInstancing=false";
+                case CaptureMode.SourceCombinationMaterialStreams:
+                    return "ResetAndSimulate; sharedMaterial=compatibility; SetActiveVertexStreams(Position,Normal,Color,UV)";
+                case CaptureMode.SourceCombinationGpuStreams:
+                    return "ResetAndSimulate; enableGPUInstancing=false; SetActiveVertexStreams(Position,Normal,Color,UV)";
+                case CaptureMode.SourceCombinationAll:
+                    return "ResetAndSimulate; sharedMaterial=compatibility; enableGPUInstancing=false; SetActiveVertexStreams(Position,Normal,Color,UV)";
+                default: return string.Empty;
+            }
+        }
+
+        private static string SourceOperationKindName(CaptureMode captureMode)
+        {
+            switch (captureMode)
+            {
+                case CaptureMode.SourceRepublishIdentical: return "clear-setparticles-identical";
+                case CaptureMode.SourceOperationSetParticlesIdentical: return "setparticles-identical";
+                case CaptureMode.SourceOperationSetCustom1Identical: return "setcustom1-identical";
+                case CaptureMode.SourceOperationRendererToggle: return "renderer-disable-enable";
+                case CaptureMode.SourceOperationMeshReassign: return "mesh-reassign-same-reference";
+                case CaptureMode.SourceOperationMaterialReassign: return "material-reassign-same-reference";
+                case CaptureMode.SourceOperationPausePlay: return "pause-play";
+                case CaptureMode.SourceOperationNone: return "none";
+                default: return string.Empty;
+            }
+        }
+
+        private static string SourceOperationSequence(CaptureMode captureMode)
+        {
+            switch (captureMode)
+            {
+                case CaptureMode.SourceRepublishIdentical:
+                    return "Stop; Clear; SetParticles(original); SetCustomParticleData(original); Play; Pause";
+                case CaptureMode.SourceOperationSetParticlesIdentical:
+                    return "SetParticles(original)";
+                case CaptureMode.SourceOperationSetCustom1Identical:
+                    return "SetCustomParticleData(original)";
+                case CaptureMode.SourceOperationRendererToggle:
+                    return "ParticleSystemRenderer.enabled=false; enabled=true";
+                case CaptureMode.SourceOperationMeshReassign:
+                    return "ParticleSystemRenderer.mesh=originalMesh";
+                case CaptureMode.SourceOperationMaterialReassign:
+                    return "ParticleSystemRenderer.sharedMaterial=originalMaterial";
+                case CaptureMode.SourceOperationPausePlay:
+                    return "Pause(false); Play(false); Pause(false)";
+                case CaptureMode.SourceOperationNone:
+                    return "none";
+                default: return string.Empty;
+            }
         }
 
         private static SourceFieldFamily SourceFieldFamilyForMode(CaptureMode captureMode)
@@ -2219,6 +2675,20 @@ namespace EndfieldGraphShaderLab
                 case "source-field-velocity": return "bounded source-field ablation: only velocity fields replaced after original particle capture";
                 case "source-field-custom1": return "bounded source-field ablation: only Custom1 data replaced after original particle capture";
                 case "source-republish-identical": return "component-admission differential: original particle rows and Custom1 republished without field changes";
+                case "source-operation-setparticles-identical": return "operation-only differential: SetParticles(original) without Clear";
+                case "source-operation-custom1-identical": return "operation-only differential: SetCustomParticleData(original) only";
+                case "source-operation-renderer-toggle": return "operation-only differential: renderer disable/enable only";
+                case "source-operation-mesh-reassign": return "operation-only differential: mesh reassigned to the same reference";
+                case "source-operation-material-reassign": return "operation-only differential: material reassigned to the same reference";
+                case "source-operation-pause-play": return "operation-only differential: Pause/Play only";
+                case "source-operation-none": return "operation-only baseline: no post-capture operation";
+                case "source-combination-material-gpu": return "renderer setup combination: compatibility material + GPU instancing off";
+                case "source-combination-material-streams": return "renderer setup combination: compatibility material + basic streams";
+                case "source-combination-gpu-streams": return "renderer setup combination: GPU instancing off + basic streams";
+                case "source-combination-all": return "renderer setup combination: compatibility material + GPU instancing off + basic streams";
+                case "source-read-particles": return "read/sync isolation: bounded GetParticles only after fixed renderer setup";
+                case "source-read-custom1": return "read/sync isolation: bounded GetCustomParticleData(Custom1) only after fixed renderer setup";
+                case "source-read-pause": return "read/sync isolation: Pause(false) only after fixed renderer setup";
                 default: return "positive: target renderer must be visible with particles";
             }
         }

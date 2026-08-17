@@ -4699,32 +4699,36 @@ The standalone Li M23 source-renderer capture probe now isolates
 `start_04_2/xuanzhuan03` in a normal D3D11 player and explicitly forbids
 BakeMesh and MeshRenderer proxies. Hidden-window runs are not valid admission
 evidence because Unity does not execute normal camera rendering there. Use the
-opt-in foreground-window flag, a time-based DXCap frame (currently 7 seconds),
-and the matching runtime JSON. With that protocol the serialized camera
+opt-in foreground-window flag and the matching runtime JSON. With that protocol the serialized camera
 sentinel, ordinary Billboard control, exact-source-mesh control, and a manual
 particle on the exact source component all submit normally.
 
-The decisive mode is `source-republish-identical`. It captures the two original
-simulated particle rows plus Custom1, clears the system, republishes the same
-values through `SetParticles`/`SetCustomParticleData`, and fails closed unless
-all reported public values remain exactly equal. Its runtime report passes and
-DXCap adds the expected two-particle `DrawIndexed(3456)` at stride 36. Separate
-lifetime, size, rotation, and Custom1 modes produce the same draw; color and
-velocity are already white and zero. The missing boundary is therefore not a
-tested public particle value, SRP, Mesh mode, or the source mesh. Identical
-public-API republishing reconstructs internal renderer-consumable state that
-the recovered simulation path does not establish.
+`source-republish-identical` remains a useful strict-equality control, but it
+is not required for submission. The source rows have only about 1.86 and 1.29
+seconds of remaining lifetime after the target sample. A no-read, no-pause,
+no-republish time sweep captures both original rows as `DrawIndexed(3456)` from
+3.0 through 4.25 seconds after launch, one row as `DrawIndexed(1728)` at
+4.4–5.0 seconds, and no row from 5.25 seconds. `Pause(false)` preserves both
+rows for a later 7-second capture; bounded GetParticles and Custom1 reads do
+not. Thus the earlier zero draw was particle expiration during capture, not a
+missing internal renderer state.
+
+At 3.5 seconds the unmodified six-stream source renderer and recovered M23
+SampleStack material produce `DrawIndexed(3456)` with stride 60 and the
+3,036-byte VS / 3,956-byte PS pair. This is the first directly captured real
+source-component M23 draw without BakeMesh, a MeshRenderer proxy, changed
+particle values, or a compatibility material.
 
 The installed UnityPlayer maps
 `ParticleSystemRenderer::PrepareForRenderThreaded` to
 `0xBA28F0..0xBA2C20`; its selected caller tests an unnamed record count at
 `rcx+0x160` immediately after the call and exits before mode-4 dispatch when
 the count is non-positive. Keep this classified as a record-building boundary,
-not camera culling. The next recovery target is the internal simulated-row
-state changed by an identical `SetParticles` round trip, followed by a faithful
-initializer in the importer/runtime. The exact retail M23 shader submission
-still requires the 136-byte IA layout and 10,720/8,100-byte shader pair; the
-compatibility-material draws above prove admission only, not visual parity.
+not camera culling; the count naturally reaches zero after source-particle
+expiry. The next target is the fork's exact renderer packing: carry the proven
+live source rows into the 136-byte IA layout and 10,720/8,100-byte exact DXBC
+pair, then close the remaining draw-time `cb3` values. Do not extend source
+lifetime or force Pause in production merely to accommodate capture latency.
 
 An isolated immediate-context shadow-vtable attempt is deliberately removed.
 It copied all 115 `ID3D11DeviceContext` slots, hooked only Draw variants,

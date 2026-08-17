@@ -2475,32 +2475,37 @@ only stable interpretation and priorities.
    `start_04_2/xuanzhuan03` without BakeMesh or a MeshRenderer proxy. The old
    hidden-window captures were invalid for renderer admission: Unity skipped
    normal camera rendering while the player window was hidden. Restore/show
-   the window and use a time-based DXCap frame (currently 7 seconds), then gate
-   every capture with its matching runtime JSON. Under that protocol the
+   the window and gate every capture with its matching runtime JSON. Under that protocol the
    serialized camera sentinel, ordinary Billboard control, and exact-source
    Mesh control all submit. The exact source mesh produces 1,728 indices for
    one control particle, so HGCompat, Mesh particle mode, and the mesh asset
    are not the missing boundary.
    The exact source ParticleSystem/renderer/mesh also submits after one manual
-   particle is installed. More decisively, the two original simulated particle
-   rows and their Custom1 values can be captured and republished through
-   `Clear`, `SetParticles`, and `SetCustomParticleData` with strict before/after
-   public-value equality; DXCap then records the expected two-particle
-   `DrawIndexed(3456)` at stride 36. Lifetime, size, rotation, and Custom1
-   single-family variants produce the same submission, while color and
-   velocity are already white and zero. Therefore no tested public field value
-   is causal: public-API republishing rebuilds renderer-consumable internal
-   particle state that the recovered `Simulate` path leaves absent.
+   particle is installed. The apparent need for `SetParticles` republishing was
+   a second capture-timing artifact, not an internal-state defect. Original
+   particles have only about 1.86 and 1.29 seconds of remaining lifetime after
+   the target simulation sample. A no-read/no-pause/no-republish time sweep
+   records both original particles as `DrawIndexed(3456)` from 3.0 through
+   4.25 seconds after process launch, one as `DrawIndexed(1728)` at 4.4 through
+   5.0 seconds, and none from 5.25 seconds. `Pause(false)` merely preserved the
+   short-lived rows until the old 7-second capture. `GetParticles` and
+   `GetCustomParticleData` alone do not preserve them. The original six-stream
+   source renderer with its recovered M23 SampleStack material is independently
+   captured at 3.5 seconds as `DrawIndexed(3456)`, stride 60, with the
+   3,036/3,956-byte recovered VS/PS pair. This closes ordinary Unity source
+   submission without any proxy or particle mutation.
    The selected installed UnityPlayer independently transfers
    `ParticleSystemRenderer::PrepareForRenderThreaded` to
    `0xBA28F0..0xBA2C20`. Its caller at `0x1457615` immediately tests the
    still-unnamed record count at `rcx+0x160`; a non-positive value exits before
    mode-4 dispatch through `0x1425650` and the selected
    `DrawMeshParticles<4>` route. This is a record-building boundary, not a
-   camera-culling classification. Next recover which internal simulated-row
-   flag/container differs before and after identical `SetParticles`, then
-   reproduce that initialization in the maintained source importer/runtime;
-   do not paper over it with changed particle values or a BakeMesh proxy.
+   camera-culling classification: the count naturally falls to zero when the
+   rows expire. The remaining renderer-packing target is the fork's exact M23
+   path: join these proven live source rows to the already recovered 136-byte
+   IA layout and 10,720/8,100-byte exact DXBC pair, then recover the open
+   draw-time `cb3` semantics. Do not add a lifetime workaround, forced Pause,
+   or BakeMesh proxy to production recovery.
    A narrower immediate-context object-vtable experiment is also rejected. It
    shadowed the complete 115-slot `ID3D11DeviceContext` table only inside the
    isolated player, filtered Draw variants by the retained exact VS/PS
