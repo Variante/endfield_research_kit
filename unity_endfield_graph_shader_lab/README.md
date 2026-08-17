@@ -4499,6 +4499,10 @@ The peak-effect builder now publishes this as `m23ShaderAbi` and fails closed
 on the material and both DXBC hashes, pass/keyword identity, proven TEXCOORD
 packing, and named low UnityPerMaterial slots. Higher cbuffer groups remain
 explicitly unresolved until another layout source supplies their names.
+Direct DXBC container validation also pins ISGN/OSGN/SHEX and the absence of
+RDEF. SHEX uses 44 b4 float4 registers through cb4[43], but matching DXBC and
+Vulkan reflection is partial at 432 bytes; cb4[10..43] names must come from a
+separate layout source rather than this binary.
 
 The actor-composed harness now also instantiates the exact recovered
 `P_fxui_lizhiyan_overview_trails_Bip001_R_Finger2Nub` prefab beneath the

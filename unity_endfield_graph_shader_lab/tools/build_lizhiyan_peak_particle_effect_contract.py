@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import struct
 from pathlib import Path
 from typing import Any
 
@@ -107,6 +108,24 @@ M23_UNRESOLVED_CBUFFER_SLOTS = [
     "cb4[11..12]", "cb4[16..18]", "cb4[17..18]",
     "cb4[23..24]", "cb4[28..29]", "cb4[33..43]",
 ]
+M23_FRAGMENT_CONTAINER = {
+    "bytes": 8100,
+    "chunks": [
+        {"fourCC": "ISGN", "offset": "0x2C", "bytes": 248},
+        {"fourCC": "OSGN", "offset": "0x12C", "bytes": 68},
+        {"fourCC": "SHEX", "offset": "0x178", "bytes": 7716},
+    ],
+    "hasRdef": False,
+    "b4Float4Registers": 44,
+    "b4Bytes": 704,
+    "highestDirectlyAccessedB4Index": 43,
+    "reflectionBoundary": {
+        "isPartial": True,
+        "bytes": 432,
+        "namedSlots": "cb4[0..9] with gaps recorded by lowCbufferMappings",
+    },
+    "unresolvedNameBoundary": "cb4[10..43]",
+}
 
 
 def metadata(data: dict[str, Any]) -> dict[str, Any]:
@@ -181,6 +200,20 @@ def m23_shader_abi(materials: dict[int, tuple[Path, dict[str, Any]]]) -> dict[st
                 f"M23 {stage} DXBC size drifted")
         require(sha256(blob) == expected["sha256"],
                 f"M23 {stage} DXBC SHA-256 drifted")
+        if stage == "fragment":
+            payload = blob.read_bytes()
+            require(payload[:4] == b"DXBC", "M23 fragment is not a DXBC container")
+            chunk_count = struct.unpack_from("<I", payload, 28)[0]
+            offsets = struct.unpack_from(f"<{chunk_count}I", payload, 32)
+            chunks = []
+            for offset in offsets:
+                fourcc = payload[offset:offset + 4].decode("ascii")
+                size = struct.unpack_from("<I", payload, offset + 4)[0]
+                chunks.append({"fourCC": fourcc, "offset": f"0x{offset:X}", "bytes": size})
+            require(chunks == M23_FRAGMENT_CONTAINER["chunks"],
+                    "M23 fragment DXBC chunk table drifted")
+            require(all(row["fourCC"] != "RDEF" for row in chunks),
+                    "M23 fragment unexpectedly gained an RDEF chunk")
         compiled = json.loads(metadata_path.read_text(encoding="utf-8"))
         require(compiled.get("SourcePassName") == M23_VARIANT_PASS,
                 f"M23 {stage} pass drifted")
@@ -206,6 +239,7 @@ def m23_shader_abi(materials: dict[int, tuple[Path, dict[str, Any]]]) -> dict[st
         "texcoordPacking": M23_TEXCOORD_PACKING,
         "lowCbufferMappings": M23_LOW_CBUFFER_MAPPINGS,
         "unresolvedCbufferSlots": M23_UNRESOLVED_CBUFFER_SLOTS,
+        "fragmentContainer": M23_FRAGMENT_CONTAINER,
     }
 
 
