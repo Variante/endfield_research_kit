@@ -50,6 +50,17 @@ M23_VARIANT_ROOT = (
     / "scratch/character_recovery/vfx_shader_variants/shader_export/Shader"
     / "HGRP_Effect_VFXBaseV2_pEC273EDA76F7FCDA.shader.bytecode"
 )
+M23_SHADER_JSON = (
+    REPO_ROOT
+    / "scratch/animestudio/m23_shader_json_probe/out/Shader"
+    / "HGRP_Effect_VFXBaseV2_pEC273EDA76F7FCDA.json"
+)
+M23_SHADER_JSON_BYTES = 17166809
+M23_SHADER_JSON_SHA256 = "B77939FDD44FF3684C61F4CF4464514535F43530DF6BCDC68E08DC20F1BB160E"
+M23_SHADER_PROPERTY_COUNT = 296
+M23_UNITY_PER_MATERIAL_SIZE = 432
+M23_UNITY_PER_MATERIAL_VECTOR_COUNT = 20
+M23_UNITY_PER_MATERIAL_MAX_NAMED_INDEX = 144
 M23_VARIANT_FILES = {
     "vertex": {
         "blob": "0138_endfield_dxbc_0.dxbc",
@@ -155,6 +166,151 @@ def derived_artifact(path: Path, object_type: str, path_id: int) -> dict[str, An
     }
 
 
+def _pack_shader_properties(properties: list[dict[str, Any]]) -> tuple[dict[str, int], int]:
+    """Pack serialized numeric properties using ordinary HLSL cbuffer rules."""
+    offset = 0
+    packed: dict[str, int] = {}
+    for prop in properties:
+        name = str(prop.get("m_Name") or "")
+        prop_type = str(prop.get("m_Type") or "")
+        if prop_type == "Texture":
+            continue
+        if prop_type in {"Vector", "Color"}:
+            offset = (offset + 15) // 16 * 16
+            packed[name] = offset
+            offset += 16
+        elif prop_type in {"Float", "Range"}:
+            if offset % 16 > 12:
+                offset = (offset + 15) // 16 * 16
+            packed[name] = offset
+            offset += 4
+        else:
+            raise RuntimeError(f"unsupported serialized shader property type: {prop_type!r}")
+    return packed, (offset + 15) // 16 * 16
+
+
+def _first_packing_divergence(packed: dict[str, int], known: dict[str, int]) -> dict[str, Any] | None:
+    for name, offset in packed.items():
+        if name in known and offset != known[name]:
+            return {"property": name, "candidateOffset": offset, "knownOffset": known[name]}
+    return None
+
+
+def _packing_candidate(
+    name: str,
+    properties: list[dict[str, Any]],
+    known: dict[str, int],
+    reflection_size: int,
+    shex_size: int,
+    add_main_tex_st: bool = False,
+) -> dict[str, Any]:
+    source_properties = properties
+    if add_main_tex_st:
+        source_properties = []
+        for prop in properties:
+            if prop.get("m_Name") in known:
+                source_properties.append(prop)
+            if prop.get("m_Name") == "_MainTex":
+                source_properties.append({"m_Name": "_MainTex_ST", "m_Type": "Vector"})
+    packed, total = _pack_shader_properties(source_properties)
+    divergence = _first_packing_divergence(packed, known)
+    return {
+        "name": name,
+        "propertyCount": len(packed),
+        "totalBytes": total,
+        "firstDivergence": divergence,
+        "matchesKnownLowLayout": divergence is None,
+        "matchesUnityPerMaterialSize": total == reflection_size,
+        "matchesShexB4Bytes": total == shex_size,
+        "passesGates": divergence is None and total == reflection_size and total == shex_size,
+        "mainTexSTOffset": packed.get("_MainTex_ST"),
+    }
+
+
+def m23_shader_json_evidence() -> dict[str, Any]:
+    require(M23_SHADER_JSON.is_file(), f"M23 targeted Shader JSON is missing: {M23_SHADER_JSON}")
+    require(M23_SHADER_JSON.stat().st_size == M23_SHADER_JSON_BYTES,
+            "M23 targeted Shader JSON size drifted")
+    require(sha256(M23_SHADER_JSON) == M23_SHADER_JSON_SHA256,
+            "M23 targeted Shader JSON SHA-256 drifted")
+    shader = json.loads(M23_SHADER_JSON.read_text(encoding="utf-8"))
+    parsed = shader.get("m_ParsedForm")
+    require(isinstance(parsed, dict), "M23 Shader JSON is missing m_ParsedForm")
+    prop_info = parsed.get("m_PropInfo")
+    properties = prop_info.get("m_Props") if isinstance(prop_info, dict) else None
+    require(isinstance(properties, list) and len(properties) == M23_SHADER_PROPERTY_COUNT,
+            "M23 serialized Shader property count drifted")
+    subshaders = parsed.get("m_SubShaders")
+    require(isinstance(subshaders, list) and subshaders, "M23 Shader JSON has no subshaders")
+    passes = subshaders[0].get("m_Passes")
+    require(isinstance(passes, list) and passes, "M23 Shader JSON has no first pass")
+    first_pass = passes[0]
+    name_indices = first_pass.get("m_NameIndices")
+    require(isinstance(name_indices, list), "M23 Shader JSON is missing m_NameIndices")
+    names = {str(row.get("Key")): int(row.get("Value")) for row in name_indices
+             if isinstance(row, dict) and row.get("Key") is not None and row.get("Value") is not None}
+    material_name_index = names.get("UnityPerMaterial")
+    require(material_name_index is not None, "M23 UnityPerMaterial name index is missing")
+    common = ((first_pass.get("progVertex") or {}).get("m_CommonParameters"))
+    require(isinstance(common, dict), "M23 Shader JSON is missing vertex common parameters")
+    constant_buffers = common.get("m_ConstantBuffers")
+    require(isinstance(constant_buffers, list), "M23 Shader JSON is missing constant buffers")
+    matching = [row for row in constant_buffers
+                if isinstance(row, dict) and row.get("m_NameIndex") == material_name_index]
+    require(len(matching) == 1, "M23 UnityPerMaterial constant buffer is ambiguous")
+    material_cb = matching[0]
+    vectors = material_cb.get("m_VectorParams")
+    require(isinstance(vectors, list) and len(vectors) == M23_UNITY_PER_MATERIAL_VECTOR_COUNT,
+            "M23 UnityPerMaterial named vector count drifted")
+    known = {}
+    for row in vectors:
+        require(isinstance(row, dict) and isinstance(row.get("m_NameIndex"), int)
+                and isinstance(row.get("m_Index"), int),
+                "M23 UnityPerMaterial parameter row is malformed")
+        name = next((key for key, value in names.items() if value == row["m_NameIndex"]), None)
+        require(name is not None, "M23 UnityPerMaterial parameter name index is unresolved")
+        known[name] = row["m_Index"]
+    require(max(known.values()) == M23_UNITY_PER_MATERIAL_MAX_NAMED_INDEX,
+            "M23 UnityPerMaterial maximum named offset drifted")
+    require(material_cb.get("m_Size") == M23_UNITY_PER_MATERIAL_SIZE,
+            "M23 UnityPerMaterial size drifted")
+    require(material_cb.get("m_IsPartialCB") is True,
+            "M23 UnityPerMaterial partial-reflection gate changed")
+    active_properties = [prop for prop in properties if prop.get("m_Name") in known]
+    candidates = [
+        _packing_candidate("activeSerializedProperties", active_properties, known,
+                           M23_UNITY_PER_MATERIAL_SIZE, M23_FRAGMENT_CONTAINER["b4Bytes"]),
+        _packing_candidate("activeSerializedPropertiesPlusMainTexST", properties, known,
+                           M23_UNITY_PER_MATERIAL_SIZE, M23_FRAGMENT_CONTAINER["b4Bytes"],
+                           add_main_tex_st=True),
+        _packing_candidate("allNonTextureSerializedProperties", properties, known,
+                           M23_UNITY_PER_MATERIAL_SIZE, M23_FRAGMENT_CONTAINER["b4Bytes"]),
+    ]
+    require(candidates[0]["firstDivergence"] == {
+        "property": "_VertCameraOffset", "candidateOffset": 8, "knownOffset": 52,
+    }, "M23 active-property packing divergence drifted")
+    require(candidates[1]["firstDivergence"] == candidates[0]["firstDivergence"],
+            "M23 implicit MainTex_ST packing divergence drifted")
+    require(candidates[1]["mainTexSTOffset"] == 48,
+            "M23 implicit MainTex_ST candidate offset drifted")
+    require(candidates[2]["firstDivergence"] == {
+        "property": "_SurfaceType", "candidateOffset": 4, "knownOffset": 0,
+    }, "M23 all-property packing divergence drifted")
+    require(all(not candidate["passesGates"] for candidate in candidates),
+            "M23 unresolved packing unexpectedly passed")
+    return {
+        "source": derived_artifact(M23_SHADER_JSON, "ShaderSerializedJSON", SHADER_PATH_ID),
+        "propertyCount": len(properties),
+        "unityPerMaterial": {
+            "size": material_cb["m_Size"],
+            "isPartial": material_cb["m_IsPartialCB"],
+            "namedVectorCount": len(vectors),
+            "maxNamedIndex": max(known.values()),
+        },
+        "packingCandidates": candidates,
+    }
+
+
 def hierarchy_for_group(
     game_objects: dict[int, tuple[Path, dict[str, Any]]],
     transforms: dict[int, tuple[Path, dict[str, Any]]],
@@ -240,6 +396,7 @@ def m23_shader_abi(materials: dict[int, tuple[Path, dict[str, Any]]]) -> dict[st
         "lowCbufferMappings": M23_LOW_CBUFFER_MAPPINGS,
         "unresolvedCbufferSlots": M23_UNRESOLVED_CBUFFER_SLOTS,
         "fragmentContainer": M23_FRAGMENT_CONTAINER,
+        "shaderJsonEvidence": m23_shader_json_evidence(),
     }
 
 
@@ -366,6 +523,7 @@ def main() -> int:
                               "source": artifact(path, "Material")})
         artifact_paths.append(path)
     m23_abi = m23_shader_abi(materials)
+    artifact_paths.append(M23_SHADER_JSON)
     for expected in M23_VARIANT_FILES.values():
         artifact_paths.extend((M23_VARIANT_ROOT / expected["blob"],
                                M23_VARIANT_ROOT / expected["metadata"]))

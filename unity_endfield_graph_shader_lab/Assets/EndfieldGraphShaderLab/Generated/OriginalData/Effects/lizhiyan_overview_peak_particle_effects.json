@@ -8,7 +8,7 @@
     "materials": 8,
     "uniqueTextures": 13,
     "meshes": 3,
-    "sourceAggregateSha256": "E56CE31ED9F2686B84307F6E11749C8E0EDBB6F21310D9CA97A9F19E0C2642FF"
+    "sourceAggregateSha256": "BF768BDCCF752F8DBC9193995C4DAB9A0E5C835D81F55E7192109CCEB01AC843"
   },
   "effects": [
     {
@@ -29994,6 +29994,69 @@
         "namedSlots": "cb4[0..9] with gaps recorded by lowCbufferMappings"
       },
       "unresolvedNameBoundary": "cb4[10..43]"
+    },
+    "shaderJsonEvidence": {
+      "source": {
+        "path": "scratch/animestudio/m23_shader_json_probe/out/Shader/HGRP_Effect_VFXBaseV2_pEC273EDA76F7FCDA.json",
+        "bytes": 17166809,
+        "sha256": "B77939FDD44FF3684C61F4CF4464514535F43530DF6BCDC68E08DC20F1BB160E",
+        "objectType": "ShaderSerializedJSON",
+        "pathID": -1430105248647086886
+      },
+      "propertyCount": 296,
+      "unityPerMaterial": {
+        "size": 432,
+        "isPartial": true,
+        "namedVectorCount": 20,
+        "maxNamedIndex": 144
+      },
+      "packingCandidates": [
+        {
+          "name": "activeSerializedProperties",
+          "propertyCount": 19,
+          "totalBytes": 144,
+          "firstDivergence": {
+            "property": "_VertCameraOffset",
+            "candidateOffset": 8,
+            "knownOffset": 52
+          },
+          "matchesKnownLowLayout": false,
+          "matchesUnityPerMaterialSize": false,
+          "matchesShexB4Bytes": false,
+          "passesGates": false,
+          "mainTexSTOffset": null
+        },
+        {
+          "name": "activeSerializedPropertiesPlusMainTexST",
+          "propertyCount": 20,
+          "totalBytes": 160,
+          "firstDivergence": {
+            "property": "_VertCameraOffset",
+            "candidateOffset": 8,
+            "knownOffset": 52
+          },
+          "matchesKnownLowLayout": false,
+          "matchesUnityPerMaterialSize": false,
+          "matchesShexB4Bytes": false,
+          "passesGates": false,
+          "mainTexSTOffset": 48
+        },
+        {
+          "name": "allNonTextureSerializedProperties",
+          "propertyCount": 277,
+          "totalBytes": 1840,
+          "firstDivergence": {
+            "property": "_SurfaceType",
+            "candidateOffset": 4,
+            "knownOffset": 0
+          },
+          "matchesKnownLowLayout": false,
+          "matchesUnityPerMaterialSize": false,
+          "matchesShexB4Bytes": false,
+          "passesGates": false,
+          "mainTexSTOffset": null
+        }
+      ]
     }
   },
   "executionBoundary": "Serialized hierarchy/TRS, particle modules, renderer/material/mesh ownership, material payloads, converted textures, converted mesh geometry, shader identity, and M23's exact ForwardOnly vertex/fragment DXBC variant are source-closed. M23 TEXCOORD packing and the named low UnityPerMaterial slots are instruction/metadata-closed; high sample/mask/blend/dissolve/Fresnel cbuffer property names remain explicitly unresolved. Filtered GameObject convenience JSON omits m_IsActive; manual diagnostics default those nodes active while retail activation remains owned by unrecovered EffectSetting/EffectLodCfg execution. Converted PNG/OBJ payloads are diagnostic derivatives. Retail EffectSetting execution, descriptor binding, draw/PSO/MRT/depth, after-DOF survivor ownership, and final compositing remain unproven; visibleAdmission stays false."

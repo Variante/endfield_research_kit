@@ -54,6 +54,64 @@ def test_m23_abi_constants_and_generated_contract() -> None:
     assert abi["lowCbufferMappings"] == M.M23_LOW_CBUFFER_MAPPINGS
     assert abi["unresolvedCbufferSlots"] == M.M23_UNRESOLVED_CBUFFER_SLOTS
     assert abi["fragmentContainer"] == M.M23_FRAGMENT_CONTAINER
+    shader_json = abi["shaderJsonEvidence"]
+    assert shader_json["source"] == {
+        "path": "scratch/animestudio/m23_shader_json_probe/out/Shader/"
+        "HGRP_Effect_VFXBaseV2_pEC273EDA76F7FCDA.json",
+        "bytes": 17166809,
+        "sha256": "B77939FDD44FF3684C61F4CF4464514535F43530DF6BCDC68E08DC20F1BB160E",
+        "objectType": "ShaderSerializedJSON",
+        "pathID": M.SHADER_PATH_ID,
+    }
+    assert shader_json["propertyCount"] == 296
+    assert shader_json["unityPerMaterial"] == {
+        "size": 432,
+        "isPartial": True,
+        "namedVectorCount": 20,
+        "maxNamedIndex": 144,
+    }
+    assert shader_json["packingCandidates"] == [
+        {
+            "name": "activeSerializedProperties",
+            "propertyCount": 19,
+            "totalBytes": 144,
+            "firstDivergence": {
+                "property": "_VertCameraOffset", "candidateOffset": 8, "knownOffset": 52,
+            },
+            "matchesKnownLowLayout": False,
+            "matchesUnityPerMaterialSize": False,
+            "matchesShexB4Bytes": False,
+            "passesGates": False,
+            "mainTexSTOffset": None,
+        },
+        {
+            "name": "activeSerializedPropertiesPlusMainTexST",
+            "propertyCount": 20,
+            "totalBytes": 160,
+            "firstDivergence": {
+                "property": "_VertCameraOffset", "candidateOffset": 8, "knownOffset": 52,
+            },
+            "matchesKnownLowLayout": False,
+            "matchesUnityPerMaterialSize": False,
+            "matchesShexB4Bytes": False,
+            "passesGates": False,
+            "mainTexSTOffset": 48,
+        },
+        {
+            "name": "allNonTextureSerializedProperties",
+            "propertyCount": 277,
+            "totalBytes": 1840,
+            "firstDivergence": {
+                "property": "_SurfaceType", "candidateOffset": 4, "knownOffset": 0,
+            },
+            "matchesKnownLowLayout": False,
+            "matchesUnityPerMaterialSize": False,
+            "matchesShexB4Bytes": False,
+            "passesGates": False,
+            "mainTexSTOffset": None,
+        },
+    ]
+    assert M.m23_shader_json_evidence() == shader_json
 
 
 if __name__ == "__main__":
