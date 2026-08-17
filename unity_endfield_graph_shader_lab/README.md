@@ -4653,6 +4653,18 @@ selects raw versus attenuated COLOR. The M23 source graph strongly selects the
 non-skin route, but native draw-time cb3 bytes are still required before that
 inference becomes a captured runtime fact.
 
+The source oracle now also validates every live source vertex against BakeMesh.
+Unity 2022.3 `Particle.rotation` is already degrees; the closed transform is
+`system.localToWorld * TRS(position, AngleAxis(rotation, axisOfRotation),
+GetCurrentSize3D)`, with inverse-transpose normal handling. At PTS 40000 all
+2,312 live vertices pass the `1e-5` gates: maximum position error `8.70e-7`
+and normalized-normal error `6.88e-7`. This requires exact-time, non-fixed-step
+simulation. Fixed-step public particle size is not the renderer-interpolated
+size and leaves a reproducible `0.03924` position error; do not hide that state
+boundary with a looser tolerance. The next oracle revision must add a distinct
+second camera, repeat-reset hashes, before/after-Bake particle hashes, and exact
+per-submesh index sequence comparison.
+
 The actor-composed harness now also instantiates the exact recovered
 `P_fxui_lizhiyan_overview_trails_Bip001_R_Finger2Nub` prefab beneath the
 unique actor `Bip001_R_Finger2Nub` mount. It preserves the source

@@ -2423,6 +2423,24 @@ only stable interpretation and priorities.
    ordinary mesh particles take the non-skin path, but draw-time bytes remain
    unobserved. Contrary to the earlier tentative interpretation, cb4[3].z is a
    raw-versus-attenuated COLOR selector, not a position/skin gate.
+   The source oracle now closes the full live source-vertex-to-BakeMesh TRS at
+   PTS 40000. Unity 2022.3 exposes scalar `Particle.rotation` in degrees (the
+   initial radians assumption made every vertex fail); the exact candidate is
+   `system.localToWorld * TRS(particle.position, AngleAxis(rotationDegrees,
+   axisOfRotation), GetCurrentSize3D)`. Normals use that matrix's inverse
+   transpose. With non-fixed-step simulation at the exact effect-local time,
+   all 2,312 live vertices pass `1e-5`: maximum position error
+   `8.70e-7`, maximum normalized-normal error `6.88e-7`, and zero failures.
+   A fixed-step run is deliberately rejected: its public Particle size and the
+   renderer's interpolated size differ, leaving about `0.03924` maximum
+   position and `0.01950` normal error even though a fitted affine transform is
+   internally exact to `3.6e-8`. This identifies renderer interpolation—not
+   particle order, mesh identity, or arbitrary tolerance—as the discrepancy.
+   Exact row/cb3 construction must therefore use one explicit exact-time
+   simulation boundary or separately recover the fixed-step render interpolation;
+   it must not mix public fixed-step state with interpolated BakeMesh geometry.
+   Camera invariance, repeated reset determinism, BakeMesh non-mutation, and
+   exact per-submesh index order are the next oracle gates.
    Video acceptance must distinguish Unity anchors from nearest retail PTS:
    39934 maps to retail 39933 and 40834 to 40833, while 40000/40867 are exact.
    At PTS 40000 the current composite raised-hand coverage is 4.863% versus

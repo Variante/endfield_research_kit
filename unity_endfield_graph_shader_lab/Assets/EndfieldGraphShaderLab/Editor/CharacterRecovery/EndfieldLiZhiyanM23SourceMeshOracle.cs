@@ -34,6 +34,13 @@ namespace EndfieldGraphShaderLabEditor
         private const int RetailClockOriginPts = 37967;
         private const int RetailClockUnitsPerSecond = 1000;
         private const float ExpectedEffectDelay = 1.833333f;
+        // BakeMesh and the source-side Matrix4x4.TRS candidate both execute
+        // through Unity's binary32 transform path.  These are deliberately
+        // tight absolute vector tolerances: a loose pixel-space tolerance
+        // would allow a wrong particle ordering or rotation convention to
+        // pass unnoticed.
+        private const float PositionTransformTolerance = 0.00001f;
+        private const float NormalTransformTolerance = 0.00001f;
         private const string OutputRelativePath =
             "scratch/character_recovery/lizhiyan_m23_source_mesh_oracle/" +
             "pts_40000.json";
@@ -197,8 +204,11 @@ namespace EndfieldGraphShaderLabEditor
             public Float3Record rotation3D;
             public Float3Record size3D;
             public Float3Record velocity;
+            public Float3Record axisOfRotation;
             public ColorRecord color;
             public Float4Record custom1;
+            public bool uses3DRotation;
+            public float rotationDegrees;
             public int sourceVertexOffset;
             public int sourceVertexCount;
             public int bakedVertexOffset;
@@ -224,6 +234,39 @@ namespace EndfieldGraphShaderLabEditor
         }
 
         [Serializable]
+        private sealed class TransformValidationEvidence
+        {
+            public string candidate =
+                "Matrix4x4.TRS(particle.position, particle rotation, " +
+                "particle.GetCurrentSize3D(system)), then system.localToWorld";
+            public string rotationContract =
+                "startRotation3D=true: Quaternion.Euler(rotation3D degrees); " +
+                "false: Quaternion.AngleAxis(rotation degrees, axisOfRotation)";
+            public float positionTolerance;
+            public float normalTolerance;
+            public int positionSampleCount;
+            public int positionFailureCount;
+            public float positionMaxError;
+            public float positionMeanError;
+            public int positionFirstFailureParticle = -1;
+            public int positionFirstFailureVertex = -1;
+            public Float3Record positionFirstExpected;
+            public Float3Record positionFirstActual;
+            public int normalSampleCount;
+            public int normalFailureCount;
+            public float normalMaxError;
+            public float normalMeanError;
+            public int normalFirstFailureParticle = -1;
+            public int normalFirstFailureVertex = -1;
+            public Float3Record normalFirstExpected;
+            public Float3Record normalFirstActual;
+            public Float3Record[] firstParticleSourceProbe;
+            public Float3Record[] firstParticleBakedProbe;
+            public bool localTrsClosed;
+            public bool inverseTransposeNormalClosed;
+        }
+
+        [Serializable]
         private sealed class RendererEvidence
         {
             public string hierarchy;
@@ -238,6 +281,8 @@ namespace EndfieldGraphShaderLabEditor
             public bool particleStateClosed;
             public bool custom1Closed;
             public bool segmentMappingClosed;
+            public bool localTrsClosed;
+            public bool inverseTransposeNormalClosed;
             public int particleCount;
             public int bakedVertexCount;
             public int bakedIndexCount;
@@ -245,6 +290,7 @@ namespace EndfieldGraphShaderLabEditor
             public string custom1Sha256;
             public SourceMeshEvidence[] sourceMeshes;
             public BakedMeshEvidence bakedMesh;
+            public TransformValidationEvidence transformValidation;
             public ParticleEvidence[] particles;
         }
 
@@ -263,6 +309,8 @@ namespace EndfieldGraphShaderLabEditor
             public float localSeconds;
             public float effectLocalSeconds;
             public float sourceEffectDelay;
+            public bool fixedTimeStep;
+            public string simulationContract;
             public bool sourceContractPassed;
             public bool noDefaultsUsed;
             public bool visualAdmission;
@@ -288,6 +336,10 @@ namespace EndfieldGraphShaderLabEditor
                 retailClockOriginPts = RetailClockOriginPts,
                 localSeconds = (RetailPts - RetailClockOriginPts) /
                     (float)RetailClockUnitsPerSecond,
+                fixedTimeStep = false,
+                simulationContract =
+                    "Simulate(effectLocalSeconds, withChildren:false, " +
+                    "restart:true, fixedTimeStep:false), then Play(false)",
                 visualAdmission = false,
                 noDefaultsUsed = true,
             };
@@ -343,7 +395,8 @@ namespace EndfieldGraphShaderLabEditor
                 Require(report.renderers.Length == RendererSpecs.Length &&
                     report.renderers.All(row => row.sourceGeometryClosed &&
                         row.particleStateClosed && row.custom1Closed &&
-                        row.segmentMappingClosed),
+                        row.segmentMappingClosed && row.localTrsClosed &&
+                        row.inverseTransposeNormalClosed),
                     "M23 source mesh/particle segment evidence did not close");
             }
             catch (Exception exception)
@@ -412,7 +465,11 @@ namespace EndfieldGraphShaderLabEditor
                 "M23 system uses automatic random seed: " + spec.hierarchy);
             system.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             system.Clear(true);
-            system.Simulate(effectLocalSeconds, true, true, true);
+            system.Simulate(effectLocalSeconds, false, true, false);
+            // Match the maintained actor-capture submission boundary: Play
+            // publishes the simulated state to the renderer without advancing
+            // time in this batchmode call.
+            system.Play(false);
             var particles = new ParticleSystem.Particle[Mathf.Max(system.particleCount, main.maxParticles)];
             int particleCount = system.GetParticles(particles);
             Array.Resize(ref particles, particleCount);
@@ -437,9 +494,11 @@ namespace EndfieldGraphShaderLabEditor
                     "M23 BakeMesh geometry count mismatch at " + spec.hierarchy +
                     ": actual=" + baked.vertexCount + "/" + CountIndices(baked) +
                     ", expected=" + expectedVertices + "/" + expectedIndices);
+                TransformValidationEvidence transformValidation;
                 ParticleEvidence[] particlesEvidence = BuildParticleEvidence(
-                    system, meshes[0], baked, particles, customRows, particleCount);
-                return new RendererEvidence
+                    system, meshes[0], baked, particles, customRows, particleCount,
+                    main.startRotation3D, out transformValidation);
+                var evidence = new RendererEvidence
                 {
                     hierarchy = spec.hierarchy,
                     particleSystemPathId = spec.particleSystemPathId,
@@ -454,6 +513,9 @@ namespace EndfieldGraphShaderLabEditor
                     custom1Closed = true,
                     segmentMappingClosed = particlesEvidence.All(value =>
                         value.bakedIndexRangeValid),
+                    localTrsClosed = transformValidation.localTrsClosed,
+                    inverseTransposeNormalClosed =
+                        transformValidation.inverseTransposeNormalClosed,
                     particleCount = particleCount,
                     bakedVertexCount = baked.vertexCount,
                     bakedIndexCount = CountIndices(baked),
@@ -461,8 +523,12 @@ namespace EndfieldGraphShaderLabEditor
                     custom1Sha256 = HashVector4(customRows.ToArray()),
                     sourceMeshes = new[] { source },
                     bakedMesh = bakedEvidence,
+                    transformValidation = transformValidation,
                     particles = particlesEvidence,
                 };
+                Require(evidence.segmentMappingClosed,
+                    "M23 baked index segment escaped its particle vertex range");
+                return evidence;
             }
             finally
             {
@@ -476,7 +542,9 @@ namespace EndfieldGraphShaderLabEditor
             Mesh baked,
             ParticleSystem.Particle[] particles,
             List<Vector4> customRows,
-            int particleCount)
+            int particleCount,
+            bool startRotation3D,
+            out TransformValidationEvidence transformValidation)
         {
             Vector3[] bakedPositions = baked.vertices;
             Vector3[] bakedNormals = baked.normals;
@@ -488,6 +556,25 @@ namespace EndfieldGraphShaderLabEditor
                 baked.GetUVs(channel, bakedUv[channel]);
             }
             int[] bakedIndexOffsets = new int[baked.subMeshCount];
+            Vector3[] sourcePositions = source.vertices;
+            Vector3[] sourceNormals = source.normals;
+            Require(sourcePositions != null && sourcePositions.Length == source.vertexCount,
+                "M23 source Position channel is incomplete");
+            Require(sourceNormals != null && sourceNormals.Length == source.vertexCount,
+                "M23 source Normal channel is incomplete");
+            Require(bakedNormals != null && bakedNormals.Length == baked.vertexCount,
+                "M23 baked Normal channel is incomplete");
+            var validation = new TransformValidationEvidence
+            {
+                positionTolerance = PositionTransformTolerance,
+                normalTolerance = NormalTransformTolerance,
+                firstParticleSourceProbe = sourcePositions.Take(8)
+                    .Select(Float3Record.From).ToArray(),
+                firstParticleBakedProbe = bakedPositions.Take(8)
+                    .Select(Float3Record.From).ToArray(),
+            };
+            double positionErrorSum = 0.0;
+            double normalErrorSum = 0.0;
             var result = new ParticleEvidence[particleCount];
             int vertexOffset = 0;
             int sourceIndexOffset = 0;
@@ -500,17 +587,29 @@ namespace EndfieldGraphShaderLabEditor
                 // particle for its mesh index still records Unity's public
                 // selection rather than silently assuming it.
                 Require(meshIndex == 0, "M23 particle selected an unexpected mesh index");
+                ParticleSystem.Particle particle = particles[particleIndex];
+                Vector3 particleSize = particle.GetCurrentSize3D(system);
+                Quaternion particleRotation = BuildParticleRotation(
+                    particle, startRotation3D);
+                Matrix4x4 particleTrs = Matrix4x4.TRS(
+                    particle.position, particleRotation, particleSize);
+                Matrix4x4 sourceToBaked =
+                    system.transform.localToWorldMatrix * particleTrs;
+                Matrix4x4 inverseTranspose = sourceToBaked.inverse.transpose;
                 var row = new ParticleEvidence
                 {
                     particleIndex = particleIndex,
                     meshIndex = meshIndex,
                     randomSeed = particles[particleIndex].randomSeed,
-                    position = Float3Record.From(particles[particleIndex].position),
-                    rotation3D = Float3Record.From(particles[particleIndex].rotation3D),
-                    size3D = Float3Record.From(particles[particleIndex].GetCurrentSize3D(system)),
-                    velocity = Float3Record.From(particles[particleIndex].velocity),
-                    color = ColorRecord.From(particles[particleIndex].GetCurrentColor(system)),
+                    position = Float3Record.From(particle.position),
+                    rotation3D = Float3Record.From(particle.rotation3D),
+                    size3D = Float3Record.From(particleSize),
+                    velocity = Float3Record.From(particle.velocity),
+                    axisOfRotation = Float3Record.From(particle.axisOfRotation),
+                    color = ColorRecord.From(particle.GetCurrentColor(system)),
                     custom1 = Float4Record.From(customRows[particleIndex]),
+                    uses3DRotation = startRotation3D,
+                    rotationDegrees = startRotation3D ? 0.0f : particle.rotation,
                     sourceVertexOffset = 0,
                     sourceVertexCount = vertexCount,
                     bakedVertexOffset = vertexOffset,
@@ -526,6 +625,60 @@ namespace EndfieldGraphShaderLabEditor
                     bakedUv0SegmentSha256 = HashVector4(SliceRequired(bakedUv[0], vertexOffset, vertexCount, "uv0")),
                     bakedUv1SegmentSha256 = HashVector4(SliceRequired(bakedUv[1], vertexOffset, vertexCount, "uv1")),
                 };
+                for (int vertex = 0; vertex < vertexCount; ++vertex)
+                {
+                    Vector3 expectedPosition = sourceToBaked.MultiplyPoint3x4(
+                        sourcePositions[vertex]);
+                    Vector3 actualPosition = bakedPositions[vertexOffset + vertex];
+                    float positionError = Vector3.Distance(
+                        expectedPosition, actualPosition);
+                    validation.positionSampleCount++;
+                    positionErrorSum += positionError;
+                    validation.positionMaxError = Mathf.Max(
+                        validation.positionMaxError, positionError);
+                    if (positionError > PositionTransformTolerance)
+                    {
+                        validation.positionFailureCount++;
+                        if (validation.positionFirstFailureParticle < 0)
+                        {
+                            validation.positionFirstFailureParticle = particleIndex;
+                            validation.positionFirstFailureVertex = vertex;
+                            validation.positionFirstExpected =
+                                Float3Record.From(expectedPosition);
+                            validation.positionFirstActual =
+                                Float3Record.From(actualPosition);
+                        }
+                    }
+
+                    Vector3 sourceNormal = sourceNormals[vertex];
+                    Require(sourceNormal.sqrMagnitude > 0.0f,
+                        "M23 source Normal contains a zero vector at vertex " + vertex);
+                    Vector3 expectedNormal = inverseTranspose.MultiplyVector(
+                        sourceNormal).normalized;
+                    Vector3 actualNormal = bakedNormals[vertexOffset + vertex];
+                    Require(actualNormal.sqrMagnitude > 0.0f,
+                        "M23 baked Normal contains a zero vector at particle " +
+                        particleIndex + ", vertex " + vertex);
+                    actualNormal.Normalize();
+                    float normalError = Vector3.Distance(expectedNormal, actualNormal);
+                    validation.normalSampleCount++;
+                    normalErrorSum += normalError;
+                    validation.normalMaxError = Mathf.Max(
+                        validation.normalMaxError, normalError);
+                    if (normalError > NormalTransformTolerance)
+                    {
+                        validation.normalFailureCount++;
+                        if (validation.normalFirstFailureParticle < 0)
+                        {
+                            validation.normalFirstFailureParticle = particleIndex;
+                            validation.normalFirstFailureVertex = vertex;
+                            validation.normalFirstExpected =
+                                Float3Record.From(expectedNormal);
+                            validation.normalFirstActual =
+                                Float3Record.From(actualNormal);
+                        }
+                    }
+                }
                 for (int channel = 0; channel < bakedUv.Length; ++channel)
                 {
                     int mask = MatchReplicatedCustom1(
@@ -554,7 +707,31 @@ namespace EndfieldGraphShaderLabEditor
                 vertexOffset += vertexCount;
                 sourceIndexOffset += sourceIndexCount;
             }
+            validation.positionMeanError = validation.positionSampleCount == 0
+                ? 0.0f
+                : (float)(positionErrorSum / validation.positionSampleCount);
+            validation.normalMeanError = validation.normalSampleCount == 0
+                ? 0.0f
+                : (float)(normalErrorSum / validation.normalSampleCount);
+            validation.localTrsClosed = validation.positionFailureCount == 0;
+            validation.inverseTransposeNormalClosed =
+                validation.normalFailureCount == 0;
+            transformValidation = validation;
             return result;
+        }
+
+        private static Quaternion BuildParticleRotation(
+            ParticleSystem.Particle particle,
+            bool startRotation3D)
+        {
+            if (startRotation3D)
+                return Quaternion.Euler(particle.rotation3D);
+            Require(particle.axisOfRotation.sqrMagnitude > 0.0f,
+                "M23 scalar particle rotation has no axisOfRotation");
+            // Particle.rotation is exposed in degrees by Unity 2022.3, as is
+            // rotation3D. Quaternion.AngleAxis uses the same unit.
+            return Quaternion.AngleAxis(
+                particle.rotation, particle.axisOfRotation.normalized);
         }
 
         private static void SetCustomMask(ParticleEvidence row, int channel, int mask)
@@ -693,6 +870,8 @@ namespace EndfieldGraphShaderLabEditor
                 {
                     Write(writer, value.position);
                     Write(writer, value.rotation3D);
+                    writer.Write(value.rotation);
+                    Write(writer, value.axisOfRotation);
                     Write(writer, value.GetCurrentSize3D(system));
                     Write(writer, value.velocity);
                     writer.Write(value.randomSeed);
@@ -703,6 +882,7 @@ namespace EndfieldGraphShaderLabEditor
                     writer.Write(color.b); writer.Write(color.a);
                     writer.Write(value.GetMeshIndex(system));
                 }
+                writer.Write(system.main.startRotation3D);
                 writer.Flush();
                 return Hash(bytes.ToArray());
             }
