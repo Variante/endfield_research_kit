@@ -2209,10 +2209,13 @@ only stable interpretation and priorities.
    blank for the paused sampled buffer; the capture therefore uses Unity
    `BakeMesh` billboard expansion, preserves source material queues, supplies
    the recovered pipeline's exposure/global gates, and keeps this transport
-   named in the manifest. At PTS 40000, 26 particles are alive, the peak-only
-   frame contains 15,962 non-background pixels and 4.548% `broadTeal`
-   coverage, and actor-composed coverage rises to 7.572% versus 21.699%
-   retail. The independently validated run remains predicate-only and
+   named in the manifest. The older, incorrectly actor-clocked schema-v3 PTS
+   40000 count was 26; schema v4 replaces it with 129 particles after applying
+   the recovered effect delay. Its PTS-40000 peak-only frame now contains
+   280,864 non-background pixels, with 14,799/219,700 (`6.736%`) teal pixels
+   in the `broadTeal` ROI. This large correction replaces rather than extends
+   the old schema-v3 visual counts. The independently validated run remains
+   predicate-only and
    diagnostic: native VFXBaseV2 variant/descriptor/PSO, exact activation/LOD,
    renderer-list survivor, after-DOF ownership, and final compositing are still
    open, so `visibleAdmission` stays false.
@@ -2326,8 +2329,21 @@ only stable interpretation and priorities.
    this exact material enable custom vertex streams `[0,1,3,4,5,34]`, including
    the Color stream, and their serialized start-color and Color-over-Lifetime
    RGB are white. White RGB is therefore source-backed rather than arbitrary;
-   selected-frame particle alpha, per-draw attenuation, exposure history, UVs,
-   and neutral high slots remain open before claiming material or visual parity.
+   `cb3[13]` at byte offset 208 is now cross-variant-proven as the Unity
+   particle-instance color complement `1-packedRGBA8/255`; exact 0138 therefore
+   computes `COLOR0*(1-cb3[13])`. White RGB fixes its xyz to zero, while alpha
+   follows particle age and Color-over-Lifetime. The actor-composed harness had
+   sampled all peak systems on the actor-local clock, ignoring the recovered
+   `sourceEffectDelay=1.833333` and `sourceEffectDuration=1.233333`. Manifest
+   schema v4 now gates that interval, simulates effect-local time, preserves
+   each system's own 0/0.5-second delay, and records per-renderer PathIDs plus
+   baked COLOR0 alpha min/max/mean. The refreshed D3D12 capture and validator
+   pass: PTS 37967/39367 have zero peak particles, PTS 39934 has 125 at effect
+   time 0.133667, PTS 40000 has 129 and 8,212 baked colors at 0.199667, PTS
+   40834 has 104 at 1.033667, and PTS 41434 is inactive with zero. PTS-40000
+   renderer alpha spans quantized per-system ranges including 0.1137..0.1608,
+   0.2..0.2745, and fully opaque 1.0 lanes. Exposure history, UVs, and neutral
+   high slots remain open before claiming material or visual parity.
    The exact independently AssetMap-proven finger prefab is now executable in
    the same actor-composed diagnostic. It is mounted beneath the unique
    `Bip001_R_Finger2Nub`, keeps its source 0.83333-second delay and
