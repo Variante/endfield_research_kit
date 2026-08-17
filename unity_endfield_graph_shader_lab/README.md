@@ -4665,6 +4665,20 @@ the two live rows while public `GetCurrentColor()` reports 51/71, so the public
 color is census evidence only and must not be copied into an exact packet.
 Likewise TEXCOORD4 remains the alternate-position input selected by runtime
 `cb3[10].x`, not a proven unconditional Custom1 alias.
+Run `python tools/validate_m23_packet_contract.py` to join the managed census,
+source/BakeMesh oracle, and exact-DXBC fixture. The validator recomputes the
+constant white-RGB alpha candidates behind the oracle hashes, checks all four
+particle/source identities and exact fixture bindings, and fails if any
+packed-row, draw-time-cb3, or visual admission flag becomes true without new
+evidence.
+The installed stock UnityPlayer path is not the stride-136 producer:
+`PrepareForRenderThreaded` builds `0x108`-byte CPU records at renderer
+`+0x1A0` with their count at `+0x160`, and the selected mode-4 draw chain has
+no D3D11 buffer creation or 136-byte IA binding. The real foreground M23
+source draw is stride 60; observed stock alternatives are 36 and auxiliary
+24/48/88-byte streams. Keep the producer queue on the fork/HG render or mesh
+conversion path. The synthetic exact fixture remains the only captured
+stride-136 draw and cannot establish source provenance.
 At PTS 40000 it proves two live particles each for `xuanzhuan03` (388 source
 vertices, 776 baked) and `xuanzhuan03_02` (768 source vertices, 1,536 baked),
 while both `xuanzhuan04*` renderers are present but empty. Source normals and

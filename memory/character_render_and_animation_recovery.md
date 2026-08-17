@@ -2525,6 +2525,20 @@ only stable interpretation and priorities.
    public color cannot be copied into the exact packet. TEXCOORD4 remains an
    alternate-position input controlled by runtime `cb3[10].x`, not an
    unconditional alias for Custom1.
+   The stock UnityPlayer path is now excluded as the 136-byte IA producer.
+   `PrepareForRenderThreaded` builds CPU records beginning at renderer
+   `+0x1A0` with `0x108` stride and the count at `+0x160`; the selected
+   mode-4/`DrawMeshParticles<4>` chain contains no D3D11 buffer creation or
+   136-byte IA binding. Its real foreground source draw uses stride 60, while
+   other stock captures use 36 and ordinary auxiliary 24/48/88-byte streams.
+   The only observed stride-136 draw remains the synthetic exact-DXBC fixture.
+   Therefore the remaining producer search belongs to the fork/HG render or
+   mesh-conversion path, not stock ParticleSystemRenderer expansion.
+   `tools/validate_m23_packet_contract.py` now joins the managed census,
+   source/BakeMesh oracle, and exact-DXBC fixture with deterministic
+   diagnostics. Its current 225 checks close the four public rows and recover
+   packed alpha 51/70 by recomputing the oracle hashes, while requiring every
+   packed-row, draw-time-cb3, and visual admission flag to remain false.
    A narrower immediate-context object-vtable experiment is also rejected. It
    shadowed the complete 115-slot `ID3D11DeviceContext` table only inside the
    isolated player, filtered Draw variants by the retained exact VS/PS
