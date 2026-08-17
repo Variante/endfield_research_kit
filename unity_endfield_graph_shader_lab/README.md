@@ -4683,6 +4683,30 @@ events therefore cannot close draw-time constants; the next route must hook
 the actual D3D11 Draw/constant-buffer binding path or use an external API
 capture keyed to the exact shader/material identity.
 
+Windows Graphics Diagnostics is now a proven supported capture path for the
+isolated D3D11 player. Capturing frame 0 and replaying it through
+`DXCap.exe -toXML` yields 18,269 API calls and two draws. The maintained
+streaming parser uniquely identifies moment 9748 as the exact diagnostic
+candidate: `Draw(3,0)`, VS handle 8343, PS handle 8344, one 136-byte IA
+stream, and five VS constant-buffer handles. It rejects the earlier Unity
+shell draw with incompatible 40/64/32-byte streams. This closes safe draw
+identification without a context hook. The XML does not inline vertex- or
+constant-buffer bytes, so the complete source-row ABI and the 224-byte VS
+`cb3[14]` remain open. The next target is the real M23 particle draw and a
+supported resource-byte inspection or upstream renderer-packing join.
+
+The standalone Li M23 source-renderer capture probe now isolates
+`start_04_2/xuanzhuan03` in a normal D3D11 player. It preserves the exact
+source prefab, enables only the real `ParticleSystemRenderer`, and explicitly
+forbids BakeMesh and MeshRenderer proxies. Runtime validation closes the exact
+PathIDs, serialized seed 7930, two particles at local time 0.199667, and active
+streams `[0,1,3,4,5,34]`. The first DXCap frames contain no target draw and the
+renderer remains not visible even after bounds-based camera framing. Two
+bounded compatibility ablations also remain negative: replacing serialized
+`m_SortingFudge=NaN` with zero and disabling authored GPU instancing. Treat
+this as a real Unity particle-submission admission gap, not permission to use
+the existing BakeMesh proxy as the target draw.
+
 An isolated immediate-context shadow-vtable attempt is deliberately removed.
 It copied all 115 `ID3D11DeviceContext` slots, hooked only Draw variants,
 filtered by the retained exact VS/PS pointers, and restored the object vptr,

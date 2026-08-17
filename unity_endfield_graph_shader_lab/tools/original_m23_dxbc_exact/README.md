@@ -129,6 +129,37 @@ VS/PS objects. Unity crashed inside `Graphics.ExecuteCommandBuffer` before a
 report on two storage-lifetime variants. The experiment was removed and the
 published plugin rebuilt from the safe observer source.
 
+## Supported DXCap evidence path
+
+Windows Graphics Diagnostics provides a supported D3D11 capture boundary for
+the isolated player. For this short player the useful frame is frame 0; later
+frames may contain only the shutdown shell. Capture and export the API event
+stream with:
+
+```bat
+cd unity_endfield_graph_shader_lab\tools\original_m23_dxbc_exact
+C:\Windows\System32\DXCap.exe -file <capture.vsglog> -frame 0+1 -terminateonsave -c <player.exe> <player arguments>
+C:\Windows\System32\DXCap.exe -p <capture.vsglog> -toXML <capture.xml>
+python dxcap_xml_evidence.py <capture.xml> -o <capture.evidence.json>
+python test_dxcap_xml_evidence.py
+```
+
+`dxcap_xml_evidence.py` accepts both the rootless XML emitted by the installed
+Windows SDK and bounded rooted fixtures. It incrementally tracks D3D11 shader,
+IA, constant-buffer, resource, sampler, topology, viewport, and target state.
+The exact diagnostic candidate requires the known VS/PS bytecode lengths and
+the 136-byte IA stride. It never promotes object handles or bytecode lengths
+to byte hashes.
+
+The current isolated capture locates one exact candidate at moment 9748:
+`Draw(3,0)`, VS handle 8343, PS handle 8344, IA stride 136, and five VS
+constant-buffer handles 8347 through 8351. The XML does not inline vertex- or
+constant-buffer contents, so this closes safe draw identification only. It
+does not recover the 136-byte source row, the 224-byte VS `cb3[14]`, or retail
+particle visibility. Keep `.vsglog`, replay XML, and generated evidence JSON
+under `scratch/reverse_engineering/`; they are disposable capture artifacts,
+not tracked source contracts.
+
 Event 2 intentionally owns and clears Unity's immediate-context state for the
 duration of the isolated diagnostic pass; it is not safe to interleave with a
 normal viewer frame. The managed diagnostic gate invokes it only in the
