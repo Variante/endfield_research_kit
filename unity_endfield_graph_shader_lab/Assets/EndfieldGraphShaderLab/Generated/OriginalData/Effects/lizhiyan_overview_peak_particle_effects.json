@@ -29964,7 +29964,37 @@
       "cb4[23..24]",
       "cb4[28..29]",
       "cb4[33..43]"
-    ]
+    ],
+    "fragmentContainer": {
+      "bytes": 8100,
+      "chunks": [
+        {
+          "fourCC": "ISGN",
+          "offset": "0x2C",
+          "bytes": 248
+        },
+        {
+          "fourCC": "OSGN",
+          "offset": "0x12C",
+          "bytes": 68
+        },
+        {
+          "fourCC": "SHEX",
+          "offset": "0x178",
+          "bytes": 7716
+        }
+      ],
+      "hasRdef": false,
+      "b4Float4Registers": 44,
+      "b4Bytes": 704,
+      "highestDirectlyAccessedB4Index": 43,
+      "reflectionBoundary": {
+        "isPartial": true,
+        "bytes": 432,
+        "namedSlots": "cb4[0..9] with gaps recorded by lowCbufferMappings"
+      },
+      "unresolvedNameBoundary": "cb4[10..43]"
+    }
   },
   "executionBoundary": "Serialized hierarchy/TRS, particle modules, renderer/material/mesh ownership, material payloads, converted textures, converted mesh geometry, shader identity, and M23's exact ForwardOnly vertex/fragment DXBC variant are source-closed. M23 TEXCOORD packing and the named low UnityPerMaterial slots are instruction/metadata-closed; high sample/mask/blend/dissolve/Fresnel cbuffer property names remain explicitly unresolved. Filtered GameObject convenience JSON omits m_IsActive; manual diagnostics default those nodes active while retail activation remains owned by unrecovered EffectSetting/EffectLodCfg execution. Converted PNG/OBJ payloads are diagnostic derivatives. Retail EffectSetting execution, descriptor binding, draw/PSO/MRT/depth, after-DOF survivor ownership, and final compositing remain unproven; visibleAdmission stays false."
 }

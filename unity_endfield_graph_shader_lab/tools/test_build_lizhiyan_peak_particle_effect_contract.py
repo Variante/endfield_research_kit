@@ -38,6 +38,10 @@ def test_m23_abi_constants_and_generated_contract() -> None:
         "o3.xy": "sample2UV", "o3.zw": "sample3UV",
     }
     assert "cb4[11..12]" in M.M23_UNRESOLVED_CBUFFER_SLOTS
+    assert M.M23_FRAGMENT_CONTAINER["hasRdef"] is False
+    assert M.M23_FRAGMENT_CONTAINER["b4Float4Registers"] == 44
+    assert M.M23_FRAGMENT_CONTAINER["highestDirectlyAccessedB4Index"] == 43
+    assert M.M23_FRAGMENT_CONTAINER["unresolvedNameBoundary"] == "cb4[10..43]"
 
     data = json.loads(CONTRACT.read_text(encoding="utf-8"))
     abi = data["m23ShaderAbi"]
@@ -49,6 +53,7 @@ def test_m23_abi_constants_and_generated_contract() -> None:
     assert abi["texcoordPacking"] == M.M23_TEXCOORD_PACKING
     assert abi["lowCbufferMappings"] == M.M23_LOW_CBUFFER_MAPPINGS
     assert abi["unresolvedCbufferSlots"] == M.M23_UNRESOLVED_CBUFFER_SLOTS
+    assert abi["fragmentContainer"] == M.M23_FRAGMENT_CONTAINER
 
 
 if __name__ == "__main__":

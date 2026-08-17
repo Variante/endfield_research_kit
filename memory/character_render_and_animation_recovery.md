@@ -2249,6 +2249,11 @@ only stable interpretation and priorities.
    vertex/fragment blob hashes, pass/keyword identity, UV packing, and named
    low UnityPerMaterial slots. It records higher sample/mask/blend/dissolve/
    Fresnel slot groups as unresolved instead of inventing property names.
+   Direct container parsing confirms the 8,100-byte fragment has only ISGN,
+   OSGN, and SHEX chunks and no RDEF. SHEX declares 44 b4 float4 registers
+   (704 bytes) and reaches cb4[43], while every matching DXBC/Vulkan sidecar
+   exposes only a 432-byte partial reflection. Names for cb4[10..43] therefore
+   require a separate layout source; they are not hidden in this binary.
    The exact independently AssetMap-proven finger prefab is now executable in
    the same actor-composed diagnostic. It is mounted beneath the unique
    `Bip001_R_Finger2Nub`, keeps its source 0.83333-second delay and
