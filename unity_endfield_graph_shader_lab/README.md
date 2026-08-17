@@ -4508,6 +4508,12 @@ properties, but its UnityPerMaterial table is the same 432-byte partial view.
 Three guarded property-order packing models fail the known low offsets and
 the 704-byte SHEX size, so property declaration order must not be used to name
 cb4[10..43]. The probe hash and negative gates are part of `m23ShaderAbi`.
+`tools/original_m23_dxbc_exact/` now provides the next isolated recovery
+stage: a D3D11/WARP creation fixture for exact blobs 0138/0139. It validates
+the full 136-byte input layout, separate stage-specific b0..b4 allocations,
+five SRVs/samplers, and controlled raster/blend/depth state. All creation masks
+pass. It does not bind, draw, read back, integrate with Unity, or claim visual
+fidelity; those remain the next explicit gates.
 
 The actor-composed harness now also instantiates the exact recovered
 `P_fxui_lizhiyan_overview_trails_Bip001_R_Finger2Nub` prefab beneath the
