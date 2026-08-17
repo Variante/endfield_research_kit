@@ -4461,11 +4461,14 @@ textures. Because filtered GameObject JSON omits `m_IsActive`, manual capture
 defaults those nodes active and records that retail activation remains
 unproven. The actor-composed D3D12 harness manually samples each particle
 system and uses Unity `BakeMesh` billboard proxies for the known command-line
-paused-buffer submission boundary. At PTS 40000 it records 26 live particles,
-15,962 peak-only non-background pixels, and 4.548% peak-only `broadTeal`;
-composite coverage rises to 7.572% but remains below 21.699% retail. Separate
-manifest validation passes, while every native/retail admission flag remains
-false.
+paused-buffer submission boundary. The original schema-v3 run incorrectly
+sampled the peak roots on the actor-local clock and reported 26 particles at
+PTS 40000. Schema v4 applies the recovered effect delay and records 129 live
+particles plus 8,212 baked COLOR0 values at effect-local 0.199667 seconds;
+PTS 37967/39367 are correctly empty, PTS 40834 retains 104 particles at
+1.033667 seconds, and PTS 41434 is past the recovered duration and empty.
+Separate manifest validation passes, while every native/retail admission flag
+remains false.
 The peak diagnostic now preserves M19's authored soft-blend/Fresnel keyword
 state and the SampleStack vertex path consumes the recovered particle streams:
 UV2 from `TEXCOORD0.zw`, Custom1XYZW from `TEXCOORD1`, and
@@ -4563,6 +4566,14 @@ All four exact-material particle renderers enable custom vertex streams
 `[0,1,3,4,5,34]`, including Color, and their serialized start/color-over-
 lifetime RGB is white. The white RGB input is thus source-backed; its target-
 frame alpha and the exact per-draw attenuation remain runtime-dependent.
+Cross-variant Unity/native evidence identifies that attenuation as the
+complement of packed RGBA8 particle-instance color, so exact 0138 evaluates
+`COLOR0*(1-cb3[13])`. White serialized RGB fixes xyz to zero; age-dependent
+alpha remains dynamic. Actor-composed manifest schema v4 now honors each peak
+root's recovered 1.833333-second effect delay and 1.233333-second duration,
+simulates on its effect-local clock, and records per-renderer baked COLOR0
+alpha min/max/mean. The refreshed D3D12 capture and stricter validator pass;
+the older v3 capture must not be used as corrected-clock evidence.
 
 The actor-composed harness now also instantiates the exact recovered
 `P_fxui_lizhiyan_overview_trails_Bip001_R_Finger2Nub` prefab beneath the

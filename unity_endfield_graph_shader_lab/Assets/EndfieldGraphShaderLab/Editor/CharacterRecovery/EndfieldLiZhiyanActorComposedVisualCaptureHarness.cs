@@ -71,7 +71,7 @@ namespace EndfieldGraphShaderLabEditor
         private const string ExpectedOracleSchema =
             "endfield.lizhiyan-retail-visual-oracle.v1";
         private const string ExpectedManifestSchema =
-            "endfield.lizhiyan-actor-composed-diagnostic-capture.v3";
+            "endfield.lizhiyan-actor-composed-diagnostic-capture.v4";
         private const long SharedClipPathId = 7360398354216100382L;
         private const string SharedClipName = "A_fxui__lizhiyan_overview_start_01";
         private const float SharedClipStopTime = 6.366667f;
@@ -317,6 +317,8 @@ namespace EndfieldGraphShaderLabEditor
                             actorClipClampedAfterEnd = localSeconds > actorClip.length,
                             effectsAllInactive = !AnyEffectActive(localSeconds),
                             peakParticleAliveCount = CountPeakParticles(bundle),
+                            peakParticleColorSamples =
+                                BuildPeakParticleColorSamples(bundle, localSeconds),
                         };
 
                         ConfigureVisibility(bundle, localSeconds, true, -1);
@@ -815,13 +817,17 @@ namespace EndfieldGraphShaderLabEditor
             for (int rootIndex = 0; rootIndex < bundle.peakEffects.Length; rootIndex++)
             {
                 GameObject peak = bundle.peakEffects[rootIndex];
-                peak.SetActive(actorActive);
+                EndfieldRecoveredParticleEffectSource marker =
+                    bundle.peakMarkers[rootIndex];
+                bool peakActive = actorActive && IsPeakEffectActive(marker, localSeconds);
+                float peakLocalSeconds = localSeconds - marker.sourceEffectDelay;
+                peak.SetActive(peakActive);
                 foreach (ParticleSystem system in peak.GetComponentsInChildren<ParticleSystem>(true))
                 {
                     system.Stop(false, ParticleSystemStopBehavior.StopEmittingAndClear);
-                    if (actorActive)
-                        system.Simulate(Mathf.Max(0f, localSeconds), false, true, true);
-                    if (actorActive && system.particleCount > 0)
+                    if (peakActive)
+                        system.Simulate(Mathf.Max(0f, peakLocalSeconds), false, true, true);
+                    if (peakActive && system.particleCount > 0)
                         system.Play(false);
                 }
             }
@@ -843,7 +849,9 @@ namespace EndfieldGraphShaderLabEditor
             foreach (PeakBakeProxy proxy in bundle.peakBakeProxies)
             {
                 proxy.mesh.Clear();
-                if (actorActive && proxy.system.particleCount > 0)
+                bool peakActive = actorActive && IsPeakEffectActive(
+                    bundle.peakMarkers[proxy.rootIndex], localSeconds);
+                if (peakActive && proxy.system.particleCount > 0)
                 {
                     proxy.sourceRenderer.BakeMesh(
                         proxy.mesh,
@@ -892,13 +900,17 @@ namespace EndfieldGraphShaderLabEditor
             for (int index = 0; index < bundle.peakEffects.Length; index++)
             {
                 bool active = actorActive &&
+                    IsPeakEffectActive(bundle.peakMarkers[index], localSeconds) &&
                     (composite || effectSelection == -3 || effectSelection == -4);
                 bundle.peakEffects[index].SetActive(active);
             }
-            bool peakVisible = actorActive &&
-                (composite || effectSelection == -3 || effectSelection == -4);
             foreach (PeakBakeProxy proxy in bundle.peakBakeProxies)
+            {
+                bool peakVisible = actorActive && IsPeakEffectActive(
+                    bundle.peakMarkers[proxy.rootIndex], localSeconds) &&
+                    (composite || effectSelection == -3 || effectSelection == -4);
                 proxy.proxyRenderer.enabled = peakVisible && proxy.hasGeometry;
+            }
             bool fingerVisible = actorActive && IsFingerEffectActive(localSeconds) &&
                 (composite || effectSelection == -3);
             bundle.fingerEffect.SetActive(fingerVisible);
@@ -911,6 +923,63 @@ namespace EndfieldGraphShaderLabEditor
             float fingerLocalSeconds = localSeconds - FingerEffectDelaySeconds;
             return fingerLocalSeconds >= -ActiveEndpointEpsilon &&
                 fingerLocalSeconds <= FingerEffectDurationSeconds + ActiveEndpointEpsilon;
+        }
+
+        private static bool IsPeakEffectActive(
+            EndfieldRecoveredParticleEffectSource marker,
+            float localSeconds)
+        {
+            Require(marker != null, "Peak particle marker is missing");
+            float peakLocalSeconds = localSeconds - marker.sourceEffectDelay;
+            return peakLocalSeconds >= -ActiveEndpointEpsilon &&
+                peakLocalSeconds <= marker.sourceEffectDuration + ActiveEndpointEpsilon;
+        }
+
+        private static PeakParticleColorSampleRecord[] BuildPeakParticleColorSamples(
+            ActorBundle bundle,
+            float localSeconds)
+        {
+            var rows = new List<PeakParticleColorSampleRecord>();
+            foreach (PeakBakeProxy proxy in bundle.peakBakeProxies)
+            {
+                Color[] colors = proxy.mesh.colors;
+                float alphaMin = 0f;
+                float alphaMax = 0f;
+                float alphaMean = 0f;
+                if (colors.Length > 0)
+                {
+                    alphaMin = 1f;
+                    double alphaSum = 0.0;
+                    for (int index = 0; index < colors.Length; index++)
+                    {
+                        float alpha = colors[index].a;
+                        alphaMin = Mathf.Min(alphaMin, alpha);
+                        alphaMax = Mathf.Max(alphaMax, alpha);
+                        alphaSum += alpha;
+                    }
+                    alphaMean = (float)(alphaSum / colors.Length);
+                }
+                EndfieldRecoveredParticleEffectSource marker =
+                    bundle.peakMarkers[proxy.rootIndex];
+                rows.Add(new PeakParticleColorSampleRecord
+                {
+                    effectRoot = marker.effectRoot,
+                    sourceEffectDelay = marker.sourceEffectDelay,
+                    sourceEffectDuration = marker.sourceEffectDuration,
+                    effectLocalSeconds = localSeconds - marker.sourceEffectDelay,
+                    effectActive = IsPeakEffectActive(marker, localSeconds),
+                    hierarchy = proxy.sourceNode.hierarchy,
+                    particleSystemPathId = proxy.sourceNode.particleSystemPathId,
+                    particleRendererPathId = proxy.sourceNode.particleRendererPathId,
+                    particleCount = proxy.system.particleCount,
+                    bakedVertexCount = proxy.mesh.vertexCount,
+                    bakedColorCount = colors.Length,
+                    colorAlphaMin = alphaMin,
+                    colorAlphaMax = alphaMax,
+                    colorAlphaMean = alphaMean,
+                });
+            }
+            return rows.ToArray();
         }
 
         private static int CountPeakParticles(ActorBundle bundle)
@@ -1987,6 +2056,9 @@ namespace EndfieldGraphShaderLabEditor
             bool[] foundVisibleRoot = new bool[Roots.Length];
             bool foundVisibleActor = false;
             bool foundVisiblePeakParticles = false;
+            bool foundPeakBeforeDelay = false;
+            bool foundPeakInsideWindow = false;
+            bool foundPeakAfterDuration = false;
             var materialCurveStateHashes = new HashSet<string>[Roots.Length];
             var rootPngHashes = new HashSet<string>[Roots.Length];
             for (int index = 0; index < Roots.Length; index++)
@@ -2008,8 +2080,60 @@ namespace EndfieldGraphShaderLabEditor
                     capture.effectsOnly != null && capture.peakParticlesOnly != null &&
                     capture.peakParticleAliveCount >= 0 && capture.roots != null &&
                     capture.roots.Length == Roots.Length &&
-                    capture.rendererFingerprintWitness != null,
+                    capture.rendererFingerprintWitness != null &&
+                    capture.peakParticleColorSamples != null &&
+                    capture.peakParticleColorSamples.Length == 14,
                     "Actor-composed capture timing/shape drifted at PTS " + expected.retailPts);
+                int sampledPeakParticleCount = 0;
+                for (int sampleIndex = 0;
+                    sampleIndex < capture.peakParticleColorSamples.Length;
+                    sampleIndex++)
+                {
+                    PeakParticleColorSampleRecord sample =
+                        capture.peakParticleColorSamples[sampleIndex];
+                    Require(sample != null && !string.IsNullOrEmpty(sample.effectRoot) &&
+                        !string.IsNullOrEmpty(sample.hierarchy) &&
+                        sample.particleSystemPathId != 0 &&
+                        sample.particleRendererPathId != 0 &&
+                        sample.sourceEffectDelay >= 0f &&
+                        sample.sourceEffectDuration > 0f &&
+                        Mathf.Abs(sample.effectLocalSeconds -
+                            (capture.localSeconds - sample.sourceEffectDelay)) < 0.00001f,
+                        "Peak particle COLOR0 identity/timing drifted at PTS " +
+                        expected.retailPts);
+                    bool expectedPeakActive = sample.effectLocalSeconds >=
+                        -ActiveEndpointEpsilon && sample.effectLocalSeconds <=
+                        sample.sourceEffectDuration + ActiveEndpointEpsilon;
+                    Require(sample.effectActive == expectedPeakActive &&
+                        sample.particleCount >= 0 && sample.bakedVertexCount >= 0 &&
+                        sample.bakedColorCount == sample.bakedVertexCount &&
+                        float.IsFinite(sample.colorAlphaMin) &&
+                        float.IsFinite(sample.colorAlphaMax) &&
+                        float.IsFinite(sample.colorAlphaMean) &&
+                        sample.colorAlphaMin >= 0f && sample.colorAlphaMax <= 1f &&
+                        sample.colorAlphaMin <= sample.colorAlphaMean &&
+                        sample.colorAlphaMean <= sample.colorAlphaMax,
+                        "Peak particle COLOR0 payload drifted at PTS " +
+                        expected.retailPts);
+                    if (!expectedPeakActive)
+                    {
+                        Require(sample.particleCount == 0 &&
+                            sample.bakedColorCount == 0,
+                            "Inactive peak particle retained payload at PTS " +
+                            expected.retailPts);
+                    }
+                    sampledPeakParticleCount += sample.particleCount;
+                    foundPeakBeforeDelay |= sample.effectLocalSeconds < 0f &&
+                        !sample.effectActive && sample.particleCount == 0;
+                    foundPeakInsideWindow |= sample.effectActive &&
+                        sample.particleCount > 0 && sample.bakedColorCount > 0;
+                    foundPeakAfterDuration |= sample.effectLocalSeconds >
+                        sample.sourceEffectDuration && !sample.effectActive &&
+                        sample.particleCount == 0;
+                }
+                Require(sampledPeakParticleCount == capture.peakParticleAliveCount,
+                    "Peak particle COLOR0 rows do not match aggregate count at PTS " +
+                    expected.retailPts);
                 ValidateRendererFingerprintWitness(
                     capture, ref stableRendererFingerprints, actorPoseHashes);
                 ValidateFrame(capture.composite, outputDirectory, expected.retailPts, "composite",
@@ -2096,6 +2220,9 @@ namespace EndfieldGraphShaderLabEditor
             Require(foundVisibleActor, "No actor-only capture produced visible pixels");
             Require(foundVisiblePeakParticles,
                 "No live peak-particle capture produced visible pixels");
+            Require(foundPeakBeforeDelay && foundPeakInsideWindow &&
+                foundPeakAfterDuration,
+                "Peak particle corrected delay/duration/COLOR0 witnesses are incomplete");
             for (int index = 0; index < Roots.Length; index++)
                 Require(foundVisibleRoot[index],
                     "No root-only capture produced visible pixels for " + Roots[index].key);
@@ -2730,6 +2857,7 @@ namespace EndfieldGraphShaderLabEditor
             public bool actorClipClampedAfterEnd;
             public bool effectsAllInactive;
             public int peakParticleAliveCount;
+            public PeakParticleColorSampleRecord[] peakParticleColorSamples;
             public RendererFingerprintRecord[] rendererFingerprintWitness;
             public FrameRecord composite;
             public FrameRecord actorOnly;
@@ -2737,6 +2865,25 @@ namespace EndfieldGraphShaderLabEditor
             public FrameRecord peakParticlesOnly;
             public RootCaptureRecord[] roots;
             public RetailRoiComparison[] roiComparisons;
+        }
+
+        [Serializable]
+        private sealed class PeakParticleColorSampleRecord
+        {
+            public string effectRoot;
+            public float sourceEffectDelay;
+            public float sourceEffectDuration;
+            public float effectLocalSeconds;
+            public bool effectActive;
+            public string hierarchy;
+            public long particleSystemPathId;
+            public long particleRendererPathId;
+            public int particleCount;
+            public int bakedVertexCount;
+            public int bakedColorCount;
+            public float colorAlphaMin;
+            public float colorAlphaMax;
+            public float colorAlphaMean;
         }
 
         [Serializable]
