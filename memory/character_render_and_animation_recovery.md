@@ -2344,6 +2344,22 @@ only stable interpretation and priorities.
    renderer alpha spans quantized per-system ranges including 0.1137..0.1608,
    0.2..0.2745, and fully opaque 1.0 lanes. Exposure history, UVs, and neutral
    high slots remain open before claiming material or visual parity.
+   The M23 Unity handoff now has a separate opt-in D3D11 compiler-extension
+   bridge and standalone-only shell. It is inert without the explicit batch
+   diagnostic token, reserves `ENDFIELD_ORIGINAL_M23_DXBC_EXACT`, admits one
+   VS and one PS replacement per arm cycle, verifies the copied DLL hash and
+   exports, and releases retained COM references through render event 3.
+   Offline WARP modes, the managed contract test, and D3D12 zero-activation
+   gate pass. The live D3D11 player now closes exact execution through an
+   isolated render-event fixture: 2 callbacks, one exact VS and PS swap, no
+   failures, one native draw, exact-shader identity true, complete VS
+   CB/SRV masks `0x1f/0x1`, complete PS CB/SRV/sampler masks
+   `0x1f/0x1f/0x1f`, and completed render-thread cleanup. The exact-pair
+   fixture's finite sentinel-preserving output is an execution/binding proof,
+   not a visual-fidelity claim. Next feed the recovered particle vertex rows,
+   exact textures, high-neutral material constants, reciprocal exposure, and
+   corrected COLOR0 clock into a visual output mode; ordinary viewer admission
+   remains false.
    The exact independently AssetMap-proven finger prefab is now executable in
    the same actor-composed diagnostic. It is mounted beneath the unique
    `Bip001_R_Finger2Nub`, keeps its source 0.83333-second delay and

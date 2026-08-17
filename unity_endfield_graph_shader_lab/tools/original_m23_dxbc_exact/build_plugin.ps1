@@ -3,6 +3,7 @@ $ErrorActionPreference = "Stop"
 $toolRoot = $PSScriptRoot
 $projectRoot = (Resolve-Path (Join-Path $toolRoot "..\..")).Path
 $buildRoot = Join-Path $toolRoot "build"
+$pluginOutputRoot = Join-Path $projectRoot "Assets\EndfieldGraphShaderLab\Plugins\x86_64"
 $vswhere = "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe"
 $sourceRoot = (Resolve-Path (Join-Path $projectRoot "..\scratch\character_recovery\vfx_shader_variants\shader_export\Shader\HGRP_Effect_VFXBaseV2_pEC273EDA76F7FCDA.shader.bytecode")).Path
 $materialPath = (Resolve-Path (Join-Path $projectRoot "..\scratch\animestudio\lizhiyan_peak_particles\dependency_json\Material\M_fxui__lizhiyan_overview_23_pFA062F1311E9B888.json")).Path
@@ -20,11 +21,36 @@ $vsDevCmd = Join-Path $visualStudio "Common7\Tools\VsDevCmd.bat"
 $dll = Join-Path $buildRoot "OriginalM23DxbcExactPlugin.dll"
 $obj = Join-Path $buildRoot "OriginalM23DxbcExactPlugin.obj"
 $source = Join-Path $toolRoot "OriginalM23DxbcExactPlugin.cpp"
+$bridgeSource = Join-Path $toolRoot "OriginalM23DxbcUnityBridge.cpp"
 $importLibrary = Join-Path $buildRoot "OriginalM23DxbcExactPlugin.lib"
 $exports = Join-Path $buildRoot "OriginalM23DxbcExactPlugin.exp"
-$cmd = "cl.exe /nologo /std:c++17 /O2 /EHsc /LD /I`"$buildRoot`" /Fo`"$obj`" `"$source`" /link /NOLOGO /Brepro /OUT:`"$dll`" /IMPLIB:`"$importLibrary`" d3d11.lib d3dcompiler.lib bcrypt.lib windowscodecs.lib ole32.lib"
-cmd.exe /d /c "call `"$vsDevCmd`" -arch=x64 -host_arch=x64 && $cmd"
+$bridgeObj = Join-Path $buildRoot "OriginalM23DxbcUnityBridge.obj"
+$compileSource = "cl.exe /nologo /std:c++17 /O2 /EHsc /c /I`"$buildRoot`" /Fo`"$obj`" `"$source`""
+$compileBridge = "cl.exe /nologo /std:c++17 /O2 /EHsc /c /I`"$buildRoot`" /I`"D:\Program Files\2022.3.62f3\Editor\Data\PluginAPI`" /Fo`"$bridgeObj`" `"$bridgeSource`""
+$link = "link.exe /DLL /NOLOGO /Brepro `"$obj`" `"$bridgeObj`" /OUT:`"$dll`" /IMPLIB:`"$importLibrary`" d3d11.lib d3dcompiler.lib bcrypt.lib windowscodecs.lib ole32.lib"
+cmd.exe /d /c "call `"$vsDevCmd`" -arch=x64 -host_arch=x64 && $compileSource && $compileBridge && $link"
 if ($LASTEXITCODE -ne 0) { throw "M23 plugin compilation failed." }
+New-Item -ItemType Directory -Force -Path $pluginOutputRoot | Out-Null
+$pluginDll = Join-Path $pluginOutputRoot "OriginalM23DxbcExactPlugin.dll"
+Copy-Item -LiteralPath $dll -Destination $pluginDll -Force
+$builtHash = (Get-FileHash -LiteralPath $dll -Algorithm SHA256).Hash.ToLowerInvariant()
+$copiedHash = (Get-FileHash -LiteralPath $pluginDll -Algorithm SHA256).Hash.ToLowerInvariant()
+if ($builtHash -ne $copiedHash) { throw "M23 Unity plugin copy hash mismatch." }
+$exportListing = cmd.exe /d /c "call `"$vsDevCmd`" -arch=x64 -host_arch=x64 && dumpbin /exports `"$dll`""
+if ($LASTEXITCODE -ne 0) { throw "M23 Unity plugin export inspection failed." }
+foreach ($requiredExport in @(
+    "UnityPluginLoad",
+    "UnityShaderCompilerExtEvent",
+    "EndfieldOriginalM23DxbcBridgeSetArmed",
+    "EndfieldOriginalM23DxbcBridgeGetRenderEventFunc",
+    "EndfieldOriginalM23DxbcBridgeGetCleanupCount",
+    "EndfieldOriginalM23DxbcBridgeGetNativeDrawIssued",
+    "EndfieldOriginalM23DxbcBridgeCopyNativeReadback"
+)) {
+    if (-not ($exportListing -match [regex]::Escape($requiredExport))) {
+        throw "M23 Unity plugin export missing: $requiredExport"
+    }
+}
 $validatorObj = Join-Path $buildRoot "ValidateEmbeddedM23Dxbc.obj"
 $validator = Join-Path $buildRoot "ValidateEmbeddedM23Dxbc.exe"
 $report = Join-Path $buildRoot "m23_dxbc_validation.json"
@@ -72,8 +98,10 @@ foreach ($nativeReport in $reports) {
     python (Join-Path $toolRoot "validate_diagnostic.py") --report $nativeReport
     if ($LASTEXITCODE -ne 0) { throw "M23 report validation failed: $nativeReport" }
 }
-Remove-Item -Force -ErrorAction SilentlyContinue $obj,$validatorObj
+Remove-Item -Force -ErrorAction SilentlyContinue $obj,$bridgeObj,$validatorObj
 Write-Output "native_creation_fixture=$dll"
+Write-Output "unity_plugin_output=$pluginDll"
+Write-Output "unity_plugin_sha256=$copiedHash"
 Write-Output "native_validation_report=$report"
 Write-Output "native_diagnostic_validation_report=$diagnosticReport"
 Write-Output "native_named_low_validation_report=$namedLowReport"

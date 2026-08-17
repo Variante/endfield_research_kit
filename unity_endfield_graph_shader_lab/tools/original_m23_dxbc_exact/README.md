@@ -78,3 +78,46 @@ VSGet*/PSGet*/IAGet*/OMGet* masks, draws three vertices into a controlled 1x1
 float RT with triangle-list topology and a 1x1 viewport, and maps a staging
 copy. `readback_changed_from_sentinel` is reported
 but is not a pass gate; `visual_fidelity_claim` is always false.
+
+## Opt-in Unity bridge
+
+`OriginalM23DxbcUnityBridge.cpp` is linked into the same DLL as the fixture;
+the standalone exports and report layout above remain unchanged. Unity calls
+`UnityPluginLoad` and `UnityShaderCompilerExtEvent` through the normal native
+plugin/compiler-extension ABI. The compiler configuration reserves
+`ENDFIELD_ORIGINAL_M23_DXBC_EXACT` and advertises only D3D11 SM5 VS/PS
+programs. The bridge is disarmed after plugin load and only arms through
+`EndfieldOriginalM23DxbcBridgeSetArmed(1)`.
+
+While armed, a callback must pass the D3D11 platform and exactly-one VS/PS
+stage gates before replacement. Unity supplies shell/variant bytecode to this
+callback rather than the original retail 0138/0139 bytes, so the bridge does
+not make an impossible byte-for-byte input comparison. The reserved keyword
+and explicit arm request are the opt-in contract; it claims at most one exact
+object per stage per arm cycle, while callbacks before arming and extra stage
+objects remain Unity-owned. The bridge retains a separate COM reference for
+render-event identity checks, so the stored pointer does not depend on Unity
+retaining the compiler output object.
+
+`EndfieldOriginalM23DxbcBridgeGetRenderEventFunc()` returns an arm-aware
+render-event callback. Event ID 1 inspects current D3D11 VS/PS and the M23
+five-slot constant/resource/sampler masks. Event ID 2 runs the already-proven
+exact-pair fixture against the current Unity D3D11 device: it creates
+controlled M23 b0..b4/skin/texture/sampler resources, input layout and
+triangle, float render target, issues the exact VS/PS draw, staging-reads the
+result, and then calls `ClearState()`/`Flush()`. It increments native
+execution/draw counters and exposes finite/changed/changed-from-zero output
+bits plus four readback floats. Event ID 3 disarms and releases retained
+compiler shader COM references on the render thread. Callers should call
+`SetArmed(0)`, issue event 3, and only then unload or rearm.
+
+Event 2 intentionally owns and clears Unity's immediate-context state for the
+duration of the isolated diagnostic pass; it is not safe to interleave with a
+normal viewer frame. The managed diagnostic gate invokes it only in the
+isolated player, which exits immediately; no normal viewer path invokes the
+event. The callback does not claim visual fidelity or reuse Unity's transient
+post-draw bindings. Arm, shell-input-observed, blocked, failure, cleanup,
+binding, draw, readback, and render counters are reset at the arm boundary and
+exposed through deterministic bridge getter exports. The build script copies
+the linked DLL to the lab's x86_64 Unity plugin folder after the native compile
+succeeds.
