@@ -4539,6 +4539,14 @@ writes `[0,0,0,0]`; these are negative register-level results, not recovered
 property values. A tentative final-output operand patch was rejected because
 the modified DXBC no longer disassembled, so the next step is supported shader
 tracing/token decoding or exact texture/global-buffer substitution.
+Exact texture substitution is now executable. The fixture hash-checks and
+WIC-decodes the five M23 t0..t4 PNGs, preserves their dimensions, and samples
+them across a hash-pinned 16x16 UV diagnostic grid as RGBA8 UNORM without an
+sRGB transform. Named-low values produce no nonzero pixels; the high-neutral
+diagnostic produces 175/256 alpha pixels with maximum `[0,0,0,1]`. Exact 0139
+therefore has a working real-texture alpha path. Its RGB chain is still zero,
+and the diagnostic UV/high constants must not be presented as recovered
+vertex, material, or visual fidelity.
 
 The actor-composed harness now also instantiates the exact recovered
 `P_fxui_lizhiyan_overview_trails_Bip001_R_Finger2Nub` prefab beneath the

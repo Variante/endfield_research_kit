@@ -43,6 +43,16 @@ current combination still writes transparent black. This proves only that
 the tested inputs are insufficient; it does not name high slots or recover
 material values. The build executes and validates every maintained mode.
 
+Two exact-texture modes replace synthetic t0..t4 with the five M23 PNGs joined
+by the generated peak contract. The build checks every PNG hash, WIC-decodes
+the original dimensions to RGBA8 UNORM without an sRGB transform, and uses a
+separately source/compiled-hash-pinned diagnostic VS to sweep UV `[0,1]` over
+a 16x16 target. Named-low constants produce 0/256 nonzero pixels. The
+numerical-domain-neutral high-slot diagnostic produces 175/256 nonzero pixels
+with maximum RGBA `[0,0,0,1]`. This is the first exact-PS alpha activation;
+RGB remains unresolved and the diagnostic UV/high-slot inputs are not vertex,
+material, or visual fidelity.
+
 All buffers are zero-initialized. Unresolved b4 high-slot semantics are not
 inferred. The validator explicitly binds every object, verifies identity with
 VSGet*/PSGet*/IAGet*/OMGet* masks, draws three vertices into a controlled 1x1

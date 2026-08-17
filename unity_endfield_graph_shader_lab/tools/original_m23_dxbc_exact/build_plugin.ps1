@@ -14,6 +14,7 @@ if ((Get-FileHash $contractPath -Algorithm SHA256).Hash -ne $expectedContractSha
 New-Item -ItemType Directory -Force -Path $buildRoot | Out-Null
 python (Join-Path $toolRoot "generate_embedded_header.py") --vertex (Join-Path $sourceRoot "0138_endfield_dxbc_0.dxbc") --pixel (Join-Path $sourceRoot "0139_endfield_dxbc_1.dxbc") --output (Join-Path $buildRoot "EmbeddedM23Dxbc.generated.h")
 python (Join-Path $toolRoot "generate_diagnostic_vs_header.py") --source (Join-Path $toolRoot "diagnostic_vs.hlsl") --output (Join-Path $buildRoot "DiagnosticM23Vs.generated.h")
+python (Join-Path $toolRoot "generate_diagnostic_vs_header.py") --source (Join-Path $toolRoot "diagnostic_vs_textures.hlsl") --prefix g_EndfieldM23DiagnosticVsTexture --output (Join-Path $buildRoot "DiagnosticM23TextureVs.generated.h")
 $visualStudio = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
 $vsDevCmd = Join-Path $visualStudio "Common7\Tools\VsDevCmd.bat"
 $dll = Join-Path $buildRoot "OriginalM23DxbcExactPlugin.dll"
@@ -21,13 +22,13 @@ $obj = Join-Path $buildRoot "OriginalM23DxbcExactPlugin.obj"
 $source = Join-Path $toolRoot "OriginalM23DxbcExactPlugin.cpp"
 $importLibrary = Join-Path $buildRoot "OriginalM23DxbcExactPlugin.lib"
 $exports = Join-Path $buildRoot "OriginalM23DxbcExactPlugin.exp"
-$cmd = "cl.exe /nologo /std:c++17 /O2 /EHsc /LD /I`"$buildRoot`" /Fo`"$obj`" `"$source`" /link /NOLOGO /Brepro /OUT:`"$dll`" /IMPLIB:`"$importLibrary`" d3d11.lib d3dcompiler.lib bcrypt.lib"
+$cmd = "cl.exe /nologo /std:c++17 /O2 /EHsc /LD /I`"$buildRoot`" /Fo`"$obj`" `"$source`" /link /NOLOGO /Brepro /OUT:`"$dll`" /IMPLIB:`"$importLibrary`" d3d11.lib d3dcompiler.lib bcrypt.lib windowscodecs.lib ole32.lib"
 cmd.exe /d /c "call `"$vsDevCmd`" -arch=x64 -host_arch=x64 && $cmd"
 if ($LASTEXITCODE -ne 0) { throw "M23 plugin compilation failed." }
 $validatorObj = Join-Path $buildRoot "ValidateEmbeddedM23Dxbc.obj"
 $validator = Join-Path $buildRoot "ValidateEmbeddedM23Dxbc.exe"
 $report = Join-Path $buildRoot "m23_dxbc_validation.json"
-$vcmd = "cl.exe /nologo /std:c++17 /O2 /EHsc /I`"$buildRoot`" /Fo`"$validatorObj`" `"$(Join-Path $toolRoot 'ValidateEmbeddedM23Dxbc.cpp')`" /link /NOLOGO /Brepro /OUT:`"$validator`" `"$importLibrary`" d3d11.lib"
+$vcmd = "cl.exe /nologo /std:c++17 /O2 /EHsc /I`"$buildRoot`" /Fo`"$validatorObj`" `"$(Join-Path $toolRoot 'ValidateEmbeddedM23Dxbc.cpp')`" /link /NOLOGO /Brepro /OUT:`"$validator`" `"$importLibrary`" d3d11.lib ole32.lib"
 cmd.exe /d /c "call `"$vsDevCmd`" -arch=x64 -host_arch=x64 && $vcmd"
 if ($LASTEXITCODE -ne 0) { throw "M23 validator compilation failed." }
 & $validator $report
@@ -54,7 +55,19 @@ foreach ($mask in 1,2,3) {
     if ($LASTEXITCODE -ne 0) { throw "WARP rejected M23 high-neutral override $mask." }
     $overrideReports += $overrideReport
 }
-$reports = @($report,$diagnosticReport,$namedLowReport,$highProbeReport,$highBaselineReport,$highNeutralReport) + $overrideReports
+$exactTextureReports = @()
+Push-Location $toolRoot
+try {
+    foreach ($textureMode in @("named-low","high-neutral")) {
+        $textureReport = Join-Path $buildRoot "m23_exact_textures_$($textureMode.Replace('-','_')).json"
+        & $validator $textureReport "--exact-textures-$textureMode"
+        if ($LASTEXITCODE -ne 0) { throw "WARP rejected M23 exact-texture $textureMode mode." }
+        $exactTextureReports += $textureReport
+    }
+} finally {
+    Pop-Location
+}
+$reports = @($report,$diagnosticReport,$namedLowReport,$highProbeReport,$highBaselineReport,$highNeutralReport) + $overrideReports + $exactTextureReports
 foreach ($nativeReport in $reports) {
     python (Join-Path $toolRoot "validate_diagnostic.py") --report $nativeReport
     if ($LASTEXITCODE -ne 0) { throw "M23 report validation failed: $nativeReport" }
@@ -67,3 +80,4 @@ Write-Output "native_named_low_validation_report=$namedLowReport"
 Write-Output "native_high_probe_validation_report=$highProbeReport"
 Write-Output "native_high_baseline_validation_report=$highBaselineReport"
 Write-Output "native_high_neutral_validation_report=$highNeutralReport"
+Write-Output "native_exact_texture_validation_reports=$($exactTextureReports -join ',')"
