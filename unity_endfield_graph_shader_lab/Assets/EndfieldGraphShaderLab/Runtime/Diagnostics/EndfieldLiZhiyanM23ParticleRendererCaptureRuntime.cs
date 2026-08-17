@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.SceneManagement;
 
 namespace EndfieldGraphShaderLab
 {
@@ -83,10 +84,33 @@ namespace EndfieldGraphShaderLab
             public bool serializedGpuInstancing;
             public bool gpuInstancingAtCapture;
             public bool diagnosticGpuInstancingOffOverride;
+            public bool rendererAllowsDynamicOcclusion;
+            public bool cameraUsesOcclusionCulling;
+            public bool diagnosticRendererOcclusionOffOverride;
+            public bool diagnosticCameraOcclusionOffOverride;
+            public bool diagnosticBillboardRenderModeOverride;
+            public bool diagnosticCompatibilityMaterialOverride;
+            public bool diagnosticBasicVertexStreamsOverride;
+            public bool diagnosticNaturalPlaybackOverride;
+            public bool diagnosticDefaultLayerOverride;
             public Vector3 targetBoundsCenter;
             public Vector3 targetBoundsExtents;
             public Vector3 captureCameraPosition;
             public float captureCameraOrthographicSize;
+            public int captureCameraCullingMask;
+            public int targetLayer;
+            public bool publicFrustumIntersectsBounds;
+            public bool materialShaderSupported;
+            public int materialPassCount;
+            public int materialRenderQueue;
+            public string materialName;
+            public string materialShaderName;
+            public string materialMrtAdmissionTag;
+            public string currentRenderPipelineType;
+            public bool recoveredSceneMVRequested;
+            public string recoveredSceneMVRequestFailure;
+            public bool recoveredSceneMVDescriptorCreated;
+            public bool recoveredAfterPostExecuted;
             public bool targetRendererMeshMode;
             public bool targetUsesDiagnosticMaterial;
             public bool targetHasMeshFilter;
@@ -94,6 +118,23 @@ namespace EndfieldGraphShaderLab
             public int particleCount;
             public int[] activeVertexStreamIds;
             public string[] activeVertexStreams;
+            public bool controlCreated;
+            public bool controlGameObjectActive;
+            public bool controlRendererEnabled;
+            public bool controlRendererVisible;
+            public int controlParticleCount;
+            public Vector3 controlBoundsCenter;
+            public Vector3 controlBoundsExtents;
+            public bool controlBoundsFinite;
+            public bool controlFrustumIntersectsBounds;
+            public bool controlMaterialShaderSupported;
+            public int controlMaterialPassCount;
+            public int controlMaterialRenderQueue;
+            public string controlMaterialName;
+            public string controlMaterialShaderName;
+            public bool controlHasMeshFilter;
+            public bool controlHasMeshRenderer;
+            public string controlContract;
             public RendererIdentity identity;
             public string negativeControlExpectation;
         }
@@ -117,6 +158,13 @@ namespace EndfieldGraphShaderLab
         private uint serializedRandomSeed;
         private float serializedSortingFudge;
         private bool serializedGpuInstancing;
+        private GameObject controlObject;
+        private ParticleSystem controlSystem;
+        private ParticleSystemRenderer controlRenderer;
+        [SerializeField] private Material compatibilityMaterial;
+
+        private const string ControlObjectName =
+            "M23ParticleRendererAdmissionControl";
 
         private enum CaptureMode
         {
@@ -126,6 +174,18 @@ namespace EndfieldGraphShaderLab
             EmptyTarget,
             SortingFudgeZero,
             GpuInstancingOff,
+            RendererOcclusionOff,
+            CameraOcclusionOff,
+            BillboardRenderMode,
+            CompatibilityMaterial,
+            BasicVertexStreams,
+            NaturalPlayback,
+            DefaultLayer,
+        }
+
+        public void ConfigureCompatibilityMaterial(Material material)
+        {
+            compatibilityMaterial = material;
         }
 
         private void Awake()
@@ -193,15 +253,57 @@ namespace EndfieldGraphShaderLab
                     targetRenderer.sortingFudge = 0.0f;
                 if (captureMode == CaptureMode.GpuInstancingOff)
                     targetRenderer.enableGPUInstancing = false;
+                if (captureMode == CaptureMode.RendererOcclusionOff)
+                    targetRenderer.allowOcclusionWhenDynamic = false;
+                if (captureMode == CaptureMode.CameraOcclusionOff)
+                {
+                    Camera captureCamera = Camera.main;
+                    Require(captureCamera != null, "The capture camera is missing.");
+                    captureCamera.useOcclusionCulling = false;
+                }
+                if (captureMode == CaptureMode.BillboardRenderMode)
+                    targetRenderer.renderMode = ParticleSystemRenderMode.Billboard;
+                if (captureMode == CaptureMode.CompatibilityMaterial)
+                {
+                    Require(compatibilityMaterial != null &&
+                        compatibilityMaterial.shader != null &&
+                        compatibilityMaterial.shader.isSupported,
+                        "The compatibility material is missing or unsupported.");
+                    targetRenderer.sharedMaterial = compatibilityMaterial;
+                }
+                if (captureMode == CaptureMode.BasicVertexStreams)
+                {
+                    targetRenderer.SetActiveVertexStreams(
+                        new List<ParticleSystemVertexStream>
+                        {
+                            ParticleSystemVertexStream.Position,
+                            ParticleSystemVertexStream.Normal,
+                            ParticleSystemVertexStream.Color,
+                            ParticleSystemVertexStream.UV,
+                        });
+                }
+                if (captureMode == CaptureMode.DefaultLayer)
+                {
+                    targetRenderer.gameObject.layer = 0;
+                    Camera captureCamera = Camera.main;
+                    Require(captureCamera != null, "The capture camera is missing.");
+                    captureCamera.cullingMask = -1;
+                }
 
                 simulationSeconds = captureMode == CaptureMode.PreDelay
                     ? 0.0f
                     : TargetLocalSeconds;
                 serializedRandomSeed = targetSystem.randomSeed;
-                if (captureMode != CaptureMode.TargetDisabled)
+                if (captureMode == CaptureMode.NaturalPlayback)
+                {
+                    simulationSeconds = 0.0f;
+                    ResetAndPlayNaturally(targetSystem);
+                }
+                else if (captureMode != CaptureMode.TargetDisabled)
                     ResetAndSimulate(targetSystem, simulationSeconds);
                 else
                     setupPassed = true;
+                CreatePositiveControl();
                 ConfigureCaptureCamera();
                 setupPassed = true;
 
@@ -324,6 +426,16 @@ namespace EndfieldGraphShaderLab
                 "M23 randomSeed changed while publishing the runtime renderer state.");
         }
 
+        private void ResetAndPlayNaturally(ParticleSystem system)
+        {
+            serializedRandomSeed = system.randomSeed;
+            system.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            system.Clear(true);
+            system.randomSeed = serializedRandomSeed;
+            system.Play(false);
+            setupPassed = system.randomSeed == serializedRandomSeed;
+        }
+
         private void ConfigureCaptureCamera()
         {
             Camera camera = Camera.main;
@@ -341,6 +453,50 @@ namespace EndfieldGraphShaderLab
             camera.farClipPlane = Mathf.Max(100.0f, radius * 10.0f);
         }
 
+        private void CreatePositiveControl()
+        {
+            Require(compatibilityMaterial != null &&
+                compatibilityMaterial.shader != null &&
+                compatibilityMaterial.shader.isSupported,
+                "The positive-control compatibility material is missing or unsupported.");
+
+            controlObject = new GameObject(ControlObjectName);
+            SceneManager.MoveGameObjectToScene(controlObject, gameObject.scene);
+            controlObject.layer = targetRenderer.gameObject.layer;
+            controlObject.transform.SetPositionAndRotation(
+                targetRenderer.bounds.center + Vector3.forward * 0.5f,
+                Quaternion.identity);
+
+            controlSystem = controlObject.AddComponent<ParticleSystem>();
+            controlRenderer = controlObject.GetComponent<ParticleSystemRenderer>();
+            Require(controlRenderer != null, "Could not create the control ParticleSystemRenderer.");
+
+            ParticleSystem.MainModule main = controlSystem.main;
+            main.playOnAwake = false;
+            main.loop = false;
+            main.startDelay = 0.0f;
+            main.startLifetime = 10.0f;
+            main.startSpeed = 0.0f;
+            main.startSize = 1.0f;
+            main.maxParticles = 1;
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+
+            ParticleSystem.EmissionModule emission = controlSystem.emission;
+            emission.enabled = false;
+            controlRenderer.renderMode = ParticleSystemRenderMode.Billboard;
+            controlRenderer.sharedMaterial = compatibilityMaterial;
+            controlRenderer.enableGPUInstancing = false;
+            controlRenderer.allowOcclusionWhenDynamic = false;
+            controlRenderer.sortingFudge = 0.0f;
+
+            controlSystem.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            controlSystem.Clear(true);
+            controlSystem.Emit(1);
+            controlSystem.Play(false);
+            Require(controlSystem.particleCount > 0,
+                "The positive-control ParticleSystem emitted no particles.");
+        }
+
         private void FillReport(CaptureReport report, CaptureMode captureMode)
         {
             report.mode = mode;
@@ -351,6 +507,7 @@ namespace EndfieldGraphShaderLab
             report.targetGameObjectActive = targetSystem.gameObject.activeInHierarchy;
             report.targetRendererEnabled = targetRenderer.enabled;
             report.targetRendererVisible = targetRenderer.isVisible;
+            Camera captureCamera = Camera.main;
             report.serializedSortingFudge = FormatFloat(serializedSortingFudge);
             report.sortingFudgeAtCapture = FormatFloat(targetRenderer.sortingFudge);
             report.diagnosticSortingFudgeZeroOverride =
@@ -359,15 +516,70 @@ namespace EndfieldGraphShaderLab
             report.gpuInstancingAtCapture = targetRenderer.enableGPUInstancing;
             report.diagnosticGpuInstancingOffOverride =
                 captureMode == CaptureMode.GpuInstancingOff;
+            report.rendererAllowsDynamicOcclusion =
+                targetRenderer.allowOcclusionWhenDynamic;
+            report.cameraUsesOcclusionCulling = captureCamera != null &&
+                captureCamera.useOcclusionCulling;
+            report.diagnosticRendererOcclusionOffOverride =
+                captureMode == CaptureMode.RendererOcclusionOff;
+            report.diagnosticCameraOcclusionOffOverride =
+                captureMode == CaptureMode.CameraOcclusionOff;
+            report.diagnosticBillboardRenderModeOverride =
+                captureMode == CaptureMode.BillboardRenderMode;
+            report.diagnosticCompatibilityMaterialOverride =
+                captureMode == CaptureMode.CompatibilityMaterial;
+            report.diagnosticBasicVertexStreamsOverride =
+                captureMode == CaptureMode.BasicVertexStreams;
+            report.diagnosticNaturalPlaybackOverride =
+                captureMode == CaptureMode.NaturalPlayback;
+            report.diagnosticDefaultLayerOverride =
+                captureMode == CaptureMode.DefaultLayer;
             report.targetBoundsCenter = targetRenderer.bounds.center;
             report.targetBoundsExtents = targetRenderer.bounds.extents;
-            Camera captureCamera = Camera.main;
             report.captureCameraPosition = captureCamera != null
                 ? captureCamera.transform.position
                 : Vector3.zero;
             report.captureCameraOrthographicSize = captureCamera != null
                 ? captureCamera.orthographicSize
                 : 0.0f;
+            report.captureCameraCullingMask = captureCamera != null
+                ? captureCamera.cullingMask
+                : 0;
+            report.targetLayer = targetRenderer.gameObject.layer;
+            report.publicFrustumIntersectsBounds = captureCamera != null &&
+                GeometryUtility.TestPlanesAABB(
+                    GeometryUtility.CalculateFrustumPlanes(captureCamera),
+                    targetRenderer.bounds);
+            Material captureMaterial = targetRenderer.sharedMaterial;
+            report.materialShaderSupported = captureMaterial != null &&
+                captureMaterial.shader != null && captureMaterial.shader.isSupported;
+            report.materialPassCount = captureMaterial != null
+                ? captureMaterial.passCount
+                : 0;
+            report.materialRenderQueue = captureMaterial != null
+                ? captureMaterial.renderQueue
+                : -1;
+            report.materialName = captureMaterial != null
+                ? captureMaterial.name
+                : string.Empty;
+            report.materialShaderName = captureMaterial != null &&
+                captureMaterial.shader != null
+                ? captureMaterial.shader.name
+                : string.Empty;
+            report.materialMrtAdmissionTag = captureMaterial != null
+                ? captureMaterial.GetTag("EndfieldSceneMVMRT", false, string.Empty)
+                : string.Empty;
+            report.currentRenderPipelineType =
+                GraphicsSettings.currentRenderPipeline != null
+                    ? GraphicsSettings.currentRenderPipeline.GetType().FullName
+                    : string.Empty;
+            EndfieldRecoveredSceneMVDiagnosticState sceneMV =
+                HDRenderPipeline.LastRecoveredSceneMVDiagnostic;
+            report.recoveredSceneMVRequested = sceneMV.requested;
+            report.recoveredSceneMVRequestFailure = sceneMV.requestFailure;
+            report.recoveredSceneMVDescriptorCreated = sceneMV.descriptorCreated;
+            report.recoveredAfterPostExecuted =
+                sceneMV.afterPostSceneMVLoadStoreNoClear;
             report.targetRendererMeshMode = targetRenderer.renderMode == ParticleSystemRenderMode.Mesh;
             report.targetHasMeshFilter = targetRenderer.GetComponent<MeshFilter>() != null;
             report.targetHasMeshRenderer = targetRenderer.GetComponent<MeshRenderer>() != null;
@@ -383,22 +595,76 @@ namespace EndfieldGraphShaderLab
             report.serializedRandomSeed = serializedRandomSeed;
             report.randomSeedAfterReset = targetSystem.randomSeed;
             report.targetUsesDiagnosticMaterial = UsesDiagnosticMaterial(targetRenderer);
+            FillControlReport(report, captureCamera);
+        }
+
+        private void FillControlReport(CaptureReport report, Camera captureCamera)
+        {
+            report.controlCreated = controlObject != null && controlSystem != null &&
+                controlRenderer != null;
+            report.controlGameObjectActive = controlObject != null &&
+                controlObject.activeInHierarchy;
+            report.controlRendererEnabled = controlRenderer != null && controlRenderer.enabled;
+            report.controlRendererVisible = controlRenderer != null && controlRenderer.isVisible;
+            report.controlParticleCount = controlSystem != null ? controlSystem.particleCount : 0;
+            Bounds bounds = controlRenderer != null ? controlRenderer.bounds : new Bounds();
+            report.controlBoundsCenter = bounds.center;
+            report.controlBoundsExtents = bounds.extents;
+            report.controlBoundsFinite = controlRenderer != null &&
+                IsFinite(bounds.center) && IsFinite(bounds.extents);
+            report.controlFrustumIntersectsBounds = captureCamera != null &&
+                report.controlBoundsFinite && GeometryUtility.TestPlanesAABB(
+                    GeometryUtility.CalculateFrustumPlanes(captureCamera), bounds);
+            Material material = controlRenderer != null ? controlRenderer.sharedMaterial : null;
+            report.controlMaterialShaderSupported = material != null &&
+                material.shader != null && material.shader.isSupported;
+            report.controlMaterialPassCount = material != null ? material.passCount : 0;
+            report.controlMaterialRenderQueue = material != null ? material.renderQueue : -1;
+            report.controlMaterialName = material != null ? material.name : string.Empty;
+            report.controlMaterialShaderName = material != null && material.shader != null
+                ? material.shader.name : string.Empty;
+            report.controlHasMeshFilter = controlObject != null &&
+                controlObject.GetComponent<MeshFilter>() != null;
+            report.controlHasMeshRenderer = controlObject != null &&
+                controlObject.GetComponent<MeshRenderer>() != null;
+            report.controlContract =
+                "runtime ParticleSystemRenderer; Emit(1); known-good compatibility material; " +
+                "no BakeMesh; no MeshRenderer/MeshFilter proxy; source target untouched";
         }
 
         private bool EvaluateStatus(CaptureReport report, CaptureMode captureMode)
         {
-            bool identity = report.exactIdentityClosed && report.targetRendererMeshMode &&
-                report.activeVertexStreamIds.SequenceEqual(ExpectedStreams);
+            bool expectedRenderMode = captureMode == CaptureMode.BillboardRenderMode
+                ? !report.targetRendererMeshMode
+                : report.targetRendererMeshMode;
+            bool expectedStreams = captureMode == CaptureMode.BasicVertexStreams
+                ? report.activeVertexStreamIds.SequenceEqual(new[] { 0, 1, 3, 4 })
+                : report.activeVertexStreamIds.SequenceEqual(ExpectedStreams);
+            bool identity = report.exactIdentityClosed && expectedRenderMode &&
+                expectedStreams;
             bool noProxy = report.noBakeMeshContract && report.noProxyContract &&
                 !report.targetHasMeshFilter && !report.targetHasMeshRenderer;
             if (captureMode == CaptureMode.Positive ||
                 captureMode == CaptureMode.SortingFudgeZero ||
-                captureMode == CaptureMode.GpuInstancingOff)
+                captureMode == CaptureMode.GpuInstancingOff ||
+                captureMode == CaptureMode.RendererOcclusionOff ||
+                captureMode == CaptureMode.CameraOcclusionOff ||
+                captureMode == CaptureMode.BillboardRenderMode ||
+                captureMode == CaptureMode.CompatibilityMaterial ||
+                captureMode == CaptureMode.BasicVertexStreams ||
+                captureMode == CaptureMode.NaturalPlayback ||
+                captureMode == CaptureMode.DefaultLayer)
+            {
+                bool expectedMaterial = captureMode == CaptureMode.CompatibilityMaterial
+                    ? report.diagnosticCompatibilityMaterialOverride &&
+                        report.materialShaderSupported
+                    : report.targetUsesDiagnosticMaterial;
                 return report.graphicsDeviceType == GraphicsDeviceType.Direct3D11.ToString() &&
                     !report.applicationIsBatchMode && identity && noProxy &&
                     report.targetRendererEnabled && report.targetRendererVisible &&
-                    report.particleCount > 0 && report.targetUsesDiagnosticMaterial &&
+                    report.particleCount > 0 && expectedMaterial &&
                     report.sourceRendererSubmissionPath;
+            }
             if (captureMode == CaptureMode.TargetDisabled)
                 return identity && noProxy && !report.targetRendererEnabled &&
                     report.particleCount == 0;
@@ -489,6 +755,13 @@ namespace EndfieldGraphShaderLab
                 case "empty-target": return CaptureMode.EmptyTarget;
                 case "sorting-fudge-zero": return CaptureMode.SortingFudgeZero;
                 case "gpu-instancing-off": return CaptureMode.GpuInstancingOff;
+                case "renderer-occlusion-off": return CaptureMode.RendererOcclusionOff;
+                case "camera-occlusion-off": return CaptureMode.CameraOcclusionOff;
+                case "billboard-render-mode": return CaptureMode.BillboardRenderMode;
+                case "compatibility-material": return CaptureMode.CompatibilityMaterial;
+                case "basic-vertex-streams": return CaptureMode.BasicVertexStreams;
+                case "natural-playback": return CaptureMode.NaturalPlayback;
+                case "default-layer": return CaptureMode.DefaultLayer;
                 default: return CaptureMode.Positive;
             }
         }
@@ -507,6 +780,13 @@ namespace EndfieldGraphShaderLab
                 case "empty-target": return "xuanzhuan04 at PTS 40000: zero target particles/draws";
                 case "sorting-fudge-zero": return "causal diagnostic: zero sorting fudge permits the target draw";
                 case "gpu-instancing-off": return "causal diagnostic: disabling source GPU instancing permits the target draw";
+                case "renderer-occlusion-off": return "causal diagnostic: dynamic renderer occlusion disabled";
+                case "camera-occlusion-off": return "causal diagnostic: camera occlusion culling disabled";
+                case "billboard-render-mode": return "causal diagnostic: source Mesh mode replaced by Billboard";
+                case "compatibility-material": return "causal diagnostic: source material replaced by known-good SRP unlit";
+                case "basic-vertex-streams": return "causal diagnostic: active streams reduced to Position/Normal/Color/UV";
+                case "natural-playback": return "causal diagnostic: ordinary Play without manual Simulate";
+                case "default-layer": return "causal diagnostic: target on layer 0 with full camera mask";
                 default: return "positive: target renderer must be visible with particles";
             }
         }

@@ -12,6 +12,7 @@ namespace EndfieldGraphShaderLab
     public sealed class EndfieldRecoveredSceneMVDiagnosticState
     {
         public bool requested { get; internal set; }
+        public string requestFailure { get; internal set; }
         public bool descriptorCreated { get; internal set; }
         public int sceneMVWidth { get; internal set; }
         public int sceneMVHeight { get; internal set; }
@@ -258,6 +259,7 @@ namespace EndfieldGraphShaderLab
             EndfieldRecoveredSceneMVDiagnosticState state =
                 LastRecoveredSceneMVDiagnostic;
             state.requested = requested;
+            state.requestFailure = string.Empty;
             state.descriptorCreated = false;
             state.sceneMVWidth = 0;
             state.sceneMVHeight = 0;
@@ -835,6 +837,8 @@ namespace EndfieldGraphShaderLab
             EndfieldRecoveredSceneMVRequest recoveredSceneMVRequest =
                 recoveredSceneMVCompositor.CollectRequest(camera);
             ResetRecoveredSceneMVDiagnostic(recoveredSceneMVRequest.requested);
+            LastRecoveredSceneMVDiagnostic.requestFailure =
+                recoveredSceneMVRequest.failure ?? string.Empty;
             LastRecoveredSceneMVDiagnostic.glow902Queue3005Requested =
                 recoveredSceneMVRequest.hasGlow902Queue3005;
             RenderTexture recoveredSceneMV = null;

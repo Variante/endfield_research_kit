@@ -4701,11 +4701,18 @@ source prefab, enables only the real `ParticleSystemRenderer`, and explicitly
 forbids BakeMesh and MeshRenderer proxies. Runtime validation closes the exact
 PathIDs, serialized seed 7930, two particles at local time 0.199667, and active
 streams `[0,1,3,4,5,34]`. The first DXCap frames contain no target draw and the
-renderer remains not visible even after bounds-based camera framing. Two
-bounded compatibility ablations also remain negative: replacing serialized
-`m_SortingFudge=NaN` with zero and disabling authored GPU instancing. Treat
-this as a real Unity particle-submission admission gap, not permission to use
-the existing BakeMesh proxy as the target draw.
+renderer remains not visible even after bounds-based camera framing. The
+single-variable admission matrix remains negative for sorting-fudge, GPU
+instancing, renderer/camera occlusion, Mesh-versus-Billboard mode, a known-good
+queue-3000 `SRPDefaultUnlit` material, basic vertex streams, natural playback,
+and layer-0/full-camera-mask substitution. A runtime-created standard
+Billboard control in the same camera and HGCompat pipeline also has one live
+particle, finite in-frustum bounds, and a supported material, yet remains not
+visible. Its DXCap frame still has only the same three unrelated shell draws.
+The active defect is therefore global HGCompat/Unity particle culling or
+submission until a control draw proves otherwise, rather than a demonstrated
+M23 prefab field defect. Keep the source renderer unmodified and do not use the
+existing BakeMesh proxy as the target draw.
 
 An isolated immediate-context shadow-vtable attempt is deliberately removed.
 It copied all 115 `ID3D11DeviceContext` slots, hooked only Draw variants,
