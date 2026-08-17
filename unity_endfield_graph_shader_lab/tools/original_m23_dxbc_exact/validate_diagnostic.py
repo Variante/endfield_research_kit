@@ -24,7 +24,7 @@ def validate_blobs() -> None:
 def validate_report(path: Path) -> dict:
     report = json.loads(path.read_text(encoding="utf-8-sig"))
     required = {
-        "schema": "endfield.original-m23-dxbc-creation.v1",
+        "schema": "endfield.original-m23-dxbc-exact.v2",
         "vertex_sha256": EXPECTED["vertex"][2],
         "pixel_sha256": EXPECTED["pixel"][2],
         "vs_constant_buffer_creation_mask": "0x1f",
@@ -32,14 +32,30 @@ def validate_report(path: Path) -> dict:
         "shader_resource_creation_mask": "0x1f",
         "sampler_creation_mask": "0x1f",
         "b4_high_semantics": "zero_or_sentinel_only_non_fidelity",
+        "vs_binding_mask": "0x1",
+        "ps_binding_mask": "0x1",
+        "input_binding_mask": "0x1",
+        "vertex_buffer_binding_mask": "0x1",
+        "vs_constant_buffer_binding_mask": "0x1f",
+        "ps_constant_buffer_binding_mask": "0x1f",
+        "shader_resource_binding_mask": "0x1f",
+        "sampler_binding_mask": "0x1f",
+        "state_binding_mask": "0x7",
+        "render_target_binding_mask": "0x1",
+        "vertex_shader_resource_creation_mask": "0x1",
+        "vertex_shader_resource_binding_mask": "0x1",
+        "topology_binding_mask": "0x1",
+        "viewport_binding_mask": "0x1",
     }
     for key, expected in required.items():
         if report.get(key) != expected:
             raise AssertionError(f"{key}: expected {expected!r}, got {report.get(key)!r}")
     if report.get("status") != "pass":
-        raise AssertionError("M23 native creation fixture did not pass")
-    if report.get("binds_or_draws") is not False or report.get("visual_fidelity_claim") is not False:
-        raise AssertionError("M23 creation fixture crossed its no-bind/no-draw boundary")
+        raise AssertionError("M23 native exact fixture did not pass")
+    if report.get("draw_issued") != 1 or report.get("readback_finite") != 1:
+        raise AssertionError("M23 draw/readback proof is incomplete")
+    if report.get("visual_fidelity_claim") != 0:
+        raise AssertionError("M23 fixture incorrectly claims visual fidelity")
     return report
 
 if __name__ == "__main__":

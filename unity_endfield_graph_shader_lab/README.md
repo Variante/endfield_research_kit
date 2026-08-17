@@ -4511,9 +4511,12 @@ cb4[10..43]. The probe hash and negative gates are part of `m23ShaderAbi`.
 `tools/original_m23_dxbc_exact/` now provides the next isolated recovery
 stage: a D3D11/WARP creation fixture for exact blobs 0138/0139. It validates
 the full 136-byte input layout, separate stage-specific b0..b4 allocations,
-five SRVs/samplers, and controlled raster/blend/depth state. All creation masks
-pass. It does not bind, draw, read back, integrate with Unity, or claim visual
-fidelity; those remain the next explicit gates.
+five PS SRVs/samplers, the VS `_VertexSkinMatrices` structured t0, and
+controlled raster/blend/depth state. It getter-verifies every stage/resource/
+IA/state/RT binding, issues `Draw(3,0)`, and maps a finite 1x1 float readback.
+The zeroed unresolved constants leave the sentinel unchanged; material
+constants, visible pixels, Unity integration, and visual fidelity remain the
+next explicit gates.
 
 The actor-composed harness now also instantiates the exact recovered
 `P_fxui_lizhiyan_overview_trails_Bip001_R_Finger2Nub` prefab beneath the

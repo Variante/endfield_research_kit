@@ -2265,9 +2265,13 @@ only stable interpretation and priorities.
    hash-embeds the exact 0138/0139 pair and creates the full 136-byte ISGN
    layout, vertex buffer, separate VS b0..b4 sizes `[2,82,104,14,50]`, PS
    sizes `[45,105,5,1,44]`, five SRVs/samplers, and controlled raster/blend/
-   depth states. Native validation passes with every creation mask complete.
-   It deliberately performs no binding, draw, readback, or Unity integration;
-   those are the next execution boundary and no visual-fidelity claim exists.
+   depth states. It now binds and getter-verifies both shader stages, all ten
+   CBs, PS t0..t4/s0..s4, the VS `_VertexSkinMatrices` structured t0, input
+   layout/VB/topology, states, 1x1 viewport, and float RT before issuing
+   `Draw(3,0)` and mapping a finite staging readback. Every creation/binding
+   mask passes. Zero unresolved constants leave the sentinel pixel unchanged,
+   so material constants, visible output, and Unity integration remain the
+   next boundary; no visual-fidelity claim exists.
    The exact independently AssetMap-proven finger prefab is now executable in
    the same actor-composed diagnostic. It is mounted beneath the unique
    `Bip001_R_Finger2Nub`, keeps its source 0.83333-second delay and
