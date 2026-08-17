@@ -5,6 +5,12 @@ $projectRoot = (Resolve-Path (Join-Path $toolRoot "..\..")).Path
 $buildRoot = Join-Path $toolRoot "build"
 $vswhere = "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe"
 $sourceRoot = (Resolve-Path (Join-Path $projectRoot "..\scratch\character_recovery\vfx_shader_variants\shader_export\Shader\HGRP_Effect_VFXBaseV2_pEC273EDA76F7FCDA.shader.bytecode")).Path
+$materialPath = (Resolve-Path (Join-Path $projectRoot "..\scratch\animestudio\lizhiyan_peak_particles\dependency_json\Material\M_fxui__lizhiyan_overview_23_pFA062F1311E9B888.json")).Path
+$contractPath = (Resolve-Path (Join-Path $projectRoot "Assets\EndfieldGraphShaderLab\Generated\OriginalData\Effects\lizhiyan_overview_peak_particle_effects.json")).Path
+$expectedMaterialSha256 = "81B920BE11D13B3662A97851C97C8A41EF98333478578EACD2A164D4BEFE98FA"
+$expectedContractSha256 = "41402BE441AD98C7823D021FB86C1FC3E48ECD6515A58D46EEDFD0BE6EEA7EEB"
+if ((Get-FileHash $materialPath -Algorithm SHA256).Hash -ne $expectedMaterialSha256) { throw "M23 material hash mismatch: $materialPath" }
+if ((Get-FileHash $contractPath -Algorithm SHA256).Hash -ne $expectedContractSha256) { throw "M23 generated contract hash mismatch: $contractPath" }
 New-Item -ItemType Directory -Force -Path $buildRoot | Out-Null
 python (Join-Path $toolRoot "generate_embedded_header.py") --vertex (Join-Path $sourceRoot "0138_endfield_dxbc_0.dxbc") --pixel (Join-Path $sourceRoot "0139_endfield_dxbc_1.dxbc") --output (Join-Path $buildRoot "EmbeddedM23Dxbc.generated.h")
 python (Join-Path $toolRoot "generate_diagnostic_vs_header.py") --source (Join-Path $toolRoot "diagnostic_vs.hlsl") --output (Join-Path $buildRoot "DiagnosticM23Vs.generated.h")
@@ -29,7 +35,11 @@ if ($LASTEXITCODE -ne 0) { throw "WARP rejected the M23 exact-DXBC creation cont
 $diagnosticReport = Join-Path $buildRoot "m23_diagnostic_vs_validation.json"
 & $validator $diagnosticReport --diagnostic-vs
 if ($LASTEXITCODE -ne 0) { throw "WARP rejected the M23 diagnostic-VS exact-PS contract." }
+$namedLowReport = Join-Path $buildRoot "m23_diagnostic_vs_named_low_validation.json"
+& $validator $namedLowReport --named-low
+if ($LASTEXITCODE -ne 0) { throw "WARP rejected the M23 named-low exact-PS contract." }
 Remove-Item -Force -ErrorAction SilentlyContinue $obj,$validatorObj
 Write-Output "native_creation_fixture=$dll"
 Write-Output "native_validation_report=$report"
 Write-Output "native_diagnostic_validation_report=$diagnosticReport"
+Write-Output "native_named_low_validation_report=$namedLowReport"

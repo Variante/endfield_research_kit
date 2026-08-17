@@ -13,6 +13,15 @@ EXPECTED = {
 }
 DIAGNOSTIC_VS_SOURCE_SHA256 = "8a45e1a2462f164538430228eb5fa482e3337f6ec40189d273bc76cbd6c61e98"
 DIAGNOSTIC_VS_COMPILED_SHA256 = "51f0011ff8f7fbeaa9f0dfb60d95de82f010a3cbef77c14393313d425d16e707"
+M23_MATERIAL_SHA256 = "81b920be11d13b3662a97851c97c8a41ef98333478578eacd2a164d4befe98fa"
+M23_CONTRACT_SHA256 = "41402be441ad98c7823d021fb86c1fc3e48ecd6515a58d46eedfd0be6eea7eeb"
+NAMED_LOW_COMPONENT_MAP = ("cb4[0].x=1,cb4[0].y=0,cb4[0].z=0,cb4[0].w=0;"
+    "cb4[1].x=1,cb4[1].y=0,cb4[1].z=4,cb4[1].w=4.14;"
+    "cb4[2].y=1,cb4[2].z=0,cb4[2].w=0;cb4[3].x=1,cb4[3].y=0;"
+    "cb4[4]=(0.3080313,0.83496046,0.9547169,1);"
+    "cb4[5].x=0,cb4[5].y=0,cb4[5].z=1;cb4[6]=(0,0,1,0);"
+    "cb4[7]=(-1,8.742278e-08,-8.742278e-08,-1);cb4[8]=(1,0,0,0);"
+    "cb4[9]=(-1,1.5,0.82,-0.1)")
 EXPECTED_PS_SIGNATURE = [
     ("SV_Position", 0, 0, 0xF),
     ("TEXCOORD", 0, 1, 0xF), ("TEXCOORD", 1, 2, 0xF),
@@ -54,10 +63,11 @@ def validate_blobs() -> None:
 
 def validate_report(path: Path) -> dict:
     report = json.loads(path.read_text(encoding="utf-8-sig"))
-    diagnostic = report.get("mode") == "diagnostic_vs_exact_ps"
+    named_low = report.get("mode") == "diagnostic_vs_exact_ps_named_low"
+    diagnostic = report.get("mode") == "diagnostic_vs_exact_ps" or named_low
     required = {
         "schema": "endfield.original-m23-dxbc-exact.v3",
-        "mode": "diagnostic_vs_exact_ps" if diagnostic else "exact_pair",
+        "mode": "diagnostic_vs_exact_ps_named_low" if named_low else ("diagnostic_vs_exact_ps" if diagnostic else "exact_pair"),
         "vertex_sha256": EXPECTED["vertex"][2],
         "pixel_sha256": EXPECTED["pixel"][2],
         "vs_constant_buffer_creation_mask": "0x1f",
@@ -90,7 +100,16 @@ def validate_report(path: Path) -> dict:
             "diagnostic_vs_signature_mask": "0x1",
             "diagnostic_vs_source_hash_mask": "0x1",
         })
-    else:
+    if named_low:
+        required.update({
+            "named_low_material_sha256": M23_MATERIAL_SHA256,
+            "named_low_contract_sha256": M23_CONTRACT_SHA256,
+            "named_low_material_hash_mask": "0x1",
+            "named_low_contract_hash_mask": "0x1",
+            "named_low_component_map_mask": "0x1",
+            "named_low_component_map": NAMED_LOW_COMPONENT_MAP,
+        })
+    if not diagnostic:
         required.update({
             "input_layout_creation_mask": "0x1",
             "vertex_buffer_creation_mask": "0x1",

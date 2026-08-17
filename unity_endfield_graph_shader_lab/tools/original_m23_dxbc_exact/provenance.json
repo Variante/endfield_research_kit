@@ -37,6 +37,14 @@
     "interpretation": "exact pixel shader executes and writes transparent black; exact-pair unchanged sentinel is upstream vertex/raster coverage, not a fragment discard",
     "visual_fidelity_claim": false
   },
+  "diagnostic_vs_exact_ps_named_low": {
+    "material": "scratch/animestudio/lizhiyan_peak_particles/dependency_json/Material/M_fxui__lizhiyan_overview_23_pFA062F1311E9B888.json",
+    "material_sha256": "81b920be11d13b3662a97851c97c8a41ef98333478578eacd2a164d4befe98fa",
+    "contract_sha256": "41402be441ad98c7823d021fb86c1fc3e48ecd6515a58d46eedfd0be6eea7eeb",
+    "populated_components": "cb4[0..9] named components only; unnamed and cb4[10..43] zero",
+    "readback_zero_comparison": true,
+    "visual_fidelity_claim": false
+  },
   "creation_contract": {
     "input_stride_bytes": 136,
     "separate_stage_constant_buffers": true,

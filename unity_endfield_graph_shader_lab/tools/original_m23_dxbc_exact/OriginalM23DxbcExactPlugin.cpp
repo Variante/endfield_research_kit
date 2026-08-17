@@ -47,6 +47,13 @@ struct EndfieldM23DxbcValidation {
     std::uint32_t diagnosticVsCompiledHashMask;
     char diagnosticVsSourceSha256[65];
     char diagnosticVsCompiledSha256[65];
+    std::uint32_t namedLowMaterialHashMask;
+    std::uint32_t namedLowContractHashMask;
+    std::uint32_t namedLowComponentMapMask;
+    char namedLowMaterialSha256[65];
+    char namedLowContractSha256[65];
+    char namedLowComponentMap[1024];
+    std::uint32_t readbackChangedFromZero;
     float readback[4];
 };
 
@@ -62,6 +69,17 @@ constexpr std::uint32_t kVsConstantBufferFloats4[kResourceCount] = {2, 82, 104, 
 constexpr std::uint32_t kPsConstantBufferFloats4[kResourceCount] = {45, 105, 5, 1, 44};
 // Filled from the deterministic D3DCompile output and checked below.
 constexpr char kDiagnosticVsCompiledSha256[] = "51f0011ff8f7fbeaa9f0dfb60d95de82f010a3cbef77c14393313d425d16e707";
+constexpr char kM23MaterialSha256[] = "81b920be11d13b3662a97851c97c8a41ef98333478578eacd2a164d4befe98fa";
+constexpr char kM23ContractSha256[] = "41402be441ad98c7823d021fb86c1fc3e48ecd6515a58d46eedfd0be6eea7eeb";
+constexpr char kNamedLowComponentMap[] =
+    "cb4[0].x=1,cb4[0].y=0,cb4[0].z=0,cb4[0].w=0;"
+    "cb4[1].x=1,cb4[1].y=0,cb4[1].z=4,cb4[1].w=4.14;"
+    "cb4[2].y=1,cb4[2].z=0,cb4[2].w=0;"
+    "cb4[3].x=1,cb4[3].y=0;"
+    "cb4[4]=(0.3080313,0.83496046,0.9547169,1);"
+    "cb4[5].x=0,cb4[5].y=0,cb4[5].z=1;"
+    "cb4[6]=(0,0,1,0);cb4[7]=(-1,8.742278e-08,-8.742278e-08,-1);"
+    "cb4[8]=(1,0,0,0);cb4[9]=(-1,1.5,0.82,-0.1)";
 
 bool Sha256Hex(const void* bytes, std::size_t size, char output[65]) {
     BCRYPT_ALG_HANDLE algorithm = nullptr;
@@ -125,13 +143,14 @@ struct Vertex {
 static_assert(sizeof(Vertex) == 136, "M23 input layout stride must remain 136 bytes");
 
 HRESULT CreateConstantBuffer(ID3D11Device* device, std::uint32_t float4Count,
-                             ComObject<ID3D11Buffer>* result) {
+                             ComObject<ID3D11Buffer>* result,
+                             const void* initialOverride = nullptr) {
     std::vector<std::uint32_t> initialData(static_cast<std::size_t>(float4Count) * 4u, 0u);
     D3D11_BUFFER_DESC description = {};
     description.ByteWidth = float4Count * 16u;
     description.Usage = D3D11_USAGE_DEFAULT;
     description.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-    D3D11_SUBRESOURCE_DATA data = {initialData.data(), 0, 0};
+    D3D11_SUBRESOURCE_DATA data = {initialOverride ? initialOverride : initialData.data(), 0, 0};
     return device->CreateBuffer(&description, &data, result->Put());
 }
 
@@ -172,12 +191,12 @@ HRESULT CreateSimpleSampler(ID3D11Device* device, ComObject<ID3D11SamplerState>*
 
 static HRESULT RunValidation(ID3D11Device* device, ID3D11DeviceContext* context,
                              EndfieldM23DxbcValidation* report,
-                             bool diagnosticVs) {
+                             bool diagnosticVs, bool namedLow) {
     if (report == nullptr || device == nullptr || context == nullptr) {
         return E_INVALIDARG;
     }
     std::memset(report, 0, sizeof(*report));
-    report->mode = diagnosticVs ? 1u : 0u;
+    report->mode = namedLow ? 2u : (diagnosticVs ? 1u : 0u);
     if (diagnosticVs) {
         std::memcpy(report->diagnosticVsSourceSha256,
                     g_EndfieldM23DiagnosticVsSourceSha256,
@@ -278,12 +297,35 @@ static HRESULT RunValidation(ID3D11Device* device, ID3D11DeviceContext* context,
         report->vertexConstantBufferMask |= 1u << i;
     }
     ComObject<ID3D11Buffer> pixelConstantBuffers[kResourceCount];
+    float namedLowCb4[50 * 4] = {};
+    if (namedLow) {
+        namedLowCb4[0] = 1.0f; namedLowCb4[1] = 0.0f; namedLowCb4[2] = 0.0f; namedLowCb4[3] = 0.0f;
+        namedLowCb4[4] = 1.0f; namedLowCb4[5] = 0.0f; namedLowCb4[6] = 4.0f; namedLowCb4[7] = 4.14f;
+        namedLowCb4[9] = 1.0f;
+        namedLowCb4[10] = 0.0f; namedLowCb4[11] = 0.0f; namedLowCb4[12] = 0.0f;
+        namedLowCb4[12] = 1.0f; namedLowCb4[13] = 0.0f;
+        namedLowCb4[16] = 0.3080313f; namedLowCb4[17] = 0.83496046f; namedLowCb4[18] = 0.9547169f; namedLowCb4[19] = 1.0f;
+        namedLowCb4[20] = 0.0f; namedLowCb4[21] = 0.0f; namedLowCb4[22] = 1.0f;
+        namedLowCb4[24] = 0.0f; namedLowCb4[25] = 0.0f; namedLowCb4[26] = 1.0f; namedLowCb4[27] = 0.0f;
+        namedLowCb4[28] = -1.0f; namedLowCb4[29] = 8.742278e-08f; namedLowCb4[30] = -8.742278e-08f; namedLowCb4[31] = -1.0f;
+        namedLowCb4[32] = 1.0f;
+        namedLowCb4[36] = -1.0f; namedLowCb4[37] = 1.5f; namedLowCb4[38] = 0.82f; namedLowCb4[39] = -0.1f;
+    }
     for (std::uint32_t i = 0; i < kResourceCount; ++i) {
-        hr = CreateConstantBuffer(device, kPsConstantBufferFloats4[i], &pixelConstantBuffers[i]);
+        hr = CreateConstantBuffer(device, kPsConstantBufferFloats4[i], &pixelConstantBuffers[i],
+                                  namedLow && i == 4 ? namedLowCb4 : nullptr);
         if (FAILED(hr)) {
             return hr;
         }
         report->pixelConstantBufferMask |= 1u << i;
+    }
+    if (namedLow) {
+        std::memcpy(report->namedLowMaterialSha256, kM23MaterialSha256, sizeof(kM23MaterialSha256));
+        std::memcpy(report->namedLowContractSha256, kM23ContractSha256, sizeof(kM23ContractSha256));
+        std::memcpy(report->namedLowComponentMap, kNamedLowComponentMap, sizeof(kNamedLowComponentMap));
+        report->namedLowMaterialHashMask = std::strcmp(report->namedLowMaterialSha256, kM23MaterialSha256) == 0 ? 1u : 0u;
+        report->namedLowContractHashMask = std::strcmp(report->namedLowContractSha256, kM23ContractSha256) == 0 ? 1u : 0u;
+        report->namedLowComponentMapMask = 1u;
     }
 
     // The exact VS declares StructuredBuffer t0 for skin matrices. Keep this
@@ -431,7 +473,7 @@ static HRESULT RunValidation(ID3D11Device* device, ID3D11DeviceContext* context,
     report->stateBindingMask |= report->renderTargetBindingMask ? 0u : 0u;
     report->drawIssued = 1u; context->Draw(3, 0); context->Flush();
     D3D11_TEXTURE2D_DESC stagingDesc = targetDesc; stagingDesc.Usage = D3D11_USAGE_STAGING; stagingDesc.BindFlags = 0; stagingDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
-    ComObject<ID3D11Texture2D> staging; hr = device->CreateTexture2D(&stagingDesc, nullptr, staging.Put()); if (FAILED(hr)) return hr; context->CopyResource(staging.Get(), target.Get()); context->Flush(); D3D11_MAPPED_SUBRESOURCE mapped = {}; hr = context->Map(staging.Get(), 0, D3D11_MAP_READ, 0, &mapped); if (SUCCEEDED(hr)) { std::memcpy(report->readback, mapped.pData, sizeof(report->readback)); context->Unmap(staging.Get(), 0); report->readbackFinite = (std::isfinite(report->readback[0]) && std::isfinite(report->readback[1]) && std::isfinite(report->readback[2]) && std::isfinite(report->readback[3])) ? 1u : 0u; report->readbackChanged = (std::memcmp(report->readback, sentinel, sizeof(sentinel)) != 0) ? 1u : 0u; }
+    ComObject<ID3D11Texture2D> staging; hr = device->CreateTexture2D(&stagingDesc, nullptr, staging.Put()); if (FAILED(hr)) return hr; context->CopyResource(staging.Get(), target.Get()); context->Flush(); D3D11_MAPPED_SUBRESOURCE mapped = {}; hr = context->Map(staging.Get(), 0, D3D11_MAP_READ, 0, &mapped); if (SUCCEEDED(hr)) { std::memcpy(report->readback, mapped.pData, sizeof(report->readback)); context->Unmap(staging.Get(), 0); report->readbackFinite = (std::isfinite(report->readback[0]) && std::isfinite(report->readback[1]) && std::isfinite(report->readback[2]) && std::isfinite(report->readback[3])) ? 1u : 0u; report->readbackChanged = (std::memcmp(report->readback, sentinel, sizeof(sentinel)) != 0) ? 1u : 0u; const float zero[4] = {}; report->readbackChangedFromZero = (std::memcmp(report->readback, zero, sizeof(zero)) != 0) ? 1u : 0u; }
     report->visualFidelityClaim = 0u;
     const bool commonComplete = report->shaderMask == 3u &&
             report->vertexConstantBufferMask == kAllResourcesMask &&
@@ -457,19 +499,28 @@ static HRESULT RunValidation(ID3D11Device* device, ID3D11DeviceContext* context,
         report->vertexBufferMask == 0u && report->vertexShaderResourceCreationMask == 0u &&
         report->vertexShaderResourceBindingMask == 0u && report->diagnosticVsSignatureMask == 1u &&
         report->diagnosticVsSourceHashMask == 1u && report->diagnosticVsCompiledHashMask == 1u;
-    return (diagnosticVs ? diagnosticComplete : exactComplete) ? S_OK : E_FAIL;
+    const bool namedLowComplete = diagnosticComplete && report->mode == 2u &&
+        report->namedLowMaterialHashMask == 1u && report->namedLowContractHashMask == 1u &&
+        report->namedLowComponentMapMask == 1u;
+    return (namedLow ? namedLowComplete : (diagnosticVs ? diagnosticComplete : exactComplete)) ? S_OK : E_FAIL;
 }
 
 extern "C" __declspec(dllexport) HRESULT __cdecl EndfieldOriginalM23DxbcValidate(
     ID3D11Device* device, ID3D11DeviceContext* context,
     EndfieldM23DxbcValidation* report) {
-    return RunValidation(device, context, report, false);
+    return RunValidation(device, context, report, false, false);
 }
 
 extern "C" __declspec(dllexport) HRESULT __cdecl EndfieldOriginalM23DxbcValidateDiagnosticVs(
     ID3D11Device* device, ID3D11DeviceContext* context,
     EndfieldM23DxbcValidation* report) {
-    return RunValidation(device, context, report, true);
+    return RunValidation(device, context, report, true, false);
+}
+
+extern "C" __declspec(dllexport) HRESULT __cdecl EndfieldOriginalM23DxbcValidateDiagnosticVsNamedLow(
+    ID3D11Device* device, ID3D11DeviceContext* context,
+    EndfieldM23DxbcValidation* report) {
+    return RunValidation(device, context, report, true, true);
 }
 
 extern "C" __declspec(dllexport) std::uint32_t __cdecl EndfieldOriginalM23DxbcGetVsConstantBufferCount() {

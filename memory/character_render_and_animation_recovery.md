@@ -2279,6 +2279,14 @@ only stable interpretation and priorities.
    `[0,0,0,0]`. The fragment executes and writes rather than discarding; the
    exact-pair unchanged sentinel is therefore an upstream VS/raster-coverage
    boundary. This oracle is explicitly not vertex or visual fidelity.
+   A third `diagnostic_vs_exact_ps_named_low` run populates only the
+   source-backed named components in cb4[0..9], after fail-closed source-file
+   checks of the exact material and generated peak contract; cb4[10..43] and
+   every unnamed component remain zero. WARP still reads finite transparent
+   black `[0,0,0,0]`, byte-identical to the all-zero-constant oracle. The
+   known low material prefix is therefore insufficient to make M23 visible.
+   Recover the causal high-slot gates and real texture contribution next;
+   do not reinterpret this negative result as a property-name mapping.
    The exact independently AssetMap-proven finger prefab is now executable in
    the same actor-composed diagnostic. It is mounted beneath the unique
    `Bip001_R_Finger2Nub`, keeps its source 0.83333-second delay and
