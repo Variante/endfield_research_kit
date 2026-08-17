@@ -4679,6 +4679,19 @@ source draw is stride 60; observed stock alternatives are 36 and auxiliary
 24/48/88-byte streams. Keep the producer queue on the fork/HG render or mesh
 conversion path. The synthetic exact fixture remains the only captured
 stride-136 draw and cannot establish source provenance.
+Run `python tools/audit_m23_source_vertex_layout.py` for the independent asset
+boundary. It pins all three recovered M23 OBJ counts/tags and the four
+ParticleSystemRenderer identities, mesh bindings, and authored stream tuples.
+Those OBJs contain only position/normal/UV geometry, while streams
+`[0,1,3,4,5,34]` total exactly 60 bytes. The exact 0138 float4/tangent/blend
+layout totals 136 bytes, so neither the source OBJ nor the authored stock
+particle stream can be cited as its producer.
+The current GameAssembly HGMesh layer is also a negative boundary:
+`HGMeshRendererData` callers manage ECS mesh/material handles, bounds, dither,
+and renderer lists, while `HGParticleMeshInstanceRenderer` exposes no managed
+field, method, parameter, or caller in current metadata. Continue at its
+UnityPlayer/HG-native implementation or a supported real-draw resource
+capture; do not infer the packer from EffectManager or HG material wrappers.
 At PTS 40000 it proves two live particles each for `xuanzhuan03` (388 source
 vertices, 776 baked) and `xuanzhuan03_02` (768 source vertices, 1,536 baked),
 while both `xuanzhuan04*` renderers are present but empty. Source normals and

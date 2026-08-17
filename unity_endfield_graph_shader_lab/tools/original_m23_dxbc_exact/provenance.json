@@ -74,7 +74,7 @@
   },
   "creation_contract": {
     "input_stride_bytes": 136,
-    "input_stride_source_status": "unresolved_fork_or_hg_path; stock UnityPlayer ParticleSystemRenderer is excluded because its real foreground source draw uses stride 60 and its 0x108-byte CPU records do not create or bind a 136-byte IA buffer",
+    "input_stride_source_status": "unresolved UnityPlayer/HG-native path; stock ParticleSystemRenderer is excluded by its captured stride-60 draw and 0x108-byte CPU records, recovered OBJ assets are excluded because they contain only position/normal/UV, authored streams [0,1,3,4,5,34] total 60 bytes, and GameAssembly HGMesh managed wrappers expose no particle packer",
     "separate_stage_constant_buffers": true,
     "controlled_state_creation": ["rasterizer", "blend", "depth_stencil"],
     "b4_high_semantics": "zero_or_sentinel_only_non_fidelity"

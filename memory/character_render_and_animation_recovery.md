@@ -2534,11 +2534,28 @@ only stable interpretation and priorities.
    The only observed stride-136 draw remains the synthetic exact-DXBC fixture.
    Therefore the remaining producer search belongs to the fork/HG render or
    mesh-conversion path, not stock ParticleSystemRenderer expansion.
+   A source-layout audit independently excludes the asset/import side. The
+   three recovered M23 OBJs contain only `v/vt/vn/f/g`; their 388, 768, and
+   268 vertex counts and face topology are pinned. All four exact-material
+   renderer rows author streams `[0,1,3,4,5,34]`, whose Position/Normal/
+   Color32/UV/UV2/Custom1 width is exactly 60 bytes. The 136-byte 0138 ABI
+   additionally requires tangent, float4 color/UV lanes, and blend lanes, so
+   it cannot be a serialized OBJ or direct authored-stream layout.
+   GameAssembly's HGMesh audit also excludes its managed layer: current
+   `HGMeshRendererData` callers only manage ECS mesh/material handles, bounds,
+   dither, and renderer lists. `HGParticleMeshInstanceRenderer` has no managed
+   fields, methods, parameters, or callers in current metadata. The positive
+   queue is now its UnityPlayer/HG-native implementation or a supported
+   real-draw resource capture; EffectManager/HGMaterialController wrappers are
+   no longer useful packer candidates.
    `tools/validate_m23_packet_contract.py` now joins the managed census,
    source/BakeMesh oracle, and exact-DXBC fixture with deterministic
    diagnostics. Its current 225 checks close the four public rows and recover
    packed alpha 51/70 by recomputing the oracle hashes, while requiring every
    packed-row, draw-time-cb3, and visual admission flag to remain false.
+   `tools/audit_m23_source_vertex_layout.py` maintains the separate 60-versus-
+   136 asset/stream exclusion gate and fails deterministically on missing OBJ,
+   renderer identity, stream tuple, mesh binding, or HG-instancing drift.
    A narrower immediate-context object-vtable experiment is also rejected. It
    shadowed the complete 115-slot `ID3D11DeviceContext` table only inside the
    isolated player, filtered Draw variants by the retained exact VS/PS
