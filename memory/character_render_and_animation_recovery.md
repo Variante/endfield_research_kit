@@ -2299,6 +2299,16 @@ only stable interpretation and priorities.
    `D3DDisassemble` reject the container. The next useful boundary is a
    supported shader-trace/token decoder or the exact texture/global-buffer
    inputs, not more isolated b4 guesses.
+   The native oracle now replaces t0..t4 with all five contract-proven M23
+   converted PNGs, fail-closes on their hashes and decoded dimensions, and
+   sweeps UV `[0,1]` over a source/compiled-hash-pinned 16x16 diagnostic grid.
+   WIC uploads RGBA8 UNORM without an sRGB transform. Named-low constants stay
+   at 0/256 nonzero pixels, while the numerical-domain-neutral high-slot mode
+   reaches 175/256 nonzero pixels with maximum `[0,0,0,1]`. This is the first
+   demonstrated activation of exact 0139's alpha path using real M23 texture
+   content. RGB remains identically zero, so the next recovery target is the
+   color-chain/global cbuffer inputs; the diagnostic UV and neutral constants
+   are not recovered vertex/material fidelity.
    The exact independently AssetMap-proven finger prefab is now executable in
    the same actor-composed diagnostic. It is mounted beneath the unique
    `Bip001_R_Finger2Nub`, keeps its source 0.83333-second delay and

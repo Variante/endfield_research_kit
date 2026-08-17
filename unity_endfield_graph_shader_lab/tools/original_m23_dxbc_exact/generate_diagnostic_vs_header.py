@@ -10,6 +10,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--source", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--prefix", default="g_EndfieldM23DiagnosticVs")
     args = parser.parse_args()
     source = args.source.read_bytes()
     digest = hashlib.sha256(source).hexdigest()
@@ -18,13 +19,13 @@ def main() -> None:
     escaped = ", ".join(f"0x{byte:02x}" for byte in source)
     args.output.write_text(
         "#pragma once\n"
-        "static const unsigned char g_EndfieldM23DiagnosticVsSource[] = {"
+        f"static const unsigned char {args.prefix}Source[] = {{"
         + escaped
         + "};\n"
-        "static constexpr unsigned int g_EndfieldM23DiagnosticVsSourceSize = "
+        f"static constexpr unsigned int {args.prefix}SourceSize = "
         + str(len(source))
         + ";\n"
-        "static constexpr char g_EndfieldM23DiagnosticVsSourceSha256[] = \""
+        f"static constexpr char {args.prefix}SourceSha256[] = \""
         + digest
         + "\";\n",
         encoding="ascii",

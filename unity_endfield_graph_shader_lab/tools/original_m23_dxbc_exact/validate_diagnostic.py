@@ -66,6 +66,10 @@ def validate_report(path: Path) -> dict:
     mode = report.get("mode")
     named_low = mode == "diagnostic_vs_exact_ps_named_low"
     diagnostic = isinstance(mode, str) and mode.startswith("diagnostic_vs_exact_ps")
+    exact_textures = mode in {
+        "diagnostic_vs_exact_ps_exact_textures_named_low",
+        "diagnostic_vs_exact_ps_exact_textures_high_neutral",
+    }
     required = {
         "schema": "endfield.original-m23-dxbc-exact.v3",
         "mode": mode,
@@ -89,7 +93,7 @@ def validate_report(path: Path) -> dict:
         "topology_binding_mask": "0x1",
         "viewport_binding_mask": "0x1",
     }
-    if diagnostic:
+    if diagnostic and not exact_textures:
         required.update({
             "input_layout_creation_mask": "0x0",
             "vertex_buffer_creation_mask": "0x0",
@@ -134,6 +138,20 @@ def validate_report(path: Path) -> dict:
         })
         if report.get("high_neutral_override_mask") not in {"0x1", "0x2", "0x3"}:
             raise AssertionError("invalid high-neutral override mask")
+    if exact_textures:
+        required.update({
+            "input_layout_creation_mask": "0x0", "vertex_buffer_creation_mask": "0x0",
+            "no_input_layout_binding_mask": "0x1", "no_vertex_buffer_binding_mask": "0x1",
+            "exact_texture_source_hash_mask": "0x1f", "exact_texture_decode_mask": "0x1f",
+            "exact_texture_widths": [128, 256, 1024, 512, 512],
+            "exact_texture_heights": [128, 256, 1024, 512, 512],
+            "exact_texture_vs_signature_mask": "0x1",
+            "exact_texture_vs_source_hash_mask": "0x1",
+            "exact_texture_vs_compiled_hash_mask": "0x1",
+            "exact_texture_grid_size": 16,
+            "exact_texture_grid_finite_pixels": 256,
+            "exact_texture_color_space_assumption": "WIC 32bpp RGBA uploaded as UNORM; no sRGB transform",
+        })
     if not diagnostic:
         required.update({
             "input_layout_creation_mask": "0x1",

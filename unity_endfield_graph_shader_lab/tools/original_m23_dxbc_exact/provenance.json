@@ -55,6 +55,17 @@
     "property_names_resolved": false,
     "visual_fidelity_claim": false
   },
+  "exact_texture_diagnostics": {
+    "slot_path_ids": [-4144937439893824610, -2436663960397463630, 3952872704872131793, 5503065527579778695, -1647025128171678556],
+    "dimensions": [[128, 128], [256, 256], [1024, 1024], [512, 512], [512, 512]],
+    "decode_contract": "WIC RGBA8 UNORM; no sRGB transform",
+    "diagnostic_uv_grid": [16, 16],
+    "named_low_nonzero_pixels": 0,
+    "high_neutral_nonzero_pixels": 175,
+    "high_neutral_max_rgba": [0.0, 0.0, 0.0, 1.0],
+    "rgb_recovered": false,
+    "visual_fidelity_claim": false
+  },
   "creation_contract": {
     "input_stride_bytes": 136,
     "separate_stage_constant_buffers": true,
