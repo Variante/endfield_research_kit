@@ -30,6 +30,8 @@ namespace EndfieldGraphShaderLabEditor
         private const string BuiltinCompatibilityMaterialPath =
             GeneratedRoot + "/M23ParticleBuiltinCompatibility.mat";
         private const string OutputRoot = "scratch/reverse_engineering/lizhiyan_m23_particle_renderer_capture";
+        private const string ExactPluginPath =
+            "Assets/EndfieldGraphShaderLab/Plugins/x86_64/OriginalM23DxbcExactPlugin.dll";
         private const string TargetHierarchy = "P_fxui_lizhiyan_overview_start_04_2/xuanzhuan03";
         private const long TargetMaterialPathId = -430604955415889784L;
         private const string ActivationArgument =
@@ -54,6 +56,7 @@ namespace EndfieldGraphShaderLabEditor
 
         private static void Build()
         {
+            ConfigureExactPluginImporter();
             EndfieldLiZhiyanOverviewPeakParticleEffectImporter.ValidateBatch();
             GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
             if (prefab == null)
@@ -88,6 +91,8 @@ namespace EndfieldGraphShaderLabEditor
             Material diagnostic = LoadDiagnosticMaterial(targetRenderer, TargetMaterialPathId);
             if (diagnostic != null)
                 targetRenderer.sharedMaterials = new[] { diagnostic };
+            instance.AddComponent<EndfieldLiZhiyanM23ExactSubstitutionProbe>()
+                .Configure(targetRenderer);
 
             var runtime = instance.AddComponent<EndfieldLiZhiyanM23ParticleRendererCaptureRuntime>();
             Material compatibilityMaterial = BuildCompatibilityMaterial();
@@ -170,6 +175,21 @@ namespace EndfieldGraphShaderLabEditor
                     PlayerSettings.SetGraphicsAPIs(BuildTarget.StandaloneWindows64, previousApis);
             }
             Debug.Log("Built Li Zhiyan M23 source ParticleSystemRenderer capture: " + playerPath);
+        }
+
+        private static void ConfigureExactPluginImporter()
+        {
+            var importer = AssetImporter.GetAtPath(ExactPluginPath) as PluginImporter;
+            if (importer == null)
+                throw new FileNotFoundException("M23 exact substitution plugin is missing.", ExactPluginPath);
+            importer.SetCompatibleWithAnyPlatform(false);
+            importer.SetCompatibleWithEditor(true);
+            importer.SetEditorData("OS", "Windows");
+            importer.SetEditorData("CPU", "x86_64");
+            importer.SetCompatibleWithPlatform(BuildTarget.StandaloneWindows64, true);
+            importer.SetPlatformData(BuildTarget.StandaloneWindows64, "CPU", "x86_64");
+            importer.isPreloaded = true;
+            importer.SaveAndReimport();
         }
 
         private static Material LoadDiagnosticMaterial(

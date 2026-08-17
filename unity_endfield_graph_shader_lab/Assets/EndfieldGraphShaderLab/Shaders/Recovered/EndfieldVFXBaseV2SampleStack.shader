@@ -101,6 +101,7 @@ Shader "Endfield/Recovered/VFXBaseV2SampleStack"
             #pragma target 5.0
             #pragma vertex Vert
             #pragma fragment Frag
+            #pragma multi_compile_local __ ENDFIELD_ORIGINAL_M23_DXBC_EXACT
             #pragma shader_feature_local_fragment _SAMPLE_TEX0
             #pragma shader_feature_local_fragment _SAMPLE_TEX1
             #pragma shader_feature_local_fragment _SAMPLE_TEX2
