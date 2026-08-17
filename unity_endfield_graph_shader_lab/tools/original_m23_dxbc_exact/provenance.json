@@ -1,5 +1,5 @@
 {
-  "schema": "endfield.original-m23-dxbc-exact-provenance.v2",
+  "schema": "endfield.original-m23-dxbc-exact-provenance.v3",
   "activation_policy": "native-warp-explicit-bind-draw-readback-only",
   "shader": "HGRP/Effect/VFXBaseV2",
   "pass": "ForwardOnly",
@@ -17,6 +17,25 @@
     "constant_buffer_float4_counts": [45, 105, 5, 1, 44],
     "shader_resource_slots": [0, 1, 2, 3, 4],
     "sampler_slots": [0, 1, 2, 3, 4]
+  },
+  "diagnostic_vs_exact_ps": {
+    "source": "diagnostic_vs.hlsl",
+    "source_sha256": "8a45e1a2462f164538430228eb5fa482e3337f6ec40189d273bc76cbd6c61e98",
+    "compiler": "D3DCompile vs_5_0",
+    "compiled_sha256": "51f0011ff8f7fbeaa9f0dfb60d95de82f010a3cbef77c14393313d425d16e707",
+    "pixel_isgn": [
+      ["SV_Position", 0, "float4", "0xf"],
+      ["TEXCOORD0", 1, "float4", "0xf"], ["TEXCOORD1", 2, "float4", "0xf"],
+      ["TEXCOORD2", 3, "float4", "0xf"], ["TEXCOORD3", 4, "float3", "0x7"],
+      ["TEXCOORD4", 5, "float4", "0xf"], ["TEXCOORD5", 6, "float4", "0xf"],
+      ["TEXCOORD6", 7, "float3", "0x7"], ["TEXCOORD7", 8, "float3", "0x7"]
+    ],
+    "uses_exact_vertex_shader_0138": false,
+    "uses_exact_pixel_shader_0139": true,
+    "zero_constant_readback": [0, 0, 0, 0],
+    "zero_constant_readback_changed_from_sentinel": true,
+    "interpretation": "exact pixel shader executes and writes transparent black; exact-pair unchanged sentinel is upstream vertex/raster coverage, not a fragment discard",
+    "visual_fidelity_claim": false
   },
   "creation_contract": {
     "input_stride_bytes": 136,

@@ -4517,6 +4517,12 @@ IA/state/RT binding, issues `Draw(3,0)`, and maps a finite 1x1 float readback.
 The zeroed unresolved constants leave the sentinel unchanged; material
 constants, visible pixels, Unity integration, and visual fidelity remain the
 next explicit gates.
+The companion `diagnostic_vs_exact_ps` mode uses a source/compiled-hash-pinned
+fullscreen VS with the exact 0139 input signature. Under the same zero PS
+constants it changes the sentinel to finite `[0,0,0,0]`, proving that exact
+0139 executes and writes rather than discarding. The exact-pair unchanged
+pixel is therefore upstream VS/raster coverage; this diagnostic substitution
+does not claim vertex or visual fidelity.
 
 The actor-composed harness now also instantiates the exact recovered
 `P_fxui_lizhiyan_overview_trails_Bip001_R_Finger2Nub` prefab beneath the
