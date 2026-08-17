@@ -1,6 +1,6 @@
 {
-  "schema": "endfield.original-m23-dxbc-creation-provenance.v1",
-  "activation_policy": "native-warp-creation-contract-only",
+  "schema": "endfield.original-m23-dxbc-exact-provenance.v2",
+  "activation_policy": "native-warp-explicit-bind-draw-readback-only",
   "shader": "HGRP/Effect/VFXBaseV2",
   "pass": "ForwardOnly",
   "material_path_id": -430604955415889784,
@@ -24,10 +24,20 @@
     "controlled_state_creation": ["rasterizer", "blend", "depth_stencil"],
     "b4_high_semantics": "zero_or_sentinel_only_non_fidelity"
   },
+  "binding_contract": {
+    "vertex_structured_buffer_t0": "_VertexSkinMatrices",
+    "vertex_structured_buffer_t0_identity_mask": "0x1",
+    "vs_slots": [0, 1, 2, 3, 4],
+    "ps_slots": [0, 1, 2, 3, 4],
+    "identity_getters": ["VSGetShader", "PSGetShader", "IAGetInputLayout", "IAGetVertexBuffers", "IAGetPrimitiveTopology", "VSGetConstantBuffers", "PSGetConstantBuffers", "VSGetShaderResources", "PSGetShaderResources", "PSGetSamplers", "RSGetState", "RSGetViewports", "OMGetBlendState", "OMGetDepthStencilState", "OMGetRenderTargets"],
+    "draw_vertices": 3,
+    "topology": "trianglelist",
+    "viewport": "1x1",
+    "render_target": "1x1 R32G32B32A32_FLOAT",
+    "readback_changed_is_not_required": true,
+    "visual_fidelity_claim": false
+  },
   "does_not_prove": [
-    "resource binding",
-    "draw execution",
-    "GPU readback",
     "Unity integration",
     "material or visual fidelity"
   ]

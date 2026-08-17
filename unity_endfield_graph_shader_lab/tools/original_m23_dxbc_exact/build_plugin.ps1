@@ -19,10 +19,12 @@ cmd.exe /d /c "call `"$vsDevCmd`" -arch=x64 -host_arch=x64 && $cmd"
 if ($LASTEXITCODE -ne 0) { throw "M23 plugin compilation failed." }
 $validatorObj = Join-Path $buildRoot "ValidateEmbeddedM23Dxbc.obj"
 $validator = Join-Path $buildRoot "ValidateEmbeddedM23Dxbc.exe"
+$report = Join-Path $buildRoot "m23_dxbc_validation.json"
 $vcmd = "cl.exe /nologo /std:c++17 /O2 /EHsc /I`"$buildRoot`" /Fo`"$validatorObj`" `"$(Join-Path $toolRoot 'ValidateEmbeddedM23Dxbc.cpp')`" /link /NOLOGO /Brepro /OUT:`"$validator`" `"$importLibrary`" d3d11.lib"
 cmd.exe /d /c "call `"$vsDevCmd`" -arch=x64 -host_arch=x64 && $vcmd"
 if ($LASTEXITCODE -ne 0) { throw "M23 validator compilation failed." }
-& $validator
+& $validator $report
 if ($LASTEXITCODE -ne 0) { throw "WARP rejected the M23 exact-DXBC creation contract." }
 Remove-Item -Force -ErrorAction SilentlyContinue $obj,$validatorObj
 Write-Output "native_creation_fixture=$dll"
+Write-Output "native_validation_report=$report"

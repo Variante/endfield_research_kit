@@ -4,13 +4,12 @@
 
 #include <cstdint>
 #include <cstring>
+#include <cmath>
+#include <fstream>
 #include <vector>
 
 #include "EmbeddedM23Dxbc.generated.h"
 
-// Batch 1 is deliberately a native D3D11 contract only.  There is no Unity
-// callback, draw, or readback here: a host supplies its D3D11 device and gets
-// a complete creation report back.
 struct EndfieldM23DxbcValidation {
     std::uint32_t shaderMask;
     std::uint32_t inputLayoutMask;
@@ -20,6 +19,25 @@ struct EndfieldM23DxbcValidation {
     std::uint32_t shaderResourceMask;
     std::uint32_t samplerMask;
     std::uint32_t stateMask;
+    std::uint32_t vsBindingMask;
+    std::uint32_t psBindingMask;
+    std::uint32_t inputBindingMask;
+    std::uint32_t vertexBindingMask;
+    std::uint32_t vsConstantBufferBindingMask;
+    std::uint32_t psConstantBufferBindingMask;
+    std::uint32_t shaderResourceBindingMask;
+    std::uint32_t vertexShaderResourceCreationMask;
+    std::uint32_t vertexShaderResourceBindingMask;
+    std::uint32_t samplerBindingMask;
+    std::uint32_t stateBindingMask;
+    std::uint32_t renderTargetBindingMask;
+    std::uint32_t topologyBindingMask;
+    std::uint32_t viewportBindingMask;
+    std::uint32_t drawIssued;
+    std::uint32_t readbackFinite;
+    std::uint32_t readbackChanged;
+    std::uint32_t visualFidelityClaim;
+    float readback[4];
 };
 
 namespace {
@@ -113,8 +131,9 @@ HRESULT CreateSimpleSampler(ID3D11Device* device, ComObject<ID3D11SamplerState>*
 }  // namespace
 
 extern "C" __declspec(dllexport) HRESULT __cdecl EndfieldOriginalM23DxbcValidate(
-    ID3D11Device* device, EndfieldM23DxbcValidation* report) {
-    if (report == nullptr || device == nullptr) {
+    ID3D11Device* device, ID3D11DeviceContext* context,
+    EndfieldM23DxbcValidation* report) {
+    if (report == nullptr || device == nullptr || context == nullptr) {
         return E_INVALIDARG;
     }
     std::memset(report, 0, sizeof(*report));
@@ -194,6 +213,29 @@ extern "C" __declspec(dllexport) HRESULT __cdecl EndfieldOriginalM23DxbcValidate
         report->pixelConstantBufferMask |= 1u << i;
     }
 
+    // The exact VS declares StructuredBuffer t0 for skin matrices. Keep this
+    // SRV separate from the five pixel texture slots.
+    D3D11_BUFFER_DESC skinDescription = {};
+    skinDescription.ByteWidth = 16;
+    skinDescription.Usage = D3D11_USAGE_DEFAULT;
+    skinDescription.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+    skinDescription.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+    skinDescription.StructureByteStride = 16;
+    const float skinData[4] = {1, 0, 0, 0};
+    D3D11_SUBRESOURCE_DATA skinInit = {skinData, 0, 0};
+    ComObject<ID3D11Buffer> vertexSkinBuffer;
+    hr = device->CreateBuffer(&skinDescription, &skinInit, vertexSkinBuffer.Put());
+    if (FAILED(hr)) return hr;
+    D3D11_SHADER_RESOURCE_VIEW_DESC skinViewDescription = {};
+    skinViewDescription.Format = DXGI_FORMAT_UNKNOWN;
+    skinViewDescription.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
+    skinViewDescription.Buffer.FirstElement = 0;
+    skinViewDescription.Buffer.NumElements = 1;
+    ComObject<ID3D11ShaderResourceView> vertexSkinResource;
+    hr = device->CreateShaderResourceView(vertexSkinBuffer.Get(), &skinViewDescription, vertexSkinResource.Put());
+    if (FAILED(hr)) return hr;
+    report->vertexShaderResourceCreationMask = 1u;
+
     ComObject<ID3D11ShaderResourceView> shaderResources[kResourceCount];
     ComObject<ID3D11SamplerState> samplers[kResourceCount];
     for (std::uint32_t i = 0; i < kResourceCount; ++i) {
@@ -242,12 +284,94 @@ extern "C" __declspec(dllexport) HRESULT __cdecl EndfieldOriginalM23DxbcValidate
     }
     report->stateMask |= kStateDepth;
 
+    // Bind every exact object explicitly. The masks below are identity checks
+    // from the D3D11 getter APIs, not merely setter bookkeeping.
+    UINT stride = sizeof(Vertex), offset = 0;
+    ID3D11Buffer* vb = vertexBuffer.Get();
+    context->IASetInputLayout(inputLayout.Get());
+    context->IASetVertexBuffers(0, 1, &vb, &stride, &offset);
+    context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    context->VSSetShader(vertexShader.Get(), nullptr, 0);
+    context->PSSetShader(pixelShader.Get(), nullptr, 0);
+    ID3D11ShaderResourceView* vertexSkinView = vertexSkinResource.Get();
+    context->VSSetShaderResources(0, 1, &vertexSkinView);
+    ID3D11Buffer* vsBuffers[kResourceCount] = {};
+    ID3D11Buffer* psBuffers[kResourceCount] = {};
+    ID3D11ShaderResourceView* resourceViews[kResourceCount] = {};
+    ID3D11SamplerState* samplerStates[kResourceCount] = {};
+    for (std::uint32_t i = 0; i < kResourceCount; ++i) {
+        vsBuffers[i] = vertexConstantBuffers[i].Get();
+        psBuffers[i] = pixelConstantBuffers[i].Get();
+        resourceViews[i] = shaderResources[i].Get();
+        samplerStates[i] = samplers[i].Get();
+    }
+    context->VSSetConstantBuffers(0, kResourceCount, vsBuffers);
+    context->PSSetConstantBuffers(0, kResourceCount, psBuffers);
+    context->PSSetShaderResources(0, kResourceCount, resourceViews);
+    context->PSSetSamplers(0, kResourceCount, samplerStates);
+    context->RSSetState(rasterizer.Get());
+    context->OMSetBlendState(blend.Get(), nullptr, 0xffffffffu);
+    context->OMSetDepthStencilState(depth.Get(), 0);
+
+    auto same = [](IUnknown* left, IUnknown* right) { return left == right ? 1u : 0u; };
+    ID3D11VertexShader* gotVs = nullptr; ID3D11PixelShader* gotPs = nullptr;
+    ID3D11InputLayout* gotLayout = nullptr; ID3D11Buffer* gotVb = nullptr;
+    context->VSGetShader(&gotVs, nullptr, nullptr); context->PSGetShader(&gotPs, nullptr, nullptr);
+    context->IAGetInputLayout(&gotLayout); context->IAGetVertexBuffers(0, 1, &gotVb, &stride, &offset);
+    report->vsBindingMask = same(gotVs, vertexShader.Get()); report->psBindingMask = same(gotPs, pixelShader.Get());
+    report->inputBindingMask = same(gotLayout, inputLayout.Get()); report->vertexBindingMask = same(gotVb, vertexBuffer.Get());
+    if (gotVs) gotVs->Release(); if (gotPs) gotPs->Release(); if (gotLayout) gotLayout->Release(); if (gotVb) gotVb->Release();
+    ID3D11Buffer* gotVsBuffers[kResourceCount] = {}; ID3D11Buffer* gotPsBuffers[kResourceCount] = {};
+    context->VSGetConstantBuffers(0, kResourceCount, gotVsBuffers); context->PSGetConstantBuffers(0, kResourceCount, gotPsBuffers);
+    for (std::uint32_t i = 0; i < kResourceCount; ++i) { if (same(gotVsBuffers[i], vsBuffers[i])) report->vsConstantBufferBindingMask |= 1u << i; if (same(gotPsBuffers[i], psBuffers[i])) report->psConstantBufferBindingMask |= 1u << i; if (gotVsBuffers[i]) gotVsBuffers[i]->Release(); if (gotPsBuffers[i]) gotPsBuffers[i]->Release(); }
+    ID3D11ShaderResourceView* gotResources[kResourceCount] = {}; ID3D11SamplerState* gotSamplers[kResourceCount] = {};
+    context->PSGetShaderResources(0, kResourceCount, gotResources); context->PSGetSamplers(0, kResourceCount, gotSamplers);
+    for (std::uint32_t i = 0; i < kResourceCount; ++i) { if (same(gotResources[i], resourceViews[i])) report->shaderResourceBindingMask |= 1u << i; if (same(gotSamplers[i], samplerStates[i])) report->samplerBindingMask |= 1u << i; if (gotResources[i]) gotResources[i]->Release(); if (gotSamplers[i]) gotSamplers[i]->Release(); }
+    ID3D11ShaderResourceView* gotVertexSkin = nullptr;
+    context->VSGetShaderResources(0, 1, &gotVertexSkin);
+    if (same(gotVertexSkin, vertexSkinResource.Get())) report->vertexShaderResourceBindingMask = 1u;
+    if (gotVertexSkin) gotVertexSkin->Release();
+    D3D11_PRIMITIVE_TOPOLOGY gotTopology = D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
+    context->IAGetPrimitiveTopology(&gotTopology);
+    if (gotTopology == D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST) report->topologyBindingMask = 1u;
+    ID3D11RasterizerState* gotRaster = nullptr; ID3D11BlendState* gotBlend = nullptr; ID3D11DepthStencilState* gotDepth = nullptr;
+    context->RSGetState(&gotRaster); FLOAT blendFactor[4] = {}; UINT sampleMask = 0; context->OMGetBlendState(&gotBlend, blendFactor, &sampleMask); context->OMGetDepthStencilState(&gotDepth, nullptr);
+    if (same(gotRaster, rasterizer.Get())) report->stateBindingMask |= kStateRasterizer; if (same(gotBlend, blend.Get())) report->stateBindingMask |= kStateBlend; if (same(gotDepth, depth.Get())) report->stateBindingMask |= kStateDepth;
+    if (gotRaster) gotRaster->Release(); if (gotBlend) gotBlend->Release(); if (gotDepth) gotDepth->Release();
+
+    D3D11_TEXTURE2D_DESC targetDesc = {}; targetDesc.Width = 1; targetDesc.Height = 1; targetDesc.MipLevels = 1; targetDesc.ArraySize = 1; targetDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT; targetDesc.SampleDesc.Count = 1; targetDesc.Usage = D3D11_USAGE_DEFAULT; targetDesc.BindFlags = D3D11_BIND_RENDER_TARGET;
+    ComObject<ID3D11Texture2D> target; hr = device->CreateTexture2D(&targetDesc, nullptr, target.Put()); if (FAILED(hr)) return hr;
+    ComObject<ID3D11RenderTargetView> rtv; hr = device->CreateRenderTargetView(target.Get(), nullptr, rtv.Put()); if (FAILED(hr)) return hr;
+    const float sentinel[4] = {0.125f, 0.25f, 0.5f, 0.75f}; ID3D11RenderTargetView* renderTarget = rtv.Get(); context->OMSetRenderTargets(1, &renderTarget, nullptr);
+    D3D11_VIEWPORT viewport = {0, 0, 1, 1, 0, 1}; context->RSSetViewports(1, &viewport); context->ClearRenderTargetView(rtv.Get(), sentinel);
+    UINT viewportCount = 1; D3D11_VIEWPORT gotViewport = {}; context->RSGetViewports(&viewportCount, &gotViewport);
+    if (viewportCount == 1 && gotViewport.Width == 1.0f && gotViewport.Height == 1.0f && gotViewport.TopLeftX == 0.0f && gotViewport.TopLeftY == 0.0f) report->viewportBindingMask = 1u;
+    ID3D11RenderTargetView* gotRtv = nullptr; context->OMGetRenderTargets(1, &gotRtv, nullptr); report->renderTargetBindingMask = same(gotRtv, rtv.Get()); if (gotRtv) gotRtv->Release();
+    report->stateBindingMask |= report->renderTargetBindingMask ? 0u : 0u;
+    report->drawIssued = 1u; context->Draw(3, 0); context->Flush();
+    D3D11_TEXTURE2D_DESC stagingDesc = targetDesc; stagingDesc.Usage = D3D11_USAGE_STAGING; stagingDesc.BindFlags = 0; stagingDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+    ComObject<ID3D11Texture2D> staging; hr = device->CreateTexture2D(&stagingDesc, nullptr, staging.Put()); if (FAILED(hr)) return hr; context->CopyResource(staging.Get(), target.Get()); context->Flush(); D3D11_MAPPED_SUBRESOURCE mapped = {}; hr = context->Map(staging.Get(), 0, D3D11_MAP_READ, 0, &mapped); if (SUCCEEDED(hr)) { std::memcpy(report->readback, mapped.pData, sizeof(report->readback)); context->Unmap(staging.Get(), 0); report->readbackFinite = (std::isfinite(report->readback[0]) && std::isfinite(report->readback[1]) && std::isfinite(report->readback[2]) && std::isfinite(report->readback[3])) ? 1u : 0u; report->readbackChanged = (std::memcmp(report->readback, sentinel, sizeof(sentinel)) != 0) ? 1u : 0u; }
+    report->visualFidelityClaim = 0u;
     return (report->shaderMask == 3u && report->inputLayoutMask == 1u &&
             report->vertexBufferMask == 1u &&
             report->vertexConstantBufferMask == kAllResourcesMask &&
             report->pixelConstantBufferMask == kAllResourcesMask &&
             report->shaderResourceMask == kAllResourcesMask &&
-            report->samplerMask == kAllResourcesMask && report->stateMask == kAllStateMask)
+            report->samplerMask == kAllResourcesMask &&
+            report->stateMask == kAllStateMask &&
+            report->vertexShaderResourceCreationMask == 1u &&
+            report->vsBindingMask == 1u && report->psBindingMask == 1u &&
+            report->inputBindingMask == 1u && report->vertexBindingMask == 1u &&
+            report->vsConstantBufferBindingMask == kAllResourcesMask &&
+            report->psConstantBufferBindingMask == kAllResourcesMask &&
+            report->shaderResourceBindingMask == kAllResourcesMask &&
+            report->samplerBindingMask == kAllResourcesMask &&
+            report->vertexShaderResourceBindingMask == 1u &&
+            report->stateBindingMask == kAllStateMask &&
+            report->renderTargetBindingMask == 1u &&
+            report->topologyBindingMask == 1u &&
+            report->viewportBindingMask == 1u && report->drawIssued == 1u &&
+            report->readbackFinite == 1u && report->visualFidelityClaim == 0u)
                ? S_OK
                : E_FAIL;
 }
