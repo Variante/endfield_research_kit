@@ -2373,6 +2373,34 @@ only stable interpretation and priorities.
    particle draw. The next implementation step is a capture-session DrawMesh
    path for the four exact-M23 renderers using their baked 136-byte streams and
    corrected effect-local COLOR0 alpha.
+   That proposed BakeMesh-direct path has now been rejected by an executed
+   fail-closed Unity probe rather than promoted. At PTS 40000 the four exact
+   renderers retain the authored stream tuple `[0,1,3,4,5,34]`, deterministic
+   BakeMesh vertex/index expansion, and an exact per-particle mesh-index vertex
+   census, but BakeMesh exposes only UV0/UV1: neither channel reproduces public
+   Custom1 XYZ (`UV0` component mask `0`, `UV1` mask `8`, only W). The 0138
+   disassembly independently rejects the attempted mapping: its full ISGN is
+   POSITION/NORMAL/TANGENT/COLOR/TEXCOORD0/TEXCOORD1/TEXCOORD4/
+   BLENDWEIGHTS/BLENDINDICES at byte offsets
+   `0/12/24/40/56/72/88/104/120`; TEXCOORD4 is an auxiliary motion/previous-
+   position lane, not proven Custom1. Source POSITION is transformed by Draw
+   cb3 and must not be replaced by already-transformed BakeMesh world positions.
+   BakeMesh also has no BlendWeight/BlendIndices. Therefore it is
+   admissible only as deterministic expansion/order and transformed-geometry
+   evidence. The next bridge must expand source-mesh POSITION/COLOR/UV/normal
+   rows per public particle meshIndex, carry public Custom1/currentColor while
+   leaving its runtime semantic slot fail-closed, and recover the per-particle
+   Draw cb3 transform/color contract; missing
+   lanes must fail closed rather than receive defaults.
+   Native render events 4/5 now provide a non-destructive D3D11 state observer
+   around a future real Unity DrawMesh. It snapshots exact shader identity,
+   CB/SRV/sampler masks, IA vertex slots/strides/offsets, index format,
+   topology, viewport, and target without executing the synthetic fixture or
+   calling `ClearState`. Its explicit observer guarantee must not be read as a
+   claim that Unity itself preserves every binding. The plugin build, complete
+   observer export census, WARP suite, and managed source-contract test pass;
+   real-draw evidence remains pending until the source-row/cb3 bridge can issue
+   a semantically valid draw.
    Video acceptance must distinguish Unity anchors from nearest retail PTS:
    39934 maps to retail 39933 and 40834 to 40833, while 40000/40867 are exact.
    At PTS 40000 the current composite raised-hand coverage is 4.863% versus
