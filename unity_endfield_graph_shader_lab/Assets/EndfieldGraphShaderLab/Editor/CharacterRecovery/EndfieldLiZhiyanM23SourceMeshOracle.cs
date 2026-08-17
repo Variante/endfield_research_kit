@@ -123,6 +123,17 @@ namespace EndfieldGraphShaderLabEditor
                     w = value.w,
                 };
             }
+
+            public static Float4Record From(Quaternion value)
+            {
+                return new Float4Record
+                {
+                    x = value.x,
+                    y = value.y,
+                    z = value.z,
+                    w = value.w,
+                };
+            }
         }
 
         [Serializable]
@@ -157,6 +168,7 @@ namespace EndfieldGraphShaderLabEditor
             public int subMeshCount;
             public int indexCount;
             public int[] subMeshIndexCounts;
+            public string indicesSha256;
             public ChannelEvidence positions;
             public ChannelEvidence normals;
             public ChannelEvidence tangents;
@@ -179,6 +191,7 @@ namespace EndfieldGraphShaderLabEditor
             public int subMeshCount;
             public int indexCount;
             public int[] subMeshIndexCounts;
+            public string indicesSha256;
             public ChannelEvidence positions;
             public ChannelEvidence normals;
             public ChannelEvidence tangents;
@@ -217,6 +230,20 @@ namespace EndfieldGraphShaderLabEditor
             public int bakedIndexOffset;
             public int bakedIndexCount;
             public bool bakedIndexRangeValid;
+            // Range-only validation is insufficient: a renderer can keep all
+            // indices inside the particle's vertex window while reordering
+            // triangles.  Keep the exact source-submesh sequence and the
+            // first bounded mismatch in the report so a future ABI bridge
+            // cannot silently accept a different index topology.
+            public bool bakedIndexSequenceValid;
+            public string sourceIndexSequenceSha256;
+            public string expectedIndexSequenceSha256;
+            public string bakedIndexSequenceSha256;
+            public int bakedIndexMismatchCount;
+            public int bakedIndexFirstMismatchSubmesh = -1;
+            public int bakedIndexFirstMismatchOffset = -1;
+            public int bakedIndexFirstExpected = -1;
+            public int bakedIndexFirstActual = -1;
             public string sourcePositionSha256;
             public string bakedPositionSegmentSha256;
             public string bakedNormalSegmentSha256;
@@ -267,6 +294,33 @@ namespace EndfieldGraphShaderLabEditor
         }
 
         [Serializable]
+        private sealed class CaptureEvidence
+        {
+            public string label;
+            public Float3Record cameraPosition;
+            public Float4Record cameraRotation;
+            public uint serializedRandomSeed;
+            public int particleCount;
+            public string beforeParticleStateSha256;
+            public string afterParticleStateSha256;
+            public string beforeCustom1Sha256;
+            public string afterCustom1Sha256;
+            public bool fixedSeedClosed;
+            public bool bakeMeshMutationClosed;
+            public BakedMeshEvidence bakedMesh;
+        }
+
+        // The managed arrays are intentionally kept outside CaptureEvidence:
+        // they are inputs to the transform oracle, not part of the JSON schema.
+        private sealed class CaptureSample
+        {
+            public CaptureEvidence evidence;
+            public ParticleSystem.Particle[] particles;
+            public List<Vector4> customRows;
+            public Mesh bakedMesh;
+        }
+
+        [Serializable]
         private sealed class RendererEvidence
         {
             public string hierarchy;
@@ -281,8 +335,19 @@ namespace EndfieldGraphShaderLabEditor
             public bool particleStateClosed;
             public bool custom1Closed;
             public bool segmentMappingClosed;
+            public bool indexSequenceClosed;
             public bool localTrsClosed;
             public bool inverseTransposeNormalClosed;
+            public bool stateResetClosed;
+            public bool bakeMeshMutationClosed;
+            public bool repeatClosed;
+            public bool cameraInvarianceAuthoredGateClosed;
+            public bool cameraInvarianceExpected;
+            public bool cameraInvarianceClosed;
+            public string cameraInvarianceDiagnostic;
+            public CaptureEvidence cameraA;
+            public CaptureEvidence cameraB;
+            public CaptureEvidence cameraARepeat;
             public int particleCount;
             public int bakedVertexCount;
             public int bakedIndexCount;
@@ -396,7 +461,10 @@ namespace EndfieldGraphShaderLabEditor
                     report.renderers.All(row => row.sourceGeometryClosed &&
                         row.particleStateClosed && row.custom1Closed &&
                         row.segmentMappingClosed && row.localTrsClosed &&
-                        row.inverseTransposeNormalClosed),
+                        row.inverseTransposeNormalClosed && row.stateResetClosed &&
+                        row.bakeMeshMutationClosed && row.repeatClosed &&
+                        row.cameraInvarianceAuthoredGateClosed &&
+                        (!row.cameraInvarianceExpected || row.cameraInvarianceClosed)),
                     "M23 source mesh/particle segment evidence did not close");
             }
             catch (Exception exception)
@@ -463,40 +531,101 @@ namespace EndfieldGraphShaderLabEditor
             ParticleSystem.MainModule main = system.main;
             Require(!system.useAutoRandomSeed,
                 "M23 system uses automatic random seed: " + spec.hierarchy);
-            system.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-            system.Clear(true);
-            system.Simulate(effectLocalSeconds, false, true, false);
-            // Match the maintained actor-capture submission boundary: Play
-            // publishes the simulated state to the renderer without advancing
-            // time in this batchmode call.
-            system.Play(false);
-            var particles = new ParticleSystem.Particle[Mathf.Max(system.particleCount, main.maxParticles)];
-            int particleCount = system.GetParticles(particles);
-            Array.Resize(ref particles, particleCount);
-            var customRows = new List<Vector4>(particleCount);
-            int customCount = system.GetCustomParticleData(customRows, ParticleSystemCustomData.Custom1);
-            Require(customCount == particleCount && customRows.Count == particleCount,
-                "M23 Custom1 count does not match particle count: " + spec.hierarchy);
-
-            Mesh baked = new Mesh { name = "LiZhiyan_M23_SourceMesh_Oracle_Baked" };
+            // randomSeed is serialized on the authored ParticleSystem.  Every
+            // sample below resets to this exact value before exact-time
+            // simulation; reusing a live system would hide random-stream or
+            // BakeMesh mutation.
+            uint serializedRandomSeed = system.randomSeed;
+            CaptureSample cameraA = null;
+            CaptureSample cameraB = null;
+            CaptureSample cameraARepeat = null;
             try
             {
-                renderer.BakeMesh(baked, camera,
-                    ParticleSystemBakeMeshOptions.BakePosition |
-                    ParticleSystemBakeMeshOptions.BakeRotationAndScale);
+                ConfigureCamera(camera, new Vector3(0.0f, 0.0f, -10.0f),
+                    Quaternion.identity);
+                cameraA = CaptureRendererSample(
+                    system, renderer, camera, effectLocalSeconds,
+                    serializedRandomSeed, "cameraA", spec.hierarchy);
+                ConfigureCamera(camera, new Vector3(3.25f, 1.75f, -7.5f),
+                    Quaternion.Euler(17.0f, -21.0f, 8.0f));
+                cameraB = CaptureRendererSample(
+                    system, renderer, camera, effectLocalSeconds,
+                    serializedRandomSeed, "cameraB", spec.hierarchy);
+                ConfigureCamera(camera, new Vector3(0.0f, 0.0f, -10.0f),
+                    Quaternion.identity);
+                cameraARepeat = CaptureRendererSample(
+                    system, renderer, camera, effectLocalSeconds,
+                    serializedRandomSeed, "cameraARepeat", spec.hierarchy);
+
                 SourceMeshEvidence source = DescribeSourceMesh(meshes[0], spec.meshPathId);
-                BakedMeshEvidence bakedEvidence = DescribeBakedMesh(baked);
-                int expectedVertices = particleCount * meshes[0].vertexCount;
-                int expectedIndices = particleCount * CountIndices(meshes[0]);
-                Require(baked.subMeshCount == meshes[0].subMeshCount,
+                int expectedVertices = 0;
+                int expectedIndices = 0;
+                foreach (ParticleSystem.Particle particle in cameraA.particles)
+                {
+                    int meshIndex = particle.GetMeshIndex(system);
+                    Require(meshIndex >= 0 && meshIndex < meshes.Length &&
+                        meshes[meshIndex] != null,
+                        "M23 particle selected an invalid source mesh index: " +
+                        meshIndex + " at " + spec.hierarchy);
+                    expectedVertices += meshes[meshIndex].vertexCount;
+                    expectedIndices += CountIndices(meshes[meshIndex]);
+                }
+                Require(cameraA.bakedMesh.subMeshCount == meshes[0].subMeshCount,
                     "M23 BakeMesh submesh count drifted at " + spec.hierarchy);
-                Require(baked.vertexCount == expectedVertices && CountIndices(baked) == expectedIndices,
+                Require(cameraA.bakedMesh.vertexCount == expectedVertices &&
+                    CountIndices(cameraA.bakedMesh) == expectedIndices,
                     "M23 BakeMesh geometry count mismatch at " + spec.hierarchy +
-                    ": actual=" + baked.vertexCount + "/" + CountIndices(baked) +
+                    ": actual=" + cameraA.bakedMesh.vertexCount + "/" + CountIndices(cameraA.bakedMesh) +
                     ", expected=" + expectedVertices + "/" + expectedIndices);
+                bool stateResetClosed =
+                    cameraA.evidence.beforeParticleStateSha256 ==
+                        cameraB.evidence.beforeParticleStateSha256 &&
+                    cameraA.evidence.beforeParticleStateSha256 ==
+                        cameraARepeat.evidence.beforeParticleStateSha256 &&
+                    cameraA.evidence.beforeCustom1Sha256 ==
+                        cameraB.evidence.beforeCustom1Sha256 &&
+                    cameraA.evidence.beforeCustom1Sha256 ==
+                        cameraARepeat.evidence.beforeCustom1Sha256;
+                bool bakeMeshMutationClosed =
+                    cameraA.evidence.bakeMeshMutationClosed &&
+                    cameraB.evidence.bakeMeshMutationClosed &&
+                    cameraARepeat.evidence.bakeMeshMutationClosed;
+                bool repeatClosed =
+                    MeshDigestEqual(cameraA.evidence.bakedMesh,
+                        cameraARepeat.evidence.bakedMesh) &&
+                    stateResetClosed;
+                bool cameraInvarianceClosed = MeshDigestEqual(
+                    cameraA.evidence.bakedMesh, cameraB.evidence.bakedMesh);
+                bool cameraInvarianceAuthoredGateClosed =
+                    renderer.renderMode == ParticleSystemRenderMode.Mesh &&
+                    renderer.alignment == ParticleSystemRenderSpace.Local &&
+                    renderer.sortMode == ParticleSystemSortMode.None &&
+                    renderer.cameraVelocityScale == 0.0f &&
+                    renderer.velocityScale == 0.0f;
+                bool cameraInvarianceExpected = cameraInvarianceAuthoredGateClosed;
+                string cameraInvarianceDiagnostic = cameraInvarianceClosed
+                    ? "cameraA and cameraB baked mesh digests are identical"
+                    : "cameraA and cameraB baked mesh digests differ";
+                Require(stateResetClosed,
+                    "M23 exact-time reset state mismatch at " + spec.hierarchy);
+                Require(bakeMeshMutationClosed,
+                    "M23 BakeMesh mutated particle or Custom1 state at " + spec.hierarchy);
+                Require(repeatClosed,
+                    "M23 camera A repeat is not deterministic at " + spec.hierarchy);
+                Require(cameraInvarianceAuthoredGateClosed,
+                    "M23 camera-invariance authored gate drifted at " + spec.hierarchy +
+                    ": renderMode=" + renderer.renderMode +
+                    ", alignment=" + renderer.alignment +
+                    ", sortMode=" + renderer.sortMode +
+                    ", cameraVelocityScale=" + renderer.cameraVelocityScale +
+                    ", velocityScale=" + renderer.velocityScale);
+                Require(cameraInvarianceClosed,
+                    "M23 authored mesh/local/unsorted BakeMesh is camera-dependent at " +
+                    spec.hierarchy);
                 TransformValidationEvidence transformValidation;
                 ParticleEvidence[] particlesEvidence = BuildParticleEvidence(
-                    system, meshes[0], baked, particles, customRows, particleCount,
+                    system, meshes, cameraA.bakedMesh, cameraA.particles,
+                    cameraA.customRows, cameraA.particles.Length,
                     main.startRotation3D, out transformValidation);
                 var evidence = new RendererEvidence
                 {
@@ -509,36 +638,219 @@ namespace EndfieldGraphShaderLabEditor
                     authoredStreams = streams.Select(value => value.ToString()).ToArray(),
                     sourceRendererEnabled = renderer.enabled,
                     sourceGeometryClosed = true,
-                    particleStateClosed = true,
-                    custom1Closed = true,
+                    particleStateClosed = stateResetClosed && bakeMeshMutationClosed,
+                    custom1Closed = stateResetClosed && bakeMeshMutationClosed,
                     segmentMappingClosed = particlesEvidence.All(value =>
-                        value.bakedIndexRangeValid),
+                        value.bakedIndexRangeValid && value.bakedIndexSequenceValid),
+                    indexSequenceClosed = particlesEvidence.All(value =>
+                        value.bakedIndexSequenceValid),
                     localTrsClosed = transformValidation.localTrsClosed,
                     inverseTransposeNormalClosed =
                         transformValidation.inverseTransposeNormalClosed,
-                    particleCount = particleCount,
-                    bakedVertexCount = baked.vertexCount,
-                    bakedIndexCount = CountIndices(baked),
-                    particleStateSha256 = HashParticleState(particles, system),
-                    custom1Sha256 = HashVector4(customRows.ToArray()),
+                    stateResetClosed = stateResetClosed,
+                    bakeMeshMutationClosed = bakeMeshMutationClosed,
+                    repeatClosed = repeatClosed,
+                    cameraInvarianceAuthoredGateClosed =
+                        cameraInvarianceAuthoredGateClosed,
+                    cameraInvarianceExpected = cameraInvarianceExpected,
+                    cameraInvarianceClosed = cameraInvarianceClosed,
+                    cameraInvarianceDiagnostic = cameraInvarianceDiagnostic,
+                    cameraA = cameraA.evidence,
+                    cameraB = cameraB.evidence,
+                    cameraARepeat = cameraARepeat.evidence,
+                    particleCount = cameraA.particles.Length,
+                    bakedVertexCount = cameraA.bakedMesh.vertexCount,
+                    bakedIndexCount = CountIndices(cameraA.bakedMesh),
+                    particleStateSha256 = cameraA.evidence.beforeParticleStateSha256,
+                    custom1Sha256 = cameraA.evidence.beforeCustom1Sha256,
                     sourceMeshes = new[] { source },
-                    bakedMesh = bakedEvidence,
+                    bakedMesh = cameraA.evidence.bakedMesh,
                     transformValidation = transformValidation,
                     particles = particlesEvidence,
                 };
                 Require(evidence.segmentMappingClosed,
-                    "M23 baked index segment escaped its particle vertex range");
+                    "M23 baked index segment/range or exact sequence validation failed");
                 return evidence;
             }
             finally
             {
-                UnityEngine.Object.DestroyImmediate(baked);
+                if (cameraA != null && cameraA.bakedMesh != null)
+                    UnityEngine.Object.DestroyImmediate(cameraA.bakedMesh);
+                if (cameraB != null && cameraB.bakedMesh != null)
+                    UnityEngine.Object.DestroyImmediate(cameraB.bakedMesh);
+                if (cameraARepeat != null && cameraARepeat.bakedMesh != null)
+                    UnityEngine.Object.DestroyImmediate(cameraARepeat.bakedMesh);
             }
+        }
+
+        private sealed class ParticleStateSnapshot
+        {
+            public ParticleSystem.Particle[] particles;
+            public List<Vector4> customRows;
+            public string particleStateSha256;
+            public string custom1Sha256;
+        }
+
+        private static CaptureSample CaptureRendererSample(
+            ParticleSystem system,
+            ParticleSystemRenderer renderer,
+            Camera camera,
+            float effectLocalSeconds,
+            uint serializedRandomSeed,
+            string label,
+            string hierarchy)
+        {
+            ResetAndSimulate(system, effectLocalSeconds, serializedRandomSeed, hierarchy);
+            ParticleStateSnapshot before = ReadParticleState(system, hierarchy);
+            Mesh baked = new Mesh { name = "LiZhiyan_M23_SourceMesh_Oracle_" + label };
+            try
+            {
+                renderer.BakeMesh(baked, camera,
+                    ParticleSystemBakeMeshOptions.BakePosition |
+                    ParticleSystemBakeMeshOptions.BakeRotationAndScale);
+                ParticleStateSnapshot after = ReadParticleState(system, hierarchy);
+                bool fixedSeedClosed = system.randomSeed == serializedRandomSeed;
+                bool bakeMeshMutationClosed =
+                    before.particleStateSha256 == after.particleStateSha256 &&
+                    before.custom1Sha256 == after.custom1Sha256 &&
+                    before.particles.Length == after.particles.Length &&
+                    before.customRows.Count == after.customRows.Count;
+                var evidence = new CaptureEvidence
+                {
+                    label = label,
+                    cameraPosition = Float3Record.From(camera.transform.position),
+                    cameraRotation = Float4Record.From(camera.transform.rotation),
+                    serializedRandomSeed = serializedRandomSeed,
+                    particleCount = before.particles.Length,
+                    beforeParticleStateSha256 = before.particleStateSha256,
+                    afterParticleStateSha256 = after.particleStateSha256,
+                    beforeCustom1Sha256 = before.custom1Sha256,
+                    afterCustom1Sha256 = after.custom1Sha256,
+                    fixedSeedClosed = fixedSeedClosed,
+                    bakeMeshMutationClosed = bakeMeshMutationClosed,
+                    bakedMesh = DescribeBakedMesh(baked),
+                };
+                Require(fixedSeedClosed,
+                    "M23 ParticleSystem randomSeed mutated during " + label +
+                    " at " + hierarchy);
+                Require(bakeMeshMutationClosed,
+                    "M23 BakeMesh mutated particle or Custom1 state during " +
+                    label + " at " + hierarchy);
+                return new CaptureSample
+                {
+                    evidence = evidence,
+                    particles = before.particles,
+                    customRows = before.customRows,
+                    bakedMesh = baked,
+                };
+            }
+            catch
+            {
+                UnityEngine.Object.DestroyImmediate(baked);
+                throw;
+            }
+        }
+
+        private static void ResetAndSimulate(
+            ParticleSystem system,
+            float effectLocalSeconds,
+            uint serializedRandomSeed,
+            string hierarchy)
+        {
+            system.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            system.Clear(true);
+            system.randomSeed = serializedRandomSeed;
+            Require(system.randomSeed == serializedRandomSeed,
+                "M23 could not restore serialized randomSeed at " + hierarchy);
+            system.Simulate(effectLocalSeconds, false, true, false);
+            // Match the maintained actor-capture submission boundary: Play
+            // publishes the simulated state to the renderer without advancing
+            // time in this batchmode call.
+            system.Play(false);
+        }
+
+        private static ParticleStateSnapshot ReadParticleState(
+            ParticleSystem system,
+            string hierarchy)
+        {
+            ParticleSystem.MainModule main = system.main;
+            var particles = new ParticleSystem.Particle[
+                Mathf.Max(system.particleCount, main.maxParticles)];
+            int particleCount = system.GetParticles(particles);
+            Array.Resize(ref particles, particleCount);
+            var customRows = new List<Vector4>(particleCount);
+            int customCount = system.GetCustomParticleData(
+                customRows, ParticleSystemCustomData.Custom1);
+            Require(customCount == particleCount && customRows.Count == particleCount,
+                "M23 Custom1 count does not match particle count at " + hierarchy);
+            return new ParticleStateSnapshot
+            {
+                particles = particles,
+                customRows = customRows,
+                particleStateSha256 = HashParticleState(particles, system),
+                custom1Sha256 = HashVector4(customRows.ToArray()),
+            };
+        }
+
+        private static void ConfigureCamera(
+            Camera camera,
+            Vector3 position,
+            Quaternion rotation)
+        {
+            camera.transform.SetPositionAndRotation(position, rotation);
+            camera.enabled = false;
+        }
+
+        private static bool MeshDigestEqual(
+            BakedMeshEvidence left,
+            BakedMeshEvidence right)
+        {
+            if (left == null || right == null ||
+                left.vertexCount != right.vertexCount ||
+                left.subMeshCount != right.subMeshCount ||
+                left.indexCount != right.indexCount ||
+                !SequenceEqual(left.subMeshIndexCounts, right.subMeshIndexCounts) ||
+                left.indicesSha256 != right.indicesSha256 ||
+                left.boundsSha256 != right.boundsSha256)
+                return false;
+            return ChannelDigestEqual(left.positions, right.positions) &&
+                ChannelDigestEqual(left.normals, right.normals) &&
+                ChannelDigestEqual(left.tangents, right.tangents) &&
+                ChannelDigestEqual(left.colors, right.colors) &&
+                ChannelDigestEqual(left.uv0, right.uv0) &&
+                ChannelDigestEqual(left.uv1, right.uv1) &&
+                ChannelDigestEqual(left.uv2, right.uv2) &&
+                ChannelDigestEqual(left.uv3, right.uv3) &&
+                ChannelDigestEqual(left.uv4, right.uv4) &&
+                ChannelDigestEqual(left.uv5, right.uv5) &&
+                ChannelDigestEqual(left.uv6, right.uv6) &&
+                ChannelDigestEqual(left.uv7, right.uv7);
+        }
+
+        private static bool ChannelDigestEqual(
+            ChannelEvidence left,
+            ChannelEvidence right)
+        {
+            return left != null && right != null &&
+                left.semantic == right.semantic &&
+                left.present == right.present &&
+                left.count == right.count &&
+                left.sha256 == right.sha256;
+        }
+
+        private static bool SequenceEqual(int[] left, int[] right)
+        {
+            if (left == null || right == null || left.Length != right.Length)
+                return left == right;
+            for (int index = 0; index < left.Length; ++index)
+                if (left[index] != right[index])
+                    return false;
+            return true;
         }
 
         private static ParticleEvidence[] BuildParticleEvidence(
             ParticleSystem system,
-            Mesh source,
+            Mesh[] sourceMeshes,
             Mesh baked,
             ParticleSystem.Particle[] particles,
             List<Vector4> customRows,
@@ -556,20 +868,12 @@ namespace EndfieldGraphShaderLabEditor
                 baked.GetUVs(channel, bakedUv[channel]);
             }
             int[] bakedIndexOffsets = new int[baked.subMeshCount];
-            Vector3[] sourcePositions = source.vertices;
-            Vector3[] sourceNormals = source.normals;
-            Require(sourcePositions != null && sourcePositions.Length == source.vertexCount,
-                "M23 source Position channel is incomplete");
-            Require(sourceNormals != null && sourceNormals.Length == source.vertexCount,
-                "M23 source Normal channel is incomplete");
             Require(bakedNormals != null && bakedNormals.Length == baked.vertexCount,
                 "M23 baked Normal channel is incomplete");
             var validation = new TransformValidationEvidence
             {
                 positionTolerance = PositionTransformTolerance,
                 normalTolerance = NormalTransformTolerance,
-                firstParticleSourceProbe = sourcePositions.Take(8)
-                    .Select(Float3Record.From).ToArray(),
                 firstParticleBakedProbe = bakedPositions.Take(8)
                     .Select(Float3Record.From).ToArray(),
             };
@@ -580,13 +884,26 @@ namespace EndfieldGraphShaderLabEditor
             int sourceIndexOffset = 0;
             for (int particleIndex = 0; particleIndex < particleCount; ++particleIndex)
             {
+                int meshIndex = particles[particleIndex].GetMeshIndex(system);
+                Require(meshIndex >= 0 && meshIndex < sourceMeshes.Length &&
+                    sourceMeshes[meshIndex] != null,
+                    "M23 particle selected an invalid source mesh index: " +
+                    meshIndex + " at particle " + particleIndex);
+                Mesh source = sourceMeshes[meshIndex];
+                Require(source.subMeshCount == baked.subMeshCount,
+                    "M23 selected source mesh submesh count drifted at particle " +
+                    particleIndex);
+                Vector3[] sourcePositions = source.vertices;
+                Vector3[] sourceNormals = source.normals;
+                Require(sourcePositions != null && sourcePositions.Length == source.vertexCount,
+                    "M23 source Position channel is incomplete at mesh " + meshIndex);
+                Require(sourceNormals != null && sourceNormals.Length == source.vertexCount,
+                    "M23 source Normal channel is incomplete at mesh " + meshIndex);
+                if (particleIndex == 0)
+                    validation.firstParticleSourceProbe = sourcePositions.Take(8)
+                        .Select(Float3Record.From).ToArray();
                 int vertexCount = source.vertexCount;
                 int sourceIndexCount = CountIndices(source);
-                int meshIndex = particles[particleIndex].GetMeshIndex(system);
-                // The generated M23 renderer has one source mesh.  Asking the
-                // particle for its mesh index still records Unity's public
-                // selection rather than silently assuming it.
-                Require(meshIndex == 0, "M23 particle selected an unexpected mesh index");
                 ParticleSystem.Particle particle = particles[particleIndex];
                 Vector3 particleSize = particle.GetCurrentSize3D(system);
                 Quaternion particleRotation = BuildParticleRotation(
@@ -618,6 +935,7 @@ namespace EndfieldGraphShaderLabEditor
                     bakedIndexOffset = sourceIndexOffset,
                     bakedIndexCount = sourceIndexCount,
                     bakedIndexRangeValid = true,
+                    bakedIndexSequenceValid = false,
                     sourcePositionSha256 = HashVector3(source.vertices),
                     bakedPositionSegmentSha256 = HashVector3(Slice(bakedPositions, vertexOffset, vertexCount)),
                     bakedNormalSegmentSha256 = HashVector3(SliceRequired(bakedNormals, vertexOffset, vertexCount, "normal")),
@@ -685,28 +1003,18 @@ namespace EndfieldGraphShaderLabEditor
                         bakedUv[channel], vertexOffset, vertexCount, customRows[particleIndex]);
                     SetCustomMask(row, channel, mask);
                 }
-                for (int submesh = 0; submesh < baked.subMeshCount; ++submesh)
-                {
-                    int[] indices = baked.GetIndices(submesh);
-                    int count = (int)source.GetIndexCount(submesh);
-                    int expectedStart = bakedIndexOffsets[submesh];
-                    int expectedEnd = expectedStart + count;
-                    for (int index = expectedStart; index < expectedEnd; ++index)
-                    {
-                        Require(index < indices.Length,
-                            "M23 baked index segment is truncated");
-                        int value = indices[index];
-                        if (value < vertexOffset || value >= vertexOffset + vertexCount)
-                            row.bakedIndexRangeValid = false;
-                    }
-                    bakedIndexOffsets[submesh] += count;
-                }
-                Require(row.bakedIndexRangeValid,
-                    "M23 baked index segment escaped its particle vertex range");
+                ValidateParticleIndexSequence(
+                    source, baked, bakedIndexOffsets, vertexOffset, row);
+                Require(row.bakedIndexRangeValid && row.bakedIndexSequenceValid,
+                    "M23 baked index segment escaped range or exact source sequence");
                 result[particleIndex] = row;
                 vertexOffset += vertexCount;
                 sourceIndexOffset += sourceIndexCount;
             }
+            for (int submesh = 0; submesh < baked.subMeshCount; ++submesh)
+                Require(bakedIndexOffsets[submesh] == (int)baked.GetIndexCount(submesh),
+                    "M23 baked index stream contains an unassigned trailing segment at submesh " +
+                    submesh);
             validation.positionMeanError = validation.positionSampleCount == 0
                 ? 0.0f
                 : (float)(positionErrorSum / validation.positionSampleCount);
@@ -718,6 +1026,81 @@ namespace EndfieldGraphShaderLabEditor
                 validation.normalFailureCount == 0;
             transformValidation = validation;
             return result;
+        }
+
+        private static void ValidateParticleIndexSequence(
+            Mesh source,
+            Mesh baked,
+            int[] bakedIndexOffsets,
+            int bakedVertexOffset,
+            ParticleEvidence row)
+        {
+            var sourceSegments = new List<int[]>(source.subMeshCount);
+            var expectedSegments = new List<int[]>(source.subMeshCount);
+            var actualSegments = new List<int[]>(source.subMeshCount);
+            int mismatchCount = 0;
+            int firstMismatchSubmesh = -1;
+            int firstMismatchOffset = -1;
+            int firstExpected = -1;
+            int firstActual = -1;
+            bool rangeValid = true;
+            bool sequenceValid = true;
+
+            for (int submesh = 0; submesh < source.subMeshCount; ++submesh)
+            {
+                int[] sourceIndices = source.GetIndices(submesh);
+                int[] bakedIndices = baked.GetIndices(submesh);
+                int bakedStart = bakedIndexOffsets[submesh];
+                sourceSegments.Add(sourceIndices);
+
+                var expected = new int[sourceIndices.Length];
+                var actual = new List<int>(sourceIndices.Length);
+                bool complete = bakedStart >= 0 &&
+                    bakedStart + sourceIndices.Length <= bakedIndices.Length;
+                if (!complete)
+                {
+                    sequenceValid = false;
+                    rangeValid = false;
+                }
+
+                for (int offset = 0; offset < sourceIndices.Length; ++offset)
+                {
+                    int expectedIndex = sourceIndices[offset] + bakedVertexOffset;
+                    expected[offset] = expectedIndex;
+                    int absoluteIndex = bakedStart + offset;
+                    int actualIndex = complete ? bakedIndices[absoluteIndex] : -1;
+                    actual.Add(actualIndex);
+                    if (actualIndex < bakedVertexOffset ||
+                        actualIndex >= bakedVertexOffset + row.bakedVertexCount)
+                        rangeValid = false;
+                    if (!complete || actualIndex != expectedIndex)
+                    {
+                        sequenceValid = false;
+                        mismatchCount++;
+                        if (firstMismatchSubmesh < 0)
+                        {
+                            firstMismatchSubmesh = submesh;
+                            firstMismatchOffset = offset;
+                            firstExpected = expectedIndex;
+                            firstActual = actualIndex;
+                        }
+                    }
+                }
+                expectedSegments.Add(expected);
+                actualSegments.Add(actual.ToArray());
+                bakedIndexOffsets[submesh] += sourceIndices.Length;
+            }
+
+            row.bakedIndexRangeValid = rangeValid;
+            row.bakedIndexSequenceValid = sequenceValid && mismatchCount == 0;
+            row.sourceIndexSequenceSha256 = HashIndexSubmeshes(sourceSegments);
+            row.expectedIndexSequenceSha256 = HashIndexSubmeshes(expectedSegments);
+            row.bakedIndexSequenceSha256 = HashIndexSubmeshes(actualSegments);
+            row.bakedIndexMismatchCount = mismatchCount;
+            row.bakedIndexFirstMismatchSubmesh = firstMismatchSubmesh;
+            row.bakedIndexFirstMismatchOffset = firstMismatchOffset;
+            row.bakedIndexFirstExpected = firstExpected;
+            row.bakedIndexFirstActual = firstActual;
         }
 
         private static Quaternion BuildParticleRotation(
@@ -779,6 +1162,7 @@ namespace EndfieldGraphShaderLabEditor
                 indexCount = CountIndices(mesh),
                 subMeshIndexCounts = Enumerable.Range(0, mesh.subMeshCount)
                     .Select(index => (int)mesh.GetIndexCount(index)).ToArray(),
+                indicesSha256 = HashIndices(mesh),
                 positions = Digest("Position", mesh.vertices),
                 normals = Digest("Normal", mesh.normals),
                 tangents = Digest("Tangent", mesh.tangents),
@@ -804,6 +1188,7 @@ namespace EndfieldGraphShaderLabEditor
                 indexCount = CountIndices(mesh),
                 subMeshIndexCounts = Enumerable.Range(0, mesh.subMeshCount)
                     .Select(index => (int)mesh.GetIndexCount(index)).ToArray(),
+                indicesSha256 = HashIndices(mesh),
                 positions = Digest("Position", mesh.vertices),
                 normals = Digest("Normal", mesh.normals),
                 tangents = Digest("Tangent", mesh.tangents),
@@ -928,6 +1313,27 @@ namespace EndfieldGraphShaderLabEditor
             }
         }
 
+        private static string HashIndexSubmeshes(IList<int[]> segments)
+        {
+            using (var bytes = new MemoryStream())
+            using (var writer = new BinaryWriter(bytes))
+            {
+                writer.Write(segments == null ? 0 : segments.Count);
+                if (segments != null)
+                {
+                    foreach (int[] segment in segments)
+                    {
+                        int[] values = segment ?? Array.Empty<int>();
+                        writer.Write(values.Length);
+                        foreach (int value in values)
+                            writer.Write(value);
+                    }
+                }
+                writer.Flush();
+                return Hash(bytes.ToArray());
+            }
+        }
+
         private static string HashBounds(Bounds bounds)
         {
             using (var bytes = new MemoryStream())
@@ -935,6 +1341,24 @@ namespace EndfieldGraphShaderLabEditor
             {
                 Write(writer, bounds.center); Write(writer, bounds.size);
                 Write(writer, bounds.min); Write(writer, bounds.max);
+                writer.Flush();
+                return Hash(bytes.ToArray());
+            }
+        }
+
+        private static string HashIndices(Mesh mesh)
+        {
+            using (var bytes = new MemoryStream())
+            using (var writer = new BinaryWriter(bytes))
+            {
+                writer.Write(mesh.subMeshCount);
+                for (int submesh = 0; submesh < mesh.subMeshCount; ++submesh)
+                {
+                    int[] indices = mesh.GetIndices(submesh);
+                    writer.Write(indices.Length);
+                    foreach (int value in indices)
+                        writer.Write(value);
+                }
                 writer.Flush();
                 return Hash(bytes.ToArray());
             }

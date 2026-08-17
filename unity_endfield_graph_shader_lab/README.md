@@ -4643,8 +4643,7 @@ Unity-computed Mikk tangents are complete; source COLOR is absent and remains
 an explicit ABI gap rather than being filled. The JSON under
 `scratch/character_recovery/lizhiyan_m23_source_mesh_oracle/` records particle,
 Custom1, source-channel, and BakeMesh segment hashes and remains diagnostic,
-not generated admission data. Next add particle-TRS/normal agreement and a
-second-camera invariance gate before constructing any exact draw rows.
+not generated admission data.
 
 0138 instruction tracing now fixes current Draw transform cb3[0..3], previous/
 motion transform cb3[6..9], history selectors cb3[10].xy, and particle-color
@@ -4661,9 +4660,16 @@ GetCurrentSize3D)`, with inverse-transpose normal handling. At PTS 40000 all
 and normalized-normal error `6.88e-7`. This requires exact-time, non-fixed-step
 simulation. Fixed-step public particle size is not the renderer-interpolated
 size and leaves a reproducible `0.03924` position error; do not hide that state
-boundary with a looser tolerance. The next oracle revision must add a distinct
-second camera, repeat-reset hashes, before/after-Bake particle hashes, and exact
-per-submesh index sequence comparison.
+boundary with a looser tolerance. Three independent exact-time captures now
+use camera A, a displaced/rotated camera B, and camera A repeat. They restore
+the serialized random seed, prove particle and Custom1 hashes are unchanged by
+BakeMesh, and compare every baked channel, UV0-UV7, bounds, and the
+submesh-delimited index stream. All four authored Mesh + Local + unsorted +
+zero velocity/camera-velocity renderers pass reset/repeat and camera-invariance
+gates. Every live particle's source indices also equal the baked indices after
+the particle vertex-base remap, with zero sequence mismatches. The next oracle
+boundary is the real draw-time cb3 capture and complete 136-byte source-row ABI
+bridge; do not reopen camera or index ordering without contradictory evidence.
 
 The actor-composed harness now also instantiates the exact recovered
 `P_fxui_lizhiyan_overview_trails_Bip001_R_Finger2Nub` prefab beneath the
