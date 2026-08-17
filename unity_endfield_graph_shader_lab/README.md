@@ -4469,6 +4469,21 @@ PTS 37967/39367 are correctly empty, PTS 40834 retains 104 particles at
 1.033667 seconds, and PTS 41434 is past the recovered duration and empty.
 Separate manifest validation passes, while every native/retail admission flag
 remains false.
+
+The exact M23 DXBC path now also has an opt-in Windows/D3D11 Unity bridge and
+standalone diagnostic. `run_original_m23_dxbc_exact_diagnostic.bat` rebuilds
+the native fixture/plugin, verifies required exports and the copied DLL hash,
+builds a D3D11-only player, and checks D3D12 non-activation. The reserved
+keyword, explicit batch token, one-claim-per-stage arm cycle, and render-thread
+cleanup event keep the normal viewer inert. The live player now passes with two
+compiler callbacks, exactly one successful 0138/0139 replacement, one isolated
+native draw, exact-shader identity, complete VS `CB/SRV=0x1f/0x1` and PS
+`CB/SRV/sampler=0x1f/0x1f/0x1f` binding masks, finite readback, and completed
+render-thread cleanup. D3D12 reports zero activation. The current exact-pair
+fixture intentionally preserves its sentinel output, so this proves Unity
+execution and binding compatibility, not visual fidelity. The next step is to
+feed recovered peak-particle vertices, exact textures, high-neutral constants,
+reciprocal exposure, and corrected COLOR0 timing into a visual output mode.
 The peak diagnostic now preserves M19's authored soft-blend/Fresnel keyword
 state and the SampleStack vertex path consumes the recovered particle streams:
 UV2 from `TEXCOORD0.zw`, Custom1XYZW from `TEXCOORD1`, and
