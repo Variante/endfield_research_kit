@@ -2412,9 +2412,7 @@ only stable interpretation and priorities.
    particles at this frame. The source meshes have imported normals and stable
    Unity Mikk tangents but no COLOR channel. No default COLOR, blend, or other
    missing ABI row is synthesized. Live segments reproduce the earlier
-   Custom1 masks UV0=`0`, UV1=`8` independently. The next oracle revision must
-   validate the local particle TRS and inverse-transpose normal transform
-   against every BakeMesh segment, including a second-camera invariance gate.
+   Custom1 masks UV0=`0`, UV1=`8` independently.
    Exact 0138 also closes the relevant Draw cb3 arithmetic: cb3[0..2].xyz are
    the current transform basis columns, cb3[3].xyz is translation, cb3[6..8]
    plus cb3[9] are the previous/motion basis and translation, cb3[10].xy select
@@ -2439,8 +2437,18 @@ only stable interpretation and priorities.
    Exact row/cb3 construction must therefore use one explicit exact-time
    simulation boundary or separately recover the fixed-step render interpolation;
    it must not mix public fixed-step state with interpolated BakeMesh geometry.
-   Camera invariance, repeated reset determinism, BakeMesh non-mutation, and
-   exact per-submesh index order are the next oracle gates.
+   The same oracle now independently resets each capture to the serialized
+   random seed and exact non-fixed time for camera A, a displaced/rotated
+   camera B, and camera A repeat. It hashes particle and Custom1 state before
+   and after every BakeMesh call, and hashes every baked channel, UV0-UV7,
+   bounds, and submesh-delimited index stream. All four renderer identities
+   pass reset determinism, BakeMesh non-mutation, A-repeat equality, and A/B
+   camera invariance under the exact authored Mesh + Local + unsorted + zero
+   velocity/camera-velocity gates. Every live particle also reproduces its
+   source submesh index sequence exactly after the particle vertex-base remap;
+   all four live rows have zero mismatches. This closes the public source-mesh
+   expansion boundary. The next gate is captured draw-time cb3 plus a complete
+   source-row ABI bridge, not another BakeMesh interpretation.
    Video acceptance must distinguish Unity anchors from nearest retail PTS:
    39934 maps to retail 39933 and 40834 to 40833, while 40000/40867 are exact.
    At PTS 40000 the current composite raised-hand coverage is 4.863% versus
