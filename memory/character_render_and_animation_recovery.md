@@ -2569,9 +2569,18 @@ only stable interpretation and priorities.
    requires zero exact 136-byte candidates. This closes an important negative
    boundary: the lab source player preserves the real ParticleSystemRenderer,
    mesh and authored streams but deliberately substitutes the diagnostic
-   material, so it cannot prove retail blob1277/blob1956 selection. The next
-   positive comparison needs a source-identity player capable of binding the
-   retail shader without reusing the synthetic exact-DXBC triangle.
+   material, so it cannot prove retail blob1277/blob1956 selection.
+   The corresponding positive shader-admission experiment is now closed. An
+   opt-in local keyword keeps the same `xuanzhuan03` renderer, source mesh,
+   particles, and authored `[0,1,3,4,5,34]` streams, while the D3D11 compiler
+   extension substitutes exact 0138/0139 shader objects into that material.
+   Both replacements return success, and the 4.25-second capture contains the
+   real `DrawIndexed(3456)` bound to the 10,720/8,100-byte pair while IA slot 0
+   remains stride 60. This proves exact-shader admission on the stock source
+   draw and disproves an input-layout rejection at this boundary. It does not
+   prove retail variant selection or recover the retail 136-byte producer:
+   blend-lane values, draw-time `cb3`, and the fork/HG packing path remain the
+   highest-value gap. The joined validator records those limits explicitly.
    GameAssembly's HGMesh audit also excludes its managed layer: current
    `HGMeshRendererData` callers only manage ECS mesh/material handles, bounds,
    dither, and renderer lists. `HGParticleMeshInstanceRenderer` has no managed

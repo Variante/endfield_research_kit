@@ -4814,15 +4814,30 @@ SampleStack material produce `DrawIndexed(3456)` with stride 60 and the
 source-component M23 draw without BakeMesh, a MeshRenderer proxy, changed
 particle values, or a compatibility material.
 
+The same source-identity player now has an opt-in exact shader-object
+substitution experiment. Run `capture_m23_source_dxcap.bat
+-ExactSubstitution`; the probe clones only the source material, arms the
+compiler extension, and enables the reserved diagnostic keyword. It preserves
+the original `xuanzhuan03` ParticleSystemRenderer, mesh, particles, and
+`[0,1,3,4,5,34]` streams. The joined runtime/plugin/DXCap validator requires
+two successful compiler callbacks, one 0138 VS replacement, one 0139 PS
+replacement, and exactly one target `DrawIndexed(3456)`. The maintained
+capture binds the 10,720/8,100-byte exact pair while IA slot 0 remains stride
+60. This proves that the exact shader objects are admitted on the real source
+draw; it does not claim retail shader selection, a 136-byte source row, or
+recovered blend values. The remaining renderer-packing queue is therefore the
+fork/HG 60-to-136-byte producer plus draw-time `cb3`, not an input-layout
+failure in stock Unity's automatic ParticleSystemRenderer draw.
+
 The installed UnityPlayer maps
 `ParticleSystemRenderer::PrepareForRenderThreaded` to
 `0xBA28F0..0xBA2C20`; its selected caller tests an unnamed record count at
 `rcx+0x160` immediately after the call and exits before mode-4 dispatch when
 the count is non-positive. Keep this classified as a record-building boundary,
 not camera culling; the count naturally reaches zero after source-particle
-expiry. The next target is the fork's exact renderer packing: carry the proven
-live source rows into the 136-byte IA layout and 10,720/8,100-byte exact DXBC
-pair, then close the remaining draw-time `cb3` values. Do not extend source
+expiry. The next target is the fork's exact renderer packing: explain how the
+proven live 60-byte rows become the retail 136-byte IA layout, recover the
+blend lanes, then close the remaining draw-time `cb3` values. Do not extend source
 lifetime or force Pause in production merely to accommodate capture latency.
 
 An isolated immediate-context shadow-vtable attempt is deliberately removed.
