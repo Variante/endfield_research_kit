@@ -4645,9 +4645,12 @@ an explicit ABI gap rather than being filled. The JSON under
 Custom1, source-channel, and BakeMesh segment hashes and remains diagnostic,
 not generated admission data.
 
-0138 instruction tracing now fixes current Draw transform cb3[0..3], previous/
-motion transform cb3[6..9], history selectors cb3[10].xy, and particle-color
-complement cb3[13]. Its skin predicate is carried by cb3[4].w; cb4[3].z only
+0138 instruction tracing now fixes current Draw affine coefficients cb3[0..3],
+a second affine position path cb3[6..9], its current/alternate selectors
+cb3[10].xy, and particle-color complement cb3[13]. Offline DXBC does not prove
+that the second path is the previous frame; keep its producer unnamed until a
+runtime capture closes it. Its skin predicate is carried by cb3[4].w;
+cb4[3].z only
 selects raw versus attenuated COLOR. The M23 source graph strongly selects the
 non-skin route, but native draw-time cb3 bytes are still required before that
 inference becomes a captured runtime fact.
@@ -4670,6 +4673,15 @@ gates. Every live particle's source indices also equal the baked indices after
 the particle vertex-base remap, with zero sequence mismatches. The next oracle
 boundary is the real draw-time cb3 capture and complete 136-byte source-row ABI
 bridge; do not reopen camera or index ordering without contradictory evidence.
+
+Native observer events 4/5 now also attempt a fail-closed copy of the exact
+224-byte VS `cb3[14]` through an unbound staging buffer. In the isolated D3D11
+player both callbacks execute once around `CommandBuffer.DrawMesh`, but neither
+boundary exposes a VS b3 resource. The exact shader execution gate remains
+independently passing and no constant bytes are published. Adjacent plugin
+events therefore cannot close draw-time constants; the next route must hook
+the actual D3D11 Draw/constant-buffer binding path or use an external API
+capture keyed to the exact shader/material identity.
 
 The actor-composed harness now also instantiates the exact recovered
 `P_fxui_lizhiyan_overview_trails_Bip001_R_Finger2Nub` prefab beneath the

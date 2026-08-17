@@ -111,6 +111,17 @@ bits plus four readback floats. Event ID 3 disarms and releases retained
 compiler shader COM references on the render thread. Callers should call
 `SetArmed(0)`, issue event 3, and only then unload or rearm.
 
+Event IDs 4 and 5 are observation-only callbacks placed immediately before
+and after the managed diagnostic `DrawMesh`. They inspect the current D3D11
+bindings and attempt to copy VS `b3` through an unbound staging buffer only
+when its resource is exactly the recovered 224-byte `cb3[14]`. Missing,
+mismatched, or unreadable resources publish no bytes. On Unity 2022.3.62f3 the
+callbacks execute, but both boundaries expose no VS `b3`: the draw's internal
+bindings are not observable from adjacent plugin events. This maintained
+negative result does not weaken the independent exact-shader execution gate.
+Capturing a real particle draw therefore requires a draw/API hook or external
+graphics capture rather than another adjacent plugin event.
+
 Event 2 intentionally owns and clears Unity's immediate-context state for the
 duration of the isolated diagnostic pass; it is not safe to interleave with a
 normal viewer frame. The managed diagnostic gate invokes it only in the

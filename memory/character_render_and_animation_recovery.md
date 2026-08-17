@@ -2414,9 +2414,12 @@ only stable interpretation and priorities.
    missing ABI row is synthesized. Live segments reproduce the earlier
    Custom1 masks UV0=`0`, UV1=`8` independently.
    Exact 0138 also closes the relevant Draw cb3 arithmetic: cb3[0..2].xyz are
-   the current transform basis columns, cb3[3].xyz is translation, cb3[6..8]
-   plus cb3[9] are the previous/motion basis and translation, cb3[10].xy select
-   history inputs, and cb3[13] is `1-particleCurrentColor`. The actual skin
+   three current affine coefficient vectors and cb3[3].xyz is translation.
+   cb3[6..8] plus cb3[9] form a second affine position path and cb3[10].xy
+   select current/alternate clip-position inputs. Offline DXBC does not prove
+   that the second path is the previous frame, so retain the mathematical
+   identity until runtime capture closes its producer. cb3[13] is
+   `1-particleCurrentColor`. The actual skin
    predicate is encoded in cb3[4].w; high-confidence source evidence says these
    ordinary mesh particles take the non-skin path, but draw-time bytes remain
    unobserved. Contrary to the earlier tentative interpretation, cb4[3].z is a
@@ -2449,6 +2452,14 @@ only stable interpretation and priorities.
    all four live rows have zero mismatches. This closes the public source-mesh
    expansion boundary. The next gate is captured draw-time cb3 plus a complete
    source-row ABI bridge, not another BakeMesh interpretation.
+   Native observer events 4/5 now attempt that cb3 copy only for an exact
+   224-byte VS b3, using an unbound staging buffer. In the isolated D3D11
+   player both adjacent events execute once but observe no VS b3 before or
+   after `CommandBuffer.DrawMesh`; Unity's internal draw bindings are not
+   visible at adjacent plugin-event boundaries. Exact shader execution remains
+   independently green and the observer publishes no bytes. The next capture
+   must intercept the actual D3D11 Draw/constant-buffer binding path or use an
+   external API capture keyed to exact shader and material identity.
    Video acceptance must distinguish Unity anchors from nearest retail PTS:
    39934 maps to retail 39933 and 40834 to 40833, while 40000/40867 are exact.
    At PTS 40000 the current composite raised-hand coverage is 4.863% versus
