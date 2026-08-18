@@ -15,7 +15,7 @@ is not the retail renderer.
 | Complete HGRP/CharInfo frame | partial |
 | Playable UI clips | complete for the selected `all-ui` scope |
 | Runtime animation behavior | partial |
-| Retail visual parity | not reached |
+| Retail visual parity | not reached; Wulfa band mean CIEDE2000 13.49 default, 12.87 composed |
 
 The canonical identities are 31 playables, one NPC character, one cutscene
 clone, 94 enemies, and 29 ability/prop actors. Six modular ambient-NPC
@@ -1026,6 +1026,25 @@ The missing work is the coupled retail frame contract:
 Current images are recognizable but flatter than retail, especially around
 faces, pale cloth/armor, hair, dark hardware, and contact shadows.
 
+That gap is now measured rather than described. `render_visual_delta_frames.bat`
+plus `tools/compare_recovered_vs_original.py` compare a recovered frame to the
+original capture inside the UI-free band, and the reports live under
+`scratch/character_recovery/visual_delta/`. Two conclusions are durable.
+
+The recovered light chain lights characters only. Every source-authored overview
+row is `CharacterOnly`, and nothing in the recovered set lights scene geometry:
+composing the validated chain without the ready-subset backdrop renders the
+backdrop black. A coherent composed frame therefore depends on the partial,
+explicitly non-original ready-subset presentation. The missing generic scene
+light candidate list is the blocking item for a promotable default frame, ahead
+of any further character-response work.
+
+The recovered deferred data cannot move the image. The selected pass-0
+transports and the DefaultDeferred GBuffer sidecar are GPU-closed but record
+`pass0_consumer_enabled=false` and `published_by_default=false`, and the sidecar
+is explicitly non-presented. They are correctness results, not fidelity results,
+and no image measurement can promote them.
+
 ## Main animation gap
 
 Remaining runtime systems include:
@@ -1076,6 +1095,15 @@ Changing inventories and exhaustive renderer/shader proof live under
 only stable interpretation and priorities.
 
 ## Highest-value next work
+
+0. Recover a scene-light path. The measured composed frame proves the recovered
+   lighting is character-only, so the lab cannot light its own backdrop and the
+   composed profile is not promotable. This now outranks further per-material
+   character response work: without it there is no coherent default frame to
+   promote recovered work into, and every improvement stays gated behind a
+   partial non-original presentation subset. Start from the native
+   `HGCullingSystem.CullLights` candidate output and the live interleaved scene
+   light list rather than from the isolated overview operator list.
 
 1. Follow the API-2 resource/descriptor records after the HGTree front-end
    wrappers to their runtime object/queue consumer. The callback route now

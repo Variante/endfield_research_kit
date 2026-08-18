@@ -17,6 +17,7 @@ set "UNITY_EXE=D:\Program Files\2022.3.62f3\Editor\Unity.exe"
 set "OUTPUT_ROOT=%PROJECT_PATH%\scratch\character_recovery\visual_delta"
 
 set "PROFILE="
+set "NO_READY_SUBSET="
 set "CHARACTER=both"
 set "API=d3d12"
 
@@ -24,6 +25,7 @@ set "API=d3d12"
 if "%~1"=="" goto PARSED
 if /i "%~1"=="--baseline" ( set "PROFILE=baseline" & shift & goto PARSE )
 if /i "%~1"=="--composed" ( set "PROFILE=composed" & shift & goto PARSE )
+if /i "%~1"=="--no-ready-subset" ( set "NO_READY_SUBSET=1" & shift & goto PARSE )
 if /i "%~1"=="--character" ( set "CHARACTER=%~2" & shift & shift & goto PARSE )
 if /i "%~1"=="--d3d11" ( set "API=d3d11" & shift & goto PARSE )
 if /i "%~1"=="--d3d12" ( set "API=d3d12" & shift & goto PARSE )
@@ -41,6 +43,9 @@ if "%PROFILE%"=="" (
   goto USAGE
 )
 if not exist "%OUTPUT_ROOT%" mkdir "%OUTPUT_ROOT%"
+
+set "LABEL=%PROFILE%"
+if /i "%PROFILE%"=="composed" if "%NO_READY_SUBSET%"=="1" set "LABEL=composed_no_ready_subset"
 
 rem Selectors with a serialized scene companion are tri-state, so the baseline
 rem states its zeros explicitly instead of relying on an unset variable.
@@ -75,8 +80,10 @@ if /i "%PROFILE%"=="composed" (
   rem The executed Forward consumer of the recovered screen-shadow mask.
   set "ENDFIELD_RECOVERED_SCREEN_SHADOW_MASK_CONSUMER_DIAGNOSTIC=1"
 
-  rem The CharInfo presentation subset the deferred frame runs against.
-  set "ENDFIELD_RECOVERED_CHARINFO_READY_SUBSET_DIAGNOSTIC=1"
+  rem The CharInfo presentation subset the deferred frame runs against. It
+  rem swaps the compatibility backdrop for a partial source subset with no
+  rem SphereOutside or ShadowPlane, so it is separable from character shading.
+  if not "%NO_READY_SUBSET%"=="1" set "ENDFIELD_RECOVERED_CHARINFO_READY_SUBSET_DIAGNOSTIC=1"
 )
 
 if /i "%CHARACTER%"=="both" (
@@ -96,22 +103,22 @@ if /i "%NAME%"=="wulfa" ( set "METHOD=RenderRuntimeReferenceWulfaPreview" ) else
     exit /b 2
   )
 )
-set "LOG_PATH=%OUTPUT_ROOT%\%PROFILE%_%NAME%.log"
-set "FRAME_PATH=%OUTPUT_ROOT%\%NAME%_%PROFILE%.png"
+set "LOG_PATH=%OUTPUT_ROOT%\%LABEL%_%NAME%.log"
+set "FRAME_PATH=%OUTPUT_ROOT%\%NAME%_%LABEL%.png"
 
-echo Rendering %NAME% [%PROFILE%] with %API%...
+echo Rendering %NAME% [%LABEL%] with %API%...
 "%UNITY_EXE%" -batchmode -quit -projectPath "%PROJECT_PATH%" -force-%API% -executeMethod EndfieldGraphShaderLabEditor.EndfieldManifestCharacterSetup.%METHOD% -logFile "%LOG_PATH%"
 set "UNITY_EXIT=%ERRORLEVEL%"
 if not "%UNITY_EXIT%"=="0" (
-  echo Unity render failed for %NAME% [%PROFILE%]: exit %UNITY_EXIT%
+  echo Unity render failed for %NAME% [%LABEL%]: exit %UNITY_EXIT%
   exit /b %UNITY_EXIT%
 )
 copy /y "%PROJECT_PATH%\..\scratch\runtime_reference_%NAME%.png" "%FRAME_PATH%" >nul
 if not "%ERRORLEVEL%"=="0" exit /b %ERRORLEVEL%
 
-python "%PROJECT_PATH%\tools\compare_recovered_vs_original.py" --character %NAME% --recovered "%FRAME_PATH%" --label %PROFILE% --report-root "%OUTPUT_ROOT%"
+python "%PROJECT_PATH%\tools\compare_recovered_vs_original.py" --character %NAME% --recovered "%FRAME_PATH%" --label %LABEL% --report-root "%OUTPUT_ROOT%"
 exit /b %ERRORLEVEL%
 
 :USAGE
-echo Usage: %~nx0 --baseline ^| --composed [--character wulfa^|zhuangfy^|both] [--d3d11^|--d3d12]
+echo Usage: %~nx0 --baseline ^| --composed [--no-ready-subset] [--character wulfa^|zhuangfy^|both] [--d3d11^|--d3d12]
 exit /b 2
