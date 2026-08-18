@@ -1031,13 +1031,19 @@ plus `tools/compare_recovered_vs_original.py` compare a recovered frame to the
 original capture inside the UI-free band, and the reports live under
 `scratch/character_recovery/visual_delta/`. Two conclusions are durable.
 
-The recovered light chain lights characters only. Every source-authored overview
-row is `CharacterOnly`, and nothing in the recovered set lights scene geometry:
-composing the validated chain without the ready-subset backdrop renders the
-backdrop black. A coherent composed frame therefore depends on the partial,
-explicitly non-original ready-subset presentation. The missing generic scene
-light candidate list is the blocking item for a promotable default frame, ahead
-of any further character-response work.
+The recovered character response is coupled to the CharInfo physical
+presentation scene and cannot be promoted without it. The source-energy-core
+keyword switches the camera to the exact recovered `T_hdri_006` sky and
+deliberately disables the neutral compatibility backdrop. The bright background
+in the original capture is source scene geometry, not that sky, and the lab
+holds it only as the partial ready subset with `SphereOutside` and `ShadowPlane`
+excluded. Any profile that enables the recovered response without that subset
+renders a near-black background. Completing the physical presentation scene is
+the blocking item for a promotable default frame, ahead of further
+character-response equations.
+
+The character surfaces themselves do improve underneath that failure, so they
+are the promotable candidates once a backdrop exists to hold them.
 
 The recovered deferred data cannot move the image. The selected pass-0
 transports and the DefaultDeferred GBuffer sidecar are GPU-closed but record
@@ -1096,14 +1102,15 @@ only stable interpretation and priorities.
 
 ## Highest-value next work
 
-0. Recover a scene-light path. The measured composed frame proves the recovered
-   lighting is character-only, so the lab cannot light its own backdrop and the
-   composed profile is not promotable. This now outranks further per-material
-   character response work: without it there is no coherent default frame to
-   promote recovered work into, and every improvement stays gated behind a
-   partial non-original presentation subset. Start from the native
-   `HGCullingSystem.CullLights` candidate output and the live interleaved scene
-   light list rather than from the isolated overview operator list.
+0. Complete the CharInfo physical presentation scene. The measured frames prove
+   the recovered character response cannot be enabled without it: the
+   source-energy-core keyword disables the compatibility backdrop in favour of
+   the exact recovered sky, and the source wall/floor geometry that the original
+   capture actually shows exists only as the partial ready subset. This now
+   outranks further per-material character work, because without it there is no
+   coherent default frame to promote anything into and every character gain
+   stays gated behind a labeled non-original subset. The open items are
+   `SphereOutside`, `ShadowPlane`, and `exactSourceAssetsReady`.
 
 1. Follow the API-2 resource/descriptor records after the HGTree front-end
    wrappers to their runtime object/queue consumer. The callback route now

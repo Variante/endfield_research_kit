@@ -18,6 +18,8 @@ set "OUTPUT_ROOT=%PROJECT_PATH%\scratch\character_recovery\visual_delta"
 
 set "PROFILE="
 set "NO_READY_SUBSET="
+set "CUSTOM="
+set "LABEL_OVERRIDE="
 set "CHARACTER=both"
 set "API=d3d12"
 
@@ -25,7 +27,9 @@ set "API=d3d12"
 if "%~1"=="" goto PARSED
 if /i "%~1"=="--baseline" ( set "PROFILE=baseline" & shift & goto PARSE )
 if /i "%~1"=="--composed" ( set "PROFILE=composed" & shift & goto PARSE )
+if /i "%~1"=="--character-response" ( set "PROFILE=character_response" & shift & goto PARSE )
 if /i "%~1"=="--no-ready-subset" ( set "NO_READY_SUBSET=1" & shift & goto PARSE )
+if /i "%~1"=="--selectors" ( set "PROFILE=custom" & set "CUSTOM=%~2" & set "LABEL_OVERRIDE=%~3" & shift & shift & shift & goto PARSE )
 if /i "%~1"=="--character" ( set "CHARACTER=%~2" & shift & shift & goto PARSE )
 if /i "%~1"=="--d3d11" ( set "API=d3d11" & shift & goto PARSE )
 if /i "%~1"=="--d3d12" ( set "API=d3d12" & shift & goto PARSE )
@@ -39,12 +43,13 @@ if not exist "%UNITY_EXE%" (
   exit /b 1
 )
 if "%PROFILE%"=="" (
-  echo Select --baseline or --composed.
+  echo Select --baseline, --character-response, or --composed.
   goto USAGE
 )
 if not exist "%OUTPUT_ROOT%" mkdir "%OUTPUT_ROOT%"
 
 set "LABEL=%PROFILE%"
+if not "%LABEL_OVERRIDE%"=="" set "LABEL=%LABEL_OVERRIDE%"
 if /i "%PROFILE%"=="composed" if "%NO_READY_SUBSET%"=="1" set "LABEL=composed_no_ready_subset"
 
 rem Selectors with a serialized scene companion are tri-state, so the baseline
@@ -53,6 +58,23 @@ set "ENDFIELD_RECOVERED_CHARINFO_PRESENTATION=0"
 set "ENDFIELD_RECOVERED_CHARINFO_READY_SUBSET_DIAGNOSTIC=0"
 set "ENDFIELD_RECOVERED_CHARINFO_BACKGROUND_PORTRAIT=0"
 set "ENDFIELD_RECOVERED_CHARINFO_GYROSCOPE_MODE=off"
+
+rem Bisect helper: --selectors "A=1 B=1" LABEL applies exactly those selectors on
+rem top of the forced-off baseline, so a single culprit can be isolated.
+if /i "%PROFILE%"=="custom" (
+  for %%S in (%CUSTOM%) do set "%%S"
+)
+
+rem Character response only. This deliberately omits the recovered light
+rem scheduling and the ready-subset backdrop, so the compatibility backdrop
+rem survives and the measurement isolates character shading.
+if /i "%PROFILE%"=="character_response" (
+  set "ENDFIELD_RECOVERED_SOURCE_ENERGY_CORE=1"
+  set "ENDFIELD_RECOVERED_EYE_RESPONSE_SEMANTICS=1"
+  set "ENDFIELD_RECOVERED_FACE_HIGHLIGHT_SEMANTICS=1"
+  set "ENDFIELD_RECOVERED_POST_SEMANTICS=1"
+  set "ENDFIELD_RECOVERED_SEPARATE_CHARACTER_SHADOW=1"
+)
 
 if /i "%PROFILE%"=="composed" (
   rem Character response and post semantics shared by every validated run.
@@ -120,5 +142,5 @@ python "%PROJECT_PATH%\tools\compare_recovered_vs_original.py" --character %NAME
 exit /b %ERRORLEVEL%
 
 :USAGE
-echo Usage: %~nx0 --baseline ^| --composed [--no-ready-subset] [--character wulfa^|zhuangfy^|both] [--d3d11^|--d3d12]
+echo Usage: %~nx0 --baseline ^| --character-response ^| --composed [--no-ready-subset] [--character wulfa^|zhuangfy^|both] [--d3d11^|--d3d12]
 exit /b 2

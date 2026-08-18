@@ -37,6 +37,10 @@ DEFAULT_REPORT_ROOT = os.path.join(
     PROJECT_ROOT, "scratch", "character_recovery", "visual_delta"
 )
 
+# Below this ECC correlation the two frames no longer differ by a camera
+# transform, so the per-pixel metrics stop describing shading.
+LOW_CORRELATION = 0.5
+
 
 class ComparisonError(RuntimeError):
     """Fail-closed comparison error."""
@@ -90,15 +94,22 @@ def _estimate_alignment(
     rec_gray = cv2.cvtColor(recovered, cv2.COLOR_RGB2GRAY)[y0:y1, x0:x1]
     warp = np.eye(2, 3, dtype=np.float32)
     criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 500, 1e-7)
-    correlation, warp = cv2.findTransformECC(
-        ref_gray.astype(np.float32) / 255.0,
-        rec_gray.astype(np.float32) / 255.0,
-        warp,
-        cv2.MOTION_EUCLIDEAN,
-        criteria,
-        None,
-        5,
-    )
+    try:
+        correlation, warp = cv2.findTransformECC(
+            ref_gray.astype(np.float32) / 255.0,
+            rec_gray.astype(np.float32) / 255.0,
+            warp,
+            cv2.MOTION_EUCLIDEAN,
+            criteria,
+            None,
+            5,
+        )
+    except cv2.error as error:
+        raise ComparisonError(
+            "camera alignment did not converge, so the recovered frame differs "
+            "from the reference by more than a residual transform. Inspect the "
+            f"frame before trusting any region metric: {error}"
+        ) from error
     # ECC solved in band-local coordinates, so its rotation pivots on the band
     # origin. Re-express the same transform about the full-image origin before
     # it is applied to the whole picture.
@@ -123,6 +134,16 @@ def _estimate_alignment(
             "unclosed camera/pose difference, not a shading result"
         ),
     }
+    # A weak fit means the two frames no longer differ by a camera transform at
+    # all, which is what a blacked-out backdrop or a broken pass looks like.
+    # The per-pixel numbers stay in the report but must not be read as shading.
+    summary["trustworthy"] = bool(correlation >= LOW_CORRELATION)
+    if not summary["trustworthy"]:
+        summary["warning"] = (
+            f"alignment correlation {correlation:.3f} is below "
+            f"{LOW_CORRELATION}: the frames differ structurally, so treat the "
+            "per-pixel deltas as a failure signal rather than a shading result"
+        )
     return warp, summary
 
 
@@ -442,6 +463,8 @@ def main(argv: list[str]) -> int:
             f"rotation={alignment['rotationDegrees']} deg "
             f"cc={alignment['correlation']}"
         )
+    if alignment.get("warning"):
+        print(f"  WARNING: {alignment['warning']}")
     print(f"  overall deltaE00 mean: {report['overallDeltaE00Mean']}")
     for name, region in report["regions"].items():
         luminance = region["luminanceLinear"]

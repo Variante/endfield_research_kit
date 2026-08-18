@@ -15,7 +15,8 @@
       2500,
       2100
     ],
-    "alignmentRule": "Per-pixel colour metrics are measured after removing the residual reference->recovered camera transform, which is reported separately. Distribution metrics (luminance mean/percentiles, contrast, chroma) are the alignment-robust signals and carry the shading conclusions."
+    "alignmentRule": "Per-pixel colour metrics are measured after removing the residual reference->recovered camera transform, which is reported separately. Distribution metrics (luminance mean/percentiles, contrast, chroma) are the alignment-robust signals and carry the shading conclusions.",
+    "backgroundContentRule": "Several boxes contain backdrop pixels as well as the named surface. ear_fur and background_wall in particular move with the backdrop, so a run that changes the backdrop invalidates them as material measurements. Check the alignment correlation and the diff image before attributing any region change to a material."
   },
   "characters": {
     "wulfa": {
