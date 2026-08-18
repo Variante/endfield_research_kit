@@ -1,0 +1,2334 @@
+{
+  "schemaVersion": 1,
+  "generatedUtc": "2026-08-18T21:36:30Z",
+  "policy": {
+    "authoritativeSources": [
+      "original_serialized_asset",
+      "original_material_json",
+      "original_native_il2cpp",
+      "original_compiled_shader",
+      "original_render_settings"
+    ],
+    "rule": "Image fitting and broad parameter sweeps are diagnostic only. Unknown original runtime values remain neutral or default-off.",
+    "productionEligibleStatuses": [
+      "exact_serialized",
+      "exact_native",
+      "exact_compiled_shader",
+      "exact_derived"
+    ]
+  },
+  "coverage": {
+    "productionPath": "EndfieldManifestCharacterSetup.RenderRuntimeReferenceActorPreview plus HGCompatRenderPipeline and Endfield/Recovered character shaders",
+    "shaderPropertyDefaultRule": "Every ShaderLab Properties default not overwritten by an original character manifest is an unproven fallback and is not evidence of an original value.",
+    "materialRule": "Manifest colors, floats, textures, and transforms are authoritative unless an entry below records a compatibility override.",
+    "mathematicalLiteralRule": "Identity values, unit conversions, epsilon guards, color-space matrices, and algebraic constants are classified with their containing recovered or compatibility equation rather than as independent tuning parameters.",
+    "ledgerScopeNote": "Entries cover the recovered render surface through 2026-08-18. The deferred pass-0 transports, GBuffer frame, light binning/cookie layouts, and VisibilitySH constants are recovered and GPU-validated in isolation but publish nothing into the presented frame, so none of them can be promoted on a measured image improvement."
+  },
+  "parameters": [
+    {
+      "id": "camera.runtime_reference.output_size",
+      "scope": "diagnostic_output",
+      "currentValue": [
+        3840,
+        2160
+      ],
+      "status": "diagnostic_only",
+      "productionEligible": false,
+      "activation": "runtime reference PNG commands",
+      "source": "supplied reference capture dimensions",
+      "code": "Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/EndfieldManifestCharacterSetup.cs:40",
+      "action": "keep only as comparison output resolution"
+    },
+    {
+      "id": "camera.wulfa.overview_lens_and_transform",
+      "scope": "operator_reference",
+      "currentValue": {
+        "fieldOfViewDegrees": 20.0,
+        "near": 0.1,
+        "far": 50.0,
+        "position": [
+          0.0,
+          0.998,
+          3.46
+        ],
+        "authoredPrePipelineRotationQuaternionXYZW": [
+          -0.00036646938,
+          0.9991945,
+          0.009385596,
+          0.03901448
+        ],
+        "lookAtLocalPosition": [
+          0.022,
+          1.19,
+          0.0
+        ],
+        "composer": "centered zero damping",
+        "neutralSettledOrientation": "Quaternion.LookRotation(lookAtLocalPosition-position, Vector3.up)",
+        "dollyNormalizedPosition": 1.0,
+        "cinemachineGyroscopeOffset": [
+          0.2483662,
+          -0.143241
+        ],
+        "gpuBeautyValidation": {
+          "pngSha256": "21FEFA384196A2BEB51E1D220921740E9CB04CC860AB84ADA83E79A03DDFC165",
+          "comparison": "scratch/wulfa_source_composer_comparison_20260714/metrics.json",
+          "nativeToReferenceScale": 0.9992248976269413,
+          "nativeToReferenceRotationDegrees": 0.668665,
+          "nativeToReferenceTranslationPixels": [
+            8.744607237674927,
+            -26.35446062856522
+          ]
+        }
+      },
+      "status": "exact_serialized",
+      "productionEligible": true,
+      "activation": "active for Wulfa runtime reference",
+      "source": "track_chr_0028_wulfa.prefab virtual camera endpoint, LookAt target and Cinemachine Composer",
+      "evidence": "scratch/hgrp_original_pipeline_recovery_agent.md#exact-overview-camera-transforms-and-composition; scratch/charinfo_camera_compositor_recovery_20260714.md; memory/charinfo_camera_composer_recovery_20260714.md",
+      "code": "Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/EndfieldManifestCharacterSetup.cs:4699",
+      "action": "keep"
+    },
+    {
+      "id": "camera.zhuangfy.overview_lens_and_transform",
+      "scope": "operator_reference",
+      "currentValue": {
+        "fieldOfViewDegrees": 20.007383,
+        "near": 0.1,
+        "far": 50.0,
+        "position": [
+          0.0,
+          1.25,
+          3.5
+        ],
+        "authoredPrePipelineRotationQuaternionXYZW": [
+          -1.367486e-05,
+          0.99982595,
+          -0.0007334001,
+          -0.018642593
+        ],
+        "lookAtLocalPosition": [
+          0.002,
+          1.346,
+          -0.21826088
+        ],
+        "composer": "centered zero damping",
+        "neutralSettledOrientation": "Quaternion.LookRotation(lookAtLocalPosition-position, Vector3.up)",
+        "dollyNormalizedPosition": 1.0,
+        "cinemachineGyroscopeOffset": [
+          -0.2489724,
+          0.08848439
+        ],
+        "gpuBeautyValidation": {
+          "pngSha256": "42A13B82F421E77B5B3D01DDAF84E345E60CC8814BD315740D0543CC7DE320D0",
+          "comparison": "scratch/zhuangfy_source_composer_comparison_20260714/metrics.json",
+          "nativeToReferenceScale": 1.0059057411971999,
+          "nativeToReferenceRotationDegrees": -0.156918,
+          "nativeToReferenceTranslationPixels": [
+            -0.02580852194569161,
+            12.180319654495861
+          ]
+        }
+      },
+      "status": "exact_serialized",
+      "productionEligible": true,
+      "activation": "active for Zhuangfy runtime reference",
+      "source": "track_chr_0030_zhuangfy.prefab virtual camera endpoint, LookAt target and Cinemachine Composer",
+      "evidence": "scratch/hgrp_original_pipeline_recovery_agent.md#exact-overview-camera-transforms-and-composition; scratch/charinfo_camera_compositor_recovery_20260714.md; memory/charinfo_camera_composer_recovery_20260714.md",
+      "code": "Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/EndfieldManifestCharacterSetup.cs:4709",
+      "action": "keep"
+    },
+    {
+      "id": "camera.runtime_reference.fitted_compositor_translation",
+      "scope": "diagnostic_registration",
+      "currentValue": {
+        "wulfaPixels": [
+          -445.54,
+          222.35
+        ],
+        "zhuangfyPixels": [
+          184.0,
+          184.0
+        ]
+      },
+      "status": "image_fitted_diagnostic",
+      "productionEligible": false,
+      "activation": "default-off; ENDFIELD_REFERENCE_FITTED_COMPOSITOR_TRANSLATION=1",
+      "source": "measurements from supplied screenshots",
+      "code": "Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/EndfieldManifestCharacterSetup.cs:4736",
+      "action": "keep default-off as screenshot-registration only; the recovered centered composer and actor-at-origin hierarchy provide no source evidence for these static projection shifts, and CinemachineGyroscopeEffect offsets are live effect inputs rather than proven constant projection translations"
+    },
+    {
+      "id": "camera.charinfo.overview_actor_placement",
+      "scope": "operator_reference",
+      "currentValue": {
+        "charContainerPosition": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "charContainerRotationQuaternionXYZW": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "charContainerScale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "actorLocalPosition": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "cameraAndLightRootLocalPosition": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "cameraAndLightRootLocalEulerAngles": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "status": "exact_derived",
+      "productionEligible": true,
+      "activation": "active through the recovered per-operator overview cameras; no extra actor compositor translation",
+      "source": "charinfochar.prefab Transform serialization plus PhaseCharInfo._RefreshCharModel/_RefreshCharModelAddon",
+      "evidence": "scratch/charinfo_exposure_compositor_recovery_20260712.md",
+      "action": "keep fitted screenshot translations default-off; overviewImgOffset belongs only to a decorative sprite attachment"
+    },
+    {
+      "id": "camera.charinfo.initial_render_state",
+      "scope": "runtime_created_initial_state",
+      "currentValue": {
+        "enableAlpha": false,
+        "customFrameSettings": false,
+        "frameSettingsOverrideMask": 0,
+        "globalPostprocessBit": true,
+        "antialiasingFieldInitial": "None",
+        "windowsUpscalerMode": "TAAU",
+        "taauQuality": "Quality",
+        "taauSerializedSharpenRows": [
+          0.3,
+          0.3,
+          0.3
+        ],
+        "taauQualityResolveConsumesSerializedSharpen": false,
+        "hgSharpenComponentActive": false,
+        "uberPerformSharpenKeyword": true,
+        "uberPPSharpenScalar": "runtime unknown",
+        "targetTextureInitialAssignment": "none in CameraManager/HGCameraConfig initializers"
+      },
+      "status": "exact_native_and_serialized_initial_state",
+      "productionEligible": true,
+      "activation": "source-proven startup/default state; later live mutation and history are not implied",
+      "source": "CameraManager/HGAdditionalCameraData native initialization, default FrameSettings bits, shipped Windows quality rows, and exhaustive Camera.set_targetTexture direct-call scan",
+      "evidence": "scratch/charinfo_camera_target_state_recovery_20260713.md; scratch/charinfo_camera_state_recovery.json; scratch/charinfo_taau_sharpen_contract_20260713.md",
+      "code": "scratch/recover_charinfo_camera_state.py; scratch/verify_charinfo_camera_state.py; scratch/recover_charinfo_taau_sharpen_contract.py; scratch/verify_charinfo_taau_sharpen_contract.py",
+      "action": "use as the source-backed initial/fallback contract, not the current settled request; the current saved profile selects DLSS/DLAA with sharpness input 0.0. Do not substitute the serialized TAAU 0.3 row for Uber _PPSharpen; keep capability fallback, live targetTexture, temporal history, indirect XLua mutation, and per-frame overrides explicit"
+    },
+    {
+      "id": "runtime.current_saved_graphics_quality_request",
+      "scope": "installed_client_current_user_profile_20260714",
+      "currentValue": {
+        "display": "3840x2160 fullscreen",
+        "mainPreset": "ExHigh / Very High",
+        "windowsDeviceScore": 500,
+        "windowsGlobalTier": 5000,
+        "frameRate": 60,
+        "upscaler": "DLSS",
+        "dlssMode": "DLAA",
+        "renderScaleDefault": 1.0,
+        "sharpnessSetting": 0.0,
+        "frameGeneration": "off",
+        "reflex": "On / LowLatency",
+        "anisotropicFiltering": "x8",
+        "textureQuality": "High",
+        "shadow": {
+          "resolvedRow": 3500,
+          "screenSpaceShadowMask": true,
+          "csmTileResolution": 2048,
+          "csmMaxDistance": 80.0,
+          "csmFadeInnerDistance": 60.0,
+          "characterShadowResolution": 1024,
+          "punctualShadowTileMax": 1024,
+          "asmTileResolution": 256
+        },
+        "ambientOcclusion": {
+          "gtaoEnabled": true,
+          "qualityLevel": 2
+        },
+        "screenSpaceReflection": {
+          "enabled": true,
+          "raymarchSamples": 128
+        },
+        "ppSharpen": "saved slider and applied component input are exactly 0.0; final settled _PPSharpen remains unobserved",
+        "labComparison": {
+          "alreadyAligned": [
+            "3840x2160 reference output",
+            "no speculative positive sharpening"
+          ],
+          "p0": "native-scale DLSS/DLAA temporal resolve, history, jitter, motion/depth/reactive inputs and settled capability state are absent",
+          "p1": [
+            "exact x8 global-cap plus per-texture sampler contract is unresolved",
+            "1024 character/contact shadow path remains diagnostic or incomplete; Zhuangfy caster dependency fails closed"
+          ],
+          "p2": "retail Unity 2021.3 Vulkan versus lab Unity 2022.3 D3D12"
+        }
+      },
+      "status": "exact_saved_request_and_shipped_quality_resolution_runtime_fallback_unproven",
+      "productionEligible": false,
+      "activation": "evidence target only; the lab does not claim a DLSS/DLAA implementation or settled temporal equivalence",
+      "source": "current read-only HKCU values joined to shipped GameSettingSubQualityConfig, option/text tables, Windows device/quality maps, desktop HGRP settings, Lua preset control, IL2CPP metadata and native Apply methods",
+      "evidence": "memory/endfield_current_graphics_quality_profile_20260714.md; scratch/live_quality_profile_recovery_20260714/current_quality_profile.json; scratch/quality_to_unity_character_lab_gap_audit_20260714.md",
+      "limitation": "offline recovery proves the requested profile, not capability fallback, final internal extent/jitter/history/exposure/dynamic-resolution state, final _PPSharpen after late mutation, or final CharInfo volume gates; the lab has no DLAA temporal stage, exact global/per-texture x8 sampler contract, complete character/contact shadow path, or Vulkan/Unity-2021 execution lane",
+      "action": "compare the reconstruction against the recovered Very High native-scale DLSS/DLAA request with zero speculative sharpen; retain the TAAU data only as startup/fallback evidence and obtain settled runtime confirmation through the observation-only telemetry/capture boundary"
+    },
+    {
+      "id": "camera.generic_preview_framing",
+      "scope": "lab_viewer",
+      "currentValue": {
+        "near": 0.05,
+        "fieldOfViewDegrees": 32.0,
+        "verticalCoverage": 0.64,
+        "topBias": 0.5,
+        "farMinimum": 100.0,
+        "depthPadding": 0.8
+      },
+      "status": "lab_only_manual",
+      "productionEligible": false,
+      "activation": "generic fast/full viewer only; not the matched operator reference camera",
+      "source": "hand-authored lab framing",
+      "code": "Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/EndfieldManifestCharacterSetup.cs:43",
+      "action": "do not use as evidence of game camera behavior"
+    },
+    {
+      "id": "camera.preview_pose_sample",
+      "scope": "diagnostic_pose",
+      "currentValue": {
+        "genericNormalizedTime": 0.42,
+        "wulfaSeconds": 0.95,
+        "zhuangfySeconds": 0.275
+      },
+      "status": "diagnostic_only",
+      "productionEligible": false,
+      "activation": "static comparison pose",
+      "source": "lab/reference selection rather than a recovered live frame clock",
+      "code": "Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/EndfieldManifestCharacterSetup.cs:47",
+      "action": "animation deferred; never tune render parameters around these times"
+    },
+    {
+      "id": "geometry.original_packed_tangent_stream",
+      "scope": "active_operator_character_meshes",
+      "currentValue": {
+        "serializedChannelSignature": "channel 1 raw dimension byte 0x31 only",
+        "decode": "bits 0..9 oct-normal X, 10..19 oct-normal Y, 20..29 tangent-frame angle, bit 30 required selector, bit 31 handedness",
+        "activeMeshes": {
+          "wulfa": 14,
+          "zhuangfy": 9,
+          "total": 23
+        },
+        "tangentCount": 139771,
+        "componentCount": 559084,
+        "bitExactComponentCount": 559084,
+        "maximumUnityVsSourceComponentDelta": 0.0,
+        "handednessCounts": {
+          "positive": 56951,
+          "negative": 82820
+        },
+        "fallbackMeshCount": 0
+      },
+      "status": "exact_serialized_decoded_and_unity_verified",
+      "productionEligible": true,
+      "activation": "active Wulfa and Zhuangfy actor meshes generated from the installed-game Mesh payloads",
+      "source": "installed-game Endfield Mesh channel-1 packed vertex words decoded by the narrow raw-0x31 exporter path",
+      "evidence": "scratch/original_tangent_stream_recovery_20260713/recovery_note.md; scratch/original_tangent_asset_validation_20260713/original_tangent_asset_validation.json",
+      "code": "../tools/AnimeStudio/AnimeStudio/Classes/Mesh.cs; Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/EndfieldOriginalTangentAssetBatchVerifier.cs",
+      "limitation": "the two supplemental Wulfa item-widget meshes are not actor meshes and have no recovered original tangent stream",
+      "action": "preserve the decoded original tangents and fail closed instead of recalculating when an eligible packed stream is malformed"
+    },
+    {
+      "id": "scene.preview_lighting_and_backdrop",
+      "scope": "lab_viewer",
+      "currentValue": {
+        "keyIntensity": 0.55,
+        "ambient": [
+          0.72,
+          0.73,
+          0.72,
+          1.0
+        ],
+        "background": [
+          0.7,
+          0.71,
+          0.7,
+          1.0
+        ],
+        "keyDirectionToLight": [
+          -0.28,
+          0.78,
+          0.56
+        ],
+        "shadowStrength": 0.9,
+        "shadowBias": 0.04,
+        "shadowNormalBias": 0.35,
+        "shadowNear": 0.1
+      },
+      "status": "lab_only_manual",
+      "productionEligible": false,
+      "activation": "generic fast/full viewer and backdrop",
+      "source": "hand-authored neutral inspection scene",
+      "code": "Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/EndfieldManifestCharacterSetup.cs:48",
+      "action": "exclude from operator-reference provenance"
+    },
+    {
+      "id": "scene.operator_charinfo_sky_and_histogram_source",
+      "scope": "operator_reference_source_physical_hdr",
+      "currentValue": {
+        "cameraClearMode": "Sky",
+        "fallbackClearHdr": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "cubemap": {
+          "name": "T_hdri_006",
+          "pathId": "-5544960624411894816",
+          "format": "BC6H unsigned",
+          "size": 128,
+          "faces": 6,
+          "mips": 8,
+          "sourcePayloadSha256": "070FD7C568B9DB9C1CFC936E3FE081465807E761D28090761C92F6F94444214E"
+        },
+        "tint": [
+          0.8207547,
+          0.8207547,
+          0.8207547,
+          0.5
+        ],
+        "rotationDegrees": 294.0,
+        "preExposure": 7.193062e-05,
+        "skyboxBrightness": 13902.285,
+        "nativeExposureFloat32": 1.0,
+        "nativeExposureBits": "0x3F800000",
+        "skyFarDepth": "clip z=0 on reversed-Z; clip z=w on non-reversed-Z APIs",
+        "rawHdrHistogramInput": "visible cubemap sky plus physical scene; presentation ReferenceBackdrop excluded before culling",
+        "cameraScopedState": {
+          "prepareBeforeCulling": true,
+          "restoreAfterSubmitInFinally": true,
+          "restoresRenderSettingsSkybox": true,
+          "restoresPresentationBackdropRenderer": true,
+          "restoresCameraClearAndBackground": true
+        },
+        "standaloneAssetInclusion": {
+          "standaloneArgument": "-endfield-recovered-source-energy-core",
+          "savedViewerMarkerReferencesMaterialAndCubemap": true,
+          "fastCaptureBuildRequiresSourceAssets": true,
+          "cubemapImportRepairsExistingGeneratedViewerScenes": true
+        },
+        "ordinaryCompatibilityDefaultsChanged": false
+      },
+      "status": "exact_source_core_partial_pipeline",
+      "productionEligible": false,
+      "activation": "operator camera marker plus ENDFIELD_RECOVERED_SOURCE_ENERGY_CORE=1; the separate HGRP Auto-mode histogram diagnostic additionally requires ENDFIELD_RECOVERED_LIVE_CHARINFO_AUTO_EXPOSURE=1 and recovered post semantics",
+      "source": "CharInfo_Env serialized sky config, installed-game T_hdri_006 payload, native HGSkyRenderer.RenderSkybox material packing, compiled HGRP/SkyBoxCubemap",
+      "evidence": "scratch/charinfo_dynamic_lighting_gap_20260713/recovery_note.md; scratch/charinfo_dynamic_lighting_gap_20260713/mapping.json; memory/charinfo_atmosphere_fog_recovery_20260714.md",
+      "code": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredCharInfoSky.cs; Assets/EndfieldGraphShaderLab/Shaders/HGRPCompat/EndfieldRecoveredCharInfoSky.shader; Assets/EndfieldGraphShaderLab/Runtime/Rendering/HGCompatRenderPipeline.cs; Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/EndfieldRecoveredCharCubemapImporter.cs",
+      "limitation": "the separate physical CharInfo scene assets are reconstructed but remain fail-closed pending SphereOutside live deferred bindings/resolve and ShadowPlane canonical stencil plus live atlas/VisibilitySH integration; atmosphere fog, height fog, volumetric fog, flow noise and fog-LUT baking are source-proven disabled for this CharInfo environment",
+      "action": "keep source-gated with fog families reset/no-op; complete the physical presentation resolve/producers and live final-response state instead of porting disabled atmosphere effects"
+    },
+    {
+      "id": "scene.operator_charinfo_physical_presentation",
+      "scope": "operator_reference_default_off_physical_scene",
+      "currentValue": {
+        "sourcePrefab": "assets/beyond/dynamicassets/gameplay/ui/prefabs/charinfo/charinfochar.prefab",
+        "sourceSerializedFile": "CAB-45edfbd38d2a68534810c905ce39aff4",
+        "layer": 13,
+        "renderers": [
+          "CharInfo_Scene/Mesh/SphereOutside",
+          "CharInfo_Scene/Mesh/CharFloorEffect",
+          "CharInfo_Scene/Mesh/GeoSphere001",
+          "CharInfo_Scene/Mesh/ShadowPlane",
+          "GridDeco/Far"
+        ],
+        "meshRecovery": "three raw source meshes preserve Sphere UV1 and S_GridFar UV1 float3; source built-in Quad and Plane are resolved explicitly",
+        "textureRecovery": "four original BC7 payloads plus exact 4x4 DXT1 T_default_mro_MRO, with source dimensions/mips/color-space state",
+        "materialRecovery": "five serialized source materials with exact source/raw hashes",
+        "selectedShaderEvidence": {
+          "VFXDsWrite": "ForwardOnly DXBC recovered",
+          "VFXDistanceField": "ForwardOnly DXBC recovered",
+          "VFXBaseV2": "ForwardOnly DXBC recovered",
+          "CharacterNPR_ShadowReceiver": "exact no-keyword receiver DXBC/material recovered; canonical stencil, live atlas and VisibilitySH publication incomplete",
+          "HGRP_Lit": "selected HGBuffer vertex/fragment stages and deferred resolver family recovered; settled frame bindings and compatible resolve incomplete"
+        },
+        "canvasOrder": "physical camera scene first; CharInfoPanel ScreenSpaceOverlay afterward",
+        "generatedPrefab": "Assets/EndfieldGraphShaderLab/Generated/CharInfoPresentation/RecoveredCharInfoPresentation.prefab",
+        "sourceManifest": "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/source_manifest.json",
+        "sourceManifestComplete": false,
+        "exactSourceAssetsReady": false,
+        "failClosedKeepsCompatibilityBackdrop": true,
+        "unityBuildVerified": true,
+        "readySubsetDiagnostic": {
+          "activation": "ENDFIELD_RECOVERED_CHARINFO_READY_SUBSET_DIAGNOSTIC=1 or -endfield-recovered-charinfo-ready-subset-diagnostic",
+          "enabledRenderers": [
+            "CharFloorEffect",
+            "GeoSphere001",
+            "GridDeco/Far"
+          ],
+          "excludedRenderers": [
+            "SphereOutside",
+            "ShadowPlane"
+          ],
+          "openedEndpointSha256": "33008E41035D5AF6072C4DC6213BB5099189A9D6CFBEE72953BBB52E360C2BA0",
+          "wulfaPngSha256": "5CF2511042BD0488E0FE5272E0D1443A5305E3D8EF23ADBAAADD598701C5589C",
+          "zhuangfyPngSha256": "D9BD5483D5CE32E0DA32D53BAA633D53DE0B638BFFD8FE2298BE214A598C5932",
+          "prePostActorShading": "exactly unchanged in the controlled Zhuangfy post-off A/B across all 1473369 nonzero-alpha actor pixels",
+          "postInteraction": "bright scene bloom/composition lifts fully opaque actor display luma by 4.122/255 Wulfa and 4.296/255 Zhuangfy on average",
+          "referenceVerdict": "mixed for Wulfa and farther for all five measured Zhuangfy material groups; this does not close the response-span gap"
+        },
+        "cumulativeDiagnostic": {
+          "activation": "explicit PARTIAL/NON-ORIGINAL wrappers only; ready subset plus exact actor-specific background portrait through the bounded primary-depth post-Uber standard layer-16 route and focused one-actor screen-shadow consumer; gyroscope forced off",
+          "fullPresentationEnabled": false,
+          "screenDirectAuditEnabled": false,
+          "pregPresentationCoverage": "exact floor q2000/no-DepthOnly, wall q2000/no-DepthOnly-or-GBuffer, and grid q2950/no-DepthOnly-or-GBuffer identities are excluded from character PreG; the portrait is exempt only by bound-component identity plus layer 16, exact recovered shader and transparent queue; unknown recovered shaders still block",
+          "wulfaPngSha256": "C5D035DD00730E94B7DE6D4FDA9EFC4E1DEBF832FAAB56077673D3FA998ACBC5",
+          "zhuangfyPngSha256": "FC22179F2268B33FF7A45601A6A93BD42F7249F0D215BCAB7DBFA118C0E0673C",
+          "producerValidation": {
+            "wulfaValidPixels": 82908,
+            "zhuangfyValidPixels": 80812,
+            "blockedMaterialPasses": 0,
+            "failures": 0
+          },
+          "producerReportSha256": {
+            "wulfa": "8BE1BAACD3CB210C42305CFE0B07E19A317C5634ABC9520AE2957197E1CE0305",
+            "zhuangfy": "AF4DFDC8C42C3955F7F0B9724E91427CE9D8201FAE5D95065FB49F3F2CA2697E"
+          },
+          "producerReportHashScope": "raw JSON includes run-local Unity instance IDs; stable acceptance uses beauty bytes plus semantic counts/failures",
+          "historicalScreenOnlyReferenceVerdict": "the earlier portrait-free cumulative pair was mixed by material and remains valid only as an isolated screen-shadow comparison; its fixed-pixel metrics do not describe these portrait-inclusive PNGs",
+          "currentReferenceVerdict": "the actor-specific portrait now uses the bounded primary-full-scene-depth post-Uber standard layer-16 route, but the cumulative frame remains diagnostic-only because the distinct paired retail output-depth attachment/ECS/HGUI lists, full physical presentation, complete character response, temporal resolve, and overlay UI remain incomplete"
+        },
+        "sphereOutsideDeferredRecovery": {
+          "selectedStages": {
+            "vertex": "7be4c9935209bc165682ca459c60149dfc67892b98e76cf0e6b8aff6cc3c67df",
+            "fragment": "1bdda9c60972b0a28325411d7438f7ce4335ef8820ef3b91dc05b564f749d5e7"
+          },
+          "resolverPasses": 14,
+          "d3d11Variants": 640,
+          "nativeDrawTargetsMapped": 7,
+          "runtimeReady": false
+        },
+        "shadowReceiverRecovery": {
+          "selectedVariant": "no material keywords",
+          "stencil": "Ref/ReadMask 32 NotEqual; source character PreG refs 36/52 carry bit 32",
+          "characterAtlasAbi": "15 slots in the original ShadowData block",
+          "capsuleProducer": "VisibilitySH live posed records; neutral zero-data endpoint only in the lab",
+          "runtimeReady": false
+        },
+        "backgroundPortraitOwnership": {
+          "status": "closed from original data",
+          "actorSpecific": true,
+          "settledCurrentPoseProjection": false,
+          "ownership": "bg_charinfo_<templateId> Sprite loaded by PhaseCharInfo.lua into CharInfoCamAttachment/OffsetRoot/CharinfoBGDeco/CharTexture",
+          "separateFromPhysicalPresentation": true
+        }
+      },
+      "status": "exact_asset_graph_with_ready_subset_and_partial_runtime_contracts",
+      "productionEligible": false,
+      "activation": "default-off ENDFIELD_RECOVERED_CHARINFO_PRESENTATION or -endfield-recovered-charinfo-presentation; currently refuses activation",
+      "source": "installed CharInfoChar prefab, Mesh/Texture2D/Material payloads and selected shipped shader DXBC",
+      "evidence": "memory/charinfo_backdrop_asset_recovery_20260714.md; memory/charinfo_physical_presentation_recovery_20260714.md; memory/charinfo_sphereoutside_deferred_lighting_recovery_20260714.md; memory/charinfo_shadow_receiver_recovery_20260714.md; memory/charinfo_ready_subset_actor_diff_20260714.md; memory/charinfo_preg_presentation_coverage_recovery_20260714.md; memory/charinfo_cumulative_diagnostic_20260714.md; memory/charinfo_background_portrait_recovery_20260714.md; scratch/charinfo_backdrop_recovery_20260714/evidence.json; scratch/charinfo_presentation_recovery_build.log; scratch/charinfo_cumulative_diagnostic_20260714/ready_subset_delta_metrics.json",
+      "code": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredCharInfoPresentation.cs; Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/EndfieldRecoveredCharInfoPresentationBuilder.cs; Assets/EndfieldGraphShaderLab/Shaders/Recovered/EndfieldCharInfo*.shader",
+      "limitation": "SphereOutside still requires settled deferred bindings/frame resources and a binding-compatible resolve; ShadowPlane still requires canonical physical-camera stencil integration plus live 15-slot atlas and VisibilitySH records; complete Grid/Floor controller playback remains unresolved. The actor-specific background portrait is a separate recovered world-space UI route, not a SphereOutside or ShadowPlane effect",
+      "action": "retain strict fail-closed behavior; use only explicitly partial diagnostics, and close remaining runtime choices through developer-supplied evidence or policy-compliant, explicitly user-authorized stock graphics instrumentation; abort if protection blocks it"
+    },
+    {
+      "id": "scene.operator_charinfo_background_portrait",
+      "scope": "wulfa_zhuangfy_default_off_world_space_ui",
+      "currentValue": {
+        "runtimeRoute": "PhaseCharInfo.lua loads CharInfo/bg_charinfo_<templateId> into CharInfoCamAttachment/OffsetRoot/CharinfoBGDeco/CharTexture for Overview",
+        "wulfa": {
+          "templateId": "chr_0028_wulfa",
+          "textureSha256": "426F6391011A58F88F2C51CBF1809F6068B07F10A17A08336528BDC3C20D9225",
+          "meshSha256": "E476503F9F7E29B954EDB6C507D2A3E7B21DD2228FE3AC7E55B5EB6A9155ECD4",
+          "standalonePngSha256": "515AB6742C9775D55C9CD5489C7E5BFFC07B6C750C8D5AF0DA43031EBF85858A"
+        },
+        "zhuangfy": {
+          "templateId": "chr_0030_zhuangfy",
+          "textureSha256": "2B214668CA5B48EF6D9ECBEE6E3DFFA50C9E7536D47C65D5272DA673CF472A77",
+          "meshSha256": "0CE140536E82946F1E6820420308D049D8224B321A16AA1CBD12AFE398B6D32F",
+          "standalonePngSha256": "EF2A16FDE902645B5D61E8A365F23A05E11125E9948ED788FD520EEBBD09992E"
+        },
+        "layout": "world-space Canvas layer 16; T(lookAt)*R(raw overview vcam)*T(0,0,0.8)*S(0.0016)*T(-300,50); logical 900-square Image; settled alpha 90/255",
+        "spriteGeometry": "actor-specific GenerateSimpleSprite quads reconstructed from each 1022-square Sprite rect, tight textureRect and 1024-square Texture2D outer UVs",
+        "selectedMaterial": "M_ui_world_default_chartex_depthoffset; HGRP/UI/Default; Default/SRPDEFAULTUNLIT; CLIP_SCENEDEPTH + HG_WORLD_UI; ZTest Always; Blend One OneMinusSrcAlpha; raw depth saturate(z/w-0.011)",
+        "registrationResidual3840x2160": {
+          "wulfa": {
+            "retailScaleVsLabPercent": 0.199,
+            "retailMinusLabCentroidPixels": [
+              56.39,
+              -29.77
+            ]
+          },
+          "zhuangfy": {
+            "retailScaleVsLabPercent": 2.193,
+            "retailMinusLabCentroidPixels": [
+              -51.2,
+              -21.57
+            ]
+          }
+        },
+        "sourceManifestSha256": "50F90FE27900AC96036BE479AD830368F056FA60EF9C8D4B5301055992BB4C6E",
+        "compositor": "standard layer-16 world UI is excluded from ordinary transparents, drawn after the fullscreen post, and samples preserved full-scene D32_SFloat_S8_UInt RawDepth with D24_UNorm_S8_UInt fallback"
+      },
+      "status": "exact_source_asset_layout_selected_shader_variant_and_bounded_source_closed_post_uber_compositor",
+      "productionEligible": false,
+      "activation": "ENDFIELD_RECOVERED_CHARINFO_BACKGROUND_PORTRAIT=1; default off; cumulative diagnostic enables it explicitly",
+      "source": "installed PhaseCharInfo Lua, operator Sprite/Texture2D assets, CharInfoCamAttachment prefab, material JSON and selected shipped HGRP/UI/Default DXBC",
+      "evidence": "memory/charinfo_background_portrait_recovery_20260714.md; memory/charinfo_portrait_post_uber_compositor_recovery_20260714.md; Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoBackgroundPortrait/source_manifest.json; Assets/EndfieldGraphShaderLab/Generated/OriginalData/RenderParameters/charinfo_portrait_post_uber_contract.json; scratch/charinfo_background_portrait_diagnostic_20260714/registration_analysis.json; scratch/charinfo_portrait_ui_shader_20260714/; scratch/charinfo_portrait_ui_runtime_20260714/recovery_report.md; scratch/charinfo_portrait_scene_depth_audit_20260714.md; scratch/charinfo_portrait_post_uber_compositor_20260714/validation_summary.json",
+      "code": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/HGCompatRenderPipeline.cs; Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredCharInfoBackgroundPortrait.cs; Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/EndfieldRecoveredCharInfoBackgroundPortraitBuilder.cs; Assets/EndfieldGraphShaderLab/Shaders/Recovered/EndfieldCharInfoBackgroundPortraitRecovered.shader",
+      "limitation": "the bounded lab route implements the selected standard layer-16 post-Uber draw against preserved full-scene depth/stencil. It does not invent the retail pass's distinct paired output-depth descriptor because that descriptor is not source-closed and the selected UI is ZTest Always/ZWrite Off; absent ECS/HGUI renderer-list systems remain unclaimed. Device-selected depth/MSAA, per-frame _ZBufferParams and non-jittered UI constants, the engine-owned _TextureSampleAdd literal (expected zero), later copy/scaler branch and unrelated equal-key batch ordinal remain live observations; the opposite per-actor registration residuals do not justify a fitted global offset",
+      "action": "keep the route default-off and exact-source-gated; capture only the remaining live frame constants and branch choices, and do not fabricate the paired output-depth or absent ECS/HGUI systems"
+    },
+    {
+      "id": "camera.charinfo.gyroscope_finalize_state",
+      "scope": "wulfa_zhuangfy_default_off_camera_input_endpoint",
+      "currentValue": {
+        "nativeCallback": "Beyond.UI.CinemachineGyroscopeEffect.PostPipelineStageCallback at Finalize; PositionCorrection += RawOrientation*(offsetX,offsetY,0), then preserve the prior look offset",
+        "inputDriver": "UIGyroscopeEffect PreLate; original vertical/horizontal curves; target scales +0.15/-0.25; 2-second OutQuad replacement of extension offsets",
+        "centeredMouseSettledOffsets": [
+          -0.0014590695,
+          -0.0079590753
+        ],
+        "neutralCenteredPortraitShiftPixels3840x2160": {
+          "wulfa": [
+            -0.483,
+            2.526
+          ],
+          "zhuangfy": [
+            -0.439,
+            2.358
+          ]
+        },
+        "serializedEntryPortraitShiftPixels3840x2160": {
+          "wulfa": [
+            89.2,
+            50.97
+          ],
+          "zhuangfy": [
+            -75.91,
+            -26.91
+          ]
+        },
+        "modes": [
+          "off",
+          "neutral-centered-input",
+          "serialized-entry",
+          "recorded-input-endpoint"
+        ]
+      },
+      "status": "exact_native_finalize_callback_curves_and_source_endpoints",
+      "productionEligible": false,
+      "activation": "ENDFIELD_RECOVERED_CHARINFO_GYROSCOPE_MODE; default off in ordinary and cumulative captures",
+      "source": "installed UI.Beyond metadata/native GameAssembly bodies plus Wulfa/Zhuangfy UIGyroscopeEffect and CinemachineGyroscopeEffect MonoBehaviour records",
+      "evidence": "memory/charinfo_gyroscope_camera_state_recovery_20260714.md; Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoGyroscope/source_manifest.json; scratch/charinfo_gyroscope_effect_recovery_20260714.md; scratch/charinfo_gyroscope_recovery_verification_20260714.json",
+      "code": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredCharInfoGyroscopeCameraState.cs; tools/verify_charinfo_gyroscope_recovery.py",
+      "limitation": "the capture-time cursor/controller state and two-second transition timeline were not recorded. Serialized offsets are entry state and must not be treated as universal settled values",
+      "action": "use source-defined endpoint modes for diagnostics; replay only a recorded input trace when exact capture-time input becomes available"
+    },
+    {
+      "id": "scene.operator_environment_direction",
+      "scope": "operator_reference",
+      "currentValue": {
+        "pitchDegrees": 40.0,
+        "yawDegrees": -181.6,
+        "rgb": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "temperatureKelvin": 7000.0,
+        "directIntensity": 8.631674,
+        "directIntensityDividePi": 2.7475471,
+        "packedCharacterIntensity": "I=directIntensityDividePi*exposure; clamp(I,0.75,1.25) + max(I-1.25,0)*(dialog?0.05:0.25) - max(0.75-I,0)*(dialog?0.05:0.25)",
+        "nativeHsvCorrection": "identity for this white CharInfo source RGB"
+      },
+      "status": "exact_serialized_and_native",
+      "productionEligible": true,
+      "activation": "direction/color are active; exact exposure-dependent intensity is active with ENDFIELD_RECOVERED_SOURCE_ENERGY_CORE",
+      "source": "CharInfo_Env serialized direction/color/temperature/directIntensity fields plus active installed LightExtensions native packing",
+      "evidence": "scratch/hgrp_original_pipeline_recovery_agent.md#operator-studio-environment; scratch/main_light_native_catalog.md; scratch/main_light_native_mapping.md",
+      "code": "tools/extract_original_render_parameters.py; Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldHGRPCharacterLightingVolume.cs; Assets/EndfieldGraphShaderLab/Shaders/HGRPCompat/EndfieldHGRPCharacterLighting.cginc",
+      "action": "keep the parsed descriptor and live exposure coupling; do not replace it with Unity Light.intensity or fitted brightness"
+    },
+    {
+      "id": "character_volume.wulfa.final_state",
+      "scope": "operator_reference",
+      "currentValue": {
+        "characterParams0": [
+          1.0,
+          1.05,
+          0.55,
+          0.9
+        ],
+        "characterParams1": [
+          0.0,
+          1.0,
+          0.0,
+          1.0
+        ],
+        "characterParams4": [
+          1.0,
+          0.8923962,
+          0.8886792,
+          1.0
+        ],
+        "characterParams5": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "ambientDirection": [
+          0.0,
+          1.0,
+          4.371139e-08
+        ],
+        "ambientFactors": [
+          0.15,
+          1.5,
+          0.5
+        ],
+        "cameraFollowBiasDegrees": [
+          32.0,
+          12.0
+        ],
+        "rangeBias": -0.1,
+        "characterParams12": [
+          1.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "characterParams13": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "status": "exact_serialized",
+      "productionEligible": true,
+      "activation": "active",
+      "source": "CharInfo base HGCharacterVolume plus Wulfa volume modifier and native packing",
+      "evidence": "scratch/lighting_volume_state_recovery.md#exact-final-packed-character-parameters",
+      "code": "Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/EndfieldManifestCharacterSetup.cs:3824",
+      "action": "keep"
+    },
+    {
+      "id": "character_volume.zhuangfy.final_state",
+      "scope": "operator_reference",
+      "currentValue": {
+        "characterParams0": [
+          1.0,
+          1.0,
+          0.55,
+          1.0
+        ],
+        "characterParams1": [
+          0.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "characterParams4": [
+          1.0,
+          0.926182,
+          0.8666667,
+          1.0
+        ],
+        "characterParams5": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "ambientDirection": [
+          0.0,
+          1.0,
+          4.371139e-08
+        ],
+        "ambientFactors": [
+          0.15,
+          1.5,
+          0.5
+        ],
+        "cameraFollowBiasDegrees": [
+          32.0,
+          12.0
+        ],
+        "rangeBias": 0.0,
+        "characterParams12": [
+          1.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        "characterParams13": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "status": "exact_serialized",
+      "productionEligible": true,
+      "activation": "active",
+      "source": "CharInfo base HGCharacterVolume plus Zhuangfy volume modifier and native packing",
+      "evidence": "scratch/lighting_volume_state_recovery.md#exact-final-packed-character-parameters",
+      "code": "Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/EndfieldManifestCharacterSetup.cs:3824",
+      "action": "keep"
+    },
+    {
+      "id": "character_volume.environment_global_params0",
+      "scope": "operator_reference",
+      "currentValue": [
+        0.28772247,
+        0.28772247,
+        1.0,
+        0.0
+      ],
+      "status": "exact_derived",
+      "productionEligible": true,
+      "activation": "active",
+      "source": "CharInfo_Env diffuse/specular factors plus native UpdateShaderVariablesGlobalEnvironment packing",
+      "evidence": "scratch/lighting_volume_state_recovery.md#environment-cubemap-and-exposure",
+      "code": "Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/EndfieldManifestCharacterSetup.cs:3848",
+      "action": "keep"
+    },
+    {
+      "id": "character_volume.compatibility_influence",
+      "scope": "compatibility_bridge",
+      "currentValue": 1.0,
+      "status": "lab_implementation_switch",
+      "productionEligible": false,
+      "activation": "active operator reference; generic viewer uses 0.35",
+      "source": "not an original HGRP parameter",
+      "code": "Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/EndfieldManifestCharacterSetup.cs:3818",
+      "action": "remove when shaders consume only the original ABI"
+    },
+    {
+      "id": "environment.character_reflection_cubemap",
+      "scope": "operator_reference",
+      "currentValue": {
+        "name": "T_hdri_reflection_char_01",
+        "format": "BC6H unsigned",
+        "size": 128,
+        "faces": 6,
+        "mips": 8,
+        "sourcePayloadSha256": "898FF663C8D447456666612E55697F7AECDE13C03B19B74F9DF5B73735E2C9DF"
+      },
+      "status": "exact_serialized",
+      "productionEligible": true,
+      "activation": "active",
+      "source": "CharInfo HGCharacterVolume PPtr and installed-game texture payload",
+      "evidence": "scratch/cubemap_dependency_recovery/recovery_note.md",
+      "code": "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfo/T_hdri_reflection_char_01.cubemap.manifest.json",
+      "action": "keep"
+    },
+    {
+      "id": "operator_lights.serialized_records",
+      "scope": "operator_reference",
+      "currentValue": {
+        "wulfaCount": 8,
+        "zhuangfyCount": 6,
+        "payloadSha256": "95F8D270386C63EF4225A6F435148C2EA65F74F6E4E3DA3D48CF56D965A4A8D3",
+        "nativeNprPackMatches": "14/14",
+        "fields": [
+          "position",
+          "rotation",
+          "forward_from_quaternion",
+          "color",
+          "intensity",
+          "priority",
+          "range",
+          "type",
+          "outerSpotAngle",
+          "innerSpotAngle",
+          "nprType",
+          "nprData",
+          "characterOnly",
+          "volumetricScatteringIntensity",
+          "falloffExponent",
+          "enabled",
+          "useColorTemperature",
+          "useCullingDistance",
+          "cullingDistance",
+          "falloffDistance",
+          "specularIntensity",
+          "shadowType",
+          "shadows",
+          "shadowOnly",
+          "cookiePathId",
+          "enableObbCullingBox",
+          "flickerEnabled",
+          "softSourceRadius",
+          "linearLightLength",
+          "charInfoLightFollowerSource",
+          "followType",
+          "followableNodeType",
+          "positionOffset",
+          "localPosition",
+          "localRotationEuler"
+        ]
+      },
+      "status": "exact_serialized_and_native",
+      "productionEligible": true,
+      "activation": "records are published; both source-energy and clustered-NPR selectors are required for the recovered contribution subset; exact isolated-rig membership additionally requires ENDFIELD_RECOVERED_LIGHT_BINNING_MEMBERSHIP=1",
+      "source": "direct-child light_overview PPtr selection and deterministic join of Light, Transform, GameObject, HGAdditionalLightData, and CharInfoLightFollower JSON plus native GetLightNPRData and priority packing",
+      "evidence": "scratch/original_operator_light_extraction_20260712.md; scratch/clustered_npr_light_loop_recovery_20260713.md; scratch/operator_light_runtime_attachment_recovery_20260713.md; scratch/light_membership_order_recovery_20260713.md; scratch/native_lightbinning_formula_evidence_20260713.md",
+      "code": "tools/extract_original_operator_lights.py; Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/EndfieldOriginalOperatorLightImporter.cs; Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldHGOperatorLightRig.cs",
+      "action": "regenerate/check operator_lights.json; keep compatibility scales zero and the recovered subset default-off"
+    },
+    {
+      "id": "operator_lights.compatibility_scales",
+      "scope": "operator_reference",
+      "currentValue": {
+        "default": [
+          0.0,
+          0.0
+        ],
+        "diagnostic": [
+          0.45,
+          0.05
+        ]
+      },
+      "status": "compatibility_approximation",
+      "productionEligible": false,
+      "activation": "default-off; ENDFIELD_REFERENCE_APPROXIMATE_OPERATOR_LIGHTING=1",
+      "source": "hand-authored lab scales; no original parameter corresponds to them",
+      "code": "Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/EndfieldManifestCharacterSetup.cs:3913",
+      "action": "replace only after original punctual/NPR light equations are recovered"
+    },
+    {
+      "id": "operator_lights.compatibility_equation",
+      "scope": "shader",
+      "currentValue": {
+        "rangeAttenuation": "linear",
+        "spotAttenuation": "smoothstep",
+        "diffuseBand": [
+          -0.15,
+          0.15
+        ],
+        "specularPower": "exp2(3 + smoothness*8)",
+        "rimPower": 2.5,
+        "rimSideRange": [
+          -0.45,
+          0.35
+        ],
+        "rimAlbedoBlend": 0.25
+      },
+      "status": "compatibility_approximation",
+      "productionEligible": false,
+      "activation": "multiplied by zero unless the explicit diagnostic selector is enabled",
+      "source": "lab-authored formula",
+      "code": "Assets/EndfieldGraphShaderLab/Shaders/HGRPCompat/EndfieldHGRPCharacterLighting.cginc:354",
+      "action": "recover original clustered/punctual loop and NPR modes from compiled shaders/native buffers"
+    },
+    {
+      "id": "operator_lights.recovered_clustered_npr_subset",
+      "scope": "wulfa_zhuangfy_default_off_diagnostic",
+      "currentValue": {
+        "clothFrontFaces": "8 Default diffuse+GGX, 2 Fog, 2 shadowless Rim; the two soft-shadow Rim rows require the separate isolated producer selector",
+        "hair": "8 Default diffuse + primary-strand punctual specular, 2 Fog, 2 shadowless depth-Rim; double-sided back faces use the exact face-signed normal contract; the two soft-shadow depth-Rim rows require the separate isolated producer selector",
+        "defaultAngularCarrier": "lerp(0.25*npr.x,1,saturate(NdotL+0.5)); active npr.x=0 reduces to saturate(NdotL+0.5)",
+        "hairPrimaryPunctual": "shifted primary strand, exponent 200, mip-0 spec ramp, edge fade, spec mask, authored anisotropy and light specular intensity",
+        "skin": "selected zero-metal/no-bump/no-weather face subset evaluates 8 Default diffuse+GGX rows, 2 order-sensitive Fog rows, 2 shadowless Rim rows, and 2 shadowed Rim rows through the separately gated isolated atlas producer; separately source-gated Wulfa/Zhuangfy normal-mapped body materials use body mode 5 with their distinct angular/diffuse/specular normals and simple projected Rim response",
+        "eye": "8 Default diffuse and 2 order-sensitive Fog rows use the exact shared camera-cluster traversal; 4 Rim rows are exact zero",
+        "isolatedOverviewMembership": "optional exact three-float4 descriptor packing, 32-pixel XY masks, 2048 one-unit Z masks, and fragment word-zero intersection",
+        "compatibilityScalesConsumed": false
+      },
+      "status": "partial_compiled_shader_port_with_exact_isolated_membership",
+      "productionEligible": false,
+      "activation": "base shading requires ENDFIELD_RECOVERED_SOURCE_ENERGY_CORE=1 and ENDFIELD_RECOVERED_CLUSTERED_NPR_LIGHT_LOOP=1; exact isolated membership additionally requires ENDFIELD_RECOVERED_LIGHT_BINNING_MEMBERSHIP=1",
+      "source": "selected shipped Wulfa/Zhuangfy cloth/hair and body-Skin SPIR-V/DXBC, native LightCulling/HGAdditionalLightData packing, original LightBinning XY/Z DXBC, and exact serialized operator-light rows",
+      "evidence": "scratch/clustered_npr_light_loop_recovery_20260713.md; scratch/skin_eye_worldcell_recovery_20260713/recovery_note.md; scratch/skin_eye_worldcell_recovery_20260713/mapping.json; scratch/skin_face_punctual_exact_20260713/recovery_note.md; scratch/skin_face_punctual_exact_20260713/mapping.json; scratch/hair_punctual_energy_order_recovery_20260713.md; scratch/hair_depth_rim_punctual_shadow_contract_20260713.md; scratch/punctual_soft_shadow_producer_recovery_20260713.md; scratch/charinfo_next_style_gap_priority_20260714/body_skin_equation_review.md; scratch/body_skin_forward_20260714/render_delta_metrics.json; scratch/verify_clustered_npr_light_loop_recovery.py; scratch/verify_punctual_soft_shadow_producer_recovery_20260713.py; scratch/native_lightbinning_formula_evidence_20260713.md; scratch/light_binning_reference_vectors_20260713/gpu_verification.json",
+      "code": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldHGOperatorLightRig.cs; Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredLightBinning.cs; Assets/EndfieldGraphShaderLab/Resources/EndfieldRecoveredLightBinning.compute; Assets/EndfieldGraphShaderLab/Runtime/Rendering/HGCompatRenderPipeline.cs; Assets/EndfieldGraphShaderLab/Shaders/HGRPCompat/EndfieldHGRPCharacterLighting.cginc; Assets/EndfieldGraphShaderLab/Shaders/Recovered/EndfieldCharacterClothRecovered.shader; Assets/EndfieldGraphShaderLab/Shaders/Recovered/EndfieldCharacterHairRecovered.shader; Assets/EndfieldGraphShaderLab/Shaders/Recovered/EndfieldCharacterSkinRecovered.shader; Assets/EndfieldGraphShaderLab/Shaders/Recovered/EndfieldCharacterEyeRecovered.shader",
+      "action": "keep default-off until the native candidate/interleaved scene-light list, remaining Hair branches, and full upstream screen-shadow inputs are recovered; keep the isolated shadow producer separately gated"
+    },
+    {
+      "id": "operator_lights.isolated_punctual_soft_shadow_producer",
+      "scope": "wulfa_zhuangfy_isolated_overview_row_4",
+      "currentValue": {
+        "wulfa": "RimLight_2 (5) Spot, direct cache slot 40, live BIP001 fixed-world-offset position, serialized rotation",
+        "zhuangfy": "RimLight_2 (5) Point, faces +X/-X/+Y/-Y/+Z/-Z in cache slots 40..45",
+        "atlasProfiles": {
+          "B512": [
+            3072,
+            2048
+          ],
+          "B1024": [
+            6144,
+            4096
+          ]
+        },
+        "atlasFormat": "D16_UNorm-equivalent persistent reversed-Z depth atlas, Point RT metadata, Clamp, no MSAA",
+        "producer": "source OpenGL-style projection; independent caster/receiver GPU projections; native point bases; reversed-Z world-to-shadow; depth-zero tile clear; 2px scissor; raster bias (0.1,1); CullOff recovered actor ShadowCaster submeshes",
+        "receiver": "56 matrices/params/rects, strict dominant-axis and strict-positive point-face selection, geometric-normal offset 7.5*texelWorld*normalBias, optimized 3x3 PCF with emulated bilinear D16 GreaterEqual comparison",
+        "casterProperties6": "both static and dynamic actor renderers; active opaque recovered ShadowCaster submeshes only",
+        "failureBehavior": "no cache slot is published when actor/light identity, clustered loop, D16 reversed-Z atlas, or actor caster contract is unavailable; shadowed Skin/Cloth/Hair rows remain zero and shadowless rows keep their radial fallback"
+      },
+      "status": "exact_serialized_native_and_compiled_shader_isolated_runtime",
+      "productionEligible": false,
+      "activation": "default-off; requires ENDFIELD_RECOVERED_SOURCE_ENERGY_CORE=1, ENDFIELD_RECOVERED_CLUSTERED_NPR_LIGHT_LOOP=1, and ENDFIELD_RECOVERED_ISOLATED_PUNCTUAL_SOFT_SHADOWS=1; ENDFIELD_RECOVERED_PUNCTUAL_SHADOW_TILE_RESOLUTION accepts only source-backed 512 or 1024 profiles and defaults to the captured RTX 5080 device profile 1024",
+      "source": "installed Wulfa/Zhuangfy Light/HGAdditionalLightData/CharInfoLightFollower rows, recovered PunctualShadowManager/allocator/ShadowUtils/render-delegate IL2CPP, and selected original cloth/hair ShadowCaster and Rim receiver shaders",
+      "evidence": "scratch/punctual_soft_shadow_producer_contract_20260713.json; scratch/punctual_soft_shadow_producer_recovery_20260713.md; scratch/verify_punctual_soft_shadow_producer_recovery_20260713.py; scratch/hair_depth_rim_punctual_shadow_contract_20260713.md; scratch/skin_shadowless_rim_exact_20260713/shadowed_rim_audit.md; scratch/skin_shadowless_rim_exact_20260713/shadowed_verification.json",
+      "code": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredPunctualShadowProducer.cs; Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldHGOperatorLightRig.cs; Assets/EndfieldGraphShaderLab/Runtime/Rendering/HGCompatRenderPipeline.cs; Assets/EndfieldGraphShaderLab/Shaders/HGRPCompat/EndfieldRecoveredPunctualShadowClear.shader; Assets/EndfieldGraphShaderLab/Shaders/HGRPCompat/EndfieldHGRPCharacterLighting.cginc",
+      "action": "retain the isolated fail-closed path; a live capture is still required for current quality override, full-client slot identity, exact frame caster/deformation membership, and independent descriptor comparison-op confirmation"
+    },
+    {
+      "id": "operator_lights.charinfo_light_followers",
+      "scope": "wulfa_zhuangfy_overview",
+      "currentValue": {
+        "wulfa": "5 followers: 3 BIP001 fixed-world-offset, 2 HEAD_LOCAL parent-space",
+        "zhuangfy": "4 followers: 2 BIP001 fixed-world-offset, 2 HEAD_LOCAL parent-space",
+        "fixedMode": "worldPosition = bonePosition + positionOffset; serialized rotation remains",
+        "parentMode": "worldPosition = bonePosition + boneRotation*localPosition; worldRotation = boneRotation*Quaternion.Euler(localEuler)",
+        "boneResolution": "exactly one case-insensitive Bip001/Head_Local match below the sampled/live actor"
+      },
+      "status": "exact_serialized_and_native",
+      "productionEligible": true,
+      "activation": "evaluated from the sampled/live actor pose when ENDFIELD_RECOVERED_CLUSTERED_NPR_LIGHT_LOOP=1",
+      "source": "nine original CharInfoLightFollower components, exact IL2CPP Tick/follow methods, actor bone mapping, and recovered prefab skeletons",
+      "evidence": "scratch/operator_light_runtime_attachment_recovery_20260713.md; scratch/operator_light_follower_integration_20260713.md",
+      "code": "tools/extract_original_operator_lights.py; Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldHGOperatorLightRig.cs; Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/EndfieldManifestCharacterSetup.cs",
+      "action": "preserve the pose-driven formulas and hard provenance checks; do not replace follower positions with fitted constants"
+    },
+    {
+      "id": "operator_lights.membership_and_order_contract",
+      "scope": "hgrp_visible_punctual_lights",
+      "currentValue": {
+        "sort": "priority descending, then camera distance squared ascending; no explicit equal-key tie-break",
+        "overviewPriorities": "14/14 are zero",
+        "windowsVisibleLightCap": 256,
+        "screenTileSizePixels": [
+          32,
+          32
+        ],
+        "tileMaskWords": 8,
+        "fixedZSliceCount": 2048,
+        "fixedZSliceSize": 1.0,
+        "spotVolume": "cone-proxy OBB even when serialized enableObbCullingBox is false",
+        "runtimeBoundary": "isolated overview rig applies exact sort after follower evaluation and can publish exact GPU tile/Z masks; native candidate culling and the interleaved scene-light list remain unavailable"
+      },
+      "status": "exact_native_and_compiled_contract_isolated_runtime",
+      "productionEligible": false,
+      "activation": "priority/distance ordering is active with the recovered clustered selector; exact isolated-rig per-pixel membership additionally requires ENDFIELD_RECOVERED_LIGHT_BINNING_MEMBERSHIP=1",
+      "source": "installed GameAssembly native visible-light sort and recovered original LightBinning compute-shader DXBC",
+      "evidence": "scratch/light_membership_order_recovery_20260713.md; scratch/light_membership_evidence.json; scratch/light_membership_compute_shader_dxbc/manifest.json; scratch/native_lightbinning_formula_evidence_20260713.md; scratch/light_binning_implementation_plan_20260713.md; scratch/light_binning_reference_vectors_20260713/gpu_verification.json",
+      "code": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldHGOperatorLightRig.cs; Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredLightBinning.cs; Assets/EndfieldGraphShaderLab/Resources/EndfieldRecoveredLightBinning.compute; Assets/EndfieldGraphShaderLab/Shaders/HGRPCompat/EndfieldHGRPCharacterLighting.cginc",
+      "action": "capture or reproduce HGCullingSystem.CullLights output and the evaluated interleaved visible-light list; retain the exact isolated membership path and do not revert to prefab/controller order"
+    },
+    {
+      "id": "post.runtime_exposure",
+      "scope": "operator_reference",
+      "currentValue": {
+        "defaultEV": 0.0,
+        "diagnosticOverride": "ENDFIELD_RECOVERED_POST_EXPOSURE_EV",
+        "serializedMode": 1,
+        "serializedModeName": "Manual",
+        "histogramSelected": false,
+        "manualCompensationEV": 0.0,
+        "manualTargetExposure": 1.0,
+        "newCameraCurrentExposure": 1.0,
+        "newCameraTargetExposure": 1.0,
+        "resetReseedsExposure": false,
+        "reusedCameraEntryCurrent": "history_dependent_until_converged_to_1",
+        "autoModeDiagnosticSelector": "ENDFIELD_RECOVERED_LIVE_CHARINFO_AUTO_EXPOSURE",
+        "autoModeDiagnosticReadbacksInFlight": 1,
+        "counterfactualAutoModeValidation": {
+          "wulfaFrame180": {
+            "currentTarget": 0.448361,
+            "averageEV": -1.316663,
+            "readbackLatencyFrames": 2
+          },
+          "zhuangfyFrame180": {
+            "currentTarget": 0.418806,
+            "averageEV": -1.218284,
+            "readbackLatencyFrames": 2
+          },
+          "firstReadbackLatencyFrames": 3
+        }
+      },
+      "status": "exact_manual_target_and_new_camera_seed_partial_reused_camera_entry_history",
+      "productionEligible": true,
+      "activation": "neutral multiplier 1 is the original CharInfo Manual target and new-camera/settled value; leave the Auto-mode diagnostic selector off",
+      "source": "installed CharInfo HGAutoExposure profile, AutoExposureMode enum, and installed GameAssembly HGCamera/UberPostPassUtils lifecycle and update bodies",
+      "evidence": "memory/charinfo_exposure_initialization_recovery_20260714.md; scratch/charinfo_exposure_lifecycle_native_20260714.json; scratch/charinfo_post_recovery/exposure_lut_evidence.md; scratch/live_charinfo_auto_exposure_validation_20260713.md",
+      "code": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredCharInfoAutoExposure.cs; Assets/EndfieldGraphShaderLab/Shaders/HGRPCompat/EndfieldRecoveredCharInfoExposure.compute; Assets/EndfieldGraphShaderLab/Runtime/Rendering/HGCompatRenderPipeline.cs; Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldStandalonePngCapture.cs",
+      "action": "keep neutral for new-camera or settled original-data renders; for exact entry-transition parity recover the prior shared-camera current multiplier and delta-time sequence; never enable the histogram diagnostic or promote its measured lab values as CharInfo exposure"
+    },
+    {
+      "id": "post.charinfo_histogram_state_machine",
+      "scope": "hgrp_auto_mode_diagnostic_not_selected_by_charinfo",
+      "currentValue": {
+        "selectedBySerializedCharInfo": false,
+        "histogramBins": 16,
+        "tileSizePixels": 16,
+        "threadGroupSize": [
+          8,
+          8,
+          1
+        ],
+        "bufferElementType": "float32",
+        "meteringMode": "Center",
+        "centerPixelWeight": 0.75,
+        "exposureRangeEV": [
+          -8.0,
+          4.0
+        ],
+        "histogramRangeEV": [
+          -8.0,
+          4.0
+        ],
+        "acceptedFraction": [
+          0.05,
+          0.95
+        ],
+        "clampEV": [
+          -4.0,
+          4.0
+        ],
+        "adaptationSpeeds": [
+          20.0,
+          20.0
+        ],
+        "exposureParamsLayout": [
+          "currentExposure",
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "status": "exact_compiled_auto_mode_shader_dormant_for_charinfo",
+      "productionEligible": false,
+      "activation": "default-off renderer diagnostic only; CharInfo mode 1 Manual bypasses compute resource setup, histogram pass construction, readback, and histogram reduction",
+      "source": "CharInfo profile, AutoExposureMode enum, installed HGRP native branch, and HGAutoExposureHistogramCS D3D11 DXBC",
+      "evidence": "memory/charinfo_exposure_initialization_recovery_20260714.md; scratch/charinfo_exposure_lifecycle_native_20260714.json; scratch/charinfo_exposure_compositor_recovery_20260712.md; scratch/live_charinfo_auto_exposure_validation_20260713.md",
+      "code": "tools/recover_charinfo_exposure.py",
+      "action": "use generated charinfo_exposure_state.json to preserve the exact branch distinction; keep this diagnostic disabled for original CharInfo reconstruction"
+    },
+    {
+      "id": "post.charinfo_static_profile",
+      "scope": "operator_reference",
+      "currentValue": {
+        "saturationMultiplier": 1.08,
+        "bloomThresholdSerialized": 0.75,
+        "bloomIntensitySerialized": 0.45,
+        "bloomScatterSerialized": 0.8,
+        "bloomScatterRuntime": 0.77,
+        "vignetteColor": [
+          0.06666667,
+          0.067174576,
+          0.07450981,
+          1.0
+        ],
+        "vignetteIntensity": 0.3,
+        "vignetteSmoothness": 0.41,
+        "vignetteRoundness": 0.94,
+        "shadowGradeMultiplier": 0.89473686,
+        "tonemapMode": "ACES_modified"
+      },
+      "status": "exact_derived",
+      "productionEligible": true,
+      "activation": "fully source-shaped only when ENDFIELD_RECOVERED_POST_SEMANTICS=1",
+      "source": "CharInfo_Volume serialized components plus recovered HGRP conversion equations",
+      "evidence": "scratch/charinfo_post_recovery/recovery_note.md",
+      "code": "Assets/EndfieldGraphShaderLab/Shaders/HGRPCompat/EndfieldHGRPRecoveredPost.cginc",
+      "action": "keep static values and Manual EV0 target 1; do not claim final output until the physical presentation resolve, temporal state, and a proven single-encode target path are supplied"
+    },
+    {
+      "id": "post.preexposure_and_final_chain",
+      "scope": "operator_reference",
+      "currentValue": {
+        "histogramInput": "raw HDR sceneColor before bloom and Uber, without exposure multiplication",
+        "scenePreExposure": "recovered Cloth/Hair/Skin forward and outline paths plus Eye exact/fallback RGB divide by _ExposureParams.x",
+        "uberNormalization": "sampled scene RGB multiplied by the same _ExposureParams.x",
+        "operatorLightBehavior": "raw serialized punctual RGB*intensity mostly cancels through CharacterNPR divide and Uber multiply",
+        "mainDirectionalBoundary": "lab publishes the recovered native directIntensityDividePi*camera.exposureAdaptation carrier with the original [0.75,1.25] clamp and dialog/non-dialog overflow shaping; CharInfo Manual EV0 targets 1 and is exactly 1 for a new or settled camera, while only a reused camera's first entry frames can carry prior current",
+        "tonemapPlacement": "ACES_modified baked into the 1024x32 grading LUT",
+        "outputTransfer": "explicit IEC sRGB OETF",
+        "dither": "frac(dot(pixel,(171,231)) * (1/103,1/71,1/97)) - 0.5, scaled by 0.35/255",
+        "standardFinalFormat": "linear R8G8B8A8_UNorm",
+        "finalPass": "mutually exclusive raw viewport SampleBias copy"
+      },
+      "status": "exact_compiled_shader_and_native",
+      "productionEligible": false,
+      "activation": "default-off capture path requires ENDFIELD_RECOVERED_POST_SEMANTICS=1 and ENDFIELD_RECOVERED_LINEAR_UNORM_FINAL_TARGET=1 plus an exact linear single-mip R8G8B8A8_UNorm camera target",
+      "source": "authoritative CharacterNPR, LutBuilder2D, UberPost, FinalPass, TAAU resources plus recovered HGRP native render-path code",
+      "evidence": "scratch/charinfo_preexposure_final_chain_20260713.md; scratch/charinfo_final_chain_recovery.json; scratch/linear_unorm_final_target_recovery_20260713.md; scratch/live_charinfo_auto_exposure_validation_20260713.md; scratch/main_light_native_mapping.md",
+      "code": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldHGRPCharacterLightingVolume.cs; Assets/EndfieldGraphShaderLab/Runtime/Rendering/HGCompatRenderPipeline.cs; Assets/EndfieldGraphShaderLab/Shaders/HGRPCompat/EndfieldHGRPExposureTonemap.shader; scratch/verify_linear_unorm_final_target.py",
+      "action": "keep the strict capture target checks, same-format CopyTexture, and recovered main-light carrier; continue rejecting unproven interactive CameraTarget presentation and fitted brightness"
+    },
+    {
+      "id": "post.charinfo_taau_and_sharpen_contract",
+      "scope": "initial_windows_fallback_path_not_current_saved_request",
+      "currentValue": {
+        "passOrder": [
+          "TAAU Dilation",
+          "TAAU Mask Dilation",
+          "TAAU Quality Resolve",
+          "UberPost"
+        ],
+        "qualityResolveShaderSha256Prefix": "8030c0ce1792539c",
+        "historyWeight": 0.95,
+        "historyWeightInMotion": 0.85,
+        "fastConverge": 0.4,
+        "responsive": 0.0,
+        "motionRange": [
+          0.0,
+          0.1
+        ],
+        "characterSensitivity": 0.1,
+        "depthDifference": 0.0002,
+        "lumaEnabled": true,
+        "firstOrResetHistoryWeight": 0.0,
+        "hgSharpenExecutes": false,
+        "uberPerformSharpen": true,
+        "uberPPSharpen": null,
+        "finalPassRelationship": "mutually exclusive no-post fallback"
+      },
+      "status": "exact_compiled_shader_and_native_initial_contract",
+      "productionEligible": false,
+      "activation": "analysis-only contract; converged TAAU and Uber sharpening remain disabled/unclaimed in the static lab render",
+      "source": "shipped Windows quality rows, TAAU Dilation/Mask/Quality compiled shaders, UberPost compiled shader, UnityPlayer native keyword/property anchors, and GameAssembly HGCamera field reads",
+      "evidence": "scratch/charinfo_taau_sharpen_contract_20260713.md; scratch/charinfo_taau_sharpen_contract.json",
+      "code": "scratch/recover_charinfo_taau_sharpen_contract.py; scratch/verify_charinfo_taau_sharpen_contract.py",
+      "action": "do not approximate a still with blur/sharpen; the current saved request is DLSS/DLAA with a 0.0 sharpness input, while this TAAU contract remains startup/fallback evidence. Recover the final temporal-path selection, _PPSharpen, history, jitter, depth/motion vectors, masks, and reset state before claiming convergence"
+    },
+    {
+      "id": "post.default_compatibility_path",
+      "scope": "operator_reference",
+      "currentValue": {
+        "acesFit": [
+          2.51,
+          0.03,
+          2.43,
+          0.59,
+          0.14
+        ],
+        "characterOnlyBloom": true,
+        "halfResolutionBlur": true
+      },
+      "status": "compatibility_approximation",
+      "productionEligible": false,
+      "activation": "active when ENDFIELD_RECOVERED_POST_SEMANTICS is unset/0",
+      "source": "lab-authored compatibility post, not original HGRP",
+      "code": "Assets/EndfieldGraphShaderLab/Shaders/HGRPCompat/EndfieldHGRPExposureTonemap.shader:42",
+      "action": "retain as lab fallback only; source-shaped branch is still blocked by runtime exposure/final display transform"
+    },
+    {
+      "id": "post.recovered_bloom_graph",
+      "scope": "default_off_recovery",
+      "currentValue": {
+        "heightCap": 1080,
+        "maximumMips": 16,
+        "thresholdSerialized": 0.75,
+        "intensitySerialized": 0.45,
+        "runtimeIntensity": 0.36604025675,
+        "scatterRuntime": 0.77,
+        "prefilterKnee": 0.5
+      },
+      "status": "exact_native",
+      "productionEligible": true,
+      "activation": "ENDFIELD_RECOVERED_POST_SEMANTICS=1",
+      "source": "serialized Bloom plus recovered HGRP bloom shader/native graph",
+      "evidence": "scratch/charinfo_post_recovery_mip_pyramid/recovery_note.md",
+      "code": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/HGCompatRenderPipeline.cs:44",
+      "action": "keep"
+    },
+    {
+      "id": "post.recovered_color_lut",
+      "scope": "default_off_recovery",
+      "currentValue": {
+        "cubeSize": 32,
+        "flattenedSize": [
+          1024,
+          32
+        ],
+        "format": "RGBAHalf",
+        "filter": "bilinear",
+        "wrap": "clamp",
+        "mips": false
+      },
+      "status": "exact_compiled_shader",
+      "productionEligible": true,
+      "activation": "ENDFIELD_RECOVERED_POST_SEMANTICS=1",
+      "source": "original LUT dimensions/format and recovered grading equations",
+      "evidence": "scratch/charinfo_post_recovery/exposure_lut_evidence.md",
+      "code": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredCharInfoLut.cs:13",
+      "action": "keep"
+    },
+    {
+      "id": "materials.original_serialized_properties",
+      "scope": "all_generated_character_materials",
+      "currentValue": "colors, floats, texture PPtrs/files and shader identity from each actor recovery manifest",
+      "status": "exact_serialized",
+      "productionEligible": true,
+      "activation": "active where the replacement shader exposes the original property",
+      "source": "AnimeStudio Material JSON copied into Wulfa/Zhuangfy/Mifu recovery manifests",
+      "evidence": "Assets/EndfieldGraphShaderLab/Generated/Characters/<Actor>/*_recovery_manifest.json",
+      "code": "Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/EndfieldManifestCharacterSetup.cs:2220",
+      "action": "keep authoritative and never clamp for _OriginalHGRPProfile materials"
+    },
+    {
+      "id": "materials.original_cloth_preview_clamps",
+      "scope": "material_import",
+      "currentValue": {
+        "metallic": 0.0,
+        "specularClamp": [
+          0.22,
+          0.42
+        ],
+        "smoothnessClamp": [
+          0.44,
+          0.6
+        ],
+        "bumpMaximum": 0.72,
+        "specBumpMaximum": 0.68,
+        "emissionMaximum": 1.5,
+        "outlineWidthMaximum": 0.28,
+        "outlineOffsetMaximum": 0.05
+      },
+      "status": "legacy_preview_approximation",
+      "productionEligible": false,
+      "activation": "now skipped for every _OriginalHGRPProfile material; legacy fallback only",
+      "source": "hand-authored lab clamp",
+      "code": "Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/EndfieldManifestCharacterSetup.cs:4410",
+      "action": "do not re-enable for recovered game materials"
+    },
+    {
+      "id": "materials.feature_flag_fallbacks",
+      "scope": "material_import",
+      "currentValue": "infer selected _Use* flags from texture presence only when the serialized float is absent",
+      "status": "compatibility_fallback",
+      "productionEligible": false,
+      "activation": "fallback-only; serialized flags win",
+      "source": "lab inference for incomplete/legacy manifests",
+      "code": "Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/EndfieldManifestCharacterSetup.cs:2398",
+      "action": "recover original keyword/variant state from Material JSON/PSO instead of extending inference"
+    },
+    {
+      "id": "materials.outline_zero_width_fallback",
+      "scope": "material_import",
+      "currentValue": 0.5,
+      "status": "compatibility_fallback",
+      "productionEligible": false,
+      "activation": "only if original profile enables outline but width is <=0.001; no current Wulfa/Zhuangfy material hits this branch",
+      "source": "lab fallback",
+      "code": "Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/EndfieldManifestCharacterSetup.cs:2367",
+      "action": "leave inactive for Wulfa/Zhuangfy; parse original material/quality behavior if a future actor requires it"
+    },
+    {
+      "id": "materials.shader_property_defaults",
+      "scope": "Endfield/Recovered shaders",
+      "currentValue": "all defaults declared in the Properties blocks of Cloth, Hair, Skin, Eye and OverlayShadow",
+      "status": "unproven_fallback",
+      "productionEligible": false,
+      "activation": "only for a property missing from the original manifest or absent from the replacement shader mapping",
+      "source": "mixed lab defaults; not globally traced to original material defaults",
+      "code": "Assets/EndfieldGraphShaderLab/Shaders/Recovered/*.shader",
+      "action": "treat each missing property as unknown; never tune the fallback by eye"
+    },
+    {
+      "id": "materials.active_recovered_response_controls",
+      "scope": "Endfield/Recovered shaders",
+      "currentValue": {
+        "cloth": {
+          "bandSoftness": 0.08,
+          "ambientStrength": 0.7,
+          "directStrength": 1.0,
+          "outlineScale": 0.0035,
+          "outlineZScale": 1e-05
+        },
+        "hair": {
+          "bandSoftness": 0.065,
+          "ambientStrength": 0.68,
+          "directStrength": 1.0,
+          "outlineScale": 0.0035,
+          "outlineZScale": 1e-05
+        },
+        "skin": {
+          "bandSoftness": 0.075,
+          "ambientStrength": 0.72,
+          "directStrength": 0.95,
+          "outlineScale": 0.0035,
+          "outlineZScale": 1e-05
+        },
+        "eye": {
+          "bandSoftness": 0.06,
+          "ambientStrength": 0.76,
+          "directStrength": 0.9,
+          "eyeDirectStrength": 0.18
+        }
+      },
+      "status": "compatibility_approximation",
+      "productionEligible": false,
+      "activation": "active in the default compatibility shaders",
+      "source": "hand-authored lab response controls; absent from original materials",
+      "code": "Assets/EndfieldGraphShaderLab/Shaders/Recovered/*.shader",
+      "action": "replace by porting original material equations; do not sweep these values"
+    },
+    {
+      "id": "materials.default_diffuse_composition",
+      "scope": "cloth_hair_skin_eye",
+      "currentValue": "mode 0 compatibility diffuse, including hand-authored ambient/direct floors and response multipliers",
+      "status": "compatibility_approximation",
+      "productionEligible": false,
+      "activation": "default",
+      "source": "lab-authored reconstruction",
+      "code": "Assets/EndfieldGraphShaderLab/Shaders/Recovered/*.shader",
+      "action": "replace with exact per-material compiled-shader branches; cloth/hair source-shaped audit modes 4/5 and the default-off eye source-response selector are evidence, not yet a whole-pipeline default"
+    },
+    {
+      "id": "materials.skin_eye_exact_variant_join",
+      "scope": "wulfa_zhuangfy_skin_eye_brow",
+      "currentValue": {
+        "wulfaFace": [
+          "_DIFF_RAMP_ON",
+          "_EMOTION_MAP",
+          "_HIGHLIGHT_MAP",
+          "_OUTLINE_MASK",
+          "_SDFLIGHTMAP",
+          "_SHADOW_LUT_TEX"
+        ],
+        "zhuangfyFace": [
+          "_DIFF_RAMP_ON",
+          "_EMISSION",
+          "_HIGHLIGHT_MAP",
+          "_OUTLINE_MASK",
+          "_SDFLIGHTMAP"
+        ],
+        "wulfaIris": [
+          "_DIFF_RAMP_ON",
+          "_EYE_HIGHLIGHT",
+          "_MATCAP_ON"
+        ],
+        "zhuangfyIris": [
+          "_DIFF_RAMP_ON",
+          "_EMISSION",
+          "_EYE_HIGHLIGHT",
+          "_MATCAP_ON"
+        ],
+        "sharedBrow": [
+          "_DIFF_RAMP_ON",
+          "_SHADOW_LUT_TEX"
+        ],
+        "alphaPremultiply": {
+          "wulfaIris": 0.0,
+          "zhuangfyIris": 0.0
+        },
+        "forwardLitFragments": {
+          "wulfaSkin": {
+            "blob": 187,
+            "file": "0215_endfield_spirv_1.spv",
+            "sha256": "29285B5D3B84253F68945DB7431C315C8721C2F9D8D7EF108C99E57F3A1324BE"
+          },
+          "zhuangfySkin": {
+            "blob": 181,
+            "file": "0179_endfield_spirv_1.spv",
+            "sha256": "4990B96AB1FC3DB04AFA48AB730862C2AB4CA8287292D6FB50DA387B02269D06"
+          },
+          "wulfaEye": {
+            "file": "0059_endfield_spirv_1.spv",
+            "sha256": "A8655AAC90B0AB8B75A8B412CBDDEE5F2B69B230B0D8CAC66AA40902AA7E287C"
+          },
+          "zhuangfyEye": {
+            "file": "0065_endfield_spirv_1.spv",
+            "sha256": "6AE19F28368F0C400D3998181CDD8E99215C17BBBCF40BEF845D6CB904575959"
+          }
+        },
+        "runtimeGlobalSelection": "installed Windows unpatched source selects HG_ENABLE_SCREEN_SPACE_SHADOW_MASK; the supplied frame is screen-expected but still requires a bound shader hash to exclude IFix/runtime override"
+      },
+      "status": "exact_serialized_material_and_raster_variant_join",
+      "productionEligible": true,
+      "activation": "feature keywords/floats are applied by material import; _AlphaPremultiply is consumed by the default-off eye source response",
+      "source": "raw installed-game Unity Material keyword arrays/saved properties joined to AnimeStudio v3 serialized pass identity and exact compiled keywords; SPIR-V OpEntryPoint independently proves the fragment stages",
+      "evidence": "scratch/skin_eye_raster_forward_recovery_20260713/manifest.json; scratch/skin_eye_raster_forward_recovery_20260713/recovery_note.md; scratch/skin_eye_pass_keyword_metadata_checkpoint_20260713.md",
+      "code": "Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/EndfieldManifestCharacterSetup.cs; Assets/EndfieldGraphShaderLab/Shaders/Recovered/EndfieldCharacterEyeRecovered.shader",
+      "action": "keep exact material feature/value data and pass-0 hashes; retain the labeled no-screen lab fallback until the recovered mask contract has its required pre-shading depth/stencil, GBuffer, CSM/ASM/contact/cloud producers"
+    },
+    {
+      "id": "materials.eye_source_response",
+      "scope": "wulfa_zhuangfy_default_off_diagnostic",
+      "currentValue": "object-space projected character light, two fixed-row ramp samples, CP2/CP5/CP13 energy, exact main directional-shadow selection between separate fullDiffuse and NPR view/ramp endpoints, recovered nprShadow matcap carrier, eye subsurface, emission, exact camera-cluster Default/Fog punctual traversal with zero Rim, final whole-result pre-exposure division, and exact opaque Target0 alpha=1",
+      "status": "partial_compiled_shader_port",
+      "productionEligible": false,
+      "activation": "ENDFIELD_RECOVERED_EYE_RESPONSE_SEMANTICS=1 or -endfield-recovered-eye-response-semantics",
+      "source": "exact Wulfa/Zhuangfy Eye pass-0 ForwardLit fragments selected by original Material keywords, plus readable Eye Fix arithmetic correlation",
+      "evidence": "scratch/skin_eye_raster_forward_recovery_20260713/manifest.json; scratch/skin_eye_raster_forward_recovery_20260713/recovery_note.md; scratch/eye_raster_live_shadow_equation_audit_20260713.md; scratch/skin_eye_worldcell_recovery_20260713/recovery_note.md; scratch/skin_eye_worldcell_recovery_20260713/mapping.json; scratch/eye_remaining_raster_exact_20260713/recovery_note.md; scratch/eye_remaining_raster_exact_20260713/mapping.json",
+      "code": "Assets/EndfieldGraphShaderLab/Shaders/Recovered/EndfieldCharacterEyeRecovered.shader; Assets/EndfieldGraphShaderLab/Shaders/HGRPCompat/EndfieldHGRPCharacterLighting.cginc",
+      "action": "keep default-off until retail PreG surface ownership, exact sceneMV Target1 format/attachment and previous-frame state, exposure history, and final post inputs are recovered; the focused CharInfo screen-mask producer/consumer now exists, and no Eye G carrier, rim, scatter, or weather term should be invented"
+    },
+    {
+      "id": "materials.skin_selected_punctual_response",
+      "scope": "wulfa_zhuangfy_zero_weather_face_subset",
+      "currentValue": {
+        "coverage": {
+          "wulfa": "8/8 rows",
+          "zhuangfy": "6/6 rows",
+          "combined": "14/14 rows"
+        },
+        "types": "Default nprType 0, order-sensitive Fog nprType 4, and both selected shadow_type 0/2 Rim nprType 3 rows per actor",
+        "angularNormal": "normalize(lerp(flatObjectRadial, faceDiffuseNormal, sdfMask.g))",
+        "nprDiffuse": "full original faceShadowWeight/characterShadowMix/minimumState/ramp-base/luma-preserving scene-shadow selector",
+        "f0": "0.04 * _Specular * sdfMask.g for selected Metallic=0 materials",
+        "perceptualRoughness": "1 - _Smoothness",
+        "fog": "lerp accumulated color toward light RGB using attenuation*0.91 after falloff exponent 0.982",
+        "rim": "shadowless row uses exact projected silhouette/SDF shape and radial self-shadow; shadowed row uses the same shape with guarded row-4 slot 40/40..45 optimized PCF; both use face-normal side and source diffuse-albedo tint"
+      },
+      "status": "exact_selected_active_subset",
+      "productionEligible": false,
+      "activation": "ENDFIELD_RECOVERED_SOURCE_ENERGY_CORE=1 plus ENDFIELD_RECOVERED_CLUSTERED_NPR_LIGHT_LOOP=1 on selected SDF face materials",
+      "source": "selected original Wulfa/Zhuangfy Skin pass-0 ForwardLit fragments, original face Materials, CharInfo state, and packed overview light rows",
+      "evidence": "scratch/skin_face_punctual_exact_20260713/recovery_note.md; scratch/skin_face_punctual_exact_20260713/mapping.json; scratch/skin_face_punctual_exact_20260713/verification.json; scratch/skin_shadowless_rim_exact_20260713/recovery_note.md; scratch/skin_shadowless_rim_exact_20260713/verification.json; scratch/skin_shadowless_rim_exact_20260713/shadowed_rim_audit.md; scratch/skin_shadowless_rim_exact_20260713/shadowed_verification.json",
+      "code": "Assets/EndfieldGraphShaderLab/Shaders/Recovered/EndfieldCharacterSkinRecovered.shader; Assets/EndfieldGraphShaderLab/Shaders/HGRPCompat/EndfieldHGRPCharacterLighting.cginc",
+      "action": "retain the isolated fail-closed row-4 producer guard; generalize only after nonzero weather carriers and the full live light/cache population are recovered"
+    },
+    {
+      "id": "materials.skin_selected_directional_source_response",
+      "scope": "wulfa_zhuangfy_zero_weather_face_subset",
+      "currentValue": {
+        "mainIntensityAtNeutralExposure": 1.624386775,
+        "diffuse": "bright-ambient/full-direct endpoints selected by scene shadow, multiplied by exact skinNprDiffuse",
+        "direction": "raw CP1.w lerp from scene direction to CP11 plus raw CP11.w*CP12.x range bias",
+        "ambient": "raw CP0.z shadow-LUT scale and exact CP6/7 lobe/CP3 tint",
+        "specular": "selected custom half vector, bounded GGX, authored smoothness/F0, fullDiffuse*specAmbient carrier, CP13.w",
+        "highlight": "RGB-only Point/MirrorOnce SampleBias at uv plus raw object-basis view offset; shares fullDiffuse*specAmbient and ignores alpha/vector z/w",
+        "outputOrder": "diffuse+GGX+Highlight, high-luma chroma extrapolation, emission, clustered punctual loop, pre-exposure divide, opaque alpha 1",
+        "sourceModeBypasses": "compatibility blend leakage, reconstructed heavy shadow, generic power/spec-ramp and SDF specular, local subsurface, local additive SDF rim, approximate face rim"
+      },
+      "status": "exact_selected_compiled_shader_port_before_upstream_fog_and_mrt",
+      "productionEligible": false,
+      "activation": "ENDFIELD_RECOVERED_SOURCE_ENERGY_CORE=1 on the selected original Wulfa/Zhuangfy SDF face materials",
+      "source": "selected original Wulfa/Zhuangfy Skin pass-0 ForwardLit DXBC/SPIR-V, original Materials, and recovered CharInfo globals",
+      "evidence": "scratch/skin_directional_core_gap_20260713/recovery_note.md; scratch/skin_directional_core_gap_20260713/ggx_highlight_tail_addendum.md; scratch/skin_directional_core_gap_20260713/verification.json; scratch/skin_hair_eye_exact_validation_20260713.md",
+      "code": "Assets/EndfieldGraphShaderLab/Shaders/Recovered/EndfieldCharacterSkinRecovered.shader",
+      "action": "keep exact local source response; recover the pre-shading GBuffer/depth/stencil and scene/character shadow producers, then fog/atmosphere and sceneMV/visibility attachments"
+    },
+    {
+      "id": "materials.skin_selected_body_forward_response",
+      "scope": "wulfa_zhuangfy_neutral_static_normal_mapped_body_materials",
+      "currentValue": {
+        "identity": {
+          "shaderPathId": 4484747192473637154,
+          "wulfaMaterialPathId": 7152188194418193687,
+          "zhuangfyMaterialPathId": -6228499253811589790,
+          "keywords": [
+            "_DIFF_RAMP_ON",
+            "_NORMALMAP",
+            "_SHADOW_LUT_TEX"
+          ]
+        },
+        "selector": "_RecoveredSkinBodyForwardVariant=1 only after exact Material, Shader, feature-state, and four-texture identity joins; all other Skin materials fail closed",
+        "textureSemantics": "Base PointMirror SampleBias; packed-normal PointRepeat SampleBias; DiffRamp LOD0; flattened ShadowLUT PointClamp LOD0 with manual adjacent-B-slice interpolation",
+        "bodyResponse": "packed R*A/G normal; body grazing tint from SkinRimOffScale; F0=0.04*Specular at exact Metallic zero; distinct body shadow/ramp carriers; body clustered material mode 5",
+        "mainLightCorrection": "ambient lightBlend consumes unscaled lerp(sceneMainRGB,CP4.rgb,CP12.y), while direct luma/chroma consumes the separate native-intensity-scaled copy",
+        "selectedRuntimeReduction": "neutral static CharInfo; CP8 RGB zero and CP12.x one make the later character-rim/subsurface group exactly zero only for the selected state",
+        "runtimePsoCacheEvidence": {
+          "cacheSha256": "109306D366938A68C71369FB615193C65601D04914A42276209BA107A9CD64CB",
+          "cacheBytes": 115304891,
+          "cacheKind": "rebuilt/pruned NVIDIA Vulkan cache, not an execution timeline",
+          "noScreen": {
+            "record": 153,
+            "key": "1d5e5ab40e014d070fb2820c368afc003a0f885e045f9b10",
+            "tld4": 16
+          },
+          "screenCandidates": [
+            {
+              "record": 530,
+              "key": "d14a2432c07fb31a7f4f0c06b6af3d4b8f658e5e489ff7a0",
+              "tld": 1,
+              "tld4": 0
+            },
+            {
+              "record": 3744,
+              "key": "13ba5c9e5987c3c00e63d310462b2df4d0cfeddd57fb4011",
+              "tld": 1,
+              "tld4": 0
+            }
+          ],
+          "liveBranchSelection": "unresolved; both families are cached and neither record carries actor/draw identity, execution time, descriptors, constants, or fixed state"
+        },
+        "controlledRender": {
+          "wulfa": {
+            "controlSha256": "24C511B5CC82479C0796E7F820B0A48EDF302237F1C11618EE67D4F489B5B385",
+            "variantSha256": "EBD675258FD6F8946C6B53B37CB887DCBD24EA61D5BB2535058A6DB788960525",
+            "changedMaskMaeControl": 74.2219914972608,
+            "changedMaskMaeVariant": 74.0399652339433
+          },
+          "zhuangfy": {
+            "controlSha256": "E32A62B73F23BDD9CEF843C445361EFC0D941ECA2539D2907CA1233780495A14",
+            "variantSha256": "59028021B070B59A468D268470712097A8BF4E91EF504B39E9934CE59A680EB5",
+            "changedMaskMaeControl": 60.28627378703405,
+            "changedMaskMaeVariant": 59.07800764871216
+          },
+          "interpretation": "component-isolation evidence only; no whole-frame parity or visual-fit claim, and Wulfa's stronger >4/255 subset is farther"
+        }
+      },
+      "status": "exact_selected_compiled_shader_component_port_with_bounded_runtime_state",
+      "productionEligible": false,
+      "activation": "ENDFIELD_RECOVERED_SOURCE_ENERGY_CORE=1 plus the importer-authored exact material selector; clustered rows additionally require ENDFIELD_RECOVERED_CLUSTERED_NPR_LIGHT_LOOP=1",
+      "source": "installed Wulfa/Zhuangfy body Material JSON, selected Skin pass-0 ForwardLit SPIR-V and DXBC variants, four Ruri reductions, exact copied textures, and recovered CharInfo constants/operator rows",
+      "evidence": "Assets/EndfieldGraphShaderLab/Generated/OriginalData/RenderParameters/body_skin_forward_contract.json; memory/charinfo_body_skin_forward_recovery_20260714.md; memory/charinfo_runtime_pso_cache_body_skin_20260714.md; scratch/pso_cache_offline_audit_20260714/recovery_note.md; scratch/charinfo_next_style_gap_priority_20260714/report.md; scratch/charinfo_next_style_gap_priority_20260714/body_skin_equation_review.md; scratch/body_skin_forward_20260714/render_delta_metrics.json",
+      "code": "Assets/EndfieldGraphShaderLab/Shaders/Recovered/EndfieldCharacterSkinRecovered.shader; Assets/EndfieldGraphShaderLab/Shaders/HGRPCompat/EndfieldHGRPCharacterLighting.cginc; Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/EndfieldManifestCharacterSetup.cs; tools/verify_body_skin_forward_recovery.py",
+      "limitation": "Unity Standalone native compression and generated mip texels are not byte-proven against retail; live per-draw weather, screen/no-screen branch selection, generalized nonzero character-rim/subsurface state, auxiliary MRT temporal output, interleaved retail light membership, and Zhuangfy's missing shadow-caster dependency remain unresolved",
+      "action": "keep the exact selector fail-closed; capture native texture/mip resources and one policy-compliant user-authorized or developer-supplied retail body draw's shader hash, constants, screen-mask binding, cluster membership, and resolved light indices before generalizing"
+    },
+    {
+      "id": "materials.eye_scene_motion_target",
+      "scope": "wulfa_zhuangfy_eye_forwardlit_target1",
+      "currentValue": {
+        "target0Alpha": "exact selected opaque value 1.0 is integrated",
+        "target1": "not integrated",
+        "encoding": "0.5 + 0.5*sign(d)*pow(abs(0.5*d),0.25), z=1, w=0.4",
+        "motion": "current minus previous non-jittered clip NDC with Y negated"
+      },
+      "status": "exact_compiled_shader_contract_missing_pipeline_attachment",
+      "productionEligible": false,
+      "activation": "requires an owned sceneMV MRT plus exact previous camera/object/deformation lifecycle",
+      "source": "selected original Eye vertex/fragment modules and native ForwardOpaque/GBuffer/TAAU pass attachment flow",
+      "evidence": "scratch/eye_remaining_raster_exact_20260713/recovery_note.md; scratch/eye_remaining_raster_exact_20260713/mapping.json; scratch/eye_remaining_raster_exact_20260713/verify_eye_remaining_raster_exact.py",
+      "code": "Target0 alpha integrated in Assets/EndfieldGraphShaderLab/Shaders/Recovered/EndfieldCharacterEyeRecovered.shader; Target1 intentionally absent",
+      "action": "recover sceneMV GraphicsFormat and previous-frame state before adding SV_Target1; do not emit a shader-only placeholder"
+    },
+    {
+      "id": "materials.face_sdf_basis",
+      "scope": "wulfa_zhuangfy_skin",
+      "currentValue": {
+        "basis": "raw renderer object-to-world affine rows/columns",
+        "localYEpsilon": 6.103515625e-05,
+        "originalPhysicalInstanceRecordStrideBytes": 192,
+        "originalPhysicalInstanceBufferProducer": "native allocation/upload remains internal, but no separate face basis exists in the consumer",
+        "namedSerializedFaceForwardProperty": false,
+        "namedSerializedFaceRightProperty": false
+      },
+      "status": "exact_selected_reflection_shader",
+      "productionEligible": false,
+      "activation": "Skin SDF path; no face_Head publisher is used or required",
+      "source": "selected shipped Wulfa/Zhuangfy Skin RayTracingReflection SPIR-V binding-30 dataflow and exact physical instance-record ABI",
+      "evidence": "scratch/face_sdf_instance_basis_recovery_20260713.md; scratch/verify_face_sdf_instance_basis.py; scratch/skin_eye_exact_binding_recovery_20260713.md",
+      "code": "Assets/EndfieldGraphShaderLab/Shaders/Recovered/EndfieldCharacterSkinRecovered.shader",
+      "action": "preserve the raw renderer basis and exact epsilon as reflection-path evidence; confirm the camera-raster Skin path before promoting the no-head-publisher conclusion pipeline-wide"
+    },
+    {
+      "id": "materials.cloth_hair_live_shadow_diffuse",
+      "scope": "cloth_hair_diagnostic",
+      "currentValue": "exact recovered full-diffuse/NPR branch algebra and constants",
+      "status": "exact_compiled_shader",
+      "productionEligible": true,
+      "activation": "ENDFIELD_RECOVERED_DIFFUSE_AUDIT_MODE=4 or 5",
+      "source": "selected original Wulfa/Zhuangfy SPIR-V and readable Fix shader correlation",
+      "evidence": "scratch/characternpr_vulkan_variant_recovery/analysis",
+      "code": "Assets/EndfieldGraphShaderLab/Shaders/HGRPCompat/EndfieldHGRPCharacterLighting.cginc:575",
+      "action": "promote only after its upstream shadow/exposure/irradiance inputs are exact"
+    },
+    {
+      "id": "materials.cloth_hair_source_energy_core",
+      "scope": "wulfa_zhuangfy_default_off_diagnostic",
+      "currentValue": {
+        "cloth": "live-shadow diffuse + direct GGX/spec-ramp + character cubemap/DFG + high-luma chroma extrapolation + serialized emission",
+        "hair": "fixed-dielectric diffuse + packed-R strand basis + dual anisotropic lobes/specular line + fullDiffuse/specAmbient carrier + high-luma chroma extrapolation"
+      },
+      "status": "partial_compiled_shader_port",
+      "productionEligible": false,
+      "activation": "ENDFIELD_RECOVERED_SOURCE_ENERGY_CORE=1 or -endfield-recovered-source-energy-core",
+      "source": "four selected original Wulfa/Zhuangfy ForwardLit SPIR-V fragments joined to exact serialized material keywords/floats and recovered CharInfo parameters",
+      "evidence": "scratch/cloth_hair_source_energy_core_recovery.md; scratch/characternpr_vulkan_variant_recovery/analysis",
+      "code": "Assets/EndfieldGraphShaderLab/Shaders/Recovered/EndfieldCharacterClothRecovered.shader; Assets/EndfieldGraphShaderLab/Shaders/Recovered/EndfieldCharacterHairRecovered.shader",
+      "action": "keep default-off until dynamic renderer environment state, the remaining clustered/shadow modes, reference-frame exposure history, and final target state are recovered; the live main-light carrier is now exact, and resolved Wulfa/Zhuangfy overview uses exact CP2 custom tint rather than the IV branch"
+    },
+    {
+      "id": "materials.hair_packed_r_semantics",
+      "scope": "wulfa_zhuangfy_hair",
+      "currentValue": "packed R blends the object-space anisotropy basis toward the authored tangent; the diffuse metallic input is fixed zero and oneMinusReflectivity is 0.96",
+      "status": "exact_compiled_shader",
+      "productionEligible": true,
+      "activation": "ENDFIELD_RECOVERED_HAIR_RESPONSE or ENDFIELD_RECOVERED_SOURCE_ENERGY_CORE",
+      "source": "selected Wulfa/Zhuangfy original hair SPIR-V dataflow; exact serialized packed-map keyword",
+      "evidence": "scratch/characternpr_vulkan_variant_recovery/analysis/wulfa_hair_forward.frag.hlsl:716; scratch/characternpr_vulkan_variant_recovery/analysis/zhuangfy_hair_forward.frag.hlsl",
+      "code": "Assets/EndfieldGraphShaderLab/Shaders/Recovered/EndfieldCharacterHairRecovered.shader",
+      "action": "keep; never feed packed R into the hair diffuse metallic workflow"
+    },
+    {
+      "id": "materials.hair_backface_normal_contract",
+      "scope": "wulfa_zhuangfy_hair",
+      "currentValue": {
+        "faceSign": "front ? 1 : (-1 + 2 * _BackFaceNormalFlip)",
+        "wulfaHair02Cull": 0,
+        "wulfaHairt02Cull": 0,
+        "zhuangfyHair02Cull": 2,
+        "zhuangfyHairt02Cull": 2,
+        "backFaceNormalFlip": 0.0,
+        "splitSpecularRule": "diffuse and geometry normals are face-signed; a non-split specular normal aliases signed diffuse, while the separate BA specular normal remains unsigned",
+        "clusteredMaterialMode": 1
+      },
+      "status": "exact_compiled_shader",
+      "productionEligible": true,
+      "activation": "active in Endfield/Recovered/CharacterHair",
+      "source": "four original Wulfa/Zhuangfy Hair pass-0 ForwardLit fragments joined to original Material _Cull/_BackFaceNormalFlip/_SPECULAR_NORMALMAP state",
+      "evidence": "scratch/hair_secondary_lightlist_recovery_20260713/recovery_note.md; scratch/hair_secondary_lightlist_recovery_20260713/hair_sidecar_manifest.json; scratch/hair_secondary_lightlist_recovery_20260713/verify_hair_secondary_lightlist_recovery.py",
+      "code": "Assets/EndfieldGraphShaderLab/Shaders/Recovered/EndfieldCharacterHairRecovered.shader",
+      "action": "keep; face orientation is not a material mode, and punctual Hair must retain the primary strand only"
+    },
+    {
+      "id": "materials.character_environment_per_draw",
+      "scope": "dynamic_renderer_state",
+      "currentValue": {
+        "customPerDrawIndex": 2,
+        "recordMember": "_m7 float4 at byte 208 of a 256-byte UnityPerDraw record",
+        "xPackedLanes": [
+          "rain",
+          "wet",
+          "wet-global",
+          "snow"
+        ],
+        "y": "wet world-space height",
+        "w": "dissolve schedule",
+        "labLiveValue": null,
+        "characterParams10": "x > 0.5 enables global override; y supplies packed lanes; w supplies wet height",
+        "hairDisableRain": {
+          "wulfaHair02Hairt02": 0.0,
+          "zhuangfyHair02Hairt02": 1.0
+        },
+        "hairDiffuseScale": "enabled ? lerp(1,0.8,max(rain,wetCombined)) : 1",
+        "hairDarkenedScale": "enabled ? lerp(1,2,max(rain,wetCombined)) : 1; multiplies the summed primary+secondary main strands once",
+        "unityConsumer": "_EndfieldRecoveredCharacterPerDraw2 plus CP10 override are decoded exactly inside the source-energy Hair path; static default is neutral",
+        "unityPublisher": "per-renderer MaterialPropertyBlock producer is not yet implemented"
+      },
+      "status": "exact_consumer_and_native_producer_contract_missing_live_unity_publisher",
+      "productionEligible": false,
+      "activation": "neutral in the static lab; gameplay controllers publish it with Renderer.SetCustomPerDrawData(2, Vector4)",
+      "source": "selected Wulfa/Zhuangfy Hair SPIR-V plus IL2CPP metadata and GameAssembly producer/helper bodies",
+      "evidence": "scratch/face_sdf_instance_basis_recovery_20260713.md; scratch/verify_hair_perdraw_m7.py; scratch/hair_energy_carrier_exact_20260713/recovery_note.md; scratch/hair_energy_carrier_exact_20260713/verify_hair_energy_carrier_exact.py",
+      "action": "add a per-renderer publisher only when the original controller state is available; drive dynamic effects only from recovered packed weather/wetness data and never fit the carrier from screenshots"
+    },
+    {
+      "id": "shadow.quality_defaults_on_this_machine",
+      "scope": "default_off_character_shadow_recovery",
+      "currentValue": {
+        "deviceScore": 500,
+        "qualityTier": 5000,
+        "tileResolution": 1024,
+        "depthBits": 16,
+        "hardwareDepthBias": 8.0,
+        "hardwareNormalBias": 0.0,
+        "shaderDepthScale": 2.0,
+        "shaderNormalScale": 4.0,
+        "sampleMode": 2,
+        "pcfScale": 1.5
+      },
+      "status": "exact_derived",
+      "productionEligible": true,
+      "activation": "ENDFIELD_RECOVERED_SEPARATE_CHARACTER_SHADOW=1",
+      "source": "installed GPU SettingRules/QualityMap/QualityTierComponent plus native HGRP tier selection",
+      "evidence": "scratch/ifix_shadow_recovery/recovery_note.md#effective-original-quality-settings-on-this-machine",
+      "code": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/HGCompatRenderPipeline.cs:49",
+      "action": "keep as proven device default; live user-selected quality remains unknown"
+    },
+    {
+      "id": "shadow.screen_space_mask_producer_contract",
+      "scope": "shipped_windows_topology_with_default_off_charinfo_g_producer_and_forward_consumer_diagnostic",
+      "currentValue": {
+        "enabledByInstalledDesktopSettings": true,
+        "lowResolutionScale": 0.25,
+        "lowResolutionSize": "ceil(actualCameraSize * renderingScale / 4)",
+        "lowResolutionTargets": {
+          "count": 3,
+          "format": "R8_UNorm"
+        },
+        "blur": {
+          "passes": [
+            "7x1 pass 1",
+            "1x7 pass 2"
+          ],
+          "offsets": [
+            -3,
+            -2,
+            -1,
+            0,
+            1,
+            2,
+            3
+          ],
+          "weight": 0.142857149,
+          "quantizesToR8BetweenAxes": true
+        },
+        "lowDepthEdgeSentinel": 0.5,
+        "sceneResolveTrustsLowOutside": [
+          0.001,
+          0.99
+        ],
+        "resolveTarget": {
+          "size": "full scene RT",
+          "format": "R8G8_UNorm"
+        },
+        "sceneStencil": {
+          "ref": 4,
+          "readMask": 7,
+          "compare": "NotEqual"
+        },
+        "characterStencil": {
+          "ref": 4,
+          "readMask": 7,
+          "compare": "Equal"
+        },
+        "characterSelector": "log2(packUnorm4x10(GBuffer0)) - 8",
+        "characterPassReadsLowResolutionShadow": false,
+        "channels": {
+          "r": "scene directional attenuation",
+          "g": "character attenuation"
+        },
+        "charInfoActivation": {
+          "disableDirectionalShadow": 1.0,
+          "directionalShadowAttenuation": 1.0,
+          "disableAsm": true,
+          "cloudShadow": false,
+          "characterSelfShadowQuality": "AlwaysOn",
+          "characterShadowMode": "CameraVirtualLight",
+          "interpretation": "scene R is neutralized for CharInfo while dedicated character G remains active"
+        },
+        "charInfoDiagnosticProducer": {
+          "activation": "ENDFIELD_RECOVERED_SCREEN_SHADOW_MASK_DIAGNOSTIC=1 or -endfield-recovered-screen-shadow-mask-diagnostic",
+          "target": "full-size R8G8_UNorm cleared to (1,1), R structurally unchanged, ColorMask G",
+          "inputs": "GPU-validated PreGBuffer D32S8/A2B10G10R10/R32 frame plus exact one-actor 1024/D16 CameraVirtualLight atlas",
+          "actorContract": "exactly one actor, slot 0 selector 256, matching PreGBuffer and character-atlas root instance ID",
+          "strengthBoundary": "G is raw character receiver attenuation; shared receiver y=1. Observed Light.shadowStrength is provenance-only and is not applied by the producer",
+          "gpuValidation": {
+            "backend": "D3D12 editor / NVIDIA GeForce RTX 5080",
+            "size": [
+              640,
+              720
+            ],
+            "characterDraws": 14,
+            "validCharacterPixels": 246290,
+            "shadowedCharacterPixels": 229138,
+            "gRange": [
+              0.0,
+              1.0
+            ],
+            "gMean": 0.81855905,
+            "mismatchCounts": 0,
+            "repeatMaskByteIdentical": true
+          },
+          "diagnosticGlobal": "_EndfieldRecoveredScreenShadowMaskDiagnostic",
+          "feedsForwardConsumers": "only under the separate default-off consumer diagnostic"
+        },
+        "charInfoDiagnosticConsumer": {
+          "activation": "ENDFIELD_RECOVERED_SCREEN_SHADOW_MASK_CONSUMER_DIAGNOSTIC=1 or -endfield-recovered-screen-shadow-mask-consumer-diagnostic",
+          "compileTimeKeyword": "ENDFIELD_RECOVERED_SCREEN_SHADOW_MASK_CONSUMER",
+          "routing": {
+            "skinClothHair": "one integer RG load; R scene attenuation and raw G character attenuation",
+            "eye": "one compiler-reduced R-only load; selected original Eye screen path ignores G"
+          },
+          "directAtlasSolveInConsumer": false,
+          "gpuExecutionValidation": {
+            "backend": "standalone D3D12 / NVIDIA GeForce RTX 5080",
+            "size": [
+              1280,
+              720
+            ],
+            "mainForwardDraws": 14,
+            "drawsByFamily": {
+              "cloth": 6,
+              "skin": 2,
+              "hair": 4,
+              "eye": 2
+            },
+            "singleSharedResource": "R8G8_UNORM resource 931",
+            "exactCompiledPixelProgramsExecuted": true,
+            "directAtlasInputsAbsent": true
+          },
+          "sourceCorrections": {
+            "noScreenDirectReceiverNormal": "VFACE signed by -1 + 2 * _BackFaceNormalFlip for surviving backfaces",
+            "hairNormalMapOnlyPreGDecode": "packed R*A,G; selected Wulfa Hair02 alpha is exactly one"
+          },
+          "visualValidation": {
+            "correctedControlSha256": {
+              "wulfa": "B08F85F023CD590048722B15E9E3A889E6224295B4B9F0EE89E4917CF44A7A32",
+              "zhuangfy": "633C1144FA7103CC51AE0C70D4A4218DC98267589534D0DB239EA9244376140E"
+            },
+            "consumerSha256": {
+              "wulfa": "28EACD154F590FBFA08DD5D32D3F8F76B875FF23B5D21DA39E7D348826CB4B9E",
+              "zhuangfy": "6F9901AE21DF5D9953187272072D2B38B4A2262CD19E766D0CC79433A56F63C7"
+            },
+            "maxChannelDeltaAtLeast4Pixels": {
+              "wulfa": 365126,
+              "zhuangfy": 202155
+            },
+            "referenceVerdict": "mixed by material; retain default-off"
+          }
+        },
+        "twoMrtLookupAudit": {
+          "activation": "ENDFIELD_RECOVERED_SCREEN_DIRECT_AUDIT=1; optional ENDFIELD_RECOVERED_SCREEN_DIRECT_AUDIT_USE_PREGBUFFER_DEPTH=1",
+          "targets": [
+            "R16G16B16A16_SFloat",
+            "R16G16B16A16_SFloat"
+          ],
+          "ordinaryCameraColorPreserved": true,
+          "shippedChronology": "CharInfo DefaultDeferred runs generic deferred/forward ECS PreZ and ordinary opaque DepthPrepass before character ECS/outline/SRP PreG in GBuffer on the same sceneDepth",
+          "preGMaterialMembership": "opaque queues through GeometryLast only; observed 2000/2015 eligible and 2985/3000 Forward layers excluded",
+          "ordinaryForwardDepth": {
+            "report": "scratch/screen_direct_audit_20260713/gpu_capture_default_deferred_opaque_preg/MainCamera/screen_direct_audit_validation.json",
+            "characterDraws": 12,
+            "auditedPixels": 246290,
+            "selectorValidPixels": 246243,
+            "selectorInvalidPixels": 47,
+            "familyMismatchPixels": 1436,
+            "loadedVsRecomputedFailures": 0,
+            "maximumUnorm8CodeDifference": 1
+          },
+          "sharedPreGDepth": {
+            "report": "scratch/screen_direct_audit_20260713/gpu_capture_default_deferred_opaque_preg_shared_depth/MainCamera/screen_direct_audit_validation.json",
+            "characterDraws": 12,
+            "auditedPixels": 245282,
+            "selectorValidPixels": 245235,
+            "selectorInvalidPixels": 47,
+            "familyMismatchPixels": 428,
+            "loadedVsRecomputedFailures": 0,
+            "maximumUnorm8CodeDifference": 1
+          },
+          "sameOwnerAudit": {
+            "schema": "endfield-recovered-screen-direct-same-owner-audit-v3",
+            "finalReport": "scratch/screen_direct_same_owner_audit_20260713/gpu_capture_retry12_forward_vface/MainCamera/screen_direct_same_owner_validation.json",
+            "backend": "standalone D3D12 / NVIDIA GeForce RTX 5080",
+            "auditedPixels": 246290,
+            "sameDrawSamePrimitivePixels": 220432,
+            "sameOwnerNormalMismatchPixels": 0,
+            "sameOwnerGeometryHemisphereMismatchPixels": 0,
+            "sameOwnerShadingPreGDotMean": 0.9999986290931702,
+            "sameOwnerShadingPreGDotMinimum": 0.9999904632568359,
+            "sameOwnerTangentExactMatchPixels": 220432,
+            "sameOwnerTangentMismatchPixels": 0,
+            "nonFiniteNormalOrTangentPixels": 0,
+            "failures": 0,
+            "retry10Isolation": "all 220432 exact-owner Forward and PreG tangent-space normal pairs were finite and component-exact before TBN; the remaining world-normal collapse was downstream of texture decode",
+            "rootCause": "the former manual PreG vertex path multiplied authored tangent.w by unity_WorldTransformParams.w, whose captured cb1[9].w was zero for every PreG draw but one for matching Forward draws",
+            "sourceCorrection": "Skin, Cloth, Hair and Eye now carry authored float4 tangent and reconstruct fragment bitangent as cross(N,T.xyz)*T.w, matching the selected shipped Ruri sources; Skin/Cloth also apply shipped Forward VFACE sign once before lighting, while Eye signs geometry only"
+          },
+          "interpretation": "lookup/reconstruction and exact same-draw/same-primitive normal ownership now validate end to end for the selected one-actor path. Transparent Forward layers remain deliberately outside PreG ownership, and retail QueryID/multi-actor ordering remains separate."
+        },
+        "labKeywordState": "retail keyword remains disabled; the distinct diagnostic consumer keyword is default-off",
+        "productionScreenSpaceShadowMaskBound": false,
+        "genericSceneRIntegrated": false
+      },
+      "status": "exact_focused_charinfo_g_topology_with_producer_and_executed_consumer_gpu_validated",
+      "productionEligible": false,
+      "activation": "default-off CharInfo G producer plus separately selected Forward consumer diagnostic; ordinary lab renders remain no-screen",
+      "source": "original LowResDirectionalShadow, ShadowBlur, ScreenSpaceShadowResolve bytecode plus native render-graph pass constructors and selected Skin/Eye consumers",
+      "evidence": "scratch/screen_shadow_topology_20260713/source_mapping.json; scratch/screen_shadow_topology_20260713/verification.json; scratch/shadow_settings_from_data_20260713/provenance.json; scratch/screen_shadow_strength_boundary_20260713/provenance.json; scratch/screen_shadow_mask_diagnostic_20260713/gpu_capture/MainCamera/screen_shadow_mask_validation.json; scratch/screen_shadow_consumer_gpu_proof_20260713/executed_consumer_draw_proof.json; scratch/screen_vs_direct_shadow_delta_20260713/recovery_note.md; memory/recovered_charinfo_screen_shadow_mask_20260713.md",
+      "code": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredScreenShadowMaskDiagnostic.cs; Assets/EndfieldGraphShaderLab/Resources/EndfieldRecoveredScreenShadowMaskDiagnostic.shader; Assets/EndfieldGraphShaderLab/Shaders/HGRPCompat/EndfieldHGRPCharacterLighting.cginc; selected Skin/Eye/Cloth/Hair recovered shaders; scheduling between PreGBuffer, Forward, transparent/overlay, and submit in HGCompatRenderPipeline.cs",
+      "action": "retain the distinct fail-closed path and keep it default-off. Do not apply Light.shadowStrength to producer G or add visible CSM/ASM/cloud darkness to CharInfo. Do not publish the retail global/keyword or promote globally until retail PreG surface ownership, multi-actor ordering, and generic scene R are recovered"
+    },
+    {
+      "id": "pipeline.pregbuffer_producer_sidecar",
+      "scope": "default_off_source_contract_diagnostic",
+      "currentValue": {
+        "depthStencilIntent": "D32_SFloat_S8_UInt",
+        "depthStencilFallback": "D24_UNorm_S8_UInt only when D32S8 is unsupported",
+        "depthCopy": "R32_SFloat",
+        "gBufferA": "A2B10G10R10_UNormPack32 character selector",
+        "gBufferB": "A2B10G10R10_UNormPack32 Y-up oct normal/reserved-zero/family tag",
+        "selectorCpuRule": "index < 0 ? 0u : 1u << ((index + 8) & 31)",
+        "familyTags": {
+          "cloth": 0.0,
+          "skin": 0.4,
+          "eye": 0.7,
+          "hair": 1.0
+        },
+        "characterStencil": "low three bits equal 4",
+        "chronology": "shipped CharInfo DefaultDeferred: generic deferred/forward ECS PreZ and ordinary opaque DepthPrepass first, then character ECS/outline/SRP PreG in GBuffer on the same sceneDepth; lab surrogate draws conservative generic opaque depth before character PreG",
+        "materialMembership": "opaque recovered materials through GeometryLast only; observed queues 2000/2015 eligible, queue 2900 overlays and 2985/3000 layered Forward materials excluded",
+        "characterPreGCull": "fixed Cull Off in all four original DepthCharacterOnly pass headers; independent of serialized material _Cull; current lab passes match all 23 eligible links",
+        "gpuValidation": {
+          "backend": "D3D12 editor",
+          "size": [
+            640,
+            720
+          ],
+          "characterDraws": 14,
+          "historicalBeforeOpaqueMembershipGuard": true,
+          "characterPixels": 246290,
+          "matchingStencilPixels": 246290,
+          "mismatchCounts": 0
+        },
+        "currentOpaqueScheduleValidation": {
+          "characterDraws": 12,
+          "ordinaryForwardDepthFamilyMismatchPixels": 1436,
+          "sharedPreGDepthFamilyMismatchPixels": 428,
+          "loadedVsRecomputedFailures": 0,
+          "maximumUnorm8CodeDifference": 1
+        },
+        "sameOwnerValidation": {
+          "report": "scratch/screen_direct_same_owner_audit_20260713/gpu_capture_retry12_forward_vface/MainCamera/screen_direct_same_owner_validation.json",
+          "exactDrawAndPrimitivePixels": 220432,
+          "normalMismatches": 0,
+          "tangentInputMismatches": 0,
+          "nonFiniteValues": 0,
+          "failures": 0
+        },
+        "feedsFinalLighting": false,
+        "screenSpaceShadowMaskEnabled": false
+      },
+      "status": "exact_selected_producer_contract_with_defaultdeferred_membership_and_same_owner_gpu_validated",
+      "productionEligible": false,
+      "activation": "ENDFIELD_RECOVERED_PREGBUFFER_DIAGNOSTIC=1 or -endfield-recovered-pregbuffer-diagnostic",
+      "source": "original DefaultDeferred chronology, selected CharacterNPR/Skin/Eye/Hair PreGBuffer bytecode and pass states, and native selector/list evidence",
+      "evidence": "scratch/screen_preshading_inputs_20260713/producer_mapping.json; scratch/pregbuffer_draw_order_recovery_20260713/pregbuffer_recovery_mapping.json; scratch/pregbuffer_draw_order_recovery_20260713/actor_material_prepass_membership.tsv; scratch/preg_cull_state_recovery_20260713/preg_cull_state_mapping.json; scratch/pregbuffer_tranche1_20260713/verify_tranche1.py; scratch/pregbuffer_tranche1_editor_gpu_3/MainCamera/pregbuffer_validation.json; scratch/screen_direct_audit_20260713/gpu_capture_default_deferred_opaque_preg/MainCamera/screen_direct_audit_validation.json; scratch/screen_direct_audit_20260713/gpu_capture_default_deferred_opaque_preg_shared_depth/MainCamera/screen_direct_audit_validation.json; scratch/screen_direct_same_owner_audit_20260713/gpu_capture_retry12_forward_vface/MainCamera/screen_direct_same_owner_validation.json; memory/recovered_pregbuffer_sidecar_20260713.md",
+      "code": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredPreGBufferDiagnostic.cs; Assets/EndfieldGraphShaderLab/Shaders/Recovered/EndfieldCharacterRecoveredCommon.cginc",
+      "action": "keep isolated and default-off until DrawECS retail QueryID/multi-actor assignment, remaining active variants, full opaque/decal/particle chronology, shared main attachment, and real shadow producers are recovered; selected one-actor same-owner primitive correlation is closed"
+    },
+    {
+      "id": "shadow.receiver_filter",
+      "scope": "default_off_character_shadow_recovery",
+      "currentValue": {
+        "gathers": 16,
+        "depthTaps": 64,
+        "poissonPoints": 16,
+        "rotations": 16,
+        "radiusTexels": 4.0,
+        "screenPattern": [
+          4,
+          4
+        ],
+        "depthClampMinimum": 0.01,
+        "zeroBlockerAttenuation": 1.0,
+        "fullBlockerAttenuation": 0.0
+      },
+      "status": "exact_compiled_shader",
+      "productionEligible": true,
+      "activation": "ENDFIELD_RECOVERED_SEPARATE_CHARACTER_SHADOW=1",
+      "source": "selected original Wulfa/Zhuangfy Vulkan fragments and PSO/SASS correlation",
+      "evidence": "scratch/pso_cache_oracle_20260712/recovery_note.md; scratch/virtual_light_native_recovery_20260712.md#mode-6-black-field-follow-up",
+      "code": "Assets/EndfieldGraphShaderLab/Shaders/HGRPCompat/EndfieldHGRPCharacterLighting.cginc:185",
+      "action": "keep; zero non-negative gathered deltas is the fully-lit endpoint, not fully shadowed"
+    },
+    {
+      "id": "shadow.character_bounds",
+      "scope": "default_off_character_shadow_recovery",
+      "currentValue": {
+        "wulfaSpheres": 49,
+        "zhuangfySpheres": 75,
+        "boundsMethod": "live bone-transformed sphere union"
+      },
+      "status": "exact_serialized",
+      "productionEligible": true,
+      "activation": "ENDFIELD_RECOVERED_SEPARATE_CHARACTER_SHADOW=1",
+      "source": "original HGCharacterHelper serialized sphere records mapped to imported skeleton paths",
+      "evidence": "scratch/sphere_bounds_mapping/sphere_bounds_mapping.json",
+      "code": "Assets/EndfieldGraphShaderLab/Resources/EndfieldRecoveredCharacterShadowBounds",
+      "action": "keep; secondary dynamics can still change live transforms"
+    },
+    {
+      "id": "shadow.camera_virtual_light_fit",
+      "scope": "default_off_character_shadow_recovery",
+      "currentValue": {
+        "cameraFollowBiasDegrees": [
+          32.0,
+          12.0
+        ],
+        "fit": "native sphere-AABB orthographic support fit"
+      },
+      "status": "exact_native",
+      "productionEligible": true,
+      "activation": "ENDFIELD_RECOVERED_SEPARATE_CHARACTER_SHADOW=1",
+      "source": "HGShadowManager native IL2CPP and exact character modifier",
+      "evidence": "scratch/ifix_shadow_recovery/recovery_note.md",
+      "code": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/HGCompatRenderPipeline.cs:840",
+      "action": "keep"
+    },
+    {
+      "id": "shadow.lab_single_actor_topology",
+      "scope": "default_off_character_shadow_recovery",
+      "currentValue": "one 1024x1024 tile, manual active-actor caster traversal, one matrix record",
+      "status": "partial_native_port",
+      "productionEligible": false,
+      "activation": "default-off",
+      "source": "exact per-tile pieces but incomplete original 15-slot renderer-index schedule",
+      "evidence": "scratch/character_shadow_index_recovery/recovery_note.md",
+      "code": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/HGCompatRenderPipeline.cs:560",
+      "action": "implement priority registry, 15-slot atlas, rendering-layer word and characterIndex caster filters"
+    },
+    {
+      "id": "shadow.runtime_strength_and_live_quality",
+      "scope": "runtime_unknown",
+      "currentValue": {
+        "labSelfShadowStrength": 1.0,
+        "liveUserQuality": null,
+        "liveDirectionalShadowStrength": null
+      },
+      "status": "runtime_unknown_neutral",
+      "productionEligible": false,
+      "activation": "shadow diagnostic only",
+      "source": "native receiver setup publishes live directionalLight.shadowStrength; CharInfo does not serialize that scalar",
+      "evidence": "scratch/shadow_settings_from_data_20260713/provenance.json; scratch/shadow_settings_from_data_20260713/recovery_note.md; scratch/character_shadow_index_recovery/recovery_note.md#explicit-remaining-unknowns-and-limitations",
+      "action": "capture the official runtime light state or reproduce its state machine; do not label the lab-neutral value 1 as recovered"
+    },
+    {
+      "id": "pipeline.legacy_character_shadow_asset_fields",
+      "scope": "dormant_legacy_path",
+      "currentValue": {
+        "enabled": false,
+        "resolution": 2048,
+        "distance": 30.0,
+        "strength": 0.9,
+        "normalBias": 0.012
+      },
+      "status": "compatibility_approximation",
+      "productionEligible": false,
+      "activation": "asset flag false; separate exact-data diagnostic ignores most of these values",
+      "source": "hand-authored compatibility asset",
+      "code": "Assets/EndfieldGraphShaderLab/Generated/HGCompatRenderPipeline.asset",
+      "action": "do not enable as an original shadow path"
+    },
+    {
+      "id": "pipeline.clear_color",
+      "scope": "operator_reference_and_viewer",
+      "currentValue": [
+        0.19,
+        0.2,
+        0.21,
+        1.0
+      ],
+      "status": "lab_only_manual",
+      "productionEligible": false,
+      "activation": "active before backdrop/character rendering",
+      "source": "hand-authored compatibility asset",
+      "code": "Assets/EndfieldGraphShaderLab/Generated/HGCompatRenderPipeline.asset:17",
+      "action": "recover original intermediate/compositor clear target; do not color-fit this value"
+    },
+    {
+      "id": "texture_import.semantic_profiles",
+      "scope": "material_import",
+      "currentValue": "normal/packed/mask/ramp/LUT textures are classified by original material property and canonical suffix; data maps are linear and LUTs are single-mip",
+      "status": "exact_derived",
+      "productionEligible": true,
+      "activation": "active",
+      "source": "original material bindings and texture semantics",
+      "code": "Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/EndfieldManifestCharacterSetup.cs:4440",
+      "action": "keep; unknown aliases must remain unclassified rather than guessed"
+    },
+    {
+      "id": "project.linear_color_space",
+      "scope": "project",
+      "currentValue": "Linear",
+      "status": "exact_native",
+      "productionEligible": true,
+      "activation": "active",
+      "source": "original HGRP material/LUT math is linear-light",
+      "code": "ProjectSettings/ProjectSettings.asset",
+      "action": "keep"
+    },
+    {
+      "id": "deferred.transform_variables",
+      "scope": "default_off_source_contract_gpu_validated",
+      "currentValue": {
+        "canonicalProperty": "_TransformVariables",
+        "originalDxbcBridgeProperty": "EndfieldCB0",
+        "logicalSizeBytes": 1312,
+        "logicalVectorCount": 82,
+        "d3d11BridgeSizeBytes": 720,
+        "selectedUsedVectorCount": 13,
+        "pass0ConsumerEnabled": false,
+        "publishedByDefault": false,
+        "unselectedRows": "zero until their history, jitter, or stereo producers are independently closed"
+      },
+      "status": "exact_selected_consumer_subset_gpu_closed_pass0_disabled",
+      "productionEligible": false,
+      "activation": "ENDFIELD_RECOVERED_DEFERRED_TRANSFORM_VARIABLES=1",
+      "source": "original pass-0 b30 DXBC metadata; only these four live fields are exposed",
+      "evidence": "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/deferred_lighting_recovery.json#selected_deferred_transform_variables_transport",
+      "code": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredTransformVariablesContract.cs:11",
+      "action": "keep default-off: the transport is GPU-closed but pass 0 stays disabled and the buffer is never published to the presented frame, so enabling it cannot change the beauty image. Promote only after the pass-0 consumer, its general scene payload, and a retail-frame numeric comparison are closed"
+    },
+    {
+      "id": "deferred.light_data",
+      "scope": "default_off_source_contract_gpu_validated",
+      "currentValue": {
+        "canonicalProperty": "_LightDataBuffer",
+        "originalDxbcBridgeProperty": "EndfieldCB4",
+        "logicalSizeBytes": 32864,
+        "logicalVectorCount": 2054,
+        "layout": {
+          "headerVectors": 6,
+          "maxPunctualLights": 256,
+          "vectorsPerPunctualLight": 8
+        },
+        "selectedConsumerBoundary": "exact directional vectors 0/1/4 plus record[5].w=0 and record[3].z=1 for each isolated CharacterOnly row",
+        "generalScenePunctualPayloadRecovered": false,
+        "pass0ConsumerEnabled": false,
+        "publishedByDefault": false
+      },
+      "status": "exact_selected_consumer_subset_gpu_closed_pass0_disabled",
+      "productionEligible": false,
+      "activation": "ENDFIELD_RECOVERED_DEFERRED_LIGHT_DATA=1",
+      "source": "original pass-0 b31 _LightDataBuffer; the isolated CharInfo overview rigs are source-authored CharacterOnly with no OBB",
+      "evidence": "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/deferred_lighting_recovery.json#selected_deferred_light_data_transport",
+      "code": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredLightDataContract.cs:14",
+      "action": "keep default-off: the transport is GPU-closed but pass 0 stays disabled and the buffer is never published to the presented frame, so enabling it cannot change the beauty image. Promote only after the pass-0 consumer, its general scene payload, and a retail-frame numeric comparison are closed"
+    },
+    {
+      "id": "deferred.shadow_data",
+      "scope": "default_off_source_contract_gpu_validated",
+      "currentValue": {
+        "canonicalProperty": "_ShadowData",
+        "originalDxbcBridgeProperty": "EndfieldCB5",
+        "atlasProperty": "_PunctualLightShadowTexV2",
+        "logicalSizeBytes": 11440,
+        "logicalVectorCount": 715,
+        "selectedSpan": "punctual matrices c64..c287, params c288..c343, params2 c344..c399",
+        "populated": "the isolated overview producer's 56 matrices/params/rects and atlas texel size only",
+        "generalSceneShadowDataRecovered": false,
+        "pass0ConsumerEnabled": false,
+        "publishedByDefault": false
+      },
+      "status": "exact_selected_consumer_subset_gpu_closed_pass0_disabled",
+      "productionEligible": false,
+      "activation": "ENDFIELD_RECOVERED_DEFERRED_SHADOW_DATA=1",
+      "source": "source-closed punctual section of the original 11,440-byte ShadowData",
+      "evidence": "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/deferred_lighting_recovery.json#selected_deferred_shadow_data_transport",
+      "code": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredShadowDataContract.cs:13",
+      "action": "keep default-off: the transport is GPU-closed but pass 0 stays disabled and the buffer is never published to the presented frame, so enabling it cannot change the beauty image. Promote only after the pass-0 consumer, its general scene payload, and a retail-frame numeric comparison are closed; the selected CharacterOnly consumer exits before the b34 reads"
+    },
+    {
+      "id": "shader.variables_global",
+      "scope": "default_off_source_contract_gpu_validated",
+      "currentValue": {
+        "canonicalProperty": "ShaderVariablesGlobal",
+        "originalDxbcBridgeProperty": "EndfieldCB1",
+        "logicalSizeBytes": 3200,
+        "logicalVectorCount": 200,
+        "d3d11SelectedSizeBytes": 2512,
+        "d3d11SelectedVectorCount": 157,
+        "actualSelectedFieldCount": 33,
+        "readback": "800/800 and 628/628 words exact on D3D11/D3D12, raw c28 integer offsets preserved, every unselected row zero",
+        "pass0ConsumerEnabled": false,
+        "publishedByDefault": false
+      },
+      "status": "exact_selected_consumer_subset_gpu_closed_pass0_disabled",
+      "productionEligible": false,
+      "activation": "ENDFIELD_RECOVERED_SHADER_VARIABLES_GLOBAL=1",
+      "source": "original deferred pass-0 b35 ShaderVariablesGlobal constant buffer",
+      "evidence": "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/deferred_lighting_recovery.json#selected_shader_variables_global_boundary",
+      "code": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredShaderVariablesGlobalContract.cs:11",
+      "action": "keep default-off: the transport is GPU-closed but pass 0 stays disabled and the buffer is never published to the presented frame, so enabling it cannot change the beauty image. Promote only after the pass-0 consumer, its general scene payload, and a retail-frame numeric comparison are closed; every non-selected row stays zero until its own producer is recovered"
+    },
+    {
+      "id": "deferred.gbuffer_frame",
+      "scope": "default_off_source_contract_gpu_validated",
+      "currentValue": {
+        "selectedInstalledRoute": "HGRenderPathDefaultDeferred -> GBufferPassConstructor.ConstructPass",
+        "shaderPassName": "HGBuffer",
+        "rendererListLightMode": "GBuffer",
+        "sorting": "CommonOpaque",
+        "executionQueue": "graphics",
+        "colorAttachmentsInOrder": [
+          "SceneColor",
+          "SceneMV when valid",
+          "GBufferA",
+          "GBufferB",
+          "GBufferC"
+        ],
+        "sceneMvClear": [
+          0.5,
+          0.5,
+          0.0,
+          0.0
+        ],
+        "depthAttachment": {
+          "resource": "sceneDepth",
+          "access": "Write"
+        },
+        "sidecarReadback": "bit-identical 640x720 on D3D11 and D3D12",
+        "changesPresentedBeautyFrame": false
+      },
+      "status": "exact_source_route_and_sidecar_gpu_closed_not_presented",
+      "productionEligible": false,
+      "activation": "ENDFIELD_RECOVERED_DEFERRED_GBUFFER_FRAME=1",
+      "source": "installed DefaultDeferred render-graph topology, HighEnd GBuffer formats, and native draw entry points",
+      "evidence": "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/deferred_lighting_recovery.json#default_deferred_gbuffer_submission",
+      "code": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredGBufferFrame.cs:18",
+      "action": "keep default-off: the same-camera SphereOutside sidecar is explicitly non-presented, so it is not evidence of physical render-graph equivalence and cannot move the image. Promote only with retail render-graph physical resource identity, alias lifetime, and settled contents"
+    },
+    {
+      "id": "lighting.light_binning_constants",
+      "scope": "default_off_source_contract",
+      "currentValue": {
+        "layout": "exact 48-byte retail LightCulling+0x60 constant buffer",
+        "discoversLightCensus": false,
+        "requires": "a caller-supplied source-closed selected-light count"
+      },
+      "status": "exact_native_layout_without_census_producer",
+      "productionEligible": false,
+      "activation": "ENDFIELD_RECOVERED_LIGHT_BINNING_CONSTANTS=1",
+      "source": "installed GameAssembly LightCulling constant-buffer layout",
+      "code": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredLightBinningConstantsContract.cs:11",
+      "action": "keep default-off until the native HGCullingSystem light census supplies the count; the layout alone cannot populate a live frame"
+    },
+    {
+      "id": "lighting.light_cookie_data",
+      "scope": "default_off_source_contract",
+      "currentValue": {
+        "layout": "exact binding-37 byte layout used by the installed deferred resolver",
+        "sourceClosedState": "no-cookie, all zero",
+        "atlasAllocationRecovered": false,
+        "matrixGenerationRecovered": false
+      },
+      "status": "exact_native_layout_no_cookie_state_only",
+      "productionEligible": false,
+      "activation": "ENDFIELD_RECOVERED_LIGHT_COOKIE_DATA=1",
+      "source": "installed deferred resolver binding 37",
+      "code": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredLightCookieDataContract.cs:11",
+      "action": "keep default-off; non-empty cookie atlas allocation and matrix generation remain native/capture-only"
+    },
+    {
+      "id": "visibility.sh_constants",
+      "scope": "default_off_source_contract",
+      "currentValue": {
+        "size": "exact installed 128-byte VisibilitySHConstData for the current active untiled route",
+        "nativeBehavior": "zero-fills the source struct, overwrites vectors 0..4, copies untouched zero vectors 5..7",
+        "selectedResolverReads": [
+          2,
+          3
+        ]
+      },
+      "status": "exact_native_producer_for_untiled_route",
+      "productionEligible": false,
+      "activation": "ENDFIELD_RECOVERED_VISIBILITY_SH=1",
+      "source": "installed native VisibilitySHConstData producer",
+      "code": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredVisibilitySHConstantsContract.cs:12",
+      "action": "keep default-off until posed capsule visibility-SH records and the consumers that do not take the proven Wulfa/Zhuangfy Skin bypass are recovered"
+    }
+  ],
+  "knownRuntimeUnknowns": [
+    "whether the shared physical camera is reused at the captured CharInfo entry and, if so, its carried first-frame exposure current before Manual EV0 converges it to 1",
+    "live CharInfo targetTexture presence/format and indirect XLua/effect/cinematic mutations after initial camera creation",
+    "settled runtime application or capability fallback of the recovered current Very High / DLSS-DLAA / sharpness-zero quality request",
+    "native HGCullingSystem candidate output, live interleaved scene-light list/order, full eight-word camera-cluster population, punctual shadow resources, and unrecovered light modes; pass-0 Skin/Eye/Cloth/Hair all use the recovered 32-pixel XY plus linear-Z traversal, while world-XZ cells belong to RayTracingReflection",
+    "native retail body Base/Bump/DiffRamp/ShadowLUT compression and mip texels, selected screen-shadow variant, packed per-renderer weather carrier, generalized nonzero body character-rim/subsurface state, and auxiliary motion/reactive MRT consumption",
+    "irradiance-volume and visibility-SH samples for consumers that do not take the proven Wulfa/Zhuangfy Skin bypass",
+    "internal retail PreG DrawECS query/chunk/PSO/instance order, equal-depth ties, full active variant map, and multi-actor selector/list ordering; selected one-actor same-draw/same-primitive Forward-to-PreG identity is GPU-closed, and the high-level DefaultDeferred shared-sceneDepth order, observed opaque membership, fixed Cull Off PreG state, and loaded-G reconstruction are recovered; generic CSM/ASM/contact/cloud inputs exist, but CharInfo neutralizes scene directional/ASM/cloud output",
+    "live renderer rain/wet/wet-global/snow, wet-height and dissolve per-draw values",
+    "visibility-buffer interpolation/precision and native physical instance-buffer upload scheduling",
+    "later live CharInfo FrameSettings mutation plus TAAU jitter/phase, accurate motion vectors, masks, history validity, reset/fast-converge state and per-frame resolve state",
+    "Uber _PPSharpen runtime scalar and converged PERFORM_SHARPEN output",
+    "complete 15-slot character shadow population and per-draw renderer word for a live frame",
+    "SphereOutside settled HGRP deferred route, subpass/stencil/load-store state, constant/resource bindings and binding-compatible resolve for the imported five-renderer CharInfo physical scene; selected HGBuffer stages, formats, resolver family and native draw topology are already pinned",
+    "ShadowPlane integration with the canonical physical-camera bit-32 stencil attachment, full live 15-slot character atlas scheduler, posed VisibilitySH capsule records, and final draw order; the selected receiver/material and producer ABIs are already pinned",
+    "background-portrait residuals after implementing the selected standard layer-16 post-Uber route: the distinct retail paired output-depth attachment and absent ECS/HGUI lists remain unclaimed; frame-specific device depth/MSAA, _ZBufferParams, non-jittered UI constants, later copy/scaler branch, the expected-zero engine-owned _TextureSampleAdd literal and unrelated equal-key batch ordinal remain observations",
+    "capture-time cursor/controller input and the two-second UIGyroscopeEffect transition state; the native Finalize callback, source curves, serialized entry state, and centered/recorded endpoint equations are recovered"
+  ]
+}

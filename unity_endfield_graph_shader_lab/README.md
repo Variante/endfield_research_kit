@@ -4980,6 +4980,74 @@ This does not yet generalize all dialog assets or implement lip-sync, speye/eye
 look-at inputs, broader emotions, face material curves, or cross-track event
 chronology.
 
+## Measured Visual Delta
+
+The lab renders the runtime reference at the supplied capture resolution, so a
+recovered frame and the original capture are directly comparable inside the
+UI-free character band:
+
+```bat
+.\render_visual_delta_frames.bat --baseline --character wulfa
+.\render_visual_delta_frames.bat --composed --character wulfa
+python tools\compare_recovered_vs_original.py --character wulfa --label composed ^
+  --baseline scratch\character_recovery\visual_delta\wulfa_baseline.json
+```
+
+`config/visual_comparison_rois.json` pins the reference hashes and the UI-free
+region boxes. Per-pixel CIEDE2000 is measured after removing the residual
+reference-to-recovered camera transform, and that transform is reported rather
+than absorbed. The alignment-robust luminance/contrast/chroma distributions
+carry the shading conclusions. A smaller delta is a priority signal, never
+evidence that a recovered value is the original value.
+
+The residual camera transform is real, not a fitting artifact: the Euclidean
+fit lowers Wulfa face dE from 7.325 to 5.812 and skirt dE from 10.938 to 6.779,
+and the affine fit independently agrees on the rotation. Wulfa settles at
+-0.8236 degrees with band translation (-7.73, +13.15) px and Zhuangfy at
++0.0885 degrees with (-9.05, -15.40) px. This is consistent with the already
+recorded unknown capture-time `UIGyroscopeEffect` cursor state and must not be
+tuned away.
+
+Recovered-feature selectors are tri-state. Unset leaves the serialized scene
+value in charge, truthy forces on, falsey forces off. Before that change a
+scene saved by an earlier diagnostic kept its feature enabled and the
+maintained default frame could not be rendered at all: with the selector unset
+the CharInfo ready-subset diagnostic activated from its serialized value and
+the backdrop strip ran +0.221 linear luminance over the original, against
++0.073 when forced off.
+
+Composing the validated default-off chain on Wulfa moves the overall band mean
+from 13.4919 to 12.8723. Per region: `dark_hardware` -3.772, `ear_fur` -3.235,
+`red_cape_strip` -1.732, `face_skin` -1.250, `hair_side` -0.156 improved, while
+`background_wall` +1.114, `pale_skirt_cloth` +1.048, and `red_hood` +0.629
+regressed. Every region also brightened by +0.041 to +0.138 linear luminance,
+and the regressions track that brightening rather than a material change.
+
+Two boundaries follow directly and are load-bearing for promotion decisions.
+
+The deferred chain cannot explain any of that movement. Every selected pass-0
+transport records `pass0_consumer_enabled=false` and
+`published_by_default=false`, and the DefaultDeferred GBuffer sidecar is
+explicitly non-presented. `deferred.transform_variables`, `deferred.light_data`,
+`deferred.shadow_data`, `shader.variables_global`, and `deferred.gbuffer_frame`
+are GPU-closed transports that publish nothing into the beauty frame, so no
+image measurement can promote them and none of them is production-eligible.
+
+The recovered light chain is character-only. Rendering the composed profile with
+`--no-ready-subset` leaves the backdrop completely black: overall dE rises to
+26.7005, `background_wall` reaches 56.309 at -0.424 linear luminance, and the
+alignment correlation collapses to 0.095. The characters still light correctly
+because the source-authored rows are `CharacterOnly`. Nothing in the recovered
+set lights scene geometry, so a coherent composed frame currently depends on the
+partial, explicitly non-original ready-subset backdrop. The composed profile is
+therefore not promotable as the default path, and the missing generic scene
+light candidate list is the blocking item rather than any character response.
+
+Metric agreement is not visual agreement. The composed `ear_fur` region improves
+by 3.235 because it corrects the ear-membrane tone over a large area, while the
+fur tufts inside it gain hard black strand outlines that the original capture
+does not have. Read the diff image, not only the table.
+
 ## Layout
 
 ```text
