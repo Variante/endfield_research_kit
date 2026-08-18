@@ -5002,11 +5002,11 @@ evidence that a recovered value is the original value.
 
 The residual camera transform is real, not a fitting artifact: the Euclidean
 fit lowers Wulfa face dE from 7.325 to 5.812 and skirt dE from 10.938 to 6.779,
-and the affine fit independently agrees on the rotation. Wulfa settles at
--0.8236 degrees with band translation (-7.73, +13.15) px and Zhuangfy at
-+0.0885 degrees with (-9.05, -15.40) px. This is consistent with the already
-recorded unknown capture-time `UIGyroscopeEffect` cursor state and must not be
-tuned away.
+and the affine fit independently agrees on the rotation (-0.7696 degrees).
+Wulfa settles at -0.8236 degrees with band translation (-7.73, +13.15) px and
+Zhuangfy at +0.2597 degrees with (-5.80, -17.27) px. This is consistent with the
+already recorded unknown capture-time `UIGyroscopeEffect` cursor state and must
+not be tuned away.
 
 Recovered-feature selectors are tri-state. Unset leaves the serialized scene
 value in charge, truthy forces on, falsey forces off. Before that change a
@@ -5023,6 +5023,14 @@ from 13.4919 to 12.8723. Per region: `dark_hardware` -3.772, `ear_fur` -3.235,
 regressed. Every region also brightened by +0.041 to +0.138 linear luminance,
 and the regressions track that brightening rather than a material change.
 
+Zhuangfy reproduces the pattern on an independent actor: 12.4549 to 12.2797,
+with `face_skin` -1.725, `hair_dark` -1.053, `antler_hardware` -0.976,
+`pale_armor` -0.658, `dark_hardware` -0.573, and `ground_contact` -0.019
+improved against `background_wall` +1.649 and `olive_skirt_cloth` +0.569. Six of
+eight regions improve, the backdrop regresses, and the whole frame brightens.
+Both actors agree: the recovered chain helps character surfaces and hurts
+everything it does not own.
+
 Two boundaries follow directly and are load-bearing for promotion decisions.
 
 The deferred chain cannot explain any of that movement. Every selected pass-0
@@ -5033,15 +5041,34 @@ explicitly non-presented. `deferred.transform_variables`, `deferred.light_data`,
 are GPU-closed transports that publish nothing into the beauty frame, so no
 image measurement can promote them and none of them is production-eligible.
 
-The recovered light chain is character-only. Rendering the composed profile with
-`--no-ready-subset` leaves the backdrop completely black: overall dE rises to
-26.7005, `background_wall` reaches 56.309 at -0.424 linear luminance, and the
-alignment correlation collapses to 0.095. The characters still light correctly
-because the source-authored rows are `CharacterOnly`. Nothing in the recovered
-set lights scene geometry, so a coherent composed frame currently depends on the
-partial, explicitly non-original ready-subset backdrop. The composed profile is
-therefore not promotable as the default path, and the missing generic scene
-light candidate list is the blocking item rather than any character response.
+The recovered character response cannot be promoted without the CharInfo
+physical presentation scene. `EndfieldRecoveredCharInfoSky.PrepareForRender`
+keys on the source-energy-core keyword: when it is set the camera switches to
+`CameraClearFlags.Skybox` with the exact recovered `T_hdri_006` sky material and
+the neutral compatibility backdrop renderer is deliberately disabled. The bright
+grey background in the original capture is not that sky, it is source scene
+geometry, and the lab only holds that geometry as the partial ready subset with
+`SphereOutside` and `ShadowPlane` explicitly excluded and
+`exactSourceAssetsReady=false`.
+
+Any profile that enables the recovered character response without the
+ready-subset presentation therefore renders a near-black background. Measured on
+Wulfa with the five character-response selectors alone and no light scheduling,
+`background_wall` moves from 8.024 to 56.534 at -0.427 linear luminance and the
+alignment correlation collapses to 0.130. The composed profile only looks
+complete because the ready subset supplies wall, floor, and far grid. Completing
+the CharInfo physical presentation scene is therefore the blocking item for a
+promotable default frame, ahead of further character-response work.
+
+Underneath that backdrop failure the character surfaces do improve on their own.
+With the same five selectors and no ready subset: `dark_hardware` -5.076,
+`face_skin` -2.109, `red_cape_strip` -1.068, `hair_side` -1.032. Those are the
+promotable candidates once a backdrop exists to promote them into.
+
+Read region numbers with their background content in mind. `ear_fur` and
+`background_wall` both contain sky pixels, so their values move with the
+backdrop rather than with any material: `ear_fur` reports +23.133 in that same
+run purely because the sky between the ears went black.
 
 Metric agreement is not visual agreement. The composed `ear_fur` region improves
 by 3.235 because it corrects the ear-membrane tone over a large area, while the
