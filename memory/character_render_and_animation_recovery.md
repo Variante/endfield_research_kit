@@ -1038,7 +1038,9 @@ deliberately disables the neutral compatibility backdrop. The bright background
 in the original capture is source scene geometry, not that sky, and the lab
 holds it only as the partial ready subset with `SphereOutside` and `ShadowPlane`
 excluded. Any profile that enables the recovered response without that subset
-renders a near-black background. Completing the physical presentation scene is
+renders a near-black background: with only the source-energy-core selector set,
+the Wulfa backdrop strip falls from sRGB (188, 188, 186) to (14, 11, 11) while
+the character stays correctly lit. Completing the physical presentation scene is
 the blocking item for a promotable default frame, ahead of further
 character-response equations.
 
