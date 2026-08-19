@@ -1133,10 +1133,14 @@ only stable interpretation and priorities.
    No constant remains open. `cb4` is `_VisibilitySHConstData`, and the two
    vectors the fragment reads are the same two the VisibilitySH constants
    contract already records as the selected resolver reads. What remains is
-   wiring plus one disambiguation: the retail block declares both `_LogSHLutTex`
-   and `_ABLutTex`, and `_ABLutTex` is the stronger candidate for the receiver's
-   LUT because it reads two channels as an (a, b) pair, while the lab producer
-   binds `_LogSHLutTex`. The stencil writer is the already-pinned bit-32
+   implementation only. The disambiguation is closed: the receiver's LUT is
+   `_ABLutTex` = `visibility_ab_lut`, path id 2892350180982884757, a 256x1
+   RGBA32 table the lab had never imported, distinct from the producer's
+   `_LogSHLutTex`. Its zero B/A channels independently confirm the xy read.
+   Extract it offline with a targeted AnimeStudio `--filter_data` run on the
+   Persistent chk that holds `HGRenderPipelineRuntimeResources`; the same run
+   reproduces the already-pinned SH LUT byte-for-byte, which validates the
+   method. The stencil writer is the already-pinned bit-32
    character PreG writer contract, whose remainder is the same capture-blocked
    canonical physical-camera stencil integration.
 

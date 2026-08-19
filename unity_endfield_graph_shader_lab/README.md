@@ -5150,13 +5150,37 @@ value.
 
 The retail VisibilitySH shader-ID block is `_VisibilitySHConstData`,
 `_VisibilityCapsuleData`, `_LogSHLutTex`, `_ABLutTex`, `_VisibilitySHRT`,
-`_VisibilitySHDebugRT`. Note there are **two** LUTs. `_ABLutTex` is the stronger
-candidate for the receiver's `t4`, because the fragment reads two channels and
-applies an `(a, b)` scale/bias pair, while the lab producer binds
-`_LogSHLutTex`. Disambiguate before binding the producer's texture to `t4`.
+`_VisibilitySHDebugRT` — two LUTs, not one.
+`HGRenderPipelineRuntimeResources` names both:
+`textures.VisibilitySHLut` is path id `8323377478838034894`, the LUT the lab
+already had, and `textures.VisibilityABLut` is path id `2892350180982884757`,
+which the lab had never imported.
 
-No constant remains open. What remains is wiring: the receiver still stubs its
-capsule term to zero.
+The receiver's `t4` is `_ABLutTex` = `visibility_ab_lut`: 256x1 RGBA32 linear,
+1024 bytes, sha256
+`ca1a648d1a19434b41a9dbbe9f6ad0191c4c4e7f088341761725895748f33ed0`. Its B and A
+channels are zero across all 256 texels while R and G carry the rising
+coefficient curve, which independently confirms the `xy` read implied by the
+`t4.zxyw` swizzle. Binding the lab producer's `_LogSHLutTex` to `t4` would have
+sampled the wrong table — that LUT is a different one whose `R==B` and `G==A`.
+
+Recover it with a targeted extraction, which needs no game session:
+
+```bat
+tools\AnimeStudio\AnimeStudio.CLIin\Release
+et9.0-windows\AnimeStudio.CLI.exe ^
+  "%ENDFIELD_GAME_ROOT%\Persistent\VFS CE8FA57ò43F039A1BFD05676B5D323B50D4AA.chk" ^
+  <out> --game ArknightsEndfield --types Texture2D --export_type Convert ^
+  --texture2d_native_payload
+```
+
+That same run also produces `visibility_sh_lut` byte-identical to the LUT the
+lab had already pinned, which validates the extraction path independently of the
+new asset.
+
+No constant, LUT identity, or channel read remains open on this path. What
+remains is implementation: the receiver still stubs its capsule term to zero and
+`visibility_ab_lut` is not yet imported.
 
 Rebuild and verify the contract from the pinned bytecode with:
 
