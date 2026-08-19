@@ -11614,35 +11614,22 @@ namespace EndfieldGraphShaderLabEditor
             string actorName,
             float fieldOfView)
         {
-            bool isWulfa = string.Equals(actorName, "Wulfa", StringComparison.OrdinalIgnoreCase);
-            bool isZhuangfy = string.Equals(actorName, "Zhuangfy", StringComparison.OrdinalIgnoreCase);
-            if (!isWulfa && !isZhuangfy)
-                throw new ArgumentOutOfRangeException(nameof(actorName), actorName, "No recovered CharInfo camera is registered.");
+            // Authored Overview vcam endpoint plus its centered, zero-damping
+            // Composer LookAt target, read from
+            // charinfo_overview_camera_contract.json. That contract is built
+            // from the track_chr_<template>.prefab Cinemachine rigs and covers
+            // 30 characters; it reproduces the two values that were previously
+            // hard-coded here. Cinemachine Composer owns the settled physical
+            // orientation, so the serialized vcam quaternion is recorded in the
+            // contract but not applied directly.
+            EndfieldRecoveredOverviewCameraContract.Entry cameraEntry =
+                EndfieldRecoveredOverviewCameraContract.Resolve(actorName);
 
             camera.orthographic = false;
             camera.fieldOfView = fieldOfView;
             camera.aspect = (float)RuntimeReferenceRenderWidth / RuntimeReferenceRenderHeight;
-            Vector3 cameraPosition;
-            Vector3 lookAtPosition;
-            if (isWulfa)
-            {
-                // track_chr_0028_wulfa.prefab: authored Overview vcam endpoint
-                // plus its centered, zero-damping Composer LookAt target. The
-                // serialized pre-pipeline vcam quaternion is
-                // (-0.00036646938, 0.9991945, 0.009385596, 0.03901448);
-                // Cinemachine Composer owns the settled physical orientation.
-                cameraPosition = new Vector3(0.0f, 0.998f, 3.46f);
-                lookAtPosition = new Vector3(0.022f, 1.19f, 0.0f);
-            }
-            else
-            {
-                // track_chr_0030_zhuangfy.prefab: authored Overview vcam
-                // endpoint plus its centered, zero-damping Composer target.
-                // The serialized pre-pipeline vcam quaternion is
-                // (-0.00001367486, 0.99982595, -0.0007334001, -0.018642593).
-                cameraPosition = new Vector3(0.0f, 1.25f, 3.5f);
-                lookAtPosition = new Vector3(0.002f, 1.346f, -0.21826088f);
-            }
+            Vector3 cameraPosition = cameraEntry.CameraPosition;
+            Vector3 lookAtPosition = cameraEntry.LookAtPosition;
             camera.transform.position = cameraPosition;
             camera.transform.rotation = Quaternion.LookRotation(
                 lookAtPosition - cameraPosition,
