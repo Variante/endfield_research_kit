@@ -5262,6 +5262,44 @@ by 3.235 because it corrects the ear-membrane tone over a large area, while the
 fur tufts inside it gain hard black strand outlines that the original capture
 does not have. Read the diff image, not only the table.
 
+## Gameplay Video Reference Set
+
+`tools/build_gameplay_video_reference_set.py` turns the recorded roster
+walkthrough into settled per-character reference frames. It re-verifies the
+video against the pin the Li Zhiyan oracle already uses, segments on the left
+stat panel, and identifies each segment by OCR of the name plate joined to
+`CharacterTable` through the CN I18n table. 29 of the 32 roster actors resolve;
+only `laevat` has no segment, and segment 0 is the roster grid rather than a
+detail view.
+
+Segment on the panel, not the frame. Idle animation holds the median whole-frame
+difference near 11/255 for the whole recording, so transitions do not stand out.
+Decode sequentially too: seeking per sample makes OpenCV decode from the nearest
+keyframe each time, which took over forty minutes against sixty-eight seconds
+for the same result.
+
+These frames are not yet drop-in comparable with lab renders. The recording
+carries its own camera state: against the hand-supplied `front_full.png`
+capture, the video's Wulfa frame sits about 198 px and 4.8 degrees away with an
+ECC correlation of 0.367, and a lab render aligns to the capture at 0.822 but to
+the video at 0.352. Feature-based initialisation does not rescue it either,
+because the two images differ in content as well as geometry: ORB keeps only 9
+of 800 matches as inliers, latching onto the UI overlay and the different
+backdrop.
+
+So the blocking item for roster-wide comparison is camera, not shading. Each
+character has its own authored overview virtual camera, and the lab has
+recovered `look_at_local_position` and `overview_vcam_local_rotation_xyzw` for
+Wulfa and Zhuangfy only. On top of that sits the already-recorded unrecoverable
+per-frame unknown, the capture-time cursor and `UIGyroscopeEffect` state, which
+differs between this recording and the earlier stills.
+
+Recovering the per-character CharInfo overview virtual camera roster-wide is the
+next offline step. `CharInfoCam` appears five times in the object index against
+21,007 `CinemachineVirtualCamera` references, so the search is bounded but not
+yet done. Until then the reference set is an inventory rather than a
+measurement target.
+
 ## Play Mode Presentation
 
 The pipeline composes into an offscreen colour target and presents with
