@@ -1126,6 +1126,15 @@ only stable interpretation and priorities.
    substitute for it. ShadowPlane additionally needs the shipped capsule-AO
    producer and the exact character stencil writer.
 
+   Both of those ShadowPlane items are now narrower than the manifest stated.
+   The pinned ShadowReceiver fragment has no separate analytic capsule producer:
+   it consumes the VisibilitySH screen buffer and log-SH LUT and lerps toward
+   `_CapsuleAoColor`, and the lab already implements that producer. The single
+   remaining unknown is `cb4[3].xy`, the SH-magnitude to LUT-coordinate encode
+   scale/bias. The stencil writer is the already-pinned bit-32 character PreG
+   writer contract, whose remainder is the same capture-blocked canonical
+   physical-camera stencil integration.
+
    That capture has no tooling here and sits outside the current access policy:
    the existing lab capture paths target the lab's own player, and
    original-client access is pinned at `external_telemetry_only`, which by its
