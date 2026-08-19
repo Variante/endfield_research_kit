@@ -5052,13 +5052,24 @@ geometry, and the lab only holds that geometry as the partial ready subset with
 `exactSourceAssetsReady=false`.
 
 Any profile that enables the recovered character response without the
-ready-subset presentation therefore renders a near-black background. Measured on
-Wulfa with the five character-response selectors alone and no light scheduling,
-`background_wall` moves from 8.024 to 56.534 at -0.427 linear luminance and the
-alignment correlation collapses to 0.130. The composed profile only looks
-complete because the ready subset supplies wall, floor, and far grid. Completing
-the CharInfo physical presentation scene is therefore the blocking item for a
-promotable default frame, ahead of further character-response work.
+ready-subset presentation therefore renders a near-black background. The clean
+single-variable run sets only `ENDFIELD_RECOVERED_SOURCE_ENERGY_CORE=1` with
+every other selector forced off: the Wulfa backdrop strip falls from sRGB
+(188.4, 187.6, 186.1) to (14.3, 10.6, 11.0) and the whole frame from
+(176.0, 173.8, 172.1) to (30.0, 25.7, 26.3), while the character stays correctly
+lit. ECC alignment does not converge at all against the original, and the
+harness fails closed rather than reporting region deltas for frames that no
+longer differ by a camera transform.
+
+The composed profile only looks complete because the ready subset supplies wall,
+floor, and far grid. Completing the CharInfo physical presentation scene is
+therefore the blocking item for a promotable default frame, ahead of further
+character-response work.
+
+Do not edit `render_visual_delta_frames.bat` while a run is in flight. cmd.exe
+reads a batch file incrementally, so an edit mid-run makes it resume at a stale
+offset; one such run reported a normal backdrop for a profile that black-screens
+it, and the two contradictory results cost a full re-measurement to resolve.
 
 Underneath that backdrop failure the character surfaces do improve on their own.
 With the same five selectors and no ready subset: `dark_hardware` -5.076,
