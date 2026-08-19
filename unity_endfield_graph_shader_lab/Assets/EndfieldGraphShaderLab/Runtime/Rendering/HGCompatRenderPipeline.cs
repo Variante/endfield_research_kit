@@ -184,6 +184,46 @@ namespace EndfieldGraphShaderLab
         private static readonly int BloomIntensityId = Shader.PropertyToID("_BloomIntensity");
         private static readonly int BloomThresholdId = Shader.PropertyToID("_BloomThreshold");
         private static readonly int BloomSoftnessId = Shader.PropertyToID("_BloomSoftness");
+        // Presentation flip for the backbuffer. CommandBuffer.Blit inverts Y when
+        // the destination is the screen on UV-starts-at-top devices but not when
+        // it is a RenderTexture, so the offscreen capture path this lab was built
+        // around is upright while Play mode is upside down. The offscreen path
+        // always assigns camera.targetTexture, so the condition below is false
+        // there and the validated capture output is unchanged.
+        private static readonly int PresentFlipYId =
+            Shader.PropertyToID("_EndfieldPresentFlipY");
+
+        private static bool ShouldFlipPresentation(Camera camera)
+        {
+            return camera != null &&
+                   camera.targetTexture == null &&
+                   SystemInfo.graphicsUVStartsAtTop;
+        }
+
+        /// <summary>
+        /// Presents an already-composed colour target to the camera target,
+        /// compensating for the backbuffer Y inversion when there is one.
+        /// </summary>
+        private static void PresentToCameraTarget(
+            CommandBuffer commandBuffer,
+            RenderTargetIdentifier source,
+            Camera camera)
+        {
+            var destination =
+                new RenderTargetIdentifier(BuiltinRenderTextureType.CameraTarget);
+            if (ShouldFlipPresentation(camera))
+            {
+                commandBuffer.Blit(
+                    source,
+                    destination,
+                    new Vector2(1.0f, -1.0f),
+                    new Vector2(0.0f, 1.0f));
+                return;
+            }
+
+            commandBuffer.Blit(source, destination);
+        }
+
         private static readonly int BloomDirectionId = Shader.PropertyToID("_BloomDirection");
         private static readonly int BloomTexelSizeId = Shader.PropertyToID("_BloomTexelSize");
         private static readonly int BloomLowMipTextureId = Shader.PropertyToID("_SourceTexLowMip");
@@ -1908,9 +1948,10 @@ namespace EndfieldGraphShaderLab
                     }
                     else
                     {
-                        commandBuffer.Blit(
+                        PresentToCameraTarget(
+                            commandBuffer,
                             recoveredAfterPostColor.Target,
-                            BuiltinRenderTextureType.CameraTarget);
+                            camera);
                     }
                     context.ExecuteCommandBuffer(commandBuffer);
                     commandBuffer.Release();
@@ -1939,9 +1980,10 @@ namespace EndfieldGraphShaderLab
                     }
                     else
                     {
-                        commandBuffer.Blit(
+                        PresentToCameraTarget(
+                            commandBuffer,
                             recoveredDeferredPostColor.Target,
-                            BuiltinRenderTextureType.CameraTarget);
+                            camera);
                     }
                     context.ExecuteCommandBuffer(commandBuffer);
                     commandBuffer.Release();
@@ -2675,6 +2717,7 @@ namespace EndfieldGraphShaderLab
                     useRecoveredLinearUnormFinalTarget
                         ? FilterMode.Point
                         : FilterMode.Bilinear);
+                commandBuffer.SetGlobalFloat(PresentFlipYId, 0.0f);
                 commandBuffer.Blit(
                     CameraColorId,
                     EndfieldRecoveredSceneMVCompositor.PostColorId,
@@ -2705,6 +2748,7 @@ namespace EndfieldGraphShaderLab
                     RecoveredFinalDisplayId,
                     finalDisplayDescriptor,
                     FilterMode.Point);
+                commandBuffer.SetGlobalFloat(PresentFlipYId, 0.0f);
                 commandBuffer.Blit(
                     CameraColorId,
                     RecoveredFinalDisplayId,
@@ -2723,6 +2767,9 @@ namespace EndfieldGraphShaderLab
             }
             else
             {
+                commandBuffer.SetGlobalFloat(
+                    PresentFlipYId,
+                    ShouldFlipPresentation(camera) ? 1.0f : 0.0f);
                 commandBuffer.Blit(
                     CameraColorId,
                     BuiltinRenderTextureType.CameraTarget,

@@ -5262,6 +5262,45 @@ by 3.235 because it corrects the ear-membrane tone over a large area, while the
 fur tufts inside it gain hard black strand outlines that the original capture
 does not have. Read the diff image, not only the table.
 
+## Play Mode Presentation
+
+The pipeline composes into an offscreen colour target and presents with
+`CommandBuffer.Blit` to `BuiltinRenderTextureType.CameraTarget`. That inverts Y
+when the destination is the screen on UV-starts-at-top devices but not when it
+is a RenderTexture, so the capture path, which always assigns
+`camera.targetTexture`, was upright while Play mode was upside down. There was
+no flip handling anywhere in the pipeline.
+
+Presentation is now flipped only when the destination is the backbuffer:
+
+```csharp
+camera.targetTexture == null && SystemInfo.graphicsUVStartsAtTop
+```
+
+The two plain presents go through `PresentToCameraTarget`, which uses the
+scale/offset blit. The third present runs `ExposureTonemap` pass 0, whose
+`vert_img` entry ignores `_MainTex_ST`, so that pass takes a
+`_EndfieldPresentFlipY` uniform and flips at the top of `Frag`; all five UV
+reads there (source, bloom, vignette, vignette distance, and the final dither)
+use the flipped coordinate so the presented image stays internally consistent.
+
+That uniform is a global set through the command buffer rather than a material
+property. Pass 0 records three blits per frame, two to render textures and one
+to the backbuffer, and this file already carries the lesson that mutating one
+Material twice before `ExecuteCommandBuffer` leaves every deferred blit
+observing the final value.
+
+The guard cannot affect the capture path, which never has a null
+`targetTexture`. That is verified rather than argued: re-rendering Zhuangfy
+after the change reproduces the previous PNG byte-for-byte, sha256
+`e008536b76c46a20abc9795d664d8e969d236c3ddf73c3d279db129a6506c6ea`.
+
+Orientation is all this fixes. Play mode remains an unvalidated output path:
+the pipeline still reports that with a null `camera.targetTexture` the
+"screen backbuffer format/write state is not proven", and no measurement in this
+lab has been taken through it. Treat Play mode as a viewing convenience until
+that path gets its own validation.
+
 ## Layout
 
 ```text
