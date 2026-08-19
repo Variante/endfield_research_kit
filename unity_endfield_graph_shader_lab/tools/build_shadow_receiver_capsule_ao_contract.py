@@ -150,9 +150,16 @@ def build_contract(disassembly: str) -> dict:
         ),
         "consumer_abi": {
             "t4": {
-                "role": "log-SH LUT",
-                "lab_property": "_LogSHLutTex",
-                "published_by": "EndfieldRecoveredVisibilitySHProducer",
+                "role": "SH exponentiation coefficient LUT",
+                "retail_candidates": ["_ABLutTex", "_LogSHLutTex"],
+                "status": "retail_name_not_yet_disambiguated",
+                "note": (
+                    "the retail block declares both. _ABLutTex is the stronger "
+                    "candidate for this consumer because the fragment reads two "
+                    "channels and applies an (a, b) scale/bias pair, while the lab "
+                    "producer binds _LogSHLutTex. Do not assume the lab producer's "
+                    "LUT is the one this receiver samples"
+                ),
             },
             "t5": {
                 "role": "VisibilitySH screen buffer",
@@ -160,21 +167,50 @@ def build_contract(disassembly: str) -> dict:
                 "published_by": "EndfieldRecoveredVisibilitySHProducer",
                 "screen_uv": "SV_Position.xy * cb0[82].zw",
             },
+            "cb4": {
+                "retail_name": "_VisibilitySHConstData",
+                "status": "identified_by_structural_match",
+                "size_bytes": 128,
+                "vector_count": 8,
+                "evidence": [
+                    "the retail shader-ID block groups _VisibilitySHConstData "
+                    "with _VisibilityCapsuleData, _LogSHLutTex, _ABLutTex, "
+                    "_VisibilitySHRT and _VisibilitySHDebugRT",
+                    "EndfieldRecoveredVisibilitySHConstantsContract independently "
+                    "records that the selected deferred resolver reads only "
+                    "vectors 2 and 3, which are exactly the two this fragment "
+                    "reads",
+                    "the fragment declares CB4[4], consistent with an eight-vector "
+                    "buffer whose highest referenced index is 3",
+                    "vector 3 .zw holds the half-resolution dimensions, which this "
+                    "fragment never reads, so the unused tail is accounted for",
+                ],
+                "residual": "a live binding capture would confirm the register assignment",
+            },
             "cb4[2]": {
-                "role": "LUT coefficient scale/bias",
-                "retail_name": "_GStarParams",
+                "role": "LUT sample scale/bias, applied as lut * xy + zw",
+                "value": [1.0, 0.31518998742103577, 1.0, 1.0],
+                "bits": ["0x3F800000", "0x3EA16095", "0x3F800000", "0x3F800000"],
                 "status": "source_closed",
-                "evidence": (
-                    "the lab producer already applies the identical "
-                    "lut * _GStarParams.xy + _GStarParams.zw form"
+                "source": "VisibilitySHConstData vector 2",
+                "correction": (
+                    "this is not _GStarParams. _GStarParams is vector 1 of the "
+                    "same buffer, (17.4207, 9.55479, -17.4207, -9.55479), and the "
+                    "name itself is a lab invention with zero hits in the "
+                    "installed global-metadata.dat"
                 ),
             },
             "cb4[3].xy": {
                 "role": "SH-magnitude to LUT-coordinate encode scale/bias",
-                "status": "not_recovered_fail_closed",
+                "value": [0.21420201659202576, 0.0],
+                "bits": ["0x3E5B57C6", "0x00000000"],
+                "status": "source_closed",
+                "source": "VisibilitySHConstData vector 3",
                 "note": (
-                    "the only value still missing before the receiver can "
-                    "evaluate the exact occlusion"
+                    "the earlier 1/4.6 = 0.2173913 consistency bound was close but "
+                    "wrong by about 1.5 percent; it was recorded as a bound rather "
+                    "than substituted as a value, and the recovered constant "
+                    "replaces it"
                 ),
             },
             "cb5[2].xyz": {"role": "_ShadowColor"},
@@ -277,9 +313,12 @@ def build_contract(disassembly: str) -> dict:
             "this constant buffer, rather than any shader asset"
         ),
         "open_gap": (
-            "cb4[3].xy. Until its producer is recovered the lab receiver must "
-            "keep its zero capsule-AO stub rather than substituting a fitted "
-            "encode."
+            "None of the constants remain open. The last unknown, cb4[3].xy, "
+            "resolves to VisibilitySHConstData vector 3, which the lab already "
+            "recovers from native evidence. The remaining work is wiring: the "
+            "receiver still stubs its capsule term to zero, and the retail LUT "
+            "identity must be disambiguated between _ABLutTex and _LogSHLutTex "
+            "before the producer's texture is bound to t4."
         ),
     }
 

@@ -5133,24 +5133,30 @@ accumulated log occlusion and the receiver evaluates `exp(SH)` as
 the threshold, applies the LUT once, then repeats the SH self-product exactly
 `n` times.
 
-The gap is therefore one constant, not a subsystem: `cb4[3].xy`, the
-SH-magnitude to LUT-coordinate encode scale/bias. The halving loop bounds that
-magnitude at 4.6 and the result is quantised as `(x*255+0.5)/256`, so a scale of
-`1/4.6` with zero bias is consistent with the observed domain — but that is a
-consistency bound, not a recovered value. Until its producer is recovered the
-lab receiver keeps its zero capsule-AO stub; do not substitute a fitted encode.
+The last unknown is now closed too. `cb4` is `_VisibilitySHConstData`, the
+eight-vector buffer the lab already recovers from native evidence, and the two
+vectors this fragment reads are exactly the two
+`EndfieldRecoveredVisibilitySHConstantsContract` independently records as the
+selected resolver reads. `cb4[2]` is `(1.0, 0.31519, 1.0, 1.0)` and
+`cb4[3].xy` is `(0.21420201659202576, 0.0)`.
 
-Three name sources are already ruled out, so do not spend the attempt again. The
-fragment DXBC container holds only ISGN, OSGN and SHEX, with no RDEF chunk. The
-AnimeStudio HLSL decompile of
-`HGRP_CharacterNPR_ShadowReceiver_p22FE8453732C0E54.shader` emits unnamed arrays
-such as `float4 cb4[715]`, and its register assignment differs per variant, so
-slot numbers are not comparable across them. The Vulkan SMOL-V subprogram in the
-same asset carries no `OpName`/`OpMemberName`, and its decoded decorations are
-visibly corrupt: every `OpMemberDecorate Offset` reads 10 and the
-DescriptorSet/Binding pairs mirror their own result ids. The next source to try
-is the installed GameAssembly VisibilitySH pass setup, which writes this
-constant buffer, rather than any shader asset.
+Two earlier claims here were wrong and are corrected. `cb4[2]` is not
+`_GStarParams`: that is vector 1 of the same buffer,
+`(17.4207, 9.55479, -17.4207, -9.55479)`, and the name is a lab invention with
+zero hits in the installed `global-metadata.dat`. The `1/4.6 = 0.2173913`
+consistency bound for `cb4[3].x` was also close but wrong by about 1.5 percent —
+which is exactly why it was recorded as a bound rather than substituted as a
+value.
+
+The retail VisibilitySH shader-ID block is `_VisibilitySHConstData`,
+`_VisibilityCapsuleData`, `_LogSHLutTex`, `_ABLutTex`, `_VisibilitySHRT`,
+`_VisibilitySHDebugRT`. Note there are **two** LUTs. `_ABLutTex` is the stronger
+candidate for the receiver's `t4`, because the fragment reads two channels and
+applies an `(a, b)` scale/bias pair, while the lab producer binds
+`_LogSHLutTex`. Disambiguate before binding the producer's texture to `t4`.
+
+No constant remains open. What remains is wiring: the receiver still stubs its
+capsule term to zero.
 
 Rebuild and verify the contract from the pinned bytecode with:
 

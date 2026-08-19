@@ -1128,12 +1128,17 @@ only stable interpretation and priorities.
 
    Both of those ShadowPlane items are now narrower than the manifest stated.
    The pinned ShadowReceiver fragment has no separate analytic capsule producer:
-   it consumes the VisibilitySH screen buffer and log-SH LUT and lerps toward
-   `_CapsuleAoColor`, and the lab already implements that producer. The single
-   remaining unknown is `cb4[3].xy`, the SH-magnitude to LUT-coordinate encode
-   scale/bias. The stencil writer is the already-pinned bit-32 character PreG
-   writer contract, whose remainder is the same capture-blocked canonical
-   physical-camera stencil integration.
+   it consumes the VisibilitySH screen buffer and an SH-exponentiation LUT and
+   lerps toward `_CapsuleAoColor`, and the lab already implements that producer.
+   No constant remains open. `cb4` is `_VisibilitySHConstData`, and the two
+   vectors the fragment reads are the same two the VisibilitySH constants
+   contract already records as the selected resolver reads. What remains is
+   wiring plus one disambiguation: the retail block declares both `_LogSHLutTex`
+   and `_ABLutTex`, and `_ABLutTex` is the stronger candidate for the receiver's
+   LUT because it reads two channels as an (a, b) pair, while the lab producer
+   binds `_LogSHLutTex`. The stencil writer is the already-pinned bit-32
+   character PreG writer contract, whose remainder is the same capture-blocked
+   canonical physical-camera stencil integration.
 
    That capture has no tooling here and sits outside the current access policy:
    the existing lab capture paths target the lab's own player, and
