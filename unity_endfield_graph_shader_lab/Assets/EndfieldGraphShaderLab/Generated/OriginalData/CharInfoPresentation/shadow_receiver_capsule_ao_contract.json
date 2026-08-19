@@ -214,6 +214,28 @@
     }
   ],
   "next_source_to_try": "the installed GameAssembly VisibilitySH pass setup, which writes this constant buffer, rather than any shader asset",
-  "open_gap": "None. Every constant, both LUT identities, and the channel reads are source-closed offline. The remaining work is implementation only: the lab receiver still stubs its capsule term to zero and the visibility_ab_lut asset is not yet imported.",
+  "open_gap": "None. Every constant, both LUT identities, and the channel reads are source-closed offline, the term is implemented, and the capsule set is verified source-exact. The only unconsumed retail data on this path is the isFoot flag on the two foot capsules.",
+  "independent_confirmation": {
+    "shader": "HGRP/VisibilitySH",
+    "export": "HGRP_VisibilitySH_pC373B6179F491022.shader",
+    "finding": "That shader's own resolve pass performs the identical SH exponentiation with a four-vector cb0 using indices 2 and 3, confirming the receiver's cb4 reads from a second, unrelated program",
+    "matching_details": [
+      "halving threshold 4.5999999",
+      "coordinate quantisation x*255+0.5 then *0.00390625",
+      "LUT sampled .xy, which independently confirms the channel read",
+      "cb0[3].xy encode scale/bias and cb0[2].xy/.zw coefficient scale/bias",
+      "full-precision constants 3.54490781, 0.40697673, 0.282094777",
+      "the same four-dot self-product loop shape"
+    ]
+  },
+  "capsule_set_validation": {
+    "result": "the lab capsule set is source-exact",
+    "detail": "Retail serialises the capsules as HGCapsuleShadowHelper m_capsuleShadowContainers, ten per actor. Wulfa matches the lab on every height, radius, intensity, offset and rotation to a worst absolute delta of 5e-15; Zhuangfy matches to about 1e-7 except one upper-arm capsule at 0.162 degrees, and retail has twenty variants carrying that signature, so that is variant selection rather than an error.",
+    "unconsumed_retail_fields": [
+      "isFoot",
+      "enabled"
+    ],
+    "note": "isFoot is set on exactly the two foot capsules and the lab ignores it. The retail helper also binds fourteen skeleton joints including Wrist_R/L and ToesEnd_R/L, which are capsule endpoints rather than additional capsules; the ten-capsule count is correct."
+  },
   "extraction_validation": "The same targeted AnimeStudio --filter_data extraction also produced visibility_sh_lut byte-identical to the LUT the lab had already pinned (sha256 3e5d7d50ed14ab927676cb638eebcedfb8e02766b8e0d01164105d519d925bf3), which validates the extraction path independently of the new asset."
 }

@@ -5212,6 +5212,25 @@ open difference and must not be tuned away.
 The term still renders onto the ready-subset floor, a labeled non-original
 surface. The shadow is source-backed; the ground it falls on is not yet.
 
+Two follow-up checks close off the obvious explanations for that softness. The
+capsule set is source-exact: retail serialises ten capsules per actor as
+`HGCapsuleShadowHelper.m_capsuleShadowContainers`, and Wulfa matches the lab on
+every height, radius, intensity, offset and rotation to a worst delta of 5e-15,
+Zhuangfy to about 1e-7 apart from one upper-arm capsule at 0.162 degrees where
+retail carries twenty variants of the same signature. The helper binds fourteen
+skeleton joints including `Wrist_R/L` and `ToesEnd_R/L`, but those are capsule
+endpoints rather than extra capsules, so ten is the correct count. The only
+retail field the lab does not consume is `isFoot`, set on exactly the two foot
+capsules.
+
+The decode is also independently confirmed. `HGRP/VisibilitySH` contains its own
+resolve pass performing the identical SH exponentiation against a four-vector
+`cb0` using indices 2 and 3: same 4.5999999 threshold, same `x*255+0.5` then
+`*0.00390625` quantisation, same `.xy` LUT read, and the full-precision
+constants 3.54490781, 0.40697673 and 0.282094777. Two unrelated programs
+agreeing on all of it makes the recovered equation and the channel read
+independent of any single disassembly.
+
 Rebuild and verify the contract from the pinned bytecode with:
 
 ```bat
