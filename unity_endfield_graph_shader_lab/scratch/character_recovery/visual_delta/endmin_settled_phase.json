@@ -1,0 +1,45 @@
+{
+  "schema": "endfield.charinfo.phase-sweep.v1",
+  "boundary": "recorded_video_comparison",
+  "actor": "endmin",
+  "referenceKind": "settled_loop",
+  "reference": {
+    "frame": "endmin_settled_frame10300.png",
+    "sha256": "2167b9754703b3aa40ad6c573adcf77339a422e1af455ab66b4adb64f467531f",
+    "settledFrame": 10300,
+    "settledSeconds": 171.6667,
+    "note": "A recorded video frame, not the hash-pinned front_full still that compare_recovered_vs_original.py uses. The two are not comparable."
+  },
+  "expectedPhaseSeconds": {
+    "loopPhaseSeconds": 1.8167,
+    "loopClipSeconds": 2.0833,
+    "loopClip": "A_actor_endminf_ui_overview_loop"
+  },
+  "band": [
+    1400,
+    200,
+    2500,
+    2100
+  ],
+  "ranking": "ecc_correlation_descending",
+  "rankingNote": "Correlation answers whether the pose matches; deltaE00 is reported so a phase is not chosen against an obvious shading regression. A smaller delta never on its own proves a phase is the original.",
+  "best": {
+    "sampleTime": 1.817,
+    "correlation": 0.815924,
+    "bandDeltaE00Mean": 11.9187
+  },
+  "samples": [
+    {
+      "sampleTime": 1.817,
+      "file": "endmin_settled_t1p817.png",
+      "correlation": 0.815924,
+      "translationPixels": [
+        -16.793,
+        6.178
+      ],
+      "rotationDegrees": -0.6663,
+      "trustworthy": true,
+      "bandDeltaE00Mean": 11.9187
+    }
+  ]
+}

@@ -1,0 +1,140 @@
+{
+  "schema": "endfield.charinfo.phase-sweep.v1",
+  "boundary": "recorded_video_comparison",
+  "actor": "wulfa",
+  "reference": {
+    "frame": "04_frame3480.png",
+    "sha256": "ec80f41a8404e7d877b3dbe45ba437da9ea4858ce25405b020e750d9d46de9ae",
+    "settledFrame": 3480,
+    "settledSeconds": 58.0,
+    "note": "A recorded video frame, not the hash-pinned front_full still that compare_recovered_vs_original.py uses. The two are not comparable."
+  },
+  "expectedPhaseSeconds": {
+    "fromPanelSettle": 5.6833,
+    "fromModelSwap": 6.2833,
+    "bandPeakRatio": 3.44
+  },
+  "band": [
+    1400,
+    200,
+    2500,
+    2100
+  ],
+  "ranking": "ecc_correlation_descending",
+  "rankingNote": "Correlation answers whether the pose matches; deltaE00 is reported so a phase is not chosen against an obvious shading regression. A smaller delta never on its own proves a phase is the original.",
+  "best": {
+    "sampleTime": 7.0,
+    "correlation": 0.375333,
+    "bandDeltaE00Mean": 24.0146
+  },
+  "samples": [
+    {
+      "sampleTime": 7.0,
+      "file": "wulfa_t7p000.png",
+      "correlation": 0.375333,
+      "translationPixels": [
+        -224.846,
+        21.217
+      ],
+      "rotationDegrees": 0.7,
+      "trustworthy": false,
+      "bandDeltaE00Mean": 24.0146
+    },
+    {
+      "sampleTime": 5.75,
+      "file": "wulfa_t5p750.png",
+      "correlation": 0.369426,
+      "translationPixels": [
+        -262.462,
+        125.277
+      ],
+      "rotationDegrees": -7.4659,
+      "trustworthy": false,
+      "bandDeltaE00Mean": 23.449
+    },
+    {
+      "sampleTime": 6.0,
+      "file": "wulfa_t6p000.png",
+      "correlation": 0.36689,
+      "translationPixels": [
+        -222.04,
+        40.402
+      ],
+      "rotationDegrees": -1.5353,
+      "trustworthy": false,
+      "bandDeltaE00Mean": 23.2005
+    },
+    {
+      "sampleTime": 5.0,
+      "file": "wulfa_t5p000.png",
+      "correlation": 0.356558,
+      "translationPixels": [
+        -224.733,
+        76.586
+      ],
+      "rotationDegrees": -5.9294,
+      "trustworthy": false,
+      "bandDeltaE00Mean": 24.5415
+    },
+    {
+      "sampleTime": 5.5,
+      "file": "wulfa_t5p500.png",
+      "correlation": 0.345503,
+      "translationPixels": [
+        -244.242,
+        89.546
+      ],
+      "rotationDegrees": -7.0149,
+      "trustworthy": false,
+      "bandDeltaE00Mean": 24.7807
+    },
+    {
+      "sampleTime": 5.25,
+      "file": "wulfa_t5p250.png",
+      "correlation": 0.336795,
+      "translationPixels": [
+        -272.645,
+        91.32
+      ],
+      "rotationDegrees": -6.7828,
+      "trustworthy": false,
+      "bandDeltaE00Mean": 24.499
+    },
+    {
+      "sampleTime": 6.25,
+      "file": "wulfa_t6p250.png",
+      "correlation": 0.325191,
+      "translationPixels": [
+        -278.834,
+        92.667
+      ],
+      "rotationDegrees": -6.5553,
+      "trustworthy": false,
+      "bandDeltaE00Mean": 24.3366
+    },
+    {
+      "sampleTime": 6.5,
+      "file": "wulfa_t6p500.png",
+      "correlation": 0.293567,
+      "translationPixels": [
+        -262.294,
+        112.875
+      ],
+      "rotationDegrees": -5.7735,
+      "trustworthy": false,
+      "bandDeltaE00Mean": 24.7473
+    },
+    {
+      "sampleTime": 6.75,
+      "file": "wulfa_t6p750.png",
+      "correlation": 0.243364,
+      "translationPixels": [
+        -358.081,
+        193.371
+      ],
+      "rotationDegrees": -10.4582,
+      "trustworthy": false,
+      "bandDeltaE00Mean": 25.8804
+    }
+  ]
+}

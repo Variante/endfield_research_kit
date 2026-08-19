@@ -1,0 +1,85 @@
+{
+  "schema": "endfield.charinfo.settled-reference-frames.v1",
+  "boundary": "recorded_video_measurement",
+  "video": {
+    "path": "videos/2026-08-15_10-32-32.mkv",
+    "bytes": 1678613397,
+    "sha256": "2F542A3BE7CE3332295D3A841FD8613C62707E084F9E33A0F156DA8A06EBF5E7"
+  },
+  "selection": {
+    "settleClearanceSeconds": 1.0,
+    "segmentTailClearanceSeconds": 0.5,
+    "note": "Frame taken at the middle of the window where the start clip has finished and the segment has not yet ended, so both the camera and the character are settled and the recovered static vcam_overview is the correct camera."
+  },
+  "phaseNote": "loopPhaseSeconds = (frameTime - selection - startClipLength) mod loopClipLength. Selection is frame-accurate but animation t=0 is not, leaving about +/- 0.7 s; loop clips run 1.7 to 3.3 s, so this is a sweep starting point rather than an answer. It also assumes the loop starts at t=0 when the start clip ends, with no blend.",
+  "totals": {
+    "extracted": 3,
+    "skipped": 0
+  },
+  "skipped": [],
+  "frames": [
+    {
+      "actor": "endmin",
+      "actorDirectory": "Endminf",
+      "segmentIndex": 13,
+      "selectionSeconds": 163.9833,
+      "startClip": "A_actor_endminf_ui_overview_start",
+      "startClipSeconds": 5.8667,
+      "loopClip": "A_actor_endminf_ui_overview_loop",
+      "loopClipSeconds": 2.0833,
+      "settledWindowSeconds": [
+        170.85,
+        172.5
+      ],
+      "frameIndex": 10300,
+      "frameSeconds": 171.6667,
+      "elapsedSinceSelectionSeconds": 7.6834,
+      "loopPhaseSeconds": 1.8167,
+      "image": "endmin_settled_frame10300.png",
+      "imageSha256": "2167b9754703b3aa40ad6c573adcf77339a422e1af455ab66b4adb64f467531f",
+      "imageBytes": 6704562
+    },
+    {
+      "actor": "chen",
+      "actorDirectory": "Chen",
+      "segmentIndex": 16,
+      "selectionSeconds": 200.7833,
+      "startClip": "A_actor_chen_ui_overview_start",
+      "startClipSeconds": 5.25,
+      "loopClip": "A_actor_chen_ui_overview_loop",
+      "loopClipSeconds": 2.0,
+      "settledWindowSeconds": [
+        207.0333,
+        208.5
+      ],
+      "frameIndex": 12466,
+      "frameSeconds": 207.7667,
+      "elapsedSinceSelectionSeconds": 6.9834,
+      "loopPhaseSeconds": 1.7334,
+      "image": "chen_settled_frame12466.png",
+      "imageSha256": "8b44ae58c07445eea4e4d735b06eb41bc0cb378c60978b7b1f8cefac9cc2e154",
+      "imageBytes": 5831267
+    },
+    {
+      "actor": "pelica",
+      "actorDirectory": "Pelica",
+      "segmentIndex": 17,
+      "selectionSeconds": 209.9,
+      "startClip": "A_actor_pelica_ui_overview_start",
+      "startClipSeconds": 6.4167,
+      "loopClip": "A_actor_pelica_ui_overview_loop",
+      "loopClipSeconds": 3.0833,
+      "settledWindowSeconds": [
+        217.3167,
+        220.0
+      ],
+      "frameIndex": 13119,
+      "frameSeconds": 218.65,
+      "elapsedSinceSelectionSeconds": 8.75,
+      "loopPhaseSeconds": 2.3333,
+      "image": "pelica_settled_frame13119.png",
+      "imageSha256": "890b594adac6001547020f61bc6c903d81ec230761d03197a930abeff07e2365",
+      "imageBytes": 5600373
+    }
+  ]
+}
