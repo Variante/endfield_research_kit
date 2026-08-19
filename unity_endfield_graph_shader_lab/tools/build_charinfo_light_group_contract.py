@@ -10,10 +10,11 @@ Every character has one, so a shading comparison against a reference capture is
 only valid once the matching group is applied; the lab's default rig is not a
 substitute.
 
-Boundary: every Light component in every group serialises `m_Enabled = 1`, so
-which lights apply to a given Character Info tab is not decided at the component
-level. That selection is not recovered here, and the `_overview` naming is the
-only in-prefab hint about it.
+Lights are organised by Character Info tab under nodes named `light_overview`,
+`light_document`, `light_weapon` and so on. That parent decides the tab, not the
+light's own name: a light called `Point Light_overview` can sit under
+`light_document`. Every Light component serialises `m_Enabled = 1`, so the tab
+node's active state is what selects them.
 
 Usage:
     python tools/build_charinfo_light_group_contract.py --extract-root <dir>
@@ -103,17 +104,27 @@ def collect(extract_root: str) -> dict:
             }
             by_gameobject[owner.get("m_PathID")] = pid
 
-        def owning_group(pid: int) -> str | None:
+        def owning_group(pid: int) -> tuple[str | None, str | None]:
+            """Return (group root, tab node) for a light transform.
+
+            Lights are organised by Character Info tab under nodes named
+            light_overview, light_document, light_weapon and so on, so the tab
+            is the child of the group root on the way up.
+            """
             seen: set[int] = set()
+            tab = None
             while pid and pid not in seen:
                 seen.add(pid)
                 node = transforms.get(pid)
                 if node is None:
-                    return None
-                if node["name"].startswith("light_chr_"):
-                    return node["name"]
+                    return None, None
+                name = node["name"]
+                if name.startswith("light_chr_"):
+                    return name, tab
+                if name.startswith("light_"):
+                    tab = name
                 pid = node["father"]
-            return None
+            return None, None
 
         for path in glob.glob(os.path.join(lgroup, "Light", "*.json")):
             data = json.load(io.open(path, encoding="utf-8"))
@@ -121,13 +132,14 @@ def collect(extract_root: str) -> dict:
             tpid = by_gameobject.get(gid)
             if tpid is None:
                 continue
-            root = owning_group(tpid)
+            root, tab = owning_group(tpid)
             if not root:
                 continue
             node = transforms[tpid]
             colour = data.get("m_Color") or {}
             groups[root].append({
                 "name": node["name"],
+                "tab": tab,
                 "enabled": data.get("m_Enabled"),
                 "type": data.get("m_Type"),
                 "shape": data.get("m_Shape"),
@@ -152,7 +164,11 @@ def build(extract_root: str) -> dict:
     enabled = 0
     overview_named = 0
     for root in sorted(groups):
-        lights = sorted(groups[root], key=lambda item: (item["name"], item["intensity"] or 0))
+        lights = sorted(
+            groups[root],
+            key=lambda item: (item["tab"] or "", item["name"], item["intensity"] or 0),
+        )
+        by_tab = collections.Counter(item["tab"] or "(none)" for item in lights)
         total += len(lights)
         enabled += sum(1 for item in lights if item["enabled"])
         overview_named += sum(1 for item in lights if "overview" in (item["name"] or "").lower())
@@ -161,12 +177,14 @@ def build(extract_root: str) -> dict:
             "group": root,
             "actor": template.split("_", 2)[-1],
             "lightCount": len(lights),
+            "lightsByTab": dict(sorted(by_tab.items())),
+            "overviewLightCount": by_tab.get("light_overview", 0),
             "lights": lights,
         }
 
     return {
         "schema": "endfield.charinfo.light-group.v1",
-        "boundary": "source_closed_rig_without_tab_selection",
+        "boundary": "source_closed_rig_with_tab_grouping",
         "source": {
             "lua": "Lua/Data/LuaScripts/Phase/CharInfo/PhaseCharInfo.lua",
             "luaFunction": "PhaseCharInfo._RefreshCharModelAddon",
@@ -181,11 +199,20 @@ def build(extract_root: str) -> dict:
             "componentEnabled": enabled,
             "overviewNamed": overview_named,
         },
-        "unrecovered": (
-            "Which lights apply to a given Character Info tab. Every Light "
-            "component in every group serialises m_Enabled = 1, so the selection "
-            "is not made at the component level, and the _overview naming is the "
-            "only in-prefab hint."
+        "groupCountNote": (
+            "31 light groups against 30 camera tracks. The extra is "
+            "light_chr_0024_qianneng, whose 51 lights all sit under a single "
+            "light_qianneng node rather than the Character Info tab set, so it "
+            "belongs to the potential screen rather than to a roster character's "
+            "overview."
+        ),
+        "tabSelection": (
+            "Lights are organised by Character Info tab under nodes named "
+            "light_overview, light_document, light_weapon and so on, recorded per "
+            "light as 'tab'. That parent, not the light's own name, decides the "
+            "tab: a light called 'Point Light_overview' can sit under "
+            "light_document. Every Light component serialises m_Enabled = 1, so "
+            "the tab node's active state is what selects them."
         ),
         "consequence": (
             "A shading comparison against a reference capture is only valid once "
