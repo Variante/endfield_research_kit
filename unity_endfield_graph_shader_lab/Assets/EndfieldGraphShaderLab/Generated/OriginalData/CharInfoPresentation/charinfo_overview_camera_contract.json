@@ -34,6 +34,16 @@
   "unrecovered": "The per-frame cursor and UIGyroscopeEffect offset. Framing is now source-backed, but two captures of the same character still differ by that offset, so comparison continues to need alignment.",
   "vfsRootNote": "chr_0035_liino ships in the Persistent VFS, not StreamingAssets. Scanning only the StreamingAssets asset map drops it silently and yields 30 characters instead of 31.",
   "warning": "Do not enumerate the camera set from CharacterDisplayConfig. Its CharacterDisplayData entries are SerializeReference and are recorded unparsed; 15 of 33 yield no string hints, so counting camera groups there undercounts. Use the asset map.",
+  "actorAliases": {
+    "endminf": "endmin"
+  },
+  "actorAliasEntries": [
+    {
+      "from": "endminf",
+      "to": "endmin"
+    }
+  ],
+  "actorAliasNote": "Lab actor directory name -> contract actor. The lab imports template chr_0003_endmin as Endminf, so resolving by directory name alone misses it. operator_lights.json carries the same alias.",
   "characterCount": 31,
   "characters": {
     "chr_0002_endminm": {

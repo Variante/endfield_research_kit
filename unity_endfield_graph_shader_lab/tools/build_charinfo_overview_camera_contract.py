@@ -70,6 +70,12 @@ WULFA_VCAM_ROTATION = (-0.00036646938, 0.9991945, 0.009385596, 0.03901448)
 WULFA_FOV = 20.0
 ZHUANGFY_FOV = 20.007383
 
+# The lab's actor directory does not always match the prefab template. Template
+# chr_0003_endmin is the actor the lab calls Endminf, which is the same alias
+# operator_lights.json already carries. Without it, framing Endminf fails
+# closed even though its camera is present.
+ACTOR_ALIASES = {"endminf": "endmin"}
+
 
 class CameraContractError(RuntimeError):
     """Fail-closed recovery error."""
@@ -237,6 +243,17 @@ def build(extract_root: str) -> dict:
         if lens["dutch"] != 0.0:
             raise CameraContractError(f"{template} has a non-zero Dutch roll")
 
+    actors = {entry["actor"] for entry in characters.values()}
+    for alias, target in ACTOR_ALIASES.items():
+        if target not in actors:
+            raise CameraContractError(
+                f"actor alias {alias} -> {target} has no matching entry"
+            )
+        if alias in actors:
+            raise CameraContractError(
+                f"actor alias {alias} collides with a real entry"
+            )
+
     return {
         "schema": "endfield.charinfo.overview-camera.v1",
         "boundary": "source_closed_per_character_framing",
@@ -289,6 +306,17 @@ def build(extract_root: str) -> dict:
             "CharacterDisplayData entries are SerializeReference and are recorded "
             "unparsed; 15 of 33 yield no string hints, so counting camera groups "
             "there undercounts. Use the asset map."
+        ),
+        "actorAliases": ACTOR_ALIASES,
+        # Flat form for Unity's JsonUtility, which cannot read dictionaries.
+        "actorAliasEntries": [
+            {"from": alias, "to": target}
+            for alias, target in sorted(ACTOR_ALIASES.items())
+        ],
+        "actorAliasNote": (
+            "Lab actor directory name -> contract actor. The lab imports "
+            "template chr_0003_endmin as Endminf, so resolving by directory "
+            "name alone misses it. operator_lights.json carries the same alias."
         ),
         "characterCount": len(characters),
         "characters": characters,

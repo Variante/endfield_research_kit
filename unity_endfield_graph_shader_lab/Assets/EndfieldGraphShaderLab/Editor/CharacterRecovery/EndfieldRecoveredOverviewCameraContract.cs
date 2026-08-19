@@ -60,9 +60,17 @@ namespace EndfieldGraphShaderLabEditor
         }
 
         [Serializable]
+        private sealed class SerializedAlias
+        {
+            public string from;
+            public string to;
+        }
+
+        [Serializable]
         private sealed class SerializedContract
         {
             public SerializedEntry[] entries;
+            public SerializedAlias[] actorAliasEntries;
         }
 
         private static Dictionary<string, Entry> cache;
@@ -144,6 +152,26 @@ namespace EndfieldGraphShaderLabEditor
                     NearClipPlane = item.nearClipPlane,
                     FarClipPlane = item.farClipPlane,
                 };
+            }
+
+            // The lab's actor directory name does not always match the prefab
+            // template: template chr_0003_endmin is imported as Endminf. Without
+            // the alias, framing that actor fails closed even though its camera
+            // is present.
+            if (parsed.actorAliasEntries != null)
+            {
+                foreach (SerializedAlias alias in parsed.actorAliasEntries)
+                {
+                    if (string.IsNullOrEmpty(alias.from) || string.IsNullOrEmpty(alias.to))
+                        continue;
+                    if (!map.TryGetValue(alias.to, out Entry target))
+                    {
+                        throw new InvalidOperationException(
+                            $"Recovered overview camera alias '{alias.from}' points " +
+                            $"at missing actor '{alias.to}'.");
+                    }
+                    map[alias.from.ToLowerInvariant()] = target;
+                }
             }
 
             cache = map;
