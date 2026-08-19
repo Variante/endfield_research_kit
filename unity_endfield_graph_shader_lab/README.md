@@ -5122,10 +5122,23 @@ the lab as `EndfieldRecoveredVisibilitySHProducer`, publishing
 `_EndfieldRecoveredVisibilitySH`, `_LogSHLutTex`, and a readiness flag, and it
 already applies the identical `lut * _GStarParams.xy + _GStarParams.zw` form.
 
+Every magic number in that path is now derived rather than observed, which
+identifies the algorithm outright as spherical-harmonic exponentiation of a
+log-space visibility SH. `0.282095` is `Y00 = 1/(2*sqrt(pi))`, `3.544908` is its
+inverse `2*sqrt(pi)`, `-0.325735` is the band-1 irradiance convolution weight
+`-(2/3)*sqrt(3/(4*pi))`, and `0.406977` is `Y00 * log2(e)` — so the base-2 DXBC
+`exp` makes `exp2(sh.x * 0.406977)` exactly `exp(Y00 * sh.x)`. The buffer holds
+accumulated log occlusion and the receiver evaluates `exp(SH)` as
+`(exp(SH / 2^n))^(2^n)`, which is why it halves until the magnitude falls under
+the threshold, applies the LUT once, then repeats the SH self-product exactly
+`n` times.
+
 The gap is therefore one constant, not a subsystem: `cb4[3].xy`, the
-SH-magnitude to LUT-coordinate encode scale/bias. Until its producer is
-recovered the lab receiver keeps its zero capsule-AO stub; do not substitute a
-fitted encode.
+SH-magnitude to LUT-coordinate encode scale/bias. The halving loop bounds that
+magnitude at 4.6 and the result is quantised as `(x*255+0.5)/256`, so a scale of
+`1/4.6` with zero bias is consistent with the observed domain — but that is a
+consistency bound, not a recovered value. Until its producer is recovered the
+lab receiver keeps its zero capsule-AO stub; do not substitute a fitted encode.
 
 Rebuild and verify the contract from the pinned bytecode with:
 
