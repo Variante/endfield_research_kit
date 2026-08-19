@@ -5140,6 +5140,18 @@ magnitude at 4.6 and the result is quantised as `(x*255+0.5)/256`, so a scale of
 consistency bound, not a recovered value. Until its producer is recovered the
 lab receiver keeps its zero capsule-AO stub; do not substitute a fitted encode.
 
+Three name sources are already ruled out, so do not spend the attempt again. The
+fragment DXBC container holds only ISGN, OSGN and SHEX, with no RDEF chunk. The
+AnimeStudio HLSL decompile of
+`HGRP_CharacterNPR_ShadowReceiver_p22FE8453732C0E54.shader` emits unnamed arrays
+such as `float4 cb4[715]`, and its register assignment differs per variant, so
+slot numbers are not comparable across them. The Vulkan SMOL-V subprogram in the
+same asset carries no `OpName`/`OpMemberName`, and its decoded decorations are
+visibly corrupt: every `OpMemberDecorate Offset` reads 10 and the
+DescriptorSet/Binding pairs mirror their own result ids. The next source to try
+is the installed GameAssembly VisibilitySH pass setup, which writes this
+constant buffer, rather than any shader asset.
+
 Rebuild and verify the contract from the pinned bytecode with:
 
 ```bat
