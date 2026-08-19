@@ -198,6 +198,18 @@ def build(extract_root: str) -> dict:
         ),
         "characterCount": len(characters),
         "characters": characters,
+        # Flat form for Unity's JsonUtility, which cannot read dictionaries.
+        "entries": [
+            {
+                "templateId": template,
+                "actor": entry["actor"],
+                "track": entry["track"],
+                "vcamPosition": entry["vcamOverview"]["localPosition"],
+                "vcamRotation": entry["vcamOverview"]["localRotation"],
+                "lookAtPosition": entry["lookAtOverview"]["localPosition"],
+            }
+            for template, entry in sorted(characters.items())
+        ],
     }
 
 
