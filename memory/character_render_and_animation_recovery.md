@@ -1140,7 +1140,14 @@ only stable interpretation and priorities.
    zero-occlusion endpoint. The recovered occlusion is broader and softer than
    the original's more directional shadow, which is an open difference, and it
    still falls on the ready-subset floor rather than the real presentation
-   scene. The disambiguation is closed: the receiver's LUT is
+   scene. Two explanations for that softness are ruled out: the capsule set is
+   source-exact against retail's serialised
+   `HGCapsuleShadowHelper.m_capsuleShadowContainers` (Wulfa to 5e-15, Zhuangfy
+   to ~1e-7 bar one variant-selection difference), and the decode is confirmed
+   independently by `HGRP/VisibilitySH`'s own resolve pass, which performs the
+   identical exponentiation with the same threshold, quantisation, `.xy` LUT
+   read and full-precision constants. The only unconsumed retail field is
+   `isFoot`, set on the two foot capsules. The disambiguation is closed: the receiver's LUT is
    `_ABLutTex` = `visibility_ab_lut`, path id 2892350180982884757, a 256x1
    RGBA32 table the lab had never imported, distinct from the producer's
    `_LogSHLutTex`. Its zero B/A channels independently confirm the xy read.
