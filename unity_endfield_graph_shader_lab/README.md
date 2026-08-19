@@ -5291,40 +5291,43 @@ So the blocking item for roster-wide comparison is camera, not shading, and the
 camera data is now located.
 
 `PhaseCharInfo._RefreshCharModelAddon` reads `charDisplayData.charInfoCameraGroup`
-and `charInfoLightGroup` from `Beyond.Gameplay.CharacterDisplayConfig`, a single
-asset holding 33 `CharacterDisplayData` SerializeReference entries. Both fields
-are optional: the Lua instantiates a camera group only when the string is
-non-empty. Exactly 11 characters name one, each as a matching pair:
+and `charInfoLightGroup` from `Beyond.Gameplay.CharacterDisplayConfig`. Those
+resolve to per-character prefabs under
+`assets/beyond/dynamicassets/gameplay/prefabs/charinfo/`, and the asset map shows
+**30 camera tracks and 31 light groups**, essentially the whole roster rather
+than a handful of exceptions.
+
+Do not read the camera set out of `CharacterDisplayConfig` itself. Its
+`CharacterDisplayData` entries deserialise as SerializeReference and AnimeStudio
+records them unparsed, so only best-effort string hints are available: 15 of the
+33 entries yield no hints at all and the rest yield between 10 and 16. Counting
+camera groups there suggests only 11 characters have one, which the asset map
+contradicts. Use the asset map.
+
+Each `track_chr_<template>.prefab` is a Cinemachine rig with a virtual camera,
+look-at target and post volume per UI tab, plus the dolly paths between tabs.
+The overview state is `vcam_overview`, `lookat_overview` and `volume_overview`.
+For Wulfa those read:
 
 ```text
-CameraTracks/track_chr_0002_endminm    AdditionalLights/light_chr_0002_endminm
-CameraTracks/track_chr_0014_aurora     AdditionalLights/light_chr_0014_aurora
-CameraTracks/track_chr_0015_lifeng     AdditionalLights/light_chr_0015_lifeng
-CameraTracks/track_chr_0016_laevat     AdditionalLights/light_chr_0016_laevat
-CameraTracks/track_chr_0018_dapan      AdditionalLights/light_chr_0018_dapan
-CameraTracks/track_chr_0019_karin      AdditionalLights/light_chr_0019_karin
-CameraTracks/track_chr_0020_meurs      AdditionalLights/light_chr_0020_meurs
-CameraTracks/track_chr_0021_whiten     AdditionalLights/light_chr_0021_whiten
-CameraTracks/track_chr_0022_bounda     AdditionalLights/light_chr_0022_bounda
-CameraTracks/track_chr_0023_antal      AdditionalLights/light_chr_0023_antal
-CameraTracks/track_chr_0024_deepfin    AdditionalLights/light_chr_0024_deepfin
+lookat_overview  localPosition (0.022, 1.19, 0)
+vcam_overview    localPosition (0, 0.998, 3.46)
+vcam_overview    localRotation (-0.00036646938, 0.9991945, 0.009385596, 0.03901448)
 ```
 
-Everyone else, including Wulfa and Zhuangfy, names neither and falls back to the
-shared default camera. That reframes the work: the roster needs one shared
-camera plus eleven bespoke tracks, not thirty-two bespoke cameras.
+The look-at position and vcam rotation match the lab's already-recovered
+`look_at_local_position` and `overview_vcam_local_rotation_xyzw` exactly, which
+confirms this is their source. The vcam local position is new; the lab did not
+have it.
 
-It also explains the two hand-fitted lab cameras. Both of those characters use
-the default, so the spread between them, and between this video and the earlier
-stills, is not per-character authoring but the already-recorded unrecoverable
-per-frame unknown: the capture-time cursor and `UIGyroscopeEffect` state.
+So the overview camera is authored per character and recoverable offline for the
+whole roster, and the lab's two fitted cameras can be replaced with source data.
+What remains unrecoverable is the per-frame cursor and `UIGyroscopeEffect`
+offset, which is why this recording and the earlier stills disagree even for the
+same character.
 
-The eleven bespoke entries carry lighting as well as framing, so those
-characters cannot be compared on shading until both are recovered. Extracting
-the `track_chr_*` and `light_chr_*` prefabs for concrete transforms is the next
-step. These names come from AnimeStudio's heuristic string hints, because the
-`CharacterDisplayData` entries deserialise as SerializeReference and are
-currently recorded unparsed.
+Each camera track is paired with a light group, so those must be recovered
+together before a character's shading is comparable.
 
 ## Play Mode Presentation
 
