@@ -1056,6 +1056,39 @@ the source wall geometry whose absence blacks the background. The deferred pass
 and the missing backdrop are one problem: closing pass 0 is the route to the
 backdrop.
 
+## CharInfo per-character presentation
+
+The Character Info overview is authored per character, not shared. `PhaseCharInfo`
+instantiates `charDisplayData.charInfoCameraGroup` and `charInfoLightGroup`, and
+both now have contracts built from the source prefabs:
+
+- `charinfo_overview_camera_contract.json` — 30 characters. Each
+  `track_chr_<template>.prefab` is a Cinemachine rig with a vcam, look-at and
+  post volume per tab; the overview state is `vcam_overview` + `lookat_overview`.
+  The builder self-checks against Wulfa's independently recovered look-at and
+  vcam rotation and fails closed if either drifts.
+- `charinfo_light_group_contract.json` — 31 groups, 1,583 lights, 41 to 67 per
+  character, roles `RimLight_*`, `SpecLight_*`, `FogLight_*`, `FloorLight`,
+  `Point Light_overview`.
+
+This retires image-fitted framing: the lab's two fitted cameras are reproducible
+from source, and the rest of the roster can be framed the same way.
+
+Two consequences for measurement. A per-character shading delta is only valid
+once that character's own light group is applied, because the lab's default rig
+is not a substitute. And framing alone does not make two captures agree: the
+per-frame cursor and `UIGyroscopeEffect` offset stays unrecoverable, so
+comparison still needs alignment on top of correct framing.
+
+Do not enumerate either set from `CharacterDisplayConfig`. Its
+`CharacterDisplayData` entries are SerializeReference and recorded unparsed; 15
+of 33 yield no string hints, and counting camera groups there gives 11 against
+the asset map's 30. Use the asset map.
+
+Which lights apply to a given tab is not recovered. Every Light component
+serialises `m_Enabled = 1`, so the selection happens elsewhere, and the
+`_overview` naming on 202 of the 1,583 is the only in-prefab hint.
+
 ## Main animation gap
 
 Remaining runtime systems include:
