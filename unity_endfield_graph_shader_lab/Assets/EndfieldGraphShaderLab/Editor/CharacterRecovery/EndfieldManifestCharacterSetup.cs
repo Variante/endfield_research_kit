@@ -4723,9 +4723,6 @@ namespace EndfieldGraphShaderLabEditor
                 "Wulfa",
                 "A_actor_wulfa_ui_overview_loop_01",
                 0.95f,
-                new Vector2(0.492f, 0.389f),
-                0.0352f,
-                20.0f,
                 "runtime_reference_wulfa.png");
         }
 
@@ -4736,9 +4733,6 @@ namespace EndfieldGraphShaderLabEditor
                 "Zhuangfy",
                 "A_actor_zhuangfy_ui_overview_loop_01",
                 0.275f,
-                new Vector2(0.510f, 0.304f),
-                0.0331f,
-                20.007383f,
                 "runtime_reference_zhuangfy.png");
         }
 
@@ -5307,13 +5301,14 @@ namespace EndfieldGraphShaderLabEditor
                     : string.Empty));
         }
 
+        // The reference eye midpoint and span that used to be passed here were
+        // inputs to the image-fitted eye-line framing that the recovered
+        // overview camera replaced, and field of view now comes from that same
+        // contract, so none of the three reach the render any more.
         private static void RenderRuntimeReferenceActorPreview(
             string actorName,
             string clipName,
             float sampleTime,
-            Vector2 referenceEyeMidpointFromTop,
-            float referenceEyeSpanFraction,
-            float fieldOfView,
             string outputFileName)
         {
             EnsureHGCompatRenderPipelineAssigned();
@@ -5384,7 +5379,7 @@ namespace EndfieldGraphShaderLabEditor
                 camera,
                 actorName,
                 actorRoot.transform);
-            FrameCameraToRecoveredOperatorCamera(camera, actorName, fieldOfView);
+            FrameCameraToRecoveredOperatorCamera(camera, actorName);
             EndfieldRecoveredCharInfoBackgroundPortraitBuilder.EnsureAndBind(
                 camera,
                 actorName,
@@ -11611,8 +11606,7 @@ namespace EndfieldGraphShaderLabEditor
 
         internal static void FrameCameraToRecoveredOperatorCamera(
             Camera camera,
-            string actorName,
-            float fieldOfView)
+            string actorName)
         {
             // Authored Overview vcam endpoint plus its centered, zero-damping
             // Composer LookAt target, read from
@@ -11622,11 +11616,16 @@ namespace EndfieldGraphShaderLabEditor
             // hard-coded here. Cinemachine Composer owns the settled physical
             // orientation, so the serialized vcam quaternion is recorded in the
             // contract but not applied directly.
+            //
+            // Field of view, near and far come from the same Cinemachine lens
+            // rather than from the call site. Field of view varies per
+            // character across five distinct values just above 20 degrees, so
+            // the single constant the callers used was wrong for 13 of 31.
             EndfieldRecoveredOverviewCameraContract.Entry cameraEntry =
                 EndfieldRecoveredOverviewCameraContract.Resolve(actorName);
 
             camera.orthographic = false;
-            camera.fieldOfView = fieldOfView;
+            camera.fieldOfView = cameraEntry.FieldOfView;
             camera.aspect = (float)RuntimeReferenceRenderWidth / RuntimeReferenceRenderHeight;
             Vector3 cameraPosition = cameraEntry.CameraPosition;
             Vector3 lookAtPosition = cameraEntry.LookAtPosition;
@@ -11638,8 +11637,8 @@ namespace EndfieldGraphShaderLabEditor
                 camera,
                 actorName,
                 lookAtPosition);
-            camera.nearClipPlane = 0.1f;
-            camera.farClipPlane = 50.0f;
+            camera.nearClipPlane = cameraEntry.NearClipPlane;
+            camera.farClipPlane = cameraEntry.FarClipPlane;
             EndfieldRecoveredCharInfoSky sourceSky =
                 camera.GetComponent<EndfieldRecoveredCharInfoSky>();
             camera.clearFlags =
