@@ -5287,18 +5287,44 @@ because the two images differ in content as well as geometry: ORB keeps only 9
 of 800 matches as inliers, latching onto the UI overlay and the different
 backdrop.
 
-So the blocking item for roster-wide comparison is camera, not shading. Each
-character has its own authored overview virtual camera, and the lab has
-recovered `look_at_local_position` and `overview_vcam_local_rotation_xyzw` for
-Wulfa and Zhuangfy only. On top of that sits the already-recorded unrecoverable
-per-frame unknown, the capture-time cursor and `UIGyroscopeEffect` state, which
-differs between this recording and the earlier stills.
+So the blocking item for roster-wide comparison is camera, not shading, and the
+camera data is now located.
 
-Recovering the per-character CharInfo overview virtual camera roster-wide is the
-next offline step. `CharInfoCam` appears five times in the object index against
-21,007 `CinemachineVirtualCamera` references, so the search is bounded but not
-yet done. Until then the reference set is an inventory rather than a
-measurement target.
+`PhaseCharInfo._RefreshCharModelAddon` reads `charDisplayData.charInfoCameraGroup`
+and `charInfoLightGroup` from `Beyond.Gameplay.CharacterDisplayConfig`, a single
+asset holding 33 `CharacterDisplayData` SerializeReference entries. Both fields
+are optional: the Lua instantiates a camera group only when the string is
+non-empty. Exactly 11 characters name one, each as a matching pair:
+
+```text
+CameraTracks/track_chr_0002_endminm    AdditionalLights/light_chr_0002_endminm
+CameraTracks/track_chr_0014_aurora     AdditionalLights/light_chr_0014_aurora
+CameraTracks/track_chr_0015_lifeng     AdditionalLights/light_chr_0015_lifeng
+CameraTracks/track_chr_0016_laevat     AdditionalLights/light_chr_0016_laevat
+CameraTracks/track_chr_0018_dapan      AdditionalLights/light_chr_0018_dapan
+CameraTracks/track_chr_0019_karin      AdditionalLights/light_chr_0019_karin
+CameraTracks/track_chr_0020_meurs      AdditionalLights/light_chr_0020_meurs
+CameraTracks/track_chr_0021_whiten     AdditionalLights/light_chr_0021_whiten
+CameraTracks/track_chr_0022_bounda     AdditionalLights/light_chr_0022_bounda
+CameraTracks/track_chr_0023_antal      AdditionalLights/light_chr_0023_antal
+CameraTracks/track_chr_0024_deepfin    AdditionalLights/light_chr_0024_deepfin
+```
+
+Everyone else, including Wulfa and Zhuangfy, names neither and falls back to the
+shared default camera. That reframes the work: the roster needs one shared
+camera plus eleven bespoke tracks, not thirty-two bespoke cameras.
+
+It also explains the two hand-fitted lab cameras. Both of those characters use
+the default, so the spread between them, and between this video and the earlier
+stills, is not per-character authoring but the already-recorded unrecoverable
+per-frame unknown: the capture-time cursor and `UIGyroscopeEffect` state.
+
+The eleven bespoke entries carry lighting as well as framing, so those
+characters cannot be compared on shading until both are recovered. Extracting
+the `track_chr_*` and `light_chr_*` prefabs for concrete transforms is the next
+step. These names come from AnimeStudio's heuristic string hints, because the
+`CharacterDisplayData` entries deserialise as SerializeReference and are
+currently recorded unparsed.
 
 ## Play Mode Presentation
 
