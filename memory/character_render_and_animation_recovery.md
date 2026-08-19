@@ -1047,11 +1047,14 @@ character-response equations.
 The character surfaces themselves do improve underneath that failure, so they
 are the promotable candidates once a backdrop exists to hold them.
 
-The recovered deferred data cannot move the image. The selected pass-0
-transports and the DefaultDeferred GBuffer sidecar are GPU-closed but record
-`pass0_consumer_enabled=false` and `published_by_default=false`, and the sidecar
-is explicitly non-presented. They are correctness results, not fidelity results,
-and no image measurement can promote them.
+The recovered deferred data cannot move today's image, but it is not a detour.
+The selected pass-0 transports and the DefaultDeferred GBuffer sidecar are
+GPU-closed while recording `pass0_consumer_enabled=false` and
+`published_by_default=false`, so no image measurement can promote them. That
+sidecar is however the same-camera SphereOutside sidecar, and SphereOutside is
+the source wall geometry whose absence blacks the background. The deferred pass
+and the missing backdrop are one problem: closing pass 0 is the route to the
+backdrop.
 
 ## Main animation gap
 
@@ -1113,6 +1116,24 @@ only stable interpretation and priorities.
    coherent default frame to promote anything into and every character gain
    stays gated behind a labeled non-original subset. The open items are
    `SphereOutside`, `ShadowPlane`, and `exactSourceAssetsReady`.
+
+   SphereOutside is already asset-complete; what blocks it is the CharInfo-frame
+   resolver gates, IFix-patched render parameters, render-graph/subpass state,
+   and frame-produced lighting resources. `required_next_capture` in
+   `deferred_lighting_recovery.json` specifies the one action that closes all of
+   them: a supported GPU capture of a settled original-client CharInfo frame
+   with SphereOutside visible, on an offline session. Static work does not
+   substitute for it. ShadowPlane additionally needs the shipped capsule-AO
+   producer and the exact character stencil writer.
+
+   That capture has no tooling here and sits outside the current access policy:
+   the existing lab capture paths target the lab's own player, and
+   original-client access is pinned at `external_telemetry_only`, which by its
+   own `knownLimits` exposes no draw events, descriptors, constants, or render
+   targets, and whose `prohibitedActions` cover injector attachment and global
+   API layer registration. This line is therefore blocked on an owner decision
+   about capture method rather than on analysis. Do not widen that boundary
+   without one.
 
 1. Follow the API-2 resource/descriptor records after the HGTree front-end
    wrappers to their runtime object/queue consumer. The callback route now
