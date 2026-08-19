@@ -56,6 +56,18 @@ namespace EndfieldGraphShaderLab
             Shader.PropertyToID("_GBufferTexture1");
         private static readonly int LutId =
             Shader.PropertyToID("_LogSHLutTex");
+
+        // Consumer-side publication for the recovered ShadowReceiver capsule
+        // term. _ABLutTex is a different table from _LogSHLutTex; see
+        // shadow_receiver_capsule_ao_contract.json.
+        private static readonly int AbLutId =
+            Shader.PropertyToID("_EndfieldRecoveredABLutTex");
+        private static readonly int ScreenScaleId =
+            Shader.PropertyToID("_EndfieldRecoveredVisibilitySHScreenScale");
+        private static readonly int CoeffParamsId =
+            Shader.PropertyToID("_EndfieldRecoveredVisibilitySHCoeffParams");
+        private static readonly int EncodeParamsId =
+            Shader.PropertyToID("_EndfieldRecoveredVisibilitySHEncodeParams");
         private static readonly int GpuViewProjectionId =
             Shader.PropertyToID("_GpuViewProjection");
         private static readonly int InverseGpuViewProjectionId =
@@ -77,6 +89,7 @@ namespace EndfieldGraphShaderLab
             public RetailDefaults retailDefaults;
             public Vector4 gStarParams;
             public string visibilityShLutRgba32Base64;
+            public string visibilityAbLutRgba32Base64;
             public Actor[] actors;
         }
 
@@ -159,6 +172,10 @@ namespace EndfieldGraphShaderLab
         private Material material;
         private Mesh sphereMesh;
         private Texture2D visibilityShLut;
+        private Texture2D visibilityAbLut;
+        private readonly Vector4[] consumerConstants =
+            new Vector4[
+                EndfieldRecoveredVisibilitySHConstantsContract.VectorCount];
         private ComputeBuffer capsuleBuffer;
         private bool initialized;
         private bool loggedActive;
@@ -360,6 +377,49 @@ namespace EndfieldGraphShaderLab
                 canonicalFrameResourcesReady
                     ? (Texture)resources.color
                     : Texture2D.blackTexture);
+            // Consumer-side capsule-AO inputs. VisibilitySHConstData vectors 2
+            // and 3 are the two the ShadowReceiver reads as its LUT coefficient
+            // and encode parameters.
+            commandBuffer.SetGlobalTexture(AbLutId, visibilityAbLut);
+            // preGBuffer carries the full-resolution frame the receiver
+            // rasterises against; the VisibilitySH buffer is its half.
+            int fullWidth = preGBuffer.width;
+            int fullHeight = preGBuffer.height;
+            commandBuffer.SetGlobalVector(
+                ScreenScaleId,
+                new Vector4(
+                    1.0f / Mathf.Max(1, fullWidth),
+                    1.0f / Mathf.Max(1, fullHeight),
+                    fullWidth,
+                    fullHeight));
+            if (EndfieldRecoveredVisibilitySHConstantsContract.TryBuild(
+                    fullWidth,
+                    fullHeight,
+                    consumerConstants,
+                    out string consumerFailure))
+            {
+                commandBuffer.SetGlobalVector(
+                    CoeffParamsId,
+                    consumerConstants[
+                        EndfieldRecoveredVisibilitySHConstantsContract
+                            .SelectedReadFirstVector]);
+                commandBuffer.SetGlobalVector(
+                    EncodeParamsId,
+                    consumerConstants[
+                        EndfieldRecoveredVisibilitySHConstantsContract
+                            .SelectedReadFirstVector + 1]);
+            }
+            else
+            {
+                // Fail closed: without the exact constants the receiver must
+                // keep its neutral zero-occlusion endpoint.
+                canonicalFrameResourcesReady = false;
+                Debug.LogWarning(
+                    "Recovered VisibilitySH consumer constants unavailable, so " +
+                    "the ShadowReceiver capsule term stays disabled: " +
+                    consumerFailure,
+                    null);
+            }
             commandBuffer.SetGlobalFloat(
                 ReadyId,
                 canonicalFrameResourcesReady ? 1.0f : 0.0f);
@@ -485,7 +545,9 @@ namespace EndfieldGraphShaderLab
                 capsuleBuffer = null;
             }
             DestroyResource(visibilityShLut);
+            DestroyResource(visibilityAbLut);
             visibilityShLut = null;
+            visibilityAbLut = null;
             DestroyResource(material);
             material = null;
             Shader.SetGlobalTexture(
@@ -584,6 +646,38 @@ namespace EndfieldGraphShaderLab
             };
             visibilityShLut.LoadRawTextureData(lutBytes);
             visibilityShLut.Apply(false, true);
+
+            byte[] abLutBytes;
+            try
+            {
+                abLutBytes = Convert.FromBase64String(
+                    payload.visibilityAbLutRgba32Base64);
+            }
+            catch (FormatException)
+            {
+                failure = "exact VisibilityAB LUT base64 is invalid";
+                return false;
+            }
+            if (abLutBytes.Length != 256 * 4)
+            {
+                failure = "exact VisibilityAB LUT is not 1024 bytes";
+                return false;
+            }
+            visibilityAbLut = new Texture2D(
+                256,
+                1,
+                TextureFormat.RGBA32,
+                false,
+                true)
+            {
+                hideFlags = HideFlags.HideAndDontSave,
+                name = "visibility_ab_lut (exact retail linear payload)",
+                filterMode = FilterMode.Bilinear,
+                wrapMode = TextureWrapMode.Clamp,
+                anisoLevel = 1
+            };
+            visibilityAbLut.LoadRawTextureData(abLutBytes);
+            visibilityAbLut.Apply(false, true);
 
             capsuleBuffer = new ComputeBuffer(
                 CapsuleCapacity,
