@@ -5167,9 +5167,8 @@ sampled the wrong table — that LUT is a different one whose `R==B` and `G==A`.
 Recover it with a targeted extraction, which needs no game session:
 
 ```bat
-tools\AnimeStudio\AnimeStudio.CLIin\Release
-et9.0-windows\AnimeStudio.CLI.exe ^
-  "%ENDFIELD_GAME_ROOT%\Persistent\VFS CE8FA57ò43F039A1BFD05676B5D323B50D4AA.chk" ^
+tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe ^
+  "%ENDFIELD_GAME_ROOT%\Persistent\VFS\0CE8FA57\36243F039A1BFD05676B5D323B50D4AA.chk" ^
   <out> --game ArknightsEndfield --types Texture2D --export_type Convert ^
   --texture2d_native_payload
 ```
@@ -5178,9 +5177,40 @@ That same run also produces `visibility_sh_lut` byte-identical to the LUT the
 lab had already pinned, which validates the extraction path independently of the
 new asset.
 
-No constant, LUT identity, or channel read remains open on this path. What
-remains is implementation: the receiver still stubs its capsule term to zero and
-`visibility_ab_lut` is not yet imported.
+No constant, LUT identity, or channel read remains open on this path, and the
+term is now implemented. The receiver evaluates the recovered SH exponentiation
+and the producer publishes the `_ABLutTex` payload, the screen scale, and
+`VisibilitySHConstData` vectors 2 and 3 as the LUT coefficient and encode
+parameters. It is gated on the producer's readiness flag and fails closed to the
+neutral zero-occlusion endpoint when the constants cannot be built, so an
+unpublished frame is unchanged.
+
+This is the first change in this line of work that moves the image, and both
+actors agree. Against the composed profile the overall band mean falls from
+12.2797 to 11.4748 on Zhuangfy and from 12.8723 to 12.2405 on Wulfa, seven of
+eight regions improving in each case:
+
+| region | Zhuangfy | region | Wulfa |
+| --- | --- | --- | --- |
+| olive_skirt_cloth | -2.325 | red_hood | -2.237 |
+| ground_contact | -1.165 | face_skin | -1.289 |
+| dark_hardware | -0.865 | hair_side | -1.105 |
+| hair_dark | -0.803 | red_cape_strip | -0.954 |
+| face_skin | -0.441 | pale_skirt_cloth | -0.578 |
+| background_wall | -0.383 | background_wall | -0.046 |
+| pale_armor | -0.121 | ear_fur | -0.008 |
+| antler_hardware | +0.020 | dark_hardware | +0.304 |
+
+Those are the best results recorded for both: Zhuangfy 12.4549 default, 12.2797
+composed, 11.4748 with the capsule term; Wulfa 13.4919, 12.8723, 12.2405.
+
+Visual inspection confirms a real occlusion under the hand where the original
+capture has its shadow, not a global darkening. The recovered term is broader
+and softer than the original's more defined, directional shadow. That remains an
+open difference and must not be tuned away.
+
+The term still renders onto the ready-subset floor, a labeled non-original
+surface. The shadow is source-backed; the ground it falls on is not yet.
 
 Rebuild and verify the contract from the pinned bytecode with:
 
