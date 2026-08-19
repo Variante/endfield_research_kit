@@ -147,5 +147,23 @@
       "text": "mad r0.xyz, r0.xxxx, r0.yzwy, l(1.000000, 1.000000, 1.000000, 0.000000)"
     }
   },
+  "ruled_out_name_sources": [
+    {
+      "source": "fragment DXBC reflection chunk",
+      "result": "absent",
+      "detail": "the container holds only ISGN, OSGN and SHEX; there is no RDEF chunk, so no constant-buffer or variable names"
+    },
+    {
+      "source": "AnimeStudio HLSL decompile of the source Shader asset HGRP_CharacterNPR_ShadowReceiver_p22FE8453732C0E54.shader",
+      "result": "unnamed",
+      "detail": "constant buffers are emitted as unnamed arrays such as float4 cb4[715]; register assignment also differs per variant, so slot numbers are not comparable across them"
+    },
+    {
+      "source": "Vulkan SMOL-V subprogram in the same Shader asset",
+      "result": "unusable",
+      "detail": "no OpName or OpMemberName debug records, and the decoded decorations are visibly corrupt: every OpMemberDecorate Offset reads 10 and DescriptorSet/Binding pairs mirror their own result ids"
+    }
+  ],
+  "next_source_to_try": "the installed GameAssembly VisibilitySH pass setup, which writes this constant buffer, rather than any shader asset",
   "open_gap": "cb4[3].xy. Until its producer is recovered the lab receiver must keep its zero capsule-AO stub rather than substituting a fitted encode."
 }
