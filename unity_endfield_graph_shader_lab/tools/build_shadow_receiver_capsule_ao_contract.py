@@ -150,15 +150,36 @@ def build_contract(disassembly: str) -> dict:
         ),
         "consumer_abi": {
             "t4": {
-                "role": "SH exponentiation coefficient LUT",
-                "retail_candidates": ["_ABLutTex", "_LogSHLutTex"],
-                "status": "retail_name_not_yet_disambiguated",
-                "note": (
-                    "the retail block declares both. _ABLutTex is the stronger "
-                    "candidate for this consumer because the fragment reads two "
-                    "channels and applies an (a, b) scale/bias pair, while the lab "
-                    "producer binds _LogSHLutTex. Do not assume the lab producer's "
-                    "LUT is the one this receiver samples"
+                "role": "SH exponentiation (a, b) coefficient LUT",
+                "retail_name": "_ABLutTex",
+                "status": "source_closed",
+                "asset": {
+                    "name": "visibility_ab_lut",
+                    "path_id": 2892350180982884757,
+                    "resources_field": "HGRenderPipelineRuntimeResources.textures.VisibilityABLut",
+                    "serialized_file": "CAB-5edbf457631197eaf84a8374582f8cca",
+                    "width": 256,
+                    "height": 1,
+                    "format": "RGBA32",
+                    "color_space": "linear",
+                    "payload_bytes": 1024,
+                    "payload_sha256": (
+                        "ca1a648d1a19434b41a9dbbe9f6ad0191c4c4e7f088341761725895748f33ed0"
+                    ),
+                },
+                "channels_read": "xy",
+                "channel_evidence": (
+                    "B and A are zero across all 256 texels, so sampling zw would "
+                    "be degenerate; R and G carry the rising coefficient curve. "
+                    "This independently confirms the xy read implied by the "
+                    "t4.zxyw swizzle"
+                ),
+                "correction": (
+                    "this is NOT the lab producer's LUT. The producer binds "
+                    "_LogSHLutTex = visibility_sh_lut, path id 8323377478838034894, "
+                    "sha256 3e5d7d50ed14ab927676cb638eebcedfb8e02766b8e0d01164105d5"
+                    "19d925bf3, a different table whose R==B and G==A. Binding the "
+                    "producer's texture to t4 would sample the wrong LUT"
                 ),
             },
             "t5": {
@@ -313,12 +334,17 @@ def build_contract(disassembly: str) -> dict:
             "this constant buffer, rather than any shader asset"
         ),
         "open_gap": (
-            "None of the constants remain open. The last unknown, cb4[3].xy, "
-            "resolves to VisibilitySHConstData vector 3, which the lab already "
-            "recovers from native evidence. The remaining work is wiring: the "
-            "receiver still stubs its capsule term to zero, and the retail LUT "
-            "identity must be disambiguated between _ABLutTex and _LogSHLutTex "
-            "before the producer's texture is bound to t4."
+            "None. Every constant, both LUT identities, and the channel reads are "
+            "source-closed offline. The remaining work is implementation only: the "
+            "lab receiver still stubs its capsule term to zero and the "
+            "visibility_ab_lut asset is not yet imported."
+        ),
+        "extraction_validation": (
+            "The same targeted AnimeStudio --filter_data extraction also produced "
+            "visibility_sh_lut byte-identical to the LUT the lab had already "
+            "pinned (sha256 3e5d7d50ed14ab927676cb638eebcedfb8e02766b8e0d01164105d5"
+            "19d925bf3), which validates the extraction path independently of the "
+            "new asset."
         ),
     }
 
