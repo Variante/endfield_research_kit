@@ -5109,6 +5109,35 @@ So this line of work is blocked on an owner decision about capture method, not
 on further analysis. Do not widen the boundary or add an attach path without
 that decision.
 
+### ShadowPlane capsule AO
+
+The manifest previously listed a missing "shipped capsule-AO producer".
+Disassembling the pinned `HGRP/CharacterNPR_ShadowReceiver` fragment shows there
+is no such separate producer. The receiver samples the VisibilitySH screen
+buffer at `SV_Position.xy * cb0[82].zw`, decodes it through the log-SH LUT in
+`t4` with `cb4[2]` = `_GStarParams`, evaluates SH bands 0 and 1 with
+`0.282095` and `-0.325735`, and lerps the shaded result toward `cb5[3]` =
+`_CapsuleAoColor` by the resulting occlusion. That producer already exists in
+the lab as `EndfieldRecoveredVisibilitySHProducer`, publishing
+`_EndfieldRecoveredVisibilitySH`, `_LogSHLutTex`, and a readiness flag, and it
+already applies the identical `lut * _GStarParams.xy + _GStarParams.zw` form.
+
+The gap is therefore one constant, not a subsystem: `cb4[3].xy`, the
+SH-magnitude to LUT-coordinate encode scale/bias. Until its producer is
+recovered the lab receiver keeps its zero capsule-AO stub; do not substitute a
+fitted encode.
+
+Rebuild and verify the contract from the pinned bytecode with:
+
+```bat
+python tools\build_shadow_receiver_capsule_ao_contract.py
+python tools\build_shadow_receiver_capsule_ao_contract.py --check
+```
+
+It re-disassembles the hash-pinned DXBC and asserts all 16 instruction
+landmarks the conclusion rests on, so a shader revision cannot silently
+invalidate it.
+
 Do not edit `render_visual_delta_frames.bat` while a run is in flight. cmd.exe
 reads a batch file incrementally, so an edit mid-run makes it resume at a stale
 offset; one such run reported a normal backdrop for a profile that black-screens

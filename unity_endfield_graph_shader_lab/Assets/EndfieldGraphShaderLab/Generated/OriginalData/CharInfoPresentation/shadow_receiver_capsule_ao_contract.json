@@ -1,0 +1,138 @@
+{
+  "schema": "endfield.charinfo.shadow-receiver-capsule-ao.v1",
+  "boundary": "source_closed_consumer_with_one_open_constant",
+  "source": {
+    "shader": "HGRP/CharacterNPR_ShadowReceiver",
+    "pass": "ShadowReceiver",
+    "path_id": "2521598335323475540",
+    "fragment_dxbc": "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/ShaderEvidence/ShadowReceiver.fragment.dxbc.bytes",
+    "fragment_bytes": 13852,
+    "fragment_sha256": "88367e81d2557e26f6154a7ef2b29bb22abf1a65786d08fc7f0696df43950769"
+  },
+  "finding": "There is no separate analytic capsule-AO producer. The shipped ShadowReceiver consumes the VisibilitySH screen buffer plus its log-SH LUT and lerps the shaded result toward _CapsuleAoColor by the decoded occlusion. The producer the manifest calls missing is the already-implemented VisibilitySH producer.",
+  "consumer_abi": {
+    "t4": {
+      "role": "log-SH LUT",
+      "lab_property": "_LogSHLutTex",
+      "published_by": "EndfieldRecoveredVisibilitySHProducer"
+    },
+    "t5": {
+      "role": "VisibilitySH screen buffer",
+      "lab_property": "_EndfieldRecoveredVisibilitySH",
+      "published_by": "EndfieldRecoveredVisibilitySHProducer",
+      "screen_uv": "SV_Position.xy * cb0[82].zw"
+    },
+    "cb4[2]": {
+      "role": "LUT coefficient scale/bias",
+      "retail_name": "_GStarParams",
+      "status": "source_closed",
+      "evidence": "the lab producer already applies the identical lut * _GStarParams.xy + _GStarParams.zw form"
+    },
+    "cb4[3].xy": {
+      "role": "SH-magnitude to LUT-coordinate encode scale/bias",
+      "status": "not_recovered_fail_closed",
+      "note": "the only value still missing before the receiver can evaluate the exact occlusion"
+    },
+    "cb5[2].xyz": {
+      "role": "_ShadowColor"
+    },
+    "cb5[2].w": {
+      "role": "shadow amount multiplier"
+    },
+    "cb5[3].xyz": {
+      "role": "_CapsuleAoColor"
+    }
+  },
+  "recovered_equation": [
+    "uv = SV_Position.xy * cb0[82].zw",
+    "sh = t5.SampleLevel(s0, uv, 0)",
+    "if all(|sh| <= 1e-4): visibility = float2(0, 1)",
+    "else: halve sh while length(sh.yzw) > 4.6, counting the halvings",
+    "lutX = (length(sh.yzw) * cb4[3].x + cb4[3].y) * 255 + 0.5, scaled by 1/256",
+    "lut = t4.SampleLevel(s0, float2(lutX, 0.5), 0)",
+    "coefficients = lut * cb4[2].xy + cb4[2].zw",
+    "band = float4(coefficients.x * 3.544908, coefficients.y * sh.yzw)",
+    "band *= exp2(sh.x * 0.406977)",
+    "repeat the halving count: band = SH self-product scaled by 0.282095",
+    "visibility = float2(band.y * -0.325735, band.x * 0.282095)",
+    "occlusion = 1 - saturate(max(visibility.x + visibility.y, 0))",
+    "result = lerp(1, cb5[2].xyz, shadowTerm)",
+    "output.rgb = lerp(result, cb5[3].xyz, occlusion)"
+  ],
+  "constants": {
+    "sh_band0": 0.282095,
+    "sh_band1_convolved": -0.325735,
+    "band0_gain": 3.544908,
+    "log_exponent_scale": 0.406977,
+    "halving_threshold": 4.6,
+    "significance_epsilon": 0.0001,
+    "note": "3.544908 is 2*sqrt(pi) and 0.282095 is 1/(2*sqrt(pi)); the DXBC exp opcode is base 2"
+  },
+  "landmarks": {
+    "screen_uv_scale": {
+      "instruction": 371,
+      "text": "mul r0.yz, v0.xxyx, cb0[82].zzwz"
+    },
+    "visibility_sh_sample": {
+      "instruction": 372,
+      "text": "r1.xyzw, r0.yzyy, t5.xyzw, s0"
+    },
+    "significance_test": {
+      "instruction": 373,
+      "text": "lt r2.xyzw, l(0.000100, 0.000100, 0.000100, 0.000100), |r1.xyzw|"
+    },
+    "halving_threshold": {
+      "instruction": 383,
+      "text": "ge r2.y, l(4.600000), r0.w"
+    },
+    "lut_encode": {
+      "instruction": 394,
+      "text": "mad r0.y, r0.y, cb4[3].x, cb4[3].y"
+    },
+    "lut_quantise": {
+      "instruction": 395,
+      "text": "mad r0.y, r0.y, l(255.000000), l(0.500000)"
+    },
+    "lut_texel_scale": {
+      "instruction": 396,
+      "text": "mul r3.x, r0.y, l(0.003906)"
+    },
+    "lut_sample": {
+      "instruction": 398,
+      "text": "r0.yz, r3.xyxx, t4.zxyw, s0"
+    },
+    "gstar_scale_bias": {
+      "instruction": 399,
+      "text": "mad r0.yz, r0.yyzy, cb4[2].xxyx, cb4[2].zzwz"
+    },
+    "band0_gain": {
+      "instruction": 400,
+      "text": "mul r3.x, r0.y, l(3.544908)"
+    },
+    "log_exponent": {
+      "instruction": 402,
+      "text": "mul r0.y, r1.x, l(0.406977)"
+    },
+    "sh_self_product": {
+      "instruction": 410,
+      "text": "mul r4.xyzw, r3.xyzw, l(0.282095, 0.282095, 0.282095, 0.282095)"
+    },
+    "band_evaluation": {
+      "instruction": 421,
+      "text": "mul r1.xy, r3.yxyy, l(-0.325735, 0.282095, 0.000000, 0.000000)"
+    },
+    "occlusion_luma_fold": {
+      "instruction": 429,
+      "text": "dp3 r0.w, r0.wwww, l(0.212673, 0.715152, 0.072175, 0.000000)"
+    },
+    "capsule_ao_lerp": {
+      "instruction": 433,
+      "text": "mad o0.xyz, r0.wwww, r1.xyzx, r0.xyzx"
+    },
+    "shadow_color_lerp": {
+      "instruction": 426,
+      "text": "mad r0.xyz, r0.xxxx, r0.yzwy, l(1.000000, 1.000000, 1.000000, 0.000000)"
+    }
+  },
+  "open_gap": "cb4[3].xy. Until its producer is recovered the lab receiver must keep its zero capsule-AO stub rather than substituting a fitted encode."
+}
