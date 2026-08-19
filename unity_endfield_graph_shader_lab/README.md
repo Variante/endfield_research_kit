@@ -5041,6 +5041,19 @@ explicitly non-presented. `deferred.transform_variables`, `deferred.light_data`,
 are GPU-closed transports that publish nothing into the beauty frame, so no
 image measurement can promote them and none of them is production-eligible.
 
+That is a statement about today's frame, not about their value. The deferred
+chain and the missing backdrop are the same problem: the sidecar is the
+same-camera **SphereOutside** sidecar, and SphereOutside is exactly the source
+wall geometry whose absence blacks the background. `source_manifest.json`
+records SphereOutside as asset-complete down to its Sphere mesh and
+`T_default_mro_MRO` payload, with the HGRP/Lit HGBuffer stages, deferred
+resolver shader family, HighEnd GBuffer formats, and native draw entry points
+recovered. What is missing is the exact CharInfo-frame resolver gates, the
+IFix-patched render parameters, the render-graph/subpass state, and the
+frame-produced lighting resources. A forward/PBR substitute would change
+behaviour, so the whole physical presentation selector stays fail-closed.
+Closing pass 0 is therefore the route to the backdrop, not a detour from it.
+
 The recovered character response cannot be promoted without the CharInfo
 physical presentation scene. `EndfieldRecoveredCharInfoSky.PrepareForRender`
 keys on the source-energy-core keyword: when it is set the camera switches to
@@ -5065,6 +5078,36 @@ The composed profile only looks complete because the ready subset supplies wall,
 floor, and far grid. Completing the CharInfo physical presentation scene is
 therefore the blocking item for a promotable default frame, ahead of further
 character-response work.
+
+`deferred_lighting_recovery.json#required_next_capture` already names the single
+step that would close it: one settled original-client CharInfo frame with
+SphereOutside visible, captured with supported GPU tooling on an offline
+session. That one capture is specified to yield the DeferredLighting draw-event
+order, every attachment format and load/store and stencil state, the raw
+constant-buffer bytes at the HGBuffer and deferred-resolve draws, the resolved
+render-parameter booleans and IFix patch-table state, and the GBuffer/depth/
+scene-colour/shadow-mask/AO/SSR/reflection/fog/wetness resource exports. Nothing
+smaller unblocks the backdrop, and no amount of further static work substitutes
+for it. ShadowPlane needs its own additions on top: the shipped capsule-AO
+producer and the exact character stencil writer.
+
+No tooling for that capture exists in this repo, and it is outside the current
+access policy. `run_charinfo_d3d12_capture_diagnostic.bat` and
+`capture_m23_source_dxcap.ps1` both capture the lab's own player, not the retail
+client. Original-client access is pinned at
+`config/original_client_shader_recovery_capture.json` with
+`boundary=external_telemetry_only`, whose own `knownLimits` state that it
+"does not expose draw events, shader bytecode, descriptors, constants, textures,
+render targets", and whose `prohibitedActions` include debugger/injector
+attachment and "global Vulkan layer registration or API forcing" — the usual
+attach mechanism for a frame capture tool. The same config notes that
+AntiCheatExpert may hide the live executable path, and the existing OverlayShadow
+gap is already recorded as needing "a vendor-sanctioned or stock-profiler-
+compatible capture".
+
+So this line of work is blocked on an owner decision about capture method, not
+on further analysis. Do not widen the boundary or add an attach path without
+that decision.
 
 Do not edit `render_visual_delta_frames.bat` while a run is in flight. cmd.exe
 reads a batch file incrementally, so an edit mid-run makes it resume at a stale
