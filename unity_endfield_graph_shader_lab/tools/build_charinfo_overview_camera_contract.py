@@ -14,6 +14,10 @@ records them unparsed, so only best-effort string hints survive: 15 of its 33
 entries yield none at all. Counting camera groups there suggests 11 characters
 have one, which the asset map contradicts.
 
+Walk both asset maps. chr_0035_liino ships in the Persistent VFS rather than
+StreamingAssets, so a StreamingAssets-only scan silently yields 30 characters
+instead of 31 and the missing one fails closed at framing time.
+
 This replaces image-fitted framing with source data. It does not recover the
 per-frame cursor and UIGyroscopeEffect offset, which stays unknown and is why
 two captures of the same character still disagree.
@@ -189,6 +193,11 @@ def build(extract_root: str) -> dict:
             "The per-frame cursor and UIGyroscopeEffect offset. Framing is now "
             "source-backed, but two captures of the same character still differ "
             "by that offset, so comparison continues to need alignment."
+        ),
+        "vfsRootNote": (
+            "chr_0035_liino ships in the Persistent VFS, not StreamingAssets. "
+            "Scanning only the StreamingAssets asset map drops it silently and "
+            "yields 30 characters instead of 31."
         ),
         "warning": (
             "Do not enumerate the camera set from CharacterDisplayConfig. Its "

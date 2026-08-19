@@ -28,8 +28,9 @@
     ]
   },
   "unrecovered": "The per-frame cursor and UIGyroscopeEffect offset. Framing is now source-backed, but two captures of the same character still differ by that offset, so comparison continues to need alignment.",
+  "vfsRootNote": "chr_0035_liino ships in the Persistent VFS, not StreamingAssets. Scanning only the StreamingAssets asset map drops it silently and yields 30 characters instead of 31.",
   "warning": "Do not enumerate the camera set from CharacterDisplayConfig. Its CharacterDisplayData entries are SerializeReference and are recorded unparsed; 15 of 33 yield no string hints, so counting camera groups there undercounts. Use the asset map.",
-  "characterCount": 30,
+  "characterCount": 31,
   "characters": {
     "chr_0002_endminm": {
       "track": "track_chr_0002_endminm",
@@ -1320,6 +1321,49 @@
           1.0
         ]
       }
+    },
+    "chr_0035_liino": {
+      "track": "track_chr_0035_liino",
+      "actor": "liino",
+      "vcamOverview": {
+        "localPosition": [
+          -0.177,
+          0.998,
+          3.4
+        ],
+        "localRotation": [
+          -0.00046601787,
+          0.9992671,
+          0.03602849,
+          0.012925225
+        ]
+      },
+      "lookAtOverview": {
+        "localPosition": [
+          0.022,
+          1.242,
+          0.0
+        ],
+        "localRotation": [
+          -0.0,
+          -0.0,
+          -0.0,
+          1.0
+        ]
+      },
+      "volumeOverview": {
+        "localPosition": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "localRotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
     }
   },
   "entries": [
@@ -1950,6 +1994,27 @@
       "lookAtPosition": [
         -0.01,
         1.353,
+        0.0
+      ]
+    },
+    {
+      "templateId": "chr_0035_liino",
+      "actor": "liino",
+      "track": "track_chr_0035_liino",
+      "vcamPosition": [
+        -0.177,
+        0.998,
+        3.4
+      ],
+      "vcamRotation": [
+        -0.00046601787,
+        0.9992671,
+        0.03602849,
+        0.012925225
+      ],
+      "lookAtPosition": [
+        0.022,
+        1.242,
         0.0
       ]
     }

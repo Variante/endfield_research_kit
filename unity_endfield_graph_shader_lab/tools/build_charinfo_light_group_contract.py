@@ -49,6 +49,17 @@ DEFAULT_EXTRACT_ROOT = os.path.join(
     "gameplay_reference",
     "charinfo_prefabs",
 )
+OPERATOR_LIGHTS_PATH = os.path.join(
+    PROJECT_ROOT,
+    "Assets",
+    "EndfieldGraphShaderLab",
+    "Generated",
+    "OriginalData",
+    "RenderParameters",
+    "operator_lights.json",
+)
+# operator_lights.json keys chr_0003_endmin as "endminf"; same root, same lights.
+OPERATOR_LIGHTS_ALIASES = {"endmin": "endminf"}
 PATH_ID_SUFFIX = re.compile(r"_p([0-9A-Fa-f]{16})\.json$")
 
 
@@ -154,6 +165,59 @@ def collect(extract_root: str) -> dict:
     return groups
 
 
+def cross_check_operator_lights(characters: dict) -> dict:
+    """Verify each light_overview set against the independently recovered rig.
+
+    RenderParameters/operator_lights.json was built from installed-game
+    Light/HGAdditionalLightData JSON and is what actually applies these lights
+    in the lab. If the tab grouping recovered here is right, the two must agree
+    light for light, so any disagreement means one of them has drifted.
+    """
+    if not os.path.isfile(OPERATOR_LIGHTS_PATH):
+        raise LightContractError(
+            f"operator_lights.json is missing: {OPERATOR_LIGHTS_PATH}"
+        )
+    actors = json.load(io.open(OPERATOR_LIGHTS_PATH, encoding="utf-8"))["actors"]
+
+    by_actor = {}
+    for entry in characters.values():
+        actor = entry["actor"]
+        by_actor[OPERATOR_LIGHTS_ALIASES.get(actor, actor)] = entry
+
+    def signature(light):
+        return (light["name"], round(float(light["intensity"] or 0.0), 6))
+
+    for actor in sorted(actors):
+        entry = by_actor.get(actor)
+        if entry is None:
+            raise LightContractError(
+                f"operator_lights.json has {actor} but no light group was "
+                "extracted for it. If it is a Persistent-VFS character, the "
+                "StreamingAssets asset map alone will not reach it."
+            )
+        overview = sorted(
+            signature(light)
+            for light in entry["lights"]
+            if light["tab"] == "light_overview"
+        )
+        expected = sorted(signature(light) for light in actors[actor]["lights"])
+        if overview != expected:
+            raise LightContractError(
+                f"{actor}: light_overview set ({len(overview)}) disagrees with "
+                f"operator_lights.json ({len(expected)})"
+            )
+
+    return {
+        "source": "Generated/OriginalData/RenderParameters/operator_lights.json",
+        "actorsChecked": len(actors),
+        "result": (
+            "Every light_overview set reproduces the corresponding actor, which "
+            "is what ties the recovered tab grouping to the rig the lab already "
+            "applies."
+        ),
+    }
+
+
 def build(extract_root: str) -> dict:
     groups = collect(extract_root)
     if not groups:
@@ -182,6 +246,8 @@ def build(extract_root: str) -> dict:
             "lights": lights,
         }
 
+    cross_check = cross_check_operator_lights(characters)
+
     return {
         "schema": "endfield.charinfo.light-group.v1",
         "boundary": "source_closed_rig_with_tab_grouping",
@@ -200,11 +266,26 @@ def build(extract_root: str) -> dict:
             "overviewNamed": overview_named,
         },
         "groupCountNote": (
-            "31 light groups against 30 camera tracks. The extra is "
+            "32 light groups against 31 camera tracks. The extra is "
             "light_chr_0024_qianneng, whose 51 lights all sit under a single "
             "light_qianneng node rather than the Character Info tab set, so it "
             "belongs to the potential screen rather than to a roster character's "
             "overview."
+        ),
+        "vfsRootNote": (
+            "chr_0035_liino ships in the Persistent VFS, not StreamingAssets, so "
+            "scanning only the StreamingAssets asset map silently drops it. Both "
+            "maps have to be walked to reach the full roster."
+        ),
+        "operatorLightsCrossCheck": cross_check,
+        "operatorLightsCrossCheckNote": (
+            "Every light_overview set reproduces the corresponding actor in "
+            "RenderParameters/operator_lights.json, which was recovered "
+            "independently from installed-game Light/HGAdditionalLightData JSON. "
+            "That file already applies these lights in the lab, so this contract "
+            "documents and verifies the rig rather than supplying new wiring. "
+            "operator_lights keys chr_0003_endmin as 'endminf'; same root, same "
+            "12 lights."
         ),
         "tabSelection": (
             "Lights are organised by Character Info tab under nodes named "

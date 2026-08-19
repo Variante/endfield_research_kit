@@ -11618,7 +11618,7 @@ namespace EndfieldGraphShaderLabEditor
             // Composer LookAt target, read from
             // charinfo_overview_camera_contract.json. That contract is built
             // from the track_chr_<template>.prefab Cinemachine rigs and covers
-            // 30 characters; it reproduces the two values that were previously
+            // 31 characters; it reproduces the two values that were previously
             // hard-coded here. Cinemachine Composer owns the settled physical
             // orientation, so the serialized vcam quaternion is recorded in the
             // contract but not applied directly.
