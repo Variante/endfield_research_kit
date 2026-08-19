@@ -1133,7 +1133,14 @@ only stable interpretation and priorities.
    No constant remains open. `cb4` is `_VisibilitySHConstData`, and the two
    vectors the fragment reads are the same two the VisibilitySH constants
    contract already records as the selected resolver reads. What remains is
-   implementation only. The disambiguation is closed: the receiver's LUT is
+   done. The capsule term is implemented and measurably improves both actors:
+   against the composed profile the overall band mean falls 12.2797 -> 11.4748
+   on Zhuangfy and 12.8723 -> 12.2405 on Wulfa, seven of eight regions improving
+   in each. It is gated on producer readiness and fails closed to the neutral
+   zero-occlusion endpoint. The recovered occlusion is broader and softer than
+   the original's more directional shadow, which is an open difference, and it
+   still falls on the ready-subset floor rather than the real presentation
+   scene. The disambiguation is closed: the receiver's LUT is
    `_ABLutTex` = `visibility_ab_lut`, path id 2892350180982884757, a 256x1
    RGBA32 table the lab had never imported, distinct from the producer's
    `_LogSHLutTex`. Its zero B/A channels independently confirm the xy read.
