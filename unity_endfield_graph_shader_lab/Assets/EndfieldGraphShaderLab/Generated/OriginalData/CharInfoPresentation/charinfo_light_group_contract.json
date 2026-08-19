@@ -8,12 +8,19 @@
     "prefabRoot": "assets/beyond/dynamicassets/gameplay/prefabs/charinfo/additionallights/"
   },
   "totals": {
-    "groups": 31,
-    "lights": 1583,
-    "componentEnabled": 1583,
-    "overviewNamed": 202
+    "groups": 32,
+    "lights": 1638,
+    "componentEnabled": 1638,
+    "overviewNamed": 205
   },
-  "groupCountNote": "31 light groups against 30 camera tracks. The extra is light_chr_0024_qianneng, whose 51 lights all sit under a single light_qianneng node rather than the Character Info tab set, so it belongs to the potential screen rather than to a roster character's overview.",
+  "groupCountNote": "32 light groups against 31 camera tracks. The extra is light_chr_0024_qianneng, whose 51 lights all sit under a single light_qianneng node rather than the Character Info tab set, so it belongs to the potential screen rather than to a roster character's overview.",
+  "vfsRootNote": "chr_0035_liino ships in the Persistent VFS, not StreamingAssets, so scanning only the StreamingAssets asset map silently drops it. Both maps have to be walked to reach the full roster.",
+  "operatorLightsCrossCheck": {
+    "source": "Generated/OriginalData/RenderParameters/operator_lights.json",
+    "actorsChecked": 31,
+    "result": "Every light_overview set reproduces the corresponding actor, which is what ties the recovered tab grouping to the rig the lab already applies."
+  },
+  "operatorLightsCrossCheckNote": "Every light_overview set reproduces the corresponding actor in RenderParameters/operator_lights.json, which was recovered independently from installed-game Light/HGAdditionalLightData JSON. That file already applies these lights in the lab, so this contract documents and verifies the rig rather than supplying new wiring. operator_lights keys chr_0003_endmin as 'endminf'; same root, same 12 lights.",
   "tabSelection": "Lights are organised by Character Info tab under nodes named light_overview, light_document, light_weapon and so on, recorded per light as 'tab'. That parent, not the light's own name, decides the tab: a light called 'Point Light_overview' can sit under light_document. Every Light component serialises m_Enabled = 1, so the tab node's active state is what selects them.",
   "consequence": "A shading comparison against a reference capture is only valid once the character's own group is applied. The lab's default rig is not a substitute, and any per-character delta measured without it mixes lighting error into the material result.",
   "characters": {
@@ -44828,6 +44835,1562 @@
             0.31423172,
             0.14573601,
             -0.937445
+          ]
+        }
+      ]
+    },
+    "chr_0035_liino": {
+      "group": "light_chr_0035_liino",
+      "actor": "liino",
+      "lightCount": 55,
+      "lightsByTab": {
+        "light_document": 9,
+        "light_equip": 8,
+        "light_overview": 7,
+        "light_skill": 12,
+        "light_upgrade": 10,
+        "light_weapon": 9
+      },
+      "overviewLightCount": 7,
+      "lights": [
+        {
+          "name": "FogLight_1 (5)",
+          "tab": "light_document",
+          "enabled": 1,
+          "type": 0,
+          "shape": 0,
+          "intensity": 0.2,
+          "range": 0.8,
+          "spotAngle": 98.811966,
+          "color": [
+            0.7210039,
+            0.7825836,
+            0.8113208,
+            1.0
+          ],
+          "cullingMask": 4294967295,
+          "localPosition": [
+            0.033691406,
+            0.90060425,
+            -0.9021301
+          ],
+          "localRotation": [
+            -0.06048367,
+            0.089887396,
+            -0.6922664,
+            -0.7134629
+          ]
+        },
+        {
+          "name": "Point Light_overview (4)",
+          "tab": "light_document",
+          "enabled": 1,
+          "type": 2,
+          "shape": 0,
+          "intensity": 1.0,
+          "range": 0.14582698,
+          "spotAngle": 74.889656,
+          "color": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "cullingMask": 4294967295,
+          "localPosition": [
+            -0.06652832,
+            1.7237549,
+            0.015258789
+          ],
+          "localRotation": [
+            0.016166106,
+            0.15129265,
+            -0.10138556,
+            -0.98314303
+          ]
+        },
+        {
+          "name": "RimLight_2 (8)",
+          "tab": "light_document",
+          "enabled": 1,
+          "type": 0,
+          "shape": 0,
+          "intensity": 12.0,
+          "range": 0.76,
+          "spotAngle": 111.77538,
+          "color": [
+            1.0,
+            0.95031446,
+            0.8509433,
+            1.0
+          ],
+          "cullingMask": 4294967295,
+          "localPosition": [
+            -0.6676941,
+            1.7201538,
+            -0.030090332
+          ],
+          "localRotation": [
+            -0.14801085,
+            0.7775218,
+            -0.522505,
+            0.3170824
+          ]
+        },
+        {
+          "name": "RimLight_2 (9)",
+          "tab": "light_document",
+          "enabled": 1,
+          "type": 2,
+          "shape": 0,
+          "intensity": 12.0,
+          "range": 0.39031982,
+          "spotAngle": 111.77538,
+          "color": [
+            1.0,
+            0.95031446,
+            0.8509433,
+            1.0
+          ],
+          "cullingMask": 4294967295,
+          "localPosition": [
+            -0.5580139,
+            1.0610046,
+            0.07699585
+          ],
+          "localRotation": [
+            -0.14801085,
+            0.7775218,
+            -0.522505,
+            0.3170824
+          ]
+        },
+        {
+          "name": "SpecLight_1 (17)",
+          "tab": "light_document",
+          "enabled": 1,
+          "type": 2,
+          "shape": 0,
+          "intensity": 0.6,
+          "range": 0.14141846,
+          "spotAngle": 74.889656,
+          "color": [
+            0.96862745,
+            0.8893539,
+            0.85490197,
+            1.0
+          ],
+          "cullingMask": 4294967295,
+          "localPosition": [
+            -0.22381592,
+            1.0653381,
+            0.24325562
+          ],
+          "localRotation": [
+            -0.0,
+            -0.85918504,
+            -0.0,
+            0.51166505
+          ]
+        },
+        {
+          "name": "SpecLight_1 (18)",
+          "tab": "light_document",
+          "enabled": 1,
+          "type": 2,
+          "shape": 0,
+          "intensity": 13.0,
+          "range": 0.12164307,
+          "spotAngle": 74.889656,
+          "color": [
+            1.0,
+            0.9703289,
+            0.87358487,
+            1.0
+          ],
+          "cullingMask": 4294967295,
+          "localPosition": [
+            -0.1289978,
+            1.4407043,
+            0.1177063
+          ],
+          "localRotation": [
+            -0.048337627,
+            0.80238086,
+            -0.05716918,
+            0.5920982
+          ]
+        },
+        {
+          "name": "SpecLight_1 (19)",
+          "tab": "light_document",
+          "enabled": 1,
+          "type": 2,
+          "shape": 0,
+          "intensity": 1.4,
+          "range": 0.10687256,
+          "spotAngle": 74.889656,
+          "color": [
+            1.0,
+            0.81852484,
+            0.7830188,
+            1.0
+          ],
+          "cullingMask": 4294967295,
+          "localPosition": [
+            -0.070892334,
+            1.4774475,
+            0.1515503
+          ],
+          "localRotation": [
+            -0.049379498,
+            0.79875666,
+            -0.07258291,
+            0.5952153
+          ]
+        },
+        {
+          "name": "SpecLight_1 (20)",
+          "tab": "light_document",
+          "enabled": 1,
+          "type": 2,
+          "shape": 0,
+          "intensity": 1.0,
+          "range": 0.14141846,
+          "spotAngle": 74.889656,
+          "color": [
+            0.96862745,
+            0.8893539,
+            0.85490197,
+            1.0
+          ],
+          "cullingMask": 4294967295,
+          "localPosition": [
+            -0.08981323,
+            1.2992249,
+            0.18328857
+          ],
+          "localRotation": [
+            -0.0,
+            -0.85918504,
+            -0.0,
+            0.51166505
+          ]
+        },
+        {
+          "name": "SpecLight_1 (21)",
+          "tab": "light_document",
+          "enabled": 1,
+          "type": 2,
+          "shape": 0,
+          "intensity": 1.8,
+          "range": 0.14141846,
+          "spotAngle": 74.889656,
+          "color": [
+            0.96862745,
+            0.8893539,
+            0.85490197,
+            1.0
+          ],
+          "cullingMask": 4294967295,
+          "localPosition": [
+            0.14050293,
+            1.2889099,
+            0.67471313
+          ],
+          "localRotation": [
+            -0.0,
+            -0.85918504,
+            -0.0,
+            0.51166505
+          ]
+        },
+        {
+          "name": "Point Light_1 (4)",
+          "tab": "light_equip",
+          "enabled": 1,
+          "type": 2,
+          "shape": 0,
+          "intensity": 0.8,
+          "range": 0.09146118,
+          "spotAngle": 74.889656,
+          "color": [
+            1.0,
+            0.893948,
+            0.84339625,
+            1.0
+          ],
+          "cullingMask": 4294967295,
+          "localPosition": [
+            0.0105,
+            1.3474,
+            0.1292
+          ],
+          "localRotation": [
+            -0.0,
+            -0.0,
+            -0.0,
+            1.0
+          ]
+        },
+        {
+          "name": "Point Light_1 (5)",
+          "tab": "light_equip",
+          "enabled": 1,
+          "type": 0,
+          "shape": 0,
+          "intensity": 0.8,
+          "range": 0.3581848,
+          "spotAngle": 127.80907,
+          "color": [
+            0.977152,
+            0.76792455,
+            1.0,
+            1.0
+          ],
+          "cullingMask": 4294967295,
+          "localPosition": [
+            -0.08,
+            1.121,
+            0.411
+          ],
+          "localRotation": [
+            0.29621094,
+            -0.0,
+            -0.0,
+            0.9551226
+          ]
+        },
+        {
+          "name": "Point Light_1 (6)",
+          "tab": "light_equip",
+          "enabled": 1,
+          "type": 2,
+          "shape": 0,
+          "intensity": 0.8,
+          "range": 0.3581848,
+          "spotAngle": 127.80907,
+          "color": [
+            1.0,
+            0.5943396,
+            0.97683144,
+            1.0
+          ],
+          "cullingMask": 4294967295,
+          "localPosition": [
+            -0.024,
+            1.16,
+            0.518
+          ],
+          "localRotation": [
+            0.63603693,
+            -0.2973104,
+            0.5914738,
+            -0.39651266
+          ]
+        },
+        {
+          "name": "Point Light_1 (7)",
+          "tab": "light_equip",
+          "enabled": 1,
+          "type": 2,
+          "shape": 0,
+          "intensity": 0.8,
+          "range": 0.3581848,
+          "spotAngle": 127.80907,
+          "color": [
+            1.0,
+            0.84313726,
+            0.9966145,
+            1.0
+          ],
+          "cullingMask": 4294967295,
+          "localPosition": [
+            -0.003,
+            1.08,
+            0.411
+          ],
+          "localRotation": [
+            0.07529826,
+            0.5456367,
+            0.1505622,
+            0.8209396
+          ]
+        },
+        {
+          "name": "Point Light_1 (8)",
+          "tab": "light_equip",
+          "enabled": 1,
+          "type": 2,
+          "shape": 0,
+          "intensity": 2.0,
+          "range": 0.15649414,
+          "spotAngle": 127.80907,
+          "color": [
+            0.84313726,
+            0.9469471,
+            1.0,
+            1.0
+          ],
+          "cullingMask": 4294967295,
+          "localPosition": [
+            -0.155,
+            0.107,
+            0.227
+          ],
+          "localRotation": [
+            0.63603693,
+            -0.2973104,
+            0.5914738,
+            -0.39651266
+          ]
+        },
+        {
+          "name": "RimLight_1 (6)",
+          "tab": "light_equip",
+          "enabled": 1,
+          "type": 2,
+          "shape": 0,
+          "intensity": 1.0,
+          "range": 0.13095093,
+          "spotAngle": 49.50778,
+          "color": [
+            1.0,
+            1.0,
+            1.0,
+            0.85
+          ],
+          "cullingMask": 4294967295,
+          "localPosition": [
+            -0.13284302,
+            1.574707,
+            0.05279541
+          ],
+          "localRotation": [
+            -0.20918185,
+            -0.59021485,
+            -0.15696318,
+            -0.76370937
+          ]
+        },
+        {
+          "name": "RimLight_1 (7)",
+          "tab": "light_equip",
+          "enabled": 1,
+          "type": 0,
+          "shape": 0,
+          "intensity": 16.0,
+          "range": 3.0,
+          "spotAngle": 41.96709,
+          "color": [
+            1.0,
+            0.9805819,
+            0.91886795,
+            0.85
+          ],
+          "cullingMask": 4294967295,
+          "localPosition": [
+            0.16400146,
+            2.540985,
+            -1.4960022
+          ],
+          "localRotation": [
+            0.28094998,
+            -0.002440587,
+            0.0009078803,
+            0.95971894
+          ]
+        },
+        {
+          "name": "RimLight_1 (8)",
+          "tab": "light_equip",
+          "enabled": 1,
+          "type": 2,
+          "shape": 0,
+          "intensity": 6.0,
+          "range": 0.75961304,
+          "spotAngle": 73.93924,
+          "color": [
+            0.8132075,
+            0.95030725,
+            1.0,
+            0.85
+          ],
+          "cullingMask": 4294967295,
+          "localPosition": [
+            0.182,
+            0.048,
+            -0.297
+          ],
+          "localRotation": [
+            0.03688597,
+            0.22148432,
+            -0.061017863,
+            -0.97255385
+          ]
+        },
+        {
+          "name": "FogLight_1 (3)",
+          "tab": "light_overview",
+          "enabled": 1,
+          "type": 0,
+          "shape": 0,
+          "intensity": 0.2,
+          "range": 0.8,
+          "spotAngle": 98.811966,
+          "color": [
+            0.7210039,
+            0.7825836,
+            0.8113208,
+            1.0
+          ],
+          "cullingMask": 4294967295,
+          "localPosition": [
+            -0.0018310547,
+            0.86276245,
+            -0.92752075
+          ],
+          "localRotation": [
+            -0.060483675,
+            0.0898874,
+            -0.6922664,
+            -0.71346295
+          ]
+        },
+        {
+          "name": "Point Light_overview (2)",
+          "tab": "light_overview",
+          "enabled": 1,
+          "type": 2,
+          "shape": 0,
+          "intensity": 1.0,
+          "range": 0.14582698,
+          "spotAngle": 74.889656,
+          "color": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "cullingMask": 4294967295,
+          "localPosition": [
+            -0.30264282,
+            1.5421143,
+            -0.19155884
+          ],
+          "localRotation": [
+            0.42397383,
+            -0.15888266,
+            -0.2237002,
+            -0.86311114
+          ]
+        },
+        {
+          "name": "RimLight_2 (5)",
+          "tab": "light_overview",
+          "enabled": 1,
+          "type": 0,
+          "shape": 0,
+          "intensity": 12.0,
+          "range": 0.76,
+          "spotAngle": 111.77538,
+          "color": [
+            1.0,
+            0.95031446,
+            0.8509433,
+            1.0
+          ],
+          "cullingMask": 4294967295,
+          "localPosition": [
+            -0.70321655,
+            1.682312,
+            -0.055480957
+          ],
+          "localRotation": [
+            -0.14801085,
+            0.7775218,
+            -0.522505,
+            0.3170824
+          ]
+        },
+        {
+          "name": "SpecLight_1 (10)",
+          "tab": "light_overview",
+          "enabled": 1,
+          "type": 2,
+          "shape": 0,
+          "intensity": 1.0,
+          "range": 0.14141846,
+          "spotAngle": 74.889656,
+          "color": [
+            0.96862745,
+            0.8893539,
+            0.85490197,
+            1.0
+          ],
+          "cullingMask": 4294967295,
+          "localPosition": [
+            -0.1253357,
+            1.261383,
+            0.15789795
+          ],
+          "localRotation": [
+            -0.0,
+            -0.85918504,
+            -0.0,
+            0.51166505
+          ]
+        },
+        {
+          "name": "SpecLight_1 (11)",
+          "tab": "light_overview",
+          "enabled": 1,
+          "type": 2,
+          "shape": 0,
+          "intensity": 1.4,
+          "range": 0.10687256,
+          "spotAngle": 74.889656,
+          "color": [
+            1.0,
+            0.81852484,
+            0.7830188,
+            1.0
+          ],
+          "cullingMask": 4294967295,
+          "localPosition": [
+            -0.1741333,
+            1.5092773,
+            0.056793213
+          ],
+          "localRotation": [
+            -0.38214648,
+            0.7933394,
+            -0.37235928,
+            0.29313034
+          ]
+        },
+        {
+          "name": "SpecLight_1 (8)",
+          "tab": "light_overview",
+          "enabled": 1,
+          "type": 2,
+          "shape": 0,
+          "intensity": 0.6,
+          "range": 0.14141846,
+          "spotAngle": 74.889656,
+          "color": [
+            0.96862745,
+            0.8893539,
+            0.85490197,
+            1.0
+          ],
+          "cullingMask": 4294967295,
+          "localPosition": [
+            -0.25933838,
+            1.0274963,
+            0.21786499
+          ],
+          "localRotation": [
+            -0.0,
+            -0.85918504,
+            -0.0,
+            0.51166505
+          ]
+        },
+        {
+          "name": "SpecLight_1 (9)",
+          "tab": "light_overview",
+          "enabled": 1,
+          "type": 2,
+          "shape": 0,
+          "intensity": 13.0,
+          "range": 0.12164307,
+          "spotAngle": 74.889656,
+          "color": [
+            1.0,
+            0.9703289,
+            0.87358487,
+            1.0
+          ],
+          "cullingMask": 4294967295,
+          "localPosition": [
+            -0.22454834,
+            1.4671631,
+            0.096191406
+          ],
+          "localRotation": [
+            -0.3762696,
+            0.80271155,
+            -0.36129877,
+            0.28903037
+          ]
+        },
+        {
+          "name": "FloorLight (2)",
+          "tab": "light_skill",
+          "enabled": 1,
+          "type": 2,
+          "shape": 0,
+          "intensity": 1.4,
+          "range": 7.4,
+          "spotAngle": 129.51323,
+          "color": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "cullingMask": 4294967295,
+          "localPosition": [
+            -1.2600098,
+            0.94000244,
+            -0.10998535
+          ],
+          "localRotation": [
+            0.7071068,
+            -0.0,
+            -0.0,
+            0.7071068
+          ]
+        },
+        {
+          "name": "Point Light_1 (10)",
+          "tab": "light_skill",
+          "enabled": 1,
+          "type": 2,
+          "shape": 0,
+          "intensity": 1.0,
+          "range": 0.14705184,
+          "spotAngle": 74.889656,
+          "color": [
+            1.0,
+            0.9252467,
+            0.85882354,
+            1.0
+          ],
+          "cullingMask": 4294967295,
+          "localPosition": [
+            -0.0496,
+            1.2826,
+            0.2664
+          ],
+          "localRotation": [
+            -0.0,
+            0.3954034,
+            -0.0,
+            0.9185076
+          ]
+        },
+        {
+          "name": "Point Light_1 (11)",
+          "tab": "light_skill",
+          "enabled": 1,
+          "type": 2,
+          "shape": 0,
+          "intensity": 0.8,
+          "range": 0.137146,
+          "spotAngle": 74.889656,
+          "color": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "cullingMask": 4294967295,
+          "localPosition": [
+            -0.2029,
+            1.5799,
+            -0.1276
+          ],
+          "localRotation": [
+            -0.0,
+            0.6161585,
+            -0.0,
+            0.7876222
+          ]
+        },
+        {
+          "name": "Point Light_1 (12)",
+          "tab": "light_skill",
+          "enabled": 1,
+          "type": 2,
+          "shape": 0,
+          "intensity": 1.2,
+          "range": 0.08996582,
+          "spotAngle": 74.889656,
+          "color": [
+            1.0,
+            0.9022838,
+            0.85882354,
+            1.0
+          ],
+          "cullingMask": 4294967295,
+          "localPosition": [
+            -0.1347,
+            1.7138,
+            0.2268
+          ],
+          "localRotation": [
+            -0.0,
+            0.3954034,
+            -0.0,
+            0.9185076
+          ]
+        },
+        {
+          "name": "Point Light_1 (13)",
+          "tab": "light_skill",
+          "enabled": 1,
+          "type": 2,
+          "shape": 0,
+          "intensity": 1.2,
+          "range": 0.08996582,
+          "spotAngle": 74.889656,
+          "color": [
+            1.0,
+            0.9022838,
+            0.85882354,
+            1.0
+          ],
+          "cullingMask": 4294967295,
+          "localPosition": [
+            -0.1859,
+            1.6253,
+            0.3664
+          ],
+          "localRotation": [
+            -0.0,
+            0.3954034,
+            -0.0,
+            0.9185076
+          ]
+        },
+        {
+          "name": "Point Light_1 (14)",
+          "tab": "light_skill",
+          "enabled": 1,
+          "type": 2,
+          "shape": 0,
+          "intensity": 1.5,
+          "range": 0.077941895,
+          "spotAngle": 74.889656,
+          "color": [
+            0.8132075,
+            0.9175916,
+            1.0,
+            1.0
+          ],
+          "cullingMask": 4294967295,
+          "localPosition": [
+            -0.0609,
+            0.0872,
+            0.195
+          ],
+          "localRotation": [
+            -0.0,
+            0.3954034,
+            -0.0,
+            0.9185076
+          ]
+        },
+        {
+          "name": "Point Light_1 (8)",
+          "tab": "light_skill",
+          "enabled": 1,
+          "type": 2,
+          "shape": 0,
+          "intensity": 1.3,
+          "range": 0.13192749,
+          "spotAngle": 74.889656,
+          "color": [
+            1.0,
+            0.86855346,
+            0.8207547,
+            1.0
+          ],
+          "cullingMask": 4294967295,
+          "localPosition": [
+            -0.2019,
+            1.4718,
+            0.0946
+          ],
+          "localRotation": [
+            -0.0,
+            0.552494,
+            -0.0,
+            0.8335169
+          ]
+        },
+        {
+          "name": "Point Light_1 (9)",
+          "tab": "light_skill",
+          "enabled": 1,
+          "type": 2,
+          "shape": 0,
+          "intensity": 1.0,
+          "range": 0.11072166,
+          "spotAngle": 74.889656,
+          "color": [
+            1.0,
+            0.96085906,
+            0.9264151,
+            1.0
+          ],
+          "cullingMask": 4294967295,
+          "localPosition": [
+            -0.18579102,
+            1.4819946,
+            -0.05090332
+          ],
+          "localRotation": [
+            -0.0,
+            0.3908303,
+            -0.0,
+            0.92046285
+          ]
+        },
+        {
+          "name": "RimLight_1 (6)",
+          "tab": "light_skill",
+          "enabled": 1,
+          "type": 0,
+          "shape": 0,
+          "intensity": 10.0,
+          "range": 1.4,
+          "spotAngle": 86.069016,
+          "color": [
+            0.9415095,
+            0.9853774,
+            1.0,
+            0.9
+          ],
+          "cullingMask": 4294967295,
+          "localPosition": [
+            -1.0549927,
+            0.379,
+            0.07501221
+          ],
+          "localRotation": [
+            -0.0,
+            0.8110927,
+            -0.0,
+            0.5849178
+          ]
+        },
+        {
+          "name": "RimLight_1 (7)",
+          "tab": "light_skill",
+          "enabled": 1,
+          "type": 0,
+          "shape": 0,
+          "intensity": 0.35,
+          "range": 1.97,
+          "spotAngle": 110.0,
+          "color": [
+            0.6301887,
+            0.6301887,
+            0.6301887,
+            0.9
+          ],
+          "cullingMask": 4294967295,
+          "localPosition": [
+            0.15701294,
+            -0.85198975,
+            -0.83499146
+          ],
+          "localRotation": [
+            -0.3462336,
+            -0.0,
+            -0.0,
+            0.9381484
+          ]
+        },
+        {
+          "name": "RimLight_1 (8)",
+          "tab": "light_skill",
+          "enabled": 1,
+          "type": 0,
+          "shape": 0,
+          "intensity": 18.0,
+          "range": 1.4,
+          "spotAngle": 47.93006,
+          "color": [
+            1.0,
+            0.8650943,
+            0.73018867,
+            0.9
+          ],
+          "cullingMask": 4294967295,
+          "localPosition": [
+            -1.062,
+            1.5650024,
+            -0.525
+          ],
+          "localRotation": [
+            0.060599674,
+            0.43675685,
+            0.0032472757,
+            0.89753026
+          ]
+        },
+        {
+          "name": "RimLight_1 (9)",
+          "tab": "light_skill",
+          "enabled": 1,
+          "type": 2,
+          "shape": 0,
+          "intensity": 18.0,
+          "range": 0.11883545,
+          "spotAngle": 47.93006,
+          "color": [
+            1.0,
+            0.8650943,
+            0.73018867,
+            0.9
+          ],
+          "cullingMask": 4294967295,
+          "localPosition": [
+            -0.2778,
+            1.4262,
+            0.0834
+          ],
+          "localRotation": [
+            0.060599674,
+            0.43675685,
+            0.0032472757,
+            0.89753026
+          ]
+        },
+        {
+          "name": "FogLight_1 (4)",
+          "tab": "light_upgrade",
+          "enabled": 1,
+          "type": 0,
+          "shape": 0,
+          "intensity": 0.2,
+          "range": 0.8,
+          "spotAngle": 98.811966,
+          "color": [
+            0.90943396,
+            0.90943396,
+            0.90943396,
+            1.0
+          ],
+          "cullingMask": 4294967295,
+          "localPosition": [
+            0.031585693,
+            0.8958435,
+            -0.8964844
+          ],
+          "localRotation": [
+            -0.060483668,
+            0.089887396,
+            -0.69226635,
+            -0.7134629
+          ]
+        },
+        {
+          "name": "Point Light_overview (3)",
+          "tab": "light_upgrade",
+          "enabled": 1,
+          "type": 2,
+          "shape": 0,
+          "intensity": 1.0,
+          "range": 0.14582698,
+          "spotAngle": 74.889656,
+          "color": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "cullingMask": 4294967295,
+          "localPosition": [
+            -0.050048828,
+            1.7207642,
+            0.014556885
+          ],
+          "localRotation": [
+            0.027612723,
+            0.14461836,
+            -0.07802588,
+            -0.98601985
+          ]
+        },
+        {
+          "name": "RimLight_2 (6)",
+          "tab": "light_upgrade",
+          "enabled": 1,
+          "type": 0,
+          "shape": 0,
+          "intensity": 12.0,
+          "range": 0.76,
+          "spotAngle": 111.77538,
+          "color": [
+            1.0,
+            0.95031446,
+            0.8509433,
+            1.0
+          ],
+          "cullingMask": 4294967295,
+          "localPosition": [
+            -0.6697998,
+            1.7153931,
+            -0.02444458
+          ],
+          "localRotation": [
+            -0.14801085,
+            0.7775218,
+            -0.522505,
+            0.3170824
+          ]
+        },
+        {
+          "name": "RimLight_2 (7)",
+          "tab": "light_upgrade",
+          "enabled": 1,
+          "type": 2,
+          "shape": 0,
+          "intensity": 12.0,
+          "range": 0.39031982,
+          "spotAngle": 111.77538,
+          "color": [
+            1.0,
+            0.95031446,
+            0.8509433,
+            1.0
+          ],
+          "cullingMask": 4294967295,
+          "localPosition": [
+            -0.558,
+            1.061,
+            0.077
+          ],
+          "localRotation": [
+            -0.14801085,
+            0.7775218,
+            -0.522505,
+            0.3170824
+          ]
+        },
+        {
+          "name": "SpecLight_1 (12)",
+          "tab": "light_upgrade",
+          "enabled": 1,
+          "type": 2,
+          "shape": 0,
+          "intensity": 0.6,
+          "range": 0.14141846,
+          "spotAngle": 74.889656,
+          "color": [
+            0.96862745,
+            0.8893539,
+            0.85490197,
+            1.0
+          ],
+          "cullingMask": 4294967295,
+          "localPosition": [
+            -0.22592163,
+            1.0605774,
+            0.24890137
+          ],
+          "localRotation": [
+            -0.0,
+            -0.85918504,
+            -0.0,
+            0.51166505
+          ]
+        },
+        {
+          "name": "SpecLight_1 (13)",
+          "tab": "light_upgrade",
+          "enabled": 1,
+          "type": 2,
+          "shape": 0,
+          "intensity": 13.0,
+          "range": 0.12164307,
+          "spotAngle": 74.889656,
+          "color": [
+            1.0,
+            0.9703289,
+            0.87358487,
+            1.0
+          ],
+          "cullingMask": 4294967295,
+          "localPosition": [
+            -0.12545776,
+            1.4429321,
+            0.12243652
+          ],
+          "localRotation": [
+            -0.03343834,
+            0.80605614,
+            -0.07844412,
+            0.5856637
+          ]
+        },
+        {
+          "name": "SpecLight_1 (14)",
+          "tab": "light_upgrade",
+          "enabled": 1,
+          "type": 2,
+          "shape": 0,
+          "intensity": 1.4,
+          "range": 0.10687256,
+          "spotAngle": 74.889656,
+          "color": [
+            1.0,
+            0.81852484,
+            0.7830188,
+            1.0
+          ],
+          "cullingMask": 4294967295,
+          "localPosition": [
+            -0.065216064,
+            1.4772644,
+            0.1550293
+          ],
+          "localRotation": [
+            -0.034680955,
+            0.8023478,
+            -0.09389452,
+            0.588404
+          ]
+        },
+        {
+          "name": "SpecLight_1 (15)",
+          "tab": "light_upgrade",
+          "enabled": 1,
+          "type": 2,
+          "shape": 0,
+          "intensity": 1.0,
+          "range": 0.14141846,
+          "spotAngle": 74.889656,
+          "color": [
+            0.96862745,
+            0.8893539,
+            0.85490197,
+            1.0
+          ],
+          "cullingMask": 4294967295,
+          "localPosition": [
+            -0.091918945,
+            1.2944641,
+            0.18893433
+          ],
+          "localRotation": [
+            -0.0,
+            -0.85918504,
+            -0.0,
+            0.51166505
+          ]
+        },
+        {
+          "name": "SpecLight_1 (16)",
+          "tab": "light_upgrade",
+          "enabled": 1,
+          "type": 2,
+          "shape": 0,
+          "intensity": 1.8,
+          "range": 0.14141846,
+          "spotAngle": 74.889656,
+          "color": [
+            0.96862745,
+            0.8893539,
+            0.85490197,
+            1.0
+          ],
+          "cullingMask": 4294967295,
+          "localPosition": [
+            -0.091918945,
+            1.2944641,
+            0.18893433
+          ],
+          "localRotation": [
+            -0.0,
+            -0.85918504,
+            -0.0,
+            0.51166505
+          ]
+        },
+        {
+          "name": "SpecLight_1 (17)",
+          "tab": "light_upgrade",
+          "enabled": 1,
+          "type": 2,
+          "shape": 0,
+          "intensity": 1.8,
+          "range": 0.14141846,
+          "spotAngle": 74.889656,
+          "color": [
+            0.96862745,
+            0.8893539,
+            0.85490197,
+            1.0
+          ],
+          "cullingMask": 4294967295,
+          "localPosition": [
+            0.1492,
+            1.2929,
+            0.6639
+          ],
+          "localRotation": [
+            -0.0,
+            -0.85918504,
+            -0.0,
+            0.51166505
+          ]
+        },
+        {
+          "name": "FogLight_1 (2)",
+          "tab": "light_weapon",
+          "enabled": 1,
+          "type": 0,
+          "shape": 0,
+          "intensity": 0.8,
+          "range": 1.9,
+          "spotAngle": 98.73541,
+          "color": [
+            0.76040584,
+            0.77499855,
+            0.78867924,
+            1.0
+          ],
+          "cullingMask": 4294967295,
+          "localPosition": [
+            -0.435,
+            1.1919861,
+            -1.698
+          ],
+          "localRotation": [
+            -0.0,
+            0.098064944,
+            -0.0,
+            0.9951801
+          ]
+        },
+        {
+          "name": "Point Light_1 (11)",
+          "tab": "light_weapon",
+          "enabled": 1,
+          "type": 2,
+          "shape": 0,
+          "intensity": 0.2,
+          "range": 0.23562622,
+          "spotAngle": 74.889656,
+          "color": [
+            1.0,
+            0.9053278,
+            0.8666667,
+            1.0
+          ],
+          "cullingMask": 4294967295,
+          "localPosition": [
+            0.124,
+            0.883,
+            0.626
+          ],
+          "localRotation": [
+            0.021618465,
+            -0.81743336,
+            0.016527815,
+            0.5753801
+          ]
+        },
+        {
+          "name": "Point Light_1 (12)",
+          "tab": "light_weapon",
+          "enabled": 1,
+          "type": 2,
+          "shape": 0,
+          "intensity": 1.5,
+          "range": 0.0925293,
+          "spotAngle": 74.889656,
+          "color": [
+            0.8660377,
+            0.95981133,
+            1.0,
+            1.0
+          ],
+          "cullingMask": 4294967295,
+          "localPosition": [
+            0.1905,
+            1.168,
+            0.1568
+          ],
+          "localRotation": [
+            0.021618465,
+            -0.81743336,
+            0.016527815,
+            0.5753801
+          ]
+        },
+        {
+          "name": "Point Light_1 (5)",
+          "tab": "light_weapon",
+          "enabled": 1,
+          "type": 2,
+          "shape": 0,
+          "intensity": 1.5,
+          "range": 0.11315918,
+          "spotAngle": 74.889656,
+          "color": [
+            1.0,
+            0.8592992,
+            0.83584905,
+            1.0
+          ],
+          "cullingMask": 4294967295,
+          "localPosition": [
+            -0.2775,
+            1.6107,
+            0.3376
+          ],
+          "localRotation": [
+            -0.0,
+            0.9197399,
+            -0.0,
+            0.39252833
+          ]
+        },
+        {
+          "name": "Point Light_1 (6)",
+          "tab": "light_weapon",
+          "enabled": 1,
+          "type": 2,
+          "shape": 0,
+          "intensity": 1.0,
+          "range": 0.15200806,
+          "spotAngle": 74.889656,
+          "color": [
+            0.9037736,
+            0.99259794,
+            1.0,
+            1.0
+          ],
+          "cullingMask": 4294967295,
+          "localPosition": [
+            -0.053009033,
+            1.303009,
+            0.15499878
+          ],
+          "localRotation": [
+            -0.0,
+            -0.0,
+            -0.0,
+            1.0
+          ]
+        },
+        {
+          "name": "Point Light_1 (7)",
+          "tab": "light_weapon",
+          "enabled": 1,
+          "type": 2,
+          "shape": 0,
+          "intensity": 1.8,
+          "range": 0.35590583,
+          "spotAngle": 74.889656,
+          "color": [
+            0.9037736,
+            0.9716981,
+            1.0,
+            1.0
+          ],
+          "cullingMask": 4294967295,
+          "localPosition": [
+            0.884,
+            0.735,
+            0.397
+          ],
+          "localRotation": [
+            0.021618465,
+            -0.81743336,
+            0.016527815,
+            0.5753801
+          ]
+        },
+        {
+          "name": "Point Light_1 (8)",
+          "tab": "light_weapon",
+          "enabled": 1,
+          "type": 2,
+          "shape": 0,
+          "intensity": 0.8,
+          "range": 0.16086674,
+          "spotAngle": 74.889656,
+          "color": [
+            1.0,
+            0.9802111,
+            0.9037736,
+            1.0
+          ],
+          "cullingMask": 4294967295,
+          "localPosition": [
+            -0.2161,
+            1.822,
+            0.269
+          ],
+          "localRotation": [
+            -0.0,
+            0.7639244,
+            -0.0,
+            0.6453059
+          ]
+        },
+        {
+          "name": "Point Light_1 (9)",
+          "tab": "light_weapon",
+          "enabled": 1,
+          "type": 2,
+          "shape": 0,
+          "intensity": 1.0,
+          "range": 0.12765503,
+          "spotAngle": 74.889656,
+          "color": [
+            1.0,
+            0.8592992,
+            0.83584905,
+            1.0
+          ],
+          "cullingMask": 4294967295,
+          "localPosition": [
+            -0.2657,
+            1.418,
+            0.4004
+          ],
+          "localRotation": [
+            -0.0,
+            0.9197399,
+            -0.0,
+            0.39252833
+          ]
+        },
+        {
+          "name": "RimLight_1 (8)",
+          "tab": "light_weapon",
+          "enabled": 1,
+          "type": 2,
+          "shape": 0,
+          "intensity": 6.0,
+          "range": 0.77645385,
+          "spotAngle": 91.85075,
+          "color": [
+            0.94905657,
+            0.9806415,
+            1.0,
+            0.85
+          ],
+          "cullingMask": 4294967295,
+          "localPosition": [
+            -0.613,
+            0.691,
+            0.543
+          ],
+          "localRotation": [
+            -0.7470565,
+            -0.024587892,
+            -0.05512102,
+            0.6620149
           ]
         }
       ]

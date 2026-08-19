@@ -14,7 +14,9 @@ namespace EndfieldGraphShaderLabEditor
     /// from the authored track_chr_&lt;template&gt;.prefab Cinemachine rigs, whose
     /// overview state is the vcam_overview and lookat_overview pair. It replaces
     /// the two hand-transcribed entries that previously lived in
-    /// EndfieldManifestCharacterSetup and covers 30 characters.
+    /// EndfieldManifestCharacterSetup and covers 31 characters. chr_0035_liino
+    /// ships in the Persistent VFS rather than StreamingAssets, so it is only
+    /// reached when both asset maps are walked.
     ///
     /// This is framing only. The per-frame cursor and UIGyroscopeEffect offset
     /// remains unrecovered, so two captures of the same character still differ
