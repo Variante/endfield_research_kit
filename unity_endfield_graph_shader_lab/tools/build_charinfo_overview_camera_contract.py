@@ -58,11 +58,17 @@ DEFAULT_EXTRACT_ROOT = os.path.join(
 
 PATH_ID_SUFFIX = re.compile(r"_p([0-9A-Fa-f]{16})\.json$")
 OVERVIEW_NODES = ("vcam_overview", "lookat_overview", "volume_overview")
+SIXTEEN_BY_NINE = 1.7777778
 
 # Independently recovered earlier from the CharInfo presentation work. The
 # contract must reproduce these or the extraction has drifted.
 WULFA_LOOK_AT = (0.022, 1.19, 0.0)
 WULFA_VCAM_ROTATION = (-0.00036646938, 0.9991945, 0.009385596, 0.03901448)
+# Field of view was hand-passed per render call before the lens was recovered.
+# These two are the values the lab already used, so the extracted Cinemachine
+# lens has to reproduce them.
+WULFA_FOV = 20.0
+ZHUANGFY_FOV = 20.007383
 
 
 class CameraContractError(RuntimeError):
@@ -96,7 +102,9 @@ def collect(extract_root: str) -> dict:
 
     tracks: dict[str, dict] = {}
     for group in groups:
+        light_group = group.replace("out_", "lights_")
         transforms: dict[int, dict] = {}
+        by_game_object: dict[int, int] = {}
         for path in glob.glob(os.path.join(group, "Transform", "*.json")):
             pid = _path_id(path)
             if pid is None:
@@ -105,12 +113,14 @@ def collect(extract_root: str) -> dict:
                 data = json.load(io.open(path, encoding="utf-8"))
             except Exception:
                 continue
+            owner = data.get("m_GameObject") or {}
             transforms[pid] = {
-                "name": (data.get("m_GameObject") or {}).get("Name") or "",
+                "name": owner.get("Name") or "",
                 "father": (data.get("m_Father") or {}).get("m_PathID"),
                 "position": data.get("m_LocalPosition"),
                 "rotation": data.get("m_LocalRotation"),
             }
+            by_game_object[owner.get("m_PathID")] = pid
 
         def owning_track(pid: int) -> str | None:
             seen: set[int] = set()
@@ -134,6 +144,37 @@ def collect(extract_root: str) -> dict:
                 "localPosition": _vector(node["position"]),
                 "localRotation": _quaternion(node["rotation"]),
             }
+
+        # The Cinemachine virtual camera on vcam_overview carries the lens.
+        # Field of view varies per character; near and far do not, and match
+        # the values the framing code already applies.
+        for path in glob.glob(os.path.join(light_group, "MonoBehaviour", "*.json")):
+            try:
+                data = json.load(io.open(path, encoding="utf-8"))
+            except Exception:
+                continue
+            lens = data.get("m_Lens")
+            if not isinstance(lens, dict):
+                continue
+            pid = by_game_object.get((data.get("m_GameObject") or {}).get("m_PathID"))
+            if pid is None or transforms[pid]["name"] != "vcam_overview":
+                continue
+            track = owning_track(pid)
+            if not track:
+                continue
+            tracks.setdefault(track, {})["lens"] = {
+                "fieldOfView": float(lens["FieldOfView"]),
+                "nearClipPlane": float(lens["NearClipPlane"]),
+                "farClipPlane": float(lens["FarClipPlane"]),
+                "dutch": float(lens["Dutch"]),
+                "gateFit": int(lens["GateFit"]),
+                "modeOverride": int(lens.get("ModeOverride", 0)),
+                "sensorSize": [
+                    float(lens["m_SensorSize"]["x"]),
+                    float(lens["m_SensorSize"]["y"]),
+                ],
+                "priority": data.get("m_Priority"),
+            }
     return tracks
 
 
@@ -144,9 +185,14 @@ def build(extract_root: str) -> dict:
         entry = tracks[track]
         vcam = entry.get("vcam_overview")
         look = entry.get("lookat_overview")
+        lens = entry.get("lens")
         if not vcam or not look:
             raise CameraContractError(
                 f"{track} is missing vcam_overview or lookat_overview"
+            )
+        if not lens:
+            raise CameraContractError(
+                f"{track} has no Cinemachine lens on vcam_overview"
             )
         template = track[len("track_") :]
         characters[template] = {
@@ -155,6 +201,7 @@ def build(extract_root: str) -> dict:
             "vcamOverview": vcam,
             "lookAtOverview": look,
             "volumeOverview": entry.get("volume_overview"),
+            "lens": lens,
         }
 
     wulfa = characters.get("chr_0028_wulfa")
@@ -166,6 +213,29 @@ def build(extract_root: str) -> dict:
         raise CameraContractError(f"Wulfa look-at drifted: {look}")
     if rot != tuple(round(v, 9) for v in WULFA_VCAM_ROTATION):
         raise CameraContractError(f"Wulfa vcam rotation drifted: {rot}")
+    if wulfa["lens"]["fieldOfView"] != WULFA_FOV:
+        raise CameraContractError(
+            f"Wulfa field of view drifted: {wulfa['lens']['fieldOfView']}"
+        )
+    zhuangfy = characters.get("chr_0030_zhuangfy")
+    if zhuangfy is None:
+        raise CameraContractError("chr_0030_zhuangfy is absent; cannot self-check")
+    if zhuangfy["lens"]["fieldOfView"] != ZHUANGFY_FOV:
+        raise CameraContractError(
+            f"Zhuangfy field of view drifted: {zhuangfy['lens']['fieldOfView']}"
+        )
+
+    # Near and far are uniform and match what the framing code already applies;
+    # if that ever stops being true the hard-coded clip planes are wrong.
+    for template, entry in characters.items():
+        lens = entry["lens"]
+        if lens["nearClipPlane"] != 0.1 or lens["farClipPlane"] != 50.0:
+            raise CameraContractError(
+                f"{template} has non-uniform clip planes: "
+                f"near {lens['nearClipPlane']}, far {lens['farClipPlane']}"
+            )
+        if lens["dutch"] != 0.0:
+            raise CameraContractError(f"{template} has a non-zero Dutch roll")
 
     return {
         "schema": "endfield.charinfo.overview-camera.v1",
@@ -188,7 +258,22 @@ def build(extract_root: str) -> dict:
             ),
             "lookAtLocalPosition": list(WULFA_LOOK_AT),
             "vcamLocalRotation": list(WULFA_VCAM_ROTATION),
+            "fieldOfView": WULFA_FOV,
+            "zhuangfyFieldOfView": ZHUANGFY_FOV,
+            "fieldOfViewNote": (
+                "Field of view used to be hand-passed per render call. The "
+                "extracted Cinemachine lens reproduces both values the lab "
+                "already used, which is what ties the lens to that data."
+            ),
         },
+        "lensNote": (
+            "Field of view varies per character across five distinct values "
+            "clustered just above 20 degrees, so a single constant is wrong for "
+            "13 of 31. Near 0.1 and far 50.0 are uniform and match the framing "
+            "code. Every ModeOverride is 0, so the physical-camera sensor size "
+            "is inert; chr_0027_tangtang carries a non-16:9 sensor that has no "
+            "effect and is recorded rather than applied."
+        ),
         "unrecovered": (
             "The per-frame cursor and UIGyroscopeEffect offset. Framing is now "
             "source-backed, but two captures of the same character still differ "
@@ -216,6 +301,9 @@ def build(extract_root: str) -> dict:
                 "vcamPosition": entry["vcamOverview"]["localPosition"],
                 "vcamRotation": entry["vcamOverview"]["localRotation"],
                 "lookAtPosition": entry["lookAtOverview"]["localPosition"],
+                "fieldOfView": entry["lens"]["fieldOfView"],
+                "nearClipPlane": entry["lens"]["nearClipPlane"],
+                "farClipPlane": entry["lens"]["farClipPlane"],
             }
             for template, entry in sorted(characters.items())
         ],

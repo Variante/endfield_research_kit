@@ -25,8 +25,12 @@
       0.9991945,
       0.009385596,
       0.03901448
-    ]
+    ],
+    "fieldOfView": 20.0,
+    "zhuangfyFieldOfView": 20.007383,
+    "fieldOfViewNote": "Field of view used to be hand-passed per render call. The extracted Cinemachine lens reproduces both values the lab already used, which is what ties the lens to that data."
   },
+  "lensNote": "Field of view varies per character across five distinct values clustered just above 20 degrees, so a single constant is wrong for 13 of 31. Near 0.1 and far 50.0 are uniform and match the framing code. Every ModeOverride is 0, so the physical-camera sensor size is inert; chr_0027_tangtang carries a non-16:9 sensor that has no effect and is recorded rather than applied.",
   "unrecovered": "The per-frame cursor and UIGyroscopeEffect offset. Framing is now source-backed, but two captures of the same character still differ by that offset, so comparison continues to need alignment.",
   "vfsRootNote": "chr_0035_liino ships in the Persistent VFS, not StreamingAssets. Scanning only the StreamingAssets asset map drops it silently and yields 30 characters instead of 31.",
   "warning": "Do not enumerate the camera set from CharacterDisplayConfig. Its CharacterDisplayData entries are SerializeReference and are recorded unparsed; 15 of 33 yield no string hints, so counting camera groups there undercounts. Use the asset map.",
@@ -73,6 +77,19 @@
           0.0,
           1.0
         ]
+      },
+      "lens": {
+        "fieldOfView": 20.0,
+        "nearClipPlane": 0.1,
+        "farClipPlane": 50.0,
+        "dutch": 0.0,
+        "gateFit": 2,
+        "modeOverride": 0,
+        "sensorSize": [
+          1.7777778,
+          1.0
+        ],
+        "priority": 25
       }
     },
     "chr_0003_endmin": {
@@ -116,6 +133,19 @@
           0.0,
           1.0
         ]
+      },
+      "lens": {
+        "fieldOfView": 20.0,
+        "nearClipPlane": 0.1,
+        "farClipPlane": 50.0,
+        "dutch": 0.0,
+        "gateFit": 2,
+        "modeOverride": 0,
+        "sensorSize": [
+          1.7777778,
+          1.0
+        ],
+        "priority": 25
       }
     },
     "chr_0004_pelica": {
@@ -159,6 +189,19 @@
           0.0,
           1.0
         ]
+      },
+      "lens": {
+        "fieldOfView": 20.0,
+        "nearClipPlane": 0.1,
+        "farClipPlane": 50.0,
+        "dutch": 0.0,
+        "gateFit": 2,
+        "modeOverride": 0,
+        "sensorSize": [
+          1.7777778,
+          1.0
+        ],
+        "priority": 25
       }
     },
     "chr_0005_chen": {
@@ -202,6 +245,19 @@
           0.0,
           1.0
         ]
+      },
+      "lens": {
+        "fieldOfView": 20.0,
+        "nearClipPlane": 0.1,
+        "farClipPlane": 50.0,
+        "dutch": 0.0,
+        "gateFit": 2,
+        "modeOverride": 0,
+        "sensorSize": [
+          1.7777778,
+          1.0
+        ],
+        "priority": 25
       }
     },
     "chr_0006_wolfgd": {
@@ -245,6 +301,19 @@
           0.0,
           1.0
         ]
+      },
+      "lens": {
+        "fieldOfView": 20.0,
+        "nearClipPlane": 0.1,
+        "farClipPlane": 50.0,
+        "dutch": 0.0,
+        "gateFit": 2,
+        "modeOverride": 0,
+        "sensorSize": [
+          1.7777778,
+          1.0
+        ],
+        "priority": 25
       }
     },
     "chr_0007_ikut": {
@@ -288,6 +357,19 @@
           0.0,
           1.0
         ]
+      },
+      "lens": {
+        "fieldOfView": 20.0,
+        "nearClipPlane": 0.1,
+        "farClipPlane": 50.0,
+        "dutch": 0.0,
+        "gateFit": 2,
+        "modeOverride": 0,
+        "sensorSize": [
+          1.7777778,
+          1.0
+        ],
+        "priority": 25
       }
     },
     "chr_0009_azrila": {
@@ -331,6 +413,19 @@
           0.0,
           1.0
         ]
+      },
+      "lens": {
+        "fieldOfView": 20.0,
+        "nearClipPlane": 0.1,
+        "farClipPlane": 50.0,
+        "dutch": 0.0,
+        "gateFit": 2,
+        "modeOverride": 0,
+        "sensorSize": [
+          1.7777778,
+          1.0
+        ],
+        "priority": 25
       }
     },
     "chr_0011_seraph": {
@@ -374,6 +469,19 @@
           0.0,
           1.0
         ]
+      },
+      "lens": {
+        "fieldOfView": 20.0,
+        "nearClipPlane": 0.1,
+        "farClipPlane": 50.0,
+        "dutch": 0.0,
+        "gateFit": 2,
+        "modeOverride": 0,
+        "sensorSize": [
+          1.7777778,
+          1.0
+        ],
+        "priority": 25
       }
     },
     "chr_0012_avywen": {
@@ -417,6 +525,19 @@
           0.0,
           1.0
         ]
+      },
+      "lens": {
+        "fieldOfView": 20.0,
+        "nearClipPlane": 0.1,
+        "farClipPlane": 50.0,
+        "dutch": 0.0,
+        "gateFit": 2,
+        "modeOverride": 0,
+        "sensorSize": [
+          1.7777778,
+          1.0
+        ],
+        "priority": 25
       }
     },
     "chr_0013_aglina": {
@@ -460,6 +581,19 @@
           0.0,
           1.0
         ]
+      },
+      "lens": {
+        "fieldOfView": 20.0,
+        "nearClipPlane": 0.1,
+        "farClipPlane": 50.0,
+        "dutch": 0.0,
+        "gateFit": 2,
+        "modeOverride": 0,
+        "sensorSize": [
+          1.7777778,
+          1.0
+        ],
+        "priority": 25
       }
     },
     "chr_0014_aurora": {
@@ -503,6 +637,19 @@
           0.0,
           1.0
         ]
+      },
+      "lens": {
+        "fieldOfView": 20.0,
+        "nearClipPlane": 0.1,
+        "farClipPlane": 50.0,
+        "dutch": 0.0,
+        "gateFit": 2,
+        "modeOverride": 0,
+        "sensorSize": [
+          1.7777778,
+          1.0
+        ],
+        "priority": 25
       }
     },
     "chr_0015_lifeng": {
@@ -546,6 +693,19 @@
           0.0,
           1.0
         ]
+      },
+      "lens": {
+        "fieldOfView": 20.0,
+        "nearClipPlane": 0.1,
+        "farClipPlane": 50.0,
+        "dutch": 0.0,
+        "gateFit": 2,
+        "modeOverride": 0,
+        "sensorSize": [
+          1.7777778,
+          1.0
+        ],
+        "priority": 25
       }
     },
     "chr_0016_laevat": {
@@ -589,6 +749,19 @@
           0.0,
           1.0
         ]
+      },
+      "lens": {
+        "fieldOfView": 20.0,
+        "nearClipPlane": 0.1,
+        "farClipPlane": 50.0,
+        "dutch": 0.0,
+        "gateFit": 2,
+        "modeOverride": 0,
+        "sensorSize": [
+          1.7777778,
+          1.0
+        ],
+        "priority": 25
       }
     },
     "chr_0017_yvonne": {
@@ -632,6 +805,19 @@
           0.0,
           1.0
         ]
+      },
+      "lens": {
+        "fieldOfView": 20.0,
+        "nearClipPlane": 0.1,
+        "farClipPlane": 50.0,
+        "dutch": 0.0,
+        "gateFit": 2,
+        "modeOverride": 0,
+        "sensorSize": [
+          1.7777778,
+          1.0
+        ],
+        "priority": 25
       }
     },
     "chr_0018_dapan": {
@@ -675,6 +861,19 @@
           0.0,
           1.0
         ]
+      },
+      "lens": {
+        "fieldOfView": 20.011497,
+        "nearClipPlane": 0.1,
+        "farClipPlane": 50.0,
+        "dutch": 0.0,
+        "gateFit": 2,
+        "modeOverride": 0,
+        "sensorSize": [
+          1.7777778,
+          1.0
+        ],
+        "priority": 25
       }
     },
     "chr_0019_karin": {
@@ -718,6 +917,19 @@
           0.0,
           1.0
         ]
+      },
+      "lens": {
+        "fieldOfView": 20.007383,
+        "nearClipPlane": 0.1,
+        "farClipPlane": 50.0,
+        "dutch": 0.0,
+        "gateFit": 2,
+        "modeOverride": 0,
+        "sensorSize": [
+          1.7777778,
+          1.0
+        ],
+        "priority": 25
       }
     },
     "chr_0020_meurs": {
@@ -761,6 +973,19 @@
           0.0,
           1.0
         ]
+      },
+      "lens": {
+        "fieldOfView": 20.007383,
+        "nearClipPlane": 0.1,
+        "farClipPlane": 50.0,
+        "dutch": 0.0,
+        "gateFit": 2,
+        "modeOverride": 0,
+        "sensorSize": [
+          1.7777778,
+          1.0
+        ],
+        "priority": 25
       }
     },
     "chr_0021_whiten": {
@@ -804,6 +1029,19 @@
           0.0,
           1.0
         ]
+      },
+      "lens": {
+        "fieldOfView": 20.007383,
+        "nearClipPlane": 0.1,
+        "farClipPlane": 50.0,
+        "dutch": 0.0,
+        "gateFit": 2,
+        "modeOverride": 0,
+        "sensorSize": [
+          1.7777778,
+          1.0
+        ],
+        "priority": 25
       }
     },
     "chr_0022_bounda": {
@@ -847,6 +1085,19 @@
           0.0,
           1.0
         ]
+      },
+      "lens": {
+        "fieldOfView": 20.0,
+        "nearClipPlane": 0.1,
+        "farClipPlane": 50.0,
+        "dutch": 0.0,
+        "gateFit": 2,
+        "modeOverride": 0,
+        "sensorSize": [
+          1.7777778,
+          1.0
+        ],
+        "priority": 25
       }
     },
     "chr_0023_antal": {
@@ -890,6 +1141,19 @@
           0.0,
           1.0
         ]
+      },
+      "lens": {
+        "fieldOfView": 20.014765,
+        "nearClipPlane": 0.1,
+        "farClipPlane": 50.0,
+        "dutch": 0.0,
+        "gateFit": 2,
+        "modeOverride": 0,
+        "sensorSize": [
+          1.7777778,
+          1.0
+        ],
+        "priority": 25
       }
     },
     "chr_0024_deepfin": {
@@ -933,6 +1197,19 @@
           0.0,
           1.0
         ]
+      },
+      "lens": {
+        "fieldOfView": 20.029537,
+        "nearClipPlane": 0.1,
+        "farClipPlane": 50.0,
+        "dutch": 0.0,
+        "gateFit": 2,
+        "modeOverride": 0,
+        "sensorSize": [
+          1.7777778,
+          1.0
+        ],
+        "priority": 25
       }
     },
     "chr_0025_ardelia": {
@@ -976,6 +1253,19 @@
           0.0,
           1.0
         ]
+      },
+      "lens": {
+        "fieldOfView": 20.007383,
+        "nearClipPlane": 0.1,
+        "farClipPlane": 50.0,
+        "dutch": 0.0,
+        "gateFit": 2,
+        "modeOverride": 0,
+        "sensorSize": [
+          1.7777778,
+          1.0
+        ],
+        "priority": 25
       }
     },
     "chr_0026_lastrite": {
@@ -1019,6 +1309,19 @@
           0.0,
           1.0
         ]
+      },
+      "lens": {
+        "fieldOfView": 20.014765,
+        "nearClipPlane": 0.1,
+        "farClipPlane": 50.0,
+        "dutch": 0.0,
+        "gateFit": 2,
+        "modeOverride": 0,
+        "sensorSize": [
+          1.7777778,
+          1.0
+        ],
+        "priority": 25
       }
     },
     "chr_0027_tangtang": {
@@ -1062,6 +1365,19 @@
           0.0,
           1.0
         ]
+      },
+      "lens": {
+        "fieldOfView": 20.0,
+        "nearClipPlane": 0.1,
+        "farClipPlane": 50.0,
+        "dutch": 0.0,
+        "gateFit": 2,
+        "modeOverride": 0,
+        "sensorSize": [
+          1.9140188,
+          1.0
+        ],
+        "priority": 25
       }
     },
     "chr_0028_wulfa": {
@@ -1105,6 +1421,19 @@
           0.0,
           1.0
         ]
+      },
+      "lens": {
+        "fieldOfView": 20.0,
+        "nearClipPlane": 0.1,
+        "farClipPlane": 50.0,
+        "dutch": 0.0,
+        "gateFit": 2,
+        "modeOverride": 0,
+        "sensorSize": [
+          1.7777778,
+          1.0
+        ],
+        "priority": 25
       }
     },
     "chr_0029_pograni": {
@@ -1148,6 +1477,19 @@
           0.0,
           1.0
         ]
+      },
+      "lens": {
+        "fieldOfView": 20.007383,
+        "nearClipPlane": 0.1,
+        "farClipPlane": 50.0,
+        "dutch": 0.0,
+        "gateFit": 2,
+        "modeOverride": 0,
+        "sensorSize": [
+          1.7777778,
+          1.0
+        ],
+        "priority": 25
       }
     },
     "chr_0030_zhuangfy": {
@@ -1191,6 +1533,19 @@
           0.0,
           1.0
         ]
+      },
+      "lens": {
+        "fieldOfView": 20.007383,
+        "nearClipPlane": 0.1,
+        "farClipPlane": 50.0,
+        "dutch": 0.0,
+        "gateFit": 2,
+        "modeOverride": 0,
+        "sensorSize": [
+          1.7777778,
+          1.0
+        ],
+        "priority": 25
       }
     },
     "chr_0031_mifu": {
@@ -1234,6 +1589,19 @@
           0.0,
           1.0
         ]
+      },
+      "lens": {
+        "fieldOfView": 20.0,
+        "nearClipPlane": 0.1,
+        "farClipPlane": 50.0,
+        "dutch": 0.0,
+        "gateFit": 2,
+        "modeOverride": 0,
+        "sensorSize": [
+          1.7777778,
+          1.0
+        ],
+        "priority": 25
       }
     },
     "chr_0032_lizhiyan": {
@@ -1277,6 +1645,19 @@
           0.0,
           1.0
         ]
+      },
+      "lens": {
+        "fieldOfView": 20.007383,
+        "nearClipPlane": 0.1,
+        "farClipPlane": 50.0,
+        "dutch": 0.0,
+        "gateFit": 2,
+        "modeOverride": 0,
+        "sensorSize": [
+          1.7777778,
+          1.0
+        ],
+        "priority": 25
       }
     },
     "chr_0033_camille": {
@@ -1320,6 +1701,19 @@
           0.0,
           1.0
         ]
+      },
+      "lens": {
+        "fieldOfView": 20.014765,
+        "nearClipPlane": 0.1,
+        "farClipPlane": 50.0,
+        "dutch": 0.0,
+        "gateFit": 2,
+        "modeOverride": 0,
+        "sensorSize": [
+          1.7777778,
+          1.0
+        ],
+        "priority": 25
       }
     },
     "chr_0035_liino": {
@@ -1363,6 +1757,19 @@
           0.0,
           1.0
         ]
+      },
+      "lens": {
+        "fieldOfView": 20.007383,
+        "nearClipPlane": 0.1,
+        "farClipPlane": 50.0,
+        "dutch": 0.0,
+        "gateFit": 2,
+        "modeOverride": 0,
+        "sensorSize": [
+          1.7777778,
+          1.0
+        ],
+        "priority": 25
       }
     }
   },
@@ -1386,7 +1793,10 @@
         0.0,
         1.31,
         0.0
-      ]
+      ],
+      "fieldOfView": 20.0,
+      "nearClipPlane": 0.1,
+      "farClipPlane": 50.0
     },
     {
       "templateId": "chr_0003_endmin",
@@ -1407,7 +1817,10 @@
         0.022,
         1.225,
         0.0
-      ]
+      ],
+      "fieldOfView": 20.0,
+      "nearClipPlane": 0.1,
+      "farClipPlane": 50.0
     },
     {
       "templateId": "chr_0004_pelica",
@@ -1428,7 +1841,10 @@
         0.0,
         1.225,
         0.0
-      ]
+      ],
+      "fieldOfView": 20.0,
+      "nearClipPlane": 0.1,
+      "farClipPlane": 50.0
     },
     {
       "templateId": "chr_0005_chen",
@@ -1449,7 +1865,10 @@
         0.0,
         1.225,
         0.0
-      ]
+      ],
+      "fieldOfView": 20.0,
+      "nearClipPlane": 0.1,
+      "farClipPlane": 50.0
     },
     {
       "templateId": "chr_0006_wolfgd",
@@ -1470,7 +1889,10 @@
         0.027,
         1.37,
         0.0
-      ]
+      ],
+      "fieldOfView": 20.0,
+      "nearClipPlane": 0.1,
+      "farClipPlane": 50.0
     },
     {
       "templateId": "chr_0007_ikut",
@@ -1491,7 +1913,10 @@
         0.044,
         1.225,
         0.0
-      ]
+      ],
+      "fieldOfView": 20.0,
+      "nearClipPlane": 0.1,
+      "farClipPlane": 50.0
     },
     {
       "templateId": "chr_0009_azrila",
@@ -1512,7 +1937,10 @@
         0.0,
         1.27,
         0.0
-      ]
+      ],
+      "fieldOfView": 20.0,
+      "nearClipPlane": 0.1,
+      "farClipPlane": 50.0
     },
     {
       "templateId": "chr_0011_seraph",
@@ -1533,7 +1961,10 @@
         0.0,
         1.225,
         0.0
-      ]
+      ],
+      "fieldOfView": 20.0,
+      "nearClipPlane": 0.1,
+      "farClipPlane": 50.0
     },
     {
       "templateId": "chr_0012_avywen",
@@ -1554,7 +1985,10 @@
         0.0,
         1.225,
         0.0
-      ]
+      ],
+      "fieldOfView": 20.0,
+      "nearClipPlane": 0.1,
+      "farClipPlane": 50.0
     },
     {
       "templateId": "chr_0013_aglina",
@@ -1575,7 +2009,10 @@
         -0.01,
         1.2353896,
         -0.028807428
-      ]
+      ],
+      "fieldOfView": 20.0,
+      "nearClipPlane": 0.1,
+      "farClipPlane": 50.0
     },
     {
       "templateId": "chr_0014_aurora",
@@ -1596,7 +2033,10 @@
         -0.08657039,
         1.2489265,
         -0.06634163
-      ]
+      ],
+      "fieldOfView": 20.0,
+      "nearClipPlane": 0.1,
+      "farClipPlane": 50.0
     },
     {
       "templateId": "chr_0015_lifeng",
@@ -1617,7 +2057,10 @@
         0.0,
         1.225,
         0.0
-      ]
+      ],
+      "fieldOfView": 20.0,
+      "nearClipPlane": 0.1,
+      "farClipPlane": 50.0
     },
     {
       "templateId": "chr_0016_laevat",
@@ -1638,7 +2081,10 @@
         0.025,
         1.3037171,
         -0.21826088
-      ]
+      ],
+      "fieldOfView": 20.0,
+      "nearClipPlane": 0.1,
+      "farClipPlane": 50.0
     },
     {
       "templateId": "chr_0017_yvonne",
@@ -1659,7 +2105,10 @@
         0.104,
         1.225,
         0.0
-      ]
+      ],
+      "fieldOfView": 20.0,
+      "nearClipPlane": 0.1,
+      "farClipPlane": 50.0
     },
     {
       "templateId": "chr_0018_dapan",
@@ -1680,7 +2129,10 @@
         0.0,
         1.42,
         0.0
-      ]
+      ],
+      "fieldOfView": 20.011497,
+      "nearClipPlane": 0.1,
+      "farClipPlane": 50.0
     },
     {
       "templateId": "chr_0019_karin",
@@ -1701,7 +2153,10 @@
         0.022,
         1.225,
         0.0
-      ]
+      ],
+      "fieldOfView": 20.007383,
+      "nearClipPlane": 0.1,
+      "farClipPlane": 50.0
     },
     {
       "templateId": "chr_0020_meurs",
@@ -1722,7 +2177,10 @@
         0.022,
         1.31,
         0.0
-      ]
+      ],
+      "fieldOfView": 20.007383,
+      "nearClipPlane": 0.1,
+      "farClipPlane": 50.0
     },
     {
       "templateId": "chr_0021_whiten",
@@ -1743,7 +2201,10 @@
         -0.08,
         1.25,
         0.0
-      ]
+      ],
+      "fieldOfView": 20.007383,
+      "nearClipPlane": 0.1,
+      "farClipPlane": 50.0
     },
     {
       "templateId": "chr_0022_bounda",
@@ -1764,7 +2225,10 @@
         0.022,
         1.22,
         0.0
-      ]
+      ],
+      "fieldOfView": 20.0,
+      "nearClipPlane": 0.1,
+      "farClipPlane": 50.0
     },
     {
       "templateId": "chr_0023_antal",
@@ -1785,7 +2249,10 @@
         0.022,
         1.31,
         0.0
-      ]
+      ],
+      "fieldOfView": 20.014765,
+      "nearClipPlane": 0.1,
+      "farClipPlane": 50.0
     },
     {
       "templateId": "chr_0024_deepfin",
@@ -1806,7 +2273,10 @@
         0.0,
         1.34,
         0.0
-      ]
+      ],
+      "fieldOfView": 20.029537,
+      "nearClipPlane": 0.1,
+      "farClipPlane": 50.0
     },
     {
       "templateId": "chr_0025_ardelia",
@@ -1827,7 +2297,10 @@
         0.022,
         1.225,
         0.0
-      ]
+      ],
+      "fieldOfView": 20.007383,
+      "nearClipPlane": 0.1,
+      "farClipPlane": 50.0
     },
     {
       "templateId": "chr_0026_lastrite",
@@ -1848,7 +2321,10 @@
         0.022,
         1.225,
         0.0
-      ]
+      ],
+      "fieldOfView": 20.014765,
+      "nearClipPlane": 0.1,
+      "farClipPlane": 50.0
     },
     {
       "templateId": "chr_0027_tangtang",
@@ -1869,7 +2345,10 @@
         0.022,
         1.25,
         0.0
-      ]
+      ],
+      "fieldOfView": 20.0,
+      "nearClipPlane": 0.1,
+      "farClipPlane": 50.0
     },
     {
       "templateId": "chr_0028_wulfa",
@@ -1890,7 +2369,10 @@
         0.022,
         1.19,
         0.0
-      ]
+      ],
+      "fieldOfView": 20.0,
+      "nearClipPlane": 0.1,
+      "farClipPlane": 50.0
     },
     {
       "templateId": "chr_0029_pograni",
@@ -1911,7 +2393,10 @@
         0.032,
         1.397,
         0.0
-      ]
+      ],
+      "fieldOfView": 20.007383,
+      "nearClipPlane": 0.1,
+      "farClipPlane": 50.0
     },
     {
       "templateId": "chr_0030_zhuangfy",
@@ -1932,7 +2417,10 @@
         0.002,
         1.346,
         -0.21826088
-      ]
+      ],
+      "fieldOfView": 20.007383,
+      "nearClipPlane": 0.1,
+      "farClipPlane": 50.0
     },
     {
       "templateId": "chr_0031_mifu",
@@ -1953,7 +2441,10 @@
         0.025,
         1.3037171,
         -0.21826088
-      ]
+      ],
+      "fieldOfView": 20.0,
+      "nearClipPlane": 0.1,
+      "farClipPlane": 50.0
     },
     {
       "templateId": "chr_0032_lizhiyan",
@@ -1974,7 +2465,10 @@
         0.022,
         1.225,
         0.0
-      ]
+      ],
+      "fieldOfView": 20.007383,
+      "nearClipPlane": 0.1,
+      "farClipPlane": 50.0
     },
     {
       "templateId": "chr_0033_camille",
@@ -1995,7 +2489,10 @@
         -0.01,
         1.353,
         0.0
-      ]
+      ],
+      "fieldOfView": 20.014765,
+      "nearClipPlane": 0.1,
+      "farClipPlane": 50.0
     },
     {
       "templateId": "chr_0035_liino",
@@ -2016,7 +2513,10 @@
         0.022,
         1.242,
         0.0
-      ]
+      ],
+      "fieldOfView": 20.007383,
+      "nearClipPlane": 0.1,
+      "farClipPlane": 50.0
     }
   ]
 }

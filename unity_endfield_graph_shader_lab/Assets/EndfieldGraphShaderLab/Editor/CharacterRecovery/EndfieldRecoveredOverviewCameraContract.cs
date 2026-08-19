@@ -18,6 +18,10 @@ namespace EndfieldGraphShaderLabEditor
     /// ships in the Persistent VFS rather than StreamingAssets, so it is only
     /// reached when both asset maps are walked.
     ///
+    /// The entry also carries the Cinemachine lens. Field of view varies per
+    /// character across five distinct values just above 20 degrees, so it is
+    /// read from here rather than passed in by the caller.
+    ///
     /// This is framing only. The per-frame cursor and UIGyroscopeEffect offset
     /// remains unrecovered, so two captures of the same character still differ
     /// and comparison continues to need alignment.
@@ -36,6 +40,9 @@ namespace EndfieldGraphShaderLabEditor
             internal Vector3 CameraPosition;
             internal Vector3 LookAtPosition;
             internal Quaternion SerializedVcamRotation;
+            internal float FieldOfView;
+            internal float NearClipPlane;
+            internal float FarClipPlane;
         }
 
         [Serializable]
@@ -47,6 +54,9 @@ namespace EndfieldGraphShaderLabEditor
             public float[] vcamPosition;
             public float[] vcamRotation;
             public float[] lookAtPosition;
+            public float fieldOfView;
+            public float nearClipPlane;
+            public float farClipPlane;
         }
 
         [Serializable]
@@ -105,6 +115,19 @@ namespace EndfieldGraphShaderLabEditor
                         $"Recovered overview camera entry '{item.actor}' is incomplete.");
                 }
 
+                // Field of view varies per character, so a zero here means the
+                // Cinemachine lens did not survive extraction rather than a
+                // legitimately absent value.
+                if (item.fieldOfView <= 0.0f ||
+                    item.nearClipPlane <= 0.0f ||
+                    item.farClipPlane <= item.nearClipPlane)
+                {
+                    throw new InvalidOperationException(
+                        $"Recovered overview camera entry '{item.actor}' has no " +
+                        "usable Cinemachine lens. Rebuild the contract with " +
+                        "tools/build_charinfo_overview_camera_contract.py.");
+                }
+
                 map[item.actor.ToLowerInvariant()] = new Entry
                 {
                     TemplateId = item.templateId,
@@ -117,6 +140,9 @@ namespace EndfieldGraphShaderLabEditor
                     SerializedVcamRotation = new Quaternion(
                         item.vcamRotation[0], item.vcamRotation[1],
                         item.vcamRotation[2], item.vcamRotation[3]),
+                    FieldOfView = item.fieldOfView,
+                    NearClipPlane = item.nearClipPlane,
+                    FarClipPlane = item.farClipPlane,
                 };
             }
 
