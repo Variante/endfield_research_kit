@@ -1190,6 +1190,21 @@ while preserving arrays without a proven stride as raw semantic gaps. None of
 these contracts recover the Burst kernel, instantiate a solver, prove retail
 execution, or modify a Transform.
 
+The managed EndSimulationStepJob indexed fallback is now closed separately for
+its fixed-build integration chain: method identity and next-pointer span, 28
+branch edges, the TeamData spring test, Project/ProjectOnPlane/AutoToFloat3
+helper calls, and the collision, velocity, friction, old-position, and result
+array accesses are decoded and cross-checked against the canonical job layout.
+The transform bridge now independently rebuilds its method identities and call
+edges from the current metadata and GameAssembly for TransformAccessArray
+lifecycle calls plus ReadTransform, ReadAnimatorBufferData, RestoreTransform,
+and WriteTransform jobs. This proves the position/rotation getter and setter
+call surface only: array ownership, schedule execution, result-array pointer
+provenance, Burst numerics, and visual equivalence remain open. The nearest
+numeric blocker is still mapping the three BurstDirectCall range wrappers to
+the installed `lib_burst_generated.dll` hashed exports; the prepared resolver
+telemetry requires a running pinned retail client.
+
 The installed client does contain its original `lib_burst_generated.dll`, but
 that is not a drop-in public-Unity plugin: its hashed exports are resolved
 through the retail Burst runtime and depend on the original IL2CPP/Jobs state.
