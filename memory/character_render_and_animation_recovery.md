@@ -1129,6 +1129,26 @@ zero-weight gates. It never registers the recovered PlayerLoop or sets
 ownership, the remaining static-field join, and IFix-patched execution remain
 separate gates before any solver can be called retail-equivalent.
 
+The priority actors now also have a fail-closed static solver-input contract.
+It joins the original serialized cloth, selection/prebuild, constraint,
+root-bone, and collider payloads for Endminf (4 cloth/10 colliders), Pelica
+(7/16), and Chen (6/6), covering 385 authored selection points. The builder
+rechecks hierarchy PPtrs, raw/serialized hashes, target-filter object sets,
+script identities, and the pinned PlayerLoop evidence before publication. It
+is deliberately an input contract only: Burst scheduling, constraint numerics,
+and transform writeback remain unimplemented and `retail_equivalent=false`.
+
+A 2 fps actor-only Overview probe successfully emitted complete
+start -> transition -> loop sequences for all three priority actors with no
+foreground UI, but visual inspection confirms the frozen-secondary-bone gap:
+Endminf and Chen show detached cloth/hair/ornament geometry, and Pelica remains
+incomplete. A proposed Pelica deco-widget join was rejected after its enabled
+capture was byte-identical in all 21 frames to the disabled control. The two
+source clips only toggle `Mesh_all`; they contain no mount/transform track, and
+the recovered prop remains actor-local with no proven visible contribution.
+Recover the original prefab/socket attachment and add prop-only A/B pixel or
+draw evidence before admitting that widget into Overview capture.
+
 ## Main animation gap
 
 Remaining runtime systems include:
