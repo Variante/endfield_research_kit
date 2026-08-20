@@ -473,7 +473,8 @@ Geographic
 `layer_tips` keys are presented as numbered floors. Numbered floors sort in
 ascending order before the remaining tier-id-ordered geographic overlays.
 Tier chunk rows retain the exported top-to-bottom, +Z-at-top orientation just
-like base-map chunks; only `needInverseXZ` may rotate a complete composite.
+like base-map chunks; `needInverseXZ` changes world-pin projection and never
+rotates the exported composite.
 Registry markers, quest points, and authored
 `staticElements` all retain raw X/Z coordinates; marker-to-tier membership is
 published only when the point lies inside that tier's authored rectangle.
@@ -487,10 +488,10 @@ places appear to exchange positions.
 Only the Map01 and Map02 families are stitched into regional canvases. Other
 same-prefix levels can be separate states or decks with identical bounds; the
 two Dijiang maps therefore load independently. Their composites retain the
-authored 180-degree image rotation, while `needInverseXZ` converts world pins
-with the evidenced quarter turn `X'=-Z, Z'=X`: this places the raw bridge
-coordinate on the right-hand prow and applies identically to markers, routes,
-and location labels. Where game minimap art is absent, a
+exported orientation shown by the in-game reference (prow/bridge left and base
+area right), while `needInverseXZ` converts world pins with the evidenced
+clockwise quarter turn `X'=Z, Z'=-X`. This applies identically to markers,
+routes, and location labels. Where game minimap art is absent, a
 recovered HLOD surface is preferred; otherwise the page uses an explicitly
 evidence-only, height-tinted point cloud made from exact registry and quest
 X/Y/Z transforms without inventing terrain. The expandable mission list links
@@ -694,10 +695,8 @@ preview; whichever source wins also supplies the declared `worldBounds` the
 markers stretch against, and the rail states which one the page is showing.
 Each chunk draws at its own world size (half-size cells included), and a
 sidecar records the chosen textures by hash so an unchanged rebuild reuses the
-published composite instead of repainting it. Levels whose config sets
-`basic.needInverseXZ` (only the base01 decks) have their picture rotated 180
-degrees, exactly as the game draws that art; the declared world rectangle is
-unchanged.
+published composite instead of repainting it. `basic.needInverseXZ` is recorded
+as a pin-projection contract; it does not rotate the chunk composite.
 
 The page fits a single on-demand zone to its own declared rectangle. After the
 reader requests a sibling, the generated `region.worldBounds` union becomes the
