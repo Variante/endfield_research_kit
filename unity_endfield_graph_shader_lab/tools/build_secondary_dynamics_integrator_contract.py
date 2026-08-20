@@ -180,6 +180,35 @@ EXPECTED_MEMORY_SITES = (
     (0xD93, "oldPosArray", "rax", "rcx", 8, 0, 16, "write"),
     (0xD98, "oldPosArray", "rax", "rcx", 8, 16, 8, "write"),
 )
+# The load which establishes the base pointer for each array access.  This is
+# deliberately per-site (rather than merely "some load before it").
+EXPECTED_MEMORY_POINTER_BINDINGS = {
+    0xB5: 0xA1, 0xC1: 0xB9, 0x368: 0x35F, 0x36D: 0x35F,
+    0x37F: 0x378, 0x384: 0x378, 0x3EE: 0x3C8, 0x3F4: 0x3C8,
+    0x3F9: 0x3D3, 0x405: 0x3D3, 0x40C: 0x3DE, 0x455: 0x43C,
+    0x73D: 0x715, 0x956: 0x943, 0xCF6: 0xCEF, 0xCFB: 0xCEF,
+    0xD84: 0xD48, 0xD89: 0xD48, 0xD93: 0xD72, 0xD98: 0xD72,
+}
+EXPECTED_JOB_TYPE_INDEX = 48424
+EXPECTED_FIELD_METADATA = {
+    "simulationDeltaTime": (230433, 163868, "Single", 4, 0x0),
+    "stepParticleIndexArray": (230434, 83201, "NativeArray", 16, 0x8),
+    "teamDataArray": (230435, 83381, "NativeArray", 16, 0x18),
+    "parameterArray": (230436, 83108, "NativeArray", 16, 0x28),
+    "centerDataArray": (230437, 83349, "NativeArray", 16, 0x38),
+    "attributes": (230438, 83290, "NativeArray", 16, 0x48),
+    "vertexDepths": (230439, 83240, "NativeArray", 16, 0x58),
+    "teamIdArray": (230440, 83197, "NativeArray", 16, 0x68),
+    "nextPosArray": (230441, 83298, "NativeArray", 16, 0x78),
+    "oldPosArray": (230442, 83298, "NativeArray", 16, 0x88),
+    "velocityPosArray": (230443, 83298, "NativeArray", 16, 0x98),
+    "velocityArray": (230444, 83304, "NativeArray", 16, 0xA8),
+    "realVelocityArray": (230445, 83304, "NativeArray", 16, 0xB8),
+    "frictionArray": (230446, 83240, "NativeArray", 16, 0xC8),
+    "staticFrictionArray": (230447, 83240, "NativeArray", 16, 0xD8),
+    "collisionNormalArray": (230448, 83304, "NativeArray", 16, 0xE8),
+    "_indexCount": (230449, 83620, "NativeReference", 16, 0xF8),
+}
 
 EXPECTED_TEAM_STRIDE = (0xC6, 0x1D0)
 EXPECTED_DIRECT_CALL_COUNT = {METHOD_INDEX: 52, 384698: 3, 386213: 2, 386214: 3, 386216: 0}
@@ -392,8 +421,9 @@ def _verify_memory(body: bytes, job_fields: dict[str, int], pointer_loads: tuple
     for offset, field, base, index, scale, displacement, width, access in EXPECTED_MEMORY_SITES:
         if field not in job_fields:
             raise ContractError(f"memory site {field} is not a canonical job field")
+        bound_load = EXPECTED_MEMORY_POINTER_BINDINGS.get(offset)
         matching_loads = [load_offset for load_offset, load_field in pointer_loads if load_field == field]
-        if not matching_loads or min(matching_loads) > offset:
+        if bound_load not in matching_loads:
             raise ContractError(f"memory site {field} at 0x{offset:x} has no canonical pointer load")
         decoded = _memory_instruction(body, offset, 0 if access == "write" else 1)
         if (decoded["base"], decoded["index"], decoded["scale"], decoded["displacement"], decoded["widthBytes"]) != (base, index, scale, displacement, width):
@@ -429,16 +459,23 @@ def _job_layout(gate: dict[str, Any]) -> dict[str, Any]:
     if len(rows) != 1:
         raise ContractError("canonical job layout lacks unique EndSimulationStepJob")
     raw_fields = rows[0].get("fields", [])
+    if int(rows[0].get("typeIndex", -1)) != EXPECTED_JOB_TYPE_INDEX:
+        raise ContractError("canonical job typeIndex drift")
     if len(raw_fields) != len(EXPECTED_JOB_FIELDS) or len({row.get("name") for row in raw_fields}) != len(raw_fields):
         raise ContractError("canonical EndSimulationStepJob field set is incomplete or duplicated")
     fields = {str(row["name"]): int(str(row["nativePayloadOffset"]), 16) for row in raw_fields}
-    if fields != EXPECTED_JOB_FIELDS:
+    if fields != EXPECTED_JOB_FIELDS or set(fields) != set(EXPECTED_FIELD_METADATA):
         raise ContractError(f"EndSimulationStepJob field offsets drift: {fields!r}")
     for row in raw_fields:
         if not isinstance(row.get("fieldIndex"), int) or not isinstance(row.get("metadataTypeIndex"), int) or not row.get("kind") or int(row.get("slotWidthBytes", 0)) <= 0:
             raise ContractError(f"canonical field metadata incomplete: {row.get('name')}")
     if [int(row["fieldIndex"]) for row in raw_fields] != list(range(230433, 230450)):
         raise ContractError("canonical field index set drift")
+    for row in raw_fields:
+        expected = EXPECTED_FIELD_METADATA.get(str(row["name"]))
+        actual = (int(row["fieldIndex"]), int(row["metadataTypeIndex"]), str(row["kind"]), int(row["slotWidthBytes"]), int(str(row["nativePayloadOffset"]), 16))
+        if expected != actual:
+            raise ContractError(f"canonical field provenance drift: {row.get('name')}")
     return {"path": _repo_path(JOB_LAYOUT_PATH), "sha256": _sha256(JOB_LAYOUT_PATH), "fields": {name: f"0x{value:x}" for name, value in fields.items()}}
 
 
