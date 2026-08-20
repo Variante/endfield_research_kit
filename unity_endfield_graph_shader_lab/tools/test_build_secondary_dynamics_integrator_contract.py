@@ -118,6 +118,63 @@ class SecondaryDynamicsIntegratorContractTests(unittest.TestCase):
         finally:
             builder.EXPECTED_HELPER_DIRECT_CALLS[386213] = original_calls
 
+    def test_bounded_census_deletions_fail_closed(self) -> None:
+        cases = (
+            ("EXPECTED_CHAIN_CALLS", lambda value: value[:-1]),
+            ("EXPECTED_MEMORY_SITES", lambda value: value[:-1]),
+            ("EXPECTED_JOB_POINTER_LOADS", lambda value: value[:-1]),
+            ("EXPECTED_SCALAR_LOADS", lambda value: value[:-1]),
+        )
+        for name, remove in cases:
+            original = getattr(builder, name)
+            setattr(builder, name, remove(original))
+            try:
+                with self.assertRaises(builder.ContractError, msg=name):
+                    builder.build_contract()
+            finally:
+                setattr(builder, name, original)
+
+        original = builder.EXPECTED_HELPER_SPANS
+        builder.EXPECTED_HELPER_SPANS = dict(original)
+        builder.EXPECTED_HELPER_SPANS.pop(386216)
+        try:
+            with self.assertRaises(builder.ContractError):
+                builder.build_contract()
+        finally:
+            builder.EXPECTED_HELPER_SPANS = original
+
+    def test_semantic_identity_attacks_fail_closed(self) -> None:
+        original_site = builder.EXPECTED_MEMORY_SITES[0]
+        builder.EXPECTED_MEMORY_SITES = (original_site[:1] + ("oldPosArray",) + original_site[2:],) + builder.EXPECTED_MEMORY_SITES[1:]
+        try:
+            with self.assertRaises(builder.ContractError):
+                builder.build_contract()
+        finally:
+            builder.EXPECTED_MEMORY_SITES = (original_site,) + builder.EXPECTED_MEMORY_SITES[1:]
+
+        original_call = builder.EXPECTED_CHAIN_CALLS[0]
+        builder.EXPECTED_CHAIN_CALLS = (original_call[:3] + ("BeyondDynamicBone.TeamManager+TeamData.fake",),) + builder.EXPECTED_CHAIN_CALLS[1:]
+        try:
+            with self.assertRaises(builder.ContractError):
+                builder.build_contract()
+        finally:
+            builder.EXPECTED_CHAIN_CALLS = (original_call,) + builder.EXPECTED_CHAIN_CALLS[1:]
+
+    def test_canonical_job_layout_attacks_fail_closed(self) -> None:
+        payload = json.loads(builder.JOB_LAYOUT_PATH.read_text(encoding="utf-8"))
+        row = next(row for row in payload["jobs"] if row.get("type") == builder.EXPECTED_METHOD["type"])
+        row["fields"][0]["fieldIndex"] = row["fields"][0]["fieldIndex"] + 1
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "job.json"
+            path.write_text(json.dumps(payload), encoding="utf-8")
+            original_path = builder.JOB_LAYOUT_PATH
+            builder.JOB_LAYOUT_PATH = path
+            try:
+                with self.assertRaises(builder.ContractError):
+                    builder.build_contract()
+            finally:
+                builder.JOB_LAYOUT_PATH = original_path
+
 
 if __name__ == "__main__":
     unittest.main()
