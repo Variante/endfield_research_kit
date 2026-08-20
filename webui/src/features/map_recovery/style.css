@@ -275,6 +275,35 @@
 .mr-layer:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
 .mr-layer input { position: absolute; width: 1px; height: 1px; opacity: 0; }
 
+.mr-floor-picker,
+.mr-floor-options {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.mr-floor-group {
+  min-width: 0;
+  margin: 2px 0 0;
+  padding: 7px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+}
+
+.mr-floor-group legend {
+  max-width: 100%;
+  padding: 0 4px;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mr-floor-count { margin-left: 6px; opacity: 0.75; }
+.mr-floor-option { justify-content: space-between; width: 100%; }
+.mr-floor-none { align-self: flex-start; }
+
 .mr-swatch {
   width: 9px;
   height: 9px;

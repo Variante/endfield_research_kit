@@ -70,6 +70,10 @@
     filePath: "",
     filePathLabel: "",
     pendingFit: false,
+    // A map switch should frame the selected map screen even when the clean
+    // geographic view intentionally has no entity nodes enabled. Keep this
+    // target separate from pendingFit so mission changes still fit nodes.
+    pendingFitTarget: "nodes",
     dragging: null,
     pointers: new Map(),
     pinch: null,
@@ -83,6 +87,7 @@
     backgrounds: [], // every region zone's map screen, in stable draw order
     layerBackgrounds: [], // transparent tier overlays, kept separate from base screens
     contentBox: null, // plotted content extent in viewBox units, for the pan clamp
+    selectedMapBox: null, // selected level's fitted background rectangle
     lastNodeScale: null, // skip per-node writes while a pan keeps the same scale
     loadRequest: 0,
     loadController: null,
@@ -138,19 +143,56 @@
     Object.values(map?.facets?.kinds || {}).flatMap((info) => Object.keys(info.subKinds || {}))
   );
 
-  const allMapLayers = (map) => new Set(
-    (map?.mapLayers || []).map((row) => String(row.id)).filter(Boolean)
-  );
+  const mapFloorNumber = (layer) => {
+    const key = String(layer?.nameKey || "");
+    const match = key.match(/([0-9]+)$/);
+    return match ? match[1] : "";
+  };
 
+  const mapLayerLabel = (layer) => {
+    const number = mapFloorNumber(layer);
+    const tier = layer?.tierId ?? layer?.id;
+    return number ? `${t("mapFloor")} ${number} / ${t("mapTier")} ${tier}` : `${t("mapTier")} ${tier}`;
+  };
+
+  const mapLayerRange = (layer) => {
+    const range = layer?.heightRange;
+    if (!range || !Number.isFinite(Number(range.minY)) || !Number.isFinite(Number(range.maxY))) return "";
+    return `Y ${Number(range.minY).toFixed(1)} - ${Number(range.maxY).toFixed(1)}`;
+  };
+
+  // A region contains tiers from several sibling sub-maps. They are not one
+  // giant floor list: selecting one tier must be scoped and obvious, and two
+  // transparent overlays must never be blended accidentally.
   const mapLayerTreeHtml = (data) => {
-    const layers = data.mapLayers || [];
+    const layers = (data.mapLayers || []).filter((layer) => layer.levelId === state.selected);
     if (!layers.length) return `<p class="mr-note">${esc(t("mapLayersNone"))}</p>`;
-    return layers.map((layer) => {
-      const label = layer.nameKey || String(layer.tierId ?? layer.id);
-      const range = layer.heightRange && Number.isFinite(Number(layer.heightRange.minY))
-        ? ` · Y ${Number(layer.heightRange.minY).toFixed(1)}..${Number(layer.heightRange.maxY).toFixed(1)}` : "";
-      return `<label class="mr-layer" title="${esc(`${label}${range}`)}"><input type="checkbox" data-map-tier="${esc(layer.id)}" ${state.mapLayers.has(String(layer.id)) ? "checked" : ""}>${esc(label)}<span class="mr-layer-count">${layer.tileCount || 0}</span></label>`;
+    const groups = new Map();
+    for (const layer of layers) {
+      const levelId = String(layer.levelId || "unknown");
+      if (!groups.has(levelId)) groups.set(levelId, {
+        levelId,
+        levelName: layer.levelName || levelId,
+        layers: [],
+      });
+      groups.get(levelId).layers.push(layer);
+    }
+    const selected = [...state.mapLayers][0] || "";
+    const none = `<label class="mr-layer mr-floor-none" title="${esc(t("mapFloorNoneHint"))}"><input type="radio" name="map-tier-selection" data-map-tier-none value="" ${selected ? "" : "checked"}>${esc(t("mapFloorNone"))}</label>`;
+    const groupHtml = [...groups.values()].map((group) => {
+      const levelTitle = group.levelName && group.levelName !== group.levelId
+        ? `${group.levelName} (${group.levelId})`
+        : group.levelId;
+      const options = group.layers.map((layer) => {
+        const id = String(layer.id);
+        const label = mapLayerLabel(layer);
+        const range = mapLayerRange(layer);
+        const title = range ? `${label} · ${range}` : label;
+        return `<label class="mr-layer mr-floor-option" title="${esc(title)}"><input type="radio" name="map-tier-selection" data-map-tier="${esc(id)}" value="${esc(id)}" ${selected === id ? "checked" : ""}>${esc(label)}<span class="mr-layer-count">${esc(range || `${layer.tileCount || 0} ${t("mapTiles")}`)}</span></label>`;
+      }).join("");
+      return `<fieldset class="mr-floor-group"><legend>${esc(levelTitle)}<span class="mr-floor-count">${group.layers.length} ${esc(t("mapFloorCount"))}</span></legend><div class="mr-floor-options">${options}</div></fieldset>`;
     }).join("");
+    return `<div class="mr-floor-picker" role="radiogroup" aria-label="${esc(t("mapLayers"))}">${none}${groupHtml}</div>`;
   };
 
   // A full region can contain thousands of entity markers. Keep the first
@@ -277,6 +319,12 @@
       layers: "Layers",
       mapLayers: "Map floors",
       mapLayersNone: "No tier overlays are declared by this level's UILevelMapLoadConfig.",
+      mapFloor: "Floor",
+      mapTier: "tier",
+      mapTiles: "tiles",
+      mapFloorCount: "floors",
+      mapFloorNone: "Base map",
+      mapFloorNoneHint: "Show the stitched geographic base without a floor overlay.",
       evidence: "Evidence",
       controls: "Controls",
       collapse: "Collapse panel",
@@ -370,6 +418,12 @@
       scene3dUnavailable: "No safe OBJ model is published for this level; the map stays marker-only.",
     },
     zh: {
+      mapFloor: "\u697c\u5c42",
+      mapTier: "\u5c42\u7ea7",
+      mapTiles: "\u56fe\u5757",
+      mapFloorCount: "\u5c42",
+      mapFloorNone: "\u4ec5\u663e\u793a\u5e95\u56fe",
+      mapFloorNoneHint: "\u663e\u793a\u62fc\u63a5\u540e\u7684\u5730\u7406\u5e95\u56fe\uff0c\u4e0d\u53e0\u52a0\u697c\u5c42\u56fe\u3002",
       mapLayers: "地图楼层",
       mapLayersNone: "该关卡的 UILevelMapLoadConfig 未声明楼层叠图。",
       layerSelectionHint: "\u9ed8\u8ba4\u4ee5\u5e72\u51c0\u7684\u5730\u7406\u5730\u56fe\u663e\u793a\u3002\u9700\u8981\u65f6\u518d\u5f00\u542f\u4efb\u52a1\u3001\u5267\u60c5\u6216\u5176\u5b83\u6807\u8bb0\u3002",
@@ -662,8 +716,19 @@
     return clamped({ scale, x: viewX - worldX * scale, y: viewY - worldY * scale });
   }
 
-  function fitTransform() {
-    if (!state.nodes.length) return { x: 0, y: 0, scale: 1 };
+  function fitTransform(targetMode = state.pendingFitTarget) {
+    const target = targetMode === "map" ? state.selectedMapBox : null;
+    if (!state.nodes.length && !target) return { x: 0, y: 0, scale: 1 };
+    if (target) {
+      const width = Math.max(1, Number(target.w) || 1);
+      const height = Math.max(1, Number(target.h) || 1);
+      const scale = clamp(Math.min((WIDTH - 2 * PAD) / width, (HEIGHT - 2 * PAD) / height), MIN_SCALE, MAX_SCALE);
+      return clamped({
+        scale,
+        x: WIDTH / 2 - scale * (Number(target.x) + width / 2),
+        y: HEIGHT / 2 - scale * (Number(target.y) + height / 2),
+      });
+    }
     const xs = state.nodes.map((node) => node.plot.x);
     const ys = state.nodes.map((node) => node.plot.y);
     // plot() normalises against the extremes, so on a sparse map the outermost
@@ -715,9 +780,11 @@
     // actually occupies, so an identity transform wastes most of the surface.
     // The first measurable paint frames the plotted nodes instead. The flag is
     // cleared before re-entering so this can only ever run once per load.
-    if (state.pendingFit && state.nodes.length) {
+    if (state.pendingFit && (state.nodes.length || (state.pendingFitTarget === "map" && state.selectedMapBox))) {
       state.pendingFit = false;
-      state.transform = fitTransform();
+      const fitTarget = state.pendingFitTarget;
+      state.pendingFitTarget = "nodes";
+      state.transform = fitTransform(fitTarget);
       applyTransform();
       return;
     }
@@ -1247,8 +1314,17 @@
           h: (Number(bg.worldBounds.maxZ) - Number(bg.worldBounds.minZ)) * fitScale,
         };
       });
+    const selectedBackground = bgRects.find(({ bg }) => bg.levelId === state.selected);
+    state.selectedMapBox = selectedBackground
+      ? { x: selectedBackground.x, y: selectedBackground.y, w: selectedBackground.w, h: selectedBackground.h }
+      : null;
+    // Minimap PNGs already carry the game's alpha mask.  Applying an extra
+    // .9 opacity here made every opaque pixel blend with the dark canvas and
+    // made overlapping sibling screens visibly darker than their neighbours.
+    // Keep the source alpha intact so the region surface has one consistent
+    // tone; transparency still exposes the map background below.
     const backgroundImages = bgRects
-      .map(({ bg, x, y, w, h }) => `<image class="mr-bg-image" href="data/map_recovery/${esc(bg.src)}" x="${x.toFixed(2)}" y="${y.toFixed(2)}" width="${w.toFixed(2)}" height="${h.toFixed(2)}" opacity=".9"><title>${esc(bg.levelId)}</title></image>`)
+      .map(({ bg, x, y, w, h }) => `<image class="mr-bg-image" href="data/map_recovery/${esc(bg.src)}" x="${x.toFixed(2)}" y="${y.toFixed(2)}" width="${w.toFixed(2)}" height="${h.toFixed(2)}"><title>${esc(bg.levelId)}</title></image>`)
       .join("");
     // Level display names describe gameplay scenes, not geographic ownership
     // of the whole (overlapping) map-screen rectangle. Location labels come
@@ -1364,7 +1440,7 @@
         </div>
         <p class="mr-help">${esc(t("help"))}</p>
         <div class="mr-axis">+Z -> X -></div>
-        ${state.nodes.length ? "" : `<p class="mr-empty">${esc(t("noNodes"))}</p>`}
+        ${state.nodes.length || bgRects.length || state.locationLabels.length ? "" : `<p class="mr-empty">${esc(t("noNodes"))}</p>`}
       </div>
       <section class="mr-float mr-float--header" data-panel="header" aria-label="${esc(t("title"))}">
         <div class="mr-float-head" data-panel-drag>
@@ -1402,7 +1478,7 @@
              <button type="button" data-map-layers="story">${esc(t("layersStory"))}</button>
            </div>
            <p class="mr-note mr-layer-selection-hint">${esc(t("layerSelectionHint"))}</p>
-           ${data.mapLayers?.length ? `<h2>${esc(t("mapLayers"))}</h2><div class="mr-layer-actions"><button type="button" data-map-elevation="all">${esc(t("layersAll"))}</button><button type="button" data-map-elevation="none">${esc(t("layersNone"))}</button></div><div class="mr-layers">${mapLayerControls}</div>` : ""}
+           ${data.mapLayers?.length ? `<h2>${esc(t("mapLayers"))}</h2><div class="mr-layers">${mapLayerControls}</div>` : ""}
            <h2>${esc(t("relations"))}</h2>
           <div class="mr-layer-actions" role="group" aria-label="${esc(t("relations"))}">
             ${["focus", "all", "off"].map((mode) => `<button type="button" data-map-relations="${mode}" aria-pressed="${state.relations === mode ? "true" : "false"}">${esc(t(`relations_${mode}`))}</button>`).join("")}
@@ -1504,6 +1580,7 @@
     host.querySelector("#map-recovery-mission")?.addEventListener("change", (event) => {
       state.mission = event.target.value;
       state.pendingFit = true; // an isolated mission occupies a different area
+      state.pendingFitTarget = "nodes";
       render();
     });
     host.querySelectorAll("[data-map-kind]").forEach((input) => input.addEventListener("change", () => {
@@ -1519,13 +1596,13 @@
       scheduleRender();
     }));
     host.querySelectorAll("[data-map-tier]").forEach((input) => input.addEventListener("change", () => {
-      state.mapLayers = new Set([...host.querySelectorAll("[data-map-tier]:checked")].map((row) => row.dataset.mapTier));
+      state.mapLayers = new Set([input.dataset.mapTier]);
       scheduleRender();
     }));
-    host.querySelectorAll("[data-map-elevation]").forEach((button) => button.addEventListener("click", () => {
-      state.mapLayers = button.dataset.mapElevation === "all" ? allMapLayers(state.map) : new Set();
-      render();
-    }));
+    host.querySelector("[data-map-tier-none]")?.addEventListener("change", () => {
+      state.mapLayers = new Set();
+      scheduleRender();
+    });
     host.querySelectorAll("[data-map-relations]").forEach((button) => button.addEventListener("click", () => {
       state.relations = button.dataset.mapRelations;
       host.querySelectorAll("[data-map-relations]").forEach((row) => {
@@ -1553,7 +1630,7 @@
     host.querySelectorAll("[data-map-zoom]").forEach((button) => button.addEventListener("click", () => {
       animateTo(zoomed(button.dataset.mapZoom === "in" ? 1.35 : 1 / 1.35, null));
     }));
-    host.querySelector("[data-map-fit]")?.addEventListener("click", () => animateTo(fitTransform()));
+    host.querySelector("[data-map-fit]")?.addEventListener("click", () => animateTo(fitTransform(state.nodes.length ? "nodes" : "map")));
     host.querySelector("[data-map-reset]")?.addEventListener("click", () => animateTo({ x: 0, y: 0, scale: 1 }));
 
     map.querySelectorAll(".mr-node").forEach((node) => {
@@ -1798,7 +1875,12 @@
       for (const row of payload.markers || []) markers.push({ ...row, levelId: member.id, mapLayerIds: (row.mapLayerIds || []).map((id) => `${member.id}:${id}`) });
       for (const layer of payload.mapConfig?.layers || []) {
         const id = `${member.id}:${layer.id}`;
-        mapLayers.push({ ...layer, id, levelId: member.id });
+        mapLayers.push({
+          ...layer,
+          id,
+          levelId: member.id,
+          levelName: member.payload.name || member.payload.label || member.id,
+        });
         const rendered = (payload.minimap?.layers || []).find((row) => row.id === layer.id);
         if (rendered?.src && rendered.worldBounds) layerBackgrounds.push({ ...rendered, id, levelId: member.id });
       }
@@ -1929,6 +2011,7 @@
     state.mission = "";
     state.transform = { x: 0, y: 0, scale: 1 };
     state.pendingFit = true;
+    state.pendingFitTarget = "map";
     state.selectedId = "";
     state.previewId = "";
     state.filePath = "";
