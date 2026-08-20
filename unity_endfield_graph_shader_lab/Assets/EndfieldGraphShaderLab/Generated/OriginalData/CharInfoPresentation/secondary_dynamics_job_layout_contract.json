@@ -1,0 +1,883 @@
+{
+  "schema": "endfield.charinfo.secondary-dynamics-job-layout.v1",
+  "status": "outer_job_layout_closed",
+  "outer_job_layout_recovered": true,
+  "job_payload_layout_recovered": false,
+  "secondary_dynamics_verified": false,
+  "solver_implemented": false,
+  "retail_equivalent": false,
+  "native_gate": {
+    "gameAssembly": {
+      "path": "D:/Program Files/Endfield Game/GameAssembly.dll",
+      "size": 280436712,
+      "sha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
+    },
+    "globalMetadata": {
+      "path": "D:/Program Files/Endfield Game/Endfield_Data/il2cpp_data/Metadata/global-metadata.dat",
+      "size": 62925560,
+      "sha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
+    }
+  },
+  "metadataRegistration": {
+    "codeRegistrationVa": "0x18b9217d0",
+    "metadataRegistrationVa": "0x18b921c30",
+    "fieldOffsets": "0x18e7b5840",
+    "fieldOffsetsCount": 63987,
+    "typeDefinitionsSizes": "0x18e8327e0",
+    "typeDefinitionsSizesCount": 63987
+  },
+  "layoutBasis": {
+    "il2cppObjectHeaderBytes": 16,
+    "boxedFieldOffsets": "MetadataRegistration.fieldOffsets",
+    "nativePayloadOffsets": "boxedFieldOffset - 0x10",
+    "nativeSize": "MetadataRegistration.typeDefinitionsSizes.native_size",
+    "declarationClassificationBoundary": "field kind labels classify the pinned metadata type indexes for readability only; they are not inner generic layout claims",
+    "genericBoundary": {
+      "NativeArray": {
+        "definitionIndex": 50690,
+        "innerLayoutRecovered": false,
+        "classificationBoundary": "declaration classification only; not an inner generic layout claim"
+      },
+      "NativeReference": {
+        "definitionIndex": 60806,
+        "innerLayoutRecovered": false,
+        "classificationBoundary": "declaration classification only; not an inner generic layout claim"
+      }
+    }
+  },
+  "jobs": [
+    {
+      "type": "BeyondDynamicBone.ColliderManager+StartSimulationStepJob",
+      "typeIndex": 48376,
+      "token": "0x02000181",
+      "fieldStart": 230238,
+      "fieldCount": 17,
+      "fieldOffsetsPointerVa": "0x18b9e29d0",
+      "typeDefinitionsSizesPointerVa": "0x18bb69748",
+      "instanceSizeBytes": 288,
+      "nativeSizeBytes": 272,
+      "fields": [
+        {
+          "fieldIndex": 230238,
+          "name": "jobColliderIndexList",
+          "metadataTypeIndex": 83201,
+          "kind": "NativeArray",
+          "boxedFieldOffset": "0x10",
+          "nativePayloadOffset": "0x0",
+          "slotWidthBytes": 16,
+          "token": "0x04000747"
+        },
+        {
+          "fieldIndex": 230239,
+          "name": "teamDataArray",
+          "metadataTypeIndex": 83381,
+          "kind": "NativeArray",
+          "boxedFieldOffset": "0x20",
+          "nativePayloadOffset": "0x10",
+          "slotWidthBytes": 16,
+          "token": "0x04000748"
+        },
+        {
+          "fieldIndex": 230240,
+          "name": "centerDataArray",
+          "metadataTypeIndex": 83349,
+          "kind": "NativeArray",
+          "boxedFieldOffset": "0x30",
+          "nativePayloadOffset": "0x20",
+          "slotWidthBytes": 16,
+          "token": "0x04000749"
+        },
+        {
+          "fieldIndex": 230241,
+          "name": "teamIdArray",
+          "metadataTypeIndex": 83197,
+          "kind": "NativeArray",
+          "boxedFieldOffset": "0x40",
+          "nativePayloadOffset": "0x30",
+          "slotWidthBytes": 16,
+          "token": "0x0400074a"
+        },
+        {
+          "fieldIndex": 230242,
+          "name": "flagArray",
+          "metadataTypeIndex": 83139,
+          "kind": "NativeArray",
+          "boxedFieldOffset": "0x50",
+          "nativePayloadOffset": "0x40",
+          "slotWidthBytes": 16,
+          "token": "0x0400074b"
+        },
+        {
+          "fieldIndex": 230243,
+          "name": "sizeArray",
+          "metadataTypeIndex": 83304,
+          "kind": "NativeArray",
+          "boxedFieldOffset": "0x60",
+          "nativePayloadOffset": "0x50",
+          "slotWidthBytes": 16,
+          "token": "0x0400074c"
+        },
+        {
+          "fieldIndex": 230244,
+          "name": "framePositions",
+          "metadataTypeIndex": 83298,
+          "kind": "NativeArray",
+          "boxedFieldOffset": "0x70",
+          "nativePayloadOffset": "0x60",
+          "slotWidthBytes": 16,
+          "token": "0x0400074d"
+        },
+        {
+          "fieldIndex": 230245,
+          "name": "frameRotations",
+          "metadataTypeIndex": 83315,
+          "kind": "NativeArray",
+          "boxedFieldOffset": "0x80",
+          "nativePayloadOffset": "0x70",
+          "slotWidthBytes": 16,
+          "token": "0x0400074e"
+        },
+        {
+          "fieldIndex": 230246,
+          "name": "frameScales",
+          "metadataTypeIndex": 83304,
+          "kind": "NativeArray",
+          "boxedFieldOffset": "0x90",
+          "nativePayloadOffset": "0x80",
+          "slotWidthBytes": 16,
+          "token": "0x0400074f"
+        },
+        {
+          "fieldIndex": 230247,
+          "name": "oldFramePositions",
+          "metadataTypeIndex": 83298,
+          "kind": "NativeArray",
+          "boxedFieldOffset": "0xa0",
+          "nativePayloadOffset": "0x90",
+          "slotWidthBytes": 16,
+          "token": "0x04000750"
+        },
+        {
+          "fieldIndex": 230248,
+          "name": "oldFrameRotations",
+          "metadataTypeIndex": 83315,
+          "kind": "NativeArray",
+          "boxedFieldOffset": "0xb0",
+          "nativePayloadOffset": "0xa0",
+          "slotWidthBytes": 16,
+          "token": "0x04000751"
+        },
+        {
+          "fieldIndex": 230249,
+          "name": "nowPositions",
+          "metadataTypeIndex": 83298,
+          "kind": "NativeArray",
+          "boxedFieldOffset": "0xc0",
+          "nativePayloadOffset": "0xb0",
+          "slotWidthBytes": 16,
+          "token": "0x04000752"
+        },
+        {
+          "fieldIndex": 230250,
+          "name": "nowRotations",
+          "metadataTypeIndex": 83315,
+          "kind": "NativeArray",
+          "boxedFieldOffset": "0xd0",
+          "nativePayloadOffset": "0xc0",
+          "slotWidthBytes": 16,
+          "token": "0x04000753"
+        },
+        {
+          "fieldIndex": 230251,
+          "name": "oldPositions",
+          "metadataTypeIndex": 83298,
+          "kind": "NativeArray",
+          "boxedFieldOffset": "0xe0",
+          "nativePayloadOffset": "0xd0",
+          "slotWidthBytes": 16,
+          "token": "0x04000754"
+        },
+        {
+          "fieldIndex": 230252,
+          "name": "oldRotations",
+          "metadataTypeIndex": 83315,
+          "kind": "NativeArray",
+          "boxedFieldOffset": "0xf0",
+          "nativePayloadOffset": "0xe0",
+          "slotWidthBytes": 16,
+          "token": "0x04000755"
+        },
+        {
+          "fieldIndex": 230253,
+          "name": "workDataArray",
+          "metadataTypeIndex": 83340,
+          "kind": "NativeArray",
+          "boxedFieldOffset": "0x100",
+          "nativePayloadOffset": "0xf0",
+          "slotWidthBytes": 16,
+          "token": "0x04000756"
+        },
+        {
+          "fieldIndex": 230254,
+          "name": "_indexCount",
+          "metadataTypeIndex": 83620,
+          "kind": "NativeReference",
+          "boxedFieldOffset": "0x110",
+          "nativePayloadOffset": "0x100",
+          "slotWidthBytes": 16,
+          "token": "0x04000757"
+        }
+      ],
+      "setIndexCount": {
+        "methodIndex": 385449,
+        "token": "0x06000772",
+        "parameter": {
+          "parameterCount": 1,
+          "metadataTypeIndex": 83617,
+          "kind": "NativeReference"
+        },
+        "methodPointerVa": "0x183bbaf90",
+        "fileOffset": "0x3bb9590",
+        "section": "il2cpp",
+        "bodyBytes": 81,
+        "bodySha256": "d29ca99c068eecd6f5b6f4e49934c111b91eda42488230274691afa7686f7890",
+        "store": {
+          "instruction": "movups xmm0,[rbx]; movups [rdi+disp32],xmm0",
+          "thisRegister": "rdi",
+          "argumentRegister": "rbx",
+          "prologue": {
+            "this": "48 8b f9",
+            "argument": "48 8b da",
+            "thisRegister": "rdi",
+            "argumentRegister": "rbx",
+            "relation": "argument move immediately follows this move"
+          },
+          "payloadOffset": "0x100",
+          "widthBytes": 16,
+          "matches": "_indexCount"
+        }
+      }
+    },
+    {
+      "type": "BeyondDynamicBone.ColliderManager+EndSimulationStepJob",
+      "typeIndex": 48377,
+      "token": "0x02000182",
+      "fieldStart": 230255,
+      "fieldCount": 6,
+      "fieldOffsetsPointerVa": "0x18b9e2bc8",
+      "typeDefinitionsSizesPointerVa": "0x18bb698d8",
+      "instanceSizeBytes": 112,
+      "nativeSizeBytes": 96,
+      "fields": [
+        {
+          "fieldIndex": 230255,
+          "name": "jobColliderIndexList",
+          "metadataTypeIndex": 83201,
+          "kind": "NativeArray",
+          "boxedFieldOffset": "0x10",
+          "nativePayloadOffset": "0x0",
+          "slotWidthBytes": 16,
+          "token": "0x04000758"
+        },
+        {
+          "fieldIndex": 230256,
+          "name": "nowPositions",
+          "metadataTypeIndex": 83298,
+          "kind": "NativeArray",
+          "boxedFieldOffset": "0x20",
+          "nativePayloadOffset": "0x10",
+          "slotWidthBytes": 16,
+          "token": "0x04000759"
+        },
+        {
+          "fieldIndex": 230257,
+          "name": "nowRotations",
+          "metadataTypeIndex": 83315,
+          "kind": "NativeArray",
+          "boxedFieldOffset": "0x30",
+          "nativePayloadOffset": "0x20",
+          "slotWidthBytes": 16,
+          "token": "0x0400075a"
+        },
+        {
+          "fieldIndex": 230258,
+          "name": "oldPositions",
+          "metadataTypeIndex": 83298,
+          "kind": "NativeArray",
+          "boxedFieldOffset": "0x40",
+          "nativePayloadOffset": "0x30",
+          "slotWidthBytes": 16,
+          "token": "0x0400075b"
+        },
+        {
+          "fieldIndex": 230259,
+          "name": "oldRotations",
+          "metadataTypeIndex": 83315,
+          "kind": "NativeArray",
+          "boxedFieldOffset": "0x50",
+          "nativePayloadOffset": "0x40",
+          "slotWidthBytes": 16,
+          "token": "0x0400075c"
+        },
+        {
+          "fieldIndex": 230260,
+          "name": "_indexCount",
+          "metadataTypeIndex": 83620,
+          "kind": "NativeReference",
+          "boxedFieldOffset": "0x60",
+          "nativePayloadOffset": "0x50",
+          "slotWidthBytes": 16,
+          "token": "0x0400075d"
+        }
+      ],
+      "setIndexCount": {
+        "methodIndex": 385453,
+        "token": "0x06000776",
+        "parameter": {
+          "parameterCount": 1,
+          "metadataTypeIndex": 83617,
+          "kind": "NativeReference"
+        },
+        "methodPointerVa": "0x183c06610",
+        "fileOffset": "0x3c04c10",
+        "section": "il2cpp",
+        "bodyBytes": 78,
+        "bodySha256": "a481ad5b21de55b551d1f05eb7a22191b37f6223c75bd3e020cd78e88ee4b640",
+        "store": {
+          "instruction": "movups xmm0,[rbx]; movups [rdi+disp32],xmm0",
+          "thisRegister": "rdi",
+          "argumentRegister": "rbx",
+          "prologue": {
+            "this": "48 8b f9",
+            "argument": "48 8b da",
+            "thisRegister": "rdi",
+            "argumentRegister": "rbx",
+            "relation": "argument move immediately follows this move"
+          },
+          "payloadOffset": "0x50",
+          "widthBytes": 16,
+          "matches": "_indexCount"
+        }
+      }
+    },
+    {
+      "type": "BeyondDynamicBone.SimulationManager+StartSimulationStepJob",
+      "typeIndex": 48422,
+      "token": "0x020001af",
+      "fieldStart": 230393,
+      "fieldCount": 26,
+      "fieldOffsetsPointerVa": "0x18b9e2ec0",
+      "typeDefinitionsSizesPointerVa": "0x18bb69228",
+      "instanceSizeBytes": 424,
+      "nativeSizeBytes": 408,
+      "fields": [
+        {
+          "fieldIndex": 230393,
+          "name": "simulationPower",
+          "metadataTypeIndex": 171886,
+          "kind": "float4",
+          "boxedFieldOffset": "0x10",
+          "nativePayloadOffset": "0x0",
+          "slotWidthBytes": 16,
+          "token": "0x040007e2"
+        },
+        {
+          "fieldIndex": 230394,
+          "name": "simulationDeltaTime",
+          "metadataTypeIndex": 163868,
+          "kind": "Single",
+          "boxedFieldOffset": "0x20",
+          "nativePayloadOffset": "0x10",
+          "slotWidthBytes": 4,
+          "token": "0x040007e3"
+        },
+        {
+          "fieldIndex": 230395,
+          "name": "stepParticleIndexArray",
+          "metadataTypeIndex": 83201,
+          "kind": "NativeArray",
+          "boxedFieldOffset": "0x28",
+          "nativePayloadOffset": "0x18",
+          "slotWidthBytes": 16,
+          "token": "0x040007e4"
+        },
+        {
+          "fieldIndex": 230396,
+          "name": "attributes",
+          "metadataTypeIndex": 83290,
+          "kind": "NativeArray",
+          "boxedFieldOffset": "0x38",
+          "nativePayloadOffset": "0x28",
+          "slotWidthBytes": 16,
+          "token": "0x040007e5"
+        },
+        {
+          "fieldIndex": 230397,
+          "name": "depthArray",
+          "metadataTypeIndex": 83240,
+          "kind": "NativeArray",
+          "boxedFieldOffset": "0x48",
+          "nativePayloadOffset": "0x38",
+          "slotWidthBytes": 16,
+          "token": "0x040007e6"
+        },
+        {
+          "fieldIndex": 230398,
+          "name": "positions",
+          "metadataTypeIndex": 83298,
+          "kind": "NativeArray",
+          "boxedFieldOffset": "0x58",
+          "nativePayloadOffset": "0x48",
+          "slotWidthBytes": 16,
+          "token": "0x040007e7"
+        },
+        {
+          "fieldIndex": 230399,
+          "name": "rotations",
+          "metadataTypeIndex": 83315,
+          "kind": "NativeArray",
+          "boxedFieldOffset": "0x68",
+          "nativePayloadOffset": "0x58",
+          "slotWidthBytes": 16,
+          "token": "0x040007e8"
+        },
+        {
+          "fieldIndex": 230400,
+          "name": "vertexRootIndices",
+          "metadataTypeIndex": 83201,
+          "kind": "NativeArray",
+          "boxedFieldOffset": "0x78",
+          "nativePayloadOffset": "0x68",
+          "slotWidthBytes": 16,
+          "token": "0x040007e9"
+        },
+        {
+          "fieldIndex": 230401,
+          "name": "teamDataArray",
+          "metadataTypeIndex": 83381,
+          "kind": "NativeArray",
+          "boxedFieldOffset": "0x88",
+          "nativePayloadOffset": "0x78",
+          "slotWidthBytes": 16,
+          "token": "0x040007ea"
+        },
+        {
+          "fieldIndex": 230402,
+          "name": "parameterArray",
+          "metadataTypeIndex": 83108,
+          "kind": "NativeArray",
+          "boxedFieldOffset": "0x98",
+          "nativePayloadOffset": "0x88",
+          "slotWidthBytes": 16,
+          "token": "0x040007eb"
+        },
+        {
+          "fieldIndex": 230403,
+          "name": "centerDataArray",
+          "metadataTypeIndex": 83349,
+          "kind": "NativeArray",
+          "boxedFieldOffset": "0xa8",
+          "nativePayloadOffset": "0x98",
+          "slotWidthBytes": 16,
+          "token": "0x040007ec"
+        },
+        {
+          "fieldIndex": 230404,
+          "name": "teamWindArray",
+          "metadataTypeIndex": 83253,
+          "kind": "NativeArray",
+          "boxedFieldOffset": "0xb8",
+          "nativePayloadOffset": "0xa8",
+          "slotWidthBytes": 16,
+          "token": "0x040007ed"
+        },
+        {
+          "fieldIndex": 230405,
+          "name": "windDataArray",
+          "metadataTypeIndex": 83391,
+          "kind": "NativeArray",
+          "boxedFieldOffset": "0xc8",
+          "nativePayloadOffset": "0xb8",
+          "slotWidthBytes": 16,
+          "token": "0x040007ee"
+        },
+        {
+          "fieldIndex": 230406,
+          "name": "teamIdArray",
+          "metadataTypeIndex": 83197,
+          "kind": "NativeArray",
+          "boxedFieldOffset": "0xd8",
+          "nativePayloadOffset": "0xc8",
+          "slotWidthBytes": 16,
+          "token": "0x040007ef"
+        },
+        {
+          "fieldIndex": 230407,
+          "name": "oldPosArray",
+          "metadataTypeIndex": 83298,
+          "kind": "NativeArray",
+          "boxedFieldOffset": "0xe8",
+          "nativePayloadOffset": "0xd8",
+          "slotWidthBytes": 16,
+          "token": "0x040007f0"
+        },
+        {
+          "fieldIndex": 230408,
+          "name": "nextPosArray",
+          "metadataTypeIndex": 83298,
+          "kind": "NativeArray",
+          "boxedFieldOffset": "0xf8",
+          "nativePayloadOffset": "0xe8",
+          "slotWidthBytes": 16,
+          "token": "0x040007f1"
+        },
+        {
+          "fieldIndex": 230409,
+          "name": "basePosArray",
+          "metadataTypeIndex": 83298,
+          "kind": "NativeArray",
+          "boxedFieldOffset": "0x108",
+          "nativePayloadOffset": "0xf8",
+          "slotWidthBytes": 16,
+          "token": "0x040007f2"
+        },
+        {
+          "fieldIndex": 230410,
+          "name": "velocityArray",
+          "metadataTypeIndex": 83304,
+          "kind": "NativeArray",
+          "boxedFieldOffset": "0x118",
+          "nativePayloadOffset": "0x108",
+          "slotWidthBytes": 16,
+          "token": "0x040007f3"
+        },
+        {
+          "fieldIndex": 230411,
+          "name": "baseRotArray",
+          "metadataTypeIndex": 83315,
+          "kind": "NativeArray",
+          "boxedFieldOffset": "0x128",
+          "nativePayloadOffset": "0x118",
+          "slotWidthBytes": 16,
+          "token": "0x040007f4"
+        },
+        {
+          "fieldIndex": 230412,
+          "name": "oldPositionArray",
+          "metadataTypeIndex": 83298,
+          "kind": "NativeArray",
+          "boxedFieldOffset": "0x138",
+          "nativePayloadOffset": "0x128",
+          "slotWidthBytes": 16,
+          "token": "0x040007f5"
+        },
+        {
+          "fieldIndex": 230413,
+          "name": "oldRotationArray",
+          "metadataTypeIndex": 83315,
+          "kind": "NativeArray",
+          "boxedFieldOffset": "0x148",
+          "nativePayloadOffset": "0x138",
+          "slotWidthBytes": 16,
+          "token": "0x040007f6"
+        },
+        {
+          "fieldIndex": 230414,
+          "name": "velocityPosArray",
+          "metadataTypeIndex": 83298,
+          "kind": "NativeArray",
+          "boxedFieldOffset": "0x158",
+          "nativePayloadOffset": "0x148",
+          "slotWidthBytes": 16,
+          "token": "0x040007f7"
+        },
+        {
+          "fieldIndex": 230415,
+          "name": "frictionArray",
+          "metadataTypeIndex": 83240,
+          "kind": "NativeArray",
+          "boxedFieldOffset": "0x168",
+          "nativePayloadOffset": "0x158",
+          "slotWidthBytes": 16,
+          "token": "0x040007f8"
+        },
+        {
+          "fieldIndex": 230416,
+          "name": "stepBasicPositionArray",
+          "metadataTypeIndex": 83298,
+          "kind": "NativeArray",
+          "boxedFieldOffset": "0x178",
+          "nativePayloadOffset": "0x168",
+          "slotWidthBytes": 16,
+          "token": "0x040007f9"
+        },
+        {
+          "fieldIndex": 230417,
+          "name": "stepBasicRotationArray",
+          "metadataTypeIndex": 83315,
+          "kind": "NativeArray",
+          "boxedFieldOffset": "0x188",
+          "nativePayloadOffset": "0x178",
+          "slotWidthBytes": 16,
+          "token": "0x040007fa"
+        },
+        {
+          "fieldIndex": 230418,
+          "name": "_indexCount",
+          "metadataTypeIndex": 83620,
+          "kind": "NativeReference",
+          "boxedFieldOffset": "0x198",
+          "nativePayloadOffset": "0x188",
+          "slotWidthBytes": 16,
+          "token": "0x040007fb"
+        }
+      ],
+      "setIndexCount": {
+        "methodIndex": 385695,
+        "token": "0x06000868",
+        "parameter": {
+          "parameterCount": 1,
+          "metadataTypeIndex": 83617,
+          "kind": "NativeReference"
+        },
+        "methodPointerVa": "0x183bb8790",
+        "fileOffset": "0x3bb6d90",
+        "section": "il2cpp",
+        "bodyBytes": 81,
+        "bodySha256": "7cecc15a61436eafc298fe32f3c0647dfd7f2b7dcb7be3627de648605069c90a",
+        "store": {
+          "instruction": "movups xmm0,[rbx]; movups [rdi+disp32],xmm0",
+          "thisRegister": "rdi",
+          "argumentRegister": "rbx",
+          "prologue": {
+            "this": "48 8b f9",
+            "argument": "48 8b da",
+            "thisRegister": "rdi",
+            "argumentRegister": "rbx",
+            "relation": "argument move immediately follows this move"
+          },
+          "payloadOffset": "0x188",
+          "widthBytes": 16,
+          "matches": "_indexCount"
+        }
+      }
+    },
+    {
+      "type": "BeyondDynamicBone.SimulationManager+EndSimulationStepJob",
+      "typeIndex": 48424,
+      "token": "0x020001b1",
+      "fieldStart": 230433,
+      "fieldCount": 17,
+      "fieldOffsetsPointerVa": "0x18b9e2d90",
+      "typeDefinitionsSizesPointerVa": "0x18bb69248",
+      "instanceSizeBytes": 280,
+      "nativeSizeBytes": 264,
+      "fields": [
+        {
+          "fieldIndex": 230433,
+          "name": "simulationDeltaTime",
+          "metadataTypeIndex": 163868,
+          "kind": "Single",
+          "boxedFieldOffset": "0x10",
+          "nativePayloadOffset": "0x0",
+          "slotWidthBytes": 4,
+          "token": "0x0400080a"
+        },
+        {
+          "fieldIndex": 230434,
+          "name": "stepParticleIndexArray",
+          "metadataTypeIndex": 83201,
+          "kind": "NativeArray",
+          "boxedFieldOffset": "0x18",
+          "nativePayloadOffset": "0x8",
+          "slotWidthBytes": 16,
+          "token": "0x0400080b"
+        },
+        {
+          "fieldIndex": 230435,
+          "name": "teamDataArray",
+          "metadataTypeIndex": 83381,
+          "kind": "NativeArray",
+          "boxedFieldOffset": "0x28",
+          "nativePayloadOffset": "0x18",
+          "slotWidthBytes": 16,
+          "token": "0x0400080c"
+        },
+        {
+          "fieldIndex": 230436,
+          "name": "parameterArray",
+          "metadataTypeIndex": 83108,
+          "kind": "NativeArray",
+          "boxedFieldOffset": "0x38",
+          "nativePayloadOffset": "0x28",
+          "slotWidthBytes": 16,
+          "token": "0x0400080d"
+        },
+        {
+          "fieldIndex": 230437,
+          "name": "centerDataArray",
+          "metadataTypeIndex": 83349,
+          "kind": "NativeArray",
+          "boxedFieldOffset": "0x48",
+          "nativePayloadOffset": "0x38",
+          "slotWidthBytes": 16,
+          "token": "0x0400080e"
+        },
+        {
+          "fieldIndex": 230438,
+          "name": "attributes",
+          "metadataTypeIndex": 83290,
+          "kind": "NativeArray",
+          "boxedFieldOffset": "0x58",
+          "nativePayloadOffset": "0x48",
+          "slotWidthBytes": 16,
+          "token": "0x0400080f"
+        },
+        {
+          "fieldIndex": 230439,
+          "name": "vertexDepths",
+          "metadataTypeIndex": 83240,
+          "kind": "NativeArray",
+          "boxedFieldOffset": "0x68",
+          "nativePayloadOffset": "0x58",
+          "slotWidthBytes": 16,
+          "token": "0x04000810"
+        },
+        {
+          "fieldIndex": 230440,
+          "name": "teamIdArray",
+          "metadataTypeIndex": 83197,
+          "kind": "NativeArray",
+          "boxedFieldOffset": "0x78",
+          "nativePayloadOffset": "0x68",
+          "slotWidthBytes": 16,
+          "token": "0x04000811"
+        },
+        {
+          "fieldIndex": 230441,
+          "name": "nextPosArray",
+          "metadataTypeIndex": 83298,
+          "kind": "NativeArray",
+          "boxedFieldOffset": "0x88",
+          "nativePayloadOffset": "0x78",
+          "slotWidthBytes": 16,
+          "token": "0x04000812"
+        },
+        {
+          "fieldIndex": 230442,
+          "name": "oldPosArray",
+          "metadataTypeIndex": 83298,
+          "kind": "NativeArray",
+          "boxedFieldOffset": "0x98",
+          "nativePayloadOffset": "0x88",
+          "slotWidthBytes": 16,
+          "token": "0x04000813"
+        },
+        {
+          "fieldIndex": 230443,
+          "name": "velocityPosArray",
+          "metadataTypeIndex": 83298,
+          "kind": "NativeArray",
+          "boxedFieldOffset": "0xa8",
+          "nativePayloadOffset": "0x98",
+          "slotWidthBytes": 16,
+          "token": "0x04000814"
+        },
+        {
+          "fieldIndex": 230444,
+          "name": "velocityArray",
+          "metadataTypeIndex": 83304,
+          "kind": "NativeArray",
+          "boxedFieldOffset": "0xb8",
+          "nativePayloadOffset": "0xa8",
+          "slotWidthBytes": 16,
+          "token": "0x04000815"
+        },
+        {
+          "fieldIndex": 230445,
+          "name": "realVelocityArray",
+          "metadataTypeIndex": 83304,
+          "kind": "NativeArray",
+          "boxedFieldOffset": "0xc8",
+          "nativePayloadOffset": "0xb8",
+          "slotWidthBytes": 16,
+          "token": "0x04000816"
+        },
+        {
+          "fieldIndex": 230446,
+          "name": "frictionArray",
+          "metadataTypeIndex": 83240,
+          "kind": "NativeArray",
+          "boxedFieldOffset": "0xd8",
+          "nativePayloadOffset": "0xc8",
+          "slotWidthBytes": 16,
+          "token": "0x04000817"
+        },
+        {
+          "fieldIndex": 230447,
+          "name": "staticFrictionArray",
+          "metadataTypeIndex": 83240,
+          "kind": "NativeArray",
+          "boxedFieldOffset": "0xe8",
+          "nativePayloadOffset": "0xd8",
+          "slotWidthBytes": 16,
+          "token": "0x04000818"
+        },
+        {
+          "fieldIndex": 230448,
+          "name": "collisionNormalArray",
+          "metadataTypeIndex": 83304,
+          "kind": "NativeArray",
+          "boxedFieldOffset": "0xf8",
+          "nativePayloadOffset": "0xe8",
+          "slotWidthBytes": 16,
+          "token": "0x04000819"
+        },
+        {
+          "fieldIndex": 230449,
+          "name": "_indexCount",
+          "metadataTypeIndex": 83620,
+          "kind": "NativeReference",
+          "boxedFieldOffset": "0x108",
+          "nativePayloadOffset": "0xf8",
+          "slotWidthBytes": 16,
+          "token": "0x0400081a"
+        }
+      ],
+      "setIndexCount": {
+        "methodIndex": 385706,
+        "token": "0x06000873",
+        "parameter": {
+          "parameterCount": 1,
+          "metadataTypeIndex": 83617,
+          "kind": "NativeReference"
+        },
+        "methodPointerVa": "0x183bbb010",
+        "fileOffset": "0x3bb9610",
+        "section": "il2cpp",
+        "bodyBytes": 81,
+        "bodySha256": "f83db4e7fa18a9621c3e8dd5260c5fb2de243fb7b9c71d1ef3f645e796bfaaa1",
+        "store": {
+          "instruction": "movups xmm0,[rbx]; movups [rdi+disp32],xmm0",
+          "thisRegister": "rdi",
+          "argumentRegister": "rbx",
+          "prologue": {
+            "this": "48 8b f9",
+            "argument": "48 8b da",
+            "thisRegister": "rdi",
+            "argumentRegister": "rbx",
+            "relation": "argument move immediately follows this move"
+          },
+          "payloadOffset": "0xf8",
+          "widthBytes": 16,
+          "matches": "_indexCount"
+        }
+      }
+    }
+  ],
+  "unresolved": [
+    "NativeArray<T> inner m_Buffer/m_Length/m_AllocatorLabel offsets are not claimed.",
+    "NativeReference<T> inner m_Data/m_AllocatorLabel offsets are not claimed.",
+    "Execute/UnsafeDo and Burst constraint numerics are not recovered."
+  ]
+}
