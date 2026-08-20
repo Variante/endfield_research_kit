@@ -2731,7 +2731,12 @@ def main() -> int:
         "schemaVersion": 2,
         "defaultMap": default_map,
         "language": language,
-        "maps": sorted(entries, key=lambda row: (row["family"], row["id"])),
+        "maps": sorted(entries, key=lambda row: (
+            0 if row["regionKey"] == "base01" else
+            1 if row["regionKey"] == "map01" else
+            2 if row["regionKey"] == "map02" else 3,
+            row["family"], row["id"],
+        )),
     }
     (OUT / "index.json").write_text(json.dumps(index, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
     print(

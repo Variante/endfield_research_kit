@@ -299,15 +299,15 @@
   font-size: 11px;
 }
 
-.mr-floor-picker select {
+.mr-floor-picker input[type="range"] {
   width: 100%;
   min-width: 0;
-  padding: 6px 8px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--panel);
-  color: var(--text);
+  accent-color: var(--accent);
+  cursor: pointer;
 }
+.mr-floor-picker b { color: var(--text); font-weight: 600; }
+.mr-floor-ends { display: flex; justify-content: space-between; gap: 12px; font-size: 10px; }
+.mr-floor-ends i { max-width: 46%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-style: normal; }
 
 .mr-swatch {
   width: 9px;
@@ -498,7 +498,7 @@
 }
 
 .mr-floor-dock .mr-floor-picker { color: rgba(255, 255, 255, 0.72); }
-.mr-floor-dock .mr-floor-picker select { border-color: rgba(255, 255, 255, 0.2); background: #182227; color: #edf4f5; }
+.mr-floor-dock .mr-floor-picker input[type="range"] { accent-color: #8bd3dd; }
 .mr-floor-dock .mr-note { margin: 0; color: rgba(255, 255, 255, 0.65); }
 
 .mr-help {

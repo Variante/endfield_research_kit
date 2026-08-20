@@ -166,34 +166,34 @@
   // grouped so every authored tier remains reachable without pretending that
   // unrelated local overlays are consecutive floors of one building.
   const mapLayerTreeHtml = (data) => {
-    const layers = data.mapLayers || [];
-    if (!layers.length) return `<p class="mr-note">${esc(t("mapLayersNone"))}</p>`;
+    const renderedIds = new Set(state.layerBackgrounds.map((row) => String(row.id)));
+    const layers = (data.mapLayers || []).filter((row) => renderedIds.has(String(row.id)));
+    if (!layers.length) return "";
     const selected = [...state.mapLayers][0] || "";
     const groups = new Map();
     for (const layer of layers) {
       if (!groups.has(layer.levelId)) groups.set(layer.levelId, []);
       groups.get(layer.levelId).push(layer);
     }
-    const options = [...groups.entries()].map(([levelId, rows]) => {
+    const sliderRows = [...groups.entries()].flatMap(([levelId, rows]) => {
       const levelName = rows[0]?.levelName || levelId;
-      const label = levelName === levelId ? levelId : `${levelName} (${levelId})`;
-      const orderedRows = [...rows].sort((a, b) => {
+      return [...rows].sort((a, b) => {
         const floorA = Number(mapFloorNumber(a));
         const floorB = Number(mapFloorNumber(b));
         if (floorA && floorB) return floorA - floorB;
         if (floorA) return -1;
         if (floorB) return 1;
         return Number(a.tierId) - Number(b.tierId) || String(a.id).localeCompare(String(b.id));
-      });
-      const choices = orderedRows.map((layer) => {
-        const id = String(layer.id);
-        const floorLabel = mapLayerLabel(layer);
-        const range = mapLayerRange(layer);
-        return `<option value="${esc(id)}" ${selected === id ? "selected" : ""}>${esc(range ? `${floorLabel} · ${range}` : floorLabel)}</option>`;
-      }).join("");
-      return `<optgroup label="${esc(label)}">${choices}</optgroup>`;
-    }).join("");
-    return `<label class="mr-floor-picker"><span>${esc(t("mapFloorChoose"))}</span><select data-map-floor-select aria-label="${esc(t("mapLayers"))}" title="${esc(t("mapFloorNoneHint"))}"><option value="" ${selected ? "" : "selected"}>${esc(t("mapFloorNone"))}</option>${options}</select></label>`;
+      }).map((layer) => ({
+        id: String(layer.id),
+        label: `${levelName === levelId ? "" : `${levelName} · `}${mapLayerLabel(layer)}${mapLayerRange(layer) ? ` · ${mapLayerRange(layer)}` : ""}`,
+      }));
+    });
+    const sliderValues = [{ id: "", label: t("mapFloorNone") }, ...sliderRows];
+    const sliderIndex = Math.max(0, sliderValues.findIndex((row) => row.id === selected));
+    return `<label class="mr-floor-picker"><span>${esc(t("mapFloorChoose"))}: <b>${esc(sliderValues[sliderIndex].label)}</b></span>`
+      + `<input type="range" min="0" max="${sliderValues.length - 1}" step="1" value="${sliderIndex}" data-map-floor-slider data-floor-values="${esc(JSON.stringify(sliderValues.map((row) => row.id)))}" aria-label="${esc(t("mapLayers"))}" title="${esc(t("mapFloorNoneHint"))}">`
+      + `<span class="mr-floor-ends"><i>${esc(t("mapFloorNone"))}</i><i>${esc(sliderValues.at(-1).label)}</i></span></label>`;
   };
 
   // A full region can contain thousands of entity markers. Keep the first
@@ -225,7 +225,13 @@
       if (!groups.has(family)) groups.set(family, []);
       groups.get(family).push(row);
     }
-    return [...groups.entries()].map(([family, rows]) => {
+    const familyPriority = (rows) => {
+      const key = regionKey(rows[0]?.id || "");
+      return key === "base01" ? 0 : key === "map01" ? 1 : key === "map02" ? 2 : 3;
+    };
+    return [...groups.entries()]
+      .sort((a, b) => familyPriority(a[1]) - familyPriority(b[1]) || a[0].localeCompare(b[0]))
+      .map(([family, rows]) => {
       const options = rows.map((row) => {
         const counts = [
           row.markerCount ? `${row.markerCount}${t("countMarkers")}` : "",
@@ -1251,6 +1257,9 @@
     const viewH = rangeZ * fitScale;
     const viewX = (WIDTH - viewW) / 2;
     const viewY = (HEIGHT - viewH) / 2;
+    const oriented = (p, row) => row?.mapInverted
+      ? { ...p, x: minX + maxX - p.x, z: minZ + maxZ - p.z }
+      : p;
     const plot = (p) => ({ x: viewX + (p.x - minX) * fitScale, y: viewY + viewH - (p.z - minZ) * fitScale });
 
     state.nodes = [
@@ -1258,8 +1267,8 @@
       // and a region surface merges several levels, so both the mission and the
       // level are part of the node id: quest ids are only unique inside their
       // own mission and marker identities stay scoped to their level.
-      ...questRows.map((row) => ({ ...row, id: `q:${row.levelId}:${row.missionId || ""}:${row.questId}`, plot: plot(row.position), px: { x: 0, y: 0 } })),
-      ...markerRows.map((row) => ({ ...row, id: `m:${row.levelId}:${row.identity}`, plot: plot(row.position), px: { x: 0, y: 0 } })),
+      ...questRows.map((row) => ({ ...row, id: `q:${row.levelId}:${row.missionId || ""}:${row.questId}`, plot: plot(oriented(row.position, row)), px: { x: 0, y: 0 } })),
+      ...markerRows.map((row) => ({ ...row, id: `m:${row.levelId}:${row.identity}`, plot: plot(oriented(row.position, row)), px: { x: 0, y: 0 } })),
     ].map((node) => {
       const labelText = nodeDisplayLabel(node);
       return {
@@ -1293,7 +1302,7 @@
         const right = Number.isFinite(b.questOrder) ? b.questOrder : Number.MAX_SAFE_INTEGER;
         return left - right || String(a.questId).localeCompare(String(b.questId));
       });
-      const points = ordered.map((row) => plot(row.position)).map((p) => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(" ");
+      const points = ordered.map((row) => plot(oriented(row.position, row))).map((p) => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(" ");
       return `<polyline class="mr-route" points="${points}" vector-effect="non-scaling-stroke"><title>${esc(`${t("questRoute")}: ${mission}`)}</title></polyline>`;
     }).join("");
     // The selected zone's bounds define the fitted rectangle; every sibling
@@ -1345,7 +1354,7 @@
     state.locationLabels = (data.locationLabels || []).map((row, index) => {
       const position = finitePosition(row.position);
       if (!position || !row.text) return null;
-      const p = plot(position);
+      const p = plot(oriented(position, row));
       const labelText = String(row.text).trim();
       return {
         ...row,
@@ -1445,7 +1454,7 @@
           <button type="button" data-map-reset aria-label="${esc(t("resetLong"))}" title="${esc(t("resetLong"))}">${esc(t("reset"))}</button>
           <span class="mr-zoom-readout" role="status" aria-live="polite"></span>
         </div>
-        <div class="mr-floor-dock">${mapLayerControls}</div>
+        ${mapLayerControls ? `<div class="mr-floor-dock">${mapLayerControls}</div>` : ""}
         <p class="mr-help">${esc(t("help"))}</p>
         <div class="mr-axis">+Z -> X -></div>
         ${state.nodes.length || bgRects.length || state.locationLabels.length ? "" : `<p class="mr-empty">${esc(t("noNodes"))}</p>`}
@@ -1604,8 +1613,10 @@
       state.subKinds = new Set([...[...state.subKinds].filter((key) => !shown.has(key)), ...checked]);
       scheduleRender();
     }));
-    host.querySelector("[data-map-floor-select]")?.addEventListener("change", (event) => {
-      state.mapLayers = event.currentTarget.value ? new Set([event.currentTarget.value]) : new Set();
+    host.querySelector("[data-map-floor-slider]")?.addEventListener("input", (event) => {
+      const values = JSON.parse(event.currentTarget.dataset.floorValues || "[]");
+      const id = values[Number(event.currentTarget.value)] || "";
+      state.mapLayers = id ? new Set([id]) : new Set();
       scheduleRender();
     });
     host.querySelectorAll("[data-map-relations]").forEach((button) => button.addEventListener("click", () => {
@@ -1879,8 +1890,9 @@
     for (const member of members) {
       const payload = member.payload;
       if (!payload) continue;
-      for (const row of payload.questPoints || []) questPoints.push({ ...row, levelId: member.id, mapLayerIds: (row.mapLayerIds || []).map((id) => `${member.id}:${id}`) });
-      for (const row of payload.markers || []) markers.push({ ...row, levelId: member.id, mapLayerIds: (row.mapLayerIds || []).map((id) => `${member.id}:${id}`) });
+      const mapInverted = !!payload.mapConfig?.needInverseXZ;
+      for (const row of payload.questPoints || []) questPoints.push({ ...row, levelId: member.id, mapInverted, mapLayerIds: (row.mapLayerIds || []).map((id) => `${member.id}:${id}`) });
+      for (const row of payload.markers || []) markers.push({ ...row, levelId: member.id, mapInverted, mapLayerIds: (row.mapLayerIds || []).map((id) => `${member.id}:${id}`) });
       for (const layer of payload.mapConfig?.layers || []) {
         const id = `${member.id}:${layer.id}`;
         const displayName = (payload.mapConfig?.staticElements || [])
@@ -1901,7 +1913,7 @@
         // screens. Keep one stable authored anchor instead of drawing stacked
         // duplicates that look like conflicting region assignments.
         const key = `${row.text}:${Math.round(Number(row.position.x))}:${Math.round(Number(row.position.z))}`;
-        if (!locationLabels.has(key)) locationLabels.set(key, { ...row, levelId: member.id });
+        if (!locationLabels.has(key)) locationLabels.set(key, { ...row, levelId: member.id, mapInverted });
       }
       (payload.unlinkedMissionFiles || []).forEach((path) => { if (path) unlinked.add(path); });
       pinnedFileCount += payload.pinnedFileCount || 0;
@@ -2021,8 +2033,9 @@
     // Start on one authored floor and let the reader opt into comparisons.
     // Prefer the selected sub-map's first authored tier even though region
     // members are merged in stable id order for rendering and caching.
-    const initialMapLayer = state.map.mapLayers?.find((row) => row.levelId === state.selected)
-      || state.map.mapLayers?.[0];
+    const renderedLayerIds = new Set(state.layerBackgrounds.map((row) => String(row.id)));
+    const initialMapLayer = state.map.mapLayers?.find((row) => row.levelId === state.selected && renderedLayerIds.has(String(row.id)))
+      || state.map.mapLayers?.find((row) => renderedLayerIds.has(String(row.id)));
     state.mapLayers = initialMapLayer
       ? new Set([String(initialMapLayer.id)])
       : new Set();

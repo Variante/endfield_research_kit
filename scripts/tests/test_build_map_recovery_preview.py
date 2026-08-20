@@ -19,6 +19,7 @@ from scripts.build_map_recovery_preview import (
     plot_bounds,
     raster_size,
     rasterise_depth,
+    render_level,
     render_point_cloud,
     smooth_surface,
 )
@@ -190,6 +191,20 @@ class SurfaceRasterTests(unittest.TestCase):
         )
         self.assertEqual((used, triangles), ([], 0))
         self.assertTrue(all(value <= NO_HIT for value in depth))
+
+    def test_hlod_preview_publishes_real_geometry_as_point_density(self):
+        bounds = {"minX": 0.0, "maxX": 8.0, "minZ": 0.0, "maxZ": 8.0}
+        fit = {"originX": 0.0, "originZ": 0.0}
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._cluster_obj(tmp, "g c\nv 60 5 -60\nv -60 5 -60\nv -60 5 60\nf 1 2 3\n")
+            clusters = [{"i": 0, "j": 0, "pathId": 1, "name": "S_HLOD1_0_0_Cluster_1"}]
+            with mock.patch.object(builder, "raster_size", return_value=(16, 16)):
+                manifest = render_level(clusters=clusters, level_id="test", lod=1, fit=fit,
+                                        bounds=bounds, mesh_files={"1": path}, output_root=Path(tmp))
+
+        self.assertEqual(manifest["render"]["method"], "orthographic_hlod_depth_point_density")
+        self.assertEqual(manifest["render"]["pointDensity"], 8 / 11)
+        self.assertEqual(manifest["render"]["coveredPixelRatio"], manifest["render"]["realPixelRatio"])
 
 
 class ReliefShadingTests(unittest.TestCase):

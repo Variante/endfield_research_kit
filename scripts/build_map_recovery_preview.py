@@ -677,18 +677,14 @@ def render_level(
     mesh_files: dict[str, Path],
     output_root: Path,
 ) -> dict | None:
-    """Render one level as a softened shaded-relief backdrop."""
+    """Render recovered HLOD geometry as a dense orthographic point cloud."""
     width, height = raster_size(bounds["maxX"] - bounds["minX"], bounds["maxZ"] - bounds["minZ"])
     depth, used, triangles = rasterise_depth(clusters, lod, fit, bounds, mesh_files, width, height)
     if not used:
         return None
 
-    grown, real = grow_surface(depth, width, height)
-    mask = [value > NO_HIT for value in grown]
-    dem = smooth_surface(grown, mask, width, height)
-    shading = hillshade(dem, mask, width, height)
-
-    covered = [dem[index] for index in range(len(dem)) if mask[index]]
+    real = [value > NO_HIT for value in depth]
+    covered = [depth[index] for index in range(len(depth)) if real[index]]
     if not covered:
         return None
     low, high = min(covered), max(covered)
@@ -700,18 +696,18 @@ def render_level(
         base_index = y * width
         for x in range(width):
             index = base_index + x
-            if not mask[index]:
-                # Nothing was recovered here at all, so the page's own surface
-                # shows through rather than an invented floor.
+            # A deterministic screen-door sample retains the density and
+            # silhouette of actual HLOD geometry while reading as the older
+            # 3D scan/point-cloud view instead of an invented solid terrain.
+            if not real[index] or ((x * 37 + y * 17) % 11) >= 8:
                 row.extend((255, 255, 255, 0))
                 continue
-            tint = (dem[index] - low) / span
-            lambert = AMBIENT + (1.0 - AMBIENT) * shading[index]
+            tint = (depth[index] - low) / span
             row.extend((
-                shade((0.95 - 0.17 * tint) * lambert),
-                shade((0.94 - 0.08 * tint) * lambert),
-                shade((0.90 + 0.03 * tint) * lambert),
-                ALPHA_REAL if real[index] else ALPHA_GROWN,
+                shade(0.42 + 0.48 * tint),
+                shade(0.63 + 0.31 * tint),
+                shade(0.76 + 0.20 * tint),
+                205,
             ))
         rows.append(bytes(row))
 
@@ -729,27 +725,18 @@ def render_level(
         "coordinateSystem": "Unity world X/Z; image top is +Z",
         "hlodLevel": lod,
         "render": {
-            "method": "orthographic_depth_pass_then_smoothed_hillshade",
+            "method": "orthographic_hlod_depth_point_density",
             "shading": (
-                "hillshade over a grown and blurred height field, with an elevation tint; "
-                "per-facet mesh normals are deliberately not used"
+                "deterministically sampled real HLOD depth pixels with an elevation tint; "
+                "no grown or interpolated terrain pixels are drawn"
             ),
-            "hillshade": {
-                "azimuth": HILLSHADE_AZIMUTH,
-                "altitude": HILLSHADE_ALTITUDE,
-                "scale": HILLSHADE_SCALE,
-                "growRounds": FILL_ROUNDS,
-                "blurRadius": BLUR_RADIUS,
-                "blurPasses": BLUR_PASSES,
-            },
+            "pointDensity": 8 / 11,
             "realPixelRatio": round(sum(1 for value in real if value) / (width * height), 4),
-            "coveredPixelRatio": round(len(covered) / (width * height), 4),
+            "coveredPixelRatio": round(sum(1 for value in real if value) / (width * height), 4),
             "elevationRange": {"min": low, "max": high},
             "boundary": (
-                "HLOD publishes cliffs, props and structures but no ground surface for these scenes, so "
-                "the height field is grown a few pixels to join scattered props into the landform they sit "
-                "on. Grown pixels are drawn more transparently than pixels carrying real geometry, and "
-                "everything outside them is left empty rather than filled with an invented floor."
+                "Only pixels hit by recovered HLOD triangles can emit points. The deterministic density "
+                "sample exposes height and structure without filling gaps or inventing a ground surface."
             ),
         },
         "transform": {
@@ -785,7 +772,7 @@ def render_level(
             ),
         },
         "boundary": (
-            "Diagnostic orthographic preview only. The HLOD bundles publish no GameObject or Transform "
+            "Diagnostic orthographic point-density preview only. The HLOD bundles publish no GameObject or Transform "
             "record, so cluster placement is inferred from the grid index in each cluster's name and an "
             "origin fitted to this level's exact marker transforms. No mesh-to-material binding survives "
             "the export, so the surface is shaded, never textured."
@@ -853,8 +840,8 @@ def main() -> int:
         published_ids.add(level_id)
         print(
             f"{level_id}: HLOD{lod} {manifest['renderedMeshCount']}/{manifest['candidateMeshCount']} clusters, "
-            f"{manifest['renderedTriangleCount']} tris, {manifest['render']['realPixelRatio']:.0%} real"
-            f" / {manifest['render']['coveredPixelRatio']:.0%} shaded, "
+            f"{manifest['renderedTriangleCount']} tris, {manifest['render']['realPixelRatio']:.0%} real geometry"
+            f" / {manifest['render']['pointDensity']:.0%} point density, "
             f"origin ({fit['originX']:g},{fit['originZ']:g}), "
             f"fit {fit['coverage']:.0%} of {fit['samplePoints']} markers"
         )
