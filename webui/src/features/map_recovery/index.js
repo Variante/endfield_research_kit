@@ -161,38 +161,20 @@
     return `Y ${Number(range.minY).toFixed(1)} - ${Number(range.maxY).toFixed(1)}`;
   };
 
-  // A region contains tiers from several sibling sub-maps. They are not one
-  // giant floor list: selecting one tier must be scoped and obvious, and two
-  // transparent overlays must never be blended accidentally.
+  // A region contains tiers from several sibling sub-maps. Expose only the
+  // selected sub-map as one current-floor selector, so changing floors is
+  // explicit and transparent overlays from different heights never blend.
   const mapLayerTreeHtml = (data) => {
     const layers = (data.mapLayers || []).filter((layer) => layer.levelId === state.selected);
     if (!layers.length) return `<p class="mr-note">${esc(t("mapLayersNone"))}</p>`;
-    const groups = new Map();
-    for (const layer of layers) {
-      const levelId = String(layer.levelId || "unknown");
-      if (!groups.has(levelId)) groups.set(levelId, {
-        levelId,
-        levelName: layer.levelName || levelId,
-        layers: [],
-      });
-      groups.get(levelId).layers.push(layer);
-    }
     const selected = [...state.mapLayers][0] || "";
-    const none = `<label class="mr-layer mr-floor-none" title="${esc(t("mapFloorNoneHint"))}"><input type="radio" name="map-tier-selection" data-map-tier-none value="" ${selected ? "" : "checked"}>${esc(t("mapFloorNone"))}</label>`;
-    const groupHtml = [...groups.values()].map((group) => {
-      const levelTitle = group.levelName && group.levelName !== group.levelId
-        ? `${group.levelName} (${group.levelId})`
-        : group.levelId;
-      const options = group.layers.map((layer) => {
-        const id = String(layer.id);
-        const label = mapLayerLabel(layer);
-        const range = mapLayerRange(layer);
-        const title = range ? `${label} · ${range}` : label;
-        return `<label class="mr-layer mr-floor-option" title="${esc(title)}"><input type="radio" name="map-tier-selection" data-map-tier="${esc(id)}" value="${esc(id)}" ${selected === id ? "checked" : ""}>${esc(label)}<span class="mr-layer-count">${esc(range || `${layer.tileCount || 0} ${t("mapTiles")}`)}</span></label>`;
-      }).join("");
-      return `<fieldset class="mr-floor-group"><legend>${esc(levelTitle)}<span class="mr-floor-count">${group.layers.length} ${esc(t("mapFloorCount"))}</span></legend><div class="mr-floor-options">${options}</div></fieldset>`;
+    const options = layers.map((layer) => {
+      const id = String(layer.id);
+      const label = mapLayerLabel(layer);
+      const range = mapLayerRange(layer);
+      return `<option value="${esc(id)}" ${selected === id ? "selected" : ""}>${esc(range ? `${label} · ${range}` : label)}</option>`;
     }).join("");
-    return `<div class="mr-floor-picker" role="radiogroup" aria-label="${esc(t("mapLayers"))}">${none}${groupHtml}</div>`;
+    return `<label class="mr-floor-picker"><span>${esc(t("mapFloorChoose"))}</span><select data-map-floor-select aria-label="${esc(t("mapLayers"))}" title="${esc(t("mapFloorNoneHint"))}"><option value="" ${selected ? "" : "selected"}>${esc(t("mapFloorNone"))}</option>${options}</select></label>`;
   };
 
   // A full region can contain thousands of entity markers. Keep the first
@@ -321,10 +303,9 @@
       mapLayersNone: "No tier overlays are declared by this level's UILevelMapLoadConfig.",
       mapFloor: "Floor",
       mapTier: "tier",
-      mapTiles: "tiles",
-      mapFloorCount: "floors",
       mapFloorNone: "Base map",
       mapFloorNoneHint: "Show the stitched geographic base without a floor overlay.",
+      mapFloorChoose: "Displayed floor",
       evidence: "Evidence",
       controls: "Controls",
       collapse: "Collapse panel",
@@ -420,10 +401,9 @@
     zh: {
       mapFloor: "\u697c\u5c42",
       mapTier: "\u5c42\u7ea7",
-      mapTiles: "\u56fe\u5757",
-      mapFloorCount: "\u5c42",
       mapFloorNone: "\u4ec5\u663e\u793a\u5e95\u56fe",
       mapFloorNoneHint: "\u663e\u793a\u62fc\u63a5\u540e\u7684\u5730\u7406\u5e95\u56fe\uff0c\u4e0d\u53e0\u52a0\u697c\u5c42\u56fe\u3002",
+      mapFloorChoose: "\u5f53\u524d\u663e\u793a\u697c\u5c42",
       mapLayers: "地图楼层",
       mapLayersNone: "该关卡的 UILevelMapLoadConfig 未声明楼层叠图。",
       layerSelectionHint: "\u9ed8\u8ba4\u4ee5\u5e72\u51c0\u7684\u5730\u7406\u5730\u56fe\u663e\u793a\u3002\u9700\u8981\u65f6\u518d\u5f00\u542f\u4efb\u52a1\u3001\u5267\u60c5\u6216\u5176\u5b83\u6807\u8bb0\u3002",
@@ -1595,12 +1575,8 @@
       state.subKinds = new Set([...[...state.subKinds].filter((key) => !shown.has(key)), ...checked]);
       scheduleRender();
     }));
-    host.querySelectorAll("[data-map-tier]").forEach((input) => input.addEventListener("change", () => {
-      state.mapLayers = new Set([input.dataset.mapTier]);
-      scheduleRender();
-    }));
-    host.querySelector("[data-map-tier-none]")?.addEventListener("change", () => {
-      state.mapLayers = new Set();
+    host.querySelector("[data-map-floor-select]")?.addEventListener("change", (event) => {
+      state.mapLayers = event.currentTarget.value ? new Set([event.currentTarget.value]) : new Set();
       scheduleRender();
     });
     host.querySelectorAll("[data-map-relations]").forEach((button) => button.addEventListener("click", () => {
@@ -1661,6 +1637,7 @@
     });
 
     map.addEventListener("pointerdown", beginPan);
+    map.addEventListener("selectstart", (event) => event.preventDefault());
     map.addEventListener("pointermove", movePan);
     map.addEventListener("pointerup", endPan);
     map.addEventListener("pointercancel", endPan);
@@ -1747,6 +1724,7 @@
   function beginPan(event) {
     if (event.pointerType === "mouse" && event.button !== 0) return;
     if (event.target.closest("input, select, label, button, summary, details")) return;
+    window.getSelection?.()?.removeAllRanges();
     stopAnimation();
     state.pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
     if (state.pointers.size === 2) {
