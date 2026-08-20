@@ -43,6 +43,7 @@ COMPARE_TOOL = Path(__file__).with_name("compare_video_phase_sweep.py")
 
 HALF_WINDOW_SECONDS = 0.6
 STEP_SECONDS = 0.2
+EXPECTED_RENDER_COUNT = 7
 
 
 class SweepError(RuntimeError):
@@ -204,7 +205,9 @@ def unity_command(
     return command, environment
 
 
-def expected_render_paths(row: dict[str, Any]) -> list[Path]:
+def expected_render_paths(
+    row: dict[str, Any], *, sweep_root: Path = SWEEP_ROOT
+) -> list[Path]:
     """Return the exact files Unity must produce for this invocation."""
     actor = str(row["actor"])
     names = [
@@ -213,7 +216,32 @@ def expected_render_paths(row: dict[str, Any]) -> list[Path]:
     ]
     if len(names) != len(set(names)):
         raise SweepError(f"{actor}: phase samples collide after 3-decimal formatting")
-    return [SWEEP_ROOT / name for name in names]
+    return [sweep_root / name for name in names]
+
+
+def validate_render_paths(
+    row: dict[str, Any], *, sweep_root: Path = SWEEP_ROOT
+) -> list[Path]:
+    """Validate that the sweep directory contains exactly the planned renders."""
+    expected_paths = expected_render_paths(row, sweep_root=sweep_root)
+    if len(expected_paths) != EXPECTED_RENDER_COUNT:
+        raise SweepError(
+            f"{row['actor']}: expected exactly {EXPECTED_RENDER_COUNT} render paths, "
+            f"planned {len(expected_paths)}"
+        )
+    expected_names = {path.name for path in expected_paths}
+    missing = [path.name for path in expected_paths if not path.is_file()]
+    unexpected = sorted(
+        path.name
+        for path in sweep_root.glob(f"{row['actor']}_t*.png")
+        if path.name not in expected_names
+    )
+    if missing or unexpected:
+        raise SweepError(
+            f"{row['actor']}: rendered file set mismatch; missing={missing}, "
+            f"unexpected={unexpected}"
+        )
+    return expected_paths
 
 
 def run_plan(
@@ -223,15 +251,17 @@ def run_plan(
     project_path: Path = PROJECT_ROOT,
     visual_delta_root: Path = DEFAULT_VISUAL_DELTA,
     dry_run: bool = False,
+    compare_only: bool = False,
 ) -> None:
-    """Run Unity and compare each actor sequentially, or print the plan."""
+    """Run Unity and compare each actor, compare existing renders, or print the plan."""
     if not dry_run:
-        if not unity_exe.is_file():
+        if not compare_only and not unity_exe.is_file():
             raise SweepError(f"Unity executable not found: {unity_exe}")
         if not COMPARE_TOOL.is_file():
             raise SweepError(f"phase comparison tool not found: {COMPARE_TOOL}")
         visual_delta_root.mkdir(parents=True, exist_ok=True)
-        SWEEP_ROOT.mkdir(parents=True, exist_ok=True)
+        if not compare_only:
+            SWEEP_ROOT.mkdir(parents=True, exist_ok=True)
 
     for row in plan["actors"]:
         actor = row["actor"]
@@ -245,28 +275,23 @@ def run_plan(
             print(f"  compare report: {report_path}")
             continue
 
-        expected_paths = expected_render_paths(row)
-        for stale_path in SWEEP_ROOT.glob(f"{actor}_t*.png"):
-            stale_path.unlink()
+        if compare_only:
+            # Existing renders are immutable in this mode: validate before
+            # invoking the comparison tool and never start Unity or clean up.
+            validate_render_paths(row)
+        else:
+            expected_paths = expected_render_paths(row)
+            for stale_path in SWEEP_ROOT.glob(f"{actor}_t*.png"):
+                stale_path.unlink()
 
-        environment = os.environ.copy()
-        environment.update(phase_environment)
-        completed = subprocess.run(
-            command, cwd=str(project_path), env=environment, check=False
-        )
-        if completed.returncode != 0:
-            raise SweepError(f"Unity sweep failed for {actor}")
-        missing = [path.name for path in expected_paths if not path.is_file()]
-        unexpected = sorted(
-            path.name
-            for path in SWEEP_ROOT.glob(f"{actor}_t*.png")
-            if path not in expected_paths
-        )
-        if missing or unexpected:
-            raise SweepError(
-                f"{actor}: rendered file set mismatch; missing={missing}, "
-                f"unexpected={unexpected}"
+            environment = os.environ.copy()
+            environment.update(phase_environment)
+            completed = subprocess.run(
+                command, cwd=str(project_path), env=environment, check=False
             )
+            if completed.returncode != 0:
+                raise SweepError(f"Unity sweep failed for {actor}")
+            validate_render_paths(row)
 
         compare_command = [
             sys.executable,
@@ -305,6 +330,11 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="print the commands and plan without starting Unity or comparison",
     )
+    parser.add_argument(
+        "--compare-only",
+        action="store_true",
+        help="compare existing seven-frame sweeps without starting Unity or deleting frames",
+    )
     return parser
 
 
@@ -314,9 +344,17 @@ def main(argv: list[str] | None = None) -> int:
         plan = build_plan(DEFAULT_SETTLED, parse_actors(args.actors))
         if args.dry_run:
             print(json.dumps(plan, indent=2))
-        run_plan(plan, unity_exe=args.unity_exe, dry_run=args.dry_run)
+        if args.dry_run and args.compare_only:
+            raise SweepError("--dry-run and --compare-only cannot be combined")
+        run_plan(
+            plan,
+            unity_exe=args.unity_exe,
+            dry_run=args.dry_run,
+            compare_only=args.compare_only,
+        )
+        mode = "planned" if args.dry_run else "compared" if args.compare_only else "completed"
         print(
-            f"settled phase sweeps {'planned' if args.dry_run else 'completed'}: "
+            f"settled phase sweeps {mode}: "
             f"{len(plan['actors'])} actors"
         )
         return 0
