@@ -1172,6 +1172,18 @@ not close the open generic sizes: they remain bounded only from below (16 and
 `lib_burst_generated.dll` is unresolved. The complete execution payload,
 numeric solver, and public-Unity execution therefore remain inadmissible.
 
+The next static layer now closes all 150 direct fields across the six large
+job element types used by the priority solver path: TeamData, CenterData,
+ClothParameters, Collider WorkData, TeamWindData, and WindData. Nested value
+types and generic interiors remain explicit boundaries. The indexed managed
+fallback Execute bodies independently confirm selected raw-buffer job offsets,
+element strides, and field displacements; dispatch and UnsafeDo rows that only
+forward into Burst remain classified as wrappers. A read-only payload decoder
+also validates the current selection data and maps all 334 prebuild Transform
+PPtrs (333 unique hierarchy rows plus one explicit null), while preserving
+arrays without a proven stride as raw semantic gaps. None of these contracts
+instantiate a solver or modify a Transform.
+
 The installed client does contain its original `lib_burst_generated.dll`, but
 that is not a drop-in public-Unity plugin: its hashed exports are resolved
 through the retail Burst runtime and depend on the original IL2CPP/Jobs state.
