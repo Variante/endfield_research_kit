@@ -1,0 +1,742 @@
+{
+  "schema": "endfield.charinfo.secondary-dynamics-spring-semantics.v1",
+  "status": "managed_spring_static_semantics_closed",
+  "solverImplemented": false,
+  "retailEquivalent": false,
+  "nativeGate": {
+    "gameAssembly": {
+      "path": "D:/Program Files/Endfield Game/GameAssembly.dll",
+      "size": 280436712,
+      "sha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
+    },
+    "globalMetadata": {
+      "path": "D:/Program Files/Endfield Game/Endfield_Data/il2cpp_data/Metadata/global-metadata.dat",
+      "size": 62925560,
+      "sha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
+    }
+  },
+  "sourceContracts": {
+    "solverStatic": {
+      "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_solver_static_contract.json",
+      "size": 20353,
+      "sha256": "102361db8cca663e826c225fdbe6dbb7e0cea6f32bcb0b9f098ad4d51b4b0bed"
+    }
+  },
+  "method": {
+    "methodIndex": 385698,
+    "type": "BeyondDynamicBone.SimulationManager+StartSimulationStepJob",
+    "method": "Spring",
+    "role": "managed_value_helper",
+    "solverStatus": "helper_static_boundary_only",
+    "va": "0x186775ae4",
+    "endVaExclusive": "0x186776080",
+    "spanBytes": 1436,
+    "bodySha256": "149382eea39d5d1a3ca0e27ed701a665f51406664766283b070305adc52050b5",
+    "parameters": [
+      {
+        "name": "springParams",
+        "metadataTypeIndex": 116564,
+        "metadataType": {
+          "metadataTypeIndex": 116564,
+          "typeCode": "0x11",
+          "typeCodeValue": 17,
+          "typePointerVa": "0x18e629f90",
+          "category": "valueType",
+          "recursiveBoundary": "direct_field_only",
+          "typeDefinitionIndex": 48138,
+          "name": "BeyondDynamicBone.SpringConstraint+SpringConstraintParams",
+          "typeDefinitionNativeSizeBytes": 16
+        }
+      },
+      {
+        "name": "normalAxis",
+        "metadataTypeIndex": 134008,
+        "metadataType": {
+          "metadataTypeIndex": 134008,
+          "typeCode": "0x11",
+          "typeCodeValue": 17,
+          "typePointerVa": "0x18e5a9c90",
+          "category": "valueType",
+          "recursiveBoundary": "direct_field_only",
+          "typeDefinitionIndex": 48001,
+          "name": "BeyondDynamicBone.ClothNormalAxis",
+          "typeDefinitionNativeSizeBytes": 4
+        }
+      },
+      {
+        "name": "nextPos",
+        "metadataTypeIndex": 114556,
+        "metadataType": {
+          "metadataTypeIndex": 114556,
+          "typeCode": "0x11",
+          "typeCodeValue": 17,
+          "typePointerVa": "0x18e3ad270",
+          "category": "valueType",
+          "recursiveBoundary": "direct_field_only",
+          "typeDefinitionIndex": 57201,
+          "name": "Unity.Mathematics.double3",
+          "typeDefinitionNativeSizeBytes": 24
+        }
+      },
+      {
+        "name": "basePos",
+        "metadataTypeIndex": 114557,
+        "metadataType": {
+          "metadataTypeIndex": 114557,
+          "typeCode": "0x11",
+          "typeCodeValue": 17,
+          "typePointerVa": "0x18e3ad180",
+          "category": "valueType",
+          "recursiveBoundary": "direct_field_only",
+          "typeDefinitionIndex": 57201,
+          "name": "Unity.Mathematics.double3",
+          "typeDefinitionNativeSizeBytes": 24
+        }
+      },
+      {
+        "name": "baseRot",
+        "metadataTypeIndex": 114598,
+        "metadataType": {
+          "metadataTypeIndex": 114598,
+          "typeCode": "0x11",
+          "typeCodeValue": 17,
+          "typePointerVa": "0x18e3aa780",
+          "category": "valueType",
+          "recursiveBoundary": "direct_field_only",
+          "typeDefinitionIndex": 57247,
+          "name": "Unity.Mathematics.quaternion",
+          "typeDefinitionNativeSizeBytes": 16
+        }
+      },
+      {
+        "name": "noiseTime",
+        "metadataTypeIndex": 137533,
+        "metadataType": {
+          "metadataTypeIndex": 137533,
+          "typeCode": "0xd",
+          "typeCodeValue": 13,
+          "typePointerVa": "0x18e68c180",
+          "category": "primitive",
+          "recursiveBoundary": "direct_field_only",
+          "typeDefinitionIndex": 42042,
+          "name": "System.Double",
+          "typeDefinitionNativeSizeBytes": 8
+        }
+      },
+      {
+        "name": "scaleRatio",
+        "metadataTypeIndex": 163863,
+        "metadataType": {
+          "metadataTypeIndex": 163863,
+          "typeCode": "0xc",
+          "typeCodeValue": 12,
+          "typePointerVa": "0x18e68c010",
+          "category": "primitive",
+          "recursiveBoundary": "direct_field_only",
+          "typeDefinitionIndex": 42141,
+          "name": "System.Single",
+          "typeDefinitionNativeSizeBytes": 4
+        }
+      }
+    ],
+    "argumentAbi": [
+      {
+        "instructionOffset": "0x26",
+        "argument": "nextPos",
+        "location": "r14",
+        "instructionBytes": "4d8bf1"
+      },
+      {
+        "instructionOffset": "0x2d",
+        "argument": "normalAxis",
+        "location": "ebx",
+        "instructionBytes": "418bd8"
+      },
+      {
+        "instructionOffset": "0x34",
+        "argument": "springParams",
+        "location": "rdi",
+        "instructionBytes": "488bfa"
+      },
+      {
+        "instructionOffset": "0x3c",
+        "argument": "this/job",
+        "location": "rsi",
+        "instructionBytes": "488bf1"
+      },
+      {
+        "instructionOffset": "0x76",
+        "argument": "basePos",
+        "location": "r15",
+        "instructionBytes": "4c8b7d50"
+      },
+      {
+        "instructionOffset": "0x1a7",
+        "argument": "baseRot",
+        "location": "[rbp+0x58]",
+        "instructionBytes": "488b4558"
+      },
+      {
+        "instructionOffset": "0x1d2",
+        "argument": "scaleRatio",
+        "location": "[rbp+0x68]",
+        "instructionBytes": "f3440f104568"
+      },
+      {
+        "instructionOffset": "0x438",
+        "argument": "noiseTime",
+        "location": "[rbp+0x60]",
+        "instructionBytes": "f20f104560"
+      }
+    ],
+    "directCalls": [
+      {
+        "instructionOffset": "0x52",
+        "targetVa": "0x180035ed0",
+        "instructionBytes": "e895038cf9"
+      },
+      {
+        "instructionOffset": "0x69",
+        "targetVa": "0x182f95a30",
+        "instructionBytes": "e8defe81fc"
+      },
+      {
+        "instructionOffset": "0xb1",
+        "targetVa": "0x185f00f40",
+        "instructionBytes": "e8a6b378ff"
+      },
+      {
+        "instructionOffset": "0xea",
+        "targetVa": "0x18415f9a0",
+        "instructionBytes": "e8cd9d9efd"
+      },
+      {
+        "instructionOffset": "0x138",
+        "targetVa": "0x183f48480",
+        "instructionBytes": "e85f287dfd"
+      },
+      {
+        "instructionOffset": "0x19a",
+        "targetVa": "0x18415f9a0",
+        "instructionBytes": "e81d9d9efd"
+      },
+      {
+        "instructionOffset": "0x1cd",
+        "targetVa": "0x186689afc",
+        "instructionBytes": "e8463ef1ff"
+      },
+      {
+        "instructionOffset": "0x213",
+        "targetVa": "0x18415f9a0",
+        "instructionBytes": "e8a49c9efd"
+      },
+      {
+        "instructionOffset": "0x244",
+        "targetVa": "0x185f0ae78",
+        "instructionBytes": "e84b5179ff"
+      },
+      {
+        "instructionOffset": "0x249",
+        "targetVa": "0x1801d32d0",
+        "instructionBytes": "e89ed5a5f9"
+      },
+      {
+        "instructionOffset": "0x27b",
+        "targetVa": "0x185f00ed4",
+        "instructionBytes": "e870b178ff"
+      },
+      {
+        "instructionOffset": "0x2bd",
+        "targetVa": "0x185f0ae78",
+        "instructionBytes": "e8d25079ff"
+      },
+      {
+        "instructionOffset": "0x2e3",
+        "targetVa": "0x185f00ed4",
+        "instructionBytes": "e808b178ff"
+      },
+      {
+        "instructionOffset": "0x315",
+        "targetVa": "0x185f00f40",
+        "instructionBytes": "e842b178ff"
+      },
+      {
+        "instructionOffset": "0x341",
+        "targetVa": "0x185f0ae78",
+        "instructionBytes": "e84e5079ff"
+      },
+      {
+        "instructionOffset": "0x346",
+        "targetVa": "0x1801d32d0",
+        "instructionBytes": "e8a1d4a5f9"
+      },
+      {
+        "instructionOffset": "0x353",
+        "targetVa": "0x1801d7ea0",
+        "instructionBytes": "e86420a6f9"
+      },
+      {
+        "instructionOffset": "0x358",
+        "targetVa": "0x1801d8880",
+        "instructionBytes": "e83f2aa6f9"
+      },
+      {
+        "instructionOffset": "0x3bb",
+        "targetVa": "0x185f00ed4",
+        "instructionBytes": "e830b078ff"
+      },
+      {
+        "instructionOffset": "0x3d5",
+        "targetVa": "0x185f355bc",
+        "instructionBytes": "e8fef67bff"
+      },
+      {
+        "instructionOffset": "0x3e6",
+        "targetVa": "0x185f00ed4",
+        "instructionBytes": "e805b078ff"
+      },
+      {
+        "instructionOffset": "0x418",
+        "targetVa": "0x185f00f40",
+        "instructionBytes": "e83fb078ff"
+      },
+      {
+        "instructionOffset": "0x43d",
+        "targetVa": "0x1801d9d00",
+        "instructionBytes": "e8da3da6f9"
+      },
+      {
+        "instructionOffset": "0x486",
+        "targetVa": "0x185f00ed4",
+        "instructionBytes": "e865af78ff"
+      },
+      {
+        "instructionOffset": "0x4b8",
+        "targetVa": "0x185f00f40",
+        "instructionBytes": "e89faf78ff"
+      },
+      {
+        "instructionOffset": "0x4f2",
+        "targetVa": "0x185f00d7c",
+        "instructionBytes": "e8a1ad78ff"
+      },
+      {
+        "instructionOffset": "0x510",
+        "targetVa": "0x185396738",
+        "instructionBytes": "e83f07c2fe"
+      },
+      {
+        "instructionOffset": "0x51d",
+        "targetVa": "0x1800d8260",
+        "instructionBytes": "e85a2296f9"
+      },
+      {
+        "instructionOffset": "0x55f",
+        "targetVa": "0x1866e13d0",
+        "instructionBytes": "e888b3f6ff"
+      }
+    ],
+    "branches": [
+      {
+        "instructionOffset": "0x49",
+        "mnemonic": "jne",
+        "targetOffset": "0x5e",
+        "instructionBytes": "7513"
+      },
+      {
+        "instructionOffset": "0x70",
+        "mnemonic": "jne",
+        "targetOffset": "0x50b",
+        "instructionBytes": "0f8595040000"
+      },
+      {
+        "instructionOffset": "0xf9",
+        "mnemonic": "je",
+        "targetOffset": "0x17f",
+        "instructionBytes": "0f8480000000"
+      },
+      {
+        "instructionOffset": "0x102",
+        "mnemonic": "je",
+        "targetOffset": "0x171",
+        "instructionBytes": "746d"
+      },
+      {
+        "instructionOffset": "0x107",
+        "mnemonic": "je",
+        "targetOffset": "0x166",
+        "instructionBytes": "745d"
+      },
+      {
+        "instructionOffset": "0x10c",
+        "mnemonic": "je",
+        "targetOffset": "0x15e",
+        "instructionBytes": "7450"
+      },
+      {
+        "instructionOffset": "0x111",
+        "mnemonic": "je",
+        "targetOffset": "0x150",
+        "instructionBytes": "743d"
+      },
+      {
+        "instructionOffset": "0x116",
+        "mnemonic": "jne",
+        "targetOffset": "0x1a7",
+        "instructionBytes": "0f858b000000"
+      },
+      {
+        "instructionOffset": "0x14e",
+        "mnemonic": "jmp",
+        "targetOffset": "0x191",
+        "instructionBytes": "eb41"
+      },
+      {
+        "instructionOffset": "0x15c",
+        "mnemonic": "jmp",
+        "targetOffset": "0x128",
+        "instructionBytes": "ebca"
+      },
+      {
+        "instructionOffset": "0x164",
+        "mnemonic": "jmp",
+        "targetOffset": "0x156",
+        "instructionBytes": "ebf0"
+      },
+      {
+        "instructionOffset": "0x16f",
+        "mnemonic": "jmp",
+        "targetOffset": "0x188",
+        "instructionBytes": "eb17"
+      },
+      {
+        "instructionOffset": "0x17d",
+        "mnemonic": "jmp",
+        "targetOffset": "0x18b",
+        "instructionBytes": "eb0c"
+      },
+      {
+        "instructionOffset": "0x1e9",
+        "mnemonic": "ja",
+        "targetOffset": "0x21d",
+        "instructionBytes": "7732"
+      },
+      {
+        "instructionOffset": "0x218",
+        "mnemonic": "jmp",
+        "targetOffset": "0x41d",
+        "instructionBytes": "e900020000"
+      },
+      {
+        "instructionOffset": "0x256",
+        "mnemonic": "jbe",
+        "targetOffset": "0x28a",
+        "instructionBytes": "7632"
+      },
+      {
+        "instructionOffset": "0x28e",
+        "mnemonic": "jbe",
+        "targetOffset": "0x427",
+        "instructionBytes": "0f8693010000"
+      },
+      {
+        "instructionOffset": "0x389",
+        "mnemonic": "jbe",
+        "targetOffset": "0x427",
+        "instructionBytes": "0f8698000000"
+      },
+      {
+        "instructionOffset": "0x436",
+        "mnemonic": "jbe",
+        "targetOffset": "0x46e",
+        "instructionBytes": "7636"
+      },
+      {
+        "instructionOffset": "0x469",
+        "mnemonic": "ja",
+        "targetOffset": "0x46e",
+        "instructionBytes": "7703"
+      },
+      {
+        "instructionOffset": "0x509",
+        "mnemonic": "jmp",
+        "targetOffset": "0x564",
+        "instructionBytes": "eb59"
+      },
+      {
+        "instructionOffset": "0x51b",
+        "mnemonic": "jne",
+        "targetOffset": "0x523",
+        "instructionBytes": "7506"
+      }
+    ],
+    "constants": [
+      {
+        "instructionOffset": "0xb6",
+        "targetVa": "0x18b959200",
+        "valueKind": "float32",
+        "widthBytes": 4,
+        "value": 1.0,
+        "instructionBytes": "f30f103d5e361e05"
+      },
+      {
+        "instructionOffset": "0x1e1",
+        "targetVa": "0x18b9593b4",
+        "valueKind": "float32",
+        "widthBytes": 4,
+        "value": 9.99999993922529e-09,
+        "instructionBytes": "440f2f05e7361e05"
+      },
+      {
+        "instructionOffset": "0x447",
+        "targetVa": "0x18b959530",
+        "valueKind": "float32",
+        "widthBytes": 4,
+        "value": 0.6000000238418579,
+        "instructionBytes": "f30f590dfd351e05"
+      },
+      {
+        "instructionOffset": "0x45e",
+        "targetVa": "0x18b959248",
+        "valueKind": "float64",
+        "widthBytes": 8,
+        "value": 0.0,
+        "instructionBytes": "660f2f05fe321e05"
+      }
+    ],
+    "memoryAccesses": [
+      {
+        "instructionOffset": "0x88",
+        "owner": "basePos",
+        "baseRegister": "r15",
+        "displacementBytes": 0,
+        "widthBytes": 16,
+        "access": "read",
+        "instructionBytes": "410f1007"
+      },
+      {
+        "instructionOffset": "0x8c",
+        "owner": "basePos",
+        "baseRegister": "r15",
+        "displacementBytes": 16,
+        "widthBytes": 8,
+        "access": "read",
+        "instructionBytes": "f2410f104f10"
+      },
+      {
+        "instructionOffset": "0x97",
+        "owner": "nextPos",
+        "baseRegister": "r14",
+        "displacementBytes": 0,
+        "widthBytes": 16,
+        "access": "read",
+        "instructionBytes": "410f1006"
+      },
+      {
+        "instructionOffset": "0xa0",
+        "owner": "nextPos",
+        "baseRegister": "r14",
+        "displacementBytes": 16,
+        "widthBytes": 8,
+        "access": "read",
+        "instructionBytes": "f2410f104e10"
+      },
+      {
+        "instructionOffset": "0x1db",
+        "owner": "SpringConstraintParams.limitDistance",
+        "baseRegister": "rdi",
+        "displacementBytes": 4,
+        "widthBytes": 4,
+        "access": "read",
+        "instructionBytes": "f3440f594704"
+      },
+      {
+        "instructionOffset": "0x258",
+        "owner": "job.simulationDeltaTime",
+        "baseRegister": "rsi",
+        "displacementBytes": 16,
+        "widthBytes": 8,
+        "access": "read",
+        "instructionBytes": "f20f105610"
+      },
+      {
+        "instructionOffset": "0x262",
+        "owner": "job.simulationPower",
+        "baseRegister": "rsi",
+        "displacementBytes": 0,
+        "widthBytes": 16,
+        "access": "read",
+        "instructionBytes": "0f100e"
+      },
+      {
+        "instructionOffset": "0x28a",
+        "owner": "SpringConstraintParams.normalLimitRatio",
+        "baseRegister": "rdi",
+        "displacementBytes": 8,
+        "widthBytes": 4,
+        "access": "read",
+        "instructionBytes": "0f2f7f08"
+      },
+      {
+        "instructionOffset": "0x35d",
+        "owner": "SpringConstraintParams.normalLimitRatio",
+        "baseRegister": "rdi",
+        "displacementBytes": 8,
+        "widthBytes": 4,
+        "access": "read",
+        "instructionBytes": "f3440f594708"
+      },
+      {
+        "instructionOffset": "0x427",
+        "owner": "SpringConstraintParams.springNoise",
+        "baseRegister": "rdi",
+        "displacementBytes": 12,
+        "widthBytes": 4,
+        "access": "read",
+        "instructionBytes": "f30f10470c"
+      },
+      {
+        "instructionOffset": "0x42f",
+        "owner": "SpringConstraintParams.springPower",
+        "baseRegister": "rdi",
+        "displacementBytes": 0,
+        "widthBytes": 4,
+        "access": "read",
+        "instructionBytes": "f30f103f"
+      },
+      {
+        "instructionOffset": "0x442",
+        "owner": "SpringConstraintParams.springNoise",
+        "baseRegister": "rdi",
+        "displacementBytes": 12,
+        "widthBytes": 4,
+        "access": "read",
+        "instructionBytes": "f30f104f0c"
+      },
+      {
+        "instructionOffset": "0x4d8",
+        "owner": "basePos",
+        "baseRegister": "r15",
+        "displacementBytes": 0,
+        "widthBytes": 16,
+        "access": "read",
+        "instructionBytes": "410f1007"
+      },
+      {
+        "instructionOffset": "0x4e1",
+        "owner": "basePos",
+        "baseRegister": "r15",
+        "displacementBytes": 16,
+        "widthBytes": 8,
+        "access": "read",
+        "instructionBytes": "f2410f104f10"
+      },
+      {
+        "instructionOffset": "0x4ff",
+        "owner": "nextPos",
+        "baseRegister": "r14",
+        "displacementBytes": 0,
+        "widthBytes": 16,
+        "access": "write",
+        "instructionBytes": "410f1116"
+      },
+      {
+        "instructionOffset": "0x503",
+        "owner": "nextPos",
+        "baseRegister": "r14",
+        "displacementBytes": 16,
+        "widthBytes": 8,
+        "access": "write",
+        "instructionBytes": "f2410f114610"
+      }
+    ],
+    "nativeArrayAccesses": [],
+    "arrayStrideStatus": "not_applicable_helper_has_no_nativearray_operand",
+    "valueTypeLayouts": [
+      {
+        "name": "BeyondDynamicBone.SpringConstraint+SpringConstraintParams",
+        "typeDefinitionIndex": 48138,
+        "fieldStart": 229085,
+        "fieldCount": 4,
+        "instanceSizeBytes": 32,
+        "nativeSizeBytes": 16,
+        "directFieldsOnly": true,
+        "fields": [
+          {
+            "name": "springPower",
+            "metadataTypeIndex": 163868,
+            "metadataType": {
+              "metadataTypeIndex": 163868,
+              "typeCode": "0xc",
+              "typeCodeValue": 12,
+              "typePointerVa": "0x18e3d5ec0",
+              "category": "primitive",
+              "recursiveBoundary": "direct_field_only",
+              "typeDefinitionIndex": 42141,
+              "name": "System.Single",
+              "typeDefinitionNativeSizeBytes": 4
+            },
+            "boxedFieldOffset": "0x10",
+            "nativePayloadOffset": "0x0",
+            "token": "0x040002c6"
+          },
+          {
+            "name": "limitDistance",
+            "metadataTypeIndex": 163868,
+            "metadataType": {
+              "metadataTypeIndex": 163868,
+              "typeCode": "0xc",
+              "typeCodeValue": 12,
+              "typePointerVa": "0x18e3d5ec0",
+              "category": "primitive",
+              "recursiveBoundary": "direct_field_only",
+              "typeDefinitionIndex": 42141,
+              "name": "System.Single",
+              "typeDefinitionNativeSizeBytes": 4
+            },
+            "boxedFieldOffset": "0x14",
+            "nativePayloadOffset": "0x4",
+            "token": "0x040002c7"
+          },
+          {
+            "name": "normalLimitRatio",
+            "metadataTypeIndex": 163868,
+            "metadataType": {
+              "metadataTypeIndex": 163868,
+              "typeCode": "0xc",
+              "typeCodeValue": 12,
+              "typePointerVa": "0x18e3d5ec0",
+              "category": "primitive",
+              "recursiveBoundary": "direct_field_only",
+              "typeDefinitionIndex": 42141,
+              "name": "System.Single",
+              "typeDefinitionNativeSizeBytes": 4
+            },
+            "boxedFieldOffset": "0x18",
+            "nativePayloadOffset": "0x8",
+            "token": "0x040002c8"
+          },
+          {
+            "name": "springNoise",
+            "metadataTypeIndex": 163868,
+            "metadataType": {
+              "metadataTypeIndex": 163868,
+              "typeCode": "0xc",
+              "typeCodeValue": 12,
+              "typePointerVa": "0x18e3d5ec0",
+              "category": "primitive",
+              "recursiveBoundary": "direct_field_only",
+              "typeDefinitionIndex": 42141,
+              "name": "System.Single",
+              "typeDefinitionNativeSizeBytes": 4
+            },
+            "boxedFieldOffset": "0x1c",
+            "nativePayloadOffset": "0xc",
+            "token": "0x040002c9"
+          }
+        ]
+      }
+    ]
+  },
+  "boundary": "385698 is the managed Spring helper called by the indexed Execute fallback. This contract closes native bytes, value/job memory operands, branch targets, and direct calls only; Burst range execution, runtime patch selection, solver scheduling, and transform writeback equivalence remain unresolved."
+}
