@@ -229,6 +229,38 @@ def _source_hash_checks(payload: dict[str, Any]) -> dict[str, Any]:
     return checks
 
 
+def _source_hash_mismatch_details(source_hash_checks: dict[str, Any]) -> list[str]:
+    """Return bounded, actionable details for every source hash mismatch."""
+
+    details: list[str] = []
+    for actor_name, actor_checks in source_hash_checks.items():
+        for source_name, check in actor_checks.items():
+            if check["matches"]:
+                continue
+            details.append(
+                f"{actor_name}.{source_name} ({check['repo_path']}): "
+                f"size {check['recorded_size']} != {check['actual_size']}; "
+                f"sha256 {check['recorded_sha256']} != {check['actual_sha256']}"
+            )
+    return details
+
+
+def _require_source_hashes(
+    source_hash_checks: dict[str, Any], *, allow_source_hash_mismatch: bool
+) -> None:
+    """Fail closed unless the caller explicitly requests diagnostic output."""
+
+    if allow_source_hash_mismatch:
+        return
+    details = _source_hash_mismatch_details(source_hash_checks)
+    if details:
+        raise PayloadDecodeError(
+            "source hash mismatch; refusing to publish decoded output. "
+            "Pass --allow-source-hash-mismatch only for a degraded diagnostic report: "
+            + "; ".join(details)
+        )
+
+
 def _pptr(value: Any, label: str, hierarchy: dict[int, str], index: int) -> dict[str, Any]:
     if not isinstance(value, dict) or not _is_int(value.get("m_FileID")) or not _is_int(value.get("m_PathID")):
         raise PayloadDecodeError(f"{label}[{index}]: invalid Transform PPtr")
@@ -435,15 +467,17 @@ def _proxy_arrays(proxy: dict[str, Any], label: str) -> dict[str, Any]:
     return result
 
 
-def decode_payload(payload: dict[str, Any]) -> dict[str, Any]:
+def decode_payload(
+    payload: dict[str, Any], *, source_hash_checks: dict[str, Any] | None = None
+) -> dict[str, Any]:
     """Return a decoded report without mutating ``payload``."""
 
     validate_input(payload)
     actors: dict[str, Any] = {}
-    source_hash_checks = _source_hash_checks(payload)
+    resolved_source_hash_checks = source_hash_checks or _source_hash_checks(payload)
     source_hashes_match = all(
         check["matches"]
-        for actor_checks in source_hash_checks.values()
+        for actor_checks in resolved_source_hash_checks.values()
         for check in actor_checks.values()
     )
     for actor_name, actor in payload["actors"].items():
@@ -511,7 +545,7 @@ def decode_payload(payload: dict[str, Any]) -> dict[str, Any]:
             "input_path": INPUT.relative_to(REPO_ROOT).as_posix(),
             "input_sha256": EXPECTED_INPUT_SHA256,
             "source_build": _copy(payload["source_build"]),
-            "hash_checks": source_hash_checks,
+            "hash_checks": resolved_source_hash_checks,
             "hashes_match": source_hashes_match,
         },
         "actors": actors,
@@ -528,10 +562,15 @@ def decode_payload(payload: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def build_report() -> dict[str, Any]:
+def build_report(*, allow_source_hash_mismatch: bool = False) -> dict[str, Any]:
     payload = load_json(INPUT)
     validate_input(payload, input_path=INPUT)
-    report = decode_payload(payload)
+    source_hash_checks = _source_hash_checks(payload)
+    _require_source_hashes(
+        source_hash_checks,
+        allow_source_hash_mismatch=allow_source_hash_mismatch,
+    )
+    report = decode_payload(payload, source_hash_checks=source_hash_checks)
     report["source"]["input_size"] = INPUT.stat().st_size
     return report
 
@@ -572,10 +611,19 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="validate the source and verify the generated report without writing it",
     )
+    parser.add_argument(
+        "--allow-source-hash-mismatch",
+        action="store_true",
+        help="publish a degraded diagnostic report when referenced source files drift",
+    )
     args = parser.parse_args(argv)
 
+    if args.check and args.allow_source_hash_mismatch:
+        print("error: --check cannot be combined with --allow-source-hash-mismatch", file=sys.stderr)
+        return 2
+
     try:
-        report = build_report()
+        report = build_report(allow_source_hash_mismatch=args.allow_source_hash_mismatch)
         if args.check:
             _check_report(report)
             print(f"ok {OUTPUT}")
