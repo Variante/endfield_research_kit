@@ -9,13 +9,15 @@ the mappings below.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import hashlib
+import struct
 from pathlib import Path
 from typing import Any
 
 if __package__ == "scripts.audio_semantics":
-    from ..common import check_installed_native_inputs
+    from ..common import check_installed_native_inputs, native_evidence_required
 elif __package__ == "audio_semantics":
-    from common import check_installed_native_inputs
+    from common import check_installed_native_inputs, native_evidence_required
 else:  # pragma: no cover - package modules are not direct-file entry points.
     raise ImportError("import as scripts.audio_semantics or audio_semantics")
 
@@ -32,6 +34,49 @@ NATIVE_VOICE_TRIGGER_MAPPING_ID = (
 ANIMATION_VOICE_TRIGGER_MAPPING_ID = (
     "gameassembly-2026-08-13-animator-mono-trigger-voice"
 )
+MODEL_VIEW_STATE_AUDIO_MAPPING_ID = (
+    "gameassembly-2026-08-20-model-view-state-normal-audio-event"
+)
+
+# This is a deliberately small, build-locked route contract.  The body
+# hashes are part of the proof: a method index/address pair from a different
+# client build must not be enough to publish a runtime route.  The route is
+# only exposed after ``validate_native_audio_evidence`` has accepted the
+# explicitly selected metadata and GameAssembly files.
+MODEL_VIEW_STATE_AUDIO_NATIVE_ROUTE = {
+    "nativeMappingId": MODEL_VIEW_STATE_AUDIO_MAPPING_ID,
+    "consumer": {
+        "type": "Beyond.Gameplay.Core.ModelViewStateController.AudioBehavior",
+        "method": "Execute",
+        "methodIndex": 81734,
+        "token": "0x06013f47",
+        "virtualAddress": "0x183281ff0",
+        "bodySha256": "e0d2892930a50b5c6dbcfe27773654395631aad9a224efbf4b38bea43f88e2c8",
+    },
+    "directCalls": [
+        {
+            "targetType": "Beyond.Gameplay.Audio.AudioManager",
+            "targetMethod": "PostEvent",
+            "targetMethodIndex": 38956,
+            "targetToken": "0x0600982d",
+            "targetVirtualAddress": "0x1832811c0",
+            "targetBodySha256": "7508b9f39689da91934e581b07e3b5e0bd4601bbbb3d2b6fb0f8e12cce68e958",
+            "relation": "AudioBehavior.Execute direct call target",
+        },
+        {
+            "targetType": "Beyond.Gameplay.Core.ModelViewStateController",
+            "targetMethod": "RegisterAudioBehaviorHandler",
+            "targetMethodIndex": 82021,
+            "targetToken": "0x06014066",
+            "targetVirtualAddress": "0x183281150",
+            "targetBodySha256": "3be609894156661bb9c6726b4a25090d765bf61605c17679467ce62031204552",
+            "relation": "AudioBehavior.Execute direct call target",
+        },
+    ],
+    "evidence": (
+        "exactCurrentBuildMethodMappingBodyHashesAndDirectCallTargets"
+    ),
+}
 
 
 @dataclass(frozen=True)
@@ -44,6 +89,10 @@ class NativeAudioEvidence:
     metadata_sha256: str = ""
     gameassembly_sha256: str = ""
     reason: str = ""
+    # ``False`` is retained for directly constructed synthetic contexts used
+    # by unit tests.  Only validate_native_audio_evidence sets this after the
+    # explicit GameAssembly + metadata gate has measured the supplied files.
+    gate_verified: bool = False
 
     @property
     def validated(self) -> bool:
@@ -63,6 +112,266 @@ class NativeAudioEvidence:
         }
 
 
+def model_view_state_audio_native_route(
+    native_context: NativeAudioEvidence,
+    *,
+    observed_route: dict[str, Any] | None = None,
+) -> dict[str, Any] | None:
+    """Return the exact ModelView normal-audio route when its gate is valid.
+
+    ``observed_route`` is an optional synthetic byte-audit result used by
+    focused tests.  Production callers audit the explicitly selected PE
+    automatically; every method mapping, body hash, and direct call target
+    must match the pinned route.  Missing, mismatched, or drifted inputs
+    return no route, never a partially trusted one.
+    """
+
+    audit = audit_model_view_state_audio_native_route(
+        native_context,
+        observed_route=observed_route,
+    )
+    if audit["status"] != "validated":
+        if native_evidence_required():
+            raise RuntimeError(
+                "Audio native evidence required but ModelView route is unavailable: "
+                + str(audit["reason"])
+            )
+        return None
+    return audit["route"]
+
+
+_MODEL_VIEW_EXECUTE_METHOD = (81734, "0x06013f47", "0x183281ff0")
+_MODEL_VIEW_DIRECT_CALLS = (
+    (38956, "0x0600982d", "0x1832811c0"),
+    (82021, "0x06014066", "0x183281150"),
+)
+_PE_BODY_SCAN_LIMIT = 0x10000
+
+
+def _bounded_reason(*parts: str) -> str:
+    """Make native-audit diagnostics deterministic and bounded."""
+
+    return "; ".join(str(part).replace("\n", " ")[:240] for part in parts if part)[:1000]
+
+
+def _catalog_row_errors(route: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    if not isinstance(route, dict):
+        return ["route catalog is not an object"]
+    if route.get("nativeMappingId") != MODEL_VIEW_STATE_AUDIO_MAPPING_ID:
+        errors.append("nativeMappingId catalog drift")
+    consumer = route.get("consumer")
+    if not isinstance(consumer, dict):
+        errors.append("consumer catalog row missing")
+    else:
+        values = (
+            ("type", consumer.get("type"), "Beyond.Gameplay.Core.ModelViewStateController.AudioBehavior"),
+            ("method", consumer.get("method"), "Execute"),
+            ("methodIndex", consumer.get("methodIndex"), _MODEL_VIEW_EXECUTE_METHOD[0]),
+            ("token", consumer.get("token"), _MODEL_VIEW_EXECUTE_METHOD[1]),
+            ("virtualAddress", consumer.get("virtualAddress"), _MODEL_VIEW_EXECUTE_METHOD[2]),
+        )
+        errors.extend(
+            f"consumer {name} expected {expected} got {actual}"
+            for name, actual, expected in values
+            if actual != expected
+        )
+        if not isinstance(consumer.get("bodySha256"), str):
+            errors.append("consumer bodySha256 catalog row missing")
+    calls = route.get("directCalls")
+    if not isinstance(calls, list) or len(calls) != len(_MODEL_VIEW_DIRECT_CALLS):
+        errors.append("directCalls catalog row count drift")
+    else:
+        for index, (row, expected) in enumerate(zip(calls, _MODEL_VIEW_DIRECT_CALLS)):
+            if not isinstance(row, dict):
+                errors.append(f"directCalls[{index}] catalog row missing")
+                continue
+            for name, actual, expected_value in (
+                ("targetType", row.get("targetType"), (
+                    "Beyond.Gameplay.Audio.AudioManager"
+                    if index == 0
+                    else "Beyond.Gameplay.Core.ModelViewStateController"
+                )),
+                ("targetMethod", row.get("targetMethod"), (
+                    "PostEvent" if index == 0 else "RegisterAudioBehaviorHandler"
+                )),
+                ("targetMethodIndex", row.get("targetMethodIndex"), expected[0]),
+                ("targetToken", row.get("targetToken"), expected[1]),
+                ("targetVirtualAddress", row.get("targetVirtualAddress"), expected[2]),
+            ):
+                if actual != expected_value:
+                    errors.append(
+                        f"directCalls[{index}] {name} expected {expected_value} got {actual}"
+                    )
+            if not isinstance(row.get("targetBodySha256"), str):
+                errors.append(f"directCalls[{index}] targetBodySha256 catalog row missing")
+    return errors[:8]
+
+
+def _pe_file_bounds_for_va(data: bytes, virtual_address: int) -> tuple[int, int]:
+    """Map an x64 PE VA (or RVA) to a bounded raw-file offset."""
+
+    if len(data) < 0x40 or data[:2] != b"MZ":
+        raise ValueError("GameAssembly.dll is not a DOS PE")
+    nt_offset = struct.unpack_from("<I", data, 0x3C)[0]
+    if nt_offset < 0 or nt_offset + 24 > len(data) or data[nt_offset:nt_offset + 4] != b"PE\0\0":
+        raise ValueError("GameAssembly.dll PE header is invalid")
+    coff = nt_offset + 4
+    section_count = struct.unpack_from("<H", data, coff + 2)[0]
+    optional_size = struct.unpack_from("<H", data, coff + 16)[0]
+    optional = coff + 20
+    if optional + optional_size > len(data) or optional_size < 64:
+        raise ValueError("GameAssembly.dll optional PE header is truncated")
+    magic = struct.unpack_from("<H", data, optional)[0]
+    if magic == 0x20B:
+        image_base = struct.unpack_from("<Q", data, optional + 24)[0]
+    elif magic == 0x10B:
+        image_base = struct.unpack_from("<I", data, optional + 28)[0]
+    else:
+        raise ValueError(f"unsupported PE optional-header magic 0x{magic:x}")
+    rva = virtual_address - image_base if virtual_address >= image_base else virtual_address
+    section_table = optional + optional_size
+    for index in range(section_count):
+        section = section_table + index * 40
+        if section + 40 > len(data):
+            break
+        virtual_size, section_rva, raw_size, raw_offset = struct.unpack_from(
+            "<IIII", data, section + 8
+        )
+        span = max(virtual_size, raw_size)
+        if section_rva <= rva < section_rva + span:
+            file_offset = raw_offset + (rva - section_rva)
+            if file_offset >= len(data):
+                break
+            raw_end = min(len(data), raw_offset + raw_size)
+            if file_offset < raw_end:
+                return file_offset, raw_end
+    raise ValueError(f"VA 0x{virtual_address:x} has no PE section mapping")
+
+
+def _pe_file_offset_for_va(data: bytes, virtual_address: int) -> int:
+    """Return only the raw offset for callers that do not need section bounds."""
+
+    return _pe_file_bounds_for_va(data, virtual_address)[0]
+
+
+def _read_pe_method_body(
+    gameassembly_path: Path,
+    virtual_address: str | int,
+    expected_sha256: str,
+) -> bytes:
+    """Read the bounded method body whose digest is in the route catalog.
+
+    Method sizes are intentionally not guessed from a disassembler.  The
+    expected digest identifies the exact prefix, while the PE mapper keeps
+    the search inside the owning section and at most 64 KiB.
+    """
+
+    data = Path(gameassembly_path).read_bytes()
+    va = int(virtual_address, 0) if isinstance(virtual_address, str) else int(virtual_address)
+    offset, section_end = _pe_file_bounds_for_va(data, va)
+    available = data[offset:min(section_end, offset + _PE_BODY_SCAN_LIMIT)]
+    expected = str(expected_sha256 or "").casefold()
+    if len(expected) != 64:
+        raise ValueError(f"invalid body SHA256 catalog value for VA 0x{va:x}")
+    # Hash every bounded prefix.  This is deliberately small (three methods)
+    # and supports minimal PE fixtures as well as methods with multiple RETs.
+    digest = hashlib.sha256()
+    for length, byte in enumerate(available, 1):
+        digest.update(bytes((byte,)))
+        if digest.hexdigest() == expected:
+            return available[:length]
+    raise ValueError(f"body SHA256 drift at VA 0x{va:x}")
+
+
+def _direct_call_targets(body: bytes, method_va: int) -> set[int]:
+    targets: set[int] = set()
+    for index in range(max(0, len(body) - 4)):
+        if body[index] != 0xE8:
+            continue
+        displacement = struct.unpack_from("<i", body, index + 1)[0]
+        targets.add(method_va + index + 5 + displacement)
+    return targets
+
+
+def audit_model_view_state_audio_native_route(
+    native_context: NativeAudioEvidence,
+    *,
+    observed_route: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Audit the production ModelView route and return a bounded diagnostic."""
+
+    if not native_context.validated:
+        return {"status": native_context.status, "reason": native_context.reason[:1000], "route": None}
+    if (
+        native_context.metadata_sha256.casefold() != EXPECTED_METADATA_SHA256
+        or native_context.gameassembly_sha256.casefold() != EXPECTED_GAMEASSEMBLY_SHA256
+    ):
+        return {"status": "mismatched", "reason": "native input fingerprint mismatch", "route": None}
+    expected = MODEL_VIEW_STATE_AUDIO_NATIVE_ROUTE
+    catalog_errors = _catalog_row_errors(expected)
+    if observed_route is not None:
+        if observed_route != expected:
+            catalog_errors.append("synthetic observed route differs from catalog")
+        if catalog_errors:
+            return {"status": "mismatched", "reason": _bounded_reason(*catalog_errors), "route": None}
+        return {"status": "validated", "reason": "synthetic observed route validated", "route": _route_with_fingerprints(native_context, expected)}
+    # Directly constructed NativeAudioEvidence is the existing synthetic test
+    # contract.  The production builder always receives gate_verified=True.
+    if not native_context.gate_verified:
+        if catalog_errors:
+            return {"status": "mismatched", "reason": _bounded_reason(*catalog_errors), "route": None}
+        return {"status": "validated", "reason": "synthetic route catalog validated", "route": _route_with_fingerprints(native_context, expected)}
+    if native_context.gameassembly_path is None or not native_context.gameassembly_path.is_file():
+        return {"status": "missing", "reason": "GameAssembly.dll missing for production route body audit", "route": None}
+    if catalog_errors:
+        return {"status": "mismatched", "reason": _bounded_reason(*catalog_errors), "route": None}
+    consumer = expected["consumer"]
+    bodies: list[tuple[int, bytes, str]] = []
+    try:
+        bodies.append((int(consumer["virtualAddress"], 0), _read_pe_method_body(
+            native_context.gameassembly_path, consumer["virtualAddress"], consumer["bodySha256"]
+        ), "consumer"))
+        for row in expected["directCalls"]:
+            bodies.append((int(row["targetVirtualAddress"], 0), _read_pe_method_body(
+                native_context.gameassembly_path, row["targetVirtualAddress"], row["targetBodySha256"]
+            ), str(row["targetMethod"])))
+    except (OSError, ValueError, struct.error) as exc:
+        return {"status": "mismatched", "reason": _bounded_reason("native body audit failed", str(exc)), "route": None}
+    actual_targets = _direct_call_targets(bodies[0][1], bodies[0][0])
+    expected_targets = {
+        int(row["targetVirtualAddress"], 0) for row in expected["directCalls"]
+    }
+    missing_targets = sorted(expected_targets - actual_targets)
+    if missing_targets:
+        text = ", ".join(f"0x{value:x}" for value in missing_targets[:4])
+        return {"status": "mismatched", "reason": _bounded_reason("Execute direct-call target drift", f"missing {text}"), "route": None}
+    return {
+        "status": "validated",
+        "reason": "exact catalog, body SHA256, and Execute direct calls validated",
+        "route": _route_with_fingerprints(native_context, expected),
+        "checks": {
+            "catalog": "validated",
+            "bodySha256": "validated",
+            "executeDirectCalls": "validated",
+        },
+    }
+
+
+def _route_with_fingerprints(
+    native_context: NativeAudioEvidence,
+    expected: dict[str, Any],
+) -> dict[str, Any]:
+    route = {
+        **expected,
+        "metadataSha256": native_context.metadata_sha256,
+        "gameAssemblySha256": native_context.gameassembly_sha256,
+    }
+    route["consumer"] = dict(expected["consumer"])
+    route["directCalls"] = [dict(row) for row in expected["directCalls"]]
+    return route
+
+
 def validate_native_audio_evidence(
     metadata_path: Path | None,
     gameassembly_path: Path | None,
@@ -78,12 +387,17 @@ def validate_native_audio_evidence(
         if path is None or not path.is_file()
     ]
     if missing:
-        return NativeAudioEvidence(
+        result = NativeAudioEvidence(
             metadata_path,
             gameassembly_path,
             "missing",
             reason="missing native input(s): " + ", ".join(missing),
         )
+        if native_evidence_required():
+            raise RuntimeError(
+                "Audio native evidence required but unavailable: " + result.reason
+            )
+        return result
 
     assert metadata_path is not None and gameassembly_path is not None
     result = check_installed_native_inputs(
@@ -92,14 +406,21 @@ def validate_native_audio_evidence(
         gameassembly=gameassembly_path,
         metadata=metadata_path,
     )
-    return NativeAudioEvidence(
+    result = NativeAudioEvidence(
         result.metadata,
         result.gameassembly,
         result.status,
         result.metadata_sha256,
         result.gameassembly_sha256,
         result.detail,
+        True,
     )
+    if not result.validated and native_evidence_required():
+        raise RuntimeError(
+            "Audio native evidence required but not validated: "
+            f"{result.status}: {result.reason}"
+        )
+    return result
 
 
 ANIMATION_VOICE_TRIGGER_NATIVE = {
@@ -295,8 +616,12 @@ __all__ = [
     "ENEMY_TRIGGER_VOICE_ACTION_NATIVE",
     "EXPECTED_GAMEASSEMBLY_SHA256",
     "EXPECTED_METADATA_SHA256",
+    "MODEL_VIEW_STATE_AUDIO_MAPPING_ID",
+    "MODEL_VIEW_STATE_AUDIO_NATIVE_ROUTE",
     "NATIVE_VOICE_TRIGGER_MAPPING_ID",
     "NATIVE_VOICE_TRIGGER_ROWS",
     "NativeAudioEvidence",
+    "audit_model_view_state_audio_native_route",
+    "model_view_state_audio_native_route",
     "validate_native_audio_evidence",
 ]

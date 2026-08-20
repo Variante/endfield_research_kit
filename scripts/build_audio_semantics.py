@@ -38,6 +38,7 @@ if __package__ == "scripts":
         identifiers,
         interactive_components,
         managed_literals,
+        model_view_projection,
         native_evidence,
         purpose,
         responsive_voice,
@@ -55,6 +56,7 @@ elif not __package__:
         identifiers,
         interactive_components,
         managed_literals,
+        model_view_projection,
         native_evidence,
         purpose,
         responsive_voice,
@@ -98,8 +100,8 @@ PROJECTILE_SOUND_PHASES = {
 # authoritative value; these names are presentation labels, not a claim that
 # selection behavior was evaluated offline.
 SELECTION_HIRC_TYPES = frozenset({5, 6, 12, 13})
-AUDIO_SEMANTIC_SCHEMA_VERSION = 106
-TRIGGER_CONTEXT_SCHEMA_VERSION = 32
+AUDIO_SEMANTIC_SCHEMA_VERSION = 107
+TRIGGER_CONTEXT_SCHEMA_VERSION = 33
 
 MONO_BEHAVIOUR_AUDIO_EVENT_FIELD_NAMES = frozenset({
     "_spawnAudioEvent", "_finishAudioEvent", "_onHitAudioEvent",
@@ -9981,6 +9983,8 @@ def build_trigger_context_catalog(
     export_root: Path | None = None,
     levelscript_semantics: dict[str, Any] | None = None,
     mono_behaviour_audio_id_contexts: dict[str, list[dict[str, Any]]] | None = None,
+    model_view_semantics: dict[str, Any] | None = None,
+    native_context: native_evidence.NativeAudioEvidence | None = None,
 ) -> dict[str, Any]:
     """Build one navigable trigger -> situation -> media surface.
 
@@ -10042,6 +10046,11 @@ def build_trigger_context_catalog(
             mono_event_rows or event_rows
         ),
         "audioGlobalConfig": _build_audio_global_config_trigger_contexts(event_rows),
+        "modelViewStateAudio": model_view_projection.project_model_view_state_audio_trigger_contexts(
+            model_view_semantics,
+            event_rows,
+            native_context=native_context,
+        ),
     }
     contexts = [row for rows in grouped.values() for row in rows]
     contexts.sort(key=lambda row: (str(row.get("semanticKind") or ""), str(row.get("triggerId") or "")))
@@ -10113,6 +10122,18 @@ def build_trigger_context_catalog(
             "source": "AudioGlobalConfig raw JSON or complete MonoBehaviour object index",
             "storedTriggerContextRows": len(grouped["audioGlobalConfig"]),
             "runtimeExecutionObserved": 0,
+        },
+        "modelViewStateAudio": {
+            "source": "ModelViewStateControllerData tag-0x0001 normal Event behavior",
+            "storedTriggerContextRows": len(grouped["modelViewStateAudio"]),
+            "runtimeExecutionObserved": 0,
+            "runtimeSelectionStatus": "wwiseEventBranchSelectionUnobserved",
+            "ownerStatus": "modelViewStateControllerOwnerOnlyInteractiveAssociationNotOwner",
+            "nativeRouteStatus": (
+                "exactCurrentBuildRoute"
+                if any(row.get("nativeRoute") for row in grouped["modelViewStateAudio"])
+                else "nativeRouteUnavailable"
+            ),
         },
         "managedLiteralCallsite": {
             "source": "fingerprint-locked current metadata literal handles and GameAssembly native callsites",
@@ -10246,7 +10267,10 @@ def build_trigger_context_catalog(
             "RemoteCommon auto-play row, or selected line/slot actually ran. "
             "AudioDialogCustomEventTable lifecycle rows identify a static request/scheduling "
             "hook; RemoteCommon voiceId remains separate from its audioId; neither proves "
-            "PostEvent or an audible media leaf."
+            "PostEvent or an audible media leaf. ModelView normal Event rows keep the "
+            "serialized definition, possible Wwise media leaves, unresolved runtime branch, "
+            "and unobserved activation as separate evidence fields; InteractiveTable "
+            "associations are not promoted to owners."
         ),
     }
 
@@ -12378,9 +12402,11 @@ def build_audio_semantic_data(
         language,
         export_root=export_root,
         levelscript_semantics=levelscript_semantics,
-            mono_behaviour_audio_id_contexts=(
+        mono_behaviour_audio_id_contexts=(
             mono_behaviour_audio_id_semantics.get("eventContexts") or {}
         ),
+        model_view_semantics=model_view_semantics,
+        native_context=native_context,
     )
     media_trigger_context_counts = annotate_media_trigger_contexts(
         media,

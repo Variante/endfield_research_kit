@@ -13,6 +13,7 @@ from scripts.audio_semantics import (
     identifiers,
     interactive_components,
     managed_literals,
+    model_view_projection,
     native_evidence,
     purpose,
     responsive_voice,
@@ -7430,6 +7431,125 @@ class AudioSemanticDataTests(unittest.TestCase):
             self.assertEqual(unresolved["category"], "sfx")
             self.assertEqual(unresolved["categoryEvidence"], "exactModelViewStateAudioBehavior")
 
+            event_rows = [{
+                "id": "au_mv_event",
+                "hash": event_hash,
+                "category": "sfx",
+                "foundInWwise": True,
+                "playbackRole": "playback",
+                "possibleMediaCount": 2,
+                "media": [
+                    {"id": "leaf-a", "src": "/audio/leaf-a.flac"},
+                    {"id": "leaf-b", "src": "/audio/leaf-b.flac"},
+                ],
+            }]
+            native_rows = model_view_projection.project_model_view_state_audio_trigger_contexts(
+                semantics,
+                event_rows,
+                native_context=validated_native_context(),
+            )
+            self.assertEqual(1, len(native_rows))
+            trigger = native_rows[0]
+            self.assertEqual("modelViewStateAudioEvent", trigger["semanticKind"])
+            self.assertEqual(2, len(trigger["wwiseMediaCandidates"]))
+            self.assertEqual("unresolved", trigger["runtimeBranch"]["status"])
+            self.assertEqual("unobserved", trigger["activation"]["status"])
+            self.assertEqual(
+                "interactiveTableAssociationNotOwner",
+                trigger["owner"]["ownerPromotionStatus"],
+            )
+            self.assertEqual(81734, trigger["nativeRoute"]["consumer"]["methodIndex"])
+            self.assertEqual(
+                "0x0600982d",
+                trigger["nativeRoute"]["directCalls"][0]["targetToken"],
+            )
+
+            excluded_semantics = {
+                "eventContexts": {
+                    identifiers.event_hash_context_key(event_hash): [
+                        semantics["eventContexts"][identifiers.event_hash_context_key(event_hash)][0],
+                        {
+                            **semantics["eventContexts"][identifiers.event_hash_context_key(event_hash)][0],
+                            "kind": "modelViewStatePositionAudioEvent",
+                            "behaviorTag": 0x0002,
+                        },
+                        {
+                            **semantics["eventContexts"][identifiers.event_hash_context_key(event_hash)][0],
+                            "isCustom": True,
+                        },
+                    ]
+                }
+            }
+            self.assertEqual(
+                1,
+                len(model_view_projection.project_model_view_state_audio_trigger_contexts(
+                    excluded_semantics,
+                    event_rows,
+                    native_context=validated_native_context(),
+                )),
+            )
+
+            missing_rows = model_view_projection.project_model_view_state_audio_trigger_contexts(
+                semantics,
+                event_rows,
+                native_context=native_evidence.NativeAudioEvidence(
+                    None, None, "missing"
+                ),
+            )
+            self.assertNotIn("nativeRoute", missing_rows[0])
+            self.assertEqual(
+                "nativeRouteUnavailable",
+                missing_rows[0]["runtimeBranch"]["nativeRouteStatus"],
+            )
+            self.assertIn("reason", missing_rows[0]["nativeRouteDiagnostic"])
+            mismatch_rows = model_view_projection.project_model_view_state_audio_trigger_contexts(
+                semantics,
+                event_rows,
+                native_context=native_evidence.NativeAudioEvidence(
+                    Path("global-metadata.dat"), Path("GameAssembly.dll"), "mismatched",
+                    "wrong-metadata", "wrong-gameassembly", "fingerprint mismatch",
+                ),
+            )
+            self.assertNotIn("nativeRoute", mismatch_rows[0])
+            wrong_fingerprint = native_evidence.NativeAudioEvidence(
+                Path("global-metadata.dat"), Path("GameAssembly.dll"), "validated",
+                "wrong-metadata", "wrong-gameassembly",
+            )
+            self.assertNotIn(
+                "nativeRoute",
+                model_view_projection.project_model_view_state_audio_trigger_contexts(
+                    semantics, event_rows, native_context=wrong_fingerprint
+                )[0],
+            )
+
+            route = native_evidence.MODEL_VIEW_STATE_AUDIO_NATIVE_ROUTE
+            drifted = {
+                **route,
+                "consumer": {**route["consumer"], "bodySha256": "body-drift"},
+            }
+            self.assertIsNone(
+                native_evidence.model_view_state_audio_native_route(
+                    validated_native_context(), observed_route=drifted
+                )
+            )
+
+            catalog = audio_semantics.build_trigger_context_catalog(
+                event_rows,
+                [],
+                webui_root,
+                "CN",
+                model_view_semantics=semantics,
+                native_context=validated_native_context(),
+            )
+            self.assertIn("modelViewStateAudioEvent", catalog["counts"]["bySemanticKind"])
+            self.assertEqual(
+                "modelViewStateAudioEvent",
+                next(
+                    row for row in catalog["contexts"]
+                    if row["semanticKind"] == "modelViewStateAudioEvent"
+                )["semanticKind"],
+            )
+
     def test_collects_owner_unresolved_animation_callbacks_as_debug_contexts(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:
             root = Path(raw_root)
@@ -8362,6 +8482,33 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertIn('sourceKinds.has("externalSourceCodec")', source)
         self.assertIn('sourceKinds.has("synthesizedSource")', source)
         self.assertIn("Stream type is a buffering policy", source)
+
+    def test_model_view_projection_stably_deduplicates_duplicate_trigger_ids(self) -> None:
+        event_hash = 0x12345678
+        authored = {
+            "kind": "modelViewStateAudioEvent",
+            "behaviorTag": 0x0001,
+            "isCustom": False,
+            "controllerId": "controller-fixture",
+            "sourceFile": "controller.json",
+            "normalAudioId": event_hash,
+        }
+        semantics = {
+            "eventContexts": {
+                identifiers.event_hash_context_key(event_hash): [authored],
+            },
+        }
+        duplicate_event_rows = [
+            {"id": "au_duplicate", "hash": event_hash, "media": []},
+            {"id": "au_duplicate", "hash": event_hash, "media": []},
+        ]
+        projected = model_view_projection.project_model_view_state_audio_trigger_contexts(
+            semantics,
+            duplicate_event_rows,
+            native_context=validated_native_context(),
+        )
+        self.assertEqual(len(projected), 1)
+        self.assertEqual(len({row["triggerId"] for row in projected}), len(projected))
 
 
 if __name__ == "__main__":
