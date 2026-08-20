@@ -112,7 +112,7 @@
       "Pointer snapshots are opaque bytes; no NativeArray, TransformAccessArray, bone, or actor layout is inferred.",
       "Counts do not prove that a cloth solver ran or that the resulting bytes reached a visible renderer.",
       "The target actor is a user-supplied capture label; only exact runtime identity evidence can promote it.",
-      "The hook never invokes, patches, replaces, or writes any game function or data."
+      "Frida Interceptor instrumentation changes the hooked function-entry execution path; callbacks perform read-only observation and never write game state, replace a game body, or call a game function."
     ],
     "stopRule": "Stop on attach refusal, protection termination, module/hash/byte drift, hook failure, invalid pointer read, or event cap; do not retry through evasion."
   }

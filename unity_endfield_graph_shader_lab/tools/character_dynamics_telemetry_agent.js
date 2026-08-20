@@ -1,9 +1,9 @@
 "use strict";
 
-// Read-only Frida agent.  The launcher verifies the executable, GameAssembly,
-// and metadata hashes before this source is rendered and loaded.  This agent
-// only observes the five pinned native boundaries; it never calls a game
-// function, changes memory, or decodes a pointer as an object.
+// Read-only observation agent.  Frida Interceptor instrumentation changes the
+// hooked function-entry execution path, but the callbacks below only observe
+// the pinned native boundaries: they do not call game functions, write
+// game state, or decode a pointer as an object.
 const CONFIG = __CHARACTER_DYNAMICS_TRACE_CONFIG__;
 const module = Process.getModuleByName(CONFIG.moduleName);
 const capture = CONFIG.capture;
@@ -11,6 +11,8 @@ const hookStates = {};
 let captureEnabled = false;
 let eventCount = 0;
 let capped = false;
+let captureStarted = false;
+let terminalState = null;
 let batch = [];
 
 function transmit(channel, payload) {
@@ -48,17 +50,28 @@ function flush() {
   batch = [];
 }
 
+function state(kind, values) {
+  transmit("state", { state: { kind, ...values } });
+}
+
+function fatal(kind, values) {
+  terminalState = "fatal";
+  captureEnabled = false;
+  state("capture_fatal", { reason: kind, ...values });
+  transmit("fatal", { fatal: { kind, ...values } });
+}
+
 function record(kind, values) {
   if (!captureEnabled || capped) return;
   batch.push({ kind, ...values });
   eventCount += 1;
   if (batch.length >= capture.batchSize) flush();
   if (eventCount >= capture.maxEvents) {
+    captureEnabled = false;
     capped = true;
     flush();
-    transmit("diagnostic", {
-      diagnostic: { kind: "event_limit_reached", maxEvents: capture.maxEvents },
-    });
+    terminalState = "capped";
+    state("capture_capped", { maxEvents: capture.maxEvents });
   }
 }
 
@@ -77,22 +90,23 @@ function attachHook(name, spec) {
   const actual = bytesToHex(address.readByteArray(expected.length / 2));
   if (actual !== expected) {
     hookStates[name] = "bytes_changed";
-    transmit("fatal", {
-      fatal: {
-        kind: "hook_bytes_changed",
-        hook: name,
-        type: spec.type,
-        method: spec.method,
-        rva: spec.rva,
-        expectedBytes: expected,
-        actualBytes: actual,
-      },
+    fatal("hook_bytes_changed", {
+      hook: name,
+      type: spec.type,
+      method: spec.method,
+      rva: spec.rva,
+      expectedBytes: expected,
+      actualBytes: actual,
     });
     return;
   }
   try {
     Interceptor.attach(address, {
       onEnter() {
+        if (!captureEnabled || capped || terminalState) {
+          this.trace = null;
+          return;
+        }
         this.trace = {
           threadId: Process.getCurrentThreadId(),
           registers: {
@@ -113,19 +127,17 @@ function attachHook(name, spec) {
           ([, value]) => value.snapshot && value.snapshot.status === "unreadable"
         );
         if (unreadable) {
+          this.trace.stopped = true;
           captureEnabled = false;
-          capped = true;
-          transmit("fatal", {
-            fatal: {
-              kind: "pointer_snapshot_unreadable",
-              hook: name,
-              message: "stopping capture after a configured pointer snapshot could not be read",
-            },
+          fatal("pointer_snapshot_unreadable", {
+            hook: name,
+            message: "stopping capture after a configured pointer snapshot could not be read",
           });
           flush();
         }
       },
       onLeave(retval) {
+        if (!this.trace || this.trace.stopped || !captureEnabled || capped || terminalState) return;
         record("hook_leave", {
           hook: name,
           type: spec.type,
@@ -139,9 +151,7 @@ function attachHook(name, spec) {
     hookStates[name] = "attached";
   } catch (error) {
     hookStates[name] = "attach_failed";
-    transmit("fatal", {
-      fatal: { kind: "hook_attach_failed", hook: name, error: String(error) },
-    });
+    fatal("hook_attach_failed", { hook: name, error: String(error) });
   }
 }
 
@@ -154,6 +164,14 @@ setInterval(flush, capture.flushIntervalMs);
 
 function waitForStart() {
   recv("start_capture", () => {
+    if (captureStarted || terminalState || capped) {
+      state("capture_start_rejected", {
+        reason: terminalState || (capped ? "capped" : "already_started"),
+      });
+      waitForStart();
+      return;
+    }
+    captureStarted = true;
     captureEnabled = true;
     eventCount = 0;
     capped = false;
@@ -166,7 +184,7 @@ waitForStart();
 recv("stop_capture", () => {
   captureEnabled = false;
   flush();
-  transmit("diagnostic", { diagnostic: { kind: "capture_stopped", eventCount } });
+  state("capture_stop_ack", { eventCount, captureStarted, terminalState });
 });
 
 transmit("ready", {
@@ -181,5 +199,7 @@ transmit("ready", {
     maxEvents: capture.maxEvents,
     readBytesPerPointer: capture.readBytesPerPointer,
     captureEnabled,
+    captureStarted,
+    terminalState,
   },
 });

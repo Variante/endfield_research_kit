@@ -53,8 +53,11 @@ def load_rows(path: Path) -> list[dict[str, Any]]:
 def validate_trace(path: Path, manifest_path: Path = telemetry.DEFAULT_MANIFEST) -> dict[str, Any]:
     manifest = telemetry.load_manifest(manifest_path.resolve())
     rows = load_rows(path.resolve())
-    session_ids = {row.get("sessionId") for row in rows}
-    if len(session_ids) != 1 or not next(iter(session_ids or {None})):
+    session_values = [row.get("sessionId") for row in rows]
+    if any(not isinstance(value, str) or not value for value in session_values):
+        _fail("trace rows must have a non-empty string sessionId")
+    session_ids = set(session_values)
+    if len(session_ids) != 1:
         _fail("trace must contain exactly one non-empty sessionId")
     expected_seq = 0
     for index, row in enumerate(rows):
@@ -80,6 +83,19 @@ def validate_trace(path: Path, manifest_path: Path = telemetry.DEFAULT_MANIFEST)
         _fail("session gameBuild differs from the pinned manifest")
     if start.get("exportFingerprint") != manifest["files"]["metadata"]["sha256"]:
         _fail("session metadata fingerprint differs from the pinned manifest")
+    expected_files = manifest["files"]
+    for row_name, row in (("session_start", start),):
+        facts = row.get("verifiedFiles")
+        if not isinstance(facts, dict):
+            _fail(f"{row_name} has no actual verifiedFiles handshake")
+        for name, expected in expected_files.items():
+            actual = facts.get(name)
+            if not isinstance(actual, dict):
+                _fail(f"{row_name} missing verified file fact {name}")
+            if actual.get("bytes") != expected["bytes"] or actual.get("sha256", "").casefold() != expected["sha256"].casefold():
+                _fail(f"{row_name} verified file fact drift for {name}")
+            if not isinstance(actual.get("path"), str) or not actual["path"]:
+                _fail(f"{row_name} verified file fact {name} has no path")
     handshakes = [row for row in rows if row.get("kind") == "native_module_verified"]
     if len(handshakes) != 1:
         _fail(f"expected exactly one native_module_verified row, got {len(handshakes)}")
@@ -87,6 +103,12 @@ def validate_trace(path: Path, manifest_path: Path = telemetry.DEFAULT_MANIFEST)
     for key in ("modulePathMatch", "moduleSizeMatch"):
         if handshake.get(key) is not True:
             _fail(f"native module handshake did not validate {key}")
+    handshake_files = handshake.get("verifiedFiles")
+    if handshake_files != start.get("verifiedFiles"):
+        _fail("native module handshake file facts differ from session_start")
+    hook_states = handshake.get("hookStates")
+    if not isinstance(hook_states, dict) or any(value != "attached" for value in hook_states.values()):
+        _fail("native module handshake does not prove every configured hook attached")
     known_hooks = set(manifest["hooks"])
     hook_events = [row for row in rows if row.get("kind") in {"hook_enter", "hook_leave"}]
     hook_counts: dict[str, int] = {name: 0 for name in known_hooks}
@@ -115,9 +137,27 @@ def validate_trace(path: Path, manifest_path: Path = telemetry.DEFAULT_MANIFEST)
                         _fail(f"hook_enter {index} snapshot bytes are malformed")
                 elif status not in {"null", "unreadable"}:
                     _fail(f"hook_enter {index} has unknown snapshot status {status!r}")
-    fatal = [row for row in rows if row.get("kind") == "agent_fatal"]
-    if fatal:
-        _fail(f"trace contains agent_fatal: {fatal[0]}")
+    terminal_kinds = {
+        "capture_fatal",
+        "capture_capped",
+        "capture_detached",
+        "capture_stop_ack_missing",
+        "capture_not_started",
+        "capture_start_rejected",
+    }
+    terminal_rows = [row for row in rows if row.get("kind") in terminal_kinds]
+    if terminal_rows:
+        _fail(f"trace contains terminal failure state: {terminal_rows[0]}")
+    started_rows = [row for row in rows if row.get("kind") == "capture_started"]
+    if len(started_rows) != 1:
+        _fail(f"expected exactly one capture_started row, got {len(started_rows)}")
+    stop_acks = [row for row in rows if row.get("kind") == "capture_stop_ack"]
+    if len(stop_acks) != 1:
+        _fail(f"expected exactly one capture_stop_ack row, got {len(stop_acks)}")
+    if ends[0].get("stopAck") is not True:
+        _fail("session_end does not confirm stopAck")
+    if ends[0].get("terminalFailure") is not False:
+        _fail("session_end contains terminalFailure")
     native_events = len(hook_events)
     if native_events > manifest["capture"]["maxEvents"]:
         _fail("trace exceeds configured native event cap")
@@ -136,8 +176,8 @@ def validate_trace(path: Path, manifest_path: Path = telemetry.DEFAULT_MANIFEST)
         "nativeModuleVerified": True,
         "claims": {
             "readOnlyHookEvents": True,
-            "transformOutputObserved": hook_counts.get("transformWriteback", 0) > 0,
-            "actorIdentityProven": target.get("identityStatus") == "exact",
+            "transformWritebackCallObserved": hook_counts.get("transformWriteback", 0) > 0,
+            "actorIdentityProven": False,
             "solverImplemented": False,
             "retailEquivalent": False,
         },

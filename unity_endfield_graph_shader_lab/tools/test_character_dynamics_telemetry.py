@@ -8,6 +8,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
+from types import SimpleNamespace
 
 TOOLS = Path(__file__).resolve().parent
 if str(TOOLS) not in sys.path:
@@ -57,13 +58,63 @@ class CharacterDynamicsTelemetryTests(unittest.TestCase):
         self.assertEqual(result, 1)
 
     def test_check_only_does_not_load_frida_or_attach(self) -> None:
-        manifest = telemetry.load_manifest(telemetry.DEFAULT_MANIFEST)
         with tempfile.TemporaryDirectory() as temp:
-            with patch.object(telemetry.core, "verify_game_files", return_value={"gameAssembly": Path(temp) / "GameAssembly.dll"}):
-                with patch.object(telemetry.core, "load_frida", side_effect=AssertionError("check-only attached")):
+            native = SimpleNamespace(
+                validated=True,
+                status="validated",
+                detail="",
+                gameassembly=Path(temp) / "GameAssembly.dll",
+                metadata=Path(temp) / "Endfield_Data/il2cpp_data/Metadata/global-metadata.dat",
+            )
+            with patch.object(telemetry, "check_installed_native_inputs", return_value=native):
+                with patch.object(telemetry.core, "verify_game_files", return_value={"gameAssembly": Path(temp) / "GameAssembly.dll"}):
+                    with patch.object(telemetry.core, "load_frida", side_effect=AssertionError("check-only attached")):
+                        self.assertEqual(
+                            telemetry.main(["--target", "chen-overview", "--check-only", "--game-root", str(temp)]),
+                            0,
+                        )
+
+    def test_main_uses_explicit_common_native_gate_before_executable_gate(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            native = SimpleNamespace(
+                validated=True,
+                status="validated",
+                detail="",
+                gameassembly=root / "GameAssembly.dll",
+                metadata=root / "Endfield_Data/il2cpp_data/Metadata/global-metadata.dat",
+            )
+            with patch.object(telemetry, "check_installed_native_inputs", return_value=native) as gate:
+                with patch.object(telemetry.core, "verify_game_files", return_value={"gameAssembly": root / "GameAssembly.dll"}) as executable_gate:
+                    with patch.object(telemetry, "render_agent_source", return_value="rendered"):
+                        with patch.object(telemetry.core, "load_frida", side_effect=AssertionError("check-only attached")):
+                            self.assertEqual(
+                                telemetry.main(["--target", "chen-overview", "--check-only", "--game-root", str(root)]),
+                                0,
+                            )
+            manifest = telemetry.load_manifest(telemetry.DEFAULT_MANIFEST)
+            gate.assert_called_once_with(
+                manifest["files"]["gameAssembly"]["sha256"],
+                manifest["files"]["metadata"]["sha256"],
+                gameassembly=(root / "GameAssembly.dll").resolve(),
+                metadata=(root / "Endfield_Data/il2cpp_data/Metadata/global-metadata.dat").resolve(),
+            )
+            executable_gate.assert_called_once()
+
+    def test_native_gate_mismatch_refuses_before_executable_check(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            native = SimpleNamespace(
+                validated=False,
+                status="mismatched",
+                detail="GameAssembly.dll is a different build",
+                gameassembly=Path(temp) / "GameAssembly.dll",
+                metadata=Path(temp) / "Endfield_Data/il2cpp_data/Metadata/global-metadata.dat",
+            )
+            with patch.object(telemetry, "check_installed_native_inputs", return_value=native):
+                with patch.object(telemetry.core, "verify_game_files", side_effect=AssertionError("executable gate ran")):
                     self.assertEqual(
-                        telemetry.main(["--target", "chen-overview", "--check-only", "--game-root", temp]),
-                        0,
+                        telemetry.main(["--target", "chen-overview", "--check-only", "--game-root", str(temp)]),
+                        1,
                     )
 
     def test_capture_config_is_bounded(self) -> None:
@@ -74,6 +125,18 @@ class CharacterDynamicsTelemetryTests(unittest.TestCase):
         self.assertLessEqual(capture["maxPointerReadsPerEvent"], 2)
         self.assertEqual(capture["snapshotRegisters"], ["rcx", "r8"])
         self.assertTrue(manifest["evidenceBoundary"]["nonClaims"])
+
+    def test_instrumentation_boundary_is_explicit(self) -> None:
+        manifest = telemetry.load_manifest(telemetry.DEFAULT_MANIFEST)
+        boundary = " ".join(manifest["evidenceBoundary"]["nonClaims"])
+        self.assertIn("Interceptor instrumentation changes", boundary)
+        self.assertIn("never write game state", boundary)
+
+    def test_disabled_capture_checks_before_pointer_snapshot(self) -> None:
+        rendered = telemetry.render_agent_source(telemetry.DEFAULT_AGENT, telemetry.load_manifest(telemetry.DEFAULT_MANIFEST))
+        self.assertIn("if (!captureEnabled || capped || terminalState)", rendered)
+        self.assertLess(rendered.index("if (!captureEnabled || capped || terminalState)"), rendered.index("registerSnapshot(this.context"))
+        self.assertIn("capture_start_rejected", rendered)
 
 
 if __name__ == "__main__":
