@@ -462,8 +462,10 @@ Levels in one region share a single world-space canvas, but remain separate
 selectable sub-maps. `UILevelMapLoadConfig` supplies the exact chunk rectangles,
 optional tier overlays, and the only supported orientation flag
 (`needInverseXZ`); exported tile rows are not flipped independently. Multi-tier
-levels start with only the selected sub-map's first tier visible, and the user
-can enable additional floors. Registry markers, quest points, and authored
+levels start with only the selected sub-map's first tier visible. Floors are a
+single-choice overlay scoped to that sub-map, with an explicit base-map option,
+so transparent floors from different heights or sibling zones never blend.
+Registry markers, quest points, and authored
 `staticElements` all retain raw X/Z coordinates; marker-to-tier membership is
 published only when the point lies inside that tier's authored rectangle.
 The level display name identifies a gameplay scene, not ownership of every
@@ -478,8 +480,12 @@ mirrors every stitched screen north/south while leaving task coordinates in
 the original orientation, producing apparently mismatched edges and pins.
 Opening any `map01` or `map02` level loads every sibling background in that
 region immediately; readers do not need to change the selector once to finish
-the stitch. The initial view is a clean geographic map with no quest/entity
-overlay selected. One primary place label per sibling remains visible,
+the stitch. Selecting a sub-map automatically frames its own map-screen extent,
+including in the clean view where no entity nodes are enabled. Source minimap
+alpha is rendered directly without an additional whole-image opacity, avoiding
+artificial dark seams where sibling screens overlap. The initial view is a clean
+geographic map with no quest/entity overlay selected, and an available stitched
+surface is not reported as an empty node layer. One primary place label per sibling remains visible,
 collision-free local names appear progressively with zoom, and quests, dialog
 markers, or other entity layers are explicit user choices.
 
