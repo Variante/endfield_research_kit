@@ -181,8 +181,8 @@
     "builderPath": "unity_endfield_graph_shader_lab/tools/build_secondary_dynamics_burst_export_contract.py",
     "contract": {
       "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_burst_export_contract.json",
-      "size": 579599,
-      "sha256": "dc71d5be694f1a6f41aa96094ae597fc920a35d609e152e4017b007cc6d69594"
+      "size": 583041,
+      "sha256": "217a7b307fbf9162527b5c906f256b499754a7fe8370b6884bb0cd98b2b8e4b4"
     },
     "candidateCount": 3,
     "candidateHashes": [
