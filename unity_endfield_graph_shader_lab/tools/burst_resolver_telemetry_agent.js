@@ -7,6 +7,12 @@ const capture = CONFIG.capture;
 const hookStates = {};
 const targetModuleName = String(CONFIG.resolverModuleName).toLowerCase();
 const gameAssemblyName = String(CONFIG.moduleName).toLowerCase();
+const targetWindows = Array.isArray(CONFIG.targets) ? CONFIG.targets : [];
+const expectedResolverPath = CONFIG.resolverExpectedPath
+  ? String(CONFIG.resolverExpectedPath).replace(/\//g, "\\").toLowerCase()
+  : null;
+const expectedResolverSize = Number(CONFIG.resolverExpectedSize || 0);
+const requireResolverExportEnumeration = CONFIG.capture.requireResolverExportEnumeration === true;
 let captureEnabled = false;
 let captureStarted = false;
 let eventCount = 0;
@@ -15,6 +21,10 @@ let terminalState = null;
 let batch = [];
 let burstHandle = null;
 let burstIdentity = null;
+let resolverExports = new Map();
+let resolverExportStatus = "not_loaded";
+let resolverHashedExportCount = 0;
+let resolverRequestOrdinal = 0;
 
 function transmit(channel, payload) {
   send({ channel, ...payload });
@@ -25,14 +35,45 @@ function pointerText(value) {
   try { return String(value); } catch (_) { return null; }
 }
 
+function normalizedPath(value) {
+  return value ? String(value).replace(/\//g, "\\").toLowerCase() : null;
+}
+
 function moduleInfo(item, status) {
   return {
     status: status || "observed",
     name: item ? item.name : null,
     path: item ? item.path : null,
     base: item ? pointerText(item.base) : null,
+    moduleBase: item ? pointerText(item.base) : null,
     size: item ? item.size : null,
+    exportEnumerationStatus: item ? resolverExportStatus : "not_loaded",
+    hashedExportCount: item ? resolverHashedExportCount : 0,
   };
+}
+
+function refreshResolverExports(item) {
+  resolverExports = new Map();
+  resolverHashedExportCount = 0;
+  if (!item) {
+    resolverExportStatus = "not_loaded";
+    return;
+  }
+  try {
+    const entries = item.enumerateExports();
+    for (const entry of entries) {
+      if (!entry || !entry.address) continue;
+      const name = String(entry.name);
+      resolverExports.set(pointerText(entry.address).toLowerCase(), name);
+      if (/^[0-9a-f]{32}$/i.test(name)) resolverHashedExportCount += 1;
+    }
+    resolverExportStatus = "available";
+  } catch (error) {
+    resolverExportStatus = "unavailable";
+    transmit("diagnostic", {
+      diagnostic: { kind: "resolver_export_enumeration_failed", error: String(error) },
+    });
+  }
 }
 
 function findResolverModules() {
@@ -77,12 +118,42 @@ function setResolverIdentity(handle, path, source) {
     return false;
   }
   if (!observedPath && observedModule) observedPath = observedModule.path;
+  if (
+    expectedResolverPath &&
+    normalizedPath(observedPath) !== expectedResolverPath
+  ) {
+    fatal("resolver_module_path_mismatch", {
+      expectedPath: CONFIG.resolverExpectedPath,
+      actualPath: observedPath,
+      source,
+    });
+    return false;
+  }
+  if (expectedResolverSize && observedModule.size !== expectedResolverSize) {
+    fatal("resolver_module_size_mismatch", {
+      expectedSize: expectedResolverSize,
+      actualSize: observedModule.size,
+      source,
+    });
+    return false;
+  }
+  refreshResolverExports(observedModule);
+  if (requireResolverExportEnumeration && resolverExportStatus !== "available") {
+    fatal("resolver_export_enumeration_required", {
+      status: resolverExportStatus,
+      source,
+    });
+    return false;
+  }
   burstIdentity = {
     status: source,
     name: observedModule ? observedModule.name : CONFIG.resolverModuleName,
     path: observedPath,
     base: text,
+    moduleBase: text,
     size: observedModule ? observedModule.size : null,
+    exportEnumerationStatus: resolverExportStatus,
+    hashedExportCount: resolverHashedExportCount,
   };
   return true;
 }
@@ -110,7 +181,10 @@ function discoverResolverIdentity() {
       name: CONFIG.resolverModuleName,
       path: null,
       base: null,
+      moduleBase: null,
       size: null,
+      exportEnumerationStatus: "not_loaded",
+      hashedExportCount: 0,
     };
   }
 }
@@ -208,40 +282,124 @@ function procName(value) {
   }
 }
 
-function gameAssemblyBacktrace(context) {
-  const frames = [];
+function sameGameAssembly(owner) {
+  return Boolean(
+    owner &&
+    gameAssembly &&
+    String(owner.name).toLowerCase() === gameAssemblyName &&
+    ptr(owner.base).equals(ptr(gameAssembly.base)) &&
+    normalizedPath(owner.path) === normalizedPath(gameAssembly.path)
+  );
+}
+
+function frameRecord(address, owner) {
+  return {
+    address: pointerText(address),
+    module: owner ? owner.name : null,
+    modulePath: owner ? owner.path : null,
+    moduleBase: owner ? pointerText(owner.base) : null,
+    moduleSize: owner ? owner.size : null,
+    offset: owner ? pointerText(ptr(address).sub(owner.base)) : null,
+  };
+}
+
+function callerBacktraces(context) {
+  const allFrames = [];
+  const gameFrames = [];
   try {
     const trace = Thread.backtrace(context, Backtracer.ACCURATE);
     for (const address of trace) {
-      if (frames.length >= capture.maxBacktraceFrames) break;
+      if (allFrames.length >= capture.maxBacktraceFrames) break;
       let owner = null;
       try { owner = Process.findModuleByAddress(address); } catch (_) { owner = null; }
-      // Match the verified module instance, not just a basename.  A basename
-      // alone is insufficient if a same-named DLL was loaded from another
-      // directory or a module was replaced while the trace was running.
-      if (
-        !owner ||
-        !gameAssembly ||
-        String(owner.name).toLowerCase() !== gameAssemblyName ||
-        !ptr(owner.base).equals(ptr(gameAssembly.base)) ||
-        String(owner.path).toLowerCase() !== String(gameAssembly.path).toLowerCase()
-      ) continue;
-      frames.push({
-        address: pointerText(address),
-        module: owner.name,
-        modulePath: owner.path,
-        moduleBase: pointerText(owner.base),
-        moduleSize: owner.size,
-        offset: pointerText(ptr(address).sub(owner.base)),
-      });
+      // Unresolved addresses are omitted rather than inventing a module or
+      // offset.  The all-module list remains bounded and every retained frame
+      // carries the module load base and module-relative offset.
+      if (!owner) continue;
+      const frame = frameRecord(address, owner);
+      allFrames.push(frame);
+      if (sameGameAssembly(owner)) gameFrames.push(frame);
     }
     return {
-      status: frames.length ? "gameassembly_frames" : "no_gameassembly_frame",
-      frames,
+      all: allFrames,
+      gameAssembly: gameFrames,
+      allStatus: allFrames.length ? "frames" : "no_resolved_frame",
+      gameStatus: gameFrames.length ? "gameassembly_frames" : "no_gameassembly_frame",
     };
   } catch (error) {
-    return { status: "unavailable", frames, error: String(error) };
+    return {
+      all: allFrames,
+      gameAssembly: gameFrames,
+      allStatus: "unavailable",
+      gameStatus: "unavailable",
+      error: String(error),
+    };
   }
+}
+
+function targetMatches(frames) {
+  const matches = [];
+  for (const frame of frames) {
+    if (!frame || !frame.offset || !frame.moduleBase) continue;
+    for (const target of targetWindows) {
+      for (const window of target.windows || []) {
+        try {
+          const offset = ptr(frame.offset);
+          const start = ptr(window.startOffset);
+          const end = ptr(window.endOffsetExclusive);
+          if (offset.compare(start) >= 0 && offset.compare(end) < 0) {
+            matches.push({
+              targetId: target.id,
+              targetMethodIndex: target.methodIndex,
+              targetMethodName: target.methodName,
+              targetFullName: target.fullName,
+              role: window.role,
+              methodIndex: window.methodIndex,
+              windowStartOffset: window.startOffset,
+              windowEndOffsetExclusive: window.endOffsetExclusive,
+              frameAddress: frame.address,
+              frameOffset: frame.offset,
+            });
+          }
+        } catch (_) {
+          // Manifest validation is performed before rendering.  A malformed
+          // runtime comparison is not evidence and simply yields no match.
+        }
+      }
+    }
+  }
+  return matches;
+}
+
+function resolvedPointer(retval) {
+  if (!retval || retval.isNull()) {
+    return {
+      resolvedAddress: null,
+      resolvedModuleName: null,
+      resolvedModulePath: null,
+      resolvedModuleBase: null,
+      resolvedModuleSize: null,
+      resolvedModuleOffset: null,
+      resolvedExportName: null,
+      resolvedExportStatus: "null_return",
+    };
+  }
+  let owner = null;
+  try { owner = Process.findModuleByAddress(retval); } catch (_) { owner = null; }
+  const address = pointerText(retval);
+  const key = address ? address.toLowerCase() : null;
+  return {
+    resolvedAddress: address,
+    resolvedModuleName: owner ? owner.name : null,
+    resolvedModulePath: owner ? owner.path : null,
+    resolvedModuleBase: owner ? pointerText(owner.base) : null,
+    resolvedModuleSize: owner ? owner.size : null,
+    resolvedModuleOffset: owner ? pointerText(ptr(retval).sub(owner.base)) : null,
+    resolvedExportName: key && resolverExports.has(key) ? resolverExports.get(key) : null,
+    resolvedExportStatus: key && resolverExports.has(key)
+      ? "enumerated"
+      : (resolverExportStatus === "available" ? "not_enumerated" : resolverExportStatus),
+  };
 }
 
 function attachHook(name, spec) {
@@ -274,7 +432,7 @@ function attachHook(name, spec) {
         const nameValue = procName(args[1]);
         this.hModule = pointerText(handle);
         this.lpProcName = nameValue;
-        this.callerBacktrace = gameAssemblyBacktrace(this.context);
+        this.callerBacktraces = callerBacktraces(this.context);
       },
       onLeave(retval) {
         if (name === "loadLibraryW") {
@@ -293,17 +451,37 @@ function attachHook(name, spec) {
             hModule: pointerText(retval),
             loadSucceeded: loaded,
             module: moduleInfo(module, "loadlibraryw"),
+            resolverModuleIdentity: burstIdentity,
           });
           return;
         }
         if (!this.matchingHandle || terminalState || !captureEnabled || capped) return;
+        const backtraces = this.callerBacktraces || {
+          all: [], gameAssembly: [], allStatus: "unavailable", gameStatus: "unavailable",
+        };
+        const matches = targetMatches(backtraces.gameAssembly);
+        const targets = Array.from(new Set(matches.map((entry) => entry.targetId)));
+        const resolved = resolvedPointer(retval);
         record("get_proc_address", {
+          requestOrdinal: resolverRequestOrdinal++,
           hModule: this.hModule,
           lpProcName: this.lpProcName.value,
           lpProcNameType: this.lpProcName.type,
+          requestedExportIsHashed: Boolean(
+            this.lpProcName.type === "name" &&
+            /^[0-9a-f]{32}$/i.test(String(this.lpProcName.value || ""))
+          ),
           returnPointer: pointerText(retval),
-          gameAssemblyCallerBacktrace: this.callerBacktrace.frames,
-          backtraceStatus: this.callerBacktrace.status,
+          resolverModule: burstIdentity,
+          ...resolved,
+          caller: backtraces.all.length ? backtraces.all[0] : null,
+          callerBacktrace: backtraces.all,
+          callerBacktraceStatus: backtraces.allStatus,
+          gameAssemblyCallerBacktrace: backtraces.gameAssembly,
+          backtraceStatus: backtraces.gameStatus,
+          targetWindowMatches: matches,
+          targetAttributionStatus: targets.length ? "target_window_match" : "no_target_window_match",
+          targetAttributionTargets: targets,
           threadId: Process.getCurrentThreadId(),
         });
       },
@@ -372,6 +550,14 @@ transmit("ready", {
     kernel32ModuleName: kernel32 ? kernel32.name : CONFIG.kernel32ModuleName,
     resolverModuleName: CONFIG.resolverModuleName,
     resolverModuleIdentity: burstIdentity,
+    resolverExportEnumerationStatus: resolverExportStatus,
+    resolverHashedExportCount: resolverHashedExportCount,
+    targets: targetWindows.map((target) => ({
+      id: target.id,
+      methodIndex: target.methodIndex,
+      methodName: target.methodName,
+      windowCount: Array.isArray(target.windows) ? target.windows.length : 0,
+    })),
     hooks: hookStates,
     failed,
     maxEvents: capture.maxEvents,

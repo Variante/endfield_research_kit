@@ -6,6 +6,7 @@ import json
 import sys
 import tempfile
 import unittest
+from copy import deepcopy
 from pathlib import Path
 
 TOOLS = Path(__file__).resolve().parent
@@ -44,20 +45,27 @@ class ValidateBurstResolverTelemetryTests(unittest.TestCase):
         add(
             "session_start",
             gameBuild=manifest["gameBuild"],
+            captureTool="frida-burst-resolver-telemetry/test",
             exportFingerprint=manifest["files"]["metadata"]["sha256"],
             verifiedFiles=files,
             kernel32ModuleName=manifest["kernel32ModuleName"],
             resolverModuleName=manifest["resolverModuleName"],
+            nativeEvidenceBoundary=manifest["evidenceBoundary"],
         )
         identity = {
             "status": "already_loaded",
             "name": manifest["resolverModuleName"],
-            "path": "D:/Program Files/Endfield Game/Endfield_Data/Plugins/lib_burst_generated.dll",
+            "path": "D:/Program Files/Endfield Game/Endfield_Data/Plugins/x86_64/lib_burst_generated.dll",
             "base": "0x5000",
-            "size": 123456,
+            "moduleBase": "0x5000",
+            "size": manifest["files"]["resolver"]["bytes"],
+            "exportEnumerationStatus": "available",
+            "hashedExportCount": 628,
         }
         add(
             "native_module_verified",
+            expectedModulePath="D:/Program Files/Endfield Game/GameAssembly.dll",
+            expectedModuleSize=manifest["files"]["gameAssembly"]["bytes"],
             attachedModulePath="D:/Program Files/Endfield Game/GameAssembly.dll",
             attachedModuleSize=manifest["files"]["gameAssembly"]["bytes"],
             modulePathMatch=True,
@@ -67,25 +75,69 @@ class ValidateBurstResolverTelemetryTests(unittest.TestCase):
             kernel32ModuleName=manifest["kernel32ModuleName"],
             resolverModuleName=manifest["resolverModuleName"],
             resolverModuleIdentity=identity,
+            resolverExpectedPath="D:/Program Files/Endfield Game/Endfield_Data/Plugins/x86_64/lib_burst_generated.dll",
+            resolverExpectedSize=manifest["files"]["resolver"]["bytes"],
+            gameAssemblyModuleName=manifest["moduleName"],
+            gameAssemblyModuleBase="0x180000000",
+            gameAssemblyModuleSize=manifest["files"]["gameAssembly"]["bytes"],
+            targets=[
+                {
+                    "id": target["id"],
+                    "methodIndex": target["methodIndex"],
+                    "methodName": target["methodName"],
+                    "windowCount": len(target["windows"]),
+                }
+                for target in manifest["targets"]
+            ],
         )
         add("capture_started", trigger="test")
+        frame = {
+            "address": "0x1867774a4",
+            "module": "GameAssembly.dll",
+            "modulePath": "D:/Program Files/Endfield Game/GameAssembly.dll",
+            "moduleBase": "0x180000000",
+            "moduleSize": manifest["files"]["gameAssembly"]["bytes"],
+            "offset": "0x67774a4",
+        }
+        target = next(target for target in manifest["targets"] if target["id"] == "start_simulation_step_range_kernel")
+        window = next(window for window in target["windows"] if window["role"] == "get_function_pointer_discard")
+        match = {
+            "targetId": target["id"],
+            "targetMethodIndex": target["methodIndex"],
+            "targetMethodName": target["methodName"],
+            "targetFullName": target["fullName"],
+            "role": window["role"],
+            "methodIndex": window["methodIndex"],
+            "windowStartOffset": window["startOffset"],
+            "windowEndOffsetExclusive": window["endOffsetExclusive"],
+            "frameAddress": frame["address"],
+            "frameOffset": frame["offset"],
+        }
         add(
             "get_proc_address",
+            requestOrdinal=0,
             hModule="0x5000",
-            lpProcName="BurstDirectCall_0",
+            lpProcName="0123456789abcdef0123456789abcdef",
             lpProcNameType="name",
+            requestedExportIsHashed=True,
             returnPointer="0x7000",
-            gameAssemblyCallerBacktrace=[
-                {
-                    "address": "0x180123456",
-                    "module": "GameAssembly.dll",
-                    "modulePath": "D:/Program Files/Endfield Game/GameAssembly.dll",
-                    "moduleBase": "0x180000000",
-                    "moduleSize": manifest["files"]["gameAssembly"]["bytes"],
-                    "offset": "0x123456",
-                }
-            ],
+            resolverModule=identity,
+            resolvedAddress="0x7000",
+            resolvedModuleName=manifest["resolverModuleName"],
+            resolvedModulePath=identity["path"],
+            resolvedModuleBase="0x5000",
+            resolvedModuleSize=manifest["files"]["resolver"]["bytes"],
+            resolvedModuleOffset="0x2000",
+            resolvedExportName="0123456789abcdef0123456789abcdef",
+            resolvedExportStatus="enumerated",
+            caller=frame,
+            callerBacktrace=[frame],
+            callerBacktraceStatus="frames",
+            gameAssemblyCallerBacktrace=[frame],
             backtraceStatus="gameassembly_frames",
+            targetWindowMatches=[match],
+            targetAttributionStatus="target_window_match",
+            targetAttributionTargets=[target["id"]],
             threadId=42,
         )
         if stop_ack:
@@ -113,6 +165,61 @@ class ValidateBurstResolverTelemetryTests(unittest.TestCase):
         self.assertFalse(result["claims"]["resolverExportMappingProven"])
         self.assertFalse(result["claims"]["gameStateWritten"])
 
+    def test_all_three_target_windows_are_counted_without_execution_claim(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "trace.jsonl"
+            self._write_trace(path)
+            manifest = telemetry.load_manifest(telemetry.DEFAULT_MANIFEST)
+            rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+            first = next(row for row in rows if row["kind"] == "get_proc_address")
+            extra_events = []
+            for ordinal, target in enumerate(manifest["targets"][1:], start=1):
+                window = target["windows"][0]
+                frame_offset = window["startOffset"]
+                frame = deepcopy(first["caller"])
+                frame["offset"] = frame_offset
+                frame["address"] = hex(int(frame["moduleBase"], 16) + int(frame_offset, 16))
+                match = {
+                    "targetId": target["id"],
+                    "targetMethodIndex": target["methodIndex"],
+                    "targetMethodName": target["methodName"],
+                    "targetFullName": target["fullName"],
+                    "role": window["role"],
+                    "methodIndex": window["methodIndex"],
+                    "windowStartOffset": window["startOffset"],
+                    "windowEndOffsetExclusive": window["endOffsetExclusive"],
+                    "frameAddress": frame["address"],
+                    "frameOffset": frame["offset"],
+                }
+                event = deepcopy(first)
+                event["requestOrdinal"] = ordinal
+                event["caller"] = frame
+                event["callerBacktrace"] = [frame]
+                event["gameAssemblyCallerBacktrace"] = [frame]
+                event["targetWindowMatches"] = [match]
+                event["targetAttributionTargets"] = [target["id"]]
+                extra_events.append(event)
+            get_index = next(index for index, row in enumerate(rows) if row["kind"] == "get_proc_address")
+            rows[get_index:get_index + 1] = [first, *extra_events]
+            stop_ack = next(row for row in rows if row["kind"] == "capture_stop_ack")
+            stop_ack["eventCount"] = 3
+            for seq, row in enumerate(rows):
+                row["seq"] = seq
+            path.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
+            result = validator.validate_trace(path)
+        self.assertEqual(result["hashedExportRequestCount"], 3)
+        self.assertEqual(result["hashedExportRequestsWithTargetAttribution"], 3)
+        self.assertEqual(
+            result["targetWindowObservations"],
+            {
+                "start_simulation_step_range_kernel": 1,
+                "update_step_basic_poture_range_kernel": 1,
+                "end_simulation_step_range_kernel": 1,
+            },
+        )
+        self.assertTrue(result["claims"]["allThreeTargetWindowsObserved"])
+        self.assertFalse(result["claims"]["resolverExportMappingProven"])
+
     def test_null_proc_result_and_failed_load_are_valid_observations(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             path = Path(temp) / "trace.jsonl"
@@ -121,13 +228,25 @@ class ValidateBurstResolverTelemetryTests(unittest.TestCase):
             rows.insert(
                 3,
                 {
-                    **rows[3],
-                    "seq": 3,
+                    key: rows[3][key]
+                    for key in ("schema", "sessionId", "seq", "monotonicMs", "utc")
+                }
+                | {
                     "kind": "resolver_module_loaded",
                     "requestedPath": "D:/Program Files/Endfield Game/Endfield_Data/Plugins/lib_burst_generated.dll",
                     "hModule": "0x0",
                     "loadSucceeded": False,
-                    "module": {"status": "loadlibraryw", "name": None, "path": None, "base": None, "size": None},
+                    "module": {
+                        "status": "loadlibraryw",
+                        "name": None,
+                        "path": None,
+                        "base": None,
+                        "moduleBase": None,
+                        "size": None,
+                        "exportEnumerationStatus": "not_loaded",
+                        "hashedExportCount": 0,
+                    },
+                    "resolverModuleIdentity": rows[1]["resolverModuleIdentity"],
                 },
             )
             for seq, row in enumerate(rows):
@@ -135,7 +254,16 @@ class ValidateBurstResolverTelemetryTests(unittest.TestCase):
             get_proc = next(row for row in rows if row["kind"] == "get_proc_address")
             get_proc["lpProcName"] = None
             get_proc["lpProcNameType"] = "null"
+            get_proc["requestedExportIsHashed"] = False
             get_proc["returnPointer"] = "0x0"
+            get_proc["resolvedAddress"] = None
+            get_proc["resolvedModuleName"] = None
+            get_proc["resolvedModulePath"] = None
+            get_proc["resolvedModuleBase"] = None
+            get_proc["resolvedModuleSize"] = None
+            get_proc["resolvedModuleOffset"] = None
+            get_proc["resolvedExportName"] = None
+            get_proc["resolvedExportStatus"] = "null_return"
             path.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
             result = validator.validate_trace(path)
         self.assertEqual(result["getProcAddressEventCount"], 1)
@@ -165,6 +293,26 @@ class ValidateBurstResolverTelemetryTests(unittest.TestCase):
             rows[3]["gameAssemblyCallerBacktrace"][0]["module"] = "kernel32.dll"
             path.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
             with self.assertRaisesRegex(validator.TraceValidationError, "non-GameAssembly"):
+                validator.validate_trace(path)
+
+    def test_target_window_schema_drift_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "trace.jsonl"
+            self._write_trace(path)
+            rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+            rows[3]["targetWindowMatches"][0]["windowEndOffsetExclusive"] = "0x67775a7"
+            path.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
+            with self.assertRaisesRegex(validator.TraceValidationError, "windowEndOffsetExclusive drifted"):
+                validator.validate_trace(path)
+
+    def test_missing_all_module_caller_schema_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "trace.jsonl"
+            self._write_trace(path)
+            rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+            rows[3].pop("callerBacktrace")
+            path.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
+            with self.assertRaisesRegex(validator.TraceValidationError, "caller backtrace"):
                 validator.validate_trace(path)
 
 

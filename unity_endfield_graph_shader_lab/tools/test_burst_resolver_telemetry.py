@@ -16,15 +16,22 @@ import burst_resolver_telemetry as telemetry  # noqa: E402
 
 
 class BurstResolverTelemetryTests(unittest.TestCase):
-    def test_manifest_pins_three_native_files_and_exact_modules(self) -> None:
+    def test_manifest_pins_four_hash_pinned_files_and_exact_modules(self) -> None:
         manifest = telemetry.load_manifest(telemetry.DEFAULT_MANIFEST)
         self.assertEqual(manifest["schema"], "burstResolverTelemetry.hooks.v1")
         self.assertEqual(manifest["moduleName"], "GameAssembly.dll")
         self.assertEqual(manifest["kernel32ModuleName"], "kernel32.dll")
         self.assertEqual(manifest["resolverModuleName"], "lib_burst_generated.dll")
-        self.assertEqual(set(manifest["files"]), {"executable", "gameAssembly", "metadata"})
+        self.assertEqual(set(manifest["files"]), {"executable", "gameAssembly", "metadata", "resolver"})
         self.assertEqual(manifest["files"]["gameAssembly"]["sha256"], "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce")
         self.assertEqual(manifest["files"]["metadata"]["sha256"], "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e")
+        self.assertEqual(manifest["files"]["resolver"]["sha256"], "ee8702dd63dec2db7dc29d5bc23b8acd032f0e19a0daad5f69e6c45f9d3ceb99")
+        self.assertEqual({target["id"] for target in manifest["targets"]}, telemetry.TARGET_IDS)
+        for target in manifest["targets"]:
+            self.assertEqual(
+                {window["role"] for window in target["windows"]},
+                telemetry.TARGET_WINDOW_ROLES,
+            )
 
     def test_rendered_agent_is_observation_only_and_has_required_apis(self) -> None:
         rendered = telemetry.render_agent_source(
@@ -35,6 +42,9 @@ class BurstResolverTelemetryTests(unittest.TestCase):
         self.assertIn("LoadLibraryW", rendered)
         self.assertIn("GetProcAddress", rendered)
         self.assertIn("gameAssemblyCallerBacktrace", rendered)
+        self.assertIn("callerBacktrace", rendered)
+        self.assertIn("targetWindowMatches", rendered)
+        self.assertIn("resolvedExportName", rendered)
         self.assertIn("readAnsiString", rendered)
         self.assertIn("loadlibrary_path_unterminated", rendered)
         identity = rendered.index('setResolverIdentity(retval, module ? module.path : this.requestedPath, "loadlibraryw")')
@@ -59,13 +69,40 @@ class BurstResolverTelemetryTests(unittest.TestCase):
                 with patch.object(
                     telemetry.core,
                     "verify_game_files",
-                    return_value={"gameAssembly": root / "GameAssembly.dll"},
+                    return_value={
+                        "gameAssembly": root / "GameAssembly.dll",
+                        "resolver": root / "Endfield_Data/Plugins/x86_64/lib_burst_generated.dll",
+                    },
                 ):
                     with patch.object(telemetry.core, "load_frida", side_effect=AssertionError("attach ran")):
                         self.assertEqual(
                             telemetry.main(["--check-only", "--game-root", str(root)]),
                             0,
                         )
+
+    def test_resolver_handshake_rejects_path_or_size_drift(self) -> None:
+        manifest = telemetry.load_manifest(telemetry.DEFAULT_MANIFEST)
+        expected = Path("D:/Program Files/Endfield Game/Endfield_Data/Plugins/x86_64/lib_burst_generated.dll")
+        identity = {
+            "status": "already_loaded",
+            "name": expected.name,
+            "path": str(expected),
+            "size": manifest["files"]["resolver"]["bytes"],
+            "base": "0x5000",
+            "moduleBase": "0x5000",
+        }
+        telemetry.validate_resolver_handshake(
+            {"resolverModuleIdentity": identity},
+            expected,
+            manifest["files"]["resolver"]["bytes"],
+        )
+        identity["path"] = "D:/other/lib_burst_generated.dll"
+        with self.assertRaisesRegex(RuntimeError, "does not match"):
+            telemetry.validate_resolver_handshake(
+                {"resolverModuleIdentity": identity},
+                expected,
+                manifest["files"]["resolver"]["bytes"],
+            )
 
     def test_native_gate_mismatch_refuses_before_executable_gate(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
