@@ -49,10 +49,7 @@
     "labActorsWithoutVideo": [
       "endminm",
       "laevat"
-    ],
-    "actorAlias": {
-      "endmin": "endminf"
-    }
+    ]
   },
   "modelSwapMinusSettleSeconds": {
     "note": "Character-band spike minus panel settle, for character switches. It is not a constant, so the panel settle is not a reliable stand-in for animation t=0. Where bandPeakRatio is large the spike is unambiguous and is the better estimate; the spread bounds the residual phase uncertainty.",
