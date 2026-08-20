@@ -19,6 +19,7 @@ retry path is provided.
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 import threading
 import time
@@ -41,6 +42,19 @@ EVENT_SCHEMA = "burstResolverTelemetry.event.v1"
 MANIFEST_SCHEMA = "burstResolverTelemetry.hooks.v1"
 AGENT_PLACEHOLDER = "__BURST_RESOLVER_TRACE_CONFIG__"
 DEFAULT_OUTPUT_ROOT = ROOT / "scratch/reverse_engineering/burst_resolver_telemetry"
+TARGET_IDS = {
+    "start_simulation_step_range_kernel",
+    "update_step_basic_poture_range_kernel",
+    "end_simulation_step_range_kernel",
+}
+TARGET_WINDOW_ROLES = {
+    "constructor",
+    "static_constructor",
+    "initializer",
+    "get_function_pointer_discard",
+    "get_function_pointer",
+    "invoke",
+}
 
 CaptureConfigurationError = core.CaptureConfigurationError
 
@@ -99,9 +113,9 @@ def load_manifest(path: Path) -> dict[str, Any]:
         )
 
     files = manifest.get("files")
-    if not isinstance(files, dict) or set(files) != {"executable", "gameAssembly", "metadata"}:
+    if not isinstance(files, dict) or set(files) != {"executable", "gameAssembly", "metadata", "resolver"}:
         raise CaptureConfigurationError(
-            "manifest files must contain exactly executable, gameAssembly, and metadata"
+            "manifest files must contain exactly executable, gameAssembly, metadata, and resolver"
         )
     for name, spec in files.items():
         if not isinstance(spec, dict):
@@ -141,13 +155,55 @@ def load_manifest(path: Path) -> dict[str, Any]:
         raise CaptureConfigurationError("capture bounds are too large")
     if capture.get("requireAllHooks") is not True or capture.get("gameAssemblyOnlyBacktrace") is not True:
         raise CaptureConfigurationError("capture must require all hooks and GameAssembly-only backtraces")
+    if capture.get("includeAllModuleBacktrace") is not True:
+        raise CaptureConfigurationError("capture must include the bounded all-module caller backtrace")
+    if not isinstance(capture.get("requireResolverExportEnumeration"), bool):
+        raise CaptureConfigurationError("capture requireResolverExportEnumeration must be boolean")
+
+    targets = manifest.get("targets")
+    if not isinstance(targets, list) or len(targets) != len(TARGET_IDS) or {target.get("id") for target in targets if isinstance(target, dict)} != TARGET_IDS:
+        raise CaptureConfigurationError("manifest targets must contain exactly the three pinned Burst range targets")
+    for target in targets:
+        if not isinstance(target, dict):
+            raise CaptureConfigurationError("each manifest target must be an object")
+        target_id = target.get("id")
+        if not isinstance(target_id, str) or target_id not in TARGET_IDS:
+            raise CaptureConfigurationError(f"invalid Burst target id: {target_id!r}")
+        if isinstance(target.get("methodIndex"), bool) or not isinstance(target.get("methodIndex"), int) or target["methodIndex"] <= 0:
+            raise CaptureConfigurationError(f"target {target_id} methodIndex is invalid")
+        for key in ("methodName", "fullName"):
+            if not isinstance(target.get(key), str) or not target[key].strip():
+                raise CaptureConfigurationError(f"target {target_id} {key} is invalid")
+        windows = target.get("windows")
+        if not isinstance(windows, list) or {window.get("role") for window in windows if isinstance(window, dict)} != TARGET_WINDOW_ROLES:
+            raise CaptureConfigurationError(f"target {target_id} must contain exactly the pinned wrapper/initializer windows")
+        roles: set[str] = set()
+        for window in windows:
+            if not isinstance(window, dict):
+                raise CaptureConfigurationError(f"target {target_id} window must be an object")
+            role = window.get("role")
+            if not isinstance(role, str) or role in roles or role not in TARGET_WINDOW_ROLES:
+                raise CaptureConfigurationError(f"target {target_id} window role is invalid: {role!r}")
+            roles.add(role)
+            if isinstance(window.get("methodIndex"), bool) or not isinstance(window.get("methodIndex"), int) or window["methodIndex"] <= 0:
+                raise CaptureConfigurationError(f"target {target_id} {role} methodIndex is invalid")
+            for key in ("startOffset", "endOffsetExclusive"):
+                value = window.get(key)
+                if not isinstance(value, str) or not re.fullmatch(r"0x[0-9a-fA-F]+", value):
+                    raise CaptureConfigurationError(f"target {target_id} {role} {key} is invalid")
+            if int(window["startOffset"], 16) >= int(window["endOffsetExclusive"], 16):
+                raise CaptureConfigurationError(f"target {target_id} {role} window is empty or inverted")
     boundary = manifest.get("evidenceBoundary")
     if not isinstance(boundary, dict) or not isinstance(boundary.get("nonClaims"), list) or not boundary["nonClaims"]:
         raise CaptureConfigurationError("manifest evidenceBoundary.nonClaims must be non-empty")
     return manifest
 
 
-def render_agent_source(path: Path, manifest: dict[str, Any]) -> str:
+def render_agent_source(
+    path: Path,
+    manifest: dict[str, Any],
+    resolver_expected_path: Path | None = None,
+) -> str:
     return core.render_agent_template(
         path,
         AGENT_PLACEHOLDER,
@@ -158,6 +214,9 @@ def render_agent_source(path: Path, manifest: dict[str, Any]) -> str:
             "resolverModuleName": manifest["resolverModuleName"],
             "hooks": manifest["hooks"],
             "capture": manifest["capture"],
+            "targets": manifest["targets"],
+            "resolverExpectedPath": str(resolver_expected_path.resolve()) if resolver_expected_path else None,
+            "resolverExpectedSize": manifest["files"]["resolver"]["bytes"],
         },
         "Burst resolver telemetry",
     )
@@ -174,6 +233,44 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--duration", type=float, help="capture duration after the start trigger")
     parser.add_argument("--start-immediately", action="store_true")
     parser.add_argument("--check-only", action="store_true")
+
+
+def validate_resolver_handshake(
+    ready_payload: dict[str, Any],
+    expected_resolver: Path,
+    expected_size: int,
+) -> None:
+    """Fail closed when an already-loaded resolver is not the pinned file."""
+
+    identity = ready_payload.get("resolverModuleIdentity")
+    if not isinstance(identity, dict) or identity.get("base") is None:
+        return
+    actual_path = identity.get("path")
+    actual_size = identity.get("size")
+    actual_name = identity.get("name")
+    actual_base = identity.get("base")
+    actual_module_base = identity.get("moduleBase")
+    if not isinstance(actual_name, str) or actual_name.casefold() != expected_resolver.name.casefold():
+        raise RuntimeError("agent reported an unexpected already-loaded resolver module name")
+    if not isinstance(actual_path, str) or not actual_path.strip():
+        raise RuntimeError("agent did not report the already-loaded resolver module path")
+    if (
+        not isinstance(actual_base, str)
+        or not re.fullmatch(r"0x[0-9a-fA-F]+", actual_base)
+        or actual_base.casefold() in {"0x0", "0x0000000000000000"}
+        or actual_module_base != actual_base
+    ):
+        raise RuntimeError("agent did not report a valid already-loaded resolver module base")
+    if core.normalized_path(actual_path) != core.normalized_path(expected_resolver):
+        raise RuntimeError(
+            "attached resolver module does not match the hash-verified resolver: "
+            f"expected={expected_resolver}, got={actual_path}"
+        )
+    if isinstance(actual_size, bool) or not isinstance(actual_size, int) or actual_size != expected_size:
+        raise RuntimeError(
+            "attached resolver module size does not match the hash-verified resolver: "
+            f"expected={expected_size}, got={actual_size}"
+        )
 
 
 def run_capture(
@@ -295,6 +392,11 @@ def run_capture(
         if fatal_values:
             raise RuntimeError(f"Burst resolver hooks refused to start: {fatal_values[0]}")
         module_facts = core.validate_attached_module(ready_payload, verified["gameAssembly"])
+        validate_resolver_handshake(
+            ready_payload,
+            verified["resolver"],
+            manifest["files"]["resolver"]["bytes"],
+        )
         if ready_payload.get("kernel32ModuleName", "").casefold() != manifest["kernel32ModuleName"].casefold():
             raise RuntimeError("agent did not confirm the expected kernel32 module")
         if ready_payload.get("resolverModuleName", "").casefold() != manifest["resolverModuleName"].casefold():
@@ -314,6 +416,12 @@ def run_capture(
                 "kernel32ModuleName": ready_payload["kernel32ModuleName"],
                 "resolverModuleName": ready_payload["resolverModuleName"],
                 "resolverModuleIdentity": ready_payload.get("resolverModuleIdentity"),
+                "resolverExpectedPath": str(verified["resolver"].resolve()),
+                "resolverExpectedSize": manifest["files"]["resolver"]["bytes"],
+                "gameAssemblyModuleName": ready_payload.get("moduleName"),
+                "gameAssemblyModuleBase": ready_payload.get("moduleBase"),
+                "gameAssemblyModuleSize": ready_payload.get("moduleSize"),
+                "targets": ready_payload.get("targets"),
             },
         )
         if args.start_immediately:
@@ -397,7 +505,9 @@ def main(argv: list[str] | None = None) -> int:
         game_root = args.game_root.resolve()
         verify_pinned_native_gate(game_root, manifest)
         verified = core.verify_game_files(game_root, manifest)
-        agent_source = render_agent_source(args.agent.resolve(), manifest)
+        agent_source = render_agent_source(
+            args.agent.resolve(), manifest, verified["resolver"]
+        )
         print(
             f"Verified {manifest['gameBuild']}: "
             + ", ".join(f"{name}={path.name}" for name, path in verified.items()),
