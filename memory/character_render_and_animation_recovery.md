@@ -1175,14 +1175,20 @@ numeric solver, and public-Unity execution therefore remain inadmissible.
 The next static layer now closes all 150 direct fields across the six large
 job element types used by the priority solver path: TeamData, CenterData,
 ClothParameters, Collider WorkData, TeamWindData, and WindData. Nested value
-types and generic interiors remain explicit boundaries. The indexed managed
-fallback Execute bodies independently confirm selected raw-buffer job offsets,
-element strides, and field displacements; dispatch and UnsafeDo rows that only
-forward into Burst remain classified as wrappers. A read-only payload decoder
-also validates the current selection data and maps all 334 prebuild Transform
-PPtrs (333 unique hierarchy rows plus one explicit null), while preserving
-arrays without a proven stride as raw semantic gaps. None of these contracts
-instantiate a solver or modify a Transform.
+types remain boundaries except for the helper-accessed direct layouts now
+closed for SpringConstraintParams, WindParams, TeamWindInfo, double3,
+quaternion, and float3; generic interiors remain unresolved. The indexed
+managed fallback Execute bodies independently confirm selected raw-buffer job
+offsets, element strides, and field displacements, while fixed-build Spring,
+Wind, and WindForceBlend contracts now decode their branch conditions,
+constants, memory access direction, canonical job-array ownership, element
+displacements, call setup, and bounded result writes. Dispatch and UnsafeDo
+rows that only forward into Burst remain classified as wrappers. A read-only
+payload decoder also validates the current selection data and maps all 334
+prebuild Transform PPtrs (333 unique hierarchy rows plus one explicit null),
+while preserving arrays without a proven stride as raw semantic gaps. None of
+these contracts recover the Burst kernel, instantiate a solver, prove retail
+execution, or modify a Transform.
 
 The installed client does contain its original `lib_burst_generated.dll`, but
 that is not a drop-in public-Unity plugin: its hashed exports are resolved
