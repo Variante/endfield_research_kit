@@ -48,6 +48,7 @@
     selected: "",
     kinds: new Set(),
     subKinds: new Set(),
+    mapLayers: new Set(), // raw UILevelMapLoadConfig tier ids in the loaded region
     storyOnly: false,
     mission: "", // "" means every mission this level hosts
     // Relation lines are cliques: every pair of markers sharing a level-script
@@ -75,6 +76,7 @@
     edges: [],
     payloads: new Map(), // levelId -> payload; siblings of a region share the cache
     backgrounds: [], // every region zone's map screen, in draw order (selected last)
+    layerBackgrounds: [], // transparent tier overlays, kept separate from base screens
     contentBox: null, // plotted content extent in viewBox units, for the pan clamp
     lastNodeScale: null, // skip per-node writes while a pan keeps the same scale
     loadRequest: 0,
@@ -130,6 +132,21 @@
   const allSubKinds = (map) => new Set(
     Object.values(map?.facets?.kinds || {}).flatMap((info) => Object.keys(info.subKinds || {}))
   );
+
+  const allMapLayers = (map) => new Set(
+    (map?.mapLayers || []).map((row) => String(row.id)).filter(Boolean)
+  );
+
+  const mapLayerTreeHtml = (data) => {
+    const layers = data.mapLayers || [];
+    if (!layers.length) return `<p class="mr-note">${esc(t("mapLayersNone"))}</p>`;
+    return layers.map((layer) => {
+      const label = layer.nameKey || String(layer.tierId ?? layer.id);
+      const range = layer.heightRange && Number.isFinite(Number(layer.heightRange.minY))
+        ? ` · Y ${Number(layer.heightRange.minY).toFixed(1)}..${Number(layer.heightRange.maxY).toFixed(1)}` : "";
+      return `<label class="mr-layer" title="${esc(`${label}${range}`)}"><input type="checkbox" data-map-tier="${esc(layer.id)}" ${state.mapLayers.has(String(layer.id)) ? "checked" : ""}>${esc(label)}<span class="mr-layer-count">${layer.tileCount || 0}</span></label>`;
+    }).join("");
+  };
 
   // A full region can contain thousands of entity markers. Keep the first
   // view useful (quest points plus markers that carry dialog) without asking
@@ -253,6 +270,8 @@
     en: {
       title: "Map Recovery",
       layers: "Layers",
+      mapLayers: "Map floors",
+      mapLayersNone: "No tier overlays are declared by this level's UILevelMapLoadConfig.",
       evidence: "Evidence",
       controls: "Controls",
       collapse: "Collapse panel",
@@ -342,9 +361,12 @@
       minimapLayer: "layer",
       scene3d: "Recovered 3D models",
       scene3dHint: "Open a representative OBJ in the existing Assets 3D viewer. Mesh placement is inferred and diagnostic only.",
+      scene3dUnplacedHint: "These level-matched OBJ exports have no recovered scene transform. Open them in Assets for inspection; they are not placed on this map.",
       scene3dUnavailable: "No safe OBJ model is published for this level; the map stays marker-only.",
     },
     zh: {
+      mapLayers: "地图楼层",
+      mapLayersNone: "该关卡的 UILevelMapLoadConfig 未声明楼层叠图。",
       layerSelectionHint: "\u9ed8\u8ba4\u4ec5\u663e\u793a\u542b\u5bf9\u8bdd\u7684\u56fe\u5c42\u3002\u8bf7\u4f7f\u7528\u6309\u94ae\u6216\u56fe\u5c42\u6807\u7b7e\u9009\u62e9\u8981\u663e\u793a\u7684\u5185\u5bb9\u3002",
       loadError: "\u65e0\u6cd5\u52a0\u8f7d\u5730\u56fe\u6062\u590d\u6570\u636e",
       retry: "\u91cd\u8bd5",
@@ -1031,12 +1053,17 @@
     // no mission of its own is level art: it is only shown when no mission is
     // selected, because claiming it for the selected mission would be a lie.
     const inMission = (row) => !state.mission || (row.missions || []).includes(state.mission);
+    const inMapLayer = (row) => {
+      const ids = row.mapLayerIds || [];
+      return ids.length ? ids.some((id) => state.mapLayers.has(id)) : true;
+    };
     const questRows = (data.questPoints || [])
-      .filter(inMission)
+      .filter((row) => inMission(row) && inMapLayer(row))
       .map((row) => ({ ...row, type: "quest", position: finitePosition(row.position) }))
       .filter((row) => row.position);
     const markerRows = (data.markers || [])
       .filter((row) => state.kinds.has(row.kind) && state.subKinds.has(row.subKind || row.kind) && inMission(row))
+      .filter(inMapLayer)
       .filter((row) => !state.storyOnly || Number(row.storyCount || 0) > 0)
       .map((row) => ({ ...row, type: "marker", position: finitePosition(row.position) }))
       .filter((row) => row.position);
@@ -1132,7 +1159,7 @@
     // which is what makes the surfaces tile into one seamless region: the
     // neighbours are drawn first, the selected zone on top, and no outline is
     // drawn between them.
-    const bgRects = state.backgrounds
+    const bgRects = [...state.backgrounds, ...state.layerBackgrounds.filter((bg) => state.mapLayers.has(bg.id))]
       .filter((bg) => ["minX", "maxX", "minZ", "maxZ"].every((key) => Number.isFinite(Number(bg.worldBounds?.[key]))))
       .map((bg) => {
         const x = viewX + (Number(bg.worldBounds.minX) - minX) * fitScale;
@@ -1194,6 +1221,7 @@
     }).join("");
 
     const layerControls = layerTreeHtml(data);
+    const mapLayerControls = mapLayerTreeHtml(data);
     const missionControls = missionSelectHtml(data);
     const unlinked = (data.unlinkedMissionFiles || []).filter((path) => String(path || "").trim()).sort((a, b) => a.localeCompare(b));
     const unresolvedSlots = data.unresolvedTriggerSlots || { count: 0 };
@@ -1203,15 +1231,22 @@
       || state.index?.maps?.filter((row) => regionKey(row.id) === regionKey(state.selected)).length
       || state.backgrounds.length;
     const surfaceLabel = state.backgrounds.length < regionLevelCount ? t("selectedSurface") : t("regionSurface");
-    const scene = bg.modelScene && typeof bg.modelScene === "object" ? bg.modelScene : {};
+    // A minimap may be authoritative for the surface while the render
+    // background carries only an asset-only OBJ fallback (base01 is the
+    // common case). Prefer a spatial HLOD scene when present, then retain the
+    // unplaced Assets links instead of hiding them behind the minimap choice.
+    const scene = bg.modelScene && typeof bg.modelScene === "object"
+      ? bg.modelScene
+      : (minimapBg.modelScene && typeof minimapBg.modelScene === "object" ? minimapBg.modelScene : {});
     const sceneMeshes = Array.isArray(scene.meshes) ? scene.meshes.filter((row) => row && row.assetRel) : [];
     const sceneFiles = sceneMeshes.slice(0, 6).map((row) => {
       const rel = String(row.assetRel || "");
       const href = `?asset=${encodeURIComponent(rel)}#assets`;
       return `<li><a href="${esc(href)}">${esc(row.name || rel)}</a></li>`;
     }).join("");
+    const sceneHint = scene.positionStatus === "unplaced" ? t("scene3dUnplacedHint") : t("scene3dHint");
     const sceneBlock = sceneMeshes.length
-      ? `<details><summary>${esc(`${t("scene3d")} (${scene.meshCount || sceneMeshes.length})`)}</summary><p class="mr-note">${esc(t("scene3dHint"))}</p><ul class="mr-file-list">${sceneFiles}</ul></details>`
+      ? `<details><summary>${esc(`${t("scene3d")} (${scene.meshCount || sceneMeshes.length})`)}</summary><p class="mr-note">${esc(sceneHint)}</p><ul class="mr-file-list">${sceneFiles}</ul></details>`
       : `<p class="mr-note"><code>${esc(scene.status || "obj_cluster_files_unavailable")}</code> ${esc(t("scene3dUnavailable"))}</p>`;
 
     host.innerHTML = `<style id="map-recovery-edge-style"></style>
@@ -1265,6 +1300,7 @@
              <button type="button" data-map-layers="story">${esc(t("layersStory"))}</button>
            </div>
            <p class="mr-note mr-layer-selection-hint">${esc(t("layerSelectionHint"))}</p>
+           ${data.mapLayers?.length ? `<h2>${esc(t("mapLayers"))}</h2><div class="mr-layer-actions"><button type="button" data-map-elevation="all">${esc(t("layersAll"))}</button><button type="button" data-map-elevation="none">${esc(t("layersNone"))}</button></div><div class="mr-layers">${mapLayerControls}</div>` : ""}
            <h2>${esc(t("relations"))}</h2>
           <div class="mr-layer-actions" role="group" aria-label="${esc(t("relations"))}">
             ${["focus", "all", "off"].map((mode) => `<button type="button" data-map-relations="${mode}" aria-pressed="${state.relations === mode ? "true" : "false"}">${esc(t(`relations_${mode}`))}</button>`).join("")}
@@ -1379,6 +1415,14 @@
       const checked = [...host.querySelectorAll("[data-map-subkind]:checked")].map((row) => row.dataset.mapSubkind);
       state.subKinds = new Set([...[...state.subKinds].filter((key) => !shown.has(key)), ...checked]);
       scheduleRender();
+    }));
+    host.querySelectorAll("[data-map-tier]").forEach((input) => input.addEventListener("change", () => {
+      state.mapLayers = new Set([...host.querySelectorAll("[data-map-tier]:checked")].map((row) => row.dataset.mapTier));
+      scheduleRender();
+    }));
+    host.querySelectorAll("[data-map-elevation]").forEach((button) => button.addEventListener("click", () => {
+      state.mapLayers = button.dataset.mapElevation === "all" ? allMapLayers(state.map) : new Set();
+      render();
     }));
     host.querySelectorAll("[data-map-relations]").forEach((button) => button.addEventListener("click", () => {
       state.relations = button.dataset.mapRelations;
@@ -1629,13 +1673,21 @@
     const unplacedReasons = {};
     const unresolved = [];
     const backgrounds = [];
+    const mapLayers = [];
+    const layerBackgrounds = [];
     let pinnedFileCount = 0;
     let exactProxyCount = 0;
     for (const member of members) {
       const payload = member.payload;
       if (!payload) continue;
-      for (const row of payload.questPoints || []) questPoints.push({ ...row, levelId: member.id });
-      for (const row of payload.markers || []) markers.push({ ...row, levelId: member.id });
+      for (const row of payload.questPoints || []) questPoints.push({ ...row, levelId: member.id, mapLayerIds: (row.mapLayerIds || []).map((id) => `${member.id}:${id}`) });
+      for (const row of payload.markers || []) markers.push({ ...row, levelId: member.id, mapLayerIds: (row.mapLayerIds || []).map((id) => `${member.id}:${id}`) });
+      for (const layer of payload.mapConfig?.layers || []) {
+        const id = `${member.id}:${layer.id}`;
+        mapLayers.push({ ...layer, id, levelId: member.id });
+        const rendered = (payload.minimap?.layers || []).find((row) => row.id === layer.id);
+        if (rendered?.src && rendered.worldBounds) layerBackgrounds.push({ ...rendered, id, levelId: member.id });
+      }
       (payload.unlinkedMissionFiles || []).forEach((path) => { if (path) unlinked.add(path); });
       pinnedFileCount += payload.pinnedFileCount || 0;
       exactProxyCount += payload.npcCoverage?.exactProxyCount || 0;
@@ -1672,8 +1724,10 @@
     // order with the selected zone last, on top of everything else.
     backgrounds.sort((a, b) => ((a.levelId === selectedId ? 1 : 0) - (b.levelId === selectedId ? 1 : 0)) || a.levelId.localeCompare(b.levelId));
     state.backgrounds = backgrounds;
+    state.layerBackgrounds = layerBackgrounds;
     return {
       ...selected,
+      mapLayers,
       questPoints,
       markers,
       facets: { kinds, missions },
@@ -1739,6 +1793,15 @@
     // explicit user choices.
     state.kinds = storyKinds(state.map);
     state.subKinds = allSubKinds(state.map);
+    // Multi-floor maps must not begin as a stack of every transparent tier.
+    // Start on one authored floor and let the reader opt into comparisons.
+    // Prefer the selected sub-map's first authored tier even though region
+    // members are merged in stable id order for rendering and caching.
+    const initialMapLayer = state.map.mapLayers?.find((row) => row.levelId === state.selected)
+      || state.map.mapLayers?.[0];
+    state.mapLayers = initialMapLayer
+      ? new Set([String(initialMapLayer.id)])
+      : new Set();
     state.storyOnly = true;
     state.mission = "";
     state.transform = { x: 0, y: 0, scale: 1 };

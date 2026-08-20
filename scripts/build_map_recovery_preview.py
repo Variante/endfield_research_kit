@@ -722,6 +722,13 @@ def main() -> int:
     parser.add_argument("--level", action="append", default=[], help="build only these level ids (repeatable)")
     args = parser.parse_args()
 
+    # Asset export is optional in the canonical WebUI rebuild. A missing
+    # AssetMap must leave marker/minimap data usable rather than turning the
+    # diagnostic HLOD stage into a hard failure.
+    if not args.asset_map.is_file():
+        print(f"map previews: skipped - AssetMap not found: {args.asset_map}")
+        return 0
+
     index = load_hlod_index(args.asset_map, args.hlod_index, args.refresh_index)
     mesh_files = mesh_file_index(args.mesh_root)
     only = set(args.level)

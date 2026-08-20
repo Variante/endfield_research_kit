@@ -59,10 +59,18 @@ LEVEL_DESC_REL = "export_full/structured/StreamingAssets/Table/LevelDescTable.js
 I18N_TEXT_REL = "export_full/structured/StreamingAssets/Table/I18nTextTable_{0}.json"
 MAP_UI_CONFIG_DIR = "export_full/structured/StreamingAssets/Data/Json/UILevelMapLoadConfig"
 MAP_TILE_DIR = "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D"
+MODEL_ROOT_REL = "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Mesh"
 
 OUT = ROOT / "webui/data/map_recovery"
 MAP_LEVEL_ID = "indie_dg002"
 MISSION_RUNTIME_ASSET = f"{MISSION_RUNTIME_DIR}/e0m0.json"
+
+# An OBJ whose filename contains a level id is useful for inspection in the
+# Assets viewer, but it is not a scene placement record. Keep this fallback
+# deliberately separate from the HLOD scene contract: a level-matched model
+# must never acquire a fabricated translation just because it was exported.
+MAX_UNPLACED_MODEL_ASSETS = 24
+_MODEL_ASSET_INDEX: dict[Path, list[Path]] = {}
 
 # A level id is encoded into the leading digits of every registry id it owns.
 # `indie_dg002` has idNum 87, so its entities are 8_700_000_000 upward.
@@ -1159,6 +1167,340 @@ def _minimap_tiles(layer: str, level_id: str) -> dict[tuple[int, int], Path]:
     return {cell: root / sorted(names)[0] for cell, names in by_cell.items()}
 
 
+def _minimap_tier_tiles(layer: str, level_id: str, tier_id: str) -> dict[tuple[int, int], Path]:
+    """Return exported transparent map-layer art for one config tier.
+
+    Tier images use the same cell coordinates as the base map image, but carry
+    ``_tier_<tierId>`` before the PathID suffix.  Keeping this selector
+    separate from :func:`_minimap_tiles` is important: a base tile and a tier
+    overlay are different map layers, not near-duplicate variants of one tile.
+    """
+    root = ROOT / MAP_TILE_DIR
+    if not root.is_dir():
+        return {}
+    pattern = re.compile(
+        rf"^{layer}_{re.escape(level_id)}_(\d+)_(\d+)_tier_{re.escape(str(tier_id))}_p[0-9A-Fa-f]+\.png$"
+    )
+    by_cell: dict[tuple[int, int], list[str]] = {}
+    for name in os.listdir(root):
+        match = pattern.match(name)
+        if match:
+            by_cell.setdefault((int(match.group(1)), int(match.group(2))), []).append(name)
+    return {cell: root / sorted(names)[0] for cell, names in by_cell.items()}
+
+
+def _world_rect(row: object) -> tuple[float, float, float, float] | None:
+    """Read one config rectangle as ``(left, bottom, right, top)``."""
+    if not isinstance(row, dict):
+        return None
+    left_bottom = row.get("worldLeftBottom") or {}
+    right_top = row.get("worldRightTop") or {}
+    values = (left_bottom.get("x"), left_bottom.get("y"), right_top.get("x"), right_top.get("y"))
+    if not all(isinstance(value, (int, float)) and not isinstance(value, bool) for value in values):
+        return None
+    left, bottom, right, top = map(float, values)
+    if right <= left or top <= bottom:
+        return None
+    return left, bottom, right, top
+
+
+def _config_tier_rows(config: dict) -> dict[str, list[dict]]:
+    """Group ``tierInfos`` by tier id, retaining the raw cell rectangles.
+
+    ``tierNames`` is the source of truth for which layers the game exposes;
+    ``tierInfos`` is the source of truth for where each layer image belongs.
+    There is deliberately no visual/manual tier list here.
+    """
+    names = config.get("tierNames") or {}
+    infos = config.get("tierInfos") or {}
+    if not isinstance(names, dict) or not isinstance(infos, dict):
+        return {}
+    rows: dict[str, list[dict]] = {str(tier_id): [] for tier_id in names}
+    for raw in infos.values():
+        if not isinstance(raw, dict) or raw.get("tierId") is None:
+            continue
+        tier_id = str(raw.get("tierId"))
+        if tier_id not in rows:
+            continue
+        rect = _world_rect(raw)
+        if not rect:
+            continue
+        load_id = str(raw.get("tierLoadId") or "")
+        match = re.match(r"^(?P<layer>[mhl])_[^_]+(?:_[^_]+)*_(?P<x>\d+)_(?P<y>\d+)_tier_", load_id)
+        row = {"rect": rect, "loadId": load_id}
+        if match:
+            row.update({"layer": match.group("layer"), "x": int(match.group("x")), "y": int(match.group("y"))})
+        rows[tier_id].append(row)
+    return {tier_id: rows[tier_id] for tier_id in rows if rows[tier_id]}
+
+
+def _union_rects(rects: Iterable[tuple[float, float, float, float] | None]) -> dict[str, float] | None:
+    # Configs for focused/unit-test levels may omit worldRect entirely. A
+    # missing rectangle is absence of evidence, not a zero-sized extent.
+    values = [row for row in rects if row is not None]
+    if not values:
+        return None
+    return {
+        "minX": min(row[0] for row in values),
+        "maxX": max(row[2] for row in values),
+        "minZ": min(row[1] for row in values),
+        "maxZ": max(row[3] for row in values),
+    }
+
+
+def _point_in_rect(position: dict, rect: tuple[float, float, float, float]) -> bool:
+    x, z = position.get("x"), position.get("z")
+    return isinstance(x, (int, float)) and isinstance(z, (int, float)) and rect[0] <= x <= rect[2] and rect[1] <= z <= rect[3]
+
+
+def _map_ui_config(level_id: str) -> dict:
+    """Load the level's map-UI config, or an empty config when it is absent.
+
+    ``UILevelMapLoadConfig`` is optional for private/dungeon scenes.  Keeping
+    the read in one helper makes the coordinate contract explicit and lets the
+    static-element and tile builders use exactly the same source file.
+    """
+    return _load_json(ROOT / f"{MAP_UI_CONFIG_DIR}/{level_id}.json", {}) or {}
+
+
+def _map_ui_world_bounds(config: dict) -> dict[str, float] | None:
+    """Return the authored map-UI world rectangle as X/Z bounds."""
+    basic = config.get("basic") or {}
+    left_bottom = basic.get("worldRectLeftBottom") or {}
+    right_top = basic.get("worldRectRightTop") or {}
+    values = (left_bottom.get("x"), left_bottom.get("y"), right_top.get("x"), right_top.get("y"))
+    if not all(isinstance(value, (int, float)) and not isinstance(value, bool) for value in values):
+        return None
+    left, bottom, right, top = map(float, values)
+    if right <= left or top <= bottom:
+        return None
+    return {"minX": left, "maxX": right, "minZ": bottom, "maxZ": top}
+
+
+def _map_ui_static_elements(level_id: str) -> dict:
+    """Publish authored map-screen points in the same world X/Z space.
+
+    These are not registry entities: ``staticElements`` contains location-tip
+    and level-transition points owned by the map UI itself.  They are useful as
+    an independent alignment witness, so keep their exact source identity and
+    do not turn them into semantic/entity markers.
+    """
+    config = _map_ui_config(level_id)
+    source = f"{MAP_UI_CONFIG_DIR}/{level_id}.json" if config else None
+    basic = config.get("basic") or {}
+    rows: list[dict] = []
+    static = config.get("staticElements") or {}
+    values = static.items() if isinstance(static, dict) else enumerate(static)
+    for key, raw in values:
+        if not isinstance(raw, dict):
+            continue
+        position = _finite_position(raw.get("position"))
+        if not position:
+            continue
+        row = {
+            "id": str(raw.get("id") or key),
+            "type": raw.get("type"),
+            "position": position,
+            "directionAngle": raw.get("directionAngle"),
+            "targetLevelId": raw.get("targetLevelId"),
+            "textId": raw.get("textId"),
+            "evidence": "UILevelMapLoadConfig.staticElements exact X/Z position",
+        }
+        if source:
+            row["source"] = source
+        rows.append({key: value for key, value in row.items() if value is not None and value != ""})
+    return {
+        "source": source,
+        "worldBounds": _map_ui_world_bounds(config),
+        "needInverseXZ": bool(basic.get("needInverseXZ")),
+        "orientation": "rotate180" if basic.get("needInverseXZ") else "identity",
+        "coordinateSystem": "UILevelMapLoadConfig world X/Z; image top is +Z",
+        "staticElements": sorted(rows, key=lambda row: row["id"]),
+    }
+
+
+def _map_layer_metadata(level_id: str, nodes: Iterable[dict], language: str = "CN") -> dict:
+    """Publish map UI layers and evidence-based marker-to-tier membership.
+
+    The game does not serialize a ``tierId`` onto WorldEntityRegistry rows.
+    We therefore join a marker to a tier only when its X/Z point lies inside a
+    raw ``tierInfos`` rectangle.  The resulting Y range is diagnostic evidence
+    from those exact transforms, not a visual guess; overlapping tiers remain
+    distinct and a marker can list more than one candidate tier.
+    """
+    config = _load_json(ROOT / f"{MAP_UI_CONFIG_DIR}/{level_id}.json", {}) or {}
+    basic = config.get("basic") or {}
+    world_bounds = _union_rects([_world_rect({"worldLeftBottom": basic.get("worldRectLeftBottom"), "worldRightTop": basic.get("worldRectRightTop")})])
+    rows_by_tier = _config_tier_rows(config)
+    names = config.get("tierNames") or {}
+    layers: list[dict] = []
+    # Accept full marker/quest rows (the production path) and bare position
+    # dictionaries (focused probes). Membership belongs on the node beside its
+    # other facets; mutating only node["position"] would publish no filterable
+    # mapLayerIds even though the in-memory point had been classified.
+    point_rows: list[tuple[dict, dict]] = []
+    for row in nodes:
+        if not isinstance(row, dict):
+            continue
+        position = row.get("position") if isinstance(row.get("position"), dict) else row
+        if isinstance(position, dict):
+            point_rows.append((row, position))
+    for tier_id in sorted(rows_by_tier, key=lambda value: (int(value) if value.isdigit() else 10**9, value)):
+        rows = rows_by_tier[tier_id]
+        rects = [row["rect"] for row in rows]
+        points = [point for _node, point in point_rows if any(_point_in_rect(point, rect) for rect in rects)]
+        ys = [float(point["y"]) for point in points if isinstance(point.get("y"), (int, float))]
+        layer = {
+            "id": f"tier:{tier_id}",
+            "tierId": int(tier_id) if tier_id.isdigit() else tier_id,
+            "nameKey": str(names.get(tier_id, "")),
+            "worldBounds": _union_rects(rects),
+            "cellCount": len(rects),
+            "heightRange": {"minY": min(ys), "maxY": max(ys)} if ys else None,
+            "heightEvidence": "WorldEntityRegistry positions within UILevelMapLoadConfig.tierInfos rectangles" if ys else "no marker Y samples within tierInfos rectangles",
+            "src": None,
+        }
+        layers.append(layer)
+
+        # Keep the ephemeral rectangles off the JSON payload while allowing
+        # build_level to assign memberships below.
+        layer["_rects"] = rects
+    for node, point in point_rows:
+        matches = [layer["id"] for layer in layers if any(_point_in_rect(point, rect) for rect in layer["_rects"])]
+        if matches:
+            node["mapLayerIds"] = matches
+    for layer in layers:
+        layer.pop("_rects", None)
+    static_metadata = _map_ui_static_elements(level_id)
+    return {
+        "source": f"{MAP_UI_CONFIG_DIR}/{level_id}.json" if config else None,
+        "worldBounds": world_bounds,
+        "needInverseXZ": bool(basic.get("needInverseXZ")),
+        "orientation": "rotate180" if basic.get("needInverseXZ") else "identity",
+        "coordinateSystem": "UILevelMapLoadConfig world X/Z; image top is +Z",
+        "staticElements": static_metadata["staticElements"],
+        "layers": layers,
+    }
+
+
+def _render_tier_layers(level_id: str, config: dict, inverted: bool) -> list[dict]:
+    """Composite transparent tier PNGs from the config's exact tier cells."""
+    tier_names = config.get("tierNames") or {}
+    rows_by_tier = _config_tier_rows(config)
+    if not tier_names or not rows_by_tier:
+        return []
+    render_root = ROOT / "webui/data/map_recovery/render"
+    rendered: list[dict] = []
+    # Tier art is only useful when a cell-level source exists.  Prefer the
+    # game's medium/high/low export in that order, using the same config rects
+    # rather than inferring a grid from the PNG dimensions.
+    for tier_id in sorted(rows_by_tier, key=lambda value: (int(value) if value.isdigit() else 10**9, value)):
+        rows = rows_by_tier[tier_id]
+        chosen_layer = None
+        rects: dict[tuple[int, int], tuple[float, float, float, float]] = {}
+        tiles: dict[tuple[int, int], Path] = {}
+        for layer in ("m", "h", "l"):
+            candidate_rows = [row for row in rows if row.get("layer") == layer and row.get("x") is not None and row.get("y") is not None]
+            candidate_rects = {(row["x"], row["y"]): row["rect"] for row in candidate_rows}
+            candidate_tiles = _minimap_tier_tiles(layer, level_id, tier_id)
+            matched = set(candidate_rects) & set(candidate_tiles)
+            if matched and (chosen_layer is None or len(matched) > len(tiles)):
+                chosen_layer = layer
+                rects = {cell: candidate_rects[cell] for cell in matched}
+                tiles = {cell: candidate_tiles[cell] for cell in matched}
+        layer_info = {
+            "id": f"tier:{tier_id}",
+            "tierId": int(tier_id) if str(tier_id).isdigit() else tier_id,
+            "nameKey": str(tier_names.get(tier_id, "")),
+            "src": None,
+            "status": "map_tier_art_missing",
+            "tileCount": 0,
+            "layer": chosen_layer,
+            "worldBounds": _union_rects(rects.values()),
+            "inverted": inverted,
+        }
+        if not rects:
+            rendered.append(layer_info)
+            continue
+        world_bounds = _union_rects(rects.values())
+        assert world_bounds is not None
+        weight_x: dict[float, float] = {}
+        weight_y: dict[float, float] = {}
+        sizes: dict[tuple[int, int], tuple[int, int]] = {}
+        for cell in sorted(rects):
+            tex_w, tex_h = _png_size(tiles[cell])
+            sizes[cell] = (tex_w, tex_h)
+            left, bottom, right, top = rects[cell]
+            if right > left and tex_w > 0:
+                ratio = round(tex_w / (right - left), 6)
+                weight_x[ratio] = weight_x.get(ratio, 0.0) + right - left
+            if top > bottom and tex_h > 0:
+                ratio = round(tex_h / (top - bottom), 6)
+                weight_y[ratio] = weight_y.get(ratio, 0.0) + top - bottom
+        if not weight_x or not weight_y:
+            rendered.append(layer_info)
+            continue
+        scale_x = max(weight_x, key=lambda ratio: (weight_x[ratio], ratio))
+        scale_y = max(weight_y, key=lambda ratio: (weight_y[ratio], ratio))
+        img_w = max(1, round((world_bounds["maxX"] - world_bounds["minX"]) * scale_x))
+        img_h = max(1, round((world_bounds["maxZ"] - world_bounds["minZ"]) * scale_y))
+        sources = {f"{x}_{y}": hashlib.sha256(tiles[(x, y)].read_bytes()).hexdigest() for x, y in sorted(rects)}
+        png_path = render_root / f"{level_id}_tier_{tier_id}.png"
+        sidecar_path = render_root / f"{level_id}_tier_{tier_id}.sources.json"
+        sidecar = {
+            "tierId": int(tier_id) if str(tier_id).isdigit() else tier_id,
+            "layer": chosen_layer,
+            "inverted": inverted,
+            "worldBounds": world_bounds,
+            "imgSize": [img_w, img_h],
+            "sources": sources,
+        }
+        if not (png_path.exists() and _load_json(sidecar_path) == sidecar):
+            decoded = {cell: _png_decode(tiles[cell]) for cell in sorted(rects)}
+            canvas = [bytearray(img_w * 4) for _ in range(img_h)]
+            for cell in sorted(rects):
+                left, bottom, right, top = rects[cell]
+                tex_w, tex_h, rows_rgba = decoded[cell]
+                x0 = round((left - world_bounds["minX"]) * scale_x)
+                x1 = round((right - world_bounds["minX"]) * scale_x)
+                y0 = round((world_bounds["maxZ"] - top) * scale_y)
+                y1 = round((world_bounds["maxZ"] - bottom) * scale_y)
+                dst_w, dst_h = x1 - x0, y1 - y0
+                if dst_w <= 0 or dst_h <= 0:
+                    continue
+                for j in range(dst_h):
+                    src_row = rows_rgba[tex_h - 1 - min(tex_h - 1, (j * tex_h + tex_h // 2) // dst_h)]
+                    dst = canvas[y0 + j]
+                    for i in range(dst_w):
+                        src_i = min(tex_w - 1, (i * tex_w + tex_w // 2) // dst_w) * 4
+                        s = src_row[src_i:src_i + 4]
+                        if s[3] == 0:
+                            continue
+                        dst_i = (x0 + i) * 4
+                        if s[3] == 255:
+                            dst[dst_i:dst_i + 4] = s
+                        else:
+                            alpha = s[3]
+                            inverse = 255 - alpha
+                            dst[dst_i] = (s[0] * alpha + dst[dst_i] * inverse) // 255
+                            dst[dst_i + 1] = (s[1] * alpha + dst[dst_i + 1] * inverse) // 255
+                            dst[dst_i + 2] = (s[2] * alpha + dst[dst_i + 2] * inverse) // 255
+                            dst[dst_i + 3] = max(dst[dst_i + 3], alpha)
+            if inverted:
+                canvas = [b"".join(row[i:i + 4] for i in range(len(row) - 4, -1, -4)) for row in reversed(canvas)]
+            render_root.mkdir(parents=True, exist_ok=True)
+            _png_write(png_path, img_w, img_h, canvas)
+            sidecar_path.write_text(json.dumps(sidecar, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
+        layer_info.update({
+            "src": f"render/{level_id}_tier_{tier_id}.png",
+            "status": "in_game_map_tier",
+            "tileCount": len(rects),
+            "worldBounds": world_bounds,
+        })
+        rendered.append(layer_info)
+    return rendered
+
+
 _MINIMAP_BOUNDARY = (
     "Background is the game's own map-screen texture: `UILevelMapLoadConfig` declares each chunk's "
     "(x, y) index and exact world rectangle, and the exported chunk art under "
@@ -1189,6 +1531,7 @@ def _minimap_background(level_id: str) -> dict:
     sidecar_path = render_root / f"{level_id}_minimap.sources.json"
     config = _load_json(ROOT / f"{MAP_UI_CONFIG_DIR}/{level_id}.json", {}) or {}
     inverted = bool((config.get("basic") or {}).get("needInverseXZ"))
+    tier_layers = _render_tier_layers(level_id, config, inverted)
     for layer, config_key in (("m", "mediumChunks"), ("h", "highChunks"), ("l", "lowChunks")):
         chunks = config.get(config_key) or {}
         rects: dict[tuple[int, int], tuple[float, float, float, float]] = {}
@@ -1258,6 +1601,7 @@ def _minimap_background(level_id: str) -> dict:
                 "layer": layer,
                 "tileCount": len(rects),
                 "inverted": inverted,
+                "layers": tier_layers,
                 "boundary": _MINIMAP_BOUNDARY,
             }
         decoded = {cell: _png_decode(tiles[cell]) for cell in sorted(rects)}
@@ -1269,8 +1613,11 @@ def _minimap_background(level_id: str) -> dict:
             x0 = round((left - min_world_x) * scale_x)
             x1 = round((right - min_world_x) * scale_x)
             # The config's y index grows with world Z, while image rows grow
-            # downward, so the row order is inverted to keep the image top on
-            # +Z exactly like the HLOD preview.
+            # downward.  The tile is therefore placed from its world rect
+            # (higher-Z rects get smaller y0); exported PNG rows are already
+            # top-to-bottom with +Z at the image top and must not be flipped
+            # per tile.  A configured inverse is applied only to the complete
+            # composite below.
             y0 = round((max_world_z - top) * scale_y)
             y1 = round((max_world_z - bottom) * scale_y)
             dst_w = x1 - x0
@@ -1339,15 +1686,17 @@ def _minimap_background(level_id: str) -> dict:
             "src": f"render/{level_id}_minimap.png",
             "worldBounds": world_bounds,
             "layer": layer,
-            "tileCount": len(rects),
-            "inverted": inverted,
-            "boundary": _MINIMAP_BOUNDARY,
+                "tileCount": len(rects),
+                "inverted": inverted,
+                "layers": tier_layers,
+                "boundary": _MINIMAP_BOUNDARY,
         }
     return {
         "status": "in_game_minimap_missing",
         "src": None,
-        "worldBounds": None,
-        "boundary": (
+            "worldBounds": None,
+            "layers": tier_layers,
+            "boundary": (
             "The in-game map screen publishes no complete chunk grid or no exported chunk art for "
             "this level, so the background falls back to the HLOD preview."
         ),
@@ -1699,8 +2048,93 @@ def _teleport_markers(level_id: str, entries: list[dict], attachment_index: dict
     return markers
 
 
+def _model_asset_index(mesh_root: Path) -> list[Path]:
+    """Return exported OBJ files once, so level fallback checks stay linear.
+
+    The map builder handles many levels and the asset export can contain tens
+    of thousands of OBJ files. A process-local cache avoids rescanning that
+    directory for every level while keeping tests that patch ``ROOT`` safe.
+    """
+    root = mesh_root.resolve()
+    cached = _MODEL_ASSET_INDEX.get(root)
+    if cached is not None:
+        return cached
+    if not root.is_dir():
+        _MODEL_ASSET_INDEX[root] = []
+        return []
+    files = sorted(path for path in root.glob("*.obj") if path.is_file())
+    _MODEL_ASSET_INDEX[root] = files
+    return files
+
+
+def _unplaced_model_scene(level_id: str) -> dict:
+    """Publish level-matched OBJ assets without claiming scene placement.
+
+    Some levels (notably the base01 decks) have exported models but no HLOD
+    cluster containers. Their OBJ vertices do not carry a GameObject/Transform
+    owner, so they cannot be rendered onto the map safely. The Assets viewer
+    can still inspect exact filename matches; this manifest is intentionally
+    asset-only and has no ``src``/``worldBounds`` background fields.
+    """
+    mesh_root = ROOT / MODEL_ROOT_REL
+    needle = str(level_id or "").strip().lower()
+    if not needle:
+        return {
+            "status": "obj_level_assets_unavailable",
+            "method": "level_filename_match_only",
+            "meshes": [],
+            "meshCount": 0,
+            "triangleCount": 0,
+            "positionStatus": "unplaced",
+            "boundary": (
+                "No level id was available for a safe OBJ filename match; no model asset is claimed."
+            ),
+        }
+
+    # Match a complete level token, not a shared family token such as
+    # ``base01`` or ``dung02``. A family-wide match would make the three
+    # 帝江号 decks look identical and would falsely assign assets to them.
+    candidates = [path for path in _model_asset_index(mesh_root) if needle in path.stem.lower()]
+    rows: list[dict] = []
+    export_root = (ROOT / "export_full").resolve()
+    for path in candidates:
+        try:
+            relative = path.resolve().relative_to(export_root).as_posix()
+        except (OSError, ValueError):
+            continue
+        parts = relative.split("/")
+        if len(parts) < 5 or parts[:2] != ["recovered", "AnimeStudio-cli"]:
+            continue
+        if parts[2] != "StreamingAssets" or parts[3] != "convert_by_type":
+            continue
+        asset_rel = f"{parts[2]}/{'/'.join(parts[4:])}"
+        rows.append({
+            "name": path.stem,
+            "pathId": path.stem.rsplit("_p", 1)[-1].upper() if "_p" in path.stem else None,
+            "src": f"/export_full/{relative}",
+            "assetRel": asset_rel,
+            "triangles": None,
+            "positionStatus": "unplaced",
+        })
+        if len(rows) >= MAX_UNPLACED_MODEL_ASSETS:
+            break
+    return {
+        "status": "obj_level_assets_unplaced" if rows else "obj_level_assets_unavailable",
+        "method": "level_filename_match_only",
+        "meshes": rows,
+        "meshCount": len(rows),
+        "triangleCount": None,
+        "positionStatus": "unplaced",
+        "boundary": (
+            "These OBJ files match the level id in their exported filename, but no authored "
+            "GameObject/Transform or mesh-to-scene placement was recovered. Open them in Assets "
+            "for inspection; they are not drawn on this map."
+        ),
+    }
+
+
 def _render_background(level_id: str) -> dict:
-    """Published top-down background, when one has been rendered for the level."""
+    """Published top-down background, with a non-spatial OBJ fallback."""
     # Resolved from ROOT rather than the module-level OUT so a relocated repo
     # root (and the focused tests that patch it) reads its own render folder.
     render_root = ROOT / "webui/data/map_recovery/render"
@@ -1708,15 +2142,18 @@ def _render_background(level_id: str) -> dict:
     preview = _load_json(preview_path) if preview_path.exists() else None
     if preview:
         return preview
+    model_scene = _unplaced_model_scene(level_id)
     return {
         "status": "asset_transform_recovery_required",
         "src": None,
         "worldBounds": None,
         "hlodTextureCandidateCount": 0,
+        "modelScene": model_scene,
         "boundary": (
             "No top-down background is published for this level. Markers are plotted from exact "
             "recovered transforms; a background is only added once HLOD meshes and scene transforms "
-            "are reconstructed and rendered with an orthographic +Y camera."
+            "are reconstructed and rendered with an orthographic +Y camera. Level-matched OBJ files "
+            "remain available below as unplaced Assets viewer links."
         ),
     }
 
@@ -1843,6 +2280,15 @@ def build_level(
     ) + markers
     markers.extend(_teleport_markers(level_id, teleports, attachment_index, language))
 
+    # The map UI config is also the authority for map floors/overlays.  Join
+    # exact marker transforms to its tier rectangles before sorting/publishing
+    # so the frontend can hide a floor without guessing from a screenshot.
+    map_config = _map_layer_metadata(
+        level_id,
+        [*markers, *quest_points],
+        language,
+    )
+
     level_scripts = _level_script_files(level_id)
     level_data = _level_data_files(level_id)
 
@@ -1857,6 +2303,7 @@ def build_level(
         _related(REGISTRY_REL, "entity_registry", "exact world/script entity transforms for this level"),
         _related(LEVEL_BASIC_INFO_REL, "level_definition", f"declares {level_id} (idNum {id_num})"),
         _related(MAP_ID_TABLE_REL, "level_definition", f"registers the map id for {level_id}"),
+        _related(map_config.get("source"), "level_definition", "raw UILevelMapLoadConfig map rectangles and tier names"),
         *[
             _related(_mission_runtime_asset(mission), "mission_runtime", f"mission that plays in this level ({mission})")
             for mission in missions
@@ -1900,6 +2347,15 @@ def build_level(
         if not row.get("relatedFiles"):
             row.pop("relatedFiles", None)
 
+    minimap = _minimap_background(level_id)
+    rendered_tiers = {str(row.get("id")): row for row in minimap.get("layers") or []}
+    for layer in map_config.get("layers") or []:
+        rendered = rendered_tiers.get(str(layer.get("id")))
+        if rendered:
+            for key in ("src", "status", "tileCount", "layer", "inverted"):
+                if key in rendered:
+                    layer[key] = rendered[key]
+
     return {
         "schemaVersion": 1,
         "id": level_id,
@@ -1930,7 +2386,8 @@ def build_level(
         # The in-game map screen is the preferred background; `src` stays
         # null when the level's chunk grid or art is incomplete, and the
         # reader then falls back to the HLOD preview above.
-        "minimap": _minimap_background(level_id),
+        "mapConfig": map_config,
+        "minimap": minimap,
         "scriptSources": {**{Path(path).stem: path for path in level_scripts}, **script_file_map},
         "relatedFiles": map_related_files,
         "unresolvedTriggerSlots": {

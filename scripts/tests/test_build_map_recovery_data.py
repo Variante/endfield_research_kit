@@ -34,6 +34,40 @@ class BuildMapRecoveryDataTests(unittest.TestCase):
             self.assertEqual(payload["questPoints"][0]["questId"], "e0m0_q#10")
             self.assertEqual(payload["renderBackground"]["status"], "asset_transform_recovery_required")
 
+    def test_render_background_exposes_exact_level_obj_assets_without_placing_them(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            mesh_root = root / "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Mesh"
+            mesh_root.mkdir(parents=True)
+            exact = mesh_root / "S_mod_test_lv001_hull_lod0_pABC.obj"
+            family = mesh_root / "S_mod_test_lv002_hull_lod0_pDEF.obj"
+            exact.write_text("v 0 0 0\nf 1 1 1\n", encoding="utf-8")
+            family.write_text("v 0 0 0\n", encoding="utf-8")
+            with mock.patch.object(builder, "ROOT", root):
+                builder._MODEL_ASSET_INDEX.clear()
+                background = builder._render_background("test_lv001")
+
+        self.assertIsNone(background["src"])
+        scene = background["modelScene"]
+        self.assertEqual(scene["status"], "obj_level_assets_unplaced")
+        self.assertEqual(scene["positionStatus"], "unplaced")
+        self.assertEqual(scene["meshCount"], 1)
+        self.assertEqual(scene["meshes"][0]["assetRel"], "StreamingAssets/Mesh/S_mod_test_lv001_hull_lod0_pABC.obj")
+        self.assertNotIn("translation", scene["meshes"][0])
+
+    def test_unplaced_obj_fallback_does_not_match_a_shared_level_family(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            mesh_root = root / "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Mesh"
+            mesh_root.mkdir(parents=True)
+            (mesh_root / "S_mod_base01_shared_lod0_pABC.obj").write_text("v 0 0 0\n", encoding="utf-8")
+            with mock.patch.object(builder, "ROOT", root):
+                builder._MODEL_ASSET_INDEX.clear()
+                background = builder._render_background("base01_dg001")
+
+        self.assertEqual(background["modelScene"]["status"], "obj_level_assets_unavailable")
+        self.assertEqual(background["modelScene"]["meshes"], [])
+
     def test_e0m0_tomb_marker_uses_tomb_label(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -570,6 +604,107 @@ class MapNamingAndMinimapTests(unittest.TestCase):
         self.assertEqual(builder._region_key("map02_lv008"), "map02")
         self.assertEqual(builder._region_key("indie_dg002"), "indie_dg002")
 
+    def test_ui_config_tiers_are_read_from_tier_names_and_tier_infos(self):
+        config = {
+            "tierNames": {"254": "scene_layer_upper"},
+            "tierInfos": {
+                "h_test_lv001_2_3_tier_254": {
+                    "tierId": 254,
+                    "tierLoadId": "h_test_lv001_2_3_tier_254",
+                    "worldLeftBottom": {"x": 10, "y": 20},
+                    "worldRightTop": {"x": 30, "y": 40},
+                }
+            },
+        }
+        rows = builder._config_tier_rows(config)
+        self.assertEqual(rows["254"][0]["layer"], "h")
+        self.assertEqual((rows["254"][0]["x"], rows["254"][0]["y"]), (2, 3))
+        self.assertEqual(rows["254"][0]["rect"], (10.0, 20.0, 30.0, 40.0))
+
+    def test_map_layer_metadata_joins_marker_by_raw_tier_footprint_and_reports_y(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            config_dir = root / "export_full/structured/StreamingAssets/Data/Json/UILevelMapLoadConfig"
+            config_dir.mkdir(parents=True)
+            (config_dir / "test_lv_tier.json").write_text(json.dumps({
+                "basic": {
+                    "worldRectLeftBottom": {"x": 0, "y": 0},
+                    "worldRectRightTop": {"x": 128, "y": 128},
+                    "needInverseXZ": False,
+                },
+                "tierNames": {"7": "scene_upper"},
+                "tierInfos": {
+                    "h_test_lv_tier_1_1_tier_7": {
+                        "tierId": 7,
+                        "tierLoadId": "h_test_lv_tier_1_1_tier_7",
+                        "worldLeftBottom": {"x": 0, "y": 0},
+                        "worldRightTop": {"x": 64, "y": 64},
+                    }
+                },
+            }), encoding="utf-8")
+            points = [{"x": 10.0, "y": 42.5, "z": 20.0}, {"x": 100.0, "y": 5.0, "z": 100.0}]
+            with mock.patch.object(builder, "ROOT", root):
+                result = builder._map_layer_metadata("test_lv_tier", points)
+        self.assertEqual(points[0]["mapLayerIds"], ["tier:7"])
+        self.assertNotIn("mapLayerIds", points[1])
+        self.assertEqual(result["layers"][0]["heightRange"], {"minY": 42.5, "maxY": 42.5})
+        self.assertFalse(result["needInverseXZ"])
+
+    def test_map_layer_metadata_publishes_membership_on_full_node_rows(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            config_dir = root / "export_full/structured/StreamingAssets/Data/Json/UILevelMapLoadConfig"
+            config_dir.mkdir(parents=True)
+            (config_dir / "test_lv_node.json").write_text(json.dumps({
+                "tierNames": {"7": "floor_7"},
+                "tierInfos": {"h_test_lv_node_1_1_tier_7": {
+                    "tierLoadId": "h_test_lv_node_1_1_tier_7", "tierId": 7,
+                    "worldLeftBottom": {"x": 0, "y": 0},
+                    "worldRightTop": {"x": 64, "y": 64},
+                }},
+            }), encoding="utf-8")
+            nodes = [{"identity": "marker:1", "position": {"x": 10.0, "y": 3.0, "z": 20.0}}]
+            with mock.patch.object(builder, "ROOT", root):
+                builder._map_layer_metadata("test_lv_node", nodes)
+        self.assertEqual(nodes[0]["mapLayerIds"], ["tier:7"])
+        self.assertNotIn("mapLayerIds", nodes[0]["position"])
+
+    def test_map_layer_metadata_publishes_static_elements_in_authored_xz_space(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            config_dir = root / "export_full/structured/StreamingAssets/Data/Json/UILevelMapLoadConfig"
+            config_dir.mkdir(parents=True)
+            (config_dir / "test_lv_static.json").write_text(json.dumps({
+                "basic": {
+                    "worldRectLeftBottom": {"x": -64, "y": -128},
+                    "worldRectRightTop": {"x": 192, "y": 256},
+                    "needInverseXZ": True,
+                },
+                "staticElements": {
+                    "se_1": {
+                        "id": "test_lv_static_se_1",
+                        "type": 1,
+                        "position": {"x": 12.5, "y": 3.0, "z": -20.0},
+                        "targetLevelId": "test_lv_other",
+                    },
+                    "se_invalid": {"id": "bad", "position": {"x": "12", "z": 4}},
+                },
+            }), encoding="utf-8")
+            with mock.patch.object(builder, "ROOT", root):
+                result = builder._map_layer_metadata("test_lv_static", [{"x": 1, "y": 2, "z": 3}])
+        self.assertEqual(result["worldBounds"], {"minX": -64.0, "maxX": 192.0, "minZ": -128.0, "maxZ": 256.0})
+        self.assertTrue(result["needInverseXZ"])
+        self.assertEqual(result["orientation"], "rotate180")
+        self.assertEqual(result["coordinateSystem"], "UILevelMapLoadConfig world X/Z; image top is +Z")
+        self.assertEqual(result["staticElements"], [{
+            "id": "test_lv_static_se_1",
+            "type": 1,
+            "position": {"x": 12.5, "y": 3.0, "z": -20.0},
+            "targetLevelId": "test_lv_other",
+            "evidence": "UILevelMapLoadConfig.staticElements exact X/Z position",
+            "source": "export_full/structured/StreamingAssets/Data/Json/UILevelMapLoadConfig/test_lv_static.json",
+        }])
+
     def test_region_bounds_union_only_uses_complete_preferred_backgrounds(self):
         payloads = [
             {"minimap": {"src": "render/a.png", "worldBounds": {"minX": -10, "maxX": 5, "minZ": 20, "maxZ": 30}}},
@@ -634,6 +769,32 @@ class MapNamingAndMinimapTests(unittest.TestCase):
                 again = builder._minimap_background("test_lv001")
                 self.assertEqual(again, info)
 
+    def test_minimap_background_preserves_exported_tile_rows_for_world_plus_z(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._write_config(root, "test_lv_axis", [(1, 1)])
+            path = root / "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/m_test_lv_axis_1_1_pABCD.png"
+            # Source texture rows are top-to-bottom. Distinct corners make
+            # both the local Z flip and X direction observable.
+            rows = [
+                bytes((10, 0, 0, 255)) * 2 + bytes((20, 0, 0, 255)) * 2,
+                bytes((0, 0, 0, 0)) * 4,
+                bytes((0, 0, 0, 0)) * 4,
+                bytes((30, 0, 0, 255)) * 2 + bytes((40, 0, 0, 255)) * 2,
+            ]
+            path.parent.mkdir(parents=True, exist_ok=True)
+            builder._png_write(path, 4, 4, rows)
+            with mock.patch.object(builder, "ROOT", root):
+                builder._minimap_background("test_lv_axis")
+            _width, _height, rgba = builder._png_decode(root / "webui/data/map_recovery/render/test_lv_axis_minimap.png")
+        # Exported tile rows are already authored top-to-bottom with +Z at
+        # the image top; only the config-level inverse flag rotates the full
+        # composite. X is not mirrored for a normal level.
+        self.assertEqual(bytes(rgba[0][:4]), bytes((10, 0, 0, 255)))
+        self.assertEqual(bytes(rgba[0][-4:]), bytes((20, 0, 0, 255)))
+        self.assertEqual(bytes(rgba[-1][:4]), bytes((30, 0, 0, 255)))
+        self.assertEqual(bytes(rgba[-1][-4:]), bytes((40, 0, 0, 255)))
+
     def test_minimap_background_rotates_art_when_the_config_inverts_xz(self):
         green = (0, 255, 0, 255)
         blue = (0, 0, 255, 255)
@@ -673,6 +834,43 @@ class MapNamingAndMinimapTests(unittest.TestCase):
             self.assertEqual(bytes(rgba[7][:4]), bytes(blue))
             sidecar = json.loads((root / "webui/data/map_recovery/render/test_lv004_minimap.sources.json").read_text(encoding="utf-8"))
             self.assertTrue(sidecar["inverted"])
+
+    def test_minimap_background_publishes_transparent_configured_tier_art_separately(self):
+        base = (40, 40, 40, 255)
+        tier = (255, 0, 0, 255)
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            config_dir = root / "export_full/structured/StreamingAssets/Data/Json/UILevelMapLoadConfig"
+            config_dir.mkdir(parents=True)
+            (config_dir / "test_lv_tier.json").write_text(json.dumps({
+                "basic": {},
+                "tierNames": {"7": "scene_upper"},
+                "tierInfos": {
+                    "h_test_lv_tier_1_1_tier_7": {
+                        "tierId": 7,
+                        "tierLoadId": "h_test_lv_tier_1_1_tier_7",
+                        "worldLeftBottom": {"x": 0, "y": 0},
+                        "worldRightTop": {"x": 128, "y": 128},
+                    }
+                },
+                "mediumChunks": {
+                    "m_test_lv_tier_1_1": {
+                        "x": 1, "y": 1,
+                        "worldLeftBottom": {"x": 0, "y": 0},
+                        "worldRightTop": {"x": 128, "y": 128},
+                    }
+                },
+            }), encoding="utf-8")
+            self._write_tile(root, "m_test_lv_tier_1_1_pAAAA.png", base)
+            self._write_tile(root, "h_test_lv_tier_1_1_tier_7_pBBBB.png", tier)
+            with mock.patch.object(builder, "ROOT", root):
+                info = builder._minimap_background("test_lv_tier")
+            self.assertEqual(info["layers"][0]["id"], "tier:7")
+            self.assertEqual(info["layers"][0]["status"], "in_game_map_tier")
+            self.assertEqual(info["layers"][0]["tileCount"], 1)
+            self.assertTrue((root / "webui/data/map_recovery/render/test_lv_tier_tier_7.png").exists())
+            _w, _h, rgba = builder._png_decode(root / "webui/data/map_recovery/render/test_lv_tier_tier_7.png")
+            self.assertEqual(bytes(rgba[0][:4]), bytes(tier))
 
     def test_minimap_background_stretches_half_size_chunks_to_their_rect(self):
         green = (0, 255, 0, 255)
