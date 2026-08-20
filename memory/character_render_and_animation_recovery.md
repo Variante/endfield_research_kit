@@ -1156,9 +1156,28 @@ reported only as `audit_callback_marker` plus `identity_writeback`; a
 movement-enabled run explicitly skips identity writeback and fails. This
 prevents topology/order testing from masquerading as native execution. The
 next native payload edge reaches `StartSimulationStepJob.SetIndexCount` and
-recovers its field declaration order and call ABI, but NativeArray instance
-offsets and the independently pinned Execute/Burst bodies are still missing,
-so no payload layout or numeric solver is admitted.
+now closes four outer job value layouts from the installed IL2CPP
+`fieldOffsets`/`typeDefinitionsSizes` tables plus their exact native setter
+stores. The Collider start job's 17 fields occupy the recovered native range
+through `_indexCount`; the other collider/simulation start/end jobs have the
+same independent size/last-field closure. Relevant managed `Execute` bodies
+and the BurstDirectCall fallback/wrapper are also hash-pinned. The inner
+NativeArray/NativeReference layouts and the wrapper-to-hashed-export mapping
+inside `lib_burst_generated.dll` are not resolved, so the complete payload,
+numeric solver, and public-Unity execution remain inadmissible.
+
+The installed client does contain its original `lib_burst_generated.dll`, but
+that is not a drop-in public-Unity plugin: its hashed exports are resolved
+through the retail Burst runtime and depend on the original IL2CPP/Jobs state.
+A maintained external telemetry probe therefore takes the safer next route.
+It applies the shared pinned-native gate, then attaches bounded read-only
+Frida callbacks at the retail cloth/update/transform boundaries and writes the
+full verified file handshake into JSONL. The callbacks instrument function
+entry but do not call game functions or write game state. Until a real trace
+links the opaque pointers to an exact actor and transform path, the target is
+only a user capture label, actor identity remains unproven, and a writeback
+hook event proves only that the call occurred. No retail capture has yet been
+recorded.
 
 A 2 fps actor-only Overview probe successfully emitted complete
 start -> transition -> loop sequences for all three priority actors with no
