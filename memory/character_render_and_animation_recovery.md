@@ -1089,6 +1089,20 @@ Which lights apply to a given tab is not recovered. Every Light component
 serialises `m_Enabled = 1`, so the selection happens elsewhere, and the
 `_overview` naming on 202 of the 1,583 is the only in-prefab hint.
 
+The priority CharInfo actors Endminf, Pelica, and Chen now have the same
+targeted postmodel secondary-dynamics evidence as the earlier audit set. The
+generated `secondary_dynamics_owner_recovery.json` contract records their
+exact `BeyondBoneCloth` owners, root-bone paths, collider components, serialized
+constraint hashes, and Overview `MagicaClothWeight`. Endminf sequence captures
+provide a useful fail-closed visual gate: its body and sleeves align at the
+start pose, then the authored body bones move while coat/ribbon bones remain at
+their animation pose because the lab has no Magica solver. This is not a clip,
+camera, LOD, or renderer-isolation defect and must not be hidden by disabling
+the affected meshes. Exact simulation remains unavailable because the project
+does not contain the retail BeyondDynamicBone/Burst solver, PlayerLoop
+scheduling, or numeric frame fixtures; a substitute spring chain is not
+original-game recovery.
+
 ## Main animation gap
 
 Remaining runtime systems include:

@@ -11,28 +11,75 @@ SPEC.loader.exec_module(MODULE)
 
 
 def valid_payload():
+    frames = []
+    for index, (phase, clip, phase_seconds, clip_time, normalized) in enumerate([
+        ("start", "start", 0.0, 0.0, 0.0),
+        ("start", "start", 0.1, 0.1, 0.083333),
+        ("transition", "start->loop", 0.0, 0.0, 0.0),
+        ("transition", "start->loop", 0.1, 0.1, 0.5),
+        ("loop", "loop", 0.0, 0.0, 0.0),
+        ("loop", "loop", 0.1, 0.1, 0.125),
+    ]):
+        frames.append({
+            "index": index,
+            "phase": phase,
+            "clip": clip,
+            "timestamp_seconds": index * 0.1,
+            "phase_seconds": phase_seconds,
+            "clip_time_seconds": clip_time,
+            "phase_normalized": normalized,
+            "alpha_audit": {
+                "width": 2,
+                "height": 2,
+                "transparent_pixels": 2,
+                "nontransparent_pixels": 2,
+            },
+        })
     return {
         "schema_version": 1,
         "status": "ok",
         "actor": "Endminf",
         "fps": 10,
         "matte_verified": False,
+        "secondary_dynamics_verified": False,
+        "secondary_dynamics_contract": "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_owner_recovery.json",
+        "render_fidelity_status": "incomplete_missing_retail_secondary_dynamics_solver",
         "transparent_clear_requested": True,
+        "transparent_pipeline_override_applied": True,
+        "transparent_post_process_disabled": True,
+        "transition_mode": "state_weighted_crossfade_sample",
+        "controller_exit_normalized_time": 0.9,
+        "controller_transition_seconds": 0.2,
         "reference_backdrop_disabled": True,
         "non_actor_renderers_disabled": True,
         "non_actor_ui_disabled": True,
         "actor_props_disabled": True,
         "clips": [
             {
+                "name": "start",
                 "role": "ui_overview_start",
                 "duration_seconds": 1.2,
-                "frame_count": 13,
+                "frame_count": 2,
+                "sequence_start_seconds": 0.0,
+                "sequence_end_seconds": 0.2,
                 "loop_cycles": 0,
             },
             {
+                "name": "start->loop",
+                "role": "ui_overview_transition",
+                "duration_seconds": 0.2,
+                "frame_count": 2,
+                "sequence_start_seconds": 0.2,
+                "sequence_end_seconds": 0.4,
+                "loop_cycles": 0,
+            },
+            {
+                "name": "loop",
                 "role": "ui_overview_loop",
                 "duration_seconds": 0.8,
-                "frame_count": 8,
+                "frame_count": 2,
+                "sequence_start_seconds": 0.4,
+                "sequence_end_seconds": 0.6,
                 "loop_cycles": 1,
             },
         ],
@@ -45,85 +92,23 @@ def valid_payload():
             "near_clip_plane": 0.01,
             "far_clip_plane": 100.0,
         },
-        "frames": [
-            {
-                "index": 0,
-                "phase": "start",
-                "timestamp_seconds": 0.0,
-                "phase_seconds": 0.0,
-                "alpha_audit": {"width": 2, "height": 2, "transparent_pixels": 4, "nontransparent_pixels": 0},
-            },
-            {
-                "index": 1,
-                "phase": "start",
-                "timestamp_seconds": 0.1,
-                "phase_seconds": 0.1,
-                "alpha_audit": {"width": 2, "height": 2, "transparent_pixels": 2, "nontransparent_pixels": 2},
-            },
-            {
-                "index": 2,
-                "phase": "loop",
-                "timestamp_seconds": 1.2,
-                "phase_seconds": 0.0,
-                "alpha_audit": {"width": 2, "height": 2, "transparent_pixels": 2, "nontransparent_pixels": 2},
-            },
-            {
-                "index": 3,
-                "phase": "loop",
-                "timestamp_seconds": 1.3,
-                "phase_seconds": 0.1,
-                "alpha_audit": {"width": 2, "height": 2, "transparent_pixels": 2, "nontransparent_pixels": 2},
-            },
-            {
-                "index": 4,
-                "phase": "loop",
-                "timestamp_seconds": 1.4,
-                "phase_seconds": 0.2,
-                "alpha_audit": {"width": 2, "height": 2, "transparent_pixels": 2, "nontransparent_pixels": 2},
-            },
-            {
-                "index": 5,
-                "phase": "loop",
-                "timestamp_seconds": 1.5,
-                "phase_seconds": 0.3,
-                "alpha_audit": {"width": 2, "height": 2, "transparent_pixels": 2, "nontransparent_pixels": 2},
-            },
-            {
-                "index": 6,
-                "phase": "loop",
-                "timestamp_seconds": 1.6,
-                "phase_seconds": 0.4,
-                "alpha_audit": {"width": 2, "height": 2, "transparent_pixels": 2, "nontransparent_pixels": 2},
-            },
-            {
-                "index": 7,
-                "phase": "loop",
-                "timestamp_seconds": 1.7,
-                "phase_seconds": 0.5,
-                "alpha_audit": {"width": 2, "height": 2, "transparent_pixels": 2, "nontransparent_pixels": 2},
-            },
-            {
-                "index": 8,
-                "phase": "loop",
-                "timestamp_seconds": 1.8,
-                "phase_seconds": 0.6,
-                "alpha_audit": {"width": 2, "height": 2, "transparent_pixels": 2, "nontransparent_pixels": 2},
-            },
-            {
-                "index": 9,
-                "phase": "loop",
-                "timestamp_seconds": 1.9,
-                "phase_seconds": 0.7,
-                "alpha_audit": {"width": 2, "height": 2, "transparent_pixels": 2, "nontransparent_pixels": 2},
-            },
+        "frames": frames,
+        "alpha_audit": {
+            "matte_verified": False,
+            "frame_count": len(frames),
+            "frames_with_transparent_pixels": len(frames),
+            "frames_with_nontransparent_pixels": len(frames),
+        },
+        "limitations": [
+            "matteVerified=false: alpha readback is audit only",
+            "secondaryDynamicsVerified=false: retail solver not reproduced",
+            "The transparent pass excludes post processing.",
         ],
-        "alpha_audit": {"matte_verified": False, "frame_count": 10},
-        "limitations": ["matteVerified=false: alpha readback is audit only"],
     }
 
 
 class ValidateOverviewCaptureSidecarTests(unittest.TestCase):
-    def test_valid_start_then_one_loop(self):
+    def test_valid_start_transition_then_one_loop(self):
         self.assertEqual(MODULE.validate_payload(valid_payload()), [])
 
     def test_matte_cannot_be_promoted_by_alpha_readback(self):
@@ -131,12 +116,45 @@ class ValidateOverviewCaptureSidecarTests(unittest.TestCase):
         payload["matte_verified"] = True
         self.assertTrue(any("matte_verified" in error for error in MODULE.validate_payload(payload)))
 
+    def test_secondary_dynamics_cannot_be_promoted_without_retail_solver(self):
+        payload = valid_payload()
+        payload["secondary_dynamics_verified"] = True
+        self.assertTrue(
+            any(
+                "secondary_dynamics_verified" in error
+                for error in MODULE.validate_payload(payload)
+            )
+        )
+
     def test_missing_loop_is_rejected(self):
         payload = valid_payload()
-        payload["frames"] = payload["frames"][:2]
-        payload["alpha_audit"]["frame_count"] = 2
+        payload["frames"] = payload["frames"][:4]
+        payload["clips"] = payload["clips"][:2]
+        payload["alpha_audit"]["frame_count"] = 4
         errors = MODULE.validate_payload(payload)
-        self.assertTrue(any("loop phase" in error for error in errors))
+        self.assertTrue(any("clips must contain" in error or "loop phase" in error for error in errors))
+
+    def test_all_transparent_frame_is_fail_closed(self):
+        payload = valid_payload()
+        payload["frames"][2]["alpha_audit"]["transparent_pixels"] = 4
+        payload["frames"][2]["alpha_audit"]["nontransparent_pixels"] = 0
+        errors = MODULE.validate_payload(payload)
+        self.assertTrue(any("both transparent" in error for error in errors))
+
+    def test_pixel_counts_must_cover_target(self):
+        payload = valid_payload()
+        payload["frames"][0]["alpha_audit"]["transparent_pixels"] = 1
+        errors = MODULE.validate_payload(payload)
+        self.assertTrue(any("sum to width*height" in error for error in errors))
+
+    def test_phase_order_and_clip_time_are_strict(self):
+        payload = valid_payload()
+        payload["frames"][4]["phase"] = "start"
+        payload["frames"][4]["clip"] = "start"
+        payload["frames"][4]["clip_time_seconds"] = 9.0
+        errors = MODULE.validate_payload(payload)
+        self.assertTrue(any("strict start" in error for error in errors))
+        self.assertTrue(any("clip_time_seconds" in error for error in errors))
 
 
 if __name__ == "__main__":
