@@ -34,19 +34,23 @@ class SecondaryDynamicsWindHelperContractTests(unittest.TestCase):
         self.assertIn(("0x28a", "0x186776394"), calls)
         self.assertIn(("0x318", "0x186776394"), calls)
         self.assertEqual([row["offset"] for row in wind["blendCallSemantics"]], ["0x28a", "0x318"])
+        self.assertEqual(wind["blendCallSemantics"][0]["setupInstructions"][0]["rawBytes"], "4c8d4d90")
+        self.assertEqual(wind["blendCallSemantics"][1]["setupInstructions"][-1]["rawBytes"], "f30f11742420")
 
     def test_wind_buffer_strides_and_displacements(self) -> None:
         accesses = {row["jobField"]: row for row in self.by_index[builder.WIND_INDEX]["bufferAccesses"]}
-        self.assertEqual(accesses["windIndexArray"]["strideBytes"], 4)
-        self.assertEqual(accesses["windDataArray"]["strideBytes"], 152)
-        self.assertEqual(accesses["windDataArray"]["elementFieldDisplacements"][-1], 144)
-        self.assertEqual(accesses["teamWindDataArray"]["strideBytes"], 212)
-        self.assertEqual(accesses["teamWindDataArray"]["elementFieldDisplacements"][-1], 208)
-        self.assertEqual(accesses["depthArray"]["strideBytes"], 4)
+        self.assertEqual(accesses["vertexRootIndices"]["strideBytes"], 4)
+        self.assertEqual(accesses["teamWindArray"]["strideBytes"], 152)
+        self.assertEqual(accesses["teamWindArray"]["elementFieldDisplacements"][-1], 144)
+        self.assertEqual(accesses["windDataArray"]["strideBytes"], 212)
+        self.assertEqual(accesses["windDataArray"]["elementFieldDisplacements"][-1], 208)
+        self.assertEqual(accesses["frictionArray"]["strideBytes"], 4)
+        self.assertEqual(self.by_index[builder.WIND_INDEX]["canonicalJobFields"]["0x68"]["name"], "vertexRootIndices")
 
     def test_helper_branches_constants_and_result_boundary(self) -> None:
         helper = self.by_index[builder.WIND_FORCE_BLEND_INDEX]
-        self.assertEqual([(row["offset"], row["targetOffset"]) for row in helper["branches"]], [("0x50", "0x2f3"), ("0x68", "0x2db")])
+        self.assertEqual([(row["offset"], row["targetOffset"], row["condition"]) for row in helper["branches"]], [("0x50", "0x2f3", "jne"), ("0x68", "0x2db", "ja")])
+        self.assertEqual(helper["branches"][0]["opcode"], "0f85")
         constants = {row["meaning"]: row["float32Bits"] for row in helper["constants"]}
         self.assertEqual(constants["minimum-wind-info"], "0x3c23d70a")
         self.assertEqual(constants["degrees-to-radians"], "0x3c8efa35")
@@ -76,6 +80,14 @@ class SecondaryDynamicsWindHelperContractTests(unittest.TestCase):
         finally:
             builder.EXPECTED_CALLS[builder.WIND_INDEX] = original_calls
 
+        original_access = builder.WIND_BUFFER_ACCESS[1]["elementFieldDisplacements"][-1]
+        builder.WIND_BUFFER_ACCESS[1]["elementFieldDisplacements"][-1] = original_access + 1
+        try:
+            with self.assertRaises(builder.ContractError):
+                builder.build_contract()
+        finally:
+            builder.WIND_BUFFER_ACCESS[1]["elementFieldDisplacements"][-1] = original_access
+
     def test_constant_and_branch_drift_are_rejected(self) -> None:
         original = builder.EXPECTED_CONSTANTS[builder.WIND_FORCE_BLEND_INDEX][0]
         builder.EXPECTED_CONSTANTS[builder.WIND_FORCE_BLEND_INDEX][0] = (original[0], original[1], original[2], 0)
@@ -92,6 +104,14 @@ class SecondaryDynamicsWindHelperContractTests(unittest.TestCase):
                 builder.build_contract()
         finally:
             builder.EXPECTED_BRANCHES[builder.WIND_INDEX][0] = original_branch
+
+        original_condition = builder.EXPECTED_BRANCHES[builder.WIND_INDEX][0]
+        builder.EXPECTED_BRANCHES[builder.WIND_INDEX][0] = (original_condition[0], "je", original_condition[2], original_condition[3])
+        try:
+            with self.assertRaises(builder.ContractError):
+                builder.build_contract()
+        finally:
+            builder.EXPECTED_BRANCHES[builder.WIND_INDEX][0] = original_condition
 
 
 if __name__ == "__main__":

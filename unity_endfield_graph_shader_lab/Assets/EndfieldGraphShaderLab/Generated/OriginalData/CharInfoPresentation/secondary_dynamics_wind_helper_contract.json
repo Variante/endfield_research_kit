@@ -91,36 +91,42 @@
           "offset": "0x4b",
           "condition": "jne",
           "targetOffset": "0x60",
+          "opcode": "75",
           "meaning": "lazy initialization path"
         },
         {
           "offset": "0x83",
           "condition": "jne",
           "targetOffset": "0x3be",
+          "opcode": "0f85",
           "meaning": "IFix patch path"
         },
         {
           "offset": "0x176",
           "condition": "jle",
           "targetOffset": "0x2d4",
+          "opcode": "0f8e",
           "meaning": "no wind zones"
         },
         {
           "offset": "0x2ce",
           "condition": "jl",
           "targetOffset": "0x196",
+          "opcode": "0f8c",
           "meaning": "wind-zone loop"
         },
         {
           "offset": "0x2e0",
           "condition": "jbe",
           "targetOffset": "0x356",
+          "opcode": "76",
           "meaning": "turbulence threshold skips second blend"
         },
         {
           "offset": "0x3ce",
           "condition": "jne",
           "targetOffset": "0x3d6",
+          "opcode": "75",
           "meaning": "IFix fallback path"
         }
       ],
@@ -128,6 +134,7 @@
         {
           "offset": "0x9c",
           "meaning": "one",
+          "opcodePrefix": "f30f1035",
           "targetVa": "0x18b959200",
           "float32Bits": "0x3f800000",
           "float32": 1.0
@@ -135,6 +142,7 @@
         {
           "offset": "0xcd",
           "meaning": "wind-index-scale",
+          "opcodePrefix": "f30f590d",
           "targetVa": "0x18dc806ac",
           "float32Bits": "0x3b1d0b3e",
           "float32": 0.002396299969404936
@@ -142,6 +150,7 @@
         {
           "offset": "0xe4",
           "meaning": "wind-index-amplitude",
+          "opcodePrefix": "f30f590d",
           "targetVa": "0x18b959428",
           "float32Bits": "0x42c80000",
           "float32": 100.0
@@ -149,6 +158,7 @@
         {
           "offset": "0xf6",
           "meaning": "particle-index-scale",
+          "opcodePrefix": "f30f5905",
           "targetVa": "0x18dc80b6c",
           "float32Bits": "0x40862760",
           "float32": 4.1923065185546875
@@ -156,6 +166,7 @@
         {
           "offset": "0x2d9",
           "meaning": "minimum-turbulence",
+          "opcodePrefix": "0f2f05",
           "targetVa": "0x18b959480",
           "float32Bits": "0x3c23d70a",
           "float32": 0.009999999776482582
@@ -163,7 +174,8 @@
       ],
       "bufferAccesses": [
         {
-          "jobField": "windIndexArray",
+          "jobField": "vertexRootIndices",
+          "role": "wind-index lookup by vindex",
           "jobOffset": "0x68",
           "index": "vindex",
           "strideBytes": 4,
@@ -178,7 +190,8 @@
           ]
         },
         {
-          "jobField": "windDataArray",
+          "jobField": "teamWindArray",
+          "role": "zone wind-info records consumed as windInfo",
           "jobOffset": "0xa8",
           "index": "teamId",
           "strideBytes": 152,
@@ -214,7 +227,8 @@
           ]
         },
         {
-          "jobField": "teamWindDataArray",
+          "jobField": "windDataArray",
+          "role": "aggregate wind-info records",
           "jobOffset": "0xb8",
           "index": "zoneId",
           "strideBytes": 212,
@@ -259,7 +273,8 @@
           "secondChunkBaseAdd": "0x80"
         },
         {
-          "jobField": "depthArray",
+          "jobField": "frictionArray",
+          "role": "pindex-dependent friction sample",
           "jobOffset": "0x158",
           "index": "pindex",
           "strideBytes": 4,
@@ -274,6 +289,36 @@
           ]
         }
       ],
+      "canonicalJobLayoutSource": {
+        "path": "D:\\fluffy-dump\\unity_endfield_graph_shader_lab\\Assets\\EndfieldGraphShaderLab\\Generated\\OriginalData\\CharInfoPresentation\\secondary_dynamics_job_layout_contract.json",
+        "sha256": "f8720afa5a0c6715475df119d22e139fcdc0515ad5b461928d51e0596ad2487d"
+      },
+      "canonicalJobFields": {
+        "0x68": {
+          "name": "vertexRootIndices",
+          "nativePayloadOffset": "0x68",
+          "elementType": "System.Int32",
+          "elementSizeBytes": 4
+        },
+        "0xa8": {
+          "name": "teamWindArray",
+          "nativePayloadOffset": "0xa8",
+          "elementType": "BeyondDynamicBone.TeamWindData",
+          "elementSizeBytes": 152
+        },
+        "0xb8": {
+          "name": "windDataArray",
+          "nativePayloadOffset": "0xb8",
+          "elementType": "BeyondDynamicBone.WindManager+WindData",
+          "elementSizeBytes": 212
+        },
+        "0x158": {
+          "name": "frictionArray",
+          "nativePayloadOffset": "0x158",
+          "elementType": "System.Single",
+          "elementSizeBytes": 4
+        }
+      },
       "blendCallSemantics": [
         {
           "offset": "0x28a",
@@ -290,6 +335,32 @@
             "0x26f",
             "0x27f",
             "0x284"
+          ],
+          "setupInstructions": [
+            {
+              "offset": "0x1b1",
+              "rawBytes": "4c8d4d90"
+            },
+            {
+              "offset": "0x1c0",
+              "rawBytes": "4c8bc3"
+            },
+            {
+              "offset": "0x23b",
+              "rawBytes": "488d55c8"
+            },
+            {
+              "offset": "0x26f",
+              "rawBytes": "488d442460"
+            },
+            {
+              "offset": "0x27f",
+              "rawBytes": "4889442428"
+            },
+            {
+              "offset": "0x284",
+              "rawBytes": "f30f11442420"
+            }
           ]
         },
         {
@@ -307,6 +378,32 @@
             "0x2fc",
             "0x305",
             "0x312"
+          ],
+          "setupInstructions": [
+            {
+              "offset": "0x2e8",
+              "rawBytes": "488d442460"
+            },
+            {
+              "offset": "0x2f0",
+              "rawBytes": "4889442428"
+            },
+            {
+              "offset": "0x2f8",
+              "rawBytes": "4c8d4d90"
+            },
+            {
+              "offset": "0x2fc",
+              "rawBytes": "4c8bc3"
+            },
+            {
+              "offset": "0x305",
+              "rawBytes": "488d5560"
+            },
+            {
+              "offset": "0x312",
+              "rawBytes": "f30f11742420"
+            }
           ]
         }
       ]
@@ -418,12 +515,14 @@
           "offset": "0x50",
           "condition": "jne",
           "targetOffset": "0x2f3",
+          "opcode": "0f85",
           "meaning": "IFix fallback path"
         },
         {
           "offset": "0x68",
           "condition": "ja",
           "targetOffset": "0x2db",
+          "opcode": "0f87",
           "meaning": "wind-info magnitude threshold writes zero"
         }
       ],
@@ -431,6 +530,7 @@
         {
           "offset": "0x5c",
           "meaning": "minimum-wind-info",
+          "opcodePrefix": "f30f1005",
           "targetVa": "0x18b959480",
           "float32Bits": "0x3c23d70a",
           "float32": 0.009999999776482582
@@ -438,6 +538,7 @@
         {
           "offset": "0x82",
           "meaning": "noise-frequency",
+          "opcodePrefix": "f30f5915",
           "targetVa": "0x18b959524",
           "float32Bits": "0x41200000",
           "float32": 10.0
@@ -445,6 +546,7 @@
         {
           "offset": "0xce",
           "meaning": "noise-position-scale",
+          "opcodePrefix": "f30f5915",
           "targetVa": "0x18dc80a84",
           "float32Bits": "0x40140b78",
           "float32": 2.313199996948242
@@ -452,6 +554,7 @@
         {
           "offset": "0x12e",
           "meaning": "noise-position-bias",
+          "opcodePrefix": "f30f100d",
           "targetVa": "0x18dc80a80",
           "float32Bits": "0x40133333",
           "float32": 2.299999952316284
@@ -459,6 +562,7 @@
         {
           "offset": "0x182",
           "meaning": "wind-angle-degrees",
+          "opcodePrefix": "f30f100d",
           "targetVa": "0x18b95948c",
           "float32Bits": "0x42340000",
           "float32": 45.0
@@ -466,6 +570,7 @@
         {
           "offset": "0x1ad",
           "meaning": "degrees-to-radians",
+          "opcodePrefix": "f30f100d",
           "targetVa": "0x18b9592a0",
           "float32Bits": "0x3c8efa35",
           "float32": 0.01745329238474369
@@ -473,6 +578,7 @@
         {
           "offset": "0x1c5",
           "meaning": "turbulence-mix",
+          "opcodePrefix": "f30f591d",
           "targetVa": "0x18b959574",
           "float32Bits": "0x3ecccccd",
           "float32": 0.4000000059604645
@@ -480,6 +586,7 @@
         {
           "offset": "0x1d1",
           "meaning": "turbulence-bias",
+          "opcodePrefix": "f30f581d",
           "targetVa": "0x18b95929c",
           "float32Bits": "0x3dcccccd",
           "float32": 0.10000000149011612
@@ -487,6 +594,7 @@
         {
           "offset": "0x262",
           "meaning": "one",
+          "opcodePrefix": "f30f1015",
           "targetVa": "0x18b959200",
           "float32Bits": "0x3f800000",
           "float32": 1.0
@@ -494,6 +602,7 @@
         {
           "offset": "0x26e",
           "meaning": "normalization-scale",
+          "opcodePrefix": "f30f5e1d",
           "targetVa": "0x18dc80bd0",
           "float32Bits": "0x40f00000",
           "float32": 7.5
@@ -501,6 +610,7 @@
         {
           "offset": "0x294",
           "meaning": "subtract-one",
+          "opcodePrefix": "f30f5c3d",
           "targetVa": "0x18b95927c",
           "float32Bits": "0xbf800000",
           "float32": -1.0
@@ -508,6 +618,7 @@
         {
           "offset": "0x2a8",
           "meaning": "half",
+          "opcodePrefix": "f30f593d",
           "targetVa": "0x18b9591e0",
           "float32Bits": "0x3f000000",
           "float32": 0.5
@@ -626,6 +737,36 @@
             }
           ],
           "value": "zero"
+        },
+        "rawInstructions": {
+          "normal": [
+            {
+              "offset": "0x2c7",
+              "rawBytes": "488b4d77"
+            },
+            {
+              "offset": "0x2d2",
+              "rawBytes": "f20f1101"
+            },
+            {
+              "offset": "0x2d6",
+              "rawBytes": "895108"
+            }
+          ],
+          "threshold_zero": [
+            {
+              "offset": "0x2db",
+              "rawBytes": "488b4d77"
+            },
+            {
+              "offset": "0x2e8",
+              "rawBytes": "f20f1101"
+            },
+            {
+              "offset": "0x2ec",
+              "rawBytes": "f30f115108"
+            }
+          ]
         }
       }
     }

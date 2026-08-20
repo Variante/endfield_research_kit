@@ -23,6 +23,7 @@ from typing import Any
 LAB_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = LAB_ROOT.parent
 SOURCE_ROOT = LAB_ROOT / "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation"
+JOB_LAYOUT_PATH = SOURCE_ROOT / "secondary_dynamics_job_layout_contract.json"
 DEFAULT_OUTPUT = SOURCE_ROOT / "secondary_dynamics_wind_helper_contract.json"
 DEFAULT_MARKDOWN = SOURCE_ROOT / "secondary_dynamics_wind_helper_contract.md"
 DEFAULT_GAME_ASSEMBLY: Path | None = None
@@ -171,9 +172,34 @@ EXPECTED_CONSTANTS = {
     ],
 }
 
+EXPECTED_CONSTANT_PREFIXES = {
+    WIND_INDEX: {
+        0x9C: bytes.fromhex("f3 0f 10 35"),
+        0xCD: bytes.fromhex("f3 0f 59 0d"),
+        0xE4: bytes.fromhex("f3 0f 59 0d"),
+        0xF6: bytes.fromhex("f3 0f 59 05"),
+        0x2D9: bytes.fromhex("0f 2f 05"),
+    },
+    WIND_FORCE_BLEND_INDEX: {
+        0x5C: bytes.fromhex("f3 0f 10 05"),
+        0x82: bytes.fromhex("f3 0f 59 15"),
+        0xCE: bytes.fromhex("f3 0f 59 15"),
+        0x12E: bytes.fromhex("f3 0f 10 0d"),
+        0x182: bytes.fromhex("f3 0f 10 0d"),
+        0x1AD: bytes.fromhex("f3 0f 10 0d"),
+        0x1C5: bytes.fromhex("f3 0f 59 1d"),
+        0x1D1: bytes.fromhex("f3 0f 58 1d"),
+        0x262: bytes.fromhex("f3 0f 10 15"),
+        0x26E: bytes.fromhex("f3 0f 5e 1d"),
+        0x294: bytes.fromhex("f3 0f 5c 3d"),
+        0x2A8: bytes.fromhex("f3 0f 59 3d"),
+    },
+}
+
 WIND_BUFFER_ACCESS = [
     {
-        "jobField": "windIndexArray",
+        "jobField": "vertexRootIndices",
+        "role": "wind-index lookup by vindex",
         "jobOffset": "0x68",
         "index": "vindex",
         "strideBytes": 4,
@@ -182,7 +208,8 @@ WIND_BUFFER_ACCESS = [
         "elementInstructionOffsets": ["0xb3"],
     },
     {
-        "jobField": "windDataArray",
+        "jobField": "teamWindArray",
+        "role": "zone wind-info records consumed as windInfo",
         "jobOffset": "0xa8",
         "index": "teamId",
         "strideBytes": 152,
@@ -192,7 +219,8 @@ WIND_BUFFER_ACCESS = [
         "elementInstructionOffsets": ["0x112", "0x118", "0x120", "0x128", "0x130", "0x138", "0x140", "0x148", "0x151", "0x159"],
     },
     {
-        "jobField": "teamWindDataArray",
+        "jobField": "windDataArray",
+        "role": "aggregate wind-info records",
         "jobOffset": "0xb8",
         "index": "zoneId",
         "strideBytes": 212,
@@ -203,7 +231,8 @@ WIND_BUFFER_ACCESS = [
         "secondChunkBaseAdd": "0x80",
     },
     {
-        "jobField": "depthArray",
+        "jobField": "frictionArray",
+        "role": "pindex-dependent friction sample",
         "jobOffset": "0x158",
         "index": "pindex",
         "strideBytes": 4,
@@ -254,6 +283,34 @@ BLEND_CALL_SEMANTICS = [
         "setupInstructionOffsets": ["0x2e8", "0x2f0", "0x2f8", "0x2fc", "0x305", "0x312"],
     },
 ]
+
+BLEND_CALL_RAW_BYTES = {
+    0x1B1: bytes.fromhex("4c 8d 4d 90"),
+    0x1C0: bytes.fromhex("4c 8b c3"),
+    0x23B: bytes.fromhex("48 8d 55 c8"),
+    0x26F: bytes.fromhex("48 8d 44 24 60"),
+    0x27F: bytes.fromhex("48 89 44 24 28"),
+    0x284: bytes.fromhex("f3 0f 11 44 24 20"),
+    0x2E8: bytes.fromhex("48 8d 44 24 60"),
+    0x2F0: bytes.fromhex("48 89 44 24 28"),
+    0x2F8: bytes.fromhex("4c 8d 4d 90"),
+    0x2FC: bytes.fromhex("4c 8b c3"),
+    0x305: bytes.fromhex("48 8d 55 60"),
+    0x312: bytes.fromhex("f3 0f 11 74 24 20"),
+}
+
+BLEND_RESULT_RAW_BYTES = {
+    "normal": {
+        0x2C7: bytes.fromhex("48 8b 4d 77"),
+        0x2D2: bytes.fromhex("f2 0f 11 01"),
+        0x2D6: bytes.fromhex("89 51 08"),
+    },
+    "threshold_zero": {
+        0x2DB: bytes.fromhex("48 8b 4d 77"),
+        0x2E8: bytes.fromhex("f2 0f 11 01"),
+        0x2EC: bytes.fromhex("f3 0f 11 51 08"),
+    },
+}
 
 
 def _hex(value: int) -> str:
@@ -315,13 +372,15 @@ def _branch_target(body: bytes, offset: int) -> tuple[str, int] | None:
     if opcode == 0xEB or 0x70 <= opcode <= 0x7F:
         if offset + 2 > len(body):
             return None
-        return ("jmp" if opcode == 0xEB else f"jcc_{opcode:02x}", offset + 2 + struct.unpack_from("<b", body, offset + 1)[0])
+        short_names = {0x70: "jo", 0x71: "jno", 0x72: "jb", 0x73: "jae", 0x74: "je", 0x75: "jne", 0x76: "jbe", 0x77: "ja", 0x78: "js", 0x79: "jns", 0x7A: "jp", 0x7B: "jnp", 0x7C: "jl", 0x7D: "jge", 0x7E: "jle", 0x7F: "jg"}
+        return ("jmp" if opcode == 0xEB else short_names[opcode], offset + 2 + struct.unpack_from("<b", body, offset + 1)[0])
     if opcode == 0xE9:
         if offset + 5 > len(body):
             return None
         return ("jmp", offset + 5 + struct.unpack_from("<i", body, offset + 1)[0])
     if opcode == 0x0F and offset + 6 <= len(body) and 0x80 <= body[offset + 1] <= 0x8F:
-        return (f"jcc_{body[offset + 1]:02x}", offset + 6 + struct.unpack_from("<i", body, offset + 2)[0])
+        near_names = {0x80: "jo", 0x81: "jno", 0x82: "jb", 0x83: "jae", 0x84: "je", 0x85: "jne", 0x86: "jbe", 0x87: "ja", 0x88: "js", 0x89: "jns", 0x8A: "jp", 0x8B: "jnp", 0x8C: "jl", 0x8D: "jge", 0x8E: "jle", 0x8F: "jg"}
+        return (near_names[body[offset + 1]], offset + 6 + struct.unpack_from("<i", body, offset + 2)[0])
     return None
 
 
@@ -329,9 +388,9 @@ def _verify_branches(body: bytes, method_index: int) -> list[dict[str, Any]]:
     rows = []
     for offset, mnemonic, target, meaning in EXPECTED_BRANCHES[method_index]:
         actual = _branch_target(body, offset)
-        if actual is None or actual[1] != target:
-            raise ContractError(f"method {method_index} branch {_hex(offset)} target drift: {actual!r} != {_hex(target)}")
-        rows.append({"offset": _hex(offset), "condition": mnemonic, "targetOffset": _hex(target), "meaning": meaning})
+        if actual is None or actual[1] != target or actual[0] != mnemonic:
+            raise ContractError(f"method {method_index} branch {_hex(offset)} condition/target drift: actual={actual!r}, expected=({mnemonic!r}, {_hex(target)})")
+        rows.append({"offset": _hex(offset), "condition": mnemonic, "targetOffset": _hex(target), "opcode": body[offset:offset + 2].hex() if body[offset] == 0x0F else body[offset:offset + 1].hex(), "meaning": meaning})
     return rows
 
 
@@ -340,6 +399,12 @@ def _verify_constants(pe: Any, body: bytes, method_index: int, va: int) -> list[
     for offset, length, meaning, bits in EXPECTED_CONSTANTS[method_index]:
         if offset + length > len(body):
             raise ContractError(f"method {method_index} constant {_hex(offset)} is out of span")
+        prefix = EXPECTED_CONSTANT_PREFIXES[method_index][offset]
+        if body[offset:offset + len(prefix)] != prefix:
+            raise ContractError(
+                f"method {method_index} constant {_hex(offset)} opcode/prefix drift: "
+                f"{body[offset:offset + len(prefix)].hex()} != {prefix.hex()}"
+            )
         displacement = struct.unpack_from("<i", body, offset + length - 4)[0]
         target = va + offset + length + displacement
         raw = pe.bytes_at_va(target, 4)
@@ -348,7 +413,7 @@ def _verify_constants(pe: Any, body: bytes, method_index: int, va: int) -> list[
         actual_bits = struct.unpack("<I", raw)[0]
         if actual_bits != bits:
             raise ContractError(f"method {method_index} constant {_hex(offset)} drift: {_hex(actual_bits)} != {_hex(bits)}")
-        rows.append({"offset": _hex(offset), "meaning": meaning, "targetVa": _hex(target), "float32Bits": _hex(actual_bits), "float32": struct.unpack("<f", raw)[0]})
+        rows.append({"offset": _hex(offset), "meaning": meaning, "opcodePrefix": prefix.hex(), "targetVa": _hex(target), "float32Bits": _hex(actual_bits), "float32": struct.unpack("<f", raw)[0]})
     return rows
 
 
@@ -384,14 +449,82 @@ def _verify_wind_buffers(body: bytes) -> list[dict[str, Any]]:
             entry = STATIC._memory_instruction(body, int(offset_text, 16))
             if entry is None or entry.get("kind") != "imul" or int(entry.get("immediate")) != access["strideBytes"]:
                 raise ContractError(f"Wind {access['jobField']} stride arithmetic drift")
-        if access["jobField"] == "windIndexArray":
+        if access["jobField"] == "vertexRootIndices":
             # movd xmm1,dword ptr [rax+rcx*4]; this SIMD opcode is outside
             # the older generic memory decoder used by the solver contract.
             _verify_raw(body, WIND_INDEX, 0xB3, bytes.fromhex("66 0f 6e 0c 88"))
-        elif access["jobField"] == "depthArray":
+        elif access["jobField"] == "frictionArray":
             # subss xmm2,dword ptr [rax+rcx*4].
             _verify_raw(body, WIND_INDEX, 0x384, bytes.fromhex("f3 0f 5c 14 88"))
+        _verify_wind_element_instructions(body, access)
     return WIND_BUFFER_ACCESS
+
+
+def _verify_wind_element_instructions(body: bytes, access: dict[str, Any]) -> None:
+    field = access["jobField"]
+    offsets = [int(value, 16) for value in access.get("elementInstructionOffsets", [])]
+    if field == "vertexRootIndices":
+        return
+    if field == "frictionArray":
+        return
+    expected = access["elementFieldDisplacements"]
+    if field == "teamWindArray":
+        widths = [16] * 9 + [8]
+    elif field == "windDataArray":
+        widths = [16] * 13 + [4]
+    else:
+        raise ContractError(f"unhandled Wind element field {field}")
+    if len(offsets) != len(expected) or len(widths) != len(offsets):
+        raise ContractError(f"Wind {field} element access table is internally inconsistent")
+    base_adjust = 0
+    raw_displacements = list(expected)
+    if field == "teamWindArray":
+        # The final two loads use rdx=0x80, so their raw displacements are
+        # 0 and 0x10 even though their element-relative offsets are 0x80/0x90.
+        raw_displacements[-2:] = [expected[-2] - 0x80, expected[-1] - 0x80]
+    elif field == "windDataArray":
+        # The second chunk starts after the pinned add rax,0x80 at 0x231.
+        _verify_raw(body, WIND_INDEX, 0x231, bytes.fromhex("48 03 c2"))
+        raw_displacements = expected[:8] + [value - 0x80 for value in expected[8:]]
+    for index, (offset, displacement, width) in enumerate(zip(offsets, raw_displacements, widths)):
+        actual_displacement = displacement
+        _verify_memory(body, WIND_INDEX, offset, base="rax", displacement=actual_displacement, width=width)
+
+
+def _canonical_wind_job_fields() -> dict[str, dict[str, Any]]:
+    if not JOB_LAYOUT_PATH.is_file():
+        raise ContractError(f"canonical job layout is missing: {JOB_LAYOUT_PATH}")
+    payload = json.loads(JOB_LAYOUT_PATH.read_text(encoding="utf-8"))
+    jobs = [row for row in payload.get("jobs", []) if row.get("type") == "BeyondDynamicBone.SimulationManager+StartSimulationStepJob"]
+    if len(jobs) != 1:
+        raise ContractError(f"canonical job layout expected one SimulationManager StartSimulationStepJob, found {len(jobs)}")
+    result: dict[str, dict[str, Any]] = {}
+    for field in jobs[0].get("fields", []):
+        offset = field.get("nativePayloadOffset")
+        if offset in {"0x68", "0xa8", "0xb8", "0x158"}:
+            result[offset] = field
+    expected_names = {"0x68": "vertexRootIndices", "0xa8": "teamWindArray", "0xb8": "windDataArray", "0x158": "frictionArray"}
+    for offset, name in expected_names.items():
+        field = result.get(offset)
+        if field is None or field.get("name") != name:
+            actual = field.get("name") if field else "<missing>"
+            raise ContractError(f"canonical job layout field {offset} drift: {actual} != {name}")
+    return result
+
+
+def _verify_canonical_wind_job_fields() -> dict[str, dict[str, Any]]:
+    canonical = _canonical_wind_job_fields()
+    expected = {"0x68": ("vertexRootIndices", 4), "0xa8": ("teamWindArray", 152), "0xb8": ("windDataArray", 212), "0x158": ("frictionArray", 4)}
+    for offset, (name, size) in expected.items():
+        field = canonical[offset]
+        element = field.get("elementType") or {}
+        if int(element.get("nativeSizeBytes", -1)) != size:
+            raise ContractError(f"canonical job layout {name} element size drift: {element.get('nativeSizeBytes')} != {size}")
+        for access in WIND_BUFFER_ACCESS:
+            if access["jobOffset"] == offset:
+                if access["jobField"] != name or access["strideBytes"] != size:
+                    raise ContractError(f"Wind buffer attribution drift at {offset}: {access['jobField']}/{access['strideBytes']} != {name}/{size}")
+    return canonical
 
 
 def _verify_blend_pointer_access(body: bytes) -> list[dict[str, Any]]:
@@ -406,11 +539,38 @@ def _verify_blend_pointer_access(body: bytes) -> list[dict[str, Any]]:
     return rows
 
 
+def _verify_blend_call_setup(body: bytes) -> list[dict[str, Any]]:
+    for offset, raw in BLEND_CALL_RAW_BYTES.items():
+        _verify_raw(body, WIND_INDEX, offset, raw)
+    rows = []
+    for item in BLEND_CALL_SEMANTICS:
+        setup = []
+        for offset_text in item["setupInstructionOffsets"]:
+            offset = int(offset_text, 16)
+            setup.append({"offset": offset_text, "rawBytes": BLEND_CALL_RAW_BYTES[offset].hex()})
+        row = dict(item)
+        row["setupInstructions"] = setup
+        rows.append(row)
+    return rows
+
+
+def _verify_blend_result_stores(body: bytes) -> dict[str, Any]:
+    result: dict[str, Any] = {}
+    for path, instructions in BLEND_RESULT_RAW_BYTES.items():
+        rows = []
+        for offset, raw in instructions.items():
+            _verify_raw(body, WIND_FORCE_BLEND_INDEX, offset, raw)
+            rows.append({"offset": _hex(offset), "rawBytes": raw.hex()})
+        result[path] = rows
+    return result
+
+
 def build_contract(gameassembly: Path | None = DEFAULT_GAME_ASSEMBLY, metadata: Path | None = DEFAULT_METADATA) -> dict[str, Any]:
     evidence = check_installed_native_inputs(EXPECTED_GAME_ASSEMBLY_SHA256, EXPECTED_METADATA_SHA256, gameassembly=gameassembly, metadata=metadata)
     if evidence.status != "validated":
         raise ContractError(f"native evidence gate {evidence.status}: {evidence.detail}")
     native, md, pe, method_by_pointer, all_pointers = STATIC._native_indexes(evidence.metadata, evidence.gameassembly)
+    canonical_fields = _verify_canonical_wind_job_fields()
     methods: dict[int, dict[str, Any]] = {}
     bodies: dict[int, bytes] = {}
     for method_index in (WIND_INDEX, WIND_FORCE_BLEND_INDEX):
@@ -420,11 +580,18 @@ def build_contract(gameassembly: Path | None = DEFAULT_GAME_ASSEMBLY, metadata: 
         methods[method_index] = row
         bodies[method_index] = body
     methods[WIND_INDEX]["bufferAccesses"] = _verify_wind_buffers(bodies[WIND_INDEX])
+    methods[WIND_INDEX]["canonicalJobLayoutSource"] = {"path": str(JOB_LAYOUT_PATH), "sha256": hashlib.sha256(JOB_LAYOUT_PATH.read_bytes()).hexdigest()}
+    methods[WIND_INDEX]["canonicalJobFields"] = {
+        offset: {"name": field["name"], "nativePayloadOffset": field["nativePayloadOffset"], "elementType": field.get("elementType", {}).get("name"), "elementSizeBytes": field.get("elementType", {}).get("nativeSizeBytes")}
+        for offset, field in canonical_fields.items()
+    }
     methods[WIND_FORCE_BLEND_INDEX]["pointerFieldAccesses"] = _verify_blend_pointer_access(bodies[WIND_FORCE_BLEND_INDEX])
-    methods[WIND_INDEX]["blendCallSemantics"] = BLEND_CALL_SEMANTICS
+    methods[WIND_INDEX]["blendCallSemantics"] = _verify_blend_call_setup(bodies[WIND_INDEX])
+    result_stores = _verify_blend_result_stores(bodies[WIND_FORCE_BLEND_INDEX])
     methods[WIND_FORCE_BLEND_INDEX]["resultContract"] = {
         "normalPath": {"resultPointerStackOffset": "0x30", "writes": [{"offset": "0x0", "widthBytes": 8}, {"offset": "0x8", "widthBytes": 4}]},
         "thresholdPath": {"resultPointerStackOffset": "0x30", "writes": [{"offset": "0x0", "widthBytes": 8}, {"offset": "0x8", "widthBytes": 4}], "value": "zero"},
+        "rawInstructions": result_stores,
     }
     return {
         "schema": "endfield.charinfo.secondary-dynamics-wind-helper.v1",
