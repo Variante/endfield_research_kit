@@ -54,6 +54,16 @@ class ContractError(RuntimeError):
     """Raised when a pinned native evidence gate does not close."""
 
 
+def _validate_collider_wrapper_evidence(wrapper: dict[str, Any], expected_names: list[str]) -> None:
+    """Fail closed on any thunk payload access, GPR clobber, or order drift."""
+    if wrapper.get("incomingGprPreserved") != ["rcx", "rdx", "r8", "r9"]:
+        raise ContractError("ColliderEnd thunk incoming GPR preservation drift")
+    if wrapper.get("payloadDereferenceCount", 0) != 0 or wrapper.get("payloadWritebackCount", 0) != 0:
+        raise ContractError("ColliderEnd thunk contains payload dereference/writeback")
+    if wrapper.get("decodedForwardingParameterNames") != expected_names:
+        raise ContractError("ColliderEnd thunk forwarding parameter order drift")
+
+
 def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as stream:
@@ -713,10 +723,14 @@ def _collider_end_candidate_audit(pe: dict[str, Any], rows: list[dict[str, Any]]
         written_before_call = {ins.reg_name(ins.operands[0].reg) for ins in instructions[:call_index]
                                if ins.operands and ins.operands[0].type == 1}
         incoming_preserved = [reg for reg in ("rcx", "rdx", "r8", "r9") if reg not in written_before_call]
-        payload_dereference_count = sum(
-            operand.type == 3 and ins.reg_name(operand.mem.base) not in {"rbp", "rsp", "rip"}
-            for ins in instructions for operand in ins.operands
-        )
+        payload_accesses = [
+            {"instructionOffset": f"0x{ins.address - (pe['imageBase'] + export_rva):x}",
+             "operand": ins.op_str, "access": "write" if index == 0 else "read"}
+            for ins in instructions for index, operand in enumerate(ins.operands)
+            if operand.type == 3 and ins.reg_name(operand.mem.base) not in {"rbp", "rsp", "rip"}
+        ]
+        payload_dereference_count = len(payload_accesses)
+        payload_writeback_count = sum(row["access"] == "write" for row in payload_accesses)
         stack_loads = []
         stack_forwards = []
         for ins in instructions:
@@ -752,16 +766,16 @@ def _collider_end_candidate_audit(pe: dict[str, Any], rows: list[dict[str, Any]]
             {"instructionOffset": "0x17", "destination": "[rsp+0x20]", "sourceRegister": "rax", "widthBytes": 8, "parameter": "oldRotations"},
         ]:
             raise ContractError(f"candidate {candidate_hash} outgoing stack forwarding drift")
-        candidates.append({
-            "hash": candidate_hash,
-            "wrapper": {
+        candidate_wrapper = {
                 "rva": row["rva"],
                 "bodyBytes": row["bodyBytes"],
                 "bodySha256": row["bodySha256"],
                 "branchCount": sum(ins.mnemonic.startswith(("j", "loop")) for ins in instructions),
                 "incomingGprPreserved": incoming_preserved,
+                "decodedForwardingParameterNames": [job_fields[index].get("name") for index in range(4)] + [entry["parameter"] for entry in stack_loads],
+                "payloadAccesses": payload_accesses,
                 "payloadDereferenceCount": payload_dereference_count,
-                "payloadWritebackCount": 0,
+                "payloadWritebackCount": payload_writeback_count,
                 "indirectCall": indirect_calls[0],
                 "incomingGprForwarding": [
                     {"ordinal": index + 1, "parameter": job_fields[index].get("name"), "register": register}
@@ -769,7 +783,11 @@ def _collider_end_candidate_audit(pe: dict[str, Any], rows: list[dict[str, Any]]
                 ],
                 "stackParameterForwarding": stack_loads,
                 "outgoingStackForwarding": stack_forwards,
-            },
+            }
+        _validate_collider_wrapper_evidence(candidate_wrapper, [field.get("name") for field in job_fields])
+        candidates.append({
+            "hash": candidate_hash,
+            "wrapper": candidate_wrapper,
             "runtimeFunctionPointerSlot": {
                 "targetVa": f"0x{slot_va:x}",
                 "targetRva": f"0x{slot_va - pe['imageBase']:x}",
@@ -826,7 +844,7 @@ def _collider_end_candidate_audit(pe: dict[str, Any], rows: list[dict[str, Any]]
             "candidateCount": len(candidates),
             "sameWrapperCfg": all(c["wrapper"]["branchCount"] == candidates[0]["wrapper"]["branchCount"] and c["wrapper"]["indirectCall"]["kind"] == candidates[0]["wrapper"]["indirectCall"]["kind"] for c in candidates),
             "sameParameterForwarding": wrapper_forwarding_equal and stack_forwarding_equal,
-            "sameNativeArrayParameterOrder": parameter_rows == [{"ordinal": i + 1, "name": n, "kind": k} for i, (n, k) in enumerate([(r.get("name"), f"{r.get('kind')}<{r.get('elementType', {}).get('name')}>" if r.get('elementType') else r.get('kind')) for r in job_fields])],
+            "sameNativeArrayParameterOrder": all(c["wrapper"]["decodedForwardingParameterNames"] == [field.get("name") for field in job_fields] for c in candidates),
             "fieldOffsetsPresentInCandidateThunk": any(c["wrapper"]["payloadDereferenceCount"] for c in candidates),
             "nowOldWritebackDiscriminates": len({c["wrapper"]["payloadWritebackCount"] for c in candidates}) > 1,
             "staticInitializerSlotIdentityDiscriminates": False,

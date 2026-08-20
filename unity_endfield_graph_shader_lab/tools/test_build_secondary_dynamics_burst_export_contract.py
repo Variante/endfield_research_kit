@@ -133,6 +133,8 @@ class SecondaryDynamicsBurstExportTests(unittest.TestCase):
         for candidate in audit["candidates"]:
             self.assertEqual(candidate["wrapper"]["branchCount"], 0)
             self.assertEqual(candidate["wrapper"]["incomingGprPreserved"], ["rcx", "rdx", "r8", "r9"])
+            self.assertEqual(candidate["wrapper"]["decodedForwardingParameterNames"], ["jobColliderIndexList", "nowPositions", "nowRotations", "oldPositions", "oldRotations", "_indexCount"])
+            self.assertEqual(candidate["wrapper"]["payloadAccesses"], [])
             self.assertEqual(candidate["wrapper"]["payloadDereferenceCount"], 0)
             self.assertEqual(candidate["wrapper"]["payloadWritebackCount"], 0)
             self.assertEqual(len(candidate["wrapper"]["stackParameterForwarding"]), 2)
@@ -189,6 +191,21 @@ class SecondaryDynamicsBurstExportTests(unittest.TestCase):
             with patch.object(builder, "DEFAULT_OUTPUT", root / "out.json"):
                 with self.assertRaisesRegex(builder.ContractError, "schema/status drift"):
                     builder._sibling_provenance("sibling.json", gate, "test.schema.v1", "expected")
+
+    def test_collider_wrapper_evidence_rejects_gpr_payload_and_order_tampering(self) -> None:
+        payload = json.loads(builder.DEFAULT_OUTPUT.read_text(encoding="utf-8"))
+        wrapper = payload["targets"]["colliderEndRange"]["candidateAudit"]["candidates"][0]["wrapper"]
+        expected = wrapper["decodedForwardingParameterNames"]
+        for key, value, message in (
+            ("incomingGprPreserved", ["rcx", "rdx", "r8"], "GPR"),
+            ("payloadDereferenceCount", 1, "payload"),
+            ("payloadWritebackCount", 1, "payload"),
+            ("decodedForwardingParameterNames", list(reversed(expected)), "order"),
+        ):
+            tampered = dict(wrapper)
+            tampered[key] = value
+            with self.assertRaisesRegex(builder.ContractError, message):
+                builder._validate_collider_wrapper_evidence(tampered, expected)
 
     def test_stack_feature_decoder_preserves_width_and_offsets(self) -> None:
         body = bytes.fromhex(
