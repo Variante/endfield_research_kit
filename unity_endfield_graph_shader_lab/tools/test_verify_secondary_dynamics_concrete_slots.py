@@ -46,6 +46,13 @@ class SecondaryDynamicsConcreteSlotTests(unittest.TestCase):
         with self.assertRaisesRegex(verifier.ContractError, "width/span drift"):
             verifier._validate_combined(drifted, inner)
 
+    def test_generic_field_coverage_is_exactly_59_arrays_and_4_references(self) -> None:
+        job, inner = self._contracts()
+        drifted = copy.deepcopy(job)
+        drifted["jobs"][0]["fields"].pop(0)
+        with self.assertRaisesRegex(verifier.ContractError, "coverage drift"):
+            verifier._validate_combined(drifted, inner)
+
     def test_generic_size_claim_is_rejected(self) -> None:
         job, inner = self._contracts()
         drifted = copy.deepcopy(inner)
