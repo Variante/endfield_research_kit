@@ -4,6 +4,8 @@ This is an opt-in external observation tool for the pinned client build.  It
 does not implement the cloth solver and it does not identify a character from
 an opaque native pointer.  The user labels a capture target and opens that
 actor's Character Info overview while the trace is armed.
+Frida Interceptor instrumentation changes the hooked entry-point execution
+path; the callbacks are read-only observations and never write game state.
 
 Examples (from the repository root)::
 
@@ -35,6 +37,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from scripts.story_recovery import runtime_trace_core as core  # noqa: E402
+from scripts.common import check_installed_native_inputs  # noqa: E402
 
 
 DEFAULT_MANIFEST = ROOT / "unity_endfield_graph_shader_lab/config/character_dynamics_telemetry_hooks.json"
@@ -45,6 +48,42 @@ AGENT_PLACEHOLDER = "__CHARACTER_DYNAMICS_TRACE_CONFIG__"
 DEFAULT_OUTPUT_ROOT = ROOT / "scratch/reverse_engineering/character_dynamics_telemetry"
 
 CaptureConfigurationError = core.CaptureConfigurationError
+
+
+def verify_pinned_native_gate(game_root: Path, manifest: dict[str, Any]) -> Any:
+    """Require the shared explicit GameAssembly/metadata gate before export checks."""
+
+    gameassembly = (game_root / manifest["files"]["gameAssembly"]["relativePath"]).resolve()
+    metadata = (game_root / manifest["files"]["metadata"]["relativePath"]).resolve()
+    result = check_installed_native_inputs(
+        manifest["files"]["gameAssembly"]["sha256"],
+        manifest["files"]["metadata"]["sha256"],
+        gameassembly=gameassembly,
+        metadata=metadata,
+    )
+    if not result.validated:
+        raise CaptureConfigurationError(
+            "common.check_installed_native_inputs "
+            f"[{result.status}]: {result.detail}"
+        )
+    if Path(result.gameassembly).resolve() != gameassembly or Path(result.metadata).resolve() != metadata:
+        raise CaptureConfigurationError(
+            "common.check_installed_native_inputs did not retain the explicit native paths"
+        )
+    return result
+
+
+def verified_file_facts(verified: dict[str, Path]) -> dict[str, dict[str, Any]]:
+    """Record actual path, size, and SHA-256 facts in the primary JSONL stream."""
+
+    return {
+        name: {
+            "path": str(path.resolve()),
+            "bytes": path.stat().st_size,
+            "sha256": core.sha256_file(path),
+        }
+        for name, path in verified.items()
+    }
 
 
 def default_output_path(target: str) -> Path:
@@ -157,6 +196,7 @@ def run_capture(
     start = time.perf_counter()
     session_id = f"{manifest['gameBuild']}-{args.target}-{process.pid}-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}"
     writer = core.EventWriter(output, session_id, start, EVENT_SCHEMA)
+    file_facts = verified_file_facts(verified)
     target = manifest["targets"][args.target]
     writer.emit(
         "session_start",
@@ -166,6 +206,7 @@ def run_capture(
             "targetId": args.target,
             "target": target,
             "exportFingerprint": manifest["files"]["metadata"]["sha256"],
+            "verifiedFiles": file_facts,
             "nativeEvidenceBoundary": manifest["evidenceBoundary"],
         },
     )
@@ -174,13 +215,18 @@ def run_capture(
     ready = threading.Event()
     ready_payload: dict[str, Any] = {}
     fatal: list[dict[str, Any]] = []
+    stop_ack = threading.Event()
+    terminal_failure = False
     session = None
     script = None
 
     def on_message(message: dict[str, Any], data: bytes | None) -> None:
+        nonlocal terminal_failure
         if message.get("type") == "error":
-            writer.diagnostic("agent_error", {"message": message, "dataBytes": len(data or b"")})
-            fatal.append({"kind": "agent_error", "message": message})
+            value = {"kind": "agent_error", "message": message, "dataBytes": len(data or b"")}
+            writer.emit("capture_fatal", value)
+            writer.diagnostic("agent_error", value)
+            fatal.append(value)
             stop.set()
             return
         payload = message.get("payload")
@@ -202,16 +248,31 @@ def run_capture(
         elif channel == "diagnostic" and isinstance(payload.get("diagnostic"), dict):
             diagnostic = dict(payload["diagnostic"])
             writer.diagnostic(str(diagnostic.pop("kind", "agent_diagnostic")), diagnostic)
+        elif channel == "state" and isinstance(payload.get("state"), dict):
+            state = dict(payload["state"])
+            kind = str(state.pop("kind", "capture_state"))
+            writer.emit(kind, state)
+            if kind == "capture_stop_ack":
+                stop_ack.set()
+            elif kind in {"capture_fatal", "capture_capped", "capture_detached"}:
+                terminal_failure = True
+                stop.set()
         elif channel == "fatal" and isinstance(payload.get("fatal"), dict):
             value = dict(payload["fatal"])
             fatal.append(value)
+            writer.emit("capture_fatal", value)
             writer.diagnostic("agent_fatal", value)
+            stop.set()
             ready.set()
         else:
             writer.diagnostic("unexpected_agent_payload", {"payload": payload})
 
     def on_detached(*values: Any) -> None:
-        writer.diagnostic("session_detached", {"values": [str(value) for value in values]})
+        nonlocal terminal_failure
+        value = {"values": [str(value) for value in values]}
+        terminal_failure = True
+        writer.emit("capture_detached", value)
+        writer.diagnostic("session_detached", value)
         stop.set()
 
     previous_sigint = core.install_stop_signal(stop)
@@ -238,7 +299,10 @@ def run_capture(
         failed = ready_payload.get("failed") or []
         if failed or any(state != "attached" for state in (ready_payload.get("hooks") or {}).values()):
             raise RuntimeError(f"one or more character dynamics hooks failed to attach: {failed or ready_payload.get('hooks')}")
-        writer.emit("native_module_verified", module_facts)
+        writer.emit(
+            "native_module_verified",
+            {**module_facts, "verifiedFiles": file_facts, "hookStates": ready_payload.get("hooks", {})},
+        )
         print(
             f"Verified {manifest['gameBuild']} and attached all {len(ready_payload.get('hooks') or {})} hooks.\n"
             f"Target: {args.target} ({target['actor']})\n"
@@ -267,10 +331,22 @@ def run_capture(
                 break
         if script is not None and started:
             script.post({"type": "stop_capture"})
-            # Let the agent's bounded batch and stop diagnostic cross the
+            # Let the agent's bounded batch and stop acknowledgement cross the
             # Frida message queue before unloading the script.
-            time.sleep(0.25)
-        writer.emit("session_end", {"captureStarted": started})
+            if not stop_ack.wait(1.0):
+                terminal_failure = True
+                writer.emit("capture_stop_ack_missing", {"targetId": args.target})
+        elif not started:
+            terminal_failure = True
+            writer.emit("capture_not_started", {"targetId": args.target})
+        writer.emit(
+            "session_end",
+            {
+                "captureStarted": started,
+                "stopAck": stop_ack.is_set(),
+                "terminalFailure": terminal_failure or bool(fatal),
+            },
+        )
     finally:
         core.restore_stop_signal(previous_sigint)
         if script is not None:
@@ -284,7 +360,7 @@ def run_capture(
             except Exception:
                 pass
         writer.close()
-    return 0
+    return 1 if terminal_failure or fatal else 0
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -297,7 +373,11 @@ def main(argv: list[str] | None = None) -> int:
             raise CaptureConfigurationError(
                 f"unknown target {args.target!r}; available: {', '.join(sorted(manifest['targets']))}"
             )
-        verified = core.verify_game_files(args.game_root.resolve(), manifest)
+        game_root = args.game_root.resolve()
+        # The shared native gate is authoritative for the two binary inputs;
+        # verify_game_files then adds the executable's independent hash gate.
+        verify_pinned_native_gate(game_root, manifest)
+        verified = core.verify_game_files(game_root, manifest)
         agent_source = render_agent_source(args.agent.resolve(), manifest)
         print(
             f"Verified {manifest['gameBuild']}: "
