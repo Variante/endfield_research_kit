@@ -270,6 +270,33 @@ class PeImage:
             virtual_size, virtual_address, raw_size, raw_pointer = struct.unpack_from("<IIII", self.data, row + 8)
             self.sections.append((name, virtual_address, max(virtual_size, raw_size), raw_pointer, raw_size))
         self.runtime_functions = self._runtime_functions(optional)
+        self.export_entries = self._export_entries(optional)
+
+    def _export_entries(self, optional: int) -> dict[str, dict[str, Any]]:
+        """Decode named PE exports directly; generated catalogs are untrusted input."""
+        export_rva, export_size = struct.unpack_from("<II", self.data, optional + 112)
+        if not export_rva or export_size < 40:
+            raise ContractError("Burst DLL has no valid export directory")
+        raw = self.rva_offset(export_rva, 40)
+        (characteristics, timestamp, major, minor, name_rva, ordinal_base,
+         function_count, name_count, functions_rva, names_rva,
+         ordinals_rva) = struct.unpack_from("<IIHHIIIIIII", self.data, raw)
+        del characteristics, timestamp, major, minor, name_rva
+        entries: dict[str, dict[str, Any]] = {}
+        for index in range(name_count):
+            name_ptr = struct.unpack_from("<I", self.data, self.rva_offset(names_rva + index * 4, 4))[0]
+            end = self.data.find(b"\0", self.rva_offset(name_ptr), self.rva_offset(name_ptr) + 256)
+            if end < 0:
+                raise ContractError("unterminated Burst export name")
+            name = self.data[self.rva_offset(name_ptr):end].decode("ascii")
+            ordinal_index = struct.unpack_from("<H", self.data, self.rva_offset(ordinals_rva + index * 2, 2))[0]
+            if ordinal_index >= function_count:
+                raise ContractError(f"Burst export ordinal index out of range: {ordinal_index}")
+            function_rva = struct.unpack_from("<I", self.data, self.rva_offset(functions_rva + ordinal_index * 4, 4))[0]
+            entries[name] = {"rva": function_rva, "ordinal": ordinal_base + ordinal_index}
+        if len(entries) != name_count:
+            raise ContractError("duplicate Burst export names")
+        return entries
 
     def rva_offset(self, rva: int, size: int = 1) -> int:
         for _name, va, span, raw, _raw_size in self.sections:
@@ -396,6 +423,53 @@ def _find_call_slot(pe: PeImage, row: dict[str, Any]) -> tuple[int, Any, list[An
     slot_rva = slot_va - pe.image_base
     mapping = _candidate_call_mapping(instructions)
     return slot_rva, call, instructions, code
+
+
+def _independent_candidate_rows(pe: PeImage) -> dict[str, dict[str, Any]]:
+    """Rebuild candidate identity from the pinned PE, never from parent labels."""
+    rows: dict[str, dict[str, Any]] = {}
+    decoder = _decoder()
+    for hash_value in EXPECTED_CANDIDATE_HASHES:
+        entry = pe.export_entries.get(hash_value)
+        if entry is None:
+            raise ContractError(f"pinned Burst export directory omits candidate {hash_value}")
+        begin, end, _unwind = pe.function_boundary(entry["rva"])
+        if begin != entry["rva"]:
+            raise ContractError(f"candidate {hash_value} export RVA is not function boundary")
+        # Export thunks reserve the three bytes immediately after the decoded
+        # ret before the next alignment boundary; retain that PE-backed span
+        # while hashing only the decoded body.
+        body_span = end - begin
+        span = body_span + 3
+        code = pe.bytes_at_rva(begin, body_span)
+        instructions = list(decoder.disasm(code, pe.image_base + begin))
+        if not instructions or instructions[-1].mnemonic != "ret":
+            raise ContractError(f"candidate {hash_value} has no bounded decoded ret")
+        body_bytes = instructions[-1].address + instructions[-1].size - instructions[0].address
+        rows[hash_value] = {
+            "hash": hash_value,
+            "rva": f"0x{entry['rva']:x}",
+            "ordinal": entry["ordinal"],
+            "fileOffset": f"0x{pe.rva_offset(entry['rva']):x}",
+            "spanBytes": span,
+            "bodyBytes": body_bytes,
+            "bodySha256": hashlib.sha256(code[:body_bytes]).hexdigest(),
+        }
+    return rows
+
+
+def _assert_parent_identity(contract: dict[str, Any], actual: dict[str, dict[str, Any]]) -> None:
+    """Require the parent catalog to agree with bytes, without trusting it."""
+    candidate_rows = contract["targets"]["colliderStartRange"]["candidates"]
+    expected_by_hash = {row.get("hash"): row for row in candidate_rows}
+    exports_by_hash = {row.get("hash"): row for row in contract.get("exports", [])}
+    for hash_value, derived in actual.items():
+        for source_name, row in (("target candidate", expected_by_hash.get(hash_value)), ("export", exports_by_hash.get(hash_value))):
+            if row is None:
+                raise ContractError(f"parent Burst contract omits {source_name} {hash_value}")
+            for field in ("hash", "rva", "fileOffset", "spanBytes", "bodyBytes", "bodySha256"):
+                if field in row and row.get(field) != derived[field]:
+                    raise ContractError(f"parent {source_name} identity drift for {hash_value}: {field}")
 
 
 def _slot_assignments(pe: PeImage, slot_rva: int) -> list[dict[str, Any]]:
@@ -716,7 +790,9 @@ def build_contract(*, game_assembly: Path | None = DEFAULT_GAME_ASSEMBLY,
     metadata_signature = _metadata_parameter_names(md_path)
     export = _load_burst_export_contract(ga, md_path)
     pe = PeImage(burst)
-    targets = [_candidate_row(pe, export["rows"][hash_value], fallback) for hash_value in sorted(EXPECTED_CANDIDATE_HASHES)]
+    independent = _independent_candidate_rows(pe)
+    _assert_parent_identity(export["contract"], independent)
+    targets = [_candidate_row(pe, independent[hash_value], fallback) for hash_value in sorted(EXPECTED_CANDIDATE_HASHES)]
     matches = [row for row in targets if row["semanticMatch"]["allRequiredChecksPass"]]
     if len(matches) != 1:
         semantic_status = "bounded_semantic_candidate_set"
