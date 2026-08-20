@@ -1163,16 +1163,26 @@ through `_indexCount`; the other collider/simulation start/end jobs have the
 same independent size/last-field closure. Relevant managed `Execute` bodies
 and the BurstDirectCall fallback/wrapper are also hash-pinned. Closed-generic
 native accessors now recover the NativeArray buffer/length/allocator offsets
-and NativeReference data/allocator offsets. Their total sizes remain bounded
-only from below (16 and 12 bytes respectively), and the wrapper-to-hashed-export
-mapping inside `lib_burst_generated.dll` is not resolved, so the complete
-payload, numeric solver, and public-Unity execution remain inadmissible.
+and NativeReference data/allocator offsets. Across these four concrete jobs,
+59 NativeArray slots and four NativeReference slots independently span 16
+bytes; their single generic element types and native element sizes are also
+resolved, and the two scalar-to-array alignment gaps are explicit. This does
+not close the open generic sizes: they remain bounded only from below (16 and
+12 bytes respectively), while the wrapper-to-hashed-export mapping inside
+`lib_burst_generated.dll` is unresolved. The complete execution payload,
+numeric solver, and public-Unity execution therefore remain inadmissible.
 
 The installed client does contain its original `lib_burst_generated.dll`, but
 that is not a drop-in public-Unity plugin: its hashed exports are resolved
 through the retail Burst runtime and depend on the original IL2CPP/Jobs state.
-A maintained external telemetry probe therefore takes the safer next route.
-It applies the shared pinned-native gate, then attaches bounded read-only
+A second maintained read-only trace now targets that exact resolver boundary:
+it identifies the already-loaded or newly loaded Burst module, records only
+matching `GetProcAddress` calls with verified-GameAssembly caller frames, and
+fails closed on ambiguous modules or incomplete terminal state. This is the
+shortest route to the missing wrapper-to-hashed-export join, but only its
+static/check-only contract has run; no retail resolver trace has been recorded.
+The separate character-dynamics telemetry probe applies the shared pinned-native
+gate, then attaches bounded read-only
 Frida callbacks at the retail cloth/update/transform boundaries and writes the
 full verified file handshake into JSONL. The callbacks instrument function
 entry but do not call game functions or write game state. Until a real trace
