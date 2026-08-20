@@ -80,6 +80,8 @@ class ValidateBurstResolverTelemetryTests(unittest.TestCase):
             gameAssemblyModuleName=manifest["moduleName"],
             gameAssemblyModuleBase="0x180000000",
             gameAssemblyModuleSize=manifest["files"]["gameAssembly"]["bytes"],
+            resolverExportMapSha256=manifest["resolverExportEnumeration"]["canonicalNameRvaSha256"],
+            resolverExportMapCount=manifest["resolverExportEnumeration"]["hashedCount"],
             targets=[
                 {
                     "id": target["id"],
@@ -251,6 +253,7 @@ class ValidateBurstResolverTelemetryTests(unittest.TestCase):
             )
             for seq, row in enumerate(rows):
                 row["seq"] = seq
+            next(row for row in rows if row["kind"] == "capture_stop_ack")["eventCount"] = 2
             get_proc = next(row for row in rows if row["kind"] == "get_proc_address")
             get_proc["lpProcName"] = None
             get_proc["lpProcNameType"] = "null"
@@ -356,6 +359,44 @@ class ValidateBurstResolverTelemetryTests(unittest.TestCase):
                 path.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
                 with self.assertRaisesRegex(validator.TraceValidationError, message):
                     validator.validate_trace(path)
+
+    def test_resolver_identity_status_is_enum_and_not_loaded_fields_are_null(self) -> None:
+        for mutation, message in (
+            (lambda identity: identity.update(status="bogus"), "status is invalid or unrecognized"),
+            (lambda identity: identity.update(status="not_loaded_at_attach", path=None, base=None, moduleBase=None, size=None, exportEnumerationStatus="available"), "inconsistent export enumeration fields"),
+        ):
+            with self.subTest(message=message), tempfile.TemporaryDirectory() as temp:
+                path = Path(temp) / "trace.jsonl"
+                self._write_trace(path)
+                rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+                mutation(rows[1]["resolverModuleIdentity"])
+                path.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
+                with self.assertRaisesRegex(validator.TraceValidationError, message):
+                    validator.validate_trace(path)
+
+    def test_stop_ack_count_and_clean_state_are_exact(self) -> None:
+        for mutation, message in (
+            (lambda row: row.update(eventCount=0), "eventCount differs"),
+            (lambda row: row.update(terminalState="capped"), "non-clean terminal state"),
+        ):
+            with self.subTest(message=message), tempfile.TemporaryDirectory() as temp:
+                path = Path(temp) / "trace.jsonl"
+                self._write_trace(path)
+                rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+                mutation(next(row for row in rows if row["kind"] == "capture_stop_ack"))
+                path.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
+                with self.assertRaisesRegex(validator.TraceValidationError, message):
+                    validator.validate_trace(path)
+
+    def test_manifest_pinned_export_map_digest_is_required(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "trace.jsonl"
+            self._write_trace(path)
+            rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+            rows[1]["resolverExportMapSha256"] = "0" * 64
+            path.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
+            with self.assertRaisesRegex(validator.TraceValidationError, "pinned name/RVA map"):
+                validator.validate_trace(path)
 
     def test_missing_stop_ack_fails_closed(self) -> None:
         with tempfile.TemporaryDirectory() as temp:

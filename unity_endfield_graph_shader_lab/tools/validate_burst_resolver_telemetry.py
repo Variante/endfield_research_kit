@@ -148,13 +148,16 @@ def _module_identity(value: Any, label: str, manifest: dict[str, Any]) -> dict[s
     required = {"status", "name", "path", "base", "moduleBase", "size", "exportEnumerationStatus", "hashedExportCount"}
     if set(value) != required:
         _fail(f"{label} has an unexpected module identity schema: {sorted(value)}")
-    if not isinstance(value.get("status"), str) or not value["status"]:
-        _fail(f"{label}.status is invalid")
+    status = value.get("status")
+    if status not in {"already_loaded", "loadlibraryw", "not_loaded_at_attach"}:
+        _fail(f"{label}.status is invalid or unrecognized")
     if _module_name(value.get("name"), f"{label}.name") != manifest["resolverModuleName"].casefold():
         _fail(f"{label}.name differs from the pinned resolver")
-    if value.get("status") == "not_loaded_at_attach":
+    if status == "not_loaded_at_attach":
         if any(value.get(key) is not None for key in ("path", "base", "moduleBase", "size")):
             _fail(f"{label} not_loaded identity must have null path/base/size")
+        if value.get("exportEnumerationStatus") != "not_loaded" or value.get("hashedExportCount") != 0:
+            _fail(f"{label} not_loaded identity has inconsistent export enumeration fields")
     else:
         _module_path(value.get("path"), f"{label}.path")
         _check_pointer(value.get("base"), f"{label}.base")
@@ -162,7 +165,7 @@ def _module_identity(value: Any, label: str, manifest: dict[str, Any]) -> dict[s
         if value["base"].casefold() != value["moduleBase"].casefold():
             _fail(f"{label}.base and moduleBase differ")
     size = value.get("size")
-    if value.get("status") == "not_loaded_at_attach":
+    if status == "not_loaded_at_attach":
         if size is not None:
             _fail(f"{label}.size must be null before module load")
     elif isinstance(size, bool) or not isinstance(size, int) or size <= 0:
@@ -263,6 +266,7 @@ def validate_trace(
             "kernel32ModuleName", "resolverModuleName", "resolverModuleIdentity",
             "resolverExpectedPath", "resolverExpectedSize", "gameAssemblyModuleName",
             "gameAssemblyModuleBase", "gameAssemblyModuleSize", "targets",
+            "resolverExportMapSha256", "resolverExportMapCount",
         },
         "resolver_module_loaded": {
             "requestedPath", "hModule", "loadSucceeded", "module", "resolverModuleIdentity",
@@ -365,6 +369,9 @@ def validate_trace(
         _fail("native module handshake resolverExpectedPath differs from the pinned file")
     if handshake.get("resolverExpectedSize") != manifest["files"]["resolver"]["bytes"]:
         _fail("native module handshake resolverExpectedSize differs from the pinned file")
+    export_enum = manifest["resolverExportEnumeration"]
+    if handshake.get("resolverExportMapSha256") != export_enum["canonicalNameRvaSha256"] or handshake.get("resolverExportMapCount") != export_enum["hashedCount"]:
+        _fail("native module handshake resolver export map is not the pinned name/RVA map")
     handshake_targets = handshake.get("targets")
     if not isinstance(handshake_targets, list) or len(handshake_targets) != len(manifest["targets"]):
         _fail("native module handshake target list is incomplete")
@@ -612,7 +619,20 @@ def validate_trace(
         _fail(f"expected exactly one capture_started row, got {len(started_rows)}")
     if len(stop_acks) != 1:
         _fail(f"expected exactly one capture_stop_ack row, got {len(stop_acks)}")
-    stop_identity = stop_acks[0].get("resolverModuleIdentity")
+    stop_ack = stop_acks[0]
+    if stop_ack.get("captureStarted") is not True:
+        _fail("capture_stop_ack must confirm captureStarted=true")
+    if stop_ack.get("terminalState") is not None:
+        if stop_ack.get("terminalState") not in {"fatal", "capped", "detached", "start_rejected"}:
+            _fail("capture_stop_ack has an unrecognized terminalState")
+        _fail("capture_stop_ack confirms a non-clean terminal state")
+    expected_event_count = len(resolver_events) + len(proc_events)
+    if stop_ack.get("eventCount") != expected_event_count:
+        _fail(
+            "capture_stop_ack eventCount differs from resolver/proc event count: "
+            f"expected {expected_event_count}, got {stop_ack.get('eventCount')}"
+        )
+    stop_identity = stop_ack.get("resolverModuleIdentity")
     _pinned_resolver_identity(
         stop_identity,
         "capture_stop_ack.resolverModuleIdentity",

@@ -97,6 +97,10 @@
       ]
     }
   ],
+  "resolverExportEnumeration": {
+    "hashedCount": 628,
+    "canonicalNameRvaSha256": "c5e81b87d6e69459047585163469139c8e75523f1e4939166d40b96725c4ce54"
+  },
   "evidenceBoundary": {
     "classification": "observed_runtime_candidate",
     "scope": "Read-only LoadLibraryW/GetProcAddress observation for one exact lib_burst_generated.dll HMODULE, with disk-hash-pinned inputs plus runtime path/size/base matching and bounded all-module caller backtraces; a verified GameAssembly-only subset is used for target-window attribution.",

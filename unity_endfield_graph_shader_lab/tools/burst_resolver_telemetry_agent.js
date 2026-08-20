@@ -24,6 +24,7 @@ let burstIdentity = null;
 let resolverExports = new Map();
 let resolverExportStatus = "not_loaded";
 let resolverHashedExportCount = 0;
+let resolverExportMap = [];
 let resolverRequestOrdinal = 0;
 
 function transmit(channel, payload) {
@@ -54,6 +55,7 @@ function moduleInfo(item, status) {
 
 function refreshResolverExports(item) {
   resolverExports = new Map();
+  resolverExportMap = [];
   resolverHashedExportCount = 0;
   if (!item) {
     resolverExportStatus = "not_loaded";
@@ -64,8 +66,13 @@ function refreshResolverExports(item) {
     for (const entry of entries) {
       if (!entry || !entry.address) continue;
       const name = String(entry.name);
-      resolverExports.set(pointerText(entry.address).toLowerCase(), name);
-      if (/^[0-9a-f]{32}$/i.test(name)) resolverHashedExportCount += 1;
+      const address = pointerText(entry.address);
+      if (!address) continue;
+      resolverExports.set(address.toLowerCase(), name);
+      if (/^[0-9a-f]{32}$/i.test(name)) {
+        resolverHashedExportCount += 1;
+        resolverExportMap.push({ name, offset: pointerText(ptr(entry.address).sub(item.base)) });
+      }
     }
     resolverExportStatus = "available";
   } catch (error) {
@@ -552,6 +559,7 @@ transmit("ready", {
     resolverModuleIdentity: burstIdentity,
     resolverExportEnumerationStatus: resolverExportStatus,
     resolverHashedExportCount: resolverHashedExportCount,
+    resolverExportMap: resolverExportMap,
     targets: targetWindows.map((target) => ({
       id: target.id,
       methodIndex: target.methodIndex,
