@@ -251,6 +251,15 @@ ModelView normal audio is separately authored when a non-custom normal behavior
 model/layer/state chain, and `behaviorTime` are retained. The fingerprint-locked
 `AudioBehavior.Execute` -> `AudioManager.PostEvent` route is static evidence
 only; state entry, execution, selected branch, and audibility remain unobserved.
+Positioned ModelView audio (`behaviorTag=0x0002`) has three stable authored
+branches. A direct-position Event with nonzero `normalAudioId` reaches the
+fingerprint-locked managed `AudioAdapter._PostEvent` route, stores its managed
+internal playing id in `m_audioHandle`, and has statically verified
+`LoadBank`/`PrepareEvent` boundaries. Custom and entity forms remain
+control-only; `_SwitchState` has no recovered playback sink, and neither form
+promotes an Event, media leaf, or owner. Runtime-dynamic completion, final
+`AkSoundEngine.PostEvent`/native playing-id handoff, Wwise selection,
+execution, and audibility remain unresolved.
 The current `VoiceContext` layout also closes the request-input side: `+0x18`
 is the audio-object id, `+0x20` the Wwise Event, and the inline
 `RuntimeVoiceData` block at `+0x48` supplies the localized `data` key at
@@ -1191,9 +1200,11 @@ Do not copy volatile inventories into this file.
 
 ## Remaining gaps
 
-- Audio recovery queue: positioned ModelView `TrySwitchAudioState` ABI;
-  authorized runtime source-state -> provider/file/decoder/PCM correlation for
-  one VoicePlayer request; and ownership/use evidence for `unknownUse` media.
+- Audio recovery queue: runtime-dynamic completion and final
+  `AkSoundEngine.PostEvent`/native playing-id/Wwise selection; authorized runtime
+  source-state -> provider/file/decoder/PCM correlation for one VoicePlayer
+  request; and ownership/use evidence for `unknownUse` media, which remains
+  identity-only.
 - Server-side mission/property producers and activation policy.
 - Active IFix/server combat overrides, live targets, evaluator chronology, and
   blackboard values.
