@@ -1115,13 +1115,19 @@ ROI: it clips limbs, hair, cloth, or weapons and cannot serve as a complete
 character matte. Clip delivery remains gated on a verified per-frame alpha
 mask with no foreground-UI intersection.
 
-The next source-faithful secondary-motion slice is lifecycle recovery, not a
-visual spring approximation. Recover the exact `PlayerLoopUtils.AddPlayerLoop`
-anchor strings and insertion flags, then validate read -> callback -> writeback
-ordering with movement disabled. Endminf `MC_Ribbon2` is the smallest priority
-probe (31 positions and two capsule colliders). Constraint/Burst numerics and
-IFix-patched execution remain separate gates before any solver can be called
-retail-equivalent.
+Secondary-motion lifecycle recovery has begun without adding a visual spring
+approximation. The pinned native `MagicaManager.SetCustomGameLoop` body proves
+seven ordered `PlayerLoopUtils.AddPlayerLoop` calls, all category anchors, six
+system anchors, and every `last`/`before` flag. The first EarlyUpdate system
+anchor still comes through an initialized TypeInfo static field; its
+`ScriptRunDelayedTasks` candidate is not promoted until that field maps to the
+literal independently. A Unity non-solver probe resolves all four Endminf
+cloth owners, 18 roots, and 10 collider references into 28 unique transforms,
+then verifies read -> callback -> identity-writeback plus disabled and
+zero-weight gates. It never registers the recovered PlayerLoop or sets
+`secondary_dynamics_verified`. Constraint/Burst numerics, exact callback
+ownership, the remaining static-field join, and IFix-patched execution remain
+separate gates before any solver can be called retail-equivalent.
 
 ## Main animation gap
 

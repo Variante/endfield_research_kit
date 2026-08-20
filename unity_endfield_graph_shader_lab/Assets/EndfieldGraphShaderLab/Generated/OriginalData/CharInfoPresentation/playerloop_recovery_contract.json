@@ -1,6 +1,6 @@
 {
   "schema": "endfieldPlayerLoopRecoveryContract.v1",
-  "status": "validated",
+  "status": "partial_unresolved_first_system_anchor",
   "manager": "BeyondDynamicBone.MagicaManager",
   "method": "SetCustomGameLoop",
   "methodIndex": 385094,
@@ -31,9 +31,11 @@
         "value": "EarlyUpdate"
       },
       "systemName": {
-        "status": "decoded_from_initialized_static",
-        "sourceIndex": 23778,
-        "value": "ScriptRunDelayedTasks"
+        "status": "unresolved_initialized_static_field",
+        "typeInfoSlotVa": "0x18e371250",
+        "encodedTypeHandle": "0x20050b0d",
+        "candidateValue": "ScriptRunDelayedTasks",
+        "candidateEvidence": "the same metadata literal is directly decoded for ordinal 3; the ordinal-1 TypeInfo static field has not yet been mapped to that literal"
       },
       "last": true,
       "before": false
@@ -177,7 +179,7 @@
       "before": false
     }
   ],
-  "evidenceBoundary": "Exact native call order, PlayerLoop category/system anchors, and last/before arguments are recovered for the pinned client. This does not prove Unity runtime execution on a different build or replace the managed lifecycle callbacks.",
+  "evidenceBoundary": "Exact native call order, all category anchors, six of seven system anchors, and all last/before arguments are recovered for the pinned client. Ordinal 1 still reads an unresolved initialized TypeInfo static field and is not published as an exact system anchor.",
   "source": {
     "gameAssembly": "D:\\Program Files\\Endfield Game\\GameAssembly.dll",
     "globalMetadata": "D:\\Program Files\\Endfield Game\\Endfield_Data\\il2cpp_data\\Metadata\\global-metadata.dat",
@@ -188,16 +190,24 @@
     "GameAssembly.dll": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
     "global-metadata.dat": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
   },
+  "evidenceHashes": {
+    "runtime_native.json": "5ffce74bf27888c5f028d5757e8c03f989ca80f38da495de82f760ea344e9b09",
+    "playerloop_metadata.json": "ecf54a1d36d9d293e4178da7f7f26f5e95da92f5d15dac5072694a5007db070a"
+  },
   "validation": {
-    "status": "validated",
+    "status": "partial",
     "gate": "explicit_current_native_inputs",
     "checks": [
       "GameAssembly.dll sha256",
       "global-metadata.dat sha256",
+      "playerloop evidence embedded metadata sha256",
       "PlayerLoopUtils.AddPlayerLoop signature",
-      "seven native AddPlayerLoop calls",
-      "metadata string-literal handles",
-      "last/before stack arguments"
+      "seven ordered native AddPlayerLoop calls",
+      "six direct metadata string-literal system handles",
+      "unique exact last/before stack writes"
+    ],
+    "unresolved": [
+      "ordinal 1 systemName TypeInfo static field -> exact string literal"
     ]
   }
 }
