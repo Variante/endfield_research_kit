@@ -362,7 +362,8 @@
   position: absolute;
   inset: 0;
   overflow: hidden;
-  background: var(--mr-sunken);
+  background-color: #10171b;
+  background-image: repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.025) 0 1px, transparent 1px 12px);
   touch-action: none;
   cursor: grab;
   user-select: none;
@@ -374,7 +375,7 @@
 .mr-map:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .mr-map.is-panning { cursor: grabbing; }
 .mr-canvas { display: block; width: 100%; height: 100%; }
-.mr-map-bg { fill: var(--mr-sunken); }
+.mr-map-bg { fill: transparent; }
 .mr-route { fill: none; stroke: var(--mr-quest); stroke-width: 2.5; stroke-dasharray: 7 5; opacity: 0.55; }
 .mr-bg-image { pointer-events: none; }
 .mr-location-label {
@@ -466,11 +467,29 @@
 .mr-tools button:hover { border-color: var(--accent); background: rgba(var(--accent-rgb), 0.07); }
 .mr-zoom-readout { padding: 0 4px; color: var(--muted); font: 11px/1 var(--mono); min-width: 58px; }
 
+.mr-floor-dock {
+  position: absolute;
+  left: 288px;
+  bottom: 12px;
+  z-index: 3;
+  width: min(390px, calc(100% - 470px));
+  padding: 8px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 9px;
+  background: rgba(16, 23, 27, 0.9);
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(7px);
+}
+
+.mr-floor-dock .mr-floor-picker { color: rgba(255, 255, 255, 0.72); }
+.mr-floor-dock .mr-floor-picker select { border-color: rgba(255, 255, 255, 0.2); background: #182227; color: #edf4f5; }
+.mr-floor-dock .mr-note { margin: 0; color: rgba(255, 255, 255, 0.65); }
+
 .mr-help {
   position: absolute;
-  left: 10px;
-  bottom: 10px;
-  max-width: min(520px, calc(100% - 120px));
+  left: 288px;
+  bottom: 88px;
+  max-width: min(520px, calc(100% - 590px));
   margin: 0;
   padding: 4px 8px;
   border-radius: 6px;
@@ -759,6 +778,9 @@
 @media (max-width: 1180px) {
   .mr-float--controls { width: 232px; }
   .mr-float--inspector { width: 312px; }
+  .mr-floor-dock, .mr-help { left: 256px; }
+  .mr-floor-dock { width: min(360px, calc(100% - 430px)); }
+  .mr-help { max-width: min(460px, calc(100% - 520px)); }
 }
 
 @media (max-width: 760px) {
@@ -766,7 +788,8 @@
   .mr-float--controls { width: min(260px, calc(100% - 24px)); }
   .mr-float--inspector { width: min(300px, calc(100% - 24px)); }
   .mr-axis { display: none; }
-  .mr-help { max-width: calc(100% - 170px); }
+  .mr-floor-dock { left: 12px; right: 12px; width: auto; }
+  .mr-help { left: 12px; bottom: 90px; max-width: calc(100% - 24px); }
 }
 
 @media (prefers-reduced-motion: reduce) {

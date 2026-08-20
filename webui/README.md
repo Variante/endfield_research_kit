@@ -462,9 +462,12 @@ Levels in one region share a single world-space canvas, but remain separate
 selectable sub-maps. `UILevelMapLoadConfig` supplies the exact chunk rectangles,
 optional tier overlays, and the only supported orientation flag
 (`needInverseXZ`); exported tile rows are not flipped independently. Multi-tier
-levels start with only the selected sub-map's first tier visible. A current-floor
-selector switches the single overlay scoped to that sub-map and includes an explicit base-map option,
-so transparent floors from different heights or sibling zones never blend.
+regions start with the selected sub-map's first tier visible. A current-floor
+selector on the lower-left map surface groups every sibling sub-map in the
+stitched region and switches one overlay at a time, with an explicit base-map
+option, so transparent floors from different heights never blend. Geographic
+`regiontoast` overlays use their recovered place names; only authored
+`layer_tips` keys are presented as numbered floors.
 Registry markers, quest points, and authored
 `staticElements` all retain raw X/Z coordinates; marker-to-tier membership is
 published only when the point lies inside that tier's authored rectangle.
@@ -491,6 +494,9 @@ markers, or other entity layers are explicit user choices.
 The pan surface suppresses native text/SVG selection from pointer-down through
 drag completion, including when pointer capture carries the drag outside the
 map, so panning never highlights labels or surrounding interface text.
+The map canvas uses a subdued dark stripe outside recovered textures. The
+lower-left floor control and help text reserve the default controls-panel width
+instead of sitting underneath that floating panel.
 
 Because one level hosts many missions and one mission can reach several levels,
 every contribution is gated on the coordinate space it names: mission-area
