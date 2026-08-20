@@ -144,13 +144,13 @@ class SecondaryDynamicsIntegratorContractTests(unittest.TestCase):
             builder.EXPECTED_HELPER_SPANS = original
 
     def test_semantic_identity_attacks_fail_closed(self) -> None:
-        original_site = builder.EXPECTED_MEMORY_SITES[0]
-        builder.EXPECTED_MEMORY_SITES = (original_site[:1] + ("oldPosArray",) + original_site[2:],) + builder.EXPECTED_MEMORY_SITES[1:]
+        original_site = builder.EXPECTED_MEMORY_SITES[2]
+        builder.EXPECTED_MEMORY_SITES = builder.EXPECTED_MEMORY_SITES[:2] + (original_site[:1] + ("stepParticleIndexArray",) + original_site[2:],) + builder.EXPECTED_MEMORY_SITES[3:]
         try:
             with self.assertRaises(builder.ContractError):
                 builder.build_contract()
         finally:
-            builder.EXPECTED_MEMORY_SITES = (original_site,) + builder.EXPECTED_MEMORY_SITES[1:]
+            builder.EXPECTED_MEMORY_SITES = builder.EXPECTED_MEMORY_SITES[:2] + (original_site,) + builder.EXPECTED_MEMORY_SITES[3:]
 
         original_call = builder.EXPECTED_CHAIN_CALLS[0]
         builder.EXPECTED_CHAIN_CALLS = (original_call[:3] + ("BeyondDynamicBone.TeamManager+TeamData.fake",),) + builder.EXPECTED_CHAIN_CALLS[1:]
@@ -164,6 +164,7 @@ class SecondaryDynamicsIntegratorContractTests(unittest.TestCase):
         payload = json.loads(builder.JOB_LAYOUT_PATH.read_text(encoding="utf-8"))
         row = next(row for row in payload["jobs"] if row.get("type") == builder.EXPECTED_METHOD["type"])
         row["fields"][0]["fieldIndex"] = row["fields"][0]["fieldIndex"] + 1
+        row["fields"][1]["metadataTypeIndex"] = row["fields"][1]["metadataTypeIndex"] + 1
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "job.json"
             path.write_text(json.dumps(payload), encoding="utf-8")
