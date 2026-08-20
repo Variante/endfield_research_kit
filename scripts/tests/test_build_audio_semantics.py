@@ -139,6 +139,11 @@ def char_interact_fixture(event_id: int) -> bytes:
 
 
 class AudioSemanticDataTests(unittest.TestCase):
+    def test_semantic_cli_does_not_select_module_global_game_root(self) -> None:
+        args = audio_semantics.parse_args([])
+        self.assertIsNone(args.game_root)
+        self.assertIsNone(args.metadata)
+
     def test_ability_voice_trigger_context_uses_exact_union_and_owner_identity(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             export_root = Path(temporary)
@@ -4258,6 +4263,236 @@ class AudioSemanticDataTests(unittest.TestCase):
             for row in audio_semantics.LEVEL_EVENT_AUDIO_CONDITION_DEFINITIONS
         ))
 
+    def test_external_source_event_identity_audit_separates_route_and_media_keys(self) -> None:
+        audit = audio_semantics.external_source.collect_event_identity_audit(
+            {
+                "wwiseEventInventory": [
+                    {
+                        "eventHash": 0x100,
+                        "eventId": "hashed-event:0x00000100",
+                        "nonMediaSourceEvidence": [
+                            {"sourceKind": "externalSourceCodec", "sourceId": 0x24DB9834},
+                        ],
+                    },
+                    {
+                        "eventHash": 0x200,
+                        "eventId": "au_voice_route",
+                        "nonMediaSourceEvidence": [
+                            {"sourceKind": "externalSourceCodec", "sourceId": 0x24DB9834},
+                        ],
+                    },
+                    {
+                        "eventHash": 0x300,
+                        "eventId": "au_dialog_media_identity",
+                        "nonMediaSourceEvidence": [],
+                    },
+                ],
+                "voiceTableWwiseEventAliases": [
+                    {"eventHash": 0x100},
+                    {"eventHash": 0x200},
+                ],
+                "audioDialogWwiseEventAliases": [{"eventHash": 0x300}],
+            },
+            language="CN",
+        )
+        self.assertEqual(audit["status"], "complete")
+        self.assertEqual(audit["externalSourceEventCount"], 2)
+        self.assertEqual(audit["externalSourceReferenceCount"], 2)
+        self.assertEqual(audit["externalEventsWithVoiceTableAlias"], 2)
+        self.assertEqual(audit["externalEventsWithAudioDialogAlias"], 0)
+        self.assertEqual(audit["externalEventsWithoutVoiceTableAlias"], 0)
+        self.assertEqual(audit["externalEventsWithDecodedMedia"], 0)
+        self.assertEqual(audit["externalEventsWithMediaRelations"], 0)
+        self.assertEqual(audit["externalEventsWithZeroResolvedMedia"], 2)
+        self.assertEqual(audit["externalSourceIds"], [{
+            "sourceId": 618371124,
+            "sourceIdHex": "0x24db9834",
+            "referenceCount": 2,
+        }])
+        self.assertIn("per-request media identity", audit["evidenceBoundary"])
+
+    def test_external_source_audit_recovers_override_route_path_candidates(self) -> None:
+        event_name = "vo_fixture_external_route"
+        event_hash = identifiers.audio_hash_generator_compute(event_name)
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            for layer, row_id, authored_path in (
+                ("StreamingAssets", "1", "v1d0/Narrating/fixture_a.wem"),
+                ("Persistent", "2", "v1d0/Narrating/fixture_b.wem"),
+            ):
+                table = root / "structured" / layer / "Table"
+                table.mkdir(parents=True, exist_ok=True)
+                (table / "AudioDialog.json").write_text(
+                    json.dumps({
+                        row_id: {
+                            "overrideWwiseEvent": event_name,
+                            "path": authored_path,
+                        },
+                    }),
+                    encoding="utf-8",
+                )
+            audit = audio_semantics.external_source.collect_event_identity_audit(
+                {
+                    "wwiseEventInventory": [{
+                        "eventHash": event_hash,
+                        "eventId": event_name,
+                        "nonMediaSourceEvidence": [{
+                            "sourceKind": "externalSourceCodec",
+                            "sourceId": 0x24DB9834,
+                        }],
+                    }],
+                    "entries": [{
+                        "id": "fixture_a",
+                        "audioDialogPath": "v1d0/Narrating/fixture_a.wem",
+                    }],
+                },
+                language="CN",
+                export_root=root,
+            )
+        self.assertEqual(audit["schemaVersion"], 5)
+        self.assertEqual(audit["externalOverridePathAuditStatus"], "complete")
+        self.assertEqual(audit["externalEventsWithOverridePathCandidates"], 1)
+        self.assertEqual(audit["externalEventsWithUniqueOverridePath"], 0)
+        self.assertEqual(audit["externalOverridePathRowCount"], 2)
+        self.assertEqual(audit["externalOverridePathCandidateCount"], 2)
+        self.assertEqual(audit["externalOverridePathCandidatesWithDecodedMedia"], 1)
+        mapping = audit["externalOverridePathMappings"][0]
+        self.assertEqual(mapping["overrideWwiseEvent"], event_name)
+        self.assertEqual(mapping["pathCount"], 2)
+        self.assertEqual(mapping["decodedPathCount"], 1)
+        self.assertEqual(mapping["decodedAudioIdCount"], 1)
+        self.assertEqual(mapping["decodedAudioIdSamples"], ["fixture_a"])
+
+    def test_external_source_audit_recovers_channel_route_path_candidates(self) -> None:
+        event_name = "vo_fixture_channel_route"
+        event_hash = identifiers.audio_hash_generator_compute(event_name)
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            table = root / "structured" / "StreamingAssets" / "Table"
+            table.mkdir(parents=True, exist_ok=True)
+            (table / "AudioDialog.json").write_text(
+                json.dumps({
+                    "1": {
+                        "speakerChannel": "fixture_channel",
+                        "path": "v1d0/Narrating/channel_a.wem",
+                    },
+                    "2": {
+                        "speakerChannel": "other_channel",
+                        "path": "v1d0/Narrating/channel_b.wem",
+                    },
+                }),
+                encoding="utf-8",
+            )
+            (table / "AudioDialogChannel.json").write_text(
+                json.dumps({
+                    "fixture_channel": {"narratingWwiseEvent": event_name},
+                }),
+                encoding="utf-8",
+            )
+            audit = audio_semantics.external_source.collect_event_identity_audit(
+                {
+                    "wwiseEventInventory": [{
+                        "eventHash": event_hash,
+                        "eventId": event_name,
+                        "nonMediaSourceEvidence": [{
+                            "sourceKind": "externalSourceCodec",
+                            "sourceId": 0x24DB9834,
+                        }],
+                    }],
+                    "entries": [{
+                        "id": "channel_a",
+                        "audioDialogPath": "v1d0/Narrating/channel_a.wem",
+                    }],
+                },
+                language="CN",
+                export_root=root,
+            )
+        self.assertEqual(audit["externalChannelPathAuditStatus"], "complete")
+        self.assertEqual(audit["externalEventsWithChannelPathCandidates"], 1)
+        self.assertEqual(audit["externalChannelPathRowCount"], 1)
+        self.assertEqual(audit["externalChannelPathCandidateCount"], 1)
+        self.assertEqual(audit["externalChannelPathUniqueCandidateCount"], 1)
+        self.assertEqual(audit["externalChannelPathCandidatesWithDecodedMedia"], 1)
+        mapping = audit["externalChannelPathMappings"][0]
+        self.assertEqual(mapping["fields"], ["narratingWwiseEvent"])
+        self.assertEqual(mapping["channelSamples"], ["fixture_channel"])
+
+    def test_external_source_audit_fails_closed_on_malformed_structured_table(self) -> None:
+        event_name = "vo_fixture_malformed_table"
+        event_hash = identifiers.audio_hash_generator_compute(event_name)
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            table = root / "structured" / "StreamingAssets" / "Table"
+            table.mkdir(parents=True, exist_ok=True)
+            (table / "AudioDialog.json").write_text("{not-json", encoding="utf-8")
+            (table / "AudioDialogChannel.json").write_text(
+                json.dumps({"fixture_channel": {"narratingWwiseEvent": event_name}}),
+                encoding="utf-8",
+            )
+            audit = audio_semantics.external_source.collect_event_identity_audit(
+                {
+                    "wwiseEventInventory": [{
+                        "eventHash": event_hash,
+                        "eventId": event_name,
+                        "nonMediaSourceEvidence": [{
+                            "sourceKind": "externalSourceCodec",
+                            "sourceId": 0x24DB9834,
+                        }],
+                    }],
+                },
+                language="CN",
+                export_root=root,
+            )
+        self.assertEqual(audit["externalOverridePathAuditStatus"], "unavailable")
+        self.assertEqual(audit["externalChannelPathAuditStatus"], "unavailable")
+        self.assertEqual(audit["externalOverridePathMappings"], [])
+        self.assertEqual(audit["externalChannelPathMappings"], [])
+
+    def test_external_source_audit_deduplicates_inventory_occurrences(self) -> None:
+        audit = audio_semantics.external_source.collect_event_identity_audit(
+            {
+                "wwiseEventInventory": [
+                    {
+                        "eventHash": 0x400,
+                        "eventId": "au_duplicate_route",
+                        "nonMediaSourceEvidence": [{"sourceKind": "externalSourceCodec"}],
+                        "mediaIds": [9001],
+                        "mediaRelationTypes": ["ordinaryCodecMedia"],
+                    },
+                    {
+                        "eventHash": 0x400,
+                        "eventId": "au_duplicate_route",
+                        "nonMediaSourceEvidence": [{"sourceKind": "externalSourceCodec"}],
+                        "mediaRelationTypes": ["ordinaryCodecMedia"],
+                    },
+                    {
+                        "eventHash": 0x500,
+                        "eventId": "au_conflicting_route_a",
+                        "nonMediaSourceEvidence": [{"sourceKind": "externalSourceCodec"}],
+                    },
+                    {
+                        "eventHash": 0x600,
+                        "eventId": "au_explicit_external_media",
+                        "nonMediaSourceEvidence": [{"sourceKind": "externalSourceCodec"}],
+                        "externalMediaIds": [1234],
+                        "externalMediaRelationTypes": ["externalSourceMedia"],
+                    },
+                    {
+                        "eventHash": 0x500,
+                        "eventId": "au_conflicting_route_b",
+                        "nonMediaSourceEvidence": [{"sourceKind": "externalSourceCodec"}],
+                    },
+                ],
+            },
+            language="CN",
+        )
+        self.assertEqual(audit["externalSourceEventCount"], 3)
+        self.assertEqual(audit["externalSourceReferenceCount"], 5)
+        self.assertEqual(audit["externalEventsWithDecodedMedia"], 1)
+        self.assertEqual(audit["externalEventsWithMediaRelations"], 1)
+        self.assertEqual(audit["namedExternalEventCount"], 2)
+        self.assertEqual(audit["hashedExternalEventCount"], 1)
+
     def test_runtime_model_preserves_exact_native_playback_call_chains(self) -> None:
         specs = {row["type"]: row for row in audio_semantics.RUNTIME_SYSTEM_SPECS}
         adapter = specs["Beyond.Audio.AudioAdapter"]
@@ -4330,13 +4565,28 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertIn("voiceData.data (+0x60)", external_alternates[0]["relation"])
         self.assertIn("wwiseEvent (+0x20)", external_alternates[0]["relation"])
         self.assertIn("codec (+0x68)", external_alternates[0]["relation"])
+        self.assertIn("rcx=resolved externalSourceKey", external_alternates[0]["relation"])
+        self.assertIn("r9d=handleId", external_alternates[0]["relation"])
+        self.assertIn("stack +0x20 carries codec", external_alternates[0]["relation"])
+        self.assertIn("VoiceData.codec at serialized +0x14", external_alternates[0]["relation"])
+        self.assertIn("copies it raw", external_alternates[0]["relation"])
         self.assertIn("externalCookie 0x24db9834", external_alternates[0]["relation"])
         self.assertIn("callback type 0x100001", external_alternates[0]["relation"])
+        self.assertIn("managed PostEventExternal result", external_alternates[0]["relation"])
+        self.assertIn("native PostEvent result and external-manager registration serial are retained separately", external_alternates[0]["relation"])
         external_cookie_join = next(
             row
             for row in external["stages"]
             if row["role"] == "externalSourceCookieBankJoinAudit"
         )
+        managed_return = next(
+            row for row in external["stages"] if row["role"] == "prepareExternal"
+        )
+        self.assertIn("_GetInternalPlayingId at 0x18328a810", managed_return["relation"])
+        self.assertIn("native AkSoundEngine.PostEvent at 0x183abed90", managed_return["relation"])
+        self.assertIn("stores that result separately in ebx", managed_return["relation"])
+        self.assertIn("function returns edi", managed_return["relation"])
+        self.assertIn("not the native c3990 registration serial/manager key", managed_return["relation"])
         self.assertEqual(external_cookie_join["virtualAddress"], "0x24db9834")
         self.assertIn("1,712 exact Wwise External Source source records", external_cookie_join["relation"])
         self.assertIn("plugin 0x00080001", external_cookie_join["relation"])
@@ -4344,6 +4594,30 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertIn("0x183abefd9", external_cookie_join["relation"])
         self.assertIn("callback-family selection boundary", external_cookie_join["relation"])
         self.assertIn("per-request externalSourceKey path", external_cookie_join["relation"])
+        hirc_path_separation = next(
+            row
+            for row in external["stages"]
+            if row["role"] == "externalSourceHircPathSeparationAudit"
+        )
+        self.assertEqual(hirc_path_separation["virtualAddress"], "0x18003a5b0")
+        self.assertIn("1,712 exact externalSourceCodec records", hirc_path_separation["relation"])
+        self.assertIn("1,711 serialized paths", hirc_path_separation["relation"])
+        self.assertIn("one is event -> action -> ordinary HIRC type-5", hirc_path_separation["relation"])
+        self.assertIn("None is owned by HIRC type-13", hirc_path_separation["relation"])
+        self.assertIn("cannot be used as a static key mapping", hirc_path_separation["relation"])
+        native_cookie_absence = next(
+            row
+            for row in external["stages"]
+            if row["role"] == "nativeExternalCookieLiteralAbsenceAudit"
+        )
+        self.assertEqual(native_cookie_absence["virtualAddress"], "0x180344988")
+        self.assertIn("zero occurrences", native_cookie_absence["relation"])
+        self.assertIn("little-endian dword 0x24db9834", native_cookie_absence["relation"])
+        self.assertIn("entry +0x58", native_cookie_absence["relation"])
+        self.assertIn("entry +0x4c", native_cookie_absence["relation"])
+        self.assertIn("image-initial dword at serial slot 0x180344988 is 0x002f9238", native_cookie_absence["relation"])
+        self.assertIn("unmodified first lock-xadd would generate 0x002f9239", native_cookie_absence["relation"])
+        self.assertIn("runtime argument capture", native_cookie_absence["relation"])
         self.assertEqual(
             external_alternates[1]["role"],
             "voiceExternalSourceKeyResolution",
@@ -4352,6 +4626,9 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertIn("voiceData.data (+0x60)", external_alternates[1]["relation"])
         self.assertIn("0x182f25040", external_alternates[1]["relation"])
         self.assertIn("template UTF-16 placeholder expansion", external_alternates[1]["relation"])
+        self.assertIn("VoiceI18n metadata type", external_alternates[1]["relation"])
+        self.assertIn("format {0}/{1}/{2}", external_alternates[1]["relation"])
+        self.assertIn("Voice/<language>/<VoiceData.path>", external_alternates[1]["relation"])
         descriptor_alternate = external_alternates[2]
         self.assertIn("record +0x10", descriptor_alternate["relation"])
         self.assertIn("0x1800c3990", descriptor_alternate["relation"])
@@ -4384,6 +4661,7 @@ class AudioSemanticDataTests(unittest.TestCase):
         external_file = next(row for row in external["stages"] if row["role"] == "externalFile")
         self.assertIn("directly from the externalSourceKey argument", external_file["relation"])
         self.assertIn("managed key/path", external_file["relation"])
+        self.assertIn("direct VoicePlayer key -> external-descriptor path identity", external_file["relation"])
         self.assertIn("native source-state key equals the registration serial", external_file["relation"])
         source_manager = next(row for row in external["stages"] if row["role"] == "nativeSourceManager")
         self.assertEqual(source_manager["virtualAddress"], "0x1800e1320")
@@ -4391,6 +4669,8 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertIn("+0x50", source_manager["relation"])
         self.assertIn("+0x68", source_manager["relation"])
         self.assertIn("internally generated registration serial written at 0x1800c3990 record +0xc", source_manager["relation"])
+        self.assertIn("resolves the exact hash-table entry by +0x4c", source_manager["relation"])
+        self.assertIn("shared entry pointers can prove one manager node", source_manager["relation"])
         self.assertIn("nativeSourceManagerJoinAudit below", source_manager["relation"])
         self.assertIn("nativeSourceDescriptorManagerRetentionAudit below", source_manager["relation"])
         descriptor_retention = next(
@@ -4406,6 +4686,18 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertIn("manager entry +0x38", descriptor_retention["relation"])
         self.assertIn("copied external-descriptor allocation pointer", descriptor_retention["relation"])
         self.assertIn("not proof that manager +0x38 is a UTF-16 string", descriptor_retention["relation"])
+        cookie_separation = next(
+            row
+            for row in external["stages"]
+            if row["role"] == "nativePostEventCookieFieldSeparationAudit"
+        )
+        self.assertEqual(cookie_separation["virtualAddress"], "0x1800285d0")
+        self.assertIn("pCookie, cExternals, pExternalSources", cookie_separation["relation"])
+        self.assertIn("stack argument 5", cookie_separation["relation"])
+        self.assertIn("manager entry +0x58", cookie_separation["relation"])
+        self.assertIn("AkExternalSourceInfo iExternalSrcCookie/szFile/codec", cookie_separation["relation"])
+        self.assertIn("manager +0x4c", cookie_separation["relation"])
+        self.assertIn("must not be equated", cookie_separation["relation"])
         descriptor_lifetime = next(
             row
             for row in external["stages"]
@@ -4530,6 +4822,10 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertIn("stack argument 6", source_key_config["relation"])
         self.assertIn("config +0x34", source_key_config["relation"])
         self.assertIn("source-state +0x268", source_key_config["relation"])
+        self.assertIn("child-source branch", source_key_config["relation"])
+        self.assertIn("0x18003779e", source_key_config["relation"])
+        self.assertIn("0x180034733", source_key_config["relation"])
+        self.assertIn("same-record value identity", source_key_config["relation"])
         self.assertIn("not statically aliased", source_key_config["relation"])
         source_metadata = next(
             row
@@ -4537,10 +4833,14 @@ class AudioSemanticDataTests(unittest.TestCase):
             if row["role"] == "nativeSourceStateMetadataProvenanceAudit"
         )
         self.assertEqual(source_metadata["virtualAddress"], "0x1800d1f90")
-        self.assertIn("incoming r9 directly to source-state +0x288", source_metadata["relation"])
+        self.assertIn("r9 directly to source-state +0x288", source_metadata["relation"])
         self.assertIn("0x18003def1", source_metadata["relation"])
         self.assertIn("0x180046580", source_metadata["relation"])
-        self.assertIn("alternate initializer callers", source_metadata["relation"])
+        self.assertIn("Alternate callsite", source_metadata["relation"])
+        self.assertIn("0x1800fca27", source_metadata["relation"])
+        self.assertIn("incoming r9 to initializer rdx/config", source_metadata["relation"])
+        self.assertIn("0x18018dbc5", source_metadata["relation"])
+        self.assertIn("three distinct register-source families", source_metadata["relation"])
         self.assertIn("manager entry +0x38", source_metadata["relation"])
         self.assertIn("no direct call or field-dataflow edge", source_metadata["relation"])
         self.assertIn("PCM delivery remain unobserved", source_metadata["relation"])
@@ -4595,6 +4895,20 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertIn("sourceId/cookie 0x24db9834", source_info_parser["relation"])
         self.assertIn("registration serial +0x4c", source_info_parser["relation"])
         self.assertIn("managed externalSourceKey", source_info_parser["relation"])
+        source_info_owner = next(
+            row
+            for row in external["stages"]
+            if row["role"] == "nativeSourceInfoHircOwnerAudit"
+        )
+        self.assertEqual(source_info_owner["virtualAddress"], "0x18003a5b0")
+        self.assertIn("HIRC type byte", source_info_owner["relation"])
+        self.assertIn("10 -> 0x180039e80", source_info_owner["relation"])
+        self.assertIn("12 -> 0x180039b70", source_info_owner["relation"])
+        self.assertIn("13 -> 0x1800397b0", source_info_owner["relation"])
+        self.assertIn("0x180039a28", source_info_owner["relation"])
+        self.assertIn("0x180039b35", source_info_owner["relation"])
+        self.assertIn("Music Random Sequence Container", source_info_owner["relation"])
+        self.assertIn("direct AkBankSourceData external-source parser", source_info_owner["relation"])
         source_manager_join = next(
             row
             for row in external["stages"]
@@ -4749,9 +5063,10 @@ class AudioSemanticDataTests(unittest.TestCase):
         source_descriptor = next(
             row for row in stream_chain["stages"] if row["role"] == "sourceDescriptor"
         )
-        self.assertEqual(source_descriptor["virtualAddress"], "0x1800b9530")
-        self.assertIn("0x1800b5e30", source_descriptor["relation"])
-        self.assertIn("0x1800b9460", source_descriptor["relation"])
+        self.assertEqual(source_descriptor["virtualAddress"], "0x1800b5e30")
+        self.assertIn("0x1800bb160", source_descriptor["relation"])
+        self.assertIn("0x180293260", source_descriptor["relation"])
+        self.assertIn("separate 0x1800b9460 -> 0x1800b9530", source_descriptor["relation"])
         self.assertIn("+0x288/+0x10", source_descriptor["relation"])
         self.assertIn("UTF-16 path pointer", source_descriptor["relation"])
         self.assertIn("external key/context", source_descriptor["relation"])
@@ -4819,6 +5134,32 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertIn("CreateFileW/GetFileSize", native_file_open["relation"])
         self.assertIn("0x180005150", native_file_open["relation"])
         self.assertIn("no external key, source-state key, or manager +0x38", native_file_open["relation"])
+        native_file_open_abi = next(
+            row
+            for row in stream_chain["stages"]
+            if row["role"] == "nativeFileOpenArgumentFlowAudit"
+        )
+        self.assertEqual(native_file_open_abi["virtualAddress"], "0x180024630")
+        self.assertIn("rcx is the registered-device/file-I/O object", native_file_open_abi["relation"])
+        self.assertIn("rdx is the original descriptor/path argument", native_file_open_abi["relation"])
+        self.assertIn("r8 is the caller output slot", native_file_open_abi["relation"])
+        self.assertIn("flag r8b=1", native_file_open_abi["relation"])
+        self.assertIn("provider context in r9", native_file_open_abi["relation"])
+        self.assertIn("normalized UTF-16 result", native_file_open_abi["relation"])
+        self.assertIn("No manager entry +0x38, external key, source-state key, or codec pointer", native_file_open_abi["relation"])
+        native_io_vtable = next(
+            row
+            for row in stream_chain["stages"]
+            if row["role"] == "nativeIoVtablePointerCensus"
+        )
+        self.assertEqual(native_io_vtable["virtualAddress"], "0x18028f2f8")
+        self.assertIn("0x18028bfa0", native_io_vtable["relation"])
+        self.assertIn("slots 0/1/2 -> 0x180005030/0x180005150/0x180005180", native_io_vtable["relation"])
+        self.assertIn("0x18028c000", native_io_vtable["relation"])
+        self.assertIn("+0x28 -> 0x180005430", native_io_vtable["relation"])
+        self.assertIn("0x180292c58", native_io_vtable["relation"])
+        self.assertIn("0x180292fd0", native_io_vtable["relation"])
+        self.assertIn("does not prove", native_io_vtable["relation"])
         read_completion = next(
             row for row in stream_chain["stages"] if row["role"] == "readCompletion"
         )
@@ -4857,7 +5198,7 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertIn("pump-to-ReadFileEx", codec_boundary["relation"])
         self.assertIn("read-completion-to-request-recycle", codec_boundary["relation"])
         self.assertIn("completion-to-provider-allocation", codec_boundary["relation"])
-        self.assertIn("external key-to-path value correlation", codec_boundary["relation"])
+        self.assertIn("direct VoicePlayer externalSourceKey -> AkExternalSourceInfo.szFile -> copied-descriptor path", codec_boundary["relation"])
         self.assertIn("0x1801c4650", codec_boundary["relation"])
         self.assertIn("0x1801c4770", codec_boundary["relation"])
         self.assertIn("0x1801c481a", codec_boundary["relation"])
@@ -7915,6 +8256,10 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertLess(
             record_panel_body.index('playerHeading.textContent = t("playableMedia")'),
             record_panel_body.index('const facts = record.kind === "events"'),
+        )
+        self.assertLess(
+            record_panel_body.index('playerHeading.textContent = t("playableMedia")'),
+            record_panel_body.index('heading.textContent = t("details")'),
         )
         self.assertLess(
             record_panel_body.index('playerHeading.textContent = t("playableMedia")'),

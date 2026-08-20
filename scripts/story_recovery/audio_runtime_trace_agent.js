@@ -11,6 +11,7 @@ const hookStats = {};
 const nativeHookStats = {};
 const contextStacks = new Map();
 const callStacks = new Map();
+const nativeCallStacks = new Map();
 let captureCounter = 0;
 
 function rva(value) {
@@ -39,6 +40,15 @@ function callStackFor(threadId) {
   if (!stack) {
     stack = [];
     callStacks.set(threadId, stack);
+  }
+  return stack;
+}
+
+function nativeCallStackFor(threadId) {
+  let stack = nativeCallStacks.get(threadId);
+  if (!stack) {
+    stack = [];
+    nativeCallStacks.set(threadId, stack);
   }
   return stack;
 }
@@ -149,6 +159,23 @@ function readArguments(hook, args) {
   return values;
 }
 
+function readStackArguments(hook, stackPointer) {
+  const values = {};
+  if (!stackPointer) return values;
+  for (const spec of hook.stackArguments || []) {
+    if (!spec || typeof spec.name !== "string" || typeof spec.offset !== "number") continue;
+    try {
+      values[spec.name] = readNativeMemoryValue(
+        stackPointer.add(spec.offset),
+        spec.kind || "pointer",
+      );
+    } catch (_) {
+      values[spec.name] = null;
+    }
+  }
+  return values;
+}
+
 function readReturn(value, kind) {
   if (!kind || kind === "void") return null;
   return readValue(value, kind);
@@ -178,23 +205,77 @@ function readNativeMemoryValue(pointer, kind) {
   }
 }
 
-function readNativeMemory(hook, args) {
+function readNativeMemory(hook, args, stackPointer = null, savedBases = {}) {
   const values = {};
   for (const spec of hook.memory || []) {
-    if (!spec || typeof spec.name !== "string" || typeof spec.argIndex !== "number") continue;
+    if (!spec || typeof spec.name !== "string") continue;
     try {
-      const base = args[spec.argIndex];
+      let base = null;
+      let usingSavedBase = false;
+      if (typeof spec.argIndex === "number") {
+        base = args[spec.argIndex];
+      } else if (
+        typeof spec.baseField === "string"
+        && savedBases[spec.baseField]
+      ) {
+        base = savedBases[spec.baseField];
+        usingSavedBase = true;
+      } else if (typeof spec.stackOffset === "number" && stackPointer) {
+        base = stackPointer.add(spec.stackOffset);
+      } else {
+        continue;
+      }
       if (!base || base.isNull()) {
         values[spec.name] = null;
         continue;
       }
       let target = base;
-      if (typeof spec.pointerOffset === "number") {
-        target = target.add(spec.pointerOffset).readPointer();
-        if (!target || target.isNull()) {
-          values[spec.name] = null;
-          continue;
+      const pointerOffsets = Array.isArray(spec.pointerOffsets)
+        ? spec.pointerOffsets
+        : (typeof spec.pointerOffset === "number" ? [spec.pointerOffset] : []);
+      let pointerMissing = false;
+      for (const pointerOffset of pointerOffsets) {
+        if (typeof pointerOffset !== "number") {
+          pointerMissing = true;
+          break;
         }
+        target = target.add(pointerOffset).readPointer();
+        if (!target || target.isNull()) {
+          pointerMissing = true;
+          break;
+        }
+      }
+      if (pointerMissing) {
+        values[spec.name] = null;
+        continue;
+      }
+      if (
+        spec.savePointer
+        && !usingSavedBase
+        && (spec.kind || "pointer") === "pointer"
+      ) {
+        try {
+          const saved = target.readPointer();
+          if (saved && !saved.isNull()) savedBases[spec.name] = saved;
+        } catch (_) {
+          // Keep the scalar observation even when the optional saved base is
+          // unreadable on this invocation.
+        }
+      }
+      // A stack-backed pointer is both an output slot and the base used by
+      // later fields. On post-call sampling, preserve the pointer captured at
+      // entry as the scalar value; do not treat that pointer as a new memory
+      // location and read its first word (usually a vtable) as the pointer.
+      if (
+        typeof spec.stackOffset === "number"
+        && !usingSavedBase
+        && (spec.kind || "pointer") === "pointer"
+        && savedBases[spec.name]
+        && typeof spec.pointerOffset !== "number"
+        && !Array.isArray(spec.pointerOffsets)
+      ) {
+        values[spec.name] = pointerString(savedBases[spec.name]);
+        continue;
       }
       values[spec.name] = readNativeMemoryValue(
         target.add(spec.offset || 0),
@@ -207,9 +288,9 @@ function readNativeMemory(hook, args) {
   return values;
 }
 
-function readNativeArguments(args) {
+function readNativeArguments(hook, args) {
   const values = {};
-  for (let index = 0; index < 6; index += 1) {
+  for (let index = 0; index < nativeArgumentCount(hook); index += 1) {
     try {
       values[`arg${index}`] = pointerString(args[index]);
     } catch (_) {
@@ -217,6 +298,21 @@ function readNativeArguments(args) {
     }
   }
   return values;
+}
+
+function nativeArgumentCount(hook) {
+  let maximum = 5;
+  for (const spec of Object.values((hook && hook.args) || {})) {
+    if (spec && typeof spec.index === "number") maximum = Math.max(maximum, spec.index);
+  }
+  for (const indexText of Object.keys((hook && hook.stringArgs) || {})) {
+    const index = Number(indexText);
+    if (Number.isInteger(index)) maximum = Math.max(maximum, index);
+  }
+  for (const spec of (hook && hook.memory) || []) {
+    if (spec && typeof spec.argIndex === "number") maximum = Math.max(maximum, spec.argIndex);
+  }
+  return maximum + 1;
 }
 
 function readNativeDecodedArguments(hook, args) {
@@ -227,12 +323,76 @@ function readNativeDecodedArguments(hook, args) {
   }
 }
 
+// The external-source manager is a small hash table whose bucket head lives at
+// manager +0 and whose bucket count lives at manager +8.  The constructor does
+// not return the allocated entry, so a bounded post-call scan by its generated
+// serial is the only way to expose the entry pointer without patching the
+// target process.  The same scan at join/lookup gives a pointer identity that
+// is stronger than a same-session integer intersection.
+function managerEntryForKey(manager, keyValue) {
+  try {
+    if (!manager || manager.isNull()) return null;
+    const bucketCount = manager.add(8).readU32();
+    if (!bucketCount || bucketCount > 0x100000) return null;
+    const buckets = manager.readPointer();
+    if (!buckets || buckets.isNull()) return null;
+    const key = Number(keyValue >>> 0);
+    let entry = buckets.add((key % bucketCount) * Process.pointerSize).readPointer();
+    for (let index = 0; index < 4096 && entry && !entry.isNull(); index += 1) {
+      if (entry.add(0x4c).readU32() === key) return entry;
+      entry = entry.add(0x68).readPointer();
+    }
+  } catch (_) {
+    return null;
+  }
+  return null;
+}
+
+function derivedManagerEntryArguments(hook, args) {
+  const sourceKind = hook && hook.sourceKind;
+  if (![
+    "externalSourceRegistration",
+    "externalSourceManagerJoin",
+    "externalSourceLookup",
+    "externalSourceSiblingLookup",
+  ].includes(sourceKind)) return {};
+  try {
+    const manager = args[0];
+    const key = args[1].toUInt32();
+    const entry = managerEntryForKey(manager, key);
+    if (!entry) return { managerEntryPointer: null, managerEntryFound: false };
+    return {
+      managerEntryPointer: pointerString(entry),
+      managerEntryFound: true,
+      managerEntrySerial: entry.add(0x4c).readU32(),
+      managerEntryAux: entry.add(0x24).readU32(),
+      managerEntryContext: pointerString(entry.add(0x28).readPointer()),
+      managerEntryDescriptorInfo: pointerString(entry.add(0x38).readPointer()),
+      managerEntryCallback: pointerString(entry.add(0x50).readPointer()),
+      managerEntryCallbackCookie: pointerString(entry.add(0x58).readPointer()),
+      managerEntryFlags: entry.add(0x60).readU32(),
+    };
+  } catch (_) {
+    return { managerEntryPointer: null, managerEntryFound: false };
+  }
+}
+
 function activeContexts(threadId) {
   return (contextStacks.get(threadId) || []).map((context) => ({
     captureId: context.captureId,
     hookName: context.hookName,
     sourceKind: context.sourceKind,
     instancePointer: context.instancePointer,
+  }));
+}
+
+function managedCallStack(threadId) {
+  return (callStacks.get(threadId) || []).map((frame) => ({
+    captureId: frame.captureId,
+    parentCaptureId: frame.parentCaptureId || null,
+    hookName: frame.hookName,
+    sourceKind: frame.sourceKind || null,
+    mode: frame.mode || null,
   }));
 }
 
@@ -254,6 +414,7 @@ function attachHook(hook) {
           methodIndex: hook.methodIndex,
           rva: hook.rva,
           arguments: readArguments(hook, args),
+          stackArguments: readStackArguments(hook, this.context.sp),
           activeContexts: activeContexts(threadId),
         };
         if (hook.instance) values.instancePointer = pointerString(args[0]);
@@ -261,6 +422,7 @@ function attachHook(hook) {
           captureId,
           parentCaptureId: parentFrame ? parentFrame.captureId : null,
           hookName: hook.name,
+          sourceKind: hook.sourceKind,
           mode: hook.mode,
         };
         callStack.push(frame);
@@ -354,9 +516,30 @@ function attachNativeHook(hook) {
   try {
     Interceptor.attach(address, {
       onEnter(args) {
+        const threadId = currentThreadId();
         this.nativeCaptureId = `audio-native-${Process.id}-${++captureCounter}`;
+        const nativeCallStack = nativeCallStackFor(threadId);
+        const parentNativeFrame = nativeCallStack.length
+          ? nativeCallStack[nativeCallStack.length - 1]
+          : null;
+        this.nativeFrame = {
+          nativeCaptureId: this.nativeCaptureId,
+          hookName: hook.name,
+          sourceKind: hook.sourceKind,
+          returnAddress: pointerString(this.returnAddress),
+          parentNativeCaptureId: parentNativeFrame
+            ? parentNativeFrame.nativeCaptureId
+            : null,
+        };
+        nativeCallStack.push(this.nativeFrame);
+        // Keep the entry stack pointer so stack-argument memory can be read
+        // again after the native function stores its output fields.  The
+        // default Wwise I/O open routine receives its provider context in
+        // stack argument 5 and writes the resulting handle there indirectly.
+        this.nativeStackPointer = this.context.sp;
+        this.nativeMemoryBases = {};
         this.nativeArgs = [];
-        for (let index = 0; index < 6; index += 1) {
+        for (let index = 0; index < nativeArgumentCount(hook); index += 1) {
           try {
             this.nativeArgs[index] = args[index];
           } catch (_) {
@@ -367,26 +550,63 @@ function attachNativeHook(hook) {
           native: true,
           moduleName: nativeModule.name,
           nativeCaptureId: this.nativeCaptureId,
+          nativeParentCaptureId: this.nativeFrame.parentNativeCaptureId,
           hookName: hook.name,
           sourceKind: hook.sourceKind,
           rva: hook.rva,
-          arguments: readNativeArguments(args),
+          nativeReturnAddress: this.nativeFrame.returnAddress,
+          activeContexts: activeContexts(threadId),
+          managedCallStack: managedCallStack(threadId),
+          arguments: readNativeArguments(hook, args),
           decodedArguments: readNativeDecodedArguments(hook, args),
-          memory: readNativeMemory(hook, args),
+          derivedArguments: derivedManagerEntryArguments(hook, args),
+          memory: readNativeMemory(
+            hook,
+            args,
+            this.nativeStackPointer,
+            this.nativeMemoryBases,
+          ),
         });
       },
       onLeave(retval) {
+        const threadId = currentThreadId();
+        const nativeFrame = this.nativeFrame;
         event("audio_native_result", {
           native: true,
           moduleName: nativeModule.name,
           nativeCaptureId: this.nativeCaptureId || null,
+          nativeParentCaptureId: nativeFrame
+            ? nativeFrame.parentNativeCaptureId
+            : null,
           hookName: hook.name,
           sourceKind: hook.sourceKind,
           rva: hook.rva,
+          nativeReturnAddress: nativeFrame ? nativeFrame.returnAddress : null,
+          activeContexts: activeContexts(threadId),
+          managedCallStack: managedCallStack(threadId),
           returnValue: readReturn(retval, hook.returnKind),
           decodedArgumentsAfter: readNativeDecodedArguments(hook, this.nativeArgs || []),
-          memoryAfter: readNativeMemory(hook, this.nativeArgs || []),
+          derivedArgumentsAfter: derivedManagerEntryArguments(hook, this.nativeArgs || []),
+          memoryAfter: readNativeMemory(
+            hook,
+            this.nativeArgs || [],
+            this.nativeStackPointer,
+            this.nativeMemoryBases || {},
+          ),
         });
+        const nativeCallStack = nativeCallStacks.get(threadId) || [];
+        if (nativeFrame && nativeCallStack.length && nativeCallStack[nativeCallStack.length - 1] === nativeFrame) {
+          nativeCallStack.pop();
+        } else if (nativeFrame) {
+          diagnostic("audio_native_call_stack_mismatch", {
+            hookName: hook.name,
+            nativeCaptureId: nativeFrame.nativeCaptureId,
+            stackDepth: nativeCallStack.length,
+          });
+          const index = nativeCallStack.lastIndexOf(nativeFrame);
+          if (index >= 0) nativeCallStack.splice(index, 1);
+        }
+        if (!nativeCallStack.length) nativeCallStacks.delete(threadId);
       },
     });
     nativeHookStats[hook.name] = "attached";
