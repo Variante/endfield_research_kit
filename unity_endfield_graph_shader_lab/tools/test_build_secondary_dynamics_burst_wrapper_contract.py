@@ -8,6 +8,7 @@ import tempfile
 import unittest
 from pathlib import Path
 import sys
+from unittest.mock import patch
 
 TOOLS_ROOT = Path(__file__).resolve().parent
 if str(TOOLS_ROOT) not in sys.path:
@@ -81,6 +82,54 @@ class SecondaryDynamicsBurstWrapperContractTests(unittest.TestCase):
                 builder.build_contract(gameassembly=GAME_ASSEMBLY, metadata=METADATA)
         finally:
             builder.TARGET_SPECS[385570]["sha"] = original
+
+    def test_semantic_table_attacks_fail_closed(self) -> None:
+        original = builder.TARGET_SPECS[385570]
+        try:
+            builder.TARGET_SPECS[385570] = dict(original, role="fake_role")
+            with self.assertRaises(builder.ContractError):
+                builder.build_contract(gameassembly=GAME_ASSEMBLY, metadata=METADATA)
+            builder.TARGET_SPECS[385570] = dict(original)
+            builder.TARGET_SPECS[385570]["calls"] = dict(original["calls"])
+            builder.TARGET_SPECS[385570]["calls"].pop(0x7B)
+            with self.assertRaises(builder.ContractError):
+                builder.build_contract(gameassembly=GAME_ASSEMBLY, metadata=METADATA)
+            builder.TARGET_SPECS[385570] = dict(original)
+            builder.TARGET_SPECS[385570]["rip"] = list(original["rip"])
+            builder.TARGET_SPECS[385570]["rip"][0] = (0x0A, 7, "fake_rip")
+            with self.assertRaises(builder.ContractError):
+                builder.build_contract(gameassembly=GAME_ASSEMBLY, metadata=METADATA)
+            builder.TARGET_SPECS[385570] = dict(original)
+            builder.TARGET_SPECS[385570]["indirect"] = [(0x208, "rax", "fake_indirect")]
+            with self.assertRaises(builder.ContractError):
+                builder.build_contract(gameassembly=GAME_ASSEMBLY, metadata=METADATA)
+        finally:
+            builder.TARGET_SPECS[385570] = original
+
+    def test_target_set_and_static_ctor_export_attacks_fail_closed(self) -> None:
+        original = builder.TARGET_SPECS[385570]
+        builder.TARGET_SPECS[999999] = original
+        try:
+            with self.assertRaises(builder.ContractError):
+                builder.build_contract(gameassembly=GAME_ASSEMBLY, metadata=METADATA)
+        finally:
+            del builder.TARGET_SPECS[999999]
+
+        cctor = builder.STATIC_CCTOR_SPECS[385569]
+        original_end = cctor["end"]
+        cctor["end"] = original_end + 1
+        try:
+            with self.assertRaises(builder.ContractError):
+                builder.build_contract(gameassembly=GAME_ASSEMBLY, metadata=METADATA)
+        finally:
+            cctor["end"] = original_end
+
+        exports = builder.build_contract(gameassembly=GAME_ASSEMBLY, metadata=METADATA)["burstGenerated"]
+        bad_exports = dict(exports)
+        bad_exports["ordinalRvaSha256"] = "0" * 64
+        with patch.object(builder, "_exports", return_value=bad_exports):
+            with self.assertRaises(builder.ContractError):
+                builder.build_contract(gameassembly=GAME_ASSEMBLY, metadata=METADATA)
 
 
 if __name__ == "__main__":

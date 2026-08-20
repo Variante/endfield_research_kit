@@ -1261,16 +1261,37 @@
   "staticConstructors": [
     {
       "methodIndex": 385569,
+      "type": "BeyondDynamicBone.SimulationManager+StartSimulationStepJobKernels+StartSimulationStepRangeKernel_00000408$BurstDirectCall",
+      "method": ".cctor",
+      "token": "0x060007ea",
+      "va": "0x183fb2c70",
+      "endVaExclusive": "0x183fb2c80",
+      "spanBytes": 16,
+      "bodySha256": "c28da2fa4ca71ad55552c17bf65603f741b4d87ef983865bc06025982b155bf3",
       "tailJumpTargetVa": "0x183fb21e0",
       "targetMethodIndex": 385567
     },
     {
       "methodIndex": 385415,
+      "type": "BeyondDynamicBone.ColliderManager+StartSimulationStepJobKernels+StartSimulationStepRangeKernel_000003D8$BurstDirectCall",
+      "method": ".cctor",
+      "token": "0x06000750",
+      "va": "0x183fb2cf0",
+      "endVaExclusive": "0x183fb2d00",
+      "spanBytes": 16,
+      "bodySha256": "ebb4c8fcc0e0a35b02ad6edac99de37e342e29ff47d3761dcc70fdbfc0e1190c",
       "tailJumpTargetVa": "0x183fb2660",
       "targetMethodIndex": 385413
     },
     {
       "methodIndex": 385316,
+      "type": "BeyondDynamicBone.EndSimulationStepJobKernels+EndSimulationStepRangeKernel_000003BB$BurstDirectCall",
+      "method": ".cctor",
+      "token": "0x060006ed",
+      "va": "0x183fb2d50",
+      "endVaExclusive": "0x183fb2d60",
+      "spanBytes": 16,
+      "bodySha256": "733185763ea7188b46e54d28e53f36f21435736932fabb731df07d2ea2c63b07",
       "tailJumpTargetVa": "0x183fb29c0",
       "targetMethodIndex": 385314
     }
@@ -1303,6 +1324,8 @@
   "burstGenerated": {
     "count": 628,
     "namesSha256": "3575fa430f691be98c1f2b6cadfb71e74854f422eed7fce767215d974ac332c9",
+    "ordinalRvaCount": 628,
+    "ordinalRvaSha256": "3812c9734869f43fee79d7c4e677808b9bad45218b85fc6d9d1e444e38d1b138",
     "stringEvidence": {
       "initializationPrefixes": [
         "burst.initialize.externals",

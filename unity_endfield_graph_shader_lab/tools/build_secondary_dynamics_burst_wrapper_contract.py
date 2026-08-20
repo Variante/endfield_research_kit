@@ -18,6 +18,7 @@ is the remaining evidence required to close that boundary.
 from __future__ import annotations
 
 import argparse
+import copy
 import hashlib
 import importlib.util
 import json
@@ -40,6 +41,9 @@ DEFAULT_METADATA: Path | None = None
 EXPECTED_GAME_ASSEMBLY_SHA256 = "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
 EXPECTED_METADATA_SHA256 = "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
 EXPECTED_LIB_BURST_SHA256 = "ee8702dd63dec2db7dc29d5bc23b8acd032f0e19a0daad5f69e6c45f9d3ceb99"
+EXPECTED_BURST_EXPORT_COUNT = 628
+EXPECTED_BURST_EXPORT_NAMES_SHA256 = "3575fa430f691be98c1f2b6cadfb71e74854f422eed7fce767215d974ac332c9"
+EXPECTED_BURST_EXPORT_ORDINAL_RVA_SHA256 = "3812c9734869f43fee79d7c4e677808b9bad45218b85fc6d9d1e444e38d1b138"
 EXPECTED_CODE_REGISTRATION = 0x18B9217D0
 EXPECTED_METADATA_REGISTRATION = 0x18B921C30
 
@@ -160,6 +164,30 @@ TARGET_SPECS: dict[int, dict[str, Any]] = {
 
 TARGET_SPECS[385312]["sha"] = "8b80e3fdd7d5a3624308497454cc81dc0e73e57e90c5e3596caf17b941950c7a"
 
+# Keep an immutable semantic fingerprint separate from the mutable table used
+# by the focused drift tests.  Any edited/inserted/deleted method row or
+# altered role/call/RIP/indirect site therefore fails closed before PE bytes
+# are interpreted.
+EXPECTED_METHOD_INDEX_SET = frozenset(TARGET_SPECS)
+EXPECTED_TARGET_CARDINALITY = len(EXPECTED_METHOD_INDEX_SET)
+EXPECTED_SPEC_SNAPSHOT = copy.deepcopy(TARGET_SPECS)
+
+
+def _spec_fingerprint(specs: dict[int, dict[str, Any]]) -> str:
+    payload = json.dumps(specs, sort_keys=True, separators=(",", ":"), default=list)
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+EXPECTED_SPEC_FINGERPRINT = _spec_fingerprint(EXPECTED_SPEC_SNAPSHOT)
+EXPECTED_RESOLUTION_MANAGED = (489283, 489284, 489285, 489288)
+EXPECTED_RESOLUTION_SERVICE = (402096, 402097)
+STATIC_CCTOR_SPECS = {
+    385569: {"type": "BeyondDynamicBone.SimulationManager+StartSimulationStepJobKernels+StartSimulationStepRangeKernel_00000408$BurstDirectCall", "method": ".cctor", "va": 0x183FB2C70, "end": 0x183FB2C80, "sha": "c28da2fa4ca71ad55552c17bf65603f741b4d87ef983865bc06025982b155bf3", "target": 0x183FB21E0, "targetMethod": 385567},
+    385415: {"type": "BeyondDynamicBone.ColliderManager+StartSimulationStepJobKernels+StartSimulationStepRangeKernel_000003D8$BurstDirectCall", "method": ".cctor", "va": 0x183FB2CF0, "end": 0x183FB2D00, "sha": "ebb4c8fcc0e0a35b02ad6edac99de37e342e29ff47d3761dcc70fdbfc0e1190c", "target": 0x183FB2660, "targetMethod": 385413},
+    385316: {"type": "BeyondDynamicBone.EndSimulationStepJobKernels+EndSimulationStepRangeKernel_000003BB$BurstDirectCall", "method": ".cctor", "va": 0x183FB2D50, "end": 0x183FB2D60, "sha": "733185763ea7188b46e54d28e53f36f21435736932fabb731df07d2ea2c63b07", "target": 0x183FB29C0, "targetMethod": 385314},
+}
+EXPECTED_CCTOR_SET = frozenset(STATIC_CCTOR_SPECS)
+
 
 def _decode_rel32(body: bytes, offset: int, opcode: int) -> int:
     if offset < 0 or offset + 5 > len(body) or body[offset] != opcode:
@@ -221,10 +249,11 @@ def _exports(path: Path) -> dict[str, Any]:
         raise ContractError(f"export RVA 0x{rva:x} is outside PE sections")
 
     directory = rva_offset(export_rva, 40)
-    (_characteristics, _timestamp, _major, _minor, _name_rva, _ordinal_base,
-     _function_count, name_count, _functions_rva, names_rva,
-     _ordinals_rva) = struct.unpack_from("<IIHHIIIIIII", data, directory)
+    (_characteristics, _timestamp, _major, _minor, _name_rva, ordinal_base,
+     function_count, name_count, functions_rva, names_rva,
+     ordinals_rva) = struct.unpack_from("<IIHHIIIIIII", data, directory)
     names: list[bytes] = []
+    ordinal_rvas: list[bytes] = []
     for index in range(name_count):
         name_rva = struct.unpack_from("<I", data, rva_offset(names_rva + index * 4, 4))[0]
         start = rva_offset(name_rva)
@@ -234,12 +263,19 @@ def _exports(path: Path) -> dict[str, Any]:
         value = data[start:end]
         if re.fullmatch(rb"[0-9a-f]{32}", value):
             names.append(value)
+            ordinal_index = struct.unpack_from("<H", data, rva_offset(ordinals_rva + index * 2, 2))[0]
+            if ordinal_index >= function_count:
+                raise ContractError("hashed export ordinal index is outside function table")
+            function_rva = struct.unpack_from("<I", data, rva_offset(functions_rva + ordinal_index * 4, 4))[0]
+            ordinal_rvas.append(value + b":" + str(ordinal_base + ordinal_index).encode("ascii") + b":" + _hex(function_rva).encode("ascii"))
     names = sorted(set(names))
     if not names:
         raise ContractError("no 32-hex Burst exports found")
     return {
         "count": len(names),
         "namesSha256": hashlib.sha256(b"\n".join(names)).hexdigest(),
+        "ordinalRvaCount": len(ordinal_rvas),
+        "ordinalRvaSha256": hashlib.sha256(b"\n".join(sorted(ordinal_rvas))).hexdigest(),
     }
 
 
@@ -359,36 +395,58 @@ def _verify_target(
     return row
 
 
-def _verify_cctor(pe: Any, method_by_pointer: dict[int, list[dict[str, Any]]], all_pointers: list[int], method_index: int, expected_target: int, expected_target_method: int) -> dict[str, Any]:
+def _verify_cctor(md: Any, pe: Any, method_by_pointer: dict[int, list[dict[str, Any]]], all_pointers: list[int], method_index: int, expected: dict[str, Any]) -> dict[str, Any]:
     rows = _register_method_rows(method_by_pointer, method_index)
     if len(rows) != 1:
         raise ContractError(f"cctor {method_index} resolves to {len(rows)} pointers")
-    pointer, _signature = rows[0]
+    pointer, signature = rows[0]
+    if pointer != expected["va"] or signature.get("type") != expected["type"] or signature.get("method") != expected["method"]:
+        raise ContractError(f"cctor {method_index} metadata identity/pointer drift")
     index = bisect_right(all_pointers, pointer)
-    if index >= len(all_pointers):
+    if index >= len(all_pointers) or all_pointers[index] != expected["end"]:
         raise ContractError(f"cctor {method_index} has no bounded end")
-    body = pe.bytes_at_va(pointer, all_pointers[index] - pointer)
+    body = pe.bytes_at_va(pointer, expected["end"] - pointer)
+    if hashlib.sha256(body).hexdigest() != expected["sha"]:
+        raise ContractError(f"cctor {method_index} body hash drift")
     if body[:2] != b"\x33\xc9":
         raise ContractError(f"cctor {method_index} does not clear the static constructor argument")
     target = pointer + 2 + 5 + _decode_rel32(body, 2, 0xE9)
-    if target != expected_target:
+    if target != expected["target"]:
         raise ContractError(f"cctor {method_index} tail jump drift")
     actual_target_method = _known_method_index(method_by_pointer, target)
-    if actual_target_method != expected_target_method:
+    if actual_target_method != expected["targetMethod"]:
         raise ContractError(f"cctor {method_index} constructor identity drift")
-    return {"methodIndex": method_index, "tailJumpTargetVa": _hex(target), "targetMethodIndex": actual_target_method}
+    return {"methodIndex": method_index, "type": signature["type"], "method": signature["method"], "token": signature.get("token"), "va": _hex(pointer), "endVaExclusive": _hex(expected["end"]), "spanBytes": expected["end"] - pointer, "bodySha256": hashlib.sha256(body).hexdigest(), "tailJumpTargetVa": _hex(target), "targetMethodIndex": actual_target_method}
 
 
 def build_contract(*, gameassembly: Path | None = DEFAULT_GAME_ASSEMBLY, metadata: Path | None = DEFAULT_METADATA) -> dict[str, Any]:
+    if len(TARGET_SPECS) != EXPECTED_TARGET_CARDINALITY or frozenset(TARGET_SPECS) != EXPECTED_METHOD_INDEX_SET:
+        raise ContractError("target method-index set/cardinality drift")
+    if _spec_fingerprint(TARGET_SPECS) != EXPECTED_SPEC_FINGERPRINT:
+        raise ContractError("target role/call/RIP/indirect semantic table drift")
     gate, burst = _native_gate(gameassembly, metadata)
     native, md, pe, method_by_pointer, all_pointers, metadata_registration = _native_indexes(Path(gate["globalMetadata"]["path"]), Path(gate["gameAssembly"]["path"]))
     targets = [_verify_target(index, spec, native, md, pe, method_by_pointer, all_pointers) for index, spec in TARGET_SPECS.items()]
-    cctors = [
-        _verify_cctor(pe, method_by_pointer, all_pointers, 385569, 0x183FB21E0, 385567),
-        _verify_cctor(pe, method_by_pointer, all_pointers, 385415, 0x183FB2660, 385413),
-        _verify_cctor(pe, method_by_pointer, all_pointers, 385316, 0x183FB29C0, 385314),
-    ]
+    if tuple(row["methodIndex"] for row in targets) != tuple(TARGET_SPECS):
+        raise ContractError("published target row order/set drift")
+    published = {row["methodIndex"] for row in targets}
+    required_path_rows = set(EXPECTED_RESOLUTION_MANAGED) | set(EXPECTED_RESOLUTION_SERVICE)
+    if not required_path_rows <= published:
+        raise ContractError("resolution path references unpublished method rows")
+    by_index = {row["methodIndex"]: row for row in targets}
+    service_edges = {
+        call["methodIndex"]
+        for call in by_index[489288]["directCalls"]
+        if "methodIndex" in call
+    }
+    if service_edges != set(EXPECTED_RESOLUTION_SERVICE):
+        raise ContractError("published BurstCompiler service edges drift")
+    cctors = [_verify_cctor(md, pe, method_by_pointer, all_pointers, index, STATIC_CCTOR_SPECS[index]) for index in STATIC_CCTOR_SPECS]
     exports = _exports(burst)
+    if exports["count"] != EXPECTED_BURST_EXPORT_COUNT or exports["namesSha256"] != EXPECTED_BURST_EXPORT_NAMES_SHA256:
+        raise ContractError("Burst export count/name digest drift")
+    if exports["ordinalRvaCount"] != EXPECTED_BURST_EXPORT_COUNT or exports["ordinalRvaSha256"] != EXPECTED_BURST_EXPORT_ORDINAL_RVA_SHA256:
+        raise ContractError("Burst export ordinal/RVA cardinality drift")
     strings = _string_evidence(burst)
     return {
         "schema": "endfield.charinfo.secondary-dynamics-burst-wrapper.v1",
@@ -407,8 +465,8 @@ def build_contract(*, gameassembly: Path | None = DEFAULT_GAME_ASSEMBLY, metadat
         "staticConstructors": cctors,
         "resolutionPath": {
             "status": "BurstCompiler_to_late_bound_BurstCompilerService",
-            "managedBurstCompilerMethods": [489283, 489284, 489285, 489288],
-            "burstCompilerServiceMethods": [402096, 402097],
+            "managedBurstCompilerMethods": list(EXPECTED_RESOLUTION_MANAGED),
+            "burstCompilerServiceMethods": list(EXPECTED_RESOLUTION_SERVICE),
             "lateBoundNativeServiceFactoryVa": _hex(0x180059FC0),
             "getProcAddressObservedStatically": False,
             "runtimeTelemetryRequired": True,
