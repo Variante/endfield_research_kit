@@ -153,6 +153,15 @@ They suppress only build-locked callsites/mappings and expose a bounded
 unavailable diagnostic, so the page cannot silently present stale native
 addresses as current evidence.
 
+ModelView normal Event contexts show the authored controller/model/layer/state
+chain and `behaviorTime` with explicit labels: `Authored`, `static route`,
+`runtime unobserved`, and `branch unresolved`. The static route is shown only
+for the fingerprint-locked `AudioBehavior.Execute` -> `AudioManager.PostEvent`
+contract; execution, branch choice, and audibility are not inferred. The
+runtime overview publishes no `nativePairing` unless a complete
+hash-verified closed capture session exists; partial key/path/handle/decoder
+overlaps remain unobserved.
+
 Responsive voice contexts also expose exact matching `AIBark` request rows and
 the fingerprint-locked native dispatch chain. The UI must keep the live
 AIBarkType-to-bark-id dictionary choice, probability/cooldown selection, and
