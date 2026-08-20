@@ -37,6 +37,9 @@ ANIMATION_VOICE_TRIGGER_MAPPING_ID = (
 MODEL_VIEW_STATE_AUDIO_MAPPING_ID = (
     "gameassembly-2026-08-20-model-view-state-normal-audio-event"
 )
+MODEL_VIEW_POSITIONED_AUDIO_MAPPING_ID = (
+    "gameassembly-2026-08-20-model-view-positioned-audio-branches"
+)
 
 # This is a deliberately small, build-locked route contract.  The body
 # hashes are part of the proof: a method index/address pair from a different
@@ -76,6 +79,119 @@ MODEL_VIEW_STATE_AUDIO_NATIVE_ROUTE = {
     "evidence": (
         "exactCurrentBuildMethodMappingBodyHashesAndDirectCallTargets"
     ),
+}
+
+# This is intentionally a separate contract from the normal ModelView route.
+# The Execute body has three mutually exclusive tag-0x0002 branches.  Only
+# ``isDirectlyPlay`` reaches PlaySoundAtPosition with a normalAudioId Event;
+# the other two branches are state controls and never become Event/media rows.
+# Offsets are serialized in code so a changed data layout or native branch
+# fails closed instead of silently promoting a control to playback.
+MODEL_VIEW_POSITIONED_AUDIO_NATIVE_ROUTE = {
+    "nativeMappingId": MODEL_VIEW_POSITIONED_AUDIO_MAPPING_ID,
+    "consumer": {
+        "type": "Beyond.Gameplay.Core.ModelViewStateController.AudioPositionBehavior",
+        "method": "Execute",
+        "methodIndex": 81745,
+        "token": "0x06013f52",
+        "virtualAddress": "0x1870c7c3c",
+        "bodyLength": 0x231,
+        "bodySha256": "38d194cb51256a6e30c40f21c8996dd59c626b9f3d1a6bd58933251619a12e7e",
+    },
+    "fieldContract": {
+        "dataPointerOffset": "0x18",
+        "isCustomOffset": "0x28",
+        "isDirectlyPlayOffset": "0x29",
+        "normalAudioIdOffset": "0x38",
+        "entityStateModelLevel": 1,
+        "guards": {
+            "customStateSwitch": "!isDirectlyPlay && isCustom",
+            "entityStateSwitch": "!isDirectlyPlay && !isCustom",
+            "directPositionEvent": "isDirectlyPlay",
+        },
+    },
+    "directCalls": [
+        {
+            "offset": "0xac", "targetType": "Beyond.Gameplay.Actions.GameAction",
+            "targetMethod": "TrySwitchAudioState", "targetMethodIndex": 32652,
+            "targetToken": "0x06007f8d", "targetVirtualAddress": "0x184cd7ca0",
+        },
+        {
+            "offset": "0xe8", "targetType": "Beyond.Gameplay.Actions.GameAction",
+            "targetMethod": "TrySwitchAudioCustomState", "targetMethodIndex": 32651,
+            "targetToken": "0x06007f8c", "targetVirtualAddress": "0x1875efc70",
+        },
+        {
+            "offset": "0x152", "targetType": "Beyond.Gameplay.Core.Entity",
+            "targetMethod": "TryGetGameObject", "targetVirtualAddress": "0x1832828f0",
+        },
+        {
+            "offset": "0x16d", "targetType": "Beyond.Gameplay.Core.Entity",
+            "targetMethod": "get_AudioId", "targetVirtualAddress": "0x183197ad0",
+        },
+        {
+            "offset": "0x195", "targetType": "Beyond.Gameplay.Core.Entity",
+            "targetMethod": "get_AudioId", "targetVirtualAddress": "0x183197ad0",
+        },
+        {
+            "offset": "0x1a8", "targetType": "UnityEngine.Component",
+            "targetMethod": "get_transform", "targetVirtualAddress": "0x183273070",
+        },
+        {
+            "offset": "0x1bd", "targetType": "UnityEngine.Transform",
+            "targetMethod": "get_position", "targetVirtualAddress": "0x183276380",
+        },
+        {
+            "offset": "0x1f5", "targetType": "Beyond.Gameplay.Audio.AudioManager",
+            "targetMethod": "PlaySoundAtPosition", "targetMethodIndex": 38869,
+            "targetToken": "0x060097d6", "targetVirtualAddress": "0x183b87c60",
+        },
+    ],
+    "endpointAudits": [
+        {
+            "targetMethod": "TrySwitchAudioState", "targetVirtualAddress": "0x184cd7ca0",
+            "bodyLength": 0xa3,
+            "bodySha256": "23ef278f4182d97f1f936149ed8b9b43b0b22ee50d831633a892181ac793f86d",
+            "calls": [{"offset": "0x8c", "targetVirtualAddress": "0x183c2b050"}],
+        },
+        {
+            "targetMethod": "TrySwitchAudioCustomState", "targetVirtualAddress": "0x1875efc70",
+            "bodyLength": 0xbd,
+            "bodySha256": "89c253f0f2889fad05712fedfda0f64447da28f5e412490d906d1a15c461d2bc",
+        },
+        {
+            "targetType": "Beyond.Gameplay.Core.InteractiveAudioComponent",
+            "targetMethod": "SwitchAudioState", "targetMethodIndex": 67202,
+            "targetToken": "0x06010683", "targetVirtualAddress": "0x183c2b050",
+            "bodyLength": 79,
+            "bodySha256": "f9276c4986f27904b06697de2ef6e59c0aa4904f352bf7f1232fb344bbf0e71f",
+            "calls": [{"offset": "0x3a", "targetVirtualAddress": "0x183c2b3e0"}],
+        },
+        {
+            "targetType": "Beyond.Gameplay.Core.InteractiveAudioComponent",
+            "targetMethod": "_SwitchState", "targetVirtualAddress": "0x183c2b3e0",
+            "bodyLength": 71,
+            "bodySha256": "245a0544e65e32dad9f0dc0a2205c0e20a5c472a40bbee0292a836f800a40361",
+        },
+        {
+            "targetType": "Beyond.Gameplay.Audio.AudioManager",
+            "targetMethod": "PlaySoundAtPosition", "targetMethodIndex": 38869,
+            "targetToken": "0x060097d6", "targetVirtualAddress": "0x183b87c60",
+            "bodyLength": 0x69,
+            "bodySha256": "a64e5b83b1f680ab697a13ec2ed21eea0e161a477d5ee7e86ac1d9887e28fea4",
+            "calls": [
+                {"offset": "0x3b", "targetVirtualAddress": "0x18319b840"},
+                {"offset": "0x47", "targetVirtualAddress": "0x183b896b0"},
+                {"offset": "0x59", "targetVirtualAddress": "0x183b89730"},
+            ],
+        },
+    ],
+    "branchBoundary": {
+        "directPositionEvent": "PlaySoundAtPosition target verified; Wwise/media selection and execution unobserved",
+        "customStateSwitch": "TrySwitchAudioCustomState target/body verified; control only, no Event ownership",
+        "entityStateSwitch": "TrySwitchAudioState -> InteractiveAudioComponent.SwitchAudioState -> _SwitchState verified; control only, no final Wwise/PostEvent claim",
+    },
+    "evidence": "exactCurrentBuildExecuteBodyFieldsGuardsAndNarrowEndpointAudits",
 }
 
 
@@ -134,6 +250,31 @@ def model_view_state_audio_native_route(
         if native_evidence_required():
             raise RuntimeError(
                 "Audio native evidence required but ModelView route is unavailable: "
+                + str(audit["reason"])
+            )
+        return None
+    return audit["route"]
+
+
+def model_view_positioned_audio_native_route(
+    native_context: NativeAudioEvidence,
+    *,
+    observed_route: dict[str, Any] | None = None,
+) -> dict[str, Any] | None:
+    """Return the build-locked tag-0x0002 branch route, or no route.
+
+    Controls may still be published as authored control evidence when this
+    route is unavailable.  The route itself is never partially trusted.
+    """
+
+    audit = audit_model_view_positioned_audio_native_route(
+        native_context,
+        observed_route=observed_route,
+    )
+    if audit["status"] != "validated":
+        if native_evidence_required():
+            raise RuntimeError(
+                "Audio native evidence required but positioned ModelView route is unavailable: "
                 + str(audit["reason"])
             )
         return None
@@ -292,6 +433,170 @@ def _direct_call_targets(body: bytes, method_va: int) -> set[int]:
         displacement = struct.unpack_from("<i", body, index + 1)[0]
         targets.add(method_va + index + 5 + displacement)
     return targets
+
+
+def _direct_call_sites(body: bytes, method_va: int) -> dict[int, int]:
+    """Return relative E8 offsets and targets for exact callsite contracts."""
+
+    targets: dict[int, int] = {}
+    for index in range(max(0, len(body) - 4)):
+        if body[index] != 0xE8:
+            continue
+        displacement = struct.unpack_from("<i", body, index + 1)[0]
+        targets[index] = method_va + index + 5 + displacement
+    return targets
+
+
+def _positioned_catalog_errors(route: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    if not isinstance(route, dict):
+        return ["positioned route catalog is not an object"]
+    if route.get("nativeMappingId") != MODEL_VIEW_POSITIONED_AUDIO_MAPPING_ID:
+        errors.append("positioned nativeMappingId catalog drift")
+    consumer = route.get("consumer")
+    expected_consumer = MODEL_VIEW_POSITIONED_AUDIO_NATIVE_ROUTE["consumer"]
+    if not isinstance(consumer, dict):
+        errors.append("positioned consumer catalog row missing")
+    else:
+        for name in ("type", "method", "methodIndex", "token", "virtualAddress", "bodyLength"):
+            if consumer.get(name) != expected_consumer.get(name):
+                errors.append(
+                    f"positioned consumer {name} expected {expected_consumer.get(name)} got {consumer.get(name)}"
+                )
+        if not isinstance(consumer.get("bodySha256"), str):
+            errors.append("positioned consumer bodySha256 catalog row missing")
+    expected_calls = MODEL_VIEW_POSITIONED_AUDIO_NATIVE_ROUTE["directCalls"]
+    calls = route.get("directCalls")
+    if not isinstance(calls, list) or len(calls) != len(expected_calls):
+        errors.append("positioned directCalls catalog row count drift")
+    else:
+        for index, (actual, expected) in enumerate(zip(calls, expected_calls)):
+            if not isinstance(actual, dict):
+                errors.append(f"positioned directCalls[{index}] catalog row missing")
+                continue
+            for name in ("offset", "targetMethod", "targetVirtualAddress"):
+                if actual.get(name) != expected.get(name):
+                    errors.append(
+                        f"positioned directCalls[{index}] {name} expected {expected.get(name)} got {actual.get(name)}"
+                    )
+    endpoints = route.get("endpointAudits")
+    if not isinstance(endpoints, list) or len(endpoints) != len(
+        MODEL_VIEW_POSITIONED_AUDIO_NATIVE_ROUTE["endpointAudits"]
+    ):
+        errors.append("positioned endpointAudits catalog row count drift")
+    return errors[:8]
+
+
+def _audit_positioned_endpoint(
+    data_path: Path,
+    endpoint: dict[str, Any],
+) -> tuple[bytes, dict[int, int]]:
+    body = _read_pe_method_body(
+        data_path,
+        endpoint["targetVirtualAddress"],
+        endpoint["bodySha256"],
+    )
+    expected_length = int(endpoint["bodyLength"])
+    if len(body) != expected_length:
+        raise ValueError(
+            f"{endpoint.get('targetMethod')} body length drift: "
+            f"expected 0x{expected_length:x} got 0x{len(body):x}"
+        )
+    method_va = int(endpoint["targetVirtualAddress"], 0)
+    sites = _direct_call_sites(body, method_va)
+    for call in endpoint.get("calls") or ():
+        offset = int(call["offset"], 0)
+        target = int(call["targetVirtualAddress"], 0)
+        if sites.get(offset) != target:
+            actual = sites.get(offset)
+            raise ValueError(
+                f"{endpoint.get('targetMethod')} E8 drift at +0x{offset:x}: "
+                f"expected 0x{target:x} got {('0x%x' % actual) if actual is not None else 'missing'}"
+            )
+    return body, sites
+
+
+def audit_model_view_positioned_audio_native_route(
+    native_context: NativeAudioEvidence,
+    *,
+    observed_route: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Audit the exact tag-0x0002 consumer and narrow endpoint chain."""
+
+    if not native_context.validated:
+        return {"status": native_context.status, "reason": native_context.reason[:1000], "route": None}
+    if (
+        native_context.metadata_sha256.casefold() != EXPECTED_METADATA_SHA256
+        or native_context.gameassembly_sha256.casefold() != EXPECTED_GAMEASSEMBLY_SHA256
+    ):
+        return {"status": "mismatched", "reason": "native input fingerprint mismatch", "route": None}
+    expected = MODEL_VIEW_POSITIONED_AUDIO_NATIVE_ROUTE
+    catalog_errors = _positioned_catalog_errors(
+        expected if observed_route is None else observed_route
+    )
+    if observed_route is not None:
+        if observed_route != expected:
+            catalog_errors.append("synthetic observed positioned route differs from catalog")
+        if catalog_errors:
+            return {"status": "mismatched", "reason": _bounded_reason(*catalog_errors), "route": None}
+        return {
+            "status": "validated",
+            "reason": "synthetic positioned route catalog validated",
+            "route": _route_with_fingerprints(native_context, expected),
+        }
+    if not native_context.gate_verified:
+        if catalog_errors:
+            return {"status": "mismatched", "reason": _bounded_reason(*catalog_errors), "route": None}
+        return {
+            "status": "validated",
+            "reason": "synthetic positioned route catalog validated",
+            "route": _route_with_fingerprints(native_context, expected),
+        }
+    gameassembly = native_context.gameassembly_path
+    if gameassembly is None or not gameassembly.is_file():
+        return {"status": "missing", "reason": "GameAssembly.dll missing for positioned route body audit", "route": None}
+    if catalog_errors:
+        return {"status": "mismatched", "reason": _bounded_reason(*catalog_errors), "route": None}
+    consumer = expected["consumer"]
+    try:
+        consumer_body = _read_pe_method_body(
+            gameassembly, consumer["virtualAddress"], consumer["bodySha256"]
+        )
+        if len(consumer_body) != int(consumer["bodyLength"]):
+            raise ValueError("positioned Execute body length drift")
+        consumer_sites = _direct_call_sites(consumer_body, int(consumer["virtualAddress"], 0))
+        expected_sites = {
+            int(row["offset"], 0): int(row["targetVirtualAddress"], 0)
+            for row in expected["directCalls"]
+        }
+        for offset, target in expected_sites.items():
+            if consumer_sites.get(offset) != target:
+                actual = consumer_sites.get(offset)
+                raise ValueError(
+                    f"positioned Execute E8 drift at +0x{offset:x}: expected "
+                    f"0x{target:x} got {('0x%x' % actual) if actual is not None else 'missing'}"
+                )
+        endpoint_results = []
+        for endpoint in expected["endpointAudits"]:
+            _audit_positioned_endpoint(gameassembly, endpoint)
+            endpoint_results.append(str(endpoint.get("targetMethod") or "unknown"))
+    except (OSError, ValueError, struct.error) as exc:
+        return {
+            "status": "mismatched",
+            "reason": _bounded_reason("positioned native body/call audit failed", str(exc)),
+            "route": None,
+        }
+    return {
+        "status": "validated",
+        "reason": "exact positioned catalog, body SHA256, and E8 calls validated",
+        "route": _route_with_fingerprints(native_context, expected),
+        "checks": {
+            "catalog": "validated",
+            "consumerBodySha256": "validated",
+            "consumerDirectCalls": "validated",
+            "endpointBodiesAndCalls": "validated",
+        },
+    }
 
 
 def audit_model_view_state_audio_native_route(
@@ -616,12 +921,16 @@ __all__ = [
     "ENEMY_TRIGGER_VOICE_ACTION_NATIVE",
     "EXPECTED_GAMEASSEMBLY_SHA256",
     "EXPECTED_METADATA_SHA256",
+    "MODEL_VIEW_POSITIONED_AUDIO_MAPPING_ID",
+    "MODEL_VIEW_POSITIONED_AUDIO_NATIVE_ROUTE",
     "MODEL_VIEW_STATE_AUDIO_MAPPING_ID",
     "MODEL_VIEW_STATE_AUDIO_NATIVE_ROUTE",
     "NATIVE_VOICE_TRIGGER_MAPPING_ID",
     "NATIVE_VOICE_TRIGGER_ROWS",
     "NativeAudioEvidence",
     "audit_model_view_state_audio_native_route",
+    "audit_model_view_positioned_audio_native_route",
+    "model_view_positioned_audio_native_route",
     "model_view_state_audio_native_route",
     "validate_native_audio_evidence",
 ]

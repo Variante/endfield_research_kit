@@ -63,7 +63,7 @@ def project_model_view_state_audio_trigger_contexts(
     *,
     native_context: native_evidence.NativeAudioEvidence | None = None,
 ) -> list[dict[str, Any]]:
-    """Project only tag-0x0001 normal Event behaviors.
+    """Project normal and positioned ModelView trigger/control evidence.
 
     The result deliberately carries four independent evidence surfaces:
     ``authoredDefinition`` (serialized request and controller chain),
@@ -77,212 +77,301 @@ def project_model_view_state_audio_trigger_contexts(
     if not isinstance(model_view_semantics, dict):
         return []
     by_hash = _event_rows_by_hash(event_rows)
-    native_route = None
-    native_route_diagnostic: dict[str, Any] | None = None
+    normal_route = None
+    positioned_route = None
+    diagnostics: dict[str, dict[str, Any]] = {}
     if native_context is not None:
-        native_route = native_evidence.model_view_state_audio_native_route(native_context)
-        if native_route is None:
-            # Keep the reason bounded and attached to the authored row.  The
-            # route itself remains suppressed, while callers can distinguish
-            # a missing input from catalog/body/direct-call drift.
-            native_route_diagnostic = native_evidence.audit_model_view_state_audio_native_route(
-                native_context
-            )
+        normal_route = native_evidence.model_view_state_audio_native_route(native_context)
+        positioned_route = native_evidence.model_view_positioned_audio_native_route(native_context)
+        if normal_route is None:
+            diagnostics["normal"] = native_evidence.audit_model_view_state_audio_native_route(native_context)
+        if positioned_route is None:
+            diagnostics["positioned"] = native_evidence.audit_model_view_positioned_audio_native_route(native_context)
+
     contexts: list[dict[str, Any]] = []
     seen_trigger_ids: set[str] = set()
+
+    def common_definition(authored: dict[str, Any], tag: int, *, event_hash: int | None = None) -> dict[str, Any]:
+        controller_id = str(authored.get("controllerId") or authored.get("ownerId") or "")
+        definition: dict[str, Any] = {
+            "sourceKind": "ModelViewStateControllerData",
+            "behaviorUnionTag": tag,
+            "behaviorUnionTagHex": f"0x{tag:04x}",
+            "behaviorType": authored.get("behaviorType"),
+            "behaviorKind": authored.get("behaviorKind"),
+            "normalAudioId": authored.get("normalAudioId"),
+            "audioNodeName": authored.get("audioNodeName"),
+            "customAudioId": authored.get("customAudioId"),
+            "eAudioTriggerState": authored.get("eAudioTriggerState"),
+            "isCustom": authored.get("isCustom"),
+            "isDirectlyPlay": authored.get("isDirectlyPlay"),
+            "stopOnEnd": authored.get("stopOnEnd"),
+            "transitionTime": authored.get("transitionTime"),
+            "behaviorTime": authored.get("behaviorTime"),
+            "modelAnimatorIndex": authored.get("modelAnimatorIndex"),
+            "modelAnimatorName": authored.get("modelAnimatorName"),
+            "layerIndex": authored.get("layerIndex"),
+            "layerFsmIndex": authored.get("layerFsmIndex"),
+            "layerName": authored.get("layerName"),
+            "stateIndex": authored.get("stateIndex"),
+            "stateName": authored.get("stateName"),
+            "stateType": authored.get("stateType"),
+            "behaviorIndex": authored.get("behaviorIndex"),
+            "semanticPath": str(authored.get("semanticPath") or ""),
+            "controllerId": controller_id,
+            "ownerKind": "modelViewStateController",
+            "interactiveAssociation": {
+                "templateIds": authored.get("interactiveTemplateIds") or [],
+                "templatePaths": authored.get("interactiveTemplatePaths") or [],
+                "consumerIds": authored.get("interactiveConsumerIds") or [],
+                "status": authored.get("templateAssociationStatus") or "unlinked",
+                "ownerPromotion": "notAnOwnerProof",
+            },
+        }
+        if event_hash is not None:
+            definition["eventHash"] = event_hash
+            definition["eventHex"] = f"0x{event_hash:08x}"
+        return definition
+
+    def owner(authored: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "ownerKind": "modelViewStateController",
+            "controllerId": str(authored.get("controllerId") or authored.get("ownerId") or ""),
+            "ownerPromotionStatus": "interactiveTableAssociationNotOwner",
+            "sourceFile": authored.get("sourceFile") or "",
+            "sourcePaths": authored.get("sourcePaths") or [],
+            "sourceRoots": authored.get("sourceRoots") or [],
+            "sourceFingerprints": authored.get("sourceFingerprints") or [],
+            "schemaMappingId": authored.get("schemaMappingId"),
+            "runtimeMappingId": authored.get("runtimeMappingId"),
+            "schemaStatus": authored.get("schemaStatus"),
+        }
+
+    # Event contexts contain tag-0x0001 normal events and only the direct
+    # tag-0x0002 branch.  The collector deliberately keeps positioned
+    # controls in a separate list, so a future malformed input cannot promote
+    # them merely by carrying a nonzero normalAudioId.
     for context_key, authored_rows in (model_view_semantics.get("eventContexts") or {}).items():
         if not isinstance(authored_rows, list):
             continue
         for occurrence_index, authored in enumerate(authored_rows):
             if not isinstance(authored, dict):
                 continue
-            # The decoder already classifies these rows.  Re-check the union
-            # tag here so future/incorrect classifications cannot promote
-            # positioned (0x0002) or custom controls into normal Events.
-            raw_tag = authored.get("behaviorTag")
             try:
-                tag = (
-                    int(raw_tag)
-                    if not isinstance(raw_tag, bool)
-                    else -1
-                )
+                tag = int(authored.get("behaviorTag")) if not isinstance(authored.get("behaviorTag"), bool) else -1
             except (TypeError, ValueError):
                 tag = -1
-            if (
-                tag != 0x0001
-                or authored.get("kind") != "modelViewStateAudioEvent"
-                or authored.get("isCustom")
-            ):
+            is_position = tag == 0x0002
+            if tag == 0x0001:
+                if authored.get("kind") != "modelViewStateAudioEvent" or authored.get("isCustom"):
+                    continue
+            elif is_position:
+                # A positioned Event is promoted only from the exact current
+                # collector shape.  Old caches sometimes carried a tag-2 row
+                # under the normal kind or used the context key as its only
+                # hash; those rows fail closed instead of gaining media.
+                normal_audio_id = authored.get("normalAudioId")
+                if (
+                    authored.get("kind") != "modelViewStatePositionAudioEvent"
+                    or authored.get("isCustom") is not False
+                    or authored.get("isDirectlyPlay") is not True
+                    or not isinstance(normal_audio_id, int)
+                    or isinstance(normal_audio_id, bool)
+                    or normal_audio_id == 0
+                ):
+                    continue
+            else:
                 continue
-            event_hash = _context_event_hash(context_key, authored)
+            event_hash = (
+                int(authored["normalAudioId"]) & 0xFFFFFFFF
+                if is_position
+                else _context_event_hash(context_key, authored)
+            )
             if event_hash is None:
                 continue
-            matching_events = by_hash.get(event_hash, [])
-            # Event rows are normally guaranteed by build_event_rows.  Keep a
-            # context only when an exact Event identity is available so an
-            # authored row cannot silently become a guessed Wwise identity.
-            for event in matching_events:
-                event_id = str(event.get("id") or "").strip()
-                if not event_id:
-                    event_id = identifiers.event_hash_context_key(event_hash)
+            for event in by_hash.get(event_hash, []):
+                event_id = str(event.get("id") or "").strip() or identifiers.event_hash_context_key(event_hash)
                 media_refs = [
-                    _media_ref(media)
-                    for media in event.get("media") or []
+                    _media_ref(media) for media in event.get("media") or []
                     if isinstance(media, dict) and _media_ref(media)
                 ]
                 controller_id = str(authored.get("controllerId") or authored.get("ownerId") or "")
                 source_file = str(authored.get("sourceFile") or "")
                 semantic_path = str(authored.get("semanticPath") or "")
                 trigger_id = ":".join((
-                    "model-view-state-audio",
-                    event_id,
-                    controller_id or "unknown-controller",
-                    source_file or "unknown-file",
-                    str(occurrence_index),
+                    "model-view-positioned-audio" if is_position else "model-view-state-audio",
+                    event_id, controller_id or "unknown-controller",
+                    source_file or "unknown-file", str(occurrence_index),
                 ))
-                # A malformed/duplicated Event shard can produce the same
-                # event identity for one authored occurrence more than once.
-                # Keep the first row in deterministic input order; duplicate
-                # trigger IDs would otherwise make media joins over-count.
                 if trigger_id in seen_trigger_ids:
                     continue
                 seen_trigger_ids.add(trigger_id)
-                authored_definition = {
-                    "sourceKind": "ModelViewStateControllerData",
-                    "behaviorUnionTag": tag,
-                    "behaviorUnionTagHex": "0x0001",
-                    "behaviorType": authored.get("behaviorType"),
-                    "behaviorKind": authored.get("behaviorKind"),
-                    "eventHash": event_hash,
-                    "eventHex": f"0x{event_hash:08x}",
-                    "normalAudioId": authored.get("normalAudioId"),
-                    "audioNodeName": authored.get("audioNodeName"),
-                    "eAudioTriggerState": authored.get("eAudioTriggerState"),
-                    "isDirectlyPlay": authored.get("isDirectlyPlay"),
-                    "stopOnEnd": authored.get("stopOnEnd"),
-                    "transitionTime": authored.get("transitionTime"),
-                    "behaviorTime": authored.get("behaviorTime"),
-                    "modelAnimatorIndex": authored.get("modelAnimatorIndex"),
-                    "modelAnimatorName": authored.get("modelAnimatorName"),
-                    "layerIndex": authored.get("layerIndex"),
-                    "layerFsmIndex": authored.get("layerFsmIndex"),
-                    "layerName": authored.get("layerName"),
-                    "stateIndex": authored.get("stateIndex"),
-                    "stateName": authored.get("stateName"),
-                    "stateType": authored.get("stateType"),
-                    "behaviorIndex": authored.get("behaviorIndex"),
-                    "semanticPath": semantic_path,
-                    "controllerId": controller_id,
-                    "ownerKind": "modelViewStateController",
-                    "interactiveAssociation": {
-                        "templateIds": authored.get("interactiveTemplateIds") or [],
-                        "templatePaths": authored.get("interactiveTemplatePaths") or [],
-                        "consumerIds": authored.get("interactiveConsumerIds") or [],
-                        "status": authored.get("templateAssociationStatus")
-                        or "unlinked",
-                        "ownerPromotion": "notAnOwnerProof",
-                    },
-                }
-                runtime_branch = {
-                    "status": "unresolved",
-                    "selectionStatus": "wwiseEventBranchSelectionUnobserved",
-                    "possibleMediaCount": len(media_refs),
-                    "nativeRouteStatus": (
-                        "exactCurrentBuildRoute"
-                        if native_route is not None
-                        else "nativeRouteUnavailable"
-                    ),
-                }
-                activation = {
-                    "status": "unobserved",
-                    "reason": authored.get("runtimeActivationStatus")
-                    or "modelViewStateBehaviorExecutionNotObserved",
-                    "behaviorTime": authored.get("behaviorTime"),
-                }
+                activation_reason = authored.get("runtimeActivationStatus") or "modelViewStateBehaviorExecutionNotObserved"
+                selection_status = (
+                    "directPositionEventWwiseSelectionUnobserved"
+                    if is_position else "wwiseEventBranchSelectionUnobserved"
+                )
                 row: dict[str, Any] = {
                     "triggerId": trigger_id,
-                    "semanticKind": "modelViewStateAudioEvent",
-                    "triggerRole": "authoredModelViewStateNormalEventRequest",
+                    "semanticKind": "modelViewStatePositionAudioEvent" if is_position else "modelViewStateAudioEvent",
+                    "triggerRole": "authoredModelViewStateDirectPositionEventRequest" if is_position else "authoredModelViewStateNormalEventRequest",
                     "situation": {
-                        "eventId": event_id,
-                        "eventHash": event_hash,
-                        "controllerId": controller_id,
+                        "eventId": event_id, "eventHash": event_hash, "controllerId": controller_id,
                         "modelAnimatorIndex": authored.get("modelAnimatorIndex"),
                         "modelAnimatorName": authored.get("modelAnimatorName"),
-                        "layerIndex": authored.get("layerIndex"),
-                        "layerFsmIndex": authored.get("layerFsmIndex"),
-                        "layerName": authored.get("layerName"),
-                        "stateIndex": authored.get("stateIndex"),
-                        "stateName": authored.get("stateName"),
-                        "stateType": authored.get("stateType"),
-                        "behaviorIndex": authored.get("behaviorIndex"),
-                        "behaviorTime": authored.get("behaviorTime"),
+                        "layerIndex": authored.get("layerIndex"), "layerFsmIndex": authored.get("layerFsmIndex"),
+                        "layerName": authored.get("layerName"), "stateIndex": authored.get("stateIndex"),
+                        "stateName": authored.get("stateName"), "stateType": authored.get("stateType"),
+                        "behaviorIndex": authored.get("behaviorIndex"), "behaviorTime": authored.get("behaviorTime"),
                         "semanticPath": semantic_path,
                     },
                     "meaning": {
-                        "eventId": event_id,
-                        "category": event.get("category"),
+                        "eventId": event_id, "category": event.get("category"),
                         "foundInWwise": bool(event.get("foundInWwise")),
                         "playbackRole": event.get("playbackRole"),
                         "possibleMediaCount": event.get("possibleMediaCount", len(media_refs)),
                     },
-                    "authoredDefinition": authored_definition,
+                    "authoredDefinition": common_definition(authored, tag, event_hash=event_hash),
                     "wwiseMediaCandidates": media_refs,
-                    "runtimeBranch": runtime_branch,
-                    "activation": activation,
-                    "action": {
-                        "normalAudioId": authored.get("normalAudioId"),
-                        "audioNodeName": authored.get("audioNodeName"),
-                        "isDirectlyPlay": authored.get("isDirectlyPlay"),
-                        "stopOnEnd": authored.get("stopOnEnd"),
-                        "transitionTime": authored.get("transitionTime"),
-                        "runtimeActivationStatus": activation["reason"],
-                    },
-                    "owner": {
-                        "ownerKind": "modelViewStateController",
-                        "controllerId": controller_id,
-                        "ownerPromotionStatus": "interactiveTableAssociationNotOwner",
-                        "sourceFile": source_file,
-                        "sourcePaths": authored.get("sourcePaths") or [],
-                        "sourceRoots": authored.get("sourceRoots") or [],
-                        "sourceFingerprints": authored.get("sourceFingerprints") or [],
-                        "schemaMappingId": authored.get("schemaMappingId"),
-                        "runtimeMappingId": authored.get("runtimeMappingId"),
-                        "schemaStatus": authored.get("schemaStatus"),
-                    },
-                    "selection": {
-                        "triggerBindingStatus": "exactModelViewStateNormalEventBehavior",
-                        "mediaSelectionStatus": (
-                            "wwiseEventMediaCandidates" if media_refs else "noDecodedMediaCandidate"
+                    "runtimeBranch": {
+                        "status": "unresolved", "selectionStatus": selection_status,
+                        "possibleMediaCount": len(media_refs),
+                        "downstreamStatus": "WwiseSelectionUnobserved" if is_position else "WwiseEventSelectionUnobserved",
+                        "nativeRouteStatus": "exactCurrentBuildPositionedRoute" if is_position and positioned_route is not None else (
+                            "exactCurrentBuildRoute" if not is_position and normal_route is not None else "nativeRouteUnavailable"
                         ),
-                        "runtimeSelectionStatus": runtime_branch["selectionStatus"],
+                    },
+                    "activation": {"status": "unobserved", "reason": activation_reason, "behaviorTime": authored.get("behaviorTime")},
+                    "action": {
+                        "normalAudioId": authored.get("normalAudioId"), "audioNodeName": authored.get("audioNodeName"),
+                        "isDirectlyPlay": authored.get("isDirectlyPlay"), "stopOnEnd": authored.get("stopOnEnd"),
+                        "transitionTime": authored.get("transitionTime"),
+                        "playbackSink": "AudioManager.PlaySoundAtPosition" if is_position else None,
+                        "playbackSinkStatus": "nativeTargetAndBodyVerified" if is_position else None,
+                        "runtimeActivationStatus": activation_reason,
+                    },
+                    "owner": owner(authored),
+                    "selection": {
+                        "triggerBindingStatus": "exactModelViewStatePositionedDirectEventBehavior" if is_position else "exactModelViewStateNormalEventBehavior",
+                        "mediaSelectionStatus": "wwiseEventMediaCandidates" if media_refs else "noDecodedMediaCandidate",
+                        "runtimeSelectionStatus": selection_status,
                     },
                     "mediaRefs": media_refs,
                     "evidence": {
-                        "definition": "exactDecodedModelViewStateAudioBehavior",
+                        "definition": "exactDecodedModelViewStatePositionedDirectBranch" if is_position else "exactDecodedModelViewStateAudioBehavior",
                         "owner": "exactModelLayerStateBehaviorOwnerChain",
                         "media": "wwiseEventMediaCandidates",
-                        "runtimeBranch": "wwiseBranchSelectionUnobserved",
-                        "activation": activation["reason"],
+                        "runtimeBranch": selection_status,
+                        "activation": activation_reason,
                         "requestEvidence": authored.get("triggerRequestEvidence") or [],
                     },
-                    "runtimeActivationStatus": activation["reason"],
+                    "runtimeActivationStatus": activation_reason,
                     "sourceRefs": [
-                        value for value in (
-                            source_file, semantic_path, *(
-                                authored.get("sourcePaths") or []
-                            ),
-                        ) if isinstance(value, str) and value
+                        value for value in (source_file, semantic_path, *(authored.get("sourcePaths") or []))
+                        if isinstance(value, str) and value
                     ],
                 }
-                if native_route is not None:
-                    row["nativeRoute"] = native_route
-                elif native_route_diagnostic is not None:
+                route = positioned_route if is_position else normal_route
+                diagnostic = diagnostics.get("positioned" if is_position else "normal")
+                if route is not None:
+                    row["nativeRoute"] = route
+                elif diagnostic is not None:
                     row["nativeRouteDiagnostic"] = {
-                        "status": native_route_diagnostic.get("status"),
-                        "reason": str(native_route_diagnostic.get("reason") or "")[:1000],
+                        "status": diagnostic.get("status"),
+                        "reason": str(diagnostic.get("reason") or "")[:1000],
                     }
                 contexts.append(row)
+
+    # Controls are useful trigger context, but are never joined to Event rows
+    # and never expose media candidates or event ownership.
+    control_rows = list(model_view_semantics.get("positionedControls") or [])
+    for occurrence_index, authored in enumerate(control_rows):
+        if not isinstance(authored, dict):
+            continue
+        branch = str(authored.get("controlBranch") or "")
+        if branch not in {"customStateSwitch", "entityStateSwitch"}:
+            continue
+        controller_id = str(authored.get("controllerId") or authored.get("ownerId") or "")
+        source_file = str(authored.get("sourceFile") or "")
+        semantic_path = str(authored.get("semanticPath") or "")
+        trigger_id = ":".join(("model-view-positioned-control", branch, controller_id or "unknown-controller", source_file or "unknown-file", str(occurrence_index)))
+        if trigger_id in seen_trigger_ids:
+            continue
+        seen_trigger_ids.add(trigger_id)
+        native_method = "TrySwitchAudioCustomState" if branch == "customStateSwitch" else "TrySwitchAudioState"
+        control_definition = common_definition(authored, 0x0002)
+        control_definition.pop("ownerKind", None)
+        control_definition["controllerEvidence"] = {
+            "controllerId": controller_id,
+            "ownerStatus": "notAnOwnerProof",
+            "interactiveAssociation": control_definition.pop("interactiveAssociation", {}),
+        }
+        contexts.append({
+            "triggerId": trigger_id,
+            "semanticKind": "modelViewStatePositionedCustomStateControl" if branch == "customStateSwitch" else "modelViewStatePositionedEntityStateControl",
+            "triggerRole": "authoredModelViewStatePositionedControl",
+            "situation": {
+                "controllerId": controller_id,
+                "controlBranch": branch,
+                "controlValue": authored.get("controlValue"),
+                "stateValue": authored.get("stateValue") if branch == "entityStateSwitch" else None,
+                "eAudioTriggerState": authored.get("eAudioTriggerState"),
+                "modelLevel": authored.get("modelLevel") if branch == "entityStateSwitch" else None,
+                "semanticPath": semantic_path,
+            },
+            "meaning": {
+                "category": "control",
+                "foundInWwise": False,
+                "playbackRole": "controlOnly",
+                "wwiseEventStatus": "notPromotedToEvent",
+            },
+            "authoredDefinition": control_definition,
+            "wwiseMediaCandidates": [],
+            "runtimeBranch": {
+                "status": "unresolved",
+                "selectionStatus": "positionedControlExecutionUnobserved",
+                "nativeControlMethod": native_method,
+                "nativeRouteStatus": "exactCurrentBuildPositionedRoute" if positioned_route is not None else "nativeRouteUnavailable",
+            },
+            "activation": {"status": "unobserved", "reason": authored.get("runtimeActivationStatus") or "modelViewStateBehaviorExecutionNotObserved"},
+            "action": {
+                "controlBranch": branch,
+                "controlValue": authored.get("controlValue"),
+                "customAudioId": authored.get("customAudioId"),
+                "stateValue": authored.get("stateValue") if branch == "entityStateSwitch" else None,
+                "eAudioTriggerState": authored.get("eAudioTriggerState"),
+                "modelLevel": authored.get("modelLevel") if branch == "entityStateSwitch" else None,
+                "nativeControlMethod": native_method,
+                "runtimeActivationStatus": "positionedControlExecutionUnobserved",
+            },
+            "controllerEvidence": {
+                "controllerId": controller_id,
+                "ownerStatus": "notAnOwnerProof",
+                "sourceFile": source_file,
+                "semanticPath": semantic_path,
+            },
+            "selection": {
+                "triggerBindingStatus": "exactModelViewStatePositionedControlBranch",
+                "mediaSelectionStatus": "notApplicableControlOnly",
+                "runtimeSelectionStatus": "positionedControlExecutionUnobserved",
+            },
+            "mediaRefs": [],
+            "evidence": {
+                "definition": authored.get("evidence") or "exactDecodedModelViewStatePositionedControlBranch",
+                "owner": "exactModelLayerStateBehaviorOwnerChain",
+                "media": "controlOnlyNoWwiseEventCandidate",
+                "runtimeBranch": "positionedControlExecutionUnobserved",
+            },
+            "runtimeActivationStatus": "positionedControlExecutionUnobserved",
+            "sourceRefs": [value for value in (source_file, semantic_path, *(authored.get("sourcePaths") or [])) if isinstance(value, str) and value],
+        })
+        if positioned_route is not None:
+            contexts[-1]["nativeRoute"] = positioned_route
+        elif diagnostics.get("positioned") is not None:
+            contexts[-1]["nativeRouteDiagnostic"] = {
+                "status": diagnostics["positioned"].get("status"),
+                "reason": str(diagnostics["positioned"].get("reason") or "")[:1000],
+            }
     contexts.sort(key=lambda row: str(row.get("triggerId") or ""))
     return contexts
 

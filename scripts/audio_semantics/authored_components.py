@@ -406,6 +406,9 @@ def collect_model_view_state_audio_semantics(
         "audioBehaviorCount": 0,
         "eventBehaviorCount": 0,
         "positionEventBehaviorCount": 0,
+        "positionDirectEventBehaviorCount": 0,
+        "positionCustomStateSwitchCount": 0,
+        "positionEntityStateSwitchCount": 0,
         "rtpcBehaviorCount": 0,
         "spatialBehaviorCount": 0,
         "customAudioControlCount": 0,
@@ -418,7 +421,8 @@ def collect_model_view_state_audio_semantics(
     if not files_by_name:
         return {
             "eventContexts": {}, "rtpcParameters": [], "spatialControls": [],
-            "customAudioControls": [], "stats": empty, "evidenceBoundary": boundary,
+            "customAudioControls": [], "positionedControls": [],
+            "stats": empty, "evidenceBoundary": boundary,
         }
 
     decoded_controllers: list[dict[str, Any]] = []
@@ -575,6 +579,7 @@ def collect_model_view_state_audio_semantics(
     rtpc_parameters: list[dict[str, Any]] = []
     spatial_controls: list[dict[str, Any]] = []
     custom_controls: list[dict[str, Any]] = []
+    positioned_controls: list[dict[str, Any]] = []
     tag_counts: Counter[int] = Counter()
     controllers_with_audio = 0
     associated_controllers: set[str] = set()
@@ -662,6 +667,54 @@ def collect_model_view_state_audio_semantics(
                     "stopOnEnd": bool(row.get("stopOnEnd")),
                     "transitionTime": row.get("transitionTime"),
                 }
+                # Positioned data has a different native branch model from
+                # normal tag-0x0001 audio.  A direct position request is the
+                # only tag-0x0002 row that owns a normalAudioId Event.  Both
+                # control branches retain their authored values but never
+                # enter eventContexts or the Event/media graph.
+                if tag == 2 and row.get("isDirectlyPlay"):
+                    signed_id = row.get("normalAudioId")
+                    if not isinstance(signed_id, int) or isinstance(signed_id, bool) or signed_id == 0:
+                        positioned_controls.append({
+                            **event_fields,
+                            "kind": "modelViewStatePositionedEventMissingAudioId",
+                            "semanticRole": "authoredModelViewStatePositionedEventRequestMissingAudioId",
+                            "wwiseEventStatus": "unresolvedMissingNormalAudioId",
+                            "controlBranch": "directPositionEvent",
+                            "evidence": "exactDecodedModelViewStatePositionedDirectBranch",
+                        })
+                        continue
+                elif tag == 2 and row.get("isCustom"):
+                    positioned_controls.append({
+                        **event_fields,
+                        "kind": "modelViewStatePositionedCustomStateSwitch",
+                        "controlValue": str(row.get("customAudioId") or ""),
+                        "controlBranch": "customStateSwitch",
+                        "semanticRole": "unresolvedModelViewStatePositionedCustomAudioId",
+                        "wwiseEventStatus": "notPromotedToEvent",
+                        "nativeControlMethod": "TrySwitchAudioCustomState",
+                        "evidence": "exactDecodedModelViewStatePositionedCustomBranch",
+                    })
+                    continue
+                elif tag == 2:
+                    positioned_controls.append({
+                        **event_fields,
+                        "kind": "modelViewStatePositionedEntityStateSwitch",
+                        "controlValue": row.get("eAudioTriggerState"),
+                        "stateValue": row.get("eAudioTriggerState"),
+                        "controlBranch": "entityStateSwitch",
+                        "modelLevel": 1,
+                        "semanticRole": "unresolvedModelViewStatePositionedEntityAudioState",
+                        "wwiseEventStatus": "notPromotedToEvent",
+                        "nativeControlMethod": "TrySwitchAudioState",
+                        "nativeControlChain": [
+                            "TrySwitchAudioState",
+                            "InteractiveAudioComponent.SwitchAudioState",
+                            "InteractiveAudioComponent._SwitchState",
+                        ],
+                        "evidence": "exactDecodedModelViewStatePositionedEntityStateBranch",
+                    })
+                    continue
                 if row.get("isCustom"):
                     custom_controls.append({
                         **event_fields,
@@ -730,7 +783,17 @@ def collect_model_view_state_audio_semantics(
                     "evidence": "exactDecodedModelViewStateSpatialAudioBehavior",
                 })
 
-    event_context_count = sum(len(rows) for rows in contexts.values())
+    # Keep the historical normal-event stats tag-0x0001-only. Positioned
+    # direct Events share eventContexts for downstream Event joins, but must
+    # be counted independently from normal ModelView semantics.
+    normal_event_context_count = sum(
+        1 for rows in contexts.values() for row in rows
+        if isinstance(row, dict) and row.get("behaviorTag") == 1
+    )
+    normal_event_hash_count = sum(
+        any(isinstance(row, dict) and row.get("behaviorTag") == 1 for row in rows)
+        for rows in contexts.values()
+    )
     stats = {
         "status": "complete" if not failures else "partial",
         "controllerPhysicalFiles": physical_files,
@@ -742,9 +805,20 @@ def collect_model_view_state_audio_semantics(
         "positionEventBehaviorCount": tag_counts.get(2, 0),
         "rtpcBehaviorCount": tag_counts.get(3, 0),
         "spatialBehaviorCount": tag_counts.get(4, 0),
-        "normalEventContextCount": event_context_count,
-        "distinctNormalEventHashes": len(contexts),
+        "normalEventContextCount": normal_event_context_count,
+        "distinctNormalEventHashes": normal_event_hash_count,
         "customAudioControlCount": len(custom_controls),
+        "positionDirectEventBehaviorCount": sum(
+            1 for rows in contexts.values() for row in rows
+            if isinstance(row, dict) and row.get("behaviorTag") == 2
+        ),
+        "positionCustomStateSwitchCount": sum(
+            row.get("controlBranch") == "customStateSwitch" for row in positioned_controls
+        ),
+        "positionEntityStateSwitchCount": sum(
+            row.get("controlBranch") == "entityStateSwitch" for row in positioned_controls
+        ),
+        "positionedControlCount": len(positioned_controls),
         "controllersWithTemplateAssociations": len(associated_controllers),
         "templateAssociationCount": len(associated_templates),
         "interactiveConsumerIdentityCount": len(associated_consumers),
@@ -756,6 +830,7 @@ def collect_model_view_state_audio_semantics(
         "rtpcParameters": rtpc_parameters,
         "spatialControls": spatial_controls,
         "customAudioControls": custom_controls,
+        "positionedControls": positioned_controls,
         "stats": stats,
         "evidenceBoundary": boundary,
     }
