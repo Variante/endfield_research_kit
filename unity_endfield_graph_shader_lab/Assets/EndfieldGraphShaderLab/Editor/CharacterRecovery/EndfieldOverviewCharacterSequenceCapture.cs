@@ -8,6 +8,7 @@ using EndfieldGraphShaderLab;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
 
 namespace EndfieldGraphShaderLabEditor
@@ -44,6 +45,9 @@ namespace EndfieldGraphShaderLabEditor
         private const string CapturePathContract =
             "Assets/EndfieldGraphShaderLab/Generated/OriginalData/" +
             "CharInfoPresentation/charinfo_overview_camera_contract.json";
+        private const string SecondaryDynamicsContract =
+            "Assets/EndfieldGraphShaderLab/Generated/OriginalData/" +
+            "CharInfoPresentation/secondary_dynamics_owner_recovery.json";
 
         [Serializable]
         private sealed class CaptureClip
@@ -129,15 +133,21 @@ namespace EndfieldGraphShaderLabEditor
             public int height = DefaultHeight;
             public string output_directory = "";
             public string sidecar = "";
-            public string transition_mode = "direct_clip_boundary";
+            public string transition_mode = "state_weighted_crossfade_sample";
             public float controller_exit_normalized_time;
             public float controller_transition_seconds;
             public bool transparent_clear_requested = true;
+            public bool transparent_pipeline_override_applied;
+            public bool transparent_post_process_disabled = true;
             public bool reference_backdrop_disabled;
             public bool non_actor_renderers_disabled;
             public bool non_actor_ui_disabled;
             public bool actor_props_disabled;
             public bool matte_verified = false;
+            public bool secondary_dynamics_verified = false;
+            public string secondary_dynamics_contract = SecondaryDynamicsContract;
+            public string render_fidelity_status =
+                "incomplete_missing_retail_secondary_dynamics_solver";
             public CaptureClip[] clips = Array.Empty<CaptureClip>();
             public CameraContract camera_contract;
             public AlphaAudit alpha_audit = new AlphaAudit();
@@ -148,12 +158,64 @@ namespace EndfieldGraphShaderLabEditor
 
         private sealed class FramePlan
         {
-            public string Phase;
+            public string Phase = "";
             public AnimationClip Clip;
+            public string ClipName = "";
             public float Timestamp;
             public float ClipTime;
             public float PhaseSeconds;
             public float PhaseNormalized;
+            public float TransitionElapsed;
+            public float TransitionNormalized;
+        }
+
+        private sealed class CaptureEnvironmentSnapshot
+        {
+            public string ActiveScenePath = "";
+            public RenderPipelineAsset GraphicsPipeline;
+            public RenderPipelineAsset QualityPipeline;
+            public Material Skybox;
+        }
+
+        private sealed class PipelineVisualSnapshot
+        {
+            private readonly HGCompatRenderPipelineAsset asset;
+            private readonly Color clearColor;
+            private readonly bool drawSkybox;
+            private readonly bool applyCharacterPostProcess;
+
+            public PipelineVisualSnapshot(HGCompatRenderPipelineAsset asset)
+            {
+                this.asset = asset ?? throw new ArgumentNullException(nameof(asset));
+                clearColor = asset.clearColor;
+                drawSkybox = asset.drawSkybox;
+                applyCharacterPostProcess = asset.applyCharacterPostProcess;
+            }
+
+            public void ApplyTransparentPass()
+            {
+                asset.clearColor = Color.clear;
+                asset.drawSkybox = false;
+                // Post processing can write an opaque color over a transparent
+                // clear. The transparent beauty pass intentionally excludes it;
+                // the sidecar records this limitation explicitly.
+                asset.applyCharacterPostProcess = false;
+            }
+
+            public void Restore()
+            {
+                asset.clearColor = clearColor;
+                asset.drawSkybox = drawSkybox;
+                asset.applyCharacterPostProcess = applyCharacterPostProcess;
+                if (asset.clearColor != clearColor ||
+                    asset.drawSkybox != drawSkybox ||
+                    asset.applyCharacterPostProcess != applyCharacterPostProcess)
+                {
+                    throw new InvalidOperationException(
+                        "Could not safely restore HGCompatRenderPipelineAsset " +
+                        "transparent-pass settings.");
+                }
+            }
         }
 
         [MenuItem(
@@ -170,6 +232,11 @@ namespace EndfieldGraphShaderLabEditor
                     "No actor selected. Set " + ActorEnvironmentVariable +
                     " to one or more generated Playable actor roots.");
 
+            // Opening the generated viewer and changing global pipeline/scene
+            // state is only safe when the caller's scene can be reopened.
+            // Reject an untitled or dirty scene rather than pretending it can
+            // be restored after a long capture.
+            CaptureEnvironmentSnapshot environment = SnapshotEnvironment();
             try
             {
                 EnsureSourceSceneExists();
@@ -196,17 +263,11 @@ namespace EndfieldGraphShaderLabEditor
                 // after backdrop/UI isolation or a failed actor.
                 try
                 {
-                    if (File.Exists(Path.Combine(
-                            Directory.GetCurrentDirectory(), ViewerScenePath)))
-                    {
-                        EditorSceneManager.OpenScene(
-                            ViewerScenePath,
-                            OpenSceneMode.Single);
-                    }
+                    RestoreEnvironment(environment);
                 }
                 catch (Exception exception)
                 {
-                    failures.Add("viewer restore: " + exception.Message);
+                    failures.Add("capture environment restore failed: " + exception.Message);
                 }
             }
 
@@ -221,6 +282,87 @@ namespace EndfieldGraphShaderLabEditor
                 "Actor-only Overview capture completed: actors=" +
                 string.Join(",", actorNames) + ", fps=" + fps + ", output=" +
                 outputRoot);
+        }
+
+        private static CaptureEnvironmentSnapshot SnapshotEnvironment()
+        {
+            Scene activeScene = SceneManager.GetActiveScene();
+            if (Application.isBatchMode &&
+                (!activeScene.IsValid() || string.IsNullOrWhiteSpace(activeScene.path)))
+            {
+                return new CaptureEnvironmentSnapshot
+                {
+                    ActiveScenePath = "",
+                    GraphicsPipeline = GraphicsSettings.renderPipelineAsset,
+                    QualityPipeline = QualitySettings.renderPipeline,
+                    Skybox = RenderSettings.skybox,
+                };
+            }
+            if (!activeScene.IsValid() || string.IsNullOrWhiteSpace(activeScene.path))
+            {
+                throw new InvalidOperationException(
+                    "Capture refused: the active scene is untitled or invalid; " +
+                    "it cannot be safely restored after capture.");
+            }
+            if (activeScene.isDirty)
+            {
+                throw new InvalidOperationException(
+                    "Capture refused: the active scene has unsaved changes; " +
+                    "it cannot be safely restored without overwriting or losing them.");
+            }
+            string absolutePath = Path.Combine(
+                Directory.GetCurrentDirectory(), activeScene.path);
+            if (!File.Exists(absolutePath))
+            {
+                throw new FileNotFoundException(
+                    "Capture refused: the active scene path cannot be reopened safely.",
+                    activeScene.path);
+            }
+            return new CaptureEnvironmentSnapshot
+            {
+                ActiveScenePath = activeScene.path,
+                GraphicsPipeline = GraphicsSettings.renderPipelineAsset,
+                QualityPipeline = QualitySettings.renderPipeline,
+                Skybox = RenderSettings.skybox,
+            };
+        }
+
+        private static void RestoreEnvironment(CaptureEnvironmentSnapshot snapshot)
+        {
+            if (snapshot == null)
+                throw new InvalidOperationException(
+                    "Capture environment snapshot was missing; scene restoration is unsafe.");
+
+            if (!string.IsNullOrWhiteSpace(snapshot.ActiveScenePath))
+            {
+                Scene activeScene = SceneManager.GetActiveScene();
+                if (!activeScene.IsValid() ||
+                    !string.Equals(activeScene.path, snapshot.ActiveScenePath,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    EditorSceneManager.OpenScene(
+                        snapshot.ActiveScenePath,
+                        OpenSceneMode.Single);
+                }
+            }
+
+            GraphicsSettings.renderPipelineAsset = snapshot.GraphicsPipeline;
+            QualitySettings.renderPipeline = snapshot.QualityPipeline;
+            RenderSettings.skybox = snapshot.Skybox;
+
+            Scene restoredScene = SceneManager.GetActiveScene();
+            if ((!string.IsNullOrWhiteSpace(snapshot.ActiveScenePath) &&
+                 !string.Equals(restoredScene.path, snapshot.ActiveScenePath,
+                     StringComparison.OrdinalIgnoreCase)) ||
+                GraphicsSettings.renderPipelineAsset != snapshot.GraphicsPipeline ||
+                QualitySettings.renderPipeline != snapshot.QualityPipeline ||
+                RenderSettings.skybox != snapshot.Skybox)
+            {
+                throw new InvalidOperationException(
+                    "Capture environment restoration did not reproduce the saved " +
+                    "active scene path, GraphicsSettings/QualitySettings pipeline, " +
+                    "and RenderSettings.skybox.");
+            }
         }
 
         private static void CaptureActor(
@@ -256,7 +398,6 @@ namespace EndfieldGraphShaderLabEditor
                     throw new InvalidOperationException(
                         "CharacterRecoveryViewer has no Characters root.");
 
-                ClearActorRoots(charactersRoot);
                 actor = PrefabUtility.InstantiatePrefab(prefab, scene) as GameObject;
                 if (actor == null)
                     throw new InvalidOperationException(
@@ -264,10 +405,14 @@ namespace EndfieldGraphShaderLabEditor
                         AssetDatabase.GetAssetPath(prefab));
                 actor.name = actorName;
                 actor.transform.SetParent(charactersRoot, false);
+                foreach (Transform child in charactersRoot)
+                {
+                    if (child != null)
+                        child.gameObject.SetActive(child.gameObject == actor);
+                }
                 actor.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
                 actor.transform.localScale = Vector3.one;
                 actor.SetActive(true);
-
                 Animation animation = actor.GetComponent<Animation>() ??
                     actor.GetComponentInChildren<Animation>(true);
                 EndfieldOverviewPlayback playback =
@@ -290,11 +435,14 @@ namespace EndfieldGraphShaderLabEditor
                         "CharacterRecoveryViewer has no camera.");
 
                 sidecar.camera_contract = BuildCameraContract(actorName);
+                float exitSeconds = ResolveExitSeconds(
+                    playback.exitNormalizedTime,
+                    startClip.length);
+                float transitionSeconds = ResolveTransitionSeconds(
+                    playback,
+                    startClip.length);
                 sidecar.controller_exit_normalized_time = playback.exitNormalizedTime;
-                sidecar.controller_transition_seconds = playback.transitionDurationFixed
-                    ? playback.normalizedTransitionDuration
-                    : playback.normalizedTransitionDuration * startClip.length;
-                sidecar.clips = BuildClipRecords(startClip, loopClip, fps);
+                sidecar.controller_transition_seconds = transitionSeconds;
 
                 ConfigureActorOnlyScene(
                     scene,
@@ -315,50 +463,127 @@ namespace EndfieldGraphShaderLabEditor
                 animation.playAutomatically = false;
                 animation.Stop();
 
-                List<FramePlan> plan = BuildFramePlan(startClip, loopClip, fps);
+                List<FramePlan> plan = BuildFramePlan(
+                    startClip,
+                    loopClip,
+                    fps,
+                    exitSeconds,
+                    transitionSeconds,
+                    playback.destinationNormalizedOffset);
+                sidecar.clips = BuildClipRecords(
+                    startClip,
+                    loopClip,
+                    fps,
+                    plan,
+                    exitSeconds,
+                    transitionSeconds);
                 var frames = new List<CaptureFrame>(plan.Count);
                 var alphaSummary = new AlphaAudit
                 {
                     transparent_clear_requested = true,
                     matte_verified = false,
                 };
-                for (int index = 0; index < plan.Count; index++)
-                {
-                    FramePlan sample = plan[index];
-                    sample.Clip.SampleAnimation(animation.gameObject, sample.ClipTime);
-                    CharacterProceduralIk poseCorrection =
-                        actor.GetComponent<CharacterProceduralIk>() ??
-                        actor.GetComponentInChildren<CharacterProceduralIk>(true);
-                    if (poseCorrection != null)
-                        poseCorrection.Evaluate();
-                    // Active curves can re-enable a private widget after a
-                    // sample. Re-apply this gate on every frame, not only once.
-                    actorPropsDisabled = DisableActorProps(actor);
+                HGCompatRenderPipelineAsset pipeline =
+                    AssetDatabase.LoadAssetAtPath<HGCompatRenderPipelineAsset>(
+                        "Assets/EndfieldGraphShaderLab/Generated/HGCompatRenderPipeline.asset");
+                if (pipeline == null)
+                    throw new FileNotFoundException(
+                        "HG compatibility render pipeline is missing for transparent capture.",
+                        "Assets/EndfieldGraphShaderLab/Generated/HGCompatRenderPipeline.asset");
 
-                    string fileName = "frame_" + index.ToString("D6", CultureInfo.InvariantCulture) + ".png";
-                    string filePath = Path.Combine(actorOutput, fileName);
-                    AlphaFrameAudit alpha = RenderTransparentFrame(
-                        camera,
-                        filePath,
-                        DefaultWidth,
-                        DefaultHeight);
-                    AccumulateAlphaAudit(alphaSummary, alpha);
-                    frames.Add(new CaptureFrame
+                Exception frameCaptureFailure = null;
+                PipelineVisualSnapshot transparentPipeline =
+                    new PipelineVisualSnapshot(pipeline);
+                try
+                {
+                    transparentPipeline.ApplyTransparentPass();
+                    sidecar.transparent_pipeline_override_applied = true;
+                    for (int index = 0; index < plan.Count; index++)
                     {
-                        index = index,
-                        file = fileName,
-                        phase = sample.Phase,
-                        clip = sample.Clip.name,
-                        timestamp_seconds = sample.Timestamp,
-                        clip_time_seconds = sample.ClipTime,
-                        phase_seconds = sample.PhaseSeconds,
-                        phase_normalized = sample.PhaseNormalized,
-                        alpha_audit = alpha,
-                    });
+                        FramePlan sample = plan[index];
+                        SampleFrame(
+                            animation,
+                            startClip,
+                            loopClip,
+                            playback,
+                            exitSeconds,
+                            sample);
+                        CharacterProceduralIk poseCorrection =
+                            actor.GetComponent<CharacterProceduralIk>() ??
+                            actor.GetComponentInChildren<CharacterProceduralIk>(true);
+                        if (poseCorrection != null)
+                            poseCorrection.Evaluate();
+                        // Active curves can re-enable a private widget after a
+                        // sample. Re-apply this gate on every frame, not only once.
+                        actorPropsDisabled = DisableActorProps(actor);
+
+                        string fileName = "frame_" + index.ToString("D6", CultureInfo.InvariantCulture) + ".png";
+                        string filePath = Path.Combine(actorOutput, fileName);
+                        AlphaFrameAudit alpha = RenderTransparentFrame(
+                            camera,
+                            filePath,
+                            DefaultWidth,
+                            DefaultHeight);
+                        AccumulateAlphaAudit(alphaSummary, alpha);
+                        frames.Add(new CaptureFrame
+                        {
+                            index = index,
+                            file = fileName,
+                            phase = sample.Phase,
+                            clip = sample.ClipName,
+                            timestamp_seconds = sample.Timestamp,
+                            clip_time_seconds = sample.ClipTime,
+                            phase_seconds = sample.PhaseSeconds,
+                            phase_normalized = sample.PhaseNormalized,
+                            alpha_audit = alpha,
+                        });
+                        // Persist progress before the fail-closed check so a
+                        // failed sidecar still explains which frame was bad.
+                        sidecar.frames = frames.ToArray();
+                        sidecar.alpha_audit = alphaSummary;
+                        if (alpha.transparent_pixels <= 0 ||
+                            alpha.nontransparent_pixels <= 0)
+                        {
+                            throw new InvalidDataException(
+                                "Transparent capture frame " + index + " has " +
+                                alpha.transparent_pixels + " transparent and " +
+                                alpha.nontransparent_pixels + " non-transparent pixels; " +
+                                "capture is fail-closed.");
+                        }
+                    }
                 }
+                catch (Exception exception)
+                {
+                    frameCaptureFailure = exception;
+                }
+                finally
+                {
+                    try
+                    {
+                        transparentPipeline.Restore();
+                    }
+                    catch (Exception exception)
+                    {
+                        frameCaptureFailure = frameCaptureFailure == null
+                            ? exception
+                            : new InvalidOperationException(
+                                "Transparent pipeline capture failed and its settings " +
+                                "could not be restored.",
+                                new AggregateException(frameCaptureFailure, exception));
+                    }
+                }
+                if (frameCaptureFailure != null)
+                    throw frameCaptureFailure;
 
                 sidecar.frames = frames.ToArray();
                 sidecar.alpha_audit = alphaSummary;
+                if (alphaSummary.frames_with_transparent_pixels != frames.Count ||
+                    alphaSummary.frames_with_nontransparent_pixels != frames.Count)
+                {
+                    throw new InvalidDataException(
+                        "Transparent capture summary does not contain both pixel classes " +
+                        "for every frame; capture is fail-closed.");
+                }
                 sidecar.matte_verified = false;
                 sidecar.status = "ok";
                 File.WriteAllText(
@@ -403,15 +628,15 @@ namespace EndfieldGraphShaderLabEditor
         private static CaptureClip[] BuildClipRecords(
             AnimationClip startClip,
             AnimationClip loopClip,
-            int fps)
+            int fps,
+            List<FramePlan> plan,
+            float exitSeconds,
+            float transitionSeconds)
         {
-            int startFrameCount = Mathf.Max(
-                1,
-                Mathf.CeilToInt(startClip.length * fps) + 1);
-            int loopFrameCount = Mathf.Max(
-                1,
-                Mathf.CeilToInt(loopClip.length * fps));
-            float sequenceBoundary = startClip.length;
+            int startFrameCount = plan.Count(frame => frame.Phase == "start");
+            int transitionFrameCount = plan.Count(frame => frame.Phase == "transition");
+            int loopFrameCount = plan.Count(frame => frame.Phase == "loop");
+            float transitionBoundary = exitSeconds + transitionSeconds;
             return new[]
             {
                 new CaptureClip
@@ -421,7 +646,17 @@ namespace EndfieldGraphShaderLabEditor
                     duration_seconds = startClip.length,
                     frame_count = startFrameCount,
                     sequence_start_seconds = 0f,
-                    sequence_end_seconds = sequenceBoundary,
+                    sequence_end_seconds = exitSeconds,
+                    loop_cycles = 0,
+                },
+                new CaptureClip
+                {
+                    name = startClip.name + "->" + loopClip.name,
+                    role = "ui_overview_transition",
+                    duration_seconds = transitionSeconds,
+                    frame_count = transitionFrameCount,
+                    sequence_start_seconds = exitSeconds,
+                    sequence_end_seconds = transitionBoundary,
                     loop_cycles = 0,
                 },
                 new CaptureClip
@@ -430,8 +665,8 @@ namespace EndfieldGraphShaderLabEditor
                     role = "ui_overview_loop",
                     duration_seconds = loopClip.length,
                     frame_count = loopFrameCount,
-                    sequence_start_seconds = sequenceBoundary,
-                    sequence_end_seconds = sequenceBoundary + loopFrameCount / (float)fps,
+                    sequence_start_seconds = transitionBoundary,
+                    sequence_end_seconds = transitionBoundary + loopFrameCount / (float)fps,
                     loop_cycles = 1,
                 },
             };
@@ -440,25 +675,56 @@ namespace EndfieldGraphShaderLabEditor
         private static List<FramePlan> BuildFramePlan(
             AnimationClip startClip,
             AnimationClip loopClip,
-            int fps)
+            int fps,
+            float exitSeconds,
+            float transitionSeconds,
+            float destinationNormalizedOffset)
         {
             var result = new List<FramePlan>();
-            int startFrameCount = Mathf.Max(
-                1,
-                Mathf.CeilToInt(startClip.length * fps));
-            for (int index = 0; index <= startFrameCount; index++)
+            int startFrameCount = Mathf.Max(1, Mathf.CeilToInt(exitSeconds * fps));
+            for (int index = 0; index < startFrameCount; index++)
             {
-                float time = Mathf.Min(index / (float)fps, startClip.length);
+                float time = Mathf.Min(
+                    index / (float)fps,
+                    Mathf.Max(0f, exitSeconds - 1e-5f));
                 result.Add(new FramePlan
                 {
                     Phase = "start",
                     Clip = startClip,
+                    ClipName = startClip.name,
                     Timestamp = time,
                     ClipTime = time,
                     PhaseSeconds = time,
                     PhaseNormalized = startClip.length > 0f
                         ? time / startClip.length
-                        : 0f,
+                    : 0f,
+                });
+            }
+
+            int transitionFrameCount = transitionSeconds > 1e-5f
+                ? Mathf.Max(1, Mathf.CeilToInt(transitionSeconds * fps))
+                : 0;
+            for (int index = 0; index < transitionFrameCount; index++)
+            {
+                float elapsed = Mathf.Min(
+                    index / (float)fps,
+                    Mathf.Max(0f, transitionSeconds - 1e-5f));
+                float normalized = transitionSeconds > 0f
+                    ? elapsed / transitionSeconds
+                    : 1f;
+                result.Add(new FramePlan
+                {
+                    Phase = "transition",
+                    ClipName = startClip.name + "->" + loopClip.name,
+                    Timestamp = exitSeconds + elapsed,
+                    // For a blended state this field records transition
+                    // elapsed time, while the source clip states are carried
+                    // by the transition metadata.
+                    ClipTime = elapsed,
+                    PhaseSeconds = elapsed,
+                    PhaseNormalized = normalized,
+                    TransitionElapsed = elapsed,
+                    TransitionNormalized = normalized,
                 });
             }
 
@@ -474,7 +740,8 @@ namespace EndfieldGraphShaderLabEditor
                 {
                     Phase = "loop",
                     Clip = loopClip,
-                    Timestamp = startClip.length + index / (float)fps,
+                    ClipName = loopClip.name,
+                    Timestamp = exitSeconds + transitionSeconds + index / (float)fps,
                     ClipTime = time,
                     PhaseSeconds = time,
                     PhaseNormalized = loopClip.length > 0f
@@ -483,6 +750,111 @@ namespace EndfieldGraphShaderLabEditor
                 });
             }
             return result;
+        }
+
+        private static float ResolveExitSeconds(float normalizedTime, float clipLength)
+        {
+            RequireFinite(normalizedTime, "exitNormalizedTime");
+            RequireFinite(clipLength, "start clip length");
+            if (clipLength <= 0f)
+                throw new InvalidDataException("Start clip length must be positive.");
+            return Mathf.Clamp(normalizedTime, 0f, 1f) * clipLength;
+        }
+
+        private static float ResolveTransitionSeconds(
+            EndfieldOverviewPlayback playback,
+            float startClipLength)
+        {
+            RequireFinite(
+                playback.normalizedTransitionDuration,
+                "normalizedTransitionDuration");
+            if (playback.normalizedTransitionDuration < 0f)
+                throw new InvalidDataException(
+                    "normalizedTransitionDuration must not be negative.");
+            float seconds = playback.transitionDurationFixed
+                ? playback.normalizedTransitionDuration
+                : playback.normalizedTransitionDuration * startClipLength;
+            RequireFinite(seconds, "controller transition seconds");
+            if (seconds < 0f)
+                throw new InvalidDataException(
+                    "controller transition seconds must not be negative.");
+            return seconds;
+        }
+
+        private static void RequireFinite(float value, string name)
+        {
+            if (float.IsNaN(value) || float.IsInfinity(value))
+                throw new InvalidDataException(name + " must be finite.");
+        }
+
+        private static void SampleFrame(
+            Animation animation,
+            AnimationClip startClip,
+            AnimationClip loopClip,
+            EndfieldOverviewPlayback playback,
+            float exitSeconds,
+            FramePlan sample)
+        {
+            if (sample.Phase == "transition")
+            {
+                SampleTransition(
+                    animation,
+                    startClip,
+                    loopClip,
+                    playback.destinationNormalizedOffset,
+                    exitSeconds,
+                    sample.TransitionElapsed,
+                    sample.TransitionNormalized);
+                return;
+            }
+            if (sample.Clip == null)
+                throw new InvalidDataException(
+                    "Overview frame has no source clip: phase=" + sample.Phase);
+            sample.Clip.SampleAnimation(animation.gameObject, sample.ClipTime);
+        }
+
+        private static void SampleTransition(
+            Animation animation,
+            AnimationClip startClip,
+            AnimationClip loopClip,
+            float destinationNormalizedOffset,
+            float startTime,
+            float elapsed,
+            float normalized)
+        {
+            AnimationState startState = animation[startClip.name];
+            AnimationState loopState = animation[loopClip.name];
+            if (startState == null || loopState == null)
+                throw new InvalidDataException(
+                    "Overview transition source states are not registered on Animation.");
+
+            RequireFinite(destinationNormalizedOffset, "destinationNormalizedOffset");
+            RequireFinite(elapsed, "transition elapsed");
+            RequireFinite(normalized, "transition normalized");
+            animation.Stop();
+            startState.layer = 0;
+            startState.blendMode = AnimationBlendMode.Blend;
+            startState.wrapMode = WrapMode.ClampForever;
+            startState.speed = 0f;
+            startState.enabled = true;
+            startState.weight = Mathf.Clamp01(1f - normalized);
+            startState.time = Mathf.Clamp(
+                startTime + Mathf.Max(0f, elapsed),
+                0f,
+                startClip.length);
+
+            loopState.layer = 0;
+            loopState.blendMode = AnimationBlendMode.Blend;
+            loopState.wrapMode = WrapMode.Loop;
+            loopState.speed = 0f;
+            loopState.enabled = true;
+            loopState.weight = Mathf.Clamp01(normalized);
+            float loopTime = Mathf.Repeat(
+                Mathf.Clamp01(destinationNormalizedOffset) * loopClip.length +
+                Mathf.Max(0f, elapsed),
+                loopClip.length);
+            loopState.time = loopTime;
+            animation.Sample();
         }
 
         private static AnimationClip ResolveClip(Animation animation, string name)
@@ -552,7 +924,7 @@ namespace EndfieldGraphShaderLabEditor
                     "HG compatibility render pipeline is missing.",
                     "Assets/EndfieldGraphShaderLab/Generated/HGCompatRenderPipeline.asset");
             UnityEngine.Rendering.GraphicsSettings.renderPipelineAsset = pipeline;
-            UnityEngine.Rendering.QualitySettings.renderPipeline = pipeline;
+            QualitySettings.renderPipeline = pipeline;
             EditorSceneManager.OpenScene(ViewerScenePath, OpenSceneMode.Single);
         }
 
@@ -646,16 +1018,6 @@ namespace EndfieldGraphShaderLabEditor
                     renderer.enabled = false;
             }
             return true;
-        }
-
-        private static void ClearActorRoots(Transform charactersRoot)
-        {
-            for (int index = charactersRoot.childCount - 1; index >= 0; index--)
-            {
-                Transform child = charactersRoot.GetChild(index);
-                if (child != null)
-                    UnityEngine.Object.DestroyImmediate(child.gameObject);
-            }
         }
 
         private static GameObject FindSceneObject(string name)
@@ -859,8 +1221,10 @@ namespace EndfieldGraphShaderLabEditor
         {
             "The capture disables all Renderer and Canvas objects outside the selected actor.",
             "RecoveredProps are disabled; this is a body-only beauty capture and does not recover item/widget matte ownership.",
-            "ui_overview_start and ui_overview_loop are sampled at a direct clip boundary; the runtime Animator crossfade is recorded but not simulated.",
+            "ui_overview_start ends at controller exit time; transition frames sample the start/loop AnimationState weights on the same layer, then one complete loop period is emitted without a duplicate endpoint.",
+            "The transparent pass temporarily disables HGCompatRenderPipelineAsset character post processing; transparent frames therefore do not contain recovered post-process output.",
             "matteVerified=false: alpha readback is reported as an audit only; no independent character matte or UI-removal ground truth was verified.",
+            "secondaryDynamicsVerified=false: the original BeyondBoneCloth owners and serialized constraints are catalogued, but the retail BeyondDynamicBone/Burst solver and its PlayerLoop scheduling are not present; cloth, hair, ribbons, and accessories can diverge from the animated body.",
             "Recovered renderer/shader pipeline output is not a proof of retail pixel parity or of a complete source rendering pipeline.",
         };
     }
