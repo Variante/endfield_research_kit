@@ -64,6 +64,53 @@ class PreviewInputTests(unittest.TestCase):
             self.assertTrue(image.is_file())
             self.assertEqual(image.read_bytes()[:8], b"\x89PNG\r\n\x1a\n")
 
+    def test_streaming_static_meshes_are_rasterized_instead_of_drawn_as_location_points(self):
+        payload = {"markers": [{"streamingInstance": {
+            "sourceFile": "Data/Streaming/PC/test/Streaming/InitChunkData_0_0_0_0.bytes",
+            "mesh": {
+                "name": "S_build_test_lod0",
+                "pathId": 42,
+                "obj": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Mesh/S_build_test_lod0_p2A.obj",
+            },
+        }}]}
+        def fake_raster(_streaming, _bounds, width, height):
+            return ([1.0] * (width * height), 1, 7, 3)
+
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(
+            builder, "rasterise_streaming_depth", side_effect=fake_raster
+        ):
+            manifest = render_point_cloud("test_level", [(1.0, 2.0, 3.0)], Path(tmp), payload)
+
+        self.assertEqual(manifest["status"], "recovered_streaming_mesh_topdown")
+        self.assertEqual(manifest["render"]["method"], "exact_streaming_matrix_obj_depth_pass")
+        self.assertEqual(manifest["render"]["pointCount"], 0)
+        self.assertEqual(manifest["render"]["renderedTriangleCount"], 7)
+        self.assertEqual(manifest["modelScene"]["meshCount"], 1)
+        self.assertEqual(manifest["modelScene"]["instanceCount"], 1)
+        self.assertEqual(manifest["modelScene"]["meshes"][0]["assetRel"], "StreamingAssets/Mesh/S_build_test_lod0_p2A.obj")
+        self.assertIn("static OBJ instances", manifest["boundary"])
+
+    def test_composite_streaming_instance_publishes_each_mesh_but_counts_one_instance(self):
+        meshes = [
+            {"name": "tower", "pathId": 3, "obj": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Mesh/tower_p3.obj"},
+            {"name": "base", "pathId": 2, "obj": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Mesh/base_p2.obj"},
+        ]
+        payload = {"markers": [{"streamingInstance": {
+            "matrixColumnMajor": [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
+            "mesh": meshes[0],
+            "meshes": meshes,
+        }}]}
+        def fake_raster(_streaming, _bounds, width, height):
+            return ([1.0] * (width * height), 1, 12, 0)
+
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(
+            builder, "rasterise_streaming_depth", side_effect=fake_raster
+        ):
+            manifest = render_point_cloud("composite", [(0.0, 0.0, 0.0)], Path(tmp), payload)
+
+        self.assertEqual(manifest["modelScene"]["instanceCount"], 1)
+        self.assertEqual(manifest["modelScene"]["meshCount"], 2)
+
 
 class FitOriginTests(unittest.TestCase):
     """The grid origin is recovered from marker occupancy, or not claimed."""
@@ -192,7 +239,7 @@ class SurfaceRasterTests(unittest.TestCase):
         self.assertEqual((used, triangles), ([], 0))
         self.assertTrue(all(value <= NO_HIT for value in depth))
 
-    def test_hlod_preview_publishes_real_geometry_as_point_density(self):
+    def test_hlod_preview_publishes_black_point_density(self):
         bounds = {"minX": 0.0, "maxX": 8.0, "minZ": 0.0, "maxZ": 8.0}
         fit = {"originX": 0.0, "originZ": 0.0}
         with tempfile.TemporaryDirectory() as tmp:
@@ -202,9 +249,25 @@ class SurfaceRasterTests(unittest.TestCase):
                 manifest = render_level(clusters=clusters, level_id="test", lod=1, fit=fit,
                                         bounds=bounds, mesh_files={"1": path}, output_root=Path(tmp))
 
-        self.assertEqual(manifest["render"]["method"], "orthographic_hlod_depth_point_density")
+        self.assertEqual(manifest["render"]["method"], "orthographic_hlod_depth_black_point_density")
         self.assertEqual(manifest["render"]["pointDensity"], 8 / 11)
         self.assertEqual(manifest["render"]["coveredPixelRatio"], manifest["render"]["realPixelRatio"])
+
+    def test_dg002_uses_irregular_mesh_vertex_scan_without_coordinate_echo(self):
+        bounds = {"minX": 0.0, "maxX": 8.0, "minZ": 0.0, "maxZ": 8.0}
+        fit = {"originX": 0.0, "originZ": 0.0}
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._cluster_obj(tmp, "g c\nv 60 1 -60\nv -60 9 -60\nv -60 1 60\nf 1 2 3\n")
+            clusters = [{"i": 0, "j": 0, "pathId": 1, "name": "S_HLOD1_0_0_Cluster_1"}]
+            with mock.patch.object(builder, "raster_size", return_value=(32, 32)):
+                manifest = render_level(clusters=clusters, level_id="indie_dg002", lod=1, fit=fit,
+                                        bounds=bounds, mesh_files={"1": path}, output_root=Path(tmp))
+
+        self.assertEqual(manifest["render"]["method"], "orthographic_hlod_mesh_vertex_scan")
+        self.assertFalse(manifest["render"]["heightEcho"]["enabled"])
+        self.assertEqual(manifest["worldBounds"], bounds)
+        self.assertEqual(manifest["elevationUnderlay"]["method"], "orthographic_depth_pass_then_smoothed_hillshade")
+        self.assertEqual(manifest["elevationUnderlay"]["src"], "render/indie_dg002_hlod_elevation.png")
 
 
 class ReliefShadingTests(unittest.TestCase):

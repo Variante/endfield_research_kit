@@ -64,6 +64,12 @@ MODEL_ROOT_REL = "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_
 
 OUT = ROOT / "webui/data/map_recovery"
 MAP_LEVEL_ID = "indie_dg002"
+# Map recovery now advances in authored mainline order.  Keep the currently
+# recovered scene explicit rather than allowing the largest free-roam map to
+# replace it as the page entry point when generated counts change.
+MAINLINE_MAP_SCENES = (
+    {"missionId": "e0m0", "levelId": MAP_LEVEL_ID},
+)
 MISSION_RUNTIME_ASSET = f"{MISSION_RUNTIME_DIR}/e0m0.json"
 
 # An OBJ whose filename contains a level id is useful for inspection in the
@@ -83,6 +89,14 @@ REGISTRY_ID_SCALE = 10 ** 8
 # plotted on the indie_dg002 map and gets a map of its own instead.
 DG004_LEVEL_ID = "indie_dg004"
 DG004_MISSIONS = ("e0m0", "e4m1d5")
+STREAMING_INSTANCE_ROOT = ROOT / "export_full/recovered/AnimeStudio-cli/StreamingAssets/map_streaming_instances"
+STREAMING_SUBKIND_LABELS = {
+    "streaming_building": "流式建筑 / streaming building",
+    "streaming_prop": "流式道具 / streaming prop",
+    "streaming_decal": "流式贴花 / streaming decal",
+    "streaming_vegetation": "流式植被 / streaming vegetation",
+    "streaming_instance": "流式实例 / streaming instance",
+}
 
 # A pinned file is published with the strength of the link that produced it, so
 # the reader never has to guess whether a file proves the marker or merely
@@ -1715,7 +1729,7 @@ def _minimap_background(level_id: str) -> dict:
             "layers": tier_layers,
             "boundary": (
             "The in-game map screen publishes no complete chunk grid or no exported chunk art for "
-            "this level, so the background falls back to the HLOD preview."
+            "this level, so the background falls back to the strongest available diagnostic preview."
         ),
     }
 
@@ -2222,7 +2236,11 @@ def _facets(markers: list[dict], quest_points: list[dict], missions: list[str]) 
         bucket = kinds.setdefault(row["kind"], {"count": 0, "storyCount": 0, "subKinds": {}})
         bucket["count"] += 1
         bucket["storyCount"] += 1 if row.get("storyCount") else 0
-        sub = bucket["subKinds"].setdefault(row.get("subKind") or row["kind"], {"count": 0, "label": row.get("label") or ""})
+        sub_kind = row.get("subKind") or row["kind"]
+        sub = bucket["subKinds"].setdefault(
+            sub_kind,
+            {"count": 0, "label": STREAMING_SUBKIND_LABELS.get(sub_kind, row.get("label") or "")},
+        )
         sub["count"] += 1
 
     mission_rows: dict[str, dict] = {mission: {"markers": 0, "questPoints": 0, "stories": 0} for mission in missions}
@@ -2410,6 +2428,10 @@ def build_level(
         "idNum": id_num,
         "family": _level_family(level_id),
         "missions": sorted(missions),
+        "defaultMission": next((
+            row["missionId"] for row in MAINLINE_MAP_SCENES
+            if row["levelId"] == level_id and row["missionId"] in missions
+        ), ""),
         "missionDetails": mission_details,
         "coordinateSystem": "Unity world X/Y/Z; map projection uses X/Z with +Z upward",
         "questPoints": sorted(quest_points, key=lambda row: (str(row.get("missionId") or ""), str(row["questId"]))),
@@ -2524,11 +2546,12 @@ def build_indie_dg004(language: str) -> dict:
         for script_key, stories in (rows.get(DG004_LEVEL_ID) or {}).items():
             known = {row["key"] for row in bindings.setdefault(script_key, [])}
             bindings[script_key].extend(row for row in stories if row["key"] not in known)
+    streaming_markers = _streaming_instance_markers(DG004_LEVEL_ID)
     digest = {
         "missionId": DG004_MISSIONS[0],
         "storyIndex": {},
         "attachmentIndex": bindings,
-        "markers": [],
+        "markers": streaming_markers,
         "questPoints": [],
         "scriptFileMap": {},
         "fileRefs": set(),
@@ -2542,7 +2565,74 @@ def build_indie_dg004(language: str) -> dict:
         _teleports_by_level().get(DG004_LEVEL_ID, []), {},
     )
     payload["label"] = f"{DG004_LEVEL_ID} (e0m0 / e4m1d5)"
+    payload["streamingInstanceCoverage"] = {
+        "publishedCount": len(streaming_markers),
+        "source": str((STREAMING_INSTANCE_ROOT / f"{DG004_LEVEL_ID}.json").relative_to(ROOT)).replace("\\", "/"),
+        "boundary": (
+            "Exact transform-bearing InitChunkData entities. A published transform proves placement, not that "
+            "the entity is visible, interactive, or backed by a recovered renderer/mesh."
+        ),
+    }
     return payload
+
+
+def _streaming_instance_kind(entity_base: str) -> tuple[str, str]:
+    folded = entity_base.casefold()
+    if folded.startswith("p_build_"):
+        return "scenery", "streaming_building"
+    if folded.startswith("p_prop_"):
+        return "scenery", "streaming_prop"
+    if folded.startswith("p_rdecal_"):
+        return "scenery", "streaming_decal"
+    if folded.startswith(("p_grass_", "p_bush_", "p_vine_")):
+        return "scenery", "streaming_vegetation"
+    return "scenery", "streaming_instance"
+
+
+def _streaming_instance_markers(level_id: str) -> list[dict]:
+    """Publish exact streaming transforms without upgrading them to geometry."""
+    path = STREAMING_INSTANCE_ROOT / f"{level_id}.json"
+    payload = _load_json(path, {}) or {}
+    if payload.get("levelId") != level_id or payload.get("schemaVersion") != 1:
+        return []
+    source = str(path.relative_to(ROOT)).replace("\\", "/")
+    mesh_by_base = {
+        row.get("entityBase"): {
+            "mesh": row.get("mesh"),
+            "meshes": row.get("meshes") or ([row.get("mesh")] if row.get("mesh") else []),
+        }
+        for row in payload.get("entityBases") or []
+        if row.get("entityBase") and row.get("mesh")
+    }
+    markers = []
+    for instance in payload.get("instances") or []:
+        position = _finite_position(instance.get("position"))
+        entity_id = instance.get("entityId")
+        entity_base = str(instance.get("entityBase") or instance.get("name") or "streaming instance")
+        matrix = instance.get("matrixColumnMajor")
+        if position is None or not isinstance(entity_id, int) or not isinstance(matrix, list) or len(matrix) != 16:
+            continue
+        kind, sub_kind = _streaming_instance_kind(entity_base)
+        markers.append({
+            "kind": kind,
+            "subKind": sub_kind,
+            "label": entity_base,
+            "identity": f"streaming:{entity_id}",
+            "position": position,
+            "detailId": entity_base,
+            "interactionStatus": "scene_instance_not_proven_interactive",
+            "evidence": "InitChunkData exact column-major transform",
+            "sourceFiles": [source],
+            "streamingInstance": {
+                "entityId": entity_id,
+                "name": instance.get("name"),
+                "matrixColumnMajor": matrix,
+                "sourceFile": instance.get("sourceFile"),
+                "mesh": (mesh_by_base.get(entity_base) or {}).get("mesh"),
+                "meshes": (mesh_by_base.get(entity_base) or {}).get("meshes", []),
+            },
+        })
+    return markers
 
 
 def _reading_receivers_by_level(index: dict[str, list[dict]]) -> dict[str, dict[str, list[dict]]]:
@@ -2625,8 +2715,23 @@ def build_all(language: str, only: set[str] | None = None) -> list[dict]:
         entities = entities_by_level.get(level_id, {"world": [], "script": [], "npc": []})
         digests = digests_by_level.get(level_id, [])
         level_teleports = teleports.get(level_id, [])
-        if not any((entities["world"], entities["script"], entities["npc"], digests, level_teleports)):
+        streaming_markers = _streaming_instance_markers(level_id)
+        if not any((entities["world"], entities["script"], entities["npc"], digests, level_teleports, streaming_markers)):
             continue
+        if streaming_markers:
+            digests = [*digests, {
+                "missionId": "",
+                "storyIndex": {},
+                "attachmentIndex": {},
+                "markers": streaming_markers,
+                "questPoints": [],
+                "scriptFileMap": {},
+                "fileRefs": set(),
+                "sceneUniverse": {},
+                "crossLevel": {},
+                "unresolvedTriggerSlots": {"count": 0, "stories": []},
+                "runtimeAsset": None,
+            }]
         # Chains that run inside a level are the only story evidence some
         # sub-levels have, and they come from the mission that teleports in.
         bindings = bindings_by_level.get(level_id) or {}
@@ -2681,8 +2786,10 @@ def main() -> int:
     payloads = build_all(language, set(args.level) if args.level else None)
     maps = OUT / "maps"
     maps.mkdir(parents=True, exist_ok=True)
-    for stale in maps.glob("*.json"):
-        stale.unlink()
+    existing_index = _load_json(OUT / "index.json", {}) if args.level else {}
+    if not args.level:
+        for stale in maps.glob("*.json"):
+            stale.unlink()
 
     entries = []
     for payload in payloads:
@@ -2703,8 +2810,9 @@ def main() -> int:
             "missionCount": len(payload["missions"]),
         })
 
-    # The default map is the richest one, so the page opens on something worth
-    # reading instead of on whichever level sorts first alphabetically.
+    # Open on the first recovered mainline scene.  Before mainline scene
+    # recovery began this used the richest level, but changing generated counts
+    # could then move the entry point away from the authored progression.
     # A level dropped from the catalog leaves behind the map-screen composite
     # the previous build made. A focused --level run must not touch the
     # composites of the levels it did not rebuild, so this only runs for full
@@ -2716,7 +2824,19 @@ def main() -> int:
             if stale.name.split("_minimap", 1)[0] not in catalog_ids:
                 stale.unlink()
 
-    default_map = max(entries, key=lambda row: (row["storyKeyCount"], row["markerCount"]))["id"] if entries else ""
+    if args.level:
+        replaced = {row["id"] for row in entries}
+        entries = [
+            row for row in existing_index.get("maps") or []
+            if row.get("id") not in replaced
+        ] + entries
+    entry_ids = {row["id"] for row in entries}
+    default_map = str(existing_index.get("defaultMap") or "") if args.level else ""
+    if default_map not in entry_ids:
+        default_map = next((
+            row["levelId"] for row in MAINLINE_MAP_SCENES
+            if row["levelId"] in entry_ids
+        ), max(entries, key=lambda row: (row["storyKeyCount"], row["markerCount"]))["id"] if entries else "")
     index = {
         "schemaVersion": 2,
         "defaultMap": default_map,

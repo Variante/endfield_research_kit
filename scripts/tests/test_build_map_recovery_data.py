@@ -8,6 +8,37 @@ from scripts import build_map_recovery_data as builder
 
 
 class BuildMapRecoveryDataTests(unittest.TestCase):
+    def test_streaming_instance_markers_preserve_matrix_and_mesh_evidence(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source_root = root / "streaming"
+            source_root.mkdir()
+            (source_root / "indie_dg004.json").write_text(json.dumps({
+                "schemaVersion": 1,
+                "levelId": "indie_dg004",
+                "entityBases": [{
+                    "entityBase": "P_build_indie_floor+1_001_01",
+                    "mesh": {"name": "S_build_indie_floor+1_001_01_lod0", "pathId": 9},
+                }],
+                "instances": [{
+                    "entityId": 7,
+                    "name": "P_build_indie_floor+1_001_01#0_7",
+                    "entityBase": "P_build_indie_floor+1_001_01",
+                    "position": {"x": 1, "y": 2, "z": 3},
+                    "matrixColumnMajor": list(range(16)),
+                    "sourceFile": "InitChunkData_0_0_0_0.bytes",
+                }],
+            }), encoding="utf-8")
+            with mock.patch.object(builder, "ROOT", root), mock.patch.object(
+                builder, "STREAMING_INSTANCE_ROOT", source_root
+            ):
+                rows = builder._streaming_instance_markers("indie_dg004")
+
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["subKind"], "streaming_building")
+        self.assertEqual(rows[0]["streamingInstance"]["matrixColumnMajor"], list(range(16)))
+        self.assertEqual(rows[0]["streamingInstance"]["mesh"]["pathId"], 9)
+
     def test_e0m0_publishes_exact_reading_trigger_and_quest_coordinates(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -32,6 +63,7 @@ class BuildMapRecoveryDataTests(unittest.TestCase):
             self.assertEqual(reading["eventName"], "readepitaph")
             self.assertEqual(reading["position"], {"x": 1, "y": 2, "z": 3})
             self.assertEqual(payload["questPoints"][0]["questId"], "e0m0_q#10")
+            self.assertEqual(payload["defaultMission"], "e0m0")
             self.assertEqual(payload["renderBackground"]["status"], "asset_transform_recovery_required")
 
     def test_render_background_exposes_exact_level_obj_assets_without_placing_them(self):
