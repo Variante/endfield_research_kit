@@ -463,9 +463,10 @@ selectable sub-maps. `UILevelMapLoadConfig` supplies the exact chunk rectangles,
 optional tier overlays, and the only supported orientation flag
 (`needInverseXZ`); exported tile rows are not flipped independently. Multi-tier
 regions start with the selected sub-map's first tier visible. A current-floor
-selector on the lower-left map surface groups every sibling sub-map in the
-stitched region and switches one overlay at a time, with an explicit base-map
-option, so transparent floors from different heights never blend. Geographic
+slider on the lower-left map surface groups every rendered sibling overlay in
+the stitched region and switches one floor at a time, with an explicit base-map
+position, so transparent floors from different heights never blend. It is
+hidden when no tier image was actually recovered. Geographic
 `regiontoast` overlays use their recovered place names; only authored
 `layer_tips` keys are presented as numbered floors. Numbered floors sort in
 ascending order before the remaining tier-id-ordered geographic overlays.
@@ -484,13 +485,16 @@ places appear to exchange positions.
 Only the Map01 and Map02 families are stitched into regional canvases. Other
 same-prefix levels can be separate states or decks with identical bounds; the
 two Dijiang maps therefore load independently and each honors its authored
-`needInverseXZ` 180-degree rotation. Where game minimap art is absent, a
+`needInverseXZ` 180-degree rotation for both the composite and its marker,
+route, and location-label projection. Where game minimap art is absent, a
 recovered HLOD surface is preferred; otherwise the page uses an explicitly
 evidence-only, height-tinted point cloud made from exact registry and quest
 X/Y/Z transforms without inventing terrain. The expandable mission list links
 the files owned by each mission. Selecting one mission shows all of its plotted
 markers across ordinary marker and floor filters, focuses their footprint, and
 the map can be zoomed to 48x for close inspection.
+The selector orders Dijiang first, then Valley-IV, Wuling, and finally dungeon
+and independent-scene families.
 
 Both marker points and background rectangles use the same `screenY = maxZ -
 worldZ` projection. Do not place a background with `worldZ - minZ`: that
@@ -736,27 +740,20 @@ and origin in the rail, so a weak background reads as weak. A level whose origin
 is under-determined (fewer than 50 marker transforms, or under 90% coverage)
 publishes no background at all rather than a plausible-looking guess.
 
-The image is a softened shaded relief, produced in four passes:
+The image uses the earlier dense 3D scan/point-cloud presentation:
 
 1. **Depth pass.** Every cluster triangle is rasterised orthographically from
    directly above with a depth test on world Y, giving a digital elevation
    model of the level.
-2. **Grow.** HLOD publishes no ground, so a raw depth pass is a cloud of
-   disconnected shards. The surface is grown a few pixels outward to join
-   scattered props into the landform they sit on. Only the coverage frontier is
-   visited per round, so this costs the edge rather than the whole image.
-3. **Smooth.** The height field is box-blurred (separable, sliding-window) so
-   shading follows landforms rather than individual props.
-4. **Hillshade.** A standard DEM hillshade over the smoothed field, plus an
-   elevation tint.
+2. **Density sample.** A deterministic screen-door sample keeps roughly 73% of
+   pixels hit by real HLOD triangles, preserving structure while exposing the
+   background between points.
+3. **Elevation tint.** Exact depth values tint the recovered points from cool
+   blue-grey to warm ivory, retaining readable vertical relief.
 
-Shading deliberately does *not* use per-facet mesh normals. Normals give every
-rock shard its own highlight, which reads as noise and makes the page look like
-a 3D model viewport rather than a map; a hillshade over a blurred DEM keeps the
-landforms and drops the shards. Grown pixels are drawn more transparently than
-pixels carrying real geometry (`realPixelRatio` versus `coveredPixelRatio` in
-the manifest), so the reader can still tell where the export actually had a
-surface.
+The renderer deliberately adds neither mesh-normal lighting nor grown terrain.
+Every visible point comes from a real triangle depth hit; gaps remain missing
+evidence instead of being joined into a plausible-looking solid surface.
 
 Bounds are the marker bounds padded to the page's viewBox aspect, so the image
 is not stretched against the markers drawn over it, and the PNG is ink on
@@ -774,9 +771,9 @@ than rendering choices:
 - **No ground.** `realPixelRatio` runs from about 12% to 77% per level. The
   uncovered pixels are not open ground: for these scenes HLOD publishes cliffs,
   props and structures but no ground surface, and no `TerrainData` or other mesh
-  exists in the art scene either. Growing the surface closes small gaps between
-  props; everything beyond that is left empty, because a gap is missing data and
-  an invented floor would imply coverage the export does not have.
+  exists in the art scene either. Everything beyond recovered triangle hits is
+  left empty, because a gap is missing data and an invented floor would imply
+  coverage the export does not have.
 
 These remain diagnostic previews labeled `inferred_hlod_grid_preview`, useful
 for checking route alignment and scene coverage. They are not exact scene
