@@ -86,6 +86,18 @@ def build_phases(args: argparse.Namespace) -> list[tuple[str, list[TaskSpec]]]:
             module("scripts.build_map_recovery_data"),
         ),
     )
+
+    # HLOD fitting needs the freshly published marker coordinates and, when
+    # requested, the completed asset export. Keep this as a later task rather
+    # than running it beside the asset exporter; its final data pass embeds the
+    # manifest and cannot race a producer that is still writing OBJ files.
+    map_recovery = TaskSpec(
+        "map_recovery",
+        (
+            module("scripts.build_map_recovery_preview"),
+            module("scripts.build_map_recovery_data"),
+        ),
+    )
     character = TaskSpec(
         "characters",
         (
@@ -100,6 +112,10 @@ def build_phases(args: argparse.Namespace) -> list[tuple[str, list[TaskSpec]]]:
     )
 
     if args.mission_pipeline_only:
+        mission = TaskSpec(
+            mission.name,
+            (*mission.commands, module("scripts.build_map_recovery_preview"), module("scripts.build_map_recovery_data")),
+        )
         return [("post_story", [mission])]
 
     gameplay = TaskSpec(
@@ -163,7 +179,7 @@ def build_phases(args: argparse.Namespace) -> list[tuple[str, list[TaskSpec]]]:
         )
 
     gameplay_refs = gameplay_asset_refs_task("gameplay_asset_refs")
-    phase_two = [gameplay_refs]
+    phase_two = [gameplay_refs, map_recovery]
     if args.with_assets:
         audio_args: list[str] = []
         if not args.decode_audio:
@@ -175,6 +191,7 @@ def build_phases(args: argparse.Namespace) -> list[tuple[str, list[TaskSpec]]]:
         phase_two = [
             character,
             gameplay_refs,
+            map_recovery,
             TaskSpec(
                 "audio",
                 (module("scripts.build_audio", *audio_args),),

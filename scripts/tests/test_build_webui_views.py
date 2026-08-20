@@ -60,7 +60,7 @@ class WebuiViewPlanTests(unittest.TestCase):
                     "gameplay",
                     "projectiles",
                 ],
-                ["gameplay_asset_refs"],
+                ["gameplay_asset_refs", "map_recovery"],
                 ["source_graph"],
                 ["gameplay_asset_refs_after_graph", "combat_relationships"],
             ],
@@ -126,7 +126,7 @@ class WebuiViewPlanTests(unittest.TestCase):
         self.assertNotIn("characters", task_names(phases)[0])
         self.assertEqual(
             task_names(phases)[1],
-            ["characters", "gameplay_asset_refs", "audio"],
+            ["characters", "gameplay_asset_refs", "map_recovery", "audio"],
         )
         asset_command = commands_for(phases, "assets")[0]
         self.assertNotIn("--skip-gameplay-refs", asset_command)

@@ -458,6 +458,15 @@ own recovered display names - and labels each level with the name the builder
 resolved from `LevelDescTable` plus the per-language `I18nTextTable` (empty or
 placeholder texts keep the bare level id) alongside its node and story counts.
 
+Levels in one region share a single world-space canvas, but remain separate
+selectable sub-maps. `UILevelMapLoadConfig` supplies the exact chunk rectangles,
+optional tier overlays, and the only supported orientation flag
+(`needInverseXZ`); exported tile rows are not flipped independently. Multi-tier
+levels start with only the selected sub-map's first tier visible, and the user
+can enable additional floors. Registry markers, quest points, and authored
+`staticElements` all retain raw X/Z coordinates; marker-to-tier membership is
+published only when the point lies inside that tier's authored rectangle.
+
 Because one level hosts many missions and one mission can reach several levels,
 every contribution is gated on the coordinate space it names: mission-area
 proximity rows on their `pin.mapId`, authored map pins on their own `scene`
@@ -734,6 +743,12 @@ must remain under `export_full`; publication fails closed above 24 meshes or
 120,000 triangles and states marker-only fallback when no safe model survives.
 The grid translation and Unity-to-OBJ axis conversion remain explicitly
 inferred, not exact scene hierarchy evidence.
+
+When a level has no HLOD cluster container but exported OBJ filenames contain
+that exact level id (for example a base01 deck), the map payload publishes an
+asset-only `modelScene` with `positionStatus: unplaced`. Those links open the
+existing Assets viewer but never become map geometry or a background; shared
+family names such as `base01` are not used to assign an OBJ to every deck.
 
 The builders read each other's output, so a full rebuild runs data, then
 previews, then data again to embed the new manifests:

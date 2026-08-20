@@ -1,7 +1,9 @@
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
+from scripts import build_map_recovery_preview as builder
 from scripts.build_map_recovery_preview import (
     BASE_CELL,
     LONG_EDGE,
@@ -28,6 +30,14 @@ class CellSizeTests(unittest.TestCase):
         # builder existed, and is the independent check on the doubling rule.
         self.assertEqual(cell_size(1), 128.0)
         self.assertEqual(cell_size(2), 256.0)
+
+
+class PreviewInputTests(unittest.TestCase):
+    def test_missing_asset_map_is_a_nonfatal_degraded_preview(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            missing = Path(tmp) / "missing-assets.json"
+            with mock.patch("sys.argv", ["build_map_recovery_preview.py", "--asset-map", str(missing)]):
+                self.assertEqual(builder.main(), 0)
 
 
 class FitOriginTests(unittest.TestCase):
