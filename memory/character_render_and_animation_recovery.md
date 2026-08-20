@@ -1220,6 +1220,21 @@ already-loaded and post-attach resolver loads. Its disk hashes and runtime
 path/size/base observations do not prove an in-memory module hash. A real
 retail capture is still required before any candidate can be promoted.
 
+Deeper thunk/core analysis narrows the semantic side further without changing
+that identity boundary. The simulation candidate is a 25-container ABI
+marshaler whose only indirect target is a zero-fill `.data` function-pointer
+slot, so its numeric CFG is unavailable on disk. Both collider-end candidates
+are branchless six-parameter forwarding thunks with distinct zero-fill slots;
+they preserve the same four incoming registers and expose no payload
+dereference or writeback, so static evidence cannot choose between them. For
+collider start, tracing both CPU variants to their cores leaves one unique
+semantic candidate, `8b3d2761aaaac71a35d4a2557d570456`: it alone preserves the
+canonical 17-parameter order and matches the flag byte guard, team-id stride
+2, TeamData stride 464, and index/length access. The other two candidates are
+excluded by parameter reorder and incompatible byte/word accesses. Even this
+unique semantic match is not a wrapper-to-hash identity; the runtime resolver
+request remains the required join.
+
 The installed client does contain its original `lib_burst_generated.dll`, but
 that is not a drop-in public-Unity plugin: its hashed exports are resolved
 through the retail Burst runtime and depend on the original IL2CPP/Jobs state.
