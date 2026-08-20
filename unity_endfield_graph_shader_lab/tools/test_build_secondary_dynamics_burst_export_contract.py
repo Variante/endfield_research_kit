@@ -54,12 +54,88 @@ class SecondaryDynamicsBurstExportTests(unittest.TestCase):
 
     def test_direct_call_identity_and_parameter_contracts_are_explicit(self) -> None:
         payload = json.loads(builder.DEFAULT_OUTPUT.read_text(encoding="utf-8"))
+        simulation = payload["targets"]["simulationStartRange"]
         start = payload["targets"]["colliderStartRange"]
         end = payload["targets"]["colliderEndRange"]
+        self.assertEqual(simulation["directInvokeMethodIndex"], 385570)
+        self.assertEqual(simulation["parameterContract"]["parameterCount"], 29)
         self.assertEqual((start["directInvokeMethodIndex"], start["directInvokeVa"]), (385416, "0x186762cc0"))
         self.assertEqual((end["directInvokeMethodIndex"], end["directInvokeVa"]), (385317, "0x18675b0cc"))
         self.assertEqual(start["parameterContract"]["parameterCount"], 17)
         self.assertEqual(end["parameterContract"]["parameterCount"], 6)
+
+    def test_simulation_semantic_fingerprint_is_closed_at_runtime_boundary(self) -> None:
+        payload = json.loads(builder.DEFAULT_OUTPUT.read_text(encoding="utf-8"))
+        fingerprint = payload["targets"]["simulationStartRange"]["semanticFingerprint"]
+        self.assertEqual(fingerprint["status"], "export_thunk_fingerprint_closed_internal_target_unobserved")
+        self.assertEqual(fingerprint["candidateHash"], "c7e2be088565d3ff7a6e7ba86d23fd51")
+        self.assertEqual(fingerprint["export"]["rva"], "0x3616e0")
+        self.assertEqual(fingerprint["export"]["bodySha256"], "38e122699775a7bc42cb1277028ece1430c467c9112510aa29948ee8d3f2e45d")
+        self.assertEqual(fingerprint["abi"]["nativeArrayCount"], 24)
+        self.assertEqual(len(fingerprint["abi"]["stackInputLoads"]), 25)
+        self.assertEqual(len(fingerprint["abi"]["stackOutputStores"]), 25)
+        self.assertEqual(fingerprint["abi"]["directCalls"], [])
+        self.assertEqual(fingerprint["abi"]["tailTransfers"], [])
+        target = fingerprint["indirectTarget"]
+        self.assertEqual((target["targetRva"], target["section"], target["fileBacked"]), ("0x3c6390", ".data", False))
+        self.assertEqual(target["diskState"], "zero_fill_bss_no_on_disk_pointer")
+        self.assertEqual(fingerprint["internalCfg"]["status"], "unavailable_target_pointer_unobserved")
+        self.assertEqual(fingerprint["internalCfg"]["recursionBound"], {"maxDepth": 4, "maxNodes": 128, "maxEdges": 256})
+        self.assertEqual(fingerprint["internalCfg"]["seedTargetRva"], "0x3c6390")
+        self.assertEqual(fingerprint["jobPayload"]["status"], "unavailable_target_pointer_unobserved")
+        self.assertEqual(fingerprint["jobPayload"]["nativeArrayFieldAccesses"], [])
+        self.assertEqual(fingerprint["jobPayload"]["strideBytes"], [])
+        self.assertEqual(fingerprint["jobPayload"]["constants"], [])
+        self.assertEqual(fingerprint["jobPayload"]["writebacks"], [])
+        self.assertEqual(fingerprint["identityBoundary"], "unique_abi_candidate_identity_unresolved")
+
+    def test_managed_cross_check_preserves_native_reference_boundary(self) -> None:
+        payload = json.loads(builder.DEFAULT_OUTPUT.read_text(encoding="utf-8"))
+        managed = payload["targets"]["simulationStartRange"]["semanticFingerprint"]["managedCrossCheck"]
+        self.assertEqual((managed["fieldCount"], managed["nativeArrayCount"], managed["nativeReferenceCount"]), (26, 23, 1))
+        self.assertEqual(managed["managedNativeContainerCount"], 24)
+        self.assertEqual(managed["nativeReferenceArgumentIndexes"], [28])
+        self.assertEqual(managed["nativeReferenceFields"][0]["name"], "_indexCount")
+        direct = managed["managedDirectInvokeContract"]
+        self.assertEqual((direct["parameterCount"], direct["nativeArrayCount"], direct["lengthPointerArgumentIndex"]), (29, 24, 28))
+        self.assertIn("corresponding managed job field is NativeReference", direct["boundary"])
+        end = managed["endSimulation"]
+        self.assertEqual((end["fieldCount"], end["nativeArrayCount"], end["nativeReferenceCount"]), (17, 15, 1))
+        self.assertEqual(end["nativeReferenceFields"][0]["name"], "_indexCount")
+
+    def test_collider_end_static_audit_keeps_both_hashes_unresolved(self) -> None:
+        payload = json.loads(builder.DEFAULT_OUTPUT.read_text(encoding="utf-8"))
+        audit = payload["targets"]["colliderEndRange"]["candidateAudit"]
+        self.assertEqual(audit["status"], "two_abi_compatible_candidates_static_non_discriminating")
+        self.assertEqual(audit["comparison"]["candidateCount"], 2)
+        self.assertTrue(audit["comparison"]["sameWrapperCfg"])
+        self.assertTrue(audit["comparison"]["sameParameterForwarding"])
+        self.assertFalse(audit["comparison"]["fieldOffsetsPresentInCandidateThunk"])
+        self.assertEqual(
+            [row["name"] for row in audit["parameterContract"]["parameters"]],
+            ["jobColliderIndexList", "nowPositions", "nowRotations", "oldPositions", "oldRotations", "lengthPtr"],
+        )
+        self.assertEqual(
+            [(row["name"], row["jobOffset"], row["strideBytes"])
+             for row in audit["managedFallbackComparison"]["fields"]],
+            [
+                ("nowPositions", "0x10", 24),
+                ("nowRotations", "0x20", 16),
+                ("oldPositions", "0x30", 24),
+                ("oldRotations", "0x40", 16),
+            ],
+        )
+        for candidate in audit["candidates"]:
+            self.assertEqual(candidate["wrapper"]["branchCount"], 0)
+            self.assertEqual(len(candidate["wrapper"]["stackParameterForwarding"]), 2)
+            self.assertEqual(len(candidate["wrapper"]["outgoingStackForwarding"]), 2)
+            self.assertEqual(candidate["runtimeFunctionPointerSlot"]["initializers"]["statics"][0]["staticSelectorConstants"], ["0xedfccb8b263b8f83"])
+            for row in candidate["runtimeFunctionPointerSlot"]["initializers"]["externals"]:
+                self.assertEqual(row["candidateWrapperSlotStoreMatches"], [])
+                self.assertGreater(row["resolverCallCount"], 0)
+            for row in candidate["runtimeFunctionPointerSlot"]["initializers"]["statics"]:
+                self.assertEqual(row["candidateWrapperSlotStoreMatches"], [])
+        self.assertIn("runtime GetProcAddress", audit["comparison"]["requiredNextEvidence"])
 
     def test_canonical_installed_dll_and_export_set(self) -> None:
         dll = Path(json.loads(builder.DEFAULT_OUTPUT.read_text(encoding="utf-8"))["native_gate"]["libBurstGenerated"]["path"])
@@ -72,6 +148,17 @@ class SecondaryDynamicsBurstExportTests(unittest.TestCase):
             __import__("hashlib").sha256("\n".join(names).encode()).hexdigest(),
             "3575fa430f691be98c1f2b6cadfb71e74854f422eed7fce767215d974ac332c9",
         )
+
+    def test_zero_fill_function_pointer_slot_is_not_file_backed(self) -> None:
+        dll = Path(json.loads(builder.DEFAULT_OUTPUT.read_text(encoding="utf-8"))["native_gate"]["libBurstGenerated"]["path"])
+        parsed = builder._pe_exports(dll)
+        section = builder._section_record(parsed, 0x3C6390, 8)
+        self.assertIsNotNone(section)
+        assert section is not None
+        self.assertEqual(section["name"], ".data")
+        self.assertFalse(section["fileBacked"])
+        with self.assertRaisesRegex(builder.ContractError, "zero-fill"):
+            builder._rva_file_offset(parsed, 0x3C6390, 8)
 
     def test_stack_feature_decoder_preserves_width_and_offsets(self) -> None:
         body = bytes.fromhex(
