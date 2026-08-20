@@ -31,6 +31,13 @@
     "boxedFieldOffsets": "MetadataRegistration.fieldOffsets",
     "nativePayloadOffsets": "boxedFieldOffset - 0x10",
     "nativeSize": "MetadataRegistration.typeDefinitionsSizes.native_size",
+    "concreteGenericSlotWidths": {
+      "status": "closed_from_adjacent_offsets_and_native_size_tail",
+      "source": "MetadataRegistration.fieldOffsets plus typeDefinitionsSizes.native_size",
+      "abiAlignmentBytes": 8,
+      "genericTypeSizeClaimed": false,
+      "boundary": "Each NativeArray/NativeReference width is the concrete closed job slot span; it is not the open generic type's total size."
+    },
     "declarationClassificationBoundary": "field kind labels classify the pinned metadata type indexes for readability only; they are not inner generic layout claims",
     "genericBoundary": {
       "NativeArray": {
@@ -65,6 +72,17 @@
           "boxedFieldOffset": "0x10",
           "nativePayloadOffset": "0x0",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "next_field_native_offset",
+            "nativePayloadOffset": "0x0",
+            "nextNativePayloadOffset": "0x10",
+            "nextField": "teamDataArray",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x04000747"
         },
         {
@@ -75,6 +93,17 @@
           "boxedFieldOffset": "0x20",
           "nativePayloadOffset": "0x10",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "next_field_native_offset",
+            "nativePayloadOffset": "0x10",
+            "nextNativePayloadOffset": "0x20",
+            "nextField": "centerDataArray",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x04000748"
         },
         {
@@ -85,6 +114,17 @@
           "boxedFieldOffset": "0x30",
           "nativePayloadOffset": "0x20",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "next_field_native_offset",
+            "nativePayloadOffset": "0x20",
+            "nextNativePayloadOffset": "0x30",
+            "nextField": "teamIdArray",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x04000749"
         },
         {
@@ -95,6 +135,17 @@
           "boxedFieldOffset": "0x40",
           "nativePayloadOffset": "0x30",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "next_field_native_offset",
+            "nativePayloadOffset": "0x30",
+            "nextNativePayloadOffset": "0x40",
+            "nextField": "flagArray",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x0400074a"
         },
         {
@@ -105,6 +156,17 @@
           "boxedFieldOffset": "0x50",
           "nativePayloadOffset": "0x40",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "next_field_native_offset",
+            "nativePayloadOffset": "0x40",
+            "nextNativePayloadOffset": "0x50",
+            "nextField": "sizeArray",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x0400074b"
         },
         {
@@ -115,6 +177,17 @@
           "boxedFieldOffset": "0x60",
           "nativePayloadOffset": "0x50",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "next_field_native_offset",
+            "nativePayloadOffset": "0x50",
+            "nextNativePayloadOffset": "0x60",
+            "nextField": "framePositions",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x0400074c"
         },
         {
@@ -125,6 +198,17 @@
           "boxedFieldOffset": "0x70",
           "nativePayloadOffset": "0x60",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "next_field_native_offset",
+            "nativePayloadOffset": "0x60",
+            "nextNativePayloadOffset": "0x70",
+            "nextField": "frameRotations",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x0400074d"
         },
         {
@@ -135,6 +219,17 @@
           "boxedFieldOffset": "0x80",
           "nativePayloadOffset": "0x70",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "next_field_native_offset",
+            "nativePayloadOffset": "0x70",
+            "nextNativePayloadOffset": "0x80",
+            "nextField": "frameScales",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x0400074e"
         },
         {
@@ -145,6 +240,17 @@
           "boxedFieldOffset": "0x90",
           "nativePayloadOffset": "0x80",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "next_field_native_offset",
+            "nativePayloadOffset": "0x80",
+            "nextNativePayloadOffset": "0x90",
+            "nextField": "oldFramePositions",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x0400074f"
         },
         {
@@ -155,6 +261,17 @@
           "boxedFieldOffset": "0xa0",
           "nativePayloadOffset": "0x90",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "next_field_native_offset",
+            "nativePayloadOffset": "0x90",
+            "nextNativePayloadOffset": "0xa0",
+            "nextField": "oldFrameRotations",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x04000750"
         },
         {
@@ -165,6 +282,17 @@
           "boxedFieldOffset": "0xb0",
           "nativePayloadOffset": "0xa0",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "next_field_native_offset",
+            "nativePayloadOffset": "0xa0",
+            "nextNativePayloadOffset": "0xb0",
+            "nextField": "nowPositions",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x04000751"
         },
         {
@@ -175,6 +303,17 @@
           "boxedFieldOffset": "0xc0",
           "nativePayloadOffset": "0xb0",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "next_field_native_offset",
+            "nativePayloadOffset": "0xb0",
+            "nextNativePayloadOffset": "0xc0",
+            "nextField": "nowRotations",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x04000752"
         },
         {
@@ -185,6 +324,17 @@
           "boxedFieldOffset": "0xd0",
           "nativePayloadOffset": "0xc0",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "next_field_native_offset",
+            "nativePayloadOffset": "0xc0",
+            "nextNativePayloadOffset": "0xd0",
+            "nextField": "oldPositions",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x04000753"
         },
         {
@@ -195,6 +345,17 @@
           "boxedFieldOffset": "0xe0",
           "nativePayloadOffset": "0xd0",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "next_field_native_offset",
+            "nativePayloadOffset": "0xd0",
+            "nextNativePayloadOffset": "0xe0",
+            "nextField": "oldRotations",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x04000754"
         },
         {
@@ -205,6 +366,17 @@
           "boxedFieldOffset": "0xf0",
           "nativePayloadOffset": "0xe0",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "next_field_native_offset",
+            "nativePayloadOffset": "0xe0",
+            "nextNativePayloadOffset": "0xf0",
+            "nextField": "workDataArray",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x04000755"
         },
         {
@@ -215,6 +387,17 @@
           "boxedFieldOffset": "0x100",
           "nativePayloadOffset": "0xf0",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "next_field_native_offset",
+            "nativePayloadOffset": "0xf0",
+            "nextNativePayloadOffset": "0x100",
+            "nextField": "_indexCount",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x04000756"
         },
         {
@@ -225,6 +408,17 @@
           "boxedFieldOffset": "0x110",
           "nativePayloadOffset": "0x100",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "native_size_tail",
+            "nativePayloadOffset": "0x100",
+            "nextNativePayloadOffset": "0x110",
+            "nextField": null,
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x04000757"
         }
       ],
@@ -277,6 +471,17 @@
           "boxedFieldOffset": "0x10",
           "nativePayloadOffset": "0x0",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "next_field_native_offset",
+            "nativePayloadOffset": "0x0",
+            "nextNativePayloadOffset": "0x10",
+            "nextField": "nowPositions",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x04000758"
         },
         {
@@ -287,6 +492,17 @@
           "boxedFieldOffset": "0x20",
           "nativePayloadOffset": "0x10",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "next_field_native_offset",
+            "nativePayloadOffset": "0x10",
+            "nextNativePayloadOffset": "0x20",
+            "nextField": "nowRotations",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x04000759"
         },
         {
@@ -297,6 +513,17 @@
           "boxedFieldOffset": "0x30",
           "nativePayloadOffset": "0x20",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "next_field_native_offset",
+            "nativePayloadOffset": "0x20",
+            "nextNativePayloadOffset": "0x30",
+            "nextField": "oldPositions",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x0400075a"
         },
         {
@@ -307,6 +534,17 @@
           "boxedFieldOffset": "0x40",
           "nativePayloadOffset": "0x30",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "next_field_native_offset",
+            "nativePayloadOffset": "0x30",
+            "nextNativePayloadOffset": "0x40",
+            "nextField": "oldRotations",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x0400075b"
         },
         {
@@ -317,6 +555,17 @@
           "boxedFieldOffset": "0x50",
           "nativePayloadOffset": "0x40",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "next_field_native_offset",
+            "nativePayloadOffset": "0x40",
+            "nextNativePayloadOffset": "0x50",
+            "nextField": "_indexCount",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x0400075c"
         },
         {
@@ -327,6 +576,17 @@
           "boxedFieldOffset": "0x60",
           "nativePayloadOffset": "0x50",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "native_size_tail",
+            "nativePayloadOffset": "0x50",
+            "nextNativePayloadOffset": "0x60",
+            "nextField": null,
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x0400075d"
         }
       ],
@@ -379,6 +639,16 @@
           "boxedFieldOffset": "0x10",
           "nativePayloadOffset": "0x0",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "classified_field_width_with_next_field_span",
+            "nativePayloadOffset": "0x0",
+            "nextNativePayloadOffset": "0x10",
+            "nextField": "simulationDeltaTime",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true
+          },
           "token": "0x040007e2"
         },
         {
@@ -389,6 +659,16 @@
           "boxedFieldOffset": "0x20",
           "nativePayloadOffset": "0x10",
           "slotWidthBytes": 4,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "classified_field_width_with_next_field_span",
+            "nativePayloadOffset": "0x10",
+            "nextNativePayloadOffset": "0x18",
+            "nextField": "stepParticleIndexArray",
+            "slotSpanBytes": 8,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true
+          },
           "token": "0x040007e3"
         },
         {
@@ -399,6 +679,17 @@
           "boxedFieldOffset": "0x28",
           "nativePayloadOffset": "0x18",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "next_field_native_offset",
+            "nativePayloadOffset": "0x18",
+            "nextNativePayloadOffset": "0x28",
+            "nextField": "attributes",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x040007e4"
         },
         {
@@ -409,6 +700,17 @@
           "boxedFieldOffset": "0x38",
           "nativePayloadOffset": "0x28",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "next_field_native_offset",
+            "nativePayloadOffset": "0x28",
+            "nextNativePayloadOffset": "0x38",
+            "nextField": "depthArray",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x040007e5"
         },
         {
@@ -419,6 +721,17 @@
           "boxedFieldOffset": "0x48",
           "nativePayloadOffset": "0x38",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "next_field_native_offset",
+            "nativePayloadOffset": "0x38",
+            "nextNativePayloadOffset": "0x48",
+            "nextField": "positions",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x040007e6"
         },
         {
@@ -429,6 +742,17 @@
           "boxedFieldOffset": "0x58",
           "nativePayloadOffset": "0x48",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "next_field_native_offset",
+            "nativePayloadOffset": "0x48",
+            "nextNativePayloadOffset": "0x58",
+            "nextField": "rotations",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x040007e7"
         },
         {
@@ -439,6 +763,17 @@
           "boxedFieldOffset": "0x68",
           "nativePayloadOffset": "0x58",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "next_field_native_offset",
+            "nativePayloadOffset": "0x58",
+            "nextNativePayloadOffset": "0x68",
+            "nextField": "vertexRootIndices",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x040007e8"
         },
         {
@@ -449,6 +784,17 @@
           "boxedFieldOffset": "0x78",
           "nativePayloadOffset": "0x68",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "next_field_native_offset",
+            "nativePayloadOffset": "0x68",
+            "nextNativePayloadOffset": "0x78",
+            "nextField": "teamDataArray",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x040007e9"
         },
         {
@@ -459,6 +805,17 @@
           "boxedFieldOffset": "0x88",
           "nativePayloadOffset": "0x78",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "next_field_native_offset",
+            "nativePayloadOffset": "0x78",
+            "nextNativePayloadOffset": "0x88",
+            "nextField": "parameterArray",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x040007ea"
         },
         {
@@ -469,6 +826,17 @@
           "boxedFieldOffset": "0x98",
           "nativePayloadOffset": "0x88",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "next_field_native_offset",
+            "nativePayloadOffset": "0x88",
+            "nextNativePayloadOffset": "0x98",
+            "nextField": "centerDataArray",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x040007eb"
         },
         {
@@ -479,6 +847,17 @@
           "boxedFieldOffset": "0xa8",
           "nativePayloadOffset": "0x98",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "next_field_native_offset",
+            "nativePayloadOffset": "0x98",
+            "nextNativePayloadOffset": "0xa8",
+            "nextField": "teamWindArray",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x040007ec"
         },
         {
@@ -489,6 +868,17 @@
           "boxedFieldOffset": "0xb8",
           "nativePayloadOffset": "0xa8",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "next_field_native_offset",
+            "nativePayloadOffset": "0xa8",
+            "nextNativePayloadOffset": "0xb8",
+            "nextField": "windDataArray",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x040007ed"
         },
         {
@@ -499,6 +889,17 @@
           "boxedFieldOffset": "0xc8",
           "nativePayloadOffset": "0xb8",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "next_field_native_offset",
+            "nativePayloadOffset": "0xb8",
+            "nextNativePayloadOffset": "0xc8",
+            "nextField": "teamIdArray",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x040007ee"
         },
         {
@@ -509,6 +910,17 @@
           "boxedFieldOffset": "0xd8",
           "nativePayloadOffset": "0xc8",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "next_field_native_offset",
+            "nativePayloadOffset": "0xc8",
+            "nextNativePayloadOffset": "0xd8",
+            "nextField": "oldPosArray",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x040007ef"
         },
         {
@@ -519,6 +931,17 @@
           "boxedFieldOffset": "0xe8",
           "nativePayloadOffset": "0xd8",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "next_field_native_offset",
+            "nativePayloadOffset": "0xd8",
+            "nextNativePayloadOffset": "0xe8",
+            "nextField": "nextPosArray",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x040007f0"
         },
         {
@@ -529,6 +952,17 @@
           "boxedFieldOffset": "0xf8",
           "nativePayloadOffset": "0xe8",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "next_field_native_offset",
+            "nativePayloadOffset": "0xe8",
+            "nextNativePayloadOffset": "0xf8",
+            "nextField": "basePosArray",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x040007f1"
         },
         {
@@ -539,6 +973,17 @@
           "boxedFieldOffset": "0x108",
           "nativePayloadOffset": "0xf8",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "next_field_native_offset",
+            "nativePayloadOffset": "0xf8",
+            "nextNativePayloadOffset": "0x108",
+            "nextField": "velocityArray",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x040007f2"
         },
         {
@@ -549,6 +994,17 @@
           "boxedFieldOffset": "0x118",
           "nativePayloadOffset": "0x108",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "next_field_native_offset",
+            "nativePayloadOffset": "0x108",
+            "nextNativePayloadOffset": "0x118",
+            "nextField": "baseRotArray",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x040007f3"
         },
         {
@@ -559,6 +1015,17 @@
           "boxedFieldOffset": "0x128",
           "nativePayloadOffset": "0x118",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "next_field_native_offset",
+            "nativePayloadOffset": "0x118",
+            "nextNativePayloadOffset": "0x128",
+            "nextField": "oldPositionArray",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x040007f4"
         },
         {
@@ -569,6 +1036,17 @@
           "boxedFieldOffset": "0x138",
           "nativePayloadOffset": "0x128",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "next_field_native_offset",
+            "nativePayloadOffset": "0x128",
+            "nextNativePayloadOffset": "0x138",
+            "nextField": "oldRotationArray",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x040007f5"
         },
         {
@@ -579,6 +1057,17 @@
           "boxedFieldOffset": "0x148",
           "nativePayloadOffset": "0x138",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "next_field_native_offset",
+            "nativePayloadOffset": "0x138",
+            "nextNativePayloadOffset": "0x148",
+            "nextField": "velocityPosArray",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x040007f6"
         },
         {
@@ -589,6 +1078,17 @@
           "boxedFieldOffset": "0x158",
           "nativePayloadOffset": "0x148",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "next_field_native_offset",
+            "nativePayloadOffset": "0x148",
+            "nextNativePayloadOffset": "0x158",
+            "nextField": "frictionArray",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x040007f7"
         },
         {
@@ -599,6 +1099,17 @@
           "boxedFieldOffset": "0x168",
           "nativePayloadOffset": "0x158",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "next_field_native_offset",
+            "nativePayloadOffset": "0x158",
+            "nextNativePayloadOffset": "0x168",
+            "nextField": "stepBasicPositionArray",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x040007f8"
         },
         {
@@ -609,6 +1120,17 @@
           "boxedFieldOffset": "0x178",
           "nativePayloadOffset": "0x168",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "next_field_native_offset",
+            "nativePayloadOffset": "0x168",
+            "nextNativePayloadOffset": "0x178",
+            "nextField": "stepBasicRotationArray",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x040007f9"
         },
         {
@@ -619,6 +1141,17 @@
           "boxedFieldOffset": "0x188",
           "nativePayloadOffset": "0x178",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "next_field_native_offset",
+            "nativePayloadOffset": "0x178",
+            "nextNativePayloadOffset": "0x188",
+            "nextField": "_indexCount",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x040007fa"
         },
         {
@@ -629,6 +1162,17 @@
           "boxedFieldOffset": "0x198",
           "nativePayloadOffset": "0x188",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "native_size_tail",
+            "nativePayloadOffset": "0x188",
+            "nextNativePayloadOffset": "0x198",
+            "nextField": null,
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x040007fb"
         }
       ],
@@ -681,6 +1225,16 @@
           "boxedFieldOffset": "0x10",
           "nativePayloadOffset": "0x0",
           "slotWidthBytes": 4,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "classified_field_width_with_next_field_span",
+            "nativePayloadOffset": "0x0",
+            "nextNativePayloadOffset": "0x8",
+            "nextField": "stepParticleIndexArray",
+            "slotSpanBytes": 8,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true
+          },
           "token": "0x0400080a"
         },
         {
@@ -691,6 +1245,17 @@
           "boxedFieldOffset": "0x18",
           "nativePayloadOffset": "0x8",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "next_field_native_offset",
+            "nativePayloadOffset": "0x8",
+            "nextNativePayloadOffset": "0x18",
+            "nextField": "teamDataArray",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x0400080b"
         },
         {
@@ -701,6 +1266,17 @@
           "boxedFieldOffset": "0x28",
           "nativePayloadOffset": "0x18",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "next_field_native_offset",
+            "nativePayloadOffset": "0x18",
+            "nextNativePayloadOffset": "0x28",
+            "nextField": "parameterArray",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x0400080c"
         },
         {
@@ -711,6 +1287,17 @@
           "boxedFieldOffset": "0x38",
           "nativePayloadOffset": "0x28",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "next_field_native_offset",
+            "nativePayloadOffset": "0x28",
+            "nextNativePayloadOffset": "0x38",
+            "nextField": "centerDataArray",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x0400080d"
         },
         {
@@ -721,6 +1308,17 @@
           "boxedFieldOffset": "0x48",
           "nativePayloadOffset": "0x38",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "next_field_native_offset",
+            "nativePayloadOffset": "0x38",
+            "nextNativePayloadOffset": "0x48",
+            "nextField": "attributes",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x0400080e"
         },
         {
@@ -731,6 +1329,17 @@
           "boxedFieldOffset": "0x58",
           "nativePayloadOffset": "0x48",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "next_field_native_offset",
+            "nativePayloadOffset": "0x48",
+            "nextNativePayloadOffset": "0x58",
+            "nextField": "vertexDepths",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x0400080f"
         },
         {
@@ -741,6 +1350,17 @@
           "boxedFieldOffset": "0x68",
           "nativePayloadOffset": "0x58",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "next_field_native_offset",
+            "nativePayloadOffset": "0x58",
+            "nextNativePayloadOffset": "0x68",
+            "nextField": "teamIdArray",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x04000810"
         },
         {
@@ -751,6 +1371,17 @@
           "boxedFieldOffset": "0x78",
           "nativePayloadOffset": "0x68",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "next_field_native_offset",
+            "nativePayloadOffset": "0x68",
+            "nextNativePayloadOffset": "0x78",
+            "nextField": "nextPosArray",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x04000811"
         },
         {
@@ -761,6 +1392,17 @@
           "boxedFieldOffset": "0x88",
           "nativePayloadOffset": "0x78",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "next_field_native_offset",
+            "nativePayloadOffset": "0x78",
+            "nextNativePayloadOffset": "0x88",
+            "nextField": "oldPosArray",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x04000812"
         },
         {
@@ -771,6 +1413,17 @@
           "boxedFieldOffset": "0x98",
           "nativePayloadOffset": "0x88",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "next_field_native_offset",
+            "nativePayloadOffset": "0x88",
+            "nextNativePayloadOffset": "0x98",
+            "nextField": "velocityPosArray",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x04000813"
         },
         {
@@ -781,6 +1434,17 @@
           "boxedFieldOffset": "0xa8",
           "nativePayloadOffset": "0x98",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "next_field_native_offset",
+            "nativePayloadOffset": "0x98",
+            "nextNativePayloadOffset": "0xa8",
+            "nextField": "velocityArray",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x04000814"
         },
         {
@@ -791,6 +1455,17 @@
           "boxedFieldOffset": "0xb8",
           "nativePayloadOffset": "0xa8",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "next_field_native_offset",
+            "nativePayloadOffset": "0xa8",
+            "nextNativePayloadOffset": "0xb8",
+            "nextField": "realVelocityArray",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x04000815"
         },
         {
@@ -801,6 +1476,17 @@
           "boxedFieldOffset": "0xc8",
           "nativePayloadOffset": "0xb8",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "next_field_native_offset",
+            "nativePayloadOffset": "0xb8",
+            "nextNativePayloadOffset": "0xc8",
+            "nextField": "frictionArray",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x04000816"
         },
         {
@@ -811,6 +1497,17 @@
           "boxedFieldOffset": "0xd8",
           "nativePayloadOffset": "0xc8",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "next_field_native_offset",
+            "nativePayloadOffset": "0xc8",
+            "nextNativePayloadOffset": "0xd8",
+            "nextField": "staticFrictionArray",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x04000817"
         },
         {
@@ -821,6 +1518,17 @@
           "boxedFieldOffset": "0xe8",
           "nativePayloadOffset": "0xd8",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "next_field_native_offset",
+            "nativePayloadOffset": "0xd8",
+            "nextNativePayloadOffset": "0xe8",
+            "nextField": "collisionNormalArray",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x04000818"
         },
         {
@@ -831,6 +1539,17 @@
           "boxedFieldOffset": "0xf8",
           "nativePayloadOffset": "0xe8",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "next_field_native_offset",
+            "nativePayloadOffset": "0xe8",
+            "nextNativePayloadOffset": "0xf8",
+            "nextField": "_indexCount",
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x04000819"
         },
         {
@@ -841,6 +1560,17 @@
           "boxedFieldOffset": "0x108",
           "nativePayloadOffset": "0xf8",
           "slotWidthBytes": 16,
+          "slotWidthEvidence": {
+            "status": "closed",
+            "basis": "native_size_tail",
+            "nativePayloadOffset": "0xf8",
+            "nextNativePayloadOffset": "0x108",
+            "nextField": null,
+            "slotSpanBytes": 16,
+            "abiAlignmentBytes": 8,
+            "abiAligned": true,
+            "genericTypeSizeClaimed": false
+          },
           "token": "0x0400081a"
         }
       ],
