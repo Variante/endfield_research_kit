@@ -240,6 +240,17 @@ one external source, and routes EndOfEvent through the user callback before
 removing the playing mapping and releasing the temporary audio object. This is
 still static argument/cleanup evidence; it does not prove a live request or
 the selected external file.
+The durable static closure now spans the VoicePlayer external key and
+descriptor through native manager retention, provider preparation, file/read
+transport, and decoder/PCM conversion. It remains a possible transport chain,
+not a per-request runtime identity. The importer fails closed: without one
+complete hash-verified capture session it publishes no `nativePairing`, even
+when isolated keys, paths, pointers, handles, or decoder records overlap.
+ModelView normal audio is separately authored when a non-custom normal behavior
+(`behaviorTag=0x0001`) has a nonzero `normalAudioId`; its controller,
+model/layer/state chain, and `behaviorTime` are retained. The fingerprint-locked
+`AudioBehavior.Execute` -> `AudioManager.PostEvent` route is static evidence
+only; state entry, execution, selected branch, and audibility remain unobserved.
 The current `VoiceContext` layout also closes the request-input side: `+0x18`
 is the audio-object id, `+0x20` the Wwise Event, and the inline
 `RuntimeVoiceData` block at `+0x48` supplies the localized `data` key at
@@ -1180,6 +1191,9 @@ Do not copy volatile inventories into this file.
 
 ## Remaining gaps
 
+- Audio recovery queue: positioned ModelView `TrySwitchAudioState` ABI;
+  authorized runtime source-state -> provider/file/decoder/PCM correlation for
+  one VoicePlayer request; and ownership/use evidence for `unknownUse` media.
 - Server-side mission/property producers and activation policy.
 - Active IFix/server combat overrides, live targets, evaluator chronology, and
   blackboard values.
