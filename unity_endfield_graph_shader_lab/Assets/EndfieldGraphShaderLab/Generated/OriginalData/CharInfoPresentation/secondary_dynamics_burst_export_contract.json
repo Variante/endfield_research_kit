@@ -1610,6 +1610,15 @@
                 "r8",
                 "r9"
               ],
+              "decodedForwardingParameterNames": [
+                "jobColliderIndexList",
+                "nowPositions",
+                "nowRotations",
+                "oldPositions",
+                "oldRotations",
+                "_indexCount"
+              ],
+              "payloadAccesses": [],
               "payloadDereferenceCount": 0,
               "payloadWritebackCount": 0,
               "indirectCall": {
@@ -1997,6 +2006,15 @@
                 "r8",
                 "r9"
               ],
+              "decodedForwardingParameterNames": [
+                "jobColliderIndexList",
+                "nowPositions",
+                "nowRotations",
+                "oldPositions",
+                "oldRotations",
+                "_indexCount"
+              ],
+              "payloadAccesses": [],
               "payloadDereferenceCount": 0,
               "payloadWritebackCount": 0,
               "indirectCall": {
