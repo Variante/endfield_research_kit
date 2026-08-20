@@ -1,0 +1,3479 @@
+{
+  "schema": "endfield.charinfo.secondary-dynamics-collider-start-semantics.v1",
+  "status": "unique_static_semantic_candidate_wrapper_mapping_unresolved",
+  "nativeGate": {
+    "gameAssembly": {
+      "path": "D:/Program Files/Endfield Game/GameAssembly.dll",
+      "size": 280436712,
+      "sha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
+    },
+    "globalMetadata": {
+      "path": "D:/Program Files/Endfield Game/Endfield_Data/il2cpp_data/Metadata/global-metadata.dat",
+      "size": 62925560,
+      "sha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
+    },
+    "libBurstGenerated": {
+      "path": "D:/Program Files/Endfield Game/Endfield_Data/Plugins/x86_64/lib_burst_generated.dll",
+      "size": 4042216,
+      "sha256": "ee8702dd63dec2db7dc29d5bc23b8acd032f0e19a0daad5f69e6c45f9d3ceb99"
+    }
+  },
+  "canonicalSignature": {
+    "methodIndex": 385416,
+    "parameterCount": 17,
+    "parameters": [
+      "jobColliderIndexList",
+      "teamDataArray",
+      "centerDataArray",
+      "teamIdArray",
+      "flagArray",
+      "sizeArray",
+      "framePositions",
+      "frameRotations",
+      "frameScales",
+      "oldFramePositions",
+      "oldFrameRotations",
+      "nowPositions",
+      "nowRotations",
+      "oldPositions",
+      "oldRotations",
+      "workDataArray",
+      "lengthPtr"
+    ],
+    "parameterTypeIndices": [
+      117350,
+      117510,
+      117477,
+      117347,
+      117259,
+      117458,
+      117458,
+      117463,
+      117458,
+      117458,
+      117463,
+      117458,
+      117463,
+      117458,
+      117463,
+      117464,
+      117350
+    ],
+    "metadataSource": {
+      "path": "D:/Program Files/Endfield Game/Endfield_Data/il2cpp_data/Metadata/global-metadata.dat",
+      "size": 62925560,
+      "sha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
+    }
+  },
+  "managedFallback": {
+    "methodIndex": 385451,
+    "bodySha256": "61d0b5400bed687be8baa7bf5281119b2ce09276423b84461fc27053710c7426",
+    "bufferAccesses": {
+      "jobColliderIndexList": {
+        "jobOffset": 0,
+        "strideBytes": 4,
+        "elementFieldDisplacements": [
+          0
+        ]
+      },
+      "flagArray": {
+        "jobOffset": 64,
+        "strideBytes": 1,
+        "elementFieldDisplacements": [
+          0
+        ]
+      },
+      "teamIdArray": {
+        "jobOffset": 48,
+        "strideBytes": 2,
+        "elementFieldDisplacements": [
+          0
+        ]
+      },
+      "teamDataArray": {
+        "jobOffset": 16,
+        "strideBytes": 464,
+        "elementFieldDisplacements": [
+          0,
+          16,
+          32,
+          48,
+          64,
+          80,
+          96,
+          112
+        ]
+      },
+      "centerDataArray": {
+        "jobOffset": 32,
+        "strideBytes": 696,
+        "elementFieldDisplacements": [
+          0
+        ]
+      },
+      "framePositions": {
+        "jobOffset": 96,
+        "strideBytes": 24,
+        "elementFieldDisplacements": [
+          0,
+          16
+        ]
+      },
+      "oldFramePositions": {
+        "jobOffset": 144,
+        "strideBytes": 24,
+        "elementFieldDisplacements": [
+          0,
+          16
+        ]
+      },
+      "nowPositions": {
+        "jobOffset": 176,
+        "strideBytes": 24,
+        "elementFieldDisplacements": [
+          0,
+          16
+        ]
+      },
+      "nowRotations": {
+        "jobOffset": 192,
+        "strideBytes": 16,
+        "elementFieldDisplacements": [
+          0
+        ]
+      },
+      "oldPositions": {
+        "jobOffset": 208,
+        "strideBytes": 24,
+        "elementFieldDisplacements": [
+          0,
+          16
+        ]
+      },
+      "oldRotations": {
+        "jobOffset": 224,
+        "strideBytes": 16,
+        "elementFieldDisplacements": [
+          0
+        ]
+      },
+      "workDataArray": {
+        "jobOffset": 240,
+        "strideBytes": 184,
+        "elementFieldDisplacements": [
+          0,
+          16,
+          32,
+          48,
+          64,
+          80,
+          96
+        ]
+      }
+    },
+    "source": {
+      "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_solver_static_contract.json",
+      "size": 20353,
+      "sha256": "102361db8cca663e826c225fdbe6dbb7e0cea6f32bcb0b9f098ad4d51b4b0bed"
+    }
+  },
+  "candidateSource": {
+    "builderPath": "unity_endfield_graph_shader_lab/tools/build_secondary_dynamics_burst_export_contract.py",
+    "contract": {
+      "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_burst_export_contract.json",
+      "size": 579599,
+      "sha256": "dc71d5be694f1a6f41aa96094ae597fc920a35d609e152e4017b007cc6d69594"
+    },
+    "candidateCount": 3,
+    "candidateHashes": [
+      "4aa6773b1eaf6055e0feb9593e092585",
+      "7342567c29c434b5b924be51bd8e34b7",
+      "8b3d2761aaaac71a35d4a2557d570456"
+    ]
+  },
+  "targets": [
+    {
+      "hash": "4aa6773b1eaf6055e0feb9593e092585",
+      "rva": "0x355c50",
+      "fileOffset": "0x355050",
+      "spanBytes": 208,
+      "bodyBytes": 205,
+      "bodySha256": "4038fa9e1aaef0bf253452744dbf2ba6cdd1b1c3d602e5d40e095bc05385f94d",
+      "callSite": {
+        "instructionOffset": "0xb2",
+        "slotRva": "0x3c5110",
+        "callEncoding": "ff1508f40600"
+      },
+      "callMapping": {
+        "registerSourcesAtCall": [
+          "param16",
+          "param2",
+          "param3",
+          "param4"
+        ],
+        "stackSourcesAtCall": [
+          "param5",
+          "param6",
+          "param7",
+          "param8",
+          "param9",
+          "param10",
+          "param11",
+          "param12",
+          "param13",
+          "param14",
+          "param15",
+          "param16",
+          "param17"
+        ],
+        "callArgumentSources": [
+          "param16",
+          "param2",
+          "param3",
+          "param4",
+          "param5",
+          "param6",
+          "param7",
+          "param8",
+          "param9",
+          "param10",
+          "param11",
+          "param12",
+          "param13",
+          "param14",
+          "param15",
+          "param16",
+          "param17"
+        ],
+        "canonicalOrderExact": false,
+        "callInstructionOffset": "0xb2"
+      },
+      "initializerAssignments": [
+        {
+          "initializerInstructionRva": "0x35bbfc",
+          "implementationEntryRva": "0x24f8b0",
+          "implementationEndRvaExclusive": "0x24f903",
+          "implementationSpanBytes": 83,
+          "implementationBodySha256": "4d6b8b54fde3f0a7f4d15ab8b23e323244f959a9bcec2c9a64169c98d69e3ee9",
+          "unwindInfoRva": "0x3af818",
+          "cpuVariant": "avx2",
+          "tailJumpTargetRva": "0x24fa60",
+          "callChain": [
+            {
+              "beginRva": "0x24f8b0",
+              "endRvaExclusive": "0x24f903",
+              "spanBytes": 83,
+              "bodySha256": "4d6b8b54fde3f0a7f4d15ab8b23e323244f959a9bcec2c9a64169c98d69e3ee9",
+              "unwindInfoRva": "0x3af818"
+            },
+            {
+              "beginRva": "0x250140",
+              "endRvaExclusive": "0x25014a",
+              "spanBytes": 10,
+              "bodySha256": "2da7a8c2de46cf7cb61d16d0a0bd67338459ebfab8c241e9144fb24cd72f2022",
+              "unwindInfoRva": "0x3af87c"
+            },
+            {
+              "beginRva": "0x24fa60",
+              "endRvaExclusive": "0x250131",
+              "spanBytes": 1745,
+              "bodySha256": "f623b3ca9c367210ca74998645797c72cefa6d393d708f8665788b85aba41780",
+              "unwindInfoRva": "0x3af83c"
+            }
+          ],
+          "core": {
+            "beginRva": "0x24fa60",
+            "endRvaExclusive": "0x250131",
+            "spanBytes": 1745,
+            "bodySha256": "f623b3ca9c367210ca74998645797c72cefa6d393d708f8665788b85aba41780",
+            "unwindInfoRva": "0x3af83c",
+            "firstInstructions": [
+              {
+                "offset": "0x0",
+                "mnemonic": "push",
+                "opStr": "rbp"
+              },
+              {
+                "offset": "0x1",
+                "mnemonic": "push",
+                "opStr": "r15"
+              },
+              {
+                "offset": "0x3",
+                "mnemonic": "push",
+                "opStr": "r14"
+              },
+              {
+                "offset": "0x5",
+                "mnemonic": "push",
+                "opStr": "rsi"
+              },
+              {
+                "offset": "0x6",
+                "mnemonic": "push",
+                "opStr": "rdi"
+              },
+              {
+                "offset": "0x7",
+                "mnemonic": "push",
+                "opStr": "rbx"
+              },
+              {
+                "offset": "0x8",
+                "mnemonic": "sub",
+                "opStr": "rsp, 0x108"
+              },
+              {
+                "offset": "0xf",
+                "mnemonic": "lea",
+                "opStr": "rbp, [rsp + 0x80]"
+              },
+              {
+                "offset": "0x17",
+                "mnemonic": "vmovaps",
+                "opStr": "xmmword ptr [rbp + 0x70], xmm15"
+              },
+              {
+                "offset": "0x1c",
+                "mnemonic": "vmovaps",
+                "opStr": "xmmword ptr [rbp + 0x60], xmm14"
+              },
+              {
+                "offset": "0x21",
+                "mnemonic": "vmovaps",
+                "opStr": "xmmword ptr [rbp + 0x50], xmm13"
+              },
+              {
+                "offset": "0x26",
+                "mnemonic": "vmovaps",
+                "opStr": "xmmword ptr [rbp + 0x40], xmm12"
+              },
+              {
+                "offset": "0x2b",
+                "mnemonic": "vmovaps",
+                "opStr": "xmmword ptr [rbp + 0x30], xmm11"
+              },
+              {
+                "offset": "0x30",
+                "mnemonic": "vmovaps",
+                "opStr": "xmmword ptr [rbp + 0x20], xmm10"
+              },
+              {
+                "offset": "0x35",
+                "mnemonic": "vmovaps",
+                "opStr": "xmmword ptr [rbp + 0x10], xmm9"
+              },
+              {
+                "offset": "0x3a",
+                "mnemonic": "vmovaps",
+                "opStr": "xmmword ptr [rbp], xmm8"
+              }
+            ],
+            "semantic": {
+              "stackParameterOffsetFirst": "0xe0",
+              "parameterLoads": [
+                {
+                  "instructionOffset": "0x4d",
+                  "parameter": 12,
+                  "register": "rcx",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x54",
+                  "parameter": 10,
+                  "register": "rax",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x5b",
+                  "parameter": 6,
+                  "register": "r11",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x62",
+                  "parameter": 9,
+                  "register": "rbx",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x69",
+                  "parameter": 7,
+                  "register": "r14",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x70",
+                  "parameter": 5,
+                  "register": "rdi",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x77",
+                  "parameter": 8,
+                  "register": "rsi",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x7e",
+                  "parameter": 17,
+                  "register": "r10",
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0x19c",
+                  "parameter": 16,
+                  "register": "rbx",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x1a3",
+                  "parameter": 15,
+                  "register": "rsi",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x1aa",
+                  "parameter": 14,
+                  "register": "r11",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x1b1",
+                  "parameter": 13,
+                  "register": "r8",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x49f",
+                  "parameter": 11,
+                  "register": "r9",
+                  "widthBytes": 8
+                }
+              ],
+              "arrayAccesses": [
+                {
+                  "instructionOffset": "0x85",
+                  "operation": "movsxd",
+                  "parameter": 2,
+                  "base": "rdx",
+                  "scale": 4,
+                  "displacement": 0,
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0x89",
+                  "operation": "movsx",
+                  "parameter": 8,
+                  "base": "rsi",
+                  "scale": 2,
+                  "displacement": 0,
+                  "widthBytes": 2
+                },
+                {
+                  "instructionOffset": "0x95",
+                  "operation": "vmovss",
+                  "parameter": 3,
+                  "base": "r8",
+                  "scale": 1,
+                  "displacement": 96,
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0x9c",
+                  "operation": "vmovss",
+                  "parameter": 3,
+                  "base": "r8",
+                  "scale": 1,
+                  "displacement": 252,
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0xad",
+                  "operation": "vmovups",
+                  "parameter": 5,
+                  "base": "rdi",
+                  "scale": 1,
+                  "displacement": 368,
+                  "widthBytes": 16
+                },
+                {
+                  "instructionOffset": "0xb7",
+                  "operation": "vmovsd",
+                  "parameter": 5,
+                  "base": "rdi",
+                  "scale": 1,
+                  "displacement": 384,
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0xc1",
+                  "operation": "vmovss",
+                  "parameter": 5,
+                  "base": "rdi",
+                  "scale": 1,
+                  "displacement": 528,
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0xcb",
+                  "operation": "vmovss",
+                  "parameter": 5,
+                  "base": "rdi",
+                  "scale": 1,
+                  "displacement": 532,
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0xd5",
+                  "operation": "vmovsd",
+                  "parameter": 5,
+                  "base": "rdi",
+                  "scale": 1,
+                  "displacement": 536,
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0xe6",
+                  "operation": "vmovss",
+                  "parameter": 4,
+                  "base": "r9",
+                  "scale": 1,
+                  "displacement": 216,
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0xf0",
+                  "operation": "vmovss",
+                  "parameter": 4,
+                  "base": "r9",
+                  "scale": 1,
+                  "displacement": 220,
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0xfa",
+                  "operation": "vmovss",
+                  "parameter": 4,
+                  "base": "r9",
+                  "scale": 1,
+                  "displacement": 616,
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0x104",
+                  "operation": "mov",
+                  "parameter": 3,
+                  "base": "r8",
+                  "scale": 1,
+                  "displacement": 292,
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0x11a",
+                  "operation": "vmovss",
+                  "parameter": 7,
+                  "base": "r14",
+                  "scale": 4,
+                  "displacement": 0,
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0x12c",
+                  "operation": "vmovsd",
+                  "parameter": 9,
+                  "base": "rbx",
+                  "scale": 1,
+                  "displacement": 16,
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x13d",
+                  "operation": "vmovsd",
+                  "parameter": 10,
+                  "base": "rax",
+                  "scale": 1,
+                  "displacement": 16,
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x155",
+                  "operation": "mov",
+                  "parameter": 3,
+                  "base": "r8",
+                  "scale": 1,
+                  "displacement": 0,
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x1b8",
+                  "operation": "vmovsd",
+                  "parameter": 13,
+                  "base": "r8",
+                  "scale": 1,
+                  "displacement": 16,
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x1d3",
+                  "operation": "vmovss",
+                  "parameter": 14,
+                  "base": "r11",
+                  "scale": 4,
+                  "displacement": 0,
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0x1dd",
+                  "operation": "vmovsd",
+                  "parameter": 16,
+                  "base": "rbx",
+                  "scale": 1,
+                  "displacement": 0,
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x208",
+                  "operation": "vmovss",
+                  "parameter": 15,
+                  "base": "rsi",
+                  "scale": 4,
+                  "displacement": 0,
+                  "widthBytes": 4
+                }
+              ],
+              "firstByteGuard": null,
+              "wordAccesses": [
+                {
+                  "instructionOffset": "0x89",
+                  "operation": "movsx",
+                  "parameter": 8,
+                  "base": "rsi",
+                  "scale": 2,
+                  "displacement": 0,
+                  "widthBytes": 2
+                }
+              ],
+              "indexParameterObserved": "param17",
+              "strideMultipliers": [
+                {
+                  "instructionOffset": "0x8e",
+                  "register": "rsi",
+                  "immediate": 464
+                },
+                {
+                  "instructionOffset": "0xa6",
+                  "register": "r15",
+                  "immediate": 696
+                },
+                {
+                  "instructionOffset": "0xdf",
+                  "register": "rdi",
+                  "immediate": 808
+                }
+              ],
+              "parameterNames": {
+                "1": "jobColliderIndexList",
+                "2": "teamDataArray",
+                "3": "centerDataArray",
+                "4": "teamIdArray",
+                "5": "flagArray",
+                "6": "sizeArray",
+                "7": "framePositions",
+                "8": "frameRotations",
+                "9": "frameScales",
+                "10": "oldFramePositions",
+                "11": "oldFrameRotations",
+                "12": "nowPositions",
+                "13": "nowRotations",
+                "14": "oldPositions",
+                "15": "oldRotations",
+                "16": "workDataArray",
+                "17": "lengthPtr"
+              }
+            }
+          }
+        },
+        {
+          "initializerInstructionRva": "0x35fe33",
+          "implementationEntryRva": "0xb5230",
+          "implementationEndRvaExclusive": "0xb52fc",
+          "implementationSpanBytes": 204,
+          "implementationBodySha256": "54e14475cfa38204beea68acccbd164c9c4ce43e06b30d33f46cd7521174c63c",
+          "unwindInfoRva": "0x3a1d40",
+          "cpuVariant": "x64_sse2",
+          "tailJumpTargetRva": "0xb5450",
+          "callChain": [
+            {
+              "beginRva": "0xb5230",
+              "endRvaExclusive": "0xb52fc",
+              "spanBytes": 204,
+              "bodySha256": "54e14475cfa38204beea68acccbd164c9c4ce43e06b30d33f46cd7521174c63c",
+              "unwindInfoRva": "0x3a1d40"
+            },
+            {
+              "beginRva": "0xb5dc0",
+              "endRvaExclusive": "0xb5dca",
+              "spanBytes": 10,
+              "bodySha256": "afa49581575dbd60c42ead1e79f282b92605346e010f171fc806f3a352c7d133",
+              "unwindInfoRva": "0x3a1db4"
+            },
+            {
+              "beginRva": "0xb5450",
+              "endRvaExclusive": "0xb5db4",
+              "spanBytes": 2404,
+              "bodySha256": "499b919ffc7d68fa900c7987eec4f3d4c79b6c4292ead9506825b223137d88eb",
+              "unwindInfoRva": "0x3a1d74"
+            }
+          ],
+          "core": {
+            "beginRva": "0xb5450",
+            "endRvaExclusive": "0xb5db4",
+            "spanBytes": 2404,
+            "bodySha256": "499b919ffc7d68fa900c7987eec4f3d4c79b6c4292ead9506825b223137d88eb",
+            "unwindInfoRva": "0x3a1d74",
+            "firstInstructions": [
+              {
+                "offset": "0x0",
+                "mnemonic": "push",
+                "opStr": "rbp"
+              },
+              {
+                "offset": "0x1",
+                "mnemonic": "push",
+                "opStr": "r15"
+              },
+              {
+                "offset": "0x3",
+                "mnemonic": "push",
+                "opStr": "r14"
+              },
+              {
+                "offset": "0x5",
+                "mnemonic": "push",
+                "opStr": "rsi"
+              },
+              {
+                "offset": "0x6",
+                "mnemonic": "push",
+                "opStr": "rdi"
+              },
+              {
+                "offset": "0x7",
+                "mnemonic": "push",
+                "opStr": "rbx"
+              },
+              {
+                "offset": "0x8",
+                "mnemonic": "sub",
+                "opStr": "rsp, 0x138"
+              },
+              {
+                "offset": "0xf",
+                "mnemonic": "lea",
+                "opStr": "rbp, [rsp + 0x80]"
+              },
+              {
+                "offset": "0x17",
+                "mnemonic": "movaps",
+                "opStr": "xmmword ptr [rbp + 0xa0], xmm15"
+              },
+              {
+                "offset": "0x1f",
+                "mnemonic": "movaps",
+                "opStr": "xmmword ptr [rbp + 0x90], xmm14"
+              },
+              {
+                "offset": "0x27",
+                "mnemonic": "movaps",
+                "opStr": "xmmword ptr [rbp + 0x80], xmm13"
+              },
+              {
+                "offset": "0x2f",
+                "mnemonic": "movaps",
+                "opStr": "xmmword ptr [rbp + 0x70], xmm12"
+              },
+              {
+                "offset": "0x34",
+                "mnemonic": "movaps",
+                "opStr": "xmmword ptr [rbp + 0x60], xmm11"
+              },
+              {
+                "offset": "0x39",
+                "mnemonic": "movaps",
+                "opStr": "xmmword ptr [rbp + 0x50], xmm10"
+              },
+              {
+                "offset": "0x3e",
+                "mnemonic": "movaps",
+                "opStr": "xmmword ptr [rbp + 0x40], xmm9"
+              },
+              {
+                "offset": "0x43",
+                "mnemonic": "movaps",
+                "opStr": "xmmword ptr [rbp + 0x30], xmm8"
+              }
+            ],
+            "semantic": {
+              "stackParameterOffsetFirst": "0x110",
+              "parameterLoads": [
+                {
+                  "instructionOffset": "0x50",
+                  "parameter": 12,
+                  "register": "rcx",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x57",
+                  "parameter": 10,
+                  "register": "rax",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x5e",
+                  "parameter": 6,
+                  "register": "r11",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x65",
+                  "parameter": 9,
+                  "register": "rsi",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x6c",
+                  "parameter": 7,
+                  "register": "r14",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x73",
+                  "parameter": 5,
+                  "register": "rdi",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x7a",
+                  "parameter": 8,
+                  "register": "rbx",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x81",
+                  "parameter": 17,
+                  "register": "r10",
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0x1b8",
+                  "parameter": 16,
+                  "register": "rbx",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x1bf",
+                  "parameter": 15,
+                  "register": "rsi",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x1c6",
+                  "parameter": 14,
+                  "register": "r11",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x1cd",
+                  "parameter": 13,
+                  "register": "r8",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x656",
+                  "parameter": 11,
+                  "register": "r9",
+                  "widthBytes": 8
+                }
+              ],
+              "arrayAccesses": [
+                {
+                  "instructionOffset": "0x88",
+                  "operation": "movsxd",
+                  "parameter": 2,
+                  "base": "rdx",
+                  "scale": 4,
+                  "displacement": 0,
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0x8c",
+                  "operation": "movsx",
+                  "parameter": 8,
+                  "base": "rbx",
+                  "scale": 2,
+                  "displacement": 0,
+                  "widthBytes": 2
+                },
+                {
+                  "instructionOffset": "0x98",
+                  "operation": "movss",
+                  "parameter": 3,
+                  "base": "r8",
+                  "scale": 1,
+                  "displacement": 96,
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0xa4",
+                  "operation": "movss",
+                  "parameter": 3,
+                  "base": "r8",
+                  "scale": 1,
+                  "displacement": 252,
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0xbf",
+                  "operation": "movsd",
+                  "parameter": 5,
+                  "base": "rdi",
+                  "scale": 1,
+                  "displacement": 384,
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0xc9",
+                  "operation": "movss",
+                  "parameter": 5,
+                  "base": "rdi",
+                  "scale": 1,
+                  "displacement": 528,
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0xd3",
+                  "operation": "movss",
+                  "parameter": 5,
+                  "base": "rdi",
+                  "scale": 1,
+                  "displacement": 532,
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0xdd",
+                  "operation": "movsd",
+                  "parameter": 5,
+                  "base": "rdi",
+                  "scale": 1,
+                  "displacement": 536,
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0xee",
+                  "operation": "movss",
+                  "parameter": 4,
+                  "base": "r9",
+                  "scale": 1,
+                  "displacement": 216,
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0xf8",
+                  "operation": "movss",
+                  "parameter": 4,
+                  "base": "r9",
+                  "scale": 1,
+                  "displacement": 220,
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0x107",
+                  "operation": "movss",
+                  "parameter": 4,
+                  "base": "r9",
+                  "scale": 1,
+                  "displacement": 616,
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0x111",
+                  "operation": "mov",
+                  "parameter": 3,
+                  "base": "r8",
+                  "scale": 1,
+                  "displacement": 292,
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0x127",
+                  "operation": "movss",
+                  "parameter": 7,
+                  "base": "r14",
+                  "scale": 4,
+                  "displacement": 0,
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0x15b",
+                  "operation": "movsd",
+                  "parameter": 9,
+                  "base": "rsi",
+                  "scale": 1,
+                  "displacement": 16,
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x162",
+                  "operation": "movsd",
+                  "parameter": 10,
+                  "base": "rax",
+                  "scale": 1,
+                  "displacement": 16,
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x16b",
+                  "operation": "mov",
+                  "parameter": 3,
+                  "base": "r8",
+                  "scale": 1,
+                  "displacement": 0,
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x1d4",
+                  "operation": "movsd",
+                  "parameter": 13,
+                  "base": "r8",
+                  "scale": 1,
+                  "displacement": 16,
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x1f8",
+                  "operation": "movss",
+                  "parameter": 14,
+                  "base": "r11",
+                  "scale": 4,
+                  "displacement": 0,
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0x207",
+                  "operation": "movsd",
+                  "parameter": 16,
+                  "base": "rbx",
+                  "scale": 1,
+                  "displacement": 0,
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x20d",
+                  "operation": "movss",
+                  "parameter": 16,
+                  "base": "rbx",
+                  "scale": 1,
+                  "displacement": 8,
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0x23b",
+                  "operation": "movss",
+                  "parameter": 15,
+                  "base": "rsi",
+                  "scale": 4,
+                  "displacement": 0,
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0x273",
+                  "operation": "movss",
+                  "parameter": 4,
+                  "base": "r9",
+                  "scale": 1,
+                  "displacement": 620,
+                  "widthBytes": 4
+                }
+              ],
+              "firstByteGuard": null,
+              "wordAccesses": [
+                {
+                  "instructionOffset": "0x8c",
+                  "operation": "movsx",
+                  "parameter": 8,
+                  "base": "rbx",
+                  "scale": 2,
+                  "displacement": 0,
+                  "widthBytes": 2
+                }
+              ],
+              "indexParameterObserved": "param17",
+              "strideMultipliers": [
+                {
+                  "instructionOffset": "0x91",
+                  "register": "rbx",
+                  "immediate": 464
+                },
+                {
+                  "instructionOffset": "0xae",
+                  "register": "r15",
+                  "immediate": 696
+                },
+                {
+                  "instructionOffset": "0xe7",
+                  "register": "rdi",
+                  "immediate": 808
+                }
+              ],
+              "parameterNames": {
+                "1": "jobColliderIndexList",
+                "2": "teamDataArray",
+                "3": "centerDataArray",
+                "4": "teamIdArray",
+                "5": "flagArray",
+                "6": "sizeArray",
+                "7": "framePositions",
+                "8": "frameRotations",
+                "9": "frameScales",
+                "10": "oldFramePositions",
+                "11": "oldFrameRotations",
+                "12": "nowPositions",
+                "13": "nowRotations",
+                "14": "oldPositions",
+                "15": "oldRotations",
+                "16": "workDataArray",
+                "17": "lengthPtr"
+              }
+            }
+          }
+        }
+      ],
+      "semanticMatch": {
+        "mappingMatches": {
+          "jobColliderIndexList": false,
+          "teamDataArray": true,
+          "teamIdArray": true,
+          "flagArray": true,
+          "framePositions": true,
+          "frameRotations": true,
+          "oldFramePositions": true,
+          "oldFrameRotations": true,
+          "nowPositions": true,
+          "nowRotations": true,
+          "oldPositions": true,
+          "oldRotations": true,
+          "workDataArray": true,
+          "lengthPtr": true
+        },
+        "guardMatches": {
+          "avx2": {
+            "flagArrayParam5": false,
+            "observed": null,
+            "indexParameter17": true,
+            "teamIdWordParam4": false,
+            "teamDataStride464": true
+          },
+          "x64_sse2": {
+            "flagArrayParam5": false,
+            "observed": null,
+            "indexParameter17": true,
+            "teamIdWordParam4": false,
+            "teamDataStride464": true
+          }
+        },
+        "requiredChecks": {
+          "canonicalParameterOrder": false,
+          "jobColliderIndexList": false,
+          "teamDataArray": true,
+          "teamIdArray": true,
+          "flagArray": true,
+          "index": true,
+          "avx2.flagArrayGuard": false,
+          "avx2.index": true,
+          "avx2.teamId": false,
+          "avx2.teamDataStride": true,
+          "x64_sse2.flagArrayGuard": false,
+          "x64_sse2.index": true,
+          "x64_sse2.teamId": false,
+          "x64_sse2.teamDataStride": true
+        },
+        "allRequiredChecksPass": false,
+        "comparisonBasis": {
+          "managedFallbackMethodIndex": 385451,
+          "managedFallbackBodySha256": "61d0b5400bed687be8baa7bf5281119b2ce09276423b84461fc27053710c7426",
+          "canonicalParameterNames": [
+            "jobColliderIndexList",
+            "teamDataArray",
+            "centerDataArray",
+            "teamIdArray",
+            "flagArray",
+            "sizeArray",
+            "framePositions",
+            "frameRotations",
+            "frameScales",
+            "oldFramePositions",
+            "oldFrameRotations",
+            "nowPositions",
+            "nowRotations",
+            "oldPositions",
+            "oldRotations",
+            "workDataArray",
+            "lengthPtr"
+          ]
+        }
+      }
+    },
+    {
+      "hash": "7342567c29c434b5b924be51bd8e34b7",
+      "rva": "0x3571e0",
+      "fileOffset": "0x3565e0",
+      "spanBytes": 208,
+      "bodyBytes": 205,
+      "bodySha256": "17244d44dcff7f94b21b887f24ca42d662db90b81a1a1fcc2220a41e15c90328",
+      "callSite": {
+        "instructionOffset": "0xb2",
+        "slotRva": "0x3c57b0",
+        "callEncoding": "ff1518e50600"
+      },
+      "callMapping": {
+        "registerSourcesAtCall": [
+          "param1",
+          "param2",
+          "param3",
+          "param4"
+        ],
+        "stackSourcesAtCall": [
+          "param5",
+          "param6",
+          "param7",
+          "param8",
+          "param9",
+          "param10",
+          "param11",
+          "param12",
+          "param13",
+          "param14",
+          "param15",
+          "param16",
+          "param17"
+        ],
+        "callArgumentSources": [
+          "param1",
+          "param2",
+          "param3",
+          "param4",
+          "param5",
+          "param6",
+          "param7",
+          "param8",
+          "param9",
+          "param10",
+          "param11",
+          "param12",
+          "param13",
+          "param14",
+          "param15",
+          "param16",
+          "param17"
+        ],
+        "canonicalOrderExact": true,
+        "callInstructionOffset": "0xb2"
+      },
+      "initializerAssignments": [
+        {
+          "initializerInstructionRva": "0x35c396",
+          "implementationEntryRva": "0x29a3c0",
+          "implementationEndRvaExclusive": "0x29a413",
+          "implementationSpanBytes": 83,
+          "implementationBodySha256": "ef3d905ce27209c4f97ea2f88610907fbfd572a01f7db6c1ca5a610ddca9859a",
+          "unwindInfoRva": "0x3b25cc",
+          "cpuVariant": "avx2",
+          "tailJumpTargetRva": "0x284c50",
+          "callChain": [
+            {
+              "beginRva": "0x29a3c0",
+              "endRvaExclusive": "0x29a413",
+              "spanBytes": 83,
+              "bodySha256": "ef3d905ce27209c4f97ea2f88610907fbfd572a01f7db6c1ca5a610ddca9859a",
+              "unwindInfoRva": "0x3b25cc"
+            },
+            {
+              "beginRva": "0x29a5c0",
+              "endRvaExclusive": "0x29a5ca",
+              "spanBytes": 10,
+              "bodySha256": "109cb38188b82eb4b73761ce7b46c535f1cf9402ab6255afd36a4031409476f8",
+              "unwindInfoRva": "0x3b25f0"
+            },
+            {
+              "beginRva": "0x284c50",
+              "endRvaExclusive": "0x2857a5",
+              "spanBytes": 2901,
+              "bodySha256": "fd0fd8d14052cccdcf137f7e90391faadd0bae6c88c5e199fc908f0b8fe5b07c",
+              "unwindInfoRva": "0x3b1bf4"
+            }
+          ],
+          "core": {
+            "beginRva": "0x284c50",
+            "endRvaExclusive": "0x2857a5",
+            "spanBytes": 2901,
+            "bodySha256": "fd0fd8d14052cccdcf137f7e90391faadd0bae6c88c5e199fc908f0b8fe5b07c",
+            "unwindInfoRva": "0x3b1bf4",
+            "firstInstructions": [
+              {
+                "offset": "0x0",
+                "mnemonic": "push",
+                "opStr": "rbp"
+              },
+              {
+                "offset": "0x1",
+                "mnemonic": "push",
+                "opStr": "r15"
+              },
+              {
+                "offset": "0x3",
+                "mnemonic": "push",
+                "opStr": "r14"
+              },
+              {
+                "offset": "0x5",
+                "mnemonic": "push",
+                "opStr": "r13"
+              },
+              {
+                "offset": "0x7",
+                "mnemonic": "push",
+                "opStr": "r12"
+              },
+              {
+                "offset": "0x9",
+                "mnemonic": "push",
+                "opStr": "rsi"
+              },
+              {
+                "offset": "0xa",
+                "mnemonic": "push",
+                "opStr": "rdi"
+              },
+              {
+                "offset": "0xb",
+                "mnemonic": "push",
+                "opStr": "rbx"
+              },
+              {
+                "offset": "0xc",
+                "mnemonic": "sub",
+                "opStr": "rsp, 0x218"
+              },
+              {
+                "offset": "0x13",
+                "mnemonic": "lea",
+                "opStr": "rbp, [rsp + 0x80]"
+              },
+              {
+                "offset": "0x1b",
+                "mnemonic": "vmovaps",
+                "opStr": "xmmword ptr [rbp + 0x180], xmm15"
+              },
+              {
+                "offset": "0x23",
+                "mnemonic": "vmovaps",
+                "opStr": "xmmword ptr [rbp + 0x170], xmm14"
+              },
+              {
+                "offset": "0x2b",
+                "mnemonic": "vmovaps",
+                "opStr": "xmmword ptr [rbp + 0x160], xmm13"
+              },
+              {
+                "offset": "0x33",
+                "mnemonic": "vmovaps",
+                "opStr": "xmmword ptr [rbp + 0x150], xmm12"
+              },
+              {
+                "offset": "0x3b",
+                "mnemonic": "vmovapd",
+                "opStr": "xmmword ptr [rbp + 0x140], xmm11"
+              },
+              {
+                "offset": "0x43",
+                "mnemonic": "vmovapd",
+                "opStr": "xmmword ptr [rbp + 0x130], xmm10"
+              }
+            ],
+            "semantic": {
+              "stackParameterOffsetFirst": "0x200",
+              "parameterLoads": [
+                {
+                  "instructionOffset": "0x72",
+                  "parameter": 12,
+                  "register": "r9",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x79",
+                  "parameter": 17,
+                  "register": "rax",
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0x8f",
+                  "parameter": 13,
+                  "register": "rcx",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0xc3",
+                  "parameter": 15,
+                  "register": "r10",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0xd8",
+                  "parameter": 16,
+                  "register": "r15",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0xdf",
+                  "parameter": 14,
+                  "register": "r10",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0xe6",
+                  "parameter": 11,
+                  "register": "r11",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0xed",
+                  "parameter": 10,
+                  "register": "r12",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0xf4",
+                  "parameter": 7,
+                  "register": "r13",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x24d",
+                  "parameter": 11,
+                  "register": "r11",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x2bc",
+                  "parameter": 6,
+                  "register": "rax",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x300",
+                  "parameter": 5,
+                  "register": "rdx",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x328",
+                  "parameter": 6,
+                  "register": "rcx",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x448",
+                  "parameter": 5,
+                  "register": "rcx",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x768",
+                  "parameter": 11,
+                  "register": "r11",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x795",
+                  "parameter": 8,
+                  "register": "rax",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x82f",
+                  "parameter": 6,
+                  "register": "rax",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x878",
+                  "parameter": 16,
+                  "register": "r15",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x87f",
+                  "parameter": 10,
+                  "register": "r12",
+                  "widthBytes": 8
+                }
+              ],
+              "arrayAccesses": [
+                {
+                  "instructionOffset": "0x80",
+                  "operation": "movsxd",
+                  "parameter": 1,
+                  "base": "rcx",
+                  "scale": 4,
+                  "displacement": 0,
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0x96",
+                  "operation": "movsx",
+                  "parameter": 13,
+                  "base": "rcx",
+                  "scale": 2,
+                  "displacement": 0,
+                  "widthBytes": 2
+                },
+                {
+                  "instructionOffset": "0xca",
+                  "operation": "movzx",
+                  "parameter": 15,
+                  "base": "r10",
+                  "scale": 2,
+                  "displacement": 0,
+                  "widthBytes": 2
+                },
+                {
+                  "instructionOffset": "0xfb",
+                  "operation": "vmovss",
+                  "parameter": 2,
+                  "base": "rdx",
+                  "scale": 1,
+                  "displacement": 104,
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0x101",
+                  "operation": "vmovsd",
+                  "parameter": 2,
+                  "base": "rdx",
+                  "scale": 1,
+                  "displacement": 108,
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x107",
+                  "operation": "vmovups",
+                  "parameter": 2,
+                  "base": "rdx",
+                  "scale": 1,
+                  "displacement": 136,
+                  "widthBytes": 16
+                },
+                {
+                  "instructionOffset": "0x120",
+                  "operation": "vmovss",
+                  "parameter": 3,
+                  "base": "r8",
+                  "scale": 1,
+                  "displacement": 160,
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0x130",
+                  "operation": "vmovss",
+                  "parameter": 3,
+                  "base": "r8",
+                  "scale": 1,
+                  "displacement": 164,
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0x140",
+                  "operation": "mov",
+                  "parameter": 2,
+                  "base": "rdx",
+                  "scale": 1,
+                  "displacement": 292,
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0x147",
+                  "operation": "mov",
+                  "parameter": 2,
+                  "base": "rdx",
+                  "scale": 1,
+                  "displacement": 300,
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0x154",
+                  "operation": "movzx",
+                  "parameter": 14,
+                  "base": "r10",
+                  "scale": 2,
+                  "displacement": 0,
+                  "widthBytes": 2
+                },
+                {
+                  "instructionOffset": "0x2de",
+                  "operation": "movzx",
+                  "parameter": 16,
+                  "base": "r15",
+                  "scale": 2,
+                  "displacement": 0,
+                  "widthBytes": 2
+                },
+                {
+                  "instructionOffset": "0x2e7",
+                  "operation": "mov",
+                  "parameter": 10,
+                  "base": "r12",
+                  "scale": 4,
+                  "displacement": 0,
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0x307",
+                  "operation": "vmovsd",
+                  "parameter": 5,
+                  "base": "rdx",
+                  "scale": 8,
+                  "displacement": 16,
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x30d",
+                  "operation": "vmovups",
+                  "parameter": 5,
+                  "base": "rdx",
+                  "scale": 8,
+                  "displacement": 0,
+                  "widthBytes": 16
+                },
+                {
+                  "instructionOffset": "0x32f",
+                  "operation": "vmovss",
+                  "parameter": 6,
+                  "base": "rcx",
+                  "scale": 1,
+                  "displacement": 12,
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0x335",
+                  "operation": "movzx",
+                  "parameter": 4,
+                  "base": "rsi",
+                  "scale": 1,
+                  "displacement": 0,
+                  "widthBytes": 1
+                },
+                {
+                  "instructionOffset": "0x33d",
+                  "operation": "vmovsd",
+                  "parameter": 6,
+                  "base": "rcx",
+                  "scale": 1,
+                  "displacement": 0,
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x358",
+                  "operation": "vmovss",
+                  "parameter": 6,
+                  "base": "rcx",
+                  "scale": 1,
+                  "displacement": 8,
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0x3ca",
+                  "operation": "movzx",
+                  "parameter": 11,
+                  "base": "r11",
+                  "scale": 2,
+                  "displacement": 0,
+                  "widthBytes": 2
+                },
+                {
+                  "instructionOffset": "0x3d8",
+                  "operation": "vmovsd",
+                  "parameter": 7,
+                  "base": "r13",
+                  "scale": 4,
+                  "displacement": 0,
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x44f",
+                  "operation": "vmovsd",
+                  "parameter": 5,
+                  "base": "rcx",
+                  "scale": 8,
+                  "displacement": 16,
+                  "widthBytes": 8
+                }
+              ],
+              "firstByteGuard": {
+                "instructionOffset": "0x335",
+                "operation": "movzx",
+                "parameter": 4,
+                "base": "rsi",
+                "scale": 1,
+                "displacement": 0,
+                "widthBytes": 1
+              },
+              "wordAccesses": [
+                {
+                  "instructionOffset": "0x96",
+                  "operation": "movsx",
+                  "parameter": 13,
+                  "base": "rcx",
+                  "scale": 2,
+                  "displacement": 0,
+                  "widthBytes": 2
+                },
+                {
+                  "instructionOffset": "0xca",
+                  "operation": "movzx",
+                  "parameter": 15,
+                  "base": "r10",
+                  "scale": 2,
+                  "displacement": 0,
+                  "widthBytes": 2
+                },
+                {
+                  "instructionOffset": "0x154",
+                  "operation": "movzx",
+                  "parameter": 14,
+                  "base": "r10",
+                  "scale": 2,
+                  "displacement": 0,
+                  "widthBytes": 2
+                },
+                {
+                  "instructionOffset": "0x2de",
+                  "operation": "movzx",
+                  "parameter": 16,
+                  "base": "r15",
+                  "scale": 2,
+                  "displacement": 0,
+                  "widthBytes": 2
+                },
+                {
+                  "instructionOffset": "0x3ca",
+                  "operation": "movzx",
+                  "parameter": 11,
+                  "base": "r11",
+                  "scale": 2,
+                  "displacement": 0,
+                  "widthBytes": 2
+                }
+              ],
+              "indexParameterObserved": "param17",
+              "strideMultipliers": [
+                {
+                  "instructionOffset": "0xa4",
+                  "register": "rcx",
+                  "immediate": 464
+                },
+                {
+                  "instructionOffset": "0x119",
+                  "register": "r9",
+                  "immediate": 808
+                }
+              ],
+              "parameterNames": {
+                "1": "jobColliderIndexList",
+                "2": "teamDataArray",
+                "3": "centerDataArray",
+                "4": "teamIdArray",
+                "5": "flagArray",
+                "6": "sizeArray",
+                "7": "framePositions",
+                "8": "frameRotations",
+                "9": "frameScales",
+                "10": "oldFramePositions",
+                "11": "oldFrameRotations",
+                "12": "nowPositions",
+                "13": "nowRotations",
+                "14": "oldPositions",
+                "15": "oldRotations",
+                "16": "workDataArray",
+                "17": "lengthPtr"
+              }
+            }
+          }
+        },
+        {
+          "initializerInstructionRva": "0x3605cd",
+          "implementationEntryRva": "0x10ef20",
+          "implementationEndRvaExclusive": "0x10efec",
+          "implementationSpanBytes": 204,
+          "implementationBodySha256": "ef31d3c92ce1d2d1004560a75f2dc47b849f6f330dadd5bb267c5e9427be8b18",
+          "unwindInfoRva": "0x3a4bfc",
+          "cpuVariant": "x64_sse2",
+          "tailJumpTargetRva": "0xf4100",
+          "callChain": [
+            {
+              "beginRva": "0x10ef20",
+              "endRvaExclusive": "0x10efec",
+              "spanBytes": 204,
+              "bodySha256": "ef31d3c92ce1d2d1004560a75f2dc47b849f6f330dadd5bb267c5e9427be8b18",
+              "unwindInfoRva": "0x3a4bfc"
+            },
+            {
+              "beginRva": "0x10f190",
+              "endRvaExclusive": "0x10f19a",
+              "spanBytes": 10,
+              "bodySha256": "1477b201c50de25305761971f44bae5a8060b844f72a5a5770e462f8b32d61ac",
+              "unwindInfoRva": "0x3a4c30"
+            },
+            {
+              "beginRva": "0xf4100",
+              "endRvaExclusive": "0xf4f9e",
+              "spanBytes": 3742,
+              "bodySha256": "d2981125e4685061134d4e7c1048efc84c33ecc9053f09d3dc9d104756282824",
+              "unwindInfoRva": "0x3a4200"
+            }
+          ],
+          "core": {
+            "beginRva": "0xf4100",
+            "endRvaExclusive": "0xf4f9e",
+            "spanBytes": 3742,
+            "bodySha256": "d2981125e4685061134d4e7c1048efc84c33ecc9053f09d3dc9d104756282824",
+            "unwindInfoRva": "0x3a4200",
+            "firstInstructions": [
+              {
+                "offset": "0x0",
+                "mnemonic": "push",
+                "opStr": "rbp"
+              },
+              {
+                "offset": "0x1",
+                "mnemonic": "push",
+                "opStr": "r15"
+              },
+              {
+                "offset": "0x3",
+                "mnemonic": "push",
+                "opStr": "r14"
+              },
+              {
+                "offset": "0x5",
+                "mnemonic": "push",
+                "opStr": "r13"
+              },
+              {
+                "offset": "0x7",
+                "mnemonic": "push",
+                "opStr": "r12"
+              },
+              {
+                "offset": "0x9",
+                "mnemonic": "push",
+                "opStr": "rsi"
+              },
+              {
+                "offset": "0xa",
+                "mnemonic": "push",
+                "opStr": "rdi"
+              },
+              {
+                "offset": "0xb",
+                "mnemonic": "push",
+                "opStr": "rbx"
+              },
+              {
+                "offset": "0xc",
+                "mnemonic": "sub",
+                "opStr": "rsp, 0x228"
+              },
+              {
+                "offset": "0x13",
+                "mnemonic": "lea",
+                "opStr": "rbp, [rsp + 0x80]"
+              },
+              {
+                "offset": "0x1b",
+                "mnemonic": "movapd",
+                "opStr": "xmmword ptr [rbp + 0x190], xmm15"
+              },
+              {
+                "offset": "0x24",
+                "mnemonic": "movapd",
+                "opStr": "xmmword ptr [rbp + 0x180], xmm14"
+              },
+              {
+                "offset": "0x2d",
+                "mnemonic": "movapd",
+                "opStr": "xmmword ptr [rbp + 0x170], xmm13"
+              },
+              {
+                "offset": "0x36",
+                "mnemonic": "movapd",
+                "opStr": "xmmword ptr [rbp + 0x160], xmm12"
+              },
+              {
+                "offset": "0x3f",
+                "mnemonic": "movaps",
+                "opStr": "xmmword ptr [rbp + 0x150], xmm11"
+              },
+              {
+                "offset": "0x47",
+                "mnemonic": "movapd",
+                "opStr": "xmmword ptr [rbp + 0x140], xmm10"
+              }
+            ],
+            "semantic": {
+              "stackParameterOffsetFirst": "0x210",
+              "parameterLoads": [
+                {
+                  "instructionOffset": "0x74",
+                  "parameter": 12,
+                  "register": "r9",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x7b",
+                  "parameter": 17,
+                  "register": "rax",
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0x91",
+                  "parameter": 13,
+                  "register": "rcx",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0xc5",
+                  "parameter": 15,
+                  "register": "r10",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0xd9",
+                  "parameter": 16,
+                  "register": "r14",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0xe0",
+                  "parameter": 14,
+                  "register": "r10",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0xe7",
+                  "parameter": 11,
+                  "register": "r11",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0xee",
+                  "parameter": 10,
+                  "register": "r15",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0xf5",
+                  "parameter": 7,
+                  "register": "r13",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x2a4",
+                  "parameter": 11,
+                  "register": "r11",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x311",
+                  "parameter": 6,
+                  "register": "rax",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x361",
+                  "parameter": 5,
+                  "register": "rdx",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x38a",
+                  "parameter": 6,
+                  "register": "rcx",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x532",
+                  "parameter": 5,
+                  "register": "rcx",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x9c3",
+                  "parameter": 11,
+                  "register": "r11",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0xa04",
+                  "parameter": 8,
+                  "register": "rax",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0xa8c",
+                  "parameter": 6,
+                  "register": "rax",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0xad9",
+                  "parameter": 16,
+                  "register": "r14",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0xae0",
+                  "parameter": 10,
+                  "register": "r15",
+                  "widthBytes": 8
+                }
+              ],
+              "arrayAccesses": [
+                {
+                  "instructionOffset": "0x82",
+                  "operation": "movsxd",
+                  "parameter": 1,
+                  "base": "rcx",
+                  "scale": 4,
+                  "displacement": 0,
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0x98",
+                  "operation": "movsx",
+                  "parameter": 13,
+                  "base": "rcx",
+                  "scale": 2,
+                  "displacement": 0,
+                  "widthBytes": 2
+                },
+                {
+                  "instructionOffset": "0xcc",
+                  "operation": "movzx",
+                  "parameter": 15,
+                  "base": "r10",
+                  "scale": 2,
+                  "displacement": 0,
+                  "widthBytes": 2
+                },
+                {
+                  "instructionOffset": "0xfc",
+                  "operation": "movss",
+                  "parameter": 2,
+                  "base": "rdx",
+                  "scale": 1,
+                  "displacement": 104,
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0x102",
+                  "operation": "movsd",
+                  "parameter": 2,
+                  "base": "rdx",
+                  "scale": 1,
+                  "displacement": 108,
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x109",
+                  "operation": "movups",
+                  "parameter": 2,
+                  "base": "rdx",
+                  "scale": 1,
+                  "displacement": 136,
+                  "widthBytes": 16
+                },
+                {
+                  "instructionOffset": "0x11c",
+                  "operation": "movss",
+                  "parameter": 3,
+                  "base": "r8",
+                  "scale": 1,
+                  "displacement": 160,
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0x12e",
+                  "operation": "movss",
+                  "parameter": 3,
+                  "base": "r8",
+                  "scale": 1,
+                  "displacement": 164,
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0x140",
+                  "operation": "mov",
+                  "parameter": 2,
+                  "base": "rdx",
+                  "scale": 1,
+                  "displacement": 292,
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0x147",
+                  "operation": "mov",
+                  "parameter": 2,
+                  "base": "rdx",
+                  "scale": 1,
+                  "displacement": 300,
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0x156",
+                  "operation": "movzx",
+                  "parameter": 14,
+                  "base": "r10",
+                  "scale": 2,
+                  "displacement": 0,
+                  "widthBytes": 2
+                },
+                {
+                  "instructionOffset": "0x33b",
+                  "operation": "movzx",
+                  "parameter": 16,
+                  "base": "r14",
+                  "scale": 2,
+                  "displacement": 0,
+                  "widthBytes": 2
+                },
+                {
+                  "instructionOffset": "0x344",
+                  "operation": "mov",
+                  "parameter": 10,
+                  "base": "r15",
+                  "scale": 4,
+                  "displacement": 0,
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0x368",
+                  "operation": "movsd",
+                  "parameter": 5,
+                  "base": "rdx",
+                  "scale": 8,
+                  "displacement": 16,
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x391",
+                  "operation": "movss",
+                  "parameter": 6,
+                  "base": "rcx",
+                  "scale": 1,
+                  "displacement": 12,
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0x397",
+                  "operation": "movzx",
+                  "parameter": 4,
+                  "base": "rsi",
+                  "scale": 1,
+                  "displacement": 0,
+                  "widthBytes": 1
+                },
+                {
+                  "instructionOffset": "0x3a1",
+                  "operation": "movsd",
+                  "parameter": 6,
+                  "base": "rcx",
+                  "scale": 1,
+                  "displacement": 4,
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x3cc",
+                  "operation": "movss",
+                  "parameter": 6,
+                  "base": "rcx",
+                  "scale": 1,
+                  "displacement": 0,
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0x498",
+                  "operation": "movzx",
+                  "parameter": 11,
+                  "base": "r11",
+                  "scale": 2,
+                  "displacement": 0,
+                  "widthBytes": 2
+                },
+                {
+                  "instructionOffset": "0x4a6",
+                  "operation": "movsd",
+                  "parameter": 7,
+                  "base": "r13",
+                  "scale": 4,
+                  "displacement": 0,
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x4ad",
+                  "operation": "movss",
+                  "parameter": 7,
+                  "base": "r13",
+                  "scale": 4,
+                  "displacement": 8,
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0x539",
+                  "operation": "movsd",
+                  "parameter": 5,
+                  "base": "rcx",
+                  "scale": 8,
+                  "displacement": 16,
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0xa0b",
+                  "operation": "movups",
+                  "parameter": 8,
+                  "base": "rax",
+                  "scale": 1,
+                  "displacement": 0,
+                  "widthBytes": 16
+                }
+              ],
+              "firstByteGuard": {
+                "instructionOffset": "0x397",
+                "operation": "movzx",
+                "parameter": 4,
+                "base": "rsi",
+                "scale": 1,
+                "displacement": 0,
+                "widthBytes": 1
+              },
+              "wordAccesses": [
+                {
+                  "instructionOffset": "0x98",
+                  "operation": "movsx",
+                  "parameter": 13,
+                  "base": "rcx",
+                  "scale": 2,
+                  "displacement": 0,
+                  "widthBytes": 2
+                },
+                {
+                  "instructionOffset": "0xcc",
+                  "operation": "movzx",
+                  "parameter": 15,
+                  "base": "r10",
+                  "scale": 2,
+                  "displacement": 0,
+                  "widthBytes": 2
+                },
+                {
+                  "instructionOffset": "0x156",
+                  "operation": "movzx",
+                  "parameter": 14,
+                  "base": "r10",
+                  "scale": 2,
+                  "displacement": 0,
+                  "widthBytes": 2
+                },
+                {
+                  "instructionOffset": "0x33b",
+                  "operation": "movzx",
+                  "parameter": 16,
+                  "base": "r14",
+                  "scale": 2,
+                  "displacement": 0,
+                  "widthBytes": 2
+                },
+                {
+                  "instructionOffset": "0x498",
+                  "operation": "movzx",
+                  "parameter": 11,
+                  "base": "r11",
+                  "scale": 2,
+                  "displacement": 0,
+                  "widthBytes": 2
+                }
+              ],
+              "indexParameterObserved": "param17",
+              "strideMultipliers": [
+                {
+                  "instructionOffset": "0xa6",
+                  "register": "rcx",
+                  "immediate": 464
+                },
+                {
+                  "instructionOffset": "0x115",
+                  "register": "r9",
+                  "immediate": 808
+                }
+              ],
+              "parameterNames": {
+                "1": "jobColliderIndexList",
+                "2": "teamDataArray",
+                "3": "centerDataArray",
+                "4": "teamIdArray",
+                "5": "flagArray",
+                "6": "sizeArray",
+                "7": "framePositions",
+                "8": "frameRotations",
+                "9": "frameScales",
+                "10": "oldFramePositions",
+                "11": "oldFrameRotations",
+                "12": "nowPositions",
+                "13": "nowRotations",
+                "14": "oldPositions",
+                "15": "oldRotations",
+                "16": "workDataArray",
+                "17": "lengthPtr"
+              }
+            }
+          }
+        }
+      ],
+      "semanticMatch": {
+        "mappingMatches": {
+          "jobColliderIndexList": true,
+          "teamDataArray": true,
+          "teamIdArray": true,
+          "flagArray": true,
+          "framePositions": true,
+          "frameRotations": true,
+          "oldFramePositions": true,
+          "oldFrameRotations": true,
+          "nowPositions": true,
+          "nowRotations": true,
+          "oldPositions": true,
+          "oldRotations": true,
+          "workDataArray": true,
+          "lengthPtr": true
+        },
+        "guardMatches": {
+          "avx2": {
+            "flagArrayParam5": false,
+            "observed": {
+              "instructionOffset": "0x335",
+              "operation": "movzx",
+              "parameter": 4,
+              "base": "rsi",
+              "scale": 1,
+              "displacement": 0,
+              "widthBytes": 1
+            },
+            "indexParameter17": true,
+            "teamIdWordParam4": false,
+            "teamDataStride464": true
+          },
+          "x64_sse2": {
+            "flagArrayParam5": false,
+            "observed": {
+              "instructionOffset": "0x397",
+              "operation": "movzx",
+              "parameter": 4,
+              "base": "rsi",
+              "scale": 1,
+              "displacement": 0,
+              "widthBytes": 1
+            },
+            "indexParameter17": true,
+            "teamIdWordParam4": false,
+            "teamDataStride464": true
+          }
+        },
+        "requiredChecks": {
+          "canonicalParameterOrder": true,
+          "jobColliderIndexList": true,
+          "teamDataArray": true,
+          "teamIdArray": true,
+          "flagArray": true,
+          "index": true,
+          "avx2.flagArrayGuard": false,
+          "avx2.index": true,
+          "avx2.teamId": false,
+          "avx2.teamDataStride": true,
+          "x64_sse2.flagArrayGuard": false,
+          "x64_sse2.index": true,
+          "x64_sse2.teamId": false,
+          "x64_sse2.teamDataStride": true
+        },
+        "allRequiredChecksPass": false,
+        "comparisonBasis": {
+          "managedFallbackMethodIndex": 385451,
+          "managedFallbackBodySha256": "61d0b5400bed687be8baa7bf5281119b2ce09276423b84461fc27053710c7426",
+          "canonicalParameterNames": [
+            "jobColliderIndexList",
+            "teamDataArray",
+            "centerDataArray",
+            "teamIdArray",
+            "flagArray",
+            "sizeArray",
+            "framePositions",
+            "frameRotations",
+            "frameScales",
+            "oldFramePositions",
+            "oldFrameRotations",
+            "nowPositions",
+            "nowRotations",
+            "oldPositions",
+            "oldRotations",
+            "workDataArray",
+            "lengthPtr"
+          ]
+        }
+      }
+    },
+    {
+      "hash": "8b3d2761aaaac71a35d4a2557d570456",
+      "rva": "0x357ad0",
+      "fileOffset": "0x356ed0",
+      "spanBytes": 208,
+      "bodyBytes": 205,
+      "bodySha256": "bad4ef19af75f491d1a97a73428af34b9e983eb2b5c543dace2ca3fd64bbcf83",
+      "callSite": {
+        "instructionOffset": "0xb2",
+        "slotRva": "0x3c5af0",
+        "callEncoding": "ff1568df0600"
+      },
+      "callMapping": {
+        "registerSourcesAtCall": [
+          "param1",
+          "param2",
+          "param3",
+          "param4"
+        ],
+        "stackSourcesAtCall": [
+          "param5",
+          "param6",
+          "param7",
+          "param8",
+          "param9",
+          "param10",
+          "param11",
+          "param12",
+          "param13",
+          "param14",
+          "param15",
+          "param16",
+          "param17"
+        ],
+        "callArgumentSources": [
+          "param1",
+          "param2",
+          "param3",
+          "param4",
+          "param5",
+          "param6",
+          "param7",
+          "param8",
+          "param9",
+          "param10",
+          "param11",
+          "param12",
+          "param13",
+          "param14",
+          "param15",
+          "param16",
+          "param17"
+        ],
+        "canonicalOrderExact": true,
+        "callInstructionOffset": "0xb2"
+      },
+      "initializerAssignments": [
+        {
+          "initializerInstructionRva": "0x35bac8",
+          "implementationEntryRva": "0x243660",
+          "implementationEndRvaExclusive": "0x2436b3",
+          "implementationSpanBytes": 83,
+          "implementationBodySha256": "0601c7e78f544793564164d2ecbd6bbb7f28824c8f279d64ed565ef17bbe790d",
+          "unwindInfoRva": "0x3af0dc",
+          "cpuVariant": "avx2",
+          "tailJumpTargetRva": "0x243810",
+          "callChain": [
+            {
+              "beginRva": "0x243660",
+              "endRvaExclusive": "0x2436b3",
+              "spanBytes": 83,
+              "bodySha256": "0601c7e78f544793564164d2ecbd6bbb7f28824c8f279d64ed565ef17bbe790d",
+              "unwindInfoRva": "0x3af0dc"
+            },
+            {
+              "beginRva": "0x2442c0",
+              "endRvaExclusive": "0x2442ca",
+              "spanBytes": 10,
+              "bodySha256": "886d6831c8efb1656ca4bef12ce76a0040a93590d60c2b944b7826288c53a9a8",
+              "unwindInfoRva": "0x3af144"
+            },
+            {
+              "beginRva": "0x243810",
+              "endRvaExclusive": "0x2442bc",
+              "spanBytes": 2732,
+              "bodySha256": "a69539c847d5f68e7a1c155058f8299a6953c79004ef28e14282ccdec26d0615",
+              "unwindInfoRva": "0x3af100"
+            }
+          ],
+          "core": {
+            "beginRva": "0x243810",
+            "endRvaExclusive": "0x2442bc",
+            "spanBytes": 2732,
+            "bodySha256": "a69539c847d5f68e7a1c155058f8299a6953c79004ef28e14282ccdec26d0615",
+            "unwindInfoRva": "0x3af100",
+            "firstInstructions": [
+              {
+                "offset": "0x0",
+                "mnemonic": "push",
+                "opStr": "rbp"
+              },
+              {
+                "offset": "0x1",
+                "mnemonic": "push",
+                "opStr": "r15"
+              },
+              {
+                "offset": "0x3",
+                "mnemonic": "push",
+                "opStr": "r14"
+              },
+              {
+                "offset": "0x5",
+                "mnemonic": "push",
+                "opStr": "r13"
+              },
+              {
+                "offset": "0x7",
+                "mnemonic": "push",
+                "opStr": "r12"
+              },
+              {
+                "offset": "0x9",
+                "mnemonic": "push",
+                "opStr": "rsi"
+              },
+              {
+                "offset": "0xa",
+                "mnemonic": "push",
+                "opStr": "rdi"
+              },
+              {
+                "offset": "0xb",
+                "mnemonic": "push",
+                "opStr": "rbx"
+              },
+              {
+                "offset": "0xc",
+                "mnemonic": "sub",
+                "opStr": "rsp, 0xd8"
+              },
+              {
+                "offset": "0x13",
+                "mnemonic": "lea",
+                "opStr": "rbp, [rsp + 0x80]"
+              },
+              {
+                "offset": "0x1b",
+                "mnemonic": "vmovaps",
+                "opStr": "xmmword ptr [rbp + 0x40], xmm15"
+              },
+              {
+                "offset": "0x20",
+                "mnemonic": "vmovaps",
+                "opStr": "xmmword ptr [rbp + 0x30], xmm14"
+              },
+              {
+                "offset": "0x25",
+                "mnemonic": "vmovaps",
+                "opStr": "xmmword ptr [rbp + 0x20], xmm13"
+              },
+              {
+                "offset": "0x2a",
+                "mnemonic": "vmovaps",
+                "opStr": "xmmword ptr [rbp + 0x10], xmm12"
+              },
+              {
+                "offset": "0x2f",
+                "mnemonic": "vmovaps",
+                "opStr": "xmmword ptr [rbp], xmm11"
+              },
+              {
+                "offset": "0x34",
+                "mnemonic": "vmovapd",
+                "opStr": "xmmword ptr [rbp - 0x10], xmm10"
+              }
+            ],
+            "semantic": {
+              "stackParameterOffsetFirst": "0xc0",
+              "parameterLoads": [
+                {
+                  "instructionOffset": "0x4d",
+                  "parameter": 5,
+                  "register": "rax",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x54",
+                  "parameter": 17,
+                  "register": "r10",
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0x6f",
+                  "parameter": 11,
+                  "register": "rax",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x76",
+                  "parameter": 10,
+                  "register": "rcx",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x7d",
+                  "parameter": 8,
+                  "register": "r10",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x84",
+                  "parameter": 7,
+                  "register": "r11",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x112",
+                  "parameter": 15,
+                  "register": "r12",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x119",
+                  "parameter": 14,
+                  "register": "rcx",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x120",
+                  "parameter": 13,
+                  "register": "rax",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x127",
+                  "parameter": 12,
+                  "register": "rdx",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x2ea",
+                  "parameter": 14,
+                  "register": "rcx",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x2f1",
+                  "parameter": 13,
+                  "register": "rax",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x2f8",
+                  "parameter": 12,
+                  "register": "rdx",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x397",
+                  "parameter": 9,
+                  "register": "r15",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x39e",
+                  "parameter": 6,
+                  "register": "rdx",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x550",
+                  "parameter": 6,
+                  "register": "rdx",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x557",
+                  "parameter": 16,
+                  "register": "rax",
+                  "widthBytes": 8
+                }
+              ],
+              "arrayAccesses": [
+                {
+                  "instructionOffset": "0x5b",
+                  "operation": "movsxd",
+                  "parameter": 1,
+                  "base": "rcx",
+                  "scale": 4,
+                  "displacement": 0,
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0x5f",
+                  "operation": "movzx",
+                  "parameter": 5,
+                  "base": "rax",
+                  "scale": 1,
+                  "displacement": 0,
+                  "widthBytes": 1
+                },
+                {
+                  "instructionOffset": "0x8b",
+                  "operation": "movsx",
+                  "parameter": 4,
+                  "base": "r9",
+                  "scale": 2,
+                  "displacement": 0,
+                  "widthBytes": 2
+                },
+                {
+                  "instructionOffset": "0xaa",
+                  "operation": "vmovsd",
+                  "parameter": 10,
+                  "base": "rcx",
+                  "scale": 1,
+                  "displacement": 0,
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0xb7",
+                  "operation": "vmovsd",
+                  "parameter": 7,
+                  "base": "r11",
+                  "scale": 1,
+                  "displacement": 0,
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0xd4",
+                  "operation": "vmovups",
+                  "parameter": 11,
+                  "base": "rax",
+                  "scale": 1,
+                  "displacement": 0,
+                  "widthBytes": 16
+                },
+                {
+                  "instructionOffset": "0xda",
+                  "operation": "vmovups",
+                  "parameter": 8,
+                  "base": "r10",
+                  "scale": 1,
+                  "displacement": 0,
+                  "widthBytes": 16
+                },
+                {
+                  "instructionOffset": "0x340",
+                  "operation": "vmovsd",
+                  "parameter": 14,
+                  "base": "rcx",
+                  "scale": 1,
+                  "displacement": 0,
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x34d",
+                  "operation": "vmovups",
+                  "parameter": 15,
+                  "base": "r12",
+                  "scale": 1,
+                  "displacement": 0,
+                  "widthBytes": 16
+                },
+                {
+                  "instructionOffset": "0x3a5",
+                  "operation": "vmovss",
+                  "parameter": 3,
+                  "base": "r8",
+                  "scale": 1,
+                  "displacement": 452,
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0x59c",
+                  "operation": "vmovsd",
+                  "parameter": 6,
+                  "base": "rdx",
+                  "scale": 1,
+                  "displacement": 0,
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x5a9",
+                  "operation": "vmovsd",
+                  "parameter": 9,
+                  "base": "r15",
+                  "scale": 1,
+                  "displacement": 0,
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x71e",
+                  "operation": "movsxd",
+                  "parameter": 3,
+                  "base": "r8",
+                  "scale": 4,
+                  "displacement": 0,
+                  "widthBytes": 4
+                }
+              ],
+              "firstByteGuard": {
+                "instructionOffset": "0x5f",
+                "operation": "movzx",
+                "parameter": 5,
+                "base": "rax",
+                "scale": 1,
+                "displacement": 0,
+                "widthBytes": 1
+              },
+              "wordAccesses": [
+                {
+                  "instructionOffset": "0x8b",
+                  "operation": "movsx",
+                  "parameter": 4,
+                  "base": "r9",
+                  "scale": 2,
+                  "displacement": 0,
+                  "widthBytes": 2
+                }
+              ],
+              "indexParameterObserved": "param17",
+              "strideMultipliers": [
+                {
+                  "instructionOffset": "0x90",
+                  "register": "r9",
+                  "immediate": 464
+                },
+                {
+                  "instructionOffset": "0x353",
+                  "register": "rax",
+                  "immediate": 696
+                },
+                {
+                  "instructionOffset": "0x9f4",
+                  "register": "rcx",
+                  "immediate": 184
+                }
+              ],
+              "parameterNames": {
+                "1": "jobColliderIndexList",
+                "2": "teamDataArray",
+                "3": "centerDataArray",
+                "4": "teamIdArray",
+                "5": "flagArray",
+                "6": "sizeArray",
+                "7": "framePositions",
+                "8": "frameRotations",
+                "9": "frameScales",
+                "10": "oldFramePositions",
+                "11": "oldFrameRotations",
+                "12": "nowPositions",
+                "13": "nowRotations",
+                "14": "oldPositions",
+                "15": "oldRotations",
+                "16": "workDataArray",
+                "17": "lengthPtr"
+              }
+            }
+          }
+        },
+        {
+          "initializerInstructionRva": "0x35fcff",
+          "implementationEntryRva": "0xa7c30",
+          "implementationEndRvaExclusive": "0xa7cfc",
+          "implementationSpanBytes": 204,
+          "implementationBodySha256": "e6cf677c45c5c6ad7b9ea2d6aeff7387e0e2b36d8dc29b5430287796d4701765",
+          "unwindInfoRva": "0x3a15c0",
+          "cpuVariant": "x64_sse2",
+          "tailJumpTargetRva": "0xa7e50",
+          "callChain": [
+            {
+              "beginRva": "0xa7c30",
+              "endRvaExclusive": "0xa7cfc",
+              "spanBytes": 204,
+              "bodySha256": "e6cf677c45c5c6ad7b9ea2d6aeff7387e0e2b36d8dc29b5430287796d4701765",
+              "unwindInfoRva": "0x3a15c0"
+            },
+            {
+              "beginRva": "0xa8ab0",
+              "endRvaExclusive": "0xa8aba",
+              "spanBytes": 10,
+              "bodySha256": "cd1751ed074e26b6b135683b03683364baac17a84ef7e9e0b84bd1651a489d21",
+              "unwindInfoRva": "0x3a1638"
+            },
+            {
+              "beginRva": "0xa7e50",
+              "endRvaExclusive": "0xa8aa2",
+              "spanBytes": 3154,
+              "bodySha256": "9d13c5486a92508b3664a2a9ce888d8994e83e5951f185e5531207ffdd507fc4",
+              "unwindInfoRva": "0x3a15f4"
+            }
+          ],
+          "core": {
+            "beginRva": "0xa7e50",
+            "endRvaExclusive": "0xa8aa2",
+            "spanBytes": 3154,
+            "bodySha256": "9d13c5486a92508b3664a2a9ce888d8994e83e5951f185e5531207ffdd507fc4",
+            "unwindInfoRva": "0x3a15f4",
+            "firstInstructions": [
+              {
+                "offset": "0x0",
+                "mnemonic": "push",
+                "opStr": "rbp"
+              },
+              {
+                "offset": "0x1",
+                "mnemonic": "push",
+                "opStr": "r15"
+              },
+              {
+                "offset": "0x3",
+                "mnemonic": "push",
+                "opStr": "r14"
+              },
+              {
+                "offset": "0x5",
+                "mnemonic": "push",
+                "opStr": "r13"
+              },
+              {
+                "offset": "0x7",
+                "mnemonic": "push",
+                "opStr": "r12"
+              },
+              {
+                "offset": "0x9",
+                "mnemonic": "push",
+                "opStr": "rsi"
+              },
+              {
+                "offset": "0xa",
+                "mnemonic": "push",
+                "opStr": "rdi"
+              },
+              {
+                "offset": "0xb",
+                "mnemonic": "push",
+                "opStr": "rbx"
+              },
+              {
+                "offset": "0xc",
+                "mnemonic": "sub",
+                "opStr": "rsp, 0xe8"
+              },
+              {
+                "offset": "0x13",
+                "mnemonic": "lea",
+                "opStr": "rbp, [rsp + 0x80]"
+              },
+              {
+                "offset": "0x1b",
+                "mnemonic": "movaps",
+                "opStr": "xmmword ptr [rbp + 0x50], xmm15"
+              },
+              {
+                "offset": "0x20",
+                "mnemonic": "movaps",
+                "opStr": "xmmword ptr [rbp + 0x40], xmm14"
+              },
+              {
+                "offset": "0x25",
+                "mnemonic": "movaps",
+                "opStr": "xmmword ptr [rbp + 0x30], xmm13"
+              },
+              {
+                "offset": "0x2a",
+                "mnemonic": "movaps",
+                "opStr": "xmmword ptr [rbp + 0x20], xmm12"
+              },
+              {
+                "offset": "0x2f",
+                "mnemonic": "movaps",
+                "opStr": "xmmword ptr [rbp + 0x10], xmm11"
+              },
+              {
+                "offset": "0x34",
+                "mnemonic": "movaps",
+                "opStr": "xmmword ptr [rbp], xmm10"
+              }
+            ],
+            "semantic": {
+              "stackParameterOffsetFirst": "0xd0",
+              "parameterLoads": [
+                {
+                  "instructionOffset": "0x4b",
+                  "parameter": 5,
+                  "register": "rax",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x52",
+                  "parameter": 17,
+                  "register": "r10",
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0x6d",
+                  "parameter": 11,
+                  "register": "rax",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x74",
+                  "parameter": 10,
+                  "register": "rcx",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x7b",
+                  "parameter": 8,
+                  "register": "r10",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x82",
+                  "parameter": 7,
+                  "register": "r11",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x12b",
+                  "parameter": 15,
+                  "register": "r12",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x132",
+                  "parameter": 14,
+                  "register": "rcx",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x139",
+                  "parameter": 13,
+                  "register": "rdx",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x140",
+                  "parameter": 12,
+                  "register": "r9",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x33b",
+                  "parameter": 14,
+                  "register": "rcx",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x346",
+                  "parameter": 13,
+                  "register": "rdx",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x34d",
+                  "parameter": 12,
+                  "register": "r9",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x41d",
+                  "parameter": 9,
+                  "register": "r15",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x424",
+                  "parameter": 6,
+                  "register": "rdx",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x617",
+                  "parameter": 6,
+                  "register": "rdx",
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x61e",
+                  "parameter": 16,
+                  "register": "rax",
+                  "widthBytes": 8
+                }
+              ],
+              "arrayAccesses": [
+                {
+                  "instructionOffset": "0x59",
+                  "operation": "movsxd",
+                  "parameter": 1,
+                  "base": "rcx",
+                  "scale": 4,
+                  "displacement": 0,
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0x5d",
+                  "operation": "movzx",
+                  "parameter": 5,
+                  "base": "rax",
+                  "scale": 1,
+                  "displacement": 0,
+                  "widthBytes": 1
+                },
+                {
+                  "instructionOffset": "0x89",
+                  "operation": "movsx",
+                  "parameter": 4,
+                  "base": "r9",
+                  "scale": 2,
+                  "displacement": 0,
+                  "widthBytes": 2
+                },
+                {
+                  "instructionOffset": "0x95",
+                  "operation": "movss",
+                  "parameter": 2,
+                  "base": "rdx",
+                  "scale": 1,
+                  "displacement": 60,
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0xa8",
+                  "operation": "movsd",
+                  "parameter": 10,
+                  "base": "rcx",
+                  "scale": 1,
+                  "displacement": 0,
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0xae",
+                  "operation": "movss",
+                  "parameter": 10,
+                  "base": "rcx",
+                  "scale": 1,
+                  "displacement": 8,
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0xbe",
+                  "operation": "movsd",
+                  "parameter": 7,
+                  "base": "r11",
+                  "scale": 1,
+                  "displacement": 0,
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0xc4",
+                  "operation": "movss",
+                  "parameter": 7,
+                  "base": "r11",
+                  "scale": 1,
+                  "displacement": 8,
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0xea",
+                  "operation": "movups",
+                  "parameter": 11,
+                  "base": "rax",
+                  "scale": 1,
+                  "displacement": 0,
+                  "widthBytes": 16
+                },
+                {
+                  "instructionOffset": "0xef",
+                  "operation": "movups",
+                  "parameter": 8,
+                  "base": "r10",
+                  "scale": 1,
+                  "displacement": 0,
+                  "widthBytes": 16
+                },
+                {
+                  "instructionOffset": "0x3aa",
+                  "operation": "movsd",
+                  "parameter": 14,
+                  "base": "rcx",
+                  "scale": 1,
+                  "displacement": 0,
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x3b0",
+                  "operation": "movss",
+                  "parameter": 14,
+                  "base": "rcx",
+                  "scale": 1,
+                  "displacement": 8,
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0x3c0",
+                  "operation": "movups",
+                  "parameter": 15,
+                  "base": "r12",
+                  "scale": 1,
+                  "displacement": 0,
+                  "widthBytes": 16
+                },
+                {
+                  "instructionOffset": "0x3d4",
+                  "operation": "movss",
+                  "parameter": 3,
+                  "base": "r8",
+                  "scale": 1,
+                  "displacement": 448,
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0x42b",
+                  "operation": "movss",
+                  "parameter": 3,
+                  "base": "r8",
+                  "scale": 1,
+                  "displacement": 452,
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0x677",
+                  "operation": "movsd",
+                  "parameter": 6,
+                  "base": "rdx",
+                  "scale": 1,
+                  "displacement": 0,
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x67d",
+                  "operation": "movss",
+                  "parameter": 6,
+                  "base": "rdx",
+                  "scale": 1,
+                  "displacement": 8,
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0x68d",
+                  "operation": "movsd",
+                  "parameter": 9,
+                  "base": "r15",
+                  "scale": 1,
+                  "displacement": 0,
+                  "widthBytes": 8
+                },
+                {
+                  "instructionOffset": "0x693",
+                  "operation": "movss",
+                  "parameter": 9,
+                  "base": "r15",
+                  "scale": 1,
+                  "displacement": 8,
+                  "widthBytes": 4
+                },
+                {
+                  "instructionOffset": "0x856",
+                  "operation": "movsxd",
+                  "parameter": 3,
+                  "base": "r8",
+                  "scale": 4,
+                  "displacement": 0,
+                  "widthBytes": 4
+                }
+              ],
+              "firstByteGuard": {
+                "instructionOffset": "0x5d",
+                "operation": "movzx",
+                "parameter": 5,
+                "base": "rax",
+                "scale": 1,
+                "displacement": 0,
+                "widthBytes": 1
+              },
+              "wordAccesses": [
+                {
+                  "instructionOffset": "0x89",
+                  "operation": "movsx",
+                  "parameter": 4,
+                  "base": "r9",
+                  "scale": 2,
+                  "displacement": 0,
+                  "widthBytes": 2
+                }
+              ],
+              "indexParameterObserved": "param17",
+              "strideMultipliers": [
+                {
+                  "instructionOffset": "0x8e",
+                  "register": "r9",
+                  "immediate": 464
+                },
+                {
+                  "instructionOffset": "0x3c5",
+                  "register": "rax",
+                  "immediate": 696
+                },
+                {
+                  "instructionOffset": "0xb95",
+                  "register": "rcx",
+                  "immediate": 184
+                }
+              ],
+              "parameterNames": {
+                "1": "jobColliderIndexList",
+                "2": "teamDataArray",
+                "3": "centerDataArray",
+                "4": "teamIdArray",
+                "5": "flagArray",
+                "6": "sizeArray",
+                "7": "framePositions",
+                "8": "frameRotations",
+                "9": "frameScales",
+                "10": "oldFramePositions",
+                "11": "oldFrameRotations",
+                "12": "nowPositions",
+                "13": "nowRotations",
+                "14": "oldPositions",
+                "15": "oldRotations",
+                "16": "workDataArray",
+                "17": "lengthPtr"
+              }
+            }
+          }
+        }
+      ],
+      "semanticMatch": {
+        "mappingMatches": {
+          "jobColliderIndexList": true,
+          "teamDataArray": true,
+          "teamIdArray": true,
+          "flagArray": true,
+          "framePositions": true,
+          "frameRotations": true,
+          "oldFramePositions": true,
+          "oldFrameRotations": true,
+          "nowPositions": true,
+          "nowRotations": true,
+          "oldPositions": true,
+          "oldRotations": true,
+          "workDataArray": true,
+          "lengthPtr": true
+        },
+        "guardMatches": {
+          "avx2": {
+            "flagArrayParam5": true,
+            "observed": {
+              "instructionOffset": "0x5f",
+              "operation": "movzx",
+              "parameter": 5,
+              "base": "rax",
+              "scale": 1,
+              "displacement": 0,
+              "widthBytes": 1
+            },
+            "indexParameter17": true,
+            "teamIdWordParam4": true,
+            "teamDataStride464": true
+          },
+          "x64_sse2": {
+            "flagArrayParam5": true,
+            "observed": {
+              "instructionOffset": "0x5d",
+              "operation": "movzx",
+              "parameter": 5,
+              "base": "rax",
+              "scale": 1,
+              "displacement": 0,
+              "widthBytes": 1
+            },
+            "indexParameter17": true,
+            "teamIdWordParam4": true,
+            "teamDataStride464": true
+          }
+        },
+        "requiredChecks": {
+          "canonicalParameterOrder": true,
+          "jobColliderIndexList": true,
+          "teamDataArray": true,
+          "teamIdArray": true,
+          "flagArray": true,
+          "index": true,
+          "avx2.flagArrayGuard": true,
+          "avx2.index": true,
+          "avx2.teamId": true,
+          "avx2.teamDataStride": true,
+          "x64_sse2.flagArrayGuard": true,
+          "x64_sse2.index": true,
+          "x64_sse2.teamId": true,
+          "x64_sse2.teamDataStride": true
+        },
+        "allRequiredChecksPass": true,
+        "comparisonBasis": {
+          "managedFallbackMethodIndex": 385451,
+          "managedFallbackBodySha256": "61d0b5400bed687be8baa7bf5281119b2ce09276423b84461fc27053710c7426",
+          "canonicalParameterNames": [
+            "jobColliderIndexList",
+            "teamDataArray",
+            "centerDataArray",
+            "teamIdArray",
+            "flagArray",
+            "sizeArray",
+            "framePositions",
+            "frameRotations",
+            "frameScales",
+            "oldFramePositions",
+            "oldFrameRotations",
+            "nowPositions",
+            "nowRotations",
+            "oldPositions",
+            "oldRotations",
+            "workDataArray",
+            "lengthPtr"
+          ]
+        }
+      }
+    }
+  ],
+  "semanticDecision": {
+    "semanticCandidateHash": "8b3d2761aaaac71a35d4a2557d570456",
+    "semanticCandidateCount": 1,
+    "semanticCandidateReason": "only candidate whose canonical call order and both CPU-variant cores match managed fallback flagArray/teamIdArray/TeamData/index access evidence",
+    "wrapperToHashMappingStatus": "unresolved_runtime_GetProcAddress_required",
+    "wrapperMethodIndex": 385416,
+    "wrapperHashIdentityPublished": false
+  },
+  "boundary": [
+    "The static export body can be semantically fingerprinted but cannot prove that BurstDirectCall method 385416 selected this export at runtime.",
+    "No function pointer is loaded, called, or installed by this builder.",
+    "A changed GameAssembly.dll, global-metadata.dat, or lib_burst_generated.dll fails the three-file gate and leaves the checked-in report untouched."
+  ]
+}
