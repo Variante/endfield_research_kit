@@ -641,10 +641,14 @@ def _resolve_identity(
         and row.get("type") != target_type
         and _candidate_matches_bridge(row, source_pairs)
     ]
+    # CAB-to-AssetMap joining intentionally uses the stable suffix after VFS,
+    # but physical-source uniqueness must retain the complete normalized path.
+    # Persistent/VFS/SAME/dep.chk and StreamingAssets/VFS/SAME/dep.chk are
+    # different bytes even though their suffixes are equal.
     physical_source_pairs = {
-        (_source_suffix(source), int(offset))
+        (_normal_source(source), int(offset))
         for source, offset in source_pairs
-        if _source_suffix(source)
+        if _normal_source(source)
     }
     bridge_ambiguous = len(physical_source_pairs) > 1
     exact_map_rows: list[dict[str, Any]] = []
