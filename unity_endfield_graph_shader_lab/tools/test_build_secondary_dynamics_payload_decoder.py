@@ -7,8 +7,10 @@ import copy
 import json
 import struct
 import sys
+import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
 TOOLS_ROOT = Path(__file__).resolve().parent
@@ -116,6 +118,29 @@ class SecondaryDynamicsPayloadDecoderTests(unittest.TestCase):
         original = copy.deepcopy(payload)
         decoder.decode_payload(payload)
         self.assertEqual(payload, original)
+
+    def test_check_accepts_canonical_report_without_writing(self) -> None:
+        before = decoder.OUTPUT.read_bytes()
+        self.assertEqual(decoder.main(["--check"]), 0)
+        self.assertEqual(decoder.OUTPUT.read_bytes(), before)
+
+    def test_check_rejects_missing_or_stale_report_without_creating_it(self) -> None:
+        report = decoder.build_report()
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary) / "missing.json"
+            with mock.patch.object(decoder, "OUTPUT", output):
+                self.assertEqual(decoder.main(["--check"]), 1)
+                self.assertFalse(output.exists())
+
+                output.write_bytes(b"{}\n")
+                before = output.read_bytes()
+                self.assertEqual(decoder.main(["--check"]), 1)
+                self.assertEqual(output.read_bytes(), before)
+
+                # The check compares the same canonical bytes used for a
+                # normal write, not merely parseable JSON.
+                decoder._write_report(report)
+                self.assertEqual(decoder.main(["--check"]), 0)
 
 
 if __name__ == "__main__":
