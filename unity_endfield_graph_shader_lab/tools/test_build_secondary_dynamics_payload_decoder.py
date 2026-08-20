@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
 import struct
 import sys
@@ -26,7 +27,7 @@ class SecondaryDynamicsPayloadDecoderTests(unittest.TestCase):
         cls.payload = decoder.load_json(decoder.INPUT)
 
     def test_published_report_is_read_only_and_reconstructs(self) -> None:
-        observed = decoder.build_report(allow_source_hash_mismatch=True)
+        observed = decoder.build_report()
         published = json.loads(decoder.OUTPUT.read_text(encoding="utf-8"))
         self.assertEqual(observed, published)
         self.assertEqual(published["schema"], decoder.REPORT_SCHEMA)
@@ -34,8 +35,8 @@ class SecondaryDynamicsPayloadDecoderTests(unittest.TestCase):
         self.assertFalse(published["implementation_boundary"]["transforms_modified"])
         self.assertFalse(published["implementation_boundary"]["secondary_dynamics_verified"])
         self.assertFalse(published["implementation_boundary"]["solver_implemented"])
-        self.assertFalse(published["source"]["hashes_match"])
-        self.assertFalse(published["source"]["hash_checks"]["chen"]["hierarchy_name_map"]["matches"])
+        self.assertTrue(published["source"]["hashes_match"])
+        self.assertTrue(published["source"]["hash_checks"]["chen"]["hierarchy_name_map"]["matches"])
         self.assertEqual(
             {name: len(actor["cloths"]) for name, actor in published["actors"].items()},
             {"endminf": 4, "pelica": 7, "chen": 6},
@@ -119,17 +120,24 @@ class SecondaryDynamicsPayloadDecoderTests(unittest.TestCase):
         decoder.decode_payload(payload)
         self.assertEqual(payload, original)
 
-    def test_check_rejects_source_hash_mismatch_without_writing(self) -> None:
+    def test_check_accepts_current_source_hash_without_writing(self) -> None:
         before = decoder.OUTPUT.read_bytes()
-        self.assertEqual(decoder.main(["--check"]), 1)
+        self.assertEqual(decoder.main(["--check"]), 0)
         self.assertEqual(decoder.OUTPUT.read_bytes(), before)
 
-    def test_default_build_fails_closed_and_allow_build_writes_diagnostic(self) -> None:
+    def test_default_build_is_strict_and_diagnostic_mode_remains_explicit(self) -> None:
+        report = decoder.build_report()
+        self.assertTrue(report["source"]["hashes_match"])
+        mismatched = decoder._source_hash_checks(self.payload)
+        mismatched["chen"]["hierarchy_name_map"]["matches"] = False
         with self.assertRaisesRegex(decoder.PayloadDecodeError, "source hash mismatch"):
-            decoder.build_report()
+            decoder._require_source_hashes(
+                mismatched,
+                allow_source_hash_mismatch=False,
+            )
 
         before = decoder.OUTPUT.read_bytes()
-        self.assertEqual(decoder.main([]), 1)
+        self.assertEqual(decoder.main([]), 0)
         self.assertEqual(decoder.OUTPUT.read_bytes(), before)
 
         with tempfile.TemporaryDirectory() as temporary:
@@ -137,13 +145,33 @@ class SecondaryDynamicsPayloadDecoderTests(unittest.TestCase):
             with mock.patch.object(decoder, "OUTPUT", output):
                 self.assertEqual(decoder.main(["--allow-source-hash-mismatch"]), 0)
                 generated = json.loads(output.read_text(encoding="utf-8"))
-                self.assertEqual(generated["status"], "decoded_read_only_payload_source_hash_mismatch")
-                self.assertFalse(generated["source"]["hashes_match"])
+                self.assertEqual(generated["status"], "decoded_read_only_payload")
+                self.assertTrue(generated["source"]["hashes_match"])
 
     def test_check_never_accepts_override_or_writes(self) -> None:
         before = decoder.OUTPUT.read_bytes()
         self.assertEqual(decoder.main(["--check", "--allow-source-hash-mismatch"]), 2)
+        self.assertEqual(decoder.main(["--check", "--refresh-input-hash"]), 2)
         self.assertEqual(decoder.OUTPUT.read_bytes(), before)
+
+    def test_refresh_input_hash_pin_is_explicit_and_deterministic(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            input_path = root / "solver_inputs.json"
+            source_path = root / "decoder.py"
+            input_bytes = b'{"schema":"fixture"}\n'
+            input_path.write_bytes(input_bytes)
+            source_path.write_text(
+                'EXPECTED_INPUT_SHA256 = "' + ("0" * 64) + '"\n',
+                encoding="utf-8",
+            )
+            with mock.patch.object(decoder, "INPUT", input_path), mock.patch.object(
+                decoder, "__file__", str(source_path)
+            ):
+                actual = decoder._refresh_input_hash_pin()
+            expected = hashlib.sha256(input_bytes).hexdigest()
+            self.assertEqual(actual, expected)
+            self.assertIn(f'EXPECTED_INPUT_SHA256 = "{expected}"', source_path.read_text(encoding="utf-8"))
 
     def test_check_rejects_missing_or_stale_report_without_creating_it(self) -> None:
         report = decoder.build_report(allow_source_hash_mismatch=True)

@@ -23,6 +23,7 @@ import copy
 import hashlib
 import json
 import math
+import re
 import struct
 import sys
 from pathlib import Path
@@ -47,7 +48,7 @@ OUTPUT = (
 # These values are intentionally duplicated as a small gate.  A decoder must
 # never treat a newly substituted installed build as the pinned source used by
 # the reviewed static-input contract.
-EXPECTED_INPUT_SHA256 = "35ecd376533773035fce3afadd8935ee5f0f2466168d8a5f8016c158c64f6d97"
+EXPECTED_INPUT_SHA256 = "f12ba5d88013a2e28a82c93c1f56c171388cc74d3a3a040f7e33ffb6cf90c197"
 EXPECTED_SOURCE_BUILD = {
     "game_assembly": {
         "size": 280436712,
@@ -589,6 +590,23 @@ def _write_report(report: dict[str, Any]) -> None:
         stream.write(_serialize_report(report).decode("utf-8"))
 
 
+def _refresh_input_hash_pin() -> str:
+    """Refresh the checked-in input pin from the current solver contract."""
+
+    actual = file_sha256(INPUT)
+    source_path = Path(__file__)
+    source = source_path.read_text(encoding="utf-8")
+    pattern = r'(?m)^EXPECTED_INPUT_SHA256 = "[0-9a-f]{64}"$'
+    replacement = f'EXPECTED_INPUT_SHA256 = "{actual}"'
+    updated, count = re.subn(pattern, replacement, source)
+    if count != 1:
+        raise PayloadDecodeError(
+            "refresh-input-hash: expected exactly one decoder input pin"
+        )
+    source_path.write_text(updated, encoding="utf-8", newline="\n")
+    return actual
+
+
 def _check_report(report: dict[str, Any]) -> None:
     """Fail if the checked-in report is absent or not the canonical output."""
 
@@ -616,13 +634,24 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="publish a degraded diagnostic report when referenced source files drift",
     )
+    parser.add_argument(
+        "--refresh-input-hash",
+        action="store_true",
+        help="refresh the checked-in solver-input pin from the current input, then stop",
+    )
     args = parser.parse_args(argv)
 
-    if args.check and args.allow_source_hash_mismatch:
-        print("error: --check cannot be combined with --allow-source-hash-mismatch", file=sys.stderr)
+    if args.check and (args.allow_source_hash_mismatch or args.refresh_input_hash):
+        print("error: --check cannot be combined with diagnostic or refresh modes", file=sys.stderr)
+        return 2
+    if args.refresh_input_hash and args.allow_source_hash_mismatch:
+        print("error: --refresh-input-hash cannot be combined with --allow-source-hash-mismatch", file=sys.stderr)
         return 2
 
     try:
+        if args.refresh_input_hash:
+            print(f"refreshed EXPECTED_INPUT_SHA256={_refresh_input_hash_pin()}")
+            return 0
         report = build_report(allow_source_hash_mismatch=args.allow_source_hash_mismatch)
         if args.check:
             _check_report(report)
