@@ -113,6 +113,9 @@ class SecondaryDynamicsBurstExportTests(unittest.TestCase):
         self.assertTrue(audit["comparison"]["sameWrapperCfg"])
         self.assertTrue(audit["comparison"]["sameParameterForwarding"])
         self.assertFalse(audit["comparison"]["fieldOffsetsPresentInCandidateThunk"])
+        self.assertFalse(audit["comparison"]["staticInitializerSlotIdentityDiscriminates"])
+        self.assertTrue(audit["comparison"]["wrapperSlotsDistinct"])
+        self.assertFalse(audit["comparison"]["runtimeSelectedPointerObserved"])
         self.assertEqual(
             [row["name"] for row in audit["parameterContract"]["parameters"]],
             ["jobColliderIndexList", "nowPositions", "nowRotations", "oldPositions", "oldRotations", "_indexCount"],
@@ -129,6 +132,9 @@ class SecondaryDynamicsBurstExportTests(unittest.TestCase):
         )
         for candidate in audit["candidates"]:
             self.assertEqual(candidate["wrapper"]["branchCount"], 0)
+            self.assertEqual(candidate["wrapper"]["incomingGprPreserved"], ["rcx", "rdx", "r8", "r9"])
+            self.assertEqual(candidate["wrapper"]["payloadDereferenceCount"], 0)
+            self.assertEqual(candidate["wrapper"]["payloadWritebackCount"], 0)
             self.assertEqual(len(candidate["wrapper"]["stackParameterForwarding"]), 2)
             self.assertEqual(len(candidate["wrapper"]["outgoingStackForwarding"]), 2)
             self.assertEqual(candidate["runtimeFunctionPointerSlot"]["initializers"]["statics"][0]["staticSelectorConstants"], ["0xedfccb8b263b8f83"])

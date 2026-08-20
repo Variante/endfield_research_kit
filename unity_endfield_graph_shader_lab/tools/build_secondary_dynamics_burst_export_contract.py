@@ -740,7 +740,7 @@ def _collider_end_candidate_audit(pe: dict[str, Any], rows: list[dict[str, Any]]
                         "destination": f"[rsp+0x{dest.mem.disp:x}]",
                         "sourceRegister": ins.reg_name(ins.operands[1].reg),
                         "widthBytes": dest.size,
-                        "parameter": job_fields[4 + len(stack_forwards)].get("name"),
+                        "parameter": job_fields[4 if dest.mem.disp == 0x20 else 5].get("name"),
                     })
         if stack_loads != [
             {"instructionOffset": "0xa", "source": "[rbp+0x30]", "destinationRegister": "rax", "widthBytes": 8, "parameter": "oldRotations"},
