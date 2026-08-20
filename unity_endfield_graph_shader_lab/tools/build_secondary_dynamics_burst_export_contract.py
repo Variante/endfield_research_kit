@@ -25,6 +25,14 @@ from collections import Counter
 from pathlib import Path
 from typing import Any
 
+try:
+    from capstone import Cs, CS_ARCH_X86, CS_MODE_64
+except ImportError as exc:  # pragma: no cover - environment gate
+    Cs = None  # type: ignore[assignment]
+    _CAPSTONE_IMPORT_ERROR = exc
+else:
+    _CAPSTONE_IMPORT_ERROR = None
+
 
 LAB_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = LAB_ROOT.parent
@@ -168,69 +176,74 @@ def _pe_exports(path: Path) -> dict[str, Any]:
 
 
 def _stack_writes(body: bytes) -> list[dict[str, Any]]:
-    """Recover the small set of x64 stack-store encodings used by wrappers."""
+    raise AssertionError("_stack_writes requires decoded instructions")
+
+
+def _decode_body(code: bytes, address: int) -> tuple[bytes, list[Any]]:
+    if Cs is None:
+        raise ContractError(f"Capstone unavailable: {_CAPSTONE_IMPORT_ERROR}")
+    decoder = Cs(CS_ARCH_X86, CS_MODE_64)
+    decoder.detail = True
+    instructions = list(decoder.disasm(code, address))
+    if not instructions:
+        raise ContractError(f"no x64 instructions at 0x{address:x}")
+    ret = next((ins for ins in instructions if ins.mnemonic == "ret"), None)
+    if ret is None:
+        raise ContractError(f"no real ret instruction at 0x{address:x}")
+    end = ret.address - address + ret.size
+    return code[:end], [ins for ins in instructions if ins.address < address + end]
+
+
+def _memory_operand(ins: Any, operand: Any, base: str) -> dict[str, Any] | None:
+    if operand.type != 3 or ins.reg_name(operand.mem.base) != base:
+        return None
+    return {"offset": operand.mem.disp, "widthBytes": operand.size}
+
+
+def _stack_writes_from_instructions(instructions: list[Any]) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
-    index = 0
-    while index < len(body):
-        # mov qword ptr [rsp+disp8], r64
-        if index + 4 < len(body) and body[index] in (0x48, 0x4C) and body[index + 1] == 0x89 and (body[index + 2] & 0xC7) == 0x44 and body[index + 3] == 0x24:
-            rows.append({"offset": body[index + 4], "widthBytes": 8})
-            index += 5
+    for ins in instructions:
+        if ins.mnemonic not in {"mov", "movss", "movsd"} or not ins.operands:
             continue
-        if index + 8 <= len(body) and body[index] in (0x48, 0x4C) and body[index + 1] == 0x89 and (body[index + 2] & 0xC7) == 0x84 and body[index + 3] == 0x24:
-            rows.append({"offset": int.from_bytes(body[index + 4:index + 8], "little"), "widthBytes": 8})
-            index += 8
-            continue
-        # mov dword ptr [rsp+disp8], r32
-        if index + 3 < len(body) and body[index] == 0x89 and (body[index + 1] & 0xC7) == 0x44 and body[index + 2] == 0x24:
-            rows.append({"offset": body[index + 3], "widthBytes": 4})
-            index += 4
-            continue
-        if index + 7 <= len(body) and body[index] == 0x89 and (body[index + 1] & 0xC7) == 0x84 and body[index + 2] == 0x24:
-            rows.append({"offset": int.from_bytes(body[index + 3:index + 7], "little"), "widthBytes": 4})
-            index += 7
-            continue
-        # movss dword ptr [rsp+disp8], xmm
-        if index + 5 < len(body) and body[index:index + 3] == b"\xf3\x0f\x11" and (body[index + 3] & 0xC7) == 0x44 and body[index + 4] == 0x24:
-            rows.append({"offset": body[index + 5], "widthBytes": 4, "kind": "xmm"})
-            index += 6
-            continue
-        if index + 9 <= len(body) and body[index:index + 3] == b"\xf3\x0f\x11" and (body[index + 3] & 0xC7) == 0x84 and body[index + 4] == 0x24:
-            rows.append({"offset": int.from_bytes(body[index + 5:index + 9], "little"), "widthBytes": 4, "kind": "xmm"})
-            index += 9
-            continue
-        index += 1
-    # The byte patterns above can only occur at instruction starts in these
-    # generated wrappers; sorting makes the report independent of scan order.
+        memory = _memory_operand(ins, ins.operands[0], "rsp")
+        if memory is not None:
+            if ins.mnemonic == "movss":
+                memory["widthBytes"] = 4
+                memory["kind"] = "xmm"
+            elif ins.mnemonic == "movsd":
+                memory["widthBytes"] = 8
+                memory["kind"] = "xmm"
+            rows.append(memory)
     return sorted(rows, key=lambda row: (row["offset"], row["widthBytes"], row.get("kind", "gpr")))
 
 
 def _stack_load_registers(body: bytes) -> list[str]:
-    """Decode mov r64,[rbp+disp8] enough to detect incoming-GPR clobbers."""
-    names = ["rax", "rcx", "rdx", "rbx", "rsp", "rbp", "rsi", "rdi",
-             "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15"]
+    raise AssertionError("_stack_load_registers requires decoded instructions")
+
+
+def _stack_load_registers_from_instructions(instructions: list[Any]) -> list[str]:
     result: list[str] = []
-    for index in range(max(0, len(body) - 3)):
-        rex = body[index]
-        if rex not in (0x48, 0x4C) or body[index + 1] != 0x8B:
+    for ins in instructions:
+        if ins.mnemonic != "mov" or len(ins.operands) < 2 or ins.operands[0].type != 1:
             continue
-        modrm = body[index + 2]
-        if (modrm >> 6) != 1 or (modrm & 7) != 5:
+        memory = _memory_operand(ins, ins.operands[1], "rbp")
+        if memory is None:
             continue
-        reg = ((modrm >> 3) & 7) + (8 if rex & 4 else 0)
-        result.append(names[reg])
+        result.append(ins.reg_name(ins.operands[0].reg))
     return result
 
 
 def _xmm_stack_load_count(body: bytes) -> int:
-    count = 0
-    for index in range(max(0, len(body) - 4)):
-        if body[index:index + 3] != b"\xf3\x0f\x10":
-            continue
-        modrm = body[index + 3]
-        if (modrm & 7) == 5 and (modrm >> 6) in (1, 2):
-            count += 1
-    return count
+    raise AssertionError("_xmm_stack_load_count requires decoded instructions")
+
+
+def _xmm_stack_load_count_from_instructions(instructions: list[Any]) -> int:
+    return sum(
+        ins.mnemonic in {"movss", "movsd"}
+        and len(ins.operands) >= 2
+        and _memory_operand(ins, ins.operands[1], "rbp") is not None
+        for ins in instructions
+    )
 
 
 def _body_rows(pe: dict[str, Any]) -> list[dict[str, Any]]:
@@ -258,10 +271,9 @@ def _body_rows(pe: dict[str, Any]) -> list[dict[str, Any]]:
             raise ContractError(f"hashed export 0x{export['rva']:x} is outside PE sections")
         span = min(span, len(data) - file_offset)
         code = data[file_offset:file_offset + span]
-        ret = code.find(b"\xC3")
-        body = code[:ret + 1] if ret >= 0 else code
-        stores = _stack_writes(body)
-        loads = _stack_load_registers(body)
+        body, instructions = _decode_body(code, pe["imageBase"] + export["rva"])
+        stores = _stack_writes_from_instructions(instructions)
+        loads = _stack_load_registers_from_instructions(instructions)
         rows.append({
             "hash": export["name"],
             "rva": f"0x{export['rva']:x}",
@@ -269,13 +281,13 @@ def _body_rows(pe: dict[str, Any]) -> list[dict[str, Any]]:
             "spanBytes": span,
             "bodyBytes": len(body),
             "bodySha256": hashlib.sha256(body).hexdigest(),
-            "retBoundary": "first_ret" if ret >= 0 else "span_end",
+            "retBoundary": "decoded_ret",
             "stackWrites": stores,
             "stackWriteOffsets": [f"0x{row['offset']:x}" for row in stores],
             "stackWriteWidths": [row["widthBytes"] for row in stores],
             "stackLoadRegisterDestinations": loads,
             "incomingGprClobbers": sorted(set(loads) & {"rcx", "rdx", "r8", "r9"}),
-            "xmmStackLoadCount": _xmm_stack_load_count(body),
+            "xmmStackLoadCount": _xmm_stack_load_count_from_instructions(instructions),
             "indirectRipCallCount": body.count(b"\xff\x15"),
         })
     return rows
@@ -284,10 +296,10 @@ def _body_rows(pe: dict[str, Any]) -> list[dict[str, Any]]:
 def _target_candidates(rows: list[dict[str, Any]]) -> dict[str, Any]:
     by_hash = {row["hash"]: row for row in rows}
     stores = lambda row: [(int(offset, 16), width) for offset, width in zip(row["stackWriteOffsets"], row["stackWriteWidths"])]
-    simulation_shape = lambda row: len(stores(row)) == 25 and stores(row)[0][0] == 0x20 and stores(row)[-1][0] == 0xE0 and row["xmmStackLoadCount"] == 1
+    simulation_shape = lambda row: stores(row) == [(0x20, 4)] + [(offset, 8) for offset in range(0x28, 0xE1, 8)] and row["xmmStackLoadCount"] == 1
     sim_all = [row for row in rows if simulation_shape(row)]
     sim_qword = [row for row in sim_all if stores(row)[-1][1] == 8]
-    collider_shape = lambda row: len(stores(row)) == 13 and stores(row)[0][0] == 0x20 and stores(row)[-1][0] == 0x80 and not row["incomingGprClobbers"]
+    collider_shape = lambda row: stores(row) == [(offset, 8) for offset in range(0x20, 0x80, 8)] + [(0x80, 4)]
     collider_all = [row for row in rows if collider_shape(row)]
     collider_dword = [row for row in collider_all if stores(row)[-1][1] == 4]
     end_shape = lambda row: stores(row) == [(0x20, 8), (0x28, 8)] and not row["incomingGprClobbers"]
@@ -340,9 +352,27 @@ def _contract_snapshot(name: str) -> dict[str, Any]:
     return {"path": _path(path), "schema": payload.get("schema"), "status": payload.get("status")}
 
 
+def _validate_solver_identity_contract() -> None:
+    path = DEFAULT_OUTPUT.parent / "secondary_dynamics_solver_static_contract.json"
+    if not path.is_file():
+        raise ContractError(f"missing solver static contract: {path}")
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        method_ids = {row["methodIndex"] for row in payload.get("targets", [])}
+        for row in payload.get("targets", []):
+            method_ids.update(call.get("methodIndex") for call in row.get("nextCalls", []) if call.get("methodIndex") is not None)
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        raise ContractError(f"invalid solver static contract: {exc}") from exc
+    required = {385542, 385570, 385394, 385295}
+    missing = sorted(required - method_ids)
+    if missing:
+        raise ContractError(f"solver static contract missing target method identities: {missing}")
+
+
 def build_contract(*, game_assembly: Path | None = DEFAULT_GAME_ASSEMBLY,
                    metadata: Path | None = DEFAULT_METADATA) -> dict[str, Any]:
     gate = _native_gate(game_assembly, metadata)
+    _validate_solver_identity_contract()
     pe = _pe_exports(Path(gate["libBurstGenerated"]["path"]))
     rows = _body_rows(pe)
     hashes = [row["hash"] for row in rows]
