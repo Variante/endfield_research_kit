@@ -242,6 +242,11 @@ def project_model_view_state_audio_trigger_contexts(
                             if is_position and positioned_route is not None
                             else "unavailable" if is_position else None
                         ),
+                        "asyncBoundaryStatus": (
+                            positioned_route.get("asyncBoundaryStatus")
+                            if is_position and positioned_route is not None
+                            else "unavailable" if is_position else None
+                        ),
                         "nativeRouteStatus": "exactCurrentBuildPositionedRoute" if is_position and positioned_route is not None else (
                             "exactCurrentBuildRoute" if not is_position and normal_route is not None else "nativeRouteUnavailable"
                         ),
@@ -258,6 +263,8 @@ def project_model_view_state_audio_trigger_contexts(
                             else "unavailable" if is_position else None
                         ),
                         "audioHandleField": "self+0x28 m_audioHandle" if is_position else None,
+                        "audioHandleMeaning": "managedInternalPlayingId" if is_position else None,
+                        "nativeAkSoundEnginePlayingIdStatus": "unresolved" if is_position else None,
                         "audioHandleWriteStatus": (
                             positioned_route.get("fieldContract", {}).get("audioHandleWrite", {}).get("status")
                             if is_position and positioned_route is not None
@@ -265,6 +272,16 @@ def project_model_view_state_audio_trigger_contexts(
                         ),
                         "postAndForgetToAudioAdapterConnectionStatus": (
                             positioned_route.get("postAndForgetToAudioAdapterConnectionStatus")
+                            if is_position and positioned_route is not None
+                            else "unavailable" if is_position else None
+                        ),
+                        "postEventRuntimeStatus": (
+                            positioned_route.get("postEventRuntimeStatus")
+                            if is_position and positioned_route is not None
+                            else "unavailable" if is_position else None
+                        ),
+                        "asyncBoundaryStatus": (
+                            positioned_route.get("asyncBoundaryStatus")
                             if is_position and positioned_route is not None
                             else "unavailable" if is_position else None
                         ),

@@ -212,6 +212,11 @@ MODEL_VIEW_POSITIONED_AUDIO_NATIVE_ROUTE = {
                 {"offset": "0x6b", "targetVirtualAddress": "0x18328a150"},
             ],
             "claimBoundary": "staticManagedAdapterRouteVerified",
+            "returnContract": {
+                "offset": "0x70",
+                "bytes": "488b742440488b5c24484883c4305fc3",
+                "meaning": "rawBridgeReturnPreservedInEax",
+            },
         },
         {
             "targetType": "Beyond.Gameplay.Audio.AudioAdapter",
@@ -228,11 +233,80 @@ MODEL_VIEW_POSITIONED_AUDIO_NATIVE_ROUTE = {
             "targetToken": "0x0600005f", "targetVirtualAddress": "0x18328a690",
             "bodyLength": 0x570,
             "bodySha256": "56ffbc0cb4911163c172b38940dacd3c2f1fb06d24f5719b27e8cba0ef31e866",
-            "claimBoundary": "AkSoundEngineWwiseSelectionExecutionAudibilityUnresolved",
+            "calls": [{"offset": "0x79", "targetVirtualAddress": "0x18328a810"}, {"offset": "0x118", "targetVirtualAddress": "0x18328a870"}],
+            "returnContract": {
+                "offset": "0x11d",
+                "bytes": "8bc6",
+                "meaning": "managedInternalPlayingId",
+            },
+            "claimBoundary": "adapterRequestQueuedOrPreparedAkSoundEngineWwiseSelectionExecutionAudibilityUnresolved",
+            "guards": {
+                "managerContextActive": "manager+0xe0 != 0 and context/resource pointer non-null",
+                "audioStateAtMost": "audioState <= 0x7b",
+                "eventIdNonzero": "eventId != 0",
+                "payloadAllocated": "payload allocation at +0xa8 returns non-null",
+            },
+        },
+        {
+            "targetType": "Beyond.Gameplay.Audio.AudioAdapter",
+            "targetMethod": "_GetInternalPlayingId", "targetVirtualAddress": "0x18328a810",
+            "bodyLength": 0x33,
+            "bodySha256": "d40cd95dd740bdd969424c7e9db4d0da2476ed337afcc443abb84f6f3b160ffd",
+            "claimBoundary": "managedInternalPlayingIdCounterOnly",
+        },
+        {
+            "targetType": "Beyond.Gameplay.Audio.AudioAssetHelper",
+            "targetMethod": "_PostEventResourcePendingHelper", "targetVirtualAddress": "0x18328a870",
+            "bodyLength": 0x1ae,
+            "bodySha256": "8528419fd255e22ca465fa71ed691240d69ca70af03d65298388821aef37d708",
+            "claimBoundary": "adapterRequestQueuedOrPreparedAsyncCompletionUnresolved",
+        },
+        {
+            "targetType": "Beyond.Gameplay.Audio.AudioAssetHelper",
+            "targetMethod": "_DoLoadEventAsync", "targetMethodIndex": 480201,
+            "targetToken": "0x0600011e", "targetVirtualAddress": "0x18328afb0",
+            "bodyLength": 0x1d0,
+            "bodySha256": "fb17b445be71a8783f953f7e5c9d38f7cb840ccd8c9a654836e9edf2e188b804",
+            "calls": [
+                {"offset": "0xa5", "targetVirtualAddress": "0x18328ac60"},
+                {"offset": "0xfe", "targetVirtualAddress": "0x18328cf20"},
+                {"offset": "0x149", "targetVirtualAddress": "0x183eb0c60"},
+            ],
+            "claimBoundary": "staticLoadBankRequestBoundary",
+        },
+        {
+            "targetType": "Beyond.Gameplay.Audio.AudioAssetHelper",
+            "targetMethod": "_TryDequeueAndInvokeCallback", "targetVirtualAddress": "0x18328cf20",
+            "bodyLength": 0x1d0,
+            "bodySha256": "635867c6d52e1db4a3a77739ebeb7a6a462de4cd61d242e44dadb6138c5375ad",
+            "calls": [
+                {"offset": "0xf7", "targetVirtualAddress": "0x183084da0"},
+                {"offset": "0x130", "targetVirtualAddress": "0x183c330f0"},
+                {"offset": "0x163", "targetVirtualAddress": "0x18328d0f0"},
+            ],
+            "claimBoundary": "runtimeDynamicCompletionDelegate",
+        },
+        {
+            "targetType": "Beyond.Gameplay.Audio.AudioAssetHelper",
+            "targetMethod": "_CompletionHelper", "targetVirtualAddress": "0x18328d0f0",
+            "bodyLength": 0x2f0,
+            "bodySha256": "1be0fbdd95a8fef8dbff9bdedc63274e2441b3ea36726f01a91302a6819cbd52",
+            "calls": [
+                {"offset": "0x8e", "targetVirtualAddress": "0x18328c4e0"},
+                {"offset": "0x176", "targetVirtualAddress": "0x183a3f9c0"},
+                {"offset": "0x1b2", "targetVirtualAddress": "0x183eb0f20"},
+                {"offset": "0x210", "targetVirtualAddress": "0x18328c4e0"},
+                {"offset": "0x26a", "targetVirtualAddress": "0x183eb09f0"},
+            ],
+            "jumps": [{"offset": "0x12c", "opcode": "0xe9", "targetVirtualAddress": "0x183eb0bd0"}],
+            "opcodeSites": [{"offset": "0x75", "bytes": "ffd0"}, {"offset": "0x201", "bytes": "41ffd2"}],
+            "claimBoundary": "runtimeDynamicCompletionDelegate",
         },
     ],
     "endpointAuditStatus": "staticManagedAdapterRouteVerified",
     "postAndForgetToAudioAdapterConnectionStatus": "verified",
+    "postEventRuntimeStatus": "adapterRequestQueuedOrPrepared",
+    "asyncBoundaryStatus": "staticLoadBankPrepareEventBoundaryVerified",
     "branchBoundary": {
         "directPositionEvent": "PlaySoundAtPosition -> PostAndForget -> AudioAdapter._PostEvent statically verified; AkSoundEngine/Wwise selection, execution, and audibility unobserved",
         "customStateSwitch": "TrySwitchAudioCustomState target/body verified; control only, no Event ownership",
@@ -539,6 +613,10 @@ def _positioned_catalog_errors(route: dict[str, Any]) -> list[str]:
         errors.append("positioned endpoint audit status drift")
     if route.get("postAndForgetToAudioAdapterConnectionStatus") != "verified":
         errors.append("positioned downstream connection boundary drift")
+    if route.get("postEventRuntimeStatus") != "adapterRequestQueuedOrPrepared":
+        errors.append("positioned PostEvent runtime status drift")
+    if route.get("asyncBoundaryStatus") != "staticLoadBankPrepareEventBoundaryVerified":
+        errors.append("positioned async boundary status drift")
     return errors[:8]
 
 
@@ -570,12 +648,12 @@ def _audit_positioned_endpoint(
             )
     for site in endpoint.get("opcodeSites") or ():
         offset = int(site["offset"], 0)
-        opcode = int(site["opcode"], 0)
-        if offset >= len(body) or body[offset] != opcode:
-            actual = body[offset] if offset < len(body) else None
+        expected_bytes = bytes.fromhex(str(site.get("bytes") or f"{int(site['opcode'], 0):02x}"))
+        actual_bytes = body[offset:offset + len(expected_bytes)]
+        if actual_bytes != expected_bytes:
             raise ValueError(
                 f"{endpoint.get('targetMethod')} opcode drift at +0x{offset:x}: "
-                f"expected 0x{opcode:02x} got {('0x%02x' % actual) if actual is not None else 'missing'}"
+                f"expected {expected_bytes.hex()} got {actual_bytes.hex()}"
             )
     for jump in endpoint.get("jumps") or ():
         offset = int(jump["offset"], 0)
@@ -588,6 +666,16 @@ def _audit_positioned_endpoint(
             raise ValueError(
                 f"{endpoint.get('targetMethod')} jump drift at +0x{offset:x}: "
                 f"expected 0x{target:x} got 0x{actual:x}"
+            )
+    return_contract = endpoint.get("returnContract")
+    if isinstance(return_contract, dict):
+        offset = int(return_contract["offset"], 0)
+        expected_bytes = bytes.fromhex(str(return_contract["bytes"]))
+        actual_bytes = body[offset:offset + len(expected_bytes)]
+        if actual_bytes != expected_bytes:
+            raise ValueError(
+                f"{endpoint.get('targetMethod')} return drift at +0x{offset:x}: "
+                f"expected {expected_bytes.hex()} got {actual_bytes.hex()}"
             )
     return body, sites
 
@@ -668,7 +756,7 @@ def audit_model_view_positioned_audio_native_route(
         }
     return {
         "status": "validated",
-        "reason": "exact positioned catalog, body SHA256, E8 calls, and managed-adapter E9 transfer validated",
+        "reason": "exact positioned catalog, body SHA256, E8 calls, managed-adapter E9, and async LoadBank/PrepareEvent boundary validated",
         "route": _route_with_fingerprints(native_context, expected),
         "checks": {
             "catalog": "validated",
@@ -677,8 +765,11 @@ def audit_model_view_positioned_audio_native_route(
             "consumerAudioHandleWrite": "validated",
             "endpointBodiesAndCalls": "validated",
             "managedAdapterE9Transfer": "validated",
+            "asyncLoadBankPrepareEvent": "validated",
             "endpointAuditStatus": "staticManagedAdapterRouteVerified",
             "postAndForgetToAudioAdapterConnection": "verified",
+            "postEventRuntimeStatus": "adapterRequestQueuedOrPrepared",
+            "asyncBoundaryStatus": "staticLoadBankPrepareEventBoundaryVerified",
         },
     }
 
