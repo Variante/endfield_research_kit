@@ -149,10 +149,20 @@ function record(kind, values) {
 }
 
 function resolverPath(value) {
-  if (!value) return { value: null, matched: false };
+  if (value === null || value === undefined) return { value: null, matched: false };
   try {
-    const path = value.readUtf16String(capture.maxLibraryPathChars);
-    if (path === null) return { value: null, matched: false };
+    const pointer = ptr(value);
+    if (pointer.isNull()) return { value: null, matched: false };
+    let length = 0;
+    for (; length < capture.maxLibraryPathChars; length++) {
+      if (pointer.add(length * 2).readU16() === 0) break;
+    }
+    if (length >= capture.maxLibraryPathChars) {
+      fatal("loadlibrary_path_unterminated", { maxChars: capture.maxLibraryPathChars });
+      return { value: null, matched: false, failed: true };
+    }
+    const path = length === 0 ? "" : pointer.readUtf16String(length);
+    if (path === null) return { value: null, matched: false, failed: true };
     const normalized = String(path).replace(/\//g, "\\").toLowerCase();
     const leaf = normalized.split("\\").pop();
     return {
@@ -166,13 +176,27 @@ function resolverPath(value) {
 }
 
 function procName(value) {
-  if (!value) return { value: null, type: "null" };
+  // Frida supplies a NativePointer for every native argument, including a
+  // NULL pointer.  NativePointer(0) is truthy in JavaScript, so check the
+  // pointer value before applying the ordinal convention.  Treating NULL as
+  // ordinal #0 would misrepresent an invalid GetProcAddress call and would
+  // also make the bounded ANSI read look successful.
   try {
+    if (value === null || value === undefined) return { value: null, type: "null" };
     const pointer = ptr(value);
+    if (pointer.isNull()) return { value: null, type: "null" };
     if (pointer.compare(ptr("0x10000")) < 0) {
       return { value: "#" + pointer.toUInt32(), type: "ordinal" };
     }
-    const name = pointer.readCString(capture.maxProcNameChars);
+    let length = 0;
+    for (; length < capture.maxProcNameChars; length++) {
+      if (pointer.add(length).readU8() === 0) break;
+    }
+    if (length >= capture.maxProcNameChars) {
+      fatal("getproc_name_unterminated", { maxBytes: capture.maxProcNameChars });
+      return { value: null, type: "unreadable" };
+    }
+    const name = length === 0 ? "" : pointer.readAnsiString(length);
     if (name === null) {
       fatal("getproc_name_unreadable", {});
       return { value: null, type: "unreadable" };
@@ -192,10 +216,22 @@ function gameAssemblyBacktrace(context) {
       if (frames.length >= capture.maxBacktraceFrames) break;
       let owner = null;
       try { owner = Process.findModuleByAddress(address); } catch (_) { owner = null; }
-      if (!owner || String(owner.name).toLowerCase() !== gameAssemblyName) continue;
+      // Match the verified module instance, not just a basename.  A basename
+      // alone is insufficient if a same-named DLL was loaded from another
+      // directory or a module was replaced while the trace was running.
+      if (
+        !owner ||
+        !gameAssembly ||
+        String(owner.name).toLowerCase() !== gameAssemblyName ||
+        !ptr(owner.base).equals(ptr(gameAssembly.base)) ||
+        String(owner.path).toLowerCase() !== String(gameAssembly.path).toLowerCase()
+      ) continue;
       frames.push({
         address: pointerText(address),
         module: owner.name,
+        modulePath: owner.path,
+        moduleBase: pointerText(owner.base),
+        moduleSize: owner.size,
         offset: pointerText(ptr(address).sub(owner.base)),
       });
     }
@@ -242,12 +278,16 @@ function attachHook(name, spec) {
       },
       onLeave(retval) {
         if (name === "loadLibraryW") {
-          if (this.pathReadFailed || !this.resolverMatch || terminalState || !captureEnabled || capped) return;
+          if (this.pathReadFailed || !this.resolverMatch || terminalState || capped) return;
           const loaded = !retval.isNull();
           const module = loaded ? (() => {
             try { return Process.findModuleByAddress(retval); } catch (_) { return null; }
           })() : null;
           if (loaded && !setResolverIdentity(retval, module ? module.path : this.requestedPath, "loadlibraryw")) return;
+          // Identity discovery must not depend on the capture trigger.  The
+          // resolver may load during the attach-to-trigger window; retain its
+          // HMODULE so GetProcAddress calls after start are still attributed.
+          if (!captureEnabled) return;
           record("resolver_module_loaded", {
             requestedPath: this.requestedPath,
             hModule: pointerText(retval),

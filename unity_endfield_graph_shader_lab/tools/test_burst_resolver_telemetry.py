@@ -35,8 +35,15 @@ class BurstResolverTelemetryTests(unittest.TestCase):
         self.assertIn("LoadLibraryW", rendered)
         self.assertIn("GetProcAddress", rendered)
         self.assertIn("gameAssemblyCallerBacktrace", rendered)
+        self.assertIn("readAnsiString", rendered)
+        self.assertIn("loadlibrary_path_unterminated", rendered)
+        identity = rendered.index('setResolverIdentity(retval, module ? module.path : this.requestedPath, "loadlibraryw")')
+        capture_guard = rendered.index("if (!captureEnabled) return;", identity)
+        self.assertLess(identity, capture_guard)
         for forbidden in ("writeByteArray", "Memory.patchCode", "NativeFunction", "send({ channel: \"write\""):
             self.assertNotIn(forbidden, rendered)
+        self.assertIn("pointer.isNull()", rendered)
+        self.assertIn('type: "null"', rendered)
 
     def test_check_only_does_not_load_frida_or_attach(self) -> None:
         with tempfile.TemporaryDirectory() as temp:

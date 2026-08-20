@@ -58,6 +58,8 @@ class ValidateBurstResolverTelemetryTests(unittest.TestCase):
         }
         add(
             "native_module_verified",
+            attachedModulePath="D:/Program Files/Endfield Game/GameAssembly.dll",
+            attachedModuleSize=manifest["files"]["gameAssembly"]["bytes"],
             modulePathMatch=True,
             moduleSizeMatch=True,
             verifiedFiles=files,
@@ -74,7 +76,14 @@ class ValidateBurstResolverTelemetryTests(unittest.TestCase):
             lpProcNameType="name",
             returnPointer="0x7000",
             gameAssemblyCallerBacktrace=[
-                {"address": "0x180123456", "module": "GameAssembly.dll", "offset": "0x123456"}
+                {
+                    "address": "0x180123456",
+                    "module": "GameAssembly.dll",
+                    "modulePath": "D:/Program Files/Endfield Game/GameAssembly.dll",
+                    "moduleBase": "0x180000000",
+                    "moduleSize": manifest["files"]["gameAssembly"]["bytes"],
+                    "offset": "0x123456",
+                }
             ],
             backtraceStatus="gameassembly_frames",
             threadId=42,
@@ -103,6 +112,33 @@ class ValidateBurstResolverTelemetryTests(unittest.TestCase):
         self.assertTrue(result["claims"]["gameAssemblyCallerBacktraceObserved"])
         self.assertFalse(result["claims"]["resolverExportMappingProven"])
         self.assertFalse(result["claims"]["gameStateWritten"])
+
+    def test_null_proc_result_and_failed_load_are_valid_observations(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "trace.jsonl"
+            self._write_trace(path)
+            rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+            rows.insert(
+                3,
+                {
+                    **rows[3],
+                    "seq": 3,
+                    "kind": "resolver_module_loaded",
+                    "requestedPath": "D:/Program Files/Endfield Game/Endfield_Data/Plugins/lib_burst_generated.dll",
+                    "hModule": "0x0",
+                    "loadSucceeded": False,
+                    "module": {"status": "loadlibraryw", "name": None, "path": None, "base": None, "size": None},
+                },
+            )
+            for seq, row in enumerate(rows):
+                row["seq"] = seq
+            get_proc = next(row for row in rows if row["kind"] == "get_proc_address")
+            get_proc["lpProcName"] = None
+            get_proc["lpProcNameType"] = "null"
+            get_proc["returnPointer"] = "0x0"
+            path.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
+            result = validator.validate_trace(path)
+        self.assertEqual(result["getProcAddressEventCount"], 1)
 
     def test_foreign_hmodule_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
