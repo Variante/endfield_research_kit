@@ -145,14 +145,15 @@
 
   const mapFloorNumber = (layer) => {
     const key = String(layer?.nameKey || "");
-    const match = key.match(/([0-9]+)$/);
+    const match = key.match(/_layer_tips_([0-9]+)$/i);
     return match ? match[1] : "";
   };
 
   const mapLayerLabel = (layer) => {
     const number = mapFloorNumber(layer);
     const tier = layer?.tierId ?? layer?.id;
-    return number ? `${t("mapFloor")} ${number} / ${t("mapTier")} ${tier}` : `${t("mapTier")} ${tier}`;
+    if (number) return `${t("mapFloor")} ${number} / ${t("mapTier")} ${tier}`;
+    return layer?.displayName ? `${layer.displayName} / ${t("mapTier")} ${tier}` : `${t("mapTier")} ${tier}`;
   };
 
   const mapLayerRange = (layer) => {
@@ -161,18 +162,28 @@
     return `Y ${Number(range.minY).toFixed(1)} - ${Number(range.maxY).toFixed(1)}`;
   };
 
-  // A region contains tiers from several sibling sub-maps. Expose only the
-  // selected sub-map as one current-floor selector, so changing floors is
-  // explicit and transparent overlays from different heights never blend.
+  // A stitched region owns the floor selector as a whole. Keep sibling maps
+  // grouped so every authored tier remains reachable without pretending that
+  // unrelated local overlays are consecutive floors of one building.
   const mapLayerTreeHtml = (data) => {
-    const layers = (data.mapLayers || []).filter((layer) => layer.levelId === state.selected);
+    const layers = data.mapLayers || [];
     if (!layers.length) return `<p class="mr-note">${esc(t("mapLayersNone"))}</p>`;
     const selected = [...state.mapLayers][0] || "";
-    const options = layers.map((layer) => {
-      const id = String(layer.id);
-      const label = mapLayerLabel(layer);
-      const range = mapLayerRange(layer);
-      return `<option value="${esc(id)}" ${selected === id ? "selected" : ""}>${esc(range ? `${label} · ${range}` : label)}</option>`;
+    const groups = new Map();
+    for (const layer of layers) {
+      if (!groups.has(layer.levelId)) groups.set(layer.levelId, []);
+      groups.get(layer.levelId).push(layer);
+    }
+    const options = [...groups.entries()].map(([levelId, rows]) => {
+      const levelName = rows[0]?.levelName || levelId;
+      const label = levelName === levelId ? levelId : `${levelName} (${levelId})`;
+      const choices = rows.map((layer) => {
+        const id = String(layer.id);
+        const floorLabel = mapLayerLabel(layer);
+        const range = mapLayerRange(layer);
+        return `<option value="${esc(id)}" ${selected === id ? "selected" : ""}>${esc(range ? `${floorLabel} · ${range}` : floorLabel)}</option>`;
+      }).join("");
+      return `<optgroup label="${esc(label)}">${choices}</optgroup>`;
     }).join("");
     return `<label class="mr-floor-picker"><span>${esc(t("mapFloorChoose"))}</span><select data-map-floor-select aria-label="${esc(t("mapLayers"))}" title="${esc(t("mapFloorNoneHint"))}"><option value="" ${selected ? "" : "selected"}>${esc(t("mapFloorNone"))}</option>${options}</select></label>`;
   };
@@ -1418,6 +1429,7 @@
           <button type="button" data-map-reset aria-label="${esc(t("resetLong"))}" title="${esc(t("resetLong"))}">${esc(t("reset"))}</button>
           <span class="mr-zoom-readout" role="status" aria-live="polite"></span>
         </div>
+        <div class="mr-floor-dock">${mapLayerControls}</div>
         <p class="mr-help">${esc(t("help"))}</p>
         <div class="mr-axis">+Z -> X -></div>
         ${state.nodes.length || bgRects.length || state.locationLabels.length ? "" : `<p class="mr-empty">${esc(t("noNodes"))}</p>`}
@@ -1458,7 +1470,6 @@
              <button type="button" data-map-layers="story">${esc(t("layersStory"))}</button>
            </div>
            <p class="mr-note mr-layer-selection-hint">${esc(t("layerSelectionHint"))}</p>
-           ${data.mapLayers?.length ? `<h2>${esc(t("mapLayers"))}</h2><div class="mr-layers">${mapLayerControls}</div>` : ""}
            <h2>${esc(t("relations"))}</h2>
           <div class="mr-layer-actions" role="group" aria-label="${esc(t("relations"))}">
             ${["focus", "all", "off"].map((mode) => `<button type="button" data-map-relations="${mode}" aria-pressed="${state.relations === mode ? "true" : "false"}">${esc(t(`relations_${mode}`))}</button>`).join("")}
@@ -1853,11 +1864,14 @@
       for (const row of payload.markers || []) markers.push({ ...row, levelId: member.id, mapLayerIds: (row.mapLayerIds || []).map((id) => `${member.id}:${id}`) });
       for (const layer of payload.mapConfig?.layers || []) {
         const id = `${member.id}:${layer.id}`;
+        const displayName = (payload.mapConfig?.staticElements || [])
+          .find((row) => row.textId && row.textId === layer.nameKey)?.text || "";
         mapLayers.push({
           ...layer,
           id,
           levelId: member.id,
           levelName: member.payload.name || member.payload.label || member.id,
+          displayName,
         });
         const rendered = (payload.minimap?.layers || []).find((row) => row.id === layer.id);
         if (rendered?.src && rendered.worldBounds) layerBackgrounds.push({ ...rendered, id, levelId: member.id });
