@@ -1,0 +1,30 @@
+# Secondary dynamics BurstDirectCall wrapper contract
+
+Status: `initialization_resolution_chain_closed_export_mapping_unresolved`.
+
+The pinned GameAssembly/metadata registration and Burst DLL export directory close the managed wrapper and BurstCompilerService path. The final hashed export remains unresolved: all 628 export-directory names are bounded candidates until runtime GetProcAddress telemetry observes the selected HMODULE/name.
+
+| Method | Role | Span | Direct calls |
+|---:|---|---|---|
+| 385570 | simulation_start_entry | `0x1867775fc..0x1867779ac` (944 B) | 0x180035ed0 @ 0x3a, 0x180035ed0 @ 0x46, 0x1800036a0 @ 0x59, 489283 @ 0x60, 0x1800036a0 @ 0x74, 385566 @ 0x7b, 385547 @ 0x38b |
+| 385394 | collider_start_entry | `0x186761454..0x186761580` (300 B) | 0x180035ed0 @ 0x33, 0x1800036a0 @ 0x46, 385416 @ 0x10c |
+| 385295 | collider_end_entry | `0x18675a944..0x18675a9cc` (136 B) | 0x180035ed0 @ 0x30, 0x1800036a0 @ 0x43, 385317 @ 0x6e |
+| 385416 | collider_start_directcall | `0x186762cc0..0x186762edc` (540 B) | 0x180035ed0 @ 0x33, 0x180035ed0 @ 0x3f, 0x1800036a0 @ 0x52, 489283 @ 0x59, 0x1800036a0 @ 0x6d, 385412 @ 0x74, 385396 @ 0x1fd |
+| 385317 | collider_end_directcall | `0x18675b0cc..0x18675b1d4` (264 B) | 0x180035ed0 @ 0x39, 0x180035ed0 @ 0x45, 0x1800036a0 @ 0x58, 489283 @ 0x5f, 0x1800036a0 @ 0x6f, 385313 @ 0x76, 385294 @ 0xdd |
+| 385566 | simulation_get_function_pointer | `0x1867775a8..0x1867775fc` (84 B) | 0x180035ed0 @ 0x14, 0x18002c880 @ 0x39, 385565 @ 0x45 |
+| 385565 | simulation_get_function_pointer_discard | `0x1867774a4..0x1867775a8` (260 B) | 0x180035ed0 @ 0x28, 0x180035ed0 @ 0x34, 0x180035ed0 @ 0x40, 0x180035ed0 @ 0x4c, 0x1800036a0 @ 0x5f, 0x1800036a0 @ 0x78, 0x1800036a0 @ 0xa4, 489285 @ 0xb5, 0x1800036a0 @ 0xd2 |
+| 385412 | collider_start_get_function_pointer | `0x186762c6c..0x186762cc0` (84 B) | 0x180035ed0 @ 0x14, 0x18002c880 @ 0x39, 385411 @ 0x45 |
+| 385411 | collider_start_get_function_pointer_discard | `0x186762b68..0x186762c6c` (260 B) | 0x180035ed0 @ 0x28, 0x180035ed0 @ 0x34, 0x180035ed0 @ 0x40, 0x180035ed0 @ 0x4c, 0x1800036a0 @ 0x5f, 0x1800036a0 @ 0x78, 0x1800036a0 @ 0xa4, 489285 @ 0xb5, 0x1800036a0 @ 0xd2 |
+| 385313 | collider_end_get_function_pointer | `0x18675b078..0x18675b0cc` (84 B) | 0x180035ed0 @ 0x14, 0x18002c880 @ 0x39, 385312 @ 0x45 |
+| 385312 | collider_end_get_function_pointer_discard | `0x18675af74..0x18675b078` (260 B) | 0x180035ed0 @ 0x28, 0x180035ed0 @ 0x34, 0x180035ed0 @ 0x40, 0x180035ed0 @ 0x4c, 0x1800036a0 @ 0x5f, 0x1800036a0 @ 0x78, 0x1800036a0 @ 0xa4, 489285 @ 0xb5, 0x1800036a0 @ 0xd2 |
+| 385567 | simulation_constructor | `0x183fb21e0..0x183fb2270` (144 B) | 0x180035ed0 @ 0x16, 0x180035ed0 @ 0x22, 0x180035ed0 @ 0x2e, 0x18002c880 @ 0x51, 489284 @ 0x5b, 0x18002c880 @ 0x73 |
+| 385413 | collider_start_constructor | `0x183fb2660..0x183fb26f0` (144 B) | 0x180035ed0 @ 0x16, 0x180035ed0 @ 0x22, 0x180035ed0 @ 0x2e, 0x18002c880 @ 0x51, 489284 @ 0x5b, 0x18002c880 @ 0x73 |
+| 385314 | collider_end_constructor | `0x183fb29c0..0x183fb2a50` (144 B) | 0x180035ed0 @ 0x16, 0x180035ed0 @ 0x22, 0x180035ed0 @ 0x2e, 0x18002c880 @ 0x51, 489284 @ 0x5b, 0x18002c880 @ 0x73 |
+| 489283 | burst_compiler_enabled | `0x18307b8d0..0x18307b940` (112 B) | - |
+| 489284 | burst_compiler_ilpp_init | `0x183fb0bc0..0x183fb0ca0` (224 B) | 489288 @ 0xa1 |
+| 489285 | burst_compiler_function_pointer | `0x18474f6f0..0x18474f720` (48 B) | - |
+| 489288 | burst_compiler_service_bridge | `0x183fb0d30..0x183fb0fd0` (672 B) | 402096 @ 0x136, 402097 @ 0x13f |
+| 402096 | burst_compiler_service_compile_async | `0x183fb1010..0x183fb1060` (80 B) | 0x180059fc0 @ 0x36 |
+| 402097 | burst_compiler_service_get_async | `0x183fb0fd0..0x183fb1010` (64 B) | 0x180059fc0 @ 0x25 |
+
+No wrapper-to-hash mapping is asserted. The generated contract records the complete bounded candidate count/hash and preserves runtime telemetry as the required next gate.

@@ -1,0 +1,1339 @@
+{
+  "schema": "endfield.charinfo.secondary-dynamics-burst-wrapper.v1",
+  "status": "initialization_resolution_chain_closed_export_mapping_unresolved",
+  "nativeGate": {
+    "gameAssembly": {
+      "path": "D:\\Program Files\\Endfield Game\\GameAssembly.dll",
+      "size": 280436712,
+      "sha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
+    },
+    "globalMetadata": {
+      "path": "D:\\Program Files\\Endfield Game\\Endfield_Data\\il2cpp_data\\Metadata\\global-metadata.dat",
+      "size": 62925560,
+      "sha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
+    },
+    "libBurstGenerated": {
+      "path": "D:\\Program Files\\Endfield Game\\Endfield_Data\\Plugins\\x86_64\\lib_burst_generated.dll",
+      "size": 4042216,
+      "sha256": "ee8702dd63dec2db7dc29d5bc23b8acd032f0e19a0daad5f69e6c45f9d3ceb99"
+    }
+  },
+  "registration": {
+    "codeRegistrationVa": "0x18b9217d0",
+    "metadataRegistrationVa": "0x18b921c30"
+  },
+  "staticEvidence": {
+    "methodIdentitySource": "global-metadata.dat method records joined to code-registration method_by_pointer",
+    "spanBoundarySource": "next sorted all_pointers entry after each resolved method pointer",
+    "bodyEvidenceSource": "GameAssembly.dll PE bytes bounded by the adjacent all_pointers span",
+    "hash": "SHA-256 of each bounded PE body",
+    "directCallEvidence": "x64 E8 rel32 bytes at the recorded instruction offsets",
+    "ripGlobalEvidence": "x64 RIP-relative displacement bytes at the recorded instruction offsets"
+  },
+  "targets": [
+    {
+      "methodIndex": 385570,
+      "type": "BeyondDynamicBone.SimulationManager+StartSimulationStepJobKernels+StartSimulationStepRangeKernel_00000408$BurstDirectCall",
+      "method": "Invoke",
+      "token": "0x060007eb",
+      "returnType": "System.Void",
+      "role": "simulation_start_entry",
+      "va": "0x1867775fc",
+      "endVaExclusive": "0x1867779ac",
+      "spanBytes": 944,
+      "bodySha256": "cafeebc9f217a60a011aaac5d3df41e50b0c1afe05e1189c3295a53741482530",
+      "directCalls": [
+        {
+          "instructionOffset": "0x3a",
+          "targetVa": "0x180035ed0",
+          "kind": "runtime_class_init"
+        },
+        {
+          "instructionOffset": "0x46",
+          "targetVa": "0x180035ed0",
+          "kind": "runtime_class_init"
+        },
+        {
+          "instructionOffset": "0x59",
+          "targetVa": "0x1800036a0",
+          "kind": "delegate_field_load"
+        },
+        {
+          "instructionOffset": "0x60",
+          "targetVa": "0x18307b8d0",
+          "kind": "BurstCompiler.get_IsEnabled",
+          "methodIndex": 489283
+        },
+        {
+          "instructionOffset": "0x74",
+          "targetVa": "0x1800036a0",
+          "kind": "delegate_field_load"
+        },
+        {
+          "instructionOffset": "0x7b",
+          "targetVa": "0x1867775a8",
+          "kind": "GetFunctionPointer",
+          "methodIndex": 385566
+        },
+        {
+          "instructionOffset": "0x38b",
+          "targetVa": "0x1867673dc",
+          "kind": "managed_fallback",
+          "methodIndex": 385547
+        }
+      ],
+      "ripGlobals": [
+        {
+          "instructionOffset": "0xa",
+          "targetVa": "0x18f38145d",
+          "kind": "initialization_guard"
+        },
+        {
+          "instructionOffset": "0x33",
+          "targetVa": "0x18e366608",
+          "kind": "initialization_state"
+        },
+        {
+          "instructionOffset": "0x3f",
+          "targetVa": "0x18e30d578",
+          "kind": "delegate_state"
+        },
+        {
+          "instructionOffset": "0x4b",
+          "targetVa": "0x18f38145d",
+          "kind": "initialization_guard_store"
+        },
+        {
+          "instructionOffset": "0x52",
+          "targetVa": "0x18e366608",
+          "kind": "initialization_state_load"
+        },
+        {
+          "instructionOffset": "0x6d",
+          "targetVa": "0x18e30d578",
+          "kind": "delegate_state_load"
+        }
+      ],
+      "indirectCalls": [
+        {
+          "instructionOffset": "0x208",
+          "register": "rdx",
+          "kind": "burst_function_pointer_call",
+          "encoding": "ffd2"
+        }
+      ]
+    },
+    {
+      "methodIndex": 385394,
+      "type": "BeyondDynamicBone.ColliderManager+StartSimulationStepJobKernels",
+      "method": "StartSimulationStepRangeKernel",
+      "token": "0x0600073b",
+      "returnType": "System.Void",
+      "role": "collider_start_entry",
+      "va": "0x186761454",
+      "endVaExclusive": "0x186761580",
+      "spanBytes": 300,
+      "bodySha256": "8288afcbf74538804fca27116411829f357da2926614202c0ed6ae3313b1b9c7",
+      "directCalls": [
+        {
+          "instructionOffset": "0x33",
+          "targetVa": "0x180035ed0",
+          "kind": "runtime_class_init"
+        },
+        {
+          "instructionOffset": "0x46",
+          "targetVa": "0x1800036a0",
+          "kind": "delegate_field_load"
+        },
+        {
+          "instructionOffset": "0x10c",
+          "targetVa": "0x186762cc0",
+          "kind": "BurstDirectCall.Invoke",
+          "methodIndex": 385416
+        }
+      ],
+      "ripGlobals": [
+        {
+          "instructionOffset": "0x17",
+          "targetVa": "0x18f38141e",
+          "kind": "initialization_guard"
+        },
+        {
+          "instructionOffset": "0x2c",
+          "targetVa": "0x18e2ef3a0",
+          "kind": "initialization_state"
+        },
+        {
+          "instructionOffset": "0x38",
+          "targetVa": "0x18f38141e",
+          "kind": "initialization_guard_store"
+        },
+        {
+          "instructionOffset": "0x3f",
+          "targetVa": "0x18e2ef3a0",
+          "kind": "initialization_state_load"
+        }
+      ]
+    },
+    {
+      "methodIndex": 385295,
+      "type": "BeyondDynamicBone.EndSimulationStepJobKernels",
+      "method": "EndSimulationStepRangeKernel",
+      "token": "0x060006d8",
+      "returnType": "System.Void",
+      "role": "collider_end_entry",
+      "va": "0x18675a944",
+      "endVaExclusive": "0x18675a9cc",
+      "spanBytes": 136,
+      "bodySha256": "cb44336ba8aca6b48b51f77a6523c65e8bebe76b57efa5b680d4d721b28f92e1",
+      "directCalls": [
+        {
+          "instructionOffset": "0x30",
+          "targetVa": "0x180035ed0",
+          "kind": "runtime_class_init"
+        },
+        {
+          "instructionOffset": "0x43",
+          "targetVa": "0x1800036a0",
+          "kind": "delegate_field_load"
+        },
+        {
+          "instructionOffset": "0x6e",
+          "targetVa": "0x18675b0cc",
+          "kind": "BurstDirectCall.Invoke",
+          "methodIndex": 385317
+        }
+      ],
+      "ripGlobals": [
+        {
+          "instructionOffset": "0x14",
+          "targetVa": "0x18f3813fd",
+          "kind": "initialization_guard"
+        },
+        {
+          "instructionOffset": "0x29",
+          "targetVa": "0x18e2ef510",
+          "kind": "initialization_state"
+        },
+        {
+          "instructionOffset": "0x35",
+          "targetVa": "0x18f3813fd",
+          "kind": "initialization_guard_store"
+        },
+        {
+          "instructionOffset": "0x3c",
+          "targetVa": "0x18e2ef510",
+          "kind": "initialization_state_load"
+        }
+      ]
+    },
+    {
+      "methodIndex": 385416,
+      "type": "BeyondDynamicBone.ColliderManager+StartSimulationStepJobKernels+StartSimulationStepRangeKernel_000003D8$BurstDirectCall",
+      "method": "Invoke",
+      "token": "0x06000751",
+      "returnType": "System.Void",
+      "role": "collider_start_directcall",
+      "va": "0x186762cc0",
+      "endVaExclusive": "0x186762edc",
+      "spanBytes": 540,
+      "bodySha256": "7df4869600061f52675346458da081a90aa0afe2971e233d0fa388d9bc0d69e9",
+      "directCalls": [
+        {
+          "instructionOffset": "0x33",
+          "targetVa": "0x180035ed0",
+          "kind": "runtime_class_init"
+        },
+        {
+          "instructionOffset": "0x3f",
+          "targetVa": "0x180035ed0",
+          "kind": "runtime_class_init"
+        },
+        {
+          "instructionOffset": "0x52",
+          "targetVa": "0x1800036a0",
+          "kind": "delegate_field_load"
+        },
+        {
+          "instructionOffset": "0x59",
+          "targetVa": "0x18307b8d0",
+          "kind": "BurstCompiler.get_IsEnabled",
+          "methodIndex": 489283
+        },
+        {
+          "instructionOffset": "0x6d",
+          "targetVa": "0x1800036a0",
+          "kind": "delegate_field_load"
+        },
+        {
+          "instructionOffset": "0x74",
+          "targetVa": "0x186762c6c",
+          "kind": "GetFunctionPointer",
+          "methodIndex": 385412
+        },
+        {
+          "instructionOffset": "0x1fd",
+          "targetVa": "0x1867584a0",
+          "kind": "managed_fallback",
+          "methodIndex": 385396
+        }
+      ],
+      "ripGlobals": [
+        {
+          "instructionOffset": "0x17",
+          "targetVa": "0x18f381425",
+          "kind": "initialization_guard"
+        },
+        {
+          "instructionOffset": "0x2c",
+          "targetVa": "0x18e366608",
+          "kind": "initialization_state"
+        },
+        {
+          "instructionOffset": "0x38",
+          "targetVa": "0x18e2ef3a0",
+          "kind": "delegate_state"
+        },
+        {
+          "instructionOffset": "0x44",
+          "targetVa": "0x18f381425",
+          "kind": "initialization_guard_store"
+        },
+        {
+          "instructionOffset": "0x4b",
+          "targetVa": "0x18e366608",
+          "kind": "initialization_state_load"
+        },
+        {
+          "instructionOffset": "0x66",
+          "targetVa": "0x18e2ef3a0",
+          "kind": "delegate_state_load"
+        }
+      ],
+      "indirectCalls": [
+        {
+          "instructionOffset": "0x13d",
+          "register": "r10",
+          "kind": "burst_function_pointer_call",
+          "encoding": "41ffd2"
+        }
+      ]
+    },
+    {
+      "methodIndex": 385317,
+      "type": "BeyondDynamicBone.EndSimulationStepJobKernels+EndSimulationStepRangeKernel_000003BB$BurstDirectCall",
+      "method": "Invoke",
+      "token": "0x060006ee",
+      "returnType": "System.Void",
+      "role": "collider_end_directcall",
+      "va": "0x18675b0cc",
+      "endVaExclusive": "0x18675b1d4",
+      "spanBytes": 264,
+      "bodySha256": "af0bc7f23f65b57b0635f634adad4b9024c7e7c2f36818f26b622a0d56f544f1",
+      "directCalls": [
+        {
+          "instructionOffset": "0x39",
+          "targetVa": "0x180035ed0",
+          "kind": "runtime_class_init"
+        },
+        {
+          "instructionOffset": "0x45",
+          "targetVa": "0x180035ed0",
+          "kind": "runtime_class_init"
+        },
+        {
+          "instructionOffset": "0x58",
+          "targetVa": "0x1800036a0",
+          "kind": "delegate_field_load"
+        },
+        {
+          "instructionOffset": "0x5f",
+          "targetVa": "0x18307b8d0",
+          "kind": "BurstCompiler.get_IsEnabled",
+          "methodIndex": 489283
+        },
+        {
+          "instructionOffset": "0x6f",
+          "targetVa": "0x1800036a0",
+          "kind": "delegate_field_load"
+        },
+        {
+          "instructionOffset": "0x76",
+          "targetVa": "0x18675b078",
+          "kind": "GetFunctionPointer",
+          "methodIndex": 385313
+        },
+        {
+          "instructionOffset": "0xdd",
+          "targetVa": "0x18675a834",
+          "kind": "managed_fallback",
+          "methodIndex": 385294
+        }
+      ],
+      "ripGlobals": [
+        {
+          "instructionOffset": "0x1d",
+          "targetVa": "0x18f381404",
+          "kind": "initialization_guard"
+        },
+        {
+          "instructionOffset": "0x32",
+          "targetVa": "0x18e366608",
+          "kind": "initialization_state"
+        },
+        {
+          "instructionOffset": "0x3e",
+          "targetVa": "0x18e2ef510",
+          "kind": "delegate_state"
+        },
+        {
+          "instructionOffset": "0x4a",
+          "targetVa": "0x18f381404",
+          "kind": "initialization_guard_store"
+        },
+        {
+          "instructionOffset": "0x51",
+          "targetVa": "0x18e366608",
+          "kind": "initialization_state_load"
+        },
+        {
+          "instructionOffset": "0x68",
+          "targetVa": "0x18e2ef510",
+          "kind": "delegate_state_load"
+        }
+      ],
+      "indirectCalls": [
+        {
+          "instructionOffset": "0xa6",
+          "register": "rax",
+          "kind": "burst_function_pointer_call",
+          "encoding": "ffd0"
+        }
+      ]
+    },
+    {
+      "methodIndex": 385566,
+      "type": "BeyondDynamicBone.SimulationManager+StartSimulationStepJobKernels+StartSimulationStepRangeKernel_00000408$BurstDirectCall",
+      "method": "GetFunctionPointer",
+      "token": "0x060007e7",
+      "returnType": "System.IntPtr",
+      "role": "simulation_get_function_pointer",
+      "va": "0x1867775a8",
+      "endVaExclusive": "0x1867775fc",
+      "spanBytes": 84,
+      "bodySha256": "28798b9256325c7f41935a83b6fbf43e044259964873b31f3f4b32a16c82e982",
+      "directCalls": [
+        {
+          "instructionOffset": "0x14",
+          "targetVa": "0x180035ed0",
+          "kind": "runtime_class_init"
+        },
+        {
+          "instructionOffset": "0x39",
+          "targetVa": "0x18002c880",
+          "kind": "runtime_static_guard"
+        },
+        {
+          "instructionOffset": "0x45",
+          "targetVa": "0x1867774a4",
+          "kind": "GetFunctionPointerDiscard",
+          "methodIndex": 385565
+        }
+      ],
+      "ripGlobals": [
+        {
+          "instructionOffset": "0x4",
+          "targetVa": "0x18f38145c",
+          "kind": "initialization_guard"
+        },
+        {
+          "instructionOffset": "0xd",
+          "targetVa": "0x18e30d578",
+          "kind": "initialization_state"
+        },
+        {
+          "instructionOffset": "0x19",
+          "targetVa": "0x18f38145c",
+          "kind": "initialization_guard_store"
+        },
+        {
+          "instructionOffset": "0x20",
+          "targetVa": "0x18e30d578",
+          "kind": "initialization_state_load"
+        }
+      ]
+    },
+    {
+      "methodIndex": 385565,
+      "type": "BeyondDynamicBone.SimulationManager+StartSimulationStepJobKernels+StartSimulationStepRangeKernel_00000408$BurstDirectCall",
+      "method": "GetFunctionPointerDiscard",
+      "token": "0x060007e6",
+      "returnType": "System.Void",
+      "role": "simulation_get_function_pointer_discard",
+      "va": "0x1867774a4",
+      "endVaExclusive": "0x1867775a8",
+      "spanBytes": 260,
+      "bodySha256": "853d297634b86c7a37e71e83706c54f28bdd5a11b27405958f7471b45df448dd",
+      "directCalls": [
+        {
+          "instructionOffset": "0x28",
+          "targetVa": "0x180035ed0",
+          "kind": "runtime_class_init"
+        },
+        {
+          "instructionOffset": "0x34",
+          "targetVa": "0x180035ed0",
+          "kind": "runtime_class_init"
+        },
+        {
+          "instructionOffset": "0x40",
+          "targetVa": "0x180035ed0",
+          "kind": "runtime_class_init"
+        },
+        {
+          "instructionOffset": "0x4c",
+          "targetVa": "0x180035ed0",
+          "kind": "runtime_class_init"
+        },
+        {
+          "instructionOffset": "0x5f",
+          "targetVa": "0x1800036a0",
+          "kind": "delegate_field_load"
+        },
+        {
+          "instructionOffset": "0x78",
+          "targetVa": "0x1800036a0",
+          "kind": "delegate_field_load"
+        },
+        {
+          "instructionOffset": "0xa4",
+          "targetVa": "0x1800036a0",
+          "kind": "delegate_field_load"
+        },
+        {
+          "instructionOffset": "0xb5",
+          "targetVa": "0x18474f6f0",
+          "kind": "BurstCompiler.GetILPPMethodFunctionPointer2",
+          "methodIndex": 489285
+        },
+        {
+          "instructionOffset": "0xd2",
+          "targetVa": "0x1800036a0",
+          "kind": "delegate_field_load"
+        }
+      ],
+      "ripGlobals": [
+        {
+          "instructionOffset": "0x15",
+          "targetVa": "0x18f38145b",
+          "kind": "initialization_guard"
+        },
+        {
+          "instructionOffset": "0x21",
+          "targetVa": "0x18e366608",
+          "kind": "type_state"
+        },
+        {
+          "instructionOffset": "0x2d",
+          "targetVa": "0x18f035a10",
+          "kind": "runtime_method_handle"
+        },
+        {
+          "instructionOffset": "0x39",
+          "targetVa": "0x18e30d578",
+          "kind": "delegate_type_handle"
+        },
+        {
+          "instructionOffset": "0x45",
+          "targetVa": "0x18f035a30",
+          "kind": "runtime_type_handle"
+        },
+        {
+          "instructionOffset": "0x51",
+          "targetVa": "0x18f38145b",
+          "kind": "initialization_guard_store"
+        },
+        {
+          "instructionOffset": "0x58",
+          "targetVa": "0x18e30d578",
+          "kind": "delegate_state_load"
+        },
+        {
+          "instructionOffset": "0x64",
+          "targetVa": "0x18e30d578",
+          "kind": "delegate_state_load"
+        },
+        {
+          "instructionOffset": "0x7d",
+          "targetVa": "0x18e30d578",
+          "kind": "ilpp_method_load"
+        },
+        {
+          "instructionOffset": "0x84",
+          "targetVa": "0x18f035a10",
+          "kind": "runtime_method_handle_load"
+        },
+        {
+          "instructionOffset": "0x8b",
+          "targetVa": "0x18f035a30",
+          "kind": "delegate_type_handle_load"
+        },
+        {
+          "instructionOffset": "0x9d",
+          "targetVa": "0x18e366608",
+          "kind": "initialization_state_load"
+        },
+        {
+          "instructionOffset": "0xba",
+          "targetVa": "0x18e30d578",
+          "kind": "initialization_state_load"
+        },
+        {
+          "instructionOffset": "0xcb",
+          "targetVa": "0x18e30d578",
+          "kind": "initialization_state_load"
+        },
+        {
+          "instructionOffset": "0xd7",
+          "targetVa": "0x18e30d578",
+          "kind": "ilpp_method_load"
+        }
+      ]
+    },
+    {
+      "methodIndex": 385412,
+      "type": "BeyondDynamicBone.ColliderManager+StartSimulationStepJobKernels+StartSimulationStepRangeKernel_000003D8$BurstDirectCall",
+      "method": "GetFunctionPointer",
+      "token": "0x0600074d",
+      "returnType": "System.IntPtr",
+      "role": "collider_start_get_function_pointer",
+      "va": "0x186762c6c",
+      "endVaExclusive": "0x186762cc0",
+      "spanBytes": 84,
+      "bodySha256": "92e3a26949411850485cd52ae1e51d3f50545134dd92fb24293435fc5d030052",
+      "directCalls": [
+        {
+          "instructionOffset": "0x14",
+          "targetVa": "0x180035ed0",
+          "kind": "runtime_class_init"
+        },
+        {
+          "instructionOffset": "0x39",
+          "targetVa": "0x18002c880",
+          "kind": "runtime_static_guard"
+        },
+        {
+          "instructionOffset": "0x45",
+          "targetVa": "0x186762b68",
+          "kind": "GetFunctionPointerDiscard",
+          "methodIndex": 385411
+        }
+      ],
+      "ripGlobals": [
+        {
+          "instructionOffset": "0x4",
+          "targetVa": "0x18f381424",
+          "kind": "initialization_guard"
+        },
+        {
+          "instructionOffset": "0xd",
+          "targetVa": "0x18e2ef3a0",
+          "kind": "initialization_state"
+        },
+        {
+          "instructionOffset": "0x19",
+          "targetVa": "0x18f381424",
+          "kind": "initialization_guard_store"
+        },
+        {
+          "instructionOffset": "0x20",
+          "targetVa": "0x18e2ef3a0",
+          "kind": "initialization_state_load"
+        }
+      ]
+    },
+    {
+      "methodIndex": 385411,
+      "type": "BeyondDynamicBone.ColliderManager+StartSimulationStepJobKernels+StartSimulationStepRangeKernel_000003D8$BurstDirectCall",
+      "method": "GetFunctionPointerDiscard",
+      "token": "0x0600074c",
+      "returnType": "System.Void",
+      "role": "collider_start_get_function_pointer_discard",
+      "va": "0x186762b68",
+      "endVaExclusive": "0x186762c6c",
+      "spanBytes": 260,
+      "bodySha256": "e8504a97b60a08caeedf6e3e064a3a1bfd1916a55c65e02c3928e51cae58d1dd",
+      "directCalls": [
+        {
+          "instructionOffset": "0x28",
+          "targetVa": "0x180035ed0",
+          "kind": "runtime_class_init"
+        },
+        {
+          "instructionOffset": "0x34",
+          "targetVa": "0x180035ed0",
+          "kind": "runtime_class_init"
+        },
+        {
+          "instructionOffset": "0x40",
+          "targetVa": "0x180035ed0",
+          "kind": "runtime_class_init"
+        },
+        {
+          "instructionOffset": "0x4c",
+          "targetVa": "0x180035ed0",
+          "kind": "runtime_class_init"
+        },
+        {
+          "instructionOffset": "0x5f",
+          "targetVa": "0x1800036a0",
+          "kind": "delegate_field_load"
+        },
+        {
+          "instructionOffset": "0x78",
+          "targetVa": "0x1800036a0",
+          "kind": "delegate_field_load"
+        },
+        {
+          "instructionOffset": "0xa4",
+          "targetVa": "0x1800036a0",
+          "kind": "delegate_field_load"
+        },
+        {
+          "instructionOffset": "0xb5",
+          "targetVa": "0x18474f6f0",
+          "kind": "BurstCompiler.GetILPPMethodFunctionPointer2",
+          "methodIndex": 489285
+        },
+        {
+          "instructionOffset": "0xd2",
+          "targetVa": "0x1800036a0",
+          "kind": "delegate_field_load"
+        }
+      ],
+      "ripGlobals": [
+        {
+          "instructionOffset": "0x15",
+          "targetVa": "0x18f381423",
+          "kind": "initialization_guard"
+        },
+        {
+          "instructionOffset": "0x21",
+          "targetVa": "0x18e366608",
+          "kind": "type_state"
+        },
+        {
+          "instructionOffset": "0x2d",
+          "targetVa": "0x18f032f88",
+          "kind": "runtime_method_handle"
+        },
+        {
+          "instructionOffset": "0x39",
+          "targetVa": "0x18e2ef3a0",
+          "kind": "delegate_type_handle"
+        },
+        {
+          "instructionOffset": "0x45",
+          "targetVa": "0x18f032f90",
+          "kind": "runtime_type_handle"
+        },
+        {
+          "instructionOffset": "0x51",
+          "targetVa": "0x18f381423",
+          "kind": "initialization_guard_store"
+        },
+        {
+          "instructionOffset": "0x58",
+          "targetVa": "0x18e2ef3a0",
+          "kind": "delegate_state_load"
+        },
+        {
+          "instructionOffset": "0x64",
+          "targetVa": "0x18e2ef3a0",
+          "kind": "delegate_state_load"
+        },
+        {
+          "instructionOffset": "0x7d",
+          "targetVa": "0x18e2ef3a0",
+          "kind": "ilpp_method_load"
+        },
+        {
+          "instructionOffset": "0x84",
+          "targetVa": "0x18f032f88",
+          "kind": "runtime_method_handle_load"
+        },
+        {
+          "instructionOffset": "0x8b",
+          "targetVa": "0x18f032f90",
+          "kind": "delegate_type_handle_load"
+        },
+        {
+          "instructionOffset": "0x9d",
+          "targetVa": "0x18e366608",
+          "kind": "initialization_state_load"
+        },
+        {
+          "instructionOffset": "0xba",
+          "targetVa": "0x18e2ef3a0",
+          "kind": "initialization_state_load"
+        },
+        {
+          "instructionOffset": "0xcb",
+          "targetVa": "0x18e2ef3a0",
+          "kind": "initialization_state_load"
+        },
+        {
+          "instructionOffset": "0xd7",
+          "targetVa": "0x18e2ef3a0",
+          "kind": "ilpp_method_load"
+        }
+      ]
+    },
+    {
+      "methodIndex": 385313,
+      "type": "BeyondDynamicBone.EndSimulationStepJobKernels+EndSimulationStepRangeKernel_000003BB$BurstDirectCall",
+      "method": "GetFunctionPointer",
+      "token": "0x060006ea",
+      "returnType": "System.IntPtr",
+      "role": "collider_end_get_function_pointer",
+      "va": "0x18675b078",
+      "endVaExclusive": "0x18675b0cc",
+      "spanBytes": 84,
+      "bodySha256": "d468db6b18d79b1fc74d0983bb696d1b03d67acc2fad0e95408492ef9fd76dbc",
+      "directCalls": [
+        {
+          "instructionOffset": "0x14",
+          "targetVa": "0x180035ed0",
+          "kind": "runtime_class_init"
+        },
+        {
+          "instructionOffset": "0x39",
+          "targetVa": "0x18002c880",
+          "kind": "runtime_static_guard"
+        },
+        {
+          "instructionOffset": "0x45",
+          "targetVa": "0x18675af74",
+          "kind": "GetFunctionPointerDiscard",
+          "methodIndex": 385312
+        }
+      ],
+      "ripGlobals": [
+        {
+          "instructionOffset": "0x4",
+          "targetVa": "0x18f381403",
+          "kind": "initialization_guard"
+        },
+        {
+          "instructionOffset": "0xd",
+          "targetVa": "0x18e2ef510",
+          "kind": "initialization_state"
+        },
+        {
+          "instructionOffset": "0x19",
+          "targetVa": "0x18f381403",
+          "kind": "initialization_guard_store"
+        },
+        {
+          "instructionOffset": "0x20",
+          "targetVa": "0x18e2ef510",
+          "kind": "initialization_state_load"
+        }
+      ]
+    },
+    {
+      "methodIndex": 385312,
+      "type": "BeyondDynamicBone.EndSimulationStepJobKernels+EndSimulationStepRangeKernel_000003BB$BurstDirectCall",
+      "method": "GetFunctionPointerDiscard",
+      "token": "0x060006e9",
+      "returnType": "System.Void",
+      "role": "collider_end_get_function_pointer_discard",
+      "va": "0x18675af74",
+      "endVaExclusive": "0x18675b078",
+      "spanBytes": 260,
+      "bodySha256": "8b80e3fdd7d5a3624308497454cc81dc0e73e57e90c5e3596caf17b941950c7a",
+      "directCalls": [
+        {
+          "instructionOffset": "0x28",
+          "targetVa": "0x180035ed0",
+          "kind": "runtime_class_init"
+        },
+        {
+          "instructionOffset": "0x34",
+          "targetVa": "0x180035ed0",
+          "kind": "runtime_class_init"
+        },
+        {
+          "instructionOffset": "0x40",
+          "targetVa": "0x180035ed0",
+          "kind": "runtime_class_init"
+        },
+        {
+          "instructionOffset": "0x4c",
+          "targetVa": "0x180035ed0",
+          "kind": "runtime_class_init"
+        },
+        {
+          "instructionOffset": "0x5f",
+          "targetVa": "0x1800036a0",
+          "kind": "delegate_field_load"
+        },
+        {
+          "instructionOffset": "0x78",
+          "targetVa": "0x1800036a0",
+          "kind": "delegate_field_load"
+        },
+        {
+          "instructionOffset": "0xa4",
+          "targetVa": "0x1800036a0",
+          "kind": "delegate_field_load"
+        },
+        {
+          "instructionOffset": "0xb5",
+          "targetVa": "0x18474f6f0",
+          "kind": "BurstCompiler.GetILPPMethodFunctionPointer2",
+          "methodIndex": 489285
+        },
+        {
+          "instructionOffset": "0xd2",
+          "targetVa": "0x1800036a0",
+          "kind": "delegate_field_load"
+        }
+      ],
+      "ripGlobals": [
+        {
+          "instructionOffset": "0x15",
+          "targetVa": "0x18f381402",
+          "kind": "initialization_guard"
+        },
+        {
+          "instructionOffset": "0x21",
+          "targetVa": "0x18e366608",
+          "kind": "type_state"
+        },
+        {
+          "instructionOffset": "0x2d",
+          "targetVa": "0x18f0333e8",
+          "kind": "runtime_method_handle"
+        },
+        {
+          "instructionOffset": "0x39",
+          "targetVa": "0x18e2ef510",
+          "kind": "delegate_type_handle"
+        },
+        {
+          "instructionOffset": "0x45",
+          "targetVa": "0x18f0333f0",
+          "kind": "runtime_type_handle"
+        },
+        {
+          "instructionOffset": "0x51",
+          "targetVa": "0x18f381402",
+          "kind": "initialization_guard_store"
+        },
+        {
+          "instructionOffset": "0x58",
+          "targetVa": "0x18e2ef510",
+          "kind": "delegate_state_load"
+        },
+        {
+          "instructionOffset": "0x64",
+          "targetVa": "0x18e2ef510",
+          "kind": "delegate_state_load"
+        },
+        {
+          "instructionOffset": "0x7d",
+          "targetVa": "0x18e2ef510",
+          "kind": "ilpp_method_load"
+        },
+        {
+          "instructionOffset": "0x84",
+          "targetVa": "0x18f0333e8",
+          "kind": "runtime_method_handle_load"
+        },
+        {
+          "instructionOffset": "0x8b",
+          "targetVa": "0x18f0333f0",
+          "kind": "delegate_type_handle_load"
+        },
+        {
+          "instructionOffset": "0x9d",
+          "targetVa": "0x18e366608",
+          "kind": "initialization_state_load"
+        },
+        {
+          "instructionOffset": "0xba",
+          "targetVa": "0x18e2ef510",
+          "kind": "initialization_state_load"
+        },
+        {
+          "instructionOffset": "0xcb",
+          "targetVa": "0x18e2ef510",
+          "kind": "initialization_state_load"
+        },
+        {
+          "instructionOffset": "0xd7",
+          "targetVa": "0x18e2ef510",
+          "kind": "ilpp_method_load"
+        }
+      ]
+    },
+    {
+      "methodIndex": 385567,
+      "type": "BeyondDynamicBone.SimulationManager+StartSimulationStepJobKernels+StartSimulationStepRangeKernel_00000408$BurstDirectCall",
+      "method": "Constructor",
+      "token": "0x060007e8",
+      "returnType": "System.Void",
+      "role": "simulation_constructor",
+      "va": "0x183fb21e0",
+      "endVaExclusive": "0x183fb2270",
+      "spanBytes": 144,
+      "bodySha256": "904e16fd75b3c4545842a059818a6f8f683d3e0b31f17245566b1270232a2576",
+      "directCalls": [
+        {
+          "instructionOffset": "0x16",
+          "targetVa": "0x180035ed0",
+          "kind": "runtime_class_init"
+        },
+        {
+          "instructionOffset": "0x22",
+          "targetVa": "0x180035ed0",
+          "kind": "runtime_class_init"
+        },
+        {
+          "instructionOffset": "0x2e",
+          "targetVa": "0x180035ed0",
+          "kind": "runtime_class_init"
+        },
+        {
+          "instructionOffset": "0x51",
+          "targetVa": "0x18002c880",
+          "kind": "runtime_static_guard"
+        },
+        {
+          "instructionOffset": "0x5b",
+          "targetVa": "0x183fb0bc0",
+          "kind": "BurstCompiler.CompileILPPMethod2",
+          "methodIndex": 489284
+        },
+        {
+          "instructionOffset": "0x73",
+          "targetVa": "0x18002c880",
+          "kind": "runtime_static_guard"
+        }
+      ]
+    },
+    {
+      "methodIndex": 385413,
+      "type": "BeyondDynamicBone.ColliderManager+StartSimulationStepJobKernels+StartSimulationStepRangeKernel_000003D8$BurstDirectCall",
+      "method": "Constructor",
+      "token": "0x0600074e",
+      "returnType": "System.Void",
+      "role": "collider_start_constructor",
+      "va": "0x183fb2660",
+      "endVaExclusive": "0x183fb26f0",
+      "spanBytes": 144,
+      "bodySha256": "49cb396d03ef3d2687b4baf058b64d7cce9e0329166dc4e60d150ebe4889651b",
+      "directCalls": [
+        {
+          "instructionOffset": "0x16",
+          "targetVa": "0x180035ed0",
+          "kind": "runtime_class_init"
+        },
+        {
+          "instructionOffset": "0x22",
+          "targetVa": "0x180035ed0",
+          "kind": "runtime_class_init"
+        },
+        {
+          "instructionOffset": "0x2e",
+          "targetVa": "0x180035ed0",
+          "kind": "runtime_class_init"
+        },
+        {
+          "instructionOffset": "0x51",
+          "targetVa": "0x18002c880",
+          "kind": "runtime_static_guard"
+        },
+        {
+          "instructionOffset": "0x5b",
+          "targetVa": "0x183fb0bc0",
+          "kind": "BurstCompiler.CompileILPPMethod2",
+          "methodIndex": 489284
+        },
+        {
+          "instructionOffset": "0x73",
+          "targetVa": "0x18002c880",
+          "kind": "runtime_static_guard"
+        }
+      ]
+    },
+    {
+      "methodIndex": 385314,
+      "type": "BeyondDynamicBone.EndSimulationStepJobKernels+EndSimulationStepRangeKernel_000003BB$BurstDirectCall",
+      "method": "Constructor",
+      "token": "0x060006eb",
+      "returnType": "System.Void",
+      "role": "collider_end_constructor",
+      "va": "0x183fb29c0",
+      "endVaExclusive": "0x183fb2a50",
+      "spanBytes": 144,
+      "bodySha256": "881b30b3a84115342ce43c696e20aa7c6578c5a0b6f91e11c84e8c7a0ee705c8",
+      "directCalls": [
+        {
+          "instructionOffset": "0x16",
+          "targetVa": "0x180035ed0",
+          "kind": "runtime_class_init"
+        },
+        {
+          "instructionOffset": "0x22",
+          "targetVa": "0x180035ed0",
+          "kind": "runtime_class_init"
+        },
+        {
+          "instructionOffset": "0x2e",
+          "targetVa": "0x180035ed0",
+          "kind": "runtime_class_init"
+        },
+        {
+          "instructionOffset": "0x51",
+          "targetVa": "0x18002c880",
+          "kind": "runtime_static_guard"
+        },
+        {
+          "instructionOffset": "0x5b",
+          "targetVa": "0x183fb0bc0",
+          "kind": "BurstCompiler.CompileILPPMethod2",
+          "methodIndex": 489284
+        },
+        {
+          "instructionOffset": "0x73",
+          "targetVa": "0x18002c880",
+          "kind": "runtime_static_guard"
+        }
+      ]
+    },
+    {
+      "methodIndex": 489283,
+      "type": "Unity.Burst.BurstCompiler",
+      "method": "get_IsEnabled",
+      "token": "0x0600000b",
+      "returnType": "System.Boolean",
+      "role": "burst_compiler_enabled",
+      "va": "0x18307b8d0",
+      "endVaExclusive": "0x18307b940",
+      "spanBytes": 112,
+      "bodySha256": "5ebd6d7fab819f87fa679296ae3da3708c29760e0f2b0185b59f98b34ea69980",
+      "directCalls": []
+    },
+    {
+      "methodIndex": 489284,
+      "type": "Unity.Burst.BurstCompiler",
+      "method": "CompileILPPMethod2",
+      "token": "0x0600000c",
+      "returnType": "System.IntPtr",
+      "role": "burst_compiler_ilpp_init",
+      "va": "0x183fb0bc0",
+      "endVaExclusive": "0x183fb0ca0",
+      "spanBytes": 224,
+      "bodySha256": "8ab80ebd0afe065d38f9c3473b6bcd080831d913cd77e7fae80bad3c0d81406a",
+      "directCalls": [
+        {
+          "instructionOffset": "0xa1",
+          "targetVa": "0x183fb0d30",
+          "kind": "BurstCompiler.Compile",
+          "methodIndex": 489288
+        }
+      ]
+    },
+    {
+      "methodIndex": 489285,
+      "type": "Unity.Burst.BurstCompiler",
+      "method": "GetILPPMethodFunctionPointer2",
+      "token": "0x0600000d",
+      "returnType": "<type-index:117445>",
+      "role": "burst_compiler_function_pointer",
+      "va": "0x18474f6f0",
+      "endVaExclusive": "0x18474f720",
+      "spanBytes": 48,
+      "bodySha256": "9bee5e8ec8df54600135338af3dcfb9bd658c504be3b76c5dd27f1093c44cc24",
+      "directCalls": []
+    },
+    {
+      "methodIndex": 489288,
+      "type": "Unity.Burst.BurstCompiler",
+      "method": "Compile",
+      "token": "0x06000010",
+      "returnType": "<type-index:117445>",
+      "role": "burst_compiler_service_bridge",
+      "va": "0x183fb0d30",
+      "endVaExclusive": "0x183fb0fd0",
+      "spanBytes": 672,
+      "bodySha256": "c77723c44e300e7a3857c87ad46799dcf7c8600b2b1e23d61d13f31dda95efe9",
+      "directCalls": [
+        {
+          "instructionOffset": "0x136",
+          "targetVa": "0x183fb1010",
+          "kind": "BurstCompilerService.CompileAsyncDelegateMethod",
+          "methodIndex": 402096
+        },
+        {
+          "instructionOffset": "0x13f",
+          "targetVa": "0x183fb0fd0",
+          "kind": "BurstCompilerService.GetAsyncCompiledAsyncDelegateMethod",
+          "methodIndex": 402097
+        }
+      ]
+    },
+    {
+      "methodIndex": 402096,
+      "type": "Unity.Burst.LowLevel.BurstCompilerService",
+      "method": "CompileAsyncDelegateMethod",
+      "token": "0x06000137",
+      "returnType": "System.Int32",
+      "role": "burst_compiler_service_compile_async",
+      "va": "0x183fb1010",
+      "endVaExclusive": "0x183fb1060",
+      "spanBytes": 80,
+      "bodySha256": "11292831a98144c83876fef614792cea95d5d814a41eb9a5c9ed993f59d870a9",
+      "directCalls": [
+        {
+          "instructionOffset": "0x36",
+          "targetVa": "0x180059fc0",
+          "kind": "late_bound_native_service_factory"
+        }
+      ],
+      "ripGlobals": [
+        {
+          "instructionOffset": "0xa",
+          "targetVa": "0x18f36ef58",
+          "kind": "service_function_slot"
+        },
+        {
+          "instructionOffset": "0x2f",
+          "targetVa": "0x18b8ce630",
+          "kind": "service_factory_string_or_slot"
+        },
+        {
+          "instructionOffset": "0x44",
+          "targetVa": "0x18f36ef58",
+          "kind": "service_function_slot_store"
+        }
+      ]
+    },
+    {
+      "methodIndex": 402097,
+      "type": "Unity.Burst.LowLevel.BurstCompilerService",
+      "method": "GetAsyncCompiledAsyncDelegateMethod",
+      "token": "0x06000138",
+      "returnType": "<type-index:117445>",
+      "role": "burst_compiler_service_get_async",
+      "va": "0x183fb0fd0",
+      "endVaExclusive": "0x183fb1010",
+      "spanBytes": 64,
+      "bodySha256": "baa29c1b316ca0b19e357d5c2706ee037fc5869dbdd673818ffea2b0a16f7254",
+      "directCalls": [
+        {
+          "instructionOffset": "0x25",
+          "targetVa": "0x180059fc0",
+          "kind": "late_bound_native_service_factory"
+        }
+      ],
+      "ripGlobals": [
+        {
+          "instructionOffset": "0x6",
+          "targetVa": "0x18f36ef60",
+          "kind": "service_function_slot"
+        },
+        {
+          "instructionOffset": "0x1e",
+          "targetVa": "0x18b8ce5d0",
+          "kind": "service_factory_string_or_slot"
+        },
+        {
+          "instructionOffset": "0x33",
+          "targetVa": "0x18f36ef60",
+          "kind": "service_function_slot_store"
+        }
+      ]
+    }
+  ],
+  "staticConstructors": [
+    {
+      "methodIndex": 385569,
+      "tailJumpTargetVa": "0x183fb21e0",
+      "targetMethodIndex": 385567
+    },
+    {
+      "methodIndex": 385415,
+      "tailJumpTargetVa": "0x183fb2660",
+      "targetMethodIndex": 385413
+    },
+    {
+      "methodIndex": 385316,
+      "tailJumpTargetVa": "0x183fb29c0",
+      "targetMethodIndex": 385314
+    }
+  ],
+  "resolutionPath": {
+    "status": "BurstCompiler_to_late_bound_BurstCompilerService",
+    "managedBurstCompilerMethods": [
+      489283,
+      489284,
+      489285,
+      489288
+    ],
+    "burstCompilerServiceMethods": [
+      402096,
+      402097
+    ],
+    "lateBoundNativeServiceFactoryVa": "0x180059fc0",
+    "getProcAddressObservedStatically": false,
+    "runtimeTelemetryRequired": true,
+    "runtimeTelemetry": {
+      "hookConfig": "unity_endfield_graph_shader_lab/config/burst_resolver_telemetry_hooks.json",
+      "events": [
+        "LoadLibraryW",
+        "GetProcAddress"
+      ],
+      "moduleGate": "the HMODULE returned for the pinned lib_burst_generated.dll"
+    },
+    "reason": "GameAssembly wrappers and service thunks expose no unique 32-hex export name; the service factory and GetProcAddress must be observed at runtime for the selected lib_burst_generated.dll HMODULE."
+  },
+  "burstGenerated": {
+    "count": 628,
+    "namesSha256": "3575fa430f691be98c1f2b6cadfb71e74854f422eed7fce767215d974ac332c9",
+    "stringEvidence": {
+      "initializationPrefixes": [
+        "burst.initialize.externals",
+        "burst.initialize.statics"
+      ],
+      "distinctHashesPerPrefix": {
+        "externals": 628,
+        "statics": 628
+      },
+      "distinctInitializationHashes": 628,
+      "pdbPathStringObserved": true,
+      "mappingUse": "initializer strings establish the Burst-generated naming scheme only; they do not join a GameAssembly wrapper to one hash"
+    },
+    "mappingStatus": "unresolved_wrapper_to_hashed_export",
+    "candidateBoundary": "all names in the pinned IMAGE_EXPORT_DIRECTORY are bounded candidates; no candidate is promoted without runtime GetProcAddress evidence"
+  },
+  "unresolved": [
+    {
+      "boundary": "385570 simulation wrapper to lib_burst_generated.dll export",
+      "status": "unresolved",
+      "boundedCandidates": 628
+    },
+    {
+      "boundary": "385394 collider-start wrapper to lib_burst_generated.dll export",
+      "status": "unresolved",
+      "boundedCandidates": 628
+    },
+    {
+      "boundary": "385295 collider-end wrapper to lib_burst_generated.dll export",
+      "status": "unresolved",
+      "boundedCandidates": 628
+    }
+  ]
+}
