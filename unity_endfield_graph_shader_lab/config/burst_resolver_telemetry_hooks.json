@@ -1,0 +1,61 @@
+{
+  "schema": "burstResolverTelemetry.hooks.v1",
+  "gameBuild": "endfield-2026-07-11-gameassembly-0c557367",
+  "processName": "Endfield.exe",
+  "moduleName": "GameAssembly.dll",
+  "kernel32ModuleName": "kernel32.dll",
+  "resolverModuleName": "lib_burst_generated.dll",
+  "files": {
+    "executable": {
+      "relativePath": "Endfield.exe",
+      "bytes": 827448,
+      "sha256": "a9726459d9ab90cf01d7536a4250315e85ebfe12da493ac16f7bad3b68e7df99"
+    },
+    "gameAssembly": {
+      "relativePath": "GameAssembly.dll",
+      "bytes": 280436712,
+      "sha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
+    },
+    "metadata": {
+      "relativePath": "Endfield_Data/il2cpp_data/Metadata/global-metadata.dat",
+      "bytes": 62925560,
+      "sha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
+    }
+  },
+  "hooks": {
+    "loadLibraryW": {
+      "type": "kernel32!LoadLibraryW",
+      "moduleName": "kernel32.dll",
+      "export": "LoadLibraryW",
+      "records": "lib_burst_generated.dll module identity and returned HMODULE"
+    },
+    "getProcAddress": {
+      "type": "kernel32!GetProcAddress",
+      "moduleName": "kernel32.dll",
+      "export": "GetProcAddress",
+      "records": "matching HMODULE lpProcName, returned pointer, and GameAssembly caller backtrace"
+    }
+  },
+  "capture": {
+    "maxEvents": 4096,
+    "batchSize": 64,
+    "flushIntervalMs": 250,
+    "maxLibraryPathChars": 512,
+    "maxProcNameChars": 256,
+    "maxBacktraceFrames": 16,
+    "requireAllHooks": true,
+    "gameAssemblyOnlyBacktrace": true
+  },
+  "evidenceBoundary": {
+    "classification": "observed_runtime_candidate",
+    "scope": "Read-only LoadLibraryW/GetProcAddress observation for one exact lib_burst_generated.dll HMODULE and bounded GameAssembly-only caller backtraces.",
+    "nonClaims": [
+      "The trace does not call a resolver export, replace a resolver body, or write game state.",
+      "A returned proc pointer is an identity observation only; it does not prove the pointer was called or map it to a Burst generic.",
+      "Only GetProcAddress calls whose hModule equals the observed lib_burst_generated.dll HMODULE are recorded.",
+      "The caller backtrace is bounded and contains only frames resolved inside GameAssembly.dll; an empty backtrace is not identity proof.",
+      "The pinned executable, GameAssembly.dll, and global-metadata.dat hashes describe one client build; drift refuses attach."
+    ],
+    "stopRule": "Stop on attach refusal, protection termination, native hash/module drift, missing kernel32 exports, hook failure, malformed bounded read, or event cap; do not retry through evasion."
+  }
+}
