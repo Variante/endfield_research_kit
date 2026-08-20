@@ -8,7 +8,7 @@
   const PAD = 64;
   const MIN_SCALE = 0.3; // a whole region can span several zone maps of canvas
   const MAX_SCALE = 48;
-  const MAP_ASSET_VERSION = "20260820-map31";
+  const MAP_ASSET_VERSION = "20260820-map32";
   const PAN_OVERHANG = 96; // px of surface a pan may run past the content edge
   const LABEL_ZOOM = 1.7; // minor entity labels stay hidden below this zoom
   const GEO_LABEL_ZOOM = 0.3; // keep one primary name per sibling at region view
@@ -1258,15 +1258,15 @@
     const viewH = rangeZ * fitScale;
     const viewX = (WIDTH - viewW) / 2;
     const viewY = (HEIGHT - viewH) / 2;
-    // `needInverseXZ` is a quarter-turn axis conversion, not two independent
-    // sign flips. Dijiang's authored label evidence proves the mapping: the
-    // bridge at raw (X~0,Z~-71) belongs on the right-hand prow, hence
-    // screen-world X'=-Z and Z'=X around the map rectangle's centre.
+    // `needInverseXZ` is a quarter-turn axis conversion, not an image flip.
+    // The in-game Dijiang reference has its prow/bridge on the left and the
+    // base area on the right. Raw bridge (X~0,Z~-71) and base-area
+    // (X~-1,Z~120) therefore prove X'=Z and Z'=-X around the map centre.
     const oriented = (p, row) => {
       if (!row?.mapInverted) return p;
       const centreX = (minX + maxX) / 2;
       const centreZ = (minZ + maxZ) / 2;
-      return { ...p, x: centreX - (p.z - centreZ), z: centreZ + (p.x - centreX) };
+      return { ...p, x: centreX + (p.z - centreZ), z: centreZ - (p.x - centreX) };
     };
     const plot = (p) => ({ x: viewX + (p.x - minX) * fitScale, y: viewY + viewH - (p.z - minZ) * fitScale });
 

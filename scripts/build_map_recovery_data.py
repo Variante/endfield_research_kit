@@ -1335,7 +1335,7 @@ def _map_ui_static_elements(level_id: str, language: str = "CN") -> dict:
         "source": source,
         "worldBounds": _map_ui_world_bounds(config),
         "needInverseXZ": bool(basic.get("needInverseXZ")),
-        "orientation": "rotate180" if basic.get("needInverseXZ") else "identity",
+        "orientation": "world_xz_quarter_turn_clockwise" if basic.get("needInverseXZ") else "identity",
         "coordinateSystem": "UILevelMapLoadConfig world X/Z; image top is +Z",
         "staticElements": sorted(rows, key=lambda row: row["id"]),
     }
@@ -1398,7 +1398,7 @@ def _map_layer_metadata(level_id: str, nodes: Iterable[dict], language: str = "C
         "source": f"{MAP_UI_CONFIG_DIR}/{level_id}.json" if config else None,
         "worldBounds": world_bounds,
         "needInverseXZ": bool(basic.get("needInverseXZ")),
-        "orientation": "rotate180" if basic.get("needInverseXZ") else "identity",
+        "orientation": "world_xz_quarter_turn_clockwise" if basic.get("needInverseXZ") else "identity",
         "coordinateSystem": "UILevelMapLoadConfig world X/Z; image top is +Z",
         "staticElements": static_metadata["staticElements"],
         "layers": layers,
@@ -1473,6 +1473,7 @@ def _render_tier_layers(level_id: str, config: dict, inverted: bool) -> list[dic
             "tierId": int(tier_id) if str(tier_id).isdigit() else tier_id,
             "layer": chosen_layer,
             "inverted": inverted,
+            "imageOrientation": "exported",
             "rowOrientation": "top_to_bottom_plus_z",
             "worldBounds": world_bounds,
             "imgSize": [img_w, img_h],
@@ -1513,8 +1514,6 @@ def _render_tier_layers(level_id: str, config: dict, inverted: bool) -> list[dic
                             dst[dst_i + 1] = (s[1] * alpha + dst[dst_i + 1] * inverse) // 255
                             dst[dst_i + 2] = (s[2] * alpha + dst[dst_i + 2] * inverse) // 255
                             dst[dst_i + 3] = max(dst[dst_i + 3], alpha)
-            if inverted:
-                canvas = [b"".join(row[i:i + 4] for i in range(len(row) - 4, -1, -4)) for row in reversed(canvas)]
             render_root.mkdir(parents=True, exist_ok=True)
             _png_write(png_path, img_w, img_h, canvas)
             sidecar_path.write_text(json.dumps(sidecar, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
@@ -1548,10 +1547,10 @@ def _minimap_background(level_id: str) -> dict:
     resolution, exactly as the game's map screen stretches each chunk to its
     own world rectangle.
 
-    `basic.needInverseXZ` marks levels whose map art is authored inverted; the
-    game rotates that picture 180 degrees (X and Z both flipped) before drawing
-    it, so the composite applies the same rotation. Only the base01 decks set
-    it; the world rectangle stays put because the game keeps the same rect.
+    `basic.needInverseXZ` is a world-pin projection flag, not an image rotation.
+    The in-game Dijiang reference keeps the exported prow on the left while its
+    raw world pins require X'=Z, Z'=-X. The composite therefore preserves the
+    exported image orientation; the frontend applies the quarter turn to pins.
     """
     render_root = ROOT / "webui/data/map_recovery/render"
     png_path = render_root / f"{level_id}_minimap.png"
@@ -1619,7 +1618,7 @@ def _minimap_background(level_id: str) -> dict:
         # never reuse a composite painted at the old scale.
         # The inversion flag is part of the sidecar so a config change can
         # never reuse a composite painted without it.
-        sidecar = {"layer": layer, "inverted": inverted, "worldBounds": world_bounds, "imgSize": [img_w, img_h], "sources": sources}
+        sidecar = {"layer": layer, "inverted": inverted, "imageOrientation": "exported", "worldBounds": world_bounds, "imgSize": [img_w, img_h], "sources": sources}
         if png_path.exists() and _load_json(sidecar_path) == sidecar:
             return {
                 "status": "in_game_minimap",
@@ -1696,15 +1695,6 @@ def _minimap_background(level_id: str) -> dict:
                         dst[k + 1] = (src[i * 4 + 1] * a + dst[k + 1] * ia) // 255
                         dst[k + 2] = (src[i * 4 + 2] * a + dst[k + 2] * ia) // 255
                         dst[k + 3] = a if a > dst[k + 3] else dst[k + 3]
-        if inverted:
-            # X and Z both flipped, exactly as the game's map screen draws the
-            # art for these levels; the declared world rectangle is unchanged.
-            # Rows are byte strings of RGBA quads, so the mirror must swap
-            # whole 4-byte pixels, not bytes.
-            canvas = [
-                b"".join(row[i:i + 4] for i in range(len(row) - 4, -1, -4))
-                for row in reversed(canvas)
-            ]
         render_root.mkdir(parents=True, exist_ok=True)
         _png_write(png_path, img_w, img_h, canvas)
         sidecar_path.write_text(json.dumps(sidecar, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
