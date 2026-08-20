@@ -1103,6 +1103,26 @@ does not contain the retail BeyondDynamicBone/Burst solver, PlayerLoop
 scheduling, or numeric frame fixtures; a substitute spring chain is not
 original-game recovery.
 
+The pinned gameplay recording and recovered Overview controllers now have a
+fail-closed composite phase contract. Chen's measured model swap is `199.3000
+s` and its controller-derived loop boundary is `204.5500 s`; Pelica's are
+`209.3333 s` and `215.74747 s`. These loop instants combine the video model
+swap with recovered entry, exit, and transition timing; they are not
+video-only measurements. The recording's `endmin` / `chr_9000_endmin` row does not prove
+the exact `chr_0003_endminf` identity, so Endminf remains inadmissible rather
+than inheriting the older alias. The central character band is only an audit
+ROI: it clips limbs, hair, cloth, or weapons and cannot serve as a complete
+character matte. Clip delivery remains gated on a verified per-frame alpha
+mask with no foreground-UI intersection.
+
+The next source-faithful secondary-motion slice is lifecycle recovery, not a
+visual spring approximation. Recover the exact `PlayerLoopUtils.AddPlayerLoop`
+anchor strings and insertion flags, then validate read -> callback -> writeback
+ordering with movement disabled. Endminf `MC_Ribbon2` is the smallest priority
+probe (31 positions and two capsule colliders). Constraint/Burst numerics and
+IFix-patched execution remain separate gates before any solver can be called
+retail-equivalent.
+
 ## Main animation gap
 
 Remaining runtime systems include:
