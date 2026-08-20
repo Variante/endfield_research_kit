@@ -466,7 +466,9 @@ regions start with the selected sub-map's first tier visible. A current-floor
 slider on the lower-left map surface groups every rendered sibling overlay in
 the stitched region and switches one floor at a time, with an explicit base-map
 position, so transparent floors from different heights never blend. It is
-hidden when no tier image was actually recovered. Geographic
+hidden when no tier image was actually recovered; the same light control dock
+retains the pan/zoom keyboard and wheel hints without a separate floating hint.
+Geographic
 `regiontoast` overlays use their recovered place names; only authored
 `layer_tips` keys are presented as numbered floors. Numbered floors sort in
 ascending order before the remaining tier-id-ordered geographic overlays.
@@ -495,6 +497,9 @@ markers across ordinary marker and floor filters, focuses their footprint, and
 the map can be zoomed to 48x for close inspection.
 The selector orders Dijiang first, then Valley-IV, Wuling, and finally dungeon
 and independent-scene families.
+Map feature scripts, styles, and regenerated background images carry the same
+release cache key so an ordinary page reload cannot mix an old coordinate
+projection with a newly generated minimap composite.
 
 Both marker points and background rectangles use the same `screenY = maxZ -
 worldZ` projection. Do not place a background with `worldZ - minZ`: that
