@@ -476,6 +476,12 @@ Both marker points and background rectangles use the same `screenY = maxZ -
 worldZ` projection. Do not place a background with `worldZ - minZ`: that
 mirrors every stitched screen north/south while leaving task coordinates in
 the original orientation, producing apparently mismatched edges and pins.
+Opening any `map01` or `map02` level loads every sibling background in that
+region immediately; readers do not need to change the selector once to finish
+the stitch. The initial view is a clean geographic map with no quest/entity
+overlay selected. One primary place label per sibling remains visible,
+collision-free local names appear progressively with zoom, and quests, dialog
+markers, or other entity layers are explicit user choices.
 
 Because one level hosts many missions and one mission can reach several levels,
 every contribution is gated on the coordinate space it names: mission-area
