@@ -49,6 +49,8 @@ TARGET_TYPES = (
 )
 SCHEMA = "endfield.endminf-external-pptr-closure.v1"
 _SOURCE_RE = re.compile(r"(?:^|/)vfs/(?P<suffix>.+)$", re.IGNORECASE)
+_SIGNED_INT64_MIN = -(1 << 63)
+_SIGNED_INT64_MAX = (1 << 63) - 1
 
 
 class ClosureError(RuntimeError):
@@ -83,6 +85,54 @@ def _int(value: Any, *, field: str, path: Path | None = None) -> int:
     except (TypeError, ValueError) as exc:
         where = f" in {path}" if path else ""
         raise ClosureError(f"{field} must be an integer{where}: {value!r}") from exc
+
+
+def _signed_int64(value: Any, *, field: str, path: Path | None = None) -> int:
+    result = _int(value, field=field, path=path)
+    if not _SIGNED_INT64_MIN <= result <= _SIGNED_INT64_MAX:
+        where = f" in {path}" if path else ""
+        raise ClosureError(f"{field} is outside signed int64{where}: {value!r}")
+    return result
+
+
+def _file_snapshot(path: Path) -> dict[str, Any]:
+    if not path.is_file():
+        raise ClosureError(f"provenance input is missing: {path}")
+    try:
+        stat = path.stat()
+    except OSError as exc:
+        raise ClosureError(f"cannot stat provenance input {path}: {exc}") from exc
+    return {
+        "path": _relative_path(path),
+        "bytes": int(stat.st_size),
+        "mtime_ns": int(stat.st_mtime_ns),
+    }
+
+
+def _validate_snapshot(snapshot: Any, *, field: str) -> Path:
+    if not isinstance(snapshot, dict):
+        raise ClosureError(f"{field} must be an object")
+    raw_path = snapshot.get("source") or snapshot.get("path")
+    if not raw_path:
+        raise ClosureError(f"{field} lacks a source path")
+    path = Path(str(raw_path))
+    if not path.is_file():
+        raise ClosureError(f"{field} source is missing: {path}")
+    try:
+        stat = path.stat()
+    except OSError as exc:
+        raise ClosureError(f"cannot stat {field} source {path}: {exc}") from exc
+    expected_bytes = snapshot.get("bytes")
+    expected_mtime = snapshot.get("mtime_ns")
+    if expected_bytes is None or expected_mtime is None:
+        raise ClosureError(f"{field} lacks byte/mtime provenance: {path}")
+    if int(expected_bytes) != stat.st_size or int(expected_mtime) != stat.st_mtime_ns:
+        raise ClosureError(
+            f"{field} source provenance is stale: {path} "
+            f"(expected bytes={expected_bytes}, mtime_ns={expected_mtime}; "
+            f"actual bytes={stat.st_size}, mtime_ns={stat.st_mtime_ns})"
+        )
+    return path
 
 
 def _normal_source(value: Any) -> str:
@@ -130,7 +180,7 @@ def _unsigned_path_id(path_id: int) -> int:
     return int(path_id) & ((1 << 64) - 1)
 
 
-def _load_stage(stage_input: Path) -> tuple[dict[str, Any], Path]:
+def _load_stage(stage_input: Path) -> tuple[dict[str, Any], Path, Path, dict[str, Any]]:
     stage_path = stage_input / "external_ui_effect_stage.json" if stage_input.is_dir() else stage_input
     stage = _json(stage_path)
     if not isinstance(stage, dict) or stage.get("schema_version") != 1:
@@ -143,6 +193,8 @@ def _load_stage(stage_input: Path) -> tuple[dict[str, Any], Path]:
     summaries = validation.get("object_index_summaries") or []
     if not summaries or any(
         not isinstance(row, dict)
+        or row.get("recordType") != "summary"
+        or row.get("schemaVersion") != 1
         or row.get("complete") is not True
         or row.get("errors")
         or int((row.get("counts") or {}).get("errors") or 0) != 0
@@ -153,7 +205,31 @@ def _load_stage(stage_input: Path) -> tuple[dict[str, Any], Path]:
         stage.get("expected_clip_count") or 0
     ):
         raise ClosureError(f"external UI-effect stage root/clip count is not terminal: {stage_path}")
-    return stage, stage_path
+    if len(summaries) != len(stage.get("object_index_paths") or []):
+        raise ClosureError(
+            f"external UI-effect stage summary count does not match object-index paths: {stage_path}"
+        )
+
+    stamp_path = stage_path.parent / ".character_import_stage.json"
+    stamp = _json(stamp_path)
+    if not isinstance(stamp, dict) or not stamp.get("fingerprint"):
+        raise ClosureError(f"exact character-import provenance stamp is missing or malformed: {stamp_path}")
+    if stamp.get("fingerprint") != validation.get("stage_fingerprint"):
+        raise ClosureError(
+            f"external UI-effect stage fingerprint does not match its exact extraction stamp: {stage_path}"
+        )
+    if int(stamp.get("entry_count") or -1) != int(stage.get("entry_count") or -2):
+        raise ClosureError(f"external UI-effect stage entry count drifted from its extraction stamp: {stage_path}")
+    if stage.get("types") and stamp.get("types") != stage.get("types"):
+        raise ClosureError(f"external UI-effect stage type contract drifted from its extraction stamp: {stage_path}")
+    if stamp.get("object_index_jsonl") is not True:
+        raise ClosureError(f"external UI-effect stage was not stamped with an object index: {stamp_path}")
+    snapshots = stamp.get("source_snapshots")
+    if not isinstance(snapshots, list) or not snapshots:
+        raise ClosureError(f"exact extraction stamp has no source snapshots: {stamp_path}")
+    for index, snapshot in enumerate(snapshots):
+        _validate_snapshot(snapshot, field=f"source_snapshots[{index}]")
+    return stage, stage_path, stamp_path, stamp
 
 
 def _iter_jsonl(path: Path) -> Iterator[dict[str, Any]]:
@@ -180,21 +256,28 @@ def _iter_jsonl(path: Path) -> Iterator[dict[str, Any]]:
 def _object_index_records(
     paths: Iterable[Path],
     requested: set[tuple[str, int]],
-) -> tuple[dict[tuple[str, int], list[dict[str, Any]]], dict[str, set[tuple[str, int]]]]:
+) -> tuple[
+    dict[tuple[str, int], list[dict[str, Any]]],
+    dict[str, set[tuple[str, int]]],
+    dict[Path, dict[str, Any]],
+]:
     """Load only complete indexes and retain exact targets plus CAB sources."""
 
     targets: dict[tuple[str, int], list[dict[str, Any]]] = defaultdict(list)
     cab_sources: dict[str, set[tuple[str, int]]] = defaultdict(set)
+    summaries: dict[Path, dict[str, Any]] = {}
     for path in paths:
-        complete = False
+        summary: dict[str, Any] | None = None
+        last_record_type = ""
         for row in _iter_jsonl(path):
+            last_record_type = str(row.get("recordType") or "")
             if row.get("recordType") == "summary":
-                complete = complete or (
-                    row.get("complete") is True
-                    and not row.get("errors")
-                    and int((row.get("counts") or {}).get("errors") or 0) == 0
-                )
+                if summary is not None:
+                    raise ClosureError(f"object index has a non-terminal summary: {path}")
+                summary = row
                 continue
+            if summary is not None:
+                raise ClosureError(f"object index has records after terminal summary: {path}")
             obj = row.get("object") or {}
             serialized_file = str(obj.get("serializedFile") or "")
             if not serialized_file:
@@ -203,26 +286,35 @@ def _object_index_records(
             offset = obj.get("sourceOffset")
             if source and offset is not None:
                 cab_sources[serialized_file].add((source, _int(offset, field="sourceOffset", path=path)))
-            if (serialized_file, int(obj.get("pathId") or 0)) not in requested:
+            path_id = _signed_int64(obj.get("pathId") or 0, field="object.pathId", path=path)
+            if (serialized_file, path_id) not in requested:
                 continue
             record_type = str(row.get("type") or row.get("recordType") or "")
             target_type = "MonoScript" if row.get("recordType") == "monoScript" else record_type
             name = str(row.get("name") or row.get("className") or "")
-            targets[(serialized_file, int(obj.get("pathId") or 0))].append(
+            targets[(serialized_file, path_id)].append(
                 {
                     "basis": "complete_object_index",
                     "index": _relative_path(path),
                     "serializedFile": serialized_file,
-                    "pathId": int(obj.get("pathId") or 0),
+                    "pathId": path_id,
                     "type": target_type,
                     "name": name,
                     "source": source or None,
                     "sourceOffset": int(offset) if offset is not None else None,
                 }
             )
-        if not complete:
+        if (
+            last_record_type != "summary"
+            or summary is None
+            or summary.get("schemaVersion") != 1
+            or summary.get("complete") is not True
+            or summary.get("errors")
+            or int((summary.get("counts") or {}).get("errors") or 0) != 0
+        ):
             raise ClosureError(f"object index is not a complete error-free index: {path}")
-    return targets, cab_sources
+        summaries[path.resolve()] = summary
+    return targets, cab_sources, summaries
 
 
 def _iter_json_files(root: Path) -> Iterator[Path]:
@@ -251,7 +343,7 @@ def _json_metadata_candidates(
             serialized_file = str(metadata.get("sourceFile") or "")
             if not serialized_file or metadata.get("pathId") is None:
                 continue
-            path_id = _int(metadata.get("pathId"), field="$animestudio.pathId", path=path)
+            path_id = _signed_int64(metadata.get("pathId"), field="$animestudio.pathId", path=path)
             source = str(metadata.get("sourceOriginalPath") or metadata.get("source") or "")
             offset = metadata.get("sourceOffset")
             if source and offset is not None:
@@ -284,7 +376,7 @@ def _asset_map_rows(paths: Iterable[Path], path_ids: set[int]) -> dict[int, list
         try:
             entries = iter_asset_entries(path)
             for row in entries:
-                path_id = _int(row.get("PathID"), field="AssetMap.PathID", path=path)
+                path_id = _signed_int64(row.get("PathID"), field="AssetMap.PathID", path=path)
                 if path_id in path_ids:
                     rows[path_id].append(
                         {
@@ -339,6 +431,10 @@ def _cab_map_rows(
             if record.cab.casefold() not in wanted:
                 continue
             source = record.source
+            if not Path(source).is_file():
+                raise ClosureError(
+                    f"CAB map source for {record.cab} is missing or stale: {source}"
+                )
             pair = (source, int(record.offset))
             source_pairs[record.cab].add(pair)
             records[record.cab].append(
@@ -392,7 +488,7 @@ def _occurrence(row: dict[str, Any], pptr: dict[str, Any], target_type: str) -> 
         "ownerType": str(row.get("type") or ""),
         "ownerName": str(row.get("name") or ""),
         "ownerSerializedFile": str(obj.get("serializedFile") or ""),
-        "ownerPathId": int(obj.get("pathId") or 0),
+        "ownerPathId": _signed_int64(obj.get("pathId") or 0, field="owner.pathId"),
         "path": str(pptr.get("path") or ""),
         "fileId": int(pptr.get("fileId") or 0),
         "targetType": target_type,
@@ -410,16 +506,47 @@ def _load_unresolved(stage_object_indexes: Iterable[Path]) -> dict[tuple[str, in
                     continue
                 expected = pptr.get("expected") or {}
                 serialized_file = str(expected.get("serializedFile") or "")
-                if not serialized_file or pptr.get("pathId") is None:
+                if not serialized_file.startswith("CAB-") or pptr.get("pathId") is None:
                     raise ClosureError(f"malformed unresolved PPtr in {path}: {pptr}")
                 target_type = _target_type(str(pptr.get("path") or ""))
                 if target_type not in TARGET_TYPES:
                     raise ClosureError(
                         f"unsupported unresolved PPtr target type {target_type!r} in {path}: {pptr.get('path')!r}"
                     )
-                key = (serialized_file, _int(pptr.get("pathId"), field="PPtr.pathId", path=path), target_type)
+                key = (
+                    serialized_file,
+                    _signed_int64(pptr.get("pathId"), field="PPtr.pathId", path=path),
+                    target_type,
+                )
                 result[key].append(_occurrence(row, pptr, target_type))
     return result
+
+
+def _summary_contract(value: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "schemaVersion": value.get("schemaVersion"),
+        "complete": value.get("complete"),
+        "counts": value.get("counts") or {},
+        "errors": value.get("errors") or [],
+    }
+
+
+def _assert_index_summaries_match(
+    stage: dict[str, Any],
+    stage_indexes: list[Path],
+    actual_summaries: dict[Path, dict[str, Any]],
+) -> None:
+    expected = (stage.get("validation") or {}).get("object_index_summaries") or []
+    if len(expected) != len(stage_indexes):
+        raise ClosureError("stage object-index summary count is inconsistent")
+    for index, (path, expected_summary) in enumerate(zip(stage_indexes, expected)):
+        actual_summary = actual_summaries.get(path.resolve())
+        if actual_summary is None:
+            raise ClosureError(f"stage object-index summary is missing: {path}")
+        if _summary_contract(actual_summary) != _summary_contract(expected_summary):
+            raise ClosureError(
+                f"stage object-index summary is stale or drifted at index {index}: {path}"
+            )
 
 
 def _candidate_identity(record: dict[str, Any]) -> tuple[Any, ...]:
@@ -458,6 +585,12 @@ def _resolve_identity(
         ):
             exact_map_rows.append(row)
     exact_map_rows = _dedupe_map_rows(exact_map_rows)
+    for row in exact_map_rows:
+        source_path = Path(str(row.get("Source") or ""))
+        if not source_path.is_file():
+            raise ClosureError(
+                f"AssetMap source for {serialized_file}/{path_id} is missing or stale: {source_path}"
+            )
     unique_target_records = {
         _candidate_identity(row): row
         for row in target_records
@@ -515,7 +648,7 @@ def build_report(
     asset_maps: Iterable[Path] = (),
     cab_maps: Iterable[Path] = (),
 ) -> dict[str, Any]:
-    stage, stage_path = _load_stage(stage_input)
+    stage, stage_path, stamp_path, stamp = _load_stage(stage_input)
     stage_indexes = [Path(path) for path in stage.get("object_index_paths") or []]
     if not stage_indexes:
         raise ClosureError(f"external UI-effect stage has no object-index paths: {stage_path}")
@@ -523,14 +656,22 @@ def build_report(
     missing = [path for path in stage_indexes if not path.is_file()]
     if missing:
         raise ClosureError(f"external UI-effect stage object index is missing: {missing[0]}")
+    # The stage embeds the summary it observed when it was extracted.  Read
+    # the actual terminal index marker again and compare the full contract so
+    # a replaced/truncated index cannot inherit the stage's old counts.
+    _, stage_index_sources, stage_index_summaries = _object_index_records(stage_indexes, set())
+    _assert_index_summaries_match(stage, stage_indexes, stage_index_summaries)
     unresolved = _load_unresolved(stage_indexes)
     requested = {(sf, pid) for sf, pid, _ in unresolved}
     index_paths = [Path(path) for path in object_indexes]
-    index_records, index_sources = _object_index_records(index_paths, requested) if index_paths else ({}, {})
+    if index_paths:
+        index_records, index_sources, index_summaries = _object_index_records(index_paths, requested)
+    else:
+        index_records, index_sources, index_summaries = {}, {}, {}
     json_paths = [Path(path) for path in json_roots]
     json_records, json_sources = _json_metadata_candidates(json_paths, requested) if json_paths else ({}, {})
     source_proof: dict[str, set[tuple[str, int]]] = defaultdict(set)
-    for source_map in (index_sources, json_sources):
+    for source_map in (stage_index_sources, index_sources, json_sources):
         for serialized_file, pairs in source_map.items():
             source_proof[serialized_file].update(pairs)
     cab_map_paths = [Path(path) for path in cab_maps]

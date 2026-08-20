@@ -13,6 +13,7 @@ if str(TOOLS_ROOT) not in sys.path:
     sys.path.insert(0, str(TOOLS_ROOT))
 
 from build_endminf_external_pptr_closure import (  # noqa: E402
+    ClosureError,
     TARGET_TYPES,
     build_report,
     main,
@@ -25,6 +26,9 @@ def _write_json(path: Path, value: object) -> None:
 
 
 def _stage(root: Path, *, serialized_file: str = "CAB-dependency", path_id: int = 77, pptr_path: str = "$.m_Materials[0]") -> Path:
+    source = root / "VFS" / "AAAA" / "dep.chk"
+    source.parent.mkdir(parents=True, exist_ok=True)
+    source.write_bytes(b"fixture-source")
     index = root / "stage" / "object_index.jsonl"
     index.parent.mkdir(parents=True, exist_ok=True)
     rows = [
@@ -38,7 +42,7 @@ def _stage(root: Path, *, serialized_file: str = "CAB-dependency", path_id: int 
             "recordType": "object",
             "object": {
                 "serializedFile": "CAB-root",
-                "source": "VFS/ROOT/root.chk",
+                "source": "VFS/AAAA/dep.chk",
                 "sourceOffset": 1,
                 "pathId": 100,
             },
@@ -94,14 +98,39 @@ def _stage(root: Path, *, serialized_file: str = "CAB-dependency", path_id: int 
                 "object_index_summaries": [
                     {
                         "recordType": "summary",
+                        "schemaVersion": 1,
                         "complete": True,
-                        "counts": {"errors": 0},
+                        "counts": {
+                            "objects": 1,
+                            "schemas": 1,
+                            "monoScripts": 0,
+                            "scalars": 0,
+                            "pptrs": 1,
+                            "objectsWithTruncatedScalars": 0,
+                            "errors": 0,
+                            "suppressedErrors": 0,
+                        },
                         "errors": [],
                     }
                 ],
                 "root_clip_count": 1,
                 "stage_fingerprint": "fixture-stage",
             },
+        },
+    )
+    _write_json(
+        stage.parent / ".character_import_stage.json",
+        {
+            "fingerprint": "fixture-stage",
+            "entry_count": 1,
+            "object_index_jsonl": True,
+            "source_snapshots": [
+                {
+                    "source": str(source),
+                    "bytes": source.stat().st_size,
+                    "mtime_ns": source.stat().st_mtime_ns,
+                }
+            ],
         },
     )
     return stage
@@ -137,7 +166,9 @@ def _target_row(*, name: str = "M_exact", source: str = "VFS/AAAA/dep.chk", offs
     }
 
 
-def _asset_map(root: Path, *, source: str = r"D:\Game\Endfield_Data\StreamingAssets\VFS\AAAA\dep.chk", path_id: int = 77, entry_type: str = "Material") -> Path:
+def _asset_map(root: Path, *, source: str | None = None, path_id: int = 77, entry_type: str = "Material") -> Path:
+    if source is None:
+        source = str(root / "VFS" / "AAAA" / "dep.chk")
     path = root / "map.json"
     _write_json(
         path,
@@ -175,7 +206,7 @@ def _cab_map(root: Path) -> Path:
     path.write_bytes(
         b"".join(
             [
-                _dotnet_string(r"D:\Game\Endfield_Data\StreamingAssets"),
+                _dotnet_string(str(root)),
                 struct.pack("<i", 1),
                 _dotnet_string("CAB-dependency"),
                 _dotnet_string(r"VFS\AAAA\dep.chk"),
@@ -224,7 +255,7 @@ class EndminfExternalPPtrClosureTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             stage = _stage(root)
-            wrong_map = _asset_map(root, source=r"D:\Game\Endfield_Data\StreamingAssets\VFS\BBBB\dep.chk")
+            wrong_map = _asset_map(root, source=str(root / "VFS" / "BBBB" / "dep.chk"))
             report = build_report(stage, asset_maps=[wrong_map])
 
             self.assertEqual(report["summary"]["unresolvedCount"], 1)
@@ -245,7 +276,7 @@ class EndminfExternalPPtrClosureTests(unittest.TestCase):
                         "type": "Material",
                         "name": "M_exact",
                         "sourceFile": "CAB-dependency",
-                        "sourceOriginalPath": r"D:\Game\Endfield_Data\StreamingAssets\VFS\AAAA\dep.chk",
+                        "sourceOriginalPath": str(root / "VFS" / "AAAA" / "dep.chk"),
                         "sourceOffset": 42,
                     },
                     "m_Name": "M_exact",
@@ -268,6 +299,40 @@ class EndminfExternalPPtrClosureTests(unittest.TestCase):
             self.assertIn("cab_map_source_offset_to_cab", identity["resolutionBasis"])
             self.assertEqual(identity["cabMapCandidates"][0]["sourceOffset"], 42)
             self.assertEqual(identity["extraction"]["PathID"], 77)
+
+    def test_signed_pathid_is_joined_and_reported_as_unsigned_hex(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            stage = _stage(root, path_id=-2)
+            index = _complete_target(root, rows=[_target_row(path_id=-2)])
+            report = build_report(stage, object_indexes=[index], asset_maps=[_asset_map(root, path_id=-2)])
+
+            identity = report["identities"][0]
+            self.assertEqual(identity["status"], "resolved")
+            self.assertEqual(identity["pathId"], -2)
+            self.assertEqual(identity["pathIdUnsigned"], 18446744073709551614)
+            self.assertEqual(identity["pathIdHex"], "FFFFFFFFFFFFFFFE")
+
+    def test_stale_stage_source_provenance_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            stage = _stage(root)
+            source = root / "VFS" / "AAAA" / "dep.chk"
+            source.write_bytes(b"changed-after-extraction")
+
+            with self.assertRaisesRegex(ClosureError, "provenance is stale"):
+                build_report(stage)
+
+    def test_nonterminal_additional_index_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            stage = _stage(root)
+            index = _complete_target(root, rows=[_target_row()])
+            with index.open("a", encoding="utf-8") as handle:
+                handle.write(json.dumps(_target_row(name="after-summary")) + "\n")
+
+            with self.assertRaisesRegex(ClosureError, "records after terminal summary"):
+                build_report(stage, object_indexes=[index])
 
     def test_check_mode_rejects_incomplete_without_explicit_opt_in(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
