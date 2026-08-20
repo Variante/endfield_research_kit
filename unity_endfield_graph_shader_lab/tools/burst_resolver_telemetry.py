@@ -19,6 +19,7 @@ retry path is provided.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import re
 import sys
 import threading
@@ -196,6 +197,11 @@ def load_manifest(path: Path) -> dict[str, Any]:
     boundary = manifest.get("evidenceBoundary")
     if not isinstance(boundary, dict) or not isinstance(boundary.get("nonClaims"), list) or not boundary["nonClaims"]:
         raise CaptureConfigurationError("manifest evidenceBoundary.nonClaims must be non-empty")
+    export_enum = manifest.get("resolverExportEnumeration")
+    if not isinstance(export_enum, dict) or set(export_enum) != {"hashedCount", "canonicalNameRvaSha256"}:
+        raise CaptureConfigurationError("manifest resolverExportEnumeration is incomplete")
+    if export_enum["hashedCount"] != 628 or not isinstance(export_enum["canonicalNameRvaSha256"], str) or not re.fullmatch(r"[0-9a-f]{64}", export_enum["canonicalNameRvaSha256"]):
+        raise CaptureConfigurationError("manifest resolverExportEnumeration is not hash-pinned")
     return manifest
 
 
@@ -239,6 +245,7 @@ def validate_resolver_handshake(
     ready_payload: dict[str, Any],
     expected_resolver: Path,
     expected_size: int,
+    expected_export_enumeration: dict[str, Any],
 ) -> None:
     """Fail closed when an already-loaded resolver is not the pinned file."""
 
@@ -271,6 +278,23 @@ def validate_resolver_handshake(
             "attached resolver module size does not match the hash-verified resolver: "
             f"expected={expected_size}, got={actual_size}"
         )
+    entries = ready_payload.get("resolverExportMap")
+    if not isinstance(entries, list) or len(entries) != expected_export_enumeration["hashedCount"]:
+        raise RuntimeError("agent did not report the complete hash-pinned resolver export map")
+    canonical: list[str] = []
+    for entry in entries:
+        if not isinstance(entry, dict) or set(entry) != {"name", "offset"}:
+            raise RuntimeError("agent reported a malformed resolver export map entry")
+        name = entry["name"]
+        offset = entry["offset"]
+        if not isinstance(name, str) or not re.fullmatch(r"[0-9a-f]{32}", name):
+            raise RuntimeError("agent reported a non-hashed resolver export")
+        if not isinstance(offset, str) or not re.fullmatch(r"0x[0-9a-fA-F]+", offset):
+            raise RuntimeError("agent reported an invalid resolver export offset")
+        canonical.append(f"{name}:{int(offset, 16):x}")
+    digest = hashlib.sha256(("\n".join(sorted(canonical)) + "\n").encode()).hexdigest()
+    if digest != expected_export_enumeration["canonicalNameRvaSha256"]:
+        raise RuntimeError("runtime resolver export name/RVA map differs from the pinned manifest")
 
 
 def run_capture(
@@ -396,6 +420,7 @@ def run_capture(
             ready_payload,
             verified["resolver"],
             manifest["files"]["resolver"]["bytes"],
+            manifest["resolverExportEnumeration"],
         )
         if ready_payload.get("kernel32ModuleName", "").casefold() != manifest["kernel32ModuleName"].casefold():
             raise RuntimeError("agent did not confirm the expected kernel32 module")
@@ -418,6 +443,8 @@ def run_capture(
                 "resolverModuleIdentity": ready_payload.get("resolverModuleIdentity"),
                 "resolverExpectedPath": str(verified["resolver"].resolve()),
                 "resolverExpectedSize": manifest["files"]["resolver"]["bytes"],
+                "resolverExportMapSha256": manifest["resolverExportEnumeration"]["canonicalNameRvaSha256"],
+                "resolverExportMapCount": manifest["resolverExportEnumeration"]["hashedCount"],
                 "gameAssemblyModuleName": ready_payload.get("moduleName"),
                 "gameAssemblyModuleBase": ready_payload.get("moduleBase"),
                 "gameAssemblyModuleSize": ready_payload.get("moduleSize"),

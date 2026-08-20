@@ -5,6 +5,7 @@ from __future__ import annotations
 import sys
 import tempfile
 import unittest
+import hashlib
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -92,16 +93,18 @@ class BurstResolverTelemetryTests(unittest.TestCase):
             "moduleBase": "0x5000",
         }
         telemetry.validate_resolver_handshake(
-            {"resolverModuleIdentity": identity},
+            {"resolverModuleIdentity": identity, "resolverExportMap": []},
             expected,
             manifest["files"]["resolver"]["bytes"],
+            {"hashedCount": 0, "canonicalNameRvaSha256": hashlib.sha256(b"\n").hexdigest()},
         )
         identity["path"] = "D:/other/lib_burst_generated.dll"
         with self.assertRaisesRegex(RuntimeError, "does not match"):
             telemetry.validate_resolver_handshake(
-                {"resolverModuleIdentity": identity},
+                {"resolverModuleIdentity": identity, "resolverExportMap": []},
                 expected,
                 manifest["files"]["resolver"]["bytes"],
+                {"hashedCount": 0, "canonicalNameRvaSha256": hashlib.sha256(b"\n").hexdigest()},
             )
 
     def test_native_gate_mismatch_refuses_before_executable_gate(self) -> None:
