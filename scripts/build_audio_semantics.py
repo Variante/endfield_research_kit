@@ -100,8 +100,8 @@ PROJECTILE_SOUND_PHASES = {
 # authoritative value; these names are presentation labels, not a claim that
 # selection behavior was evaluated offline.
 SELECTION_HIRC_TYPES = frozenset({5, 6, 12, 13})
-AUDIO_SEMANTIC_SCHEMA_VERSION = 108
-TRIGGER_CONTEXT_SCHEMA_VERSION = 34
+AUDIO_SEMANTIC_SCHEMA_VERSION = 109
+TRIGGER_CONTEXT_SCHEMA_VERSION = 35
 
 MONO_BEHAVIOUR_AUDIO_EVENT_FIELD_NAMES = frozenset({
     "_spawnAudioEvent", "_finishAudioEvent", "_onHitAudioEvent",
@@ -118,7 +118,7 @@ MONO_BEHAVIOUR_AUDIO_EVENT_PREFILTERS = tuple(sorted(
     | {"soundBase.soundSpawn", "soundBase.soundFinish", "PlayLineSound"}
 ))
 MONO_BEHAVIOUR_AUDIO_CONTEXT_CACHE_SCHEMA_VERSION = 2
-RUNTIME_MODEL_CACHE_SCHEMA_VERSION = 105
+RUNTIME_MODEL_CACHE_SCHEMA_VERSION = 106
 METADATA_EVENT_SYMBOL_SCHEMA_VERSION = 1
 METADATA_EVENT_SYMBOL_RE = re.compile(r"^AU_[A-Z0-9_]+$")
 RADIO_MEDIA_CONTEXT_LIMIT = 64
@@ -10138,6 +10138,30 @@ def build_trigger_context_catalog(
                 row.get("semanticKind") == "modelViewStatePositionAudioEvent"
                 for row in grouped["modelViewStateAudio"]
                 if isinstance(row, dict)
+            ),
+            "positionedEndpointAuditStatus": next(
+                (
+                    (row.get("nativeRoute") or {}).get("endpointAuditStatus")
+                    for row in grouped["modelViewStateAudio"]
+                    if isinstance(row, dict) and row.get("semanticKind") == "modelViewStatePositionAudioEvent"
+                ),
+                "unavailable",
+            ),
+            "positionedPostAndForgetToAudioAdapterConnectionStatus": next(
+                (
+                    (row.get("nativeRoute") or {}).get("postAndForgetToAudioAdapterConnectionStatus")
+                    for row in grouped["modelViewStateAudio"]
+                    if isinstance(row, dict) and row.get("semanticKind") == "modelViewStatePositionAudioEvent"
+                ),
+                "unresolved",
+            ),
+            "positionedAudioHandleWriteStatus": next(
+                (
+                    (row.get("nativeRoute") or {}).get("fieldContract", {}).get("audioHandleWrite", {}).get("status")
+                    for row in grouped["modelViewStateAudio"]
+                    if isinstance(row, dict) and row.get("semanticKind") == "modelViewStatePositionAudioEvent"
+                ),
+                "unavailable",
             ),
             "positionedControlRows": sum(
                 str(row.get("semanticKind") or "").startswith("modelViewStatePositioned")

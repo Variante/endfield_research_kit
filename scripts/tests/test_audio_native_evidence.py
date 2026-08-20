@@ -78,6 +78,7 @@ def _positioned_model_view_fixture_pe(
     path: Path,
     *,
     execute_calls: bool = True,
+    audio_handle_write: bool = True,
 ) -> dict:
     """Build a compact multi-section PE for the positioned route audit."""
 
@@ -86,7 +87,7 @@ def _positioned_model_view_fixture_pe(
     consumer = route["consumer"]
     endpoint_rows = route["endpointAudits"]
 
-    def body(length: int, calls: list[dict] | None = None) -> bytes:
+    def body(length: int, calls: list[dict] | None = None, writes: list[tuple[int, bytes]] | None = None) -> bytes:
         result = bytearray(b"\x90" * length)
         for call in calls or ():
             offset = int(call["offset"], 0)
@@ -96,6 +97,8 @@ def _positioned_model_view_fixture_pe(
                 "<i", result, offset + 1,
                 target - (int(call.get("methodVirtualAddress", 0), 0) + offset + 5),
             )
+        for offset, instruction in writes or ():
+            result[offset:offset + len(instruction)] = instruction
         result[-1] = 0xC3
         return bytes(result)
 
@@ -104,7 +107,12 @@ def _positioned_model_view_fixture_pe(
         for row in route["directCalls"]
     ]
     bodies: dict[int, bytes] = {
-        int(consumer["virtualAddress"], 0): body(consumer["bodyLength"], consumer_calls),
+        int(consumer["virtualAddress"], 0): body(
+            consumer["bodyLength"],
+            consumer_calls,
+            ([(int(route["fieldContract"]["audioHandleWrite"]["offset"], 0), b"\x89\x46\x28")]
+             if audio_handle_write else []),
+        ),
     }
     for endpoint in endpoint_rows:
         va = int(endpoint["targetVirtualAddress"], 0)
@@ -391,6 +399,9 @@ class NativeAudioEvidenceTests(unittest.TestCase):
                 audited = native_evidence.audit_model_view_positioned_audio_native_route(context)
         self.assertEqual(audited["status"], "validated")
         self.assertEqual(audited["checks"]["consumerDirectCalls"], "validated")
+        self.assertEqual(audited["checks"]["consumerAudioHandleWrite"], "validated")
+        self.assertEqual(audited["checks"]["endpointAuditStatus"], "individuallyAuditedEndpoints")
+        self.assertEqual(audited["checks"]["postAndForgetToAudioAdapterConnection"], "unresolved")
         self.assertEqual(audited["checks"]["endpointBodiesAndCalls"], "validated")
 
     def test_positioned_production_fixture_rejects_execute_e8_drift(self) -> None:
@@ -418,6 +429,32 @@ class NativeAudioEvidenceTests(unittest.TestCase):
                 audited = native_evidence.audit_model_view_positioned_audio_native_route(context)
         self.assertEqual(audited["status"], "mismatched")
         self.assertIn("positioned Execute E8 drift", audited["reason"])
+
+    def test_positioned_production_fixture_rejects_audio_handle_write_drift(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            metadata = root / "global-metadata.dat"
+            gameassembly = root / "GameAssembly.dll"
+            metadata.write_bytes(b"metadata")
+            route = _positioned_model_view_fixture_pe(gameassembly, audio_handle_write=False)
+            with patch.object(
+                native_evidence,
+                "MODEL_VIEW_POSITIONED_AUDIO_NATIVE_ROUTE",
+                route,
+            ), patch.object(
+                native_evidence,
+                "check_installed_native_inputs",
+                return_value=InstalledNativeInputs(
+                    gameassembly, metadata,
+                    native_evidence.EXPECTED_GAMEASSEMBLY_SHA256,
+                    native_evidence.EXPECTED_METADATA_SHA256,
+                    "validated", "",
+                ),
+            ):
+                context = native_evidence.validate_native_audio_evidence(metadata, gameassembly)
+                audited = native_evidence.audit_model_view_positioned_audio_native_route(context)
+        self.assertEqual(audited["status"], "mismatched")
+        self.assertIn("m_audioHandle write drift", audited["reason"])
 
     def test_authored_ai_bark_survives_without_native_dispatch_claims(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

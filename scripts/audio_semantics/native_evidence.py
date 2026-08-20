@@ -103,11 +103,17 @@ MODEL_VIEW_POSITIONED_AUDIO_NATIVE_ROUTE = {
         "isCustomOffset": "0x28",
         "isDirectlyPlayOffset": "0x29",
         "normalAudioIdOffset": "0x38",
+        "audioHandleWrite": {
+            "offset": "0x1fa",
+            "instruction": "mov dword ptr [self+0x28], eax",
+            "field": "m_audioHandle",
+            "status": "verified",
+        },
         "entityStateModelLevel": 1,
         "guards": {
             "customStateSwitch": "!isDirectlyPlay && isCustom",
             "entityStateSwitch": "!isDirectlyPlay && !isCustom",
-            "directPositionEvent": "isDirectlyPlay",
+            "directPositionEvent": "isDirectlyPlay && !isCustom && normalAudioId != 0",
         },
     },
     "directCalls": [
@@ -150,12 +156,16 @@ MODEL_VIEW_POSITIONED_AUDIO_NATIVE_ROUTE = {
     "endpointAudits": [
         {
             "targetMethod": "TrySwitchAudioState", "targetVirtualAddress": "0x184cd7ca0",
+            "branchRole": "controlOnly",
+            "claimBoundary": "noEventOwnershipNoFinalWwisePostEvent",
             "bodyLength": 0xa3,
             "bodySha256": "23ef278f4182d97f1f936149ed8b9b43b0b22ee50d831633a892181ac793f86d",
             "calls": [{"offset": "0x8c", "targetVirtualAddress": "0x183c2b050"}],
         },
         {
             "targetMethod": "TrySwitchAudioCustomState", "targetVirtualAddress": "0x1875efc70",
+            "branchRole": "controlOnly",
+            "claimBoundary": "noEventOwnershipNoFinalWwisePostEvent",
             "bodyLength": 0xbd,
             "bodySha256": "89c253f0f2889fad05712fedfda0f64447da28f5e412490d906d1a15c461d2bc",
         },
@@ -170,12 +180,16 @@ MODEL_VIEW_POSITIONED_AUDIO_NATIVE_ROUTE = {
         {
             "targetType": "Beyond.Gameplay.Core.InteractiveAudioComponent",
             "targetMethod": "_SwitchState", "targetVirtualAddress": "0x183c2b3e0",
+            "branchRole": "controlOnly",
+            "claimBoundary": "noEventOwnershipNoFinalWwisePostEvent",
             "bodyLength": 71,
             "bodySha256": "245a0544e65e32dad9f0dc0a2205c0e20a5c472a40bbee0292a836f800a40361",
         },
         {
             "targetType": "Beyond.Gameplay.Audio.AudioManager",
             "targetMethod": "PlaySoundAtPosition", "targetMethodIndex": 38869,
+            "branchRole": "directPositionEventDownstream",
+            "claimBoundary": "finalWwiseSelectionExecutionAudibilityUnresolved",
             "targetToken": "0x060097d6", "targetVirtualAddress": "0x183b87c60",
             "bodyLength": 0x69,
             "bodySha256": "a64e5b83b1f680ab697a13ec2ed21eea0e161a477d5ee7e86ac1d9887e28fea4",
@@ -186,6 +200,8 @@ MODEL_VIEW_POSITIONED_AUDIO_NATIVE_ROUTE = {
             ],
         },
     ],
+    "endpointAuditStatus": "individuallyAuditedEndpoints",
+    "postAndForgetToAudioAdapterConnectionStatus": "unresolved",
     "branchBoundary": {
         "directPositionEvent": "PlaySoundAtPosition target verified; Wwise/media selection and execution unobserved",
         "customStateSwitch": "TrySwitchAudioCustomState target/body verified; control only, no Event ownership",
@@ -453,6 +469,10 @@ def _positioned_catalog_errors(route: dict[str, Any]) -> list[str]:
         return ["positioned route catalog is not an object"]
     if route.get("nativeMappingId") != MODEL_VIEW_POSITIONED_AUDIO_MAPPING_ID:
         errors.append("positioned nativeMappingId catalog drift")
+    field_contract = route.get("fieldContract")
+    expected_field_contract = MODEL_VIEW_POSITIONED_AUDIO_NATIVE_ROUTE["fieldContract"]
+    if not isinstance(field_contract, dict) or field_contract.get("audioHandleWrite") != expected_field_contract.get("audioHandleWrite"):
+        errors.append("positioned audioHandle write contract drift")
     consumer = route.get("consumer")
     expected_consumer = MODEL_VIEW_POSITIONED_AUDIO_NATIVE_ROUTE["consumer"]
     if not isinstance(consumer, dict):
@@ -484,6 +504,10 @@ def _positioned_catalog_errors(route: dict[str, Any]) -> list[str]:
         MODEL_VIEW_POSITIONED_AUDIO_NATIVE_ROUTE["endpointAudits"]
     ):
         errors.append("positioned endpointAudits catalog row count drift")
+    if route.get("endpointAuditStatus") != "individuallyAuditedEndpoints":
+        errors.append("positioned endpoint audit status drift")
+    if route.get("postAndForgetToAudioAdapterConnectionStatus") != "unresolved":
+        errors.append("positioned downstream connection boundary drift")
     return errors[:8]
 
 
@@ -564,6 +588,10 @@ def audit_model_view_positioned_audio_native_route(
         )
         if len(consumer_body) != int(consumer["bodyLength"]):
             raise ValueError("positioned Execute body length drift")
+        write = expected["fieldContract"]["audioHandleWrite"]
+        write_offset = int(write["offset"], 0)
+        if consumer_body[write_offset:write_offset + 3] != b"\x89\x46\x28":
+            raise ValueError("positioned Execute m_audioHandle write drift")
         consumer_sites = _direct_call_sites(consumer_body, int(consumer["virtualAddress"], 0))
         expected_sites = {
             int(row["offset"], 0): int(row["targetVirtualAddress"], 0)
@@ -594,7 +622,10 @@ def audit_model_view_positioned_audio_native_route(
             "catalog": "validated",
             "consumerBodySha256": "validated",
             "consumerDirectCalls": "validated",
+            "consumerAudioHandleWrite": "validated",
             "endpointBodiesAndCalls": "validated",
+            "endpointAuditStatus": "individuallyAuditedEndpoints",
+            "postAndForgetToAudioAdapterConnection": "unresolved",
         },
     }
 
