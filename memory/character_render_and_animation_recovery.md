@@ -1161,10 +1161,12 @@ now closes four outer job value layouts from the installed IL2CPP
 stores. The Collider start job's 17 fields occupy the recovered native range
 through `_indexCount`; the other collider/simulation start/end jobs have the
 same independent size/last-field closure. Relevant managed `Execute` bodies
-and the BurstDirectCall fallback/wrapper are also hash-pinned. The inner
-NativeArray/NativeReference layouts and the wrapper-to-hashed-export mapping
-inside `lib_burst_generated.dll` are not resolved, so the complete payload,
-numeric solver, and public-Unity execution remain inadmissible.
+and the BurstDirectCall fallback/wrapper are also hash-pinned. Closed-generic
+native accessors now recover the NativeArray buffer/length/allocator offsets
+and NativeReference data/allocator offsets. Their total sizes remain bounded
+only from below (16 and 12 bytes respectively), and the wrapper-to-hashed-export
+mapping inside `lib_burst_generated.dll` is not resolved, so the complete
+payload, numeric solver, and public-Unity execution remain inadmissible.
 
 The installed client does contain its original `lib_burst_generated.dll`, but
 that is not a drop-in public-Unity plugin: its hashed exports are resolved
