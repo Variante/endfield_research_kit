@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import struct
 from pathlib import Path
 from typing import Any
@@ -102,15 +103,18 @@ def _target_va(row: dict[str, Any]) -> int:
 
 
 def _stack_value(context: dict[str, Any], slot: str) -> bool | None:
+    matches: list[str] = []
+    pattern = re.compile(
+        rf"^mov \[rsp\+{re.escape(slot)}\], (0x[01]|r14|r14b|r14d)$"
+    )
     for instruction in context.get("nearbyInstructions", []):
         text = str(instruction.get("text", ""))
-        if f"[rsp+{slot}]" not in text:
-            continue
-        if "0x1" in text:
-            return True
-        if "r14" in text or "0x0" in text:
-            return False
-    return None
+        match = pattern.fullmatch(text)
+        if match:
+            matches.append(match.group(1))
+    if len(matches) != 1:
+        return None
+    return matches[0] == "0x1"
 
 
 def recover(native: dict[str, Any], loop_metadata: dict[str, Any], image: bytes, metadata: bytes) -> dict[str, Any]:
@@ -121,6 +125,9 @@ def recover(native: dict[str, Any], loop_metadata: dict[str, Any], image: bytes,
     calls = [row for row in target.get("directCalls", []) if _target_va(row) == int(ADD_LOOP_TARGET, 0)]
     if len(calls) != 7:
         raise ContractError(f"expected seven AddPlayerLoop calls, found {len(calls)}")
+    offsets = [int(row.get("offset", -1)) for row in calls]
+    if offsets != sorted(set(offsets)):
+        raise ContractError("AddPlayerLoop calls are duplicated or not in native offset order")
     parameter_row = next((row for row in loop_metadata.get("bodyTargets", []) if row.get("type") == "BeyondDynamicBone.PlayerLoopUtils" and row.get("method") == "AddPlayerLoop"), None)
     if not parameter_row or parameter_row.get("methodIndex") != ADD_LOOP_METHOD_INDEX or parameter_row.get("parameters") != ["method", "playerLoop", "categoryName", "systemName", "last", "before"]:
         raise ContractError("PlayerLoopUtils.AddPlayerLoop signature evidence is incomplete")
@@ -134,14 +141,18 @@ def recover(native: dict[str, Any], loop_metadata: dict[str, Any], image: bytes,
         system_va = int(system_ref.rsplit("=>", 1)[1].rstrip("] "), 16) if "=>" in system_ref else None
         if category_va is None:
             raise ContractError(f"AddPlayerLoop #{ordinal} lacks category string slot")
-        # The first system anchor is loaded through MagicaManager's initialized
-        # static type-info block (rax+0xb8), so the offline PE has no direct
-        # relocatable slot to decode.  The shipped callback family and the
-        # matching metadata literal establish the same exact anchor used by
-        # the remaining six calls; keep the resolution explicitly labelled.
-        first_system_literal = 23778
         if system_va is None and ordinal == 1:
-            system = {"status": "decoded_from_initialized_static", "sourceIndex": first_system_literal, "value": _literal(metadata, first_system_literal)}
+            system = {
+                "status": "unresolved_initialized_static_field",
+                "typeInfoSlotVa": "0x18e371250",
+                "encodedTypeHandle": "0x20050b0d",
+                "candidateValue": "ScriptRunDelayedTasks",
+                "candidateEvidence": (
+                    "the same metadata literal is directly decoded for ordinal 3; "
+                    "the ordinal-1 TypeInfo static field has not yet been mapped "
+                    "to that literal"
+                ),
+            }
         elif system_va is None:
             raise ContractError(f"AddPlayerLoop #{ordinal} lacks system string slot")
         else:
@@ -159,13 +170,13 @@ def recover(native: dict[str, Any], loop_metadata: dict[str, Any], image: bytes,
         raise ContractError("one or more AddPlayerLoop bool arguments are unresolved")
     return {
         "schema": "endfieldPlayerLoopRecoveryContract.v1",
-        "status": "validated",
+        "status": "partial_unresolved_first_system_anchor",
         "manager": "BeyondDynamicBone.MagicaManager",
         "method": "SetCustomGameLoop",
         "methodIndex": SET_LOOP_METHOD_INDEX,
         "playerLoopUtility": {"type": "BeyondDynamicBone.PlayerLoopUtils", "method": "AddPlayerLoop", "methodIndex": ADD_LOOP_METHOD_INDEX, "parameters": parameter_row["parameters"]},
         "insertions": rows,
-        "evidenceBoundary": "Exact native call order, PlayerLoop category/system anchors, and last/before arguments are recovered for the pinned client. This does not prove Unity runtime execution on a different build or replace the managed lifecycle callbacks.",
+        "evidenceBoundary": "Exact native call order, all category anchors, six of seven system anchors, and all last/before arguments are recovered for the pinned client. Ordinal 1 still reads an unresolved initialized TypeInfo static field and is not published as an exact system anchor.",
     }
 
 
@@ -184,12 +195,20 @@ def build_contract(game_assembly: Path, metadata_path: Path, native_path: Path, 
     try:
         native = json.loads(native_path.read_text(encoding="utf-8"))
         loop_metadata = json.loads(loop_metadata_path.read_text(encoding="utf-8"))
+        recorded_metadata = loop_metadata.get("metadata") or {}
+        if recorded_metadata.get("sha256") != EXPECTED_METADATA_SHA256:
+            raise ContractError("playerloop metadata evidence is for a different global-metadata.dat")
         contract = recover(native, loop_metadata, game_assembly.read_bytes(), metadata_path.read_bytes())
-    except (OSError, ValueError, KeyError, ContractError, json.JSONDecodeError) as exc:
+    except (OSError, ValueError, KeyError, TypeError, AttributeError, IndexError,
+            struct.error, ContractError, json.JSONDecodeError) as exc:
         return {"schema": "endfieldPlayerLoopRecoveryContract.v1", "status": "unavailable", "validationFailures": [str(exc)], "source": source, "evidenceBoundary": "Native PlayerLoop claims are withheld when evidence parsing or ABI validation fails."}
     contract["source"] = source
     contract["sourceHashes"] = {"GameAssembly.dll": EXPECTED_GAME_ASSEMBLY_SHA256, "global-metadata.dat": EXPECTED_METADATA_SHA256}
-    contract["validation"] = {"status": "validated", "gate": "explicit_current_native_inputs", "checks": ["GameAssembly.dll sha256", "global-metadata.dat sha256", "PlayerLoopUtils.AddPlayerLoop signature", "seven native AddPlayerLoop calls", "metadata string-literal handles", "last/before stack arguments"]}
+    contract["evidenceHashes"] = {
+        "runtime_native.json": sha256(native_path),
+        "playerloop_metadata.json": sha256(loop_metadata_path),
+    }
+    contract["validation"] = {"status": "partial", "gate": "explicit_current_native_inputs", "checks": ["GameAssembly.dll sha256", "global-metadata.dat sha256", "playerloop evidence embedded metadata sha256", "PlayerLoopUtils.AddPlayerLoop signature", "seven ordered native AddPlayerLoop calls", "six direct metadata string-literal system handles", "unique exact last/before stack writes"], "unresolved": ["ordinal 1 systemName TypeInfo static field -> exact string literal"]}
     return contract
 
 
@@ -203,10 +222,26 @@ def main() -> int:
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args()
     result = build_contract(args.game_assembly, args.metadata, args.native_evidence, args.playerloop_metadata)
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(result, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    print(json.dumps({"status": result["status"], "output": str(args.output), "validationFailures": result.get("validationFailures", [])}, ensure_ascii=False))
-    return 0 if result["status"] == "validated" or not args.check else 1
+    serialized = json.dumps(result, indent=2, ensure_ascii=False) + "\n"
+    matches = None
+    publishable = result["status"] in {
+        "validated",
+        "partial_unresolved_first_system_anchor",
+    }
+    if args.check:
+        matches = args.output.is_file() and args.output.read_text(encoding="utf-8") == serialized
+    elif publishable:
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(serialized, encoding="utf-8")
+    print(json.dumps({
+        "status": result["status"],
+        "output": str(args.output),
+        "matches": matches,
+        "validationFailures": result.get("validationFailures", []),
+    }, ensure_ascii=False))
+    if args.check:
+        return 0 if publishable and matches else 1
+    return 0 if publishable else 1
 
 
 if __name__ == "__main__":
