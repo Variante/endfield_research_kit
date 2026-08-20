@@ -1,4 +1,6 @@
 import json
+import copy
+import sys
 import unittest
 from pathlib import Path
 
@@ -6,6 +8,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation"
 REPORT = SOURCE / "secondary_dynamics_collider_start_semantics_contract.json"
+sys.path.insert(0, str(ROOT / "tools"))
+from build_secondary_dynamics_collider_start_semantics_contract import ContractError, _assert_parent_identity  # noqa: E402
 
 
 class ColliderStartSemanticsContractTests(unittest.TestCase):
@@ -68,6 +72,25 @@ class ColliderStartSemanticsContractTests(unittest.TestCase):
         self.assertEqual(decision["semanticCandidateHash"], "8b3d2761aaaac71a35d4a2557d570456")
         self.assertFalse(decision["wrapperHashIdentityPublished"])
         self.assertEqual(decision["wrapperToHashMappingStatus"], "unresolved_runtime_GetProcAddress_required")
+
+    def test_parent_identity_attacks_fail_closed(self):
+        burst = json.loads((ROOT / "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_burst_export_contract.json").read_text(encoding="utf-8"))
+        actual = {row["hash"]: {key: row[key] for key in ("hash", "rva", "fileOffset", "spanBytes", "bodyBytes", "bodySha256")} for row in self.payload["targets"]}
+        def candidate(d, hash_name):
+            return next(row for row in d["targets"]["colliderStartRange"]["candidates"] if row["hash"] == hash_name)
+        def export(d, hash_name):
+            return next(row for row in d["exports"] if row["hash"] == hash_name)
+        mutations = (
+            lambda d: candidate(d, "8b3d2761aaaac71a35d4a2557d570456").__setitem__("hash", "7342567c29c434b5b924be51bd8e34b7"),
+            lambda d: export(d, "8b3d2761aaaac71a35d4a2557d570456").__setitem__("rva", "0x3571e0"),
+            lambda d: export(d, "8b3d2761aaaac71a35d4a2557d570456").__setitem__("bodySha256", "0" * 64),
+            lambda d: candidate(d, "8b3d2761aaaac71a35d4a2557d570456").__setitem__("spanBytes", 207),
+        )
+        for mutate in mutations:
+            attacked = copy.deepcopy(burst)
+            mutate(attacked)
+            with self.assertRaises(ContractError):
+                _assert_parent_identity(attacked, actual)
 
 
 if __name__ == "__main__":
