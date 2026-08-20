@@ -191,7 +191,15 @@ def _decode_body(code: bytes, address: int) -> tuple[bytes, list[Any]]:
     if ret is None:
         raise ContractError(f"no real ret instruction at 0x{address:x}")
     end = ret.address - address + ret.size
-    return code[:end], [ins for ins in instructions if ins.address < address + end]
+    bounded = [ins for ins in instructions if ins.address < address + end]
+    cursor = address
+    for ins in bounded:
+        if ins.address != cursor:
+            raise ContractError(f"unsupported/undecoded x64 bytes at 0x{cursor:x}")
+        cursor += ins.size
+    if cursor != address + end:
+        raise ContractError(f"incomplete x64 decode at 0x{cursor:x}")
+    return code[:end], bounded
 
 
 def _memory_operand(ins: Any, operand: Any, base: str) -> dict[str, Any] | None:
