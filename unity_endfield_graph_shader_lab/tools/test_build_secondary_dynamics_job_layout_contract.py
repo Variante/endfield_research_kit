@@ -18,6 +18,12 @@ import build_secondary_dynamics_job_layout_contract as builder
 
 
 class SecondaryDynamicsJobLayoutContractTests(unittest.TestCase):
+    def test_primitive_type_code_boundary_excludes_non_values(self) -> None:
+        self.assertNotIn(0x01, builder.IL2CPP_PRIMITIVE_TYPE_CODES)  # VOID
+        self.assertNotIn(0x0E, builder.IL2CPP_PRIMITIVE_TYPE_CODES)  # STRING
+        self.assertIn(0x08, builder.IL2CPP_PRIMITIVE_TYPE_CODES)  # I4
+        self.assertIn(0x18, builder.IL2CPP_PRIMITIVE_TYPE_CODES)  # native I
+
     def test_current_contract_closes_only_outer_layout(self) -> None:
         observed = builder.build_contract()
         payload = json.loads(builder.DEFAULT_OUTPUT.read_text(encoding="utf-8"))
