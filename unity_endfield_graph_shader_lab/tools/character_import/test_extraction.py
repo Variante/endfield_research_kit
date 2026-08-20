@@ -17,6 +17,7 @@ from character_import.extraction import (  # noqa: E402
     EXTERNAL_UI_EFFECT_TYPES,
     CharacterImportError,
     _assert_scoped_output,
+    _fingerprint,
     _find_material_json,
     _material_dependency_ids,
     collect_hierarchy_asset_ids,
@@ -82,6 +83,68 @@ class ExtractionTests(unittest.TestCase):
             },
         }
         return character, map_path, entries, source
+
+    def _write_external_validation_fixture(
+        self,
+        output: Path,
+        selection: dict,
+        entries: list[dict],
+        *,
+        path_id_delta: int = 0,
+        wrong_internal_name: bool = False,
+        duplicate: bool = False,
+    ) -> Path:
+        output.mkdir(parents=True, exist_ok=True)
+        index = output / "object_index.jsonl"
+        index.write_text(
+            json.dumps(
+                {
+                    "recordType": "summary",
+                    "schemaVersion": 1,
+                    "complete": True,
+                    "counts": {
+                        "objects": 0,
+                        "schemas": 0,
+                        "monoScripts": 0,
+                        "scalars": 0,
+                        "pptrs": 0,
+                        "objectsWithTruncatedScalars": 0,
+                        "errors": 0,
+                        "suppressedErrors": 0,
+                    },
+                    "errors": [],
+                }
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        for entry in entries[:2]:
+            path_id = int(entry["PathID"]) + path_id_delta
+            filename = f"{entry['Name']}_p{path_id & ((1 << 64) - 1):X}.json"
+            path = output / entry["Type"] / filename
+            path.parent.mkdir(parents=True, exist_ok=True)
+            internal_name = "wrong" if wrong_internal_name and entry is entries[1] else entry["Name"]
+            path.write_text(json.dumps({"m_Name": internal_name}), encoding="utf-8")
+            if duplicate and entry is entries[0]:
+                duplicate_path = output / entry["Type"] / "duplicate" / filename
+                duplicate_path.parent.mkdir(parents=True, exist_ok=True)
+                duplicate_path.write_text(json.dumps({"Name": entry["Name"]}), encoding="utf-8")
+        (output / ".character_import_stage.json").write_text(
+            json.dumps(
+                {
+                    "fingerprint": _fingerprint(
+                        selection["entries"],
+                        EXTERNAL_UI_EFFECT_TYPES,
+                        object_index_jsonl=True,
+                    ),
+                    "entry_count": selection["entry_count"],
+                    "types": list(EXTERNAL_UI_EFFECT_TYPES),
+                    "object_index_jsonl": True,
+                }
+            ),
+            encoding="utf-8",
+        )
+        return index
 
     def test_external_effect_selector_expands_exact_container_closure(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -152,6 +215,18 @@ class ExtractionTests(unittest.TestCase):
 
             self.assertEqual(len(selection["expected_clip_identities"]), 1)
 
+    def test_external_effect_selector_rejects_unmarked_legacy_actor_inside_selected_container(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            character, map_path, entries, _source = self._external_effect_fixture(Path(temporary))
+            legacy = dict(entries[1])
+            legacy.pop("_ownership_evidence", None)
+            legacy["Name"] = "A_actor_endminf_ui_overview_02"
+            legacy["Container"] = entries[1]["Container"]
+            character["ui_animation"]["external_ui_effect_entries"].append(legacy)
+
+            with self.assertRaisesRegex(CharacterImportError, "unmarked legacy row inside"):
+                select_external_ui_effect_entries(character, [map_path])
+
     def test_external_effect_selector_rejects_unmarked_new_fx_row(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             character, map_path, _entries, _source = self._external_effect_fixture(Path(temporary))
@@ -192,57 +267,55 @@ class ExtractionTests(unittest.TestCase):
     def test_object_index_summary_and_export_identity_are_terminal_and_exact(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            character, map_path, entries, source = self._external_effect_fixture(root)
+            character, map_path, entries, _source = self._external_effect_fixture(root)
             selection = select_external_ui_effect_entries(character, [map_path])
             output = root / "output"
-            output.mkdir()
-            index = output / "object_index.jsonl"
-            index.write_text(
-                json.dumps({"recordType": "object", "pathId": 101})
-                + "\n"
-                + json.dumps(
-                    {
-                        "recordType": "summary",
-                        "schemaVersion": 1,
-                        "complete": True,
-                        "counts": {
-                            "objects": 2,
-                            "schemas": 0,
-                            "monoScripts": 0,
-                            "scalars": 0,
-                            "pptrs": 0,
-                            "objectsWithTruncatedScalars": 0,
-                            "errors": 0,
-                            "suppressedErrors": 0,
-                        },
-                        "errors": [],
-                    }
-                )
-                + "\n",
-                encoding="utf-8",
-            )
-            for entry in entries[:2]:
-                path = output / f"{entry['Type']}_{entry['PathID']}.json"
-                path.write_text(
-                    json.dumps(
-                        {
-                            "$animestudio": {
-                                "sourceOriginalPath": str(source),
-                                "pathId": entry["PathID"],
-                                "sourceOffset": entry["Offset"],
-                                "type": entry["Type"],
-                                "name": entry["Name"],
-                            }
-                        }
-                    ),
-                    encoding="utf-8",
-                )
+            index = self._write_external_validation_fixture(output, selection, entries)
 
             summary = validate_object_index_jsonl_summary(index)
             validated = validate_external_ui_effect_export(output, selection, [index])
 
             self.assertTrue(summary["complete"])
             self.assertEqual(validated["root_clip_count"], 2)
+
+    def test_external_effect_export_rejects_wrong_path_id_filename(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            character, map_path, entries, _source = self._external_effect_fixture(root)
+            selection = select_external_ui_effect_entries(character, [map_path])
+            output = root / "output"
+            index = self._write_external_validation_fixture(
+                output, selection, entries, path_id_delta=1
+            )
+
+            with self.assertRaisesRegex(CharacterImportError, "missing exact type-directory"):
+                validate_external_ui_effect_export(output, selection, [index])
+
+    def test_external_effect_export_rejects_wrong_internal_name(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            character, map_path, entries, _source = self._external_effect_fixture(root)
+            selection = select_external_ui_effect_entries(character, [map_path])
+            output = root / "output"
+            index = self._write_external_validation_fixture(
+                output, selection, entries, wrong_internal_name=True
+            )
+
+            with self.assertRaisesRegex(CharacterImportError, "internal Name/m_Name"):
+                validate_external_ui_effect_export(output, selection, [index])
+
+    def test_external_effect_export_rejects_duplicate_exact_file(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            character, map_path, entries, _source = self._external_effect_fixture(root)
+            selection = select_external_ui_effect_entries(character, [map_path])
+            output = root / "output"
+            index = self._write_external_validation_fixture(
+                output, selection, entries, duplicate=True
+            )
+
+            with self.assertRaisesRegex(CharacterImportError, "duplicate exact"):
+                validate_external_ui_effect_export(output, selection, [index])
 
     def test_object_index_summary_rejects_nonempty_errors_and_inconsistent_counts(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

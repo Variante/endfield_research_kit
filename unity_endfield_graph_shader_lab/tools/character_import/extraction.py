@@ -566,21 +566,21 @@ def select_external_ui_effect_entries(
         # ``external_ui_effect_entries`` historically also carried unrelated
         # A_actor_* effect evidence (for example sk_fx_endminf_01_ui.fbx).
         # Only catalog rows carrying the explicit A_fx/P_fxui ownership marker
-        # belong to this prefab extraction.  Legacy evidence remains visible in
-        # the catalog but cannot make this source-backed stage fail.
+        # belong to this prefab extraction. Legacy evidence remains visible in
+        # the catalog and is allowed only outside the selected closure.
         name = str(entry.get("Name") or "")
+        key = _external_effect_container_key(entry.get("Container"))
         if str(entry.get("_ownership_evidence") or "") != EXPLICIT_EXTERNAL_UI_EFFECT_CLIP_EVIDENCE:
             # The only intentionally retained legacy member is the known
-            # A_actor_* external FBX evidence.  An unmarked A_fx row (or any
-            # other new row) is a contract violation, not a reason to skip a
-            # potentially malformed source identity.
-            if name.casefold().startswith("a_actor_"):
+            # A_actor_* external FBX evidence outside the selected prefab
+            # closure. An unmarked legacy row inside that closure is unsafe.
+            if name.casefold().startswith("a_actor_") and key not in containers:
                 continue
             raise CharacterImportError(
-                f"external UI-effect row {name!r} lacks explicit actor-keyed FX evidence"
+                f"external UI-effect row {name!r} lacks explicit actor-keyed FX evidence "
+                "or is an unmarked legacy row inside a selected P_fxui container"
             )
         token = str(character.get("actor_token") or "")
-        key = _external_effect_container_key(entry.get("Container"))
         if str(entry.get("Type") or "") != "AnimationClip":
             raise CharacterImportError(
                 f"explicit external UI-effect row {name!r} is not an AnimationClip"
@@ -753,41 +753,106 @@ def validate_external_ui_effect_export(
     selection: dict[str, Any],
     object_index_paths: Iterable[Path],
 ) -> dict[str, Any]:
-    """Validate terminal object indexes and exact exported root/clip metadata."""
+    """Validate terminal indexes and exact type-directory root/clip exports.
+
+    Dedicated Animator/AnimationClip JSON does not carry the optional
+    ``$animestudio`` metadata sidecar. The output contract instead binds the
+    exact source/path/offset selection through the stage fingerprint, then
+    checks the exporter naming contract and the object's internal name.
+    """
 
     summaries = [validate_object_index_jsonl_summary(path) for path in object_index_paths]
+    selected_entries = _dedupe_entries(selection["entries"])
+    stamp_path = output / ".character_import_stage.json"
+    if not stamp_path.is_file():
+        raise CharacterImportError(
+            f"external UI-effect extraction stage fingerprint is missing: {stamp_path}"
+        )
+    try:
+        stamp = json.loads(stamp_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise CharacterImportError(
+            f"external UI-effect extraction stage fingerprint is malformed: {stamp_path}"
+        ) from exc
+    if not isinstance(stamp, dict):
+        raise CharacterImportError(
+            f"external UI-effect extraction stage fingerprint is not an object: {stamp_path}"
+        )
+    expected_fingerprint = _fingerprint(
+        selected_entries,
+        EXTERNAL_UI_EFFECT_TYPES,
+        object_index_jsonl=True,
+    )
+    if (
+        stamp.get("fingerprint") != expected_fingerprint
+        or stamp.get("entry_count") != len(selected_entries)
+        or stamp.get("types") != list(EXTERNAL_UI_EFFECT_TYPES)
+        or stamp.get("object_index_jsonl") is not True
+    ):
+        raise CharacterImportError(
+            "external UI-effect extraction stage fingerprint does not match the selected "
+            "AssetMap closure"
+        )
+
     expected = set(selection["expected_root_identities"]) | set(selection["expected_clip_identities"])
-    exported: set[tuple[Any, ...]] = set()
-    for path in output.rglob("*.json"):
+    expected_file_keys: set[tuple[str, str, int]] = set()
+    for identity in expected:
         try:
-            data = json.loads(path.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError):
-            continue
-        metadata = data.get("$animestudio") if isinstance(data, dict) else None
-        if not isinstance(metadata, dict):
-            continue
-        try:
-            exported.add(
-                (
-                    str(metadata.get("sourceOriginalPath") or "").replace("\\", "/").casefold(),
-                    int(metadata.get("pathId") or 0),
-                    int(metadata.get("sourceOffset") or 0),
-                    str(metadata.get("type") or ""),
-                    str(metadata.get("name") or ""),
-                )
+            entry_type = str(identity[4])
+            name = str(identity[5])
+            path_id = int(identity[2])
+        except (IndexError, TypeError, ValueError) as exc:
+            raise CharacterImportError(
+                "external UI-effect selection has a malformed root/clip identity"
+            ) from exc
+        file_key = (entry_type, name, path_id)
+        if file_key in expected_file_keys:
+            raise CharacterImportError(
+                "external UI-effect selection has duplicate root/clip output identities"
             )
-        except (TypeError, ValueError):
+        expected_file_keys.add(file_key)
+
+    missing: list[tuple[str, str, int]] = []
+    for entry_type, name, path_id in sorted(
+        expected_file_keys,
+        key=lambda value: (value[0].casefold(), value[1].casefold(), value[2]),
+    ):
+        unsigned_path_id = path_id & ((1 << 64) - 1)
+        filename = f"{name}_p{unsigned_path_id:X}.json"
+        type_root = output / entry_type
+        candidates = sorted(type_root.rglob(filename)) if type_root.is_dir() else []
+        if len(candidates) > 1:
+            raise CharacterImportError(
+                f"external UI-effect export has duplicate exact {entry_type} file: {filename}"
+            )
+        expected_path = type_root / filename
+        if len(candidates) != 1 or candidates[0] != expected_path:
+            missing.append((entry_type, name, path_id))
             continue
-    expected_root_clip = {
-        (identity[1], identity[2], identity[3], identity[4], identity[5])
-        for identity in expected
-    }
-    missing = expected_root_clip - exported
+        try:
+            data = json.loads(expected_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            raise CharacterImportError(
+                f"external UI-effect export JSON is malformed: {expected_path}"
+            ) from exc
+        if not isinstance(data, dict) or name not in {
+            str(data.get("Name") or ""),
+            str(data.get("m_Name") or ""),
+        }:
+            raise CharacterImportError(
+                f"external UI-effect export internal Name/m_Name does not match "
+                f"{entry_type}/{filename}"
+            )
     if missing:
         raise CharacterImportError(
-            f"external UI-effect export is missing exact root/clip metadata rows: {len(missing)}"
+            "external UI-effect export is missing exact type-directory root/clip files: "
+            f"{len(missing)}"
         )
-    return {"object_index_summaries": summaries, "root_clip_count": len(expected_root_clip)}
+    return {
+        "object_index_summaries": summaries,
+        "root_clip_count": len(expected_file_keys),
+        "stage_fingerprint": stamp["fingerprint"],
+    }
 
 
 def extract_external_ui_effect_stage(
