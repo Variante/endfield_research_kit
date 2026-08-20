@@ -249,6 +249,8 @@ class ValidateBurstResolverTelemetryTests(unittest.TestCase):
                         "hashedExportCount": 0,
                     },
                     "resolverModuleIdentity": rows[1]["resolverModuleIdentity"],
+                    "resolverExportMap": [],
+                    "resolverExportMapCount": 0,
                 },
             )
             for seq, row in enumerate(rows):
@@ -336,6 +338,8 @@ class ValidateBurstResolverTelemetryTests(unittest.TestCase):
                 "loadSucceeded": True,
                 "module": module,
                 "resolverModuleIdentity": identity,
+                "resolverExportMap": [],
+                "resolverExportMapCount": 0,
             }
             rows.insert(3, event)
             rows[3]["module"]["base"] = "0x5001"
@@ -344,6 +348,34 @@ class ValidateBurstResolverTelemetryTests(unittest.TestCase):
                 row["seq"] = seq
             path.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
             with self.assertRaisesRegex(validator.TraceValidationError, "module.base does not equal hModule"):
+                validator.validate_trace(path)
+
+    def test_successful_post_attach_load_cannot_spoof_empty_export_map(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "trace.jsonl"
+            self._write_trace(path)
+            rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+            identity = deepcopy(rows[1]["resolverModuleIdentity"])
+            module = deepcopy(identity)
+            module["status"] = "loadlibraryw"
+            event = {
+                key: rows[3][key]
+                for key in ("schema", "sessionId", "seq", "monotonicMs", "utc")
+            } | {
+                "kind": "resolver_module_loaded",
+                "requestedPath": identity["path"],
+                "hModule": "0x5000",
+                "loadSucceeded": True,
+                "module": module,
+                "resolverModuleIdentity": identity,
+                "resolverExportMap": [],
+                "resolverExportMapCount": 0,
+            }
+            rows.insert(3, event)
+            for seq, row in enumerate(rows):
+                row["seq"] = seq
+            path.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
+            with self.assertRaisesRegex(validator.TraceValidationError, "incomplete resolver export map"):
                 validator.validate_trace(path)
 
     def test_export_status_name_and_hashed_flag_are_consistent(self) -> None:

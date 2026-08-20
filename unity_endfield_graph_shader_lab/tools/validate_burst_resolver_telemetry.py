@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import sys
@@ -270,6 +271,7 @@ def validate_trace(
         },
         "resolver_module_loaded": {
             "requestedPath", "hModule", "loadSucceeded", "module", "resolverModuleIdentity",
+            "resolverExportMap", "resolverExportMapCount",
         },
         "capture_started": {"trigger"},
         "get_proc_address": {
@@ -444,6 +446,23 @@ def validate_trace(
                 manifest,
                 expected_resolver_path,
             )
+            export_map = row.get("resolverExportMap")
+            if not isinstance(export_map, list) or len(export_map) != manifest["resolverExportEnumeration"]["hashedCount"]:
+                _fail(f"resolver_module_loaded {index} success has incomplete resolver export map")
+            canonical = []
+            for entry in export_map:
+                if not isinstance(entry, dict) or set(entry) != {"name", "offset"}:
+                    _fail(f"resolver_module_loaded {index} export map entry schema is invalid")
+                if not isinstance(entry["name"], str) or not re.fullmatch(r"[0-9a-f]{32}", entry["name"]):
+                    _fail(f"resolver_module_loaded {index} export map contains a non-hashed name")
+                if not isinstance(entry["offset"], str) or not re.fullmatch(r"0x[0-9a-fA-F]+", entry["offset"]):
+                    _fail(f"resolver_module_loaded {index} export map contains an invalid offset")
+                canonical.append(f"{entry['name']}:{int(entry['offset'], 16):x}")
+            digest = hashlib.sha256(("\n".join(sorted(canonical)) + "\n").encode()).hexdigest()
+            if digest != manifest["resolverExportEnumeration"]["canonicalNameRvaSha256"]:
+                _fail(f"resolver_module_loaded {index} export map differs from the pinned manifest")
+            if row.get("resolverExportMapCount") != len(export_map):
+                _fail(f"resolver_module_loaded {index} export map count drifted")
         else:
             module = row.get("module")
             if not isinstance(module, dict):
@@ -453,6 +472,8 @@ def validate_trace(
                 _fail(f"resolver_module_loaded {index} failed load module schema is not exact")
             if any(module.get(key) is not None for key in ("name", "path", "base", "moduleBase", "size")):
                 _fail(f"resolver_module_loaded {index} failed load has non-null module identity")
+            if row.get("resolverExportMap") != [] or row.get("resolverExportMapCount") != 0:
+                _fail(f"resolver_module_loaded {index} failed load must have no resolver export map")
 
     target_windows = _target_windows(manifest)
     observed_hashed_events = 0

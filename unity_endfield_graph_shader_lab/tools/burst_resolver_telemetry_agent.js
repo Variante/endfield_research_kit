@@ -459,6 +459,8 @@ function attachHook(name, spec) {
             loadSucceeded: loaded,
             module: moduleInfo(module, "loadlibraryw"),
             resolverModuleIdentity: burstIdentity,
+            resolverExportMap: resolverExportMap,
+            resolverExportMapCount: resolverHashedExportCount,
           });
           return;
         }
