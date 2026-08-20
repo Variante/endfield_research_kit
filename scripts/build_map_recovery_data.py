@@ -1473,6 +1473,7 @@ def _render_tier_layers(level_id: str, config: dict, inverted: bool) -> list[dic
             "tierId": int(tier_id) if str(tier_id).isdigit() else tier_id,
             "layer": chosen_layer,
             "inverted": inverted,
+            "rowOrientation": "top_to_bottom_plus_z",
             "worldBounds": world_bounds,
             "imgSize": [img_w, img_h],
             "sources": sources,
@@ -1491,7 +1492,11 @@ def _render_tier_layers(level_id: str, config: dict, inverted: bool) -> list[dic
                 if dst_w <= 0 or dst_h <= 0:
                     continue
                 for j in range(dst_h):
-                    src_row = rows_rgba[tex_h - 1 - min(tex_h - 1, (j * tex_h + tex_h // 2) // dst_h)]
+                    # Exported tier rows use the same top-to-bottom, +Z-at-top
+                    # convention as base minimap chunks. Flipping every tile
+                    # here inverted local art while leaving its world rect in
+                    # place, producing discontinuous edges in multi-cell tiers.
+                    src_row = rows_rgba[min(tex_h - 1, (j * tex_h + tex_h // 2) // dst_h)]
                     dst = canvas[y0 + j]
                     for i in range(dst_w):
                         src_i = min(tex_w - 1, (i * tex_w + tex_w // 2) // dst_w) * 4
