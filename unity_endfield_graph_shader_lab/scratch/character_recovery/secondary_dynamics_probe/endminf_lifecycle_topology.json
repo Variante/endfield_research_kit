@@ -1,5 +1,5 @@
 {
-    "schema": "endfield.charinfo.secondary-dynamics-lifecycle-probe.v1",
+    "schema": "endfield.charinfo.secondary-dynamics-lifecycle-probe.v2",
     "actor": "endminf",
     "prefab": "Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/Prefabs/Endminf.prefab",
     "source_contract": "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_owner_recovery.json",
@@ -26,8 +26,11 @@
         "movement_disabled": true,
         "gate_open": true,
         "state_allocated": true,
-        "callback_invoked": true,
-        "writeback_invoked": true,
+        "callback_invoked": false,
+        "writeback_invoked": false,
+        "audit_callback_marker_invoked": true,
+        "identity_writeback_invoked": true,
+        "identity_writeback_skipped": false,
         "ordering_verified": true,
         "transforms_unchanged": true,
         "passed": true,
@@ -37,8 +40,8 @@
         "gate_reason": "open",
         "events": [
             "read",
-            "callback",
-            "writeback"
+            "audit_callback_marker",
+            "identity_writeback"
         ],
         "limitation": "non-solver lifecycle audit only; no retail secondary dynamics solver, PlayerLoop registration, or secondary_dynamics_verified claim is produced"
     },
@@ -50,6 +53,9 @@
         "state_allocated": true,
         "callback_invoked": false,
         "writeback_invoked": false,
+        "audit_callback_marker_invoked": false,
+        "identity_writeback_invoked": false,
+        "identity_writeback_skipped": false,
         "ordering_verified": true,
         "transforms_unchanged": true,
         "passed": true,
@@ -71,6 +77,9 @@
         "state_allocated": true,
         "callback_invoked": false,
         "writeback_invoked": false,
+        "audit_callback_marker_invoked": false,
+        "identity_writeback_invoked": false,
+        "identity_writeback_skipped": false,
         "ordering_verified": true,
         "transforms_unchanged": true,
         "passed": true,

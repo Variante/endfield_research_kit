@@ -1,6 +1,9 @@
 import importlib.util
 import pathlib
+import struct
+import tempfile
 import unittest
+import zlib
 
 
 MODULE_PATH = pathlib.Path(__file__).with_name("validate_overview_capture_sidecar.py")
@@ -107,6 +110,42 @@ def valid_payload():
     }
 
 
+def rgba_png(width=2, height=2):
+    """Build a tiny valid RGBA PNG without a third-party image package."""
+    pixels = bytes((255, 0, 0, 0, 0, 255, 0, 0, 0, 0, 255, 255, 255, 255, 255, 128))
+    assert width == height == 2
+    scanlines = b"\x00" + pixels[:8] + b"\x00" + pixels[8:]
+
+    def chunk(kind, payload):
+        return (
+            struct.pack(">I", len(payload))
+            + kind
+            + payload
+            + struct.pack(">I", zlib.crc32(kind + payload) & 0xFFFFFFFF)
+        )
+
+    return (
+        b"\x89PNG\r\n\x1a\n"
+        + chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 6, 0, 0, 0))
+        + chunk(b"IDAT", zlib.compress(scanlines))
+        + chunk(b"IEND", b"")
+    )
+
+
+def frame_verified_payload():
+    payload = valid_payload()
+    payload["width"] = 2
+    payload["height"] = 2
+    for index, frame in enumerate(payload["frames"]):
+        frame["file"] = f"frame_{index:06d}.png"
+        frame["alpha_audit"].update({
+            "minimum_alpha": 0,
+            "maximum_alpha": 255,
+            "transparent_clear_observed": True,
+        })
+    return payload
+
+
 class ValidateOverviewCaptureSidecarTests(unittest.TestCase):
     def test_valid_start_transition_then_one_loop(self):
         self.assertEqual(MODULE.validate_payload(valid_payload()), [])
@@ -155,6 +194,48 @@ class ValidateOverviewCaptureSidecarTests(unittest.TestCase):
         errors = MODULE.validate_payload(payload)
         self.assertTrue(any("strict start" in error for error in errors))
         self.assertTrue(any("clip_time_seconds" in error for error in errors))
+
+    def test_verify_frames_reads_png_and_matches_sidecar(self):
+        payload = frame_verified_payload()
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            for frame in payload["frames"]:
+                (root / frame["file"]).write_bytes(rgba_png())
+            self.assertEqual(
+                MODULE.validate_payload(payload, frame_root=root, verify_frames=True),
+                [],
+            )
+
+    def test_verify_frames_rejects_tampered_alpha_counts(self):
+        payload = frame_verified_payload()
+        payload["frames"][0]["alpha_audit"]["transparent_pixels"] = 1
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            for frame in payload["frames"]:
+                (root / frame["file"]).write_bytes(rgba_png())
+            errors = MODULE._verify_frame_files(payload, root)
+        self.assertTrue(any("transparent_pixels mismatch" in error for error in errors))
+
+    def test_verify_frames_rejects_missing_extra_and_traversal(self):
+        payload = frame_verified_payload()
+        payload["frames"][0]["file"] = "../outside.png"
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            for frame in payload["frames"][1:]:
+                (root / frame["file"]).write_bytes(rgba_png())
+            (root / "frame_stale.png").write_bytes(rgba_png())
+            errors = MODULE._verify_frame_files(payload, root)
+        self.assertTrue(any("stay under" in error for error in errors))
+        self.assertTrue(any("unreferenced frame_*.png" in error for error in errors))
+
+    def test_verify_frames_rejects_corrupt_png(self):
+        payload = frame_verified_payload()
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            for frame in payload["frames"]:
+                (root / frame["file"]).write_bytes(b"not a png")
+            errors = MODULE._verify_frame_files(payload, root)
+        self.assertTrue(any("PNG audit failed" in error for error in errors))
 
 
 if __name__ == "__main__":
