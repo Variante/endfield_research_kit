@@ -27,6 +27,7 @@ class SecondaryDynamicsBurstExportTests(unittest.TestCase):
         self.assertEqual(payload["native_gate"]["libBurstGenerated"]["sha256"], builder.EXPECTED_LIB_BURST_SHA256)
         self.assertEqual(payload["pe"]["totalNamedExportCount"], 3141)
         self.assertEqual(payload["pe"]["hashedExportCount"], 628)
+        self.assertEqual(payload["pe"]["hashedExportNamesSha256"], "3575fa430f691be98c1f2b6cadfb71e74854f422eed7fce767215d974ac332c9")
         self.assertEqual(
             payload["targets"]["simulationStartRange"]["candidates"][0]["hash"],
             "c7e2be088565d3ff7a6e7ba86d23fd51",
@@ -50,14 +51,27 @@ class SecondaryDynamicsBurstExportTests(unittest.TestCase):
         self.assertIn("GetProcAddress", unresolved)
         self.assertIn("hash bytes", unresolved)
 
+    def test_canonical_installed_dll_and_export_set(self) -> None:
+        dll = Path(json.loads(builder.DEFAULT_OUTPUT.read_text(encoding="utf-8"))["native_gate"]["libBurstGenerated"]["path"])
+        self.assertTrue(dll.is_file())
+        self.assertEqual(builder._sha256(dll), builder.EXPECTED_LIB_BURST_SHA256)
+        parsed = builder._pe_exports(dll)
+        names = sorted(row["name"] for row in parsed["hashed"])
+        self.assertEqual(len(names), 628)
+        self.assertEqual(
+            __import__("hashlib").sha256("\n".join(names).encode()).hexdigest(),
+            "3575fa430f691be98c1f2b6cadfb71e74854f422eed7fce767215d974ac332c9",
+        )
+
     def test_stack_feature_decoder_preserves_width_and_offsets(self) -> None:
         body = bytes.fromhex(
             "f3 0f 11 64 24 20 "
             "48 89 44 24 28 "
-            "4c 89 84 24 80 00 00 00"
+            "4c 89 84 24 80 00 00 00 c3"
         )
+        decoded_body, instructions = builder._decode_body(body, 0x180000000)
         self.assertEqual(
-            builder._stack_writes(body),
+            builder._stack_writes_from_instructions(instructions),
             [
                 {"offset": 32, "widthBytes": 4, "kind": "xmm"},
                 {"offset": 40, "widthBytes": 8},
