@@ -24,6 +24,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from capstone import CS_ARCH_X86, CS_MODE_64, Cs, CS_OP_MEM
+
 
 LAB_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = LAB_ROOT.parent
@@ -193,10 +195,10 @@ ACCESS_EVIDENCE: tuple[dict[str, Any], ...] = (
         "type": "BeyondDynamicBone.SimulationManager+StartSimulationStepJob",
         "method": "Spring",
         "arguments": [
-            {"name": "springParams", "type": "BeyondDynamicBone.SpringConstraint+SpringConstraintParams", "accessedOffsets": ["0x0", "0x4", "0x8", "0xc"]},
-            {"name": "nextPos", "type": "Unity.Mathematics.double3", "accessedOffsets": ["0x0", "0x10"]},
-            {"name": "basePos", "type": "Unity.Mathematics.double3", "accessedOffsets": ["0x0", "0x10"]},
-            {"name": "baseRot", "type": "Unity.Mathematics.quaternion", "accessedOffsets": ["0x0"]},
+            {"name": "springParams", "type": "BeyondDynamicBone.SpringConstraint+SpringConstraintParams", "root": "rdi", "maxPayloadBytes": 16},
+            {"name": "nextPos", "type": "Unity.Mathematics.double3", "root": "r14", "maxPayloadBytes": 24},
+            {"name": "basePos", "type": "Unity.Mathematics.double3", "root": "r15", "maxPayloadBytes": 24},
+            {"name": "baseRot", "type": "Unity.Mathematics.quaternion", "root": "opaque", "maxPayloadBytes": 16, "opaqueOnly": True},
         ],
     },
     {
@@ -204,8 +206,8 @@ ACCESS_EVIDENCE: tuple[dict[str, Any], ...] = (
         "type": "BeyondDynamicBone.SimulationManager+StartSimulationStepJob",
         "method": "Wind",
         "arguments": [
-            {"name": "windParams", "type": "BeyondDynamicBone.WindParams", "accessedOffsets": ["0x0", "0x10", "0x14", "0x18"]},
-            {"name": "result", "type": "Unity.Mathematics.float3", "accessedOffsets": ["0x0", "0x8"]},
+            {"name": "windParams", "type": "BeyondDynamicBone.WindParams", "root": "rbx", "maxPayloadBytes": 28},
+            {"name": "result", "type": "Unity.Mathematics.float3", "root": "result", "maxPayloadBytes": 12, "opaqueBoundary": True},
         ],
     },
     {
@@ -213,10 +215,10 @@ ACCESS_EVIDENCE: tuple[dict[str, Any], ...] = (
         "type": "BeyondDynamicBone.SimulationManager+StartSimulationStepJob",
         "method": "WindForceBlend",
         "arguments": [
-            {"name": "windInfo", "type": "BeyondDynamicBone.TeamWindInfo", "accessedOffsets": ["0x4", "0x8", "0xc", "0x14"]},
-            {"name": "windParams", "type": "BeyondDynamicBone.WindParams", "accessedOffsets": ["0x8", "0xc"]},
-            {"name": "windPos", "type": "Unity.Mathematics.float3", "accessedOffsets": ["0x0", "0x8"]},
-            {"name": "result", "type": "Unity.Mathematics.float3", "accessedOffsets": ["0x0", "0x8"]},
+            {"name": "windInfo", "type": "BeyondDynamicBone.TeamWindInfo", "root": "rbx", "maxPayloadBytes": 24},
+            {"name": "windParams", "type": "BeyondDynamicBone.WindParams", "root": "rsi", "maxPayloadBytes": 28},
+            {"name": "windPos", "type": "Unity.Mathematics.float3", "root": "rdi", "maxPayloadBytes": 12},
+            {"name": "result", "type": "Unity.Mathematics.float3", "root": "result", "maxPayloadBytes": 12, "opaqueBoundary": True},
         ],
     },
 )
@@ -327,6 +329,82 @@ def _direct_type_layout(*, md: Any, pe: Any, registration: dict[str, Any], type_
     }
 
 
+def _scan_argument_memory(pe: Any, start: int, end: int, roots: set[str]) -> list[dict[str, Any]]:
+    """Decode every bounded x64 memory operand rooted at selected arguments."""
+    if end <= start or end - start > 0x2000:
+        raise ContractError(f"invalid helper span 0x{start:x}-0x{end:x}")
+    cs = Cs(CS_ARCH_X86, CS_MODE_64)
+    cs.detail = True
+    records: list[dict[str, Any]] = []
+    for instruction in cs.disasm(pe.bytes_at_va(start, end - start), start):
+        for operand_index, operand in enumerate(instruction.operands):
+            if operand.type != CS_OP_MEM:
+                continue
+            base = instruction.reg_name(operand.mem.base) if operand.mem.base else None
+            if base not in roots:
+                continue
+            access = "read"
+            if instruction.mnemonic.startswith(("mov", "vmov", "stos")) and operand_index == 0:
+                access = "write"
+            elif operand_index == 0 and instruction.mnemonic.startswith(("add", "sub", "mul", "div", "inc", "dec", "and", "or", "xor")):
+                access = "readwrite"
+            records.append({
+                "instructionOffset": f"0x{instruction.address - start:x}",
+                "base": base,
+                "displacement": f"0x{operand.mem.disp:x}" if operand.mem.disp >= 0 else f"-0x{-operand.mem.disp:x}",
+                "displacementValue": operand.mem.disp,
+                "widthBytes": operand.size,
+                "access": access,
+            })
+    return records
+
+
+def _validate_argument_accesses(arguments: list[dict[str, Any]], records: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Match decoded argument-root accesses; reject fabricated offsets."""
+    by_root = {
+        str(argument["root"]): argument
+        for argument in arguments
+        if argument["root"] not in ("result", "opaque") and not argument.get("opaqueOnly")
+    }
+    observed: dict[str, list[dict[str, Any]]] = {root: [] for root in by_root}
+    for record in records:
+        root = str(record["base"])
+        if root not in by_root:
+            continue
+        argument = by_root[root]
+        displacement = int(record["displacementValue"])
+        width = int(record["widthBytes"])
+        if displacement < 0 or displacement + width > int(argument["maxPayloadBytes"]):
+            if argument.get("opaqueBoundary"):
+                record = dict(record)
+                record["classification"] = "typed_payload_boundary_unresolved"
+                observed[root].append(record)
+                continue
+            raise ContractError(
+                f"{argument['name']} decoded access outside payload: "
+                f"{root}+0x{displacement:x}/width={width}"
+            )
+        observed[root].append(record)
+    output: list[dict[str, Any]] = []
+    for argument in arguments:
+        root = str(argument["root"])
+        if root in ("result", "opaque") or argument.get("opaqueOnly"):
+            output.append({**argument, "decodedAccesses": [], "classification": "writeback_pointer_unresolved"})
+            continue
+        accesses = observed[root]
+        if not accesses:
+            raise ContractError(f"{argument['name']} root {root} has no decoded accesses")
+        output.append({
+            "name": argument["name"],
+            "type": argument["type"],
+            "root": root,
+            "maxPayloadBytes": argument["maxPayloadBytes"],
+            "decodedAccesses": accesses,
+            "classification": "typed_payload_boundary_unresolved" if argument.get("opaqueBoundary") else "decoded_bounded_accesses",
+        })
+    return output
+
+
 def _method_evidence(*, md: Any, pe: Any, native: Any, code_registration: int) -> list[dict[str, Any]]:
     image_names = {md.string(image.name_index) for image in md.images}
     modules = native.parse_codegen_modules(pe, code_registration)
@@ -352,9 +430,16 @@ def _method_evidence(*, md: Any, pe: Any, native: Any, code_registration: int) -
             raise ContractError(f"static contract lacks unique helper row {method_index}")
         row = static_rows[0]
         expected_va = int(str(row["va"]), 16)
-        expected_end = int(str(row["endVaExclusive"]), 16)
+        _, all_method_pointers = native.build_pointer_indexes(pe, md, modules, ranges)
+        all_pointers = sorted(pointer for pointer in all_method_pointers if pointer)
+        next_pointer = next((candidate for candidate in all_pointers if candidate > pointer), None)
+        if next_pointer is None:
+            raise ContractError(f"method {method_index} has no bounded next pointer")
+        expected_end = next_pointer
         if pointer != expected_va:
             raise ContractError(f"method {method_index} pointer drift: 0x{pointer:x} != 0x{expected_va:x}")
+        if expected_end != int(str(row["endVaExclusive"]), 16):
+            raise ContractError(f"method {method_index} next-pointer span drift")
         body = pe.bytes_at_va(pointer, expected_end - expected_va)
         digest = hashlib.sha256(body).hexdigest()
         if digest != row["bodySha256"]:
@@ -367,7 +452,11 @@ def _method_evidence(*, md: Any, pe: Any, native: Any, code_registration: int) -
             "endVaExclusive": row["endVaExclusive"],
             "spanBytes": row["spanBytes"],
             "bodySha256": row["bodySha256"],
-            "accesses": expected["arguments"],
+            "accesses": _validate_argument_accesses(
+                expected["arguments"],
+                _scan_argument_memory(pe, pointer, expected_end, {str(argument["root"]) for argument in expected["arguments"] if argument["root"] not in ("result", "opaque")}),
+            ),
+            "canonicalStaticContractSha256": _sha256(STATIC_CONTRACT),
         })
     return output
 
@@ -396,6 +485,24 @@ def build_contract(*, game_assembly: Path | None = None, metadata: Path | None =
         )
         for spec in TYPE_SPECS
     ]
+    method_evidence = _method_evidence(md=md, pe=pe, native=native, code_registration=code_registration)
+    layout_sizes = {str(layout["name"]): int(layout["nativeSizeBytes"]) for layout in layouts}
+    for method in method_evidence:
+        for argument in method["accesses"]:
+            type_name = str(argument["type"])
+            if type_name not in layout_sizes:
+                raise ContractError(f"method {method['methodIndex']} argument {type_name} lacks accessed layout")
+            if int(argument["maxPayloadBytes"]) != layout_sizes[type_name]:
+                raise ContractError(f"method {method['methodIndex']} {type_name} payload-size cross-check drift")
+    canonical_sha256 = _sha256(STATIC_CONTRACT)
+    canonical = json.loads(STATIC_CONTRACT.read_text(encoding="utf-8"))
+    if canonical.get("solverStatus") != "managed_fallback_accesses_closed_burst_solver_unresolved":
+        raise ContractError("canonical static contract status drift")
+    canonical_gate = canonical.get("nativeGate", canonical.get("native_gate", {}))
+    if canonical_gate.get("gameAssembly", {}).get("sha256") != gate["gameAssembly"]["sha256"]:
+        raise ContractError("canonical static contract GameAssembly source hash drift")
+    if canonical_gate.get("globalMetadata", {}).get("sha256") != gate["globalMetadata"]["sha256"]:
+        raise ContractError("canonical static contract metadata source hash drift")
     return {
         "schema": "endfield.charinfo.secondary-dynamics-accessed-layout.v1",
         "status": "accessed_nested_direct_layouts_closed",
@@ -413,7 +520,14 @@ def build_contract(*, game_assembly: Path | None = None, metadata: Path | None =
             "typeDefinitionsSizesCount": registration["typeDefinitionsSizesCount"],
         },
         "layouts": layouts,
-        "methodEvidence": _method_evidence(md=md, pe=pe, native=native, code_registration=code_registration),
+        "methodEvidence": method_evidence,
+        "canonicalStaticContract": {
+            "path": _path(STATIC_CONTRACT),
+            "sha256": canonical_sha256,
+            "status": canonical["status"],
+            "sourceHashesCrossChecked": True,
+            "nextPointersRecomputed": True,
+        },
         "boundary": {
             "largeElementInputs": "TeamData, CenterData, and other NativeArray element layouts remain owned by secondary_dynamics_element_layout_contract.json.",
             "genericInputs": "No generic element field is directly addressed by Spring, Wind, or WindForceBlend; NativeArray/NativeReference remain outer job-payload boundaries.",
