@@ -54,6 +54,9 @@ EXTERNAL_UI_EFFECT_TYPES = (
     "Material:Both",
     "Texture2D:Both",
 )
+EXPLICIT_EXTERNAL_UI_EFFECT_CLIP_EVIDENCE = (
+    "explicit_actor_keyed_fx_clip_in_external_ui_effect_prefab_container"
+)
 
 
 class CharacterImportError(RuntimeError):
@@ -560,13 +563,36 @@ def select_external_ui_effect_entries(
     for entry in clip_entries:
         if not isinstance(entry, dict):
             continue
-        key = _external_effect_container_key(entry.get("Container"))
-        if key not in containers or str(entry.get("Type") or "") != "AnimationClip":
-            continue
+        # ``external_ui_effect_entries`` historically also carried unrelated
+        # A_actor_* effect evidence (for example sk_fx_endminf_01_ui.fbx).
+        # Only catalog rows carrying the explicit A_fx/P_fxui ownership marker
+        # belong to this prefab extraction.  Legacy evidence remains visible in
+        # the catalog but cannot make this source-backed stage fail.
         name = str(entry.get("Name") or "")
+        if str(entry.get("_ownership_evidence") or "") != EXPLICIT_EXTERNAL_UI_EFFECT_CLIP_EVIDENCE:
+            # The only intentionally retained legacy member is the known
+            # A_actor_* external FBX evidence.  An unmarked A_fx row (or any
+            # other new row) is a contract violation, not a reason to skip a
+            # potentially malformed source identity.
+            if name.casefold().startswith("a_actor_"):
+                continue
+            raise CharacterImportError(
+                f"external UI-effect row {name!r} lacks explicit actor-keyed FX evidence"
+            )
         token = str(character.get("actor_token") or "")
+        key = _external_effect_container_key(entry.get("Container"))
+        if str(entry.get("Type") or "") != "AnimationClip":
+            raise CharacterImportError(
+                f"explicit external UI-effect row {name!r} is not an AnimationClip"
+            )
         if not name.casefold().startswith(f"a_fx_{token.casefold()}_ui_"):
-            continue
+            raise CharacterImportError(
+                f"explicit external UI-effect row {name!r} is not A_fx_{token}_ui_*"
+            )
+        if key not in containers:
+            raise CharacterImportError(
+                f"explicit external UI-effect clip {name!r} is outside the selected P_fxui prefab containers"
+            )
         _external_effect_identity(entry)
         containers[key]["clip_entries"].append(entry)
         selected_clip_identities.add(_external_effect_identity(entry))
@@ -666,13 +692,59 @@ def validate_object_index_jsonl_summary(path: Path) -> dict[str, Any]:
     if (
         summary.get("recordType") != "summary"
         or summary.get("schemaVersion") != 1
-        or summary.get("complete") is not True
     ):
         raise CharacterImportError(
-            f"object-index JSONL lacks a terminal complete schema-v1 summary: {path}"
+            f"object-index JSONL lacks a terminal schema-v1 summary: {path}"
         )
     if any(row.get("recordType") == "summary" for row in rows[:-1]):
         raise CharacterImportError(f"object-index JSONL has a non-terminal summary: {path}")
+
+    counts = summary.get("counts")
+    if not isinstance(counts, dict):
+        raise CharacterImportError(f"object-index JSONL summary counts are malformed: {path}")
+    required_counts = (
+        "objects",
+        "schemas",
+        "monoScripts",
+        "scalars",
+        "pptrs",
+        "objectsWithTruncatedScalars",
+        "errors",
+        "suppressedErrors",
+    )
+    for key in required_counts:
+        value = counts.get(key)
+        if not isinstance(value, int) or isinstance(value, bool) or value < 0:
+            raise CharacterImportError(
+                f"object-index JSONL summary count {key!r} is malformed: {path}"
+            )
+
+    errors = summary.get("errors")
+    if not isinstance(errors, list):
+        raise CharacterImportError(f"object-index JSONL summary errors are malformed: {path}")
+    for error in errors:
+        if (
+            not isinstance(error, dict)
+            or not isinstance(error.get("code"), str)
+            or not error.get("code")
+            or not isinstance(error.get("message"), str)
+        ):
+            raise CharacterImportError(f"object-index JSONL summary contains a malformed error: {path}")
+
+    reported_errors = counts["errors"]
+    suppressed_errors = counts["suppressedErrors"]
+    if reported_errors != len(errors) + suppressed_errors:
+        raise CharacterImportError(
+            f"object-index JSONL error counts are inconsistent: {path}"
+        )
+    if errors or reported_errors or suppressed_errors:
+        raise CharacterImportError(
+            f"object-index JSONL contains export errors: {path}"
+        )
+    if summary.get("complete") is not True:
+        raise CharacterImportError(
+            f"object-index JSONL terminal summary is not complete: {path}"
+        )
     return summary
 
 
