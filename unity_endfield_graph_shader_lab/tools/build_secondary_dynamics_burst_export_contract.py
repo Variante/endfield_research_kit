@@ -625,7 +625,7 @@ def _candidate_initializer_evidence(
     return variants
 
 
-def _collider_end_candidate_audit(pe: dict[str, Any], rows: list[dict[str, Any]]) -> dict[str, Any]:
+def _collider_end_candidate_audit(pe: dict[str, Any], rows: list[dict[str, Any]], gate: dict[str, Any]) -> dict[str, Any]:
     """Compare both end-range candidates against the known managed fallback.
 
     The result is intentionally an exclusion audit: neither candidate is
@@ -638,11 +638,14 @@ def _collider_end_candidate_audit(pe: dict[str, Any], rows: list[dict[str, Any]]
     candidate_hashes = ("5d15fdfe5676d33316f2415a1f41d523", "e6aec003f0525fe127cd9c0ccb59b1e2")
     solver_path = DEFAULT_OUTPUT.parent / "secondary_dynamics_solver_static_contract.json"
     job_path = DEFAULT_OUTPUT.parent / "secondary_dynamics_job_layout_contract.json"
-    try:
-        solver_payload = json.loads(solver_path.read_text(encoding="utf-8"))
-        job_payload = json.loads(job_path.read_text(encoding="utf-8"))
-    except (OSError, ValueError) as exc:
-        raise ContractError(f"cannot read collider-end managed comparison contracts: {exc}") from exc
+    solver_provenance = _sibling_provenance(
+        solver_path.name, gate, "endfield.charinfo.secondary-dynamics-solver-static.v1", "native_spans_hash_pinned"
+    )
+    job_provenance = _sibling_provenance(
+        job_path.name, gate, "endfield.charinfo.secondary-dynamics-job-layout.v1", "outer_job_layout_closed"
+    )
+    solver_payload = json.loads(solver_path.read_text(encoding="utf-8"))
+    job_payload = json.loads(job_path.read_text(encoding="utf-8"))
     fallback_rows = [row for row in solver_payload.get("targets", [])
                      if row.get("methodIndex") == 385455]
     if len(fallback_rows) != 1 or fallback_rows[0].get("solverStatus") != "managed_fallback_observed":
@@ -748,21 +751,23 @@ def _collider_end_candidate_audit(pe: dict[str, Any], rows: list[dict[str, Any]]
             },
         })
 
+    parameter_rows = []
+    for ordinal, field in enumerate(job_fields, 1):
+        kind = field.get("kind")
+        element = field.get("elementType", {}).get("name")
+        parameter_rows.append({"ordinal": ordinal, "name": field.get("name"),
+                               "kind": f"{kind}<{element}>" if element else kind})
+    wrapper_forwarding_equal = all(c["wrapper"]["incomingGprForwarding"] == candidates[0]["wrapper"]["incomingGprForwarding"] for c in candidates)
+    stack_forwarding_equal = all(c["wrapper"]["stackParameterForwarding"] == candidates[0]["wrapper"]["stackParameterForwarding"] and c["wrapper"]["outgoingStackForwarding"] == candidates[0]["wrapper"]["outgoingStackForwarding"] for c in candidates)
+    slot_rvas = [c["runtimeFunctionPointerSlot"]["targetRva"] for c in candidates]
     return {
         "status": "two_abi_compatible_candidates_static_non_discriminating",
         "parameterContract": {
             "methodIndex": 385317,
             "method": "Invoke",
             "parameterCount": 6,
-            "parameters": [
-                {"ordinal": 1, "name": "jobColliderIndexList", "kind": "NativeArray<int>"},
-                {"ordinal": 2, "name": "nowPositions", "kind": "NativeArray<double3>"},
-                {"ordinal": 3, "name": "nowRotations", "kind": "NativeArray<quaternion>"},
-                {"ordinal": 4, "name": "oldPositions", "kind": "NativeArray<double3>"},
-                {"ordinal": 5, "name": "oldRotations", "kind": "NativeArray<quaternion>"},
-                {"ordinal": 6, "name": "lengthPtr", "kind": "NativeArray<int>"},
-            ],
-            "source": "global-metadata.dat method 385317 plus canonical EndSimulationStepJob layout",
+            "parameters": parameter_rows,
+            "source": "canonical EndSimulationStepJob field metadata",
         },
         "managedFallbackComparison": {
             "methodIndex": 385455,
@@ -790,15 +795,16 @@ def _collider_end_candidate_audit(pe: dict[str, Any], rows: list[dict[str, Any]]
                 for row in job_fields
             ],
         },
+        "provenance": {"solver": solver_provenance, "jobLayout": job_provenance},
         "comparison": {
-            "candidateCount": 2,
-            "sameWrapperCfg": True,
-            "sameParameterForwarding": True,
-            "sameNativeArrayParameterOrder": True,
-            "fieldOffsetsPresentInCandidateThunk": False,
-            "nowOldWritebackDiscriminates": False,
-            "staticInitializerSlotIdentityDiscriminates": False,
-            "externalInitializerRequiresRuntimeCallback": True,
+            "candidateCount": len(candidates),
+            "sameWrapperCfg": all(c["wrapper"]["branchCount"] == candidates[0]["wrapper"]["branchCount"] and c["wrapper"]["indirectCall"]["kind"] == candidates[0]["wrapper"]["indirectCall"]["kind"] for c in candidates),
+            "sameParameterForwarding": wrapper_forwarding_equal and stack_forwarding_equal,
+            "sameNativeArrayParameterOrder": parameter_rows == [{"ordinal": i + 1, "name": n, "kind": k} for i, (n, k) in enumerate([(r.get("name"), f"{r.get('kind')}<{r.get('elementType', {}).get('name')}>" if r.get('elementType') else r.get('kind')) for r in job_fields])],
+            "fieldOffsetsPresentInCandidateThunk": any("nativePayloadOffset" in access for c in candidates for access in c["wrapper"].get("fieldAccesses", [])),
+            "nowOldWritebackDiscriminates": any(c["wrapper"].get("writebacks") for c in candidates),
+            "staticInitializerSlotIdentityDiscriminates": len(set(slot_rvas)) > 1,
+            "externalInitializerRequiresRuntimeCallback": any(bool(c["runtimeFunctionPointerSlot"]["initializers"].get("externals")) for c in candidates),
             "requiredNextEvidence": "runtime GetProcAddress/resolver callback trace for this exact lib_burst_generated.dll HMODULE and EndSimulationStep wrapper caller window",
         },
         "candidates": candidates,
@@ -810,7 +816,7 @@ def _collider_end_candidate_audit(pe: dict[str, Any], rows: list[dict[str, Any]]
     }
 
 
-def _target_candidates(pe: dict[str, Any], rows: list[dict[str, Any]]) -> dict[str, Any]:
+def _target_candidates(pe: dict[str, Any], rows: list[dict[str, Any]], gate: dict[str, Any]) -> dict[str, Any]:
     by_hash = {row["hash"]: row for row in rows}
     stores = lambda row: [(int(offset, 16), width) for offset, width in zip(row["stackWriteOffsets"], row["stackWriteWidths"])]
     simulation_shape = lambda row: stores(row) == [(0x20, 4)] + [(offset, 8) for offset in range(0x28, 0xE1, 8)] and row["xmmStackLoadCount"] == 1
@@ -854,7 +860,7 @@ def _target_candidates(pe: dict[str, Any], rows: list[dict[str, Any]]) -> dict[s
             "candidates": [brief(row) for row in end_preserved],
             "nearCandidatesExcluded": [brief(row) for row in end_all if row not in end_preserved],
             "exclusionReason": "09829f... loads the second stack argument into rdx and 1adf3a... into r9, clobbering incoming target GPRs; 89666f... uses displaced stack slots. The surviving r10 forms preserve rcx/rdx/r8/r9.",
-            "candidateAudit": _collider_end_candidate_audit(pe, rows),
+            "candidateAudit": _collider_end_candidate_audit(pe, rows, gate),
         },
     }
 
@@ -1064,9 +1070,14 @@ def _simulation_semantic_fingerprint(pe: dict[str, Any], rows: list[dict[str, An
             "BurstCompilerService shared-memory registration; no kernel identity"
         )
         if ".statics." in name:
-            decoded["sharedMemoryKey"] = "0xedfccb8b263b8f83"
-            decoded["sharedMemorySizeBytes"] = "0x80000"
-            decoded["sharedMemoryAlignmentBytes"] = 16
+            key_values = [int(ins.operands[1].imm) & ((1 << 64) - 1) for ins in init_instructions if ins.mnemonic == "movabs" and len(ins.operands) >= 2 and ins.reg_name(ins.operands[0].reg) == "rax"]
+            size_values = [int(ins.operands[1].imm) for ins in init_instructions if ins.mnemonic == "mov" and len(ins.operands) >= 2 and ins.reg_name(ins.operands[0].reg) == "edx" and ins.operands[1].type == 2]
+            alignment_values = [int(ins.operands[1].imm) for ins in init_instructions if ins.mnemonic == "mov" and len(ins.operands) >= 2 and ins.reg_name(ins.operands[0].reg) == "r8d" and ins.operands[1].type == 2]
+            if key_values != [0xedfccb8b263b8f83] or size_values != [0x80000] or alignment_values != [0x10]:
+                raise ContractError(f"{name} shared-memory argument decode drift")
+            decoded["sharedMemoryKey"] = f"0x{key_values[0]:x}"
+            decoded["sharedMemorySizeBytes"] = f"0x{size_values[0]:x}"
+            decoded["sharedMemoryAlignmentBytes"] = alignment_values[0]
             decoded["sharedMemoryCallTargetRvas"] = sorted({
                 f"0x{int(call['targetRva'], 16):x}"
                 for call in calls if call.get("kind") == "indirect_rip_memory"
@@ -1081,6 +1092,24 @@ def _simulation_semantic_fingerprint(pe: dict[str, Any], rows: list[dict[str, An
             "Simulation candidate ABI move drift: "
             f"loads={len(fingerprint['stackLoads'])} stores={len(fingerprint['stackStores'])}"
         )
+    expected_loads = [("0xd0", "xmm4", 4)] + [
+        (f"0x{offset:x}", register, 8)
+        for offset, register in zip(
+            list(range(0x128, 0x198, 8)) + list(range(0x120, 0xd0, -8)),
+            ["r14", "r15", "r12", "r13", "rbx", "rdi", "rsi", "r11", "r10", "r9", "r8", "rdx", "rcx", "rax"] + ["rax"] * 10,
+        )
+    ]
+    actual_loads = [(row["sourceStackOffset"], row["destination"], row["widthBytes"]) for row in fingerprint["stackLoads"]]
+    expected_stores = [(f"0x{offset:x}", source, width) for offset, source, width in [
+        (0xe0, "rax", 8), (0xd8, "rcx", 8), (0xd0, "rdx", 8), (0xc8, "r8", 8), (0xc0, "r9", 8),
+        (0xb8, "r10", 8), (0xb0, "r11", 8), (0xa8, "rsi", 8), (0xa0, "rdi", 8), (0x98, "rbx", 8),
+        (0x90, "r13", 8), (0x88, "r12", 8), (0x80, "r15", 8), (0x78, "r14", 8),
+        (0x70, "rax", 8), (0x68, "rax", 8), (0x60, "rax", 8), (0x58, "rax", 8), (0x50, "rax", 8),
+        (0x48, "rax", 8), (0x40, "rax", 8), (0x38, "rax", 8), (0x30, "rax", 8), (0x28, "rax", 8), (0x20, "xmm4", 4),
+    ]]
+    actual_stores = [(row["destinationStackOffset"], row["source"], row["widthBytes"]) for row in fingerprint["stackStores"]]
+    if actual_loads != expected_loads or actual_stores != expected_stores:
+        raise ContractError("Simulation candidate exact ABI load/store mapping drift")
     return {
         "status": "export_thunk_fingerprint_closed_internal_target_unobserved",
         "candidateHash": candidate_hash,
@@ -1159,7 +1188,43 @@ def _contract_snapshot(name: str) -> dict[str, Any]:
     return {"path": _path(path), "schema": payload.get("schema"), "status": payload.get("status")}
 
 
-def _validate_solver_identity_contract() -> None:
+def _sibling_provenance(name: str, gate: dict[str, Any], expected_schema: str,
+                        expected_status: str, require_burst: bool = False) -> dict[str, Any]:
+    """Load a sibling contract only when its identity and source file are pinned."""
+    path = DEFAULT_OUTPUT.parent / name
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise ContractError(f"cannot read sibling contract {name}: {exc}") from exc
+    if payload.get("schema") != expected_schema or payload.get("status") != expected_status:
+        raise ContractError(f"sibling contract {name} schema/status drift")
+    native = payload.get("nativeGate", payload.get("native_gate", {}))
+    for key in ("gameAssembly", "globalMetadata"):
+        if native.get(key, {}).get("sha256") != gate[key]["sha256"]:
+            raise ContractError(f"sibling contract {name} native gate drift: {key}")
+    if require_burst and native.get("libBurstGenerated", {}).get("sha256") != gate["libBurstGenerated"]["sha256"]:
+        raise ContractError(f"sibling contract {name} Burst gate drift")
+    # Validate every embedded sourceSha256 whose source exists locally.
+    def verify_sources(value: Any) -> None:
+        if isinstance(value, dict):
+            source, digest = value.get("source"), value.get("sourceSha256")
+            if source and digest:
+                source_path = Path(source)
+                if not source_path.is_absolute():
+                    source_path = REPO_ROOT / source_path
+                if source_path.is_file() and _sha256(source_path) != digest:
+                    raise ContractError(f"sibling contract {name} source hash drift: {source}")
+            for child in value.values():
+                verify_sources(child)
+        elif isinstance(value, list):
+            for child in value:
+                verify_sources(child)
+    verify_sources(payload)
+    return {"path": _path(path), "fileSha256": _sha256(path), "schema": payload["schema"],
+            "status": payload["status"], "nativeGate": native}
+
+
+def _validate_solver_identity_contract(gate: dict[str, Any]) -> dict[str, Any]:
     path = DEFAULT_OUTPUT.parent / "secondary_dynamics_solver_static_contract.json"
     if not path.is_file():
         raise ContractError(f"missing solver static contract: {path}")
@@ -1182,6 +1247,10 @@ def _validate_solver_identity_contract() -> None:
         rows = {row["methodIndex"]: row for row in wrapper.get("targets", [])}
     except (OSError, ValueError, KeyError, TypeError) as exc:
         raise ContractError(f"invalid Burst wrapper contract: {exc}") from exc
+    wrapper_provenance = _sibling_provenance(
+        wrapper_path.name, gate, "endfield.charinfo.secondary-dynamics-burst-wrapper.v1",
+        "initialization_resolution_chain_closed_export_mapping_unresolved", require_burst=True,
+    )
     direct = {
         385416: ("0x186762cc0", "collider_start_directcall"),
         385317: ("0x18675b0cc", "collider_end_directcall"),
@@ -1190,12 +1259,13 @@ def _validate_solver_identity_contract() -> None:
         row = rows.get(method_index)
         if row is None or row.get("va") != expected_va or row.get("role") != expected_role:
             raise ContractError(f"Burst wrapper contract identity drift for {method_index}: expected {expected_va}/{expected_role}")
+    return wrapper_provenance
 
 
 def build_contract(*, game_assembly: Path | None = DEFAULT_GAME_ASSEMBLY,
                    metadata: Path | None = DEFAULT_METADATA) -> dict[str, Any]:
     gate = _native_gate(game_assembly, metadata)
-    _validate_solver_identity_contract()
+    wrapper_provenance = _validate_solver_identity_contract(gate)
     pe = _pe_exports(Path(gate["libBurstGenerated"]["path"]))
     rows = _body_rows(pe)
     hashes = [row["hash"] for row in rows]
@@ -1209,7 +1279,7 @@ def build_contract(*, game_assembly: Path | None = DEFAULT_GAME_ASSEMBLY,
             variant_prefixes["statics"] += 1
     spans = Counter(str(row["spanBytes"]) for row in rows)
     bodies = Counter(str(row["bodyBytes"]) for row in rows)
-    targets = _target_candidates(pe, rows)
+    targets = _target_candidates(pe, rows, gate)
     targets["simulationStartRange"]["semanticFingerprint"] = _simulation_semantic_fingerprint(pe, rows, gate)
     return {
         "schema": "endfield.charinfo.secondary-dynamics-burst-export.v1",
@@ -1233,6 +1303,7 @@ def build_contract(*, game_assembly: Path | None = DEFAULT_GAME_ASSEMBLY,
             "innerLayout": _contract_snapshot("secondary_dynamics_inner_layout_contract.json"),
             "jobLayout": _contract_snapshot("secondary_dynamics_job_layout_contract.json"),
             "integrator": _contract_snapshot("secondary_dynamics_integrator_contract.json"),
+            "burstWrapperProvenance": wrapper_provenance,
         },
         "unresolved": [
             "No exact 32-hex hash bytes or 16-byte hash values were found in GameAssembly.dll; static export-table analysis cannot join a managed BurstDirectCall to a hash.",
