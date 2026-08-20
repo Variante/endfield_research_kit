@@ -48,6 +48,7 @@ def _stage(root: Path, *, serialized_file: str = "CAB-dependency", path_id: int 
             },
             "type": "ParticleSystemRenderer",
             "name": "root",
+            "scalars": [],
             "pptrs": [
                 {
                     "path": pptr_path,
@@ -144,7 +145,16 @@ def _complete_target(root: Path, *, rows: list[dict]) -> Path:
             "recordType": "summary",
             "schemaVersion": 1,
             "complete": True,
-            "counts": {"errors": 0},
+            "counts": {
+                "objects": len(rows),
+                "schemas": 0,
+                "monoScripts": 0,
+                "scalars": 0,
+                "pptrs": 0,
+                "objectsWithTruncatedScalars": 0,
+                "errors": 0,
+                "suppressedErrors": 0,
+            },
             "errors": [],
         }
     )
@@ -152,15 +162,26 @@ def _complete_target(root: Path, *, rows: list[dict]) -> Path:
     return path
 
 
-def _target_row(*, name: str = "M_exact", source: str = "VFS/AAAA/dep.chk", offset: int = 42, path_id: int = 77) -> dict:
+def _target_row(
+    *,
+    name: str = "M_exact",
+    source: str | None = "VFS/AAAA/dep.chk",
+    offset: int | None = 42,
+    path_id: int = 77,
+) -> dict:
+    identity = {
+        "serializedFile": "CAB-dependency",
+        "pathId": path_id,
+    }
+    if source is not None:
+        identity["source"] = source
+    if offset is not None:
+        identity["sourceOffset"] = offset
     return {
         "recordType": "object",
-        "object": {
-            "serializedFile": "CAB-dependency",
-            "source": source,
-            "sourceOffset": offset,
-            "pathId": path_id,
-        },
+        "object": identity,
+        "scalars": [],
+        "pptrs": [],
         "type": "Material",
         "name": name,
     }
@@ -218,6 +239,26 @@ def _cab_map(root: Path) -> Path:
     return path
 
 
+def _second_cab_map(root: Path) -> Path:
+    source = root / "VFS" / "BBBB" / "dep.chk"
+    source.parent.mkdir(parents=True, exist_ok=True)
+    source.write_bytes(b"second-fixture-source")
+    path = root / "endfield_persistent_assets.bin"
+    path.write_bytes(
+        b"".join(
+            [
+                _dotnet_string(str(root)),
+                struct.pack("<i", 1),
+                _dotnet_string("CAB-dependency"),
+                _dotnet_string(r"VFS\BBBB\dep.chk"),
+                struct.pack("<q", 42),
+                struct.pack("<i", 0),
+            ]
+        )
+    )
+    return path
+
+
 class EndminfExternalPPtrClosureTests(unittest.TestCase):
     def test_exact_cab_pathid_source_offset_and_type_resolve(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -246,7 +287,7 @@ class EndminfExternalPPtrClosureTests(unittest.TestCase):
             )
             report = build_report(stage, object_indexes=[index], asset_maps=[_asset_map(root)])
 
-            self.assertEqual(report["status"], "incomplete_unresolved_dependencies")
+            self.assertEqual(report["status"], "incomplete_ambiguous")
             self.assertEqual(report["summary"]["ambiguousCount"], 1)
             self.assertEqual(report["identities"][0]["status"], "ambiguous")
             self.assertIsNone(report["identities"][0]["extraction"])
@@ -322,6 +363,76 @@ class EndminfExternalPPtrClosureTests(unittest.TestCase):
 
             with self.assertRaisesRegex(ClosureError, "provenance is stale"):
                 build_report(stage)
+
+    def test_candidate_without_source_offset_does_not_resolve(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            stage = _stage(root)
+            index = _complete_target(root, rows=[_target_row(source=None, offset=None)])
+            report = build_report(stage, object_indexes=[index])
+
+            self.assertEqual(report["identities"][0]["status"], "unresolved")
+            self.assertIsNone(report["identities"][0]["extraction"])
+
+    def test_json_candidate_without_source_offset_does_not_resolve(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            stage = _stage(root)
+            metadata = root / "json" / "M_missing_provenance.json"
+            _write_json(
+                metadata,
+                {
+                    "$animestudio": {
+                        "pathId": 77,
+                        "type": "Material",
+                        "name": "M_exact",
+                        "sourceFile": "CAB-dependency",
+                    }
+                },
+            )
+            report = build_report(stage, json_roots=[metadata])
+
+            self.assertEqual(report["identities"][0]["status"], "unresolved")
+            self.assertIsNone(report["identities"][0]["extraction"])
+
+    def test_multiple_cab_physical_sources_are_ambiguous(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            stage = _stage(root)
+            report = build_report(
+                stage,
+                cab_maps=[_cab_map(root), _second_cab_map(root)],
+                asset_maps=[_asset_map(root)],
+            )
+
+            identity = report["identities"][0]
+            self.assertEqual(identity["status"], "ambiguous")
+            self.assertEqual(report["status"], "incomplete_ambiguous")
+            self.assertEqual(len(identity["sourceCandidates"]), 2)
+            self.assertIsNone(identity["extraction"])
+
+    def test_non_dict_jsonl_row_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            stage = _stage(root)
+            index = _complete_target(root, rows=[_target_row()])
+            with index.open("a", encoding="utf-8") as handle:
+                handle.write("null\n")
+
+            with self.assertRaisesRegex(ClosureError, "row must be an object"):
+                build_report(stage, object_indexes=[index])
+
+    def test_summary_counts_must_match_parsed_rows(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            stage = _stage(root)
+            index = _complete_target(root, rows=[_target_row()])
+            value = [json.loads(line) for line in index.read_text(encoding="utf-8").splitlines()]
+            value[-1]["counts"]["objects"] = 2
+            index.write_text("\n".join(json.dumps(row) for row in value) + "\n", encoding="utf-8")
+
+            with self.assertRaisesRegex(ClosureError, "summary count mismatch.*objects"):
+                build_report(stage, object_indexes=[index])
 
     def test_nonterminal_additional_index_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

@@ -1,6 +1,6 @@
 {
   "schema": "endfield.endminf-external-pptr-closure.v1",
-  "status": "complete",
+  "status": "incomplete_ambiguous",
   "characterId": "chr_0003_endminf",
   "actorToken": "endminf",
   "stage": {
@@ -32,9 +32,9 @@
   "summary": {
     "identityCount": 43,
     "occurrenceCount": 125,
-    "resolvedCount": 43,
+    "resolvedCount": 38,
     "unresolvedCount": 0,
-    "ambiguousCount": 0,
+    "ambiguousCount": 5,
     "byTargetType": {
       "Material": {
         "resolved": 27,
@@ -62,12 +62,12 @@
         "ambiguous": 0
       },
       "MonoScript": {
-        "resolved": 5,
+        "resolved": 0,
         "unresolved": 0,
-        "ambiguous": 0
+        "ambiguous": 5
       }
     },
-    "sourceFingerprint": "6d73ffa8fe5349061ce4e86b360ea518ada1b26439f06be3535ccb87ba5097e9"
+    "sourceFingerprint": "554288743e2183a66b03558ca0cac79678c7c14f9559f39ac6724dfa293cb13d"
   },
   "identities": [
     {
@@ -441,7 +441,7 @@
           "targetType": "MonoScript"
         }
       ],
-      "status": "resolved",
+      "status": "ambiguous",
       "resolutionBasis": [
         "cab_map_source_offset_to_cab",
         "exported_json_metadata"
@@ -491,16 +491,7 @@
         }
       ],
       "assetMapCandidates": [],
-      "extraction": {
-        "basis": "exported_json_metadata",
-        "path": "export_full/recovered/AnimeStudio-cli/Persistent/json_by_type/MonoScript/EffectAnimation_p80074E8FA4E77C44.json",
-        "serializedFile": "CAB-5f527d7b7706baccdad9f794cf46420c",
-        "pathId": -9221315333163877308,
-        "type": "MonoScript",
-        "name": "EffectAnimation",
-        "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\Persistent\\VFS\\0CE8FA57\\36243F039A1BFD05676B5D323B50D4AA.chk",
-        "sourceOffset": 10506912
-      }
+      "extraction": null
     },
     {
       "serializedFile": "CAB-5f527d7b7706baccdad9f794cf46420c",
@@ -565,7 +556,7 @@
           "targetType": "MonoScript"
         }
       ],
-      "status": "resolved",
+      "status": "ambiguous",
       "resolutionBasis": [
         "cab_map_source_offset_to_cab",
         "exported_json_metadata"
@@ -615,16 +606,7 @@
         }
       ],
       "assetMapCandidates": [],
-      "extraction": {
-        "basis": "exported_json_metadata",
-        "path": "export_full/recovered/AnimeStudio-cli/Persistent/json_by_type/MonoScript/VFXTrailRenderer_p9E44517B99753B78.json",
-        "serializedFile": "CAB-5f527d7b7706baccdad9f794cf46420c",
-        "pathId": -7042414326003188872,
-        "type": "MonoScript",
-        "name": "VFXTrailRenderer",
-        "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\Persistent\\VFS\\0CE8FA57\\36243F039A1BFD05676B5D323B50D4AA.chk",
-        "sourceOffset": 10506912
-      }
+      "extraction": null
     },
     {
       "serializedFile": "CAB-5f527d7b7706baccdad9f794cf46420c",
@@ -644,7 +626,7 @@
           "targetType": "MonoScript"
         }
       ],
-      "status": "resolved",
+      "status": "ambiguous",
       "resolutionBasis": [
         "cab_map_source_offset_to_cab",
         "exported_json_metadata"
@@ -694,16 +676,7 @@
         }
       ],
       "assetMapCandidates": [],
-      "extraction": {
-        "basis": "exported_json_metadata",
-        "path": "export_full/recovered/AnimeStudio-cli/Persistent/json_by_type/MonoScript/VFXPPRadialBlur_p04684CBA990D0F89.json",
-        "serializedFile": "CAB-5f527d7b7706baccdad9f794cf46420c",
-        "pathId": 317588138045017993,
-        "type": "MonoScript",
-        "name": "VFXPPRadialBlur",
-        "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\Persistent\\VFS\\0CE8FA57\\36243F039A1BFD05676B5D323B50D4AA.chk",
-        "sourceOffset": 10506912
-      }
+      "extraction": null
     },
     {
       "serializedFile": "CAB-5f527d7b7706baccdad9f794cf46420c",
@@ -777,7 +750,7 @@
           "targetType": "MonoScript"
         }
       ],
-      "status": "resolved",
+      "status": "ambiguous",
       "resolutionBasis": [
         "cab_map_source_offset_to_cab",
         "exported_json_metadata"
@@ -827,16 +800,7 @@
         }
       ],
       "assetMapCandidates": [],
-      "extraction": {
-        "basis": "exported_json_metadata",
-        "path": "export_full/recovered/AnimeStudio-cli/Persistent/json_by_type/MonoScript/EffectSetting_p3361D41A7E1A8383.json",
-        "serializedFile": "CAB-5f527d7b7706baccdad9f794cf46420c",
-        "pathId": 3702473578925163395,
-        "type": "MonoScript",
-        "name": "EffectSetting",
-        "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\Persistent\\VFS\\0CE8FA57\\36243F039A1BFD05676B5D323B50D4AA.chk",
-        "sourceOffset": 10506912
-      }
+      "extraction": null
     },
     {
       "serializedFile": "CAB-5f527d7b7706baccdad9f794cf46420c",
@@ -856,7 +820,7 @@
           "targetType": "MonoScript"
         }
       ],
-      "status": "resolved",
+      "status": "ambiguous",
       "resolutionBasis": [
         "cab_map_source_offset_to_cab",
         "exported_json_metadata"
@@ -906,16 +870,7 @@
         }
       ],
       "assetMapCandidates": [],
-      "extraction": {
-        "basis": "exported_json_metadata",
-        "path": "export_full/recovered/AnimeStudio-cli/Persistent/json_by_type/MonoScript/VFXPPChromaticAberration_p606DDA6315DAEF6A.json",
-        "serializedFile": "CAB-5f527d7b7706baccdad9f794cf46420c",
-        "pathId": 6948449919205830506,
-        "type": "MonoScript",
-        "name": "VFXPPChromaticAberration",
-        "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\Persistent\\VFS\\0CE8FA57\\36243F039A1BFD05676B5D323B50D4AA.chk",
-        "sourceOffset": 10506912
-      }
+      "extraction": null
     },
     {
       "serializedFile": "CAB-677d23cb83fcb2c2acf659290a3b25ec",
@@ -4604,87 +4559,42 @@
         "pathId": -9221315333163877308,
         "pathIdUnsigned": 9225428740545674308,
         "pathIdHex": "80074E8FA4E77C44",
-        "status": "resolved",
-        "source": {
-          "basis": "exported_json_metadata",
-          "path": "export_full/recovered/AnimeStudio-cli/Persistent/json_by_type/MonoScript/EffectAnimation_p80074E8FA4E77C44.json",
-          "serializedFile": "CAB-5f527d7b7706baccdad9f794cf46420c",
-          "pathId": -9221315333163877308,
-          "type": "MonoScript",
-          "name": "EffectAnimation",
-          "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\Persistent\\VFS\\0CE8FA57\\36243F039A1BFD05676B5D323B50D4AA.chk",
-          "sourceOffset": 10506912
-        }
+        "status": "ambiguous",
+        "source": null
       },
       {
         "serializedFile": "CAB-5f527d7b7706baccdad9f794cf46420c",
         "pathId": -7042414326003188872,
         "pathIdUnsigned": 11404329747706362744,
         "pathIdHex": "9E44517B99753B78",
-        "status": "resolved",
-        "source": {
-          "basis": "exported_json_metadata",
-          "path": "export_full/recovered/AnimeStudio-cli/Persistent/json_by_type/MonoScript/VFXTrailRenderer_p9E44517B99753B78.json",
-          "serializedFile": "CAB-5f527d7b7706baccdad9f794cf46420c",
-          "pathId": -7042414326003188872,
-          "type": "MonoScript",
-          "name": "VFXTrailRenderer",
-          "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\Persistent\\VFS\\0CE8FA57\\36243F039A1BFD05676B5D323B50D4AA.chk",
-          "sourceOffset": 10506912
-        }
+        "status": "ambiguous",
+        "source": null
       },
       {
         "serializedFile": "CAB-5f527d7b7706baccdad9f794cf46420c",
         "pathId": 317588138045017993,
         "pathIdUnsigned": 317588138045017993,
         "pathIdHex": "04684CBA990D0F89",
-        "status": "resolved",
-        "source": {
-          "basis": "exported_json_metadata",
-          "path": "export_full/recovered/AnimeStudio-cli/Persistent/json_by_type/MonoScript/VFXPPRadialBlur_p04684CBA990D0F89.json",
-          "serializedFile": "CAB-5f527d7b7706baccdad9f794cf46420c",
-          "pathId": 317588138045017993,
-          "type": "MonoScript",
-          "name": "VFXPPRadialBlur",
-          "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\Persistent\\VFS\\0CE8FA57\\36243F039A1BFD05676B5D323B50D4AA.chk",
-          "sourceOffset": 10506912
-        }
+        "status": "ambiguous",
+        "source": null
       },
       {
         "serializedFile": "CAB-5f527d7b7706baccdad9f794cf46420c",
         "pathId": 3702473578925163395,
         "pathIdUnsigned": 3702473578925163395,
         "pathIdHex": "3361D41A7E1A8383",
-        "status": "resolved",
-        "source": {
-          "basis": "exported_json_metadata",
-          "path": "export_full/recovered/AnimeStudio-cli/Persistent/json_by_type/MonoScript/EffectSetting_p3361D41A7E1A8383.json",
-          "serializedFile": "CAB-5f527d7b7706baccdad9f794cf46420c",
-          "pathId": 3702473578925163395,
-          "type": "MonoScript",
-          "name": "EffectSetting",
-          "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\Persistent\\VFS\\0CE8FA57\\36243F039A1BFD05676B5D323B50D4AA.chk",
-          "sourceOffset": 10506912
-        }
+        "status": "ambiguous",
+        "source": null
       },
       {
         "serializedFile": "CAB-5f527d7b7706baccdad9f794cf46420c",
         "pathId": 6948449919205830506,
         "pathIdUnsigned": 6948449919205830506,
         "pathIdHex": "606DDA6315DAEF6A",
-        "status": "resolved",
-        "source": {
-          "basis": "exported_json_metadata",
-          "path": "export_full/recovered/AnimeStudio-cli/Persistent/json_by_type/MonoScript/VFXPPChromaticAberration_p606DDA6315DAEF6A.json",
-          "serializedFile": "CAB-5f527d7b7706baccdad9f794cf46420c",
-          "pathId": 6948449919205830506,
-          "type": "MonoScript",
-          "name": "VFXPPChromaticAberration",
-          "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\Persistent\\VFS\\0CE8FA57\\36243F039A1BFD05676B5D323B50D4AA.chk",
-          "sourceOffset": 10506912
-        }
+        "status": "ambiguous",
+        "source": null
       }
     ]
   },
-  "evidenceBoundary": "Only exact serializedFile+CAB PathID identities are joined. AssetMap extraction rows additionally require a proven source path+offset+PathID+Type match. Names, containers, PathIDs alone, playback, mounting, and renderability are not resolution evidence."
+  "evidenceBoundary": "Only exact serializedFile+CAB PathID identities are joined. AssetMap extraction rows additionally require a single proven CAB-to-source+offset+PathID+Type match. Names, containers, PathIDs alone, multiple physical CAB sources, playback, mounting, and renderability are not resolution evidence."
 }
