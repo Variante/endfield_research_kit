@@ -846,7 +846,8 @@ class MapNamingAndMinimapTests(unittest.TestCase):
 
     def test_minimap_background_publishes_transparent_configured_tier_art_separately(self):
         base = (40, 40, 40, 255)
-        tier = (255, 0, 0, 255)
+        tier_top = (255, 0, 0, 255)
+        tier_bottom = (0, 0, 255, 255)
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             config_dir = root / "export_full/structured/StreamingAssets/Data/Json/UILevelMapLoadConfig"
@@ -871,7 +872,9 @@ class MapNamingAndMinimapTests(unittest.TestCase):
                 },
             }), encoding="utf-8")
             self._write_tile(root, "m_test_lv_tier_1_1_pAAAA.png", base)
-            self._write_tile(root, "h_test_lv_tier_1_1_tier_7_pBBBB.png", tier)
+            tier_path = root / "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/h_test_lv_tier_1_1_tier_7_pBBBB.png"
+            tier_path.parent.mkdir(parents=True, exist_ok=True)
+            builder._png_write(tier_path, 4, 4, [bytes(tier_top) * 4, bytes((0, 0, 0, 0)) * 4, bytes((0, 0, 0, 0)) * 4, bytes(tier_bottom) * 4])
             with mock.patch.object(builder, "ROOT", root):
                 info = builder._minimap_background("test_lv_tier")
             self.assertEqual(info["layers"][0]["id"], "tier:7")
@@ -879,7 +882,8 @@ class MapNamingAndMinimapTests(unittest.TestCase):
             self.assertEqual(info["layers"][0]["tileCount"], 1)
             self.assertTrue((root / "webui/data/map_recovery/render/test_lv_tier_tier_7.png").exists())
             _w, _h, rgba = builder._png_decode(root / "webui/data/map_recovery/render/test_lv_tier_tier_7.png")
-            self.assertEqual(bytes(rgba[0][:4]), bytes(tier))
+            self.assertEqual(bytes(rgba[0][:4]), bytes(tier_top))
+            self.assertEqual(bytes(rgba[-1][:4]), bytes(tier_bottom))
 
     def test_minimap_background_stretches_half_size_chunks_to_their_rect(self):
         green = (0, 255, 0, 255)

@@ -467,7 +467,10 @@ selector on the lower-left map surface groups every sibling sub-map in the
 stitched region and switches one overlay at a time, with an explicit base-map
 option, so transparent floors from different heights never blend. Geographic
 `regiontoast` overlays use their recovered place names; only authored
-`layer_tips` keys are presented as numbered floors.
+`layer_tips` keys are presented as numbered floors. Numbered floors sort in
+ascending order before the remaining tier-id-ordered geographic overlays.
+Tier chunk rows retain the exported top-to-bottom, +Z-at-top orientation just
+like base-map chunks; only `needInverseXZ` may rotate a complete composite.
 Registry markers, quest points, and authored
 `staticElements` all retain raw X/Z coordinates; marker-to-tier membership is
 published only when the point lies inside that tier's authored rectangle.

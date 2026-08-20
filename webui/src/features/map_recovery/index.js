@@ -177,7 +177,15 @@
     const options = [...groups.entries()].map(([levelId, rows]) => {
       const levelName = rows[0]?.levelName || levelId;
       const label = levelName === levelId ? levelId : `${levelName} (${levelId})`;
-      const choices = rows.map((layer) => {
+      const orderedRows = [...rows].sort((a, b) => {
+        const floorA = Number(mapFloorNumber(a));
+        const floorB = Number(mapFloorNumber(b));
+        if (floorA && floorB) return floorA - floorB;
+        if (floorA) return -1;
+        if (floorB) return 1;
+        return Number(a.tierId) - Number(b.tierId) || String(a.id).localeCompare(String(b.id));
+      });
+      const choices = orderedRows.map((layer) => {
         const id = String(layer.id);
         const floorLabel = mapLayerLabel(layer);
         const range = mapLayerRange(layer);
