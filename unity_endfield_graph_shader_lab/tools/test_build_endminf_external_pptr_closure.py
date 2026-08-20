@@ -259,6 +259,29 @@ def _second_cab_map(root: Path) -> Path:
     return path
 
 
+def _same_suffix_cross_root_cab_maps(root: Path) -> list[Path]:
+    paths = []
+    for asset_root, marker in (("Persistent", "persistent"), ("StreamingAssets", "streamingassets")):
+        source = root / asset_root / "VFS" / "SAME" / "dep.chk"
+        source.parent.mkdir(parents=True, exist_ok=True)
+        source.write_bytes(asset_root.encode("ascii"))
+        path = root / f"endfield_{marker}_same_assets.bin"
+        path.write_bytes(
+            b"".join(
+                [
+                    _dotnet_string(str(root / asset_root)),
+                    struct.pack("<i", 1),
+                    _dotnet_string("CAB-dependency"),
+                    _dotnet_string(r"VFS\SAME\dep.chk"),
+                    struct.pack("<q", 42),
+                    struct.pack("<i", 0),
+                ]
+            )
+        )
+        paths.append(path)
+    return paths
+
+
 class EndminfExternalPPtrClosureTests(unittest.TestCase):
     def test_exact_cab_pathid_source_offset_and_type_resolve(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -410,6 +433,20 @@ class EndminfExternalPPtrClosureTests(unittest.TestCase):
             self.assertEqual(report["status"], "incomplete_ambiguous")
             self.assertEqual(len(identity["sourceCandidates"]), 2)
             self.assertIsNone(identity["extraction"])
+
+    def test_same_suffix_across_roots_is_still_physically_ambiguous(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            stage = _stage(root)
+            report = build_report(stage, cab_maps=_same_suffix_cross_root_cab_maps(root))
+
+            identity = report["identities"][0]
+            self.assertEqual(identity["status"], "ambiguous")
+            self.assertEqual(len(identity["sourceCandidates"]), 2)
+            self.assertNotEqual(
+                identity["sourceCandidates"][0]["source"].casefold(),
+                identity["sourceCandidates"][1]["source"].casefold(),
+            )
 
     def test_non_dict_jsonl_row_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
