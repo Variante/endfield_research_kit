@@ -486,9 +486,11 @@ places appear to exchange positions.
 
 Only the Map01 and Map02 families are stitched into regional canvases. Other
 same-prefix levels can be separate states or decks with identical bounds; the
-two Dijiang maps therefore load independently and each honors its authored
-`needInverseXZ` 180-degree rotation for both the composite and its marker,
-route, and location-label projection. Where game minimap art is absent, a
+two Dijiang maps therefore load independently. Their composites retain the
+authored 180-degree image rotation, while `needInverseXZ` converts world pins
+with the evidenced quarter turn `X'=-Z, Z'=X`: this places the raw bridge
+coordinate on the right-hand prow and applies identically to markers, routes,
+and location labels. Where game minimap art is absent, a
 recovered HLOD surface is preferred; otherwise the page uses an explicitly
 evidence-only, height-tinted point cloud made from exact registry and quest
 X/Y/Z transforms without inventing terrain. The expandable mission list links
