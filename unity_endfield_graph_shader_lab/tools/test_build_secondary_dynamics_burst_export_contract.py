@@ -88,6 +88,8 @@ class SecondaryDynamicsBurstExportTests(unittest.TestCase):
         self.assertEqual(fingerprint["jobPayload"]["constants"], [])
         self.assertEqual(fingerprint["jobPayload"]["writebacks"], [])
         self.assertEqual(fingerprint["identityBoundary"], "unique_abi_candidate_identity_unresolved")
+        self.assertEqual(fingerprint["sourcePins"]["libBurstGeneratedSha256"], builder.EXPECTED_LIB_BURST_SHA256)
+        self.assertEqual(payload["contractComparison"]["burstWrapperProvenance"]["fileSha256"], builder._sha256(builder.REPO_ROOT / payload["contractComparison"]["burstWrapperProvenance"]["path"]))
 
     def test_managed_cross_check_preserves_native_reference_boundary(self) -> None:
         payload = json.loads(builder.DEFAULT_OUTPUT.read_text(encoding="utf-8"))
@@ -113,7 +115,7 @@ class SecondaryDynamicsBurstExportTests(unittest.TestCase):
         self.assertFalse(audit["comparison"]["fieldOffsetsPresentInCandidateThunk"])
         self.assertEqual(
             [row["name"] for row in audit["parameterContract"]["parameters"]],
-            ["jobColliderIndexList", "nowPositions", "nowRotations", "oldPositions", "oldRotations", "lengthPtr"],
+            ["jobColliderIndexList", "nowPositions", "nowRotations", "oldPositions", "oldRotations", "_indexCount"],
         )
         self.assertEqual(
             [(row["name"], row["jobOffset"], row["strideBytes"])
@@ -135,7 +137,11 @@ class SecondaryDynamicsBurstExportTests(unittest.TestCase):
                 self.assertGreater(row["resolverCallCount"], 0)
             for row in candidate["runtimeFunctionPointerSlot"]["initializers"]["statics"]:
                 self.assertEqual(row["candidateWrapperSlotStoreMatches"], [])
+        for row in payload["targets"]["simulationStartRange"]["semanticFingerprint"]["initializerExports"]:
+            if row["initializerRole"] == "statics":
+                self.assertEqual((row["sharedMemoryKey"], row["sharedMemorySizeBytes"], row["sharedMemoryAlignmentBytes"]), ("0xedfccb8b263b8f83", "0x80000", 16))
         self.assertIn("runtime GetProcAddress", audit["comparison"]["requiredNextEvidence"])
+        self.assertEqual(audit["provenance"]["solver"]["fileSha256"], builder._sha256(builder.REPO_ROOT / audit["provenance"]["solver"]["path"]))
 
     def test_canonical_installed_dll_and_export_set(self) -> None:
         dll = Path(json.loads(builder.DEFAULT_OUTPUT.read_text(encoding="utf-8"))["native_gate"]["libBurstGenerated"]["path"])
@@ -159,6 +165,24 @@ class SecondaryDynamicsBurstExportTests(unittest.TestCase):
         self.assertFalse(section["fileBacked"])
         with self.assertRaisesRegex(builder.ContractError, "zero-fill"):
             builder._rva_file_offset(parsed, 0x3C6390, 8)
+
+    def test_sibling_provenance_rejects_tampered_status(self) -> None:
+        gate = {
+            "gameAssembly": {"sha256": builder.EXPECTED_GAME_ASSEMBLY_SHA256},
+            "globalMetadata": {"sha256": builder.EXPECTED_METADATA_SHA256},
+            "libBurstGenerated": {"sha256": builder.EXPECTED_LIB_BURST_SHA256},
+        }
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            sibling = root / "sibling.json"
+            sibling.write_text(json.dumps({
+                "schema": "test.schema.v1", "status": "tampered",
+                "nativeGate": {"gameAssembly": {"sha256": builder.EXPECTED_GAME_ASSEMBLY_SHA256},
+                                "globalMetadata": {"sha256": builder.EXPECTED_METADATA_SHA256}},
+            }), encoding="utf-8")
+            with patch.object(builder, "DEFAULT_OUTPUT", root / "out.json"):
+                with self.assertRaisesRegex(builder.ContractError, "schema/status drift"):
+                    builder._sibling_provenance("sibling.json", gate, "test.schema.v1", "expected")
 
     def test_stack_feature_decoder_preserves_width_and_offsets(self) -> None:
         body = bytes.fromhex(

@@ -1423,35 +1423,35 @@
             {
               "ordinal": 1,
               "name": "jobColliderIndexList",
-              "kind": "NativeArray<int>"
+              "kind": "NativeArray<System.Int32>"
             },
             {
               "ordinal": 2,
               "name": "nowPositions",
-              "kind": "NativeArray<double3>"
+              "kind": "NativeArray<Unity.Mathematics.double3>"
             },
             {
               "ordinal": 3,
               "name": "nowRotations",
-              "kind": "NativeArray<quaternion>"
+              "kind": "NativeArray<Unity.Mathematics.quaternion>"
             },
             {
               "ordinal": 4,
               "name": "oldPositions",
-              "kind": "NativeArray<double3>"
+              "kind": "NativeArray<Unity.Mathematics.double3>"
             },
             {
               "ordinal": 5,
               "name": "oldRotations",
-              "kind": "NativeArray<quaternion>"
+              "kind": "NativeArray<Unity.Mathematics.quaternion>"
             },
             {
               "ordinal": 6,
-              "name": "lengthPtr",
-              "kind": "NativeArray<int>"
+              "name": "_indexCount",
+              "kind": "NativeReference<System.Int32>"
             }
           ],
-          "source": "global-metadata.dat method 385317 plus canonical EndSimulationStepJob layout"
+          "source": "canonical EndSimulationStepJob field metadata"
         },
         "managedFallbackComparison": {
           "methodIndex": 385455,
@@ -1567,6 +1567,44 @@
             }
           ]
         },
+        "provenance": {
+          "solver": {
+            "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_solver_static_contract.json",
+            "fileSha256": "102361db8cca663e826c225fdbe6dbb7e0cea6f32bcb0b9f098ad4d51b4b0bed",
+            "schema": "endfield.charinfo.secondary-dynamics-solver-static.v1",
+            "status": "native_spans_hash_pinned",
+            "nativeGate": {
+              "gameAssembly": {
+                "path": "D:\\Program Files\\Endfield Game\\GameAssembly.dll",
+                "size": 280436712,
+                "sha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
+              },
+              "globalMetadata": {
+                "path": "D:\\Program Files\\Endfield Game\\Endfield_Data\\il2cpp_data\\Metadata\\global-metadata.dat",
+                "size": 62925560,
+                "sha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
+              }
+            }
+          },
+          "jobLayout": {
+            "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_job_layout_contract.json",
+            "fileSha256": "f8720afa5a0c6715475df119d22e139fcdc0515ad5b461928d51e0596ad2487d",
+            "schema": "endfield.charinfo.secondary-dynamics-job-layout.v1",
+            "status": "outer_job_layout_closed",
+            "nativeGate": {
+              "gameAssembly": {
+                "path": "D:/Program Files/Endfield Game/GameAssembly.dll",
+                "size": 280436712,
+                "sha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
+              },
+              "globalMetadata": {
+                "path": "D:/Program Files/Endfield Game/Endfield_Data/il2cpp_data/Metadata/global-metadata.dat",
+                "size": 62925560,
+                "sha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
+              }
+            }
+          }
+        },
         "comparison": {
           "candidateCount": 2,
           "sameWrapperCfg": true,
@@ -1574,7 +1612,7 @@
           "sameNativeArrayParameterOrder": true,
           "fieldOffsetsPresentInCandidateThunk": false,
           "nowOldWritebackDiscriminates": false,
-          "staticInitializerSlotIdentityDiscriminates": false,
+          "staticInitializerSlotIdentityDiscriminates": true,
           "externalInitializerRequiresRuntimeCallback": true,
           "requiredNextEvidence": "runtime GetProcAddress/resolver callback trace for this exact lib_burst_generated.dll HMODULE and EndSimulationStep wrapper caller window"
         },
@@ -22888,6 +22926,29 @@
       "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_integrator_contract.json",
       "schema": "endfield.charinfo.secondary-dynamics-integrator.v1",
       "status": "native_spans_hash_pinned_managed_integrator_boundary"
+    },
+    "burstWrapperProvenance": {
+      "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_burst_wrapper_contract.json",
+      "fileSha256": "2a594ddd0b03ec04b6fa31f412a84ac6bb4b63f9c624a7636824dddcb0517d4e",
+      "schema": "endfield.charinfo.secondary-dynamics-burst-wrapper.v1",
+      "status": "initialization_resolution_chain_closed_export_mapping_unresolved",
+      "nativeGate": {
+        "gameAssembly": {
+          "path": "D:\\Program Files\\Endfield Game\\GameAssembly.dll",
+          "size": 280436712,
+          "sha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
+        },
+        "globalMetadata": {
+          "path": "D:\\Program Files\\Endfield Game\\Endfield_Data\\il2cpp_data\\Metadata\\global-metadata.dat",
+          "size": 62925560,
+          "sha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
+        },
+        "libBurstGenerated": {
+          "path": "D:\\Program Files\\Endfield Game\\Endfield_Data\\Plugins\\x86_64\\lib_burst_generated.dll",
+          "size": 4042216,
+          "sha256": "ee8702dd63dec2db7dc29d5bc23b8acd032f0e19a0daad5f69e6c45f9d3ceb99"
+        }
+      }
     }
   },
   "unresolved": [
