@@ -98,6 +98,7 @@ SUPPORTED_CLIP_SCOPES = ("overview", "overview-team", "all-ui")
 
 _CHARACTER_ID_RE = re.compile(r"^chr_(?P<number>\d{4})_(?P<token>[a-z0-9]+)$", re.IGNORECASE)
 _ACTOR_CLIP_RE = re.compile(r"^A_actor_(?P<token>[^_]+)_(?P<suffix>.+)$", re.IGNORECASE)
+_FX_UI_CLIP_RE = re.compile(r"^A_fx_(?P<token>[^_]+)_ui_(?P<suffix>.+)$", re.IGNORECASE)
 _ITEM_WIDGET_RE = re.compile(r"^A_item_widget_(?P<token>[^_]+)_(?P<suffix>.+)$", re.IGNORECASE)
 _UI_DECO_RE = re.compile(
     r"^(?P<character_id>chr_\d{4}_[a-z0-9]+)_deco_(?P<slot>\d+)$",
@@ -113,6 +114,10 @@ _UI_DECO_CONTROLLER_ASSET_RE = re.compile(
     r"(?:^|/)prefabs/uimodels/decoitems/"
     r"(?P<prefab>(?P<character_id>chr_\d{4}_[a-z0-9]+)_deco_(?P<slot>\d+))"
     r"(?:_controller\.controller|\.prefab)$",
+    re.IGNORECASE,
+)
+_FX_UI_PREFAB_RE = re.compile(
+    r"(?:^|/)effects/prefabs/(?P<prefab>p_fxui_[^/]+\.prefab)$",
     re.IGNORECASE,
 )
 _WIDGET_CLIP_FAMILY_RE = re.compile(
@@ -153,6 +158,20 @@ def _asset_root_for_map(path: Path) -> str:
     if path.parent.name.lower() == "maps":
         return path.parent.parent.name
     return path.stem
+
+
+def _normalized_container(value: object) -> str:
+    return str(value or "").replace("\\", "/").casefold()
+
+
+def _is_external_ui_effect_prefab_container(container: object) -> bool:
+    """Return whether a container is an explicit UI-effect prefab source.
+
+    The predicate only identifies a source container.  It does not assert that
+    the prefab is instantiated, mounted on a character, rendered, or played.
+    """
+
+    return bool(_FX_UI_PREFAB_RE.search(_normalized_container(container)))
 
 
 def _entry_copy(entry: dict[str, Any], asset_root: str) -> dict[str, Any]:
@@ -499,6 +518,8 @@ def build_import_plan(
     ui_deco_prefabs: dict[str, list[dict[str, Any]]] = defaultdict(list)
     actor_ui: dict[str, list[dict[str, Any]]] = defaultdict(list)
     external_actor_ui_effects: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    external_ui_effect_prefabs_by_container: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    external_ui_effect_clip_containers: dict[str, set[str]] = defaultdict(set)
     companion_ui: dict[str, list[dict[str, Any]]] = defaultdict(list)
     widget_ui_by_family: dict[str, list[dict[str, Any]]] = defaultdict(list)
     widget_ui_by_path_id: dict[int, list[dict[str, Any]]] = defaultdict(list)
@@ -516,10 +537,22 @@ def build_import_plan(
             entry_type = str(raw_entry.get("Type") or "")
             name = str(raw_entry.get("Name") or "")
             lowered_name = name.lower()
+            container = str(raw_entry.get("Container") or "").replace("\\", "/")
+            normalized_container = _normalized_container(container)
             if entry_type == "Animator" and lowered_name in expected_postmodels:
                 postmodels[expected_postmodels[lowered_name]].append(_entry_copy(raw_entry, asset_root))
                 continue
             if entry_type == "Animator":
+                # AssetMap may expose child Animators from the same prefab.
+                # Only the explicit P_fxui_* object name is retained as a
+                # root candidate; child hierarchy is not recovered here.
+                if (
+                    _is_external_ui_effect_prefab_container(container)
+                    and lowered_name.startswith("p_fxui_")
+                ):
+                    external_ui_effect_prefabs_by_container[normalized_container].append(
+                        _entry_copy(raw_entry, asset_root)
+                    )
                 deco_match = _UI_DECO_RE.fullmatch(name)
                 if deco_match:
                     char_id = deco_match.group("character_id").lower()
@@ -533,6 +566,28 @@ def build_import_plan(
             if entry_type != "AnimationClip":
                 continue
 
+            # Some character-info effects use an explicit actor-keyed
+            # ``A_fx_<token>_ui_*`` name, while their root Animator lives in a
+            # generic ``P_fxui_*`` prefab.  Keep this as source evidence only:
+            # same-container membership proves neither hierarchy, mount point,
+            # renderer/material closure, nor runtime playback.
+            fx_match = _FX_UI_CLIP_RE.fullmatch(name)
+            if fx_match:
+                token = fx_match.group("token").casefold()
+                if token in token_to_id and _is_external_ui_effect_prefab_container(container):
+                    copied = _entry_copy(raw_entry, asset_root)
+                    copied["_ownership_evidence"] = (
+                        "explicit_actor_keyed_fx_clip_in_external_ui_effect_prefab_container"
+                    )
+                    copied["_evidence_boundary"] = (
+                        "source container identity only; no playback, mount, hierarchy, "
+                        "renderer, material, or texture claim"
+                    )
+                    character_id = token_to_id[token]
+                    external_actor_ui_effects[character_id].append(copied)
+                    external_ui_effect_clip_containers[character_id].add(normalized_container)
+                    continue
+
             if (
                 any(marker in lowered_name for marker in _WIDGET_NAME_TOKENS)
                 and any(marker in lowered_name for marker in _WIDGET_UI_TOKENS)
@@ -545,7 +600,7 @@ def build_import_plan(
             if widget_family:
                 copied = _entry_copy(raw_entry, asset_root)
                 widget_ui_by_family[widget_family].append(copied)
-                controller_owner = _deco_controller_owner(str(raw_entry.get("Container") or ""))
+                controller_owner = _deco_controller_owner(container)
                 if controller_owner and controller_owner[0] in row_by_id:
                     owner_char_id, owner_prefab = controller_owner
                     controller_owned_widget_families[owner_char_id][widget_family].add(owner_prefab)
@@ -573,6 +628,27 @@ def build_import_plan(
                 if _is_direct_widget_ui_clip(name, token):
                     companion_ui[char_id].append(_entry_copy(raw_entry, asset_root))
                     break
+
+    # Link explicit actor-keyed FX clips to only the root Animator candidates
+    # from their exact source containers.  A missing root is retained as a
+    # source-clip fact but cannot manufacture a prefab entry.
+    external_ui_effect_prefabs: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for char_id, containers in external_ui_effect_clip_containers.items():
+        for container in sorted(containers):
+            for raw_entry in external_ui_effect_prefabs_by_container.get(container, []):
+                copied = dict(raw_entry)
+                copied["_ownership_evidence"] = (
+                    "same_container_as_explicit_actor_keyed_fx_clip"
+                )
+                copied["_evidence_boundary"] = (
+                    "source root Animator candidate only; no hierarchy, mount, renderer, "
+                    "material, texture, or playback claim"
+                )
+                copied["_source_fx_clip_container"] = container
+                external_ui_effect_prefabs[char_id].append(copied)
+        external_ui_effect_prefabs[char_id] = _dedupe_entries(
+            external_ui_effect_prefabs[char_id]
+        )
 
     # Resolve private controller PPtrs after the asset maps have supplied the
     # exact AnimationClip entries. This admits shared A_wpn_misc families that
@@ -697,6 +773,10 @@ def build_import_plan(
         deferred_effect_entries = _best_unique_named_entries(
             external_actor_ui_effects.get(char_id, [])
         )
+        deferred_effect_prefab_entries = sorted(
+            _dedupe_entries(external_ui_effect_prefabs.get(char_id, [])),
+            key=_entry_sort_key,
+        )
         selected_entries = select_ui_entries(all_actor_entries, clip_scope)
         external_camera_entries = [
             entry for entry in all_actor_entries if _is_external_camera_clip(str(entry.get("Name") or ""))
@@ -768,6 +848,9 @@ def build_import_plan(
                     "skeletal_body_ui_count": len(body_entries),
                     "external_camera_count": len(external_camera_entries),
                     "external_ui_effect_count": len(deferred_effect_entries),
+                    "external_ui_effect_entries": deferred_effect_entries,
+                    "external_ui_effect_prefab_count": len(deferred_effect_prefab_entries),
+                    "external_ui_effect_prefab_entries": deferred_effect_prefab_entries,
                     "companion_widget_count": len(all_widget_entries),
                     "selected_companion_widget_count": len(selected_widget_entries),
                     "selected_count": len(selected_entries),
@@ -776,7 +859,6 @@ def build_import_plan(
                     "selected_entries": selected_entries,
                     "body_entries": body_entries,
                     "external_camera_entries": external_camera_entries,
-                    "external_ui_effect_entries": deferred_effect_entries,
                     "companion_widget_entries": all_widget_entries,
                     "selected_companion_widget_entries": selected_widget_entries,
                     "selected_companion_widget_names": [
@@ -865,7 +947,9 @@ def build_import_plan(
         "animation_rule": (
             "Only A_actor_<token>_ui_*, A_actor_<token>_uiteam_*, and "
             "A_actor_<token>_gacha* source clips under arts/entity/actor/.../animations are "
-            "inventoried as body clips; name-matched effects/model rigs are deferred; actor-keyed "
+            "inventoried as body clips; explicit A_fx_<token>_ui_* clips and same-container "
+            "P_fxui_* Animator candidates are inventoried as deferred source evidence only; "
+            "name-matched effects/model rigs are deferred; actor-keyed "
             "widget/effect/creature UI clips and generic widget families source-owned by exact "
             "actor deco controller containers are matched to private deco hierarchies; "
             "camera clips are never loaded as body animation"
@@ -907,6 +991,15 @@ def unity_catalog_from_plan(plan: dict[str, Any]) -> dict[str, Any]:
                 "source_ui_clip_count": int(ui.get("actor_ui_source_count") or 0),
                 "deferred_external_ui_effect_count": int(
                     ui.get("external_ui_effect_count") or 0
+                ),
+                "deferred_external_ui_effect_clips": list(
+                    ui.get("external_ui_effect_entries") or []
+                ),
+                "deferred_external_ui_effect_prefab_count": int(
+                    ui.get("external_ui_effect_prefab_count") or 0
+                ),
+                "deferred_external_ui_effect_prefabs": list(
+                    ui.get("external_ui_effect_prefab_entries") or []
                 ),
                 "selected_ui_clip_count": int(ui.get("selected_count") or 0),
                 "ui_item_widget_prefab_count": int(
