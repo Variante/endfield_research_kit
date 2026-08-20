@@ -1,0 +1,735 @@
+/* Map recovery uses the shared light palette from webui/style.css. Only the
+   marker hues are declared locally, because they carry meaning (entity kind)
+   rather than chrome, and they are darkened versions of the usual map colours
+   so they stay legible as small dots on a white surface. */
+/* The map is the page: the surface fills the whole view and every piece of
+   chrome is a floating panel on top of it, so the plotted area is as large as
+   the window and panels get out of the way when collapsed or dragged. */
+#map-recovery-view {
+  min-height: 0;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+}
+
+#map-recovery-app {
+  --mr-quest: #2f7d4f;
+  --mr-story: #c8410f;
+  --mr-travel: #2b6cb0;
+  --mr-device: #a2660a;
+  --mr-scenery: #7a6a52;
+  --mr-trigger: #7759a8;
+  --mr-enemy: #b0342c;
+  --mr-npc: #2f7d4f;
+  --mr-spawn: #367f84;
+  --mr-pin: #c8410f;
+  --mr-panel: #ffffff;
+  --mr-sunken: #fbfcfc;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* ---------------------------------------------------------------- header */
+
+/* A floating panel: draggable by its header, collapsible onto it, and
+   translucent so the map reads through the edges. Positions are per-class by
+   default; dragging moves a panel to explicit left/top (.is-placed). */
+.mr-float {
+  position: absolute;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100% - 24px);
+  max-width: calc(100% - 24px);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.93);
+  backdrop-filter: blur(7px);
+  box-shadow: 0 10px 30px rgba(35, 45, 55, 0.16);
+  overflow: hidden;
+}
+
+.mr-float-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 auto;
+  padding: 8px 10px 8px 12px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(var(--fg-rgb), 0.03);
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+}
+
+.mr-float-head:active { cursor: grabbing; }
+
+.mr-float-toggle {
+  flex: 0 0 auto;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--muted);
+  font: 700 11px/1 var(--mono);
+  cursor: pointer;
+}
+
+.mr-float-toggle:hover { border-color: var(--muted); color: var(--text); }
+
+.mr-float-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  letter-spacing: -0.01em;
+}
+
+.mr-float--header .mr-float-title { font-size: 17px; }
+
+.mr-float-body {
+  padding: 10px 12px 14px;
+  overflow: auto;
+  min-height: 0;
+  font-size: 12px;
+}
+
+.mr-float.is-collapsed .mr-float-body { display: none; }
+.mr-float.is-collapsed .mr-float-head { border-bottom-color: transparent; }
+
+/* Default positions: controls top-left, inspector top-right, the title and
+   metrics bar centred between them. */
+.mr-float--header { top: 12px; left: 50%; transform: translateX(-50%); width: clamp(280px, calc(100% - 690px), 560px); }
+.mr-float--header.is-placed { transform: none; }
+.mr-float--controls { top: 12px; left: 12px; width: 264px; }
+.mr-float--inspector { top: 12px; right: 12px; width: 372px; }
+
+.mr-kicker {
+  padding: 2px 7px;
+  border: 1px solid rgba(var(--accent-rgb), 0.3);
+  border-radius: 999px;
+  background: rgba(var(--accent-rgb), 0.08);
+  color: var(--accent-text);
+  font: 700 9px/1.5 var(--mono);
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.mr-coords {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+#map-recovery-select {
+  display: block;
+  width: 100%;
+  margin-bottom: 12px;
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-3, #fff);
+  color: var(--text);
+  font-size: 12px;
+}
+
+/* A single-line stat run inside the header float: the numbers are context for
+   the map, not the subject of the page. */
+.mr-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  margin: 8px 0 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.mr-metrics span {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.mr-metrics b {
+  color: var(--text);
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------------------------------------------------------------- layout */
+
+.mr-float-body h2 {
+  margin: 0 0 7px;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.mr-layers {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 14px;
+}
+
+/* A kind and its subKinds are one unit: the nested rows are indented under the
+   kind chip and share its left rule, so it stays obvious that unchecking the
+   kind hides everything below it. */
+.mr-layer-group { display: flex; flex-direction: column; gap: 3px; }
+.mr-layer-group > .mr-layer { align-self: flex-start; }
+
+.mr-sublayers {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 1px 0 2px 9px;
+  padding-left: 8px;
+  border-left: 1px solid var(--border);
+}
+
+.mr-sublayer {
+  align-self: flex-start;
+  border-color: transparent;
+  padding: 1px 7px;
+  font-size: 10px;
+}
+
+/* The rail is narrow and these chips are scanned, not read, so a chip wraps
+   onto three lines rather than staying legible. Keep them on one line. */
+.mr-layer, .mr-sublayer { white-space: nowrap; }
+
+.mr-layer-count {
+  margin-left: 3px;
+  color: var(--muted);
+  opacity: 0.8;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Nodes carrying dialog are the reason to keep a layer on, so the count is
+   shown beside the total rather than spelled out. */
+.mr-layer-count i { color: var(--mr-story); font-style: normal; }
+
+.mr-layer-actions {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.mr-layer-actions button {
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: none;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.mr-layer-actions button:hover { border-color: var(--muted); color: var(--text); }
+
+#map-recovery-mission {
+  width: 100%;
+  margin-bottom: 12px;
+  padding: 3px 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--panel, transparent);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 11px;
+}
+
+/* Layer toggles are the app's chip control, so the checkbox itself is only the
+   accessible input and the visible state is carried by the chip. */
+.mr-layer {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 11px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.mr-layer:hover { border-color: var(--muted); color: var(--text); }
+.mr-layer:has(input:checked) { border-color: var(--muted); background: var(--hover); color: var(--text); }
+.mr-layer:has(input:disabled) { cursor: default; opacity: 0.85; }
+.mr-layer:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+.mr-layer input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+
+.mr-swatch {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 1px solid rgba(var(--fg-rgb), 0.25);
+  flex: 0 0 auto;
+}
+
+.mr-note {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.mr-note code {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--accent-text);
+  font-size: 10px;
+  overflow-wrap: anywhere;
+}
+
+.mr-float-body details {
+  margin-top: 10px;
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+}
+
+.mr-float-body summary {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mr-float-body summary:hover { color: var(--text); }
+
+.mr-file-list {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  max-height: 220px;
+  overflow: auto;
+}
+
+.mr-file-list li { margin: 0 0 4px; overflow-wrap: anywhere; }
+.mr-file-list code { color: var(--accent-text); font-size: 10px; overflow-wrap: anywhere; }
+
+.mr-file-list a,
+.mr-inspector .mr-file-open {
+  color: var(--accent-text);
+  font-size: 10px;
+  overflow-wrap: anywhere;
+}
+
+/* ---------------------------------------------------------------- map */
+
+/* The surface is the page: it fills the whole view and the floating panels
+   ride on top of it. The 1024x1280 world viewBox letterboxes inside the
+   container, and that margin is part of the pannable surface rather than a
+   gutter. touch-action:none keeps a touch drag panning the map instead of
+   scrolling the page; wheel zoom is cancelled in JS with a non-passive
+   handler. */
+.mr-map {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: var(--mr-sunken);
+  touch-action: none;
+  cursor: grab;
+}
+
+.mr-map:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.mr-map.is-panning { cursor: grabbing; }
+.mr-canvas { display: block; width: 100%; height: 100%; }
+.mr-map-bg { fill: var(--mr-sunken); }
+.mr-route { fill: none; stroke: var(--mr-quest); stroke-width: 2.5; stroke-dasharray: 7 5; opacity: 0.55; }
+.mr-bg-image { pointer-events: none; }
+.mr-links { pointer-events: none; }
+.mr-edge { fill: none; opacity: 0.75; }
+
+/* Nodes are counter-scaled in JS, so every length below is effectively a
+   constant on-screen pixel size at any zoom level. */
+.mr-node { cursor: pointer; }
+.mr-node .mr-shape { stroke: #fff; stroke-width: 1.6; transition: stroke-width 0.12s ease-out; }
+.mr-quest .mr-shape { fill: var(--mr-quest); }
+.mr-marker.is-story .mr-shape { stroke-width: 2.4; }
+
+.mr-node .mr-label {
+  fill: var(--text);
+  font: 12px/1 var(--mono);
+  paint-order: stroke;
+  stroke: #fff;
+  stroke-width: 3.5px;
+  pointer-events: none;
+}
+
+.mr-node .mr-label.is-hidden { visibility: hidden; }
+
+/* A pinned node keeps a dashed ring once the pointer moves on, so a pinned
+   selection stays readable and distinct from the transient hover/focus target.
+   is-target is declared after it and resets the dash, because a node that is
+   both pinned and hovered should read as the solid current target. */
+.mr-node.is-selected .mr-shape { stroke: var(--mr-pin); stroke-width: 2.4; stroke-dasharray: 3 2.2; }
+.mr-node.is-target .mr-shape { stroke: var(--mr-pin); stroke-width: 3; stroke-dasharray: none; }
+.mr-node.is-target .mr-label { font-weight: 700; }
+.mr-node:focus { outline: none; }
+.mr-node:focus-visible .mr-shape { stroke: var(--accent); stroke-width: 3.5; }
+
+.mr-tools {
+  position: absolute;
+  bottom: 10px;
+  right: 12px;
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.mr-tools button {
+  min-width: 27px;
+  height: 27px;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: #fff;
+  color: var(--text);
+  font: 600 12px/1 inherit;
+  cursor: pointer;
+}
+
+.mr-tools button:hover { border-color: var(--accent); background: rgba(var(--accent-rgb), 0.07); }
+.mr-zoom-readout { padding: 0 4px; color: var(--muted); font: 11px/1 var(--mono); min-width: 58px; }
+
+.mr-help {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  max-width: min(520px, calc(100% - 120px));
+  margin: 0;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.88);
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.mr-axis {
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  transform: translateX(-50%);
+  padding: 4px 7px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.88);
+  color: var(--muted);
+  font: 10px/1 var(--mono);
+}
+
+.mr-empty { position: absolute; inset: auto 0 50% 0; margin: 0; text-align: center; color: var(--muted); }
+.mr-loading { padding: 30px; color: var(--muted); }
+.mr-load-state {
+  display: grid;
+  place-items: center;
+  min-height: 100%;
+  padding: 32px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.mr-load-state--error {
+  gap: 8px;
+  color: var(--accent-text);
+}
+
+.mr-load-state--error strong { font-size: 14px; }
+.mr-load-state--error span { max-width: 560px; overflow-wrap: anywhere; font: 11px/1.5 var(--mono); }
+.mr-load-state--error button {
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--bg-3, #fff);
+  color: var(--text);
+  cursor: pointer;
+}
+.mr-load-state--error button:hover { border-color: var(--accent); }
+
+/* Hover readout: identity only. Everything that needs reading room lives in the
+   inspector, so the tooltip never has to be big enough to cover the map. */
+.mr-tip {
+  position: absolute;
+  z-index: 4;
+  max-width: 260px;
+  padding: 6px 9px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: 0 6px 18px rgba(var(--fg-rgb), 0.14);
+  font-size: 11px;
+  line-height: 1.4;
+  pointer-events: none;
+}
+
+.mr-tip[hidden] { display: none; }
+.mr-tip strong { display: block; overflow-wrap: anywhere; font-size: 12px; }
+.mr-tip span { display: block; color: var(--muted); font-family: var(--mono); font-size: 10px; overflow-wrap: anywhere; }
+
+/* ---------------------------------------------------------------- inspector */
+
+/* The inspector is the right-hand float; its body scrolls while the float
+   itself is bounded by the viewport. */
+.mr-inspector-head {
+  flex: 0 0 auto;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.mr-inspector-head h2 {
+  margin: 2px 0 0;
+  font-size: 15px;
+  overflow-wrap: anywhere;
+}
+
+.mr-role {
+  margin: 0;
+  color: var(--accent-2-text);
+  font: 700 9px/1.4 var(--mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.mr-inspector-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 12px 14px 18px;
+}
+
+.mr-placeholder { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
+
+.mr-fields {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 3px 10px;
+  margin: 0 0 14px;
+  font-size: 11px;
+}
+
+.mr-fields dt { color: var(--muted); white-space: nowrap; }
+.mr-fields dd { margin: 0; font-family: var(--mono); overflow-wrap: anywhere; }
+
+.mr-section-title {
+  margin: 0 0 6px;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.mr-files { display: grid; gap: 4px; margin-bottom: 6px; }
+
+/* One row per pinned file. The whole row is the button that loads the content
+   below, and the raw-file link sits beside it so opening the export directly
+   never costs a round trip through the viewer. */
+.mr-file {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 7px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent-2);
+  border-radius: 7px;
+  background: var(--mr-sunken);
+}
+
+.mr-file.is-weak { border-left-color: rgba(var(--fg-rgb), 0.22); border-left-style: dashed; }
+.mr-file.is-active { border-color: var(--accent); background: rgba(var(--accent-rgb), 0.06); }
+
+.mr-file-pick {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.mr-file-pick b { font-size: 11px; font-weight: 600; overflow-wrap: anywhere; }
+.mr-file-pick small { color: var(--muted); font-size: 9.5px; overflow-wrap: anywhere; }
+.mr-file-pick:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+.mr-file-actions { display: inline-flex; align-items: center; gap: 7px; flex: 0 0 auto; }
+.mr-file-open { flex: 0 0 auto; text-decoration: none; white-space: nowrap; }
+.mr-file-open:hover { text-decoration: underline; }
+
+/* Cross-reference into the Story view, where the same payload is rendered with
+   its full line order, options and audio. */
+.mr-story-link {
+  flex: 0 0 auto;
+  padding: 1px 6px;
+  border: 1px solid rgba(var(--accent-2-rgb), 0.5);
+  border-radius: 999px;
+  background: rgba(var(--accent-2-rgb), 0.1);
+  color: var(--accent-2-text);
+  font-size: 9.5px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.mr-story-link:hover { background: rgba(var(--accent-2-rgb), 0.2); }
+
+.mr-reason-head {
+  margin: 9px 0 3px;
+  color: var(--text);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.mr-reason-head b { color: var(--muted); font-weight: 600; }
+
+.mr-weak-files { margin-bottom: 6px; }
+.mr-weak-files > summary { color: var(--muted); font-size: 10px; cursor: pointer; }
+.mr-weak-files > summary:hover { color: var(--text); }
+.mr-weak-files .mr-files { margin-top: 6px; }
+
+.mr-viewer {
+  margin-top: 12px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--mr-sunken);
+  overflow: hidden;
+}
+
+.mr-viewer-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 9px;
+  border-bottom: 1px solid var(--border);
+  background: #fff;
+}
+
+.mr-viewer-head b { flex: 1 1 auto; font-size: 11px; overflow-wrap: anywhere; }
+.mr-viewer-head span { flex: 0 0 auto; color: var(--muted); font-size: 9.5px; white-space: nowrap; }
+.mr-viewer-body { max-height: 340px; overflow: auto; padding: 9px; }
+.mr-viewer-state { margin: 0; color: var(--muted); font-size: 11px; }
+.mr-viewer-state.is-error { color: var(--accent-text); }
+
+/* Dialog rendering: the point of pinning a conv file is reading it, so the
+   published lines are shown as speech rather than as JSON. */
+.mr-dialog { display: grid; gap: 7px; }
+.mr-dialog-summary {
+  margin: 0;
+  padding: 6px 8px;
+  border-left: 3px solid var(--accent-2);
+  border-radius: 0 5px 5px 0;
+  background: rgba(var(--accent-2-rgb), 0.09);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.mr-dialog-notes > summary { color: var(--muted); font-size: 10px; cursor: pointer; }
+.mr-dialog-notes > summary:hover { color: var(--text); }
+.mr-dialog-notes p { margin: 5px 0 0; color: var(--muted); font-size: 10px; line-height: 1.5; overflow-wrap: anywhere; }
+
+.mr-dialog-line {
+  display: grid;
+  grid-template-columns: minmax(0, 74px) minmax(0, 1fr);
+  gap: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px dotted var(--border);
+  font-size: 11.5px;
+  line-height: 1.55;
+}
+
+.mr-dialog-line:last-child { border-bottom: 0; padding-bottom: 0; }
+.mr-dialog-line b { color: var(--muted); font-size: 10px; font-weight: 600; text-align: right; overflow-wrap: anywhere; }
+.mr-dialog-line p { margin: 0; overflow-wrap: anywhere; white-space: pre-wrap; }
+.mr-dialog-line i { display: block; margin-top: 2px; color: var(--muted); font-size: 10px; font-style: italic; }
+.mr-dialog-more { margin: 0; color: var(--muted); font-size: 10px; }
+
+.mr-tokens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin: 7px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mr-tokens li {
+  padding: 1px 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: #fff;
+  font: 10px/1.5 var(--mono);
+  overflow-wrap: anywhere;
+}
+
+.mr-hex { margin-top: 8px; }
+.mr-hex > summary { color: var(--muted); font-size: 10px; cursor: pointer; }
+.mr-hex > summary:hover { color: var(--text); }
+.mr-hex > pre { margin-top: 6px; }
+
+.mr-raw {
+  margin: 0;
+  font: 10.5px/1.5 var(--mono);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--text);
+}
+
+.mr-raw.is-hex { white-space: pre; word-break: break-all; }
+
+/* ---------------------------------------------------------------- responsive */
+
+@media (max-width: 1180px) {
+  .mr-float--controls { width: 232px; }
+  .mr-float--inspector { width: 312px; }
+}
+
+@media (max-width: 760px) {
+  .mr-float--header { width: min(340px, calc(100% - 24px)); }
+  .mr-float--controls { width: min(260px, calc(100% - 24px)); }
+  .mr-float--inspector { width: min(300px, calc(100% - 24px)); }
+  .mr-axis { display: none; }
+  .mr-help { max-width: calc(100% - 170px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mr-node .mr-shape { transition: none; }
+}
+
+/* The filtered count only appears while a filter is narrowing the map, so it
+   is emphasised against the unchanging level totals beside it. */
+.mr-metric-active b { color: var(--accent-text); }
+.mr-metric-active { color: var(--text); }
+
+/* The relation-mode group reuses the layer button chips, with the active mode
+   carrying the same filled treatment a checked layer chip gets. */
+.mr-layer-actions button[aria-pressed="true"] {
+  border-color: var(--muted);
+  background: var(--hover);
+  color: var(--text);
+}

@@ -16,14 +16,16 @@
     "gameplay",
     "audio",
     "mission-pipeline",
+    "map-recovery",
     "assets",
     "reference",
     "updates",
   ]);
-  const DEBUG_ONLY_VIEWS = new Set(["mission-pipeline"]);
+  const DEBUG_ONLY_VIEWS = new Set(["mission-pipeline", "map-recovery"]);
   const DEBUG_VIEW_FALLBACKS = Object.freeze({
     audio: "gameplay",
     "mission-pipeline": "gameplay",
+    "map-recovery": "gameplay",
   });
   const RETIRED_VIEW_FALLBACKS = Object.freeze({ projectiles: "gameplay" });
   const SHARED_ASSET_NAME_PREFIXES = new Set(["S", "T", "P", "M"]);
@@ -640,6 +642,7 @@
       gameplay: "gameplayPageTitle",
       audio: "audioPageTitle",
       "mission-pipeline": "missionPipelinePageTitle",
+      "map-recovery": "mapRecoveryPageTitle",
       assets: "assetsPageTitle",
       reference: "referencePageTitle",
       updates: "updatesPageTitle",

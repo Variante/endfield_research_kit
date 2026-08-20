@@ -291,6 +291,8 @@ if errorlevel 1 exit /b %errorlevel%
 
 python .\scripts\build_mission_pipeline_data.py
 if errorlevel 1 exit /b %errorlevel%
+python .\scripts\build_map_recovery_data.py
+if errorlevel 1 exit /b %errorlevel%
 echo [export.bat] Mission Pipeline data refresh complete; no Story, evidence, semantic-view, or source-graph rebuild was run.
 goto :done
 
