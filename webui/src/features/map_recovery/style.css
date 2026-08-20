@@ -24,7 +24,7 @@
   --mr-spawn: #367f84;
   --mr-pin: #c8410f;
   --mr-panel: #ffffff;
-  --mr-sunken: #fbfcfc;
+  --mr-sunken: #ffffff;
   position: absolute;
   inset: 0;
   overflow: hidden;
@@ -379,8 +379,7 @@
   position: absolute;
   inset: 0;
   overflow: hidden;
-  background-color: #e7edef;
-  background-image: repeating-linear-gradient(135deg, rgba(55, 78, 87, 0.055) 0 1px, transparent 1px 12px);
+  background: var(--mr-sunken);
   touch-action: none;
   cursor: grab;
   user-select: none;
@@ -392,7 +391,7 @@
 .mr-map:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .mr-map.is-panning { cursor: grabbing; }
 .mr-canvas { display: block; width: 100%; height: 100%; }
-.mr-map-bg { fill: transparent; }
+.mr-map-bg { fill: var(--mr-sunken); }
 .mr-route { fill: none; stroke: var(--mr-quest); stroke-width: 2.5; stroke-dasharray: 7 5; opacity: 0.55; }
 .mr-bg-image { pointer-events: none; }
 .mr-location-label {
@@ -417,32 +416,40 @@
   letter-spacing: 0.04em;
 }
 .mr-location-label.is-hidden { visibility: hidden; }
-.mr-links { pointer-events: none; }
-.mr-edge { fill: none; opacity: 0.75; }
-
 /* Nodes are counter-scaled in JS, so every length below is effectively a
    constant on-screen pixel size at any zoom level. */
 .mr-node { cursor: pointer; }
 .mr-node .mr-shape { stroke: #fff; stroke-width: 1.6; transition: stroke-width 0.12s ease-out; }
 .mr-quest .mr-shape { fill: var(--mr-quest); }
+.mr-quest .mr-endpoint-halo {
+  fill: rgba(255, 255, 255, 0.92);
+  stroke: var(--mr-pin);
+  stroke-width: 1.5;
+}
+.mr-quest.is-mission-start .mr-shape { fill: #20b889; }
+.mr-quest.is-mission-end .mr-shape { fill: #f29d49; }
+.mr-endpoint-glyph { fill: #fff; pointer-events: none; }
+.mr-endpoint-label {
+  fill: var(--text);
+  font: 800 11px/1 var(--sans);
+  letter-spacing: 0.08em;
+  text-anchor: middle;
+  paint-order: stroke fill;
+  stroke: #fff;
+  stroke-width: 4px;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
 .mr-marker.is-story .mr-shape { stroke-width: 2.4; }
 
 .mr-node .mr-label {
-  fill: #26343a;
-  font: 11px/1 var(--mono);
+  fill: var(--text);
+  font: 12px/1 var(--mono);
   paint-order: stroke;
-  stroke: rgba(255, 255, 255, 0.94);
-  stroke-width: 3px;
-  stroke-linejoin: round;
-  opacity: 0.8;
+  stroke: #fff;
+  stroke-width: 3.5px;
   pointer-events: none;
 }
-
-/* A story node is the useful default map annotation. Ordinary entity labels
-   become secondary ink, so the marker remains visible without competing with
-   the terrain and location names. Selected/target labels get their stronger
-   weight from the rules below. */
-.mr-marker:not(.is-story) .mr-label { opacity: 0.58; }
 
 .mr-node .mr-label.is-hidden { visibility: hidden; }
 
@@ -452,7 +459,7 @@
    both pinned and hovered should read as the solid current target. */
 .mr-node.is-selected .mr-shape { stroke: var(--mr-pin); stroke-width: 2.4; stroke-dasharray: 3 2.2; }
 .mr-node.is-target .mr-shape { stroke: var(--mr-pin); stroke-width: 3; stroke-dasharray: none; }
-.mr-node.is-target .mr-label { font-weight: 700; opacity: 1; }
+.mr-node.is-target .mr-label { font-weight: 700; }
 .mr-node:focus { outline: none; }
 .mr-node:focus-visible .mr-shape { stroke: var(--accent); stroke-width: 3.5; }
 
@@ -502,6 +509,20 @@
 .mr-floor-dock.is-help-only { width: min(500px, calc(100% - 470px)); }
 .mr-floor-help { margin: 8px 0 0; padding-top: 7px; border-top: 1px solid rgba(63, 87, 96, 0.14); color: #52676f; font-size: 10px; font-weight: 600; line-height: 1.45; }
 .mr-floor-dock.is-help-only .mr-floor-help { margin-top: 0; padding-top: 0; border-top: 0; }
+
+.mr-opacity-dock {
+  display: grid;
+  grid-template-columns: auto 118px 38px;
+  gap: 8px;
+  align-items: center;
+  padding: 0;
+  color: #3f555e;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.mr-opacity-dock input { width: 118px; accent-color: #397f8c; }
+.mr-opacity-dock output { color: var(--muted); font: 11px/1 var(--mono); text-align: right; }
 
 .mr-axis {
   position: absolute;
@@ -792,6 +813,8 @@
   .mr-float--inspector { width: min(300px, calc(100% - 24px)); }
   .mr-axis { display: none; }
   .mr-floor-dock { left: 12px; right: 12px; width: auto; }
+  .mr-opacity-dock { grid-template-columns: auto minmax(80px, 1fr) 38px; right: 12px; }
+  .mr-opacity-dock input { width: 100%; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -802,11 +825,3 @@
    is emphasised against the unchanging level totals beside it. */
 .mr-metric-active b { color: var(--accent-text); }
 .mr-metric-active { color: var(--text); }
-
-/* The relation-mode group reuses the layer button chips, with the active mode
-   carrying the same filled treatment a checked layer chip gets. */
-.mr-layer-actions button[aria-pressed="true"] {
-  border-color: var(--muted);
-  background: var(--hover);
-  color: var(--text);
-}

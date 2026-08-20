@@ -68,10 +68,9 @@ MAX_SCENE_TRIANGLES = 120_000
 NO_HIT = -1e30  # empty depth-buffer sentinel
 EDGE_EPSILON = 0.002  # half-pixel slack so adjacent triangles do not seam
 
-# Shading is derived from the smoothed height field, not from per-facet mesh
-# normals. Normals give every rock shard its own highlight, which reads as noise
-# rather than as terrain; a hillshade over a blurred DEM keeps the landforms and
-# drops the shards. These are the standard hillshade parameters.
+# Relief helpers remain available for focused diagnostics, but the published
+# screenshot-matched preview uses only real depth hits as black scan points.
+# These constants define the older optional smoothed-height calculation.
 FILL_ROUNDS = 6  # pixels of surface grown into gaps between scattered props
 BLUR_RADIUS = 3
 BLUR_PASSES = 2
@@ -83,6 +82,17 @@ AMBIENT = 0.80  # hillshade only modulates the top 20%, keeping the wash calm
 # reader can still see where the export actually had a surface.
 ALPHA_REAL = 210
 ALPHA_GROWN = 150
+
+# A full oblique projection would move every marker by world Y and break the
+# page's X/Z overlay contract.  For dg002 retain the exact top-down anchor and
+# add one lighter, height-proportional sample toward screen +Z.  This exposes
+# elevated roofs/towers without filling side walls that the HLOD evidence does
+# not actually contain.
+# dg002's screenshot-era appearance came from irregular mesh samples, not a
+# screen-space stipple over filled triangles. Keep that choice level-scoped;
+# other HLOD maps retain the conservative depth-point renderer.
+LEVEL_SCAN_MODES = {"indie_dg002": "mesh_vertices"}
+LEVEL_PREFERRED_LODS = {"indie_dg002": 0}
 
 
 def build_hlod_index(asset_map: Path) -> dict:
@@ -193,7 +203,7 @@ def fit_origin(lods: dict[str, list], points: list[tuple[float, float]]) -> dict
     }
 
 
-def plot_bounds(points: list[tuple[float, float]]) -> dict[str, float]:
+def plot_bounds(points: list[tuple[float, float]], min_pad: float = 32.0) -> dict[str, float]:
     """Marker bounds padded out to the page's viewBox aspect.
 
     The frontend projects onto these bounds when they are declared, so matching
@@ -204,8 +214,8 @@ def plot_bounds(points: list[tuple[float, float]]) -> dict[str, float]:
     zs = [p[1] for p in points]
     min_x, max_x = min(xs), max(xs)
     min_z, max_z = min(zs), max(zs)
-    pad_x = max((max_x - min_x) * BOUNDS_PAD, 32.0)
-    pad_z = max((max_z - min_z) * BOUNDS_PAD, 32.0)
+    pad_x = max((max_x - min_x) * BOUNDS_PAD, min_pad)
+    pad_z = max((max_z - min_z) * BOUNDS_PAD, min_pad)
     min_x, max_x = min_x - pad_x, max_x + pad_x
     min_z, max_z = min_z - pad_z, max_z + pad_z
 
@@ -250,7 +260,23 @@ def level_positions(path: Path) -> list[tuple[float, float, float]]:
     return points
 
 
-def render_point_cloud(level_id: str, positions: list[tuple[float, float, float]], output_root: Path) -> dict | None:
+def _instance_meshes(instance: dict) -> list[dict]:
+    """Normalize legacy single-mesh and composite streaming-instance rows."""
+    meshes = instance.get("meshes")
+    if isinstance(meshes, list):
+        rows = [row for row in meshes if isinstance(row, dict)]
+        if rows:
+            return rows
+    mesh = instance.get("mesh")
+    return [mesh] if isinstance(mesh, dict) else []
+
+
+def render_point_cloud(
+    level_id: str,
+    positions: list[tuple[float, float, float]],
+    output_root: Path,
+    map_payload: dict | None = None,
+) -> dict | None:
     """Render an evidence-only height-tinted point cloud when no map art exists.
 
     This deliberately draws only exact published transforms. It gives sparse
@@ -259,7 +285,23 @@ def render_point_cloud(level_id: str, positions: list[tuple[float, float, float]
     """
     if not positions:
         return None
-    bounds = plot_bounds([(x, z) for x, _y, z in positions])
+    streaming = [
+        row.get("streamingInstance")
+        for row in ((map_payload or {}).get("markers") or [])
+        if isinstance(row.get("streamingInstance"), dict)
+    ]
+    streaming_xz = [
+        (float(row["matrixColumnMajor"][12]), float(row["matrixColumnMajor"][14]))
+        for row in streaming
+        if isinstance(row.get("matrixColumnMajor"), list) and len(row["matrixColumnMajor"]) == 16
+    ]
+    # A recovered streaming scene with hundreds of transforms is not the old
+    # sparse registry fallback. Four metres keeps its exact extents readable;
+    # small evidence sets retain the conservative 32 m context margin.
+    bounds = plot_bounds(
+        streaming_xz or [(x, z) for x, _y, z in positions],
+        min_pad=1.0 if streaming_xz else (4.0 if len(positions) >= 100 else 32.0),
+    )
     span_x = max(bounds["maxX"] - bounds["minX"], 1.0)
     span_z = max(bounds["maxZ"] - bounds["minZ"], 1.0)
     if span_x / span_z >= VIEW_ASPECT:
@@ -285,48 +327,103 @@ def render_point_cloud(level_id: str, positions: list[tuple[float, float, float]
         row[offset + 2] = (color[2] * alpha + row[offset + 2] * inverse) // 255
         row[offset + 3] = min(255, alpha + row[offset + 3] * inverse // 255)
 
-    # Low points are blue-grey and high points warm ivory. A soft outer halo
-    # gives the cloud the same legible 3D relief character as the HLOD preview
-    # while each bright core remains one exact authored transform.
-    for x, y, z in sorted(positions, key=lambda row: row[1]):
-        px = round((x - bounds["minX"]) / span_x * (width - 1))
-        py = round((bounds["maxZ"] - z) / span_z * (height - 1))
-        height_t = (y - low) / y_span
-        color = (
-            shade(0.48 + 0.42 * height_t),
-            shade(0.66 + 0.27 * height_t),
-            shade(0.78 + 0.16 * height_t),
+    resolved = [row for row in streaming if _instance_meshes(row)]
+    rendered_instances = rendered_triangles = rendered_vertex_samples = 0
+    real_pixel_ratio = 0.0
+    if resolved:
+        depth, rendered_instances, rendered_triangles, rendered_vertex_samples = rasterise_streaming_depth(
+            resolved, bounds, width, height
         )
-        for dy in range(-radius * 2, radius * 2 + 1):
-            for dx in range(-radius * 2, radius * 2 + 1):
-                distance = math.hypot(dx, dy)
-                if distance <= radius * 2:
-                    blend(px + dx, py + dy, color, round(42 * (1 - distance / (radius * 2 + 0.01))))
-        for dy in range(-radius, radius + 1):
-            for dx in range(-radius, radius + 1):
-                distance = math.hypot(dx, dy)
-                if distance <= radius:
-                    blend(px + dx, py + dy, color, round(210 * (1 - 0.55 * distance / (radius + 0.01))))
+        real = [value > NO_HIT for value in depth]
+        covered = [value for value in depth if value > NO_HIT]
+        if covered:
+            mesh_low, mesh_high = min(covered), max(covered)
+            mesh_span = max(mesh_high - mesh_low, 1.0)
+            real_pixel_ratio = sum(real) / (width * height)
+            low, high = mesh_low, mesh_high
+            for py in range(height):
+                row = pixels[py]
+                for px in range(width):
+                    value = depth[py * width + px]
+                    if value <= NO_HIT:
+                        continue
+                    tint = (value - mesh_low) / mesh_span
+                    grey = shade(0.32 - 0.24 * tint)
+                    offset = px * 4
+                    row[offset:offset + 4] = bytes((grey, grey, grey, 220))
+    else:
+        # Sparse non-streaming fallbacks remain exact transform points. A soft
+        # halo keeps isolated transforms legible without connecting them.
+        for x, y, z in sorted(positions, key=lambda row: row[1]):
+            px = round((x - bounds["minX"]) / span_x * (width - 1))
+            py = round((bounds["maxZ"] - z) / span_z * (height - 1))
+            height_t = (y - low) / y_span
+            color = (8, 10, 11)
+            height_alpha = 0.78 + 0.22 * height_t
+            for dy in range(-radius * 2, radius * 2 + 1):
+                for dx in range(-radius * 2, radius * 2 + 1):
+                    distance = math.hypot(dx, dy)
+                    if distance <= radius * 2:
+                        blend(px + dx, py + dy, color, round(42 * height_alpha * (1 - distance / (radius * 2 + 0.01))))
+            for dy in range(-radius, radius + 1):
+                for dx in range(-radius, radius + 1):
+                    distance = math.hypot(dx, dy)
+                    if distance <= radius:
+                        blend(px + dx, py + dy, color, round(210 * height_alpha * (1 - 0.55 * distance / (radius + 0.01))))
+
+    mesh_rows: dict[str, dict] = {}
+    for row in resolved:
+        for mesh in _instance_meshes(row):
+            obj = str(mesh.get("obj") or "").replace("\\", "/")
+            parts = obj.split("/recovered/AnimeStudio-cli/", 1)
+            asset_rel = ""
+            if len(parts) == 2:
+                tail = parts[1].split("/")
+                if len(tail) >= 4 and tail[1] == "convert_by_type":
+                    asset_rel = f"{tail[0]}/{'/'.join(tail[2:])}"
+            key = str(mesh.get("pathId") or mesh.get("name") or obj)
+            current = mesh_rows.setdefault(key, {
+                "name": mesh.get("name"),
+                "pathId": mesh.get("pathId"),
+                "assetRel": asset_rel,
+                "instanceCount": 0,
+            })
+            current["instanceCount"] += 1
 
     output_root.mkdir(parents=True, exist_ok=True)
-    image_name = f"{level_id}_registry_point_cloud.png"
+    image_name = f"{level_id}_streaming_topdown.png" if rendered_instances else f"{level_id}_registry_point_cloud.png"
     write_png(output_root / image_name, width, height, [bytes(row) for row in pixels])
     return {
         "schemaVersion": 1,
-        "status": "inferred_registry_point_cloud_preview",
+        "status": "recovered_streaming_mesh_topdown" if rendered_instances else "inferred_registry_point_cloud_preview",
         "levelId": level_id,
         "src": f"render/{image_name}",
         "worldBounds": bounds,
         "coordinateSystem": "Unity world X/Z; image top is +Z; tint derives from exact world Y",
         "render": {
-            "method": "exact_registry_transform_point_cloud",
-            "pointCount": len(positions),
-            "pointRadius": radius,
+            "method": "exact_streaming_matrix_obj_depth_pass" if rendered_instances else "exact_registry_transform_point_cloud",
+            "pointCount": 0 if rendered_instances else len(positions),
+            "pointRadius": 0 if rendered_instances else radius,
+            "renderedInstanceCount": rendered_instances,
+            "renderedTriangleCount": rendered_triangles,
+            "renderedVertexSampleCount": rendered_vertex_samples,
+            "realPixelRatio": round(real_pixel_ratio, 4),
             "elevationRange": {"min": low, "max": high},
         },
-        "modelScene": {"status": "no_recovered_scene_meshes", "meshes": [], "meshCount": 0},
+        "modelScene": {
+            "status": "streaming_meshes_rasterized" if rendered_instances else "no_recovered_scene_meshes",
+            "positionStatus": "exact_streaming_matrix" if mesh_rows else "unavailable",
+            "meshes": list(mesh_rows.values()),
+            "meshCount": len(mesh_rows),
+            "instanceCount": len(resolved),
+        },
         "boundary": (
-            "Evidence-only point cloud drawn from exact published registry and quest X/Y/Z transforms. "
+            f"Orthographic depth raster of {rendered_instances} static OBJ instances placed by their recovered "
+            f"InitChunkData 4x4 matrices ({rendered_triangles} prop triangles and {rendered_vertex_samples} "
+            f"floor-edge vertex samples). The remaining "
+            f"{len(streaming) - rendered_instances} non-rasterized instances are not drawn as location dots."
+            if rendered_instances else
+            f"Evidence-only point cloud drawn from {len(positions)} exact published registry and quest X/Y/Z transforms. "
             "Points are not connected into terrain and do not claim recovered scene geometry."
         ),
     }
@@ -429,8 +526,8 @@ def raster_size(span_x: float, span_z: float) -> tuple[int, int]:
 def _read_cluster(path: Path):
     """Vertices and triangles of one exported cluster OBJ.
 
-    Vertex normals are deliberately not read: the render shades a smoothed
-    height field instead, so per-facet normals would only add noise.
+    Vertex normals are deliberately not read: the published scan view only
+    needs triangle positions for its orthographic world-Y depth pass.
     """
     vertices = []
     faces = []
@@ -457,6 +554,143 @@ def _read_cluster(path: Path):
                 if len(corners) == 3:
                     faces.append(tuple(corners))
     return vertices, faces
+
+
+def rasterise_vertices(clusters, lod, fit, bounds, mesh_files, width, height):
+    """Project actual OBJ vertices, preserving their irregular scan spacing."""
+    span_x = bounds["maxX"] - bounds["minX"]
+    span_z = bounds["maxZ"] - bounds["minZ"]
+    depth = [NO_HIT] * (width * height)
+    used = []
+    vertex_count = 0
+    size = cell_size(lod)
+    for cluster in clusters:
+        suffix = f"{int(cluster['pathId']) & ((1 << 64) - 1):X}"
+        path = mesh_files.get(suffix)
+        if path is None:
+            continue
+        parsed = _read_cluster(path)
+        if not parsed:
+            continue
+        raw_vertices, faces = parsed
+        translate_x = fit["originX"] + cluster["i"] * size + size / 2
+        translate_z = fit["originZ"] + cluster["j"] * size + size / 2
+        landed = 0
+        for obj_x, obj_y, obj_z in raw_vertices:
+            world_x = translate_x - obj_x
+            world_z = translate_z + obj_z
+            px = round((world_x - bounds["minX"]) / span_x * (width - 1))
+            py = round((bounds["maxZ"] - world_z) / span_z * (height - 1))
+            if not (0 <= px < width and 0 <= py < height):
+                continue
+            index = py * width + px
+            depth[index] = max(depth[index], obj_y)
+            landed += 1
+        if landed:
+            vertex_count += landed
+            used.append({
+                "pathId": cluster["pathId"],
+                "name": cluster["name"],
+                "vertices": landed,
+                "triangles": len(faces),
+            })
+    return depth, used, vertex_count
+
+
+def rasterise_streaming_depth(streaming, bounds, width, height):
+    """Rasterize resolved static OBJ instances with their exact 4x4 matrices."""
+    span_x = bounds["maxX"] - bounds["minX"]
+    span_z = bounds["maxZ"] - bounds["minZ"]
+    depth = [NO_HIT] * (width * height)
+    cache: dict[Path, tuple[list, list] | None] = {}
+    used_instances = 0
+    triangles = 0
+    vertex_samples = 0
+    export_root = (ROOT / "export_full").resolve()
+
+    for instance in streaming:
+        matrix = instance.get("matrixColumnMajor")
+        meshes = _instance_meshes(instance)
+        if not meshes or not isinstance(matrix, list) or len(matrix) != 16:
+            continue
+        instance_drawn = False
+        for mesh in meshes:
+            path = (ROOT / str(mesh.get("obj") or "")).resolve()
+            try:
+                path.relative_to(export_root)
+            except ValueError:
+                continue
+            if path not in cache:
+                cache[path] = _read_cluster(path)
+            parsed = cache[path]
+            if not parsed:
+                continue
+            raw_vertices, faces = parsed
+            # AnimeStudio's OBJ conversion mirrors Unity X. Undo that conversion
+            # before applying the recovered Unity column-major instance matrix.
+            vertices = []
+            for obj_x, obj_y, obj_z in raw_vertices:
+                local_x = -obj_x
+                vertices.append((
+                    matrix[0] * local_x + matrix[4] * obj_y + matrix[8] * obj_z + matrix[12],
+                    matrix[1] * local_x + matrix[5] * obj_y + matrix[9] * obj_z + matrix[13],
+                    matrix[2] * local_x + matrix[6] * obj_y + matrix[10] * obj_z + matrix[14],
+                ))
+            # Filling the level-wide floor mesh would turn the white map into one
+            # grey rectangle and hide every prop. Keep its real mesh vertices as
+            # the floor outline while volumetric props use a normal depth pass.
+            if str(mesh.get("name") or "").lower().startswith("s_build_indie_floor"):
+                landed = 0
+                for world_x, world_y, world_z in vertices:
+                    px = round((world_x - bounds["minX"]) / span_x * (width - 1))
+                    py = round((bounds["maxZ"] - world_z) / span_z * (height - 1))
+                    if 0 <= px < width and 0 <= py < height:
+                        index = py * width + px
+                        depth[index] = max(depth[index], world_y)
+                        landed += 1
+                if landed:
+                    instance_drawn = True
+                    vertex_samples += landed
+                continue
+            drawn = 0
+            for face in faces:
+                try:
+                    points = [vertices[index] for index in face]
+                except IndexError:
+                    continue
+                screen_x = [(point[0] - bounds["minX"]) / span_x * width for point in points]
+                screen_y = [(bounds["maxZ"] - point[2]) / span_z * height for point in points]
+                x0, x1 = max(0, int(min(screen_x))), min(width - 1, int(max(screen_x)) + 1)
+                y0, y1 = max(0, int(min(screen_y))), min(height - 1, int(max(screen_y)) + 1)
+                if x0 > x1 or y0 > y1:
+                    continue
+                area = ((screen_y[1] - screen_y[2]) * (screen_x[0] - screen_x[2])
+                        + (screen_x[2] - screen_x[1]) * (screen_y[0] - screen_y[2]))
+                if abs(area) < 1e-12:
+                    continue
+                drawn += 1
+                for pixel_y in range(y0, y1 + 1):
+                    sample_y = pixel_y + 0.5
+                    base = pixel_y * width
+                    for pixel_x in range(x0, x1 + 1):
+                        sample_x = pixel_x + 0.5
+                        w0 = ((screen_y[1] - screen_y[2]) * (sample_x - screen_x[2])
+                              + (screen_x[2] - screen_x[1]) * (sample_y - screen_y[2])) / area
+                        w1 = ((screen_y[2] - screen_y[0]) * (sample_x - screen_x[2])
+                              + (screen_x[0] - screen_x[2]) * (sample_y - screen_y[2])) / area
+                        w2 = 1.0 - w0 - w1
+                        if min(w0, w1, w2) < -EDGE_EPSILON:
+                            continue
+                        elevation = w0 * points[0][1] + w1 * points[1][1] + w2 * points[2][1]
+                        index = base + pixel_x
+                        if elevation > depth[index]:
+                            depth[index] = elevation
+            if drawn:
+                instance_drawn = True
+                triangles += drawn
+        if instance_drawn:
+            used_instances += 1
+    return depth, used_instances, triangles, vertex_samples
 
 
 def rasterise_depth(clusters, lod, fit, bounds, mesh_files, width, height):
@@ -668,6 +902,56 @@ def hillshade(dem, mask, width, height):
     return out
 
 
+def render_elevation_underlay(
+    level_id: str,
+    depth: list[float],
+    width: int,
+    height: int,
+    output_root: Path,
+) -> dict | None:
+    """Restore the earlier smoothed DEM as a quiet layer below a point scan."""
+    grown, real = grow_surface(depth, width, height)
+    mask = [value > NO_HIT for value in grown]
+    if not any(mask):
+        return None
+    dem = smooth_surface(grown, mask, width, height)
+    lighting = hillshade(dem, mask, width, height)
+    covered = [dem[index] for index, present in enumerate(mask) if present]
+    low, high = min(covered), max(covered)
+    span = max(high - low, 1.0)
+    rows = []
+    for y in range(height):
+        row = bytearray()
+        for x in range(width):
+            index = y * width + x
+            if not mask[index]:
+                row.extend((255, 255, 255, 0))
+                continue
+            tint = (dem[index] - low) / span
+            value = shade((0.97 - 0.16 * tint) * (0.88 + 0.12 * lighting[index]))
+            row.extend((value, value, value, 225 if real[index] else 165))
+        rows.append(bytes(row))
+    image_name = f"{level_id}_hlod_elevation.png"
+    write_png(output_root / image_name, width, height, rows)
+    return {
+        "src": f"render/{image_name}",
+        "method": "orthographic_depth_pass_then_smoothed_hillshade",
+        "defaultOpacity": 1.0,
+        "hillshade": {
+            "azimuth": HILLSHADE_AZIMUTH,
+            "altitude": HILLSHADE_ALTITUDE,
+            "scale": HILLSHADE_SCALE,
+            "growRounds": FILL_ROUNDS,
+            "blurRadius": BLUR_RADIUS,
+            "blurPasses": BLUR_PASSES,
+        },
+        "realPixelRatio": round(sum(real) / (width * height), 4),
+        "coveredPixelRatio": round(sum(mask) / (width * height), 4),
+        "elevationRange": {"min": low, "max": high},
+        "boundary": "Recovered HLOD triangle depth only; gap growth is visibly translucent and does not claim authored ground geometry.",
+    }
+
+
 def render_level(
     level_id: str,
     clusters: list[dict],
@@ -676,10 +960,19 @@ def render_level(
     bounds: dict[str, float],
     mesh_files: dict[str, Path],
     output_root: Path,
+    scan_mode: str | None = None,
 ) -> dict | None:
     """Render recovered HLOD geometry as a dense orthographic point cloud."""
     width, height = raster_size(bounds["maxX"] - bounds["minX"], bounds["maxZ"] - bounds["minZ"])
-    depth, used, triangles = rasterise_depth(clusters, lod, fit, bounds, mesh_files, width, height)
+    mode = scan_mode or LEVEL_SCAN_MODES.get(level_id, "depth_points")
+    if mode == "mesh_vertices":
+        depth, used, primitive_count = rasterise_vertices(
+            clusters, lod, fit, bounds, mesh_files, width, height
+        )
+        triangles = 0
+    else:
+        depth, used, triangles = rasterise_depth(clusters, lod, fit, bounds, mesh_files, width, height)
+        primitive_count = triangles
     if not used:
         return None
 
@@ -690,30 +983,36 @@ def render_level(
     low, high = min(covered), max(covered)
     span = max(high - low, 1.0)
 
-    rows = []
+    rows = [bytearray(width * 4) for _ in range(height)]
     for y in range(height):
-        row = bytearray()
+        row = rows[y]
         base_index = y * width
         for x in range(width):
             index = base_index + x
-            # A deterministic screen-door sample retains the density and
-            # silhouette of actual HLOD geometry while reading as the older
-            # 3D scan/point-cloud view instead of an invented solid terrain.
-            if not real[index] or ((x * 37 + y * 17) % 11) >= 8:
-                row.extend((255, 255, 255, 0))
+            if not real[index]:
+                continue
+            # The screenshot-era vertex scan is irregular because its samples
+            # are mesh vertices. The depth mode retains the later deterministic
+            # 8/11 screen-door alternative for explicit comparisons.
+            if mode == "depth_points" and ((x * 37 + y * 17) % 11) >= 8:
                 continue
             tint = (depth[index] - low) / span
-            row.extend((
-                shade(0.42 + 0.48 * tint),
-                shade(0.63 + 0.31 * tint),
-                shade(0.76 + 0.20 * tint),
-                205,
-            ))
-        rows.append(bytes(row))
+            grey = shade((0.28 - 0.22 * tint) if mode == "mesh_vertices" else (0.40 - 0.34 * tint))
+            offset = x * 4
+            row[offset:offset + 4] = bytes((grey, grey, grey, 215 if mode == "mesh_vertices" else 205))
 
     output_root.mkdir(parents=True, exist_ok=True)
     image_name = f"{level_id}_hlod_grid_inferred.png"
     write_png(output_root / image_name, width, height, rows)
+    elevation_underlay = None
+    if level_id == "indie_dg002":
+        elevation_depth, elevation_used, _ = rasterise_depth(
+            clusters, lod, fit, bounds, mesh_files, width, height
+        )
+        if elevation_used:
+            elevation_underlay = render_elevation_underlay(
+                level_id, elevation_depth, width, height, output_root
+            )
     size = cell_size(lod)
     scene_meshes = _scene_meshes(used, mesh_files, lod=lod, fit=fit)
     return {
@@ -721,22 +1020,30 @@ def render_level(
         "status": "inferred_hlod_grid_preview",
         "levelId": level_id,
         "src": f"render/{image_name}",
+        "elevationUnderlay": elevation_underlay,
         "worldBounds": bounds,
         "coordinateSystem": "Unity world X/Z; image top is +Z",
         "hlodLevel": lod,
         "render": {
-            "method": "orthographic_hlod_depth_point_density",
+            "method": "orthographic_hlod_mesh_vertex_scan" if mode == "mesh_vertices" else "orthographic_hlod_depth_black_point_density",
             "shading": (
-                "deterministically sampled real HLOD depth pixels with an elevation tint; "
-                "no grown or interpolated terrain pixels are drawn"
+                "actual OBJ vertices projected orthographically, with world-Y encoded as grey-black on white"
+                if mode == "mesh_vertices" else
+                "the 87b60f49 screen-door sample of real HLOD depth pixels, with its height palette inverted"
             ),
-            "pointDensity": 8 / 11,
+            "pointDensity": 1.0 if mode == "mesh_vertices" else 8 / 11,
+            "sourceSampleCount": primitive_count,
+            "heightEcho": {
+                "enabled": False,
+                "boundary": "Disabled for the mesh-vertex scan: height is encoded by tone without duplicating coordinates.",
+            },
             "realPixelRatio": round(sum(1 for value in real if value) / (width * height), 4),
             "coveredPixelRatio": round(sum(1 for value in real if value) / (width * height), 4),
             "elevationRange": {"min": low, "max": high},
             "boundary": (
-                "Only pixels hit by recovered HLOD triangles can emit points. The deterministic density "
-                "sample exposes height and structure without filling gaps or inventing a ground surface."
+                "Only recovered OBJ vertices emit points; triangle interiors, gaps and side walls are not filled."
+                if mode == "mesh_vertices" else
+                "Only pixels hit by recovered HLOD triangles can emit points; gaps are not filled."
             ),
         },
         "transform": {
@@ -751,6 +1058,7 @@ def render_level(
         "candidateMeshCount": len(clusters),
         "renderedMeshCount": len(used),
         "renderedTriangleCount": triangles,
+        "renderedPrimitiveCount": primitive_count,
         "imageSize": {"width": width, "height": height},
         "meshes": used,
         # The browser may offer a lightweight interactive OBJ inspection view
@@ -772,7 +1080,7 @@ def render_level(
             ),
         },
         "boundary": (
-            "Diagnostic orthographic point-density preview only. The HLOD bundles publish no GameObject or Transform "
+            "Diagnostic orthographic black point-density preview only. The HLOD bundles publish no GameObject or Transform "
             "record, so cluster placement is inferred from the grid index in each cluster's name and an "
             "origin fitted to this level's exact marker transforms. No mesh-to-material binding survives "
             "the export, so the surface is shaded, never textured."
@@ -792,7 +1100,11 @@ def main() -> int:
     parser.add_argument("--output-root", type=Path, default=OUTPUT_ROOT)
     parser.add_argument("--hlod-index", type=Path, default=HLOD_INDEX)
     parser.add_argument("--refresh-index", action="store_true", help="rescan the asset map even if the cache matches")
-    parser.add_argument("--lod", type=int, default=1, help="preferred HLOD level; falls back to the finest available")
+    parser.add_argument("--lod", type=int, default=None, help="preferred HLOD level; overrides the verified per-level choice")
+    parser.add_argument(
+        "--scan-mode", choices=("auto", "mesh_vertices", "depth_points"), default="auto",
+        help="HLOD sampling method; auto uses the verified per-level choice",
+    )
     parser.add_argument("--level", action="append", default=[], help="build only these level ids (repeatable)")
     args = parser.parse_args()
 
@@ -825,9 +1137,11 @@ def main() -> int:
             skipped.append((level_id, f"best origin only explains {fit['coverage']:.0%} of markers"))
             continue
 
-        lod = args.lod if str(args.lod) in lods else min(int(key) for key in lods)
+        preferred_lod = args.lod if args.lod is not None else LEVEL_PREFERRED_LODS.get(level_id, 1)
+        lod = preferred_lod if str(preferred_lod) in lods else min(int(key) for key in lods)
         manifest = render_level(
-            level_id, lods[str(lod)], lod, fit, plot_bounds(points), mesh_files, args.output_root
+            level_id, lods[str(lod)], lod, fit, plot_bounds(points), mesh_files, args.output_root,
+            None if args.scan_mode == "auto" else args.scan_mode,
         )
         if manifest is None:
             skipped.append((level_id, "no exported cluster mesh landed in bounds"))
@@ -840,7 +1154,7 @@ def main() -> int:
         published_ids.add(level_id)
         print(
             f"{level_id}: HLOD{lod} {manifest['renderedMeshCount']}/{manifest['candidateMeshCount']} clusters, "
-            f"{manifest['renderedTriangleCount']} tris, {manifest['render']['realPixelRatio']:.0%} real geometry"
+            f"{manifest['renderedPrimitiveCount']} source samples, {manifest['render']['realPixelRatio']:.0%} real geometry"
             f" / {manifest['render']['pointDensity']:.0%} point density, "
             f"origin ({fit['originX']:g},{fit['originZ']:g}), "
             f"fit {fit['coverage']:.0%} of {fit['samplePoints']} markers"
@@ -856,7 +1170,7 @@ def main() -> int:
         payload = json.loads(map_path.read_text(encoding="utf-8"))
         if (payload.get("minimap") or {}).get("src") or level_id in published_ids:
             continue
-        manifest = render_point_cloud(level_id, level_positions(map_path), args.output_root)
+        manifest = render_point_cloud(level_id, level_positions(map_path), args.output_root, payload)
         if manifest is None:
             skipped.append((level_id, "no exact X/Y/Z positions for point-cloud fallback"))
             continue

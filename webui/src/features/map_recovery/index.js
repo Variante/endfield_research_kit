@@ -8,7 +8,7 @@
   const PAD = 64;
   const MIN_SCALE = 0.3; // a whole region can span several zone maps of canvas
   const MAX_SCALE = 48;
-  const MAP_ASSET_VERSION = "20260820-map32";
+  const MAP_ASSET_VERSION = "20260820-map45";
   const PAN_OVERHANG = 96; // px of surface a pan may run past the content edge
   const LABEL_ZOOM = 1.7; // minor entity labels stay hidden below this zoom
   const GEO_LABEL_ZOOM = 0.3; // keep one primary name per sibling at region view
@@ -35,12 +35,6 @@
     waypoint: "#4a6b8a",
   };
   const QUEST_COLOR = "#2f7d4f";
-  const EDGE_STYLES = {
-    same_file: { stroke: "#93b8d6", dash: "6 4", width: 1.4 },
-    same_script: { stroke: "#b9a8e0", dash: "2 4", width: 1.1 },
-  };
-  const MAX_EDGE_GROUP = 24; // nodes sharing one file/script before the clique is dropped
-  const MAX_EDGES = 4000; // total relation lines drawn on one map
   const MAX_PREVIEW_BYTES = 200000; // conv payloads carry large _debug blocks
   const MAX_DIALOG_LINES = 120;
   const MAX_RAW_CHARS = 12000;
@@ -56,11 +50,6 @@
     showQuests: false,
     storyOnly: false,
     mission: "", // "" means every mission this level hosts
-    // Relation lines are cliques: every pair of markers sharing a level-script
-    // file gets one, so a group of n draws n(n-1)/2 lines that all say the same
-    // thing. Showing them only for the focused node keeps the evidence without
-    // the permanent web.
-    relations: "focus",
     bound: false,
     transform: { x: 0, y: 0, scale: 1 },
     nodes: [],
@@ -83,10 +72,10 @@
     observer: null,
     fileCache: new Map(),
     fileFlight: new Map(),
-    edges: [],
     payloads: new Map(), // levelId -> payload; siblings of a region share the cache
     backgrounds: [], // every region zone's map screen, in stable draw order
     layerBackgrounds: [], // transparent tier overlays, kept separate from base screens
+    pointCloudOpacity: 0.82, // only affects scan PNGs that expose an elevation underlay
     contentBox: null, // plotted content extent in viewBox units, for the pan clamp
     selectedMapBox: null, // selected level's fitted background rectangle
     lastNodeScale: null, // skip per-node writes while a pan keeps the same scale
@@ -107,7 +96,6 @@
   // the same way the mission-pipeline view does instead of rendering markup.
   const plainText = (value) => String(value ?? "").replace(/<@[^>]*>/g, "").replace(/<\/[^>]+>/g, "").replace(/<[^>]+>/g, "").replaceAll("\\n", " ").trim();
   const uniq = (values) => [...new Set(values.map((value) => String(value || "").trim()).filter(Boolean))];
-  const sourcePaths = (node) => uniq([...(node?.sourceFiles || []), ...(node?.source ? [node.source] : [])]);
   // The builder marks registry-placed nodes with `registryBacked` instead of
   // repeating one identical 7 MB registry path on thousands of markers. The pin
   // is rebuilt here from the node's own level entry, so the inspector shows the
@@ -336,6 +324,7 @@
       mapFloorNone: "Base map",
       mapFloorNoneHint: "Show the stitched geographic base without a floor overlay.",
       mapFloorChoose: "Displayed floor",
+      pointCloudOpacity: "Point cloud opacity",
       evidence: "Evidence",
       controls: "Controls",
       collapse: "Collapse panel",
@@ -352,6 +341,8 @@
       zoomLevel: "Zoom",
       help: "Wheel or +/- zooms, drag or arrows pan, Tab walks the nodes, Enter pins one, Esc clears, 0 resets, F fits.",
       questPoint: "Quest point",
+      missionStart: "Mission start",
+      missionEnd: "Mission end",
       entityNode: "Entity node",
       noNodes: "No plotted nodes for current layers.",
       questPoints: "quest points",
@@ -374,11 +365,6 @@
       loadError: "Map recovery data could not be loaded",
       retry: "Retry",
       questRoute: "Quest route",
-      relations: "Relation lines",
-      relations_focus: "Focused",
-      relations_all: "All",
-      relations_off: "Off",
-      relationsHint: "Lines join markers that share a level-script file or script entity. Every pair in a group is joined, so a group of n draws n(n-1)/2 lines; Focused shows only the lines of the node under the pointer.",
       gridFit: "Background grid fit",
       gridFitOf: "of",
       gridFitMarkers: "marker transforms",
@@ -388,6 +374,9 @@
       questOrder: "Order",
       objective: "Objective",
       coordinates: "Coordinates",
+      streamingSource: "Streaming source",
+      matchedMesh: "Matched mesh",
+      meshPathId: "Mesh PathID",
       name: "Label",
       kind: "Kind",
       identity: "Identity",
@@ -426,6 +415,7 @@
       minimapLayer: "layer",
       scene3d: "Recovered 3D models",
       scene3dHint: "Open a representative OBJ in the existing Assets 3D viewer. Mesh placement is inferred and diagnostic only.",
+      streamingSceneHint: "The instance transform is exact, and matched static OBJ geometry is rasterized into the top-down background.",
       scene3dUnplacedHint: "These level-matched OBJ exports have no recovered scene transform. Open them in Assets for inspection; they are not placed on this map.",
       scene3dUnavailable: "No safe OBJ model is published for this level; the map stays marker-only.",
     },
@@ -435,6 +425,7 @@
       mapFloorNone: "\u4ec5\u663e\u793a\u5e95\u56fe",
       mapFloorNoneHint: "\u663e\u793a\u62fc\u63a5\u540e\u7684\u5730\u7406\u5e95\u56fe\uff0c\u4e0d\u53e0\u52a0\u697c\u5c42\u56fe\u3002",
       mapFloorChoose: "\u5f53\u524d\u663e\u793a\u697c\u5c42",
+      pointCloudOpacity: "\u70b9\u4e91\u900f\u660e\u5ea6",
       mapLayers: "地图楼层",
       mapLayersNone: "该关卡的 UILevelMapLoadConfig 未声明楼层叠图。",
       layerSelectionHint: "\u9ed8\u8ba4\u4ee5\u5e72\u51c0\u7684\u5730\u7406\u5730\u56fe\u663e\u793a\u3002\u9700\u8981\u65f6\u518d\u5f00\u542f\u4efb\u52a1\u3001\u5267\u60c5\u6216\u5176\u5b83\u6807\u8bb0\u3002",
@@ -458,6 +449,8 @@
       zoomLevel: "缩放",
       help: "滚轮或 +/- 缩放，拖拽或方向键平移，Tab 遍历节点，Enter 固定，Esc 取消，0 复位，F 适配。",
       questPoint: "任务点",
+      missionStart: "任务开始",
+      missionEnd: "任务结束",
       entityNode: "实体节点",
       noNodes: "当前图层没有可绘制节点。",
       questPoints: "任务点",
@@ -477,11 +470,6 @@
       layersNone: "全不选",
       layersStory: "含剧情",
       questRoute: "任务路线",
-      relations: "关系连线",
-      relations_focus: "仅当前",
-      relations_all: "全部",
-      relations_off: "关闭",
-      relationsHint: "连线表示两个标记共用同一份关卡脚本文件或脚本实体。同组内每两点都会连线，n 个点即 n(n-1)/2 条；“仅当前”只显示指针所指节点的连线。",
       gridFit: "底图网格拟合",
       gridFitOf: "／共",
       gridFitMarkers: "个实体坐标",
@@ -491,6 +479,9 @@
       questOrder: "顺序",
       objective: "目标",
       coordinates: "坐标",
+      streamingSource: "流式场景来源",
+      matchedMesh: "匹配网格",
+      meshPathId: "网格 PathID",
       name: "名称",
       kind: "类型",
       identity: "标识",
@@ -529,6 +520,7 @@
       minimapLayer: "图层",
       scene3d: "Recovered 3D models",
       scene3dHint: "Open a representative OBJ in the existing Assets 3D viewer. Mesh placement is inferred and diagnostic only.",
+      streamingSceneHint: "实例变换为精确恢复，已匹配的静态 OBJ 网格已栅格化进俯视背景。",
       scene3dUnavailable: "No safe OBJ model is published for this level; the map stays marker-only.",
     },
   };
@@ -558,6 +550,7 @@
     const coords = `X ${p.x} / Y ${p.y ?? "?"} / Z ${p.z}`;
     const rows = node.type === "quest"
       ? [
+        [t("mission"), node.endpointRole ? t(node.endpointRole === "start" ? "missionStart" : "missionEnd") : ""],
         [t("questId"), node.questId],
         [t("questOrder"), Number.isFinite(Number(node.questOrder)) ? String(node.questOrder) : ""],
         [t("objective"), plainText(node.objective)],
@@ -576,11 +569,18 @@
         [t("coordinates"), coords],
       ];
     rows.push([t("scenes"), (node.sceneKeys || []).join(", ")]);
+    if (node.streamingInstance) {
+      rows.push([t("streamingSource"), node.streamingInstance.sourceFile]);
+      rows.push([t("matchedMesh"), node.streamingInstance.mesh?.name]);
+      rows.push([t("meshPathId"), node.streamingInstance.mesh?.pathId]);
+    }
     return rows.filter(([, value]) => value !== null && value !== undefined && String(value) !== "");
   }
 
   const nodeTitle = (node) => (node.type === "quest" ? String(node.questId) : nodeDisplayLabel(node));
-  const nodeRole = (node) => (node.type === "quest" ? t("questPoint") : t("entityNode"));
+  const nodeRole = (node) => (node.type === "quest"
+    ? (node.endpointRole ? t(node.endpointRole === "start" ? "missionStart" : "missionEnd") : t("questPoint"))
+    : t("entityNode"));
   const accessibleName = (node) => `${nodeRole(node)}: ${fields(node).map(([label, value]) => `${label} ${value}`).join(", ")}`;
 
   function priority(node) {
@@ -1101,36 +1101,6 @@
     return `<div class="mr-dialog">${head}${rows}${more}</div>`;
   }
 
-  // ---------------------------------------------------------------- relations
-
-  // Rewriting one stylesheet rule is O(1) no matter how many lines are drawn,
-  // so relation focus can follow the pointer without touching thousands of
-  // SVG nodes on every hover.
-  const cssString = (value) => String(value).replace(/["\\]/g, "\\$&");
-
-  function applyEdgeFocus() {
-    const host = root();
-    if (!host) return;
-    const style = host.querySelector("#map-recovery-edge-style");
-    if (!style) return;
-    if (state.relations === "all") {
-      style.textContent = "";
-      return;
-    }
-    if (state.relations === "off") {
-      style.textContent = ".mr-edge { display: none; }";
-      return;
-    }
-    const focused = state.selectedId || state.previewId;
-    if (!focused) {
-      style.textContent = ".mr-edge { display: none; }";
-      return;
-    }
-    const id = cssString(focused);
-    style.textContent = `.mr-edge { display: none; }\n`
-      + `.mr-edge[data-from="${id}"], .mr-edge[data-to="${id}"] { display: inline; }`;
-  }
-
   // ---------------------------------------------------------------- selection
 
   function setPreview(id) {
@@ -1138,7 +1108,6 @@
     state.previewId = id;
     layoutLabelsSafely();
     syncTip();
-    applyEdgeFocus();
     renderInspector();
   }
 
@@ -1151,7 +1120,6 @@
     }
     syncSelection();
     layoutLabelsSafely();
-    applyEdgeFocus();
     renderInspector();
     // Pinning a node opens its strongest file straight away, so the common case
     // (click a marker, read the dialog it triggers) takes one interaction.
@@ -1219,6 +1187,28 @@
       .map((row) => ({ ...row, type: "marker", position: finitePosition(row.position) }))
       .filter((row) => row.position);
 
+    // Start/end pins are derived strictly from each mission's authored
+    // questOrder.  They describe the endpoints of the published tracking
+    // route, not an inferred spawn, trigger, or runtime completion position.
+    const endpointRoles = new Map();
+    const endpointGroups = new Map();
+    for (const row of questRows) {
+      const key = `${row.levelId}:${row.missionId || ""}`;
+      if (!endpointGroups.has(key)) endpointGroups.set(key, []);
+      endpointGroups.get(key).push(row);
+    }
+    for (const rows of endpointGroups.values()) {
+      const ordered = [...rows].sort((a, b) => {
+        const left = Number.isFinite(Number(a.questOrder)) ? Number(a.questOrder) : Number.MAX_SAFE_INTEGER;
+        const right = Number.isFinite(Number(b.questOrder)) ? Number(b.questOrder) : Number.MAX_SAFE_INTEGER;
+        return left - right || String(a.questId).localeCompare(String(b.questId));
+      });
+      if (!ordered.length) continue;
+      const keyOf = (row) => `${row.levelId}:${row.missionId || ""}:${row.questId}`;
+      endpointRoles.set(keyOf(ordered[0]), "start");
+      endpointRoles.set(keyOf(ordered.at(-1)), ordered.length === 1 ? "start" : "end");
+    }
+
     // The background is the game's own map-screen composite when the level
     // publishes one, else the HLOD preview. Whichever source is chosen also
     // supplies the declared world bounds, so the markers and the picture are
@@ -1275,7 +1265,13 @@
       // and a region surface merges several levels, so both the mission and the
       // level are part of the node id: quest ids are only unique inside their
       // own mission and marker identities stay scoped to their level.
-      ...questRows.map((row) => ({ ...row, id: `q:${row.levelId}:${row.missionId || ""}:${row.questId}`, plot: plot(oriented(row.position, row)), px: { x: 0, y: 0 } })),
+      ...questRows.map((row) => ({
+        ...row,
+        id: `q:${row.levelId}:${row.missionId || ""}:${row.questId}`,
+        endpointRole: endpointRoles.get(`${row.levelId}:${row.missionId || ""}:${row.questId}`) || "",
+        plot: plot(oriented(row.position, row)),
+        px: { x: 0, y: 0 },
+      })),
       ...markerRows.map((row) => ({ ...row, id: `m:${row.levelId}:${row.identity}`, plot: plot(oriented(row.position, row)), px: { x: 0, y: 0 } })),
     ].map((node) => {
       const labelText = nodeDisplayLabel(node);
@@ -1287,8 +1283,6 @@
       };
     });
 
-    const markerIndex = new Map(state.nodes.filter((row) => row.type === "marker").map((row) => [row.id, row]));
-    state.edges = inferredEdges(markerIndex);
     if (!state.nodes.some((node) => node.id === state.selectedId)) state.selectedId = "";
     if (!state.nodes.some((node) => node.id === state.previewId)) state.previewId = "";
 
@@ -1348,7 +1342,15 @@
     // Keep the source alpha intact so the region surface has one consistent
     // tone; transparency still exposes the map background below.
     const backgroundImages = bgRects
-      .map(({ bg, x, y, w, h }) => `<image class="mr-bg-image" href="data/map_recovery/${esc(bg.src)}?v=${MAP_ASSET_VERSION}" x="${x.toFixed(2)}" y="${y.toFixed(2)}" width="${w.toFixed(2)}" height="${h.toFixed(2)}"><title>${esc(bg.levelId)}</title></image>`)
+      .map(({ bg, x, y, w, h }) => {
+        const geometry = `x="${x.toFixed(2)}" y="${y.toFixed(2)}" width="${w.toFixed(2)}" height="${h.toFixed(2)}"`;
+        const underlay = bg.elevationUnderlay?.src
+          ? `<image class="mr-bg-image mr-bg-elevation" href="data/map_recovery/${esc(bg.elevationUnderlay.src)}?v=${MAP_ASSET_VERSION}" ${geometry}><title>${esc(`${bg.levelId} elevation`)}</title></image>`
+          : "";
+        const pointClass = underlay ? " mr-bg-point-cloud" : "";
+        const opacity = underlay ? ` style="opacity:${state.pointCloudOpacity.toFixed(2)}"` : "";
+        return `${underlay}<image class="mr-bg-image${pointClass}" href="data/map_recovery/${esc(bg.src)}?v=${MAP_ASSET_VERSION}" ${geometry}${opacity}><title>${esc(bg.levelId)}</title></image>`;
+      })
       .join("");
     // Level display names describe gameplay scenes, not geographic ownership
     // of the whole (overlapping) map-screen rectangle. Location labels come
@@ -1400,30 +1402,34 @@
       : null;
     state.lastNodeScale = null;
 
-    const edgeSvg = state.edges.map((edge) => {
-      const from = markerIndex.get(edge.from);
-      const to = markerIndex.get(edge.to);
-      if (!from || !to) return "";
-      const style = EDGE_STYLES[edge.kind] || { stroke: "#a8b0b4", dash: "4 4", width: 1 };
-      return `<line class="mr-edge" data-from="${esc(edge.from)}" data-to="${esc(edge.to)}" x1="${from.plot.x.toFixed(2)}" y1="${from.plot.y.toFixed(2)}" x2="${to.plot.x.toFixed(2)}" y2="${to.plot.y.toFixed(2)}" stroke="${style.stroke}" stroke-width="${style.width}" stroke-dasharray="${style.dash}"><title>${esc(edge.label || edge.kind)}</title></line>`;
-    }).join("");
-
     const nodeSvg = state.nodes.map((node) => {
       const quest = node.type === "quest";
       // A node reads as a story node when dialog is actually pinned to it, not
       // when its structural kind happens to be `story`: on a full map most
       // recovered dialog sits on NPC proxies, triggers and narrative anchors.
       const hasStory = quest ? false : (node.storyCount || 0) > 0;
-      const shape = quest
-        ? `<rect class="mr-shape" x="-5.5" y="-5.5" width="11" height="11"/>`
+      const endpoint = quest && node.endpointRole;
+      const endpointLabel = endpoint ? t(endpoint === "start" ? "missionStart" : "missionEnd") : "";
+      const shape = endpoint === "start"
+        ? `<circle class="mr-endpoint-halo" r="11"/><circle class="mr-shape" r="7"/><path class="mr-endpoint-glyph" d="M-2.5,-4 L4,0 L-2.5,4 Z"/>`
+        : endpoint === "end"
+          ? `<circle class="mr-endpoint-halo" r="11"/><rect class="mr-shape" x="-6" y="-6" width="12" height="12" transform="rotate(45)"/><path class="mr-endpoint-glyph" d="M-3,-3 H3 V3 H-3 Z"/>`
+          : quest
+            ? `<rect class="mr-shape" x="-5.5" y="-5.5" width="11" height="11"/>`
         : `<circle class="mr-shape" r="${hasStory || node.kind === "story" ? 9 : 6}" fill="${esc(kindColor(node))}"/>`;
-      return `<g class="mr-node${quest ? " mr-quest" : " mr-marker"}${hasStory || node.kind === "story" ? " is-story" : ""}" data-node="${esc(node.id)}" data-kind="${esc(node.kind || "quest")}" role="button" tabindex="0" aria-pressed="${node.id === state.selectedId ? "true" : "false"}" aria-label="${esc(accessibleName(node))}">`
+      return `<g class="mr-node${quest ? " mr-quest" : " mr-marker"}${endpoint ? ` is-mission-${endpoint}` : ""}${hasStory || node.kind === "story" ? " is-story" : ""}" data-node="${esc(node.id)}" data-kind="${esc(node.kind || "quest")}" role="button" tabindex="0" aria-pressed="${node.id === state.selectedId ? "true" : "false"}" aria-label="${esc(accessibleName(node))}">`
         + `<circle class="mr-hit" r="15" fill="none" pointer-events="all"/>${shape}`
+        + (endpoint ? `<text class="mr-endpoint-label" x="0" y="-17">${esc(endpointLabel)}</text>` : "")
         + `<text class="mr-label" x="${node.labelOffset.x}" y="${node.labelOffset.y}">${esc(node.labelText)}</text></g>`;
     }).join("");
 
     const layerControls = layerTreeHtml(data);
     const mapLayerControls = mapLayerTreeHtml(data);
+    const hasPointCloudUnderlay = bgRects.some(({ bg }) => bg.elevationUnderlay?.src);
+    const pointCloudOpacity = Math.round(state.pointCloudOpacity * 100);
+    const opacityControl = hasPointCloudUnderlay
+      ? `<label class="mr-opacity-dock"><span>${esc(t("pointCloudOpacity"))}</span><input type="range" min="0" max="100" step="1" value="${pointCloudOpacity}" data-map-point-opacity><output>${pointCloudOpacity}%</output></label>`
+      : "";
     const missionControls = missionSelectHtml(data);
     const unlinked = (data.unlinkedMissionFiles || []).filter((path) => String(path || "").trim()).sort((a, b) => a.localeCompare(b));
     const unresolvedSlots = data.unresolvedTriggerSlots || { count: 0 };
@@ -1446,14 +1452,15 @@
       const href = `?asset=${encodeURIComponent(rel)}#assets`;
       return `<li><a href="${esc(href)}">${esc(row.name || rel)}</a></li>`;
     }).join("");
-    const sceneHint = scene.positionStatus === "unplaced" ? t("scene3dUnplacedHint") : t("scene3dHint");
+    const sceneHint = scene.positionStatus === "unplaced"
+      ? t("scene3dUnplacedHint")
+      : (scene.positionStatus === "exact_streaming_matrix" ? t("streamingSceneHint") : t("scene3dHint"));
     const sceneBlock = sceneMeshes.length
       ? `<details><summary>${esc(`${t("scene3d")} (${scene.meshCount || sceneMeshes.length})`)}</summary><p class="mr-note">${esc(sceneHint)}</p><ul class="mr-file-list">${sceneFiles}</ul></details>`
       : `<p class="mr-note"><code>${esc(scene.status || "obj_cluster_files_unavailable")}</code> ${esc(t("scene3dUnavailable"))}</p>`;
 
-    host.innerHTML = `<style id="map-recovery-edge-style"></style>
-      <div class="mr-map" tabindex="0" role="group" aria-label="${esc(`${mapTitle(data)} - ${t("mapSurface")}`)}">
-        <svg class="mr-canvas" viewBox="0 0 ${WIDTH} ${HEIGHT}" role="group" aria-label="${esc(mapTitle(data))}"><rect width="100%" height="100%" class="mr-map-bg"/><g class="mr-viewport">${backgroundImages}<g class="mr-location-labels">${locationLabelSvg}</g><g class="mr-routes">${routeSvg}</g><g class="mr-links">${edgeSvg}</g><g class="mr-nodes">${nodeSvg}</g></g></svg>
+    host.innerHTML = `<div class="mr-map${hasPointCloudUnderlay ? " has-point-opacity" : ""}" tabindex="0" role="group" aria-label="${esc(`${mapTitle(data)} - ${t("mapSurface")}`)}">
+        <svg class="mr-canvas" viewBox="0 0 ${WIDTH} ${HEIGHT}" role="group" aria-label="${esc(mapTitle(data))}"><rect width="100%" height="100%" class="mr-map-bg"/><g class="mr-viewport">${backgroundImages}<g class="mr-location-labels">${locationLabelSvg}</g><g class="mr-routes">${routeSvg}</g><g class="mr-nodes">${nodeSvg}</g></g></svg>
         <div class="mr-tip" hidden></div>
         <div class="mr-tools" role="group" aria-label="${esc(t("zoomLevel"))}">
           <button type="button" data-map-zoom="out" aria-label="${esc(t("zoomOut"))}" title="${esc(t("zoomOut"))}">-</button>
@@ -1462,7 +1469,7 @@
           <button type="button" data-map-reset aria-label="${esc(t("resetLong"))}" title="${esc(t("resetLong"))}">${esc(t("reset"))}</button>
           <span class="mr-zoom-readout" role="status" aria-live="polite"></span>
         </div>
-        <div class="mr-floor-dock${mapLayerControls ? "" : " is-help-only"}">${mapLayerControls}<p class="mr-floor-help">${esc(t("help"))}</p></div>
+        <div class="mr-floor-dock${mapLayerControls || opacityControl ? "" : " is-help-only"}">${opacityControl}${mapLayerControls}<p class="mr-floor-help">${esc(t("help"))}</p></div>
         <div class="mr-axis">+Z -> X -></div>
         ${state.nodes.length || bgRects.length || state.locationLabels.length ? "" : `<p class="mr-empty">${esc(t("noNodes"))}</p>`}
       </div>
@@ -1502,11 +1509,6 @@
              <button type="button" data-map-layers="story">${esc(t("layersStory"))}</button>
            </div>
            <p class="mr-note mr-layer-selection-hint">${esc(t("layerSelectionHint"))}</p>
-           <h2>${esc(t("relations"))}</h2>
-          <div class="mr-layer-actions" role="group" aria-label="${esc(t("relations"))}">
-            ${["focus", "all", "off"].map((mode) => `<button type="button" data-map-relations="${mode}" aria-pressed="${state.relations === mode ? "true" : "false"}">${esc(t(`relations_${mode}`))}</button>`).join("")}
-          </div>
-          <p class="mr-note">${esc(t("relationsHint"))}</p>
           <div class="mr-layers">${(data.questPoints || []).length ? `<label class="mr-layer"><input type="checkbox" data-map-quests ${state.showQuests ? "checked" : ""}><span class="mr-swatch" style="background:${QUEST_COLOR}"></span>quest<span class="mr-layer-count">${data.questPoints.length}</span></label>` : ""}${layerControls}</div>
           <h2>${esc(t("evidence"))}</h2>
            <p class="mr-note"><b>${state.backgrounds.length}</b> ${esc(surfaceLabel)}</p>
@@ -1548,50 +1550,8 @@
       </aside>`;
     bindMap(host);
     state.inspectorKey = "";
-    applyEdgeFocus();
     renderInspector();
     applyTransform();
-  }
-
-  // Two markers are drawn as related when they provably share a source file or
-  // a script entity. Both are identity matches in the published payload, not
-  // inferences about gameplay.
-  function inferredEdges(markerIndex) {
-    const rows = [];
-    const seen = new Set();
-    const addEdge = (from, to, kind, label) => {
-      if (!from || !to || from === to) return;
-      const key = [from, to].sort().join("::");
-      if (seen.has(key)) return;
-      seen.add(key);
-      rows.push({ from, to, kind, label });
-    };
-    const groups = new Map();
-    const group = (key, node) => {
-      const list = groups.get(key) || [];
-      list.push(node);
-      groups.set(key, list);
-    };
-    markerIndex.forEach((node) => {
-      sourcePaths(node).forEach((path) => group(`same_file:${path}`, node));
-      const match = /^script:(\d+):/.exec(node.identity);
-      if (match) group(`same_script:${match[1]}`, node);
-    });
-    for (const [key, nodes] of groups) {
-      // A clique is quadratic in the group size. On a full world map one level
-      // script can own hundreds of entity slots, which would draw tens of
-      // thousands of lines that say only "same file" - unreadable and slow. A
-      // group that large is dropped rather than thinned, because a partial
-      // clique would misrepresent which members are related.
-      if (nodes.length > MAX_EDGE_GROUP) continue;
-      const kind = key.startsWith("same_file:") ? "same_file" : "same_script";
-      const label = kind === "same_file" ? "shared source file" : "same script entity";
-      for (let i = 0; i < nodes.length; i += 1) {
-        for (let j = i + 1; j < nodes.length; j += 1) addEdge(nodes[i].id, nodes[j].id, kind, label);
-      }
-      if (rows.length > MAX_EDGES) return rows.slice(0, MAX_EDGES);
-    }
-    return rows;
   }
 
   // ---------------------------------------------------------------- events
@@ -1626,13 +1586,14 @@
       state.mapLayers = id ? new Set([id]) : new Set();
       scheduleRender();
     });
-    host.querySelectorAll("[data-map-relations]").forEach((button) => button.addEventListener("click", () => {
-      state.relations = button.dataset.mapRelations;
-      host.querySelectorAll("[data-map-relations]").forEach((row) => {
-        row.setAttribute("aria-pressed", row.dataset.mapRelations === state.relations ? "true" : "false");
+    host.querySelector("[data-map-point-opacity]")?.addEventListener("input", (event) => {
+      state.pointCloudOpacity = clamp(Number(event.currentTarget.value) / 100, 0, 1);
+      host.querySelectorAll(".mr-bg-point-cloud").forEach((image) => {
+        image.style.opacity = state.pointCloudOpacity.toFixed(2);
       });
-      applyEdgeFocus();
-    }));
+      const output = event.currentTarget.parentElement?.querySelector("output");
+      if (output) output.textContent = `${Math.round(state.pointCloudOpacity * 100)}%`;
+    });
     host.querySelectorAll("[data-map-layers]").forEach((button) => button.addEventListener("click", () => {
       const mode = button.dataset.mapLayers;
       const kinds = state.map?.facets?.kinds || {};
@@ -1956,7 +1917,12 @@
       const unresolvedSlots = payload.unresolvedTriggerSlots;
       if (unresolvedSlots?.count) unresolved.push(...(unresolvedSlots.stories || []));
       const background = zoneBackground(payload);
-      if (background) backgrounds.push({ levelId: member.id, src: background.src, worldBounds: background.worldBounds });
+      if (background) backgrounds.push({
+        levelId: member.id,
+        src: background.src,
+        worldBounds: background.worldBounds,
+        elevationUnderlay: background.elevationUnderlay || null,
+      });
     }
     // These are overlapping map screens, not disjoint rectangles owned by
     // the selected gameplay level. A stable order prevents selection changes
@@ -2033,6 +1999,9 @@
     }
     // Start as a geographic map. A region can contain thousands of entities
     // and quest points; the explicit layer controls opt those overlays in.
+    // Start with recovered geography only. Streaming instances are now drawn
+    // as static geometry in the background; their optional evidence nodes no
+    // longer need to cover that render with hundreds of location dots.
     state.kinds = new Set();
     state.subKinds = allSubKinds(state.map);
     state.showQuests = false;
@@ -2047,7 +2016,7 @@
       ? new Set([String(initialMapLayer.id)])
       : new Set();
     state.storyOnly = false;
-    state.mission = "";
+    state.mission = state.map.defaultMission || "";
     state.transform = { x: 0, y: 0, scale: 1 };
     state.pendingFit = true;
     state.pendingFitTarget = "map";
