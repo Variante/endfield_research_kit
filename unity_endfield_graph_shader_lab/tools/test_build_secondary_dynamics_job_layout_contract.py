@@ -31,6 +31,62 @@ class SecondaryDynamicsJobLayoutContractTests(unittest.TestCase):
         self.assertEqual(start["fields"][0]["nativePayloadOffset"], "0x0")
         self.assertEqual(start["fields"][-1]["nativePayloadOffset"], "0x100")
         self.assertEqual(start["setIndexCount"]["store"]["payloadOffset"], "0x100")
+        basis = payload["layoutBasis"]["concreteGenericSlotWidths"]
+        self.assertEqual(basis["status"], "closed_from_adjacent_offsets_and_native_size_tail")
+        self.assertFalse(basis["genericTypeSizeClaimed"])
+        for job in payload["jobs"]:
+            for field in job["fields"]:
+                if field["kind"] not in builder.GENERIC_FIELD_KINDS:
+                    continue
+                self.assertEqual(field["slotWidthBytes"], 16)
+                evidence = field["slotWidthEvidence"]
+                self.assertEqual(evidence["status"], "closed")
+                self.assertEqual(evidence["slotSpanBytes"], 16)
+                self.assertEqual(evidence["abiAlignmentBytes"], 8)
+                self.assertTrue(evidence["abiAligned"])
+                self.assertFalse(evidence["genericTypeSizeClaimed"])
+
+    def test_generic_slot_width_is_derived_from_adjacent_boundary(self) -> None:
+        width, evidence = builder._field_slot_evidence(
+            name="array",
+            kind="NativeArray",
+            native_offset=0x10,
+            next_native_offset=0x20,
+            native_size=0x30,
+            # Deliberately not used for generic fields.  The width must come
+            # from the concrete job offsets, not a generic-size convention.
+            declared_width=0x7FFFFFFF,
+            next_field_name="next",
+        )
+        self.assertEqual(width, 16)
+        self.assertEqual(evidence["basis"], "next_field_native_offset")
+        self.assertEqual(evidence["slotSpanBytes"], 16)
+
+    def test_final_reference_slot_width_uses_native_size_tail(self) -> None:
+        width, evidence = builder._field_slot_evidence(
+            name="_indexCount",
+            kind="NativeReference",
+            native_offset=0x100,
+            next_native_offset=0x110,
+            native_size=0x110,
+            declared_width=1,
+            next_field_name=None,
+        )
+        self.assertEqual(width, 16)
+        self.assertEqual(evidence["basis"], "native_size_tail")
+        self.assertEqual(evidence["nextNativePayloadOffset"], "0x110")
+
+    def test_slot_alignment_drift_fails_closed(self) -> None:
+        with self.assertRaisesRegex(builder.ContractError, "8-byte ABI alignment"):
+            builder._field_slot_evidence(
+                name="array",
+                kind="NativeArray",
+                native_offset=0x8,
+                next_native_offset=0x1c,
+                native_size=0x20,
+                declared_width=16,
+                next_field_name="next",
+            )
 
     def test_missing_native_input_fails_closed(self) -> None:
         with tempfile.TemporaryDirectory() as temp:

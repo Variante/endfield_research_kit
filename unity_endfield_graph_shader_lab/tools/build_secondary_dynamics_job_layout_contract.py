@@ -29,6 +29,12 @@ DEFAULT_OUTPUT = SOURCE_ROOT / "secondary_dynamics_job_layout_contract.json"
 DEFAULT_GAME_ASSEMBLY: Path | None = None
 DEFAULT_METADATA: Path | None = None
 
+# The selected GameAssembly is PE32+ x64 (PeImage rejects any other image).
+# This is the alignment boundary used for the materialized native job value;
+# it is not a claim about the size or alignment of an open generic definition.
+NATIVE_ABI_ALIGNMENT_BYTES = 8
+GENERIC_FIELD_KINDS = frozenset({"NativeArray", "NativeReference"})
+
 EXPECTED_GAME_ASSEMBLY_SHA256 = "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
 EXPECTED_METADATA_SHA256 = "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
 
@@ -87,6 +93,14 @@ def _file_record(path: Path, digest: str | None = None) -> dict[str, Any]:
 # offsets.  The offsets below always come from MetadataRegistration.fieldOffsets.
 # The declaration type indexes below are classification assertions only; they
 # do not claim any inner NativeArray/NativeReference layout.
+def _native_array_field(name: str, type_index: int) -> tuple[str, int, str, int]:
+    return name, type_index, "NativeArray", 50690
+
+
+def _native_reference_field(name: str, type_index: int) -> tuple[str, int, str, int]:
+    return name, type_index, "NativeReference", 60806
+
+
 JOBS: tuple[dict[str, Any], ...] = (
     {
         "typeIndex": 48376,
@@ -98,23 +112,23 @@ JOBS: tuple[dict[str, Any], ...] = (
         "nativeReferenceTypeIndex": 83620,
         "nativeReferenceDefinitionIndex": 60806,
         "fields": (
-            ("jobColliderIndexList", 83201, "NativeArray", 50690, 16),
-            ("teamDataArray", 83381, "NativeArray", 50690, 16),
-            ("centerDataArray", 83349, "NativeArray", 50690, 16),
-            ("teamIdArray", 83197, "NativeArray", 50690, 16),
-            ("flagArray", 83139, "NativeArray", 50690, 16),
-            ("sizeArray", 83304, "NativeArray", 50690, 16),
-            ("framePositions", 83298, "NativeArray", 50690, 16),
-            ("frameRotations", 83315, "NativeArray", 50690, 16),
-            ("frameScales", 83304, "NativeArray", 50690, 16),
-            ("oldFramePositions", 83298, "NativeArray", 50690, 16),
-            ("oldFrameRotations", 83315, "NativeArray", 50690, 16),
-            ("nowPositions", 83298, "NativeArray", 50690, 16),
-            ("nowRotations", 83315, "NativeArray", 50690, 16),
-            ("oldPositions", 83298, "NativeArray", 50690, 16),
-            ("oldRotations", 83315, "NativeArray", 50690, 16),
-            ("workDataArray", 83340, "NativeArray", 50690, 16),
-            ("_indexCount", 83620, "NativeReference", 60806, 16),
+            _native_array_field("jobColliderIndexList", 83201),
+            _native_array_field("teamDataArray", 83381),
+            _native_array_field("centerDataArray", 83349),
+            _native_array_field("teamIdArray", 83197),
+            _native_array_field("flagArray", 83139),
+            _native_array_field("sizeArray", 83304),
+            _native_array_field("framePositions", 83298),
+            _native_array_field("frameRotations", 83315),
+            _native_array_field("frameScales", 83304),
+            _native_array_field("oldFramePositions", 83298),
+            _native_array_field("oldFrameRotations", 83315),
+            _native_array_field("nowPositions", 83298),
+            _native_array_field("nowRotations", 83315),
+            _native_array_field("oldPositions", 83298),
+            _native_array_field("oldRotations", 83315),
+            _native_array_field("workDataArray", 83340),
+            _native_reference_field("_indexCount", 83620),
         ),
     },
     {
@@ -127,12 +141,12 @@ JOBS: tuple[dict[str, Any], ...] = (
         "nativeReferenceTypeIndex": 83620,
         "nativeReferenceDefinitionIndex": 60806,
         "fields": (
-            ("jobColliderIndexList", 83201, "NativeArray", 50690, 16),
-            ("nowPositions", 83298, "NativeArray", 50690, 16),
-            ("nowRotations", 83315, "NativeArray", 50690, 16),
-            ("oldPositions", 83298, "NativeArray", 50690, 16),
-            ("oldRotations", 83315, "NativeArray", 50690, 16),
-            ("_indexCount", 83620, "NativeReference", 60806, 16),
+            _native_array_field("jobColliderIndexList", 83201),
+            _native_array_field("nowPositions", 83298),
+            _native_array_field("nowRotations", 83315),
+            _native_array_field("oldPositions", 83298),
+            _native_array_field("oldRotations", 83315),
+            _native_reference_field("_indexCount", 83620),
         ),
     },
     {
@@ -147,30 +161,30 @@ JOBS: tuple[dict[str, Any], ...] = (
         "fields": (
             ("simulationPower", 171886, "float4", 57221, 16),
             ("simulationDeltaTime", 163868, "Single", 42141, 4),
-            ("stepParticleIndexArray", 83201, "NativeArray", 50690, 16),
-            ("attributes", 83290, "NativeArray", 50690, 16),
-            ("depthArray", 83240, "NativeArray", 50690, 16),
-            ("positions", 83298, "NativeArray", 50690, 16),
-            ("rotations", 83315, "NativeArray", 50690, 16),
-            ("vertexRootIndices", 83201, "NativeArray", 50690, 16),
-            ("teamDataArray", 83381, "NativeArray", 50690, 16),
-            ("parameterArray", 83108, "NativeArray", 50690, 16),
-            ("centerDataArray", 83349, "NativeArray", 50690, 16),
-            ("teamWindArray", 83253, "NativeArray", 50690, 16),
-            ("windDataArray", 83391, "NativeArray", 50690, 16),
-            ("teamIdArray", 83197, "NativeArray", 50690, 16),
-            ("oldPosArray", 83298, "NativeArray", 50690, 16),
-            ("nextPosArray", 83298, "NativeArray", 50690, 16),
-            ("basePosArray", 83298, "NativeArray", 50690, 16),
-            ("velocityArray", 83304, "NativeArray", 50690, 16),
-            ("baseRotArray", 83315, "NativeArray", 50690, 16),
-            ("oldPositionArray", 83298, "NativeArray", 50690, 16),
-            ("oldRotationArray", 83315, "NativeArray", 50690, 16),
-            ("velocityPosArray", 83298, "NativeArray", 50690, 16),
-            ("frictionArray", 83240, "NativeArray", 50690, 16),
-            ("stepBasicPositionArray", 83298, "NativeArray", 50690, 16),
-            ("stepBasicRotationArray", 83315, "NativeArray", 50690, 16),
-            ("_indexCount", 83620, "NativeReference", 60806, 16),
+            _native_array_field("stepParticleIndexArray", 83201),
+            _native_array_field("attributes", 83290),
+            _native_array_field("depthArray", 83240),
+            _native_array_field("positions", 83298),
+            _native_array_field("rotations", 83315),
+            _native_array_field("vertexRootIndices", 83201),
+            _native_array_field("teamDataArray", 83381),
+            _native_array_field("parameterArray", 83108),
+            _native_array_field("centerDataArray", 83349),
+            _native_array_field("teamWindArray", 83253),
+            _native_array_field("windDataArray", 83391),
+            _native_array_field("teamIdArray", 83197),
+            _native_array_field("oldPosArray", 83298),
+            _native_array_field("nextPosArray", 83298),
+            _native_array_field("basePosArray", 83298),
+            _native_array_field("velocityArray", 83304),
+            _native_array_field("baseRotArray", 83315),
+            _native_array_field("oldPositionArray", 83298),
+            _native_array_field("oldRotationArray", 83315),
+            _native_array_field("velocityPosArray", 83298),
+            _native_array_field("frictionArray", 83240),
+            _native_array_field("stepBasicPositionArray", 83298),
+            _native_array_field("stepBasicRotationArray", 83315),
+            _native_reference_field("_indexCount", 83620),
         ),
     },
     {
@@ -184,22 +198,22 @@ JOBS: tuple[dict[str, Any], ...] = (
         "nativeReferenceDefinitionIndex": 60806,
         "fields": (
             ("simulationDeltaTime", 163868, "Single", 42141, 4),
-            ("stepParticleIndexArray", 83201, "NativeArray", 50690, 16),
-            ("teamDataArray", 83381, "NativeArray", 50690, 16),
-            ("parameterArray", 83108, "NativeArray", 50690, 16),
-            ("centerDataArray", 83349, "NativeArray", 50690, 16),
-            ("attributes", 83290, "NativeArray", 50690, 16),
-            ("vertexDepths", 83240, "NativeArray", 50690, 16),
-            ("teamIdArray", 83197, "NativeArray", 50690, 16),
-            ("nextPosArray", 83298, "NativeArray", 50690, 16),
-            ("oldPosArray", 83298, "NativeArray", 50690, 16),
-            ("velocityPosArray", 83298, "NativeArray", 50690, 16),
-            ("velocityArray", 83304, "NativeArray", 50690, 16),
-            ("realVelocityArray", 83304, "NativeArray", 50690, 16),
-            ("frictionArray", 83240, "NativeArray", 50690, 16),
-            ("staticFrictionArray", 83240, "NativeArray", 50690, 16),
-            ("collisionNormalArray", 83304, "NativeArray", 50690, 16),
-            ("_indexCount", 83620, "NativeReference", 60806, 16),
+            _native_array_field("stepParticleIndexArray", 83201),
+            _native_array_field("teamDataArray", 83381),
+            _native_array_field("parameterArray", 83108),
+            _native_array_field("centerDataArray", 83349),
+            _native_array_field("attributes", 83290),
+            _native_array_field("vertexDepths", 83240),
+            _native_array_field("teamIdArray", 83197),
+            _native_array_field("nextPosArray", 83298),
+            _native_array_field("oldPosArray", 83298),
+            _native_array_field("velocityPosArray", 83298),
+            _native_array_field("velocityArray", 83304),
+            _native_array_field("realVelocityArray", 83304),
+            _native_array_field("frictionArray", 83240),
+            _native_array_field("staticFrictionArray", 83240),
+            _native_array_field("collisionNormalArray", 83304),
+            _native_reference_field("_indexCount", 83620),
         ),
     },
 )
@@ -305,6 +319,84 @@ def _validate_setter_metadata(md: Any, spec: dict[str, Any]) -> Any:
     return method
 
 
+def _field_slot_evidence(
+    *,
+    name: str,
+    kind: str,
+    native_offset: int,
+    next_native_offset: int,
+    native_size: int,
+    declared_width: int,
+    next_field_name: str | None,
+) -> tuple[int, dict[str, Any]]:
+    """Derive a materialized field slot from the next native boundary.
+
+    For a NativeArray/NativeReference field, the concrete closed-instance slot
+    is the distance to the next field (or the native-size tail for the final
+    field).  The generic definition's own size is deliberately not consulted:
+    the inner contract only has lower bounds for those open definitions.
+    Scalar/vector rows retain their independently classified field width while
+    still recording the inter-field ABI span.
+    """
+    if native_offset < 0 or native_size < 0:
+        raise ContractError(f"{name} has a negative native layout boundary")
+    if native_offset % NATIVE_ABI_ALIGNMENT_BYTES:
+        raise ContractError(
+            f"{name} native offset 0x{native_offset:x} violates "
+            f"{NATIVE_ABI_ALIGNMENT_BYTES}-byte ABI alignment"
+        )
+    if native_size % NATIVE_ABI_ALIGNMENT_BYTES:
+        raise ContractError(
+            f"native size 0x{native_size:x} violates "
+            f"{NATIVE_ABI_ALIGNMENT_BYTES}-byte ABI alignment"
+        )
+    span = next_native_offset - native_offset
+    if span <= 0:
+        raise ContractError(
+            f"{name} has non-positive native slot span {span} "
+            f"(offset=0x{native_offset:x}, boundary=0x{next_native_offset:x})"
+        )
+    if next_native_offset > native_size:
+        raise ContractError(
+            f"{name} native slot boundary 0x{next_native_offset:x} exceeds "
+            f"native size 0x{native_size:x}"
+        )
+    if span % NATIVE_ABI_ALIGNMENT_BYTES:
+        raise ContractError(
+            f"{name} native slot span {span} violates "
+            f"{NATIVE_ABI_ALIGNMENT_BYTES}-byte ABI alignment"
+        )
+
+    if kind in GENERIC_FIELD_KINDS:
+        # This is the concrete *outer* slot.  Do not use declared_width here:
+        # that tuple value is retained only as a historical classification
+        # assertion and must never become a generic type-size claim.
+        width = span
+        basis = "next_field_native_offset" if next_field_name else "native_size_tail"
+    else:
+        if declared_width <= 0 or declared_width > span:
+            raise ContractError(
+                f"{name} classified width {declared_width} does not fit "
+                f"native slot span {span}"
+            )
+        width = declared_width
+        basis = "classified_field_width_with_next_field_span"
+
+    evidence = {
+        "status": "closed",
+        "basis": basis,
+        "nativePayloadOffset": f"0x{native_offset:x}",
+        "nextNativePayloadOffset": f"0x{next_native_offset:x}",
+        "nextField": next_field_name,
+        "slotSpanBytes": span,
+        "abiAlignmentBytes": NATIVE_ABI_ALIGNMENT_BYTES,
+        "abiAligned": True,
+    }
+    if kind in GENERIC_FIELD_KINDS:
+        evidence["genericTypeSizeClaimed"] = False
+    return width, evidence
+
+
 def _build_job(md: Any, native: Any, pe: Any, registration: dict[str, Any], spec: dict[str, Any]) -> dict[str, Any]:
     type_def = md.types[spec["typeIndex"]]
     if md.type_full_name(type_def) != spec["type"]:
@@ -330,17 +422,35 @@ def _build_job(md: Any, native: Any, pe: Any, registration: dict[str, Any], spec
         raise ContractError(f"{spec['type']} metadata field count drift")
     rows: list[dict[str, Any]] = []
     previous_end = -1
+    native_offsets = [boxed_offset - 16 for boxed_offset in offsets]
+    if native_size % NATIVE_ABI_ALIGNMENT_BYTES:
+        raise ContractError(
+            f"{spec['type']} native size 0x{native_size:x} violates "
+            f"{NATIVE_ABI_ALIGNMENT_BYTES}-byte ABI alignment"
+        )
     for index, (field, expected, boxed_offset) in enumerate(zip(expected_fields, fields, offsets)):
-        name, type_index, kind, _declared_definition, width = field
+        name, type_index, kind, _declared_definition, *width_values = field
+        declared_width = width_values[0] if width_values else None
         actual_name = md.string(expected.name_index)
         if actual_name != name or expected.type_index != type_index:
             raise ContractError(f"{spec['type']} field {index} declaration drift")
         offset = boxed_offset - 16
         if boxed_offset < 16:
             raise ContractError(f"{spec['type']} field {name} has invalid boxed/native relation")
-        if offset < previous_end:
+        if offset != native_offsets[index] or offset < previous_end:
             raise ContractError(f"{spec['type']} fields overlap at {name}")
-        previous_end = offset + width
+        next_offset = native_offsets[index + 1] if index + 1 < len(native_offsets) else native_size
+        next_name = expected_fields[index + 1][0] if index + 1 < len(expected_fields) else None
+        slot_width, slot_evidence = _field_slot_evidence(
+            name=name,
+            kind=kind,
+            native_offset=offset,
+            next_native_offset=next_offset,
+            native_size=native_size,
+            declared_width=declared_width or 0,
+            next_field_name=next_name,
+        )
+        previous_end = offset + slot_width
         rows.append({
             "fieldIndex": expected.index,
             "name": name,
@@ -348,7 +458,8 @@ def _build_job(md: Any, native: Any, pe: Any, registration: dict[str, Any], spec
             "kind": kind,
             "boxedFieldOffset": f"0x{boxed_offset:x}",
             "nativePayloadOffset": f"0x{offset:x}",
-            "slotWidthBytes": width,
+            "slotWidthBytes": slot_width,
+            "slotWidthEvidence": slot_evidence,
             "token": f"0x{expected.token:08x}",
         })
     if native_size < previous_end:
@@ -432,6 +543,13 @@ def build_contract(*, game_assembly: Path | None = DEFAULT_GAME_ASSEMBLY, metada
             "boxedFieldOffsets": "MetadataRegistration.fieldOffsets",
             "nativePayloadOffsets": "boxedFieldOffset - 0x10",
             "nativeSize": "MetadataRegistration.typeDefinitionsSizes.native_size",
+            "concreteGenericSlotWidths": {
+                "status": "closed_from_adjacent_offsets_and_native_size_tail",
+                "source": "MetadataRegistration.fieldOffsets plus typeDefinitionsSizes.native_size",
+                "abiAlignmentBytes": NATIVE_ABI_ALIGNMENT_BYTES,
+                "genericTypeSizeClaimed": False,
+                "boundary": "Each NativeArray/NativeReference width is the concrete closed job slot span; it is not the open generic type's total size.",
+            },
             "declarationClassificationBoundary": "field kind labels classify the pinned metadata type indexes for readability only; they are not inner generic layout claims",
             "genericBoundary": {
                 "NativeArray": {
