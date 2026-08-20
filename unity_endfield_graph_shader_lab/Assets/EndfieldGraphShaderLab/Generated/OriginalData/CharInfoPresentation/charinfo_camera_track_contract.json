@@ -1,0 +1,5434 @@
+{
+  "boundary": "serialized_pptr_vcam_to_tracked_dolly_path",
+  "character_count": 31,
+  "characters": [
+    {
+      "actor": "endminm",
+      "character_id": "chr_0002_endminm",
+      "cm": {
+        "path": "track_chr_0002_endminm/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/cm_p510CCE1F7F491EE2.json",
+          "path_id": 5840269451467497186,
+          "raw_data_sha256": "",
+          "sha256": "81b6a333ab0cfe004b30d9cb83e036383cb8778a251083c660254a4aa384684e",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "endpoint_validation": {
+        "max_abs_delta": 0.0,
+        "ok": true,
+        "path_endpoint": [
+          0.0,
+          1.179,
+          3.283
+        ],
+        "static_camera_position": [
+          0.0,
+          1.179,
+          3.283
+        ]
+      },
+      "lookat_overview_ani": {
+        "component_types": [
+          "Transform"
+        ],
+        "components": [
+          {
+            "path_id": 8980865919170060002,
+            "type": "Transform"
+          }
+        ],
+        "path": "track_chr_0002_endminm/LookAtGroup/lookat_overview/lookat_overview_ani",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/lookat_overview_ani_p796B1B089CFE1EE2.json",
+          "path_id": 8749116424904908514,
+          "raw_data_sha256": "",
+          "sha256": "74e7163b8e7e121d97b4b5f28511cf5146d165d38af16a327e5ac7e1d44fe72f",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "path": {
+        "endpoint": [
+          0.0,
+          1.179,
+          3.283
+        ],
+        "game_object": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/weapon_overview_pA93D644386AF1EE2.json",
+          "path_id": -6251730466535170334,
+          "raw_data_sha256": "",
+          "sha256": "d9f14b1da4ed066bd3b5743a3a88bec960e000a7746fe29d00f9eb2a7be3d735",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "loop": false,
+        "m_Looped": 0,
+        "m_Resolution": 6,
+        "name": "weapon_overview",
+        "path_id": 167344557562863330,
+        "resolution": 6,
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#13091_p025286FD0CA11EE2.json",
+          "path_id": 167344557562863330,
+          "raw_data_sha256": "914fa27f9408a0388b8323dc152b6e8d1fab701f8887d3965b8e9e5834bb96cc",
+          "sha256": "bb7f3cadefdab839b6735b4ca6fef604c4083864ad1ee079a7865b80bc3238d2",
+          "source_file": "CAB-c116aedc2a61207c9c4c6d6802fe2d8e",
+          "source_offset": 848437059,
+          "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+        },
+        "waypoints": [
+          {
+            "position": [
+              1.387,
+              0.515,
+              1.983
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              0.5971327,
+              0.8897201,
+              2.4992352
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              -0.0,
+              1.179,
+              3.283
+            ],
+            "roll": 0.0
+          }
+        ]
+      },
+      "track_root": "track_chr_0002_endminm",
+      "tracked_dolly": {
+        "component_type": "CinemachineTrackedDolly",
+        "m_AutoDolly": {
+          "m_Enabled": 1,
+          "m_PositionOffset": 0.0,
+          "m_SearchRadius": 2,
+          "m_SearchResolution": 5
+        },
+        "m_Path": {
+          "file_id": 0,
+          "path_id": 167344557562863330,
+          "source": {
+            "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#13091_p025286FD0CA11EE2.json",
+            "path_id": 167344557562863330,
+            "raw_data_sha256": "914fa27f9408a0388b8323dc152b6e8d1fab701f8887d3965b8e9e5834bb96cc",
+            "sha256": "bb7f3cadefdab839b6735b4ca6fef604c4083864ad1ee079a7865b80bc3238d2",
+            "source_file": "CAB-c116aedc2a61207c9c4c6d6802fe2d8e",
+            "source_offset": 848437059,
+            "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+          },
+          "target_name": "weapon_overview",
+          "target_type": "MonoBehaviour"
+        },
+        "m_PathOffset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "m_PathPosition": 1.0,
+        "m_PositionDamping": {
+          "m_PitchDamping": 0.0,
+          "m_RollDamping": 0.0,
+          "m_XDamping": 0.0,
+          "m_YDamping": 0.0,
+          "m_YawDamping": 0.0,
+          "m_ZDamping": 1.0
+        },
+        "m_PositionUnits": 2,
+        "path": "track_chr_0002_endminm/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#13181_p420FD13F52A81EE2.json",
+          "path_id": 4760253401053798114,
+          "raw_data_sha256": "ec01f7ed93084c9a4c1cd4f48fcbbc743b7edf173146a1106593360538f46a54",
+          "sha256": "c5eec3dc103d9ca2bf9807f6da6cfe2db49f809ef51ffb0e32ebdeb83641b2b5",
+          "source_file": "CAB-c116aedc2a61207c9c4c6d6802fe2d8e",
+          "source_offset": 848437059,
+          "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+        }
+      },
+      "vcam_overview": {
+        "path": "track_chr_0002_endminm/DollyCart/vcam_overview",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/vcam_overview_p3C1A0FFF274F1EE2.json",
+          "path_id": 4330791580220727010,
+          "raw_data_sha256": "",
+          "sha256": "d57262936f3da2ecddb2be94636412889588381a7af5cd064847f105c7448e0d",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "static_position": [
+          0.0,
+          1.179,
+          3.283
+        ]
+      }
+    },
+    {
+      "actor": "endminf",
+      "character_id": "chr_0003_endminf",
+      "cm": {
+        "path": "track_chr_0003_endmin/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/cm_p05C0ED6DD196D823.json",
+          "path_id": 414592221641627683,
+          "raw_data_sha256": "",
+          "sha256": "2d3c6d82d6b1ee02ce27a1f1bb0eaa1e7ece7d7aa1ea2217cc624c8b59cc2060",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "endpoint_validation": {
+        "max_abs_delta": 0.0,
+        "ok": true,
+        "path_endpoint": [
+          0.0,
+          0.998,
+          3.5
+        ],
+        "static_camera_position": [
+          0.0,
+          0.998,
+          3.5
+        ]
+      },
+      "lookat_overview_ani": {
+        "component_types": [
+          "Transform"
+        ],
+        "components": [
+          {
+            "path_id": -1182822188388722653,
+            "type": "Transform"
+          }
+        ],
+        "path": "track_chr_0003_endmin/LookAtGroup/lookat_overview/lookat_overview_ani",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/lookat_overview_ani_p574501E0AC32D823.json",
+          "path_id": 6288434519166081059,
+          "raw_data_sha256": "",
+          "sha256": "ad0e1eee6f2babff31ca6bb65d69d24397a1b7c52989fce3044ffb81e210f45f",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "path": {
+        "endpoint": [
+          0.0,
+          0.998,
+          3.5
+        ],
+        "game_object": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/weapon_overview_p9B308F94879BD823.json",
+          "path_id": -7264148330855540701,
+          "raw_data_sha256": "",
+          "sha256": "a3c63adc30fd7a7049d11eed8f5d4dd88fe166e479b039a78f3a3cfb4e88a650",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "loop": false,
+        "m_Looped": 0,
+        "m_Resolution": 6,
+        "name": "weapon_overview",
+        "path_id": -8956663021007808477,
+        "resolution": 6,
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#11670_p83B38A6FD3F3D823.json",
+          "path_id": -8956663021007808477,
+          "raw_data_sha256": "b0962adfd85a2e6931fdec1717c3502e4835f15cc220453cc4da871ef0e0663f",
+          "sha256": "305297f9b4e6343ab8d28f69662722e50028cf79d04830e21b97dc96981c31d8",
+          "source_file": "CAB-e24e47f8b0c3d0b9a509a8043323a4a7",
+          "source_offset": 847606463,
+          "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+        },
+        "waypoints": [
+          {
+            "position": [
+              1.35,
+              0.519,
+              1.948
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              0.5971327,
+              0.8897201,
+              2.4992352
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              0.0,
+              0.998,
+              3.5
+            ],
+            "roll": 0.0
+          }
+        ]
+      },
+      "track_root": "track_chr_0003_endmin",
+      "tracked_dolly": {
+        "component_type": "CinemachineTrackedDolly",
+        "m_AutoDolly": {
+          "m_Enabled": 1,
+          "m_PositionOffset": 0.0,
+          "m_SearchRadius": 2,
+          "m_SearchResolution": 5
+        },
+        "m_Path": {
+          "file_id": 0,
+          "path_id": -8956663021007808477,
+          "source": {
+            "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#11670_p83B38A6FD3F3D823.json",
+            "path_id": -8956663021007808477,
+            "raw_data_sha256": "b0962adfd85a2e6931fdec1717c3502e4835f15cc220453cc4da871ef0e0663f",
+            "sha256": "305297f9b4e6343ab8d28f69662722e50028cf79d04830e21b97dc96981c31d8",
+            "source_file": "CAB-e24e47f8b0c3d0b9a509a8043323a4a7",
+            "source_offset": 847606463,
+            "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+          },
+          "target_name": "weapon_overview",
+          "target_type": "MonoBehaviour"
+        },
+        "m_PathOffset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "m_PathPosition": 1.0,
+        "m_PositionDamping": {
+          "m_PitchDamping": 0.0,
+          "m_RollDamping": 0.0,
+          "m_XDamping": 0.0,
+          "m_YDamping": 0.0,
+          "m_YawDamping": 0.0,
+          "m_ZDamping": 1.0
+        },
+        "m_PositionUnits": 2,
+        "path": "track_chr_0003_endmin/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#11769_pC9FD1DC791ABD823.json",
+          "path_id": -3891921759998584797,
+          "raw_data_sha256": "e21a05a2f2815af4c16540c3c0db08ce3675ca8c24aa56842b8ef1d6ec2186c1",
+          "sha256": "439365f2f1f3bf38861f8225c63b1a61adebb87ad35df6f4ba704bb894c7b236",
+          "source_file": "CAB-e24e47f8b0c3d0b9a509a8043323a4a7",
+          "source_offset": 847606463,
+          "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+        }
+      },
+      "vcam_overview": {
+        "path": "track_chr_0003_endmin/DollyCart/vcam_overview",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/vcam_overview_p0922039C20FCD823.json",
+          "path_id": 658092464652736547,
+          "raw_data_sha256": "",
+          "sha256": "f02f8bb619dae7fa2d635e4d5544e498b35c8b6f4c465b3fdcb84b4ed20f2c43",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "static_position": [
+          0.0,
+          0.998,
+          3.5
+        ]
+      }
+    },
+    {
+      "actor": "pelica",
+      "character_id": "chr_0004_pelica",
+      "cm": {
+        "path": "track_chr_0004_pelica/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/cm_p670D43C58C6C3307.json",
+          "path_id": 7425665876347335431,
+          "raw_data_sha256": "",
+          "sha256": "7a14a9477c7f2e9df507b8b7354011a7aef5853df9d57e547c6b4224993cfb0e",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "endpoint_validation": {
+        "max_abs_delta": 0.0,
+        "ok": true,
+        "path_endpoint": [
+          0.0,
+          0.998,
+          3.5
+        ],
+        "static_camera_position": [
+          0.0,
+          0.998,
+          3.5
+        ]
+      },
+      "lookat_overview_ani": {
+        "component_types": [
+          "Transform"
+        ],
+        "components": [
+          {
+            "path_id": -980681884307344633,
+            "type": "Transform"
+          }
+        ],
+        "path": "track_chr_0004_pelica/LookAtGroup/lookat_overview/lookat_overview_ani",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/lookat_overview_ani_p93D67639323A3307.json",
+          "path_id": -7793912117090176249,
+          "raw_data_sha256": "",
+          "sha256": "364f22ea30805700d5943e85dd4c74a6b6870166815ed8a32bfd587feea7210b",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "path": {
+        "endpoint": [
+          0.0,
+          0.998,
+          3.5
+        ],
+        "game_object": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/equip_overview_pA4E3405E278D3307.json",
+          "path_id": -6565333058641382649,
+          "raw_data_sha256": "",
+          "sha256": "71d1fdf7ebbff132230e2e2a2d605c1e5860c9708de5ba60b599c709498624e7",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "loop": false,
+        "m_Looped": 0,
+        "m_Resolution": 20,
+        "name": "equip_overview",
+        "path_id": 4852752321225044743,
+        "resolution": 20,
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#14792_p4358708671923307.json",
+          "path_id": 4852752321225044743,
+          "raw_data_sha256": "58ee66df2b023abe11b365fc998e152c5dbaeac2879c9cbb6d97951350d3bec6",
+          "sha256": "b12ecf5680895b041e8da892bd66bc58eaa36a02368c25a1b8d7bbdf4f41f92b",
+          "source_file": "CAB-660ffe6d6649af2f7c0bc412ad393ea1",
+          "source_offset": 849503130,
+          "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+        },
+        "waypoints": [
+          {
+            "position": [
+              -3.36,
+              2.492,
+              -2.54
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              -2.1829872,
+              1.897583,
+              1.0877392
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              0.0,
+              0.998,
+              3.5
+            ],
+            "roll": 0.0
+          }
+        ]
+      },
+      "track_root": "track_chr_0004_pelica",
+      "tracked_dolly": {
+        "component_type": "CinemachineTrackedDolly",
+        "m_AutoDolly": {
+          "m_Enabled": 1,
+          "m_PositionOffset": 0.0,
+          "m_SearchRadius": 2,
+          "m_SearchResolution": 5
+        },
+        "m_Path": {
+          "file_id": 0,
+          "path_id": 4852752321225044743,
+          "source": {
+            "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#14792_p4358708671923307.json",
+            "path_id": 4852752321225044743,
+            "raw_data_sha256": "58ee66df2b023abe11b365fc998e152c5dbaeac2879c9cbb6d97951350d3bec6",
+            "sha256": "b12ecf5680895b041e8da892bd66bc58eaa36a02368c25a1b8d7bbdf4f41f92b",
+            "source_file": "CAB-660ffe6d6649af2f7c0bc412ad393ea1",
+            "source_offset": 849503130,
+            "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+          },
+          "target_name": "equip_overview",
+          "target_type": "MonoBehaviour"
+        },
+        "m_PathOffset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "m_PathPosition": 1.0,
+        "m_PositionDamping": {
+          "m_PitchDamping": 0.0,
+          "m_RollDamping": 0.0,
+          "m_XDamping": 0.0,
+          "m_YDamping": 0.0,
+          "m_YawDamping": 0.0,
+          "m_ZDamping": 1.0
+        },
+        "m_PositionUnits": 2,
+        "path": "track_chr_0004_pelica/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#14653_pE9C88C0E9FC43307.json",
+          "path_id": -1600875673092345081,
+          "raw_data_sha256": "366a6c5ad7e1dd6192fc5d4770e61aa78f5075e9dea98b027f104d852b7456f8",
+          "sha256": "122b3aa61684b555e1f30f9e60b0615e33c6826e1e1370ec2ddd322d761567c5",
+          "source_file": "CAB-660ffe6d6649af2f7c0bc412ad393ea1",
+          "source_offset": 849503130,
+          "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+        }
+      },
+      "vcam_overview": {
+        "path": "track_chr_0004_pelica/DollyCart/vcam_overview",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/vcam_overview_p3FDAF949F9B13307.json",
+          "path_id": 4601264065429451527,
+          "raw_data_sha256": "",
+          "sha256": "72a5c9dbe60a7c987b4b7e841d0b8078cc6a4bfb8bec1f9255b94f180cb2dca1",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "static_position": [
+          0.0,
+          0.998,
+          3.5
+        ]
+      }
+    },
+    {
+      "actor": "chen",
+      "character_id": "chr_0005_chen",
+      "cm": {
+        "path": "track_chr_0005_chen/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/cm_pA8C2BE8395204979.json",
+          "path_id": -6286252657503876743,
+          "raw_data_sha256": "",
+          "sha256": "a6a7d87a2f13b1cc250812c8c8a770fca74ae44a8fa23687f03371dea47c4a69",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "endpoint_validation": {
+        "max_abs_delta": 0.0,
+        "ok": true,
+        "path_endpoint": [
+          0.0,
+          0.998,
+          3.5
+        ],
+        "static_camera_position": [
+          0.0,
+          0.998,
+          3.5
+        ]
+      },
+      "lookat_overview_ani": {
+        "component_types": [
+          "Transform"
+        ],
+        "components": [
+          {
+            "path_id": 1875174409299511673,
+            "type": "Transform"
+          }
+        ],
+        "path": "track_chr_0005_chen/LookAtGroup/lookat_overview/lookat_overview_ani",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/lookat_overview_ani_p333723E085644979.json",
+          "path_id": 3690457866870999417,
+          "raw_data_sha256": "",
+          "sha256": "67421bbe71f86bc3a5740869e989d05ea0dc09fdba860ba0e10022c63384fe31",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "path": {
+        "endpoint": [
+          0.0,
+          0.998,
+          3.5
+        ],
+        "game_object": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/skill_overview_p60D437E2A0304979.json",
+          "path_id": 6977263169193396601,
+          "raw_data_sha256": "",
+          "sha256": "ac27ee578e37685f622b85e7bee0b93e8cce9f3279aa24fa63f52fa9ed4c868c",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "loop": false,
+        "m_Looped": 0,
+        "m_Resolution": 10,
+        "name": "skill_overview",
+        "path_id": 3087499684498459001,
+        "resolution": 10,
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#12724_p2AD9009AD2A94979.json",
+          "path_id": 3087499684498459001,
+          "raw_data_sha256": "2c18d33205645fc9c7f0c2863cfa3b71de28e2ce675f9130f2d3ab4bc5aebb4b",
+          "sha256": "ece4c5b7a3d794d0f9d435384fdade7b21030647e4bc2766cfed258936a8f9a5",
+          "source_file": "CAB-671cc37ca59709f470944f838352e5bf",
+          "source_offset": 848136637,
+          "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+        },
+        "waypoints": [
+          {
+            "position": [
+              -0.39,
+              4.49,
+              2.71
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              0.014341891,
+              2.617096,
+              3.2735307
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              0.0,
+              0.998,
+              3.5
+            ],
+            "roll": 0.0
+          }
+        ]
+      },
+      "track_root": "track_chr_0005_chen",
+      "tracked_dolly": {
+        "component_type": "CinemachineTrackedDolly",
+        "m_AutoDolly": {
+          "m_Enabled": 1,
+          "m_PositionOffset": 0.0,
+          "m_SearchRadius": 2,
+          "m_SearchResolution": 5
+        },
+        "m_Path": {
+          "file_id": 0,
+          "path_id": 3087499684498459001,
+          "source": {
+            "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#12724_p2AD9009AD2A94979.json",
+            "path_id": 3087499684498459001,
+            "raw_data_sha256": "2c18d33205645fc9c7f0c2863cfa3b71de28e2ce675f9130f2d3ab4bc5aebb4b",
+            "sha256": "ece4c5b7a3d794d0f9d435384fdade7b21030647e4bc2766cfed258936a8f9a5",
+            "source_file": "CAB-671cc37ca59709f470944f838352e5bf",
+            "source_offset": 848136637,
+            "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+          },
+          "target_name": "skill_overview",
+          "target_type": "MonoBehaviour"
+        },
+        "m_PathOffset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "m_PathPosition": 1.0,
+        "m_PositionDamping": {
+          "m_PitchDamping": 0.0,
+          "m_RollDamping": 0.0,
+          "m_XDamping": 0.0,
+          "m_YDamping": 0.0,
+          "m_YawDamping": 0.0,
+          "m_ZDamping": 1.0
+        },
+        "m_PositionUnits": 2,
+        "path": "track_chr_0005_chen/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#12513_p9DFD57143DD94979.json",
+          "path_id": -7062392896198456967,
+          "raw_data_sha256": "3833d5efeecb84b10019a731ff8bf8b8f0619b36d27ee2c0127ceb2d94094a89",
+          "sha256": "52cf75f2df7df538d8d0dc6a7708bf49894ef070fd51ca572b03534048105b5a",
+          "source_file": "CAB-671cc37ca59709f470944f838352e5bf",
+          "source_offset": 848136637,
+          "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+        }
+      },
+      "vcam_overview": {
+        "path": "track_chr_0005_chen/DollyCart/vcam_overview",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/vcam_overview_pE4871E0694E14979.json",
+          "path_id": -1979580497589614215,
+          "raw_data_sha256": "",
+          "sha256": "98a3dfb67158a8d336006ecf9dfc108d2a4f88c8126ddae2efda612d19c55c04",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "static_position": [
+          0.0,
+          0.998,
+          3.5
+        ]
+      }
+    },
+    {
+      "actor": "wolfgd",
+      "character_id": "chr_0006_wolfgd",
+      "cm": {
+        "path": "track_chr_0006_wolfgd/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/cm_pD43DFBC815324334.json",
+          "path_id": -3153087327321832652,
+          "raw_data_sha256": "",
+          "sha256": "069fea5f92e3ec2376e757cabc2f99a446ad456fc0278cd5daa07ee12a032af7",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "endpoint_validation": {
+        "max_abs_delta": 0.0,
+        "ok": true,
+        "path_endpoint": [
+          0.0,
+          1.2,
+          3.57
+        ],
+        "static_camera_position": [
+          0.0,
+          1.2,
+          3.57
+        ]
+      },
+      "lookat_overview_ani": {
+        "component_types": [
+          "Transform"
+        ],
+        "components": [
+          {
+            "path_id": -1558859155293387980,
+            "type": "Transform"
+          }
+        ],
+        "path": "track_chr_0006_wolfgd/LookAtGroup/lookat_overview/lookat_overview_ani",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/lookat_overview_ani_pA6AADAFB5FF44334.json",
+          "path_id": -6437091944191212748,
+          "raw_data_sha256": "",
+          "sha256": "1ea352c640683c22b873fda8051f7be3d520b5a03682e9b59c479566b8b7d199",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "path": {
+        "endpoint": [
+          0.0,
+          1.2,
+          3.57
+        ],
+        "game_object": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/skill_overview_p63DEE62E49AB4334.json",
+          "path_id": 7196442341063476020,
+          "raw_data_sha256": "",
+          "sha256": "555170a1be8b71633a1f1bcef201a464ef68e2a09ed07d14a2563458c9182c08",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "loop": false,
+        "m_Looped": 0,
+        "m_Resolution": 10,
+        "name": "skill_overview",
+        "path_id": -9003058630461603020,
+        "resolution": 10,
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#10475_p830EB5E037524334.json",
+          "path_id": -9003058630461603020,
+          "raw_data_sha256": "e9d019fd8bb161aa75da33050b7d87617ba87a9842d2443c7a591522bea482f2",
+          "sha256": "041a0ed58f967b3cfdc6d50052779e0abf283695aeb15fddca0598e9ab7e4131",
+          "source_file": "CAB-e94516c9d66e39c6f0f390994854b9a1",
+          "source_offset": 845934364,
+          "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+        },
+        "waypoints": [
+          {
+            "position": [
+              -0.5,
+              4.55,
+              2.87
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              -0.13765134,
+              2.3181884,
+              2.5938795
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              -0.0,
+              1.2,
+              3.57
+            ],
+            "roll": 0.0
+          }
+        ]
+      },
+      "track_root": "track_chr_0006_wolfgd",
+      "tracked_dolly": {
+        "component_type": "CinemachineTrackedDolly",
+        "m_AutoDolly": {
+          "m_Enabled": 1,
+          "m_PositionOffset": 0.0,
+          "m_SearchRadius": 2,
+          "m_SearchResolution": 5
+        },
+        "m_Path": {
+          "file_id": 0,
+          "path_id": -9003058630461603020,
+          "source": {
+            "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#10475_p830EB5E037524334.json",
+            "path_id": -9003058630461603020,
+            "raw_data_sha256": "e9d019fd8bb161aa75da33050b7d87617ba87a9842d2443c7a591522bea482f2",
+            "sha256": "041a0ed58f967b3cfdc6d50052779e0abf283695aeb15fddca0598e9ab7e4131",
+            "source_file": "CAB-e94516c9d66e39c6f0f390994854b9a1",
+            "source_offset": 845934364,
+            "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+          },
+          "target_name": "skill_overview",
+          "target_type": "MonoBehaviour"
+        },
+        "m_PathOffset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "m_PathPosition": 1.0,
+        "m_PositionDamping": {
+          "m_PitchDamping": 0.0,
+          "m_RollDamping": 0.0,
+          "m_XDamping": 0.0,
+          "m_YDamping": 0.0,
+          "m_YawDamping": 0.0,
+          "m_ZDamping": 1.0
+        },
+        "m_PositionUnits": 2,
+        "path": "track_chr_0006_wolfgd/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#10512_pA2FB5FE1BC264334.json",
+          "path_id": -6702658197281946828,
+          "raw_data_sha256": "15965de3fd2ab34bf7ecbdeced1cefcfb78deab1717ecba620d1d540ea671b54",
+          "sha256": "f5fb4163dd6695ad765b875892ab4bb346633ef74a088bcb004e284a137ffb68",
+          "source_file": "CAB-e94516c9d66e39c6f0f390994854b9a1",
+          "source_offset": 845934364,
+          "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+        }
+      },
+      "vcam_overview": {
+        "path": "track_chr_0006_wolfgd/DollyCart/vcam_overview",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/vcam_overview_p0C58F8029FD24334.json",
+          "path_id": 889733616560653108,
+          "raw_data_sha256": "",
+          "sha256": "f02134e6db0c5c8261c1dfefcee9be975892aa6fa65835ecdeca5734b3829def",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "static_position": [
+          0.0,
+          1.2,
+          3.57
+        ]
+      }
+    },
+    {
+      "actor": "ikut",
+      "character_id": "chr_0007_ikut",
+      "cm": {
+        "path": "track_chr_0007_ikut/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/cm_pD6F2CE871297FBBB.json",
+          "path_id": -2958074925701137477,
+          "raw_data_sha256": "",
+          "sha256": "7b56dcbc446e2357e42a60a6d543ae3b4216dda68ff0110e8aea8af0b70f52a3",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "endpoint_validation": {
+        "max_abs_delta": 0.0,
+        "ok": true,
+        "path_endpoint": [
+          0.0,
+          0.998,
+          3.5
+        ],
+        "static_camera_position": [
+          0.0,
+          0.998,
+          3.5
+        ]
+      },
+      "lookat_overview_ani": {
+        "component_types": [
+          "Transform"
+        ],
+        "components": [
+          {
+            "path_id": 1284884889783040955,
+            "type": "Transform"
+          }
+        ],
+        "path": "track_chr_0007_ikut/LookAtGroup/lookat_overview/lookat_overview_ani",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/lookat_overview_ani_p9EB1128EAF25FBBB.json",
+          "path_id": -7011802740805993541,
+          "raw_data_sha256": "",
+          "sha256": "80365ec3e1810a279b55876bce6ae03eff61094b3364bdd583f322f6e2dbd7a2",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "path": {
+        "endpoint": [
+          0.0,
+          0.998,
+          3.5
+        ],
+        "game_object": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/weapon_overview_pC024A0C74D32FBBB.json",
+          "path_id": -4601376141411681349,
+          "raw_data_sha256": "",
+          "sha256": "596af9b964244786a61357c829587061e80817bee36a23e30dedb5cf5cd7f4b3",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "loop": false,
+        "m_Looped": 0,
+        "m_Resolution": 6,
+        "name": "weapon_overview",
+        "path_id": 3667085291777358779,
+        "resolution": 6,
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#11567_p32E41AA4D172FBBB.json",
+          "path_id": 3667085291777358779,
+          "raw_data_sha256": "80a4ef6ccfa4e592fff8f65e4f2f05b1888174d7c4a5f8ac9c57391f503f415c",
+          "sha256": "aa937748313e1402e4adffced2abd032d7b297bc2b41f84b5677acafb29020be",
+          "source_file": "CAB-5a76468f77d92cb094e4a47850b79562",
+          "source_offset": 847270973,
+          "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+        },
+        "waypoints": [
+          {
+            "position": [
+              1.548,
+              0.856,
+              1.767
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              0.5971327,
+              0.8897201,
+              2.4992352
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              0.0,
+              0.998,
+              3.5
+            ],
+            "roll": 0.0
+          }
+        ]
+      },
+      "track_root": "track_chr_0007_ikut",
+      "tracked_dolly": {
+        "component_type": "CinemachineTrackedDolly",
+        "m_AutoDolly": {
+          "m_Enabled": 1,
+          "m_PositionOffset": 0.0,
+          "m_SearchRadius": 2,
+          "m_SearchResolution": 5
+        },
+        "m_Path": {
+          "file_id": 0,
+          "path_id": 3667085291777358779,
+          "source": {
+            "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#11567_p32E41AA4D172FBBB.json",
+            "path_id": 3667085291777358779,
+            "raw_data_sha256": "80a4ef6ccfa4e592fff8f65e4f2f05b1888174d7c4a5f8ac9c57391f503f415c",
+            "sha256": "aa937748313e1402e4adffced2abd032d7b297bc2b41f84b5677acafb29020be",
+            "source_file": "CAB-5a76468f77d92cb094e4a47850b79562",
+            "source_offset": 847270973,
+            "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+          },
+          "target_name": "weapon_overview",
+          "target_type": "MonoBehaviour"
+        },
+        "m_PathOffset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "m_PathPosition": 1.0,
+        "m_PositionDamping": {
+          "m_PitchDamping": 0.0,
+          "m_RollDamping": 0.0,
+          "m_XDamping": 0.0,
+          "m_YDamping": 0.0,
+          "m_YawDamping": 0.0,
+          "m_ZDamping": 1.0
+        },
+        "m_PositionUnits": 2,
+        "path": "track_chr_0007_ikut/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#11545_p25EDF991DB7BFBBB.json",
+          "path_id": 2733114953731668923,
+          "raw_data_sha256": "5fe288f1f62191e34f24300f06b00f83ca18fd407f0d3a3cfeb1bfb1b742e292",
+          "sha256": "7efbabaa4951dfa9d9c25bdf8074a5959e3eb91759041fa144308f623f66c83c",
+          "source_file": "CAB-5a76468f77d92cb094e4a47850b79562",
+          "source_offset": 847270973,
+          "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+        }
+      },
+      "vcam_overview": {
+        "path": "track_chr_0007_ikut/DollyCart/vcam_overview",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/vcam_overview_p3416ADA9C230FBBB.json",
+          "path_id": 3753378284078955451,
+          "raw_data_sha256": "",
+          "sha256": "c2e4c1a5f225b83451f6e994124d2b7e68b7ee805f65fc7c971dcb8f8b486355",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "static_position": [
+          0.0,
+          0.998,
+          3.5
+        ]
+      }
+    },
+    {
+      "actor": "azrila",
+      "character_id": "chr_0009_azrila",
+      "cm": {
+        "path": "track_chr_0009_azrila/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/cm_p2C91342C80DD7E21.json",
+          "path_id": 3211405375037079073,
+          "raw_data_sha256": "",
+          "sha256": "697d5c1d55a7064fe13fda89e8f2824ba60b86b0fab9d987ba619889d3f068ca",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "endpoint_validation": {
+        "max_abs_delta": 0.0,
+        "ok": true,
+        "path_endpoint": [
+          0.0,
+          1.03,
+          3.12
+        ],
+        "static_camera_position": [
+          0.0,
+          1.03,
+          3.12
+        ]
+      },
+      "lookat_overview_ani": {
+        "component_types": [
+          "Transform"
+        ],
+        "components": [
+          {
+            "path_id": -8084378963207684575,
+            "type": "Transform"
+          }
+        ],
+        "path": "track_chr_0009_azrila/LookAtGroup/lookat_overview/lookat_overview_ani",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/lookat_overview_ani_pB5ED25F45CF47E21.json",
+          "path_id": -5337568251902394847,
+          "raw_data_sha256": "",
+          "sha256": "0bc8f002a15e49e40233506e656bb0781867de7ab8b0d9d4448231f16e174e46",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "path": {
+        "endpoint": [
+          0.0,
+          1.03,
+          3.12
+        ],
+        "game_object": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/equip_overview_p8AE22C7EC3C47E21.json",
+          "path_id": -8439133828776952287,
+          "raw_data_sha256": "",
+          "sha256": "c37e072b24001a2da3d3b2852e32ae553e83476cb51f1a0ce68cdade4271de06",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "loop": false,
+        "m_Looped": 0,
+        "m_Resolution": 20,
+        "name": "equip_overview",
+        "path_id": -8872908150620848607,
+        "resolution": 20,
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#9274_p84DD190C35937E21.json",
+          "path_id": -8872908150620848607,
+          "raw_data_sha256": "f6c3e29350174ca8c559b19b8ff17a1425a17908cefe039b2a989a2def73989d",
+          "sha256": "77d128b2f9dfba069c1ea70cc91078fbc421c2c417cfc34e645ca9513df4406a",
+          "source_file": "CAB-3487bb642a920a70e32542979f746acf",
+          "source_offset": 845574539,
+          "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+        },
+        "waypoints": [
+          {
+            "position": [
+              -2.785,
+              2.515,
+              -2.796
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              -2.9186327,
+              1.3553467,
+              0.8182067
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              0.0,
+              1.03,
+              3.12
+            ],
+            "roll": 0.0
+          }
+        ]
+      },
+      "track_root": "track_chr_0009_azrila",
+      "tracked_dolly": {
+        "component_type": "CinemachineTrackedDolly",
+        "m_AutoDolly": {
+          "m_Enabled": 1,
+          "m_PositionOffset": 0.0,
+          "m_SearchRadius": 2,
+          "m_SearchResolution": 5
+        },
+        "m_Path": {
+          "file_id": 0,
+          "path_id": -8872908150620848607,
+          "source": {
+            "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#9274_p84DD190C35937E21.json",
+            "path_id": -8872908150620848607,
+            "raw_data_sha256": "f6c3e29350174ca8c559b19b8ff17a1425a17908cefe039b2a989a2def73989d",
+            "sha256": "77d128b2f9dfba069c1ea70cc91078fbc421c2c417cfc34e645ca9513df4406a",
+            "source_file": "CAB-3487bb642a920a70e32542979f746acf",
+            "source_offset": 845574539,
+            "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+          },
+          "target_name": "equip_overview",
+          "target_type": "MonoBehaviour"
+        },
+        "m_PathOffset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "m_PathPosition": 1.0,
+        "m_PositionDamping": {
+          "m_PitchDamping": 0.0,
+          "m_RollDamping": 0.0,
+          "m_XDamping": 0.0,
+          "m_YDamping": 0.0,
+          "m_YawDamping": 0.0,
+          "m_ZDamping": 1.0
+        },
+        "m_PositionUnits": 2,
+        "path": "track_chr_0009_azrila/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#9515_p179BFD06C6817E21.json",
+          "path_id": 1701231489804500513,
+          "raw_data_sha256": "1534c96ea49dfb85e58f3d0e325fe80e240ac5f2feb1e0bdb83db2e682caf181",
+          "sha256": "044bab897ebce088f3b3f9a99f94d9c4f90a86e2b914a1575fa8ec2fab412e9a",
+          "source_file": "CAB-3487bb642a920a70e32542979f746acf",
+          "source_offset": 845574539,
+          "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+        }
+      },
+      "vcam_overview": {
+        "path": "track_chr_0009_azrila/DollyCart/vcam_overview",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/vcam_overview_p055D633059BF7E21.json",
+          "path_id": 386574202339032609,
+          "raw_data_sha256": "",
+          "sha256": "968039bb4308120914308887a1d003ad2b8d62d3f88d8791d8a0782e98d73460",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "static_position": [
+          0.0,
+          1.03,
+          3.12
+        ]
+      }
+    },
+    {
+      "actor": "seraph",
+      "character_id": "chr_0011_seraph",
+      "cm": {
+        "path": "track_chr_0011_seraph/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/cm_pB019989E7E4EB93E.json",
+          "path_id": -5757402842125125314,
+          "raw_data_sha256": "",
+          "sha256": "cecd7ed405a0fdb62cd2c9aafa7307a908c0d8f42d303fb8b7082b25dbef2e75",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "endpoint_validation": {
+        "max_abs_delta": 0.0,
+        "ok": true,
+        "path_endpoint": [
+          0.0,
+          0.998,
+          3.5
+        ],
+        "static_camera_position": [
+          0.0,
+          0.998,
+          3.5
+        ]
+      },
+      "lookat_overview_ani": {
+        "component_types": [
+          "Transform"
+        ],
+        "components": [
+          {
+            "path_id": -9133426026800957122,
+            "type": "Transform"
+          }
+        ],
+        "path": "track_chr_0011_seraph/LookAtGroup/lookat_overview/lookat_overview_ani",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/lookat_overview_ani_p73DD1DD2378DB93E.json",
+          "path_id": 8348862072927140158,
+          "raw_data_sha256": "",
+          "sha256": "3d1f4956935b014428897c42cba5fdbe8ee240d4267c019d0ee42618f36723eb",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "path": {
+        "endpoint": [
+          0.0,
+          0.998,
+          3.5
+        ],
+        "game_object": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/equip_overview_p40496A36F91DB93E.json",
+          "path_id": 4632350476067518782,
+          "raw_data_sha256": "",
+          "sha256": "7c53e6abf7ddc1bc0eda9f247eccec35f58338883a0050f362063a69782ba294",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "loop": false,
+        "m_Looped": 0,
+        "m_Resolution": 20,
+        "name": "equip_overview",
+        "path_id": -3318115439238989506,
+        "resolution": 20,
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#10203_pD1F3AF96906BB93E.json",
+          "path_id": -3318115439238989506,
+          "raw_data_sha256": "8fe429ae77a9b6a1077a3b40de442f4c4dafc208cfda746b292dc28890028acd",
+          "sha256": "24e15253e74c51dd66191047d63dbed97c2a4b639c7667f4a622ddc3b31f6282",
+          "source_file": "CAB-58e734e6f3140160605c36bc67787d9f",
+          "source_offset": 845773472,
+          "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+        },
+        "waypoints": [
+          {
+            "position": [
+              -2.424,
+              2.807,
+              -3.136
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              -2.973578,
+              1.897583,
+              1.3794559
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              0.0,
+              0.998,
+              3.5
+            ],
+            "roll": 0.0
+          }
+        ]
+      },
+      "track_root": "track_chr_0011_seraph",
+      "tracked_dolly": {
+        "component_type": "CinemachineTrackedDolly",
+        "m_AutoDolly": {
+          "m_Enabled": 1,
+          "m_PositionOffset": 0.0,
+          "m_SearchRadius": 2,
+          "m_SearchResolution": 5
+        },
+        "m_Path": {
+          "file_id": 0,
+          "path_id": -3318115439238989506,
+          "source": {
+            "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#10203_pD1F3AF96906BB93E.json",
+            "path_id": -3318115439238989506,
+            "raw_data_sha256": "8fe429ae77a9b6a1077a3b40de442f4c4dafc208cfda746b292dc28890028acd",
+            "sha256": "24e15253e74c51dd66191047d63dbed97c2a4b639c7667f4a622ddc3b31f6282",
+            "source_file": "CAB-58e734e6f3140160605c36bc67787d9f",
+            "source_offset": 845773472,
+            "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+          },
+          "target_name": "equip_overview",
+          "target_type": "MonoBehaviour"
+        },
+        "m_PathOffset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "m_PathPosition": 1.0,
+        "m_PositionDamping": {
+          "m_PitchDamping": 0.0,
+          "m_RollDamping": 0.0,
+          "m_XDamping": 0.0,
+          "m_YDamping": 0.0,
+          "m_YawDamping": 0.0,
+          "m_ZDamping": 1.0
+        },
+        "m_PositionUnits": 2,
+        "path": "track_chr_0011_seraph/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#10273_p045C56E9E5A2B93E.json",
+          "path_id": 314221636589107518,
+          "raw_data_sha256": "99aba67dc5e9757a242eeedb0ff4117d7e4c4405765c809410a987a06af23d9b",
+          "sha256": "e8e01077cbaa32ec7670a30d2fd60207ca8e5b931ccc6afd2d58a329d7cd3d99",
+          "source_file": "CAB-58e734e6f3140160605c36bc67787d9f",
+          "source_offset": 845773472,
+          "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+        }
+      },
+      "vcam_overview": {
+        "path": "track_chr_0011_seraph/DollyCart/vcam_overview",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/vcam_overview_pD0983A630842B93E.json",
+          "path_id": -3415916120345757378,
+          "raw_data_sha256": "",
+          "sha256": "97d5c1be21cbcdcf6a858d4a0bb52c1ec057c0cfbdcdbff942e68e2b2289243f",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "static_position": [
+          0.0,
+          0.998,
+          3.5
+        ]
+      }
+    },
+    {
+      "actor": "avywen",
+      "character_id": "chr_0012_avywen",
+      "cm": {
+        "path": "track_chr_0012_avywen/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/cm_pE7157A258A801985.json",
+          "path_id": -1795394574781245051,
+          "raw_data_sha256": "",
+          "sha256": "33ae168d2498b553c55395d56a2b70d70355f99c74018fcffea3f93af463e9d9",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "endpoint_validation": {
+        "max_abs_delta": 0.0,
+        "ok": true,
+        "path_endpoint": [
+          0.0,
+          0.983,
+          3.68
+        ],
+        "static_camera_position": [
+          0.0,
+          0.983,
+          3.68
+        ]
+      },
+      "lookat_overview_ani": {
+        "component_types": [
+          "Transform"
+        ],
+        "components": [
+          {
+            "path_id": 5478407053634640261,
+            "type": "Transform"
+          }
+        ],
+        "path": "track_chr_0012_avywen/LookAtGroup/lookat_overview/lookat_overview_ani",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/lookat_overview_ani_pE514CD87BE871985.json",
+          "path_id": -1939699556589037179,
+          "raw_data_sha256": "",
+          "sha256": "68dc914ea32995c792cd336f520445d7cf79bfda9d86c1dc0221d57f1b649e1a",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "path": {
+        "endpoint": [
+          0.0,
+          0.983,
+          3.68
+        ],
+        "game_object": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/skill_overview_p5A17A049286A1985.json",
+          "path_id": 6491833623948958085,
+          "raw_data_sha256": "",
+          "sha256": "b7db12efdfb81d65610c4cb62816454b63ab712ec489b72d83de3452921e0760",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "loop": false,
+        "m_Looped": 0,
+        "m_Resolution": 10,
+        "name": "skill_overview",
+        "path_id": 1010316923494996357,
+        "resolution": 10,
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#13503_p0E055DE3977C1985.json",
+          "path_id": 1010316923494996357,
+          "raw_data_sha256": "1a279ed796f065983d7ae2d64665665865ce77d727baa415bab5b9cad3785ae5",
+          "sha256": "985f02cccb5cb805c38c5b3cccf1934261846523538926c549a1f29745d046d3",
+          "source_file": "CAB-2da92d1071451d4be731666d4792817f",
+          "source_offset": 848561821,
+          "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+        },
+        "waypoints": [
+          {
+            "position": [
+              -0.4,
+              4.3,
+              3.05
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              -0.13765134,
+              2.3181884,
+              2.5938795
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              0.0,
+              0.983,
+              3.68
+            ],
+            "roll": 0.0
+          }
+        ]
+      },
+      "track_root": "track_chr_0012_avywen",
+      "tracked_dolly": {
+        "component_type": "CinemachineTrackedDolly",
+        "m_AutoDolly": {
+          "m_Enabled": 1,
+          "m_PositionOffset": 0.0,
+          "m_SearchRadius": 2,
+          "m_SearchResolution": 5
+        },
+        "m_Path": {
+          "file_id": 0,
+          "path_id": 1010316923494996357,
+          "source": {
+            "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#13503_p0E055DE3977C1985.json",
+            "path_id": 1010316923494996357,
+            "raw_data_sha256": "1a279ed796f065983d7ae2d64665665865ce77d727baa415bab5b9cad3785ae5",
+            "sha256": "985f02cccb5cb805c38c5b3cccf1934261846523538926c549a1f29745d046d3",
+            "source_file": "CAB-2da92d1071451d4be731666d4792817f",
+            "source_offset": 848561821,
+            "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+          },
+          "target_name": "skill_overview",
+          "target_type": "MonoBehaviour"
+        },
+        "m_PathOffset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "m_PathPosition": 1.0,
+        "m_PositionDamping": {
+          "m_PitchDamping": 0.0,
+          "m_RollDamping": 0.0,
+          "m_XDamping": 0.0,
+          "m_YDamping": 0.0,
+          "m_YawDamping": 0.0,
+          "m_ZDamping": 1.0
+        },
+        "m_PositionUnits": 2,
+        "path": "track_chr_0012_avywen/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#13641_p6E0A8A0B76481985.json",
+          "path_id": 7929301875772889477,
+          "raw_data_sha256": "6237ef4ec15d4633f5064eeede026f33007dd6f0b44e850cdc8c0de87ffed8ca",
+          "sha256": "7c00085eae6114241e364590466d08e5afaeed1f2347a92785076a5f608c11f5",
+          "source_file": "CAB-2da92d1071451d4be731666d4792817f",
+          "source_offset": 848561821,
+          "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+        }
+      },
+      "vcam_overview": {
+        "path": "track_chr_0012_avywen/DollyCart/vcam_overview",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/vcam_overview_pA5C21E0F9D281985.json",
+          "path_id": -6502601859559581307,
+          "raw_data_sha256": "",
+          "sha256": "092429fd85e33728b0a3a442283c9fd5d9ee497ed436d8b89aa9248f50bd22b8",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "static_position": [
+          0.0,
+          0.983,
+          3.68
+        ]
+      }
+    },
+    {
+      "actor": "aglina",
+      "character_id": "chr_0013_aglina",
+      "cm": {
+        "path": "track_chr_0013_aglina/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/cm_p97426E4FEEB6076A.json",
+          "path_id": -7547348735933151382,
+          "raw_data_sha256": "",
+          "sha256": "32e832ddf20f14476df6f9a1aa2e12730b80a65dc392bea03c8f5a1957d06b4e",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "endpoint_validation": {
+        "max_abs_delta": 0.0,
+        "ok": true,
+        "path_endpoint": [
+          0.0,
+          0.998,
+          3.5
+        ],
+        "static_camera_position": [
+          0.0,
+          0.998,
+          3.5
+        ]
+      },
+      "lookat_overview_ani": {
+        "component_types": [
+          "Transform"
+        ],
+        "components": [
+          {
+            "path_id": -4411302606181890198,
+            "type": "Transform"
+          }
+        ],
+        "path": "track_chr_0013_aglina/LookAtGroup/lookat_overview/lookat_overview_ani",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/lookat_overview_ani_p29F7F40682F2076A.json",
+          "path_id": 3024153983606458218,
+          "raw_data_sha256": "",
+          "sha256": "a7d0903b7467a805bbe646cf9e7ffef9c66dcb1e62ee1ca6c0443c5d26992326",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "path": {
+        "endpoint": [
+          0.0,
+          0.998,
+          3.5
+        ],
+        "game_object": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/equip_overview_p16D5D755E281076A.json",
+          "path_id": 1645458002746083178,
+          "raw_data_sha256": "",
+          "sha256": "aacc0ac39f88a6896aff15dc6d18e9e9e0093db5ee6b215b0ec8dd7477216176",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "loop": false,
+        "m_Looped": 0,
+        "m_Resolution": 20,
+        "name": "equip_overview",
+        "path_id": 8976683638599059306,
+        "resolution": 20,
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#12465_p7C93963573C2076A.json",
+          "path_id": 8976683638599059306,
+          "raw_data_sha256": "0a5dec4a44c0f5a125b94ea743afb0f638331ffe1715ef742fdfb43dde8e9f25",
+          "sha256": "c257fda3ac41204375d61dab80a6e1123fa99e0fc72eb70e9b84446e0dd0db1c",
+          "source_file": "CAB-99f94a3c3125c224cd2828c74cbef00f",
+          "source_offset": 847830629,
+          "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+        },
+        "waypoints": [
+          {
+            "position": [
+              -2.3,
+              2.69,
+              -2.94
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              -3.8766522,
+              1.897583,
+              -0.025684237
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              0.0,
+              0.998,
+              3.5
+            ],
+            "roll": 0.0
+          }
+        ]
+      },
+      "track_root": "track_chr_0013_aglina",
+      "tracked_dolly": {
+        "component_type": "CinemachineTrackedDolly",
+        "m_AutoDolly": {
+          "m_Enabled": 1,
+          "m_PositionOffset": 0.0,
+          "m_SearchRadius": 2,
+          "m_SearchResolution": 5
+        },
+        "m_Path": {
+          "file_id": 0,
+          "path_id": 8976683638599059306,
+          "source": {
+            "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#12465_p7C93963573C2076A.json",
+            "path_id": 8976683638599059306,
+            "raw_data_sha256": "0a5dec4a44c0f5a125b94ea743afb0f638331ffe1715ef742fdfb43dde8e9f25",
+            "sha256": "c257fda3ac41204375d61dab80a6e1123fa99e0fc72eb70e9b84446e0dd0db1c",
+            "source_file": "CAB-99f94a3c3125c224cd2828c74cbef00f",
+            "source_offset": 847830629,
+            "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+          },
+          "target_name": "equip_overview",
+          "target_type": "MonoBehaviour"
+        },
+        "m_PathOffset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "m_PathPosition": 1.0,
+        "m_PositionDamping": {
+          "m_PitchDamping": 0.0,
+          "m_RollDamping": 0.0,
+          "m_XDamping": 0.0,
+          "m_YDamping": 0.0,
+          "m_YawDamping": 0.0,
+          "m_ZDamping": 1.0
+        },
+        "m_PositionUnits": 2,
+        "path": "track_chr_0013_aglina/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#12433_p696ADB65DD09076A.json",
+          "path_id": 7596124952060299114,
+          "raw_data_sha256": "4ad296e16e9e6981e80b55b7c8cd809848c4caae61234b5d2d0d5077269dd8f8",
+          "sha256": "2e0c43040ba81e75018fe456fa2ea9f99ce9dcb3feabe9cc79db1d13b49014be",
+          "source_file": "CAB-99f94a3c3125c224cd2828c74cbef00f",
+          "source_offset": 847830629,
+          "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+        }
+      },
+      "vcam_overview": {
+        "path": "track_chr_0013_aglina/DollyCart/vcam_overview",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/vcam_overview_p8F739BA5CD4A076A.json",
+          "path_id": -8109967367548041366,
+          "raw_data_sha256": "",
+          "sha256": "d2f8a8d8c4c3cec70e29e0f1ac1f38c0ad9dde700bcd4a5d982c841eb2594974",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "static_position": [
+          0.0,
+          0.998,
+          3.5
+        ]
+      }
+    },
+    {
+      "actor": "aurora",
+      "character_id": "chr_0014_aurora",
+      "cm": {
+        "path": "track_chr_0014_aurora/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/cm_pDA62AB417A730C9E.json",
+          "path_id": -2710415728008033122,
+          "raw_data_sha256": "",
+          "sha256": "ab591ff8e4aa6329680712c73f046f01c776f96bc0fa066409c9c1f19903cf5e",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "endpoint_validation": {
+        "max_abs_delta": 0.0,
+        "ok": true,
+        "path_endpoint": [
+          0.0,
+          0.998,
+          3.5
+        ],
+        "static_camera_position": [
+          0.0,
+          0.998,
+          3.5
+        ]
+      },
+      "lookat_overview_ani": {
+        "component_types": [
+          "Transform"
+        ],
+        "components": [
+          {
+            "path_id": -2443472450558358370,
+            "type": "Transform"
+          }
+        ],
+        "path": "track_chr_0014_aurora/LookAtGroup/lookat_overview/lookat_overview_ani",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/lookat_overview_ani_p81297443AFA40C9E.json",
+          "path_id": -9139646134713316194,
+          "raw_data_sha256": "",
+          "sha256": "8e5219a17b3a838aa59435edbf1f69b58310ece6e51ea79ba52f514c601c5623",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "path": {
+        "endpoint": [
+          0.0,
+          0.998,
+          3.5
+        ],
+        "game_object": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/weapon_overview_p798509E81F910C9E.json",
+          "path_id": 8756415943058459806,
+          "raw_data_sha256": "",
+          "sha256": "7a040477111b18938253743b755c34f790b39e3543808a347d0c0fce49e654dd",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "loop": false,
+        "m_Looped": 0,
+        "m_Resolution": 6,
+        "name": "weapon_overview",
+        "path_id": 4935096039642500254,
+        "resolution": 6,
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#13977_p447CFBB367540C9E.json",
+          "path_id": 4935096039642500254,
+          "raw_data_sha256": "b0b4fb359586dbc9a82fc19423de79d6d48b74e0a203c0af9a1a9d73b8949c18",
+          "sha256": "e44b0dda199ee9bfedab58cb3c34bae674291fda7aebe664b7de9800c5743b77",
+          "source_file": "CAB-dc77e2979d41d2d2daef42e758f75cf4",
+          "source_offset": 848905068,
+          "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+        },
+        "waypoints": [
+          {
+            "position": [
+              1.262,
+              0.814,
+              1.897
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              0.5971327,
+              0.8897201,
+              2.4992352
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              0.0,
+              0.998,
+              3.5
+            ],
+            "roll": 0.0
+          }
+        ]
+      },
+      "track_root": "track_chr_0014_aurora",
+      "tracked_dolly": {
+        "component_type": "CinemachineTrackedDolly",
+        "m_AutoDolly": {
+          "m_Enabled": 1,
+          "m_PositionOffset": 0.0,
+          "m_SearchRadius": 2,
+          "m_SearchResolution": 5
+        },
+        "m_Path": {
+          "file_id": 0,
+          "path_id": 4935096039642500254,
+          "source": {
+            "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#13977_p447CFBB367540C9E.json",
+            "path_id": 4935096039642500254,
+            "raw_data_sha256": "b0b4fb359586dbc9a82fc19423de79d6d48b74e0a203c0af9a1a9d73b8949c18",
+            "sha256": "e44b0dda199ee9bfedab58cb3c34bae674291fda7aebe664b7de9800c5743b77",
+            "source_file": "CAB-dc77e2979d41d2d2daef42e758f75cf4",
+            "source_offset": 848905068,
+            "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+          },
+          "target_name": "weapon_overview",
+          "target_type": "MonoBehaviour"
+        },
+        "m_PathOffset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "m_PathPosition": 1.0,
+        "m_PositionDamping": {
+          "m_PitchDamping": 0.0,
+          "m_RollDamping": 0.0,
+          "m_XDamping": 0.0,
+          "m_YDamping": 0.0,
+          "m_YawDamping": 0.0,
+          "m_ZDamping": 1.0
+        },
+        "m_PositionUnits": 2,
+        "path": "track_chr_0014_aurora/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#14030_p67B4675D02030C9E.json",
+          "path_id": 7472711330877869214,
+          "raw_data_sha256": "d0c23601ae5546a387081bae110e4751e9ccc1da22cb2a49d7fe54ad314eee7c",
+          "sha256": "02a7c6e172cd40baad35e48ccb7bcc1f7abab3541f0ad116ae2f2e9101735750",
+          "source_file": "CAB-dc77e2979d41d2d2daef42e758f75cf4",
+          "source_offset": 848905068,
+          "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+        }
+      },
+      "vcam_overview": {
+        "path": "track_chr_0014_aurora/DollyCart/vcam_overview",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/vcam_overview_p5E7D622CF0FF0C9E.json",
+          "path_id": 6808706156815387806,
+          "raw_data_sha256": "",
+          "sha256": "6975b40fae21bc6f3a8968cbebb51768ecbfbb253431ac805c60eb9bb91e9965",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "static_position": [
+          0.0,
+          0.998,
+          3.5
+        ]
+      }
+    },
+    {
+      "actor": "lifeng",
+      "character_id": "chr_0015_lifeng",
+      "cm": {
+        "path": "track_chr_0015_lifeng/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/cm_pEA8725E14A0CC349.json",
+          "path_id": -1547226297438256311,
+          "raw_data_sha256": "",
+          "sha256": "17ea2352ac8d0ab80eec4d8858423f8cc66b6b594002549098bd70cf86b9e788",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "endpoint_validation": {
+        "max_abs_delta": 0.0,
+        "ok": true,
+        "path_endpoint": [
+          0.0,
+          1.18,
+          3.37
+        ],
+        "static_camera_position": [
+          0.0,
+          1.18,
+          3.37
+        ]
+      },
+      "lookat_overview_ani": {
+        "component_types": [
+          "Transform"
+        ],
+        "components": [
+          {
+            "path_id": 3936237500216361801,
+            "type": "Transform"
+          }
+        ],
+        "path": "track_chr_0015_lifeng/LookAtGroup/lookat_overview/lookat_overview_ani",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/lookat_overview_ani_p79173708529BC349.json",
+          "path_id": 8725503311938831177,
+          "raw_data_sha256": "",
+          "sha256": "483a25f4a9b6df9b3fde1503f31c5a4578ff36c1b001a87d179589f1e1a1290b",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "path": {
+        "endpoint": [
+          0.0,
+          1.18,
+          3.37
+        ],
+        "game_object": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/skill_overview_pA81B7FDC72D2C349.json",
+          "path_id": -6333327866170522807,
+          "raw_data_sha256": "",
+          "sha256": "253e52a340182bc9a43072b961e02149f1de14dc0ef9fd830d729b58a2414548",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "loop": false,
+        "m_Looped": 0,
+        "m_Resolution": 10,
+        "name": "skill_overview",
+        "path_id": 3747136485542970185,
+        "resolution": 10,
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#15974_p340080C7C9B1C349.json",
+          "path_id": 3747136485542970185,
+          "raw_data_sha256": "ecc92ec0789cb903aa15172f3d9dd1a5c2430cdd8195d0cd3a9223a35b1c8e7b",
+          "sha256": "8aab3d1bc552f0bd561ffb0f3c671141ffcbe56adabbb17ba933f127d8f7dadb",
+          "source_file": "CAB-abfc0bc5e09e2edf8607fa5765043fd8",
+          "source_offset": 850764924,
+          "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+        },
+        "waypoints": [
+          {
+            "position": [
+              -0.495,
+              3.87,
+              2.881
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              -0.13765134,
+              2.3181884,
+              2.5938795
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              -0.0,
+              1.18,
+              3.37
+            ],
+            "roll": 0.0
+          }
+        ]
+      },
+      "track_root": "track_chr_0015_lifeng",
+      "tracked_dolly": {
+        "component_type": "CinemachineTrackedDolly",
+        "m_AutoDolly": {
+          "m_Enabled": 1,
+          "m_PositionOffset": 0.0,
+          "m_SearchRadius": 2,
+          "m_SearchResolution": 5
+        },
+        "m_Path": {
+          "file_id": 0,
+          "path_id": 3747136485542970185,
+          "source": {
+            "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#15974_p340080C7C9B1C349.json",
+            "path_id": 3747136485542970185,
+            "raw_data_sha256": "ecc92ec0789cb903aa15172f3d9dd1a5c2430cdd8195d0cd3a9223a35b1c8e7b",
+            "sha256": "8aab3d1bc552f0bd561ffb0f3c671141ffcbe56adabbb17ba933f127d8f7dadb",
+            "source_file": "CAB-abfc0bc5e09e2edf8607fa5765043fd8",
+            "source_offset": 850764924,
+            "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+          },
+          "target_name": "skill_overview",
+          "target_type": "MonoBehaviour"
+        },
+        "m_PathOffset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "m_PathPosition": 1.0,
+        "m_PositionDamping": {
+          "m_PitchDamping": 0.0,
+          "m_RollDamping": 0.0,
+          "m_XDamping": 0.0,
+          "m_YDamping": 0.0,
+          "m_YawDamping": 0.0,
+          "m_ZDamping": 1.0
+        },
+        "m_PositionUnits": 2,
+        "path": "track_chr_0015_lifeng/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#16000_p46EF719D59EFC349.json",
+          "path_id": 5111429022721491785,
+          "raw_data_sha256": "6d281fbe0892a6ba436f0547d42013511713e2fed60dd9cead813f6a0fe8c1c2",
+          "sha256": "ed18b1613e79fd0a4171c08ecbfa65dd2e17e4ca4bfc6934d7543c45be6f2d09",
+          "source_file": "CAB-abfc0bc5e09e2edf8607fa5765043fd8",
+          "source_offset": 850764924,
+          "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+        }
+      },
+      "vcam_overview": {
+        "path": "track_chr_0015_lifeng/DollyCart/vcam_overview",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/vcam_overview_p67B64B18765BC349.json",
+          "path_id": 7473243200104940361,
+          "raw_data_sha256": "",
+          "sha256": "ec7d7fa9531c530db67d0b73c4d94d5236eaff86fbd3dc6846118c5f9ddb709e",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "static_position": [
+          0.0,
+          1.18,
+          3.37
+        ]
+      }
+    },
+    {
+      "actor": "laevat",
+      "character_id": "chr_0016_laevat",
+      "cm": {
+        "path": "track_chr_0016_laevat/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/cm_p9C57BF879ED8DA76.json",
+          "path_id": -7181060491612464522,
+          "raw_data_sha256": "",
+          "sha256": "d2431d4ec184a9cff184e2f299367a7b3c907fd9a647517ad3f7bf7ca1a54411",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "endpoint_validation": {
+        "max_abs_delta": 0.0,
+        "ok": true,
+        "path_endpoint": [
+          0.0,
+          0.998,
+          3.5
+        ],
+        "static_camera_position": [
+          0.0,
+          0.998,
+          3.5
+        ]
+      },
+      "lookat_overview_ani": {
+        "component_types": [
+          "Transform"
+        ],
+        "components": [
+          {
+            "path_id": 3604164120572910198,
+            "type": "Transform"
+          }
+        ],
+        "path": "track_chr_0016_laevat/LookAtGroup/lookat_overview/lookat_overview_ani",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/lookat_overview_ani_p669AE43AB5D9DA76.json",
+          "path_id": 7393472679092279926,
+          "raw_data_sha256": "",
+          "sha256": "7181d4bcccf1e0722391ba95ce7d7ca81ab79b3b446ba6ee3d66d983aecd9064",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "path": {
+        "endpoint": [
+          0.0,
+          0.998,
+          3.5
+        ],
+        "game_object": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/skill_overview_p639DCE14A128DA76.json",
+          "path_id": 7178119969096915574,
+          "raw_data_sha256": "",
+          "sha256": "db03d754793510514ddd8662e1cd272d81cb5d50bd169fe74d74a70435578192",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "loop": false,
+        "m_Looped": 0,
+        "m_Resolution": 10,
+        "name": "skill_overview",
+        "path_id": 685890043967822454,
+        "resolution": 10,
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#14279_p0984C55C69ADDA76.json",
+          "path_id": 685890043967822454,
+          "raw_data_sha256": "23aad3722f985923e1ece02afb46624134fd52ce426b8e0a6651ebcb2093fcf5",
+          "sha256": "fc2dc8bbc6c5311cbc2d865b03c305b8a343c62e6b09c35f363a2e0b69731438",
+          "source_file": "CAB-62e71234ce82e2183ff0d7711d005597",
+          "source_offset": 849357139,
+          "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+        },
+        "waypoints": [
+          {
+            "position": [
+              -0.559,
+              4.626,
+              2.854
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              -0.13765134,
+              2.3181884,
+              2.5938795
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              0.0,
+              0.998,
+              3.5
+            ],
+            "roll": 0.0
+          }
+        ]
+      },
+      "track_root": "track_chr_0016_laevat",
+      "tracked_dolly": {
+        "component_type": "CinemachineTrackedDolly",
+        "m_AutoDolly": {
+          "m_Enabled": 1,
+          "m_PositionOffset": 0.0,
+          "m_SearchRadius": 2,
+          "m_SearchResolution": 5
+        },
+        "m_Path": {
+          "file_id": 0,
+          "path_id": 685890043967822454,
+          "source": {
+            "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#14279_p0984C55C69ADDA76.json",
+            "path_id": 685890043967822454,
+            "raw_data_sha256": "23aad3722f985923e1ece02afb46624134fd52ce426b8e0a6651ebcb2093fcf5",
+            "sha256": "fc2dc8bbc6c5311cbc2d865b03c305b8a343c62e6b09c35f363a2e0b69731438",
+            "source_file": "CAB-62e71234ce82e2183ff0d7711d005597",
+            "source_offset": 849357139,
+            "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+          },
+          "target_name": "skill_overview",
+          "target_type": "MonoBehaviour"
+        },
+        "m_PathOffset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "m_PathPosition": 1.0,
+        "m_PositionDamping": {
+          "m_PitchDamping": 0.0,
+          "m_RollDamping": 0.0,
+          "m_XDamping": 0.0,
+          "m_YDamping": 0.0,
+          "m_YawDamping": 0.0,
+          "m_ZDamping": 1.0
+        },
+        "m_PositionUnits": 2,
+        "path": "track_chr_0016_laevat/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#14325_p2AD125AE3186DA76.json",
+          "path_id": 3085288649810958966,
+          "raw_data_sha256": "be86bd4c3813547803183c47b94ae86a015b534e80f425c95301fdae8a4ab194",
+          "sha256": "71331e473bcad6454269779591edbf30d53992bf0d15525257ab745d415aaaff",
+          "source_file": "CAB-62e71234ce82e2183ff0d7711d005597",
+          "source_offset": 849357139,
+          "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+        }
+      },
+      "vcam_overview": {
+        "path": "track_chr_0016_laevat/DollyCart/vcam_overview",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/vcam_overview_p4128F04F7CFCDA76.json",
+          "path_id": 4695266835723770486,
+          "raw_data_sha256": "",
+          "sha256": "33ef78147dc2bb78593f48e9e1b475453ffec8c1681124e3ebc7ddefd80c69b2",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "static_position": [
+          0.0,
+          0.998,
+          3.5
+        ]
+      }
+    },
+    {
+      "actor": "yvonne",
+      "character_id": "chr_0017_yvonne",
+      "cm": {
+        "path": "track_chr_0017_yvonne/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/cm_p868110721AFFD34C.json",
+          "path_id": -8754698118366244020,
+          "raw_data_sha256": "",
+          "sha256": "9ace6510358ca17d2d981abc0cf5e379e0f1079b041cbba79be40c1bfa90a1c2",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "endpoint_validation": {
+        "max_abs_delta": 0.0,
+        "ok": true,
+        "path_endpoint": [
+          0.0,
+          0.998,
+          3.5
+        ],
+        "static_camera_position": [
+          0.0,
+          0.998,
+          3.5
+        ]
+      },
+      "lookat_overview_ani": {
+        "component_types": [
+          "Transform"
+        ],
+        "components": [
+          {
+            "path_id": 150407118895960908,
+            "type": "Transform"
+          }
+        ],
+        "path": "track_chr_0017_yvonne/LookAtGroup/lookat_overview/lookat_overview_ani",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/lookat_overview_ani_p94DEC9B252B6D34C.json",
+          "path_id": -7719510943537376436,
+          "raw_data_sha256": "",
+          "sha256": "0f9146fc0c99be3ce317555ea33da950bfb2dd4d32efac3e77b01120ce49dddf",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "path": {
+        "endpoint": [
+          0.0,
+          0.998,
+          3.5
+        ],
+        "game_object": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/weapon_overview_p5454BAFD44F0D34C.json",
+          "path_id": 6076687394175767372,
+          "raw_data_sha256": "",
+          "sha256": "d1035ea936eaa55dd1def943c76df0c1318dc8875832479c7d163cba7a5d42b3",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "loop": false,
+        "m_Looped": 0,
+        "m_Resolution": 6,
+        "name": "weapon_overview",
+        "path_id": -2323519823496424628,
+        "resolution": 6,
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#9819_pDFC13307F3EAD34C.json",
+          "path_id": -2323519823496424628,
+          "raw_data_sha256": "2e3eef83e143784be11339769fe73f0baaf907be8d1bf4d3a575bc53cfa8499d",
+          "sha256": "b5e27354f180b2052170c71f72542174c0ee81e8afe53269e85df0d9c376cc33",
+          "source_file": "CAB-94778482ac0488cff9aadabbd63a8600",
+          "source_offset": 845618755,
+          "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+        },
+        "waypoints": [
+          {
+            "position": [
+              1.651,
+              0.614,
+              1.873
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              0.5971327,
+              0.8897201,
+              2.4992352
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              0.0,
+              0.998,
+              3.5
+            ],
+            "roll": 0.0
+          }
+        ]
+      },
+      "track_root": "track_chr_0017_yvonne",
+      "tracked_dolly": {
+        "component_type": "CinemachineTrackedDolly",
+        "m_AutoDolly": {
+          "m_Enabled": 1,
+          "m_PositionOffset": 0.0,
+          "m_SearchRadius": 2,
+          "m_SearchResolution": 5
+        },
+        "m_Path": {
+          "file_id": 0,
+          "path_id": -2323519823496424628,
+          "source": {
+            "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#9819_pDFC13307F3EAD34C.json",
+            "path_id": -2323519823496424628,
+            "raw_data_sha256": "2e3eef83e143784be11339769fe73f0baaf907be8d1bf4d3a575bc53cfa8499d",
+            "sha256": "b5e27354f180b2052170c71f72542174c0ee81e8afe53269e85df0d9c376cc33",
+            "source_file": "CAB-94778482ac0488cff9aadabbd63a8600",
+            "source_offset": 845618755,
+            "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+          },
+          "target_name": "weapon_overview",
+          "target_type": "MonoBehaviour"
+        },
+        "m_PathOffset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "m_PathPosition": 1.0,
+        "m_PositionDamping": {
+          "m_PitchDamping": 0.0,
+          "m_RollDamping": 0.0,
+          "m_XDamping": 0.0,
+          "m_YDamping": 0.0,
+          "m_YawDamping": 0.0,
+          "m_ZDamping": 1.0
+        },
+        "m_PositionUnits": 2,
+        "path": "track_chr_0017_yvonne/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#9943_p3091BF6B3317D34C.json",
+          "path_id": 3499788852583191372,
+          "raw_data_sha256": "20eaca2b94c46665104247cb36730741ba0a64115bb4afbb7d76e8f528dc1103",
+          "sha256": "2ec986d7c1525532d9ccb2c1c9ff3eda467b3b4c5179c4ceddfe790c4a2b8ac6",
+          "source_file": "CAB-94778482ac0488cff9aadabbd63a8600",
+          "source_offset": 845618755,
+          "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+        }
+      },
+      "vcam_overview": {
+        "path": "track_chr_0017_yvonne/DollyCart/vcam_overview",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/vcam_overview_pD7FD97D30EB7D34C.json",
+          "path_id": -2882981253706427572,
+          "raw_data_sha256": "",
+          "sha256": "3ac4a8627389887486c0828545d75f557cfaf2d5c4b1a284cf93f7be4b12f378",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "static_position": [
+          0.0,
+          0.998,
+          3.5
+        ]
+      }
+    },
+    {
+      "actor": "dapan",
+      "character_id": "chr_0018_dapan",
+      "cm": {
+        "path": "track_chr_0018_dapan/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/cm_p1D3D1175CCB98AF4.json",
+          "path_id": 2106859398322817780,
+          "raw_data_sha256": "",
+          "sha256": "c7cbf41bb728e0a2d836a886decb69db97a5519b094f356bb2e09caef029287b",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "endpoint_validation": {
+        "max_abs_delta": 0.0,
+        "ok": true,
+        "path_endpoint": [
+          0.0,
+          1.09,
+          4.8
+        ],
+        "static_camera_position": [
+          0.0,
+          1.09,
+          4.8
+        ]
+      },
+      "lookat_overview_ani": {
+        "component_types": [
+          "Transform"
+        ],
+        "components": [
+          {
+            "path_id": 3711558414494173940,
+            "type": "Transform"
+          }
+        ],
+        "path": "track_chr_0018_dapan/LookAtGroup/lookat_overview/lookat_overview_ani",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/lookat_overview_ani_pA0C49A24A7AA8AF4.json",
+          "path_id": -6862190449983321356,
+          "raw_data_sha256": "",
+          "sha256": "5c548a7148c5f94d4cd8f8172c85f745409b5498b226a7cd5d8d4bbda369a5cb",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "path": {
+        "endpoint": [
+          0.0,
+          1.09,
+          4.8
+        ],
+        "game_object": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/skill_overview_p70AB70EC2D278AF4.json",
+          "path_id": 8118706912937609972,
+          "raw_data_sha256": "",
+          "sha256": "3b6033359d36db8bc60c4e97030b1eb13f62ad832c7253839b345ca2d7ef11f2",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "loop": false,
+        "m_Looped": 0,
+        "m_Resolution": 10,
+        "name": "skill_overview",
+        "path_id": 7429601216232983284,
+        "resolution": 10,
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#11236_p671B3EF144608AF4.json",
+          "path_id": 7429601216232983284,
+          "raw_data_sha256": "db24a9b42289dfa6f053830a8438e596f188826f7c8d09ffc1548e7af298ce8c",
+          "sha256": "8436b98d948832b7e86cf9720392efa20702a0ddfccfc624adfeec21043973d7",
+          "source_file": "CAB-b396cf9e499035dfe37658ffa18ad27f",
+          "source_offset": 846812820,
+          "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+        },
+        "waypoints": [
+          {
+            "position": [
+              -0.38,
+              5.6,
+              3.99
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              -0.13765134,
+              2.3181884,
+              2.5938795
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              0.0,
+              1.09,
+              4.8
+            ],
+            "roll": 0.0
+          }
+        ]
+      },
+      "track_root": "track_chr_0018_dapan",
+      "tracked_dolly": {
+        "component_type": "CinemachineTrackedDolly",
+        "m_AutoDolly": {
+          "m_Enabled": 1,
+          "m_PositionOffset": 0.0,
+          "m_SearchRadius": 2,
+          "m_SearchResolution": 5
+        },
+        "m_Path": {
+          "file_id": 0,
+          "path_id": 7429601216232983284,
+          "source": {
+            "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#11236_p671B3EF144608AF4.json",
+            "path_id": 7429601216232983284,
+            "raw_data_sha256": "db24a9b42289dfa6f053830a8438e596f188826f7c8d09ffc1548e7af298ce8c",
+            "sha256": "8436b98d948832b7e86cf9720392efa20702a0ddfccfc624adfeec21043973d7",
+            "source_file": "CAB-b396cf9e499035dfe37658ffa18ad27f",
+            "source_offset": 846812820,
+            "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+          },
+          "target_name": "skill_overview",
+          "target_type": "MonoBehaviour"
+        },
+        "m_PathOffset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "m_PathPosition": 1.0,
+        "m_PositionDamping": {
+          "m_PitchDamping": 0.0,
+          "m_RollDamping": 0.0,
+          "m_XDamping": 0.0,
+          "m_YDamping": 0.0,
+          "m_YawDamping": 0.0,
+          "m_ZDamping": 1.0
+        },
+        "m_PositionUnits": 2,
+        "path": "track_chr_0018_dapan/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#11151_p2DE662DA41A28AF4.json",
+          "path_id": 3307439665893772020,
+          "raw_data_sha256": "a55bec308ceab0dd803d5e5ca5b39a00107897ff65f3654aec0e791ae76277eb",
+          "sha256": "5bc0e6ea18e86966c1ff63f26fed0503a7d4b8952167871ec9f91bd3e36a14fa",
+          "source_file": "CAB-b396cf9e499035dfe37658ffa18ad27f",
+          "source_offset": 846812820,
+          "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+        }
+      },
+      "vcam_overview": {
+        "path": "track_chr_0018_dapan/DollyCart/vcam_overview",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/vcam_overview_p1F38A00A74E08AF4.json",
+          "path_id": 2249723980642552564,
+          "raw_data_sha256": "",
+          "sha256": "4e670658afe2c5d9ee4804effe7f25cee76d44fa18a8dfabe0dd132bbbfc983a",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "static_position": [
+          0.0,
+          1.09,
+          4.8
+        ]
+      }
+    },
+    {
+      "actor": "karin",
+      "character_id": "chr_0019_karin",
+      "cm": {
+        "path": "track_chr_0019_karin/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/cm_p1BB1D62D008B7002.json",
+          "path_id": 1995611598672850946,
+          "raw_data_sha256": "",
+          "sha256": "1bec3c9b5ff5918f95d4402c926277e96dfff9543d6e4d53c81cecb22efc8fcc",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "endpoint_validation": {
+        "max_abs_delta": 0.0,
+        "ok": true,
+        "path_endpoint": [
+          -0.177,
+          0.998,
+          3.5
+        ],
+        "static_camera_position": [
+          -0.177,
+          0.998,
+          3.5
+        ]
+      },
+      "lookat_overview_ani": {
+        "component_types": [
+          "Transform"
+        ],
+        "components": [
+          {
+            "path_id": -2057241416673038334,
+            "type": "Transform"
+          }
+        ],
+        "path": "track_chr_0019_karin/LookAtGroup/lookat_overview/lookat_overview_ani",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/lookat_overview_ani_p8E02AE7138E47002.json",
+          "path_id": -8213810969061330942,
+          "raw_data_sha256": "",
+          "sha256": "dc3ff6f70b40853da93a257d43cd5bdd25b4386623c1912c603ec0979dba96d8",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "path": {
+        "endpoint": [
+          -0.177,
+          0.998,
+          3.5
+        ],
+        "game_object": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/skill_overview_p0DE18EE34EC57002.json",
+          "path_id": 1000237699183243266,
+          "raw_data_sha256": "",
+          "sha256": "9253599cf6bba4bd990d9f8f5a6f6c018de5eb1ec4d82f786af567a179017002",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "loop": false,
+        "m_Looped": 0,
+        "m_Resolution": 10,
+        "name": "skill_overview",
+        "path_id": -1708204483077836798,
+        "resolution": 10,
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#16253_pE84B3D12B66A7002.json",
+          "path_id": -1708204483077836798,
+          "raw_data_sha256": "3cd87e994e63b382e614232e6cf118a1eb3099619c147a47413c8285bec77d4d",
+          "sha256": "f134c1706b03f1a84120d42090897a4bda4db10be24da10dd527e942f1113783",
+          "source_file": "CAB-3ede21a11b6a52d358a14e72cdd3e674",
+          "source_offset": 851294910,
+          "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+        },
+        "waypoints": [
+          {
+            "position": [
+              0.08,
+              4.23,
+              2.7
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              -0.13765134,
+              2.3181884,
+              2.5938795
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              -0.177,
+              0.998,
+              3.5
+            ],
+            "roll": 0.0
+          }
+        ]
+      },
+      "track_root": "track_chr_0019_karin",
+      "tracked_dolly": {
+        "component_type": "CinemachineTrackedDolly",
+        "m_AutoDolly": {
+          "m_Enabled": 1,
+          "m_PositionOffset": 0.0,
+          "m_SearchRadius": 2,
+          "m_SearchResolution": 5
+        },
+        "m_Path": {
+          "file_id": 0,
+          "path_id": -1708204483077836798,
+          "source": {
+            "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#16253_pE84B3D12B66A7002.json",
+            "path_id": -1708204483077836798,
+            "raw_data_sha256": "3cd87e994e63b382e614232e6cf118a1eb3099619c147a47413c8285bec77d4d",
+            "sha256": "f134c1706b03f1a84120d42090897a4bda4db10be24da10dd527e942f1113783",
+            "source_file": "CAB-3ede21a11b6a52d358a14e72cdd3e674",
+            "source_offset": 851294910,
+            "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+          },
+          "target_name": "skill_overview",
+          "target_type": "MonoBehaviour"
+        },
+        "m_PathOffset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "m_PathPosition": 1.0,
+        "m_PositionDamping": {
+          "m_PitchDamping": 0.0,
+          "m_RollDamping": 0.0,
+          "m_XDamping": 0.0,
+          "m_YDamping": 0.0,
+          "m_YawDamping": 0.0,
+          "m_ZDamping": 1.0
+        },
+        "m_PositionUnits": 2,
+        "path": "track_chr_0019_karin/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#16400_p43F38B2922507002.json",
+          "path_id": 4896410228667478018,
+          "raw_data_sha256": "b5e9c29792c72307a1687e05641f11e5c84df8c1d1c03803ab05e836d548d6a4",
+          "sha256": "34c3ae7deef3778e5409685e8c27de323e2497ff2b950911c53e2e2f4a85b4a0",
+          "source_file": "CAB-3ede21a11b6a52d358a14e72cdd3e674",
+          "source_offset": 851294910,
+          "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+        }
+      },
+      "vcam_overview": {
+        "path": "track_chr_0019_karin/DollyCart/vcam_overview",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/vcam_overview_pDD510DA67C907002.json",
+          "path_id": -2499201309508341758,
+          "raw_data_sha256": "",
+          "sha256": "c8620b489a10031b3e6a6d88610b087b2fabe42e6ce30398657166db88cc1850",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "static_position": [
+          -0.177,
+          0.998,
+          3.5
+        ]
+      }
+    },
+    {
+      "actor": "meurs",
+      "character_id": "chr_0020_meurs",
+      "cm": {
+        "path": "track_chr_0020_meurs/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/cm_pB31E64BDCCCE2BB8.json",
+          "path_id": -5539879725271471176,
+          "raw_data_sha256": "",
+          "sha256": "94df8160020735302cc0af51f60a516e29458bd5a789c6f8334cfb047ad99f3e",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "endpoint_validation": {
+        "max_abs_delta": 0.0,
+        "ok": true,
+        "path_endpoint": [
+          -0.06,
+          1.06,
+          3.183
+        ],
+        "static_camera_position": [
+          -0.06,
+          1.06,
+          3.183
+        ]
+      },
+      "lookat_overview_ani": {
+        "component_types": [
+          "Transform"
+        ],
+        "components": [
+          {
+            "path_id": -6808723026505028680,
+            "type": "Transform"
+          }
+        ],
+        "path": "track_chr_0020_meurs/LookAtGroup/lookat_overview/lookat_overview_ani",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/lookat_overview_ani_p9F1C1593BDBF2BB8.json",
+          "path_id": -6981681598043313224,
+          "raw_data_sha256": "",
+          "sha256": "25481b6c2042507d132cea8c92c0dfc3bd1b6444eab093b89395c2df48866549",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "path": {
+        "endpoint": [
+          -0.06,
+          1.06,
+          3.183
+        ],
+        "game_object": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/weapon_overview_p473E094CECD82BB8.json",
+          "path_id": 5133550851244698552,
+          "raw_data_sha256": "",
+          "sha256": "fff07d475854b64409919b2e7c5e6a1a04ccedd86d455620301669dfae4d7bd8",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "loop": false,
+        "m_Looped": 0,
+        "m_Resolution": 6,
+        "name": "weapon_overview",
+        "path_id": 153994247023504312,
+        "resolution": 6,
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#19126_p022318F3A74A2BB8.json",
+          "path_id": 153994247023504312,
+          "raw_data_sha256": "c0fb6e01f22d857229cf752a6783f0dab47a02352d4e0a1d2a9de6f4a26207f9",
+          "sha256": "85ba05570ac5e8149d949610c0532f2795cf00a558cb59b58ceb31103dc40653",
+          "source_file": "CAB-35bae603c562ff828572d6062d25e1cf",
+          "source_offset": 855519756,
+          "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+        },
+        "waypoints": [
+          {
+            "position": [
+              1.221,
+              0.685,
+              2.12
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              0.5971327,
+              0.8897201,
+              2.4992352
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              -0.06,
+              1.06,
+              3.183
+            ],
+            "roll": 0.0
+          }
+        ]
+      },
+      "track_root": "track_chr_0020_meurs",
+      "tracked_dolly": {
+        "component_type": "CinemachineTrackedDolly",
+        "m_AutoDolly": {
+          "m_Enabled": 1,
+          "m_PositionOffset": 0.0,
+          "m_SearchRadius": 2,
+          "m_SearchResolution": 5
+        },
+        "m_Path": {
+          "file_id": 0,
+          "path_id": 153994247023504312,
+          "source": {
+            "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#19126_p022318F3A74A2BB8.json",
+            "path_id": 153994247023504312,
+            "raw_data_sha256": "c0fb6e01f22d857229cf752a6783f0dab47a02352d4e0a1d2a9de6f4a26207f9",
+            "sha256": "85ba05570ac5e8149d949610c0532f2795cf00a558cb59b58ceb31103dc40653",
+            "source_file": "CAB-35bae603c562ff828572d6062d25e1cf",
+            "source_offset": 855519756,
+            "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+          },
+          "target_name": "weapon_overview",
+          "target_type": "MonoBehaviour"
+        },
+        "m_PathOffset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "m_PathPosition": 1.0,
+        "m_PositionDamping": {
+          "m_PitchDamping": 0.0,
+          "m_RollDamping": 0.0,
+          "m_XDamping": 0.0,
+          "m_YDamping": 0.0,
+          "m_YawDamping": 0.0,
+          "m_ZDamping": 1.0
+        },
+        "m_PositionUnits": 2,
+        "path": "track_chr_0020_meurs/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#19032_pC287E3AC37702BB8.json",
+          "path_id": -4429321379691615304,
+          "raw_data_sha256": "64b07671295856c77ccdbd94547f6a9cb4de2fbd5366db429d55675d59984cd5",
+          "sha256": "cab187631a773b99e1440359f1ea913c5898fd2e2f14e3baf3642675f33801c5",
+          "source_file": "CAB-35bae603c562ff828572d6062d25e1cf",
+          "source_offset": 855519756,
+          "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+        }
+      },
+      "vcam_overview": {
+        "path": "track_chr_0020_meurs/DollyCart/vcam_overview",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/vcam_overview_p65FD7F65F6462BB8.json",
+          "path_id": 7349170242838735800,
+          "raw_data_sha256": "",
+          "sha256": "b01d95dbadc0c2e9727eabbcddd502cf4e5a6f71b85b1d2c5b4fb4453e15648b",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "static_position": [
+          -0.06,
+          1.06,
+          3.183
+        ]
+      }
+    },
+    {
+      "actor": "whiten",
+      "character_id": "chr_0021_whiten",
+      "cm": {
+        "path": "track_chr_0021_whiten/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/cm_pF1D5128FA289326C.json",
+          "path_id": -1020889332413025684,
+          "raw_data_sha256": "",
+          "sha256": "431b036fc957b1fde3f72b5b03da7590903f1dcb1fb822fe9f08e28b6fa5b081",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "endpoint_validation": {
+        "max_abs_delta": 0.0,
+        "ok": true,
+        "path_endpoint": [
+          -0.533,
+          1.049,
+          3.52
+        ],
+        "static_camera_position": [
+          -0.533,
+          1.049,
+          3.52
+        ]
+      },
+      "lookat_overview_ani": {
+        "component_types": [
+          "Transform"
+        ],
+        "components": [
+          {
+            "path_id": -8758408194347683220,
+            "type": "Transform"
+          }
+        ],
+        "path": "track_chr_0021_whiten/LookAtGroup/lookat_overview/lookat_overview_ani",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/lookat_overview_ani_pD47E155492F4326C.json",
+          "path_id": -3135044837616373140,
+          "raw_data_sha256": "",
+          "sha256": "373ec20298e46dfdb09809b3b74ada686b7d3c39aafa4e50b5ed70e170f30808",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "path": {
+        "endpoint": [
+          -0.533,
+          1.049,
+          3.52
+        ],
+        "game_object": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/equip_overview_p760DB340AA8A326C.json",
+          "path_id": 8506652361493197420,
+          "raw_data_sha256": "",
+          "sha256": "ef03cf9ac2a90bba872ab992012355ef4fc215eb1342d1330a3068155e4a6915",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "loop": false,
+        "m_Looped": 0,
+        "m_Resolution": 20,
+        "name": "equip_overview",
+        "path_id": 929320443205530220,
+        "resolution": 20,
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#16718_p0CE59C04F3C6326C.json",
+          "path_id": 929320443205530220,
+          "raw_data_sha256": "0977accbb763b05b7be7b7f78019a249e815c29ec1304d8e390483acc94db476",
+          "sha256": "aa0888908229eb0e5644fb36b67482989629da72bcde3b5beeadc33603faef06",
+          "source_file": "CAB-48438a678134ccc3e467e5e0ce0c28e0",
+          "source_offset": 851362260,
+          "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+        },
+        "waypoints": [
+          {
+            "position": [
+              -3.03,
+              2.39,
+              -2.66
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              -3.250009,
+              1.897583,
+              1.0094608
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              -0.533,
+              1.049,
+              3.52
+            ],
+            "roll": 0.0
+          }
+        ]
+      },
+      "track_root": "track_chr_0021_whiten",
+      "tracked_dolly": {
+        "component_type": "CinemachineTrackedDolly",
+        "m_AutoDolly": {
+          "m_Enabled": 1,
+          "m_PositionOffset": 0.0,
+          "m_SearchRadius": 2,
+          "m_SearchResolution": 5
+        },
+        "m_Path": {
+          "file_id": 0,
+          "path_id": 929320443205530220,
+          "source": {
+            "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#16718_p0CE59C04F3C6326C.json",
+            "path_id": 929320443205530220,
+            "raw_data_sha256": "0977accbb763b05b7be7b7f78019a249e815c29ec1304d8e390483acc94db476",
+            "sha256": "aa0888908229eb0e5644fb36b67482989629da72bcde3b5beeadc33603faef06",
+            "source_file": "CAB-48438a678134ccc3e467e5e0ce0c28e0",
+            "source_offset": 851362260,
+            "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+          },
+          "target_name": "equip_overview",
+          "target_type": "MonoBehaviour"
+        },
+        "m_PathOffset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "m_PathPosition": 1.0,
+        "m_PositionDamping": {
+          "m_PitchDamping": 0.0,
+          "m_RollDamping": 0.0,
+          "m_XDamping": 0.0,
+          "m_YDamping": 0.0,
+          "m_YawDamping": 0.0,
+          "m_ZDamping": 1.0
+        },
+        "m_PositionUnits": 2,
+        "path": "track_chr_0021_whiten/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#16566_pAC5558863771326C.json",
+          "path_id": -6028815192686513556,
+          "raw_data_sha256": "0a592769eb56e3f240e320d7bf7965c020e88ce0bfbbfa92883e7e1332248669",
+          "sha256": "1b2c4a6dfe53bd47e95acace2e9cbbb3205a5ad0986fbeb9ee5ee6cdb9ab39dc",
+          "source_file": "CAB-48438a678134ccc3e467e5e0ce0c28e0",
+          "source_offset": 851362260,
+          "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+        }
+      },
+      "vcam_overview": {
+        "path": "track_chr_0021_whiten/DollyCart/vcam_overview",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/vcam_overview_p438B7318AF32326C.json",
+          "path_id": 4867110372159664748,
+          "raw_data_sha256": "",
+          "sha256": "aff90f8865945351ab086d24ba369a5aa8e0e8ee103b422d84217f8f90f37b7b",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "static_position": [
+          -0.533,
+          1.049,
+          3.52
+        ]
+      }
+    },
+    {
+      "actor": "bounda",
+      "character_id": "chr_0022_bounda",
+      "cm": {
+        "path": "track_chr_0022_bounda/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/cm_pFAF9F870DB374DBB.json",
+          "path_id": -361985131428753989,
+          "raw_data_sha256": "",
+          "sha256": "9c0af2a5a1983cfcd0386a7f4b0ec48e87d5cd891cc99d44d773a5680de4142a",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "endpoint_validation": {
+        "max_abs_delta": 0.0,
+        "ok": true,
+        "path_endpoint": [
+          0.033,
+          1.146,
+          3.059
+        ],
+        "static_camera_position": [
+          0.033,
+          1.146,
+          3.059
+        ]
+      },
+      "lookat_overview_ani": {
+        "component_types": [
+          "Transform"
+        ],
+        "components": [
+          {
+            "path_id": -6760007074408804933,
+            "type": "Transform"
+          }
+        ],
+        "path": "track_chr_0022_bounda/LookAtGroup/lookat_overview/lookat_overview_ani",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/lookat_overview_ani_p5D7B830654704DBB.json",
+          "path_id": 6736121730872397243,
+          "raw_data_sha256": "",
+          "sha256": "6da92fec693ff758bc638f859c05cd16b50eacf5383e9e0f116ca335b8055076",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "path": {
+        "endpoint": [
+          0.033,
+          1.146,
+          3.059
+        ],
+        "game_object": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/weapon_overview_pDD62D0C0E7934DBB.json",
+          "path_id": -2494201716672344645,
+          "raw_data_sha256": "",
+          "sha256": "f7f089c3986661f11c69eaecc6abc5002be0cc43a4318886a115788488725d97",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "loop": false,
+        "m_Looped": 0,
+        "m_Resolution": 6,
+        "name": "weapon_overview",
+        "path_id": -8765362200904970821,
+        "resolution": 6,
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#18526_p865B2D84E76C4DBB.json",
+          "path_id": -8765362200904970821,
+          "raw_data_sha256": "434c271cba16355da0ddcc9d1b9e2cb40f2fb6decb1deca734833d8bc372204a",
+          "sha256": "7225fd94667320df843473b9b10dc3163c5af62d326207fc045e162b9c785f58",
+          "source_file": "CAB-dfe428bf137a7403133bbd5e7c78999d",
+          "source_offset": 853505285,
+          "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+        },
+        "waypoints": [
+          {
+            "position": [
+              0.938,
+              0.564,
+              2.447
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              0.5971327,
+              0.8897201,
+              2.4992352
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              0.033,
+              1.146,
+              3.059
+            ],
+            "roll": 0.0
+          }
+        ]
+      },
+      "track_root": "track_chr_0022_bounda",
+      "tracked_dolly": {
+        "component_type": "CinemachineTrackedDolly",
+        "m_AutoDolly": {
+          "m_Enabled": 1,
+          "m_PositionOffset": 0.0,
+          "m_SearchRadius": 2,
+          "m_SearchResolution": 5
+        },
+        "m_Path": {
+          "file_id": 0,
+          "path_id": -8765362200904970821,
+          "source": {
+            "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#18526_p865B2D84E76C4DBB.json",
+            "path_id": -8765362200904970821,
+            "raw_data_sha256": "434c271cba16355da0ddcc9d1b9e2cb40f2fb6decb1deca734833d8bc372204a",
+            "sha256": "7225fd94667320df843473b9b10dc3163c5af62d326207fc045e162b9c785f58",
+            "source_file": "CAB-dfe428bf137a7403133bbd5e7c78999d",
+            "source_offset": 853505285,
+            "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+          },
+          "target_name": "weapon_overview",
+          "target_type": "MonoBehaviour"
+        },
+        "m_PathOffset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "m_PathPosition": 1.0,
+        "m_PositionDamping": {
+          "m_PitchDamping": 0.0,
+          "m_RollDamping": 0.0,
+          "m_XDamping": 0.0,
+          "m_YDamping": 0.0,
+          "m_YawDamping": 0.0,
+          "m_ZDamping": 1.0
+        },
+        "m_PositionUnits": 2,
+        "path": "track_chr_0022_bounda/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#18591_pACB7180790EF4DBB.json",
+          "path_id": -6001301557672456773,
+          "raw_data_sha256": "c0bff69eeb9d9cd4cae0dda3b74f46284eae05c19324c407e82ee4e8da434042",
+          "sha256": "d41585f68827e957a7874ef5cac517f207482583352676f82474f8fd6914a454",
+          "source_file": "CAB-dfe428bf137a7403133bbd5e7c78999d",
+          "source_offset": 853505285,
+          "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+        }
+      },
+      "vcam_overview": {
+        "path": "track_chr_0022_bounda/DollyCart/vcam_overview",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/vcam_overview_pCB24F829CC434DBB.json",
+          "path_id": -3808646526444286533,
+          "raw_data_sha256": "",
+          "sha256": "4478942731ba556fb2b7259924c3c441322a5c5df6c534ea3ae69ff6b4b19626",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "static_position": [
+          0.033,
+          1.146,
+          3.059
+        ]
+      }
+    },
+    {
+      "actor": "antal",
+      "character_id": "chr_0023_antal",
+      "cm": {
+        "path": "track_chr_0023_antal/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/cm_pC92CB56AB5726B16.json",
+          "path_id": -3950583303195432170,
+          "raw_data_sha256": "",
+          "sha256": "d3cdf1b6bfc39a29227a443e7a04a31ba8912ffc60da373a3b09e117fe82d0b2",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "endpoint_validation": {
+        "max_abs_delta": 0.0,
+        "ok": true,
+        "path_endpoint": [
+          -0.113,
+          1.18,
+          3.439
+        ],
+        "static_camera_position": [
+          -0.113,
+          1.18,
+          3.439
+        ]
+      },
+      "lookat_overview_ani": {
+        "component_types": [
+          "Transform"
+        ],
+        "components": [
+          {
+            "path_id": -6574727504584611050,
+            "type": "Transform"
+          }
+        ],
+        "path": "track_chr_0023_antal/LookAtGroup/lookat_overview/lookat_overview_ani",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/lookat_overview_ani_p33FE6DAAF34A6B16.json",
+          "path_id": 3746552521012439830,
+          "raw_data_sha256": "",
+          "sha256": "060cecc4da843e1d10917bc5dc219a9129678aa017904621d80314d67636128f",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "path": {
+        "endpoint": [
+          -0.113,
+          1.18,
+          3.439
+        ],
+        "game_object": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/document_overview_p92289A66E9076B16.json",
+          "path_id": -7914906578316727530,
+          "raw_data_sha256": "",
+          "sha256": "ba16fce01106eb0bc4f0e059e691e808f3e5891768ccdd3dead6139e6bb4ba32",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "loop": false,
+        "m_Looped": 0,
+        "m_Resolution": 5,
+        "name": "document_overview",
+        "path_id": -1657572576248763626,
+        "resolution": 5,
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#18264_pE8FF1E862B436B16.json",
+          "path_id": -1657572576248763626,
+          "raw_data_sha256": "08dcead0049a65564b9017bc6840dc39c0f17ed7e177532192212f17e83ba6ed",
+          "sha256": "9fb3821711066555bcfbf58af1b20c2b2e79783dc9384104bc79958f070bb681",
+          "source_file": "CAB-64748743a8b4763683aaa20aea763c83",
+          "source_offset": 853205160,
+          "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+        },
+        "waypoints": [
+          {
+            "position": [
+              0.62,
+              1.12,
+              2.46
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              -0.113,
+              1.18,
+              3.439
+            ],
+            "roll": 0.0
+          }
+        ]
+      },
+      "track_root": "track_chr_0023_antal",
+      "tracked_dolly": {
+        "component_type": "CinemachineTrackedDolly",
+        "m_AutoDolly": {
+          "m_Enabled": 1,
+          "m_PositionOffset": 0.0,
+          "m_SearchRadius": 2,
+          "m_SearchResolution": 5
+        },
+        "m_Path": {
+          "file_id": 0,
+          "path_id": -1657572576248763626,
+          "source": {
+            "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#18264_pE8FF1E862B436B16.json",
+            "path_id": -1657572576248763626,
+            "raw_data_sha256": "08dcead0049a65564b9017bc6840dc39c0f17ed7e177532192212f17e83ba6ed",
+            "sha256": "9fb3821711066555bcfbf58af1b20c2b2e79783dc9384104bc79958f070bb681",
+            "source_file": "CAB-64748743a8b4763683aaa20aea763c83",
+            "source_offset": 853205160,
+            "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+          },
+          "target_name": "document_overview",
+          "target_type": "MonoBehaviour"
+        },
+        "m_PathOffset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "m_PathPosition": 1.0,
+        "m_PositionDamping": {
+          "m_PitchDamping": 0.0,
+          "m_RollDamping": 0.0,
+          "m_XDamping": 0.0,
+          "m_YDamping": 0.0,
+          "m_YawDamping": 0.0,
+          "m_ZDamping": 1.0
+        },
+        "m_PositionUnits": 2,
+        "path": "track_chr_0023_antal/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#18234_pD43FFAC497666B16.json",
+          "path_id": -3152525491875452138,
+          "raw_data_sha256": "745bb47a306ffe8d35d1c69d0cb4b8c95ae81224ba76bbe80ec65ef3e953c005",
+          "sha256": "eb1d395531cfe15921649154695fce8963d0380e87c22b39fb9c557f44937ce4",
+          "source_file": "CAB-64748743a8b4763683aaa20aea763c83",
+          "source_offset": 853205160,
+          "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+        }
+      },
+      "vcam_overview": {
+        "path": "track_chr_0023_antal/DollyCart/vcam_overview",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/vcam_overview_p3916261CE6526B16.json",
+          "path_id": 4113517215214627606,
+          "raw_data_sha256": "",
+          "sha256": "fdb554cdacc07342fc1d2013a7c317376d0a181dc45efab5bb7903c32231c9ab",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "static_position": [
+          -0.113,
+          1.18,
+          3.439
+        ]
+      }
+    },
+    {
+      "actor": "deepfin",
+      "character_id": "chr_0024_deepfin",
+      "cm": {
+        "path": "track_chr_0024_deepfin/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/cm_pD461004430B466B7.json",
+          "path_id": -3143230772052990281,
+          "raw_data_sha256": "",
+          "sha256": "c75beb700c57147e7c70dc35d6b6d1e926d4b117aaba4073d5f8cabacf5187bf",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "endpoint_validation": {
+        "max_abs_delta": 0.0,
+        "ok": true,
+        "path_endpoint": [
+          0.01,
+          1.244,
+          3.542
+        ],
+        "static_camera_position": [
+          0.01,
+          1.244,
+          3.542
+        ]
+      },
+      "lookat_overview_ani": {
+        "component_types": [
+          "Transform"
+        ],
+        "components": [
+          {
+            "path_id": 2866225809145816759,
+            "type": "Transform"
+          }
+        ],
+        "path": "track_chr_0024_deepfin/LookAtGroup/lookat_overview/lookat_overview_ani",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/lookat_overview_ani_pE9E5244255D766B7.json",
+          "path_id": -1592827025878980937,
+          "raw_data_sha256": "",
+          "sha256": "8b8304bcc1d52d16bc91a7cdcd827634bf46cd4476a3e5414e292a20cf270a25",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "path": {
+        "endpoint": [
+          0.01,
+          1.244,
+          3.542
+        ],
+        "game_object": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/equip_overview_p6014820C8D5466B7.json",
+          "path_id": 6923301517597632183,
+          "raw_data_sha256": "",
+          "sha256": "d109648bf78104da804b71a1baddea14a2d9d3b402c7f87d006c6eca439be0ba",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "loop": false,
+        "m_Looped": 0,
+        "m_Resolution": 20,
+        "name": "equip_overview",
+        "path_id": 4099772683804042935,
+        "resolution": 20,
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#15575_p38E55188CDFD66B7.json",
+          "path_id": 4099772683804042935,
+          "raw_data_sha256": "45b743c0712c2a5e770a54e43b871ec97afe0c613c5a59da86048f7cf28ee454",
+          "sha256": "c3a060051aeabc77ee483e41bf255cd1ba23ae8d34c683a4d803221a0fae6179",
+          "source_file": "CAB-503867856ff70065ef856fe63d70dfef",
+          "source_offset": 850361669,
+          "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+        },
+        "waypoints": [
+          {
+            "position": [
+              -3.59,
+              2.477,
+              -3.09
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              -2.7857175,
+              1.897583,
+              0.8182067
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              0.01,
+              1.244,
+              3.542
+            ],
+            "roll": 0.0
+          }
+        ]
+      },
+      "track_root": "track_chr_0024_deepfin",
+      "tracked_dolly": {
+        "component_type": "CinemachineTrackedDolly",
+        "m_AutoDolly": {
+          "m_Enabled": 1,
+          "m_PositionOffset": 0.0,
+          "m_SearchRadius": 2,
+          "m_SearchResolution": 5
+        },
+        "m_Path": {
+          "file_id": 0,
+          "path_id": 4099772683804042935,
+          "source": {
+            "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#15575_p38E55188CDFD66B7.json",
+            "path_id": 4099772683804042935,
+            "raw_data_sha256": "45b743c0712c2a5e770a54e43b871ec97afe0c613c5a59da86048f7cf28ee454",
+            "sha256": "c3a060051aeabc77ee483e41bf255cd1ba23ae8d34c683a4d803221a0fae6179",
+            "source_file": "CAB-503867856ff70065ef856fe63d70dfef",
+            "source_offset": 850361669,
+            "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+          },
+          "target_name": "equip_overview",
+          "target_type": "MonoBehaviour"
+        },
+        "m_PathOffset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "m_PathPosition": 1.0,
+        "m_PositionDamping": {
+          "m_PitchDamping": 0.0,
+          "m_RollDamping": 0.0,
+          "m_XDamping": 0.0,
+          "m_YDamping": 0.0,
+          "m_YawDamping": 0.0,
+          "m_ZDamping": 1.0
+        },
+        "m_PositionUnits": 2,
+        "path": "track_chr_0024_deepfin/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#15650_p6CFB2A8AA14B66B7.json",
+          "path_id": 7852917150150518455,
+          "raw_data_sha256": "6127dcfef367028d7e5715c1b755ba30a83338795a80f17a584b7aea1b194c67",
+          "sha256": "ce549f51139e4756afe15391c9a3fdb3584015285e07f2c45e482d7d4102be92",
+          "source_file": "CAB-503867856ff70065ef856fe63d70dfef",
+          "source_offset": 850361669,
+          "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+        }
+      },
+      "vcam_overview": {
+        "path": "track_chr_0024_deepfin/DollyCart/vcam_overview",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/vcam_overview_pD04E4870256B66B7.json",
+          "path_id": -3436729819135777097,
+          "raw_data_sha256": "",
+          "sha256": "a424aa40b7d8cd6eeda2e4839702c0c0d213aa3f2aaba412b27700fbbb099d9c",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "static_position": [
+          0.01,
+          1.244,
+          3.542
+        ]
+      }
+    },
+    {
+      "actor": "ardelia",
+      "character_id": "chr_0025_ardelia",
+      "cm": {
+        "path": "track_chr_0025_ardelia/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/cm_pC54797039ACE2851.json",
+          "path_id": -4231247283153393583,
+          "raw_data_sha256": "",
+          "sha256": "f835263cb19688e3d8c0895dc1600525622b3ee8abda2e3620bac8d167b217f6",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "endpoint_validation": {
+        "max_abs_delta": 0.0,
+        "ok": true,
+        "path_endpoint": [
+          0.0,
+          0.998,
+          3.5
+        ],
+        "static_camera_position": [
+          0.0,
+          0.998,
+          3.5
+        ]
+      },
+      "lookat_overview_ani": {
+        "component_types": [
+          "Transform"
+        ],
+        "components": [
+          {
+            "path_id": 602913149670860881,
+            "type": "Transform"
+          }
+        ],
+        "path": "track_chr_0025_ardelia/LookAtGroup/lookat_overview/lookat_overview_ani",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/lookat_overview_ani_p1DFFAC1104752851.json",
+          "path_id": 2161635535250335825,
+          "raw_data_sha256": "",
+          "sha256": "3376597780e4f6130c14c82522f3df85ed77dfcc3fdab22409841564a8eff3d2",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "path": {
+        "endpoint": [
+          0.0,
+          0.998,
+          3.5
+        ],
+        "game_object": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/weapon_overview_pC5C2F023DF9B2851.json",
+          "path_id": -4196527865889871791,
+          "raw_data_sha256": "",
+          "sha256": "ec8e73022cf57783a3bedb2b1031caa893dc580f8c940f64bace26aacfa1b05f",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "loop": false,
+        "m_Looped": 0,
+        "m_Resolution": 6,
+        "name": "weapon_overview",
+        "path_id": 2447164005233010769,
+        "resolution": 6,
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#17553_p21F612B277092851.json",
+          "path_id": 2447164005233010769,
+          "raw_data_sha256": "8d65eabda0b12f9ea70132408123cfca05048433b9c41039c5c01f55cdac38c7",
+          "sha256": "0ba091b9ac60b0cf8fe9ff2e17fc80d94e491e05ee5488ed1b676adce0a4ddbe",
+          "source_file": "CAB-d699b20ee1c49fd186e3a23649f3da4b",
+          "source_offset": 852607880,
+          "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+        },
+        "waypoints": [
+          {
+            "position": [
+              1.35,
+              0.519,
+              1.948
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              0.5971327,
+              0.8897201,
+              2.4992352
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              0.0,
+              0.998,
+              3.5
+            ],
+            "roll": 0.0
+          }
+        ]
+      },
+      "track_root": "track_chr_0025_ardelia",
+      "tracked_dolly": {
+        "component_type": "CinemachineTrackedDolly",
+        "m_AutoDolly": {
+          "m_Enabled": 1,
+          "m_PositionOffset": 0.0,
+          "m_SearchRadius": 2,
+          "m_SearchResolution": 5
+        },
+        "m_Path": {
+          "file_id": 0,
+          "path_id": 2447164005233010769,
+          "source": {
+            "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#17553_p21F612B277092851.json",
+            "path_id": 2447164005233010769,
+            "raw_data_sha256": "8d65eabda0b12f9ea70132408123cfca05048433b9c41039c5c01f55cdac38c7",
+            "sha256": "0ba091b9ac60b0cf8fe9ff2e17fc80d94e491e05ee5488ed1b676adce0a4ddbe",
+            "source_file": "CAB-d699b20ee1c49fd186e3a23649f3da4b",
+            "source_offset": 852607880,
+            "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+          },
+          "target_name": "weapon_overview",
+          "target_type": "MonoBehaviour"
+        },
+        "m_PathOffset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "m_PathPosition": 1.0,
+        "m_PositionDamping": {
+          "m_PitchDamping": 0.0,
+          "m_RollDamping": 0.0,
+          "m_XDamping": 0.0,
+          "m_YDamping": 0.0,
+          "m_YawDamping": 0.0,
+          "m_ZDamping": 1.0
+        },
+        "m_PositionUnits": 2,
+        "path": "track_chr_0025_ardelia/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#17659_p63D8E46F2CEB2851.json",
+          "path_id": 7194751570870478929,
+          "raw_data_sha256": "4f3a1706d97370937de1e24560861b6451ba9b72c6fce193bf855b5adff8e721",
+          "sha256": "1c9927edcfff8507228460eb9579cfdadd4c8d076e057c4e453a699048c691da",
+          "source_file": "CAB-d699b20ee1c49fd186e3a23649f3da4b",
+          "source_offset": 852607880,
+          "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+        }
+      },
+      "vcam_overview": {
+        "path": "track_chr_0025_ardelia/DollyCart/vcam_overview",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/vcam_overview_p7082A14E520B2851.json",
+          "path_id": 8107219636976298065,
+          "raw_data_sha256": "",
+          "sha256": "a6908995bda64426c6ad9eeec01f9ca9a47acd066ba6c24ad075bbebbcc69455",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "static_position": [
+          0.0,
+          0.998,
+          3.5
+        ]
+      }
+    },
+    {
+      "actor": "lastrite",
+      "character_id": "chr_0026_lastrite",
+      "cm": {
+        "path": "track_chr_0026_lastrite/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/cm_p33E9ECD649383F30.json",
+          "path_id": 3740781370603487024,
+          "raw_data_sha256": "",
+          "sha256": "ec8a28fc061ba5d00f05d85f0902b42d91bd11517e55ee8f479c453dfec28c9a",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "endpoint_validation": {
+        "max_abs_delta": 0.0,
+        "ok": true,
+        "path_endpoint": [
+          0.0,
+          0.998,
+          3.5
+        ],
+        "static_camera_position": [
+          0.0,
+          0.998,
+          3.5
+        ]
+      },
+      "lookat_overview_ani": {
+        "component_types": [
+          "Transform"
+        ],
+        "components": [
+          {
+            "path_id": -244432478580621520,
+            "type": "Transform"
+          }
+        ],
+        "path": "track_chr_0026_lastrite/LookAtGroup/lookat_overview/lookat_overview_ani",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/lookat_overview_ani_p70F55D6762113F30.json",
+          "path_id": 8139514600150351664,
+          "raw_data_sha256": "",
+          "sha256": "4381e3f96bb4775d317bb7b23439fa893cce0d5e767c5dd3eaa91ee4452ddfcc",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "path": {
+        "endpoint": [
+          0.0,
+          0.998,
+          3.5
+        ],
+        "game_object": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/equip_overview_p64EB241AD1973F30.json",
+          "path_id": 7271945720923897648,
+          "raw_data_sha256": "",
+          "sha256": "1fa366e2b5cb70fb60e1800847194ad808b936405927a82886c41108d93f1dfd",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "loop": false,
+        "m_Looped": 0,
+        "m_Resolution": 20,
+        "name": "equip_overview",
+        "path_id": -6673089777979277520,
+        "resolution": 20,
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#16957_pA3646C33D5413F30.json",
+          "path_id": -6673089777979277520,
+          "raw_data_sha256": "43deb845c4a6d17b0f9d0d6d6ea9dcfe1f05fe642f45c1a90ed41712a4f3e460",
+          "sha256": "f52a7dd412c7374dc77674de96a3abce28d7c479ee595e25e1a09dab4fe680e6",
+          "source_file": "CAB-e23197f0558b5b562ddec810906115ea",
+          "source_offset": 851587991,
+          "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+        },
+        "waypoints": [
+          {
+            "position": [
+              -1.99,
+              2.37,
+              -3.19
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              -3.250009,
+              1.897583,
+              1.0094608
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              0.0,
+              0.998,
+              3.5
+            ],
+            "roll": 0.0
+          }
+        ]
+      },
+      "track_root": "track_chr_0026_lastrite",
+      "tracked_dolly": {
+        "component_type": "CinemachineTrackedDolly",
+        "m_AutoDolly": {
+          "m_Enabled": 1,
+          "m_PositionOffset": 0.0,
+          "m_SearchRadius": 2,
+          "m_SearchResolution": 5
+        },
+        "m_Path": {
+          "file_id": 0,
+          "path_id": -6673089777979277520,
+          "source": {
+            "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#16957_pA3646C33D5413F30.json",
+            "path_id": -6673089777979277520,
+            "raw_data_sha256": "43deb845c4a6d17b0f9d0d6d6ea9dcfe1f05fe642f45c1a90ed41712a4f3e460",
+            "sha256": "f52a7dd412c7374dc77674de96a3abce28d7c479ee595e25e1a09dab4fe680e6",
+            "source_file": "CAB-e23197f0558b5b562ddec810906115ea",
+            "source_offset": 851587991,
+            "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+          },
+          "target_name": "equip_overview",
+          "target_type": "MonoBehaviour"
+        },
+        "m_PathOffset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "m_PathPosition": 1.0,
+        "m_PositionDamping": {
+          "m_PitchDamping": 0.0,
+          "m_RollDamping": 0.0,
+          "m_XDamping": 0.0,
+          "m_YDamping": 0.0,
+          "m_YawDamping": 0.0,
+          "m_ZDamping": 1.0
+        },
+        "m_PositionUnits": 2,
+        "path": "track_chr_0026_lastrite/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#16913_p8A156896E7123F30.json",
+          "path_id": -8496770124633456848,
+          "raw_data_sha256": "a99619c4c4b0c9df2cf7fc3912c96c124de6dba7f66b0e3fcaf1804de40c2b7e",
+          "sha256": "286f6237d519ed6f440952466c0a4c775e3752761420eddb663e64c3e553c14e",
+          "source_file": "CAB-e23197f0558b5b562ddec810906115ea",
+          "source_offset": 851587991,
+          "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+        }
+      },
+      "vcam_overview": {
+        "path": "track_chr_0026_lastrite/DollyCart/vcam_overview",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/vcam_overview_pC026E18FCF9A3F30.json",
+          "path_id": -4600741961532817616,
+          "raw_data_sha256": "",
+          "sha256": "ac32f7fcb4dbf91efa372aaecb7d01614958367fe1f38703ea354a30ff1f1d28",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "static_position": [
+          0.0,
+          0.998,
+          3.5
+        ]
+      }
+    },
+    {
+      "actor": "pograni",
+      "character_id": "chr_0029_pograni",
+      "cm": {
+        "path": "track_chr_0029_pograni/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/cm_pB3C2EFE500219556.json",
+          "path_id": -5493564828609833642,
+          "raw_data_sha256": "",
+          "sha256": "203b06e9b5b0ce720d8dd74b81cd3539d1d7b949d4dec54ec28de84f1a3ce94c",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "endpoint_validation": {
+        "max_abs_delta": 0.0,
+        "ok": true,
+        "path_endpoint": [
+          -0.059,
+          1.267,
+          3.248
+        ],
+        "static_camera_position": [
+          -0.059,
+          1.267,
+          3.248
+        ]
+      },
+      "lookat_overview_ani": {
+        "component_types": [
+          "Transform"
+        ],
+        "components": [
+          {
+            "path_id": 8369474303084565846,
+            "type": "Transform"
+          }
+        ],
+        "path": "track_chr_0029_pograni/LookAtGroup/lookat_overview/lookat_overview_ani",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/lookat_overview_ani_p7703E1C21D459556.json",
+          "path_id": 8575946339274560854,
+          "raw_data_sha256": "",
+          "sha256": "35d6e3f1feb4e4b511cd3562b039f077e127407da34708f5a20b8ab9a81aff5b",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "path": {
+        "endpoint": [
+          -0.059,
+          1.267,
+          3.248
+        ],
+        "game_object": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/equip_overview_p93D3654121A99556.json",
+          "path_id": -7794775199636155050,
+          "raw_data_sha256": "",
+          "sha256": "69c3288a6a3f31fcc6f2a99d67df2001c1aa1b37510a7ca3e9c7defc241729b2",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "loop": false,
+        "m_Looped": 0,
+        "m_Resolution": 27,
+        "name": "equip_overview",
+        "path_id": 2879929069919704406,
+        "resolution": 27,
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#17985_p27F7903B06E29556.json",
+          "path_id": 2879929069919704406,
+          "raw_data_sha256": "082f593de0b4f99325e436115ba01febfe5b1e0b9f65126a99e94c6714a7c723",
+          "sha256": "0cac5f4e71dd19a053bad8f1002b3bf4abde3221dce6547ada25ec207a18ef9a",
+          "source_file": "CAB-b912db938714babf5f91e6b5a8d8832e",
+          "source_offset": 853022013,
+          "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+        },
+        "waypoints": [
+          {
+            "position": [
+              -2.87,
+              2.89,
+              -2.94
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              -3.250009,
+              1.897583,
+              1.0094608
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              -0.059,
+              1.267,
+              3.248
+            ],
+            "roll": 0.0
+          }
+        ]
+      },
+      "track_root": "track_chr_0029_pograni",
+      "tracked_dolly": {
+        "component_type": "CinemachineTrackedDolly",
+        "m_AutoDolly": {
+          "m_Enabled": 1,
+          "m_PositionOffset": 0.0,
+          "m_SearchRadius": 2,
+          "m_SearchResolution": 5
+        },
+        "m_Path": {
+          "file_id": 0,
+          "path_id": 2879929069919704406,
+          "source": {
+            "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#17985_p27F7903B06E29556.json",
+            "path_id": 2879929069919704406,
+            "raw_data_sha256": "082f593de0b4f99325e436115ba01febfe5b1e0b9f65126a99e94c6714a7c723",
+            "sha256": "0cac5f4e71dd19a053bad8f1002b3bf4abde3221dce6547ada25ec207a18ef9a",
+            "source_file": "CAB-b912db938714babf5f91e6b5a8d8832e",
+            "source_offset": 853022013,
+            "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+          },
+          "target_name": "equip_overview",
+          "target_type": "MonoBehaviour"
+        },
+        "m_PathOffset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "m_PathPosition": 1.0,
+        "m_PositionDamping": {
+          "m_PitchDamping": 0.0,
+          "m_RollDamping": 0.0,
+          "m_XDamping": 0.0,
+          "m_YDamping": 0.0,
+          "m_YawDamping": 0.0,
+          "m_ZDamping": 1.0
+        },
+        "m_PositionUnits": 2,
+        "path": "track_chr_0029_pograni/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#17787_pB0124797AABA9556.json",
+          "path_id": -5759462256723454634,
+          "raw_data_sha256": "d1307e3836558d505c16346be608e7e657d3402311aef98410d20e398faa8d36",
+          "sha256": "2e521dee9b4d2880959e884bf1373f7e6dc57d867eb569fb30be9d19da73050e",
+          "source_file": "CAB-b912db938714babf5f91e6b5a8d8832e",
+          "source_offset": 853022013,
+          "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+        }
+      },
+      "vcam_overview": {
+        "path": "track_chr_0029_pograni/DollyCart/vcam_overview",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/vcam_overview_p8C9B8D30EBB99556.json",
+          "path_id": -8314897045756734122,
+          "raw_data_sha256": "",
+          "sha256": "afcfe68016fe07d1b1bf904d323c9db312fa3421451703b4268ce3537ee08039",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "static_position": [
+          -0.059,
+          1.267,
+          3.248
+        ]
+      }
+    },
+    {
+      "actor": "tangtang",
+      "character_id": "chr_0027_tangtang",
+      "cm": {
+        "path": "track_chr_0027_tangtang/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/cm_p9B90CE97A440B54D.json",
+          "path_id": -7237057450493299379,
+          "raw_data_sha256": "",
+          "sha256": "719b8551a03114d62629dd9a043c1e7085585ef030b540fd3f8a7ce04ef37fa7",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "endpoint_validation": {
+        "max_abs_delta": 0.0,
+        "ok": true,
+        "path_endpoint": [
+          0.0,
+          0.998,
+          3.5
+        ],
+        "static_camera_position": [
+          0.0,
+          0.998,
+          3.5
+        ]
+      },
+      "lookat_overview_ani": {
+        "component_types": [
+          "Transform"
+        ],
+        "components": [
+          {
+            "path_id": -6117550795850074803,
+            "type": "Transform"
+          }
+        ],
+        "path": "track_chr_0027_tangtang/LookAtGroup/lookat_overview/lookat_overview_ani",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/lookat_overview_ani_p073D61E79AEFB54D.json",
+          "path_id": 521680779209585997,
+          "raw_data_sha256": "",
+          "sha256": "78ac51eddf15c85709cb478733a1394fe6153bc9e40a4d2b3753b199d54bb730",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "path": {
+        "endpoint": [
+          0.0,
+          0.998,
+          3.5
+        ],
+        "game_object": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/weapon_overview_pC858D1EA960CB54D.json",
+          "path_id": -4010224662703458995,
+          "raw_data_sha256": "",
+          "sha256": "06cdda81c8bf9735e99eb94ebfa40ba4129405db93df3c36a4b4d30dc1803229",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "loop": false,
+        "m_Looped": 0,
+        "m_Resolution": 6,
+        "name": "weapon_overview",
+        "path_id": -5208288274132978355,
+        "resolution": 6,
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#14991_pB7B87168CC78B54D.json",
+          "path_id": -5208288274132978355,
+          "raw_data_sha256": "191eac346680c354b47369e86438a621b212b2f4f3c32810d62982df9dba92c7",
+          "sha256": "67ab4925e0d54674179762e808c5b5050ebe846b251262f56b89d9cb7918f464",
+          "source_file": "CAB-2f7791a648505ac6e16aca4035042ce9",
+          "source_offset": 849705624,
+          "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+        },
+        "waypoints": [
+          {
+            "position": [
+              1.45,
+              0.91,
+              1.64
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              0.5971327,
+              0.8897201,
+              2.4992352
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              0.0,
+              0.998,
+              3.5
+            ],
+            "roll": 0.0
+          }
+        ]
+      },
+      "track_root": "track_chr_0027_tangtang",
+      "tracked_dolly": {
+        "component_type": "CinemachineTrackedDolly",
+        "m_AutoDolly": {
+          "m_Enabled": 1,
+          "m_PositionOffset": 0.0,
+          "m_SearchRadius": 2,
+          "m_SearchResolution": 5
+        },
+        "m_Path": {
+          "file_id": 0,
+          "path_id": -5208288274132978355,
+          "source": {
+            "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#14991_pB7B87168CC78B54D.json",
+            "path_id": -5208288274132978355,
+            "raw_data_sha256": "191eac346680c354b47369e86438a621b212b2f4f3c32810d62982df9dba92c7",
+            "sha256": "67ab4925e0d54674179762e808c5b5050ebe846b251262f56b89d9cb7918f464",
+            "source_file": "CAB-2f7791a648505ac6e16aca4035042ce9",
+            "source_offset": 849705624,
+            "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+          },
+          "target_name": "weapon_overview",
+          "target_type": "MonoBehaviour"
+        },
+        "m_PathOffset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "m_PathPosition": 1.0,
+        "m_PositionDamping": {
+          "m_PitchDamping": 0.0,
+          "m_RollDamping": 0.0,
+          "m_XDamping": 0.0,
+          "m_YDamping": 0.0,
+          "m_YawDamping": 0.0,
+          "m_ZDamping": 1.0
+        },
+        "m_PositionUnits": 2,
+        "path": "track_chr_0027_tangtang/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#15162_p3746D7AF4985B54D.json",
+          "path_id": 3983108068308530509,
+          "raw_data_sha256": "81d2d2e45f5fc3d442fa4163096a34138faedf13646d804238a79c215fd88f99",
+          "sha256": "3b6f1b606793fb35c7f2695237dbb86c3c7be11acdc30074cfd200818bbfb411",
+          "source_file": "CAB-2f7791a648505ac6e16aca4035042ce9",
+          "source_offset": 849705624,
+          "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+        }
+      },
+      "vcam_overview": {
+        "path": "track_chr_0027_tangtang/DollyCart/vcam_overview",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/vcam_overview_p81A571760820B54D.json",
+          "path_id": -9104746319903148723,
+          "raw_data_sha256": "",
+          "sha256": "4f6a1f9c83f89a7a170263dd5760bb6523a1fbfd936b8d302522416a3a721d9e",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "static_position": [
+          0.0,
+          0.998,
+          3.5
+        ]
+      }
+    },
+    {
+      "actor": "wulfa",
+      "character_id": "chr_0028_wulfa",
+      "cm": {
+        "path": "track_chr_0028_wulfa/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/cm_pCAFCD0D90C31A0F2.json",
+          "path_id": -3819948753285963534,
+          "raw_data_sha256": "",
+          "sha256": "929735605e6f4c5cd8f5716707d301a5eec0e699b4272ecd4b475a380bf9c602",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "endpoint_validation": {
+        "max_abs_delta": 0.0,
+        "ok": true,
+        "path_endpoint": [
+          0.0,
+          0.998,
+          3.46
+        ],
+        "static_camera_position": [
+          0.0,
+          0.998,
+          3.46
+        ]
+      },
+      "lookat_overview_ani": {
+        "component_types": [
+          "Transform"
+        ],
+        "components": [
+          {
+            "path_id": 9183696869018280178,
+            "type": "Transform"
+          }
+        ],
+        "path": "track_chr_0028_wulfa/LookAtGroup/lookat_overview/lookat_overview_ani",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/lookat_overview_ani_p44F133FED89BA0F2.json",
+          "path_id": 4967809033615155442,
+          "raw_data_sha256": "",
+          "sha256": "72962ec2c38fbbd44a3753a9a724435414e081f123d9be0cd6967ab8d0a4c0d5",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "path": {
+        "endpoint": [
+          0.0,
+          0.998,
+          3.46
+        ],
+        "game_object": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/equip_overview_pBB6891BFC824A0F2.json",
+          "path_id": -4942540338156494606,
+          "raw_data_sha256": "",
+          "sha256": "3780cf3d5a7547cc6380d230422a33b74802ad1677927f866234180b314043c6",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "loop": false,
+        "m_Looped": 0,
+        "m_Resolution": 20,
+        "name": "equip_overview",
+        "path_id": 3487239338969047282,
+        "resolution": 20,
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#700_p306529B3DE04A0F2.json",
+          "path_id": 3487239338969047282,
+          "raw_data_sha256": "00fdf7eb463a88b2379e5f5d943408ad7bf2957778429c3d4c5be7f136e2b2f9",
+          "sha256": "2262b8a5dced9c284e38e2ed3f09139ec01f90f0942923cd64f7347914b96ff7",
+          "source_file": "CAB-6d4e56c8ca3b776ad42d03d852233931",
+          "source_offset": 166931290,
+          "source_original_file": "62EB15DCD74A3348E244B9B068AB9694.chk"
+        },
+        "waypoints": [
+          {
+            "position": [
+              -2.621,
+              2.37,
+              -3.038
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              -3.250009,
+              1.897583,
+              1.0094608
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              0.0,
+              0.998,
+              3.46
+            ],
+            "roll": 0.0
+          }
+        ]
+      },
+      "track_root": "track_chr_0028_wulfa",
+      "tracked_dolly": {
+        "component_type": "CinemachineTrackedDolly",
+        "m_AutoDolly": {
+          "m_Enabled": 1,
+          "m_PositionOffset": 0.0,
+          "m_SearchRadius": 2,
+          "m_SearchResolution": 5
+        },
+        "m_Path": {
+          "file_id": 0,
+          "path_id": 3487239338969047282,
+          "source": {
+            "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#700_p306529B3DE04A0F2.json",
+            "path_id": 3487239338969047282,
+            "raw_data_sha256": "00fdf7eb463a88b2379e5f5d943408ad7bf2957778429c3d4c5be7f136e2b2f9",
+            "sha256": "2262b8a5dced9c284e38e2ed3f09139ec01f90f0942923cd64f7347914b96ff7",
+            "source_file": "CAB-6d4e56c8ca3b776ad42d03d852233931",
+            "source_offset": 166931290,
+            "source_original_file": "62EB15DCD74A3348E244B9B068AB9694.chk"
+          },
+          "target_name": "equip_overview",
+          "target_type": "MonoBehaviour"
+        },
+        "m_PathOffset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "m_PathPosition": 1.0,
+        "m_PositionDamping": {
+          "m_PitchDamping": 0.0,
+          "m_RollDamping": 0.0,
+          "m_XDamping": 0.0,
+          "m_YDamping": 0.0,
+          "m_YawDamping": 0.0,
+          "m_ZDamping": 1.0
+        },
+        "m_PositionUnits": 2,
+        "path": "track_chr_0028_wulfa/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#596_pEB02E831C523A0F2.json",
+          "path_id": -1512391224384577294,
+          "raw_data_sha256": "f89042e81c4f79bbeb4703393410e63112519ce39e1ea00f81c67ba36d877509",
+          "sha256": "48a6f499f5f9126ddc7c2093309ecdb2bc57a4a8a1309573dad75795669c3dab",
+          "source_file": "CAB-6d4e56c8ca3b776ad42d03d852233931",
+          "source_offset": 166931290,
+          "source_original_file": "62EB15DCD74A3348E244B9B068AB9694.chk"
+        }
+      },
+      "vcam_overview": {
+        "path": "track_chr_0028_wulfa/DollyCart/vcam_overview",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/vcam_overview_p73E9D7DFFF29A0F2.json",
+          "path_id": 8352444340993892594,
+          "raw_data_sha256": "",
+          "sha256": "b2a6687ff3e478ddba5cfb2e4f96d6e84fd19245261eeb70b70cc53416feadf8",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "static_position": [
+          0.0,
+          0.998,
+          3.46
+        ]
+      }
+    },
+    {
+      "actor": "zhuangfy",
+      "character_id": "chr_0030_zhuangfy",
+      "cm": {
+        "path": "track_chr_0030_zhuangfy/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/cm_p83147AB701AB5FC8.json",
+          "path_id": -9001434828781166648,
+          "raw_data_sha256": "",
+          "sha256": "7df98baa6f35caf679ea04871e0c541dd4ab9659cff78c6b14d1a88d5ea0100e",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "endpoint_validation": {
+        "max_abs_delta": 0.0,
+        "ok": true,
+        "path_endpoint": [
+          0.0,
+          1.25,
+          3.5
+        ],
+        "static_camera_position": [
+          0.0,
+          1.25,
+          3.5
+        ]
+      },
+      "lookat_overview_ani": {
+        "component_types": [
+          "Transform"
+        ],
+        "components": [
+          {
+            "path_id": 5013250885068611528,
+            "type": "Transform"
+          }
+        ],
+        "path": "track_chr_0030_zhuangfy/LookAtGroup/lookat_overview/lookat_overview_ani",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/lookat_overview_ani_p1DE61F6C64665FC8.json",
+          "path_id": 2154444022144720840,
+          "raw_data_sha256": "",
+          "sha256": "fb4e332de1126b1e18db3be35e17b385c036a99d1cf975230c89aa850cef60de",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "path": {
+        "endpoint": [
+          0.0,
+          1.25,
+          3.5
+        ],
+        "game_object": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/skill_overview_p68BAE20C128C5FC8.json",
+          "path_id": 7546592667091361736,
+          "raw_data_sha256": "",
+          "sha256": "32bd63395ee553ad026f6a29d97d6077d70ec9bad0f4feb69deda11e34d050ea",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "loop": false,
+        "m_Looped": 0,
+        "m_Resolution": 10,
+        "name": "skill_overview",
+        "path_id": 5652243162198466504,
+        "resolution": 10,
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#1159_p4E70CD358AF85FC8.json",
+          "path_id": 5652243162198466504,
+          "raw_data_sha256": "1cf316daa3bc80489cf8da05f42f62f5636d3fb592dde2420474d8bf18e835db",
+          "sha256": "f34ebb28b7a6b68d503844f0f9cfb24ac28490cd84e5d00fcd5d04bb1acc6634",
+          "source_file": "CAB-e720fafe0af9340a1e694c453c0a1747",
+          "source_offset": 167043860,
+          "source_original_file": "62EB15DCD74A3348E244B9B068AB9694.chk"
+        },
+        "waypoints": [
+          {
+            "position": [
+              -0.548,
+              4.565,
+              2.804
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              -0.13765134,
+              2.3181884,
+              2.5938795
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              0.0,
+              1.25,
+              3.5
+            ],
+            "roll": 0.0
+          }
+        ]
+      },
+      "track_root": "track_chr_0030_zhuangfy",
+      "tracked_dolly": {
+        "component_type": "CinemachineTrackedDolly",
+        "m_AutoDolly": {
+          "m_Enabled": 1,
+          "m_PositionOffset": 0.0,
+          "m_SearchRadius": 2,
+          "m_SearchResolution": 5
+        },
+        "m_Path": {
+          "file_id": 0,
+          "path_id": 5652243162198466504,
+          "source": {
+            "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#1159_p4E70CD358AF85FC8.json",
+            "path_id": 5652243162198466504,
+            "raw_data_sha256": "1cf316daa3bc80489cf8da05f42f62f5636d3fb592dde2420474d8bf18e835db",
+            "sha256": "f34ebb28b7a6b68d503844f0f9cfb24ac28490cd84e5d00fcd5d04bb1acc6634",
+            "source_file": "CAB-e720fafe0af9340a1e694c453c0a1747",
+            "source_offset": 167043860,
+            "source_original_file": "62EB15DCD74A3348E244B9B068AB9694.chk"
+          },
+          "target_name": "skill_overview",
+          "target_type": "MonoBehaviour"
+        },
+        "m_PathOffset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "m_PathPosition": 1.0,
+        "m_PositionDamping": {
+          "m_PitchDamping": 0.0,
+          "m_RollDamping": 0.0,
+          "m_XDamping": 0.0,
+          "m_YDamping": 0.0,
+          "m_YawDamping": 0.0,
+          "m_ZDamping": 1.0
+        },
+        "m_PositionUnits": 2,
+        "path": "track_chr_0030_zhuangfy/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#1123_p34B9DE2B77BF5FC8.json",
+          "path_id": 3799312038937714632,
+          "raw_data_sha256": "8ba63f7a30a00877d6f01136187d84dc95f56e7cdf4ccd4c3b53c8db581834a5",
+          "sha256": "75b251b92a29576757c3418fb9cc68fce9f26e0f854d486d877fe348974dfecd",
+          "source_file": "CAB-e720fafe0af9340a1e694c453c0a1747",
+          "source_offset": 167043860,
+          "source_original_file": "62EB15DCD74A3348E244B9B068AB9694.chk"
+        }
+      },
+      "vcam_overview": {
+        "path": "track_chr_0030_zhuangfy/DollyCart/vcam_overview",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/vcam_overview_pD28E9D1AFC015FC8.json",
+          "path_id": -3274507139829112888,
+          "raw_data_sha256": "",
+          "sha256": "dc2debac3080ca205b97769b4af2fdf30d2712ad28e9ad5f9cf731dceb3f85a5",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "static_position": [
+          0.0,
+          1.25,
+          3.5
+        ]
+      }
+    },
+    {
+      "actor": "mifu",
+      "character_id": "chr_0031_mifu",
+      "cm": {
+        "path": "track_chr_0031_mifu/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/cm_pA74380B9AA52F55D.json",
+          "path_id": -6394125511021103779,
+          "raw_data_sha256": "",
+          "sha256": "b38816cac0ea795d2b0463f723f7d6d7741876d10dce97e1748d04d2f7c9f472",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "endpoint_validation": {
+        "max_abs_delta": 0.0,
+        "ok": true,
+        "path_endpoint": [
+          0.0,
+          0.998,
+          3.5
+        ],
+        "static_camera_position": [
+          0.0,
+          0.998,
+          3.5
+        ]
+      },
+      "lookat_overview_ani": {
+        "component_types": [
+          "Transform"
+        ],
+        "components": [
+          {
+            "path_id": -1317063575819848355,
+            "type": "Transform"
+          }
+        ],
+        "path": "track_chr_0031_mifu/LookAtGroup/lookat_overview/lookat_overview_ani",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/lookat_overview_ani_pAD54F39EDA30F55D.json",
+          "path_id": -5956868543513299619,
+          "raw_data_sha256": "",
+          "sha256": "d29975a565655a35e5124f85a55640a15e9ccfe3df1c10111447e40f176f4a96",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "path": {
+        "endpoint": [
+          0.0,
+          0.998,
+          3.5
+        ],
+        "game_object": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/weapon_overview_pE822B318BEDFF55D.json",
+          "path_id": -1719615188839172771,
+          "raw_data_sha256": "",
+          "sha256": "e4a4253baf3a3651711896c04d6cae132f0d194a1e18febb37035bb28d045aeb",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "loop": false,
+        "m_Looped": 0,
+        "m_Resolution": 6,
+        "name": "weapon_overview",
+        "path_id": -3947136554222750371,
+        "resolution": 6,
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#1562_pC938F4377D97F55D.json",
+          "path_id": -3947136554222750371,
+          "raw_data_sha256": "2b1ed1ef0e39923e5f61f1a567fbf2a24b355b04f2bd44ce7bc2abea90d87bdf",
+          "sha256": "d03951d226a2408a6507177be20f22f5728eaff147144ef6ce99d4e3f24d4598",
+          "source_file": "CAB-9b5dd7b18fb13d8393851ef911b381e6",
+          "source_offset": 64683327,
+          "source_original_file": "76EE474C267510893D2D47418F42AEAB.chk"
+        },
+        "waypoints": [
+          {
+            "position": [
+              1.341,
+              0.49,
+              2.104
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              0.5971327,
+              0.8897201,
+              2.4992352
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              0.0,
+              0.998,
+              3.5
+            ],
+            "roll": 0.0
+          }
+        ]
+      },
+      "track_root": "track_chr_0031_mifu",
+      "tracked_dolly": {
+        "component_type": "CinemachineTrackedDolly",
+        "m_AutoDolly": {
+          "m_Enabled": 1,
+          "m_PositionOffset": 0.0,
+          "m_SearchRadius": 2,
+          "m_SearchResolution": 5
+        },
+        "m_Path": {
+          "file_id": 0,
+          "path_id": -3947136554222750371,
+          "source": {
+            "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#1562_pC938F4377D97F55D.json",
+            "path_id": -3947136554222750371,
+            "raw_data_sha256": "2b1ed1ef0e39923e5f61f1a567fbf2a24b355b04f2bd44ce7bc2abea90d87bdf",
+            "sha256": "d03951d226a2408a6507177be20f22f5728eaff147144ef6ce99d4e3f24d4598",
+            "source_file": "CAB-9b5dd7b18fb13d8393851ef911b381e6",
+            "source_offset": 64683327,
+            "source_original_file": "76EE474C267510893D2D47418F42AEAB.chk"
+          },
+          "target_name": "weapon_overview",
+          "target_type": "MonoBehaviour"
+        },
+        "m_PathOffset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "m_PathPosition": 1.0,
+        "m_PositionDamping": {
+          "m_PitchDamping": 0.0,
+          "m_RollDamping": 0.0,
+          "m_XDamping": 0.0,
+          "m_YDamping": 0.0,
+          "m_YawDamping": 0.0,
+          "m_ZDamping": 1.0
+        },
+        "m_PositionUnits": 2,
+        "path": "track_chr_0031_mifu/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#1701_p15909C88B2C8F55D.json",
+          "path_id": 1553913982371820893,
+          "raw_data_sha256": "b196c4ac095204e00fe20cb8fc981f464b300547e4c22dbe88281d40d2308613",
+          "sha256": "3c6b7e19596b9bd4fb4aef25a591063a5f0fc3d7d80344473752e71e6c4257f8",
+          "source_file": "CAB-9b5dd7b18fb13d8393851ef911b381e6",
+          "source_offset": 64683327,
+          "source_original_file": "76EE474C267510893D2D47418F42AEAB.chk"
+        }
+      },
+      "vcam_overview": {
+        "path": "track_chr_0031_mifu/DollyCart/vcam_overview",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/vcam_overview_p9674B61CB8CFF55D.json",
+          "path_id": -7605253636245949091,
+          "raw_data_sha256": "",
+          "sha256": "8eaea051a327a6aae0eb262530291cc4c1a3620aa59e7c3efb6d7ce2f5b62b17",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "static_position": [
+          0.0,
+          0.998,
+          3.5
+        ]
+      }
+    },
+    {
+      "actor": "lizhiyan",
+      "character_id": "chr_0032_lizhiyan",
+      "cm": {
+        "path": "track_chr_0032_lizhiyan/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/cm_p9EF856C6AEF11E29.json",
+          "path_id": -6991743010154144215,
+          "raw_data_sha256": "",
+          "sha256": "101cebeff893fc0becbdccb1d698bc6e00f8e42bf19675b7dc2bec23ff5d22db",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "endpoint_validation": {
+        "max_abs_delta": 0.0,
+        "ok": true,
+        "path_endpoint": [
+          -0.177,
+          0.998,
+          3.5
+        ],
+        "static_camera_position": [
+          -0.177,
+          0.998,
+          3.5
+        ]
+      },
+      "lookat_overview_ani": {
+        "component_types": [
+          "Transform"
+        ],
+        "components": [
+          {
+            "path_id": -387196519433953751,
+            "type": "Transform"
+          }
+        ],
+        "path": "track_chr_0032_lizhiyan/LookAtGroup/lookat_overview/lookat_overview_ani",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/lookat_overview_ani_p43EA2BE7E3411E29.json",
+          "path_id": 4893772220041600553,
+          "raw_data_sha256": "",
+          "sha256": "a6c5026442df2b34d64cd7f5c73f438c8ac4fb6b8a1e4a435756ef9e2386ca0c",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "path": {
+        "endpoint": [
+          -0.177,
+          0.998,
+          3.5
+        ],
+        "game_object": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/weapon_overview_p249BF5B35D141E29.json",
+          "path_id": 2637972157465108009,
+          "raw_data_sha256": "",
+          "sha256": "f0b60786b9d5226b3ef61351f45bdf39724aa676c1074686f008e64759fb8639",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "loop": false,
+        "m_Looped": 0,
+        "m_Resolution": 6,
+        "name": "weapon_overview",
+        "path_id": 695231780019904041,
+        "resolution": 6,
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#3044_p09A5F59ED4A61E29.json",
+          "path_id": 695231780019904041,
+          "raw_data_sha256": "bc3f06b307ddf6b0882036a44159b290cc2abed579491047a7af9cd429e63b58",
+          "sha256": "be1eb70b15590334393799956083ad25609448c2fcfc4022dcb24e6e6098e192",
+          "source_file": "CAB-4e46aec2ca6fa973b61902cede1097e0",
+          "source_offset": 216001333,
+          "source_original_file": "B428C352B17C75CA29122CAACC037A59.chk"
+        },
+        "waypoints": [
+          {
+            "position": [
+              1.242,
+              0.676,
+              2.37
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              0.5971327,
+              0.8897201,
+              2.4992352
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              -0.177,
+              0.998,
+              3.5
+            ],
+            "roll": 0.0
+          }
+        ]
+      },
+      "track_root": "track_chr_0032_lizhiyan",
+      "tracked_dolly": {
+        "component_type": "CinemachineTrackedDolly",
+        "m_AutoDolly": {
+          "m_Enabled": 1,
+          "m_PositionOffset": 0.0,
+          "m_SearchRadius": 2,
+          "m_SearchResolution": 5
+        },
+        "m_Path": {
+          "file_id": 0,
+          "path_id": 695231780019904041,
+          "source": {
+            "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#3044_p09A5F59ED4A61E29.json",
+            "path_id": 695231780019904041,
+            "raw_data_sha256": "bc3f06b307ddf6b0882036a44159b290cc2abed579491047a7af9cd429e63b58",
+            "sha256": "be1eb70b15590334393799956083ad25609448c2fcfc4022dcb24e6e6098e192",
+            "source_file": "CAB-4e46aec2ca6fa973b61902cede1097e0",
+            "source_offset": 216001333,
+            "source_original_file": "B428C352B17C75CA29122CAACC037A59.chk"
+          },
+          "target_name": "weapon_overview",
+          "target_type": "MonoBehaviour"
+        },
+        "m_PathOffset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "m_PathPosition": 1.0,
+        "m_PositionDamping": {
+          "m_PitchDamping": 0.0,
+          "m_RollDamping": 0.0,
+          "m_XDamping": 0.0,
+          "m_YDamping": 0.0,
+          "m_YawDamping": 0.0,
+          "m_ZDamping": 1.0
+        },
+        "m_PositionUnits": 2,
+        "path": "track_chr_0032_lizhiyan/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#3212_p739ED8B196AD1E29.json",
+          "path_id": 8331334617930735145,
+          "raw_data_sha256": "bc9b22f571f9b62b6d3e9a1cff2ef13b3d57757198f8dd5266ead5cca285deb0",
+          "sha256": "647204efb1afff24d583cac26ba0fa1ef2d719e74a9ed3cc0ca032279ec8e502",
+          "source_file": "CAB-4e46aec2ca6fa973b61902cede1097e0",
+          "source_offset": 216001333,
+          "source_original_file": "B428C352B17C75CA29122CAACC037A59.chk"
+        }
+      },
+      "vcam_overview": {
+        "path": "track_chr_0032_lizhiyan/DollyCart/vcam_overview",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/vcam_overview_pD8C2D0836A971E29.json",
+          "path_id": -2827468353187668439,
+          "raw_data_sha256": "",
+          "sha256": "25f6f571c2d218a756968a2c450c7af03f01cb35b82e16ff2b75732830fb5289",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "static_position": [
+          -0.177,
+          0.998,
+          3.5
+        ]
+      }
+    },
+    {
+      "actor": "camille",
+      "character_id": "chr_0033_camille",
+      "cm": {
+        "path": "track_chr_0033_camille/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/cm_p5D12C7B41C19E5D5.json",
+          "path_id": 6706642371487589845,
+          "raw_data_sha256": "",
+          "sha256": "47118adbe2d2288c0e6787f814bf0776eb9d0632b14c99281b0728578f7ad2a9",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "endpoint_validation": {
+        "max_abs_delta": 0.0,
+        "ok": true,
+        "path_endpoint": [
+          -0.113,
+          1.216,
+          3.66
+        ],
+        "static_camera_position": [
+          -0.113,
+          1.216,
+          3.66
+        ]
+      },
+      "lookat_overview_ani": {
+        "component_types": [
+          "Transform"
+        ],
+        "components": [
+          {
+            "path_id": -2223984024815802923,
+            "type": "Transform"
+          }
+        ],
+        "path": "track_chr_0033_camille/LookAtGroup/lookat_overview/lookat_overview_ani",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/lookat_overview_ani_pFBB69BFEDF34E5D5.json",
+          "path_id": -308888005459515947,
+          "raw_data_sha256": "",
+          "sha256": "2503f41926492b603c72f0489fab7d20f68cf619ff17b5940856fec9a0ad9180",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "path": {
+        "endpoint": [
+          -0.113,
+          1.216,
+          3.66
+        ],
+        "game_object": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/weapon_overview_pB60B0FEEDD4BE5D5.json",
+          "path_id": -5329148215473478187,
+          "raw_data_sha256": "",
+          "sha256": "b13f317795819ddda83092e64b3b14b27f13247d68cde3b24611a9ad4b0c2c5f",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "loop": false,
+        "m_Looped": 0,
+        "m_Resolution": 6,
+        "name": "weapon_overview",
+        "path_id": 6115718899289089493,
+        "resolution": 6,
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#2747_p54DF65EFBA44E5D5.json",
+          "path_id": 6115718899289089493,
+          "raw_data_sha256": "cb4e6c2b2e92db65d44e30fc31bcd43cdb7545eb929e24d0906e538081fca4aa",
+          "sha256": "ced16ab1474838d1cff070bff4d0b21a4aee77af13e371c69b0da572d6ba0df4",
+          "source_file": "CAB-dd18753285ce55e9ca17f545c76dd780",
+          "source_offset": 215888133,
+          "source_original_file": "B428C352B17C75CA29122CAACC037A59.chk"
+        },
+        "waypoints": [
+          {
+            "position": [
+              1.29,
+              0.804,
+              2.207
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              0.5971327,
+              0.8897201,
+              2.4992352
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              -0.113,
+              1.216,
+              3.66
+            ],
+            "roll": 0.0
+          }
+        ]
+      },
+      "track_root": "track_chr_0033_camille",
+      "tracked_dolly": {
+        "component_type": "CinemachineTrackedDolly",
+        "m_AutoDolly": {
+          "m_Enabled": 1,
+          "m_PositionOffset": 0.0,
+          "m_SearchRadius": 2,
+          "m_SearchResolution": 5
+        },
+        "m_Path": {
+          "file_id": 0,
+          "path_id": 6115718899289089493,
+          "source": {
+            "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#2747_p54DF65EFBA44E5D5.json",
+            "path_id": 6115718899289089493,
+            "raw_data_sha256": "cb4e6c2b2e92db65d44e30fc31bcd43cdb7545eb929e24d0906e538081fca4aa",
+            "sha256": "ced16ab1474838d1cff070bff4d0b21a4aee77af13e371c69b0da572d6ba0df4",
+            "source_file": "CAB-dd18753285ce55e9ca17f545c76dd780",
+            "source_offset": 215888133,
+            "source_original_file": "B428C352B17C75CA29122CAACC037A59.chk"
+          },
+          "target_name": "weapon_overview",
+          "target_type": "MonoBehaviour"
+        },
+        "m_PathOffset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "m_PathPosition": 1.0,
+        "m_PositionDamping": {
+          "m_PitchDamping": 0.0,
+          "m_RollDamping": 0.0,
+          "m_XDamping": 0.0,
+          "m_YDamping": 0.0,
+          "m_YawDamping": 0.0,
+          "m_ZDamping": 1.0
+        },
+        "m_PositionUnits": 2,
+        "path": "track_chr_0033_camille/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#2441_p8C44FDE6D477E5D5.json",
+          "path_id": -8339261442134383147,
+          "raw_data_sha256": "ae6519871470da5ce2afc0d47db3c51949ff1679422e1d3e97080466043984f7",
+          "sha256": "c28c83866e44bd075f065e91c236dcfeb73d681676f5a7b75061bece42343c2a",
+          "source_file": "CAB-dd18753285ce55e9ca17f545c76dd780",
+          "source_offset": 215888133,
+          "source_original_file": "B428C352B17C75CA29122CAACC037A59.chk"
+        }
+      },
+      "vcam_overview": {
+        "path": "track_chr_0033_camille/DollyCart/vcam_overview",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/vcam_overview_pB0C1F517D11DE5D5.json",
+          "path_id": -5710013369887627819,
+          "raw_data_sha256": "",
+          "sha256": "b119566835f2ba5cf9a891c3cfe77c92f7d7f1c61097acb8ee1661f9d0c35bef",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "static_position": [
+          -0.113,
+          1.216,
+          3.66
+        ]
+      }
+    },
+    {
+      "actor": "liino",
+      "character_id": "chr_0035_liino",
+      "cm": {
+        "path": "track_chr_0035_liino/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/cm_p29C29E4EF424B428.json",
+          "path_id": 3009141562977596456,
+          "raw_data_sha256": "",
+          "sha256": "dc4567ce951b96b91335b00de6e5baa813bab7938f5068def89480b0b2d608e9",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "endpoint_validation": {
+        "max_abs_delta": 0.0,
+        "ok": true,
+        "path_endpoint": [
+          -0.177,
+          0.998,
+          3.4
+        ],
+        "static_camera_position": [
+          -0.177,
+          0.998,
+          3.4
+        ]
+      },
+      "lookat_overview_ani": {
+        "component_types": [
+          "Transform"
+        ],
+        "components": [
+          {
+            "path_id": 3202613058018718760,
+            "type": "Transform"
+          }
+        ],
+        "path": "track_chr_0035_liino/LookAtGroup/lookat_overview/lookat_overview_ani",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/lookat_overview_ani_p9BD89222DEF0B428.json",
+          "path_id": -7216857724394359768,
+          "raw_data_sha256": "",
+          "sha256": "6f4bfd56aaf4f0c35d9b9da7d2dc0011ec5fe70f29d48813b7c5923d5fb302be",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        }
+      },
+      "path": {
+        "endpoint": [
+          -0.177,
+          0.998,
+          3.4
+        ],
+        "game_object": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/weapon_overview_pEDBA182631F5B428.json",
+          "path_id": -1316713388726438872,
+          "raw_data_sha256": "",
+          "sha256": "86ae9ab9398a3556e623655051ed285853e114382a5fcc55b5c24cb8a051ddec",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "loop": false,
+        "m_Looped": 0,
+        "m_Resolution": 6,
+        "name": "weapon_overview",
+        "path_id": -6276703522646477784,
+        "resolution": 6,
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#326_pA8E4AB66CC36B428.json",
+          "path_id": -6276703522646477784,
+          "raw_data_sha256": "eef107f1cd85a7ea65f527152f6816d6db4f81a76af52f41a6d5c4a72cb6ff31",
+          "sha256": "e4f0bbd4dd47b462bd401aaf08e6ae5f9de1b101b93a3ad5959583cbda263fe5",
+          "source_file": "CAB-7455baed27604981737b1c2fef381152",
+          "source_offset": 31751607,
+          "source_original_file": "95A7DFEE8DC70B6076E01C43013E9C9D.chk"
+        },
+        "waypoints": [
+          {
+            "position": [
+              1.545,
+              0.709,
+              2.088
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              0.5971327,
+              0.8897201,
+              2.4992352
+            ],
+            "roll": 0.0
+          },
+          {
+            "position": [
+              -0.177,
+              0.998,
+              3.4
+            ],
+            "roll": 0.0
+          }
+        ]
+      },
+      "track_root": "track_chr_0035_liino",
+      "tracked_dolly": {
+        "component_type": "CinemachineTrackedDolly",
+        "m_AutoDolly": {
+          "m_Enabled": 1,
+          "m_PositionOffset": 0.0,
+          "m_SearchRadius": 2,
+          "m_SearchResolution": 5
+        },
+        "m_Path": {
+          "file_id": 0,
+          "path_id": -6276703522646477784,
+          "source": {
+            "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#326_pA8E4AB66CC36B428.json",
+            "path_id": -6276703522646477784,
+            "raw_data_sha256": "eef107f1cd85a7ea65f527152f6816d6db4f81a76af52f41a6d5c4a72cb6ff31",
+            "sha256": "e4f0bbd4dd47b462bd401aaf08e6ae5f9de1b101b93a3ad5959583cbda263fe5",
+            "source_file": "CAB-7455baed27604981737b1c2fef381152",
+            "source_offset": 31751607,
+            "source_original_file": "95A7DFEE8DC70B6076E01C43013E9C9D.chk"
+          },
+          "target_name": "weapon_overview",
+          "target_type": "MonoBehaviour"
+        },
+        "m_PathOffset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "m_PathPosition": 1.0,
+        "m_PositionDamping": {
+          "m_PitchDamping": 0.0,
+          "m_RollDamping": 0.0,
+          "m_XDamping": 0.0,
+          "m_YDamping": 0.0,
+          "m_YawDamping": 0.0,
+          "m_ZDamping": 1.0
+        },
+        "m_PositionUnits": 2,
+        "path": "track_chr_0035_liino/DollyCart/vcam_overview/cm",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#396_pD4CF5EB0852FB428.json",
+          "path_id": -3112164705247972312,
+          "raw_data_sha256": "fbfe125c57a8fcae6dae16decfdd2b458e4621d01335dd20ee099a7a1568d85d",
+          "sha256": "9a602491826c3db400b461a16d9b181ef3b32cdc571e723655643193c73f3d29",
+          "source_file": "CAB-7455baed27604981737b1c2fef381152",
+          "source_offset": 31751607,
+          "source_original_file": "95A7DFEE8DC70B6076E01C43013E9C9D.chk"
+        }
+      },
+      "vcam_overview": {
+        "path": "track_chr_0035_liino/DollyCart/vcam_overview",
+        "source": {
+          "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/vcam_overview_p2C68A69F43C2B428.json",
+          "path_id": 3199990738213581864,
+          "raw_data_sha256": "",
+          "sha256": "8313934eb21a9ed8d0e4135a1e87d6ecf8348dcc09b5bbec2ecd3b761e7cab2e",
+          "source_file": "",
+          "source_offset": 0,
+          "source_original_file": ""
+        },
+        "static_position": [
+          -0.177,
+          0.998,
+          3.4
+        ]
+      }
+    }
+  ],
+  "required_actors": [
+    "chen",
+    "endminf",
+    "pelica"
+  ],
+  "schema": "endfield.charinfo.camera-track.v1",
+  "source": {
+    "edge": "vcam_overview -> cm -> TrackedDolly.m_Path",
+    "source_plan": "scratch/charinfo_playable_profiles/source_plan.json",
+    "work_root": "scratch/charinfo_playable_profiles"
+  }
+}

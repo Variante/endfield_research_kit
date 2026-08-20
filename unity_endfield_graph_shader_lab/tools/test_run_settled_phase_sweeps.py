@@ -13,6 +13,8 @@ try:
         build_plan,
         expected_render_paths,
         phase_times,
+        SweepError,
+        validate_render_paths,
         wrap_phase,
     )
 except ModuleNotFoundError:  # ``python -m unittest tools.test_...``
@@ -20,6 +22,8 @@ except ModuleNotFoundError:  # ``python -m unittest tools.test_...``
         build_plan,
         expected_render_paths,
         phase_times,
+        SweepError,
+        validate_render_paths,
         wrap_phase,
     )
 
@@ -42,6 +46,36 @@ class SettledPhaseSweepTests(unittest.TestCase):
             [path.name for path in paths],
             ["chen_t1p133.png", "chen_t0p133.png"],
         )
+
+    def test_validate_render_paths_accepts_exact_seven_planned_files(self) -> None:
+        row = {"actor": "chen", "times": [index / 5 for index in range(7)]}
+        with tempfile.TemporaryDirectory() as directory:
+            sweep_root = Path(directory)
+            expected = expected_render_paths(row, sweep_root=sweep_root)
+            for path in expected:
+                path.touch()
+            self.assertEqual(validate_render_paths(row, sweep_root=sweep_root), expected)
+
+    def test_validate_render_paths_rejects_missing_file(self) -> None:
+        row = {"actor": "chen", "times": [index / 5 for index in range(7)]}
+        with tempfile.TemporaryDirectory() as directory:
+            sweep_root = Path(directory)
+            expected = expected_render_paths(row, sweep_root=sweep_root)
+            for path in expected[:-1]:
+                path.touch()
+            with self.assertRaisesRegex(SweepError, "missing=.*chen_t1p200.png"):
+                validate_render_paths(row, sweep_root=sweep_root)
+
+    def test_validate_render_paths_rejects_unexpected_stale_glob(self) -> None:
+        row = {"actor": "chen", "times": [index / 5 for index in range(7)]}
+        with tempfile.TemporaryDirectory() as directory:
+            sweep_root = Path(directory)
+            for path in expected_render_paths(row, sweep_root=sweep_root):
+                path.touch()
+            stale = sweep_root / "chen_t9p999.png"
+            stale.touch()
+            with self.assertRaisesRegex(SweepError, "unexpected=.*chen_t9p999.png"):
+                validate_render_paths(row, sweep_root=sweep_root)
 
     def test_plan_selects_repeated_actor_order_and_clip_duration(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
