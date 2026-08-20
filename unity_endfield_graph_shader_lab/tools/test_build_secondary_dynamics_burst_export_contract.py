@@ -28,6 +28,7 @@ class SecondaryDynamicsBurstExportTests(unittest.TestCase):
         self.assertEqual(payload["pe"]["totalNamedExportCount"], 3141)
         self.assertEqual(payload["pe"]["hashedExportCount"], 628)
         self.assertEqual(payload["pe"]["hashedExportNamesSha256"], "3575fa430f691be98c1f2b6cadfb71e74854f422eed7fce767215d974ac332c9")
+        self.assertEqual(payload["functionBoundary"]["rule"], "Capstone-decoded-instructions-through-first-real-ret")
         self.assertEqual(
             payload["targets"]["simulationStartRange"]["candidates"][0]["hash"],
             "c7e2be088565d3ff7a6e7ba86d23fd51",
@@ -50,6 +51,15 @@ class SecondaryDynamicsBurstExportTests(unittest.TestCase):
         unresolved = " ".join(payload["unresolved"])
         self.assertIn("GetProcAddress", unresolved)
         self.assertIn("hash bytes", unresolved)
+
+    def test_direct_call_identity_and_parameter_contracts_are_explicit(self) -> None:
+        payload = json.loads(builder.DEFAULT_OUTPUT.read_text(encoding="utf-8"))
+        start = payload["targets"]["colliderStartRange"]
+        end = payload["targets"]["colliderEndRange"]
+        self.assertEqual((start["directInvokeMethodIndex"], start["directInvokeVa"]), (385416, "0x186762cc0"))
+        self.assertEqual((end["directInvokeMethodIndex"], end["directInvokeVa"]), (385317, "0x18675b0cc"))
+        self.assertEqual(start["parameterContract"]["parameterCount"], 17)
+        self.assertEqual(end["parameterContract"]["parameterCount"], 6)
 
     def test_canonical_installed_dll_and_export_set(self) -> None:
         dll = Path(json.loads(builder.DEFAULT_OUTPUT.read_text(encoding="utf-8"))["native_gate"]["libBurstGenerated"]["path"])

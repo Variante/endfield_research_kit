@@ -375,6 +375,22 @@ def _validate_solver_identity_contract() -> None:
     missing = sorted(required - method_ids)
     if missing:
         raise ContractError(f"solver static contract missing target method identities: {missing}")
+    wrapper_path = DEFAULT_OUTPUT.parent / "secondary_dynamics_burst_wrapper_contract.json"
+    if not wrapper_path.is_file():
+        raise ContractError(f"missing Burst wrapper contract: {wrapper_path}")
+    try:
+        wrapper = json.loads(wrapper_path.read_text(encoding="utf-8"))
+        rows = {row["methodIndex"]: row for row in wrapper.get("targets", [])}
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        raise ContractError(f"invalid Burst wrapper contract: {exc}") from exc
+    direct = {
+        385416: ("0x186762cc0", "collider_start_directcall"),
+        385317: ("0x18675b0cc", "collider_end_directcall"),
+    }
+    for method_index, (expected_va, expected_role) in direct.items():
+        row = rows.get(method_index)
+        if row is None or row.get("va") != expected_va or row.get("role") != expected_role:
+            raise ContractError(f"Burst wrapper contract identity drift for {method_index}: expected {expected_va}/{expected_role}")
 
 
 def build_contract(*, game_assembly: Path | None = DEFAULT_GAME_ASSEMBLY,
@@ -408,7 +424,7 @@ def build_contract(*, game_assembly: Path | None = DEFAULT_GAME_ASSEMBLY,
             "hashedRvaRange": {"first": f"0x{pe['hashed'][0]['rva']:x}", "last": f"0x{pe['hashed'][-1]['rva']:x}"},
             "initializerVariantCounts": dict(sorted(variant_prefixes.items())),
         },
-        "functionBoundary": {"rule": "first_ret_after_hashed_export_rva", "spanBytesHistogram": dict(sorted(spans.items(), key=lambda item: int(item[0]))), "bodyBytesHistogram": dict(sorted(bodies.items(), key=lambda item: int(item[0])))},
+        "functionBoundary": {"rule": "Capstone-decoded-instructions-through-first-real-ret", "spanBytesHistogram": dict(sorted(spans.items(), key=lambda item: int(item[0]))), "bodyBytesHistogram": dict(sorted(bodies.items(), key=lambda item: int(item[0])))},
         "targets": _target_candidates(rows),
         "exports": rows,
         "contractComparison": {
