@@ -36,7 +36,25 @@ NATIVE_ABI_ALIGNMENT_BYTES = 8
 GENERIC_FIELD_KINDS = frozenset({"NativeArray", "NativeReference"})
 IL2CPP_TYPE_GENERICINST = 0x15
 IL2CPP_TYPE_VALUETYPE = 0x11
-IL2CPP_PRIMITIVE_TYPE_CODES = frozenset(range(0x1, 0x0f))
+# VOID and STRING are metadata type codes in this range, but neither is a
+# primitive value that can be a NativeArray/NativeReference element.  Native
+# sized integers I/U live outside the contiguous CLI primitive range.
+IL2CPP_PRIMITIVE_TYPE_CODES = frozenset({
+    0x02,  # BOOLEAN
+    0x03,  # CHAR
+    0x04,  # I1
+    0x05,  # U1
+    0x06,  # I2
+    0x07,  # U2
+    0x08,  # I4
+    0x09,  # U4
+    0x0A,  # I8
+    0x0B,  # U8
+    0x0C,  # R4
+    0x0D,  # R8
+    0x18,  # I
+    0x19,  # U
+})
 
 EXPECTED_GAME_ASSEMBLY_SHA256 = "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
 EXPECTED_METADATA_SHA256 = "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
