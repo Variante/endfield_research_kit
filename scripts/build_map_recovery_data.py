@@ -57,6 +57,7 @@ MISSION_RUNTIME_DIR = "export_full/structured/Persistent/Data/Json/MissionRuntim
 
 LEVEL_DESC_REL = "export_full/structured/StreamingAssets/Table/LevelDescTable.json"
 I18N_TEXT_REL = "export_full/structured/StreamingAssets/Table/I18nTextTable_{0}.json"
+TEXT_TABLE_REL = "export_full/structured/StreamingAssets/Table/TextTable.json"
 MAP_UI_CONFIG_DIR = "export_full/structured/StreamingAssets/Data/Json/UILevelMapLoadConfig"
 MAP_TILE_DIR = "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D"
 MODEL_ROOT_REL = "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Mesh"
@@ -71,6 +72,7 @@ MISSION_RUNTIME_ASSET = f"{MISSION_RUNTIME_DIR}/e0m0.json"
 # must never acquire a fabricated translation just because it was exported.
 MAX_UNPLACED_MODEL_ASSETS = 24
 _MODEL_ASSET_INDEX: dict[Path, list[Path]] = {}
+_MAP_TEXT_LOOKUPS: dict[tuple[str, str], dict[str, str]] = {}
 
 # A level id is encoded into the leading digits of every registry id it owns.
 # `indie_dg002` has idNum 87, so its entities are 8_700_000_000 upward.
@@ -1277,7 +1279,25 @@ def _map_ui_world_bounds(config: dict) -> dict[str, float] | None:
     return {"minX": left, "maxX": right, "minZ": bottom, "maxZ": top}
 
 
-def _map_ui_static_elements(level_id: str) -> dict:
+def _map_text_lookup(language: str) -> dict[str, str]:
+    """Resolve map config text keys through TextTable into localized text."""
+    cache_key = (str(ROOT.resolve()), language.upper())
+    if cache_key in _MAP_TEXT_LOOKUPS:
+        return _MAP_TEXT_LOOKUPS[cache_key]
+    text_table = _load_json(ROOT / TEXT_TABLE_REL, {}) or {}
+    i18n = _load_json(ROOT / I18N_TEXT_REL.format(language.upper()), {}) or {}
+    result: dict[str, str] = {}
+    for key, row in text_table.items():
+        if not isinstance(row, dict) or row.get("id") is None:
+            continue
+        text = i18n.get(str(row["id"]))
+        if isinstance(text, str) and text.strip():
+            result[str(key)] = text.strip()
+    _MAP_TEXT_LOOKUPS[cache_key] = result
+    return result
+
+
+def _map_ui_static_elements(level_id: str, language: str = "CN") -> dict:
     """Publish authored map-screen points in the same world X/Z space.
 
     These are not registry entities: ``staticElements`` contains location-tip
@@ -1286,6 +1306,7 @@ def _map_ui_static_elements(level_id: str) -> dict:
     do not turn them into semantic/entity markers.
     """
     config = _map_ui_config(level_id)
+    localized = _map_text_lookup(language)
     source = f"{MAP_UI_CONFIG_DIR}/{level_id}.json" if config else None
     basic = config.get("basic") or {}
     rows: list[dict] = []
@@ -1304,6 +1325,7 @@ def _map_ui_static_elements(level_id: str) -> dict:
             "directionAngle": raw.get("directionAngle"),
             "targetLevelId": raw.get("targetLevelId"),
             "textId": raw.get("textId"),
+            "text": localized.get(str(raw.get("textId") or "")),
             "evidence": "UILevelMapLoadConfig.staticElements exact X/Z position",
         }
         if source:
@@ -1371,7 +1393,7 @@ def _map_layer_metadata(level_id: str, nodes: Iterable[dict], language: str = "C
             node["mapLayerIds"] = matches
     for layer in layers:
         layer.pop("_rects", None)
-    static_metadata = _map_ui_static_elements(level_id)
+    static_metadata = _map_ui_static_elements(level_id, language)
     return {
         "source": f"{MAP_UI_CONFIG_DIR}/{level_id}.json" if config else None,
         "worldBounds": world_bounds,

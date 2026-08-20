@@ -355,6 +355,15 @@
 .mr-map-bg { fill: var(--mr-sunken); }
 .mr-route { fill: none; stroke: var(--mr-quest); stroke-width: 2.5; stroke-dasharray: 7 5; opacity: 0.55; }
 .mr-bg-image { pointer-events: none; }
+.mr-location-label {
+  fill: var(--text);
+  font: 700 14px/1 var(--sans);
+  text-anchor: middle;
+  paint-order: stroke;
+  stroke: var(--surface);
+  stroke-width: 4px;
+  pointer-events: none;
+}
 .mr-links { pointer-events: none; }
 .mr-edge { fill: none; opacity: 0.75; }
 
