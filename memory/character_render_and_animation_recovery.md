@@ -1205,6 +1205,21 @@ numeric blocker is still mapping the three BurstDirectCall range wrappers to
 the installed `lib_burst_generated.dll` hashed exports; the prepared resolver
 telemetry requires a running pinned retail client.
 
+That mapping boundary is now narrowed on both sides. The three DirectCall
+entries and their static constructors are hash-pinned through
+GetFunctionPointer/Discard, BurstCompiler, and BurstCompilerService, including
+their RIP globals and indirect pointer calls. A complete instruction-decoded
+census of the pinned Burst DLL's 628 hashed exports leaves one ABI-compatible
+simulation candidate (`c7e2be088565d3ff7a6e7ba86d23fd51`), three collider-start
+candidates, and two collider-end candidates. These remain candidate sets, not
+published wrapper-to-export identities: no hash bytes in GameAssembly join the
+two sides. The read-only resolver probe now attributes requests by validated
+GameAssembly caller windows and checks the full hashed export map, module
+bases, pointer arithmetic, capture phases, and clean completion for both
+already-loaded and post-attach resolver loads. Its disk hashes and runtime
+path/size/base observations do not prove an in-memory module hash. A real
+retail capture is still required before any candidate can be promoted.
+
 The installed client does contain its original `lib_burst_generated.dll`, but
 that is not a drop-in public-Unity plugin: its hashed exports are resolved
 through the retail Burst runtime and depend on the original IL2CPP/Jobs state.
