@@ -460,6 +460,8 @@ def _independent_candidate_rows(pe: PeImage) -> dict[str, dict[str, Any]]:
 
 def _assert_parent_identity(contract: dict[str, Any], actual: dict[str, dict[str, Any]]) -> None:
     """Require the parent catalog to agree with bytes, without trusting it."""
+    target_required = {"hash", "rva", "spanBytes", "bodyBytes", "bodySha256"}
+    export_required = {"hash", "rva", "fileOffset", "ordinal", "spanBytes", "bodyBytes", "bodySha256"}
     candidate_rows = contract["targets"]["colliderStartRange"]["candidates"]
     expected_by_hash = {row.get("hash"): row for row in candidate_rows}
     exports_by_hash = {row.get("hash"): row for row in contract.get("exports", [])}
@@ -467,9 +469,18 @@ def _assert_parent_identity(contract: dict[str, Any], actual: dict[str, dict[str
         for source_name, row in (("target candidate", expected_by_hash.get(hash_value)), ("export", exports_by_hash.get(hash_value))):
             if row is None:
                 raise ContractError(f"parent Burst contract omits {source_name} {hash_value}")
-            for field in ("hash", "rva", "fileOffset", "spanBytes", "bodyBytes", "bodySha256"):
-                if field in row and row.get(field) != derived[field]:
+            required = target_required if source_name == "target candidate" else export_required
+            missing = sorted(required - row.keys())
+            if missing:
+                raise ContractError(f"parent {source_name} identity schema missing {hash_value}: {missing}")
+            compare_fields = ("hash", "rva", "spanBytes", "bodyBytes", "bodySha256")
+            if source_name == "export":
+                compare_fields += ("fileOffset",)
+            for field in compare_fields:
+                if row.get(field) != derived[field]:
                     raise ContractError(f"parent {source_name} identity drift for {hash_value}: {field}")
+            if source_name == "export" and row.get("ordinal") != derived["ordinal"]:
+                raise ContractError(f"parent export identity drift for {hash_value}: ordinal")
 
 
 def _slot_assignments(pe: PeImage, slot_rva: int) -> list[dict[str, Any]]:

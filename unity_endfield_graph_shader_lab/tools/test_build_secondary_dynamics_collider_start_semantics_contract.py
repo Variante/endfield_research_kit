@@ -76,6 +76,9 @@ class ColliderStartSemanticsContractTests(unittest.TestCase):
     def test_parent_identity_attacks_fail_closed(self):
         burst = json.loads((ROOT / "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_burst_export_contract.json").read_text(encoding="utf-8"))
         actual = {row["hash"]: {key: row[key] for key in ("hash", "rva", "fileOffset", "spanBytes", "bodyBytes", "bodySha256")} for row in self.payload["targets"]}
+        for row in burst["exports"]:
+            if row["hash"] in actual:
+                actual[row["hash"]]["ordinal"] = row["ordinal"]
         def candidate(d, hash_name):
             return next(row for row in d["targets"]["colliderStartRange"]["candidates"] if row["hash"] == hash_name)
         def export(d, hash_name):
