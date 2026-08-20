@@ -317,10 +317,17 @@ def run_capture(
             },
         )
         if args.start_immediately:
-            script.post({"type": "start_capture"})
-            writer.emit("capture_started", {"trigger": "command_line"})
-            started = True
-            deadline = time.monotonic() + args.duration if args.duration is not None else None
+            try:
+                script.post({"type": "start_capture"})
+            except Exception as exc:
+                terminal_failure = True
+                writer.diagnostic("capture_start_post_failed", {"error": str(exc)})
+                writer.emit("capture_start_rejected", {"reason": "agent_post_failed"})
+                stop.set()
+            else:
+                writer.emit("capture_started", {"trigger": "command_line"})
+                started = True
+                deadline = time.monotonic() + args.duration if args.duration is not None else None
         else:
             print(
                 "Create this empty trigger file to start the bounded resolver trace, then reproduce the target load/resolution:\n"
@@ -329,18 +336,31 @@ def run_capture(
             )
         while not stop.wait(0.25):
             if not started and trigger_path.is_file():
-                script.post({"type": "start_capture"})
-                writer.emit("capture_started", {"trigger": str(trigger_path)})
-                started = True
-                deadline = time.monotonic() + args.duration if args.duration is not None else None
-                print("Burst resolver capture started.", flush=True)
+                try:
+                    script.post({"type": "start_capture"})
+                except Exception as exc:
+                    terminal_failure = True
+                    writer.diagnostic("capture_start_post_failed", {"error": str(exc)})
+                    writer.emit("capture_start_rejected", {"reason": "agent_post_failed"})
+                    stop.set()
+                else:
+                    writer.emit("capture_started", {"trigger": str(trigger_path)})
+                    started = True
+                    deadline = time.monotonic() + args.duration if args.duration is not None else None
+                    print("Burst resolver capture started.", flush=True)
             if started and deadline is not None and time.monotonic() >= deadline:
                 break
         if script is not None:
-            script.post({"type": "stop_capture"})
-            if not stop_ack.wait(1.0):
+            try:
+                script.post({"type": "stop_capture"})
+            except Exception as exc:
                 terminal_failure = True
-                writer.emit("capture_stop_ack_missing", {})
+                writer.diagnostic("capture_stop_post_failed", {"error": str(exc)})
+                writer.emit("capture_stop_ack_missing", {"reason": "agent_post_failed"})
+            else:
+                if not stop_ack.wait(1.0):
+                    terminal_failure = True
+                    writer.emit("capture_stop_ack_missing", {})
         if not started:
             terminal_failure = True
             writer.emit("capture_not_started", {})

@@ -51,6 +51,7 @@
     "scope": "Read-only LoadLibraryW/GetProcAddress observation for one exact lib_burst_generated.dll HMODULE and bounded GameAssembly-only caller backtraces.",
     "nonClaims": [
       "The trace does not call a resolver export, replace a resolver body, or write game state.",
+      "Interceptor attachment can perturb timing and loader scheduling; the capture is not behavior-neutral and remains candidate evidence.",
       "A returned proc pointer is an identity observation only; it does not prove the pointer was called or map it to a Burst generic.",
       "Only GetProcAddress calls whose hModule equals the observed lib_burst_generated.dll HMODULE are recorded.",
       "The caller backtrace is bounded and contains only frames resolved inside GameAssembly.dll; an empty backtrace is not identity proof.",

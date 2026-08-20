@@ -79,6 +79,12 @@ def _module_name(value: Any, label: str) -> str:
     return value.casefold()
 
 
+def _module_path(value: Any, label: str) -> str:
+    if not isinstance(value, str) or not value:
+        _fail(f"{label} must be a non-empty module path")
+    return value.replace("/", "\\").casefold()
+
+
 def validate_trace(
     path: Path,
     manifest_path: Path = telemetry.DEFAULT_MANIFEST,
@@ -125,6 +131,12 @@ def validate_trace(
             _fail(f"native module handshake did not validate {key}")
     if handshake.get("verifiedFiles") != file_facts:
         _fail("native module handshake file facts differ from session_start")
+    attached_module_path = _module_path(
+        handshake.get("attachedModulePath"), "native module handshake attachedModulePath"
+    )
+    attached_module_size = handshake.get("attachedModuleSize")
+    if isinstance(attached_module_size, bool) or not isinstance(attached_module_size, int) or attached_module_size <= 0:
+        _fail("native module handshake attachedModuleSize is invalid")
     if _module_name(handshake.get("kernel32ModuleName"), "handshake kernel32ModuleName") != manifest["kernel32ModuleName"].casefold():
         _fail("native module handshake kernel32 name drifted")
     if _module_name(handshake.get("resolverModuleName"), "handshake resolverModuleName") != manifest["resolverModuleName"].casefold():
@@ -154,14 +166,22 @@ def validate_trace(
             _fail(f"resolver_module_loaded {index} has no requestedPath")
         if requested.replace("/", "\\").casefold().split("\\")[-1] != manifest["resolverModuleName"].casefold():
             _fail(f"resolver_module_loaded {index} requested a different module")
-        _check_pointer(row.get("hModule"), f"resolver_module_loaded {index} hModule")
-        if row.get("loadSucceeded") is True:
+        load_succeeded = row.get("loadSucceeded")
+        if not isinstance(load_succeeded, bool):
+            _fail(f"resolver_module_loaded {index} loadSucceeded is invalid")
+        # LoadLibraryW returns NULL on a normal load failure.  Preserve that
+        # observation instead of rejecting the trace before checking the
+        # success branch.
+        _check_pointer(
+            row.get("hModule"),
+            f"resolver_module_loaded {index} hModule",
+            allow_null=load_succeeded is False,
+        )
+        if load_succeeded is True:
             observed_handles.add(str(row["hModule"]).casefold())
             module = row.get("module")
             if not isinstance(module, dict) or _module_name(module.get("name"), f"resolver_module_loaded {index} module name") != manifest["resolverModuleName"].casefold():
                 _fail(f"resolver_module_loaded {index} has no matching module identity")
-        elif row.get("loadSucceeded") is not False:
-            _fail(f"resolver_module_loaded {index} loadSucceeded is invalid")
 
     for index, row in enumerate(proc_events):
         handle = row.get("hModule")
@@ -173,7 +193,10 @@ def validate_trace(
             _fail(f"get_proc_address {index} lpProcName is not a string or null")
         if row.get("lpProcNameType") not in {"name", "ordinal", "null", "unreadable"}:
             _fail(f"get_proc_address {index} lpProcNameType is invalid")
-        _check_pointer(row.get("returnPointer"), f"get_proc_address {index} returnPointer")
+        # GetProcAddress legitimately returns NULL when the export is absent;
+        # the trace records that result without treating it as a malformed
+        # pointer observation.
+        _check_pointer(row.get("returnPointer"), f"get_proc_address {index} returnPointer", allow_null=True)
         backtrace = row.get("gameAssemblyCallerBacktrace")
         if not isinstance(backtrace, list) or len(backtrace) > manifest["capture"]["maxBacktraceFrames"]:
             _fail(f"get_proc_address {index} GameAssembly backtrace exceeds its bound")
@@ -182,6 +205,11 @@ def validate_trace(
                 _fail(f"get_proc_address {index} backtrace frame {frame_index} is not an object")
             if _module_name(frame.get("module"), f"get_proc_address {index} backtrace module") != manifest["moduleName"].casefold():
                 _fail(f"get_proc_address {index} backtrace contains a non-GameAssembly frame")
+            if _module_path(frame.get("modulePath"), f"get_proc_address {index} backtrace modulePath") != attached_module_path:
+                _fail(f"get_proc_address {index} backtrace belongs to a different GameAssembly path")
+            if frame.get("moduleSize") != attached_module_size:
+                _fail(f"get_proc_address {index} backtrace GameAssembly size drifted")
+            _check_pointer(frame.get("moduleBase"), f"get_proc_address {index} backtrace moduleBase")
             _check_pointer(frame.get("address"), f"get_proc_address {index} backtrace address")
             _check_pointer(frame.get("offset"), f"get_proc_address {index} backtrace offset", allow_null=True)
         if row.get("backtraceStatus") not in {"gameassembly_frames", "no_gameassembly_frame", "unavailable"}:
