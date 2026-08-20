@@ -162,6 +162,15 @@ runtime overview publishes no `nativePairing` unless a complete
 hash-verified closed capture session exists; partial key/path/handle/decoder
 overlaps remain unobserved.
 
+Positioned ModelView audio shows three authored branches. Only a direct-position
+Event with nonzero `normalAudioId` exposes Event/media candidates. Its managed
+Adapter route, managed internal playing id, and `LoadBank`/`PrepareEvent`
+boundaries are static evidence; runtime-dynamic completion, final
+`AkSoundEngine.PostEvent`/native playing-id handoff, Wwise selection,
+execution, and audibility remain unresolved. Custom and entity forms are
+control-only; `_SwitchState` has no recovered playback sink, and neither form
+promotes an Event, media leaf, or owner.
+
 Responsive voice contexts also expose exact matching `AIBark` request rows and
 the fingerprint-locked native dispatch chain. The UI must keep the live
 AIBarkType-to-bark-id dictionary choice, probability/cooldown selection, and

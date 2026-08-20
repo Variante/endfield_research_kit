@@ -448,7 +448,8 @@ truncated tail is published as `failedClosed` with an offset and reason.
 the Audio evidence page. Maintained domain code lives under
 `audio_semantics/`: `native_evidence.py` owns the installed-build gate,
 `external_source.py` owns static External Source voice-route/path joins, and
-`model_view_projection.py` owns authored ModelView normal-Event projection;
+`model_view_projection.py` owns authored ModelView normal/positioned branch
+projection;
 `identifiers.py` owns Wwise hashes and managed string identities,
 `managed_literals.py`, `responsive_voice.py`, and `voice_requests.py`
 own their respective consumer evidence, `interactive_components.py` and
