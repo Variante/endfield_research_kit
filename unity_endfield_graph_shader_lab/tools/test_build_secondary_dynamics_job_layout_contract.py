@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import tempfile
 import unittest
+from collections import Counter
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -25,7 +26,16 @@ class SecondaryDynamicsJobLayoutContractTests(unittest.TestCase):
         self.assertTrue(payload["outer_job_layout_recovered"])
         self.assertFalse(payload["job_payload_layout_recovered"])
         self.assertFalse(payload["secondary_dynamics_verified"])
+        self.assertFalse(payload["solver_implemented"])
         self.assertEqual(len(payload["jobs"]), 4)
+        self.assertEqual(
+            Counter(
+                field["kind"]
+                for job in payload["jobs"]
+                for field in job["fields"]
+            ),
+            Counter({"NativeArray": 59, "NativeReference": 4, "float4": 1, "Single": 2}),
+        )
         start = next(row for row in payload["jobs"] if row["typeIndex"] == 48376)
         self.assertEqual(start["nativeSizeBytes"], 0x110)
         self.assertEqual(start["fields"][0]["nativePayloadOffset"], "0x0")
@@ -34,6 +44,8 @@ class SecondaryDynamicsJobLayoutContractTests(unittest.TestCase):
         basis = payload["layoutBasis"]["concreteGenericSlotWidths"]
         self.assertEqual(basis["status"], "closed_from_adjacent_offsets_and_native_size_tail")
         self.assertFalse(basis["genericTypeSizeClaimed"])
+        self.assertEqual(payload["metadataRegistration"]["typeDefinitionsSizesCount"], 63987)
+        self.assertEqual(payload["metadataRegistration"]["typesCount"], 272743)
         for job in payload["jobs"]:
             for field in job["fields"]:
                 if field["kind"] not in builder.GENERIC_FIELD_KINDS:
@@ -45,6 +57,39 @@ class SecondaryDynamicsJobLayoutContractTests(unittest.TestCase):
                 self.assertEqual(evidence["abiAlignmentBytes"], 8)
                 self.assertTrue(evidence["abiAligned"])
                 self.assertFalse(evidence["genericTypeSizeClaimed"])
+                element = field["elementType"]
+                self.assertIsInstance(element["name"], str)
+                self.assertIsInstance(element["metadataTypeIndex"], int)
+                self.assertIsInstance(element["typeDefinitionIndex"], int)
+                self.assertGreater(element["nativeSizeBytes"], 0)
+                self.assertEqual(
+                    element["instanceSizeBytes"], element["nativeSizeBytes"] + 16
+                )
+                context = field["genericContext"]
+                self.assertEqual(context["argumentCount"], 1)
+                self.assertEqual(
+                    context["genericDefinitionTypeIndex"],
+                    50690 if field["kind"] == "NativeArray" else 60806,
+                )
+
+        sim_start = next(
+            row for row in payload["jobs"]
+            if row["typeIndex"] == 48422
+        )
+        self.assertEqual(sim_start["paddingGaps"], [{
+            "nativePayloadOffset": "0x14",
+            "endNativePayloadOffset": "0x18",
+            "sizeBytes": 4,
+            "afterField": "simulationDeltaTime",
+            "beforeField": "stepParticleIndexArray",
+            "basis": "declared_field_width_to_next_native_offset",
+        }])
+        sim_end = next(
+            row for row in payload["jobs"]
+            if row["typeIndex"] == 48424
+        )
+        self.assertEqual(sim_end["paddingGaps"][0]["nativePayloadOffset"], "0x4")
+        self.assertEqual(sim_end["paddingGaps"][0]["endNativePayloadOffset"], "0x8")
 
     def test_generic_slot_width_is_derived_from_adjacent_boundary(self) -> None:
         width, evidence = builder._field_slot_evidence(

@@ -23,6 +23,8 @@
     "metadataRegistrationVa": "0x18b921c30",
     "fieldOffsets": "0x18e7b5840",
     "fieldOffsetsCount": 63987,
+    "types": "0x18d5dfbf0",
+    "typesCount": 272743,
     "typeDefinitionsSizes": "0x18e8327e0",
     "typeDefinitionsSizesCount": 63987
   },
@@ -83,7 +85,27 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x04000747"
+          "token": "0x04000747",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 50690,
+            "genericDefinitionName": "Unity.Collections.NativeArray`1",
+            "genericClassPointerVa": "0x18e5e6a10",
+            "genericDefinitionClassPointerVa": "0x18e51e380",
+            "genericContextPointerVa": "0x18c0bf358",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb80e18",
+            "elementTypePointerVa": "0x18e68cca0"
+          },
+          "elementType": {
+            "name": "System.Int32",
+            "metadataTypeIndex": 148327,
+            "typeDefinitionIndex": 42093,
+            "typeCode": 8,
+            "category": "primitive",
+            "typeDefinitionsSizesPointerVa": "0x18bb57ad8",
+            "instanceSizeBytes": 20,
+            "nativeSizeBytes": 4
+          }
         },
         {
           "fieldIndex": 230239,
@@ -104,7 +126,27 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x04000748"
+          "token": "0x04000748",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 50690,
+            "genericDefinitionName": "Unity.Collections.NativeArray`1",
+            "genericClassPointerVa": "0x18e5e79b0",
+            "genericDefinitionClassPointerVa": "0x18e51e380",
+            "genericContextPointerVa": "0x18c0b30f8",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb77b60",
+            "elementTypePointerVa": "0x18e67af50"
+          },
+          "elementType": {
+            "name": "BeyondDynamicBone.TeamManager+TeamData",
+            "metadataTypeIndex": 206396,
+            "typeDefinitionIndex": 48233,
+            "typeCode": 17,
+            "category": "valueType",
+            "typeDefinitionsSizesPointerVa": "0x18bb69fd8",
+            "instanceSizeBytes": 480,
+            "nativeSizeBytes": 464
+          }
         },
         {
           "fieldIndex": 230240,
@@ -125,7 +167,27 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x04000749"
+          "token": "0x04000749",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 50690,
+            "genericDefinitionName": "Unity.Collections.NativeArray`1",
+            "genericClassPointerVa": "0x18e5e7a70",
+            "genericDefinitionClassPointerVa": "0x18e51e380",
+            "genericContextPointerVa": "0x18c0b35f8",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb77e10",
+            "elementTypePointerVa": "0x18e67b900"
+          },
+          "elementType": {
+            "name": "BeyondDynamicBone.InertiaConstraint+CenterData",
+            "metadataTypeIndex": 195736,
+            "typeDefinitionIndex": 48071,
+            "typeCode": 17,
+            "category": "valueType",
+            "typeDefinitionsSizesPointerVa": "0x18bb6ac38",
+            "instanceSizeBytes": 712,
+            "nativeSizeBytes": 696
+          }
         },
         {
           "fieldIndex": 230241,
@@ -146,7 +208,27 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x0400074a"
+          "token": "0x0400074a",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 50690,
+            "genericDefinitionName": "Unity.Collections.NativeArray`1",
+            "genericClassPointerVa": "0x18e5e69a0",
+            "genericDefinitionClassPointerVa": "0x18e51e380",
+            "genericContextPointerVa": "0x18c0b40b8",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb78358",
+            "elementTypePointerVa": "0x18e680930"
+          },
+          "elementType": {
+            "name": "System.Int16",
+            "metadataTypeIndex": 148311,
+            "typeDefinitionIndex": 42092,
+            "typeCode": 6,
+            "category": "primitive",
+            "typeDefinitionsSizesPointerVa": "0x18bb57ac8",
+            "instanceSizeBytes": 18,
+            "nativeSizeBytes": 2
+          }
         },
         {
           "fieldIndex": 230242,
@@ -167,7 +249,27 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x0400074b"
+          "token": "0x0400074b",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 50690,
+            "genericDefinitionName": "Unity.Collections.NativeArray`1",
+            "genericClassPointerVa": "0x18e5e6da0",
+            "genericDefinitionClassPointerVa": "0x18e51e380",
+            "genericContextPointerVa": "0x18c0b4888",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb78710",
+            "elementTypePointerVa": "0x18e67d460"
+          },
+          "elementType": {
+            "name": "BeyondDynamicBone.ExBitFlag8",
+            "metadataTypeIndex": 140092,
+            "typeDefinitionIndex": 48538,
+            "typeCode": 17,
+            "category": "valueType",
+            "typeDefinitionsSizesPointerVa": "0x18bb68ae8",
+            "instanceSizeBytes": 17,
+            "nativeSizeBytes": 1
+          }
         },
         {
           "fieldIndex": 230243,
@@ -188,7 +290,27 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x0400074c"
+          "token": "0x0400074c",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 50690,
+            "genericDefinitionName": "Unity.Collections.NativeArray`1",
+            "genericClassPointerVa": "0x18e5e7e20",
+            "genericDefinitionClassPointerVa": "0x18e51e380",
+            "genericContextPointerVa": "0x18c0b3b78",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb780b8",
+            "elementTypePointerVa": "0x18e67fac0"
+          },
+          "elementType": {
+            "name": "Unity.Mathematics.float3",
+            "metadataTypeIndex": 171869,
+            "typeDefinitionIndex": 57216,
+            "typeCode": 17,
+            "category": "valueType",
+            "typeDefinitionsSizesPointerVa": "0x18bacb478",
+            "instanceSizeBytes": 28,
+            "nativeSizeBytes": 12
+          }
         },
         {
           "fieldIndex": 230244,
@@ -209,7 +331,27 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x0400074d"
+          "token": "0x0400074d",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 50690,
+            "genericDefinitionName": "Unity.Collections.NativeArray`1",
+            "genericClassPointerVa": "0x18e5e8250",
+            "genericDefinitionClassPointerVa": "0x18e51e380",
+            "genericContextPointerVa": "0x18c0b3cb8",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb78160",
+            "elementTypePointerVa": "0x18e67c3e0"
+          },
+          "elementType": {
+            "name": "Unity.Mathematics.double3",
+            "metadataTypeIndex": 171826,
+            "typeDefinitionIndex": 57201,
+            "typeCode": 17,
+            "category": "valueType",
+            "typeDefinitionsSizesPointerVa": "0x18bacbb88",
+            "instanceSizeBytes": 40,
+            "nativeSizeBytes": 24
+          }
         },
         {
           "fieldIndex": 230245,
@@ -230,7 +372,27 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x0400074e"
+          "token": "0x0400074e",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 50690,
+            "genericDefinitionName": "Unity.Collections.NativeArray`1",
+            "genericClassPointerVa": "0x18e5e7e80",
+            "genericDefinitionClassPointerVa": "0x18e51e380",
+            "genericContextPointerVa": "0x18c0b3be8",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb780d8",
+            "elementTypePointerVa": "0x18e67c260"
+          },
+          "elementType": {
+            "name": "Unity.Mathematics.quaternion",
+            "metadataTypeIndex": 172157,
+            "typeDefinitionIndex": 57247,
+            "typeCode": 17,
+            "category": "valueType",
+            "typeDefinitionsSizesPointerVa": "0x18bacb668",
+            "instanceSizeBytes": 32,
+            "nativeSizeBytes": 16
+          }
         },
         {
           "fieldIndex": 230246,
@@ -251,7 +413,27 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x0400074f"
+          "token": "0x0400074f",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 50690,
+            "genericDefinitionName": "Unity.Collections.NativeArray`1",
+            "genericClassPointerVa": "0x18e5e7e20",
+            "genericDefinitionClassPointerVa": "0x18e51e380",
+            "genericContextPointerVa": "0x18c0b3b78",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb780b8",
+            "elementTypePointerVa": "0x18e67fac0"
+          },
+          "elementType": {
+            "name": "Unity.Mathematics.float3",
+            "metadataTypeIndex": 171869,
+            "typeDefinitionIndex": 57216,
+            "typeCode": 17,
+            "category": "valueType",
+            "typeDefinitionsSizesPointerVa": "0x18bacb478",
+            "instanceSizeBytes": 28,
+            "nativeSizeBytes": 12
+          }
         },
         {
           "fieldIndex": 230247,
@@ -272,7 +454,27 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x04000750"
+          "token": "0x04000750",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 50690,
+            "genericDefinitionName": "Unity.Collections.NativeArray`1",
+            "genericClassPointerVa": "0x18e5e8250",
+            "genericDefinitionClassPointerVa": "0x18e51e380",
+            "genericContextPointerVa": "0x18c0b3cb8",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb78160",
+            "elementTypePointerVa": "0x18e67c3e0"
+          },
+          "elementType": {
+            "name": "Unity.Mathematics.double3",
+            "metadataTypeIndex": 171826,
+            "typeDefinitionIndex": 57201,
+            "typeCode": 17,
+            "category": "valueType",
+            "typeDefinitionsSizesPointerVa": "0x18bacbb88",
+            "instanceSizeBytes": 40,
+            "nativeSizeBytes": 24
+          }
         },
         {
           "fieldIndex": 230248,
@@ -293,7 +495,27 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x04000751"
+          "token": "0x04000751",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 50690,
+            "genericDefinitionName": "Unity.Collections.NativeArray`1",
+            "genericClassPointerVa": "0x18e5e7e80",
+            "genericDefinitionClassPointerVa": "0x18e51e380",
+            "genericContextPointerVa": "0x18c0b3be8",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb780d8",
+            "elementTypePointerVa": "0x18e67c260"
+          },
+          "elementType": {
+            "name": "Unity.Mathematics.quaternion",
+            "metadataTypeIndex": 172157,
+            "typeDefinitionIndex": 57247,
+            "typeCode": 17,
+            "category": "valueType",
+            "typeDefinitionsSizesPointerVa": "0x18bacb668",
+            "instanceSizeBytes": 32,
+            "nativeSizeBytes": 16
+          }
         },
         {
           "fieldIndex": 230249,
@@ -314,7 +536,27 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x04000752"
+          "token": "0x04000752",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 50690,
+            "genericDefinitionName": "Unity.Collections.NativeArray`1",
+            "genericClassPointerVa": "0x18e5e8250",
+            "genericDefinitionClassPointerVa": "0x18e51e380",
+            "genericContextPointerVa": "0x18c0b3cb8",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb78160",
+            "elementTypePointerVa": "0x18e67c3e0"
+          },
+          "elementType": {
+            "name": "Unity.Mathematics.double3",
+            "metadataTypeIndex": 171826,
+            "typeDefinitionIndex": 57201,
+            "typeCode": 17,
+            "category": "valueType",
+            "typeDefinitionsSizesPointerVa": "0x18bacbb88",
+            "instanceSizeBytes": 40,
+            "nativeSizeBytes": 24
+          }
         },
         {
           "fieldIndex": 230250,
@@ -335,7 +577,27 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x04000753"
+          "token": "0x04000753",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 50690,
+            "genericDefinitionName": "Unity.Collections.NativeArray`1",
+            "genericClassPointerVa": "0x18e5e7e80",
+            "genericDefinitionClassPointerVa": "0x18e51e380",
+            "genericContextPointerVa": "0x18c0b3be8",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb780d8",
+            "elementTypePointerVa": "0x18e67c260"
+          },
+          "elementType": {
+            "name": "Unity.Mathematics.quaternion",
+            "metadataTypeIndex": 172157,
+            "typeDefinitionIndex": 57247,
+            "typeCode": 17,
+            "category": "valueType",
+            "typeDefinitionsSizesPointerVa": "0x18bacb668",
+            "instanceSizeBytes": 32,
+            "nativeSizeBytes": 16
+          }
         },
         {
           "fieldIndex": 230251,
@@ -356,7 +618,27 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x04000754"
+          "token": "0x04000754",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 50690,
+            "genericDefinitionName": "Unity.Collections.NativeArray`1",
+            "genericClassPointerVa": "0x18e5e8250",
+            "genericDefinitionClassPointerVa": "0x18e51e380",
+            "genericContextPointerVa": "0x18c0b3cb8",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb78160",
+            "elementTypePointerVa": "0x18e67c3e0"
+          },
+          "elementType": {
+            "name": "Unity.Mathematics.double3",
+            "metadataTypeIndex": 171826,
+            "typeDefinitionIndex": 57201,
+            "typeCode": 17,
+            "category": "valueType",
+            "typeDefinitionsSizesPointerVa": "0x18bacbb88",
+            "instanceSizeBytes": 40,
+            "nativeSizeBytes": 24
+          }
         },
         {
           "fieldIndex": 230252,
@@ -377,7 +659,27 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x04000755"
+          "token": "0x04000755",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 50690,
+            "genericDefinitionName": "Unity.Collections.NativeArray`1",
+            "genericClassPointerVa": "0x18e5e7e80",
+            "genericDefinitionClassPointerVa": "0x18e51e380",
+            "genericContextPointerVa": "0x18c0b3be8",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb780d8",
+            "elementTypePointerVa": "0x18e67c260"
+          },
+          "elementType": {
+            "name": "Unity.Mathematics.quaternion",
+            "metadataTypeIndex": 172157,
+            "typeDefinitionIndex": 57247,
+            "typeCode": 17,
+            "category": "valueType",
+            "typeDefinitionsSizesPointerVa": "0x18bacb668",
+            "instanceSizeBytes": 32,
+            "nativeSizeBytes": 16
+          }
         },
         {
           "fieldIndex": 230253,
@@ -398,7 +700,27 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x04000756"
+          "token": "0x04000756",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 50690,
+            "genericDefinitionName": "Unity.Collections.NativeArray`1",
+            "genericClassPointerVa": "0x18e5e7d00",
+            "genericDefinitionClassPointerVa": "0x18e51e380",
+            "genericContextPointerVa": "0x18c0b31e8",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb77bd0",
+            "elementTypePointerVa": "0x18e67b0d0"
+          },
+          "elementType": {
+            "name": "BeyondDynamicBone.ColliderManager+WorkData",
+            "metadataTypeIndex": 186600,
+            "typeDefinitionIndex": 48373,
+            "typeCode": 17,
+            "category": "valueType",
+            "typeDefinitionsSizesPointerVa": "0x18bb69718",
+            "instanceSizeBytes": 200,
+            "nativeSizeBytes": 184
+          }
         },
         {
           "fieldIndex": 230254,
@@ -419,9 +741,30 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x04000757"
+          "token": "0x04000757",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 60806,
+            "genericDefinitionName": "Unity.Collections.NativeReference`1",
+            "genericClassPointerVa": "0x18e5e6340",
+            "genericDefinitionClassPointerVa": "0x18e51ac00",
+            "genericContextPointerVa": "0x18c0bf358",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb80e18",
+            "elementTypePointerVa": "0x18e68cca0"
+          },
+          "elementType": {
+            "name": "System.Int32",
+            "metadataTypeIndex": 148327,
+            "typeDefinitionIndex": 42093,
+            "typeCode": 8,
+            "category": "primitive",
+            "typeDefinitionsSizesPointerVa": "0x18bb57ad8",
+            "instanceSizeBytes": 20,
+            "nativeSizeBytes": 4
+          }
         }
       ],
+      "paddingGaps": [],
       "setIndexCount": {
         "methodIndex": 385449,
         "token": "0x06000772",
@@ -482,7 +825,27 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x04000758"
+          "token": "0x04000758",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 50690,
+            "genericDefinitionName": "Unity.Collections.NativeArray`1",
+            "genericClassPointerVa": "0x18e5e6a10",
+            "genericDefinitionClassPointerVa": "0x18e51e380",
+            "genericContextPointerVa": "0x18c0bf358",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb80e18",
+            "elementTypePointerVa": "0x18e68cca0"
+          },
+          "elementType": {
+            "name": "System.Int32",
+            "metadataTypeIndex": 148327,
+            "typeDefinitionIndex": 42093,
+            "typeCode": 8,
+            "category": "primitive",
+            "typeDefinitionsSizesPointerVa": "0x18bb57ad8",
+            "instanceSizeBytes": 20,
+            "nativeSizeBytes": 4
+          }
         },
         {
           "fieldIndex": 230256,
@@ -503,7 +866,27 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x04000759"
+          "token": "0x04000759",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 50690,
+            "genericDefinitionName": "Unity.Collections.NativeArray`1",
+            "genericClassPointerVa": "0x18e5e8250",
+            "genericDefinitionClassPointerVa": "0x18e51e380",
+            "genericContextPointerVa": "0x18c0b3cb8",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb78160",
+            "elementTypePointerVa": "0x18e67c3e0"
+          },
+          "elementType": {
+            "name": "Unity.Mathematics.double3",
+            "metadataTypeIndex": 171826,
+            "typeDefinitionIndex": 57201,
+            "typeCode": 17,
+            "category": "valueType",
+            "typeDefinitionsSizesPointerVa": "0x18bacbb88",
+            "instanceSizeBytes": 40,
+            "nativeSizeBytes": 24
+          }
         },
         {
           "fieldIndex": 230257,
@@ -524,7 +907,27 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x0400075a"
+          "token": "0x0400075a",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 50690,
+            "genericDefinitionName": "Unity.Collections.NativeArray`1",
+            "genericClassPointerVa": "0x18e5e7e80",
+            "genericDefinitionClassPointerVa": "0x18e51e380",
+            "genericContextPointerVa": "0x18c0b3be8",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb780d8",
+            "elementTypePointerVa": "0x18e67c260"
+          },
+          "elementType": {
+            "name": "Unity.Mathematics.quaternion",
+            "metadataTypeIndex": 172157,
+            "typeDefinitionIndex": 57247,
+            "typeCode": 17,
+            "category": "valueType",
+            "typeDefinitionsSizesPointerVa": "0x18bacb668",
+            "instanceSizeBytes": 32,
+            "nativeSizeBytes": 16
+          }
         },
         {
           "fieldIndex": 230258,
@@ -545,7 +948,27 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x0400075b"
+          "token": "0x0400075b",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 50690,
+            "genericDefinitionName": "Unity.Collections.NativeArray`1",
+            "genericClassPointerVa": "0x18e5e8250",
+            "genericDefinitionClassPointerVa": "0x18e51e380",
+            "genericContextPointerVa": "0x18c0b3cb8",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb78160",
+            "elementTypePointerVa": "0x18e67c3e0"
+          },
+          "elementType": {
+            "name": "Unity.Mathematics.double3",
+            "metadataTypeIndex": 171826,
+            "typeDefinitionIndex": 57201,
+            "typeCode": 17,
+            "category": "valueType",
+            "typeDefinitionsSizesPointerVa": "0x18bacbb88",
+            "instanceSizeBytes": 40,
+            "nativeSizeBytes": 24
+          }
         },
         {
           "fieldIndex": 230259,
@@ -566,7 +989,27 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x0400075c"
+          "token": "0x0400075c",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 50690,
+            "genericDefinitionName": "Unity.Collections.NativeArray`1",
+            "genericClassPointerVa": "0x18e5e7e80",
+            "genericDefinitionClassPointerVa": "0x18e51e380",
+            "genericContextPointerVa": "0x18c0b3be8",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb780d8",
+            "elementTypePointerVa": "0x18e67c260"
+          },
+          "elementType": {
+            "name": "Unity.Mathematics.quaternion",
+            "metadataTypeIndex": 172157,
+            "typeDefinitionIndex": 57247,
+            "typeCode": 17,
+            "category": "valueType",
+            "typeDefinitionsSizesPointerVa": "0x18bacb668",
+            "instanceSizeBytes": 32,
+            "nativeSizeBytes": 16
+          }
         },
         {
           "fieldIndex": 230260,
@@ -587,9 +1030,30 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x0400075d"
+          "token": "0x0400075d",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 60806,
+            "genericDefinitionName": "Unity.Collections.NativeReference`1",
+            "genericClassPointerVa": "0x18e5e6340",
+            "genericDefinitionClassPointerVa": "0x18e51ac00",
+            "genericContextPointerVa": "0x18c0bf358",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb80e18",
+            "elementTypePointerVa": "0x18e68cca0"
+          },
+          "elementType": {
+            "name": "System.Int32",
+            "metadataTypeIndex": 148327,
+            "typeDefinitionIndex": 42093,
+            "typeCode": 8,
+            "category": "primitive",
+            "typeDefinitionsSizesPointerVa": "0x18bb57ad8",
+            "instanceSizeBytes": 20,
+            "nativeSizeBytes": 4
+          }
         }
       ],
+      "paddingGaps": [],
       "setIndexCount": {
         "methodIndex": 385453,
         "token": "0x06000776",
@@ -690,7 +1154,27 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x040007e4"
+          "token": "0x040007e4",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 50690,
+            "genericDefinitionName": "Unity.Collections.NativeArray`1",
+            "genericClassPointerVa": "0x18e5e6a10",
+            "genericDefinitionClassPointerVa": "0x18e51e380",
+            "genericContextPointerVa": "0x18c0bf358",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb80e18",
+            "elementTypePointerVa": "0x18e68cca0"
+          },
+          "elementType": {
+            "name": "System.Int32",
+            "metadataTypeIndex": 148327,
+            "typeDefinitionIndex": 42093,
+            "typeCode": 8,
+            "category": "primitive",
+            "typeDefinitionsSizesPointerVa": "0x18bb57ad8",
+            "instanceSizeBytes": 20,
+            "nativeSizeBytes": 4
+          }
         },
         {
           "fieldIndex": 230396,
@@ -711,7 +1195,27 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x040007e5"
+          "token": "0x040007e5",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 50690,
+            "genericDefinitionName": "Unity.Collections.NativeArray`1",
+            "genericClassPointerVa": "0x18e5e81b0",
+            "genericDefinitionClassPointerVa": "0x18e51e380",
+            "genericContextPointerVa": "0x18c0b3c78",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb781b0",
+            "elementTypePointerVa": "0x18e67c4e0"
+          },
+          "elementType": {
+            "name": "BeyondDynamicBone.VertexAttribute",
+            "metadataTypeIndex": 169759,
+            "typeDefinitionIndex": 48621,
+            "typeCode": 17,
+            "category": "valueType",
+            "typeDefinitionsSizesPointerVa": "0x18bb92988",
+            "instanceSizeBytes": 17,
+            "nativeSizeBytes": 1
+          }
         },
         {
           "fieldIndex": 230397,
@@ -732,7 +1236,27 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x040007e6"
+          "token": "0x040007e6",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 50690,
+            "genericDefinitionName": "Unity.Collections.NativeArray`1",
+            "genericClassPointerVa": "0x18e5e64b0",
+            "genericDefinitionClassPointerVa": "0x18e51e380",
+            "genericContextPointerVa": "0x18c0b8ef8",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb7bcb8",
+            "elementTypePointerVa": "0x18e68c010"
+          },
+          "elementType": {
+            "name": "System.Single",
+            "metadataTypeIndex": 163863,
+            "typeDefinitionIndex": 42141,
+            "typeCode": 12,
+            "category": "primitive",
+            "typeDefinitionsSizesPointerVa": "0x18bb575d8",
+            "instanceSizeBytes": 20,
+            "nativeSizeBytes": 4
+          }
         },
         {
           "fieldIndex": 230398,
@@ -753,7 +1277,27 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x040007e7"
+          "token": "0x040007e7",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 50690,
+            "genericDefinitionName": "Unity.Collections.NativeArray`1",
+            "genericClassPointerVa": "0x18e5e8250",
+            "genericDefinitionClassPointerVa": "0x18e51e380",
+            "genericContextPointerVa": "0x18c0b3cb8",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb78160",
+            "elementTypePointerVa": "0x18e67c3e0"
+          },
+          "elementType": {
+            "name": "Unity.Mathematics.double3",
+            "metadataTypeIndex": 171826,
+            "typeDefinitionIndex": 57201,
+            "typeCode": 17,
+            "category": "valueType",
+            "typeDefinitionsSizesPointerVa": "0x18bacbb88",
+            "instanceSizeBytes": 40,
+            "nativeSizeBytes": 24
+          }
         },
         {
           "fieldIndex": 230399,
@@ -774,7 +1318,27 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x040007e8"
+          "token": "0x040007e8",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 50690,
+            "genericDefinitionName": "Unity.Collections.NativeArray`1",
+            "genericClassPointerVa": "0x18e5e7e80",
+            "genericDefinitionClassPointerVa": "0x18e51e380",
+            "genericContextPointerVa": "0x18c0b3be8",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb780d8",
+            "elementTypePointerVa": "0x18e67c260"
+          },
+          "elementType": {
+            "name": "Unity.Mathematics.quaternion",
+            "metadataTypeIndex": 172157,
+            "typeDefinitionIndex": 57247,
+            "typeCode": 17,
+            "category": "valueType",
+            "typeDefinitionsSizesPointerVa": "0x18bacb668",
+            "instanceSizeBytes": 32,
+            "nativeSizeBytes": 16
+          }
         },
         {
           "fieldIndex": 230400,
@@ -795,7 +1359,27 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x040007e9"
+          "token": "0x040007e9",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 50690,
+            "genericDefinitionName": "Unity.Collections.NativeArray`1",
+            "genericClassPointerVa": "0x18e5e6a10",
+            "genericDefinitionClassPointerVa": "0x18e51e380",
+            "genericContextPointerVa": "0x18c0bf358",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb80e18",
+            "elementTypePointerVa": "0x18e68cca0"
+          },
+          "elementType": {
+            "name": "System.Int32",
+            "metadataTypeIndex": 148327,
+            "typeDefinitionIndex": 42093,
+            "typeCode": 8,
+            "category": "primitive",
+            "typeDefinitionsSizesPointerVa": "0x18bb57ad8",
+            "instanceSizeBytes": 20,
+            "nativeSizeBytes": 4
+          }
         },
         {
           "fieldIndex": 230401,
@@ -816,7 +1400,27 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x040007ea"
+          "token": "0x040007ea",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 50690,
+            "genericDefinitionName": "Unity.Collections.NativeArray`1",
+            "genericClassPointerVa": "0x18e5e79b0",
+            "genericDefinitionClassPointerVa": "0x18e51e380",
+            "genericContextPointerVa": "0x18c0b30f8",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb77b60",
+            "elementTypePointerVa": "0x18e67af50"
+          },
+          "elementType": {
+            "name": "BeyondDynamicBone.TeamManager+TeamData",
+            "metadataTypeIndex": 206396,
+            "typeDefinitionIndex": 48233,
+            "typeCode": 17,
+            "category": "valueType",
+            "typeDefinitionsSizesPointerVa": "0x18bb69fd8",
+            "instanceSizeBytes": 480,
+            "nativeSizeBytes": 464
+          }
         },
         {
           "fieldIndex": 230402,
@@ -837,7 +1441,27 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x040007eb"
+          "token": "0x040007eb",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 50690,
+            "genericDefinitionName": "Unity.Collections.NativeArray`1",
+            "genericClassPointerVa": "0x18e5e72a0",
+            "genericDefinitionClassPointerVa": "0x18e51e380",
+            "genericContextPointerVa": "0x18c0b51a8",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb78bd8",
+            "elementTypePointerVa": "0x18e742590"
+          },
+          "elementType": {
+            "name": "BeyondDynamicBone.ClothParameters",
+            "metadataTypeIndex": 134012,
+            "typeDefinitionIndex": 48002,
+            "typeCode": 17,
+            "category": "valueType",
+            "typeDefinitionsSizesPointerVa": "0x18bb6b068",
+            "instanceSizeBytes": 824,
+            "nativeSizeBytes": 808
+          }
         },
         {
           "fieldIndex": 230403,
@@ -858,7 +1482,27 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x040007ec"
+          "token": "0x040007ec",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 50690,
+            "genericDefinitionName": "Unity.Collections.NativeArray`1",
+            "genericClassPointerVa": "0x18e5e7a70",
+            "genericDefinitionClassPointerVa": "0x18e51e380",
+            "genericContextPointerVa": "0x18c0b35f8",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb77e10",
+            "elementTypePointerVa": "0x18e67b900"
+          },
+          "elementType": {
+            "name": "BeyondDynamicBone.InertiaConstraint+CenterData",
+            "metadataTypeIndex": 195736,
+            "typeDefinitionIndex": 48071,
+            "typeCode": 17,
+            "category": "valueType",
+            "typeDefinitionsSizesPointerVa": "0x18bb6ac38",
+            "instanceSizeBytes": 712,
+            "nativeSizeBytes": 696
+          }
         },
         {
           "fieldIndex": 230404,
@@ -879,7 +1523,27 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x040007ed"
+          "token": "0x040007ed",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 50690,
+            "genericDefinitionName": "Unity.Collections.NativeArray`1",
+            "genericClassPointerVa": "0x18e5e6560",
+            "genericDefinitionClassPointerVa": "0x18e51e380",
+            "genericContextPointerVa": "0x18c0b38d8",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb77f88",
+            "elementTypePointerVa": "0x18e67be20"
+          },
+          "elementType": {
+            "name": "BeyondDynamicBone.TeamWindData",
+            "metadataTypeIndex": 166200,
+            "typeDefinitionIndex": 48441,
+            "typeCode": 17,
+            "category": "valueType",
+            "typeDefinitionsSizesPointerVa": "0x18bb694d8",
+            "instanceSizeBytes": 168,
+            "nativeSizeBytes": 152
+          }
         },
         {
           "fieldIndex": 230405,
@@ -900,7 +1564,27 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x040007ee"
+          "token": "0x040007ee",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 50690,
+            "genericDefinitionName": "Unity.Collections.NativeArray`1",
+            "genericClassPointerVa": "0x18e5e7750",
+            "genericDefinitionClassPointerVa": "0x18e51e380",
+            "genericContextPointerVa": "0x18c0b2fe8",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb77ac8",
+            "elementTypePointerVa": "0x18e67ad20"
+          },
+          "elementType": {
+            "name": "BeyondDynamicBone.WindManager+WindData",
+            "metadataTypeIndex": 208637,
+            "typeDefinitionIndex": 48431,
+            "typeCode": 17,
+            "category": "valueType",
+            "typeDefinitionsSizesPointerVa": "0x18bb693b8",
+            "instanceSizeBytes": 228,
+            "nativeSizeBytes": 212
+          }
         },
         {
           "fieldIndex": 230406,
@@ -921,7 +1605,27 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x040007ef"
+          "token": "0x040007ef",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 50690,
+            "genericDefinitionName": "Unity.Collections.NativeArray`1",
+            "genericClassPointerVa": "0x18e5e69a0",
+            "genericDefinitionClassPointerVa": "0x18e51e380",
+            "genericContextPointerVa": "0x18c0b40b8",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb78358",
+            "elementTypePointerVa": "0x18e680930"
+          },
+          "elementType": {
+            "name": "System.Int16",
+            "metadataTypeIndex": 148311,
+            "typeDefinitionIndex": 42092,
+            "typeCode": 6,
+            "category": "primitive",
+            "typeDefinitionsSizesPointerVa": "0x18bb57ac8",
+            "instanceSizeBytes": 18,
+            "nativeSizeBytes": 2
+          }
         },
         {
           "fieldIndex": 230407,
@@ -942,7 +1646,27 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x040007f0"
+          "token": "0x040007f0",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 50690,
+            "genericDefinitionName": "Unity.Collections.NativeArray`1",
+            "genericClassPointerVa": "0x18e5e8250",
+            "genericDefinitionClassPointerVa": "0x18e51e380",
+            "genericContextPointerVa": "0x18c0b3cb8",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb78160",
+            "elementTypePointerVa": "0x18e67c3e0"
+          },
+          "elementType": {
+            "name": "Unity.Mathematics.double3",
+            "metadataTypeIndex": 171826,
+            "typeDefinitionIndex": 57201,
+            "typeCode": 17,
+            "category": "valueType",
+            "typeDefinitionsSizesPointerVa": "0x18bacbb88",
+            "instanceSizeBytes": 40,
+            "nativeSizeBytes": 24
+          }
         },
         {
           "fieldIndex": 230408,
@@ -963,7 +1687,27 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x040007f1"
+          "token": "0x040007f1",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 50690,
+            "genericDefinitionName": "Unity.Collections.NativeArray`1",
+            "genericClassPointerVa": "0x18e5e8250",
+            "genericDefinitionClassPointerVa": "0x18e51e380",
+            "genericContextPointerVa": "0x18c0b3cb8",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb78160",
+            "elementTypePointerVa": "0x18e67c3e0"
+          },
+          "elementType": {
+            "name": "Unity.Mathematics.double3",
+            "metadataTypeIndex": 171826,
+            "typeDefinitionIndex": 57201,
+            "typeCode": 17,
+            "category": "valueType",
+            "typeDefinitionsSizesPointerVa": "0x18bacbb88",
+            "instanceSizeBytes": 40,
+            "nativeSizeBytes": 24
+          }
         },
         {
           "fieldIndex": 230409,
@@ -984,7 +1728,27 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x040007f2"
+          "token": "0x040007f2",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 50690,
+            "genericDefinitionName": "Unity.Collections.NativeArray`1",
+            "genericClassPointerVa": "0x18e5e8250",
+            "genericDefinitionClassPointerVa": "0x18e51e380",
+            "genericContextPointerVa": "0x18c0b3cb8",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb78160",
+            "elementTypePointerVa": "0x18e67c3e0"
+          },
+          "elementType": {
+            "name": "Unity.Mathematics.double3",
+            "metadataTypeIndex": 171826,
+            "typeDefinitionIndex": 57201,
+            "typeCode": 17,
+            "category": "valueType",
+            "typeDefinitionsSizesPointerVa": "0x18bacbb88",
+            "instanceSizeBytes": 40,
+            "nativeSizeBytes": 24
+          }
         },
         {
           "fieldIndex": 230410,
@@ -1005,7 +1769,27 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x040007f3"
+          "token": "0x040007f3",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 50690,
+            "genericDefinitionName": "Unity.Collections.NativeArray`1",
+            "genericClassPointerVa": "0x18e5e7e20",
+            "genericDefinitionClassPointerVa": "0x18e51e380",
+            "genericContextPointerVa": "0x18c0b3b78",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb780b8",
+            "elementTypePointerVa": "0x18e67fac0"
+          },
+          "elementType": {
+            "name": "Unity.Mathematics.float3",
+            "metadataTypeIndex": 171869,
+            "typeDefinitionIndex": 57216,
+            "typeCode": 17,
+            "category": "valueType",
+            "typeDefinitionsSizesPointerVa": "0x18bacb478",
+            "instanceSizeBytes": 28,
+            "nativeSizeBytes": 12
+          }
         },
         {
           "fieldIndex": 230411,
@@ -1026,7 +1810,27 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x040007f4"
+          "token": "0x040007f4",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 50690,
+            "genericDefinitionName": "Unity.Collections.NativeArray`1",
+            "genericClassPointerVa": "0x18e5e7e80",
+            "genericDefinitionClassPointerVa": "0x18e51e380",
+            "genericContextPointerVa": "0x18c0b3be8",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb780d8",
+            "elementTypePointerVa": "0x18e67c260"
+          },
+          "elementType": {
+            "name": "Unity.Mathematics.quaternion",
+            "metadataTypeIndex": 172157,
+            "typeDefinitionIndex": 57247,
+            "typeCode": 17,
+            "category": "valueType",
+            "typeDefinitionsSizesPointerVa": "0x18bacb668",
+            "instanceSizeBytes": 32,
+            "nativeSizeBytes": 16
+          }
         },
         {
           "fieldIndex": 230412,
@@ -1047,7 +1851,27 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x040007f5"
+          "token": "0x040007f5",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 50690,
+            "genericDefinitionName": "Unity.Collections.NativeArray`1",
+            "genericClassPointerVa": "0x18e5e8250",
+            "genericDefinitionClassPointerVa": "0x18e51e380",
+            "genericContextPointerVa": "0x18c0b3cb8",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb78160",
+            "elementTypePointerVa": "0x18e67c3e0"
+          },
+          "elementType": {
+            "name": "Unity.Mathematics.double3",
+            "metadataTypeIndex": 171826,
+            "typeDefinitionIndex": 57201,
+            "typeCode": 17,
+            "category": "valueType",
+            "typeDefinitionsSizesPointerVa": "0x18bacbb88",
+            "instanceSizeBytes": 40,
+            "nativeSizeBytes": 24
+          }
         },
         {
           "fieldIndex": 230413,
@@ -1068,7 +1892,27 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x040007f6"
+          "token": "0x040007f6",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 50690,
+            "genericDefinitionName": "Unity.Collections.NativeArray`1",
+            "genericClassPointerVa": "0x18e5e7e80",
+            "genericDefinitionClassPointerVa": "0x18e51e380",
+            "genericContextPointerVa": "0x18c0b3be8",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb780d8",
+            "elementTypePointerVa": "0x18e67c260"
+          },
+          "elementType": {
+            "name": "Unity.Mathematics.quaternion",
+            "metadataTypeIndex": 172157,
+            "typeDefinitionIndex": 57247,
+            "typeCode": 17,
+            "category": "valueType",
+            "typeDefinitionsSizesPointerVa": "0x18bacb668",
+            "instanceSizeBytes": 32,
+            "nativeSizeBytes": 16
+          }
         },
         {
           "fieldIndex": 230414,
@@ -1089,7 +1933,27 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x040007f7"
+          "token": "0x040007f7",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 50690,
+            "genericDefinitionName": "Unity.Collections.NativeArray`1",
+            "genericClassPointerVa": "0x18e5e8250",
+            "genericDefinitionClassPointerVa": "0x18e51e380",
+            "genericContextPointerVa": "0x18c0b3cb8",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb78160",
+            "elementTypePointerVa": "0x18e67c3e0"
+          },
+          "elementType": {
+            "name": "Unity.Mathematics.double3",
+            "metadataTypeIndex": 171826,
+            "typeDefinitionIndex": 57201,
+            "typeCode": 17,
+            "category": "valueType",
+            "typeDefinitionsSizesPointerVa": "0x18bacbb88",
+            "instanceSizeBytes": 40,
+            "nativeSizeBytes": 24
+          }
         },
         {
           "fieldIndex": 230415,
@@ -1110,7 +1974,27 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x040007f8"
+          "token": "0x040007f8",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 50690,
+            "genericDefinitionName": "Unity.Collections.NativeArray`1",
+            "genericClassPointerVa": "0x18e5e64b0",
+            "genericDefinitionClassPointerVa": "0x18e51e380",
+            "genericContextPointerVa": "0x18c0b8ef8",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb7bcb8",
+            "elementTypePointerVa": "0x18e68c010"
+          },
+          "elementType": {
+            "name": "System.Single",
+            "metadataTypeIndex": 163863,
+            "typeDefinitionIndex": 42141,
+            "typeCode": 12,
+            "category": "primitive",
+            "typeDefinitionsSizesPointerVa": "0x18bb575d8",
+            "instanceSizeBytes": 20,
+            "nativeSizeBytes": 4
+          }
         },
         {
           "fieldIndex": 230416,
@@ -1131,7 +2015,27 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x040007f9"
+          "token": "0x040007f9",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 50690,
+            "genericDefinitionName": "Unity.Collections.NativeArray`1",
+            "genericClassPointerVa": "0x18e5e8250",
+            "genericDefinitionClassPointerVa": "0x18e51e380",
+            "genericContextPointerVa": "0x18c0b3cb8",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb78160",
+            "elementTypePointerVa": "0x18e67c3e0"
+          },
+          "elementType": {
+            "name": "Unity.Mathematics.double3",
+            "metadataTypeIndex": 171826,
+            "typeDefinitionIndex": 57201,
+            "typeCode": 17,
+            "category": "valueType",
+            "typeDefinitionsSizesPointerVa": "0x18bacbb88",
+            "instanceSizeBytes": 40,
+            "nativeSizeBytes": 24
+          }
         },
         {
           "fieldIndex": 230417,
@@ -1152,7 +2056,27 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x040007fa"
+          "token": "0x040007fa",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 50690,
+            "genericDefinitionName": "Unity.Collections.NativeArray`1",
+            "genericClassPointerVa": "0x18e5e7e80",
+            "genericDefinitionClassPointerVa": "0x18e51e380",
+            "genericContextPointerVa": "0x18c0b3be8",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb780d8",
+            "elementTypePointerVa": "0x18e67c260"
+          },
+          "elementType": {
+            "name": "Unity.Mathematics.quaternion",
+            "metadataTypeIndex": 172157,
+            "typeDefinitionIndex": 57247,
+            "typeCode": 17,
+            "category": "valueType",
+            "typeDefinitionsSizesPointerVa": "0x18bacb668",
+            "instanceSizeBytes": 32,
+            "nativeSizeBytes": 16
+          }
         },
         {
           "fieldIndex": 230418,
@@ -1173,7 +2097,37 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x040007fb"
+          "token": "0x040007fb",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 60806,
+            "genericDefinitionName": "Unity.Collections.NativeReference`1",
+            "genericClassPointerVa": "0x18e5e6340",
+            "genericDefinitionClassPointerVa": "0x18e51ac00",
+            "genericContextPointerVa": "0x18c0bf358",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb80e18",
+            "elementTypePointerVa": "0x18e68cca0"
+          },
+          "elementType": {
+            "name": "System.Int32",
+            "metadataTypeIndex": 148327,
+            "typeDefinitionIndex": 42093,
+            "typeCode": 8,
+            "category": "primitive",
+            "typeDefinitionsSizesPointerVa": "0x18bb57ad8",
+            "instanceSizeBytes": 20,
+            "nativeSizeBytes": 4
+          }
+        }
+      ],
+      "paddingGaps": [
+        {
+          "nativePayloadOffset": "0x14",
+          "endNativePayloadOffset": "0x18",
+          "sizeBytes": 4,
+          "afterField": "simulationDeltaTime",
+          "beforeField": "stepParticleIndexArray",
+          "basis": "declared_field_width_to_next_native_offset"
         }
       ],
       "setIndexCount": {
@@ -1256,7 +2210,27 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x0400080b"
+          "token": "0x0400080b",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 50690,
+            "genericDefinitionName": "Unity.Collections.NativeArray`1",
+            "genericClassPointerVa": "0x18e5e6a10",
+            "genericDefinitionClassPointerVa": "0x18e51e380",
+            "genericContextPointerVa": "0x18c0bf358",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb80e18",
+            "elementTypePointerVa": "0x18e68cca0"
+          },
+          "elementType": {
+            "name": "System.Int32",
+            "metadataTypeIndex": 148327,
+            "typeDefinitionIndex": 42093,
+            "typeCode": 8,
+            "category": "primitive",
+            "typeDefinitionsSizesPointerVa": "0x18bb57ad8",
+            "instanceSizeBytes": 20,
+            "nativeSizeBytes": 4
+          }
         },
         {
           "fieldIndex": 230435,
@@ -1277,7 +2251,27 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x0400080c"
+          "token": "0x0400080c",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 50690,
+            "genericDefinitionName": "Unity.Collections.NativeArray`1",
+            "genericClassPointerVa": "0x18e5e79b0",
+            "genericDefinitionClassPointerVa": "0x18e51e380",
+            "genericContextPointerVa": "0x18c0b30f8",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb77b60",
+            "elementTypePointerVa": "0x18e67af50"
+          },
+          "elementType": {
+            "name": "BeyondDynamicBone.TeamManager+TeamData",
+            "metadataTypeIndex": 206396,
+            "typeDefinitionIndex": 48233,
+            "typeCode": 17,
+            "category": "valueType",
+            "typeDefinitionsSizesPointerVa": "0x18bb69fd8",
+            "instanceSizeBytes": 480,
+            "nativeSizeBytes": 464
+          }
         },
         {
           "fieldIndex": 230436,
@@ -1298,7 +2292,27 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x0400080d"
+          "token": "0x0400080d",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 50690,
+            "genericDefinitionName": "Unity.Collections.NativeArray`1",
+            "genericClassPointerVa": "0x18e5e72a0",
+            "genericDefinitionClassPointerVa": "0x18e51e380",
+            "genericContextPointerVa": "0x18c0b51a8",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb78bd8",
+            "elementTypePointerVa": "0x18e742590"
+          },
+          "elementType": {
+            "name": "BeyondDynamicBone.ClothParameters",
+            "metadataTypeIndex": 134012,
+            "typeDefinitionIndex": 48002,
+            "typeCode": 17,
+            "category": "valueType",
+            "typeDefinitionsSizesPointerVa": "0x18bb6b068",
+            "instanceSizeBytes": 824,
+            "nativeSizeBytes": 808
+          }
         },
         {
           "fieldIndex": 230437,
@@ -1319,7 +2333,27 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x0400080e"
+          "token": "0x0400080e",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 50690,
+            "genericDefinitionName": "Unity.Collections.NativeArray`1",
+            "genericClassPointerVa": "0x18e5e7a70",
+            "genericDefinitionClassPointerVa": "0x18e51e380",
+            "genericContextPointerVa": "0x18c0b35f8",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb77e10",
+            "elementTypePointerVa": "0x18e67b900"
+          },
+          "elementType": {
+            "name": "BeyondDynamicBone.InertiaConstraint+CenterData",
+            "metadataTypeIndex": 195736,
+            "typeDefinitionIndex": 48071,
+            "typeCode": 17,
+            "category": "valueType",
+            "typeDefinitionsSizesPointerVa": "0x18bb6ac38",
+            "instanceSizeBytes": 712,
+            "nativeSizeBytes": 696
+          }
         },
         {
           "fieldIndex": 230438,
@@ -1340,7 +2374,27 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x0400080f"
+          "token": "0x0400080f",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 50690,
+            "genericDefinitionName": "Unity.Collections.NativeArray`1",
+            "genericClassPointerVa": "0x18e5e81b0",
+            "genericDefinitionClassPointerVa": "0x18e51e380",
+            "genericContextPointerVa": "0x18c0b3c78",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb781b0",
+            "elementTypePointerVa": "0x18e67c4e0"
+          },
+          "elementType": {
+            "name": "BeyondDynamicBone.VertexAttribute",
+            "metadataTypeIndex": 169759,
+            "typeDefinitionIndex": 48621,
+            "typeCode": 17,
+            "category": "valueType",
+            "typeDefinitionsSizesPointerVa": "0x18bb92988",
+            "instanceSizeBytes": 17,
+            "nativeSizeBytes": 1
+          }
         },
         {
           "fieldIndex": 230439,
@@ -1361,7 +2415,27 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x04000810"
+          "token": "0x04000810",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 50690,
+            "genericDefinitionName": "Unity.Collections.NativeArray`1",
+            "genericClassPointerVa": "0x18e5e64b0",
+            "genericDefinitionClassPointerVa": "0x18e51e380",
+            "genericContextPointerVa": "0x18c0b8ef8",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb7bcb8",
+            "elementTypePointerVa": "0x18e68c010"
+          },
+          "elementType": {
+            "name": "System.Single",
+            "metadataTypeIndex": 163863,
+            "typeDefinitionIndex": 42141,
+            "typeCode": 12,
+            "category": "primitive",
+            "typeDefinitionsSizesPointerVa": "0x18bb575d8",
+            "instanceSizeBytes": 20,
+            "nativeSizeBytes": 4
+          }
         },
         {
           "fieldIndex": 230440,
@@ -1382,7 +2456,27 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x04000811"
+          "token": "0x04000811",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 50690,
+            "genericDefinitionName": "Unity.Collections.NativeArray`1",
+            "genericClassPointerVa": "0x18e5e69a0",
+            "genericDefinitionClassPointerVa": "0x18e51e380",
+            "genericContextPointerVa": "0x18c0b40b8",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb78358",
+            "elementTypePointerVa": "0x18e680930"
+          },
+          "elementType": {
+            "name": "System.Int16",
+            "metadataTypeIndex": 148311,
+            "typeDefinitionIndex": 42092,
+            "typeCode": 6,
+            "category": "primitive",
+            "typeDefinitionsSizesPointerVa": "0x18bb57ac8",
+            "instanceSizeBytes": 18,
+            "nativeSizeBytes": 2
+          }
         },
         {
           "fieldIndex": 230441,
@@ -1403,7 +2497,27 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x04000812"
+          "token": "0x04000812",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 50690,
+            "genericDefinitionName": "Unity.Collections.NativeArray`1",
+            "genericClassPointerVa": "0x18e5e8250",
+            "genericDefinitionClassPointerVa": "0x18e51e380",
+            "genericContextPointerVa": "0x18c0b3cb8",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb78160",
+            "elementTypePointerVa": "0x18e67c3e0"
+          },
+          "elementType": {
+            "name": "Unity.Mathematics.double3",
+            "metadataTypeIndex": 171826,
+            "typeDefinitionIndex": 57201,
+            "typeCode": 17,
+            "category": "valueType",
+            "typeDefinitionsSizesPointerVa": "0x18bacbb88",
+            "instanceSizeBytes": 40,
+            "nativeSizeBytes": 24
+          }
         },
         {
           "fieldIndex": 230442,
@@ -1424,7 +2538,27 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x04000813"
+          "token": "0x04000813",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 50690,
+            "genericDefinitionName": "Unity.Collections.NativeArray`1",
+            "genericClassPointerVa": "0x18e5e8250",
+            "genericDefinitionClassPointerVa": "0x18e51e380",
+            "genericContextPointerVa": "0x18c0b3cb8",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb78160",
+            "elementTypePointerVa": "0x18e67c3e0"
+          },
+          "elementType": {
+            "name": "Unity.Mathematics.double3",
+            "metadataTypeIndex": 171826,
+            "typeDefinitionIndex": 57201,
+            "typeCode": 17,
+            "category": "valueType",
+            "typeDefinitionsSizesPointerVa": "0x18bacbb88",
+            "instanceSizeBytes": 40,
+            "nativeSizeBytes": 24
+          }
         },
         {
           "fieldIndex": 230443,
@@ -1445,7 +2579,27 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x04000814"
+          "token": "0x04000814",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 50690,
+            "genericDefinitionName": "Unity.Collections.NativeArray`1",
+            "genericClassPointerVa": "0x18e5e8250",
+            "genericDefinitionClassPointerVa": "0x18e51e380",
+            "genericContextPointerVa": "0x18c0b3cb8",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb78160",
+            "elementTypePointerVa": "0x18e67c3e0"
+          },
+          "elementType": {
+            "name": "Unity.Mathematics.double3",
+            "metadataTypeIndex": 171826,
+            "typeDefinitionIndex": 57201,
+            "typeCode": 17,
+            "category": "valueType",
+            "typeDefinitionsSizesPointerVa": "0x18bacbb88",
+            "instanceSizeBytes": 40,
+            "nativeSizeBytes": 24
+          }
         },
         {
           "fieldIndex": 230444,
@@ -1466,7 +2620,27 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x04000815"
+          "token": "0x04000815",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 50690,
+            "genericDefinitionName": "Unity.Collections.NativeArray`1",
+            "genericClassPointerVa": "0x18e5e7e20",
+            "genericDefinitionClassPointerVa": "0x18e51e380",
+            "genericContextPointerVa": "0x18c0b3b78",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb780b8",
+            "elementTypePointerVa": "0x18e67fac0"
+          },
+          "elementType": {
+            "name": "Unity.Mathematics.float3",
+            "metadataTypeIndex": 171869,
+            "typeDefinitionIndex": 57216,
+            "typeCode": 17,
+            "category": "valueType",
+            "typeDefinitionsSizesPointerVa": "0x18bacb478",
+            "instanceSizeBytes": 28,
+            "nativeSizeBytes": 12
+          }
         },
         {
           "fieldIndex": 230445,
@@ -1487,7 +2661,27 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x04000816"
+          "token": "0x04000816",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 50690,
+            "genericDefinitionName": "Unity.Collections.NativeArray`1",
+            "genericClassPointerVa": "0x18e5e7e20",
+            "genericDefinitionClassPointerVa": "0x18e51e380",
+            "genericContextPointerVa": "0x18c0b3b78",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb780b8",
+            "elementTypePointerVa": "0x18e67fac0"
+          },
+          "elementType": {
+            "name": "Unity.Mathematics.float3",
+            "metadataTypeIndex": 171869,
+            "typeDefinitionIndex": 57216,
+            "typeCode": 17,
+            "category": "valueType",
+            "typeDefinitionsSizesPointerVa": "0x18bacb478",
+            "instanceSizeBytes": 28,
+            "nativeSizeBytes": 12
+          }
         },
         {
           "fieldIndex": 230446,
@@ -1508,7 +2702,27 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x04000817"
+          "token": "0x04000817",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 50690,
+            "genericDefinitionName": "Unity.Collections.NativeArray`1",
+            "genericClassPointerVa": "0x18e5e64b0",
+            "genericDefinitionClassPointerVa": "0x18e51e380",
+            "genericContextPointerVa": "0x18c0b8ef8",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb7bcb8",
+            "elementTypePointerVa": "0x18e68c010"
+          },
+          "elementType": {
+            "name": "System.Single",
+            "metadataTypeIndex": 163863,
+            "typeDefinitionIndex": 42141,
+            "typeCode": 12,
+            "category": "primitive",
+            "typeDefinitionsSizesPointerVa": "0x18bb575d8",
+            "instanceSizeBytes": 20,
+            "nativeSizeBytes": 4
+          }
         },
         {
           "fieldIndex": 230447,
@@ -1529,7 +2743,27 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x04000818"
+          "token": "0x04000818",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 50690,
+            "genericDefinitionName": "Unity.Collections.NativeArray`1",
+            "genericClassPointerVa": "0x18e5e64b0",
+            "genericDefinitionClassPointerVa": "0x18e51e380",
+            "genericContextPointerVa": "0x18c0b8ef8",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb7bcb8",
+            "elementTypePointerVa": "0x18e68c010"
+          },
+          "elementType": {
+            "name": "System.Single",
+            "metadataTypeIndex": 163863,
+            "typeDefinitionIndex": 42141,
+            "typeCode": 12,
+            "category": "primitive",
+            "typeDefinitionsSizesPointerVa": "0x18bb575d8",
+            "instanceSizeBytes": 20,
+            "nativeSizeBytes": 4
+          }
         },
         {
           "fieldIndex": 230448,
@@ -1550,7 +2784,27 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x04000819"
+          "token": "0x04000819",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 50690,
+            "genericDefinitionName": "Unity.Collections.NativeArray`1",
+            "genericClassPointerVa": "0x18e5e7e20",
+            "genericDefinitionClassPointerVa": "0x18e51e380",
+            "genericContextPointerVa": "0x18c0b3b78",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb780b8",
+            "elementTypePointerVa": "0x18e67fac0"
+          },
+          "elementType": {
+            "name": "Unity.Mathematics.float3",
+            "metadataTypeIndex": 171869,
+            "typeDefinitionIndex": 57216,
+            "typeCode": 17,
+            "category": "valueType",
+            "typeDefinitionsSizesPointerVa": "0x18bacb478",
+            "instanceSizeBytes": 28,
+            "nativeSizeBytes": 12
+          }
         },
         {
           "fieldIndex": 230449,
@@ -1571,7 +2825,37 @@
             "abiAligned": true,
             "genericTypeSizeClaimed": false
           },
-          "token": "0x0400081a"
+          "token": "0x0400081a",
+          "genericContext": {
+            "genericDefinitionTypeIndex": 60806,
+            "genericDefinitionName": "Unity.Collections.NativeReference`1",
+            "genericClassPointerVa": "0x18e5e6340",
+            "genericDefinitionClassPointerVa": "0x18e51ac00",
+            "genericContextPointerVa": "0x18c0bf358",
+            "argumentCount": 1,
+            "argumentVectorVa": "0x18eb80e18",
+            "elementTypePointerVa": "0x18e68cca0"
+          },
+          "elementType": {
+            "name": "System.Int32",
+            "metadataTypeIndex": 148327,
+            "typeDefinitionIndex": 42093,
+            "typeCode": 8,
+            "category": "primitive",
+            "typeDefinitionsSizesPointerVa": "0x18bb57ad8",
+            "instanceSizeBytes": 20,
+            "nativeSizeBytes": 4
+          }
+        }
+      ],
+      "paddingGaps": [
+        {
+          "nativePayloadOffset": "0x4",
+          "endNativePayloadOffset": "0x8",
+          "sizeBytes": 4,
+          "afterField": "simulationDeltaTime",
+          "beforeField": "stepParticleIndexArray",
+          "basis": "declared_field_width_to_next_native_offset"
         }
       ],
       "setIndexCount": {

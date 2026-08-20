@@ -34,6 +34,9 @@ DEFAULT_METADATA: Path | None = None
 # it is not a claim about the size or alignment of an open generic definition.
 NATIVE_ABI_ALIGNMENT_BYTES = 8
 GENERIC_FIELD_KINDS = frozenset({"NativeArray", "NativeReference"})
+IL2CPP_TYPE_GENERICINST = 0x15
+IL2CPP_TYPE_VALUETYPE = 0x11
+IL2CPP_PRIMITIVE_TYPE_CODES = frozenset(range(0x1, 0x0f))
 
 EXPECTED_GAME_ASSEMBLY_SHA256 = "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
 EXPECTED_METADATA_SHA256 = "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
@@ -218,6 +221,15 @@ JOBS: tuple[dict[str, Any], ...] = (
     },
 )
 
+EXPECTED_PADDING_GAPS: dict[str, tuple[int, int, str, str]] = {
+    "BeyondDynamicBone.SimulationManager+StartSimulationStepJob": (
+        0x14, 0x18, "simulationDeltaTime", "stepParticleIndexArray"
+    ),
+    "BeyondDynamicBone.SimulationManager+EndSimulationStepJob": (
+        0x4, 0x8, "simulationDeltaTime", "stepParticleIndexArray"
+    ),
+}
+
 
 def _native_gate(game_assembly: Path | None, metadata: Path | None) -> dict[str, Any]:
     result = check_installed_native_inputs(
@@ -238,6 +250,167 @@ def _native_gate(game_assembly: Path | None, metadata: Path | None) -> dict[str,
 
 def _signed_i32(pe: Any, va: int) -> int:
     return struct.unpack("<i", struct.pack("<I", pe.u32_at_va(va)))[0]
+
+
+def _type_definition_for_byval_index(md: Any, metadata_type_index: int, field_name: str) -> Any:
+    """Resolve one canonical TypeDef without confusing a byref alias for it."""
+    matches = [
+        type_def for type_def in md.types
+        if type_def.byval_type_index == metadata_type_index
+    ]
+    if len(matches) != 1:
+        raise ContractError(
+            f"{field_name} element metadata type index {metadata_type_index} "
+            f"maps to {len(matches)} by-value TypeDefs"
+        )
+    return matches[0]
+
+
+def _build_type_pointer_index(pe: Any, registration: dict[str, Any]) -> dict[int, list[int]]:
+    count = int(registration["typesCount"])
+    pointer = int(registration["types"], 16)
+    if count <= 0 or not pointer:
+        raise ContractError("MetadataRegistration.types has no usable count/pointer")
+    result: dict[int, list[int]] = {}
+    for index in range(count):
+        type_pointer = pe.u64_at_va(pointer + index * 8)
+        if type_pointer:
+            result.setdefault(type_pointer, []).append(index)
+    return result
+
+
+def _element_type_evidence(
+    *,
+    md: Any,
+    pe: Any,
+    registration: dict[str, Any],
+    type_pointer_index: dict[int, list[int]],
+    field_name: str,
+    metadata_type_index: int,
+    expected_kind: str,
+    expected_definition_index: int,
+) -> dict[str, Any]:
+    """Resolve one closed NativeArray/NativeReference argument fail-closed."""
+    type_count = int(registration["typesCount"])
+    if metadata_type_index < 0 or metadata_type_index >= type_count:
+        raise ContractError(
+            f"{field_name} generic metadata type index {metadata_type_index} "
+            f"is outside MetadataRegistration.types count {type_count}"
+        )
+    type_table = int(registration["types"], 16)
+    type_pointer = pe.u64_at_va(type_table + metadata_type_index * 8)
+    if not type_pointer:
+        raise ContractError(f"{field_name} generic metadata type index has a null types entry")
+    type_code = pe.bytes_at_va(type_pointer + 10, 1)[0]
+    if type_code != IL2CPP_TYPE_GENERICINST:
+        raise ContractError(
+            f"{field_name} metadata type index {metadata_type_index} has type code "
+            f"0x{type_code:x}, expected GENERICINST 0x{IL2CPP_TYPE_GENERICINST:x}"
+        )
+
+    generic_class_pointer = pe.u64_at_va(type_pointer)
+    if not generic_class_pointer:
+        raise ContractError(f"{field_name} generic type has a null generic-class context")
+    generic_definition_class_pointer = pe.u64_at_va(generic_class_pointer)
+    if not generic_definition_class_pointer:
+        raise ContractError(f"{field_name} generic class has a null definition-class pointer")
+    generic_definition_index = pe.u32_at_va(generic_definition_class_pointer)
+    if generic_definition_index != expected_definition_index:
+        raise ContractError(
+            f"{field_name} generic definition index {generic_definition_index} "
+            f"does not match {expected_kind} definition {expected_definition_index}"
+        )
+    if generic_definition_index >= len(md.types):
+        raise ContractError(f"{field_name} generic definition index is outside metadata TypeDefs")
+    generic_definition_name = md.type_full_name(md.types[generic_definition_index])
+    expected_definition_name = {
+        50690: "Unity.Collections.NativeArray`1",
+        60806: "Unity.Collections.NativeReference`1",
+    }.get(expected_definition_index)
+    if generic_definition_name != expected_definition_name:
+        raise ContractError(
+            f"{field_name} generic definition {generic_definition_index} name drift: "
+            f"{generic_definition_name!r}"
+        )
+
+    context_pointer = pe.u64_at_va(generic_class_pointer + 8)
+    if not context_pointer:
+        raise ContractError(f"{field_name} generic class has a null generic context")
+    argument_count = pe.u32_at_va(context_pointer)
+    argument_vector = pe.u64_at_va(context_pointer + 8)
+    if argument_count != 1 or not argument_vector:
+        raise ContractError(
+            f"{field_name} generic context has argumentCount={argument_count} "
+            f"and argumentVector=0x{argument_vector:x}; expected one argument"
+        )
+    argument_pointer = pe.u64_at_va(argument_vector)
+    candidates = type_pointer_index.get(argument_pointer, [])
+    if len(candidates) != 1:
+        raise ContractError(
+            f"{field_name} generic argument pointer 0x{argument_pointer:x} "
+            f"maps to {len(candidates)} metadata type indexes"
+        )
+    element_metadata_type_index = candidates[0]
+    element_type_code = pe.bytes_at_va(argument_pointer + 10, 1)[0]
+    if element_type_code == IL2CPP_TYPE_VALUETYPE:
+        element_category = "valueType"
+    elif element_type_code in IL2CPP_PRIMITIVE_TYPE_CODES:
+        element_category = "primitive"
+    else:
+        raise ContractError(
+            f"{field_name} element metadata type index {element_metadata_type_index} "
+            f"has unsupported type code 0x{element_type_code:x}"
+        )
+    element_type_def = _type_definition_for_byval_index(
+        md, element_metadata_type_index, field_name
+    )
+    sizes_count = int(registration["typeDefinitionsSizesCount"])
+    if sizes_count != len(md.types):
+        raise ContractError(
+            f"{field_name} typeDefinitionsSizes count {sizes_count} "
+            f"does not equal metadata TypeDef count {len(md.types)}"
+        )
+    if element_type_def.index < 0 or element_type_def.index >= sizes_count:
+        raise ContractError(
+            f"{field_name} element TypeDef index {element_type_def.index} "
+            f"is outside typeDefinitionsSizes count {sizes_count}"
+        )
+    sizes_table = int(registration["typeDefinitionsSizes"], 16)
+    sizes_pointer = pe.u64_at_va(sizes_table + element_type_def.index * 8)
+    if not sizes_pointer:
+        raise ContractError(
+            f"{field_name} element TypeDef index {element_type_def.index} "
+            "has a null typeDefinitionsSizes entry"
+        )
+    instance_size = pe.u32_at_va(sizes_pointer)
+    native_size = _signed_i32(pe, sizes_pointer + 4)
+    if native_size <= 0 or instance_size != native_size + 16:
+        raise ContractError(
+            f"{field_name} element {md.type_full_name(element_type_def)} "
+            f"has invalid typeDefinitionsSizes instance={instance_size} native={native_size}"
+        )
+    return {
+        "genericContext": {
+            "genericDefinitionTypeIndex": generic_definition_index,
+            "genericDefinitionName": generic_definition_name,
+            "genericClassPointerVa": f"0x{generic_class_pointer:x}",
+            "genericDefinitionClassPointerVa": f"0x{generic_definition_class_pointer:x}",
+            "genericContextPointerVa": f"0x{context_pointer:x}",
+            "argumentCount": argument_count,
+            "argumentVectorVa": f"0x{argument_vector:x}",
+            "elementTypePointerVa": f"0x{argument_pointer:x}",
+        },
+        "elementType": {
+            "name": md.type_full_name(element_type_def),
+            "metadataTypeIndex": element_metadata_type_index,
+            "typeDefinitionIndex": element_type_def.index,
+            "typeCode": element_type_code,
+            "category": element_category,
+            "typeDefinitionsSizesPointerVa": f"0x{sizes_pointer:x}",
+            "instanceSizeBytes": instance_size,
+            "nativeSizeBytes": native_size,
+        },
+    }
 
 
 def _method_pointer(md: Any, native: Any, pe: Any, method_index: int) -> int:
@@ -397,7 +570,14 @@ def _field_slot_evidence(
     return width, evidence
 
 
-def _build_job(md: Any, native: Any, pe: Any, registration: dict[str, Any], spec: dict[str, Any]) -> dict[str, Any]:
+def _build_job(
+    md: Any,
+    native: Any,
+    pe: Any,
+    registration: dict[str, Any],
+    type_pointer_index: dict[int, list[int]],
+    spec: dict[str, Any],
+) -> dict[str, Any]:
     type_def = md.types[spec["typeIndex"]]
     if md.type_full_name(type_def) != spec["type"]:
         raise ContractError(f"type {spec['typeIndex']} name drift")
@@ -421,6 +601,7 @@ def _build_job(md: Any, native: Any, pe: Any, registration: dict[str, Any], spec
     if len(fields) != len(expected_fields):
         raise ContractError(f"{spec['type']} metadata field count drift")
     rows: list[dict[str, Any]] = []
+    padding_gaps: list[dict[str, Any]] = []
     previous_end = -1
     native_offsets = [boxed_offset - 16 for boxed_offset in offsets]
     if native_size % NATIVE_ABI_ALIGNMENT_BYTES:
@@ -451,7 +632,7 @@ def _build_job(md: Any, native: Any, pe: Any, registration: dict[str, Any], spec
             next_field_name=next_name,
         )
         previous_end = offset + slot_width
-        rows.append({
+        row = {
             "fieldIndex": expected.index,
             "name": name,
             "metadataTypeIndex": type_index,
@@ -461,9 +642,51 @@ def _build_job(md: Any, native: Any, pe: Any, registration: dict[str, Any], spec
             "slotWidthBytes": slot_width,
             "slotWidthEvidence": slot_evidence,
             "token": f"0x{expected.token:08x}",
-        })
+        }
+        if kind in GENERIC_FIELD_KINDS:
+            generic_evidence = _element_type_evidence(
+                md=md,
+                pe=pe,
+                registration=registration,
+                type_pointer_index=type_pointer_index,
+                field_name=f"{spec['type']}.{name}",
+                metadata_type_index=type_index,
+                expected_kind=kind,
+                expected_definition_index=field[3],
+            )
+            row.update(generic_evidence)
+        rows.append(row)
+        field_end = offset + slot_width
+        if next_offset > field_end:
+            padding_gaps.append({
+                "nativePayloadOffset": f"0x{field_end:x}",
+                "endNativePayloadOffset": f"0x{next_offset:x}",
+                "sizeBytes": next_offset - field_end,
+                "afterField": name,
+                "beforeField": next_name,
+                "basis": "declared_field_width_to_next_native_offset",
+            })
     if native_size < previous_end:
         raise ContractError(f"{spec['type']} native size does not contain its final field")
+    expected_gap = EXPECTED_PADDING_GAPS.get(spec["type"])
+    if expected_gap is not None:
+        actual_gap = padding_gaps
+        if len(actual_gap) != 1:
+            raise ContractError(
+                f"{spec['type']} expected one explicit padding/gap record, "
+                f"found {len(actual_gap)}"
+            )
+        gap_start, gap_end, after_field, before_field = expected_gap
+        observed_gap = actual_gap[0]
+        if (
+            observed_gap["nativePayloadOffset"] != f"0x{gap_start:x}"
+            or observed_gap["endNativePayloadOffset"] != f"0x{gap_end:x}"
+            or observed_gap["afterField"] != after_field
+            or observed_gap["beforeField"] != before_field
+        ):
+            raise ContractError(f"{spec['type']} explicit padding/gap boundary drift")
+    elif padding_gaps:
+        raise ContractError(f"{spec['type']} has unexpected padding/gap records")
     method = _validate_setter_metadata(md, spec)
     pointer = _method_pointer(md, native, pe, spec["setterMethodIndex"])
     index_offset = offsets[-1] - 16
@@ -479,6 +702,7 @@ def _build_job(md: Any, native: Any, pe: Any, registration: dict[str, Any], spec
         "instanceSizeBytes": instance_size,
         "nativeSizeBytes": native_size,
         "fields": rows,
+        "paddingGaps": padding_gaps,
         "setIndexCount": {
             "methodIndex": spec["setterMethodIndex"],
             "token": f"0x{method.token:08x}",
@@ -518,9 +742,18 @@ def build_contract(*, game_assembly: Path | None = DEFAULT_GAME_ASSEMBLY, metada
     max_type_index = max(spec["typeIndex"] for spec in JOBS)
     if int(registration["fieldOffsetsCount"]) < max_type_index + 1:
         raise ContractError("fieldOffsets table is too short")
+    if int(registration["typeDefinitionsSizesCount"]) != len(md.types):
+        raise ContractError(
+            "typeDefinitionsSizes count does not match metadata TypeDef count: "
+            f"{registration['typeDefinitionsSizesCount']} != {len(md.types)}"
+        )
     if int(registration["typeDefinitionsSizesCount"]) < max_type_index + 1:
         raise ContractError("typeDefinitionsSizes table is too short")
-    jobs = [_build_job(md, native, pe, registration, spec) for spec in JOBS]
+    type_pointer_index = _build_type_pointer_index(pe, registration)
+    jobs = [
+        _build_job(md, native, pe, registration, type_pointer_index, spec)
+        for spec in JOBS
+    ]
     return {
         "schema": "endfield.charinfo.secondary-dynamics-job-layout.v1",
         "status": "outer_job_layout_closed",
@@ -535,6 +768,8 @@ def build_contract(*, game_assembly: Path | None = DEFAULT_GAME_ASSEMBLY, metada
             "metadataRegistrationVa": f"0x{metadata_registration:x}",
             "fieldOffsets": registration["fieldOffsets"],
             "fieldOffsetsCount": registration["fieldOffsetsCount"],
+            "types": registration["types"],
+            "typesCount": registration["typesCount"],
             "typeDefinitionsSizes": registration["typeDefinitionsSizes"],
             "typeDefinitionsSizesCount": registration["typeDefinitionsSizesCount"],
         },
