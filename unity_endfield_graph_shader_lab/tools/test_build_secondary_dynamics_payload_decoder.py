@@ -26,7 +26,7 @@ class SecondaryDynamicsPayloadDecoderTests(unittest.TestCase):
         cls.payload = decoder.load_json(decoder.INPUT)
 
     def test_published_report_is_read_only_and_reconstructs(self) -> None:
-        observed = decoder.build_report()
+        observed = decoder.build_report(allow_source_hash_mismatch=True)
         published = json.loads(decoder.OUTPUT.read_text(encoding="utf-8"))
         self.assertEqual(observed, published)
         self.assertEqual(published["schema"], decoder.REPORT_SCHEMA)
@@ -119,28 +119,53 @@ class SecondaryDynamicsPayloadDecoderTests(unittest.TestCase):
         decoder.decode_payload(payload)
         self.assertEqual(payload, original)
 
-    def test_check_accepts_canonical_report_without_writing(self) -> None:
+    def test_check_rejects_source_hash_mismatch_without_writing(self) -> None:
         before = decoder.OUTPUT.read_bytes()
-        self.assertEqual(decoder.main(["--check"]), 0)
+        self.assertEqual(decoder.main(["--check"]), 1)
+        self.assertEqual(decoder.OUTPUT.read_bytes(), before)
+
+    def test_default_build_fails_closed_and_allow_build_writes_diagnostic(self) -> None:
+        with self.assertRaisesRegex(decoder.PayloadDecodeError, "source hash mismatch"):
+            decoder.build_report()
+
+        before = decoder.OUTPUT.read_bytes()
+        self.assertEqual(decoder.main([]), 1)
+        self.assertEqual(decoder.OUTPUT.read_bytes(), before)
+
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary) / "diagnostic.json"
+            with mock.patch.object(decoder, "OUTPUT", output):
+                self.assertEqual(decoder.main(["--allow-source-hash-mismatch"]), 0)
+                generated = json.loads(output.read_text(encoding="utf-8"))
+                self.assertEqual(generated["status"], "decoded_read_only_payload_source_hash_mismatch")
+                self.assertFalse(generated["source"]["hashes_match"])
+
+    def test_check_never_accepts_override_or_writes(self) -> None:
+        before = decoder.OUTPUT.read_bytes()
+        self.assertEqual(decoder.main(["--check", "--allow-source-hash-mismatch"]), 2)
         self.assertEqual(decoder.OUTPUT.read_bytes(), before)
 
     def test_check_rejects_missing_or_stale_report_without_creating_it(self) -> None:
-        report = decoder.build_report()
+        report = decoder.build_report(allow_source_hash_mismatch=True)
         with tempfile.TemporaryDirectory() as temporary:
             output = Path(temporary) / "missing.json"
             with mock.patch.object(decoder, "OUTPUT", output):
-                self.assertEqual(decoder.main(["--check"]), 1)
+                # _check_report itself remains a pure byte-level canonicality
+                # check; main's strict source gate is covered above.
+                with self.assertRaisesRegex(decoder.PayloadDecodeError, "missing generated report"):
+                    decoder._check_report(report)
                 self.assertFalse(output.exists())
 
                 output.write_bytes(b"{}\n")
                 before = output.read_bytes()
-                self.assertEqual(decoder.main(["--check"]), 1)
+                with self.assertRaisesRegex(decoder.PayloadDecodeError, "stale or non-canonical"):
+                    decoder._check_report(report)
                 self.assertEqual(output.read_bytes(), before)
 
                 # The check compares the same canonical bytes used for a
                 # normal write, not merely parseable JSON.
                 decoder._write_report(report)
-                self.assertEqual(decoder.main(["--check"]), 0)
+                decoder._check_report(report)
 
 
 if __name__ == "__main__":
