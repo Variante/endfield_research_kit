@@ -179,7 +179,7 @@
           "jobOffset": "0x68",
           "index": "vindex",
           "strideBytes": 4,
-          "elementFieldDisplacements": [
+          "elementByteDisplacements": [
             0
           ],
           "jobLoadInstructionOffsets": [
@@ -187,7 +187,8 @@
           ],
           "elementInstructionOffsets": [
             "0xb3"
-          ]
+          ],
+          "displacementKind": "element_byte_displacement_from_record_base"
         },
         {
           "jobField": "teamWindArray",
@@ -195,7 +196,7 @@
           "jobOffset": "0xa8",
           "index": "teamId",
           "strideBytes": 152,
-          "elementFieldDisplacements": [
+          "elementByteDisplacements": [
             0,
             16,
             32,
@@ -224,7 +225,19 @@
             "0x148",
             "0x151",
             "0x159"
-          ]
+          ],
+          "displacementKind": "element_byte_displacement_from_record_base",
+          "indexProvenance": {
+            "indexRegister": "rdx",
+            "scale": 1,
+            "baseValueInstructionOffset": "0x97",
+            "baseValueBytes": "ba80000000",
+            "baseValue": 128,
+            "accessOffsets": [
+              "0x151",
+              "0x159"
+            ]
+          }
         },
         {
           "jobField": "windDataArray",
@@ -232,7 +245,7 @@
           "jobOffset": "0xb8",
           "index": "zoneId",
           "strideBytes": 212,
-          "elementFieldDisplacements": [
+          "elementByteDisplacements": [
             0,
             16,
             32,
@@ -270,7 +283,8 @@
             "0x25d",
             "0x261"
           ],
-          "secondChunkBaseAdd": "0x80"
+          "secondChunkBaseAdd": "0x80",
+          "displacementKind": "element_byte_displacement_from_record_base"
         },
         {
           "jobField": "frictionArray",
@@ -278,7 +292,7 @@
           "jobOffset": "0x158",
           "index": "pindex",
           "strideBytes": 4,
-          "elementFieldDisplacements": [
+          "elementByteDisplacements": [
             0
           ],
           "jobLoadInstructionOffsets": [
@@ -286,7 +300,8 @@
           ],
           "elementInstructionOffsets": [
             "0x384"
-          ]
+          ],
+          "displacementKind": "element_byte_displacement_from_record_base"
         }
       ],
       "canonicalJobLayoutSource": {
@@ -713,27 +728,33 @@
       "resultContract": {
         "normalPath": {
           "resultPointerStackOffset": "0x30",
+          "resultPointerRaw": "488b4d77",
           "writes": [
             {
               "offset": "0x0",
-              "widthBytes": 8
+              "widthBytes": 8,
+              "rawBytes": "f20f1101"
             },
             {
               "offset": "0x8",
-              "widthBytes": 4
+              "widthBytes": 4,
+              "rawBytes": "895108"
             }
           ]
         },
         "thresholdPath": {
           "resultPointerStackOffset": "0x30",
+          "resultPointerRaw": "488b4d77",
           "writes": [
             {
               "offset": "0x0",
-              "widthBytes": 8
+              "widthBytes": 8,
+              "rawBytes": "f20f1101"
             },
             {
               "offset": "0x8",
-              "widthBytes": 4
+              "widthBytes": 4,
+              "rawBytes": "f30f115108"
             }
           ],
           "value": "zero"
