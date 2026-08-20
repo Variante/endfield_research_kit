@@ -31,7 +31,10 @@
           "kind": "managed_fallback",
           "methodIndex": 385697,
           "va": "0x186774be8",
-          "method": "Execute(int)"
+          "method": "Execute(int)",
+          "instructionOffsets": [
+            "0x56"
+          ]
         }
       ]
     },
@@ -50,13 +53,19 @@
           "kind": "managed_helper",
           "methodIndex": 385698,
           "va": "0x186775ae4",
-          "method": "Spring"
+          "method": "Spring",
+          "instructionOffsets": [
+            "0xdb2"
+          ]
         },
         {
           "kind": "managed_helper",
           "methodIndex": 385699,
           "va": "0x186776704",
-          "method": "Wind"
+          "method": "Wind",
+          "instructionOffsets": [
+            "0xbda"
+          ]
         }
       ],
       "bufferAccesses": [
@@ -101,7 +110,14 @@
           ],
           "instructionOffsets": [
             "0xfd",
-            "0x10e"
+            "0x10e",
+            "0x111",
+            "0x118",
+            "0x120",
+            "0x128",
+            "0x130",
+            "0x138",
+            "0x140"
           ]
         },
         {
@@ -121,7 +137,14 @@
           ],
           "instructionOffsets": [
             "0x28e",
-            "0x29f"
+            "0x29f",
+            "0x2a5",
+            "0x2ad",
+            "0x2b5",
+            "0x2bd",
+            "0x2c5",
+            "0x2cd",
+            "0x2d8"
           ]
         },
         {
@@ -306,7 +329,18 @@
       "endVaExclusive": "0x186776b64",
       "spanBytes": 1120,
       "bodySha256": "2aca620c9c194d06742ffcc855efd57cca85bee46a8fc972da83ff02a855b0a0",
-      "nextCalls": []
+      "nextCalls": [
+        {
+          "kind": "managed_helper",
+          "methodIndex": 385700,
+          "va": "0x186776394",
+          "method": "WindForceBlend",
+          "instructionOffsets": [
+            "0x28a",
+            "0x318"
+          ]
+        }
+      ]
     },
     {
       "methodIndex": 385700,
@@ -335,7 +369,10 @@
           "kind": "burst_wrapper",
           "methodIndex": 385542,
           "va": "0x1867744b0",
-          "method": "StartSimulationStepRangeKernel"
+          "method": "StartSimulationStepRangeKernel",
+          "instructionOffsets": [
+            "0x2a2"
+          ]
         },
         {
           "kind": "burst_invoke",
@@ -360,7 +397,10 @@
           "kind": "managed_fallback",
           "methodIndex": 385451,
           "va": "0x186761618",
-          "method": "Execute(int)"
+          "method": "Execute(int)",
+          "instructionOffsets": [
+            "0x56"
+          ]
         }
       ]
     },
@@ -429,7 +469,15 @@
           ],
           "instructionOffsets": [
             "0xb9",
-            "0xc4"
+            "0xc4",
+            "0xcb",
+            "0xce",
+            "0xd5",
+            "0xdd",
+            "0xe5",
+            "0xed",
+            "0xf5",
+            "0xfd"
           ]
         },
         {
@@ -441,8 +489,7 @@
             0
           ],
           "instructionOffsets": [
-            "0x280",
-            "0x299"
+            "0x280"
           ]
         },
         {
@@ -534,11 +581,20 @@
             0,
             16,
             32,
-            48
+            48,
+            64,
+            80,
+            96
           ],
           "instructionOffsets": [
             "0xdaa",
-            "0xdb1"
+            "0xdb8",
+            "0xdbf",
+            "0xdc7",
+            "0xdcf",
+            "0xdd7",
+            "0xddf",
+            "0xde7"
           ]
         }
       ]
@@ -558,7 +614,10 @@
           "kind": "burst_wrapper",
           "methodIndex": 385394,
           "va": "0x186761454",
-          "method": "StartSimulationStepRangeKernel"
+          "method": "StartSimulationStepRangeKernel",
+          "instructionOffsets": [
+            "0x1b3"
+          ]
         }
       ]
     },
@@ -577,7 +636,10 @@
           "kind": "managed_fallback",
           "methodIndex": 385455,
           "va": "0x18675a9cc",
-          "method": "Execute(int)"
+          "method": "Execute(int)",
+          "instructionOffsets": [
+            "0x53"
+          ]
         }
       ]
     },
@@ -674,7 +736,10 @@
           "kind": "burst_wrapper",
           "methodIndex": 385295,
           "va": "0x18675a944",
-          "method": "EndSimulationStepRangeKernel"
+          "method": "EndSimulationStepRangeKernel",
+          "instructionOffsets": [
+            "0x84"
+          ]
         }
       ]
     }
