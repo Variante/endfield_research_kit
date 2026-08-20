@@ -1,0 +1,119 @@
+{
+  "schema": "characterDynamicsTelemetry.hooks.v1",
+  "gameBuild": "endfield-2026-07-11-gameassembly-0c557367",
+  "processName": "Endfield.exe",
+  "moduleName": "GameAssembly.dll",
+  "files": {
+    "executable": {
+      "relativePath": "Endfield.exe",
+      "bytes": 827448,
+      "sha256": "a9726459d9ab90cf01d7536a4250315e85ebfe12da493ac16f7bad3b68e7df99"
+    },
+    "gameAssembly": {
+      "relativePath": "GameAssembly.dll",
+      "bytes": 280436712,
+      "sha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
+    },
+    "metadata": {
+      "relativePath": "Endfield_Data/il2cpp_data/Metadata/global-metadata.dat",
+      "bytes": 62925560,
+      "sha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
+    }
+  },
+  "hooks": {
+    "clothUpdate": {
+      "type": "BeyondDynamicBone.ClothManager",
+      "method": "ClothUpdate",
+      "methodIndex": 384441,
+      "va": "0x182f918a0",
+      "rva": "0x2f918a0",
+      "expectedBytes": "488bc448894808535657415441554156"
+    },
+    "transformWriteback": {
+      "type": "BeyondDynamicBone.DynamicBoneTransformManager",
+      "method": "WriteTransform",
+      "va": "0x18672641c",
+      "rva": "0x672641c",
+      "expectedBytes": "488bc448895808488970104889781855",
+      "snapshotRegisters": ["rcx", "r8"]
+    },
+    "transformRead": {
+      "type": "BeyondDynamicBone.DynamicBoneTransformManager",
+      "method": "ReadTransform",
+      "va": "0x183b127d0",
+      "rva": "0x3b127d0",
+      "expectedBytes": "48895c2410488974241848897c242055",
+      "snapshotRegisters": ["rcx", "r8"]
+    },
+    "animatorBufferWriteback": {
+      "type": "BeyondDynamicBone.DynamicBoneTransformManager",
+      "method": "WriteAnimatorBufferData",
+      "va": "0x186726158",
+      "rva": "0x6726158",
+      "expectedBytes": "488bc44889580848897010488978184c",
+      "snapshotRegisters": ["rcx", "r8"]
+    },
+    "charUiAnimatorMove": {
+      "type": "Beyond.Gameplay.View.CharUIModelMono",
+      "method": "_OnAnimatorMove",
+      "methodIndex": 49767,
+      "va": "0x186c2abd0",
+      "rva": "0x6c2abd0",
+      "expectedBytes": "48895c2408574883ec60488bfa0f2974"
+    },
+    "charUiTick": {
+      "type": "Beyond.Gameplay.View.CharUIModelMono",
+      "method": "Tick",
+      "methodIndex": 49737,
+      "va": "0x186c29344",
+      "rva": "0x6c29344",
+      "expectedBytes": "40534883ec30488bd90f29742420b901"
+    }
+  },
+  "targets": {
+    "endminf-overview": {
+      "actor": "Endminf",
+      "identityStatus": "unresolved_endminf_alias",
+      "instruction": "Open the exact Endminf Character Info overview; leave the actor unobscured and do not use this trace as identity proof."
+    },
+    "pelica-overview": {
+      "actor": "Pelica",
+      "runtimeCharacterId": "chr_0004_pelica",
+      "identityStatus": "exact",
+      "startSeconds": 209.3333,
+      "transitionStartSeconds": 215.17246715666667,
+      "loopStartSeconds": 215.74746695666667,
+      "instruction": "Open Pelica at the pinned model-swap boundary, then keep the unobscured actor through ui_overview_start and ui_overview_loop."
+    },
+    "chen-overview": {
+      "actor": "Chen",
+      "runtimeCharacterId": "chr_0005_chen",
+      "identityStatus": "exact",
+      "startSeconds": 199.3,
+      "transitionStartSeconds": 203.7625,
+      "loopStartSeconds": 204.55,
+      "instruction": "Open Chen at the pinned model-swap boundary, then keep the unobscured actor through ui_overview_start and ui_overview_loop."
+    }
+  },
+  "capture": {
+    "maxEvents": 50000,
+    "batchSize": 128,
+    "flushIntervalMs": 250,
+    "readBytesPerPointer": 16,
+    "maxPointerReadsPerEvent": 2,
+    "snapshotRegisters": ["rcx", "r8"],
+    "requireAllHooks": true
+  },
+  "evidenceBoundary": {
+    "classification": "observed_runtime_candidate",
+    "scope": "Read-only entry/leave counters, register pointer values, and at most two bounded 16-byte snapshots at the exact pinned native boundaries.",
+    "nonClaims": [
+      "A WriteTransform call does not identify a character or transform path by itself.",
+      "Pointer snapshots are opaque bytes; no NativeArray, TransformAccessArray, bone, or actor layout is inferred.",
+      "Counts do not prove that a cloth solver ran or that the resulting bytes reached a visible renderer.",
+      "The target actor is a user-supplied capture label; only exact runtime identity evidence can promote it.",
+      "The hook never invokes, patches, replaces, or writes any game function or data."
+    ],
+    "stopRule": "Stop on attach refusal, protection termination, module/hash/byte drift, hook failure, invalid pointer read, or event cap; do not retry through evasion."
+  }
+}
