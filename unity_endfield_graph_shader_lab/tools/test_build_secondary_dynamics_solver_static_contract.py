@@ -43,6 +43,11 @@ class SecondaryDynamicsSolverStaticContractTests(unittest.TestCase):
         for method_index in (385701, 385452, 385456):
             self.assertEqual(self.by_index[method_index]["solverStatus"], "wrapper_only_burst_solver_unresolved")
 
+    def test_wind_helper_closes_wind_force_blend(self) -> None:
+        wind = self.by_index[385699]
+        self.assertEqual(wind["nextCalls"][0]["methodIndex"], 385700)
+        self.assertEqual(wind["nextCalls"][0]["instructionOffsets"], ["0x28a", "0x318"])
+
     def test_managed_fallback_strides_and_field_displacements(self) -> None:
         sim = {row["jobField"]: row for row in self.by_index[385697]["bufferAccesses"]}
         self.assertEqual(sim["stepParticleIndexArray"]["strideBytes"], 4)
@@ -71,6 +76,25 @@ class SecondaryDynamicsSolverStaticContractTests(unittest.TestCase):
                 builder.build_contract()
         finally:
             builder.TARGETS[0]["bodySha256"] = original
+
+    def test_method_identity_and_instruction_arithmetic_are_rejected_when_changed(self) -> None:
+        target = builder.TARGETS[1]
+        original_type = target["type"]
+        target["type"] = "wrong.Type"
+        try:
+            with self.assertRaises(builder.ContractError):
+                builder.build_contract()
+        finally:
+            target["type"] = original_type
+
+        access = target["bufferAccesses"][0]
+        original_stride = access["strideBytes"]
+        access["strideBytes"] = original_stride + 1
+        try:
+            with self.assertRaises(builder.ContractError):
+                builder.build_contract()
+        finally:
+            access["strideBytes"] = original_stride
 
 
 if __name__ == "__main__":
