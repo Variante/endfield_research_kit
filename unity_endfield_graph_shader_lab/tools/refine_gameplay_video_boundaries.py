@@ -330,7 +330,6 @@ def refine(video_path, manifest):
                 "video reference frame at any phase."
             ),
             "labActorsWithoutVideo": ["endminm", "laevat"],
-            "actorAlias": {"endmin": "endminf"},
         },
         "modelSwapMinusSettleSeconds": {
             "note": (
