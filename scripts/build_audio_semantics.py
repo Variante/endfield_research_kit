@@ -28,15 +28,13 @@ from typing import Any, Iterable
 
 
 if __package__ == "scripts":
-    from scripts.common import (
-        resolve_installed_game_data_root,
-        sha256_file as file_sha256,
-    )
+    from scripts.common import sha256_file as file_sha256
     from scripts.audio_semantics import (
         authored_components,
         context_utils,
         event_projection,
         event_summary,
+        external_source,
         identifiers,
         interactive_components,
         managed_literals,
@@ -47,12 +45,13 @@ if __package__ == "scripts":
         voice_requests,
     )
 elif not __package__:
-    from common import resolve_installed_game_data_root, sha256_file as file_sha256
+    from common import sha256_file as file_sha256
     from audio_semantics import (
         authored_components,
         context_utils,
         event_projection,
         event_summary,
+        external_source,
         identifiers,
         interactive_components,
         managed_literals,
@@ -69,7 +68,6 @@ else:  # pragma: no cover - this file has exactly two supported identities.
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_EXPORT_ROOT = ROOT / "export_full"
 DEFAULT_WEBUI_ROOT = ROOT / "webui"
-DEFAULT_GAME_ROOT = resolve_installed_game_data_root()
 DEFAULT_METADATA_REL = Path("il2cpp_data/Metadata/global-metadata.dat")
 METADATA_HELPER = ROOT / "tools/endfield-il2cpp/catalog_option_flow_metadata.py"
 RUNTIME_CACHE_REL = Path("recovered/audio_semantics/runtime_metadata.json")
@@ -100,7 +98,7 @@ PROJECTILE_SOUND_PHASES = {
 # authoritative value; these names are presentation labels, not a claim that
 # selection behavior was evaluated offline.
 SELECTION_HIRC_TYPES = frozenset({5, 6, 12, 13})
-AUDIO_SEMANTIC_SCHEMA_VERSION = 100
+AUDIO_SEMANTIC_SCHEMA_VERSION = 106
 TRIGGER_CONTEXT_SCHEMA_VERSION = 32
 
 MONO_BEHAVIOUR_AUDIO_EVENT_FIELD_NAMES = frozenset({
@@ -118,7 +116,7 @@ MONO_BEHAVIOUR_AUDIO_EVENT_PREFILTERS = tuple(sorted(
     | {"soundBase.soundSpawn", "soundBase.soundFinish", "PlayLineSound"}
 ))
 MONO_BEHAVIOUR_AUDIO_CONTEXT_CACHE_SCHEMA_VERSION = 2
-RUNTIME_MODEL_CACHE_SCHEMA_VERSION = 96
+RUNTIME_MODEL_CACHE_SCHEMA_VERSION = 104
 METADATA_EVENT_SYMBOL_SCHEMA_VERSION = 1
 METADATA_EVENT_SYMBOL_RE = re.compile(r"^AU_[A-Z0-9_]+$")
 RADIO_MEDIA_CONTEXT_LIMIT = 64
@@ -1485,14 +1483,22 @@ AUDIO_PLAYBACK_NATIVE_CALL_CHAINS = {
                 (
                     "VoicePlayer._PlayVoice supplies the resolver output from VoiceContext.voiceData.data "
                     "(+0x60), wwiseEvent (+0x20), audioObjectId (+0x18), handleId (+0x10), and codec "
-                    "(+0x68), plus the Event/path context, and "
-                    "voice handle fields. The helper validates the Event/path objects, calls "
+                    "(+0x68), plus the Event/path context, and voice handle fields. The selected "
+                    "RuntimeVoiceData.FromSparkBuffer path reads VoiceData.codec at serialized +0x14 "
+                    "through the shared Int32 reader and copies it raw into that codec slot; no arithmetic "
+                    "or enum conversion occurs before this call. Its current native ABI "
+                    "is explicit: rcx=resolved externalSourceKey, rdx=wwiseEvent, r8=audioObject, and "
+                    "r9d=handleId; stack +0x20 carries codec. The helper validates the Event/path objects, "
+                    "writes fixed externalCookie 0x24db9834 and callback type 0x100001, then calls "
                     "Beyond.Audio.AudioAdapter.PostEventExternal at 0x183abf0a0 with the incoming "
                     "Event/object values, resolver output as externalSourceKey, fixed externalCookie "
                     "0x24db9834, callback type 0x100001, the context handle as callback cookie, and "
-                    "the fifth stack argument as codec before entering _PostEventWithExternalSource."
+                    "the fifth stack argument as codec before entering _PostEventWithExternalSource. "
+                    "The helper returns the managed PostEventExternal result; downstream static tracing "
+                    "shows _PostEventWithExternalSource returns the internal playing id, while the native "
+                    "PostEvent result and external-manager registration serial are retained separately."
                 ),
-                "decodedCurrentGameAssemblyBody;directCallToMappedPostEventExternal",
+                "decodedCurrentGameAssemblyBody;exactVoicePlayerArgumentRegisters;fixedExternalCookieLiteral;directCallToMappedPostEventExternal;managedReturnIsInternalPlayingId;nativePostResultAndManagerSerialSeparate",
             ),
             native_unmapped_playback_entry(
                 "voiceExternalSourceKeyResolution",
@@ -1504,12 +1510,14 @@ AUDIO_PLAYBACK_NATIVE_CALL_CHAINS = {
                     "calls shared formatter target 0x182f25040, whose current body performs runtime/template UTF-16 "
                     "placeholder expansion, stores its returned managed string through the out pointer, and "
                     "tail-enters the write-barrier helper; the out value is then forwarded as "
-                    "PostEventExternal.externalSourceKey. The body does not itself read a file or post to Wwise. "
-                    "The same formatter target is called by VoiceI18n.GetVoicePath/GetDebugVoicePath "
-                    "(0x186b0296c/0x186b02b1c) and VFS path helpers, so it is not proven "
-                    "to be an AudioObject resolver."
+                    "PostEventExternal.externalSourceKey. The VoicePlayer caller resolves the current "
+                    "VoiceI18n metadata type and reads static +0x10 s_languagePrefix, then passes the exact "
+                    "formatter arguments (format {0}/{1}/{2}, root Voice, language prefix, VoiceData.path). "
+                    "The normal native key is therefore Voice/<language>/<VoiceData.path>. The body does not "
+                    "itself read a file or post to Wwise; the same formatter is also called by "
+                    "VoiceI18n.GetVoicePath/GetDebugVoicePath (0x186b02b1c/0x186b0296c) and VFS path helpers."
                 ),
-                "decodedCurrentGameAssemblyBody;sharedVoiceI18nAndVfsPathCallers;callerAndOutParameterEvidence;templateExpansionAndStringCopy;sharedFormatterTarget0x182f25040",
+                "decodedCurrentGameAssemblyBody;voicePlayerVoiceI18nStaticLanguagePrefix;exactVoicePathFormatterArguments;sharedVoiceI18nAndVfsPathCallers;callerAndOutParameterEvidence;templateExpansionAndStringCopy;sharedFormatterTarget0x182f25040",
             ),
             native_unmapped_playback_entry(
                 "nativeExternalDescriptor",
@@ -1547,7 +1555,11 @@ AUDIO_PLAYBACK_NATIVE_CALL_CHAINS = {
                 480011,
                 "0x06000060",
                 "0x183abea70",
-                "Builds AkExternalSourceInfo and keeps an external playing/object cleanup mapping.",
+                "Builds AkExternalSourceInfo and keeps an external playing/object cleanup mapping. The body calls "
+                "_GetInternalPlayingId at 0x18328a810 and stores that result in edi, then calls native "
+                "AkSoundEngine.PostEvent at 0x183abed90 and stores that result separately in ebx. Telemetry "
+                "receives both values, while the function returns edi; the managed UInt32 return is therefore "
+                "not the native c3990 registration serial/manager key.",
             ),
             native_playback_stage(
                 "externalCookie",
@@ -1568,13 +1580,31 @@ AUDIO_PLAYBACK_NATIVE_CALL_CHAINS = {
                 "The current CN v150 HIRC corpus contains 1,712 exact Wwise External Source source records (plugin 0x00080001); every record has sourceId 618371124 = 0x24db9834, the same constant written by the current VoicePlayer external-source helper at 0x183abefd9 before PostEventExternal. This closes the serialized source-cookie to managed AkExternalSourceInfo cookie identity and therefore the callback-family selection boundary. It does not identify the per-request externalSourceKey path, a particular sourceInfo +0x10 instance, or a live callback/file/PCM observation.",
             ),
             native_playback_stage(
+                "externalSourceHircPathSeparationAudit",
+                "Wwise External Source HIRC path corpus",
+                "external source records versus native sourceInfo HIRC owner",
+                None,
+                "",
+                "0x18003a5b0",
+                "The current CN event-detail corpus contains 1,712 exact externalSourceCodec records (plugin 0x00080001, sourceId 0x24db9834): 1,711 serialized paths are event -> action -> sound and one is event -> action -> ordinary HIRC type-5 Random/Sequence Container -> sound. None is owned by HIRC type-13 Music Random Sequence Container, the only native sourceInfo-table construction path found at dispatcher 0x18003a5b0. Therefore that type-13 sourceInfo table cannot be used as a static key mapping for this external-source corpus; the bank sourceId/cookie and native sourceInfo/source-state key remain separate evidence domains.",
+            ),
+            native_playback_stage(
+                "nativeExternalCookieLiteralAbsenceAudit",
+                "AkSoundEngine native external-source manager",
+                "managed external cookie -> native registration input boundary",
+                None,
+                "",
+                "0x180344988",
+                "An exact byte scan of the selected AkSoundEngine.dll finds zero occurrences of the little-endian dword 0x24db9834. The image-initial dword at serial slot 0x180344988 is 0x002f9238 (raw RVA 0x344988), so an unmodified first lock-xadd would generate 0x002f9239, not the HIRC cookie; this is image-initialization evidence only, not a claim about runtime counter state. The native manager constructor therefore receives its callback cookie/context dynamically (entry +0x58), while its exact lookup/registration key is the separately generated serial at entry +0x4c. The serialized sourceId/cookie join is consequently established by managed GameAssembly plus current HIRC data, not by a baked AkSoundEngine literal; runtime argument capture is still required to prove which native input carries the managed cookie and whether any source-state key matches the registration serial.",
+            ),
+            native_playback_stage(
                 "externalFile",
                 "AkExternalSourceInfo",
                 "set_szFile",
                 444128,
                 "0x0600015a",
                 "0x183abe850",
-                "Sets the external audio file path directly from the externalSourceKey argument carried by _PostEventWithExternalSource; the managed key/path and the AkExternalSourceInfo.szFile field therefore share one value before native descriptor copying. This managed identity does not by itself prove the later native source-state key equals the registration serial.",
+                "Sets the external audio file path directly from the externalSourceKey argument carried by _PostEventWithExternalSource; the managed key/path and the AkExternalSourceInfo.szFile field therefore share one value before native descriptor copying. This statically closes the direct VoicePlayer key -> external-descriptor path identity. It does not by itself prove a later native source-state key equals the registration serial, a selected sourceInfo instance, an opened handle, or audibility.",
             ),
             native_playback_stage(
                 "externalCodec",
@@ -1610,7 +1640,7 @@ AUDIO_PLAYBACK_NATIVE_CALL_CHAINS = {
                 None,
                 "",
                 "0x1800e1320",
-                "The wrapper 0x1800e12e0 passes the external context pointer/count plus callback, cookie, and flags into the native constructor. The constructor allocates and hash-links a source object, storing its constructor input id at +0x4c, callback at +0x50, cookie at +0x58, flags at +0x60, descriptor/context pointers at +0x28/+0x38/+0x40/+0x48, and chain-next at +0x68. For the shared external descriptor path, nativeSourceDescriptorManagerRetentionAudit below proves that +0x38 is the copied external-descriptor allocation pointer, while +0x40/+0x48 retain its companion fields. Every current constructor callsite reaches +0x4c from the internally generated registration serial written at 0x1800c3990 record +0xc (global lock-xadd result +1, via the 0x1800c3990/related paths), not from a direct managed external-key copy. The later source setup's exact-key join is covered by nativeSourceManagerJoinAudit below; this stage itself proves registration storage and callback metadata, not a live match or file open.",
+                "The wrapper 0x1800e12e0 passes the external context pointer/count plus callback, cookie, and flags into the native constructor. The constructor allocates and hash-links a source object, storing its constructor input id at +0x4c, callback at +0x50, cookie at +0x58, flags at +0x60, descriptor/context pointers at +0x28/+0x38/+0x40/+0x48, and chain-next at +0x68. For the shared external descriptor path, nativeSourceDescriptorManagerRetentionAudit below proves that +0x38 is the copied external-descriptor allocation pointer, while +0x40/+0x48 retain its companion fields. Every current constructor callsite reaches +0x4c from the internally generated registration serial written at 0x1800c3990 record +0xc (global lock-xadd result +1, via the 0x1800c3990/related paths), not from a direct managed external-key copy. The maintained runtime probe resolves the exact hash-table entry by +0x4c after constructor return and at join/lookup entry, so shared entry pointers can prove one manager node without claiming a file or PCM join. The later source setup's exact-key join is covered by nativeSourceManagerJoinAudit below; this stage itself proves registration storage and callback metadata, not a live match or file open.",
             ),
             native_playback_stage(
                 "nativeSourceDescriptorManagerRetentionAudit",
@@ -1620,6 +1650,15 @@ AUDIO_PLAYBACK_NATIVE_CALL_CHAINS = {
                 "",
                 "0x1800c38b0",
                 "The shared external PostEvent body 0x1800c38b0 calls descriptor copier 0x1800c08d0 when cExternals is nonzero. On success it stores the copied allocation pointer in its local carrier at [rsp+0x50], passes a pointer to that carrier as c3990 stack argument 6, and 0x1800c3990 copies 0x14 bytes from that carrier into registration record +0x14/+0x24. The wrapper 0x1800e12e0 then passes record +0x14 to constructor 0x1800e1320; the constructor loads [record+0x14] into manager entry +0x38, so this path proves manager +0x38 is the copied external-descriptor allocation pointer, with +0x40/+0x48 as its copied companion fields. The same constructor stores the callback at +0x50 and cookie/context at +0x58. This is descriptor ownership/retention, not proof that manager +0x38 is a UTF-16 string, a selected sourceInfo instance, an opened handle, or PCM.",
+            ),
+            native_playback_stage(
+                "nativePostEventCookieFieldSeparationAudit",
+                "AkSoundEngine native external-source manager",
+                "PostEvent pCookie versus AkExternalSourceInfo external cookie",
+                None,
+                "",
+                "0x1800285d0",
+                "The external PostEvent export stub 0x1800285d0 preserves the callback bridge in r9 and copies caller stack arguments pCookie, cExternals, pExternalSources, and the playing-id output into native 0x1800c38b0. Native 0x1800c38b0 passes pCookie to 0x1800c3990 stack argument 5; c3990 forwards it as r9 into wrapper 0x1800e12e0, whose constructor stack argument 6 becomes manager entry +0x58. The external-source descriptor instead travels through 0x1800c08d0 and registration record +0x14 into manager +0x38, where its copied 0x20-byte payload retains AkExternalSourceInfo iExternalSrcCookie/szFile/codec. The separately generated registration serial remains manager +0x4c. Therefore manager +0x58 is the PostEvent callback-mapping cookie, not Wwise externalCookie 0x24db9834; these identities must not be equated.",
             ),
             native_playback_stage(
                 "nativeSourceDescriptorManagerLifetimeAudit",
@@ -1691,7 +1730,7 @@ AUDIO_PLAYBACK_NATIVE_CALL_CHAINS = {
                 None,
                 "",
                 "0x1801af7a0",
-                "Consumes owner +0x18 source metadata at +0x288. Flags at sourceInfo +0xc select the in-memory branch (owner +0x338/+0x340) or the file/key branch; in the latter, flag bit 9 selects sourceInfo +0x10 as the descriptor path pointer, while sourceInfo +4, +0x1a and flag-derived fields populate the remaining local descriptor. The registered provider path reaches 0x1800b5e30 -> 0x1800b9460 -> 0x1800b9530, where descriptor +0 is copied as a provider-owned UTF-16 path before default-device I/O queueing. This closes descriptor/path/provider transport, but not source-state key +0 -> this source metadata instance.",
+                "Consumes owner +0x18 source metadata at +0x288. Flags at sourceInfo +0xc select the in-memory branch (owner +0x338/+0x340) or the file/key branch; in the latter, flag bit 9 selects sourceInfo +0x10 as the descriptor path pointer, while sourceInfo +4, +0x1a and flag-derived fields populate the remaining local descriptor. The registered provider path reaches factory 0x1800b5e30, whose constructor 0x1800bb160 installs the primary provider vtable and the decoder-facing secondary interface at allocation +0x90; the returned secondary interface is stored at decoder +0x58 before default-device I/O queueing, and descriptor +0 is copied into provider-owned UTF-16 path storage. The separate 0x1800b9460 -> 0x1800b9530 table seen elsewhere is not this sourceInfo factory path. This closes descriptor/path/provider transport, but not source-state key +0 -> this source metadata instance.",
             ),
             native_playback_stage(
                 "nativeSourceProviderDescriptorInputAudit",
@@ -1727,7 +1766,7 @@ AUDIO_PLAYBACK_NATIVE_CALL_CHAINS = {
                 None,
                 "",
                 "0x180034db0",
-                "A byte-level direct-call scan of the selected AkSoundEngine .text finds one direct callsite, 0x18003def1 -> 0x180034db0. The caller passes the callee's stack argument 6 from the record returned by 0x180040350; that accessor returns nested [object +0x10] -> [+0x68] +0x18. Because the returned record is parent B +0x18, callee 0x180034e4f reads parent B +0x2c into config +0x34. Sibling accessor 0x1800404f0 reads the same B +0x2c directly; callsites 0x18003e35b and 0x18003e486 pass that value into source vtable +0x138, proving field reuse in native source/state operations. Source-state construction 0x1800365f0 and initializer 0x1800d1f90 later copy config +0x34 into source-state +0x268. This closes the direct config-producer/callsite and local-field-alias coverage for the selected binary, but parent B is not statically aliased to the 0x1800c3990 external-registration record and its +0xc serial; registration provenance and runtime match remain unproven.",
+                "A byte-level direct-call scan of the selected AkSoundEngine .text finds one direct callsite, 0x18003def1 -> 0x180034db0. The caller passes the callee's stack argument 6 from the record returned by 0x180040350; that accessor returns nested [object +0x10] -> [+0x68] +0x18. Because the returned record is parent B +0x18, callee 0x180034e4f reads parent B +0x2c into config +0x34. Sibling accessor 0x1800404f0 reads the same B +0x2c directly; callsites 0x18003e35b and 0x18003e486 pass that value into source vtable +0x138, proving field reuse in native source/state operations. Source-state construction 0x1800365f0 and initializer 0x1800d1f90 later copy config +0x34 into source-state +0x268. A separate child-source branch 0x180034640 -> 0x180037740 preserves one source record: constructor write 0x18003779e copies record +0x14 to child source +0x2c, and 0x180034733 passes that same record field to 0x1800e2cd0 as the exact-key lookup value. This proves local same-record value identity before the manager comparison, but parent B/source record is not statically aliased to the 0x1800c3990 external-registration record and its +0xc serial; registration provenance and runtime match remain unproven.",
             ),
             native_playback_stage(
                 "nativeSourceStateMetadataProvenanceAudit",
@@ -1736,7 +1775,7 @@ AUDIO_PLAYBACK_NATIVE_CALL_CHAINS = {
                 None,
                 "",
                 "0x1800d1f90",
-                "Initializer 0x1800d1f90 copies its incoming r9 directly to source-state +0x288, while copying config +0x34 to source-state +0x268. In the primary voice construction chain, 0x180034db0 forwards its incoming r8 through stack argument +0x20 to 0x1800365f0, which forwards it as r9 to the initializer; the sole direct caller 0x18003def1 supplies that r8 from the record returned by 0x180046580. That selector walks its own +0xe0 table and returns the matched record's +8 pointer. The alternate initializer callers 0x1800fca27 and 0x18018dbc5 receive their metadata pointer through separate call paths. The external-source manager constructor 0x1800e1320 instead stores its own incoming r9 at manager entry +0x38, and no direct call or field-dataflow edge in the selected AkSoundEngine joins that allocation to the 0x180046580 record or source-state +0x288. Therefore +0x288 provenance is now bounded, but sourceInfo identity, runtime key matching, path selection, and PCM delivery remain unobserved.",
+                "Initializer 0x1800d1f90 has a stable three-pointer ABI in the selected build: rcx is the destination source-state object, rdx is the source config, and r9 is the sourceInfo metadata pointer. It copies config +0x34 directly to source-state +0x268 and r9 directly to source-state +0x288; the same call also preserves sourceInfo-derived fields for later selection. The primary voice construction chain reaches it at return address 0x180036622: 0x180034db0 places its incoming r8 in stack argument +0x20, 0x1800365f0 reloads that value as initializer r9, and the sole direct caller 0x18003def1 supplies the original r8 from the record returned by 0x180046580. That selector walks its own +0xe0 table and returns the matched record's +8 pointer. Alternate callsite 0x1800fca27 (function 0x1800fc9e0, return address 0x1800fca2c) remaps its incoming r9 to initializer rdx/config and incoming r8 to initializer r9/sourceInfo; callsite 0x18018dbc5 (function 0x18018dba0, return address 0x18018dbca) forwards incoming rdx/r9 directly as config/sourceInfo. These are three distinct register-source families, not one proven external-source path. The external-source manager constructor 0x1800e1320 instead stores its own incoming r9 at manager entry +0x38, and no direct call or field-dataflow edge in the selected AkSoundEngine joins that allocation to the 0x180046580 record or source-state +0x288. The runtime manifest now samples initializer object/key/pointer fields and return addresses for bounded joins with provider and decoder owners; sourceInfo identity, runtime key matching, path selection, and PCM delivery remain unobserved.",
             ),
             native_playback_stage(
                 "nativeSourceInfoInternalSelectionAudit",
@@ -1748,13 +1787,31 @@ AUDIO_PLAYBACK_NATIVE_CALL_CHAINS = {
                 "Source-state helper 0x1800d2ed0 dereferences source-state +0x288, then passes sourceInfo dword +0 and mode ((sourceInfo +0xc >> 2) & 0x1f) to 0x1800f5030 through global slot 0x180344a20. That selector walks its own table at +0x88 using bucket count +0x90 and compares entry +8 exactly against sourceInfo +0 before choosing an available candidate. The helper 0x1800f9780 then materializes a 0x20-byte local descriptor: +0 is the matched table entry, +8 is the type-2 candidate context (otherwise null), +0x10 is candidate +8, and +0x18 is candidate +0x10. The caller checks descriptor +0x10/+0x18 against source +0x328 +0x18, passes the candidate through 0x180143de0, then applies sourceInfo to source +0x328 through 0x180104720 before copying the descriptor into the source object. Slot 0x180344a20 is distinct from the external-source manager hash slot 0x1803449f8 and the key-to-decoder registry slot 0x1803449d0. This bounds sourceInfo +0 as an internal selection key that feeds provider/source setup; it is not statically shown to be the external manager serial +0x4c, and runtime values, path/handle choice, and PCM delivery remain unobserved.",
             ),
             native_playback_stage(
+                "nativeSourceInfoDescriptorContinuityAudit",
+                "AkSoundEngine native source/media state",
+                "selector descriptor -> source-owner +0x338 continuity",
+                None,
+                "",
+                "0x1800d2f99",
+                "The sourceInfo consumer success branch receives selector output at local +0x30: helper 0x1800f9780 writes candidate +8 to local +0x40 and candidate +0x10 to local +0x48, then 0x180104720 applies sourceInfo metadata before the consumer copies the complete 0x20-byte descriptor from local +0x30 into source object +0x328. Therefore selector output +0x10 is copied exactly to source +0x338 and output +0x18 to source +0x340; the failure branch applies a zero descriptor. The runtime manifest samples selector output +0x10 and source +0x338 after the consumer, then repeats owner +0x18 -> +0x338 in provider preparation, exposing bounded pointer intersections without claiming a file, handle, or PCM join.",
+            ),
+            native_playback_stage(
                 "nativeSourceInfoPathWriterAudit",
                 "AkSoundEngine native source/media state",
                 "sourceInfo +0x10 UTF-16 path writer and metadata-link provenance",
                 None,
                 "",
                 "0x180104630",
-                "The selected build has one direct caller of 0x180104630 at 0x1800e037e. Setter 0x180104630 copies the incoming UTF-16 pointer r8 into source record +0x10 after replacing the 16-byte identity block at +0 and sets the source mode at +0x18; its sibling 0x1801044f0 performs the same path role by measuring r9 with 0x18026b7f8, allocating UTF-16 storage, and copying the characters through 0x180263808 before storing the owned pointer at +0x10 and setting the owned-string flag. Caller 0x1800e037e walks the source-metadata records at r13 +0x20, matches the current source key [r12+4] against record +0, and takes either the direct-path branch (record +8 -> 0x1801044f0) or the alias branch when record +0x18 is nonzero and record +0x10 is present (record +0x10 -> r8 -> 0x180104630). This closes the native writer and UTF-16 storage provenance for sourceInfo +0x10, while no manager entry +0x38, managed external key, or source-state key appears in either writer boundary; exact copied-descriptor identity and runtime values remain unobserved.",
+                "The selected build has one direct caller of 0x180104630 at 0x1800e037e. Setter 0x180104630 copies the incoming UTF-16 pointer r8 into source record +0x10 after replacing the 16-byte identity block at +0 and sets the source mode at +0x18; its sibling 0x1801044f0 performs the same path role by measuring r9 with 0x18026b7f8, allocating UTF-16 storage, and copying the characters through 0x180263808 before storing the owned pointer at +0x10 and setting the owned-string flag. Caller 0x1800e037e walks the source-metadata records at r13 +0x20, matches the current source key [r12+4] against record +0, and takes either the direct-path branch (record +8 -> 0x1801044f0) or the alias branch when record +0x18 is nonzero and record +0x10 is present (record +0x10 -> r8 -> 0x180104630). This closes the native writer and UTF-16 storage provenance for sourceInfo +0x10; the separate sourceInfo consumer audit closes selector-descriptor copying into source +0x338/+0x340 and the exact copied-descriptor identity. No manager entry +0x38, managed external key, or source-state key appears in either writer boundary, and runtime values remain unobserved.",
+            ),
+            native_playback_stage(
+                "nativeSourceInfoHircOwnerAudit",
+                "Wwise HIRC Music Random Sequence Container",
+                "HIRC type byte -> sourceInfo-table parser",
+                None,
+                "",
+                "0x18003a5b0",
+                "The selected AkSoundEngine bank-object dispatcher at 0x18003a5b0 reads the serialized HIRC type byte: 10 -> 0x180039e80, 11 -> 0x18003a190, 12 -> 0x180039b70, and 13 -> 0x1800397b0. The only direct calls into sourceInfo-table parser 0x180047120 are 0x180039a28 inside the type-13 parser and 0x180039b35 inside helper 0x180039af0, whose only callers are 0x1800398e7/0x180039a54 in that same type-13 path. The type-12 branch has no direct 0x180047120 call in the selected .text. This attributes the table-construction call path to the maintained HIRC Music Random Sequence Container family, and positively separates it from the direct AkBankSourceData external-source parser; the later source/provider consumers still require a separate runtime/source-state join.",
             ),
             native_playback_stage(
                 "nativeSourceInfoSerializedParserAudit",
@@ -2010,8 +2067,8 @@ AUDIO_PLAYBACK_NATIVE_CALL_CHAINS = {
                 "descriptor UTF-16 path -> provider-owned storage",
                 None,
                 "",
-                "0x1800b9530",
-                "The file/key branch of 0x1801af7a0 builds a local source descriptor from owner metadata +0x288/+0x10 when its flag branch selects an external path, then passes it into singleton vtable +0x28 (0x1800b5e30 -> 0x1800b9460). Provider setup 0x1800b9530 treats descriptor +0 as a UTF-16 path pointer and copies it into provider-owned storage, then copies descriptor +0xc..+0x2b source metadata. This is an exact descriptor-to-path-buffer join; it does not yet identify which external key/context supplied that descriptor.",
+                "0x1800b5e30",
+                "The file/key branch of 0x1801af7a0 builds a local source descriptor from owner metadata +0x288/+0x10 when its flag branch selects an external path, then passes the UTF-16 path pointer into singleton vtable +0x28 at factory 0x1800b5e30. That factory allocates the provider through constructor 0x1800bb160, which installs primary vtable 0x1802932e8 at the allocation base and secondary decoder-facing vtable 0x180293260 at base +0x90; the returned secondary interface is written to decoder +0x58. The provider constructor copies descriptor +0 as provider-owned UTF-16 storage and preserves descriptor +0xc..+0x2b source metadata. The separate 0x1800b9460 -> 0x1800b9530 table is a different provider-callback/batch-wrapper path, not this sourceInfo factory. This is an exact descriptor-to-provider allocation join; it does not yet identify which external key/context supplied that descriptor.",
             ),
             native_playback_stage(
                 "sourceProviderQueue",
@@ -2068,6 +2125,24 @@ AUDIO_PLAYBACK_NATIVE_CALL_CHAINS = {
                 "The concrete open wrapper 0x180024630 receives the registered-device descriptor, obtains its provider-side path/context through the object's vtable, and calls 0x180004a20 with the descriptor and returned path pointer. 0x180004a20 validates the descriptor state, calls 0x180004b40, and then dispatches the default file-I/O vtable slot 0 at 0x18028bfa0 to 0x180005030, whose CreateFileW/GetFileSize pair stores the handle/size result. 0x180004b40 selects the incoming path pointer or the file-I/O object's base path, normalizes it through vtable slot +0x8 at 0x180005150, and feeds that normalized path into the open object. This closes the provider-request-to-native-open ABI, while no external key, source-state key, or manager +0x38 value appears in this open boundary.",
             ),
             native_playback_stage(
+                "nativeFileOpenArgumentFlowAudit",
+                "AkSoundEngine default Wwise file-I/O object",
+                "open wrapper register/stack argument flow",
+                None,
+                "",
+                "0x180024630",
+                "Capstone decoding of the selected build's concrete open wrapper closes the ABI at register level: rcx is the registered-device/file-I/O object, rdx is the original descriptor/path argument, and r8 is the caller output slot. The wrapper clears the lookup key before calling object vtable +0x10, stores the returned provider context through the output slot, then calls 0x180004a20 with object +0x10, the original rdx, flag r8b=1, and that provider context in r9. 0x180004a20 forwards the descriptor/path state to 0x180004b40, whose normalized UTF-16 result reaches default file-I/O slot 0 at 0x180005030; that routine receives path, access mode, and async flag and writes the native handle/size result. No manager entry +0x38, external key, source-state key, or codec pointer occurs in these argument registers or local path-normalization frames, so this is an exact open ABI boundary rather than an identity join.",
+            ),
+            native_playback_stage(
+                "nativeIoVtablePointerCensus",
+                "AkSoundEngine native I/O vtable tables",
+                "exact .rdata function-pointer census",
+                None,
+                "",
+                "0x18028f2f8",
+                "An exact pointer scan of the selected AkSoundEngine.dll (SHA-256 b33c3c71e44c305fb1c3903942308f2ab55a7854d68c719fe55e7de323e7dba2) finds the registered-device table at 0x18028f2f8 with slot 0 -> 0x180024630 and slot +0x38 -> 0x180024270; the default file-I/O table at 0x18028bfa0 has slots 0/1/2 -> 0x180005030/0x180005150/0x180005180; the active stream-manager table begins at 0x18028c000 with +0x28 -> 0x180005430, +0x30 -> 0x180024270, and +0x38 -> 0x1800243e0; the provider and pump tables at 0x180292c58 and 0x180292fd0 expose slot 0 -> 0x1800b9530 and slot 0 -> 0x1800bc1e0 respectively. This is a static pointer-table proof of the I/O dispatch topology only; it does not prove that a live external-source request selects these slots or that a returned handle reaches the decoder.",
+            ),
+            native_playback_stage(
                 "readCompletion",
                 "AkSoundEngine ReadFileEx completion",
                 "queued read completion transform and callback",
@@ -2083,7 +2158,7 @@ AUDIO_PLAYBACK_NATIVE_CALL_CHAINS = {
                 None,
                 "",
                 "0x1801c9fa0",
-                "The generic codec stream reader at 0x1801c9fa0 keeps buffered bytes at stream-object +0x48 and inline stream state at +0x58, then calls the indirect function pointer at +0 with context +0x20, buffer, and length. Setup 0x1801ca710 copies the caller-provided 32-byte callback descriptor into the stream object before allocating its buffer. The exact `.rdata` descriptor literals reached by current calls are 0x1802b09d8 for Opus and 0x1802b1020 for the generic memory source. The selected Opus path 0x1801c5239 passes 0x1802b09d8; descriptor +0 is 0x1801c44d0, a memory-source copier that reads context +0x60 with available/offset fields at +0x68/+0x6c and calls source-provider vtable +0x80 only when releasing an exhausted buffer. A second native source path is also closed: 0x1801c4650 -> 0x1801ca9a0 -> 0x1801cfe80 constructs a 24-byte memory-stream context (source pointer, byte length, cursor) and four-function descriptor at its local +0x30; descriptor +0 = 0x1801cfd80 copies bytes and advances context +0x10, +0x8 = 0x1801cfe00 updates the cursor for seek modes, +0x10 = 0x18010ad90 returns the source pointer, and +0x18 = 0x1801cfd70 frees the stream wrapper. Thus both the selected Opus descriptor and this header-recognized generic memory descriptor have statically resolved stream callbacks; descriptors not reached by these current callers remain an evidence gap. The decoder-side provider handoff is exact: source prep 0x1801af960 gets provider +0x78 buffer/size, decoder address point 0x18029cde8 +0x130 resolves to 0x1801afc80, and that method stores the buffer at decoder +0x60; decoder +0x120 -> 0x1801aebf0 and reset 0x1801af740 release/advance through provider +0x80. The provider is the secondary +0x90 interface of the same base object retained by request +0x48, so the static file-read completion now joins the codec provider queue. Codec state path 0x1801c8d11 directly calls the stream reader; packet wrapper 0x1801c8b60 reaches 0x1801cc1b0 at 0x1801c8bda. Its callee-frame +0xf0 callback slot is populated by every direct 0x1801cc1f0 caller: 0x1801c6490 and 0x1801c6bf2 pass 0x1801c6f90, an integer-array transform, while wrapper 0x1801cc1e1 passes 0x1801cbff0, another integer-array transform. Those known callbacks are invoked at 0x1801cc4ce/0x1801cc532/0x1801cc57e, so this parser callback branch is not a PCM sink. The selected decoder output boundary is now statically closed: 0x1801c4650-0x1801c48cc calls generic decoder 0x1801c7ec0 at 0x1801c4770 with an output-pointer slot; after return it loads float samples through the returned pointer at 0x1801c481a, scales/clamps and converts with cvttss2si, then writes signed 16-bit samples to the caller PCM buffer at 0x1801c483c while advancing the byte count/pointer. This proves decoded float -> PCM16 handoff for this native decode path. The optional decoder callback context +0x2a08 is read only at 0x1801c8b64; no direct store to that field occurs in the current AkSoundEngine function table, so its initialization remains unresolved. The same path reaches exact OpusHead parser 0x1801cf560. The pump-to-ReadFileEx, read-completion-to-request-recycle, completion-to-provider-allocation, both resolved memory-stream descriptor paths, and selected decoder PCM handoff are statically closed; external key-to-path value correlation, any unobserved codec descriptor, and live invocation remain unproven.",
+                "The generic codec stream reader at 0x1801c9fa0 keeps buffered bytes at stream-object +0x48 and inline stream state at +0x58, then calls the indirect function pointer at +0 with context +0x20, buffer, and length. Setup 0x1801ca710 copies the caller-provided 32-byte callback descriptor into the stream object before allocating its buffer. The exact `.rdata` descriptor literals reached by current calls are 0x1802b09d8 for Opus and 0x1802b1020 for the generic memory source. The selected Opus path 0x1801c5239 passes 0x1802b09d8; descriptor +0 is 0x1801c44d0, a memory-source copier that reads context +0x60 with available/offset fields at +0x68/+0x6c and calls source-provider vtable +0x80 only when releasing an exhausted buffer. A second native source path is also closed: 0x1801c4650 -> 0x1801ca9a0 -> 0x1801cfe80 constructs a 24-byte memory-stream context (source pointer, byte length, cursor) and four-function descriptor at its local +0x30; descriptor +0 = 0x1801cfd80 copies bytes and advances context +0x10, +0x8 = 0x1801cfe00 updates the cursor for seek modes, +0x10 = 0x18010ad90 returns the source pointer, and +0x18 = 0x1801cfd70 frees the stream wrapper. Thus both the selected Opus descriptor and this header-recognized generic memory descriptor have statically resolved stream callbacks; descriptors not reached by these current callers remain an evidence gap. The decoder-side provider handoff is exact: source prep 0x1801af960 gets provider +0x78 buffer/size, decoder address point 0x18029cde8 +0x130 resolves to 0x1801afc80, and that method stores the buffer at decoder +0x60; decoder +0x120 -> 0x1801aebf0 and reset 0x1801af740 release/advance through provider +0x80. The provider is the secondary +0x90 interface of the same base object retained by request +0x48, so the static file-read completion now joins the codec provider queue. Codec state path 0x1801c8d11 directly calls the stream reader; packet wrapper 0x1801c8b60 reaches 0x1801cc1b0 at 0x1801c8bda. Its callee-frame +0xf0 callback slot is populated by every direct 0x1801cc1f0 caller: 0x1801c6490 and 0x1801c6bf2 pass 0x1801c6f90, an integer-array transform, while wrapper 0x1801cc1e1 passes 0x1801cbff0, another integer-array transform. Those known callbacks are invoked at 0x1801cc4ce/0x1801cc532/0x1801cc57e, so this parser callback branch is not a PCM sink. The selected decoder output boundary is now statically closed: 0x1801c4650-0x1801c48cc calls generic decoder 0x1801c7ec0 at 0x1801c4770 with an output-pointer slot; after return it loads float samples through the returned pointer at 0x1801c481a, scales/clamps and converts with cvttss2si, then writes signed 16-bit samples to the caller PCM buffer at 0x1801c483c while advancing the byte count/pointer. This proves decoded float -> PCM16 handoff for this native decode path. The optional decoder callback context +0x2a08 is read only at 0x1801c8b64; no direct store to that field occurs in the current AkSoundEngine function table, so its initialization remains unresolved. The same path reaches exact OpusHead parser 0x1801cf560. The pump-to-ReadFileEx, read-completion-to-request-recycle, and completion-to-provider-allocation joins are statically closed. The direct VoicePlayer externalSourceKey -> AkExternalSourceInfo.szFile -> copied-descriptor path is statically closed; remaining gaps are source-state/sourceInfo instance selection, any unobserved codec descriptor, and live invocation.",
             ),
             native_playback_stage(
                 "nativeOptionalDecoderCallbackAudit",
@@ -2128,7 +2203,7 @@ AUDIO_PLAYBACK_NATIVE_CALL_CHAINS = {
                 None,
                 "",
                 "0x1801c7ec0",
-                "An exhaustive direct-call scan of the selected AkSoundEngine .text finds three valid calls to generic decoder 0x1801c7ec0: 0x1801c477b in function 0x1801c4729, plus 0x1801c49bc and 0x1801c4a3e in function 0x1801c499c. The 0x1801c477b call receives local output-pointer/count slots and its returned float samples flow to the signed PCM16 writes at 0x1801c481a/0x1801c483c. The 0x1801c49bc call is the initial decode attempt; 0x1801c4a3e retries after provider refill 0x1801af960, and both return codes drive decoder state/consumption rather than independently proving a PCM sink. No other direct decoder call exists in the selected .text.",
+                "An exhaustive direct-call scan of the selected AkSoundEngine .text finds three valid calls to generic decoder 0x1801c7ec0: 0x1801c477b in function 0x1801c4729, plus 0x1801c49bc and 0x1801c4a3e in function 0x1801c499c. The 0x1801c477b call receives local output-pointer/count slots and its returned float samples flow to the signed PCM16 writes at 0x1801c481a/0x1801c483c; its native return address is 0x1801c4780. The 0x1801c49bc call is the initial decode attempt (return address 0x1801c49c1); 0x1801c4a3e retries after provider refill 0x1801af960 (return address 0x1801c4a43), and both return codes drive decoder state/consumption rather than independently proving a PCM sink. No other direct decoder call exists in the selected .text. The runtime manifest also hooks this exact entry with ABI (decoder, float-output slot, frame-count slot), samples decoder owner +0x268, provider +0x58, and native return address, and reports intersections with the key registry and provider-preparation hooks when a verified capture is available; those observations are still absent here.",
             ),
         ),
         "branches": (
@@ -2140,7 +2215,7 @@ AUDIO_PLAYBACK_NATIVE_CALL_CHAINS = {
         ),
         "boundary": (
             "This closes the Wwise package/media I/O boundary to a registered native I/O-device callback rather than the generic managed VFS low-I/O reader, and the selected native plugin now supplies direct CreateFileW/GetFileSize, queued ReadFileEx, read-completion transform, and embedded codec-parser evidence. "
-            "The current binary identifies the registration site, 0x468-byte device object, active composite address point, source-provider queue binding, virtual pump, the composite default file-I/O object at device +0x428, the concrete CreateFileW helper, provider/state dispatch 0x180005430 -> 0x180024200 -> 0x1800b92c0, and the direct pump call to 0x180024270 ReadFileEx. It also identifies the ordinary candidate carrier as request +0x8, maps carrier +0x18 to fixed callback 0x1800bf190, and closes ReadFileEx -> request-recycle/release into the same dual-interface provider allocation: primary base at request +0x48, codec-facing secondary at base +0x90. The provider +0x20 call remains branch-sensitive: active implementation 0x1800bc660 may assemble a segment through 0x1800bb970 -> 0x1800bb8e0, while alternate 0x1800b8820 does not populate candidate context/flag slots. The selected decoder's 0x1801c4650 -> 0x1801c7ec0 -> 0x1801c481a/0x1801c483c path now proves float-sample to signed PCM16 writes. The optional decoder callback slot has a complete negative direct/overlap write audit, but its initialization and target remain unresolved. Remaining static gaps are external-key-to-path value correlation, generic other-codec stream callback targets, and live invocation; no direct GameAssembly caller was found by the current static call-rel32 scan.",
+            "The current binary identifies the registration site, 0x468-byte device object, active composite address point, source-provider queue binding, virtual pump, the composite default file-I/O object at device +0x428, the concrete CreateFileW helper, provider/state dispatch 0x180005430 -> 0x180024200 -> 0x1800b92c0, and the direct pump call to 0x180024270 ReadFileEx. It also identifies the ordinary candidate carrier as request +0x8, maps carrier +0x18 to fixed callback 0x1800bf190, and closes ReadFileEx -> request-recycle/release into the same dual-interface provider allocation: primary base at request +0x48, codec-facing secondary at base +0x90. The provider +0x20 call remains branch-sensitive: active implementation 0x1800bc660 may assemble a segment through 0x1800bb970 -> 0x1800bb8e0, while alternate 0x1800b8820 does not populate candidate context/flag slots. The selected decoder's 0x1801c4650 -> 0x1801c7ec0 -> 0x1801c481a/0x1801c483c path now proves float-sample to signed PCM16 writes. The direct VoicePlayer externalSourceKey -> AkExternalSourceInfo.szFile -> copied-descriptor path is statically closed, and selector output +0x10 is copied into source +0x338 before provider preparation. Remaining static gaps are the runtime source-state/sourceInfo instance/key match, generic other-codec stream callback targets, and live invocation; no direct GameAssembly caller was found by the current static call-rel32 scan.",
         ),
     },
     "playingIdAction": {
@@ -12036,6 +12111,11 @@ def build_audio_semantic_data(
         for row in audio_index.get("wwiseEventInventory") or []
         if isinstance(row, dict) and isinstance(row.get("eventHash"), int)
     }
+    external_source_event_identity_audit = external_source.collect_event_identity_audit(
+        audio_index,
+        language=language,
+        export_root=export_root,
+    )
     metadata_event_symbol_catalog = collect_metadata_event_symbol_aliases(
         metadata_path,
         current_wwise_event_hashes,
@@ -12801,6 +12881,42 @@ def build_audio_semantic_data(
             "wwiseSynthesizedSourceReferences": wwise_source_reference_counts.get("synthesizedSource", 0),
             "wwiseEventsWithExternalSource": wwise_source_event_counts.get("externalSourceCodec", 0),
             "wwiseEventsWithSynthesizedSource": wwise_source_event_counts.get("synthesizedSource", 0),
+            "externalSourceEventIdentityEvents": external_source_event_identity_audit.get(
+                "externalSourceEventCount", 0
+            ),
+            "externalSourceEventIdentityVoiceTableMatches": external_source_event_identity_audit.get(
+                "externalEventsWithVoiceTableAlias", 0
+            ),
+            "externalSourceEventIdentityAudioDialogMatches": external_source_event_identity_audit.get(
+                "externalEventsWithAudioDialogAlias", 0
+            ),
+            "externalSourceEventIdentityDecodedMediaMatches": external_source_event_identity_audit.get(
+                "externalEventsWithDecodedMedia", 0
+            ),
+            "externalSourceEventIdentityZeroResolvedMedia": external_source_event_identity_audit.get(
+                "externalEventsWithZeroResolvedMedia", 0
+            ),
+            "externalSourceOverridePathEvents": external_source_event_identity_audit.get(
+                "externalEventsWithOverridePathCandidates", 0
+            ),
+            "externalSourceOverridePathUniqueEvents": external_source_event_identity_audit.get(
+                "externalEventsWithUniqueOverridePath", 0
+            ),
+            "externalSourceOverridePathCandidates": external_source_event_identity_audit.get(
+                "externalOverridePathCandidateCount", 0
+            ),
+            "externalSourceOverridePathDecodedCandidates": external_source_event_identity_audit.get(
+                "externalOverridePathCandidatesWithDecodedMedia", 0
+            ),
+            "externalSourceChannelPathEvents": external_source_event_identity_audit.get(
+                "externalEventsWithChannelPathCandidates", 0
+            ),
+            "externalSourceChannelPathUniqueCandidates": external_source_event_identity_audit.get(
+                "externalChannelPathUniqueCandidateCount", 0
+            ),
+            "externalSourceChannelPathDecodedCandidates": external_source_event_identity_audit.get(
+                "externalChannelPathUniqueCandidatesWithDecodedMedia", 0
+            ),
             "wwiseSourcePluginIds": len(wwise_source_plugin_counts),
             "sharedPlayableCharacterAnimationEvents": sum(
                 int(row.get("playableCharacterAnimationOwnerCount") or 0) > 1
@@ -13195,6 +13311,7 @@ def build_audio_semantic_data(
             "evidenceBoundary": "Cue behavior exprType=3 values, constant LevelScript Event parameters, LevelScript cue names joined by the native AudioHashGenerator to exact cue behavior expressions, non-empty PhysicsAudio Event properties, and normal ModelView Event/position hashes are authored requests. Metadata-named InitialRTPC rows are exact ID/hash joins that preserve authored curve targets and controlled properties; they do not observe live RTPC updates or audibility. PhysicsAudio/ModelView RTPC names, ModelView spatial/custom-audio rows, cue/action execution, handler conditions, exprType=8 strings, dynamic Params, state/variable writes, playback handles, placeholder-music ids, unresolved cue hashes, and musicCue* values remain typed controls or unresolved runtime state. LevelEvent OnAudioStateChanged and OnMusicBeatEvent are current-build trigger-input definitions, not playback requests; exhaustive active-overlay scanning found zero authored occurrences. Two non-music Wwise selector groups have exact native setter callsites; three more have high-confidence semantic correlation only, and ten music State groups have exact current-metadata/native-setter joins. None reveal a live value, selected branch, or authored group name.",
         },
         "runtimeModel": runtime_model,
+        "externalSourceEventIdentityAudit": external_source_event_identity_audit,
         "evidenceBoundary": {
             "decodedMedia": "A decoded FLAC/WAV/WEM is a source media object, not proof that it played.",
             "eventMedia": "Possible media leaves use typed Wwise v150 Event -> Action -> reciprocal Children -> Sound/MusicTrack AkBankSourceData edges. Ordinary Codec sources may join decoded media; External Source codec and synthesized Source-plugin records remain non-media playback sources. Play roots and random/sequence/switch/layer relations are preserved; runtime selection and source instantiation are not evaluated. Unsupported plugins, music nodes, and unparsed child structures fail closed.",
@@ -13229,6 +13346,9 @@ def build_audio_semantic_data(
                 "prove static request routing, asynchronous Event preparation, Wwise posting, and playing-id "
                 "lifetime handling; they are not a live execution trace, active state, or selected media leaf."
             ),
+            "externalSourceEventIdentity": external_source_event_identity_audit.get(
+                "evidenceBoundary", ""
+            ),
         },
     }
     json_dump(out_root / "index.json", payload)
@@ -13240,13 +13360,20 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--language", default="CN")
     parser.add_argument("--export-root", type=Path, default=DEFAULT_EXPORT_ROOT)
     parser.add_argument("--webui-root", type=Path, default=DEFAULT_WEBUI_ROOT)
-    parser.add_argument("--game-root", type=Path, default=DEFAULT_GAME_ROOT)
+    parser.add_argument(
+        "--game-root",
+        type=Path,
+        default=None,
+        help=(
+            "Selected Endfield_Data root for the native evidence gate. If omitted, "
+            "native callsite/runtime claims remain unavailable."
+        ),
+    )
     parser.add_argument("--metadata", type=Path, default=None)
     args = parser.parse_args(argv)
-    if args.metadata is None:
+    if args.metadata is None and args.game_root is not None:
         installed = args.game_root / DEFAULT_METADATA_REL
-        cached = args.export_root / "recovered/il2cpp/global-metadata.dat"
-        args.metadata = installed if installed.is_file() else (cached if cached.is_file() else None)
+        args.metadata = installed if installed.is_file() else None
     return args
 
 
@@ -13263,7 +13390,11 @@ def main(argv: list[str] | None = None) -> int:
         export_root=args.export_root.resolve(),
         webui_root=args.webui_root.resolve(),
         metadata_path=args.metadata.resolve() if args.metadata else None,
-        gameassembly_path=(args.game_root.parent / "GameAssembly.dll").resolve(),
+        gameassembly_path=(
+            (args.game_root.parent / "GameAssembly.dll").resolve()
+            if args.game_root is not None
+            else None
+        ),
     )
     print(
         "Audio semantic WebUI data:"

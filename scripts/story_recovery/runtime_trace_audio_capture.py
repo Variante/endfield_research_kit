@@ -30,16 +30,23 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 from . import runtime_trace_core as core
 
 
-DEFAULT_GAME_ROOT = core.DEFAULT_GAME_ROOT
 DEFAULT_MANIFEST = SCRIPT_DIR / "audio_runtime_trace_hooks.json"
 DEFAULT_AGENT = SCRIPT_DIR / "audio_runtime_trace_agent.js"
 EVENT_SCHEMA = "audioRuntimeTrace.event.v1"
-MANIFEST_SCHEMA = "audioRuntimeTrace.hooks.v1"
+MANIFEST_SCHEMA = "audioRuntimeTrace.hooks.v2"
 AUDIO_AGENT_PLACEHOLDER = "__AUDIO_TRACE_CONFIG__"
+MAX_ABI_ARGUMENT_INDEX = 63
+ABI_ARGUMENT_KINDS = frozenset({"pointer", "string", "u32", "i32", "u64", "bool", "utf16"})
+ABI_RETURN_KINDS = ABI_ARGUMENT_KINDS | {"void"}
 
 
 def add_arguments(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument("--game-root", type=Path, default=DEFAULT_GAME_ROOT)
+    parser.add_argument(
+        "--game-root",
+        type=Path,
+        default=None,
+        help="Selected game install root; omitted uses a call-time configured root.",
+    )
     parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
     parser.add_argument("--agent", type=Path, default=DEFAULT_AGENT)
     parser.add_argument("--process")
@@ -52,6 +59,53 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
 
 def default_output_path() -> Path:
     return core.default_capture_output("audio")
+
+
+def _validate_abi_contract(hook: dict[str, Any], label: str) -> None:
+    args = hook.get("args")
+    if args is not None and not isinstance(args, dict):
+        raise core.CaptureConfigurationError(f"{label} args must be an object")
+    for name, spec in (args or {}).items():
+        if not isinstance(name, str) or not name.strip() or not isinstance(spec, dict):
+            raise core.CaptureConfigurationError(f"{label} args[{name!r}] must be an object")
+        index = spec.get("index")
+        if (
+            isinstance(index, bool)
+            or not isinstance(index, int)
+            or index < 0
+            or index > MAX_ABI_ARGUMENT_INDEX
+        ):
+            raise core.CaptureConfigurationError(
+                f"{label} args[{name!r}] index must be in 0..{MAX_ABI_ARGUMENT_INDEX}"
+            )
+        kind = spec.get("kind", "pointer")
+        if not isinstance(kind, str) or kind not in ABI_ARGUMENT_KINDS:
+            raise core.CaptureConfigurationError(f"{label} args[{name!r}] has unsupported kind")
+    string_args = hook.get("stringArgs")
+    if string_args is not None and not isinstance(string_args, dict):
+        raise core.CaptureConfigurationError(f"{label} stringArgs must be an object")
+    for raw_index, name in (string_args or {}).items():
+        try:
+            index = int(raw_index)
+        except (TypeError, ValueError) as exc:
+            raise core.CaptureConfigurationError(
+                f"{label} stringArgs index must be an integer"
+            ) from exc
+        if (
+            isinstance(raw_index, bool)
+            or index < 0
+            or index > MAX_ABI_ARGUMENT_INDEX
+            or str(index) != str(raw_index)
+            or not isinstance(name, str)
+            or not name.strip()
+        ):
+            raise core.CaptureConfigurationError(
+                f"{label} stringArgs index must be in 0..{MAX_ABI_ARGUMENT_INDEX} "
+                "and name a field"
+            )
+    return_kind = hook.get("returnKind", "void")
+    if not isinstance(return_kind, str) or return_kind not in ABI_RETURN_KINDS:
+        raise core.CaptureConfigurationError(f"{label} has unsupported returnKind")
 
 
 def load_manifest(path: Path) -> dict[str, Any]:
@@ -106,6 +160,32 @@ def load_manifest(path: Path) -> dict[str, Any]:
             raise core.CaptureConfigurationError(f"hooks[{index}] sourceKind is required")
         if "required" in hook and not isinstance(hook["required"], bool):
             raise core.CaptureConfigurationError(f"hooks[{index}] required must be boolean")
+        _validate_abi_contract(hook, f"hooks[{index}]")
+        stack_arguments = hook.get("stackArguments")
+        if stack_arguments is not None and not isinstance(stack_arguments, list):
+            raise core.CaptureConfigurationError(
+                f"hooks[{index}] stackArguments must be a list"
+            )
+        for stack_index, spec in enumerate(stack_arguments or []):
+            if (
+                not isinstance(spec, dict)
+                or not isinstance(spec.get("name"), str)
+                or not spec["name"].strip()
+            ):
+                raise core.CaptureConfigurationError(
+                    f"hooks[{index}].stackArguments[{stack_index}] must name a field"
+                )
+            offset = spec.get("offset")
+            if isinstance(offset, bool) or not isinstance(offset, int) or offset < 0:
+                raise core.CaptureConfigurationError(
+                    f"hooks[{index}].stackArguments[{stack_index}] offset must be non-negative"
+                )
+            if not isinstance(spec.get("kind", "pointer"), str) or spec.get("kind", "pointer") not in {
+                "pointer", "u32", "i32", "u64", "utf16",
+            }:
+                raise core.CaptureConfigurationError(
+                    f"hooks[{index}].stackArguments[{stack_index}] has unsupported kind"
+                )
     native_names: set[str] = set()
     for index, hook in enumerate(native_hooks):
         if not isinstance(hook, dict):
@@ -128,23 +208,87 @@ def load_manifest(path: Path) -> dict[str, Any]:
             raise core.CaptureConfigurationError(f"nativeHooks[{index}] sourceKind is required")
         if "required" in hook and not isinstance(hook["required"], bool):
             raise core.CaptureConfigurationError(f"nativeHooks[{index}] required must be boolean")
+        _validate_abi_contract(hook, f"nativeHooks[{index}]")
         memory = hook.get("memory")
         if memory is not None and not isinstance(memory, list):
             raise core.CaptureConfigurationError(f"nativeHooks[{index}] memory must be a list")
         for mem_index, spec in enumerate(memory or []):
-            if not isinstance(spec, dict) or not isinstance(spec.get("name"), str):
+            if (
+                not isinstance(spec, dict)
+                or not isinstance(spec.get("name"), str)
+                or not spec["name"].strip()
+            ):
                 raise core.CaptureConfigurationError(
                     f"nativeHooks[{index}].memory[{mem_index}] must name a field"
                 )
-            if not isinstance(spec.get("argIndex"), int) or spec["argIndex"] < 0:
+            if "argIndex" in spec and (
+                isinstance(spec["argIndex"], bool)
+                or not isinstance(spec["argIndex"], int)
+                or not 0 <= spec["argIndex"] <= MAX_ABI_ARGUMENT_INDEX
+            ):
                 raise core.CaptureConfigurationError(
-                    f"nativeHooks[{index}].memory[{mem_index}] argIndex must be non-negative"
+                    f"nativeHooks[{index}].memory[{mem_index}] argIndex must be in "
+                    f"0..{MAX_ABI_ARGUMENT_INDEX}"
                 )
-            if not isinstance(spec.get("offset", 0), int) or spec.get("offset", 0) < 0:
+            has_arg_index = (
+                isinstance(spec.get("argIndex"), int)
+                and not isinstance(spec["argIndex"], bool)
+                and spec["argIndex"] <= MAX_ABI_ARGUMENT_INDEX
+                and spec["argIndex"] >= 0
+            )
+            has_stack_offset = (
+                isinstance(spec.get("stackOffset"), int)
+                and not isinstance(spec["stackOffset"], bool)
+                and spec["stackOffset"] >= 0
+            )
+            has_base_field = isinstance(spec.get("baseField"), str) and bool(
+                spec["baseField"].strip()
+            )
+            if sum((has_arg_index, has_stack_offset, has_base_field)) != 1:
+                raise core.CaptureConfigurationError(
+                    f"nativeHooks[{index}].memory[{mem_index}] needs exactly one non-negative "
+                    "argIndex, stackOffset, or baseField"
+                )
+            if "savePointer" in spec and not isinstance(spec["savePointer"], bool):
+                raise core.CaptureConfigurationError(
+                    f"nativeHooks[{index}].memory[{mem_index}] savePointer must be boolean"
+                )
+            pointer_offsets = spec.get("pointerOffsets")
+            if pointer_offsets is not None and (
+                not isinstance(pointer_offsets, list)
+                or any(
+                    not isinstance(item, int)
+                    or isinstance(item, bool)
+                    or item < 0
+                    for item in pointer_offsets
+                )
+            ):
+                raise core.CaptureConfigurationError(
+                    f"nativeHooks[{index}].memory[{mem_index}] pointerOffsets must be "
+                    "a list of non-negative integers"
+                )
+            if "pointerOffset" in spec and "pointerOffsets" in spec:
+                raise core.CaptureConfigurationError(
+                    f"nativeHooks[{index}].memory[{mem_index}] cannot set both "
+                    "pointerOffset and pointerOffsets"
+                )
+            if "pointerOffset" in spec and (
+                not isinstance(spec["pointerOffset"], int)
+                or isinstance(spec["pointerOffset"], bool)
+                or spec["pointerOffset"] < 0
+            ):
+                raise core.CaptureConfigurationError(
+                    f"nativeHooks[{index}].memory[{mem_index}] pointerOffset must be non-negative"
+                )
+            if (
+                not isinstance(spec.get("offset", 0), int)
+                or isinstance(spec.get("offset", 0), bool)
+                or spec.get("offset", 0) < 0
+            ):
                 raise core.CaptureConfigurationError(
                     f"nativeHooks[{index}].memory[{mem_index}] offset must be non-negative"
                 )
-            if spec.get("kind", "pointer") not in {
+            if not isinstance(spec.get("kind", "pointer"), str) or spec.get("kind", "pointer") not in {
                 "pointer",
                 "u32",
                 "i32",
@@ -225,16 +369,57 @@ def validate_hook_ranges(
         )
 
 
-validate_attached_module = core.validate_attached_module
+def _attached_file_sha256(path_text: str) -> str | None:
+    try:
+        path = Path(path_text).resolve()
+        return core.sha256_file(path) if path.is_file() else None
+    except OSError:
+        return None
+
+
+def validate_attached_module(
+    ready_payload: dict[str, Any],
+    expected_module: Path,
+    expected_sha256: str | None = None,
+) -> dict[str, Any]:
+    actual_path = ready_payload.get("modulePath")
+    actual_size = ready_payload.get("moduleSize")
+    expected_path = expected_module.resolve()
+    expected_size = expected_path.stat().st_size
+    expected_hash = (expected_sha256 or core.sha256_file(expected_path)).casefold()
+    if not isinstance(actual_path, str) or not actual_path.strip():
+        raise RuntimeError("Frida agent did not report the attached GameAssembly path")
+    if isinstance(actual_size, bool) or not isinstance(actual_size, int) or actual_size <= 0:
+        raise RuntimeError("Frida agent did not report a valid attached GameAssembly size")
+    actual_hash = _attached_file_sha256(actual_path)
+    facts = {
+        "expectedModulePath": str(expected_path),
+        "expectedModuleSize": expected_size,
+        "expectedModuleSha256": expected_hash,
+        "attachedModulePath": actual_path,
+        "attachedModuleSize": actual_size,
+        "attachedModuleSha256": actual_hash,
+        "modulePathMatch": core.normalized_path(actual_path) == core.normalized_path(expected_path),
+        "moduleSizeMatch": actual_size == expected_size,
+        "moduleSha256Match": actual_hash is not None and actual_hash == expected_hash,
+    }
+    if not all(facts[key] for key in ("modulePathMatch", "moduleSizeMatch", "moduleSha256Match")):
+        raise RuntimeError(
+            "attached GameAssembly does not match the hash-verified module: "
+            f"pathMatch={facts['modulePathMatch']}, sizeMatch={facts['moduleSizeMatch']}, "
+            f"sha256Match={facts['moduleSha256Match']}"
+        )
+    return facts
 
 
 def validate_attached_native_module(
-    ready_payload: dict[str, Any], expected_module: Path
+    ready_payload: dict[str, Any], expected_module: Path, expected_sha256: str | None = None
 ) -> dict[str, Any]:
     actual_path = ready_payload.get("nativeModulePath")
     actual_size = ready_payload.get("nativeModuleSize")
     expected_path = expected_module.resolve()
     expected_size = expected_path.stat().st_size
+    expected_hash = (expected_sha256 or core.sha256_file(expected_path)).casefold()
     if not isinstance(actual_path, str) or not actual_path.strip():
         raise RuntimeError("Frida agent did not report the attached AkSoundEngine path")
     if isinstance(actual_size, bool) or not isinstance(actual_size, int) or actual_size <= 0:
@@ -242,15 +427,25 @@ def validate_attached_native_module(
     facts = {
         "expectedNativeModulePath": str(expected_path),
         "expectedNativeModuleSize": expected_size,
+        "expectedNativeModuleSha256": expected_hash,
         "attachedNativeModulePath": actual_path,
         "attachedNativeModuleSize": actual_size,
+        "attachedNativeModuleSha256": _attached_file_sha256(actual_path),
         "nativeModulePathMatch": core.normalized_path(actual_path) == core.normalized_path(expected_path),
         "nativeModuleSizeMatch": actual_size == expected_size,
     }
-    if not facts["nativeModulePathMatch"] or not facts["nativeModuleSizeMatch"]:
+    facts["nativeModuleSha256Match"] = (
+        facts["attachedNativeModuleSha256"] is not None
+        and facts["attachedNativeModuleSha256"].casefold() == expected_hash
+    )
+    if not all(
+        facts[key]
+        for key in ("nativeModulePathMatch", "nativeModuleSizeMatch", "nativeModuleSha256Match")
+    ):
         raise RuntimeError(
             "attached AkSoundEngine does not match the hash-verified module: "
-            f"pathMatch={facts['nativeModulePathMatch']}, sizeMatch={facts['nativeModuleSizeMatch']}"
+            f"pathMatch={facts['nativeModulePathMatch']}, sizeMatch={facts['nativeModuleSizeMatch']}, "
+            f"sha256Match={facts['nativeModuleSha256Match']}"
         )
     return facts
 
@@ -295,6 +490,7 @@ def run_capture(
             "captureTool": f"frida-audio-runtime-trace/{getattr(frida, '__version__', 'unknown')}",
             "exportFingerprint": manifest["files"]["metadata"]["sha256"],
             "language": manifest.get("language", ""),
+            "selectedGameRoot": str(args.game_root.resolve()),
             "expectedModulePath": str(verified["gameAssembly"].resolve()),
             "expectedModuleSize": verified["gameAssembly"].stat().st_size,
             "expectedModuleSha256": manifest["files"]["gameAssembly"]["sha256"],
@@ -365,7 +561,11 @@ def run_capture(
         if not ready.wait(15):
             raise RuntimeError("audio hook agent did not report ready within 15 seconds")
         try:
-            module_facts = validate_attached_module(ready_payload, verified["gameAssembly"])
+            module_facts = validate_attached_module(
+                ready_payload,
+                verified["gameAssembly"],
+                manifest["files"]["gameAssembly"]["sha256"],
+            )
         except RuntimeError as exc:
             writer.diagnostic(
                 "attached_module_mismatch",
@@ -381,7 +581,11 @@ def run_capture(
         if manifest.get("nativeHooks"):
             try:
                 module_facts.update(
-                    validate_attached_native_module(ready_payload, verified["akSoundEngine"])
+                    validate_attached_native_module(
+                        ready_payload,
+                        verified["akSoundEngine"],
+                        manifest["files"]["akSoundEngine"]["sha256"],
+                    )
                 )
             except RuntimeError as exc:
                 writer.diagnostic(
@@ -470,8 +674,14 @@ def run_capture(
 
 def capture(args: argparse.Namespace) -> int:
     try:
+        selected_game_root = (
+            args.game_root
+            if args.game_root is not None
+            else core.resolve_installed_game_data_root().parent
+        ).resolve()
+        args.game_root = selected_game_root
         manifest = load_manifest(args.manifest.resolve())
-        verified = core.verify_game_files(args.game_root.resolve(), manifest)
+        verified = core.verify_game_files(selected_game_root, manifest)
         validate_hook_ranges(
             manifest,
             verified["gameAssembly"],

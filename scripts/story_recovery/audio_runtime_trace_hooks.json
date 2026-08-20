@@ -1,5 +1,5 @@
 {
-  "schema": "audioRuntimeTrace.hooks.v1",
+  "schema": "audioRuntimeTrace.hooks.v2",
   "gameBuild": "endfield-2026-07-11-gameassembly-0c557367",
   "processName": "Endfield.exe",
   "moduleName": "GameAssembly.dll",
@@ -70,6 +70,23 @@
         "externalCookie": {"index": 3, "kind": "u32"}
       },
       "returnKind": "u32"
+    },
+    {
+      "name": "VoicePlayer.ExternalSourcePreparation",
+      "sourceKind": "voiceExternalSourcePreparation",
+      "mode": "request",
+      "required": false,
+      "rva": "0x3abef40",
+      "args": {
+        "externalSourceKey": {"index": 0, "kind": "string"},
+        "wwiseEvent": {"index": 1, "kind": "pointer"},
+        "audioObject": {"index": 2, "kind": "pointer"},
+        "handleId": {"index": 3, "kind": "u32"}
+      },
+      "stackArguments": [
+        {"name": "codec", "offset": 40, "kind": "u32"}
+      ],
+      "returnKind": "u64"
     },
     {
       "name": "AudioAdapter._OnEventPreparedDoPostEvent",
@@ -374,6 +391,7 @@
         "statusPointer": {"index": 3, "kind": "u64"}
       },
       "memory": [
+        {"name": "copiedAllocationBase", "argIndex": 2, "offset": 0, "kind": "pointer"},
         {"name": "externalCookie", "argIndex": 1, "offset": 0, "kind": "u32"},
         {"name": "externalCodec", "argIndex": 1, "offset": 4, "kind": "u32"},
         {"name": "externalFile", "argIndex": 1, "offset": 8, "kind": "utf16"},
@@ -385,11 +403,15 @@
       "name": "AkSoundEngine.ExternalSourceManagerConstructor",
       "sourceKind": "externalSourceRegistration",
       "rva": "0xe1320",
+      "returnKind": "u32",
       "args": {
         "managerContext": {"index": 0, "kind": "pointer"},
         "sourceKey": {"index": 1, "kind": "u32"},
         "sourceContextOrObjectId": {"index": 2, "kind": "u64"},
-        "descriptorInfo": {"index": 3, "kind": "pointer"}
+        "descriptorInfo": {"index": 3, "kind": "pointer"},
+        "callbackFunction": {"index": 5, "kind": "pointer"},
+        "callbackCookie": {"index": 6, "kind": "pointer"},
+        "operationFlags": {"index": 7, "kind": "u32"}
       },
       "memory": [
         {"name": "descriptorAllocationBase", "argIndex": 3, "offset": 0, "kind": "pointer"},
@@ -415,7 +437,25 @@
     {
       "name": "AkSoundEngine.ExternalSourceManagerSiblingLookup",
       "sourceKind": "externalSourceSiblingLookup",
-      "rva": "0xe28d0"
+      "rva": "0xe28d0",
+      "args": {
+        "manager": {"index": 0, "kind": "pointer"},
+        "sourceKey": {"index": 1, "kind": "u32"},
+        "callbackContext": {"index": 2, "kind": "pointer"}
+      }
+    },
+    {
+      "name": "AkSoundEngine.ExternalSourceStateCallback",
+      "sourceKind": "externalSourceStateCallback",
+      "rva": "0x143990",
+      "args": {
+        "sourceStateObject": {"index": 0, "kind": "pointer"}
+      },
+      "memory": [
+        {"name": "sourceContext", "argIndex": 0, "offset": 8, "kind": "pointer"},
+        {"name": "sourceCallbackState", "argIndex": 0, "offset": 216, "kind": "pointer"},
+        {"name": "sourceKeyFromContext", "argIndex": 0, "pointerOffset": 8, "offset": 592, "kind": "u32"}
+      ]
     },
     {
       "name": "AkSoundEngine.ExternalSourceManagerJoin",
@@ -446,6 +486,63 @@
       "returnKind": "u32"
     },
     {
+      "name": "AkSoundEngine.SourceInfoSelectionConsumer",
+      "sourceKind": "sourceInfoSelectionConsumer",
+      "rva": "0xd2ed0",
+      "required": false,
+      "args": {
+        "sourceObject": {"index": 0, "kind": "pointer"}
+      },
+      "memory": [
+        {"name": "sourceInfoPointer", "argIndex": 0, "offset": 648, "kind": "pointer"},
+        {"name": "sourceInfoKey", "argIndex": 0, "pointerOffset": 648, "offset": 0, "kind": "u32"},
+        {"name": "sourceInfoFlags", "argIndex": 0, "pointerOffset": 648, "offset": 12, "kind": "u32"},
+        {"name": "sourceObjectSelectedDescriptor", "argIndex": 0, "offset": 824, "kind": "pointer"},
+        {"name": "sourceObjectSelectedDescriptorAux", "argIndex": 0, "offset": 832, "kind": "u32"}
+      ],
+      "returnKind": "bool"
+    },
+    {
+      "name": "AkSoundEngine.SourceStateInitializer",
+      "sourceKind": "sourceStateInitializer",
+      "rva": "0xd1f90",
+      "required": false,
+      "args": {
+        "sourceState": {"index": 0, "kind": "pointer"},
+        "sourceConfig": {"index": 1, "kind": "pointer"},
+        "sourceInfo": {"index": 3, "kind": "pointer"}
+      },
+      "memory": [
+        {"name": "sourceStateKey268", "argIndex": 0, "offset": 616, "kind": "u32"},
+        {"name": "sourceStateSourceInfo", "argIndex": 0, "offset": 648, "kind": "pointer"},
+        {"name": "sourceConfigKey34", "argIndex": 1, "offset": 52, "kind": "u32"},
+        {"name": "sourceInfoKey", "argIndex": 3, "offset": 0, "kind": "u32"},
+        {"name": "sourceInfoFlags", "argIndex": 3, "offset": 12, "kind": "u32"},
+        {"name": "sourceInfoPath", "argIndex": 3, "offset": 16, "kind": "utf16"}
+      ],
+      "returnKind": "void"
+    },
+    {
+      "name": "AkSoundEngine.SourceInfoSelector",
+      "sourceKind": "sourceInfoSelector",
+      "rva": "0xf5030",
+      "required": false,
+      "args": {
+        "selector": {"index": 0, "kind": "pointer"},
+        "sourceInfoKey": {"index": 1, "kind": "u32"},
+        "sourceInfoMode": {"index": 2, "kind": "u32"},
+        "outputDescriptor": {"index": 3, "kind": "pointer"}
+      },
+      "memory": [
+        {"name": "selectedEntry", "argIndex": 3, "offset": 0, "kind": "pointer"},
+        {"name": "selectedEntryKey", "argIndex": 3, "pointerOffset": 0, "offset": 8, "kind": "u32"},
+        {"name": "selectedContext", "argIndex": 3, "offset": 8, "kind": "pointer"},
+        {"name": "selectedDescriptor", "argIndex": 3, "offset": 16, "kind": "pointer"},
+        {"name": "selectedDescriptorAux", "argIndex": 3, "offset": 24, "kind": "u32"}
+      ],
+      "returnKind": "void"
+    },
+    {
       "name": "AkSoundEngine.SourceProviderPreparation",
       "sourceKind": "wwiseSourceProviderPreparation",
       "rva": "0x1af7a0",
@@ -457,9 +554,13 @@
       "memory": [
         {"name": "sourceOwner", "argIndex": 0, "pointerOffset": 24, "offset": 0, "kind": "pointer"},
         {"name": "sourceInfoPointer", "argIndex": 0, "pointerOffset": 24, "offset": 648, "kind": "pointer"},
+        {"name": "sourceInfoKey", "argIndex": 0, "pointerOffsets": [24, 648], "offset": 0, "kind": "u32"},
         {"name": "sourceInfoFlags", "argIndex": 0, "pointerOffset": 24, "offset": 660, "kind": "u32"},
         {"name": "sourceInfoPath", "argIndex": 0, "pointerOffset": 24, "offset": 664, "kind": "utf16"},
-        {"name": "sourceInfoAux", "argIndex": 0, "pointerOffset": 24, "offset": 652, "kind": "u32"}
+        {"name": "sourceInfoAux", "argIndex": 0, "pointerOffset": 24, "offset": 652, "kind": "u32"},
+        {"name": "sourceOwnerSelectedDescriptor", "argIndex": 0, "pointerOffset": 24, "offset": 824, "kind": "pointer"},
+        {"name": "sourceOwnerSelectedDescriptorAux", "argIndex": 0, "pointerOffset": 24, "offset": 832, "kind": "u32"},
+        {"name": "decoderProvider", "argIndex": 0, "offset": 88, "kind": "pointer"}
       ]
     },
     {
@@ -507,7 +608,35 @@
     {
       "name": "AkSoundEngine.NativeCallbackQueueDetach",
       "sourceKind": "externalSourceCallbackQueueDetach",
-      "rva": "0x2d10"
+      "rva": "0x2d10",
+      "returnKind": "pointer"
+    },
+    {
+      "name": "AkSoundEngine.NativeCallbackRecordCookieGetter",
+      "sourceKind": "externalSourceCallbackRecordCookieGetter",
+      "rva": "0x2e310",
+      "args": {
+        "record": {"index": 0, "kind": "pointer"}
+      },
+      "returnKind": "pointer"
+    },
+    {
+      "name": "AkSoundEngine.NativeCallbackRecordTypeGetter",
+      "sourceKind": "externalSourceCallbackRecordTypeGetter",
+      "rva": "0x2e320",
+      "args": {
+        "record": {"index": 0, "kind": "pointer"}
+      },
+      "returnKind": "u32"
+    },
+    {
+      "name": "AkSoundEngine.NativeCallbackRecordPayloadGetter",
+      "sourceKind": "externalSourceCallbackRecordPayloadGetter",
+      "rva": "0x2e330",
+      "args": {
+        "record": {"index": 0, "kind": "pointer"}
+      },
+      "returnKind": "pointer"
     },
     {
       "name": "AkSoundEngine.SourceMediaLookup",
@@ -553,6 +682,11 @@
         "openMode": {"index": 2, "kind": "u32"},
         "async": {"index": 3, "kind": "bool"}
       },
+      "memory": [
+        {"name": "openProviderContext", "stackOffset": 40, "offset": 0, "kind": "pointer", "savePointer": true},
+        {"name": "openFileSize", "baseField": "openProviderContext", "offset": 0, "kind": "u64"},
+        {"name": "openHandle", "baseField": "openProviderContext", "offset": 16, "kind": "u64"}
+      ],
       "returnKind": "u32"
     },
     {
@@ -597,6 +731,7 @@
         {"name": "requestSizeOrOffsetHigh", "argIndex": 2, "offset": 8, "kind": "u64"},
         {"name": "requestTransfer", "argIndex": 2, "offset": 16, "kind": "pointer"},
         {"name": "descriptorProviderObject", "argIndex": 2, "offset": 0, "kind": "pointer"},
+        {"name": "descriptorProviderHandle", "argIndex": 2, "pointerOffset": 0, "offset": 16, "kind": "u64"},
         {"name": "descriptorTransferScalar", "argIndex": 2, "offset": 8, "kind": "u64"},
         {"name": "descriptorRequestContext", "argIndex": 2, "offset": 16, "kind": "pointer"}
       ]
@@ -615,6 +750,7 @@
         {"name": "requestSizeOrOffsetHigh", "argIndex": 2, "offset": 8, "kind": "u64"},
         {"name": "requestTransfer", "argIndex": 2, "offset": 16, "kind": "pointer"},
         {"name": "descriptorProviderObject", "argIndex": 2, "offset": 0, "kind": "pointer"},
+        {"name": "descriptorProviderHandle", "argIndex": 2, "pointerOffset": 0, "offset": 16, "kind": "u64"},
         {"name": "descriptorTransferScalar", "argIndex": 2, "offset": 8, "kind": "u64"},
         {"name": "descriptorRequestContext", "argIndex": 2, "offset": 16, "kind": "pointer"}
       ]
@@ -670,12 +806,33 @@
         {"name": "sourceOffset", "argIndex": 0, "offset": 108, "kind": "u32"},
         {"name": "refillObject", "argIndex": 0, "offset": 88, "kind": "pointer"}
       ]
+    },
+    {
+      "name": "AkSoundEngine.CodecDecoderDecode",
+      "sourceKind": "wwiseCodecDecoderDecode",
+      "rva": "0x1c7ec0",
+      "args": {
+        "decoder": {"index": 0, "kind": "pointer"},
+        "floatOutputSlot": {"index": 1, "kind": "pointer"},
+        "frameCountSlot": {"index": 2, "kind": "pointer"}
+      },
+      "memory": [
+        {"name": "decoderOwner", "argIndex": 0, "offset": 24, "kind": "pointer"},
+        {"name": "decoderOwnerKey", "argIndex": 0, "pointerOffset": 24, "offset": 616, "kind": "u32"},
+        {"name": "decoderProviderInterface", "argIndex": 0, "offset": 88, "kind": "pointer"},
+        {"name": "decoderBuffer", "argIndex": 0, "offset": 96, "kind": "pointer"},
+        {"name": "decoderAvailable", "argIndex": 0, "offset": 104, "kind": "u32"},
+        {"name": "decoderPosition", "argIndex": 0, "offset": 108, "kind": "u32"},
+        {"name": "decodedFloatBuffer", "argIndex": 1, "offset": 0, "kind": "pointer"},
+        {"name": "decodedFrameCount", "argIndex": 2, "offset": 0, "kind": "u32"}
+      ],
+      "returnKind": "i32"
     }
   ],
   "evidenceBoundary": {
     "classification": "observed_runtime_request",
-    "description": "A carrier hook proves that the managed request or carrier method executed in the attached process; an AudioAdapter hook proves that an integer Event request reached the adapter. Neither alone proves Wwise acceptance, selected media, or audibility.",
+    "description": "A carrier hook proves that the managed request or carrier method executed in the attached process; the optional VoicePlayer external-source preparation hook records the formatted externalSourceKey and its Event/object/handle arguments immediately before the external-post helper; an AudioAdapter hook proves that an integer Event request reached the adapter. Neither alone proves Wwise acceptance, selected media, or audibility.",
     "eventIdJoin": "eventHash against the current language Audio index is a static name/media candidate join, not an observed Wwise selection.",
-    "nativeTrace": "Native observations are accepted only from the hash-locked AkSoundEngine.dll. External-source descriptors, the source-manager key join, key-to-decoder registry, and Wwise open/read calls are execution evidence, but a capture must still show their correlation before claiming a key-to-file mapping. Provider-array dispatch, ReadFileEx descriptor fields, completion request fields, and codec callback pointers are captured as bounded ABI evidence; none alone proves a key-to-file join, decoded PCM, or audibility."
+    "nativeTrace": "Native observations are accepted only from the hash-locked AkSoundEngine.dll. External-source descriptors, the source-manager key join, key-to-decoder registry, and Wwise open/read calls are execution evidence, but a capture must still show their correlation before claiming a key-to-file mapping. The agent resolves the exact source-manager hash-table node by serial at constructor return and join/lookup entry, records the constructor status (1 for the successful registration branch and 0x34 for this build's allocation-failure branch), and the importer reports pointer intersections as same-entry evidence. Native events also carry the same-thread managed hook stack when a synchronous bridge is active; the importer reports exact path matches at that boundary without upgrading later asynchronous events. Each native call also carries an exact same-thread nativeParentCaptureId when another attached native hook is synchronously active; nativePairing.nativeCallRelations reports only those resolved parent/child hook pairs. The importer separately compares native resolver/queue descriptor context pointers with the managed external callback cookie; this is callback-mapping evidence, not the Wwise external-source cookie or a file/PCM join. The optional VoicePlayer helper hook records its fifth ABI argument as stackArguments.codec at entry stack +0x28, so managed codec values can be compared with copied descriptor +0x04 without assuming a numeric-domain conversion. Provider preparation records decoder +0x58 only after the helper returns, and the importer compares it separately with device/async-read provider pointers as a bounded same-object check. The source-state initializer at +0xd1f90 samples the source-state object, config +0x34 key, incoming sourceInfo, and post-write +0x268/+0x288 fields; pointer/key intersections with manager joins, provider owners, decoder owners, and sourceInfo pointers are initialization continuity only. The sourceInfo selector samples candidate descriptor +0x10, while the source-info consumer and provider-preparation owner sample the copied source +0x338; pointer intersections are reported as bounded selector-to-owner continuity, not as a path or file identity. The default-open stack argument-5 provider context is sampled after the call, including its +0x10 handle; async-read descriptors sample their provider object's +0x10 handle, and an exact handle intersection is reported as open-to-read continuity. The generic decoder entry at +0x1c7ec0 is also sampled with its decoder owner +0x268 key, provider +0x58 interface, float-output slot, frame-count slot, and native return address; return address +0x1801c4780 identifies the static PCM16-producing caller while +0x1801c49c1/+0x1801c4a43 identify refill/retry callers. Registry/provider intersections prove bounded continuity into an actual decode call when observed, while the statically known caller still owns float-to-PCM16 conversion. Provider-array dispatch, ReadFileEx descriptor fields, completion request fields, and codec callback pointers are captured as bounded ABI evidence; none alone proves a key-to-file join, decoded PCM, or audibility."
   }
 }
