@@ -7,7 +7,7 @@
   const HEIGHT = 1280;
   const PAD = 64;
   const MIN_SCALE = 0.3; // a whole region can span several zone maps of canvas
-  const MAX_SCALE = 14;
+  const MAX_SCALE = 48;
   const PAN_OVERHANG = 96; // px of surface a pan may run past the content edge
   const LABEL_ZOOM = 1.7; // minor entity labels stay hidden below this zoom
   const GEO_LABEL_ZOOM = 0.3; // keep one primary name per sibling at region view
@@ -267,19 +267,23 @@
     }).join("");
   };
 
-  // Missions are ordered by how much of the map they account for, so the ones
-  // worth isolating are at the top rather than in alphabetical order.
+  // Missions use the same expandable-list shape as Story: select the mission
+  // from its summary, then inspect the files owned by that mission in place.
   const missionSelectHtml = (data) => {
-    const missions = Object.entries(data.facets?.missions || {});
+    const details = data.missionDetails || {};
+    const missions = Object.entries(data.facets?.missions || {}).map(([id, counts]) => [id, { ...counts, ...(details[id] || {}) }]);
     if (!missions.length) return `<p class="mr-note">${esc(t("missionNone"))}</p>`;
-    const options = missions
+    const rows = missions
       .sort((a, b) => (b[1].markers + b[1].questPoints) - (a[1].markers + a[1].questPoints) || a[0].localeCompare(b[0]))
       .map(([id, counts]) => {
-        const weight = `${counts.markers + counts.questPoints}${t("countMarkers")}${counts.stories ? ` · ${counts.stories}${t("countStories")}` : ""}`;
-        return `<option value="${esc(id)}" ${id === state.mission ? "selected" : ""}>${esc(`${id} — ${weight}`)}</option>`;
+        const active = id === state.mission;
+        const files = (counts.files || []).map((path) => `<li><a href="/${esc(path)}" target="_blank" rel="noreferrer" title="${esc(path)}">${esc(fileName(path))}</a>${storyLink(path)}</li>`).join("");
+        return `<details class="mr-mission-item${active ? " is-active" : ""}" ${active ? "open" : ""}>
+          <summary data-map-mission="${esc(id)}"><b>${esc(id)}</b><span>${counts.markers + counts.questPoints}${esc(t("countMarkers"))}${counts.stories ? ` · ${counts.stories}${esc(t("countStories"))}` : ""}</span></summary>
+          <div class="mr-mission-files"><small>${esc(`${t("missionFiles")} (${counts.files?.length || 0})`)}</small>${files ? `<ul>${files}</ul>` : `<p>${esc(t("noFiles"))}</p>`}</div>
+        </details>`;
       }).join("");
-    return `<select id="map-recovery-mission" aria-label="${esc(t("mission"))}">`
-      + `<option value="" ${state.mission ? "" : "selected"}>${esc(`${t("missionAll")} (${missions.length})`)}</option>${options}</select>`;
+    return `<div class="mr-mission-list"><button type="button" class="mr-mission-all${state.mission ? "" : " is-active"}" data-map-mission="">${esc(`${t("missionAll")} (${missions.length})`)}</button>${rows}</div>`;
   };
 
   // A pinned dialog file is the same payload the Story view renders, so its
@@ -355,6 +359,7 @@
       mission: "Mission",
       missionAll: "All missions",
       missionNone: "No mission plots content in this level.",
+      missionFiles: "Mission files",
       layersAll: "All",
       layersNone: "None",
       layersStory: "With dialog",
@@ -460,6 +465,7 @@
       mission: "任务",
       missionAll: "全部任务",
       missionNone: "本关卡没有任务内容。",
+      missionFiles: "任务文件",
       layersAll: "全选",
       layersNone: "全不选",
       layersStory: "含剧情",
@@ -1193,14 +1199,16 @@
       const ids = row.mapLayerIds || [];
       return ids.length ? ids.some((id) => state.mapLayers.has(id)) : true;
     };
-    const questRows = (state.showQuests ? (data.questPoints || []) : [])
-      .filter((row) => inMission(row) && inMapLayer(row))
+    const missionSelected = !!state.mission;
+    const questRows = ((state.showQuests || missionSelected) ? (data.questPoints || []) : [])
+      .filter((row) => inMission(row) && (missionSelected || inMapLayer(row)))
       .map((row) => ({ ...row, type: "quest", position: finitePosition(row.position) }))
       .filter((row) => row.position);
     const markerRows = (data.markers || [])
-      .filter((row) => state.kinds.has(row.kind) && state.subKinds.has(row.subKind || row.kind) && inMission(row))
-      .filter(inMapLayer)
-      .filter((row) => !state.storyOnly || Number(row.storyCount || 0) > 0)
+      .filter((row) => inMission(row))
+      .filter((row) => missionSelected || (state.kinds.has(row.kind) && state.subKinds.has(row.subKind || row.kind)))
+      .filter((row) => missionSelected || inMapLayer(row))
+      .filter((row) => missionSelected || !state.storyOnly || Number(row.storyCount || 0) > 0)
       .map((row) => ({ ...row, type: "marker", position: finitePosition(row.position) }))
       .filter((row) => row.position);
 
@@ -1576,12 +1584,14 @@
     host.querySelector("#map-recovery-select")?.addEventListener("change", (event) => {
       void switchMap(event.target.value);
     });
-    host.querySelector("#map-recovery-mission")?.addEventListener("change", (event) => {
-      state.mission = event.target.value;
-      state.pendingFit = true; // an isolated mission occupies a different area
+    host.querySelectorAll("[data-map-mission]").forEach((button) => button.addEventListener("click", () => {
+      state.mission = button.dataset.mapMission || "";
+      // A selected mission always exposes its complete footprint, regardless
+      // of the ordinary marker and floor filters.
+      state.pendingFit = true;
       state.pendingFitTarget = "nodes";
       render();
-    });
+    }));
     host.querySelectorAll("[data-map-kind]").forEach((input) => input.addEventListener("change", () => {
       state.kinds = new Set([...host.querySelectorAll("[data-map-kind]:checked")].map((row) => row.dataset.mapKind));
       scheduleRender();
@@ -1853,6 +1863,7 @@
     if (!selected) return null;
     const kinds = {};
     const missions = {};
+    const missionDetails = {};
     const questPoints = [];
     const markers = [];
     const unlinked = new Set();
@@ -1912,6 +1923,10 @@
         entry.questPoints += counts.questPoints || 0;
         entry.stories += counts.stories || 0;
       }
+      for (const [missionId, detail] of Object.entries(payload.missionDetails || {})) {
+        const entry = (missionDetails[missionId] ||= { files: new Set() });
+        for (const path of detail.files || []) if (path) entry.files.add(path);
+      }
       const unplacedStories = payload.unplacedStories;
       if (unplacedStories?.count) {
         unplaced.push(...(unplacedStories.stories || []));
@@ -1937,6 +1952,10 @@
       questPoints,
       markers,
       facets: { kinds, missions },
+      missionDetails: Object.fromEntries(Object.entries(missionDetails).map(([missionId, detail]) => [missionId, {
+        ...(missions[missionId] || { markers: 0, questPoints: 0, stories: 0 }),
+        files: [...detail.files].sort(),
+      }])),
       pinnedFileCount,
       npcCoverage: { exactProxyCount, boundary: selected.npcCoverage?.boundary || "" },
       unplacedStories: {
@@ -1956,13 +1975,13 @@
 
   // ---------------------------------------------------------------- lifecycle
 
-  async function loadMap(id, { includeRegion = !!state.map || stitchOnInitialOpen(id) } = {}) {
+  async function loadMap(id, { includeRegion = stitchOnInitialOpen(id) } = {}) {
     const row = (state.index?.maps || []).find((item) => item.id === id) || state.index?.maps?.[0];
     if (!row) return false;
     const key = regionKey(row.id);
-    // Main regional maps are stitched from their complete sibling set even
-    // on initial activation. For other families the existing on-demand rule
-    // keeps a first view from fetching every unrelated sibling.
+    // Only Map01/Map02 are one geographic surface. Shared prefixes elsewhere
+    // can denote separate states/decks with identical bounds: notably the two
+    // Dijiang maps. Overlaying those rotated images displaces correct markers.
     const memberRows = includeRegion
       ? (state.index?.maps || []).filter((item) => regionKey(item.id) === key)
       : [row];

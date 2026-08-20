@@ -19,6 +19,7 @@ from scripts.build_map_recovery_preview import (
     plot_bounds,
     raster_size,
     rasterise_depth,
+    render_point_cloud,
     smooth_surface,
 )
 
@@ -36,8 +37,31 @@ class PreviewInputTests(unittest.TestCase):
     def test_missing_asset_map_is_a_nonfatal_degraded_preview(self):
         with tempfile.TemporaryDirectory() as tmp:
             missing = Path(tmp) / "missing-assets.json"
-            with mock.patch("sys.argv", ["build_map_recovery_preview.py", "--asset-map", str(missing)]):
+            maps_root = Path(tmp) / "maps"
+            output_root = Path(tmp) / "render"
+            maps_root.mkdir()
+            with mock.patch("sys.argv", [
+                "build_map_recovery_preview.py",
+                "--asset-map", str(missing),
+                "--maps-root", str(maps_root),
+                "--output-root", str(output_root),
+            ]):
                 self.assertEqual(builder.main(), 0)
+
+    def test_exact_positions_render_an_explicit_point_cloud_fallback(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            manifest = render_point_cloud(
+                "test_level",
+                [(-10.0, -2.0, 20.0), (30.0, 12.0, -40.0)],
+                Path(tmp),
+            )
+            self.assertEqual(manifest["status"], "inferred_registry_point_cloud_preview")
+            self.assertEqual(manifest["render"]["pointCount"], 2)
+            self.assertEqual(manifest["render"]["elevationRange"], {"min": -2.0, "max": 12.0})
+            self.assertIn("Evidence-only", manifest["boundary"])
+            image = Path(tmp, "test_level_registry_point_cloud.png")
+            self.assertTrue(image.is_file())
+            self.assertEqual(image.read_bytes()[:8], b"\x89PNG\r\n\x1a\n")
 
 
 class FitOriginTests(unittest.TestCase):

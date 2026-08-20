@@ -480,6 +480,18 @@ uses a stable background order, and geographic labels are positioned from the
 localized `UILevelMapLoadConfig.staticElements` text anchors. Selecting a
 different sibling level must not reorder the region surfaces or make named
 places appear to exchange positions.
+
+Only the Map01 and Map02 families are stitched into regional canvases. Other
+same-prefix levels can be separate states or decks with identical bounds; the
+two Dijiang maps therefore load independently and each honors its authored
+`needInverseXZ` 180-degree rotation. Where game minimap art is absent, a
+recovered HLOD surface is preferred; otherwise the page uses an explicitly
+evidence-only, height-tinted point cloud made from exact registry and quest
+X/Y/Z transforms without inventing terrain. The expandable mission list links
+the files owned by each mission. Selecting one mission shows all of its plotted
+markers across ordinary marker and floor filters, focuses their footprint, and
+the map can be zoomed to 48x for close inspection.
+
 Both marker points and background rectangles use the same `screenY = maxZ -
 worldZ` projection. Do not place a background with `worldZ - minZ`: that
 mirrors every stitched screen north/south while leaving task coordinates in

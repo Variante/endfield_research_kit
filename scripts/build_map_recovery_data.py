@@ -2383,6 +2383,27 @@ def build_level(
                 if key in rendered:
                     layer[key] = rendered[key]
 
+    facets = _facets(markers, quest_points, missions)
+    digest_files = {
+        digest["missionId"]: set(digest.get("fileRefs") or [])
+        for digest in digests if digest.get("missionId")
+    }
+    mission_details: dict[str, dict] = {}
+    for mission in sorted(missions):
+        files = set(digest_files.get(mission) or [])
+        runtime_asset = _mission_runtime_asset(mission)
+        if runtime_asset:
+            files.add(runtime_asset)
+        for node in [*markers, *quest_points]:
+            if mission not in (node.get("missions") or []):
+                continue
+            files.update(path for path in node.get("sourceFiles") or [] if path)
+            files.update(pin.get("path") for pin in node.get("relatedFiles") or [] if pin.get("path"))
+        mission_details[mission] = {
+            **(facets["missions"].get(mission) or {"markers": 0, "questPoints": 0, "stories": 0}),
+            "files": sorted(files),
+        }
+
     return {
         "schemaVersion": 1,
         "id": level_id,
@@ -2394,11 +2415,12 @@ def build_level(
         # it is the coordinate-space contract used to stitch sibling level
         # screens, not a translated UI label.
         "regionKey": _region_key(level_id),
-        "facets": _facets(markers, quest_points, missions),
+        "facets": facets,
         "levelId": level_id,
         "idNum": id_num,
         "family": _level_family(level_id),
         "missions": sorted(missions),
+        "missionDetails": mission_details,
         "coordinateSystem": "Unity world X/Y/Z; map projection uses X/Z with +Z upward",
         "questPoints": sorted(quest_points, key=lambda row: (str(row.get("missionId") or ""), str(row["questId"]))),
         "markers": sorted(markers, key=lambda row: (row["kind"], row["identity"])),
