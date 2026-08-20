@@ -278,6 +278,85 @@ class ValidateBurstResolverTelemetryTests(unittest.TestCase):
             with self.assertRaisesRegex(validator.TraceValidationError, "does not match"):
                 validator.validate_trace(path)
 
+    def test_canonical_phase_order_rejects_pre_start_proc_event(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "trace.jsonl"
+            self._write_trace(path)
+            rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+            rows[2], rows[3] = rows[3], rows[2]
+            for seq, row in enumerate(rows):
+                row["seq"] = seq
+            path.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
+            with self.assertRaisesRegex(validator.TraceValidationError, "event order"):
+                validator.validate_trace(path)
+
+    def test_frame_address_offset_and_handshake_base_are_checked(self) -> None:
+        for mutation, message in (
+            (lambda rows: rows[3]["caller"].update(address="0x1867774a5") or rows[3]["callerBacktrace"][0].update(address="0x1867774a5") or rows[3]["gameAssemblyCallerBacktrace"][0].update(address="0x1867774a5"), "address is not moduleBase plus offset"),
+            (lambda rows: rows[1].update(gameAssemblyModuleBase="0x190000000"), "module base differs from the native handshake"),
+        ):
+            with self.subTest(message=message), tempfile.TemporaryDirectory() as temp:
+                path = Path(temp) / "trace.jsonl"
+                self._write_trace(path)
+                rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+                mutation(rows)
+                path.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
+                with self.assertRaisesRegex(validator.TraceValidationError, message):
+                    validator.validate_trace(path)
+
+    def test_resolved_pointer_arithmetic_is_checked(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "trace.jsonl"
+            self._write_trace(path)
+            rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+            rows[3]["returnPointer"] = "0x7001"
+            rows[3]["resolvedAddress"] = "0x7001"
+            path.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
+            with self.assertRaisesRegex(validator.TraceValidationError, "resolvedAddress is not resolvedModuleBase"):
+                validator.validate_trace(path)
+
+    def test_successful_resolver_load_requires_module_base_equal_hmodule(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "trace.jsonl"
+            self._write_trace(path)
+            rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+            identity = deepcopy(rows[1]["resolverModuleIdentity"])
+            module = deepcopy(identity)
+            module["status"] = "loadlibraryw"
+            event = {
+                key: rows[3][key]
+                for key in ("schema", "sessionId", "seq", "monotonicMs", "utc")
+            } | {
+                "kind": "resolver_module_loaded",
+                "requestedPath": identity["path"],
+                "hModule": "0x5000",
+                "loadSucceeded": True,
+                "module": module,
+                "resolverModuleIdentity": identity,
+            }
+            rows.insert(3, event)
+            rows[3]["module"]["base"] = "0x5001"
+            rows[3]["module"]["moduleBase"] = "0x5001"
+            for seq, row in enumerate(rows):
+                row["seq"] = seq
+            path.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
+            with self.assertRaisesRegex(validator.TraceValidationError, "module.base does not equal hModule"):
+                validator.validate_trace(path)
+
+    def test_export_status_name_and_hashed_flag_are_consistent(self) -> None:
+        for mutation, message in (
+            (lambda row: row.update(resolvedExportStatus="not_enumerated"), "not_enumerated result must not include resolvedExportName"),
+            (lambda row: row.update(requestedExportIsHashed=False), "requestedExportIsHashed disagrees with lpProcName"),
+        ):
+            with self.subTest(message=message), tempfile.TemporaryDirectory() as temp:
+                path = Path(temp) / "trace.jsonl"
+                self._write_trace(path)
+                rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+                mutation(rows[3])
+                path.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
+                with self.assertRaisesRegex(validator.TraceValidationError, message):
+                    validator.validate_trace(path)
+
     def test_missing_stop_ack_fails_closed(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             path = Path(temp) / "trace.jsonl"

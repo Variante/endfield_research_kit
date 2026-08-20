@@ -109,6 +109,7 @@ def _frame(
     expected_module: str | None = None,
     expected_path: str | None = None,
     expected_size: int | None = None,
+    expected_base: str | None = None,
 ) -> dict[str, Any]:
     if not isinstance(value, dict):
         _fail(f"{label} is not an object")
@@ -122,13 +123,22 @@ def _frame(
     size = value.get("moduleSize")
     if isinstance(size, bool) or not isinstance(size, int) or size <= 0:
         _fail(f"{label}.moduleSize is invalid")
-    _check_pointer(value.get("offset"), f"{label}.offset", allow_null=True)
+    _check_pointer(value.get("offset"), f"{label}.offset")
     if expected_module is not None and module != expected_module.casefold():
         _fail(f"{label} contains a non-GameAssembly frame")
     if expected_path is not None and path != expected_path:
         _fail(f"{label} belongs to a different module path")
     if expected_size is not None and size != expected_size:
         _fail(f"{label} module size drifted")
+    base = int(value["moduleBase"], 16)
+    offset = int(value["offset"], 16)
+    address = int(value["address"], 16)
+    if offset >= size:
+        _fail(f"{label} offset lies outside its module image")
+    if address != base + offset:
+        _fail(f"{label} address is not moduleBase plus offset")
+    if expected_base is not None and base != int(expected_base, 16):
+        _fail(f"{label} module base differs from the native handshake")
     return value
 
 
@@ -216,6 +226,18 @@ def _resolved_fields(row: dict[str, Any], label: str) -> None:
         not isinstance(row["resolvedExportName"], str) or not row["resolvedExportName"]
     ):
         _fail(f"{label}.resolvedExportName is invalid")
+    export_name = row.get("resolvedExportName")
+    if status == "enumerated" and not isinstance(export_name, str):
+        _fail(f"{label}.enumerated result must include resolvedExportName")
+    if status != "enumerated" and export_name is not None:
+        _fail(f"{label}.{status} result must not include resolvedExportName")
+    resolved_base = int(row["resolvedModuleBase"], 16)
+    resolved_offset = int(row["resolvedModuleOffset"], 16)
+    resolved_address = int(row["resolvedAddress"], 16)
+    if resolved_offset >= size:
+        _fail(f"{label}.resolvedModuleOffset lies outside its module image")
+    if resolved_address != resolved_base + resolved_offset:
+        _fail(f"{label}.resolvedAddress is not resolvedModuleBase plus resolvedModuleOffset")
 
 
 def validate_trace(
@@ -268,6 +290,17 @@ def validate_trace(
         if row["kind"] in strict_success_fields:
             _strict_event_keys(row, row["kind"], strict_success_fields[row["kind"]])
 
+    expected_phase = ["session_start", "native_module_verified", "capture_started"]
+    if len(rows) < len(expected_phase) + 2:
+        _fail("trace is too short to contain the canonical capture phases")
+    if [row.get("kind") for row in rows[:3]] != expected_phase:
+        _fail("trace event order must begin session_start -> native_module_verified -> capture_started")
+    if rows[-2].get("kind") != "capture_stop_ack" or rows[-1].get("kind") != "session_end":
+        _fail("trace event order must end capture_stop_ack -> session_end")
+    middle_kinds = [row.get("kind") for row in rows[3:-2]]
+    if any(kind not in {"resolver_module_loaded", "get_proc_address"} for kind in middle_kinds):
+        _fail("resolver/proc events are only valid between capture_started and capture_stop_ack")
+
     starts = [row for row in rows if row.get("kind") == "session_start"]
     ends = [row for row in rows if row.get("kind") == "session_end"]
     handshakes = [row for row in rows if row.get("kind") == "native_module_verified"]
@@ -302,6 +335,7 @@ def validate_trace(
     if _module_name(handshake.get("gameAssemblyModuleName"), "handshake gameAssemblyModuleName") != manifest["moduleName"].casefold():
         _fail("native module handshake GameAssembly name drifted")
     _check_pointer(handshake.get("gameAssemblyModuleBase"), "native module handshake gameAssemblyModuleBase")
+    gameassembly_module_base = handshake["gameAssemblyModuleBase"]
     gameassembly_module_size = handshake.get("gameAssemblyModuleSize")
     if isinstance(gameassembly_module_size, bool) or not isinstance(gameassembly_module_size, int) or gameassembly_module_size <= 0:
         _fail("native module handshake gameAssemblyModuleSize is invalid")
@@ -387,6 +421,9 @@ def validate_trace(
             if not isinstance(module, dict):
                 _fail(f"resolver_module_loaded {index} has no matching module identity")
             _module_identity(module, f"resolver_module_loaded {index} module", manifest)
+            _check_pointer(module.get("base"), f"resolver_module_loaded {index} module.base")
+            if module["base"].casefold() != row["hModule"].casefold():
+                _fail(f"resolver_module_loaded {index} module.base does not equal hModule")
             if _module_path(module.get("path"), f"resolver_module_loaded {index} module path") != expected_resolver_path:
                 _fail(f"resolver_module_loaded {index} module path differs from the pinned file")
             if module.get("size") != manifest["files"]["resolver"]["bytes"]:
@@ -438,6 +475,13 @@ def validate_trace(
         hashed = row.get("requestedExportIsHashed")
         if not isinstance(hashed, bool):
             _fail(f"{label}.requestedExportIsHashed is invalid")
+        name_is_hashed = (
+            row.get("lpProcNameType") == "name"
+            and isinstance(name, str)
+            and re.fullmatch(r"[0-9a-fA-F]{32}", name) is not None
+        )
+        if hashed != name_is_hashed:
+            _fail(f"{label}.requestedExportIsHashed disagrees with lpProcName")
         if hashed:
             observed_hashed_events += 1
             if row.get("lpProcNameType") != "name" or not isinstance(name, str) or not re.fullmatch(r"[0-9a-fA-F]{32}", name):
@@ -484,6 +528,7 @@ def validate_trace(
                 expected_module=manifest["moduleName"],
                 expected_path=attached_module_path,
                 expected_size=attached_module_size,
+                expected_base=gameassembly_module_base,
             )
             if frame_value not in backtrace:
                 _fail(f"{label} GameAssembly frame is absent from callerBacktrace")

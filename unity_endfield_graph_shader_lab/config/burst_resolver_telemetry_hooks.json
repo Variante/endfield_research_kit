@@ -99,7 +99,7 @@
   ],
   "evidenceBoundary": {
     "classification": "observed_runtime_candidate",
-    "scope": "Read-only LoadLibraryW/GetProcAddress observation for one exact lib_burst_generated.dll HMODULE, bounded all-module caller backtraces, and a verified GameAssembly-only subset used for target-window attribution.",
+    "scope": "Read-only LoadLibraryW/GetProcAddress observation for one exact lib_burst_generated.dll HMODULE, with disk-hash-pinned inputs plus runtime path/size/base matching and bounded all-module caller backtraces; a verified GameAssembly-only subset is used for target-window attribution.",
     "nonClaims": [
       "The trace does not call a resolver export, replace a resolver body, or write game state.",
       "Interceptor attachment can perturb timing and loader scheduling; the capture is not behavior-neutral and remains candidate evidence.",
@@ -107,7 +107,7 @@
       "Only GetProcAddress calls whose hModule equals the observed lib_burst_generated.dll HMODULE are recorded.",
       "The callerBacktrace is bounded and includes only frames Frida resolves to a loaded module; gameAssemblyCallerBacktrace is the verified GameAssembly.dll subset, and an empty backtrace is not identity proof.",
       "Target-window attribution is a caller-address observation against the three pinned wrapper/initializer ranges; it does not prove the hashed export was called or that the Burst kernel executed.",
-      "The pinned executable, GameAssembly.dll, and global-metadata.dat hashes describe one client build; drift refuses attach."
+      "The pinned executable, GameAssembly.dll, global-metadata.dat, and resolver hashes verify disk files for one client build; runtime path/size/base matching is recorded separately, and this does not claim a memory-image hash."
     ],
     "stopRule": "Stop on attach refusal, protection termination, native hash/module drift, missing kernel32 exports, hook failure, malformed bounded read, or event cap; do not retry through evasion."
   }
