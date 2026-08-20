@@ -1,0 +1,383 @@
+{
+  "schema": "endfield.charinfo.secondary-dynamics-callback-writeback.v1",
+  "recovered_at": "2026-08-20",
+  "status": "native_callback_writeback_closed",
+  "secondary_dynamics_verified": false,
+  "solver_implemented": false,
+  "retail_equivalent": false,
+  "native_gate": {
+    "gameAssembly": {
+      "path": "D:/Program Files/Endfield Game/GameAssembly.dll",
+      "size": 280436712,
+      "sha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
+    },
+    "globalMetadata": {
+      "path": "D:/Program Files/Endfield Game/Endfield_Data/il2cpp_data/Metadata/global-metadata.dat",
+      "size": 62925560,
+      "sha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
+    }
+  },
+  "sources": {
+    "solver_inputs": {
+      "repo_path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_solver_inputs.json",
+      "size": 1310099,
+      "sha256": "35ecd376533773035fce3afadd8935ee5f0f2466168d8a5f8016c158c64f6d97"
+    },
+    "native_evidence": {
+      "repo_path": "unity_endfield_graph_shader_lab/scratch/character_recovery/secondary_dynamics_owner/lifecycle_native.json",
+      "size": 15587730,
+      "sha256": "05c18f4a404698ad9cec8928d88f5833f09d0b0bbe1a627191722cdd32ff6517"
+    },
+    "metadata_catalog": {
+      "repo_path": "unity_endfield_graph_shader_lab/scratch/character_recovery/secondary_dynamics_owner/lifecycle_metadata.json",
+      "size": 1810421,
+      "sha256": "75dfc0bd58415fc907bae56a986962b4b9f328a71c36c2374fa886aaa9b8f243"
+    },
+    "player_loop_contract": {
+      "repo_path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/playerloop_recovery_contract.json",
+      "size": 6770,
+      "sha256": "2e1a8235c257c7e709f6968f049e4b54261a08e0f2d9a4be784a5f9f173e6069"
+    },
+    "dummy_generation": {
+      "record": {
+        "repo_path": "tools/DummyDll/generation.json",
+        "size": 36310,
+        "sha256": "492cc780e48108718f200571e38f443e39c5e28c962529d22c480ba63a7330eb"
+      },
+      "schema": 1,
+      "game": {
+        "gameAssemblySha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
+        "metadataSha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e",
+        "codeRegistration": "0x18b9217d0"
+      },
+      "BeyondDynamicBone.dll": {
+        "bytes": 6144,
+        "sha256": "025c209c7f0b9ee927891421c74b42bdd16ff224f16f9c189f9f7d6ad1a3182c"
+      }
+    },
+    "codeRegistration": "0x18b9217d0",
+    "catalogMetadata": {
+      "sha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e",
+      "version": 29
+    }
+  },
+  "callback": {
+    "delegateSlot": "0x18",
+    "playerLoopOrdinal": 2,
+    "playerLoopCategory": "FixedUpdate",
+    "playerLoopSystem": "ScriptRunBehaviourFixedUpdate",
+    "nativeCallOffset": 988,
+    "nativeCallVa": "0x183323a5c",
+    "insertion": {
+      "last": false,
+      "before": false
+    },
+    "method": {
+      "type": "BeyondDynamicBone.MagicaManager+<>c",
+      "method": "<SetCustomGameLoop>b__40_1",
+      "methodIndex": 385118,
+      "methodPointerVa": "0x183234640",
+      "fileOffset": "0x3232c40",
+      "bytes": 1040,
+      "sha256": "f728905b0a95d7fc8fb142a63d572937e31368ca9a69e91d7dc6d2e72312d163",
+      "nativeBodySha256": "f728905b0a95d7fc8fb142a63d572937e31368ca9a69e91d7dc6d2e72312d163",
+      "hashSource": "pinned GameAssembly.dll fileOffset + scanBytes"
+    },
+    "calls": [
+      {
+        "offset": 394,
+        "targetVa": "0x182f95240",
+        "type": "BeyondDynamicBone.MagicaManager",
+        "method": "get_Time"
+      },
+      {
+        "offset": 419,
+        "targetVa": "0x182f918a0",
+        "type": "BeyondDynamicBone.ClothManager",
+        "method": "ClothUpdate",
+        "abiRegisterWrites": {
+          "rcx": "rbp",
+          "rdx": "0"
+        }
+      },
+      {
+        "offset": 493,
+        "targetVa": "0x1835bcab0",
+        "type": "BeyondDynamicBone.TeamManager",
+        "method": "MonitoringProcess",
+        "abiRegisterWrites": {
+          "rcx": "rbp",
+          "rdx": "0",
+          "r8": "0"
+        }
+      },
+      {
+        "offset": 790,
+        "targetVa": "0x182f95240",
+        "type": "BeyondDynamicBone.MagicaManager",
+        "method": "get_Time"
+      }
+    ],
+    "argumentContract": {
+      "ClothUpdate": {
+        "rcx": "rbp",
+        "rdx": "0"
+      },
+      "MonitoringProcess": {
+        "rcx": "rbp",
+        "rdx": "0",
+        "r8": "0"
+      }
+    }
+  },
+  "writeback": {
+    "method": {
+      "type": "BeyondDynamicBone.ClothManager",
+      "method": "ClothUpdate",
+      "methodIndex": 384441,
+      "methodPointerVa": "0x182f918a0",
+      "fileOffset": "0x2f8fea0",
+      "bytes": 6256,
+      "sha256": "a1065dd5aaa62d715dc756e8ce87a4630d629d303494df34fb9d949b2231d077",
+      "nativeBodySha256": "a1065dd5aaa62d715dc756e8ce87a4630d629d303494df34fb9d949b2231d077",
+      "hashSource": "pinned GameAssembly.dll fileOffset + scanBytes"
+    },
+    "decoder": {
+      "unknownInstructionCount": 367,
+      "boundary": "Critical named call edges and their order are exact; unknown decoder fragments remain outside the numeric claim."
+    },
+    "criticalCalls": [
+      {
+        "offset": 447,
+        "targetVa": "0x1834460c0",
+        "type": "BeyondDynamicBone.TimeManager",
+        "method": "FrameUpdate"
+      },
+      {
+        "offset": 672,
+        "targetVa": "0x1835bd710",
+        "type": "Unity.Jobs.JobHandle",
+        "method": "Complete"
+      },
+      {
+        "offset": 752,
+        "targetVa": "0x1835bea60",
+        "type": "BeyondDynamicBone.TeamManager",
+        "method": "AlwaysTeamUpdate"
+      },
+      {
+        "offset": 971,
+        "targetVa": "0x183df49b0",
+        "type": "BeyondDynamicBone.WindManager",
+        "method": "AlwaysWindUpdate"
+      },
+      {
+        "offset": 990,
+        "targetVa": "0x182f8bca0",
+        "type": "BeyondDynamicBone.SimulationManager",
+        "method": "WorkBufferUpdate"
+      },
+      {
+        "offset": 1191,
+        "targetVa": "0x183b127d0",
+        "type": "BeyondDynamicBone.DynamicBoneTransformManager",
+        "method": "ReadTransform",
+        "abiRegisterWrites": {
+          "rcx": "&[rsp+0x40]",
+          "rdx": "rdi",
+          "r8": "&[rsp+0x50]",
+          "r9": "0"
+        }
+      },
+      {
+        "offset": 1232,
+        "targetVa": "0x183b125a0",
+        "type": "BeyondDynamicBone.DynamicBoneTransformManager",
+        "method": "WriteDoubleBufferTransform",
+        "abiRegisterWrites": {
+          "xmm0": "[rax]",
+          "rcx": "&[rsp+0x50]",
+          "rdx": "rdi",
+          "r8": "&[rsp+0x40]",
+          "r9": "0"
+        }
+      },
+      {
+        "offset": 1472,
+        "targetVa": "0x186725e4c",
+        "type": "BeyondDynamicBone.DynamicBoneTransformManager",
+        "method": "ReadAnimatorBufferData",
+        "abiRegisterWrites": {
+          "rcx": "&[rsp+0x60]",
+          "rdx": "[rsp+0x238]",
+          "r8": "&[rsp+0x40]",
+          "r9": "&[r15+0xb8]"
+        }
+      },
+      {
+        "offset": 1883,
+        "targetVa": "0x183b127d0",
+        "type": "BeyondDynamicBone.DynamicBoneTransformManager",
+        "method": "ReadTransform",
+        "abiRegisterWrites": {
+          "rcx": "&[rsp+0x50]",
+          "rdx": "rdi",
+          "r8": "&[rsp+0x40]",
+          "r9": "0"
+        }
+      },
+      {
+        "offset": 1930,
+        "targetVa": "0x182f8b170",
+        "type": "BeyondDynamicBone.VirtualMeshManager",
+        "method": "PreProxyMeshUpdate"
+      },
+      {
+        "offset": 1973,
+        "targetVa": "0x1835bc3e0",
+        "type": "BeyondDynamicBone.TeamManager",
+        "method": "CalcCenterAndInertiaAndWind"
+      },
+      {
+        "offset": 2016,
+        "targetVa": "0x182f8ad10",
+        "type": "BeyondDynamicBone.SimulationManager",
+        "method": "PreSimulationUpdate"
+      },
+      {
+        "offset": 2091,
+        "targetVa": "0x182f914d0",
+        "type": "BeyondDynamicBone.ColliderManager",
+        "method": "PreSimulationUpdate"
+      },
+      {
+        "offset": 2160,
+        "targetVa": "0x182f8f430",
+        "type": "BeyondDynamicBone.SimulationManager",
+        "method": "SimulationStepUpdate"
+      },
+      {
+        "offset": 2214,
+        "targetVa": "0x182f8a9f0",
+        "type": "BeyondDynamicBone.SimulationManager",
+        "method": "CalcDisplayPosition"
+      },
+      {
+        "offset": 2257,
+        "targetVa": "0x182f8c4a0",
+        "type": "BeyondDynamicBone.VirtualMeshManager",
+        "method": "PostProxyMeshUpdate"
+      },
+      {
+        "offset": 3004,
+        "targetVa": "0x18672641c",
+        "type": "BeyondDynamicBone.DynamicBoneTransformManager",
+        "method": "WriteTransform",
+        "abiRegisterWrites": {
+          "xmm0": "[rbx+0x38]",
+          "rcx": "&[rsp+0x70]",
+          "rdx": "rax",
+          "r8": "&[rsp+0x40]",
+          "r9": "0"
+        }
+      },
+      {
+        "offset": 4277,
+        "targetVa": "0x186726158",
+        "type": "BeyondDynamicBone.DynamicBoneTransformManager",
+        "method": "WriteAnimatorBufferData",
+        "abiRegisterWrites": {
+          "xmm0": "[r8+0x38]",
+          "rcx": "&[rsp+0x70]",
+          "rdx": "[rsp+0x238]",
+          "r8": "&[rsp+0x40]",
+          "r9": "&[r15+0xb8]"
+        }
+      },
+      {
+        "offset": 4358,
+        "targetVa": "0x182f8d550",
+        "type": "BeyondDynamicBone.ColliderManager",
+        "method": "PostSimulationUpdate"
+      },
+      {
+        "offset": 4401,
+        "targetVa": "0x183dc03b0",
+        "type": "BeyondDynamicBone.TeamManager",
+        "method": "PostTeamUpdate"
+      },
+      {
+        "offset": 4448,
+        "targetVa": "0x182f95120",
+        "type": "BeyondDynamicBone.ClothManager",
+        "method": "CompleteMasterJob"
+      }
+    ],
+    "stages": {
+      "preparation": [
+        447,
+        672,
+        752,
+        971,
+        990
+      ],
+      "inputRead": [
+        1191,
+        1232,
+        1472,
+        1883
+      ],
+      "simulation": [
+        1930,
+        1973,
+        2016,
+        2091,
+        2160,
+        2214,
+        2257
+      ],
+      "transformWriteback": [
+        3004,
+        4277
+      ],
+      "postSimulation": [
+        4358,
+        4401,
+        4448
+      ]
+    },
+    "orderingGates": [
+      {
+        "before": 1191,
+        "after": 3004,
+        "relation": "ReadTransform precedes WriteTransform"
+      },
+      {
+        "before": 1472,
+        "after": 4277,
+        "relation": "ReadAnimatorBufferData precedes WriteAnimatorBufferData"
+      },
+      {
+        "before": 2160,
+        "after": 3004,
+        "relation": "SimulationStepUpdate precedes WriteTransform"
+      },
+      {
+        "before": 672,
+        "after": 4448,
+        "relation": "JobHandle.Complete precedes CompleteMasterJob"
+      }
+    ],
+    "abiBoundary": "The six transform/animator bridge call sites retain exact native register writes; stack locations and pointers are symbolic native evidence, not a recovered managed layout."
+  },
+  "execution_boundary": {
+    "native_callback_closed": true,
+    "transform_writeback_route_closed": true,
+    "burst_constraint_numerics_recovered": false,
+    "job_payload_layout_recovered": false,
+    "unity_runtime_executed": false,
+    "visual_verification_required": true,
+    "ignoredEvidenceBoundary": "lifecycle_native.json, lifecycle_metadata.json, and related filters are ignored local evidence; a clean checkout without them is unavailable and fails closed rather than independently reconstructing the map.",
+    "reason": "Exact callback, scheduling, transform read, simulation dispatch, and writeback call sites are closed for the pinned client; Burst constraint numerics and runtime execution remain unimplemented."
+  }
+}

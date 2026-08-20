@@ -1138,6 +1138,18 @@ script identities, and the pinned PlayerLoop evidence before publication. It
 is deliberately an input contract only: Burst scheduling, constraint numerics,
 and transform writeback remain unimplemented and `retail_equivalent=false`.
 
+The pinned native callback/writeback boundary is now closed separately from
+the solver. `MagicaManager+<>c.<SetCustomGameLoop>b__40_1` is the second
+recovered PlayerLoop insertion (`FixedUpdate/ScriptRunBehaviourFixedUpdate`)
+and calls `ClothManager.ClothUpdate`; the latter's exact named call sites prove
+transform and animator-buffer reads, simulation dispatch, job completion, and
+transform/animator-buffer writeback ordering. The contract uses the shared
+installed-native gate and exact GameAssembly/metadata hashes. Its long native
+body still contains undecoded fragments, and Burst constraint numerics, job
+payload layout, Unity execution, and visual verification remain unresolved;
+therefore `secondary_dynamics_verified`, `solver_implemented`, and
+`retail_equivalent` all remain false.
+
 A 2 fps actor-only Overview probe successfully emitted complete
 start -> transition -> loop sequences for all three priority actors with no
 foreground UI, but visual inspection confirms the frozen-secondary-bone gap:
