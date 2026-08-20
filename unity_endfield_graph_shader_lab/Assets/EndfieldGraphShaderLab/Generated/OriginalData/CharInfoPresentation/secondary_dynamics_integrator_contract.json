@@ -1,0 +1,957 @@
+{
+  "schema": "endfield.charinfo.secondary-dynamics-integrator.v1",
+  "status": "native_spans_hash_pinned_managed_integrator_boundary",
+  "solverStatus": "managed_end_step_helper_chain_only_burst_solver_unresolved",
+  "secondaryDynamicsVerified": false,
+  "nativeGate": {
+    "gameAssembly": {
+      "path": "D:/Program Files/Endfield Game/GameAssembly.dll",
+      "size": 280436712,
+      "sha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
+    },
+    "globalMetadata": {
+      "path": "D:/Program Files/Endfield Game/Endfield_Data/il2cpp_data/Metadata/global-metadata.dat",
+      "size": 62925560,
+      "sha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
+    }
+  },
+  "canonicalJobLayout": {
+    "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_job_layout_contract.json",
+    "sha256": "f8720afa5a0c6715475df119d22e139fcdc0515ad5b461928d51e0596ad2487d",
+    "fields": {
+      "simulationDeltaTime": "0x0",
+      "stepParticleIndexArray": "0x8",
+      "teamDataArray": "0x18",
+      "parameterArray": "0x28",
+      "centerDataArray": "0x38",
+      "attributes": "0x48",
+      "vertexDepths": "0x58",
+      "teamIdArray": "0x68",
+      "nextPosArray": "0x78",
+      "oldPosArray": "0x88",
+      "velocityPosArray": "0x98",
+      "velocityArray": "0xa8",
+      "realVelocityArray": "0xb8",
+      "frictionArray": "0xc8",
+      "staticFrictionArray": "0xd8",
+      "collisionNormalArray": "0xe8",
+      "_indexCount": "0xf8"
+    }
+  },
+  "root": {
+    "methodIndex": 385708,
+    "type": "BeyondDynamicBone.SimulationManager+EndSimulationStepJob",
+    "method": "Execute",
+    "token": "0x06000875",
+    "va": "0x18676e964",
+    "endVaExclusive": "0x18676f784",
+    "spanBytes": 3616,
+    "bodySha256": "0b5d95b2c3da269554beb03aefabc2b5e6bdd6f2aa897943e1c4328e45e4d77c",
+    "directCallCount": 52,
+    "unresolvedDirectCallCount": 31,
+    "jobPointerLoads": [
+      {
+        "offset": "0xa1",
+        "field": "stepParticleIndexArray",
+        "mnemonic": "mov",
+        "rawBytes": "488b4308",
+        "base": "rbx",
+        "index": null,
+        "scale": 1,
+        "displacement": "0x8",
+        "widthBytes": 8
+      },
+      {
+        "offset": "0xb9",
+        "field": "teamIdArray",
+        "mnemonic": "mov",
+        "rawBytes": "488b4368",
+        "base": "rbx",
+        "index": null,
+        "scale": 1,
+        "displacement": "0x68",
+        "widthBytes": 8
+      },
+      {
+        "offset": "0xcd",
+        "field": "teamDataArray",
+        "mnemonic": "add",
+        "rawBytes": "48035318",
+        "base": "rbx",
+        "index": null,
+        "scale": 1,
+        "displacement": "0x18",
+        "widthBytes": 8
+      },
+      {
+        "offset": "0x142",
+        "field": "centerDataArray",
+        "mnemonic": "mov",
+        "rawBytes": "488b4338",
+        "base": "rbx",
+        "index": null,
+        "scale": 1,
+        "displacement": "0x38",
+        "widthBytes": 8
+      },
+      {
+        "offset": "0x1c4",
+        "field": "parameterArray",
+        "mnemonic": "mov",
+        "rawBytes": "488b4328",
+        "base": "rbx",
+        "index": null,
+        "scale": 1,
+        "displacement": "0x28",
+        "widthBytes": 8
+      },
+      {
+        "offset": "0x331",
+        "field": "attributes",
+        "mnemonic": "mov",
+        "rawBytes": "488b4348",
+        "base": "rbx",
+        "index": null,
+        "scale": 1,
+        "displacement": "0x48",
+        "widthBytes": 8
+      },
+      {
+        "offset": "0x349",
+        "field": "vertexDepths",
+        "mnemonic": "mov",
+        "rawBytes": "488b4358",
+        "base": "rbx",
+        "index": null,
+        "scale": 1,
+        "displacement": "0x58",
+        "widthBytes": 8
+      },
+      {
+        "offset": "0x35f",
+        "field": "nextPosArray",
+        "mnemonic": "mov",
+        "rawBytes": "488b4378",
+        "base": "rbx",
+        "index": null,
+        "scale": 1,
+        "displacement": "0x78",
+        "widthBytes": 8
+      },
+      {
+        "offset": "0x378",
+        "field": "oldPosArray",
+        "mnemonic": "mov",
+        "rawBytes": "488b8388000000",
+        "base": "rbx",
+        "index": null,
+        "scale": 1,
+        "displacement": "0x88",
+        "widthBytes": 8
+      },
+      {
+        "offset": "0x3c8",
+        "field": "collisionNormalArray",
+        "mnemonic": "mov",
+        "rawBytes": "4c8b9be8000000",
+        "base": "rbx",
+        "index": null,
+        "scale": 1,
+        "displacement": "0xe8",
+        "widthBytes": 8
+      },
+      {
+        "offset": "0x3d3",
+        "field": "velocityPosArray",
+        "mnemonic": "mov",
+        "rawBytes": "4c8bbb98000000",
+        "base": "rbx",
+        "index": null,
+        "scale": 1,
+        "displacement": "0x98",
+        "widthBytes": 8
+      },
+      {
+        "offset": "0x3de",
+        "field": "frictionArray",
+        "mnemonic": "mov",
+        "rawBytes": "488b83c8000000",
+        "base": "rbx",
+        "index": null,
+        "scale": 1,
+        "displacement": "0xc8",
+        "widthBytes": 8
+      },
+      {
+        "offset": "0x43c",
+        "field": "staticFrictionArray",
+        "mnemonic": "mov",
+        "rawBytes": "488b83d8000000",
+        "base": "rbx",
+        "index": null,
+        "scale": 1,
+        "displacement": "0xd8",
+        "widthBytes": 8
+      },
+      {
+        "offset": "0x715",
+        "field": "staticFrictionArray",
+        "mnemonic": "mov",
+        "rawBytes": "488b83d8000000",
+        "base": "rbx",
+        "index": null,
+        "scale": 1,
+        "displacement": "0xd8",
+        "widthBytes": 8
+      },
+      {
+        "offset": "0x943",
+        "field": "frictionArray",
+        "mnemonic": "mov",
+        "rawBytes": "488b83c8000000",
+        "base": "rbx",
+        "index": null,
+        "scale": 1,
+        "displacement": "0xc8",
+        "widthBytes": 8
+      },
+      {
+        "offset": "0xcef",
+        "field": "velocityArray",
+        "mnemonic": "mov",
+        "rawBytes": "488b83a8000000",
+        "base": "rbx",
+        "index": null,
+        "scale": 1,
+        "displacement": "0xa8",
+        "widthBytes": 8
+      },
+      {
+        "offset": "0xd48",
+        "field": "realVelocityArray",
+        "mnemonic": "mov",
+        "rawBytes": "488b8bb8000000",
+        "base": "rbx",
+        "index": null,
+        "scale": 1,
+        "displacement": "0xb8",
+        "widthBytes": 8
+      },
+      {
+        "offset": "0xd72",
+        "field": "oldPosArray",
+        "mnemonic": "mov",
+        "rawBytes": "488b8388000000",
+        "base": "rbx",
+        "index": null,
+        "scale": 1,
+        "displacement": "0x88",
+        "widthBytes": 8
+      },
+      {
+        "offset": "0x5d4",
+        "field": "simulationDeltaTime",
+        "mnemonic": "movss",
+        "rawBytes": "f30f100b",
+        "base": "rbx",
+        "index": null,
+        "scale": 1,
+        "displacement": "0x0",
+        "widthBytes": 4
+      },
+      {
+        "offset": "0x754",
+        "field": "simulationDeltaTime",
+        "mnemonic": "movss",
+        "rawBytes": "f30f100b",
+        "base": "rbx",
+        "index": null,
+        "scale": 1,
+        "displacement": "0x0",
+        "widthBytes": 4
+      },
+      {
+        "offset": "0xd6e",
+        "field": "simulationDeltaTime",
+        "mnemonic": "divss",
+        "rawBytes": "f30f5e03",
+        "base": "rbx",
+        "index": null,
+        "scale": 1,
+        "displacement": "0x0",
+        "widthBytes": 4
+      },
+      {
+        "offset": "0xd79",
+        "field": "simulationDeltaTime",
+        "mnemonic": "divss",
+        "rawBytes": "f30f5e0b",
+        "base": "rbx",
+        "index": null,
+        "scale": 1,
+        "displacement": "0x0",
+        "widthBytes": 4
+      },
+      {
+        "offset": "0xd7d",
+        "field": "simulationDeltaTime",
+        "mnemonic": "divss",
+        "rawBytes": "f30f5e13",
+        "base": "rbx",
+        "index": null,
+        "scale": 1,
+        "displacement": "0x0",
+        "widthBytes": 4
+      }
+    ],
+    "branches": [
+      {
+        "offset": "0x74",
+        "condition": "jne",
+        "targetOffset": "0x89",
+        "opcode": "7513"
+      },
+      {
+        "offset": "0x9b",
+        "condition": "jne",
+        "targetOffset": "0xda1",
+        "opcode": "0f85000d0000"
+      },
+      {
+        "offset": "0x11c",
+        "condition": "jne",
+        "targetOffset": "0xd4",
+        "opcode": "75b6"
+      },
+      {
+        "offset": "0x1a4",
+        "condition": "jne",
+        "targetOffset": "0x15c",
+        "opcode": "75b6"
+      },
+      {
+        "offset": "0x225",
+        "condition": "jne",
+        "targetOffset": "0x1dd",
+        "opcode": "75b6"
+      },
+      {
+        "offset": "0x292",
+        "condition": "jne",
+        "targetOffset": "0x24a",
+        "opcode": "75b6"
+      },
+      {
+        "offset": "0x309",
+        "condition": "jne",
+        "targetOffset": "0x2c1",
+        "opcode": "75b6"
+      },
+      {
+        "offset": "0x3b0",
+        "condition": "jne",
+        "targetOffset": "0x3c8",
+        "opcode": "7516"
+      },
+      {
+        "offset": "0x3c2",
+        "condition": "je",
+        "targetOffset": "0xd00",
+        "opcode": "0f8438090000"
+      },
+      {
+        "offset": "0x468",
+        "condition": "je",
+        "targetOffset": "0x6ee",
+        "opcode": "0f8480020000"
+      },
+      {
+        "offset": "0x472",
+        "condition": "jbe",
+        "targetOffset": "0x6ee",
+        "opcode": "0f8676020000"
+      },
+      {
+        "offset": "0x47c",
+        "condition": "jbe",
+        "targetOffset": "0x6ee",
+        "opcode": "0f866c020000"
+      },
+      {
+        "offset": "0x5e7",
+        "condition": "ja",
+        "targetOffset": "0x610",
+        "opcode": "7727"
+      },
+      {
+        "offset": "0x605",
+        "condition": "ja",
+        "targetOffset": "0x60a",
+        "opcode": "7703"
+      },
+      {
+        "offset": "0x60e",
+        "condition": "jmp",
+        "targetOffset": "0x618",
+        "opcode": "eb08"
+      },
+      {
+        "offset": "0x6ec",
+        "condition": "jmp",
+        "targetOffset": "0x715",
+        "opcode": "eb27"
+      },
+      {
+        "offset": "0x7e4",
+        "condition": "jbe",
+        "targetOffset": "0x813",
+        "opcode": "762d"
+      },
+      {
+        "offset": "0x811",
+        "condition": "jmp",
+        "targetOffset": "0x823",
+        "opcode": "eb10"
+      },
+      {
+        "offset": "0x839",
+        "condition": "je",
+        "targetOffset": "0x93b",
+        "opcode": "0f84fc000000"
+      },
+      {
+        "offset": "0x84b",
+        "condition": "jbe",
+        "targetOffset": "0x93b",
+        "opcode": "0f86ea000000"
+      },
+      {
+        "offset": "0x859",
+        "condition": "jb",
+        "targetOffset": "0x93b",
+        "opcode": "0f82dc000000"
+      },
+      {
+        "offset": "0x95b",
+        "condition": "jb",
+        "targetOffset": "0x98d",
+        "opcode": "7230"
+      },
+      {
+        "offset": "0x999",
+        "condition": "jbe",
+        "targetOffset": "0xc90",
+        "opcode": "0f86f1020000"
+      },
+      {
+        "offset": "0x9ab",
+        "condition": "jbe",
+        "targetOffset": "0xc90",
+        "opcode": "0f86df020000"
+      },
+      {
+        "offset": "0x9c5",
+        "condition": "jb",
+        "targetOffset": "0xc90",
+        "opcode": "0f82c5020000"
+      },
+      {
+        "offset": "0xad4",
+        "condition": "jbe",
+        "targetOffset": "0xc90",
+        "opcode": "0f86b6010000"
+      },
+      {
+        "offset": "0xd9f",
+        "condition": "jmp",
+        "targetOffset": "0xdc7",
+        "opcode": "eb26"
+      },
+      {
+        "offset": "0xdae",
+        "condition": "jne",
+        "targetOffset": "0xdb6",
+        "opcode": "7506"
+      }
+    ],
+    "memoryAccesses": [
+      {
+        "offset": "0xb5",
+        "field": "stepParticleIndexArray",
+        "access": "read",
+        "mnemonic": "movsxd",
+        "rawBytes": "48633cb8",
+        "base": "rax",
+        "index": "rdi",
+        "scale": 4,
+        "displacement": "0x0",
+        "widthBytes": 4
+      },
+      {
+        "offset": "0xc1",
+        "field": "teamIdArray",
+        "access": "read",
+        "mnemonic": "movsx",
+        "rawBytes": "4c0fbf0c78",
+        "base": "rax",
+        "index": "rdi",
+        "scale": 2,
+        "displacement": "0x0",
+        "widthBytes": 2
+      },
+      {
+        "offset": "0x368",
+        "field": "nextPosArray",
+        "access": "read",
+        "mnemonic": "movups",
+        "rawBytes": "440f1024c8",
+        "base": "rax",
+        "index": "rcx",
+        "scale": 8,
+        "displacement": "0x0",
+        "widthBytes": 16
+      },
+      {
+        "offset": "0x36d",
+        "field": "nextPosArray",
+        "access": "read",
+        "mnemonic": "movsd",
+        "rawBytes": "f2440f106cc810",
+        "base": "rax",
+        "index": "rcx",
+        "scale": 8,
+        "displacement": "0x10",
+        "widthBytes": 8
+      },
+      {
+        "offset": "0x37f",
+        "field": "oldPosArray",
+        "access": "read",
+        "mnemonic": "movups",
+        "rawBytes": "440f1014c8",
+        "base": "rax",
+        "index": "rcx",
+        "scale": 8,
+        "displacement": "0x0",
+        "widthBytes": 16
+      },
+      {
+        "offset": "0x384",
+        "field": "oldPosArray",
+        "access": "read",
+        "mnemonic": "movsd",
+        "rawBytes": "f2440f105cc810",
+        "base": "rax",
+        "index": "rcx",
+        "scale": 8,
+        "displacement": "0x10",
+        "widthBytes": 8
+      },
+      {
+        "offset": "0x3ee",
+        "field": "collisionNormalArray",
+        "access": "read",
+        "mnemonic": "movsd",
+        "rawBytes": "f2430f10048b",
+        "base": "r11",
+        "index": "r9",
+        "scale": 4,
+        "displacement": "0x0",
+        "widthBytes": 8
+      },
+      {
+        "offset": "0x3f4",
+        "field": "collisionNormalArray",
+        "access": "read",
+        "mnemonic": "mov",
+        "rawBytes": "478b648b08",
+        "base": "r11",
+        "index": "r9",
+        "scale": 4,
+        "displacement": "0x8",
+        "widthBytes": 4
+      },
+      {
+        "offset": "0x3f9",
+        "field": "velocityPosArray",
+        "access": "read",
+        "mnemonic": "movups",
+        "rawBytes": "430f101cf7",
+        "base": "r15",
+        "index": "r14",
+        "scale": 8,
+        "displacement": "0x0",
+        "widthBytes": 16
+      },
+      {
+        "offset": "0x405",
+        "field": "velocityPosArray",
+        "access": "read",
+        "mnemonic": "movsd",
+        "rawBytes": "f2430f1064f710",
+        "base": "r15",
+        "index": "r14",
+        "scale": 8,
+        "displacement": "0x10",
+        "widthBytes": 8
+      },
+      {
+        "offset": "0x40c",
+        "field": "frictionArray",
+        "access": "read",
+        "mnemonic": "movss",
+        "rawBytes": "f30f103cb8",
+        "base": "rax",
+        "index": "rdi",
+        "scale": 4,
+        "displacement": "0x0",
+        "widthBytes": 4
+      },
+      {
+        "offset": "0x455",
+        "field": "staticFrictionArray",
+        "access": "read",
+        "mnemonic": "movss",
+        "rawBytes": "f30f1034b8",
+        "base": "rax",
+        "index": "rdi",
+        "scale": 4,
+        "displacement": "0x0",
+        "widthBytes": 4
+      },
+      {
+        "offset": "0x73d",
+        "field": "staticFrictionArray",
+        "access": "write",
+        "mnemonic": "movss",
+        "rawBytes": "f30f1104b8",
+        "base": "rax",
+        "index": "rdi",
+        "scale": 4,
+        "displacement": "0x0",
+        "widthBytes": 4
+      },
+      {
+        "offset": "0x956",
+        "field": "frictionArray",
+        "access": "write",
+        "mnemonic": "movss",
+        "rawBytes": "f30f113cb8",
+        "base": "rax",
+        "index": "rdi",
+        "scale": 4,
+        "displacement": "0x0",
+        "widthBytes": 4
+      },
+      {
+        "offset": "0xcf6",
+        "field": "velocityArray",
+        "access": "write",
+        "mnemonic": "movsd",
+        "rawBytes": "f20f110490",
+        "base": "rax",
+        "index": "rdx",
+        "scale": 4,
+        "displacement": "0x0",
+        "widthBytes": 8
+      },
+      {
+        "offset": "0xcfb",
+        "field": "velocityArray",
+        "access": "write",
+        "mnemonic": "mov",
+        "rawBytes": "4489449008",
+        "base": "rax",
+        "index": "rdx",
+        "scale": 4,
+        "displacement": "0x8",
+        "widthBytes": 4
+      },
+      {
+        "offset": "0xd84",
+        "field": "realVelocityArray",
+        "access": "write",
+        "mnemonic": "movsd",
+        "rawBytes": "f20f110491",
+        "base": "rcx",
+        "index": "rdx",
+        "scale": 4,
+        "displacement": "0x0",
+        "widthBytes": 8
+      },
+      {
+        "offset": "0xd89",
+        "field": "realVelocityArray",
+        "access": "write",
+        "mnemonic": "movss",
+        "rawBytes": "f30f11549108",
+        "base": "rcx",
+        "index": "rdx",
+        "scale": 4,
+        "displacement": "0x8",
+        "widthBytes": 4
+      },
+      {
+        "offset": "0xd93",
+        "field": "oldPosArray",
+        "access": "write",
+        "mnemonic": "movups",
+        "rawBytes": "440f1124c8",
+        "base": "rax",
+        "index": "rcx",
+        "scale": 8,
+        "displacement": "0x0",
+        "widthBytes": 16
+      },
+      {
+        "offset": "0xd98",
+        "field": "oldPosArray",
+        "access": "write",
+        "mnemonic": "movsd",
+        "rawBytes": "f2440f116cc810",
+        "base": "rax",
+        "index": "rcx",
+        "scale": 8,
+        "displacement": "0x10",
+        "widthBytes": 8
+      }
+    ],
+    "selectedHelperCalls": [
+      {
+        "offset": "0x3bb",
+        "targetVa": "0x18673dee8",
+        "methodIndex": 384698,
+        "method": "BeyondDynamicBone.TeamManager+TeamData.get_IsSpring",
+        "resolved": [
+          {
+            "methodIndex": 384698,
+            "type": "BeyondDynamicBone.TeamManager+TeamData",
+            "method": "get_IsSpring",
+            "token": "0x06000483",
+            "returnTypeName": "System.Boolean"
+          }
+        ]
+      },
+      {
+        "offset": "0x4c3",
+        "targetVa": "0x184d87200",
+        "methodIndex": 386216,
+        "method": "BeyondDynamicBone.MathUtility.AutoToFloat3",
+        "resolved": [
+          {
+            "methodIndex": 386216,
+            "type": "BeyondDynamicBone.MathUtility",
+            "method": "AutoToFloat3",
+            "token": "0x06000a71",
+            "returnTypeName": "Unity.Mathematics.float3+DebuggerProxy&"
+          }
+        ]
+      },
+      {
+        "offset": "0x55e",
+        "targetVa": "0x186696ac8",
+        "methodIndex": 386213,
+        "method": "BeyondDynamicBone.MathUtility.Project",
+        "resolved": [
+          {
+            "methodIndex": 386213,
+            "type": "BeyondDynamicBone.MathUtility",
+            "method": "Project",
+            "token": "0x06000a6e",
+            "returnTypeName": "Unity.Mathematics.double3+DebuggerProxy&"
+          }
+        ]
+      },
+      {
+        "offset": "0xa1b",
+        "targetVa": "0x184d87200",
+        "methodIndex": 386216,
+        "method": "BeyondDynamicBone.MathUtility.AutoToFloat3",
+        "resolved": [
+          {
+            "methodIndex": 386216,
+            "type": "BeyondDynamicBone.MathUtility",
+            "method": "AutoToFloat3",
+            "token": "0x06000a71",
+            "returnTypeName": "Unity.Mathematics.float3+DebuggerProxy&"
+          }
+        ]
+      },
+      {
+        "offset": "0xa95",
+        "targetVa": "0x1866b0cb4",
+        "methodIndex": 386214,
+        "method": "BeyondDynamicBone.MathUtility.ProjectOnPlane",
+        "resolved": [
+          {
+            "methodIndex": 386214,
+            "type": "BeyondDynamicBone.MathUtility",
+            "method": "ProjectOnPlane",
+            "token": "0x06000a6f",
+            "returnTypeName": "Unity.Mathematics.double3+DebuggerProxy&"
+          }
+        ]
+      },
+      {
+        "offset": "0xcd3",
+        "targetVa": "0x184d87200",
+        "methodIndex": 386216,
+        "method": "BeyondDynamicBone.MathUtility.AutoToFloat3",
+        "resolved": [
+          {
+            "methodIndex": 386216,
+            "type": "BeyondDynamicBone.MathUtility",
+            "method": "AutoToFloat3",
+            "token": "0x06000a71",
+            "returnTypeName": "Unity.Mathematics.float3+DebuggerProxy&"
+          }
+        ]
+      },
+      {
+        "offset": "0xd43",
+        "targetVa": "0x184d87200",
+        "methodIndex": 386216,
+        "method": "BeyondDynamicBone.MathUtility.AutoToFloat3",
+        "resolved": [
+          {
+            "methodIndex": 386216,
+            "type": "BeyondDynamicBone.MathUtility",
+            "method": "AutoToFloat3",
+            "token": "0x06000a71",
+            "returnTypeName": "Unity.Mathematics.float3+DebuggerProxy&"
+          }
+        ]
+      }
+    ]
+  },
+  "helperBodies": [
+    {
+      "methodIndex": 384698,
+      "type": "BeyondDynamicBone.TeamManager+TeamData",
+      "method": "get_IsSpring",
+      "token": "0x06000483",
+      "va": "0x18673dee8",
+      "endVaExclusive": "0x18673df3c",
+      "spanBytes": 84,
+      "bodySha256": "bf6bb2d728e7f490306baa4a2a8295e3273d8a91a378f493af81e5aae33e1e77",
+      "directCallCount": 3,
+      "unresolvedDirectCallCount": 1,
+      "selectedDirectCalls": [
+        {
+          "offset": "0x10",
+          "targetVa": "0x182f95a30",
+          "methodIndex": null,
+          "method": "BeyondDynamicBone.TeamManager+TeamData.get_IsSpring",
+          "resolved": [
+            {
+              "methodIndex": 387384,
+              "type": "IFix.WrappersManagerImpl",
+              "method": "IsPatched",
+              "token": "0x06000f01",
+              "returnTypeName": "System.Boolean"
+            }
+          ]
+        },
+        {
+          "offset": "0x31",
+          "targetVa": "0x185396738",
+          "methodIndex": null,
+          "method": "BeyondDynamicBone.TeamManager+TeamData.get_IsSpring",
+          "resolved": [
+            {
+              "methodIndex": 387383,
+              "type": "IFix.WrappersManagerImpl",
+              "method": "GetPatch",
+              "token": "0x06000f00",
+              "returnTypeName": "IFix.ILFixDynamicMethodWrapper"
+            }
+          ]
+        },
+        {
+          "offset": "0x3b",
+          "targetVa": "0x1800d8260",
+          "methodIndex": null,
+          "method": "BeyondDynamicBone.TeamManager+TeamData.get_IsSpring",
+          "resolved": []
+        }
+      ]
+    },
+    {
+      "methodIndex": 386213,
+      "type": "BeyondDynamicBone.MathUtility",
+      "method": "Project",
+      "token": "0x06000a6e",
+      "va": "0x186696ac8",
+      "endVaExclusive": "0x186696b50",
+      "spanBytes": 136,
+      "bodySha256": "7eaabebfeb20205d0ea319d066cae13cfc4f4df938c066ce4361dafdbd6b3dd7",
+      "directCallCount": 2,
+      "unresolvedDirectCallCount": 2,
+      "selectedDirectCalls": [
+        {
+          "offset": "0x4e",
+          "targetVa": "0x185f0ae78",
+          "methodIndex": null,
+          "method": "BeyondDynamicBone.MathUtility.Project",
+          "resolved": []
+        },
+        {
+          "offset": "0x63",
+          "targetVa": "0x185f00e9c",
+          "methodIndex": null,
+          "method": "BeyondDynamicBone.MathUtility.Project",
+          "resolved": []
+        }
+      ]
+    },
+    {
+      "methodIndex": 386214,
+      "type": "BeyondDynamicBone.MathUtility",
+      "method": "ProjectOnPlane",
+      "token": "0x06000a6f",
+      "va": "0x1866b0cb4",
+      "endVaExclusive": "0x1866b0d70",
+      "spanBytes": 188,
+      "bodySha256": "ca219c115689076aca94f79adefc4e14aa9672036a97217cbf70283e09959381",
+      "directCallCount": 3,
+      "unresolvedDirectCallCount": 3,
+      "selectedDirectCalls": [
+        {
+          "offset": "0x53",
+          "targetVa": "0x185f0ae78",
+          "methodIndex": null,
+          "method": "BeyondDynamicBone.MathUtility.ProjectOnPlane",
+          "resolved": []
+        },
+        {
+          "offset": "0x63",
+          "targetVa": "0x185f00e9c",
+          "methodIndex": null,
+          "method": "BeyondDynamicBone.MathUtility.ProjectOnPlane",
+          "resolved": []
+        },
+        {
+          "offset": "0x98",
+          "targetVa": "0x185f00f40",
+          "methodIndex": null,
+          "method": "BeyondDynamicBone.MathUtility.ProjectOnPlane",
+          "resolved": []
+        }
+      ]
+    },
+    {
+      "methodIndex": 386216,
+      "type": "BeyondDynamicBone.MathUtility",
+      "method": "AutoToFloat3",
+      "token": "0x06000a71",
+      "va": "0x184d87200",
+      "endVaExclusive": "0x184d87230",
+      "spanBytes": 48,
+      "bodySha256": "618a3b7dcb353a27723827ed14e05f3ba1453888fe7ca7ffdd0fa72441e702d8",
+      "directCallCount": 0,
+      "unresolvedDirectCallCount": 0,
+      "selectedDirectCalls": []
+    }
+  ],
+  "boundary": "EndSimulationStepJob.Execute(int) is a managed fallback. Its array writebacks and MathUtility helper edges are pinned, but the Burst EndSimulationStepRangeKernel and complete solver remain unresolved."
+}
