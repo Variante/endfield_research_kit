@@ -7318,6 +7318,22 @@ class AudioSemanticDataTests(unittest.TestCase):
                     "transitionTime": 300,
                 },
                 {
+                    **common, "unionTag": 2, "unionTagHex": "0x0002",
+                    "behaviorType": 8, "behaviorKind": "positionEvent",
+                    "audioNodeName": "Position", "customAudioId": "custom_position",
+                    "eAudioTriggerState": 3, "isCustom": True, "isDirectlyPlay": False,
+                    "normalAudioId": 123, "stopOnEnd": False,
+                    "transitionTime": 300,
+                },
+                {
+                    **common, "unionTag": 2, "unionTagHex": "0x0002",
+                    "behaviorType": 8, "behaviorKind": "positionEvent",
+                    "audioNodeName": "Position", "customAudioId": "",
+                    "eAudioTriggerState": 4, "isCustom": False, "isDirectlyPlay": False,
+                    "normalAudioId": 456, "stopOnEnd": False,
+                    "transitionTime": 300,
+                },
+                {
                     **common, "unionTag": 1, "unionTagHex": "0x0001",
                     "behaviorType": 1, "behaviorKind": "event",
                     "audioNodeName": "AudioPoint", "customAudioId": "custom_portal",
@@ -7368,8 +7384,12 @@ class AudioSemanticDataTests(unittest.TestCase):
             )
 
             self.assertEqual(semantics["stats"]["status"], "complete")
-            self.assertEqual(semantics["stats"]["audioBehaviorCount"], 5)
-            self.assertEqual(semantics["stats"]["normalEventContextCount"], 2)
+            self.assertEqual(semantics["stats"]["audioBehaviorCount"], 7)
+            self.assertEqual(semantics["stats"]["normalEventContextCount"], 1)
+            self.assertEqual(semantics["stats"]["positionDirectEventBehaviorCount"], 1)
+            self.assertEqual(semantics["stats"]["positionCustomStateSwitchCount"], 1)
+            self.assertEqual(semantics["stats"]["positionEntityStateSwitchCount"], 1)
+            self.assertEqual(len(semantics["positionedControls"]), 2)
             self.assertEqual(semantics["stats"]["customAudioControlCount"], 1)
             self.assertEqual(len(semantics["rtpcParameters"]), 1)
             self.assertEqual(len(semantics["spatialControls"]), 1)
@@ -7417,6 +7437,7 @@ class AudioSemanticDataTests(unittest.TestCase):
             self.assertEqual(payload["controlCatalog"]["counts"]["modelViewStateRtpcParameters"], 1)
             self.assertEqual(payload["controlCatalog"]["counts"]["modelViewStateSpatialControls"], 1)
             self.assertEqual(payload["controlCatalog"]["counts"]["modelViewStateCustomAudioControls"], 1)
+            self.assertEqual(payload["controlCatalog"]["counts"]["modelViewStatePositionedControls"], 2)
             summaries = json.loads(
                 (webui_root / "data/lang/CN/audio/events.json").read_text(encoding="utf-8")
             )["events"]
@@ -7448,8 +7469,8 @@ class AudioSemanticDataTests(unittest.TestCase):
                 event_rows,
                 native_context=validated_native_context(),
             )
-            self.assertEqual(1, len(native_rows))
-            trigger = native_rows[0]
+            self.assertEqual(3, len(native_rows))
+            trigger = next(row for row in native_rows if row["semanticKind"] == "modelViewStateAudioEvent")
             self.assertEqual("modelViewStateAudioEvent", trigger["semanticKind"])
             self.assertEqual(2, len(trigger["wwiseMediaCandidates"]))
             self.assertEqual("unresolved", trigger["runtimeBranch"]["status"])
@@ -7481,7 +7502,7 @@ class AudioSemanticDataTests(unittest.TestCase):
                 }
             }
             self.assertEqual(
-                1,
+                2,
                 len(model_view_projection.project_model_view_state_audio_trigger_contexts(
                     excluded_semantics,
                     event_rows,
@@ -8509,6 +8530,95 @@ class AudioSemanticDataTests(unittest.TestCase):
         )
         self.assertEqual(len(projected), 1)
         self.assertEqual(len({row["triggerId"] for row in projected}), len(projected))
+
+    def test_model_view_positioned_three_branches_keep_controls_out_of_events(self) -> None:
+        base = {
+            "behaviorTag": 0x0002,
+            "behaviorType": 8,
+            "behaviorKind": "positionEvent",
+            "kind": "modelViewStatePositionAudioEvent",
+            "controllerId": "position-controller",
+            "ownerId": "position-controller",
+            "sourceFile": "position.json",
+            "semanticPath": "modelAnimatorDatas[0].behaviors[0]",
+            "sourcePaths": ["position.json"],
+            "audioNodeName": "Point",
+            "customAudioId": "custom_state",
+            "eAudioTriggerState": 7,
+            "stopOnEnd": False,
+            "transitionTime": 0,
+            "runtimeActivationStatus": "modelViewStateBehaviorExecutionNotObserved",
+        }
+        direct = {**base, "isDirectlyPlay": True, "isCustom": False, "normalAudioId": 0x1234}
+        custom = {**base, "isDirectlyPlay": False, "isCustom": True, "controlBranch": "customStateSwitch", "controlValue": "custom_state"}
+        entity = {**base, "isDirectlyPlay": False, "isCustom": False, "normalAudioId": 9, "controlBranch": "entityStateSwitch", "controlValue": 7, "stateValue": 7, "modelLevel": 1}
+        semantics = {
+            "eventContexts": {identifiers.event_hash_context_key(0x1234): [direct]},
+            "positionedControls": [custom, entity],
+        }
+        rows = model_view_projection.project_model_view_state_audio_trigger_contexts(
+            semantics,
+            [{"id": "au_position", "hash": 0x1234, "foundInWwise": True, "media": [{"src": "position.flac"}]}],
+            native_context=validated_native_context(),
+        )
+        self.assertEqual({row["semanticKind"] for row in rows}, {
+            "modelViewStatePositionAudioEvent",
+            "modelViewStatePositionedCustomStateControl",
+            "modelViewStatePositionedEntityStateControl",
+        })
+        event = next(row for row in rows if row["semanticKind"] == "modelViewStatePositionAudioEvent")
+        self.assertEqual(event["action"]["playbackSink"], "AudioManager.PlaySoundAtPosition")
+        self.assertEqual(event["runtimeBranch"]["status"], "unresolved")
+        for control in rows:
+            if control["semanticKind"].endswith("Control"):
+                self.assertEqual(control["wwiseMediaCandidates"], [])
+                self.assertEqual(control["mediaRefs"], [])
+                self.assertEqual(control["meaning"]["wwiseEventStatus"], "notPromotedToEvent")
+                self.assertNotIn("owner", control)
+                self.assertEqual(control["controllerEvidence"]["ownerStatus"], "notAnOwnerProof")
+        entity_row = next(row for row in rows if row["semanticKind"] == "modelViewStatePositionedEntityStateControl")
+        self.assertEqual(entity_row["action"]["stateValue"], 7)
+        self.assertEqual(entity_row["action"]["modelLevel"], 1)
+
+    def test_model_view_positioned_projection_rejects_stale_or_key_only_event_rows(self) -> None:
+        stale = {
+            "behaviorTag": 0x0002,
+            "kind": "modelViewStateAudioEvent",
+            "isDirectlyPlay": True,
+            "isCustom": False,
+            "normalAudioId": 0x1234,
+            "controllerId": "stale",
+        }
+        zero_id = {
+            **stale,
+            "kind": "modelViewStatePositionAudioEvent",
+            "normalAudioId": 0,
+        }
+        key_only = {
+            **stale,
+            "kind": "modelViewStatePositionAudioEvent",
+            "normalAudioId": None,
+        }
+        valid_wrong_context_key = {
+            **stale,
+            "kind": "modelViewStatePositionAudioEvent",
+            "normalAudioId": 0x1234,
+        }
+        semantics = {
+            "eventContexts": {
+                "#0x00001234": [stale],
+                "#0x00005678": [zero_id, valid_wrong_context_key],
+                "#0x00001234-key-only": [key_only],
+            },
+            "positionedControls": [],
+        }
+        projected = model_view_projection.project_model_view_state_audio_trigger_contexts(
+            semantics,
+            [{"id": "au_position", "hash": 0x1234, "media": [{"src": "position.flac"}]}],
+            native_context=validated_native_context(),
+        )
+        self.assertEqual(len(projected), 1)
+        self.assertEqual(projected[0]["situation"]["eventHash"], 0x1234)
 
 
 if __name__ == "__main__":

@@ -100,8 +100,8 @@ PROJECTILE_SOUND_PHASES = {
 # authoritative value; these names are presentation labels, not a claim that
 # selection behavior was evaluated offline.
 SELECTION_HIRC_TYPES = frozenset({5, 6, 12, 13})
-AUDIO_SEMANTIC_SCHEMA_VERSION = 107
-TRIGGER_CONTEXT_SCHEMA_VERSION = 33
+AUDIO_SEMANTIC_SCHEMA_VERSION = 108
+TRIGGER_CONTEXT_SCHEMA_VERSION = 34
 
 MONO_BEHAVIOUR_AUDIO_EVENT_FIELD_NAMES = frozenset({
     "_spawnAudioEvent", "_finishAudioEvent", "_onHitAudioEvent",
@@ -118,7 +118,7 @@ MONO_BEHAVIOUR_AUDIO_EVENT_PREFILTERS = tuple(sorted(
     | {"soundBase.soundSpawn", "soundBase.soundFinish", "PlayLineSound"}
 ))
 MONO_BEHAVIOUR_AUDIO_CONTEXT_CACHE_SCHEMA_VERSION = 2
-RUNTIME_MODEL_CACHE_SCHEMA_VERSION = 104
+RUNTIME_MODEL_CACHE_SCHEMA_VERSION = 105
 METADATA_EVENT_SYMBOL_SCHEMA_VERSION = 1
 METADATA_EVENT_SYMBOL_RE = re.compile(r"^AU_[A-Z0-9_]+$")
 RADIO_MEDIA_CONTEXT_LIMIT = 64
@@ -10124,15 +10124,26 @@ def build_trigger_context_catalog(
             "runtimeExecutionObserved": 0,
         },
         "modelViewStateAudio": {
-            "source": "ModelViewStateControllerData tag-0x0001 normal Event behavior",
+            "source": "ModelViewStateControllerData tag-0x0001 normal Event plus tag-0x0002 positioned direct/control branches",
             "storedTriggerContextRows": len(grouped["modelViewStateAudio"]),
             "runtimeExecutionObserved": 0,
-            "runtimeSelectionStatus": "wwiseEventBranchSelectionUnobserved",
+            "runtimeSelectionStatus": "wwiseEventAndPositionedBranchSelectionUnobserved",
             "ownerStatus": "modelViewStateControllerOwnerOnlyInteractiveAssociationNotOwner",
             "nativeRouteStatus": (
-                "exactCurrentBuildRoute"
+                "exactCurrentBuildPositionedAndNormalRoutes"
                 if any(row.get("nativeRoute") for row in grouped["modelViewStateAudio"])
                 else "nativeRouteUnavailable"
+            ),
+            "positionedDirectEventRows": sum(
+                row.get("semanticKind") == "modelViewStatePositionAudioEvent"
+                for row in grouped["modelViewStateAudio"]
+                if isinstance(row, dict)
+            ),
+            "positionedControlRows": sum(
+                str(row.get("semanticKind") or "").startswith("modelViewStatePositioned")
+                and row.get("semanticKind") != "modelViewStatePositionAudioEvent"
+                for row in grouped["modelViewStateAudio"]
+                if isinstance(row, dict)
             ),
         },
         "managedLiteralCallsite": {
@@ -13050,6 +13061,14 @@ def build_audio_semantic_data(
             "modelViewStateAudioEventsUnresolved": sum(
                 not row.get("foundInWwise") for row in model_view_event_rows
             ),
+            "modelViewStatePositionDirectEvents": context_kind_event_counts.get("modelViewStatePositionAudioEvent", 0),
+            "modelViewStatePositionDirectEventContexts": context_kind_counts.get("modelViewStatePositionAudioEvent", 0),
+            "modelViewStatePositionedCustomStateControls": context_kind_counts.get("modelViewStatePositionedCustomStateControl", 0),
+            "modelViewStatePositionedEntityStateControls": context_kind_counts.get("modelViewStatePositionedEntityStateControl", 0),
+            "modelViewStatePositionedControls": (
+                context_kind_counts.get("modelViewStatePositionedCustomStateControl", 0)
+                + context_kind_counts.get("modelViewStatePositionedEntityStateControl", 0)
+            ),
             "modelViewStateRtpcControls": len(model_view_semantics.get("rtpcParameters") or []),
             "modelViewStateSpatialControls": len(model_view_semantics.get("spatialControls") or []),
             "modelViewStateCustomAudioControls": len(model_view_semantics.get("customAudioControls") or []),
@@ -13254,6 +13273,7 @@ def build_audio_semantic_data(
                 "modelViewStateRtpcParameters": len(model_view_semantics.get("rtpcParameters") or []),
                 "modelViewStateSpatialControls": len(model_view_semantics.get("spatialControls") or []),
                 "modelViewStateCustomAudioControls": len(model_view_semantics.get("customAudioControls") or []),
+                "modelViewStatePositionedControls": len(model_view_semantics.get("positionedControls") or []),
                 "levelScriptAudioCueInvocations": len(levelscript_semantics.get("cueInvocations") or []),
                 "levelScriptAudioCueInvocationsResolved": (
                     (levelscript_semantics.get("stats") or {}).get("cueDefinitionStatusCounts") or {}
@@ -13318,6 +13338,7 @@ def build_audio_semantic_data(
             "modelViewStateRtpcParameters": model_view_semantics.get("rtpcParameters") or [],
             "modelViewStateSpatialControls": model_view_semantics.get("spatialControls") or [],
             "modelViewStateCustomAudioControls": model_view_semantics.get("customAudioControls") or [],
+            "modelViewStatePositionedControls": model_view_semantics.get("positionedControls") or [],
             "levelScriptAudioCueInvocations": levelscript_semantics.get("cueInvocations") or [],
             "levelScriptDynamicAudioBindings": levelscript_semantics.get("dynamicEventBindings") or [],
             "levelScriptResolvedDynamicAudioBindings": (
@@ -13334,7 +13355,7 @@ def build_audio_semantic_data(
             ],
             "wwiseActionControls": wwise_action_control_catalog,
             "wwiseInitialRtpcParameters": wwise_initial_rtpc_catalog,
-            "evidenceBoundary": "Cue behavior exprType=3 values, constant LevelScript Event parameters, LevelScript cue names joined by the native AudioHashGenerator to exact cue behavior expressions, non-empty PhysicsAudio Event properties, and normal ModelView Event/position hashes are authored requests. Metadata-named InitialRTPC rows are exact ID/hash joins that preserve authored curve targets and controlled properties; they do not observe live RTPC updates or audibility. PhysicsAudio/ModelView RTPC names, ModelView spatial/custom-audio rows, cue/action execution, handler conditions, exprType=8 strings, dynamic Params, state/variable writes, playback handles, placeholder-music ids, unresolved cue hashes, and musicCue* values remain typed controls or unresolved runtime state. LevelEvent OnAudioStateChanged and OnMusicBeatEvent are current-build trigger-input definitions, not playback requests; exhaustive active-overlay scanning found zero authored occurrences. Two non-music Wwise selector groups have exact native setter callsites; three more have high-confidence semantic correlation only, and ten music State groups have exact current-metadata/native-setter joins. None reveal a live value, selected branch, or authored group name.",
+            "evidenceBoundary": "Cue behavior exprType=3 values, constant LevelScript Event parameters, LevelScript cue names joined by the native AudioHashGenerator to exact cue behavior expressions, non-empty PhysicsAudio Event properties, and normal ModelView Event plus positioned direct-position hashes are authored requests. Positioned custom/entity state rows are typed controls only and never Event ownership. Metadata-named InitialRTPC rows are exact ID/hash joins that preserve authored curve targets and controlled properties; they do not observe live RTPC updates or audibility. PhysicsAudio/ModelView RTPC names, ModelView spatial/custom-audio rows, cue/action execution, handler conditions, exprType=8 strings, dynamic Params, state/variable writes, playback handles, placeholder-music ids, unresolved cue hashes, and musicCue* values remain typed controls or unresolved runtime state. LevelEvent OnAudioStateChanged and OnMusicBeatEvent are current-build trigger-input definitions, not playback requests; exhaustive active-overlay scanning found zero authored occurrences. Two non-music Wwise selector groups have exact native setter callsites; three more have high-confidence semantic correlation only, and ten music State groups have exact current-metadata/native-setter joins. None reveal a live value, selected branch, or authored group name.",
         },
         "runtimeModel": runtime_model,
         "externalSourceEventIdentityAudit": external_source_event_identity_audit,

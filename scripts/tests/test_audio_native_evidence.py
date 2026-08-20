@@ -74,6 +74,88 @@ def _model_view_fixture_pe(
     return route
 
 
+def _positioned_model_view_fixture_pe(
+    path: Path,
+    *,
+    execute_calls: bool = True,
+) -> dict:
+    """Build a compact multi-section PE for the positioned route audit."""
+
+    image_base = 0x180000000
+    route = native_evidence.MODEL_VIEW_POSITIONED_AUDIO_NATIVE_ROUTE
+    consumer = route["consumer"]
+    endpoint_rows = route["endpointAudits"]
+
+    def body(length: int, calls: list[dict] | None = None) -> bytes:
+        result = bytearray(b"\x90" * length)
+        for call in calls or ():
+            offset = int(call["offset"], 0)
+            target = int(call["targetVirtualAddress"], 0)
+            result[offset] = 0xE8
+            struct.pack_into(
+                "<i", result, offset + 1,
+                target - (int(call.get("methodVirtualAddress", 0), 0) + offset + 5),
+            )
+        result[-1] = 0xC3
+        return bytes(result)
+
+    consumer_calls = [] if not execute_calls else [
+        {**row, "methodVirtualAddress": consumer["virtualAddress"]}
+        for row in route["directCalls"]
+    ]
+    bodies: dict[int, bytes] = {
+        int(consumer["virtualAddress"], 0): body(consumer["bodyLength"], consumer_calls),
+    }
+    for endpoint in endpoint_rows:
+        va = int(endpoint["targetVirtualAddress"], 0)
+        calls = [
+            {**row, "methodVirtualAddress": endpoint["targetVirtualAddress"]}
+            for row in endpoint.get("calls") or ()
+        ]
+        bodies[va] = body(endpoint["bodyLength"], calls)
+
+    section_header = 0x98 + 0xF0
+    raw_offset = 0x1000
+    sections: list[tuple[int, int, int, bytes]] = []
+    for index, (va, section_body) in enumerate(sorted(bodies.items())):
+        aligned = (raw_offset + 0x1FF) & ~0x1FF
+        sections.append((va - image_base, aligned, index, section_body))
+        raw_offset = aligned + len(section_body)
+    data = bytearray(raw_offset)
+    data[:2] = b"MZ"
+    struct.pack_into("<I", data, 0x3C, 0x80)
+    data[0x80:0x84] = b"PE\0\0"
+    struct.pack_into(
+        "<HHIIIHH", data, 0x84, 0x8664, len(sections), 0, 0, 0, 0xF0, 0x2022
+    )
+    struct.pack_into("<H", data, 0x98, 0x20B)
+    struct.pack_into("<Q", data, 0x98 + 24, image_base)
+    struct.pack_into("<II", data, 0x98 + 32, 0x1000, 0x200)
+    struct.pack_into("<II", data, 0x98 + 56, max(rva + len(section_body) for rva, _raw, _idx, section_body in sections), 0x200)
+    for rva, raw, index, section_body in sections:
+        header = section_header + index * 40
+        data[header:header + 8] = f".p{index:06d}".encode("ascii")[:8].ljust(8, b"\0")
+        struct.pack_into("<IIII", data, header + 8, len(section_body), rva, len(section_body), raw)
+        data[raw:raw + len(section_body)] = section_body
+
+    fixture = {
+        **route,
+        "consumer": {
+            **consumer,
+            "bodySha256": hashlib.sha256(bodies[int(consumer["virtualAddress"], 0)]).hexdigest(),
+        },
+        "endpointAudits": [
+            {
+                **endpoint,
+                "bodySha256": hashlib.sha256(bodies[int(endpoint["targetVirtualAddress"], 0)]).hexdigest(),
+            }
+            for endpoint in endpoint_rows
+        ],
+    }
+    path.write_bytes(data)
+    return fixture
+
+
 class NativeAudioEvidenceTests(unittest.TestCase):
     def test_missing_inputs_fail_closed_with_paths_named(self) -> None:
         context = native_evidence.validate_native_audio_evidence(
@@ -257,6 +339,85 @@ class NativeAudioEvidenceTests(unittest.TestCase):
                         native_evidence.model_view_state_audio_native_route(context)
         self.assertEqual(audit["status"], "mismatched")
         self.assertIn("direct-call target drift", audit["reason"])
+
+    def test_positioned_route_catalog_and_endpoint_drift_fail_closed(self) -> None:
+        context = native_evidence.NativeAudioEvidence(
+            Path("global-metadata.dat"), Path("GameAssembly.dll"), "validated",
+            native_evidence.EXPECTED_METADATA_SHA256,
+            native_evidence.EXPECTED_GAMEASSEMBLY_SHA256,
+        )
+        route = native_evidence.MODEL_VIEW_POSITIONED_AUDIO_NATIVE_ROUTE
+        self.assertEqual(
+            native_evidence.audit_model_view_positioned_audio_native_route(
+                context, observed_route=route
+            )["status"],
+            "validated",
+        )
+        drifted = {
+            **route,
+            "endpointAudits": [
+                {**route["endpointAudits"][0], "bodySha256": "0" * 64},
+                *route["endpointAudits"][1:],
+            ],
+        }
+        audited = native_evidence.audit_model_view_positioned_audio_native_route(
+            context, observed_route=drifted
+        )
+        self.assertEqual(audited["status"], "mismatched")
+        self.assertIn("synthetic observed positioned route differs", audited["reason"])
+
+    def test_positioned_production_fixture_audits_body_hashes_and_e8_sites(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            metadata = root / "global-metadata.dat"
+            gameassembly = root / "GameAssembly.dll"
+            metadata.write_bytes(b"metadata")
+            route = _positioned_model_view_fixture_pe(gameassembly)
+            with patch.object(
+                native_evidence,
+                "MODEL_VIEW_POSITIONED_AUDIO_NATIVE_ROUTE",
+                route,
+            ), patch.object(
+                native_evidence,
+                "check_installed_native_inputs",
+                return_value=InstalledNativeInputs(
+                    gameassembly, metadata,
+                    native_evidence.EXPECTED_GAMEASSEMBLY_SHA256,
+                    native_evidence.EXPECTED_METADATA_SHA256,
+                    "validated", "",
+                ),
+            ):
+                context = native_evidence.validate_native_audio_evidence(metadata, gameassembly)
+                audited = native_evidence.audit_model_view_positioned_audio_native_route(context)
+        self.assertEqual(audited["status"], "validated")
+        self.assertEqual(audited["checks"]["consumerDirectCalls"], "validated")
+        self.assertEqual(audited["checks"]["endpointBodiesAndCalls"], "validated")
+
+    def test_positioned_production_fixture_rejects_execute_e8_drift(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            metadata = root / "global-metadata.dat"
+            gameassembly = root / "GameAssembly.dll"
+            metadata.write_bytes(b"metadata")
+            route = _positioned_model_view_fixture_pe(gameassembly, execute_calls=False)
+            with patch.object(
+                native_evidence,
+                "MODEL_VIEW_POSITIONED_AUDIO_NATIVE_ROUTE",
+                route,
+            ), patch.object(
+                native_evidence,
+                "check_installed_native_inputs",
+                return_value=InstalledNativeInputs(
+                    gameassembly, metadata,
+                    native_evidence.EXPECTED_GAMEASSEMBLY_SHA256,
+                    native_evidence.EXPECTED_METADATA_SHA256,
+                    "validated", "",
+                ),
+            ):
+                context = native_evidence.validate_native_audio_evidence(metadata, gameassembly)
+                audited = native_evidence.audit_model_view_positioned_audio_native_route(context)
+        self.assertEqual(audited["status"], "mismatched")
+        self.assertIn("positioned Execute E8 drift", audited["reason"])
 
     def test_authored_ai_bark_survives_without_native_dispatch_claims(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
