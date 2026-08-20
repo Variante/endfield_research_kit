@@ -35,7 +35,7 @@
     }
   },
   "functionBoundary": {
-    "rule": "first_ret_after_hashed_export_rva",
+    "rule": "Capstone-decoded-instructions-through-first-real-ret",
     "spanBytesHistogram": {
       "32": 534,
       "48": 14,
