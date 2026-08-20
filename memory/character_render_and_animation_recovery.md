@@ -1115,6 +1115,20 @@ ROI: it clips limbs, hair, cloth, or weapons and cannot serve as a complete
 character matte. Clip delivery remains gated on a verified per-frame alpha
 mask with no foreground-UI intersection.
 
+Endminf's Overview effects are no longer represented only by the external
+`sk_fx_endminf_01_ui.fbx` animation hint. The playable-character catalog now
+retains explicit `A_fx_endminf_ui_*` clips and only the `P_fxui_*` root
+Animator candidates found in each clip's exact original effect-prefab
+container. This is a source-inventory edge, not a playback or renderability
+claim: the current export still lacks the prefab GameObject/Transform,
+renderer, material/texture closure, mount, and runtime scheduling evidence.
+Recover those dependencies with a targeted AnimeStudio extraction before
+admitting any Endminf effect to the viewer. Pelica's private deco controller
+does source-prove its Overview widget state and clip ownership, but the
+published manifest predates the current controller join; regenerate it only
+with that pending controller change intentionally included. Chen's hidden
+weapon props still have no source-proven Overview visibility or mount binding.
+
 Secondary-motion lifecycle recovery has begun without adding a visual spring
 approximation. The pinned native `MagicaManager.SetCustomGameLoop` body proves
 seven ordered `PlayerLoopUtils.AddPlayerLoop` calls, all category anchors, six
