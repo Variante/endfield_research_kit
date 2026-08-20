@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib.util
 import json
 import sys
 from pathlib import Path
@@ -255,6 +256,78 @@ def file_record(path: Path) -> dict[str, Any]:
     return {"repo_path": _repo_path(path), "size": path.stat().st_size, "sha256": sha256(path)}
 
 
+def _load_il2cpp_helpers() -> tuple[Any, Any]:
+    """Load the maintained PE and metadata parsers as independent witnesses."""
+    root = REPO_ROOT / "tools/endfield-il2cpp"
+    def load(name: str, path: Path) -> Any:
+        spec = importlib.util.spec_from_file_location(name, path)
+        if spec is None or spec.loader is None:
+            raise ContractError(f"unable to load independent parser: {path}")
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[name] = module
+        spec.loader.exec_module(module)
+        return module
+    return load("secondary_writeback_native_parser", root / "map_body_targets_to_gameassembly.py"), load(
+        "secondary_writeback_metadata_parser", root / "catalog_option_flow_metadata.py"
+    )
+
+
+def _independent_context(game_assembly: Path, metadata: Path) -> tuple[Any, Any, dict[int, list[dict[str, Any]]], list[int]]:
+    native_parser, metadata_parser = _load_il2cpp_helpers()
+    pe = native_parser.PeImage(game_assembly)
+    md = metadata_parser.Metadata(metadata)
+    code_registration = int(EXPECTED_CODE_REGISTRATION, 16)
+    modules = native_parser.parse_codegen_modules(pe, code_registration)
+    ranges = native_parser.image_method_ranges(md)
+    _, method_by_pointer = native_parser.build_pointer_indexes(pe, md, modules, ranges)
+    pointers = sorted(method_by_pointer)
+    if not pointers:
+        raise ContractError("independent method-pointer index is empty")
+    return pe, md, method_by_pointer, pointers
+
+
+def _metadata_identity(md: Any, type_name: str, method_index: int) -> tuple[str, str]:
+    if method_index < 0 or method_index >= len(md.methods):
+        raise ContractError(f"metadata method index out of range: {method_index}")
+    method = md.methods[method_index]
+    actual_type = md.type_full_name(md.types[method.declaring_type])
+    actual_method = md.string(method.name_index)
+    if actual_type != type_name:
+        raise ContractError(f"metadata declaring type drift for method {method_index}: {actual_type}")
+    return actual_type, actual_method
+
+
+def _validate_catalog_against_metadata(catalog: dict[str, Any], md: Any) -> None:
+    """Reject catalog self-reported indexes unless raw metadata agrees."""
+    for type_name in set(type_name for type_name, _ in METHODS):
+        row = _catalog_type(catalog, type_name)
+        type_index = int(row.get("index", -1))
+        if type_index < 0 or type_index >= len(md.types) or md.type_full_name(md.types[type_index]) != type_name:
+            raise ContractError(f"metadata type index drift for {type_name}")
+        raw_fields = {field.index: field for field in md.fields_for(md.types[type_index])}
+        for field in row.get("fields", []):
+            index = int(field.get("index", -1))
+            raw = raw_fields.get(index)
+            if raw is None or md.string(raw.name_index) != field.get("name") or raw.type_index != int(field.get("typeIndex", -1)):
+                raise ContractError(f"metadata field index drift for {type_name}::{field.get('name')}")
+        for method in row.get("methods", []):
+            index = int(method.get("index", -1))
+            if index < 0 or index >= len(md.methods):
+                raise ContractError(f"metadata method index drift for {type_name}")
+            raw = md.methods[index]
+            if raw.declaring_type != type_index or md.string(raw.name_index) != method.get("name"):
+                raise ContractError(f"metadata method identity drift for {type_name} index {index}")
+            if raw.return_type != int(method.get("returnTypeIndex", -1)):
+                raise ContractError(f"metadata return type drift for {type_name} index {index}")
+            params = md.parameters_for(raw)
+            details = method.get("parameterDetails", [])
+            if len(params) != len(details) or any(
+                param.type_index != int(detail.get("typeIndex", -1)) or md.string(param.name_index) != detail.get("name")
+                for param, detail in zip(params, details)
+            ):
+                raise ContractError(f"metadata parameter shape drift for {type_name} index {index}")
+
+
 def _native_gate(game_assembly: Path | None, metadata: Path | None) -> dict[str, Any]:
     result = check_installed_native_inputs(
         EXPECTED_GAME_ASSEMBLY_SHA256,
@@ -347,24 +420,46 @@ def _body(native: dict[str, Any], type_name: str, method_index: int) -> dict[str
     raise ContractError(f"native evidence missing body target {type_name} index {method_index}")
 
 
-def _body_identity(native: dict[str, Any], type_name: str, method_index: int, game_assembly: Path) -> dict[str, Any]:
+def _body_identity(
+    native: dict[str, Any],
+    type_name: str,
+    method_index: int,
+    game_assembly: Path,
+    pe: Any,
+    md: Any,
+    method_by_pointer: dict[int, list[dict[str, Any]]],
+    pointers: list[int],
+) -> dict[str, Any]:
     row = _body(native, type_name, method_index)
-    scan_bytes = int(row.get("scanBytes", 0))
-    file_offset = int(str(row.get("fileOffset")), 0)
-    with game_assembly.open("rb") as stream:
-        stream.seek(file_offset)
-        body = stream.read(scan_bytes)
-    if len(body) != scan_bytes:
-        raise ContractError(f"native body truncated: {type_name} index {method_index}")
+    actual_type, actual_method = _metadata_identity(md, type_name, method_index)
+    pointer = [ptr for ptr, rows in method_by_pointer.items() if any(int(sig.get("methodIndex", -1)) == method_index for sig in rows)]
+    if len(pointer) != 1:
+        raise ContractError(f"independent method pointer is ambiguous for {type_name} index {method_index}")
+    method_pointer = pointer[0]
+    file_offset, section, _ = pe.file_offset_for_va(method_pointer)
+    if file_offset is None or section not in {".text", "il2cpp"}:
+        raise ContractError(f"method pointer is not executable for {type_name} index {method_index}")
+    next_pointer = next((candidate for candidate in pointers if candidate > method_pointer and pe.file_offset_for_va(candidate)[1] == section), None)
+    if next_pointer is None or next_pointer <= method_pointer:
+        raise ContractError(f"no positive executable span for {type_name} index {method_index}")
+    span = next_pointer - method_pointer
+    body = pe.bytes_at_va(method_pointer, span)
+    if len(body) != span:
+        raise ContractError(f"independent native body truncated: {type_name} index {method_index}")
+    if row.get("method") != actual_method or str(row.get("methodPointerVa", "")).lower() != f"0x{method_pointer:x}":
+        raise ContractError(f"ignored native method identity disagrees with current metadata/registration: {type_name} index {method_index}")
+    if int(row.get("scanBytes", 0)) != span or int(str(row.get("fileOffset")), 0) != file_offset:
+        raise ContractError(f"ignored native span disagrees with current executable pointer span: {type_name} index {method_index}")
     return {
         "type": type_name,
-        "method": row.get("method"),
+        "method": actual_method,
         "methodIndex": method_index,
-        "methodPointerVa": row.get("methodPointerVa"),
-        "fileOffset": row.get("fileOffset"),
-        "bytes": scan_bytes,
+        "methodPointerVa": f"0x{method_pointer:x}",
+        "fileOffset": f"0x{file_offset:x}",
+        "section": section,
+        "bytes": span,
         "sha256": hashlib.sha256(body).hexdigest(),
-        "hashSource": "pinned GameAssembly.dll fileOffset + scanBytes",
+        "hashSource": "current metadata method pointer + PE executable section span to next pointer",
     }
 
 
@@ -372,36 +467,61 @@ def _resolved(call: dict[str, Any]) -> set[tuple[str, str]]:
     return {(str(row.get("type")), str(row.get("method"))) for row in call.get("resolved", [])}
 
 
-def _register_writes(call: dict[str, Any]) -> dict[str, str]:
-    values: dict[str, str] = {}
-    for register, entry in (call.get("argumentContext", {}).get("argRegisterWrites") or {}).items():
-        value = (entry.get("write") or {}).get("value")
-        if value is not None:
-            values[str(register)] = str(value)
-    return values
+def _decoded_calls(pe: Any, identity: dict[str, Any]) -> dict[int, dict[str, Any]]:
+    # Decode directly from the current image; the ignored directCalls list is
+    # never consulted.
+    native_parser, _ = _load_il2cpp_helpers()
+    pointer = int(identity["methodPointerVa"], 16)
+    body = pe.bytes_at_va(pointer, int(identity["bytes"]))
+    instructions = native_parser.decode_x64_subset(body, pointer, stop_offset=len(body))
+    calls: dict[int, dict[str, Any]] = {}
+    for instruction in instructions:
+        text = str(instruction.get("text", ""))
+        if not text.startswith("call 0x"):
+            continue
+        raw = bytes.fromhex(str(instruction.get("bytes", "")))
+        opcode_delta = raw.find(b"\xe8")
+        if opcode_delta < 0:
+            continue
+        target = text.split(" ", 1)[1]
+        call_offset = int(instruction["offset"]) + opcode_delta
+        calls[call_offset] = {
+            "offset": call_offset,
+            "targetVa": target.lower(),
+            "bytes": instruction.get("bytes"),
+            "va": instruction.get("va"),
+        }
+    return calls
 
 
-def _call_record(body: dict[str, Any], spec: tuple[int, str, str, str, str, dict[str, str] | None]) -> dict[str, Any]:
+def _call_record(
+    decoded_calls: dict[int, dict[str, Any]],
+    spec: tuple[int, str, str, str, str, dict[str, str] | None],
+) -> dict[str, Any]:
     offset, target, type_name, method, role, expected_registers = spec
-    matches = [call for call in body.get("directCalls", []) if int(call.get("offset", -1)) == offset]
-    if len(matches) != 1:
-        raise ContractError(f"expected one call at {body.get('method')}+{offset}, found {len(matches)}")
-    call = matches[0]
-    if str(call.get("targetVa")) != target:
-        raise ContractError(f"{body.get('method')}+{offset} target drift")
-    if (type_name, method) not in _resolved(call):
-        raise ContractError(f"{body.get('method')}+{offset} resolver drift")
-    observed = _register_writes(call)
-    if expected_registers is not None and observed != expected_registers:
-        raise ContractError(f"{body.get('method')}+{offset} register-write drift: {observed!r}")
+    call = decoded_calls.get(offset)
+    if call is None or str(call.get("targetVa", "")).lower() != target.lower():
+        raise ContractError(f"decoded current GameAssembly call edge drift at offset {offset}")
     return {
         "offset": offset,
         "targetVa": target,
         "type": type_name,
         "method": method,
         "role": role,
-        "observedRegisterWrites": observed,
+        "instructionBytes": call.get("bytes"),
+        "instructionVa": call.get("va"),
     }
+
+
+def _validate_evidence_call_consistency(body: dict[str, Any], spec: tuple[int, str, str, str, str, dict[str, str] | None]) -> None:
+    """Treat ignored directCalls as a consistency check, never as authority."""
+    offset, target, type_name, method, _, _ = spec
+    rows = [row for row in body.get("directCalls", []) if int(row.get("offset", -1)) == offset]
+    if len(rows) != 1 or str(rows[0].get("targetVa", "")).lower() != target.lower():
+        raise ContractError(f"ignored direct-call evidence disagrees at offset {offset}")
+    resolved = {(str(item.get("type")), str(item.get("method"))) for item in rows[0].get("resolved", [])}
+    if (type_name, method) not in resolved:
+        raise ContractError(f"ignored direct-call resolver evidence disagrees at offset {offset}")
 
 
 def _validate_sources(native: dict[str, Any], catalog: dict[str, Any], native_path: Path, catalog_path: Path) -> None:
@@ -438,16 +558,30 @@ def build_contract(
         native = load_json(native_evidence)
         catalog = load_json(metadata_catalog)
         _validate_sources(native, catalog, native_evidence, metadata_catalog)
+        pe, md, method_by_pointer, pointers = _independent_context(game_path, metadata_path)
+        _validate_catalog_against_metadata(catalog, md)
         dummy = _dummy_record(dummy_generation, game_path, metadata_path)
 
-        method_identities = [_body_identity(native, type_name, index, game_path) for type_name, index in METHODS]
+        method_identities = [
+            _body_identity(native, type_name, index, game_path, pe, md, method_by_pointer, pointers)
+            for type_name, index in METHODS
+        ]
+        identity_by_method = {(row["type"], row["methodIndex"]): row for row in method_identities}
+        decoded_by_method = {
+            key: _decoded_calls(pe, identity)
+            for key, identity in identity_by_method.items()
+            if key[1] in CALL_SPECS
+        }
         call_rows: list[dict[str, Any]] = []
         for type_name, method_index in METHODS:
             specs = CALL_SPECS.get(method_index, ())
             if specs:
                 body = _body(native, type_name, method_index)
+                decoded_calls = decoded_by_method[(type_name, method_index)]
+                for spec in specs:
+                    _validate_evidence_call_consistency(body, spec)
                 call_rows.extend([
-                    {"methodIndex": method_index, "ownerType": type_name, "ownerMethod": body.get("method"), **_call_record(body, spec)}
+                    {"methodIndex": method_index, "ownerType": type_name, "ownerMethod": identity_by_method[(type_name, method_index)]["method"], **_call_record(decoded_calls, spec)}
                     for spec in specs
                 ])
 
@@ -473,7 +607,7 @@ def build_contract(
         burst_dispatch_calls = [row for row in call_rows if row["role"] == "burst_range_dispatch"]
         return {
             "schema": "endfield.charinfo.secondary-dynamics-transform-writeback.v1",
-            "status": "transform_writeback_access_closed",
+            "status": "transform_writeback_call_edges_closed",
             "secondary_dynamics_verified": False,
             "solver_implemented": False,
             "retail_equivalent": False,
@@ -507,8 +641,9 @@ def build_contract(
                 "jobIndexBoundary": "managed Execute(int index, TransformAccess transform) signatures are closed; schedule-range call and runtime array length are not independently closed here",
             },
             "execution_boundary": {
-                "transform_access_array_create_destroy_closed": True,
-                "transform_access_array_add_set_length_closed": True,
+                "transform_access_array_call_edges_closed": True,
+                "array_ownership_closed": False,
+                "schedule_closed": False,
                 "transform_access_property_reads_closed": True,
                 "transform_access_property_writes_closed": True,
                 "job_managed_field_shapes_closed": True,
@@ -528,8 +663,9 @@ def build_contract(
             "retail_equivalent": False,
             "validationFailures": [str(exc)],
             "execution_boundary": {
-                "transform_access_array_create_destroy_closed": False,
-                "transform_access_array_add_set_length_closed": False,
+                "transform_access_array_call_edges_closed": False,
+                "array_ownership_closed": False,
+                "schedule_closed": False,
                 "transform_access_property_reads_closed": False,
                 "transform_access_property_writes_closed": False,
                 "reason": "Native/evidence gate failed closed; no transform writeback claim is published.",
@@ -552,13 +688,13 @@ def main() -> int:
     matches = None
     if args.check:
         matches = args.output.is_file() and args.output.read_text(encoding="utf-8") == serialized
-    elif result.get("status") == "transform_writeback_access_closed":
+    elif result.get("status") == "transform_writeback_call_edges_closed":
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(serialized, encoding="utf-8")
     print(json.dumps({"status": result.get("status"), "output": str(args.output), "matches": matches, "validationFailures": result.get("validationFailures", [])}, ensure_ascii=False))
     if args.check and not matches:
         return 1
-    return 0 if result.get("status") == "transform_writeback_access_closed" else 1
+    return 0 if result.get("status") == "transform_writeback_call_edges_closed" else 1
 
 
 if __name__ == "__main__":

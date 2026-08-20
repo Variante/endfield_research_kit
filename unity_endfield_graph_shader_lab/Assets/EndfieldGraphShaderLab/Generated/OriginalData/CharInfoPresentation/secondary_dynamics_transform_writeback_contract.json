@@ -1,6 +1,6 @@
 {
   "schema": "endfield.charinfo.secondary-dynamics-transform-writeback.v1",
-  "status": "transform_writeback_access_closed",
+  "status": "transform_writeback_call_edges_closed",
   "secondary_dynamics_verified": false,
   "solver_implemented": false,
   "retail_equivalent": false,
@@ -981,9 +981,10 @@
         "methodIndex": 384477,
         "methodPointerVa": "0x186726158",
         "fileOffset": "0x6724758",
+        "section": "il2cpp",
         "bytes": 708,
         "sha256": "1f9695110d6817d2247ed04455cfade32440f2a542e3388de8867b2a44fb65d1",
-        "hashSource": "pinned GameAssembly.dll fileOffset + scanBytes"
+        "hashSource": "current metadata method pointer + PE executable section span to next pointer"
       },
       {
         "type": "BeyondDynamicBone.DynamicBoneTransformManager",
@@ -991,9 +992,10 @@
         "methodIndex": 384478,
         "methodPointerVa": "0x186725e4c",
         "fileOffset": "0x672444c",
+        "section": "il2cpp",
         "bytes": 780,
         "sha256": "fd4333f2824c4da7ef8b0f3a9c703a515a64ce73bfc386259317a94619cc5664",
-        "hashSource": "pinned GameAssembly.dll fileOffset + scanBytes"
+        "hashSource": "current metadata method pointer + PE executable section span to next pointer"
       },
       {
         "type": "BeyondDynamicBone.DynamicBoneTransformManager",
@@ -1001,9 +1003,10 @@
         "methodIndex": 384479,
         "methodPointerVa": "0x183d42300",
         "fileOffset": "0x3d40900",
+        "section": "il2cpp",
         "bytes": 2464,
         "sha256": "8685987675a83b14f849e0fe60601a583359918cd7d94bb2fa39e355d32bb3bb",
-        "hashSource": "pinned GameAssembly.dll fileOffset + scanBytes"
+        "hashSource": "current metadata method pointer + PE executable section span to next pointer"
       },
       {
         "type": "BeyondDynamicBone.DynamicBoneTransformManager",
@@ -1011,9 +1014,10 @@
         "methodIndex": 384480,
         "methodPointerVa": "0x183b125a0",
         "fileOffset": "0x3b10ba0",
+        "section": "il2cpp",
         "bytes": 560,
         "sha256": "276a4d07a24b9a42b61eb117a97eab4ec097eda2f78bbe668c048bf43ca284c4",
-        "hashSource": "pinned GameAssembly.dll fileOffset + scanBytes"
+        "hashSource": "current metadata method pointer + PE executable section span to next pointer"
       },
       {
         "type": "BeyondDynamicBone.DynamicBoneTransformManager",
@@ -1021,9 +1025,10 @@
         "methodIndex": 384481,
         "methodPointerVa": "0x183b12cf0",
         "fileOffset": "0x3b112f0",
+        "section": "il2cpp",
         "bytes": 352,
         "sha256": "272192f50689db4b8e162c907bc4db709a6d60cda63384d6f613c0a92a57e13a",
-        "hashSource": "pinned GameAssembly.dll fileOffset + scanBytes"
+        "hashSource": "current metadata method pointer + PE executable section span to next pointer"
       },
       {
         "type": "BeyondDynamicBone.DynamicBoneTransformManager",
@@ -1031,9 +1036,10 @@
         "methodIndex": 384482,
         "methodPointerVa": "0x1835ba600",
         "fileOffset": "0x35b8c00",
+        "section": "il2cpp",
         "bytes": 592,
         "sha256": "0a67f17f48f817a066dedf9f0073a4595eee91b9c3296584315f5f9acb8459cc",
-        "hashSource": "pinned GameAssembly.dll fileOffset + scanBytes"
+        "hashSource": "current metadata method pointer + PE executable section span to next pointer"
       },
       {
         "type": "BeyondDynamicBone.DynamicBoneTransformManager",
@@ -1041,9 +1047,10 @@
         "methodIndex": 384484,
         "methodPointerVa": "0x183e87d80",
         "fileOffset": "0x3e86380",
+        "section": "il2cpp",
         "bytes": 1184,
         "sha256": "6251d978c761866030283313ef60673018f8a3c70766170e3a25d1823305ee9a",
-        "hashSource": "pinned GameAssembly.dll fileOffset + scanBytes"
+        "hashSource": "current metadata method pointer + PE executable section span to next pointer"
       },
       {
         "type": "BeyondDynamicBone.DynamicBoneTransformManager",
@@ -1051,9 +1058,10 @@
         "methodIndex": 384486,
         "methodPointerVa": "0x183cf8680",
         "fileOffset": "0x3cf6c80",
+        "section": "il2cpp",
         "bytes": 976,
         "sha256": "18fa165a31ea218519cab75e40ac767d24476ed2cf5f357ed6f9e98b0e02a572",
-        "hashSource": "pinned GameAssembly.dll fileOffset + scanBytes"
+        "hashSource": "current metadata method pointer + PE executable section span to next pointer"
       },
       {
         "type": "BeyondDynamicBone.DynamicBoneTransformManager",
@@ -1061,9 +1069,10 @@
         "methodIndex": 384487,
         "methodPointerVa": "0x183cf8360",
         "fileOffset": "0x3cf6960",
+        "section": "il2cpp",
         "bytes": 800,
         "sha256": "91e068958db13d361415d746c35052e63c08470f2e727c71262d060982478bc0",
-        "hashSource": "pinned GameAssembly.dll fileOffset + scanBytes"
+        "hashSource": "current metadata method pointer + PE executable section span to next pointer"
       },
       {
         "type": "BeyondDynamicBone.DynamicBoneTransformManager",
@@ -1071,9 +1080,10 @@
         "methodIndex": 384488,
         "methodPointerVa": "0x186724e0c",
         "fileOffset": "0x672340c",
+        "section": "il2cpp",
         "bytes": 1388,
         "sha256": "fe6b3f37e7bfb1f7c9144fc2b253bc4f954dbaf07cb8da347be83a0e45ade1ec",
-        "hashSource": "pinned GameAssembly.dll fileOffset + scanBytes"
+        "hashSource": "current metadata method pointer + PE executable section span to next pointer"
       },
       {
         "type": "BeyondDynamicBone.DynamicBoneTransformManager",
@@ -1081,9 +1091,10 @@
         "methodIndex": 384494,
         "methodPointerVa": "0x1867253c8",
         "fileOffset": "0x67239c8",
+        "section": "il2cpp",
         "bytes": 832,
         "sha256": "3c3f699d9ae7c356d119016b2fad132391eb01836c89d6efd273a4578a31105d",
-        "hashSource": "pinned GameAssembly.dll fileOffset + scanBytes"
+        "hashSource": "current metadata method pointer + PE executable section span to next pointer"
       },
       {
         "type": "BeyondDynamicBone.DynamicBoneTransformManager",
@@ -1091,9 +1102,10 @@
         "methodIndex": 384495,
         "methodPointerVa": "0x183b12aa0",
         "fileOffset": "0x3b110a0",
+        "section": "il2cpp",
         "bytes": 592,
         "sha256": "26747e0935792db158ae179c713088a1d669ab65bee19db58ca12f0d6e200ca2",
-        "hashSource": "pinned GameAssembly.dll fileOffset + scanBytes"
+        "hashSource": "current metadata method pointer + PE executable section span to next pointer"
       },
       {
         "type": "BeyondDynamicBone.DynamicBoneTransformManager",
@@ -1101,9 +1113,10 @@
         "methodIndex": 384496,
         "methodPointerVa": "0x183b127d0",
         "fileOffset": "0x3b10dd0",
+        "section": "il2cpp",
         "bytes": 720,
         "sha256": "3b6b93480ea400a146482036e017d88d462aa11d6a3f72bb9dcc7dc9fd36e4ea",
-        "hashSource": "pinned GameAssembly.dll fileOffset + scanBytes"
+        "hashSource": "current metadata method pointer + PE executable section span to next pointer"
       },
       {
         "type": "BeyondDynamicBone.DynamicBoneTransformManager",
@@ -1111,9 +1124,10 @@
         "methodIndex": 384497,
         "methodPointerVa": "0x18672641c",
         "fileOffset": "0x6724a1c",
+        "section": "il2cpp",
         "bytes": 552,
         "sha256": "0d2bd0087b25250cd8d88bf8325bbc9bac4da0b58622537e4891dc8fb5acd0f7",
-        "hashSource": "pinned GameAssembly.dll fileOffset + scanBytes"
+        "hashSource": "current metadata method pointer + PE executable section span to next pointer"
       },
       {
         "type": "BeyondDynamicBone.DynamicBoneTransformManager",
@@ -1121,9 +1135,10 @@
         "methodIndex": 384498,
         "methodPointerVa": "0x183d46540",
         "fileOffset": "0x3d44b40",
+        "section": "il2cpp",
         "bytes": 384,
         "sha256": "87ac214550836cf15cdf051562cd35a06e3f18081cc7ff04407ce83f5d93af12",
-        "hashSource": "pinned GameAssembly.dll fileOffset + scanBytes"
+        "hashSource": "current metadata method pointer + PE executable section span to next pointer"
       },
       {
         "type": "BeyondDynamicBone.DynamicBoneTransformManager",
@@ -1131,9 +1146,10 @@
         "methodIndex": 384499,
         "methodPointerVa": "0x183cf9ef0",
         "fileOffset": "0x3cf84f0",
+        "section": "il2cpp",
         "bytes": 256,
         "sha256": "e5d9f995df666f82b72ee69898dad8a1a5412d8c9797e2374fa78766196db612",
-        "hashSource": "pinned GameAssembly.dll fileOffset + scanBytes"
+        "hashSource": "current metadata method pointer + PE executable section span to next pointer"
       },
       {
         "type": "BeyondDynamicBone.DynamicBoneTransformManager",
@@ -1141,9 +1157,10 @@
         "methodIndex": 384501,
         "methodPointerVa": "0x183c06690",
         "fileOffset": "0x3c04c90",
+        "section": "il2cpp",
         "bytes": 784,
         "sha256": "00fcdd6ca098075c09caaacc7b1cf8da1cc7b4e6e3059c57aaf400afb0f1ce3d",
-        "hashSource": "pinned GameAssembly.dll fileOffset + scanBytes"
+        "hashSource": "current metadata method pointer + PE executable section span to next pointer"
       },
       {
         "type": "BeyondDynamicBone.DynamicBoneTransformManager+ReadAnimatorBufferDataJob",
@@ -1151,9 +1168,10 @@
         "methodIndex": 384530,
         "methodPointerVa": "0x1867266cc",
         "fileOffset": "0x6724ccc",
+        "section": "il2cpp",
         "bytes": 144,
         "sha256": "46732e8918701fad3aca689d09499fa266cbc37d8dd99416323bb45be0739773",
-        "hashSource": "pinned GameAssembly.dll fileOffset + scanBytes"
+        "hashSource": "current metadata method pointer + PE executable section span to next pointer"
       },
       {
         "type": "BeyondDynamicBone.DynamicBoneTransformManager+ReadAnimatorBufferDataJob",
@@ -1161,9 +1179,10 @@
         "methodIndex": 384531,
         "methodPointerVa": "0x18672675c",
         "fileOffset": "0x6724d5c",
+        "section": "il2cpp",
         "bytes": 2592,
         "sha256": "92197e89b5cc063c4f77f6dd469f3256e5724083f705bbe14b269d5c66624158",
-        "hashSource": "pinned GameAssembly.dll fileOffset + scanBytes"
+        "hashSource": "current metadata method pointer + PE executable section span to next pointer"
       },
       {
         "type": "BeyondDynamicBone.DynamicBoneTransformManager+WriteAnimatorBufferDataJob",
@@ -1171,9 +1190,10 @@
         "methodIndex": 384532,
         "methodPointerVa": "0x18672d604",
         "fileOffset": "0x672bc04",
+        "section": "il2cpp",
         "bytes": 2120,
         "sha256": "f9a9c46c3c6081e0664add62398de08e7053a38417b8d15f2dd2188981fbc77a",
-        "hashSource": "pinned GameAssembly.dll fileOffset + scanBytes"
+        "hashSource": "current metadata method pointer + PE executable section span to next pointer"
       },
       {
         "type": "BeyondDynamicBone.DynamicBoneTransformManager+WriteAnimatorBufferDataJob",
@@ -1181,9 +1201,10 @@
         "methodIndex": 384533,
         "methodPointerVa": "0x18672de4c",
         "fileOffset": "0x672c44c",
+        "section": "il2cpp",
         "bytes": 392,
         "sha256": "66617118802a1066617c9a11461494599b275385a33ef549b6246399c0a0c8e0",
-        "hashSource": "pinned GameAssembly.dll fileOffset + scanBytes"
+        "hashSource": "current metadata method pointer + PE executable section span to next pointer"
       },
       {
         "type": "BeyondDynamicBone.DynamicBoneTransformManager+ReadTransformJob",
@@ -1191,9 +1212,10 @@
         "methodIndex": 384537,
         "methodPointerVa": "0x186727248",
         "fileOffset": "0x6725848",
+        "section": "il2cpp",
         "bytes": 1736,
         "sha256": "fff0ef01d8a6d6f4ab3e1a898659aa4b0b3fe33913fe868b871ab02256a1490c",
-        "hashSource": "pinned GameAssembly.dll fileOffset + scanBytes"
+        "hashSource": "current metadata method pointer + PE executable section span to next pointer"
       },
       {
         "type": "BeyondDynamicBone.DynamicBoneTransformManager+RestoreTransformJob",
@@ -1201,9 +1223,10 @@
         "methodIndex": 384536,
         "methodPointerVa": "0x186727910",
         "fileOffset": "0x6725f10",
+        "section": "il2cpp",
         "bytes": 532,
         "sha256": "6754b44dfcd09d6d3f3a28cac2a1f5da02000b3e126207865edd2223d334b3ff",
-        "hashSource": "pinned GameAssembly.dll fileOffset + scanBytes"
+        "hashSource": "current metadata method pointer + PE executable section span to next pointer"
       },
       {
         "type": "BeyondDynamicBone.DynamicBoneTransformManager+WriteTransformJob",
@@ -1211,9 +1234,10 @@
         "methodIndex": 384566,
         "methodPointerVa": "0x18672e7e0",
         "fileOffset": "0x672cde0",
+        "section": "il2cpp",
         "bytes": 11452,
         "sha256": "8bb838d1118e5910d0794f5790cecad8a92981c760e802799e3244189cfd4676",
-        "hashSource": "pinned GameAssembly.dll fileOffset + scanBytes"
+        "hashSource": "current metadata method pointer + PE executable section span to next pointer"
       },
       {
         "type": "BeyondDynamicBone.DynamicBoneTransformManager+ReadComponentTransformJob",
@@ -1221,9 +1245,10 @@
         "methodIndex": 384567,
         "methodPointerVa": "0x18672717c",
         "fileOffset": "0x672577c",
+        "section": "il2cpp",
         "bytes": 204,
         "sha256": "34778df624d8a9358376abecbd13f99b6f895c87c45bd3cd996a1a9782ac6227",
-        "hashSource": "pinned GameAssembly.dll fileOffset + scanBytes"
+        "hashSource": "current metadata method pointer + PE executable section span to next pointer"
       },
       {
         "type": "BeyondDynamicBone.VirtualMeshManager+WriteTransformDataJob",
@@ -1231,9 +1256,10 @@
         "methodIndex": 385060,
         "methodPointerVa": "0x183d77850",
         "fileOffset": "0x3d75e50",
+        "section": "il2cpp",
         "bytes": 1136,
         "sha256": "14d5a615034dc97c96f5b61fc4a051ddca4bfdf5b2a238ff4a0947029a993621",
-        "hashSource": "pinned GameAssembly.dll fileOffset + scanBytes"
+        "hashSource": "current metadata method pointer + PE executable section span to next pointer"
       },
       {
         "type": "BeyondDynamicBone.VirtualMeshManager+WriteTransformDataJob",
@@ -1241,9 +1267,10 @@
         "methodIndex": 385061,
         "methodPointerVa": "0x186754738",
         "fileOffset": "0x6752d38",
+        "section": "il2cpp",
         "bytes": 152,
         "sha256": "485acd69532348bb12db9f9c02ad81a2894b0e9cd6c34f1a51cfab215c4e80b8",
-        "hashSource": "pinned GameAssembly.dll fileOffset + scanBytes"
+        "hashSource": "current metadata method pointer + PE executable section span to next pointer"
       },
       {
         "type": "BeyondDynamicBone.VirtualMeshManager+WriteTransformDataJob",
@@ -1251,9 +1278,10 @@
         "methodIndex": 385062,
         "methodPointerVa": "0x1867547d0",
         "fileOffset": "0x6752dd0",
+        "section": "il2cpp",
         "bytes": 864,
         "sha256": "de460b8c62e7daf355e0455ef846f33c5cbe7911190f7488d02edb0494d5328c",
-        "hashSource": "pinned GameAssembly.dll fileOffset + scanBytes"
+        "hashSource": "current metadata method pointer + PE executable section span to next pointer"
       },
       {
         "type": "BeyondDynamicBone.VirtualMeshManager+WriteTransformDataJob",
@@ -1261,9 +1289,10 @@
         "methodIndex": 385063,
         "methodPointerVa": "0x186754b30",
         "fileOffset": "0x6753130",
+        "section": "il2cpp",
         "bytes": 280,
         "sha256": "7b1212e8ed5eda8f98c63d49a09dca1c4f2254a67eac7136e5f0e59fd927bad3",
-        "hashSource": "pinned GameAssembly.dll fileOffset + scanBytes"
+        "hashSource": "current metadata method pointer + PE executable section span to next pointer"
       },
       {
         "type": "BeyondDynamicBone.VirtualMeshManager+WriteTransformLocalDataJob",
@@ -1271,9 +1300,10 @@
         "methodIndex": 385064,
         "methodPointerVa": "0x183d52360",
         "fileOffset": "0x3d50960",
+        "section": "il2cpp",
         "bytes": 592,
         "sha256": "90883e6de1074d3d442d34d271338f67ab348e84b64adc892e28b287c3330078",
-        "hashSource": "pinned GameAssembly.dll fileOffset + scanBytes"
+        "hashSource": "current metadata method pointer + PE executable section span to next pointer"
       },
       {
         "type": "BeyondDynamicBone.VirtualMeshManager+WriteTransformLocalDataJob",
@@ -1281,9 +1311,10 @@
         "methodIndex": 385065,
         "methodPointerVa": "0x186755854",
         "fileOffset": "0x6753e54",
+        "section": "il2cpp",
         "bytes": 152,
         "sha256": "6d43c364fb01f71d531b997aebcc2fee2cfb1c81b21d07991d68782a7a5b989c",
-        "hashSource": "pinned GameAssembly.dll fileOffset + scanBytes"
+        "hashSource": "current metadata method pointer + PE executable section span to next pointer"
       },
       {
         "type": "BeyondDynamicBone.VirtualMeshManager+WriteTransformLocalDataJob",
@@ -1291,9 +1322,10 @@
         "methodIndex": 385066,
         "methodPointerVa": "0x1867558ec",
         "fileOffset": "0x6753eec",
+        "section": "il2cpp",
         "bytes": 956,
         "sha256": "e10129235bf1fc44fed345c7ef36bcb5f0f589788835d82c8de18949287cb8dc",
-        "hashSource": "pinned GameAssembly.dll fileOffset + scanBytes"
+        "hashSource": "current metadata method pointer + PE executable section span to next pointer"
       },
       {
         "type": "BeyondDynamicBone.VirtualMeshManager+WriteTransformLocalDataJob",
@@ -1301,9 +1333,10 @@
         "methodIndex": 385067,
         "methodPointerVa": "0x186755ca8",
         "fileOffset": "0x67542a8",
+        "section": "il2cpp",
         "bytes": 356,
         "sha256": "a060e53d3a5bb005cdeae8e597bb7e9bfc2176ddad93070d225578b904e298fd",
-        "hashSource": "pinned GameAssembly.dll fileOffset + scanBytes"
+        "hashSource": "current metadata method pointer + PE executable section span to next pointer"
       }
     ],
     "transformAccessArrayLifecycle": [
@@ -1316,10 +1349,8 @@
         "type": "UnityEngine.Jobs.TransformAccessArray",
         "method": "DestroyTransformAccessArray",
         "role": "array_destroy",
-        "observedRegisterWrites": {
-          "rcx": "[rbx+0x80]",
-          "rdx": "0"
-        }
+        "instructionBytes": "e8 db 39 22 01",
+        "instructionVa": "0x1835ba800"
       },
       {
         "methodIndex": 384482,
@@ -1330,10 +1361,8 @@
         "type": "UnityEngine.Jobs.TransformAccessArray",
         "method": "DestroyTransformAccessArray",
         "role": "array_destroy",
-        "observedRegisterWrites": {
-          "rcx": "[rbx+0x98]",
-          "rdx": "0"
-        }
+        "instructionBytes": "e8 ad 39 22 01",
+        "instructionVa": "0x1835ba82e"
       },
       {
         "methodIndex": 384484,
@@ -1344,11 +1373,8 @@
         "type": "UnityEngine.Jobs.TransformAccessArray",
         "method": "Create",
         "role": "array_create",
-        "observedRegisterWrites": {
-          "rcx": "0x100",
-          "rdx": "0xffffffff",
-          "r8": "0"
-        }
+        "instructionBytes": "e8 4c e9 84 00",
+        "instructionVa": "0x183e8819f"
       },
       {
         "methodIndex": 384484,
@@ -1359,11 +1385,8 @@
         "type": "UnityEngine.Jobs.TransformAccessArray",
         "method": "Create",
         "role": "array_create",
-        "observedRegisterWrites": {
-          "rcx": "0x100",
-          "rdx": "0xffffffff",
-          "r8": "0"
-        }
+        "instructionBytes": "e8 f1 e8 84 00",
+        "instructionVa": "0x183e881fa"
       },
       {
         "methodIndex": 384486,
@@ -1374,10 +1397,8 @@
         "type": "UnityEngine.Jobs.TransformAccessArray",
         "method": "GetLength",
         "role": "array_length",
-        "observedRegisterWrites": {
-          "rcx": "[rbp+0x80]",
-          "rdx": "0"
-        }
+        "instructionBytes": "e8 fa 0a 8a 00",
+        "instructionVa": "0x183cf88e1"
       },
       {
         "methodIndex": 384486,
@@ -1388,11 +1409,8 @@
         "type": "UnityEngine.Jobs.TransformAccessArray",
         "method": "Add",
         "role": "array_add",
-        "observedRegisterWrites": {
-          "rcx": "[rbp+0x80]",
-          "rdx": "rax",
-          "r8": "0"
-        }
+        "instructionBytes": "e8 c6 97 63 00",
+        "instructionVa": "0x183cf8925"
       },
       {
         "methodIndex": 384486,
@@ -1403,11 +1421,8 @@
         "type": "UnityEngine.Jobs.TransformAccessArray",
         "method": "SetTransform",
         "role": "array_set_transform",
-        "observedRegisterWrites": {
-          "rdx": "&[rdi+rbx*1]",
-          "r8": "rsi",
-          "r9": "0"
-        }
+        "instructionBytes": "e8 5a 8d 77 00",
+        "instructionVa": "0x183cf8991"
       },
       {
         "methodIndex": 384486,
@@ -1418,11 +1433,8 @@
         "type": "UnityEngine.Jobs.TransformAccessArray",
         "method": "Add",
         "role": "array_add",
-        "observedRegisterWrites": {
-          "rcx": "[rbp+0x80]",
-          "rdx": "0",
-          "r8": "0"
-        }
+        "instructionBytes": "e8 37 97 63 00",
+        "instructionVa": "0x183cf89b4"
       },
       {
         "methodIndex": 384487,
@@ -1433,10 +1445,8 @@
         "type": "UnityEngine.Jobs.TransformAccessArray",
         "method": "GetLength",
         "role": "array_length",
-        "observedRegisterWrites": {
-          "rcx": "[rdi+0x80]",
-          "rdx": "0"
-        }
+        "instructionBytes": "e8 9f 0e 8a 00",
+        "instructionVa": "0x183cf853c"
       },
       {
         "methodIndex": 384487,
@@ -1447,11 +1457,8 @@
         "type": "UnityEngine.Jobs.TransformAccessArray",
         "method": "Add",
         "role": "array_add",
-        "observedRegisterWrites": {
-          "rcx": "[rdi+0x80]",
-          "rdx": "0",
-          "r8": "0"
-        }
+        "instructionBytes": "e8 7e 9b 63 00",
+        "instructionVa": "0x183cf856d"
       },
       {
         "methodIndex": 384487,
@@ -1462,11 +1469,8 @@
         "type": "UnityEngine.Jobs.TransformAccessArray",
         "method": "Add",
         "role": "array_add",
-        "observedRegisterWrites": {
-          "rcx": "[rdi+0x80]",
-          "rdx": "0",
-          "r8": "0"
-        }
+        "instructionBytes": "e8 a2 9a 63 00",
+        "instructionVa": "0x183cf8649"
       },
       {
         "methodIndex": 384487,
@@ -1477,10 +1481,8 @@
         "type": "UnityEngine.Jobs.TransformAccessArray",
         "method": "SetTransform",
         "role": "array_set_transform",
-        "observedRegisterWrites": {
-          "rdx": "ebp",
-          "r9": "0"
-        }
+        "instructionBytes": "e8 8c 90 77 00",
+        "instructionVa": "0x183cf865f"
       },
       {
         "methodIndex": 384488,
@@ -1491,10 +1493,8 @@
         "type": "UnityEngine.Jobs.TransformAccessArray",
         "method": "get_length",
         "role": "array_length",
-        "observedRegisterWrites": {
-          "rcx": "&[rsi+0x80]",
-          "rdx": "0"
-        }
+        "instructionBytes": "e8 56 08 c7 fe",
+        "instructionVa": "0x1867252cd"
       },
       {
         "methodIndex": 384488,
@@ -1505,11 +1505,8 @@
         "type": "UnityEngine.Jobs.TransformAccessArray",
         "method": "Add",
         "role": "array_add",
-        "observedRegisterWrites": {
-          "rcx": "[rsi+0x80]",
-          "rdx": "r14",
-          "r8": "0"
-        }
+        "instructionBytes": "e8 08 ce c0 fd",
+        "instructionVa": "0x1867252e3"
       },
       {
         "methodIndex": 384488,
@@ -1520,11 +1517,8 @@
         "type": "UnityEngine.Jobs.TransformAccessArray",
         "method": "SetTransform",
         "role": "array_set_transform",
-        "observedRegisterWrites": {
-          "rdx": "edi",
-          "r8": "r14",
-          "r9": "0"
-        }
+        "instructionBytes": "e8 f9 c3 d4 fd",
+        "instructionVa": "0x1867252f2"
       },
       {
         "methodIndex": 384494,
@@ -1535,10 +1529,8 @@
         "type": "UnityEngine.Jobs.TransformAccessArray",
         "method": "get_length",
         "role": "array_length",
-        "observedRegisterWrites": {
-          "rcx": "&[rbp+0x80]",
-          "rdx": "0"
-        }
+        "instructionBytes": "e8 e8 04 c7 fe",
+        "instructionVa": "0x18672563b"
       },
       {
         "methodIndex": 384494,
@@ -1549,11 +1541,8 @@
         "type": "UnityEngine.Jobs.TransformAccessArray",
         "method": "Add",
         "role": "array_add",
-        "observedRegisterWrites": {
-          "rcx": "[r14]",
-          "rdx": "0",
-          "r8": "0"
-        }
+        "instructionBytes": "e8 97 ca c0 fd",
+        "instructionVa": "0x186725654"
       },
       {
         "methodIndex": 384494,
@@ -1564,10 +1553,8 @@
         "type": "UnityEngine.Jobs.TransformAccessArray",
         "method": "get_length",
         "role": "array_length",
-        "observedRegisterWrites": {
-          "rcx": "r14",
-          "rdx": "0"
-        }
+        "instructionBytes": "e8 c5 04 c7 fe",
+        "instructionVa": "0x18672565e"
       },
       {
         "methodIndex": 384494,
@@ -1578,11 +1565,8 @@
         "type": "UnityEngine.Jobs.TransformAccessArray",
         "method": "get_Item",
         "role": "array_item",
-        "observedRegisterWrites": {
-          "rcx": "&[rbp+0x80]",
-          "rdx": "edi",
-          "r8": "0"
-        }
+        "instructionBytes": "e8 c4 25 c7 fe",
+        "instructionVa": "0x186725683"
       },
       {
         "methodIndex": 384494,
@@ -1593,12 +1577,8 @@
         "type": "UnityEngine.Jobs.TransformAccessArray",
         "method": "SetTransform",
         "role": "array_set_transform",
-        "observedRegisterWrites": {
-          "rcx": "[rbp+0x80]",
-          "rdx": "&[rbx+rdi*1]",
-          "r8": "rax",
-          "r9": "0"
-        }
+        "instructionBytes": "e8 53 c0 d4 fd",
+        "instructionVa": "0x186725698"
       },
       {
         "methodIndex": 384494,
@@ -1609,12 +1589,8 @@
         "type": "UnityEngine.Jobs.TransformAccessArray",
         "method": "SetTransform",
         "role": "array_set_transform",
-        "observedRegisterWrites": {
-          "rcx": "[rbp+0x80]",
-          "rdx": "edi",
-          "r8": "0",
-          "r9": "0"
-        }
+        "instructionBytes": "e8 3f c0 d4 fd",
+        "instructionVa": "0x1867256ac"
       },
       {
         "methodIndex": 384501,
@@ -1625,11 +1601,8 @@
         "type": "UnityEngine.Jobs.TransformAccessArray",
         "method": "GetLength",
         "role": "array_length",
-        "observedRegisterWrites": {
-          "rcx": "rbx",
-          "rdx": "0",
-          "xmm0": "0"
-        }
+        "instructionBytes": "e8 75 2b 99 00",
+        "instructionVa": "0x183c06866"
       }
     ],
     "transformAccessProperties": [
@@ -1642,11 +1615,8 @@
         "type": "UnityEngine.Jobs.TransformAccess",
         "method": "get_position",
         "role": "transform_read",
-        "observedRegisterWrites": {
-          "rcx": "&[rsp+0x40]",
-          "rdx": "rbx",
-          "r8": "0"
-        }
+        "instructionBytes": "e8 ca 82 cb 04",
+        "instructionVa": "0x186726c69"
       },
       {
         "methodIndex": 384531,
@@ -1657,11 +1627,8 @@
         "type": "UnityEngine.Jobs.TransformAccess",
         "method": "get_rotation",
         "role": "transform_read",
-        "observedRegisterWrites": {
-          "rcx": "&[rsp+0x60]",
-          "rdx": "rbx",
-          "r8": "0"
-        }
+        "instructionBytes": "e8 ed 82 cb 04",
+        "instructionVa": "0x186726c8e"
       },
       {
         "methodIndex": 384531,
@@ -1672,11 +1639,8 @@
         "type": "UnityEngine.Jobs.TransformAccess",
         "method": "get_localToWorldMatrix",
         "role": "transform_read",
-        "observedRegisterWrites": {
-          "rcx": "&[rbp-0x20]",
-          "rdx": "rbx",
-          "r8": "0"
-        }
+        "instructionBytes": "e8 21 82 cb 04",
+        "instructionVa": "0x186726ca2"
       },
       {
         "methodIndex": 384531,
@@ -1687,11 +1651,8 @@
         "type": "UnityEngine.Jobs.TransformAccess",
         "method": "get_localPosition",
         "role": "transform_read",
-        "observedRegisterWrites": {
-          "rcx": "&[rsp+0x40]",
-          "rdx": "rbx",
-          "r8": "0"
-        }
+        "instructionBytes": "e8 03 81 cb 04",
+        "instructionVa": "0x186726cf4"
       },
       {
         "methodIndex": 384531,
@@ -1702,12 +1663,8 @@
         "type": "UnityEngine.Jobs.TransformAccess",
         "method": "get_localRotation",
         "role": "transform_read",
-        "observedRegisterWrites": {
-          "rcx": "&[rsp+0x60]",
-          "rdx": "rbx",
-          "r8": "0",
-          "xmm0": "[rax]"
-        }
+        "instructionBytes": "e8 fe 80 cb 04",
+        "instructionVa": "0x186726d41"
       },
       {
         "methodIndex": 384537,
@@ -1718,11 +1675,8 @@
         "type": "UnityEngine.Jobs.TransformAccess",
         "method": "get_position",
         "role": "transform_read",
-        "observedRegisterWrites": {
-          "rcx": "&[rsp+0x50]",
-          "rdx": "rsi",
-          "r8": "0"
-        }
+        "instructionBytes": "e8 69 7b cb 04",
+        "instructionVa": "0x1867273ca"
       },
       {
         "methodIndex": 384537,
@@ -1733,11 +1687,8 @@
         "type": "UnityEngine.Jobs.TransformAccess",
         "method": "get_rotation",
         "role": "transform_read",
-        "observedRegisterWrites": {
-          "rcx": "&[rsp+0x30]",
-          "rdx": "rsi",
-          "r8": "0"
-        }
+        "instructionBytes": "e8 8c 7b cb 04",
+        "instructionVa": "0x1867273ef"
       },
       {
         "methodIndex": 384537,
@@ -1748,11 +1699,8 @@
         "type": "UnityEngine.Jobs.TransformAccess",
         "method": "get_localToWorldMatrix",
         "role": "transform_read",
-        "observedRegisterWrites": {
-          "rcx": "&[rsp+0x60]",
-          "rdx": "rsi",
-          "r8": "0"
-        }
+        "instructionBytes": "e8 bf 7a cb 04",
+        "instructionVa": "0x186727404"
       },
       {
         "methodIndex": 384537,
@@ -1763,11 +1711,8 @@
         "type": "UnityEngine.Jobs.TransformAccess",
         "method": "get_localPosition",
         "role": "transform_read",
-        "observedRegisterWrites": {
-          "rcx": "&[rsp+0x30]",
-          "rdx": "rsi",
-          "r8": "0"
-        }
+        "instructionBytes": "e8 a0 79 cb 04",
+        "instructionVa": "0x186727457"
       },
       {
         "methodIndex": 384537,
@@ -1778,12 +1723,8 @@
         "type": "UnityEngine.Jobs.TransformAccess",
         "method": "get_localRotation",
         "role": "transform_read",
-        "observedRegisterWrites": {
-          "rcx": "&[rsp+0x30]",
-          "rdx": "rsi",
-          "r8": "0",
-          "xmm0": "[rax]"
-        }
+        "instructionBytes": "e8 9b 79 cb 04",
+        "instructionVa": "0x1867274a4"
       },
       {
         "methodIndex": 384536,
@@ -1794,12 +1735,8 @@
         "type": "UnityEngine.Jobs.TransformAccess",
         "method": "set_localPosition",
         "role": "transform_write",
-        "observedRegisterWrites": {
-          "rcx": "rsi",
-          "rdx": "&[rsp+0x30]",
-          "r8": "0",
-          "xmm0": "[rax]"
-        }
+        "instructionBytes": "e8 2d 75 cb 04",
+        "instructionVa": "0x186727a8a"
       },
       {
         "methodIndex": 384536,
@@ -1810,12 +1747,8 @@
         "type": "UnityEngine.Jobs.TransformAccess",
         "method": "set_localRotation",
         "role": "transform_write",
-        "observedRegisterWrites": {
-          "rcx": "rsi",
-          "rdx": "&[rsp+0x40]",
-          "r8": "0",
-          "xmm0": "[rax]"
-        }
+        "instructionBytes": "40 e8 02 75 cb 04",
+        "instructionVa": "0x186727ac8"
       },
       {
         "methodIndex": 384566,
@@ -1826,11 +1759,8 @@
         "type": "UnityEngine.Jobs.TransformAccess",
         "method": "get_localPosition",
         "role": "transform_read",
-        "observedRegisterWrites": {
-          "rcx": "&[rsp+0x30]",
-          "rdx": "r14",
-          "r8": "0"
-        }
+        "instructionBytes": "e8 73 04 cb 04",
+        "instructionVa": "0x18672e984"
       },
       {
         "methodIndex": 384566,
@@ -1841,12 +1771,8 @@
         "type": "UnityEngine.Jobs.TransformAccess",
         "method": "set_localPosition",
         "role": "transform_write",
-        "observedRegisterWrites": {
-          "rcx": "r14",
-          "rdx": "&[rsp+0x60]",
-          "r8": "0",
-          "xmm0": "[rax]"
-        }
+        "instructionBytes": "e8 3f 05 cb 04",
+        "instructionVa": "0x18672ea78"
       },
       {
         "methodIndex": 384566,
@@ -1857,11 +1783,8 @@
         "type": "UnityEngine.Jobs.TransformAccess",
         "method": "get_localRotation",
         "role": "transform_read",
-        "observedRegisterWrites": {
-          "rcx": "&[rsp+0x40]",
-          "rdx": "r14",
-          "r8": "0"
-        }
+        "instructionBytes": "e8 ac 03 cb 04",
+        "instructionVa": "0x18672ea93"
       },
       {
         "methodIndex": 384566,
@@ -1872,12 +1795,8 @@
         "type": "UnityEngine.Jobs.TransformAccess",
         "method": "set_localRotation",
         "role": "transform_write",
-        "observedRegisterWrites": {
-          "rcx": "r14",
-          "rdx": "&[rsp+0x40]",
-          "r8": "0",
-          "xmm0": "[rax]"
-        }
+        "instructionBytes": "40 e8 97 04 cb 04",
+        "instructionVa": "0x18672eb33"
       },
       {
         "methodIndex": 384566,
@@ -1888,11 +1807,8 @@
         "type": "UnityEngine.Jobs.TransformAccess",
         "method": "get_rotation",
         "role": "transform_read",
-        "observedRegisterWrites": {
-          "rcx": "&[rsp+0x40]",
-          "rdx": "r14",
-          "r8": "0"
-        }
+        "instructionBytes": "e8 f4 03 cb 04",
+        "instructionVa": "0x18672eb87"
       },
       {
         "methodIndex": 384566,
@@ -1903,12 +1819,8 @@
         "type": "UnityEngine.Jobs.TransformAccess",
         "method": "set_rotation",
         "role": "transform_write",
-        "observedRegisterWrites": {
-          "rcx": "r14",
-          "rdx": "&[rsp+0x40]",
-          "r8": "0",
-          "xmm0": "[rax]"
-        }
+        "instructionBytes": "40 e8 f3 02 cb 04",
+        "instructionVa": "0x18672ed13"
       },
       {
         "methodIndex": 384566,
@@ -1919,11 +1831,8 @@
         "type": "UnityEngine.Jobs.TransformAccess",
         "method": "get_position",
         "role": "transform_read",
-        "observedRegisterWrites": {
-          "rcx": "&[rsp+0x40]",
-          "rdx": "r14",
-          "r8": "0"
-        }
+        "instructionBytes": "e8 eb 01 cb 04",
+        "instructionVa": "0x18672ed48"
       },
       {
         "methodIndex": 384566,
@@ -1934,12 +1843,8 @@
         "type": "UnityEngine.Jobs.TransformAccess",
         "method": "set_position",
         "role": "transform_write",
-        "observedRegisterWrites": {
-          "rcx": "r14",
-          "rdx": "&[rsp+0x30]",
-          "r8": "0",
-          "xmm0": "[rax]"
-        }
+        "instructionBytes": "e8 a5 00 cb 04",
+        "instructionVa": "0x18672ef4e"
       },
       {
         "methodIndex": 384567,
@@ -1950,11 +1855,8 @@
         "type": "UnityEngine.Jobs.TransformAccess",
         "method": "get_position",
         "role": "transform_read",
-        "observedRegisterWrites": {
-          "rcx": "&[rsp+0x40]",
-          "rdx": "rbx",
-          "r8": "0"
-        }
+        "instructionBytes": "e8 7a 7d cb 04",
+        "instructionVa": "0x1867271b9"
       }
     ],
     "burstRangeDispatch": [
@@ -1967,12 +1869,8 @@
         "type": "BeyondDynamicBone.DynamicBoneTransformManager+WriteAnimatorBufferDataJobKernels",
         "method": "WriteAnimatorBufferDataRangeKernel",
         "role": "burst_range_dispatch",
-        "observedRegisterWrites": {
-          "rcx": "[rbx]",
-          "rdx": "[rbx+0x10]",
-          "r8": "[rbx+0x20]",
-          "xmm0": "[rbx+0x70]"
-        }
+        "instructionBytes": "e8 a4 f5 ff ff",
+        "instructionVa": "0x18672df8b"
       },
       {
         "methodIndex": 385063,
@@ -1983,16 +1881,8 @@
         "type": "BeyondDynamicBone.VirtualMeshManager+WriteTransformDataJobKernels",
         "method": "WriteTransformDataRangeKernel",
         "role": "burst_range_dispatch",
-        "observedRegisterWrites": {
-          "rcx": "[rbx]",
-          "rdx": "[rbx+0x10]",
-          "r8": "[rbx+0x20]",
-          "r9": "[rbx+0x30]",
-          "xmm0": "[rbx+0x80]",
-          "xmm1": "[rbx+0x70]",
-          "xmm2": "[rbx+0x60]",
-          "xmm3": "[rbx+0x50]"
-        }
+        "instructionBytes": "e8 78 fa ff ff",
+        "instructionVa": "0x186754c03"
       },
       {
         "methodIndex": 385067,
@@ -2003,16 +1893,8 @@
         "type": "BeyondDynamicBone.VirtualMeshManager+WriteTransformLocalDataJobKernels",
         "method": "WriteTransformLocalDataRangeKernel",
         "role": "burst_range_dispatch",
-        "observedRegisterWrites": {
-          "rcx": "[rbx]",
-          "rdx": "[rbx+0x10]",
-          "r8": "[rbx+0x20]",
-          "r9": "[rbx+0x30]",
-          "xmm0": "[rbx+0xa0]",
-          "xmm1": "[rbx+0x90]",
-          "xmm2": "[rbx+0x80]",
-          "xmm3": "[rbx+0x70]"
-        }
+        "instructionBytes": "e8 c7 f9 ff ff",
+        "instructionVa": "0x186755db8"
       }
     ]
   },
@@ -2040,11 +1922,8 @@
         "type": "UnityEngine.Jobs.TransformAccess",
         "method": "get_position",
         "role": "transform_read",
-        "observedRegisterWrites": {
-          "rcx": "&[rsp+0x40]",
-          "rdx": "rbx",
-          "r8": "0"
-        }
+        "instructionBytes": "e8 ca 82 cb 04",
+        "instructionVa": "0x186726c69"
       },
       {
         "methodIndex": 384531,
@@ -2055,11 +1934,8 @@
         "type": "UnityEngine.Jobs.TransformAccess",
         "method": "get_rotation",
         "role": "transform_read",
-        "observedRegisterWrites": {
-          "rcx": "&[rsp+0x60]",
-          "rdx": "rbx",
-          "r8": "0"
-        }
+        "instructionBytes": "e8 ed 82 cb 04",
+        "instructionVa": "0x186726c8e"
       },
       {
         "methodIndex": 384531,
@@ -2070,11 +1946,8 @@
         "type": "UnityEngine.Jobs.TransformAccess",
         "method": "get_localToWorldMatrix",
         "role": "transform_read",
-        "observedRegisterWrites": {
-          "rcx": "&[rbp-0x20]",
-          "rdx": "rbx",
-          "r8": "0"
-        }
+        "instructionBytes": "e8 21 82 cb 04",
+        "instructionVa": "0x186726ca2"
       },
       {
         "methodIndex": 384531,
@@ -2085,11 +1958,8 @@
         "type": "UnityEngine.Jobs.TransformAccess",
         "method": "get_localPosition",
         "role": "transform_read",
-        "observedRegisterWrites": {
-          "rcx": "&[rsp+0x40]",
-          "rdx": "rbx",
-          "r8": "0"
-        }
+        "instructionBytes": "e8 03 81 cb 04",
+        "instructionVa": "0x186726cf4"
       },
       {
         "methodIndex": 384531,
@@ -2100,12 +1970,8 @@
         "type": "UnityEngine.Jobs.TransformAccess",
         "method": "get_localRotation",
         "role": "transform_read",
-        "observedRegisterWrites": {
-          "rcx": "&[rsp+0x60]",
-          "rdx": "rbx",
-          "r8": "0",
-          "xmm0": "[rax]"
-        }
+        "instructionBytes": "e8 fe 80 cb 04",
+        "instructionVa": "0x186726d41"
       },
       {
         "methodIndex": 384537,
@@ -2116,11 +1982,8 @@
         "type": "UnityEngine.Jobs.TransformAccess",
         "method": "get_position",
         "role": "transform_read",
-        "observedRegisterWrites": {
-          "rcx": "&[rsp+0x50]",
-          "rdx": "rsi",
-          "r8": "0"
-        }
+        "instructionBytes": "e8 69 7b cb 04",
+        "instructionVa": "0x1867273ca"
       },
       {
         "methodIndex": 384537,
@@ -2131,11 +1994,8 @@
         "type": "UnityEngine.Jobs.TransformAccess",
         "method": "get_rotation",
         "role": "transform_read",
-        "observedRegisterWrites": {
-          "rcx": "&[rsp+0x30]",
-          "rdx": "rsi",
-          "r8": "0"
-        }
+        "instructionBytes": "e8 8c 7b cb 04",
+        "instructionVa": "0x1867273ef"
       },
       {
         "methodIndex": 384537,
@@ -2146,11 +2006,8 @@
         "type": "UnityEngine.Jobs.TransformAccess",
         "method": "get_localToWorldMatrix",
         "role": "transform_read",
-        "observedRegisterWrites": {
-          "rcx": "&[rsp+0x60]",
-          "rdx": "rsi",
-          "r8": "0"
-        }
+        "instructionBytes": "e8 bf 7a cb 04",
+        "instructionVa": "0x186727404"
       },
       {
         "methodIndex": 384537,
@@ -2161,11 +2018,8 @@
         "type": "UnityEngine.Jobs.TransformAccess",
         "method": "get_localPosition",
         "role": "transform_read",
-        "observedRegisterWrites": {
-          "rcx": "&[rsp+0x30]",
-          "rdx": "rsi",
-          "r8": "0"
-        }
+        "instructionBytes": "e8 a0 79 cb 04",
+        "instructionVa": "0x186727457"
       },
       {
         "methodIndex": 384537,
@@ -2176,12 +2030,8 @@
         "type": "UnityEngine.Jobs.TransformAccess",
         "method": "get_localRotation",
         "role": "transform_read",
-        "observedRegisterWrites": {
-          "rcx": "&[rsp+0x30]",
-          "rdx": "rsi",
-          "r8": "0",
-          "xmm0": "[rax]"
-        }
+        "instructionBytes": "e8 9b 79 cb 04",
+        "instructionVa": "0x1867274a4"
       },
       {
         "methodIndex": 384566,
@@ -2192,11 +2042,8 @@
         "type": "UnityEngine.Jobs.TransformAccess",
         "method": "get_localPosition",
         "role": "transform_read",
-        "observedRegisterWrites": {
-          "rcx": "&[rsp+0x30]",
-          "rdx": "r14",
-          "r8": "0"
-        }
+        "instructionBytes": "e8 73 04 cb 04",
+        "instructionVa": "0x18672e984"
       },
       {
         "methodIndex": 384566,
@@ -2207,11 +2054,8 @@
         "type": "UnityEngine.Jobs.TransformAccess",
         "method": "get_localRotation",
         "role": "transform_read",
-        "observedRegisterWrites": {
-          "rcx": "&[rsp+0x40]",
-          "rdx": "r14",
-          "r8": "0"
-        }
+        "instructionBytes": "e8 ac 03 cb 04",
+        "instructionVa": "0x18672ea93"
       },
       {
         "methodIndex": 384566,
@@ -2222,11 +2066,8 @@
         "type": "UnityEngine.Jobs.TransformAccess",
         "method": "get_rotation",
         "role": "transform_read",
-        "observedRegisterWrites": {
-          "rcx": "&[rsp+0x40]",
-          "rdx": "r14",
-          "r8": "0"
-        }
+        "instructionBytes": "e8 f4 03 cb 04",
+        "instructionVa": "0x18672eb87"
       },
       {
         "methodIndex": 384566,
@@ -2237,11 +2078,8 @@
         "type": "UnityEngine.Jobs.TransformAccess",
         "method": "get_position",
         "role": "transform_read",
-        "observedRegisterWrites": {
-          "rcx": "&[rsp+0x40]",
-          "rdx": "r14",
-          "r8": "0"
-        }
+        "instructionBytes": "e8 eb 01 cb 04",
+        "instructionVa": "0x18672ed48"
       },
       {
         "methodIndex": 384567,
@@ -2252,11 +2090,8 @@
         "type": "UnityEngine.Jobs.TransformAccess",
         "method": "get_position",
         "role": "transform_read",
-        "observedRegisterWrites": {
-          "rcx": "&[rsp+0x40]",
-          "rdx": "rbx",
-          "r8": "0"
-        }
+        "instructionBytes": "e8 7a 7d cb 04",
+        "instructionVa": "0x1867271b9"
       }
     ],
     "transformAccessPropertyWrites": [
@@ -2269,12 +2104,8 @@
         "type": "UnityEngine.Jobs.TransformAccess",
         "method": "set_localPosition",
         "role": "transform_write",
-        "observedRegisterWrites": {
-          "rcx": "rsi",
-          "rdx": "&[rsp+0x30]",
-          "r8": "0",
-          "xmm0": "[rax]"
-        }
+        "instructionBytes": "e8 2d 75 cb 04",
+        "instructionVa": "0x186727a8a"
       },
       {
         "methodIndex": 384536,
@@ -2285,12 +2116,8 @@
         "type": "UnityEngine.Jobs.TransformAccess",
         "method": "set_localRotation",
         "role": "transform_write",
-        "observedRegisterWrites": {
-          "rcx": "rsi",
-          "rdx": "&[rsp+0x40]",
-          "r8": "0",
-          "xmm0": "[rax]"
-        }
+        "instructionBytes": "40 e8 02 75 cb 04",
+        "instructionVa": "0x186727ac8"
       },
       {
         "methodIndex": 384566,
@@ -2301,12 +2128,8 @@
         "type": "UnityEngine.Jobs.TransformAccess",
         "method": "set_localPosition",
         "role": "transform_write",
-        "observedRegisterWrites": {
-          "rcx": "r14",
-          "rdx": "&[rsp+0x60]",
-          "r8": "0",
-          "xmm0": "[rax]"
-        }
+        "instructionBytes": "e8 3f 05 cb 04",
+        "instructionVa": "0x18672ea78"
       },
       {
         "methodIndex": 384566,
@@ -2317,12 +2140,8 @@
         "type": "UnityEngine.Jobs.TransformAccess",
         "method": "set_localRotation",
         "role": "transform_write",
-        "observedRegisterWrites": {
-          "rcx": "r14",
-          "rdx": "&[rsp+0x40]",
-          "r8": "0",
-          "xmm0": "[rax]"
-        }
+        "instructionBytes": "40 e8 97 04 cb 04",
+        "instructionVa": "0x18672eb33"
       },
       {
         "methodIndex": 384566,
@@ -2333,12 +2152,8 @@
         "type": "UnityEngine.Jobs.TransformAccess",
         "method": "set_rotation",
         "role": "transform_write",
-        "observedRegisterWrites": {
-          "rcx": "r14",
-          "rdx": "&[rsp+0x40]",
-          "r8": "0",
-          "xmm0": "[rax]"
-        }
+        "instructionBytes": "40 e8 f3 02 cb 04",
+        "instructionVa": "0x18672ed13"
       },
       {
         "methodIndex": 384566,
@@ -2349,20 +2164,17 @@
         "type": "UnityEngine.Jobs.TransformAccess",
         "method": "set_position",
         "role": "transform_write",
-        "observedRegisterWrites": {
-          "rcx": "r14",
-          "rdx": "&[rsp+0x30]",
-          "r8": "0",
-          "xmm0": "[rax]"
-        }
+        "instructionBytes": "e8 a5 00 cb 04",
+        "instructionVa": "0x18672ef4e"
       }
     ],
     "pointerProvenance": "unresolved: native register values such as [rax] are recorded, but the evidence does not establish which NativeArray element produced each value",
     "jobIndexBoundary": "managed Execute(int index, TransformAccess transform) signatures are closed; schedule-range call and runtime array length are not independently closed here"
   },
   "execution_boundary": {
-    "transform_access_array_create_destroy_closed": true,
-    "transform_access_array_add_set_length_closed": true,
+    "transform_access_array_call_edges_closed": true,
+    "array_ownership_closed": false,
+    "schedule_closed": false,
     "transform_access_property_reads_closed": true,
     "transform_access_property_writes_closed": true,
     "job_managed_field_shapes_closed": true,
