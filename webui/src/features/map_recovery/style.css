@@ -356,14 +356,27 @@
 .mr-route { fill: none; stroke: var(--mr-quest); stroke-width: 2.5; stroke-dasharray: 7 5; opacity: 0.55; }
 .mr-bg-image { pointer-events: none; }
 .mr-location-label {
-  fill: var(--text);
-  font: 700 14px/1 var(--sans);
+  /* Location names sit on top of the recovered game texture. A quiet dark
+     ink plus a broad white halo reads like a cartographic place label while
+     keeping the terrain visible underneath it. The JS collision/zoom pass
+     decides when the label is present; these rules only control its visual
+     weight once present. */
+  fill: #26343a;
+  font: 700 13px/1 var(--sans);
+  letter-spacing: 0.015em;
   text-anchor: middle;
-  paint-order: stroke;
-  stroke: var(--surface);
-  stroke-width: 4px;
+  paint-order: stroke fill;
+  stroke: rgba(255, 255, 255, 0.9);
+  stroke-width: 5px;
+  stroke-linejoin: round;
   pointer-events: none;
 }
+.mr-location-label.is-major {
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+.mr-location-label.is-hidden { visibility: hidden; }
 .mr-links { pointer-events: none; }
 .mr-edge { fill: none; opacity: 0.75; }
 
@@ -375,13 +388,21 @@
 .mr-marker.is-story .mr-shape { stroke-width: 2.4; }
 
 .mr-node .mr-label {
-  fill: var(--text);
-  font: 12px/1 var(--mono);
+  fill: #26343a;
+  font: 11px/1 var(--mono);
   paint-order: stroke;
-  stroke: #fff;
-  stroke-width: 3.5px;
+  stroke: rgba(255, 255, 255, 0.94);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+  opacity: 0.8;
   pointer-events: none;
 }
+
+/* A story node is the useful default map annotation. Ordinary entity labels
+   become secondary ink, so the marker remains visible without competing with
+   the terrain and location names. Selected/target labels get their stronger
+   weight from the rules below. */
+.mr-marker:not(.is-story) .mr-label { opacity: 0.58; }
 
 .mr-node .mr-label.is-hidden { visibility: hidden; }
 
@@ -391,7 +412,7 @@
    both pinned and hovered should read as the solid current target. */
 .mr-node.is-selected .mr-shape { stroke: var(--mr-pin); stroke-width: 2.4; stroke-dasharray: 3 2.2; }
 .mr-node.is-target .mr-shape { stroke: var(--mr-pin); stroke-width: 3; stroke-dasharray: none; }
-.mr-node.is-target .mr-label { font-weight: 700; }
+.mr-node.is-target .mr-label { font-weight: 700; opacity: 1; }
 .mr-node:focus { outline: none; }
 .mr-node:focus-visible .mr-shape { stroke: var(--accent); stroke-width: 3.5; }
 

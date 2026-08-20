@@ -9,7 +9,10 @@
   const MIN_SCALE = 0.3; // a whole region can span several zone maps of canvas
   const MAX_SCALE = 14;
   const PAN_OVERHANG = 96; // px of surface a pan may run past the content edge
-  const LABEL_ZOOM = 1.7; // minor labels stay hidden below this zoom
+  const LABEL_ZOOM = 1.7; // minor entity labels stay hidden below this zoom
+  const GEO_LABEL_ZOOM = 0.3; // keep one primary name per sibling at region view
+  const GEO_LOCAL_ZOOM = 1.25; // reveal local place names after the map is readable
+  const GEO_ALL_ZOOM = 2.2; // allow dense local names only when zoomed in
   const LABEL_CHAR = 7.3; // 12px monospace advance, used for overlap boxes
   const LABEL_LINE = 14;
   // Entity names are Chinese, and a CJK glyph fills a full-width monospace cell.
@@ -49,6 +52,7 @@
     kinds: new Set(),
     subKinds: new Set(),
     mapLayers: new Set(), // raw UILevelMapLoadConfig tier ids in the loaded region
+    showQuests: false,
     storyOnly: false,
     mission: "", // "" means every mission this level hosts
     // Relation lines are cliques: every pair of markers sharing a level-script
@@ -59,6 +63,7 @@
     bound: false,
     transform: { x: 0, y: 0, scale: 1 },
     nodes: [],
+    locationLabels: [],
     selectedId: "",
     previewId: "",
     inspectorKey: "",
@@ -75,7 +80,7 @@
     fileFlight: new Map(),
     edges: [],
     payloads: new Map(), // levelId -> payload; siblings of a region share the cache
-    backgrounds: [], // every region zone's map screen, in draw order (selected last)
+    backgrounds: [], // every region zone's map screen, in stable draw order
     layerBackgrounds: [], // transparent tier overlays, kept separate from base screens
     contentBox: null, // plotted content extent in viewBox units, for the pan clamp
     lastNodeScale: null, // skip per-node writes while a pan keeps the same scale
@@ -305,7 +310,7 @@
       layersAll: "All",
       layersNone: "None",
       layersStory: "With dialog",
-      layerSelectionHint: "Only layers with dialog are shown initially. Use All, None, or the layer chips to choose what appears on the map.",
+      layerSelectionHint: "The overview starts as a clean geographic map. Enable quests, dialog markers, or other layers when needed.",
       loadError: "Map recovery data could not be loaded",
       retry: "Retry",
       questRoute: "Quest route",
@@ -367,7 +372,7 @@
     zh: {
       mapLayers: "地图楼层",
       mapLayersNone: "该关卡的 UILevelMapLoadConfig 未声明楼层叠图。",
-      layerSelectionHint: "\u9ed8\u8ba4\u4ec5\u663e\u793a\u542b\u5bf9\u8bdd\u7684\u56fe\u5c42\u3002\u8bf7\u4f7f\u7528\u6309\u94ae\u6216\u56fe\u5c42\u6807\u7b7e\u9009\u62e9\u8981\u663e\u793a\u7684\u5185\u5bb9\u3002",
+      layerSelectionHint: "\u9ed8\u8ba4\u4ee5\u5e72\u51c0\u7684\u5730\u7406\u5730\u56fe\u663e\u793a\u3002\u9700\u8981\u65f6\u518d\u5f00\u542f\u4efb\u52a1\u3001\u5267\u60c5\u6216\u5176\u5b83\u6807\u8bb0\u3002",
       loadError: "\u65e0\u6cd5\u52a0\u8f7d\u5730\u56fe\u6062\u590d\u6570\u636e",
       retry: "\u91cd\u8bd5",
       title: "地图恢复",
@@ -732,20 +737,85 @@
         node.el.setAttribute("transform", `translate(${node.plot.x.toFixed(3)} ${node.plot.y.toFixed(3)}) scale(${nodeScale.toFixed(5)})`);
       }
     });
-    layoutLabels(m);
+    state.locationLabels.forEach((label) => {
+      label.px = toPixel(m, label.plot);
+      if (nodeScaleChanged && label.el) {
+        // Geographic labels use the same counter-scale as pins. They remain
+        // readable while zooming, and their collision boxes stay in screen px.
+        label.el.setAttribute("transform", `translate(${label.plot.x.toFixed(3)} ${label.plot.y.toFixed(3)}) scale(${nodeScale.toFixed(5)})`);
+      }
+    });
+    const labelBoxes = layoutLocationLabels(m);
+    layoutLabels(m, labelBoxes);
     const readout = host.querySelector(".mr-zoom-readout");
     if (readout) readout.textContent = `${t("zoomLevel")} ${Math.round(scale * 100)}%`;
     syncTip(m);
   }
 
-  function layoutLabels(m) {
+  function layoutLocationLabels(m) {
     const boxes = [];
+    const scale = state.transform.scale;
+    const hasMajor = state.locationLabels.some((label) => label.major);
+    const ranked = state.locationLabels.slice().sort((a, b) => {
+      // Major geographic labels claim space before local names. Stable
+      // position ordering prevents labels from flickering during a pan.
+      return Number(b.major) - Number(a.major) || b.labelPx - a.labelPx || a.id.localeCompare(b.id);
+    });
+    ranked.forEach((label) => {
+      if (!label.el || !label.px) return;
+      const onScreen = label.px.x > -100 && label.px.x < m.width + 100 && label.px.y > -80 && label.px.y < m.height + 80;
+      // At region scale keep only major anchors. A map that has no explicit
+      // region-tier labels still gets useful names, but only one collision-free
+      // set of local names is admitted until the reader zooms in.
+      // A family without explicit region-tier labels (for example map01's
+      // local `sub01_location_tips`) still needs a readable anchor at the
+      // initial fitted scale, so allow the collision pass from the minimum
+      // zoom instead of making that otherwise valid map nameless.
+      const threshold = label.major ? GEO_LABEL_ZOOM : (!hasMajor ? MIN_SCALE : GEO_LOCAL_ZOOM);
+      let visible = onScreen && scale >= threshold;
+      if (visible) {
+        const box = {
+          x: label.px.x - label.labelPx / 2,
+          y: label.px.y - LABEL_LINE,
+          w: label.labelPx,
+          h: LABEL_LINE,
+        };
+        if (boxes.some((other) => box.x < other.x + other.w + 4 && other.x < box.x + box.w + 4 && box.y < other.y + other.h + 4 && other.y < box.y + box.h + 4)) visible = false;
+        else boxes.push(box);
+      }
+      label.el.classList.toggle("is-hidden", !visible);
+      label.el.classList.toggle("is-major", !!label.major);
+    });
+    // At close zoom, the labels are still deliberately collision-filtered, but
+    // a denser set is permitted. This second pass only affects the visibility
+    // threshold; the same boxes keep the rendering deterministic.
+    if (scale >= GEO_ALL_ZOOM) {
+      ranked.forEach((label) => {
+        if (!label.el || !label.px || !label.el.classList.contains("is-hidden")) return;
+        const box = { x: label.px.x - label.labelPx / 2, y: label.px.y - LABEL_LINE, w: label.labelPx, h: LABEL_LINE };
+        if (label.px.x > -100 && label.px.x < m.width + 100 && label.px.y > -80 && label.px.y < m.height + 80
+          && !boxes.some((other) => box.x < other.x + other.w + 4 && other.x < box.x + box.w + 4 && box.y < other.y + other.h + 4 && other.y < box.y + box.h + 4)) {
+          boxes.push(box);
+          label.el.classList.remove("is-hidden");
+        }
+      });
+    }
+    return boxes;
+  }
+
+  function layoutLabels(m, seedBoxes = []) {
+    const boxes = seedBoxes;
     const targetId = inspectorTargetId();
     const ranked = state.nodes.slice().sort((a, b) => priority(b) - priority(a));
     ranked.forEach((node) => {
       if (!node.labelEl) return;
       const onScreen = node.px.x > -80 && node.px.x < m.width + 80 && node.px.y > -60 && node.px.y < m.height + 60;
-      let visible = onScreen && (priority(node) >= 2 || state.transform.scale >= LABEL_ZOOM);
+      const nodePriority = priority(node);
+      // The geographic layer is the map's primary language. Entity names are
+      // interaction aids: reveal them on selection/hover, then progressively
+      // at closer zooms instead of turning a regional surface into a text wall.
+      const threshold = node.type === "quest" ? 1.25 : LABEL_ZOOM;
+      let visible = onScreen && (nodePriority >= 4 || state.transform.scale >= threshold);
       // Labels sit to the right of their marker by default. Near the right edge
       // that clips them, so they flip to the other side instead. Node contents
       // are counter-scaled to container pixels, so the offset is in px.
@@ -760,9 +830,9 @@
           w: node.labelPx,
           h: LABEL_LINE,
         };
-        // Highest-priority labels claim their box first, so the selected,
-        // hovered and story labels are never the ones culled.
-        if (boxes.some((other) => box.x < other.x + other.w + 2 && other.x < box.x + box.w + 2 && box.y < other.y + other.h + 2 && other.y < box.y + box.h + 2)) visible = false;
+        // Explicitly selected/hovered nodes stay readable even over a place
+        // name; ordinary labels yield to geographic labels and earlier pins.
+        if (nodePriority < 4 && boxes.some((other) => box.x < other.x + other.w + 2 && other.x < box.x + box.w + 2 && box.y < other.y + other.h + 2 && other.y < box.y + box.h + 2)) visible = false;
         else boxes.push(box);
       }
       node.labelEl.classList.toggle("is-hidden", !visible);
@@ -1038,7 +1108,7 @@
 
   function layoutLabelsSafely() {
     const m = metrics();
-    if (m) layoutLabels(m);
+    if (m) layoutLabels(m, layoutLocationLabels(m));
   }
 
   // ---------------------------------------------------------------- rendering
@@ -1057,7 +1127,7 @@
       const ids = row.mapLayerIds || [];
       return ids.length ? ids.some((id) => state.mapLayers.has(id)) : true;
     };
-    const questRows = (data.questPoints || [])
+    const questRows = (state.showQuests ? (data.questPoints || []) : [])
       .filter((row) => inMission(row) && inMapLayer(row))
       .map((row) => ({ ...row, type: "quest", position: finitePosition(row.position) }))
       .filter((row) => row.position);
@@ -1182,13 +1252,31 @@
       .join("");
     // Level display names describe gameplay scenes, not geographic ownership
     // of the whole (overlapping) map-screen rectangle. Location labels come
-    // from the map UI's own staticElements text anchors instead.
-    const locationLabelSvg = (data.locationLabels || []).map((row) => {
+    // from the map UI's own staticElements text anchors instead. Keep them as
+    // a separate, low-density layer: geographic names are always preferable
+    // to entity ids when the reader is looking at a regional surface.
+    // Each sibling config's `_tips_1` is its primary place anchor. Treating
+    // every `regiontoast` row as major made the region overview a wall of 70+
+    // equally loud labels.
+    const locationMajor = (row) => /_tips_1$/i.test(String(row.textId || ""));
+    state.locationLabels = (data.locationLabels || []).map((row, index) => {
       const position = finitePosition(row.position);
-      if (!position || !row.text) return "";
+      if (!position || !row.text) return null;
       const p = plot(position);
-      return `<text class="mr-location-label" x="${p.x.toFixed(2)}" y="${p.y.toFixed(2)}">${esc(row.text)}</text>`;
-    }).join("");
+      const labelText = String(row.text).trim();
+      return {
+        ...row,
+        id: String(row.id || `${row.textId || "location"}:${index}`),
+        position,
+        plot: p,
+        labelText,
+        labelPx: labelWidth(labelText),
+        major: locationMajor(row),
+        px: { x: 0, y: 0 },
+        el: null,
+      };
+    }).filter(Boolean);
+    const locationLabelSvg = state.locationLabels.map((row, index) => `<text class="mr-location-label${row.major ? " is-major" : ""}" data-location-label="${index}" x="0" y="4" aria-label="${esc(row.labelText)}"><title>${esc(row.labelText)}</title>${esc(row.labelText)}</text>`).join("");
     state.contentBox = state.nodes.length || bgRects.length
       ? (() => {
         let minXc = Infinity;
@@ -1320,7 +1408,7 @@
             ${["focus", "all", "off"].map((mode) => `<button type="button" data-map-relations="${mode}" aria-pressed="${state.relations === mode ? "true" : "false"}">${esc(t(`relations_${mode}`))}</button>`).join("")}
           </div>
           <p class="mr-note">${esc(t("relationsHint"))}</p>
-          <div class="mr-layers">${(data.questPoints || []).length ? `<label class="mr-layer"><input type="checkbox" checked disabled><span class="mr-swatch" style="background:${QUEST_COLOR}"></span>quest</label>` : ""}${layerControls}</div>
+          <div class="mr-layers">${(data.questPoints || []).length ? `<label class="mr-layer"><input type="checkbox" data-map-quests ${state.showQuests ? "checked" : ""}><span class="mr-swatch" style="background:${QUEST_COLOR}"></span>quest<span class="mr-layer-count">${data.questPoints.length}</span></label>` : ""}${layerControls}</div>
           <h2>${esc(t("evidence"))}</h2>
            <p class="mr-note"><b>${state.backgrounds.length}</b> ${esc(surfaceLabel)}</p>
           <p class="mr-note"><code>${esc(minimapBg.status || "unknown")}</code>${minimapBg.src
@@ -1450,10 +1538,15 @@
       const kinds = state.map?.facets?.kinds || {};
       const keep = ([kind, info]) => (mode === "all" ? true : mode === "story" ? info.storyCount > 0 : false);
       state.storyOnly = mode === "story";
+      state.showQuests = mode === "all";
       state.kinds = new Set(Object.entries(kinds).filter(keep).map(([kind]) => kind));
       state.subKinds = allSubKinds(state.map);
       render();
     }));
+    host.querySelector("[data-map-quests]")?.addEventListener("change", (event) => {
+      state.showQuests = event.currentTarget.checked;
+      render();
+    });
 
     const map = host.querySelector(".mr-map");
     if (!map) return;
@@ -1484,6 +1577,10 @@
         event.stopPropagation();
         selectNode(id);
       });
+    });
+    host.querySelectorAll("[data-location-label]").forEach((label) => {
+      const index = Number(label.dataset.locationLabel);
+      if (Number.isInteger(index) && state.locationLabels[index]) state.locationLabels[index].el = label;
     });
 
     map.addEventListener("pointerdown", beginPan);
@@ -1653,10 +1750,12 @@
 
   // Every level of one region (map01, map02, base01, ...) is authored in the
   // same world coordinate space, and each zone's map screen also depicts its
-  // neighbours. The first view loads only the selected zone; choosing another
-  // zone explicitly loads the rest of that region and restores the seamless
-  // stitched surface without making the initial page pay for every sibling.
+  // neighbours. The main regional surfaces (map01 / map02) are loaded as a
+  // complete set on first open, so opening 武陵城 or 四号谷地 cannot show an
+  // isolated island until the user changes the level selector. Other levels
+  // remain on-demand to keep the initial payload bounded.
   const regionKey = (id) => (String(id).includes("_lv") ? String(id).split("_lv")[0] : String(id));
+  const stitchOnInitialOpen = (id) => ["map01", "map02"].includes(regionKey(id));
 
   async function ensurePayload(row) {
     if (!state.payloads.has(row.id)) {
@@ -1775,13 +1874,13 @@
 
   // ---------------------------------------------------------------- lifecycle
 
-  async function loadMap(id, { includeRegion = !!state.map } = {}) {
+  async function loadMap(id, { includeRegion = !!state.map || stitchOnInitialOpen(id) } = {}) {
     const row = (state.index?.maps || []).find((item) => item.id === id) || state.index?.maps?.[0];
     if (!row) return false;
     const key = regionKey(row.id);
-    // Keep initial activation on demand. Once the reader explicitly changes
-    // zones, load the siblings in parallel so the existing stitched-region
-    // behavior remains available for deliberate navigation.
+    // Main regional maps are stitched from their complete sibling set even
+    // on initial activation. For other families the existing on-demand rule
+    // keeps a first view from fetching every unrelated sibling.
     const memberRows = includeRegion
       ? (state.index?.maps || []).filter((item) => regionKey(item.id) === key)
       : [row];
@@ -1812,12 +1911,11 @@
         worldBounds: regionBounds,
       };
     }
-    // Do not render every marker on first open. Large levels can contain
-    // several thousand entities; dialog-bearing layers are the smallest
-    // useful starting point and the layer controls make the broader views
-    // explicit user choices.
-    state.kinds = storyKinds(state.map);
+    // Start as a geographic map. A region can contain thousands of entities
+    // and quest points; the explicit layer controls opt those overlays in.
+    state.kinds = new Set();
     state.subKinds = allSubKinds(state.map);
+    state.showQuests = false;
     // Multi-floor maps must not begin as a stack of every transparent tier.
     // Start on one authored floor and let the reader opt into comparisons.
     // Prefer the selected sub-map's first authored tier even though region
@@ -1827,7 +1925,7 @@
     state.mapLayers = initialMapLayer
       ? new Set([String(initialMapLayer.id)])
       : new Set();
-    state.storyOnly = true;
+    state.storyOnly = false;
     state.mission = "";
     state.transform = { x: 0, y: 0, scale: 1 };
     state.pendingFit = true;
@@ -1889,7 +1987,8 @@
       // Payloads are fetched in parallel by loadMap. Keep the shared loader
       // indeterminate while those files are being decoded and merged.
       window.WebUI?.updateLoader?.("map-recovery", null, t("loading"));
-      const loaded = await loadMap(state.selected || state.index.defaultMap, { includeRegion: false });
+      const initialId = state.selected || state.index.defaultMap;
+      const loaded = await loadMap(initialId, { includeRegion: stitchOnInitialOpen(initialId) });
       if (request !== state.loadRequest) return null;
       window.WebUI?.updateLoader?.("map-recovery", 1, t("loading"));
       return loaded;
