@@ -65,8 +65,11 @@ class SecondaryDynamicsAccessedLayoutTests(unittest.TestCase):
         )
         self.assertEqual(payload["methodEvidence"][0]["bodySha256"],
                          "149382eea39d5d1a3ca0e27ed701a665f51406664766283b070305adc52050b5")
-        self.assertEqual(payload["methodEvidence"][2]["accesses"][0]["accessedOffsets"],
-                         ["0x4", "0x8", "0xc", "0x14"])
+        wind_info = payload["methodEvidence"][2]["accesses"][0]
+        self.assertEqual(
+            sorted({row["displacement"] for row in wind_info["decodedAccesses"]}),
+            ["0x14", "0x4", "0x8", "0xc"],
+        )
 
     def test_common_gate_receives_explicit_overrides(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
@@ -102,6 +105,16 @@ class SecondaryDynamicsAccessedLayoutTests(unittest.TestCase):
         ):
             with self.assertRaisesRegex(builder.ContractError, "mismatched"):
                 builder._native_gate(None, None)
+
+    def test_fake_access_and_short_span_fail_closed(self) -> None:
+        argument = [{"name": "v", "type": "float3", "root": "rdi", "maxPayloadBytes": 12}]
+        with self.assertRaisesRegex(builder.ContractError, "outside payload"):
+            builder._validate_argument_accesses(
+                argument,
+                [{"base": "rdi", "displacementValue": 12, "widthBytes": 4, "instructionOffset": "0x0", "access": "read"}],
+            )
+        with self.assertRaisesRegex(builder.ContractError, "invalid helper span"):
+            builder._scan_argument_memory(None, 0x1000, 0x1000, {"rdi"})
 
 
 if __name__ == "__main__":

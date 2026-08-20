@@ -759,37 +759,153 @@
         {
           "name": "springParams",
           "type": "BeyondDynamicBone.SpringConstraint+SpringConstraintParams",
-          "accessedOffsets": [
-            "0x0",
-            "0x4",
-            "0x8",
-            "0xc"
-          ]
+          "root": "rdi",
+          "maxPayloadBytes": 16,
+          "decodedAccesses": [
+            {
+              "instructionOffset": "0x1db",
+              "base": "rdi",
+              "displacement": "0x4",
+              "displacementValue": 4,
+              "widthBytes": 4,
+              "access": "read"
+            },
+            {
+              "instructionOffset": "0x28a",
+              "base": "rdi",
+              "displacement": "0x8",
+              "displacementValue": 8,
+              "widthBytes": 4,
+              "access": "read"
+            },
+            {
+              "instructionOffset": "0x35d",
+              "base": "rdi",
+              "displacement": "0x8",
+              "displacementValue": 8,
+              "widthBytes": 4,
+              "access": "read"
+            },
+            {
+              "instructionOffset": "0x427",
+              "base": "rdi",
+              "displacement": "0xc",
+              "displacementValue": 12,
+              "widthBytes": 4,
+              "access": "read"
+            },
+            {
+              "instructionOffset": "0x42f",
+              "base": "rdi",
+              "displacement": "0x0",
+              "displacementValue": 0,
+              "widthBytes": 4,
+              "access": "read"
+            },
+            {
+              "instructionOffset": "0x442",
+              "base": "rdi",
+              "displacement": "0xc",
+              "displacementValue": 12,
+              "widthBytes": 4,
+              "access": "read"
+            }
+          ],
+          "classification": "decoded_bounded_accesses"
         },
         {
           "name": "nextPos",
           "type": "Unity.Mathematics.double3",
-          "accessedOffsets": [
-            "0x0",
-            "0x10"
-          ]
+          "root": "r14",
+          "maxPayloadBytes": 24,
+          "decodedAccesses": [
+            {
+              "instructionOffset": "0x97",
+              "base": "r14",
+              "displacement": "0x0",
+              "displacementValue": 0,
+              "widthBytes": 16,
+              "access": "read"
+            },
+            {
+              "instructionOffset": "0xa0",
+              "base": "r14",
+              "displacement": "0x10",
+              "displacementValue": 16,
+              "widthBytes": 8,
+              "access": "read"
+            },
+            {
+              "instructionOffset": "0x4ff",
+              "base": "r14",
+              "displacement": "0x0",
+              "displacementValue": 0,
+              "widthBytes": 16,
+              "access": "write"
+            },
+            {
+              "instructionOffset": "0x503",
+              "base": "r14",
+              "displacement": "0x10",
+              "displacementValue": 16,
+              "widthBytes": 8,
+              "access": "write"
+            }
+          ],
+          "classification": "decoded_bounded_accesses"
         },
         {
           "name": "basePos",
           "type": "Unity.Mathematics.double3",
-          "accessedOffsets": [
-            "0x0",
-            "0x10"
-          ]
+          "root": "r15",
+          "maxPayloadBytes": 24,
+          "decodedAccesses": [
+            {
+              "instructionOffset": "0x88",
+              "base": "r15",
+              "displacement": "0x0",
+              "displacementValue": 0,
+              "widthBytes": 16,
+              "access": "read"
+            },
+            {
+              "instructionOffset": "0x8c",
+              "base": "r15",
+              "displacement": "0x10",
+              "displacementValue": 16,
+              "widthBytes": 8,
+              "access": "read"
+            },
+            {
+              "instructionOffset": "0x4d8",
+              "base": "r15",
+              "displacement": "0x0",
+              "displacementValue": 0,
+              "widthBytes": 16,
+              "access": "read"
+            },
+            {
+              "instructionOffset": "0x4e1",
+              "base": "r15",
+              "displacement": "0x10",
+              "displacementValue": 16,
+              "widthBytes": 8,
+              "access": "read"
+            }
+          ],
+          "classification": "decoded_bounded_accesses"
         },
         {
           "name": "baseRot",
           "type": "Unity.Mathematics.quaternion",
-          "accessedOffsets": [
-            "0x0"
-          ]
+          "root": "opaque",
+          "maxPayloadBytes": 16,
+          "opaqueOnly": true,
+          "decodedAccesses": [],
+          "classification": "writeback_pointer_unresolved"
         }
-      ]
+      ],
+      "canonicalStaticContractSha256": "102361db8cca663e826c225fdbe6dbb7e0cea6f32bcb0b9f098ad4d51b4b0bed"
     },
     {
       "methodIndex": 385699,
@@ -803,22 +919,55 @@
         {
           "name": "windParams",
           "type": "BeyondDynamicBone.WindParams",
-          "accessedOffsets": [
-            "0x0",
-            "0x10",
-            "0x14",
-            "0x18"
-          ]
+          "root": "rbx",
+          "maxPayloadBytes": 28,
+          "decodedAccesses": [
+            {
+              "instructionOffset": "0xbb",
+              "base": "rbx",
+              "displacement": "0x10",
+              "displacementValue": 16,
+              "widthBytes": 4,
+              "access": "read"
+            },
+            {
+              "instructionOffset": "0x2d4",
+              "base": "rbx",
+              "displacement": "0x18",
+              "displacementValue": 24,
+              "widthBytes": 4,
+              "access": "read"
+            },
+            {
+              "instructionOffset": "0x391",
+              "base": "rbx",
+              "displacement": "0x0",
+              "displacementValue": 0,
+              "widthBytes": 4,
+              "access": "read"
+            },
+            {
+              "instructionOffset": "0x395",
+              "base": "rbx",
+              "displacement": "0x14",
+              "displacementValue": 20,
+              "widthBytes": 4,
+              "access": "read"
+            }
+          ],
+          "classification": "decoded_bounded_accesses"
         },
         {
           "name": "result",
           "type": "Unity.Mathematics.float3",
-          "accessedOffsets": [
-            "0x0",
-            "0x8"
-          ]
+          "root": "result",
+          "maxPayloadBytes": 12,
+          "opaqueBoundary": true,
+          "decodedAccesses": [],
+          "classification": "writeback_pointer_unresolved"
         }
-      ]
+      ],
+      "canonicalStaticContractSha256": "102361db8cca663e826c225fdbe6dbb7e0cea6f32bcb0b9f098ad4d51b4b0bed"
     },
     {
       "methodIndex": 385700,
@@ -832,40 +981,146 @@
         {
           "name": "windInfo",
           "type": "BeyondDynamicBone.TeamWindInfo",
-          "accessedOffsets": [
-            "0x4",
-            "0x8",
-            "0xc",
-            "0x14"
-          ]
+          "root": "rbx",
+          "maxPayloadBytes": 24,
+          "decodedAccesses": [
+            {
+              "instructionOffset": "0x56",
+              "base": "rbx",
+              "displacement": "0x8",
+              "displacementValue": 8,
+              "widthBytes": 4,
+              "access": "read"
+            },
+            {
+              "instructionOffset": "0x6e",
+              "base": "rbx",
+              "displacement": "0x4",
+              "displacementValue": 4,
+              "widthBytes": 4,
+              "access": "read"
+            },
+            {
+              "instructionOffset": "0xbd",
+              "base": "rbx",
+              "displacement": "0x4",
+              "displacementValue": 4,
+              "widthBytes": 4,
+              "access": "read"
+            },
+            {
+              "instructionOffset": "0x20f",
+              "base": "rbx",
+              "displacement": "0xc",
+              "displacementValue": 12,
+              "widthBytes": 8,
+              "access": "read"
+            },
+            {
+              "instructionOffset": "0x218",
+              "base": "rbx",
+              "displacement": "0x14",
+              "displacementValue": 20,
+              "widthBytes": 4,
+              "access": "read"
+            }
+          ],
+          "classification": "decoded_bounded_accesses"
         },
         {
           "name": "windParams",
           "type": "BeyondDynamicBone.WindParams",
-          "accessedOffsets": [
-            "0x8",
-            "0xc"
-          ]
+          "root": "rsi",
+          "maxPayloadBytes": 28,
+          "decodedAccesses": [
+            {
+              "instructionOffset": "0x163",
+              "base": "rsi",
+              "displacement": "0xc",
+              "displacementValue": 12,
+              "widthBytes": 4,
+              "access": "read"
+            },
+            {
+              "instructionOffset": "0x18a",
+              "base": "rsi",
+              "displacement": "0x8",
+              "displacementValue": 8,
+              "widthBytes": 4,
+              "access": "read"
+            },
+            {
+              "instructionOffset": "0x1bd",
+              "base": "rsi",
+              "displacement": "0xc",
+              "displacementValue": 12,
+              "widthBytes": 4,
+              "access": "read"
+            }
+          ],
+          "classification": "decoded_bounded_accesses"
         },
         {
           "name": "windPos",
           "type": "Unity.Mathematics.float3",
-          "accessedOffsets": [
-            "0x0",
-            "0x8"
-          ]
+          "root": "rdi",
+          "maxPayloadBytes": 12,
+          "decodedAccesses": [
+            {
+              "instructionOffset": "0x77",
+              "base": "rdi",
+              "displacement": "0x0",
+              "displacementValue": 0,
+              "widthBytes": 8,
+              "access": "read"
+            },
+            {
+              "instructionOffset": "0x7f",
+              "base": "rdi",
+              "displacement": "0x8",
+              "displacementValue": 8,
+              "widthBytes": 4,
+              "access": "read"
+            },
+            {
+              "instructionOffset": "0xc6",
+              "base": "rdi",
+              "displacement": "0x0",
+              "displacementValue": 0,
+              "widthBytes": 8,
+              "access": "read"
+            },
+            {
+              "instructionOffset": "0xe0",
+              "base": "rdi",
+              "displacement": "0x8",
+              "displacementValue": 8,
+              "widthBytes": 4,
+              "access": "read"
+            }
+          ],
+          "classification": "decoded_bounded_accesses"
         },
         {
           "name": "result",
           "type": "Unity.Mathematics.float3",
-          "accessedOffsets": [
-            "0x0",
-            "0x8"
-          ]
+          "root": "result",
+          "maxPayloadBytes": 12,
+          "opaqueBoundary": true,
+          "decodedAccesses": [],
+          "classification": "writeback_pointer_unresolved"
         }
-      ]
+      ],
+      "canonicalStaticContractSha256": "102361db8cca663e826c225fdbe6dbb7e0cea6f32bcb0b9f098ad4d51b4b0bed"
     }
   ],
+  "canonicalStaticContract": {
+    "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_solver_static_contract.json",
+    "sha256": "102361db8cca663e826c225fdbe6dbb7e0cea6f32bcb0b9f098ad4d51b4b0bed",
+    "status": "native_spans_hash_pinned",
+    "sourceHashesCrossChecked": true,
+    "nextPointersRecomputed": true
+  },
   "boundary": {
     "largeElementInputs": "TeamData, CenterData, and other NativeArray element layouts remain owned by secondary_dynamics_element_layout_contract.json.",
     "genericInputs": "No generic element field is directly addressed by Spring, Wind, or WindForceBlend; NativeArray/NativeReference remain outer job-payload boundaries.",
