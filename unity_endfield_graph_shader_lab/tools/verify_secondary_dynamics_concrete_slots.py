@@ -21,6 +21,10 @@ LAB_ROOT = TOOLS_ROOT.parent
 SOURCE_ROOT = LAB_ROOT / "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation"
 JOB_OUTPUT = SOURCE_ROOT / "secondary_dynamics_job_layout_contract.json"
 INNER_OUTPUT = SOURCE_ROOT / "secondary_dynamics_inner_layout_contract.json"
+EXPECTED_GENERIC_FIELD_COUNTS = {
+    "NativeArray": 59,
+    "NativeReference": 4,
+}
 
 if str(TOOLS_ROOT) not in sys.path:
     sys.path.insert(0, str(TOOLS_ROOT))
@@ -110,8 +114,11 @@ def _validate_combined(job: dict[str, Any], inner: dict[str, Any]) -> dict[str, 
                 )
             widths[kind].add(width)
 
-    if not all(counts.values()):
-        raise ContractError(f"generic field coverage is incomplete: {counts}")
+    if counts != EXPECTED_GENERIC_FIELD_COUNTS:
+        raise ContractError(
+            "generic field coverage drift: "
+            f"expected {EXPECTED_GENERIC_FIELD_COUNTS}, actual {counts}"
+        )
     # These are exact facts about the four pinned closed job instances.  They
     # do not alter the unresolved generic nativeSizeBytes boundary above.
     for kind, observed in widths.items():
