@@ -8,6 +8,7 @@
   const PAD = 64;
   const MIN_SCALE = 0.3; // a whole region can span several zone maps of canvas
   const MAX_SCALE = 48;
+  const MAP_ASSET_VERSION = "20260820-map30";
   const PAN_OVERHANG = 96; // px of surface a pan may run past the content edge
   const LABEL_ZOOM = 1.7; // minor entity labels stay hidden below this zoom
   const GEO_LABEL_ZOOM = 0.3; // keep one primary name per sibling at region view
@@ -1340,7 +1341,7 @@
     // Keep the source alpha intact so the region surface has one consistent
     // tone; transparency still exposes the map background below.
     const backgroundImages = bgRects
-      .map(({ bg, x, y, w, h }) => `<image class="mr-bg-image" href="data/map_recovery/${esc(bg.src)}" x="${x.toFixed(2)}" y="${y.toFixed(2)}" width="${w.toFixed(2)}" height="${h.toFixed(2)}"><title>${esc(bg.levelId)}</title></image>`)
+      .map(({ bg, x, y, w, h }) => `<image class="mr-bg-image" href="data/map_recovery/${esc(bg.src)}?v=${MAP_ASSET_VERSION}" x="${x.toFixed(2)}" y="${y.toFixed(2)}" width="${w.toFixed(2)}" height="${h.toFixed(2)}"><title>${esc(bg.levelId)}</title></image>`)
       .join("");
     // Level display names describe gameplay scenes, not geographic ownership
     // of the whole (overlapping) map-screen rectangle. Location labels come
@@ -1454,8 +1455,7 @@
           <button type="button" data-map-reset aria-label="${esc(t("resetLong"))}" title="${esc(t("resetLong"))}">${esc(t("reset"))}</button>
           <span class="mr-zoom-readout" role="status" aria-live="polite"></span>
         </div>
-        ${mapLayerControls ? `<div class="mr-floor-dock">${mapLayerControls}</div>` : ""}
-        <p class="mr-help">${esc(t("help"))}</p>
+        <div class="mr-floor-dock${mapLayerControls ? "" : " is-help-only"}">${mapLayerControls}<p class="mr-floor-help">${esc(t("help"))}</p></div>
         <div class="mr-axis">+Z -> X -></div>
         ${state.nodes.length || bgRects.length || state.locationLabels.length ? "" : `<p class="mr-empty">${esc(t("noNodes"))}</p>`}
       </div>
@@ -1854,7 +1854,7 @@
 
   async function ensurePayload(row) {
     if (!state.payloads.has(row.id)) {
-      state.payloads.set(row.id, await fetchJson(`data/map_recovery/${row.src}`));
+      state.payloads.set(row.id, await fetchJson(`data/map_recovery/${row.src}`, { cache: "no-store" }));
     }
     return state.payloads.get(row.id);
   }
