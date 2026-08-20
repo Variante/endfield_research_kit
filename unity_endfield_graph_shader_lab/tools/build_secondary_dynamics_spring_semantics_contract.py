@@ -199,6 +199,12 @@ CONSTANT_TARGETS: tuple[tuple[int, int, str, int], ...] = (
     (0x447, 0x18B959530, "float32", 4),
     (0x45E, 0x18B959248, "float64", 8),
 )
+CONSTANT_INSTRUCTION_BYTES = {
+    0xB6: "f30f103d5e361e05",
+    0x1E1: "440f2f05e7361e05",
+    0x447: "f30f590dfd351e05",
+    0x45E: "660f2f05fe321e05",
+}
 
 # Memory sites are declared with the semantic owner derived from the job and
 # method signatures.  The verifier decodes the base register, displacement and
@@ -292,8 +298,10 @@ def _decode_memory(data: bytes, offset: int) -> dict[str, Any]:
         displacement = struct.unpack_from("<i", data, pos)[0]; pos += 4
     else:
         displacement = 0
+    direction = "write" if opcode == 0x0F and opcode2 == 0x11 else "read"
     return {"base": None if base < 0 else _reg_name(base),
             "displacement": displacement, "widthBytes": width,
+            "direction": direction,
             "instructionBytes": data[offset:pos].hex()}
 
 
@@ -305,13 +313,21 @@ def _branch_bytes(body: bytes, offset: int) -> tuple[str, int, str]:
         if offset + 6 > len(body) or not 0x80 <= body[offset + 1] <= 0x8F:
             raise ContractError(f"invalid near branch at 0x{offset:x}")
         displacement = struct.unpack_from("<i", body, offset + 2)[0]
-        return ("jcc", offset + 6 + displacement, body[offset:offset + 6].hex())
+        mnemonic = {0x84: "je", 0x85: "jne", 0x86: "jbe", 0x87: "ja"}.get(body[offset + 1])
+        if mnemonic is None:
+            raise ContractError(f"unsupported near condition opcode at 0x{offset:x}")
+        return (mnemonic, offset + 6 + displacement, body[offset:offset + 6].hex())
     if 0x70 <= first <= 0x7F or first == 0xEB:
         if offset + 2 > len(body):
             raise ContractError(f"invalid short branch at 0x{offset:x}")
         displacement = struct.unpack_from("<b", body, offset + 1)[0]
-        return ("jcc" if first != 0xEB else "jmp", offset + 2 + displacement,
-                body[offset:offset + 2].hex())
+        if first == 0xEB:
+            mnemonic = "jmp"
+        else:
+            mnemonic = {0x74: "je", 0x75: "jne", 0x76: "jbe", 0x77: "ja"}.get(first)
+            if mnemonic is None:
+                raise ContractError(f"unsupported short condition opcode at 0x{offset:x}")
+        return (mnemonic, offset + 2 + displacement, body[offset:offset + 2].hex())
     if first == 0xE9:
         if offset + 5 > len(body):
             raise ContractError(f"invalid near jmp at 0x{offset:x}")
@@ -339,6 +355,12 @@ def _constant_site(body: bytes, method_va: int, offset: int, expected_target: in
             f"constant site 0x{offset:x} target drift: 0x{actual_target:x} != 0x{expected_target:x}"
         )
     raw = body[offset:offset + 8]
+    expected_bytes = CONSTANT_INSTRUCTION_BYTES[offset]
+    if raw.hex() != expected_bytes:
+        raise ContractError(
+            f"constant site 0x{offset:x} opcode/prefix/ModRM drift: "
+            f"actual={raw.hex()} expected={expected_bytes}"
+        )
     if value_kind == "float32":
         value = struct.unpack("<f", _read_native_bytes(expected_target, width))[0]
     else:
@@ -361,9 +383,11 @@ def _verify_memory_sites(body: bytes) -> list[dict[str, Any]]:
     result: list[dict[str, Any]] = []
     for offset, owner, register, displacement, width, access in MEMORY_SITES:
         decoded = _decode_memory(body, offset)
-        if decoded["base"] != register or decoded["displacement"] != displacement or decoded["widthBytes"] != width:
+        if (decoded["base"] != register or decoded["displacement"] != displacement
+                or decoded["widthBytes"] != width or decoded["direction"] != access):
             raise ContractError(
-                f"memory site 0x{offset:x} drift: {decoded} expected {register}+0x{displacement:x}/{width}"
+                f"memory site 0x{offset:x} drift: actual={decoded} expected="
+                f"{register}+0x{displacement:x}/{width}/{access}"
             )
         result.append({
             "instructionOffset": f"0x{offset:x}", "owner": owner,
@@ -424,10 +448,11 @@ def _verify_method(static: Any, gameassembly: Path, metadata: Path, static_contr
         decoded_mnemonic, actual_target, instruction_bytes = _branch_bytes(body, offset)
         if actual_target != target_offset:
             raise ContractError(f"Spring branch 0x{offset:x} target drift")
-        if mnemonic == "jmp" and decoded_mnemonic != "jmp":
-            raise ContractError(f"Spring branch 0x{offset:x} mnemonic drift")
-        if mnemonic != "jmp" and decoded_mnemonic != "jcc":
-            raise ContractError(f"Spring branch 0x{offset:x} condition drift")
+        if decoded_mnemonic != mnemonic:
+            raise ContractError(
+                f"Spring branch 0x{offset:x} condition drift: "
+                f"actual={decoded_mnemonic} expected={mnemonic}"
+            )
         branches.append({"instructionOffset": f"0x{offset:x}", "mnemonic": mnemonic,
                          "targetOffset": f"0x{target_offset:x}", "instructionBytes": instruction_bytes})
 
@@ -469,6 +494,17 @@ def _verify_method(static: Any, gameassembly: Path, metadata: Path, static_contr
         "argumentAbi": argument_abi,
         "directCalls": calls, "branches": branches, "constants": constants,
         "memoryAccesses": accesses,
+        "memoryAccessCensus": {
+            "status": "bounded_related_operands_closed",
+            "registerBasedValueAndJobSites": len(accesses),
+            "stackArgumentSites": [row for row in argument_abi if row["location"].startswith("[rbp+")],
+            "ripRelativeConstantSites": len(constants),
+            "unclassifiedBoundary": (
+                "Prologue/epilogue spills, stack temporaries, runtime metadata flags, and "
+                "helper-internal scratch addresses are not semantic value/job accesses; "
+                "they remain bounded by the pinned body hash and are not promoted to fields."
+            ),
+        },
         "nativeArrayAccesses": [],
         "arrayStrideStatus": "not_applicable_helper_has_no_nativearray_operand",
         "valueTypeLayouts": [spring_params_layout],
@@ -524,6 +560,33 @@ def _markdown(contract: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def _first_diff(expected: Any, actual: Any, path: str = "$") -> tuple[str, str, str] | None:
+    if type(expected) is not type(actual):
+        return path, type(expected).__name__, type(actual).__name__
+    if isinstance(expected, dict):
+        for key in sorted(set(expected) | set(actual)):
+            child = f"{path}.{key}"
+            if key not in expected:
+                return child, "<missing>", repr(actual[key])[:240]
+            if key not in actual:
+                return child, repr(expected[key])[:240], "<missing>"
+            found = _first_diff(expected[key], actual[key], child)
+            if found is not None:
+                return found
+        return None
+    if isinstance(expected, list):
+        for index, (left, right) in enumerate(zip(expected, actual)):
+            found = _first_diff(left, right, f"{path}[{index}]")
+            if found is not None:
+                return found
+        if len(expected) != len(actual):
+            return f"{path}.length", str(len(expected)), str(len(actual))
+        return None
+    if expected != actual:
+        return path, repr(expected)[:240], repr(actual)[:240]
+    return None
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--gameassembly", type=Path, default=DEFAULT_GAME_ASSEMBLY)
@@ -535,17 +598,31 @@ def main() -> int:
     try:
         contract = build_contract(args.gameassembly, args.metadata)
     except (ContractError, OSError, ValueError, KeyError, json.JSONDecodeError) as exc:
-        print(f"[secondary-dynamics-spring] {exc}", file=sys.stderr)
+        print(f"[secondary-dynamics-spring] source={args.output} {exc}", file=sys.stderr)
         return 2
     if args.check:
         if not args.output.is_file() or not args.markdown.is_file():
             print("[secondary-dynamics-spring] checked-in output is missing", file=sys.stderr)
             return 2
-        if json.loads(args.output.read_text(encoding="utf-8")) != contract:
-            print("[secondary-dynamics-spring] JSON output is stale", file=sys.stderr)
+        checked_json = json.loads(args.output.read_text(encoding="utf-8"))
+        difference = _first_diff(contract, checked_json)
+        if difference is not None:
+            path, expected, actual = difference
+            print(
+                f"[secondary-dynamics-spring] JSON output is stale: source={args.output} "
+                f"path={path} expected={expected} actual={actual}",
+                file=sys.stderr,
+            )
             return 2
-        if args.markdown.read_text(encoding="utf-8") != _markdown(contract):
-            print("[secondary-dynamics-spring] Markdown output is stale", file=sys.stderr)
+        expected_markdown = _markdown(contract)
+        actual_markdown = args.markdown.read_text(encoding="utf-8")
+        if actual_markdown != expected_markdown:
+            print(
+                f"[secondary-dynamics-spring] Markdown output is stale: source={args.markdown} "
+                f"expected_sha256={hashlib.sha256(expected_markdown.encode()).hexdigest()} "
+                f"actual_sha256={hashlib.sha256(actual_markdown.encode()).hexdigest()}",
+                file=sys.stderr,
+            )
             return 2
         print(f"checked {args.output} and {args.markdown}")
         return 0

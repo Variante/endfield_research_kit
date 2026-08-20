@@ -650,6 +650,32 @@
         "instructionBytes": "f2410f114610"
       }
     ],
+    "memoryAccessCensus": {
+      "status": "bounded_related_operands_closed",
+      "registerBasedValueAndJobSites": 16,
+      "stackArgumentSites": [
+        {
+          "instructionOffset": "0x1a7",
+          "argument": "baseRot",
+          "location": "[rbp+0x58]",
+          "instructionBytes": "488b4558"
+        },
+        {
+          "instructionOffset": "0x1d2",
+          "argument": "scaleRatio",
+          "location": "[rbp+0x68]",
+          "instructionBytes": "f3440f104568"
+        },
+        {
+          "instructionOffset": "0x438",
+          "argument": "noiseTime",
+          "location": "[rbp+0x60]",
+          "instructionBytes": "f20f104560"
+        }
+      ],
+      "ripRelativeConstantSites": 4,
+      "unclassifiedBoundary": "Prologue/epilogue spills, stack temporaries, runtime metadata flags, and helper-internal scratch addresses are not semantic value/job accesses; they remain bounded by the pinned body hash and are not promoted to fields."
+    },
     "nativeArrayAccesses": [],
     "arrayStrideStatus": "not_applicable_helper_has_no_nativearray_operand",
     "valueTypeLayouts": [
