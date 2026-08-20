@@ -5389,6 +5389,17 @@ Project-local data-generation helpers live in:
 D:\fluffy-dump\unity_endfield_graph_shader_lab\tools
 ```
 
+`tools/endfield_asset_map_filter.py` is the tracked stdlib-only stream filter
+used by the character catalog/import helpers. It emits exact AssetMap filter
+rows; it does not claim prefab mounting, playback, hierarchy, or renderability.
+Inspect a bounded external UI-effect prefab closure with:
+
+```powershell
+python -B .\unity_endfield_graph_shader_lab\tools\endfield_asset_map_filter.py `
+  --asset-map .\export_full\recovered\AnimeStudio-cli\StreamingAssets\maps\endfield_streamingassets_assets.json `
+  --container '^assets/.*/p_fxui_.*\.prefab$' --summary
+```
+
 The maintained all-roster importer is grouped under
 `tools/character_import/`, with user-facing wrappers under
 `scripts/character_import/`. Older actor-specific source tools remain only as
