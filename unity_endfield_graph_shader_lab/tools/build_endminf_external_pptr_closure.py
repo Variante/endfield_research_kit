@@ -21,7 +21,7 @@ import hashlib
 import json
 import re
 import sys
-from collections import defaultdict
+from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any, Iterable, Iterator
 
@@ -247,8 +247,9 @@ def _iter_jsonl(path: Path) -> Iterator[dict[str, Any]]:
                     value = json.loads(line)
                 except json.JSONDecodeError as exc:
                     raise ClosureError(f"invalid JSONL {path}:{number}: {exc}") from exc
-                if isinstance(value, dict):
-                    yield value
+                if not isinstance(value, dict):
+                    raise ClosureError(f"object index row must be an object {path}:{number}")
+                yield value
     except OSError as exc:
         raise ClosureError(f"cannot read object index {path}: {exc}") from exc
 
@@ -267,6 +268,7 @@ def _object_index_records(
     cab_sources: dict[str, set[tuple[str, int]]] = defaultdict(set)
     summaries: dict[Path, dict[str, Any]] = {}
     for path in paths:
+        actual: Counter[str] = Counter()
         summary: dict[str, Any] | None = None
         last_record_type = ""
         for row in _iter_jsonl(path):
@@ -278,6 +280,23 @@ def _object_index_records(
                 continue
             if summary is not None:
                 raise ClosureError(f"object index has records after terminal summary: {path}")
+            record_type = row.get("recordType")
+            if record_type == "schema":
+                actual["schemas"] += 1
+                continue
+            if record_type not in {"object", "monoScript"}:
+                raise ClosureError(f"object index has unsupported recordType {record_type!r}: {path}")
+            if record_type == "monoScript":
+                actual["monoScripts"] += 1
+            else:
+                actual["objects"] += 1
+                scalars = row.get("scalars")
+                pptrs = row.get("pptrs")
+                if not isinstance(scalars, list) or not isinstance(pptrs, list):
+                    raise ClosureError(f"object index object row lacks scalar/PPtr arrays: {path}")
+                actual["scalars"] += len(scalars)
+                actual["pptrs"] += len(pptrs)
+                actual["objectsWithTruncatedScalars"] += int(row.get("scalarsTruncated") is True)
             obj = row.get("object") or {}
             serialized_file = str(obj.get("serializedFile") or "")
             if not serialized_file:
@@ -310,9 +329,31 @@ def _object_index_records(
             or summary.get("schemaVersion") != 1
             or summary.get("complete") is not True
             or summary.get("errors")
-            or int((summary.get("counts") or {}).get("errors") or 0) != 0
+            or not isinstance(summary.get("counts"), dict)
         ):
             raise ClosureError(f"object index is not a complete error-free index: {path}")
+        counts = summary["counts"]
+        actual["errors"] = 0
+        actual["suppressedErrors"] = 0
+        for field in (
+            "objects",
+            "schemas",
+            "monoScripts",
+            "scalars",
+            "pptrs",
+            "objectsWithTruncatedScalars",
+            "errors",
+            "suppressedErrors",
+        ):
+            try:
+                reported = int(counts[field])
+            except (KeyError, TypeError, ValueError) as exc:
+                raise ClosureError(f"object index summary count {field!r} is malformed: {path}") from exc
+            if reported != actual[field]:
+                raise ClosureError(
+                    f"object index summary count mismatch for {field!r}: "
+                    f"reported {reported}, parsed {actual[field]}: {path}"
+                )
         summaries[path.resolve()] = summary
     return targets, cab_sources, summaries
 
@@ -558,6 +599,21 @@ def _candidate_identity(record: dict[str, Any]) -> tuple[Any, ...]:
     )
 
 
+def _candidate_matches_bridge(record: dict[str, Any], source_pairs: Iterable[tuple[str, int]]) -> bool:
+    source = record.get("source")
+    offset = record.get("sourceOffset")
+    if not source or offset is None:
+        return False
+    try:
+        candidate_offset = int(offset)
+    except (TypeError, ValueError):
+        return False
+    return any(
+        candidate_offset == int(bridge_offset) and _source_matches(source, bridge_source)
+        for bridge_source, bridge_offset in source_pairs
+    )
+
+
 def _resolve_identity(
     key: tuple[str, int, str],
     occurrences: list[dict[str, Any]],
@@ -571,9 +627,26 @@ def _resolve_identity(
     exact_records = _dedupe_records(
         [*index_records.get((serialized_file, path_id), []), *json_records.get((serialized_file, path_id), [])]
     )
-    target_records = [row for row in exact_records if not row.get("type") or row.get("type") == target_type]
-    conflicting_types = [row for row in exact_records if row.get("type") and row.get("type") != target_type]
     source_pairs = sorted(cab_sources.get(serialized_file) or [])
+    target_records = [
+        row
+        for row in exact_records
+        if (not row.get("type") or row.get("type") == target_type)
+        and _candidate_matches_bridge(row, source_pairs)
+    ]
+    conflicting_types = [
+        row
+        for row in exact_records
+        if row.get("type")
+        and row.get("type") != target_type
+        and _candidate_matches_bridge(row, source_pairs)
+    ]
+    physical_source_pairs = {
+        (_source_suffix(source), int(offset))
+        for source, offset in source_pairs
+        if _source_suffix(source)
+    }
+    bridge_ambiguous = len(physical_source_pairs) > 1
     exact_map_rows: list[dict[str, Any]] = []
     for row in map_rows.get(path_id) or []:
         if row.get("Type") != target_type:
@@ -596,7 +669,7 @@ def _resolve_identity(
         for row in target_records
         if row.get("type") or row.get("basis") == "exported_json_metadata"
     }
-    if conflicting_types or len(unique_target_records) > 1 or len(exact_map_rows) > 1:
+    if bridge_ambiguous or conflicting_types or len(unique_target_records) > 1 or len(exact_map_rows) > 1:
         status = "ambiguous"
     elif exact_map_rows:
         status = "resolved"
@@ -735,7 +808,12 @@ def build_report(
             "identities": identities,
         }
     )
-    status = "complete" if unresolved_count == 0 and ambiguous == 0 else "incomplete_unresolved_dependencies"
+    if ambiguous:
+        status = "incomplete_ambiguous"
+    elif unresolved_count:
+        status = "incomplete_unresolved_dependencies"
+    else:
+        status = "complete"
     return {
         "schema": SCHEMA,
         "status": status,
@@ -763,8 +841,8 @@ def build_report(
         "extractionEntries": extraction_entries,
         "evidenceBoundary": (
             "Only exact serializedFile+CAB PathID identities are joined. AssetMap extraction rows additionally "
-            "require a proven source path+offset+PathID+Type match. Names, containers, PathIDs alone, playback, "
-            "mounting, and renderability are not resolution evidence."
+            "require a single proven CAB-to-source+offset+PathID+Type match. Names, containers, PathIDs alone, "
+            "multiple physical CAB sources, playback, mounting, and renderability are not resolution evidence."
         ),
     }
 
@@ -772,6 +850,12 @@ def build_report(
 def _validate_report(report: dict[str, Any]) -> None:
     if report.get("schema") != SCHEMA:
         raise ClosureError(f"unsupported closure report schema: {report.get('schema')!r}")
+    if report.get("status") not in {
+        "complete",
+        "incomplete_unresolved_dependencies",
+        "incomplete_ambiguous",
+    }:
+        raise ClosureError(f"closure report has invalid status: {report.get('status')!r}")
     identities = report.get("identities")
     if not isinstance(identities, list):
         raise ClosureError("closure report identities must be a list")
@@ -784,8 +868,8 @@ def _validate_report(report: dict[str, Any]) -> None:
             raise ClosureError(f"closure report has invalid identity status: {row.get('status')!r}")
         if not isinstance(row.get("serializedFile"), str) or not row["serializedFile"].startswith("CAB-"):
             raise ClosureError("closure report identity lacks an exact CAB serializedFile")
-        path_id = int(row.get("pathId"))
-        if int(row.get("pathIdUnsigned")) != _unsigned_path_id(path_id):
+        path_id = _signed_int64(row.get("pathId"), field="closure report pathId")
+        if _int(row.get("pathIdUnsigned"), field="closure report pathIdUnsigned") != _unsigned_path_id(path_id):
             raise ClosureError("closure report signed/unsigned PathID pair is inconsistent")
         if str(row.get("pathIdHex")) != f"{_unsigned_path_id(path_id):016X}":
             raise ClosureError("closure report PathID hex encoding is inconsistent")
@@ -804,6 +888,20 @@ def _validate_report(report: dict[str, Any]) -> None:
         summary.get("ambiguousCount") or 0
     ) != len(identities):
         raise ClosureError("closure report status counts are inconsistent")
+    ambiguous_count = int(summary.get("ambiguousCount") or 0)
+    unresolved_count = int(summary.get("unresolvedCount") or 0)
+    expected_status = (
+        "incomplete_ambiguous"
+        if ambiguous_count
+        else "incomplete_unresolved_dependencies"
+        if unresolved_count
+        else "complete"
+    )
+    if report["status"] != expected_status:
+        raise ClosureError(
+            f"closure report status does not match identity counts: "
+            f"reported {report['status']!r}, expected {expected_status!r}"
+        )
 
 
 def _parse_args(argv: list[str] | None) -> argparse.Namespace:
