@@ -236,7 +236,12 @@ def project_model_view_state_audio_trigger_contexts(
                     "runtimeBranch": {
                         "status": "unresolved", "selectionStatus": selection_status,
                         "possibleMediaCount": len(media_refs),
-                        "downstreamStatus": "individuallyAuditedEndpointsConnectionUnresolved" if is_position else "WwiseSelectionUnobserved",
+                        "downstreamStatus": "AkSoundEngineWwiseSelectionExecutionAudibilityUnresolved" if is_position else "WwiseSelectionUnobserved",
+                        "managedAdapterRouteStatus": (
+                            positioned_route.get("endpointAuditStatus")
+                            if is_position and positioned_route is not None
+                            else "unavailable" if is_position else None
+                        ),
                         "nativeRouteStatus": "exactCurrentBuildPositionedRoute" if is_position and positioned_route is not None else (
                             "exactCurrentBuildRoute" if not is_position and normal_route is not None else "nativeRouteUnavailable"
                         ),
@@ -247,10 +252,19 @@ def project_model_view_state_audio_trigger_contexts(
                         "isDirectlyPlay": authored.get("isDirectlyPlay"), "stopOnEnd": authored.get("stopOnEnd"),
                         "transitionTime": authored.get("transitionTime"),
                         "playbackSink": "AudioManager.PlaySoundAtPosition" if is_position else None,
-                        "playbackSinkStatus": "nativeTargetAndBodyVerified" if is_position else None,
+                        "playbackSinkStatus": (
+                            positioned_route.get("endpointAuditStatus")
+                            if is_position and positioned_route is not None
+                            else "unavailable" if is_position else None
+                        ),
                         "audioHandleField": "self+0x28 m_audioHandle" if is_position else None,
                         "audioHandleWriteStatus": (
                             positioned_route.get("fieldContract", {}).get("audioHandleWrite", {}).get("status")
+                            if is_position and positioned_route is not None
+                            else "unavailable" if is_position else None
+                        ),
+                        "postAndForgetToAudioAdapterConnectionStatus": (
+                            positioned_route.get("postAndForgetToAudioAdapterConnectionStatus")
                             if is_position and positioned_route is not None
                             else "unavailable" if is_position else None
                         ),

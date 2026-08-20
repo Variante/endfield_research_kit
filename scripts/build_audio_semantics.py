@@ -100,8 +100,8 @@ PROJECTILE_SOUND_PHASES = {
 # authoritative value; these names are presentation labels, not a claim that
 # selection behavior was evaluated offline.
 SELECTION_HIRC_TYPES = frozenset({5, 6, 12, 13})
-AUDIO_SEMANTIC_SCHEMA_VERSION = 109
-TRIGGER_CONTEXT_SCHEMA_VERSION = 35
+AUDIO_SEMANTIC_SCHEMA_VERSION = 110
+TRIGGER_CONTEXT_SCHEMA_VERSION = 36
 
 MONO_BEHAVIOUR_AUDIO_EVENT_FIELD_NAMES = frozenset({
     "_spawnAudioEvent", "_finishAudioEvent", "_onHitAudioEvent",
@@ -118,7 +118,7 @@ MONO_BEHAVIOUR_AUDIO_EVENT_PREFILTERS = tuple(sorted(
     | {"soundBase.soundSpawn", "soundBase.soundFinish", "PlayLineSound"}
 ))
 MONO_BEHAVIOUR_AUDIO_CONTEXT_CACHE_SCHEMA_VERSION = 2
-RUNTIME_MODEL_CACHE_SCHEMA_VERSION = 106
+RUNTIME_MODEL_CACHE_SCHEMA_VERSION = 107
 METADATA_EVENT_SYMBOL_SCHEMA_VERSION = 1
 METADATA_EVENT_SYMBOL_RE = re.compile(r"^AU_[A-Z0-9_]+$")
 RADIO_MEDIA_CONTEXT_LIMIT = 64

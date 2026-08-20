@@ -79,6 +79,8 @@ def _positioned_model_view_fixture_pe(
     *,
     execute_calls: bool = True,
     audio_handle_write: bool = True,
+    post_and_forget_bridge_call: bool = True,
+    bridge_tail_jump: bool = True,
 ) -> dict:
     """Build a compact multi-section PE for the positioned route audit."""
 
@@ -87,7 +89,13 @@ def _positioned_model_view_fixture_pe(
     consumer = route["consumer"]
     endpoint_rows = route["endpointAudits"]
 
-    def body(length: int, calls: list[dict] | None = None, writes: list[tuple[int, bytes]] | None = None) -> bytes:
+    def body(
+        length: int,
+        calls: list[dict] | None = None,
+        writes: list[tuple[int, bytes]] | None = None,
+        jumps: list[dict] | None = None,
+        opcode_sites: list[dict] | None = None,
+    ) -> bytes:
         result = bytearray(b"\x90" * length)
         for call in calls or ():
             offset = int(call["offset"], 0)
@@ -97,6 +105,16 @@ def _positioned_model_view_fixture_pe(
                 "<i", result, offset + 1,
                 target - (int(call.get("methodVirtualAddress", 0), 0) + offset + 5),
             )
+        for jump in jumps or ():
+            offset = int(jump["offset"], 0)
+            target = int(jump["targetVirtualAddress"], 0)
+            result[offset] = int(jump["opcode"], 0)
+            struct.pack_into(
+                "<i", result, offset + 1,
+                target - (int(jump.get("methodVirtualAddress", 0), 0) + offset + 5),
+            )
+        for site in opcode_sites or ():
+            result[int(site["offset"], 0)] = int(site["opcode"], 0)
         for offset, instruction in writes or ():
             result[offset:offset + len(instruction)] = instruction
         result[-1] = 0xC3
@@ -120,7 +138,25 @@ def _positioned_model_view_fixture_pe(
             {**row, "methodVirtualAddress": endpoint["targetVirtualAddress"]}
             for row in endpoint.get("calls") or ()
         ]
-        bodies[va] = body(endpoint["bodyLength"], calls)
+        jumps = [
+            {**row, "methodVirtualAddress": endpoint["targetVirtualAddress"]}
+            for row in endpoint.get("jumps") or ()
+        ]
+        bodies[va] = body(
+            endpoint["bodyLength"], calls,
+            jumps=jumps,
+            opcode_sites=endpoint.get("opcodeSites") or (),
+        )
+    if not post_and_forget_bridge_call:
+        post_va = int("0x183b89730", 0)
+        post_body = bytearray(bodies[post_va])
+        post_body[0x6b] = 0x90
+        bodies[post_va] = bytes(post_body)
+    if not bridge_tail_jump:
+        bridge_va = int("0x18328a150", 0)
+        bridge_body = bytearray(bodies[bridge_va])
+        bridge_body[0x60] = 0x90
+        bodies[bridge_va] = bytes(bridge_body)
 
     section_header = 0x98 + 0xF0
     raw_offset = 0x1000
@@ -400,8 +436,9 @@ class NativeAudioEvidenceTests(unittest.TestCase):
         self.assertEqual(audited["status"], "validated")
         self.assertEqual(audited["checks"]["consumerDirectCalls"], "validated")
         self.assertEqual(audited["checks"]["consumerAudioHandleWrite"], "validated")
-        self.assertEqual(audited["checks"]["endpointAuditStatus"], "individuallyAuditedEndpoints")
-        self.assertEqual(audited["checks"]["postAndForgetToAudioAdapterConnection"], "unresolved")
+        self.assertEqual(audited["checks"]["endpointAuditStatus"], "staticManagedAdapterRouteVerified")
+        self.assertEqual(audited["checks"]["postAndForgetToAudioAdapterConnection"], "verified")
+        self.assertEqual(audited["checks"]["managedAdapterE9Transfer"], "validated")
         self.assertEqual(audited["checks"]["endpointBodiesAndCalls"], "validated")
 
     def test_positioned_production_fixture_rejects_execute_e8_drift(self) -> None:
@@ -455,6 +492,50 @@ class NativeAudioEvidenceTests(unittest.TestCase):
                 audited = native_evidence.audit_model_view_positioned_audio_native_route(context)
         self.assertEqual(audited["status"], "mismatched")
         self.assertIn("m_audioHandle write drift", audited["reason"])
+
+    def test_positioned_production_fixture_rejects_post_and_forget_e8_drift(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            metadata = root / "global-metadata.dat"
+            gameassembly = root / "GameAssembly.dll"
+            metadata.write_bytes(b"metadata")
+            route = _positioned_model_view_fixture_pe(gameassembly, post_and_forget_bridge_call=False)
+            with patch.object(native_evidence, "MODEL_VIEW_POSITIONED_AUDIO_NATIVE_ROUTE", route), patch.object(
+                native_evidence,
+                "check_installed_native_inputs",
+                return_value=InstalledNativeInputs(
+                    gameassembly, metadata,
+                    native_evidence.EXPECTED_GAMEASSEMBLY_SHA256,
+                    native_evidence.EXPECTED_METADATA_SHA256,
+                    "validated", "",
+                ),
+            ):
+                context = native_evidence.validate_native_audio_evidence(metadata, gameassembly)
+                audited = native_evidence.audit_model_view_positioned_audio_native_route(context)
+        self.assertEqual(audited["status"], "mismatched")
+        self.assertIn("PostAndForget E8 drift at +0x6b", audited["reason"])
+
+    def test_positioned_production_fixture_rejects_adapter_bridge_e9_drift(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            metadata = root / "global-metadata.dat"
+            gameassembly = root / "GameAssembly.dll"
+            metadata.write_bytes(b"metadata")
+            route = _positioned_model_view_fixture_pe(gameassembly, bridge_tail_jump=False)
+            with patch.object(native_evidence, "MODEL_VIEW_POSITIONED_AUDIO_NATIVE_ROUTE", route), patch.object(
+                native_evidence,
+                "check_installed_native_inputs",
+                return_value=InstalledNativeInputs(
+                    gameassembly, metadata,
+                    native_evidence.EXPECTED_GAMEASSEMBLY_SHA256,
+                    native_evidence.EXPECTED_METADATA_SHA256,
+                    "validated", "",
+                ),
+            ):
+                context = native_evidence.validate_native_audio_evidence(metadata, gameassembly)
+                audited = native_evidence.audit_model_view_positioned_audio_native_route(context)
+        self.assertEqual(audited["status"], "mismatched")
+        self.assertIn("_PostEventBridge jump opcode drift at +0x60", audited["reason"])
 
     def test_authored_ai_bark_survives_without_native_dispatch_claims(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
