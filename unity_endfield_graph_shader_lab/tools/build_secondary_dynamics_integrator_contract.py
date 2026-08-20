@@ -42,6 +42,7 @@ EXPECTED_METHOD = {
     "method": "Execute",
     "va": 0x18676E964,
     "bodySha256": "0b5d95b2c3da269554beb03aefabc2b5e6bdd6f2aa897943e1c4328e45e4d77c",
+    "token": "0x06000875",
 }
 
 # These are the direct edges that form the managed integrator/helper chain.
@@ -63,24 +64,28 @@ EXPECTED_HELPER_SPANS = {
         "method": "get_IsSpring",
         "va": 0x18673DEE8,
         "bodySha256": "bf6bb2d728e7f490306baa4a2a8295e3273d8a91a378f493af81e5aae33e1e77",
+        "token": "0x06000483",
     },
     386213: {
         "type": "BeyondDynamicBone.MathUtility",
         "method": "Project",
         "va": 0x186696AC8,
         "bodySha256": "7eaabebfeb20205d0ea319d066cae13cfc4f4df938c066ce4361dafdbd6b3dd7",
+        "token": "0x06000a6e",
     },
     386214: {
         "type": "BeyondDynamicBone.MathUtility",
         "method": "ProjectOnPlane",
         "va": 0x1866B0CB4,
         "bodySha256": "ca219c115689076aca94f79adefc4e14aa9672036a97217cbf70283e09959381",
+        "token": "0x06000a6f",
     },
     386216: {
         "type": "BeyondDynamicBone.MathUtility",
         "method": "AutoToFloat3",
         "va": 0x184D87200,
         "bodySha256": "618a3b7dcb353a27723827ed14e05f3ba1453888fe7ca7ffdd0fa72441e702d8",
+        "token": "0x06000a71",
     },
 }
 
@@ -268,7 +273,7 @@ def _resolve_method(md: Any, by_pointer: dict[int, list[dict[str, Any]]], method
     pointer, signature = candidates[0]
     if pointer != int(expected["va"]):
         raise ContractError(f"method {method_index} VA drift: 0x{pointer:x} != 0x{int(expected['va']):x}")
-    if signature.get("type") != expected["type"] or signature.get("method") != expected["method"]:
+    if signature.get("type") != expected["type"] or signature.get("method") != expected["method"] or str(signature.get("token", "")).lower() != str(expected.get("token", "")).lower():
         raise ContractError(f"method {method_index} identity drift")
     return pointer, signature
 
@@ -304,13 +309,23 @@ def _span_record(native: Any, md: Any, pe: Any, by_pointer: dict[int, list[dict[
     }, body, calls, pointer
 
 
-def _call_target(calls: list[dict[str, Any]], offset: int, target: int, method_index: int | None, label: str) -> dict[str, Any]:
+def _call_target(calls: list[dict[str, Any]], offset: int, target: int, method_index: int | None, label: str, md: Any | None = None) -> dict[str, Any]:
     matches = [row for row in calls if int(row["offset"]) == offset]
     if len(matches) != 1 or int(matches[0]["targetVa"], 16) != target:
         raise ContractError(f"method {method_index} call {label} at 0x{offset:x} drift")
     resolved = matches[0].get("resolved", [])
     if method_index is not None and not any(int(row.get("methodIndex", -1)) == method_index for row in resolved):
         raise ContractError(f"method {method_index} call {label} has no metadata identity")
+    if method_index is not None and md is not None:
+        method = md.methods[method_index]
+        actual_type = md.type_full_name(md.types[method.declaring_type])
+        actual_name = md.string(method.name_index)
+        actual_token = f"0x{int(method.token):08x}"
+        if label != f"{actual_type}.{actual_name}":
+            raise ContractError(f"call label drift at 0x{offset:x}: {label!r} != {actual_type}.{actual_name}")
+        row = next(row for row in resolved if int(row.get("methodIndex", -1)) == method_index)
+        if row.get("type") != actual_type or row.get("method") != actual_name or str(row.get("token", "")).lower() != actual_token:
+            raise ContractError(f"call metadata identity drift at 0x{offset:x}")
     return {
         "offset": f"0x{offset:x}",
         "targetVa": f"0x{target:x}",
@@ -370,9 +385,16 @@ def _memory_instruction(body: bytes, method_offset: int, operand_index: int | No
     raise ContractError(f"memory site 0x{method_offset:x} does not decode")
 
 
-def _verify_memory(body: bytes) -> list[dict[str, Any]]:
+def _verify_memory(body: bytes, job_fields: dict[str, int], pointer_loads: tuple[tuple[int, str], ...]) -> list[dict[str, Any]]:
+    if len(EXPECTED_MEMORY_SITES) != len(set(EXPECTED_MEMORY_SITES)):
+        raise ContractError("memory-site census contains duplicates")
     rows: list[dict[str, Any]] = []
     for offset, field, base, index, scale, displacement, width, access in EXPECTED_MEMORY_SITES:
+        if field not in job_fields:
+            raise ContractError(f"memory site {field} is not a canonical job field")
+        matching_loads = [load_offset for load_offset, load_field in pointer_loads if load_field == field]
+        if not matching_loads or min(matching_loads) > offset:
+            raise ContractError(f"memory site {field} at 0x{offset:x} has no canonical pointer load")
         decoded = _memory_instruction(body, offset, 0 if access == "write" else 1)
         if (decoded["base"], decoded["index"], decoded["scale"], decoded["displacement"], decoded["widthBytes"]) != (base, index, scale, displacement, width):
             raise ContractError(f"memory site {field} at 0x{offset:x} drift: {decoded}")
@@ -391,16 +413,32 @@ def _verify_memory(body: bytes) -> list[dict[str, Any]]:
     return rows
 
 
-def _job_layout() -> dict[str, Any]:
+def _job_layout(gate: dict[str, Any]) -> dict[str, Any]:
     if not JOB_LAYOUT_PATH.is_file():
         raise ContractError(f"missing canonical job layout: {JOB_LAYOUT_PATH}")
     payload = json.loads(JOB_LAYOUT_PATH.read_text(encoding="utf-8"))
+    if payload.get("status") != "outer_job_layout_closed" or payload.get("outer_job_layout_recovered") is not True or payload.get("job_payload_layout_recovered") is not False:
+        raise ContractError("canonical job layout status is not closed")
+    native_gate = payload.get("native_gate", {})
+    for key, expected_hash in (("gameAssembly", EXPECTED_GAME_ASSEMBLY_SHA256), ("globalMetadata", EXPECTED_METADATA_SHA256)):
+        if native_gate.get(key, {}).get("sha256", "").lower() != expected_hash:
+            raise ContractError(f"canonical job layout native gate drift: {key}")
+        if native_gate.get(key, {}).get("sha256", "").lower() != gate[key]["sha256"].lower() or native_gate.get(key, {}).get("size") != gate[key]["size"]:
+            raise ContractError(f"canonical job layout does not match selected native gate: {key}")
     rows = [row for row in payload.get("jobs", []) if row.get("type") == EXPECTED_METHOD["type"]]
     if len(rows) != 1:
         raise ContractError("canonical job layout lacks unique EndSimulationStepJob")
-    fields = {str(row["name"]): int(str(row["nativePayloadOffset"]), 16) for row in rows[0].get("fields", [])}
+    raw_fields = rows[0].get("fields", [])
+    if len(raw_fields) != len(EXPECTED_JOB_FIELDS) or len({row.get("name") for row in raw_fields}) != len(raw_fields):
+        raise ContractError("canonical EndSimulationStepJob field set is incomplete or duplicated")
+    fields = {str(row["name"]): int(str(row["nativePayloadOffset"]), 16) for row in raw_fields}
     if fields != EXPECTED_JOB_FIELDS:
         raise ContractError(f"EndSimulationStepJob field offsets drift: {fields!r}")
+    for row in raw_fields:
+        if not isinstance(row.get("fieldIndex"), int) or not isinstance(row.get("metadataTypeIndex"), int) or not row.get("kind") or int(row.get("slotWidthBytes", 0)) <= 0:
+            raise ContractError(f"canonical field metadata incomplete: {row.get('name')}")
+    if [int(row["fieldIndex"]) for row in raw_fields] != list(range(230433, 230450)):
+        raise ContractError("canonical field index set drift")
     return {"path": _repo_path(JOB_LAYOUT_PATH), "sha256": _sha256(JOB_LAYOUT_PATH), "fields": {name: f"0x{value:x}" for name, value in fields.items()}}
 
 
@@ -409,6 +447,8 @@ def _job_pointer_rows(body: bytes) -> list[dict[str, Any]]:
     cs.detail = True
     start = 0x18676E964
     rows: list[dict[str, Any]] = []
+    if len(EXPECTED_JOB_POINTER_LOADS) != len(set(EXPECTED_JOB_POINTER_LOADS)) or len(EXPECTED_SCALAR_LOADS) != len(set(EXPECTED_SCALAR_LOADS)):
+        raise ContractError("job-load census contains duplicates")
     for offset, field in EXPECTED_JOB_POINTER_LOADS:
         decoded = _memory_instruction(body, offset, 1)
         if decoded["base"] != "rbx" or decoded["displacement"] != EXPECTED_JOB_FIELDS[field] or decoded["widthBytes"] != 8:
@@ -423,6 +463,12 @@ def _job_pointer_rows(body: bytes) -> list[dict[str, Any]]:
 
 
 def build_contract(gameassembly: Path | None = DEFAULT_GAME_ASSEMBLY, metadata: Path | None = DEFAULT_METADATA) -> dict[str, Any]:
+    if len(EXPECTED_CHAIN_CALLS) != 7 or len({(o, t, i) for o, t, i, _ in EXPECTED_CHAIN_CALLS}) != 7:
+        raise ContractError("direct-call chain census is incomplete or duplicated")
+    if set(EXPECTED_HELPER_SPANS) != {384698, 386213, 386214, 386216} or set(EXPECTED_HELPER_DIRECT_CALLS) != set(EXPECTED_HELPER_SPANS):
+        raise ContractError("helper span census is incomplete")
+    if len(EXPECTED_JOB_POINTER_LOADS) != 18 or len(EXPECTED_SCALAR_LOADS) != 5 or len(EXPECTED_MEMORY_SITES) != 20:
+        raise ContractError("bounded job/access census is incomplete")
     game_path, metadata_path, gate = _native_gate(gameassembly, metadata)
     catalog, native = _helpers()
     md = catalog.Metadata(metadata_path)
@@ -432,7 +478,7 @@ def build_contract(gameassembly: Path | None = DEFAULT_GAME_ASSEMBLY, metadata: 
     main, body, calls, pointer = _span_record(native, md, pe, by_pointer, all_pointers, METHOD_INDEX, main_expected)
     chain_calls = []
     for offset, target, method_index, label in EXPECTED_CHAIN_CALLS:
-        chain_calls.append(_call_target(calls, offset, target, method_index, label))
+        chain_calls.append(_call_target(calls, offset, target, method_index, label, md))
 
     helper_rows: list[dict[str, Any]] = []
     for method_index, expected in sorted(EXPECTED_HELPER_SPANS.items()):
@@ -453,8 +499,8 @@ def build_contract(gameassembly: Path | None = DEFAULT_GAME_ASSEMBLY, metadata: 
         "solverStatus": "managed_end_step_helper_chain_only_burst_solver_unresolved",
         "secondaryDynamicsVerified": False,
         "nativeGate": gate,
-        "canonicalJobLayout": _job_layout(),
-        "root": {**main, "jobPointerLoads": _job_pointer_rows(body), "branches": _branches(body, pointer), "memoryAccesses": _verify_memory(body), "selectedHelperCalls": chain_calls},
+        "canonicalJobLayout": _job_layout(gate),
+        "root": {**main, "jobPointerLoads": _job_pointer_rows(body), "branches": _branches(body, pointer), "memoryAccesses": _verify_memory(body, EXPECTED_JOB_FIELDS, EXPECTED_JOB_POINTER_LOADS), "selectedHelperCalls": chain_calls},
         "helperBodies": helper_rows,
         "boundary": "EndSimulationStepJob.Execute(int) is a managed fallback. Its array writebacks and MathUtility helper edges are pinned, but the Burst EndSimulationStepRangeKernel and complete solver remain unresolved.",
     }
