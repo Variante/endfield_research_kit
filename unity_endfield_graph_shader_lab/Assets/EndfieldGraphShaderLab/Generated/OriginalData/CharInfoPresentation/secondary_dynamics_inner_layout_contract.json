@@ -1,0 +1,165 @@
+{
+  "schema": "endfield.charinfo.secondary-dynamics-inner-layout.v1",
+  "status": "inner_payload_offsets_closed_size_unresolved_burst_mapping_unresolved",
+  "inner_payload_layout_recovered": false,
+  "inner_payload_offsets_recovered": true,
+  "job_payload_layout_recovered": false,
+  "secondary_dynamics_verified": false,
+  "native_gate": {
+    "gameAssembly": {
+      "path": "D:/Program Files/Endfield Game/GameAssembly.dll",
+      "size": 280436712,
+      "sha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
+    },
+    "globalMetadata": {
+      "path": "D:/Program Files/Endfield Game/Endfield_Data/il2cpp_data/Metadata/global-metadata.dat",
+      "size": 62925560,
+      "sha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
+    },
+    "libBurstGenerated": {
+      "path": "D:/Program Files/Endfield Game/Endfield_Data/Plugins/x86_64/lib_burst_generated.dll",
+      "size": 4042216,
+      "sha256": "ee8702dd63dec2db7dc29d5bc23b8acd032f0e19a0daad5f69e6c45f9d3ceb99"
+    }
+  },
+  "metadataRegistration": {
+    "codeRegistrationVa": "0x18b9217d0",
+    "metadataRegistrationVa": "0x18b921c30"
+  },
+  "nativeArray": {
+    "definitionTypeIndex": 50690,
+    "nativeSizeBytes": null,
+    "nativeSizeEvidence": {
+      "status": "lower_bound_only",
+      "lowerBoundBytes": 16,
+      "reason": "Allocate writes the three recovered fields through byte 0x0f, but no closed generic type-size record proves that trailing padding is absent."
+    },
+    "fields": {
+      "m_Buffer": {
+        "offset": "0x0",
+        "widthBytes": 8
+      },
+      "m_Length": {
+        "offset": "0x8",
+        "widthBytes": 4
+      },
+      "m_AllocatorLabel": {
+        "offset": "0xc",
+        "widthBytes": 4
+      }
+    },
+    "evidence": {
+      "allocate": {
+        "methodPointerVa": "0x183296320",
+        "fileOffset": "0x3294920",
+        "section": "il2cpp",
+        "probeBytes": 192,
+        "nextMethodPointerVa": "0x1832963e0",
+        "probeSha256": "d51947a6caa5abad17dbbb0eceb6b249bf5d499654ecf115e682fec1012fc142",
+        "patterns": {
+          "zeroes_16_byte_result": "0x46",
+          "allocator_at_plus_c": "0x8f",
+          "length_at_plus_8": "0x9a",
+          "buffer_at_plus_0": "0x97"
+        }
+      },
+      "get_Length": {
+        "methodPointerVa": "0x184d9cf30",
+        "fileOffset": "0x4d9b530",
+        "section": "il2cpp",
+        "probeBytes": 16,
+        "nextMethodPointerVa": "0x184d9cf40",
+        "probeSha256": "d29b153835a8d66eb27e83c2ccb2eb5d4c80f17e1f77b829b8b5d748825d331e",
+        "patterns": {
+          "length_load_plus_8": "0x2"
+        }
+      },
+      "get_IsCreated": {
+        "methodPointerVa": "0x1830cfc40",
+        "fileOffset": "0x30ce240",
+        "section": "il2cpp",
+        "probeBytes": 16,
+        "nextMethodPointerVa": "0x1830cfc50",
+        "probeSha256": "40e57a8729fa92c3aabeb41c452586f5f5ea65f4f612456f5a515a5c773ea87a",
+        "patterns": {
+          "buffer_test_plus_0": "0x0"
+        }
+      }
+    }
+  },
+  "nativeReference": {
+    "definitionTypeIndex": 60806,
+    "nativeSizeBytes": null,
+    "nativeSizeEvidence": {
+      "status": "lower_bound_only",
+      "lowerBoundBytes": 12,
+      "reason": "Allocate writes the recovered allocator field through byte 0x0b; neither this body nor a closed generic type-size record proves bytes 0x0c-0x0f or the absence of trailing padding."
+    },
+    "fields": {
+      "m_Data": {
+        "offset": "0x0",
+        "widthBytes": 8
+      },
+      "m_AllocatorLabel": {
+        "offset": "0x8",
+        "widthBytes": 4
+      }
+    },
+    "evidence": {
+      "allocate": {
+        "methodPointerVa": "0x1837f37c0",
+        "fileOffset": "0x37f1dc0",
+        "section": "il2cpp",
+        "probeBytes": 128,
+        "nextMethodPointerVa": "0x1837f3840",
+        "probeSha256": "990dd6425a57c22b67c7f5cab32a841311d095b0ac4235cee40c07a5366756cd",
+        "patterns": {
+          "allocator_at_plus_8": "0x68",
+          "data_at_plus_0": "0x70"
+        }
+      },
+      "get_Value": {
+        "methodPointerVa": "0x184d9d0b0",
+        "fileOffset": "0x4d9b6b0",
+        "section": "il2cpp",
+        "probeBytes": 16,
+        "nextMethodPointerVa": "0x184d9d0c0",
+        "probeSha256": "9229684c15c105482cb5aa741b0702a4a8dd9ade1c8a7b464e03c6ad19f3c303",
+        "patterns": {
+          "data_deref_plus_0": "0x0"
+        }
+      },
+      "set_Value": {
+        "methodPointerVa": "0x184d9d140",
+        "fileOffset": "0x4d9b740",
+        "section": "il2cpp",
+        "probeBytes": 16,
+        "nextMethodPointerVa": "0x184d9d150",
+        "probeSha256": "b5689f2679c49f200702568581a5424859b0422e52b7aea94b02d44b765c99ae",
+        "patterns": {
+          "data_deref_plus_0": "0x0"
+        }
+      },
+      "get_IsCreated": {
+        "methodPointerVa": "0x183ebbbc0",
+        "fileOffset": "0x3eba1c0",
+        "section": "il2cpp",
+        "probeBytes": 16,
+        "nextMethodPointerVa": "0x183ebbbd0",
+        "probeSha256": "26e42f09222e33d2a85ff95f3147d1c16d3a86c184308459873965fa566bb376",
+        "patterns": {
+          "data_test_plus_0": "0x0"
+        }
+      }
+    }
+  },
+  "burstExports": {
+    "hashedExportCount": 628,
+    "hashedExportNamesSha256": "3575fa430f691be98c1f2b6cadfb71e74854f422eed7fce767215d974ac332c9",
+    "mappingStatus": "unresolved_wrapper_to_hashed_export"
+  },
+  "unresolved": [
+    "BurstDirectCall GetFunctionPointer/Discard wrappers are not statically joined to a specific hashed lib_burst_generated.dll export.",
+    "No Execute/UnsafeDo semantic or solver contract is claimed."
+  ]
+}
