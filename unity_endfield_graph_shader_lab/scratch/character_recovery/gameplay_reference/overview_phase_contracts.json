@@ -23,7 +23,7 @@
     "sha256": "2F542A3BE7CE3332295D3A841FD8613C62707E084F9E33A0F156DA8A06EBF5E7",
     "verification": "actual_file_size_and_sha256",
     "boundaryManifest": "scratch/character_recovery/gameplay_reference/video_segment_boundaries.json",
-    "boundaryManifestSha256": "58185b29ee55174f3842bbc2672a9b2ad0228b6cf07d9a7a01abada30694503d"
+    "boundaryManifestSha256": "d0b991cbcb4f70db5857a39ad5ac954f216797aca457d8a00984df3c5243d310"
   },
   "runtimeControllerContract": {
     "path": "scratch/character_recovery/overview_controller_native/controller_asset_audit.json",
