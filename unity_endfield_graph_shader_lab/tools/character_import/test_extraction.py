@@ -13,6 +13,7 @@ if str(TOOLS_ROOT) not in sys.path:
     sys.path.insert(0, str(TOOLS_ROOT))
 
 from character_import.extraction import (  # noqa: E402
+    EXPLICIT_EXTERNAL_UI_EFFECT_CLIP_EVIDENCE,
     EXTERNAL_UI_EFFECT_TYPES,
     CharacterImportError,
     _assert_scoped_output,
@@ -67,6 +68,7 @@ class ExtractionTests(unittest.TestCase):
         clip_entry = _effect_row(
             "A_fx_endminf_ui_overview_02", "AnimationClip", container, 102, 1002, source
         )
+        clip_entry["_ownership_evidence"] = EXPLICIT_EXTERNAL_UI_EFFECT_CLIP_EVIDENCE
         carrier_entry = _effect_row("MonoBehaviour", "MonoBehaviour", container, 103, 1003, source)
         entries = [root_entry, clip_entry, carrier_entry]
         map_path = root / "StreamingAssets" / "maps" / "assets.json"
@@ -103,6 +105,61 @@ class ExtractionTests(unittest.TestCase):
             _write_effect_map(map_path, [entries[0], entries[2]])
 
             with self.assertRaisesRegex(CharacterImportError, "exact root/clip identities"):
+                select_external_ui_effect_entries(character, [map_path])
+
+    def test_external_effect_selector_rejects_explicit_wrong_container(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            character, map_path, entries, _source = self._external_effect_fixture(Path(temporary))
+            character["ui_animation"]["external_ui_effect_entries"][0]["Container"] = (
+                "assets/beyond/dynamicassets/gameplay/effects/prefabs/"
+                "p_fxui_endminm003_overview_02.prefab"
+            )
+
+            with self.assertRaisesRegex(CharacterImportError, "outside the selected"):
+                select_external_ui_effect_entries(character, [map_path])
+
+    def test_external_effect_selector_rejects_explicit_wrong_type(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            character, map_path, _entries, _source = self._external_effect_fixture(Path(temporary))
+            character["ui_animation"]["external_ui_effect_entries"][0]["Type"] = "MonoBehaviour"
+
+            with self.assertRaisesRegex(CharacterImportError, "not an AnimationClip"):
+                select_external_ui_effect_entries(character, [map_path])
+
+    def test_external_effect_selector_rejects_explicit_wrong_name(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            character, map_path, _entries, _source = self._external_effect_fixture(Path(temporary))
+            character["ui_animation"]["external_ui_effect_entries"][0]["Name"] = (
+                "A_actor_endminf_ui_overview_02"
+            )
+
+            with self.assertRaisesRegex(CharacterImportError, "not A_fx_endminf_ui"):
+                select_external_ui_effect_entries(character, [map_path])
+
+    def test_external_effect_selector_ignores_legacy_unmarked_actor_effect(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            character, map_path, entries, _source = self._external_effect_fixture(Path(temporary))
+            legacy = dict(entries[1])
+            legacy.pop("_ownership_evidence", None)
+            legacy["Name"] = "A_actor_endminf_ui_overview_02"
+            legacy["Container"] = (
+                "assets/beyond/arts/effects/commonassets/arts/sk_model/"
+                "sk_fx_endminf_01_ui.fbx"
+            )
+            character["ui_animation"]["external_ui_effect_entries"].append(legacy)
+
+            selection = select_external_ui_effect_entries(character, [map_path])
+
+            self.assertEqual(len(selection["expected_clip_identities"]), 1)
+
+    def test_external_effect_selector_rejects_unmarked_new_fx_row(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            character, map_path, _entries, _source = self._external_effect_fixture(Path(temporary))
+            character["ui_animation"]["external_ui_effect_entries"][0].pop(
+                "_ownership_evidence"
+            )
+
+            with self.assertRaisesRegex(CharacterImportError, "lacks explicit"):
                 select_external_ui_effect_entries(character, [map_path])
 
     def test_external_effect_stage_dry_run_uses_reviewed_types_and_object_index(self) -> None:
@@ -148,7 +205,17 @@ class ExtractionTests(unittest.TestCase):
                         "recordType": "summary",
                         "schemaVersion": 1,
                         "complete": True,
-                        "counts": {"errors": 0},
+                        "counts": {
+                            "objects": 2,
+                            "schemas": 0,
+                            "monoScripts": 0,
+                            "scalars": 0,
+                            "pptrs": 0,
+                            "objectsWithTruncatedScalars": 0,
+                            "errors": 0,
+                            "suppressedErrors": 0,
+                        },
+                        "errors": [],
                     }
                 )
                 + "\n",
@@ -176,6 +243,84 @@ class ExtractionTests(unittest.TestCase):
 
             self.assertTrue(summary["complete"])
             self.assertEqual(validated["root_clip_count"], 2)
+
+    def test_object_index_summary_rejects_nonempty_errors_and_inconsistent_counts(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "object_index.jsonl"
+            path.write_text(
+                json.dumps(
+                    {
+                        "recordType": "summary",
+                        "schemaVersion": 1,
+                        "complete": False,
+                        "counts": {
+                            "objects": 0,
+                            "schemas": 0,
+                            "monoScripts": 0,
+                            "scalars": 0,
+                            "pptrs": 0,
+                            "objectsWithTruncatedScalars": 0,
+                            "errors": 1,
+                            "suppressedErrors": 0,
+                        },
+                        "errors": [{"code": "asset_export_incomplete", "message": "failed"}],
+                    }
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(CharacterImportError, "contains export errors"):
+                validate_object_index_jsonl_summary(path)
+
+            path.write_text(
+                json.dumps(
+                    {
+                        "recordType": "summary",
+                        "schemaVersion": 1,
+                        "complete": True,
+                        "counts": {
+                            "objects": 0,
+                            "schemas": 0,
+                            "monoScripts": 0,
+                            "scalars": 0,
+                            "pptrs": 0,
+                            "objectsWithTruncatedScalars": 0,
+                            "errors": 1,
+                            "suppressedErrors": 0,
+                        },
+                        "errors": [],
+                    }
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(CharacterImportError, "error counts are inconsistent"):
+                validate_object_index_jsonl_summary(path)
+
+            path.write_text(
+                json.dumps(
+                    {
+                        "recordType": "summary",
+                        "schemaVersion": 1,
+                        "complete": False,
+                        "counts": {
+                            "objects": 0,
+                            "schemas": 0,
+                            "monoScripts": 0,
+                            "scalars": 0,
+                            "pptrs": 0,
+                            "objectsWithTruncatedScalars": 0,
+                            "errors": 1,
+                            "suppressedErrors": 0,
+                        },
+                        "errors": [{"message": "missing code"}],
+                    }
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(CharacterImportError, "malformed error"):
+                validate_object_index_jsonl_summary(path)
 
     def test_material_json_falls_back_to_path_id_when_asset_name_is_hashed(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
