@@ -466,6 +466,12 @@ levels start with only the selected sub-map's first tier visible, and the user
 can enable additional floors. Registry markers, quest points, and authored
 `staticElements` all retain raw X/Z coordinates; marker-to-tier membership is
 published only when the point lies inside that tier's authored rectangle.
+The level display name identifies a gameplay scene, not ownership of every
+pixel in its overlapping map-screen rectangle. Region stitching therefore
+uses a stable background order, and geographic labels are positioned from the
+localized `UILevelMapLoadConfig.staticElements` text anchors. Selecting a
+different sibling level must not reorder the region surfaces or make named
+places appear to exchange positions.
 
 Because one level hosts many missions and one mission can reach several levels,
 every contribution is gated on the coordinate space it names: mission-area

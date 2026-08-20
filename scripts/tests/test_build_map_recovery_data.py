@@ -674,6 +674,12 @@ class MapNamingAndMinimapTests(unittest.TestCase):
             root = Path(tmp)
             config_dir = root / "export_full/structured/StreamingAssets/Data/Json/UILevelMapLoadConfig"
             config_dir.mkdir(parents=True)
+            tables = root / "export_full/structured/StreamingAssets/Table"
+            tables.mkdir(parents=True)
+            (tables / "TextTable.json").write_text(json.dumps({
+                "test_place": {"id": 987, "text": ""},
+            }), encoding="utf-8")
+            (tables / "I18nTextTable_CN.json").write_text(json.dumps({"987": "测试地点"}), encoding="utf-8")
             (config_dir / "test_lv_static.json").write_text(json.dumps({
                 "basic": {
                     "worldRectLeftBottom": {"x": -64, "y": -128},
@@ -686,6 +692,7 @@ class MapNamingAndMinimapTests(unittest.TestCase):
                         "type": 1,
                         "position": {"x": 12.5, "y": 3.0, "z": -20.0},
                         "targetLevelId": "test_lv_other",
+                        "textId": "test_place",
                     },
                     "se_invalid": {"id": "bad", "position": {"x": "12", "z": 4}},
                 },
@@ -701,6 +708,8 @@ class MapNamingAndMinimapTests(unittest.TestCase):
             "type": 1,
             "position": {"x": 12.5, "y": 3.0, "z": -20.0},
             "targetLevelId": "test_lv_other",
+            "textId": "test_place",
+            "text": "测试地点",
             "evidence": "UILevelMapLoadConfig.staticElements exact X/Z position",
             "source": "export_full/structured/StreamingAssets/Data/Json/UILevelMapLoadConfig/test_lv_static.json",
         }])

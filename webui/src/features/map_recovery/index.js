@@ -1175,6 +1175,15 @@
     const backgroundImages = bgRects
       .map(({ bg, x, y, w, h }) => `<image class="mr-bg-image" href="data/map_recovery/${esc(bg.src)}" x="${x.toFixed(2)}" y="${y.toFixed(2)}" width="${w.toFixed(2)}" height="${h.toFixed(2)}" opacity=".9"><title>${esc(bg.levelId)}</title></image>`)
       .join("");
+    // Level display names describe gameplay scenes, not geographic ownership
+    // of the whole (overlapping) map-screen rectangle. Location labels come
+    // from the map UI's own staticElements text anchors instead.
+    const locationLabelSvg = (data.locationLabels || []).map((row) => {
+      const position = finitePosition(row.position);
+      if (!position || !row.text) return "";
+      const p = plot(position);
+      return `<text class="mr-location-label" x="${p.x.toFixed(2)}" y="${p.y.toFixed(2)}">${esc(row.text)}</text>`;
+    }).join("");
     state.contentBox = state.nodes.length || bgRects.length
       ? (() => {
         let minXc = Infinity;
@@ -1251,7 +1260,7 @@
 
     host.innerHTML = `<style id="map-recovery-edge-style"></style>
       <div class="mr-map" tabindex="0" role="group" aria-label="${esc(`${mapTitle(data)} - ${t("mapSurface")}`)}">
-        <svg class="mr-canvas" viewBox="0 0 ${WIDTH} ${HEIGHT}" role="group" aria-label="${esc(mapTitle(data))}"><rect width="100%" height="100%" class="mr-map-bg"/><g class="mr-viewport">${backgroundImages}<g class="mr-routes">${routeSvg}</g><g class="mr-links">${edgeSvg}</g><g class="mr-nodes">${nodeSvg}</g></g></svg>
+        <svg class="mr-canvas" viewBox="0 0 ${WIDTH} ${HEIGHT}" role="group" aria-label="${esc(mapTitle(data))}"><rect width="100%" height="100%" class="mr-map-bg"/><g class="mr-viewport">${backgroundImages}<g class="mr-location-labels">${locationLabelSvg}</g><g class="mr-routes">${routeSvg}</g><g class="mr-links">${edgeSvg}</g><g class="mr-nodes">${nodeSvg}</g></g></svg>
         <div class="mr-tip" hidden></div>
         <div class="mr-tools" role="group" aria-label="${esc(t("zoomLevel"))}">
           <button type="button" data-map-zoom="out" aria-label="${esc(t("zoomOut"))}" title="${esc(t("zoomOut"))}">-</button>
@@ -1675,6 +1684,7 @@
     const backgrounds = [];
     const mapLayers = [];
     const layerBackgrounds = [];
+    const locationLabels = new Map();
     let pinnedFileCount = 0;
     let exactProxyCount = 0;
     for (const member of members) {
@@ -1687,6 +1697,14 @@
         mapLayers.push({ ...layer, id, levelId: member.id });
         const rendered = (payload.minimap?.layers || []).find((row) => row.id === layer.id);
         if (rendered?.src && rendered.worldBounds) layerBackgrounds.push({ ...rendered, id, levelId: member.id });
+      }
+      for (const row of payload.mapConfig?.staticElements || []) {
+        if (!row?.text || !row.position) continue;
+        // The same named place can be present in several overlapping level
+        // screens. Keep one stable authored anchor instead of drawing stacked
+        // duplicates that look like conflicting region assignments.
+        const key = `${row.text}:${Math.round(Number(row.position.x))}:${Math.round(Number(row.position.z))}`;
+        if (!locationLabels.has(key)) locationLabels.set(key, { ...row, levelId: member.id });
       }
       (payload.unlinkedMissionFiles || []).forEach((path) => { if (path) unlinked.add(path); });
       pinnedFileCount += payload.pinnedFileCount || 0;
@@ -1720,14 +1738,16 @@
       const background = zoneBackground(payload);
       if (background) backgrounds.push({ levelId: member.id, src: background.src, worldBounds: background.worldBounds });
     }
-    // Neighbouring zone screens overlap, so they are drawn in a stable id
-    // order with the selected zone last, on top of everything else.
-    backgrounds.sort((a, b) => ((a.levelId === selectedId ? 1 : 0) - (b.levelId === selectedId ? 1 : 0)) || a.levelId.localeCompare(b.levelId));
+    // These are overlapping map screens, not disjoint rectangles owned by
+    // the selected gameplay level. A stable order prevents selection changes
+    // from making whole geographic areas appear to exchange positions.
+    backgrounds.sort((a, b) => a.levelId.localeCompare(b.levelId));
     state.backgrounds = backgrounds;
     state.layerBackgrounds = layerBackgrounds;
     return {
       ...selected,
       mapLayers,
+      locationLabels: [...locationLabels.values()],
       questPoints,
       markers,
       facets: { kinds, missions },
