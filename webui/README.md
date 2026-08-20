@@ -472,6 +472,10 @@ uses a stable background order, and geographic labels are positioned from the
 localized `UILevelMapLoadConfig.staticElements` text anchors. Selecting a
 different sibling level must not reorder the region surfaces or make named
 places appear to exchange positions.
+Both marker points and background rectangles use the same `screenY = maxZ -
+worldZ` projection. Do not place a background with `worldZ - minZ`: that
+mirrors every stitched screen north/south while leaving task coordinates in
+the original orientation, producing apparently mismatched edges and pins.
 
 Because one level hosts many missions and one mission can reach several levels,
 every contribution is gated on the coordinate space it names: mission-area

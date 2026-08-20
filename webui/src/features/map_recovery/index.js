@@ -1163,7 +1163,12 @@
       .filter((bg) => ["minX", "maxX", "minZ", "maxZ"].every((key) => Number.isFinite(Number(bg.worldBounds?.[key]))))
       .map((bg) => {
         const x = viewX + (Number(bg.worldBounds.minX) - minX) * fitScale;
-        const y = viewY + (Number(bg.worldBounds.maxZ) - minZ) * fitScale;
+        // `plot()` maps +Z toward the top: screenY = maxZ - worldZ.
+        // A background rectangle must use that exact projection for its top
+        // edge. Using `bg.maxZ - minZ` mirrored every sibling screen north /
+        // south while markers still used `maxZ - z`, which made both seams
+        // and task coordinates visibly disagree.
+        const y = viewY + (maxZ - Number(bg.worldBounds.maxZ)) * fitScale;
         return {
           bg,
           x,
