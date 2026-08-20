@@ -238,6 +238,100 @@ def write_png(path: Path, width: int, height: int, rows: list[bytes]) -> None:
     path.write_bytes(png)
 
 
+def level_positions(path: Path) -> list[tuple[float, float, float]]:
+    """Exact registry/quest X/Y/Z positions published for one map."""
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    points = []
+    for node in [*(payload.get("markers") or []), *(payload.get("questPoints") or [])]:
+        position = node.get("position") or {}
+        x, y, z = position.get("x"), position.get("y"), position.get("z")
+        if all(isinstance(value, (int, float)) and not isinstance(value, bool) for value in (x, y, z)):
+            points.append((float(x), float(y), float(z)))
+    return points
+
+
+def render_point_cloud(level_id: str, positions: list[tuple[float, float, float]], output_root: Path) -> dict | None:
+    """Render an evidence-only height-tinted point cloud when no map art exists.
+
+    This deliberately draws only exact published transforms. It gives sparse
+    scenes a spatial backdrop without connecting points into invented terrain
+    or claiming that registry entities are recovered scene meshes.
+    """
+    if not positions:
+        return None
+    bounds = plot_bounds([(x, z) for x, _y, z in positions])
+    span_x = max(bounds["maxX"] - bounds["minX"], 1.0)
+    span_z = max(bounds["maxZ"] - bounds["minZ"], 1.0)
+    if span_x / span_z >= VIEW_ASPECT:
+        width = LONG_EDGE
+        height = max(1, round(width / VIEW_ASPECT))
+    else:
+        height = LONG_EDGE
+        width = max(1, round(height * VIEW_ASPECT))
+    pixels = [bytearray(width * 4) for _ in range(height)]
+    ys = [row[1] for row in positions]
+    low, high = min(ys), max(ys)
+    y_span = max(high - low, 1.0)
+    radius = max(2, min(6, round(9 - math.log2(max(len(positions), 2)) / 2)))
+
+    def blend(px: int, py: int, color: tuple[int, int, int], alpha: int) -> None:
+        if not (0 <= px < width and 0 <= py < height) or alpha <= 0:
+            return
+        row = pixels[py]
+        offset = px * 4
+        inverse = 255 - alpha
+        row[offset] = (color[0] * alpha + row[offset] * inverse) // 255
+        row[offset + 1] = (color[1] * alpha + row[offset + 1] * inverse) // 255
+        row[offset + 2] = (color[2] * alpha + row[offset + 2] * inverse) // 255
+        row[offset + 3] = min(255, alpha + row[offset + 3] * inverse // 255)
+
+    # Low points are blue-grey and high points warm ivory. A soft outer halo
+    # gives the cloud the same legible 3D relief character as the HLOD preview
+    # while each bright core remains one exact authored transform.
+    for x, y, z in sorted(positions, key=lambda row: row[1]):
+        px = round((x - bounds["minX"]) / span_x * (width - 1))
+        py = round((bounds["maxZ"] - z) / span_z * (height - 1))
+        height_t = (y - low) / y_span
+        color = (
+            shade(0.48 + 0.42 * height_t),
+            shade(0.66 + 0.27 * height_t),
+            shade(0.78 + 0.16 * height_t),
+        )
+        for dy in range(-radius * 2, radius * 2 + 1):
+            for dx in range(-radius * 2, radius * 2 + 1):
+                distance = math.hypot(dx, dy)
+                if distance <= radius * 2:
+                    blend(px + dx, py + dy, color, round(42 * (1 - distance / (radius * 2 + 0.01))))
+        for dy in range(-radius, radius + 1):
+            for dx in range(-radius, radius + 1):
+                distance = math.hypot(dx, dy)
+                if distance <= radius:
+                    blend(px + dx, py + dy, color, round(210 * (1 - 0.55 * distance / (radius + 0.01))))
+
+    output_root.mkdir(parents=True, exist_ok=True)
+    image_name = f"{level_id}_registry_point_cloud.png"
+    write_png(output_root / image_name, width, height, [bytes(row) for row in pixels])
+    return {
+        "schemaVersion": 1,
+        "status": "inferred_registry_point_cloud_preview",
+        "levelId": level_id,
+        "src": f"render/{image_name}",
+        "worldBounds": bounds,
+        "coordinateSystem": "Unity world X/Z; image top is +Z; tint derives from exact world Y",
+        "render": {
+            "method": "exact_registry_transform_point_cloud",
+            "pointCount": len(positions),
+            "pointRadius": radius,
+            "elevationRange": {"min": low, "max": high},
+        },
+        "modelScene": {"status": "no_recovered_scene_meshes", "meshes": [], "meshCount": 0},
+        "boundary": (
+            "Evidence-only point cloud drawn from exact published registry and quest X/Y/Z transforms. "
+            "Points are not connected into terrain and do not claim recovered scene geometry."
+        ),
+    }
+
+
 def mesh_file_index(mesh_root: Path) -> dict[str, Path]:
     """Exported OBJ files keyed by the PathID hex suffix AnimeStudio appends."""
     if not mesh_root.is_dir():
@@ -700,14 +794,7 @@ def render_level(
 
 
 def level_points(path: Path) -> list[tuple[float, float]]:
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    points = []
-    for node in [*(payload.get("markers") or []), *(payload.get("questPoints") or [])]:
-        position = node.get("position") or {}
-        x, z = position.get("x"), position.get("z")
-        if isinstance(x, (int, float)) and isinstance(z, (int, float)):
-            points.append((float(x), float(z)))
-    return points
+    return [(x, z) for x, _y, z in level_positions(path)]
 
 
 def main() -> int:
@@ -722,24 +809,25 @@ def main() -> int:
     parser.add_argument("--level", action="append", default=[], help="build only these level ids (repeatable)")
     args = parser.parse_args()
 
-    # Asset export is optional in the canonical WebUI rebuild. A missing
-    # AssetMap must leave marker/minimap data usable rather than turning the
-    # diagnostic HLOD stage into a hard failure.
+    # Asset export is optional. HLOD rendering needs the AssetMap, while the
+    # exact-transform point-cloud fallback remains available without it.
+    index = load_hlod_index(args.asset_map, args.hlod_index, args.refresh_index) if args.asset_map.is_file() else {"levels": {}, "assetMapSha256": None}
     if not args.asset_map.is_file():
-        print(f"map previews: skipped - AssetMap not found: {args.asset_map}")
-        return 0
-
-    index = load_hlod_index(args.asset_map, args.hlod_index, args.refresh_index)
-    mesh_files = mesh_file_index(args.mesh_root)
+        print(f"map previews: HLOD skipped - AssetMap not found: {args.asset_map}")
+    mesh_files = mesh_file_index(args.mesh_root) if index["levels"] else {}
     only = set(args.level)
 
     published, skipped = [], []
+    published_ids: set[str] = set()
     for level_id, lods in sorted(index["levels"].items()):
         if only and level_id not in only:
             continue
         map_path = args.maps_root / f"{level_id}.json"
         if not map_path.exists():
             skipped.append((level_id, "no published map"))
+            continue
+        payload = json.loads(map_path.read_text(encoding="utf-8"))
+        if (payload.get("minimap") or {}).get("src"):
             continue
         points = level_points(map_path)
         fit = fit_origin(lods, points)
@@ -762,6 +850,7 @@ def main() -> int:
             json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
         )
         published.append((level_id, manifest))
+        published_ids.add(level_id)
         print(
             f"{level_id}: HLOD{lod} {manifest['renderedMeshCount']}/{manifest['candidateMeshCount']} clusters, "
             f"{manifest['renderedTriangleCount']} tris, {manifest['render']['realPixelRatio']:.0%} real"
@@ -769,9 +858,31 @@ def main() -> int:
             f"origin ({fit['originX']:g},{fit['originZ']:g}), "
             f"fit {fit['coverage']:.0%} of {fit['samplePoints']} markers"
         )
+    # Every remaining published map without in-game art receives an exact
+    # transform cloud. HLOD success stays preferred; maps with no model export
+    # still gain a useful, explicitly non-geometric spatial backdrop.
+    point_clouds = []
+    for map_path in sorted(args.maps_root.glob("*.json")):
+        level_id = map_path.stem
+        if only and level_id not in only:
+            continue
+        payload = json.loads(map_path.read_text(encoding="utf-8"))
+        if (payload.get("minimap") or {}).get("src") or level_id in published_ids:
+            continue
+        manifest = render_point_cloud(level_id, level_positions(map_path), args.output_root)
+        if manifest is None:
+            skipped.append((level_id, "no exact X/Y/Z positions for point-cloud fallback"))
+            continue
+        (args.output_root / f"{level_id}_hlod_grid_inferred.json").write_text(
+            json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+        )
+        point_clouds.append((level_id, manifest))
+        published_ids.add(level_id)
+
+    skipped = [(level_id, reason) for level_id, reason in skipped if level_id not in published_ids]
     for level_id, reason in skipped:
         print(f"{level_id}: skipped - {reason}")
-    print(f"map previews: {len(published)} published, {len(skipped)} skipped")
+    print(f"map previews: {len(published)} HLOD, {len(point_clouds)} point clouds, {len(skipped)} skipped")
     return 0
 
 
