@@ -1992,8 +1992,8 @@
         "magica_cloth_weight": 0.01
       },
       "hierarchy_name_map": {
-        "size": 5162008,
-        "sha256": "2c2061b746e2531ec7aca1a4a8a6b184f735e458ab62345a93e5b9b422cc71bf",
+        "size": 5162004,
+        "sha256": "0ebdbd364ead05b1867583b5c9f833e9bafc2f5e156c69b403879c7415fb27c8",
         "repo_path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Chen/chen_ui_recovery_manifest.json",
         "note": "Used only to resolve current path IDs to hierarchy names; embedded prior source-chunk records are not evidence for this contract."
       },
