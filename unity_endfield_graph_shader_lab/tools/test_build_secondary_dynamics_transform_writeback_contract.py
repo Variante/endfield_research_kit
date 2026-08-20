@@ -86,6 +86,10 @@ class SecondaryDynamicsTransformWritebackTests(unittest.TestCase):
                 native_mutator(native)
             if catalog_mutator:
                 catalog_mutator(catalog)
+            # Keep the evidence-map provenance check pointed at this temporary
+            # catalog; otherwise every attack would be rejected by the path
+            # gate before reaching the intended assertion.
+            native["metadata"]["catalog"] = str(catalog_path)
             native_path.write_text(json.dumps(native), encoding="utf-8")
             catalog_path.write_text(json.dumps(catalog), encoding="utf-8")
             return builder.build_contract(native_evidence=native_path, metadata_catalog=catalog_path)
@@ -96,6 +100,7 @@ class SecondaryDynamicsTransformWritebackTests(unittest.TestCase):
             next(call for call in row["directCalls"] if call["offset"] == 441)["targetVa"] = "0x1"
         result = self._build_with_mutation(native_mutator=mutate)
         self.assertEqual(result["status"], "unavailable")
+        self.assertIn("ignored direct-call evidence disagrees", result["validationFailures"][0])
 
     def test_forged_metadata_type_index_fails_closed(self) -> None:
         def mutate(catalog):
@@ -104,6 +109,7 @@ class SecondaryDynamicsTransformWritebackTests(unittest.TestCase):
             field["typeIndex"] += 1
         result = self._build_with_mutation(catalog_mutator=mutate)
         self.assertEqual(result["status"], "unavailable")
+        self.assertIn("metadata field index drift", result["validationFailures"][0])
 
     def test_zero_scan_bytes_fails_closed(self) -> None:
         def mutate(native):
@@ -111,6 +117,7 @@ class SecondaryDynamicsTransformWritebackTests(unittest.TestCase):
             row["scanBytes"] = 0
         result = self._build_with_mutation(native_mutator=mutate)
         self.assertEqual(result["status"], "unavailable")
+        self.assertIn("ignored native span disagrees", result["validationFailures"][0])
 
     def test_forged_method_name_and_pointer_fail_closed(self) -> None:
         def mutate_name(native):
@@ -122,6 +129,7 @@ class SecondaryDynamicsTransformWritebackTests(unittest.TestCase):
         for mutate in (mutate_name, mutate_pointer):
             result = self._build_with_mutation(native_mutator=mutate)
             self.assertEqual(result["status"], "unavailable")
+            self.assertIn("ignored native method identity disagrees", result["validationFailures"][0])
 
 
 if __name__ == "__main__":
