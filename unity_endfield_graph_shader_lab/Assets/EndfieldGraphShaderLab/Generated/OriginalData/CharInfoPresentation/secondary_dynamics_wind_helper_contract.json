@@ -757,7 +757,21 @@
               "rawBytes": "f30f115108"
             }
           ],
-          "value": "zero"
+          "value": "zero",
+          "zeroValueInstructions": [
+            {
+              "offset": "0x2df",
+              "rawBytes": "0f57d2"
+            },
+            {
+              "offset": "0x2e2",
+              "rawBytes": "0f57c0"
+            },
+            {
+              "offset": "0x2e5",
+              "rawBytes": "0f14c2"
+            }
+          ]
         },
         "rawInstructions": {
           "normal": [

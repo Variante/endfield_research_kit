@@ -57,6 +57,7 @@ class SecondaryDynamicsWindHelperContractTests(unittest.TestCase):
         self.assertEqual(constants["degrees-to-radians"], "0x3c8efa35")
         self.assertEqual(helper["resultContract"]["normalPath"]["writes"][-1]["widthBytes"], 4)
         self.assertEqual(helper["resultContract"]["thresholdPath"]["value"], "zero")
+        self.assertEqual(len(helper["resultContract"]["thresholdPath"]["zeroValueInstructions"]), 3)
 
     def test_native_gate_fails_closed_for_missing_inputs(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -138,6 +139,21 @@ class SecondaryDynamicsWindHelperContractTests(unittest.TestCase):
                 builder.build_contract()
         finally:
             builder.BLEND_RESULT_RAW_BYTES["normal"][0x2D6] = original_result
+
+        fake_rows = {
+            "normal": [
+                {"offset": "0x2c7", "rawBytes": "deadbeef"},
+                {"offset": "0x2d2", "rawBytes": "f20f1101"},
+                {"offset": "0x2d6", "rawBytes": "895108"},
+            ],
+            "threshold_zero": [
+                {"offset": "0x2db", "rawBytes": "488b4d77"},
+                {"offset": "0x2e8", "rawBytes": "f20f1101"},
+                {"offset": "0x2ec", "rawBytes": "f30f115108"},
+            ],
+        }
+        with self.assertRaises(builder.ContractError):
+            builder._build_result_contract(b"", fake_rows)
 
     def test_canonical_duplicate_target_is_rejected(self) -> None:
         payload = json.loads(builder.JOB_LAYOUT_PATH.read_text(encoding="utf-8"))

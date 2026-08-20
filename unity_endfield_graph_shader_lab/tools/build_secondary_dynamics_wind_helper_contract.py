@@ -312,6 +312,16 @@ BLEND_RESULT_RAW_BYTES = {
     },
 }
 
+EXPECTED_RESULT_RAW_BYTES = {
+    path: {offset: bytes(raw) for offset, raw in rows.items()}
+    for path, rows in BLEND_RESULT_RAW_BYTES.items()
+}
+EXPECTED_ZERO_VALUE_RAW_BYTES = {
+    0x2DF: bytes.fromhex("0f 57 d2"),
+    0x2E2: bytes.fromhex("0f 57 c0"),
+    0x2E5: bytes.fromhex("0f 14 c2"),
+}
+
 # Independent immutable expectations keep report-label edits fail-closed.
 EXPECTED_BLEND_CALL_SEMANTICS = json.loads(json.dumps(BLEND_CALL_SEMANTICS))
 
@@ -608,7 +618,7 @@ def _verify_blend_result_stores(body: bytes) -> dict[str, Any]:
     return result
 
 
-def _build_result_contract(result_stores: dict[str, Any]) -> dict[str, Any]:
+def _build_result_contract(body: bytes, result_stores: dict[str, Any]) -> dict[str, Any]:
     expected = {
         "normal": {"pointer": "0x2c7", "stores": {"0x2d2": (8, 4), "0x2d6": (4, 3)}},
         "threshold_zero": {"pointer": "0x2db", "stores": {"0x2e8": (8, 4), "0x2ec": (4, 5)}},
@@ -617,20 +627,38 @@ def _build_result_contract(result_stores: dict[str, Any]) -> dict[str, Any]:
         rows = result_stores.get(path)
         if not isinstance(rows, list) or not rows or rows[0]["offset"] != spec["pointer"]:
             raise ContractError(f"WindForceBlend {path} result pointer raw evidence is incomplete")
+        try:
+            pointer_raw = bytes.fromhex(rows[0].get("rawBytes", ""))
+        except ValueError as exc:
+            raise ContractError(f"WindForceBlend {path} result pointer is not valid hex") from exc
+        expected_pointer_raw = EXPECTED_RESULT_RAW_BYTES[path][int(spec["pointer"], 16)]
+        if pointer_raw != expected_pointer_raw:
+            raise ContractError(f"WindForceBlend {path} result pointer opcode/ModRM/displacement drift")
         actual_store_rows = {row["offset"]: row for row in rows[1:]}
         if set(actual_store_rows) != set(spec["stores"]):
             raise ContractError(f"WindForceBlend {path} result store offsets drift: {sorted(actual_store_rows)}")
         writes = []
         for offset, (width, instruction_length) in spec["stores"].items():
             raw = actual_store_rows[offset]["rawBytes"]
-            if len(bytes.fromhex(raw)) != instruction_length:
+            expected_raw = EXPECTED_RESULT_RAW_BYTES[path][int(offset, 16)]
+            try:
+                supplied_raw = bytes.fromhex(raw)
+            except ValueError as exc:
+                raise ContractError(f"WindForceBlend {path} result store {_hex(int(offset, 16))} is not valid hex") from exc
+            if supplied_raw != expected_raw or len(supplied_raw) != instruction_length:
                 raise ContractError(f"WindForceBlend {path} raw store {_hex(int(offset, 16))} has invalid instruction bytes")
             writes.append({"offset": _hex(0 if offset in {"0x2d2", "0x2e8"} else 8), "widthBytes": width, "rawBytes": raw})
         row = {"resultPointerStackOffset": "0x30", "resultPointerRaw": rows[0]["rawBytes"], "writes": writes}
         if path == "threshold_zero":
             row["value"] = "zero"
         expected[path] = row
-    return {"normalPath": expected["normal"], "thresholdPath": expected["threshold_zero"]}
+    for offset, raw in EXPECTED_ZERO_VALUE_RAW_BYTES.items():
+        _verify_raw(body, WIND_FORCE_BLEND_INDEX, offset, raw)
+    result = {"normalPath": expected["normal"], "thresholdPath": expected["threshold_zero"]}
+    result["thresholdPath"]["zeroValueInstructions"] = [
+        {"offset": _hex(offset), "rawBytes": raw.hex()} for offset, raw in EXPECTED_ZERO_VALUE_RAW_BYTES.items()
+    ]
+    return result
 
 
 def build_contract(gameassembly: Path | None = DEFAULT_GAME_ASSEMBLY, metadata: Path | None = DEFAULT_METADATA) -> dict[str, Any]:
@@ -656,7 +684,7 @@ def build_contract(gameassembly: Path | None = DEFAULT_GAME_ASSEMBLY, metadata: 
     methods[WIND_FORCE_BLEND_INDEX]["pointerFieldAccesses"] = _verify_blend_pointer_access(bodies[WIND_FORCE_BLEND_INDEX])
     methods[WIND_INDEX]["blendCallSemantics"] = _verify_blend_call_setup(bodies[WIND_INDEX], methods[WIND_INDEX]["directCalls"])
     result_stores = _verify_blend_result_stores(bodies[WIND_FORCE_BLEND_INDEX])
-    methods[WIND_FORCE_BLEND_INDEX]["resultContract"] = _build_result_contract(result_stores)
+    methods[WIND_FORCE_BLEND_INDEX]["resultContract"] = _build_result_contract(bodies[WIND_FORCE_BLEND_INDEX], result_stores)
     methods[WIND_FORCE_BLEND_INDEX]["resultContract"]["rawInstructions"] = result_stores
     return {
         "schema": "endfield.charinfo.secondary-dynamics-wind-helper.v1",
