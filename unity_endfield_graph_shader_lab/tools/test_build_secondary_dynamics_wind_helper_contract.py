@@ -41,9 +41,10 @@ class SecondaryDynamicsWindHelperContractTests(unittest.TestCase):
         accesses = {row["jobField"]: row for row in self.by_index[builder.WIND_INDEX]["bufferAccesses"]}
         self.assertEqual(accesses["vertexRootIndices"]["strideBytes"], 4)
         self.assertEqual(accesses["teamWindArray"]["strideBytes"], 152)
-        self.assertEqual(accesses["teamWindArray"]["elementFieldDisplacements"][-1], 144)
+        self.assertEqual(accesses["teamWindArray"]["elementByteDisplacements"][-1], 144)
         self.assertEqual(accesses["windDataArray"]["strideBytes"], 212)
-        self.assertEqual(accesses["windDataArray"]["elementFieldDisplacements"][-1], 208)
+        self.assertEqual(accesses["windDataArray"]["elementByteDisplacements"][-1], 208)
+        self.assertEqual(accesses["teamWindArray"]["indexProvenance"]["baseValue"], 128)
         self.assertEqual(accesses["frictionArray"]["strideBytes"], 4)
         self.assertEqual(self.by_index[builder.WIND_INDEX]["canonicalJobFields"]["0x68"]["name"], "vertexRootIndices")
 
@@ -80,13 +81,13 @@ class SecondaryDynamicsWindHelperContractTests(unittest.TestCase):
         finally:
             builder.EXPECTED_CALLS[builder.WIND_INDEX] = original_calls
 
-        original_access = builder.WIND_BUFFER_ACCESS[1]["elementFieldDisplacements"][-1]
-        builder.WIND_BUFFER_ACCESS[1]["elementFieldDisplacements"][-1] = original_access + 1
+        original_access = builder.WIND_BUFFER_ACCESS[1]["elementByteDisplacements"][-1]
+        builder.WIND_BUFFER_ACCESS[1]["elementByteDisplacements"][-1] = original_access + 1
         try:
             with self.assertRaises(builder.ContractError):
                 builder.build_contract()
         finally:
-            builder.WIND_BUFFER_ACCESS[1]["elementFieldDisplacements"][-1] = original_access
+            builder.WIND_BUFFER_ACCESS[1]["elementByteDisplacements"][-1] = original_access
 
     def test_constant_and_branch_drift_are_rejected(self) -> None:
         original = builder.EXPECTED_CONSTANTS[builder.WIND_FORCE_BLEND_INDEX][0]
@@ -112,6 +113,47 @@ class SecondaryDynamicsWindHelperContractTests(unittest.TestCase):
                 builder.build_contract()
         finally:
             builder.EXPECTED_BRANCHES[builder.WIND_INDEX][0] = original_condition
+
+    def test_blend_semantic_and_result_logic_tampering_is_rejected(self) -> None:
+        original_offset = builder.BLEND_CALL_SEMANTICS[0]["offset"]
+        builder.BLEND_CALL_SEMANTICS[0]["offset"] = "0x318"
+        try:
+            with self.assertRaises(builder.ContractError):
+                builder.build_contract()
+        finally:
+            builder.BLEND_CALL_SEMANTICS[0]["offset"] = original_offset
+
+        original_setup = builder.BLEND_CALL_SEMANTICS[0]["setupInstructionOffsets"]
+        builder.BLEND_CALL_SEMANTICS[0]["setupInstructionOffsets"] = []
+        try:
+            with self.assertRaises(builder.ContractError):
+                builder.build_contract()
+        finally:
+            builder.BLEND_CALL_SEMANTICS[0]["setupInstructionOffsets"] = original_setup
+
+        original_result = builder.BLEND_RESULT_RAW_BYTES["normal"][0x2D6]
+        builder.BLEND_RESULT_RAW_BYTES["normal"][0x2D6] = bytes.fromhex("89 51 09")
+        try:
+            with self.assertRaises(builder.ContractError):
+                builder.build_contract()
+        finally:
+            builder.BLEND_RESULT_RAW_BYTES["normal"][0x2D6] = original_result
+
+    def test_canonical_duplicate_target_is_rejected(self) -> None:
+        payload = json.loads(builder.JOB_LAYOUT_PATH.read_text(encoding="utf-8"))
+        simulation = next(row for row in payload["jobs"] if row["type"] == "BeyondDynamicBone.SimulationManager+StartSimulationStepJob")
+        duplicate = dict(next(field for field in simulation["fields"] if field["nativePayloadOffset"] == "0x68"))
+        simulation["fields"].append(duplicate)
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "job-layout.json"
+            path.write_text(json.dumps(payload), encoding="utf-8")
+            original_path = builder.JOB_LAYOUT_PATH
+            builder.JOB_LAYOUT_PATH = path
+            try:
+                with self.assertRaises(builder.ContractError):
+                    builder._canonical_wind_job_fields()
+            finally:
+                builder.JOB_LAYOUT_PATH = original_path
 
 
 if __name__ == "__main__":
