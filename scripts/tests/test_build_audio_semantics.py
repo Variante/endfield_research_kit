@@ -8570,10 +8570,15 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertEqual(event["action"]["playbackSink"], "AudioManager.PlaySoundAtPosition")
         self.assertEqual(event["action"]["playbackSinkStatus"], "staticManagedAdapterRouteVerified")
         self.assertEqual(event["action"]["audioHandleField"], "self+0x28 m_audioHandle")
+        self.assertEqual(event["action"]["audioHandleMeaning"], "managedInternalPlayingId")
+        self.assertEqual(event["action"]["nativeAkSoundEnginePlayingIdStatus"], "unresolved")
         self.assertEqual(event["action"]["audioHandleWriteStatus"], "verified")
         self.assertEqual(event["runtimeBranch"]["downstreamStatus"], "AkSoundEngineWwiseSelectionExecutionAudibilityUnresolved")
         self.assertEqual(event["runtimeBranch"]["managedAdapterRouteStatus"], "staticManagedAdapterRouteVerified")
+        self.assertEqual(event["runtimeBranch"]["asyncBoundaryStatus"], "staticLoadBankPrepareEventBoundaryVerified")
         self.assertEqual(event["action"]["postAndForgetToAudioAdapterConnectionStatus"], "verified")
+        self.assertEqual(event["action"]["postEventRuntimeStatus"], "adapterRequestQueuedOrPrepared")
+        self.assertEqual(event["action"]["asyncBoundaryStatus"], "staticLoadBankPrepareEventBoundaryVerified")
         self.assertEqual(event["runtimeBranch"]["status"], "unresolved")
         for control in rows:
             if control["semanticKind"].endswith("Control"):

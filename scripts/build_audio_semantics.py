@@ -100,8 +100,8 @@ PROJECTILE_SOUND_PHASES = {
 # authoritative value; these names are presentation labels, not a claim that
 # selection behavior was evaluated offline.
 SELECTION_HIRC_TYPES = frozenset({5, 6, 12, 13})
-AUDIO_SEMANTIC_SCHEMA_VERSION = 110
-TRIGGER_CONTEXT_SCHEMA_VERSION = 36
+AUDIO_SEMANTIC_SCHEMA_VERSION = 112
+TRIGGER_CONTEXT_SCHEMA_VERSION = 38
 
 MONO_BEHAVIOUR_AUDIO_EVENT_FIELD_NAMES = frozenset({
     "_spawnAudioEvent", "_finishAudioEvent", "_onHitAudioEvent",
@@ -118,7 +118,7 @@ MONO_BEHAVIOUR_AUDIO_EVENT_PREFILTERS = tuple(sorted(
     | {"soundBase.soundSpawn", "soundBase.soundFinish", "PlayLineSound"}
 ))
 MONO_BEHAVIOUR_AUDIO_CONTEXT_CACHE_SCHEMA_VERSION = 2
-RUNTIME_MODEL_CACHE_SCHEMA_VERSION = 107
+RUNTIME_MODEL_CACHE_SCHEMA_VERSION = 109
 METADATA_EVENT_SYMBOL_SCHEMA_VERSION = 1
 METADATA_EVENT_SYMBOL_RE = re.compile(r"^AU_[A-Z0-9_]+$")
 RADIO_MEDIA_CONTEXT_LIMIT = 64
@@ -10154,6 +10154,22 @@ def build_trigger_context_catalog(
                     if isinstance(row, dict) and row.get("semanticKind") == "modelViewStatePositionAudioEvent"
                 ),
                 "unresolved",
+            ),
+            "positionedPostEventRuntimeStatus": next(
+                (
+                    (row.get("nativeRoute") or {}).get("postEventRuntimeStatus")
+                    for row in grouped["modelViewStateAudio"]
+                    if isinstance(row, dict) and row.get("semanticKind") == "modelViewStatePositionAudioEvent"
+                ),
+                "unavailable",
+            ),
+            "positionedAsyncBoundaryStatus": next(
+                (
+                    (row.get("nativeRoute") or {}).get("asyncBoundaryStatus")
+                    for row in grouped["modelViewStateAudio"]
+                    if isinstance(row, dict) and row.get("semanticKind") == "modelViewStatePositionAudioEvent"
+                ),
+                "unavailable",
             ),
             "positionedAudioHandleWriteStatus": next(
                 (
