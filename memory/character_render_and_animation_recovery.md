@@ -1129,6 +1129,20 @@ published manifest predates the current controller join; regenerate it only
 with that pending controller change intentionally included. Chen's hidden
 weapon props still have no source-proven Overview visibility or mount binding.
 
+The targeted Endminf effect extractor now expands those catalog roots to the
+complete exact same-container AssetMap row set, writes an AnimeStudio object
+index, and rejects incomplete summaries or root/clip identity drift. The
+validated extraction closes the three prefab hierarchies and their decoded
+ParticleSystem/ParticleSystemRenderer payloads with zero index errors. It does
+not yet close rendering: most particle material slots, every particle mesh,
+all effect scripts, child Animator controllers, and even the local material's
+shader/texture dependencies remain external PPtrs. The root Animators are
+controller-null; three clips have direct root ownership, while the fourth has
+no proven owner. Resolve those external CAB-filename/PathID targets globally
+and recover controller scheduling before building Unity effect prefabs. The
+current extracted hierarchy is evidence-ready but deliberately not admitted
+as visible or playable.
+
 Secondary-motion lifecycle recovery has begun without adding a visual spring
 approximation. The pinned native `MagicaManager.SetCustomGameLoop` body proves
 seven ordered `PlayerLoopUtils.AddPlayerLoop` calls, all category anchors, six
