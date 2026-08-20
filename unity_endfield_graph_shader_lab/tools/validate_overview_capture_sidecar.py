@@ -11,9 +11,12 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import os
 import pathlib
+import struct
 import sys
 from typing import Any, Dict, Iterable, List
+import zlib
 
 
 def _finite(value: Any) -> bool:
@@ -31,7 +34,242 @@ def _in_range(value: Any, lower: float, upper: float, label: str, errors: List[s
         errors.append(f"{label} must be in [{lower},{upper}]")
 
 
-def validate_payload(payload: Dict[str, Any]) -> List[str]:
+def _png_alpha_audit(path: pathlib.Path) -> Dict[str, Any]:
+    """Read the alpha channel of an un-interlaced 8-bit RGBA PNG.
+
+    The Unity capture currently emits this exact PNG representation.  Keeping
+    the decoder here stdlib-only makes ``--verify-frames`` independent of
+    Pillow/OpenCV and, importantly, verifies the bytes on disk rather than
+    trusting the counts copied into the sidecar by the capture process.
+    """
+
+    data = path.read_bytes()
+    signature = b"\x89PNG\r\n\x1a\n"
+    if not data.startswith(signature):
+        raise ValueError("missing PNG signature")
+
+    offset = len(signature)
+    width = height = bit_depth = color_type = interlace = None
+    idat = bytearray()
+    saw_iend = False
+    while offset < len(data):
+        if offset + 12 > len(data):
+            raise ValueError("truncated PNG chunk header")
+        length = struct.unpack(">I", data[offset:offset + 4])[0]
+        chunk_type = data[offset + 4:offset + 8]
+        chunk_start = offset + 8
+        chunk_end = chunk_start + length
+        crc_end = chunk_end + 4
+        if crc_end > len(data):
+            raise ValueError(f"truncated {chunk_type.decode('latin1')} chunk")
+        chunk_data = data[chunk_start:chunk_end]
+        expected_crc = struct.unpack(">I", data[chunk_end:crc_end])[0]
+        actual_crc = zlib.crc32(chunk_type + chunk_data) & 0xFFFFFFFF
+        if actual_crc != expected_crc:
+            raise ValueError(
+                f"{chunk_type.decode('latin1')} CRC mismatch "
+                f"(expected {expected_crc:08x}, got {actual_crc:08x})"
+            )
+        offset = crc_end
+
+        if chunk_type == b"IHDR":
+            if width is not None or length != 13:
+                raise ValueError("invalid or duplicate IHDR")
+            width, height, bit_depth, color_type, compression, filter_method, interlace = (
+                struct.unpack(">IIBBBBB", chunk_data)
+            )
+            if compression != 0 or filter_method != 0:
+                raise ValueError("unsupported PNG compression or filter method")
+        elif chunk_type == b"IDAT":
+            idat.extend(chunk_data)
+        elif chunk_type == b"IEND":
+            if length != 0:
+                raise ValueError("invalid IEND payload")
+            saw_iend = True
+            break
+
+    if width is None or height is None:
+        raise ValueError("PNG has no IHDR")
+    if not saw_iend:
+        raise ValueError("PNG has no IEND")
+    if width <= 0 or height <= 0:
+        raise ValueError("PNG dimensions must be positive")
+    if bit_depth != 8 or color_type != 6 or interlace != 0:
+        raise ValueError(
+            "PNG must be un-interlaced 8-bit RGBA "
+            f"(bit_depth={bit_depth}, color_type={color_type}, interlace={interlace})"
+        )
+    try:
+        decoded = zlib.decompress(bytes(idat))
+    except zlib.error as exc:
+        raise ValueError(f"invalid IDAT stream: {exc}") from exc
+
+    row_bytes = width * 4
+    expected_size = height * (row_bytes + 1)
+    if len(decoded) != expected_size:
+        raise ValueError(
+            f"decoded scanline size {len(decoded)} does not equal {expected_size}"
+        )
+
+    def paeth(a: int, b: int, c: int) -> int:
+        estimate = a + b - c
+        pa = abs(estimate - a)
+        pb = abs(estimate - b)
+        pc = abs(estimate - c)
+        if pa <= pb and pa <= pc:
+            return a
+        if pb <= pc:
+            return b
+        return c
+
+    transparent = 0
+    nontransparent = 0
+    minimum = 255
+    maximum = 0
+    # PNG filtering is component-local at byte distance 4 for RGBA.  We only
+    # need alpha, so reconstruct the alpha lane directly instead of spending
+    # three quarters of the audit time rebuilding RGB bytes that are never
+    # inspected.
+    previous_alpha = bytes(width)
+    cursor = 0
+    for _ in range(height):
+        filter_type = decoded[cursor]
+        filtered = decoded[cursor + 1:cursor + 1 + row_bytes]
+        cursor += row_bytes + 1
+        row_alpha = bytearray(width)
+        for pixel_index in range(width):
+            value = filtered[pixel_index * 4 + 3]
+            left = row_alpha[pixel_index - 1] if pixel_index else 0
+            up = previous_alpha[pixel_index]
+            upper_left = previous_alpha[pixel_index - 1] if pixel_index else 0
+            if filter_type == 0:
+                reconstructed = value
+            elif filter_type == 1:
+                reconstructed = value + left
+            elif filter_type == 2:
+                reconstructed = value + up
+            elif filter_type == 3:
+                reconstructed = value + ((left + up) // 2)
+            elif filter_type == 4:
+                reconstructed = value + paeth(left, up, upper_left)
+            else:
+                raise ValueError(f"unsupported PNG row filter {filter_type}")
+            row_alpha[pixel_index] = reconstructed & 0xFF
+        for alpha in row_alpha:
+            minimum = min(minimum, alpha)
+            maximum = max(maximum, alpha)
+            if alpha == 0:
+                transparent += 1
+            else:
+                nontransparent += 1
+        previous_alpha = bytes(row_alpha)
+    return {
+        "width": width,
+        "height": height,
+        "transparent_pixels": transparent,
+        "nontransparent_pixels": nontransparent,
+        "minimum_alpha": minimum,
+        "maximum_alpha": maximum,
+        "transparent_clear_observed": transparent > 0,
+    }
+
+
+def _safe_frame_path(root: pathlib.Path, frame_name: Any) -> pathlib.Path:
+    if not isinstance(frame_name, str) or not frame_name.strip():
+        raise ValueError("frame file must be a non-empty string")
+    normalized = frame_name.replace("\\", "/")
+    portable = pathlib.PurePosixPath(normalized)
+    if portable.is_absolute() or any(part == ".." for part in portable.parts):
+        raise ValueError("frame file must stay under the sidecar directory")
+    if pathlib.PurePosixPath(normalized).name != normalized:
+        raise ValueError("frame file must be a direct child of the sidecar directory")
+    if pathlib.Path(normalized).suffix.casefold() != ".png":
+        raise ValueError("frame file must have a .png extension")
+    candidate = (root / pathlib.Path(*portable.parts)).resolve()
+    try:
+        candidate.relative_to(root)
+    except ValueError as exc:
+        raise ValueError("frame file must stay under the sidecar directory") from exc
+    return candidate
+
+
+def _verify_frame_files(
+    payload: Dict[str, Any],
+    sidecar_directory: pathlib.Path,
+) -> List[str]:
+    """Verify every referenced PNG and reject stale/unreferenced frame files."""
+
+    errors: List[str] = []
+    root = sidecar_directory.resolve()
+    frames = payload.get("frames")
+    if not isinstance(frames, list):
+        return ["PNG frame audit requires frames to be a list"]
+    expected_paths: Dict[str, pathlib.Path] = {}
+    for index, frame in enumerate(frames):
+        if not isinstance(frame, dict):
+            continue
+        try:
+            frame_path = _safe_frame_path(root, frame.get("file"))
+        except ValueError as exc:
+            errors.append(f"frames[{index}].file: {exc}")
+            continue
+        key = os.path.normcase(str(frame_path))
+        if key in expected_paths:
+            errors.append(
+                f"frames[{index}].file duplicates {expected_paths[key].name}"
+            )
+            continue
+        expected_paths[key] = frame_path
+        if not frame_path.is_file():
+            errors.append(f"frames[{index}].file is missing: {frame_path}")
+            continue
+        try:
+            actual = _png_alpha_audit(frame_path)
+        except (OSError, ValueError) as exc:
+            errors.append(f"frames[{index}].file PNG audit failed: {frame_path}: {exc}")
+            continue
+
+        alpha = frame.get("alpha_audit")
+        checks = {
+            "width": payload.get("width"),
+            "height": payload.get("height"),
+        }
+        if isinstance(alpha, dict):
+            checks.update({
+                "width": alpha.get("width"),
+                "height": alpha.get("height"),
+                "transparent_pixels": alpha.get("transparent_pixels"),
+                "nontransparent_pixels": alpha.get("nontransparent_pixels"),
+                "minimum_alpha": alpha.get("minimum_alpha"),
+                "maximum_alpha": alpha.get("maximum_alpha"),
+                "transparent_clear_observed": alpha.get("transparent_clear_observed"),
+            })
+        for field, expected in checks.items():
+            if expected is not None and actual.get(field) != expected:
+                errors.append(
+                    f"frames[{index}].file {field} mismatch: "
+                    f"sidecar={expected!r}, png={actual.get(field)!r}"
+                )
+
+    actual_paths = {
+        os.path.normcase(str(path.resolve()))
+        for path in root.glob("frame_*.png")
+        if path.is_file()
+    }
+    extras = sorted(actual_paths - set(expected_paths), key=str.casefold)
+    if extras:
+        errors.append(
+            "unreferenced frame_*.png file(s): "
+            + ", ".join(pathlib.Path(path).name for path in extras)
+        )
+    return errors
+
+
+def validate_payload(
+    payload: Dict[str, Any],
+    frame_root: pathlib.Path | None = None,
+    verify_frames: bool = False,
+) -> List[str]:
     errors: List[str] = []
     if not isinstance(payload, dict):
         return ["sidecar root must be an object"]
@@ -283,29 +521,48 @@ def validate_payload(payload: Dict[str, Any]) -> List[str]:
         for item in limitations
     ):
         errors.append("limitations must document that transparent pass excludes post processing")
+    if verify_frames:
+        if frame_root is None:
+            errors.append("PNG frame audit requires the sidecar directory")
+        else:
+            errors.extend(_verify_frame_files(payload, pathlib.Path(frame_root)))
     return errors
 
 
-def validate_path(path: pathlib.Path) -> List[str]:
+def validate_path(path: pathlib.Path, verify_frames: bool = False) -> List[str]:
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
         return [f"{path}: could not read JSON: {exc}"]
-    return [f"{path}: {error}" for error in validate_payload(payload)]
+    errors = validate_payload(
+        payload,
+        frame_root=path.parent if verify_frames else None,
+        verify_frames=verify_frames,
+    )
+    return [f"{path}: {error}" for error in errors]
 
 
 def main(argv: Iterable[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("sidecar", nargs="+", type=pathlib.Path)
+    parser.add_argument(
+        "--verify-frames",
+        action="store_true",
+        help=(
+            "decode every referenced PNG with the stdlib RGBA decoder, verify "
+            "sidecar alpha counts and reject missing/stale frame_*.png files"
+        ),
+    )
     args = parser.parse_args(list(argv) if argv is not None else None)
     errors: List[str] = []
     for path in args.sidecar:
-        errors.extend(validate_path(path))
+        errors.extend(validate_path(path, verify_frames=args.verify_frames))
     if errors:
         for error in errors:
             print(error, file=sys.stderr)
         return 1
-    print(f"validated {len(args.sidecar)} overview capture sidecar(s)")
+    suffix = " with PNG frames" if args.verify_frames else ""
+    print(f"validated {len(args.sidecar)} overview capture sidecar(s){suffix}")
     return 0
 
 

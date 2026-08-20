@@ -7,7 +7,7 @@ namespace EndfieldGraphShaderLab
     /// <summary>
     /// A deliberately non-solver probe for the recovered BeyondDynamicBone
     /// topology.  It only snapshots transforms and checks the ordering of a
-    /// read/callback/writeback-shaped lifecycle.  It does not integrate a
+    /// read/audit-marker/identity-writeback-shaped lifecycle.  It does not integrate a
     /// spring, constraint, collision, Burst, or PlayerLoop implementation and
     /// must never be used as evidence that retail secondary dynamics run.
     /// </summary>
@@ -83,8 +83,16 @@ namespace EndfieldGraphShaderLab
             public bool movement_disabled;
             public bool gate_open;
             public bool state_allocated;
+            // These two fields are reserved for a real retail/runtime hook.
+            // The probe below never invokes that hook, so they must stay
+            // false.  Keeping them separate from the audit markers prevents
+            // an identity no-op from being mistaken for native callback or
+            // transform writeback evidence.
             public bool callback_invoked;
             public bool writeback_invoked;
+            public bool audit_callback_marker_invoked;
+            public bool identity_writeback_invoked;
+            public bool identity_writeback_skipped;
             public bool ordering_verified;
             public bool transforms_unchanged;
             public bool passed;
@@ -178,8 +186,9 @@ namespace EndfieldGraphShaderLab
         }
 
         /// <summary>
-        /// Runs one deterministic lifecycle audit.  The callback is a no-op by
-        /// design: its purpose is to prove ordering and frozen writeback, not
+        /// Runs one deterministic lifecycle audit.  The audit marker is a
+        /// no-op by design: its purpose is to prove ordering and frozen
+        /// identity writeback, not
         /// to approximate the missing retail dynamics solver.
         /// </summary>
         public LifecycleAudit RunLifecycleAudit(string scenario)
@@ -210,6 +219,8 @@ namespace EndfieldGraphShaderLab
                 audit.events = events.ToArray();
                 audit.callback_invoked = false;
                 audit.writeback_invoked = false;
+                audit.audit_callback_marker_invoked = false;
+                audit.identity_writeback_invoked = false;
                 audit.ordering_verified = IsReadThenGate(events);
                 audit.transforms_unchanged = CompareCurrentStateToTransforms();
                 audit.passed = audit.state_allocated && audit.ordering_verified &&
@@ -217,20 +228,21 @@ namespace EndfieldGraphShaderLab
                 return audit;
             }
 
-            // This marker is intentionally the only callback.  A future
+            // This marker is intentionally not a callback.  A future
             // implementation may supply a real solver separately; this class
-            // must remain a non-solver audit and therefore never mutates state.
-            events.Add("callback");
-            audit.callback_invoked = true;
+            // must remain a non-solver audit and therefore never claims that
+            // a native callback ran or that native writeback occurred.
+            events.Add("audit_callback_marker");
+            audit.audit_callback_marker_invoked = true;
 
-            WriteBack(events);
-            audit.writeback_invoked = true;
+            audit.identity_writeback_invoked = WriteBack(events);
+            audit.identity_writeback_skipped = !audit.identity_writeback_invoked;
             audit.events = events.ToArray();
-            audit.ordering_verified = IsReadCallbackWriteback(events);
+            audit.ordering_verified = IsReadAuditMarkerIdentityWriteback(events);
             audit.transforms_unchanged = CompareCurrentStateToTransforms();
             audit.passed = audit.state_allocated && audit.movement_disabled &&
-                           audit.gate_open && audit.callback_invoked &&
-                           audit.writeback_invoked && audit.ordering_verified &&
+                           audit.gate_open && audit.audit_callback_marker_invoked &&
+                           audit.identity_writeback_invoked && audit.ordering_verified &&
                            audit.transforms_unchanged;
             return audit;
         }
@@ -248,17 +260,20 @@ namespace EndfieldGraphShaderLab
             }
         }
 
-        private void WriteBack(List<string> events)
+        private bool WriteBack(List<string> events)
         {
             // Movement must be disabled for this probe.  Writing the captured
             // current pose back is therefore an identity operation, but still
-            // verifies that writeback occurs after the callback marker.
-            if (!movementEnabled)
+            // verifies that identity writeback occurs after the audit marker.
+            if (movementEnabled)
             {
-                for (int index = 0; index < nodes.Count; index++)
-                    currentState[index].WriteTo(nodes[index].transform);
+                events.Add("identity_writeback_skipped_movement_enabled");
+                return false;
             }
-            events.Add("writeback");
+            for (int index = 0; index < nodes.Count; index++)
+                currentState[index].WriteTo(nodes[index].transform);
+            events.Add("identity_writeback");
+            return true;
         }
 
         private bool EvaluateGate(out string reason)
@@ -336,10 +351,11 @@ namespace EndfieldGraphShaderLab
             return events.Count == 2 && events[0] == "read" && events[1] == "gated";
         }
 
-        private static bool IsReadCallbackWriteback(IReadOnlyList<string> events)
+        private static bool IsReadAuditMarkerIdentityWriteback(IReadOnlyList<string> events)
         {
             return events.Count == 3 && events[0] == "read" &&
-                   events[1] == "callback" && events[2] == "writeback";
+                   events[1] == "audit_callback_marker" &&
+                   events[2] == "identity_writeback";
         }
     }
 }

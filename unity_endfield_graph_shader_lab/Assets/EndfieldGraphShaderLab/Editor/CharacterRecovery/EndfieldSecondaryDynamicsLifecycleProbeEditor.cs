@@ -74,7 +74,7 @@ namespace EndfieldGraphShaderLabEditor
         [Serializable]
         private sealed class ProbeReport
         {
-            public string schema = "endfield.charinfo.secondary-dynamics-lifecycle-probe.v1";
+            public string schema = "endfield.charinfo.secondary-dynamics-lifecycle-probe.v2";
             public string actor = "endminf";
             public string prefab = EndminfPrefabPath;
             public string source_contract = ContractAssetPath;
@@ -112,8 +112,14 @@ namespace EndfieldGraphShaderLabEditor
             public bool movement_disabled;
             public bool gate_open;
             public bool state_allocated;
+            // The retail fields are intentionally false until a real native
+            // callback/writeback hook is connected.  Audit markers below are
+            // local identity operations only.
             public bool callback_invoked;
             public bool writeback_invoked;
+            public bool audit_callback_marker_invoked;
+            public bool identity_writeback_invoked;
+            public bool identity_writeback_skipped;
             public bool ordering_verified;
             public bool transforms_unchanged;
             public bool passed;
@@ -133,6 +139,9 @@ namespace EndfieldGraphShaderLabEditor
                 state_allocated = source.state_allocated;
                 callback_invoked = source.callback_invoked;
                 writeback_invoked = source.writeback_invoked;
+                audit_callback_marker_invoked = source.audit_callback_marker_invoked;
+                identity_writeback_invoked = source.identity_writeback_invoked;
+                identity_writeback_skipped = source.identity_writeback_skipped;
                 ordering_verified = source.ordering_verified;
                 transforms_unchanged = source.transforms_unchanged;
                 passed = source.passed;
@@ -159,8 +168,10 @@ namespace EndfieldGraphShaderLabEditor
                     report.active_scenario == null ||
                     !report.active_scenario.passed ||
                     !report.active_scenario.gate_open ||
-                    !report.active_scenario.callback_invoked ||
-                    !report.active_scenario.writeback_invoked ||
+                    !report.active_scenario.audit_callback_marker_invoked ||
+                    !report.active_scenario.identity_writeback_invoked ||
+                    report.active_scenario.callback_invoked ||
+                    report.active_scenario.writeback_invoked ||
                     report.component_disabled_scenario == null ||
                     !report.component_disabled_scenario.passed ||
                     report.component_disabled_scenario.gate_open ||
@@ -243,8 +254,28 @@ namespace EndfieldGraphShaderLabEditor
                 EndfieldSecondaryDynamicsLifecycleProbe.LifecycleAudit active =
                     probe.RunLifecycleAudit("self_test_active");
                 Require(active.passed, "active lifecycle self-test failed");
-                Require(active.events.SequenceEqual(new[] { "read", "callback", "writeback" }),
+                Require(active.events.SequenceEqual(new[] { "read", "audit_callback_marker", "identity_writeback" }),
                     "active lifecycle self-test ordering failed");
+                Require(!active.callback_invoked && !active.writeback_invoked &&
+                        active.audit_callback_marker_invoked &&
+                        active.identity_writeback_invoked &&
+                        !active.identity_writeback_skipped,
+                    "active lifecycle self-test claimed a retail callback/writeback");
+
+                probe.SetLifecycleGates(true, true, true,
+                    EndfieldSecondaryDynamicsLifecycleProbe.EndminfSerializedOverviewWeight,
+                    1.0f, 1.0f);
+                EndfieldSecondaryDynamicsLifecycleProbe.LifecycleAudit movementEnabled =
+                    probe.RunLifecycleAudit("self_test_movement_enabled");
+                Require(!movementEnabled.passed &&
+                        !movementEnabled.identity_writeback_invoked &&
+                        movementEnabled.identity_writeback_skipped &&
+                        movementEnabled.events.SequenceEqual(new[]
+                        {
+                            "read", "audit_callback_marker",
+                            "identity_writeback_skipped_movement_enabled"
+                        }),
+                    "movement-enabled self-test did not fail closed on identity writeback");
 
                 probe.SetLifecycleGates(false, true, false,
                     EndfieldSecondaryDynamicsLifecycleProbe.EndminfSerializedOverviewWeight,
@@ -252,8 +283,10 @@ namespace EndfieldGraphShaderLabEditor
                 EndfieldSecondaryDynamicsLifecycleProbe.LifecycleAudit disabled =
                     probe.RunLifecycleAudit("self_test_component_disabled");
                 Require(disabled.passed, "disabled lifecycle self-test failed");
-                Require(!disabled.callback_invoked && !disabled.writeback_invoked,
-                    "disabled lifecycle self-test unexpectedly invoked callback/writeback");
+                Require(!disabled.callback_invoked && !disabled.writeback_invoked &&
+                        !disabled.audit_callback_marker_invoked &&
+                        !disabled.identity_writeback_invoked,
+                    "disabled lifecycle self-test unexpectedly invoked callback/writeback markers");
 
                 probe.SetLifecycleGates(true, true, false, 0.0f, 1.0f, 1.0f);
                 EndfieldSecondaryDynamicsLifecycleProbe.LifecycleAudit weighted =

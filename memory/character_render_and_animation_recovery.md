@@ -1150,6 +1150,16 @@ payload layout, Unity execution, and visual verification remain unresolved;
 therefore `secondary_dynamics_verified`, `solver_implemented`, and
 `retail_equivalent` all remain false.
 
+The Unity lifecycle probe now reserves `callback_invoked` and
+`writeback_invoked` for a future real runtime hook. Its current local audit is
+reported only as `audit_callback_marker` plus `identity_writeback`; a
+movement-enabled run explicitly skips identity writeback and fails. This
+prevents topology/order testing from masquerading as native execution. The
+next native payload edge reaches `StartSimulationStepJob.SetIndexCount` and
+recovers its field declaration order and call ABI, but NativeArray instance
+offsets and the independently pinned Execute/Burst bodies are still missing,
+so no payload layout or numeric solver is admitted.
+
 A 2 fps actor-only Overview probe successfully emitted complete
 start -> transition -> loop sequences for all three priority actors with no
 foreground UI, but visual inspection confirms the frozen-secondary-bone gap:
@@ -1160,6 +1170,14 @@ source clips only toggle `Mesh_all`; they contain no mount/transform track, and
 the recovered prop remains actor-local with no proven visible contribution.
 Recover the original prefab/socket attachment and add prop-only A/B pixel or
 draw evidence before admitting that widget into Overview capture.
+
+The actor-only sidecar validator can additionally decode every referenced
+Unity PNG with `--verify-frames`. It checks CRC/filter decoding, dimensions,
+actual alpha extrema and transparent/nontransparent counts, bounded direct
+child paths, missing/duplicate files, and stale `frame_*.png` files. The 53
+current Endminf/Pelica/Chen frames pass this byte-level audit. This proves the
+PNG bytes match their capture sidecars; it does not promote alpha readback to
+an independently verified character matte.
 
 ## Main animation gap
 
