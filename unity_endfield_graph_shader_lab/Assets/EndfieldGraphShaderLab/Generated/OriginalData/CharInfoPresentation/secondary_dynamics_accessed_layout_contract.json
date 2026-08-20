@@ -1,0 +1,880 @@
+{
+  "schema": "endfield.charinfo.secondary-dynamics-accessed-layout.v1",
+  "status": "accessed_nested_direct_layouts_closed",
+  "accessed_layouts_recovered": true,
+  "secondary_dynamics_verified": false,
+  "solver_implemented": false,
+  "retail_equivalent": false,
+  "native_gate": {
+    "gameAssembly": {
+      "path": "D:/Program Files/Endfield Game/GameAssembly.dll",
+      "size": 280436712,
+      "sha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
+    },
+    "globalMetadata": {
+      "path": "D:/Program Files/Endfield Game/Endfield_Data/il2cpp_data/Metadata/global-metadata.dat",
+      "size": 62925560,
+      "sha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
+    }
+  },
+  "metadataRegistration": {
+    "codeRegistrationVa": "0x18b9217d0",
+    "metadataRegistrationVa": "0x18b921c30",
+    "fieldOffsets": "0x18e7b5840",
+    "fieldOffsetsCount": 63987,
+    "typeDefinitionsSizes": "0x18e8327e0",
+    "typeDefinitionsSizesCount": 63987
+  },
+  "layouts": [
+    {
+      "name": "BeyondDynamicBone.SpringConstraint+SpringConstraintParams",
+      "typeIndex": 48138,
+      "fieldStart": 229085,
+      "fieldCount": 4,
+      "fieldOffsetsPointerVa": "0x18b9e3830",
+      "typeDefinitionsSizesPointerVa": "0x18bb6a1e8",
+      "instanceSizeBytes": 32,
+      "nativeSizeBytes": 16,
+      "directFieldsOnly": true,
+      "fields": [
+        {
+          "fieldIndex": 229085,
+          "name": "springPower",
+          "metadataTypeIndex": 163868,
+          "metadataTypeName": "System.Single",
+          "boxedFieldOffset": "0x10",
+          "nativePayloadOffset": "0x0",
+          "metadataType": {
+            "metadataTypeIndex": 163868,
+            "typeCode": "0xc",
+            "typeCodeValue": 12,
+            "typePointerVa": "0x18e3d5ec0",
+            "category": "primitive",
+            "recursiveBoundary": "direct_field_only",
+            "typeDefinitionIndex": 42141,
+            "name": "System.Single",
+            "typeDefinitionNativeSizeBytes": 4
+          },
+          "token": "0x040002c6",
+          "slotSpanBytes": 4,
+          "slotEndNativePayloadOffset": "0x4",
+          "slotSpanEvidence": {
+            "status": "closed",
+            "basis": "next_instance_field_native_offset"
+          }
+        },
+        {
+          "fieldIndex": 229086,
+          "name": "limitDistance",
+          "metadataTypeIndex": 163868,
+          "metadataTypeName": "System.Single",
+          "boxedFieldOffset": "0x14",
+          "nativePayloadOffset": "0x4",
+          "metadataType": {
+            "metadataTypeIndex": 163868,
+            "typeCode": "0xc",
+            "typeCodeValue": 12,
+            "typePointerVa": "0x18e3d5ec0",
+            "category": "primitive",
+            "recursiveBoundary": "direct_field_only",
+            "typeDefinitionIndex": 42141,
+            "name": "System.Single",
+            "typeDefinitionNativeSizeBytes": 4
+          },
+          "token": "0x040002c7",
+          "slotSpanBytes": 4,
+          "slotEndNativePayloadOffset": "0x8",
+          "slotSpanEvidence": {
+            "status": "closed",
+            "basis": "next_instance_field_native_offset"
+          }
+        },
+        {
+          "fieldIndex": 229087,
+          "name": "normalLimitRatio",
+          "metadataTypeIndex": 163868,
+          "metadataTypeName": "System.Single",
+          "boxedFieldOffset": "0x18",
+          "nativePayloadOffset": "0x8",
+          "metadataType": {
+            "metadataTypeIndex": 163868,
+            "typeCode": "0xc",
+            "typeCodeValue": 12,
+            "typePointerVa": "0x18e3d5ec0",
+            "category": "primitive",
+            "recursiveBoundary": "direct_field_only",
+            "typeDefinitionIndex": 42141,
+            "name": "System.Single",
+            "typeDefinitionNativeSizeBytes": 4
+          },
+          "token": "0x040002c8",
+          "slotSpanBytes": 4,
+          "slotEndNativePayloadOffset": "0xc",
+          "slotSpanEvidence": {
+            "status": "closed",
+            "basis": "next_instance_field_native_offset"
+          }
+        },
+        {
+          "fieldIndex": 229088,
+          "name": "springNoise",
+          "metadataTypeIndex": 163868,
+          "metadataTypeName": "System.Single",
+          "boxedFieldOffset": "0x1c",
+          "nativePayloadOffset": "0xc",
+          "metadataType": {
+            "metadataTypeIndex": 163868,
+            "typeCode": "0xc",
+            "typeCodeValue": 12,
+            "typePointerVa": "0x18e3d5ec0",
+            "category": "primitive",
+            "recursiveBoundary": "direct_field_only",
+            "typeDefinitionIndex": 42141,
+            "name": "System.Single",
+            "typeDefinitionNativeSizeBytes": 4
+          },
+          "token": "0x040002c9",
+          "slotSpanBytes": 4,
+          "slotEndNativePayloadOffset": "0x10",
+          "slotSpanEvidence": {
+            "status": "closed",
+            "basis": "native_size_tail"
+          }
+        }
+      ],
+      "staticFields": []
+    },
+    {
+      "name": "BeyondDynamicBone.WindParams",
+      "typeIndex": 48182,
+      "fieldStart": 229230,
+      "fieldCount": 7,
+      "fieldOffsetsPointerVa": "0x18b9e3b28",
+      "typeDefinitionsSizesPointerVa": "0x18bb6a328",
+      "instanceSizeBytes": 44,
+      "nativeSizeBytes": 28,
+      "directFieldsOnly": true,
+      "fields": [
+        {
+          "fieldIndex": 229230,
+          "name": "influence",
+          "metadataTypeIndex": 163868,
+          "metadataTypeName": "System.Single",
+          "boxedFieldOffset": "0x10",
+          "nativePayloadOffset": "0x0",
+          "metadataType": {
+            "metadataTypeIndex": 163868,
+            "typeCode": "0xc",
+            "typeCodeValue": 12,
+            "typePointerVa": "0x18e3d5ec0",
+            "category": "primitive",
+            "recursiveBoundary": "direct_field_only",
+            "typeDefinitionIndex": 42141,
+            "name": "System.Single",
+            "typeDefinitionNativeSizeBytes": 4
+          },
+          "token": "0x04000357",
+          "slotSpanBytes": 4,
+          "slotEndNativePayloadOffset": "0x4",
+          "slotSpanEvidence": {
+            "status": "closed",
+            "basis": "next_instance_field_native_offset"
+          }
+        },
+        {
+          "fieldIndex": 229231,
+          "name": "frequency",
+          "metadataTypeIndex": 163868,
+          "metadataTypeName": "System.Single",
+          "boxedFieldOffset": "0x14",
+          "nativePayloadOffset": "0x4",
+          "metadataType": {
+            "metadataTypeIndex": 163868,
+            "typeCode": "0xc",
+            "typeCodeValue": 12,
+            "typePointerVa": "0x18e3d5ec0",
+            "category": "primitive",
+            "recursiveBoundary": "direct_field_only",
+            "typeDefinitionIndex": 42141,
+            "name": "System.Single",
+            "typeDefinitionNativeSizeBytes": 4
+          },
+          "token": "0x04000358",
+          "slotSpanBytes": 4,
+          "slotEndNativePayloadOffset": "0x8",
+          "slotSpanEvidence": {
+            "status": "closed",
+            "basis": "next_instance_field_native_offset"
+          }
+        },
+        {
+          "fieldIndex": 229232,
+          "name": "turbulence",
+          "metadataTypeIndex": 163868,
+          "metadataTypeName": "System.Single",
+          "boxedFieldOffset": "0x18",
+          "nativePayloadOffset": "0x8",
+          "metadataType": {
+            "metadataTypeIndex": 163868,
+            "typeCode": "0xc",
+            "typeCodeValue": 12,
+            "typePointerVa": "0x18e3d5ec0",
+            "category": "primitive",
+            "recursiveBoundary": "direct_field_only",
+            "typeDefinitionIndex": 42141,
+            "name": "System.Single",
+            "typeDefinitionNativeSizeBytes": 4
+          },
+          "token": "0x04000359",
+          "slotSpanBytes": 4,
+          "slotEndNativePayloadOffset": "0xc",
+          "slotSpanEvidence": {
+            "status": "closed",
+            "basis": "next_instance_field_native_offset"
+          }
+        },
+        {
+          "fieldIndex": 229233,
+          "name": "blend",
+          "metadataTypeIndex": 163868,
+          "metadataTypeName": "System.Single",
+          "boxedFieldOffset": "0x1c",
+          "nativePayloadOffset": "0xc",
+          "metadataType": {
+            "metadataTypeIndex": 163868,
+            "typeCode": "0xc",
+            "typeCodeValue": 12,
+            "typePointerVa": "0x18e3d5ec0",
+            "category": "primitive",
+            "recursiveBoundary": "direct_field_only",
+            "typeDefinitionIndex": 42141,
+            "name": "System.Single",
+            "typeDefinitionNativeSizeBytes": 4
+          },
+          "token": "0x0400035a",
+          "slotSpanBytes": 4,
+          "slotEndNativePayloadOffset": "0x10",
+          "slotSpanEvidence": {
+            "status": "closed",
+            "basis": "next_instance_field_native_offset"
+          }
+        },
+        {
+          "fieldIndex": 229234,
+          "name": "synchronization",
+          "metadataTypeIndex": 163868,
+          "metadataTypeName": "System.Single",
+          "boxedFieldOffset": "0x20",
+          "nativePayloadOffset": "0x10",
+          "metadataType": {
+            "metadataTypeIndex": 163868,
+            "typeCode": "0xc",
+            "typeCodeValue": 12,
+            "typePointerVa": "0x18e3d5ec0",
+            "category": "primitive",
+            "recursiveBoundary": "direct_field_only",
+            "typeDefinitionIndex": 42141,
+            "name": "System.Single",
+            "typeDefinitionNativeSizeBytes": 4
+          },
+          "token": "0x0400035b",
+          "slotSpanBytes": 4,
+          "slotEndNativePayloadOffset": "0x14",
+          "slotSpanEvidence": {
+            "status": "closed",
+            "basis": "next_instance_field_native_offset"
+          }
+        },
+        {
+          "fieldIndex": 229235,
+          "name": "depthWeight",
+          "metadataTypeIndex": 163868,
+          "metadataTypeName": "System.Single",
+          "boxedFieldOffset": "0x24",
+          "nativePayloadOffset": "0x14",
+          "metadataType": {
+            "metadataTypeIndex": 163868,
+            "typeCode": "0xc",
+            "typeCodeValue": 12,
+            "typePointerVa": "0x18e3d5ec0",
+            "category": "primitive",
+            "recursiveBoundary": "direct_field_only",
+            "typeDefinitionIndex": 42141,
+            "name": "System.Single",
+            "typeDefinitionNativeSizeBytes": 4
+          },
+          "token": "0x0400035c",
+          "slotSpanBytes": 4,
+          "slotEndNativePayloadOffset": "0x18",
+          "slotSpanEvidence": {
+            "status": "closed",
+            "basis": "next_instance_field_native_offset"
+          }
+        },
+        {
+          "fieldIndex": 229236,
+          "name": "movingWind",
+          "metadataTypeIndex": 163868,
+          "metadataTypeName": "System.Single",
+          "boxedFieldOffset": "0x28",
+          "nativePayloadOffset": "0x18",
+          "metadataType": {
+            "metadataTypeIndex": 163868,
+            "typeCode": "0xc",
+            "typeCodeValue": 12,
+            "typePointerVa": "0x18e3d5ec0",
+            "category": "primitive",
+            "recursiveBoundary": "direct_field_only",
+            "typeDefinitionIndex": 42141,
+            "name": "System.Single",
+            "typeDefinitionNativeSizeBytes": 4
+          },
+          "token": "0x0400035d",
+          "slotSpanBytes": 4,
+          "slotEndNativePayloadOffset": "0x1c",
+          "slotSpanEvidence": {
+            "status": "closed",
+            "basis": "native_size_tail"
+          }
+        }
+      ],
+      "staticFields": []
+    },
+    {
+      "name": "BeyondDynamicBone.TeamWindInfo",
+      "typeIndex": 48440,
+      "fieldStart": 230551,
+      "fieldCount": 4,
+      "fieldOffsetsPointerVa": "0x18b9e2398",
+      "typeDefinitionsSizesPointerVa": "0x18bb69348",
+      "instanceSizeBytes": 40,
+      "nativeSizeBytes": 24,
+      "directFieldsOnly": true,
+      "fields": [
+        {
+          "fieldIndex": 230551,
+          "name": "windId",
+          "metadataTypeIndex": 148333,
+          "metadataTypeName": "System.Int32",
+          "boxedFieldOffset": "0x10",
+          "nativePayloadOffset": "0x0",
+          "metadataType": {
+            "metadataTypeIndex": 148333,
+            "typeCode": "0x8",
+            "typeCodeValue": 8,
+            "typePointerVa": "0x18e425aa0",
+            "category": "primitive",
+            "recursiveBoundary": "direct_field_only",
+            "typeDefinitionIndex": 42093,
+            "name": "System.Int32",
+            "typeDefinitionNativeSizeBytes": 4
+          },
+          "token": "0x04000880",
+          "slotSpanBytes": 4,
+          "slotEndNativePayloadOffset": "0x4",
+          "slotSpanEvidence": {
+            "status": "closed",
+            "basis": "next_instance_field_native_offset"
+          }
+        },
+        {
+          "fieldIndex": 230552,
+          "name": "time",
+          "metadataTypeIndex": 163868,
+          "metadataTypeName": "System.Single",
+          "boxedFieldOffset": "0x14",
+          "nativePayloadOffset": "0x4",
+          "metadataType": {
+            "metadataTypeIndex": 163868,
+            "typeCode": "0xc",
+            "typeCodeValue": 12,
+            "typePointerVa": "0x18e3d5ec0",
+            "category": "primitive",
+            "recursiveBoundary": "direct_field_only",
+            "typeDefinitionIndex": 42141,
+            "name": "System.Single",
+            "typeDefinitionNativeSizeBytes": 4
+          },
+          "token": "0x04000881",
+          "slotSpanBytes": 4,
+          "slotEndNativePayloadOffset": "0x8",
+          "slotSpanEvidence": {
+            "status": "closed",
+            "basis": "next_instance_field_native_offset"
+          }
+        },
+        {
+          "fieldIndex": 230553,
+          "name": "main",
+          "metadataTypeIndex": 163868,
+          "metadataTypeName": "System.Single",
+          "boxedFieldOffset": "0x18",
+          "nativePayloadOffset": "0x8",
+          "metadataType": {
+            "metadataTypeIndex": 163868,
+            "typeCode": "0xc",
+            "typeCodeValue": 12,
+            "typePointerVa": "0x18e3d5ec0",
+            "category": "primitive",
+            "recursiveBoundary": "direct_field_only",
+            "typeDefinitionIndex": 42141,
+            "name": "System.Single",
+            "typeDefinitionNativeSizeBytes": 4
+          },
+          "token": "0x04000882",
+          "slotSpanBytes": 4,
+          "slotEndNativePayloadOffset": "0xc",
+          "slotSpanEvidence": {
+            "status": "closed",
+            "basis": "next_instance_field_native_offset"
+          }
+        },
+        {
+          "fieldIndex": 230554,
+          "name": "direction",
+          "metadataTypeIndex": 171871,
+          "metadataTypeName": "Unity.Mathematics.float3",
+          "boxedFieldOffset": "0x1c",
+          "nativePayloadOffset": "0xc",
+          "metadataType": {
+            "metadataTypeIndex": 171871,
+            "typeCode": "0x11",
+            "typeCodeValue": 17,
+            "typePointerVa": "0x18e3aa0d0",
+            "category": "valueType",
+            "recursiveBoundary": "direct_field_only",
+            "typeDefinitionIndex": 57216,
+            "name": "Unity.Mathematics.float3",
+            "typeDefinitionNativeSizeBytes": 12
+          },
+          "token": "0x04000883",
+          "slotSpanBytes": 12,
+          "slotEndNativePayloadOffset": "0x18",
+          "slotSpanEvidence": {
+            "status": "closed",
+            "basis": "native_size_tail"
+          }
+        }
+      ],
+      "staticFields": []
+    },
+    {
+      "name": "Unity.Mathematics.double3",
+      "typeIndex": 57201,
+      "fieldStart": 278555,
+      "fieldCount": 4,
+      "fieldOffsetsPointerVa": "0x18ba11ef8",
+      "typeDefinitionsSizesPointerVa": "0x18bacbb88",
+      "instanceSizeBytes": 40,
+      "nativeSizeBytes": 24,
+      "directFieldsOnly": true,
+      "fields": [
+        {
+          "fieldIndex": 278555,
+          "name": "x",
+          "metadataTypeIndex": 137537,
+          "metadataTypeName": "System.Double",
+          "boxedFieldOffset": "0x10",
+          "nativePayloadOffset": "0x0",
+          "metadataType": {
+            "metadataTypeIndex": 137537,
+            "typeCode": "0xd",
+            "typeCodeValue": 13,
+            "typePointerVa": "0x18e45e9e0",
+            "category": "primitive",
+            "recursiveBoundary": "direct_field_only",
+            "typeDefinitionIndex": 42042,
+            "name": "System.Double",
+            "typeDefinitionNativeSizeBytes": 8
+          },
+          "token": "0x04000067",
+          "slotSpanBytes": 8,
+          "slotEndNativePayloadOffset": "0x8",
+          "slotSpanEvidence": {
+            "status": "closed",
+            "basis": "next_instance_field_native_offset"
+          }
+        },
+        {
+          "fieldIndex": 278556,
+          "name": "y",
+          "metadataTypeIndex": 137537,
+          "metadataTypeName": "System.Double",
+          "boxedFieldOffset": "0x18",
+          "nativePayloadOffset": "0x8",
+          "metadataType": {
+            "metadataTypeIndex": 137537,
+            "typeCode": "0xd",
+            "typeCodeValue": 13,
+            "typePointerVa": "0x18e45e9e0",
+            "category": "primitive",
+            "recursiveBoundary": "direct_field_only",
+            "typeDefinitionIndex": 42042,
+            "name": "System.Double",
+            "typeDefinitionNativeSizeBytes": 8
+          },
+          "token": "0x04000068",
+          "slotSpanBytes": 8,
+          "slotEndNativePayloadOffset": "0x10",
+          "slotSpanEvidence": {
+            "status": "closed",
+            "basis": "next_instance_field_native_offset"
+          }
+        },
+        {
+          "fieldIndex": 278557,
+          "name": "z",
+          "metadataTypeIndex": 137537,
+          "metadataTypeName": "System.Double",
+          "boxedFieldOffset": "0x20",
+          "nativePayloadOffset": "0x10",
+          "metadataType": {
+            "metadataTypeIndex": 137537,
+            "typeCode": "0xd",
+            "typeCodeValue": 13,
+            "typePointerVa": "0x18e45e9e0",
+            "category": "primitive",
+            "recursiveBoundary": "direct_field_only",
+            "typeDefinitionIndex": 42042,
+            "name": "System.Double",
+            "typeDefinitionNativeSizeBytes": 8
+          },
+          "token": "0x04000069",
+          "slotSpanBytes": 8,
+          "slotEndNativePayloadOffset": "0x18",
+          "slotSpanEvidence": {
+            "status": "closed",
+            "basis": "native_size_tail"
+          }
+        }
+      ],
+      "staticFields": [
+        {
+          "fieldIndex": 278558,
+          "name": "zero",
+          "metadataTypeIndex": 171828,
+          "metadataTypeName": "Unity.Mathematics.double3",
+          "boxedFieldOffset": "0x0",
+          "nativePayloadOffset": "-0x10",
+          "metadataType": {
+            "metadataTypeIndex": 171828,
+            "typeCode": "0x11",
+            "typeCodeValue": 17,
+            "typePointerVa": "0x18e3aa0a0",
+            "category": "valueType",
+            "recursiveBoundary": "direct_field_only",
+            "typeDefinitionIndex": 57201,
+            "name": "Unity.Mathematics.double3",
+            "typeDefinitionNativeSizeBytes": 24
+          },
+          "token": "0x0400006a"
+        }
+      ]
+    },
+    {
+      "name": "Unity.Mathematics.quaternion",
+      "typeIndex": 57247,
+      "fieldStart": 278684,
+      "fieldCount": 2,
+      "fieldOffsetsPointerVa": "0x18ba120a0",
+      "typeDefinitionsSizesPointerVa": "0x18bacb668",
+      "instanceSizeBytes": 32,
+      "nativeSizeBytes": 16,
+      "directFieldsOnly": true,
+      "fields": [
+        {
+          "fieldIndex": 278684,
+          "name": "value",
+          "metadataTypeIndex": 171886,
+          "metadataTypeName": "Unity.Mathematics.float4",
+          "boxedFieldOffset": "0x10",
+          "nativePayloadOffset": "0x0",
+          "metadataType": {
+            "metadataTypeIndex": 171886,
+            "typeCode": "0x11",
+            "typeCodeValue": 17,
+            "typePointerVa": "0x18e3a9310",
+            "category": "valueType",
+            "recursiveBoundary": "direct_field_only",
+            "typeDefinitionIndex": 57221,
+            "name": "Unity.Mathematics.float4",
+            "typeDefinitionNativeSizeBytes": 16
+          },
+          "token": "0x040000e8",
+          "slotSpanBytes": 16,
+          "slotEndNativePayloadOffset": "0x10",
+          "slotSpanEvidence": {
+            "status": "closed",
+            "basis": "native_size_tail"
+          }
+        }
+      ],
+      "staticFields": [
+        {
+          "fieldIndex": 278685,
+          "name": "identity",
+          "metadataTypeIndex": 172161,
+          "metadataTypeName": "Unity.Mathematics.quaternion",
+          "boxedFieldOffset": "0x0",
+          "nativePayloadOffset": "-0x10",
+          "metadataType": {
+            "metadataTypeIndex": 172161,
+            "typeCode": "0x11",
+            "typeCodeValue": 17,
+            "typePointerVa": "0x18e3aa6b0",
+            "category": "valueType",
+            "recursiveBoundary": "direct_field_only",
+            "typeDefinitionIndex": 57247,
+            "name": "Unity.Mathematics.quaternion",
+            "typeDefinitionNativeSizeBytes": 16
+          },
+          "token": "0x040000e9"
+        }
+      ]
+    },
+    {
+      "name": "Unity.Mathematics.float3",
+      "typeIndex": 57216,
+      "fieldStart": 278598,
+      "fieldCount": 4,
+      "fieldOffsetsPointerVa": "0x18ba12020",
+      "typeDefinitionsSizesPointerVa": "0x18bacb478",
+      "instanceSizeBytes": 28,
+      "nativeSizeBytes": 12,
+      "directFieldsOnly": true,
+      "fields": [
+        {
+          "fieldIndex": 278598,
+          "name": "x",
+          "metadataTypeIndex": 163868,
+          "metadataTypeName": "System.Single",
+          "boxedFieldOffset": "0x10",
+          "nativePayloadOffset": "0x0",
+          "metadataType": {
+            "metadataTypeIndex": 163868,
+            "typeCode": "0xc",
+            "typeCodeValue": 12,
+            "typePointerVa": "0x18e3d5ec0",
+            "category": "primitive",
+            "recursiveBoundary": "direct_field_only",
+            "typeDefinitionIndex": 42141,
+            "name": "System.Single",
+            "typeDefinitionNativeSizeBytes": 4
+          },
+          "token": "0x04000092",
+          "slotSpanBytes": 4,
+          "slotEndNativePayloadOffset": "0x4",
+          "slotSpanEvidence": {
+            "status": "closed",
+            "basis": "next_instance_field_native_offset"
+          }
+        },
+        {
+          "fieldIndex": 278599,
+          "name": "y",
+          "metadataTypeIndex": 163868,
+          "metadataTypeName": "System.Single",
+          "boxedFieldOffset": "0x14",
+          "nativePayloadOffset": "0x4",
+          "metadataType": {
+            "metadataTypeIndex": 163868,
+            "typeCode": "0xc",
+            "typeCodeValue": 12,
+            "typePointerVa": "0x18e3d5ec0",
+            "category": "primitive",
+            "recursiveBoundary": "direct_field_only",
+            "typeDefinitionIndex": 42141,
+            "name": "System.Single",
+            "typeDefinitionNativeSizeBytes": 4
+          },
+          "token": "0x04000093",
+          "slotSpanBytes": 4,
+          "slotEndNativePayloadOffset": "0x8",
+          "slotSpanEvidence": {
+            "status": "closed",
+            "basis": "next_instance_field_native_offset"
+          }
+        },
+        {
+          "fieldIndex": 278600,
+          "name": "z",
+          "metadataTypeIndex": 163868,
+          "metadataTypeName": "System.Single",
+          "boxedFieldOffset": "0x18",
+          "nativePayloadOffset": "0x8",
+          "metadataType": {
+            "metadataTypeIndex": 163868,
+            "typeCode": "0xc",
+            "typeCodeValue": 12,
+            "typePointerVa": "0x18e3d5ec0",
+            "category": "primitive",
+            "recursiveBoundary": "direct_field_only",
+            "typeDefinitionIndex": 42141,
+            "name": "System.Single",
+            "typeDefinitionNativeSizeBytes": 4
+          },
+          "token": "0x04000094",
+          "slotSpanBytes": 4,
+          "slotEndNativePayloadOffset": "0xc",
+          "slotSpanEvidence": {
+            "status": "closed",
+            "basis": "native_size_tail"
+          }
+        }
+      ],
+      "staticFields": [
+        {
+          "fieldIndex": 278601,
+          "name": "zero",
+          "metadataTypeIndex": 171874,
+          "metadataTypeName": "Unity.Mathematics.float3",
+          "boxedFieldOffset": "0x0",
+          "nativePayloadOffset": "-0x10",
+          "metadataType": {
+            "metadataTypeIndex": 171874,
+            "typeCode": "0x11",
+            "typeCodeValue": 17,
+            "typePointerVa": "0x18e3a96c0",
+            "category": "valueType",
+            "recursiveBoundary": "direct_field_only",
+            "typeDefinitionIndex": 57216,
+            "name": "Unity.Mathematics.float3",
+            "typeDefinitionNativeSizeBytes": 12
+          },
+          "token": "0x04000095"
+        }
+      ]
+    }
+  ],
+  "methodEvidence": [
+    {
+      "methodIndex": 385698,
+      "type": "BeyondDynamicBone.SimulationManager+StartSimulationStepJob",
+      "method": "Spring",
+      "va": "0x186775ae4",
+      "endVaExclusive": "0x186776080",
+      "spanBytes": 1436,
+      "bodySha256": "149382eea39d5d1a3ca0e27ed701a665f51406664766283b070305adc52050b5",
+      "accesses": [
+        {
+          "name": "springParams",
+          "type": "BeyondDynamicBone.SpringConstraint+SpringConstraintParams",
+          "accessedOffsets": [
+            "0x0",
+            "0x4",
+            "0x8",
+            "0xc"
+          ]
+        },
+        {
+          "name": "nextPos",
+          "type": "Unity.Mathematics.double3",
+          "accessedOffsets": [
+            "0x0",
+            "0x10"
+          ]
+        },
+        {
+          "name": "basePos",
+          "type": "Unity.Mathematics.double3",
+          "accessedOffsets": [
+            "0x0",
+            "0x10"
+          ]
+        },
+        {
+          "name": "baseRot",
+          "type": "Unity.Mathematics.quaternion",
+          "accessedOffsets": [
+            "0x0"
+          ]
+        }
+      ]
+    },
+    {
+      "methodIndex": 385699,
+      "type": "BeyondDynamicBone.SimulationManager+StartSimulationStepJob",
+      "method": "Wind",
+      "va": "0x186776704",
+      "endVaExclusive": "0x186776b64",
+      "spanBytes": 1120,
+      "bodySha256": "2aca620c9c194d06742ffcc855efd57cca85bee46a8fc972da83ff02a855b0a0",
+      "accesses": [
+        {
+          "name": "windParams",
+          "type": "BeyondDynamicBone.WindParams",
+          "accessedOffsets": [
+            "0x0",
+            "0x10",
+            "0x14",
+            "0x18"
+          ]
+        },
+        {
+          "name": "result",
+          "type": "Unity.Mathematics.float3",
+          "accessedOffsets": [
+            "0x0",
+            "0x8"
+          ]
+        }
+      ]
+    },
+    {
+      "methodIndex": 385700,
+      "type": "BeyondDynamicBone.SimulationManager+StartSimulationStepJob",
+      "method": "WindForceBlend",
+      "va": "0x186776394",
+      "endVaExclusive": "0x186776704",
+      "spanBytes": 880,
+      "bodySha256": "0418400aa5d180fb7e81233ae707325e580d9881ffd519b0953e72ca9bce8796",
+      "accesses": [
+        {
+          "name": "windInfo",
+          "type": "BeyondDynamicBone.TeamWindInfo",
+          "accessedOffsets": [
+            "0x4",
+            "0x8",
+            "0xc",
+            "0x14"
+          ]
+        },
+        {
+          "name": "windParams",
+          "type": "BeyondDynamicBone.WindParams",
+          "accessedOffsets": [
+            "0x8",
+            "0xc"
+          ]
+        },
+        {
+          "name": "windPos",
+          "type": "Unity.Mathematics.float3",
+          "accessedOffsets": [
+            "0x0",
+            "0x8"
+          ]
+        },
+        {
+          "name": "result",
+          "type": "Unity.Mathematics.float3",
+          "accessedOffsets": [
+            "0x0",
+            "0x8"
+          ]
+        }
+      ]
+    }
+  ],
+  "boundary": {
+    "largeElementInputs": "TeamData, CenterData, and other NativeArray element layouts remain owned by secondary_dynamics_element_layout_contract.json.",
+    "genericInputs": "No generic element field is directly addressed by Spring, Wind, or WindForceBlend; NativeArray/NativeReference remain outer job-payload boundaries.",
+    "quaternionValue": "Unity.Mathematics.quaternion.value is retained as an opaque 16-byte float4 payload because the selected helpers copy the quaternion blob and do not address its component fields by name.",
+    "solver": "Managed helper arithmetic and Burst range-dispatch implementation remain separate unresolved work; this report is not a solver implementation."
+  },
+  "unresolved": [
+    "The helper bodies' called math functions are not reimplemented here.",
+    "Burst Execute/UnsafeDo range wrappers are not joined to a verified solver export.",
+    "No Transform writeback or retail-equivalence claim is made."
+  ]
+}
