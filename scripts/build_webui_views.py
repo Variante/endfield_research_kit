@@ -83,6 +83,7 @@ def build_phases(args: argparse.Namespace) -> list[tuple[str, list[TaskSpec]]]:
                 "scripts.build_mission_pipeline_data",
                 "--refresh-source-story-gap-queue",
             ),
+            module("scripts.build_map_recovery_data"),
         ),
     )
     character = TaskSpec(

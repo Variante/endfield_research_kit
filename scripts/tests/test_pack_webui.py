@@ -1,4 +1,5 @@
 import io
+import re
 import tempfile
 import unittest
 from contextlib import redirect_stderr
@@ -54,7 +55,13 @@ class PackWebuiAudioTests(unittest.TestCase):
         router = (project_root / "webui" / "assets.js").read_text(encoding="utf-8")
         html = (project_root / "webui" / "index.html").read_text(encoding="utf-8")
 
-        self.assertIn('const DEBUG_ONLY_VIEWS = new Set(["mission-pipeline"]);', router)
+        # Membership, not the exact set literal: the live router gains debug
+        # views over time (map-recovery joined mission-pipeline), and this test
+        # is about audio staying a normal view rather than about the roster.
+        debug_only = re.search(r"const DEBUG_ONLY_VIEWS = new Set\(\[(.*?)\]\);", router)
+        self.assertIsNotNone(debug_only)
+        self.assertIn('"mission-pipeline"', debug_only.group(1))
+        self.assertNotIn('"audio"', debug_only.group(1))
         self.assertIn('audio: "gameplay"', router)
         self.assertIn('id="audio-tab"', html)
         self.assertIn('data-view="audio" data-i18n="audioTab"', html)
