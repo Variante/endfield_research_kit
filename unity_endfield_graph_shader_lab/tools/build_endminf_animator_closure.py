@@ -40,6 +40,7 @@ try:
         _signed_int64,
         _source_matches,
         _unsigned_path_id,
+        _validate_snapshot,
         _object_index_records,
     )
 except ModuleNotFoundError:  # pragma: no cover - package-style imports
@@ -60,6 +61,7 @@ except ModuleNotFoundError:  # pragma: no cover - package-style imports
         _signed_int64,
         _source_matches,
         _unsigned_path_id,
+        _validate_snapshot,
         _object_index_records,
     )
 
@@ -168,13 +170,11 @@ def _load_cab_map(paths: Iterable[Path]) -> dict[str, list[dict[str, Any]]]:
         except (OSError, EOFError, ValueError) as exc:
             raise ClosureError(f"cannot parse CAB map {path}: {exc}") from exc
         cab_map_relative = _relative_path(path)
-        source_exists: dict[str, bool] = {}
+        source_snapshots: dict[str, dict[str, Any]] = {}
         for record in records:
             source = str(record.source)
-            if source not in source_exists:
-                source_exists[source] = Path(source).is_file()
-            if not source_exists[source]:
-                raise ClosureError(f"CAB map source is missing: {source}")
+            if source not in source_snapshots:
+                source_snapshots[source] = _file_snapshot(Path(source))
             result[str(record.cab)].append(
                 {
                     "cabMap": cab_map_relative,
@@ -185,6 +185,7 @@ def _load_cab_map(paths: Iterable[Path]) -> dict[str, list[dict[str, Any]]]:
                     "source": source,
                     "sourceOffset": int(record.offset),
                     "dependencies": [str(dep) for dep in record.dependencies],
+                    "sourceSnapshot": dict(source_snapshots[source]),
                 }
             )
     for cab in result:
@@ -285,30 +286,70 @@ def _artifact_candidates(
 
 
 def _stage_artifact(
-    stage_root: Path,
+    stage_clips: dict[int, dict[str, Any]],
     *,
     path_id: int,
     name: str,
     source: str,
     offset: int,
 ) -> dict[str, Any] | None:
-    for path in sorted((stage_root / "AnimationClip").glob("*.json")):
-        if _path_id_from_filename(path) != path_id:
-            continue
-        value = _json(path)
-        if str(value.get("m_Name") or "") != name:
-            continue
-        return {
-            "basis": "exact_stage_animationclip_json",
-            "path": _relative_path(path),
-            "name": name,
-            "pathId": path_id,
-            "source": source,
-            "sourceOffset": int(offset),
-            "snapshot": _file_snapshot(path),
-            "loopTime": value.get("m_LoopTime"),
-        }
-    return None
+    entry = stage_clips.get(path_id)
+    if entry is None:
+        return None
+    path = Path(entry["path"])
+    value = entry.get("value")
+    filter_row = entry.get("filter")
+    if not isinstance(value, dict) or not isinstance(filter_row, dict):
+        raise ClosureError(f"exact stage AnimationClip provenance is malformed: {path}")
+    if filter_row.get("Type") != "AnimationClip":
+        raise ClosureError(f"exact stage entry has the wrong type for AnimationClip {path_id}: {path}")
+    if int(filter_row.get("PathID")) != int(path_id) or str(filter_row.get("Name") or "") != name:
+        raise ClosureError(f"exact stage AnimationClip identity drifted: {path}")
+    if _normal_source(filter_row.get("Source")) != _normal_source(source):
+        raise ClosureError(
+            f"exact stage AnimationClip source mismatch for {name}: "
+            f"stage={filter_row.get('Source')!r}, requested={source!r}"
+        )
+    if int(filter_row.get("Offset")) != int(offset):
+        raise ClosureError(
+            f"exact stage AnimationClip offset mismatch for {name}: "
+            f"stage={filter_row.get('Offset')!r}, requested={offset!r}"
+        )
+    if str(value.get("m_Name") or "") != name:
+        raise ClosureError(f"exact stage AnimationClip name drifted from its object payload: {path}")
+    return {
+        "basis": "exact_stage_animationclip_json",
+        "path": _relative_path(path),
+        "name": name,
+        "pathId": path_id,
+        "source": source,
+        "sourceOffset": int(offset),
+        "stageEntry": {
+            "Name": str(filter_row["Name"]),
+            "Source": str(filter_row["Source"]),
+            "PathID": int(filter_row["PathID"]),
+            "Type": str(filter_row["Type"]),
+            "Offset": int(filter_row["Offset"]),
+        },
+        "snapshot": _file_snapshot(path),
+        "loopTime": value.get("m_LoopTime"),
+    }
+
+
+def _cab_source_snapshots(cab_rows: dict[str, list[dict[str, Any]]]) -> list[dict[str, Any]]:
+    snapshots: dict[str, dict[str, Any]] = {}
+    for rows in cab_rows.values():
+        for row in rows:
+            snapshot = row.get("sourceSnapshot")
+            if not isinstance(snapshot, dict):
+                raise ClosureError(f"CAB row lacks a physical source snapshot: {row.get('cab')}")
+            path = str(snapshot.get("path") or "").casefold()
+            if not path:
+                raise ClosureError(f"CAB row source snapshot lacks a path: {row.get('cab')}")
+            previous = snapshots.setdefault(path, snapshot)
+            if previous != snapshot:
+                raise ClosureError(f"CAB source snapshot is inconsistent: {snapshot.get('path')}")
+    return sorted(snapshots.values(), key=_canonical)
 
 
 def _target_asset_map_rows(paths: Iterable[Path], path_ids: set[int]) -> dict[int, list[dict[str, Any]]]:
@@ -561,6 +602,21 @@ def _playback_rows(stage_root: Path) -> list[dict[str, Any]]:
     return rows
 
 
+def _bind_playback_owner(
+    row: dict[str, Any], cab_rows: dict[str, list[dict[str, Any]]]
+) -> dict[str, Any]:
+    owner = _cab_at_source(cab_rows, str(row["source"]), int(row["sourceOffset"]))
+    verified = owner["cab"] == row["sourceCab"]
+    if not verified:
+        raise ClosureError(
+            f"EffectAnimation owner CAB mismatch for {row.get('artifact')}: "
+            f"stage={row.get('sourceCab')!r}, current={owner.get('cab')!r}"
+        )
+    row["ownerCabVerified"] = True
+    row["ownerCabRecord"] = owner
+    return row
+
+
 def _validate_source_stage(stage: dict[str, Any], stage_path: Path) -> tuple[list[Path], dict[Path, dict[str, Any]]]:
     paths = [Path(path) for path in stage.get("object_index_paths") or []]
     if any(not path.is_file() for path in paths):
@@ -737,7 +793,7 @@ def build_report(
                 )
             map_row = map_candidates[0]
             stage_artifact = _stage_artifact(
-                stage_root,
+                stage_clips,
                 path_id=clip_path_id,
                 name=str(map_row["Name"]),
                 source=str(map_row["Source"]),
@@ -814,9 +870,7 @@ def build_report(
 
     playback = _playback_rows(stage_root)
     for row in playback:
-        owner = _cab_at_source(cab_rows, row["source"], row["sourceOffset"])
-        row["ownerCabVerified"] = owner["cab"] == row["sourceCab"]
-        row["ownerCabRecord"] = owner
+        _bind_playback_owner(row, cab_rows)
         for key in ("start", "loop", "end"):
             pointer = row[key]
             if pointer["isNull"]:
@@ -869,6 +923,7 @@ def build_report(
         "stageFilter": _file_snapshot(filter_path),
         "assetMaps": [_file_snapshot(path) for path in asset_map_paths],
         "cabMaps": [_file_snapshot(path) for path in cab_maps],
+        "cabSources": _cab_source_snapshots(cab_rows),
         "stageArtifacts": [
             _file_snapshot(row["path"])
             for row in animator_rows
@@ -930,6 +985,17 @@ def _validate_report(report: dict[str, Any]) -> None:
     stage = report.get("stage") or {}
     if not stage.get("stageFingerprint") or stage.get("stageFingerprint") != stage.get("stampFingerprint"):
         raise ClosureError("report stage/stamp fingerprint contract is not exact")
+    snapshots = report.get("sourceSnapshots")
+    if not isinstance(snapshots, dict) or not isinstance(snapshots.get("cabSources"), list) or not snapshots["cabSources"]:
+        raise ClosureError("report lacks current CAB physical-source snapshots")
+    for group, values in snapshots.items():
+        if isinstance(values, dict):
+            _validate_snapshot(values, field=f"sourceSnapshots.{group}")
+            continue
+        if not isinstance(values, list):
+            raise ClosureError(f"report source snapshot group is not an array/object: {group}")
+        for index, snapshot in enumerate(values):
+            _validate_snapshot(snapshot, field=f"sourceSnapshots.{group}[{index}]")
     animators = report.get("animators")
     if not isinstance(animators, list) or len(animators) != 7:
         raise ClosureError("report must contain exactly 7 Animator rows")
@@ -950,6 +1016,13 @@ def _validate_report(report: dict[str, Any]) -> None:
         raise ClosureError("report must not claim start-to-loop playback")
     if playback.get("endProven") is not False:
         raise ClosureError("report must not claim end playback")
+    effect_rows = playback.get("effectAnimationRows")
+    if effect_rows is not None:
+        if not isinstance(effect_rows, list):
+            raise ClosureError("report playback effect rows are not an array")
+        for index, row in enumerate(effect_rows):
+            if not isinstance(row, dict) or row.get("ownerCabVerified") is not True:
+                raise ClosureError(f"report playback owner CAB is not verified: row {index}")
     summary = report.get("summary") or {}
     if int(summary.get("animatorCount") or -1) != 7:
         raise ClosureError("report summary Animator count drifted")

@@ -75,6 +75,203 @@
         "mtime_ns": 1786945888077225400
       }
     ],
+    "cabSources": [
+      {
+        "path": "D:/Program Files/Endfield Game/Endfield_Data/StreamingAssets/VFS/7064D8E2/15D4CE67612C5F4C51AFF5015BB5D423.chk",
+        "bytes": 1000102044,
+        "mtime_ns": 1784176418366453100
+      },
+      {
+        "path": "D:/Program Files/Endfield Game/Endfield_Data/StreamingAssets/VFS/7064D8E2/E36378B969C1BDA4BA44AE7C3D6B7149.chk",
+        "bytes": 1011637759,
+        "mtime_ns": 1784176535379075000
+      },
+      {
+        "path": "D:/Program Files/Endfield Game/Endfield_Data/StreamingAssets/VFS/7064D8E2/CE9C11821BB0D5D69E4AA80EB5F33989.chk",
+        "bytes": 1014796047,
+        "mtime_ns": 1784176433176471900
+      },
+      {
+        "path": "D:/Program Files/Endfield Game/Endfield_Data/StreamingAssets/VFS/7064D8E2/62EB15DCD74A3348E244B9B068AB9694.chk",
+        "bytes": 1040864172,
+        "mtime_ns": 1784176553176897300
+      },
+      {
+        "path": "D:/Program Files/Endfield Game/Endfield_Data/StreamingAssets/VFS/7064D8E2/0CF3F4B418D3B3C919F8D8405A4C4EAF.chk",
+        "bytes": 1068453971,
+        "mtime_ns": 1784176517013152900
+      },
+      {
+        "path": "D:/Program Files/Endfield Game/Endfield_Data/StreamingAssets/VFS/7064D8E2/8B805A424FFA2FC7F4DE0BC016C09009.chk",
+        "bytes": 1094286601,
+        "mtime_ns": 1784176571301629900
+      },
+      {
+        "path": "D:/Program Files/Endfield Game/Endfield_Data/StreamingAssets/VFS/7064D8E2/5977793016EDAD31104596EECAEC558A.chk",
+        "bytes": 1107099916,
+        "mtime_ns": 1784176514842494300
+      },
+      {
+        "path": "D:/Program Files/Endfield Game/Endfield_Data/StreamingAssets/VFS/7064D8E2/B8977AA9A23444F4E71328CB78D8D3BD.chk",
+        "bytes": 1116004206,
+        "mtime_ns": 1784176477042112000
+      },
+      {
+        "path": "D:/Program Files/Endfield Game/Endfield_Data/StreamingAssets/VFS/7064D8E2/76EE474C267510893D2D47418F42AEAB.chk",
+        "bytes": 1123302880,
+        "mtime_ns": 1784176375358269500
+      },
+      {
+        "path": "D:/Program Files/Endfield Game/Endfield_Data/StreamingAssets/VFS/7064D8E2/8161478B336F9CF4C340999DF24B23B0.chk",
+        "bytes": 1129874081,
+        "mtime_ns": 1784176420501914400
+      },
+      {
+        "path": "D:/Program Files/Endfield Game/Endfield_Data/StreamingAssets/VFS/7064D8E2/5AC3DA9B131B934AB18769A0EF2D70CB.chk",
+        "bytes": 1137525865,
+        "mtime_ns": 1784176422310042500
+      },
+      {
+        "path": "D:/Program Files/Endfield Game/Endfield_Data/StreamingAssets/VFS/7064D8E2/2EC081A46692C592EDE0334707704472.chk",
+        "bytes": 1139597247,
+        "mtime_ns": 1784176557333527100
+      },
+      {
+        "path": "D:/Program Files/Endfield Game/Endfield_Data/StreamingAssets/VFS/7064D8E2/98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+        "bytes": 1152031554,
+        "mtime_ns": 1784176416485181900
+      },
+      {
+        "path": "D:/Program Files/Endfield Game/Endfield_Data/StreamingAssets/VFS/7064D8E2/C850472B3CDB9FC414480EE7D8DF416D.chk",
+        "bytes": 1157758079,
+        "mtime_ns": 1784176538346827400
+      },
+      {
+        "path": "D:/Program Files/Endfield Game/Endfield_Data/StreamingAssets/VFS/7064D8E2/F2CD4BF904672CBE7982FBAD2CD650CE.chk",
+        "bytes": 1158083585,
+        "mtime_ns": 1784176469054442000
+      },
+      {
+        "path": "D:/Program Files/Endfield Game/Endfield_Data/StreamingAssets/VFS/7064D8E2/3DCCAF9C615BDA00948DC64770516F5D.chk",
+        "bytes": 1160724002,
+        "mtime_ns": 1784176436295371100
+      },
+      {
+        "path": "D:/Program Files/Endfield Game/Endfield_Data/StreamingAssets/VFS/7064D8E2/04E59074CE88AFA40E483C148142B24A.chk",
+        "bytes": 1162093703,
+        "mtime_ns": 1784176473211237100
+      },
+      {
+        "path": "D:/Program Files/Endfield Game/Endfield_Data/StreamingAssets/VFS/7064D8E2/344FB9AA712F9B6F2F03F01AEF52CEF0.chk",
+        "bytes": 1176111415,
+        "mtime_ns": 1784176467244543800
+      },
+      {
+        "path": "D:/Program Files/Endfield Game/Endfield_Data/StreamingAssets/VFS/7064D8E2/4A65D5C2457B9C4DBE29646A23A14004.chk",
+        "bytes": 1194696472,
+        "mtime_ns": 1784176513025848300
+      },
+      {
+        "path": "D:/Program Files/Endfield Game/Endfield_Data/StreamingAssets/VFS/7064D8E2/C08D77D8171517518EEA4B50CCEBBA58.chk",
+        "bytes": 1195132148,
+        "mtime_ns": 1784176559258009400
+      },
+      {
+        "path": "D:/Program Files/Endfield Game/Endfield_Data/StreamingAssets/VFS/7064D8E2/7E6434186C00AD19EFE8A28E3E9B46A2.chk",
+        "bytes": 1211823711,
+        "mtime_ns": 1784176526091693800
+      },
+      {
+        "path": "D:/Program Files/Endfield Game/Endfield_Data/StreamingAssets/VFS/7064D8E2/C066FB822664FDCA045B6A23AC3E4732.chk",
+        "bytes": 123963944,
+        "mtime_ns": 1784176471157752000
+      },
+      {
+        "path": "D:/Program Files/Endfield Game/Endfield_Data/StreamingAssets/VFS/7064D8E2/D08192A3E89C3873347D5D6950A04239.chk",
+        "bytes": 1244993931,
+        "mtime_ns": 1783768230069579700
+      },
+      {
+        "path": "D:/Program Files/Endfield Game/Endfield_Data/StreamingAssets/VFS/7064D8E2/E8EB8746BD8E509EB910CD18973F49AA.chk",
+        "bytes": 1251942815,
+        "mtime_ns": 1783768226200559000
+      },
+      {
+        "path": "D:/Program Files/Endfield Game/Endfield_Data/StreamingAssets/VFS/7064D8E2/5693D72E0302BD10CA36B511F70803F8.chk",
+        "bytes": 1253258614,
+        "mtime_ns": 1783768228193569700
+      },
+      {
+        "path": "D:/Program Files/Endfield Game/Endfield_Data/StreamingAssets/VFS/7064D8E2/BC9C096C4BAF4BCA298AD14C643B7022.chk",
+        "bytes": 1257493535,
+        "mtime_ns": 1783768229183574900
+      },
+      {
+        "path": "D:/Program Files/Endfield Game/Endfield_Data/StreamingAssets/VFS/7064D8E2/925B34E41A92D43C3109BB037B55D8D4.chk",
+        "bytes": 1257723065,
+        "mtime_ns": 1783768230674582900
+      },
+      {
+        "path": "D:/Program Files/Endfield Game/Endfield_Data/StreamingAssets/VFS/7064D8E2/B428C352B17C75CA29122CAACC037A59.chk",
+        "bytes": 1258089569,
+        "mtime_ns": 1784176533444439700
+      },
+      {
+        "path": "D:/Program Files/Endfield Game/Endfield_Data/StreamingAssets/VFS/0CE8FA57/19F0903A12BA87C0D43E67E64889B525.chk",
+        "bytes": 211831350,
+        "mtime_ns": 1784176360409225900
+      },
+      {
+        "path": "D:/Program Files/Endfield Game/Endfield_Data/StreamingAssets/VFS/7064D8E2/498B52108D8D4D020202DCEACD32526F.chk",
+        "bytes": 265316099,
+        "mtime_ns": 1784176470920169600
+      },
+      {
+        "path": "D:/Program Files/Endfield Game/Endfield_Data/StreamingAssets/VFS/7064D8E2/A0E4EB709C9792EA09B1E5EA81688B94.chk",
+        "bytes": 627442795,
+        "mtime_ns": 1784176434634449400
+      },
+      {
+        "path": "D:/Program Files/Endfield Game/Endfield_Data/StreamingAssets/VFS/7064D8E2/283C4AD63E15586AC34F1D23A2606383.chk",
+        "bytes": 631453899,
+        "mtime_ns": 1783768226892562700
+      },
+      {
+        "path": "D:/Program Files/Endfield Game/Endfield_Data/StreamingAssets/VFS/7064D8E2/D9FE1904A8495600159054B9E464EA60.chk",
+        "bytes": 800206681,
+        "mtime_ns": 1784176536640358400
+      },
+      {
+        "path": "D:/Program Files/Endfield Game/Endfield_Data/StreamingAssets/VFS/7064D8E2/967825B10DBE250981C6AEA5FB9691B4.chk",
+        "bytes": 828158220,
+        "mtime_ns": 1784176395889338700
+      },
+      {
+        "path": "D:/Program Files/Endfield Game/Endfield_Data/StreamingAssets/VFS/7064D8E2/7F8C27A8E2D31DF98AA32EC361AC36BF.chk",
+        "bytes": 842650052,
+        "mtime_ns": 1784176429850707100
+      },
+      {
+        "path": "D:/Program Files/Endfield Game/Endfield_Data/StreamingAssets/VFS/7064D8E2/A66A0A15ADA3E35B7A23DB7EC3950A7F.chk",
+        "bytes": 891936822,
+        "mtime_ns": 1784176474785823100
+      },
+      {
+        "path": "D:/Program Files/Endfield Game/Endfield_Data/StreamingAssets/VFS/7064D8E2/0F7D5ED12F157625D528B258B1DDF9A1.chk",
+        "bytes": 914681334,
+        "mtime_ns": 1784176394018281700
+      },
+      {
+        "path": "D:/Program Files/Endfield Game/Endfield_Data/StreamingAssets/VFS/7064D8E2/FC784A3D097236EF3B3E84F44E1B28D2.chk",
+        "bytes": 974649680,
+        "mtime_ns": 1784176464365207800
+      },
+      {
+        "path": "D:/Program Files/Endfield Game/Endfield_Data/StreamingAssets/VFS/7064D8E2/C44E84034D67AA00607DD1B4D628EDA1.chk",
+        "bytes": 988706512,
+        "mtime_ns": 1784176426936313300
+      }
+    ],
     "stageArtifacts": [
       {
         "path": "unity_endfield_graph_shader_lab/Temp/Codex/endminf_fx_exact_stage/Animator/effect_01_p24F0E3FCC7606C79.json",
@@ -218,6 +415,11 @@
           "dependencies": [
             "CAB-1ea5370161ccb9d09538c00dba506ab8"
           ],
+          "sourceSnapshot": {
+            "path": "D:/Program Files/Endfield Game/Endfield_Data/StreamingAssets/VFS/7064D8E2/FC784A3D097236EF3B3E84F44E1B28D2.chk",
+            "bytes": 974649680,
+            "mtime_ns": 1784176464365207800
+          },
           "ownerCab": "CAB-72044df92f6ff49458941a0aad30ac4d",
           "fileId": 11,
           "pathId": -4527183498941659460,
@@ -262,6 +464,11 @@
               "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
               "sourceOffset": 937624865,
               "dependencies": [],
+              "sourceSnapshot": {
+                "path": "D:/Program Files/Endfield Game/Endfield_Data/StreamingAssets/VFS/7064D8E2/FC784A3D097236EF3B3E84F44E1B28D2.chk",
+                "bytes": 974649680,
+                "mtime_ns": 1784176464365207800
+              },
               "ownerCab": "CAB-51dca2be082b56f5b8a74c222833cda4",
               "fileId": 1,
               "pathId": -7994037904239017215,
@@ -319,6 +526,11 @@
                 "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
                 "sourceOffset": 937624865,
                 "dependencies": [],
+                "sourceSnapshot": {
+                  "path": "D:/Program Files/Endfield Game/Endfield_Data/StreamingAssets/VFS/7064D8E2/FC784A3D097236EF3B3E84F44E1B28D2.chk",
+                  "bytes": 974649680,
+                  "mtime_ns": 1784176464365207800
+                },
                 "ownerCab": "CAB-51dca2be082b56f5b8a74c222833cda4",
                 "fileId": 1,
                 "pathId": -7994037904239017215,
@@ -372,6 +584,11 @@
           "dependencies": [
             "CAB-1ea5370161ccb9d09538c00dba506ab8"
           ],
+          "sourceSnapshot": {
+            "path": "D:/Program Files/Endfield Game/Endfield_Data/StreamingAssets/VFS/7064D8E2/FC784A3D097236EF3B3E84F44E1B28D2.chk",
+            "bytes": 974649680,
+            "mtime_ns": 1784176464365207800
+          },
           "ownerCab": "CAB-8fac05233bac82edb23cdafb58f7cf34",
           "fileId": 8,
           "pathId": -4527183498941659460,
@@ -416,6 +633,11 @@
               "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
               "sourceOffset": 937624865,
               "dependencies": [],
+              "sourceSnapshot": {
+                "path": "D:/Program Files/Endfield Game/Endfield_Data/StreamingAssets/VFS/7064D8E2/FC784A3D097236EF3B3E84F44E1B28D2.chk",
+                "bytes": 974649680,
+                "mtime_ns": 1784176464365207800
+              },
               "ownerCab": "CAB-51dca2be082b56f5b8a74c222833cda4",
               "fileId": 1,
               "pathId": -7994037904239017215,
@@ -473,6 +695,11 @@
                 "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
                 "sourceOffset": 937624865,
                 "dependencies": [],
+                "sourceSnapshot": {
+                  "path": "D:/Program Files/Endfield Game/Endfield_Data/StreamingAssets/VFS/7064D8E2/FC784A3D097236EF3B3E84F44E1B28D2.chk",
+                  "bytes": 974649680,
+                  "mtime_ns": 1784176464365207800
+                },
                 "ownerCab": "CAB-51dca2be082b56f5b8a74c222833cda4",
                 "fileId": 1,
                 "pathId": -7994037904239017215,
@@ -537,6 +764,11 @@
             "CAB-51dca2be082b56f5b8a74c222833cda4",
             "CAB-8f93557b361354ad7e0827de4234cada"
           ],
+          "sourceSnapshot": {
+            "path": "D:/Program Files/Endfield Game/Endfield_Data/StreamingAssets/VFS/7064D8E2/98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+            "bytes": 1152031554,
+            "mtime_ns": 1784176416485181900
+          },
           "ownerCab": "CAB-72044df92f6ff49458941a0aad30ac4d",
           "fileId": 0,
           "pathId": -1701034008672764552,
@@ -594,6 +826,11 @@
                 "CAB-51dca2be082b56f5b8a74c222833cda4",
                 "CAB-8f93557b361354ad7e0827de4234cada"
               ],
+              "sourceSnapshot": {
+                "path": "D:/Program Files/Endfield Game/Endfield_Data/StreamingAssets/VFS/7064D8E2/98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+                "bytes": 1152031554,
+                "mtime_ns": 1784176416485181900
+              },
               "ownerCab": "CAB-72044df92f6ff49458941a0aad30ac4d",
               "fileId": 0,
               "pathId": -2625895420410042749,
@@ -617,6 +854,13 @@
               "pathId": -2625895420410042749,
               "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
               "sourceOffset": 772927267,
+              "stageEntry": {
+                "Name": "A_fx_endminf_ui_overview_04",
+                "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+                "PathID": -2625895420410042749,
+                "Type": "AnimationClip",
+                "Offset": 772927267
+              },
               "snapshot": {
                 "path": "unity_endfield_graph_shader_lab/Temp/Codex/endminf_fx_exact_stage/AnimationClip/A_fx_endminf_ui_overview_04_pDB8EF20719226683.json",
                 "bytes": 67319,
@@ -677,6 +921,11 @@
                   "CAB-51dca2be082b56f5b8a74c222833cda4",
                   "CAB-8f93557b361354ad7e0827de4234cada"
                 ],
+                "sourceSnapshot": {
+                  "path": "D:/Program Files/Endfield Game/Endfield_Data/StreamingAssets/VFS/7064D8E2/98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+                  "bytes": 1152031554,
+                  "mtime_ns": 1784176416485181900
+                },
                 "ownerCab": "CAB-72044df92f6ff49458941a0aad30ac4d",
                 "fileId": 0,
                 "pathId": -2625895420410042749,
@@ -700,6 +949,13 @@
                 "pathId": -2625895420410042749,
                 "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
                 "sourceOffset": 772927267,
+                "stageEntry": {
+                  "Name": "A_fx_endminf_ui_overview_04",
+                  "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+                  "PathID": -2625895420410042749,
+                  "Type": "AnimationClip",
+                  "Offset": 772927267
+                },
                 "snapshot": {
                   "path": "unity_endfield_graph_shader_lab/Temp/Codex/endminf_fx_exact_stage/AnimationClip/A_fx_endminf_ui_overview_04_pDB8EF20719226683.json",
                   "bytes": 67319,
@@ -832,7 +1088,12 @@
             "CAB-9decc143c80b532cf8f7cfa0d964bae5",
             "CAB-c8d46ced3f6f00649eb8ebffccc0e2fb",
             "CAB-ff435e3fd9771bebac06ac4f9c8810f3"
-          ]
+          ],
+          "sourceSnapshot": {
+            "path": "D:/Program Files/Endfield Game/Endfield_Data/StreamingAssets/VFS/7064D8E2/98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+            "bytes": 1152031554,
+            "mtime_ns": 1784176416485181900
+          }
         }
       },
       {
@@ -881,7 +1142,12 @@
             "CAB-9d08038ae32d18a67e47c6f212b9f822",
             "CAB-51dca2be082b56f5b8a74c222833cda4",
             "CAB-8f93557b361354ad7e0827de4234cada"
-          ]
+          ],
+          "sourceSnapshot": {
+            "path": "D:/Program Files/Endfield Game/Endfield_Data/StreamingAssets/VFS/7064D8E2/98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+            "bytes": 1152031554,
+            "mtime_ns": 1784176416485181900
+          }
         }
       },
       {
@@ -933,7 +1199,12 @@
             "CAB-e7fdbff067fef56e9db587fdde4ec85f",
             "CAB-51dca2be082b56f5b8a74c222833cda4",
             "CAB-8f93557b361354ad7e0827de4234cada"
-          ]
+          ],
+          "sourceSnapshot": {
+            "path": "D:/Program Files/Endfield Game/Endfield_Data/StreamingAssets/VFS/7064D8E2/98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+            "bytes": 1152031554,
+            "mtime_ns": 1784176416485181900
+          }
         }
       }
     ]
@@ -945,7 +1216,7 @@
     "controllerArtifactMissingCount": 0,
     "effectAnimationCount": 3,
     "missingArtifactCount": 1,
-    "sourceFingerprint": "2a7922023bfa677155e41a706e938ebd3926fe51b09b8b91e7af52b52aa76d69"
+    "sourceFingerprint": "22f2c6771a785c9dec0e4a7f3230a6e21050e9385efbcd4e00f2bc4298269faa"
   },
   "evidenceBoundary": "Exact stage fingerprint/source snapshots, exact Animator owner CAB+FileID dependency, exact AnimatorController source/CAB/offset/PathID metadata, state clip PPtrs, and AssetMap source/offset/PathID/Type are required. Null controllers, null loop/end PPtrs, missing artifacts, and unresolved playback are explicit evidence; no start->loop claim is made from names or clip duration."
 }
