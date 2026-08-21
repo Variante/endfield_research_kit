@@ -233,6 +233,7 @@
           "keyPresent": false,
           "path": null,
           "candidateCount": 0,
+          "candidateRawKeys": [],
           "candidatePaths": [],
           "algorithmMatches": false
         },
@@ -241,6 +242,7 @@
           "keyPresent": false,
           "path": null,
           "candidateCount": 0,
+          "candidateRawKeys": [],
           "candidatePaths": [],
           "algorithmMatches": false
         },
@@ -249,6 +251,7 @@
           "keyPresent": false,
           "path": null,
           "candidateCount": 0,
+          "candidateRawKeys": [],
           "candidatePaths": [],
           "algorithmMatches": false
         }

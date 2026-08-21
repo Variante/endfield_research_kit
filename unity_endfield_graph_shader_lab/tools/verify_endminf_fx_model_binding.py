@@ -208,6 +208,25 @@ def _stage_clip(
     value = _json(expected)
     if not isinstance(value, dict):
         raise VerificationError(f"exact actor clip JSON is not an object: {expected}")
+    provenance = ((stamp.get("objectProvenance") or {}).get("value") or {})
+    artifacts = provenance.get("artifacts") if isinstance(provenance, dict) else None
+    recorded_json = artifacts.get("json") if isinstance(artifacts, dict) else None
+    if not isinstance(recorded_json, dict):
+        raise VerificationError("stage objectProvenance.artifacts.json is missing")
+    current_json = _snapshot(expected)
+    if _normal_path(recorded_json.get("path")) != _normal_path(expected.resolve()):
+        raise VerificationError(
+            f"stage objectProvenance.artifacts.json path drifted: {expected}"
+        )
+    for key in ("bytes", "sha256"):
+        if recorded_json.get(key) != current_json.get(key):
+            raise VerificationError(
+                f"stage objectProvenance.artifacts.json {key} drifted: {expected}"
+            )
+    if "mtime_ns" in recorded_json and recorded_json["mtime_ns"] != current_json["mtime_ns"]:
+        raise VerificationError(
+            f"stage objectProvenance.artifacts.json mtime_ns drifted: {expected}"
+        )
     for key in ("m_Name", "Name"):
         if value.get(key) != stage_identity["name"]:
             raise VerificationError(f"clip {key} is not the exact staged target: {expected}")
@@ -384,6 +403,7 @@ def _avatar_evidence(path: Path, hashes: Iterable[int]) -> dict[str, Any]:
                 "keyPresent": False,
                 "path": None,
                 "candidateCount": 0,
+                "candidateRawKeys": [],
                 "candidatePaths": [],
                 "algorithmMatches": False,
             }
@@ -407,21 +427,24 @@ def _avatar_evidence(path: Path, hashes: Iterable[int]) -> dict[str, Any]:
             invalid += 1
             continue
         authored = str(raw_path)
-        if unity_crc32(authored) != key:
-            invalid += 1
-            continue
-        valid += 1
         row = rows.get(str(key))
         if row is not None:
-            row.update(
-                {
-                    "keyPresent": True,
-                    "path": authored,
-                    "candidateCount": 1,
-                    "candidatePaths": [authored],
-                    "algorithmMatches": True,
-                }
+            valid_path = unity_crc32(authored) == key
+            row["keyPresent"] = True
+            row["candidateCount"] += 1
+            row["candidateRawKeys"].append(str(raw_key))
+            row["candidatePaths"].append(authored)
+            row["algorithmMatches"] = (
+                valid_path
+                if row["candidateCount"] == 1
+                else bool(row["algorithmMatches"] and valid_path)
             )
+            if row["path"] is None:
+                row["path"] = authored
+        if unity_crc32(authored) == key:
+            valid += 1
+        else:
+            invalid += 1
     base.update(
         {
             "avatarName": str(document.get("m_Name") or document.get("Name") or ""),

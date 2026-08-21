@@ -121,9 +121,11 @@ class EndminfFxModelBindingTests(unittest.TestCase):
             path = Path(temporary) / "avatar.json"
             path.write_text(json.dumps({"m_TOS": {str(path_hash): authored}}), encoding="utf-8")
             result = verifier._avatar_evidence(path, [path_hash])
-        self.assertEqual(result["targetRows"][0]["keyPresent"], False)
+        self.assertEqual(result["targetRows"][0]["keyPresent"], True)
+        self.assertEqual(result["targetRows"][0]["candidateCount"], 1)
+        self.assertFalse(result["targetRows"][0]["algorithmMatches"])
         self.assertEqual(result["invalidKeyCount"], 1)
-        self.assertEqual(result["result"], "all_target_hashes_absent_from_exact_avatar_tos")
+        self.assertEqual(result["result"], "target_hashes_present_in_exact_avatar_tos")
 
     def test_source_provenance_rejects_snapshot_or_stage_hash_mutation(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -200,6 +202,13 @@ class EndminfFxModelBindingTests(unittest.TestCase):
                 clip = {"m_Name": "TargetClip", "Name": "TargetClip"}
                 clip[wrong_key] = "WrongClip"
                 clip_path.write_text(json.dumps(clip), encoding="utf-8")
+                stamp_value = json.loads((stage / ".character_import_stage.json").read_text())
+                stamp_value["objectProvenance"] = {
+                    "value": {"artifacts": {"json": verifier._snapshot(clip_path)}}
+                }
+                (stage / ".character_import_stage.json").write_text(
+                    json.dumps(stamp_value), encoding="utf-8"
+                )
                 with self.assertRaisesRegex(verifier.VerificationError, wrong_key):
                     verifier._stage_clip(
                         stage,
@@ -209,6 +218,67 @@ class EndminfFxModelBindingTests(unittest.TestCase):
                             "mtime_ns": source_snapshot["mtime_ns"],
                         },
                     )
+
+    def test_stage_clip_rejects_artifact_snapshot_mutation(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "source.chk"
+            source.write_bytes(b"source")
+            source_snapshot = verifier._snapshot(source)
+            identity = {
+                "name": "TargetClip", "type": "AnimationClip", "pathId": -7,
+                "pathIdHex": "FFFFFFFFFFFFFFF9", "source": source_snapshot["path"],
+                "sourceOffset": 99, "cab": "CAB-test", "container": "assets/test.fbx",
+            }
+            stage = root / "stage"
+            clip_dir = stage / "AnimationClip"
+            clip_dir.mkdir(parents=True)
+            clip_path = clip_dir / "TargetClip_pFFFFFFFFFFFFFFF9.json"
+            clip_path.write_text(
+                json.dumps({"m_Name": "TargetClip", "Name": "TargetClip"}),
+                encoding="utf-8",
+            )
+            stamp = {
+                "status": "ok", "identity": identity,
+                "sourceFreshness": {
+                    "status": "validated", "current": source_snapshot,
+                    "expected": source_snapshot,
+                },
+                "objectProvenance": {
+                    "value": {"artifacts": {"json": verifier._snapshot(clip_path)}}
+                },
+            }
+            stamp_path = stage / ".character_import_stage.json"
+            stamp_path.write_text(json.dumps(stamp), encoding="utf-8")
+            mutated = json.loads(stamp_path.read_text())
+            mutated["objectProvenance"]["value"]["artifacts"]["json"]["sha256"] = "0" * 64
+            stamp_path.write_text(json.dumps(mutated), encoding="utf-8")
+            with self.assertRaisesRegex(verifier.VerificationError, "artifacts.json sha256"):
+                verifier._stage_clip(
+                    stage, identity,
+                    {"bytes": source_snapshot["bytes"], "mtime_ns": source_snapshot["mtime_ns"]},
+                )
+
+    def test_avatar_rejects_duplicate_uint32_keys_with_leading_zero(self):
+        path_hash = verifier.EXPECTED_BINDING_HASHES[0]
+        authored = "Root/FX/target"
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "avatar.json"
+            path.write_text(
+                json.dumps({"m_TOS": {str(path_hash): authored, f"0{path_hash}": authored}}),
+                encoding="utf-8",
+            )
+            result = verifier._avatar_evidence(path, [path_hash])
+        row = result["targetRows"][0]
+        self.assertEqual(row["candidateCount"], 2)
+        self.assertEqual(len(row["candidateRawKeys"]), 2)
+        self.assertEqual(row["candidatePaths"], [authored, authored])
+        self.assertFalse(verifier._remap_gates(
+            {"containerModelRows": 1, "sourceOffsetModelRows": 1},
+            {"targetRows": [{"pathHash": h, "candidateCount": 1, "candidatePaths": [f"P/{h}"]} for h in verifier.EXPECTED_BINDING_HASHES]},
+            {"targetRows": [row if h == path_hash else {"pathHash": h, "keyPresent": True, "algorithmMatches": True, "candidateCount": 1, "candidatePaths": [f"P/{h}"]} for h in verifier.EXPECTED_BINDING_HASHES]},
+            verifier.EXPECTED_BINDING_HASHES,
+        )["avatarTosUnique"])
 
     def test_remap_gates_fail_closed_for_each_required_mapping_attack(self):
         hashes = verifier.EXPECTED_BINDING_HASHES
