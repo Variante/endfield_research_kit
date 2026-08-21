@@ -249,6 +249,14 @@ ambience; generic scene emitters retain scene-object ownership without a
 guessed SFX/music category. `955778167792087661` therefore has mission-
 narration ownership while its concrete trigger and playback placement remain
 unknown.
+Serialized `monoBehaviourAudioIdField` rows now retain the raw serialized path
+and field spelling while `audio_semantics.managed_literals` projects only a
+narrow authored role: sound spawn/finish, hit/start/rotation/enable callbacks,
+animation-state audio config, particle and water fields, or the generic
+serialized-field boundary (with an audio-key hint). `componentLayout`, component
+type, and exact existing GameObject placement are separate evidence fields.
+These projections do not imply component execution, Event posting, selected
+Wwise media, or audibility; generated stats carry role/layout/Event coverage.
 Character audio naming is a second exact ownership boundary. A delimited
 current `CharacterTable` key inside a Wwise Event id assigns that authored
 namespace to the character; a shortened `chr_NNNN_*` form is accepted only

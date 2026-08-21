@@ -502,6 +502,16 @@ rejects the parent before child projection. `audio_cue_native.py` owns the
 selected `global-metadata.dat` / `GameAssembly.dll` gate: enum/operator names
 are published only for a validated exact contract, while missing or mismatched
 native inputs keep those names absent.
+
+MonoBehaviour `monoBehaviourAudioIdField` contexts are projected by
+`audio_semantics.managed_literals.project_mono_behaviour_audio_field`. The
+serialized path remains the evidence; the narrow `component*` role is an
+authored static field label, while `componentLayout`, raw field/path values,
+and exact GameObject placement stay separately searchable. Component or
+callback execution, Event posting, Wwise selection, and audibility remain
+unobserved. Role/layout coverage is emitted in generated Audio stats and Event
+summaries rather than fixed in this document.
+
 `scene_backgrounds.py` owns the scene-background catalog. It consumes the real
 AnimeStudio AssetMap object root in one bounded streaming pass, using exact
 AssetMap `Source` + `PathID` identities. Prefab-local and scene-asset

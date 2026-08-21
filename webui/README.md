@@ -216,6 +216,16 @@ same-name assets remain identity evidence until a typed consumer reaches a
 playback API. Fingerprint-locked native evidence fails closed after a client
 update.
 
+Serialized `monoBehaviourAudioIdField` contexts expose searchable authored
+field roles (`componentSoundSpawn`, `componentHitCallback`, finish/state,
+water/particle roles, or the generic serialized-field boundary (with an
+audio-key hint)), their `componentLayout`, component type, and raw serialized path.
+The detail evidence also shows the existing exact GameObject hierarchy and
+world position when present. These are authored field projections only; the
+page does not label a field as executed, posted, selected, or audible. Role and
+Event coverage counts come from generated summaries and are not hard-coded in
+the frontend.
+
 Scene-emitter details keep prefab source/status separate from scene ownership.
 Prefab-local containment and scene-asset candidates are displayed as distinct
 static evidence; only an exact, unique candidate with an authoritative

@@ -3172,6 +3172,119 @@ class AudioSemanticDataTests(unittest.TestCase):
         )
         self.assertEqual(media[0]["semanticCategoryFieldRoles"], ["soundSpawn"])
 
+    def test_mono_behaviour_mapped_role_keeps_sfx_gate_and_event_category(self) -> None:
+        media = [{
+            "id": "10",
+            "audioCategory": "unknown",
+            "src": "/audio/mapped-sfx.flac",
+            "rel": "wwise/unknown/10.flac",
+        }]
+        catalog = {
+            "contexts": [{
+                "triggerId": "mono:mapped-fixture",
+                "semanticKind": "monoBehaviourAudioIdField",
+                "triggerRole": "componentSoundSpawn",
+                "authoredFieldNameRaw": "_spawnAudioEvent",
+                "serializedFieldPath": "$._spawnAudioEvent._id",
+                "serializedFieldPathStatus": "exact",
+                "meaning": {"category": "unknown"},
+                "mediaRefs": [{
+                    "id": "10",
+                    "src": "/audio/mapped-sfx.flac",
+                    "rel": "wwise/unknown/10.flac",
+                }],
+            }],
+        }
+
+        counts = audio_semantics.annotate_media_trigger_semantic_categories(media, catalog)
+
+        self.assertEqual(counts["mediaSemanticCategoryFromMonoBehaviourSfxField"], 1)
+        self.assertEqual(media[0]["audioCategory"], "unknown")
+        self.assertEqual(media[0]["semanticCategory"], "sfx")
+        self.assertEqual(media[0]["semanticCategoryFieldRoles"], ["componentSoundSpawn"])
+
+        media_unknown = [{
+            "id": "11",
+            "audioCategory": "unknown",
+            "src": "/audio/unknown.flac",
+            "rel": "wwise/unknown/11.flac",
+        }]
+        unknown_catalog = {
+            "contexts": [{
+                "triggerId": "mono:unknown-fixture",
+                "semanticKind": "monoBehaviourAudioIdField",
+                "triggerRole": "componentSerializedAudioField",
+                "meaning": {"category": "unknown"},
+                "mediaRefs": [{
+                    "id": "11",
+                    "src": "/audio/unknown.flac",
+                    "rel": "wwise/unknown/11.flac",
+                }],
+            }],
+        }
+        audio_semantics.annotate_media_trigger_semantic_categories(media_unknown, unknown_catalog)
+        self.assertNotIn("semanticCategory", media_unknown[0])
+
+        media_unsupported_water = [{
+            "id": "12",
+            "audioCategory": "unknown",
+            "src": "/audio/water-unsupported.flac",
+            "rel": "wwise/unknown/12.flac",
+        }]
+        unsupported_water_catalog = {
+            "contexts": [{
+                "triggerId": "mono:unsupported-water-fixture",
+                "semanticKind": "monoBehaviourAudioIdField",
+                "triggerRole": "componentSerializedAudioField",
+                "situation": {
+                    "authoredFieldNameRaw": "aimableSoundEvent",
+                    "serializedFieldPath": "$.wrapper.aimableSoundEvent._id",
+                    "serializedFieldPathStatus": "exact",
+                },
+                "meaning": {"category": "unknown"},
+                "mediaRefs": [{
+                    "id": "12",
+                    "src": "/audio/water-unsupported.flac",
+                    "rel": "wwise/unknown/12.flac",
+                }],
+            }],
+        }
+        audio_semantics.annotate_media_trigger_semantic_categories(
+            media_unsupported_water,
+            unsupported_water_catalog,
+        )
+        self.assertNotIn("semanticCategory", media_unsupported_water[0])
+
+        media_water_interact = [{
+            "id": "13",
+            "audioCategory": "unknown",
+            "src": "/audio/water-interact.flac",
+            "rel": "wwise/unknown/13.flac",
+        }]
+        water_interact_catalog = {
+            "contexts": [{
+                "triggerId": "mono:water-interact-fixture",
+                "semanticKind": "monoBehaviourAudioIdField",
+                "triggerRole": "componentWaterInteractEnterSound",
+                "situation": {
+                    "authoredFieldNameRaw": "enterWaterSfx",
+                    "serializedFieldPath": "$.enterWaterSfx._id",
+                    "serializedFieldPathStatus": "exact",
+                },
+                "meaning": {"category": "unknown"},
+                "mediaRefs": [{
+                    "id": "13",
+                    "src": "/audio/water-interact.flac",
+                    "rel": "wwise/unknown/13.flac",
+                }],
+            }],
+        }
+        audio_semantics.annotate_media_trigger_semantic_categories(
+            media_water_interact,
+            water_interact_catalog,
+        )
+        self.assertNotIn("semanticCategory", media_water_interact[0])
+
     def test_control_only_event_role_uses_serialized_action_type(self) -> None:
         event_name = "au_ui_fixture_control"
         event_hash = identifiers.audio_hash_generator_compute(event_name)
@@ -6965,7 +7078,9 @@ class AudioSemanticDataTests(unittest.TestCase):
             self.assertEqual(result["stats"]["distinctEventHashes"], 3)
             self.assertEqual(result["stats"]["eventContextOccurrences"], 3)
             spawn = result["eventContexts"]["#0xfffffffe"][0]
-            self.assertEqual(spawn["authoredFieldRole"], "_spawnAudioEvent")
+            self.assertEqual(spawn["authoredFieldRole"], "componentSoundSpawn")
+            self.assertEqual(spawn["authoredFieldNameRaw"], "_spawnAudioEvent")
+            self.assertEqual(spawn["serializedFieldPathStatus"], "exact")
             self.assertEqual(spawn["gameObjectName"], "Audio Fixture")
             self.assertEqual(spawn["runtimeActivationStatus"], "monoBehaviourComponentExecutionNotObserved")
             managed = result["eventContexts"]["#0x12345678"][0]
@@ -6990,7 +7105,10 @@ class AudioSemanticDataTests(unittest.TestCase):
             "media": [],
             "contexts": [{
                 "kind": "monoBehaviourAudioIdField",
-                "authoredFieldRole": "_onHitAudioEvent",
+                "authoredFieldRole": "componentHitCallback",
+                "componentLayout": "serializedMonoBehaviourAudioIdField",
+                "componentType": "Fixture.AudioComponent",
+                "authoredFieldNameRaw": "_onHitAudioEvent",
                 "serializedFieldPath": "$._onHitAudioEvent._id",
                 "serializedFile": "CAB-test",
                 "pathId": 5,
@@ -7002,11 +7120,171 @@ class AudioSemanticDataTests(unittest.TestCase):
 
         self.assertEqual(len(rows), 1)
         self.assertEqual(rows[0]["semanticKind"], "monoBehaviourAudioIdField")
-        self.assertEqual(rows[0]["triggerRole"], "_onHitAudioEvent")
+        self.assertEqual(rows[0]["triggerRole"], "componentHitCallback")
+        self.assertEqual(rows[0]["situation"]["componentType"], "Fixture.AudioComponent")
+        self.assertEqual(rows[0]["situation"]["serializedFieldPathStatus"], None)
         self.assertEqual(
             rows[0]["runtimeActivationStatus"],
             "monoBehaviourComponentExecutionNotObserved",
         )
+
+    def test_mono_behaviour_audio_field_roles_are_narrow_and_fail_closed(self) -> None:
+        spawn = managed_literals.project_mono_behaviour_audio_field(
+            "$._spawnAudioEvent._id",
+            component_layout="Fixture.AudioComponent",
+            component_type="Fixture.AudioComponent",
+        )
+        self.assertEqual(spawn["authoredFieldRole"], "componentSoundSpawn")
+        self.assertEqual(spawn["serializedFieldName"], "_spawnAudioEvent")
+        self.assertEqual(spawn["serializedFieldPathStatus"], "exact")
+        self.assertEqual(spawn["componentLayoutStatus"], "exact")
+
+        unknown = managed_literals.project_mono_behaviour_audio_field(
+            "$._onHitAudioRtpc._id",
+        )
+        self.assertEqual(unknown["authoredFieldRole"], "componentSerializedAudioField")
+        self.assertEqual(unknown["serializedFieldName"], "_onHitAudioRtpc")
+        self.assertEqual(unknown["authoredFieldRoleEvidence"], "genericSerializedAudioField")
+
+        state = managed_literals.project_mono_behaviour_audio_field(
+            "$.stateList[0].audioPlayConfigs[0].normalAudiId._id",
+        )
+        self.assertEqual(state["authoredFieldRole"], "componentAnimationStateAudioConfig")
+        self.assertEqual(state["componentLayout"], "serializedAnimationStateAudioConfig")
+        self.assertEqual(
+            managed_literals.project_mono_behaviour_audio_field("$.normalAudiId._id")["authoredFieldRole"],
+            "componentSerializedAudioField",
+        )
+
+        audio_key = managed_literals.project_mono_behaviour_audio_field("$._audioKey._id")
+        self.assertEqual(audio_key["authoredFieldRole"], "componentSerializedAudioField")
+        self.assertEqual(audio_key["authoredFieldRoleEvidence"], "genericSerializedAudioField")
+        self.assertEqual(audio_key["serializedFieldRoleHint"], "componentAudioKey")
+        self.assertEqual(
+            managed_literals.project_mono_behaviour_audio_field("$._entries[0].soundEvent._id")["authoredFieldRole"],
+            "componentParticleSoundEvent",
+        )
+        self.assertEqual(
+            managed_literals.project_mono_behaviour_audio_field("$.waterDroneUIAudioData.aimableSoundEvent._id")["authoredFieldRole"],
+            "componentWaterDroneAimableSound",
+        )
+        self.assertEqual(
+            managed_literals.project_mono_behaviour_audio_field("$._onEnableLoopAudioEvent._id")["authoredFieldRole"],
+            "componentEnableLoopCallback",
+        )
+
+        self.assertEqual(
+            managed_literals.project_mono_behaviour_audio_field(
+                "$.references.RefIds[1].data.soundBase.soundFinish.hex",
+            )["authoredFieldRole"],
+            "componentFinish",
+        )
+        self.assertEqual(
+            managed_literals.project_mono_behaviour_audio_field(
+                "$.references.RefIds[1].data.soundSpawn.hex",
+            )["authoredFieldRole"],
+            "componentSoundSpawn",
+        )
+        self.assertEqual(
+            managed_literals.project_mono_behaviour_audio_field(
+                "$.waterDroneSourceDataDict._valueData[0].enterSoundName._id",
+            )["authoredFieldRole"],
+            "componentWaterDroneEnterSound",
+        )
+        self.assertEqual(
+            managed_literals.project_mono_behaviour_audio_field(
+                "$.waterTypeDataDict._valueData[0].startHitEvent._id",
+            )["authoredFieldRole"],
+            "componentWaterStartHitSound",
+        )
+
+        for unsupported_path, raw_field in (
+            ("$.wrapper._spawnAudioEvent._id", "_spawnAudioEvent"),
+            ("$.audioPlayConfigs[0].stateList[0].normalAudiId._id", "normalAudiId"),
+            (
+                "$.stateList[0].audioPlayConfigs[0].waterDroneUIAudioData.normalAudiId._id",
+                "normalAudiId",
+            ),
+            ("$._spawnAudioEvent.hex", "_spawnAudioEvent"),
+            ("$.waterDroneUIAudioData.aimableSoundEvent.value", "aimableSoundEvent"),
+            ("$.waterTypeDataDict._valueData[0].startHitEvent._id.extra", "startHitEvent"),
+        ):
+            with self.subTest(unsupported_path=unsupported_path):
+                projection = managed_literals.project_mono_behaviour_audio_field(
+                    unsupported_path,
+                    field_name=raw_field,
+                )
+                self.assertEqual(
+                    projection["authoredFieldRole"],
+                    "componentSerializedAudioField",
+                )
+                self.assertEqual(
+                    projection["authoredFieldRoleEvidence"],
+                    "genericSerializedAudioField",
+                )
+                self.assertEqual(
+                    projection["serializedFieldDiagnostic"],
+                    "serializedAudioFieldPathUnsupportedShape",
+                )
+
+        malformed = managed_literals.project_mono_behaviour_audio_field("")
+        self.assertEqual(malformed["authoredFieldRole"], "componentSerializedAudioField")
+        self.assertEqual(malformed["serializedFieldPathStatus"], "malformed")
+        self.assertEqual(malformed["serializedFieldDiagnostic"], "serializedAudioFieldPathMalformed")
+
+    def test_mono_behaviour_audio_multi_field_summary_preserves_event_and_runtime_boundary(self) -> None:
+        contexts = [
+            {
+                "kind": "monoBehaviourAudioIdField",
+                "authoredFieldRole": "componentSoundSpawn",
+                "componentLayout": "serializedMonoBehaviourAudioIdField",
+                "serializedFieldPath": "$._spawnAudioEvent._id",
+                "runtimeActivationStatus": "monoBehaviourComponentExecutionNotObserved",
+            },
+            {
+                "kind": "monoBehaviourAudioIdField",
+                "authoredFieldRole": "componentHitCallback",
+                "componentLayout": "serializedMonoBehaviourAudioIdField",
+                "serializedFieldPath": "$._onHitAudioEvent._id",
+                "runtimeActivationStatus": "monoBehaviourComponentExecutionNotObserved",
+            },
+        ]
+        row = {
+            "id": "au_fixture_multi_field",
+            "name": "au_fixture_multi_field",
+            "hash": 0x12345678,
+            "category": "sfx",
+            "categoryEvidence": "namePrefix",
+            "foundInWwise": True,
+            "contexts": contexts,
+            "media": [],
+            "evidence": [],
+        }
+        summary = event_summary.event_summary_row(row, "event_details/12.json")
+        self.assertEqual(summary["category"], "sfx")
+        self.assertEqual(summary["monoBehaviourAudioIdFieldCount"], 2)
+        self.assertEqual(summary["monoBehaviourAudioIdFieldRoleCounts"], {
+            "componentHitCallback": 1,
+            "componentSoundSpawn": 1,
+        })
+        self.assertIn("componentSoundSpawn", summary["contextSearch"])
+        triggers = audio_semantics._build_mono_behaviour_audio_id_trigger_contexts([row])
+        self.assertEqual({trigger["triggerRole"] for trigger in triggers}, {
+            "componentHitCallback", "componentSoundSpawn",
+        })
+        self.assertTrue(all(
+            trigger["runtimeActivationStatus"] == "monoBehaviourComponentExecutionNotObserved"
+            for trigger in triggers
+        ))
+        self.assertTrue(all(trigger["situation"]["worldPosition"] is None for trigger in triggers))
+
+    def test_audio_frontend_component_field_role_search_and_detail_labels(self) -> None:
+        source = (Path(__file__).resolve().parents[2] / "webui/src/features/audio/index.js").read_text(encoding="utf-8")
+        self.assertIn("context.componentLayout", source)
+        self.assertIn("context.componentType", source)
+        self.assertIn("context.authoredFieldNameRaw", source)
+        self.assertIn("serialized field ${context.authoredFieldNameRaw}", source)
+        self.assertIn('context?.worldPositionStatus === "exact_transform_hierarchy"', source)
 
     def test_collects_typed_play_line_sound_managed_reference_payload(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:
@@ -7048,12 +7326,12 @@ class AudioSemanticDataTests(unittest.TestCase):
             self.assertEqual(result["stats"]["eventContextOccurrences"], 2)
             self.assertEqual(result["stats"]["distinctEventHashes"], 2)
             spawn = result["eventContexts"]["#0x12345678"][0]
-            self.assertEqual(spawn["authoredFieldRole"], "soundSpawn")
+            self.assertEqual(spawn["authoredFieldRole"], "componentSoundSpawn")
             self.assertEqual(spawn["managedReferenceClass"], "PlayLineSound")
             self.assertEqual(spawn["managedReferencePayloadLength"], 24)
             self.assertEqual(spawn["gameObjectName"], "Line FX")
             finish = result["eventContexts"]["#0x87654321"][0]
-            self.assertEqual(finish["authoredFieldRole"], "soundFinish")
+            self.assertEqual(finish["authoredFieldRole"], "componentFinish")
             self.assertEqual(
                 finish["evidence"],
                 "exactSerializedPlayLineSoundPayloadAndCurrentWwiseEvent",
