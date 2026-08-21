@@ -6,7 +6,13 @@ import unittest
 from pathlib import Path
 
 from build_endminf_external_pptr_closure import ClosureError
-from build_endminf_material_closure import _artifact, _nonnull_refs, _target_cab, build_report
+from build_endminf_material_closure import (
+    _artifact,
+    _nonnull_refs,
+    _target_cab,
+    _validate_owner_cab,
+    build_report,
+)
 
 
 REPO = Path(__file__).resolve().parents[2]
@@ -50,6 +56,67 @@ class EndminfMaterialClosureTests(unittest.TestCase):
             artifact.write_bytes(b"not-a-png")
             with self.assertRaisesRegex(ClosureError, "invalid header"):
                 _artifact(root, "Texture2D", "0000000000000001")
+
+    def test_owner_fake_dependency_is_rejected_against_current_cab_map(self) -> None:
+        records = {
+            "cab-owner": [{
+                "source": r"D:\\game\\StreamingAssets\\VFS\\A\\owner.chk",
+                "sourceOffset": 42,
+                "dependencies": ["CAB-a", "CAB-b"],
+            }]
+        }
+        with self.assertRaisesRegex(ClosureError, "dependencies differ"):
+            _validate_owner_cab(
+                "CAB-owner",
+                r"D:\\game\\StreamingAssets\\VFS\\A\\owner.chk",
+                42,
+                ["CAB-a", "CAB-b", "CAB-fake"],
+                records,
+                material_hex="ABCDEF0123456789",
+            )
+
+    def test_owner_dependency_reorder_is_rejected_against_current_cab_map(self) -> None:
+        records = {
+            "cab-owner": [{
+                "source": r"D:\\game\\StreamingAssets\\VFS\\A\\owner.chk",
+                "sourceOffset": 42,
+                "dependencies": ["CAB-a", "CAB-b"],
+            }]
+        }
+        with self.assertRaisesRegex(ClosureError, "dependencies differ"):
+            _validate_owner_cab(
+                "CAB-owner",
+                r"D:\\game\\StreamingAssets\\VFS\\A\\owner.chk",
+                42,
+                ["CAB-b", "CAB-a"],
+                records,
+                material_hex="ABCDEF0123456789",
+            )
+
+    def test_owner_multiple_physical_sources_are_rejected(self) -> None:
+        records = {
+            "cab-owner": [
+                {
+                    "source": r"D:\\game\\StreamingAssets\\VFS\\A\\owner.chk",
+                    "sourceOffset": 42,
+                    "dependencies": ["CAB-a"],
+                },
+                {
+                    "source": r"D:\\game\\Persistent\\VFS\\A\\owner.chk",
+                    "sourceOffset": 42,
+                    "dependencies": ["CAB-a"],
+                },
+            ]
+        }
+        with self.assertRaisesRegex(ClosureError, "no unique current source/offset"):
+            _validate_owner_cab(
+                "CAB-owner",
+                r"D:\\game\\StreamingAssets\\VFS\\A\\owner.chk",
+                42,
+                ["CAB-a"],
+                records,
+                material_hex="ABCDEF0123456789",
+            )
 
     def test_file_id_out_of_range_fails_before_resolution(self) -> None:
         closure = json.loads(CLOSURE.read_text(encoding="utf-8"))

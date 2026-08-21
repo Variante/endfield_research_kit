@@ -98,6 +98,50 @@ def _target_cab(host_cab: str, dependencies: list[str], file_id: int, *, field: 
     return dependencies[file_id - 1]
 
 
+def _validate_owner_cab(
+    serialized_file: str,
+    source: str,
+    source_offset: int,
+    dependencies: list[str],
+    records_by_cab: dict[str, list[dict[str, Any]]],
+    *,
+    material_hex: str,
+) -> dict[str, Any]:
+    """Require one current CABMap physical row and its ordered dependency list."""
+
+    records = records_by_cab.get(serialized_file.casefold(), [])
+    if not records:
+        raise ClosureError(f"material {material_hex} owner CAB {serialized_file} is missing from current CAB maps")
+    physical_pairs = {
+        (_normal_source(record.get("source")), _integer(record.get("sourceOffset"), field="CABMap sourceOffset"))
+        for record in records
+    }
+    expected_pair = (_normal_source(source), source_offset)
+    if len(physical_pairs) != 1 or expected_pair not in physical_pairs:
+        raise ClosureError(
+            f"material {material_hex} owner CAB {serialized_file} has no unique current source/offset "
+            f"match (expected {source}:{source_offset}, found {len(physical_pairs)} physical sources)"
+        )
+    matches = [
+        record
+        for record in records
+        if _normal_source(record.get("source")) == expected_pair[0]
+        and _integer(record.get("sourceOffset"), field="CABMap sourceOffset") == expected_pair[1]
+    ]
+    if len(matches) != 1:
+        raise ClosureError(
+            f"material {material_hex} owner CAB {serialized_file} source/offset is not unique "
+            f"in current CAB maps (found {len(matches)} rows)"
+        )
+    current_dependencies = matches[0].get("dependencies")
+    if not isinstance(current_dependencies, list) or current_dependencies != dependencies:
+        raise ClosureError(
+            f"material {material_hex} owner CAB {serialized_file} dependencies differ from current CAB map "
+            "(ordered FileID mapping is not trustworthy)"
+        )
+    return matches[0]
+
+
 def _one(items: Iterable[Any], message: str) -> Any:
     values = list(items)
     if len(values) != 1:
@@ -209,6 +253,7 @@ def build_report(
     requested: set[int] = set()
     material_files: list[Path] = []
     owner_sources: set[str] = set()
+    owner_specs: list[dict[str, Any]] = []
     for owner in materials:
         owner_path_id = _signed_int64(owner.get("pathId"), field="Material identity PathID", path=closure_path)
         expected_path_hex = f"{_unsigned_path_id(owner_path_id):016X}"
@@ -275,6 +320,15 @@ def build_report(
             raise ClosureError(f"material {path_hex} JSON name does not match its AssetMap owner")
         material_files.append(material_path)
         owner_sources.add(cab_source)
+        owner_specs.append(
+            {
+                "materialHex": path_hex,
+                "serializedFile": serialized_file,
+                "source": cab_source,
+                "sourceOffset": cab_offset,
+                "dependencies": dependencies,
+            }
+        )
         refs = _nonnull_refs(payload, path=material_path)
         for ref in refs:
             pptr = ref["pptr"]
@@ -310,13 +364,23 @@ def build_report(
     rows_by_pid = _asset_map_rows(maps, requested)
     cab_paths = [Path(p) for p in cab_maps]
     target_cabs = {row["targetCab"] for row in occurrences}
-    source_pairs_raw, cab_records_raw = _cab_map_rows(cab_paths, target_cabs)
+    owner_cabs = {spec["serializedFile"] for spec in owner_specs}
+    source_pairs_raw, cab_records_raw = _cab_map_rows(cab_paths, target_cabs | owner_cabs)
     source_pairs: dict[str, set[tuple[str, int]]] = defaultdict(set)
     cab_records: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for cab, pairs in source_pairs_raw.items():
         source_pairs[str(cab).casefold()].update(pairs)
     for cab, records in cab_records_raw.items():
         cab_records[str(cab).casefold()].extend(records)
+    for spec in owner_specs:
+        _validate_owner_cab(
+            spec["serializedFile"],
+            spec["source"],
+            spec["sourceOffset"],
+            spec["dependencies"],
+            cab_records,
+            material_hex=spec["materialHex"],
+        )
     identities: dict[tuple[str, int, str], dict[str, Any]] = {}
     for occurrence in occurrences:
         key = (occurrence["targetCab"].casefold(), occurrence["pathId"], occurrence["targetType"])
