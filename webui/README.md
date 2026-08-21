@@ -216,6 +216,28 @@ same-name assets remain identity evidence until a typed consumer reaches a
 playback API. Fingerprint-locked native evidence fails closed after a client
 update.
 
+Scene-emitter details keep prefab source/status separate from scene ownership.
+Prefab-local containment and scene-asset candidates are displayed as distinct
+static evidence; only an exact, unique candidate with an authoritative
+`sceneId` may be shown as scene-owned. The generated row contract retains the
+source and `sceneOwnershipStatus`/`sceneContainmentStatus`, with
+`sceneId`/`sourceName`/`sourcePath` only on an exact scene containment row.
+Missing or malformed AssetMap input is shown as unavailable rather than
+replaced by a name/path guess. A prefab source row is not a recovered level
+instance.
+
+AudioCue AST detail is lazy and debug-only. It exposes the validated tree's
+source coordinates, parent/depth, `exprType`, four scalar fields, child paths,
+node class, semantic role, and bounded diagnostics. Non-empty behavior
+`exprType=3` is an authored Event request; non-empty `exprType=8` is a
+`runtimeCueVariable`; non-empty children are `compositeOpaque`; other nodes
+remain opaque. Native enum/operator names render only when the selected native
+contract is exact and validated; missing or mismatched contracts leave those
+names absent. A `childrenLimit` diagnostic shows the bounded parent without
+manufacturing descendant Event, operand, branch, or operator rows. The page
+does not present condition truth, runtime variable values, handler dispatch,
+cue execution, Wwise branch selection, or audibility as observed facts.
+
 Event details include exact direct effect slots, built-in Wwise plug-in class
 names, parameter fingerprints, and explicit output-bus IDs. Gain, Delay,
 Compressor, Expander, three-band Parametric EQ, Meter, Matrix Reverb, Pitch

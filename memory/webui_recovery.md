@@ -149,12 +149,23 @@ branch evidence. Selector and dictionary paths stay distinct from direct
 literal playback.
 
 Ordinary Audio details show authored AudioCue behavior Event requests and
-string-literal/variable-name controls as typed evidence. The complete numeric
-AST, raw scalar fields, source paths, and validation diagnostics are lazy
-detail data shown only in the debug surface; compact rows retain summary/count
-fields. Selected condition truth, handler/indirect dispatch, cue execution,
-Wwise branch selection, and audibility remain runtime-blocked and are not
-presented as observed facts.
+string-literal/variable-name controls as typed evidence. Scene-emitter detail
+data keeps prefab source and source-status separate from scene ownership. Event
+and Media search/detail evidence now visibly shows `sceneContainmentStatus`,
+the exact prefab `sourceAssetPath`, and its container type, while explicitly
+labeling runtime scene instantiation as unobserved. A source prefab row must
+not be presented as a recovered level instance. The complete validated AudioCue
+tree, raw scalar fields, source coordinates, node classes, native-name gate
+status, and bounded diagnostics are
+lazy detail data shown only in the debug surface; compact rows retain bounded
+summary fields. Non-empty behavior `exprType=3` leaves show authored Event
+requests, non-empty `exprType=8` leaves show `runtimeCueVariable`, and
+`childrenLimit` prevents descendant projection. Exact native enum/operator
+names appear only under the validated selected-input gate; missing or
+mismatched inputs leave them absent. Selected condition truth,
+handler/indirect dispatch, runtime variable values, cue execution, Wwise branch
+selection, and audibility remain runtime-blocked and are not presented as
+observed facts.
 
 Normal Audio records also include a collapsed LevelScript audio lifecycle
 section for authored producer/consumer links, serialized action ordinals, and

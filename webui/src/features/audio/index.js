@@ -1118,6 +1118,8 @@
       ...asArray(record?.animationCallbackResolvedEntityIds),
       ...asArray(record?.animationCallbackCandidateEntityIds),
       record?.animationCallbackLinkEvidence,
+      record?.sceneContainmentStatus, record?.sourceAssetPath, record?.containerType,
+      record?.containmentType, ...asArray(record?.sceneContainmentStatuses),
       record?.hash, record?.eventHash, ...numericHashes.map((value) => `0x${(Number(value) >>> 0).toString(16).padStart(8, "0")}`),
       record?.mediaId, record?.bankId, record?.bank, record?.rel, record?.path, record?.src,
       ...asArray(record?.eventIds), ...asArray(record?.mediaIds), ...asArray(record?.actionIds), ...asArray(record?.visitedObjectIds),
@@ -1170,6 +1172,12 @@
         ...asArray(context.interactiveConsumerIds), context.templateAssociationStatus,
         ...asArray(context.interactiveTableSourcePaths), context.interactiveTableSha256,
         context.action, context.levelScriptId, context.sourcePath, context.sourceSha256,
+        context.sceneId, context.sourceName, context.sceneContainmentStatus,
+        context.sourceAssetPath, context.containerType, context.containmentType,
+        ...Object.values(context.sceneContainmentEvidence || {}),
+        ...asArray(context.sceneContainmentDiagnostics).flatMap((diagnostic) => diagnostic && typeof diagnostic === "object"
+          ? [diagnostic.status, diagnostic.reason, ...asArray(diagnostic.candidates).flatMap((candidate) => candidate && typeof candidate === "object" ? Object.values(candidate) : [])]
+          : []),
         context.recordUid, context.recordLocalId, context.actionMapRole, context.eventName,
         context.triggerRole, context.sourceField,
         context.clipReachability, context.triggerBindingStatus, ...asArray(context.skillIds), ...asArray(context.actionKinds),
@@ -2994,6 +3002,20 @@
       if (context?.objectIndexSource) parts.push(context.objectIndexSource);
       if (context?.rawJsonSource) parts.push(context.rawJsonSource);
       parts.push("component/state execution unobserved");
+    }
+    if (kind === "sceneEmitterAudioEvent") {
+      const containmentEvidence = context?.sceneContainmentEvidence && typeof context.sceneContainmentEvidence === "object"
+        ? context.sceneContainmentEvidence
+        : {};
+      const candidates = asArray(context?.sceneContainmentDiagnostics).flatMap((diagnostic) => (
+        diagnostic && typeof diagnostic === "object" ? asArray(diagnostic.candidates) : []
+      )).filter((candidate) => candidate && typeof candidate === "object");
+      const sourceAssetPath = context?.sourceAssetPath || containmentEvidence.sourceAssetPath || candidates.find((candidate) => candidate.sourceAssetPath)?.sourceAssetPath;
+      const containerType = context?.containmentType || context?.containerType || containmentEvidence.containmentType || candidates.find((candidate) => candidate.containmentType)?.containmentType;
+      parts.push(`containment ${humanize(context?.sceneContainmentStatus || "unresolved")}`);
+      if (sourceAssetPath) parts.push(`container ${sourceAssetPath}`);
+      if (containerType) parts.push(`container type ${humanize(containerType)}`);
+      parts.push("authored prefab component / runtime scene instantiation unobserved");
     }
     if (["audioDialogVoiceDefinition", "responsiveDialogVoice", "voiceToneVariant"].includes(kind)) {
       if (context?.audioDialogPath) parts.push(`AudioDialog ${context.audioDialogPath}`);
