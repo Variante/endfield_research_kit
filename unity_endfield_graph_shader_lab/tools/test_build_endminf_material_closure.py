@@ -29,6 +29,7 @@ CAB_MAPS = [
 ]
 SHADERS = REPO / "export_full/recovered/AnimeStudio-cli/Persistent/convert_by_type/Shader"
 TEXTURES = REPO / "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D"
+RAW_SHADER_EVIDENCE = UNITY / "Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/ExternalUiEffects/endminf_shader_raw_object_evidence.json"
 
 
 class EndminfMaterialClosureTests(unittest.TestCase):
@@ -128,21 +129,54 @@ class EndminfMaterialClosureTests(unittest.TestCase):
             with self.assertRaisesRegex(ClosureError, "FileID .* out of range"):
                 build_report(path, MATERIALS, ASSET_MAPS, CAB_MAPS, SHADERS, TEXTURES)
 
-    def test_current_exact_closure_preserves_shader_source_ambiguity(self) -> None:
-        report = build_report(CLOSURE, MATERIALS, ASSET_MAPS, CAB_MAPS, SHADERS, TEXTURES)
+    def test_current_exact_closure_resolves_only_byte_identical_shader_mirrors(self) -> None:
+        report = build_report(CLOSURE, MATERIALS, ASSET_MAPS, CAB_MAPS, SHADERS, TEXTURES, RAW_SHADER_EVIDENCE)
         self.assertEqual(report["summary"], {
             "materialCount": 27,
             "occurrenceCount": 99,
             "identityCount": 37,
-            "resolvedCount": 34,
-            "ambiguousCount": 3,
-            "resolvedShaderCount": 0,
+            "resolvedCount": 36,
+            "ambiguousCount": 1,
+            "resolvedShaderCount": 2,
             "resolvedTextureCount": 34,
-            "ambiguousShaderCount": 3,
+            "ambiguousShaderCount": 1,
             "ambiguousTextureCount": 0,
         })
         self.assertEqual(report["status"], "incomplete_ambiguous_physical_sources")
         self.assertFalse(report["renderPipelineBoundary"]["renderReady"])
+        shader_statuses = {
+            row["targetName"]: row["status"]
+            for row in report["identities"]
+            if row["targetType"] == "Shader"
+        }
+        self.assertEqual(shader_statuses, {
+            "HGRP/LitEffect": "resolved_byte_identical_mirror",
+            "HGRP/Effect/VFXRefract": "resolved_byte_identical_mirror",
+            "HGRP/Effect/VFXBaseV2": "ambiguous_physical_source",
+        })
+
+    def test_missing_raw_shader_evidence_fails_closed(self) -> None:
+        report = build_report(CLOSURE, MATERIALS, ASSET_MAPS, CAB_MAPS, SHADERS, TEXTURES)
+        self.assertEqual(report["summary"]["resolvedShaderCount"], 0)
+        self.assertEqual(report["summary"]["ambiguousShaderCount"], 3)
+        reasons = {
+            row["targetName"]: row["ambiguityReason"]
+            for row in report["identities"]
+            if row["targetType"] == "Shader"
+        }
+        self.assertEqual(set(reasons.values()), {"raw_object_evidence_missing"})
+
+    def test_different_raw_shader_bytes_do_not_resolve(self) -> None:
+        evidence = json.loads(RAW_SHADER_EVIDENCE.read_text(encoding="utf-8"))
+        lit = next(row for row in evidence["records"] if row["targetName"] == "HGRP/LitEffect")
+        lit["rawObject"]["sha256"] = "f" * 64
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "evidence.json"
+            path.write_text(json.dumps(evidence), encoding="utf-8")
+            report = build_report(CLOSURE, MATERIALS, ASSET_MAPS, CAB_MAPS, SHADERS, TEXTURES, path)
+        lit_identity = next(row for row in report["identities"] if row.get("targetName") == "HGRP/LitEffect")
+        self.assertEqual(lit_identity["status"], "ambiguous_physical_source")
+        self.assertEqual(lit_identity["ambiguityReason"], "raw_object_bytes_differ")
 
 
 if __name__ == "__main__":
