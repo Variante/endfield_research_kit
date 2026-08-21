@@ -351,6 +351,20 @@ class PriorityActorMatteTests(unittest.TestCase):
         for actor in matte.ACTOR_WINDOWS:
             self.assertLess(matte._actor_window(actor).end_frame_exclusive, source["decodedFrameCount"])
 
+    def test_durable_json_bytes_are_lf_and_canonical_round_trip(self) -> None:
+        for relative in (
+            "unity_endfield_graph_shader_lab/tools/actor_matte_report.json",
+            "unity_endfield_graph_shader_lab/tools/endminf_video_identity_evidence.json",
+            "unity_endfield_graph_shader_lab/tools/endminm_comparable_capture_evidence.json",
+        ):
+            with self.subTest(relative=relative):
+                path = matte.REPO_ROOT / relative
+                data = path.read_bytes()
+                self.assertNotIn(b"\r\n", data)
+                value = json.loads(data.decode("utf-8"))
+                canonical = (json.dumps(value, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
+                self.assertEqual(data, canonical)
+
 
 if __name__ == "__main__":
     unittest.main()
