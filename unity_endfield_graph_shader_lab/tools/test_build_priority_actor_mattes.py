@@ -220,6 +220,29 @@ class PriorityActorMatteTests(unittest.TestCase):
                 with self.assertRaises(matte.MatteError):
                     matte._check_audit_report(candidate, report_path)
 
+    def test_manifest_rechecks_actor_transition_top_level_contract(self) -> None:
+        manifest_path = matte.PROJECT_ROOT / "scratch" / "character_recovery" / "actor_clips" / "actor_matte_manifest.json"
+        base = json.loads(manifest_path.read_text(encoding="utf-8"))
+        matte._check_manifest_data(base, manifest_path)
+        mutations = {
+            "transition_frame_count": lambda value: value.__setitem__(
+                "transitionFrameCount", value["transitionFrameCount"] + 1
+            ),
+            "transition_reason": lambda value: value.__setitem__(
+                "transitionReason", "mutated transition evidence"
+            ),
+            "transition_range": lambda value: value.__setitem__(
+                "transitionRangeInclusive", [11958, 11968]
+            ),
+        }
+        for label, mutate in mutations.items():
+            with self.subTest(label=label):
+                candidate = copy.deepcopy(base)
+                actor = next(item for item in candidate["actors"] if item["actor"] == "chen")
+                mutate(actor)
+                with self.assertRaises(matte.MatteError):
+                    matte._check_manifest_data(candidate, manifest_path)
+
     def test_contiguous_ranges_are_deterministic(self) -> None:
         self.assertEqual(list(matte._contiguous_ranges([4, 3, 2, 9, 10, 12])), [(2, 4), (9, 10), (12, 12)])
         self.assertEqual(list(matte._contiguous_ranges([])), [])

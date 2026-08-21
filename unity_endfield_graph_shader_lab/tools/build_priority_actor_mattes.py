@@ -1352,10 +1352,23 @@ def _check_manifest_data(report: dict, manifest_path: Path) -> None:
         actual_transition = [row["frame"] for row in rows if row.get("sourceTransition")]
         if actual_transition != expected_transition:
             raise MatteError(f"{name} transition timing is not evidence-backed")
+        actual_ranges = [list(item) for item in _contiguous_ranges(actual_transition)]
+        if actor.get("transitionFrameCount") != len(actual_transition):
+            raise MatteError(f"{name} transition frame count does not match frame rows")
+        if actor.get("transitionFrameRanges") != actual_ranges:
+            raise MatteError(f"{name} transition ranges do not match frame rows")
         expected_ranges = [list(item) for item in _contiguous_ranges(expected_transition)]
+        if actor.get("transitionFrameCount") != len(expected_transition):
+            raise MatteError(f"{name} transition frame count is not exact")
         if actor.get("transitionFrameRanges") != expected_ranges:
             raise MatteError(f"{name} transition ranges are not contiguous/exact")
         transition_contract = _transition_contract(name)
+        expected_reason = transition_contract[2] if expected_transition else None
+        expected_range = list(transition_contract[0]) if expected_transition else None
+        if actor.get("transitionReason") != expected_reason:
+            raise MatteError(f"{name} transition reason is not exact")
+        if actor.get("transitionRangeInclusive") != expected_range:
+            raise MatteError(f"{name} transition range is not exact")
         for row in rows:
             if row.get("uiOverlapPixels") != 0:
                 raise MatteError(f"{name} frame {row.get('frame')} has UI overlap")
