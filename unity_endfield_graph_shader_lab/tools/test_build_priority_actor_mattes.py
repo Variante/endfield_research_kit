@@ -308,10 +308,14 @@ class PriorityActorMatteTests(unittest.TestCase):
     def test_manifest_rechecks_requested_windows_and_excluded_actors(self) -> None:
         manifest_path = matte.PROJECT_ROOT / "scratch" / "character_recovery" / "actor_clips" / "actor_matte_manifest.json"
         base = json.loads(manifest_path.read_text(encoding="utf-8"))
+        self.assertEqual(base["actorSet"], ["chen", "endminf", "pelica"])
+        self.assertEqual(base["excludedActors"], [])
         matte._check_manifest_data(base, manifest_path)
         mutations = {
             "requested_windows": lambda value: value["requestedWindows"]["pelica"]["framesExclusive"].__setitem__(0, 12561),
-            "excluded_actors": lambda value: value["excludedActors"].clear(),
+            "excluded_actors": lambda value: value["excludedActors"].append(
+                {"actor": "endminf", "status": "unpublished", "reason": "mutated exclusion"}
+            ),
         }
         for label, mutate in mutations.items():
             with self.subTest(label=label):
