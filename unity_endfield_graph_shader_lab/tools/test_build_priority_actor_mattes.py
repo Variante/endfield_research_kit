@@ -42,6 +42,13 @@ class PriorityActorMatteTests(unittest.TestCase):
             "target_score": lambda value: value["identity"]["candidateMatrix"].__setitem__("targetScore", 0.79),
             "camera_hash": lambda value: value["identity"]["candidateMatrix"]["comparisonContract"]["cameraContract"].__setitem__("sha256", "0" * 64),
             "competitor_count": lambda value: value["identity"]["candidateMatrix"].__setitem__("comparableCompetitorCount", 1),
+            "comparable_list": lambda value: value["identity"]["candidateMatrix"].__setitem__("comparableCompetitors", ["chr_0002_endminm"]),
+            "target_margin": lambda value: value["identity"]["candidateMatrix"].__setitem__("targetMargin", 1.0),
+            "competitor_availability": lambda value: value["identity"]["candidateMatrix"]["candidates"][3]["render"].__setitem__("available", True),
+            "competitor_score_null": lambda value: value["identity"]["candidateMatrix"]["candidates"][3]["render"].__setitem__("score", 0.81),
+            "rejection_reason": lambda value: value["identity"]["candidateMatrix"]["candidates"][3].__setitem__("rejection", "mutated rejection"),
+            "candidate_asset_path": lambda value: value["identity"]["candidateMatrix"]["candidates"][0]["sourceAssets"]["prefab"].__setitem__("path", "stale.prefab"),
+            "candidate_asset_hash": lambda value: value["identity"]["candidateMatrix"]["candidates"][0]["sourceAssets"]["manifest"].__setitem__("sha256", "0" * 64),
             "status": lambda value: value["identity"].__setitem__("status", "proven"),
         }
         for label, mutate in mutations.items():

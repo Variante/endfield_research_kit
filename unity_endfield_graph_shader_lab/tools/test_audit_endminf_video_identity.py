@@ -41,7 +41,9 @@ class EndminfVideoIdentityTests(unittest.TestCase):
         self.assertEqual(tail["frameRangeInclusive"], [10410, 10499])
         self.assertEqual(tail["frameCount"], 90)
         self.assertEqual(len(tail["perFrame"]), 90)
-        self.assertTrue(all(row["classification"] == "non_target_transition_next_actor" for row in tail["perFrame"]))
+        self.assertEqual(tail["classification"], "evidence_bounded_target_window_exit_non_target_transition")
+        self.assertEqual(tail["followingActorIdentity"], "not_proven")
+        self.assertTrue(all(row["classification"] == "evidence_bounded_target_window_exit_non_target_transition" for row in tail["perFrame"]))
 
     def test_generic_alias_is_not_exact_identity(self) -> None:
         _boundaries, row, _next = evidence._load_video_evidence()

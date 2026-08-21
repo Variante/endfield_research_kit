@@ -74,13 +74,12 @@ SOURCE_TRANSITION_RANGE = (9767, 9782)
 SOURCE_TRANSITION_RANGES = (SOURCE_TRANSITION_RANGE, (10410, 10499))
 TAIL_TRANSITION_RANGE = (10410, 10499)
 LAST_CLEAN_TARGET_FRAME = 10409
-NEXT_ACTOR_TOKEN = "ikut"
-NEXT_ACTOR_TEMPLATE = "chr_0007_ikut"
+TAIL_CLASSIFICATION = "evidence_bounded_target_window_exit_non_target_transition"
 STABLE_START_FRAME = 9783
 SOURCE_TRANSITION_REASON = (
     "pinned-source Endminf model-swap fade has no person-class component through "
     "frame 9782; first stable chr_0003_endminf component is frame 9783; "
-    "actor exit/next-actor transition is classified non-target and blacked from frame 10410 through 10499"
+    "target-window exit/non-target transition is classified and blacked from frame 10410 through 10499; following actor identity is not claimed"
 )
 _STOP_TIME_RE = re.compile(r"^\s*m_StopTime:\s*([-+0-9.eE]+)\s*$", re.MULTILINE)
 
@@ -518,7 +517,7 @@ def _scan_source_transition() -> dict[str, Any]:
                 "bgrSha256": hashlib.sha256(frame.tobytes()).hexdigest().upper(),
                 "characterBandMean": round(float(band.mean()), 6),
                 "characterBandNonBlackPixels": int(np.count_nonzero(np.any(band > 8, axis=2))),
-                "classification": "non_target_transition_next_actor",
+                "classification": TAIL_CLASSIFICATION,
             })
     finally:
         tail_capture.release()
@@ -537,10 +536,9 @@ def _scan_source_transition() -> dict[str, Any]:
         "tailTransition": {
             "frameRangeInclusive": list(TAIL_TRANSITION_RANGE),
             "frameCount": TAIL_TRANSITION_RANGE[1] - TAIL_TRANSITION_RANGE[0] + 1,
-            "classification": "non_target_transition_next_actor",
-            "nextActor": NEXT_ACTOR_TOKEN,
-            "nextTemplate": NEXT_ACTOR_TEMPLATE,
-            "nextModelSwapFrame": NEXT_MODEL_SWAP_FRAME,
+            "classification": TAIL_CLASSIFICATION,
+            "followingActorIdentity": "not_proven",
+            "nextSegmentBoundaryFrame": NEXT_MODEL_SWAP_FRAME,
             "perFrame": tail_frames,
         },
     }
