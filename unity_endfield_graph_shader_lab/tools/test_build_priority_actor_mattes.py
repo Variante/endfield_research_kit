@@ -7,6 +7,7 @@ import json
 import unittest
 from pathlib import Path
 from tempfile import NamedTemporaryFile
+from unittest.mock import patch
 
 import numpy as np
 
@@ -33,6 +34,30 @@ class PriorityActorMatteTests(unittest.TestCase):
             list(range(9767, 9783)) + list(range(10410, 10500)),
         )
         self.assertEqual(matte._transition_contract("endminf")[1], 9783)
+
+    def test_endminf_candidate_matrix_hostile_mutations_fail_closed(self) -> None:
+        source_path = matte.REPO_ROOT / matte.ENDMINF_IDENTITY_EVIDENCE_RELATIVE
+        base = json.loads(source_path.read_text(encoding="utf-8"))
+        mutations = {
+            "target_score": lambda value: value["identity"]["candidateMatrix"].__setitem__("targetScore", 0.79),
+            "camera_hash": lambda value: value["identity"]["candidateMatrix"]["comparisonContract"]["cameraContract"].__setitem__("sha256", "0" * 64),
+            "competitor_count": lambda value: value["identity"]["candidateMatrix"].__setitem__("comparableCompetitorCount", 1),
+            "status": lambda value: value["identity"].__setitem__("status", "proven"),
+        }
+        for label, mutate in mutations.items():
+            with self.subTest(label=label):
+                candidate = copy.deepcopy(base)
+                mutate(candidate)
+                with NamedTemporaryFile("w", suffix=".json", dir=matte.PROJECT_ROOT / "tools", delete=False) as handle:
+                    handle.write(json.dumps(candidate))
+                    temp_path = Path(handle.name)
+                try:
+                    relative = temp_path.resolve().relative_to(matte.REPO_ROOT.resolve())
+                    with patch.object(matte, "ENDMINF_IDENTITY_EVIDENCE_RELATIVE", relative):
+                        with self.assertRaises(matte.MatteError):
+                            matte._endminf_identity_evidence()
+                finally:
+                    temp_path.unlink(missing_ok=True)
 
     def test_hard_exclusions_zero_every_ui_rectangle(self) -> None:
         mask = np.full((matte.EXPECTED_SIZE[1], matte.EXPECTED_SIZE[0]), 255, np.uint8)
@@ -253,6 +278,21 @@ class PriorityActorMatteTests(unittest.TestCase):
                 candidate = copy.deepcopy(base)
                 actor = next(item for item in candidate["actors"] if item["actor"] == "chen")
                 mutate(actor)
+                with self.assertRaises(matte.MatteError):
+                    matte._check_manifest_data(candidate, manifest_path)
+
+    def test_manifest_rechecks_requested_windows_and_excluded_actors(self) -> None:
+        manifest_path = matte.PROJECT_ROOT / "scratch" / "character_recovery" / "actor_clips" / "actor_matte_manifest.json"
+        base = json.loads(manifest_path.read_text(encoding="utf-8"))
+        matte._check_manifest_data(base, manifest_path)
+        mutations = {
+            "requested_windows": lambda value: value["requestedWindows"]["pelica"]["framesExclusive"].__setitem__(0, 12561),
+            "excluded_actors": lambda value: value["excludedActors"].clear(),
+        }
+        for label, mutate in mutations.items():
+            with self.subTest(label=label):
+                candidate = copy.deepcopy(base)
+                mutate(candidate)
                 with self.assertRaises(matte.MatteError):
                     matte._check_manifest_data(candidate, manifest_path)
 
