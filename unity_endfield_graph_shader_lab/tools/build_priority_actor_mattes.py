@@ -13,7 +13,8 @@ module for diagnostic probes but is refused by the publication CLI.
 
 The model-swap portions of a requested window can contain no actor at all.
 Those frames are retained as black frames and recorded as source transitions;
-they are not treated as a segmentation loss.  Any missing component while
+they are not treated as a segmentation loss.  The only transition exemption
+is the measured Pelica source interval below.  Any missing component while
 the source visibly contains the requested actor, malformed source timing, or
 non-zero UI overlap prevents publication.
 
@@ -70,6 +71,10 @@ ACTOR_WINDOWS = {
 ACTOR_ROI = (800, 180, 3000, 2120)  # x0, y0, x1, y1, full-resolution pixels
 UI_RECTANGLES = (
     ("top_header", (0, 0, 180, 180)),
+    # The header's selection underline is visible below the filled header.
+    # Its inclusive source rows are y=183..187, hence the half-open box end
+    # at 188.  Keep this separate so boundary tests and reports cannot lose it.
+    ("header_selection_underline", (0, 183, 3840, 188)),
     ("left_foreground_panel", (0, 180, 800, 2120)),
     ("right_foreground_panel", (3000, 180, 3840, 2120)),
     ("bottom_foreground_status", (0, 2120, 3840, 2160)),
@@ -82,10 +87,26 @@ WORK_ROI = tuple(
 )
 BACKGROUND_FRAME = 12567  # known model-swap blank in the pinned recording
 FRAME_MISSING_THRESHOLD = 8000  # stable actor support in the 480x270 work frame
-TRANSITION_MOTION_THRESHOLD = 4.5  # mean BGR delta at work resolution
 MIN_COMPONENT_AREA = 120
 KEYFRAME_INTERVAL = 4
 DEEPLAB_WEIGHT_SHA256 = "CD0A25694C4A0F7106B38F4938BF90A874F2F241CC410B8F63C7024399538F06"
+MANIFEST_SCHEMA = "endfield.character-recovery.actor-matte.v1"
+AUDIT_REPORT_SCHEMA = "endfield.character-recovery.actor-matte.audit.v2"
+
+# Evidence-backed source transition in the pinned recording.  The interval
+# is intentionally actor-specific: it must not become a guessed Chen rule.
+PELICA_SOURCE_TRANSITION_RANGE = (12560, 12601)
+PELICA_STABLE_START_FRAME = 12602
+PELICA_TRANSITION_REASON = (
+    "pinned-source model-swap/glitch interval measured in the phase evidence; "
+    "no stable Pelica actor component is present"
+)
+
+# Temporal/component purity is measured at work resolution.  A small dilation
+# permits ordinary sub-frame motion, while a disjoint component still fails.
+TEMPORAL_DILATION_KERNEL = 9
+MIN_TEMPORAL_IOU = 0.08
+MIN_TEMPORAL_DILATED_SUPPORT = 0.30
 
 _DEEPLAB_CONTEXT: tuple[object, object, object, str] | None = None
 
@@ -118,6 +139,48 @@ def _actor_window(actor: str) -> ActorWindow:
     if window.end_frame_exclusive <= window.start_frame:
         raise MatteError(f"invalid source window for {actor}")
     return window
+
+
+def _expected_transition_frame(actor: str, frame_number: int) -> bool:
+    """Return whether a frame is covered by an evidence-backed gap rule."""
+    return (
+        actor == "pelica"
+        and PELICA_SOURCE_TRANSITION_RANGE[0]
+        <= frame_number
+        <= PELICA_SOURCE_TRANSITION_RANGE[1]
+    )
+
+
+def _expected_transition_frames(actor: str, window: ActorWindow) -> list[int]:
+    if actor != "pelica":
+        return []
+    start, end = PELICA_SOURCE_TRANSITION_RANGE
+    return [
+        frame
+        for frame in range(window.start_frame, window.end_frame_exclusive)
+        if start <= frame <= end
+    ]
+
+
+def _transition_diagnostics(frame_number: int) -> dict:
+    start, end = PELICA_SOURCE_TRANSITION_RANGE
+    return {
+        "frame": frame_number,
+        "workSeedPixels": 0,
+        "workMaskPixels": 0,
+        "workMaskCoverage": 0.0,
+        "workBbox": None,
+        "sourceTransition": True,
+        "transitionReason": PELICA_TRANSITION_REASON,
+        "transitionRangeInclusive": [start, end],
+        "componentCount": 0,
+        "keptComponentCount": 0,
+        "detachedComponentCount": 0,
+        "purityFailure": False,
+        "temporalIoU": None,
+        "temporalDilatedSupport": None,
+        "temporalFailure": False,
+    }
 
 
 def _sha256(path: Path) -> tuple[int, str]:
@@ -377,16 +440,126 @@ def _load_deeplab() -> tuple[object, object, object, str]:
         raise MatteError(f"could not load pinned DeepLab model: {error}") from error
 
 
+def _select_person_components(
+    mask: np.ndarray,
+    prior: np.ndarray | None,
+) -> tuple[np.ndarray, dict]:
+    """Select the actor support and report detached-component purity evidence.
+
+    A connected component is retained only when it is the dominant person
+    component or is close to that component/prior actor envelope.  A
+    substantial detached component is a hard failure; it is never silently
+    turned into a black pixel or accepted as an effect/UI island.
+    """
+    count, labels, stats, _centres = cv2.connectedComponentsWithStats(mask, 8)
+    x0, y0, x1, y1 = WORK_ROI
+    candidates: list[tuple[int, int]] = []
+    for index in range(1, count):
+        px, py, pw, ph, area = (int(value) for value in stats[index])
+        if area < MIN_COMPONENT_AREA:
+            continue
+        if px + pw <= x0 or px >= x1 or py + ph <= y0 or py >= y1:
+            continue
+        candidates.append((area, index))
+    if not candidates:
+        return np.zeros_like(mask), {
+            "componentCount": 0,
+            "keptComponentCount": 0,
+            "detachedComponentCount": 0,
+            "detachedComponents": [],
+            "purityFailure": False,
+        }
+
+    candidates.sort(reverse=True)
+    largest_area, largest_index = candidates[0]
+    largest = np.where(labels == largest_index, 255, 0).astype(np.uint8)
+    largest_envelope = cv2.dilate(
+        largest,
+        np.ones((TEMPORAL_DILATION_KERNEL, TEMPORAL_DILATION_KERNEL), np.uint8),
+        iterations=1,
+    )
+    prior_envelope = None
+    if prior is not None and np.count_nonzero(prior) > 0:
+        prior_envelope = cv2.dilate(
+            prior,
+            np.ones((TEMPORAL_DILATION_KERNEL, TEMPORAL_DILATION_KERNEL), np.uint8),
+            iterations=1,
+        )
+
+    keep = np.zeros_like(mask)
+    keep[labels == largest_index] = 255
+    detached: list[dict] = []
+    kept_count = 1
+    # Any component admitted by the old 1/20 rule is substantial enough to
+    # audit.  Smaller specks are discarded as noise and do not become actor
+    # pixels, which keeps the output fail-closed.
+    substantial_floor = max(MIN_COMPONENT_AREA, largest_area // 20)
+    for area, index in candidates[1:]:
+        component = np.where(labels == index, 255, 0).astype(np.uint8)
+        if area < substantial_floor:
+            continue
+        near_largest = bool(np.count_nonzero(cv2.bitwise_and(component, largest_envelope)))
+        near_prior = bool(
+            prior_envelope is not None
+            and np.count_nonzero(cv2.bitwise_and(component, prior_envelope))
+        )
+        if near_largest or near_prior:
+            keep[labels == index] = 255
+            kept_count += 1
+            continue
+        ys, xs = np.where(component > 0)
+        detached.append(
+            {
+                "area": int(area),
+                "bbox": [int(xs.min()), int(ys.min()), int(xs.max() + 1), int(ys.max() + 1)],
+            }
+        )
+
+    return keep, {
+        "componentCount": len(candidates),
+        "keptComponentCount": kept_count,
+        "detachedComponentCount": len(detached),
+        "detachedComponents": detached,
+        "purityFailure": bool(detached),
+    }
+
+
+def _temporal_metrics(mask: np.ndarray, prior: np.ndarray | None) -> dict:
+    """Measure continuity against the preceding accepted actor mask."""
+    if prior is None or np.count_nonzero(prior) == 0:
+        return {
+            "temporalIoU": None,
+            "temporalDilatedSupport": None,
+            "temporalFailure": False,
+        }
+    current = mask > 0
+    previous = prior > 0
+    intersection = int(np.count_nonzero(current & previous))
+    union = int(np.count_nonzero(current | previous))
+    iou = intersection / float(union) if union else 0.0
+    dilated = cv2.dilate(
+        prior,
+        np.ones((TEMPORAL_DILATION_KERNEL, TEMPORAL_DILATION_KERNEL), np.uint8),
+        iterations=1,
+    ) > 0
+    support = int(np.count_nonzero(current & dilated)) / float(np.count_nonzero(current)) if np.count_nonzero(current) else 0.0
+    failure = iou < MIN_TEMPORAL_IOU and support < MIN_TEMPORAL_DILATED_SUPPORT
+    return {
+        "temporalIoU": round(iou, 8),
+        "temporalDilatedSupport": round(support, 8),
+        "temporalFailure": bool(failure),
+    }
+
+
 def _deeplab_mask(
     frame: np.ndarray,
     frame_number: int,
-    previous_frame: np.ndarray | None = None,
+    previous_mask: np.ndarray | None = None,
 ) -> tuple[np.ndarray, dict]:
     """Segment the person class at work resolution with the pinned model."""
     torch, Image, model_context, device = _load_deeplab()
     weights, model = model_context
     resized = cv2.resize(frame, WORK_SIZE, interpolation=cv2.INTER_AREA)
-    motion = 0.0 if previous_frame is None else float(cv2.absdiff(resized, previous_frame).mean())
     rgb = cv2.cvtColor(resized, cv2.COLOR_BGR2RGB)
     tensor = weights.transforms()(Image.fromarray(rgb)).unsqueeze(0).to(device)
     with torch.inference_mode():
@@ -397,36 +570,23 @@ def _deeplab_mask(
     mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, np.ones((2, 2), np.uint8))
     mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, np.ones((5, 5), np.uint8))
     mask = cv2.bitwise_and(mask, (_work_roi_mask() * 255).astype(np.uint8))
-    count, labels, stats, _centres = cv2.connectedComponentsWithStats(mask, 8)
-    candidates: list[tuple[int, int]] = []
-    x0, y0, x1, y1 = WORK_ROI
-    for index in range(1, count):
-        px, py, pw, ph, area = (int(value) for value in stats[index])
-        if area < MIN_COMPONENT_AREA:
-            continue
-        if px + pw <= x0 or px >= x1 or py + ph <= y0 or py >= y1:
-            continue
-        candidates.append((area, index))
-    keep = np.zeros_like(mask)
-    if candidates:
-        candidates.sort(reverse=True)
-        largest = candidates[0][0]
-        for area, index in candidates:
-            if area >= max(MIN_COMPONENT_AREA, largest // 20):
-                keep[labels == index] = 255
+    seed_pixels = int(np.count_nonzero(mask))
+    keep, component_diagnostics = _select_person_components(mask, previous_mask)
+    temporal_diagnostics = _temporal_metrics(keep, previous_mask)
     area = int(np.count_nonzero(keep))
     ys, xs = np.where(keep > 0)
     bbox = [int(xs.min()), int(ys.min()), int(xs.max() + 1), int(ys.max() + 1)] if len(xs) else None
     return keep, {
         "frame": frame_number,
-        "workSeedPixels": area,
+        "workSeedPixels": seed_pixels,
         "workMaskPixels": area,
         "workMaskCoverage": round(area / float(WORK_SIZE[0] * WORK_SIZE[1]), 8),
         "workBbox": bbox,
-        "sourceTransition": area < FRAME_MISSING_THRESHOLD,
-        "frameMotion": round(motion, 5),
+        "sourceTransition": False,
         "segmentation": "deeplabv3_resnet50_person_class_15",
         "personProbabilityThreshold": 0.30,
+        **component_diagnostics,
+        **temporal_diagnostics,
     }
 
 
@@ -466,6 +626,9 @@ def _open_encoder(path: Path) -> subprocess.Popen:
         "60",
         "-i",
         "pipe:0",
+        # Pin the encoded stream rate as well as the raw input cadence.
+        "-r",
+        "60",
         "-an",
         "-c:v",
         "ffv1",
@@ -507,8 +670,16 @@ def _frame_report_row(frame_number: int, diagnostics: dict, full_mask: np.ndarra
         "coverage": round(coverage, 8),
         "workSeedPixels": diagnostics["workSeedPixels"],
         "workMaskPixels": diagnostics["workMaskPixels"],
-        "frameMotion": diagnostics.get("frameMotion"),
         "sourceTransition": bool(diagnostics["sourceTransition"]),
+        "transitionReason": diagnostics.get("transitionReason"),
+        "transitionRangeInclusive": diagnostics.get("transitionRangeInclusive"),
+        "componentCount": diagnostics.get("componentCount", 0),
+        "keptComponentCount": diagnostics.get("keptComponentCount", 0),
+        "detachedComponentCount": diagnostics.get("detachedComponentCount", 0),
+        "purityFailure": bool(diagnostics.get("purityFailure", False)),
+        "temporalIoU": diagnostics.get("temporalIoU"),
+        "temporalDilatedSupport": diagnostics.get("temporalDilatedSupport"),
+        "temporalFailure": bool(diagnostics.get("temporalFailure", False)),
         "uiOverlapPixels": _ui_overlap_pixels(full_mask),
     }
 
@@ -518,6 +689,79 @@ def _ui_overlap_pixels(mask: np.ndarray) -> int:
     for _name, (x0, y0, x1, y1) in UI_RECTANGLES:
         total += int(np.count_nonzero(mask[y0:y1, x0:x1] > 8))
     return total
+
+
+def _parse_fps(text: object) -> float:
+    fps_text = str(text or "0/1")
+    try:
+        numerator, denominator = (int(part) for part in fps_text.split("/", 1))
+        return numerator / denominator
+    except (ValueError, ZeroDivisionError):
+        return 0.0
+
+
+def _duration_seconds(metadata: dict) -> float:
+    value = metadata.get("duration")
+    try:
+        if value is not None and float(value) > 0:
+            return float(value)
+    except (TypeError, ValueError):
+        pass
+    tags = metadata.get("tags") or {}
+    tagged = str(tags.get("DURATION") or tags.get("duration") or "")
+    parts = tagged.split(":")
+    if len(parts) == 3:
+        try:
+            hours, minutes, seconds = parts
+            return float(hours) * 3600.0 + float(minutes) * 60.0 + float(seconds)
+        except ValueError:
+            pass
+    return 0.0
+
+
+def _validate_encoded_metadata(metadata: dict, expected_frames: int) -> dict:
+    """Validate the actual FFV1 stream contract and return normalized facts."""
+    codec = str(metadata.get("codec_name") or metadata.get("codec") or "").lower()
+    pix_fmt = str(metadata.get("pix_fmt") or "").lower()
+    width = int(metadata.get("width") or 0)
+    height = int(metadata.get("height") or 0)
+    frames = int(metadata.get("nb_read_frames") or metadata.get("nb_frames") or metadata.get("frames") or 0)
+    avg_rate = _parse_fps(metadata.get("avg_frame_rate") or "0/1")
+    real_rate = _parse_fps(metadata.get("r_frame_rate") or "0/1")
+    # Some FFV1 Matroska streams expose avg_frame_rate=0/0 while the actual
+    # constant stream rate is unambiguously present as r_frame_rate=60/1.
+    # Reject only when both probes fail; never turn a missing rate into 60 by
+    # assumption.
+    fps = avg_rate if avg_rate > 0 else real_rate
+    fps_evidence = "avg_frame_rate" if avg_rate > 0 else "r_frame_rate"
+    if fps <= 0:
+        fps = _parse_fps(metadata.get("fps") or "0/1")
+        fps_evidence = "fps"
+    duration = _duration_seconds(metadata)
+    if fps <= 0 and duration > 0 and frames > 0:
+        fps = frames / duration
+        fps_evidence = "frame_count_over_duration"
+    if codec != "ffv1" or pix_fmt != "bgr0":
+        raise MatteError(
+            f"encoded clip is not the verified FFV1/BGR0 contract: codec={codec!r} pix_fmt={pix_fmt!r}"
+        )
+    if (width, height) != EXPECTED_SIZE or abs(fps - EXPECTED_FPS) > 0.01 or frames != expected_frames:
+        raise MatteError(
+            f"encoded clip contract mismatch: {width}x{height} {fps}fps {frames} frames; "
+            f"expected {EXPECTED_SIZE[0]}x{EXPECTED_SIZE[1]} {EXPECTED_FPS}fps {expected_frames}"
+        )
+    return {
+        "codec": codec,
+        "pix_fmt": pix_fmt,
+        "width": width,
+        "height": height,
+        "fps": fps,
+        "avgFrameRate": str(metadata.get("avg_frame_rate") or ""),
+        "rFrameRate": str(metadata.get("r_frame_rate") or ""),
+        "duration": duration,
+        "fpsEvidence": fps_evidence,
+        "frames": frames,
+    }
 
 
 def _verify_clip(path: Path, expected_frames: int) -> dict:
@@ -545,22 +789,9 @@ def _verify_clip(path: Path, expected_frames: int) -> dict:
         raise MatteError(f"could not verify encoded clip: {error}") from error
     if not isinstance(stream, dict):
         raise MatteError("encoded clip has no video stream")
-    width = int(stream.get("width") or 0)
-    height = int(stream.get("height") or 0)
-    frames = int(stream.get("nb_read_frames") or stream.get("nb_frames") or 0)
-    fps_text = str(stream.get("avg_frame_rate") or "0/1")
-    try:
-        numerator, denominator = (int(part) for part in fps_text.split("/", 1))
-        fps = numerator / denominator
-    except (ValueError, ZeroDivisionError):
-        fps = 0.0
-    if (width, height) != EXPECTED_SIZE or abs(fps - EXPECTED_FPS) > 0.01 or frames != expected_frames:
-        raise MatteError(
-            f"encoded clip contract mismatch: {width}x{height} {fps}fps {frames} frames; "
-            f"expected {EXPECTED_SIZE[0]}x{EXPECTED_SIZE[1]} {EXPECTED_FPS}fps {expected_frames}"
-        )
+    normalized = _validate_encoded_metadata(stream, expected_frames)
     size, digest = _sha256(path)
-    return {"bytes": size, "sha256": digest, "width": width, "height": height, "fps": fps, "frames": frames}
+    return {"bytes": size, "sha256": digest, **normalized}
 
 
 def _background_frame(source_path: Path) -> np.ndarray:
@@ -588,10 +819,9 @@ def build_actor(
     rows: list[dict] = []
     transition_frames: list[int] = []
     component_loss_frames: list[int] = []
-    previous: np.ndarray | None = None
-    previous_frame: np.ndarray | None = None
-    stable_run = 0
-    stable_seen = False
+    temporal_failure_frames: list[int] = []
+    purity_failure_frames: list[int] = []
+    previous_mask: np.ndarray | None = None
     capture = cv2.VideoCapture(str(source_path))
     encoder: subprocess.Popen | None = None
     try:
@@ -601,22 +831,35 @@ def build_actor(
         assert encoder.stdin is not None
         for frame_number in range(window.start_frame, window.end_frame_exclusive):
             frame = _read_frame(capture, frame_number)
-            if segmentation == "deeplab":
-                work_mask, diagnostics = _deeplab_mask(frame, frame_number, previous_frame)
+            if _expected_transition_frame(window.actor, frame_number):
+                # Do not ask the segmenter to explain a measured source glitch.
+                # The intentional black gap is itself evidence and is recorded
+                # exactly in every affected row and in the actor manifest.
+                work_mask = np.zeros((WORK_SIZE[1], WORK_SIZE[0]), np.uint8)
+                diagnostics = _transition_diagnostics(frame_number)
             else:
-                work_mask, diagnostics = _foreground_mask(frame, background, previous, frame_number)
-            if segmentation == "deeplab":
-                bbox = diagnostics.get("workBbox") or []
-                bbox_height = int(bbox[3] - bbox[1]) if len(bbox) == 4 else 0
-                stable_candidate = (
-                    diagnostics["workMaskPixels"] >= FRAME_MISSING_THRESHOLD
-                    and bbox_height >= 120
-                    and diagnostics.get("frameMotion", 0.0) <= TRANSITION_MOTION_THRESHOLD
-                )
-                stable_run = stable_run + 1 if stable_candidate else 0
-                if stable_run >= 3:
-                    stable_seen = True
-                diagnostics["sourceTransition"] = not stable_seen
+                if segmentation == "deeplab":
+                    work_mask, diagnostics = _deeplab_mask(frame, frame_number, previous_mask)
+                else:
+                    work_mask, diagnostics = _foreground_mask(frame, background, previous_mask, frame_number)
+                if diagnostics.get("purityFailure"):
+                    purity_failure_frames.append(frame_number)
+                    raise MatteError(
+                        f"{window.actor} detached non-actor component at frame {frame_number}: "
+                        f"{diagnostics.get('detachedComponentCount')} components"
+                    )
+                if diagnostics.get("temporalFailure"):
+                    temporal_failure_frames.append(frame_number)
+                    raise MatteError(
+                        f"{window.actor} temporal mask continuity failed at frame {frame_number}: "
+                        f"IoU={diagnostics.get('temporalIoU')} "
+                        f"dilatedSupport={diagnostics.get('temporalDilatedSupport')}"
+                    )
+                if diagnostics.get("workMaskPixels", 0) < FRAME_MISSING_THRESHOLD:
+                    component_loss_frames.append(frame_number)
+                    raise MatteError(
+                        f"{window.actor} actor component missing at stable frame {frame_number}"
+                    )
             full_mask = _full_mask(work_mask)
             row = _frame_report_row(frame_number, diagnostics, full_mask)
             rows.append(row)
@@ -626,8 +869,11 @@ def build_actor(
                 component_loss_frames.append(frame_number)
             if row["uiOverlapPixels"] != 0:
                 raise MatteError(f"frame {frame_number} has UI overlap {row['uiOverlapPixels']}")
-            previous = work_mask
-            previous_frame = cv2.resize(frame, WORK_SIZE, interpolation=cv2.INTER_AREA)
+            if not row["sourceTransition"]:
+                if row["bbox"] is None or row["coverage"] <= 0.0001:
+                    component_loss_frames.append(frame_number)
+                    raise MatteError(f"{window.actor} full-frame matte missing at frame {frame_number}")
+                previous_mask = work_mask
             try:
                 encoder.stdin.write(_masked_frame(frame, full_mask).tobytes())
             except (BrokenPipeError, OSError) as error:
@@ -637,11 +883,20 @@ def build_actor(
         if returncode != 0:
             stderr = encoder.stderr.read().decode("utf-8", errors="replace") if encoder.stderr else ""
             raise MatteError(f"ffmpeg returned {returncode}: {stderr[-1000:]}")
-        if component_loss_frames:
+        expected_transitions = _expected_transition_frames(window.actor, window)
+        if transition_frames != expected_transitions:
             raise MatteError(
-                f"{window.actor} actor component missing on {len(component_loss_frames)} non-transition frames; "
-                f"first={component_loss_frames[0]}"
+                f"{window.actor} transition classification mismatch: "
+                f"actual={transition_frames[:3]}..{transition_frames[-3:]} expected="
+                f"{expected_transitions[:3]}..{expected_transitions[-3:]}"
             )
+        if window.actor == "pelica" and PELICA_STABLE_START_FRAME < window.end_frame_exclusive:
+            first_stable = next(
+                (row for row in rows if row["frame"] >= PELICA_STABLE_START_FRAME),
+                None,
+            )
+            if first_stable is None or first_stable["sourceTransition"]:
+                raise MatteError(f"Pelica stable actor gate did not start at frame {PELICA_STABLE_START_FRAME}")
         os.replace(partial, clip)
     except Exception:
         if encoder is not None and encoder.poll() is None:
@@ -658,7 +913,12 @@ def build_actor(
         raise
     finally:
         capture.release()
-    encoded = _verify_clip(clip, window.end_frame_exclusive - window.start_frame)
+    try:
+        encoded = _verify_clip(clip, window.end_frame_exclusive - window.start_frame)
+    except Exception:
+        if clip.exists():
+            clip.unlink()
+        raise
     return {
         "actor": window.actor,
         "sourceFrameRange": [window.start_frame, window.end_frame_exclusive - 1],
@@ -666,12 +926,17 @@ def build_actor(
         "frameCount": len(rows),
         "fps": EXPECTED_FPS,
         "resolution": list(EXPECTED_SIZE),
-        "clip": clip.relative_to(REPO_ROOT).as_posix(),
-        "clipEncoding": "FFV1 lossless BGR24 black background",
+        "clip": _repo_relative_path(clip, f"{window.actor} clip"),
+        "clipEncoding": "FFV1 lossless actual pix_fmt=bgr0 black background",
         "segmentation": segmentation,
         "transitionFrameCount": len(transition_frames),
         "transitionFrameRanges": [list(item) for item in _contiguous_ranges(transition_frames)],
+        "transitionReason": PELICA_TRANSITION_REASON if transition_frames else None,
+        "transitionRangeInclusive": list(PELICA_SOURCE_TRANSITION_RANGE) if transition_frames else None,
         "componentLossFrameCount": len(component_loss_frames),
+        "temporalContinuityFailureCount": len(temporal_failure_frames),
+        "componentPurityFailureCount": len(purity_failure_frames),
+        "rowsContiguous": [row["frame"] for row in rows] == list(range(window.start_frame, window.end_frame_exclusive)),
         "uiOverlapPixels": sum(int(row["uiOverlapPixels"]) for row in rows),
         "coverage": {
             "min": min(float(row["coverage"]) for row in rows),
@@ -699,10 +964,78 @@ def _contiguous_ranges(values: Iterable[int]) -> Iterable[tuple[int, int]]:
     return ranges
 
 
+def _validate_contiguous_frame_rows(rows: object, start_frame: int, end_frame_exclusive: int, actor: str) -> None:
+    if not isinstance(rows, list):
+        raise MatteError(f"{actor} frame rows are missing")
+    expected = list(range(start_frame, end_frame_exclusive))
+    actual = [row.get("frame") if isinstance(row, dict) else None for row in rows]
+    if actual != expected:
+        raise MatteError(f"{actor} frame rows are discontinuous or incomplete")
+
+
+def _repo_relative_path(path: Path, label: str) -> str:
+    resolved = path.resolve()
+    try:
+        relative = resolved.relative_to(REPO_ROOT.resolve())
+    except ValueError as error:
+        raise MatteError(f"{label} must be inside the repository: {path}") from error
+    return relative.as_posix()
+
+
+def _resolve_repo_relative(value: object, label: str) -> Path:
+    text = str(value or "")
+    candidate = Path(text)
+    if not text or candidate.is_absolute():
+        raise MatteError(f"{label} must be a repo-relative path: {text!r}")
+    resolved = (REPO_ROOT / candidate).resolve()
+    try:
+        resolved.relative_to(REPO_ROOT.resolve())
+    except ValueError as error:
+        raise MatteError(f"{label} escapes the repository: {text!r}") from error
+    return resolved
+
+
+def _manifest_publication_gates(actor_reports: list[dict]) -> dict:
+    return {
+        "sourcePin": True,
+        "sourceResolutionFps": True,
+        "fullFrameMask": all(bool(item.get("rowsContiguous")) for item in actor_reports),
+        "exactTransitionClassification": all(
+            item.get("transitionFrameRanges")
+            == [list(item_range) for item_range in _contiguous_ranges(
+                _expected_transition_frames(item["actor"], _actor_window(item["actor"]))
+            )]
+            for item in actor_reports
+        ),
+        "temporalContinuity": sum(item.get("temporalContinuityFailureCount", 0) for item in actor_reports) == 0,
+        "componentPurity": sum(item.get("componentPurityFailureCount", 0) for item in actor_reports) == 0,
+        "nonTransitionComponentLoss": sum(item.get("componentLossFrameCount", 0) for item in actor_reports) == 0,
+        "rowsContiguous": all(bool(item.get("rowsContiguous")) for item in actor_reports),
+        "uiExclusionZero": sum(item.get("uiOverlapPixels", 0) for item in actor_reports) == 0,
+        "uiOverlapPixels": sum(item.get("uiOverlapPixels", 0) for item in actor_reports),
+        "ffv1Metadata": all(
+            (item.get("encoded") or {}).get("codec") == "ffv1"
+            and (item.get("encoded") or {}).get("pix_fmt") == "bgr0"
+            for item in actor_reports
+        ),
+        "clipsVerified": all(bool(item.get("encoded")) for item in actor_reports),
+    }
+
+
 def write_manifest(source: dict, actor_reports: list[dict], output_root: Path) -> Path:
+    if not actor_reports:
+        raise MatteError("refusing to write an empty actor matte manifest")
+    for item in actor_reports:
+        clip = _resolve_repo_relative(item.get("clip"), f"{item.get('actor')} clip")
+        if not clip.is_file():
+            raise MatteError(f"manifest clip missing before publication: {clip}")
+    gates = _manifest_publication_gates(actor_reports)
+    if not all(value is True for key, value in gates.items() if key != "uiOverlapPixels") or gates["uiOverlapPixels"] != 0:
+        raise MatteError(f"actor matte publication gates failed: {gates}")
     report = {
-        "schema": "endfield.character-recovery.actor-matte.v1",
+        "schema": MANIFEST_SCHEMA,
         "status": "ok",
+        "pathBase": "repo_root",
         "source": source,
         "algorithm": {
             "name": "deeplabv3_resnet50_person_class_with_hard_ui_exclusions",
@@ -714,20 +1047,35 @@ def write_manifest(source: dict, actor_reports: list[dict], output_root: Path) -
             "uiRectangles": [{"name": name, "box": list(box)} for name, box in UI_RECTANGLES],
             "backgroundFrame": BACKGROUND_FRAME,
             "keyframeInterval": KEYFRAME_INTERVAL,
-            "transitionMotionThreshold": TRANSITION_MOTION_THRESHOLD,
             "maskOutput": "black_background",
+            "outputCodec": "ffv1",
+            "outputPixFmt": "bgr0",
             "uiOverlapPolicy": "hard_zero_and_measured_zero",
-            "transitionPolicy": "source-model-swap-empty-frames-are-retained-as-black-and-reported",
+            "temporalPolicy": {
+                "minRawIoU": MIN_TEMPORAL_IOU,
+                "minDilatedSupport": MIN_TEMPORAL_DILATED_SUPPORT,
+                "dilationKernel": TEMPORAL_DILATION_KERNEL,
+                "detachedComponents": "reject_substantial_component_without_actor_envelope_overlap",
+            },
+            "transitionPolicy": {
+                "pelicaRangeInclusive": list(PELICA_SOURCE_TRANSITION_RANGE),
+                "pelicaStableStartFrame": PELICA_STABLE_START_FRAME,
+                "reason": PELICA_TRANSITION_REASON,
+                "chenExemption": False,
+            },
         },
+        "actorSet": sorted(item["actor"] for item in actor_reports),
         "actors": actor_reports,
-        "publicationGates": {
-            "sourcePin": True,
-            "sourceResolutionFps": True,
-            "fullFrameMask": True,
-            "nonTransitionComponentLoss": sum(item["componentLossFrameCount"] for item in actor_reports) == 0,
-            "uiOverlapPixels": sum(item["uiOverlapPixels"] for item in actor_reports),
-            "clipsVerified": True,
-        },
+        "excludedActors": [
+            {
+                "actor": actor,
+                "status": "unpublished",
+                "reason": "retained unpublished; not regenerated in this fail-closed Pelica-only run",
+            }
+            for actor in ACTOR_WINDOWS
+            if actor not in {item["actor"] for item in actor_reports}
+        ],
+        "publicationGates": gates,
     }
     path = output_root / "actor_matte_manifest.json"
     temporary = path.with_suffix(".partial.json")
@@ -736,35 +1084,202 @@ def write_manifest(source: dict, actor_reports: list[dict], output_root: Path) -
     return path
 
 
-def check_manifest(path: Path) -> None:
-    try:
-        report = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, ValueError) as error:
-        raise MatteError(f"could not read manifest: {error}") from error
-    if report.get("schema") != "endfield.character-recovery.actor-matte.v1":
+def write_durable_report(
+    manifest_path: Path,
+    source: dict,
+    actor_reports: list[dict],
+    report_path: Path | None = None,
+) -> Path:
+    """Write the tracked audit report from the just-verified manifest/output."""
+    report_path = report_path or PROJECT_ROOT / "tools" / "actor_matte_report.json"
+    manifest_relative = _repo_relative_path(manifest_path, "manifest")
+    manifest_size, manifest_hash = _sha256(manifest_path)
+    manifest_data = json.loads(manifest_path.read_text(encoding="utf-8"))
+    artifacts = []
+    for item in actor_reports:
+        clip = _resolve_repo_relative(item["clip"], f"{item['actor']} clip")
+        size, digest = _sha256(clip)
+        artifacts.append(
+            {
+                "actor": item["actor"],
+                "path": _repo_relative_path(clip, f"{item['actor']} clip"),
+                "bytes": size,
+                "sha256": digest,
+                "codec": item["encoded"]["codec"],
+                "pix_fmt": item["encoded"]["pix_fmt"],
+                "frames": item["encoded"]["frames"],
+            }
+        )
+    report = {
+        "schema": AUDIT_REPORT_SCHEMA,
+        "status": "ok",
+        "pathBase": "repo_root",
+        "generatedBy": "unity_endfield_graph_shader_lab/tools/build_priority_actor_mattes.py",
+        "manifest": manifest_relative,
+        "manifestBytes": manifest_size,
+        "manifestSha256": manifest_hash,
+        "source": source,
+        "requestedWindows": {
+            actor: {
+                "seconds": list(ACTOR_WINDOWS[actor]),
+                "framesExclusive": [_actor_window(actor).start_frame, _actor_window(actor).end_frame_exclusive],
+            }
+            for actor in ACTOR_WINDOWS
+        },
+        "algorithm": manifest_data["algorithm"],
+        "actorSet": sorted(item["actor"] for item in actor_reports),
+        "artifacts": artifacts,
+        "excludedActors": manifest_data["excludedActors"],
+        "publicationGates": manifest_data["publicationGates"],
+        "validation": {
+            "rows": {item["actor"]: item["frameCount"] for item in actor_reports},
+            "publishedClips": len(artifacts),
+            "largeVideoFilesCommitted": False,
+        },
+    }
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = report_path.with_suffix(".partial.json")
+    temporary.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    os.replace(temporary, report_path)
+    return report_path
+
+
+def _check_manifest_data(report: dict, manifest_path: Path) -> None:
+    if report.get("schema") != MANIFEST_SCHEMA:
         raise MatteError("unsupported actor matte manifest schema")
     if report.get("status") != "ok":
         raise MatteError(f"manifest status is not ok: {report.get('status')!r}")
+    if report.get("pathBase") != "repo_root":
+        raise MatteError("manifest pathBase must be repo_root")
     algorithm = report.get("algorithm") or {}
     if algorithm.get("name") != "deeplabv3_resnet50_person_class_with_hard_ui_exclusions":
         raise MatteError("manifest does not use the publishable DeepLab segmentation")
     if str(algorithm.get("modelWeightsSha256", "")).upper() != DEEPLAB_WEIGHT_SHA256:
         raise MatteError("manifest DeepLab weight pin mismatch")
     source = report.get("source") or {}
+    if source.get("path") != VIDEO_RELATIVE.as_posix():
+        raise MatteError(f"manifest source path is stale: {source.get('path')!r}")
     if source.get("bytes") != VIDEO_BYTES or str(source.get("sha256", "")).upper() != VIDEO_SHA256:
         raise MatteError("manifest source pin mismatch")
-    if report.get("publicationGates", {}).get("uiOverlapPixels") != 0:
-        raise MatteError("manifest records non-zero UI overlap")
-    for actor in report.get("actors") or []:
-        clip = REPO_ROOT / str(actor.get("clip", ""))
+    if source.get("width") != EXPECTED_SIZE[0] or source.get("height") != EXPECTED_SIZE[1] or abs(float(source.get("fps", 0)) - EXPECTED_FPS) > 0.01:
+        raise MatteError("manifest source resolution/fps mismatch")
+    source_path = _resolve_repo_relative(source["path"], "manifest source")
+    if not source_path.is_file():
+        raise MatteError(f"manifest source missing: {source_path}")
+    actual_size, actual_hash = _sha256(source_path)
+    if actual_size != VIDEO_BYTES or actual_hash != VIDEO_SHA256:
+        raise MatteError("actual source hash does not match the pinned source")
+
+    actor_reports = report.get("actors")
+    if not isinstance(actor_reports, list) or not actor_reports:
+        raise MatteError("manifest has no actor reports")
+    actor_names = [str(item.get("actor")) for item in actor_reports]
+    if len(set(actor_names)) != len(actor_names) or any(name not in ACTOR_WINDOWS for name in actor_names):
+        raise MatteError(f"manifest actor set is invalid: {actor_names}")
+    if sorted(actor_names) != report.get("actorSet"):
+        raise MatteError("manifest actorSet does not match actors")
+
+    for actor in actor_reports:
+        name = actor["actor"]
+        window = _actor_window(name)
+        expected_frames = list(range(window.start_frame, window.end_frame_exclusive))
+        if actor.get("sourceFrameRange") != [window.start_frame, window.end_frame_exclusive - 1]:
+            raise MatteError(f"{name} source frame range is not exact")
+        rows = actor.get("frames")
+        _validate_contiguous_frame_rows(rows, window.start_frame, window.end_frame_exclusive, name)
+        expected_transition = _expected_transition_frames(name, window)
+        actual_transition = [row["frame"] for row in rows if row.get("sourceTransition")]
+        if actual_transition != expected_transition:
+            raise MatteError(f"{name} transition timing is not evidence-backed")
+        expected_ranges = [list(item) for item in _contiguous_ranges(expected_transition)]
+        if actor.get("transitionFrameRanges") != expected_ranges:
+            raise MatteError(f"{name} transition ranges are not contiguous/exact")
+        for row in rows:
+            if row.get("uiOverlapPixels") != 0:
+                raise MatteError(f"{name} frame {row.get('frame')} has UI overlap")
+            if row.get("sourceTransition"):
+                if row.get("transitionReason") != PELICA_TRANSITION_REASON or row.get("transitionRangeInclusive") != list(PELICA_SOURCE_TRANSITION_RANGE):
+                    raise MatteError(f"{name} transition row lacks exact reason/range")
+                if row.get("bbox") is not None or float(row.get("coverage", 0)) != 0.0:
+                    raise MatteError(f"{name} transition row is not an intentional black gap")
+            else:
+                if row.get("bbox") is None or float(row.get("coverage", 0)) <= 0.0001:
+                    raise MatteError(f"{name} has a non-transition full-frame mask loss")
+                if row.get("purityFailure") or row.get("temporalFailure") or row.get("detachedComponentCount", 0) != 0:
+                    raise MatteError(f"{name} has component/temporal purity failure")
+        if actor.get("frameCount") != len(expected_frames) or not actor.get("rowsContiguous"):
+            raise MatteError(f"{name} frame count/contiguity gate failed")
+        if actor.get("componentLossFrameCount") != 0 or actor.get("temporalContinuityFailureCount") != 0 or actor.get("componentPurityFailureCount") != 0:
+            raise MatteError(f"{name} actor purity gate failed")
+        if actor.get("uiOverlapPixels") != 0:
+            raise MatteError(f"{name} records non-zero UI overlap")
+        clip = _resolve_repo_relative(actor.get("clip"), f"{name} clip")
         if not clip.is_file():
             raise MatteError(f"manifest clip missing: {clip}")
-        size, digest = _sha256(clip)
         encoded = actor.get("encoded") or {}
+        _validate_encoded_metadata(encoded, len(expected_frames))
+        size, digest = _sha256(clip)
         if size != encoded.get("bytes") or digest != str(encoded.get("sha256", "")).upper():
             raise MatteError(f"manifest clip hash mismatch: {clip}")
-        if actor.get("uiOverlapPixels") != 0 or actor.get("componentLossFrameCount") != 0:
-            raise MatteError(f"manifest actor gate failed: {actor.get('actor')}")
+
+    gates = report.get("publicationGates") or {}
+    required_boolean_gates = [
+        "sourcePin", "sourceResolutionFps", "fullFrameMask", "exactTransitionClassification",
+        "temporalContinuity", "componentPurity", "nonTransitionComponentLoss", "rowsContiguous",
+        "uiExclusionZero", "ffv1Metadata", "clipsVerified",
+    ]
+    if any(gates.get(key) is not True for key in required_boolean_gates) or gates.get("uiOverlapPixels") != 0:
+        raise MatteError(f"manifest publication gates failed: {gates}")
+
+
+def _check_audit_report(report: dict, report_path: Path) -> None:
+    if report.get("schema") != AUDIT_REPORT_SCHEMA:
+        raise MatteError("unsupported actor matte audit report schema")
+    if report.get("status") != "ok":
+        raise MatteError(f"audit report status is not ok: {report.get('status')!r}")
+    if report.get("pathBase") != "repo_root":
+        raise MatteError("audit report pathBase must be repo_root")
+    manifest_path = _resolve_repo_relative(report.get("manifest"), "audit manifest")
+    if not manifest_path.is_file():
+        raise MatteError(f"audit manifest missing: {manifest_path}")
+    manifest_size, manifest_hash = _sha256(manifest_path)
+    if manifest_size != report.get("manifestBytes") or manifest_hash != str(report.get("manifestSha256", "")).upper():
+        raise MatteError("audit manifest hash mismatch")
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as error:
+        raise MatteError(f"could not read audit manifest: {error}") from error
+    _check_manifest_data(manifest, manifest_path)
+    if report.get("actorSet") != manifest.get("actorSet"):
+        raise MatteError("audit actorSet does not match manifest")
+    artifacts = report.get("artifacts")
+    if not isinstance(artifacts, list) or sorted(item.get("actor") for item in artifacts) != sorted(report.get("actorSet") or []):
+        raise MatteError("audit artifacts do not match actor set")
+    manifest_actors = {item["actor"]: item for item in manifest["actors"]}
+    for artifact in artifacts:
+        actor = artifact.get("actor")
+        if actor not in manifest_actors:
+            raise MatteError(f"audit artifact actor is absent from manifest: {actor}")
+        if artifact.get("path") != manifest_actors[actor].get("clip"):
+            raise MatteError(f"audit artifact path does not match manifest for {actor}")
+        clip = _resolve_repo_relative(artifact.get("path"), f"audit {actor} clip")
+        size, digest = _sha256(clip)
+        if size != artifact.get("bytes") or digest != str(artifact.get("sha256", "")).upper():
+            raise MatteError(f"audit artifact hash mismatch for {actor}")
+    if report.get("publicationGates") != manifest.get("publicationGates"):
+        raise MatteError("audit publication gates do not match manifest")
+
+
+def check_manifest(path: Path) -> None:
+    try:
+        report = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as error:
+        raise MatteError(f"could not read manifest/report: {error}") from error
+    schema = report.get("schema")
+    if schema == AUDIT_REPORT_SCHEMA:
+        _check_audit_report(report, path)
+    else:
+        _check_manifest_data(report, path)
 
 
 def _parse_args(argv: list[str]) -> argparse.Namespace:
@@ -783,7 +1298,17 @@ def _parse_args(argv: list[str]) -> argparse.Namespace:
         default="deeplab",
         help="segmentation engine; deeplab is the only engine allowed for publication",
     )
-    parser.add_argument("--check-manifest", type=Path)
+    parser.add_argument(
+        "--check-manifest",
+        type=Path,
+        help="verify a generated actor_matte_manifest.json or actor_matte_report.json",
+    )
+    parser.add_argument(
+        "--report-path",
+        type=Path,
+        default=PROJECT_ROOT / "tools" / "actor_matte_report.json",
+        help="tracked durable audit report path (written only after all gates pass)",
+    )
     return parser.parse_args(argv)
 
 
@@ -797,6 +1322,7 @@ def main(argv: list[str] | None = None) -> int:
         source = verify_source(args.video.resolve())
         actors = list(ACTOR_WINDOWS) if args.actor == "all" else [args.actor]
         reports = []
+        built_clips: list[Path] = []
         for actor in actors:
             if args.segmentation != "deeplab":
                 raise MatteError("opencv colour-only segmentation is diagnostic-only and cannot publish")
@@ -806,6 +1332,7 @@ def main(argv: list[str] | None = None) -> int:
                 args.output_root.resolve(),
                 segmentation=args.segmentation,
             )
+            built_clips.append(REPO_ROOT / report["clip"])
             if report["transitionFrameCount"] and not args.allow_source_transition_gaps:
                 clip_path = REPO_ROOT / report["clip"]
                 if clip_path.exists():
@@ -816,7 +1343,15 @@ def main(argv: list[str] | None = None) -> int:
                 )
             reports.append(report)
         manifest = write_manifest(source, reports, args.output_root.resolve())
+        durable_report = write_durable_report(
+            manifest,
+            source,
+            reports,
+            args.report_path.resolve(),
+        )
+        check_manifest(durable_report)
         print(f"actor matte manifest: {manifest}")
+        print(f"actor matte durable report: {durable_report}")
         for report in reports:
             print(
                 f"{report['actor']}: frames={report['frameCount']} "
@@ -826,6 +1361,15 @@ def main(argv: list[str] | None = None) -> int:
             )
         return 0
     except MatteError as error:
+        # Never leave a newly generated active clip behind when a later
+        # publication gate fails.  Existing *.unpublished.mkv evidence is not
+        # touched and remains explicitly unpublished.
+        for clip in locals().get("built_clips", []):
+            try:
+                if clip.exists():
+                    clip.unlink()
+            except OSError:
+                pass
         print(f"actor matte failed closed: {error}", file=sys.stderr)
         return 2
 
