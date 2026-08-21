@@ -444,6 +444,13 @@ These are authored trigger parameters, not evaluated runtime state, effective
 inheritance, selected branch, DSP execution, or audibility. Any unsupported or
 truncated tail is published as `failedClosed` with an offset and reason.
 
+`build_audio_semantics.py` publishes the authored v150 Type-6 selector subset
+only on lazy Event-detail records as `selectorBranches` with
+`selectorBranchSchemaVersion=1`; compact Event summaries omit this payload.
+Package child IDs join decoded media only through exact same-bank
+`soundObjectIds` evidence. Malformed or cross-bank structures stay unresolved
+and fail closed, while runtime selector choice and audibility remain unresolved.
+
 `build_audio_semantics.py` is the thin orchestration/publishing surface for
 the Audio evidence page. Maintained domain code lives under
 `audio_semantics/`: `native_evidence.py` owns the installed-build gate,

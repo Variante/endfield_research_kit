@@ -521,6 +521,14 @@ branches. The bank does not provide the live State/RTPC value, selected
 selector branch, effective inheritance, DSP execution, or audibility. The
 parser fails closed with a bounded offset/reason if an operation tail is not
 fully consumed.
+The Wwise v150 Type-6 tail is an authored package/association branch, not the
+current runtime value: a serialized default is not evidence of the active
+selector or selected child. Catalog labels marked inferred remain possible and
+non-exact. Only a complete validated v150 shape with an exact same-bank
+child-to-Sound/media join is accepted; malformed structures and cross-bank
+matches are rejected or remain unresolved. RTPC/State curves are authored
+controls, not branch predicates, so selected branch and audibility stay
+runtime-unobserved.
 An additional same-event join finds 12 Set/ResetGameParameter rows whose exact
 `idExt` equals an `InitialRTPC.rtpcId` (2 unique IDs); this proves an authored
 curve-target relationship only. The GameParameter name, live value, and final
