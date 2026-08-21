@@ -291,8 +291,22 @@
       },
       "metadata": {
         "file": "unity_endfield_graph_shader_lab/Temp/Codex/liteffect_subprograms/Shader/HGRP_LitEffect_p5936F49FA93F14DD.shader.bytecode/0114_endfield_dxbc_0.dxbc.metadata.json",
+        "sha256": "4a7ca8b5937e1fc716692ff185f9cd7e2e698fedf69a2f0fc968ea78d7abc30d",
         "decodedStage": "vertex",
         "serializedStage": "vertex",
+        "sourceStage": "vertex",
+        "shaderCab": "CAB-2c811ef28608ab220ecdb5c4e0629d2d",
+        "shaderPathId": 6428594484694422749,
+        "shaderName": "HGRP/LitEffect",
+        "debugName": "subshader0/pass0:HGBuffer/vertex/blob207/33",
+        "passName": "HGBuffer",
+        "passIndex": 0,
+        "subProgramIndex": 19,
+        "programBlobIndex": 207,
+        "keywords": [
+          "HG_ENABLE_MV",
+          "_PARALLAX_MAP"
+        ],
         "constantBuffers": [
           {
             "Name": "ShaderVariablesGlobal",
@@ -1047,8 +1061,22 @@
       },
       "metadata": {
         "file": "unity_endfield_graph_shader_lab/Temp/Codex/liteffect_subprograms/Shader/HGRP_LitEffect_p5936F49FA93F14DD.shader.bytecode/0115_endfield_dxbc_1.dxbc.metadata.json",
+        "sha256": "1e57dafd0a46c3d2e57acc16f1b29ddb5c98f9b5ed3926d9a11f2e2857368ba4",
         "decodedStage": "fragment",
         "serializedStage": "vertex",
+        "sourceStage": "fragment",
+        "shaderCab": "CAB-2c811ef28608ab220ecdb5c4e0629d2d",
+        "shaderPathId": 6428594484694422749,
+        "shaderName": "HGRP/LitEffect",
+        "debugName": "subshader0/pass0:HGBuffer/vertex/blob207/33",
+        "passName": "HGBuffer",
+        "passIndex": 0,
+        "subProgramIndex": 19,
+        "programBlobIndex": 207,
+        "keywords": [
+          "HG_ENABLE_MV",
+          "_PARALLAX_MAP"
+        ],
         "constantBuffers": [
           {
             "Name": "ShaderVariablesGlobal",
