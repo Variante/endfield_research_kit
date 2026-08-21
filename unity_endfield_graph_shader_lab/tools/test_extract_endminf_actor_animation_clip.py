@@ -2,6 +2,7 @@ import json
 import sys
 import tempfile
 import unittest
+import zlib
 from unittest import mock
 from pathlib import Path
 
@@ -235,6 +236,76 @@ class EndminfActorAnimationClipExtractionTests(unittest.TestCase):
             path.write_text(json.dumps(guessed), encoding="utf-8")
             with self.assertRaisesRegex(extraction.ExtractionError, "drifted"):
                 extraction._validate_binding_gap_report(path, clip, identity)
+
+    def test_avatar_tos_mapping_requires_exact_crc32_and_reports_absence(self):
+        known_path = "Root/Bip001"
+        known_hash = zlib.crc32(known_path.encode("utf-8")) & 0xFFFFFFFF
+        missing_hash = 1875086154
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "EndminfAvatar.json"
+            path.write_text(
+                json.dumps(
+                    {
+                        "m_Name": "SK_actor_endminf_01Avatar",
+                        "m_Avatar": {"m_AvatarSkeleton": {"m_Node": [{"name": "Root"}]}},
+                        "m_TOS": {str(known_hash): known_path},
+                    }
+                ),
+                encoding="utf-8",
+            )
+            report = extraction._avatar_tos_mapping_attempt(path, [known_hash, missing_hash])
+        self.assertEqual(report["result"], "some_target_hashes_resolve_in_exact_avatar_tos")
+        self.assertEqual(report["validKeyCount"], 1)
+        self.assertEqual(report["invalidKeyCount"], 0)
+        rows = {row["pathHash"]: row for row in report["targetRows"]}
+        self.assertEqual(rows[known_hash]["path"], known_path)
+        self.assertTrue(rows[known_hash]["algorithmMatches"])
+        self.assertFalse(rows[missing_hash]["keyPresent"])
+
+    def test_avatar_tos_negative_proof_keeps_all_target_rows_absent(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "EndminfAvatar.json"
+            path.write_text(
+                json.dumps(
+                    {
+                        "m_Name": "SK_actor_endminf_01Avatar",
+                        "m_Avatar": {"m_AvatarSkeleton": {"m_Node": []}},
+                        "m_TOS": {"123": "Root/Bip001"},
+                    }
+                ),
+                encoding="utf-8",
+            )
+            report = extraction._avatar_tos_mapping_attempt(
+                path, [1875086154, 2258644607, 4054261481]
+            )
+        self.assertEqual(report["result"], "all_target_hashes_absent_from_exact_avatar_tos")
+        self.assertEqual(report["validKeyCount"], 0)
+        self.assertEqual(report["invalidKeyCount"], 1)
+        self.assertTrue(all(not row["keyPresent"] for row in report["targetRows"]))
+
+    def test_actor_manifest_mapping_validates_stored_crc32_before_matching(self):
+        known_path = "Root/Bip001"
+        known_hash = zlib.crc32(known_path.encode("utf-8")) & 0xFFFFFFFF
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "endminf_ui_recovery_manifest.json"
+            path.write_text(
+                json.dumps(
+                    {
+                        "transforms": [
+                            {"path": known_path, "path_crc": known_hash},
+                            {"path": "Root/Guessed", "path_crc": known_hash + 1},
+                        ]
+                    }
+                ),
+                encoding="utf-8",
+            )
+            report = extraction._manifest_path_mapping_attempt(path, [known_hash, 1875086154])
+        self.assertEqual(report["transformCount"], 2)
+        self.assertEqual(report["validPathCrcCount"], 1)
+        self.assertEqual(report["invalidPathCrcCount"], 1)
+        rows = {row["pathHash"]: row for row in report["targetRows"]}
+        self.assertEqual(rows[known_hash]["candidatePaths"], [known_path])
+        self.assertEqual(rows[1875086154]["candidateCount"], 0)
 
     def test_reuse_path_calls_full_validator(self):
         source = Path(tempfile.gettempdir()) / "endminf-reuse-source.chk"

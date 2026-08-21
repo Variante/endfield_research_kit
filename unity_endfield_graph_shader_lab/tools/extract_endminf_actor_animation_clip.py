@@ -19,6 +19,7 @@ import re
 import shutil
 import subprocess
 import sys
+import zlib
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -74,6 +75,15 @@ DEFAULT_ACTOR_HIERARCHY_ROOT = (
     / "Endminf"
 )
 DEFAULT_ACTOR_TOS = DEFAULT_ACTOR_HIERARCHY_ROOT / "endminf_ui_recovery_manifest.json"
+DEFAULT_ACTOR_AVATAR = (
+    PROJECT_ROOT
+    / "scratch"
+    / "character_recovery"
+    / "complete_actor_inventory"
+    / "avatars"
+    / "Avatar"
+    / "SK_actor_endminf_01Avatar_pC33AF533EEFEE4E0.json"
+)
 ANIMESTUDIO_CLI = (
     REPO_ROOT
     / "tools"
@@ -97,6 +107,11 @@ OBJECT_INDEX_REQUIRED_COUNTS = (
     "suppressedErrors",
 )
 EXPECTED_INFINITY_REPLACEMENTS = 121
+PATH_HASH_ALGORITHM = {
+    "name": "Unity Avatar m_TOS transform-path CRC32",
+    "implementation": "CRC32-IEEE over the exact UTF-8 full hierarchy path, masked to unsigned 32-bit",
+    "python": "zlib.crc32(path.encode('utf-8')) & 0xffffffff",
+}
 
 
 class ExtractionError(RuntimeError):
@@ -627,7 +642,181 @@ def _exact_hash_mapping_attempt(root: Path, path_hashes: Iterable[int]) -> dict[
         if any(matches.values())
         else "no_exact_path_hash_to_unique_transform_mapping"
     )
-    return {"path": _relative(root), "exists": True, "matches": matches, "result": result}
+    return {
+        "path": _relative(root),
+        "exists": True,
+        "matches": matches,
+        "result": result,
+        "hashAlgorithm": PATH_HASH_ALGORITHM,
+        "method": "bounded decimal occurrence scan; occurrences are not accepted as mappings",
+    }
+
+
+def _avatar_tos_mapping_attempt(path: Path, path_hashes: Iterable[int]) -> dict[str, Any]:
+    """Check target hashes against one exact Unity Avatar ``m_TOS`` map.
+
+    ``m_TOS`` is the only authoritative path-hash lookup for a generic
+    AnimationClip.  Every key/value pair is checked with the Unity-compatible
+    CRC32 implementation before a target row can be considered a hit.  This
+    intentionally returns a negative proof when the Avatar file is available,
+    rather than treating a model name or a same-name bone as a candidate.
+    """
+    hashes = sorted({int(value) for value in path_hashes})
+    rows = {
+        str(value): {
+            "pathHash": value,
+            "keyPresent": False,
+            "path": None,
+            "algorithmMatches": False,
+            "candidateCount": 0,
+        }
+        for value in hashes
+    }
+    base: dict[str, Any] = {
+        "path": _relative(path),
+        "exists": path.is_file(),
+        "hashAlgorithm": PATH_HASH_ALGORITHM,
+        "targetRows": [rows[str(value)] for value in hashes],
+    }
+    if not path.is_file():
+        base["result"] = "source_missing"
+        return base
+    try:
+        document = _json(path)
+    except ExtractionError as exc:
+        base["result"] = "malformed_avatar_tos"
+        base["error"] = str(exc)
+        return base
+    tos = document.get("m_TOS") if isinstance(document, dict) else None
+    if not isinstance(tos, dict):
+        base["result"] = "avatar_tos_missing_or_malformed"
+        base["avatarName"] = (
+            str(document.get("m_Name") or document.get("Name") or "")
+            if isinstance(document, dict)
+            else ""
+        )
+        return base
+
+    invalid_keys = 0
+    valid_key_count = 0
+    for raw_key, raw_path in tos.items():
+        try:
+            key = int(raw_key)
+        except (TypeError, ValueError):
+            invalid_keys += 1
+            continue
+        value = str(raw_path)
+        if (zlib.crc32(value.encode("utf-8")) & 0xFFFFFFFF) != key:
+            invalid_keys += 1
+            continue
+        valid_key_count += 1
+        row = rows.get(str(key))
+        if row is not None:
+            row["keyPresent"] = True
+            row["candidateCount"] += 1
+            row["path"] = value
+            row["algorithmMatches"] = True
+
+    base.update(
+        {
+            "avatarName": str(document.get("m_Name") or document.get("Name") or ""),
+            "tosEntryCount": len(tos),
+            "validKeyCount": valid_key_count,
+            "invalidKeyCount": invalid_keys,
+            "skeletonNodeCount": len(
+                ((document.get("m_Avatar") or {}).get("m_AvatarSkeleton") or {}).get("m_Node") or []
+            ),
+            "sourceSha256": _sha256(path),
+            "targetRows": [rows[str(value)] for value in hashes],
+        }
+    )
+    present = [row for row in base["targetRows"] if row["keyPresent"]]
+    if len(present) == len(base["targetRows"]):
+        base["result"] = "all_target_hashes_resolve_in_exact_avatar_tos"
+    elif present:
+        base["result"] = "some_target_hashes_resolve_in_exact_avatar_tos"
+    else:
+        base["result"] = "all_target_hashes_absent_from_exact_avatar_tos"
+    return base
+
+
+def _manifest_path_mapping_attempt(path: Path, path_hashes: Iterable[int]) -> dict[str, Any]:
+    """Resolve hashes only through the generated Endminf transform manifest.
+
+    The manifest's stored ``path_crc`` is independently recomputed from the
+    full authored path.  This gives the gap report a machine-checkable model
+    hierarchy result without accepting a decimal occurrence in a prefab or a
+    name-only match.
+    """
+    hashes = sorted({int(value) for value in path_hashes})
+    rows = {
+        str(value): {
+            "pathHash": value,
+            "candidateCount": 0,
+            "candidatePaths": [],
+        }
+        for value in hashes
+    }
+    base: dict[str, Any] = {
+        "path": _relative(path),
+        "exists": path.is_file(),
+        "hashAlgorithm": PATH_HASH_ALGORITHM,
+        "targetRows": [rows[str(value)] for value in hashes],
+    }
+    if not path.is_file():
+        base["result"] = "source_missing"
+        return base
+    try:
+        document = _json(path)
+    except ExtractionError as exc:
+        base["result"] = "malformed_actor_manifest"
+        base["error"] = str(exc)
+        return base
+    transforms = document.get("transforms") if isinstance(document, dict) else None
+    if not isinstance(transforms, list):
+        base["result"] = "actor_manifest_transforms_missing_or_malformed"
+        return base
+    valid = 0
+    invalid = 0
+    for raw in transforms:
+        if not isinstance(raw, dict):
+            invalid += 1
+            continue
+        value = str(raw.get("path") or "")
+        if not value:
+            invalid += 1
+            continue
+        computed = zlib.crc32(value.encode("utf-8")) & 0xFFFFFFFF
+        try:
+            stored = int(raw.get("path_crc"))
+        except (TypeError, ValueError):
+            invalid += 1
+            continue
+        if stored != computed:
+            invalid += 1
+            continue
+        valid += 1
+        row = rows.get(str(computed))
+        if row is not None:
+            row["candidateCount"] += 1
+            row["candidatePaths"].append(value)
+    base.update(
+        {
+            "transformCount": len(transforms),
+            "validPathCrcCount": valid,
+            "invalidPathCrcCount": invalid,
+            "sourceSha256": _sha256(path),
+            "targetRows": [rows[str(value)] for value in hashes],
+        }
+    )
+    present = [row for row in base["targetRows"] if row["candidateCount"]]
+    if len(present) == len(base["targetRows"]):
+        base["result"] = "all_target_hashes_resolve_in_actor_manifest"
+    elif present:
+        base["result"] = "some_target_hashes_resolve_in_actor_manifest"
+    else:
+        base["result"] = "all_target_hashes_absent_from_actor_manifest"
+    return base
 
 
 def _binding_gap_report(clip_value: dict[str, Any], identity: dict[str, Any]) -> dict[str, Any]:
@@ -667,8 +856,10 @@ def _binding_gap_report(clip_value: dict[str, Any], identity: dict[str, Any]) ->
     path_hashes = [row["pathHash"] for row in rows]
     hierarchy_attempt = _exact_hash_mapping_attempt(DEFAULT_ACTOR_HIERARCHY_ROOT, path_hashes)
     tos_attempt = _exact_hash_mapping_attempt(DEFAULT_ACTOR_TOS, path_hashes)
+    manifest_attempt = _manifest_path_mapping_attempt(DEFAULT_ACTOR_TOS, path_hashes)
+    avatar_attempt = _avatar_tos_mapping_attempt(DEFAULT_ACTOR_AVATAR, path_hashes)
     return {
-        "schema": "endfield.endminf.actor-animation-binding-gaps.v1",
+        "schema": "endfield.endminf.actor-animation-binding-gaps.v2",
         "status": "ok_with_unresolved_bindings",
         "identity": identity,
         "bindingCount": len(generic),
@@ -677,9 +868,18 @@ def _binding_gap_report(clip_value: dict[str, Any], identity: dict[str, Any]) ->
         "mappingAttempts": [
             {"kind": "existing_endminf_actor_hierarchy", **hierarchy_attempt},
             {"kind": "endminf_actor_tos_manifest", **tos_attempt},
+            {"kind": "endminf_actor_manifest_crc32_paths", **manifest_attempt},
+            {"kind": "canonical_endminf_actor_avatar_tos", **avatar_attempt},
         ],
-        "resolutionRule": "only an exact unique path-hash plus authored actor hierarchy/TOS path may resolve; no name/order guess",
-        "unresolvedReason": "the three hashes have no unique mapping in the existing Endminf actor hierarchy/TOS evidence",
+        "resolutionRule": (
+            "only an exact unique path-hash plus authored actor hierarchy/TOS path may resolve; "
+            "the Avatar m_TOS key must equal CRC32(UTF-8 full hierarchy path) as an unsigned "
+            "32-bit value; no name/order guess"
+        ),
+        "unresolvedReason": (
+            "the three hashes have no unique mapping in the existing Endminf actor hierarchy, "
+            "TOS manifest, or canonical actor Avatar m_TOS evidence"
+        ),
     }
 
 
