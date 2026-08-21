@@ -53,6 +53,7 @@ REPORT_PATH = PROJECT_ROOT / "tools" / "endminf_source_viewport_contract.json"
 SCRATCH_ROOT = PROJECT_ROOT / "scratch" / "character_recovery" / "endminf_source_viewport"
 CLIP_PATH = SCRATCH_ROOT / "endminf_source_viewport_original_bgr0.mkv"
 MASK_PATH = SCRATCH_ROOT / "endminf_source_viewport_validity_mask_gray.mkv"
+NO_UI_VISUALIZATION_PATH = SCRATCH_ROOT / "endminf_source_viewport_no_ui_marked_bgr0.mkv"
 SAMPLE_ROOT = SCRATCH_ROOT / "samples"
 CAMERA_CONTRACT_PATH = PROJECT_ROOT / "Assets" / "EndfieldGraphShaderLab" / "Generated" / "OriginalData" / "CharInfoPresentation" / "charinfo_overview_camera_contract.json"
 COMPARISON_EVIDENCE_PATH = PROJECT_ROOT / "tools" / "endminm_comparable_capture_evidence.json"
@@ -97,6 +98,7 @@ CURSOR_DETECTOR_SHA256 = hashlib.sha256(
 
 SCHEMA = "endfield.character-recovery.endminf-source-viewport.v1"
 PIXEL_POLICY = "exact_decoded_source_crop_no_segmentation_no_compositing_no_inpainting"
+NO_UI_VISUALIZATION_POLICY = "invalid_cursor_region_replaced_with_deterministic_magenta_black_checkerboard_only"
 
 
 class ViewportError(RuntimeError):
@@ -210,6 +212,20 @@ def _cursor_mask() -> np.ndarray:
     x0, y0, x1, y1 = CURSOR_PROTECTION_RELATIVE
     mask[y0:y1, x0:x1] = 0
     return mask
+
+
+def _no_ui_visualization(raw_bgr0: bytes) -> bytes:
+    """Mark invalid pixels conspicuously without inventing actor/background."""
+    array = np.frombuffer(raw_bgr0, dtype=np.uint8).reshape((CROP_HEIGHT, CROP_WIDTH, 4)).copy()
+    x0, y0, x1, y1 = CURSOR_PROTECTION_RELATIVE
+    height, width = y1 - y0, x1 - x0
+    yy, xx = np.indices((height, width))
+    checker = ((xx // 4 + yy // 4) % 2).astype(bool)
+    marker = np.zeros((height, width, 3), dtype=np.uint8)
+    marker[checker] = (255, 0, 255)  # conspicuous BGR magenta
+    array[y0:y1, x0:x1, :3] = marker
+    array[:, :, 3] = 0
+    return array.tobytes()
 
 
 def _cursor_detected(frame_bgr0: bytes) -> tuple[bool, dict[str, int]]:
@@ -346,14 +362,16 @@ def _build() -> dict[str, Any]:
     SAMPLE_ROOT.mkdir(parents=True, exist_ok=True)
     clip_partial = CLIP_PATH.with_suffix(".partial.mkv")
     mask_partial = MASK_PATH.with_suffix(".partial.mkv")
-    for path in (clip_partial, mask_partial):
+    visualization_partial = NO_UI_VISUALIZATION_PATH.with_suffix(".partial.mkv")
+    for path in (clip_partial, mask_partial, visualization_partial):
         if path.exists():
             path.unlink()
     decoder = _decoder()
     clip_encoder = _encoder(clip_partial, "bgr0")
     mask_encoder = _encoder(mask_partial, "gray")
+    visualization_encoder = _encoder(visualization_partial, "bgr0")
     assert decoder.stdout is not None
-    assert clip_encoder.stdin is not None and mask_encoder.stdin is not None
+    assert clip_encoder.stdin is not None and mask_encoder.stdin is not None and visualization_encoder.stdin is not None
     frame_bytes = CROP_WIDTH * CROP_HEIGHT * 4
     rows: list[dict[str, Any]] = []
     cursor_hits = 0
@@ -377,6 +395,8 @@ def _build() -> dict[str, Any]:
             cursor_hits += 1
             clip_encoder.stdin.write(raw)
             mask_encoder.stdin.write(mask_bytes)
+            visualization_raw = _no_ui_visualization(raw)
+            visualization_encoder.stdin.write(visualization_raw)
             crop_hash = _sha256_bytes(raw)
             cursor_core = np.frombuffer(raw, dtype=np.uint8).reshape((CROP_HEIGHT, CROP_WIDTH, 4))[
                 CURSOR_CORE[1] - CROP[1]:CURSOR_CORE[3] - CROP[1],
@@ -392,6 +412,7 @@ def _build() -> dict[str, Any]:
                 "cursorDetector": detector_facts,
                 "validPixels": CROP_WIDTH * CROP_HEIGHT - (CURSOR_PROTECTION_RELATIVE[2] - CURSOR_PROTECTION_RELATIVE[0]) * (CURSOR_PROTECTION_RELATIVE[3] - CURSOR_PROTECTION_RELATIVE[1]),
                 "invalidPixels": (CURSOR_PROTECTION_RELATIVE[2] - CURSOR_PROTECTION_RELATIVE[0]) * (CURSOR_PROTECTION_RELATIVE[3] - CURSOR_PROTECTION_RELATIVE[1]),
+                "noUiVisualizationSha256": _sha256_bytes(visualization_raw),
             }
             rows.append(row)
             if source_frame in SAMPLE_FRAMES:
@@ -405,21 +426,26 @@ def _build() -> dict[str, Any]:
         decoder_code = decoder.wait()
         clip_encoder.stdin.close()
         mask_encoder.stdin.close()
+        visualization_encoder.stdin.close()
         clip_stderr = clip_encoder.stderr.read().decode("utf-8", "replace") if clip_encoder.stderr else ""
         mask_stderr = mask_encoder.stderr.read().decode("utf-8", "replace") if mask_encoder.stderr else ""
+        visualization_stderr = visualization_encoder.stderr.read().decode("utf-8", "replace") if visualization_encoder.stderr else ""
         clip_code = clip_encoder.wait()
         mask_code = mask_encoder.wait()
-        if decoder_code or clip_code or mask_code:
+        visualization_code = visualization_encoder.wait()
+        if decoder_code or clip_code or mask_code or visualization_code:
             raise ViewportError(
-                f"pipeline failed source={decoder_code} clip={clip_code} mask={mask_code}; "
-                f"source={decoder_stderr[-300:]} clip={clip_stderr[-300:]} mask={mask_stderr[-300:]}"
+                f"pipeline failed source={decoder_code} clip={clip_code} mask={mask_code} visualization={visualization_code}; "
+                f"source={decoder_stderr[-300:]} clip={clip_stderr[-300:]} mask={mask_stderr[-300:]} visualization={visualization_stderr[-300:]}"
             )
     if len(rows) != FRAME_COUNT or cursor_hits != FRAME_COUNT:
         raise ViewportError(f"frame/cursor count mismatch: rows={len(rows)} cursor={cursor_hits}")
     os.replace(clip_partial, CLIP_PATH)
     os.replace(mask_partial, MASK_PATH)
+    os.replace(visualization_partial, NO_UI_VISUALIZATION_PATH)
     clip = _artifact_probe(CLIP_PATH, "bgr0")
     validity = _artifact_probe(MASK_PATH, "gray")
+    visualization = _artifact_probe(NO_UI_VISUALIZATION_PATH, "bgr0")
     samples = []
     for frame in SAMPLE_FRAMES:
         path = SAMPLE_ROOT / f"source_frame_{frame}.png"
@@ -455,7 +481,14 @@ def _build() -> dict[str, Any]:
             "unmodeledCenterOverlayStatus": "not_claimed_clean",
             "comparisonRule": "ignore_all_mask_zero_pixels; never synthesize replacement pixels",
         },
-        "artifacts": {"originalViewport": clip, "validityMask": validity},
+        "artifacts": {"originalViewport": clip, "validityMask": validity, "noUiVisualization": visualization},
+        "noUiVisualization": {
+            "policy": NO_UI_VISUALIZATION_POLICY,
+            "path": visualization["path"],
+            "invalidRegionOnly": True,
+            "validPixelsRemainSourceExact": True,
+            "notACompleteSilhouette": True,
+        },
         "visualSamples": samples,
         "frames": rows,
         "publicationGates": {
@@ -468,6 +501,7 @@ def _build() -> dict[str, Any]:
             "completeSilhouetteClaim": False,
             "ffv1OriginalBgr0": True,
             "ffv1ValidityMask": True,
+            "noUiVisualizationMarked": True,
         },
     }
     _write_json_lf(REPORT_PATH, report)
@@ -492,6 +526,14 @@ def _check() -> None:
         raise ViewportError("viewport report path/pixel policy mismatch")
     if report.get("bgr0FillerBytePolicy") != "canonical_zero_only; BGR channels are copied unchanged":
         raise ViewportError("viewport BGR0 filler-byte policy is stale")
+    no_ui = report.get("noUiVisualization") or {}
+    if (
+        no_ui.get("policy") != NO_UI_VISUALIZATION_POLICY
+        or no_ui.get("invalidRegionOnly") is not True
+        or no_ui.get("validPixelsRemainSourceExact") is not True
+        or no_ui.get("notACompleteSilhouette") is not True
+    ):
+        raise ViewportError("no-UI visualization policy is stale")
     camera = report.get("cameraComparisonContract") or {}
     if camera != _camera_comparison_contract():
         raise ViewportError("Unity comparison camera/crop contract is stale")
@@ -532,11 +574,27 @@ def _check() -> None:
     artifacts = report.get("artifacts") or {}
     clip = _artifact_probe(CLIP_PATH, "bgr0")
     validity = _artifact_probe(MASK_PATH, "gray")
-    if artifacts.get("originalViewport") != clip or artifacts.get("validityMask") != validity:
+    visualization = _artifact_probe(NO_UI_VISUALIZATION_PATH, "bgr0")
+    if (
+        artifacts.get("originalViewport") != clip
+        or artifacts.get("validityMask") != validity
+        or artifacts.get("noUiVisualization") != visualization
+    ):
         raise ViewportError("viewport artifact metadata/hash is stale")
-    for index, (raw, mask_raw) in enumerate(zip(_decode_cv2(CLIP_PATH, "bgr0"), _decode_cv2(MASK_PATH, "gray"))):
+    for index, (raw, mask_raw, visualization_raw) in enumerate(
+        zip(
+            _decode_cv2(CLIP_PATH, "bgr0"),
+            _decode_cv2(MASK_PATH, "gray"),
+            _decode_cv2(NO_UI_VISUALIZATION_PATH, "bgr0"),
+        )
+    ):
         if _sha256_bytes(raw) != rows[index]["cropSha256"]:
             raise ViewportError(f"viewport pixel hash mismatch at output frame {index}")
+        if (
+            _sha256_bytes(visualization_raw) != rows[index]["noUiVisualizationSha256"]
+            or visualization_raw != _no_ui_visualization(raw)
+        ):
+            raise ViewportError(f"no-UI visualization mismatch at output frame {index}")
         mask = np.frombuffer(mask_raw, dtype=np.uint8).reshape((CROP_HEIGHT, CROP_WIDTH))
         expected = _cursor_mask()
         if not np.array_equal(mask, expected):
