@@ -250,6 +250,8 @@
       playRoots: "Play roots",
       typedTraversal: "Typed traversal",
       selectorEvidence: "Selector evidence",
+      selectorBranches: "Possible State/Switch branches",
+      selectorRuntimeUnobserved: "Runtime value and selected branch were not observed; all selector candidates remain possible.",
       sourceEvidence: "Wwise source evidence",
       actionDispatch: "Action dispatch",
       actionOrdinal: "Action",
@@ -512,6 +514,8 @@
       playRoots: "Play \u6839",
       typedTraversal: "\u7c7b\u578b\u5316\u904d\u5386",
       selectorEvidence: "\u9009\u62e9\u5668\u8bc1\u636e",
+      selectorBranches: "\u53ef\u80fd的 State/Switch \u5206\u652f",
+      selectorRuntimeUnobserved: "\u672a\u89c2\u5bdf\u8fd0\u884c\u65f6\u503c\u548c\u5df2\u9009\u5206\u652f\uff1b\u6240\u6709\u9009\u62e9\u5668\u5019\u9009\u9879\u4ecd\u53ef\u80fd\u3002",
       sourceEvidence: "Wwise \u97f3\u6e90\u8bc1\u636e",
       actionDispatch: "Action \u6d3e\u53d1",
       actionOrdinal: "Action",
@@ -3602,7 +3606,7 @@
         });
         values.push(`Selector group ids: ${labeledGroupIds.join(" / ")}${selector.groupIdsTruncated || groupIds.length > 12 ? " / more omitted" : ""}`);
       }
-      values.push("Runtime selector value and audio-object state were not observed; every mapped child remains only a possible branch.");
+      values.push("Runtime selector value and audio-object state were not observed; selector candidates remain possible and are not guaranteed playable children.");
     }
     if (randomSequence.nodes) {
       const summarizeCounts = (counts) => [...counts]
@@ -3934,6 +3938,116 @@
     }
     if (unresolved) values.push(`${t("relationPartialGraph")}: ${formatNumber(unresolved)} unresolved nodes`);
     return values;
+  }
+
+  function selectorBranchesSection(record) {
+    const branches = asArray(record?.selectorBranches)
+      .filter((branch) => branch && typeof branch === "object");
+    if (!branches.length) return null;
+    const debug = document.body.classList.contains("show-debug");
+    const details = document.createElement("details");
+    details.className = "audio-selector-branches";
+    const summary = document.createElement("summary");
+    summary.textContent = `${t("selectorBranches")} (${formatNumber(branches.length)})`;
+    details.appendChild(summary);
+    const mediaById = new Map(asArray(record?.media)
+      .filter((media) => media && typeof media === "object")
+      .map((media) => [String(media.mediaId ?? media.id ?? ""), media]));
+    const mediaLabel = (ids, unresolved) => {
+      const labels = asArray(ids).map((id) => {
+        const media = mediaById.get(String(id));
+        return media?.src || media?.rel || media?.path || "direct media";
+      }).filter(Boolean);
+      if (labels.length) return [...new Set(labels)].join(" / ");
+      return unresolved || "no direct media leaf";
+    };
+    for (const [branchIndex, branch] of branches.entries()) {
+      const branchDetails = document.createElement("details");
+      branchDetails.className = "audio-selector-branch";
+      const branchSummary = document.createElement("summary");
+      const groupSemantic = branch.groupSemantic || {};
+      const groupLabel = groupSemantic.semanticLabel
+        || (branch.groupType ? humanize(branch.groupType) : "State/Switch group");
+      const groupJoinStatus = branch.ownershipEvidence?.groupSemanticJoinStatus
+        || groupSemantic.semanticJoinStatus || "";
+      const groupEvidenceLabel = groupJoinStatus === "exactCatalogSemanticJoin"
+        ? "exact catalog"
+        : groupJoinStatus === "inferredCatalogSemanticJoin"
+          ? "inferred / possible"
+          : groupSemantic.semanticLabel
+            ? "possible catalog join"
+            : "";
+      branchSummary.textContent = `${groupLabel} / ${branch.typedExact ? "typed exact" : humanize(branch.typedExactStatus || "unresolved")}${groupEvidenceLabel ? ` / ${groupEvidenceLabel}` : ""}`;
+      branchDetails.appendChild(branchSummary);
+      const body = document.createElement("div");
+      body.className = "audio-selector-branch-body";
+      const runtime = document.createElement("p");
+      runtime.className = "audio-detail-note";
+      runtime.textContent = `${t("selectorRuntimeUnobserved")} Selector candidates, not guaranteed playable children.`;
+      body.appendChild(runtime);
+      for (const packageRow of asArray(branch.packages)) {
+        const valueSemantic = packageRow.semanticJoin || packageRow.semantic || {};
+        const valueName = valueSemantic.resolvedValueName || valueSemantic.semanticName;
+        const valueJoinStatus = packageRow.semanticJoinStatus || "";
+        const valueLabel = valueName
+          ? `${valueName}${valueJoinStatus === "exactCatalogSemanticJoin" ? "" : " (inferred / possible)"}`
+          : (packageRow.valueId !== undefined ? "unresolved value" : "value");
+        const childCount = asArray(packageRow.childIds).length;
+        const directMedia = asArray(packageRow.directMediaIds);
+        const childLabel = packageRow.mappedStatus === "mappedChildOutsideReciprocalChildren"
+          ? `${formatNumber(childCount)} mapped selector candidate${childCount === 1 ? "" : "s"} / outside ownership evidence`
+          : packageRow.unmapped
+            ? "unmapped selector candidate / no mapped child"
+            : childCount
+              ? `${formatNumber(childCount)} mapped selector candidate${childCount === 1 ? "" : "s"}`
+              : "no mapped selector candidate";
+        const packageLine = document.createElement("p");
+        packageLine.className = "audio-selector-branch-package";
+        packageLine.textContent = [
+          valueLabel,
+          packageRow.isDefault ? "authored default" : "",
+          childLabel,
+          mediaLabel(directMedia, packageRow.mediaStatus === "descendantMediaUnresolved" ? "descendant media unresolved" : ""),
+        ].filter(Boolean).join(" / ");
+        body.appendChild(packageLine);
+      }
+      for (const association of asArray(branch.associations)) {
+        const associationLine = document.createElement("p");
+        associationLine.className = "audio-selector-branch-association";
+        associationLine.textContent = [
+          association.onSwitchModeLabel || association.onSwitchMode || "switch association",
+          association.isFirstOnly ? "first-only" : "",
+          association.continuePlayback ? "continue playback" : "",
+          association.fadeOutTimeMs !== undefined ? `fade out ${association.fadeOutTimeMs} ms` : "",
+          association.fadeInTimeMs !== undefined ? `fade in ${association.fadeInTimeMs} ms` : "",
+        ].filter(Boolean).join(" / ");
+        body.appendChild(associationLine);
+      }
+      if (debug) {
+        const evidence = document.createElement("details");
+        evidence.className = "audio-selector-branch-debug";
+        const evidenceSummary = document.createElement("summary");
+        evidenceSummary.textContent = "Raw IDs / ownership evidence";
+        const pre = document.createElement("pre");
+        pre.className = "audio-raw-record";
+        pre.textContent = JSON.stringify({
+          objectId: branch.objectId,
+          groupId: branch.groupId,
+          groupIdHex: branch.groupIdHex,
+          defaultValueId: branch.defaultValueId,
+          defaultValueIdHex: branch.defaultValueIdHex,
+          ownershipEvidence: branch.ownershipEvidence,
+          packages: branch.packages,
+          associations: branch.associations,
+        }, null, 2);
+        evidence.append(evidenceSummary, pre);
+        body.appendChild(evidence);
+      }
+      branchDetails.appendChild(body);
+      details.appendChild(branchDetails);
+      if (branchIndex >= 63) break;
+    }
+    return details;
   }
 
   function sourceEvidenceSummary(record) {
@@ -4642,6 +4756,10 @@
     }
     const selectorEvidence = selectorEvidenceSummary(raw);
     if (selectorEvidence.length) panel.appendChild(chipSection(t("selectorEvidence"), selectorEvidence));
+    if (record.kind === "events") {
+      const selectorBranches = selectorBranchesSection(raw);
+      if (selectorBranches) panel.appendChild(selectorBranches);
+    }
     const sourceEvidence = sourceEvidenceSummary(raw);
     if (sourceEvidence.length) panel.appendChild(chipSection(t("sourceEvidence"), sourceEvidence));
     const customFootstepParameters = customFootstepParameterSummary(raw);
