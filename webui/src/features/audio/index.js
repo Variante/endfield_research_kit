@@ -1151,7 +1151,9 @@
         context.triggerCustomState, context.ownerKind, context.stateDirection, context.audioStateMask, context.description,
         context.enemyTriggerVoiceActionStatus,
         ...Object.values(context.enemyTriggerVoiceAction || {}),
-        context.authoredFieldRole, context.serializedFieldPath, context.componentName,
+        context.authoredFieldRole, context.authoredFieldNameRaw, context.serializedFieldPath,
+        context.serializedFieldPathRaw, context.serializedFieldPathStatus,
+        context.serializedFieldName, context.componentLayout, context.componentType, context.componentName,
         context.authoredEventName, context.authoredEventNameEvidence,
         context.gameObjectName, ...asArray(context.hierarchyPath), context.serializedFile,
         context.objectIndexSource, context.rawJsonSource, context.sourceAssetFile,
@@ -2989,12 +2991,19 @@
     }
     if (kind === "monoBehaviourAudioIdField") {
       if (context?.authoredFieldRole) parts.push(`AudioId role ${humanize(context.authoredFieldRole)}`);
+      if (context?.componentLayout) parts.push(`layout ${context.componentLayout}`);
+      if (context?.componentType) parts.push(`type ${context.componentType}`);
+      if (context?.authoredFieldNameRaw) parts.push(`serialized field ${context.authoredFieldNameRaw}`);
       if (context?.serializedFieldPath) parts.push(context.serializedFieldPath);
+      if (context?.serializedFieldPathStatus && context.serializedFieldPathStatus !== "exact") {
+        parts.push(humanize(context.serializedFieldPathStatus));
+      }
       if (context?.componentName) parts.push(`component ${context.componentName}`);
       if (context?.gameObjectName) parts.push(`GameObject ${context.gameObjectName}`);
       const hierarchy = asArray(context?.hierarchyPath).filter(Boolean);
       if (hierarchy.length) parts.push(`hierarchy ${hierarchy.join(" / ")}`);
-      if (context?.worldPosition && typeof context.worldPosition === "object") {
+      if (context?.worldPosition && context?.worldPositionStatus === "exact_transform_hierarchy"
+        && typeof context.worldPosition === "object") {
         const { x, y, z } = context.worldPosition;
         parts.push(`world position ${x ?? "?"}, ${y ?? "?"}, ${z ?? "?"} / ${humanize(context.worldPositionStatus || "status unknown")}`);
       }

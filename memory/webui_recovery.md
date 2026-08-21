@@ -174,6 +174,15 @@ local IDs stay debug-only. Runtime handle values/state, action execution,
 branch selection, and audibility remain blocked, so the section is not a live
 playback trace.
 
+Serialized `monoBehaviourAudioIdField` context chips expose the narrow authored
+field role, `componentLayout`, component type, and raw serialized path. Search
+also covers the raw field/path evidence and generic serialized-field rows
+(including an audio-key hint);
+details show GameObject, hierarchy, and world position only when the existing
+placement fields are exact. These labels describe authored serialized fields,
+not callback execution or Event posting, and generated coverage counts remain
+in Audio data rather than this memory topic.
+
 Streaming-instance sidecars retain exact entity/name/transform and bounded raw
 ECS evidence, but the currently validated InitChunkData columns expose no known
 prefab Source+PathID/hash field in the observed schema. The Audio page accepts

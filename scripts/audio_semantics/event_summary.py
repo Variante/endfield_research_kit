@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections import Counter
 from typing import Any
 
 def semantic_context_group(kind: Any) -> str:
@@ -83,6 +84,18 @@ def event_summary_row(row: dict[str, Any], detail_shard: str) -> dict[str, Any]:
         int(context.get("levelScriptActionCount") or 0)
         for context in timeline_contexts
     )
+    mono_behaviour_contexts = [
+        context for context in contexts
+        if isinstance(context, dict) and context.get("kind") == "monoBehaviourAudioIdField"
+    ]
+    mono_field_role_counts = Counter(
+        str(context.get("authoredFieldRole") or "componentSerializedAudioField")
+        for context in mono_behaviour_contexts
+    )
+    mono_component_layout_counts = Counter(
+        str(context.get("componentLayout") or "unknown")
+        for context in mono_behaviour_contexts
+    )
     context_search: set[str] = set()
     for context in contexts:
         if not isinstance(context, dict):
@@ -97,6 +110,9 @@ def event_summary_row(row: dict[str, Any], detail_shard: str) -> dict[str, Any]:
             "projectileId", "projectileKey", "soundField", "triggerPhase",
             "runtimeActivationStatus", "sourceRoot", "sourcePathId", "sourceJsonPath",
             "signedValue", "eventHex", "sourceFile", "sourceVfsPath", "semanticPath",
+            "authoredFieldRole", "authoredFieldNameRaw", "serializedFieldPath",
+            "serializedFieldPathRaw", "serializedFieldPathStatus", "serializedFieldName",
+            "componentLayout", "componentType", "componentName",
             "sizzleSoundTriggerDistance", "ringProjectileSoundSmoothFactor",
             "cueName", "cueSignedId", "cueId", "cueHex", "cueHashEvidence",
             "definitionStatus", "handlerScope", "levelId",
@@ -262,6 +278,8 @@ def event_summary_row(row: dict[str, Any], detail_shard: str) -> dict[str, Any]:
         "timelineContextCount", "timelineAssetCount", "playableDirectorCount",
         "levelScriptPlayLevelSequenceActionCount", "timelineExactContextCount",
         "timelineInferredContextCount", "timelineOwnershipGapCount",
+        "monoBehaviourAudioIdFieldCount", "monoBehaviourAudioIdFieldRoleCounts",
+        "monoBehaviourAudioIdFieldComponentLayoutCounts",
     )
     summary = {key: row[key] for key in keys if row.get(key) not in (None, "", [])}
     summary.update({
@@ -291,6 +309,12 @@ def event_summary_row(row: dict[str, Any], detail_shard: str) -> dict[str, Any]:
             "timelineExactContextCount": exact_timeline_count,
             "timelineInferredContextCount": inferred_timeline_count,
             "timelineOwnershipGapCount": timeline_gap_count,
+        })
+    if mono_behaviour_contexts:
+        summary.update({
+            "monoBehaviourAudioIdFieldCount": len(mono_behaviour_contexts),
+            "monoBehaviourAudioIdFieldRoleCounts": dict(sorted(mono_field_role_counts.items())),
+            "monoBehaviourAudioIdFieldComponentLayoutCounts": dict(sorted(mono_component_layout_counts.items())),
         })
     if source_kinds:
         summary["sourceKinds"] = sorted(source_kinds)

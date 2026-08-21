@@ -107,8 +107,8 @@ PROJECTILE_SOUND_PHASES = {
 # authoritative value; these names are presentation labels, not a claim that
 # selection behavior was evaluated offline.
 SELECTION_HIRC_TYPES = frozenset({5, 6, 12, 13})
-AUDIO_SEMANTIC_SCHEMA_VERSION = 123
-TRIGGER_CONTEXT_SCHEMA_VERSION = 38
+AUDIO_SEMANTIC_SCHEMA_VERSION = 124
+TRIGGER_CONTEXT_SCHEMA_VERSION = 39
 
 MONO_BEHAVIOUR_AUDIO_EVENT_FIELD_NAMES = frozenset({
     "_spawnAudioEvent", "_finishAudioEvent", "_onHitAudioEvent",
@@ -124,7 +124,7 @@ MONO_BEHAVIOUR_AUDIO_EVENT_PREFILTERS = tuple(sorted(
     {f"{name}._id" for name in MONO_BEHAVIOUR_AUDIO_EVENT_FIELD_NAMES}
     | {"soundBase.soundSpawn", "soundBase.soundFinish", "PlayLineSound"}
 ))
-MONO_BEHAVIOUR_AUDIO_CONTEXT_CACHE_SCHEMA_VERSION = 2
+MONO_BEHAVIOUR_AUDIO_CONTEXT_CACHE_SCHEMA_VERSION = 3
 RUNTIME_MODEL_CACHE_SCHEMA_VERSION = 109
 METADATA_EVENT_SYMBOL_SCHEMA_VERSION = 1
 METADATA_EVENT_SYMBOL_RE = re.compile(r"^AU_[A-Z0-9_]+$")
@@ -7229,7 +7229,10 @@ def collect_mono_behaviour_audio_id_contexts(
     accepted_occurrences = 0
     raw_candidate_files = 0
     raw_fallback_occurrences = 0
+    raw_field_counts: Counter[str] = Counter()
     role_counts: Counter[str] = Counter()
+    layout_counts: Counter[str] = Counter()
+    event_role_counts: dict[str, Counter[str]] = defaultdict(Counter)
     occurrence_keys: set[tuple[str, str, int, str, int]] = set()
     raw_object_candidates: set[tuple[str, str, int]] = set()
     for source_root in ("StreamingAssets", "Persistent"):
@@ -7284,7 +7287,7 @@ def collect_mono_behaviour_audio_id_contexts(
                     continue
                 occurrence_keys.add(occurrence_key)
                 accepted_occurrences += 1
-                role_counts[authored_role] += 1
+                raw_field_counts[authored_role] += 1
                 context: dict[str, Any] = {
                     "kind": "monoBehaviourAudioIdField",
                     "semanticRole": "authoredSerializedComponentAudioEvent",
@@ -7342,6 +7345,16 @@ def collect_mono_behaviour_audio_id_contexts(
                     context["serializedPlaybackControls"] = {
                         key: value for key, value in controls.items() if value not in (None, "")
                     }
+                context.update(managed_literals.project_mono_behaviour_audio_field(
+                    scalar_path,
+                    field_name=authored_role,
+                    component_layout=context.get("managedReferenceLayout"),
+                    component_type=script.get("fullName") or row.get("name"),
+                ))
+                context["authoredFieldNameRaw"] = authored_role
+                role_counts[str(context.get("authoredFieldRole") or managed_literals.MONO_BEHAVIOUR_AUDIO_GENERIC_ROLE)] += 1
+                layout_counts[str(context.get("componentLayout") or "unknown")] += 1
+                event_role_counts[f"0x{event_hash:08x}"][str(context.get("authoredFieldRole") or managed_literals.MONO_BEHAVIOUR_AUDIO_GENERIC_ROLE)] += 1
                 _append_context(
                     contexts,
                     seen,
@@ -7364,7 +7377,7 @@ def collect_mono_behaviour_audio_id_contexts(
                     continue
                 occurrence_keys.add(occurrence_key)
                 accepted_occurrences += 1
-                role_counts[authored_role] += 1
+                raw_field_counts[authored_role] += 1
                 context = {
                     "kind": "monoBehaviourAudioIdField",
                     "semanticRole": "authoredSerializedComponentAudioEvent",
@@ -7403,6 +7416,16 @@ def collect_mono_behaviour_audio_id_contexts(
                     ],
                     **managed_details,
                 }
+                context.update(managed_literals.project_mono_behaviour_audio_field(
+                    scalar_path,
+                    field_name=authored_role,
+                    component_layout=managed_details.get("managedReferenceLayout"),
+                    component_type=script.get("fullName") or row.get("name"),
+                ))
+                context["authoredFieldNameRaw"] = authored_role
+                role_counts[str(context.get("authoredFieldRole") or managed_literals.MONO_BEHAVIOUR_AUDIO_GENERIC_ROLE)] += 1
+                layout_counts[str(context.get("componentLayout") or "unknown")] += 1
+                event_role_counts[f"0x{event_hash:08x}"][str(context.get("authoredFieldRole") or managed_literals.MONO_BEHAVIOUR_AUDIO_GENERIC_ROLE)] += 1
                 _append_context(
                     contexts,
                     seen,
@@ -7454,7 +7477,7 @@ def collect_mono_behaviour_audio_id_contexts(
             occurrence_keys.add(occurrence_key)
             accepted_occurrences += 1
             raw_fallback_occurrences += 1
-            role_counts[authored_role] += 1
+            raw_field_counts[authored_role] += 1
             context = {
                 "kind": "monoBehaviourAudioIdField",
                 "semanticRole": "authoredSerializedComponentAudioEvent",
@@ -7486,6 +7509,15 @@ def collect_mono_behaviour_audio_id_contexts(
                     "componentStateOrCallbackExecutionNotObserved",
                 ],
             }
+            context.update(managed_literals.project_mono_behaviour_audio_field(
+                scalar_path,
+                field_name=authored_role,
+                component_type=metadata.get("scriptFullName") or metadata.get("name"),
+            ))
+            context["authoredFieldNameRaw"] = authored_role
+            role_counts[str(context.get("authoredFieldRole") or managed_literals.MONO_BEHAVIOUR_AUDIO_GENERIC_ROLE)] += 1
+            layout_counts[str(context.get("componentLayout") or "unknown")] += 1
+            event_role_counts[f"0x{event_hash:08x}"][str(context.get("authoredFieldRole") or managed_literals.MONO_BEHAVIOUR_AUDIO_GENERIC_ROLE)] += 1
             _append_context(
                 contexts,
                 seen,
@@ -7513,6 +7545,12 @@ def collect_mono_behaviour_audio_id_contexts(
             "rawJsonFallbackOccurrences": raw_fallback_occurrences,
             "distinctEventHashes": len(contexts),
             "fieldRoleCounts": dict(sorted(role_counts.items())),
+            "rawFieldNameCounts": dict(sorted(raw_field_counts.items())),
+            "componentLayoutCounts": dict(sorted(layout_counts.items())),
+            "eventFieldRoleCounts": {
+                event_hex: dict(sorted(counts.items()))
+                for event_hex, counts in sorted(event_role_counts.items())
+            },
             "runtimeExecutionObserved": 0,
             "cacheStatus": "refreshed",
             "evidenceBoundary": boundary,
@@ -10248,8 +10286,17 @@ def _build_mono_behaviour_audio_id_trigger_contexts(
                     "eventId": event_id,
                     "eventHash": event.get("hash"),
                     "componentName": context.get("componentName"),
+                    "componentType": context.get("componentType") or context.get("scriptFullName"),
+                    "componentLayout": context.get("componentLayout"),
+                    "authoredFieldRole": context.get("authoredFieldRole"),
+                    "authoredFieldNameRaw": context.get("authoredFieldNameRaw"),
                     "gameObjectName": context.get("gameObjectName"),
                     "serializedFieldPath": field_path,
+                    "serializedFieldPathRaw": context.get("serializedFieldPathRaw") or field_path,
+                    "serializedFieldPathStatus": context.get("serializedFieldPathStatus"),
+                    "hierarchyPath": context.get("hierarchyPath") or [],
+                    "worldPosition": context.get("worldPosition"),
+                    "worldPositionStatus": context.get("worldPositionStatus"),
                 },
                 "meaning": {
                     "eventId": event_id,
@@ -10266,6 +10313,8 @@ def _build_mono_behaviour_audio_id_trigger_contexts(
                     for key in (
                         "sourceRoot", "serializedFile", "sourceAssetFile", "sourceOffset",
                         "pathId", "componentName", "scriptPathId", "scriptFullName",
+                        "componentType", "componentLayout", "authoredFieldNameRaw",
+                        "serializedFieldPathRaw", "serializedFieldPathStatus", "serializedFieldName",
                         "gameObjectName", "worldPositionStatus", "managedReferenceClass",
                         "managedReferenceNamespace", "managedReferenceAssembly",
                         "managedReferenceLayout", "managedReferencePayloadLength",
@@ -10719,6 +10768,22 @@ def build_trigger_context_catalog(
         "monoBehaviourAudioId": {
             "source": "AnimeStudio MonoBehaviour object-index exact AudioId scalar paths",
             "storedTriggerContextRows": len(grouped["monoBehaviourAudioId"]),
+            "authoredFieldRoleCounts": dict(sorted(Counter(
+                str(row.get("triggerRole") or managed_literals.MONO_BEHAVIOUR_AUDIO_GENERIC_ROLE)
+                for row in grouped["monoBehaviourAudioId"]
+                if isinstance(row, dict)
+            ).items())),
+            "componentLayoutCounts": dict(sorted(Counter(
+                str((row.get("situation") or {}).get("componentLayout") or "unknown")
+                for row in grouped["monoBehaviourAudioId"]
+                if isinstance(row, dict)
+            ).items())),
+            "rowsWithExactPlacement": sum(
+                bool((row.get("situation") or {}).get("worldPosition"))
+                and (row.get("situation") or {}).get("worldPositionStatus") == "exact_transform_hierarchy"
+                for row in grouped["monoBehaviourAudioId"]
+                if isinstance(row, dict)
+            ),
             "runtimeExecutionObserved": 0,
         },
         "audioGlobalConfig": {
@@ -12437,24 +12502,6 @@ def annotate_media_trigger_contexts(
     }
 
 
-_MONO_BEHAVIOUR_SFX_FIELD_ROLES = frozenset({
-    "soundSpawn",
-    "_spawnAudioEvent",
-    "_onHitAudioEvent",
-    "startHitEvent",
-    "normalAudiId",
-    "soundFinish",
-    "_onEnableLoopAudioEvent",
-    "soundEvent",
-    "_onRotationGroundOneShotAudioEvent",
-    "_finishAudioEvent",
-    "_onStartMoveAudioEvent",
-    "notAimableSoundEvent",
-    "aimableSoundEvent",
-    "capacityCountLowEvent",
-})
-
-
 def annotate_media_trigger_semantic_categories(
     media_rows: Iterable[dict[str, Any]],
     trigger_context_catalog: dict[str, Any] | None,
@@ -12486,9 +12533,25 @@ def annotate_media_trigger_semantic_categories(
             category = ""
         semantic_kind = str(context.get("semanticKind") or "")
         trigger_role = str(context.get("triggerRole") or "")
+        situation = context.get("situation")
+        situation = situation if isinstance(situation, dict) else {}
         mono_sfx_role = (
             semantic_kind == "monoBehaviourAudioIdField"
-            and trigger_role in _MONO_BEHAVIOUR_SFX_FIELD_ROLES
+            and managed_literals.is_mono_behaviour_audio_sfx_role(
+                trigger_role,
+                raw_field=(
+                    context.get("authoredFieldNameRaw")
+                    or situation.get("authoredFieldNameRaw")
+                ),
+                serialized_field_path=(
+                    context.get("serializedFieldPath")
+                    or situation.get("serializedFieldPath")
+                ),
+                serialized_field_path_status=(
+                    context.get("serializedFieldPathStatus")
+                    or situation.get("serializedFieldPathStatus")
+                ),
+            )
         )
         for media_ref in context.get("mediaRefs") or ():
             if not isinstance(media_ref, dict):

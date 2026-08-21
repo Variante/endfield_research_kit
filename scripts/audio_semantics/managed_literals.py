@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from pathlib import Path
+import re
 from typing import Any
 
 from . import context_utils, identifiers, native_evidence
@@ -58,6 +59,238 @@ NATURE_RESOURCE_SOUND_SELECTOR_ROWS = (
     ("watering", "Watering", 2, "0x183b16e2f", "0x183b16eba"),
     ("harvest", "Harvest", 5, "0x183b16e4a", "0x183b16ed5"),
 )
+
+# These are serialized field-name meanings, not runtime callback claims.  Keep
+# this table deliberately narrow: a field name is promoted only when the
+# serialized spelling itself carries the meaning.  Everything else remains a
+# generic authored component field.
+MONO_BEHAVIOUR_AUDIO_FIELD_ROLE_MAP = {
+    "soundSpawn": "componentSoundSpawn",
+    "_spawnAudioEvent": "componentSoundSpawn",
+    "_onHitAudioEvent": "componentHitCallback",
+    "_onStartMoveAudioEvent": "componentStartMoveCallback",
+    "_onRotationGroundOneShotAudioEvent": "componentRotationGroundOneShotCallback",
+    "_onEnableLoopAudioEvent": "componentEnableLoopCallback",
+    "soundFinish": "componentFinish",
+    "_finishAudioEvent": "componentFinish",
+    "normalAudiId": "componentAnimationStateAudioConfig",
+    "soundEvent": "componentParticleSoundEvent",
+    "aimableSoundEvent": "componentWaterDroneAimableSound",
+    "notAimableSoundEvent": "componentWaterDroneNotAimableSound",
+    "capacityCountLowEvent": "componentWaterDroneCapacityLowSound",
+    "enterSoundName": "componentWaterDroneEnterSound",
+    "exitSoundName": "componentWaterDroneExitSound",
+    "shootIsHitSoundName": "componentWaterDroneShootHitSound",
+    "shootNotHitSoundName": "componentWaterDroneShootMissSound",
+    "endShootSoundName": "componentWaterDroneShootEndSound",
+    "startHitEvent": "componentWaterStartHitSound",
+    "enterWaterSfx": "componentWaterInteractEnterSound",
+    "exitWaterSfx": "componentWaterInteractExitSound",
+    "splashSfx": "componentWaterInteractSplashSound",
+    # Audio-key fields are retained as generic serialized evidence.  The
+    # spelling identifies a key-shaped field, not a playback role.
+    "audioKey": "componentSerializedAudioField",
+    "_audioKey": "componentSerializedAudioField",
+}
+MONO_BEHAVIOUR_AUDIO_GENERIC_ROLE = "componentSerializedAudioField"
+
+# These are complete serialized paths observed in the current object-index
+# projection.  Matching the whole path is intentional: a basename, an
+# extra wrapper, a reordered container, or a wrong terminal cannot promote a
+# field to a semantic role.  ``hex`` and ``value`` are the two scalar leaves
+# accepted by the managed-reference decoder; component PPtrs end in ``_id``.
+_MONO_AUDIO_MANAGED_SOUND_RE = re.compile(
+    r"^\$\.references\.RefIds\[[0-9]+\]\.data\.soundBase\.(soundSpawn|soundFinish)\.(hex|value)$"
+)
+_MONO_AUDIO_PLAY_LINE_RE = re.compile(
+    r"^\$\.references\.RefIds\[[0-9]+\]\.data\.(soundSpawn|soundFinish)\.(hex|value)$"
+)
+_MONO_AUDIO_PLAY_LINE_RAW_WORD_RE = re.compile(
+    r"^\$\.references\.RefIds\[[0-9]+\]\.data\.rawWords\[(0|1)\]\.hex$"
+)
+_MONO_AUDIO_DIRECT_RE = re.compile(
+    r"^\$(\._spawnAudioEvent|\._finishAudioEvent|\._onHitAudioEvent|"
+    r"\._onStartMoveAudioEvent|\._onRotationGroundOneShotAudioEvent|"
+    r"\._onEnableLoopAudioEvent|\.audioKey|\._audioKey|\.enterWaterSfx|"
+    r"\.exitWaterSfx|\.splashSfx)\._id$"
+)
+_MONO_AUDIO_STATE_RE = re.compile(
+    r"^\$\.stateList\[[0-9]+\]\.audioPlayConfigs\[[0-9]+\]\.normalAudiId\._id$"
+)
+_MONO_AUDIO_PARTICLE_RE = re.compile(
+    r"^\$\._entries\[[0-9]+\]\.soundEvent\._id$"
+)
+_MONO_AUDIO_WATER_UI_RE = re.compile(
+    r"^\$\.waterDroneUIAudioData\.(aimableSoundEvent|notAimableSoundEvent|"
+    r"capacityCountLowEvent)\._id$"
+)
+_MONO_AUDIO_WATER_SOURCE_RE = re.compile(
+    r"^\$.waterDroneSourceDataDict\._valueData\[[0-9]+\]\.(enterSoundName|"
+    r"exitSoundName)\._id$"
+)
+_MONO_AUDIO_WATER_TYPE_RE = re.compile(
+    r"^\$.waterTypeDataDict\._valueData\[[0-9]+\]\.(shootIsHitSoundName|"
+    r"shootNotHitSoundName|endShootSoundName|startHitEvent)\._id$"
+)
+
+# The SFX media projection consumes this same domain-owned mapping.  The raw
+# names keep compatibility with older trigger-context rows; mapped role names
+# are derived from the one role map above rather than maintained separately.
+_MONO_BEHAVIOUR_AUDIO_SFX_RAW_FIELDS = frozenset({
+    "soundSpawn", "_spawnAudioEvent", "_onHitAudioEvent", "startHitEvent",
+    "normalAudiId", "soundFinish", "_onEnableLoopAudioEvent", "soundEvent",
+    "_onRotationGroundOneShotAudioEvent", "_finishAudioEvent",
+    "_onStartMoveAudioEvent", "notAimableSoundEvent", "aimableSoundEvent",
+    "capacityCountLowEvent",
+})
+MONO_BEHAVIOUR_AUDIO_SFX_AUTHORED_ROLES = frozenset(
+    MONO_BEHAVIOUR_AUDIO_FIELD_ROLE_MAP[field]
+    for field in _MONO_BEHAVIOUR_AUDIO_SFX_RAW_FIELDS
+    if field in MONO_BEHAVIOUR_AUDIO_FIELD_ROLE_MAP
+)
+
+
+def is_mono_behaviour_audio_sfx_role(
+    role: Any,
+    *,
+    raw_field: Any = None,
+    serialized_field_path: Any = None,
+    serialized_field_path_status: Any = None,
+) -> bool:
+    """Return whether a serialized field is in the maintained SFX gate.
+
+    Mapped roles require the same exact path projection used by the collector.
+    Raw field names are accepted only for genuinely old trigger rows with no
+    path evidence; once a current path is present it must independently map
+    to the same role.  This prevents a generic/unsupported projection from
+    being promoted through its retained raw spelling.
+    """
+
+    role_text = str(role or "").strip()
+    raw_text = str(raw_field or "").strip()
+    path_text = serialized_field_path if isinstance(serialized_field_path, str) else ""
+    path_status = str(serialized_field_path_status or "").strip()
+    if path_status and path_status != "exact":
+        return False
+    if path_text:
+        projected = project_mono_behaviour_audio_field(
+            path_text,
+            field_name=raw_text or None,
+        )
+        return (
+            role_text in MONO_BEHAVIOUR_AUDIO_SFX_AUTHORED_ROLES
+            and projected.get("authoredFieldRole") == role_text
+            and projected.get("authoredFieldRoleEvidence") == "exactSerializedAudioFieldNameMapping"
+        ) or (
+            role_text in _MONO_BEHAVIOUR_AUDIO_SFX_RAW_FIELDS
+            and projected.get("authoredFieldRole") in MONO_BEHAVIOUR_AUDIO_SFX_AUTHORED_ROLES
+            and MONO_BEHAVIOUR_AUDIO_FIELD_ROLE_MAP.get(role_text) == projected.get("authoredFieldRole")
+        )
+    # Bounded compatibility for pre-projection trigger rows.  Do not use a
+    # second raw-field argument to rescue a current generic/unsupported row.
+    return role_text in _MONO_BEHAVIOUR_AUDIO_SFX_RAW_FIELDS
+
+
+def project_mono_behaviour_audio_field(
+    serialized_field_path: Any,
+    *,
+    field_name: Any = None,
+    component_layout: Any = None,
+    component_type: Any = None,
+) -> dict[str, Any]:
+    """Project one exact serialized AudioId field into an authored role.
+
+    The returned role is static authored evidence only.  No component class,
+    GameObject, position, or field spelling is treated as proof of callback
+    execution or an Event post.  Invalid paths stay visible as generic fields
+    with a bounded diagnostic rather than being assigned a specific role.
+    """
+
+    raw_path = serialized_field_path if isinstance(serialized_field_path, str) else ""
+    raw_path = raw_path.strip()
+    path_status = "exact" if raw_path.startswith("$") and "\n" not in raw_path and "\r" not in raw_path else "malformed"
+    raw_field = str(field_name).strip() if field_name not in (None, "") else ""
+    if not raw_field:
+        field_match = re.fullmatch(
+            r"^\$.*\.([A-Za-z_][A-Za-z0-9_]*)\.(?:_id|hex|value)$",
+            raw_path,
+        )
+        if field_match:
+            raw_field = field_match.group(1)
+    canonical_field = ""
+    layout_from_path = ""
+    if match := _MONO_AUDIO_MANAGED_SOUND_RE.fullmatch(raw_path):
+        canonical_field = match.group(1)
+        layout_from_path = "serializedManagedReferenceSoundBase"
+    elif match := _MONO_AUDIO_PLAY_LINE_RE.fullmatch(raw_path):
+        canonical_field = match.group(1)
+        layout_from_path = "serializedManagedReferencePlayLineSound"
+    elif match := _MONO_AUDIO_PLAY_LINE_RAW_WORD_RE.fullmatch(raw_path):
+        canonical_field = "soundSpawn" if match.group(1) == "0" else "soundFinish"
+        layout_from_path = "serializedManagedReferencePlayLineSound"
+    elif match := _MONO_AUDIO_DIRECT_RE.fullmatch(raw_path):
+        canonical_field = match.group(1)[1:]
+        layout_from_path = "serializedMonoBehaviourAudioIdField"
+    elif _MONO_AUDIO_STATE_RE.fullmatch(raw_path):
+        canonical_field = "normalAudiId"
+        layout_from_path = "serializedAnimationStateAudioConfig"
+    elif _MONO_AUDIO_PARTICLE_RE.fullmatch(raw_path):
+        canonical_field = "soundEvent"
+        layout_from_path = "serializedParticleSoundEntry"
+    elif match := _MONO_AUDIO_WATER_UI_RE.fullmatch(raw_path):
+        canonical_field = match.group(1)
+        layout_from_path = "serializedWaterDroneAudioData"
+    elif match := _MONO_AUDIO_WATER_SOURCE_RE.fullmatch(raw_path):
+        canonical_field = match.group(1)
+        layout_from_path = "serializedWaterDroneSourceData"
+    elif match := _MONO_AUDIO_WATER_TYPE_RE.fullmatch(raw_path):
+        canonical_field = match.group(1)
+        layout_from_path = "serializedWaterTypeData"
+    if not raw_field and canonical_field:
+        raw_field = canonical_field
+    path_shape_is_exact = bool(
+        path_status == "exact"
+        and canonical_field
+        and (not raw_field or raw_field == canonical_field)
+    )
+    role_is_exact = path_shape_is_exact and canonical_field not in {"audioKey", "_audioKey"}
+    role = (
+        MONO_BEHAVIOUR_AUDIO_FIELD_ROLE_MAP.get(canonical_field, MONO_BEHAVIOUR_AUDIO_GENERIC_ROLE)
+        if role_is_exact
+        else MONO_BEHAVIOUR_AUDIO_GENERIC_ROLE
+    )
+    layout = str(component_layout).strip() if component_layout not in (None, "") else ""
+    layout_status = "exact" if layout else "generic"
+    if not layout:
+        if layout_from_path:
+            layout = layout_from_path
+        elif raw_field in {"audioKey", "_audioKey"}:
+            layout = "serializedAudioKeyField"
+        else:
+            layout = "serializedMonoBehaviourAudioIdField"
+    result: dict[str, Any] = {
+        "componentLayout": layout,
+        "componentLayoutStatus": layout_status,
+        "authoredFieldRole": role,
+        "authoredFieldRoleEvidence": (
+            "exactSerializedAudioFieldNameMapping"
+            if role_is_exact
+            else "genericSerializedAudioField"
+        ),
+        "serializedFieldPath": raw_path,
+        "serializedFieldPathRaw": raw_path,
+        "serializedFieldPathStatus": path_status,
+        "serializedFieldName": raw_field,
+    }
+    if component_type not in (None, ""):
+        result["componentType"] = str(component_type).strip()
+    if raw_field in {"audioKey", "_audioKey"}:
+        result["serializedFieldRoleHint"] = "componentAudioKey"
+    if path_status != "exact":
+        result["serializedFieldDiagnostic"] = "serializedAudioFieldPathMalformed"
+    elif not path_shape_is_exact:
+        result["serializedFieldDiagnostic"] = "serializedAudioFieldPathUnsupportedShape"
+    return result
 
 # Exact current-build ``SwitchAudioCustomState`` callsites whose static
 # argument usage words decode to the custom-state names below. Authored
