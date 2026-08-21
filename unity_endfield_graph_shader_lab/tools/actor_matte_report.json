@@ -4,8 +4,8 @@
   "pathBase": "repo_root",
   "generatedBy": "unity_endfield_graph_shader_lab/tools/build_priority_actor_mattes.py",
   "manifest": "unity_endfield_graph_shader_lab/scratch/character_recovery/actor_clips/actor_matte_manifest.json",
-  "manifestBytes": 927567,
-  "manifestSha256": "09A464FF282AD6B18782BB921CC89D3B179BD601F991347C23F78E860A460347",
+  "manifestBytes": 927599,
+  "manifestSha256": "3035E681465CA46C87B7AC90301B941DB807982E972F9A605BCCF8B3FE029431",
   "source": {
     "path": "videos/2026-08-15_10-32-32.mkv",
     "bytes": 1678613397,
@@ -118,8 +118,8 @@
     "uiOverlapPolicy": "hard_zero_and_measured_zero",
     "endminfIdentityEvidence": {
       "path": "unity_endfield_graph_shader_lab/tools/endminf_video_identity_evidence.json",
-      "bytes": 82683,
-      "sha256": "DBA266CE7D25256BD4136AE2B295498074244D1CA3BCCEDE330ACE17B547303F"
+      "bytes": 91975,
+      "sha256": "1DE58E739984992B255A4B3A4E277D9967140A8013A70ADB33A5710A8C3417CC"
     },
     "temporalPolicy": {
       "minRawIoU": 0.08,
@@ -200,7 +200,7 @@
     {
       "actor": "endminf",
       "status": "unpublished",
-      "reason": "retained unpublished; exact identity is only a candidate because no comparable same-camera/same-render-settings competitor render exists"
+      "reason": "retained unpublished; identity is proven, but the existing clip has no retained per-frame matte audit row and is not republished without non-reencoding frame validation"
     }
   ],
   "publicationGates": {

@@ -99,7 +99,7 @@ DEEPLAB_WEIGHT_SHA256 = "CD0A25694C4A0F7106B38F4938BF90A874F2F241CC410B8F63C7024
 DEEPLAB_WEIGHT_FILENAME = "deeplabv3_resnet50_coco-cd0a2569.pth"
 UNPUBLISHED_ACTOR_REASON = "retained unpublished; source or matte validation did not pass publication gates"
 UNPUBLISHED_ACTOR_REASONS = {
-    "endminf": "retained unpublished; exact identity is only a candidate because no comparable same-camera/same-render-settings competitor render exists",
+    "endminf": "retained unpublished; identity is proven, but the existing clip has no retained per-frame matte audit row and is not republished without non-reencoding frame validation",
 }
 MANIFEST_SCHEMA = "endfield.character-recovery.actor-matte.v1"
 AUDIT_REPORT_SCHEMA = "endfield.character-recovery.actor-matte.audit.v2"
