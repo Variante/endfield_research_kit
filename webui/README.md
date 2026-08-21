@@ -398,6 +398,17 @@ The control catalog also publishes five exact metadata-named InitialRTPC
 parameters covering 14 curve occurrences across six Event occurrences, with
 trigger contexts, controlled properties, response-point totals, and
 interpolation labels.
+The schema-117 Audio index also exposes
+`controlCatalog.staticRtpcAlignment`: its six canonical `AU_RTPC_*` names are
+joined to exact numeric HIRC IDs, serialized curve/property evidence, and
+same-event Set/ResetGameParameter controls. These rows are labeled authored
+static evidence; runtime parameter values, setter execution, target objects,
+branch selection, DSP state, and audibility are not rendered as observed
+facts. If the selected `global-metadata.dat` + `GameAssembly.dll` gate or the
+serialized source contract is missing, mismatched, malformed, or stale, the
+static names/rows fail closed and the Audio page keeps the diagnostic instead
+of showing stale identities. The generated page data appears after a formal
+semantic rebuild.
 
 When native inputs are missing or mismatched, authored Audio rows remain
 visible; only build-locked callsites, mappings, and addresses disappear, with

@@ -116,6 +116,7 @@
       wwiseSelectorGroups: "Wwise selector runtime joins",
       wwiseInitialRtpcParameters: "Named Initial RTPC curve parameters",
       wwiseActionControls: "Wwise Action control joins",
+      staticRtpcAlignment: "Static GameParameter / RTPC alignment",
       levelScriptRadioCatalog: "LevelScript radio triggers",
       unresolvedRadioIds: "Unresolved radio IDs",
       unresolvedRadioLines: "Unresolved radio lines",
@@ -385,6 +386,7 @@
       wwiseSelectorGroups: "Wwise \u9009\u62e9\u5668\u8fd0\u884c\u65f6\u8fde\u63a5",
       wwiseInitialRtpcParameters: "\u5df2\u547d\u540d\u7684 Initial RTPC \u66f2\u7ebf\u53c2\u6570",
       wwiseActionControls: "Wwise Action \u63a7\u5236\u8bed\u4e49\u8fde\u63a5",
+      staticRtpcAlignment: "\u9759\u6001 GameParameter / RTPC \u5bf9\u9f50",
       levelScriptRadioCatalog: "LevelScript \u65e0\u7ebf\u7535\u89e6\u53d1",
       unresolvedRadioIds: "\u672a\u89e3\u6790\u7684\u65e0\u7ebf\u7535 ID",
       unresolvedRadioLines: "\u672a\u89e3\u6790\u7684\u65e0\u7ebf\u7535\u53f0\u8bcd",
@@ -2294,6 +2296,16 @@
         Object.entries(row.controlledProperties || {}).map(([key, value]) => `${key} ${formatNumber(value)}`).join(" / "),
         asArray(row.triggerRoles).join(" / "),
       ].filter(Boolean).join(" / ")],
+      ["staticRtpcAlignment", asArray(catalog.staticRtpcAlignment?.entries), (row) => [
+        row.parameterIdHex || "?",
+        row.parameterName || row.metadataField || t("unknown"),
+        `${formatNumber(row.serializedCurveCount || 0)} HIRC curves`,
+        `node ${formatNumber(row.nodeRtpcCurveCount || 0)} / bus ${formatNumber(row.busRtpcCurveCount || 0)}`,
+        `set ${formatNumber(row.setGameParameterCount || 0)} / reset ${formatNumber(row.resetGameParameterCount || 0)}`,
+        `same-event joins ${formatNumber(asArray(row.controlRows).filter((control) => control?.initialRtpcJoin).length)}`,
+        Object.keys(row.controlledProperties || {}).join(", "),
+        humanize(row.alignmentStatus || "authoredStatic"),
+      ].filter(Boolean).join(" / ")],
       ["wwiseActionControls", asArray(catalog.wwiseActionControls?.referencedGroups), (row) => `${row.groupIdHex || "?"} / ${row.semanticLabel || humanize(row.semanticRole || "unknown")} / ${humanize(row.groupType || "unknown")} / ${humanize(row.runtimeObservationStatus || "")}`],
     ];
     for (const [labelKey, rows, formatRow] of groups) {
@@ -2311,6 +2323,16 @@
       }
       details.append(summary, values);
       section.appendChild(details);
+    }
+    const staticRtpcAlignment = catalog.staticRtpcAlignment;
+    if (staticRtpcAlignment && typeof staticRtpcAlignment === "object") {
+      const boundary = staticRtpcAlignment.evidenceBoundary || "";
+      const gate = staticRtpcAlignment.nativeGate || {};
+      const gateStatus = staticRtpcAlignment.status || gate.status || "unavailable";
+      if (boundary) section.appendChild(noteSection(
+        "Static RTPC evidence boundary",
+        `${humanize(gateStatus)}: ${boundary}`,
+      ));
     }
     const literalCount = Number(counts.audioCueExpressionStringLiterals || 0);
     const variableCount = Number(counts.audioCueVariableNameCandidates || 0);

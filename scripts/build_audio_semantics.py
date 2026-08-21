@@ -12,6 +12,7 @@ the current binary metadata instead of being asserted from a stale snapshot.
 from __future__ import annotations
 
 import argparse
+import copy
 import hashlib
 import importlib.util
 import json
@@ -42,6 +43,7 @@ if __package__ == "scripts":
         native_evidence,
         purpose,
         responsive_voice,
+        rtpc_alignment,
         table_contexts,
         voice_requests,
     )
@@ -60,6 +62,7 @@ elif not __package__:
         native_evidence,
         purpose,
         responsive_voice,
+        rtpc_alignment,
         table_contexts,
         voice_requests,
     )
@@ -100,7 +103,7 @@ PROJECTILE_SOUND_PHASES = {
 # authoritative value; these names are presentation labels, not a claim that
 # selection behavior was evaluated offline.
 SELECTION_HIRC_TYPES = frozenset({5, 6, 12, 13})
-AUDIO_SEMANTIC_SCHEMA_VERSION = 116
+AUDIO_SEMANTIC_SCHEMA_VERSION = 117
 TRIGGER_CONTEXT_SCHEMA_VERSION = 38
 
 MONO_BEHAVIOUR_AUDIO_EVENT_FIELD_NAMES = frozenset({
@@ -12779,6 +12782,23 @@ def build_audio_semantic_data(
         metadata_path,
         gameassembly_path,
     )
+    # Several legacy projections read the broad HIRC summary with ``.get``.
+    # Keep their working view bounded when an older/corrupt index has a
+    # malformed summary, while retaining the original for the strict RTPC
+    # validator and fail-closed publication below.
+    alignment_audio_index = audio_index
+    if not isinstance(audio_index, dict):
+        audio_index = {}
+    else:
+        raw_hirc_summary = audio_index.get("hircSummary")
+        if not isinstance(raw_hirc_summary, dict):
+            audio_index = dict(audio_index)
+            audio_index["hircSummary"] = {}
+        elif not isinstance(raw_hirc_summary.get("postProcessSummary"), dict):
+            audio_index = dict(audio_index)
+            safe_hirc_summary = dict(raw_hirc_summary)
+            safe_hirc_summary["postProcessSummary"] = {}
+            audio_index["hircSummary"] = safe_hirc_summary
     if cutscene_events is None:
         cached_cutscene_events = audio_index.get("cutsceneAudioEvents")
         # The persisted map is the exact binary placement evidence. Published
@@ -12830,13 +12850,22 @@ def build_audio_semantic_data(
     model_view_semantics = authored_components.collect_model_view_state_audio_semantics(
         export_root
     )
+    # Metadata-derived RTPC names are native/static facts.  Keep them behind
+    # the same explicit selected metadata + GameAssembly gate as the static
+    # six-field alignment; serialized table controls remain available when the
+    # gate is unavailable.
     managed_rtpc_parameters = [{
         "kind": "rtpcParameter",
         "parameterName": name,
         "source": "Endfield_Data/il2cpp_data/Metadata/global-metadata.dat:stringLiteral",
         "evidence": "exactManagedStringLiteral",
+        "evidenceClass": "authoredStatic",
         "wwiseEventStatus": "notApplicable",
-    } for name in identifiers.collect_metadata_audio_literals(metadata_path) if identifiers.is_rtpc_parameter_name(name)]
+    } for name in (
+        identifiers.collect_metadata_audio_literals(metadata_path)
+        if native_context.validated and native_context.gate_verified
+        else []
+    ) if identifiers.is_rtpc_parameter_name(name)]
     rtpc_names_by_hex: dict[str, str] = {}
     rtpc_name_collisions: set[str] = set()
     for row in managed_rtpc_parameters:
@@ -13061,6 +13090,12 @@ def build_audio_semantic_data(
             if event.get("id")
         },
         event_rows=events,
+    )
+    static_rtpc_alignment = rtpc_alignment.build_static_rtpc_alignment(
+        alignment_audio_index,
+        events,
+        media,
+        native_context=native_context,
     )
     radio_catalog = attach_levelscript_radio_contexts(
         media,
@@ -13378,6 +13413,39 @@ def build_audio_semantic_data(
     })
     trigger_context_name = "trigger_contexts.json"
     json_dump(out_root / trigger_context_name, trigger_context_catalog)
+
+    # The raw audio index can be reused from an older build and may contain
+    # native/static GameParameter names that were produced without this
+    # semantic run's explicit native gate.  Keep numeric HIRC evidence, but
+    # withhold those names from the published semantic HIRC summary unless the
+    # complete static six-name contract was validated.  This is keyed to the
+    # domain result rather than just the native context: a validated binary
+    # paired with stale/malformed serialized metadata must not leak old names.
+    raw_hirc_summary = (
+        alignment_audio_index.get("hircSummary")
+        if isinstance(alignment_audio_index, dict)
+        else None
+    )
+    published_hirc_summary = copy.deepcopy(raw_hirc_summary)
+    alignment_status = str(static_rtpc_alignment.get("status") or "malformed")
+    if alignment_status != "validated":
+        if not isinstance(published_hirc_summary, dict):
+            published_hirc_summary = {
+                "status": "malformed",
+                "postProcessSummary": {},
+            }
+        published_processing = published_hirc_summary.get("postProcessSummary")
+        if not isinstance(published_processing, dict):
+            published_processing = {}
+            published_hirc_summary["postProcessSummary"] = published_processing
+        published_processing["gameParameterNameEvidence"] = {
+            "status": alignment_status,
+            "entries": [],
+            "evidenceBoundary": static_rtpc_alignment.get("evidenceBoundary") or "",
+            "nativeGate": copy.deepcopy(
+                static_rtpc_alignment.get("nativeGate") or {}
+            ),
+        }
 
     payload = {
         "schemaVersion": AUDIO_SEMANTIC_SCHEMA_VERSION,
@@ -13880,7 +13948,7 @@ def build_audio_semantic_data(
             for key, label in CATEGORY_LABELS.items()
         ],
         "banks": banks,
-        "hircSummary": audio_index.get("hircSummary") or {},
+        "hircSummary": published_hirc_summary,
         "customFootstepModel": custom_footstep_model,
         "triggerCatalog": {
             "aiBark": ai_bark_catalog,
@@ -14012,6 +14080,26 @@ def build_audio_semantic_data(
                     int(row.get("curveCount") or 0)
                     for row in wwise_initial_rtpc_catalog
                 ),
+                "staticRtpcAlignmentParameterCount": int(
+                    (static_rtpc_alignment.get("counts") or {}).get(
+                        "staticParameterCount", 0
+                    )
+                ),
+                "staticRtpcAlignmentMatchedParameterCount": int(
+                    (static_rtpc_alignment.get("counts") or {}).get(
+                        "serializedHircMatchedParameterCount", 0
+                    )
+                ),
+                "staticRtpcAlignmentSetControlCount": int(
+                    (static_rtpc_alignment.get("counts") or {}).get(
+                        "setGameParameterControlCount", 0
+                    )
+                ),
+                "staticRtpcAlignmentResetControlCount": int(
+                    (static_rtpc_alignment.get("counts") or {}).get(
+                        "resetGameParameterControlCount", 0
+                    )
+                ),
             },
             "audioGlobalMusicCueRefs": global_controls.get("audioGlobalMusicCueRefs") or [],
             "rtpcParameters": (global_controls.get("rtpcParameters") or []) + managed_rtpc_parameters,
@@ -14046,6 +14134,7 @@ def build_audio_semantic_data(
             ],
             "wwiseActionControls": wwise_action_control_catalog,
             "wwiseInitialRtpcParameters": wwise_initial_rtpc_catalog,
+            "staticRtpcAlignment": static_rtpc_alignment,
             "evidenceBoundary": "Cue behavior exprType=3 values, constant LevelScript Event parameters, LevelScript cue names joined by the native AudioHashGenerator to exact cue behavior expressions, non-empty PhysicsAudio Event properties, and normal ModelView Event plus positioned direct-position hashes are authored requests. Positioned custom/entity state rows are typed controls only and never Event ownership. Metadata-named InitialRTPC rows are exact ID/hash joins that preserve authored curve targets and controlled properties; they do not observe live RTPC updates or audibility. PhysicsAudio/ModelView RTPC names, ModelView spatial/custom-audio rows, cue/action execution, handler conditions, exprType=8 strings, dynamic Params, state/variable writes, playback handles, placeholder-music ids, unresolved cue hashes, and musicCue* values remain typed controls or unresolved runtime state. LevelEvent OnAudioStateChanged and OnMusicBeatEvent are current-build trigger-input definitions, not playback requests; exhaustive active-overlay scanning found zero authored occurrences. Two non-music Wwise selector groups have exact native setter callsites; three more have high-confidence semantic correlation only, and ten music State groups have exact current-metadata/native-setter joins. None reveal a live value, selected branch, or authored group name.",
         },
         "runtimeModel": runtime_model,

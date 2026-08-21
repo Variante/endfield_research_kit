@@ -29,6 +29,7 @@ if __package__:
     )
     from .audio_semantics.table_contexts import collect_table_audio_events
     from .audio_semantics.event_projection import HIRC_OBJECT_TYPE_LABELS
+    from .audio_semantics.rtpc_contract import CANONICAL_RTPC_ENTRIES
     from .build_audio_semantics import (
         SELECTION_HIRC_TYPES,
         build_audio_semantic_data,
@@ -43,6 +44,7 @@ else:
     )
     from audio_semantics.table_contexts import collect_table_audio_events
     from audio_semantics.event_projection import HIRC_OBJECT_TYPE_LABELS
+    from audio_semantics.rtpc_contract import CANONICAL_RTPC_ENTRIES
     from build_audio_semantics import (
         SELECTION_HIRC_TYPES,
         build_audio_semantic_data,
@@ -387,56 +389,7 @@ HIRC_GAME_PARAMETER_NAME_EVIDENCE = {
         "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
     ),
     "evidence": "exactStaticFieldValueCrossMatchedToSerializedHircRtpcId",
-    "entries": (
-        {
-            "parameterId": 0x6B7DC358,
-            "parameterIdHex": "0x6b7dc358",
-            "metadataField": (
-                "Beyond.Gameplay.Audio.AudioGameplayConstants+GameParameters."
-                "AU_RTPC_CINE_CTRL_VOL_AMB"
-            ),
-        },
-        {
-            "parameterId": 0x590F4CD1,
-            "parameterIdHex": "0x590f4cd1",
-            "metadataField": (
-                "Beyond.Gameplay.Audio.AudioGameplayConstants+GameParameters."
-                "AU_RTPC_CINE_CTRL_VOL_MU"
-            ),
-        },
-        {
-            "parameterId": 0x52AABB05,
-            "parameterIdHex": "0x52aabb05",
-            "metadataField": (
-                "Beyond.Gameplay.Audio.AudioGameplayConstants+GameParameters."
-                "AU_RTPC_CINE_CTRL_VOL_SFX"
-            ),
-        },
-        {
-            "parameterId": 0xBA4A40B7,
-            "parameterIdHex": "0xba4a40b7",
-            "metadataField": (
-                "Beyond.Gameplay.Audio.AudioGameplayConstants+GameParameters."
-                "AU_RTPC_IS_MUTE_BY_SDK_WEBVIEW"
-            ),
-        },
-        {
-            "parameterId": 0x7EC2F9AA,
-            "parameterIdHex": "0x7ec2f9aa",
-            "metadataField": (
-                "Beyond.Gameplay.Audio.AudioGameplayConstants+GameParameters."
-                "AU_RTPC_IS_SURROUND_CHANNELS"
-            ),
-        },
-        {
-            "parameterId": 0x3794392F,
-            "parameterIdHex": "0x3794392f",
-            "metadataField": (
-                "Beyond.Gameplay.Audio.AudioGameplayConstants+GameParameters."
-                "AU_RTPC_GLOBAL_VOL_MASTER_IOS_WORKAROUND"
-            ),
-        },
-    ),
+    "entries": CANONICAL_RTPC_ENTRIES,
     "evidenceBoundary": (
         "The six field names and 32-bit values are exact for the pinned metadata "
         "file and each value is present in the exported HIRC RTPC inventory. "

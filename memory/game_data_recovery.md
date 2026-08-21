@@ -575,6 +575,17 @@ literals, covering 14 serialized curve occurrences across six Event
 occurrences. Their catalog rows retain authored Event/context ownership,
 controlled properties, response-point counts, and interpolation labels; they
 are not live RTPC traces or audible-result proof.
+The schema-117 semantic `controlCatalog.staticRtpcAlignment` is the stricter
+six-name canonical `AU_RTPC_*` contract. It statically aligns those names and
+numeric HIRC IDs with serialized InitialRTPC curve/property evidence and
+same-event Set/ResetGameParameter controls; the complete mapping remains in
+`scripts/audio_semantics/rtpc_contract.py` and generated reports. The rows are
+`authoredStatic` evidence only. Publication requires the explicitly selected
+`global-metadata.dat` + `GameAssembly.dll` hash gate, and fails closed on a
+missing/mismatched selected or source hash, malformed/incomplete rows, or stale
+serialized evidence. Runtime parameter values, setter execution, target
+objects, selected branches, DSP state, and audibility remain runtime-only.
+The page projection is refreshed only by a formal semantic rebuild.
 
 Native Audio evidence is evaluated against the explicitly selected client:
 `global-metadata.dat` and its sibling `GameAssembly.dll` must both match the
