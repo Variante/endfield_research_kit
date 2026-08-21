@@ -1415,6 +1415,26 @@ fragment snippets with the enclosing program stage. Treat SPIR-V execution
 model/reflection as authoritative for the individual snippet; use
 `SourcePassName` for the containing render pass.
 
+The exact Endminf `HGRP/LitEffect` export has a narrow fail-closed verifier. It
+requires the pinned AnimeStudio submodule and CLI build, the installed source
+CAB hash, the serialized Shader CAB/PathID/name record, the sidecar manifest,
+all 2,240 sidecar hashes/lengths/source offsets, and the two targeted
+`_PARALLAX_MAP` `HGBuffer` D3D11 representatives plus their Ruri HLSL hashes.
+Run it only after the targeted sidecars and Ruri outputs exist; it does not
+re-export assets or embed raw shader bytes:
+
+```powershell
+python -B .\unity_endfield_graph_shader_lab\tools\verify_endminf_liteffect_subprograms.py --write-evidence
+python -m unittest unity_endfield_graph_shader_lab.tools.test_verify_endminf_liteffect_subprograms
+```
+
+The durable summary is
+`Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/ExternalUiEffects/endminf_liteffect_subprogram_evidence.json`.
+Raw sidecars and Ruri HLSL remain disposable under `Temp/Codex`; the summary
+stores only provenance, metadata, counts, sizes, and SHA-256 values. A passing
+audit proves binary identity and decompiler output identity, not visual
+equivalence or a recovered executable render pipeline.
+
 The same payload now carries `CharInfo_Env.directIntensity=8.631674` and
 `directIntensityDividePi=2.7475471`. The runtime reproduces the active native
 `LightExtensions` scalar from `directIntensityDividePi * exposure`, clamps its
