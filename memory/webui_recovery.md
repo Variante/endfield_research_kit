@@ -401,6 +401,11 @@ selector roles plus the ten current-metadata music State groups; the same
 15-row catalog labels typed type-6 package branches (including XInput/ScePad
 and music enum members) when an exact value is available. Unmatched IDs remain
 visibly numeric.
+Ordinary Audio Event details show authored Type-6 candidates in a collapsed
+`Possible State/Switch branches` section. Raw object/group/value IDs and
+ownership/parser evidence stay debug-only; inferred catalog labels remain
+possible rather than exact. The selected runtime branch and audibility are
+runtime-blocked and are not presented as observed facts.
 The current CN projection also marks 12 same-event Set/ResetGameParameter →
 InitialRTPC exact-ID joins (2 unique IDs) as authored curve targets. It does
 not invent a parameter name or claim a live value/effective DSP response.
