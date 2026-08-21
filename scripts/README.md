@@ -451,6 +451,18 @@ Package child IDs join decoded media only through exact same-bank
 `soundObjectIds` evidence. Malformed or cross-bank structures stay unresolved
 and fail closed, while runtime selector choice and audibility remain unresolved.
 
+The same semantic build publishes LevelScript audio lifecycle evidence with the
+serialized action ordinal and validated static topology. Producer/consumer
+links are admitted only for an exact same-LevelScript source-root and source-
+path identity, with one active final serialized slot and one unique output
+path. `story_builder.level_bindings` resolves `ParamSource=200` dynamic string
+properties only through the strict `LevelScriptBriefData` property formatter;
+`ParamSource=100` and unknown/runtime sources remain runtime-unresolved and
+cannot become handles. Full lifecycle identities and raw paths are lazy
+Event-detail data under `levelScriptAudioLifecycle` schema version 1; compact
+rows retain only bounded summaries. This is authored serialized topology, not
+runtime handle state, action execution, branch selection, or audibility.
+
 `build_audio_semantics.py` is the thin orchestration/publishing surface for
 the Audio evidence page. Maintained domain code lives under
 `audio_semantics/`: `native_evidence.py` owns the installed-build gate,

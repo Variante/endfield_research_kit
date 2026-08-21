@@ -57,6 +57,40 @@ class EndminfActorAnimationClipExtractionTests(unittest.TestCase):
         with self.assertRaisesRegex(extraction.ExtractionError, "positive finite"):
             extraction._clip_metrics(value)
 
+    def test_converted_clip_metrics_matches_serialized_contract(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "clip.anim"
+            path.write_text(
+                "%YAML 1.1\n"
+                "AnimationClip:\n"
+                "  m_Name: A_actor_endminf_ui_overview_02\n"
+                "  m_SampleRate: 60\n"
+                "  m_ClipBindingConstant:\n"
+                "    genericBindings:\n"
+                "    - path: 1\n"
+                "      attribute: 1\n"
+                "    - path: 2\n"
+                "      attribute: 2\n"
+                "    pptrCurveMapping: []\n"
+                "  m_AnimationClipSettings:\n"
+                "    m_StopTime: 5.8833337\n"
+                "    m_LoopTime: 0\n",
+                encoding="utf-8",
+            )
+            converted = extraction._converted_clip_metrics(path)
+            serialized = {
+                "name": extraction.TARGET_NAME,
+                "sampleRate": 60.0,
+                "lengthSeconds": 5.8833337,
+                "loopTime": False,
+                "bindingCounts": {
+                    "genericBindings": 2,
+                    "pptrCurveMapping": 0,
+                    "totalBindingEntries": 2,
+                },
+            }
+            extraction._assert_converted_matches_json(converted, serialized)
+
     def test_closure_selection_rejects_conflicting_exact_identity(self):
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / "closure.json"

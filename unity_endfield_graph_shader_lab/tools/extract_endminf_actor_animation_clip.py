@@ -355,6 +355,63 @@ def _clip_metrics(value: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _converted_clip_metrics(path: Path) -> dict[str, Any]:
+    try:
+        text = path.read_text(encoding="utf-8", errors="replace")
+    except OSError as exc:
+        raise ExtractionError(f"converted AnimationClip is unreadable: {path}: {exc}") from exc
+    if not text.startswith("%YAML 1.1") or "AnimationClip:" not in text:
+        raise ExtractionError("converted AnimationClip is not Unity YAML")
+
+    def scalar(pattern: str, label: str) -> str:
+        matches = re.findall(pattern, text, flags=re.MULTILINE)
+        if not matches:
+            raise ExtractionError(f"converted AnimationClip lacks {label}")
+        return matches[-1]
+
+    name = scalar(r"^\s+m_Name:\s*(\S+)\s*$", "m_Name")
+    sample_rate = _finite_number(scalar(r"^\s+m_SampleRate:\s*([^\s]+)\s*$", "m_SampleRate"))
+    stop_time = _finite_number(scalar(r"^\s+m_StopTime:\s*([^\s]+)\s*$", "m_StopTime"))
+    if name != TARGET_NAME or sample_rate is None or sample_rate <= 0 or stop_time is None or stop_time <= 0:
+        raise ExtractionError("converted AnimationClip identity or timing is invalid")
+    start = text.find("  m_ClipBindingConstant:\n")
+    end = text.find("  m_AnimationClipSettings:\n", start + 1)
+    if start < 0 or end < 0:
+        raise ExtractionError("converted AnimationClip lacks binding/settings sections")
+    binding_section = text[start:end]
+    generic_count = len(re.findall(r"^    - path:", binding_section, flags=re.MULTILINE))
+    pptr_match = re.search(r"^    pptrCurveMapping:\s*(\[\])?\s*$", binding_section, flags=re.MULTILINE)
+    if not pptr_match:
+        raise ExtractionError("converted AnimationClip lacks pptrCurveMapping")
+    return {
+        "name": name,
+        "sampleRate": sample_rate,
+        "lengthSeconds": stop_time,
+        "loopTime": scalar(r"^\s+m_LoopTime:\s*([^\s]+)\s*$", "m_LoopTime") in {"1", "true", "True"},
+        "bindingCounts": {
+            "genericBindings": generic_count,
+            "pptrCurveMapping": 0 if pptr_match.group(1) == "[]" else None,
+            "totalBindingEntries": generic_count,
+        },
+    }
+
+
+def _assert_converted_matches_json(converted: dict[str, Any], serialized: dict[str, Any]) -> None:
+    if converted["name"] != serialized["name"]:
+        raise ExtractionError("JSON/Convert AnimationClip names differ")
+    if abs(converted["sampleRate"] - serialized["sampleRate"]) > 1e-6:
+        raise ExtractionError("JSON/Convert AnimationClip sample rates differ")
+    if abs(converted["lengthSeconds"] - serialized["lengthSeconds"]) > 1e-5:
+        raise ExtractionError("JSON/Convert AnimationClip lengths differ")
+    if converted["loopTime"] != serialized["loopTime"]:
+        raise ExtractionError("JSON/Convert AnimationClip loop flags differ")
+    if converted["bindingCounts"] != {
+        key: serialized["bindingCounts"][key]
+        for key in ("genericBindings", "pptrCurveMapping", "totalBindingEntries")
+    }:
+        raise ExtractionError("JSON/Convert AnimationClip binding counts differ")
+
+
 def _safe_reset(output: Path, *, force: bool) -> None:
     allowed = (PROJECT_ROOT / "Temp" / "Codex").resolve()
     resolved = output.resolve()
@@ -443,15 +500,23 @@ def _validate_existing_stage(
     filter_path = Path(filter_record.get("path") or "")
     _validate_file_snapshot(filter_path, filter_record)
     _validate_filter_file(filter_path, target, row)
-    artifact_record = (stamp.get("artifact") or {}).get("path") or {}
-    artifact_path = Path(artifact_record.get("path") or "")
-    _validate_file_snapshot(artifact_path, artifact_record)
+    artifact_group = stamp.get("artifact") or {}
+    json_artifact = (artifact_group.get("json") or {}).get("path") or {}
+    convert_artifact = (artifact_group.get("convert") or {}).get("path") or {}
+    artifact_path = Path(json_artifact.get("path") or "")
+    converted_path = Path(convert_artifact.get("path") or "")
+    _validate_file_snapshot(artifact_path, json_artifact)
+    _validate_file_snapshot(converted_path, convert_artifact)
     clip_value = _json(artifact_path)
     if not isinstance(clip_value, dict):
         raise ExtractionError("stage AnimationClip artifact is not an object")
     metrics = _clip_metrics(clip_value)
-    if metrics != (stamp.get("artifact") or {}).get("metrics"):
-        raise ExtractionError("stage AnimationClip metrics drifted")
+    converted_metrics = _converted_clip_metrics(converted_path)
+    _assert_converted_matches_json(converted_metrics, metrics)
+    if metrics != (artifact_group.get("json") or {}).get("metrics"):
+        raise ExtractionError("stage JSON AnimationClip metrics drifted")
+    if converted_metrics != (artifact_group.get("convert") or {}).get("metrics"):
+        raise ExtractionError("stage converted AnimationClip metrics drifted")
     provenance_record = (stamp.get("objectProvenance") or {}).get("path") or {}
     provenance_path = Path(provenance_record.get("path") or "")
     _validate_file_snapshot(provenance_path, provenance_record)
@@ -485,6 +550,7 @@ def _run_cli(
     output: Path,
     filter_path: Path,
     cli_log: Path,
+    export_type: str,
 ) -> None:
     command = [
         str(ANIMESTUDIO_CLI),
@@ -495,7 +561,7 @@ def _run_cli(
         "--types",
         "AnimationClip:Both",
         "--export_type",
-        "JSON",
+        export_type,
         "--group_assets",
         "ByType",
         "--logger_flags",
@@ -513,12 +579,12 @@ def _run_cli(
         errors="replace",
         check=False,
     )
-    cli_log.write_text(
-        "COMMAND: " + subprocess.list2cmdline(command) + "\n\n"
-        + "STDOUT:\n" + completed.stdout
-        + "\nSTDERR:\n" + completed.stderr,
-        encoding="utf-8",
-    )
+    with cli_log.open("a", encoding="utf-8") as handle:
+        handle.write(
+            "COMMAND: " + subprocess.list2cmdline(command) + "\n\n"
+            + "STDOUT:\n" + completed.stdout
+            + "\nSTDERR:\n" + completed.stderr + "\n"
+        )
     if completed.returncode != 0:
         raise ExtractionError(f"AnimeStudio targeted extraction failed with exit code {completed.returncode}")
     log_text = completed.stdout + "\n" + completed.stderr
@@ -597,8 +663,17 @@ def extract(
             output=output,
             filter_path=filter_path,
             cli_log=cli_log,
+            export_type="JSON",
+        )
+        _run_cli(
+            source=current_source,
+            output=output,
+            filter_path=filter_path,
+            cli_log=cli_log,
+            export_type="Convert",
         )
     expected_file = output / "AnimationClip" / f"{TARGET_NAME}_p{_unsigned_hex(target['pathId'])}.json"
+    expected_converted_file = output / "AnimationClip" / f"{TARGET_NAME}_p{_unsigned_hex(target['pathId'])}.anim"
     if dry_run:
         report = {
             "schema": STAGE_SCHEMA,
@@ -615,11 +690,16 @@ def extract(
 
     if not expected_file.is_file():
         raise ExtractionError(f"targeted extraction did not produce exact AnimationClip JSON: {expected_file}")
+    if not expected_converted_file.is_file():
+        raise ExtractionError(f"targeted conversion did not produce exact AnimationClip YAML: {expected_converted_file}")
     clip_value = _json(expected_file)
     if not isinstance(clip_value, dict):
         raise ExtractionError("AnimationClip JSON is not an object")
     metrics = _clip_metrics(clip_value)
+    converted_metrics = _converted_clip_metrics(expected_converted_file)
+    _assert_converted_matches_json(converted_metrics, metrics)
     artifact_snapshot = _snapshot(expected_file, with_hash=True)
+    converted_snapshot = _snapshot(expected_converted_file, with_hash=True)
     filter_snapshot = _snapshot(filter_path, with_hash=True)
     object_provenance = {
         "schema": "endfield.exact-object-provenance.v1",
@@ -629,7 +709,8 @@ def extract(
         "cabMap": {"path": _relative(cab_map_path), "row": cab},
         "sourceSnapshot": source_snapshot,
         "filterData": filter_snapshot,
-        "artifact": artifact_snapshot,
+        "artifacts": {"json": artifact_snapshot, "convert": converted_snapshot},
+        "metrics": {"json": metrics, "convert": converted_metrics},
         "selection": "source+offset+signed PathID+type+name exact join; no name-only fallback",
     }
     object_provenance_path = output / "object_provenance.json"
@@ -653,7 +734,10 @@ def extract(
             "path": _snapshot(object_provenance_path, with_hash=True),
             "value": object_provenance,
         },
-        "artifact": {"path": artifact_snapshot, "metrics": metrics},
+        "artifact": {
+            "json": {"path": artifact_snapshot, "metrics": metrics},
+            "convert": {"path": converted_snapshot, "metrics": converted_metrics},
+        },
         "log": _snapshot(cli_log, with_hash=True),
         "evidenceBoundary": (
             "one exact AnimationClip selected by closure AssetMap identity and CABMap source/offset; "
