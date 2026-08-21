@@ -4,8 +4,8 @@
   "pathBase": "repo_root",
   "generatedBy": "unity_endfield_graph_shader_lab/tools/build_priority_actor_mattes.py",
   "manifest": "unity_endfield_graph_shader_lab/scratch/character_recovery/actor_clips/actor_matte_manifest.json",
-  "manifestBytes": 925904,
-  "manifestSha256": "A522867DB4CE7EF0F105525BB7029E5B97449062EFCBA1F945CFBF7A4A3488AB",
+  "manifestBytes": 1470786,
+  "manifestSha256": "AA3DB0A6B0BD7D8C22E5830553FE501C358E1C9293D1C045BC4115450E229916",
   "source": {
     "path": "videos/2026-08-15_10-32-32.mkv",
     "bytes": 1678613397,
@@ -16,6 +16,16 @@
     "frameCount": 22702
   },
   "requestedWindows": {
+    "endminf": {
+      "seconds": [
+        162.78333333333333,
+        175.0
+      ],
+      "framesExclusive": [
+        9767,
+        10500
+      ]
+    },
     "chen": {
       "seconds": [
         199.3,
@@ -106,13 +116,39 @@
     "outputCodec": "ffv1",
     "outputPixFmt": "bgr0",
     "uiOverlapPolicy": "hard_zero_and_measured_zero",
+    "endminfIdentityEvidence": {
+      "path": "unity_endfield_graph_shader_lab/tools/endminf_video_identity_evidence.json",
+      "bytes": 12122,
+      "sha256": "0C4C80689D164564E827EDAC6ED1133CF0F823F14297B050033E0C2006378A1B"
+    },
     "temporalPolicy": {
       "minRawIoU": 0.08,
       "minDilatedSupport": 0.3,
       "dilationKernel": 9,
+      "futureLookaheadFrames": {
+        "endminf": 3,
+        "chen": 1,
+        "pelica": 1
+      },
       "detachedComponents": "reject_substantial_component_without_current_previous_or_next_actor_envelope_overlap"
     },
     "transitionPolicy": {
+      "endminfRangeInclusive": [
+        9767,
+        9782
+      ],
+      "endminfRangesInclusive": [
+        [
+          9767,
+          9782
+        ],
+        [
+          10410,
+          10499
+        ]
+      ],
+      "endminfStableStartFrame": 9783,
+      "endminfReason": "pinned-source Endminf model-swap fade has no person-class component through frame 9782; first stable chr_0003_endminf component is frame 9783; actor exit/next-actor transition is blacked from frame 10410 through 10499",
       "pelicaRangeInclusive": [
         12560,
         12601
@@ -130,6 +166,7 @@
   },
   "actorSet": [
     "chen",
+    "endminf",
     "pelica"
   ],
   "artifacts": [
@@ -150,6 +187,15 @@
       "codec": "ffv1",
       "pix_fmt": "bgr0",
       "frames": 602
+    },
+    {
+      "actor": "endminf",
+      "path": "unity_endfield_graph_shader_lab/scratch/character_recovery/actor_clips/endminf_actor_only.mkv",
+      "bytes": 563065192,
+      "sha256": "4297D598CD2AED2BC5A9144F3F0BCB75EBA8A5BC34B1A14F5B06CE2EA88D645C",
+      "codec": "ffv1",
+      "pix_fmt": "bgr0",
+      "frames": 733
     }
   ],
   "excludedActors": [],
@@ -170,9 +216,10 @@
   "validation": {
     "rows": {
       "pelica": 677,
-      "chen": 602
+      "chen": 602,
+      "endminf": 733
     },
-    "publishedClips": 2,
+    "publishedClips": 3,
     "largeVideoFilesCommitted": false
   }
 }

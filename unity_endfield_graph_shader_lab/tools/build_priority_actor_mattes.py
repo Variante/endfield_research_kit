@@ -2,7 +2,7 @@
 
 This is deliberately independent from ``build_gameplay_video_reference_set.py``.
 The latter owns roster stills and is often being edited during recovery work;
-this tool owns only the two priority actor windows used by the character lab.
+this tool owns only the three priority actor windows used by the character lab.
 
 The input is a source-pinned 3840x2160/60fps recording.  A pinned
 DeepLabV3-ResNet50 person-class model runs at small resolution and is bounded
@@ -62,6 +62,10 @@ EXPECTED_SOURCE_FRAME_COUNT = 22702
 # These are exact source-window boundaries in seconds from the phase contract.
 # End is exclusive at the 60-Hz frame boundary.
 ACTOR_WINDOWS = {
+    # Exact Endminf identity is admitted by the companion evidence contract in
+    # tools/endminf_video_identity_evidence.json.  The video row itself is
+    # intentionally only the generic endmin/chr_9000_endmin alias.
+    "endminf": (9767 / EXPECTED_FPS, 10500 / EXPECTED_FPS),
     "chen": (199.3000, 209.3333),
     "pelica": (209.3333, 220.6167),
 }
@@ -111,12 +115,29 @@ CHEN_TRANSITION_REASON = (
     "pinned-source horizontal decode-corruption interval measured frame-by-frame "
     "through frame 11969; first clean Chen source frame is 11970"
 )
+ENDMINF_IDENTITY_EVIDENCE_RELATIVE = Path(
+    "unity_endfield_graph_shader_lab/tools/endminf_video_identity_evidence.json"
+)
+ENDMINF_IDENTITY_EVIDENCE_SCHEMA = "endfield.character-recovery.endminf-video-identity.v1"
+ENDMINF_COMBINED_FRAME_RANGE = (9767, 10500)
+ENDMINF_SOURCE_TRANSITION_RANGE = (9767, 9782)
+ENDMINF_SOURCE_TRANSITION_RANGES = (
+    ENDMINF_SOURCE_TRANSITION_RANGE,
+    (10410, 10499),
+)
+ENDMINF_STABLE_START_FRAME = 9783
+ENDMINF_TRANSITION_REASON = (
+    "pinned-source Endminf model-swap fade has no person-class component through "
+    "frame 9782; first stable chr_0003_endminf component is frame 9783; "
+    "actor exit/next-actor transition is blacked from frame 10410 through 10499"
+)
 
 # Temporal/component purity is measured at work resolution.  A small dilation
 # permits ordinary sub-frame motion, while a disjoint component still fails.
 TEMPORAL_DILATION_KERNEL = 9
 MIN_TEMPORAL_IOU = 0.08
 MIN_TEMPORAL_DILATED_SUPPORT = 0.30
+ENDMINF_FUTURE_LOOKAHEAD_FRAMES = 3
 
 _DEEPLAB_CONTEXT: tuple[object, object, object, str] | None = None
 
@@ -161,6 +182,8 @@ def _actor_window(actor: str) -> ActorWindow:
 
 
 def _transition_contract(actor: str) -> tuple[tuple[int, int], int, str] | None:
+    if actor == "endminf":
+        return ENDMINF_SOURCE_TRANSITION_RANGE, ENDMINF_STABLE_START_FRAME, ENDMINF_TRANSITION_REASON
     if actor == "pelica":
         return PELICA_SOURCE_TRANSITION_RANGE, PELICA_STABLE_START_FRAME, PELICA_TRANSITION_REASON
     if actor == "chen":
@@ -168,24 +191,30 @@ def _transition_contract(actor: str) -> tuple[tuple[int, int], int, str] | None:
     return None
 
 
+def _transition_ranges_contract(actor: str) -> tuple[tuple[int, int], ...]:
+    if actor == "endminf":
+        return ENDMINF_SOURCE_TRANSITION_RANGES
+    contract = _transition_contract(actor)
+    return (contract[0],) if contract is not None else ()
+
+
+def _transition_range_for_frame(actor: str, frame_number: int) -> tuple[int, int] | None:
+    return next(
+        (item for item in _transition_ranges_contract(actor) if item[0] <= frame_number <= item[1]),
+        None,
+    )
+
+
 def _expected_transition_frame(actor: str, frame_number: int) -> bool:
     """Return whether a frame is covered by an evidence-backed gap rule."""
-    contract = _transition_contract(actor)
-    if contract is None:
-        return False
-    start, end = contract[0]
-    return start <= frame_number <= end
+    return _transition_range_for_frame(actor, frame_number) is not None
 
 
 def _expected_transition_frames(actor: str, window: ActorWindow) -> list[int]:
-    contract = _transition_contract(actor)
-    if contract is None:
-        return []
-    start, end = contract[0]
     return [
         frame
         for frame in range(window.start_frame, window.end_frame_exclusive)
-        if start <= frame <= end
+        if _expected_transition_frame(actor, frame)
     ]
 
 
@@ -214,6 +243,10 @@ def _excluded_actor_contract(actor_set: Iterable[str]) -> list[dict]:
 
 def _transition_policy_contract() -> dict:
     return {
+        "endminfRangeInclusive": list(ENDMINF_SOURCE_TRANSITION_RANGE),
+        "endminfRangesInclusive": [list(item) for item in ENDMINF_SOURCE_TRANSITION_RANGES],
+        "endminfStableStartFrame": ENDMINF_STABLE_START_FRAME,
+        "endminfReason": ENDMINF_TRANSITION_REASON,
         "pelicaRangeInclusive": list(PELICA_SOURCE_TRANSITION_RANGE),
         "pelicaStableStartFrame": PELICA_STABLE_START_FRAME,
         "pelicaReason": PELICA_TRANSITION_REASON,
@@ -228,7 +261,11 @@ def _transition_diagnostics(actor: str, frame_number: int) -> dict:
     contract = _transition_contract(actor)
     if contract is None:
         raise MatteError(f"no source-transition contract for actor {actor}")
+    interval = _transition_range_for_frame(actor, frame_number)
+    if interval is None:
+        raise MatteError(f"frame {frame_number} is not covered by the {actor} transition contract")
     (start, end), _stable_start, reason = contract
+    row_start, row_end = interval
     return {
         "frame": frame_number,
         "workSeedPixels": 0,
@@ -237,7 +274,7 @@ def _transition_diagnostics(actor: str, frame_number: int) -> dict:
         "workBbox": None,
         "sourceTransition": True,
         "transitionReason": reason,
-        "transitionRangeInclusive": [start, end],
+        "transitionRangeInclusive": [row_start, row_end],
         "componentCount": 0,
         "keptComponentCount": 0,
         "detachedComponentCount": 0,
@@ -256,6 +293,33 @@ def _sha256(path: Path) -> tuple[int, str]:
             total += len(chunk)
             digest.update(chunk)
     return total, digest.hexdigest().upper()
+
+
+def _endminf_identity_evidence() -> dict[str, str]:
+    """Require exact Endminf source/phase evidence before accepting its window."""
+    path = REPO_ROOT / ENDMINF_IDENTITY_EVIDENCE_RELATIVE
+    if not path.is_file():
+        raise MatteError(f"exact Endminf identity evidence is missing: {path}")
+    try:
+        evidence = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as error:
+        raise MatteError(f"exact Endminf identity evidence is malformed: {error}") from error
+    identity = evidence.get("identity") or {}
+    phase = evidence.get("phase") or {}
+    if (
+        evidence.get("schema") != ENDMINF_IDENTITY_EVIDENCE_SCHEMA
+        or evidence.get("status") != "ok"
+        or identity.get("status") != "proven"
+        or identity.get("characterId") != "chr_0003_endminf"
+        or identity.get("actorToken") != "endminf"
+        or (phase.get("combinedActorWindow") or {}).get("frameRangeExclusive") != list(ENDMINF_COMBINED_FRAME_RANGE)
+        or (phase.get("sourceTransition") or {}).get("frameRangesInclusive") != [list(item) for item in ENDMINF_SOURCE_TRANSITION_RANGES]
+        or (phase.get("sourceTransition") or {}).get("reason") != ENDMINF_TRANSITION_REASON
+        or (evidence.get("publication") or {}).get("matteCandidateAllowed") is not True
+    ):
+        raise MatteError("exact Endminf identity/phase evidence does not admit the pinned matte window")
+    size, digest = _sha256(path)
+    return {"path": _repo_relative_path(path, "Endminf identity evidence"), "bytes": size, "sha256": digest}
 
 
 @lru_cache(maxsize=1)
@@ -798,6 +862,23 @@ def _read_frame(capture: cv2.VideoCapture, expected_index: int) -> np.ndarray:
     return frame
 
 
+def _future_raw_mask(source_path: Path, first_frame: int, lookahead: int) -> np.ndarray:
+    """Union bounded future evidence without advancing the primary decoder."""
+    capture = cv2.VideoCapture(str(source_path))
+    try:
+        if not capture.isOpened():
+            raise MatteError(f"could not open source for future mask evidence: {source_path}")
+        combined = np.zeros((WORK_SIZE[1], WORK_SIZE[0]), np.uint8)
+        for frame_number in range(first_frame, first_frame + lookahead):
+            if not capture.set(cv2.CAP_PROP_POS_FRAMES, frame_number):
+                raise MatteError(f"could not seek future mask frame {frame_number}")
+            frame = _read_frame(capture, frame_number)
+            combined = cv2.bitwise_or(combined, _deeplab_raw_mask(frame))
+        return combined
+    finally:
+        capture.release()
+
+
 def _frame_report_row(frame_number: int, diagnostics: dict, full_mask: np.ndarray) -> dict:
     ys, xs = np.where(full_mask > 8)
     bbox = None
@@ -995,12 +1076,12 @@ def build_actor(
                         and raw_mask is not None
                         and frame_number + 1 < window.end_frame_exclusive
                     ):
-                        # A real garment/limb can first appear at an image
-                        # boundary with no preceding-pixel overlap.  Decode
-                        # and segment exactly one next source frame; only a
-                        # component with future temporal support is retained.
-                        pending_frame = _read_frame(capture, frame_number + 1)
-                        future_raw = _deeplab_raw_mask(pending_frame)
+                        # A real garment/limb can first appear during a fast
+                        # Endminf pose with no preceding-pixel overlap.  Keep
+                        # the primary decoder cadence intact and use only the
+                        # actor-specific bounded future evidence contract.
+                        lookahead = ENDMINF_FUTURE_LOOKAHEAD_FRAMES if window.actor == "endminf" else 1
+                        future_raw = _future_raw_mask(source_path, frame_number + 1, lookahead)
                         work_mask, diagnostics = _deeplab_from_raw_mask(
                             raw_mask,
                             frame_number,
@@ -1105,7 +1186,11 @@ def build_actor(
         "transitionFrameCount": len(transition_frames),
         "transitionFrameRanges": [list(item) for item in _contiguous_ranges(transition_frames)],
         "transitionReason": _transition_contract(window.actor)[2] if transition_frames else None,
-        "transitionRangeInclusive": list(_transition_contract(window.actor)[0]) if transition_frames else None,
+        "transitionRangeInclusive": (
+            [list(item) for item in _transition_ranges_contract(window.actor)]
+            if len(_transition_ranges_contract(window.actor)) > 1 and transition_frames
+            else (list(_transition_ranges_contract(window.actor)[0]) if transition_frames else None)
+        ),
         "componentLossFrameCount": len(component_loss_frames),
         "temporalContinuityFailureCount": len(temporal_failure_frames),
         "componentPurityFailureCount": len(purity_failure_frames),
@@ -1225,10 +1310,12 @@ def write_manifest(source: dict, actor_reports: list[dict], output_root: Path) -
             "outputCodec": "ffv1",
             "outputPixFmt": "bgr0",
             "uiOverlapPolicy": "hard_zero_and_measured_zero",
+            "endminfIdentityEvidence": _endminf_identity_evidence(),
             "temporalPolicy": {
                 "minRawIoU": MIN_TEMPORAL_IOU,
                 "minDilatedSupport": MIN_TEMPORAL_DILATED_SUPPORT,
                 "dilationKernel": TEMPORAL_DILATION_KERNEL,
+                "futureLookaheadFrames": {"endminf": ENDMINF_FUTURE_LOOKAHEAD_FRAMES, "chen": 1, "pelica": 1},
                 "detachedComponents": "reject_substantial_component_without_current_previous_or_next_actor_envelope_overlap",
             },
             "transitionPolicy": _transition_policy_contract(),
@@ -1315,6 +1402,8 @@ def _check_manifest_data(report: dict, manifest_path: Path) -> None:
     if str(algorithm.get("modelWeightsSha256", "")).upper() != DEEPLAB_WEIGHT_SHA256:
         raise MatteError("manifest DeepLab weight pin mismatch")
     _current_pinned_weight()
+    if algorithm.get("endminfIdentityEvidence") != _endminf_identity_evidence():
+        raise MatteError("manifest Endminf identity evidence is stale or not exact")
     if algorithm.get("transitionPolicy") != _transition_policy_contract():
         raise MatteError("manifest transition policy is stale or not actor-specific")
     source = report.get("source") or {}
@@ -1364,7 +1453,12 @@ def _check_manifest_data(report: dict, manifest_path: Path) -> None:
             raise MatteError(f"{name} transition ranges are not contiguous/exact")
         transition_contract = _transition_contract(name)
         expected_reason = transition_contract[2] if expected_transition else None
-        expected_range = list(transition_contract[0]) if expected_transition else None
+        transition_ranges_contract = _transition_ranges_contract(name)
+        expected_range = (
+            [list(item) for item in transition_ranges_contract]
+            if len(transition_ranges_contract) > 1 and expected_transition
+            else (list(transition_ranges_contract[0]) if expected_transition else None)
+        )
         if actor.get("transitionReason") != expected_reason:
             raise MatteError(f"{name} transition reason is not exact")
         if actor.get("transitionRangeInclusive") != expected_range:
@@ -1374,7 +1468,12 @@ def _check_manifest_data(report: dict, manifest_path: Path) -> None:
                 raise MatteError(f"{name} frame {row.get('frame')} has UI overlap")
             if row.get("sourceTransition"):
                 assert transition_contract is not None
-                if row.get("transitionReason") != transition_contract[2] or row.get("transitionRangeInclusive") != list(transition_contract[0]):
+                row_transition_range = _transition_range_for_frame(name, row["frame"])
+                if (
+                    row_transition_range is None
+                    or row.get("transitionReason") != transition_contract[2]
+                    or row.get("transitionRangeInclusive") != list(row_transition_range)
+                ):
                     raise MatteError(f"{name} transition row lacks exact reason/range")
                 if row.get("bbox") is not None or float(row.get("coverage", 0)) != 0.0:
                     raise MatteError(f"{name} transition row is not an intentional black gap")
@@ -1517,6 +1616,7 @@ def _refresh_existing_report(manifest_path: Path, report_path: Path) -> Path:
     if not isinstance(algorithm, dict):
         raise MatteError("existing actor matte manifest has no algorithm object")
     algorithm["modelWeightsFile"] = DEEPLAB_WEIGHT_FILENAME
+    algorithm["endminfIdentityEvidence"] = _endminf_identity_evidence()
     algorithm["transitionPolicy"] = _transition_policy_contract()
     actor_set = manifest.get("actorSet") or [item.get("actor") for item in manifest.get("actors") or []]
     manifest["actorSet"] = sorted(str(actor) for actor in actor_set)
@@ -1569,7 +1669,7 @@ def check_manifest(path: Path) -> None:
 
 def _parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--actor", choices=["chen", "pelica", "all"], default="all")
+    parser.add_argument("--actor", choices=["endminf", "chen", "pelica", "all"], default="all")
     parser.add_argument("--video", type=Path, default=REPO_ROOT / VIDEO_RELATIVE)
     parser.add_argument(
         "--output-root",
