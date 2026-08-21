@@ -218,7 +218,7 @@
     "originalViewport": {
       "path": "unity_endfield_graph_shader_lab/scratch/character_recovery/endminf_source_viewport/endminf_source_viewport_original_bgr0.mkv",
       "bytes": 804400854,
-      "sha256": "D0176DB319C8B402DFC9A0F5398037A677A7520DADE03C02A556013F34E162D0",
+      "sha256": "106CF18937404CCF53AA8D19F4942188F64A66FAE342BCD2C34A6C4CA8E2B347",
       "codec": "ffv1",
       "pixFmt": "bgr0",
       "width": 2200,
@@ -231,7 +231,7 @@
     "validityMask": {
       "path": "unity_endfield_graph_shader_lab/scratch/character_recovery/endminf_source_viewport/endminf_source_viewport_validity_mask_gray.mkv",
       "bytes": 27234108,
-      "sha256": "2C826B5A0EECF4227E2B1D5B27815BB302234DB0535729C662C9AD9E52D3B8C0",
+      "sha256": "BE4070D47B25648A6DDC2DA356DCDED75567330372E7E8E351366F093B01B588",
       "codec": "ffv1",
       "pixFmt": "gray",
       "width": 2200,
@@ -240,7 +240,27 @@
       "packets": 627,
       "fps": "60/1",
       "durationSeconds": 10.45
+    },
+    "noUiVisualization": {
+      "path": "unity_endfield_graph_shader_lab/scratch/character_recovery/endminf_source_viewport/endminf_source_viewport_no_ui_marked_bgr0.mkv",
+      "bytes": 804015842,
+      "sha256": "D7089CA79FF6A4FFC636086140816AE6A20662D4766873845E938FB77E0064EC",
+      "codec": "ffv1",
+      "pixFmt": "bgr0",
+      "width": 2200,
+      "height": 1932,
+      "frames": 627,
+      "packets": 627,
+      "fps": "60/1",
+      "durationSeconds": 10.45
     }
+  },
+  "noUiVisualization": {
+    "policy": "invalid_cursor_region_replaced_with_deterministic_magenta_black_checkerboard_only",
+    "path": "unity_endfield_graph_shader_lab/scratch/character_recovery/endminf_source_viewport/endminf_source_viewport_no_ui_marked_bgr0.mkv",
+    "invalidRegionOnly": true,
+    "validPixelsRemainSourceExact": true,
+    "notACompleteSilhouette": true
   },
   "visualSamples": [
     {
@@ -281,7 +301,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "ABDBF01D1267CEAEB7556DD445ACF7ABBBCED889829BAB51813666CA3DB618E5"
     },
     {
       "outputFrameIndex": 1,
@@ -295,7 +316,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "8687507E01C1E9B834E939C2EB5976BE3970470E76558E76967DA89B2CF0C2D5"
     },
     {
       "outputFrameIndex": 2,
@@ -309,7 +331,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "467796FDFECFE863F8CC402FF74920C8E8C7272CF64ECBE2FFE3CDF1E0A2AF27"
     },
     {
       "outputFrameIndex": 3,
@@ -323,7 +346,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "E4E7D7C5422DD442F08E9977F43F5A74729643D80EF0B13FF3805F95AD37C073"
     },
     {
       "outputFrameIndex": 4,
@@ -337,7 +361,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "651E29C7968F0D2317F02977B09290FFC3DBC587E14A700E2A34ECCEEE0F079D"
     },
     {
       "outputFrameIndex": 5,
@@ -351,7 +376,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "C529C2F30FB7D8120AA1D96E5719B387AAD718E71229F039719CFDFD30329A20"
     },
     {
       "outputFrameIndex": 6,
@@ -365,7 +391,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "2E8DAB0A4939A38478702F105FD156AC66564E2216F77540A3C12E47F0942379"
     },
     {
       "outputFrameIndex": 7,
@@ -379,7 +406,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "2EF31E8899386C08D6C5E726D7E5B866D466A23CCE11885B63A5E245D55529DB"
     },
     {
       "outputFrameIndex": 8,
@@ -393,7 +421,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "A5DA5FDDC43EEA3847D15803A74D17918E346D678FE89BB5847E0FB5E54E22E3"
     },
     {
       "outputFrameIndex": 9,
@@ -407,7 +436,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "1F525BAF71A54D121F6E19BBFFDFA1C9831C968776BE5AC60F73C13B16E85BB8"
     },
     {
       "outputFrameIndex": 10,
@@ -421,7 +451,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "5BCA677FE0D99BFA08472BA2943776F2F0821F2225CAD22716BB04155B632204"
     },
     {
       "outputFrameIndex": 11,
@@ -435,7 +466,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "C5E8E59F9D58B130E77EC1B17E22E3116F528F5021E3E4C8A04903173522EBD5"
     },
     {
       "outputFrameIndex": 12,
@@ -449,7 +481,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "F6A1B3C9616D6ED891B4B3ED4D8C12AD7700D1430CBAD51016D96BAA8D7C4B7D"
     },
     {
       "outputFrameIndex": 13,
@@ -463,7 +496,8 @@
         "grayAtLeast245": 224
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "531C7A98C923366DF9A5983538C5F6CAD6B7AC0D531E89EA0C5024F4AAB4FF37"
     },
     {
       "outputFrameIndex": 14,
@@ -477,7 +511,8 @@
         "grayAtLeast245": 224
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "926E87C11A0CE6550ED73A453BE90B23EF4575C96B29604A3DF149F17013B85B"
     },
     {
       "outputFrameIndex": 15,
@@ -491,7 +526,8 @@
         "grayAtLeast245": 224
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "7593E9D6700D81386BE84A8193114607A10EA712CB62E0939C1765C4BDC94F13"
     },
     {
       "outputFrameIndex": 16,
@@ -505,7 +541,8 @@
         "grayAtLeast245": 224
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "C62C66EE07E95E455BF049532FCCAB36838D43DBA76FB698782E45BB83F56D53"
     },
     {
       "outputFrameIndex": 17,
@@ -519,7 +556,8 @@
         "grayAtLeast245": 224
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "5262A71531B099E6DC6B65A389D8329F0C9F89A14F60F7C10FCE82DA42C82C36"
     },
     {
       "outputFrameIndex": 18,
@@ -533,7 +571,8 @@
         "grayAtLeast245": 224
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "DEC22C5D4DBC8B5632302B6080380ED640F76703559DC8986100FD7C2CA02CED"
     },
     {
       "outputFrameIndex": 19,
@@ -547,7 +586,8 @@
         "grayAtLeast245": 224
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "26495CFCE773E886BD3476FE6C7D191529F2D24DBE6308EB8232166DEBCE1060"
     },
     {
       "outputFrameIndex": 20,
@@ -561,7 +601,8 @@
         "grayAtLeast245": 224
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "197F7C3A6C7BC54F6E63F8DCE3D7D6E40AD2A762B2F6DDFA5CCE98B6C994869C"
     },
     {
       "outputFrameIndex": 21,
@@ -575,7 +616,8 @@
         "grayAtLeast245": 224
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "C5876AE2A1E4B8B51E69A460E056EB7A0ACF11F68DEF78D46810565399608E01"
     },
     {
       "outputFrameIndex": 22,
@@ -589,7 +631,8 @@
         "grayAtLeast245": 224
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "45FE727334CA0586BA0D9D35B5FEA032419277385EBED91431198EDB3E808FE6"
     },
     {
       "outputFrameIndex": 23,
@@ -603,7 +646,8 @@
         "grayAtLeast245": 224
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "9D4859B5F7938EA58560F20E99B8A43A2A94522295A0922225DFE1E99B8A7FA2"
     },
     {
       "outputFrameIndex": 24,
@@ -617,7 +661,8 @@
         "grayAtLeast245": 224
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "4884962A70AFCB45D1EBD7B95E5594CE68D7C4DEBEFE808FEA3862BE501ADE89"
     },
     {
       "outputFrameIndex": 25,
@@ -631,7 +676,8 @@
         "grayAtLeast245": 224
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "C5D1C23002C5BCB8D3B9E71F835768EBFA0441BEC20F2D08F5492D7BF63658DB"
     },
     {
       "outputFrameIndex": 26,
@@ -645,7 +691,8 @@
         "grayAtLeast245": 224
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "13CD393D9BB80A44F4B0F88AEB6820074BC88358226DF271E4713817FCA507F3"
     },
     {
       "outputFrameIndex": 27,
@@ -659,7 +706,8 @@
         "grayAtLeast245": 224
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "24A16DD58FE63E376E23876519B27D4918DEB30686AB2ADD4379469777F39A4E"
     },
     {
       "outputFrameIndex": 28,
@@ -673,7 +721,8 @@
         "grayAtLeast245": 224
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "34E5D1EA9B5A89E141F8CC0B3C2B9F4639035570A0E4E318B956B6FC9AB1B9BD"
     },
     {
       "outputFrameIndex": 29,
@@ -687,7 +736,8 @@
         "grayAtLeast245": 209
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "68EC7632D4C8B9DE05933812867C4AE33D3E1F3C6114D5F27479F87EC9EABFB6"
     },
     {
       "outputFrameIndex": 30,
@@ -701,7 +751,8 @@
         "grayAtLeast245": 212
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "24091485928BB998CFA34C9B64CB175409671C76E01646B354BA1FD1FF3B2AEB"
     },
     {
       "outputFrameIndex": 31,
@@ -715,7 +766,8 @@
         "grayAtLeast245": 215
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "7CE140D649BECE35A0E7A492D6124093211C694EC9B1B07B8CC68365C837774D"
     },
     {
       "outputFrameIndex": 32,
@@ -729,7 +781,8 @@
         "grayAtLeast245": 220
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "7D009623E6BED74CA7F8C771819EDE354A0717A57EC1BE3C9C3CC0729414ADA7"
     },
     {
       "outputFrameIndex": 33,
@@ -743,7 +796,8 @@
         "grayAtLeast245": 217
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "114EFAA3B3EDA8EB7A6D50AC4A35FDC7366113CE5BDE6672076AC8D6A3953BB9"
     },
     {
       "outputFrameIndex": 34,
@@ -757,7 +811,8 @@
         "grayAtLeast245": 220
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "932AB7C6077002BA8FECCB68B6C3E95E87232A3B4ED6069908551919148B93EE"
     },
     {
       "outputFrameIndex": 35,
@@ -771,7 +826,8 @@
         "grayAtLeast245": 216
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "3C342904677D5EEE0A21DF213A8BE2C6DD1191036E0D9D75581E70538D5D8799"
     },
     {
       "outputFrameIndex": 36,
@@ -785,7 +841,8 @@
         "grayAtLeast245": 216
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "67586E98BDE4C0AF82F91092060EA32DDF727C23DFA9C0ED6503B2B645988139"
     },
     {
       "outputFrameIndex": 37,
@@ -799,7 +856,8 @@
         "grayAtLeast245": 218
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "BC366AB7FDBAD8B8B8FD114FC6CAAFA911B9A7428ECDA5258FEF5566709214AA"
     },
     {
       "outputFrameIndex": 38,
@@ -813,7 +871,8 @@
         "grayAtLeast245": 221
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "7A8E566869336BBC9D34497E72F69CD8E4DE065BE956EE67BC58689E610FA421"
     },
     {
       "outputFrameIndex": 39,
@@ -827,7 +886,8 @@
         "grayAtLeast245": 216
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "924ABCA1CFBE90364E7DDB155487C869FF85DC4A3E36016006A5CE292C7FD10C"
     },
     {
       "outputFrameIndex": 40,
@@ -841,7 +901,8 @@
         "grayAtLeast245": 219
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "196EFFB909B7982808AA32C993D479DA46DB9571E2D40F3F985127A7036920EA"
     },
     {
       "outputFrameIndex": 41,
@@ -855,7 +916,8 @@
         "grayAtLeast245": 215
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "4A82C3D26B99FBAD17AD93E660E6B9B8F25A46AE428732B366168EEB94FABF81"
     },
     {
       "outputFrameIndex": 42,
@@ -869,7 +931,8 @@
         "grayAtLeast245": 219
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "C98FEAE80168A6711298E82CE534512A8ADEEC4F3864096D7CE5AB376D3D17D1"
     },
     {
       "outputFrameIndex": 43,
@@ -883,7 +946,8 @@
         "grayAtLeast245": 217
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "9344D038C35DA85D52FB783DF5F971443441549B80441014F7985B801DB1AFB7"
     },
     {
       "outputFrameIndex": 44,
@@ -897,7 +961,8 @@
         "grayAtLeast245": 213
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "BB7AE4CB1883B98ED6B2EC39806419FB681126E2555E45475F07AEB7BFEEA8BA"
     },
     {
       "outputFrameIndex": 45,
@@ -911,7 +976,8 @@
         "grayAtLeast245": 218
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "AC575E5DE6EB5FF7B12F6E881D26C4FE983DB74D1B23F8A816AF9B7138481210"
     },
     {
       "outputFrameIndex": 46,
@@ -925,7 +991,8 @@
         "grayAtLeast245": 219
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "BD484FF80F25BAB6914012D3068A6AF1B36C937ABA5922FF5BE44EB72B1BF56A"
     },
     {
       "outputFrameIndex": 47,
@@ -939,7 +1006,8 @@
         "grayAtLeast245": 217
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "07915D11190B6245A07AFBE58078165BAAE800421AEC7923773AFAC801F55DEE"
     },
     {
       "outputFrameIndex": 48,
@@ -953,7 +1021,8 @@
         "grayAtLeast245": 216
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "FEE716C88A2202377560B15B9A62EC8C8ABA3C1954AA1A02AF92A39D82EC8204"
     },
     {
       "outputFrameIndex": 49,
@@ -967,7 +1036,8 @@
         "grayAtLeast245": 215
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "3D9E481D850178003D540A9A4EE65F0BD4CE94C067B72F1A88132B3B27979534"
     },
     {
       "outputFrameIndex": 50,
@@ -981,7 +1051,8 @@
         "grayAtLeast245": 218
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "7A3AC2F273DE7291E0E5CF202F47735E30C60D3A94EFBFFE956B33DE773A50A1"
     },
     {
       "outputFrameIndex": 51,
@@ -995,7 +1066,8 @@
         "grayAtLeast245": 220
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "EFED21BA5C42CF3E7EBABCCB62D969765665B162DC5E16A07DD5723F9082D373"
     },
     {
       "outputFrameIndex": 52,
@@ -1009,7 +1081,8 @@
         "grayAtLeast245": 220
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "368B9AAF02F721DBC2D306163E7F27E4CFDBF801D3845CC7CF62331E5C856629"
     },
     {
       "outputFrameIndex": 53,
@@ -1023,7 +1096,8 @@
         "grayAtLeast245": 223
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "13EB6B07BEE6F92A3BF76DC2DA33DDD3A71DFC41DF78170E89DF0F78DAB0E4F3"
     },
     {
       "outputFrameIndex": 54,
@@ -1037,7 +1111,8 @@
         "grayAtLeast245": 223
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "A9CF45FEFDA47C4AD924D730B0F54ED2577CB81D44A817D71425FD50AFF76498"
     },
     {
       "outputFrameIndex": 55,
@@ -1051,7 +1126,8 @@
         "grayAtLeast245": 218
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "68D5AB20D8B1922368D585ABD54E35EFC3C22074597297992F49F1DE9163B5FD"
     },
     {
       "outputFrameIndex": 56,
@@ -1065,7 +1141,8 @@
         "grayAtLeast245": 218
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "F9D3CA34E97F0C295D8BDB0C49727CA4855DC44A71F9862230FBA29176C30D77"
     },
     {
       "outputFrameIndex": 57,
@@ -1079,7 +1156,8 @@
         "grayAtLeast245": 216
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "4E1D93E1E5BF58E11D44714EB44BB170A9B80EDB77179192829EC18AB9D7E14B"
     },
     {
       "outputFrameIndex": 58,
@@ -1093,7 +1171,8 @@
         "grayAtLeast245": 217
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "906C08CF625D7C85667FD3C0642BB27BB020F7570E274BB3D841C0837F9D258D"
     },
     {
       "outputFrameIndex": 59,
@@ -1107,7 +1186,8 @@
         "grayAtLeast245": 217
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "CFF0D7796724368B5FC338FA09B155B9E47514BCDB6BC3319F2526833709C52B"
     },
     {
       "outputFrameIndex": 60,
@@ -1121,7 +1201,8 @@
         "grayAtLeast245": 217
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "0AAA18907BD5758641A3AA28AA37F6FA6A19CBD6F8EE2A766EFC1629938EAFFA"
     },
     {
       "outputFrameIndex": 61,
@@ -1135,7 +1216,8 @@
         "grayAtLeast245": 218
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "7D665CCAA29DB0BE71526775111A40460E1CE414D2C2228A78184A3258A4EDF1"
     },
     {
       "outputFrameIndex": 62,
@@ -1149,7 +1231,8 @@
         "grayAtLeast245": 224
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "BC4AD75A6791503EECE1A67BCA6825B7FAC954A4C34B784DD526D2F8846D6FDC"
     },
     {
       "outputFrameIndex": 63,
@@ -1163,7 +1246,8 @@
         "grayAtLeast245": 220
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "620DA85A2508E3661E66280A533B61243E0272D74CF821378600DB96A879DF89"
     },
     {
       "outputFrameIndex": 64,
@@ -1177,7 +1261,8 @@
         "grayAtLeast245": 220
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "E634CC9A514A065CCBC27DC4CE1106FE62C0A8F95A485E4DC20CE98AD4B5DD79"
     },
     {
       "outputFrameIndex": 65,
@@ -1191,7 +1276,8 @@
         "grayAtLeast245": 215
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "CD2114B9981CC3940A5DB022921A42499C37D0E69B6133BB8B9D3C20D4E52AF0"
     },
     {
       "outputFrameIndex": 66,
@@ -1205,7 +1291,8 @@
         "grayAtLeast245": 224
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "06DEE970A06D799D26663460EFC53EEC80BD2200D7BF3E11A3879F090F0C8A81"
     },
     {
       "outputFrameIndex": 67,
@@ -1219,7 +1306,8 @@
         "grayAtLeast245": 218
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "A2F084C110466D0E61FE51027DFFE33849FEC436A5248319B0CCAB773CE3CA23"
     },
     {
       "outputFrameIndex": 68,
@@ -1233,7 +1321,8 @@
         "grayAtLeast245": 222
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "CF210FE9213E94997614C7A6D24E59D14089A53D878754E08E343C2D138A72B4"
     },
     {
       "outputFrameIndex": 69,
@@ -1247,7 +1336,8 @@
         "grayAtLeast245": 221
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "1FA8FA3B47D986E933826FDD77A08658AE47ABF550E9CC278DF50075EE3F1527"
     },
     {
       "outputFrameIndex": 70,
@@ -1261,7 +1351,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "55F35E5C4D4373C116624E09F24828065B6E8F976BB22842C71F29CAB5BC1A57"
     },
     {
       "outputFrameIndex": 71,
@@ -1275,7 +1366,8 @@
         "grayAtLeast245": 229
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "EA508B300B7E3EFACC9D5048D96112C38F99CED7B18A07E11198CA27264B85E1"
     },
     {
       "outputFrameIndex": 72,
@@ -1289,7 +1381,8 @@
         "grayAtLeast245": 229
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "7938B32337DC0B2CC28990C539F42FA29DE4D4A30979683B6409898C8B67723B"
     },
     {
       "outputFrameIndex": 73,
@@ -1303,7 +1396,8 @@
         "grayAtLeast245": 227
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "77B49A16BA63094C7DBAA5B7ED8E3216453249CEEF7D1736E453A2F4AA87E650"
     },
     {
       "outputFrameIndex": 74,
@@ -1317,7 +1411,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "4B6F01EDC181875CDF5B83F817CCA9B3F992132E36F985749F790902FC6D157B"
     },
     {
       "outputFrameIndex": 75,
@@ -1331,7 +1426,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "B39228E6ACB360CC1A48E1298B6078F7C4559D429E24D130125C33372EC038C4"
     },
     {
       "outputFrameIndex": 76,
@@ -1345,7 +1441,8 @@
         "grayAtLeast245": 226
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "171B7ADBD08E3C58A23FFFBB9A728F21E265B6A5D8FBBFFE1F59F2CA35718D9C"
     },
     {
       "outputFrameIndex": 77,
@@ -1359,7 +1456,8 @@
         "grayAtLeast245": 226
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "6B9A7A18DD831A096ACF38AE507F163120E2DD047B19B1D4D279523826BAB981"
     },
     {
       "outputFrameIndex": 78,
@@ -1373,7 +1471,8 @@
         "grayAtLeast245": 226
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "C037458A7F2C628DA9950EFA2830168F19ABFA3A564B80DBDA16010BD2F6E830"
     },
     {
       "outputFrameIndex": 79,
@@ -1387,7 +1486,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "B2739D61C363FDB9330BC2C79C0D410B69B786F29710FCA21A83D5499A3E6128"
     },
     {
       "outputFrameIndex": 80,
@@ -1401,7 +1501,8 @@
         "grayAtLeast245": 226
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "A94336F18E2FEFE1649D82F43E230EEABEF96C465A3F2085C993B4904B5A97CA"
     },
     {
       "outputFrameIndex": 81,
@@ -1415,7 +1516,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "D953B49DA3B985D93979660D32DA9A41569DAF8831C953EDFF15598B5E3C4F43"
     },
     {
       "outputFrameIndex": 82,
@@ -1429,7 +1531,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "FC0583B31B0B83F56D99C0E9ABFAFF61FA3B215334647F212C5D82FE93705836"
     },
     {
       "outputFrameIndex": 83,
@@ -1443,7 +1546,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "A4650ECDFBA7CBE223F313DCAF28B288CD4AD42A23EE31B4497DC150EBF84C29"
     },
     {
       "outputFrameIndex": 84,
@@ -1457,7 +1561,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "31FCE6C8861185864923A18ECD6302ECCFC35CC27ED6EE53AB3D0FA2C5F79D56"
     },
     {
       "outputFrameIndex": 85,
@@ -1471,7 +1576,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "A577F760D968C967CA5EA6EE747129DC8A6D02DC308C4BCDD09945E51F7B9AB2"
     },
     {
       "outputFrameIndex": 86,
@@ -1485,7 +1591,8 @@
         "grayAtLeast245": 227
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "FF6FB80A32C4054285F95CFFE61FBD3717CCD99DB65E5054AF088A691A78D4DD"
     },
     {
       "outputFrameIndex": 87,
@@ -1499,7 +1606,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "D14648716889E8CFC02C6F69405297EA6BF3475C1BD0F157DC8CD13BC5FC104F"
     },
     {
       "outputFrameIndex": 88,
@@ -1513,7 +1621,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "983938A50F30F342E389175F4E3C83F95641C0FBA8622FFCB3CE7A6EA80DF321"
     },
     {
       "outputFrameIndex": 89,
@@ -1527,7 +1636,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "0D5FB65E6C23D573D4308A3435E32D1DCC3644E893B3514F9AE7D1697E372E54"
     },
     {
       "outputFrameIndex": 90,
@@ -1541,7 +1651,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "AD5EE8F7F9F8618BE2676617925987A8D2AA4455FC966572B94CEE2EEF119042"
     },
     {
       "outputFrameIndex": 91,
@@ -1555,7 +1666,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "C959C4DDC3AF8073EC9641D2E05F686B5114371CC1330E73C102A49A5BB31C3F"
     },
     {
       "outputFrameIndex": 92,
@@ -1569,7 +1681,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "C4CB1A0DBC89E5BBEC3D3164EA6BD03900FBB75E4D6397816843197472055D2E"
     },
     {
       "outputFrameIndex": 93,
@@ -1583,7 +1696,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "1B0234B2E5F346E48BBCF9634A1FCB0787E3CE094D0495743FB7972744B1E3FE"
     },
     {
       "outputFrameIndex": 94,
@@ -1597,7 +1711,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "9105F9233A39F144DF0B427FFB2068FD5A6F71961E18BAAB3B3F6601CF72D9F2"
     },
     {
       "outputFrameIndex": 95,
@@ -1611,7 +1726,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "C2BFE924BCF24E197E698F6DBF497D4A940BC6837E844BF6178B384D79E420F0"
     },
     {
       "outputFrameIndex": 96,
@@ -1625,7 +1741,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "53C040CA854D04C945797C1CB9C5CA6322B049D53658E1AD4E2416134EF727EF"
     },
     {
       "outputFrameIndex": 97,
@@ -1639,7 +1756,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "90E65B7D388902EFA4BB810C0CBF7B5B4CD363119F5810B4F4B321FB23D25BF5"
     },
     {
       "outputFrameIndex": 98,
@@ -1653,7 +1771,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "03A01E1DE6D7F5E149925DBF1C9E31A4B17880ED86E9145743065C9E314127C1"
     },
     {
       "outputFrameIndex": 99,
@@ -1667,7 +1786,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "98B64E44A17E5E919DEB88724DC939070870E673586F6223545685DA317A8F18"
     },
     {
       "outputFrameIndex": 100,
@@ -1681,7 +1801,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "058F44E55DA6DB474C8B53C6CC98CD61FBEB484EB1FD5A064C552CBD6A7226D4"
     },
     {
       "outputFrameIndex": 101,
@@ -1695,7 +1816,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "B027519DBE9EAF77074D0B87F8836824660EC2660D398205CDC2E004A78F0997"
     },
     {
       "outputFrameIndex": 102,
@@ -1709,7 +1831,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "B8FA714F09AE61396551CCA8CDA4E659A0AC7312C40C237ED02C1F329E63B5F7"
     },
     {
       "outputFrameIndex": 103,
@@ -1723,7 +1846,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "17B634AD7E40ED84615335F656D60DEEF6B2332EEE851EA4F36777E6F2C85F47"
     },
     {
       "outputFrameIndex": 104,
@@ -1737,7 +1861,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "7836F6CBAE8A0A9A2EB557BE268902EE368035D6FA8A76E7139E70352097D2F8"
     },
     {
       "outputFrameIndex": 105,
@@ -1751,7 +1876,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "0BC94645A834E88D73244C5DCBF0E962C5283E1FA3353713C01993644C70F467"
     },
     {
       "outputFrameIndex": 106,
@@ -1765,7 +1891,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "F5C81D5DF8E70C5088CA5237C2BCCACE30F19BCD6A6EE35D26BB5A604F643E8E"
     },
     {
       "outputFrameIndex": 107,
@@ -1779,7 +1906,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "B30CAADBAEA868C401DA77B5C228981EECB3596C42C1B6A8528CF9F5A2A60530"
     },
     {
       "outputFrameIndex": 108,
@@ -1793,7 +1921,8 @@
         "grayAtLeast245": 226
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "FB326673FD965BFD370B7850B4AAC1B0B758669426B06EC074436CCAAB3A7094"
     },
     {
       "outputFrameIndex": 109,
@@ -1807,7 +1936,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "71888F00AABA6F26F2F836C982CCF84B33401F5A63F84B8EB57DBB74F97A4AB7"
     },
     {
       "outputFrameIndex": 110,
@@ -1821,7 +1951,8 @@
         "grayAtLeast245": 226
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "B7BC2627AFE71AC9CCF3587A7D623838F15B0909DD22524F7E708F79C0CCBC4A"
     },
     {
       "outputFrameIndex": 111,
@@ -1835,7 +1966,8 @@
         "grayAtLeast245": 227
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "E65C5B0C83C9B0A257021DC9C1596993B07A0F2E87ECED0AD7155FEB4184562D"
     },
     {
       "outputFrameIndex": 112,
@@ -1849,7 +1981,8 @@
         "grayAtLeast245": 229
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "57798A9C9637EE91C95BBE449D2FC6FC9B7F23486C1D4FFF1412A813D80BF66C"
     },
     {
       "outputFrameIndex": 113,
@@ -1863,7 +1996,8 @@
         "grayAtLeast245": 230
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "97A803B702C60FE52D60F42196655C922124E7F278CB8614A84494E54CC4BC29"
     },
     {
       "outputFrameIndex": 114,
@@ -1877,7 +2011,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "18A0DE15431F633CA1521504B77D73EBD93F2339A808179AEBC53616951BAF29"
     },
     {
       "outputFrameIndex": 115,
@@ -1891,7 +2026,8 @@
         "grayAtLeast245": 230
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "74C7B78C49751DB7A2015430C9D42BF1277B0AAFF8F71257B29BBA5FA86DB8B2"
     },
     {
       "outputFrameIndex": 116,
@@ -1905,7 +2041,8 @@
         "grayAtLeast245": 230
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "7F73254DFDE4E4509774EB66093039CDE602745A6CBE98423B21252F87BDBC84"
     },
     {
       "outputFrameIndex": 117,
@@ -1919,7 +2056,8 @@
         "grayAtLeast245": 230
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "CD67C196917485BEC1EAC03C7E5EC482C36F78A50CEA08FC8DBF68E8EDAEEA10"
     },
     {
       "outputFrameIndex": 118,
@@ -1933,7 +2071,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "A0C7CB6CA3D6CB84B31758FBBBBBA7F0BBC57EA02DE9379E761A48B5CEC11410"
     },
     {
       "outputFrameIndex": 119,
@@ -1947,7 +2086,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "9273857005610B14ADF28AF6A1891395B64709815CEEC4EE467E5C73FC8FE812"
     },
     {
       "outputFrameIndex": 120,
@@ -1961,7 +2101,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "9B19D1774363FA02DBE07CDDADBD30C6707C4F5A40AEF05E1EFA52052409D1AF"
     },
     {
       "outputFrameIndex": 121,
@@ -1975,7 +2116,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "180239A93F3695AC102A3D058DB6E6F8CA003B8C9F4A7D37B0ACC104FFDE7E45"
     },
     {
       "outputFrameIndex": 122,
@@ -1989,7 +2131,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "80793D9669D2BF288A4403E220144F94DA74189A89C259989148C7FBF08E60E3"
     },
     {
       "outputFrameIndex": 123,
@@ -2003,7 +2146,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "B350B38739D89DD9B8D8FB2C5533999C80E98C63C3CDC73B8DD3678AE1F16ADA"
     },
     {
       "outputFrameIndex": 124,
@@ -2017,7 +2161,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "B8CD06EB8E7707F9CBCC55D023140114D369AA22657208DB70B04764024C32DC"
     },
     {
       "outputFrameIndex": 125,
@@ -2031,7 +2176,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "9C4D0AEFBEBBADA7B5DFC0DF2690CB1CFEBDDDD793189532AE4AE0CD1497E092"
     },
     {
       "outputFrameIndex": 126,
@@ -2045,7 +2191,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "625652156EE7BC522BD8E988C69989D6C1CCA14E69A2D8E44BCF2BA57EAE6F0B"
     },
     {
       "outputFrameIndex": 127,
@@ -2059,7 +2206,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "581B9C47FD30684CE9B1517AE1891669EA285A80299CE4804F29DE30994DCC28"
     },
     {
       "outputFrameIndex": 128,
@@ -2073,7 +2221,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "68F3FAEDD42415AAD26C7944E2D0FE00E9E4383959FE40CC69C5119A3CB65503"
     },
     {
       "outputFrameIndex": 129,
@@ -2087,7 +2236,8 @@
         "grayAtLeast245": 229
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "63EB28C214723E6FDB30F6AE9C74B5F077D03E8300F47C9F4C4502A96D9F14C8"
     },
     {
       "outputFrameIndex": 130,
@@ -2101,7 +2251,8 @@
         "grayAtLeast245": 229
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "72885E168B4B75D74C617C11E3AEBC92BA4E3B0B2279D103E0F6B69F30D56F5C"
     },
     {
       "outputFrameIndex": 131,
@@ -2115,7 +2266,8 @@
         "grayAtLeast245": 229
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "3BA0519D61CD3BD5EF6159508C56A3EE39D008E26C6AE1CB9307D0DCF57BA079"
     },
     {
       "outputFrameIndex": 132,
@@ -2129,7 +2281,8 @@
         "grayAtLeast245": 231
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "1478D65A860785D7129912940AFB5FB0AEC25CBA0657C88840093D6E9087CFD2"
     },
     {
       "outputFrameIndex": 133,
@@ -2143,7 +2296,8 @@
         "grayAtLeast245": 229
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "A40FADBC914D1B291890F46EDEE8BF61F4B0979B517723EE8B4E9C26E4A8DFA3"
     },
     {
       "outputFrameIndex": 134,
@@ -2157,7 +2311,8 @@
         "grayAtLeast245": 231
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "095A4E2603E6DFF47D546C455F621555DADF9BC6476599A5026C1CC2B68CFD09"
     },
     {
       "outputFrameIndex": 135,
@@ -2171,7 +2326,8 @@
         "grayAtLeast245": 224
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "B3B21CF7CFD154B7B102C7B843408D0E5488CCE7CA8A8A0BE97811E1FC82096B"
     },
     {
       "outputFrameIndex": 136,
@@ -2185,7 +2341,8 @@
         "grayAtLeast245": 226
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "7D723B98D8B1BAA9888DB75720F6BCBBC50E4AF0E5A5B1A3B9349677E56AAFF9"
     },
     {
       "outputFrameIndex": 137,
@@ -2199,7 +2356,8 @@
         "grayAtLeast245": 229
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "E5F64A66F898F42B0EED189C293F538E4BFDC343537ACD9B10A3D07A27593DFB"
     },
     {
       "outputFrameIndex": 138,
@@ -2213,7 +2371,8 @@
         "grayAtLeast245": 223
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "531028866938BDAD951EC303C62BAB087D88A82ABABBE92A2BD84530AC5A164F"
     },
     {
       "outputFrameIndex": 139,
@@ -2227,7 +2386,8 @@
         "grayAtLeast245": 220
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "D10A2436B88BE28E401B97312CCF04E855DFC3CD43D8527869B9A5B3AFCCC6A3"
     },
     {
       "outputFrameIndex": 140,
@@ -2241,7 +2401,8 @@
         "grayAtLeast245": 224
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "4B4CE2BE6A1399605CAB626B8038B5E91A34A8DE69036F7C0AC7AFF0184F4B97"
     },
     {
       "outputFrameIndex": 141,
@@ -2255,7 +2416,8 @@
         "grayAtLeast245": 226
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "00871CA6C276D587AA617D252B7EAE283ACFBC354DF78ABDAD97DC38F47EB1A4"
     },
     {
       "outputFrameIndex": 142,
@@ -2269,7 +2431,8 @@
         "grayAtLeast245": 227
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "A5F3346AFFC8E8D66E5165E18F029D997C31E85E3EA77DCE221B75272A141C2E"
     },
     {
       "outputFrameIndex": 143,
@@ -2283,7 +2446,8 @@
         "grayAtLeast245": 230
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "914367E98307FA0B14EE9A52AE1400922A770292CA8C05F4B981FCC47C77594E"
     },
     {
       "outputFrameIndex": 144,
@@ -2297,7 +2461,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "DEB714CB6A86ADC50B79AC3C61184B74D69366F29025330D5FA226B364FF7161"
     },
     {
       "outputFrameIndex": 145,
@@ -2311,7 +2476,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "003373F206FE804D796016CFB9E038731B936E2C8EFF4671E1C14DE54D106C49"
     },
     {
       "outputFrameIndex": 146,
@@ -2325,7 +2491,8 @@
         "grayAtLeast245": 230
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "37071A3FC78C95BEFA54F19B3905D415C1D5887F084BFF3178F94EC7E51A0DE4"
     },
     {
       "outputFrameIndex": 147,
@@ -2339,7 +2506,8 @@
         "grayAtLeast245": 227
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "C93FD56B4324D80941FE17B9C5A6E961032A9478150F6857A287B0689774A567"
     },
     {
       "outputFrameIndex": 148,
@@ -2353,7 +2521,8 @@
         "grayAtLeast245": 226
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "D38BDFF195344F1A416D9F17A317E766A68139E5ED5E5BBB7AEC08D1DE1D1CD5"
     },
     {
       "outputFrameIndex": 149,
@@ -2367,7 +2536,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "FB098AD61C9792B1702A4AD27E03A0FBC9CA39CC81F853267FFE7BA7BB1721F4"
     },
     {
       "outputFrameIndex": 150,
@@ -2381,7 +2551,8 @@
         "grayAtLeast245": 236
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "95EAD3C2B10ABCAC21137ACC9700D32A23D5B945024729204C46DCCCC0178F15"
     },
     {
       "outputFrameIndex": 151,
@@ -2395,7 +2566,8 @@
         "grayAtLeast245": 229
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "354F2B81CBF1F5844A3F11105F912D112D7C8BA27BE67D9B85BECCC3D4C845EA"
     },
     {
       "outputFrameIndex": 152,
@@ -2409,7 +2581,8 @@
         "grayAtLeast245": 231
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "7AFF5FABF5E1A8CA9C9EC782E8A79820B2A13301B59881C5AB847BEE05E904E4"
     },
     {
       "outputFrameIndex": 153,
@@ -2423,7 +2596,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "57568A01EB7AAE070363FDBDDF49E1D9BDC249DF900BC69EECF2F3A1292762B1"
     },
     {
       "outputFrameIndex": 154,
@@ -2437,7 +2611,8 @@
         "grayAtLeast245": 230
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "3741C4487ED4BE146DF41201241F95CF5FE42F4D4085A9710F6675340460A23D"
     },
     {
       "outputFrameIndex": 155,
@@ -2451,7 +2626,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "8DE6FEA3AD57EFB829B2705EC52EF34C6B8D22A10B3FACC6864292CCD2764137"
     },
     {
       "outputFrameIndex": 156,
@@ -2465,7 +2641,8 @@
         "grayAtLeast245": 236
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "94D375ED5B9B3429F4E6DCA2F3512161FBFD53B1187EDE11C2A8891D6572306B"
     },
     {
       "outputFrameIndex": 157,
@@ -2479,7 +2656,8 @@
         "grayAtLeast245": 230
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "CAD574CFBD0B738A98DCAA424AD66F9252297F8A144CCFE1289FE66BF8A67869"
     },
     {
       "outputFrameIndex": 158,
@@ -2493,7 +2671,8 @@
         "grayAtLeast245": 239
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "E2435A7F1579306A128E72814E3CDE33A0F54A08959736B4C55F3FCA302F4197"
     },
     {
       "outputFrameIndex": 159,
@@ -2507,7 +2686,8 @@
         "grayAtLeast245": 237
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "C14FBEB288CBCF23BA9F0441AA0D94983ED2F514AE87D71C830722D1D21E4DD6"
     },
     {
       "outputFrameIndex": 160,
@@ -2521,7 +2701,8 @@
         "grayAtLeast245": 227
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "7C301D7CD92872DCEC2811D2A8A53130FD30119A43415EF9197DC7074B64D151"
     },
     {
       "outputFrameIndex": 161,
@@ -2535,7 +2716,8 @@
         "grayAtLeast245": 227
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "F20162BF30C6C2D6E8D7993262781592EBC5FCA86241703BA9844BE12B0E8402"
     },
     {
       "outputFrameIndex": 162,
@@ -2549,7 +2731,8 @@
         "grayAtLeast245": 230
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "6B25AEC92BEFF25F52D44639DEA40FBE20D78E61314888B49660913A0EC114CB"
     },
     {
       "outputFrameIndex": 163,
@@ -2563,7 +2746,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "EE2B2A0D9772CBFC3B21AC1B244CBA98AF0D5CC8B11CB2AD07B0DEB89088CCEA"
     },
     {
       "outputFrameIndex": 164,
@@ -2577,7 +2761,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "F038ECC3C6ACB93780B5935445579EAFFA99D29FD89EFF82E797B8230CF3BADC"
     },
     {
       "outputFrameIndex": 165,
@@ -2591,7 +2776,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "3F7E13DBB88EFC3052691EE52D6D7012F52D008521B7A488315D5C1F39660665"
     },
     {
       "outputFrameIndex": 166,
@@ -2605,7 +2791,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "8C7523F520C6609002FE73EDD76D053F919CC0C0DC3E703B17BFC2B628C851EE"
     },
     {
       "outputFrameIndex": 167,
@@ -2619,7 +2806,8 @@
         "grayAtLeast245": 227
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "0BD9F62BFBBDC3BFC1295F4F0AC82E570788A26424C0AAA68E359DDD1D471114"
     },
     {
       "outputFrameIndex": 168,
@@ -2633,7 +2821,8 @@
         "grayAtLeast245": 227
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "E0FCE575DD9DAB89A3CD4666956D8DDAE67B3F73A88B717A9CED539962D68293"
     },
     {
       "outputFrameIndex": 169,
@@ -2647,7 +2836,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "05DB491CF7C755AECAF6D29B65C65A6FE9485226C04CF16698A99440B078310C"
     },
     {
       "outputFrameIndex": 170,
@@ -2661,7 +2851,8 @@
         "grayAtLeast245": 226
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "7E6953F5203A9225A4DF71BEC31FBD710A52A9257FEDB4234F6E6370951DA1BC"
     },
     {
       "outputFrameIndex": 171,
@@ -2675,7 +2866,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "792CD846E71111581129041A4A4802ADD9EB9ECACE1ACF8BE3D09D92791B9217"
     },
     {
       "outputFrameIndex": 172,
@@ -2689,7 +2881,8 @@
         "grayAtLeast245": 229
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "24EBA21B518F04175A7C2C61BDFF374750273BE2D657DD42BFEE9432E290CD57"
     },
     {
       "outputFrameIndex": 173,
@@ -2703,7 +2896,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "B58EB707C3FDD6C907CBA8FCA4CD859CC0EB29E39798337D56EBC33855D24407"
     },
     {
       "outputFrameIndex": 174,
@@ -2717,7 +2911,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "301F98423EBE6A8DC2528902907AE6956D4FC43ADF2607CD0D85AFB7F7DF18F6"
     },
     {
       "outputFrameIndex": 175,
@@ -2731,7 +2926,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "31B2A2011BEAC34592D6262B3B0A310B36D4D2611D2DA927309AAD82347E9157"
     },
     {
       "outputFrameIndex": 176,
@@ -2745,7 +2941,8 @@
         "grayAtLeast245": 257
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "D17D368682DDBB5D835903017567280D0A521921F9BF4D882BB3AFE56283718E"
     },
     {
       "outputFrameIndex": 177,
@@ -2759,7 +2956,8 @@
         "grayAtLeast245": 229
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "1C03C1FB434F9325DE0FF68B002A1F22A9D00C04EBE98C7BA9407A46343D5A22"
     },
     {
       "outputFrameIndex": 178,
@@ -2773,7 +2971,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "C42EFC7399686228ECC8A890A11195C19F8442D46B17A5272D89AAAF7565D636"
     },
     {
       "outputFrameIndex": 179,
@@ -2787,7 +2986,8 @@
         "grayAtLeast245": 229
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "1244A4C092C2872E34408F8922F3BF781A5D95B14959EC84AFF7B3D67746ABE5"
     },
     {
       "outputFrameIndex": 180,
@@ -2801,7 +3001,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "C3A58D03C8C6E94FF46DF674952F619C2E84F3824F4860B7FFCC831BBAAC28ED"
     },
     {
       "outputFrameIndex": 181,
@@ -2815,7 +3016,8 @@
         "grayAtLeast245": 230
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "4B70A3B6B7A19DCD57BD897AD4D7660D271F7439B75E6DE6B8EB3E8B6FA5CB12"
     },
     {
       "outputFrameIndex": 182,
@@ -2829,7 +3031,8 @@
         "grayAtLeast245": 229
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "D735E6648A6C21A16C04EC91A36CD624C9E2D596ED74611B66A597D0EC61E5B4"
     },
     {
       "outputFrameIndex": 183,
@@ -2843,7 +3046,8 @@
         "grayAtLeast245": 229
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "80D254BEBEF41AC75FDA168AAD6175CDA6378F7006E280B5E6A3EC6BAB3D3708"
     },
     {
       "outputFrameIndex": 184,
@@ -2857,7 +3061,8 @@
         "grayAtLeast245": 229
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "160177797C312C83CED3A6393F2BE287003C16D4895341212927C76D1EF82995"
     },
     {
       "outputFrameIndex": 185,
@@ -2871,7 +3076,8 @@
         "grayAtLeast245": 229
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "00E01E52FFA59F148B1F91496D474E4A65EE4372BBCEF67A9490D5B89FC03261"
     },
     {
       "outputFrameIndex": 186,
@@ -2885,7 +3091,8 @@
         "grayAtLeast245": 229
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "7AD11FD100AFE8025AB5D23942F611C6276E58771CE67DFEAFDAE445A535C348"
     },
     {
       "outputFrameIndex": 187,
@@ -2899,7 +3106,8 @@
         "grayAtLeast245": 230
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "3BBFC61D09B97FF58564FCF0D55760A31108E63EB1FA8ED06A54899F116E62AC"
     },
     {
       "outputFrameIndex": 188,
@@ -2913,7 +3121,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "9B41FA6149717F42DDE36F49CA2D6CB37568CED4C38BE1CA6A2A4DE0B3D0C0C2"
     },
     {
       "outputFrameIndex": 189,
@@ -2927,7 +3136,8 @@
         "grayAtLeast245": 224
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "1E9A3FBFE29A350C49E278649BE69489D8308090E74453840DA5757A824D78AC"
     },
     {
       "outputFrameIndex": 190,
@@ -2941,7 +3151,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "25CEAAA3B897B35D859BF5B1C6E653DEF1C94C4C176554CB8EE09EDB67B7E326"
     },
     {
       "outputFrameIndex": 191,
@@ -2955,7 +3166,8 @@
         "grayAtLeast245": 224
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "4FBD9FD98AC7BA0C27D2E2E4F432A21E5525555FFF34B97E2E11E9FEAE20C58A"
     },
     {
       "outputFrameIndex": 192,
@@ -2969,7 +3181,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "6E977ABBF58CE73FF79CCA5EEAEC5487DF25BBA196552747A1435B8119260D66"
     },
     {
       "outputFrameIndex": 193,
@@ -2983,7 +3196,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "A520ADB9ED31EC21CF7534596ABC5020D22B0FDAE60522CBE01DB58550EC2999"
     },
     {
       "outputFrameIndex": 194,
@@ -2997,7 +3211,8 @@
         "grayAtLeast245": 230
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "1C2DDC56173B4E01170CE7A6071667D0FF273580F4E5323ADA2A7183A5382E04"
     },
     {
       "outputFrameIndex": 195,
@@ -3011,7 +3226,8 @@
         "grayAtLeast245": 222
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "42F7E663E724455D8BA623DA383D492022DD85C5FACDF0CD244BF7AC993EAFF8"
     },
     {
       "outputFrameIndex": 196,
@@ -3025,7 +3241,8 @@
         "grayAtLeast245": 222
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "CB74EDFD78441FC7DE67B24C4290CFB0FC630540D564BFE6C5E72A630DD980FE"
     },
     {
       "outputFrameIndex": 197,
@@ -3039,7 +3256,8 @@
         "grayAtLeast245": 219
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "2AE467EDFBF51F34817C8FBA12EE6482566E5036C41178C108A062286ADA9391"
     },
     {
       "outputFrameIndex": 198,
@@ -3053,7 +3271,8 @@
         "grayAtLeast245": 220
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "8215B77108441652B55FA5C72DDC2B000CAB30B276EAAC49F50DA8D2ED7E4199"
     },
     {
       "outputFrameIndex": 199,
@@ -3067,7 +3286,8 @@
         "grayAtLeast245": 220
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "1851487A85E5F9BE979EBBF1A50C64C86A64F73F16FF7CFE05C6D5A4CA7EE016"
     },
     {
       "outputFrameIndex": 200,
@@ -3081,7 +3301,8 @@
         "grayAtLeast245": 222
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "B7F67091FDDDE95F691E53CA199DAF4DD9A1FF00810C03CB5D2B4F345D2E499C"
     },
     {
       "outputFrameIndex": 201,
@@ -3095,7 +3316,8 @@
         "grayAtLeast245": 221
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "1E82A3959F2AA8C0CC8903FC4E26DB5486FD8DB8994A5AEDBFD4858622BD2EA9"
     },
     {
       "outputFrameIndex": 202,
@@ -3109,7 +3331,8 @@
         "grayAtLeast245": 220
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "9F068B6D4F6E61B4B0ABDEDE95AE2796DB92E49FD0CD4380FAB34B8BA4B374C3"
     },
     {
       "outputFrameIndex": 203,
@@ -3123,7 +3346,8 @@
         "grayAtLeast245": 218
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "CA287693318176F9187336FD7121447D4638F8D64CDB3F7FEE71A78E45FF8C44"
     },
     {
       "outputFrameIndex": 204,
@@ -3137,7 +3361,8 @@
         "grayAtLeast245": 221
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "5AA51659B209E33E744A76F6C3CC8E3BACCE203795D3B98BCFC9859574D802D2"
     },
     {
       "outputFrameIndex": 205,
@@ -3151,7 +3376,8 @@
         "grayAtLeast245": 220
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "5BAB7CCAE9D3505E4CB3346086415ED0A4E9D663C2E1CD6D70A716FFBC4386D9"
     },
     {
       "outputFrameIndex": 206,
@@ -3165,7 +3391,8 @@
         "grayAtLeast245": 220
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "33DB930922CC30290A43CF25087414291CD2478520122887F983C6EE52988174"
     },
     {
       "outputFrameIndex": 207,
@@ -3179,7 +3406,8 @@
         "grayAtLeast245": 220
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "E60D7C921FA95DC85290F65AF6E0D72D1DA2CA03FE153B6928F8E843AA718101"
     },
     {
       "outputFrameIndex": 208,
@@ -3193,7 +3421,8 @@
         "grayAtLeast245": 221
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "9A30902A6C8CC4498D67EC7C90EA6152F9702AE6FA2510CAEB5771F926C13F9B"
     },
     {
       "outputFrameIndex": 209,
@@ -3207,7 +3436,8 @@
         "grayAtLeast245": 220
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "746D2790679D6F6339FF614B861FA09F4922CDA596F7679E55DD06FC9FE68252"
     },
     {
       "outputFrameIndex": 210,
@@ -3221,7 +3451,8 @@
         "grayAtLeast245": 221
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "F258B2D887DC789C718BDCDE965356C7543F4C67848101967FCA5EEA3852EAAE"
     },
     {
       "outputFrameIndex": 211,
@@ -3235,7 +3466,8 @@
         "grayAtLeast245": 219
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "8AD0C7985449A71F03625766469FBF281E9B994EFC14F2EA69A08FB92B1533F4"
     },
     {
       "outputFrameIndex": 212,
@@ -3249,7 +3481,8 @@
         "grayAtLeast245": 221
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "863393E19D37A31158CD5FE7DEDFFB90B1E7A7E479D0EE24BF40551F32358944"
     },
     {
       "outputFrameIndex": 213,
@@ -3263,7 +3496,8 @@
         "grayAtLeast245": 220
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "B3DA02AFD9C220E02E59153D5F4E509D1C6EA230654FAACBF377DD7B89551F9B"
     },
     {
       "outputFrameIndex": 214,
@@ -3277,7 +3511,8 @@
         "grayAtLeast245": 221
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "C66C8ECCA59E0098CF336EFB4F52291F17F91075F0F3974C67202BF0B696437F"
     },
     {
       "outputFrameIndex": 215,
@@ -3291,7 +3526,8 @@
         "grayAtLeast245": 221
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "9894089C5809D1724E24E67524DB309B1293DD4BC5670A40908DB68176F1BA1A"
     },
     {
       "outputFrameIndex": 216,
@@ -3305,7 +3541,8 @@
         "grayAtLeast245": 221
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "646695CF6FC38CA45D72DEE5D23D721A760D16F6201EC4B1836C0A5EBCFE79EF"
     },
     {
       "outputFrameIndex": 217,
@@ -3319,7 +3556,8 @@
         "grayAtLeast245": 215
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "EBE62BC534E728E2FF6541852AB95FA68177FDE5DF8825D9BB44E7715A16FF4A"
     },
     {
       "outputFrameIndex": 218,
@@ -3333,7 +3571,8 @@
         "grayAtLeast245": 216
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "4F7DF35EC736BF8B665CAE21BB1C6EFBC6A22788AD4D5B84BAD45852A0F18FCF"
     },
     {
       "outputFrameIndex": 219,
@@ -3347,7 +3586,8 @@
         "grayAtLeast245": 217
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "6B6C1587363E6B09319B40ECCEE734A95C91142C97EF45AA8186CC86EEAD037E"
     },
     {
       "outputFrameIndex": 220,
@@ -3361,7 +3601,8 @@
         "grayAtLeast245": 216
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "0A70717C96F61DFFAEBA912657ECA40E1AB1AAFA968747AA80107C2E00EF756C"
     },
     {
       "outputFrameIndex": 221,
@@ -3375,7 +3616,8 @@
         "grayAtLeast245": 213
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "442B5ACEA6AA1800032DC28703D8E2A806749734283A9B7CD1584D0940FFC4EB"
     },
     {
       "outputFrameIndex": 222,
@@ -3389,7 +3631,8 @@
         "grayAtLeast245": 218
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "D7E54F00F37CE46D10D7441094856B1997540D95900EC2D3F69407E24E046606"
     },
     {
       "outputFrameIndex": 223,
@@ -3403,7 +3646,8 @@
         "grayAtLeast245": 219
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "BA1019D0214267AFCDBBC85E4BDCC35E5F5A9BAFBA6499A4B806F77F6BEBF9A1"
     },
     {
       "outputFrameIndex": 224,
@@ -3417,7 +3661,8 @@
         "grayAtLeast245": 218
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "0D883718D337CDA1E16938542F9571EFE099E1F2679D7A071C236E83B358EE86"
     },
     {
       "outputFrameIndex": 225,
@@ -3431,7 +3676,8 @@
         "grayAtLeast245": 220
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "5E2696BA908ED328CD2AD75470590F1F95F155E92E054A79B4ACEF16D05EECB0"
     },
     {
       "outputFrameIndex": 226,
@@ -3445,7 +3691,8 @@
         "grayAtLeast245": 223
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "82BC6640C568232EABEA61395D5AD6C669095E747EB253270CFD21F0EF11E332"
     },
     {
       "outputFrameIndex": 227,
@@ -3459,7 +3706,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "A6D9A79DC35EA43A4FD6A6AFA91AF00976B076F45BC2F228F24AAAA56952A966"
     },
     {
       "outputFrameIndex": 228,
@@ -3473,7 +3721,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "C7A4709F5337400C6BE463E6B523DDE8A6972828837C8FC95466A3AF5EFAF734"
     },
     {
       "outputFrameIndex": 229,
@@ -3487,7 +3736,8 @@
         "grayAtLeast245": 226
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "B54FE0E008B108F8CBBE3FB4D744043F9714C3236F4C825FE6D12AC7FB535112"
     },
     {
       "outputFrameIndex": 230,
@@ -3501,7 +3751,8 @@
         "grayAtLeast245": 226
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "35973093589AA16A0C9C5603CB735036CB0DFC242A8795D2AF3AB9BFCBFD73FD"
     },
     {
       "outputFrameIndex": 231,
@@ -3515,7 +3766,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "2BACC57BDA541206ABFC95E48888646BE60D02A4A1BB5A04C45A40B006467D56"
     },
     {
       "outputFrameIndex": 232,
@@ -3529,7 +3781,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "9743C1BB9671AC8CD95BECB48240D0B5DBC90CFEC8C94105F1002DAE0156F7FA"
     },
     {
       "outputFrameIndex": 233,
@@ -3543,7 +3796,8 @@
         "grayAtLeast245": 224
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "2C2C366897F6679153F55A42D363980D7ECA836BC5FEA8935F3385E3C4A47ACC"
     },
     {
       "outputFrameIndex": 234,
@@ -3557,7 +3811,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "627EE32BFD055BA9860DF48F8372C7863B8E5745B89C96ED9FE5922F554486B7"
     },
     {
       "outputFrameIndex": 235,
@@ -3571,7 +3826,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "496E42F7EFE986D1DA563056B2D12090EB022FC93203666DBBECA8F77728D4AE"
     },
     {
       "outputFrameIndex": 236,
@@ -3585,7 +3841,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "36F16110C13AA9B2176220C09CA60578946AA0590B50390FA5EFF00A02305724"
     },
     {
       "outputFrameIndex": 237,
@@ -3599,7 +3856,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "4907F26C4790274A18B7A8548FA6A5A73A70E5272D310966A23EF3AD8BBA5CA2"
     },
     {
       "outputFrameIndex": 238,
@@ -3613,7 +3871,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "8AF7C6D5FFFC1E5B858CE84A09AC4BA99355330B0DAED58D5A7F5D94E308EC6C"
     },
     {
       "outputFrameIndex": 239,
@@ -3627,7 +3886,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "41EBF8E5D1319596E32DB2AA4649B4E8A86B4911752BB596DEDD786A375CA36A"
     },
     {
       "outputFrameIndex": 240,
@@ -3641,7 +3901,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "D2FF10F1DECF2D21A734598DD0C81E15B7D561C167239635BD86433B93F01C9E"
     },
     {
       "outputFrameIndex": 241,
@@ -3655,7 +3916,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "10F4D2440A0716CA024B9ADF497ABF4176F3B66AD211529859DA1B0085204712"
     },
     {
       "outputFrameIndex": 242,
@@ -3669,7 +3931,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "2D491BF092B7BD352A838C7E4A3A47287E35006F85BFD183B5A2DCF478506075"
     },
     {
       "outputFrameIndex": 243,
@@ -3683,7 +3946,8 @@
         "grayAtLeast245": 220
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "A72A10CBB9239C571D66323FE839E858F7C9574CAD5B5810580DB8F5C5AD61EB"
     },
     {
       "outputFrameIndex": 244,
@@ -3697,7 +3961,8 @@
         "grayAtLeast245": 216
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "B257CB487D0535D24C588F647E018823E2452F7D54760EC881D0BBE834DCCE22"
     },
     {
       "outputFrameIndex": 245,
@@ -3711,7 +3976,8 @@
         "grayAtLeast245": 218
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "E3B5E1FF00B081EBBEBF47D0098F2EF3EA8A8DD6929D04E2FC3785FAC0634D0E"
     },
     {
       "outputFrameIndex": 246,
@@ -3725,7 +3991,8 @@
         "grayAtLeast245": 213
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "85A905459298BEAB42D89A026098CC34B80CC35F3C586FB706D4C78C432F7D84"
     },
     {
       "outputFrameIndex": 247,
@@ -3739,7 +4006,8 @@
         "grayAtLeast245": 215
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "CED233BE566ABAC33E299344A3477EA614E5FFD31EA7D9B8DFACE6D00CCC4503"
     },
     {
       "outputFrameIndex": 248,
@@ -3753,7 +4021,8 @@
         "grayAtLeast245": 215
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "2F5503D920FBC581A8E57700335059FFC70DF713208487D354F41CDB23DC0035"
     },
     {
       "outputFrameIndex": 249,
@@ -3767,7 +4036,8 @@
         "grayAtLeast245": 222
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "00198FEDCE2E0820C244973E515E96E8983CCAAB9457F4C77F787A8C4A997798"
     },
     {
       "outputFrameIndex": 250,
@@ -3781,7 +4051,8 @@
         "grayAtLeast245": 220
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "6F9319A2D47E4F5531943EF2EA5530AC8E9DE0932E01467737D25959ED54C87D"
     },
     {
       "outputFrameIndex": 251,
@@ -3795,7 +4066,8 @@
         "grayAtLeast245": 223
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "D239C089C88D3C44B5F15E004455756A169DCF34E67ABA0366A84A77CA4EA960"
     },
     {
       "outputFrameIndex": 252,
@@ -3809,7 +4081,8 @@
         "grayAtLeast245": 222
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "BDE885B81A9E91AEF165D93866E267A45C96D4D9629878D89F752000AD22B3C1"
     },
     {
       "outputFrameIndex": 253,
@@ -3823,7 +4096,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "D052885A24A6E06105982FDD758590AFEF7059ECBFF529FE716822B9F8333D27"
     },
     {
       "outputFrameIndex": 254,
@@ -3837,7 +4111,8 @@
         "grayAtLeast245": 226
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "EA69920DAD6D341D2561F769DC8DC66859E235B267DF3905B7E0E4C6E71BB1CE"
     },
     {
       "outputFrameIndex": 255,
@@ -3851,7 +4126,8 @@
         "grayAtLeast245": 226
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "8D1E769D1A7E66F33FC76342C219EE5F1B7879A9E7EF630C99B8CC8824DCB999"
     },
     {
       "outputFrameIndex": 256,
@@ -3865,7 +4141,8 @@
         "grayAtLeast245": 226
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "233D1829B6AB5091A183A8C5438BB96821B36597870D29EFF7CBC0A1538147C1"
     },
     {
       "outputFrameIndex": 257,
@@ -3879,7 +4156,8 @@
         "grayAtLeast245": 226
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "568B654949EC4D1487BD39119D413B76E093AB822C4686ED5B46C11A3A76A38E"
     },
     {
       "outputFrameIndex": 258,
@@ -3893,7 +4171,8 @@
         "grayAtLeast245": 221
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "CFE3FAC28C4B189F0ABB22E7A07CE00949C7AEC181E8BBC2F398915FC791104C"
     },
     {
       "outputFrameIndex": 259,
@@ -3907,7 +4186,8 @@
         "grayAtLeast245": 223
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "AD7AE36269F3AE45F412505B4DD90EEA5072DB64183EA053B812968040110A1B"
     },
     {
       "outputFrameIndex": 260,
@@ -3921,7 +4201,8 @@
         "grayAtLeast245": 224
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "18C849F55B8F88FDF0F7A7E005F228CA80639D5041CAB4E6A307F7BB66568C9D"
     },
     {
       "outputFrameIndex": 261,
@@ -3935,7 +4216,8 @@
         "grayAtLeast245": 410
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "FB9689DDEAAD98DE8D9A0650E153EEF3FE26BF86F1CCA8FB9A70F68EB6F51BBE"
     },
     {
       "outputFrameIndex": 262,
@@ -3949,7 +4231,8 @@
         "grayAtLeast245": 412
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "21E899DECC46D0DB3CB88965CB1E2CA99721CA79CF6372F88F23CADFCB16D224"
     },
     {
       "outputFrameIndex": 263,
@@ -3963,7 +4246,8 @@
         "grayAtLeast245": 348
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "162399E967E4F1BDD3101C4B8F53DEA3201EDB3D64E3FE5F4A6E7EDA46BA1976"
     },
     {
       "outputFrameIndex": 264,
@@ -3977,7 +4261,8 @@
         "grayAtLeast245": 295
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "C3DEB469F400A397892ACBACC1E3F260C2E9A657DC8AB5EDDAC37552848C2867"
     },
     {
       "outputFrameIndex": 265,
@@ -3991,7 +4276,8 @@
         "grayAtLeast245": 245
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "0CD7258ABB1C5D4E8A0768F98FC209D7F676C84A6E3D24851F49B3AED8DBC0F4"
     },
     {
       "outputFrameIndex": 266,
@@ -4005,7 +4291,8 @@
         "grayAtLeast245": 235
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "C56CCDFF8B7EAD7A1ABC726C9A0C63D64B992060E996070704B799F000664B9A"
     },
     {
       "outputFrameIndex": 267,
@@ -4019,7 +4306,8 @@
         "grayAtLeast245": 220
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "77B3716326DD5DEFB8F67B3E63316444241B54433FB86008C72C0BB3E7431782"
     },
     {
       "outputFrameIndex": 268,
@@ -4033,7 +4321,8 @@
         "grayAtLeast245": 224
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "4CB74D5DCEFA062BBCB1EF6819D7B0D3CA81EA6EE64017CB69238B09A2B9A12B"
     },
     {
       "outputFrameIndex": 269,
@@ -4047,7 +4336,8 @@
         "grayAtLeast245": 224
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "782E7ED8EFFC510259281162E232926FDC71990A63B76131F4DAED7881A932E9"
     },
     {
       "outputFrameIndex": 270,
@@ -4061,7 +4351,8 @@
         "grayAtLeast245": 226
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "09D08E929183CC0FDF5FDAED9F10DA42C074964E6E606BBD854A695B1F67D5AE"
     },
     {
       "outputFrameIndex": 271,
@@ -4075,7 +4366,8 @@
         "grayAtLeast245": 227
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "CE1C86CB04196E45806536E4D794FDF9F9C89F138A318CEBD4F543FCCF4341FE"
     },
     {
       "outputFrameIndex": 272,
@@ -4089,7 +4381,8 @@
         "grayAtLeast245": 226
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "4E6E24481463194F279D7F4876CEC3CC41D0DBE3A8CAF2136C14312A61E09DFF"
     },
     {
       "outputFrameIndex": 273,
@@ -4103,7 +4396,8 @@
         "grayAtLeast245": 220
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "53323510D6AE8A811F9842B59BBE67E2765D0CFF0A800CAEFC13455EB7CE5558"
     },
     {
       "outputFrameIndex": 274,
@@ -4117,7 +4411,8 @@
         "grayAtLeast245": 216
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "AEAA85318F456EBA544428C84395673A01FBD822DFA31323EFE3CC49BB7F1796"
     },
     {
       "outputFrameIndex": 275,
@@ -4131,7 +4426,8 @@
         "grayAtLeast245": 210
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "102E421287C9A2CC73F406C1F620D47947EA8F0EBC269EE5365B622A030AA434"
     },
     {
       "outputFrameIndex": 276,
@@ -4145,7 +4441,8 @@
         "grayAtLeast245": 212
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "AEB6A18C887B4DBA70680BD312E284E3C4A7638DFBBA4FBC1CCFE81EB35FFB44"
     },
     {
       "outputFrameIndex": 277,
@@ -4159,7 +4456,8 @@
         "grayAtLeast245": 214
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "2115C76EE0506D17D69DD1BEA24B08833540602D72DD876283852C74FFAAAF3E"
     },
     {
       "outputFrameIndex": 278,
@@ -4173,7 +4471,8 @@
         "grayAtLeast245": 221
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "7A85E012ECD843D1E1DB3879E3E6EA159C3FD61DD525B98E5EFA4292DB21F05C"
     },
     {
       "outputFrameIndex": 279,
@@ -4187,7 +4486,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "451B181E6AEF9E0D09EF57DDE337F92679F4720D78A18208A1C11616F1CF4E16"
     },
     {
       "outputFrameIndex": 280,
@@ -4201,7 +4501,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "E979FC6910DBC2EB2FDF49A8283D3718103CFFECFAB91A17D3EC8D688A63B992"
     },
     {
       "outputFrameIndex": 281,
@@ -4215,7 +4516,8 @@
         "grayAtLeast245": 230
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "1BDCB0C51ECE9455DEF8E524CBD1043BC0A0CDF4A6953E169CA44DF8305692ED"
     },
     {
       "outputFrameIndex": 282,
@@ -4229,7 +4531,8 @@
         "grayAtLeast245": 231
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "45726CD6FF276D5896A92A3D333A8B24480D0938B802C2D194527838B90F5740"
     },
     {
       "outputFrameIndex": 283,
@@ -4243,7 +4546,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "211CEBF620834FA50D6E170017C394ACCA6F03835C69B2A48EF69AD18A29DDCF"
     },
     {
       "outputFrameIndex": 284,
@@ -4257,7 +4561,8 @@
         "grayAtLeast245": 229
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "CE78F9E05A104CC97026029B4D735B162C4DA51B65B6A24F6A1FC9D5E905D17D"
     },
     {
       "outputFrameIndex": 285,
@@ -4271,7 +4576,8 @@
         "grayAtLeast245": 230
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "3F246BAC4C10590C42B1AE1C1383582264882F7EE7B07832F91316B65A945B4B"
     },
     {
       "outputFrameIndex": 286,
@@ -4285,7 +4591,8 @@
         "grayAtLeast245": 230
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "AC8BDBFA4E83A9A01BA144AC7A9F336D70FA62A6AB03EEDCCC04897CFFEEE09F"
     },
     {
       "outputFrameIndex": 287,
@@ -4299,7 +4606,8 @@
         "grayAtLeast245": 234
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "62D6B650ACCFB8401607E9B77AD0C60D076583D8342CDB11FB1D2529271AF2EB"
     },
     {
       "outputFrameIndex": 288,
@@ -4313,7 +4621,8 @@
         "grayAtLeast245": 233
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "44D736112F5C0316885BE9B6C77670F60B927CF015A640796C45D66AF21ACE16"
     },
     {
       "outputFrameIndex": 289,
@@ -4327,7 +4636,8 @@
         "grayAtLeast245": 234
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "5B0C2D6575039A21CE2F5DD2EFB226B780BD7FD01A30CDA99B39811C89C670E9"
     },
     {
       "outputFrameIndex": 290,
@@ -4341,7 +4651,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "67892EBF241C03C1645DA0EBB44C0AD5D1440919212387292E22B66EBAC57E5B"
     },
     {
       "outputFrameIndex": 291,
@@ -4355,7 +4666,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "24CE23522C69891C7C29A5191CDB06ABDB10D6EFA591569D27826A0C99774213"
     },
     {
       "outputFrameIndex": 292,
@@ -4369,7 +4681,8 @@
         "grayAtLeast245": 229
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "0D22BB9B98DC52AB6C24B7254E7D50D7D9E21307D53C4E2756546F23C9EE2927"
     },
     {
       "outputFrameIndex": 293,
@@ -4383,7 +4696,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "0248EE7F51E11A60CFE1F0D8EA2519434A465ED16F71C2F70FF5042009B5FC7A"
     },
     {
       "outputFrameIndex": 294,
@@ -4397,7 +4711,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "68E694D2AF2B6C32F49B73C51B38B18FF76DAB28AE5AF7BE41FA8CEF86646C3C"
     },
     {
       "outputFrameIndex": 295,
@@ -4411,7 +4726,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "CAA1D4375F475CBD80F1B7046F387F49B021B8F0CC8808CD72E921853620D95D"
     },
     {
       "outputFrameIndex": 296,
@@ -4425,7 +4741,8 @@
         "grayAtLeast245": 224
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "36A1632393D379A65B7CF2B180357587FC95DD77DE1CA301B1EE650A1A2E7636"
     },
     {
       "outputFrameIndex": 297,
@@ -4439,7 +4756,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "AEFB4BB0BD14E532500A3B38D3F41D240D46198B492D68F95C1D9CF60572604D"
     },
     {
       "outputFrameIndex": 298,
@@ -4453,7 +4771,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "A26C77EED2973E2BDCBDF77AEA7FB4C2930124463328B6AA7225477D7DB8E868"
     },
     {
       "outputFrameIndex": 299,
@@ -4467,7 +4786,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "13A4DED844D28DBF4F5125D9AF265C1E1E7A0E76574226C53117EC9888068814"
     },
     {
       "outputFrameIndex": 300,
@@ -4481,7 +4801,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "8C39DB49C73B5436DB4766F619FC7A788A6B1DE9B2F582575EF716F523A7A98E"
     },
     {
       "outputFrameIndex": 301,
@@ -4495,7 +4816,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "93B55AE18F83647201FE117558E5B2C3DAF34BBD1969AA615DECDCEF02F09623"
     },
     {
       "outputFrameIndex": 302,
@@ -4509,7 +4831,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "01DE132CCE2A0B77AE3E4E2E2CC8780AA13EC97F4AFA5C0B940D57ED5DAE8CD4"
     },
     {
       "outputFrameIndex": 303,
@@ -4523,7 +4846,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "74C0EEF7F25BD7942EE753232B08E74214E90208FC1C9D00918CA7B125B02BED"
     },
     {
       "outputFrameIndex": 304,
@@ -4537,7 +4861,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "DB20CFE449F63D0BD238A3810617BDD73973EDE1E9EB24A458EBA93BD27A51CB"
     },
     {
       "outputFrameIndex": 305,
@@ -4551,7 +4876,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "8418383D373D873AFC5651283F96B44DC720E435426F4E9FF011B6BBFC7EF6C3"
     },
     {
       "outputFrameIndex": 306,
@@ -4565,7 +4891,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "AF0BD3B090831E0CEB780131396B680A5FAFC8874E71C587BB540ACFFEE81D9C"
     },
     {
       "outputFrameIndex": 307,
@@ -4579,7 +4906,8 @@
         "grayAtLeast245": 228
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "AB99F523E3F02F92AB9B505D93636017D676C8574CF449F57D817DF1EFFA15AD"
     },
     {
       "outputFrameIndex": 308,
@@ -4593,7 +4921,8 @@
         "grayAtLeast245": 230
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "F303D133BAD260D03044CC8CEB2670B4627E32DBBA1163F588A4543D12EB12DC"
     },
     {
       "outputFrameIndex": 309,
@@ -4607,7 +4936,8 @@
         "grayAtLeast245": 230
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "E110CBF5B69692B693360557523C3350E3E6FF53FCF27AA53707839D4BE227DF"
     },
     {
       "outputFrameIndex": 310,
@@ -4621,7 +4951,8 @@
         "grayAtLeast245": 230
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "06FBD2E0C871E27261408B550CEF314BC8D1EC616E5A7A8B48A556F3959F584D"
     },
     {
       "outputFrameIndex": 311,
@@ -4635,7 +4966,8 @@
         "grayAtLeast245": 230
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "DA3A0A69F9EDEF7911901757ED567446AC1D7450426C82020652B7558A640ED5"
     },
     {
       "outputFrameIndex": 312,
@@ -4649,7 +4981,8 @@
         "grayAtLeast245": 230
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "4D2AF4722BD4C29D11DE279FFEDFB4D7BB96578A61FFF0666DF91F3206F95BBF"
     },
     {
       "outputFrameIndex": 313,
@@ -4663,7 +4996,8 @@
         "grayAtLeast245": 231
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "44BC022F61ACD825E5D27DD45F77C143E9A1FF6C6A5C7B6A03C4868F4AFEC5F3"
     },
     {
       "outputFrameIndex": 314,
@@ -4677,7 +5011,8 @@
         "grayAtLeast245": 231
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "F50F82943BD72585E7E178056754C1731CBCA921F9F929556A992EFD3E4158FF"
     },
     {
       "outputFrameIndex": 315,
@@ -4691,7 +5026,8 @@
         "grayAtLeast245": 231
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "C63FF3A5C005D7717D41F72B92647C168B48DDED642051A3C5CEBE62411FCE3E"
     },
     {
       "outputFrameIndex": 316,
@@ -4705,7 +5041,8 @@
         "grayAtLeast245": 231
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "5916EC49D903EEBC87F80F2F84D08C361EA14F1BFF0C933A008C04B6E7BA4CFC"
     },
     {
       "outputFrameIndex": 317,
@@ -4719,7 +5056,8 @@
         "grayAtLeast245": 231
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "0882C84724249FD899F5A82130FAFA8D21DC2458A065A017A4D7E6195774BDDA"
     },
     {
       "outputFrameIndex": 318,
@@ -4733,7 +5071,8 @@
         "grayAtLeast245": 231
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "459FA552C429D65B804EEB5CAF1F2F0889639B01231CC7DDD7FDF8ED1379985E"
     },
     {
       "outputFrameIndex": 319,
@@ -4747,7 +5086,8 @@
         "grayAtLeast245": 231
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "8166AD38B248EBA6CAC0716DD6BE382BD822E38CBCA057952A9702C026225335"
     },
     {
       "outputFrameIndex": 320,
@@ -4761,7 +5101,8 @@
         "grayAtLeast245": 231
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "F89A82DBD0B5E490D756BBC4F7FAB406ABF7A6D259C01E0BB3DEB59455AF6330"
     },
     {
       "outputFrameIndex": 321,
@@ -4775,7 +5116,8 @@
         "grayAtLeast245": 231
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "F6D308FE432F251BB53619C929828186275CACE913A3FF1DBBE806D1E72B318B"
     },
     {
       "outputFrameIndex": 322,
@@ -4789,7 +5131,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "5505530CB4925E7E9DC1B66107E213E20B9DD3ECB08E475847EF395031D521B6"
     },
     {
       "outputFrameIndex": 323,
@@ -4803,7 +5146,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "27FA0F9D9E0AB457C450B53AA0748DBDB1FCF147F1C6D6575F38E1EB65CC656A"
     },
     {
       "outputFrameIndex": 324,
@@ -4817,7 +5161,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "4C5689E7B4BE296EC4553611A3896BBE031B4A18FC440C95D624E59C6AD8F52B"
     },
     {
       "outputFrameIndex": 325,
@@ -4831,7 +5176,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "89EF87172A78C7F2EB9B8ADB8022E9CA860390DF335D30C7F855677C2826AB95"
     },
     {
       "outputFrameIndex": 326,
@@ -4845,7 +5191,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "8F86864CBE83739F8724F22C50D7FBA89A8BF38565D0332DE876F0BB10CE783E"
     },
     {
       "outputFrameIndex": 327,
@@ -4859,7 +5206,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "E3FBB6019A34F311C985721B6BAF0895DC4D4DACF3CB3FCF74505F863D106A79"
     },
     {
       "outputFrameIndex": 328,
@@ -4873,7 +5221,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "C49187CEAEEF3D3FDFCC3F328F5CBA2F0F4563D00A4ADB2FCB48F95ECF49DBF5"
     },
     {
       "outputFrameIndex": 329,
@@ -4887,7 +5236,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "6D418803728BBC4F3E837F634521D45961B0A00DFEE98C7BCDCC5D41D2618BB1"
     },
     {
       "outputFrameIndex": 330,
@@ -4901,7 +5251,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "115CFDE17C366A3974FD2F5E6AE0BC788D2F899C812C824D6DBDB623FD8ACEE9"
     },
     {
       "outputFrameIndex": 331,
@@ -4915,7 +5266,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "5AC5A504872B49ADC761ABB431C85829DBBC712D16BFB14C9746B81167245915"
     },
     {
       "outputFrameIndex": 332,
@@ -4929,7 +5281,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "D69E68F6030070D416FE0B0C5CCA9A4B368BD4FF5828CEF84B5F548027BAB00C"
     },
     {
       "outputFrameIndex": 333,
@@ -4943,7 +5296,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "CB53303C40D5EF39F97A698CE68A80E684C56BDEC50F4F67CDC2C1C45658FF20"
     },
     {
       "outputFrameIndex": 334,
@@ -4957,7 +5311,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "F4CC36A64BFD847F68A7E95E5D0CF47F08F26BD6A0DC9404EDAC9C74EB8D2544"
     },
     {
       "outputFrameIndex": 335,
@@ -4971,7 +5326,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "B6D872730B7A88CA87928A32482C1571A76310FB81638FFB573B868BC5C785ED"
     },
     {
       "outputFrameIndex": 336,
@@ -4985,7 +5341,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "985D945129E78602E3F6C490DC95B600F0FACCC44E92ACEFFAFAB81F9422EE6C"
     },
     {
       "outputFrameIndex": 337,
@@ -4999,7 +5356,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "C22537E63B9AD1DC7061E14128AE47F48691DC2DA7C2F9AC307887D11DEBA92B"
     },
     {
       "outputFrameIndex": 338,
@@ -5013,7 +5371,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "A3747050840D8A17D63DE01FE4D3889F629385CD79ACF775CB32B78058BC29AA"
     },
     {
       "outputFrameIndex": 339,
@@ -5027,7 +5386,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "17A249C129ED0E68C68EFCDFBC439EF80A8F188C5C2674BFAC2D1B2BECC58891"
     },
     {
       "outputFrameIndex": 340,
@@ -5041,7 +5401,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "DF7EDF14772227036A6122956B84D35F828F26D44410C8C9321FEEBFB6E62A9B"
     },
     {
       "outputFrameIndex": 341,
@@ -5055,7 +5416,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "1E7E32B17B25C21B282DE2EB16EBD4C5209EB43A0BFAE7AAEDDB186D44392C98"
     },
     {
       "outputFrameIndex": 342,
@@ -5069,7 +5431,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "0D2177E551414BDD869B6A5D8BA3658435801710D6176B65330B5C1BBC47365F"
     },
     {
       "outputFrameIndex": 343,
@@ -5083,7 +5446,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "90CFE08AD74DC9345DEFF1E7F81638B6485C0C1C98351498970D8A2BBB4E69C7"
     },
     {
       "outputFrameIndex": 344,
@@ -5097,7 +5461,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "63FB43B908AFC4C49045AA0E1D2A38BB826D85DCDD1C57C300AA0D1550D25087"
     },
     {
       "outputFrameIndex": 345,
@@ -5111,7 +5476,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "B94119FC020637911BA74959200B0C6DC68B103B4174958571E48E7EA274375B"
     },
     {
       "outputFrameIndex": 346,
@@ -5125,7 +5491,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "1C9E570E675B73C16FE93BBBA2F4BB9EAF6F43E569D4C3A64D61F7E86B950757"
     },
     {
       "outputFrameIndex": 347,
@@ -5139,7 +5506,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "F39B2809832BF66027BD8821849E0B1A1D174EB342D52DE6ACADF1A098D1D1DF"
     },
     {
       "outputFrameIndex": 348,
@@ -5153,7 +5521,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "610EBF08CCCFFCFCD7D37DC688C08F4E2B4E092EAA3D47C228680C677D774402"
     },
     {
       "outputFrameIndex": 349,
@@ -5167,7 +5536,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "34F4FD95C288B385693264C8C8AC68547864FA4C35F219EC2AE63CFF3D637F36"
     },
     {
       "outputFrameIndex": 350,
@@ -5181,7 +5551,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "9F67EB79C57E22329BB8A4DC0A95C28DF857039EC40631CD612EFE18C11F3DBE"
     },
     {
       "outputFrameIndex": 351,
@@ -5195,7 +5566,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "D2FC8711F095A51097AD942A1388160E92CB0AD6D050C0E0844D273680B36D2C"
     },
     {
       "outputFrameIndex": 352,
@@ -5209,7 +5581,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "29253E9619C9444221B785B71845089D70FB4901F6F45999995C1820AC4393BE"
     },
     {
       "outputFrameIndex": 353,
@@ -5223,7 +5596,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "0C6EE2C5ACE9420BABBAE91024D5E9E957C8B1339F85A568F81CBF81B42D5849"
     },
     {
       "outputFrameIndex": 354,
@@ -5237,7 +5611,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "880698AEE0038599494A4A59C157D3733892A4262A908FB3D9FE311EA5D790EA"
     },
     {
       "outputFrameIndex": 355,
@@ -5251,7 +5626,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "EA61DE0C60B55CD85D2476189C60ED1380C9FF1E8B17C0F8D036F8604839C866"
     },
     {
       "outputFrameIndex": 356,
@@ -5265,7 +5641,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "F2CCBED9E9050436066ED0573F32B257F5491F3BB008EB80EA6FA3AA19A8EBE3"
     },
     {
       "outputFrameIndex": 357,
@@ -5279,7 +5656,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "AEA34CEC9F1CE59720B9845463965CDD74FA2D4C351243DEEB24D2FDE2AC4A62"
     },
     {
       "outputFrameIndex": 358,
@@ -5293,7 +5671,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "7FEE552A323AED679B8ECCF6285AEB475BF441F572A4B44EA4227F4EA7D01C8F"
     },
     {
       "outputFrameIndex": 359,
@@ -5307,7 +5686,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "CA68B930BFAF0548D7F75931E936AB81424E540B327C52217C093D4818229B06"
     },
     {
       "outputFrameIndex": 360,
@@ -5321,7 +5701,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "00587AE32F7CF5CCD18C179738A77A7EC6EFDADD0486A25D2FADE11532E645A7"
     },
     {
       "outputFrameIndex": 361,
@@ -5335,7 +5716,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "04E8DF4CE5E11DCC8CF2CF2F514A4E6268B5E8E0E6C88F0DD4C999C3C8A1452E"
     },
     {
       "outputFrameIndex": 362,
@@ -5349,7 +5731,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "8581B435A4CF08E828F839D2D28BBD7138F8D4D3393AB582697DDC50D3FFA465"
     },
     {
       "outputFrameIndex": 363,
@@ -5363,7 +5746,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "45CA2BEBBA68706745056717C71043E9EA6BD50E5D6748AD219F7BC4459754AD"
     },
     {
       "outputFrameIndex": 364,
@@ -5377,7 +5761,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "049CCE839C4E00BCC37A7596E0C169D7CFD08482878F6E2CC8439830C9DE4B03"
     },
     {
       "outputFrameIndex": 365,
@@ -5391,7 +5776,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "5EDB4174EC4D1F46E52C95FBD08B83641FDA92EF220070F2D1E2ACE767466145"
     },
     {
       "outputFrameIndex": 366,
@@ -5405,7 +5791,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "7BE6E264BE15CC5159F886EF059A89A3A0602584D00108CC94A24308482BB9B0"
     },
     {
       "outputFrameIndex": 367,
@@ -5419,7 +5806,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "BD779A71B6C59970F911A38813A036BB0C2F86B53B683E119476C7E86CA84A61"
     },
     {
       "outputFrameIndex": 368,
@@ -5433,7 +5821,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "4ED31CD1FF317D5B6359D7859D85302A5228EECC7C4F768A322808E1CB7C35D0"
     },
     {
       "outputFrameIndex": 369,
@@ -5447,7 +5836,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "83DC7CBD6523C93C10F5568F647D32868474444D9DA8E787867EBCA895828CC6"
     },
     {
       "outputFrameIndex": 370,
@@ -5461,7 +5851,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "BA4042A6593F3183FB7973F1FDBC79B947A89ECBD6CC37DBB5BC77C7DBAC4F94"
     },
     {
       "outputFrameIndex": 371,
@@ -5475,7 +5866,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "7AD77E51FAF51D69B5E903DDCC0D28774A3982A258292ABEA03F64F64FBFD60F"
     },
     {
       "outputFrameIndex": 372,
@@ -5489,7 +5881,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "C21447962E66113837B6F1BA3212262BD22D0DD3D847D7487273C98FACAE093A"
     },
     {
       "outputFrameIndex": 373,
@@ -5503,7 +5896,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "45830B4CC7E0F238CE8C6DA7386BB3F12DCFC437C9FD0CD3CD4D6FCF8AE914A0"
     },
     {
       "outputFrameIndex": 374,
@@ -5517,7 +5911,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "E09C809621DB25D5E52CEA9D64BB85BEF2811FC5ECC524A5CA6E0D5FE2AD81B3"
     },
     {
       "outputFrameIndex": 375,
@@ -5531,7 +5926,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "2AF8DD31431FF78326D3C3452778F24DABAEEA0A2BEAF55E88A50AC58FD98205"
     },
     {
       "outputFrameIndex": 376,
@@ -5545,7 +5941,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "31B1F65E886B3B9D86DC0DF4B8F89FB5C367DDD3E25F3571BFE372BC4AF89DE2"
     },
     {
       "outputFrameIndex": 377,
@@ -5559,7 +5956,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "53A708C074FB352D256587A3FA6B4D179985D094F5A26EADDABDA90421BB5266"
     },
     {
       "outputFrameIndex": 378,
@@ -5573,7 +5971,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "3EA63CB2E97CA33CF5B81E29DD49AA7F487D85055F0EE6396927B592CAB96B5F"
     },
     {
       "outputFrameIndex": 379,
@@ -5587,7 +5986,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "44561598BCD273901D00F63E40941D711F94038580056BB70D09DA88145DA9F4"
     },
     {
       "outputFrameIndex": 380,
@@ -5601,7 +6001,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "8EB9963941B1E0C5991E7EB1BAFD29114F8E4F297BC5BF2CF373CF385B464CD8"
     },
     {
       "outputFrameIndex": 381,
@@ -5615,7 +6016,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "CD2142B002573187F972A055C5D33ECEE98DD4E80A31B738811A70AF044D57B9"
     },
     {
       "outputFrameIndex": 382,
@@ -5629,7 +6031,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "12322A6C46A248C559836A1F540440F9BB98F71814AA58CD8764A494EF44F2C6"
     },
     {
       "outputFrameIndex": 383,
@@ -5643,7 +6046,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "8FBFAE074391CCB044DEE632492AC11FABD72B01B9FD1E611FBE2F171D3FABF2"
     },
     {
       "outputFrameIndex": 384,
@@ -5657,7 +6061,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "BF51933264AA41ACD05F28C3EB7202CAE89A5F595A5DAC928A6E9ED7206D84FF"
     },
     {
       "outputFrameIndex": 385,
@@ -5671,7 +6076,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "D33D71B502204683717B173715A460E76957CCC57C60E09DF160021491C0A506"
     },
     {
       "outputFrameIndex": 386,
@@ -5685,7 +6091,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "374F90444BD9F8E0516FB455C5CCA6FAFB12A00C0CDEF584EA5A1165146ED650"
     },
     {
       "outputFrameIndex": 387,
@@ -5699,7 +6106,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "53C48D2A5C0BE4BADE5AEC8C85D82B408D30F70CFF92193A41B4A75D8B63648F"
     },
     {
       "outputFrameIndex": 388,
@@ -5713,7 +6121,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "02D989F76BC3900F393CA31E9F8235774F4C721323EB469F48968B59D57C8124"
     },
     {
       "outputFrameIndex": 389,
@@ -5727,7 +6136,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "8E6E7A53CD4C94A6F885AD582823EE6D1F1237CE1641CC17F153FA727118D6A6"
     },
     {
       "outputFrameIndex": 390,
@@ -5741,7 +6151,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "1A6FD47A22AC915C16B47C03084E15EA60D282E8C212656D1465207008CC9AB3"
     },
     {
       "outputFrameIndex": 391,
@@ -5755,7 +6166,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "2A9BA0F2E252D9E372A2CB20F64E9D8BE1A83428C2827082B02D555466EBF9ED"
     },
     {
       "outputFrameIndex": 392,
@@ -5769,7 +6181,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "473D9673DA48777690F1F42A30AD6719576DABB8037A41F9378BEBB9FAEB81AA"
     },
     {
       "outputFrameIndex": 393,
@@ -5783,7 +6196,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "6EDC0F77B00D2DAEBC785EB56C989C6DA8D680F294C1EC2BFA2061DE0FA5B43E"
     },
     {
       "outputFrameIndex": 394,
@@ -5797,7 +6211,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "70F7E4C42A6D27BF37E046D3D0D12C2634D0867A8C1FA21901F58EF877FAD7AB"
     },
     {
       "outputFrameIndex": 395,
@@ -5811,7 +6226,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "C580193A3F8A45E69D7686FE5270E849451BE579F5D744A911E205A2740BBD96"
     },
     {
       "outputFrameIndex": 396,
@@ -5825,7 +6241,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "86AB77386E16C15E2BBE13165046EA0C7DB70CA75B68EF2BCA99004EA9959069"
     },
     {
       "outputFrameIndex": 397,
@@ -5839,7 +6256,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "C30FC7C060A301ECEEC13D4A9E019C44AAADB795119C5B85FF69A1BF46DA2741"
     },
     {
       "outputFrameIndex": 398,
@@ -5853,7 +6271,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "173A14A9E597E9F966066AAA572C91D4C72257A2AF9E04CF8678AD90D9778AC9"
     },
     {
       "outputFrameIndex": 399,
@@ -5867,7 +6286,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "7CD092D537B4523CDA0368D7EB8D7792FA99C0FDCB06C6C836062B7CDFFD0831"
     },
     {
       "outputFrameIndex": 400,
@@ -5881,7 +6301,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "C580F6D351DE395088F52606F621E8C7C673E9154C31C38B7175B80206608B8E"
     },
     {
       "outputFrameIndex": 401,
@@ -5895,7 +6316,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "B9E27BF94E1809C0F6637A779E6379E7F17CB6E6730DF11EB43145D51CC43DD1"
     },
     {
       "outputFrameIndex": 402,
@@ -5909,7 +6331,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "E84AF8FD5E40526B23F215AEFCAF41523B96A98CF4A3672B007A999418E3323C"
     },
     {
       "outputFrameIndex": 403,
@@ -5923,7 +6346,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "EE44B53B78855437264236D5CB1EF9893033DFC0CCDAE76347C01296F1931E3C"
     },
     {
       "outputFrameIndex": 404,
@@ -5937,7 +6361,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "52FC94B403FCC0F9B7C3B16EF5ED46E53B10917D851C59CCFDF5F7CD7BED8219"
     },
     {
       "outputFrameIndex": 405,
@@ -5951,7 +6376,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "8DE5A2F4B1851CCD474C728F0CA5905E918A82ED7E4645C633A557C9230B2DC7"
     },
     {
       "outputFrameIndex": 406,
@@ -5965,7 +6391,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "F6683ACCBDC923C93BF32E1EE9C41B113FDEE7BE27B0CA6E7C2037FE11A2691E"
     },
     {
       "outputFrameIndex": 407,
@@ -5979,7 +6406,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "C22A51E3D9874CB69777120C94B39B79EA4732236FBEB8824C1423F1DF28E84D"
     },
     {
       "outputFrameIndex": 408,
@@ -5993,7 +6421,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "272256303D516B15005406578A10F8798424C1479FFEB860C0A4924ED0135DB6"
     },
     {
       "outputFrameIndex": 409,
@@ -6007,7 +6436,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "DBE9150B6F0709A642458C90635DABDB6DBF3EB7485E2F5012A5B4F774FCBAE6"
     },
     {
       "outputFrameIndex": 410,
@@ -6021,7 +6451,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "82A17F9A34681F9092D2986FFA2E3331D7E0AC29387480F442576C81F0DD256A"
     },
     {
       "outputFrameIndex": 411,
@@ -6035,7 +6466,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "D3C9ABCF66A0FEF92A6C09775A3258C52FBC3D15F5EB73B40729B1EA2262AB12"
     },
     {
       "outputFrameIndex": 412,
@@ -6049,7 +6481,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "4E64AF6E23DBC3E82B22D5F6B327FEFE907805A255AA7DB4005B930956C60D02"
     },
     {
       "outputFrameIndex": 413,
@@ -6063,7 +6496,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "46D51A85C825AF22795395342F8CE2EBBA53CF2037B1490F2CF286CA00CF4972"
     },
     {
       "outputFrameIndex": 414,
@@ -6077,7 +6511,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "80BFDF376A450E105B6ADD6BAB3C1FF37260EAF662236A2E097B2B910F41165D"
     },
     {
       "outputFrameIndex": 415,
@@ -6091,7 +6526,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "B5FAF996E035B3F22D53922489EDF47538F7B0A1463A79A5362E9178D27A1ADF"
     },
     {
       "outputFrameIndex": 416,
@@ -6105,7 +6541,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "D9822334C9D2ABA7101C1329D1D64CC8DE6AE755EAC4C60992CD2A2A4A2F0D9E"
     },
     {
       "outputFrameIndex": 417,
@@ -6119,7 +6556,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "49C10699C8ECDC76E90E8E11B55B7043C9E21C70679DC05290C015BDB4C3AD51"
     },
     {
       "outputFrameIndex": 418,
@@ -6133,7 +6571,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "7ED8C9E43346854AA0932403BEDDB30BA93E155E86FCED4A29C8BCA00819FCDB"
     },
     {
       "outputFrameIndex": 419,
@@ -6147,7 +6586,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "D29E330AF08E4BCE46D595EE1BFFBC3F70F0081AC36206B207F67F4275DA8DED"
     },
     {
       "outputFrameIndex": 420,
@@ -6161,7 +6601,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "A109E462AD01621A38EE20F5095355C8EEA92FE178DD71F422B6FE258C34C661"
     },
     {
       "outputFrameIndex": 421,
@@ -6175,7 +6616,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "D8A2C48F7D23D9C3429C6C83F0E684AC41EC42FD479D7CE23CC2233D92FA16DD"
     },
     {
       "outputFrameIndex": 422,
@@ -6189,7 +6631,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "7D3F0829D002430A1B196A6DF9875B36FB85955B494221F3651282A9E7C0BF41"
     },
     {
       "outputFrameIndex": 423,
@@ -6203,7 +6646,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "3B12DA2CB535760BD7C862D96C6541EBECDACFE0EC8047038F19978F4764A709"
     },
     {
       "outputFrameIndex": 424,
@@ -6217,7 +6661,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "826A02429E66CE39ACFCF15FD4F9608B71BA2F34B5BDD0B3336A9EB76E66A2DB"
     },
     {
       "outputFrameIndex": 425,
@@ -6231,7 +6676,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "0A90178EB8BFEB60F60225EA5892C34FA60A91996FD486E3EC539D311E165317"
     },
     {
       "outputFrameIndex": 426,
@@ -6245,7 +6691,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "659834D0D662E5981D04CCCAAE2FE0FF520A77F9D183076AF0CE4A0B0D6B1B5C"
     },
     {
       "outputFrameIndex": 427,
@@ -6259,7 +6706,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "CC7BDE17CA563A7BEDACE178E0C180DD089F4628865A3CCFB56D831E2265FE93"
     },
     {
       "outputFrameIndex": 428,
@@ -6273,7 +6721,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "F9844021D578F1DC0CF091E15505446326533C0483B02495749E5C0CC6D32AED"
     },
     {
       "outputFrameIndex": 429,
@@ -6287,7 +6736,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "F4A34C766AAA8F4B70433511E76694EF2C6365E86A488C2FB2DFDD15C39E5647"
     },
     {
       "outputFrameIndex": 430,
@@ -6301,7 +6751,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "B1516C6C2365C574F46720F481A50277467CF23970E68AB3327483DB2E31ED2D"
     },
     {
       "outputFrameIndex": 431,
@@ -6315,7 +6766,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "E123B40329EB66FEC85D2E2FE92785053300F81A899F23C9F1E78051ABD0F829"
     },
     {
       "outputFrameIndex": 432,
@@ -6329,7 +6781,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "CA4102FF14DE18DF38CF81D1106C238E4463674F84CA9CB06D6A3BE5733B7767"
     },
     {
       "outputFrameIndex": 433,
@@ -6343,7 +6796,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "044858D9A88D2529750A5271D0975E17861F5A58A783D92A64B0BD4C6C4463C7"
     },
     {
       "outputFrameIndex": 434,
@@ -6357,7 +6811,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "59698A9B1A198601767110576ACD965E709F2880F920EF6DE9CBA568F6C40B04"
     },
     {
       "outputFrameIndex": 435,
@@ -6371,7 +6826,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "8DAE77D5B7B7E7FBB23F1A83AF2A35DA23B145BA2C9F7CA485A824437F8374A3"
     },
     {
       "outputFrameIndex": 436,
@@ -6385,7 +6841,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "485A5A568D20ACC7F6C8CB61350698B669C8E7CC8EE9DD1E2932C3AAA635A95E"
     },
     {
       "outputFrameIndex": 437,
@@ -6399,7 +6856,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "E893C2F88EA84153814434338688325C6C48A171BCF0352FD2AAF3475814BE3B"
     },
     {
       "outputFrameIndex": 438,
@@ -6413,7 +6871,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "B15CBCC8F29A661D0E7AFA063704767FC5E39033B077E0992AE3704FB0E1045D"
     },
     {
       "outputFrameIndex": 439,
@@ -6427,7 +6886,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "E062F92CCF99492DD8802F10F57931A5659E165796C4C391E762D15479A70C65"
     },
     {
       "outputFrameIndex": 440,
@@ -6441,7 +6901,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "CB810B144FD0D3C7CAE5F1BC2CCFE95B1B0582EF48EE4C78392566B74657E028"
     },
     {
       "outputFrameIndex": 441,
@@ -6455,7 +6916,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "FC7F4561D96A07B28AE5D2E2FC0ABC3145C673FEB2737B4D653DCD5422508826"
     },
     {
       "outputFrameIndex": 442,
@@ -6469,7 +6931,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "51A4EE7EFD1136A9C4EC37DE341F3DCD74C3A2CA415B91AE72311090023E2ACB"
     },
     {
       "outputFrameIndex": 443,
@@ -6483,7 +6946,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "9453303F0C3E8B3FACB1E9CB36467273D055EC628AA55DC3FFBBDAFB1529A15B"
     },
     {
       "outputFrameIndex": 444,
@@ -6497,7 +6961,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "8D819940B8DD90A53FABAB7CF8FD247C4CE1761B30F5AD431E59FF8C32CC16F8"
     },
     {
       "outputFrameIndex": 445,
@@ -6511,7 +6976,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "E25A3B5C911DDB8710A633C18D2D2C2CB9718F6E4A7B53C333CE9A49A838D928"
     },
     {
       "outputFrameIndex": 446,
@@ -6525,7 +6991,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "8115C84A540D363B9AEAC11DD519414048DF597CE60FDCA02864CC7AFE6B0EED"
     },
     {
       "outputFrameIndex": 447,
@@ -6539,7 +7006,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "45E4FBB68B94B12C6BD7A15B7059D4AB3873848872C80787421B4640FE685CCB"
     },
     {
       "outputFrameIndex": 448,
@@ -6553,7 +7021,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "DF4BE8A08074688A54D92004EDAAC5CD7F7DAB8379B602C3B76D4380CC784BEF"
     },
     {
       "outputFrameIndex": 449,
@@ -6567,7 +7036,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "BA47282C295C9B76F44B8B860CBEDED078355EBC7803CB8FDE9A2D9E1F6C7D15"
     },
     {
       "outputFrameIndex": 450,
@@ -6581,7 +7051,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "20E4C88FAFC04493E966C31FA407E21673319FB55B488CA95892A191C8D8EF51"
     },
     {
       "outputFrameIndex": 451,
@@ -6595,7 +7066,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "34068C0D50B56927FE5D86C9F50C726107EB116DA6630053DD49355D2F96395E"
     },
     {
       "outputFrameIndex": 452,
@@ -6609,7 +7081,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "9F8BE6B90BFE5F28D2B6725085A6DC8D2EE07683885DB0381CEBB686B8A36A6F"
     },
     {
       "outputFrameIndex": 453,
@@ -6623,7 +7096,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "942E8C6D2859F16C3ED5E0C047E7C38686DE8A66AFF790D850CB8E3EB230A466"
     },
     {
       "outputFrameIndex": 454,
@@ -6637,7 +7111,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "86041BAABA25CCDDD4ED690A0B995BCB7B6FAE069980C56E3D87873E201E9BB2"
     },
     {
       "outputFrameIndex": 455,
@@ -6651,7 +7126,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "7D9F8A596F4AF72CDF9898CB4073C987522C328C32C33BD28A9BDF96E9A7C570"
     },
     {
       "outputFrameIndex": 456,
@@ -6665,7 +7141,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "25CBEBBEBC042343FA848E630F289E7BB11573F0BB9216C91B108240AD0A26F1"
     },
     {
       "outputFrameIndex": 457,
@@ -6679,7 +7156,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "2A2FA01114BAEE09FA32667E1EB325DDF6726551B097AFD87F70C6B134BCB5CD"
     },
     {
       "outputFrameIndex": 458,
@@ -6693,7 +7171,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "766D9B96205B53AA2CACE57B56DA46CE7947BB039C2659DE51D900EFA3B40087"
     },
     {
       "outputFrameIndex": 459,
@@ -6707,7 +7186,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "09F8054F9B41A3452F7EE981460A5B43259ED4F085BE50108164FD02BEC3ED03"
     },
     {
       "outputFrameIndex": 460,
@@ -6721,7 +7201,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "DA3302E3BAF9B50911AE47E61F99FB475BB84DEDD2DE7C4EF80B9EA42E4BED2F"
     },
     {
       "outputFrameIndex": 461,
@@ -6735,7 +7216,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "73459885656234E62BC6CC39F4AF828125EF2658F42235A66B003CEF4DD55403"
     },
     {
       "outputFrameIndex": 462,
@@ -6749,7 +7231,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "D3F6F29EEBDB63D9D16B2F3E6A7A8195B52DAC9F9AA66FB7E9A566FAC31AB588"
     },
     {
       "outputFrameIndex": 463,
@@ -6763,7 +7246,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "63070100E2D07A7416980E9422481AD5A105802946915DA20569EC17EEE021C3"
     },
     {
       "outputFrameIndex": 464,
@@ -6777,7 +7261,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "21E5926F0308661F011E88BF28346D09E36BD49DD0944DE7512676CC94D52E5C"
     },
     {
       "outputFrameIndex": 465,
@@ -6791,7 +7276,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "6F3867EB4175416F552BA9AF65F7DED406A20F2ED407A739D9FE86F1FF7316FB"
     },
     {
       "outputFrameIndex": 466,
@@ -6805,7 +7291,8 @@
         "grayAtLeast245": 232
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "A45152ECDC97E1F19D721B3375CA047E146C1ECF1CC7599428C7EBC11F71CE07"
     },
     {
       "outputFrameIndex": 467,
@@ -6819,7 +7306,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "0FA70CD8F6726146B5536C55AF35449E373863A167B01ECCF872AE39C9B1B459"
     },
     {
       "outputFrameIndex": 468,
@@ -6833,7 +7321,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "A73B5077AA3BBA0CAFA97E505B3C174B7EFC72AFEB08A190B88A0040A89A1825"
     },
     {
       "outputFrameIndex": 469,
@@ -6847,7 +7336,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "9CAEE8600257F8DF3E194F946DF715993CF3AB8664D8D817AF20C691B5888C56"
     },
     {
       "outputFrameIndex": 470,
@@ -6861,7 +7351,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "855F722DAB3803D148B3A0FEA2485EA30A3C601AEA11C82F77C02A23B6B70EF7"
     },
     {
       "outputFrameIndex": 471,
@@ -6875,7 +7366,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "EE33977213F8E98B39B78A7BCAD8B5D4B01B59242960A8C34BE6B3AAFB1D8C15"
     },
     {
       "outputFrameIndex": 472,
@@ -6889,7 +7381,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "7E9B2AB6D73B11B6D947457A4F7AAEAA6E4751274D0E8EEE2B755F7A934019A2"
     },
     {
       "outputFrameIndex": 473,
@@ -6903,7 +7396,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "409D3E61C05B44596060FFCFA0272376A66CD38C9ADB97022F2BBEFFC6C985E8"
     },
     {
       "outputFrameIndex": 474,
@@ -6917,7 +7411,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "91186F2CDCB788E2585DE24EA961A5B6771DEE649DBE7367F239CF946B168D76"
     },
     {
       "outputFrameIndex": 475,
@@ -6931,7 +7426,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "2B97EBBEB6441E743595B5574045A48157DA0EF2C8720140C4F45DB794D38AC2"
     },
     {
       "outputFrameIndex": 476,
@@ -6945,7 +7441,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "81DDEE0C38225B758EA0A85DBD5D3B91E54EF7E30EA9AF0FDDC095FEDF4B6888"
     },
     {
       "outputFrameIndex": 477,
@@ -6959,7 +7456,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "0F96B21FBB34F0FD98B1BE130DBC4F424E2F52D4D60B11E69AB7C33C1F5EC2F5"
     },
     {
       "outputFrameIndex": 478,
@@ -6973,7 +7471,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "B4D48C3C8C81A09894727FFE006B9368FFA2D2069CAEA04AB31261C22D8282F5"
     },
     {
       "outputFrameIndex": 479,
@@ -6987,7 +7486,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "E717F879B3AA44BE116E55811F2E1D2BA8B9EF81136EB46E714945BFC1FE8A3C"
     },
     {
       "outputFrameIndex": 480,
@@ -7001,7 +7501,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "D20627A11AEC51A135986CDA868C4AE96DE244F4BE7FD62424BE09E6DE203056"
     },
     {
       "outputFrameIndex": 481,
@@ -7015,7 +7516,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "0053258B926F860C4252AE8B0C311E5E02FD442E5E02D27E95A52FD361D21172"
     },
     {
       "outputFrameIndex": 482,
@@ -7029,7 +7531,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "C8BFB21369CEC39F4D21EC49870D9C18CC6DE3C85B95F529B28ABA7718BB4BED"
     },
     {
       "outputFrameIndex": 483,
@@ -7043,7 +7546,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "876AF984E2A988BFE32D92481EDF2596BCE00F1C8B9D90834BB5B853DA6F1CDA"
     },
     {
       "outputFrameIndex": 484,
@@ -7057,7 +7561,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "D110645E12E337E004073F24FA9F486E4092A58B2B804E911010DE3B64AED99D"
     },
     {
       "outputFrameIndex": 485,
@@ -7071,7 +7576,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "75178185DA3347C426FFDE49CDEFFE5016FDBDC33C46B4763D82C881621B6933"
     },
     {
       "outputFrameIndex": 486,
@@ -7085,7 +7591,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "5AC5A27A47D542DE206728DC140408B3D37C13108F3B63CDA87854B77CC298A1"
     },
     {
       "outputFrameIndex": 487,
@@ -7099,7 +7606,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "1ED3BF01B02D66AE138E5607380514BA34491491AB42CE3128F86101E6FC6D5A"
     },
     {
       "outputFrameIndex": 488,
@@ -7113,7 +7621,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "C8015D829560128E362318C0A418F1B9D02B97951C14388523E8086B7936021E"
     },
     {
       "outputFrameIndex": 489,
@@ -7127,7 +7636,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "8B06AF833C20C550966124EBFD1E8E74E6008F1392CA2D63A9B7075198942A7A"
     },
     {
       "outputFrameIndex": 490,
@@ -7141,7 +7651,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "E5A9D71738AF3D9EBEE6AC1995A8F61EE89DFA29CD5632B790BEDF15CBECD844"
     },
     {
       "outputFrameIndex": 491,
@@ -7155,7 +7666,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "49824D35DEC4A493A71DD8B62B74191105DB9277E11104852DE5FBB394CFAE70"
     },
     {
       "outputFrameIndex": 492,
@@ -7169,7 +7681,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "DC86172C331F120B1E567DE2671A585275C28AEC8C45CAD661AD8B29B814A818"
     },
     {
       "outputFrameIndex": 493,
@@ -7183,7 +7696,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "EFC1E57D6919E8048C771F08F9AC4722E1E7151058B49720491C21688582FB1C"
     },
     {
       "outputFrameIndex": 494,
@@ -7197,7 +7711,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "1EA1CBA5ECD8B24997C715B1E8ABABC8556A31923A9D9BE9EC6957052AE6FD54"
     },
     {
       "outputFrameIndex": 495,
@@ -7211,7 +7726,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "DF88878C4FA23ED41F8911538A692D5EB5F1A44D55A018BCE550AC2D46D04934"
     },
     {
       "outputFrameIndex": 496,
@@ -7225,7 +7741,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "A20C35E35395F69546B177F73CA45DAC2AD8E0F18DC54B0B3A33CE5F5BEA8B39"
     },
     {
       "outputFrameIndex": 497,
@@ -7239,7 +7756,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "FD253221712F1DED7823421EFFD799C701C115F41E12C7EE0B1537F32AEB3D73"
     },
     {
       "outputFrameIndex": 498,
@@ -7253,7 +7771,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "B37748130EF77C8726D6CBD5C62E2391E86292B9FC9A5695DB45B9024D8FE008"
     },
     {
       "outputFrameIndex": 499,
@@ -7267,7 +7786,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "823C4D1E68BB2AC5EE9A184380DD15F8925236CD827FBF26221058894B29C3DC"
     },
     {
       "outputFrameIndex": 500,
@@ -7281,7 +7801,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "0196FE55D6A96B9C10D78EF8B0D9AA87AEA4B3E39D35FB128CC5B4F25770686F"
     },
     {
       "outputFrameIndex": 501,
@@ -7295,7 +7816,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "3A74DC2CC8B463DC4CFF5572748AF72F33FA27F165DDA70D8D096FCBE7E82C42"
     },
     {
       "outputFrameIndex": 502,
@@ -7309,7 +7831,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "37620A1BF8D362CBB919C8210DFBF2CF89A16A571B5FE9DE3D4CD786BBF5A31E"
     },
     {
       "outputFrameIndex": 503,
@@ -7323,7 +7846,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "C461355D73742512BF0AEEE30496B9AE8FF590127BEFC31E294480ADCAA2EA77"
     },
     {
       "outputFrameIndex": 504,
@@ -7337,7 +7861,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "E532EA2BE753BED02BB55BB992D0D239F7339C9849E1F00A78C40684BE42EAF6"
     },
     {
       "outputFrameIndex": 505,
@@ -7351,7 +7876,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "C6250658EB552F3F86D7A8BC2DBB428754F509F888FA5DD15767A36885FF70DC"
     },
     {
       "outputFrameIndex": 506,
@@ -7365,7 +7891,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "0B8BA53051C1CEFD72DA1F3E084BE8C68070871FC670F30B07F80919BADA29BF"
     },
     {
       "outputFrameIndex": 507,
@@ -7379,7 +7906,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "8F5F30E0B1C1DE5A9FEE2E67C40410EAA2784D3F154D07633319C6A29EF0034B"
     },
     {
       "outputFrameIndex": 508,
@@ -7393,7 +7921,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "4186822747258994C2D7F721A2DB8E892613D9E699AC49F5094625AF197A382B"
     },
     {
       "outputFrameIndex": 509,
@@ -7407,7 +7936,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "431072A6978E44B5D1180DAC2E71CB1D45DBF2F0D20AD443BC30BB56AB9298F5"
     },
     {
       "outputFrameIndex": 510,
@@ -7421,7 +7951,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "51A805D9B39C97730D44DD6E40FC47710545C46428DB690D40D1F9B05F5562E8"
     },
     {
       "outputFrameIndex": 511,
@@ -7435,7 +7966,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "A6063875F797E7289AAE1CD94ADFDBE8ECE07AE5E1F2E931D13D7504DF85F788"
     },
     {
       "outputFrameIndex": 512,
@@ -7449,7 +7981,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "E9F0B9176580EB36692FA12E64318D29B822D58A67AFC9E006B856DE9F7B0F96"
     },
     {
       "outputFrameIndex": 513,
@@ -7463,7 +7996,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "003F1426FB3187F61BBC2D626EAE29F7B84430BBB365FEB269510B08FB6DB904"
     },
     {
       "outputFrameIndex": 514,
@@ -7477,7 +8011,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "B471BF807DEC338E562842E99140594E46F9EEE7D09B110E715A99CC740716A1"
     },
     {
       "outputFrameIndex": 515,
@@ -7491,7 +8026,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "02002B80FD68D066804FADEDE7D0D64AFCCD59ACD82F92F4E81B094523F9CAE4"
     },
     {
       "outputFrameIndex": 516,
@@ -7505,7 +8041,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "0F10DA2A0E52806DFFFEAC24B55F50254635DF55880E163A77E45011809B15D4"
     },
     {
       "outputFrameIndex": 517,
@@ -7519,7 +8056,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "9DD951D9504494C1688F3381D511FBC3B4EBC57BE9359A16553BB1130AAB753F"
     },
     {
       "outputFrameIndex": 518,
@@ -7533,7 +8071,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "A1EDF191BA381808A050DBEEC5FDA26533F84F3B7C39ABE41E0A8E488175DF98"
     },
     {
       "outputFrameIndex": 519,
@@ -7547,7 +8086,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "2756FA10B947586FD40D29ADA738FC1DA9CE6090C09AC90DE2591515DC9D4C67"
     },
     {
       "outputFrameIndex": 520,
@@ -7561,7 +8101,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "B8A5E2634FC25260B24557CD9703381F3CF73EC779E44234A2AB61410047FAFE"
     },
     {
       "outputFrameIndex": 521,
@@ -7575,7 +8116,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "CCE9A0026C8750F5C709A2D86490ED64A52CE3A601EA05AD7B696EE30975829D"
     },
     {
       "outputFrameIndex": 522,
@@ -7589,7 +8131,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "BEDB75FF97D507FCF4435F79070B29007C83B5B3B131604BEB6906B20FBF4D5D"
     },
     {
       "outputFrameIndex": 523,
@@ -7603,7 +8146,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "AC4A9FDDA2986F30EC0211CA3A9B5A2A87B18971E58061FAA371385A19E68455"
     },
     {
       "outputFrameIndex": 524,
@@ -7617,7 +8161,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "1E5CDF4E2E1A1C65A7280E813A98EAE9E5DD6B343EF41C4270A5C80D16901103"
     },
     {
       "outputFrameIndex": 525,
@@ -7631,7 +8176,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "81555E2CCC8CB7BB3C9A3322EAD8FAD59A22E2C6BC390D0C5E8C494461F54253"
     },
     {
       "outputFrameIndex": 526,
@@ -7645,7 +8191,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "9D49F48BF59334B720034E28F3E915D8FBE445A06C27FF89DB068B35B03260C3"
     },
     {
       "outputFrameIndex": 527,
@@ -7659,7 +8206,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "1CAD5F44BB98B4C6B72D239698576DBC875A1413FCDA30EEBEB2A4552C6F03C2"
     },
     {
       "outputFrameIndex": 528,
@@ -7673,7 +8221,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "A6013E9827B829D460D9AD29C98C1FCC79F3175C58FC7448889643E3C2BCE4AB"
     },
     {
       "outputFrameIndex": 529,
@@ -7687,7 +8236,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "4583FF5C04846A96AA0873BBD7BEA596D459D4ADC0CDB2516FAC37FE5B3EF64A"
     },
     {
       "outputFrameIndex": 530,
@@ -7701,7 +8251,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "84DC986DC64458E0696F261942140D381CCC779C763E3043FAEE420503CBAFB3"
     },
     {
       "outputFrameIndex": 531,
@@ -7715,7 +8266,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "DC8D4729A8C586A2E5C85732034704EAFEF3CC05415905362F1D46FC0087F826"
     },
     {
       "outputFrameIndex": 532,
@@ -7729,7 +8281,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "7D18F7BD26AC5989D3EF4499CFB1D360210C56DE940F7B1B3ADDEBE3B067D3AD"
     },
     {
       "outputFrameIndex": 533,
@@ -7743,7 +8296,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "5D14DE98E549B7460B4075F0742C67859456224BE52D637F36CA69112FF411FA"
     },
     {
       "outputFrameIndex": 534,
@@ -7757,7 +8311,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "D3B020D9959E04F8FBE69A130E846C9AA80C16EB7617E3F69DDE720042FF19AE"
     },
     {
       "outputFrameIndex": 535,
@@ -7771,7 +8326,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "208712C4405B3D50FE1EF0F285C028317EA7BDCACE331540962268D60274B3F7"
     },
     {
       "outputFrameIndex": 536,
@@ -7785,7 +8341,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "CD3FB1B4800BABA95F0FF78AB4D33E39DD5BDA82D56AC3E4C6FA2BA5999AB94D"
     },
     {
       "outputFrameIndex": 537,
@@ -7799,7 +8356,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "9DF8B0258C0A18E6E9AD774FF624A7D65E5D34CC36EFAE988D8253E2C9B63E3A"
     },
     {
       "outputFrameIndex": 538,
@@ -7813,7 +8371,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "7AB81A2FC5C51E1938C5D6C4CEA2497EC1FBD89CE42A54948920A499A8F71BD7"
     },
     {
       "outputFrameIndex": 539,
@@ -7827,7 +8386,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "7E97DA98CCB7D56EF736C034B89457634BA3D279CB611FAC1E20F85DA3F0B2B1"
     },
     {
       "outputFrameIndex": 540,
@@ -7841,7 +8401,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "A55782DCFF34D2EEAA0C7277D8F392E503A260C3A91642C14313006ADF05E1F4"
     },
     {
       "outputFrameIndex": 541,
@@ -7855,7 +8416,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "E8140920A222B0931B36ACE71B18EA6A9FB9866093C9B02A6CD214D0C26D3D7F"
     },
     {
       "outputFrameIndex": 542,
@@ -7869,7 +8431,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "5AFB8E0587BFD1035B0CE6DDAD35733D8E215B89409AA3BA5A2D1FD6889720B7"
     },
     {
       "outputFrameIndex": 543,
@@ -7883,7 +8446,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "7CDF2F5C58915E5FD4760D880494E9E45122D122D552DDE3514278C0874FB283"
     },
     {
       "outputFrameIndex": 544,
@@ -7897,7 +8461,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "11D54912BB7174F18517EB0D7F1188E070C272FB39868B047F4EA7FADE5611EC"
     },
     {
       "outputFrameIndex": 545,
@@ -7911,7 +8476,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "CB5EAE4F6594BE145EF041937FB84B34DCB3B5DD05C73DE0F75DC8DCF2D8F62F"
     },
     {
       "outputFrameIndex": 546,
@@ -7925,7 +8491,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "F7539E643908785479C2844DA9F7B0CE517DF34CD76D93286769B0F0453005B6"
     },
     {
       "outputFrameIndex": 547,
@@ -7939,7 +8506,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "741BA5182C691E178012E714C87F91D7ECF5FC3A2F622A74B0CADADBD4BDBC6C"
     },
     {
       "outputFrameIndex": 548,
@@ -7953,7 +8521,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "4040C9A75B4DA489DF914DED3D3B9A041C56F9C2E74A8BA443619746C276AAFF"
     },
     {
       "outputFrameIndex": 549,
@@ -7967,7 +8536,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "7E533F05DAD424EADB0863D493735DB9B50AB48251AD491A0E218C5530ECC275"
     },
     {
       "outputFrameIndex": 550,
@@ -7981,7 +8551,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "CA8EC3655F0F5E7BDD16FD7A3B065688E8611F2B6F9174B216067234514705A7"
     },
     {
       "outputFrameIndex": 551,
@@ -7995,7 +8566,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "771A810642C509E5D80A18DB0FB1B3ADF5555E9E09B328EDD4321A37533F48C4"
     },
     {
       "outputFrameIndex": 552,
@@ -8009,7 +8581,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "FCD5700C63A7D2C40DD71C6531DD73A7F1B3994F72953D8F4579B8A7A71F1F3F"
     },
     {
       "outputFrameIndex": 553,
@@ -8023,7 +8596,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "350C67A66103A17AE95C0CFD416F3DCE1F0641E03F31A60629E147610BDCBAEE"
     },
     {
       "outputFrameIndex": 554,
@@ -8037,7 +8611,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "7B929961A4BBCE79FB697562CAF4C86A634B72FDF1093EC8C07C7931CA0AA041"
     },
     {
       "outputFrameIndex": 555,
@@ -8051,7 +8626,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "815A7997DD3875858082D2F7C7D989C870BA3AFE2F04F648F4C6AF2AC867E84F"
     },
     {
       "outputFrameIndex": 556,
@@ -8065,7 +8641,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "99D51E0D452B30F2D940D56633065A044296C6E8A30173155661BC976B6F4E1E"
     },
     {
       "outputFrameIndex": 557,
@@ -8079,7 +8656,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "57B2A6AE0BC3ECD431CAB4BB300EFE1B8482FE0CF06297D3E9A693E17884E0F9"
     },
     {
       "outputFrameIndex": 558,
@@ -8093,7 +8671,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "78B457E6A9A38C15270DFA5F3B2935576EADDAAD83FF3719E1BB757FF2DB68A3"
     },
     {
       "outputFrameIndex": 559,
@@ -8107,7 +8686,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "870D477989A362163EDC3C73D8BDA60C016A515E9D64380D031497C83FE851B8"
     },
     {
       "outputFrameIndex": 560,
@@ -8121,7 +8701,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "F25188C782B59CCE3592BABBAE292CAF567A7764042C4AD5E88DC06118AA338B"
     },
     {
       "outputFrameIndex": 561,
@@ -8135,7 +8716,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "886D7966DA81DF8F8A0DEAF8787C0991289C04198B52A72BBF8C0D4E11C0DC04"
     },
     {
       "outputFrameIndex": 562,
@@ -8149,7 +8731,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "78494BC64CEA939F34242D2AD0B0532779369B61FB82E4ED9C08605096D3B52C"
     },
     {
       "outputFrameIndex": 563,
@@ -8163,7 +8746,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "031D9D6C7B75BB1ADA91576F374A92EEF22A307C451D7402ABCA21CF09396D82"
     },
     {
       "outputFrameIndex": 564,
@@ -8177,7 +8761,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "47F84571CE539EE90FECCFB12FA0E62114A13ABF2F6CFF0E0225FE11E1A047D6"
     },
     {
       "outputFrameIndex": 565,
@@ -8191,7 +8776,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "A203A48B00C785E702E18C919AD70D7B42BD3F70B77115071651ABE0E4621FCF"
     },
     {
       "outputFrameIndex": 566,
@@ -8205,7 +8791,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "5BCB4BC3E70C0D3A46A7D7139C8F31D775BC95CCC4A48CC5B07EE39EB8790883"
     },
     {
       "outputFrameIndex": 567,
@@ -8219,7 +8806,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "AE46AEFC4EF08B68CD76209C8DEB716489F2A3A904FBB93D2E1E3244131B0ED8"
     },
     {
       "outputFrameIndex": 568,
@@ -8233,7 +8821,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "F8B7DEBC84DA43061A5ED55D428BEF8EA17F25D3E991F5813F3B1A376FC9C08C"
     },
     {
       "outputFrameIndex": 569,
@@ -8247,7 +8836,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "49151FDC8AD5DEF6911B513E3C01BC08CA2F82DB6E3FA0848B7500A03B65BF44"
     },
     {
       "outputFrameIndex": 570,
@@ -8261,7 +8851,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "710EE9AAA9EDB30B6F02B3645E11402973D8274DE3AF64ECC767CFF9B1AD54CE"
     },
     {
       "outputFrameIndex": 571,
@@ -8275,7 +8866,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "665A508768F790E05A86375C617FDAA2065AFB5B3FE6E83A871D8DB125F1AA70"
     },
     {
       "outputFrameIndex": 572,
@@ -8289,7 +8881,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "B0A2EF14844BC17FA0985C952DFC4F20C5351B63E5A58C8E398665A69890C368"
     },
     {
       "outputFrameIndex": 573,
@@ -8303,7 +8896,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "9EC68B3F6DC9F6FEE9AB712BF5835B8AC4C34BBA3B068980A8975210244593F2"
     },
     {
       "outputFrameIndex": 574,
@@ -8317,7 +8911,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "6DE2D289A436E371A4B5FF2D0CA2A900F44BC8045DCC1EFAE8B4A8E7801C2A4E"
     },
     {
       "outputFrameIndex": 575,
@@ -8331,7 +8926,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "92E679B4EBBD13AA8B64A11A08B34D4B2FB82E3FEB9A487253B2949BB585E483"
     },
     {
       "outputFrameIndex": 576,
@@ -8345,7 +8941,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "BFDAFF67AA9E396B84B2B77C4D073C021E64B3EA0E8572208E7F2A9C3128D9F3"
     },
     {
       "outputFrameIndex": 577,
@@ -8359,7 +8956,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "E9CA6CC39C62276E20E4A606B454E5E27ED7666E39E2A668778AB925207E176D"
     },
     {
       "outputFrameIndex": 578,
@@ -8373,7 +8971,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "5A6D30BB091503601B6EF95685D9E9EAFF5452598539B511CD2C9401DA625CF8"
     },
     {
       "outputFrameIndex": 579,
@@ -8387,7 +8986,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "A2049ECC27D11297DD4ED7D0DCF52EF4483950D770B6C06404249FA145B1BCE9"
     },
     {
       "outputFrameIndex": 580,
@@ -8401,7 +9001,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "9A50EB658282497B0D22AF24EF56745EBEFEF81D42367753313BCA45CFF40A3D"
     },
     {
       "outputFrameIndex": 581,
@@ -8415,7 +9016,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "EE12EB360741C4987756C029A4DAE638FD28FAE5406640B6D5FF69FEBE4475FD"
     },
     {
       "outputFrameIndex": 582,
@@ -8429,7 +9031,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "7710884B7D64139962730CD35C5330050C2CF62040F70D6E0E28A5884FA40F2E"
     },
     {
       "outputFrameIndex": 583,
@@ -8443,7 +9046,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "5FE4D4829F881FD9F86E2D462D77C8B8F86D03A65D1A5986DBED60423F395846"
     },
     {
       "outputFrameIndex": 584,
@@ -8457,7 +9061,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "CC3A84DFB77D9696EBE685DCDBF071F0BAB270BAE8FE6D1A4526B6C463C963A0"
     },
     {
       "outputFrameIndex": 585,
@@ -8471,7 +9076,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "F81F871430909B595438E7AA7164388B0C83E40F7D594E5B4CF2AF53F8FB0A2A"
     },
     {
       "outputFrameIndex": 586,
@@ -8485,7 +9091,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "B647C98020F0640C90739D6C3DCF1B05912CE63ED35C09658AE4FFA67497D6D8"
     },
     {
       "outputFrameIndex": 587,
@@ -8499,7 +9106,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "AC3BF713662DEE7DBF2DCCFEF3412CCCA4B65F2160CBF26995D2808B1525DF6E"
     },
     {
       "outputFrameIndex": 588,
@@ -8513,7 +9121,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "5F18188FE79255F6F481251C0592AEA52CB42D4B2BDAC65905242CFDC88605F9"
     },
     {
       "outputFrameIndex": 589,
@@ -8527,7 +9136,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "327A59D47B955726BF428FF3DF264CC26A2C111ABEE02C35C86E1C2E658FD880"
     },
     {
       "outputFrameIndex": 590,
@@ -8541,7 +9151,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "49E95DEBB7A87FD4BF356E4CFE78F72DEA0B5F01EA7F890ADC42279E6221D77A"
     },
     {
       "outputFrameIndex": 591,
@@ -8555,7 +9166,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "59C6174DC1D7EED987A049701F64BCF8CF40FED89E0FF7CF04BABB78B49394E0"
     },
     {
       "outputFrameIndex": 592,
@@ -8569,7 +9181,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "9F10E6E275ABD8915C2FCED2472273AE218C631997196E4312B357ECD8A0D9A1"
     },
     {
       "outputFrameIndex": 593,
@@ -8583,7 +9196,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "51FBAEB69245700878D5B4F2A0F0F0E7673C2FD06805BDA9BD8FFE6C898232F9"
     },
     {
       "outputFrameIndex": 594,
@@ -8597,7 +9211,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "D179886537EFA59FBDA1E59A57915A3823800B8EA1B65051A4131E1E93C1CD1A"
     },
     {
       "outputFrameIndex": 595,
@@ -8611,7 +9226,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "14F959921D14F4BE8146AE6775BCEE6E2485C0F1ABBFCC912EECCA2047FD89AB"
     },
     {
       "outputFrameIndex": 596,
@@ -8625,7 +9241,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "0C6824A5008E0D760FF65052B69E63A19A980D14D1BDC524D704E5E3C76F3BB5"
     },
     {
       "outputFrameIndex": 597,
@@ -8639,7 +9256,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "F187F795C6913F9A80356E4CB85703B4B36F765A41DA6738509509C29E2502E0"
     },
     {
       "outputFrameIndex": 598,
@@ -8653,7 +9271,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "1B839FE64F26E4D71EB26B43F3E7D8DE4698A7643C129A11AC16A2D460091C3B"
     },
     {
       "outputFrameIndex": 599,
@@ -8667,7 +9286,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "C452D00CA66C56909C46D426E510C07D74B4F2D81A1296F083624D2419127A31"
     },
     {
       "outputFrameIndex": 600,
@@ -8681,7 +9301,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "0E0E97D293812F907106F7DF016D63CFD26E0BF8B188619240951442FFA99EFC"
     },
     {
       "outputFrameIndex": 601,
@@ -8695,7 +9316,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "25597FC9617DB433E8E13FCE7867CE6D363CA467C0A4761AF1A8D714C3858C61"
     },
     {
       "outputFrameIndex": 602,
@@ -8709,7 +9331,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "929E638FEB007EEF7B580F72C1A8DCEF25C24CF3CDF751C86C4592850EF26489"
     },
     {
       "outputFrameIndex": 603,
@@ -8723,7 +9346,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "6CBCB81F13AD801407F8A5FAFB81DAA1DCEC9DDD2D87BECE598D9F06997B4F9B"
     },
     {
       "outputFrameIndex": 604,
@@ -8737,7 +9361,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "56A957D880858C1783D6FD8F3F863AF1E98A7E02BDF3C606666D5EFFEC2D572B"
     },
     {
       "outputFrameIndex": 605,
@@ -8751,7 +9376,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "B2293E362477094E0398DF5F26D39370961478219081447CB724440E039FBC14"
     },
     {
       "outputFrameIndex": 606,
@@ -8765,7 +9391,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "1D6E67B37AD6118ACCD046810F561600145813DFB822F88706FEE92B64DF027D"
     },
     {
       "outputFrameIndex": 607,
@@ -8779,7 +9406,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "92FAA677D88C65767FCA2D6B0086F302580001C40258C7CD2E1D7504B6D6CB02"
     },
     {
       "outputFrameIndex": 608,
@@ -8793,7 +9421,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "612E337A1B5CFD4CD168490A6F142744256AF389DBF5A244FF120F8705B976F7"
     },
     {
       "outputFrameIndex": 609,
@@ -8807,7 +9436,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "6E82611EB17C06DED829282B8AF74EE793122CF1023F41D8FE9F4C8D68EABF05"
     },
     {
       "outputFrameIndex": 610,
@@ -8821,7 +9451,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "4941CA6458A0B22B0F6ADC3BD8CEA335E74FB830EE39A71570A5908B5DFE5D6A"
     },
     {
       "outputFrameIndex": 611,
@@ -8835,7 +9466,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "85DAD0CE4C2A4B047D97AA1A464156CF7A4A703C8E7592ADE338DB1A76E8B5B5"
     },
     {
       "outputFrameIndex": 612,
@@ -8849,7 +9481,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "69801742647A1CD8D034EA0682B4F19076E58FAF664E0FA74B9CDFA52414E7EA"
     },
     {
       "outputFrameIndex": 613,
@@ -8863,7 +9496,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "5B631D4AE7C4F95F5B02420BA884E8684882C0E97AE3A29D6B106C22FA81D711"
     },
     {
       "outputFrameIndex": 614,
@@ -8877,7 +9511,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "86F42072A7134E4338B3C7882B39B9B5C440FAE65398F7DB0D5F1CE8CEB19BA1"
     },
     {
       "outputFrameIndex": 615,
@@ -8891,7 +9526,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "4F2B4D2EEC4EE484BBF0DC6D52191B79844C3D43FF56455EE2CBF4D8CB9417AA"
     },
     {
       "outputFrameIndex": 616,
@@ -8905,7 +9541,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "A3599062A858C1060E2FD1F2E00FF4E8AF20B1B536EDAB97402C5EA0B5DE1791"
     },
     {
       "outputFrameIndex": 617,
@@ -8919,7 +9556,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "0D995DD2359D7B68DDED33F9D61EFA88B816BDE7F306C3577158BC6DEFA97D2B"
     },
     {
       "outputFrameIndex": 618,
@@ -8933,7 +9571,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "E5882D3EADB9BAF56926DC8182C62864DEBF9E1951219BAFB4049B61247E8345"
     },
     {
       "outputFrameIndex": 619,
@@ -8947,7 +9586,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "C8BB8CF9356E31DBACFA326FBC8A11BB36372EF3C85F341934A1BC933A801107"
     },
     {
       "outputFrameIndex": 620,
@@ -8961,7 +9601,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "39885B9B635208A52EA7AE84B1D0823F3A4881EA4A3CAABCD752C644A651518C"
     },
     {
       "outputFrameIndex": 621,
@@ -8975,7 +9616,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "CCBE9F65C40B1EB5EE1526B6042CAB274DDDF4947599E2CE4079D0932F55D879"
     },
     {
       "outputFrameIndex": 622,
@@ -8989,7 +9631,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "117E52068F06C64E84385E26EE10820C08308F24797A53DBA794768163495D8D"
     },
     {
       "outputFrameIndex": 623,
@@ -9003,7 +9646,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "80397144E26460EA7D250262B57A0B9F7DEC031A31BB2751F8BF63D55D0ED3FF"
     },
     {
       "outputFrameIndex": 624,
@@ -9017,7 +9661,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "C503C7FCC53C3A55C4F4172764BDD01FCED1368215BF6866CEC2A1FD9A6772DE"
     },
     {
       "outputFrameIndex": 625,
@@ -9031,7 +9676,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "04689E03C76515B34949382BBE9EB52DBCC6AC67AACA2142BF0ACB6860397ADB"
     },
     {
       "outputFrameIndex": 626,
@@ -9045,7 +9691,8 @@
         "grayAtLeast245": 225
       },
       "validPixels": 4249104,
-      "invalidPixels": 1296
+      "invalidPixels": 1296,
+      "noUiVisualizationSha256": "F12C63AD6BB131D8E148494F7F1937B80F134826D4C5DF74B37441DAB91CBBC9"
     }
   ],
   "publicationGates": {
@@ -9057,6 +9704,7 @@
     "noUiClaim": false,
     "completeSilhouetteClaim": false,
     "ffv1OriginalBgr0": true,
-    "ffv1ValidityMask": true
+    "ffv1ValidityMask": true,
+    "noUiVisualizationMarked": true
   }
 }

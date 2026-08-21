@@ -38,6 +38,19 @@ class EndminfSourceViewportTests(unittest.TestCase):
         self.assertEqual(facts["grayAtLeast230"], 0)
         self.assertEqual(facts["grayAtLeast245"], 0)
 
+    def test_no_ui_visualization_marks_only_invalid_cursor_region(self) -> None:
+        raw_array = np.zeros((viewport.CROP_HEIGHT, viewport.CROP_WIDTH, 4), dtype=np.uint8)
+        raw_array[:, :, :3] = (7, 11, 13)
+        raw = raw_array.tobytes()
+        marked = np.frombuffer(viewport._no_ui_visualization(raw), dtype=np.uint8).reshape(raw_array.shape)
+        x0, y0, x1, y1 = viewport.CURSOR_PROTECTION_RELATIVE
+        self.assertTrue(np.array_equal(marked[:y0, :, :3], raw_array[:y0, :, :3]))
+        self.assertTrue(np.array_equal(marked[y1:, :, :3], raw_array[y1:, :, :3]))
+        self.assertTrue(np.array_equal(marked[y0:y1, :x0, :3], raw_array[y0:y1, :x0, :3]))
+        self.assertTrue(np.array_equal(marked[y0:y1, x1:, :3], raw_array[y0:y1, x1:, :3]))
+        colors = {tuple(color) for color in np.unique(marked[y0:y1, x0:x1, :3].reshape(-1, 3), axis=0)}
+        self.assertEqual(colors, {(0, 0, 0), (255, 0, 255)})
+
     def test_pixel_policy_never_claims_clean_no_ui_or_complete_silhouette(self) -> None:
         self.assertEqual(viewport.PIXEL_POLICY, "exact_decoded_source_crop_no_segmentation_no_compositing_no_inpainting")
         self.assertEqual(viewport.CURSOR_PROTECTION_RELATIVE, (1734, 690, 1770, 726))
