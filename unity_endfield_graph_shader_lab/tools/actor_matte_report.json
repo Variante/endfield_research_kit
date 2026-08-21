@@ -4,8 +4,8 @@
   "pathBase": "repo_root",
   "generatedBy": "unity_endfield_graph_shader_lab/tools/build_priority_actor_mattes.py",
   "manifest": "unity_endfield_graph_shader_lab/scratch/character_recovery/actor_clips/actor_matte_manifest.json",
-  "manifestBytes": 927600,
-  "manifestSha256": "932F8A56065C1566F8E06BBE74D498665D2FBB533751C6B83172986C5529126E",
+  "manifestBytes": 1478445,
+  "manifestSha256": "D02286FC74F8DF1FEA6258CB89D375F0DAF267571983F87ECB5DC60298020EE4",
   "source": {
     "path": "videos/2026-08-15_10-32-32.mkv",
     "bytes": 1678613397,
@@ -174,6 +174,7 @@
   },
   "actorSet": [
     "chen",
+    "endminf",
     "pelica"
   ],
   "artifacts": [
@@ -194,15 +195,18 @@
       "codec": "ffv1",
       "pix_fmt": "bgr0",
       "frames": 602
-    }
-  ],
-  "excludedActors": [
+    },
     {
       "actor": "endminf",
-      "status": "unpublished",
-      "reason": "retained unpublished; identity is proven, but the existing clip has no retained per-frame matte audit row and is not republished without non-reencoding frame validation"
+      "path": "unity_endfield_graph_shader_lab/scratch/character_recovery/actor_clips/endminf_actor_only.mkv",
+      "bytes": 563065192,
+      "sha256": "2B1C7FF70AB21F9B9B6098BF082CC39E78E09F030E41575E98008D3134B01EDB",
+      "codec": "ffv1",
+      "pix_fmt": "bgr0",
+      "frames": 733
     }
   ],
+  "excludedActors": [],
   "publicationGates": {
     "sourcePin": true,
     "sourceResolutionFps": true,
@@ -220,9 +224,10 @@
   "validation": {
     "rows": {
       "pelica": 677,
-      "chen": 602
+      "chen": 602,
+      "endminf": 733
     },
-    "publishedClips": 2,
+    "publishedClips": 3,
     "largeVideoFilesCommitted": false
   }
 }
