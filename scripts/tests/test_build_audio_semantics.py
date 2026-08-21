@@ -6488,6 +6488,9 @@ class AudioSemanticDataTests(unittest.TestCase):
                         "conditionExpr": {
                             "exprType": 2,
                             "stringValue": "",
+                            "boolValue": False,
+                            "intValue": 149,
+                            "floatValue": 0.0,
                             "children": [{
                                 "exprType": 8,
                                 "stringValue": "au_trigger_condition_operand",
@@ -6521,7 +6524,24 @@ class AudioSemanticDataTests(unittest.TestCase):
             self.assertEqual(level["handlerScope"], "level")
             self.assertEqual(level["levelId"], "map_test")
             self.assertEqual(level["cueId"], 0xFFFFFFFE)
-            self.assertEqual(semantics["expressionOperands"], [])
+            self.assertEqual(
+                {row["stringValue"] for row in semantics["expressionOperands"]},
+                {"au_trigger_condition_operand"},
+            )
+            expression_nodes = semantics["cueDefinitions"][0xFFFFFFFE]["expressionAst"]
+            event_nodes = [node for node in expression_nodes if node["exprType"] == 3]
+            self.assertEqual(len(event_nodes), 2)
+            self.assertTrue(all(node["nodeClass"] == "authoredEventRequest" for node in event_nodes))
+            self.assertTrue(all(node["validationStatus"] == "validated" for node in event_nodes))
+            variable_nodes = [node for node in expression_nodes if node["exprType"] == 8]
+            self.assertEqual(len(variable_nodes), 1)
+            self.assertTrue(all(node["nodeClass"] == "stringLiteral" for node in variable_nodes))
+            self.assertTrue(all(node["semanticRole"] == "runtimeCueVariable" for node in variable_nodes))
+            self.assertTrue(all(node["canonicalNodeClass"] == "runtimeCueVariable" for node in variable_nodes))
+            class_counts = semantics["cueDefinitions"][0xFFFFFFFE]["expressionNodeClassCounts"]
+            self.assertEqual(class_counts["stringLiteral"], 1)
+            self.assertNotIn("runtimeCueVariable", class_counts)
+            self.assertNotIn("authoredVariableNameCandidate", class_counts)
             self.assertEqual(
                 table_contexts.collect_table_audio_events(root)[0],
                 {"au_music_direct", "au_music_level"},
@@ -6607,6 +6627,8 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertEqual(authored["depth"], 0)
         self.assertEqual(authored["childPaths"][0], "-7.directHandlers[0].behaviourExpr.children[0]")
         self.assertEqual(by_path[authored["childPaths"][0]]["nodeClass"], "stringLiteral")
+        self.assertEqual(by_path[authored["childPaths"][0]]["semanticRole"], "runtimeCueVariable")
+        self.assertEqual(by_path[authored["childPaths"][0]]["canonicalNodeClass"], "runtimeCueVariable")
         self.assertEqual(by_path[authored["childPaths"][0]]["parentPath"], authored["path"])
         self.assertEqual(by_path["-7.directHandlers[0].behaviourExpr.children[1]"]["nodeClass"], "compositeOpaque")
         self.assertEqual(by_path["-7.directHandlers[0].behaviourExpr.children[2]"]["validationStatus"], "unknownExprType")
@@ -6614,9 +6636,22 @@ class AudioSemanticDataTests(unittest.TestCase):
             by_path["-7.levelHandlerMap[map_fixture].handlers[0].conditionExpr"]["validationStatus"],
             "invalidShape",
         )
-        self.assertEqual(semantics["expressionOperands"], [])
+        self.assertEqual(
+            {row["semanticRole"] for row in semantics["expressionOperands"]},
+            {"runtimeCueVariable"},
+        )
+        self.assertEqual(
+            {row["stringValue"] for row in semantics["expressionOperands"]},
+            {"runtime_key", "condition_key"},
+        )
+        self.assertEqual(
+            by_path["-7.levelHandlerMap[map_fixture].handlers[0].conditionExpr"]["nodeClass"],
+            "opaque",
+        )
         self.assertTrue(any(row["code"] == "unknownExprType" for row in semantics["diagnostics"]))
         self.assertTrue(any(row["code"] == "childrenNotListOfDict" for row in semantics["diagnostics"]))
+        self.assertIsNone(authored["exprTypeName"])
+        self.assertIsNone(authored["exprOperatorType"])
 
         detail = table_contexts.audio_cue_expression_detail_for_contexts(
             semantics["eventContexts"]["au_level"], semantics
@@ -6690,8 +6725,33 @@ class AudioSemanticDataTests(unittest.TestCase):
         )
         self.assertEqual(bad_nodes[0]["validationStatus"], "invalidShape")
         self.assertEqual(bad_nodes[0]["nodeClass"], "opaque")
+        self.assertIsNone(bad_nodes[0]["exprTypeName"])
+        self.assertIsNone(bad_nodes[0]["exprOperatorType"])
         self.assertTrue(any(row["code"] == "invalidShape" for row in bad_diagnostics))
-        binary = node(1, children=[{**node(8), "stringValue": "flag_name"}], int_value=149)
+        oversized_child = node(3)
+        oversized_child["stringValue"] = "au_must_not_project"
+        oversized = node(
+            1,
+            children=[
+                oversized_child
+                for _ in range(table_contexts._AUDIO_CUE_MAX_CHILDREN + 1)
+            ],
+        )
+        oversized_nodes, oversized_diagnostics = table_contexts.walk_audio_cue_expression(
+            oversized, cue_signed_id=1, cue_id=1, cue_hex="0x00000001", handler_scope="direct",
+            level_id="", handler_index=0, expression_side="behavior", root_field="behaviourExpr",
+            root_path="1.directHandlers[0].behaviourExpr", source="fixture",
+        )
+        self.assertEqual(len(oversized_nodes), 1)
+        self.assertEqual(oversized_nodes[0]["validationStatus"], "childrenLimit")
+        self.assertEqual(oversized_nodes[0]["nodeClass"], "opaque")
+        self.assertEqual(oversized_nodes[0]["canonicalNodeClass"], "opaque")
+        self.assertEqual(oversized_nodes[0]["childPaths"], [])
+        self.assertTrue(any(row["code"] == "childrenLimit" for row in oversized_diagnostics))
+        self.assertNotIn("authoredEventRequest", {row["canonicalNodeClass"] for row in oversized_nodes})
+        self.assertNotIn("runtimeCueVariable", {row.get("semanticRole") for row in oversized_nodes})
+        self.assertNotIn("au_must_not_project", {row.get("stringValue") for row in oversized_nodes})
+        binary = node(2, children=[{**node(8), "stringValue": "flag_name"}], int_value=149)
         binary_nodes, _ = table_contexts.walk_audio_cue_expression(
             binary, cue_signed_id=1, cue_id=1, cue_hex="0x00000001", handler_scope="direct",
             level_id="", handler_index=0, expression_side="condition", root_field="conditionExpr",
@@ -6699,9 +6759,53 @@ class AudioSemanticDataTests(unittest.TestCase):
         )
         candidate = binary_nodes[1]
         self.assertEqual(candidate["exprTypeName"], "STRING_LITERAL")
-        self.assertEqual(candidate["nodeClass"], "authoredVariableNameCandidate")
         self.assertEqual(candidate["exprOperatorType"], "GetBoolVar")
+        self.assertEqual(candidate["nodeClass"], "authoredVariableNameCandidate")
+        self.assertEqual(candidate["semanticRole"], "runtimeCueVariable")
+        self.assertEqual(candidate["canonicalNodeClass"], "runtimeCueVariable")
+        self.assertEqual(candidate["nativeEnumStatus"], "validated")
         self.assertNotIn("directCall", candidate)
+
+        for gated_contract in (None, mismatched):
+            gated_nodes, _ = table_contexts.walk_audio_cue_expression(
+                binary, cue_signed_id=1, cue_id=1, cue_hex="0x00000001", handler_scope="direct",
+                level_id="", handler_index=0, expression_side="condition", root_field="conditionExpr",
+                root_path="1.directHandlers[0].conditionExpr", source="fixture",
+                native_contract=gated_contract,
+            )
+            gated_candidate = gated_nodes[1]
+            self.assertIsNone(gated_candidate["exprTypeName"])
+            self.assertIsNone(gated_candidate["exprOperatorType"])
+            self.assertEqual(gated_candidate["nodeClass"], "stringLiteral")
+            self.assertEqual(gated_candidate["semanticRole"], "runtimeCueVariable")
+            self.assertEqual(gated_candidate["canonicalNodeClass"], "runtimeCueVariable")
+            self.assertEqual(
+                gated_candidate["nativeEnumStatus"],
+                "missing" if gated_contract is None else "mismatched",
+            )
+
+        unproven = node(2, children=[{**node(8), "stringValue": "flag_name"}], int_value=0)
+        unproven_nodes, _ = table_contexts.walk_audio_cue_expression(
+            unproven, cue_signed_id=1, cue_id=1, cue_hex="0x00000001", handler_scope="direct",
+            level_id="", handler_index=0, expression_side="condition", root_field="conditionExpr",
+            root_path="1.directHandlers[0].conditionExpr", source="fixture", native_contract=exact,
+        )
+        self.assertEqual(unproven_nodes[1]["exprTypeName"], "STRING_LITERAL")
+        self.assertIsNone(unproven_nodes[1]["exprOperatorType"])
+        self.assertEqual(unproven_nodes[1]["nodeClass"], "stringLiteral")
+
+        nested = node(
+            2,
+            children=[node(1, children=[{**node(8), "stringValue": "nested_flag"}])],
+            int_value=149,
+        )
+        nested_nodes, _ = table_contexts.walk_audio_cue_expression(
+            nested, cue_signed_id=1, cue_id=1, cue_hex="0x00000001", handler_scope="direct",
+            level_id="", handler_index=0, expression_side="condition", root_field="conditionExpr",
+            root_path="1.directHandlers[0].conditionExpr", source="fixture", native_contract=exact,
+        )
+        self.assertEqual(nested_nodes[2]["exprOperatorType"], "GetBoolVar")
+        self.assertEqual(nested_nodes[2]["nodeClass"], "authoredVariableNameCandidate")
 
     def test_audio_cue_bounds_reject_huge_scalars_ids_levels_and_paths(self) -> None:
         huge_float = 10 ** 10000
@@ -6717,6 +6821,7 @@ class AudioSemanticDataTests(unittest.TestCase):
             root_path="1.directHandlers[0].behaviourExpr", source="fixture",
         )
         self.assertEqual(nodes[0]["validationStatus"], "badScalar")
+        self.assertEqual(nodes[0]["nodeClass"], "opaque")
         self.assertIsNone(nodes[0]["floatValue"])
         self.assertEqual(len(nodes[0]["stringValue"]), table_contexts._AUDIO_CUE_MAX_STRING)
         self.assertIsNone(nodes[0]["rawScalars"]["floatValue"])
@@ -9096,6 +9201,29 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertNotIn("raw.animationCallbackClipResolutions", panel_body)
         self.assertNotIn("raw.animationCallbackOccurrences", panel_body)
         self.assertIn("runtime execution unobserved", source)
+
+    def test_audio_frontend_exposes_scene_emitter_containment_boundary(self) -> None:
+        source = (
+            Path(__file__).resolve().parents[2] / "webui/src/features/audio/index.js"
+        ).read_text(encoding="utf-8")
+        search_body = source.split("function searchText", 1)[1].split(
+            "function humanize", 1
+        )[0]
+        evidence_body = source.split("function contextEvidenceLabel", 1)[1].split(
+            "function radioTableLineLabel", 1
+        )[0]
+        self.assertIn('kind === "sceneEmitterAudioEvent"', evidence_body)
+        self.assertIn("sceneContainmentStatus", evidence_body)
+        self.assertIn("sourceAssetPath", evidence_body)
+        self.assertIn("containmentType", evidence_body)
+        self.assertIn("authored prefab component / runtime scene instantiation unobserved", evidence_body)
+        for field in (
+            "context.sceneContainmentStatus",
+            "context.sourceAssetPath",
+            "context.containmentType",
+            "context.sceneContainmentDiagnostics",
+        ):
+            self.assertIn(field, search_body)
 
     def test_audio_frontend_renders_native_playback_call_chain_stages(self) -> None:
         source = (

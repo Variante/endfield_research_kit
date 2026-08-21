@@ -67,6 +67,11 @@ EVENT_HASH_FIELD_RE = re.compile(
 AMBIENCE_NAME_MARKERS = (
     "au_amb_", "ambient", "ambience", "roomtone", "room_tone",
 )
+SCENE_CONTAINMENT_DIAGNOSTIC_LIMIT = 4
+SCENE_CONTAINMENT_TYPES = frozenset({"SceneAsset", "Level", "LevelAsset"})
+PREFAB_CONTAINMENT_TYPES = frozenset({"Prefab", "PrefabAsset"})
+UNRESOLVED_CONTAINER_TYPES = frozenset({"SceneAssetContainer", "AssetContainer"})
+SceneIdentityKey = tuple[Any, ...]
 
 
 class SceneBackgroundError(RuntimeError):
@@ -81,6 +86,630 @@ def _identity(row: dict[str, Any]) -> dict[str, Any]:
         key: value.get(key)
         for key in ("serializedFile", "source", "sourceOffset", "pathId")
         if value.get(key) is not None
+    }
+
+
+def _identity_key(value: Any) -> SceneIdentityKey | None:
+    """Return a complete serialized-object identity, without normalizing names."""
+    if not isinstance(value, dict):
+        return None
+    serialized_file = value.get("serializedFile")
+    source = value.get("source")
+    source_offset = value.get("sourceOffset")
+    path_id = value.get("pathId")
+    if (
+        not isinstance(serialized_file, str) or not serialized_file
+        or not isinstance(source, str) or not source
+        or isinstance(source_offset, bool) or not isinstance(source_offset, int)
+        or isinstance(path_id, bool) or not isinstance(path_id, int)
+    ):
+        return None
+    return serialized_file, source, source_offset, path_id
+
+
+def _identity_projection(value: Any) -> dict[str, Any]:
+    key = _identity_key(value)
+    if key is None:
+        return {}
+    return {
+        "serializedFile": key[0],
+        "source": key[1],
+        "sourceOffset": key[2],
+        "pathId": key[3],
+    }
+
+
+def _source_tokens(value: Any) -> list[str]:
+    if not isinstance(value, str) or not value:
+        return []
+    normalized = value.replace("\\", "/").lower()
+    absolute_markers = ("/streamingassets/vfs/", "/persistent/vfs/")
+    suffix = ""
+    for marker in absolute_markers:
+        if marker in normalized:
+            suffix = normalized.split(marker, 1)[1]
+            break
+    if not suffix:
+        if normalized.startswith("vfs/"):
+            suffix = normalized[len("vfs/"):]
+        else:
+            return []
+    # Keep the complete VFS-relative identity. In particular, do not add a
+    # basename alias: two roots may legitimately contain the same hash name.
+    if not suffix or suffix.startswith("/") or "/" not in suffix:
+        return []
+    return [suffix]
+
+
+def _asset_map_keys(value: Any) -> list[SceneIdentityKey]:
+    """Return explicit AssetMap Source+PathID aliases, never name/path guesses."""
+    if not isinstance(value, dict):
+        return []
+    source = value.get("source")
+    path_id = value.get("pathId")
+    if not isinstance(source, str) or not source:
+        source = value.get("Source")
+    if isinstance(path_id, bool) or not isinstance(path_id, int):
+        path_id = value.get("PathID")
+    if (
+        not isinstance(source, str) or not source
+        or isinstance(path_id, bool) or not isinstance(path_id, int)
+    ):
+        return []
+    return [("assetMap", token, path_id) for token in _source_tokens(source)]
+
+
+def _containment_lookup_keys(value: Any) -> list[SceneIdentityKey]:
+    keys: list[SceneIdentityKey] = []
+    identity_key = _identity_key(value)
+    if identity_key is not None:
+        keys.append(("object", *identity_key))
+    keys.extend(_asset_map_keys(value))
+    return keys
+
+
+def _asset_map_identity_projection(value: Any) -> dict[str, Any] | None:
+    if not isinstance(value, dict):
+        return None
+    source = value.get("Source", value.get("source"))
+    path_id = value.get("PathID", value.get("pathId"))
+    if not isinstance(source, str) or not source:
+        return None
+    if isinstance(path_id, bool) or not isinstance(path_id, int):
+        return None
+    return {"source": source, "pathId": path_id}
+
+
+def _bound_rows(rows: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [row for row in rows if isinstance(row, dict)][
+        :SCENE_CONTAINMENT_DIAGNOSTIC_LIMIT
+    ]
+
+
+def _normalise_scene_containment_index(
+    raw_index: Any,
+) -> tuple[dict[SceneIdentityKey, list[dict[str, Any]]], list[dict[str, Any]]]:
+    """Normalize an explicit same-pass identity -> SceneAsset/Level catalog.
+
+    The index is intentionally identity-only.  Names, hierarchy paths, prefab
+    names, and positions are not accepted as join keys.  The maintained
+    exporter may provide a list or ``{"entries": [...]}``; both forms retain
+    the exact identity in the published evidence.
+    """
+    if isinstance(raw_index, dict):
+        entries = raw_index.get("entries")
+        if entries is None:
+            entries = raw_index.get("sceneContainments")
+        external_diagnostics = raw_index.get("diagnostics") or []
+    else:
+        entries = raw_index
+        external_diagnostics = []
+    if not isinstance(entries, (list, tuple)):
+        return {}, _bound_rows([
+            {"status": "malformed", "reason": "entriesNotAList"},
+            *external_diagnostics,
+        ])
+
+    by_identity: dict[SceneIdentityKey, list[dict[str, Any]]] = defaultdict(list)
+    diagnostics: list[dict[str, Any]] = []
+    for ordinal, entry in enumerate(entries):
+        if not isinstance(entry, dict):
+            diagnostics.append({
+                "status": "malformed",
+                "ordinal": ordinal,
+                "reason": "entryNotAnObject",
+            })
+            continue
+        identity_value = (
+            entry.get("identity")
+            or entry.get("objectIdentity")
+            or entry.get("object")
+            or entry.get("ownerIdentity")
+        )
+        if identity_value is None and (
+            entry.get("Source") is not None or entry.get("source") is not None
+        ):
+            identity_value = {
+                "Source": entry.get("Source", entry.get("source")),
+                "PathID": entry.get("PathID", entry.get("pathId")),
+            }
+        lookup_keys = _containment_lookup_keys(identity_value)
+        containment_type = (
+            entry.get("containmentType")
+            or entry.get("containerType")
+            or entry.get("type")
+        )
+        scene_id = entry.get("sceneId")
+        source_name = entry.get("sourceName")
+        source_path = entry.get("sourcePath")
+        if not lookup_keys:
+            diagnostics.append({
+                "status": "malformed",
+                "ordinal": ordinal,
+                "reason": "incompleteIdentity",
+            })
+            continue
+        source_asset_path = entry.get("sourceAssetPath") or entry.get("assetPath")
+        if containment_type in PREFAB_CONTAINMENT_TYPES | UNRESOLVED_CONTAINER_TYPES:
+            if not isinstance(source_asset_path, str) or not source_asset_path:
+                diagnostics.append({
+                    "status": "malformed",
+                    "ordinal": ordinal,
+                    "identity": _identity_projection(identity_value),
+                    "reason": "prefabMissingSourceAssetPath",
+                })
+                continue
+            candidate = {
+                "identity": _identity_projection(identity_value),
+                "containmentType": containment_type,
+                "sourceAssetPath": source_asset_path,
+            }
+            asset_identity = _asset_map_identity_projection(identity_value)
+            if asset_identity:
+                candidate["assetMapIdentity"] = asset_identity
+            for key in lookup_keys:
+                if not any(existing == candidate for existing in by_identity[key]):
+                    by_identity[key].append(candidate)
+            continue
+        if (
+            not isinstance(scene_id, str) or not scene_id
+            or not isinstance(source_name, str) or not source_name
+            or not isinstance(source_path, str) or not source_path
+            or not isinstance(containment_type, str)
+            or containment_type not in SCENE_CONTAINMENT_TYPES
+        ):
+            diagnostics.append({
+                "status": "malformed",
+                "ordinal": ordinal,
+                "identity": _identity_projection(identity_value),
+                "reason": "incompleteSceneAssetLevelFields",
+            })
+            continue
+        candidate = {
+            "identity": _identity_projection(identity_value),
+            "sceneId": scene_id,
+            "sourceName": source_name,
+            "sourcePath": source_path,
+            "containmentType": containment_type,
+        }
+        asset_identity = _asset_map_identity_projection(identity_value)
+        if asset_identity:
+            candidate["assetMapIdentity"] = asset_identity
+        for key in lookup_keys:
+            if not any(existing == candidate for existing in by_identity[key]):
+                by_identity[key].append(candidate)
+    return dict(by_identity), _bound_rows([*diagnostics, *external_diagnostics])
+
+
+def _resolve_scene_emitter_containment(
+    owner_identity: dict[str, Any],
+    placement: dict[str, Any] | None,
+    containment_index: dict[SceneIdentityKey, list[dict[str, Any]]],
+    *,
+    index_diagnostics: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """Resolve only explicit object identities to a unique SceneAsset/Level."""
+    identities: list[dict[str, Any]] = []
+    for value in (
+        owner_identity,
+        placement.get("gameObject") if isinstance(placement, dict) else None,
+        placement.get("transform") if isinstance(placement, dict) else None,
+    ):
+        keys = _containment_lookup_keys(value)
+        if not keys or any(set(keys) & set(_containment_lookup_keys(item)) for item in identities):
+            continue
+        projected = _identity_projection(value)
+        identities.append(projected or {
+            "source": value.get("Source", value.get("source")),
+            "pathId": value.get("PathID", value.get("pathId")),
+        })
+
+    matches: list[dict[str, Any]] = []
+    conflicts: list[dict[str, Any]] = []
+    for identity in identities:
+        candidates: list[dict[str, Any]] = []
+        for key in _containment_lookup_keys(identity):
+            for candidate in containment_index.get(key, ()):
+                if candidate not in candidates:
+                    candidates.append(candidate)
+        if len(candidates) > 1:
+            conflicts.append({
+                "identity": identity,
+                "candidates": _bound_rows(candidates),
+            })
+        matches.extend(candidates)
+    if conflicts:
+        return {
+            "status": "conflictingSceneAssetLevelContainment",
+            "diagnostics": _bound_rows(conflicts),
+            **({"indexDiagnostics": index_diagnostics} if index_diagnostics else {}),
+        }
+    prefab_matches = [
+        candidate for candidate in matches
+        if candidate.get("containmentType") in PREFAB_CONTAINMENT_TYPES
+    ]
+    scene_matches = [
+        candidate for candidate in matches
+        if candidate.get("containmentType") in SCENE_CONTAINMENT_TYPES
+    ]
+    unresolved_matches = [
+        candidate for candidate in matches
+        if candidate.get("containmentType") in UNRESOLVED_CONTAINER_TYPES
+    ]
+    if prefab_matches and not scene_matches:
+        return {
+            "status": "prefabLocalNotSceneContained",
+            "diagnostics": _bound_rows([{
+                "status": "prefabLocal",
+                "reason": "explicitAssetMapPrefabContainer",
+                "candidates": prefab_matches,
+            }]),
+        }
+    if prefab_matches and scene_matches:
+        return {
+            "status": "ambiguousSceneAssetLevelContainment",
+            "diagnostics": _bound_rows([{
+                "status": "ambiguous",
+                "reason": "sceneAndPrefabContainersForSameIdentity",
+                "candidates": matches,
+            }]),
+        }
+    if unresolved_matches and (scene_matches or prefab_matches):
+        return {
+            "status": "ambiguousSceneAssetLevelContainment",
+            "diagnostics": _bound_rows([{
+                "status": "ambiguous",
+                "reason": "mixedContainmentFamiliesForSameIdentity",
+                "candidates": matches,
+            }]),
+        }
+    if unresolved_matches and not scene_matches and not prefab_matches:
+        status = (
+            "sceneAssetContainerWithoutAuthoritativeSceneId"
+            if any(
+                candidate.get("containmentType") == "SceneAssetContainer"
+                for candidate in unresolved_matches
+            )
+            else "assetContainerNotSceneContained"
+        )
+        return {
+            "status": status,
+            "diagnostics": _bound_rows([{
+                "status": "unresolvedContainer",
+                "reason": "assetMapContainerLacksAuthoritativeSceneId",
+                "candidates": unresolved_matches,
+            }]),
+        }
+    # Only the scene/level family may enter the scene candidate tuple below.
+    # Other explicit container families have already failed closed above.
+    unique: dict[tuple[str, str, str, str], dict[str, Any]] = {}
+    for candidate in scene_matches:
+        signature = tuple(
+            candidate[field]
+            for field in ("sceneId", "sourceName", "sourcePath", "containmentType")
+        )
+        unique.setdefault(signature, candidate)
+    if not unique:
+        diagnostics: list[dict[str, Any]] = [{
+            "status": "missing",
+            "reason": "noExactIdentityJoin",
+            "identityCandidates": identities[:SCENE_CONTAINMENT_DIAGNOSTIC_LIMIT],
+        }]
+        if index_diagnostics:
+            diagnostics.extend(index_diagnostics)
+        return {
+            "status": "missingSceneAssetLevelContainment",
+            "diagnostics": _bound_rows(diagnostics),
+        }
+    if len(unique) > 1:
+        return {
+            "status": "ambiguousSceneAssetLevelContainment",
+            "diagnostics": _bound_rows([{
+                "status": "ambiguous",
+                "reason": "multipleExactIdentityCandidates",
+                "candidates": list(unique.values()),
+            }]),
+        }
+    candidate = next(iter(unique.values()))
+    return {
+        "status": "exactSceneAssetLevelContainment",
+        "sceneId": candidate["sceneId"],
+        "sourceName": candidate["sourceName"],
+        "sourcePath": candidate["sourcePath"],
+        "sceneContainmentEvidence": {
+            "kind": "exactSceneAssetLevelContainment",
+            "relation": "explicitObjectIdentityToSceneAssetLevel",
+            "identity": candidate["identity"],
+            "containmentType": candidate["containmentType"],
+        },
+    }
+
+
+class _AssetMapJsonStream:
+    """Small incremental JSON reader used for the broad AssetMap array."""
+
+    def __init__(self, handle: Any, chunk_size: int = 1024 * 1024) -> None:
+        self.handle = handle
+        self.chunk_size = chunk_size
+        self.buffer = ""
+        self.position = 0
+        self.eof = False
+        self.decoder = json.JSONDecoder()
+
+    def _compact(self) -> None:
+        if self.position >= self.chunk_size:
+            self.buffer = self.buffer[self.position:]
+            self.position = 0
+
+    def _read(self) -> None:
+        if self.eof:
+            return
+        chunk = self.handle.read(self.chunk_size)
+        if chunk:
+            self.buffer += chunk
+        else:
+            self.eof = True
+
+    def skip_ws(self) -> None:
+        while True:
+            while self.position < len(self.buffer) and self.buffer[self.position].isspace():
+                self.position += 1
+            if self.position < len(self.buffer) or self.eof:
+                return
+            self._read()
+
+    def peek(self) -> str | None:
+        self.skip_ws()
+        if self.position >= len(self.buffer):
+            return None
+        return self.buffer[self.position]
+
+    def consume(self, expected: str) -> bool:
+        if self.peek() != expected:
+            return False
+        self.position += len(expected)
+        self._compact()
+        return True
+
+    def raw_value(self) -> Any:
+        self.skip_ws()
+        while True:
+            if self.position >= len(self.buffer):
+                raise ValueError(f"unexpected end of JSON at {self.position}")
+            try:
+                value, end = self.decoder.raw_decode(self.buffer, self.position)
+            except json.JSONDecodeError as exc:
+                if self.eof:
+                    raise ValueError(
+                        f"invalid JSON value at {self.position}"
+                    ) from exc
+                if exc.pos < len(self.buffer) - 4096:
+                    raise ValueError(
+                        f"invalid JSON value at {self.position + exc.pos}"
+                    ) from exc
+                self._read()
+                continue
+            self.position = end
+            self._compact()
+            return value
+
+
+def _iter_asset_map_array(
+    stream: _AssetMapJsonStream,
+) -> Iterable[dict[str, Any]]:
+    if not stream.consume("["):
+        raise ValueError("expected JSON array")
+    if stream.peek() == "]":
+        stream.consume("]")
+        return
+    while True:
+        value = stream.raw_value()
+        if not isinstance(value, dict):
+            raise ValueError("array entry is not an object")
+        yield value
+        if stream.consume(","):
+            continue
+        if stream.consume("]"):
+            return
+        raise ValueError("expected comma or array end")
+
+
+def _iter_asset_map_entries(
+    path: Path,
+    diagnostics: list[dict[str, Any]] | None = None,
+    *,
+    allow_bare_array: bool = True,
+) -> Iterable[dict[str, Any]]:
+    """Stream AssetEntries from the real object root without full loading."""
+    diagnostics = diagnostics if diagnostics is not None else []
+
+    def report(status: str, reason: str, **extra: Any) -> None:
+        if len(diagnostics) >= SCENE_CONTAINMENT_DIAGNOSTIC_LIMIT:
+            return
+        diagnostics.append({
+            "status": status,
+            "path": str(path),
+            "reason": reason,
+            **extra,
+        })
+
+    if not path.is_file():
+        report("assetMapUnavailable", "fileMissing")
+        return
+
+    try:
+        with path.open("r", encoding="utf-8") as handle:
+            stream = _AssetMapJsonStream(handle)
+            root = stream.peek()
+            if root == "[":
+                if not allow_bare_array:
+                    report("assetMapMalformed", "rootIsNotObject")
+                    return
+                yield from _iter_asset_map_array(stream)
+            elif root == "{":
+                stream.consume("{")
+                found_entries = False
+                if stream.peek() == "}":
+                    stream.consume("}")
+                else:
+                    while True:
+                        key = stream.raw_value()
+                        if not isinstance(key, str) or not stream.consume(":"):
+                            raise ValueError("invalid object member")
+                        if key == "AssetEntries":
+                            if found_entries:
+                                report("assetMapMalformed", "duplicateAssetEntries")
+                                return
+                            found_entries = True
+                            yield from _iter_asset_map_array(stream)
+                        else:
+                            # GameType and other small metadata fields are
+                            # decoded and discarded; AssetEntries is streamed.
+                            stream.raw_value()
+                        if stream.consume(","):
+                            continue
+                        if stream.consume("}"):
+                            break
+                        raise ValueError("expected comma or object end")
+                if not found_entries:
+                    report("assetMapMalformed", "missingAssetEntries")
+                    return
+            else:
+                report("assetMapMalformed", "rootIsNotObject")
+                return
+            if stream.peek() is not None:
+                report("assetMapMalformed", "trailingDataAfterRoot")
+    except UnicodeDecodeError as exc:
+        report("assetMapUnreadable", "invalidUtf8", offset=exc.start)
+    except OSError as exc:
+        report("assetMapUnreadable", "ioError", error=str(exc))
+    except ValueError as exc:
+        report("assetMapMalformed", str(exc))
+
+
+def _asset_map_paths(export_root: Path) -> list[Path]:
+    root = export_root / "recovered" / "AnimeStudio-cli"
+    paths: list[Path] = []
+    for source in ("StreamingAssets", "Persistent"):
+        maps_root = root / source / "maps"
+        if not maps_root.is_dir():
+            continue
+        paths.extend(sorted(path for path in maps_root.glob("*_assets.json") if path.is_file()))
+    return paths
+
+
+def _asset_map_containment_provider(
+    export_root: Path,
+    emitter_identities: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Build the optional AssetMap join in one streaming pass.
+
+    AssetMap ``Source`` + ``PathID`` is used only as an explicit identity. A
+    prefab container is retained as prefab-local evidence; a ``.unity``
+    container is retained as an unresolved SceneAsset candidate until a
+    structured authoritative scene id is available.
+    """
+    wanted: set[SceneIdentityKey] = {
+        key
+        for identity in emitter_identities
+        for key in _containment_lookup_keys(identity)
+    }
+    if not wanted:
+        return {"entries": [], "diagnostics": []}
+    entries: list[dict[str, Any]] = []
+    diagnostics: list[dict[str, Any]] = []
+    scan_evidence: list[dict[str, Any]] = []
+    paths = _asset_map_paths(export_root)
+    if not paths:
+        return {
+            "entries": [],
+            "diagnostics": [{
+                "status": "assetMapUnavailable",
+                "reason": "noAssetMapFile",
+            }],
+        }
+    failed = False
+    for path in paths:
+        rows_seen = 0
+        local_entries: list[dict[str, Any]] = []
+        local_diagnostics: list[dict[str, Any]] = []
+        for row in _iter_asset_map_entries(
+            path,
+            local_diagnostics,
+            allow_bare_array=False,
+        ):
+            rows_seen += 1
+            path_id = row.get("PathID")
+            source = row.get("Source")
+            if isinstance(path_id, bool) or not isinstance(path_id, int):
+                continue
+            if not isinstance(source, str) or not source:
+                continue
+            row_keys = _asset_map_keys({"Source": source, "PathID": path_id})
+            if not wanted.intersection(row_keys):
+                continue
+            container = str(row.get("Container") or "").replace("\\", "/")
+            if not container:
+                continue
+            lower = container.lower()
+            if lower.endswith(".prefab"):
+                containment_type = "Prefab"
+            elif lower.endswith(".unity"):
+                containment_type = "SceneAssetContainer"
+            else:
+                containment_type = "AssetContainer"
+            local_entries.append({
+                "Source": source,
+                "PathID": path_id,
+                "containmentType": containment_type,
+                "sourceAssetPath": container,
+            })
+        if local_diagnostics:
+            failed = True
+            diagnostics.extend(local_diagnostics)
+            diagnostics.append({
+                "status": "assetMapRejected",
+                "path": str(path.relative_to(export_root)).replace("\\", "/"),
+                "reason": "malformedOrUnreadableAssetMap",
+                "rowsScanned": rows_seen,
+            })
+        else:
+            entries.extend(local_entries)
+            scan_evidence.append({
+                "status": "assetMapScanned",
+                "path": str(path.relative_to(export_root)).replace("\\", "/"),
+                "rowsScanned": rows_seen,
+            })
+    if failed:
+        return {
+            "entries": [],
+            "diagnostics": _bound_rows(diagnostics),
+            "scanEvidence": scan_evidence,
+        }
+    return {
+        "entries": entries,
+        "diagnostics": diagnostics,
+        "scanEvidence": scan_evidence,
     }
 
 
@@ -285,6 +914,7 @@ def _collect_audio_level_semantics(
                     role=str(event["role"]),
                     event_hash=int(event["eventHash"]),
                     scene_id=level_id,
+                    kind="sceneGlobalAudioEvent",
                 ),
             )
         levels.append({
@@ -363,9 +993,14 @@ def _event_context(
     scene_id: str | None = None,
     authored_name: str | None = None,
     placement: dict[str, Any] | None = None,
+    kind: str | None = None,
+    scene_containment: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    context_kind = kind or (
+        "sceneGlobalAudioEvent" if scene_id else "sceneEmitterAudioEvent"
+    )
     context: dict[str, Any] = {
-        "kind": "sceneGlobalAudioEvent" if scene_id else "sceneEmitterAudioEvent",
+        "kind": context_kind,
         "semanticRole": role,
         "source": source,
         "owner": owner,
@@ -374,7 +1009,8 @@ def _event_context(
         "confidence": "direct",
         "evidence": (
             "exactAudioMapDataSceneIndex"
-            if scene_id else "exactObjectIndexSceneComponentScalar"
+            if context_kind == "sceneGlobalAudioEvent"
+            else "exactObjectIndexSceneComponentScalar"
         ),
         "triggerRuntimeActivationStatuses": [
             "authoredDefinitionOnly",
@@ -388,6 +1024,22 @@ def _event_context(
         context["authoredEventName"] = authored_name
     if placement:
         context["placement"] = placement
+    if scene_containment:
+        status = scene_containment.get("status")
+        if status:
+            context["sceneContainmentStatus"] = status
+        if status == "exactSceneAssetLevelContainment":
+            for key in ("sceneId", "sourceName", "sourcePath"):
+                if scene_containment.get(key):
+                    context[key] = scene_containment[key]
+            if scene_containment.get("sceneContainmentEvidence"):
+                context["sceneContainmentEvidence"] = scene_containment[
+                    "sceneContainmentEvidence"
+                ]
+        elif scene_containment.get("diagnostics"):
+            context["sceneContainmentDiagnostics"] = _bound_rows(
+                scene_containment["diagnostics"]
+            )
     return context
 
 
@@ -528,6 +1180,7 @@ def _parse_audio_map(
                     _event_context(
                         source=source, owner=owner, role=event["role"],
                         event_hash=event["eventHash"], scene_id=scene_id,
+                        kind="sceneGlobalAudioEvent",
                     ),
                 )
         scene_rows.append({
@@ -562,6 +1215,8 @@ def _parse_emitter(
     media_by_id: dict[int, dict[str, Any]],
     contexts: dict[str, list[dict[str, Any]]],
     context_seen: dict[str, set[str]],
+    scene_containment_index: dict[SceneIdentityKey, list[dict[str, Any]]] | None = None,
+    scene_containment_index_diagnostics: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any] | None:
     script = row.get("script") if isinstance(row.get("script"), dict) else {}
     full_name = str(script.get("fullName") or "")
@@ -595,6 +1250,14 @@ def _parse_emitter(
         return None
     owner = _identity(row)
     placement = _scene_position(row.get("sceneContext"))
+    containment = None
+    if scene_containment_index is not None:
+        containment = _resolve_scene_emitter_containment(
+            owner,
+            placement,
+            scene_containment_index,
+            index_diagnostics=scene_containment_index_diagnostics,
+        )
     for request in requests:
         append_context(
             contexts,
@@ -607,9 +1270,11 @@ def _parse_emitter(
                 event_hash=request["eventHash"],
                 authored_name=request.get("authoredEventName"),
                 placement=placement,
+                kind="sceneEmitterAudioEvent",
+                scene_containment=containment,
             ),
         )
-    return {
+    emitter = {
         "source": source,
         "componentType": full_name,
         "name": str(row.get("name") or ""),
@@ -618,6 +1283,20 @@ def _parse_emitter(
         "sceneOwnershipStatus": "objectIndexSceneContextWithoutSceneAssetJoin",
         "eventRequests": requests,
     }
+    if containment is not None:
+        emitter["sceneOwnershipStatus"] = containment["status"]
+        if containment.get("diagnostics"):
+            emitter["sceneContainmentDiagnostics"] = _bound_rows(
+                containment["diagnostics"]
+            )
+        if containment.get("sceneContainmentEvidence"):
+            emitter["sceneContainmentEvidence"] = containment[
+                "sceneContainmentEvidence"
+            ]
+        if containment.get("status") == "exactSceneAssetLevelContainment":
+            for key in ("sceneId", "sourceName", "sourcePath"):
+                emitter[key] = containment[key]
+    return emitter
 
 
 def build_scene_background_catalog(
@@ -625,6 +1304,8 @@ def build_scene_background_catalog(
     audio_index: dict[str, Any],
     *,
     source_evidence: list[dict[str, Any]] | None = None,
+    scene_containment_index: Any = None,
+    scene_containment_provider: Any = None,
 ) -> dict[str, Any]:
     """Build the catalog from already validated, single-pass object streams."""
     wwise_by_hash = _wwise_lookup(audio_index)
@@ -634,6 +1315,19 @@ def build_scene_background_catalog(
     audio_maps: list[dict[str, Any]] = []
     emitters: list[dict[str, Any]] = []
     scanned_counts: Counter[str] = Counter()
+    normalized_containment: dict[SceneIdentityKey, list[dict[str, Any]]] | None = None
+    containment_index_diagnostics: list[dict[str, Any]] = []
+    containment_source_status = "notSupplied"
+    containment_scan_evidence: list[dict[str, Any]] = []
+    if scene_containment_index is not None:
+        containment_source_status = "suppliedIdentityCatalog"
+        if isinstance(scene_containment_index, dict):
+            containment_scan_evidence = _bound_rows(
+                scene_containment_index.get("scanEvidence") or []
+            )
+        normalized_containment, containment_index_diagnostics = (
+            _normalise_scene_containment_index(scene_containment_index)
+        )
 
     for source, rows in rows_by_source.items():
         for row in rows:
@@ -649,9 +1343,67 @@ def build_scene_background_catalog(
             elif full_name in SCENE_EMITTER_TYPES:
                 emitter = _parse_emitter(
                     row, source, wwise_by_hash, media_by_id, contexts, context_seen,
+                    normalized_containment,
+                    containment_index_diagnostics,
                 )
                 if emitter:
                     emitters.append(emitter)
+
+    if scene_containment_provider is not None and scene_containment_index is None:
+        containment_source_status = "assetMapIdentityCatalog"
+        provided_index = scene_containment_provider([
+            row.get("identity") for row in emitters
+            if isinstance(row.get("identity"), dict)
+        ])
+        if isinstance(provided_index, dict):
+            containment_scan_evidence = _bound_rows(
+                provided_index.get("scanEvidence") or []
+            )
+        normalized_containment, containment_index_diagnostics = (
+            _normalise_scene_containment_index(provided_index)
+        )
+        for emitter in emitters:
+            containment = _resolve_scene_emitter_containment(
+                emitter.get("identity") or {},
+                emitter.get("placement"),
+                normalized_containment,
+                index_diagnostics=containment_index_diagnostics,
+            )
+            emitter["sceneOwnershipStatus"] = containment["status"]
+            if containment.get("diagnostics"):
+                emitter["sceneContainmentDiagnostics"] = _bound_rows(
+                    containment["diagnostics"]
+                )
+            if containment.get("sceneContainmentEvidence"):
+                emitter["sceneContainmentEvidence"] = containment[
+                    "sceneContainmentEvidence"
+                ]
+            if containment.get("status") == "exactSceneAssetLevelContainment":
+                for key in ("sceneId", "sourceName", "sourcePath"):
+                    emitter[key] = containment[key]
+            owner = emitter.get("identity")
+            if not isinstance(owner, dict):
+                continue
+            for request in emitter.get("eventRequests") or ():
+                context_key = identifiers.event_hash_context_key(
+                    request["eventHash"]
+                )
+                for context in contexts.get(context_key, ()):
+                    if (
+                        context.get("kind") == "sceneEmitterAudioEvent"
+                        and context.get("owner") == owner
+                    ):
+                        context["sceneContainmentStatus"] = containment["status"]
+                        if containment.get("status") == "exactSceneAssetLevelContainment":
+                            for key in ("sceneId", "sourceName", "sourcePath"):
+                                context[key] = containment[key]
+                            context["sceneContainmentEvidence"] = containment[
+                                "sceneContainmentEvidence"
+                            ]
+                        elif containment.get("diagnostics"):
+                            context["sceneContainmentDiagnostics"] = _bound_rows(
+                                containment["diagnostics"]
+                            )
 
     scene_definitions: dict[str, list[dict[str, Any]]] = defaultdict(list)
     unresolved_scene_rows: list[dict[str, Any]] = []
@@ -690,7 +1442,9 @@ def build_scene_background_catalog(
         "AudioMapData scene names, state counts, lifecycle Events, room-tone Event, and "
         "aux-bus ids are exact serialized definitions. Scene component requests and exact "
         "transform-hierarchy positions are authored placements; prefab-local ownership is "
-        "not promoted to a level join. Wwise leaves are possible media only. Runtime scene "
+        "not promoted to a level join. An explicit unique SceneAsset/Level identity "
+        "catalog is required for containment promotion; missing, ambiguous, and "
+        "conflicting joins remain unresolved. Wwise leaves are possible media only. Runtime scene "
         "activation, live State/RTPC values, listener position, branch selection, playback, "
         "and audibility remain unobserved."
     )
@@ -718,6 +1472,26 @@ def build_scene_background_catalog(
                 row.get("semanticRole") == "authoredAmbientEmitterCandidate"
                 for row in emitter_requests
             ),
+            "sceneEmittersWithExactContainment": sum(
+                row.get("sceneOwnershipStatus") == "exactSceneAssetLevelContainment"
+                for row in emitters
+            ),
+            "sceneEmittersWithMissingContainment": sum(
+                row.get("sceneOwnershipStatus") == "missingSceneAssetLevelContainment"
+                for row in emitters
+            ),
+            "sceneEmittersWithAmbiguousContainment": sum(
+                row.get("sceneOwnershipStatus") == "ambiguousSceneAssetLevelContainment"
+                for row in emitters
+            ),
+            "sceneEmittersWithConflictingContainment": sum(
+                row.get("sceneOwnershipStatus") == "conflictingSceneAssetLevelContainment"
+                for row in emitters
+            ),
+            "sceneEmittersPrefabLocal": sum(
+                row.get("sceneOwnershipStatus") == "prefabLocalNotSceneContained"
+                for row in emitters
+            ),
             "uniquePossibleMedia": len(possible_media_ids),
         },
         "scenes": scenes,
@@ -725,6 +1499,11 @@ def build_scene_background_catalog(
         "audioMaps": audio_maps,
         "sceneEmitters": emitters,
         "eventContexts": dict(contexts),
+        "sceneContainmentIndex": {
+            "status": containment_source_status,
+            "diagnostics": containment_index_diagnostics,
+            "scanEvidence": containment_scan_evidence,
+        },
         "evidenceBoundary": boundary,
     }
 
@@ -750,6 +1529,7 @@ def collect_scene_background_semantics(
     audio_index: dict[str, Any],
     *,
     sources: tuple[str, ...] = ("StreamingAssets", "Persistent"),
+    scene_containment_index: Any = None,
 ) -> dict[str, Any]:
     """Load validated merged indexes, scan each once, and build the catalog."""
     rows_by_source: dict[str, Iterable[dict[str, Any]]] = {}
@@ -784,7 +1564,14 @@ def collect_scene_background_semantics(
         })
 
     result = build_scene_background_catalog(
-        rows_by_source, audio_index, source_evidence=evidence,
+        rows_by_source,
+        audio_index,
+        source_evidence=evidence,
+        scene_containment_index=scene_containment_index,
+        scene_containment_provider=(
+            lambda identities: _asset_map_containment_provider(export_root, identities)
+            if scene_containment_index is None else None
+        ),
     )
     actual_counts = (result.get("counts") or {}).get("objectRowsScannedBySource") or {}
     for source, expected in expected_counts.items():
@@ -905,7 +1692,9 @@ def collect_scene_background_semantics(
         "level-init and battle-music trigger Events; MissionRuntimeAsset acceptMode.levelId "
         "adds an exact mission-to-scene reference. Scene component requests and exact "
         "transform-hierarchy positions are authored placements, but prefab-local ownership "
-        "is not promoted to a level join. Wwise leaves are possible media only. Runtime "
+        "is not promoted to a level join. Only an explicit unique SceneAsset/Level identity "
+        "catalog can promote containment; missing, ambiguous, and conflicting joins remain "
+        "unresolved. Wwise leaves are possible media only. Runtime "
         "scene activation, live State/RTPC values, listener position, branch selection, "
         "playback, and audibility remain unobserved."
     )

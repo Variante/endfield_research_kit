@@ -210,18 +210,27 @@ data flow reaches a typed playback API. Conditional and selector-based native
 paths preserve their branch condition, method, callsite, target binding, and
 binary fingerprints.
 Scene-background recovery now has a fail-closed static catalog in
-`webui/data/lang/CN/audio/scene_backgrounds.json`. It joins exact
+`webui/data/lang/CN/audio/scene_backgrounds.json`. It consumes the real
+AnimeStudio AssetMap object root in one bounded streaming pass and uses exact
+AssetMap `Source` + `PathID` identities when joining authored objects. Prefab-
+local containment and scene-asset candidates are retained as separate evidence;
+only unique containment with an authoritative scene ID is promoted to scene
+ownership. Missing, malformed, or unreadable AssetMap input fails closed.
 `AudioMapData._sceneNames`, `AudioLevel` rows, scene-emitter component fields,
-and `MissionRuntimeAsset.acceptMode.levelId`, then traverses matching Wwise
-Events to possible media leaves. For c35, the three mission metadata rows all
-select `map01_lv001`; `map01_audio` names that scene, and its outdoor room-tone
+and `MissionRuntimeAsset.acceptMode.levelId` still describe authored source
+data. The current scene-emitter evidence is therefore a source prefab
+definition, not a recovered level instance. Recovering placed scene instances
+requires a structured scene-streaming/instance-relation join. The catalog does
+not infer runtime scene activation, current State/RTPC values, selector choice,
+listener state, playback, or audibility.
+Where the authored scene/Event join is available, the catalog still traverses
+matching Wwise Events to possible media leaves. For c35, the mission metadata
+selects `map01_lv001`; `map01_audio` names that scene, and its outdoor room-tone
 Event `0x7ac43e5e` reaches shared media `593335165`. The separately decoded
 `955778167792087661` asset is `au_voice_c35m3_3_001`, an external voice/path
-identity rather than that room-tone Event or media. The catalog does not infer
-runtime scene activation, current State/RTPC values, selector choice, listener
-state, playback, or audibility. Serialized emitter hierarchy positions are
-retained, but level ownership remains unresolved until an exact scene-asset
-join exists.
+identity rather than that room-tone Event or media. These examples remain
+authored identity/possible-media evidence, not placed-instance or playback
+proof.
 Decoded media now carries a separate coarse-ownership projection from exact
 scene roles, Event contexts, component fields, and recovered external paths.
 Outdoor room-tone and authored ambient-emitter leaves can be classified as
@@ -260,16 +269,20 @@ Event. `wulfa_relax_sp_02`, for example, matches
 animation owner. Similar names without an exact callback-backed match remain
 unknown; live Animator execution and the selected Wwise leaf are not inferred.
 `AudioCueTable` `behaviourExpr` and `conditionExpr` trees are serialized,
-validated, bounded AST evidence rather than an evaluator. The current metadata
-`EAudioExprType` maps `0=EMPTY`, `1=BINARY_EXPRESSION`,
-`2=FUNCTION_CALL`, `3=IDENTIFIER`, `4=UNARY_EXPRESSION`, `5=BOOL_LITERAL`,
-`6=INT_LITERAL`, `7=FLOAT_LITERAL`, and `8=STRING_LITERAL`; observed AudioCue
-operator names are `NOT_OPERATOR`, `PostEventIf`, `SetBoolVar`, `GetBoolVar`,
-and `CleanBoolVar`. Handler evaluation and its indirect dispatch/callback boundary
-remain separate `AudioCueSystem` evidence: a behavior `exprType=3` string leaf
-proves an authored Event request, but serialized expressions do not prove
-handler selection, condition truth, variable mutation, cue invocation, Event
-execution, or audibility.
+validated, bounded AST evidence rather than an evaluator. The projection keeps
+the complete tree's cue/handler scope, expression side, source path,
+parent/depth, `exprType`, four scalar fields, child paths, node class, and
+bounded diagnostics. A non-empty behavior `exprType=3` string leaf is an
+authored Event request; a non-empty `exprType=8` string leaf is a
+`runtimeCueVariable`; non-empty children are `compositeOpaque`; all other
+nodes remain opaque. The selected native `EAudioExprType` and operator names
+are published only after the exact `global-metadata.dat` + `GameAssembly.dll`
+hash gate validates; missing or mismatched native inputs leave those names
+absent. `childrenLimit` rejects the parent before any child projection.
+Handler evaluation and its indirect dispatch/callback boundary remain separate
+`AudioCueSystem` evidence: serialized expressions do not prove handler
+selection, condition truth, runtime variable values or mutation, cue
+invocation, Event execution, branch selection, or audibility.
 When a hash-only Event has a complete final-media leaf set identical to authored
 Events whose broad category agrees, the projection recovers that category for
 85 rows (56 SFX, 21 UI, 6 voice, 2 control). This is library-output evidence
@@ -1785,9 +1798,15 @@ Do not copy volatile inventories into this file.
 - Additional family-specific MemoryPack and FlatBuffer schemas.
 - Deeper Buff/Skill nested action semantics with fail-closed version gates.
 - Broader exact world-streaming and scene decoding.
+- Scene audio placement still needs a structured scene-streaming/instance
+  relation: current emitter rows are source prefab definitions and do not prove
+  a placed level instance, even when their AssetMap identity is exact.
 - Runtime projectile spawn ownership and remaining enum/branch semantics.
 - More exact gameplay-to-asset, animation-controller, effect, and audio joins.
 - Runtime-selected Wwise branches and per-language playback policy.
+- AudioCue condition truth, runtime variable values/mutation, handler dispatch,
+  and cue/Event execution remain unobserved; the serialized AST is not a
+  runtime evaluator.
 - Audio native playback: per-request source-state/sourceInfo instance to the
   concrete opened handle, any address-taken indirect codec setup, optional
   decoder callback, and a live verified capture remain unobserved. The runtime

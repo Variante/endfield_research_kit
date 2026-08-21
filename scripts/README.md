@@ -491,17 +491,30 @@ projection;
 own their respective consumer evidence, `interactive_components.py` and
 `authored_components.py` own serialized component recovery,
 `table_contexts.py` owns authored table/config scanning and the validated,
-bounded AudioCue expression AST. It retains source coordinates, raw scalar
-forms, and bounded diagnostics without evaluating serialized expressions.
-`scene_backgrounds.py` owns the scene-background catalog. It accepts only
-terminal, summary-validated AnimeStudio object indexes, resolves
-`AudioMapData` and scene emitters by script type, and joins exact
+bounded AudioCue expression AST. The projection retains the complete validated
+tree with cue/handler scope, expression side, source path, parent/depth,
+`exprType`, four serialized scalar fields, child paths, node class, and
+bounded diagnostics without evaluating serialized expressions. Non-empty
+behavior `exprType=3` leaves are authored Event requests; non-empty
+`exprType=8` leaves are `runtimeCueVariable` evidence; non-empty child lists
+are `compositeOpaque`, and all other nodes remain opaque. `childrenLimit`
+rejects the parent before child projection. `audio_cue_native.py` owns the
+selected `global-metadata.dat` / `GameAssembly.dll` gate: enum/operator names
+are published only for a validated exact contract, while missing or mismatched
+native inputs keep those names absent.
+`scene_backgrounds.py` owns the scene-background catalog. It consumes the real
+AnimeStudio AssetMap object root in one bounded streaming pass, using exact
+AssetMap `Source` + `PathID` identities. Prefab-local and scene-asset
+containment candidates remain separate; only an authoritative scene ID with
+unique scene containment promotes scene ownership. Missing, malformed, or
+unreadable maps fail closed rather than falling back to names or paths. It
+resolves `AudioMapData` and scene emitters by script type, and joins exact
 `AudioLevel` rows plus `MissionRuntimeAsset.acceptMode.levelId`. The semantic
 publisher writes `webui/data/lang/<LANG>/audio/scene_backgrounds.json` with
 authored Event requests and possible Wwise media leaves. Scene activation,
 State/RTPC values, selector branches, listener state, playback, and audibility
-remain runtime evidence; emitter hierarchy positions do not imply level
-ownership without an exact scene-asset join.
+remain runtime evidence; source prefab definitions do not prove level-instance
+placement.
 `media_ownership.py` projects those scene roles plus exact Event-context and
 external-path evidence into coarse decoded-media ownership such as scene
 environment, animation, authored component, interaction, or mission narration.
@@ -536,13 +549,11 @@ only when their normalized names match exactly inside an existing
 media to action SFX while retaining the clip, actor, callback, and runtime-
 selection boundary; name similarity without the callback never creates a
 trigger or ownership edge.
-`audio_cue_native.py` owns the explicit selected `global-metadata.dat` /
-`GameAssembly.dll` hash gate for current AudioCue enum names. Full ASTs are
-lazy Event-detail data under `audioCueExpressionSchemaVersion=1`; compact rows
-publish counts and summaries only. When the selected native inputs are
-missing or mismatched, expression and operator numbers remain opaque rather
-than receiving guessed names. `table_contexts.py` and
-`event_projection.py` / `event_summary.py` own WebUI row projection.
+`table_contexts.py` and `event_projection.py` / `event_summary.py` own WebUI
+row projection. Full AudioCue ASTs are lazy Event-detail data under
+`audioCueExpressionSchemaVersion=1`; compact rows publish bounded summaries
+only. The AST is a static request/operand projection, never condition truth,
+variable value, branch execution, or playback evidence.
 `build_audio.py` imports shared primitives from those owners instead of
 treating the semantics entry point as a utility module.
 The semantic index also publishes the bounded
