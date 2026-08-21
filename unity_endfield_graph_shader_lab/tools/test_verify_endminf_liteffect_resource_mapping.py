@@ -41,6 +41,14 @@ class LitEffectResourceMappingTests(unittest.TestCase):
                 with self.assertRaises(RuntimeError): mesh.verify_report(Path(name))
             finally:
                 Path(name).unlink()
+        for wording in ("One exact Mesh in the LitEffect material closure; proves complete shader BindChannels.", "One exact Mesh in the LitEffect material closure."):
+            mutated = copy.deepcopy(base); mutated["scope"] = wording
+            with tempfile.NamedTemporaryFile("w", suffix=".json", encoding="utf-8", delete=False) as f:
+                json.dump(mutated, f); name = f.name
+            try:
+                with self.assertRaises(RuntimeError): mesh.verify_report(Path(name))
+            finally:
+                Path(name).unlink()
 
     def test_representative_contract_is_reflected_without_rdef(self) -> None:
         report = MODULE.build_report()
