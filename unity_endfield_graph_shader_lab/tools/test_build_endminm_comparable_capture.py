@@ -65,6 +65,10 @@ class EndminmComparableCaptureTests(unittest.TestCase):
             return report["comparison"]["sweep"]["rows"][17]
 
         mutations = {
+            "source_timeline_count": lambda value: value["source"].__setitem__("timelineFrameCount", value["source"]["timelineFrameCount"] + 1),
+            "source_decoded_count": lambda value: value["source"].__setitem__("decodedFrameCount", value["source"]["decodedFrameCount"] + 1),
+            "source_packet_count": lambda value: value["source"].__setitem__("packetCount", value["source"]["packetCount"] + 1),
+            "source_stale_legacy_frame_count": lambda value: value["source"].__setitem__("frameCount", 22702),
             "source_manifest_sha": lambda value: value["sourceAssets"]["manifest"].__setitem__("sha256", "0" * 64),
             "source_controller_sha": lambda value: value["sourceAssets"]["controllerAudit"]["currentOriginalDataController"].__setitem__("sha256", "0" * 64),
             "prefab_sha": lambda value: value["sourceAssets"]["prefab"].__setitem__("sha256", "0" * 64),

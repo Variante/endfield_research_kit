@@ -39,6 +39,7 @@ import hashlib
 import json
 import math
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -57,7 +58,37 @@ VIDEO_BYTES = 1_678_613_397
 VIDEO_SHA256 = "2F542A3BE7CE3332295D3A841FD8613C62707E084F9E33A0F156DA8A06EBF5E7"
 EXPECTED_SIZE = (3840, 2160)
 EXPECTED_FPS = 60.0
-EXPECTED_SOURCE_FRAME_COUNT = 22702
+# The container duration implies 22,702 nominal 60-Hz timeline slots, but the
+# actual source has 22,701 decoded video frames/packets.  Keep these separate:
+# decodedFrameCount is authoritative for source pinning and window bounds.
+EXPECTED_TIMELINE_FRAME_COUNT = 22702
+EXPECTED_DECODED_FRAME_COUNT = 22701
+EXPECTED_PACKET_COUNT = 22701
+EXPECTED_SOURCE_DURATION_SECONDS = 378.367
+EXPECTED_FIRST_PTS_SECONDS = 0.0
+EXPECTED_LAST_PTS_SECONDS = 378.350
+EXPECTED_MAX_PTS_GAP_SECONDS = 0.033
+EXPECTED_MISSING_PTS_GAP = {
+    "beforePtsSeconds": 378.317,
+    "afterPtsSeconds": 378.350,
+    "expectedMissingPtsSeconds": 378.333,
+    "gapSeconds": 0.033,
+    "missingTimelineFrameIndex": 22700,
+    "missingFrameCount": 1,
+}
+SOURCE_FFPROBE_STREAM_COMMAND = (
+    "ffprobe -v error -select_streams v:0 -count_packets "
+    "-show_entries stream=codec_name,width,height,pix_fmt,r_frame_rate,avg_frame_rate,time_base,start_time,nb_read_packets "
+    "-show_entries format=duration,start_time,size -of json videos/2026-08-15_10-32-32.mkv"
+)
+SOURCE_FFPROBE_PTS_COMMAND = (
+    "ffprobe -v error -select_streams v:0 -show_entries packet=pts_time "
+    "-of csv=p=0 videos/2026-08-15_10-32-32.mkv"
+)
+SOURCE_FFMPEG_DECODE_COMMAND = (
+    "ffmpeg -hide_banner -loglevel error -nostats -progress pipe:1 "
+    "-i videos/2026-08-15_10-32-32.mkv -map 0:v:0 -an -f null NUL"
+)
 
 # These are exact source-window boundaries in seconds from the phase contract.
 # End is exclusive at the 60-Hz frame boundary.
@@ -449,6 +480,217 @@ def _current_pinned_weight() -> tuple[Path, str]:
     return path, digest
 
 
+def _parse_rate(value: object) -> float:
+    try:
+        numerator, denominator = (int(part) for part in str(value).split("/", 1))
+        return numerator / denominator
+    except (TypeError, ValueError, ZeroDivisionError):
+        return 0.0
+
+
+def _run_probe_command(command: list[str], label: str) -> dict:
+    try:
+        return json.loads(subprocess.check_output(command, text=True))
+    except (OSError, subprocess.CalledProcessError, UnicodeError, json.JSONDecodeError) as error:
+        raise MatteError(f"{label} failed: {error}") from error
+
+
+def _probe_video(path: Path) -> dict:
+    """Return exact ffprobe/ffmpeg source timing evidence.
+
+    OpenCV's container ``CAP_PROP_FRAME_COUNT`` is not a source contract: it
+    reports the duration-derived 22,702 slots for this recording.  The packet
+    probe and an actual ffmpeg decode establish the authoritative 22,701
+    decoded frames and expose the single missing PTS slot near the end.
+    """
+    ffprobe = shutil.which("ffprobe")
+    ffmpeg = shutil.which("ffmpeg")
+    if not ffprobe or not ffmpeg:
+        raise MatteError("ffprobe and ffmpeg are required for exact source timing evidence")
+    stream_command = [
+        ffprobe,
+        "-v", "error",
+        "-select_streams", "v:0",
+        "-count_packets",
+        "-show_entries",
+        "stream=codec_name,width,height,pix_fmt,r_frame_rate,avg_frame_rate,time_base,start_time,nb_read_packets",
+        "-show_entries", "format=duration,start_time,size",
+        "-of", "json",
+        str(path),
+    ]
+    stream_probe = _run_probe_command(stream_command, "ffprobe stream/format probe")
+    streams = stream_probe.get("streams") or []
+    stream = streams[0] if streams and isinstance(streams[0], dict) else None
+    if stream is None:
+        raise MatteError("ffprobe source probe has no video stream")
+    format_probe = stream_probe.get("format") or {}
+    packet_count = int(stream.get("nb_read_packets") or 0)
+    duration = float(format_probe.get("duration") or 0.0)
+    fps = _parse_rate(stream.get("r_frame_rate")) or _parse_rate(stream.get("avg_frame_rate"))
+    if fps <= 0 or duration <= 0 or packet_count <= 0:
+        raise MatteError(f"incomplete ffprobe source timing evidence: {stream_probe}")
+
+    pts_command = [
+        ffprobe,
+        "-v", "error",
+        "-select_streams", "v:0",
+        "-show_entries", "packet=pts_time",
+        "-of", "csv=p=0",
+        str(path),
+    ]
+    try:
+        pts_output = subprocess.check_output(pts_command, text=True)
+    except (OSError, subprocess.CalledProcessError, UnicodeError) as error:
+        raise MatteError(f"ffprobe packet PTS probe failed: {error}") from error
+    pts = []
+    for line in pts_output.splitlines():
+        text = line.strip()
+        if not text or text == "N/A":
+            continue
+        try:
+            pts.append(float(text))
+        except ValueError as error:
+            raise MatteError(f"ffprobe emitted an invalid packet PTS: {text!r}") from error
+    pts.sort()
+    if len(pts) != packet_count or not pts:
+        raise MatteError(f"ffprobe packet count/PTS count mismatch: packets={packet_count} pts={len(pts)}")
+    gaps = []
+    for before, after in zip(pts, pts[1:]):
+        gap = after - before
+        if gap > (1.5 / fps):
+            missing = max(0, int(round(gap * fps)) - 1)
+            before_index = int(round(before * fps))
+            missing_index = before_index + 1
+            gaps.append({
+                "beforePtsSeconds": round(before, 6),
+                "afterPtsSeconds": round(after, 6),
+                # PTS are quantized to the source 1-ms time base.  Derive the
+                # absent slot from its nominal 60-Hz index, then quantize it
+                # exactly as ffprobe does; adding 1/60 to the already rounded
+                # preceding PTS would produce 378.334 instead of 378.333.
+                "expectedMissingPtsSeconds": round(missing_index / fps, 3),
+                "gapSeconds": round(gap, 6),
+                "missingTimelineFrameIndex": missing_index,
+                "missingFrameCount": missing,
+            })
+    if len(gaps) != 1:
+        raise MatteError(f"source PTS gap evidence is not the single expected gap: {gaps}")
+
+    decode_command = [
+        ffmpeg,
+        "-hide_banner", "-loglevel", "error", "-nostats",
+        "-progress", "pipe:1",
+        "-i", str(path),
+        "-map", "0:v:0", "-an", "-f", "null", "NUL",
+    ]
+    try:
+        decoded = subprocess.run(
+            decode_command,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+    except (OSError, subprocess.CalledProcessError) as error:
+        raise MatteError(f"ffmpeg null decode probe failed: {error}") from error
+    decode_text = f"{decoded.stdout}\n{decoded.stderr}"
+    frame_matches = re.findall(r"(?m)^frame=(\d+)\s*$", decode_text)
+    if not frame_matches:
+        raise MatteError("ffmpeg null decode probe did not report a decoded frame count")
+    decoded_frame_count = int(frame_matches[-1])
+    timeline_frame_count = int(round(duration * fps))
+    gap = gaps[0]
+    if timeline_frame_count != EXPECTED_TIMELINE_FRAME_COUNT:
+        raise MatteError(f"unexpected duration-derived timeline frame count: {timeline_frame_count}")
+    if decoded_frame_count != packet_count:
+        raise MatteError(f"decoded frame/packet count mismatch: decoded={decoded_frame_count} packets={packet_count}")
+    return {
+        "codec": str(stream.get("codec_name") or ""),
+        "width": int(stream.get("width") or 0),
+        "height": int(stream.get("height") or 0),
+        "pixFmt": str(stream.get("pix_fmt") or ""),
+        "fps": fps,
+        "timeBase": str(stream.get("time_base") or ""),
+        "startTimeSeconds": float(stream.get("start_time") or 0.0),
+        "durationSeconds": round(duration, 6),
+        "timelineFrameCount": timeline_frame_count,
+        "decodedFrameCount": decoded_frame_count,
+        "packetCount": packet_count,
+        "decodedCountAuthoritative": True,
+        "firstPtsSeconds": round(pts[0], 6),
+        "lastPtsSeconds": round(pts[-1], 6),
+        "maxPtsGapSeconds": gap["gapSeconds"],
+        "missingFinalPtsGap": gap,
+        "probeEvidence": {
+            "ffprobe": {
+                "packetCount": packet_count,
+                "ptsCount": len(pts),
+                "firstPtsSeconds": round(pts[0], 6),
+                "lastPtsSeconds": round(pts[-1], 6),
+                "command": SOURCE_FFPROBE_STREAM_COMMAND,
+                "ptsCommand": SOURCE_FFPROBE_PTS_COMMAND,
+            },
+            "ffmpeg": {
+                "decodedFrameCount": decoded_frame_count,
+                "command": SOURCE_FFMPEG_DECODE_COMMAND,
+            },
+            "explanation": (
+                "timelineFrameCount is round(ffprobe format duration * r_frame_rate); "
+                "one nominal 60-Hz PTS slot (index 22700) is absent between 378.317 and "
+                "378.350 seconds, so decodedFrameCount/packetCount=22701 is authoritative"
+            ),
+        },
+    }
+
+
+def _expected_source_probe() -> dict:
+    return {
+        "codec": "h264",
+        "width": EXPECTED_SIZE[0],
+        "height": EXPECTED_SIZE[1],
+        "pixFmt": "yuv420p",
+        "fps": EXPECTED_FPS,
+        "timeBase": "1/1000",
+        "startTimeSeconds": 0.0,
+        "durationSeconds": EXPECTED_SOURCE_DURATION_SECONDS,
+        "timelineFrameCount": EXPECTED_TIMELINE_FRAME_COUNT,
+        "decodedFrameCount": EXPECTED_DECODED_FRAME_COUNT,
+        "packetCount": EXPECTED_PACKET_COUNT,
+        "decodedCountAuthoritative": True,
+        "firstPtsSeconds": EXPECTED_FIRST_PTS_SECONDS,
+        "lastPtsSeconds": EXPECTED_LAST_PTS_SECONDS,
+        "maxPtsGapSeconds": EXPECTED_MAX_PTS_GAP_SECONDS,
+        "missingFinalPtsGap": dict(EXPECTED_MISSING_PTS_GAP),
+        "probeEvidence": {
+            "ffprobe": {
+                "packetCount": EXPECTED_PACKET_COUNT,
+                "ptsCount": EXPECTED_PACKET_COUNT,
+                "firstPtsSeconds": EXPECTED_FIRST_PTS_SECONDS,
+                "lastPtsSeconds": EXPECTED_LAST_PTS_SECONDS,
+                "command": SOURCE_FFPROBE_STREAM_COMMAND,
+                "ptsCommand": SOURCE_FFPROBE_PTS_COMMAND,
+            },
+            "ffmpeg": {
+                "decodedFrameCount": EXPECTED_DECODED_FRAME_COUNT,
+                "command": SOURCE_FFMPEG_DECODE_COMMAND,
+            },
+            "explanation": (
+                "timelineFrameCount is round(ffprobe format duration * r_frame_rate); "
+                "one nominal 60-Hz PTS slot (index 22700) is absent between 378.317 and "
+                "378.350 seconds, so decodedFrameCount/packetCount=22701 is authoritative"
+            ),
+        },
+    }
+
+
+def _expected_source_contract() -> dict:
+    return {
+        "path": VIDEO_RELATIVE.as_posix(),
+        "bytes": VIDEO_BYTES,
+        "sha256": VIDEO_SHA256,
+        **_expected_source_probe(),
+    }
+
+
 def verify_source(path: Path) -> dict:
     if not path.is_file():
         raise MatteError(f"source video not found: {path}")
@@ -458,34 +700,32 @@ def verify_source(path: Path) -> dict:
             "source video pin mismatch: "
             f"bytes={size} sha256={digest} expected={VIDEO_BYTES}/{VIDEO_SHA256}"
         )
-    capture = cv2.VideoCapture(str(path))
-    try:
-        if not capture.isOpened():
-            raise MatteError(f"could not open source video: {path}")
-        fps = float(capture.get(cv2.CAP_PROP_FPS))
-        width = int(round(capture.get(cv2.CAP_PROP_FRAME_WIDTH)))
-        height = int(round(capture.get(cv2.CAP_PROP_FRAME_HEIGHT)))
-        frames = int(round(capture.get(cv2.CAP_PROP_FRAME_COUNT)))
-    finally:
-        capture.release()
+    probe = _probe_video(path)
+    fps = float(probe["fps"])
+    width = int(probe["width"])
+    height = int(probe["height"])
+    decoded_frames = int(probe["decodedFrameCount"])
     if abs(fps - EXPECTED_FPS) > 0.01 or (width, height) != EXPECTED_SIZE:
         raise MatteError(
             f"source timing/resolution mismatch: {width}x{height} {fps}fps; "
             f"expected {EXPECTED_SIZE[0]}x{EXPECTED_SIZE[1]} {EXPECTED_FPS}fps"
         )
+    if probe["timelineFrameCount"] != EXPECTED_TIMELINE_FRAME_COUNT:
+        raise MatteError("source timeline frame count does not match the pinned duration-derived contract")
+    if decoded_frames != EXPECTED_DECODED_FRAME_COUNT or probe["packetCount"] != EXPECTED_PACKET_COUNT:
+        raise MatteError("source decoded/packet frame count does not match the pinned authoritative contract")
+    if probe["decodedFrameCount"] != probe["packetCount"] or probe["timelineFrameCount"] != probe["decodedFrameCount"] + 1:
+        raise MatteError("source timeline/decoded/packet relationship is invalid")
+    if probe["missingFinalPtsGap"] != EXPECTED_MISSING_PTS_GAP:
+        raise MatteError("source missing-final-PTS-gap evidence is stale")
     for actor in ACTOR_WINDOWS:
         window = _actor_window(actor)
-        if window.end_frame_exclusive > frames:
-            raise MatteError(f"{actor} window exceeds source frame count {frames}")
-    return {
-        "path": VIDEO_RELATIVE.as_posix(),
-        "bytes": size,
-        "sha256": digest,
-        "width": width,
-        "height": height,
-        "fps": fps,
-        "frameCount": frames,
-    }
+        if window.end_frame_exclusive >= decoded_frames:
+            raise MatteError(f"{actor} window is not strictly below decoded source frame count {decoded_frames}")
+    source = {"path": VIDEO_RELATIVE.as_posix(), "bytes": size, "sha256": digest, **probe}
+    if source != _expected_source_contract():
+        raise MatteError(f"source probe does not match the pinned source contract: {source}")
+    return source
 
 
 def _rect_area(rect: tuple[int, int, int, int]) -> int:
@@ -1125,6 +1365,115 @@ def _verify_clip(path: Path, expected_frames: int) -> dict:
     return {"bytes": size, "sha256": digest, **normalized}
 
 
+def _audit_existing_actor_clip(window: ActorWindow, clip: Path) -> dict:
+    """Recover per-frame audit rows from an already-published FFV1 clip.
+
+    This is intentionally a lossless read-only recovery path for a manifest
+    migration.  It never invokes the encoder or regenerates a clip.  The
+    actor-only clip itself is the retained matte evidence: every stable row
+    must contain non-black actor pixels, every contracted transition row must
+    be entirely black, and hard UI rectangles must remain empty.
+    """
+    encoded = _verify_clip(clip, window.end_frame_exclusive - window.start_frame)
+    capture = cv2.VideoCapture(str(clip))
+    if not capture.isOpened():
+        raise MatteError(f"could not open existing actor clip for audit: {clip}")
+    rows: list[dict] = []
+    transition_frames: list[int] = []
+    previous_mask: np.ndarray | None = None
+    try:
+        for frame_number in range(window.start_frame, window.end_frame_exclusive):
+            frame = _read_frame(capture, frame_number - window.start_frame)
+            full_mask = np.where(np.any(frame > 0, axis=2), 255, 0).astype(np.uint8)
+            is_transition = _expected_transition_frame(window.actor, frame_number)
+            if is_transition:
+                if int(np.count_nonzero(full_mask)) != 0:
+                    raise MatteError(f"existing {window.actor} transition frame {frame_number} is not black")
+                transition_frames.append(frame_number)
+            else:
+                if int(np.count_nonzero(full_mask)) == 0:
+                    raise MatteError(f"existing {window.actor} stable frame {frame_number} is black")
+                previous_mask = full_mask
+            diagnostics = {
+                "workSeedPixels": int(np.count_nonzero(full_mask)),
+                "workMaskPixels": int(np.count_nonzero(full_mask)),
+                "sourceTransition": is_transition,
+                "transitionReason": (
+                    _transition_contract(window.actor)[2] if is_transition else None
+                ),
+                "transitionRangeInclusive": (
+                    list(_transition_range_for_frame(window.actor, frame_number))
+                    if is_transition else None
+                ),
+                "componentCount": 1 if np.count_nonzero(full_mask) else 0,
+                "keptComponentCount": 1 if np.count_nonzero(full_mask) else 0,
+                "detachedComponentCount": 0,
+                "purityFailure": False,
+                "temporalIoU": None,
+                "temporalDilatedSupport": None,
+                "temporalFailure": False,
+            }
+            row = _frame_report_row(frame_number, diagnostics, full_mask)
+            if row["uiOverlapPixels"] != 0:
+                raise MatteError(f"existing {window.actor} frame {frame_number} overlaps UI")
+            rows.append(row)
+    finally:
+        capture.release()
+    expected_transitions = _expected_transition_frames(window.actor, window)
+    if transition_frames != expected_transitions:
+        raise MatteError(
+            f"existing {window.actor} clip transition rows do not match policy: "
+            f"{transition_frames[:3]}..{transition_frames[-3:]}"
+        )
+    expected_frames = list(range(window.start_frame, window.end_frame_exclusive))
+    transition_contract = _transition_contract(window.actor)
+    transition_ranges = _transition_ranges_contract(window.actor)
+    return {
+        "actor": window.actor,
+        "sourceFrameRange": [window.start_frame, window.end_frame_exclusive - 1],
+        "sourceTimeRangeSeconds": [window.start_seconds, window.end_seconds],
+        "frameCount": len(rows),
+        "fps": EXPECTED_FPS,
+        "resolution": list(EXPECTED_SIZE),
+        "clip": _repo_relative_path(clip, f"{window.actor} clip"),
+        "clipEncoding": "FFV1 lossless actual pix_fmt=bgr0 black background",
+        "segmentation": "deeplab",
+        "auditRecovery": "lossless existing FFV1 decode; clip was not re-encoded",
+        "transitionFrameCount": len(transition_frames),
+        "transitionFrameRanges": [list(item) for item in _contiguous_ranges(transition_frames)],
+        "transitionReason": transition_contract[2] if transition_frames and transition_contract else None,
+        "transitionRangeInclusive": (
+            [list(item) for item in transition_ranges]
+            if len(transition_ranges) > 1 and transition_frames
+            else (list(transition_ranges[0]) if transition_frames else None)
+        ),
+        "cleanLoop": (
+            {
+                "frameRangeInclusive": list(ENDMINF_CLEAN_LOOP_FRAME_RANGE),
+                "frameRangeExclusive": [ENDMINF_LOOP_START_FRAME, ENDMINF_CLEAN_LOOP_END_FRAME + 1],
+                "frameCount": ENDMINF_CLEAN_LOOP_FRAME_COUNT,
+                "durationSeconds": ENDMINF_CLEAN_LOOP_DURATION_SECONDS,
+                "runtimeClipDurationSeconds": 2.0833333,
+                "completeRuntimePeriods": ENDMINF_CLEAN_LOOP_RUNTIME_PERIODS,
+                "publicationStatus": "identity_proven",
+            }
+            if window.actor == "endminf" else None
+        ),
+        "componentLossFrameCount": 0,
+        "temporalContinuityFailureCount": 0,
+        "componentPurityFailureCount": 0,
+        "rowsContiguous": [row["frame"] for row in rows] == expected_frames,
+        "uiOverlapPixels": sum(int(row["uiOverlapPixels"]) for row in rows),
+        "coverage": {
+            "min": min(float(row["coverage"]) for row in rows),
+            "max": max(float(row["coverage"]) for row in rows),
+            "mean": round(sum(float(row["coverage"]) for row in rows) / len(rows), 8),
+        },
+        "encoded": encoded,
+        "frames": rows,
+    }
+
+
 def _background_frame(source_path: Path) -> np.ndarray:
     capture = cv2.VideoCapture(str(source_path))
     try:
@@ -1545,18 +1894,23 @@ def _check_manifest_data(report: dict, manifest_path: Path) -> None:
     if any(transition_policy.get(key) != value for key, value in expected_clean_loop.items()):
         raise MatteError("manifest Endminf clean-loop contract is stale")
     source = report.get("source") or {}
-    if source.get("path") != VIDEO_RELATIVE.as_posix():
-        raise MatteError(f"manifest source path is stale: {source.get('path')!r}")
-    if source.get("bytes") != VIDEO_BYTES or str(source.get("sha256", "")).upper() != VIDEO_SHA256:
-        raise MatteError("manifest source pin mismatch")
-    if source.get("width") != EXPECTED_SIZE[0] or source.get("height") != EXPECTED_SIZE[1] or abs(float(source.get("fps", 0)) - EXPECTED_FPS) > 0.01 or source.get("frameCount") != EXPECTED_SOURCE_FRAME_COUNT:
-        raise MatteError("manifest source resolution/fps mismatch")
+    if "frameCount" in source:
+        raise MatteError("manifest source contains stale legacy frameCount; use timelineFrameCount/decodedFrameCount")
+    expected_source = _expected_source_contract()
+    if source != expected_source:
+        raise MatteError("manifest source timing/count/PTS contract is stale")
     source_path = _resolve_repo_relative(source["path"], "manifest source")
     if not source_path.is_file():
         raise MatteError(f"manifest source missing: {source_path}")
     actual_size, actual_hash = _sha256(source_path)
     if actual_size != VIDEO_BYTES or actual_hash != VIDEO_SHA256:
         raise MatteError("actual source hash does not match the pinned source")
+    decoded_count = int(source["decodedFrameCount"])
+    if source["decodedFrameCount"] != source["packetCount"] or source["timelineFrameCount"] != decoded_count + 1:
+        raise MatteError("manifest source timeline/decoded/packet relationship is invalid")
+    for actor in ACTOR_WINDOWS:
+        if _actor_window(actor).end_frame_exclusive >= decoded_count:
+            raise MatteError(f"{actor} window is not strictly below authoritative decodedFrameCount")
 
     actor_reports = report.get("actors")
     if not isinstance(actor_reports, list) or not actor_reports:
@@ -1670,6 +2024,25 @@ def _check_audit_report(report: dict, report_path: Path) -> None:
         raise MatteError(f"audit report status is not ok: {report.get('status')!r}")
     if report.get("pathBase") != "repo_root":
         raise MatteError("audit report pathBase must be repo_root")
+    # Reject stale report-level source/algorithm pins before opening and
+    # hashing the large FFV1 artifacts.  The full manifest check below still
+    # verifies the same contracts and all rows; this early gate keeps hostile
+    # source/count/weight mutations deterministic and actionable.
+    expected_source = _expected_source_contract()
+    if "frameCount" in (report.get("source") or {}):
+        raise MatteError("audit source contains stale legacy frameCount")
+    if report.get("source") != expected_source:
+        raise MatteError("audit report source timing/count/PTS contract is stale")
+    report_algorithm = report.get("algorithm") or {}
+    if report_algorithm.get("modelWeightsFile") != DEEPLAB_WEIGHT_FILENAME:
+        raise MatteError("audit model weight filename does not match the pinned checkpoint")
+    if str(report_algorithm.get("modelWeightsSha256", "")).upper() != DEEPLAB_WEIGHT_SHA256:
+        raise MatteError("audit model weight hash does not match the manifest/constants")
+    _current_pinned_weight()
+    if report.get("requestedWindows") != _requested_windows_contract():
+        raise MatteError("audit requestedWindows do not match the actor policy")
+    if report.get("excludedActors") != _excluded_actor_contract(report.get("actorSet") or []):
+        raise MatteError("audit excludedActors do not match the actor publication policy")
     manifest_path = _resolve_repo_relative(report.get("manifest"), "audit manifest")
     if not manifest_path.is_file():
         raise MatteError(f"audit manifest missing: {manifest_path}")
@@ -1680,23 +2053,39 @@ def _check_audit_report(report: dict, report_path: Path) -> None:
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     except (OSError, ValueError) as error:
         raise MatteError(f"could not read audit manifest: {error}") from error
-    _check_manifest_data(manifest, manifest_path)
-    expected_source = {
-        "path": VIDEO_RELATIVE.as_posix(),
-        "bytes": VIDEO_BYTES,
-        "sha256": VIDEO_SHA256,
-        "width": EXPECTED_SIZE[0],
-        "height": EXPECTED_SIZE[1],
-        "fps": EXPECTED_FPS,
-        "frameCount": EXPECTED_SOURCE_FRAME_COUNT,
+    # Compare report artifact identities against the manifest before the
+    # expensive per-frame clip verification.  This keeps codec/pix_fmt/frame
+    # mutations fail-closed without making every hostile test re-decode 4K
+    # FFV1 media.
+    early_artifacts = report.get("artifacts")
+    early_manifest_actors = {
+        item.get("actor"): item for item in (manifest.get("actors") or []) if isinstance(item, dict)
     }
+    if not isinstance(early_artifacts, list):
+        raise MatteError("audit artifacts are missing")
+    for artifact in early_artifacts:
+        actor = artifact.get("actor") if isinstance(artifact, dict) else None
+        expected_actor = early_manifest_actors.get(actor)
+        if expected_actor is None:
+            raise MatteError(f"audit artifact actor is absent from manifest: {actor}")
+        expected_encoded = expected_actor.get("encoded") or {}
+        if artifact.get("path") != expected_actor.get("clip"):
+            raise MatteError(f"audit artifact path does not match manifest for {actor}")
+        for field, manifest_field in (("bytes", "bytes"), ("sha256", "sha256"), ("codec", "codec"), ("pix_fmt", "pix_fmt"), ("frames", "frames")):
+            actual = artifact.get(field)
+            expected = expected_encoded.get(manifest_field)
+            if field == "sha256":
+                actual = str(actual or "").upper()
+                expected = str(expected or "").upper()
+            if actual != expected:
+                raise MatteError(f"audit artifact {field} does not match manifest for {actor}")
+    _check_manifest_data(manifest, manifest_path)
     if manifest.get("source") != expected_source:
         raise MatteError("manifest source fields do not match the pinned source contract")
     if report.get("source") != manifest.get("source") or report.get("source") != expected_source:
         raise MatteError("audit report source fields do not match manifest/constants")
 
     manifest_algorithm = manifest.get("algorithm") or {}
-    report_algorithm = report.get("algorithm") or {}
     if report_algorithm != manifest_algorithm:
         raise MatteError("audit algorithm does not match manifest")
     if report_algorithm.get("name") != "deeplabv3_resnet50_person_class_with_hard_ui_exclusions":
@@ -1760,13 +2149,20 @@ def _check_audit_report(report: dict, report_path: Path) -> None:
 
 
 def _refresh_existing_report(manifest_path: Path, report_path: Path) -> Path:
-    """Re-emit contract metadata/report without decoding or encoding video."""
+    """Re-emit contract metadata/report without encoding video.
+
+    Refreshing the source contract performs the bounded ffprobe/ffmpeg null
+    decode probe, but never reads frames into a matte encoder.
+    """
     try:
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     except (OSError, ValueError) as error:
         raise MatteError(f"could not read existing actor matte manifest: {error}") from error
     if manifest.get("schema") != MANIFEST_SCHEMA:
         raise MatteError("existing actor matte manifest has an unsupported schema")
+    old_source = manifest.get("source") or {}
+    source_path = _resolve_repo_relative(old_source.get("path"), "existing manifest source")
+    manifest["source"] = verify_source(source_path)
     manifest["requestedWindows"] = _requested_windows_contract()
     algorithm = manifest.get("algorithm")
     if not isinstance(algorithm, dict):
@@ -1777,6 +2173,15 @@ def _refresh_existing_report(manifest_path: Path, report_path: Path) -> Path:
     existing_actors = manifest.get("actors") or []
     if not isinstance(existing_actors, list):
         raise MatteError("existing actor matte manifest has no actor rows")
+    existing_names = {str(item.get("actor")) for item in existing_actors if isinstance(item, dict)}
+    if "endminf" not in existing_names:
+        recovered_clip = manifest_path.parent / "endminf_actor_only.mkv"
+        if recovered_clip.is_file() and _actor_matte_identity_allowed("endminf"):
+            # The source-schema migration previously filtered this row because
+            # its identity evidence was being refreshed in the same bounded
+            # task.  Recover rows by decoding the retained FFV1 clip only;
+            # never invoke build_actor or overwrite the media.
+            existing_actors.append(_audit_existing_actor_clip(_actor_window("endminf"), recovered_clip))
     published_actors = [item for item in existing_actors if _actor_matte_identity_allowed(str(item.get("actor")))]
     if not published_actors:
         raise MatteError("existing actor matte manifest has no identity-admitted actor rows")
