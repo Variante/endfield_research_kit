@@ -111,6 +111,7 @@
       levelScriptDynamicBindings: "LevelScript dynamic Event bindings",
       levelScriptControls: "LevelScript audio controls",
       levelScriptDynamicControls: "LevelScript dynamic control bindings",
+      levelScriptAudioLifecycle: "LevelScript audio lifecycle",
       levelEventConditions: "LevelEvent audio conditions",
       wwiseSelectorGroups: "Wwise selector runtime joins",
       wwiseInitialRtpcParameters: "Named Initial RTPC curve parameters",
@@ -379,6 +380,7 @@
       levelScriptDynamicBindings: "LevelScript \u52a8\u6001 Event \u7ed1\u5b9a",
       levelScriptControls: "LevelScript \u97f3\u9891\u63a7\u5236",
       levelScriptDynamicControls: "LevelScript \u52a8\u6001\u63a7\u5236\u7ed1\u5b9a",
+      levelScriptAudioLifecycle: "LevelScript \u97f3\u9891\u751f\u547d\u5468\u671f",
       levelEventConditions: "LevelEvent \u97f3\u9891\u6761\u4ef6",
       wwiseSelectorGroups: "Wwise \u9009\u62e9\u5668\u8fd0\u884c\u65f6\u8fde\u63a5",
       wwiseInitialRtpcParameters: "\u5df2\u547d\u540d\u7684 Initial RTPC \u66f2\u7ebf\u53c2\u6570",
@@ -2889,6 +2891,8 @@
     const kind = normalize(context?.kind);
     const audioCueContext = isAudioCueContext(context);
     const debugAudioCue = document.body.classList.contains("show-debug");
+    const debugLevelScript = document.body.classList.contains("show-debug");
+    const levelScriptContext = kind.startsWith("levelScript");
     const group = contextGroup(kind);
     const parts = [group ? taxonomyLabel(group) : humanize(kind), humanize(kind)];
     if (context?.ownerId) parts.push(context.ownerId);
@@ -3100,7 +3104,7 @@
     if (context?.audioPropertyKey) parts.push(`audio property ${context.audioPropertyKey}`);
     if (context?.propertyMapOffset) parts.push(`property map offset ${context.propertyMapOffset}`);
     if (context?.audioAction) parts.push(`${context.audioAction} / ${context.audioActionRole || "audio"} / ${context.audioSourceField || "event field"}`);
-    if (context?.actionMapRole) parts.push(`${context.actionMapRole} / local ${context.actionLocalId ?? "?"} / UID ${context.actionUid || "?"}`);
+    if (context?.actionMapRole && (!levelScriptContext || debugLevelScript)) parts.push(`${context.actionMapRole} / local ${context.actionLocalId ?? "?"} / UID ${context.actionUid || "?"}`);
     if (context?.actionUnionTag) parts.push(`action union ${context.actionUnionTag} / mc${context.actionSerializedMemberCount ?? "?"}`);
     if (context?.actionMapOffset) parts.push(`embedded action map ${context.actionMapOffset}`);
     if (context?.actionRecordOffset) parts.push(`action record ${context.actionRecordOffset} / payload ${context.actionPayloadOffset || "?"}`);
@@ -3182,16 +3186,18 @@
       if (context?.triggerRole) parts.push(`request role ${humanize(context.triggerRole)}`);
     }
     if (context?.sourceField) parts.push(context.sourceField);
-    if (context?.actionMapRole) parts.push(context.actionMapRole);
-    if (context?.recordUid || context?.recordLocalId !== undefined) parts.push(`record ${context.recordUid || "?"} / local ${context.recordLocalId ?? "?"}`);
-    if (context?.sourcePath) parts.push(context.sourcePath);
-    if (context?.sourceSha256) parts.push(`SHA-256 ${context.sourceSha256}`);
+    if (context?.actionMapRole && (!levelScriptContext || debugLevelScript)) parts.push(context.actionMapRole);
+    if ((context?.recordUid || context?.recordLocalId !== undefined) && (!levelScriptContext || debugLevelScript)) parts.push(`record ${context.recordUid || "?"} / local ${context.recordLocalId ?? "?"}`);
+    if (context?.sourcePath && (!levelScriptContext || debugLevelScript)) parts.push(context.sourcePath);
+    if (context?.sourceSha256 && (!levelScriptContext || debugLevelScript)) parts.push(`SHA-256 ${context.sourceSha256}`);
     for (const [fieldName, field] of Object.entries(context?.fields || {})) {
       if (!field || typeof field !== "object") continue;
       const value = field.value !== undefined
         ? (typeof field.value === "object" ? JSON.stringify(field.value) : String(field.value))
-        : field.path || "";
-      parts.push(`${field.sourceField || fieldName}: ${humanize(field.bindingKind || "unknown")}${value ? ` = ${value}` : ""}`);
+        : (debugLevelScript || !levelScriptContext ? field.path || "" : "");
+      const sourceLabel = field.sourceKind || field.bindingKind || "unknown";
+      const status = field.parameterStatus || field.resolutionStatus || "";
+      parts.push(`${field.sourceField || fieldName}: ${humanize(sourceLabel)}${value ? ` = ${value}` : ""}${status ? ` / ${humanize(status)}` : ""}`);
     }
     if (context?.eventHash !== undefined) parts.push(`Event 0x${Number(context.eventHash).toString(16).padStart(8, "0")}`);
     if (context?.signedValue !== undefined) parts.push(`serialized int32 ${context.signedValue}`);
@@ -3270,6 +3276,100 @@
     if (line?.wwiseEventStatus) parts.push(`Wwise Event ${humanize(line.wwiseEventStatus)}`);
     if (line?.source) parts.push(line.source);
     return parts.join(" / ");
+  }
+
+  function levelScriptAudioLifecycleSection(raw) {
+    const contexts = asArray(raw?.contexts).filter((value) => value && typeof value === "object");
+    const rows = [];
+    const seen = new Set();
+    for (const context of contexts) {
+      const lifecycle = asArray(context.levelScriptAudioLifecycle);
+      if (!lifecycle.length) continue;
+      for (const detail of lifecycle) {
+        if (!detail || typeof detail !== "object") continue;
+        const identity = detail.actionIdentity || {};
+        const key = [
+          context.levelScriptId || identity.levelScriptId || "",
+          context.recordStart ?? identity.recordStart ?? "",
+          context.action || identity.action || "",
+          detail.role || "", detail.lifecycleKind || "",
+          detail.serializedOutputPath || "", detail.joinStatus || "",
+        ].join("\u001f");
+        if (seen.has(key)) continue;
+        seen.add(key);
+        rows.push({ context, detail });
+      }
+    }
+    if (!rows.length) return null;
+    const debug = document.body.classList.contains("show-debug");
+    const details = document.createElement("details");
+    details.className = "audio-levelscript-lifecycle";
+    const summary = document.createElement("summary");
+    summary.textContent = t("levelScriptAudioLifecycle");
+    details.appendChild(summary);
+    const list = document.createElement("div");
+    list.className = "audio-context-list";
+    for (const { context, detail } of rows.slice(0, 96)) {
+      const identity = detail.actionIdentity || {};
+      const action = context.action || identity.action || "LevelScript action";
+      const item = document.createElement("div");
+      item.className = "audio-context-item";
+      const fields = Object.entries(context.fields || {})
+        .filter(([, field]) => field && typeof field === "object")
+        .map(([name, field]) => {
+          const source = field.sourceKind || field.bindingKind || "unknown";
+          const status = field.parameterStatus || field.resolutionStatus || "";
+          const value = field.value !== undefined
+            ? (typeof field.value === "object" ? JSON.stringify(field.value) : String(field.value))
+            : "";
+          return `${name}: ${humanize(source)}${value ? ` = ${value}` : ""}${status ? ` / ${humanize(status)}` : ""}`;
+        });
+      const next = asArray(context.staticNext).filter((edge) => edge && typeof edge === "object").map((edge) => {
+        const relation = edge.relation || "next";
+        const target = edge.targetActionLocalId ?? "?";
+        return `${relation} -> ${edge.targetStatus || "unresolved"}${debug ? ` (${target})` : ""}`;
+      });
+      const ordinal = context.serializedActionOrdinal ?? identity.serializedActionOrdinal;
+      const authored = [
+        `authored action ${ordinal !== undefined && ordinal !== null ? Number(ordinal) + 1 : "?"}`,
+        `${action}`,
+        detail.role === "producer" ? "producer" : detail.role === "consumer" ? "consumer" : "unresolved",
+      ];
+      if (detail.lifecycleKind) authored.push(detail.lifecycleKind);
+      if (detail.fieldName) authored.push(`field ${detail.fieldName}`);
+      if (debug && detail.serializedOutputPath) authored.push(`path ${detail.serializedOutputPath}`);
+      authored.push(humanize(detail.joinStatus || "unresolved"));
+      if (fields.length) authored.push(fields.slice(0, 16).join(" / "));
+      if (next.length) authored.push(`static ${next.slice(0, 16).join(" / ")}`);
+      const line = document.createElement("div");
+      line.textContent = authored.join(" / ");
+      item.appendChild(line);
+      if (debug) {
+        const debugParts = [
+          identity.levelScriptId || context.levelScriptId,
+          identity.actionMapRole || context.actionMapRole,
+          identity.recordStart !== undefined ? `recordStart ${identity.recordStart}` : "",
+          identity.recordLocalId !== undefined ? `recordLocalId ${identity.recordLocalId}` : "",
+          detail.pathEvidence,
+        ].filter(Boolean);
+        if (debugParts.length) {
+          const debugLine = document.createElement("small");
+          debugLine.textContent = debugParts.join(" / ");
+          item.appendChild(debugLine);
+        }
+      }
+      list.appendChild(item);
+    }
+    if (rows.length > 96) {
+      const note = document.createElement("small");
+      note.textContent = `${rows.length - 96} more lifecycle row(s) are omitted from this bounded detail.`;
+      list.appendChild(note);
+    }
+    const boundary = document.createElement("small");
+    boundary.textContent = "Static serialized LevelScript evidence only; action execution and current audio state were not observed.";
+    list.appendChild(boundary);
+    details.appendChild(list);
+    return details;
   }
 
   function selectorEvidenceSummary(record) {
@@ -4593,6 +4693,8 @@
     panel.appendChild(grid);
     const audioCueExpressions = audioCueExpressionSection(raw);
     if (audioCueExpressions) panel.appendChild(audioCueExpressions);
+    const levelScriptLifecycle = levelScriptAudioLifecycleSection(raw);
+    if (levelScriptLifecycle) panel.appendChild(levelScriptLifecycle);
 
     if (record.contextTags.length) panel.appendChild(chipSection(t("contextGroups"), record.contextTags.map(taxonomyLabel)));
     if (record.relationTags.length) panel.appendChild(chipSection(t("relation"), record.relationTags.map(taxonomyLabel)));
