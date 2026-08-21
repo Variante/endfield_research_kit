@@ -461,7 +461,15 @@ projection;
 `managed_literals.py`, `responsive_voice.py`, and `voice_requests.py`
 own their respective consumer evidence, `interactive_components.py` and
 `authored_components.py` own serialized component recovery,
-`table_contexts.py` owns authored table/config scanning, and
+`table_contexts.py` owns authored table/config scanning and the validated,
+bounded AudioCue expression AST. It retains source coordinates, raw scalar
+forms, and bounded diagnostics without evaluating serialized expressions.
+`audio_cue_native.py` owns the explicit selected `global-metadata.dat` /
+`GameAssembly.dll` hash gate for current AudioCue enum names. Full ASTs are
+lazy Event-detail data under `audioCueExpressionSchemaVersion=1`; compact rows
+publish counts and summaries only. When the selected native inputs are
+missing or mismatched, expression and operator numbers remain opaque rather
+than receiving guessed names. `table_contexts.py` and
 `event_projection.py` / `event_summary.py` own WebUI row projection.
 `build_audio.py` imports shared primitives from those owners instead of
 treating the semantics entry point as a utility module.

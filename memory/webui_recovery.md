@@ -148,6 +148,14 @@ and conditional native consumers retain their method, callsite, target, and
 branch evidence. Selector and dictionary paths stay distinct from direct
 literal playback.
 
+Ordinary Audio details show authored AudioCue behavior Event requests and
+string-literal/variable-name controls as typed evidence. The complete numeric
+AST, raw scalar fields, source paths, and validation diagnostics are lazy
+detail data shown only in the debug surface; compact rows retain summary/count
+fields. Selected condition truth, handler/indirect dispatch, cue execution,
+Wwise branch selection, and audibility remain runtime-blocked and are not
+presented as observed facts.
+
 Missing or mismatched installed native inputs never erase authored Audio rows.
 They suppress only build-locked callsites/mappings and expose a bounded
 unavailable diagnostic, so the page cannot silently present stale native
