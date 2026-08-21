@@ -248,8 +248,19 @@ def _compact_metadata(path: Path) -> dict[str, Any]:
         descriptor_sets.append({"Name": descriptor_set.get("Name"), "SetId": set_id, "MaxBindingIndex": descriptor_set.get("MaxBindingIndex"), "Bindings": bindings})
     return {
         "file": str(path.relative_to(ROOT)).replace("\\", "/"),
+        "sha256": _sha256(path),
         "decodedStage": data.get("DecodedProgramStage"),
         "serializedStage": data.get("SourceSerializedProgramStage"),
+        "sourceStage": data.get("DecodedProgramStage"),
+        "shaderCab": data.get("ShaderCab"),
+        "shaderPathId": data.get("ShaderPathId"),
+        "shaderName": data.get("ShaderName"),
+        "debugName": data.get("DebugName"),
+        "passName": data.get("SourcePassName"),
+        "passIndex": data.get("SourcePassIndex"),
+        "subProgramIndex": data.get("SourceSubProgramIndex"),
+        "programBlobIndex": data.get("SourceProgramBlobIndex"),
+        "keywords": data.get("SourceCompiledKeywords", []),
         "constantBuffers": data["ConstantBufferParameters"],
         "bufferParameters": data.get("BufferParameters", []),
         "bufferBindings": data["BufferBindingParameters"],
@@ -444,6 +455,42 @@ def _target_evidence(vertex: dict[str, Any], fragment: dict[str, Any]) -> dict[s
     }
 
 
+def _validate_stage_metadata(metadata: dict[str, Any], reflection: dict[str, Any], evidence: dict[str, Any], filename: str, expected_stage: str) -> None:
+    reps = {row.get("fileName"): row for row in evidence["target"]["representatives"] if isinstance(row, dict)}
+    row = reps.get(filename)
+    if not row:
+        raise VerificationError(f"evidence lacks {filename}")
+    if row.get("stage") != expected_stage or row.get("decodedStage") != expected_stage or row.get("stage") != row.get("decodedStage"):
+        raise VerificationError(f"representative stage/decodedStage mismatch for {filename}")
+    expected = {
+        "sha256": reflection["sha256"],
+        "decodedStage": expected_stage,
+        "serializedStage": row.get("serializedStage"),
+        "passName": "HGBuffer",
+        "passIndex": 0,
+        "subProgramIndex": 19,
+        "programBlobIndex": 207,
+        "keywords": ["HG_ENABLE_MV", "_PARALLAX_MAP"],
+        "shaderCab": "CAB-2c811ef28608ab220ecdb5c4e0629d2d",
+        "shaderPathId": 6428594484694422749,
+        "shaderName": "HGRP/LitEffect",
+    }
+    metadata_path = BYTECODE_ROOT / (filename + ".metadata.json")
+    if metadata.get("sha256") != _sha256(metadata_path):
+        raise VerificationError(f"metadata file hash mismatch for {filename}")
+    if metadata.get("debugName") != f"subshader0/pass0:HGBuffer/{row.get('serializedStage')}/blob207/33":
+        raise VerificationError(f"metadata DebugName/stage mismatch for {filename}")
+    for key in ("decodedStage", "serializedStage", "passName", "passIndex", "subProgramIndex", "programBlobIndex", "keywords"):
+        if metadata.get(key) != expected[key]:
+            raise VerificationError(f"metadata {key} mismatch for {filename}")
+    # CAB/PathID/name are not fields in AnimeStudio's metadata JSON.  The
+    # sidecar's manifest/evidence identity is therefore attached explicitly;
+    # an entry with a different identity cannot pass the checks above.
+    metadata["shaderCab"] = expected["shaderCab"]
+    metadata["shaderPathId"] = expected["shaderPathId"]
+    metadata["shaderName"] = expected["shaderName"]
+
+
 def _map_vertex_fields(fields: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Attach the one exact physical range proven by the vertex register sizes.
 
@@ -481,6 +528,8 @@ def build_report() -> dict[str, Any]:
     fragment_meta = _compact_metadata(BYTECODE_ROOT / (FRAGMENT_FILE + ".metadata.json"))
     descriptor_contract = _validate_descriptor_contract(fragment_meta)
     evidence = _target_evidence(vertex_reflection, fragment_reflection)
+    _validate_stage_metadata(vertex_meta, vertex_reflection, evidence, VERTEX_FILE, "vertex")
+    _validate_stage_metadata(fragment_meta, fragment_reflection, evidence, FRAGMENT_FILE, "fragment")
     ruri_evidence = {row.get("fileName"): row for row in _read_json(EVIDENCE_PATH).get("target", {}).get("ruriOutputs", []) if isinstance(row, dict)}
     for ruri_path in (VERTEX_RURI, FRAGMENT_RURI):
         name = ruri_path.name
@@ -510,8 +559,11 @@ def build_report() -> dict[str, Any]:
     fragment_resources = []
     if sorted(resource["register"] for resource in fragment_ruri["resources"]) != list(range(6)):
         raise VerificationError("fragment texture registers are not exactly t0..t5")
+    expected_resource_names = {index: f"_{index + 8}" for index in range(6)}
     for resource in fragment_ruri["resources"]:
         slot = resource["register"]
+        if resource.get("name") != expected_resource_names.get(slot):
+            raise VerificationError(f"fragment texture resource name mismatch at t{slot}")
         logical = dynamic_samplers.get(slot)
         fragment_resources.append({**resource, "logicalName": logical, "status": "resolved" if logical else "gap", "basis": ["Ruri register", "serialized SamplerParameters BindPoint 0..5", "PerMaterial descriptor texture binding 6..11"] if logical else []})
     if len(fragment_resources) != 6:

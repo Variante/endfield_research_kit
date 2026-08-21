@@ -137,6 +137,49 @@ class LitEffectResourceMappingTests(unittest.TestCase):
         finally:
             MODULE._texture_identity_map = original
 
+    def test_representative_stage_attack_fails_closed(self) -> None:
+        original = MODULE._read_json
+        def altered(path: Path):
+            value = original(path)
+            if path == MODULE.EVIDENCE_PATH:
+                value = copy.deepcopy(value)
+                value["target"]["representatives"][1]["stage"] = "vertex"
+            return value
+        MODULE._read_json = altered
+        try:
+            with self.assertRaisesRegex(MODULE.VerificationError, "stage/decodedStage"):
+                MODULE.build_report()
+        finally:
+            MODULE._read_json = original
+
+    def test_swapped_metadata_attack_fails_closed(self) -> None:
+        original = MODULE._compact_metadata
+        def altered(path: Path):
+            value = original(path)
+            if path.name.startswith("0115_"):
+                value["decodedStage"] = "vertex"
+            return value
+        MODULE._compact_metadata = altered
+        try:
+            with self.assertRaisesRegex(MODULE.VerificationError, "metadata decodedStage"):
+                MODULE.build_report()
+        finally:
+            MODULE._compact_metadata = original
+
+    def test_ruri_wrong_resource_name_attack_fails_closed(self) -> None:
+        original = MODULE._ruri_declarations
+        def altered(path: Path):
+            value = original(path)
+            if path.name == "parallax_hgbuffer_fragment.hlsl":
+                value["resources"][0]["name"] = "WRONG_RESOURCE"
+            return value
+        MODULE._ruri_declarations = altered
+        try:
+            with self.assertRaisesRegex(MODULE.VerificationError, "resource name mismatch"):
+                MODULE.build_report()
+        finally:
+            MODULE._ruri_declarations = original
+
 
 if __name__ == "__main__":
     unittest.main()
