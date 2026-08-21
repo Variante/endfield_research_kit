@@ -2,6 +2,7 @@ import json
 import sys
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 
@@ -13,6 +14,18 @@ import extract_endminf_actor_animation_clip as extraction
 
 
 class EndminfActorAnimationClipExtractionTests(unittest.TestCase):
+    def _identity(self, source: str = "D:/game/source.chk"):
+        return {
+            "name": extraction.TARGET_NAME,
+            "type": extraction.TARGET_TYPE,
+            "pathId": -7994037904239017215,
+            "pathIdHex": "910F78E15CD34301",
+            "source": source,
+            "sourceOffset": 937624865,
+            "cab": "CAB-exact",
+            "container": "assets/exact.fbx",
+        }
+
     def test_clip_metrics_records_timing_and_bindings(self):
         value = {
             "m_Name": extraction.TARGET_NAME,
@@ -137,6 +150,134 @@ class EndminfActorAnimationClipExtractionTests(unittest.TestCase):
             path.write_text(json.dumps([row, row]), encoding="utf-8")
             with self.assertRaisesRegex(extraction.ExtractionError, "one exact AssetMap row"):
                 extraction._validate_filter_file(path, target, row)
+
+    def test_object_index_requires_complete_zero_error_terminal_summary(self):
+        identity = self._identity()
+        summary = {
+            "recordType": "summary",
+            "schemaVersion": 1,
+            "complete": True,
+            "counts": {key: 0 for key in extraction.OBJECT_INDEX_REQUIRED_COUNTS},
+            "errors": [],
+            "source": identity["source"],
+            "cab": identity["cab"],
+            "pathId": identity["pathId"],
+            "type": identity["type"],
+            "name": identity["name"],
+        }
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "index.jsonl"
+            path.write_text(json.dumps({"recordType": "object", "pathId": 1}) + "\n" + json.dumps(summary) + "\n", encoding="utf-8")
+            self.assertEqual(extraction._object_index_summary(path, identity), summary)
+            malformed = dict(summary)
+            malformed["complete"] = False
+            path.write_text(json.dumps(malformed) + "\n", encoding="utf-8")
+            with self.assertRaisesRegex(extraction.ExtractionError, "not complete"):
+                extraction._object_index_summary(path, identity)
+
+    def test_object_index_rejects_case_or_error_drift(self):
+        identity = self._identity()
+        summary = {
+            "recordType": "summary",
+            "schemaVersion": 1,
+            "complete": True,
+            "counts": {key: 0 for key in extraction.OBJECT_INDEX_REQUIRED_COUNTS},
+            "errors": [],
+            "source": identity["source"],
+            "cab": identity["cab"],
+            "pathId": identity["pathId"],
+            "type": identity["type"],
+            "name": identity["name"],
+        }
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "index.jsonl"
+            case_drift = dict(summary, source=identity["source"].upper())
+            path.write_text(json.dumps(case_drift) + "\n", encoding="utf-8")
+            with self.assertRaisesRegex(extraction.ExtractionError, "source differs"):
+                extraction._object_index_summary(path, identity)
+            error_drift = dict(summary, errors=[{"message": "bad"}])
+            error_drift["counts"] = dict(summary["counts"], errors=1)
+            path.write_text(json.dumps(error_drift) + "\n", encoding="utf-8")
+            with self.assertRaisesRegex(extraction.ExtractionError, "count is nonzero"):
+                extraction._object_index_summary(path, identity)
+
+    def test_normalized_anim_requires_121_replacements_and_preserves_raw(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            raw = root / "raw.anim"
+            normalized = root / "raw_unity_normalized.anim"
+            raw.write_text("%YAML 1.1\n" + ("∞\n" * 121), encoding="utf-8")
+            metrics = extraction._normalize_anim(raw, normalized)
+            self.assertEqual(metrics["replacementCount"], 121)
+            self.assertEqual(normalized.read_text(encoding="utf-8").count("∞"), 0)
+            extraction._validate_normalized_anim(raw, normalized, metrics)
+            raw.write_text(raw.read_text(encoding="utf-8") + "\n", encoding="utf-8")
+            with self.assertRaisesRegex(extraction.ExtractionError, r"raw \.anim hash changed"):
+                extraction._validate_normalized_anim(raw, normalized, metrics)
+
+    def test_binding_gap_report_keeps_all_three_hashes_unresolved(self):
+        identity = self._identity()
+        generic = []
+        for path_hash in (4054261481, 1875086154, 2258644607):
+            for attribute in (1, 2, 3):
+                generic.append({"path": path_hash, "attribute": attribute, "typeID": "Transform"})
+        clip = {"m_ClipBindingConstant": {"genericBindings": generic}}
+        report = extraction._binding_gap_report(clip, identity)
+        self.assertEqual(report["bindingCount"], 9)
+        self.assertEqual(report["uniquePathHashCount"], 3)
+        self.assertTrue(all(row["status"].startswith("unresolved_") for row in report["rows"]))
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "binding_gaps.json"
+            path.write_text(json.dumps(report), encoding="utf-8")
+            extraction._validate_binding_gap_report(path, clip, identity)
+            guessed = dict(report)
+            guessed["rows"] = [dict(report["rows"][0], status="resolved", path="Root/Bone")]
+            path.write_text(json.dumps(guessed), encoding="utf-8")
+            with self.assertRaisesRegex(extraction.ExtractionError, "drifted"):
+                extraction._validate_binding_gap_report(path, clip, identity)
+
+    def test_reuse_path_calls_full_validator(self):
+        source = Path(tempfile.gettempdir()) / "endminf-reuse-source.chk"
+        target = self._identity(source.as_posix())
+        row = {
+            "Name": extraction.TARGET_NAME,
+            "Type": extraction.TARGET_TYPE,
+            "PathID": target["pathId"],
+            "Offset": target["sourceOffset"],
+            "Source": source.as_posix(),
+            "Container": target["container"],
+        }
+        cab = {"cab": target["cab"]}
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary) / "stage"
+            output.mkdir()
+            with mock.patch.object(extraction, "_target_from_closure", return_value={
+                    "name": extraction.TARGET_NAME,
+                    "type": extraction.TARGET_TYPE,
+                    "pathId": target["pathId"],
+                    "offset": target["sourceOffset"],
+                    "source": source.as_posix().casefold(),
+                    "sourceRaw": source.as_posix(),
+                    "container": target["container"],
+                    "cab": target["cab"],
+                    "expectedSourceSnapshot": None,
+                    "closure": "closure.json",
+                }), mock.patch.object(extraction, "_asset_map_row", return_value=row), \
+                    mock.patch.object(extraction, "_cab_row", return_value=cab), \
+                    mock.patch.object(extraction, "_snapshot", return_value={
+                        "path": source.as_posix(), "bytes": 1, "mtime_ns": 1,
+                    }), mock.patch.object(extraction, "_validate_existing_stage", return_value={"status": "ok"}) as validator:
+                result = extraction.extract(
+                    closure_path=Path(temporary) / "closure.json",
+                    asset_map_path=Path(temporary) / "asset-map.json",
+                    cab_map_path=Path(temporary) / "cab-map.bin",
+                    output=output,
+                    force=False,
+                    dry_run=False,
+                    check=False,
+                )
+            self.assertEqual(result, {"status": "ok"})
+            validator.assert_called_once()
 
 
 if __name__ == "__main__":

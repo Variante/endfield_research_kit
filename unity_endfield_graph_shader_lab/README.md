@@ -299,6 +299,18 @@ for 15 actors (80 skinned and two static LOD0 renderers). The other 13 actors
 have no exact UI-deco prefab in the exported data and are recorded as
 source-proven zero rather than receiving a fabricated prop. The catalog is:
 
+For the one remaining exact Endminf actor overview clip, use the narrow
+`tools/extract_endminf_actor_animation_clip.py` command. It joins the closure,
+AssetMap, and CABMap by source/offset/signed PathID/type/name and exports only
+that row. The JSON pass carries a unique `object_index_jsonl` terminal summary
+(`complete`, zero errors/counts, and source/CAB/PathID/type identity); Convert
+does not run a broad export. The raw `.anim` stays byte-for-byte intact, while
+the separately named `_unity_normalized.anim` copy records the 121 `U+221E` to
+ASCII `Infinity` replacements. `binding_gaps.json` lists the three unique
+path hashes and all nine bindings; unresolved rows stay unresolved when the
+existing actor hierarchy/TOS has no unique exact mapping. Reuse and `--check`
+both run the complete validator, including source freshness and every artifact.
+
 ```text
 Assets/EndfieldGraphShaderLab/Generated/Characters/Catalog/playable_character_ui_catalog.json
 ```
