@@ -22,6 +22,7 @@ from scripts.audio_semantics import (
     table_contexts,
     voice_requests,
 )
+from scripts.story_builder import level_bindings
 
 
 def validated_native_context() -> native_evidence.NativeAudioEvidence:
@@ -3842,6 +3843,14 @@ class AudioSemanticDataTests(unittest.TestCase):
             self.assertEqual("resolvedLevelScriptBriefProperty", binding["resolutionStatus"])
             self.assertEqual("au_music_tundra_001_race_mode", binding["resolvedEventName"])
             context = semantics["eventContexts"]["au_music_tundra_001_race_mode"][0]
+            self.assertEqual(
+                "property_value_resolved",
+                context["fields"]["key"]["parameterStatus"],
+            )
+            self.assertEqual(
+                "au_music_tundra_001_race_mode",
+                binding["binding"]["resolvedValue"],
+            )
             self.assertEqual("levelScriptAudioActionDynamicProperty", context["kind"])
             self.assertEqual("Start_music", context["resolution"]["propertyName"])
             self.assertEqual(1, semantics["stats"]["resolvedDynamicEventBindings"])
@@ -8304,6 +8313,13 @@ class AudioSemanticDataTests(unittest.TestCase):
             self.assertEqual(context["sourceRoot"], "Persistent")
             self.assertEqual(context["triggerRole"], "play")
             self.assertEqual(context["fields"]["stopOnRelease"]["value"], True)
+            self.assertEqual(context["serializedActionOrdinal"], 0)
+            self.assertNotIn("recordIndex", context)
+            self.assertEqual(
+                semantics["cueInvocations"][0]["serializedActionOrdinal"],
+                2,
+            )
+            self.assertFalse(context["storyOrderEvidence"])
             self.assertEqual(event_summary.semantic_context_group(context["kind"]), "scripted")
             self.assertEqual(semantics["cueInvocations"][0]["cueName"], "au_cue_music_combat_boss_state1")
             self.assertEqual(semantics["cueInvocations"][0]["definitionStatus"], "resolved")
@@ -9000,6 +9016,17 @@ class AudioSemanticDataTests(unittest.TestCase):
             relation_body.index("record?.eventIds"),
         )
 
+    def test_audio_frontend_hides_levelscript_serialized_output_paths_in_normal_mode(self) -> None:
+        source = (
+            Path(__file__).resolve().parents[2] / "webui/src/features/audio/index.js"
+        ).read_text(encoding="utf-8")
+        lifecycle_body = source.split("function levelScriptAudioLifecycleSection", 1)[1].split(
+            "function selectorEvidenceSummary", 1
+        )[0]
+        self.assertIn("if (debug && detail.serializedOutputPath)", lifecycle_body)
+        self.assertIn("field ${detail.fieldName}", lifecycle_body)
+        self.assertIn("Static serialized LevelScript evidence only", lifecycle_body)
+
     def test_audio_frontend_exposes_levelsequence_timeline_director_evidence(self) -> None:
         source = (
             Path(__file__).resolve().parents[2] / "webui/src/features/audio/index.js"
@@ -9216,6 +9243,262 @@ class AudioSemanticDataTests(unittest.TestCase):
         )
         self.assertEqual(len(projected), 1)
         self.assertEqual(projected[0]["situation"]["eventHash"], 0x1234)
+
+    def test_levelscript_audio_lifecycle_joins_exact_paths_and_keeps_postcue_output_only(self) -> None:
+        def action(name, start, local_id, fields, ordinal):
+            return {
+                "action": name,
+                "levelScriptId": "map/9001",
+                "sourceRoot": "Persistent",
+                "sourcePath": "structured/Persistent/Data/Json/LevelScriptData/map/9001.json",
+                "serializedActionOrdinal": ordinal,
+                "recordStart": start,
+                "recordLocalId": local_id,
+                "actionMapRole": f"actionList#{ordinal + 1} linked",
+                "runtimeSlotStatus": "active-final-serialized-slot",
+                "fields": fields,
+            }
+
+        rows = [
+            action("PlayAudio", 10, 1, {"audioPlayingId": {"bindingKind": "output", "path": "$1@_audioPlayingId", "paramSource": 0}}, 0),
+            action("StopAudio", 20, 2, {"audioId": {"bindingKind": "dynamic", "path": "$1@_audioPlayingId", "paramSource": 0}}, 1),
+            action("PlayVoice", 30, 3, {"voiceHandle": {"bindingKind": "output", "path": "$2@_voiceHandle", "paramSource": 0}}, 2),
+            action("StopVoice", 40, 4, {"voiceHandle": {"bindingKind": "dynamic", "path": "$2@_voiceHandle", "paramSource": 0}}, 3),
+            action("BlockAutoMusicChange", 50, 5, {"blockHandle": {"bindingKind": "output", "path": "$3@_blockHandle", "paramSource": 0}}, 4),
+            action("BlockAutoMusicChangeCancel", 60, 6, {"blockHandle": {"bindingKind": "dynamic", "path": "$3@_blockHandle", "paramSource": 0}}, 5),
+            action("PostAudioCue", 70, 7, {"cueHandlerId": {"bindingKind": "output", "path": "$4@_cueHandlerId", "paramSource": 0}}, 6),
+        ]
+        details, summary = audio_semantics._build_levelscript_audio_lifecycle(rows)
+        self.assertEqual(summary["exactJoinCount"], 3)
+        self.assertEqual(summary["producerOnlyCount"], 1)
+        self.assertEqual(summary["unresolvedCount"], 0)
+        self.assertEqual({row["lifecycleKind"] for row in details}, {"audioPlayingId", "voiceHandle", "blockHandle", "cueHandlerId"})
+        consumer = next(row for row in details if row["role"] == "consumer" and row["lifecycleKind"] == "audioPlayingId")
+        self.assertEqual(consumer["joinStatus"], "exact_unique_active_producer")
+        self.assertEqual(consumer["sourceKind"], "runtime")
+        cue = next(row for row in details if row["lifecycleKind"] == "cueHandlerId")
+        self.assertEqual(cue["joinStatus"], "producer_only")
+        self.assertEqual(audio_semantics._levelscript_parameter_source({"bindingKind": "constant", "paramSource": 0, "idRef": -1}), "constant")
+        self.assertEqual(audio_semantics._levelscript_parameter_source({"bindingKind": "dynamic", "paramSource": 200, "path": "CueName"}), "property")
+        self.assertEqual(audio_semantics._levelscript_parameter_source({"bindingKind": "dynamic", "paramSource": 100, "path": "$1@_audioPlayingId"}), "runtime")
+        self.assertEqual(audio_semantics._levelscript_parameter_source({"bindingKind": "output", "paramSource": 0, "path": "$1@_audioPlayingId"}), "output")
+
+    def test_levelscript_audio_lifecycle_fails_closed_for_duplicate_or_shadowed_producer(self) -> None:
+        path = "$8@_audioPlayingId"
+        base = {
+            "levelScriptId": "map/9002",
+            "sourceRoot": "Persistent",
+            "sourcePath": "structured/Persistent/Data/Json/LevelScriptData/map/9002.json",
+            "runtimeSlotStatus": "active-final-serialized-slot",
+            "fields": {"audioPlayingId": {"bindingKind": "output", "path": path, "paramSource": 0}},
+        }
+        rows = [
+            {**base, "action": "PlayAudio", "recordStart": 1, "recordLocalId": 1, "serializedActionOrdinal": 0, "actionMapRole": "actionList#1 root"},
+            {**base, "action": "PlayAudio", "recordStart": 2, "recordLocalId": 2, "serializedActionOrdinal": 1, "actionMapRole": "actionList#2 linked"},
+            {"levelScriptId": "map/9002", "sourceRoot": "Persistent", "sourcePath": "structured/Persistent/Data/Json/LevelScriptData/map/9002.json", "action": "StopAudio", "recordStart": 3, "recordLocalId": 3, "serializedActionOrdinal": 2, "actionMapRole": "actionList#3 linked", "runtimeSlotStatus": "active-final-serialized-slot", "fields": {"audioId": {"bindingKind": "dynamic", "path": path, "paramSource": 0}}},
+        ]
+        details, summary = audio_semantics._build_levelscript_audio_lifecycle(rows)
+        consumer = next(row for row in details if row["role"] == "consumer")
+        self.assertEqual(consumer["joinStatus"], "unresolved_ambiguous_or_shadowed_producer")
+        self.assertGreaterEqual(summary["unresolvedCount"], 1)
+        shadowed = {**base, "action": "PlayAudio", "recordStart": 4, "recordLocalId": 4, "serializedActionOrdinal": 3, "actionMapRole": "actionList#4 linked", "runtimeSlotStatus": "shadowed", "fields": {"audioPlayingId": {"bindingKind": "output", "path": path, "paramSource": 0}}}
+        details, _summary = audio_semantics._build_levelscript_audio_lifecycle([rows[0], shadowed, rows[2]])
+        consumer = next(row for row in details if row["role"] == "consumer")
+        self.assertEqual(consumer["joinStatus"], "unresolved_ambiguous_or_shadowed_producer")
+
+    def test_levelscript_lifecycle_rejects_runtime_output_and_cross_root_paths(self) -> None:
+        path = "$8@_audioPlayingId"
+        producer = {
+            "action": "PlayAudio",
+            "levelScriptId": "map/9003",
+            "sourceRoot": "Persistent",
+            "sourcePath": "structured/Persistent/Data/Json/LevelScriptData/map/9003.json",
+            "recordStart": 1,
+            "recordLocalId": 1,
+            "runtimeSlotStatus": "active-final-serialized-slot",
+            "fields": {
+                "audioPlayingId": {
+                    "bindingKind": "output",
+                    "paramSource": 100,
+                    "path": path,
+                },
+            },
+        }
+        consumer = {
+            "action": "StopAudio",
+            "levelScriptId": "map/9003",
+            "sourceRoot": "Persistent",
+            "sourcePath": "structured/Persistent/Data/Json/LevelScriptData/map/9003.json",
+            "recordStart": 2,
+            "recordLocalId": 2,
+            "runtimeSlotStatus": "active-final-serialized-slot",
+            "fields": {
+                "audioId": {
+                    "bindingKind": "dynamic",
+                    "paramSource": 100,
+                    "path": path,
+                },
+            },
+        }
+        details, summary = audio_semantics._build_levelscript_audio_lifecycle(
+            [producer, consumer]
+        )
+        self.assertEqual("runtime", audio_semantics._levelscript_parameter_source(
+            producer["fields"]["audioPlayingId"]
+        ))
+        self.assertEqual(0, summary["exactJoinCount"])
+        self.assertIn(
+            "unresolved_invalid_producer_parameter_source",
+            {row["joinStatus"] for row in details},
+        )
+        self.assertTrue(
+            all(row["role"] == "unresolved" for row in details)
+        )
+
+        valid_producer = {
+            **producer,
+            "sourceRoot": "Persistent",
+            "sourcePath": "structured/Persistent/Data/Json/LevelScriptData/map/9003.json",
+            "fields": {
+                "audioPlayingId": {
+                    "bindingKind": "output",
+                    "paramSource": 0,
+                    "path": path,
+                },
+            },
+        }
+        _same_root_details, same_root_summary = audio_semantics._build_levelscript_audio_lifecycle(
+            [valid_producer, consumer]
+        )
+        self.assertEqual(0, same_root_summary["exactJoinCount"])
+        valid_consumer = {
+            **consumer,
+            "fields": {
+                "audioId": {
+                    "bindingKind": "dynamic",
+                    "paramSource": 0,
+                    "path": path,
+                },
+            },
+        }
+        legal_and_malformed_details, legal_and_malformed_summary = (
+            audio_semantics._build_levelscript_audio_lifecycle(
+                [valid_producer, producer, valid_consumer]
+            )
+        )
+        self.assertEqual(0, legal_and_malformed_summary["exactJoinCount"])
+        legal_and_malformed_consumer = next(
+            row
+            for row in legal_and_malformed_details
+            if row.get("role") == "consumer"
+        )
+        self.assertEqual(
+            "unresolved_ambiguous_or_shadowed_producer",
+            legal_and_malformed_consumer["joinStatus"],
+        )
+        cross_root_consumer = {
+            **consumer,
+            "sourceRoot": "StreamingAssets",
+            "sourcePath": "structured/StreamingAssets/Data/Json/LevelScriptData/map/9003.json",
+        }
+        _details, cross_root_summary = audio_semantics._build_levelscript_audio_lifecycle(
+            [valid_producer, cross_root_consumer]
+        )
+        self.assertEqual(0, cross_root_summary["exactJoinCount"])
+        missing_root = {**consumer, "sourceRoot": None}
+        missing_details, missing_summary = audio_semantics._build_levelscript_audio_lifecycle(
+            [valid_producer, missing_root]
+        )
+        self.assertEqual(0, missing_summary["exactJoinCount"])
+        self.assertIn(
+            "unresolved_missing_or_invalid_source_identity",
+            {row["joinStatus"] for row in missing_details},
+        )
+        for bad_path in (
+            "structured/Persistent/Data/Json/LevelScriptData/map/other.json",
+            "structured/Persistent/Data/Json/LevelScriptData/map/9003.bin",
+            "structured/Persistent/Data/Json/LevelScriptData/map/../9003.json",
+            "C:/structured/Persistent/Data/Json/LevelScriptData/map/9003.json",
+        ):
+            bad_path_consumer = {**valid_consumer, "sourcePath": bad_path}
+            bad_details, bad_summary = audio_semantics._build_levelscript_audio_lifecycle(
+                [valid_producer, bad_path_consumer]
+            )
+            self.assertEqual(0, bad_summary["exactJoinCount"])
+            self.assertIn(
+                "unresolved_missing_or_invalid_source_identity",
+                {row["joinStatus"] for row in bad_details},
+            )
+
+    def test_levelscript_param_source_and_brief_property_integer_types_fail_closed(self) -> None:
+        self.assertEqual(
+            "runtime",
+            audio_semantics._levelscript_parameter_source({
+                "bindingKind": "output", "paramSource": 100, "path": "$1@_id",
+            }),
+        )
+        self.assertEqual(
+            "runtime",
+            audio_semantics._levelscript_parameter_source({
+                "bindingKind": "output", "paramSource": 300, "path": "$1@_id",
+            }),
+        )
+        self.assertEqual(
+            "output",
+            audio_semantics._levelscript_parameter_source({
+                "bindingKind": "output", "paramSource": 0, "path": "$1@_id",
+            }),
+        )
+
+        brief = {
+            "properties": [{
+                "name": "CueName",
+                "value": {
+                    "valueType": 7,
+                    "atomCount": 1,
+                    "atoms": [{"valueBit64": 0, "text": "au_fixture"}],
+                },
+            }],
+        }
+        binding = {
+            "bindingKind": "dynamic",
+            "paramSource": 200,
+            "idRef": -1,
+            "path": "CueName",
+        }
+        self.assertEqual("au_fixture", level_bindings.resolve_levelscript_dynamic_property_string(brief, binding)["value"])
+        invalid_bindings = (
+            {**binding, "paramSource": 200.0},
+            {**binding, "paramSource": True},
+            {**binding, "idRef": -1.0},
+            {**binding, "idRef": True},
+        )
+        for invalid_binding in invalid_bindings:
+            self.assertIsNone(
+                level_bindings.resolve_levelscript_dynamic_property_string(
+                    brief, invalid_binding
+                )
+            )
+        invalid_briefs = (
+            {"properties": [{**brief["properties"][0], "value": {
+                **brief["properties"][0]["value"], "valueType": 7.0,
+            }}]},
+            {"properties": [{**brief["properties"][0], "value": {
+                **brief["properties"][0]["value"], "valueType": True,
+            }}]},
+            {"properties": [{**brief["properties"][0], "value": {
+                **brief["properties"][0]["value"], "atomCount": 1.0,
+            }}]},
+            {"properties": [{**brief["properties"][0], "value": {
+                **brief["properties"][0]["value"], "atomCount": True,
+            }}]},
+        )
+        for invalid_brief in invalid_briefs:
+            self.assertIsNone(
+                level_bindings.resolve_levelscript_dynamic_property_string(
+                    invalid_brief, binding
+                )
+            )
 
 
 if __name__ == "__main__":

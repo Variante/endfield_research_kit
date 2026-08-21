@@ -2347,6 +2347,8 @@ def decode_levelscript_native_action_topology(
             "cycleComponents": [],
             "actionControlFlowEvidence": True,
             "storyOrderEvidence": False,
+            "eventRootOrderEvidence": False,
+            "eventRootOrderStatus": "independently_invoked_unordered_slots",
             "eventRootRuntimeMode": "no_serialized_event_roots",
             "controlBoundary": (
                 "the original file has no serialized action/event graph; trigger-volume "
@@ -2596,6 +2598,19 @@ def decode_levelscript_native_action_topology(
             for field in selected_detail_fields
             if detail.get(field) not in (None, "", [], {})
         }
+        action_map_role = str(
+            membership.get(int(record.get("start") or 0)) or ""
+        )
+        ordinal_match = re.match(r"^actionList#(\d+)(?:\s|$)", action_map_role)
+        # ``actionList#N`` is the serialized action-list position (one-based
+        # only in the human-facing membership label).  Publish a zero-based
+        # ordinal separately; never substitute the audio collector's filtered
+        # row index, which is not a serialized position.
+        serialized_action_ordinal = (
+            int(ordinal_match.group(1)) - 1
+            if ordinal_match is not None
+            else None
+        )
         action_rows.append({
             key: value
             for key, value in {
@@ -2603,7 +2618,10 @@ def decode_levelscript_native_action_topology(
                 "uid": str(record.get("uid") or ""),
                 "recordOffset": int(record.get("start") or 0),
                 "recordOffsetHex": f"0x{int(record.get('start') or 0):x}",
-                "actionMapRole": membership.get(int(record.get("start") or 0)),
+                "recordStart": int(record.get("start") or 0),
+                "recordLocalId": local_id,
+                "serializedActionOrdinal": serialized_action_ordinal,
+                "actionMapRole": action_map_role,
                 "actionName": action_name,
                 "recordClass": LEVELSCRIPT_OPCODE_TABLE.get(pair, ""),
                 "controlKind": control_kind,
@@ -2826,6 +2844,8 @@ def decode_levelscript_native_action_topology(
         "actionControlFlowEvidence": True,
         "storyOrderEvidence": False,
         "eventRootRuntimeMode": "independently_invoked_indexed_event_slots",
+        "eventRootOrderEvidence": False,
+        "eventRootOrderStatus": "independently_invoked_unordered_slots",
         "controlBoundary": (
             "edges are exact within one LevelScript action map; header, action, "
             "and getter IDs use their final serialized indexed slots; separate "
@@ -9006,7 +9026,9 @@ def resolve_levelscript_dynamic_property_string(
         return None
     if (
         binding.get("bindingKind") != "dynamic"
+        or type(binding.get("paramSource")) is not int
         or binding.get("paramSource") != 200
+        or type(binding.get("idRef")) is not int
         or binding.get("idRef") != -1
         or not isinstance(binding.get("path"), str)
         or not binding["path"]
@@ -9025,14 +9047,16 @@ def resolve_levelscript_dynamic_property_string(
         return None
     atoms = property_value.get("atoms")
     if not (
-        property_value.get("valueType") == 7
+        type(property_value.get("valueType")) is int
+        and property_value.get("valueType") == 7
+        and type(property_value.get("atomCount")) is int
         and property_value.get("atomCount") == 1
         and isinstance(atoms, list)
         and len(atoms) == 1
         and isinstance(atoms[0], dict)
         and isinstance(atoms[0].get("text"), str)
         and atoms[0]["text"]
-        and isinstance(atoms[0].get("valueBit64"), int)
+        and type(atoms[0].get("valueBit64")) is int
     ):
         return None
     return {
@@ -9066,7 +9090,9 @@ def resolve_levelscript_dynamic_property_string_list(
         return None
     if (
         binding.get("bindingKind") != "dynamic"
+        or type(binding.get("paramSource")) is not int
         or binding.get("paramSource") != 200
+        or type(binding.get("idRef")) is not int
         or binding.get("idRef") != -1
         or not isinstance(binding.get("path"), str)
         or not binding["path"]
@@ -9085,8 +9111,9 @@ def resolve_levelscript_dynamic_property_string_list(
         return None
     atoms = property_value.get("atoms")
     if not (
-        property_value.get("valueType") == 8
-        and isinstance(property_value.get("atomCount"), int)
+        type(property_value.get("valueType")) is int
+        and property_value.get("valueType") == 8
+        and type(property_value.get("atomCount")) is int
         and property_value["atomCount"] > 0
         and isinstance(atoms, list)
         and len(atoms) == property_value["atomCount"]
@@ -9094,7 +9121,7 @@ def resolve_levelscript_dynamic_property_string_list(
             isinstance(atom, dict)
             and isinstance(atom.get("text"), str)
             and bool(atom["text"])
-            and isinstance(atom.get("valueBit64"), int)
+            and type(atom.get("valueBit64")) is int
             for atom in atoms
         )
     ):

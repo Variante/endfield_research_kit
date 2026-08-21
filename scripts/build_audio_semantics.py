@@ -100,7 +100,7 @@ PROJECTILE_SOUND_PHASES = {
 # authoritative value; these names are presentation labels, not a claim that
 # selection behavior was evaluated offline.
 SELECTION_HIRC_TYPES = frozenset({5, 6, 12, 13})
-AUDIO_SEMANTIC_SCHEMA_VERSION = 114
+AUDIO_SEMANTIC_SCHEMA_VERSION = 116
 TRIGGER_CONTEXT_SCHEMA_VERSION = 38
 
 MONO_BEHAVIOUR_AUDIO_EVENT_FIELD_NAMES = frozenset({
@@ -4775,7 +4775,500 @@ LEVELSCRIPT_AUDIO_EVENT_FIELDS: dict[str, tuple[tuple[str, str], ...]] = {
     "PlayStandaloneMusic": (("startEvent", "standaloneStart"), ("stopEvent", "standaloneStop")),
     "PostAudioStatusEvent": (("statusEnterEvent", "statusEnter"), ("statusExitEvent", "statusExit")),
     "PostMusicEvent": (("musicEvent", "post"), ("musicEventOnRelease", "release")),
+    # PostAudioCue.name is a cue identity rather than a Wwise Event.  It is
+    # still an authored string parameter and may be sourced from the exact
+    # LevelScriptBriefData property path, so keep it in the same narrow
+    # ParamSource=200 resolution surface as the existing Event fields.
+    "PostAudioCue": (("name", "cue"),),
+    "PostAudioCueOnRelease": (("name", "cueOnRelease"),),
 }
+
+
+_LEVELSCRIPT_OUTPUT_PATH_RE = re.compile(r"^\$\d+@_[A-Za-z][A-Za-z0-9]*$")
+_LEVELSCRIPT_AUDIO_LIFECYCLE_FIELDS = {
+    ("PlayAudio", "audioPlayingId"): ("audioPlayingId", "producer"),
+    ("PlayVoice", "voiceHandle"): ("voiceHandle", "producer"),
+    ("PlayVoiceNarrative", "voiceHandle"): ("voiceHandle", "producer"),
+    ("BlockAutoMusicChange", "blockHandle"): ("blockHandle", "producer"),
+    ("PostAudioCue", "cueHandlerId"): ("cueHandlerId", "producer"),
+    ("PostAudioCueOnRelease", "cueHandlerId"): ("cueHandlerId", "producer"),
+    ("StopAudio", "audioId"): ("audioPlayingId", "consumer"),
+    ("StopVoice", "voiceHandle"): ("voiceHandle", "consumer"),
+    ("BlockAutoMusicChangeCancel", "blockHandle"): ("blockHandle", "consumer"),
+}
+
+
+def _levelscript_parameter_source(field: Any) -> str:
+    """Classify a serialized audio Param without resolving runtime values."""
+    if not isinstance(field, dict):
+        return "runtime"
+    param_source = field.get("paramSource")
+    # ParamSource is authoritative.  In particular, a malformed/custom row
+    # must not promote a ParamSource=100 or unknown source merely because a
+    # decoder labelled it ``output``.
+    if type(param_source) is not int:
+        return "runtime"
+    if param_source == 100:
+        return "runtime"
+    if param_source == 200:
+        return "property"
+    if param_source != 0:
+        return "runtime"
+    if field.get("bindingKind") == "output":
+        return "output"
+    if (
+        field.get("bindingKind") == "constant"
+        or (
+            field.get("idRef") == -1
+            and field.get("path") is None
+        )
+    ):
+        return "constant"
+    # ParamSource=100 is a runtime lookup.  It is intentionally never
+    # promoted to a playing-id or other handle merely because its path looks
+    # like an output reference.
+    return "runtime"
+
+
+def _levelscript_parameter_status(field: Any) -> str:
+    source = _levelscript_parameter_source(field)
+    if source == "constant":
+        return "authored_constant"
+    if source == "output":
+        return "serialized_output_path"
+    if source == "property":
+        return "property_value_unresolved"
+    return "runtime_value_unresolved"
+
+
+def _decorate_levelscript_audio_field(field: Any) -> dict[str, Any]:
+    """Add a stable source classification while retaining authored fields."""
+    if not isinstance(field, dict):
+        return {}
+    source = _levelscript_parameter_source(field)
+    return {
+        **field,
+        "sourceKind": source,
+        "parameterSourceKind": source,
+        "parameterStatus": _levelscript_parameter_status(field),
+    }
+
+
+def _levelscript_action_ordinal(action_map_role: Any) -> int | None:
+    match = re.match(r"^actionList#(\d+)(?:\s|$)", str(action_map_role or ""))
+    if match is None:
+        return None
+    try:
+        ordinal = int(match.group(1)) - 1
+    except (TypeError, ValueError):
+        return None
+    return ordinal if ordinal >= 0 else None
+
+
+def _levelscript_topology_action_facts(
+    topology: Any,
+    record: dict[str, Any],
+) -> dict[str, Any]:
+    """Project exact topology facts onto one physical action record.
+
+    A topology row is authoritative only when the complete action map passed
+    validation.  Physical duplicates that are not the active final indexed
+    slot remain visible as shadowed evidence but cannot participate in a
+    lifecycle join.
+    """
+    if not isinstance(topology, dict) or not str(topology.get("status") or "").startswith("exact_"):
+        return {
+            "topologyStatus": "unavailable_fail_closed",
+            "topologyEvidence": False,
+            "storyOrderEvidence": False,
+        }
+    record_start = record.get("start")
+    record_local_id = record.get("localId")
+    actions = [row for row in topology.get("actions") or [] if isinstance(row, dict)]
+    active = next(
+        (
+            row for row in actions
+            if isinstance(record_start, int)
+            and row.get("recordStart", row.get("recordOffset")) == record_start
+        ),
+        None,
+    )
+    active_for_local = next(
+        (
+            row for row in actions
+            if isinstance(record_local_id, int)
+            and row.get("recordLocalId", row.get("localId")) == record_local_id
+        ),
+        None,
+    )
+    if active is None:
+        shadowed = bool(active_for_local is not None and active_for_local.get("recordStart") != record_start)
+        return {
+            "topologyStatus": "shadowed_physical_record" if shadowed else "not_active_action_slot",
+            "topologyEvidence": True,
+            "storyOrderEvidence": False,
+            "runtimeSlotStatus": "shadowed" if shadowed else "unresolved",
+            "runtimeShadowedRecordOffsets": (
+                topology.get("runtimeShadowedActionRecordOffsets")
+                if shadowed else None
+            ),
+        }
+
+    local_id = active.get("recordLocalId", active.get("localId"))
+    static_next: list[dict[str, Any]] = []
+    for edge in topology.get("edges") or []:
+        if not isinstance(edge, dict) or edge.get("sourceKind") != "action":
+            continue
+        if edge.get("sourceLocalId") != local_id:
+            continue
+        target_local_id = edge.get("targetActionLocalId")
+        target = next(
+            (
+                row for row in actions
+                if row.get("recordLocalId", row.get("localId")) == target_local_id
+            ),
+            None,
+        )
+        static_next.append({
+            "relation": edge.get("relation"),
+            "targetActionLocalId": target_local_id,
+            "targetStatus": "active" if target is not None else "missing",
+        })
+    for terminal in topology.get("runtimeTerminalTargets") or []:
+        if not isinstance(terminal, dict) or terminal.get("sourceKind") != "action":
+            continue
+        if terminal.get("sourceLocalId") != local_id:
+            continue
+        static_next.append({
+            "relation": terminal.get("relation"),
+            "targetActionLocalId": terminal.get("targetActionLocalId"),
+            "targetStatus": "missing_runtime_action_slot",
+        })
+    static_next = [
+        row for row in static_next
+        if row.get("targetActionLocalId") is not None
+    ]
+    return {
+        "topologyStatus": "active_final_serialized_slot",
+        "topologyEvidence": True,
+        "storyOrderEvidence": False,
+        "runtimeSlotStatus": "active-final-serialized-slot",
+        "serializedActionOrdinal": active.get("serializedActionOrdinal"),
+        "recordStart": active.get("recordStart", active.get("recordOffset")),
+        "recordLocalId": active.get("recordLocalId", active.get("localId")),
+        "actionMapRole": active.get("actionMapRole"),
+        "staticNext": static_next,
+        "staticNextStatus": "resolved" if static_next else "none",
+        "runtimeShadowedRecordOffsets": active.get("runtimeShadowedRecordOffsets"),
+        "runtimeDuplicateSignatureStatus": active.get("runtimeDuplicateSignatureStatus"),
+    }
+
+
+def _levelscript_lifecycle_identity(row: dict[str, Any]) -> dict[str, Any]:
+    return {
+        key: row.get(key)
+        for key in (
+            "action", "levelScriptId", "sourceRoot", "sourcePath", "serializedActionOrdinal",
+            "recordStart", "recordLocalId", "actionMapRole", "runtimeSlotStatus",
+        )
+        if row.get(key) not in (None, "", [])
+    }
+
+
+_LEVELSCRIPT_LIFECYCLE_SOURCE_ROOTS = frozenset({
+    "StreamingAssets",
+    "Persistent",
+})
+
+
+def _levelscript_lifecycle_source_identity(
+    row: dict[str, Any],
+) -> tuple[str, str] | None:
+    """Return one canonical source-root/path pair, or fail closed."""
+    source_root = row.get("sourceRoot")
+    source_path = row.get("sourcePath")
+    level_script_id = row.get("levelScriptId")
+    if (
+        type(source_root) is not str
+        or source_root not in _LEVELSCRIPT_LIFECYCLE_SOURCE_ROOTS
+        or type(source_path) is not str
+        or not source_path
+        or "\\" in source_path
+        or type(level_script_id) is not str
+        or not level_script_id
+        or "\\" in level_script_id
+        or source_path.startswith("/")
+        or level_script_id.startswith("/")
+    ):
+        return None
+    normalized = PurePosixPath(source_path).as_posix()
+    source_parts = PurePosixPath(source_path).parts
+    normalized_level_script_id = PurePosixPath(level_script_id).as_posix()
+    level_parts = PurePosixPath(level_script_id).parts
+    expected_prefix = (
+        f"structured/{source_root}/Data/Json/LevelScriptData/"
+    )
+    expected_path = f"{expected_prefix}{normalized_level_script_id}.json"
+    if (
+        normalized != source_path
+        or normalized_level_script_id != level_script_id
+        or any(part in {"", ".", ".."} for part in source_parts)
+        or any(part in {"", ".", ".."} for part in level_parts)
+        or level_script_id.endswith(".json")
+        or source_path != expected_path
+    ):
+        return None
+    return source_root, normalized
+
+
+def _build_levelscript_audio_lifecycle(
+    action_rows: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Join only exact serialized output paths within one LevelScript.
+
+    This is a static authored-output relation.  It deliberately does not
+    resolve ParamSource=100 values and never calls a path an observed runtime
+    playing id.
+    """
+    producers: dict[tuple[str, str, str, str, str], list[dict[str, Any]]] = defaultdict(list)
+    producer_blockers: dict[tuple[str, str, str, str, str], list[dict[str, Any]]] = defaultdict(list)
+    consumers: list[dict[str, Any]] = []
+    details: list[dict[str, Any]] = []
+    counts: Counter[str] = Counter()
+    for row in action_rows:
+        if not isinstance(row, dict):
+            continue
+        action = str(row.get("action") or "")
+        level_script_id = str(row.get("levelScriptId") or "")
+        fields = row.get("fields") or {}
+        if not isinstance(fields, dict):
+            continue
+        source_identity = _levelscript_lifecycle_source_identity(row)
+        for field_name, field in fields.items():
+            relation = _LEVELSCRIPT_AUDIO_LIFECYCLE_FIELDS.get((action, str(field_name)))
+            if relation is None:
+                continue
+            lifecycle_kind, role = relation
+            field = field if isinstance(field, dict) else {}
+            source_kind = _levelscript_parameter_source(field)
+            path = field.get("path")
+            path_valid = isinstance(path, str) and bool(_LEVELSCRIPT_OUTPUT_PATH_RE.fullmatch(path))
+            base = {
+                "lifecycleKind": lifecycle_kind,
+                "role": role,
+                "fieldName": str(field_name),
+                "sourceField": field.get("sourceField"),
+                "parameterSource": field.get("paramSource"),
+                "sourceKind": source_kind,
+                "pathEvidence": "exactSerializedOutputPath" if path_valid else "malformedSerializedOutputPath",
+                "serializedOutputPath": path if path_valid else None,
+                "action": action,
+                "levelScriptId": level_script_id,
+                "sourceRoot": row.get("sourceRoot"),
+                "sourcePath": row.get("sourcePath"),
+                "actionIdentity": _levelscript_lifecycle_identity(row),
+            }
+            if source_identity is None:
+                base["role"] = "unresolved"
+                base["joinStatus"] = "unresolved_missing_or_invalid_source_identity"
+                details.append(base)
+                counts[base["joinStatus"]] += 1
+                continue
+            source_root, source_path = source_identity
+            key_path = path if isinstance(path, str) and path else None
+            key = (
+                (level_script_id, source_root, source_path, lifecycle_kind, key_path)
+                if key_path is not None else None
+            )
+            if role == "producer":
+                blocker_status = "active"
+                if not path_valid:
+                    blocker_status = "malformed_serialized_output_path"
+                elif source_kind != "output":
+                    blocker_status = "invalid_parameter_source"
+                elif row.get("runtimeSlotStatus") != "active-final-serialized-slot":
+                    blocker_status = "inactive_or_unvalidated_slot"
+                if key is not None:
+                    base["producerBlockerStatus"] = blocker_status
+                    producer_blockers[key].append(base)
+                if not path_valid:
+                    base["role"] = "unresolved"
+                    base["joinStatus"] = "unresolved_malformed_serialized_output_path"
+                    details.append(base)
+                    counts[base["joinStatus"]] += 1
+                    continue
+                # Only an explicit ParamOutput with ParamSource=0 can create
+                # a handle.  ParamSource=100/property/unknown rows remain
+                # runtime/property evidence and cannot become producers.
+                if source_kind != "output":
+                    base["role"] = "unresolved"
+                    base["joinStatus"] = "unresolved_invalid_producer_parameter_source"
+                    details.append(base)
+                    counts[base["joinStatus"]] += 1
+                    continue
+                # Shadowed physical records and topology-unavailable rows are
+                # not active producers.  The latter are retained as an
+                # explicit unresolved source rather than guessed active.
+                if row.get("runtimeSlotStatus") == "active-final-serialized-slot":
+                    producers[key].append(base)
+                else:
+                    base["joinStatus"] = "unresolved_inactive_or_unvalidated_producer"
+                    details.append(base)
+                    counts[base["joinStatus"]] += 1
+            else:
+                if not path_valid:
+                    base["role"] = "unresolved"
+                    base["joinStatus"] = "unresolved_malformed_serialized_output_path"
+                    details.append(base)
+                    counts[base["joinStatus"]] += 1
+                    continue
+                # A consumer must be an explicitly serialized ParamSource=0
+                # dynamic path. ParamSource=100 and unknown sources remain
+                # runtime-unresolved and cannot become a handle consumer.
+                if (
+                    source_kind != "runtime"
+                    or type(field.get("paramSource")) is not int
+                    or field.get("paramSource") != 0
+                    or field.get("bindingKind") != "dynamic"
+                ):
+                    base["role"] = "unresolved"
+                    base["joinStatus"] = "unresolved_invalid_consumer_parameter_source"
+                    details.append(base)
+                    counts[base["joinStatus"]] += 1
+                    continue
+                consumers.append(base)
+
+    for consumer in consumers:
+        key = (
+            str(consumer.get("levelScriptId") or ""),
+            str(consumer.get("sourceRoot") or ""),
+            str(consumer.get("sourcePath") or ""),
+            str(consumer.get("lifecycleKind") or ""),
+            str(consumer.get("serializedOutputPath") or ""),
+        )
+        candidates = producers.get(key) or []
+        blockers = producer_blockers.get(key) or []
+        blocker_statuses = {
+            str(row.get("producerBlockerStatus") or "")
+            for row in blockers
+        }
+        if (
+            len(candidates) == 1
+            and len(blockers) == 1
+            and blocker_statuses == {"active"}
+        ):
+            producer = candidates[0]
+            joined = {
+                **consumer,
+                "joinStatus": "exact_unique_active_producer",
+                "producer": producer,
+                "consumer": {
+                    key: consumer.get(key)
+                    for key in (
+                        "action", "levelScriptId", "actionIdentity", "fieldName",
+                    )
+                    if consumer.get(key) not in (None, "", [])
+                },
+            }
+            details.append(joined)
+            details.append({
+                **producer,
+                "joinStatus": "exact_unique_active_producer",
+                "consumer": {
+                    key: consumer.get(key)
+                    for key in (
+                        "action", "levelScriptId", "actionIdentity", "fieldName",
+                    )
+                    if consumer.get(key) not in (None, "", [])
+                },
+            })
+            counts["exact_unique_active_producer"] += 1
+            continue
+        status = (
+            "unresolved_ambiguous_or_shadowed_producer"
+            if len(blockers) > 1
+            else "unresolved_invalid_or_inactive_producer"
+            if blockers and blocker_statuses != {"active"}
+            else "unresolved_ambiguous_active_producer"
+            if len(candidates) > 1
+            else "unresolved_no_unique_active_producer"
+        )
+        details.append({
+            **consumer,
+            "joinStatus": status,
+            "producerCandidateCount": len(candidates),
+        })
+        counts[status] += 1
+
+    # Producers are always retained, including PostAudioCue's output-only
+    # cueHandlerId.  This makes the producer-only boundary visible without
+    # implying a consumer or current runtime state.
+    joined_keys = {
+        (
+            str(row.get("levelScriptId") or ""),
+            str(row.get("sourceRoot") or ""),
+            str(row.get("sourcePath") or ""),
+            str(row.get("lifecycleKind") or ""),
+            str(row.get("serializedOutputPath") or ""),
+        )
+        for row in details
+        if row.get("joinStatus") == "exact_unique_active_producer"
+    }
+    for key, rows in producers.items():
+        for producer in rows:
+            if key in joined_keys:
+                continue
+            producer_only = {
+                **producer,
+                "joinStatus": "producer_only",
+            }
+            details.append(producer_only)
+            counts["producer_only"] += 1
+
+    # Attach a compact static summary to each action occurrence.  Full path
+    # and identity detail remains on the lazy event detail context.
+    by_identity: dict[tuple[str, int, str], list[dict[str, Any]]] = defaultdict(list)
+    for detail in details:
+        identity = detail.get("actionIdentity") or {}
+        key = (
+            str(identity.get("levelScriptId") or ""),
+            int(identity.get("recordStart") or -1),
+            str(identity.get("action") or ""),
+        )
+        by_identity[key].append(detail)
+    for row in action_rows:
+        key = (
+            str(row.get("levelScriptId") or ""),
+            int(row.get("recordStart") or -1),
+            str(row.get("action") or ""),
+        )
+        row_details = by_identity.get(key) or []
+        if row_details:
+            row["levelScriptAudioLifecycle"] = row_details
+    summary = {
+        "schemaVersion": 1,
+        "counts": dict(sorted(counts.items())),
+        "total": len(details),
+        "exactJoinCount": counts.get("exact_unique_active_producer", 0),
+        "producerOnlyCount": counts.get("producer_only", 0),
+        "unresolvedCount": sum(
+            count for status, count in counts.items() if status.startswith("unresolved_")
+        ),
+        "storyOrderEvidence": False,
+        "evidenceBoundary": (
+            "Only same-LevelScript exact serialized output paths are joined to a "
+            "unique active producer. ParamSource=100 remains runtime-unresolved; "
+            "this catalog does not claim execution, current state, or a native "
+            "playback route."
+        ),
+    }
+    details.sort(key=lambda row: (
+        str(row.get("levelScriptId") or ""),
+        int((row.get("actionIdentity") or {}).get("recordStart") or 0),
+        str(row.get("role") or ""),
+        str(row.get("lifecycleKind") or ""),
+    ))
+    return details, summary
 
 
 
@@ -4934,12 +5427,18 @@ def collect_levelscript_audio_semantics(
                 levelscript_action_map_membership,
                 levelscript_record_semantic_key,
             )
+            from scripts.story_builder.level_bindings import (
+                decode_levelscript_native_action_topology,
+            )
         else:
             from story_builder.levelscript_binary import (
                 decode_levelscript_record_payload,
                 extract_levelscript_uid_records,
                 levelscript_action_map_membership,
                 levelscript_record_semantic_key,
+            )
+            from story_builder.level_bindings import (
+                decode_levelscript_native_action_topology,
             )
         target_keys = {
             # Audio ActionBase families registered by the current GameAssembly
@@ -4962,6 +5461,7 @@ def collect_levelscript_audio_semantics(
         def decode_file(_path: Path, data: bytes) -> dict[str, Any]:
             records = extract_levelscript_uid_records(data)
             _action_map, memberships = levelscript_action_map_membership(data, records)
+            topology, topology_diagnostic = decode_levelscript_native_action_topology(data)
             rows: list[dict[str, Any]] = []
             string_list_getters: dict[int, dict[str, Any]] = {}
             target_count = 0
@@ -5027,6 +5527,8 @@ def collect_levelscript_audio_semantics(
                 "stringListGetters": string_list_getters,
                 "nonActionTargetCount": non_action_target_count,
                 "nonActionTargetRoles": dict(non_action_target_roles),
+                "topology": topology,
+                "topologyDiagnostic": topology_diagnostic,
             }
 
     overlay: dict[str, tuple[str, Path]] = {}
@@ -5048,6 +5550,7 @@ def collect_levelscript_audio_semantics(
     resolved_dynamic_radio_bindings: list[dict[str, Any]] = []
     control_actions: list[dict[str, Any]] = []
     dynamic_control_bindings: list[dict[str, Any]] = []
+    lifecycle_action_rows: list[dict[str, Any]] = []
     action_counts: Counter[str] = Counter()
     source_files_with_actions = 0
     target_records = 0
@@ -5065,10 +5568,12 @@ def collect_levelscript_audio_semantics(
         return {
             str(name): {
                 key: value
-                for key, value in field.items()
+                for key, value in _decorate_levelscript_audio_field(field).items()
                 if key in {
                     "sourceField", "present", "bindingKind", "value", "idRef",
                     "paramSource", "path", "logicId", "slotId", "useSlotId",
+                    "sourceKind", "parameterSourceKind", "parameterStatus",
+                    "resolutionStatus", "resolvedValue", "resolvedEventName",
                 }
                 and value not in (None, "", [])
             }
@@ -5084,6 +5589,7 @@ def collect_levelscript_audio_semantics(
             decode_failures += 1
             continue
         rows = (decoded.get("rows") or []) if isinstance(decoded, dict) else []
+        topology = decoded.get("topology") if isinstance(decoded, dict) else None
         string_list_getters = (
             decoded.get("stringListGetters") or {}
             if isinstance(decoded, dict)
@@ -5110,6 +5616,24 @@ def collect_levelscript_audio_semantics(
             decoded_records += 1
             action_counts[action_name] += 1
             fields = compact_fields(action.get("fields"))
+            action_map_role = str(row.get("actionMapRole") or "")
+            topology_facts = _levelscript_topology_action_facts(topology, record)
+            # A custom focused decoder may provide only the maintained
+            # actionList membership.  Its ordinal still comes from the
+            # serialized membership label, never from the filtered audio row
+            # index.  Native control-flow facts remain unavailable unless the
+            # complete topology validator succeeded.
+            if topology_facts.get("serializedActionOrdinal") is None:
+                fallback_ordinal = _levelscript_action_ordinal(action_map_role)
+                if fallback_ordinal is not None and (
+                    topology_facts.get("topologyEvidence") is not True
+                    or topology_facts.get("topologyStatus") in {
+                        "shadowed_physical_record",
+                        "not_active_action_slot",
+                    }
+                ):
+                    topology_facts["serializedActionOrdinal"] = fallback_ordinal
+                    topology_facts["ordinalEvidence"] = "actionListMembershipOnly"
             common = {
                 "confidence": "direct",
                 "semanticRole": "authoredLevelScriptAudioAction",
@@ -5118,11 +5642,11 @@ def collect_levelscript_audio_semantics(
                 "sourceRoot": source_root,
                 "sourcePath": source_path,
                 "sourceSha256": source_sha256,
-                "recordIndex": row_index,
+                **topology_facts,
                 "recordStart": int(record.get("start") or 0),
                 "recordUid": str(record.get("uid") or ""),
                 "recordLocalId": record.get("localId"),
-                "actionMapRole": str(row.get("actionMapRole") or ""),
+                "actionMapRole": action_map_role,
                 "unionTag": record.get("unionTag"),
                 "serializedMemberCount": record.get("serializedMemberCount"),
                 "nativeMappingId": str(action.get("nativeMappingId") or ""),
@@ -5130,6 +5654,10 @@ def collect_levelscript_audio_semantics(
                 "fields": fields,
                 "runtimeActivationStatus": "levelScriptActionExecutionNotObserved",
             }
+            lifecycle_action_rows.append({
+                **common,
+                "fields": fields,
+            })
             for binding in action.get("eventBindings") or []:
                 if not isinstance(binding, dict) or not str(binding.get("eventName") or ""):
                     continue
@@ -5256,6 +5784,7 @@ def collect_levelscript_audio_semantics(
                     "triggerRole": LEVELSCRIPT_RADIO_ACTION_ROLES[action_name],
                     "sourceField": str(radio_field.get("sourceField") or "_radioId"),
                     "binding": radio_field,
+                    "sourceKind": _levelscript_parameter_source(radio_field),
                     "resolutionStatus": "runtimeRadioIdParamUnresolved",
                     "radioIdentityKind": "RadioTableDefinitionId",
                     "wwiseEventStatus": "notApplicable",
@@ -5336,7 +5865,12 @@ def collect_levelscript_audio_semantics(
                         "controlRole": control_role,
                         "sourceField": str(field.get("sourceField") or f"_{field_name}"),
                         "binding": field,
-                        "resolutionStatus": "runtimeParamValueUnresolved",
+                        "sourceKind": _levelscript_parameter_source(field),
+                        "resolutionStatus": (
+                            "propertyValueUnresolved"
+                            if _levelscript_parameter_source(field) == "property"
+                            else "runtimeParamValueUnresolved"
+                        ),
                     })
             for field_name, role in LEVELSCRIPT_AUDIO_EVENT_FIELDS.get(action_name, ()):
                 field = fields.get(field_name) or {}
@@ -5348,7 +5882,12 @@ def collect_levelscript_audio_semantics(
                     "triggerRole": role,
                     "sourceField": str(field.get("sourceField") or f"_{field_name}"),
                     "binding": field,
-                    "resolutionStatus": "runtimeParamValueUnresolved",
+                    "sourceKind": _levelscript_parameter_source(field),
+                    "resolutionStatus": (
+                        "propertyValueUnresolved"
+                        if _levelscript_parameter_source(field) == "property"
+                        else "runtimeParamValueUnresolved"
+                    ),
                 }
                 if (
                     field.get("paramSource") == 200
@@ -5369,9 +5908,18 @@ def collect_levelscript_audio_semantics(
                     if resolution:
                         resolved_event_name = str(resolution.get("value") or "").strip()
                         if resolved_event_name:
+                            fields[field_name] = {
+                                **field,
+                                "resolutionStatus": "resolvedLevelScriptBriefProperty",
+                                "parameterStatus": "property_value_resolved",
+                                "resolvedValue": resolved_event_name,
+                            }
                             dynamic_binding.update({
                                 "resolutionStatus": "resolvedLevelScriptBriefProperty",
+                                "sourceKind": "property",
+                                "binding": fields[field_name],
                                 "resolvedEventName": resolved_event_name,
+                                "resolvedValue": resolved_event_name,
                                 "resolution": resolution,
                                 "resolutionSourcePath": brief_source_path,
                             })
@@ -5402,6 +5950,42 @@ def collect_levelscript_audio_semantics(
                                 ],
                             })
                 dynamic_event_bindings.append(dynamic_binding)
+
+    lifecycle_details, lifecycle_summary = _build_levelscript_audio_lifecycle(
+        lifecycle_action_rows
+    )
+    lifecycle_by_action: dict[tuple[str, int, str], list[dict[str, Any]]] = defaultdict(list)
+    for action_row in lifecycle_action_rows:
+        key = (
+            str(action_row.get("levelScriptId") or ""),
+            int(action_row.get("recordStart") or -1),
+            str(action_row.get("action") or ""),
+        )
+        for detail in action_row.get("levelScriptAudioLifecycle") or []:
+            lifecycle_by_action[key].append(detail)
+
+    def attach_lifecycle(row: Any) -> None:
+        if not isinstance(row, dict):
+            return
+        key = (
+            str(row.get("levelScriptId") or ""),
+            int(row.get("recordStart") or -1),
+            str(row.get("action") or ""),
+        )
+        details = lifecycle_by_action.get(key) or []
+        if details:
+            row["levelScriptAudioLifecycle"] = details
+
+    for rows_by_event in contexts.values():
+        for context in rows_by_event:
+            attach_lifecycle(context)
+    for collection in (
+        cue_invocations, dynamic_event_bindings, resolved_dynamic_event_bindings,
+        radio_invocations, voice_invocations, dynamic_radio_bindings,
+        resolved_dynamic_radio_bindings, control_actions, dynamic_control_bindings,
+    ):
+        for row in collection:
+            attach_lifecycle(row)
 
     event_context_count = sum(len(rows) for rows in contexts.values())
     direct_event_context_count = sum(
@@ -5440,6 +6024,14 @@ def collect_levelscript_audio_semantics(
         "resolvedDynamicRadioBindings": resolved_dynamic_radio_bindings,
         "controlActions": control_actions,
         "dynamicControlBindings": dynamic_control_bindings,
+        # Full lifecycle rows are consumed only by lazy event details.  The
+        # compact catalog receives lifecycle_summary below.
+        "levelScriptAudioLifecycle": {
+            "summary": lifecycle_summary,
+            "details": lifecycle_details,
+        },
+        "lifecycleBindings": lifecycle_details,
+        "lifecycleSummary": lifecycle_summary,
         "stats": {
             "sourceFiles": len(overlay),
             "sourceFilesWithAudioActions": source_files_with_actions,
@@ -5472,6 +6064,7 @@ def collect_levelscript_audio_semantics(
             "radioRoleCounts": dict(sorted(radio_role_counts.items())),
             "controlActions": len(control_actions),
             "dynamicControlBindings": len(dynamic_control_bindings),
+            "levelScriptAudioLifecycle": lifecycle_summary,
             "actionCounts": dict(sorted(action_counts.items())),
             "controlActionCounts": dict(sorted(Counter(
                 str(row.get("action") or "") for row in control_actions
@@ -5487,7 +6080,10 @@ def collect_levelscript_audio_semantics(
             "placeholder-music ids are not observed. A resolved ParamSource=200 property still proves only "
             "the authored property-to-action string join, not action execution or Wwise playback. A "
             "resolved ListGetValueString radio binding proves its authored candidate set, while the "
-            "runtime-selected list index remains unobserved."
+            "runtime-selected list index remains unobserved. LevelScript lifecycle rows join only "
+            "same-script exact serialized output paths to unique active producers; authored fades, "
+            "release flags, constants, and output-only cue handles remain serialized controls, not "
+            "current state or execution evidence."
         ),
     }
 
@@ -12154,6 +12750,20 @@ def build_media_rows(
 
 
 
+def _compact_levelscript_control_rows(rows: Any) -> list[dict[str, Any]]:
+    """Keep lifecycle detail lazy; retain only bounded control-row fields."""
+    output: list[dict[str, Any]] = []
+    for row in rows or ():
+        if not isinstance(row, dict):
+            continue
+        output.append({
+            key: value
+            for key, value in row.items()
+            if key != "levelScriptAudioLifecycle"
+        })
+    return output
+
+
 def build_audio_semantic_data(
     audio_index: dict[str, Any],
     *,
@@ -13410,13 +14020,23 @@ def build_audio_semantic_data(
             "modelViewStateSpatialControls": model_view_semantics.get("spatialControls") or [],
             "modelViewStateCustomAudioControls": model_view_semantics.get("customAudioControls") or [],
             "modelViewStatePositionedControls": model_view_semantics.get("positionedControls") or [],
-            "levelScriptAudioCueInvocations": levelscript_semantics.get("cueInvocations") or [],
-            "levelScriptDynamicAudioBindings": levelscript_semantics.get("dynamicEventBindings") or [],
-            "levelScriptResolvedDynamicAudioBindings": (
-                levelscript_semantics.get("resolvedDynamicEventBindings") or []
+            "levelScriptAudioCueInvocations": _compact_levelscript_control_rows(
+                levelscript_semantics.get("cueInvocations")
             ),
-            "levelScriptAudioControls": levelscript_semantics.get("controlActions") or [],
-            "levelScriptDynamicControlBindings": levelscript_semantics.get("dynamicControlBindings") or [],
+            "levelScriptDynamicAudioBindings": _compact_levelscript_control_rows(
+                levelscript_semantics.get("dynamicEventBindings")
+            ),
+            "levelScriptResolvedDynamicAudioBindings": (
+                _compact_levelscript_control_rows(
+                    levelscript_semantics.get("resolvedDynamicEventBindings")
+                )
+            ),
+            "levelScriptAudioControls": _compact_levelscript_control_rows(
+                levelscript_semantics.get("controlActions")
+            ),
+            "levelScriptDynamicControlBindings": _compact_levelscript_control_rows(
+                levelscript_semantics.get("dynamicControlBindings")
+            ),
             "timelineAudioCueInvocations": timeline_cue_semantics.get("invocations") or [],
             "levelEventAudioConditions": [
                 dict(row) for row in LEVEL_EVENT_AUDIO_CONDITION_DEFINITIONS
