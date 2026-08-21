@@ -440,6 +440,19 @@ literals (14 curve occurrences across six Event occurrences). The catalog keeps
 the exact authored Event/context, controlled AkProp targets, response-point
 count, and interpolation mix; it does not claim a live RTPC update or audible
 result.
+The schema-117 semantic payload additionally publishes
+`controlCatalog.staticRtpcAlignment`. Its six-name canonical `AU_RTPC_*`
+contract (mapping owned by `audio_semantics/rtpc_contract.py`) aligns exact
+numeric HIRC IDs with serialized InitialRTPC curve/property evidence and
+same-event Set/ResetGameParameter controls. `rtpc_alignment.py` publishes this
+as `authoredStatic` evidence only. The explicit selected
+`global-metadata.dat` + `GameAssembly.dll` hash gate is required; a missing or
+mismatched selected/source hash, malformed or incomplete contract, or stale
+serialized evidence fails closed and withholds static names/rows. Runtime
+parameter values, setter execution, target objects, selected branches, DSP,
+and audibility remain runtime-only. Existing page data changes only after a
+formal semantic rebuild (normally `export.bat`, or the targeted
+`python scripts\build_audio_semantics.py --language CN` run).
 These are authored trigger parameters, not evaluated runtime state, effective
 inheritance, selected branch, DSP execution, or audibility. Any unsupported or
 truncated tail is published as `failedClosed` with an offset and reason.
