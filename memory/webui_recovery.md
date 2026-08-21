@@ -156,6 +156,13 @@ fields. Selected condition truth, handler/indirect dispatch, cue execution,
 Wwise branch selection, and audibility remain runtime-blocked and are not
 presented as observed facts.
 
+Normal Audio records also include a collapsed LevelScript audio lifecycle
+section for authored producer/consumer links, serialized action ordinals, and
+validated static topology. Raw serialized output paths, record offsets, and
+local IDs stay debug-only. Runtime handle values/state, action execution,
+branch selection, and audibility remain blocked, so the section is not a live
+playback trace.
+
 Missing or mismatched installed native inputs never erase authored Audio rows.
 They suppress only build-locked callsites/mappings and expose a bounded
 unavailable diagnostic, so the page cannot silently present stale native
