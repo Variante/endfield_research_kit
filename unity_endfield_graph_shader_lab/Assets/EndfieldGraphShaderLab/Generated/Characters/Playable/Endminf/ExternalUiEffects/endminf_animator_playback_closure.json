@@ -1,0 +1,951 @@
+{
+  "schema": "endfield.endminf-animator-playback-closure.v1",
+  "status": "incomplete_missing_artifacts",
+  "characterId": "chr_0003_endminf",
+  "actorToken": "endminf",
+  "stage": {
+    "path": "unity_endfield_graph_shader_lab/Temp/Codex/endminf_fx_exact_stage/external_ui_effect_stage.json",
+    "stageFingerprint": "3c42f62962eae9d67ddbc530d0f4146f3325c4f650fe66ab53490671a3d491d4",
+    "stampFingerprint": "3c42f62962eae9d67ddbc530d0f4146f3325c4f650fe66ab53490671a3d491d4",
+    "entryCount": 30,
+    "rootCount": 3,
+    "clipCount": 4,
+    "sourceSnapshotsValidated": true
+  },
+  "sourceInputs": {
+    "stage": "unity_endfield_graph_shader_lab/Temp/Codex/endminf_fx_exact_stage/external_ui_effect_stage.json",
+    "stageStamp": "unity_endfield_graph_shader_lab/Temp/Codex/endminf_fx_exact_stage/.character_import_stage.json",
+    "stageFilter": "unity_endfield_graph_shader_lab/Temp/Codex/endminf_fx_exact_stage/filters/external_ui_effects_001_98E51B76A48F5BEF8D07BDFD3E4DA7ED.json",
+    "stageObjectIndexes": [
+      "unity_endfield_graph_shader_lab/Temp/Codex/endminf_fx_exact_stage/object_index/001_98E51B76A48F5BEF8D07BDFD3E4DA7ED.jsonl"
+    ],
+    "animatorArtifacts": [
+      "unity_endfield_graph_shader_lab/Temp/Codex/endminf_fx_exact_stage/Animator/P_fxui_endminm003_overview_01_pB1AA2926B7D06C79.json",
+      "unity_endfield_graph_shader_lab/Temp/Codex/endminf_fx_exact_stage/Animator/P_fxui_endminm003_overview_02_p3E7EB9703770BDF2.json",
+      "unity_endfield_graph_shader_lab/Temp/Codex/endminf_fx_exact_stage/Animator/P_fxui_endminm003_overview_06_p7EC9C0D2971111F3.json",
+      "unity_endfield_graph_shader_lab/Temp/Codex/endminf_fx_exact_stage/Animator/effect_01_p24F0E3FCC7606C79.json",
+      "unity_endfield_graph_shader_lab/Temp/Codex/endminf_fx_exact_stage/Animator/effect_01_p35893372F64411F3.json",
+      "unity_endfield_graph_shader_lab/Temp/Codex/endminf_fx_exact_stage/Animator/effect_nanguan_pA68268B3E2D06C79.json",
+      "unity_endfield_graph_shader_lab/Temp/Codex/endminf_fx_exact_stage/Animator/post (1)_p6F9BC7BE606F6C79.json"
+    ],
+    "animationClipStageArtifacts": [
+      "unity_endfield_graph_shader_lab/Temp/Codex/endminf_fx_exact_stage/AnimationClip/A_fx_endminf_ui_overview_01_pD40BA7C0555D26DE.json",
+      "unity_endfield_graph_shader_lab/Temp/Codex/endminf_fx_exact_stage/AnimationClip/A_fx_endminf_ui_overview_02_p74C3E18DD531CF7C.json",
+      "unity_endfield_graph_shader_lab/Temp/Codex/endminf_fx_exact_stage/AnimationClip/A_fx_endminf_ui_overview_03_p74482923CB70A4E8.json",
+      "unity_endfield_graph_shader_lab/Temp/Codex/endminf_fx_exact_stage/AnimationClip/A_fx_endminf_ui_overview_04_pDB8EF20719226683.json"
+    ],
+    "controllerRoots": [
+      "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/AnimatorController"
+    ],
+    "animationRoots": [],
+    "assetMaps": [
+      "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json"
+    ],
+    "cabMaps": [
+      "export_full/recovered/AnimeStudio-cli/Maps/endfield_streamingassets_assets.bin"
+    ]
+  },
+  "sourceSnapshots": {
+    "stage": {
+      "path": "unity_endfield_graph_shader_lab/Temp/Codex/endminf_fx_exact_stage/external_ui_effect_stage.json",
+      "bytes": 1879,
+      "mtime_ns": 1787262689499015400
+    },
+    "stageStamp": {
+      "path": "unity_endfield_graph_shader_lab/Temp/Codex/endminf_fx_exact_stage/.character_import_stage.json",
+      "bytes": 849,
+      "mtime_ns": 1787262130858568100
+    },
+    "stageFilter": {
+      "path": "unity_endfield_graph_shader_lab/Temp/Codex/endminf_fx_exact_stage/filters/external_ui_effects_001_98E51B76A48F5BEF8D07BDFD3E4DA7ED.json",
+      "bytes": 12435,
+      "mtime_ns": 1787262128383819900
+    },
+    "assetMaps": [
+      {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json",
+        "bytes": 759252292,
+        "mtime_ns": 1786945893420745100
+      }
+    ],
+    "cabMaps": [
+      {
+        "path": "export_full/recovered/AnimeStudio-cli/Maps/endfield_streamingassets_assets.bin",
+        "bytes": 43844764,
+        "mtime_ns": 1786945888077225400
+      }
+    ],
+    "stageArtifacts": [
+      {
+        "path": "unity_endfield_graph_shader_lab/Temp/Codex/endminf_fx_exact_stage/Animator/effect_01_p24F0E3FCC7606C79.json",
+        "bytes": 441,
+        "mtime_ns": 1787262129647412200
+      },
+      {
+        "path": "unity_endfield_graph_shader_lab/Temp/Codex/endminf_fx_exact_stage/Animator/effect_01_p35893372F64411F3.json",
+        "bytes": 440,
+        "mtime_ns": 1787262130766561000
+      },
+      {
+        "path": "unity_endfield_graph_shader_lab/Temp/Codex/endminf_fx_exact_stage/Animator/effect_nanguan_pA68268B3E2D06C79.json",
+        "bytes": 449,
+        "mtime_ns": 1787262129296861000
+      },
+      {
+        "path": "unity_endfield_graph_shader_lab/Temp/Codex/endminf_fx_exact_stage/Animator/P_fxui_endminm003_overview_01_pB1AA2926B7D06C79.json",
+        "bytes": 458,
+        "mtime_ns": 1787262129348278400
+      },
+      {
+        "path": "unity_endfield_graph_shader_lab/Temp/Codex/endminf_fx_exact_stage/Animator/P_fxui_endminm003_overview_02_p3E7EB9703770BDF2.json",
+        "bytes": 459,
+        "mtime_ns": 1787262130211911100
+      },
+      {
+        "path": "unity_endfield_graph_shader_lab/Temp/Codex/endminf_fx_exact_stage/Animator/P_fxui_endminm003_overview_06_p7EC9C0D2971111F3.json",
+        "bytes": 459,
+        "mtime_ns": 1787262130835249200
+      },
+      {
+        "path": "unity_endfield_graph_shader_lab/Temp/Codex/endminf_fx_exact_stage/Animator/post (1)_p6F9BC7BE606F6C79.json",
+        "bytes": 417,
+        "mtime_ns": 1787262129906891200
+      },
+      {
+        "path": "unity_endfield_graph_shader_lab/Temp/Codex/endminf_fx_exact_stage/AnimationClip/A_fx_endminf_ui_overview_02_p74C3E18DD531CF7C.json",
+        "bytes": 17295,
+        "mtime_ns": 1787262129927747500
+      },
+      {
+        "path": "unity_endfield_graph_shader_lab/Temp/Codex/endminf_fx_exact_stage/AnimationClip/A_fx_endminf_ui_overview_04_pDB8EF20719226683.json",
+        "bytes": 67319,
+        "mtime_ns": 1787262129494937300
+      },
+      {
+        "path": "unity_endfield_graph_shader_lab/Temp/Codex/endminf_fx_exact_stage/AnimationClip/A_fx_endminf_ui_overview_03_p74482923CB70A4E8.json",
+        "bytes": 18118,
+        "mtime_ns": 1787262130333380400
+      },
+      {
+        "path": "unity_endfield_graph_shader_lab/Temp/Codex/endminf_fx_exact_stage/AnimationClip/A_fx_endminf_ui_overview_01_pD40BA7C0555D26DE.json",
+        "bytes": 21105,
+        "mtime_ns": 1787262130626261700
+      }
+    ]
+  },
+  "animators": [
+    {
+      "animator": {
+        "name": "P_fxui_endminm003_overview_01",
+        "pathId": -5644653936686109575,
+        "pathIdHex": "B1AA2926B7D06C79",
+        "artifact": "unity_endfield_graph_shader_lab/Temp/Codex/endminf_fx_exact_stage/Animator/P_fxui_endminm003_overview_01_pB1AA2926B7D06C79.json",
+        "gameObjectPathId": 644358100928130169,
+        "ownerCab": "CAB-72044df92f6ff49458941a0aad30ac4d",
+        "ownerSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+        "ownerSourceOffset": 772927267,
+        "container": "assets/beyond/dynamicassets/gameplay/effects/prefabs/p_fxui_endminm003_overview_01.prefab"
+      },
+      "controller": {
+        "status": "null_serialized_pointer",
+        "fileId": 0,
+        "pathId": 0
+      }
+    },
+    {
+      "animator": {
+        "name": "P_fxui_endminm003_overview_02",
+        "pathId": 4503240569034685938,
+        "pathIdHex": "3E7EB9703770BDF2",
+        "artifact": "unity_endfield_graph_shader_lab/Temp/Codex/endminf_fx_exact_stage/Animator/P_fxui_endminm003_overview_02_p3E7EB9703770BDF2.json",
+        "gameObjectPathId": 7701914037140635122,
+        "ownerCab": "CAB-e27c3ded749317d6e87d346c3cd1e4c3",
+        "ownerSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+        "ownerSourceOffset": 373845082,
+        "container": "assets/beyond/dynamicassets/gameplay/effects/prefabs/p_fxui_endminm003_overview_02.prefab"
+      },
+      "controller": {
+        "status": "null_serialized_pointer",
+        "fileId": 0,
+        "pathId": 0
+      }
+    },
+    {
+      "animator": {
+        "name": "P_fxui_endminm003_overview_06",
+        "pathId": 9136045329807905267,
+        "pathIdHex": "7EC9C0D2971111F3",
+        "artifact": "unity_endfield_graph_shader_lab/Temp/Codex/endminf_fx_exact_stage/Animator/P_fxui_endminm003_overview_06_p7EC9C0D2971111F3.json",
+        "gameObjectPathId": 8049794264004628979,
+        "ownerCab": "CAB-8fac05233bac82edb23cdafb58f7cf34",
+        "ownerSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+        "ownerSourceOffset": 446888048,
+        "container": "assets/beyond/dynamicassets/gameplay/effects/prefabs/p_fxui_endminm003_overview_06.prefab"
+      },
+      "controller": {
+        "status": "null_serialized_pointer",
+        "fileId": 0,
+        "pathId": 0
+      }
+    },
+    {
+      "animator": {
+        "name": "effect_01",
+        "pathId": 2661878054592212089,
+        "pathIdHex": "24F0E3FCC7606C79",
+        "artifact": "unity_endfield_graph_shader_lab/Temp/Codex/endminf_fx_exact_stage/Animator/effect_01_p24F0E3FCC7606C79.json",
+        "gameObjectPathId": -8947665970063446919,
+        "ownerCab": "CAB-72044df92f6ff49458941a0aad30ac4d",
+        "ownerSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+        "ownerSourceOffset": 772927267,
+        "container": "assets/beyond/dynamicassets/gameplay/effects/prefabs/p_fxui_endminm003_overview_01.prefab"
+      },
+      "controller": {
+        "status": "resolved_exact",
+        "fileId": 11,
+        "pathId": -4527183498941659460,
+        "ownerCab": "CAB-72044df92f6ff49458941a0aad30ac4d",
+        "targetCab": "CAB-51dca2be082b56f5b8a74c222833cda4",
+        "dependencyIndex": 11,
+        "targetCabRecord": {
+          "cabMap": "export_full/recovered/AnimeStudio-cli/Maps/endfield_streamingassets_assets.bin",
+          "assetRoot": "StreamingAssets",
+          "cab": "CAB-51dca2be082b56f5b8a74c222833cda4",
+          "baseFolder": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets",
+          "relativePath": "VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "sourceOffset": 369478309,
+          "dependencies": [
+            "CAB-1ea5370161ccb9d09538c00dba506ab8"
+          ],
+          "ownerCab": "CAB-72044df92f6ff49458941a0aad30ac4d",
+          "fileId": 11,
+          "pathId": -4527183498941659460,
+          "dependencyIndex": 11
+        },
+        "artifact": {
+          "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/AnimatorController/AnimatorController#6031888_pC12C3698009286BC.json",
+          "type": "AnimatorController",
+          "pathId": -4527183498941659460,
+          "sourceFile": "CAB-51dca2be082b56f5b8a74c222833cda4",
+          "sourceOriginalPath": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "sourceOffset": 369478309,
+          "name": "P_actor_endminf_ui_overview_01",
+          "snapshot": {
+            "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/AnimatorController/AnimatorController#6031888_pC12C3698009286BC.json",
+            "bytes": 67907,
+            "mtime_ns": 1786830634104965500
+          }
+        },
+        "metadata": {
+          "sourceFile": "CAB-51dca2be082b56f5b8a74c222833cda4",
+          "sourceOriginalPath": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "sourceOffset": 369478309,
+          "pathId": -4527183498941659460,
+          "type": "AnimatorController",
+          "name": "P_actor_endminf_ui_overview_01"
+        },
+        "animationClipPointers": [
+          {
+            "index": 0,
+            "fileId": 1,
+            "pathId": -7994037904239017215,
+            "pathIdHex": "910F78E15CD34301",
+            "targetCab": "CAB-1ea5370161ccb9d09538c00dba506ab8",
+            "dependencyIndex": 1,
+            "targetCabRecord": {
+              "cabMap": "export_full/recovered/AnimeStudio-cli/Maps/endfield_streamingassets_assets.bin",
+              "assetRoot": "StreamingAssets",
+              "cab": "CAB-1ea5370161ccb9d09538c00dba506ab8",
+              "baseFolder": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets",
+              "relativePath": "VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+              "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+              "sourceOffset": 937624865,
+              "dependencies": [],
+              "ownerCab": "CAB-51dca2be082b56f5b8a74c222833cda4",
+              "fileId": 1,
+              "pathId": -7994037904239017215,
+              "dependencyIndex": 1
+            },
+            "assetMap": {
+              "assetMap": "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json",
+              "Name": "A_actor_endminf_ui_overview_02",
+              "Container": "assets/beyond/arts/effects/commonassets/arts/sk_model/sk_fx_endminf_01_ui.fbx",
+              "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+              "PathID": -7994037904239017215,
+              "Type": "AnimationClip",
+              "Offset": 937624865,
+              "Hash": "e00e517348381014"
+            },
+            "artifactStatus": "artifact_missing",
+            "artifact": null,
+            "mismatchedCandidates": []
+          }
+        ],
+        "states": [
+          {
+            "stateMachineIndex": 0,
+            "stateIndex": 0,
+            "nameId": 1446091245,
+            "loop": false,
+            "clipIds": [
+              0
+            ]
+          }
+        ],
+        "stateClipReferences": [
+          {
+            "stateMachineIndex": 0,
+            "stateIndex": 0,
+            "nameId": 1446091245,
+            "loop": false,
+            "clipIds": [
+              0
+            ],
+            "clipId": 0,
+            "clip": {
+              "index": 0,
+              "fileId": 1,
+              "pathId": -7994037904239017215,
+              "pathIdHex": "910F78E15CD34301",
+              "targetCab": "CAB-1ea5370161ccb9d09538c00dba506ab8",
+              "dependencyIndex": 1,
+              "targetCabRecord": {
+                "cabMap": "export_full/recovered/AnimeStudio-cli/Maps/endfield_streamingassets_assets.bin",
+                "assetRoot": "StreamingAssets",
+                "cab": "CAB-1ea5370161ccb9d09538c00dba506ab8",
+                "baseFolder": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets",
+                "relativePath": "VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+                "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+                "sourceOffset": 937624865,
+                "dependencies": [],
+                "ownerCab": "CAB-51dca2be082b56f5b8a74c222833cda4",
+                "fileId": 1,
+                "pathId": -7994037904239017215,
+                "dependencyIndex": 1
+              },
+              "assetMap": {
+                "assetMap": "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json",
+                "Name": "A_actor_endminf_ui_overview_02",
+                "Container": "assets/beyond/arts/effects/commonassets/arts/sk_model/sk_fx_endminf_01_ui.fbx",
+                "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+                "PathID": -7994037904239017215,
+                "Type": "AnimationClip",
+                "Offset": 937624865,
+                "Hash": "e00e517348381014"
+              },
+              "artifactStatus": "artifact_missing",
+              "artifact": null,
+              "mismatchedCandidates": []
+            }
+          }
+        ]
+      }
+    },
+    {
+      "animator": {
+        "name": "effect_01",
+        "pathId": 3857671124670484979,
+        "pathIdHex": "35893372F64411F3",
+        "artifact": "unity_endfield_graph_shader_lab/Temp/Codex/endminf_fx_exact_stage/Animator/effect_01_p35893372F64411F3.json",
+        "gameObjectPathId": -1641160210811121165,
+        "ownerCab": "CAB-8fac05233bac82edb23cdafb58f7cf34",
+        "ownerSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+        "ownerSourceOffset": 446888048,
+        "container": "assets/beyond/dynamicassets/gameplay/effects/prefabs/p_fxui_endminm003_overview_06.prefab"
+      },
+      "controller": {
+        "status": "resolved_exact",
+        "fileId": 8,
+        "pathId": -4527183498941659460,
+        "ownerCab": "CAB-8fac05233bac82edb23cdafb58f7cf34",
+        "targetCab": "CAB-51dca2be082b56f5b8a74c222833cda4",
+        "dependencyIndex": 8,
+        "targetCabRecord": {
+          "cabMap": "export_full/recovered/AnimeStudio-cli/Maps/endfield_streamingassets_assets.bin",
+          "assetRoot": "StreamingAssets",
+          "cab": "CAB-51dca2be082b56f5b8a74c222833cda4",
+          "baseFolder": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets",
+          "relativePath": "VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "sourceOffset": 369478309,
+          "dependencies": [
+            "CAB-1ea5370161ccb9d09538c00dba506ab8"
+          ],
+          "ownerCab": "CAB-8fac05233bac82edb23cdafb58f7cf34",
+          "fileId": 8,
+          "pathId": -4527183498941659460,
+          "dependencyIndex": 8
+        },
+        "artifact": {
+          "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/AnimatorController/AnimatorController#6031888_pC12C3698009286BC.json",
+          "type": "AnimatorController",
+          "pathId": -4527183498941659460,
+          "sourceFile": "CAB-51dca2be082b56f5b8a74c222833cda4",
+          "sourceOriginalPath": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "sourceOffset": 369478309,
+          "name": "P_actor_endminf_ui_overview_01",
+          "snapshot": {
+            "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/AnimatorController/AnimatorController#6031888_pC12C3698009286BC.json",
+            "bytes": 67907,
+            "mtime_ns": 1786830634104965500
+          }
+        },
+        "metadata": {
+          "sourceFile": "CAB-51dca2be082b56f5b8a74c222833cda4",
+          "sourceOriginalPath": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "sourceOffset": 369478309,
+          "pathId": -4527183498941659460,
+          "type": "AnimatorController",
+          "name": "P_actor_endminf_ui_overview_01"
+        },
+        "animationClipPointers": [
+          {
+            "index": 0,
+            "fileId": 1,
+            "pathId": -7994037904239017215,
+            "pathIdHex": "910F78E15CD34301",
+            "targetCab": "CAB-1ea5370161ccb9d09538c00dba506ab8",
+            "dependencyIndex": 1,
+            "targetCabRecord": {
+              "cabMap": "export_full/recovered/AnimeStudio-cli/Maps/endfield_streamingassets_assets.bin",
+              "assetRoot": "StreamingAssets",
+              "cab": "CAB-1ea5370161ccb9d09538c00dba506ab8",
+              "baseFolder": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets",
+              "relativePath": "VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+              "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+              "sourceOffset": 937624865,
+              "dependencies": [],
+              "ownerCab": "CAB-51dca2be082b56f5b8a74c222833cda4",
+              "fileId": 1,
+              "pathId": -7994037904239017215,
+              "dependencyIndex": 1
+            },
+            "assetMap": {
+              "assetMap": "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json",
+              "Name": "A_actor_endminf_ui_overview_02",
+              "Container": "assets/beyond/arts/effects/commonassets/arts/sk_model/sk_fx_endminf_01_ui.fbx",
+              "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+              "PathID": -7994037904239017215,
+              "Type": "AnimationClip",
+              "Offset": 937624865,
+              "Hash": "e00e517348381014"
+            },
+            "artifactStatus": "artifact_missing",
+            "artifact": null,
+            "mismatchedCandidates": []
+          }
+        ],
+        "states": [
+          {
+            "stateMachineIndex": 0,
+            "stateIndex": 0,
+            "nameId": 1446091245,
+            "loop": false,
+            "clipIds": [
+              0
+            ]
+          }
+        ],
+        "stateClipReferences": [
+          {
+            "stateMachineIndex": 0,
+            "stateIndex": 0,
+            "nameId": 1446091245,
+            "loop": false,
+            "clipIds": [
+              0
+            ],
+            "clipId": 0,
+            "clip": {
+              "index": 0,
+              "fileId": 1,
+              "pathId": -7994037904239017215,
+              "pathIdHex": "910F78E15CD34301",
+              "targetCab": "CAB-1ea5370161ccb9d09538c00dba506ab8",
+              "dependencyIndex": 1,
+              "targetCabRecord": {
+                "cabMap": "export_full/recovered/AnimeStudio-cli/Maps/endfield_streamingassets_assets.bin",
+                "assetRoot": "StreamingAssets",
+                "cab": "CAB-1ea5370161ccb9d09538c00dba506ab8",
+                "baseFolder": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets",
+                "relativePath": "VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+                "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+                "sourceOffset": 937624865,
+                "dependencies": [],
+                "ownerCab": "CAB-51dca2be082b56f5b8a74c222833cda4",
+                "fileId": 1,
+                "pathId": -7994037904239017215,
+                "dependencyIndex": 1
+              },
+              "assetMap": {
+                "assetMap": "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json",
+                "Name": "A_actor_endminf_ui_overview_02",
+                "Container": "assets/beyond/arts/effects/commonassets/arts/sk_model/sk_fx_endminf_01_ui.fbx",
+                "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+                "PathID": -7994037904239017215,
+                "Type": "AnimationClip",
+                "Offset": 937624865,
+                "Hash": "e00e517348381014"
+              },
+              "artifactStatus": "artifact_missing",
+              "artifact": null,
+              "mismatchedCandidates": []
+            }
+          }
+        ]
+      }
+    },
+    {
+      "animator": {
+        "name": "effect_nanguan",
+        "pathId": -6448476594627384199,
+        "pathIdHex": "A68268B3E2D06C79",
+        "artifact": "unity_endfield_graph_shader_lab/Temp/Codex/endminf_fx_exact_stage/Animator/effect_nanguan_pA68268B3E2D06C79.json",
+        "gameObjectPathId": 4476131385385512057,
+        "ownerCab": "CAB-72044df92f6ff49458941a0aad30ac4d",
+        "ownerSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+        "ownerSourceOffset": 772927267,
+        "container": "assets/beyond/dynamicassets/gameplay/effects/prefabs/p_fxui_endminm003_overview_01.prefab"
+      },
+      "controller": {
+        "status": "resolved_exact",
+        "fileId": 0,
+        "pathId": -1701034008672764552,
+        "ownerCab": "CAB-72044df92f6ff49458941a0aad30ac4d",
+        "targetCab": "CAB-72044df92f6ff49458941a0aad30ac4d",
+        "dependencyIndex": 0,
+        "targetCabRecord": {
+          "cabMap": "export_full/recovered/AnimeStudio-cli/Maps/endfield_streamingassets_assets.bin",
+          "assetRoot": "StreamingAssets",
+          "cab": "CAB-72044df92f6ff49458941a0aad30ac4d",
+          "baseFolder": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets",
+          "relativePath": "VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+          "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+          "sourceOffset": 772927267,
+          "dependencies": [
+            "CAB-5f527d7b7706baccdad9f794cf46420c",
+            "CAB-cd71f8c396e7892649d00d8870b65267",
+            "CAB-9decc143c80b532cf8f7cfa0d964bae5",
+            "CAB-ccc3dbc4aa2a61874780e26d787e785c",
+            "CAB-40349914e91e3ff488688f280280046d",
+            "CAB-7b448c424ed5d6e42212fe6ecf508f87",
+            "CAB-9d08038ae32d18a67e47c6f212b9f822",
+            "CAB-9fe1ba4f3ce8edb2f54eb3e35709a336",
+            "CAB-e41074cb6fedcef683960a8b41a78c46",
+            "CAB-e7fdbff067fef56e9db587fdde4ec85f",
+            "CAB-51dca2be082b56f5b8a74c222833cda4",
+            "CAB-8f93557b361354ad7e0827de4234cada"
+          ],
+          "ownerCab": "CAB-72044df92f6ff49458941a0aad30ac4d",
+          "fileId": 0,
+          "pathId": -1701034008672764552,
+          "dependencyIndex": null
+        },
+        "artifact": {
+          "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/AnimatorController/AnimatorController#3596353_pE864B694E2337D78.json",
+          "type": "AnimatorController",
+          "pathId": -1701034008672764552,
+          "sourceFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
+          "sourceOriginalPath": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+          "sourceOffset": 772927267,
+          "name": "A_fx_endminf_ui_overview_04",
+          "snapshot": {
+            "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/AnimatorController/AnimatorController#3596353_pE864B694E2337D78.json",
+            "bytes": 67886,
+            "mtime_ns": 1786830530903694000
+          }
+        },
+        "metadata": {
+          "sourceFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
+          "sourceOriginalPath": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+          "sourceOffset": 772927267,
+          "pathId": -1701034008672764552,
+          "type": "AnimatorController",
+          "name": "A_fx_endminf_ui_overview_04"
+        },
+        "animationClipPointers": [
+          {
+            "index": 0,
+            "fileId": 0,
+            "pathId": -2625895420410042749,
+            "pathIdHex": "DB8EF20719226683",
+            "targetCab": "CAB-72044df92f6ff49458941a0aad30ac4d",
+            "dependencyIndex": null,
+            "targetCabRecord": {
+              "cabMap": "export_full/recovered/AnimeStudio-cli/Maps/endfield_streamingassets_assets.bin",
+              "assetRoot": "StreamingAssets",
+              "cab": "CAB-72044df92f6ff49458941a0aad30ac4d",
+              "baseFolder": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets",
+              "relativePath": "VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+              "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+              "sourceOffset": 772927267,
+              "dependencies": [
+                "CAB-5f527d7b7706baccdad9f794cf46420c",
+                "CAB-cd71f8c396e7892649d00d8870b65267",
+                "CAB-9decc143c80b532cf8f7cfa0d964bae5",
+                "CAB-ccc3dbc4aa2a61874780e26d787e785c",
+                "CAB-40349914e91e3ff488688f280280046d",
+                "CAB-7b448c424ed5d6e42212fe6ecf508f87",
+                "CAB-9d08038ae32d18a67e47c6f212b9f822",
+                "CAB-9fe1ba4f3ce8edb2f54eb3e35709a336",
+                "CAB-e41074cb6fedcef683960a8b41a78c46",
+                "CAB-e7fdbff067fef56e9db587fdde4ec85f",
+                "CAB-51dca2be082b56f5b8a74c222833cda4",
+                "CAB-8f93557b361354ad7e0827de4234cada"
+              ],
+              "ownerCab": "CAB-72044df92f6ff49458941a0aad30ac4d",
+              "fileId": 0,
+              "pathId": -2625895420410042749,
+              "dependencyIndex": null
+            },
+            "assetMap": {
+              "assetMap": "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json",
+              "Name": "A_fx_endminf_ui_overview_04",
+              "Container": "assets/beyond/dynamicassets/gameplay/effects/prefabs/p_fxui_endminm003_overview_01.prefab",
+              "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+              "PathID": -2625895420410042749,
+              "Type": "AnimationClip",
+              "Offset": 772927267,
+              "Hash": "cb429ac9f1afe11"
+            },
+            "artifactStatus": "resolved_exact",
+            "artifact": {
+              "basis": "exact_stage_animationclip_json",
+              "path": "unity_endfield_graph_shader_lab/Temp/Codex/endminf_fx_exact_stage/AnimationClip/A_fx_endminf_ui_overview_04_pDB8EF20719226683.json",
+              "name": "A_fx_endminf_ui_overview_04",
+              "pathId": -2625895420410042749,
+              "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+              "sourceOffset": 772927267,
+              "snapshot": {
+                "path": "unity_endfield_graph_shader_lab/Temp/Codex/endminf_fx_exact_stage/AnimationClip/A_fx_endminf_ui_overview_04_pDB8EF20719226683.json",
+                "bytes": 67319,
+                "mtime_ns": 1787262129494937300
+              },
+              "loopTime": null
+            },
+            "mismatchedCandidates": []
+          }
+        ],
+        "states": [
+          {
+            "stateMachineIndex": 0,
+            "stateIndex": 0,
+            "nameId": 412420636,
+            "loop": false,
+            "clipIds": [
+              0
+            ]
+          }
+        ],
+        "stateClipReferences": [
+          {
+            "stateMachineIndex": 0,
+            "stateIndex": 0,
+            "nameId": 412420636,
+            "loop": false,
+            "clipIds": [
+              0
+            ],
+            "clipId": 0,
+            "clip": {
+              "index": 0,
+              "fileId": 0,
+              "pathId": -2625895420410042749,
+              "pathIdHex": "DB8EF20719226683",
+              "targetCab": "CAB-72044df92f6ff49458941a0aad30ac4d",
+              "dependencyIndex": null,
+              "targetCabRecord": {
+                "cabMap": "export_full/recovered/AnimeStudio-cli/Maps/endfield_streamingassets_assets.bin",
+                "assetRoot": "StreamingAssets",
+                "cab": "CAB-72044df92f6ff49458941a0aad30ac4d",
+                "baseFolder": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets",
+                "relativePath": "VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+                "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+                "sourceOffset": 772927267,
+                "dependencies": [
+                  "CAB-5f527d7b7706baccdad9f794cf46420c",
+                  "CAB-cd71f8c396e7892649d00d8870b65267",
+                  "CAB-9decc143c80b532cf8f7cfa0d964bae5",
+                  "CAB-ccc3dbc4aa2a61874780e26d787e785c",
+                  "CAB-40349914e91e3ff488688f280280046d",
+                  "CAB-7b448c424ed5d6e42212fe6ecf508f87",
+                  "CAB-9d08038ae32d18a67e47c6f212b9f822",
+                  "CAB-9fe1ba4f3ce8edb2f54eb3e35709a336",
+                  "CAB-e41074cb6fedcef683960a8b41a78c46",
+                  "CAB-e7fdbff067fef56e9db587fdde4ec85f",
+                  "CAB-51dca2be082b56f5b8a74c222833cda4",
+                  "CAB-8f93557b361354ad7e0827de4234cada"
+                ],
+                "ownerCab": "CAB-72044df92f6ff49458941a0aad30ac4d",
+                "fileId": 0,
+                "pathId": -2625895420410042749,
+                "dependencyIndex": null
+              },
+              "assetMap": {
+                "assetMap": "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json",
+                "Name": "A_fx_endminf_ui_overview_04",
+                "Container": "assets/beyond/dynamicassets/gameplay/effects/prefabs/p_fxui_endminm003_overview_01.prefab",
+                "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+                "PathID": -2625895420410042749,
+                "Type": "AnimationClip",
+                "Offset": 772927267,
+                "Hash": "cb429ac9f1afe11"
+              },
+              "artifactStatus": "resolved_exact",
+              "artifact": {
+                "basis": "exact_stage_animationclip_json",
+                "path": "unity_endfield_graph_shader_lab/Temp/Codex/endminf_fx_exact_stage/AnimationClip/A_fx_endminf_ui_overview_04_pDB8EF20719226683.json",
+                "name": "A_fx_endminf_ui_overview_04",
+                "pathId": -2625895420410042749,
+                "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+                "sourceOffset": 772927267,
+                "snapshot": {
+                  "path": "unity_endfield_graph_shader_lab/Temp/Codex/endminf_fx_exact_stage/AnimationClip/A_fx_endminf_ui_overview_04_pDB8EF20719226683.json",
+                  "bytes": 67319,
+                  "mtime_ns": 1787262129494937300
+                },
+                "loopTime": null
+              },
+              "mismatchedCandidates": []
+            }
+          }
+        ]
+      }
+    },
+    {
+      "animator": {
+        "name": "post (1)",
+        "pathId": 8042241180075781241,
+        "pathIdHex": "6F9BC7BE606F6C79",
+        "artifact": "unity_endfield_graph_shader_lab/Temp/Codex/endminf_fx_exact_stage/Animator/post (1)_p6F9BC7BE606F6C79.json",
+        "gameObjectPathId": 8953141407210302585,
+        "ownerCab": "CAB-72044df92f6ff49458941a0aad30ac4d",
+        "ownerSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+        "ownerSourceOffset": 772927267,
+        "container": "assets/beyond/dynamicassets/gameplay/effects/prefabs/p_fxui_endminm003_overview_01.prefab"
+      },
+      "controller": {
+        "status": "null_serialized_pointer",
+        "fileId": 0,
+        "pathId": 0
+      }
+    }
+  ],
+  "missingArtifacts": [
+    {
+      "kind": "AnimationClip",
+      "name": "A_actor_endminf_ui_overview_02",
+      "cab": "CAB-1ea5370161ccb9d09538c00dba506ab8",
+      "pathId": -7994037904239017215,
+      "mismatchedCandidates": []
+    }
+  ],
+  "playbackProof": {
+    "startToLoopProven": false,
+    "endProven": false,
+    "reason": "All exact EffectAnimation loopAnimationClip and endAnimationClip PPtrs are null; the four exact stage AnimationClip JSON objects do not expose a positive loop-time field in their serialized TypeTree, and both non-null AnimatorController states have m_Loop=false. No ui_overview_start->ui_overview_loop playback chain is established.",
+    "stageAnimationClipCount": 4,
+    "stageAnimationClips": [
+      {
+        "name": "A_fx_endminf_ui_overview_01",
+        "pathId": -3167253468417284386,
+        "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+        "sourceOffset": 446888048,
+        "artifact": "unity_endfield_graph_shader_lab/Temp/Codex/endminf_fx_exact_stage/AnimationClip/A_fx_endminf_ui_overview_01_pD40BA7C0555D26DE.json",
+        "loopTimeField": "absent_from_exact_stage_json"
+      },
+      {
+        "name": "A_fx_endminf_ui_overview_04",
+        "pathId": -2625895420410042749,
+        "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+        "sourceOffset": 772927267,
+        "artifact": "unity_endfield_graph_shader_lab/Temp/Codex/endminf_fx_exact_stage/AnimationClip/A_fx_endminf_ui_overview_04_pDB8EF20719226683.json",
+        "loopTimeField": "absent_from_exact_stage_json"
+      },
+      {
+        "name": "A_fx_endminf_ui_overview_03",
+        "pathId": 8378992340436559080,
+        "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+        "sourceOffset": 373845082,
+        "artifact": "unity_endfield_graph_shader_lab/Temp/Codex/endminf_fx_exact_stage/AnimationClip/A_fx_endminf_ui_overview_03_p74482923CB70A4E8.json",
+        "loopTimeField": "absent_from_exact_stage_json"
+      },
+      {
+        "name": "A_fx_endminf_ui_overview_02",
+        "pathId": 8413816528141668220,
+        "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+        "sourceOffset": 772927267,
+        "artifact": "unity_endfield_graph_shader_lab/Temp/Codex/endminf_fx_exact_stage/AnimationClip/A_fx_endminf_ui_overview_02_p74C3E18DD531CF7C.json",
+        "loopTimeField": "absent_from_exact_stage_json"
+      }
+    ],
+    "effectAnimationRows": [
+      {
+        "artifact": "unity_endfield_graph_shader_lab/Temp/Codex/endminf_fx_exact_stage/MonoBehaviour/MonoBehaviour#238_pF5D607B36003BDF2.json",
+        "sourceCab": "CAB-e27c3ded749317d6e87d346c3cd1e4c3",
+        "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+        "sourceOffset": 373845082,
+        "pathId": -732389422409728526,
+        "gameObjectPathId": 7701914037140635122,
+        "start": {
+          "fileId": 0,
+          "pathId": 8378992340436559080,
+          "isNull": false,
+          "status": "exact_local_pointer"
+        },
+        "loop": {
+          "fileId": 0,
+          "pathId": 0,
+          "isNull": true,
+          "status": "null_serialized_pointer"
+        },
+        "end": {
+          "fileId": 0,
+          "pathId": 0,
+          "isNull": true,
+          "status": "null_serialized_pointer"
+        },
+        "isEnableChangeState": 1,
+        "evidence": "exact_stage_monobehaviour_json",
+        "ownerCabVerified": true,
+        "ownerCabRecord": {
+          "cabMap": "export_full/recovered/AnimeStudio-cli/Maps/endfield_streamingassets_assets.bin",
+          "assetRoot": "StreamingAssets",
+          "cab": "CAB-e27c3ded749317d6e87d346c3cd1e4c3",
+          "baseFolder": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets",
+          "relativePath": "VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+          "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+          "sourceOffset": 373845082,
+          "dependencies": [
+            "CAB-5f527d7b7706baccdad9f794cf46420c",
+            "CAB-a9472230fd792826cf92f1adc1d8737f",
+            "CAB-f5ecbaca367229e95b9a13eaf0e6cf3f",
+            "CAB-0aa796be8e8447287a06707b9d57baeb",
+            "CAB-71fba48ad87900d3b3c4b21b375fc7b3",
+            "CAB-57ab92b5f5a4375278f490cf569c0b23",
+            "CAB-1de2f26f2de7f7e1df384081b352f157",
+            "CAB-3a930505f5aee238a3d248cf9c671c0f",
+            "CAB-483f469739844610e703255a131d3dfa",
+            "CAB-677d23cb83fcb2c2acf659290a3b25ec",
+            "CAB-8913e6b485ec90d30e4d75a822d454ae",
+            "CAB-9decc143c80b532cf8f7cfa0d964bae5",
+            "CAB-c8d46ced3f6f00649eb8ebffccc0e2fb",
+            "CAB-ff435e3fd9771bebac06ac4f9c8810f3"
+          ]
+        }
+      },
+      {
+        "artifact": "unity_endfield_graph_shader_lab/Temp/Codex/endminf_fx_exact_stage/MonoBehaviour/MonoBehaviour#391_p51D9A6A7EB8911F3.json",
+        "sourceCab": "CAB-8fac05233bac82edb23cdafb58f7cf34",
+        "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+        "sourceOffset": 446888048,
+        "pathId": 5897928427159753203,
+        "gameObjectPathId": 8049794264004628979,
+        "start": {
+          "fileId": 0,
+          "pathId": -3167253468417284386,
+          "isNull": false,
+          "status": "exact_local_pointer"
+        },
+        "loop": {
+          "fileId": 0,
+          "pathId": 0,
+          "isNull": true,
+          "status": "null_serialized_pointer"
+        },
+        "end": {
+          "fileId": 0,
+          "pathId": 0,
+          "isNull": true,
+          "status": "null_serialized_pointer"
+        },
+        "isEnableChangeState": 1,
+        "evidence": "exact_stage_monobehaviour_json",
+        "ownerCabVerified": true,
+        "ownerCabRecord": {
+          "cabMap": "export_full/recovered/AnimeStudio-cli/Maps/endfield_streamingassets_assets.bin",
+          "assetRoot": "StreamingAssets",
+          "cab": "CAB-8fac05233bac82edb23cdafb58f7cf34",
+          "baseFolder": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets",
+          "relativePath": "VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+          "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+          "sourceOffset": 446888048,
+          "dependencies": [
+            "CAB-5f527d7b7706baccdad9f794cf46420c",
+            "CAB-40349914e91e3ff488688f280280046d",
+            "CAB-7b448c424ed5d6e42212fe6ecf508f87",
+            "CAB-cd71f8c396e7892649d00d8870b65267",
+            "CAB-9decc143c80b532cf8f7cfa0d964bae5",
+            "CAB-e7fdbff067fef56e9db587fdde4ec85f",
+            "CAB-9d08038ae32d18a67e47c6f212b9f822",
+            "CAB-51dca2be082b56f5b8a74c222833cda4",
+            "CAB-8f93557b361354ad7e0827de4234cada"
+          ]
+        }
+      },
+      {
+        "artifact": "unity_endfield_graph_shader_lab/Temp/Codex/endminf_fx_exact_stage/MonoBehaviour/MonoBehaviour#61_pCD8D9FA267976C79.json",
+        "sourceCab": "CAB-72044df92f6ff49458941a0aad30ac4d",
+        "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+        "sourceOffset": 772927267,
+        "pathId": -3635073804346626951,
+        "gameObjectPathId": 644358100928130169,
+        "start": {
+          "fileId": 0,
+          "pathId": 8413816528141668220,
+          "isNull": false,
+          "status": "exact_local_pointer"
+        },
+        "loop": {
+          "fileId": 0,
+          "pathId": 0,
+          "isNull": true,
+          "status": "null_serialized_pointer"
+        },
+        "end": {
+          "fileId": 0,
+          "pathId": 0,
+          "isNull": true,
+          "status": "null_serialized_pointer"
+        },
+        "isEnableChangeState": 1,
+        "evidence": "exact_stage_monobehaviour_json",
+        "ownerCabVerified": true,
+        "ownerCabRecord": {
+          "cabMap": "export_full/recovered/AnimeStudio-cli/Maps/endfield_streamingassets_assets.bin",
+          "assetRoot": "StreamingAssets",
+          "cab": "CAB-72044df92f6ff49458941a0aad30ac4d",
+          "baseFolder": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets",
+          "relativePath": "VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+          "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+          "sourceOffset": 772927267,
+          "dependencies": [
+            "CAB-5f527d7b7706baccdad9f794cf46420c",
+            "CAB-cd71f8c396e7892649d00d8870b65267",
+            "CAB-9decc143c80b532cf8f7cfa0d964bae5",
+            "CAB-ccc3dbc4aa2a61874780e26d787e785c",
+            "CAB-40349914e91e3ff488688f280280046d",
+            "CAB-7b448c424ed5d6e42212fe6ecf508f87",
+            "CAB-9d08038ae32d18a67e47c6f212b9f822",
+            "CAB-9fe1ba4f3ce8edb2f54eb3e35709a336",
+            "CAB-e41074cb6fedcef683960a8b41a78c46",
+            "CAB-e7fdbff067fef56e9db587fdde4ec85f",
+            "CAB-51dca2be082b56f5b8a74c222833cda4",
+            "CAB-8f93557b361354ad7e0827de4234cada"
+          ]
+        }
+      }
+    ]
+  },
+  "summary": {
+    "animatorCount": 7,
+    "nullControllerCount": 4,
+    "resolvedControllerCount": 3,
+    "controllerArtifactMissingCount": 0,
+    "effectAnimationCount": 3,
+    "missingArtifactCount": 1,
+    "sourceFingerprint": "2a7922023bfa677155e41a706e938ebd3926fe51b09b8b91e7af52b52aa76d69"
+  },
+  "evidenceBoundary": "Exact stage fingerprint/source snapshots, exact Animator owner CAB+FileID dependency, exact AnimatorController source/CAB/offset/PathID metadata, state clip PPtrs, and AssetMap source/offset/PathID/Type are required. Null controllers, null loop/end PPtrs, missing artifacts, and unresolved playback are explicit evidence; no start->loop claim is made from names or clip duration."
+}
