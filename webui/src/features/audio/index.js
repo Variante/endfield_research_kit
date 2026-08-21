@@ -9,6 +9,29 @@
   const NOTES_OVERRIDE_SCHEMA = "audioNotes.v1";
   const PLAYER_COLLAPSE_THRESHOLD = 20;
   const MOBILE_LAYOUT_QUERY = "(max-width: 760px)";
+  // AudioCue projections have several publication owners. Keep one shared
+  // classifier so normal-mode redaction cannot miss a newly surfaced owner.
+  const AUDIO_CUE_CONTEXT_KINDS = new Set([
+    "audioCueBehaviorEvent",
+    "audioCueExpressionOperand",
+    "timelineAudioCueBehaviorEvent",
+    "levelScriptAudioCueBehaviorEvent",
+    "audioGlobalMusicCueBehaviorEvent",
+  ]);
+  const AUDIO_CUE_BEHAVIOR_KINDS = new Set([
+    "audioCueBehaviorEvent",
+    "timelineAudioCueBehaviorEvent",
+    "levelScriptAudioCueBehaviorEvent",
+    "audioGlobalMusicCueBehaviorEvent",
+  ]);
+  function isAudioCueContext(value) {
+    const kind = typeof value === "string" ? value : value?.kind;
+    return AUDIO_CUE_CONTEXT_KINDS.has(kind) || /^audioCue[A-Z]/.test(String(kind || ""));
+  }
+  function isAudioCueBehaviorContext(value) {
+    const kind = typeof value === "string" ? value : value?.kind;
+    return AUDIO_CUE_BEHAVIOR_KINDS.has(kind) || /AudioCueBehaviorEvent$/.test(String(kind || ""));
+  }
 
   const TEXT = {
     en: {
@@ -80,6 +103,10 @@
       modelViewStateRtpcParameters: "ModelView state RTPC parameters",
       modelViewStateSpatialControls: "ModelView state spatial controls",
       modelViewStateCustomAudioControls: "ModelView custom-audio controls (unresolved)",
+      audioCueRequests: "AudioCue authored Event requests",
+      audioCueStringLiteralControl: "AudioCue string literals (typed control)",
+      audioCueRuntimeUnobserved: "AudioCue runtime activation is unobserved; serialized expressions do not prove execution, branch selection, media, or audibility.",
+      audioCueExpressionAst: "AudioCue expression AST / validation detail",
       levelScriptCueInvocations: "LevelScript cue invocations",
       levelScriptDynamicBindings: "LevelScript dynamic Event bindings",
       levelScriptControls: "LevelScript audio controls",
@@ -344,6 +371,10 @@
       modelViewStateRtpcParameters: "ModelView \u72b6\u6001 RTPC \u53c2\u6570",
       modelViewStateSpatialControls: "ModelView \u72b6\u6001\u7a7a\u95f4\u97f3\u9891\u63a7\u5236",
       modelViewStateCustomAudioControls: "ModelView \u81ea\u5b9a\u4e49\u97f3\u9891\u63a7\u5236\uff08\u672a\u89e3\u6790\uff09",
+      audioCueRequests: "AudioCue 已创作 Event 请求",
+      audioCueStringLiteralControl: "AudioCue 字符串字面量（类型化控制）",
+      audioCueRuntimeUnobserved: "AudioCue 运行时激活未观测；序列化表达式不证明执行、分支选择、媒体或可听性。",
+      audioCueExpressionAst: "AudioCue 表达式 AST / 验证详情",
       levelScriptCueInvocations: "LevelScript Cue \u8c03\u7528",
       levelScriptDynamicBindings: "LevelScript \u52a8\u6001 Event \u7ed1\u5b9a",
       levelScriptControls: "LevelScript \u97f3\u9891\u63a7\u5236",
@@ -2238,7 +2269,6 @@
       ["modelViewStateSpatialControls", asArray(catalog.modelViewStateSpatialControls), (row) => `${row.behaviorTagHex || "tag ?"} / ${row.controllerId || "?"} / ${row.modelAnimatorName || "?"} / ${row.layerName || "?"} / ${row.stateName || "?"} / direct ${String(Boolean(row.directSet))} / target ${row.targetClosePercentage ?? "?"} / ${row.dependFloatKey || "no blackboard key"}`],
       ["modelViewStateCustomAudioControls", asArray(catalog.modelViewStateCustomAudioControls), (row) => `${row.controlValue || '""'} / ${row.behaviorTagHex || "tag ?"} / ${row.controllerId || "?"} / ${row.modelAnimatorName || "?"} / ${row.layerName || "?"} / ${row.stateName || "?"} / ${humanize(row.wwiseEventStatus || "unresolved")}`],
       ["globalMusicCues", asArray(catalog.audioGlobalMusicCueRefs), (row) => `${row.field || t("unknown")} / ${row.cueHex || row.cueId || "?"} / ${humanize(row.definitionStatus || "unknown")}`],
-      ["cueOperands", asArray(catalog.audioCueExpressionOperands), (row) => `${row.stringValue || t("unknown")} / ${row.cueHex || "?"} / ${humanize(row.expressionSide || "")} / ${row.expressionPath || ""}`],
       ["levelScriptCueInvocations", asArray(catalog.levelScriptAudioCueInvocations), (row) => `${row.cueName || t("unknown")} / ${row.cueHex || "?"} / ${humanize(row.definitionStatus || "unknown")} / ${row.levelScriptId || "?"} / ${humanize(row.action || "")}`],
       ["levelScriptDynamicBindings", asArray(catalog.levelScriptDynamicAudioBindings), (row) => `${row.levelScriptId || "?"} / ${humanize(row.action || "")} / ${row.sourceField || "?"} / ${row.binding?.path || humanize(row.resolutionStatus || "")}`],
       ["levelScriptControls", asArray(catalog.levelScriptAudioControls), (row) => `${humanize(row.action || "")} / ${humanize(row.controlRole || "")} / ${row.levelScriptId || "?"} / ${formatControlFields(row)}`],
@@ -2279,6 +2309,14 @@
       }
       details.append(summary, values);
       section.appendChild(details);
+    }
+    const literalCount = Number(counts.audioCueExpressionStringLiterals || 0);
+    const variableCount = Number(counts.audioCueVariableNameCandidates || 0);
+    if (literalCount || variableCount) {
+      section.appendChild(noteSection(
+        t("audioCueStringLiteralControl"),
+        `${literalCount} ${t("audioCueStringLiteralControl")}; ${variableCount} authored variable-name candidate(s). ${t("audioCueRuntimeUnobserved")}`,
+      ));
     }
     if (catalog.evidenceBoundary) section.appendChild(noteSection(t("runtimeBoundary"), catalog.evidenceBoundary));
     return section;
@@ -2502,6 +2540,57 @@
       section.appendChild(details);
     }
     if (catalog.evidenceBoundary) section.appendChild(noteSection(t("runtimeBoundary"), catalog.evidenceBoundary));
+    return section;
+  }
+
+  function audioCueExpressionSection(raw) {
+    const contexts = asArray(raw?.contexts).filter((row) => row && typeof row === "object");
+    const authored = contexts.filter((row) => isAudioCueBehaviorContext(row) && (row.semanticRole === "cueBehaviorEventRequest" || row.expressionNodeClass === "authoredEventRequest" || row.semanticRole === "authoredTimelineAudioCueBehaviorEvent" || row.semanticRole === "authoredLevelScriptCueBehaviorEventRequest"));
+    const variables = contexts.filter((row) => isAudioCueContext(row) && (row.kind === "audioCueExpressionOperand" || row.nodeClass === "stringLiteral" || row.nodeClass === "authoredVariableNameCandidate"));
+    const detail = raw?.audioCueExpressionDetail && typeof raw.audioCueExpressionDetail === "object"
+      ? raw.audioCueExpressionDetail : null;
+    const astRows = asArray(detail?.definitions).filter((row) => row && typeof row === "object");
+    const astNodes = astRows.flatMap((row) => asArray(row.expressionAst).filter((node) => node && typeof node === "object"));
+    const astVariables = astNodes.filter((node) => ["stringLiteral", "authoredVariableNameCandidate"].includes(node.nodeClass) && typeof node.stringValue === "string" && node.stringValue.trim());
+    if (!authored.length && !variables.length && !astVariables.length && !detail) return null;
+    const section = document.createElement("section");
+    section.className = "audio-runtime-system";
+    const heading = document.createElement("h3");
+    heading.textContent = t("audioCueRequests");
+    section.appendChild(heading);
+    const values = document.createElement("div");
+    values.className = "audio-chip-list";
+    for (const row of authored.slice(0, 64)) {
+      const chip = document.createElement("span");
+      chip.textContent = `${row.eventName || row.stringValue || "Event request"} / ${t("audioCueRuntimeUnobserved")}`;
+      values.appendChild(chip);
+    }
+    const seenVariables = new Set();
+    for (const row of [...variables, ...astVariables].slice(0, 64)) {
+      const value = String(row.stringValue || "").trim();
+      if (!value || seenVariables.has(value)) continue;
+      seenVariables.add(value);
+      const chip = document.createElement("span");
+      chip.textContent = `${value} / ${t("audioCueStringLiteralControl")} / ${t("audioCueRuntimeUnobserved")}`;
+      values.appendChild(chip);
+    }
+    if (values.childElementCount) section.appendChild(values);
+    const debug = document.body.classList.contains("show-debug");
+    if (debug && detail) {
+      const details = document.createElement("details");
+      const summary = document.createElement("summary");
+      summary.textContent = `${t("audioCueExpressionAst")} (debug)`;
+      const pre = document.createElement("pre");
+      pre.className = "audio-raw-record";
+      const json = JSON.stringify(detail, null, 2) || "{}";
+      pre.textContent = json.length > 50000 ? `${json.slice(0, 50000)}\n…` : json;
+      details.append(summary, pre);
+      section.appendChild(details);
+    }
+    const boundary = document.createElement("p");
+    boundary.className = "audio-detail-note";
+    boundary.textContent = t("audioCueRuntimeUnobserved");
+    section.appendChild(boundary);
     return section;
   }
 
@@ -2798,13 +2887,15 @@
 
   function contextEvidenceLabel(context) {
     const kind = normalize(context?.kind);
+    const audioCueContext = isAudioCueContext(context);
+    const debugAudioCue = document.body.classList.contains("show-debug");
     const group = contextGroup(kind);
     const parts = [group ? taxonomyLabel(group) : humanize(kind), humanize(kind)];
     if (context?.ownerId) parts.push(context.ownerId);
     if (context?.groupId) parts.push(context.groupId);
     if (context?.storyKey) parts.push(context.storyKey);
     if (context?.table) parts.push(context.table);
-    if (context?.path) parts.push(context.path);
+    if (context?.path && (!audioCueContext || debugAudioCue)) parts.push(context.path);
     if (kind === "luaPostEvent") {
       if (context?.source) parts.push(context.source);
       if (context?.line !== undefined) parts.push(`line ${context.line}`);
@@ -2970,10 +3061,16 @@
       if (context?.timelineOwnershipStatus) parts.push(humanize(context.timelineOwnershipStatus));
       if (context?.evidenceBoundary) parts.push(context.evidenceBoundary);
     }
-    if (context?.cueHex || context?.cueId !== undefined) parts.push(`cue ${context.cueHex || context.cueId}`);
+    if (audioCueContext && !debugAudioCue) {
+      if (isAudioCueBehaviorContext(context)) parts.push("authored Event request / runtime activation unobserved");
+      else parts.push("serialized string literal control / runtime value unobserved");
+    }
+    if (context?.cueHex || context?.cueId !== undefined) {
+      if (!audioCueContext || debugAudioCue) parts.push(`cue ${context.cueHex || context.cueId}`);
+    }
     if (context?.globalMusicCueField) parts.push(`global cue ${context.globalMusicCueField}`);
-    if (context?.handlerScope) parts.push(`${context.handlerScope} handler${context.levelId ? ` / level ${context.levelId}` : ""}`);
-    if (context?.expressionPath) parts.push(`${context.expressionSide || "expression"} type ${context.exprType ?? "?"} / ${context.expressionPath}`);
+    if (context?.handlerScope && (!audioCueContext || debugAudioCue)) parts.push(`${context.handlerScope} handler${context.levelId ? ` / level ${context.levelId}` : ""}`);
+    if (context?.expressionPath && (!audioCueContext || debugAudioCue)) parts.push(`${context.expressionSide || "expression"} type ${context.exprType ?? "?"} / ${context.expressionPath}`);
     if (context?.projectileId) parts.push(`projectile ${context.projectileId}`);
     if (context?.projectileKey) parts.push(context.projectileKey);
     if (context?.soundField) parts.push(`${humanize(context.soundField)} / ${humanize(context.triggerPhase || "")}`);
@@ -4494,6 +4591,8 @@
     grid.className = "audio-facts";
     for (const [label, value] of facts) if (value !== undefined && value !== null && value !== "") grid.appendChild(factNode(label, value));
     panel.appendChild(grid);
+    const audioCueExpressions = audioCueExpressionSection(raw);
+    if (audioCueExpressions) panel.appendChild(audioCueExpressions);
 
     if (record.contextTags.length) panel.appendChild(chipSection(t("contextGroups"), record.contextTags.map(taxonomyLabel)));
     if (record.relationTags.length) panel.appendChild(chipSection(t("relation"), record.relationTags.map(taxonomyLabel)));
@@ -4821,7 +4920,20 @@
     summary.textContent = t("rawRecord");
     const pre = document.createElement("pre");
     pre.className = "audio-raw-record";
-    const json = JSON.stringify(raw, null, 2) || "{}";
+    const debugRaw = document.body.classList.contains("show-debug");
+    const rawForDisplay = debugRaw ? raw : {
+      ...raw,
+      audioCueExpressionDetail: undefined,
+      audioCueExpressionSchemaVersion: undefined,
+      audioCueNativeContract: undefined,
+      contexts: asArray(raw.contexts).map((context) => {
+        if (!context || typeof context !== "object" || !isAudioCueContext(context)) return context;
+        const safe = { ...context };
+        for (const key of ["cueSignedId", "cueId", "cueU32", "cueHex", "handlerScope", "handlerLevel", "levelId", "handlerIndex", "expressionSide", "rootField", "expressionRootField", "expressionPath", "path", "parentPath", "depth", "exprType", "exprTypeName", "exprOperatorType", "nativeEnumStatus", "boolValue", "intValue", "floatValue", "rawScalar", "rawScalars", "childPaths", "validationStatus", "validationIssues"]) delete safe[key];
+        return safe;
+      }),
+    };
+    const json = JSON.stringify(rawForDisplay, null, 2) || "{}";
     pre.textContent = json.length > 50000 ? `${json.slice(0, 50000)}\n…` : json;
     details.append(summary, pre);
     panel.appendChild(details);

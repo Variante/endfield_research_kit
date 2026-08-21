@@ -3,14 +3,15 @@
 from __future__ import annotations
 
 import json
+import math
 import re
 import shutil
 import subprocess
-from collections import defaultdict
+from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any, Iterable
 
-from . import identifiers, interactive_components
+from . import audio_cue_native, identifiers, interactive_components
 from .context_utils import append_context as _append_context
 from .context_utils import load_json
 from .context_utils import normalize_posix
@@ -447,17 +448,385 @@ def collect_authored_runtime_config_contexts(
     return dict(contexts)
 
 
+AudioCueExpressionNode = dict[str, Any]
+
+# Keep this version independent from the much larger Audio semantic schema.  A
+# reader may use the AST without having to understand Event/media projections.
+AUDIO_CUE_EXPRESSION_SCHEMA_VERSION = 1
+_AUDIO_CUE_EXPRESSION_KNOWN_TYPES = frozenset(range(0, 9))
+_AUDIO_CUE_EXPRESSION_KEYS = frozenset({
+    "boolValue", "children", "exprType", "floatValue", "intValue", "stringValue",
+})
+_AUDIO_CUE_MAX_DIAGNOSTICS = 64
+_AUDIO_CUE_MAX_DIAGNOSTIC_TEXT = 240
+_AUDIO_CUE_MAX_DEPTH = 1024
+_AUDIO_CUE_MAX_NODES = 10000
+_AUDIO_CUE_MAX_HANDLERS = 2048
+_AUDIO_CUE_MAX_STRING = 1024
+_AUDIO_CUE_MAX_LEVEL = 128
+_AUDIO_CUE_MAX_PATH = 8192
+_AUDIO_CUE_MAX_CHILDREN = 10000
+_AUDIO_CUE_SIGNED32_MIN = -(2 ** 31)
+_AUDIO_CUE_SIGNED32_MAX = (2 ** 31) - 1
+_AUDIO_CUE_MAX_INT = _AUDIO_CUE_SIGNED32_MAX
+_AUDIO_CUE_MAX_FLOAT = 3.4028234663852886e38
+
+
+def _audio_cue_diagnostic(
+    diagnostics: list[dict[str, Any]],
+    *,
+    code: str,
+    path: str,
+    detail: str,
+) -> None:
+    """Append one bounded, deterministic AST validation diagnostic."""
+
+    if len(diagnostics) >= _AUDIO_CUE_MAX_DIAGNOSTICS:
+        return
+    diagnostics.append({
+        "code": str(code),
+        "path": str(path)[:_AUDIO_CUE_MAX_DIAGNOSTIC_TEXT],
+        "detail": str(detail)[:_AUDIO_CUE_MAX_DIAGNOSTIC_TEXT],
+    })
+
+
+def _audio_cue_scalar_valid(field: str, value: Any) -> bool:
+    if field == "exprType":
+        return (
+            isinstance(value, int)
+            and not isinstance(value, bool)
+            and _AUDIO_CUE_SIGNED32_MIN <= value <= _AUDIO_CUE_SIGNED32_MAX
+        )
+    if field == "boolValue":
+        return isinstance(value, bool)
+    if field == "intValue":
+        return (
+            isinstance(value, int)
+            and not isinstance(value, bool)
+            and _AUDIO_CUE_SIGNED32_MIN <= value <= _AUDIO_CUE_SIGNED32_MAX
+        )
+    if field == "floatValue":
+        if not isinstance(value, (int, float)) or isinstance(value, bool):
+            return False
+        # ``float(10**10000)`` raises OverflowError.  Validation must never
+        # turn hostile serialized input into a parser exception.
+        try:
+            numeric = float(value)
+        except (OverflowError, ValueError, TypeError):
+            return False
+        return math.isfinite(numeric) and abs(numeric) <= _AUDIO_CUE_MAX_FLOAT
+    if field == "stringValue":
+        return isinstance(value, str)
+    return True
+
+
+def _audio_cue_safe_scalar(field: str, value: Any) -> Any:
+    """Return a bounded scalar suitable for AST/debug payloads."""
+
+    if field == "stringValue":
+        return value[:_AUDIO_CUE_MAX_STRING] if isinstance(value, str) else None
+    if field in {"exprType", "intValue"}:
+        return value if _audio_cue_scalar_valid(field, value) else None
+    if field == "floatValue":
+        return value if _audio_cue_scalar_valid(field, value) else None
+    if field == "boolValue":
+        return value if isinstance(value, bool) else None
+    return None
+
+
+def _audio_cue_raw_scalars(value: dict[str, Any]) -> dict[str, Any]:
+    """Retain exact scalar keys while bounding every value."""
+
+    return {
+        str(key): _audio_cue_safe_scalar(str(key), item)
+        for key, item in value.items()
+        if key in _AUDIO_CUE_EXPRESSION_KEYS
+        and key != "children"
+    }
+
+
+def _audio_cue_safe_segment(value: Any) -> str | None:
+    """Encode an authored level key so it cannot inject path syntax."""
+
+    text = str(value)
+    if len(text) <= _AUDIO_CUE_MAX_LEVEL and re.fullmatch(r"[A-Za-z0-9_.-]*", text):
+        return text
+    encoded = text.encode("utf-8", "backslashreplace").hex()
+    # Keep the complete bounded input encoding.  A prefix would allow two
+    # distinct level IDs to collapse to one path.
+    if len(encoded) > _AUDIO_CUE_MAX_LEVEL * 2:
+        return None
+    return f"hex_{encoded}"
+
+
+def _audio_cue_bounded_path(value: str) -> str | None:
+    """Keep a path only when complete; never truncate path coordinates."""
+
+    return value if isinstance(value, str) and len(value) <= _AUDIO_CUE_MAX_PATH else None
+
+
+def _audio_cue_compact_path(root_path: str, indices: tuple[int, ...]) -> str | None:
+    """Encode a complete bounded child-index tuple without string truncation."""
+
+    if any(index < 0 or index >= _AUDIO_CUE_MAX_CHILDREN for index in indices):
+        return None
+    # Delimit every decimal index explicitly.  Concatenated fixed-width-ish
+    # encodings can collide as soon as an index exceeds the assumed width
+    # (for example (4097, 564) versus (256, 4660)).
+    value = f"{root_path}#children/" + "/".join(str(index) for index in indices)
+    return _audio_cue_bounded_path(value)
+
+
+def walk_audio_cue_expression(
+    value: Any,
+    *,
+    cue_signed_id: int,
+    cue_id: int,
+    cue_hex: str,
+    handler_scope: str,
+    level_id: str,
+    handler_index: int,
+    expression_side: str,
+    root_field: str,
+    root_path: str,
+    source: str,
+    native_contract: dict[str, Any] | None = None,
+) -> tuple[list[AudioCueExpressionNode], list[dict[str, Any]]]:
+    """Validate and flatten one AudioCue expression tree.
+
+    This is deliberately a projection, not an evaluator.  Every emitted node
+    carries its source coordinates and the six serialized scalar fields.  A
+    malformed node is retained as an opaque node with a validation status; it
+    is never eligible to create an Event or a runtime branch claim.
+    """
+
+    nodes: list[AudioCueExpressionNode] = []
+    diagnostics: list[dict[str, Any]] = []
+
+    if (
+        not isinstance(cue_signed_id, int)
+        or isinstance(cue_signed_id, bool)
+        or not (_AUDIO_CUE_SIGNED32_MIN <= cue_signed_id <= _AUDIO_CUE_SIGNED32_MAX)
+    ):
+        _audio_cue_diagnostic(
+            diagnostics, code="cueSignedIdOutOfRange", path="expressionRoot",
+            detail="cueSignedId must be a signed 32-bit integer",
+        )
+        return [], diagnostics
+    if (
+        not isinstance(cue_id, int)
+        or isinstance(cue_id, bool)
+        or not (0 <= cue_id <= 0xFFFFFFFF)
+    ):
+        _audio_cue_diagnostic(
+            diagnostics, code="cueIdOutOfRange", path="expressionRoot",
+            detail="cueId must be an unsigned 32-bit integer",
+        )
+        return [], diagnostics
+    if not isinstance(level_id, str) or len(level_id) > _AUDIO_CUE_MAX_LEVEL:
+        _audio_cue_diagnostic(
+            diagnostics, code="levelIdTooLong", path="expressionRoot",
+            detail="handler level ID exceeds bounded length",
+        )
+        return [], diagnostics
+    if not isinstance(cue_hex, str) or len(cue_hex) > _AUDIO_CUE_MAX_LEVEL:
+        _audio_cue_diagnostic(
+            diagnostics, code="cueHexTooLong", path="expressionRoot",
+            detail="cue hex identifier exceeds bounded length",
+        )
+        return [], diagnostics
+    if not isinstance(handler_index, int) or isinstance(handler_index, bool) or handler_index < 0 or handler_index >= _AUDIO_CUE_MAX_HANDLERS:
+        _audio_cue_diagnostic(
+            diagnostics, code="handlerIndexOutOfRange", path="expressionRoot",
+            detail="handler index exceeds bounded range",
+        )
+        return [], diagnostics
+
+    native_validated = (native_contract or {}).get("status") == "validated"
+    expression_names = (native_contract or {}).get("expressionTypes") or {}
+    operator_names = (native_contract or {}).get("operatorTypes") or {}
+    bounded_root_path = _audio_cue_bounded_path(root_path)
+    if bounded_root_path is None:
+        _audio_cue_diagnostic(diagnostics, code="pathLimit", path="expressionRoot", detail="expression path exceeds bounded length")
+        return [], diagnostics
+    stack: list[tuple[Any, str, str, int, bool, int | None, tuple[int, ...]]] = [
+        (value, bounded_root_path, "", 0, True, None, ())
+    ]
+    while stack:
+        current, path, parent_path, depth, ancestor_valid, parent_operator, path_indices = stack.pop()
+        if len(nodes) >= _AUDIO_CUE_MAX_NODES:
+            _audio_cue_diagnostic(diagnostics, code="nodeLimit", path=path, detail="expression node limit reached")
+            break
+        if not isinstance(current, dict):
+            _audio_cue_diagnostic(diagnostics, code="nonDictNode", path=path, detail="expression node is not an object")
+            continue
+
+        status = "validated"
+        issues: list[str] = []
+        keys = set(current)
+        if keys != _AUDIO_CUE_EXPRESSION_KEYS:
+            status = "invalidShape"
+            issues.append("keys")
+            _audio_cue_diagnostic(
+                diagnostics, code="invalidShape", path=path,
+                detail="expression node keys must exactly be boolValue,children,exprType,floatValue,intValue,stringValue",
+            )
+        expr_type = current.get("exprType")
+        if not _audio_cue_scalar_valid("exprType", expr_type):
+            status = "badScalar"
+            issues.append("exprType")
+            _audio_cue_diagnostic(diagnostics, code="badScalar", path=f"{path}.exprType", detail="exprType must be a non-bool integer")
+        elif expr_type not in _AUDIO_CUE_EXPRESSION_KNOWN_TYPES:
+            status = "unknownExprType"
+            issues.append("exprType")
+            _audio_cue_diagnostic(diagnostics, code="unknownExprType", path=f"{path}.exprType", detail=f"unsupported exprType {expr_type!r}")
+        for field in ("boolValue", "intValue", "floatValue", "stringValue"):
+            if not _audio_cue_scalar_valid(field, current.get(field)):
+                if status == "validated":
+                    status = "badScalar"
+                issues.append(field)
+                _audio_cue_diagnostic(diagnostics, code="badScalar", path=f"{path}.{field}", detail=f"{field} has an invalid scalar type")
+        string_value = current.get("stringValue")
+        if isinstance(string_value, str) and len(string_value) > _AUDIO_CUE_MAX_STRING:
+            status = "badScalar"
+            issues.append("stringLength")
+            _audio_cue_diagnostic(diagnostics, code="stringTooLong", path=f"{path}.stringValue", detail="stringValue exceeds bounded length")
+            string_value = string_value[:_AUDIO_CUE_MAX_STRING]
+        children = current.get("children")
+        child_paths: list[str] = []
+        if not isinstance(children, list) or any(not isinstance(child, dict) for child in children):
+            if status == "validated":
+                status = "invalidShape"
+            issues.append("children")
+            _audio_cue_diagnostic(diagnostics, code="childrenNotListOfDict", path=f"{path}.children", detail="children must be a list of objects")
+        if depth >= _AUDIO_CUE_MAX_DEPTH and isinstance(children, list) and children:
+            if status == "validated":
+                status = "depthLimit"
+            issues.append("depth")
+            _audio_cue_diagnostic(diagnostics, code="depthLimit", path=path, detail="expression depth limit reached")
+            children = []
+        child_operator = (
+            current.get("intValue")
+            if native_validated and expr_type == 1 and isinstance(current.get("intValue"), int)
+            and not isinstance(current.get("intValue"), bool)
+            and current.get("intValue") in operator_names
+            else None
+        )
+        current_valid = ancestor_valid and status == "validated"
+        if native_validated and isinstance(expr_type, int) and expr_type in expression_names:
+            expr_type_name = expression_names[expr_type]
+        else:
+            expr_type_name = None
+        if native_validated and parent_operator in operator_names:
+            operator_name = operator_names[parent_operator]
+        else:
+            operator_name = None
+        variable_candidate = (
+            current_valid and expr_type == 8 and isinstance(string_value, str) and string_value.strip()
+            and operator_name in {"SetBoolVar", "GetBoolVar", "CleanBoolVar"}
+        )
+        if current_valid and expression_side == "behavior" and expr_type == 3 and isinstance(string_value, str) and string_value.strip() and not children:
+            node_class = "authoredEventRequest"
+        elif variable_candidate:
+            node_class = "authoredVariableNameCandidate"
+        elif current_valid and expr_type == 8 and isinstance(string_value, str) and string_value.strip() and not children:
+            node_class = "stringLiteral"
+        elif current_valid and isinstance(children, list) and children:
+            node_class = "compositeOpaque"
+        else:
+            node_class = "opaque"
+
+        raw_scalars = _audio_cue_raw_scalars(current)
+        safe_expr_type = _audio_cue_safe_scalar("exprType", expr_type)
+        safe_int_value = _audio_cue_safe_scalar("intValue", current.get("intValue"))
+        safe_float_value = _audio_cue_safe_scalar("floatValue", current.get("floatValue"))
+        safe_bool_value = _audio_cue_safe_scalar("boolValue", current.get("boolValue"))
+        node: AudioCueExpressionNode = {
+            "cueSignedId": cue_signed_id,
+            "cueId": cue_id,
+            "cueU32": cue_id,
+            "cueHex": cue_hex,
+            "handlerScope": handler_scope,
+            "handlerLevel": level_id,
+            "levelId": level_id,
+            "handlerIndex": handler_index,
+            "expressionSide": expression_side,
+            "rootField": root_field,
+            "expressionRootField": root_field,
+            "expressionPath": path,
+            "path": path,
+            "parentPath": parent_path,
+            "depth": depth,
+            "exprType": safe_expr_type,
+            "exprTypeName": expr_type_name,
+            "exprOperatorType": operator_name,
+            "nativeEnumStatus": "validated" if native_validated else str((native_contract or {}).get("status") or "missing"),
+            "boolValue": safe_bool_value,
+            "intValue": safe_int_value,
+            "floatValue": safe_float_value,
+            "stringValue": string_value,
+            "rawScalars": raw_scalars,
+            "rawScalar": raw_scalars,
+            "childPaths": child_paths,
+            "nodeClass": node_class,
+            "validationStatus": status if ancestor_valid else "ancestorInvalid",
+            "validationIssues": issues[:8],
+            "source": source[:_AUDIO_CUE_MAX_PATH],
+        }
+        nodes.append(node)
+        if not isinstance(children, list):
+            children = []
+        for index in range(min(len(children), _AUDIO_CUE_MAX_CHILDREN) - 1, -1, -1):
+            child = children[index]
+            child_indices = path_indices + (index,)
+            child_path = (
+                _audio_cue_compact_path(root_path, child_indices)
+                if "#children/" in path
+                else _audio_cue_bounded_path(f"{path}.children[{index}]")
+            )
+            if child_path is None:
+                child_path = _audio_cue_compact_path(root_path, child_indices)
+            if child_path is None:
+                _audio_cue_diagnostic(
+                    diagnostics, code="pathLimit", path=path,
+                    detail="child expression path exceeds bounded length",
+                )
+                continue
+            child_paths.insert(0, child_path)
+            if isinstance(child, dict):
+                stack.append((child, child_path, path, depth + 1, current_valid, child_operator, child_indices))
+        if isinstance(children, list) and len(children) > _AUDIO_CUE_MAX_CHILDREN:
+            _audio_cue_diagnostic(
+                diagnostics, code="childrenLimit", path=f"{path}.children",
+                detail="child list exceeds bounded length",
+            )
+    return nodes, diagnostics
+
+
 def _iter_audio_cue_expression_nodes(value: Any, path: str) -> Iterable[tuple[dict[str, Any], str]]:
+    """Compatibility iterator for callers that only need valid object nodes."""
+
     if not isinstance(value, dict):
         return
-    yield value, path
-    for index, child in enumerate(value.get("children") or []):
-        if isinstance(child, dict):
-            yield from _iter_audio_cue_expression_nodes(child, f"{path}.children[{index}]")
+    stack: list[tuple[dict[str, Any], str]] = [(value, path)]
+    while stack:
+        current, current_path = stack.pop()
+        yield current, current_path
+        children = current.get("children")
+        if not isinstance(children, list):
+            continue
+        for index in range(len(children) - 1, -1, -1):
+            child = children[index]
+            if isinstance(child, dict):
+                stack.append((child, f"{current_path}.children[{index}]"))
 
 
-def collect_audio_cue_semantics(export_root: Path) -> dict[str, Any]:
-    """Split AudioCue Event requests from runtime expression operands."""
+def collect_audio_cue_semantics(
+    export_root: Path,
+    *,
+    native_context: Any | None = None,
+) -> dict[str, Any]:
+    """Project AudioCue definitions without evaluating their expressions."""
 
     table_path = next((
         export_root / "structured" / source_root / "Table" / "AudioCueTable.json"
@@ -466,10 +835,12 @@ def collect_audio_cue_semantics(export_root: Path) -> dict[str, Any]:
     ), None)
     payload = load_json(table_path, {}) if table_path else {}
     source = normalize_posix(table_path.relative_to(export_root)) if table_path else ""
+    native_contract = audio_cue_native.exact_native_audio_cue_contract(native_context)
     contexts: dict[str, list[dict[str, Any]]] = defaultdict(list)
     seen: dict[str, set[str]] = defaultdict(set)
     operands: list[dict[str, Any]] = []
     definitions: dict[int, dict[str, Any]] = {}
+    all_diagnostics: list[dict[str, Any]] = []
 
     for raw_cue_id, row in sorted((payload.items() if isinstance(payload, dict) else []), key=lambda item: str(item[0])):
         if not isinstance(row, dict):
@@ -478,96 +849,241 @@ def collect_audio_cue_semantics(export_root: Path) -> dict[str, Any]:
             cue_signed_id = int(raw_cue_id)
         except (TypeError, ValueError):
             continue
+        if not (_AUDIO_CUE_SIGNED32_MIN <= cue_signed_id <= _AUDIO_CUE_SIGNED32_MAX):
+            _audio_cue_diagnostic(
+                all_diagnostics,
+                code="cueSignedIdOutOfRange",
+                path="AudioCueTable.cueId",
+                detail="cueSignedId must be a signed 32-bit integer",
+            )
+            continue
         cue_id = cue_signed_id & 0xFFFFFFFF
-        definition = {
+        cue_hex = f"0x{cue_id:08x}"
+        cue_path_id = str(cue_signed_id)
+        definition: dict[str, Any] = {
             "cueSignedId": cue_signed_id,
             "cueId": cue_id,
-            "cueHex": f"0x{cue_id:08x}",
-            "source": source,
+            "cueU32": cue_id,
+            "cueHex": cue_hex,
+            "source": source[:_AUDIO_CUE_MAX_PATH],
             "handlerCount": 0,
             "directHandlerCount": 0,
             "levelHandlerCount": 0,
             "behaviorEvents": [],
             "expressionOperands": [],
+            "expressionAst": [],
+            "expressionDiagnostics": [],
         }
 
         handlers: list[tuple[str, str, int, dict[str, Any]]] = []
-        for handler_index, handler in enumerate(row.get("directHandlers") or []):
+        handler_limit_hit = False
+        direct_handlers = row.get("directHandlers", [])
+        if not isinstance(direct_handlers, list):
+            _audio_cue_diagnostic(
+                definition["expressionDiagnostics"], code="directHandlersNotList",
+                path=f"{raw_cue_id}.directHandlers", detail="directHandlers must be a list",
+            )
+            direct_handlers = []
+        for handler_index, handler in enumerate(direct_handlers):
+            if handler_index >= _AUDIO_CUE_MAX_HANDLERS or len(handlers) >= _AUDIO_CUE_MAX_HANDLERS:
+                handler_limit_hit = True
+                break
             if isinstance(handler, dict):
                 handlers.append(("direct", "", handler_index, handler))
-        level_map = row.get("levelHandlerMap") if isinstance(row.get("levelHandlerMap"), dict) else {}
+            else:
+                _audio_cue_diagnostic(
+                    definition["expressionDiagnostics"], code="nonDictHandler",
+                    path=f"{raw_cue_id}.directHandlers[{handler_index}]", detail="handler must be an object",
+                )
+
+        raw_level_map = row.get("levelHandlerMap")
+        level_map = raw_level_map if isinstance(raw_level_map, dict) else {}
+        if raw_level_map not in (None, {}) and not isinstance(raw_level_map, dict):
+            _audio_cue_diagnostic(
+                definition["expressionDiagnostics"], code="levelHandlerMapNotObject",
+                path=f"{raw_cue_id}.levelHandlerMap", detail="levelHandlerMap must be an object",
+            )
         for level_id, wrapper in sorted(level_map.items(), key=lambda item: str(item[0])):
+            level_key = str(level_id)
+            safe_level = _audio_cue_safe_segment(level_key)
+            if safe_level is None:
+                _audio_cue_diagnostic(
+                    definition["expressionDiagnostics"], code="levelIdTooLong",
+                    path=f"{cue_path_id}.levelHandlerMap", detail="levelId exceeds bounded length",
+                )
+                continue
+            level_path = _audio_cue_bounded_path(
+                f"{cue_path_id}.levelHandlerMap[{safe_level}]"
+            )
+            if level_path is None:
+                _audio_cue_diagnostic(
+                    definition["expressionDiagnostics"], code="pathLimit",
+                    path=f"{cue_path_id}.levelHandlerMap", detail="level handler path exceeds bounded length",
+                )
+                continue
             level_handlers = wrapper.get("handlers") if isinstance(wrapper, dict) else wrapper
+            if isinstance(wrapper, dict) and "handlers" not in wrapper:
+                _audio_cue_diagnostic(
+                    definition["expressionDiagnostics"], code="levelHandlersMissing",
+                    path=f"{level_path}.handlers", detail="level handler wrapper has no handlers list",
+                )
+                level_handlers = []
             if not isinstance(level_handlers, list):
+                _audio_cue_diagnostic(
+                    definition["expressionDiagnostics"], code="levelHandlersNotList",
+                    path=f"{level_path}.handlers", detail="level handlers must be a list",
+                )
                 continue
             for handler_index, handler in enumerate(level_handlers):
+                if handler_index >= _AUDIO_CUE_MAX_HANDLERS or len(handlers) >= _AUDIO_CUE_MAX_HANDLERS:
+                    handler_limit_hit = True
+                    break
                 if isinstance(handler, dict):
-                    handlers.append(("level", str(level_id), handler_index, handler))
+                    handlers.append(("level", level_key, handler_index, handler))
+                else:
+                    _audio_cue_diagnostic(
+                        definition["expressionDiagnostics"], code="nonDictHandler",
+                        path=f"{level_path}.handlers[{handler_index}]", detail="handler must be an object",
+                    )
 
-        for handler_scope, level_id, handler_index, handler in handlers:
+        if handler_limit_hit or len(handlers) > _AUDIO_CUE_MAX_HANDLERS:
+            _audio_cue_diagnostic(
+                definition["expressionDiagnostics"], code="handlerLimit",
+                path=str(cue_signed_id), detail="AudioCue handler limit reached",
+            )
+        for handler_scope, level_id, handler_index, handler in handlers[:_AUDIO_CUE_MAX_HANDLERS]:
             definition["handlerCount"] += 1
             definition[f"{handler_scope}HandlerCount"] += 1
             handler_base = (
-                f"{raw_cue_id}.directHandlers[{handler_index}]"
+                f"{cue_path_id}.directHandlers[{handler_index}]"
                 if handler_scope == "direct"
-                else f"{raw_cue_id}.levelHandlerMap[{level_id}].handlers[{handler_index}]"
+                else f"{cue_path_id}.levelHandlerMap[{_audio_cue_safe_segment(level_id)}].handlers[{handler_index}]"
             )
             for expression_side, root_name in (("behavior", "behaviourExpr"), ("condition", "conditionExpr")):
-                for node, expression_path in _iter_audio_cue_expression_nodes(
+                root_path = f"{handler_base}.{root_name}"
+                if root_name not in handler:
+                    _audio_cue_diagnostic(
+                        definition["expressionDiagnostics"], code="missingRoot",
+                        path=root_path, detail="expression root is absent",
+                    )
+                    continue
+                nodes, diagnostics = walk_audio_cue_expression(
                     handler.get(root_name),
-                    f"{handler_base}.{root_name}",
-                ):
-                    try:
-                        expr_type = int(node.get("exprType"))
-                    except (TypeError, ValueError):
-                        continue
-                    string_value = str(node.get("stringValue") or "").strip()
+                    cue_signed_id=cue_signed_id, cue_id=cue_id, cue_hex=cue_hex,
+                    handler_scope=handler_scope, level_id=level_id,
+                    handler_index=handler_index, expression_side=expression_side,
+                    root_field=root_name, root_path=root_path, source=source,
+                    native_contract=native_contract,
+                )
+                definition["expressionAst"].extend(nodes)
+                for diagnostic in diagnostics:
+                    _audio_cue_diagnostic(
+                        definition["expressionDiagnostics"],
+                        code=diagnostic.get("code", "invalidNode"),
+                        path=diagnostic.get("path", root_path),
+                        detail=diagnostic.get("detail", "invalid expression node"),
+                    )
+                for node in nodes:
+                    string_value = node.get("stringValue") if isinstance(node.get("stringValue"), str) else ""
                     common = {
-                        "cueSignedId": cue_signed_id,
-                        "cueId": cue_id,
-                        "cueHex": f"0x{cue_id:08x}",
-                        "handlerScope": handler_scope,
-                        "handlerIndex": handler_index,
-                        "expressionSide": expression_side,
-                        "expressionPath": expression_path,
-                        "exprType": expr_type,
-                        "boolValue": bool(node.get("boolValue")),
-                        "intValue": node.get("intValue"),
-                        "floatValue": node.get("floatValue"),
-                        "stringValue": string_value,
-                        "source": source,
+                        key: node.get(key)
+                        for key in (
+                            "cueSignedId", "cueId", "cueU32", "cueHex", "handlerScope", "handlerLevel",
+                            "levelId", "handlerIndex", "expressionSide", "rootField", "expressionRootField",
+                            "expressionPath", "path", "parentPath", "depth", "exprType", "boolValue",
+                            "intValue", "floatValue", "stringValue", "childPaths", "nodeClass",
+                            "validationStatus", "exprTypeName", "exprOperatorType", "nativeEnumStatus", "source",
+                        )
                     }
-                    if level_id:
-                        common["levelId"] = level_id
-                    if expression_side == "behavior" and expr_type == 3 and string_value:
+                    if node.get("nodeClass") == "authoredEventRequest":
+                        event_id = string_value.strip()
                         context = {
-                            "kind": "audioCueBehaviorEvent",
-                            "table": "AudioCueTable",
+                            "kind": "audioCueBehaviorEvent", "table": "AudioCueTable",
                             "semanticRole": "cueBehaviorEventRequest",
+                            "expressionNodeClass": "authoredEventRequest",
                             "evidence": "exactAudioCueBehaviorExpression",
                             "triggerRequestEvidence": ["audioCueBehaviorExprType3"],
-                            "triggerRuntimeActivationStatuses": ["cueInvocationAndExpressionEvaluationRequired"],
-                            **common,
+                            "triggerRuntimeActivationStatuses": [
+                                "cueInvocationAndExpressionEvaluationRequired", "audioEventRuntimePlaybackUnobserved",
+                            ],
+                            **common, "expressionNodeClass": "authoredEventRequest", "eventName": event_id,
                         }
-                        _append_context(contexts, seen, string_value, context)
-                        definition["behaviorEvents"].append({"eventId": string_value, **context})
-                    elif expr_type == 8 and string_value:
+                        _append_context(contexts, seen, event_id, context)
+                        definition["behaviorEvents"].append({"eventId": event_id, **context})
+                    elif node.get("nodeClass") == "authoredVariableNameCandidate":
                         operand = {
-                            "kind": "audioCueExpressionOperand",
-                            "semanticRole": "runtimeCueVariable",
-                            "wwiseEventStatus": "notApplicable",
-                            "evidence": "exactAudioCueExpressionOperand",
-                            **common,
+                            "kind": "audioCueExpressionOperand", "semanticRole": "authoredVariableNameCandidate",
+                            "wwiseEventStatus": "notApplicable", "runtimeObservationStatus": "unobserved",
+                            "evidence": "exactAudioCueExpressionOperand", **common,
                         }
                         operands.append(operand)
                         definition["expressionOperands"].append(operand)
+
+        definition["expressionNodeCount"] = len(definition["expressionAst"])
+        definition["expressionDiagnosticCount"] = len(definition["expressionDiagnostics"])
+        class_counts: Counter[str] = Counter(
+            str(node.get("nodeClass") or "opaque") for node in definition["expressionAst"]
+        )
+        definition["expressionNodeClassCounts"] = dict(sorted(class_counts.items()))
+        all_diagnostics.extend(definition["expressionDiagnostics"])
         definitions[cue_id] = definition
 
     return {
+        "audioCueExpressionSchemaVersion": AUDIO_CUE_EXPRESSION_SCHEMA_VERSION,
+        "audioCueNativeContract": native_contract,
         "eventContexts": dict(contexts),
         "expressionOperands": operands,
         "cueDefinitions": definitions,
+        "diagnostics": all_diagnostics[:_AUDIO_CUE_MAX_DIAGNOSTICS],
         "source": source,
+    }
+
+
+def audio_cue_expression_detail_for_contexts(
+    contexts: Iterable[dict[str, Any]],
+    cue_semantics: dict[str, Any],
+) -> dict[str, Any] | None:
+    """Return full AST detail for a lazy Event detail row.
+
+    Definitions are selected only from exact cue IDs carried by Event
+    contexts.  A missing definition intentionally returns no AST; callers can
+    retain their invocation context without turning it into an Event.
+    """
+
+    definitions = cue_semantics.get("cueDefinitions") if isinstance(cue_semantics, dict) else {}
+    if not isinstance(definitions, dict):
+        return None
+    cue_ids: set[int] = set()
+    for context in contexts or ():
+        if not isinstance(context, dict):
+            continue
+        for key in ("cueId", "cueU32"):
+            value = context.get(key)
+            if isinstance(value, int) and not isinstance(value, bool):
+                cue_ids.add(value & 0xFFFFFFFF)
+    rows: list[dict[str, Any]] = []
+    for cue_id in sorted(cue_ids):
+        definition = definitions.get(cue_id)
+        if not isinstance(definition, dict):
+            continue
+        rows.append({
+            key: definition.get(key)
+            for key in (
+                "cueSignedId", "cueId", "cueU32", "cueHex", "source",
+                "handlerCount", "directHandlerCount", "levelHandlerCount",
+                "expressionNodeCount", "expressionDiagnosticCount",
+                "expressionNodeClassCounts", "expressionAst", "expressionDiagnostics",
+            )
+            if key in definition
+        })
+    if not rows:
+        return None
+    return {
+        "audioCueExpressionSchemaVersion": int(
+            cue_semantics.get("audioCueExpressionSchemaVersion")
+            or AUDIO_CUE_EXPRESSION_SCHEMA_VERSION
+        ),
+        "definitions": rows,
     }
 
 

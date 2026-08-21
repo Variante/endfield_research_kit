@@ -100,7 +100,7 @@ PROJECTILE_SOUND_PHASES = {
 # authoritative value; these names are presentation labels, not a claim that
 # selection behavior was evaluated offline.
 SELECTION_HIRC_TYPES = frozenset({5, 6, 12, 13})
-AUDIO_SEMANTIC_SCHEMA_VERSION = 113
+AUDIO_SEMANTIC_SCHEMA_VERSION = 114
 TRIGGER_CONTEXT_SCHEMA_VERSION = 38
 
 MONO_BEHAVIOUR_AUDIO_EVENT_FIELD_NAMES = frozenset({
@@ -12204,7 +12204,10 @@ def build_audio_semantic_data(
         native_context=native_context,
         current_wwise_event_hashes=current_wwise_event_hashes,
     )
-    cue_semantics = table_contexts.collect_audio_cue_semantics(export_root)
+    cue_semantics = table_contexts.collect_audio_cue_semantics(
+        export_root,
+        native_context=native_context,
+    )
     global_controls = table_contexts.collect_audio_global_control_semantics(
         export_root, cue_semantics
     )
@@ -12408,6 +12411,14 @@ def build_audio_semantic_data(
         rtpc_names_by_hex=rtpc_names_by_hex,
         metadata_event_symbols=metadata_event_symbol_catalog.get("entries") or [],
     )
+    # Full AudioCue ASTs are detail-only.  Event list rows remain compact;
+    # ``event_summary`` intentionally does not project this payload.
+    for event in events:
+        cue_detail = table_contexts.audio_cue_expression_detail_for_contexts(
+            event.get("contexts") or [], cue_semantics
+        )
+        if cue_detail:
+            event["audioCueExpressionDetail"] = cue_detail
     action_control_evidence_by_event = {
         str(event.get("id") or ""): list(event.get("evidence") or [])
         for event in events
@@ -12760,6 +12771,10 @@ def build_audio_semantic_data(
 
     payload = {
         "schemaVersion": AUDIO_SEMANTIC_SCHEMA_VERSION,
+        "audioCueExpressionSchemaVersion": int(
+            cue_semantics.get("audioCueExpressionSchemaVersion")
+            or table_contexts.AUDIO_CUE_EXPRESSION_SCHEMA_VERSION
+        ),
         "generated": audio_index.get("generated") or time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "language": language,
         "debugOnly": False,
@@ -13296,13 +13311,38 @@ def build_audio_semantic_data(
             },
         },
         "controlCatalog": {
-            "schemaVersion": 1,
+            "schemaVersion": 2,
+            "audioCueExpressionSchemaVersion": int(
+                cue_semantics.get("audioCueExpressionSchemaVersion")
+                or table_contexts.AUDIO_CUE_EXPRESSION_SCHEMA_VERSION
+            ),
+            "audioCueNativeContract": cue_semantics.get("audioCueNativeContract") or {},
             "counts": {
                 "audioCueDefinitions": len(cue_semantics.get("cueDefinitions") or {}),
                 "audioCueBehaviorEventContexts": sum(
                     len(rows) for rows in (cue_semantics.get("eventContexts") or {}).values()
                 ),
                 "audioCueExpressionOperands": len(cue_semantics.get("expressionOperands") or []),
+                "audioCueExpressionStringLiterals": sum(
+                    int((definition.get("expressionNodeClassCounts") or {}).get("stringLiteral", 0))
+                    for definition in (cue_semantics.get("cueDefinitions") or {}).values()
+                    if isinstance(definition, dict)
+                ),
+                "audioCueVariableNameCandidates": sum(
+                    int((definition.get("expressionNodeClassCounts") or {}).get("authoredVariableNameCandidate", 0))
+                    for definition in (cue_semantics.get("cueDefinitions") or {}).values()
+                    if isinstance(definition, dict)
+                ),
+                "audioCueExpressionNodes": sum(
+                    int(definition.get("expressionNodeCount") or 0)
+                    for definition in (cue_semantics.get("cueDefinitions") or {}).values()
+                    if isinstance(definition, dict)
+                ),
+                "audioCueExpressionDiagnostics": sum(
+                    int(definition.get("expressionDiagnosticCount") or 0)
+                    for definition in (cue_semantics.get("cueDefinitions") or {}).values()
+                    if isinstance(definition, dict)
+                ),
                 "audioGlobalMusicCueRefs": len(global_controls.get("audioGlobalMusicCueRefs") or []),
                 "audioGlobalMusicCueRefsResolved": sum(
                     row.get("definitionStatus") == "resolved"
@@ -13363,15 +13403,6 @@ def build_audio_semantic_data(
                     for row in wwise_initial_rtpc_catalog
                 ),
             },
-            "audioCueDefinitions": [
-                {key: value for key, value in definition.items() if key not in {"behaviorEvents", "expressionOperands"}}
-                | {
-                    "behaviorEventCount": len(definition.get("behaviorEvents") or []),
-                    "expressionOperandCount": len(definition.get("expressionOperands") or []),
-                }
-                for definition in (cue_semantics.get("cueDefinitions") or {}).values()
-            ],
-            "audioCueExpressionOperands": cue_semantics.get("expressionOperands") or [],
             "audioGlobalMusicCueRefs": global_controls.get("audioGlobalMusicCueRefs") or [],
             "rtpcParameters": (global_controls.get("rtpcParameters") or []) + managed_rtpc_parameters,
             "physicsAudioRtpcParameters": physics_audio_semantics.get("rtpcParameters") or [],
