@@ -19,6 +19,19 @@ SPEC.loader.exec_module(MODULE)
 
 
 class LitEffectResourceMappingTests(unittest.TestCase):
+    def test_mesh_probe_evidence_is_pinned_and_fail_closed(self) -> None:
+        probe = HERE / "verify_endminf_liteffect_mesh_probe.py"
+        spec = importlib.util.spec_from_file_location("mesh_probe", probe)
+        assert spec and spec.loader
+        mesh = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mesh)
+        report = HERE.parent / "Assets" / "EndfieldGraphShaderLab" / "Generated" / "Characters" / "Playable" / "Endminf" / "ExternalUiEffects" / "endminf_liteffect_mesh_probe_evidence.json"
+        evidence = json.loads(report.read_text(encoding="utf-8"))
+        self.assertEqual(evidence["mesh"]["exportSha256"], mesh.EXPECTED["sha256"])
+        self.assertIsNone(evidence["channels"]["COLOR"])
+        with self.assertRaises(RuntimeError):
+            mesh.verify(HERE / "does-not-exist.json")
+
     def test_representative_contract_is_reflected_without_rdef(self) -> None:
         report = MODULE.build_report()
         self.assertEqual(report["status"], "verified_with_gaps")
