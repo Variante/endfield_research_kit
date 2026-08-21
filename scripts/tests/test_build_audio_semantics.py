@@ -8,6 +8,7 @@ from unittest.mock import patch
 
 from scripts import build_audio_semantics as audio_semantics
 from scripts.audio_semantics import (
+    audio_cue_native,
     authored_components,
     event_projection,
     event_summary,
@@ -6473,11 +6474,7 @@ class AudioSemanticDataTests(unittest.TestCase):
                             "boolValue": False,
                             "intValue": 0,
                             "floatValue": 0.0,
-                            "children": [{
-                                "exprType": 8,
-                                "stringValue": "au_trigger_behavior_operand",
-                                "children": [],
-                            }],
+                            "children": [],
                         },
                         "conditionExpr": {
                             "exprType": 2,
@@ -6497,9 +6494,12 @@ class AudioSemanticDataTests(unittest.TestCase):
                             "behaviourExpr": {
                                 "exprType": 3,
                                 "stringValue": "au_music_level",
+                                "boolValue": False,
+                                "intValue": 0,
+                                "floatValue": 0.0,
                                 "children": [],
                             },
-                            "conditionExpr": {"exprType": 0, "stringValue": "", "children": []},
+                            "conditionExpr": {"exprType": 0, "stringValue": "", "boolValue": False, "intValue": 0, "floatValue": 0.0, "children": []},
                         }]},
                     },
                 },
@@ -6512,11 +6512,7 @@ class AudioSemanticDataTests(unittest.TestCase):
             self.assertEqual(level["handlerScope"], "level")
             self.assertEqual(level["levelId"], "map_test")
             self.assertEqual(level["cueId"], 0xFFFFFFFE)
-            self.assertEqual(len(semantics["expressionOperands"]), 2)
-            self.assertEqual(
-                {row["stringValue"] for row in semantics["expressionOperands"]},
-                {"au_trigger_behavior_operand", "au_trigger_condition_operand"},
-            )
+            self.assertEqual(semantics["expressionOperands"], [])
             self.assertEqual(
                 table_contexts.collect_table_audio_events(root)[0],
                 {"au_music_direct", "au_music_level"},
@@ -6530,8 +6526,8 @@ class AudioSemanticDataTests(unittest.TestCase):
             table_path.write_text(json.dumps({
                 "123": {
                     "directHandlers": [{
-                        "behaviourExpr": {"exprType": 3, "stringValue": "au_music_fixture", "children": []},
-                        "conditionExpr": {"exprType": 0, "stringValue": "", "children": []},
+                        "behaviourExpr": {"exprType": 3, "stringValue": "au_music_fixture", "boolValue": False, "intValue": 0, "floatValue": 0.0, "children": []},
+                        "conditionExpr": {"exprType": 0, "stringValue": "", "boolValue": False, "intValue": 0, "floatValue": 0.0, "children": []},
                     }],
                     "levelHandlerMap": {},
                 },
@@ -6560,6 +6556,233 @@ class AudioSemanticDataTests(unittest.TestCase):
             contexts = table_contexts.collect_table_contexts(root)
             self.assertIn("au_music_fixture", contexts)
             self.assertNotIn("#0xfffffffe", contexts)
+
+    def test_audio_cue_expression_ast_is_typed_recursive_and_fail_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            root = Path(raw_root)
+            table_path = root / "structured/StreamingAssets/Table/AudioCueTable.json"
+            table_path.parent.mkdir(parents=True)
+            table_path.write_text(json.dumps({
+                "-7": {
+                    "directHandlers": [{
+                        "behaviourExpr": {
+                            "exprType": 2,
+                            "stringValue": " au_authored ",
+                            "boolValue": False,
+                            "intValue": 0,
+                            "floatValue": 0.0,
+                            "children": [
+                                {"exprType": 8, "stringValue": "runtime_key", "boolValue": False, "intValue": 0, "floatValue": 0.0, "children": []},
+                                {"exprType": 2, "stringValue": "", "boolValue": False, "intValue": 0, "floatValue": 0.0, "children": [{"exprType": 0, "stringValue": "", "boolValue": False, "intValue": 0, "floatValue": 0.0, "children": []}]},
+                                {"exprType": 99, "stringValue": "unknown", "boolValue": False, "intValue": 0, "floatValue": 0.0, "children": []},
+                            ],
+                        },
+                        "conditionExpr": {"exprType": 8, "stringValue": "condition_key", "boolValue": False, "intValue": 0, "floatValue": 0.0, "children": []},
+                    }],
+                    "levelHandlerMap": {"map_fixture": {"handlers": [{
+                        "behaviourExpr": {"exprType": 3, "stringValue": " au_level ", "boolValue": False, "intValue": 0, "floatValue": 0.0, "children": []},
+                        "conditionExpr": {"exprType": 3, "stringValue": "bad_shape", "boolValue": False, "intValue": 0, "floatValue": 0.0, "children": "not-a-list"},
+                    }]}},
+                },
+            }), encoding="utf-8")
+
+            semantics = table_contexts.collect_audio_cue_semantics(root)
+
+        definition = semantics["cueDefinitions"][0xFFFFFFF9]
+        nodes = definition["expressionAst"]
+        by_path = {node["path"]: node for node in nodes}
+        authored = by_path["-7.directHandlers[0].behaviourExpr"]
+        self.assertEqual(authored["nodeClass"], "compositeOpaque")
+        self.assertEqual(authored["cueSignedId"], -7)
+        self.assertEqual(authored["cueU32"], 0xFFFFFFF9)
+        self.assertEqual(authored["depth"], 0)
+        self.assertEqual(authored["childPaths"][0], "-7.directHandlers[0].behaviourExpr.children[0]")
+        self.assertEqual(by_path[authored["childPaths"][0]]["nodeClass"], "stringLiteral")
+        self.assertEqual(by_path[authored["childPaths"][0]]["parentPath"], authored["path"])
+        self.assertEqual(by_path["-7.directHandlers[0].behaviourExpr.children[1]"]["nodeClass"], "compositeOpaque")
+        self.assertEqual(by_path["-7.directHandlers[0].behaviourExpr.children[2]"]["validationStatus"], "unknownExprType")
+        self.assertEqual(
+            by_path["-7.levelHandlerMap[map_fixture].handlers[0].conditionExpr"]["validationStatus"],
+            "invalidShape",
+        )
+        self.assertEqual(semantics["expressionOperands"], [])
+        self.assertTrue(any(row["code"] == "unknownExprType" for row in semantics["diagnostics"]))
+        self.assertTrue(any(row["code"] == "childrenNotListOfDict" for row in semantics["diagnostics"]))
+
+        detail = table_contexts.audio_cue_expression_detail_for_contexts(
+            semantics["eventContexts"]["au_level"], semantics
+        )
+        self.assertEqual(detail["audioCueExpressionSchemaVersion"], 1)
+        summary = event_summary.event_summary_row({
+            "id": "au_level",
+            "contexts": semantics["eventContexts"]["au_level"],
+            "audioCueExpressionDetail": detail,
+        }, "event_details/00.json")
+        self.assertNotIn("audioCueExpressionDetail", summary)
+
+        missing = audio_semantics.build_timeline_audio_cue_contexts(
+            {"occurrencesByCue": {"missing": [{"cueName": "au_missing", "cueRole": "start"}]}},
+            semantics,
+        )
+        self.assertEqual(len(missing["invocations"]), 1)
+        self.assertEqual(missing["invocations"][0]["definitionStatus"], "missing")
+        self.assertEqual(missing["eventContexts"], {})
+
+    def test_audio_cue_native_gate_and_iterative_bound_are_fail_closed(self) -> None:
+        missing = audio_cue_native.exact_native_audio_cue_contract(None)
+        self.assertEqual(missing["status"], "missing")
+        self.assertEqual(missing["expressionTypes"], {})
+        mismatched = audio_cue_native.exact_native_audio_cue_contract(
+            native_evidence.NativeAudioEvidence(
+                Path("metadata"), Path("GameAssembly.dll"), "mismatched",
+                audio_cue_native.native_evidence.EXPECTED_METADATA_SHA256,
+                audio_cue_native.native_evidence.EXPECTED_GAMEASSEMBLY_SHA256,
+                gate_verified=True,
+            )
+        )
+        self.assertEqual(mismatched["operatorTypes"], {})
+        exact_context = native_evidence.NativeAudioEvidence(
+            Path("metadata"), Path("GameAssembly.dll"), "validated",
+            audio_cue_native.native_evidence.EXPECTED_METADATA_SHA256,
+            audio_cue_native.native_evidence.EXPECTED_GAMEASSEMBLY_SHA256,
+            gate_verified=True,
+        )
+        exact = audio_cue_native.exact_native_audio_cue_contract(exact_context)
+        self.assertEqual(exact["expressionTypes"][8], "STRING_LITERAL")
+        self.assertEqual(exact["operatorTypes"][149], "GetBoolVar")
+
+        def node(expr_type: int, *, children: list[dict[str, object]] | None = None, int_value: int = 0) -> dict[str, object]:
+            return {
+                "boolValue": False, "children": children or [], "exprType": expr_type,
+                "floatValue": 0.0, "intValue": int_value, "stringValue": "",
+            }
+
+        deep = node(1)
+        cursor = deep
+        for _ in range(1100):
+            child = node(1)
+            cursor["children"] = [child]
+            cursor = child
+        nodes, diagnostics = table_contexts.walk_audio_cue_expression(
+            deep, cue_signed_id=1, cue_id=1, cue_hex="0x00000001", handler_scope="direct",
+            level_id="", handler_index=0, expression_side="behavior", root_field="behaviourExpr",
+            root_path="1.directHandlers[0].behaviourExpr", source="fixture",
+            native_contract=exact,
+        )
+        self.assertLessEqual(len(nodes), 1025)
+        self.assertTrue(any(row["code"] == "depthLimit" for row in diagnostics))
+        self.assertNotIn("authoredEventRequest", {row["nodeClass"] for row in nodes})
+        bad_shape = node(3)
+        bad_shape.pop("floatValue")
+        bad_nodes, bad_diagnostics = table_contexts.walk_audio_cue_expression(
+            bad_shape, cue_signed_id=1, cue_id=1, cue_hex="0x00000001", handler_scope="direct",
+            level_id="", handler_index=0, expression_side="behavior", root_field="behaviourExpr",
+            root_path="1.directHandlers[0].behaviourExpr", source="fixture", native_contract=exact,
+        )
+        self.assertEqual(bad_nodes[0]["validationStatus"], "invalidShape")
+        self.assertEqual(bad_nodes[0]["nodeClass"], "opaque")
+        self.assertTrue(any(row["code"] == "invalidShape" for row in bad_diagnostics))
+        binary = node(1, children=[{**node(8), "stringValue": "flag_name"}], int_value=149)
+        binary_nodes, _ = table_contexts.walk_audio_cue_expression(
+            binary, cue_signed_id=1, cue_id=1, cue_hex="0x00000001", handler_scope="direct",
+            level_id="", handler_index=0, expression_side="condition", root_field="conditionExpr",
+            root_path="1.directHandlers[0].conditionExpr", source="fixture", native_contract=exact,
+        )
+        candidate = binary_nodes[1]
+        self.assertEqual(candidate["exprTypeName"], "STRING_LITERAL")
+        self.assertEqual(candidate["nodeClass"], "authoredVariableNameCandidate")
+        self.assertEqual(candidate["exprOperatorType"], "GetBoolVar")
+        self.assertNotIn("directCall", candidate)
+
+    def test_audio_cue_bounds_reject_huge_scalars_ids_levels_and_paths(self) -> None:
+        huge_float = 10 ** 10000
+        huge_string = "x" * (table_contexts._AUDIO_CUE_MAX_STRING + 5000)
+        huge_node = {
+            "boolValue": False, "children": [], "exprType": 3,
+            "floatValue": huge_float, "intValue": 0, "stringValue": huge_string,
+        }
+        nodes, diagnostics = table_contexts.walk_audio_cue_expression(
+            huge_node, cue_signed_id=1, cue_id=1, cue_hex="0x00000001",
+            handler_scope="direct", level_id="", handler_index=0,
+            expression_side="behavior", root_field="behaviourExpr",
+            root_path="1.directHandlers[0].behaviourExpr", source="fixture",
+        )
+        self.assertEqual(nodes[0]["validationStatus"], "badScalar")
+        self.assertIsNone(nodes[0]["floatValue"])
+        self.assertEqual(len(nodes[0]["stringValue"]), table_contexts._AUDIO_CUE_MAX_STRING)
+        self.assertIsNone(nodes[0]["rawScalars"]["floatValue"])
+        self.assertEqual(len(nodes[0]["rawScalars"]["stringValue"]), table_contexts._AUDIO_CUE_MAX_STRING)
+        self.assertTrue(any(row["code"] == "badScalar" for row in diagnostics))
+
+        with tempfile.TemporaryDirectory() as raw_root:
+            root = Path(raw_root)
+            table_path = root / "structured/StreamingAssets/Table/AudioCueTable.json"
+            table_path.parent.mkdir(parents=True)
+            valid = {
+                "boolValue": False, "children": [], "exprType": 3,
+                "floatValue": 0.0, "intValue": 0, "stringValue": "event",
+            }
+            table_path.write_text(json.dumps({
+                str(2 ** 31): {"directHandlers": [{"behaviourExpr": valid}]},
+                "1": {"levelHandlerMap": {"L" * (table_contexts._AUDIO_CUE_MAX_LEVEL + 1): {
+                    "handlers": [{"behaviourExpr": valid}],
+                }}},
+            }), encoding="utf-8")
+            semantics = table_contexts.collect_audio_cue_semantics(root)
+        self.assertNotIn(2 ** 31, semantics["cueDefinitions"])
+        definition = semantics["cueDefinitions"][1]
+        self.assertEqual(definition["expressionNodeCount"], 0)
+        codes = {row["code"] for row in semantics["diagnostics"]}
+        self.assertIn("cueSignedIdOutOfRange", codes)
+        self.assertIn("levelIdTooLong", codes)
+
+        compact_a = table_contexts._audio_cue_compact_path("root", (4097, 564))
+        compact_b = table_contexts._audio_cue_compact_path("root", (256, 4660))
+        self.assertIsNotNone(compact_a)
+        self.assertIsNotNone(compact_b)
+        self.assertNotEqual(compact_a, compact_b)
+        self.assertEqual(compact_a, table_contexts._audio_cue_compact_path("root", (4097, 564)))
+        self.assertIn("#children/4097/564", compact_a)
+        self.assertLessEqual(len(compact_a), table_contexts._AUDIO_CUE_MAX_PATH)
+
+        deep = {
+            "boolValue": False, "children": [], "exprType": 0,
+            "floatValue": 0.0, "intValue": 0, "stringValue": "",
+        }
+        cursor = deep
+        for _ in range(table_contexts._AUDIO_CUE_MAX_DEPTH + 1):
+            child = {
+                "boolValue": False, "children": [], "exprType": 0,
+                "floatValue": 0.0, "intValue": 0, "stringValue": "",
+            }
+            cursor["children"] = [child]
+            cursor = child
+        deep_nodes, deep_diagnostics = table_contexts.walk_audio_cue_expression(
+            deep, cue_signed_id=1, cue_id=1, cue_hex="0x00000001",
+            handler_scope="direct", level_id="", handler_index=0,
+            expression_side="behavior", root_field="behaviourExpr",
+            root_path="1.directHandlers[0].behaviourExpr", source="fixture",
+        )
+        self.assertTrue(all(len(node["path"]) <= table_contexts._AUDIO_CUE_MAX_PATH for node in deep_nodes))
+        self.assertEqual(len({node["path"] for node in deep_nodes}), len(deep_nodes))
+        self.assertTrue(any(row["code"] == "depthLimit" for row in deep_diagnostics))
+
+    def test_audio_frontend_audio_cue_redaction_covers_all_context_owners(self) -> None:
+        source = (Path(__file__).resolve().parents[2] / "webui/src/features/audio/index.js").read_text(encoding="utf-8")
+        for kind in (
+            "audioCueBehaviorEvent", "audioCueExpressionOperand",
+            "timelineAudioCueBehaviorEvent", "levelScriptAudioCueBehaviorEvent",
+            "audioGlobalMusicCueBehaviorEvent",
+        ):
+            self.assertIn(f'"{kind}"', source)
+        self.assertIn("function isAudioCueContext", source)
+        self.assertIn("function isAudioCueBehaviorContext", source)
+        raw_body = source.split("const rawForDisplay", 1)[1].split("const json", 1)[0]
+        for key in ("cueHex", "handlerLevel", "exprType", "expressionPath", "rawScalars", "validationIssues"):
+            self.assertIn(f'"{key}"', raw_body)
+        evidence_body = source.split("function contextEvidenceLabel", 1)[1].split("function radioTableLineLabel", 1)[0]
+        self.assertIn("const audioCueContext = isAudioCueContext(context)", evidence_body)
+        self.assertIn("isAudioCueBehaviorContext(context)", evidence_body)
 
     def test_mono_behaviour_audio_id_fields_are_exact_authored_contexts(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:
@@ -8502,8 +8725,8 @@ class AudioSemanticDataTests(unittest.TestCase):
             table_path.write_text(json.dumps({
                 "123": {
                     "directHandlers": [{
-                        "behaviourExpr": {"exprType": 3, "stringValue": "au_sfx_test", "children": []},
-                        "conditionExpr": {"exprType": 0, "stringValue": "", "children": []},
+                        "behaviourExpr": {"exprType": 3, "stringValue": "au_sfx_test", "boolValue": False, "intValue": 0, "floatValue": 0.0, "children": []},
+                        "conditionExpr": {"exprType": 0, "stringValue": "", "boolValue": False, "intValue": 0, "floatValue": 0.0, "children": []},
                     }],
                     "levelHandlerMap": {},
                 },
