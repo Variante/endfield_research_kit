@@ -27,6 +27,8 @@ namespace EndfieldGraphShaderLabEditor
     ///   ENDFIELD_PHASE_SWEEP_CLIP    clip name without extension
     ///   ENDFIELD_PHASE_SWEEP_TIMES   comma-separated sample times in seconds
     ///   ENDFIELD_PHASE_SWEEP_STEM    output stem under scratch/
+    ///   ENDFIELD_PHASE_SWEEP_OUTPUT_DIRECTORY  relative scratch directory
+    ///   ENDFIELD_PHASE_SWEEP_REUSE_SCENE  keep one scene for all samples
     /// </summary>
     internal static class EndfieldRecoveredOverviewPhaseSweep
     {
@@ -34,10 +36,18 @@ namespace EndfieldGraphShaderLabEditor
         private const string ClipVariable = "ENDFIELD_PHASE_SWEEP_CLIP";
         private const string TimesVariable = "ENDFIELD_PHASE_SWEEP_TIMES";
         private const string StemVariable = "ENDFIELD_PHASE_SWEEP_STEM";
+        private const string OutputDirectoryVariable =
+            "ENDFIELD_PHASE_SWEEP_OUTPUT_DIRECTORY";
+        private const string ReuseSceneVariable =
+            "ENDFIELD_PHASE_SWEEP_REUSE_SCENE";
 
         private static readonly MethodInfo RenderRuntimeReferenceActorPreview =
             typeof(EndfieldManifestCharacterSetup).GetMethod(
                 "RenderRuntimeReferenceActorPreview",
+                BindingFlags.NonPublic | BindingFlags.Static);
+        private static readonly MethodInfo RenderRuntimeReferenceActorSweep =
+            typeof(EndfieldManifestCharacterSetup).GetMethod(
+                "RenderRuntimeReferenceActorSweep",
                 BindingFlags.NonPublic | BindingFlags.Static);
 
         public static void RenderFromEnvironment()
@@ -52,7 +62,36 @@ namespace EndfieldGraphShaderLabEditor
             string actor = Read(ActorVariable);
             string clip = Read(ClipVariable);
             string stem = Read(StemVariable);
+            string outputDirectory = ReadOutputDirectory();
             IReadOnlyList<float> times = ReadTimes(TimesVariable);
+
+            if (IsEnvironmentFlagEnabled(ReuseSceneVariable))
+            {
+                if (RenderRuntimeReferenceActorSweep == null)
+                {
+                    throw new MissingMethodException(
+                        typeof(EndfieldManifestCharacterSetup).FullName,
+                        "RenderRuntimeReferenceActorSweep");
+                }
+                try
+                {
+                    RenderRuntimeReferenceActorSweep.Invoke(
+                        null,
+                        new object[]
+                        {
+                            actor,
+                            clip,
+                            new List<float>(times).ToArray(),
+                            outputDirectory,
+                            stem,
+                        });
+                }
+                catch (TargetInvocationException exception)
+                {
+                    throw exception.InnerException ?? exception;
+                }
+                return;
+            }
 
             Debug.Log(
                 $"Overview phase sweep: actor={actor}, clip={clip}, " +
@@ -62,7 +101,7 @@ namespace EndfieldGraphShaderLabEditor
             {
                 float sampleTime = times[index];
                 string outputFileName =
-                    "charinfo_phase_sweep/" + stem + "_t" +
+                    outputDirectory + "/" + stem + "_t" +
                     sampleTime.ToString("0.000", CultureInfo.InvariantCulture)
                         .Replace('.', 'p') +
                     ".png";
@@ -83,6 +122,35 @@ namespace EndfieldGraphShaderLabEditor
             }
 
             Debug.Log($"Overview phase sweep complete: {times.Count} frames.");
+        }
+
+        private static string ReadOutputDirectory()
+        {
+            string value = Environment.GetEnvironmentVariable(OutputDirectoryVariable);
+            if (string.IsNullOrWhiteSpace(value))
+                return "charinfo_phase_sweep";
+
+            string normalized = value.Trim().Replace('\\', '/').Trim('/');
+            if (normalized.Length == 0 ||
+                normalized.StartsWith("/", StringComparison.Ordinal) ||
+                normalized.Contains("..", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    $"{OutputDirectoryVariable} must be a non-empty relative directory.");
+            }
+            return normalized;
+        }
+
+        private static bool IsEnvironmentFlagEnabled(string variable)
+        {
+            string value = Environment.GetEnvironmentVariable(variable);
+            if (string.IsNullOrWhiteSpace(value))
+                return false;
+            value = value.Trim();
+            return string.Equals(value, "1", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(value, "true", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(value, "yes", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(value, "on", StringComparison.OrdinalIgnoreCase);
         }
 
         private static string Read(string variable)

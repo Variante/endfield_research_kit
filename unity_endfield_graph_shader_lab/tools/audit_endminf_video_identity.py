@@ -331,7 +331,6 @@ def _candidate_matrix(source_identity: dict[str, Any], visual: dict[str, Any]) -
     Its evidence is rebuilt by the dedicated capture validator before it is
     admitted as a numeric comparable competitor.
     """
-    target_score = float(visual["eccTranslation"])
     try:
         import build_endminm_comparable_capture as endminm_capture_tool
         endminm_capture = endminm_capture_tool.check_report(ENDMINM_CAPTURE_EVIDENCE_PATH)
@@ -340,8 +339,9 @@ def _candidate_matrix(source_identity: dict[str, Any], visual: dict[str, Any]) -
     except Exception as error:
         raise EvidenceError(f"Endminm comparable capture evidence is not admissible: {error}") from error
     endminm_source = endminm_capture["sourceAssets"]
-    endminm_capture_data = endminm_capture["capture"]
     endminm_comparison = endminm_capture["comparison"]
+    endminm_admission = endminm_capture["admission"]
+    target_score = float(endminm_comparison["targetScore"])
     endminm_capture_evidence = _file_evidence(ENDMINM_CAPTURE_EVIDENCE_PATH)
     target = {
         "candidateId": EXACT_CHARACTER_ID,
@@ -357,7 +357,7 @@ def _candidate_matrix(source_identity: dict[str, Any], visual: dict[str, Any]) -
             "available": True,
             "sameCameraContract": True,
             "sameRenderSettingsContract": True,
-            "image": visual["exactEndminfRender"],
+            "image": endminm_comparison["targetRender"],
             "score": target_score,
             "scoreMetric": "ECC translation over pinned character band",
         },
@@ -394,25 +394,20 @@ def _candidate_matrix(source_identity: dict[str, Any], visual: dict[str, Any]) -
             },
             "captureEvidence": endminm_capture_evidence,
             "render": {
-                "available": endminm_comparison.get("sameCameraContract") is True
-                and endminm_comparison.get("sameRenderSettingsContract") is True,
+                "available": endminm_admission.get("sameCamera") is True
+                and endminm_admission.get("sameRenderSettings") is True
+                and endminm_admission.get("sweepComplete") is True,
                 "sameCameraContract": endminm_comparison.get("sameCameraContract"),
                 "sameRenderSettingsContract": endminm_comparison.get("sameRenderSettingsContract"),
-                "image": endminm_capture_data["output"],
-                "score": endminm_comparison.get("eccTranslation"),
+                "sweepComplete": endminm_admission.get("sweepComplete"),
+                "image": endminm_comparison["sweep"]["rows"][endminm_comparison["competitorBestIndex"]],
+                "score": endminm_comparison.get("competitorScore"),
                 "scoreMetric": endminm_comparison.get("scoreMetric"),
             },
             "reproducibility": {
-                "method": endminm_capture_data["method"],
-                "phaseSweepScript": endminm_capture_data["phaseSweepScript"],
-                "renderSetupScript": endminm_capture_data["renderSetupScript"],
-                "unityEditor": endminm_capture_data["unityEditor"],
-                "projectVersion": endminm_capture_data["projectVersion"],
-                "environment": endminm_capture_data["environment"],
-                "renderTexture": endminm_comparison.get("renderTexture"),
-                "resolution": endminm_comparison.get("resolution"),
-                "sampleTimeSeconds": endminm_comparison.get("sampleTimeSeconds"),
-                "targetRender": endminm_comparison.get("targetRender"),
+                "commonRenderContract": endminm_capture["commonRenderContract"],
+                "sweep": endminm_comparison["sweep"],
+                "targetRender": endminm_comparison["targetRender"],
             },
         },
     ]
@@ -456,9 +451,14 @@ def _candidate_matrix(source_identity: dict[str, Any], visual: dict[str, Any]) -
                 "evidence": endminm_capture_evidence,
                 "cameraTrack": endminm_comparison.get("cameraTrack"),
                 "resolution": endminm_comparison.get("resolution"),
-                "sampleTimeSeconds": endminm_comparison.get("sampleTimeSeconds"),
                 "sameCameraContract": endminm_comparison.get("sameCameraContract"),
                 "sameRenderSettingsContract": endminm_comparison.get("sameRenderSettingsContract"),
+                "sweepSampleCount": endminm_comparison["sweep"].get("sampleCount"),
+                "sweepFirstTimeSeconds": endminm_comparison["sweep"]["rows"][0]["timeSeconds"],
+                "sweepLastTimeSeconds": endminm_comparison["sweep"]["rows"][-1]["timeSeconds"],
+                "competitorBestIndex": endminm_comparison.get("competitorBestIndex"),
+                "competitorBestTimeSeconds": endminm_comparison.get("competitorBestTimeSeconds"),
+                "competitorScore": endminm_comparison.get("competitorScore"),
             },
         },
         "candidateCount": len(candidates),
