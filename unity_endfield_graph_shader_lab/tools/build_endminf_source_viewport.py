@@ -85,6 +85,7 @@ CURSOR_PROTECTION_RELATIVE = (
     CURSOR_PROTECTION[2] - CROP[0],
     CURSOR_PROTECTION[3] - CROP[1],
 )
+CURSOR_ACTOR_INTERSECTION_FRAMES = 192
 CURSOR_DETECTOR = {
     "kind": "pinned_bright_cursor_core",
     "coreBoxSource": list(CURSOR_CORE),
@@ -475,6 +476,7 @@ def _build() -> dict[str, Any]:
                 "detector": CURSOR_DETECTOR,
                 "detectorSha256": CURSOR_DETECTOR_SHA256,
                 "detectedFrames": FRAME_COUNT,
+                "actorIntersectionFrameCount": CURSOR_ACTOR_INTERSECTION_FRAMES,
                 "invalidMaskValue": 0,
                 "reason": "fixed source pointer visibly intersects viewport; retained in original pixels and excluded only by validity mask",
             }],
@@ -558,6 +560,8 @@ def _check() -> None:
     overlays = ui.get("knownPersistentOverlays") or []
     if len(overlays) != 1 or overlays[0].get("sourceBox") != list(CURSOR_PROTECTION) or overlays[0].get("cropBox") != list(CURSOR_PROTECTION_RELATIVE):
         raise ViewportError("cursor protection contract is stale")
+    if overlays[0].get("actorIntersectionFrameCount") != CURSOR_ACTOR_INTERSECTION_FRAMES:
+        raise ViewportError("cursor/actor intersection evidence count is stale")
     if ui.get("unmodeledCenterOverlayStatus") != "not_claimed_clean":
         raise ViewportError("center overlay status cannot be upgraded without evidence")
     rows = report.get("frames") or []
@@ -606,6 +610,9 @@ def _check() -> None:
 def _refresh_report_contract() -> None:
     report = _load_report()
     report["cameraComparisonContract"] = _camera_comparison_contract()
+    overlays = report.get("uiValidity", {}).get("knownPersistentOverlays", [])
+    if len(overlays) == 1:
+        overlays[0]["actorIntersectionFrameCount"] = CURSOR_ACTOR_INTERSECTION_FRAMES
     _write_json_lf(REPORT_PATH, report)
     print(f"Endminf source viewport report contract refreshed: {REPORT_PATH}")
 
