@@ -13,8 +13,8 @@ module for diagnostic probes but is refused by the publication CLI.
 
 The model-swap portions of a requested window can contain no actor at all.
 Those frames are retained as black frames and recorded as source transitions;
-they are not treated as a segmentation loss.  The only transition exemption
-is the measured Pelica source interval below.  Any missing component while
+they are not treated as a segmentation loss.  The only transition exemptions
+are the actor-specific measured source intervals below.  Any missing component while
 the source visibly contains the requested actor, malformed source timing, or
 non-zero UI overlap prevents publication.
 
@@ -93,7 +93,7 @@ MIN_COMPONENT_AREA = 120
 KEYFRAME_INTERVAL = 4
 DEEPLAB_WEIGHT_SHA256 = "CD0A25694C4A0F7106B38F4938BF90A874F2F241CC410B8F63C7024399538F06"
 DEEPLAB_WEIGHT_FILENAME = "deeplabv3_resnet50_coco-cd0a2569.pth"
-UNPUBLISHED_ACTOR_REASON = "retained unpublished; not regenerated in this fail-closed Pelica-only run"
+UNPUBLISHED_ACTOR_REASON = "retained unpublished; source or matte validation did not pass publication gates"
 MANIFEST_SCHEMA = "endfield.character-recovery.actor-matte.v1"
 AUDIT_REPORT_SCHEMA = "endfield.character-recovery.actor-matte.audit.v2"
 
@@ -104,6 +104,12 @@ PELICA_STABLE_START_FRAME = 12602
 PELICA_TRANSITION_REASON = (
     "pinned-source model-swap/glitch interval measured in the phase evidence; "
     "no stable Pelica actor component is present"
+)
+CHEN_SOURCE_TRANSITION_RANGE = (11958, 11969)
+CHEN_STABLE_START_FRAME = 11970
+CHEN_TRANSITION_REASON = (
+    "pinned-source horizontal decode-corruption interval measured frame-by-frame "
+    "through frame 11969; first clean Chen source frame is 11970"
 )
 
 # Temporal/component purity is measured at work resolution.  A small dilation
@@ -117,6 +123,15 @@ _DEEPLAB_CONTEXT: tuple[object, object, object, str] | None = None
 
 class MatteError(RuntimeError):
     """A fail-closed source, mask, or publication failure."""
+
+
+def _mask_bbox(mask: np.ndarray | None) -> tuple[int, int, int, int] | None:
+    if mask is None:
+        return None
+    ys, xs = np.where(mask > 0)
+    if not len(xs):
+        return None
+    return int(xs.min()), int(ys.min()), int(xs.max() + 1), int(ys.max() + 1)
 
 
 @dataclass(frozen=True)
@@ -145,20 +160,28 @@ def _actor_window(actor: str) -> ActorWindow:
     return window
 
 
+def _transition_contract(actor: str) -> tuple[tuple[int, int], int, str] | None:
+    if actor == "pelica":
+        return PELICA_SOURCE_TRANSITION_RANGE, PELICA_STABLE_START_FRAME, PELICA_TRANSITION_REASON
+    if actor == "chen":
+        return CHEN_SOURCE_TRANSITION_RANGE, CHEN_STABLE_START_FRAME, CHEN_TRANSITION_REASON
+    return None
+
+
 def _expected_transition_frame(actor: str, frame_number: int) -> bool:
     """Return whether a frame is covered by an evidence-backed gap rule."""
-    return (
-        actor == "pelica"
-        and PELICA_SOURCE_TRANSITION_RANGE[0]
-        <= frame_number
-        <= PELICA_SOURCE_TRANSITION_RANGE[1]
-    )
+    contract = _transition_contract(actor)
+    if contract is None:
+        return False
+    start, end = contract[0]
+    return start <= frame_number <= end
 
 
 def _expected_transition_frames(actor: str, window: ActorWindow) -> list[int]:
-    if actor != "pelica":
+    contract = _transition_contract(actor)
+    if contract is None:
         return []
-    start, end = PELICA_SOURCE_TRANSITION_RANGE
+    start, end = contract[0]
     return [
         frame
         for frame in range(window.start_frame, window.end_frame_exclusive)
@@ -189,8 +212,23 @@ def _excluded_actor_contract(actor_set: Iterable[str]) -> list[dict]:
     ]
 
 
-def _transition_diagnostics(frame_number: int) -> dict:
-    start, end = PELICA_SOURCE_TRANSITION_RANGE
+def _transition_policy_contract() -> dict:
+    return {
+        "pelicaRangeInclusive": list(PELICA_SOURCE_TRANSITION_RANGE),
+        "pelicaStableStartFrame": PELICA_STABLE_START_FRAME,
+        "pelicaReason": PELICA_TRANSITION_REASON,
+        "chenRangeInclusive": list(CHEN_SOURCE_TRANSITION_RANGE),
+        "chenStableStartFrame": CHEN_STABLE_START_FRAME,
+        "chenReason": CHEN_TRANSITION_REASON,
+        "actorSpecificOnly": True,
+    }
+
+
+def _transition_diagnostics(actor: str, frame_number: int) -> dict:
+    contract = _transition_contract(actor)
+    if contract is None:
+        raise MatteError(f"no source-transition contract for actor {actor}")
+    (start, end), _stable_start, reason = contract
     return {
         "frame": frame_number,
         "workSeedPixels": 0,
@@ -198,7 +236,7 @@ def _transition_diagnostics(frame_number: int) -> dict:
         "workMaskCoverage": 0.0,
         "workBbox": None,
         "sourceTransition": True,
-        "transitionReason": PELICA_TRANSITION_REASON,
+        "transitionReason": reason,
         "transitionRangeInclusive": [start, end],
         "componentCount": 0,
         "keptComponentCount": 0,
@@ -488,11 +526,12 @@ def _load_deeplab() -> tuple[object, object, object, str]:
 def _select_person_components(
     mask: np.ndarray,
     prior: np.ndarray | None,
+    future: np.ndarray | None = None,
 ) -> tuple[np.ndarray, dict]:
     """Select the actor support and report detached-component purity evidence.
 
     A connected component is retained only when it is the dominant person
-    component or is close to that component/prior actor envelope.  A
+    component or has current/prior/future actor-envelope evidence.  A
     substantial detached component is a hard failure; it is never silently
     turned into a black pixel or accepted as an effect/UI island.
     """
@@ -524,9 +563,17 @@ def _select_person_components(
         iterations=1,
     )
     prior_envelope = None
+    prior_bbox = _mask_bbox(prior)
     if prior is not None and np.count_nonzero(prior) > 0:
         prior_envelope = cv2.dilate(
             prior,
+            np.ones((TEMPORAL_DILATION_KERNEL, TEMPORAL_DILATION_KERNEL), np.uint8),
+            iterations=1,
+        )
+    future_envelope = None
+    if future is not None and np.count_nonzero(future) > 0:
+        future_envelope = cv2.dilate(
+            future,
             np.ones((TEMPORAL_DILATION_KERNEL, TEMPORAL_DILATION_KERNEL), np.uint8),
             iterations=1,
         )
@@ -548,7 +595,30 @@ def _select_person_components(
             prior_envelope is not None
             and np.count_nonzero(cv2.bitwise_and(component, prior_envelope))
         )
-        if near_largest or near_prior:
+        future_support = 0.0
+        if future_envelope is not None:
+            future_support = int(np.count_nonzero(cv2.bitwise_and(component, future_envelope))) / float(area)
+        near_future = future_support >= MIN_TEMPORAL_DILATED_SUPPORT
+        component_x, component_y, component_w, component_h, _ = (int(value) for value in stats[index])
+        component_bbox = (
+            component_x,
+            component_y,
+            component_x + component_w,
+            component_y + component_h,
+        )
+        # A real limb/garment can enter the frame beside a torso component
+        # without sharing pixels at this work resolution.  Bounding-box
+        # intersection with the previous accepted actor envelope is a
+        # temporal evidence path for that case; a detached island outside
+        # both envelopes remains a hard purity failure.
+        near_prior_bbox = bool(
+            prior_bbox is not None
+            and component_bbox[0] < prior_bbox[2]
+            and component_bbox[2] > prior_bbox[0]
+            and component_bbox[1] < prior_bbox[3]
+            and component_bbox[3] > prior_bbox[1]
+        )
+        if near_largest or near_prior or near_prior_bbox or near_future:
             keep[labels == index] = 255
             kept_count += 1
             continue
@@ -596,12 +666,8 @@ def _temporal_metrics(mask: np.ndarray, prior: np.ndarray | None) -> dict:
     }
 
 
-def _deeplab_mask(
-    frame: np.ndarray,
-    frame_number: int,
-    previous_mask: np.ndarray | None = None,
-) -> tuple[np.ndarray, dict]:
-    """Segment the person class at work resolution with the pinned model."""
+def _deeplab_raw_mask(frame: np.ndarray) -> np.ndarray:
+    """Return the thresholded pinned-person candidate before component filtering."""
     torch, Image, model_context, device = _load_deeplab()
     weights, model = model_context
     resized = cv2.resize(frame, WORK_SIZE, interpolation=cv2.INTER_AREA)
@@ -615,8 +681,18 @@ def _deeplab_mask(
     mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, np.ones((2, 2), np.uint8))
     mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, np.ones((5, 5), np.uint8))
     mask = cv2.bitwise_and(mask, (_work_roi_mask() * 255).astype(np.uint8))
+    return mask
+
+
+def _deeplab_from_raw_mask(
+    mask: np.ndarray,
+    frame_number: int,
+    previous_mask: np.ndarray | None = None,
+    future_mask: np.ndarray | None = None,
+) -> tuple[np.ndarray, dict]:
+    """Apply actor component and temporal gates to a pinned-person candidate."""
     seed_pixels = int(np.count_nonzero(mask))
-    keep, component_diagnostics = _select_person_components(mask, previous_mask)
+    keep, component_diagnostics = _select_person_components(mask, previous_mask, future_mask)
     temporal_diagnostics = _temporal_metrics(keep, previous_mask)
     area = int(np.count_nonzero(keep))
     ys, xs = np.where(keep > 0)
@@ -633,6 +709,26 @@ def _deeplab_mask(
         **component_diagnostics,
         **temporal_diagnostics,
     }
+
+
+def _deeplab_mask(
+    frame: np.ndarray,
+    frame_number: int,
+    previous_mask: np.ndarray | None = None,
+    future_mask: np.ndarray | None = None,
+) -> tuple[np.ndarray, dict]:
+    """Segment the person class at work resolution with the pinned model."""
+    raw_mask = _deeplab_raw_mask(frame)
+    work_mask, diagnostics = _deeplab_from_raw_mask(
+        raw_mask,
+        frame_number,
+        previous_mask,
+        future_mask,
+    )
+    # Kept internal for a one-frame look-ahead retry when a component first
+    # enters from an image boundary.  It is removed before JSON row creation.
+    diagnostics["_rawMask"] = raw_mask
+    return work_mask, diagnostics
 
 
 def _full_mask(work_mask: np.ndarray) -> np.ndarray:
@@ -867,6 +963,7 @@ def build_actor(
     temporal_failure_frames: list[int] = []
     purity_failure_frames: list[int] = []
     previous_mask: np.ndarray | None = None
+    pending_frame: np.ndarray | None = None
     capture = cv2.VideoCapture(str(source_path))
     encoder: subprocess.Popen | None = None
     try:
@@ -875,24 +972,47 @@ def build_actor(
         encoder = _open_encoder(partial)
         assert encoder.stdin is not None
         for frame_number in range(window.start_frame, window.end_frame_exclusive):
-            frame = _read_frame(capture, frame_number)
+            if pending_frame is not None:
+                frame = pending_frame
+                pending_frame = None
+            else:
+                frame = _read_frame(capture, frame_number)
             if _expected_transition_frame(window.actor, frame_number):
                 # Do not ask the segmenter to explain a measured source glitch.
                 # The intentional black gap is itself evidence and is recorded
                 # exactly in every affected row and in the actor manifest.
                 work_mask = np.zeros((WORK_SIZE[1], WORK_SIZE[0]), np.uint8)
-                diagnostics = _transition_diagnostics(frame_number)
+                diagnostics = _transition_diagnostics(window.actor, frame_number)
             else:
                 if segmentation == "deeplab":
                     work_mask, diagnostics = _deeplab_mask(frame, frame_number, previous_mask)
                 else:
                     work_mask, diagnostics = _foreground_mask(frame, background, previous_mask, frame_number)
                 if diagnostics.get("purityFailure"):
-                    purity_failure_frames.append(frame_number)
-                    raise MatteError(
-                        f"{window.actor} detached non-actor component at frame {frame_number}: "
-                        f"{diagnostics.get('detachedComponentCount')} components"
-                    )
+                    raw_mask = diagnostics.pop("_rawMask", None)
+                    if (
+                        segmentation == "deeplab"
+                        and raw_mask is not None
+                        and frame_number + 1 < window.end_frame_exclusive
+                    ):
+                        # A real garment/limb can first appear at an image
+                        # boundary with no preceding-pixel overlap.  Decode
+                        # and segment exactly one next source frame; only a
+                        # component with future temporal support is retained.
+                        pending_frame = _read_frame(capture, frame_number + 1)
+                        future_raw = _deeplab_raw_mask(pending_frame)
+                        work_mask, diagnostics = _deeplab_from_raw_mask(
+                            raw_mask,
+                            frame_number,
+                            previous_mask,
+                            future_raw,
+                        )
+                    if diagnostics.get("purityFailure"):
+                        purity_failure_frames.append(frame_number)
+                        raise MatteError(
+                            f"{window.actor} detached non-actor component at frame {frame_number}: "
+                            f"{diagnostics.get('detachedComponentCount')} components"
+                        )
                 if diagnostics.get("temporalFailure"):
                     temporal_failure_frames.append(frame_number)
                     raise MatteError(
@@ -900,11 +1020,16 @@ def build_actor(
                         f"IoU={diagnostics.get('temporalIoU')} "
                         f"dilatedSupport={diagnostics.get('temporalDilatedSupport')}"
                     )
-                if diagnostics.get("workMaskPixels", 0) < FRAME_MISSING_THRESHOLD:
+                # DeepLab's selected connected component is the actor evidence;
+                # do not turn a low-area but temporally continuous motion pose
+                # into a guessed source transition.  A zero selected component
+                # is the only non-transition loss accepted by this gate.
+                if diagnostics.get("workMaskPixels", 0) <= 0:
                     component_loss_frames.append(frame_number)
                     raise MatteError(
                         f"{window.actor} actor component missing at stable frame {frame_number}"
                     )
+            diagnostics.pop("_rawMask", None)
             full_mask = _full_mask(work_mask)
             row = _frame_report_row(frame_number, diagnostics, full_mask)
             rows.append(row)
@@ -935,13 +1060,16 @@ def build_actor(
                 f"actual={transition_frames[:3]}..{transition_frames[-3:]} expected="
                 f"{expected_transitions[:3]}..{expected_transitions[-3:]}"
             )
-        if window.actor == "pelica" and PELICA_STABLE_START_FRAME < window.end_frame_exclusive:
+        transition_contract = _transition_contract(window.actor)
+        if transition_contract is not None and transition_contract[1] < window.end_frame_exclusive:
             first_stable = next(
-                (row for row in rows if row["frame"] >= PELICA_STABLE_START_FRAME),
+                (row for row in rows if row["frame"] >= transition_contract[1]),
                 None,
             )
             if first_stable is None or first_stable["sourceTransition"]:
-                raise MatteError(f"Pelica stable actor gate did not start at frame {PELICA_STABLE_START_FRAME}")
+                raise MatteError(
+                    f"{window.actor} stable actor gate did not start at frame {transition_contract[1]}"
+                )
         os.replace(partial, clip)
     except Exception:
         if encoder is not None and encoder.poll() is None:
@@ -976,8 +1104,8 @@ def build_actor(
         "segmentation": segmentation,
         "transitionFrameCount": len(transition_frames),
         "transitionFrameRanges": [list(item) for item in _contiguous_ranges(transition_frames)],
-        "transitionReason": PELICA_TRANSITION_REASON if transition_frames else None,
-        "transitionRangeInclusive": list(PELICA_SOURCE_TRANSITION_RANGE) if transition_frames else None,
+        "transitionReason": _transition_contract(window.actor)[2] if transition_frames else None,
+        "transitionRangeInclusive": list(_transition_contract(window.actor)[0]) if transition_frames else None,
         "componentLossFrameCount": len(component_loss_frames),
         "temporalContinuityFailureCount": len(temporal_failure_frames),
         "componentPurityFailureCount": len(purity_failure_frames),
@@ -1101,14 +1229,9 @@ def write_manifest(source: dict, actor_reports: list[dict], output_root: Path) -
                 "minRawIoU": MIN_TEMPORAL_IOU,
                 "minDilatedSupport": MIN_TEMPORAL_DILATED_SUPPORT,
                 "dilationKernel": TEMPORAL_DILATION_KERNEL,
-                "detachedComponents": "reject_substantial_component_without_actor_envelope_overlap",
+                "detachedComponents": "reject_substantial_component_without_current_previous_or_next_actor_envelope_overlap",
             },
-            "transitionPolicy": {
-                "pelicaRangeInclusive": list(PELICA_SOURCE_TRANSITION_RANGE),
-                "pelicaStableStartFrame": PELICA_STABLE_START_FRAME,
-                "reason": PELICA_TRANSITION_REASON,
-                "chenExemption": False,
-            },
+            "transitionPolicy": _transition_policy_contract(),
         },
         "actorSet": sorted(item["actor"] for item in actor_reports),
         "requestedWindows": _requested_windows_contract(),
@@ -1192,6 +1315,8 @@ def _check_manifest_data(report: dict, manifest_path: Path) -> None:
     if str(algorithm.get("modelWeightsSha256", "")).upper() != DEEPLAB_WEIGHT_SHA256:
         raise MatteError("manifest DeepLab weight pin mismatch")
     _current_pinned_weight()
+    if algorithm.get("transitionPolicy") != _transition_policy_contract():
+        raise MatteError("manifest transition policy is stale or not actor-specific")
     source = report.get("source") or {}
     if source.get("path") != VIDEO_RELATIVE.as_posix():
         raise MatteError(f"manifest source path is stale: {source.get('path')!r}")
@@ -1230,11 +1355,13 @@ def _check_manifest_data(report: dict, manifest_path: Path) -> None:
         expected_ranges = [list(item) for item in _contiguous_ranges(expected_transition)]
         if actor.get("transitionFrameRanges") != expected_ranges:
             raise MatteError(f"{name} transition ranges are not contiguous/exact")
+        transition_contract = _transition_contract(name)
         for row in rows:
             if row.get("uiOverlapPixels") != 0:
                 raise MatteError(f"{name} frame {row.get('frame')} has UI overlap")
             if row.get("sourceTransition"):
-                if row.get("transitionReason") != PELICA_TRANSITION_REASON or row.get("transitionRangeInclusive") != list(PELICA_SOURCE_TRANSITION_RANGE):
+                assert transition_contract is not None
+                if row.get("transitionReason") != transition_contract[2] or row.get("transitionRangeInclusive") != list(transition_contract[0]):
                     raise MatteError(f"{name} transition row lacks exact reason/range")
                 if row.get("bbox") is not None or float(row.get("coverage", 0)) != 0.0:
                     raise MatteError(f"{name} transition row is not an intentional black gap")
@@ -1377,6 +1504,7 @@ def _refresh_existing_report(manifest_path: Path, report_path: Path) -> Path:
     if not isinstance(algorithm, dict):
         raise MatteError("existing actor matte manifest has no algorithm object")
     algorithm["modelWeightsFile"] = DEEPLAB_WEIGHT_FILENAME
+    algorithm["transitionPolicy"] = _transition_policy_contract()
     actor_set = manifest.get("actorSet") or [item.get("actor") for item in manifest.get("actors") or []]
     manifest["actorSet"] = sorted(str(actor) for actor in actor_set)
     manifest["excludedActors"] = _excluded_actor_contract(manifest["actorSet"])
@@ -1392,6 +1520,26 @@ def _refresh_existing_report(manifest_path: Path, report_path: Path) -> Path:
     )
     check_manifest(durable_report)
     return durable_report
+
+
+def _preserved_actor_reports(manifest_path: Path, selected_actors: set[str]) -> list[dict]:
+    """Load already-published actors for a single-actor regeneration.
+
+    The existing manifest is fully checked before its rows are merged.  This
+    makes ``--actor chen`` safe to run without touching the active Pelica
+    clip, while still refusing to carry forward stale or unpublished data.
+    """
+    if not manifest_path.is_file():
+        return []
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as error:
+        raise MatteError(f"could not read existing actor matte manifest: {error}") from error
+    _check_manifest_data(manifest, manifest_path)
+    actors = manifest.get("actors")
+    if not isinstance(actors, list):
+        raise MatteError("existing actor matte manifest has no actor rows")
+    return [item for item in actors if str(item.get("actor")) not in selected_actors]
 
 
 def check_manifest(path: Path) -> None:
@@ -1457,7 +1605,14 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         source = verify_source(args.video.resolve())
         actors = list(ACTOR_WINDOWS) if args.actor == "all" else [args.actor]
-        reports = []
+        output_root = args.output_root.resolve()
+        preserved_reports = []
+        if args.actor != "all":
+            preserved_reports = _preserved_actor_reports(
+                output_root / "actor_matte_manifest.json",
+                set(actors),
+            )
+        reports = list(preserved_reports)
         built_clips: list[Path] = []
         for actor in actors:
             if args.segmentation != "deeplab":
@@ -1465,7 +1620,7 @@ def main(argv: list[str] | None = None) -> int:
             report = build_actor(
                 _actor_window(actor),
                 args.video.resolve(),
-                args.output_root.resolve(),
+                output_root,
                 segmentation=args.segmentation,
             )
             built_clips.append(REPO_ROOT / report["clip"])
@@ -1478,7 +1633,7 @@ def main(argv: list[str] | None = None) -> int:
                     "rerun with --allow-source-transition-gaps to publish them as black"
                 )
             reports.append(report)
-        manifest = write_manifest(source, reports, args.output_root.resolve())
+        manifest = write_manifest(source, reports, output_root)
         durable_report = write_durable_report(
             manifest,
             source,
