@@ -20,6 +20,7 @@ import subprocess
 import sys
 from collections import Counter
 from pathlib import Path
+from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
@@ -166,6 +167,10 @@ def iter_entities(data: bytes):
             cursor += id_count * stride
         if cursor != blob_length:
             raise ValueError(f"InitChunkData group {group_index} column size mismatch")
+        component_type_ids = [type_id for type_id, _stride, _reserved in descriptors]
+        component_strides = {
+            str(type_id): stride for type_id, stride, _reserved in descriptors
+        }
         matrix_type = 18 if 18 in columns else 27 if 27 in columns else None
         if matrix_type is None:
             continue
@@ -190,6 +195,13 @@ def iter_entities(data: bytes):
                 "position": {"x": matrix[12], "y": matrix[13], "z": matrix[14]},
                 "groupIndex": group_index,
                 "entityIndex": entity_index,
+                "initChunkComponentTypeIds": component_type_ids,
+                "initChunkComponentStrides": component_strides,
+                "prefabIdentity": {
+                    "status": "unavailableInValidatedInitChunkSchema",
+                    "reason": "noKnownPrefabSourcePathIdOrHashColumnInValidatedSchema",
+                    "evidence": "InitChunkData entity id/name/transform and ECS component columns",
+                },
             }
 
 
@@ -272,6 +284,59 @@ def _mesh_candidates(bases: set[str], asset_map: Path, mesh_root: Path) -> dict[
     }
 
 
+def _build_prefab_identity_contract(instances: list[dict]) -> dict:
+    """Build the published, row-validated prefab identity contract."""
+    def identity(row: Any) -> dict:
+        value = row.get("prefabIdentity") if isinstance(row, dict) else None
+        return value if isinstance(value, dict) else {}
+    statuses = Counter(str(identity(row).get("status") or "missing") for row in instances)
+    invalid = sum(
+        1 for row in instances
+        if identity(row).get("status") == "exact"
+        and (
+            not isinstance(identity(row).get("source"), str)
+            or not identity(row).get("source")
+            or isinstance(identity(row).get("pathId"), bool)
+            or not isinstance(identity(row).get("pathId"), int)
+        )
+    )
+    exact = statuses.get("exact", 0) - invalid
+    return {
+        "status": "exact" if exact == len(instances) and instances and not invalid else "unavailable",
+        "joinKey": "AssetMap Source+PathID (or build-gated equivalent hash)",
+        "requiredFields": ["source", "pathId"],
+        "verificationScope": "knownInitChunkDataColumnsObservedByCurrentDecoder",
+        "exactInstanceCount": exact,
+        "unresolvedInstanceCount": len(instances) - exact,
+        "invalidExactIdentityCount": invalid,
+        "statusCounts": dict(sorted(statuses.items())),
+        "diagnostic": (
+            "The current InitChunkData recovery contract exposes no known prefab "
+            "Source+PathID/hash field in the observed schema; entity names, positions, "
+            "matrices, and Mesh joins are not accepted as prefab identity. A separately "
+            "proven StreamingChunkData relation may add evidence and remains a recovery gap."
+        ),
+        "diagnostics": ([{
+            "status": "invalidPrefabIdentityRows",
+            "reason": "exactIdentityRequiresNonEmptySourceAndIntegerPathId",
+            "count": invalid,
+        }] if invalid else []),
+    }
+
+def _compact_component_shapes(instances: list[dict]) -> dict[str, dict[str, Any]]:
+    """Move repeated InitChunkData shape columns to one group-level table."""
+    shapes: dict[str, dict[str, Any]] = {}
+    for row in instances:
+        if not isinstance(row, dict):
+            continue
+        shape_id = f"{row.get('sourceFile', '')}#group{row.get('groupIndex')}"
+        shapes.setdefault(shape_id, {
+            "componentTypeIds": row.pop("initChunkComponentTypeIds", []),
+            "componentStrides": row.pop("initChunkComponentStrides", {}),
+        })
+        row["initChunkComponentShapeId"] = shape_id
+    return shapes
+
 def recover(level_id: str, cli: Path, game_root: Path, asset_map: Path, mesh_root: Path) -> dict:
     pattern = rf"^Data/Streaming/PC/{re.escape(level_id)}/Streaming/InitChunkData_.*[.]bytes$"
     command = [str(cli), "stream", "--streaming-assets", str(game_root / "StreamingAssets"),
@@ -305,12 +370,16 @@ def recover(level_id: str, cli: Path, game_root: Path, asset_map: Path, mesh_roo
         raise RuntimeError(f"No InitChunkData files matched {level_id}")
     bases = Counter(row["entityBase"] for row in instances if row.get("entityBase"))
     mesh_candidates = _mesh_candidates(set(bases), asset_map, mesh_root)
+    component_shapes = _compact_component_shapes(instances)
+    prefab_identity_contract = _build_prefab_identity_contract(instances)
     return {
-        "schemaVersion": 1,
+        "schemaVersion": 2,
         "levelId": level_id,
         "coordinateSystem": "Unity column-major 4x4 matrices; translation at indices 12/13/14",
         "source": {"method": "AnimeStudio.CLI stream / Streaming / InitChunkData", "cli": str(cli.relative_to(ROOT)),
                    "cliSha256": sha256_file(cli), "files": sources},
+        "prefabIdentityContract": prefab_identity_contract,
+        "initChunkComponentShapes": component_shapes,
         "summary": {"sourceFileCount": len(sources), "instanceCount": len(instances), "duplicateCount": duplicates,
                     "uniqueEntityBaseCount": len(bases), "meshResolvedBaseCount": len(mesh_candidates),
                     "meshResolvedInstanceCount": sum(count for base, count in bases.items() if base in mesh_candidates)},

@@ -174,6 +174,15 @@ local IDs stay debug-only. Runtime handle values/state, action execution,
 branch selection, and audibility remain blocked, so the section is not a live
 playback trace.
 
+Streaming-instance sidecars retain exact entity/name/transform and bounded raw
+ECS evidence, but the currently validated InitChunkData columns expose no known
+prefab Source+PathID/hash field in the observed schema. The Audio page accepts
+a level-instance relation only from an explicit numeric identity, optionally
+resolved to one unique full AssetMap container path or explicit component
+identity; names, basenames, positions, Meshes, and similarity remain
+non-evidence. A separately proven StreamingChunkData record-to-entity relation
+is still a recovery gap.
+
 Missing or mismatched installed native inputs never erase authored Audio rows.
 They suppress only build-locked callsites/mappings and expose a bounded
 unavailable diagnostic, so the page cannot silently present stale native

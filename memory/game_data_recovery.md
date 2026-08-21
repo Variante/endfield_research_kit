@@ -42,6 +42,17 @@ Never treat a global PathID, filename resemblance, native address order, or one
 same-name asset as unique ownership. Preserve source layer, container, offset,
 schema version, and validation status.
 
+Map streaming recovery preserves the exact InitChunkData entity id, name,
+transform, and observed ECS component columns. In the currently validated
+samples/known columns, no known prefab Source+PathID/hash field is available;
+this is a bounded schema conclusion, not a claim about every future binary
+revision. Prefab-to-level ownership remains fail-closed until an explicit
+numeric identity is recovered and joined to a unique AssetMap container (or an
+explicit component identity). Entity names, positions, Meshes, basenames, and
+similarity cannot supply that join. StreamingChunkData record-to-entity
+correlation is the next evidence gap and does not itself establish prefab
+identity.
+
 ## Known data model
 
 - StreamingAssets and Persistent table layers must be merged according to each

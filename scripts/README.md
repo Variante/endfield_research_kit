@@ -514,7 +514,14 @@ publisher writes `webui/data/lang/<LANG>/audio/scene_backgrounds.json` with
 authored Event requests and possible Wwise media leaves. Scene activation,
 State/RTPC values, selector branches, listener state, playback, and audibility
 remain runtime evidence; source prefab definitions do not prove level-instance
-placement.
+placement. `recover_map_streaming_instances.py` also publishes the validated
+InitChunkData entity/name/transform and raw ECS columns with a versioned prefab
+identity contract. The current validated columns expose no known prefab
+Source+PathID/hash field in the observed schema, so no instance is promoted by
+basename, entity name, position, Mesh, or similarity. If a future sidecar has
+an exact numeric identity, it may resolve through one unique full AssetMap
+container path (or an explicit component identity) before the Audio page
+attaches a level; ambiguous and missing relations stay unresolved.
 `media_ownership.py` projects those scene roles plus exact Event-context and
 external-path evidence into coarse decoded-media ownership such as scene
 environment, animation, authored component, interaction, or mission narration.
