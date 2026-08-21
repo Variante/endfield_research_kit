@@ -332,6 +332,10 @@ runtime branch selection and effective DSP are not inferred. The same build publ
 serialized trigger-context summaries on each media row (semantic kinds, roles,
 owners, situations, and selection/activation statuses) through an exact
 `mediaRefs` join; these remain authored requests rather than observed playback.
+LevelScript `PlayVoice`/`PlayVoiceNarrative` rows are kept as a separate
+direct path-stem contract: their constant `_voId` selects an `AudioDialog`
+path and deliberately has `wwiseEventStatus=notApplicable`; they are not
+rewritten into Wwise Event identities.
 The same semantic build scans current IL2CPP string fields for 25 unique
 `AU_*` symbols whose AudioHashGenerator hashes match current Wwise Event IDs.
 It publishes each declaring type, field token, metadata hash, and exact
@@ -489,6 +493,49 @@ own their respective consumer evidence, `interactive_components.py` and
 `table_contexts.py` owns authored table/config scanning and the validated,
 bounded AudioCue expression AST. It retains source coordinates, raw scalar
 forms, and bounded diagnostics without evaluating serialized expressions.
+`scene_backgrounds.py` owns the scene-background catalog. It accepts only
+terminal, summary-validated AnimeStudio object indexes, resolves
+`AudioMapData` and scene emitters by script type, and joins exact
+`AudioLevel` rows plus `MissionRuntimeAsset.acceptMode.levelId`. The semantic
+publisher writes `webui/data/lang/<LANG>/audio/scene_backgrounds.json` with
+authored Event requests and possible Wwise media leaves. Scene activation,
+State/RTPC values, selector branches, listener state, playback, and audibility
+remain runtime evidence; emitter hierarchy positions do not imply level
+ownership without an exact scene-asset join.
+`media_ownership.py` projects those scene roles plus exact Event-context and
+external-path evidence into coarse decoded-media ownership such as scene
+environment, animation, authored component, interaction, or mission narration.
+It may fill an otherwise unknown semantic category only for unambiguous roles
+such as outdoor room tone or an authored ambient emitter; ownership never
+upgrades runtime playback or audibility status.
+The same module owns the CharacterTable/EnemyTable/EnemyTemplateTable animation
+identity overlay catalog. Persistent rows are authoritative; a malformed Persistent
+layer suppresses that table's identity surface instead of silently falling back
+to a stale base. Each supported serialized AnimationClip callback keeps
+per-Clip resolved entity IDs separate from candidate IDs: exact Character,
+Enemy, or EnemyTemplate matches may resolve, while unique-token and multi-match
+possibilities remain candidate/ambiguous. Shared callback owners remain shared,
+and missing, malformed, or unsupported evidence stays unresolved/fail-closed;
+candidate IDs never become resolved ownership.
+The same domain loads current `CharacterTable` keys and assigns authored
+`chr_*`/`au_chr_*` Event namespaces, plus Event-leading internal character
+tokens such as `lastrite_*`, to a character only through a delimited full key,
+a unique four-digit character-id prefix, or a uniquely owned exact token. It
+propagates that owner set to possible media, retaining every owner when a Wwise
+leaf is shared.
+Generic character templates, display-name similarity, actions, runtime
+requests, selected leaves, and playback positions are not inferred.
+Every supported serialized AnimationClip `PostAudioEvent` context is also
+projected as an explicit Event/media callback link with its clip, owner,
+function, reachability, and AnimatorController names when available. This
+callback link does not require the Event and clip names to match and does not
+promote an unknown category.
+The same domain recognizes an AnimationClip action name and Wwise Event id
+only when their normalized names match exactly inside an existing
+`PostAudioEvent` callback context. This promotes the Event and its possible
+media to action SFX while retaining the clip, actor, callback, and runtime-
+selection boundary; name similarity without the callback never creates a
+trigger or ownership edge.
 `audio_cue_native.py` owns the explicit selected `global-metadata.dat` /
 `GameAssembly.dll` hash gate for current AudioCue enum names. Full ASTs are
 lazy Event-detail data under `audioCueExpressionSchemaVersion=1`; compact rows
@@ -498,6 +545,64 @@ than receiving guessed names. `table_contexts.py` and
 `event_projection.py` / `event_summary.py` own WebUI row projection.
 `build_audio.py` imports shared primitives from those owners instead of
 treating the semantics entry point as a utility module.
+The semantic index also publishes the bounded
+`externalSourceEventIdentityAudit`: External Source Event ids are compared
+separately with typed voice-table routing aliases and the narrower AudioDialog
+path-hash aliases, preserving the Event-route versus per-request
+`externalSourceKey` boundary.
+When the structured AudioDialog tables are available, the same audit adds a
+typed `overrideWwiseEvent -> AudioDialog.path` candidate join: the current CN
+export produces bounded route/path candidate sets. Shared route Events remain
+candidate sets, not selected runtime rows; changing counts are kept in
+`reports/story/recovery/audio/external_source_override_path_audit.*`.
+Typed `AudioDialogChannel` narrating/radio fields add a broader candidate join
+for channel-selection candidates; this is explicitly lower-confidence evidence
+and is reported separately in
+`reports/story/recovery/audio/external_source_channel_path_audit.*`.
+The selected-build native I/O chain also carries a read-only pointer-table
+census for the registered device, default file-I/O object, provider, and pump;
+the generated `reports/story/recovery/audio/native_io_vtable_pointer_census.*`
+is static dispatch evidence, not a runtime playback trace.
+
+The VoicePlayer resolver's static arguments are also closed on the selected
+build: it reads `VoiceI18n.s_languagePrefix` and calls the shared formatter as
+`("{0}/{1}/{2}", "Voice", languagePrefix, VoiceData.path)`, yielding the native
+key shape `Voice/<language>/<VoiceData.path>` before `PostEventExternal`.
+`_PostEventWithExternalSource` passes that same managed string directly to
+`AkExternalSourceInfo.szFile` before native descriptor copying, so the direct
+VoicePlayer key-to-descriptor-path identity is statically closed. The remaining
+runtime gap is source-state/sourceInfo instance selection and opened-handle
+identity.
+The managed codec argument is a separate closed boundary: current metadata
+defines `Beyond.Audio.AudioCodec` as `PCM=-1`, `ADPCM=1`, `VORBIS=2`,
+`ATRAC9=6`, and `OPUS_WEM=10`, and the selected `_PostEventWithExternalSource`
+body forwards its eighth stack argument unchanged into
+  `AkExternalSourceInfo.set_idCodec`. Its resolved AkSoundEngine export
+`CSharp_ada48f7e7181c770` (`AkSoundEngine.dll+0x335c0`) jumps to
+`0x180006050`, which stores the value directly at descriptor `+0x04`; there is
+no setter-side conversion. Current public `AKCODECID_*` constants use
+different values (`PCM=1`, `VORBIS=4`, `ATRAC9=12`, `AKOPUS_WEM=20`), so the
+  raw Beyond enum domain is now closed at the descriptor while its downstream
+  native consumer semantics remain unresolved. The installed runtime type
+  table resolves both `RuntimeVoiceData.codec` and the adapter's codec
+  parameter to `Beyond.Audio.AudioCodec`; the remaining gap is native
+  descriptor consumption. Do not equate the Beyond enum with the public
+  `AKCODECID_*` constants.
+  The same selected GameAssembly also closes the serialized voice-codec side:
+  `RuntimeVoiceData.FromSparkBuffer` and `VoiceData.get_codec` both read serialized
+  `VoiceData.codec` at offset `0x14` through the shared SparkBuffer integer
+  reader and copy the returned `Int32` unchanged into `RuntimeVoiceData.codec`.
+  Thus the serialized `VoiceData.codec -> RuntimeVoiceData.codec` edge is raw
+  propagation. The AudioDialog field name/schema agrees with that serialized
+  field, but this does not claim a separate table-loader trace. Runtime type
+  resolution closes the managed handoff into the adapter's
+  `Beyond.Audio.AudioCodec` parameter; only native interpretation remains
+  open.
+The nearby sourceInfo/provider branch is not that consumer: its non-flag-9
+`sourceInfo +0x04` fallback becomes provider state `+0xb8`, which the selected
+stream helpers use as a byte-position/stream bound. The managed external
+`idCodec` is preserved in the copied external record payload and has no
+static edge to that provider field or a decoder branch yet.
 
 Native Audio claims always receive both the selected
 `global-metadata.dat` and the matching `GameAssembly.dll` through
@@ -506,7 +611,7 @@ omit build-locked callsites, mappings, and runtime addresses. Do not restore
 module-global default game paths, duplicate native catalogs, compatibility
 re-exports, or broad `ImportError` import fallbacks.
 
-For the remaining live external-key-to-managed-path/open-handle, optional
+For the remaining live source-state/sourceInfo-to-open-handle, optional
 decoder-callback, and unobserved-codec-descriptor joins,
 the read-only runtime probe is prepared with the repo-local Frida environment:
 
@@ -520,17 +625,77 @@ The audio hook manifest also verifies `AkSoundEngine.dll` and attaches optional
 native lookup, source-manager key-join (`0xe2cd0`), key-to-decoder registry
 (`0x13f440`), source/provider preparation (`0x1af7a0`), post-call descriptor, callback-queue, Wwise open, and
 asynchronous-read probes, plus the managed external-post/callback boundaries.
+It also has an optional current-build `VoicePlayer.ExternalSourcePreparation`
+hook at `GameAssembly.dll+0x3abef40`; its ABI records the formatted
+`externalSourceKey` together with the Event, audio-object argument, and voice
+handle immediately before the external-post helper, and samples its fifth
+stack argument (`codec` at entry `+0x28`) as `voicePreparationCodecs`. This
+narrows the managed
+path-resolution boundary, but does not by itself prove native lookup, file
+open, decode, or audibility.
 The key-join probe records the requested key and source-state `+0x268`; the
 registry probe records the same key argument and active decoder pointer. These
 hooks are prepared evidence only until an authorized capture observes a match.
 The provider-preparation hook follows decoder `+0x18` to owner `+0x288` and
 records the descriptor `+0x10` UTF-16 candidate without assuming that its
 flags select the path; the importer reports only exact path-string overlap with
-the default-I/O open hook.
+the default-I/O open hook. The descriptor-copy hook also records the copied
+allocation pointer and the manager-constructor hook records its `descriptorInfo
++0` pointer; the importer publishes `sharedDescriptorAllocationBases` when a
+same-session pointer match is observed, without promoting it to a sourceInfo,
+file-handle, or PCM join.
 The importer publishes these observations under `nativePairing.keyLifecycle`,
-including bounded key intersections, descriptor paths, and file-open paths;
-those intersections remain explicitly non-proof of one handle, codec stream,
-or PCM buffer.
+including bounded key intersections, explicit
+`registrationManagerJoinRequestedKeys` /
+`registrationManagerJoinStateKeys268` comparisons, descriptor paths, and
+file-open paths. Those registration-to-join intersections directly test the
+currently unresolved generated-serial versus source-state-key equality, but
+remain same-session evidence unless pointer or managed call-chain data narrows
+them to one request; they are still not proof of one handle, codec stream, or
+PCM buffer.
+The Frida agent also resolves the exact external-source manager hash-table node
+by serial at constructor return and at join/lookup entry. The importer exposes
+`registrationManagerEntryPointers`, `managerJoinEntryPointers`, and
+`sharedRegistrationJoinEntryPointers` (plus the lookup equivalent). A shared
+pointer proves that the observed values reached one native manager entry in
+that capture; it still does not prove the descriptor selected a file handle,
+decoder stream, or PCM buffer.
+`managerEntryDescriptorInfoPointers` and
+`sharedManagerDescriptorAllocationBases` separately compare manager entry
+`+0x38` with the descriptor-copy allocation, proving retention of the same
+descriptor allocation when they intersect; this remains ownership evidence,
+not a sourceInfo/path/file/PCM join.
+Each native hook event also carries `nativeParentCaptureId` when another
+attached native hook is active synchronously on the same thread. The importer
+publishes exact resolved pairs under
+`nativePairing.nativeCallRelations` as
+`synchronousNativeHookNesting`; missing or merely adjacent IDs are omitted, so
+this relation does not infer asynchronous ownership, file, decoder, or PCM.
+It also publishes `nativePairing.managedExternalPathLifecycle`: the optional
+VoicePlayer preparation path is joined to the Adapter external-post path only
+through the Frida parent-capture chain, then compared with descriptor/provider/
+open path strings in the same session. Exact parent/path matches narrow the
+managed-to-native boundary, but are still not a native handle, decoder, branch,
+or PCM correlation. Native events also carry the same-thread managed hook stack
+when a synchronous bridge is active; the importer emits bounded
+`managedNativeContextCorrelations` and exact descriptor/provider/open path
+matches for that direct stack relation. This is stronger than a same-session
+string overlap, but it still does not join a later asynchronous sourceInfo,
+handle, decoder stream, or audible PCM result.
+The importer also publishes `nativePairing.callbackLifecycle`: when the native
+resolver/queue descriptor pointer equals the managed
+`_OnExternalSourceEventCallback` cookie, it records bounded callback-context
+transport evidence. This pointer is the temporary callback mapping object, not
+the Wwise external-source cookie, and the match still does not prove file,
+decoder, PCM, or audibility.
+When the managed parent-capture chain includes `AkCallbackManager.PostCallbacks`
+and `_ProcessEventCallback`, `callbackLifecycle` also emits bounded
+`managedExternalCallbackChains` and raw callback-type values. That proves the
+managed Wwise callback-delivery chain for the capture only; it does not join the
+native resolver descriptor, file, decoder, or PCM.
+The source-manager constructor hook decodes its stack ABI explicitly: `args[5]`
+is the resolver function stored at manager `+0x50`, `args[6]` is the mapping
+pointer stored at `+0x58`, and `args[7]` is operation flags at `+0x60`.
 The Wwise default-I/O path is hooked at its real `0x5030` entry (the manifest
 decodes the UTF-16 file-path argument); do not treat the interior `0x5080`
 branch as an independent function. The profile also observes the embedded
@@ -579,14 +744,50 @@ the initial attempt and the retry after provider refill `0x1801af960`, with
 return codes driving decoder state and consumption. No other direct decoder
 call exists in the selected `.text`; this expands decode-consumer coverage
 without proving an indirect decoder target or a new PCM sink.
-An address-taken indirect codec setup, callback ownership/target, external
-key/path value, and live invocation remain unresolved.
-Static analysis now joins the file/key provider's `+0x78`
+The runtime manifest now hooks the exact decoder entry ABI at
+`0x1801c7ec0`: `(decoder, float-output slot, frame-count slot)`. It samples
+decoder owner `+0x18 -> +0x268` (the source-state key), provider interface
+`+0x58`, the returned float-buffer pointer, produced frame count, and the
+native return address before and after the call. Return address `0x1801c4780`
+identifies the direct caller whose static body writes PCM16;
+`0x1801c49c1`/`0x1801c4a43` are the refill/retry callers. The importer reports
+key-registry/decoder-call,
+source-provider/decoder-call, and source-state/decoder-call intersections as
+bounded continuity evidence. It also compares provider-preparation
+`sourceOwner` (`decoder+0x18`) with decoder-entry `decoderOwner`, giving a
+same-owner check for the sourceInfo/provider instance; no verified capture has
+produced those rows yet.
+The optional sourceInfo-selector hook also samples the post-call selected table
+entry key (`outputDescriptor +0 -> +8`), candidate descriptor pointer
+(`outputDescriptor +0x10`), and candidate auxiliary field (`outputDescriptor
++0x18`). The source-info consumer and provider-preparation hooks sample the
+source object's copied descriptor pointer at `+0x338` (owner `+0x18 -> +0x338`)
+after the consumer returns. Matching these pointers is a bounded selector ->
+source-owner continuity check; it still does not identify the external file,
+handle, or decoded PCM.
+The optional source-state initializer hook at `0x1800d1f90` samples the
+destination source-state object, `sourceConfig +0x34`, incoming `sourceInfo`,
+and post-write `sourceState +0x268/+0x288`. The importer intersects those
+objects and keys with manager joins, provider owners, decoder owners, and
+sourceInfo pointers. These are initialization-continuity checks, not proof
+that the managed external key selected that instance.
+The native manager-constructor hook also decodes its `u32` status return:
+`1` is the successful registration path and `0x34` is the allocation-failure
+path in this build. The importer records `registrationStatuses` so a future
+capture can distinguish a missing join from a registration that never
+completed; status alone does not prove source-state, file, or PCM identity.
+The remaining address-taken codec callback/initialization targets, callback
+ownership, runtime external source-state/sourceInfo identity, and live
+invocation remain unresolved. The
+direct VoicePlayer external key-to-copied-descriptor path is statically closed.
+Static analysis now joins the file/key provider secondary interface's `+0x78`
 GetBuffer-shaped queue (`0x1800b85c0`) to the registered device and the
 device `+0x428` default file-I/O request slots used by `PerformStreamMgrIO`;
-the provider `+0x80` slot is release/advance-shaped. The file/key descriptor
-path is also statically bounded: `0x1800b5e30 -> 0x1800b9460 -> 0x1800b9530`
-copies descriptor `+0` as a UTF-16 path into provider-owned storage. The copied
+the provider `+0x80` slot (`0x1800b9a00`) is release/advance-shaped. The
+sourceInfo file/key descriptor path is statically bounded through the concrete
+factory `0x1800b5e30`, whose constructor `0x1800bb160` installs secondary
+vtable `0x180293260` at allocation `+0x90`; its descriptor-copy path carries
+descriptor `+0` as a UTF-16 path into provider-owned storage. The copied
 descriptor allocation is retained through event record `+0x14` into source
 manager `+0x38`; in the voice/render path `0x1801443e0` loads context `+0x268`
 into a temporary dword at local `+0x10` and passes its address as stack argument
@@ -621,7 +822,11 @@ for the local descriptor when flag bit 9 is set, then passes that descriptor
 through the singleton provider vtable `+0x28` to provider-owned UTF-16 storage.
 That call boundary carries no explicit manager entry, manager `+0x38`, or
 source-state key value, so it closes sourceInfo-to-provider provenance while
-leaving identity with the copied external descriptor unresolved.
+leaving identity with the copied external descriptor unresolved. The selected
+factory's provider slot copies descriptor `+0` into provider-owned UTF-16
+storage and retains descriptor `+0x08/+0x14` metadata. Exact build addresses
+and the branch table are kept in the generated native-provider audit report;
+this is still static path transport, not a live key/handle/PCM correlation.
 The provider-to-file boundary is now explicit too: open wrapper `0x180024630`
 passes the registered-device descriptor and returned path pointer through
 `0x180004a20`/`0x180004b40`; the default I/O table dispatches slot 0 to
@@ -630,6 +835,16 @@ passes the registered-device descriptor and returned path pointer through
 through `0x180005150`. This closes provider-request to native-open transport,
 but the boundary still carries no external key, source-state key, or manager
 `+0x38` value.
+The audio runtime trace now also reads the default-open routine's stack
+argument-5 provider context after the call: the selected build stores the
+`CreateFileW` handle at provider-context `+0x10` and file size at `+0`.
+The async batch descriptor's provider object is sampled at `+0x10` as well,
+so `runtime_trace_audio_import.py` reports an exact `openHandle` /
+`descriptorProviderHandle` intersection when one capture shows the same
+native handle crossing open into `ReadFileEx`. This is stronger than a path
+string overlap, but it still does not prove source-key ownership, decoder
+selection, PCM delivery, or audibility; stack-memory capture is only enabled
+for this verified native hook contract.
 The selected native `.text` has one direct source-config entry,
 `0x18003def1 -> 0x180034db0`: stack argument 6 comes from the record returned
 by `0x180040350` (`[object +0x10] -> [+0x68] +0x18`). Because that result is
@@ -676,6 +891,11 @@ the same parent `B +0x2c` into `0x1800e2cd0`, whose bucket walk compares it
 directly with manager entry `+0x4c` (the `0x1800c3990` registration serial),
 with no hash transform. A successful runtime match and the later file/PCM
 handoff remain unobserved.
+Within the child-source branch, `0x180034640` carries one source record through
+`0x180037740`: constructor write `0x18003779e` copies record `+0x14` to the
+child object's `+0x2c`, and `0x180034733` uses that same record field as the
+`0x1800e2cd0` key. This proves local same-record value identity, but not an
+alias to the separately generated registration serial.
 An exhaustive direct-call census finds four join callsites: `0x180034762` and
 `0x1800350d7` in the primary source/voice construction paths, plus
 `0x1800d35a8` and `0x1800e06ea` in broader manager state transitions. Only the
@@ -690,6 +910,12 @@ from parent-B/source-state `+0x14`. The complete source-state `+0x268` writer
 audit finds no store sourced from that serial slot. Thus exact comparison is
 closed, but equality is still a runtime-value question; path/handle and PCM
 handoff remain unobserved.
+An exact selected-build direct-call audit finds only two calls to
+`0x1800c3990` (`0x1800c394e` and `0x1800c3c47`), both in registration or
+external-post bridges; the primary source setup at `0x1800350d7` calls only
+the exact-key join `0x1800e2cd0`. This is negative direct-call evidence, not
+proof that indirect/shared-record aliasing cannot occur. The detailed census
+is kept in `reports/story/recovery/audio/native_registration_serial_audit.*`.
 The exact join body at `0x1800e2cd0` is narrower than a media lookup: a hit
 appends the source-state pointer to manager entry `+0x10`, updates count and
 capacity (`+0x18`/`+0x1c`), and optionally retains auxiliary state at `+0x30`.
@@ -808,8 +1034,9 @@ allocation. The selected decoder's caller converts its returned floats to
 signed PCM16 in the caller-owned output buffer. The selected Opus descriptor
 and the header-recognized generic memory descriptor have resolved `+0` stream
 callbacks; remaining edges are any address-taken indirect codec setup, optional
-callback initialization, external key-to-path value correlation, and live invocation;
-fixed-callback provider identity is closed.
+callback initialization, source-state-to-provider path correlation, and live
+invocation; fixed-callback provider identity is closed. The direct VoicePlayer
+external key-to-copied-descriptor path is statically closed.
 Request constructor `0x1800bb8e0` takes a free-list object from stream-manager
 `+0x458`, writes request `+0x10/+0x14`, stores caller `r8` at request `+0x18`
 as buffer/source, installs fixed callback `0x1800bf190` at `+0x20`, self at
@@ -830,12 +1057,13 @@ ReadFileEx completion/request recycle to the same provider allocation and
 queue. The selected decoder's caller converts its returned floats to signed
 PCM16 in the caller-owned output buffer. The two statically reached stream
 descriptors have resolved callbacks; this section does not identify any
-address-taken indirect codec setup, optional callback initialization, or live
-key-to-path invocation.
+remaining address-taken codec callback/initialization, native key-to-provider
+path invocation, or live playback.
 Native rows
-are execution evidence only; the importer does not call a key-to-path or decode
-mapping proven until one capture correlates the external descriptor and opened
-path with the selected stream callback and resulting decoded data flow.
+are execution evidence only; the importer does not claim the native
+key-to-provider path or decode mapping until one capture correlates the external
+descriptor and opened path with the selected stream callback and resulting
+decoded data flow.
 
 The default AnimeStudio type-job mode is `auto`: map-filtered conversion stays
 sharded, while broad Story JSON runs in isolated sequential processes. Do not

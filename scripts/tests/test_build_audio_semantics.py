@@ -8805,7 +8805,16 @@ class AudioSemanticDataTests(unittest.TestCase):
             event = next(row for row in detail_payload["events"] if row["id"] == "au_sfx_test")
             media = media_payload["media"][0]
 
-            self.assertEqual(payload["shards"], {"events": "events.json", "media": "media.json"})
+            self.assertEqual(payload["shards"], {
+                "events": "events.json",
+                "media": "media.json",
+                "sceneBackgrounds": "scene_backgrounds.json",
+            })
+            scene_background_payload = json.loads(
+                (out_root / "scene_backgrounds.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(scene_background_payload["status"], "unavailable")
+            self.assertNotIn("eventContexts", scene_background_payload)
             self.assertFalse(payload["debugOnly"])
             self.assertEqual(payload["runtimeModel"]["status"], "degraded")
             self.assertEqual(event["runtimeSelection"], "runtimeBranchUnresolved")
@@ -9058,6 +9067,35 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertIn("context?.animatorControllerContexts", evidence_body)
         self.assertIn("authoredStateReferences", evidence_body)
         self.assertIn("runtime execution unobserved", evidence_body)
+
+    def test_audio_frontend_exposes_animation_callback_aggregate_ownership_contract(self) -> None:
+        source = (
+            Path(__file__).resolve().parents[2] / "webui/src/features/audio/index.js"
+        ).read_text(encoding="utf-8")
+        search_body = source.split("function searchText", 1)[1].split(
+            "function humanize", 1
+        )[0]
+        panel_body = source.split("function recordPanel", 1)[1].split(
+            "function collectIds", 1
+        )[0]
+
+        for field in (
+            "animationCallbackOwnershipStatus",
+            "animationCallbackTokenResolutionStatus",
+            "animationCallbackTokenResolutionStatuses",
+            "animationCallbackResolutionStatuses",
+            "animationCallbackResolvedEntityIds",
+            "animationCallbackCandidateEntityIds",
+        ):
+            self.assertIn(f"record?.{field}", search_body)
+            self.assertIn(f"raw.{field}", panel_body)
+        self.assertIn("Animation callback ownership", panel_body)
+        self.assertIn("Animation callback token resolution", panel_body)
+        self.assertIn("Animation callback resolved entities", panel_body)
+        self.assertIn("Animation callback candidate entities", panel_body)
+        self.assertNotIn("raw.animationCallbackClipResolutions", panel_body)
+        self.assertNotIn("raw.animationCallbackOccurrences", panel_body)
+        self.assertIn("runtime execution unobserved", source)
 
     def test_audio_frontend_renders_native_playback_call_chain_stages(self) -> None:
         source = (

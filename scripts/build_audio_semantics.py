@@ -39,11 +39,13 @@ if __package__ == "scripts":
         identifiers,
         interactive_components,
         managed_literals,
+        media_ownership,
         model_view_projection,
         native_evidence,
         purpose,
         responsive_voice,
         rtpc_alignment,
+        scene_backgrounds,
         table_contexts,
         voice_requests,
     )
@@ -58,11 +60,13 @@ elif not __package__:
         identifiers,
         interactive_components,
         managed_literals,
+        media_ownership,
         model_view_projection,
         native_evidence,
         purpose,
         responsive_voice,
         rtpc_alignment,
+        scene_backgrounds,
         table_contexts,
         voice_requests,
     )
@@ -103,7 +107,7 @@ PROJECTILE_SOUND_PHASES = {
 # authoritative value; these names are presentation labels, not a claim that
 # selection behavior was evaluated offline.
 SELECTION_HIRC_TYPES = frozenset({5, 6, 12, 13})
-AUDIO_SEMANTIC_SCHEMA_VERSION = 117
+AUDIO_SEMANTIC_SCHEMA_VERSION = 123
 TRIGGER_CONTEXT_SCHEMA_VERSION = 38
 
 MONO_BEHAVIOUR_AUDIO_EVENT_FIELD_NAMES = frozenset({
@@ -12816,6 +12820,28 @@ def build_audio_semantic_data(
         for row in audio_index.get("wwiseEventInventory") or []
         if isinstance(row, dict) and isinstance(row.get("eventHash"), int)
     }
+    try:
+        scene_background_semantics = scene_backgrounds.collect_scene_background_semantics(
+            export_root,
+            audio_index,
+        )
+    except scene_backgrounds.SceneBackgroundError as exc:
+        scene_background_semantics = {
+            "schemaVersion": scene_backgrounds.SCHEMA_VERSION,
+            "status": "unavailable",
+            "error": str(exc),
+            "sources": [],
+            "counts": {},
+            "scenes": [],
+            "unresolvedSceneDefinitions": [],
+            "audioMaps": [],
+            "sceneEmitters": [],
+            "eventContexts": {},
+            "evidenceBoundary": (
+                "Scene background semantics were withheld because the published "
+                f"AnimeStudio object-index gate failed: {exc}"
+            ),
+        }
     external_source_event_identity_audit = external_source.collect_event_identity_audit(
         audio_index,
         language=language,
@@ -12913,6 +12939,7 @@ def build_audio_semantic_data(
         char_interact_semantics.get("eventContexts") or {},
         physics_audio_semantics.get("eventContexts") or {},
         model_view_semantics.get("eventContexts") or {},
+        scene_background_semantics.get("eventContexts") or {},
         mono_behaviour_audio_id_semantics.get("eventContexts") or {},
         levelscript_semantics.get("eventContexts") or {},
         table_contexts.collect_table_contexts(
@@ -13058,6 +13085,23 @@ def build_audio_semantic_data(
         )
         if cue_detail:
             event["audioCueExpressionDetail"] = cue_detail
+    character_audio_catalog = (
+        media_ownership.collect_character_audio_identity_catalog(export_root)
+    )
+    animation_action_ownership = (
+        media_ownership.annotate_event_animation_action_identity(events)
+    )
+    animation_callback_ownership = (
+        media_ownership.annotate_event_animation_callback_links(
+            events, export_root=export_root
+        )
+    )
+    character_audio_ownership = (
+        media_ownership.annotate_event_character_audio_identity(
+            events,
+            character_audio_catalog,
+        )
+    )
     action_control_evidence_by_event = {
         str(event.get("id") or ""): list(event.get("evidence") or [])
         for event in events
@@ -13247,6 +13291,11 @@ def build_audio_semantic_data(
         media,
         events,
     )
+    media_coarse_ownership = media_ownership.annotate_media_coarse_ownership(
+        media,
+        scene_background_semantics,
+        event_rows=events,
+    )
     ai_bark_catalog = responsive_voice.build_ai_bark_catalog(
         export_root,
         audio_index,
@@ -13413,6 +13462,12 @@ def build_audio_semantic_data(
     })
     trigger_context_name = "trigger_contexts.json"
     json_dump(out_root / trigger_context_name, trigger_context_catalog)
+    scene_background_name = "scene_backgrounds.json"
+    json_dump(out_root / scene_background_name, {
+        key: value
+        for key, value in scene_background_semantics.items()
+        if key != "eventContexts"
+    })
 
     # The raw audio index can be reused from an older build and may contain
     # native/static GameParameter names that were produced without this
@@ -13463,7 +13518,11 @@ def build_audio_semantic_data(
             "counts": audio_index.get("counts") or {},
         },
         "metadataEventSymbolAliases": metadata_event_symbol_catalog,
-        "shards": {"events": events_name, "media": media_name},
+        "shards": {
+            "events": events_name,
+            "media": media_name,
+            "sceneBackgrounds": scene_background_name,
+        },
         "triggerContexts": {
             "shard": trigger_context_name,
             "schemaVersion": trigger_context_catalog.get("schemaVersion"),
@@ -13477,7 +13536,32 @@ def build_audio_semantic_data(
             **media_trigger_context_counts,
             **media_trigger_semantic_category_counts,
             **media_post_process_counts,
+            **{
+                key: value
+                for key, value in media_coarse_ownership.items()
+                if key not in {"schemaVersion", "evidenceBoundary"}
+            },
+            **{
+                key: value
+                for key, value in animation_action_ownership.items()
+                if key not in {"schemaVersion", "evidenceBoundary"}
+            },
             "eventRecords": len(events),
+            "sceneBackgroundExactNamedScenes": int(
+                (scene_background_semantics.get("counts") or {}).get(
+                    "exactNamedScenes", 0
+                )
+            ),
+            "sceneBackgroundGlobalEventOccurrences": int(
+                (scene_background_semantics.get("counts") or {}).get(
+                    "sceneGlobalEventOccurrences", 0
+                )
+            ),
+            "sceneBackgroundEmitterEventRequests": int(
+                (scene_background_semantics.get("counts") or {}).get(
+                    "sceneEmitterEventRequests", 0
+                )
+            ),
             "namedEvents": len(named_event_ids),
             "eventsFoundInWwise": linked_events,
             "wwiseEventObjectHashes": sum(
@@ -13967,6 +14051,18 @@ def build_audio_semantic_data(
                 "definitions": physics_audio_semantics.get("definitions") or [],
             },
             "modelViewStateAudio": model_view_semantics.get("stats") or {},
+            "sceneBackgroundAudio": {
+                "status": scene_background_semantics.get("status"),
+                "shard": scene_background_name,
+                **(scene_background_semantics.get("counts") or {}),
+                "evidenceBoundary": (
+                    scene_background_semantics.get("evidenceBoundary") or ""
+                ),
+            },
+            "mediaCoarseOwnership": media_coarse_ownership,
+            "characterAudioNameIdentity": character_audio_ownership,
+            "animationCallbackLink": animation_callback_ownership,
+            "animationActionNameMatch": animation_action_ownership,
             "monoBehaviourAudioId": mono_behaviour_audio_id_semantics.get("stats") or {},
             "levelScriptAudio": levelscript_semantics.get("stats") or {},
             "levelSequenceAudio": {
@@ -14154,6 +14250,21 @@ def build_audio_semantic_data(
             "charInteractAudio": (char_interact_semantics.get("stats") or {}).get("evidenceBoundary") or "",
             "physicsAudio": physics_audio_semantics.get("evidenceBoundary") or "",
             "modelViewStateAudio": model_view_semantics.get("evidenceBoundary") or "",
+            "sceneBackgroundAudio": (
+                scene_background_semantics.get("evidenceBoundary") or ""
+            ),
+            "mediaCoarseOwnership": media_coarse_ownership.get(
+                "evidenceBoundary", ""
+            ),
+            "characterAudioNameIdentity": character_audio_ownership.get(
+                "evidenceBoundary", ""
+            ),
+            "animationCallbackLink": animation_callback_ownership.get(
+                "evidenceBoundary", ""
+            ),
+            "animationActionNameMatch": animation_action_ownership.get(
+                "evidenceBoundary", ""
+            ),
             "monoBehaviourAudioId": mono_behaviour_audio_id_semantics.get("evidenceBoundary") or "",
             "levelScriptAudio": levelscript_semantics.get("evidenceBoundary") or "",
             "levelSequenceAudio": (

@@ -283,6 +283,38 @@ voice, 188 UI, 66 ambience, 48 control, 13 music, 3 cue). This includes 40,217
 uniform related-Event joins, four exact trigger-context Event categories, and
 200 exact MonoBehaviour audio-field roles. The raw physical `audioCategory` is
 preserved; 276 mixed known-category joins remain unclassified. The semantic
+media rows also expose searchable coarse ownership separately from category
+and playback placement. Exact scene/Event/component/path joins can label a
+leaf as scene environment, scene object, animation, gameplay component,
+interaction, UI, voice system, or mission narration. Outdoor room tone and
+authored ambient-emitter roles may recover `ambience`; generic scene emitters
+retain scene ownership without being forced into an audio category.
+Exact same-name AnimationClip callback evidence can similarly recover an
+action SFX category. Event and media details show the matching clip, actor,
+callback-derived ownership, and evidence status; partial/similar names and
+clips without a supported audio callback remain unclassified.
+Authored `chr_*` and `au_chr_*` Event namespaces also expose their exact
+CharacterTable owner in Event/media details and search. Full internal character
+keys are preferred; shortened namespaces are accepted only when their leading
+four-digit id is unique in the current table. Event-leading internal tokens
+such as `lastrite_*`, `lizhiyan_*`, and `pograni_*` are accepted only when the
+token has one exact CharacterTable owner. Shared media shows all named
+character owners, while generic character templates and concrete playback
+locations remain unresolved.
+All supported AnimationClip audio callbacks are shown separately from the
+same-name action classification. Event/media details expose the exact clips,
+callback functions, owners, reachability, and recovered AnimatorController
+names even when Event and clip names differ; this relationship does not by
+itself assign an SFX category or claim runtime execution.
+Audio details also keep each callback Clip's resolved entity IDs separate from
+candidate entity IDs. Exact Character/Enemy/EnemyTemplate overlay matches are
+shown as resolved; unique-token or multi-match identities remain candidates,
+and a callback used by multiple authored owners is labeled shared. Missing or
+malformed overlay evidence, and unsupported Clip tokens, remain unresolved
+instead of being promoted. These are static authored callback labels; Animator
+execution, callback timing, Wwise branch/media selection, playback, and
+audibility remain runtime-unobserved.
+The semantic
 index also recovers 25 unique `AU_*` field symbols whose AudioHashGenerator
 hash matches a current Wwise Event (for example conveyor, laser, NPC, UI scan,
 Qinshi, and mastering symbols). Event details show the declaring IL2CPP type,
