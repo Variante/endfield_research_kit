@@ -103,6 +103,10 @@ namespace EndfieldGraphShaderLabEditor
         private const float PreviewKeyIntensity = 0.55f;
         private const string FittedCompositorTranslationEnvironmentVariable =
             "ENDFIELD_REFERENCE_FITTED_COMPOSITOR_TRANSLATION";
+        private const string ComparisonCameraEnvironmentVariable =
+            "ENDFIELD_COMPARISON_CAMERA_JSON";
+        private const string ComparisonLightingActorEnvironmentVariable =
+            "ENDFIELD_COMPARISON_LIGHTING_ACTOR";
         private const string ApproximateOperatorLightingEnvironmentVariable =
             "ENDFIELD_REFERENCE_APPROXIMATE_OPERATOR_LIGHTING";
         private const string RecoveredClusteredNprLightLoopEnvironmentVariable =
@@ -5380,6 +5384,7 @@ namespace EndfieldGraphShaderLabEditor
                 actorName,
                 actorRoot.transform);
             FrameCameraToRecoveredOperatorCamera(camera, actorName);
+            ApplyComparisonCameraOverrideIfRequested(camera);
             EndfieldRecoveredCharInfoBackgroundPortraitBuilder.EnsureAndBind(
                 camera,
                 actorName,
@@ -5405,6 +5410,154 @@ namespace EndfieldGraphShaderLabEditor
             AssetDatabase.Refresh();
             Debug.Log(
                 $"Rendered {actorName} runtime reference at {sampleTime:0.###}s: {outputPath}");
+        }
+
+        /// <summary>
+        /// Renders a fixed phase list without reopening the viewer scene for
+        /// every sample. The single-sample entry point is useful for
+        /// interactive recovery, but a source-rate identity sweep must keep
+        /// one scene, camera, lighting profile, and render pipeline alive.
+        /// </summary>
+        internal static void RenderRuntimeReferenceActorSweep(
+            string actorName,
+            string clipName,
+            float[] sampleTimes,
+            string outputDirectory,
+            string stem)
+        {
+            if (sampleTimes == null || sampleTimes.Length == 0)
+                throw new ArgumentException("Sweep requires at least one sample.", nameof(sampleTimes));
+            if (string.IsNullOrWhiteSpace(outputDirectory) ||
+                Path.IsPathRooted(outputDirectory) ||
+                outputDirectory.Contains(".."))
+            {
+                throw new ArgumentException(
+                    "Sweep output directory must be a relative path.",
+                    nameof(outputDirectory));
+            }
+
+            EnsureHGCompatRenderPipelineAssigned();
+            if (!File.Exists(Path.Combine(Directory.GetCurrentDirectory(), ViewerScenePath)))
+            {
+                throw new FileNotFoundException(
+                    "Build the shared character viewer scene before rendering a runtime sweep.",
+                    ViewerScenePath);
+            }
+
+            Scene scene = EditorSceneManager.OpenScene(ViewerScenePath, OpenSceneMode.Single);
+            EnsureOriginalStylePresentationScene(scene);
+            Transform charactersRoot = FindSceneGameObject("Characters")?.transform;
+            if (charactersRoot == null)
+                throw new InvalidOperationException("Shared viewer scene has no Characters root.");
+
+            GameObject actorRoot = FindSceneGameObject(actorName);
+            if (actorRoot == null)
+            {
+                string prefabPath =
+                    $"{GeneratedRoot}/Playable/{actorName}/Prefabs/{actorName}.prefab";
+                GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+                if (prefab == null)
+                    throw new FileNotFoundException(
+                        $"Runtime-reference actor prefab is missing: {actorName}",
+                        prefabPath);
+                actorRoot = PrefabUtility.InstantiatePrefab(prefab, scene) as GameObject;
+                if (actorRoot == null)
+                {
+                    throw new InvalidOperationException(
+                        $"Could not instantiate runtime-reference actor: {actorName}");
+                }
+                actorRoot.name = actorName;
+                actorRoot.transform.SetParent(charactersRoot, false);
+            }
+
+            foreach (Transform child in charactersRoot)
+            {
+                if (child != null)
+                    child.gameObject.SetActive(child.gameObject == actorRoot.transform);
+            }
+            actorRoot.transform.localPosition = Vector3.zero;
+            actorRoot.transform.localRotation = Quaternion.identity;
+            actorRoot.transform.localScale = Vector3.one;
+            actorRoot.SetActive(true);
+
+            string clipPath =
+                $"{GeneratedRoot}/Playable/{actorName}/Animations/{Safe(clipName)}.anim";
+            AnimationClip clip = AssetDatabase.LoadAssetAtPath<AnimationClip>(clipPath);
+            if (clip == null)
+                throw new FileNotFoundException(
+                    $"Runtime-reference overview clip is missing: {clipName}",
+                    clipPath);
+            Animation animation = actorRoot.GetComponent<Animation>();
+            if (animation == null)
+                animation = actorRoot.AddComponent<Animation>();
+            if (animation[clipName] == null)
+                animation.AddClip(clip, clipName);
+            animation.clip = clip;
+            animation.Stop();
+            SetRecoveredPropVisibility(actorRoot, Array.Empty<string>());
+
+            var lightingRoot = FindSceneGameObject("Lighting")?.transform;
+            ConfigurePreviewLighting(scene, lightingRoot);
+            ApplyGeneratedMaterialProfileFlags();
+            ApplyGeneratedTextureImportProfiles();
+            PruneLowerQualityMeshLodsFromOpenScene();
+
+            Camera camera = Camera.main ?? UnityEngine.Object.FindObjectOfType<Camera>();
+            if (camera == null)
+                throw new InvalidOperationException("Shared viewer scene has no camera.");
+            ConfigureOperatorReferenceLighting(
+                scene,
+                lightingRoot,
+                camera,
+                actorName,
+                actorRoot.transform);
+            FrameCameraToRecoveredOperatorCamera(camera, actorName);
+            ApplyComparisonCameraOverrideIfRequested(camera);
+            EndfieldRecoveredCharInfoBackgroundPortraitBuilder.EnsureAndBind(
+                camera,
+                actorName,
+                actorRoot.transform);
+            if (IsEnvironmentFlagEnabled(FittedCompositorTranslationEnvironmentVariable))
+                ApplyRuntimeReferenceCompositorTranslation(camera, actorName);
+
+            Bounds bounds = CombinedBounds(
+                actorRoot.GetComponentsInChildren<SkinnedMeshRenderer>(true));
+            ConfigureReferenceBackdrop(
+                scene,
+                FindBackdropRoot(),
+                camera,
+                bounds,
+                (float)RuntimeReferenceRenderWidth / RuntimeReferenceRenderHeight);
+
+            string outputRoot = Path.GetFullPath(
+                Path.Combine(Application.dataPath, "../../scratch", outputDirectory));
+            Directory.CreateDirectory(outputRoot);
+            for (int index = 0; index < sampleTimes.Length; index++)
+            {
+                float sampleTime = sampleTimes[index];
+                if (float.IsNaN(sampleTime) || float.IsInfinity(sampleTime) || sampleTime < 0f)
+                {
+                    throw new InvalidDataException(
+                        $"Sweep sample {index} is not a finite non-negative time: {sampleTime}.");
+                }
+                clip.SampleAnimation(actorRoot, Mathf.Clamp(sampleTime, 0f, clip.length));
+                CharacterProceduralIk poseCorrection =
+                    actorRoot.GetComponent<CharacterProceduralIk>();
+                if (poseCorrection != null)
+                    poseCorrection.Evaluate();
+
+                string fileName = stem + "_t" +
+                    sampleTime.ToString("0.000", CultureInfo.InvariantCulture)
+                        .Replace('.', 'p') + ".png";
+                string outputPath = Path.Combine(outputRoot, fileName);
+                RenderPreview(outputPath, RuntimeReferenceRenderWidth, RuntimeReferenceRenderHeight);
+                Debug.Log(
+                    $"Rendered {actorName} sweep sample {index + 1}/{sampleTimes.Length} " +
+                    $"at {sampleTime:0.###}s: {outputPath}");
+            }
+            Debug.Log(
+                $"Runtime reference sweep complete: actor={actorName}, " +
+                $"samples={sampleTimes.Length}, output={outputRoot}");
         }
 
         [MenuItem("Endfield/Character Recovery Lab/Render Far Shared Viewer Preview")]
@@ -10239,20 +10392,28 @@ namespace EndfieldGraphShaderLabEditor
             volume.environmentReflectionCubemap =
                 LoadRecoveredEnvironmentReflectionCubemap();
             volume.compatibilityShaderInfluence = 1.0f;
+            string lightingActorName = Environment.GetEnvironmentVariable(
+                ComparisonLightingActorEnvironmentVariable);
+            if (string.IsNullOrWhiteSpace(lightingActorName))
+                lightingActorName = actorName;
+            else
+                lightingActorName = lightingActorName.Trim();
             if (!EndfieldOriginalRenderParameterImporter.TryApplyCharacterLighting(
                     volume,
-                    actorName,
+                    lightingActorName,
                     out string characterParameterProvenance))
             {
                 throw new InvalidDataException(
-                    $"Could not load generated original CharInfo parameters for {actorName}.");
+                    $"Could not load generated original CharInfo parameters for {lightingActorName}.");
             }
             // CharInfo selects Manual mode at zero EV. A reused physical camera
             // can carry a prior current multiplier briefly, but the source-exact
             // target and the new-camera/settled value are neutral.
             volume.postExposureEV = 0.0f;
             EditorUtility.SetDirty(volume);
-            Debug.Log($"Loaded original character render parameters ({characterParameterProvenance}).");
+            Debug.Log(
+                $"Loaded original character render parameters for {lightingActorName} " +
+                $"(capture actor={actorName}, {characterParameterProvenance}).");
 
             EndfieldHGOperatorPresentation presentation =
                 EnsureComponent<EndfieldHGOperatorPresentation>(camera.gameObject);
@@ -10320,19 +10481,21 @@ namespace EndfieldGraphShaderLabEditor
                     ? ReadRecoveredPunctualShadowTileResolution()
                     : 1024;
             if (!EndfieldOriginalOperatorLightImporter.TryRead(
-                    actorName,
+                    lightingActorName,
                     out EndfieldHGOperatorLightData[] originalOperatorLights,
                     out string operatorLightProvenance))
             {
                 throw new InvalidDataException(
-                    $"Could not load generated original operator-light parameters for {actorName}.");
+                    $"Could not load generated original operator-light parameters for " +
+                    $"{lightingActorName}.");
             }
             operatorLights.lights = originalOperatorLights;
             string followerBinding = operatorLights.BindActorRootAndDescribe(actorRoot);
             operatorLights.ApplyGlobals();
             EditorUtility.SetDirty(operatorLights);
             Debug.Log(
-                $"Loaded original operator-light parameters ({operatorLightProvenance}); " +
+                $"Loaded original operator-light parameters for {lightingActorName} " +
+                $"(capture actor={actorName}, {operatorLightProvenance}); " +
                 $"{followerBinding}; clustered follower evaluation " +
                 $"enabled={operatorLights.sourceBackedClusteredNprLightLoop}; " +
                 $"exact isolated-rig XY/Z membership " +
@@ -11683,6 +11846,84 @@ namespace EndfieldGraphShaderLabEditor
                    string.Equals(value, "true", StringComparison.OrdinalIgnoreCase) ||
                    string.Equals(value, "yes", StringComparison.OrdinalIgnoreCase) ||
                    string.Equals(value, "on", StringComparison.OrdinalIgnoreCase);
+        }
+
+        [Serializable]
+        private sealed class ComparisonCameraOverride
+        {
+            public string cameraId = string.Empty;
+            public float[] position = Array.Empty<float>();
+            public float[] rotation = Array.Empty<float>();
+            public float fieldOfView;
+            public float nearClipPlane;
+            public float farClipPlane;
+        }
+
+        private static void ApplyComparisonCameraOverrideIfRequested(Camera camera)
+        {
+            string payload = Environment.GetEnvironmentVariable(
+                ComparisonCameraEnvironmentVariable);
+            if (string.IsNullOrWhiteSpace(payload))
+                return;
+
+            ComparisonCameraOverride contract;
+            try
+            {
+                contract = JsonUtility.FromJson<ComparisonCameraOverride>(payload);
+            }
+            catch (Exception exception)
+            {
+                throw new InvalidDataException(
+                    $"Could not parse {ComparisonCameraEnvironmentVariable}: " +
+                    exception.Message,
+                    exception);
+            }
+            if (contract == null ||
+                contract.position == null || contract.position.Length != 3 ||
+                contract.rotation == null || contract.rotation.Length != 4 ||
+                string.IsNullOrWhiteSpace(contract.cameraId) ||
+                contract.fieldOfView <= 0f ||
+                contract.nearClipPlane <= 0f ||
+                contract.farClipPlane <= contract.nearClipPlane)
+            {
+                throw new InvalidDataException(
+                    $"{ComparisonCameraEnvironmentVariable} is incomplete or invalid.");
+            }
+            foreach (float value in contract.position)
+            {
+                if (float.IsNaN(value) || float.IsInfinity(value))
+                    throw new InvalidDataException(
+                        "Comparison camera position is non-finite.");
+            }
+            foreach (float value in contract.rotation)
+            {
+                if (float.IsNaN(value) || float.IsInfinity(value))
+                    throw new InvalidDataException(
+                        "Comparison camera rotation is non-finite.");
+            }
+
+            camera.orthographic = false;
+            camera.transform.position = new Vector3(
+                contract.position[0],
+                contract.position[1],
+                contract.position[2]);
+            camera.transform.rotation = new Quaternion(
+                contract.rotation[0],
+                contract.rotation[1],
+                contract.rotation[2],
+                contract.rotation[3]);
+            camera.fieldOfView = contract.fieldOfView;
+            camera.aspect = (float)RuntimeReferenceRenderWidth /
+                RuntimeReferenceRenderHeight;
+            camera.nearClipPlane = contract.nearClipPlane;
+            camera.farClipPlane = contract.farClipPlane;
+            camera.clearFlags = CameraClearFlags.SolidColor;
+            camera.backgroundColor = PreviewBackgroundColor;
+            camera.ResetProjectionMatrix();
+            EditorUtility.SetDirty(camera);
+            Debug.Log(
+                $"Applied common comparison camera '{contract.cameraId}' " +
+                $"at {camera.transform.position} fov={camera.fieldOfView:0.###}.");
         }
 
         private static int ReadRecoveredPunctualShadowTileResolution()
