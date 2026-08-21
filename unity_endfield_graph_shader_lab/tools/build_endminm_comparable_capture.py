@@ -135,6 +135,14 @@ def _file_evidence(path: Path, label: str, expected_hash: str | None = None) -> 
     return {"path": _relative(path), "bytes": size, "sha256": digest}
 
 
+def _write_json_lf(path: Path, value: object) -> None:
+    """Write canonical UTF-8 JSON bytes with LF independent of checkout mode."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_suffix(path.suffix + ".lf.partial")
+    temporary.write_bytes((json.dumps(value, ensure_ascii=False, indent=2) + "\n").encode("utf-8"))
+    temporary.replace(path)
+
+
 def _video_source_contract() -> dict[str, Any]:
     """Use the same decoded/packet/timeline source contract as matte audit."""
     try:
@@ -563,9 +571,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"common-camera Endminf/Endminm evidence verified: {args.report}")
         else:
             args.report.parent.mkdir(parents=True, exist_ok=True)
-            temporary = args.report.with_suffix(".partial.json")
-            temporary.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-            temporary.replace(args.report)
+            _write_json_lf(args.report, report)
             print(f"common-camera Endminf/Endminm evidence written: {args.report}")
         comparison = report["comparison"]
         print(

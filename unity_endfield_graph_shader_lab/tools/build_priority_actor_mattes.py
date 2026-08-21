@@ -1724,6 +1724,15 @@ def _resolve_repo_relative(value: object, label: str) -> Path:
     return resolved
 
 
+def _write_json_lf(path: Path, value: object) -> None:
+    """Write canonical UTF-8 JSON bytes with LF regardless of Windows mode."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_suffix(path.suffix + ".lf.partial")
+    data = (json.dumps(value, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
+    temporary.write_bytes(data)
+    os.replace(temporary, path)
+
+
 def _manifest_publication_gates(actor_reports: list[dict]) -> dict:
     return {
         "sourcePin": True,
@@ -1804,9 +1813,7 @@ def write_manifest(source: dict, actor_reports: list[dict], output_root: Path) -
         "publicationGates": gates,
     }
     path = output_root / "actor_matte_manifest.json"
-    temporary = path.with_suffix(".partial.json")
-    temporary.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    os.replace(temporary, path)
+    _write_json_lf(path, report)
     return path
 
 
@@ -1858,9 +1865,7 @@ def write_durable_report(
         },
     }
     report_path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = report_path.with_suffix(".partial.json")
-    temporary.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    os.replace(temporary, report_path)
+    _write_json_lf(report_path, report)
     return report_path
 
 
@@ -2189,9 +2194,7 @@ def _refresh_existing_report(manifest_path: Path, report_path: Path) -> Path:
     actor_set = [item.get("actor") for item in published_actors]
     manifest["actorSet"] = sorted(str(actor) for actor in actor_set)
     manifest["excludedActors"] = _excluded_actor_contract(manifest["actorSet"])
-    temporary = manifest_path.with_suffix(".refresh.partial.json")
-    temporary.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    os.replace(temporary, manifest_path)
+    _write_json_lf(manifest_path, manifest)
     _check_manifest_data(manifest, manifest_path)
     durable_report = write_durable_report(
         manifest_path,

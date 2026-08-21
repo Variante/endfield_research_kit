@@ -288,8 +288,8 @@
         "endminmComparableCapture": {
           "evidence": {
             "path": "unity_endfield_graph_shader_lab/tools/endminm_comparable_capture_evidence.json",
-            "bytes": 96000,
-            "sha256": "BCCD01392997124CA81E86EDB00C485D392AA5FC6D97A18458FE72053BC95CB2"
+            "bytes": 93940,
+            "sha256": "76AA472409042F42935D0CC70EF5D3574C00D12595F9F266D292899764F59755"
           },
           "cameraTrack": "track_chr_0003_endmin",
           "resolution": [
@@ -604,8 +604,8 @@
           },
           "captureEvidence": {
             "path": "unity_endfield_graph_shader_lab/tools/endminm_comparable_capture_evidence.json",
-            "bytes": 96000,
-            "sha256": "BCCD01392997124CA81E86EDB00C485D392AA5FC6D97A18458FE72053BC95CB2"
+            "bytes": 93940,
+            "sha256": "76AA472409042F42935D0CC70EF5D3574C00D12595F9F266D292899764F59755"
           },
           "render": {
             "available": true,
