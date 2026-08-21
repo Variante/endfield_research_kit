@@ -9,10 +9,12 @@ exact container/serialized-file identity also contains model objects.  It
 also rechecks the three generic binding hashes against the authored actor
 manifest and Avatar m_TOS using Unity's CRC32 path rule.
 
-The current build is intentionally a successful negative proof: the exact FX
-container has one AnimationClip row and no GameObject/Animator/Avatar/
-Transform/Mesh closure.  Consequently no FX-model remap is emitted and the
-clip is never assigned to the main actor skeleton by name or hash order.
+The current build is intentionally a successful negative proof within the
+current AssetMap/container scope: the exact FX container has one AnimationClip
+row and no GameObject/Animator/Avatar/Transform/Mesh closure.  Consequently no
+FX-model remap is emitted and the clip is never assigned to the main actor
+skeleton by name or hash order.  This does not negate an unassessed runtime
+hierarchy.
 """
 
 from __future__ import annotations
@@ -104,15 +106,100 @@ def _snapshot(path: Path) -> dict[str, Any]:
     }
 
 
-def _stage_clip(stage: Path, identity: dict[str, Any]) -> tuple[Path, dict[str, Any]]:
+def _source_fields(value: Any, *, label: str) -> tuple[int, int]:
+    if not isinstance(value, dict):
+        raise VerificationError(f"{label} source snapshot is missing")
+    try:
+        return int(value["bytes"]), int(value["mtime_ns"])
+    except (KeyError, TypeError, ValueError) as exc:
+        raise VerificationError(f"{label} source snapshot lacks bytes/mtime_ns") from exc
+
+
+def _validate_source_provenance(
+    stamp: dict[str, Any],
+    identity: dict[str, Any],
+    expected_source: Any,
+    current_source: dict[str, Any],
+) -> dict[str, Any]:
+    """Require closure, stage and current-file provenance to agree.
+
+    The closure currently records bytes/mtime (not a digest), so the verifier
+    computes the current digest and publishes it in the proof.  ``--check``
+    then makes a later audit fail if the source content changes even when its
+    size and mtime are restored.
+    """
+
+    expected_bytes, expected_mtime = _source_fields(
+        expected_source, label="closure expectedSourceSnapshot"
+    )
+    current_bytes, current_mtime = _source_fields(
+        current_source, label="current source"
+    )
+    if (current_bytes, current_mtime) != (expected_bytes, expected_mtime):
+        raise VerificationError(
+            "current source bytes/mtime differ from closure expectedSourceSnapshot"
+        )
+    if _normal_path(current_source.get("path")) != _normal_path(identity["source"]):
+        raise VerificationError("current source path differs from exact identity")
+    freshness = stamp.get("sourceFreshness")
+    if not isinstance(freshness, dict) or freshness.get("status") != "validated":
+        raise VerificationError("stage sourceFreshness is not validated")
+    stage_current = freshness.get("current")
+    stage_expected = freshness.get("expected")
+    if _source_fields(stage_current, label="stage sourceFreshness.current") != (
+        current_bytes,
+        current_mtime,
+    ):
+        raise VerificationError("stage sourceFreshness.current differs from current source")
+    if _source_fields(stage_expected, label="stage sourceFreshness.expected") != (
+        expected_bytes,
+        expected_mtime,
+    ):
+        raise VerificationError(
+            "stage sourceFreshness.expected differs from closure expectedSourceSnapshot"
+        )
+    for label, snapshot in (
+        ("stage sourceFreshness.current", stage_current),
+        ("stage sourceFreshness.expected", stage_expected),
+    ):
+        if snapshot.get("path") is not None and _normal_path(snapshot.get("path")) != _normal_path(identity["source"]):
+            raise VerificationError(f"{label} path differs from exact identity")
+        if snapshot.get("sha256") is not None and snapshot.get("sha256") != current_source["sha256"]:
+            raise VerificationError(f"{label} sha256 differs from current source")
+    if expected_source.get("sha256") is not None and expected_source.get("sha256") != current_source["sha256"]:
+        raise VerificationError("current source sha256 differs from closure expectedSourceSnapshot")
+    if not isinstance(current_source.get("sha256"), str) or len(current_source["sha256"]) != 64:
+        raise VerificationError("current source sha256 was not computed")
+    return {
+        "closureExpected": dict(expected_source),
+        "stageCurrent": dict(stage_current),
+        "stageExpected": dict(stage_expected),
+        "current": dict(current_source),
+        "bytesMtimeValidated": True,
+        "sha256Validated": True,
+    }
+
+
+def _stage_clip(
+    stage: Path,
+    identity: dict[str, Any],
+    expected_source: Any,
+) -> tuple[Path, dict[str, Any], dict[str, Any], dict[str, Any]]:
     if not stage.is_dir():
         raise VerificationError(f"exact actor clip stage is missing: {stage}")
     stamp_path = stage / ".character_import_stage.json"
     if not stamp_path.is_file():
         raise VerificationError(f"exact actor clip stage stamp is missing: {stamp_path}")
     stamp = _json(stamp_path)
-    if not isinstance(stamp, dict) or stamp.get("status") != "ok" or stamp.get("identity") != identity:
+    if not isinstance(stamp, dict) or stamp.get("status") != "ok":
+        raise VerificationError(f"exact actor clip stage stamp is stale: {stamp_path}")
+    stage_identity = stamp.get("identity")
+    if not isinstance(stage_identity, dict) or stage_identity != identity:
         raise VerificationError(f"exact actor clip stage stamp identity is stale: {stamp_path}")
+    current_source = _snapshot(Path(identity["source"]))
+    source_provenance = _validate_source_provenance(
+        stamp, identity, expected_source, current_source
+    )
     expected = stage / "AnimationClip" / (
         f"{identity['name']}_p{int(identity['pathId']) & ((1 << 64) - 1):016X}.json"
     )
@@ -121,17 +208,22 @@ def _stage_clip(stage: Path, identity: dict[str, Any]) -> tuple[Path, dict[str, 
     value = _json(expected)
     if not isinstance(value, dict):
         raise VerificationError(f"exact actor clip JSON is not an object: {expected}")
-    metadata = value.get("$animestudio") or {}
-    if metadata:
+    for key in ("m_Name", "Name"):
+        if value.get(key) != stage_identity["name"]:
+            raise VerificationError(f"clip {key} is not the exact staged target: {expected}")
+    metadata = value.get("$animestudio")
+    if metadata is not None and not isinstance(metadata, dict):
+        raise VerificationError(f"clip $animestudio provenance is malformed: {expected}")
+    if metadata is not None:
         checks = {
-            "pathId": identity["pathId"],
-            "type": identity["type"],
-            "sourceOffset": identity["sourceOffset"],
+            "pathId": stage_identity["pathId"],
+            "type": stage_identity["type"],
+            "sourceOffset": stage_identity["sourceOffset"],
         }
         for key, wanted in checks.items():
             if metadata.get(key) != wanted:
                 raise VerificationError(f"clip metadata {key} drifted: {expected}")
-    return expected, value
+    return expected, value, stamp, source_provenance
 
 
 def clip_binding_hashes(value: dict[str, Any]) -> dict[int, list[dict[str, Any]]]:
@@ -159,6 +251,14 @@ def clip_binding_hashes(value: dict[str, Any]) -> dict[int, list[dict[str, Any]]
             f"expected exactly the three Endminf FX hashes and nine bindings; "
             f"got hashes={sorted(grouped)} entries={len(bindings)}"
         )
+    for path_hash in EXPECTED_BINDING_HASHES:
+        rows = grouped[path_hash]
+        attributes = sorted(int(row["attribute"]) for row in rows)
+        if len(rows) != 3 or attributes != [1, 2, 3]:
+            raise VerificationError(
+                f"path hash {path_hash} must have exactly three Transform bindings "
+                f"with attributes [1, 2, 3]; got count={len(rows)} attributes={attributes}"
+            )
     return grouped
 
 
@@ -205,6 +305,9 @@ def _container_evidence(asset_map: Path, identity: dict[str, Any]) -> dict[str, 
         "modelTypes": list(MODEL_TYPES),
         "containerModelRows": len(model_rows),
         "sourceOffsetModelRows": len(same_file_model_rows),
+        "evidenceScope": "current AssetMap container rows and exact source+offset rows only",
+        "runtimeHierarchy": "not_assessed",
+        "runtimeHierarchyNotNegated": True,
         "targetIdentityRows": [
             {
                 "name": row.get("Name"),
@@ -217,9 +320,9 @@ def _container_evidence(asset_map: Path, identity: dict[str, Any]) -> dict[str, 
             for row in target_rows
         ],
         "result": (
-            "container_has_animation_clip_only_no_model_closure"
+            "current_assetmap_container_scope_has_animation_clip_only_no_model_closure"
             if not model_rows and not same_file_model_rows
-            else "model_rows_present_requires_explicit_hierarchy_join"
+            else "current_assetmap_container_scope_model_rows_present_requires_explicit_hierarchy_join"
         ),
     }
 
@@ -276,7 +379,14 @@ def _avatar_evidence(path: Path, hashes: Iterable[int]) -> dict[str, Any]:
         "exists": path.is_file(),
         "hashAlgorithm": PATH_HASH_ALGORITHM,
         "targetRows": [
-            {"pathHash": value, "keyPresent": False, "path": None, "algorithmMatches": False}
+            {
+                "pathHash": value,
+                "keyPresent": False,
+                "path": None,
+                "candidateCount": 0,
+                "candidatePaths": [],
+                "algorithmMatches": False,
+            }
             for value in wanted
         ],
     }
@@ -303,7 +413,15 @@ def _avatar_evidence(path: Path, hashes: Iterable[int]) -> dict[str, Any]:
         valid += 1
         row = rows.get(str(key))
         if row is not None:
-            row.update({"keyPresent": True, "path": authored, "algorithmMatches": True})
+            row.update(
+                {
+                    "keyPresent": True,
+                    "path": authored,
+                    "candidateCount": 1,
+                    "candidatePaths": [authored],
+                    "algorithmMatches": True,
+                }
+            )
     base.update(
         {
             "avatarName": str(document.get("m_Name") or document.get("Name") or ""),
@@ -320,6 +438,59 @@ def _avatar_evidence(path: Path, hashes: Iterable[int]) -> dict[str, Any]:
     return base
 
 
+def _remap_gates(
+    model: dict[str, Any],
+    manifest: dict[str, Any],
+    avatar: dict[str, Any],
+    hashes: Iterable[int],
+) -> dict[str, Any]:
+    """Return independent, fail-closed gates for an FX-model remap."""
+
+    wanted = [int(value) for value in hashes]
+    manifest_rows = {int(row["pathHash"]): row for row in manifest.get("targetRows", [])}
+    avatar_rows = {int(row["pathHash"]): row for row in avatar.get("targetRows", [])}
+    manifest_unique = all(
+        manifest_rows.get(path_hash, {}).get("candidateCount") == 1
+        and len(manifest_rows.get(path_hash, {}).get("candidatePaths") or []) == 1
+        for path_hash in wanted
+    )
+    avatar_unique = all(
+        avatar_rows.get(path_hash, {}).get("keyPresent") is True
+        and avatar_rows.get(path_hash, {}).get("algorithmMatches") is True
+        and avatar_rows.get(path_hash, {}).get("candidateCount") == 1
+        and len(avatar_rows.get(path_hash, {}).get("candidatePaths") or []) == 1
+        for path_hash in wanted
+    )
+    def first_path(rows: dict[int, dict[str, Any]], path_hash: int) -> Any:
+        paths = rows.get(path_hash, {}).get("candidatePaths") or []
+        return paths[0] if paths else None
+
+    consistent = all(
+        first_path(manifest_rows, path_hash) == first_path(avatar_rows, path_hash)
+        and first_path(manifest_rows, path_hash) is not None
+        for path_hash in wanted
+    )
+    model_closure = bool(
+        model.get("containerModelRows")
+        and model.get("sourceOffsetModelRows")
+    )
+    gates = {
+        "modelClosure": model_closure,
+        "manifestUnique": manifest_unique,
+        "avatarTosUnique": avatar_unique,
+        "manifestAvatarPathsConsistent": consistent,
+    }
+    missing = [name for name, passed in gates.items() if not passed]
+    return {
+        **gates,
+        "allGatesPassed": not missing,
+        "missingGates": missing,
+        "evidenceScope": "current AssetMap/container plus authored manifest/Avatar TOS only",
+        "runtimeHierarchy": "not_assessed",
+        "runtimeHierarchyNotNegated": True,
+    }
+
+
 def build_report(
     *,
     closure: Path,
@@ -330,6 +501,11 @@ def build_report(
     avatar: Path,
 ) -> dict[str, Any]:
     target = _target_from_closure(closure)
+    expected_source = target.get("expectedSourceSnapshot")
+    if not isinstance(expected_source, dict):
+        raise VerificationError(
+            "closure expectedSourceSnapshot is required for the exact target"
+        )
     row = _asset_map_row(asset_map, target)
     cab = _cab_row(cab_map, target)
     identity = {
@@ -342,23 +518,46 @@ def build_report(
         "cab": cab["cab"],
         "container": target["container"],
     }
-    clip_path, clip = _stage_clip(stage, identity)
+    clip_path, clip, stage_stamp_value, source_provenance = _stage_clip(
+        stage, identity, expected_source
+    )
     stage_stamp = stage / ".character_import_stage.json"
     grouped = clip_binding_hashes(clip)
     model = _container_evidence(asset_map, identity)
     manifest = _manifest_evidence(actor_manifest, grouped)
     avatar_report = _avatar_evidence(avatar, grouped)
-    remap_eligible = bool(
-        model["containerModelRows"]
-        and model["sourceOffsetModelRows"]
-        and all(
-            row["candidateCount"] == 1
-            for row in manifest["targetRows"]
+    remap_gates = _remap_gates(model, manifest, avatar_report, grouped)
+    remap_eligible = bool(remap_gates["allGatesPassed"])
+    if not remap_eligible:
+        status = (
+            "ok_current_assetmap_scope_model_closure_unresolved"
+            if not remap_gates["modelClosure"]
+            else "ok_current_assetmap_scope_remap_mapping_unresolved"
         )
-    )
+        reason = (
+            "not eligible in current AssetMap/container scope: missing gates "
+            + ", ".join(remap_gates["missingGates"])
+            + "; runtime hierarchy was not assessed; no FX-model .anim remap emitted"
+        )
+    else:
+        status = "ok_current_assetmap_scope_remap_eligible"
+        reason = (
+            "current AssetMap/container scope and authored manifest/Avatar TOS provide "
+            "unique consistent model-remap gates; runtime hierarchy still requires an "
+            "explicit join before emission"
+        )
     return {
         "schema": SCHEMA,
-        "status": "ok_model_closure_unresolved" if not remap_eligible else "ok_model_closure_requires_explicit_join",
+        "status": status,
+        "evidenceScope": {
+            "kind": "current_assetmap_container_and_authored_tos_scope",
+            "description": (
+                "Conclusions are bounded to the current AssetMap/CABMap exact identity, "
+                "serialized source offset, actor manifest and Avatar m_TOS artifacts."
+            ),
+            "runtimeHierarchy": "not_assessed",
+            "runtimeHierarchyNotNegated": True,
+        },
         "identity": identity,
         "identityEvidence": {
             "closure": _snapshot(closure),
@@ -366,33 +565,50 @@ def build_report(
             "cabMap": _snapshot(cab_map),
             "stageStamp": _snapshot(stage_stamp),
             "stageClip": _snapshot(clip_path),
-            "source": _snapshot(Path(identity["source"])),
+            "stageProvenanceIdentity": stage_stamp_value["identity"],
+            "source": source_provenance["current"],
+            "closureExpectedSource": source_provenance["closureExpected"],
+            "stageSourceFreshness": {
+                "current": source_provenance["stageCurrent"],
+                "expected": source_provenance["stageExpected"],
+                "currentFile": source_provenance["current"],
+                "bytesMtimeValidated": source_provenance["bytesMtimeValidated"],
+                "sha256Validated": source_provenance["sha256Validated"],
+            },
         },
         "clip": {
             "bindingCount": sum(len(rows) for rows in grouped.values()),
             "uniquePathHashCount": len(grouped),
+            "bindingCountByHash": {
+                str(path_hash): len(rows) for path_hash, rows in grouped.items()
+            },
             "pathHashes": sorted(grouped),
+            "typeIDsByHash": {
+                str(path_hash): sorted({str(row["typeID"]) for row in rows})
+                for path_hash, rows in grouped.items()
+            },
             "attributesByHash": {
                 str(path_hash): sorted(int(row["attribute"]) for row in rows)
                 for path_hash, rows in grouped.items()
             },
         },
         "fxModelClosure": model,
+        "remapGates": remap_gates,
         "mainActorSkeleton": {
             "role": "main-actor-skeleton",
             "remapApplied": False,
+            "evidenceScope": "current authored actor manifest and canonical Avatar m_TOS only",
+            "runtimeHierarchy": "not_assessed",
+            "runtimeHierarchyNotNegated": True,
             "manifest": manifest,
             "avatar": avatar_report,
         },
         "remap": {
             "eligible": remap_eligible,
             "output": None,
-            "reason": (
-                "exact sk_fx container/source-offset has no GameObject/Animator/Avatar/Transform/Mesh closure; "
-                "do not synthesize FX-model .anim or assign these hashes to the main actor skeleton"
-                if not remap_eligible
-                else "model rows exist but no automatic remap is allowed until every hash has one authored path"
-            ),
+            "reason": reason,
+            "runtimeHierarchy": "not_assessed",
+            "runtimeHierarchyNotNegated": True,
         },
         "resolutionRule": (
             "only exact source+offset+PathID+type identity plus one authored transform path whose CRC32(UTF-8) "
