@@ -20,6 +20,13 @@ from typing import Any
 
 import cv2
 
+from build_priority_actor_mattes import (
+    MatteError,
+    _expected_source_contract,
+    _probe_video,
+    _requested_windows_contract,
+)
+
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = PROJECT_ROOT.parent
@@ -126,6 +133,26 @@ def _file_evidence(path: Path, label: str, expected_hash: str | None = None) -> 
     if expected_hash is not None and digest != expected_hash:
         raise CaptureEvidenceError(f"{label} hash mismatch: {digest} != {expected_hash}")
     return {"path": _relative(path), "bytes": size, "sha256": digest}
+
+
+def _video_source_contract() -> dict[str, Any]:
+    """Use the same decoded/packet/timeline source contract as matte audit."""
+    try:
+        probe = _probe_video(REPO_ROOT / "videos" / "2026-08-15_10-32-32.mkv")
+    except MatteError as error:
+        raise CaptureEvidenceError(f"source timing probe failed: {error}") from error
+    path = REPO_ROOT / "videos" / "2026-08-15_10-32-32.mkv"
+    size, digest = _sha256(path)
+    actual = {"path": "videos/2026-08-15_10-32-32.mkv", "bytes": size, "sha256": digest, **probe}
+    if actual != _expected_source_contract():
+        raise CaptureEvidenceError("source timing/count/PTS contract is stale")
+    decoded_count = int(actual["decodedFrameCount"])
+    for actor, window in _requested_windows_contract().items():
+        if int(window["framesExclusive"][1]) >= decoded_count:
+            raise CaptureEvidenceError(
+                f"{actor} actor window is not strictly below decodedFrameCount={decoded_count}"
+            )
+    return actual
 
 
 def _json(path: Path, label: str) -> dict[str, Any]:
@@ -394,6 +421,7 @@ def _common_render_contract() -> dict[str, Any]:
 
 
 def build_report() -> dict[str, Any]:
+    source_contract = _video_source_contract()
     reference_evidence = _file_evidence(REFERENCE_PATH, "Endminf settled reference")
     reference_image = cv2.imread(str(REFERENCE_PATH), cv2.IMREAD_COLOR)
     if reference_image is None or reference_image.shape[:2] != (EXPECTED_SIZE[1], EXPECTED_SIZE[0]) or reference_image.ndim != 3 or reference_image.shape[2] != 3:
@@ -441,6 +469,7 @@ def build_report() -> dict[str, Any]:
         "schema": SCHEMA,
         "status": "ok",
         "pathBase": "repo_root",
+        "source": source_contract,
         "identity": {
             "target": {"characterId": "chr_0003_endminf", "actorToken": "endminf"},
             "competitor": {"characterId": "chr_0002_endminm", "actorToken": "endminm"},

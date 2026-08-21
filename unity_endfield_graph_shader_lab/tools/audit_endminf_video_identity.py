@@ -31,6 +31,13 @@ from typing import Any
 import cv2
 import numpy as np
 
+from build_priority_actor_mattes import (
+    MatteError,
+    _expected_source_contract,
+    _probe_video,
+    _requested_windows_contract,
+)
+
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = PROJECT_ROOT.parent
@@ -124,6 +131,26 @@ def _file_evidence(path: Path) -> dict[str, Any]:
         raise EvidenceError(f"required evidence is missing: {path}")
     size, digest = _sha256(path)
     return {"path": _relative(path), "bytes": size, "sha256": digest}
+
+
+def _video_source_contract() -> dict[str, Any]:
+    """Pin the exact source with the matte tool's ffprobe/ffmpeg contract."""
+    try:
+        probe = _probe_video(VIDEO_PATH)
+    except MatteError as error:
+        raise EvidenceError(f"source timing probe failed: {error}") from error
+    size, digest = _sha256(VIDEO_PATH)
+    actual = {"path": VIDEO_RELATIVE.as_posix(), "bytes": size, "sha256": digest, **probe}
+    expected = _expected_source_contract()
+    if actual != expected:
+        raise EvidenceError("source timing/count/PTS contract is stale")
+    decoded_count = int(actual["decodedFrameCount"])
+    for actor, window in _requested_windows_contract().items():
+        if int(window["framesExclusive"][1]) >= decoded_count:
+            raise EvidenceError(
+                f"{actor} actor window is not strictly below decodedFrameCount={decoded_count}"
+            )
+    return actual
 
 
 def _require_close(actual: Any, expected: float, label: str, tolerance: float = 1e-5) -> float:
@@ -609,9 +636,7 @@ def _scan_source_transition() -> dict[str, Any]:
 
 
 def build_report() -> dict[str, Any]:
-    source_size, source_hash = _sha256(VIDEO_PATH)
-    if source_size != VIDEO_BYTES or source_hash != VIDEO_SHA256:
-        raise EvidenceError(f"pinned source changed: {source_size}/{source_hash}")
+    source_contract = _video_source_contract()
     boundaries, boundary_row, next_row = _load_video_evidence()
     source_identity = _source_identity()
     visual = _visual_match()
@@ -638,7 +663,7 @@ def build_report() -> dict[str, Any]:
         "schema": SCHEMA,
         "status": "ok",
         "pathBase": "repo_root",
-        "source": {"path": VIDEO_RELATIVE.as_posix(), "bytes": source_size, "sha256": source_hash, "fps": EXPECTED_FPS, "resolution": list(EXPECTED_SIZE)},
+        "source": source_contract,
         "videoSearch": {
             "referenceSegmentCount": len(reference["segments"]),
             "boundaryRowCount": len(boundaries["boundaries"]),

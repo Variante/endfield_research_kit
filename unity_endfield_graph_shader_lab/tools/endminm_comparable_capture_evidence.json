@@ -2,6 +2,49 @@
   "schema": "endfield.character-recovery.common-camera-identity-sweep.v2",
   "status": "ok",
   "pathBase": "repo_root",
+  "source": {
+    "path": "videos/2026-08-15_10-32-32.mkv",
+    "bytes": 1678613397,
+    "sha256": "2F542A3BE7CE3332295D3A841FD8613C62707E084F9E33A0F156DA8A06EBF5E7",
+    "codec": "h264",
+    "width": 3840,
+    "height": 2160,
+    "pixFmt": "yuv420p",
+    "fps": 60.0,
+    "timeBase": "1/1000",
+    "startTimeSeconds": 0.0,
+    "durationSeconds": 378.367,
+    "timelineFrameCount": 22702,
+    "decodedFrameCount": 22701,
+    "packetCount": 22701,
+    "decodedCountAuthoritative": true,
+    "firstPtsSeconds": 0.0,
+    "lastPtsSeconds": 378.35,
+    "maxPtsGapSeconds": 0.033,
+    "missingFinalPtsGap": {
+      "beforePtsSeconds": 378.317,
+      "afterPtsSeconds": 378.35,
+      "expectedMissingPtsSeconds": 378.333,
+      "gapSeconds": 0.033,
+      "missingTimelineFrameIndex": 22700,
+      "missingFrameCount": 1
+    },
+    "probeEvidence": {
+      "ffprobe": {
+        "packetCount": 22701,
+        "ptsCount": 22701,
+        "firstPtsSeconds": 0.0,
+        "lastPtsSeconds": 378.35,
+        "command": "ffprobe -v error -select_streams v:0 -count_packets -show_entries stream=codec_name,width,height,pix_fmt,r_frame_rate,avg_frame_rate,time_base,start_time,nb_read_packets -show_entries format=duration,start_time,size -of json videos/2026-08-15_10-32-32.mkv",
+        "ptsCommand": "ffprobe -v error -select_streams v:0 -show_entries packet=pts_time -of csv=p=0 videos/2026-08-15_10-32-32.mkv"
+      },
+      "ffmpeg": {
+        "decodedFrameCount": 22701,
+        "command": "ffmpeg -hide_banner -loglevel error -nostats -progress pipe:1 -i videos/2026-08-15_10-32-32.mkv -map 0:v:0 -an -f null NUL"
+      },
+      "explanation": "timelineFrameCount is round(ffprobe format duration * r_frame_rate); one nominal 60-Hz PTS slot (index 22700) is absent between 378.317 and 378.350 seconds, so decodedFrameCount/packetCount=22701 is authoritative"
+    }
+  },
   "identity": {
     "target": {
       "characterId": "chr_0003_endminf",

@@ -266,6 +266,11 @@ class PriorityActorMatteTests(unittest.TestCase):
         matte._check_audit_report(base, report_path)
         mutations = {
             "source_sha256": lambda value: value["source"].__setitem__("sha256", "0" * 64),
+            "source_timeline_count": lambda value: value["source"].__setitem__("timelineFrameCount", matte.EXPECTED_TIMELINE_FRAME_COUNT + 1),
+            "source_decoded_count": lambda value: value["source"].__setitem__("decodedFrameCount", matte.EXPECTED_DECODED_FRAME_COUNT + 1),
+            "source_packet_count": lambda value: value["source"].__setitem__("packetCount", matte.EXPECTED_PACKET_COUNT + 1),
+            "source_count_relationship": lambda value: value["source"].__setitem__("decodedFrameCount", value["source"]["timelineFrameCount"]),
+            "source_stale_legacy_frame_count": lambda value: value["source"].__setitem__("frameCount", matte.EXPECTED_TIMELINE_FRAME_COUNT),
             "weight_sha256": lambda value: value["algorithm"].__setitem__("modelWeightsSha256", "0" * 64),
             "artifact_pix_fmt": lambda value: value["artifacts"][0].__setitem__("pix_fmt", "bgr24"),
             "artifact_codec": lambda value: value["artifacts"][0].__setitem__("codec", "h264"),
@@ -332,6 +337,19 @@ class PriorityActorMatteTests(unittest.TestCase):
         self.assertEqual(matte.VIDEO_RELATIVE.as_posix(), "videos/2026-08-15_10-32-32.mkv")
         self.assertEqual(len(matte.VIDEO_SHA256), 64)
         self.assertEqual(matte.VIDEO_BYTES, 1678613397)
+
+    def test_source_contract_separates_timeline_and_decoded_counts(self) -> None:
+        source = matte._expected_source_contract()
+        self.assertNotIn("frameCount", source)
+        self.assertEqual(source["timelineFrameCount"], 22702)
+        self.assertEqual(source["decodedFrameCount"], 22701)
+        self.assertEqual(source["packetCount"], 22701)
+        self.assertTrue(source["decodedCountAuthoritative"])
+        self.assertEqual(source["timelineFrameCount"], source["decodedFrameCount"] + 1)
+        self.assertEqual(source["missingFinalPtsGap"]["missingTimelineFrameIndex"], 22700)
+        self.assertEqual(source["missingFinalPtsGap"]["missingFrameCount"], 1)
+        for actor in matte.ACTOR_WINDOWS:
+            self.assertLess(matte._actor_window(actor).end_frame_exclusive, source["decodedFrameCount"])
 
 
 if __name__ == "__main__":

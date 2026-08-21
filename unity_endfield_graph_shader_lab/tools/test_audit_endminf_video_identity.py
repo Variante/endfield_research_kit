@@ -61,6 +61,15 @@ class EndminfVideoIdentityTests(unittest.TestCase):
         self.assertEqual(row["templateId"], "chr_9000_endmin")
         self.assertNotEqual(row["templateId"], "chr_0003_endminf")
 
+    def test_source_counts_are_decoded_authoritative(self) -> None:
+        source = self.report["source"]
+        self.assertNotIn("frameCount", source)
+        self.assertEqual(source["timelineFrameCount"], 22702)
+        self.assertEqual(source["decodedFrameCount"], 22701)
+        self.assertEqual(source["packetCount"], 22701)
+        self.assertEqual(source["timelineFrameCount"], source["decodedFrameCount"] + 1)
+        self.assertEqual(source["missingFinalPtsGap"]["missingFrameCount"], 1)
+
 
 if __name__ == "__main__":
     unittest.main()
