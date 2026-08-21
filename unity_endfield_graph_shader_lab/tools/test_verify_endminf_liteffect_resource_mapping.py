@@ -27,10 +27,20 @@ class LitEffectResourceMappingTests(unittest.TestCase):
         spec.loader.exec_module(mesh)
         report = HERE.parent / "Assets" / "EndfieldGraphShaderLab" / "Generated" / "Characters" / "Playable" / "Endminf" / "ExternalUiEffects" / "endminf_liteffect_mesh_probe_evidence.json"
         evidence = json.loads(report.read_text(encoding="utf-8"))
-        self.assertEqual(evidence["mesh"]["exportSha256"], mesh.EXPECTED["sha256"])
+        self.assertEqual(evidence["mesh"]["sha256"], mesh.EXPECTED["sha256"])
         self.assertIsNone(evidence["channels"]["COLOR"])
         with self.assertRaises(RuntimeError):
             mesh.verify(HERE / "does-not-exist.json")
+        report = HERE.parent / "Assets" / "EndfieldGraphShaderLab" / "Generated" / "Characters" / "Playable" / "Endminf" / "ExternalUiEffects" / "endminf_liteffect_mesh_probe_evidence.json"
+        base = json.loads(report.read_text(encoding="utf-8"))
+        for section, key, value in (("mesh", "name", "wrong"), ("mesh", "pathID", 1), ("mesh", "containerOffset", 1), ("mesh", "sha256", "00"), ("mesh", "vertexCount", 1), ("channels", "POSITION3", 1), ("channels", "UV2_UV7", []), ("source", "offset", 1), ("source", "pathID", 1)):
+            mutated = copy.deepcopy(base); mutated[section][key] = value
+            with tempfile.NamedTemporaryFile("w", suffix=".json", encoding="utf-8", delete=False) as f:
+                json.dump(mutated, f); name = f.name
+            try:
+                with self.assertRaises(RuntimeError): mesh.verify_report(Path(name))
+            finally:
+                Path(name).unlink()
 
     def test_representative_contract_is_reflected_without_rdef(self) -> None:
         report = MODULE.build_report()
