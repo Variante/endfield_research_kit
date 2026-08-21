@@ -1,5 +1,6 @@
 import tempfile
 import unittest
+from collections import Counter
 from pathlib import Path
 from unittest import mock
 
@@ -40,6 +41,29 @@ class StreamingInstanceRecoveryTests(unittest.TestCase):
             "S_prop_indie_sphub+1_001_02_lod0",
         ])
         self.assertTrue(all(row["match"] == "explicit_static_asset_family_closure" for row in rows))
+
+    def test_payload_keeps_component_shape_at_group_level(self):
+        instances = [{
+            "entityId": 1, "sourceFile": "chunk.bytes", "groupIndex": 0,
+            "initChunkComponentTypeIds": [18, 21, 67],
+            "initChunkComponentStrides": {"18": 64, "21": 64, "67": 16},
+            "prefabIdentity": {"status": "unavailableInValidatedInitChunkSchema"},
+        }]
+        shapes = recovery._compact_component_shapes(instances)
+        self.assertEqual(shapes["chunk.bytes#group0"]["componentTypeIds"], [18, 21, 67])
+        self.assertEqual(instances[0]["initChunkComponentShapeId"], "chunk.bytes#group0")
+        self.assertNotIn("initChunkComponentTypeIds", instances[0])
+        self.assertNotIn("initChunkComponentStrides", instances[0])
+
+    def test_prefab_contract_revalidates_exact_identity_fields(self):
+        contract = recovery._build_prefab_identity_contract([{
+            "entityId": 1,
+            "prefabIdentity": {"status": "exact", "source": "", "pathId": True},
+        }])
+        self.assertEqual(contract["status"], "unavailable")
+        self.assertEqual(contract["exactInstanceCount"], 0)
+        self.assertEqual(contract["invalidExactIdentityCount"], 1)
+        self.assertEqual(contract["diagnostics"][0]["reason"], "exactIdentityRequiresNonEmptySourceAndIntegerPathId")
 
 
 if __name__ == "__main__":

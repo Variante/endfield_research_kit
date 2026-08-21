@@ -71,11 +71,343 @@ SCENE_CONTAINMENT_DIAGNOSTIC_LIMIT = 4
 SCENE_CONTAINMENT_TYPES = frozenset({"SceneAsset", "Level", "LevelAsset"})
 PREFAB_CONTAINMENT_TYPES = frozenset({"Prefab", "PrefabAsset"})
 UNRESOLVED_CONTAINER_TYPES = frozenset({"SceneAssetContainer", "AssetContainer"})
+STREAMING_INSTANCE_CONTRACT_VERSION = 1
+STREAMING_INSTANCE_DIAGNOSTIC_LIMIT = 8
 SceneIdentityKey = tuple[Any, ...]
 
 
 class SceneBackgroundError(RuntimeError):
     """Raised when the published object-index evidence cannot be trusted."""
+
+
+def _streaming_instance_paths(export_root: Path) -> list[Path]:
+    """Return generated InitChunkData sidecars without treating names as IDs."""
+    root = export_root / "recovered" / "AnimeStudio-cli"
+    paths: list[Path] = []
+    for source in ("StreamingAssets", "Persistent"):
+        sidecar_root = root / source / "map_streaming_instances"
+        if sidecar_root.is_dir():
+            paths.extend(sorted(path for path in sidecar_root.glob("*.json") if path.is_file()))
+    return paths
+
+
+def _prefab_identity_key(value: Any) -> SceneIdentityKey | None:
+    """Accept only an explicit prefab Source+PathID identity from a sidecar."""
+    if not isinstance(value, dict) or value.get("status") != "exact":
+        return None
+    source = value.get("source", value.get("Source"))
+    path_id = value.get("pathId", value.get("PathID"))
+    if not isinstance(source, str) or not source:
+        return None
+    if isinstance(path_id, bool) or not isinstance(path_id, int):
+        return None
+    tokens = _source_tokens(source)
+    if len(tokens) != 1:
+        return None
+    return ("assetMap", tokens[0], path_id)
+
+
+def _load_streaming_instance_identity_catalog(export_root: Path) -> dict[str, Any]:
+    """Load exact prefab->level instance facts, or publish bounded gaps.
+
+    The currently validated InitChunkData sidecars contain entity IDs, names,
+    transforms, and raw ECS component columns, but no known prefab AssetMap
+    Source+PathID/hash field in the observed schema.  This loader
+    deliberately does not derive one from entity names, Mesh joins, positions,
+    or chunk filenames.  A future exporter may add an exact ``prefabIdentity``
+    object to each instance; only that object can enter ``entries``.
+    """
+    paths = _streaming_instance_paths(export_root)
+    diagnostics: list[dict[str, Any]] = []
+    sources: list[dict[str, Any]] = []
+    entries: list[dict[str, Any]] = []
+    total_instances = 0
+    exact_instances = 0
+    malformed_instances = 0
+    unavailable_contracts = 0
+    collection_invalid = False
+
+    def report(status: str, reason: str, **extra: Any) -> None:
+        if len(diagnostics) < STREAMING_INSTANCE_DIAGNOSTIC_LIMIT:
+            diagnostics.append({"status": status, "reason": reason, **extra})
+
+    for path in paths:
+        relative = str(path.relative_to(export_root)).replace("\\", "/")
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+            collection_invalid = True
+            report("streamingInstanceSidecarUnreadable", "invalidSidecar", path=relative, error=str(exc))
+            continue
+        if not isinstance(payload, dict):
+            collection_invalid = True
+            report("streamingInstanceSidecarMalformed", "rootNotObject", path=relative)
+            continue
+        level_id = payload.get("levelId")
+        if not isinstance(level_id, str) or not level_id:
+            collection_invalid = True
+            report("streamingInstanceSidecarMalformed", "missingLevelId", path=relative)
+            continue
+        schema_version = payload.get("schemaVersion")
+        contract = payload.get("prefabIdentityContract")
+        source_row = {
+            "path": relative,
+            "levelId": level_id,
+            "schemaVersion": schema_version,
+            "prefabIdentityContractStatus": (
+                contract.get("status") if isinstance(contract, dict) else None
+            ),
+        }
+        sources.append(source_row)
+        instances = payload.get("instances")
+        if not isinstance(instances, list):
+            collection_invalid = True
+            report("streamingInstanceSidecarMalformed", "instancesNotAList", path=relative, levelId=level_id)
+            continue
+        identity_contract_valid = schema_version == 2 and isinstance(contract, dict) and contract.get("status") == "exact"
+        if not identity_contract_valid:
+            collection_invalid = True
+            report(
+                "prefabIdentityUnavailable",
+                "sidecarLacksPrefabIdentityContract",
+                path=relative,
+                levelId=level_id,
+                schemaVersion=schema_version,
+            )
+            unavailable_contracts += 1
+        elif contract.get("status") != "exact":
+            unavailable_contracts += 1
+        total_instances += len(instances)
+        for ordinal, instance in enumerate(instances):
+            if not isinstance(instance, dict):
+                collection_invalid = True
+                malformed_instances += 1
+                report(
+                    "streamingInstanceSidecarMalformed",
+                    "instanceNotAnObject",
+                    path=relative,
+                    levelId=level_id,
+                    ordinal=ordinal,
+                )
+                continue
+            # A row cannot override a sidecar-level contract failure. This
+            # prevents stale/hand-authored exact rows from bypassing the
+            # versioned exporter gate.
+            if not identity_contract_valid:
+                continue
+            identity = instance.get("prefabIdentity")
+            if not isinstance(identity, dict) or identity.get("status") != "exact":
+                collection_invalid = True
+                report(
+                    "prefabIdentityMalformed",
+                    "instanceLacksExactPrefabIdentity",
+                    path=relative,
+                    levelId=level_id,
+                    ordinal=ordinal,
+                )
+                continue
+            key = _prefab_identity_key(identity)
+            if key is None:
+                collection_invalid = True
+                malformed_instances += 1
+                report(
+                    "prefabIdentityMalformed",
+                    "exactIdentityMissingSourcePathId",
+                    path=relative,
+                    levelId=level_id,
+                    ordinal=ordinal,
+                )
+                continue
+            exact_instances += 1
+            entries.append({
+                "levelId": level_id,
+                "entityId": instance.get("entityId"),
+                "sourceFile": instance.get("sourceFile"),
+                "groupIndex": instance.get("groupIndex"),
+                "entityIndex": instance.get("entityIndex"),
+                "prefabIdentity": {
+                    "source": identity.get("source", identity.get("Source")),
+                    "pathId": identity.get("pathId", identity.get("PathID")),
+                },
+                "identityKey": list(key),
+                "evidence": identity.get("evidence") or "exact prefab identity exported by InitChunkData recovery",
+            })
+
+    candidate_exact_instances = exact_instances
+    if collection_invalid:
+        entries = []
+        exact_instances = 0
+    if exact_instances:
+        status = "exactPrefabIdentityEntries"
+    elif paths and (diagnostics or unavailable_contracts):
+        status = "unavailablePrefabIdentity"
+    elif paths:
+        status = "unavailableNoPrefabIdentityEntries"
+    else:
+        status = "unavailableNoStreamingInstanceSidecars"
+    return {
+        "schemaVersion": STREAMING_INSTANCE_CONTRACT_VERSION,
+        "status": status,
+        "sources": sources,
+        "counts": {
+            "sidecars": len(sources),
+            "instances": total_instances,
+            "exactPrefabIdentityInstances": exact_instances,
+            "candidateExactPrefabIdentityInstances": candidate_exact_instances,
+            "malformedInstances": malformed_instances,
+            "exactPrefabIdentityLevels": len({row["levelId"] for row in entries}),
+        },
+        "entries": entries,
+        "diagnostics": diagnostics,
+        "evidenceBoundary": (
+            "Only an explicit prefab Source+PathID identity can join a prefab to a placed "
+            "level instance. Entity names, positions, matrices, Mesh objects, and chunk "
+            "filenames are not identity evidence; the currently validated sidecars expose "
+            "no known field for that identity. A future exporter or separately proven "
+            "StreamingChunkData relation may add exact evidence."
+        ),
+    }
+
+
+def _normalise_asset_path(value: Any) -> str | None:
+    if not isinstance(value, str) or not value.strip():
+        return None
+    normalized = value.replace("\\", "/").strip()
+    if not normalized or "/" not in normalized:
+        return None
+    return normalized.casefold()
+
+
+def _enrich_streaming_instance_asset_paths(
+    export_root: Path,
+    catalog: dict[str, Any],
+    *,
+    asset_map_index: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Resolve exact prefab identities to unique full AssetMap container paths.
+
+    This is the only path-based bridge allowed for the future instance join:
+    both sides must first be exact Source+PathID identities, then resolve to
+    one complete AssetMap ``Container`` path.  Basename, entity-name, Mesh,
+    transform, and similarity joins never enter this function.
+    """
+    entries = [entry for entry in catalog.get("entries") or () if isinstance(entry, dict)]
+    if not entries:
+        return catalog
+    identities = [
+        entry.get("prefabIdentity")
+        for entry in entries
+        if _prefab_identity_key(entry.get("prefabIdentity")) is not None
+    ]
+    provided = _asset_map_containment_provider(
+        export_root, identities, collected_index=asset_map_index,
+    )
+    # Keep raw AssetMap rows here.  The general containment normalizer
+    # intentionally deduplicates equal candidates for scene-emitter display;
+    # prefab identity recovery must see duplicate rows and fail closed.
+    _normalized_for_diagnostics, diagnostics = _normalise_scene_containment_index(provided)
+    raw_by_identity: dict[SceneIdentityKey, list[dict[str, Any]]] = defaultdict(list)
+    for candidate in provided.get("entries") or ():
+        if not isinstance(candidate, dict):
+            continue
+        for candidate_key in _containment_lookup_keys(candidate):
+            raw_by_identity[candidate_key].append(candidate)
+    duplicate_identity_row_count = 0
+    duplicate_diagnostics: list[dict[str, Any]] = []
+    duplicate_keys_seen: set[SceneIdentityKey] = set()
+    catalog["assetMapResolution"] = {
+        "status": "validated" if not diagnostics else "diagnostics",
+        "scanEvidence": _bound_rows(provided.get("scanEvidence") or []),
+        "diagnostics": _bound_rows(diagnostics),
+        "duplicateIdentityRowCount": 0,
+    }
+    for entry in entries:
+        key = _prefab_identity_key(entry.get("prefabIdentity"))
+        if key is None:
+            continue
+        candidates = raw_by_identity.get(key, [])
+        all_by_path: dict[str, list[dict[str, Any]]] = defaultdict(list)
+        prefab_by_path: dict[str, list[dict[str, Any]]] = defaultdict(list)
+        families: set[str] = set()
+        for candidate in candidates:
+            path = _normalise_asset_path(candidate.get("sourceAssetPath"))
+            if not path:
+                continue
+            all_by_path[path].append(candidate)
+            containment_type = candidate.get("containmentType")
+            if (
+                containment_type in PREFAB_CONTAINMENT_TYPES
+                or path.endswith(".prefab")
+            ):
+                family = "prefab"
+                prefab_by_path[path].append(candidate)
+            elif (
+                containment_type in SCENE_CONTAINMENT_TYPES | UNRESOLVED_CONTAINER_TYPES
+                or path.endswith(".unity")
+            ):
+                family = "scene"
+            else:
+                family = "other"
+            families.add(family)
+        duplicate_count = sum(max(0, len(rows) - 1) for rows in all_by_path.values())
+        if duplicate_count and key not in duplicate_keys_seen:
+            duplicate_keys_seen.add(key)
+            duplicate_identity_row_count += duplicate_count
+            duplicate_diagnostics.append({
+                "status": "duplicateAssetMapIdentity",
+                "reason": "multipleAssetMapRowsForSameSourcePathId",
+                "identityKey": list(key),
+                "duplicateRowCount": duplicate_count,
+                "sourceAssetPaths": sorted(all_by_path),
+            })
+        if "prefab" in families and len(families) > 1:
+            entry["prefabAssetPathStatus"] = "conflictingAssetMapContainerFamilies"
+            entry["prefabAssetPathDiagnostics"] = [{
+                "status": "conflicting",
+                "reason": "prefabAndNonPrefabAssetMapContainerFamilies",
+                "containerFamilies": sorted(families),
+                "candidates": _bound_rows([
+                    row for rows in all_by_path.values() for row in rows
+                ]),
+            }]
+        elif duplicate_count:
+            entry["prefabAssetPathStatus"] = "duplicateAssetMapIdentityRows"
+            entry["prefabAssetPathDiagnostics"] = _bound_rows(duplicate_diagnostics)
+        elif families == {"prefab"} and len(prefab_by_path) == 1:
+            candidate = next(iter(prefab_by_path.values()))[0]
+            entry["prefabSourceAssetPath"] = candidate["sourceAssetPath"]
+            entry["prefabAssetPathStatus"] = "exactUniqueAssetMapContainer"
+            entry["prefabAssetPathEvidence"] = {
+                "relation": "exactPrefabSourcePathIdToUniqueAssetMapContainer",
+                "containmentType": candidate.get("containmentType"),
+                "sourceAssetPath": candidate.get("sourceAssetPath"),
+            }
+        elif families == {"prefab"} and len(prefab_by_path) > 1:
+            entry["prefabAssetPathStatus"] = "ambiguousAssetMapContainers"
+            entry["prefabAssetPathDiagnostics"] = [{
+                "status": "ambiguous",
+                "reason": "multipleCompleteAssetMapContainerPaths",
+                "candidates": _bound_rows([
+                    row for rows in prefab_by_path.values() for row in rows
+                ]),
+            }]
+        elif families:
+            entry["prefabAssetPathStatus"] = "nonPrefabAssetMapContainer"
+            entry["prefabAssetPathDiagnostics"] = [{
+                "status": "unavailable",
+                "reason": "noPrefabContainerFamilyForIdentity",
+                "containerFamilies": sorted(families),
+            }]
+        else:
+            entry["prefabAssetPathStatus"] = "missingAssetMapContainer"
+    catalog["assetMapResolution"]["duplicateIdentityRowCount"] = duplicate_identity_row_count
+    if duplicate_diagnostics:
+        catalog["assetMapResolution"]["diagnostics"] = _bound_rows([
+            *catalog["assetMapResolution"]["diagnostics"],
+            *duplicate_diagnostics,
+        ])
+        catalog["assetMapResolution"]["status"] = "diagnostics"
+    return catalog
 
 
 def _identity(row: dict[str, Any]) -> dict[str, Any]:
@@ -618,24 +950,17 @@ def _asset_map_paths(export_root: Path) -> list[Path]:
     return paths
 
 
-def _asset_map_containment_provider(
+def _collect_asset_map_containment_index(
     export_root: Path,
-    emitter_identities: list[dict[str, Any]],
+    wanted: set[SceneIdentityKey] | None = None,
 ) -> dict[str, Any]:
-    """Build the optional AssetMap join in one streaming pass.
+    """Collect the AssetMap identity/container index once for all consumers.
 
     AssetMap ``Source`` + ``PathID`` is used only as an explicit identity. A
     prefab container is retained as prefab-local evidence; a ``.unity``
     container is retained as an unresolved SceneAsset candidate until a
     structured authoritative scene id is available.
     """
-    wanted: set[SceneIdentityKey] = {
-        key
-        for identity in emitter_identities
-        for key in _containment_lookup_keys(identity)
-    }
-    if not wanted:
-        return {"entries": [], "diagnostics": []}
     entries: list[dict[str, Any]] = []
     diagnostics: list[dict[str, Any]] = []
     scan_evidence: list[dict[str, Any]] = []
@@ -665,8 +990,9 @@ def _asset_map_containment_provider(
                 continue
             if not isinstance(source, str) or not source:
                 continue
-            row_keys = _asset_map_keys({"Source": source, "PathID": path_id})
-            if not wanted.intersection(row_keys):
+            if wanted is not None and not wanted.intersection(
+                _asset_map_keys({"Source": source, "PathID": path_id})
+            ):
                 continue
             container = str(row.get("Container") or "").replace("\\", "/")
             if not container:
@@ -710,6 +1036,32 @@ def _asset_map_containment_provider(
         "entries": entries,
         "diagnostics": diagnostics,
         "scanEvidence": scan_evidence,
+    }
+
+
+def _asset_map_containment_provider(
+    export_root: Path,
+    emitter_identities: list[dict[str, Any]],
+    *,
+    collected_index: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Filter one collected AssetMap index by exact requested identities."""
+    wanted: set[SceneIdentityKey] = {
+        key
+        for identity in emitter_identities
+        for key in _containment_lookup_keys(identity)
+    }
+    if not wanted:
+        return {"entries": [], "diagnostics": []}
+    collected = collected_index or _collect_asset_map_containment_index(export_root, wanted)
+    entries = [
+        entry for entry in collected.get("entries") or ()
+        if wanted.intersection(_containment_lookup_keys(entry))
+    ]
+    return {
+        "entries": entries,
+        "diagnostics": _bound_rows(collected.get("diagnostics") or []),
+        "scanEvidence": _bound_rows(collected.get("scanEvidence") or []),
     }
 
 
@@ -1299,6 +1651,78 @@ def _parse_emitter(
     return emitter
 
 
+def _streaming_instance_emitter_projection(
+    owner: dict[str, Any],
+    catalog: dict[str, Any],
+    emitter_asset_paths: Iterable[str] | None = None,
+) -> dict[str, Any]:
+    """Join an emitter only through exact, independently proven identity evidence.
+
+    A placed streaming instance normally identifies its prefab asset, while an
+    object-index emitter identifies a component object.  Those are different
+    identities.  The safe routes are an explicit component identity, or exact
+    Source+PathID identities on both sides that resolve to one unique
+    normalized complete prefab sourceAssetPath. Names, basenames, meshes, transforms, and
+    similarity never qualify.
+    """
+    status = str(catalog.get("status") or "unavailable")
+    diagnostics = _bound_rows(catalog.get("diagnostics") or [])
+    entries = [entry for entry in catalog.get("entries") or () if isinstance(entry, dict)]
+    owner_keys = set(_containment_lookup_keys(owner))
+    matches: list[dict[str, Any]] = []
+    for entry in entries:
+        component_identity = entry.get("componentIdentity") or entry.get("emitterIdentity")
+        if not isinstance(component_identity, dict):
+            continue
+        if owner_keys.intersection(_containment_lookup_keys(component_identity)):
+            matches.append(entry)
+    emitter_paths = {
+        normalized
+        for value in emitter_asset_paths or ()
+        for normalized in [_normalise_asset_path(value)]
+        if normalized
+    }
+    path_matches = [
+        entry for entry in entries
+        if entry.get("prefabAssetPathStatus") == "exactUniqueAssetMapContainer"
+        and _normalise_asset_path(entry.get("prefabSourceAssetPath")) in emitter_paths
+    ]
+    if path_matches:
+        matches = path_matches
+    if not entries:
+        return {
+            "status": status,
+            "diagnostics": diagnostics,
+        }
+    if not matches:
+        return {
+            "status": "unresolvedPrefabEntriesLackEmitterIdentityJoin",
+            "diagnostics": _bound_rows([
+                *diagnostics,
+                {
+                    "status": "identityJoinUnavailable",
+                    "reason": "prefabAssetIdentityIsNotEmitterComponentIdentity",
+                },
+            ]),
+        }
+    levels = sorted({str(entry.get("levelId")) for entry in matches if entry.get("levelId")})
+    if len(levels) != 1:
+        return {
+            "status": "ambiguousPrefabInstanceToLevel",
+            "levelIds": levels,
+            "diagnostics": _bound_rows([{
+                "status": "ambiguous",
+                "reason": "multipleExplicitStreamingLevelsForEmitterIdentity",
+                "levelIds": levels,
+            }]),
+        }
+    return {
+        "status": "exactPrefabInstanceToLevel",
+        "levelId": levels[0],
+        "entries": matches[:STREAMING_INSTANCE_DIAGNOSTIC_LIMIT],
+    }
+
+
 def build_scene_background_catalog(
     rows_by_source: dict[str, Iterable[dict[str, Any]]],
     audio_index: dict[str, Any],
@@ -1306,6 +1730,8 @@ def build_scene_background_catalog(
     source_evidence: list[dict[str, Any]] | None = None,
     scene_containment_index: Any = None,
     scene_containment_provider: Any = None,
+    streaming_instance_catalog: dict[str, Any] | None = None,
+    asset_map_export_root: Path | None = None,
 ) -> dict[str, Any]:
     """Build the catalog from already validated, single-pass object streams."""
     wwise_by_hash = _wwise_lookup(audio_index)
@@ -1319,6 +1745,14 @@ def build_scene_background_catalog(
     containment_index_diagnostics: list[dict[str, Any]] = []
     containment_source_status = "notSupplied"
     containment_scan_evidence: list[dict[str, Any]] = []
+    streaming_instance_catalog = streaming_instance_catalog or {
+        "schemaVersion": STREAMING_INSTANCE_CONTRACT_VERSION,
+        "status": "notSupplied",
+        "counts": {},
+        "sources": [],
+        "entries": [],
+        "diagnostics": [],
+    }
     if scene_containment_index is not None:
         containment_source_status = "suppliedIdentityCatalog"
         if isinstance(scene_containment_index, dict):
@@ -1351,9 +1785,18 @@ def build_scene_background_catalog(
 
     if scene_containment_provider is not None and scene_containment_index is None:
         containment_source_status = "assetMapIdentityCatalog"
+        prefab_identities = [
+            entry.get("prefabIdentity")
+            for entry in streaming_instance_catalog.get("entries") or ()
+            if isinstance(entry, dict)
+            and _prefab_identity_key(entry.get("prefabIdentity")) is not None
+        ]
         provided_index = scene_containment_provider([
-            row.get("identity") for row in emitters
-            if isinstance(row.get("identity"), dict)
+            *[
+                row.get("identity") for row in emitters
+                if isinstance(row.get("identity"), dict)
+            ],
+            *prefab_identities,
         ])
         if isinstance(provided_index, dict):
             containment_scan_evidence = _bound_rows(
@@ -1405,6 +1848,13 @@ def build_scene_background_catalog(
                                 containment["diagnostics"]
                             )
 
+        if streaming_instance_catalog.get("entries") and isinstance(provided_index, dict):
+            streaming_instance_catalog = _enrich_streaming_instance_asset_paths(
+                asset_map_export_root or Path(),
+                streaming_instance_catalog,
+                asset_map_index=provided_index,
+            )
+
     scene_definitions: dict[str, list[dict[str, Any]]] = defaultdict(list)
     unresolved_scene_rows: list[dict[str, Any]] = []
     for audio_map in audio_maps:
@@ -1438,13 +1888,59 @@ def build_scene_background_catalog(
         for media in event.get("possibleMedia") or ()
         if isinstance(media, dict) and isinstance(media.get("id"), int)
     }
+    for emitter in emitters:
+        emitter_asset_paths: list[str] = []
+        for value in (
+            emitter.get("sourceAssetPath"),
+            (emitter.get("sceneContainmentEvidence") or {}).get("sourceAssetPath")
+            if isinstance(emitter.get("sceneContainmentEvidence"), dict) else None,
+        ):
+            if isinstance(value, str):
+                emitter_asset_paths.append(value)
+        for diagnostic in emitter.get("sceneContainmentDiagnostics") or ():
+            if not isinstance(diagnostic, dict):
+                continue
+            for candidate in diagnostic.get("candidates") or ():
+                if isinstance(candidate, dict) and isinstance(candidate.get("sourceAssetPath"), str):
+                    emitter_asset_paths.append(candidate["sourceAssetPath"])
+        projection = _streaming_instance_emitter_projection(
+            emitter.get("identity") or {}, streaming_instance_catalog,
+            emitter_asset_paths,
+        )
+        emitter["streamingPrefabInstanceStatus"] = projection["status"]
+        if projection.get("levelId"):
+            emitter["streamingPrefabInstanceLevelId"] = projection["levelId"]
+        if projection.get("entries"):
+            emitter["streamingPrefabInstanceEvidence"] = projection["entries"]
+        if projection.get("diagnostics"):
+            emitter["streamingPrefabInstanceDiagnostics"] = projection["diagnostics"]
+        owner = emitter.get("identity")
+        for rows in contexts.values():
+            for context in rows:
+                if (
+                    not isinstance(context, dict)
+                    or context.get("kind") != "sceneEmitterAudioEvent"
+                    or context.get("owner") != owner
+                ):
+                    continue
+                context["streamingPrefabInstanceStatus"] = projection["status"]
+                if projection.get("levelId"):
+                    context["streamingPrefabInstanceLevelId"] = projection["levelId"]
+                if projection.get("entries"):
+                    context["streamingPrefabInstanceEvidence"] = projection["entries"]
+                if projection.get("diagnostics"):
+                    context["streamingPrefabInstanceDiagnostics"] = projection["diagnostics"]
     boundary = (
         "AudioMapData scene names, state counts, lifecycle Events, room-tone Event, and "
         "aux-bus ids are exact serialized definitions. Scene component requests and exact "
         "transform-hierarchy positions are authored placements; prefab-local ownership is "
         "not promoted to a level join. An explicit unique SceneAsset/Level identity "
         "catalog is required for containment promotion; missing, ambiguous, and "
-        "conflicting joins remain unresolved. Wwise leaves are possible media only. Runtime scene "
+        "conflicting joins remain unresolved. Streaming InitChunkData prefab-to-level joins "
+        "require an explicit numeric prefab Source+PathID identity. An emitter may join via "
+        "explicit component identity, or via exact identities on both sides resolving to one "
+        "unique normalized complete prefab sourceAssetPath; entity names, Meshes, positions, "
+        "and chunk filenames are not accepted as either join key. Wwise leaves are possible media only. Runtime scene "
         "activation, live State/RTPC values, listener position, branch selection, playback, "
         "and audibility remain unobserved."
     )
@@ -1492,7 +1988,22 @@ def build_scene_background_catalog(
                 row.get("sceneOwnershipStatus") == "prefabLocalNotSceneContained"
                 for row in emitters
             ),
+            "sceneEmittersWithExactStreamingPrefabInstance": sum(
+                row.get("streamingPrefabInstanceStatus") == "exactPrefabInstanceToLevel"
+                for row in emitters
+            ),
             "uniquePossibleMedia": len(possible_media_ids),
+            "streamingInstanceSidecars": int(
+                (streaming_instance_catalog.get("counts") or {}).get("sidecars", 0)
+            ),
+            "streamingInstanceRows": int(
+                (streaming_instance_catalog.get("counts") or {}).get("instances", 0)
+            ),
+            "streamingPrefabIdentityRows": int(
+                (streaming_instance_catalog.get("counts") or {}).get(
+                    "exactPrefabIdentityInstances", 0
+                )
+            ),
         },
         "scenes": scenes,
         "unresolvedSceneDefinitions": unresolved_scene_rows,
@@ -1504,6 +2015,7 @@ def build_scene_background_catalog(
             "diagnostics": containment_index_diagnostics,
             "scanEvidence": containment_scan_evidence,
         },
+        "streamingInstanceCatalog": streaming_instance_catalog,
         "evidenceBoundary": boundary,
     }
 
@@ -1563,6 +2075,7 @@ def collect_scene_background_semantics(
             "stageSignatureSha256": (summary.get("stageSignature") or {}).get("sha256"),
         })
 
+    streaming_instance_catalog = _load_streaming_instance_identity_catalog(export_root)
     result = build_scene_background_catalog(
         rows_by_source,
         audio_index,
@@ -1572,6 +2085,8 @@ def collect_scene_background_semantics(
             lambda identities: _asset_map_containment_provider(export_root, identities)
             if scene_containment_index is None else None
         ),
+        streaming_instance_catalog=streaming_instance_catalog,
+        asset_map_export_root=export_root,
     )
     actual_counts = (result.get("counts") or {}).get("objectRowsScannedBySource") or {}
     for source, expected in expected_counts.items():
@@ -1692,7 +2207,12 @@ def collect_scene_background_semantics(
         "level-init and battle-music trigger Events; MissionRuntimeAsset acceptMode.levelId "
         "adds an exact mission-to-scene reference. Scene component requests and exact "
         "transform-hierarchy positions are authored placements, but prefab-local ownership "
-        "is not promoted to a level join. Only an explicit unique SceneAsset/Level identity "
+        "is not promoted to a level join. Streaming InitChunkData entries are published "
+        "only when they carry explicit numeric prefab Source+PathID identity. An emitter "
+        "can attach through explicit component identity, or when both exact identities "
+        "resolve to one unique normalized complete prefab sourceAssetPath; otherwise it remains "
+        "unresolved. "
+        "Only an explicit unique SceneAsset/Level identity "
         "catalog can promote containment; missing, ambiguous, and conflicting joins remain "
         "unresolved. Wwise leaves are possible media only. Runtime "
         "scene activation, live State/RTPC values, listener position, branch selection, "

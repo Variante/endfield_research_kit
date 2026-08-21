@@ -226,6 +226,14 @@ Missing or malformed AssetMap input is shown as unavailable rather than
 replaced by a name/path guess. A prefab source row is not a recovered level
 instance.
 
+Streaming-instance rows expose their exact entity/name/transform and bounded
+raw ECS evidence separately from prefab identity. The current validated
+InitChunkData schema has no known prefab Source+PathID/hash field, so the Audio
+page leaves level ownership unresolved unless a future exact numeric identity
+resolves to one unique full AssetMap container path or explicit component
+identity. Basenames, names, positions, Meshes, and similarity are never search
+or ownership evidence; StreamingChunkData correlation remains an explicit gap.
+
 AudioCue AST detail is lazy and debug-only. It exposes the validated tree's
 source coordinates, parent/depth, `exprType`, four scalar fields, child paths,
 node class, semantic role, and bounded diagnostics. Non-empty behavior

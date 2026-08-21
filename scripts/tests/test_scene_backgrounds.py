@@ -440,6 +440,54 @@ class SceneBackgroundCatalogTests(unittest.TestCase):
             "assets/{nested}/effects/fx.prefab",
         )
 
+    def test_asset_map_collected_index_is_reused_without_second_scan(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            map_path = (
+                root / "recovered" / "AnimeStudio-cli" / "StreamingAssets"
+                / "maps" / "endfield_streamingassets_assets.json"
+            )
+            map_path.parent.mkdir(parents=True)
+            map_path.write_text(json.dumps({
+                "GameType": "Endfield",
+                "AssetEntries": [
+                    {
+                        "Name": "GameObject",
+                        "Container": "assets/effects/wind.prefab",
+                        "Source": "D:/Game/Endfield_Data/StreamingAssets/VFS/root/prefab.chk",
+                        "PathID": 99,
+                        "Type": "GameObject",
+                    },
+                    {
+                        "Name": "Other",
+                        "Container": "assets/effects/other.prefab",
+                        "Source": "D:/Game/Endfield_Data/StreamingAssets/VFS/root/other.chk",
+                        "PathID": 100,
+                        "Type": "GameObject",
+                    },
+                ],
+            }), encoding="utf-8")
+            original = scene_backgrounds._iter_asset_map_entries
+            with patch.object(
+                scene_backgrounds, "_iter_asset_map_entries", wraps=original
+            ) as iterator:
+                collected = scene_backgrounds._collect_asset_map_containment_index(
+                    root, {("assetMap", "root/prefab.chk", 99)}
+                )
+                first = scene_backgrounds._asset_map_containment_provider(
+                    root, [{"source": "VFS/root/prefab.chk", "pathId": 99}],
+                    collected_index=collected,
+                )
+                second = scene_backgrounds._asset_map_containment_provider(
+                    root, [{"source": "VFS/root/prefab.chk", "pathId": 99}],
+                    collected_index=collected,
+                )
+        self.assertEqual(iterator.call_count, 1)
+        self.assertEqual(len(collected["entries"]), 1)
+        self.assertNotIn("other.chk", json.dumps(collected["entries"]))
+        self.assertEqual(first["entries"], second["entries"])
+        self.assertEqual(first["entries"][0]["sourceAssetPath"], "assets/effects/wind.prefab")
+
     def test_asset_map_unity_container_needs_authoritative_scene_id(self) -> None:
         emitter = object_row(
             "Beyond.Gameplay.EffectSetting",
@@ -662,6 +710,354 @@ class SceneBackgroundCatalogTests(unittest.TestCase):
         ))
         self.assertEqual(negative["entries"], [])
         self.assertEqual(negative["diagnostics"], [])
+
+    def test_streaming_sidecar_without_prefab_identity_stays_unavailable(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            sidecar = (
+                root / "recovered" / "AnimeStudio-cli" / "StreamingAssets"
+                / "map_streaming_instances" / "map01_lv001.json"
+            )
+            sidecar.parent.mkdir(parents=True)
+            sidecar.write_text(json.dumps({
+                "schemaVersion": 2,
+                "levelId": "map01_lv001",
+                "prefabIdentityContract": {
+                    "status": "unavailable",
+                    "requiredFields": ["source", "pathId"],
+                },
+                "instances": [{
+                    "entityId": 7,
+                    "name": "P_not_an_identity",
+                    "prefabIdentity": {
+                        "status": "exact",
+                        "source": "VFS/root/prefab.chk",
+                        "pathId": 99,
+                    },
+                }],
+            }), encoding="utf-8")
+            result = scene_backgrounds._load_streaming_instance_identity_catalog(root)
+
+        self.assertEqual(result["status"], "unavailablePrefabIdentity")
+        self.assertEqual(result["counts"]["instances"], 1)
+        self.assertEqual(result["counts"]["exactPrefabIdentityInstances"], 0)
+        self.assertEqual(result["entries"], [])
+        self.assertTrue(any(
+            row["reason"] == "sidecarLacksPrefabIdentityContract"
+            for row in result["diagnostics"]
+        ))
+
+    def test_streaming_sidecar_accepts_only_explicit_numeric_prefab_identity(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            sidecar = (
+                root / "recovered" / "AnimeStudio-cli" / "StreamingAssets"
+                / "map_streaming_instances" / "map01_lv001.json"
+            )
+            sidecar.parent.mkdir(parents=True)
+            sidecar.write_text(json.dumps({
+                "schemaVersion": 2,
+                "levelId": "map01_lv001",
+                "prefabIdentityContract": {"status": "exact"},
+                "instances": [
+                    {
+                        "entityId": 7,
+                        "prefabIdentity": {
+                            "status": "exact",
+                            "source": "VFS/root/prefab.chk",
+                            "pathId": 99,
+                        },
+                    },
+                    {
+                        "entityId": 8,
+                        "prefabIdentity": {
+                            "status": "exact",
+                            "source": "D:/Other/VFS/prefab.chk",
+                            "pathId": 100,
+                        },
+                    },
+                ],
+            }), encoding="utf-8")
+            result = scene_backgrounds._load_streaming_instance_identity_catalog(root)
+
+        self.assertEqual(result["counts"]["exactPrefabIdentityInstances"], 0)
+        self.assertEqual(result["counts"]["candidateExactPrefabIdentityInstances"], 1)
+        self.assertEqual(result["entries"], [])
+        self.assertTrue(any(
+            row["reason"] == "exactIdentityMissingSourcePathId"
+            for row in result["diagnostics"]
+        ))
+
+    def test_streaming_sidecar_schema_mismatch_rejects_exact_row(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            sidecar = (
+                root / "recovered" / "AnimeStudio-cli" / "StreamingAssets"
+                / "map_streaming_instances" / "map01_lv001.json"
+            )
+            sidecar.parent.mkdir(parents=True)
+            sidecar.write_text(json.dumps({
+                "schemaVersion": 1,
+                "levelId": "map01_lv001",
+                "prefabIdentityContract": {"status": "exact"},
+                "instances": [{
+                    "entityId": 7,
+                    "prefabIdentity": {
+                        "status": "exact",
+                        "source": "VFS/root/prefab.chk",
+                        "pathId": 99,
+                    },
+                }],
+            }), encoding="utf-8")
+            result = scene_backgrounds._load_streaming_instance_identity_catalog(root)
+        self.assertEqual(result["entries"], [])
+        self.assertEqual(result["counts"]["exactPrefabIdentityInstances"], 0)
+        self.assertTrue(any(
+            row["reason"] == "sidecarLacksPrefabIdentityContract"
+            for row in result["diagnostics"]
+        ))
+
+    def test_streaming_valid_exact_sidecar_plus_bad_sibling_blocks_catalog_promotion(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            sidecar_root = (
+                root / "recovered" / "AnimeStudio-cli" / "StreamingAssets"
+                / "map_streaming_instances"
+            )
+            sidecar_root.mkdir(parents=True)
+            valid = {
+                "schemaVersion": 2,
+                "levelId": "map01_lv001",
+                "prefabIdentityContract": {"status": "exact"},
+                "instances": [{
+                    "entityId": 7,
+                    "prefabIdentity": {
+                        "status": "exact",
+                        "source": "VFS/root/prefab.chk",
+                        "pathId": 99,
+                    },
+                }],
+            }
+            (sidecar_root / "map01_lv001.json").write_text(
+                json.dumps(valid), encoding="utf-8"
+            )
+            (sidecar_root / "map01_lv002.json").write_text(
+                "{not-json", encoding="utf-8"
+            )
+            result = scene_backgrounds._load_streaming_instance_identity_catalog(root)
+        self.assertEqual(result["status"], "unavailablePrefabIdentity")
+        self.assertEqual(result["entries"], [])
+        self.assertEqual(result["counts"]["exactPrefabIdentityInstances"], 0)
+        self.assertEqual(result["counts"]["candidateExactPrefabIdentityInstances"], 1)
+        self.assertTrue(any(
+            row["status"] == "streamingInstanceSidecarUnreadable"
+            for row in result["diagnostics"]
+        ))
+
+    def test_streaming_prefab_entry_needs_explicit_emitter_component_identity(self) -> None:
+        owner = {
+            "serializedFile": "CAB-fixture",
+            "source": "VFS/root/emitter.chk",
+            "sourceOffset": 10,
+            "pathId": 11,
+        }
+        catalog = {
+            "status": "exactPrefabIdentityEntries",
+            "entries": [{
+                "levelId": "map01_lv001",
+                "prefabIdentity": {"source": "VFS/root/prefab.chk", "pathId": 99},
+            }],
+            "diagnostics": [],
+        }
+        unresolved = scene_backgrounds._streaming_instance_emitter_projection(owner, catalog)
+        self.assertEqual(
+            unresolved["status"],
+            "unresolvedPrefabEntriesLackEmitterIdentityJoin",
+        )
+        catalog["entries"][0]["componentIdentity"] = dict(owner)
+        exact = scene_backgrounds._streaming_instance_emitter_projection(owner, catalog)
+        self.assertEqual(exact["status"], "exactPrefabInstanceToLevel")
+        self.assertEqual(exact["levelId"], "map01_lv001")
+
+    def test_streaming_prefab_path_can_join_without_component_identity_only_when_unique(self) -> None:
+        owner = {
+            "serializedFile": "CAB-fixture",
+            "source": "VFS/root/emitter.chk",
+            "sourceOffset": 10,
+            "pathId": 11,
+        }
+        catalog = {
+            "status": "exactPrefabIdentityEntries",
+            "entries": [{
+                "levelId": "map01_lv001",
+                "prefabSourceAssetPath": "assets/effects/wind.prefab",
+                "prefabAssetPathStatus": "exactUniqueAssetMapContainer",
+                "prefabIdentity": {"source": "VFS/root/prefab.chk", "pathId": 99},
+            }],
+            "diagnostics": [],
+        }
+        exact = scene_backgrounds._streaming_instance_emitter_projection(
+            owner, catalog, ["assets/effects/wind.prefab"]
+        )
+        self.assertEqual(exact["status"], "exactPrefabInstanceToLevel")
+        self.assertEqual(exact["levelId"], "map01_lv001")
+        catalog["entries"].append({
+            "levelId": "map02_lv001",
+            "prefabSourceAssetPath": "assets/effects/wind.prefab",
+            "prefabAssetPathStatus": "exactUniqueAssetMapContainer",
+            "prefabIdentity": {"source": "VFS/root/prefab2.chk", "pathId": 100},
+        })
+        ambiguous = scene_backgrounds._streaming_instance_emitter_projection(
+            owner, catalog, ["assets/effects/wind.prefab"]
+        )
+        self.assertEqual(ambiguous["status"], "ambiguousPrefabInstanceToLevel")
+
+    def test_streaming_prefab_identity_resolves_full_asset_map_container_path(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            map_path = (
+                root / "recovered" / "AnimeStudio-cli" / "StreamingAssets"
+                / "maps" / "endfield_streamingassets_assets.json"
+            )
+            map_path.parent.mkdir(parents=True)
+            map_path.write_text(self._asset_map_payload({
+                "Name": "GameObject",
+                "Container": "assets/effects/wind.prefab",
+                "Source": "D:/Game/Endfield_Data/StreamingAssets/VFS/root/prefab.chk",
+                "PathID": 99,
+                "Type": "GameObject",
+            }), encoding="utf-8")
+            catalog = {
+                "status": "exactPrefabIdentityEntries",
+                "entries": [{
+                    "levelId": "map01_lv001",
+                    "prefabIdentity": {
+                        "status": "exact",
+                        "source": "VFS/root/prefab.chk",
+                        "pathId": 99,
+                    },
+                }],
+                "diagnostics": [],
+            }
+            enriched = scene_backgrounds._enrich_streaming_instance_asset_paths(root, catalog)
+
+        self.assertEqual(
+            enriched["entries"][0]["prefabSourceAssetPath"],
+            "assets/effects/wind.prefab",
+        )
+        self.assertEqual(
+            enriched["entries"][0]["prefabAssetPathStatus"],
+            "exactUniqueAssetMapContainer",
+        )
+
+    def test_streaming_prefab_duplicate_asset_map_rows_fail_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            map_path = (
+                root / "recovered" / "AnimeStudio-cli" / "StreamingAssets"
+                / "maps" / "endfield_streamingassets_assets.json"
+            )
+            map_path.parent.mkdir(parents=True)
+            row = {
+                "Name": "GameObject",
+                "Container": "assets/effects/wind.prefab",
+                "Source": "D:/Game/Endfield_Data/StreamingAssets/VFS/root/prefab.chk",
+                "PathID": 99,
+                "Type": "GameObject",
+            }
+            map_path.write_text(json.dumps({
+                "GameType": "Endfield", "AssetEntries": [row, dict(row)]
+            }), encoding="utf-8")
+            catalog = {
+                "status": "exactPrefabIdentityEntries",
+                "entries": [{
+                    "levelId": "map01_lv001",
+                    "prefabIdentity": {
+                        "status": "exact",
+                        "source": "VFS/root/prefab.chk",
+                        "pathId": 99,
+                    },
+                }],
+                "diagnostics": [],
+            }
+            enriched = scene_backgrounds._enrich_streaming_instance_asset_paths(root, catalog)
+        entry = enriched["entries"][0]
+        self.assertEqual(entry["prefabAssetPathStatus"], "duplicateAssetMapIdentityRows")
+        self.assertEqual(enriched["assetMapResolution"]["duplicateIdentityRowCount"], 1)
+        self.assertTrue(any(
+            row["reason"] == "multipleAssetMapRowsForSameSourcePathId"
+            for row in enriched["assetMapResolution"]["diagnostics"]
+        ))
+
+    def test_streaming_prefab_and_unity_container_family_conflict_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            map_path = (
+                root / "recovered" / "AnimeStudio-cli" / "StreamingAssets"
+                / "maps" / "endfield_streamingassets_assets.json"
+            )
+            map_path.parent.mkdir(parents=True)
+            base = {
+                "Source": "D:/Game/Endfield_Data/StreamingAssets/VFS/root/prefab.chk",
+                "PathID": 99,
+                "Type": "GameObject",
+            }
+            rows = [
+                {**base, "Container": "assets/effects/wind.prefab"},
+                {**base, "Container": "assets/scenes/map01.unity"},
+            ]
+            map_path.write_text(json.dumps({"GameType": "Endfield", "AssetEntries": rows}), encoding="utf-8")
+            catalog = {
+                "status": "exactPrefabIdentityEntries",
+                "entries": [{
+                    "levelId": "map01_lv001",
+                    "prefabIdentity": {
+                        "status": "exact", "source": "VFS/root/prefab.chk", "pathId": 99
+                    },
+                }],
+                "diagnostics": [],
+            }
+            enriched = scene_backgrounds._enrich_streaming_instance_asset_paths(root, catalog)
+        self.assertEqual(
+            enriched["entries"][0]["prefabAssetPathStatus"],
+            "conflictingAssetMapContainerFamilies",
+        )
+        self.assertNotIn("prefabSourceAssetPath", enriched["entries"][0])
+
+    def test_streaming_prefab_and_other_container_family_conflict_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            map_path = (
+                root / "recovered" / "AnimeStudio-cli" / "StreamingAssets"
+                / "maps" / "endfield_streamingassets_assets.json"
+            )
+            map_path.parent.mkdir(parents=True)
+            base = {
+                "Source": "D:/Game/Endfield_Data/StreamingAssets/VFS/root/prefab.chk",
+                "PathID": 99,
+                "Type": "GameObject",
+            }
+            rows = [
+                {**base, "Container": "assets/effects/wind.prefab"},
+                {**base, "Container": "assets/effects/wind.assetbundle"},
+            ]
+            map_path.write_text(json.dumps({"GameType": "Endfield", "AssetEntries": rows}), encoding="utf-8")
+            catalog = {
+                "status": "exactPrefabIdentityEntries",
+                "entries": [{
+                    "levelId": "map01_lv001",
+                    "prefabIdentity": {
+                        "status": "exact", "source": "VFS/root/prefab.chk", "pathId": 99
+                    },
+                }],
+                "diagnostics": [],
+            }
+            enriched = scene_backgrounds._enrich_streaming_instance_asset_paths(root, catalog)
+        self.assertEqual(
+            enriched["entries"][0]["prefabAssetPathStatus"],
+            "conflictingAssetMapContainerFamilies",
+        )
+        self.assertNotIn("prefabSourceAssetPath", enriched["entries"][0])
 
 
 class PublishedObjectIndexGateTests(unittest.TestCase):

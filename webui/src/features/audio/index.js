@@ -1120,6 +1120,10 @@
       record?.animationCallbackLinkEvidence,
       record?.sceneContainmentStatus, record?.sourceAssetPath, record?.containerType,
       record?.containmentType, ...asArray(record?.sceneContainmentStatuses),
+      record?.streamingPrefabInstanceStatus, record?.streamingPrefabInstanceLevelId,
+      ...asArray(record?.streamingPrefabInstanceDiagnostics).flatMap((diagnostic) => diagnostic && typeof diagnostic === "object"
+        ? [diagnostic.status, diagnostic.reason, ...asArray(diagnostic.candidates).flatMap((candidate) => candidate && typeof candidate === "object" ? Object.values(candidate) : [])]
+        : []),
       record?.hash, record?.eventHash, ...numericHashes.map((value) => `0x${(Number(value) >>> 0).toString(16).padStart(8, "0")}`),
       record?.mediaId, record?.bankId, record?.bank, record?.rel, record?.path, record?.src,
       ...asArray(record?.eventIds), ...asArray(record?.mediaIds), ...asArray(record?.actionIds), ...asArray(record?.visitedObjectIds),
@@ -1174,6 +1178,11 @@
         context.action, context.levelScriptId, context.sourcePath, context.sourceSha256,
         context.sceneId, context.sourceName, context.sceneContainmentStatus,
         context.sourceAssetPath, context.containerType, context.containmentType,
+        context.streamingPrefabInstanceStatus, context.streamingPrefabInstanceLevelId,
+        ...asArray(context.streamingPrefabInstanceEvidence).flatMap((entry) => entry && typeof entry === "object" ? Object.values(entry) : []),
+        ...asArray(context.streamingPrefabInstanceDiagnostics).flatMap((diagnostic) => diagnostic && typeof diagnostic === "object"
+          ? [diagnostic.status, diagnostic.reason, ...asArray(diagnostic.candidates).flatMap((candidate) => candidate && typeof candidate === "object" ? Object.values(candidate) : [])]
+          : []),
         ...Object.values(context.sceneContainmentEvidence || {}),
         ...asArray(context.sceneContainmentDiagnostics).flatMap((diagnostic) => diagnostic && typeof diagnostic === "object"
           ? [diagnostic.status, diagnostic.reason, ...asArray(diagnostic.candidates).flatMap((candidate) => candidate && typeof candidate === "object" ? Object.values(candidate) : [])]
@@ -3015,6 +3024,12 @@
       parts.push(`containment ${humanize(context?.sceneContainmentStatus || "unresolved")}`);
       if (sourceAssetPath) parts.push(`container ${sourceAssetPath}`);
       if (containerType) parts.push(`container type ${humanize(containerType)}`);
+      parts.push(`streaming prefab instance ${humanize(context?.streamingPrefabInstanceStatus || "unresolved")}`);
+      if (context?.streamingPrefabInstanceLevelId) parts.push(`streaming level ${context.streamingPrefabInstanceLevelId}`);
+      const streamingDiagnostics = asArray(context?.streamingPrefabInstanceDiagnostics).flatMap((diagnostic) => (
+        diagnostic && typeof diagnostic === "object" ? [diagnostic.reason || diagnostic.status].filter(Boolean) : []
+      ));
+      if (streamingDiagnostics.length) parts.push(`streaming diagnostics ${streamingDiagnostics.slice(0, 4).join(" / ")}`);
       parts.push("authored prefab component / runtime scene instantiation unobserved");
     }
     if (["audioDialogVoiceDefinition", "responsiveDialogVoice", "voiceToneVariant"].includes(kind)) {
