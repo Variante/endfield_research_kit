@@ -4,8 +4,8 @@
   "pathBase": "repo_root",
   "generatedBy": "unity_endfield_graph_shader_lab/tools/build_priority_actor_mattes.py",
   "manifest": "unity_endfield_graph_shader_lab/scratch/character_recovery/actor_clips/actor_matte_manifest.json",
-  "manifestBytes": 491571,
-  "manifestSha256": "B9E7EF99678705FDBBB65563658629DFE997A28F29F1D3496926C372A36F8C5B",
+  "manifestBytes": 925904,
+  "manifestSha256": "A522867DB4CE7EF0F105525BB7029E5B97449062EFCBA1F945CFBF7A4A3488AB",
   "source": {
     "path": "videos/2026-08-15_10-32-32.mkv",
     "bytes": 1678613397,
@@ -41,6 +41,7 @@
     "name": "deeplabv3_resnet50_person_class_with_hard_ui_exclusions",
     "model": "torchvision.deeplabv3_resnet50",
     "modelClass": 15,
+    "modelWeightsFile": "deeplabv3_resnet50_coco-cd0a2569.pth",
     "modelWeightsSha256": "CD0A25694C4A0F7106B38F4938BF90A874F2F241CC410B8F63C7024399538F06",
     "workResolution": [
       480,
@@ -109,7 +110,7 @@
       "minRawIoU": 0.08,
       "minDilatedSupport": 0.3,
       "dilationKernel": 9,
-      "detachedComponents": "reject_substantial_component_without_actor_envelope_overlap"
+      "detachedComponents": "reject_substantial_component_without_current_previous_or_next_actor_envelope_overlap"
     },
     "transitionPolicy": {
       "pelicaRangeInclusive": [
@@ -117,12 +118,18 @@
         12601
       ],
       "pelicaStableStartFrame": 12602,
-      "reason": "pinned-source model-swap/glitch interval measured in the phase evidence; no stable Pelica actor component is present",
-      "chenExemption": false
-    },
-    "modelWeightsFile": "deeplabv3_resnet50_coco-cd0a2569.pth"
+      "pelicaReason": "pinned-source model-swap/glitch interval measured in the phase evidence; no stable Pelica actor component is present",
+      "chenRangeInclusive": [
+        11958,
+        11969
+      ],
+      "chenStableStartFrame": 11970,
+      "chenReason": "pinned-source horizontal decode-corruption interval measured frame-by-frame through frame 11969; first clean Chen source frame is 11970",
+      "actorSpecificOnly": true
+    }
   },
   "actorSet": [
+    "chen",
     "pelica"
   ],
   "artifacts": [
@@ -134,15 +141,18 @@
       "codec": "ffv1",
       "pix_fmt": "bgr0",
       "frames": 677
-    }
-  ],
-  "excludedActors": [
+    },
     {
       "actor": "chen",
-      "status": "unpublished",
-      "reason": "retained unpublished; not regenerated in this fail-closed Pelica-only run"
+      "path": "unity_endfield_graph_shader_lab/scratch/character_recovery/actor_clips/chen_actor_only.mkv",
+      "bytes": 444331980,
+      "sha256": "3615047C412CBE7FEEA536E0E4455461FA48F0DF212A939AEE44AC1262D071EE",
+      "codec": "ffv1",
+      "pix_fmt": "bgr0",
+      "frames": 602
     }
   ],
+  "excludedActors": [],
   "publicationGates": {
     "sourcePin": true,
     "sourceResolutionFps": true,
@@ -159,9 +169,10 @@
   },
   "validation": {
     "rows": {
-      "pelica": 677
+      "pelica": 677,
+      "chen": 602
     },
-    "publishedClips": 1,
+    "publishedClips": 2,
     "largeVideoFilesCommitted": false
   }
 }

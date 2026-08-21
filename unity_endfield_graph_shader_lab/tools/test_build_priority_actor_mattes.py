@@ -49,6 +49,15 @@ class PriorityActorMatteTests(unittest.TestCase):
         self.assertFalse(matte._expected_transition_frame("pelica", 12602))
         self.assertFalse(matte._expected_transition_frame("chen", 12560))
 
+        chen = matte._actor_window("chen")
+        self.assertEqual(
+            matte._expected_transition_frames("chen", chen),
+            list(range(11958, 11970)),
+        )
+        self.assertTrue(matte._expected_transition_frame("chen", 11958))
+        self.assertTrue(matte._expected_transition_frame("chen", 11969))
+        self.assertFalse(matte._expected_transition_frame("chen", 11970))
+
     def test_temporal_iou_accepts_small_motion_and_rejects_disjoint_mask(self) -> None:
         prior = np.zeros((matte.WORK_SIZE[1], matte.WORK_SIZE[0]), np.uint8)
         prior[70:180, 160:230] = 255
@@ -66,6 +75,45 @@ class PriorityActorMatteTests(unittest.TestCase):
         _selected, diagnostics = matte._select_person_components(mask, None)
         self.assertEqual(diagnostics["detachedComponentCount"], 1)
         self.assertTrue(diagnostics["purityFailure"])
+
+    def test_enclosed_component_without_temporal_evidence_is_rejected(self) -> None:
+        # A current-frame bounding box alone is not actor proof: an island
+        # inside the torso envelope still needs prior/next temporal evidence.
+        mask = np.zeros((matte.WORK_SIZE[1], matte.WORK_SIZE[0]), np.uint8)
+        mask[70:90, 150:230] = 255
+        mask[90:170, 150:170] = 255
+        mask[90:170, 210:230] = 255
+        mask[170:190, 150:230] = 255
+        mask[120:140, 180:200] = 255
+        selected, diagnostics = matte._select_person_components(mask, None)
+        self.assertEqual(diagnostics["detachedComponentCount"], 1)
+        self.assertTrue(diagnostics["purityFailure"])
+        self.assertEqual(int(np.count_nonzero(selected[120:140, 180:200])), 0)
+
+    def test_temporally_overlapping_component_is_retained(self) -> None:
+        prior = np.zeros((matte.WORK_SIZE[1], matte.WORK_SIZE[0]), np.uint8)
+        prior[70:190, 150:230] = 255
+        mask = np.zeros_like(prior)
+        mask[70:190, 150:215] = 255
+        # This actor limb enters immediately beside the prior torso envelope;
+        # it is disconnected at work resolution but has temporal bbox proof.
+        mask[155:190, 220:260] = 255
+        selected, diagnostics = matte._select_person_components(mask, prior)
+        self.assertEqual(diagnostics["detachedComponentCount"], 0)
+        self.assertFalse(diagnostics["purityFailure"])
+        self.assertGreater(int(np.count_nonzero(selected[155:190, 220:260])), 0)
+
+    def test_next_frame_support_retains_boundary_actor_component(self) -> None:
+        current = np.zeros((matte.WORK_SIZE[1], matte.WORK_SIZE[0]), np.uint8)
+        current[50:180, 150:230] = 255
+        current[220:270, 220:270] = 255
+        future = np.zeros_like(current)
+        future[50:180, 150:230] = 255
+        future[215:270, 218:272] = 255
+        selected, diagnostics = matte._select_person_components(current, None, future)
+        self.assertEqual(diagnostics["detachedComponentCount"], 0)
+        self.assertFalse(diagnostics["purityFailure"])
+        self.assertGreater(int(np.count_nonzero(selected[220:270, 220:270])), 0)
 
     def test_ffv1_metadata_gate_requires_actual_codec_and_pix_fmt(self) -> None:
         good = {
@@ -161,7 +209,9 @@ class PriorityActorMatteTests(unittest.TestCase):
             "artifact_codec": lambda value: value["artifacts"][0].__setitem__("codec", "h264"),
             "artifact_frames": lambda value: value["artifacts"][0].__setitem__("frames", 676),
             "requested_windows": lambda value: value["requestedWindows"]["pelica"]["framesExclusive"].__setitem__(0, 12561),
-            "excluded_actors": lambda value: value["excludedActors"].clear(),
+            "excluded_actors": lambda value: value["excludedActors"].append(
+                {"actor": "pelica", "reason": "mutated exclusion"}
+            ),
         }
         for label, mutate in mutations.items():
             with self.subTest(label=label):
