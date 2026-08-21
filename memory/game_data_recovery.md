@@ -209,6 +209,17 @@ audibility. Managed literals and lookup keys remain identity-only until exact
 data flow reaches a typed playback API. Conditional and selector-based native
 paths preserve their branch condition, method, callsite, target binding, and
 binary fingerprints.
+`AudioCueTable` `behaviourExpr` and `conditionExpr` trees are serialized,
+validated, bounded AST evidence rather than an evaluator. The current metadata
+`EAudioExprType` maps `0=EMPTY`, `1=BINARY_EXPRESSION`,
+`2=FUNCTION_CALL`, `3=IDENTIFIER`, `4=UNARY_EXPRESSION`, `5=BOOL_LITERAL`,
+`6=INT_LITERAL`, `7=FLOAT_LITERAL`, and `8=STRING_LITERAL`; observed AudioCue
+operator names are `NOT_OPERATOR`, `PostEventIf`, `SetBoolVar`, `GetBoolVar`,
+and `CleanBoolVar`. Handler evaluation and its indirect dispatch/callback boundary
+remain separate `AudioCueSystem` evidence: a behavior `exprType=3` string leaf
+proves an authored Event request, but serialized expressions do not prove
+handler selection, condition truth, variable mutation, cue invocation, Event
+execution, or audibility.
 When a hash-only Event has a complete final-media leaf set identical to authored
 Events whose broad category agrees, the projection recovers that category for
 85 rows (56 SFX, 21 UI, 6 voice, 2 control). This is library-output evidence
