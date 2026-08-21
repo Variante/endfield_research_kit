@@ -217,6 +217,11 @@
         "mtime_ns": 1786387745921470000
       }
     ],
+    "rawObjectEvidence": {
+      "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/ExternalUiEffects/endminf_shader_raw_object_evidence.json",
+      "size": 3490,
+      "sha256": "15aef543972ace506e2c7243044cd844ba8c0c8b0147dfde521116a48d859cd4"
+    },
     "shaderRoot": "export_full/recovered/AnimeStudio-cli/Persistent/convert_by_type/Shader",
     "textureRoot": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D"
   },
@@ -224,11 +229,11 @@
     "materialCount": 27,
     "occurrenceCount": 99,
     "identityCount": 37,
-    "resolvedCount": 34,
-    "ambiguousCount": 3,
-    "resolvedShaderCount": 0,
+    "resolvedCount": 36,
+    "ambiguousCount": 1,
+    "resolvedShaderCount": 2,
     "resolvedTextureCount": 34,
-    "ambiguousShaderCount": 3,
+    "ambiguousShaderCount": 1,
     "ambiguousTextureCount": 0
   },
   "identities": [
@@ -238,7 +243,8 @@
       "pathIdUnsigned": 6428594484694422749,
       "pathIdHex": "5936F49FA93F14DD",
       "targetType": "Shader",
-      "status": "ambiguous_physical_source",
+      "targetName": "HGRP/LitEffect",
+      "status": "resolved_byte_identical_mirror",
       "assetMapCandidates": [
         {
           "assetMap": "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json",
@@ -283,6 +289,36 @@
           "dependencies": []
         }
       ],
+      "rawObjectEvidence": [
+        {
+          "serializedFile": "CAB-2c811ef28608ab220ecdb5c4e0629d2d",
+          "pathId": 6428594484694422749,
+          "pathIdHex": "5936F49FA93F14DD",
+          "targetType": "Shader",
+          "targetName": "HGRP/LitEffect",
+          "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\Persistent\\VFS\\0CE8FA57\\36243F039A1BFD05676B5D323B50D4AA.chk",
+          "sourceOffset": 40688910,
+          "rawObject": {
+            "size": 1920196,
+            "sha256": "0cf994a764694183b2c59eef25114f5d699315655e7467dd55cf378e676ee0eb"
+          },
+          "assetMapHash": "22d9f2c0c7abfe25"
+        },
+        {
+          "serializedFile": "CAB-2c811ef28608ab220ecdb5c4e0629d2d",
+          "pathId": 6428594484694422749,
+          "pathIdHex": "5936F49FA93F14DD",
+          "targetType": "Shader",
+          "targetName": "HGRP/LitEffect",
+          "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\0CE8FA57\\19F0903A12BA87C0D43E67E64889B525.chk",
+          "sourceOffset": 40675344,
+          "rawObject": {
+            "size": 1920196,
+            "sha256": "0cf994a764694183b2c59eef25114f5d699315655e7467dd55cf378e676ee0eb"
+          },
+          "assetMapHash": "22d9f2c0c7abfe25"
+        }
+      ],
       "occurrences": [
         {
           "materialPathIdHex": "5A6341E8A834E421",
@@ -323,6 +359,26 @@
           "fileId": 1,
           "fileIdRule": "host dependency[0]"
         }
+      ],
+      "assetMap": {
+        "assetMap": "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json",
+        "Name": "HGRP/LitEffect",
+        "Container": "packages/com.hg.render-pipelines/runtime/shaders/materials/lit/liteffect.shader",
+        "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\0CE8FA57\\19F0903A12BA87C0D43E67E64889B525.chk",
+        "PathID": 6428594484694422749,
+        "Type": "Shader",
+        "Offset": 40675344,
+        "Hash": "22d9f2c0c7abfe25"
+      },
+      "artifact": {
+        "path": "export_full/recovered/AnimeStudio-cli/Persistent/convert_by_type/Shader/HGRP_LitEffect_p5936F49FA93F14DD.shader",
+        "size": 33882357,
+        "sha256": "16509993574e45c233b500f7cc794544c23773eaea3538460a859c0757e17405"
+      },
+      "resolutionBasis": [
+        "asset_map_exact_source_offset_pathid",
+        "cab_map_source_offset_to_cab",
+        "raw_object_bytes_exact_match"
       ]
     },
     {
@@ -331,7 +387,8 @@
       "pathIdUnsigned": 7766268189260370413,
       "pathIdHex": "6BC753C54B47D1ED",
       "targetType": "Shader",
-      "status": "ambiguous_physical_source",
+      "targetName": "HGRP/Effect/VFXRefract",
+      "status": "resolved_byte_identical_mirror",
       "assetMapCandidates": [
         {
           "assetMap": "export_full/recovered/AnimeStudio-cli/Persistent/maps/endfield_persistent_assets.json",
@@ -376,6 +433,36 @@
           "dependencies": []
         }
       ],
+      "rawObjectEvidence": [
+        {
+          "serializedFile": "CAB-2e04428f53aa90c5ba670338c86ab22b",
+          "pathId": 7766268189260370413,
+          "pathIdHex": "6BC753C54B47D1ED",
+          "targetType": "Shader",
+          "targetName": "HGRP/Effect/VFXRefract",
+          "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\Persistent\\VFS\\0CE8FA57\\36243F039A1BFD05676B5D323B50D4AA.chk",
+          "sourceOffset": 21196567,
+          "rawObject": {
+            "size": 342028,
+            "sha256": "7d100c457d0f6e2b07c8bad3445800aafdab605e22076351811837f307715a2f"
+          },
+          "assetMapHash": "75a69be00df3eba3"
+        },
+        {
+          "serializedFile": "CAB-2e04428f53aa90c5ba670338c86ab22b",
+          "pathId": 7766268189260370413,
+          "pathIdHex": "6BC753C54B47D1ED",
+          "targetType": "Shader",
+          "targetName": "HGRP/Effect/VFXRefract",
+          "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\0CE8FA57\\19F0903A12BA87C0D43E67E64889B525.chk",
+          "sourceOffset": 21196567,
+          "rawObject": {
+            "size": 342028,
+            "sha256": "7d100c457d0f6e2b07c8bad3445800aafdab605e22076351811837f307715a2f"
+          },
+          "assetMapHash": "75a69be00df3eba3"
+        }
+      ],
       "occurrences": [
         {
           "materialPathIdHex": "19E6A2A7AE736DA5",
@@ -403,6 +490,26 @@
           "fileId": 1,
           "fileIdRule": "host dependency[0]"
         }
+      ],
+      "assetMap": {
+        "assetMap": "export_full/recovered/AnimeStudio-cli/Persistent/maps/endfield_persistent_assets.json",
+        "Name": "HGRP/Effect/VFXRefract",
+        "Container": "assets/beyond/initialassets/shaders/pso/windowsplayer/psoinfo_vulkan_600_all.psovariants",
+        "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\Persistent\\VFS\\0CE8FA57\\36243F039A1BFD05676B5D323B50D4AA.chk",
+        "PathID": 7766268189260370413,
+        "Type": "Shader",
+        "Offset": 21196567,
+        "Hash": "75a69be00df3eba3"
+      },
+      "artifact": {
+        "path": "export_full/recovered/AnimeStudio-cli/Persistent/convert_by_type/Shader/HGRP_Effect_VFXRefract_p6BC753C54B47D1ED.shader",
+        "size": 24218939,
+        "sha256": "c18d2f942cdb6a4cc921fe81c43a7e560ec0a46c9c812dad0e894465f16d2f0d"
+      },
+      "resolutionBasis": [
+        "asset_map_exact_source_offset_pathid",
+        "cab_map_source_offset_to_cab",
+        "raw_object_bytes_exact_match"
       ]
     },
     {
@@ -411,6 +518,7 @@
       "pathIdUnsigned": 17016638825062464730,
       "pathIdHex": "EC273EDA76F7FCDA",
       "targetType": "Shader",
+      "targetName": "HGRP/Effect/VFXBaseV2",
       "status": "ambiguous_physical_source",
       "assetMapCandidates": [
         {
@@ -454,6 +562,36 @@
           "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\0CE8FA57\\19F0903A12BA87C0D43E67E64889B525.chk",
           "sourceOffset": 147432431,
           "dependencies": []
+        }
+      ],
+      "rawObjectEvidence": [
+        {
+          "serializedFile": "CAB-9fe1ba4f3ce8edb2f54eb3e35709a336",
+          "pathId": -1430105248647086886,
+          "pathIdHex": "EC273EDA76F7FCDA",
+          "targetType": "Shader",
+          "targetName": "HGRP/Effect/VFXBaseV2",
+          "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\Persistent\\VFS\\0CE8FA57\\36243F039A1BFD05676B5D323B50D4AA.chk",
+          "sourceOffset": 147445997,
+          "rawObject": {
+            "size": 11968144,
+            "sha256": "0375fb806f1c06906cd700b9a0e2be91724f12e3a3d740d044e47c95db74d414"
+          },
+          "assetMapHash": "ad90ec33e5d6a06d"
+        },
+        {
+          "serializedFile": "CAB-9fe1ba4f3ce8edb2f54eb3e35709a336",
+          "pathId": -1430105248647086886,
+          "pathIdHex": "EC273EDA76F7FCDA",
+          "targetType": "Shader",
+          "targetName": "HGRP/Effect/VFXBaseV2",
+          "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\0CE8FA57\\19F0903A12BA87C0D43E67E64889B525.chk",
+          "sourceOffset": 147432431,
+          "rawObject": {
+            "size": 11940804,
+            "sha256": "36795e5c60fb3b78c62a116946a6f04deee98f911cec1522999beb40a213bd2d"
+          },
+          "assetMapHash": "c594f9199d92aad0"
         }
       ],
       "occurrences": [
@@ -743,7 +881,8 @@
           "fileId": 6,
           "fileIdRule": "host dependency[5]"
         }
-      ]
+      ],
+      "ambiguityReason": "raw_object_bytes_differ"
     },
     {
       "serializedFile": "CAB-0ba5e8e2cd7537a13ff984cdeda8ede1",

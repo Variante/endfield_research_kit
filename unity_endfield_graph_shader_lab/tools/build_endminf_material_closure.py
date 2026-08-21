@@ -23,7 +23,9 @@ from build_endminf_external_pptr_closure import (
 )
 
 SCHEMA = "endfield.endminf-material-closure.v1"
+RAW_OBJECT_EVIDENCE_SCHEMA = "endfield.endminf-shader-raw-object-evidence.v1"
 _PATH_HEX_RE = re.compile(r"(?:^|[^0-9a-z])p(?P<hex>[0-9a-f]{16})$", re.IGNORECASE)
+_SHA256_RE = re.compile(r"^[0-9a-f]{64}$", re.IGNORECASE)
 _PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
 
 
@@ -60,6 +62,75 @@ def _source_snapshot(path: Path) -> dict[str, Any]:
         "size": int(stat.st_size),
         "mtime_ns": int(stat.st_mtime_ns),
     }
+
+
+def _raw_object_evidence(path: Path | None) -> dict[tuple[str, int, str, str, int], dict[str, Any]]:
+    """Load exact serialized-object snapshots keyed by physical provenance.
+
+    A whole VFS chunk hash cannot establish that two Unity objects are mirrors:
+    chunk layout and unrelated objects may differ.  Every evidence row therefore
+    has to identify the target CAB, PathID, type, source, and source offset next
+    to the hash/size of the extracted raw object itself.
+    """
+
+    if path is None:
+        return {}
+    payload = _load_json(path)
+    if not isinstance(payload, dict) or payload.get("schema") != RAW_OBJECT_EVIDENCE_SCHEMA:
+        raise ClosureError(f"unexpected raw-object evidence schema: {path}")
+    records = payload.get("records")
+    if not isinstance(records, list):
+        raise ClosureError(f"raw-object evidence records are not an array: {path}")
+    indexed: dict[tuple[str, int, str, str, int], dict[str, Any]] = {}
+    for index, record in enumerate(records):
+        if not isinstance(record, dict):
+            raise ClosureError(f"raw-object evidence record {index} is not an object: {path}")
+        serialized_file = str(record.get("serializedFile") or "")
+        if not serialized_file:
+            raise ClosureError(f"raw-object evidence record {index} lacks serializedFile: {path}")
+        path_id = _signed_int64(record.get("pathId"), field=f"raw-object evidence record {index} PathID", path=path)
+        target_type = str(record.get("targetType") or "")
+        if not target_type:
+            raise ClosureError(f"raw-object evidence record {index} lacks targetType: {path}")
+        source = str(record.get("source") or "")
+        if not source:
+            raise ClosureError(f"raw-object evidence record {index} lacks source: {path}")
+        source_offset = _integer(record.get("sourceOffset"), field=f"raw-object evidence record {index} sourceOffset", path=path)
+        if source_offset < 0:
+            raise ClosureError(f"raw-object evidence record {index} has a negative sourceOffset: {path}")
+        raw_object = record.get("rawObject")
+        if not isinstance(raw_object, dict):
+            raise ClosureError(f"raw-object evidence record {index} lacks rawObject snapshot: {path}")
+        raw_size = _integer(raw_object.get("size"), field=f"raw-object evidence record {index} rawObject.size", path=path)
+        raw_sha256 = str(raw_object.get("sha256") or "").casefold()
+        if raw_size <= 0 or not _SHA256_RE.fullmatch(raw_sha256):
+            raise ClosureError(f"raw-object evidence record {index} has an invalid rawObject snapshot: {path}")
+        expected_hex = f"{_unsigned_path_id(path_id):016X}"
+        path_id_hex = str(record.get("pathIdHex") or expected_hex).upper()
+        if path_id_hex != expected_hex:
+            raise ClosureError(f"raw-object evidence record {index} PathID hex mismatch: {path}")
+        key = (serialized_file.casefold(), path_id, target_type, _normal_source(source), source_offset)
+        if key in indexed:
+            raise ClosureError(f"duplicate raw-object evidence provenance at record {index}: {path}")
+        indexed[key] = {
+            "serializedFile": serialized_file,
+            "pathId": path_id,
+            "pathIdHex": expected_hex,
+            "targetType": target_type,
+            "targetName": str(record.get("targetName") or ""),
+            "source": source,
+            "sourceOffset": source_offset,
+            "rawObject": {"size": raw_size, "sha256": raw_sha256},
+        }
+    return indexed
+
+
+def _raw_object_evidence_output(record: dict[str, Any], asset_map_row: dict[str, Any]) -> dict[str, Any]:
+    """Keep the report's raw-object proof tied to its AssetMap row."""
+
+    output = dict(record)
+    output["assetMapHash"] = str(asset_map_row.get("Hash") or "")
+    return output
 
 
 def _integer(value: Any, *, field: str, path: Path | None = None) -> int:
@@ -233,6 +304,7 @@ def build_report(
     cab_maps: Iterable[Path],
     shader_root: Path,
     texture_root: Path,
+    raw_object_evidence: Path | None = None,
 ) -> dict[str, Any]:
     closure = _load_json(closure_path)
     if not isinstance(closure, dict):
@@ -248,6 +320,7 @@ def build_report(
     materials = [row for row in identities if row.get("targetType") == "Material" and row.get("status") == "resolved"]
     if len(materials) != 27:
         raise ClosureError(f"expected 27 resolved Endminf materials, found {len(materials)}")
+    raw_object_evidence_by_key = _raw_object_evidence(raw_object_evidence)
 
     occurrences: list[dict[str, Any]] = []
     requested: set[int] = set()
@@ -411,17 +484,72 @@ def build_report(
                 "has no exact CABMap/AssetMap physical target"
             )
         if len(unique_rows) > 1:
+            candidate_rows = sorted(unique_rows.values(), key=_canonical)
+            raw_candidates: list[dict[str, Any]] = []
+            missing_raw_evidence = False
+            invalid_raw_evidence = False
+            for candidate in candidate_rows:
+                candidate_source = _normal_source(candidate.get("Source"))
+                candidate_offset = _integer(candidate.get("Offset"), field="AssetMap.Offset")
+                candidate_path_id = _signed_int64(
+                    candidate.get("PathID"),
+                    field=f"target {occurrence['targetCab']} AssetMap PathID",
+                )
+                evidence_key = (
+                    occurrence["targetCab"].casefold(),
+                    candidate_path_id,
+                    occurrence["targetType"],
+                    candidate_source,
+                    candidate_offset,
+                )
+                evidence = raw_object_evidence_by_key.get(evidence_key)
+                if evidence is None:
+                    missing_raw_evidence = True
+                    continue
+                if evidence.get("targetName") and evidence["targetName"] != str(candidate.get("Name") or ""):
+                    invalid_raw_evidence = True
+                raw_candidates.append(_raw_object_evidence_output(evidence, candidate))
+            raw_candidates = sorted(raw_candidates, key=_canonical)
+            raw_hashes = {
+                (item["rawObject"]["size"], item["rawObject"]["sha256"])
+                for item in raw_candidates
+            }
+            mirror = (
+                occurrence["targetType"] == "Shader"
+                and not missing_raw_evidence
+                and not invalid_raw_evidence
+                and len(raw_candidates) == len(candidate_rows)
+                and len(raw_hashes) == 1
+            )
             identity = identities.setdefault(key, {
                 "serializedFile": occurrence["targetCab"],
                 "pathId": occurrence["pathId"],
                 "pathIdUnsigned": occurrence["pathIdUnsigned"],
                 "pathIdHex": occurrence["pathIdHex"],
                 "targetType": occurrence["targetType"],
-                "status": "ambiguous_physical_source",
-                "assetMapCandidates": sorted(unique_rows.values(), key=_canonical),
+                "targetName": str(candidate_rows[0].get("Name") or ""),
+                "status": "resolved_byte_identical_mirror" if mirror else "ambiguous_physical_source",
+                "assetMapCandidates": candidate_rows,
                 "cabMapCandidates": target_records,
+                "rawObjectEvidence": raw_candidates,
                 "occurrences": [],
             })
+            if mirror:
+                identity["assetMap"] = candidate_rows[0]
+                identity["artifact"] = _snapshot(_artifact(shader_root, "Shader", occurrence["pathIdHex"]))
+                identity["resolutionBasis"] = [
+                    "asset_map_exact_source_offset_pathid",
+                    "cab_map_source_offset_to_cab",
+                    "raw_object_bytes_exact_match",
+                ]
+            elif missing_raw_evidence:
+                identity["ambiguityReason"] = "raw_object_evidence_missing"
+            elif invalid_raw_evidence:
+                identity["ambiguityReason"] = "raw_object_provenance_mismatch"
+            elif len(raw_hashes) > 1:
+                identity["ambiguityReason"] = "raw_object_bytes_differ"
+            else:
+                identity["ambiguityReason"] = "raw_object_evidence_incomplete"
             identity["occurrences"].append({k: v for k, v in occurrence.items() if k not in {"targetCab", "pathId", "pathIdUnsigned", "pathIdHex", "targetType"}})
             continue
         target = next(iter(unique_rows.values()))
@@ -446,6 +574,7 @@ def build_report(
         identity["occurrences"] = sorted(identity["occurrences"], key=_canonical)
     ordered = sorted(identities.values(), key=lambda row: (row["targetType"], row["serializedFile"], row["pathIdUnsigned"]))
     resolved_counts = Counter(row["targetType"] for row in ordered if row["status"] == "resolved")
+    resolved_counts.update(row["targetType"] for row in ordered if row["status"] == "resolved_byte_identical_mirror")
     ambiguous_counts = Counter(row["targetType"] for row in ordered if row["status"].startswith("ambiguous"))
     ambiguous_count = sum(ambiguous_counts.values())
     return {
@@ -466,6 +595,7 @@ def build_report(
                 }),
                 key=_canonical,
             ),
+            "rawObjectEvidence": _snapshot(raw_object_evidence) if raw_object_evidence is not None else None,
             "shaderRoot": _relative_path(shader_root),
             "textureRoot": _relative_path(texture_root),
         },
@@ -501,6 +631,7 @@ def _args(argv: list[str] | None = None) -> argparse.Namespace:
     p.add_argument("--cab-map", type=Path, action="append", required=True)
     p.add_argument("--shader-root", type=Path, required=True)
     p.add_argument("--texture-root", type=Path, required=True)
+    p.add_argument("--shader-raw-evidence", type=Path)
     p.add_argument("--output", type=Path, required=True)
     p.add_argument("--check", action="store_true")
     return p.parse_args(argv)
@@ -509,7 +640,15 @@ def _args(argv: list[str] | None = None) -> argparse.Namespace:
 def main(argv: list[str] | None = None) -> int:
     args = _args(argv)
     try:
-        report = build_report(args.closure, args.material_root, args.asset_map, args.cab_map, args.shader_root, args.texture_root)
+        report = build_report(
+            args.closure,
+            args.material_root,
+            args.asset_map,
+            args.cab_map,
+            args.shader_root,
+            args.texture_root,
+            args.shader_raw_evidence,
+        )
         text = json.dumps(report, ensure_ascii=False, indent=2) + "\n"
         if args.check:
             try:
