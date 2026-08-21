@@ -2037,13 +2037,14 @@
           "_43_45",
           "_48_50"
         ],
-        "logicalName": "UnityPerMaterial",
-        "status": "resolved_descriptor_buffer_identity",
+        "logicalName": null,
+        "status": "gap",
         "basis": [
-          "Ruri physical register",
-          "PerMaterial descriptor set binding 12"
+          "DescriptorSet binding names do not encode a D3D b-register relation"
         ],
-        "candidateLogicalNames": []
+        "candidateLogicalNames": [
+          "UnityPerMaterial"
+        ]
       },
       {
         "register": 4,
@@ -2056,7 +2057,7 @@
         "logicalName": null,
         "status": "gap",
         "basis": [
-          "16-byte register is ambiguous between UnityPerDraw and _TerrainSubsurfaceConstants"
+          "DescriptorSet binding names do not encode a D3D b-register relation"
         ],
         "candidateLogicalNames": [
           "UnityPerDraw",
@@ -2064,6 +2065,158 @@
         ]
       }
     ],
+    "descriptorContract": {
+      "global": [
+        {
+          "Name": "_TransformVariables",
+          "NameIndex": -1,
+          "BindingIndex": 13,
+          "DescriptorType": 4,
+          "PackedBinding": 65283,
+          "PackedInfo": 65536
+        },
+        {
+          "Name": "ShaderVariablesGlobal",
+          "NameIndex": -1,
+          "BindingIndex": 16,
+          "DescriptorType": 4,
+          "PackedBinding": 16908035,
+          "PackedInfo": 65537
+        },
+        {
+          "Name": "_VertexSkinMatrices",
+          "NameIndex": 10,
+          "BindingIndex": 19,
+          "DescriptorType": 2,
+          "PackedBinding": 218103827,
+          "PackedInfo": 0
+        },
+        {
+          "Name": "_TerrainSubsurfaceConstants",
+          "NameIndex": -1,
+          "BindingIndex": 33,
+          "DescriptorType": 4,
+          "PackedBinding": 4278517506,
+          "PackedInfo": 65540
+        }
+      ],
+      "perMaterial": [
+        {
+          "Name": "_ParallaxNoiseMap",
+          "NameIndex": -1,
+          "BindingIndex": 0,
+          "DescriptorType": 1,
+          "PackedBinding": 4278583042,
+          "PackedInfo": 131071
+        },
+        {
+          "Name": "_ParallaxMaskMap",
+          "NameIndex": -1,
+          "BindingIndex": 1,
+          "DescriptorType": 1,
+          "PackedBinding": 4278517506,
+          "PackedInfo": 131071
+        },
+        {
+          "Name": "_ParallaxMap",
+          "NameIndex": -1,
+          "BindingIndex": 2,
+          "DescriptorType": 1,
+          "PackedBinding": 4278451970,
+          "PackedInfo": 131071
+        },
+        {
+          "Name": "_NormalMap",
+          "NameIndex": -1,
+          "BindingIndex": 3,
+          "DescriptorType": 1,
+          "PackedBinding": 4278320898,
+          "PackedInfo": 131071
+        },
+        {
+          "Name": "_MROMap",
+          "NameIndex": -1,
+          "BindingIndex": 4,
+          "DescriptorType": 1,
+          "PackedBinding": 4278386434,
+          "PackedInfo": 131071
+        },
+        {
+          "Name": "_BaseColorMap",
+          "NameIndex": -1,
+          "BindingIndex": 5,
+          "DescriptorType": 1,
+          "PackedBinding": 4278255362,
+          "PackedInfo": 131071
+        },
+        {
+          "Name": "_ParallaxNoiseMap",
+          "NameIndex": -1,
+          "BindingIndex": 6,
+          "DescriptorType": 2,
+          "PackedBinding": 4278583042,
+          "PackedInfo": 66048
+        },
+        {
+          "Name": "_ParallaxMaskMap",
+          "NameIndex": -1,
+          "BindingIndex": 7,
+          "DescriptorType": 2,
+          "PackedBinding": 4278517506,
+          "PackedInfo": 66049
+        },
+        {
+          "Name": "_ParallaxMap",
+          "NameIndex": -1,
+          "BindingIndex": 8,
+          "DescriptorType": 2,
+          "PackedBinding": 4278451970,
+          "PackedInfo": 66050
+        },
+        {
+          "Name": "_NormalMap",
+          "NameIndex": -1,
+          "BindingIndex": 9,
+          "DescriptorType": 2,
+          "PackedBinding": 4278320898,
+          "PackedInfo": 66051
+        },
+        {
+          "Name": "_MROMap",
+          "NameIndex": -1,
+          "BindingIndex": 10,
+          "DescriptorType": 2,
+          "PackedBinding": 4278386434,
+          "PackedInfo": 66052
+        },
+        {
+          "Name": "_BaseColorMap",
+          "NameIndex": -1,
+          "BindingIndex": 11,
+          "DescriptorType": 2,
+          "PackedBinding": 4278255362,
+          "PackedInfo": 66053
+        },
+        {
+          "Name": "UnityPerMaterial",
+          "NameIndex": -1,
+          "BindingIndex": 12,
+          "DescriptorType": 4,
+          "PackedBinding": 4278451970,
+          "PackedInfo": 65539
+        }
+      ],
+      "perObject": [
+        {
+          "Name": "UnityPerDraw",
+          "NameIndex": -1,
+          "BindingIndex": 0,
+          "DescriptorType": 4,
+          "PackedBinding": 33750787,
+          "PackedInfo": 65538
+        }
+      ]
+    },
     "serializedFields": [
       {
         "buffer": "ShaderVariablesGlobal",
@@ -2240,236 +2393,236 @@
       {
         "property": "_EnableParallaxMap",
         "constantBuffer": "UnityPerMaterial",
-        "register": 3,
+        "register": null,
         "offsetBytes": null,
         "sizeBytes": null,
         "status": "gap",
-        "reason": "UnityPerMaterial vector/color parameter offsets are not present in the target serialized metadata"
+        "reason": "DescriptorSetParameters names UnityPerMaterial but does not prove its D3D b-register or vector/color offsets"
       },
       {
         "property": "_ParallaxStrength",
         "constantBuffer": "UnityPerMaterial",
-        "register": 3,
+        "register": null,
         "offsetBytes": null,
         "sizeBytes": null,
         "status": "gap",
-        "reason": "UnityPerMaterial vector/color parameter offsets are not present in the target serialized metadata"
+        "reason": "DescriptorSetParameters names UnityPerMaterial but does not prove its D3D b-register or vector/color offsets"
       },
       {
         "property": "_ParallaxMarchNum",
         "constantBuffer": "UnityPerMaterial",
-        "register": 3,
+        "register": null,
         "offsetBytes": null,
         "sizeBytes": null,
         "status": "gap",
-        "reason": "UnityPerMaterial vector/color parameter offsets are not present in the target serialized metadata"
+        "reason": "DescriptorSetParameters names UnityPerMaterial but does not prove its D3D b-register or vector/color offsets"
       },
       {
         "property": "_ParallaxTilling",
         "constantBuffer": "UnityPerMaterial",
-        "register": 3,
+        "register": null,
         "offsetBytes": null,
         "sizeBytes": null,
         "status": "gap",
-        "reason": "UnityPerMaterial vector/color parameter offsets are not present in the target serialized metadata"
+        "reason": "DescriptorSetParameters names UnityPerMaterial but does not prove its D3D b-register or vector/color offsets"
       },
       {
         "property": "_ParallaxAnimRandom",
         "constantBuffer": "UnityPerMaterial",
-        "register": 3,
+        "register": null,
         "offsetBytes": null,
         "sizeBytes": null,
         "status": "gap",
-        "reason": "UnityPerMaterial vector/color parameter offsets are not present in the target serialized metadata"
+        "reason": "DescriptorSetParameters names UnityPerMaterial but does not prove its D3D b-register or vector/color offsets"
       },
       {
         "property": "_ParallaxAnimSpeed",
         "constantBuffer": "UnityPerMaterial",
-        "register": 3,
+        "register": null,
         "offsetBytes": null,
         "sizeBytes": null,
         "status": "gap",
-        "reason": "UnityPerMaterial vector/color parameter offsets are not present in the target serialized metadata"
+        "reason": "DescriptorSetParameters names UnityPerMaterial but does not prove its D3D b-register or vector/color offsets"
       },
       {
         "property": "_ParallaxBrightInnerRadius",
         "constantBuffer": "UnityPerMaterial",
-        "register": 3,
+        "register": null,
         "offsetBytes": null,
         "sizeBytes": null,
         "status": "gap",
-        "reason": "UnityPerMaterial vector/color parameter offsets are not present in the target serialized metadata"
+        "reason": "DescriptorSetParameters names UnityPerMaterial but does not prove its D3D b-register or vector/color offsets"
       },
       {
         "property": "_ParallaxBrightOuterRadius",
         "constantBuffer": "UnityPerMaterial",
-        "register": 3,
+        "register": null,
         "offsetBytes": null,
         "sizeBytes": null,
         "status": "gap",
-        "reason": "UnityPerMaterial vector/color parameter offsets are not present in the target serialized metadata"
+        "reason": "DescriptorSetParameters names UnityPerMaterial but does not prove its D3D b-register or vector/color offsets"
       },
       {
         "property": "_ParallaxBrightStrength",
         "constantBuffer": "UnityPerMaterial",
-        "register": 3,
+        "register": null,
         "offsetBytes": null,
         "sizeBytes": null,
         "status": "gap",
-        "reason": "UnityPerMaterial vector/color parameter offsets are not present in the target serialized metadata"
+        "reason": "DescriptorSetParameters names UnityPerMaterial but does not prove its D3D b-register or vector/color offsets"
       },
       {
         "property": "_ParallaxFresnelStrength",
         "constantBuffer": "UnityPerMaterial",
-        "register": 3,
+        "register": null,
         "offsetBytes": null,
         "sizeBytes": null,
         "status": "gap",
-        "reason": "UnityPerMaterial vector/color parameter offsets are not present in the target serialized metadata"
+        "reason": "DescriptorSetParameters names UnityPerMaterial but does not prove its D3D b-register or vector/color offsets"
       },
       {
         "property": "_ParallaxIgnorePostExposure",
         "constantBuffer": "UnityPerMaterial",
-        "register": 3,
+        "register": null,
         "offsetBytes": null,
         "sizeBytes": null,
         "status": "gap",
-        "reason": "UnityPerMaterial vector/color parameter offsets are not present in the target serialized metadata"
+        "reason": "DescriptorSetParameters names UnityPerMaterial but does not prove its D3D b-register or vector/color offsets"
       },
       {
         "property": "_ParallaxIntensity",
         "constantBuffer": "UnityPerMaterial",
-        "register": 3,
+        "register": null,
         "offsetBytes": null,
         "sizeBytes": null,
         "status": "gap",
-        "reason": "UnityPerMaterial vector/color parameter offsets are not present in the target serialized metadata"
+        "reason": "DescriptorSetParameters names UnityPerMaterial but does not prove its D3D b-register or vector/color offsets"
       },
       {
         "property": "_ParallaxMaskMapColorStrength",
         "constantBuffer": "UnityPerMaterial",
-        "register": 3,
+        "register": null,
         "offsetBytes": null,
         "sizeBytes": null,
         "status": "gap",
-        "reason": "UnityPerMaterial vector/color parameter offsets are not present in the target serialized metadata"
+        "reason": "DescriptorSetParameters names UnityPerMaterial but does not prove its D3D b-register or vector/color offsets"
       },
       {
         "property": "_ParallaxMinBrightness",
         "constantBuffer": "UnityPerMaterial",
-        "register": 3,
+        "register": null,
         "offsetBytes": null,
         "sizeBytes": null,
         "status": "gap",
-        "reason": "UnityPerMaterial vector/color parameter offsets are not present in the target serialized metadata"
+        "reason": "DescriptorSetParameters names UnityPerMaterial but does not prove its D3D b-register or vector/color offsets"
       },
       {
         "property": "_ParallaxNoiseMapTilling",
         "constantBuffer": "UnityPerMaterial",
-        "register": 3,
+        "register": null,
         "offsetBytes": null,
         "sizeBytes": null,
         "status": "gap",
-        "reason": "UnityPerMaterial vector/color parameter offsets are not present in the target serialized metadata"
+        "reason": "DescriptorSetParameters names UnityPerMaterial but does not prove its D3D b-register or vector/color offsets"
       },
       {
         "property": "_ParallaxCharPos",
         "constantBuffer": "UnityPerMaterial",
-        "register": 3,
+        "register": null,
         "offsetBytes": null,
         "sizeBytes": null,
         "status": "gap",
-        "reason": "UnityPerMaterial vector/color parameter offsets are not present in the target serialized metadata"
+        "reason": "DescriptorSetParameters names UnityPerMaterial but does not prove its D3D b-register or vector/color offsets"
       },
       {
         "property": "_ParallaxMaskByLayerBlend",
         "constantBuffer": "UnityPerMaterial",
-        "register": 3,
+        "register": null,
         "offsetBytes": null,
         "sizeBytes": null,
         "status": "gap",
-        "reason": "UnityPerMaterial vector/color parameter offsets are not present in the target serialized metadata"
+        "reason": "DescriptorSetParameters names UnityPerMaterial but does not prove its D3D b-register or vector/color offsets"
       },
       {
         "property": "_ParallaxLerpSchedule",
         "constantBuffer": "UnityPerMaterial",
-        "register": 3,
+        "register": null,
         "offsetBytes": null,
         "sizeBytes": null,
         "status": "gap",
-        "reason": "UnityPerMaterial vector/color parameter offsets are not present in the target serialized metadata"
+        "reason": "DescriptorSetParameters names UnityPerMaterial but does not prove its D3D b-register or vector/color offsets"
       },
       {
         "property": "_ParallaxSignControl",
         "constantBuffer": "UnityPerMaterial",
-        "register": 3,
+        "register": null,
         "offsetBytes": null,
         "sizeBytes": null,
         "status": "gap",
-        "reason": "UnityPerMaterial vector/color parameter offsets are not present in the target serialized metadata"
+        "reason": "DescriptorSetParameters names UnityPerMaterial but does not prove its D3D b-register or vector/color offsets"
       },
       {
         "property": "_ParallaxColor",
         "constantBuffer": "UnityPerMaterial",
-        "register": 3,
+        "register": null,
         "offsetBytes": null,
         "sizeBytes": null,
         "status": "gap",
-        "reason": "UnityPerMaterial vector/color parameter offsets are not present in the target serialized metadata"
+        "reason": "DescriptorSetParameters names UnityPerMaterial but does not prove its D3D b-register or vector/color offsets"
       },
       {
         "property": "_ParallaxColorDark",
         "constantBuffer": "UnityPerMaterial",
-        "register": 3,
+        "register": null,
         "offsetBytes": null,
         "sizeBytes": null,
         "status": "gap",
-        "reason": "UnityPerMaterial vector/color parameter offsets are not present in the target serialized metadata"
+        "reason": "DescriptorSetParameters names UnityPerMaterial but does not prove its D3D b-register or vector/color offsets"
       },
       {
         "property": "_ParallaxPatternColor",
         "constantBuffer": "UnityPerMaterial",
-        "register": 3,
+        "register": null,
         "offsetBytes": null,
         "sizeBytes": null,
         "status": "gap",
-        "reason": "UnityPerMaterial vector/color parameter offsets are not present in the target serialized metadata"
+        "reason": "DescriptorSetParameters names UnityPerMaterial but does not prove its D3D b-register or vector/color offsets"
       },
       {
         "property": "_ParallaxPatternColorDark",
         "constantBuffer": "UnityPerMaterial",
-        "register": 3,
+        "register": null,
         "offsetBytes": null,
         "sizeBytes": null,
         "status": "gap",
-        "reason": "UnityPerMaterial vector/color parameter offsets are not present in the target serialized metadata"
+        "reason": "DescriptorSetParameters names UnityPerMaterial but does not prove its D3D b-register or vector/color offsets"
       },
       {
         "property": "_ParallaxSignLerpFactor0",
         "constantBuffer": "UnityPerMaterial",
-        "register": 3,
+        "register": null,
         "offsetBytes": null,
         "sizeBytes": null,
         "status": "gap",
-        "reason": "UnityPerMaterial vector/color parameter offsets are not present in the target serialized metadata"
+        "reason": "DescriptorSetParameters names UnityPerMaterial but does not prove its D3D b-register or vector/color offsets"
       },
       {
         "property": "_ParallaxSignLerpFactor1",
         "constantBuffer": "UnityPerMaterial",
-        "register": 3,
+        "register": null,
         "offsetBytes": null,
         "sizeBytes": null,
         "status": "gap",
-        "reason": "UnityPerMaterial vector/color parameter offsets are not present in the target serialized metadata"
+        "reason": "DescriptorSetParameters names UnityPerMaterial but does not prove its D3D b-register or vector/color offsets"
       },
       {
         "property": "_WorldParallaxAdditionalColor",
         "constantBuffer": "UnityPerMaterial",
-        "register": 3,
+        "register": null,
         "offsetBytes": null,
         "sizeBytes": null,
         "status": "gap",
-        "reason": "UnityPerMaterial vector/color parameter offsets are not present in the target serialized metadata"
+        "reason": "DescriptorSetParameters names UnityPerMaterial but does not prove its D3D b-register or vector/color offsets"
       }
     ]
   },
@@ -2489,6 +2642,8 @@
           "isNull": true,
           "status": "gap",
           "targetName": null,
+          "targetSerializedFile": null,
+          "closureOccurrence": null,
           "artifact": null
         },
         {
@@ -2498,6 +2653,8 @@
           "isNull": true,
           "status": "gap",
           "targetName": null,
+          "targetSerializedFile": null,
+          "closureOccurrence": null,
           "artifact": null
         },
         {
@@ -2507,6 +2664,13 @@
           "isNull": false,
           "status": "resolved",
           "targetName": "T_fx_flow_04_02_M",
+          "targetSerializedFile": "CAB-85f5ecdd9cd941e9e510bd7b403b08ba",
+          "closureOccurrence": {
+            "materialPathIdHex": "5A6341E8A834E421",
+            "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_01_p5A6341E8A834E421.json",
+            "property": "m_TexEnvs._ParallaxMap.m_Texture",
+            "fileId": 5
+          },
           "artifact": {
             "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_flow_04_02_M_pD98B95AFB1B9A330.png",
             "size": 7676,
@@ -2520,6 +2684,13 @@
           "isNull": false,
           "status": "resolved",
           "targetName": "T_fx_sourcerocks+1_N",
+          "targetSerializedFile": "CAB-63fd393e8f2d95424249637453cea5f7",
+          "closureOccurrence": {
+            "materialPathIdHex": "5A6341E8A834E421",
+            "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_01_p5A6341E8A834E421.json",
+            "property": "m_TexEnvs._NormalMap.m_Texture",
+            "fileId": 4
+          },
           "artifact": {
             "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_sourcerocks+1_N_p88E0975E10098787.png",
             "size": 1499301,
@@ -2533,6 +2704,13 @@
           "isNull": false,
           "status": "resolved",
           "targetName": "T_fx_sourcerocks+3_N",
+          "targetSerializedFile": "CAB-ff02c4759f8cce1357cd746f1c39c71f",
+          "closureOccurrence": {
+            "materialPathIdHex": "5A6341E8A834E421",
+            "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_01_p5A6341E8A834E421.json",
+            "property": "m_TexEnvs._MROMap.m_Texture",
+            "fileId": 3
+          },
           "artifact": {
             "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_sourcerocks+3_N_p4DACC28D12A753B7.png",
             "size": 689485,
@@ -2546,6 +2724,13 @@
           "isNull": false,
           "status": "resolved",
           "targetName": "T_fx_sourcerocks+2_D",
+          "targetSerializedFile": "CAB-f6b098902d7ca2beadfba1cf3201131c",
+          "closureOccurrence": {
+            "materialPathIdHex": "5A6341E8A834E421",
+            "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_01_p5A6341E8A834E421.json",
+            "property": "m_TexEnvs._BaseColorMap.m_Texture",
+            "fileId": 2
+          },
           "artifact": {
             "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_sourcerocks+2_D_p4B097EB7791F6E59.png",
             "size": 968167,
@@ -2814,6 +2999,8 @@
           "isNull": true,
           "status": "gap",
           "targetName": null,
+          "targetSerializedFile": null,
+          "closureOccurrence": null,
           "artifact": null
         },
         {
@@ -2823,6 +3010,8 @@
           "isNull": true,
           "status": "gap",
           "targetName": null,
+          "targetSerializedFile": null,
+          "closureOccurrence": null,
           "artifact": null
         },
         {
@@ -2832,6 +3021,13 @@
           "isNull": false,
           "status": "resolved",
           "targetName": "T_fx_flow_04_02_M",
+          "targetSerializedFile": "CAB-85f5ecdd9cd941e9e510bd7b403b08ba",
+          "closureOccurrence": {
+            "materialPathIdHex": "A531A88850690EB8",
+            "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_27_pA531A88850690EB8.json",
+            "property": "m_TexEnvs._ParallaxMap.m_Texture",
+            "fileId": 5
+          },
           "artifact": {
             "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_flow_04_02_M_pD98B95AFB1B9A330.png",
             "size": 7676,
@@ -2845,6 +3041,13 @@
           "isNull": false,
           "status": "resolved",
           "targetName": "T_fx_sourcerocks+1_N",
+          "targetSerializedFile": "CAB-63fd393e8f2d95424249637453cea5f7",
+          "closureOccurrence": {
+            "materialPathIdHex": "A531A88850690EB8",
+            "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_27_pA531A88850690EB8.json",
+            "property": "m_TexEnvs._NormalMap.m_Texture",
+            "fileId": 4
+          },
           "artifact": {
             "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_sourcerocks+1_N_p88E0975E10098787.png",
             "size": 1499301,
@@ -2858,6 +3061,13 @@
           "isNull": false,
           "status": "resolved",
           "targetName": "T_fx_sourcerocks+3_N",
+          "targetSerializedFile": "CAB-ff02c4759f8cce1357cd746f1c39c71f",
+          "closureOccurrence": {
+            "materialPathIdHex": "A531A88850690EB8",
+            "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_27_pA531A88850690EB8.json",
+            "property": "m_TexEnvs._MROMap.m_Texture",
+            "fileId": 3
+          },
           "artifact": {
             "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_sourcerocks+3_N_p4DACC28D12A753B7.png",
             "size": 689485,
@@ -2871,6 +3081,13 @@
           "isNull": false,
           "status": "resolved",
           "targetName": "T_fx_sourcerocks+2_D",
+          "targetSerializedFile": "CAB-f6b098902d7ca2beadfba1cf3201131c",
+          "closureOccurrence": {
+            "materialPathIdHex": "A531A88850690EB8",
+            "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_27_pA531A88850690EB8.json",
+            "property": "m_TexEnvs._BaseColorMap.m_Texture",
+            "fileId": 2
+          },
           "artifact": {
             "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_sourcerocks+2_D_p4B097EB7791F6E59.png",
             "size": 968167,
@@ -3139,6 +3356,8 @@
           "isNull": true,
           "status": "gap",
           "targetName": null,
+          "targetSerializedFile": null,
+          "closureOccurrence": null,
           "artifact": null
         },
         {
@@ -3148,6 +3367,8 @@
           "isNull": true,
           "status": "gap",
           "targetName": null,
+          "targetSerializedFile": null,
+          "closureOccurrence": null,
           "artifact": null
         },
         {
@@ -3157,6 +3378,13 @@
           "isNull": false,
           "status": "resolved",
           "targetName": "T_fx_flow_04_02_M",
+          "targetSerializedFile": "CAB-85f5ecdd9cd941e9e510bd7b403b08ba",
+          "closureOccurrence": {
+            "materialPathIdHex": "AFCE491DD7BC5724",
+            "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_38_pAFCE491DD7BC5724.json",
+            "property": "m_TexEnvs._ParallaxMap.m_Texture",
+            "fileId": 5
+          },
           "artifact": {
             "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_flow_04_02_M_pD98B95AFB1B9A330.png",
             "size": 7676,
@@ -3170,6 +3398,13 @@
           "isNull": false,
           "status": "resolved",
           "targetName": "T_fx_sourcerocks+1_N",
+          "targetSerializedFile": "CAB-63fd393e8f2d95424249637453cea5f7",
+          "closureOccurrence": {
+            "materialPathIdHex": "AFCE491DD7BC5724",
+            "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_38_pAFCE491DD7BC5724.json",
+            "property": "m_TexEnvs._NormalMap.m_Texture",
+            "fileId": 4
+          },
           "artifact": {
             "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_sourcerocks+1_N_p88E0975E10098787.png",
             "size": 1499301,
@@ -3183,6 +3418,13 @@
           "isNull": false,
           "status": "resolved",
           "targetName": "T_fx_sourcerocks+3_N",
+          "targetSerializedFile": "CAB-ff02c4759f8cce1357cd746f1c39c71f",
+          "closureOccurrence": {
+            "materialPathIdHex": "AFCE491DD7BC5724",
+            "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_38_pAFCE491DD7BC5724.json",
+            "property": "m_TexEnvs._MROMap.m_Texture",
+            "fileId": 3
+          },
           "artifact": {
             "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_sourcerocks+3_N_p4DACC28D12A753B7.png",
             "size": 689485,
@@ -3196,6 +3438,13 @@
           "isNull": false,
           "status": "resolved",
           "targetName": "T_fx_sourcerocks+2_D",
+          "targetSerializedFile": "CAB-f6b098902d7ca2beadfba1cf3201131c",
+          "closureOccurrence": {
+            "materialPathIdHex": "AFCE491DD7BC5724",
+            "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_38_pAFCE491DD7BC5724.json",
+            "property": "m_TexEnvs._BaseColorMap.m_Texture",
+            "fileId": 2
+          },
           "artifact": {
             "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_sourcerocks+2_D_p4B097EB7791F6E59.png",
             "size": 968167,
@@ -3452,7 +3701,7 @@
   ],
   "gaps": [
     "DXBC has no RDEF chunk; named common-buffer fields come only from serialized Shader metadata.",
-    "UnityPerMaterial property values are resolved from the three Material JSONs, but their b3 offsets are not present in the target metadata.",
+    "UnityPerMaterial property values are resolved from the three Material JSONs, but DescriptorSetParameters does not prove a b3 relation or property offsets.",
     "Fragment b4 is a 16-byte register; its identity is ambiguous between UnityPerDraw and _TerrainSubsurfaceConstants.",
     "ParserBindChannels.m_Channels is not exported by AnimeStudio's Shader JSON; do not substitute guessed ShaderLab channels.",
     "The null _ParallaxNoiseMap and _ParallaxMaskMap PPtrs remain unresolved by design."
