@@ -56,6 +56,7 @@ CONTROLLER_AUDIT_PATH = PROJECT_ROOT / "scratch" / "character_recovery" / "overv
 CAPTURE_PROBE_PATH = PROJECT_ROOT / "scratch" / "character_recovery" / "overview_capture_probe" / "Endminf" / "Endminf_overview_capture.json"
 CAMERA_CONTRACT_PATH = PROJECT_ROOT / "Assets" / "EndfieldGraphShaderLab" / "Generated" / "OriginalData" / "CharInfoPresentation" / "charinfo_overview_camera_contract.json"
 OVERVIEW_CAMERAS_PATH = PROJECT_ROOT / "scratch" / "character_recovery" / "gameplay_reference" / "charinfo_prefabs" / "overview_cameras.json"
+ENDMINM_CAPTURE_EVIDENCE_PATH = PROJECT_ROOT / "tools" / "endminm_comparable_capture_evidence.json"
 START_CLIP_PATH = PROJECT_ROOT / "Assets" / "EndfieldGraphShaderLab" / "Generated" / "Characters" / "Playable" / "Endminf" / "Animations" / "A_actor_endminf_ui_overview_start.anim"
 LOOP_CLIP_PATH = PROJECT_ROOT / "Assets" / "EndfieldGraphShaderLab" / "Generated" / "Characters" / "Playable" / "Endminf" / "Animations" / "A_actor_endminf_ui_overview_loop.anim"
 CHARACTER_BAND = (1400, 200, 2500, 2100)
@@ -325,12 +326,23 @@ def _source_identity() -> dict[str, Any]:
 def _candidate_matrix(source_identity: dict[str, Any], visual: dict[str, Any]) -> dict[str, Any]:
     """Compare the target against every plausible roster identity under one contract.
 
-    The repository has an exact Endminf render, but no exact chr_9000_endmin
-    source prefab/controller and no same-condition Endminm capture.  Those
-    missing competitors are recorded as unavailable rather than silently
-    treating a single target ECC as proof.
+    The generic video alias remains rejected, while the exact Endminm
+    original-game-derived prefab now has a same-condition phase-sweep render.
+    Its evidence is rebuilt by the dedicated capture validator before it is
+    admitted as a numeric comparable competitor.
     """
     target_score = float(visual["eccTranslation"])
+    try:
+        import build_endminm_comparable_capture as endminm_capture_tool
+        endminm_capture = endminm_capture_tool.check_report(ENDMINM_CAPTURE_EVIDENCE_PATH)
+    except ImportError as error:
+        raise EvidenceError(f"cannot load Endminm comparable capture validator: {error}") from error
+    except Exception as error:
+        raise EvidenceError(f"Endminm comparable capture evidence is not admissible: {error}") from error
+    endminm_source = endminm_capture["sourceAssets"]
+    endminm_capture_data = endminm_capture["capture"]
+    endminm_comparison = endminm_capture["comparison"]
+    endminm_capture_evidence = _file_evidence(ENDMINM_CAPTURE_EVIDENCE_PATH)
     target = {
         "candidateId": EXACT_CHARACTER_ID,
         "actorToken": EXACT_ACTOR_TOKEN,
@@ -350,8 +362,6 @@ def _candidate_matrix(source_identity: dict[str, Any], visual: dict[str, Any]) -
             "scoreMetric": "ECC translation over pinned character band",
         },
     }
-    endminm_manifest = _file_evidence(ENDMINM_SOURCE_MANIFEST_PATH)
-    endminm_prefab = _file_evidence(ENDMINM_PREFAB_PATH)
     candidates = [
         target,
         {
@@ -374,20 +384,63 @@ def _candidate_matrix(source_identity: dict[str, Any], visual: dict[str, Any]) -
             "candidateId": "chr_0002_endminm",
             "actorToken": "endminm",
             "role": "plausible_roster_competitor",
-            "sourceAssets": {"manifest": endminm_manifest, "prefab": endminm_prefab, "controllerAudit": None, "captureProbe": None},
-            "render": {"available": False, "sameCameraContract": False, "sameRenderSettingsContract": False, "score": None},
-            "rejection": "exact Endminm manifest/prefab exists, but no same-camera/same-render-settings capture probe or comparable render exists",
+            "sourceAssets": {
+                "manifest": endminm_source["manifest"],
+                "prefab": endminm_source["prefab"],
+                "controllerAudit": endminm_source["controllerAudit"],
+                "overviewStartClip": endminm_source["overviewStartClip"],
+                "overviewLoopClip": endminm_source["overviewLoopClip"],
+                "camera": endminm_source["camera"],
+            },
+            "captureEvidence": endminm_capture_evidence,
+            "render": {
+                "available": endminm_comparison.get("sameCameraContract") is True
+                and endminm_comparison.get("sameRenderSettingsContract") is True,
+                "sameCameraContract": endminm_comparison.get("sameCameraContract"),
+                "sameRenderSettingsContract": endminm_comparison.get("sameRenderSettingsContract"),
+                "image": endminm_capture_data["output"],
+                "score": endminm_comparison.get("eccTranslation"),
+                "scoreMetric": endminm_comparison.get("scoreMetric"),
+            },
+            "reproducibility": {
+                "method": endminm_capture_data["method"],
+                "phaseSweepScript": endminm_capture_data["phaseSweepScript"],
+                "renderSetupScript": endminm_capture_data["renderSetupScript"],
+                "unityEditor": endminm_capture_data["unityEditor"],
+                "projectVersion": endminm_capture_data["projectVersion"],
+                "environment": endminm_capture_data["environment"],
+                "renderTexture": endminm_comparison.get("renderTexture"),
+                "resolution": endminm_comparison.get("resolution"),
+                "sampleTimeSeconds": endminm_comparison.get("sampleTimeSeconds"),
+                "targetRender": endminm_comparison.get("targetRender"),
+            },
         },
     ]
     numeric_competitors = [
         float(row["render"]["score"])
         for row in candidates[1:]
         if isinstance(row.get("render", {}).get("score"), (int, float))
+        and not isinstance(row.get("render", {}).get("score"), bool)
+        and row.get("render", {}).get("available") is True
+        and row.get("render", {}).get("sameCameraContract") is True
+        and row.get("render", {}).get("sameRenderSettingsContract") is True
     ]
     best_competitor = max(numeric_competitors) if numeric_competitors else None
     margin = target_score - best_competitor if best_competitor is not None else None
-    comparable_competitors = [row["candidateId"] for row in candidates[1:] if row["render"].get("available")]
-    margin_satisfied = best_competitor is not None and margin >= CANDIDATE_MATRIX_MIN_MARGIN
+    comparable_competitors = [
+        row["candidateId"]
+        for row in candidates[1:]
+        if row["render"].get("available") is True
+        and row["render"].get("sameCameraContract") is True
+        and row["render"].get("sameRenderSettingsContract") is True
+        and isinstance(row["render"].get("score"), (int, float))
+        and not isinstance(row["render"].get("score"), bool)
+    ]
+    margin_satisfied = (
+        target_score > MIN_VISUAL_ECC
+        and best_competitor is not None
+        and margin >= CANDIDATE_MATRIX_MIN_MARGIN
+    )
     identity_status = "proven" if margin_satisfied else "candidate"
     return {
         "schema": "endfield.character-recovery.identity-candidate-matrix.v1",
@@ -399,6 +452,14 @@ def _candidate_matrix(source_identity: dict[str, Any], visual: dict[str, Any]) -
             "alignment": "ECC translation over pinned character band",
             "minimumTargetScore": MIN_VISUAL_ECC,
             "minimumMarginAboveEveryComparableCompetitor": CANDIDATE_MATRIX_MIN_MARGIN,
+            "endminmComparableCapture": {
+                "evidence": endminm_capture_evidence,
+                "cameraTrack": endminm_comparison.get("cameraTrack"),
+                "resolution": endminm_comparison.get("resolution"),
+                "sampleTimeSeconds": endminm_comparison.get("sampleTimeSeconds"),
+                "sameCameraContract": endminm_comparison.get("sameCameraContract"),
+                "sameRenderSettingsContract": endminm_comparison.get("sameRenderSettingsContract"),
+            },
         },
         "candidateCount": len(candidates),
         "comparableCompetitorCount": len(comparable_competitors),
@@ -411,10 +472,13 @@ def _candidate_matrix(source_identity: dict[str, Any], visual: dict[str, Any]) -
         "candidates": candidates,
         "admission": {
             "identityStatus": identity_status,
-            "matteCandidateAllowed": False,
+            "matteCandidateAllowed": margin_satisfied,
             "reason": (
-                "exact Endminf score is observed, but no comparable competitor render exists; "
-                "a one-candidate ECC cannot prove identity"
+                "target score is below the fixed minimum ECC threshold"
+                if target_score <= MIN_VISUAL_ECC
+                else "no comparable competitor render with numeric score exists"
+                if best_competitor is None
+                else "target score does not clear the fixed minimum margin above every comparable competitor"
                 if not margin_satisfied
                 else "target score clears the fixed minimum margin above every comparable competitor"
             ),
@@ -560,6 +624,11 @@ def build_report() -> dict[str, Any]:
     phase["sourceTransition"]["perFramePinnedDeepLabScan"] = transition_scan
     phase["tailTransition"] = transition_scan["tailTransition"]
     candidate_matrix = _candidate_matrix(source_identity, visual)
+    phase["cleanLoop"]["publicationStatus"] = (
+        "identity_proven"
+        if candidate_matrix["status"] == "proven"
+        else "identity_candidate_only"
+    )
     segment_sequence = []
     reference = _read_json(REFERENCE_PATH)
     for item in reference["segments"]:

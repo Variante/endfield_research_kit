@@ -1,0 +1,255 @@
+{
+  "schema": "endfield.character-recovery.endminm-comparable-capture.v1",
+  "status": "ok",
+  "pathBase": "repo_root",
+  "identity": {
+    "characterId": "chr_0002_endminm",
+    "actorToken": "endminm",
+    "displayName": "Endministrator (endminm)"
+  },
+  "capture": {
+    "method": "EndfieldGraphShaderLabEditor.EndfieldRecoveredOverviewPhaseSweep.RenderFromEnvironment",
+    "phaseSweepScript": {
+      "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/EndfieldRecoveredOverviewPhaseSweep.cs",
+      "bytes": 5320,
+      "sha256": "B0C2B2CC298A5ECED6A6E59C2CAEB8555D329024D8FE902AA052598DA4702E4D"
+    },
+    "renderSetupScript": {
+      "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/EndfieldManifestCharacterSetup.cs",
+      "bytes": 602602,
+      "sha256": "CF2E9F3DA60C92E1AA5EFF881B1B1FE6E6E878E53A884B5E8314EAB869EA88B8"
+    },
+    "unityEditor": {
+      "path": "D:/Program Files/2022.3.62f3/Editor/Unity.exe",
+      "bytes": 76202920,
+      "sha256": "02E80B2C1D7F983375C97B612655BE9F8ED852121E3A4EEDF1570701C48EA5CD",
+      "version": "2022.3.62f3 (96770f904ca7)"
+    },
+    "projectVersion": {
+      "path": "unity_endfield_graph_shader_lab/ProjectSettings/ProjectVersion.txt",
+      "bytes": 85,
+      "sha256": "B51164D22C4D2716BA8AEE7F0B59D6B7DD0EFA8552FD1DB2A8C3B123FAE3A1EC"
+    },
+    "environment": {
+      "actor": "Endminm",
+      "clip": "A_actor_endminm_ui_overview_loop",
+      "timesSeconds": [
+        0.133
+      ],
+      "stem": "endminm_candidate"
+    },
+    "output": {
+      "path": "unity_endfield_graph_shader_lab/scratch/character_recovery/endminm_comparable_capture/endminm_candidate_t0p133.png",
+      "bytes": 4461301,
+      "sha256": "F306E6998D96661C4B6044B2B3B83637FE8CA77594A1993E8C8E9E3E6F519B88",
+      "width": 3840,
+      "height": 2160,
+      "channels": 4,
+      "format": "PNG RGBA"
+    }
+  },
+  "sourceAssets": {
+    "manifest": {
+      "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminm/endminm_ui_recovery_manifest.json",
+      "bytes": 4450320,
+      "sha256": "AFB49559DC470D1BE7C5DB1BF7054D49C432B18718E4B691F7951C3212EFDBF9"
+    },
+    "prefab": {
+      "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminm/Prefabs/Endminm.prefab",
+      "bytes": 487749,
+      "sha256": "E44CFBEB32E5F3B10C54B625951CB870AECCAB031215F35740092BFB9796BD7C"
+    },
+    "controllerAudit": {
+      "path": "unity_endfield_graph_shader_lab/scratch/character_recovery/overview_controller_native/controller_asset_audit.json",
+      "bytes": 911979,
+      "sha256": "FB1C7AE062299FCF22587AF20A0F40C0CAE2F7201B93D26EB5FD3A71F84C1E7D",
+      "characterId": "chr_0002_endminm",
+      "actorToken": "endminm",
+      "controllerName": "chr_0002_endminm_controller",
+      "sourceJson": "D:\\fluffy-dump\\export_full\\recovered\\AnimeStudio-cli\\StreamingAssets\\json_by_type\\AnimatorController\\AnimatorController#5767187_p3B3BD1391057D94F.json",
+      "mainOverviewSha256": "FB3CF3F91012FC2BDEBE29A1F8009AA9F9D092891B7F9AA8829AC0003299348A",
+      "startClip": "A_actor_endminm_ui_overview_start",
+      "loopClip": "A_actor_endminm_ui_overview_loop",
+      "entryNormalizedOffset": 0.0058366423,
+      "exitNormalizedTime": 0.8729549,
+      "transitionDuration": 0.12704507,
+      "destinationNormalizedOffset": 0.003602021
+    },
+    "overviewStartClip": {
+      "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminm/Animations/A_actor_endminm_ui_overview_start.anim",
+      "bytes": 39165738,
+      "sha256": "14F58BFCFF45060507C443939C0755F3F82EAAA2699B1F26860308F7C040AD10"
+    },
+    "overviewLoopClip": {
+      "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminm/Animations/A_actor_endminm_ui_overview_loop.anim",
+      "bytes": 14249957,
+      "sha256": "F949F0968C584917912CD9508334B505259507E0611F3DCD7341E890E9FED006"
+    },
+    "camera": {
+      "contract": {
+        "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/charinfo_overview_camera_contract.json",
+        "bytes": 52454,
+        "sha256": "F7DF587923FD848C828C44E39BF11A98F5376EB2DA73D7642EFCA10E40EB43A0",
+        "track": "track_chr_0002_endminm",
+        "actor": "endminm",
+        "entry": {
+          "track": "track_chr_0002_endminm",
+          "actor": "endminm",
+          "vcamOverview": {
+            "localPosition": [
+              -0.0,
+              1.179,
+              3.283
+            ],
+            "localRotation": [
+              -0.0009475921,
+              0.99887383,
+              0.041633327,
+              0.02273479
+            ]
+          },
+          "lookAtOverview": {
+            "localPosition": [
+              0.0,
+              1.31,
+              0.0
+            ],
+            "localRotation": [
+              -0.0,
+              -0.0,
+              -0.0,
+              1.0
+            ]
+          },
+          "volumeOverview": {
+            "localPosition": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "localRotation": [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ]
+          },
+          "lens": {
+            "fieldOfView": 20.0,
+            "nearClipPlane": 0.1,
+            "farClipPlane": 50.0,
+            "dutch": 0.0,
+            "gateFit": 2,
+            "modeOverride": 0,
+            "sensorSize": [
+              1.7777778,
+              1.0
+            ],
+            "priority": 25
+          }
+        }
+      },
+      "overviewCameras": {
+        "path": "unity_endfield_graph_shader_lab/scratch/character_recovery/gameplay_reference/charinfo_prefabs/overview_cameras.json",
+        "bytes": 19502,
+        "sha256": "3EE6E8C448B240D111116C149FC161D24E3D1EFC0A3D8A89473C953F3AEA78CA",
+        "track": "track_chr_0002_endminm",
+        "entry": {
+          "vcam_overview": {
+            "localPosition": {
+              "X": -0.0,
+              "Y": 1.179,
+              "Z": 3.283
+            },
+            "localRotation": {
+              "X": -0.0009475921,
+              "Y": 0.99887383,
+              "Z": 0.041633327,
+              "W": 0.02273479
+            }
+          },
+          "volume_overview": {
+            "localPosition": {
+              "X": 0.0,
+              "Y": 0.0,
+              "Z": 0.0
+            },
+            "localRotation": {
+              "X": 0.0,
+              "Y": 0.0,
+              "Z": 0.0,
+              "W": 1.0
+            }
+          },
+          "lookat_overview": {
+            "localPosition": {
+              "X": 0.0,
+              "Y": 1.31,
+              "Z": 0.0
+            },
+            "localRotation": {
+              "X": -0.0,
+              "Y": -0.0,
+              "Z": -0.0,
+              "W": 1.0
+            }
+          }
+        }
+      }
+    }
+  },
+  "comparison": {
+    "reference": {
+      "path": "unity_endfield_graph_shader_lab/scratch/character_recovery/gameplay_reference/settled/endmin_settled_frame10300.png",
+      "bytes": 6704562,
+      "sha256": "2167B9754703B3AA40AD6C573ADCF77339A422E1AF455AB66B4ADB64F467531F",
+      "frame": 10300,
+      "dimensions": [
+        3840,
+        2160
+      ],
+      "format": "PNG RGB"
+    },
+    "targetRender": {
+      "path": "scratch/charinfo_phase_sweep/endmin_t0p133.png",
+      "bytes": 4138488,
+      "sha256": "112EEF6858F7DDB8209BFFA546E861E4843FD4084DD9B9EBD9D36BF286E2B90D",
+      "dimensions": [
+        3840,
+        2160
+      ],
+      "format": "PNG RGBA",
+      "sampleTimeSeconds": 0.133
+    },
+    "cameraTrack": "track_chr_0002_endminm",
+    "cameraContractTemplateId": "chr_0002_endminm",
+    "sameCameraContract": true,
+    "sameRenderSettingsContract": true,
+    "resolution": [
+      3840,
+      2160
+    ],
+    "renderTexture": {
+      "format": "ARGB32",
+      "depthBits": 24,
+      "antiAliasing": 1,
+      "textureFormat": "RGBA32",
+      "linear": false,
+      "mipMaps": false
+    },
+    "alignment": "ECC translation over pinned character band",
+    "characterBand": [
+      1400,
+      200,
+      2500,
+      2100
+    ],
+    "sampleTimeSeconds": 0.133,
+    "eccTranslation": 0.433439,
+    "scoreMetric": "ECC translation over pinned Endminf settled character band"
+  },
+  "publication": {
+    "comparableCompetitorAllowed": true,
+    "reason": "same harness, resolution, render target contract, and actor-specific overview camera contract are pinned"
+  }
+}

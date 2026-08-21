@@ -8,9 +8,9 @@ import audit_endminf_video_identity as evidence
 
 
 class EndminfVideoIdentityTests(unittest.TestCase):
-    def test_exact_asset_is_only_a_candidate_without_comparable_competitors(self) -> None:
+    def test_exact_asset_is_proven_against_pinned_endminm_comparable_render(self) -> None:
         report = evidence.build_report()
-        self.assertEqual(report["identity"]["status"], "candidate")
+        self.assertEqual(report["identity"]["status"], "proven")
         self.assertEqual(report["identity"]["characterId"], "chr_0003_endminf")
         self.assertEqual(report["identity"]["visibleVideo"]["visibleAlias"], "endmin")
         self.assertEqual(report["identity"]["visibleVideo"]["visibleTemplateAlias"], "chr_9000_endmin")
@@ -18,12 +18,18 @@ class EndminfVideoIdentityTests(unittest.TestCase):
         self.assertTrue(report["videoSearch"]["identityAliasRejected"])
         self.assertGreaterEqual(report["identity"]["visualMatch"]["eccTranslation"], 0.80)
         matrix = report["identity"]["candidateMatrix"]
-        self.assertEqual(matrix["comparableCompetitorCount"], 0)
-        self.assertFalse(matrix["marginSatisfied"])
-        self.assertFalse(report["publication"]["matteCandidateAllowed"])
+        self.assertEqual(matrix["comparableCompetitorCount"], 1)
+        self.assertEqual(matrix["comparableCompetitors"], ["chr_0002_endminm"])
+        self.assertAlmostEqual(matrix["bestCompetitorScore"], 0.433439, places=6)
+        self.assertAlmostEqual(matrix["targetMargin"], 0.387032, places=6)
+        self.assertTrue(matrix["marginSatisfied"])
+        self.assertTrue(report["publication"]["matteCandidateAllowed"])
         endminm = next(row for row in matrix["candidates"] if row["candidateId"] == "chr_0002_endminm")
-        self.assertFalse(endminm["render"]["available"])
-        self.assertIn("no same-camera/same-render-settings", endminm["rejection"])
+        self.assertTrue(endminm["render"]["available"])
+        self.assertTrue(endminm["render"]["sameCameraContract"])
+        self.assertTrue(endminm["render"]["sameRenderSettingsContract"])
+        self.assertAlmostEqual(endminm["render"]["score"], 0.433439, places=6)
+        self.assertEqual(endminm["sourceAssets"]["manifest"]["sha256"], "AFB49559DC470D1BE7C5DB1BF7054D49C432B18718E4B691F7951C3212EFDBF9")
 
     def test_phase_frames_are_contiguous_and_transition_is_not_loop(self) -> None:
         phase = evidence.build_report()["phase"]
