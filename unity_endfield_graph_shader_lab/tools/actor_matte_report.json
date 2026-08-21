@@ -1,45 +1,166 @@
 {
-  "schema": "endfield.character-recovery.actor-matte.audit.v1",
-  "status": "unpublished_fail_closed",
+  "schema": "endfield.character-recovery.actor-matte.audit.v2",
+  "status": "ok",
+  "pathBase": "repo_root",
+  "generatedBy": "unity_endfield_graph_shader_lab/tools/build_priority_actor_mattes.py",
+  "manifest": "unity_endfield_graph_shader_lab/scratch/character_recovery/actor_clips/actor_matte_manifest.json",
+  "manifestBytes": 491161,
+  "manifestSha256": "3F3A3BBA5AD5CB471FC44341B6FFBB33EB869C7F568026987C5B4986B1FAFF5F",
   "source": {
     "path": "videos/2026-08-15_10-32-32.mkv",
     "bytes": 1678613397,
     "sha256": "2F542A3BE7CE3332295D3A841FD8613C62707E084F9E33A0F156DA8A06EBF5E7",
-    "resolution": [3840, 2160],
-    "fps": 60.0
+    "width": 3840,
+    "height": 2160,
+    "fps": 60.0,
+    "frameCount": 22702
   },
   "requestedWindows": {
-    "chen": {"seconds": [199.3, 209.3333], "framesExclusive": [11958, 12560]},
-    "pelica": {"seconds": [209.3333, 220.6167], "framesExclusive": [12560, 13237]}
-  },
-  "algorithm": {
-    "tool": "tools/build_priority_actor_mattes.py",
-    "segmentation": "torchvision.deeplabv3_resnet50 person class 15",
-    "weightsSha256": "CD0A25694C4A0F7106B38F4938BF90A874F2F241CC410B8F63C7024399538F06",
-    "hardUiOverlapPixels": 0,
-    "transitionMotionGate": 4.5,
-    "publicationRule": "do not publish if a visible source transition or non-actor component loss is unclassified"
-  },
-  "actors": {
     "chen": {
-      "artifact": "scratch/character_recovery/actor_clips/chen_actor_only.unpublished.mkv",
-      "sha256": "6A896CE9710823A05C6B214573E483250E258DE934B4BB965FBA408F0FDBFEE5",
-      "status": "unpublished",
-      "reason": "visual audit found a background/UI wedge and isolated non-actor pixels in representative actor frames"
+      "seconds": [
+        199.3,
+        209.3333
+      ],
+      "framesExclusive": [
+        11958,
+        12560
+      ]
     },
     "pelica": {
-      "artifact": "scratch/character_recovery/actor_clips/pelica_actor_only.unpublished.mkv",
-      "sha256": "79C0475FECFE87CE7F772B2F4AB2C5532366FABCEBE6A8DCF485450887B3A9BE",
-      "status": "unpublished",
-      "reason": "the generated DeepLab clip is visually complete on stable frames, but was produced before the final motion-gate change; source glitch frames after 209.9167 were not yet classified"
+      "seconds": [
+        209.3333,
+        220.6167
+      ],
+      "framesExclusive": [
+        12560,
+        13237
+      ]
     }
   },
-  "validation": {
-    "focusedTests": "4/4 passed",
+  "algorithm": {
+    "name": "deeplabv3_resnet50_person_class_with_hard_ui_exclusions",
+    "model": "torchvision.deeplabv3_resnet50",
+    "modelClass": 15,
+    "modelWeightsSha256": "CD0A25694C4A0F7106B38F4938BF90A874F2F241CC410B8F63C7024399538F06",
+    "workResolution": [
+      480,
+      270
+    ],
+    "actorRoi": [
+      800,
+      180,
+      3000,
+      2120
+    ],
+    "uiRectangles": [
+      {
+        "name": "top_header",
+        "box": [
+          0,
+          0,
+          180,
+          180
+        ]
+      },
+      {
+        "name": "header_selection_underline",
+        "box": [
+          0,
+          183,
+          3840,
+          188
+        ]
+      },
+      {
+        "name": "left_foreground_panel",
+        "box": [
+          0,
+          180,
+          800,
+          2120
+        ]
+      },
+      {
+        "name": "right_foreground_panel",
+        "box": [
+          3000,
+          180,
+          3840,
+          2120
+        ]
+      },
+      {
+        "name": "bottom_foreground_status",
+        "box": [
+          0,
+          2120,
+          3840,
+          2160
+        ]
+      }
+    ],
+    "backgroundFrame": 12567,
+    "keyframeInterval": 4,
+    "maskOutput": "black_background",
+    "outputCodec": "ffv1",
+    "outputPixFmt": "bgr0",
+    "uiOverlapPolicy": "hard_zero_and_measured_zero",
+    "temporalPolicy": {
+      "minRawIoU": 0.08,
+      "minDilatedSupport": 0.3,
+      "dilationKernel": 9,
+      "detachedComponents": "reject_substantial_component_without_actor_envelope_overlap"
+    },
+    "transitionPolicy": {
+      "pelicaRangeInclusive": [
+        12560,
+        12601
+      ],
+      "pelicaStableStartFrame": 12602,
+      "reason": "pinned-source model-swap/glitch interval measured in the phase evidence; no stable Pelica actor component is present",
+      "chenExemption": false
+    }
+  },
+  "actorSet": [
+    "pelica"
+  ],
+  "artifacts": [
+    {
+      "actor": "pelica",
+      "path": "unity_endfield_graph_shader_lab/scratch/character_recovery/actor_clips/pelica_actor_only.mkv",
+      "bytes": 523487358,
+      "sha256": "CA282A576F70A3B0CACE91430F0538C1077B4FCB38B6B33DB02FCD00547DCCFC",
+      "codec": "ffv1",
+      "pix_fmt": "bgr0",
+      "frames": 677
+    }
+  ],
+  "excludedActors": [
+    {
+      "actor": "chen",
+      "status": "unpublished",
+      "reason": "retained unpublished; not regenerated in this fail-closed Pelica-only run"
+    }
+  ],
+  "publicationGates": {
     "sourcePin": true,
     "sourceResolutionFps": true,
-    "requestedFrameCounts": {"chen": 602, "pelica": 677},
-    "publishedClips": 0,
+    "fullFrameMask": true,
+    "exactTransitionClassification": true,
+    "temporalContinuity": true,
+    "componentPurity": true,
+    "nonTransitionComponentLoss": true,
+    "rowsContiguous": true,
+    "uiExclusionZero": true,
+    "uiOverlapPixels": 0,
+    "ffv1Metadata": true,
+    "clipsVerified": true
+  },
+  "validation": {
+    "rows": {
+      "pelica": 677
+    },
+    "publishedClips": 1,
     "largeVideoFilesCommitted": false
   }
 }
