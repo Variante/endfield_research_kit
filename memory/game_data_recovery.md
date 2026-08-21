@@ -293,6 +293,30 @@ that same value directly to `AkExternalSourceInfo.set_szFile` before native
 descriptor copying. The selected runtime template,
 actual file open/read, and live external-source callback/audibility remain
 separate evidence gaps.
+LevelScript audio actions remain keyed by validated union tags/member shapes and
+retain durable authored fields: `PlayAudiAtPosition.key`, `PlayAudio.key`,
+`PlayAudioAndWait.eventName`, `PlayAudioOnTarget.audioKey`,
+`PlayStandaloneMusic.startEvent`/`stopEvent`,
+`PostAudioStatusEvent.statusEnterEvent`/`statusExitEvent`,
+`PostMusicEvent.musicEvent`/`musicEventOnRelease`, and
+`PostAudioCue`/`PostAudioCueOnRelease.name`. Lifecycle fields are
+`PlayAudio.audioPlayingId`, `PlayVoice`/`PlayVoiceNarrative.voiceHandle`,
+`BlockAutoMusicChange.blockHandle`, and
+`PostAudioCue`/`PostAudioCueOnRelease.cueHandlerId`, consumed by
+`StopAudio.audioId`, `StopVoice.voiceHandle`, and
+`BlockAutoMusicChangeCancel.blockHandle`. A lifecycle producer requires an
+explicit serialized output path (`ParamSource=0`), while a consumer requires
+an explicit dynamic path; a join additionally requires the exact same
+LevelScript, source root, source path, lifecycle kind, and output path with one
+active final serialized slot. `ParamSource=100` is a runtime lookup and does
+not create a static handle; property and unknown sources remain unresolved.
+Producer-only rows remain producer-only, so this closes authored handle
+topology rather than live handle values, state, or execution.
+The native action topology is local static control flow: event roots are
+independently invoked listeners and are not sorted into chronology. Physical
+list order and listener priority are not Story or runtime execution order; only
+an explicit serialized edge within one LevelScript supplies a static next
+relation, and the serialized action ordinal identifies its authored slot.
 The serialized Wwise side now supplies an exact cookie join for this route:
 the current CN v150 HIRC corpus has 1,712 `Wwise External Source`
 (`pluginId=0x00080001`) source records, all with `sourceId=0x24db9834`, and
@@ -520,7 +544,9 @@ actions exactly (0 failed control tails): 3,455 SetState, 304 SetSwitch, 158 Set
 1,627 Stop/Pause/Resume, 122 Seek, 1,020 value/filter actions, 32 FX-slot
 actions, and the remaining Trigger/ResetPlaylist controls. Rows preserve the
 serialized Event→Action object paths/type labels, FNV IDs, float ranges, fade curves, active-action bit vectors,
-exception buses, and FX slot numbers. This is authored dispatch evidence only;
+exception buses, and FX slot numbers. Fade curves, flags, and action bit
+vectors are authored inputs, not execution or current-state observations. This
+is authored dispatch evidence only;
 The semantic join now maps 1,601 Action group references and 1,042 value
 references in the current CN projection. It covers the three native-backed
 selector roles (voice identity, surface material, and local/remote routing),
