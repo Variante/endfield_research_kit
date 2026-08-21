@@ -1,0 +1,379 @@
+{
+  "schema": "endfield.character-recovery.endminf-video-identity.v1",
+  "status": "ok",
+  "pathBase": "repo_root",
+  "source": {
+    "path": "videos/2026-08-15_10-32-32.mkv",
+    "bytes": 1678613397,
+    "sha256": "2F542A3BE7CE3332295D3A841FD8613C62707E084F9E33A0F156DA8A06EBF5E7",
+    "fps": 60.0,
+    "resolution": [
+      3840,
+      2160
+    ]
+  },
+  "videoSearch": {
+    "referenceSegmentCount": 33,
+    "boundaryRowCount": 32,
+    "searchedAllReferenceSegments": true,
+    "genericAliasRow": {
+      "segmentIndex": 13,
+      "actor": "endmin",
+      "templateId": "chr_9000_endmin",
+      "visibleName": "管理员"
+    },
+    "neighborSequence": [
+      {
+        "index": 10,
+        "actor": "yvonne",
+        "templateId": "chr_0017_yvonne",
+        "displayName": "伊冯",
+        "settledFrame": 7650
+      },
+      {
+        "index": 11,
+        "actor": "tangtang",
+        "templateId": "chr_0027_tangtang",
+        "displayName": "汤汤",
+        "settledFrame": 8370
+      },
+      {
+        "index": 12,
+        "actor": "pograni",
+        "templateId": "chr_0029_pograni",
+        "displayName": "骏卫",
+        "settledFrame": 9450
+      },
+      {
+        "index": 13,
+        "actor": "endmin",
+        "templateId": "chr_9000_endmin",
+        "displayName": "管理员",
+        "settledFrame": 10110
+      },
+      {
+        "index": 14,
+        "actor": "ikut",
+        "templateId": "chr_0007_ikut",
+        "displayName": "弧光",
+        "settledFrame": 10800
+      },
+      {
+        "index": 15,
+        "actor": "wolfgd",
+        "templateId": "chr_0006_wolfgd",
+        "displayName": "狼卫",
+        "settledFrame": 11670
+      },
+      {
+        "index": 16,
+        "actor": "chen",
+        "templateId": "chr_0005_chen",
+        "displayName": "陈千语",
+        "settledFrame": 12270
+      }
+    ],
+    "identityAliasRejected": true
+  },
+  "identity": {
+    "status": "proven",
+    "characterId": "chr_0003_endminf",
+    "actorToken": "endminf",
+    "source": {
+      "characterId": "chr_0003_endminf",
+      "actorToken": "endminf",
+      "sourceManifest": {
+        "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/endminf_ui_recovery_manifest.json",
+        "bytes": 4777420,
+        "sha256": "6B1DB20DA67CED6AE69D02FDCFCD1376EFFD7823EC1DF35D1A5E7FE9C76D6CB7"
+      },
+      "sourceFields": {
+        "character_id": "chr_0003_endminf",
+        "actor_token": "endminf",
+        "model": "actor_endminf",
+        "original_prefab_root": "chr_0003_endminf_postmodel"
+      },
+      "controllerAudit": {
+        "path": "unity_endfield_graph_shader_lab/scratch/character_recovery/overview_controller_native/controller_asset_audit.json",
+        "bytes": 911979,
+        "sha256": "FB1C7AE062299FCF22587AF20A0F40C0CAE2F7201B93D26EB5FD3A71F84C1E7D"
+      },
+      "controllerFields": {
+        "controller_name": "chr_0003_endminf_controller",
+        "source_json": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/AnimatorController/AnimatorController#5767468_p2220E8A8E6038278.json",
+        "start_clip": "A_actor_endminf_ui_overview_start",
+        "loop_clip": "A_actor_endminf_ui_overview_loop",
+        "entry_normalized_offset": 0.0058366423,
+        "exit_normalized_time": 0.75,
+        "transition_duration": 0.25,
+        "transition_duration_fixed": false,
+        "destination_normalized_offset": 0.0,
+        "interruption_source": 2,
+        "ordered_interruption": true,
+        "blend_root_motion": true,
+        "entry_transition_conditions": [
+          {
+            "mode": 6,
+            "parameter": "FromIndex",
+            "threshold": 0.0
+          },
+          {
+            "mode": 6,
+            "parameter": "ToIndex",
+            "threshold": 0.0
+          },
+          {
+            "mode": 1,
+            "parameter": "EnableSwitch",
+            "threshold": 0.0
+          }
+        ]
+      },
+      "captureProbe": {
+        "path": "unity_endfield_graph_shader_lab/scratch/character_recovery/overview_capture_probe/Endminf/Endminf_overview_capture.json",
+        "bytes": 16471,
+        "sha256": "A3AAB62F7636062774BFD9C796C77B000ACDB0727EC637B66D010CFB8034214D"
+      },
+      "capturePrefab": "Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/Prefabs/Endminf.prefab",
+      "startClip": {
+        "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/Animations/A_actor_endminf_ui_overview_start.anim",
+        "bytes": 31267856,
+        "sha256": "E602FDB56BCE1102FE2C0940A8DFC57E3A8C4A260D55BA42277EA2743B2E6A3F",
+        "durationSeconds": 5.866667
+      },
+      "loopClip": {
+        "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/Animations/A_actor_endminf_ui_overview_loop.anim",
+        "bytes": 9518999,
+        "sha256": "EC455F61A1C658217E2FB0056A7D2A5D8A2DC0A935C980CEC130CD5CCB9A76B7",
+        "durationSeconds": 2.0833333
+      }
+    },
+    "visibleVideo": {
+      "settledFrame": {
+        "path": "unity_endfield_graph_shader_lab/scratch/character_recovery/gameplay_reference/settled/endmin_settled_frame10300.png",
+        "bytes": 6704562,
+        "sha256": "2167B9754703B3AA40AD6C573ADCF77339A422E1AF455AB66B4ADB64F467531F",
+        "frame": 10300
+      },
+      "referenceFrame": {
+        "path": "unity_endfield_graph_shader_lab/scratch/character_recovery/gameplay_reference/13_frame10110.png",
+        "bytes": 6823475,
+        "sha256": "745FDEA2F7E98A503547F1F03E2073AB9F96FEC2A552DB3BF86900CDA11F99A5",
+        "frame": 10110
+      },
+      "visibleAlias": "endmin",
+      "visibleTemplateAlias": "chr_9000_endmin"
+    },
+    "visualMatch": {
+      "videoFrame": {
+        "path": "unity_endfield_graph_shader_lab/scratch/character_recovery/gameplay_reference/settled/endmin_settled_frame10300.png",
+        "bytes": 6704562,
+        "sha256": "2167B9754703B3AA40AD6C573ADCF77339A422E1AF455AB66B4ADB64F467531F",
+        "frame": 10300
+      },
+      "videoSettledPhaseReport": {
+        "path": "unity_endfield_graph_shader_lab/scratch/character_recovery/visual_delta/endmin_refine_phase.json",
+        "bytes": 3092,
+        "sha256": "3EE90F81611335C91CCC1128981280FBE9FB02C2896B9E34B17279A517F82F8E"
+      },
+      "exactEndminfRender": {
+        "path": "scratch/charinfo_phase_sweep/endmin_t0p133.png",
+        "bytes": 4138488,
+        "sha256": "112EEF6858F7DDB8209BFFA546E861E4843FD4084DD9B9EBD9D36BF286E2B90D",
+        "sampleTimeSeconds": 0.133
+      },
+      "characterBand": [
+        1400,
+        200,
+        2500,
+        2100
+      ],
+      "eccTranslation": 0.820471,
+      "recordedPhaseReportCorrelation": 0.823953,
+      "minimumEcc": 0.8,
+      "alignment": {
+        "mode": "ECC translation over character band",
+        "warpTranslationPixels": [
+          -10.243,
+          -2.375
+        ]
+      },
+      "interpretation": "video actor pixels match the exact chr_0003_endminf render; generic endmin/chr_9000_endmin is not used as identity proof"
+    },
+    "proofRule": "exact source prefab/controller/clip provenance plus ECC >= 0.80 against the pinned UI-free character band; generic alias is never substituted"
+  },
+  "phase": {
+    "method": "video modelSwapFrame + exact Endminf controller entry/exit/transition + next modelSwapFrame",
+    "videoModelSwap": {
+      "frame": 9767,
+      "seconds": 162.78333333333333,
+      "boundaryActorLabel": "endmin",
+      "boundaryTemplateLabel": "chr_9000_endmin"
+    },
+    "videoNextModelSwap": {
+      "frame": 10500,
+      "seconds": 175.0,
+      "boundaryActor": "ikut",
+      "boundaryTemplate": "chr_0007_ikut"
+    },
+    "start": {
+      "clip": "A_actor_endminf_ui_overview_start",
+      "frameRangeInclusive": [
+        9767,
+        10028
+      ],
+      "seconds": [
+        162.78333333333333,
+        167.14909194656113
+      ],
+      "durationSeconds": 4.365758613227797
+    },
+    "transition": {
+      "clip": "A_actor_endminf_ui_overview_start->A_actor_endminf_ui_overview_loop",
+      "frameRangeInclusive": [
+        10029,
+        10116
+      ],
+      "seconds": [
+        167.14909194656113,
+        168.61575869656113
+      ],
+      "durationSeconds": 1.46666675
+    },
+    "loop": {
+      "clip": "A_actor_endminf_ui_overview_loop",
+      "frameRangeInclusive": [
+        10117,
+        10499
+      ],
+      "seconds": [
+        168.61575869656113,
+        175.0
+      ],
+      "durationSeconds": 6.38424130343887,
+      "runtimeClipDurationSeconds": 2.0833333,
+      "completeRuntimePeriods": 3
+    },
+    "combinedActorWindow": {
+      "frameRangeExclusive": [
+        9767,
+        10500
+      ],
+      "seconds": [
+        162.78333333333333,
+        175.0
+      ],
+      "frameCount": 733
+    },
+    "sourceTransition": {
+      "frameRangeInclusive": [
+        9767,
+        9782
+      ],
+      "frameRangesInclusive": [
+        [
+          9767,
+          9782
+        ],
+        [
+          10410,
+          10499
+        ]
+      ],
+      "stableStartFrame": 9783,
+      "reason": "pinned-source Endminf model-swap fade has no person-class component through frame 9782; first stable chr_0003_endminf component is frame 9783; actor exit/next-actor transition is blacked from frame 10410 through 10499",
+      "evidence": "per-frame pinned DeepLab person-class source scan; zero support through 9782 and support at 9783",
+      "perFramePinnedDeepLabScan": {
+        "weightSha256": "CD0A25694C4A0F7106B38F4938BF90A874F2F241CC410B8F63C7024399538F06",
+        "rows": [
+          {
+            "frame": 9767,
+            "workMaskPixels": 0
+          },
+          {
+            "frame": 9768,
+            "workMaskPixels": 0
+          },
+          {
+            "frame": 9769,
+            "workMaskPixels": 0
+          },
+          {
+            "frame": 9770,
+            "workMaskPixels": 0
+          },
+          {
+            "frame": 9771,
+            "workMaskPixels": 0
+          },
+          {
+            "frame": 9772,
+            "workMaskPixels": 0
+          },
+          {
+            "frame": 9773,
+            "workMaskPixels": 0
+          },
+          {
+            "frame": 9774,
+            "workMaskPixels": 0
+          },
+          {
+            "frame": 9775,
+            "workMaskPixels": 0
+          },
+          {
+            "frame": 9776,
+            "workMaskPixels": 0
+          },
+          {
+            "frame": 9777,
+            "workMaskPixels": 0
+          },
+          {
+            "frame": 9778,
+            "workMaskPixels": 0
+          },
+          {
+            "frame": 9779,
+            "workMaskPixels": 0
+          },
+          {
+            "frame": 9780,
+            "workMaskPixels": 0
+          },
+          {
+            "frame": 9781,
+            "workMaskPixels": 0
+          },
+          {
+            "frame": 9782,
+            "workMaskPixels": 0
+          },
+          {
+            "frame": 9783,
+            "workMaskPixels": 22937
+          }
+        ],
+        "tailBoundaryFrames": [
+          {
+            "frame": 10409,
+            "bgrSha256": "4FF326E92BF9B97B71C475B1D22356B6446048D28CA0C8C76729AA4BB1487FB8",
+            "characterBandMean": 122.713032
+          },
+          {
+            "frame": 10410,
+            "bgrSha256": "5E28BDDAB5C7B4B5B6BF5C98EC875D503769A24499AA43BF159F5FED9A55ADF8",
+            "characterBandMean": 176.899563
+          }
+        ]
+      }
+    },
+    "videoOnlyLoopMeasurement": "not_claimed"
+  },
+  "publication": {
+    "matteCandidateAllowed": true,
+    "published": false,
+    "reason": "identity and composite phase are proven; actor matte still requires full DeepLab/UI/temporal/component/FFV1 gates"
+  }
+}

@@ -15,11 +15,24 @@ import build_priority_actor_mattes as matte
 
 class PriorityActorMatteTests(unittest.TestCase):
     def test_exact_priority_windows_are_frame_aligned(self) -> None:
+        endminf = matte._actor_window("endminf")
         chen = matte._actor_window("chen")
         pelica = matte._actor_window("pelica")
+        self.assertEqual((endminf.start_frame, endminf.end_frame_exclusive), (9767, 10500))
         self.assertEqual((chen.start_frame, chen.end_frame_exclusive), (11958, 12560))
         self.assertEqual((pelica.start_frame, pelica.end_frame_exclusive), (12560, 13237))
         self.assertEqual(chen.end_frame_exclusive, pelica.start_frame)
+
+    def test_endminf_requires_exact_identity_evidence_and_has_no_gap_exemption(self) -> None:
+        evidence = matte._endminf_identity_evidence()
+        self.assertEqual(evidence["path"], "unity_endfield_graph_shader_lab/tools/endminf_video_identity_evidence.json")
+        self.assertEqual(len(evidence["sha256"]), 64)
+        window = matte._actor_window("endminf")
+        self.assertEqual(
+            matte._expected_transition_frames("endminf", window),
+            list(range(9767, 9783)) + list(range(10410, 10500)),
+        )
+        self.assertEqual(matte._transition_contract("endminf")[1], 9783)
 
     def test_hard_exclusions_zero_every_ui_rectangle(self) -> None:
         mask = np.full((matte.EXPECTED_SIZE[1], matte.EXPECTED_SIZE[0]), 255, np.uint8)
