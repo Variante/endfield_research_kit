@@ -4,8 +4,8 @@
   "pathBase": "repo_root",
   "generatedBy": "unity_endfield_graph_shader_lab/tools/build_priority_actor_mattes.py",
   "manifest": "unity_endfield_graph_shader_lab/scratch/character_recovery/actor_clips/actor_matte_manifest.json",
-  "manifestBytes": 1470786,
-  "manifestSha256": "AA3DB0A6B0BD7D8C22E5830553FE501C358E1C9293D1C045BC4115450E229916",
+  "manifestBytes": 927504,
+  "manifestSha256": "DC749B3E591F0015614B3BED13C3EA339607EC26FE37FBC5C5803A13E1E79468",
   "source": {
     "path": "videos/2026-08-15_10-32-32.mkv",
     "bytes": 1678613397,
@@ -118,8 +118,8 @@
     "uiOverlapPolicy": "hard_zero_and_measured_zero",
     "endminfIdentityEvidence": {
       "path": "unity_endfield_graph_shader_lab/tools/endminf_video_identity_evidence.json",
-      "bytes": 12122,
-      "sha256": "0C4C80689D164564E827EDAC6ED1133CF0F823F14297B050033E0C2006378A1B"
+      "bytes": 78079,
+      "sha256": "89F579E8321F507A176F3F5DB63994DAD62C7F80AB0B5A5213A07822770AC065"
     },
     "temporalPolicy": {
       "minRawIoU": 0.08,
@@ -148,7 +148,15 @@
         ]
       ],
       "endminfStableStartFrame": 9783,
-      "endminfReason": "pinned-source Endminf model-swap fade has no person-class component through frame 9782; first stable chr_0003_endminf component is frame 9783; actor exit/next-actor transition is blacked from frame 10410 through 10499",
+      "endminfReason": "pinned-source Endminf model-swap fade has no person-class component through frame 9782; first stable chr_0003_endminf component is frame 9783; actor exit/next-actor transition is classified non-target and blacked from frame 10410 through 10499",
+      "endminfCleanLoopFrameRangeInclusive": [
+        10117,
+        10409
+      ],
+      "endminfCleanLoopFrameCount": 293,
+      "endminfCleanLoopDurationSeconds": 4.883333333333334,
+      "endminfCleanLoopRuntimePeriods": 2,
+      "endminfTailClassification": "non_target_transition_next_actor",
       "pelicaRangeInclusive": [
         12560,
         12601
@@ -166,7 +174,6 @@
   },
   "actorSet": [
     "chen",
-    "endminf",
     "pelica"
   ],
   "artifacts": [
@@ -187,18 +194,15 @@
       "codec": "ffv1",
       "pix_fmt": "bgr0",
       "frames": 602
-    },
-    {
-      "actor": "endminf",
-      "path": "unity_endfield_graph_shader_lab/scratch/character_recovery/actor_clips/endminf_actor_only.mkv",
-      "bytes": 563065192,
-      "sha256": "4297D598CD2AED2BC5A9144F3F0BCB75EBA8A5BC34B1A14F5B06CE2EA88D645C",
-      "codec": "ffv1",
-      "pix_fmt": "bgr0",
-      "frames": 733
     }
   ],
-  "excludedActors": [],
+  "excludedActors": [
+    {
+      "actor": "endminf",
+      "status": "unpublished",
+      "reason": "retained unpublished; exact identity is only a candidate because no comparable same-camera/same-render-settings competitor render exists"
+    }
+  ],
   "publicationGates": {
     "sourcePin": true,
     "sourceResolutionFps": true,
@@ -216,10 +220,9 @@
   "validation": {
     "rows": {
       "pelica": 677,
-      "chen": 602,
-      "endminf": 733
+      "chen": 602
     },
-    "publishedClips": 3,
+    "publishedClips": 2,
     "largeVideoFilesCommitted": false
   }
 }

@@ -98,6 +98,9 @@ KEYFRAME_INTERVAL = 4
 DEEPLAB_WEIGHT_SHA256 = "CD0A25694C4A0F7106B38F4938BF90A874F2F241CC410B8F63C7024399538F06"
 DEEPLAB_WEIGHT_FILENAME = "deeplabv3_resnet50_coco-cd0a2569.pth"
 UNPUBLISHED_ACTOR_REASON = "retained unpublished; source or matte validation did not pass publication gates"
+UNPUBLISHED_ACTOR_REASONS = {
+    "endminf": "retained unpublished; exact identity is only a candidate because no comparable same-camera/same-render-settings competitor render exists",
+}
 MANIFEST_SCHEMA = "endfield.character-recovery.actor-matte.v1"
 AUDIT_REPORT_SCHEMA = "endfield.character-recovery.actor-matte.audit.v2"
 
@@ -119,6 +122,14 @@ ENDMINF_IDENTITY_EVIDENCE_RELATIVE = Path(
     "unity_endfield_graph_shader_lab/tools/endminf_video_identity_evidence.json"
 )
 ENDMINF_IDENTITY_EVIDENCE_SCHEMA = "endfield.character-recovery.endminf-video-identity.v1"
+ENDMINF_SOURCE_MANIFEST_SHA256 = "6B1DB20DA67CED6AE69D02FDCFCD1376EFFD7823EC1DF35D1A5E7FE9C76D6CB7"
+ENDMINM_SOURCE_MANIFEST_SHA256 = "AFB49559DC470D1BE7C5DB1BF7054D49C432B18718E4B691F7951C3212EFDBF9"
+ENDMINF_PREFAB_SHA256 = "8E34B211A0DC404B7748C5C9BCB4F651AD04E292C753B1C1BDABD0B8E66D91EA"
+ENDMINM_PREFAB_SHA256 = "E44CFBEB32E5F3B10C54B625951CB870AECCAB031215F35740092BFB9796BD7C"
+ENDMINF_CONTROLLER_AUDIT_SHA256 = "FB1C7AE062299FCF22587AF20A0F40C0CAE2F7201B93D26EB5FD3A71F84C1E7D"
+ENDMINF_CAPTURE_PROBE_SHA256 = "A3AAB62F7636062774BFD9C796C77B000ACDB0727EC637B66D010CFB8034214D"
+OVERVIEW_CAMERA_CONTRACT_SHA256 = "F7DF587923FD848C828C44E39BF11A98F5376EB2DA73D7642EFCA10E40EB43A0"
+OVERVIEW_CAMERAS_SHA256 = "3EE6E8C448B240D111116C149FC161D24E3D1EFC0A3D8A89473C953F3AEA78CA"
 ENDMINF_COMBINED_FRAME_RANGE = (9767, 10500)
 ENDMINF_SOURCE_TRANSITION_RANGE = (9767, 9782)
 ENDMINF_SOURCE_TRANSITION_RANGES = (
@@ -129,8 +140,14 @@ ENDMINF_STABLE_START_FRAME = 9783
 ENDMINF_TRANSITION_REASON = (
     "pinned-source Endminf model-swap fade has no person-class component through "
     "frame 9782; first stable chr_0003_endminf component is frame 9783; "
-    "actor exit/next-actor transition is blacked from frame 10410 through 10499"
+    "actor exit/next-actor transition is classified non-target and blacked from frame 10410 through 10499"
 )
+ENDMINF_LOOP_START_FRAME = 10117
+ENDMINF_CLEAN_LOOP_END_FRAME = 10409
+ENDMINF_CLEAN_LOOP_FRAME_RANGE = (ENDMINF_LOOP_START_FRAME, ENDMINF_CLEAN_LOOP_END_FRAME)
+ENDMINF_CLEAN_LOOP_FRAME_COUNT = ENDMINF_CLEAN_LOOP_END_FRAME - ENDMINF_LOOP_START_FRAME + 1
+ENDMINF_CLEAN_LOOP_DURATION_SECONDS = ENDMINF_CLEAN_LOOP_FRAME_COUNT / EXPECTED_FPS
+ENDMINF_CLEAN_LOOP_RUNTIME_PERIODS = 2
 
 # Temporal/component purity is measured at work resolution.  A small dilation
 # permits ordinary sub-frame motion, while a disjoint component still fails.
@@ -234,7 +251,7 @@ def _excluded_actor_contract(actor_set: Iterable[str]) -> list[dict]:
         {
             "actor": actor,
             "status": "unpublished",
-            "reason": UNPUBLISHED_ACTOR_REASON,
+            "reason": UNPUBLISHED_ACTOR_REASONS.get(actor, UNPUBLISHED_ACTOR_REASON),
         }
         for actor in ACTOR_WINDOWS
         if actor not in selected
@@ -247,6 +264,11 @@ def _transition_policy_contract() -> dict:
         "endminfRangesInclusive": [list(item) for item in ENDMINF_SOURCE_TRANSITION_RANGES],
         "endminfStableStartFrame": ENDMINF_STABLE_START_FRAME,
         "endminfReason": ENDMINF_TRANSITION_REASON,
+        "endminfCleanLoopFrameRangeInclusive": list(ENDMINF_CLEAN_LOOP_FRAME_RANGE),
+        "endminfCleanLoopFrameCount": ENDMINF_CLEAN_LOOP_FRAME_COUNT,
+        "endminfCleanLoopDurationSeconds": ENDMINF_CLEAN_LOOP_DURATION_SECONDS,
+        "endminfCleanLoopRuntimePeriods": ENDMINF_CLEAN_LOOP_RUNTIME_PERIODS,
+        "endminfTailClassification": "non_target_transition_next_actor",
         "pelicaRangeInclusive": list(PELICA_SOURCE_TRANSITION_RANGE),
         "pelicaStableStartFrame": PELICA_STABLE_START_FRAME,
         "pelicaReason": PELICA_TRANSITION_REASON,
@@ -306,18 +328,75 @@ def _endminf_identity_evidence() -> dict[str, str]:
         raise MatteError(f"exact Endminf identity evidence is malformed: {error}") from error
     identity = evidence.get("identity") or {}
     phase = evidence.get("phase") or {}
-    if (
+    matrix = identity.get("candidateMatrix") or {}
+    clean_loop = phase.get("cleanLoop") or {}
+    tail = phase.get("tailTransition") or {}
+    common_valid = (
         evidence.get("schema") != ENDMINF_IDENTITY_EVIDENCE_SCHEMA
         or evidence.get("status") != "ok"
-        or identity.get("status") != "proven"
+        or identity.get("status") not in {"candidate", "proven"}
         or identity.get("characterId") != "chr_0003_endminf"
         or identity.get("actorToken") != "endminf"
         or (phase.get("combinedActorWindow") or {}).get("frameRangeExclusive") != list(ENDMINF_COMBINED_FRAME_RANGE)
         or (phase.get("sourceTransition") or {}).get("frameRangesInclusive") != [list(item) for item in ENDMINF_SOURCE_TRANSITION_RANGES]
         or (phase.get("sourceTransition") or {}).get("reason") != ENDMINF_TRANSITION_REASON
-        or (evidence.get("publication") or {}).get("matteCandidateAllowed") is not True
-    ):
-        raise MatteError("exact Endminf identity/phase evidence does not admit the pinned matte window")
+        or clean_loop.get("frameRangeInclusive") != list(ENDMINF_CLEAN_LOOP_FRAME_RANGE)
+        or clean_loop.get("frameCount") != ENDMINF_CLEAN_LOOP_FRAME_COUNT
+        or clean_loop.get("completeRuntimePeriods") != ENDMINF_CLEAN_LOOP_RUNTIME_PERIODS
+        or tail.get("frameRangeInclusive") != list(ENDMINF_SOURCE_TRANSITION_RANGES[1])
+        or tail.get("frameCount") != 90
+    )
+    identity_status = identity.get("status")
+    matrix_valid = matrix.get("status") == identity_status
+    candidates = matrix.get("candidates") or []
+    candidate_ids = [row.get("candidateId") for row in candidates if isinstance(row, dict)]
+    target_row = next((row for row in candidates if isinstance(row, dict) and row.get("candidateId") == "chr_0003_endminf"), None)
+    endminm_row = next((row for row in candidates if isinstance(row, dict) and row.get("candidateId") == "chr_0002_endminm"), None)
+    comparison = matrix.get("comparisonContract") or {}
+    matrix_valid = matrix_valid and matrix.get("candidateCount") == 4 and candidate_ids == ["chr_0003_endminf", "chr_9000_endmin", "endmin", "chr_0002_endminm"]
+    matrix_valid = matrix_valid and float(matrix.get("targetScore", 0.0)) >= 0.80
+    matrix_valid = matrix_valid and comparison.get("minimumTargetScore") == 0.8 and comparison.get("minimumMarginAboveEveryComparableCompetitor") == 0.05
+    matrix_valid = matrix_valid and ((comparison.get("cameraContract") or {}).get("sha256") == OVERVIEW_CAMERA_CONTRACT_SHA256)
+    matrix_valid = matrix_valid and ((comparison.get("overviewCameras") or {}).get("sha256") == OVERVIEW_CAMERAS_SHA256)
+    matrix_valid = matrix_valid and ((target_row or {}).get("sourceAssets", {}).get("manifest", {}).get("sha256") == ENDMINF_SOURCE_MANIFEST_SHA256)
+    matrix_valid = matrix_valid and ((target_row or {}).get("sourceAssets", {}).get("prefab", {}).get("sha256") == ENDMINF_PREFAB_SHA256)
+    matrix_valid = matrix_valid and ((target_row or {}).get("sourceAssets", {}).get("controllerAudit", {}).get("sha256") == ENDMINF_CONTROLLER_AUDIT_SHA256)
+    matrix_valid = matrix_valid and ((target_row or {}).get("sourceAssets", {}).get("captureProbe", {}).get("sha256") == ENDMINF_CAPTURE_PROBE_SHA256)
+    matrix_valid = matrix_valid and ((endminm_row or {}).get("sourceAssets", {}).get("manifest", {}).get("sha256") == ENDMINM_SOURCE_MANIFEST_SHA256)
+    matrix_valid = matrix_valid and ((endminm_row or {}).get("sourceAssets", {}).get("prefab", {}).get("sha256") == ENDMINM_PREFAB_SHA256)
+    if identity_status == "candidate":
+        matrix_valid = matrix_valid and matrix.get("comparableCompetitorCount") == 0 and matrix.get("marginSatisfied") is False and (evidence.get("publication") or {}).get("matteCandidateAllowed") is False
+    elif identity_status == "proven":
+        matrix_valid = matrix_valid and matrix.get("comparableCompetitorCount", 0) > 0 and matrix.get("marginSatisfied") is True and (evidence.get("publication") or {}).get("matteCandidateAllowed") is True
+    if common_valid or not matrix_valid:
+        raise MatteError("exact Endminf identity evidence is stale or does not meet the fixed candidate margin contract")
+    size, digest = _sha256(path)
+    return {"path": _repo_relative_path(path, "Endminf identity evidence"), "bytes": size, "sha256": digest}
+
+
+def _actor_matte_identity_allowed(actor: str) -> bool:
+    """Return whether identity evidence permits this actor in a published manifest."""
+    if actor != "endminf":
+        return True
+    try:
+        _endminf_identity_evidence()
+        path = REPO_ROOT / ENDMINF_IDENTITY_EVIDENCE_RELATIVE
+        evidence = json.loads(path.read_text(encoding="utf-8"))
+    except MatteError:
+        return False
+    except (OSError, ValueError):
+        return False
+    return (
+        (evidence.get("identity") or {}).get("status") == "proven"
+        and (evidence.get("publication") or {}).get("matteCandidateAllowed") is True
+    )
+
+
+def _endminf_identity_evidence_reference() -> dict[str, str]:
+    """Record the candidate evidence file without treating it as publication proof."""
+    path = REPO_ROOT / ENDMINF_IDENTITY_EVIDENCE_RELATIVE
+    if not path.is_file():
+        raise MatteError(f"exact Endminf identity evidence is missing: {path}")
     size, digest = _sha256(path)
     return {"path": _repo_relative_path(path, "Endminf identity evidence"), "bytes": size, "sha256": digest}
 
@@ -1191,6 +1270,19 @@ def build_actor(
             if len(_transition_ranges_contract(window.actor)) > 1 and transition_frames
             else (list(_transition_ranges_contract(window.actor)[0]) if transition_frames else None)
         ),
+        "cleanLoop": (
+            {
+                "frameRangeInclusive": list(ENDMINF_CLEAN_LOOP_FRAME_RANGE),
+                "frameRangeExclusive": [ENDMINF_LOOP_START_FRAME, ENDMINF_CLEAN_LOOP_END_FRAME + 1],
+                "frameCount": ENDMINF_CLEAN_LOOP_FRAME_COUNT,
+                "durationSeconds": ENDMINF_CLEAN_LOOP_DURATION_SECONDS,
+                "runtimeClipDurationSeconds": 2.0833333,
+                "completeRuntimePeriods": ENDMINF_CLEAN_LOOP_RUNTIME_PERIODS,
+                "publicationStatus": "identity_candidate_only",
+            }
+            if window.actor == "endminf"
+            else None
+        ),
         "componentLossFrameCount": len(component_loss_frames),
         "temporalContinuityFailureCount": len(temporal_failure_frames),
         "componentPurityFailureCount": len(purity_failure_frames),
@@ -1283,6 +1375,12 @@ def _manifest_publication_gates(actor_reports: list[dict]) -> dict:
 def write_manifest(source: dict, actor_reports: list[dict], output_root: Path) -> Path:
     if not actor_reports:
         raise MatteError("refusing to write an empty actor matte manifest")
+    unpublished_identity = [item["actor"] for item in actor_reports if not _actor_matte_identity_allowed(item["actor"])]
+    if unpublished_identity:
+        raise MatteError(
+            "refusing to publish actors without exact identity admission: "
+            + ", ".join(sorted(unpublished_identity))
+        )
     for item in actor_reports:
         clip = _resolve_repo_relative(item.get("clip"), f"{item.get('actor')} clip")
         if not clip.is_file():
@@ -1402,10 +1500,20 @@ def _check_manifest_data(report: dict, manifest_path: Path) -> None:
     if str(algorithm.get("modelWeightsSha256", "")).upper() != DEEPLAB_WEIGHT_SHA256:
         raise MatteError("manifest DeepLab weight pin mismatch")
     _current_pinned_weight()
-    if algorithm.get("endminfIdentityEvidence") != _endminf_identity_evidence():
-        raise MatteError("manifest Endminf identity evidence is stale or not exact")
+    if algorithm.get("endminfIdentityEvidence") != _endminf_identity_evidence_reference():
+        raise MatteError("manifest Endminf identity evidence is stale")
     if algorithm.get("transitionPolicy") != _transition_policy_contract():
         raise MatteError("manifest transition policy is stale or not actor-specific")
+    transition_policy = algorithm.get("transitionPolicy") or {}
+    expected_clean_loop = {
+        "endminfCleanLoopFrameRangeInclusive": list(ENDMINF_CLEAN_LOOP_FRAME_RANGE),
+        "endminfCleanLoopFrameCount": ENDMINF_CLEAN_LOOP_FRAME_COUNT,
+        "endminfCleanLoopDurationSeconds": ENDMINF_CLEAN_LOOP_DURATION_SECONDS,
+        "endminfCleanLoopRuntimePeriods": ENDMINF_CLEAN_LOOP_RUNTIME_PERIODS,
+        "endminfTailClassification": "non_target_transition_next_actor",
+    }
+    if any(transition_policy.get(key) != value for key, value in expected_clean_loop.items()):
+        raise MatteError("manifest Endminf clean-loop contract is stale")
     source = report.get("source") or {}
     if source.get("path") != VIDEO_RELATIVE.as_posix():
         raise MatteError(f"manifest source path is stale: {source.get('path')!r}")
@@ -1428,6 +1536,14 @@ def _check_manifest_data(report: dict, manifest_path: Path) -> None:
         raise MatteError(f"manifest actor set is invalid: {actor_names}")
     if sorted(actor_names) != report.get("actorSet"):
         raise MatteError("manifest actorSet does not match actors")
+    expected_windows = _requested_windows_contract()
+    if report.get("requestedWindows") != expected_windows:
+        raise MatteError("manifest requestedWindows do not match the actor window contract")
+    expected_excluded = _excluded_actor_contract(actor_names)
+    if report.get("excludedActors") != expected_excluded:
+        raise MatteError("manifest excludedActors do not match the actor publication contract")
+    if any(not _actor_matte_identity_allowed(name) for name in actor_names):
+        raise MatteError("manifest contains an actor whose exact identity is not admitted")
 
     for actor in actor_reports:
         name = actor["actor"]
@@ -1463,6 +1579,16 @@ def _check_manifest_data(report: dict, manifest_path: Path) -> None:
             raise MatteError(f"{name} transition reason is not exact")
         if actor.get("transitionRangeInclusive") != expected_range:
             raise MatteError(f"{name} transition range is not exact")
+        if name == "endminf":
+            clean_loop = actor.get("cleanLoop") or {}
+            if (
+                clean_loop.get("frameRangeInclusive") != list(ENDMINF_CLEAN_LOOP_FRAME_RANGE)
+                or clean_loop.get("frameRangeExclusive") != [ENDMINF_LOOP_START_FRAME, ENDMINF_CLEAN_LOOP_END_FRAME + 1]
+                or clean_loop.get("frameCount") != ENDMINF_CLEAN_LOOP_FRAME_COUNT
+                or abs(float(clean_loop.get("durationSeconds", -1)) - ENDMINF_CLEAN_LOOP_DURATION_SECONDS) > 1e-9
+                or clean_loop.get("completeRuntimePeriods") != ENDMINF_CLEAN_LOOP_RUNTIME_PERIODS
+            ):
+                raise MatteError("endminf clean-loop interval/duration/cycle contract is stale")
         for row in rows:
             if row.get("uiOverlapPixels") != 0:
                 raise MatteError(f"{name} frame {row.get('frame')} has UI overlap")
@@ -1616,9 +1742,16 @@ def _refresh_existing_report(manifest_path: Path, report_path: Path) -> Path:
     if not isinstance(algorithm, dict):
         raise MatteError("existing actor matte manifest has no algorithm object")
     algorithm["modelWeightsFile"] = DEEPLAB_WEIGHT_FILENAME
-    algorithm["endminfIdentityEvidence"] = _endminf_identity_evidence()
+    algorithm["endminfIdentityEvidence"] = _endminf_identity_evidence_reference()
     algorithm["transitionPolicy"] = _transition_policy_contract()
-    actor_set = manifest.get("actorSet") or [item.get("actor") for item in manifest.get("actors") or []]
+    existing_actors = manifest.get("actors") or []
+    if not isinstance(existing_actors, list):
+        raise MatteError("existing actor matte manifest has no actor rows")
+    published_actors = [item for item in existing_actors if _actor_matte_identity_allowed(str(item.get("actor")))]
+    if not published_actors:
+        raise MatteError("existing actor matte manifest has no identity-admitted actor rows")
+    manifest["actors"] = published_actors
+    actor_set = [item.get("actor") for item in published_actors]
     manifest["actorSet"] = sorted(str(actor) for actor in actor_set)
     manifest["excludedActors"] = _excluded_actor_contract(manifest["actorSet"])
     temporary = manifest_path.with_suffix(".refresh.partial.json")

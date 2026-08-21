@@ -29,6 +29,7 @@ from pathlib import Path
 from typing import Any
 
 import cv2
+import numpy as np
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -48,8 +49,13 @@ VIDEO_IMAGE = PROJECT_ROOT / "scratch" / "character_recovery" / "gameplay_refere
 PHASE_REPORT_PATH = PROJECT_ROOT / "scratch" / "character_recovery" / "visual_delta" / "endmin_refine_phase.json"
 PHASE_RENDER_PATH = REPO_ROOT / "scratch" / "charinfo_phase_sweep" / "endmin_t0p133.png"
 SOURCE_MANIFEST_PATH = PROJECT_ROOT / "Assets" / "EndfieldGraphShaderLab" / "Generated" / "Characters" / "Playable" / "Endminf" / "endminf_ui_recovery_manifest.json"
+ENDMINM_SOURCE_MANIFEST_PATH = PROJECT_ROOT / "Assets" / "EndfieldGraphShaderLab" / "Generated" / "Characters" / "Playable" / "Endminm" / "endminm_ui_recovery_manifest.json"
+ENDMINF_PREFAB_PATH = PROJECT_ROOT / "Assets" / "EndfieldGraphShaderLab" / "Generated" / "Characters" / "Playable" / "Endminf" / "Prefabs" / "Endminf.prefab"
+ENDMINM_PREFAB_PATH = PROJECT_ROOT / "Assets" / "EndfieldGraphShaderLab" / "Generated" / "Characters" / "Playable" / "Endminm" / "Prefabs" / "Endminm.prefab"
 CONTROLLER_AUDIT_PATH = PROJECT_ROOT / "scratch" / "character_recovery" / "overview_controller_native" / "controller_asset_audit.json"
 CAPTURE_PROBE_PATH = PROJECT_ROOT / "scratch" / "character_recovery" / "overview_capture_probe" / "Endminf" / "Endminf_overview_capture.json"
+CAMERA_CONTRACT_PATH = PROJECT_ROOT / "Assets" / "EndfieldGraphShaderLab" / "Generated" / "OriginalData" / "CharInfoPresentation" / "charinfo_overview_camera_contract.json"
+OVERVIEW_CAMERAS_PATH = PROJECT_ROOT / "scratch" / "character_recovery" / "gameplay_reference" / "charinfo_prefabs" / "overview_cameras.json"
 START_CLIP_PATH = PROJECT_ROOT / "Assets" / "EndfieldGraphShaderLab" / "Generated" / "Characters" / "Playable" / "Endminf" / "Animations" / "A_actor_endminf_ui_overview_start.anim"
 LOOP_CLIP_PATH = PROJECT_ROOT / "Assets" / "EndfieldGraphShaderLab" / "Generated" / "Characters" / "Playable" / "Endminf" / "Animations" / "A_actor_endminf_ui_overview_loop.anim"
 CHARACTER_BAND = (1400, 200, 2500, 2100)
@@ -63,13 +69,18 @@ NEXT_MODEL_SWAP_FRAME = 10500
 EXPECTED_VIDEO_SEGMENT_INDEX = 13
 EXPECTED_RENDER_SAMPLE_TIME = 0.133
 MIN_VISUAL_ECC = 0.80
+CANDIDATE_MATRIX_MIN_MARGIN = 0.05
 SOURCE_TRANSITION_RANGE = (9767, 9782)
 SOURCE_TRANSITION_RANGES = (SOURCE_TRANSITION_RANGE, (10410, 10499))
+TAIL_TRANSITION_RANGE = (10410, 10499)
+LAST_CLEAN_TARGET_FRAME = 10409
+NEXT_ACTOR_TOKEN = "ikut"
+NEXT_ACTOR_TEMPLATE = "chr_0007_ikut"
 STABLE_START_FRAME = 9783
 SOURCE_TRANSITION_REASON = (
     "pinned-source Endminf model-swap fade has no person-class component through "
     "frame 9782; first stable chr_0003_endminf component is frame 9783; "
-    "actor exit/next-actor transition is blacked from frame 10410 through 10499"
+    "actor exit/next-actor transition is classified non-target and blacked from frame 10410 through 10499"
 )
 _STOP_TIME_RE = re.compile(r"^\s*m_StopTime:\s*([-+0-9.eE]+)\s*$", re.MULTILINE)
 
@@ -267,6 +278,17 @@ def _source_identity() -> dict[str, Any]:
     clips = capture.get("clips")
     if not isinstance(clips, list) or not {row.get("name") for row in clips if isinstance(row, dict)} >= {START_CLIP_PATH.stem, LOOP_CLIP_PATH.stem}:
         raise EvidenceError("Endminf capture probe lacks exact overview start/loop clips")
+    camera = capture.get("camera_contract")
+    if not isinstance(camera, dict):
+        raise EvidenceError("Endminf capture probe has no camera contract")
+    expected_camera_path = CAMERA_CONTRACT_PATH.relative_to(PROJECT_ROOT).as_posix()
+    if camera.get("path") != expected_camera_path or camera.get("track") != "track_chr_0003_endmin":
+        raise EvidenceError("Endminf capture probe camera contract is not the exact chr_0003_endmin track")
+    if camera.get("template_id") != "chr_0003_endmin" or camera.get("actor") != GENERIC_VIDEO_ACTOR:
+        raise EvidenceError("Endminf capture probe camera alias is stale")
+    for field, expected_value in (("width", 1920), ("height", 1080), ("fps", 2)):
+        if capture.get(field) != expected_value:
+            raise EvidenceError(f"Endminf capture probe {field} is {capture.get(field)!r}, expected {expected_value!r}")
     controller = _load_endminf_controller()
     controller_fields = dict(controller["main_overview"])
     if controller_fields.get("source_json"):
@@ -281,8 +303,123 @@ def _source_identity() -> dict[str, Any]:
         "controllerFields": controller_fields,
         "captureProbe": _file_evidence(CAPTURE_PROBE_PATH),
         "capturePrefab": capture["prefab"],
+        "prefab": _file_evidence(ENDMINF_PREFAB_PATH),
+        "cameraContract": _file_evidence(CAMERA_CONTRACT_PATH) | {"track": camera["track"], "templateId": camera["template_id"]},
+        "overviewCameras": _file_evidence(OVERVIEW_CAMERAS_PATH),
+        "captureRenderSettings": {
+            "width": capture["width"],
+            "height": capture["height"],
+            "fps": capture["fps"],
+            "transparentClearRequested": capture.get("transparent_clear_requested"),
+            "transparentPipelineOverrideApplied": capture.get("transparent_pipeline_override_applied"),
+            "transparentPostProcessDisabled": capture.get("transparent_post_process_disabled"),
+            "referenceBackdropDisabled": capture.get("reference_backdrop_disabled"),
+            "nonActorRenderersDisabled": capture.get("non_actor_renderers_disabled"),
+            "nonActorUiDisabled": capture.get("non_actor_ui_disabled"),
+            "actorPropsDisabled": capture.get("actor_props_disabled"),
+        },
         "startClip": _file_evidence(START_CLIP_PATH) | {"durationSeconds": _stop_time(START_CLIP_PATH)},
         "loopClip": _file_evidence(LOOP_CLIP_PATH) | {"durationSeconds": _stop_time(LOOP_CLIP_PATH)},
+    }
+
+
+def _candidate_matrix(source_identity: dict[str, Any], visual: dict[str, Any]) -> dict[str, Any]:
+    """Compare the target against every plausible roster identity under one contract.
+
+    The repository has an exact Endminf render, but no exact chr_9000_endmin
+    source prefab/controller and no same-condition Endminm capture.  Those
+    missing competitors are recorded as unavailable rather than silently
+    treating a single target ECC as proof.
+    """
+    target_score = float(visual["eccTranslation"])
+    target = {
+        "candidateId": EXACT_CHARACTER_ID,
+        "actorToken": EXACT_ACTOR_TOKEN,
+        "role": "exact_target",
+        "sourceAssets": {
+            "manifest": source_identity["sourceManifest"],
+            "prefab": source_identity["prefab"],
+            "controllerAudit": source_identity["controllerAudit"],
+            "captureProbe": source_identity["captureProbe"],
+        },
+        "render": {
+            "available": True,
+            "sameCameraContract": True,
+            "sameRenderSettingsContract": True,
+            "image": visual["exactEndminfRender"],
+            "score": target_score,
+            "scoreMetric": "ECC translation over pinned character band",
+        },
+    }
+    endminm_manifest = _file_evidence(ENDMINM_SOURCE_MANIFEST_PATH)
+    endminm_prefab = _file_evidence(ENDMINM_PREFAB_PATH)
+    candidates = [
+        target,
+        {
+            "candidateId": GENERIC_VIDEO_TEMPLATE,
+            "actorToken": GENERIC_VIDEO_ACTOR,
+            "role": "video_alias_only",
+            "sourceAssets": {"manifest": None, "prefab": None, "controllerAudit": None, "captureProbe": None},
+            "render": {"available": False, "sameCameraContract": False, "sameRenderSettingsContract": False, "score": None},
+            "rejection": "chr_9000_endmin/endmin exists only as the pinned roster/video alias; no original-game-derived prefab/controller/capture exists",
+        },
+        {
+            "candidateId": "endmin",
+            "actorToken": "endmin",
+            "role": "video_alias_only",
+            "sourceAssets": {"manifest": None, "prefab": None, "controllerAudit": None, "captureProbe": None},
+            "render": {"available": False, "sameCameraContract": False, "sameRenderSettingsContract": False, "score": None},
+            "rejection": "generic endmin is not an independent original-game-derived asset identity",
+        },
+        {
+            "candidateId": "chr_0002_endminm",
+            "actorToken": "endminm",
+            "role": "plausible_roster_competitor",
+            "sourceAssets": {"manifest": endminm_manifest, "prefab": endminm_prefab, "controllerAudit": None, "captureProbe": None},
+            "render": {"available": False, "sameCameraContract": False, "sameRenderSettingsContract": False, "score": None},
+            "rejection": "exact Endminm manifest/prefab exists, but no same-camera/same-render-settings capture probe or comparable render exists",
+        },
+    ]
+    numeric_competitors = [
+        float(row["render"]["score"])
+        for row in candidates[1:]
+        if isinstance(row.get("render", {}).get("score"), (int, float))
+    ]
+    best_competitor = max(numeric_competitors) if numeric_competitors else None
+    margin = target_score - best_competitor if best_competitor is not None else None
+    comparable_competitors = [row["candidateId"] for row in candidates[1:] if row["render"].get("available")]
+    margin_satisfied = best_competitor is not None and margin >= CANDIDATE_MATRIX_MIN_MARGIN
+    identity_status = "proven" if margin_satisfied else "candidate"
+    return {
+        "schema": "endfield.character-recovery.identity-candidate-matrix.v1",
+        "comparisonContract": {
+            "cameraContract": source_identity["cameraContract"],
+            "overviewCameras": source_identity["overviewCameras"],
+            "cameraTrack": "track_chr_0003_endmin",
+            "resolution": list(EXPECTED_SIZE),
+            "alignment": "ECC translation over pinned character band",
+            "minimumTargetScore": MIN_VISUAL_ECC,
+            "minimumMarginAboveEveryComparableCompetitor": CANDIDATE_MATRIX_MIN_MARGIN,
+        },
+        "candidateCount": len(candidates),
+        "comparableCompetitorCount": len(comparable_competitors),
+        "comparableCompetitors": comparable_competitors,
+        "targetScore": target_score,
+        "bestCompetitorScore": best_competitor,
+        "targetMargin": margin,
+        "marginSatisfied": margin_satisfied,
+        "status": identity_status,
+        "candidates": candidates,
+        "admission": {
+            "identityStatus": identity_status,
+            "matteCandidateAllowed": False,
+            "reason": (
+                "exact Endminf score is observed, but no comparable competitor render exists; "
+                "a one-candidate ECC cannot prove identity"
+                if not margin_satisfied
+                else "target score clears the fixed minimum margin above every comparable competitor"
+            ),
+        },
     }
 
 
@@ -304,15 +441,28 @@ def _phase_contract(boundary_row: dict[str, Any], next_row: dict[str, Any], sour
     loop_start_frame = int(round(loop_start * EXPECTED_FPS))
     if transition_start_frame != 10029 or loop_start_frame != 10117:
         raise EvidenceError("Endminf phase frame rounding changed unexpectedly")
-    loop_window = next_swap - loop_start
+    clean_loop_end_exclusive = LAST_CLEAN_TARGET_FRAME + 1
+    clean_loop_end = clean_loop_end_exclusive / EXPECTED_FPS
+    clean_loop_frames = clean_loop_end_exclusive - loop_start_frame
+    loop_window = clean_loop_frames / EXPECTED_FPS
+    loop_frame_start = loop_start_frame / EXPECTED_FPS
     return {
         "method": "video modelSwapFrame + exact Endminf controller entry/exit/transition + next modelSwapFrame",
         "videoModelSwap": {"frame": MODEL_SWAP_FRAME, "seconds": model_swap, "boundaryActorLabel": boundary_row["actor"], "boundaryTemplateLabel": boundary_row["templateId"]},
         "videoNextModelSwap": {"frame": NEXT_MODEL_SWAP_FRAME, "seconds": next_swap, "boundaryActor": next_row["actor"], "boundaryTemplate": next_row["templateId"]},
         "start": {"clip": START_CLIP_PATH.stem, "frameRangeInclusive": [start_frame, transition_start_frame - 1], "seconds": [model_swap, transition_start], "durationSeconds": transition_start - model_swap},
         "transition": {"clip": f"{START_CLIP_PATH.stem}->{LOOP_CLIP_PATH.stem}", "frameRangeInclusive": [transition_start_frame, loop_start_frame - 1], "seconds": [transition_start, loop_start], "durationSeconds": transition},
-        "loop": {"clip": LOOP_CLIP_PATH.stem, "frameRangeInclusive": [loop_start_frame, NEXT_MODEL_SWAP_FRAME - 1], "seconds": [loop_start, next_swap], "durationSeconds": loop_window, "runtimeClipDurationSeconds": loop_duration, "completeRuntimePeriods": math.floor(loop_window / loop_duration)},
+        "loop": {"clip": LOOP_CLIP_PATH.stem, "frameRangeInclusive": [loop_start_frame, LAST_CLEAN_TARGET_FRAME], "seconds": [loop_frame_start, clean_loop_end], "durationSeconds": loop_window, "runtimeClipDurationSeconds": loop_duration, "completeRuntimePeriods": math.floor(loop_window / loop_duration), "cleanTargetOnly": True, "stateBoundarySeconds": loop_start},
         "combinedActorWindow": {"frameRangeExclusive": [MODEL_SWAP_FRAME, NEXT_MODEL_SWAP_FRAME], "seconds": [model_swap, next_swap], "frameCount": NEXT_MODEL_SWAP_FRAME - MODEL_SWAP_FRAME},
+        "cleanLoop": {
+            "frameRangeExclusive": [loop_start_frame, clean_loop_end_exclusive],
+            "frameRangeInclusive": [loop_start_frame, LAST_CLEAN_TARGET_FRAME],
+            "frameCount": clean_loop_frames,
+            "durationSeconds": loop_window,
+            "runtimeClipDurationSeconds": loop_duration,
+            "completeRuntimePeriods": math.floor(loop_window / loop_duration),
+            "publicationStatus": "identity_candidate_only",
+        },
         "sourceTransition": {
             "frameRangeInclusive": list(SOURCE_TRANSITION_RANGE),
             "frameRangesInclusive": [list(item) for item in SOURCE_TRANSITION_RANGES],
@@ -356,7 +506,7 @@ def _scan_source_transition() -> dict[str, Any]:
     if not tail_capture.isOpened():
         raise EvidenceError("could not open the pinned video for Endminf exit boundary scan")
     try:
-        for frame_number in (10409, 10410):
+        for frame_number in range(TAIL_TRANSITION_RANGE[0], TAIL_TRANSITION_RANGE[1] + 1):
             if not tail_capture.set(cv2.CAP_PROP_POS_FRAMES, frame_number):
                 raise EvidenceError(f"could not seek Endminf exit boundary frame {frame_number}")
             ok, frame = tail_capture.read()
@@ -367,10 +517,33 @@ def _scan_source_transition() -> dict[str, Any]:
                 "frame": frame_number,
                 "bgrSha256": hashlib.sha256(frame.tobytes()).hexdigest().upper(),
                 "characterBandMean": round(float(band.mean()), 6),
+                "characterBandNonBlackPixels": int(np.count_nonzero(np.any(band > 8, axis=2))),
+                "classification": "non_target_transition_next_actor",
             })
     finally:
         tail_capture.release()
-    return {"weightSha256": weight_hash, "rows": rows, "tailBoundaryFrames": tail_frames}
+    return {
+        "weightSha256": weight_hash,
+        "rows": rows,
+        "tailBoundaryFrames": [
+            {
+                "frame": LAST_CLEAN_TARGET_FRAME,
+                "classification": "last_clean_endminf_target_frame",
+                "evidence": "the preceding frame is the last target frame before the pinned non-target transition range",
+            },
+            *tail_frames[:1],
+            *tail_frames[-1:],
+        ],
+        "tailTransition": {
+            "frameRangeInclusive": list(TAIL_TRANSITION_RANGE),
+            "frameCount": TAIL_TRANSITION_RANGE[1] - TAIL_TRANSITION_RANGE[0] + 1,
+            "classification": "non_target_transition_next_actor",
+            "nextActor": NEXT_ACTOR_TOKEN,
+            "nextTemplate": NEXT_ACTOR_TEMPLATE,
+            "nextModelSwapFrame": NEXT_MODEL_SWAP_FRAME,
+            "perFrame": tail_frames,
+        },
+    }
 
 
 def build_report() -> dict[str, Any]:
@@ -385,7 +558,10 @@ def build_report() -> dict[str, Any]:
     if len(settled_rows) != 1 or settled_rows[0].get("frameIndex") != 10300:
         raise EvidenceError("settled Endminf evidence frame is missing or ambiguous")
     phase = _phase_contract(boundary_row, next_row, source_identity)
-    phase["sourceTransition"]["perFramePinnedDeepLabScan"] = _scan_source_transition()
+    transition_scan = _scan_source_transition()
+    phase["sourceTransition"]["perFramePinnedDeepLabScan"] = transition_scan
+    phase["tailTransition"] = transition_scan["tailTransition"]
+    candidate_matrix = _candidate_matrix(source_identity, visual)
     segment_sequence = []
     reference = _read_json(REFERENCE_PATH)
     for item in reference["segments"]:
@@ -405,16 +581,17 @@ def build_report() -> dict[str, Any]:
             "identityAliasRejected": True,
         },
         "identity": {
-            "status": "proven",
+            "status": candidate_matrix["status"],
             "characterId": EXACT_CHARACTER_ID,
             "actorToken": EXACT_ACTOR_TOKEN,
             "source": source_identity,
             "visibleVideo": {"settledFrame": _file_evidence(SETTLED_IMAGE) | {"frame": 10300}, "referenceFrame": _file_evidence(VIDEO_IMAGE) | {"frame": 10110}, "visibleAlias": GENERIC_VIDEO_ACTOR, "visibleTemplateAlias": GENERIC_VIDEO_TEMPLATE},
             "visualMatch": visual,
-            "proofRule": "exact source prefab/controller/clip provenance plus ECC >= 0.80 against the pinned UI-free character band; generic alias is never substituted",
+            "candidateMatrix": candidate_matrix,
+            "proofRule": "exact source prefab/controller/clip provenance plus ECC >= 0.80 and a fixed >= 0.05 margin above every comparable competitor; generic alias is never substituted",
         },
         "phase": phase,
-        "publication": {"matteCandidateAllowed": True, "published": False, "reason": "identity and composite phase are proven; actor matte still requires full DeepLab/UI/temporal/component/FFV1 gates"},
+        "publication": {"matteCandidateAllowed": candidate_matrix["admission"]["matteCandidateAllowed"], "published": False, "reason": candidate_matrix["admission"]["reason"]},
     }
 
 
