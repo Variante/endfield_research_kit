@@ -1,0 +1,2986 @@
+{
+  "schema": "endfield.endminf-material-closure.v1",
+  "status": "incomplete_ambiguous_physical_sources",
+  "characterId": "endminf",
+  "inputs": {
+    "externalClosure": {
+      "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/ExternalUiEffects/endminf_external_pptr_closure.json",
+      "size": 202836,
+      "sha256": "6f1d0d2696329a67fdc8782a8be385c2c4f5ec2758db566bd0148795cf0c5706"
+    },
+    "materialRoot": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material",
+    "materialFiles": [
+      {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_endminf_ui_overview_01_rock_03_p9EBBC39832869160.json",
+        "size": 19318,
+        "sha256": "f467cbb003de0048d8ca4bbe8eca9c4a16ab0e19d2c70c49f32ff937218c4bf9"
+      },
+      {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_common_teleport_03_p19E6A2A7AE736DA5.json",
+        "size": 6252,
+        "sha256": "69940c6a370e6519b54dadbb9758dc74617dd9e872350f121049b2b3988f9a8d"
+      },
+      {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_01_p5A6341E8A834E421.json",
+        "size": 14683,
+        "sha256": "247e90600649b896249bdb4884abaa9d89aaa961d3a76d826cad9159a420426d"
+      },
+      {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_05_p3409DAC8F2A1253D.json",
+        "size": 19292,
+        "sha256": "b95b05852b05491f5132257918c59b7491b25bc9a3594c48f2cf4b94a4237f55"
+      },
+      {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_08_p014C92101D852EC4.json",
+        "size": 19328,
+        "sha256": "43daa1bcbc22bbb8c7fb833d3130d931b1d8bf4e24f33e8c03cd1986f4abf0cf"
+      },
+      {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_09_p632B1622242536EC.json",
+        "size": 19296,
+        "sha256": "7ae117bb32cbae3b5050dfa691416616579c21ae07b2b8a1036896b356e3495c"
+      },
+      {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_12_p13C3BA85865CFBD0.json",
+        "size": 19340,
+        "sha256": "2692ba4895cbac3a6c773835bb9f748435c527177ff8e4a6e37af9f0dc92dc9f"
+      },
+      {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_13_p57A25F1386F7012F.json",
+        "size": 19649,
+        "sha256": "1a878e7f9d441e9685028836e89f10f0da0b5d1299afe38261bbd451dec2a42a"
+      },
+      {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_14_pF6DCA5E6B2122169.json",
+        "size": 19304,
+        "sha256": "eb20e4b35085aed91c0756fb95f3896b7b0694e6bcc96bb8674570d26f80c5b6"
+      },
+      {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_15_p418FE5EF54286417.json",
+        "size": 19406,
+        "sha256": "21ef63866f7aa566eae136153c5a3a57ed731ddf293cc71cb3171bfd15e14109"
+      },
+      {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_16_pF1C3F38D51FA67EF.json",
+        "size": 19365,
+        "sha256": "b2a1e5ba51f0f4b36e95740bbd6546a2d03aa545c9e5660812862aa2c759abea"
+      },
+      {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_17_p392693FCB1EC4C68.json",
+        "size": 19280,
+        "sha256": "7b1d19150c565eedbe213b72cae988532cb5db6b22054770689c104c59c2f5cc"
+      },
+      {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_18_p7010821E75C0A247.json",
+        "size": 19541,
+        "sha256": "7a5f4f452d0e446d3907dfd33a88a69bc478ee5c3840a62977035a0d30ece3c1"
+      },
+      {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_19_pF43088E31E25D24A.json",
+        "size": 19275,
+        "sha256": "833c16f936b6fcffdf2c321d4579dc581ff928932e730ed0ed89670b285a7b4b"
+      },
+      {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_20_pEE9E2589EB9513AE.json",
+        "size": 19352,
+        "sha256": "0b6538aa3fb4f0e432537587cc388c26e9b22c6a04ea5bbfd7267d18433b4ec5"
+      },
+      {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_21_p8EE22B791F9A2753.json",
+        "size": 19229,
+        "sha256": "8c82096377201d927539b18500bcc34104a160c670e801b749a01df5ecf97def"
+      },
+      {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_22_pEC97B180E0A82AB7.json",
+        "size": 19325,
+        "sha256": "c06a90a3ce249606e01a8603cec2318bd6a6a9c1e3a10db1bddc988194610234"
+      },
+      {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_26_p364397B467C89F2E.json",
+        "size": 19333,
+        "sha256": "f96a771e7f4b1615f0f8a840907a33b9419766694e13b3f3e7b67df47d56daab"
+      },
+      {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_27_pA531A88850690EB8.json",
+        "size": 14683,
+        "sha256": "bf067450ab4bfd747747bc7b0f15b0c865fdc042cc1ef119646e8bec6af22b46"
+      },
+      {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_28_pBF7FEE87831B48FB.json",
+        "size": 6252,
+        "sha256": "51ae58da347abf62408380255d2abc290145642736094dedd121dc2ac8081d80"
+      },
+      {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_31_p602883BD6BB1831B.json",
+        "size": 19300,
+        "sha256": "bfc0bdb1643c84a9095fa2b28ae149970dc139557f846b4f7f42a9bbf6043f50"
+      },
+      {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_36_p655CC24C5B0D67F2.json",
+        "size": 19304,
+        "sha256": "659c5e84ad48c7bba69f104a5fd01c47bd8e738de500ea93d95a48dd3b65f823"
+      },
+      {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_38_pAFCE491DD7BC5724.json",
+        "size": 14685,
+        "sha256": "3581bdfd934d8c8e3d3cdbdfdbe7188dd38f2a1b951f8114a6a47a7da34aa8f6"
+      },
+      {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_39_pBF692EC36800069D.json",
+        "size": 19333,
+        "sha256": "974e7c2369223840d03b59d67800b768f32ea2439a2475f7fe931919a5d35da1"
+      },
+      {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_40_p26EC2259AEC716E7.json",
+        "size": 19330,
+        "sha256": "e4ce1fc973e0c93e4df8eaa70145742b88405a2ba1d57bdddbf4a6960597d029"
+      },
+      {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_45_pE744767C80FE8433.json",
+        "size": 19406,
+        "sha256": "b29fbdc088a7a7851e47722e934a1901995c52f9986206af3830d00d4e08499c"
+      },
+      {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_46_p5D8517046749BD84.json",
+        "size": 19424,
+        "sha256": "f2fc9eba631d1c958d8337558d00f0a3869380f12a509bd76d6444e2bc952c1f"
+      }
+    ],
+    "assetMaps": [
+      {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json",
+        "size": 759252292,
+        "sha256": "148415835f911fc94a634925c50c2d8b9a1cd4f5f141412f956cbb143805b6f3"
+      },
+      {
+        "path": "export_full/recovered/AnimeStudio-cli/Persistent/maps/endfield_persistent_assets.json",
+        "size": 96820626,
+        "sha256": "a6eaf031e7808de8380af7095a00ce02153f4c2fd2d7d723af3cd72517ab3152"
+      }
+    ],
+    "cabMaps": [
+      {
+        "path": "export_full/recovered/AnimeStudio-cli/Maps/endfield_streamingassets_assets.bin",
+        "size": 43844764,
+        "sha256": "be6d4beba5dda69cff0518dbb0d85199db9df05e448f9d92135008926a6cb731"
+      },
+      {
+        "path": "export_full/recovered/AnimeStudio-cli/Maps/endfield_persistent_assets.bin",
+        "size": 2278221,
+        "sha256": "5734e10f1557ac0760340d0ef212d34a1fbea06af9b3daf160d5a2487f9ba923"
+      }
+    ],
+    "cabSources": [
+      {
+        "path": "D:/Program Files/Endfield Game/Endfield_Data/StreamingAssets/VFS/0CE8FA57/19F0903A12BA87C0D43E67E64889B525.chk",
+        "size": 211831350,
+        "mtime_ns": 1784176360409225900
+      },
+      {
+        "path": "D:/Program Files/Endfield Game/Endfield_Data/StreamingAssets/VFS/7064D8E2/967825B10DBE250981C6AEA5FB9691B4.chk",
+        "size": 828158220,
+        "mtime_ns": 1784176395889338700
+      },
+      {
+        "path": "D:/Program Files/Endfield Game/Endfield_Data/StreamingAssets/VFS/7064D8E2/98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+        "size": 1152031554,
+        "mtime_ns": 1784176416485181900
+      },
+      {
+        "path": "D:/Program Files/Endfield Game/Endfield_Data/StreamingAssets/VFS/7064D8E2/CE9C11821BB0D5D69E4AA80EB5F33989.chk",
+        "size": 1014796047,
+        "mtime_ns": 1784176433176471900
+      },
+      {
+        "path": "D:/Program Files/Endfield Game/Endfield_Data/StreamingAssets/VFS/7064D8E2/FC784A3D097236EF3B3E84F44E1B28D2.chk",
+        "size": 974649680,
+        "mtime_ns": 1784176464365207800
+      },
+      {
+        "path": "D:/Program Files/Endfield Game/Endfield_Data/StreamingAssets/VFS/7064D8E2/4A65D5C2457B9C4DBE29646A23A14004.chk",
+        "size": 1194696472,
+        "mtime_ns": 1784176513025848300
+      },
+      {
+        "path": "D:/Program Files/Endfield Game/Endfield_Data/StreamingAssets/VFS/7064D8E2/7E6434186C00AD19EFE8A28E3E9B46A2.chk",
+        "size": 1211823711,
+        "mtime_ns": 1784176526091693800
+      },
+      {
+        "path": "D:/Program Files/Endfield Game/Endfield_Data/StreamingAssets/VFS/7064D8E2/62EB15DCD74A3348E244B9B068AB9694.chk",
+        "size": 1040864172,
+        "mtime_ns": 1784176553176897300
+      },
+      {
+        "path": "D:/Program Files/Endfield Game/Endfield_Data/Persistent/VFS/0CE8FA57/36243F039A1BFD05676B5D323B50D4AA.chk",
+        "size": 212180844,
+        "mtime_ns": 1786387745921470000
+      }
+    ],
+    "shaderRoot": "export_full/recovered/AnimeStudio-cli/Persistent/convert_by_type/Shader",
+    "textureRoot": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D"
+  },
+  "summary": {
+    "materialCount": 27,
+    "occurrenceCount": 99,
+    "identityCount": 37,
+    "resolvedCount": 34,
+    "ambiguousCount": 3,
+    "resolvedShaderCount": 0,
+    "resolvedTextureCount": 34,
+    "ambiguousShaderCount": 3,
+    "ambiguousTextureCount": 0
+  },
+  "identities": [
+    {
+      "serializedFile": "CAB-2c811ef28608ab220ecdb5c4e0629d2d",
+      "pathId": 6428594484694422749,
+      "pathIdUnsigned": 6428594484694422749,
+      "pathIdHex": "5936F49FA93F14DD",
+      "targetType": "Shader",
+      "status": "ambiguous_physical_source",
+      "assetMapCandidates": [
+        {
+          "assetMap": "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json",
+          "Name": "HGRP/LitEffect",
+          "Container": "packages/com.hg.render-pipelines/runtime/shaders/materials/lit/liteffect.shader",
+          "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\0CE8FA57\\19F0903A12BA87C0D43E67E64889B525.chk",
+          "PathID": 6428594484694422749,
+          "Type": "Shader",
+          "Offset": 40675344,
+          "Hash": "22d9f2c0c7abfe25"
+        },
+        {
+          "assetMap": "export_full/recovered/AnimeStudio-cli/Persistent/maps/endfield_persistent_assets.json",
+          "Name": "HGRP/LitEffect",
+          "Container": "packages/com.hg.render-pipelines/runtime/shaders/materials/lit/liteffect.shader",
+          "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\Persistent\\VFS\\0CE8FA57\\36243F039A1BFD05676B5D323B50D4AA.chk",
+          "PathID": 6428594484694422749,
+          "Type": "Shader",
+          "Offset": 40688910,
+          "Hash": "22d9f2c0c7abfe25"
+        }
+      ],
+      "cabMapCandidates": [
+        {
+          "cabMap": "export_full/recovered/AnimeStudio-cli/Maps/endfield_persistent_assets.bin",
+          "assetRoot": "Persistent",
+          "cab": "CAB-2c811ef28608ab220ecdb5c4e0629d2d",
+          "baseFolder": "D:\\Program Files\\Endfield Game\\Endfield_Data\\Persistent",
+          "relativePath": "VFS\\0CE8FA57\\36243F039A1BFD05676B5D323B50D4AA.chk",
+          "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\Persistent\\VFS\\0CE8FA57\\36243F039A1BFD05676B5D323B50D4AA.chk",
+          "sourceOffset": 40688910,
+          "dependencies": []
+        },
+        {
+          "cabMap": "export_full/recovered/AnimeStudio-cli/Maps/endfield_streamingassets_assets.bin",
+          "assetRoot": "StreamingAssets",
+          "cab": "CAB-2c811ef28608ab220ecdb5c4e0629d2d",
+          "baseFolder": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets",
+          "relativePath": "VFS\\0CE8FA57\\19F0903A12BA87C0D43E67E64889B525.chk",
+          "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\0CE8FA57\\19F0903A12BA87C0D43E67E64889B525.chk",
+          "sourceOffset": 40675344,
+          "dependencies": []
+        }
+      ],
+      "occurrences": [
+        {
+          "materialPathIdHex": "5A6341E8A834E421",
+          "materialPathId": 6513121953618125857,
+          "materialPathIdUnsigned": 6513121953618125857,
+          "materialSerializedFile": "CAB-cd71f8c396e7892649d00d8870b65267",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 247820404,
+          "material": "M_fx_endminm_gfx_01",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_01_p5A6341E8A834E421.json",
+          "property": "m_Shader",
+          "fileId": 1,
+          "fileIdRule": "host dependency[0]"
+        },
+        {
+          "materialPathIdHex": "A531A88850690EB8",
+          "materialPathId": -6543263480174539080,
+          "materialPathIdUnsigned": 11903480593535012536,
+          "materialSerializedFile": "CAB-a9472230fd792826cf92f1adc1d8737f",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 540787460,
+          "material": "M_fx_endminm_gfx_27",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_27_pA531A88850690EB8.json",
+          "property": "m_Shader",
+          "fileId": 1,
+          "fileIdRule": "host dependency[0]"
+        },
+        {
+          "materialPathIdHex": "AFCE491DD7BC5724",
+          "materialPathId": -5778600879347443932,
+          "materialPathIdUnsigned": 12668143194362107684,
+          "materialSerializedFile": "CAB-cd71f8c396e7892649d00d8870b65267",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 247820404,
+          "material": "M_fx_endminm_gfx_38",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_38_pAFCE491DD7BC5724.json",
+          "property": "m_Shader",
+          "fileId": 1,
+          "fileIdRule": "host dependency[0]"
+        }
+      ]
+    },
+    {
+      "serializedFile": "CAB-2e04428f53aa90c5ba670338c86ab22b",
+      "pathId": 7766268189260370413,
+      "pathIdUnsigned": 7766268189260370413,
+      "pathIdHex": "6BC753C54B47D1ED",
+      "targetType": "Shader",
+      "status": "ambiguous_physical_source",
+      "assetMapCandidates": [
+        {
+          "assetMap": "export_full/recovered/AnimeStudio-cli/Persistent/maps/endfield_persistent_assets.json",
+          "Name": "HGRP/Effect/VFXRefract",
+          "Container": "assets/beyond/initialassets/shaders/pso/windowsplayer/psoinfo_vulkan_600_all.psovariants",
+          "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\Persistent\\VFS\\0CE8FA57\\36243F039A1BFD05676B5D323B50D4AA.chk",
+          "PathID": 7766268189260370413,
+          "Type": "Shader",
+          "Offset": 21196567,
+          "Hash": "75a69be00df3eba3"
+        },
+        {
+          "assetMap": "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json",
+          "Name": "HGRP/Effect/VFXRefract",
+          "Container": "assets/beyond/initialassets/shaders/pso/windowsplayer/psoinfo_vulkan_600_all.psovariants",
+          "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\0CE8FA57\\19F0903A12BA87C0D43E67E64889B525.chk",
+          "PathID": 7766268189260370413,
+          "Type": "Shader",
+          "Offset": 21196567,
+          "Hash": "75a69be00df3eba3"
+        }
+      ],
+      "cabMapCandidates": [
+        {
+          "cabMap": "export_full/recovered/AnimeStudio-cli/Maps/endfield_persistent_assets.bin",
+          "assetRoot": "Persistent",
+          "cab": "CAB-2e04428f53aa90c5ba670338c86ab22b",
+          "baseFolder": "D:\\Program Files\\Endfield Game\\Endfield_Data\\Persistent",
+          "relativePath": "VFS\\0CE8FA57\\36243F039A1BFD05676B5D323B50D4AA.chk",
+          "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\Persistent\\VFS\\0CE8FA57\\36243F039A1BFD05676B5D323B50D4AA.chk",
+          "sourceOffset": 21196567,
+          "dependencies": []
+        },
+        {
+          "cabMap": "export_full/recovered/AnimeStudio-cli/Maps/endfield_streamingassets_assets.bin",
+          "assetRoot": "StreamingAssets",
+          "cab": "CAB-2e04428f53aa90c5ba670338c86ab22b",
+          "baseFolder": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets",
+          "relativePath": "VFS\\0CE8FA57\\19F0903A12BA87C0D43E67E64889B525.chk",
+          "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\0CE8FA57\\19F0903A12BA87C0D43E67E64889B525.chk",
+          "sourceOffset": 21196567,
+          "dependencies": []
+        }
+      ],
+      "occurrences": [
+        {
+          "materialPathIdHex": "19E6A2A7AE736DA5",
+          "materialPathId": 1866357936661687717,
+          "materialPathIdUnsigned": 1866357936661687717,
+          "materialSerializedFile": "CAB-0aa796be8e8447287a06707b9d57baeb",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 113393906,
+          "material": "M_fx_common_teleport_03",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_common_teleport_03_p19E6A2A7AE736DA5.json",
+          "property": "m_Shader",
+          "fileId": 1,
+          "fileIdRule": "host dependency[0]"
+        },
+        {
+          "materialPathIdHex": "BF7FEE87831B48FB",
+          "materialPathId": -4647734024635463429,
+          "materialPathIdUnsigned": 13799010049074088187,
+          "materialSerializedFile": "CAB-3a930505f5aee238a3d248cf9c671c0f",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 98801184,
+          "material": "M_fx_endminm_gfx_28",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_28_pBF7FEE87831B48FB.json",
+          "property": "m_Shader",
+          "fileId": 1,
+          "fileIdRule": "host dependency[0]"
+        }
+      ]
+    },
+    {
+      "serializedFile": "CAB-9fe1ba4f3ce8edb2f54eb3e35709a336",
+      "pathId": -1430105248647086886,
+      "pathIdUnsigned": 17016638825062464730,
+      "pathIdHex": "EC273EDA76F7FCDA",
+      "targetType": "Shader",
+      "status": "ambiguous_physical_source",
+      "assetMapCandidates": [
+        {
+          "assetMap": "export_full/recovered/AnimeStudio-cli/Persistent/maps/endfield_persistent_assets.json",
+          "Name": "HGRP/Effect/VFXBaseV2",
+          "Container": "packages/com.hg.render-pipelines/runtime/shaders/materials/effect/vfxbasev2.shader",
+          "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\Persistent\\VFS\\0CE8FA57\\36243F039A1BFD05676B5D323B50D4AA.chk",
+          "PathID": -1430105248647086886,
+          "Type": "Shader",
+          "Offset": 147445997,
+          "Hash": "ad90ec33e5d6a06d"
+        },
+        {
+          "assetMap": "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json",
+          "Name": "HGRP/Effect/VFXBaseV2",
+          "Container": "packages/com.hg.render-pipelines/runtime/shaders/materials/effect/vfxbasev2.shader",
+          "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\0CE8FA57\\19F0903A12BA87C0D43E67E64889B525.chk",
+          "PathID": -1430105248647086886,
+          "Type": "Shader",
+          "Offset": 147432431,
+          "Hash": "c594f9199d92aad0"
+        }
+      ],
+      "cabMapCandidates": [
+        {
+          "cabMap": "export_full/recovered/AnimeStudio-cli/Maps/endfield_persistent_assets.bin",
+          "assetRoot": "Persistent",
+          "cab": "CAB-9fe1ba4f3ce8edb2f54eb3e35709a336",
+          "baseFolder": "D:\\Program Files\\Endfield Game\\Endfield_Data\\Persistent",
+          "relativePath": "VFS\\0CE8FA57\\36243F039A1BFD05676B5D323B50D4AA.chk",
+          "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\Persistent\\VFS\\0CE8FA57\\36243F039A1BFD05676B5D323B50D4AA.chk",
+          "sourceOffset": 147445997,
+          "dependencies": []
+        },
+        {
+          "cabMap": "export_full/recovered/AnimeStudio-cli/Maps/endfield_streamingassets_assets.bin",
+          "assetRoot": "StreamingAssets",
+          "cab": "CAB-9fe1ba4f3ce8edb2f54eb3e35709a336",
+          "baseFolder": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets",
+          "relativePath": "VFS\\0CE8FA57\\19F0903A12BA87C0D43E67E64889B525.chk",
+          "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\0CE8FA57\\19F0903A12BA87C0D43E67E64889B525.chk",
+          "sourceOffset": 147432431,
+          "dependencies": []
+        }
+      ],
+      "occurrences": [
+        {
+          "materialPathIdHex": "9EBBC39832869160",
+          "materialPathId": -7008793336621919904,
+          "materialPathIdUnsigned": 11437950737087631712,
+          "materialSerializedFile": "CAB-8f93557b361354ad7e0827de4234cada",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 238537452,
+          "material": "M_endminf_ui_overview_01_rock_03",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_endminf_ui_overview_01_rock_03_p9EBBC39832869160.json",
+          "property": "m_Shader",
+          "fileId": 1,
+          "fileIdRule": "host dependency[0]"
+        },
+        {
+          "materialPathIdHex": "632B1622242536EC",
+          "materialPathId": 7145829569644541676,
+          "materialPathIdUnsigned": 7145829569644541676,
+          "materialSerializedFile": "CAB-9d08038ae32d18a67e47c6f212b9f822",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 237446926,
+          "material": "M_fx_endminm_gfx_09",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_09_p632B1622242536EC.json",
+          "property": "m_Shader",
+          "fileId": 1,
+          "fileIdRule": "host dependency[0]"
+        },
+        {
+          "materialPathIdHex": "F1C3F38D51FA67EF",
+          "materialPathId": -1025708501819037713,
+          "materialPathIdUnsigned": 17421035571890513903,
+          "materialSerializedFile": "CAB-f5ecbaca367229e95b9a13eaf0e6cf3f",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 454572714,
+          "material": "M_fx_endminm_gfx_16",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_16_pF1C3F38D51FA67EF.json",
+          "property": "m_Shader",
+          "fileId": 1,
+          "fileIdRule": "host dependency[0]"
+        },
+        {
+          "materialPathIdHex": "7010821E75C0A247",
+          "materialPathId": 8075097199211487815,
+          "materialPathIdUnsigned": 8075097199211487815,
+          "materialSerializedFile": "CAB-f5ecbaca367229e95b9a13eaf0e6cf3f",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 454572714,
+          "material": "M_fx_endminm_gfx_18",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_18_p7010821E75C0A247.json",
+          "property": "m_Shader",
+          "fileId": 1,
+          "fileIdRule": "host dependency[0]"
+        },
+        {
+          "materialPathIdHex": "F43088E31E25D24A",
+          "materialPathId": -851029820528274870,
+          "materialPathIdUnsigned": 17595714253181276746,
+          "materialSerializedFile": "CAB-f5ecbaca367229e95b9a13eaf0e6cf3f",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 454572714,
+          "material": "M_fx_endminm_gfx_19",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_19_pF43088E31E25D24A.json",
+          "property": "m_Shader",
+          "fileId": 1,
+          "fileIdRule": "host dependency[0]"
+        },
+        {
+          "materialPathIdHex": "EE9E2589EB9513AE",
+          "materialPathId": -1252522372069256274,
+          "materialPathIdUnsigned": 17194221701640295342,
+          "materialSerializedFile": "CAB-f5ecbaca367229e95b9a13eaf0e6cf3f",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 454572714,
+          "material": "M_fx_endminm_gfx_20",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_20_pEE9E2589EB9513AE.json",
+          "property": "m_Shader",
+          "fileId": 1,
+          "fileIdRule": "host dependency[0]"
+        },
+        {
+          "materialPathIdHex": "8EE22B791F9A2753",
+          "materialPathId": -8150904576365942957,
+          "materialPathIdUnsigned": 10295839497343608659,
+          "materialSerializedFile": "CAB-f5ecbaca367229e95b9a13eaf0e6cf3f",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 454572714,
+          "material": "M_fx_endminm_gfx_21",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_21_p8EE22B791F9A2753.json",
+          "property": "m_Shader",
+          "fileId": 1,
+          "fileIdRule": "host dependency[0]"
+        },
+        {
+          "materialPathIdHex": "EC97B180E0A82AB7",
+          "materialPathId": -1398453992192202057,
+          "materialPathIdUnsigned": 17048290081517349559,
+          "materialSerializedFile": "CAB-f5ecbaca367229e95b9a13eaf0e6cf3f",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 454572714,
+          "material": "M_fx_endminm_gfx_22",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_22_pEC97B180E0A82AB7.json",
+          "property": "m_Shader",
+          "fileId": 1,
+          "fileIdRule": "host dependency[0]"
+        },
+        {
+          "materialPathIdHex": "364397B467C89F2E",
+          "materialPathId": 3910135702578831150,
+          "materialPathIdUnsigned": 3910135702578831150,
+          "materialSerializedFile": "CAB-f5ecbaca367229e95b9a13eaf0e6cf3f",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 454572714,
+          "material": "M_fx_endminm_gfx_26",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_26_p364397B467C89F2E.json",
+          "property": "m_Shader",
+          "fileId": 1,
+          "fileIdRule": "host dependency[0]"
+        },
+        {
+          "materialPathIdHex": "602883BD6BB1831B",
+          "materialPathId": 6928932876288361243,
+          "materialPathIdUnsigned": 6928932876288361243,
+          "materialSerializedFile": "CAB-ff435e3fd9771bebac06ac4f9c8810f3",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 237922379,
+          "material": "M_fx_endminm_gfx_31",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_31_p602883BD6BB1831B.json",
+          "property": "m_Shader",
+          "fileId": 1,
+          "fileIdRule": "host dependency[0]"
+        },
+        {
+          "materialPathIdHex": "655CC24C5B0D67F2",
+          "materialPathId": 7303926328889010162,
+          "materialPathIdUnsigned": 7303926328889010162,
+          "materialSerializedFile": "CAB-7b448c424ed5d6e42212fe6ecf508f87",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 374920838,
+          "material": "M_fx_endminm_gfx_36",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_36_p655CC24C5B0D67F2.json",
+          "property": "m_Shader",
+          "fileId": 1,
+          "fileIdRule": "host dependency[0]"
+        },
+        {
+          "materialPathIdHex": "BF692EC36800069D",
+          "materialPathId": -4654137323112364387,
+          "materialPathIdUnsigned": 13792606750597187229,
+          "materialSerializedFile": "CAB-57ab92b5f5a4375278f490cf569c0b23",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 240899272,
+          "material": "M_fx_endminm_gfx_39",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_39_pBF692EC36800069D.json",
+          "property": "m_Shader",
+          "fileId": 1,
+          "fileIdRule": "host dependency[0]"
+        },
+        {
+          "materialPathIdHex": "26EC2259AEC716E7",
+          "materialPathId": 2804654436524693223,
+          "materialPathIdUnsigned": 2804654436524693223,
+          "materialSerializedFile": "CAB-8913e6b485ec90d30e4d75a822d454ae",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 238355011,
+          "material": "M_fx_endminm_gfx_40",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_40_p26EC2259AEC716E7.json",
+          "property": "m_Shader",
+          "fileId": 1,
+          "fileIdRule": "host dependency[0]"
+        },
+        {
+          "materialPathIdHex": "E744767C80FE8433",
+          "materialPathId": -1782169275419687885,
+          "materialPathIdUnsigned": 16664574798289863731,
+          "materialSerializedFile": "CAB-7b448c424ed5d6e42212fe6ecf508f87",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 374920838,
+          "material": "M_fx_endminm_gfx_45",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_45_pE744767C80FE8433.json",
+          "property": "m_Shader",
+          "fileId": 1,
+          "fileIdRule": "host dependency[0]"
+        },
+        {
+          "materialPathIdHex": "5D8517046749BD84",
+          "materialPathId": 6738817725110009220,
+          "materialPathIdUnsigned": 6738817725110009220,
+          "materialSerializedFile": "CAB-7b448c424ed5d6e42212fe6ecf508f87",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 374920838,
+          "material": "M_fx_endminm_gfx_46",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_46_p5D8517046749BD84.json",
+          "property": "m_Shader",
+          "fileId": 1,
+          "fileIdRule": "host dependency[0]"
+        },
+        {
+          "materialPathIdHex": "3409DAC8F2A1253D",
+          "materialPathId": 3749768721361610045,
+          "materialPathIdUnsigned": 3749768721361610045,
+          "materialSerializedFile": "CAB-ccc3dbc4aa2a61874780e26d787e785c",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 253712245,
+          "material": "M_fx_endminm_gfx_05",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_05_p3409DAC8F2A1253D.json",
+          "property": "m_Shader",
+          "fileId": 2,
+          "fileIdRule": "host dependency[1]"
+        },
+        {
+          "materialPathIdHex": "014C92101D852EC4",
+          "materialPathId": 93610290180337348,
+          "materialPathIdUnsigned": 93610290180337348,
+          "materialSerializedFile": "CAB-ccc3dbc4aa2a61874780e26d787e785c",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 253712245,
+          "material": "M_fx_endminm_gfx_08",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_08_p014C92101D852EC4.json",
+          "property": "m_Shader",
+          "fileId": 2,
+          "fileIdRule": "host dependency[1]"
+        },
+        {
+          "materialPathIdHex": "13C3BA85865CFBD0",
+          "materialPathId": 1424186989826866128,
+          "materialPathIdUnsigned": 1424186989826866128,
+          "materialSerializedFile": "CAB-a9472230fd792826cf92f1adc1d8737f",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 540787460,
+          "material": "M_fx_endminm_gfx_12",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_12_p13C3BA85865CFBD0.json",
+          "property": "m_Shader",
+          "fileId": 6,
+          "fileIdRule": "host dependency[5]"
+        },
+        {
+          "materialPathIdHex": "57A25F1386F7012F",
+          "materialPathId": 6314714165000208687,
+          "materialPathIdUnsigned": 6314714165000208687,
+          "materialSerializedFile": "CAB-a9472230fd792826cf92f1adc1d8737f",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 540787460,
+          "material": "M_fx_endminm_gfx_13",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_13_p57A25F1386F7012F.json",
+          "property": "m_Shader",
+          "fileId": 6,
+          "fileIdRule": "host dependency[5]"
+        },
+        {
+          "materialPathIdHex": "F6DCA5E6B2122169",
+          "materialPathId": -658469035254341271,
+          "materialPathIdUnsigned": 17788275038455210345,
+          "materialSerializedFile": "CAB-a9472230fd792826cf92f1adc1d8737f",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 540787460,
+          "material": "M_fx_endminm_gfx_14",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_14_pF6DCA5E6B2122169.json",
+          "property": "m_Shader",
+          "fileId": 6,
+          "fileIdRule": "host dependency[5]"
+        },
+        {
+          "materialPathIdHex": "418FE5EF54286417",
+          "materialPathId": 4724247350206817303,
+          "materialPathIdUnsigned": 4724247350206817303,
+          "materialSerializedFile": "CAB-a9472230fd792826cf92f1adc1d8737f",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 540787460,
+          "material": "M_fx_endminm_gfx_15",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_15_p418FE5EF54286417.json",
+          "property": "m_Shader",
+          "fileId": 6,
+          "fileIdRule": "host dependency[5]"
+        },
+        {
+          "materialPathIdHex": "392693FCB1EC4C68",
+          "materialPathId": 4118141622802992232,
+          "materialPathIdUnsigned": 4118141622802992232,
+          "materialSerializedFile": "CAB-a9472230fd792826cf92f1adc1d8737f",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 540787460,
+          "material": "M_fx_endminm_gfx_17",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_17_p392693FCB1EC4C68.json",
+          "property": "m_Shader",
+          "fileId": 6,
+          "fileIdRule": "host dependency[5]"
+        }
+      ]
+    },
+    {
+      "serializedFile": "CAB-0ba5e8e2cd7537a13ff984cdeda8ede1",
+      "pathId": -8389716858802078310,
+      "pathIdUnsigned": 10057027214907473306,
+      "pathIdHex": "8B91BCF7B0FEFD9A",
+      "targetType": "Texture2D",
+      "targetName": "T_fx_color_201_C_D",
+      "status": "resolved",
+      "assetMap": {
+        "assetMap": "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json",
+        "Name": "T_fx_color_201_C_D",
+        "Container": "assets/beyond/arts/effects/commonassets/arts/m_material/m_fx_endminm_gfx_18.mat",
+        "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+        "PathID": -8389716858802078310,
+        "Type": "Texture2D",
+        "Offset": 65237386,
+        "Hash": "5a4f7e4b38755c6"
+      },
+      "cabMapCandidates": [
+        {
+          "cabMap": "export_full/recovered/AnimeStudio-cli/Maps/endfield_streamingassets_assets.bin",
+          "assetRoot": "StreamingAssets",
+          "cab": "CAB-0ba5e8e2cd7537a13ff984cdeda8ede1",
+          "baseFolder": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets",
+          "relativePath": "VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "sourceOffset": 65237386,
+          "dependencies": []
+        }
+      ],
+      "artifact": {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_color_201_C_D_p8B91BCF7B0FEFD9A.png",
+        "size": 680,
+        "sha256": "8274dc509c450b5b064b7e238b002af79ece251bcb7f7f18f15d616966e454d2"
+      },
+      "occurrences": [
+        {
+          "materialPathIdHex": "7010821E75C0A247",
+          "materialPathId": 8075097199211487815,
+          "materialPathIdUnsigned": 8075097199211487815,
+          "materialSerializedFile": "CAB-f5ecbaca367229e95b9a13eaf0e6cf3f",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 454572714,
+          "material": "M_fx_endminm_gfx_18",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_18_p7010821E75C0A247.json",
+          "property": "m_TexEnvs._BlendTex.m_Texture",
+          "fileId": 9,
+          "fileIdRule": "host dependency[8]"
+        },
+        {
+          "materialPathIdHex": "7010821E75C0A247",
+          "materialPathId": 8075097199211487815,
+          "materialPathIdUnsigned": 8075097199211487815,
+          "materialSerializedFile": "CAB-f5ecbaca367229e95b9a13eaf0e6cf3f",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 454572714,
+          "material": "M_fx_endminm_gfx_18",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_18_p7010821E75C0A247.json",
+          "property": "m_TexEnvs._SampleTex2.m_Texture",
+          "fileId": 9,
+          "fileIdRule": "host dependency[8]"
+        }
+      ]
+    },
+    {
+      "serializedFile": "CAB-1e224b471855f02277f9792b4f3461dd",
+      "pathId": -232925639297570254,
+      "pathIdUnsigned": 18213818434411981362,
+      "pathIdHex": "FCC47B5D7A966A32",
+      "targetType": "Texture2D",
+      "targetName": "T_fx_star_08_2_D",
+      "status": "resolved",
+      "assetMap": {
+        "assetMap": "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json",
+        "Name": "T_fx_star_08_2_D",
+        "Container": "assets/beyond/arts/effects/commonassets/arts/t_texture/color/star/t_fx_star_08_2_d.png",
+        "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+        "PathID": -232925639297570254,
+        "Type": "Texture2D",
+        "Offset": 1015685907,
+        "Hash": "37804642b75cdb40"
+      },
+      "cabMapCandidates": [
+        {
+          "cabMap": "export_full/recovered/AnimeStudio-cli/Maps/endfield_streamingassets_assets.bin",
+          "assetRoot": "StreamingAssets",
+          "cab": "CAB-1e224b471855f02277f9792b4f3461dd",
+          "baseFolder": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets",
+          "relativePath": "VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+          "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+          "sourceOffset": 1015685907,
+          "dependencies": []
+        }
+      ],
+      "artifact": {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_star_08_2_D_pFCC47B5D7A966A32.png",
+        "size": 96041,
+        "sha256": "bdabf84d1374cec25021391a19123da7e58e940567eb3b87b20f8c7e9afeb6b4"
+      },
+      "occurrences": [
+        {
+          "materialPathIdHex": "014C92101D852EC4",
+          "materialPathId": 93610290180337348,
+          "materialPathIdUnsigned": 93610290180337348,
+          "materialSerializedFile": "CAB-ccc3dbc4aa2a61874780e26d787e785c",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 253712245,
+          "material": "M_fx_endminm_gfx_08",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_08_p014C92101D852EC4.json",
+          "property": "m_TexEnvs._MainTex.m_Texture",
+          "fileId": 1,
+          "fileIdRule": "host dependency[0]"
+        }
+      ]
+    },
+    {
+      "serializedFile": "CAB-23e9d09032fcce448e524a6da99e500a",
+      "pathId": -4611483534133852646,
+      "pathIdUnsigned": 13835260539575698970,
+      "pathIdHex": "C000B8288C63861A",
+      "targetType": "Texture2D",
+      "targetName": "T_fx_mask_21_C_M",
+      "status": "resolved",
+      "assetMap": {
+        "assetMap": "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json",
+        "Name": "T_fx_mask_21_C_M",
+        "Container": "assets/beyond/dynamicassets/gameplay/effects/prefabs/p_azrila_attack_04_dilie.prefab",
+        "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\4A65D5C2457B9C4DBE29646A23A14004.chk",
+        "PathID": -4611483534133852646,
+        "Type": "Texture2D",
+        "Offset": 486627108,
+        "Hash": "39b39321abcbeba"
+      },
+      "cabMapCandidates": [
+        {
+          "cabMap": "export_full/recovered/AnimeStudio-cli/Maps/endfield_streamingassets_assets.bin",
+          "assetRoot": "StreamingAssets",
+          "cab": "CAB-23e9d09032fcce448e524a6da99e500a",
+          "baseFolder": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets",
+          "relativePath": "VFS\\7064D8E2\\4A65D5C2457B9C4DBE29646A23A14004.chk",
+          "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\4A65D5C2457B9C4DBE29646A23A14004.chk",
+          "sourceOffset": 486627108,
+          "dependencies": []
+        }
+      ],
+      "artifact": {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_mask_21_C_M_pC000B8288C63861A.png",
+        "size": 65798,
+        "sha256": "70c0de6e6b924a1a79009f98ac10bedae57145b8eaf9a3bc4cf635e5c4008e96"
+      },
+      "occurrences": [
+        {
+          "materialPathIdHex": "F43088E31E25D24A",
+          "materialPathId": -851029820528274870,
+          "materialPathIdUnsigned": 17595714253181276746,
+          "materialSerializedFile": "CAB-f5ecbaca367229e95b9a13eaf0e6cf3f",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 454572714,
+          "material": "M_fx_endminm_gfx_19",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_19_pF43088E31E25D24A.json",
+          "property": "m_TexEnvs._MainTex.m_Texture",
+          "fileId": 8,
+          "fileIdRule": "host dependency[7]"
+        },
+        {
+          "materialPathIdHex": "F43088E31E25D24A",
+          "materialPathId": -851029820528274870,
+          "materialPathIdUnsigned": 17595714253181276746,
+          "materialSerializedFile": "CAB-f5ecbaca367229e95b9a13eaf0e6cf3f",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 454572714,
+          "material": "M_fx_endminm_gfx_19",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_19_pF43088E31E25D24A.json",
+          "property": "m_TexEnvs._MaskTex.m_Texture",
+          "fileId": 8,
+          "fileIdRule": "host dependency[7]"
+        },
+        {
+          "materialPathIdHex": "F43088E31E25D24A",
+          "materialPathId": -851029820528274870,
+          "materialPathIdUnsigned": 17595714253181276746,
+          "materialSerializedFile": "CAB-f5ecbaca367229e95b9a13eaf0e6cf3f",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 454572714,
+          "material": "M_fx_endminm_gfx_19",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_19_pF43088E31E25D24A.json",
+          "property": "m_TexEnvs._SampleTex0.m_Texture",
+          "fileId": 8,
+          "fileIdRule": "host dependency[7]"
+        }
+      ]
+    },
+    {
+      "serializedFile": "CAB-240899e5e19fc6293a037fbdf346ebd4",
+      "pathId": -1131521419741620080,
+      "pathIdUnsigned": 17315222653967931536,
+      "pathIdHex": "F04C0743888E1890",
+      "targetType": "Texture2D",
+      "targetName": "T_fx_star_909_D",
+      "status": "resolved",
+      "assetMap": {
+        "assetMap": "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json",
+        "Name": "T_fx_star_909_D",
+        "Container": "assets/beyond/arts/effects/commonassets/arts/t_texture/color/star/t_fx_star_909_d.png",
+        "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\4A65D5C2457B9C4DBE29646A23A14004.chk",
+        "PathID": -1131521419741620080,
+        "Type": "Texture2D",
+        "Offset": 544269961,
+        "Hash": "ac273d071843655e"
+      },
+      "cabMapCandidates": [
+        {
+          "cabMap": "export_full/recovered/AnimeStudio-cli/Maps/endfield_streamingassets_assets.bin",
+          "assetRoot": "StreamingAssets",
+          "cab": "CAB-240899e5e19fc6293a037fbdf346ebd4",
+          "baseFolder": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets",
+          "relativePath": "VFS\\7064D8E2\\4A65D5C2457B9C4DBE29646A23A14004.chk",
+          "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\4A65D5C2457B9C4DBE29646A23A14004.chk",
+          "sourceOffset": 544269961,
+          "dependencies": []
+        }
+      ],
+      "artifact": {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_star_909_D_pF04C0743888E1890.png",
+        "size": 149798,
+        "sha256": "2841b694a2875869232ffb362205107ccf64a0c81b583706ef0a751de0fdd1a7"
+      },
+      "occurrences": [
+        {
+          "materialPathIdHex": "13C3BA85865CFBD0",
+          "materialPathId": 1424186989826866128,
+          "materialPathIdUnsigned": 1424186989826866128,
+          "materialSerializedFile": "CAB-a9472230fd792826cf92f1adc1d8737f",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 540787460,
+          "material": "M_fx_endminm_gfx_12",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_12_p13C3BA85865CFBD0.json",
+          "property": "m_TexEnvs._MainTex.m_Texture",
+          "fileId": 13,
+          "fileIdRule": "host dependency[12]"
+        }
+      ]
+    },
+    {
+      "serializedFile": "CAB-24a67ecf33802ed0684ba906e5224495",
+      "pathId": 692059209541576631,
+      "pathIdUnsigned": 692059209541576631,
+      "pathIdHex": "099AB02F344367B7",
+      "targetType": "Texture2D",
+      "targetName": "T_fx_mask_117_c_M",
+      "status": "resolved",
+      "assetMap": {
+        "assetMap": "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json",
+        "Name": "T_fx_mask_117_c_M",
+        "Container": "assets/beyond/dynamicassets/gameplay/effects/prefabs/p_azrila_ultskill_step4.prefab",
+        "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+        "PathID": 692059209541576631,
+        "Type": "Texture2D",
+        "Offset": 146010604,
+        "Hash": "d8e3cb0df2db7ce"
+      },
+      "cabMapCandidates": [
+        {
+          "cabMap": "export_full/recovered/AnimeStudio-cli/Maps/endfield_streamingassets_assets.bin",
+          "assetRoot": "StreamingAssets",
+          "cab": "CAB-24a67ecf33802ed0684ba906e5224495",
+          "baseFolder": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets",
+          "relativePath": "VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+          "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+          "sourceOffset": 146010604,
+          "dependencies": []
+        }
+      ],
+      "artifact": {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_mask_117_c_M_p099AB02F344367B7.png",
+        "size": 29030,
+        "sha256": "a8d3a699c1f6d33bdbd96ba0eae3fa21df865c718d4ce94d5cc3ad75a7b0bbcf"
+      },
+      "occurrences": [
+        {
+          "materialPathIdHex": "57A25F1386F7012F",
+          "materialPathId": 6314714165000208687,
+          "materialPathIdUnsigned": 6314714165000208687,
+          "materialSerializedFile": "CAB-a9472230fd792826cf92f1adc1d8737f",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 540787460,
+          "material": "M_fx_endminm_gfx_13",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_13_p57A25F1386F7012F.json",
+          "property": "m_TexEnvs._MainTex.m_Texture",
+          "fileId": 8,
+          "fileIdRule": "host dependency[7]"
+        }
+      ]
+    },
+    {
+      "serializedFile": "CAB-255808913a672a9a1fa251db0f8c534a",
+      "pathId": -7896745964532314291,
+      "pathIdUnsigned": 10549998109177237325,
+      "pathIdHex": "92691F624E8D4F4D",
+      "targetType": "Texture2D",
+      "targetName": "T_fx_color_207_C_D",
+      "status": "resolved",
+      "assetMap": {
+        "assetMap": "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json",
+        "Name": "T_fx_color_207_C_D",
+        "Container": "assets/beyond/arts/effects/battle/character/chr_0003_endmin/material/new/m_fx_endminf_160.mat",
+        "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+        "PathID": -7896745964532314291,
+        "Type": "Texture2D",
+        "Offset": 19983144,
+        "Hash": "d246fcbaa24d5eb7"
+      },
+      "cabMapCandidates": [
+        {
+          "cabMap": "export_full/recovered/AnimeStudio-cli/Maps/endfield_streamingassets_assets.bin",
+          "assetRoot": "StreamingAssets",
+          "cab": "CAB-255808913a672a9a1fa251db0f8c534a",
+          "baseFolder": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets",
+          "relativePath": "VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "sourceOffset": 19983144,
+          "dependencies": []
+        }
+      ],
+      "artifact": {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_color_207_C_D_p92691F624E8D4F4D.png",
+        "size": 440,
+        "sha256": "8a8b3f9427e2b3b1118fd9b40e24c7d2f70326b29b2d9796ae00feda9bb4cda7"
+      },
+      "occurrences": [
+        {
+          "materialPathIdHex": "5D8517046749BD84",
+          "materialPathId": 6738817725110009220,
+          "materialPathIdUnsigned": 6738817725110009220,
+          "materialSerializedFile": "CAB-7b448c424ed5d6e42212fe6ecf508f87",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 374920838,
+          "material": "M_fx_endminm_gfx_46",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_46_p5D8517046749BD84.json",
+          "property": "m_TexEnvs._BlendTex.m_Texture",
+          "fileId": 6,
+          "fileIdRule": "host dependency[5]"
+        },
+        {
+          "materialPathIdHex": "5D8517046749BD84",
+          "materialPathId": 6738817725110009220,
+          "materialPathIdUnsigned": 6738817725110009220,
+          "materialSerializedFile": "CAB-7b448c424ed5d6e42212fe6ecf508f87",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 374920838,
+          "material": "M_fx_endminm_gfx_46",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_46_p5D8517046749BD84.json",
+          "property": "m_TexEnvs._SampleTex1.m_Texture",
+          "fileId": 6,
+          "fileIdRule": "host dependency[5]"
+        }
+      ]
+    },
+    {
+      "serializedFile": "CAB-2a5062154f2a6f19b8cc3dfa7913c118",
+      "pathId": -5913105481290497652,
+      "pathIdUnsigned": 12533638592419053964,
+      "pathIdHex": "ADF06DE4CC43C18C",
+      "targetType": "Texture2D",
+      "targetName": "T_fx_mask_25_C_M",
+      "status": "resolved",
+      "assetMap": {
+        "assetMap": "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json",
+        "Name": "T_fx_mask_25_C_M",
+        "Container": "assets/beyond/arts/effects/dialog/dlg_c28m1_2_sub_1_vfx/materials/m_fx_dlg_c28m1_2_sub_1_014.mat",
+        "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+        "PathID": -5913105481290497652,
+        "Type": "Texture2D",
+        "Offset": 88462617,
+        "Hash": "c97d42d52a3f96b7"
+      },
+      "cabMapCandidates": [
+        {
+          "cabMap": "export_full/recovered/AnimeStudio-cli/Maps/endfield_streamingassets_assets.bin",
+          "assetRoot": "StreamingAssets",
+          "cab": "CAB-2a5062154f2a6f19b8cc3dfa7913c118",
+          "baseFolder": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets",
+          "relativePath": "VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "sourceOffset": 88462617,
+          "dependencies": []
+        }
+      ],
+      "artifact": {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_mask_25_C_M_pADF06DE4CC43C18C.png",
+        "size": 2272,
+        "sha256": "8c07b854206948493941e883a39ef42bf009d64cbbe786d110022493692a8620"
+      },
+      "occurrences": [
+        {
+          "materialPathIdHex": "EC97B180E0A82AB7",
+          "materialPathId": -1398453992192202057,
+          "materialPathIdUnsigned": 17048290081517349559,
+          "materialSerializedFile": "CAB-f5ecbaca367229e95b9a13eaf0e6cf3f",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 454572714,
+          "material": "M_fx_endminm_gfx_22",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_22_pEC97B180E0A82AB7.json",
+          "property": "m_TexEnvs._MainTex.m_Texture",
+          "fileId": 2,
+          "fileIdRule": "host dependency[1]"
+        }
+      ]
+    },
+    {
+      "serializedFile": "CAB-2e50e01836d7292d3451e2b92e354371",
+      "pathId": -6344285524260113238,
+      "pathIdUnsigned": 12102458549449438378,
+      "pathIdHex": "A7F491EDDCD2B4AA",
+      "targetType": "Texture2D",
+      "targetName": "T_fx_trail_gfx_02",
+      "status": "resolved",
+      "assetMap": {
+        "assetMap": "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json",
+        "Name": "T_fx_trail_gfx_02",
+        "Container": "assets/beyond/arts/effects/commonassets/arts/t_texture/color/trail/t_fx_trail_gfx_02.tga",
+        "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+        "PathID": -6344285524260113238,
+        "Type": "Texture2D",
+        "Offset": 747816044,
+        "Hash": "b7283acf71a69501"
+      },
+      "cabMapCandidates": [
+        {
+          "cabMap": "export_full/recovered/AnimeStudio-cli/Maps/endfield_streamingassets_assets.bin",
+          "assetRoot": "StreamingAssets",
+          "cab": "CAB-2e50e01836d7292d3451e2b92e354371",
+          "baseFolder": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets",
+          "relativePath": "VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "sourceOffset": 747816044,
+          "dependencies": []
+        }
+      ],
+      "artifact": {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_trail_gfx_02_pA7F491EDDCD2B4AA.png",
+        "size": 13460,
+        "sha256": "254405777298f440fca41670009433e12fe2aa456f4930471a75b5be8a5ccb3e"
+      },
+      "occurrences": [
+        {
+          "materialPathIdHex": "E744767C80FE8433",
+          "materialPathId": -1782169275419687885,
+          "materialPathIdUnsigned": 16664574798289863731,
+          "materialSerializedFile": "CAB-7b448c424ed5d6e42212fe6ecf508f87",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 374920838,
+          "material": "M_fx_endminm_gfx_45",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_45_pE744767C80FE8433.json",
+          "property": "m_TexEnvs._MaskTex.m_Texture",
+          "fileId": 4,
+          "fileIdRule": "host dependency[3]"
+        },
+        {
+          "materialPathIdHex": "E744767C80FE8433",
+          "materialPathId": -1782169275419687885,
+          "materialPathIdUnsigned": 16664574798289863731,
+          "materialSerializedFile": "CAB-7b448c424ed5d6e42212fe6ecf508f87",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 374920838,
+          "material": "M_fx_endminm_gfx_45",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_45_pE744767C80FE8433.json",
+          "property": "m_TexEnvs._SampleTex1.m_Texture",
+          "fileId": 4,
+          "fileIdRule": "host dependency[3]"
+        }
+      ]
+    },
+    {
+      "serializedFile": "CAB-37751cd2a8d9f272ab27ef5eb6118a3f",
+      "pathId": -8643308383140923385,
+      "pathIdUnsigned": 9803435690568628231,
+      "pathIdHex": "880CCCD1DABAB807",
+      "targetType": "Texture2D",
+      "targetName": "T_fx_star_102_D_M",
+      "status": "resolved",
+      "assetMap": {
+        "assetMap": "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json",
+        "Name": "T_fx_star_102_D_M",
+        "Container": "assets/beyond/arts/effects/dialog/dlg_e8m2_2_sub_1_vfx/materials/m_fx_dlg_e8m2_2_sub_1_107.mat",
+        "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\62EB15DCD74A3348E244B9B068AB9694.chk",
+        "PathID": -8643308383140923385,
+        "Type": "Texture2D",
+        "Offset": 86502533,
+        "Hash": "44893896bb61eeb0"
+      },
+      "cabMapCandidates": [
+        {
+          "cabMap": "export_full/recovered/AnimeStudio-cli/Maps/endfield_streamingassets_assets.bin",
+          "assetRoot": "StreamingAssets",
+          "cab": "CAB-37751cd2a8d9f272ab27ef5eb6118a3f",
+          "baseFolder": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets",
+          "relativePath": "VFS\\7064D8E2\\62EB15DCD74A3348E244B9B068AB9694.chk",
+          "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\62EB15DCD74A3348E244B9B068AB9694.chk",
+          "sourceOffset": 86502533,
+          "dependencies": []
+        }
+      ],
+      "artifact": {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_star_102_D_M_p880CCCD1DABAB807.png",
+        "size": 7516,
+        "sha256": "26077a8ba47a52659ae8b6b08f013d0343e61c603348390dd9d6d43ca27cc602"
+      },
+      "occurrences": [
+        {
+          "materialPathIdHex": "9EBBC39832869160",
+          "materialPathId": -7008793336621919904,
+          "materialPathIdUnsigned": 11437950737087631712,
+          "materialSerializedFile": "CAB-8f93557b361354ad7e0827de4234cada",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 238537452,
+          "material": "M_endminf_ui_overview_01_rock_03",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_endminf_ui_overview_01_rock_03_p9EBBC39832869160.json",
+          "property": "m_TexEnvs._MainTex.m_Texture",
+          "fileId": 2,
+          "fileIdRule": "host dependency[1]"
+        },
+        {
+          "materialPathIdHex": "3409DAC8F2A1253D",
+          "materialPathId": 3749768721361610045,
+          "materialPathIdUnsigned": 3749768721361610045,
+          "materialSerializedFile": "CAB-ccc3dbc4aa2a61874780e26d787e785c",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 253712245,
+          "material": "M_fx_endminm_gfx_05",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_05_p3409DAC8F2A1253D.json",
+          "property": "m_TexEnvs._MainTex.m_Texture",
+          "fileId": 3,
+          "fileIdRule": "host dependency[2]"
+        }
+      ]
+    },
+    {
+      "serializedFile": "CAB-464c53654aa8054460706a0fd4d912bc",
+      "pathId": -443320335637036500,
+      "pathIdUnsigned": 18003423738072515116,
+      "pathIdHex": "F9D90280E8A5C22C",
+      "targetType": "Texture2D",
+      "targetName": "T_fx_flow_146_M",
+      "status": "resolved",
+      "assetMap": {
+        "assetMap": "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json",
+        "Name": "T_fx_flow_146_M",
+        "Container": "assets/beyond/arts/effects/commonassets/arts/t_texture/mask/science/t_fx_flow_146_m.png",
+        "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\7E6434186C00AD19EFE8A28E3E9B46A2.chk",
+        "PathID": -443320335637036500,
+        "Type": "Texture2D",
+        "Offset": 438319633,
+        "Hash": "886526bba044a38d"
+      },
+      "cabMapCandidates": [
+        {
+          "cabMap": "export_full/recovered/AnimeStudio-cli/Maps/endfield_streamingassets_assets.bin",
+          "assetRoot": "StreamingAssets",
+          "cab": "CAB-464c53654aa8054460706a0fd4d912bc",
+          "baseFolder": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets",
+          "relativePath": "VFS\\7064D8E2\\7E6434186C00AD19EFE8A28E3E9B46A2.chk",
+          "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\7E6434186C00AD19EFE8A28E3E9B46A2.chk",
+          "sourceOffset": 438319633,
+          "dependencies": []
+        }
+      ],
+      "artifact": {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_flow_146_M_pF9D90280E8A5C22C.png",
+        "size": 163305,
+        "sha256": "bf4b94132abb04b9447c00193cbc73a7e72058468f837e93a2b8083bc0f74f79"
+      },
+      "occurrences": [
+        {
+          "materialPathIdHex": "57A25F1386F7012F",
+          "materialPathId": 6314714165000208687,
+          "materialPathIdUnsigned": 6314714165000208687,
+          "materialSerializedFile": "CAB-a9472230fd792826cf92f1adc1d8737f",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 540787460,
+          "material": "M_fx_endminm_gfx_13",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_13_p57A25F1386F7012F.json",
+          "property": "m_TexEnvs._DisturbTex1.m_Texture",
+          "fileId": 9,
+          "fileIdRule": "host dependency[8]"
+        },
+        {
+          "materialPathIdHex": "57A25F1386F7012F",
+          "materialPathId": 6314714165000208687,
+          "materialPathIdUnsigned": 6314714165000208687,
+          "materialSerializedFile": "CAB-a9472230fd792826cf92f1adc1d8737f",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 540787460,
+          "material": "M_fx_endminm_gfx_13",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_13_p57A25F1386F7012F.json",
+          "property": "m_TexEnvs._SampleTex0.m_Texture",
+          "fileId": 9,
+          "fileIdRule": "host dependency[8]"
+        }
+      ]
+    },
+    {
+      "serializedFile": "CAB-4b5f563d5ba27b650156a6fe0f54a1d6",
+      "pathId": 1887601145518348195,
+      "pathIdUnsigned": 1887601145518348195,
+      "pathIdHex": "1A321B3DAC3DD7A3",
+      "targetType": "Texture2D",
+      "targetName": "T_fx_glow_115_D",
+      "status": "resolved",
+      "assetMap": {
+        "assetMap": "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json",
+        "Name": "T_fx_glow_115_D",
+        "Container": "assets/beyond/dynamicassets/gameplay/effects/prefabs/p_fxint_l_treasurechest_golden_start_802.prefab",
+        "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+        "PathID": 1887601145518348195,
+        "Type": "Texture2D",
+        "Offset": 143860747,
+        "Hash": "e7500306b8a86783"
+      },
+      "cabMapCandidates": [
+        {
+          "cabMap": "export_full/recovered/AnimeStudio-cli/Maps/endfield_streamingassets_assets.bin",
+          "assetRoot": "StreamingAssets",
+          "cab": "CAB-4b5f563d5ba27b650156a6fe0f54a1d6",
+          "baseFolder": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets",
+          "relativePath": "VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+          "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+          "sourceOffset": 143860747,
+          "dependencies": []
+        }
+      ],
+      "artifact": {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_glow_115_D_p1A321B3DAC3DD7A3.png",
+        "size": 33379,
+        "sha256": "bc198e61602d1f0df90be502ad89ee279e803ee7232e26dff708af5a4ce519f1"
+      },
+      "occurrences": [
+        {
+          "materialPathIdHex": "BF692EC36800069D",
+          "materialPathId": -4654137323112364387,
+          "materialPathIdUnsigned": 13792606750597187229,
+          "materialSerializedFile": "CAB-57ab92b5f5a4375278f490cf569c0b23",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 240899272,
+          "material": "M_fx_endminm_gfx_39",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_39_pBF692EC36800069D.json",
+          "property": "m_TexEnvs._MainTex.m_Texture",
+          "fileId": 2,
+          "fileIdRule": "host dependency[1]"
+        }
+      ]
+    },
+    {
+      "serializedFile": "CAB-5a799d649f3ee5f01e2a923262ecd7a9",
+      "pathId": -6058384648169065067,
+      "pathIdUnsigned": 12388359425540486549,
+      "pathIdHex": "ABEC4B42DD33F595",
+      "targetType": "Texture2D",
+      "targetName": "T_fx_smoke_100_M",
+      "status": "resolved",
+      "assetMap": {
+        "assetMap": "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json",
+        "Name": "T_fx_smoke_100_M",
+        "Container": "assets/beyond/arts/effects/ui/gacha/material/m_fx_gacha_weapon_2311.mat",
+        "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+        "PathID": -6058384648169065067,
+        "Type": "Texture2D",
+        "Offset": 715267804,
+        "Hash": "9bb79a6e5c6e0af3"
+      },
+      "cabMapCandidates": [
+        {
+          "cabMap": "export_full/recovered/AnimeStudio-cli/Maps/endfield_streamingassets_assets.bin",
+          "assetRoot": "StreamingAssets",
+          "cab": "CAB-5a799d649f3ee5f01e2a923262ecd7a9",
+          "baseFolder": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets",
+          "relativePath": "VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "sourceOffset": 715267804,
+          "dependencies": []
+        }
+      ],
+      "artifact": {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_smoke_100_M_pABEC4B42DD33F595.png",
+        "size": 22575,
+        "sha256": "6c562ced5f207e9c058733ca1f4ffe1595b0a692311f5b9159928dba3625febb"
+      },
+      "occurrences": [
+        {
+          "materialPathIdHex": "EE9E2589EB9513AE",
+          "materialPathId": -1252522372069256274,
+          "materialPathIdUnsigned": 17194221701640295342,
+          "materialSerializedFile": "CAB-f5ecbaca367229e95b9a13eaf0e6cf3f",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 454572714,
+          "material": "M_fx_endminm_gfx_20",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_20_pEE9E2589EB9513AE.json",
+          "property": "m_TexEnvs._MainTex.m_Texture",
+          "fileId": 5,
+          "fileIdRule": "host dependency[4]"
+        }
+      ]
+    },
+    {
+      "serializedFile": "CAB-63b620764af84ab04bc48e3059755fbb",
+      "pathId": -2017692610046869736,
+      "pathIdUnsigned": 16429051463662681880,
+      "pathIdHex": "E3FFB742E839BF18",
+      "targetType": "Texture2D",
+      "targetName": "T_fx_trail_gfx_04",
+      "status": "resolved",
+      "assetMap": {
+        "assetMap": "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json",
+        "Name": "T_fx_trail_gfx_04",
+        "Container": "assets/beyond/dynamicassets/gameplay/effects/prefabs/p_fxbat_wulfa_skill_02_fly_01.prefab",
+        "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+        "PathID": -2017692610046869736,
+        "Type": "Texture2D",
+        "Offset": 717833846,
+        "Hash": "1b9815e9a9bb052f"
+      },
+      "cabMapCandidates": [
+        {
+          "cabMap": "export_full/recovered/AnimeStudio-cli/Maps/endfield_streamingassets_assets.bin",
+          "assetRoot": "StreamingAssets",
+          "cab": "CAB-63b620764af84ab04bc48e3059755fbb",
+          "baseFolder": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets",
+          "relativePath": "VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+          "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+          "sourceOffset": 717833846,
+          "dependencies": []
+        }
+      ],
+      "artifact": {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_trail_gfx_04_pE3FFB742E839BF18.png",
+        "size": 47515,
+        "sha256": "43ef2d0ccd3ac69f4c06bf5b29d79fe805d61ff4365af98787a5c5f2719521f3"
+      },
+      "occurrences": [
+        {
+          "materialPathIdHex": "5D8517046749BD84",
+          "materialPathId": 6738817725110009220,
+          "materialPathIdUnsigned": 6738817725110009220,
+          "materialSerializedFile": "CAB-7b448c424ed5d6e42212fe6ecf508f87",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 374920838,
+          "material": "M_fx_endminm_gfx_46",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_46_p5D8517046749BD84.json",
+          "property": "m_TexEnvs._MainTex.m_Texture",
+          "fileId": 7,
+          "fileIdRule": "host dependency[6]"
+        }
+      ]
+    },
+    {
+      "serializedFile": "CAB-63fd393e8f2d95424249637453cea5f7",
+      "pathId": -8583694459516385401,
+      "pathIdUnsigned": 9863049614193166215,
+      "pathIdHex": "88E0975E10098787",
+      "targetType": "Texture2D",
+      "targetName": "T_fx_sourcerocks+1_N",
+      "status": "resolved",
+      "assetMap": {
+        "assetMap": "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json",
+        "Name": "T_fx_sourcerocks+1_N",
+        "Container": "assets/beyond/arts/effects/commonassets/arts/t_texture/object/meshtex/t_fx_sourcerocks+1_n.tga",
+        "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\967825B10DBE250981C6AEA5FB9691B4.chk",
+        "PathID": -8583694459516385401,
+        "Type": "Texture2D",
+        "Offset": 613212742,
+        "Hash": "bf4152785bc36853"
+      },
+      "cabMapCandidates": [
+        {
+          "cabMap": "export_full/recovered/AnimeStudio-cli/Maps/endfield_streamingassets_assets.bin",
+          "assetRoot": "StreamingAssets",
+          "cab": "CAB-63fd393e8f2d95424249637453cea5f7",
+          "baseFolder": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets",
+          "relativePath": "VFS\\7064D8E2\\967825B10DBE250981C6AEA5FB9691B4.chk",
+          "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\967825B10DBE250981C6AEA5FB9691B4.chk",
+          "sourceOffset": 613212742,
+          "dependencies": []
+        }
+      ],
+      "artifact": {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_sourcerocks+1_N_p88E0975E10098787.png",
+        "size": 1499301,
+        "sha256": "aa4ca97d0104dd7830398c52cb125603f192dd0851e2e861a2faf30eca813870"
+      },
+      "occurrences": [
+        {
+          "materialPathIdHex": "5A6341E8A834E421",
+          "materialPathId": 6513121953618125857,
+          "materialPathIdUnsigned": 6513121953618125857,
+          "materialSerializedFile": "CAB-cd71f8c396e7892649d00d8870b65267",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 247820404,
+          "material": "M_fx_endminm_gfx_01",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_01_p5A6341E8A834E421.json",
+          "property": "m_TexEnvs._NormalMap.m_Texture",
+          "fileId": 4,
+          "fileIdRule": "host dependency[3]"
+        },
+        {
+          "materialPathIdHex": "A531A88850690EB8",
+          "materialPathId": -6543263480174539080,
+          "materialPathIdUnsigned": 11903480593535012536,
+          "materialSerializedFile": "CAB-a9472230fd792826cf92f1adc1d8737f",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 540787460,
+          "material": "M_fx_endminm_gfx_27",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_27_pA531A88850690EB8.json",
+          "property": "m_TexEnvs._NormalMap.m_Texture",
+          "fileId": 4,
+          "fileIdRule": "host dependency[3]"
+        },
+        {
+          "materialPathIdHex": "AFCE491DD7BC5724",
+          "materialPathId": -5778600879347443932,
+          "materialPathIdUnsigned": 12668143194362107684,
+          "materialSerializedFile": "CAB-cd71f8c396e7892649d00d8870b65267",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 247820404,
+          "material": "M_fx_endminm_gfx_38",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_38_pAFCE491DD7BC5724.json",
+          "property": "m_TexEnvs._NormalMap.m_Texture",
+          "fileId": 4,
+          "fileIdRule": "host dependency[3]"
+        }
+      ]
+    },
+    {
+      "serializedFile": "CAB-65b9a10e3a8d319b39a94938c2398a48",
+      "pathId": -1974230528700344570,
+      "pathIdUnsigned": 16472513545009207046,
+      "pathIdHex": "E49A1FCB48159706",
+      "targetType": "Texture2D",
+      "targetName": "T_fx_mask_119_M",
+      "status": "resolved",
+      "assetMap": {
+        "assetMap": "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json",
+        "Name": "T_fx_mask_119_M",
+        "Container": "assets/beyond/dynamicassets/gameplay/effects/prefabs/p_actor_endminf_ui_overview_01_effect.prefab",
+        "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+        "PathID": -1974230528700344570,
+        "Type": "Texture2D",
+        "Offset": 390966731,
+        "Hash": "feacba3601c2d2db"
+      },
+      "cabMapCandidates": [
+        {
+          "cabMap": "export_full/recovered/AnimeStudio-cli/Maps/endfield_streamingassets_assets.bin",
+          "assetRoot": "StreamingAssets",
+          "cab": "CAB-65b9a10e3a8d319b39a94938c2398a48",
+          "baseFolder": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets",
+          "relativePath": "VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+          "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+          "sourceOffset": 390966731,
+          "dependencies": []
+        }
+      ],
+      "artifact": {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_mask_119_M_pE49A1FCB48159706.png",
+        "size": 45425,
+        "sha256": "fadfd1fdce6b030de6db5f32487267ced3f2e1a91b90dc218da6a3a0679fa0d4"
+      },
+      "occurrences": [
+        {
+          "materialPathIdHex": "418FE5EF54286417",
+          "materialPathId": 4724247350206817303,
+          "materialPathIdUnsigned": 4724247350206817303,
+          "materialSerializedFile": "CAB-a9472230fd792826cf92f1adc1d8737f",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 540787460,
+          "material": "M_fx_endminm_gfx_15",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_15_p418FE5EF54286417.json",
+          "property": "m_TexEnvs._MainTex.m_Texture",
+          "fileId": 15,
+          "fileIdRule": "host dependency[14]"
+        }
+      ]
+    },
+    {
+      "serializedFile": "CAB-677d23cb83fcb2c2acf659290a3b25ec",
+      "pathId": 6970530313307194154,
+      "pathIdUnsigned": 6970530313307194154,
+      "pathIdHex": "60BC4C6374C4832A",
+      "targetType": "Texture2D",
+      "targetName": "T_fx_flow_121_M",
+      "status": "resolved",
+      "assetMap": {
+        "assetMap": "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json",
+        "Name": "T_fx_flow_121_M",
+        "Container": "assets/beyond/dynamicassets/gameplay/effects/prefabs/p_fxfac_interactive_furnance_2501.prefab",
+        "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+        "PathID": 6970530313307194154,
+        "Type": "Texture2D",
+        "Offset": 793448011,
+        "Hash": "2807456b59eb005d"
+      },
+      "cabMapCandidates": [
+        {
+          "cabMap": "export_full/recovered/AnimeStudio-cli/Maps/endfield_streamingassets_assets.bin",
+          "assetRoot": "StreamingAssets",
+          "cab": "CAB-677d23cb83fcb2c2acf659290a3b25ec",
+          "baseFolder": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets",
+          "relativePath": "VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+          "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+          "sourceOffset": 793448011,
+          "dependencies": []
+        }
+      ],
+      "artifact": {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_flow_121_M_p60BC4C6374C4832A.png",
+        "size": 58841,
+        "sha256": "8eeab0f7fad4e618db4d033180c5bee70aee6f9229a19566cd6bbba513b3d1eb"
+      },
+      "occurrences": [
+        {
+          "materialPathIdHex": "EE9E2589EB9513AE",
+          "materialPathId": -1252522372069256274,
+          "materialPathIdUnsigned": 17194221701640295342,
+          "materialSerializedFile": "CAB-f5ecbaca367229e95b9a13eaf0e6cf3f",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 454572714,
+          "material": "M_fx_endminm_gfx_20",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_20_pEE9E2589EB9513AE.json",
+          "property": "m_TexEnvs._DissolveTex.m_Texture",
+          "fileId": 3,
+          "fileIdRule": "host dependency[2]"
+        },
+        {
+          "materialPathIdHex": "EE9E2589EB9513AE",
+          "materialPathId": -1252522372069256274,
+          "materialPathIdUnsigned": 17194221701640295342,
+          "materialSerializedFile": "CAB-f5ecbaca367229e95b9a13eaf0e6cf3f",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 454572714,
+          "material": "M_fx_endminm_gfx_20",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_20_pEE9E2589EB9513AE.json",
+          "property": "m_TexEnvs._SampleTex1.m_Texture",
+          "fileId": 3,
+          "fileIdRule": "host dependency[2]"
+        },
+        {
+          "materialPathIdHex": "BF7FEE87831B48FB",
+          "materialPathId": -4647734024635463429,
+          "materialPathIdUnsigned": 13799010049074088187,
+          "materialSerializedFile": "CAB-3a930505f5aee238a3d248cf9c671c0f",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 98801184,
+          "material": "M_fx_endminm_gfx_28",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_28_pBF7FEE87831B48FB.json",
+          "property": "m_TexEnvs._RefractTex.m_Texture",
+          "fileId": 3,
+          "fileIdRule": "host dependency[2]"
+        }
+      ]
+    },
+    {
+      "serializedFile": "CAB-814497c8e53c8c022c2ed802fd30ff84",
+      "pathId": -3547197850324486203,
+      "pathIdUnsigned": 14899546223385065413,
+      "pathIdHex": "CEC5D259576137C5",
+      "targetType": "Texture2D",
+      "targetName": "T_fx_ray_902_M",
+      "status": "resolved",
+      "assetMap": {
+        "assetMap": "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json",
+        "Name": "T_fx_ray_902_M",
+        "Container": "assets/beyond/arts/effects/commonassets/arts/t_texture/mask/ray/t_fx_ray_902_m.png",
+        "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+        "PathID": -3547197850324486203,
+        "Type": "Texture2D",
+        "Offset": 839114382,
+        "Hash": "c368da1346d5786a"
+      },
+      "cabMapCandidates": [
+        {
+          "cabMap": "export_full/recovered/AnimeStudio-cli/Maps/endfield_streamingassets_assets.bin",
+          "assetRoot": "StreamingAssets",
+          "cab": "CAB-814497c8e53c8c022c2ed802fd30ff84",
+          "baseFolder": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets",
+          "relativePath": "VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "sourceOffset": 839114382,
+          "dependencies": []
+        }
+      ],
+      "artifact": {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_ray_902_M_pCEC5D259576137C5.png",
+        "size": 21527,
+        "sha256": "f005d72d034bb5d73e3cb73d2f875911ccb3f93c33961b9999ab25a529f5f2c3"
+      },
+      "occurrences": [
+        {
+          "materialPathIdHex": "F1C3F38D51FA67EF",
+          "materialPathId": -1025708501819037713,
+          "materialPathIdUnsigned": 17421035571890513903,
+          "materialSerializedFile": "CAB-f5ecbaca367229e95b9a13eaf0e6cf3f",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 454572714,
+          "material": "M_fx_endminm_gfx_16",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_16_pF1C3F38D51FA67EF.json",
+          "property": "m_TexEnvs._MainTex.m_Texture",
+          "fileId": 6,
+          "fileIdRule": "host dependency[5]"
+        }
+      ]
+    },
+    {
+      "serializedFile": "CAB-85f5ecdd9cd941e9e510bd7b403b08ba",
+      "pathId": -2770956563882859728,
+      "pathIdUnsigned": 15675787509826691888,
+      "pathIdHex": "D98B95AFB1B9A330",
+      "targetType": "Texture2D",
+      "targetName": "T_fx_flow_04_02_M",
+      "status": "resolved",
+      "assetMap": {
+        "assetMap": "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json",
+        "Name": "T_fx_flow_04_02_M",
+        "Container": "assets/beyond/arts/effects/commonassets/arts/m_material/m_fx_endminm_gfx_27.mat",
+        "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+        "PathID": -2770956563882859728,
+        "Type": "Texture2D",
+        "Offset": 448727288,
+        "Hash": "ae79f95a9a3a9ae1"
+      },
+      "cabMapCandidates": [
+        {
+          "cabMap": "export_full/recovered/AnimeStudio-cli/Maps/endfield_streamingassets_assets.bin",
+          "assetRoot": "StreamingAssets",
+          "cab": "CAB-85f5ecdd9cd941e9e510bd7b403b08ba",
+          "baseFolder": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets",
+          "relativePath": "VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "sourceOffset": 448727288,
+          "dependencies": []
+        }
+      ],
+      "artifact": {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_flow_04_02_M_pD98B95AFB1B9A330.png",
+        "size": 7676,
+        "sha256": "d7ac4b741f76d3ef0ccfd732caaf3d2069ec3839e0190472baf900d54e1090c5"
+      },
+      "occurrences": [
+        {
+          "materialPathIdHex": "5A6341E8A834E421",
+          "materialPathId": 6513121953618125857,
+          "materialPathIdUnsigned": 6513121953618125857,
+          "materialSerializedFile": "CAB-cd71f8c396e7892649d00d8870b65267",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 247820404,
+          "material": "M_fx_endminm_gfx_01",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_01_p5A6341E8A834E421.json",
+          "property": "m_TexEnvs._ParallaxMap.m_Texture",
+          "fileId": 5,
+          "fileIdRule": "host dependency[4]"
+        },
+        {
+          "materialPathIdHex": "A531A88850690EB8",
+          "materialPathId": -6543263480174539080,
+          "materialPathIdUnsigned": 11903480593535012536,
+          "materialSerializedFile": "CAB-a9472230fd792826cf92f1adc1d8737f",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 540787460,
+          "material": "M_fx_endminm_gfx_27",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_27_pA531A88850690EB8.json",
+          "property": "m_TexEnvs._ParallaxMap.m_Texture",
+          "fileId": 5,
+          "fileIdRule": "host dependency[4]"
+        },
+        {
+          "materialPathIdHex": "AFCE491DD7BC5724",
+          "materialPathId": -5778600879347443932,
+          "materialPathIdUnsigned": 12668143194362107684,
+          "materialSerializedFile": "CAB-cd71f8c396e7892649d00d8870b65267",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 247820404,
+          "material": "M_fx_endminm_gfx_38",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_38_pAFCE491DD7BC5724.json",
+          "property": "m_TexEnvs._ParallaxMap.m_Texture",
+          "fileId": 5,
+          "fileIdRule": "host dependency[4]"
+        }
+      ]
+    },
+    {
+      "serializedFile": "CAB-981e4a77a97c4ab9338ac6ee2f684dd2",
+      "pathId": -7046954404783675798,
+      "pathIdUnsigned": 11399789668925875818,
+      "pathIdHex": "9E34304E227EA66A",
+      "targetType": "Texture2D",
+      "targetName": "T_fx_mask_01_M",
+      "status": "resolved",
+      "assetMap": {
+        "assetMap": "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json",
+        "Name": "T_fx_mask_01_M",
+        "Container": "assets/beyond/arts/effects/dialog/dlg_e7m4_3_sub_1_vfx/materials/m_fx_dlg_e7m4_3_sub_1_012.mat",
+        "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+        "PathID": -7046954404783675798,
+        "Type": "Texture2D",
+        "Offset": 505895165,
+        "Hash": "9bc3c3c32ae1476"
+      },
+      "cabMapCandidates": [
+        {
+          "cabMap": "export_full/recovered/AnimeStudio-cli/Maps/endfield_streamingassets_assets.bin",
+          "assetRoot": "StreamingAssets",
+          "cab": "CAB-981e4a77a97c4ab9338ac6ee2f684dd2",
+          "baseFolder": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets",
+          "relativePath": "VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "sourceOffset": 505895165,
+          "dependencies": []
+        }
+      ],
+      "artifact": {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_mask_01_M_p9E34304E227EA66A.png",
+        "size": 4312,
+        "sha256": "78b75041d63840bc322e254ec60fc821a613a222d7a85b874fc816a2a53ef29d"
+      },
+      "occurrences": [
+        {
+          "materialPathIdHex": "13C3BA85865CFBD0",
+          "materialPathId": 1424186989826866128,
+          "materialPathIdUnsigned": 1424186989826866128,
+          "materialSerializedFile": "CAB-a9472230fd792826cf92f1adc1d8737f",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 540787460,
+          "material": "M_fx_endminm_gfx_12",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_12_p13C3BA85865CFBD0.json",
+          "property": "m_TexEnvs._MaskTex.m_Texture",
+          "fileId": 14,
+          "fileIdRule": "host dependency[13]"
+        },
+        {
+          "materialPathIdHex": "13C3BA85865CFBD0",
+          "materialPathId": 1424186989826866128,
+          "materialPathIdUnsigned": 1424186989826866128,
+          "materialSerializedFile": "CAB-a9472230fd792826cf92f1adc1d8737f",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 540787460,
+          "material": "M_fx_endminm_gfx_12",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_12_p13C3BA85865CFBD0.json",
+          "property": "m_TexEnvs._SampleTex0.m_Texture",
+          "fileId": 14,
+          "fileIdRule": "host dependency[13]"
+        }
+      ]
+    },
+    {
+      "serializedFile": "CAB-a5c64b2d0f3935a1b52c69eb047f7a35",
+      "pathId": 8090839415390183725,
+      "pathIdUnsigned": 8090839415390183725,
+      "pathIdHex": "70486F94C90FA12D",
+      "targetType": "Texture2D",
+      "targetName": "T_fx_mask_401_M",
+      "status": "resolved",
+      "assetMap": {
+        "assetMap": "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json",
+        "Name": "T_fx_mask_401_M",
+        "Container": "assets/beyond/arts/effects/cutscene/map01_lv007_art_e3m1_1_vfx/material/m_fx_e3m1_tzy_1066.mat",
+        "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+        "PathID": 8090839415390183725,
+        "Type": "Texture2D",
+        "Offset": 699122230,
+        "Hash": "1865752c2f9ac479"
+      },
+      "cabMapCandidates": [
+        {
+          "cabMap": "export_full/recovered/AnimeStudio-cli/Maps/endfield_streamingassets_assets.bin",
+          "assetRoot": "StreamingAssets",
+          "cab": "CAB-a5c64b2d0f3935a1b52c69eb047f7a35",
+          "baseFolder": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets",
+          "relativePath": "VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "sourceOffset": 699122230,
+          "dependencies": []
+        }
+      ],
+      "artifact": {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_mask_401_M_p70486F94C90FA12D.png",
+        "size": 6580,
+        "sha256": "89007ad961485323ab99d5071a847268b4be62de951934520cb8ed3661451554"
+      },
+      "occurrences": [
+        {
+          "materialPathIdHex": "418FE5EF54286417",
+          "materialPathId": 4724247350206817303,
+          "materialPathIdUnsigned": 4724247350206817303,
+          "materialSerializedFile": "CAB-a9472230fd792826cf92f1adc1d8737f",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 540787460,
+          "material": "M_fx_endminm_gfx_15",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_15_p418FE5EF54286417.json",
+          "property": "m_TexEnvs._MaskTex.m_Texture",
+          "fileId": 16,
+          "fileIdRule": "host dependency[15]"
+        },
+        {
+          "materialPathIdHex": "418FE5EF54286417",
+          "materialPathId": 4724247350206817303,
+          "materialPathIdUnsigned": 4724247350206817303,
+          "materialSerializedFile": "CAB-a9472230fd792826cf92f1adc1d8737f",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 540787460,
+          "material": "M_fx_endminm_gfx_15",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_15_p418FE5EF54286417.json",
+          "property": "m_TexEnvs._SampleTex0.m_Texture",
+          "fileId": 16,
+          "fileIdRule": "host dependency[15]"
+        }
+      ]
+    },
+    {
+      "serializedFile": "CAB-a7fdaaf6246ac8fc6bec0e21ac388bbc",
+      "pathId": -274215830221110170,
+      "pathIdUnsigned": 18172528243488441446,
+      "pathIdHex": "FC31CA27BFE1C466",
+      "targetType": "Texture2D",
+      "targetName": "T_fx_mask_138_M",
+      "status": "resolved",
+      "assetMap": {
+        "assetMap": "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json",
+        "Name": "T_fx_mask_138_M",
+        "Container": "assets/beyond/arts/effects/dialog/dlg_e2m2_3d5_vfx/materials/m_fx_dlg_e2m2_3d5_004.mat",
+        "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+        "PathID": -274215830221110170,
+        "Type": "Texture2D",
+        "Offset": 179466279,
+        "Hash": "bee72d37d7a0ebcd"
+      },
+      "cabMapCandidates": [
+        {
+          "cabMap": "export_full/recovered/AnimeStudio-cli/Maps/endfield_streamingassets_assets.bin",
+          "assetRoot": "StreamingAssets",
+          "cab": "CAB-a7fdaaf6246ac8fc6bec0e21ac388bbc",
+          "baseFolder": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets",
+          "relativePath": "VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "sourceOffset": 179466279,
+          "dependencies": []
+        }
+      ],
+      "artifact": {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_mask_138_M_pFC31CA27BFE1C466.png",
+        "size": 1306,
+        "sha256": "10d9f377b725cb47b55ca84556bc3db07f2766399133877eac46d5b921cc8334"
+      },
+      "occurrences": [
+        {
+          "materialPathIdHex": "19E6A2A7AE736DA5",
+          "materialPathId": 1866357936661687717,
+          "materialPathIdUnsigned": 1866357936661687717,
+          "materialSerializedFile": "CAB-0aa796be8e8447287a06707b9d57baeb",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 113393906,
+          "material": "M_fx_common_teleport_03",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_common_teleport_03_p19E6A2A7AE736DA5.json",
+          "property": "m_TexEnvs._BlendTex.m_Texture",
+          "fileId": 2,
+          "fileIdRule": "host dependency[1]"
+        }
+      ]
+    },
+    {
+      "serializedFile": "CAB-b937888969ecdb841118e6cbf83892bb",
+      "pathId": 2059965109902878562,
+      "pathIdUnsigned": 2059965109902878562,
+      "pathIdHex": "1C96775A7175A762",
+      "targetType": "Texture2D",
+      "targetName": "T_fx_star_119_D",
+      "status": "resolved",
+      "assetMap": {
+        "assetMap": "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json",
+        "Name": "T_fx_star_119_D",
+        "Container": "assets/beyond/dynamicassets/gameplay/effects/prefabs/p_yvonne_ultskill_01.prefab",
+        "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+        "PathID": 2059965109902878562,
+        "Type": "Texture2D",
+        "Offset": 445806230,
+        "Hash": "885696daaae4a758"
+      },
+      "cabMapCandidates": [
+        {
+          "cabMap": "export_full/recovered/AnimeStudio-cli/Maps/endfield_streamingassets_assets.bin",
+          "assetRoot": "StreamingAssets",
+          "cab": "CAB-b937888969ecdb841118e6cbf83892bb",
+          "baseFolder": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets",
+          "relativePath": "VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+          "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+          "sourceOffset": 445806230,
+          "dependencies": []
+        }
+      ],
+      "artifact": {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_star_119_D_p1C96775A7175A762.png",
+        "size": 24817,
+        "sha256": "c401ae6450842983772fed1ebf5a850c2b64d838db69afab90c8946a06c4b9b4"
+      },
+      "occurrences": [
+        {
+          "materialPathIdHex": "26EC2259AEC716E7",
+          "materialPathId": 2804654436524693223,
+          "materialPathIdUnsigned": 2804654436524693223,
+          "materialSerializedFile": "CAB-8913e6b485ec90d30e4d75a822d454ae",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 238355011,
+          "material": "M_fx_endminm_gfx_40",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_40_p26EC2259AEC716E7.json",
+          "property": "m_TexEnvs._MainTex.m_Texture",
+          "fileId": 2,
+          "fileIdRule": "host dependency[1]"
+        }
+      ]
+    },
+    {
+      "serializedFile": "CAB-c0944558649283ebb964e4f3fb2a17a8",
+      "pathId": -3516386400929143739,
+      "pathIdUnsigned": 14930357672780407877,
+      "pathIdHex": "CF334932EF9AA445",
+      "targetType": "Texture2D",
+      "targetName": "T_fx_glow_105_D",
+      "status": "resolved",
+      "assetMap": {
+        "assetMap": "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json",
+        "Name": "T_fx_glow_105_D",
+        "Container": "assets/beyond/arts/effects/commonassets/arts/t_texture/color/star/t_fx_glow_105_d.tga",
+        "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+        "PathID": -3516386400929143739,
+        "Type": "Texture2D",
+        "Offset": 847897551,
+        "Hash": "aab5380867c50933"
+      },
+      "cabMapCandidates": [
+        {
+          "cabMap": "export_full/recovered/AnimeStudio-cli/Maps/endfield_streamingassets_assets.bin",
+          "assetRoot": "StreamingAssets",
+          "cab": "CAB-c0944558649283ebb964e4f3fb2a17a8",
+          "baseFolder": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets",
+          "relativePath": "VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "sourceOffset": 847897551,
+          "dependencies": []
+        }
+      ],
+      "artifact": {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_glow_105_D_pCF334932EF9AA445.png",
+        "size": 9043,
+        "sha256": "578448e2a2284161402c63d514f6208bb69c00a0e0d543187a5aa0edcbba6975"
+      },
+      "occurrences": [
+        {
+          "materialPathIdHex": "364397B467C89F2E",
+          "materialPathId": 3910135702578831150,
+          "materialPathIdUnsigned": 3910135702578831150,
+          "materialSerializedFile": "CAB-f5ecbaca367229e95b9a13eaf0e6cf3f",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 454572714,
+          "material": "M_fx_endminm_gfx_26",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_26_p364397B467C89F2E.json",
+          "property": "m_TexEnvs._MainTex.m_Texture",
+          "fileId": 13,
+          "fileIdRule": "host dependency[12]"
+        },
+        {
+          "materialPathIdHex": "655CC24C5B0D67F2",
+          "materialPathId": 7303926328889010162,
+          "materialPathIdUnsigned": 7303926328889010162,
+          "materialSerializedFile": "CAB-7b448c424ed5d6e42212fe6ecf508f87",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 374920838,
+          "material": "M_fx_endminm_gfx_36",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_36_p655CC24C5B0D67F2.json",
+          "property": "m_TexEnvs._MainTex.m_Texture",
+          "fileId": 5,
+          "fileIdRule": "host dependency[4]"
+        },
+        {
+          "materialPathIdHex": "F6DCA5E6B2122169",
+          "materialPathId": -658469035254341271,
+          "materialPathIdUnsigned": 17788275038455210345,
+          "materialSerializedFile": "CAB-a9472230fd792826cf92f1adc1d8737f",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 540787460,
+          "material": "M_fx_endminm_gfx_14",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_14_pF6DCA5E6B2122169.json",
+          "property": "m_TexEnvs._MainTex.m_Texture",
+          "fileId": 7,
+          "fileIdRule": "host dependency[6]"
+        }
+      ]
+    },
+    {
+      "serializedFile": "CAB-c94184ca5aa7511d2a37856a404dec6c",
+      "pathId": -1289306414000872431,
+      "pathIdUnsigned": 17157437659708679185,
+      "pathIdHex": "EE1B76A5C2D86411",
+      "targetType": "Texture2D",
+      "targetName": "T_fx_star_07_D",
+      "status": "resolved",
+      "assetMap": {
+        "assetMap": "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json",
+        "Name": "T_fx_star_07_D",
+        "Container": "assets/beyond/arts/effects/ui/gacha/material/m_fx_ui_gacha_075.mat",
+        "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+        "PathID": -1289306414000872431,
+        "Type": "Texture2D",
+        "Offset": 720608790,
+        "Hash": "ddc2f6d8e847d7e1"
+      },
+      "cabMapCandidates": [
+        {
+          "cabMap": "export_full/recovered/AnimeStudio-cli/Maps/endfield_streamingassets_assets.bin",
+          "assetRoot": "StreamingAssets",
+          "cab": "CAB-c94184ca5aa7511d2a37856a404dec6c",
+          "baseFolder": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets",
+          "relativePath": "VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+          "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+          "sourceOffset": 720608790,
+          "dependencies": []
+        }
+      ],
+      "artifact": {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_star_07_D_pEE1B76A5C2D86411.png",
+        "size": 40069,
+        "sha256": "f4d1623d32b3144b10bcfc1ff9e1fb6a0eca8bee5cc182a5502a6c82fd8b13ea"
+      },
+      "occurrences": [
+        {
+          "materialPathIdHex": "632B1622242536EC",
+          "materialPathId": 7145829569644541676,
+          "materialPathIdUnsigned": 7145829569644541676,
+          "materialSerializedFile": "CAB-9d08038ae32d18a67e47c6f212b9f822",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 237446926,
+          "material": "M_fx_endminm_gfx_09",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_09_p632B1622242536EC.json",
+          "property": "m_TexEnvs._MainTex.m_Texture",
+          "fileId": 2,
+          "fileIdRule": "host dependency[1]"
+        }
+      ]
+    },
+    {
+      "serializedFile": "CAB-ca0bc73dcbb3715b238e3660f5c0bd32",
+      "pathId": -2906088910910405840,
+      "pathIdUnsigned": 15540655162799145776,
+      "pathIdHex": "D7AB7F885B7BC330",
+      "targetType": "Texture2D",
+      "targetName": "T_fx_flow_26_M",
+      "status": "resolved",
+      "assetMap": {
+        "assetMap": "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json",
+        "Name": "T_fx_flow_26_M",
+        "Container": "assets/beyond/dynamicassets/gameplay/effects/prefabs/p_yvonne_skill.prefab",
+        "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+        "PathID": -2906088910910405840,
+        "Type": "Texture2D",
+        "Offset": 732169809,
+        "Hash": "ecfa19a471a5d108"
+      },
+      "cabMapCandidates": [
+        {
+          "cabMap": "export_full/recovered/AnimeStudio-cli/Maps/endfield_streamingassets_assets.bin",
+          "assetRoot": "StreamingAssets",
+          "cab": "CAB-ca0bc73dcbb3715b238e3660f5c0bd32",
+          "baseFolder": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets",
+          "relativePath": "VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+          "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+          "sourceOffset": 732169809,
+          "dependencies": []
+        }
+      ],
+      "artifact": {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_flow_26_M_pD7AB7F885B7BC330.png",
+        "size": 46737,
+        "sha256": "737f73ecb27a3484199f58b2a4eb9e54b8760bf48f7ef43d252539f86edec402"
+      },
+      "occurrences": [
+        {
+          "materialPathIdHex": "57A25F1386F7012F",
+          "materialPathId": 6314714165000208687,
+          "materialPathIdUnsigned": 6314714165000208687,
+          "materialSerializedFile": "CAB-a9472230fd792826cf92f1adc1d8737f",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 540787460,
+          "material": "M_fx_endminm_gfx_13",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_13_p57A25F1386F7012F.json",
+          "property": "m_TexEnvs._DissolveTex.m_Texture",
+          "fileId": 10,
+          "fileIdRule": "host dependency[9]"
+        },
+        {
+          "materialPathIdHex": "57A25F1386F7012F",
+          "materialPathId": 6314714165000208687,
+          "materialPathIdUnsigned": 6314714165000208687,
+          "materialSerializedFile": "CAB-a9472230fd792826cf92f1adc1d8737f",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 540787460,
+          "material": "M_fx_endminm_gfx_13",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_13_p57A25F1386F7012F.json",
+          "property": "m_TexEnvs._SampleTex3.m_Texture",
+          "fileId": 10,
+          "fileIdRule": "host dependency[9]"
+        },
+        {
+          "materialPathIdHex": "7010821E75C0A247",
+          "materialPathId": 8075097199211487815,
+          "materialPathIdUnsigned": 8075097199211487815,
+          "materialSerializedFile": "CAB-f5ecbaca367229e95b9a13eaf0e6cf3f",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 454572714,
+          "material": "M_fx_endminm_gfx_18",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_18_p7010821E75C0A247.json",
+          "property": "m_TexEnvs._DissolveTex.m_Texture",
+          "fileId": 10,
+          "fileIdRule": "host dependency[9]"
+        },
+        {
+          "materialPathIdHex": "7010821E75C0A247",
+          "materialPathId": 8075097199211487815,
+          "materialPathIdUnsigned": 8075097199211487815,
+          "materialSerializedFile": "CAB-f5ecbaca367229e95b9a13eaf0e6cf3f",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 454572714,
+          "material": "M_fx_endminm_gfx_18",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_18_p7010821E75C0A247.json",
+          "property": "m_TexEnvs._SampleTex3.m_Texture",
+          "fileId": 10,
+          "fileIdRule": "host dependency[9]"
+        }
+      ]
+    },
+    {
+      "serializedFile": "CAB-e41074cb6fedcef683960a8b41a78c46",
+      "pathId": -2733301107692760106,
+      "pathIdUnsigned": 15713442966016791510,
+      "pathIdHex": "DA115D1FCBCA93D6",
+      "targetType": "Texture2D",
+      "targetName": "T_fx_star_01_b_D",
+      "status": "resolved",
+      "assetMap": {
+        "assetMap": "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json",
+        "Name": "T_fx_star_01_b_D",
+        "Container": "assets/beyond/dynamicassets/gameplay/effects/prefabs/p_map_medical_interactive_01.prefab",
+        "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+        "PathID": -2733301107692760106,
+        "Type": "Texture2D",
+        "Offset": 393315604,
+        "Hash": "e1382277c6c945e"
+      },
+      "cabMapCandidates": [
+        {
+          "cabMap": "export_full/recovered/AnimeStudio-cli/Maps/endfield_streamingassets_assets.bin",
+          "assetRoot": "StreamingAssets",
+          "cab": "CAB-e41074cb6fedcef683960a8b41a78c46",
+          "baseFolder": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets",
+          "relativePath": "VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+          "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+          "sourceOffset": 393315604,
+          "dependencies": []
+        }
+      ],
+      "artifact": {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_star_01_b_D_pDA115D1FCBCA93D6.png",
+        "size": 22898,
+        "sha256": "04dfda12bef030d1eabc39524bd8540857a7256b278368b06a63a76562a61cd4"
+      },
+      "occurrences": [
+        {
+          "materialPathIdHex": "57A25F1386F7012F",
+          "materialPathId": 6314714165000208687,
+          "materialPathIdUnsigned": 6314714165000208687,
+          "materialSerializedFile": "CAB-a9472230fd792826cf92f1adc1d8737f",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 540787460,
+          "material": "M_fx_endminm_gfx_13",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_13_p57A25F1386F7012F.json",
+          "property": "m_TexEnvs._MaskTex.m_Texture",
+          "fileId": 11,
+          "fileIdRule": "host dependency[10]"
+        },
+        {
+          "materialPathIdHex": "57A25F1386F7012F",
+          "materialPathId": 6314714165000208687,
+          "materialPathIdUnsigned": 6314714165000208687,
+          "materialSerializedFile": "CAB-a9472230fd792826cf92f1adc1d8737f",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 540787460,
+          "material": "M_fx_endminm_gfx_13",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_13_p57A25F1386F7012F.json",
+          "property": "m_TexEnvs._SampleTex2.m_Texture",
+          "fileId": 11,
+          "fileIdRule": "host dependency[10]"
+        },
+        {
+          "materialPathIdHex": "392693FCB1EC4C68",
+          "materialPathId": 4118141622802992232,
+          "materialPathIdUnsigned": 4118141622802992232,
+          "materialSerializedFile": "CAB-a9472230fd792826cf92f1adc1d8737f",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 540787460,
+          "material": "M_fx_endminm_gfx_17",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_17_p392693FCB1EC4C68.json",
+          "property": "m_TexEnvs._MainTex.m_Texture",
+          "fileId": 11,
+          "fileIdRule": "host dependency[10]"
+        },
+        {
+          "materialPathIdHex": "602883BD6BB1831B",
+          "materialPathId": 6928932876288361243,
+          "materialPathIdUnsigned": 6928932876288361243,
+          "materialSerializedFile": "CAB-ff435e3fd9771bebac06ac4f9c8810f3",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 237922379,
+          "material": "M_fx_endminm_gfx_31",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_31_p602883BD6BB1831B.json",
+          "property": "m_TexEnvs._MainTex.m_Texture",
+          "fileId": 2,
+          "fileIdRule": "host dependency[1]"
+        },
+        {
+          "materialPathIdHex": "F1C3F38D51FA67EF",
+          "materialPathId": -1025708501819037713,
+          "materialPathIdUnsigned": 17421035571890513903,
+          "materialSerializedFile": "CAB-f5ecbaca367229e95b9a13eaf0e6cf3f",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 454572714,
+          "material": "M_fx_endminm_gfx_16",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_16_pF1C3F38D51FA67EF.json",
+          "property": "m_TexEnvs._MaskTex.m_Texture",
+          "fileId": 7,
+          "fileIdRule": "host dependency[6]"
+        },
+        {
+          "materialPathIdHex": "F1C3F38D51FA67EF",
+          "materialPathId": -1025708501819037713,
+          "materialPathIdUnsigned": 17421035571890513903,
+          "materialSerializedFile": "CAB-f5ecbaca367229e95b9a13eaf0e6cf3f",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 454572714,
+          "material": "M_fx_endminm_gfx_16",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_16_pF1C3F38D51FA67EF.json",
+          "property": "m_TexEnvs._SampleTex0.m_Texture",
+          "fileId": 7,
+          "fileIdRule": "host dependency[6]"
+        }
+      ]
+    },
+    {
+      "serializedFile": "CAB-f3c4e3fc586ef3bb2a39b7006c252b7a",
+      "pathId": -5440036860501782552,
+      "pathIdUnsigned": 13006707213207769064,
+      "pathIdHex": "B4811B4C44C28FE8",
+      "targetType": "Texture2D",
+      "targetName": "T_fx_trail_gfx_01",
+      "status": "resolved",
+      "assetMap": {
+        "assetMap": "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json",
+        "Name": "T_fx_trail_gfx_01",
+        "Container": "assets/beyond/arts/effects/commonassets/arts/m_material/m_fx_endminm_gfx_45.mat",
+        "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+        "PathID": -5440036860501782552,
+        "Type": "Texture2D",
+        "Offset": 214796047,
+        "Hash": "1171d2d7fc1b5d49"
+      },
+      "cabMapCandidates": [
+        {
+          "cabMap": "export_full/recovered/AnimeStudio-cli/Maps/endfield_streamingassets_assets.bin",
+          "assetRoot": "StreamingAssets",
+          "cab": "CAB-f3c4e3fc586ef3bb2a39b7006c252b7a",
+          "baseFolder": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets",
+          "relativePath": "VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "sourceOffset": 214796047,
+          "dependencies": []
+        }
+      ],
+      "artifact": {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_trail_gfx_01_pB4811B4C44C28FE8.png",
+        "size": 2746,
+        "sha256": "4a14d309ede6e56b605260885138f704ed0b7b39580765f87a6067e035757e3d"
+      },
+      "occurrences": [
+        {
+          "materialPathIdHex": "E744767C80FE8433",
+          "materialPathId": -1782169275419687885,
+          "materialPathIdUnsigned": 16664574798289863731,
+          "materialSerializedFile": "CAB-7b448c424ed5d6e42212fe6ecf508f87",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 374920838,
+          "material": "M_fx_endminm_gfx_45",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_45_pE744767C80FE8433.json",
+          "property": "m_TexEnvs._MainTex.m_Texture",
+          "fileId": 3,
+          "fileIdRule": "host dependency[2]"
+        }
+      ]
+    },
+    {
+      "serializedFile": "CAB-f6b098902d7ca2beadfba1cf3201131c",
+      "pathId": 5406992154111209049,
+      "pathIdUnsigned": 5406992154111209049,
+      "pathIdHex": "4B097EB7791F6E59",
+      "targetType": "Texture2D",
+      "targetName": "T_fx_sourcerocks+2_D",
+      "status": "resolved",
+      "assetMap": {
+        "assetMap": "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json",
+        "Name": "T_fx_sourcerocks+2_D",
+        "Container": "assets/beyond/arts/effects/commonassets/arts/t_texture/object/meshtex/t_fx_sourcerocks+2_d.tga",
+        "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\967825B10DBE250981C6AEA5FB9691B4.chk",
+        "PathID": 5406992154111209049,
+        "Type": "Texture2D",
+        "Offset": 81202418,
+        "Hash": "4ee72f8501a3baa3"
+      },
+      "cabMapCandidates": [
+        {
+          "cabMap": "export_full/recovered/AnimeStudio-cli/Maps/endfield_streamingassets_assets.bin",
+          "assetRoot": "StreamingAssets",
+          "cab": "CAB-f6b098902d7ca2beadfba1cf3201131c",
+          "baseFolder": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets",
+          "relativePath": "VFS\\7064D8E2\\967825B10DBE250981C6AEA5FB9691B4.chk",
+          "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\967825B10DBE250981C6AEA5FB9691B4.chk",
+          "sourceOffset": 81202418,
+          "dependencies": []
+        }
+      ],
+      "artifact": {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_sourcerocks+2_D_p4B097EB7791F6E59.png",
+        "size": 968167,
+        "sha256": "60d79e89f47f7e019abf56ac51317e51bed21d2acef059c246e4928f841e1f91"
+      },
+      "occurrences": [
+        {
+          "materialPathIdHex": "5A6341E8A834E421",
+          "materialPathId": 6513121953618125857,
+          "materialPathIdUnsigned": 6513121953618125857,
+          "materialSerializedFile": "CAB-cd71f8c396e7892649d00d8870b65267",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 247820404,
+          "material": "M_fx_endminm_gfx_01",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_01_p5A6341E8A834E421.json",
+          "property": "m_TexEnvs._BaseColorMap.m_Texture",
+          "fileId": 2,
+          "fileIdRule": "host dependency[1]"
+        },
+        {
+          "materialPathIdHex": "A531A88850690EB8",
+          "materialPathId": -6543263480174539080,
+          "materialPathIdUnsigned": 11903480593535012536,
+          "materialSerializedFile": "CAB-a9472230fd792826cf92f1adc1d8737f",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 540787460,
+          "material": "M_fx_endminm_gfx_27",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_27_pA531A88850690EB8.json",
+          "property": "m_TexEnvs._BaseColorMap.m_Texture",
+          "fileId": 2,
+          "fileIdRule": "host dependency[1]"
+        },
+        {
+          "materialPathIdHex": "AFCE491DD7BC5724",
+          "materialPathId": -5778600879347443932,
+          "materialPathIdUnsigned": 12668143194362107684,
+          "materialSerializedFile": "CAB-cd71f8c396e7892649d00d8870b65267",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 247820404,
+          "material": "M_fx_endminm_gfx_38",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_38_pAFCE491DD7BC5724.json",
+          "property": "m_TexEnvs._BaseColorMap.m_Texture",
+          "fileId": 2,
+          "fileIdRule": "host dependency[1]"
+        }
+      ]
+    },
+    {
+      "serializedFile": "CAB-f7e233a55bdace08f8498f6aa4e2c0ad",
+      "pathId": -2501489879093862328,
+      "pathIdUnsigned": 15945254194615689288,
+      "pathIdHex": "DD48EC355B602048",
+      "targetType": "Texture2D",
+      "targetName": "T_fx_noise_gfx_001_M",
+      "status": "resolved",
+      "assetMap": {
+        "assetMap": "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json",
+        "Name": "T_fx_noise_gfx_001_M",
+        "Container": "assets/beyond/arts/effects/commonassets/arts/t_texture/mask/noise/t_fx_noise_gfx_001_m.png",
+        "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+        "PathID": -2501489879093862328,
+        "Type": "Texture2D",
+        "Offset": 433176175,
+        "Hash": "19296190a830a510"
+      },
+      "cabMapCandidates": [
+        {
+          "cabMap": "export_full/recovered/AnimeStudio-cli/Maps/endfield_streamingassets_assets.bin",
+          "assetRoot": "StreamingAssets",
+          "cab": "CAB-f7e233a55bdace08f8498f6aa4e2c0ad",
+          "baseFolder": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets",
+          "relativePath": "VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+          "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+          "sourceOffset": 433176175,
+          "dependencies": []
+        }
+      ],
+      "artifact": {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_noise_gfx_001_M_pDD48EC355B602048.png",
+        "size": 71103,
+        "sha256": "41da824273791505c2005c91abeeb4bdd190662be1fffbb09c102df52af4a85f"
+      },
+      "occurrences": [
+        {
+          "materialPathIdHex": "E744767C80FE8433",
+          "materialPathId": -1782169275419687885,
+          "materialPathIdUnsigned": 16664574798289863731,
+          "materialSerializedFile": "CAB-7b448c424ed5d6e42212fe6ecf508f87",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 374920838,
+          "material": "M_fx_endminm_gfx_45",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_45_pE744767C80FE8433.json",
+          "property": "m_TexEnvs._DisturbTex1.m_Texture",
+          "fileId": 2,
+          "fileIdRule": "host dependency[1]"
+        },
+        {
+          "materialPathIdHex": "E744767C80FE8433",
+          "materialPathId": -1782169275419687885,
+          "materialPathIdUnsigned": 16664574798289863731,
+          "materialSerializedFile": "CAB-7b448c424ed5d6e42212fe6ecf508f87",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 374920838,
+          "material": "M_fx_endminm_gfx_45",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_45_pE744767C80FE8433.json",
+          "property": "m_TexEnvs._SampleTex0.m_Texture",
+          "fileId": 2,
+          "fileIdRule": "host dependency[1]"
+        }
+      ]
+    },
+    {
+      "serializedFile": "CAB-f8218123a5ecdf0f7e5005b6174b46a4",
+      "pathId": -9067448324554367542,
+      "pathIdUnsigned": 9379295749155184074,
+      "pathIdHex": "8229F3CA4BB9DDCA",
+      "targetType": "Texture2D",
+      "targetName": "T_fx_flow_18_M",
+      "status": "resolved",
+      "assetMap": {
+        "assetMap": "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json",
+        "Name": "T_fx_flow_18_M",
+        "Container": "assets/beyond/dynamicassets/gameplay/interactives/postmodels/int_dungeon_entry_hard_postmodel.prefab",
+        "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+        "PathID": -9067448324554367542,
+        "Type": "Texture2D",
+        "Offset": 520061956,
+        "Hash": "faeb0b718c9f4a71"
+      },
+      "cabMapCandidates": [
+        {
+          "cabMap": "export_full/recovered/AnimeStudio-cli/Maps/endfield_streamingassets_assets.bin",
+          "assetRoot": "StreamingAssets",
+          "cab": "CAB-f8218123a5ecdf0f7e5005b6174b46a4",
+          "baseFolder": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets",
+          "relativePath": "VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+          "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+          "sourceOffset": 520061956,
+          "dependencies": []
+        }
+      ],
+      "artifact": {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_flow_18_M_p8229F3CA4BB9DDCA.png",
+        "size": 52172,
+        "sha256": "ffa9f45c0f986058a375a6bfeab0d6e77024ddb08fbb5f0a1701517c2e368a29"
+      },
+      "occurrences": [
+        {
+          "materialPathIdHex": "7010821E75C0A247",
+          "materialPathId": 8075097199211487815,
+          "materialPathIdUnsigned": 8075097199211487815,
+          "materialSerializedFile": "CAB-f5ecbaca367229e95b9a13eaf0e6cf3f",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 454572714,
+          "material": "M_fx_endminm_gfx_18",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_18_p7010821E75C0A247.json",
+          "property": "m_TexEnvs._MainTex.m_Texture",
+          "fileId": 11,
+          "fileIdRule": "host dependency[10]"
+        }
+      ]
+    },
+    {
+      "serializedFile": "CAB-fda9fc48df50f423dc09368955547d77",
+      "pathId": -1647025128171678556,
+      "pathIdUnsigned": 16799718945537873060,
+      "pathIdHex": "E924975F4B2F54A4",
+      "targetType": "Texture2D",
+      "targetName": "T_fx_flow_01_M",
+      "status": "resolved",
+      "assetMap": {
+        "assetMap": "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json",
+        "Name": "T_fx_flow_01_M",
+        "Container": "assets/beyond/dynamicassets/gameplay/effects/prefabs/p_aglina_skill_ult_start_02_range.prefab",
+        "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\4A65D5C2457B9C4DBE29646A23A14004.chk",
+        "PathID": -1647025128171678556,
+        "Type": "Texture2D",
+        "Offset": 619265653,
+        "Hash": "4b8d23b525b4f814"
+      },
+      "cabMapCandidates": [
+        {
+          "cabMap": "export_full/recovered/AnimeStudio-cli/Maps/endfield_streamingassets_assets.bin",
+          "assetRoot": "StreamingAssets",
+          "cab": "CAB-fda9fc48df50f423dc09368955547d77",
+          "baseFolder": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets",
+          "relativePath": "VFS\\7064D8E2\\4A65D5C2457B9C4DBE29646A23A14004.chk",
+          "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\4A65D5C2457B9C4DBE29646A23A14004.chk",
+          "sourceOffset": 619265653,
+          "dependencies": []
+        }
+      ],
+      "artifact": {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_flow_01_M_pE924975F4B2F54A4.png",
+        "size": 84655,
+        "sha256": "fd335206b2de7d4578b941ceb2bcec79e56541017f07b3eb9f6655ad76450939"
+      },
+      "occurrences": [
+        {
+          "materialPathIdHex": "57A25F1386F7012F",
+          "materialPathId": 6314714165000208687,
+          "materialPathIdUnsigned": 6314714165000208687,
+          "materialSerializedFile": "CAB-a9472230fd792826cf92f1adc1d8737f",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 540787460,
+          "material": "M_fx_endminm_gfx_13",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_13_p57A25F1386F7012F.json",
+          "property": "m_TexEnvs._DisturbTex2.m_Texture",
+          "fileId": 12,
+          "fileIdRule": "host dependency[11]"
+        },
+        {
+          "materialPathIdHex": "57A25F1386F7012F",
+          "materialPathId": 6314714165000208687,
+          "materialPathIdUnsigned": 6314714165000208687,
+          "materialSerializedFile": "CAB-a9472230fd792826cf92f1adc1d8737f",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 540787460,
+          "material": "M_fx_endminm_gfx_13",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_13_p57A25F1386F7012F.json",
+          "property": "m_TexEnvs._SampleTex1.m_Texture",
+          "fileId": 12,
+          "fileIdRule": "host dependency[11]"
+        },
+        {
+          "materialPathIdHex": "7010821E75C0A247",
+          "materialPathId": 8075097199211487815,
+          "materialPathIdUnsigned": 8075097199211487815,
+          "materialSerializedFile": "CAB-f5ecbaca367229e95b9a13eaf0e6cf3f",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 454572714,
+          "material": "M_fx_endminm_gfx_18",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_18_p7010821E75C0A247.json",
+          "property": "m_TexEnvs._DisturbTex1.m_Texture",
+          "fileId": 4,
+          "fileIdRule": "host dependency[3]"
+        },
+        {
+          "materialPathIdHex": "7010821E75C0A247",
+          "materialPathId": 8075097199211487815,
+          "materialPathIdUnsigned": 8075097199211487815,
+          "materialSerializedFile": "CAB-f5ecbaca367229e95b9a13eaf0e6cf3f",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 454572714,
+          "material": "M_fx_endminm_gfx_18",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_18_p7010821E75C0A247.json",
+          "property": "m_TexEnvs._SampleTex0.m_Texture",
+          "fileId": 4,
+          "fileIdRule": "host dependency[3]"
+        },
+        {
+          "materialPathIdHex": "EE9E2589EB9513AE",
+          "materialPathId": -1252522372069256274,
+          "materialPathIdUnsigned": 17194221701640295342,
+          "materialSerializedFile": "CAB-f5ecbaca367229e95b9a13eaf0e6cf3f",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 454572714,
+          "material": "M_fx_endminm_gfx_20",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_20_pEE9E2589EB9513AE.json",
+          "property": "m_TexEnvs._DisturbTex1.m_Texture",
+          "fileId": 4,
+          "fileIdRule": "host dependency[3]"
+        },
+        {
+          "materialPathIdHex": "EE9E2589EB9513AE",
+          "materialPathId": -1252522372069256274,
+          "materialPathIdUnsigned": 17194221701640295342,
+          "materialSerializedFile": "CAB-f5ecbaca367229e95b9a13eaf0e6cf3f",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 454572714,
+          "material": "M_fx_endminm_gfx_20",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_20_pEE9E2589EB9513AE.json",
+          "property": "m_TexEnvs._SampleTex0.m_Texture",
+          "fileId": 4,
+          "fileIdRule": "host dependency[3]"
+        },
+        {
+          "materialPathIdHex": "5D8517046749BD84",
+          "materialPathId": 6738817725110009220,
+          "materialPathIdUnsigned": 6738817725110009220,
+          "materialSerializedFile": "CAB-7b448c424ed5d6e42212fe6ecf508f87",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 374920838,
+          "material": "M_fx_endminm_gfx_46",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_46_p5D8517046749BD84.json",
+          "property": "m_TexEnvs._DisturbTex1.m_Texture",
+          "fileId": 8,
+          "fileIdRule": "host dependency[7]"
+        },
+        {
+          "materialPathIdHex": "5D8517046749BD84",
+          "materialPathId": 6738817725110009220,
+          "materialPathIdUnsigned": 6738817725110009220,
+          "materialSerializedFile": "CAB-7b448c424ed5d6e42212fe6ecf508f87",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 374920838,
+          "material": "M_fx_endminm_gfx_46",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_46_p5D8517046749BD84.json",
+          "property": "m_TexEnvs._SampleTex0.m_Texture",
+          "fileId": 8,
+          "fileIdRule": "host dependency[7]"
+        }
+      ]
+    },
+    {
+      "serializedFile": "CAB-fe695b53c700b6221f400bbe7c90c9af",
+      "pathId": 4774686904727710700,
+      "pathIdUnsigned": 4774686904727710700,
+      "pathIdHex": "4243187146012BEC",
+      "targetType": "Texture2D",
+      "targetName": "T_fx_mask_504_M",
+      "status": "resolved",
+      "assetMap": {
+        "assetMap": "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json",
+        "Name": "T_fx_mask_504_M",
+        "Container": "assets/beyond/dynamicassets/gameplay/effects/prefabs/p_agtrinit_skill232_summon_02_ready.prefab",
+        "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+        "PathID": 4774686904727710700,
+        "Type": "Texture2D",
+        "Offset": 549989728,
+        "Hash": "77eb725f817f2f00"
+      },
+      "cabMapCandidates": [
+        {
+          "cabMap": "export_full/recovered/AnimeStudio-cli/Maps/endfield_streamingassets_assets.bin",
+          "assetRoot": "StreamingAssets",
+          "cab": "CAB-fe695b53c700b6221f400bbe7c90c9af",
+          "baseFolder": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets",
+          "relativePath": "VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+          "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+          "sourceOffset": 549989728,
+          "dependencies": []
+        }
+      ],
+      "artifact": {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_mask_504_M_p4243187146012BEC.png",
+        "size": 73080,
+        "sha256": "b1e37d6e95f07a147e15febc9269f5bed1ed37c115600d2806dcb6103e9f2d66"
+      },
+      "occurrences": [
+        {
+          "materialPathIdHex": "7010821E75C0A247",
+          "materialPathId": 8075097199211487815,
+          "materialPathIdUnsigned": 8075097199211487815,
+          "materialSerializedFile": "CAB-f5ecbaca367229e95b9a13eaf0e6cf3f",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 454572714,
+          "material": "M_fx_endminm_gfx_18",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_18_p7010821E75C0A247.json",
+          "property": "m_TexEnvs._MaskTex.m_Texture",
+          "fileId": 12,
+          "fileIdRule": "host dependency[11]"
+        },
+        {
+          "materialPathIdHex": "7010821E75C0A247",
+          "materialPathId": 8075097199211487815,
+          "materialPathIdUnsigned": 8075097199211487815,
+          "materialSerializedFile": "CAB-f5ecbaca367229e95b9a13eaf0e6cf3f",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 454572714,
+          "material": "M_fx_endminm_gfx_18",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_18_p7010821E75C0A247.json",
+          "property": "m_TexEnvs._SampleTex1.m_Texture",
+          "fileId": 12,
+          "fileIdRule": "host dependency[11]"
+        }
+      ]
+    },
+    {
+      "serializedFile": "CAB-ff02c4759f8cce1357cd746f1c39c71f",
+      "pathId": 5597062348073817015,
+      "pathIdUnsigned": 5597062348073817015,
+      "pathIdHex": "4DACC28D12A753B7",
+      "targetType": "Texture2D",
+      "targetName": "T_fx_sourcerocks+3_N",
+      "status": "resolved",
+      "assetMap": {
+        "assetMap": "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json",
+        "Name": "T_fx_sourcerocks+3_N",
+        "Container": "assets/beyond/arts/effects/commonassets/arts/t_texture/object/meshtex/t_fx_sourcerocks+3_n.tga",
+        "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\CE9C11821BB0D5D69E4AA80EB5F33989.chk",
+        "PathID": 5597062348073817015,
+        "Type": "Texture2D",
+        "Offset": 355691189,
+        "Hash": "3f08fb2a1f925ccf"
+      },
+      "cabMapCandidates": [
+        {
+          "cabMap": "export_full/recovered/AnimeStudio-cli/Maps/endfield_streamingassets_assets.bin",
+          "assetRoot": "StreamingAssets",
+          "cab": "CAB-ff02c4759f8cce1357cd746f1c39c71f",
+          "baseFolder": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets",
+          "relativePath": "VFS\\7064D8E2\\CE9C11821BB0D5D69E4AA80EB5F33989.chk",
+          "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\CE9C11821BB0D5D69E4AA80EB5F33989.chk",
+          "sourceOffset": 355691189,
+          "dependencies": []
+        }
+      ],
+      "artifact": {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_sourcerocks+3_N_p4DACC28D12A753B7.png",
+        "size": 689485,
+        "sha256": "5e9b53832ec20c6e461c9920ff7576dd5f29299e1ad1d9ccf9e66d262a058144"
+      },
+      "occurrences": [
+        {
+          "materialPathIdHex": "5A6341E8A834E421",
+          "materialPathId": 6513121953618125857,
+          "materialPathIdUnsigned": 6513121953618125857,
+          "materialSerializedFile": "CAB-cd71f8c396e7892649d00d8870b65267",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 247820404,
+          "material": "M_fx_endminm_gfx_01",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_01_p5A6341E8A834E421.json",
+          "property": "m_TexEnvs._MROMap.m_Texture",
+          "fileId": 3,
+          "fileIdRule": "host dependency[2]"
+        },
+        {
+          "materialPathIdHex": "A531A88850690EB8",
+          "materialPathId": -6543263480174539080,
+          "materialPathIdUnsigned": 11903480593535012536,
+          "materialSerializedFile": "CAB-a9472230fd792826cf92f1adc1d8737f",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 540787460,
+          "material": "M_fx_endminm_gfx_27",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_27_pA531A88850690EB8.json",
+          "property": "m_TexEnvs._MROMap.m_Texture",
+          "fileId": 3,
+          "fileIdRule": "host dependency[2]"
+        },
+        {
+          "materialPathIdHex": "AFCE491DD7BC5724",
+          "materialPathId": -5778600879347443932,
+          "materialPathIdUnsigned": 12668143194362107684,
+          "materialSerializedFile": "CAB-cd71f8c396e7892649d00d8870b65267",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 247820404,
+          "material": "M_fx_endminm_gfx_38",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_38_pAFCE491DD7BC5724.json",
+          "property": "m_TexEnvs._MROMap.m_Texture",
+          "fileId": 3,
+          "fileIdRule": "host dependency[2]"
+        }
+      ]
+    },
+    {
+      "serializedFile": "CAB-ff93471692bbd8a4c711c0817e53c41d",
+      "pathId": -8068815077083075652,
+      "pathIdUnsigned": 10377928996626475964,
+      "pathIdHex": "9005CF701425ABBC",
+      "targetType": "Texture2D",
+      "targetName": "T_fx_mask_17_C_M",
+      "status": "resolved",
+      "assetMap": {
+        "assetMap": "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json",
+        "Name": "T_fx_mask_17_C_M",
+        "Container": "assets/beyond/dynamicassets/gameplay/effects/prefabs/p_fxfac_interactive_furnance_2501.prefab",
+        "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+        "PathID": -8068815077083075652,
+        "Type": "Texture2D",
+        "Offset": 218263346,
+        "Hash": "240cf0286418dcb4"
+      },
+      "cabMapCandidates": [
+        {
+          "cabMap": "export_full/recovered/AnimeStudio-cli/Maps/endfield_streamingassets_assets.bin",
+          "assetRoot": "StreamingAssets",
+          "cab": "CAB-ff93471692bbd8a4c711c0817e53c41d",
+          "baseFolder": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets",
+          "relativePath": "VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+          "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+          "sourceOffset": 218263346,
+          "dependencies": []
+        }
+      ],
+      "artifact": {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_mask_17_C_M_p9005CF701425ABBC.png",
+        "size": 19298,
+        "sha256": "ad20c2ec13f71e8cd7b1bdacaebd600e3787a518162e3ce704648472c546c0c3"
+      },
+      "occurrences": [
+        {
+          "materialPathIdHex": "BF7FEE87831B48FB",
+          "materialPathId": -4647734024635463429,
+          "materialPathIdUnsigned": 13799010049074088187,
+          "materialSerializedFile": "CAB-3a930505f5aee238a3d248cf9c671c0f",
+          "materialSource": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+          "materialSourceOffset": 98801184,
+          "material": "M_fx_endminm_gfx_28",
+          "materialArtifact": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_28_pBF7FEE87831B48FB.json",
+          "property": "m_TexEnvs._DissolveTex.m_Texture",
+          "fileId": 2,
+          "fileIdRule": "host dependency[1]"
+        }
+      ]
+    }
+  ],
+  "renderPipelineBoundary": {
+    "shaderArtifacts": "Exact AnimeStudio HGRP program blobs; not valid ShaderLab source.",
+    "compatibleProjectImplementations": [
+      "Assets/EndfieldGraphShaderLab/Shaders/Recovered/EndfieldVFXBaseV2SampleStack.shader",
+      "Assets/EndfieldGraphShaderLab/Shaders/Recovered/EndfieldVFXRefractRecovered.shader"
+    ],
+    "unimplementedShader": "HGRP/LitEffect",
+    "renderReady": false
+  }
+}
