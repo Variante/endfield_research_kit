@@ -1,0 +1,3460 @@
+{
+  "schema": "endfield.endminf-liteffect-resource-mapping.v1",
+  "status": "verified_with_gaps",
+  "scope": {
+    "shader": {
+      "cab": "CAB-2c811ef28608ab220ecdb5c4e0629d2d",
+      "pathId": 6428594484694422749,
+      "name": "HGRP/LitEffect"
+    },
+    "pass": "HGBuffer",
+    "keywords": [
+      "HG_ENABLE_MV",
+      "_PARALLAX_MAP"
+    ],
+    "subProgramIndex": 19,
+    "platform": "d3d11"
+  },
+  "evidence": {
+    "source": {
+      "path": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\0CE8FA57\\19F0903A12BA87C0D43E67E64889B525.chk",
+      "size": 211831350,
+      "sha256": "cbc87c7d8f41d90da25af7758cf77ced7321d19c52c067f6f77a75aa5dabc380"
+    },
+    "manifest": {
+      "path": "unity_endfield_graph_shader_lab/Temp/Codex/liteffect_subprograms/Shader/HGRP_LitEffect_p5936F49FA93F14DD.shader.bytecode/manifest.json",
+      "schema": "animestudio.shader-subprogram.v1",
+      "size": 2608532,
+      "sha256": "ad2bf8f1c7a78305ecb4d3f17702c07b36da018e2552b3ffced529fe1274ab99",
+      "entryCount": 2240,
+      "encodingCounts": {
+        "DXBC": 680,
+        "SMOL-V": 780,
+        "SPIR-V": 780
+      }
+    },
+    "target": {
+      "entryCount": 84,
+      "representatives": [
+        {
+          "stage": "vertex",
+          "fileName": "0114_endfield_dxbc_0.dxbc",
+          "sha256": "b38d5e7661abdcb0d56a1c349eb673d205547fef5a30ba7d10befbe78b638253",
+          "byteCount": 7820,
+          "sourceOffset": 8244,
+          "sourceSize": 7820,
+          "passName": "HGBuffer",
+          "passIndex": 0,
+          "subProgramIndex": 19,
+          "programBlobIndex": 207,
+          "keywords": [
+            "HG_ENABLE_MV",
+            "_PARALLAX_MAP"
+          ],
+          "serializedStage": "vertex",
+          "decodedStage": "vertex"
+        },
+        {
+          "stage": "fragment",
+          "fileName": "0115_endfield_dxbc_1.dxbc",
+          "sha256": "b2248a1deb886a0e9226695d46e650756be932addd55a81d2b1114fdeb5f932a",
+          "byteCount": 8068,
+          "sourceOffset": 176,
+          "sourceSize": 8068,
+          "passName": "HGBuffer",
+          "passIndex": 0,
+          "subProgramIndex": 19,
+          "programBlobIndex": 207,
+          "keywords": [
+            "HG_ENABLE_MV",
+            "_PARALLAX_MAP"
+          ],
+          "serializedStage": "vertex",
+          "decodedStage": "fragment"
+        }
+      ],
+      "ruriOutputs": [
+        {
+          "fileName": "parallax_hgbuffer_vertex.hlsl",
+          "size": 23831,
+          "sha256": "766bb181381150caf1e732abb67e885e3388f6a589e8685cc82b8435dd689d9c"
+        },
+        {
+          "fileName": "parallax_hgbuffer_fragment.hlsl",
+          "size": 15426,
+          "sha256": "7783cc2a916242f273853b115b2b4b67dfb8736940d86220d1cdf91dfe459744"
+        }
+      ]
+    }
+  },
+  "reflection": {
+    "vertex": {
+      "file": "unity_endfield_graph_shader_lab/Temp/Codex/liteffect_subprograms/Shader/HGRP_LitEffect_p5936F49FA93F14DD.shader.bytecode/0114_endfield_dxbc_0.dxbc",
+      "bytes": 7820,
+      "sha256": "b38d5e7661abdcb0d56a1c349eb673d205547fef5a30ba7d10befbe78b638253",
+      "chunks": [
+        "ISGN",
+        "OSGN",
+        "SHEX"
+      ],
+      "hasRdef": false,
+      "inputs": [
+        {
+          "semantic": "POSITION",
+          "index": 0,
+          "register": 0,
+          "mask": 7,
+          "components": 3,
+          "componentType": "float"
+        },
+        {
+          "semantic": "NORMAL",
+          "index": 0,
+          "register": 1,
+          "mask": 7,
+          "components": 3,
+          "componentType": "float"
+        },
+        {
+          "semantic": "TANGENT",
+          "index": 0,
+          "register": 2,
+          "mask": 15,
+          "components": 4,
+          "componentType": "float"
+        },
+        {
+          "semantic": "COLOR",
+          "index": 0,
+          "register": 3,
+          "mask": 15,
+          "components": 4,
+          "componentType": "float"
+        },
+        {
+          "semantic": "TEXCOORD",
+          "index": 0,
+          "register": 4,
+          "mask": 3,
+          "components": 2,
+          "componentType": "float"
+        },
+        {
+          "semantic": "TEXCOORD",
+          "index": 1,
+          "register": 5,
+          "mask": 3,
+          "components": 2,
+          "componentType": "float"
+        },
+        {
+          "semantic": "TEXCOORD",
+          "index": 4,
+          "register": 6,
+          "mask": 15,
+          "components": 4,
+          "componentType": "float"
+        },
+        {
+          "semantic": "BLENDWEIGHTS",
+          "index": 0,
+          "register": 7,
+          "mask": 15,
+          "components": 4,
+          "componentType": "float"
+        },
+        {
+          "semantic": "BLENDINDICES",
+          "index": 0,
+          "register": 8,
+          "mask": 15,
+          "components": 4,
+          "componentType": "uint"
+        }
+      ],
+      "outputs": [
+        {
+          "semantic": "SV_Position",
+          "index": 0,
+          "register": 0,
+          "mask": 15,
+          "components": 4,
+          "componentType": "float"
+        },
+        {
+          "semantic": "TEXCOORD",
+          "index": 0,
+          "register": 1,
+          "mask": 3,
+          "components": 2,
+          "componentType": "float"
+        },
+        {
+          "semantic": "TEXCOORD",
+          "index": 1,
+          "register": 1,
+          "mask": 12,
+          "components": 2,
+          "componentType": "float"
+        },
+        {
+          "semantic": "TEXCOORD",
+          "index": 2,
+          "register": 2,
+          "mask": 7,
+          "components": 3,
+          "componentType": "float"
+        },
+        {
+          "semantic": "TEXCOORD",
+          "index": 3,
+          "register": 3,
+          "mask": 15,
+          "components": 4,
+          "componentType": "float"
+        },
+        {
+          "semantic": "TEXCOORD",
+          "index": 4,
+          "register": 4,
+          "mask": 15,
+          "components": 4,
+          "componentType": "float"
+        },
+        {
+          "semantic": "TEXCOORD",
+          "index": 5,
+          "register": 5,
+          "mask": 7,
+          "components": 3,
+          "componentType": "float"
+        },
+        {
+          "semantic": "TEXCOORD",
+          "index": 6,
+          "register": 6,
+          "mask": 7,
+          "components": 3,
+          "componentType": "float"
+        }
+      ],
+      "ruri": {
+        "file": "unity_endfield_graph_shader_lab/Temp/Codex/liteffect_subprograms/Shader/HGRP_LitEffect_p5936F49FA93F14DD.shader.bytecode/ruri_final/parallax_hgbuffer_vertex.hlsl",
+        "bytes": 23831,
+        "sha256": "766bb181381150caf1e732abb67e885e3388f6a589e8685cc82b8435dd689d9c",
+        "physicalCbuffers": [
+          {
+            "register": 0,
+            "space": 0,
+            "arraySizes": [
+              82
+            ],
+            "aliases": [
+              "_14_16",
+              "_20_22"
+            ],
+            "sizeBytes": 1312
+          },
+          {
+            "register": 1,
+            "space": 0,
+            "arraySizes": [
+              20
+            ],
+            "aliases": [
+              "_25_27"
+            ],
+            "sizeBytes": 320
+          },
+          {
+            "register": 2,
+            "space": 0,
+            "arraySizes": [
+              11
+            ],
+            "aliases": [
+              "_30_32",
+              "_35_37"
+            ],
+            "sizeBytes": 176
+          }
+        ],
+        "resources": [
+          {
+            "kind": "ByteAddressBuffer",
+            "name": "_10",
+            "register": 0,
+            "space": 0
+          }
+        ],
+        "samplers": []
+      },
+      "metadata": {
+        "file": "unity_endfield_graph_shader_lab/Temp/Codex/liteffect_subprograms/Shader/HGRP_LitEffect_p5936F49FA93F14DD.shader.bytecode/0114_endfield_dxbc_0.dxbc.metadata.json",
+        "decodedStage": "vertex",
+        "serializedStage": "vertex",
+        "constantBuffers": [
+          {
+            "Name": "ShaderVariablesGlobal",
+            "NameIndex": 0,
+            "MatrixParameters": [],
+            "VectorParameters": [
+              {
+                "Name": "_GlobalMipBias",
+                "NameIndex": 3,
+                "Index": 416,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_TaaJitterStrength",
+                "NameIndex": 4,
+                "Index": 304,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 4,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              }
+            ],
+            "StructParameters": [],
+            "Size": 3200,
+            "IsPartialCB": true
+          },
+          {
+            "Name": "_TerrainSubsurfaceConstants",
+            "NameIndex": 1,
+            "MatrixParameters": [],
+            "VectorParameters": [
+              {
+                "Name": "_TerrainSubsurfaceProfileInt",
+                "NameIndex": 5,
+                "Index": 12,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              }
+            ],
+            "StructParameters": [],
+            "Size": 16,
+            "IsPartialCB": true
+          },
+          {
+            "Name": "_TransformVariables",
+            "NameIndex": 2,
+            "MatrixParameters": [
+              {
+                "Name": "_NonJitteredViewNoTransProjMatrix",
+                "NameIndex": 8,
+                "Index": 512,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 4,
+                "ColumnCount": 4,
+                "IsMatrix": true
+              },
+              {
+                "Name": "_PrevNonJitteredViewNoTransProjMatrix",
+                "NameIndex": 9,
+                "Index": 912,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 4,
+                "ColumnCount": 4,
+                "IsMatrix": true
+              }
+            ],
+            "VectorParameters": [
+              {
+                "Name": "_WorldSpaceCameraPos_Internal",
+                "NameIndex": 6,
+                "Index": 704,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 4,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_PrevCamPosRWS_Internal",
+                "NameIndex": 7,
+                "Index": 1296,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 4,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              }
+            ],
+            "StructParameters": [],
+            "Size": 1312,
+            "IsPartialCB": true
+          }
+        ],
+        "bufferParameters": [
+          {
+            "Name": "_VertexSkinMatrices",
+            "NameIndex": 10,
+            "Index": 19,
+            "ArraySize": 1
+          }
+        ],
+        "bufferBindings": [
+          {
+            "Name": "ShaderVariablesGlobal",
+            "NameIndex": 0,
+            "Index": 16,
+            "ArraySize": 1
+          },
+          {
+            "Name": "_TerrainSubsurfaceConstants",
+            "NameIndex": 1,
+            "Index": 33,
+            "ArraySize": 1
+          },
+          {
+            "Name": "_TransformVariables",
+            "NameIndex": 2,
+            "Index": 13,
+            "ArraySize": 1
+          }
+        ],
+        "samplers": [
+          {
+            "Sampler": 65538,
+            "BindPoint": 5,
+            "Name": "s_trilinear_repeat_sampler",
+            "PackedBinding": 4294967043,
+            "PackedInfo": 65538,
+            "StaticSamplerState": "encoded",
+            "StaticSamplerStateKnown": true
+          },
+          {
+            "Sampler": 65622,
+            "BindPoint": 6,
+            "Name": "s_trilinear_clamp_sampler",
+            "PackedBinding": 4294967043,
+            "PackedInfo": 65622,
+            "StaticSamplerState": "encoded",
+            "StaticSamplerStateKnown": true
+          },
+          {
+            "Sampler": 65536,
+            "BindPoint": 7,
+            "Name": "s_point_repeat_sampler",
+            "PackedBinding": 4294967043,
+            "PackedInfo": 65536,
+            "StaticSamplerState": "encoded",
+            "StaticSamplerStateKnown": true
+          },
+          {
+            "Sampler": 65620,
+            "BindPoint": 8,
+            "Name": "s_point_clamp_sampler",
+            "PackedBinding": 4294967043,
+            "PackedInfo": 65620,
+            "StaticSamplerState": "encoded",
+            "StaticSamplerStateKnown": true
+          },
+          {
+            "Sampler": 65537,
+            "BindPoint": 9,
+            "Name": "s_linear_repeat_sampler",
+            "PackedBinding": 4294967043,
+            "PackedInfo": 65537,
+            "StaticSamplerState": "encoded",
+            "StaticSamplerStateKnown": true
+          },
+          {
+            "Sampler": 65621,
+            "BindPoint": 10,
+            "Name": "s_linear_clamp_sampler",
+            "PackedBinding": 4294967043,
+            "PackedInfo": 65621,
+            "StaticSamplerState": "encoded",
+            "StaticSamplerStateKnown": true
+          },
+          {
+            "Sampler": 65620,
+            "BindPoint": 20,
+            "Name": "s_point_clamp_float_sampler",
+            "PackedBinding": 4294967042,
+            "PackedInfo": 65620,
+            "StaticSamplerState": "encoded",
+            "StaticSamplerStateKnown": true
+          },
+          {
+            "Sampler": 131071,
+            "BindPoint": 0,
+            "Name": "_ParallaxNoiseMap",
+            "PackedBinding": 4278583042,
+            "PackedInfo": 131071,
+            "StaticSamplerState": "unknown",
+            "StaticSamplerStateKnown": false
+          },
+          {
+            "Sampler": 131071,
+            "BindPoint": 1,
+            "Name": "_ParallaxMaskMap",
+            "PackedBinding": 4278517506,
+            "PackedInfo": 131071,
+            "StaticSamplerState": "unknown",
+            "StaticSamplerStateKnown": false
+          },
+          {
+            "Sampler": 131071,
+            "BindPoint": 2,
+            "Name": "_ParallaxMap",
+            "PackedBinding": 4278451970,
+            "PackedInfo": 131071,
+            "StaticSamplerState": "unknown",
+            "StaticSamplerStateKnown": false
+          },
+          {
+            "Sampler": 131071,
+            "BindPoint": 3,
+            "Name": "_NormalMap",
+            "PackedBinding": 4278320898,
+            "PackedInfo": 131071,
+            "StaticSamplerState": "unknown",
+            "StaticSamplerStateKnown": false
+          },
+          {
+            "Sampler": 131071,
+            "BindPoint": 4,
+            "Name": "_MROMap",
+            "PackedBinding": 4278386434,
+            "PackedInfo": 131071,
+            "StaticSamplerState": "unknown",
+            "StaticSamplerStateKnown": false
+          },
+          {
+            "Sampler": 131071,
+            "BindPoint": 5,
+            "Name": "_BaseColorMap",
+            "PackedBinding": 4278255362,
+            "PackedInfo": 131071,
+            "StaticSamplerState": "unknown",
+            "StaticSamplerStateKnown": false
+          }
+        ],
+        "descriptorSets": [
+          {
+            "Name": "Global",
+            "SetId": 0,
+            "MaxBindingIndex": 34,
+            "Bindings": [
+              {
+                "Name": "_ClothSkeletonDataBuffer",
+                "NameIndex": -1,
+                "BindingIndex": 4,
+                "DescriptorType": 5,
+                "PackedBinding": 4294967041,
+                "PackedInfo": 131071
+              },
+              {
+                "Name": "s_trilinear_repeat_sampler",
+                "NameIndex": -1,
+                "BindingIndex": 5,
+                "DescriptorType": 1,
+                "PackedBinding": 4294967043,
+                "PackedInfo": 65538
+              },
+              {
+                "Name": "s_trilinear_clamp_sampler",
+                "NameIndex": -1,
+                "BindingIndex": 6,
+                "DescriptorType": 1,
+                "PackedBinding": 4294967043,
+                "PackedInfo": 65622
+              },
+              {
+                "Name": "s_point_repeat_sampler",
+                "NameIndex": -1,
+                "BindingIndex": 7,
+                "DescriptorType": 1,
+                "PackedBinding": 4294967043,
+                "PackedInfo": 65536
+              },
+              {
+                "Name": "s_point_clamp_sampler",
+                "NameIndex": -1,
+                "BindingIndex": 8,
+                "DescriptorType": 1,
+                "PackedBinding": 4294967043,
+                "PackedInfo": 65620
+              },
+              {
+                "Name": "s_linear_repeat_sampler",
+                "NameIndex": -1,
+                "BindingIndex": 9,
+                "DescriptorType": 1,
+                "PackedBinding": 4294967043,
+                "PackedInfo": 65537
+              },
+              {
+                "Name": "s_linear_clamp_sampler",
+                "NameIndex": -1,
+                "BindingIndex": 10,
+                "DescriptorType": 1,
+                "PackedBinding": 4294967043,
+                "PackedInfo": 65621
+              },
+              {
+                "Name": "_TransformVariables",
+                "NameIndex": -1,
+                "BindingIndex": 13,
+                "DescriptorType": 4,
+                "PackedBinding": 65283,
+                "PackedInfo": 65536
+              },
+              {
+                "Name": "ShaderVariablesGlobal",
+                "NameIndex": -1,
+                "BindingIndex": 16,
+                "DescriptorType": 4,
+                "PackedBinding": 16908035,
+                "PackedInfo": 65537
+              },
+              {
+                "Name": "_VertexSkinMatrices",
+                "NameIndex": -1,
+                "BindingIndex": 19,
+                "DescriptorType": 5,
+                "PackedBinding": 16776963,
+                "PackedInfo": 131071
+              },
+              {
+                "Name": "s_point_clamp_float_sampler",
+                "NameIndex": -1,
+                "BindingIndex": 20,
+                "DescriptorType": 1,
+                "PackedBinding": 4294967042,
+                "PackedInfo": 65620
+              },
+              {
+                "Name": "_TerrainSubsurfaceConstants",
+                "NameIndex": -1,
+                "BindingIndex": 33,
+                "DescriptorType": 4,
+                "PackedBinding": 4278517506,
+                "PackedInfo": 65540
+              },
+              {
+                "Name": "_VertexSkinMatrices",
+                "NameIndex": 10,
+                "BindingIndex": 19,
+                "DescriptorType": 2,
+                "PackedBinding": 218103827,
+                "PackedInfo": 0
+              }
+            ]
+          },
+          {
+            "Name": "PerMaterial",
+            "SetId": 1,
+            "MaxBindingIndex": 12,
+            "Bindings": [
+              {
+                "Name": "_ParallaxNoiseMap",
+                "NameIndex": -1,
+                "BindingIndex": 0,
+                "DescriptorType": 1,
+                "PackedBinding": 4278583042,
+                "PackedInfo": 131071
+              },
+              {
+                "Name": "_ParallaxMaskMap",
+                "NameIndex": -1,
+                "BindingIndex": 1,
+                "DescriptorType": 1,
+                "PackedBinding": 4278517506,
+                "PackedInfo": 131071
+              },
+              {
+                "Name": "_ParallaxMap",
+                "NameIndex": -1,
+                "BindingIndex": 2,
+                "DescriptorType": 1,
+                "PackedBinding": 4278451970,
+                "PackedInfo": 131071
+              },
+              {
+                "Name": "_NormalMap",
+                "NameIndex": -1,
+                "BindingIndex": 3,
+                "DescriptorType": 1,
+                "PackedBinding": 4278320898,
+                "PackedInfo": 131071
+              },
+              {
+                "Name": "_MROMap",
+                "NameIndex": -1,
+                "BindingIndex": 4,
+                "DescriptorType": 1,
+                "PackedBinding": 4278386434,
+                "PackedInfo": 131071
+              },
+              {
+                "Name": "_BaseColorMap",
+                "NameIndex": -1,
+                "BindingIndex": 5,
+                "DescriptorType": 1,
+                "PackedBinding": 4278255362,
+                "PackedInfo": 131071
+              },
+              {
+                "Name": "_ParallaxNoiseMap",
+                "NameIndex": -1,
+                "BindingIndex": 6,
+                "DescriptorType": 2,
+                "PackedBinding": 4278583042,
+                "PackedInfo": 66048
+              },
+              {
+                "Name": "_ParallaxMaskMap",
+                "NameIndex": -1,
+                "BindingIndex": 7,
+                "DescriptorType": 2,
+                "PackedBinding": 4278517506,
+                "PackedInfo": 66049
+              },
+              {
+                "Name": "_ParallaxMap",
+                "NameIndex": -1,
+                "BindingIndex": 8,
+                "DescriptorType": 2,
+                "PackedBinding": 4278451970,
+                "PackedInfo": 66050
+              },
+              {
+                "Name": "_NormalMap",
+                "NameIndex": -1,
+                "BindingIndex": 9,
+                "DescriptorType": 2,
+                "PackedBinding": 4278320898,
+                "PackedInfo": 66051
+              },
+              {
+                "Name": "_MROMap",
+                "NameIndex": -1,
+                "BindingIndex": 10,
+                "DescriptorType": 2,
+                "PackedBinding": 4278386434,
+                "PackedInfo": 66052
+              },
+              {
+                "Name": "_BaseColorMap",
+                "NameIndex": -1,
+                "BindingIndex": 11,
+                "DescriptorType": 2,
+                "PackedBinding": 4278255362,
+                "PackedInfo": 66053
+              },
+              {
+                "Name": "UnityPerMaterial",
+                "NameIndex": -1,
+                "BindingIndex": 12,
+                "DescriptorType": 4,
+                "PackedBinding": 4278451970,
+                "PackedInfo": 65539
+              }
+            ]
+          },
+          {
+            "Name": "PerObject",
+            "SetId": 2,
+            "MaxBindingIndex": 0,
+            "Bindings": [
+              {
+                "Name": "UnityPerDraw",
+                "NameIndex": -1,
+                "BindingIndex": 0,
+                "DescriptorType": 4,
+                "PackedBinding": 33750787,
+                "PackedInfo": 65538
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "fragment": {
+      "file": "unity_endfield_graph_shader_lab/Temp/Codex/liteffect_subprograms/Shader/HGRP_LitEffect_p5936F49FA93F14DD.shader.bytecode/0115_endfield_dxbc_1.dxbc",
+      "bytes": 8068,
+      "sha256": "b2248a1deb886a0e9226695d46e650756be932addd55a81d2b1114fdeb5f932a",
+      "chunks": [
+        "ISGN",
+        "OSGN",
+        "SHEX"
+      ],
+      "hasRdef": false,
+      "inputs": [
+        {
+          "semantic": "SV_Position",
+          "index": 0,
+          "register": 0,
+          "mask": 15,
+          "components": 4,
+          "componentType": "float"
+        },
+        {
+          "semantic": "TEXCOORD",
+          "index": 0,
+          "register": 1,
+          "mask": 3,
+          "components": 2,
+          "componentType": "float"
+        },
+        {
+          "semantic": "TEXCOORD",
+          "index": 1,
+          "register": 1,
+          "mask": 12,
+          "components": 2,
+          "componentType": "float"
+        },
+        {
+          "semantic": "TEXCOORD",
+          "index": 2,
+          "register": 2,
+          "mask": 7,
+          "components": 3,
+          "componentType": "float"
+        },
+        {
+          "semantic": "TEXCOORD",
+          "index": 3,
+          "register": 3,
+          "mask": 15,
+          "components": 4,
+          "componentType": "float"
+        },
+        {
+          "semantic": "TEXCOORD",
+          "index": 4,
+          "register": 4,
+          "mask": 15,
+          "components": 4,
+          "componentType": "float"
+        },
+        {
+          "semantic": "TEXCOORD",
+          "index": 5,
+          "register": 5,
+          "mask": 7,
+          "components": 3,
+          "componentType": "float"
+        },
+        {
+          "semantic": "TEXCOORD",
+          "index": 6,
+          "register": 6,
+          "mask": 7,
+          "components": 3,
+          "componentType": "float"
+        },
+        {
+          "semantic": "SV_IsFrontFace",
+          "index": 0,
+          "register": 7,
+          "mask": 1,
+          "components": 1,
+          "componentType": "uint"
+        }
+      ],
+      "outputs": [
+        {
+          "semantic": "SV_Target",
+          "index": 0,
+          "register": 0,
+          "mask": 15,
+          "components": 4,
+          "componentType": "float"
+        },
+        {
+          "semantic": "SV_Target",
+          "index": 1,
+          "register": 1,
+          "mask": 15,
+          "components": 4,
+          "componentType": "float"
+        },
+        {
+          "semantic": "SV_Target",
+          "index": 2,
+          "register": 2,
+          "mask": 15,
+          "components": 4,
+          "componentType": "float"
+        },
+        {
+          "semantic": "SV_Target",
+          "index": 3,
+          "register": 3,
+          "mask": 15,
+          "components": 4,
+          "componentType": "float"
+        },
+        {
+          "semantic": "SV_Target",
+          "index": 4,
+          "register": 4,
+          "mask": 15,
+          "components": 4,
+          "componentType": "float"
+        }
+      ],
+      "ruri": {
+        "file": "unity_endfield_graph_shader_lab/Temp/Codex/liteffect_subprograms/Shader/HGRP_LitEffect_p5936F49FA93F14DD.shader.bytecode/ruri_final/parallax_hgbuffer_fragment.hlsl",
+        "bytes": 15426,
+        "sha256": "7783cc2a916242f273853b115b2b4b67dfb8736940d86220d1cdf91dfe459744",
+        "physicalCbuffers": [
+          {
+            "register": 0,
+            "space": 0,
+            "arraySizes": [
+              45
+            ],
+            "aliases": [
+              "_17_19",
+              "_23_25"
+            ],
+            "sizeBytes": 720
+          },
+          {
+            "register": 1,
+            "space": 0,
+            "arraySizes": [
+              106
+            ],
+            "aliases": [
+              "_28_30",
+              "_33_35"
+            ],
+            "sizeBytes": 1696
+          },
+          {
+            "register": 2,
+            "space": 0,
+            "arraySizes": [
+              5
+            ],
+            "aliases": [
+              "_38_40"
+            ],
+            "sizeBytes": 80
+          },
+          {
+            "register": 3,
+            "space": 0,
+            "arraySizes": [
+              31
+            ],
+            "aliases": [
+              "_43_45",
+              "_48_50"
+            ],
+            "sizeBytes": 496
+          },
+          {
+            "register": 4,
+            "space": 0,
+            "arraySizes": [
+              1
+            ],
+            "aliases": [
+              "_53_55"
+            ],
+            "sizeBytes": 16
+          }
+        ],
+        "resources": [
+          {
+            "kind": "Texture2D<float4>",
+            "name": "_8",
+            "register": 0,
+            "space": 0
+          },
+          {
+            "kind": "Texture2D<float4>",
+            "name": "_9",
+            "register": 1,
+            "space": 0
+          },
+          {
+            "kind": "Texture2D<float4>",
+            "name": "_10",
+            "register": 2,
+            "space": 0
+          },
+          {
+            "kind": "Texture2D<float4>",
+            "name": "_11",
+            "register": 3,
+            "space": 0
+          },
+          {
+            "kind": "Texture2D<float4>",
+            "name": "_12",
+            "register": 4,
+            "space": 0
+          },
+          {
+            "kind": "Texture2D<float4>",
+            "name": "_13",
+            "register": 5,
+            "space": 0
+          }
+        ],
+        "samplers": [
+          {
+            "name": "sampler_LinearClamp",
+            "register": 0,
+            "space": 0
+          },
+          {
+            "name": "sampler_LinearRepeat",
+            "register": 1,
+            "space": 0
+          },
+          {
+            "name": "sampler_LinearMirror",
+            "register": 2,
+            "space": 0
+          },
+          {
+            "name": "sampler_LinearMirrorOnce",
+            "register": 3,
+            "space": 0
+          },
+          {
+            "name": "sampler_PointClamp",
+            "register": 4,
+            "space": 0
+          },
+          {
+            "name": "sampler_PointRepeat",
+            "register": 5,
+            "space": 0
+          }
+        ]
+      },
+      "metadata": {
+        "file": "unity_endfield_graph_shader_lab/Temp/Codex/liteffect_subprograms/Shader/HGRP_LitEffect_p5936F49FA93F14DD.shader.bytecode/0115_endfield_dxbc_1.dxbc.metadata.json",
+        "decodedStage": "fragment",
+        "serializedStage": "vertex",
+        "constantBuffers": [
+          {
+            "Name": "ShaderVariablesGlobal",
+            "NameIndex": 0,
+            "MatrixParameters": [],
+            "VectorParameters": [
+              {
+                "Name": "_GlobalMipBias",
+                "NameIndex": 3,
+                "Index": 416,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_TaaJitterStrength",
+                "NameIndex": 4,
+                "Index": 304,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 4,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              }
+            ],
+            "StructParameters": [],
+            "Size": 3200,
+            "IsPartialCB": true
+          },
+          {
+            "Name": "_TerrainSubsurfaceConstants",
+            "NameIndex": 1,
+            "MatrixParameters": [],
+            "VectorParameters": [
+              {
+                "Name": "_TerrainSubsurfaceProfileInt",
+                "NameIndex": 5,
+                "Index": 12,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              }
+            ],
+            "StructParameters": [],
+            "Size": 16,
+            "IsPartialCB": true
+          },
+          {
+            "Name": "_TransformVariables",
+            "NameIndex": 2,
+            "MatrixParameters": [
+              {
+                "Name": "_NonJitteredViewNoTransProjMatrix",
+                "NameIndex": 8,
+                "Index": 512,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 4,
+                "ColumnCount": 4,
+                "IsMatrix": true
+              },
+              {
+                "Name": "_PrevNonJitteredViewNoTransProjMatrix",
+                "NameIndex": 9,
+                "Index": 912,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 4,
+                "ColumnCount": 4,
+                "IsMatrix": true
+              }
+            ],
+            "VectorParameters": [
+              {
+                "Name": "_WorldSpaceCameraPos_Internal",
+                "NameIndex": 6,
+                "Index": 704,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 4,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_PrevCamPosRWS_Internal",
+                "NameIndex": 7,
+                "Index": 1296,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 4,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              }
+            ],
+            "StructParameters": [],
+            "Size": 1312,
+            "IsPartialCB": true
+          }
+        ],
+        "bufferParameters": [
+          {
+            "Name": "_VertexSkinMatrices",
+            "NameIndex": 10,
+            "Index": 19,
+            "ArraySize": 1
+          }
+        ],
+        "bufferBindings": [
+          {
+            "Name": "ShaderVariablesGlobal",
+            "NameIndex": 0,
+            "Index": 16,
+            "ArraySize": 1
+          },
+          {
+            "Name": "_TerrainSubsurfaceConstants",
+            "NameIndex": 1,
+            "Index": 33,
+            "ArraySize": 1
+          },
+          {
+            "Name": "_TransformVariables",
+            "NameIndex": 2,
+            "Index": 13,
+            "ArraySize": 1
+          }
+        ],
+        "samplers": [
+          {
+            "Sampler": 65538,
+            "BindPoint": 5,
+            "Name": "s_trilinear_repeat_sampler",
+            "PackedBinding": 4294967043,
+            "PackedInfo": 65538,
+            "StaticSamplerState": "encoded",
+            "StaticSamplerStateKnown": true
+          },
+          {
+            "Sampler": 65622,
+            "BindPoint": 6,
+            "Name": "s_trilinear_clamp_sampler",
+            "PackedBinding": 4294967043,
+            "PackedInfo": 65622,
+            "StaticSamplerState": "encoded",
+            "StaticSamplerStateKnown": true
+          },
+          {
+            "Sampler": 65536,
+            "BindPoint": 7,
+            "Name": "s_point_repeat_sampler",
+            "PackedBinding": 4294967043,
+            "PackedInfo": 65536,
+            "StaticSamplerState": "encoded",
+            "StaticSamplerStateKnown": true
+          },
+          {
+            "Sampler": 65620,
+            "BindPoint": 8,
+            "Name": "s_point_clamp_sampler",
+            "PackedBinding": 4294967043,
+            "PackedInfo": 65620,
+            "StaticSamplerState": "encoded",
+            "StaticSamplerStateKnown": true
+          },
+          {
+            "Sampler": 65537,
+            "BindPoint": 9,
+            "Name": "s_linear_repeat_sampler",
+            "PackedBinding": 4294967043,
+            "PackedInfo": 65537,
+            "StaticSamplerState": "encoded",
+            "StaticSamplerStateKnown": true
+          },
+          {
+            "Sampler": 65621,
+            "BindPoint": 10,
+            "Name": "s_linear_clamp_sampler",
+            "PackedBinding": 4294967043,
+            "PackedInfo": 65621,
+            "StaticSamplerState": "encoded",
+            "StaticSamplerStateKnown": true
+          },
+          {
+            "Sampler": 65620,
+            "BindPoint": 20,
+            "Name": "s_point_clamp_float_sampler",
+            "PackedBinding": 4294967042,
+            "PackedInfo": 65620,
+            "StaticSamplerState": "encoded",
+            "StaticSamplerStateKnown": true
+          },
+          {
+            "Sampler": 131071,
+            "BindPoint": 0,
+            "Name": "_ParallaxNoiseMap",
+            "PackedBinding": 4278583042,
+            "PackedInfo": 131071,
+            "StaticSamplerState": "unknown",
+            "StaticSamplerStateKnown": false
+          },
+          {
+            "Sampler": 131071,
+            "BindPoint": 1,
+            "Name": "_ParallaxMaskMap",
+            "PackedBinding": 4278517506,
+            "PackedInfo": 131071,
+            "StaticSamplerState": "unknown",
+            "StaticSamplerStateKnown": false
+          },
+          {
+            "Sampler": 131071,
+            "BindPoint": 2,
+            "Name": "_ParallaxMap",
+            "PackedBinding": 4278451970,
+            "PackedInfo": 131071,
+            "StaticSamplerState": "unknown",
+            "StaticSamplerStateKnown": false
+          },
+          {
+            "Sampler": 131071,
+            "BindPoint": 3,
+            "Name": "_NormalMap",
+            "PackedBinding": 4278320898,
+            "PackedInfo": 131071,
+            "StaticSamplerState": "unknown",
+            "StaticSamplerStateKnown": false
+          },
+          {
+            "Sampler": 131071,
+            "BindPoint": 4,
+            "Name": "_MROMap",
+            "PackedBinding": 4278386434,
+            "PackedInfo": 131071,
+            "StaticSamplerState": "unknown",
+            "StaticSamplerStateKnown": false
+          },
+          {
+            "Sampler": 131071,
+            "BindPoint": 5,
+            "Name": "_BaseColorMap",
+            "PackedBinding": 4278255362,
+            "PackedInfo": 131071,
+            "StaticSamplerState": "unknown",
+            "StaticSamplerStateKnown": false
+          }
+        ],
+        "descriptorSets": [
+          {
+            "Name": "Global",
+            "SetId": 0,
+            "MaxBindingIndex": 34,
+            "Bindings": [
+              {
+                "Name": "_ClothSkeletonDataBuffer",
+                "NameIndex": -1,
+                "BindingIndex": 4,
+                "DescriptorType": 5,
+                "PackedBinding": 4294967041,
+                "PackedInfo": 131071
+              },
+              {
+                "Name": "s_trilinear_repeat_sampler",
+                "NameIndex": -1,
+                "BindingIndex": 5,
+                "DescriptorType": 1,
+                "PackedBinding": 4294967043,
+                "PackedInfo": 65538
+              },
+              {
+                "Name": "s_trilinear_clamp_sampler",
+                "NameIndex": -1,
+                "BindingIndex": 6,
+                "DescriptorType": 1,
+                "PackedBinding": 4294967043,
+                "PackedInfo": 65622
+              },
+              {
+                "Name": "s_point_repeat_sampler",
+                "NameIndex": -1,
+                "BindingIndex": 7,
+                "DescriptorType": 1,
+                "PackedBinding": 4294967043,
+                "PackedInfo": 65536
+              },
+              {
+                "Name": "s_point_clamp_sampler",
+                "NameIndex": -1,
+                "BindingIndex": 8,
+                "DescriptorType": 1,
+                "PackedBinding": 4294967043,
+                "PackedInfo": 65620
+              },
+              {
+                "Name": "s_linear_repeat_sampler",
+                "NameIndex": -1,
+                "BindingIndex": 9,
+                "DescriptorType": 1,
+                "PackedBinding": 4294967043,
+                "PackedInfo": 65537
+              },
+              {
+                "Name": "s_linear_clamp_sampler",
+                "NameIndex": -1,
+                "BindingIndex": 10,
+                "DescriptorType": 1,
+                "PackedBinding": 4294967043,
+                "PackedInfo": 65621
+              },
+              {
+                "Name": "_TransformVariables",
+                "NameIndex": -1,
+                "BindingIndex": 13,
+                "DescriptorType": 4,
+                "PackedBinding": 65283,
+                "PackedInfo": 65536
+              },
+              {
+                "Name": "ShaderVariablesGlobal",
+                "NameIndex": -1,
+                "BindingIndex": 16,
+                "DescriptorType": 4,
+                "PackedBinding": 16908035,
+                "PackedInfo": 65537
+              },
+              {
+                "Name": "_VertexSkinMatrices",
+                "NameIndex": -1,
+                "BindingIndex": 19,
+                "DescriptorType": 5,
+                "PackedBinding": 16776963,
+                "PackedInfo": 131071
+              },
+              {
+                "Name": "s_point_clamp_float_sampler",
+                "NameIndex": -1,
+                "BindingIndex": 20,
+                "DescriptorType": 1,
+                "PackedBinding": 4294967042,
+                "PackedInfo": 65620
+              },
+              {
+                "Name": "_TerrainSubsurfaceConstants",
+                "NameIndex": -1,
+                "BindingIndex": 33,
+                "DescriptorType": 4,
+                "PackedBinding": 4278517506,
+                "PackedInfo": 65540
+              },
+              {
+                "Name": "_VertexSkinMatrices",
+                "NameIndex": 10,
+                "BindingIndex": 19,
+                "DescriptorType": 2,
+                "PackedBinding": 218103827,
+                "PackedInfo": 0
+              }
+            ]
+          },
+          {
+            "Name": "PerMaterial",
+            "SetId": 1,
+            "MaxBindingIndex": 12,
+            "Bindings": [
+              {
+                "Name": "_ParallaxNoiseMap",
+                "NameIndex": -1,
+                "BindingIndex": 0,
+                "DescriptorType": 1,
+                "PackedBinding": 4278583042,
+                "PackedInfo": 131071
+              },
+              {
+                "Name": "_ParallaxMaskMap",
+                "NameIndex": -1,
+                "BindingIndex": 1,
+                "DescriptorType": 1,
+                "PackedBinding": 4278517506,
+                "PackedInfo": 131071
+              },
+              {
+                "Name": "_ParallaxMap",
+                "NameIndex": -1,
+                "BindingIndex": 2,
+                "DescriptorType": 1,
+                "PackedBinding": 4278451970,
+                "PackedInfo": 131071
+              },
+              {
+                "Name": "_NormalMap",
+                "NameIndex": -1,
+                "BindingIndex": 3,
+                "DescriptorType": 1,
+                "PackedBinding": 4278320898,
+                "PackedInfo": 131071
+              },
+              {
+                "Name": "_MROMap",
+                "NameIndex": -1,
+                "BindingIndex": 4,
+                "DescriptorType": 1,
+                "PackedBinding": 4278386434,
+                "PackedInfo": 131071
+              },
+              {
+                "Name": "_BaseColorMap",
+                "NameIndex": -1,
+                "BindingIndex": 5,
+                "DescriptorType": 1,
+                "PackedBinding": 4278255362,
+                "PackedInfo": 131071
+              },
+              {
+                "Name": "_ParallaxNoiseMap",
+                "NameIndex": -1,
+                "BindingIndex": 6,
+                "DescriptorType": 2,
+                "PackedBinding": 4278583042,
+                "PackedInfo": 66048
+              },
+              {
+                "Name": "_ParallaxMaskMap",
+                "NameIndex": -1,
+                "BindingIndex": 7,
+                "DescriptorType": 2,
+                "PackedBinding": 4278517506,
+                "PackedInfo": 66049
+              },
+              {
+                "Name": "_ParallaxMap",
+                "NameIndex": -1,
+                "BindingIndex": 8,
+                "DescriptorType": 2,
+                "PackedBinding": 4278451970,
+                "PackedInfo": 66050
+              },
+              {
+                "Name": "_NormalMap",
+                "NameIndex": -1,
+                "BindingIndex": 9,
+                "DescriptorType": 2,
+                "PackedBinding": 4278320898,
+                "PackedInfo": 66051
+              },
+              {
+                "Name": "_MROMap",
+                "NameIndex": -1,
+                "BindingIndex": 10,
+                "DescriptorType": 2,
+                "PackedBinding": 4278386434,
+                "PackedInfo": 66052
+              },
+              {
+                "Name": "_BaseColorMap",
+                "NameIndex": -1,
+                "BindingIndex": 11,
+                "DescriptorType": 2,
+                "PackedBinding": 4278255362,
+                "PackedInfo": 66053
+              },
+              {
+                "Name": "UnityPerMaterial",
+                "NameIndex": -1,
+                "BindingIndex": 12,
+                "DescriptorType": 4,
+                "PackedBinding": 4278451970,
+                "PackedInfo": 65539
+              }
+            ]
+          },
+          {
+            "Name": "PerObject",
+            "SetId": 2,
+            "MaxBindingIndex": 0,
+            "Bindings": [
+              {
+                "Name": "UnityPerDraw",
+                "NameIndex": -1,
+                "BindingIndex": 0,
+                "DescriptorType": 4,
+                "PackedBinding": 33750787,
+                "PackedInfo": 65538
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "bindChannels": {
+    "status": "gap",
+    "reason": "AnimeStudio Shader JSON omits ParserBindChannels.m_Channels; DXBC ISGN/OSGN signatures above are the available interface reflection.",
+    "serializedMetadataClass": "ParserBindChannels"
+  },
+  "vertexInputs": [
+    {
+      "semantic": "POSITION",
+      "index": 0,
+      "register": 0,
+      "mask": 7,
+      "components": 3,
+      "componentType": "float"
+    },
+    {
+      "semantic": "NORMAL",
+      "index": 0,
+      "register": 1,
+      "mask": 7,
+      "components": 3,
+      "componentType": "float"
+    },
+    {
+      "semantic": "TANGENT",
+      "index": 0,
+      "register": 2,
+      "mask": 15,
+      "components": 4,
+      "componentType": "float"
+    },
+    {
+      "semantic": "COLOR",
+      "index": 0,
+      "register": 3,
+      "mask": 15,
+      "components": 4,
+      "componentType": "float"
+    },
+    {
+      "semantic": "TEXCOORD",
+      "index": 0,
+      "register": 4,
+      "mask": 3,
+      "components": 2,
+      "componentType": "float"
+    },
+    {
+      "semantic": "TEXCOORD",
+      "index": 1,
+      "register": 5,
+      "mask": 3,
+      "components": 2,
+      "componentType": "float"
+    },
+    {
+      "semantic": "TEXCOORD",
+      "index": 4,
+      "register": 6,
+      "mask": 15,
+      "components": 4,
+      "componentType": "float"
+    },
+    {
+      "semantic": "BLENDWEIGHTS",
+      "index": 0,
+      "register": 7,
+      "mask": 15,
+      "components": 4,
+      "componentType": "float"
+    },
+    {
+      "semantic": "BLENDINDICES",
+      "index": 0,
+      "register": 8,
+      "mask": 15,
+      "components": 4,
+      "componentType": "uint"
+    }
+  ],
+  "vertexOutputs": [
+    {
+      "semantic": "SV_Position",
+      "index": 0,
+      "register": 0,
+      "mask": 15,
+      "components": 4,
+      "componentType": "float"
+    },
+    {
+      "semantic": "TEXCOORD",
+      "index": 0,
+      "register": 1,
+      "mask": 3,
+      "components": 2,
+      "componentType": "float"
+    },
+    {
+      "semantic": "TEXCOORD",
+      "index": 1,
+      "register": 1,
+      "mask": 12,
+      "components": 2,
+      "componentType": "float"
+    },
+    {
+      "semantic": "TEXCOORD",
+      "index": 2,
+      "register": 2,
+      "mask": 7,
+      "components": 3,
+      "componentType": "float"
+    },
+    {
+      "semantic": "TEXCOORD",
+      "index": 3,
+      "register": 3,
+      "mask": 15,
+      "components": 4,
+      "componentType": "float"
+    },
+    {
+      "semantic": "TEXCOORD",
+      "index": 4,
+      "register": 4,
+      "mask": 15,
+      "components": 4,
+      "componentType": "float"
+    },
+    {
+      "semantic": "TEXCOORD",
+      "index": 5,
+      "register": 5,
+      "mask": 7,
+      "components": 3,
+      "componentType": "float"
+    },
+    {
+      "semantic": "TEXCOORD",
+      "index": 6,
+      "register": 6,
+      "mask": 7,
+      "components": 3,
+      "componentType": "float"
+    }
+  ],
+  "fragmentInputs": [
+    {
+      "semantic": "SV_Position",
+      "index": 0,
+      "register": 0,
+      "mask": 15,
+      "components": 4,
+      "componentType": "float"
+    },
+    {
+      "semantic": "TEXCOORD",
+      "index": 0,
+      "register": 1,
+      "mask": 3,
+      "components": 2,
+      "componentType": "float"
+    },
+    {
+      "semantic": "TEXCOORD",
+      "index": 1,
+      "register": 1,
+      "mask": 12,
+      "components": 2,
+      "componentType": "float"
+    },
+    {
+      "semantic": "TEXCOORD",
+      "index": 2,
+      "register": 2,
+      "mask": 7,
+      "components": 3,
+      "componentType": "float"
+    },
+    {
+      "semantic": "TEXCOORD",
+      "index": 3,
+      "register": 3,
+      "mask": 15,
+      "components": 4,
+      "componentType": "float"
+    },
+    {
+      "semantic": "TEXCOORD",
+      "index": 4,
+      "register": 4,
+      "mask": 15,
+      "components": 4,
+      "componentType": "float"
+    },
+    {
+      "semantic": "TEXCOORD",
+      "index": 5,
+      "register": 5,
+      "mask": 7,
+      "components": 3,
+      "componentType": "float"
+    },
+    {
+      "semantic": "TEXCOORD",
+      "index": 6,
+      "register": 6,
+      "mask": 7,
+      "components": 3,
+      "componentType": "float"
+    },
+    {
+      "semantic": "SV_IsFrontFace",
+      "index": 0,
+      "register": 7,
+      "mask": 1,
+      "components": 1,
+      "componentType": "uint"
+    }
+  ],
+  "mrtOutputs": [
+    {
+      "semantic": "SV_Target",
+      "index": 0,
+      "register": 0,
+      "mask": 15,
+      "components": 4,
+      "componentType": "float"
+    },
+    {
+      "semantic": "SV_Target",
+      "index": 1,
+      "register": 1,
+      "mask": 15,
+      "components": 4,
+      "componentType": "float"
+    },
+    {
+      "semantic": "SV_Target",
+      "index": 2,
+      "register": 2,
+      "mask": 15,
+      "components": 4,
+      "componentType": "float"
+    },
+    {
+      "semantic": "SV_Target",
+      "index": 3,
+      "register": 3,
+      "mask": 15,
+      "components": 4,
+      "componentType": "float"
+    },
+    {
+      "semantic": "SV_Target",
+      "index": 4,
+      "register": 4,
+      "mask": 15,
+      "components": 4,
+      "componentType": "float"
+    }
+  ],
+  "resources": {
+    "vertex": [
+      {
+        "kind": "ByteAddressBuffer",
+        "name": "_10",
+        "register": 0,
+        "space": 0,
+        "logicalName": "_VertexSkinMatrices",
+        "status": "resolved",
+        "basis": [
+          "DXBC/Ruri t0",
+          "serialized BufferParameters",
+          "Global descriptor binding 19"
+        ]
+      }
+    ],
+    "fragmentTextures": [
+      {
+        "kind": "Texture2D<float4>",
+        "name": "_8",
+        "register": 0,
+        "space": 0,
+        "logicalName": "_ParallaxNoiseMap",
+        "status": "resolved",
+        "basis": [
+          "Ruri register",
+          "serialized SamplerParameters BindPoint 0..5",
+          "PerMaterial descriptor texture binding 6..11"
+        ]
+      },
+      {
+        "kind": "Texture2D<float4>",
+        "name": "_9",
+        "register": 1,
+        "space": 0,
+        "logicalName": "_ParallaxMaskMap",
+        "status": "resolved",
+        "basis": [
+          "Ruri register",
+          "serialized SamplerParameters BindPoint 0..5",
+          "PerMaterial descriptor texture binding 6..11"
+        ]
+      },
+      {
+        "kind": "Texture2D<float4>",
+        "name": "_10",
+        "register": 2,
+        "space": 0,
+        "logicalName": "_ParallaxMap",
+        "status": "resolved",
+        "basis": [
+          "Ruri register",
+          "serialized SamplerParameters BindPoint 0..5",
+          "PerMaterial descriptor texture binding 6..11"
+        ]
+      },
+      {
+        "kind": "Texture2D<float4>",
+        "name": "_11",
+        "register": 3,
+        "space": 0,
+        "logicalName": "_NormalMap",
+        "status": "resolved",
+        "basis": [
+          "Ruri register",
+          "serialized SamplerParameters BindPoint 0..5",
+          "PerMaterial descriptor texture binding 6..11"
+        ]
+      },
+      {
+        "kind": "Texture2D<float4>",
+        "name": "_12",
+        "register": 4,
+        "space": 0,
+        "logicalName": "_MROMap",
+        "status": "resolved",
+        "basis": [
+          "Ruri register",
+          "serialized SamplerParameters BindPoint 0..5",
+          "PerMaterial descriptor texture binding 6..11"
+        ]
+      },
+      {
+        "kind": "Texture2D<float4>",
+        "name": "_13",
+        "register": 5,
+        "space": 0,
+        "logicalName": "_BaseColorMap",
+        "status": "resolved",
+        "basis": [
+          "Ruri register",
+          "serialized SamplerParameters BindPoint 0..5",
+          "PerMaterial descriptor texture binding 6..11"
+        ]
+      }
+    ],
+    "fragmentSamplers": [
+      {
+        "name": "sampler_LinearClamp",
+        "register": 0,
+        "space": 0,
+        "status": "resolved_static_name"
+      },
+      {
+        "name": "sampler_LinearRepeat",
+        "register": 1,
+        "space": 0,
+        "status": "resolved_static_name"
+      },
+      {
+        "name": "sampler_LinearMirror",
+        "register": 2,
+        "space": 0,
+        "status": "resolved_static_name"
+      },
+      {
+        "name": "sampler_LinearMirrorOnce",
+        "register": 3,
+        "space": 0,
+        "status": "resolved_static_name"
+      },
+      {
+        "name": "sampler_PointClamp",
+        "register": 4,
+        "space": 0,
+        "status": "resolved_static_name"
+      },
+      {
+        "name": "sampler_PointRepeat",
+        "register": 5,
+        "space": 0,
+        "status": "resolved_static_name"
+      }
+    ]
+  },
+  "constantBuffers": {
+    "vertex": [
+      {
+        "register": 0,
+        "space": 0,
+        "arraySize": 82,
+        "sizeBytes": 1312,
+        "aliases": [
+          "_14_16",
+          "_20_22"
+        ],
+        "logicalName": "_TransformVariables",
+        "status": "resolved_register_range",
+        "basis": [
+          "Ruri/DXBC cbuffer array size equals serialized _TransformVariables size"
+        ]
+      },
+      {
+        "register": 1,
+        "space": 0,
+        "arraySize": 20,
+        "sizeBytes": 320,
+        "aliases": [
+          "_25_27"
+        ],
+        "logicalName": "ShaderVariablesGlobal",
+        "status": "resolved_register_range",
+        "basis": [
+          "Ruri/DXBC contiguous 20+11 register range",
+          "serialized ShaderVariablesGlobal field offsets 304 and 416"
+        ]
+      },
+      {
+        "register": 2,
+        "space": 0,
+        "arraySize": 11,
+        "sizeBytes": 176,
+        "aliases": [
+          "_30_32",
+          "_35_37"
+        ],
+        "logicalName": "ShaderVariablesGlobal",
+        "status": "resolved_register_range",
+        "basis": [
+          "Ruri/DXBC contiguous 20+11 register range",
+          "serialized ShaderVariablesGlobal field offsets 304 and 416"
+        ]
+      }
+    ],
+    "fragment": [
+      {
+        "register": 0,
+        "space": 0,
+        "arraySize": 45,
+        "sizeBytes": 720,
+        "aliases": [
+          "_17_19",
+          "_23_25"
+        ],
+        "logicalName": null,
+        "status": "gap",
+        "basis": [],
+        "candidateLogicalNames": []
+      },
+      {
+        "register": 1,
+        "space": 0,
+        "arraySize": 106,
+        "sizeBytes": 1696,
+        "aliases": [
+          "_28_30",
+          "_33_35"
+        ],
+        "logicalName": null,
+        "status": "gap",
+        "basis": [],
+        "candidateLogicalNames": []
+      },
+      {
+        "register": 2,
+        "space": 0,
+        "arraySize": 5,
+        "sizeBytes": 80,
+        "aliases": [
+          "_38_40"
+        ],
+        "logicalName": null,
+        "status": "gap",
+        "basis": [],
+        "candidateLogicalNames": []
+      },
+      {
+        "register": 3,
+        "space": 0,
+        "arraySize": 31,
+        "sizeBytes": 496,
+        "aliases": [
+          "_43_45",
+          "_48_50"
+        ],
+        "logicalName": "UnityPerMaterial",
+        "status": "resolved_descriptor_buffer_identity",
+        "basis": [
+          "Ruri physical register",
+          "PerMaterial descriptor set binding 12"
+        ],
+        "candidateLogicalNames": []
+      },
+      {
+        "register": 4,
+        "space": 0,
+        "arraySize": 1,
+        "sizeBytes": 16,
+        "aliases": [
+          "_53_55"
+        ],
+        "logicalName": null,
+        "status": "gap",
+        "basis": [
+          "16-byte register is ambiguous between UnityPerDraw and _TerrainSubsurfaceConstants"
+        ],
+        "candidateLogicalNames": [
+          "UnityPerDraw",
+          "_TerrainSubsurfaceConstants"
+        ]
+      }
+    ],
+    "serializedFields": [
+      {
+        "buffer": "ShaderVariablesGlobal",
+        "name": "_GlobalMipBias",
+        "offsetBytes": 416,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "resolved_register_range",
+        "stage": "vertex",
+        "register": 2,
+        "registerOffsetBytes": 96
+      },
+      {
+        "buffer": "ShaderVariablesGlobal",
+        "name": "_TaaJitterStrength",
+        "offsetBytes": 304,
+        "sizeBytes": 16,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "resolved_register_range",
+        "stage": "vertex",
+        "register": 1,
+        "registerOffsetBytes": 304
+      },
+      {
+        "buffer": "_TerrainSubsurfaceConstants",
+        "name": "_TerrainSubsurfaceProfileInt",
+        "offsetBytes": 12,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "vertex",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "_TransformVariables",
+        "name": "_WorldSpaceCameraPos_Internal",
+        "offsetBytes": 704,
+        "sizeBytes": 16,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "resolved_register_range",
+        "stage": "vertex",
+        "register": 0,
+        "registerOffsetBytes": 704
+      },
+      {
+        "buffer": "_TransformVariables",
+        "name": "_PrevCamPosRWS_Internal",
+        "offsetBytes": 1296,
+        "sizeBytes": 16,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "resolved_register_range",
+        "stage": "vertex",
+        "register": 0,
+        "registerOffsetBytes": 1296
+      },
+      {
+        "buffer": "_TransformVariables",
+        "name": "_NonJitteredViewNoTransProjMatrix",
+        "offsetBytes": 512,
+        "sizeBytes": 64,
+        "arraySize": 0,
+        "isMatrix": true,
+        "status": "resolved_register_range",
+        "stage": "vertex",
+        "register": 0,
+        "registerOffsetBytes": 512
+      },
+      {
+        "buffer": "_TransformVariables",
+        "name": "_PrevNonJitteredViewNoTransProjMatrix",
+        "offsetBytes": 912,
+        "sizeBytes": 64,
+        "arraySize": 0,
+        "isMatrix": true,
+        "status": "resolved_register_range",
+        "stage": "vertex",
+        "register": 0,
+        "registerOffsetBytes": 912
+      }
+    ],
+    "fragmentFieldMapping": [
+      {
+        "buffer": "ShaderVariablesGlobal",
+        "name": "_GlobalMipBias",
+        "offsetBytes": 416,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "fragment",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "ShaderVariablesGlobal",
+        "name": "_TaaJitterStrength",
+        "offsetBytes": 304,
+        "sizeBytes": 16,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "fragment",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "_TerrainSubsurfaceConstants",
+        "name": "_TerrainSubsurfaceProfileInt",
+        "offsetBytes": 12,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "fragment",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "_TransformVariables",
+        "name": "_WorldSpaceCameraPos_Internal",
+        "offsetBytes": 704,
+        "sizeBytes": 16,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "fragment",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "_TransformVariables",
+        "name": "_PrevCamPosRWS_Internal",
+        "offsetBytes": 1296,
+        "sizeBytes": 16,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "fragment",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "_TransformVariables",
+        "name": "_NonJitteredViewNoTransProjMatrix",
+        "offsetBytes": 512,
+        "sizeBytes": 64,
+        "arraySize": 0,
+        "isMatrix": true,
+        "status": "gap",
+        "stage": "fragment",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "_TransformVariables",
+        "name": "_PrevNonJitteredViewNoTransProjMatrix",
+        "offsetBytes": 912,
+        "sizeBytes": 64,
+        "arraySize": 0,
+        "isMatrix": true,
+        "status": "gap",
+        "stage": "fragment",
+        "register": null,
+        "registerOffsetBytes": null
+      }
+    ],
+    "materialConstantBufferFields": [
+      {
+        "property": "_EnableParallaxMap",
+        "constantBuffer": "UnityPerMaterial",
+        "register": 3,
+        "offsetBytes": null,
+        "sizeBytes": null,
+        "status": "gap",
+        "reason": "UnityPerMaterial vector/color parameter offsets are not present in the target serialized metadata"
+      },
+      {
+        "property": "_ParallaxStrength",
+        "constantBuffer": "UnityPerMaterial",
+        "register": 3,
+        "offsetBytes": null,
+        "sizeBytes": null,
+        "status": "gap",
+        "reason": "UnityPerMaterial vector/color parameter offsets are not present in the target serialized metadata"
+      },
+      {
+        "property": "_ParallaxMarchNum",
+        "constantBuffer": "UnityPerMaterial",
+        "register": 3,
+        "offsetBytes": null,
+        "sizeBytes": null,
+        "status": "gap",
+        "reason": "UnityPerMaterial vector/color parameter offsets are not present in the target serialized metadata"
+      },
+      {
+        "property": "_ParallaxTilling",
+        "constantBuffer": "UnityPerMaterial",
+        "register": 3,
+        "offsetBytes": null,
+        "sizeBytes": null,
+        "status": "gap",
+        "reason": "UnityPerMaterial vector/color parameter offsets are not present in the target serialized metadata"
+      },
+      {
+        "property": "_ParallaxAnimRandom",
+        "constantBuffer": "UnityPerMaterial",
+        "register": 3,
+        "offsetBytes": null,
+        "sizeBytes": null,
+        "status": "gap",
+        "reason": "UnityPerMaterial vector/color parameter offsets are not present in the target serialized metadata"
+      },
+      {
+        "property": "_ParallaxAnimSpeed",
+        "constantBuffer": "UnityPerMaterial",
+        "register": 3,
+        "offsetBytes": null,
+        "sizeBytes": null,
+        "status": "gap",
+        "reason": "UnityPerMaterial vector/color parameter offsets are not present in the target serialized metadata"
+      },
+      {
+        "property": "_ParallaxBrightInnerRadius",
+        "constantBuffer": "UnityPerMaterial",
+        "register": 3,
+        "offsetBytes": null,
+        "sizeBytes": null,
+        "status": "gap",
+        "reason": "UnityPerMaterial vector/color parameter offsets are not present in the target serialized metadata"
+      },
+      {
+        "property": "_ParallaxBrightOuterRadius",
+        "constantBuffer": "UnityPerMaterial",
+        "register": 3,
+        "offsetBytes": null,
+        "sizeBytes": null,
+        "status": "gap",
+        "reason": "UnityPerMaterial vector/color parameter offsets are not present in the target serialized metadata"
+      },
+      {
+        "property": "_ParallaxBrightStrength",
+        "constantBuffer": "UnityPerMaterial",
+        "register": 3,
+        "offsetBytes": null,
+        "sizeBytes": null,
+        "status": "gap",
+        "reason": "UnityPerMaterial vector/color parameter offsets are not present in the target serialized metadata"
+      },
+      {
+        "property": "_ParallaxFresnelStrength",
+        "constantBuffer": "UnityPerMaterial",
+        "register": 3,
+        "offsetBytes": null,
+        "sizeBytes": null,
+        "status": "gap",
+        "reason": "UnityPerMaterial vector/color parameter offsets are not present in the target serialized metadata"
+      },
+      {
+        "property": "_ParallaxIgnorePostExposure",
+        "constantBuffer": "UnityPerMaterial",
+        "register": 3,
+        "offsetBytes": null,
+        "sizeBytes": null,
+        "status": "gap",
+        "reason": "UnityPerMaterial vector/color parameter offsets are not present in the target serialized metadata"
+      },
+      {
+        "property": "_ParallaxIntensity",
+        "constantBuffer": "UnityPerMaterial",
+        "register": 3,
+        "offsetBytes": null,
+        "sizeBytes": null,
+        "status": "gap",
+        "reason": "UnityPerMaterial vector/color parameter offsets are not present in the target serialized metadata"
+      },
+      {
+        "property": "_ParallaxMaskMapColorStrength",
+        "constantBuffer": "UnityPerMaterial",
+        "register": 3,
+        "offsetBytes": null,
+        "sizeBytes": null,
+        "status": "gap",
+        "reason": "UnityPerMaterial vector/color parameter offsets are not present in the target serialized metadata"
+      },
+      {
+        "property": "_ParallaxMinBrightness",
+        "constantBuffer": "UnityPerMaterial",
+        "register": 3,
+        "offsetBytes": null,
+        "sizeBytes": null,
+        "status": "gap",
+        "reason": "UnityPerMaterial vector/color parameter offsets are not present in the target serialized metadata"
+      },
+      {
+        "property": "_ParallaxNoiseMapTilling",
+        "constantBuffer": "UnityPerMaterial",
+        "register": 3,
+        "offsetBytes": null,
+        "sizeBytes": null,
+        "status": "gap",
+        "reason": "UnityPerMaterial vector/color parameter offsets are not present in the target serialized metadata"
+      },
+      {
+        "property": "_ParallaxCharPos",
+        "constantBuffer": "UnityPerMaterial",
+        "register": 3,
+        "offsetBytes": null,
+        "sizeBytes": null,
+        "status": "gap",
+        "reason": "UnityPerMaterial vector/color parameter offsets are not present in the target serialized metadata"
+      },
+      {
+        "property": "_ParallaxMaskByLayerBlend",
+        "constantBuffer": "UnityPerMaterial",
+        "register": 3,
+        "offsetBytes": null,
+        "sizeBytes": null,
+        "status": "gap",
+        "reason": "UnityPerMaterial vector/color parameter offsets are not present in the target serialized metadata"
+      },
+      {
+        "property": "_ParallaxLerpSchedule",
+        "constantBuffer": "UnityPerMaterial",
+        "register": 3,
+        "offsetBytes": null,
+        "sizeBytes": null,
+        "status": "gap",
+        "reason": "UnityPerMaterial vector/color parameter offsets are not present in the target serialized metadata"
+      },
+      {
+        "property": "_ParallaxSignControl",
+        "constantBuffer": "UnityPerMaterial",
+        "register": 3,
+        "offsetBytes": null,
+        "sizeBytes": null,
+        "status": "gap",
+        "reason": "UnityPerMaterial vector/color parameter offsets are not present in the target serialized metadata"
+      },
+      {
+        "property": "_ParallaxColor",
+        "constantBuffer": "UnityPerMaterial",
+        "register": 3,
+        "offsetBytes": null,
+        "sizeBytes": null,
+        "status": "gap",
+        "reason": "UnityPerMaterial vector/color parameter offsets are not present in the target serialized metadata"
+      },
+      {
+        "property": "_ParallaxColorDark",
+        "constantBuffer": "UnityPerMaterial",
+        "register": 3,
+        "offsetBytes": null,
+        "sizeBytes": null,
+        "status": "gap",
+        "reason": "UnityPerMaterial vector/color parameter offsets are not present in the target serialized metadata"
+      },
+      {
+        "property": "_ParallaxPatternColor",
+        "constantBuffer": "UnityPerMaterial",
+        "register": 3,
+        "offsetBytes": null,
+        "sizeBytes": null,
+        "status": "gap",
+        "reason": "UnityPerMaterial vector/color parameter offsets are not present in the target serialized metadata"
+      },
+      {
+        "property": "_ParallaxPatternColorDark",
+        "constantBuffer": "UnityPerMaterial",
+        "register": 3,
+        "offsetBytes": null,
+        "sizeBytes": null,
+        "status": "gap",
+        "reason": "UnityPerMaterial vector/color parameter offsets are not present in the target serialized metadata"
+      },
+      {
+        "property": "_ParallaxSignLerpFactor0",
+        "constantBuffer": "UnityPerMaterial",
+        "register": 3,
+        "offsetBytes": null,
+        "sizeBytes": null,
+        "status": "gap",
+        "reason": "UnityPerMaterial vector/color parameter offsets are not present in the target serialized metadata"
+      },
+      {
+        "property": "_ParallaxSignLerpFactor1",
+        "constantBuffer": "UnityPerMaterial",
+        "register": 3,
+        "offsetBytes": null,
+        "sizeBytes": null,
+        "status": "gap",
+        "reason": "UnityPerMaterial vector/color parameter offsets are not present in the target serialized metadata"
+      },
+      {
+        "property": "_WorldParallaxAdditionalColor",
+        "constantBuffer": "UnityPerMaterial",
+        "register": 3,
+        "offsetBytes": null,
+        "sizeBytes": null,
+        "status": "gap",
+        "reason": "UnityPerMaterial vector/color parameter offsets are not present in the target serialized metadata"
+      }
+    ]
+  },
+  "materials": [
+    {
+      "file": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_01_p5A6341E8A834E421.json",
+      "name": "M_fx_endminm_gfx_01",
+      "shaderPathId": 6428594484694422749,
+      "validKeywords": [
+        "_PARALLAX_MAP"
+      ],
+      "textures": [
+        {
+          "property": "_ParallaxNoiseMap",
+          "fileId": 0,
+          "pathId": 0,
+          "isNull": true,
+          "status": "gap",
+          "targetName": null,
+          "artifact": null
+        },
+        {
+          "property": "_ParallaxMaskMap",
+          "fileId": 0,
+          "pathId": 0,
+          "isNull": true,
+          "status": "gap",
+          "targetName": null,
+          "artifact": null
+        },
+        {
+          "property": "_ParallaxMap",
+          "fileId": 5,
+          "pathId": -2770956563882859728,
+          "isNull": false,
+          "status": "resolved",
+          "targetName": "T_fx_flow_04_02_M",
+          "artifact": {
+            "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_flow_04_02_M_pD98B95AFB1B9A330.png",
+            "size": 7676,
+            "sha256": "d7ac4b741f76d3ef0ccfd732caaf3d2069ec3839e0190472baf900d54e1090c5"
+          }
+        },
+        {
+          "property": "_NormalMap",
+          "fileId": 4,
+          "pathId": -8583694459516385401,
+          "isNull": false,
+          "status": "resolved",
+          "targetName": "T_fx_sourcerocks+1_N",
+          "artifact": {
+            "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_sourcerocks+1_N_p88E0975E10098787.png",
+            "size": 1499301,
+            "sha256": "aa4ca97d0104dd7830398c52cb125603f192dd0851e2e861a2faf30eca813870"
+          }
+        },
+        {
+          "property": "_MROMap",
+          "fileId": 3,
+          "pathId": 5597062348073817015,
+          "isNull": false,
+          "status": "resolved",
+          "targetName": "T_fx_sourcerocks+3_N",
+          "artifact": {
+            "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_sourcerocks+3_N_p4DACC28D12A753B7.png",
+            "size": 689485,
+            "sha256": "5e9b53832ec20c6e461c9920ff7576dd5f29299e1ad1d9ccf9e66d262a058144"
+          }
+        },
+        {
+          "property": "_BaseColorMap",
+          "fileId": 2,
+          "pathId": 5406992154111209049,
+          "isNull": false,
+          "status": "resolved",
+          "targetName": "T_fx_sourcerocks+2_D",
+          "artifact": {
+            "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_sourcerocks+2_D_p4B097EB7791F6E59.png",
+            "size": 968167,
+            "sha256": "60d79e89f47f7e019abf56ac51317e51bed21d2acef059c246e4928f841e1f91"
+          }
+        }
+      ],
+      "parallaxProperties": [
+        {
+          "property": "_EnableParallaxMap",
+          "kind": "float",
+          "value": 1.0,
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxStrength",
+          "kind": "float",
+          "value": 0.096,
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxMarchNum",
+          "kind": "float",
+          "value": 5.0,
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxTilling",
+          "kind": "float",
+          "value": 3.36,
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxAnimRandom",
+          "kind": "float",
+          "value": 1.0,
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxAnimSpeed",
+          "kind": "float",
+          "value": 0.0,
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxBrightInnerRadius",
+          "kind": "float",
+          "value": 10.0,
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxBrightOuterRadius",
+          "kind": "float",
+          "value": 20.0,
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxBrightStrength",
+          "kind": "float",
+          "value": 1.0,
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxFresnelStrength",
+          "kind": "float",
+          "value": 1.0,
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxIgnorePostExposure",
+          "kind": "float",
+          "value": 1.0,
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxIntensity",
+          "kind": "float",
+          "value": 1.0,
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxMaskMapColorStrength",
+          "kind": "float",
+          "value": 1.0,
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxMinBrightness",
+          "kind": "float",
+          "value": 0.2,
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxNoiseMapTilling",
+          "kind": "float",
+          "value": 1.0,
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxCharPos",
+          "kind": "float",
+          "value": 0.0,
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxMaskByLayerBlend",
+          "kind": "float",
+          "value": 0.0,
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxLerpSchedule",
+          "kind": "float",
+          "value": 0.0,
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxSignControl",
+          "kind": "float",
+          "value": 0.0,
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxColor",
+          "kind": "color",
+          "value": {
+            "r": 964.7226,
+            "g": 330.88165,
+            "b": 85.55083,
+            "a": 1.0
+          },
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxColorDark",
+          "kind": "color",
+          "value": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxPatternColor",
+          "kind": "color",
+          "value": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxPatternColorDark",
+          "kind": "color",
+          "value": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxSignLerpFactor0",
+          "kind": "color",
+          "value": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 0.0
+          },
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxSignLerpFactor1",
+          "kind": "color",
+          "value": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 0.0
+          },
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_WorldParallaxAdditionalColor",
+          "kind": "color",
+          "value": {
+            "r": 979.82745,
+            "g": 863.37256,
+            "b": 433.69412,
+            "a": 1.0
+          },
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        }
+      ]
+    },
+    {
+      "file": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_27_pA531A88850690EB8.json",
+      "name": "M_fx_endminm_gfx_27",
+      "shaderPathId": 6428594484694422749,
+      "validKeywords": [
+        "_PARALLAX_MAP"
+      ],
+      "textures": [
+        {
+          "property": "_ParallaxNoiseMap",
+          "fileId": 0,
+          "pathId": 0,
+          "isNull": true,
+          "status": "gap",
+          "targetName": null,
+          "artifact": null
+        },
+        {
+          "property": "_ParallaxMaskMap",
+          "fileId": 0,
+          "pathId": 0,
+          "isNull": true,
+          "status": "gap",
+          "targetName": null,
+          "artifact": null
+        },
+        {
+          "property": "_ParallaxMap",
+          "fileId": 5,
+          "pathId": -2770956563882859728,
+          "isNull": false,
+          "status": "resolved",
+          "targetName": "T_fx_flow_04_02_M",
+          "artifact": {
+            "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_flow_04_02_M_pD98B95AFB1B9A330.png",
+            "size": 7676,
+            "sha256": "d7ac4b741f76d3ef0ccfd732caaf3d2069ec3839e0190472baf900d54e1090c5"
+          }
+        },
+        {
+          "property": "_NormalMap",
+          "fileId": 4,
+          "pathId": -8583694459516385401,
+          "isNull": false,
+          "status": "resolved",
+          "targetName": "T_fx_sourcerocks+1_N",
+          "artifact": {
+            "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_sourcerocks+1_N_p88E0975E10098787.png",
+            "size": 1499301,
+            "sha256": "aa4ca97d0104dd7830398c52cb125603f192dd0851e2e861a2faf30eca813870"
+          }
+        },
+        {
+          "property": "_MROMap",
+          "fileId": 3,
+          "pathId": 5597062348073817015,
+          "isNull": false,
+          "status": "resolved",
+          "targetName": "T_fx_sourcerocks+3_N",
+          "artifact": {
+            "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_sourcerocks+3_N_p4DACC28D12A753B7.png",
+            "size": 689485,
+            "sha256": "5e9b53832ec20c6e461c9920ff7576dd5f29299e1ad1d9ccf9e66d262a058144"
+          }
+        },
+        {
+          "property": "_BaseColorMap",
+          "fileId": 2,
+          "pathId": 5406992154111209049,
+          "isNull": false,
+          "status": "resolved",
+          "targetName": "T_fx_sourcerocks+2_D",
+          "artifact": {
+            "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_sourcerocks+2_D_p4B097EB7791F6E59.png",
+            "size": 968167,
+            "sha256": "60d79e89f47f7e019abf56ac51317e51bed21d2acef059c246e4928f841e1f91"
+          }
+        }
+      ],
+      "parallaxProperties": [
+        {
+          "property": "_EnableParallaxMap",
+          "kind": "float",
+          "value": 1.0,
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxStrength",
+          "kind": "float",
+          "value": 0.096,
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxMarchNum",
+          "kind": "float",
+          "value": 5.0,
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxTilling",
+          "kind": "float",
+          "value": 3.36,
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxAnimRandom",
+          "kind": "float",
+          "value": 1.0,
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxAnimSpeed",
+          "kind": "float",
+          "value": 0.0,
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxBrightInnerRadius",
+          "kind": "float",
+          "value": 10.0,
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxBrightOuterRadius",
+          "kind": "float",
+          "value": 20.0,
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxBrightStrength",
+          "kind": "float",
+          "value": 1.0,
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxFresnelStrength",
+          "kind": "float",
+          "value": 1.0,
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxIgnorePostExposure",
+          "kind": "float",
+          "value": 1.0,
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxIntensity",
+          "kind": "float",
+          "value": 1.0,
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxMaskMapColorStrength",
+          "kind": "float",
+          "value": 1.0,
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxMinBrightness",
+          "kind": "float",
+          "value": 0.2,
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxNoiseMapTilling",
+          "kind": "float",
+          "value": 1.0,
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxCharPos",
+          "kind": "float",
+          "value": 0.0,
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxMaskByLayerBlend",
+          "kind": "float",
+          "value": 0.0,
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxLerpSchedule",
+          "kind": "float",
+          "value": 0.0,
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxSignControl",
+          "kind": "float",
+          "value": 0.0,
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxColor",
+          "kind": "color",
+          "value": {
+            "r": 964.7226,
+            "g": 330.88165,
+            "b": 85.55083,
+            "a": 1.0
+          },
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxColorDark",
+          "kind": "color",
+          "value": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxPatternColor",
+          "kind": "color",
+          "value": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxPatternColorDark",
+          "kind": "color",
+          "value": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxSignLerpFactor0",
+          "kind": "color",
+          "value": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 0.0
+          },
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxSignLerpFactor1",
+          "kind": "color",
+          "value": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 0.0
+          },
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_WorldParallaxAdditionalColor",
+          "kind": "color",
+          "value": {
+            "r": 979.82745,
+            "g": 863.37256,
+            "b": 433.69412,
+            "a": 1.0
+          },
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        }
+      ]
+    },
+    {
+      "file": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_38_pAFCE491DD7BC5724.json",
+      "name": "M_fx_endminm_gfx_38",
+      "shaderPathId": 6428594484694422749,
+      "validKeywords": [
+        "_PARALLAX_MAP"
+      ],
+      "textures": [
+        {
+          "property": "_ParallaxNoiseMap",
+          "fileId": 0,
+          "pathId": 0,
+          "isNull": true,
+          "status": "gap",
+          "targetName": null,
+          "artifact": null
+        },
+        {
+          "property": "_ParallaxMaskMap",
+          "fileId": 0,
+          "pathId": 0,
+          "isNull": true,
+          "status": "gap",
+          "targetName": null,
+          "artifact": null
+        },
+        {
+          "property": "_ParallaxMap",
+          "fileId": 5,
+          "pathId": -2770956563882859728,
+          "isNull": false,
+          "status": "resolved",
+          "targetName": "T_fx_flow_04_02_M",
+          "artifact": {
+            "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_flow_04_02_M_pD98B95AFB1B9A330.png",
+            "size": 7676,
+            "sha256": "d7ac4b741f76d3ef0ccfd732caaf3d2069ec3839e0190472baf900d54e1090c5"
+          }
+        },
+        {
+          "property": "_NormalMap",
+          "fileId": 4,
+          "pathId": -8583694459516385401,
+          "isNull": false,
+          "status": "resolved",
+          "targetName": "T_fx_sourcerocks+1_N",
+          "artifact": {
+            "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_sourcerocks+1_N_p88E0975E10098787.png",
+            "size": 1499301,
+            "sha256": "aa4ca97d0104dd7830398c52cb125603f192dd0851e2e861a2faf30eca813870"
+          }
+        },
+        {
+          "property": "_MROMap",
+          "fileId": 3,
+          "pathId": 5597062348073817015,
+          "isNull": false,
+          "status": "resolved",
+          "targetName": "T_fx_sourcerocks+3_N",
+          "artifact": {
+            "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_sourcerocks+3_N_p4DACC28D12A753B7.png",
+            "size": 689485,
+            "sha256": "5e9b53832ec20c6e461c9920ff7576dd5f29299e1ad1d9ccf9e66d262a058144"
+          }
+        },
+        {
+          "property": "_BaseColorMap",
+          "fileId": 2,
+          "pathId": 5406992154111209049,
+          "isNull": false,
+          "status": "resolved",
+          "targetName": "T_fx_sourcerocks+2_D",
+          "artifact": {
+            "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/T_fx_sourcerocks+2_D_p4B097EB7791F6E59.png",
+            "size": 968167,
+            "sha256": "60d79e89f47f7e019abf56ac51317e51bed21d2acef059c246e4928f841e1f91"
+          }
+        }
+      ],
+      "parallaxProperties": [
+        {
+          "property": "_EnableParallaxMap",
+          "kind": "float",
+          "value": 1.0,
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxStrength",
+          "kind": "float",
+          "value": 0.096,
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxMarchNum",
+          "kind": "float",
+          "value": 5.0,
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxTilling",
+          "kind": "float",
+          "value": 3.36,
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxAnimRandom",
+          "kind": "float",
+          "value": 1.0,
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxAnimSpeed",
+          "kind": "float",
+          "value": 0.0,
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxBrightInnerRadius",
+          "kind": "float",
+          "value": 10.0,
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxBrightOuterRadius",
+          "kind": "float",
+          "value": 20.0,
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxBrightStrength",
+          "kind": "float",
+          "value": 1.0,
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxFresnelStrength",
+          "kind": "float",
+          "value": 1.0,
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxIgnorePostExposure",
+          "kind": "float",
+          "value": 1.0,
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxIntensity",
+          "kind": "float",
+          "value": 1.0,
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxMaskMapColorStrength",
+          "kind": "float",
+          "value": 1.0,
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxMinBrightness",
+          "kind": "float",
+          "value": 0.2,
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxNoiseMapTilling",
+          "kind": "float",
+          "value": 1.0,
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxCharPos",
+          "kind": "float",
+          "value": 0.0,
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxMaskByLayerBlend",
+          "kind": "float",
+          "value": 0.0,
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxLerpSchedule",
+          "kind": "float",
+          "value": 0.0,
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxSignControl",
+          "kind": "float",
+          "value": 0.0,
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxColor",
+          "kind": "color",
+          "value": {
+            "r": 135.58704,
+            "g": 46.852066,
+            "b": 12.777836,
+            "a": 1.0
+          },
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxColorDark",
+          "kind": "color",
+          "value": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxPatternColor",
+          "kind": "color",
+          "value": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxPatternColorDark",
+          "kind": "color",
+          "value": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 1.0
+          },
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxSignLerpFactor0",
+          "kind": "color",
+          "value": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 0.0
+          },
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_ParallaxSignLerpFactor1",
+          "kind": "color",
+          "value": {
+            "r": 0.0,
+            "g": 0.0,
+            "b": 0.0,
+            "a": 0.0
+          },
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        },
+        {
+          "property": "_WorldParallaxAdditionalColor",
+          "kind": "color",
+          "value": {
+            "r": 979.82745,
+            "g": 863.37256,
+            "b": 433.69412,
+            "a": 1.0
+          },
+          "shaderPropertyDeclared": true,
+          "constantBufferOffsetBytes": null,
+          "status": "resolved_material_value_only"
+        }
+      ]
+    }
+  ],
+  "gaps": [
+    "DXBC has no RDEF chunk; named common-buffer fields come only from serialized Shader metadata.",
+    "UnityPerMaterial property values are resolved from the three Material JSONs, but their b3 offsets are not present in the target metadata.",
+    "Fragment b4 is a 16-byte register; its identity is ambiguous between UnityPerDraw and _TerrainSubsurfaceConstants.",
+    "ParserBindChannels.m_Channels is not exported by AnimeStudio's Shader JSON; do not substitute guessed ShaderLab channels.",
+    "The null _ParallaxNoiseMap and _ParallaxMaskMap PPtrs remain unresolved by design."
+  ]
+}

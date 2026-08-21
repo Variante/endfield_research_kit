@@ -1,0 +1,527 @@
+"""Verify the resource/reflection contract for Endminf's LitEffect HGBuffer.
+
+This verifier intentionally keeps physical D3D registers separate from Unity's
+descriptor names.  The representative DXBCs have no RDEF chunk, so constant
+buffer names and offsets come from the serialized Shader metadata while
+register arrays/signatures come from DXBC and the pinned Ruri output.  Any
+mapping that cannot be made unique is recorded as a gap rather than inferred.
+"""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import re
+import struct
+import sys
+from pathlib import Path
+from typing import Any, Iterable
+
+
+ROOT = Path(__file__).resolve().parents[2]
+SIDE_ROOT = ROOT / "unity_endfield_graph_shader_lab" / "Temp" / "Codex" / "liteffect_subprograms"
+BYTECODE_ROOT = SIDE_ROOT / "Shader" / "HGRP_LitEffect_p5936F49FA93F14DD.shader.bytecode"
+EVIDENCE_PATH = ROOT / "unity_endfield_graph_shader_lab" / "Assets" / "EndfieldGraphShaderLab" / "Generated" / "Characters" / "Playable" / "Endminf" / "ExternalUiEffects" / "endminf_liteffect_subprogram_evidence.json"
+CLOSURE_PATH = ROOT / "unity_endfield_graph_shader_lab" / "Assets" / "EndfieldGraphShaderLab" / "Generated" / "Characters" / "Playable" / "Endminf" / "ExternalUiEffects" / "endminf_material_closure.json"
+MATERIAL_ROOT = ROOT / "export_full" / "recovered" / "AnimeStudio-cli" / "StreamingAssets" / "json_by_type" / "Material"
+REPORT_PATH = ROOT / "unity_endfield_graph_shader_lab" / "Assets" / "EndfieldGraphShaderLab" / "Generated" / "Characters" / "Playable" / "Endminf" / "ExternalUiEffects" / "endminf_liteffect_resource_mapping.json"
+
+VERTEX_FILE = "0114_endfield_dxbc_0.dxbc"
+FRAGMENT_FILE = "0115_endfield_dxbc_1.dxbc"
+VERTEX_RURI = SIDE_ROOT / "Shader" / "HGRP_LitEffect_p5936F49FA93F14DD.shader.bytecode" / "ruri_final" / "parallax_hgbuffer_vertex.hlsl"
+FRAGMENT_RURI = SIDE_ROOT / "Shader" / "HGRP_LitEffect_p5936F49FA93F14DD.shader.bytecode" / "ruri_final" / "parallax_hgbuffer_fragment.hlsl"
+
+MATERIAL_NAMES = (
+    "M_fx_endminm_gfx_01_p5A6341E8A834E421.json",
+    "M_fx_endminm_gfx_27_pA531A88850690EB8.json",
+    "M_fx_endminm_gfx_38_pAFCE491DD7BC5724.json",
+)
+TEXTURE_NAMES = (
+    "_ParallaxNoiseMap",
+    "_ParallaxMaskMap",
+    "_ParallaxMap",
+    "_NormalMap",
+    "_MROMap",
+    "_BaseColorMap",
+)
+PARALLAX_FLOATS = (
+    "_EnableParallaxMap",
+    "_ParallaxStrength",
+    "_ParallaxMarchNum",
+    "_ParallaxTilling",
+    "_ParallaxAnimRandom",
+    "_ParallaxAnimSpeed",
+    "_ParallaxBrightInnerRadius",
+    "_ParallaxBrightOuterRadius",
+    "_ParallaxBrightStrength",
+    "_ParallaxFresnelStrength",
+    "_ParallaxIgnorePostExposure",
+    "_ParallaxIntensity",
+    "_ParallaxMaskMapColorStrength",
+    "_ParallaxMinBrightness",
+    "_ParallaxNoiseMapTilling",
+    "_ParallaxCharPos",
+    "_ParallaxMaskByLayerBlend",
+    "_ParallaxLerpSchedule",
+    "_ParallaxSignControl",
+)
+PARALLAX_COLORS = (
+    "_ParallaxColor",
+    "_ParallaxColorDark",
+    "_ParallaxPatternColor",
+    "_ParallaxPatternColorDark",
+    "_ParallaxSignLerpFactor0",
+    "_ParallaxSignLerpFactor1",
+    "_WorldParallaxAdditionalColor",
+)
+
+
+class VerificationError(ValueError):
+    """Raised when evidence is absent, malformed, or no longer matches."""
+
+
+def _read_json(path: Path) -> dict[str, Any]:
+    if not path.is_file():
+        raise VerificationError(f"missing JSON evidence: {path}")
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise VerificationError(f"invalid JSON evidence {path}: {exc}") from exc
+    if not isinstance(value, dict):
+        raise VerificationError(f"JSON evidence is not an object: {path}")
+    return value
+
+
+def _sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _chunks(data: bytes) -> list[tuple[bytes, bytes]]:
+    if len(data) < 32 or data[:4] != b"DXBC":
+        raise VerificationError("not a DXBC container")
+    count = struct.unpack_from("<I", data, 28)[0]
+    table_end = 32 + count * 4
+    if table_end > len(data):
+        raise VerificationError("DXBC chunk table extends outside the container")
+    chunks: list[tuple[bytes, bytes]] = []
+    for offset in struct.unpack_from(f"<{count}I", data, 32):
+        if offset < table_end or offset + 8 > len(data):
+            raise VerificationError("DXBC chunk offset is outside the container")
+        fourcc = data[offset : offset + 4]
+        size = struct.unpack_from("<I", data, offset + 4)[0]
+        end = offset + 8 + size
+        if end > len(data):
+            raise VerificationError("DXBC chunk extends outside the container")
+        chunks.append((fourcc, data[offset + 8 : end]))
+    return chunks
+
+
+def _signature(data: bytes, wanted: tuple[bytes, ...]) -> list[dict[str, Any]]:
+    for fourcc, chunk in _chunks(data):
+        if fourcc not in wanted:
+            continue
+        if len(chunk) < 8:
+            raise VerificationError(f"short {fourcc.decode('ascii', 'replace')} chunk")
+        count = struct.unpack_from("<I", chunk, 0)[0]
+        record_size = 32 if fourcc in (b"ISG1", b"OSG1") else 24
+        result: list[dict[str, Any]] = []
+        for index in range(count):
+            offset = 8 + index * record_size
+            if offset + 24 > len(chunk):
+                raise VerificationError("short DXBC signature record")
+            name_offset, semantic_index = struct.unpack_from("<II", chunk, offset)
+            component_type = struct.unpack_from("<I", chunk, offset + 12)[0]
+            register = struct.unpack_from("<I", chunk, offset + 16)[0]
+            mask = chunk[offset + 20]
+            if name_offset >= len(chunk):
+                raise VerificationError("bad DXBC semantic name offset")
+            name = chunk[name_offset:].split(b"\0", 1)[0].decode("ascii", errors="replace")
+            result.append(
+                {
+                    "semantic": name,
+                    "index": semantic_index,
+                    "register": register,
+                    "mask": mask,
+                    "components": mask.bit_count(),
+                    "componentType": {1: "uint", 2: "sint", 3: "float"}.get(component_type, str(component_type)),
+                }
+            )
+        return result
+    raise VerificationError(f"DXBC has none of {','.join(x.decode() for x in wanted)}")
+
+
+def _dxbc_reflection(path: Path) -> dict[str, Any]:
+    data = path.read_bytes()
+    chunks = _chunks(data)
+    names = [fourcc.decode("ascii", errors="replace") for fourcc, _ in chunks]
+    has_rdef = b"RDEF" in {fourcc for fourcc, _ in chunks}
+    return {
+        "file": str(path.relative_to(ROOT)).replace("\\", "/"),
+        "bytes": len(data),
+        "sha256": _sha256(path),
+        "chunks": names,
+        "hasRdef": has_rdef,
+        "inputs": _signature(data, (b"ISGN", b"ISG1")),
+        "outputs": _signature(data, (b"OSGN", b"OSG1")),
+    }
+
+
+def _ruri_declarations(path: Path) -> dict[str, Any]:
+    if not path.is_file():
+        raise VerificationError(f"missing Ruri output: {path}")
+    text = path.read_text(encoding="utf-8")
+    cbuffer_pattern = re.compile(
+        r"cbuffer\s+(?P<name>[^\s:{]+)\s*:\s*register\(b(?P<register>\d+)\s*,\s*space(?P<space>\d+)\)\s*\{(?P<body>.*?)\};",
+        re.DOTALL,
+    )
+    cbuffer_aliases: list[dict[str, Any]] = []
+    for match in cbuffer_pattern.finditer(text):
+        arrays = []
+        for array in re.finditer(r"float4\s+(\w+)\[(\d+)(?:u)?\]\s*:\s*packoffset\(c0\)", match.group("body")):
+            arrays.append({"name": array.group(1), "arraySize": int(array.group(2)), "sizeBytes": int(array.group(2)) * 16})
+        if not arrays:
+            raise VerificationError(f"Ruri cbuffer has no float4 arrays: {path.name}:{match.group('name')}")
+        cbuffer_aliases.append(
+            {
+                "name": match.group("name"),
+                "register": int(match.group("register")),
+                "space": int(match.group("space")),
+                "arrays": arrays,
+            }
+        )
+    if not cbuffer_aliases:
+        raise VerificationError(f"Ruri output has no cbuffer declarations: {path}")
+
+    resources: list[dict[str, Any]] = []
+    resource_pattern = re.compile(
+        r"(?P<kind>ByteAddressBuffer|StructuredBuffer(?:<[^>]+>)?|Texture2D(?:<[^>]+>)?)\s+(?P<name>\w+)\s*:\s*register\(t(?P<register>\d+)\s*,\s*space(?P<space>\d+)\)\s*;"
+    )
+    for match in resource_pattern.finditer(text):
+        resources.append({"kind": match.group("kind"), "name": match.group("name"), "register": int(match.group("register")), "space": int(match.group("space"))})
+    samplers: list[dict[str, Any]] = []
+    sampler_pattern = re.compile(
+        r"SamplerState\s+(?P<name>\w+)\s*:\s*register\(s(?P<register>\d+)\s*,\s*space(?P<space>\d+)\)\s*;"
+    )
+    for match in sampler_pattern.finditer(text):
+        samplers.append({"name": match.group("name"), "register": int(match.group("register")), "space": int(match.group("space"))})
+
+    physical: dict[str, dict[str, Any]] = {}
+    for row in cbuffer_aliases:
+        key = f"b{row['register']}@space{row['space']}"
+        entry = physical.setdefault(key, {"register": row["register"], "space": row["space"], "arraySizes": [], "aliases": []})
+        entry["aliases"].append(row["name"])
+        for array in row["arrays"]:
+            if array["arraySize"] not in entry["arraySizes"]:
+                entry["arraySizes"].append(array["arraySize"])
+    for entry in physical.values():
+        entry["arraySizes"].sort()
+        entry["sizeBytes"] = entry["arraySizes"][-1] * 16
+        entry["aliases"].sort()
+    return {
+        "file": str(path.relative_to(ROOT)).replace("\\", "/"),
+        "bytes": path.stat().st_size,
+        "sha256": _sha256(path),
+        "physicalCbuffers": sorted(physical.values(), key=lambda row: row["register"]),
+        "resources": sorted(resources, key=lambda row: row["register"]),
+        "samplers": sorted(samplers, key=lambda row: row["register"]),
+    }
+
+
+def _compact_metadata(path: Path) -> dict[str, Any]:
+    data = _read_json(path)
+    required = ("ConstantBufferParameters", "BufferBindingParameters", "SamplerParameters", "DescriptorSetParameters")
+    for key in required:
+        if not isinstance(data.get(key), list):
+            raise VerificationError(f"{path.name} missing {key}")
+    for key, expected in (("SourceSubProgramIndex", 19), ("SourceProgramBlobIndex", 207), ("SourcePassName", "HGBuffer")):
+        if data.get(key) != expected:
+            raise VerificationError(f"{path.name} {key} mismatch: {data.get(key)!r}")
+    descriptor_sets = []
+    interesting_global = {4, 5, 6, 7, 8, 9, 10, 13, 16, 19, 20, 33}
+    for descriptor_set in data["DescriptorSetParameters"]:
+        set_id = descriptor_set.get("SetId")
+        if set_id == 0:
+            bindings = [row for row in descriptor_set.get("Bindings", []) if row.get("BindingIndex") in interesting_global]
+        else:
+            bindings = list(descriptor_set.get("Bindings", []))
+        descriptor_sets.append({"Name": descriptor_set.get("Name"), "SetId": set_id, "MaxBindingIndex": descriptor_set.get("MaxBindingIndex"), "Bindings": bindings})
+    return {
+        "file": str(path.relative_to(ROOT)).replace("\\", "/"),
+        "decodedStage": data.get("DecodedProgramStage"),
+        "serializedStage": data.get("SourceSerializedProgramStage"),
+        "constantBuffers": data["ConstantBufferParameters"],
+        "bufferParameters": data.get("BufferParameters", []),
+        "bufferBindings": data["BufferBindingParameters"],
+        "samplers": data["SamplerParameters"],
+        "descriptorSets": descriptor_sets,
+    }
+
+
+def _material_property_names(shader_source: Path) -> set[str]:
+    if not shader_source.is_file():
+        raise VerificationError(f"missing converted shader source: {shader_source}")
+    text = shader_source.read_text(encoding="utf-8", errors="replace")
+    return set(re.findall(r"^\s*(?:\[[^\]]+\]\s*)?(_[A-Za-z0-9]+)\s*\(", text, re.MULTILINE))
+
+
+def _texture_identity_map() -> dict[int, dict[str, Any]]:
+    closure = _read_json(CLOSURE_PATH)
+    result: dict[int, dict[str, Any]] = {}
+    for identity in closure.get("identities", []):
+        if not isinstance(identity, dict) or identity.get("targetType") != "Texture2D":
+            continue
+        path_id = identity.get("pathId")
+        if isinstance(path_id, int):
+            if path_id in result:
+                raise VerificationError(f"duplicate Texture2D identity PathID: {path_id}")
+            result[path_id] = identity
+    return result
+
+
+def _material_rows(shader_source: Path, texture_identities: dict[int, dict[str, Any]]) -> list[dict[str, Any]]:
+    declared = _material_property_names(shader_source)
+    rows: list[dict[str, Any]] = []
+    for name in MATERIAL_NAMES:
+        path = MATERIAL_ROOT / name
+        data = _read_json(path)
+        if data.get("m_Shader", {}).get("m_PathID") != 6428594484694422749:
+            raise VerificationError(f"{name} does not reference HGRP/LitEffect")
+        if data.get("m_ValidKeywords") != ["_PARALLAX_MAP"]:
+            raise VerificationError(f"{name} is not the _PARALLAX_MAP material variant")
+        tex_envs = data.get("m_SavedProperties", {}).get("m_TexEnvs", {})
+        textures = []
+        for prop in TEXTURE_NAMES:
+            tex = tex_envs.get(prop, {}).get("m_Texture")
+            if not isinstance(tex, dict):
+                raise VerificationError(f"{name} missing texture property {prop}")
+            path_id = tex.get("m_PathID")
+            is_null = tex.get("IsNull") is True or tex.get("m_FileID", 0) == 0 or path_id == 0
+            identity = None if is_null else texture_identities.get(path_id)
+            resolved = bool(identity and identity.get("status") in ("resolved", "resolved_byte_identical_mirror"))
+            textures.append(
+                {
+                    "property": prop,
+                    "fileId": tex.get("m_FileID"),
+                    "pathId": path_id,
+                    "isNull": is_null,
+                    "status": "resolved" if resolved else "gap",
+                    "targetName": identity.get("targetName") if identity else None,
+                    "artifact": identity.get("artifact") if identity else None,
+                }
+            )
+        floats = data.get("m_SavedProperties", {}).get("m_Floats", {})
+        colors = data.get("m_SavedProperties", {}).get("m_Colors", {})
+        properties = []
+        for prop in PARALLAX_FLOATS:
+            properties.append({"property": prop, "kind": "float", "value": floats.get(prop), "shaderPropertyDeclared": prop in declared, "constantBufferOffsetBytes": None, "status": "resolved_material_value_only" if prop in floats and prop in declared else "gap"})
+        for prop in PARALLAX_COLORS:
+            properties.append({"property": prop, "kind": "color", "value": colors.get(prop), "shaderPropertyDeclared": prop in declared, "constantBufferOffsetBytes": None, "status": "resolved_material_value_only" if prop in colors and prop in declared else "gap"})
+        rows.append(
+            {
+                "file": str(path.relative_to(ROOT)).replace("\\", "/"),
+                "name": data.get("Name") or data.get("m_Name"),
+                "shaderPathId": data["m_Shader"]["m_PathID"],
+                "validKeywords": data["m_ValidKeywords"],
+                "textures": textures,
+                "parallaxProperties": properties,
+            }
+        )
+    return rows
+
+
+def _field_size(parameter: dict[str, Any]) -> int:
+    if parameter.get("IsMatrix") or parameter.get("ColumnCount", 1) > 1:
+        return int(parameter.get("RowCount", 1)) * int(parameter.get("ColumnCount", 1)) * 4 * max(1, int(parameter.get("ArraySize", 0) or 1))
+    return int(parameter.get("RowCount", 1)) * 4 * max(1, int(parameter.get("ArraySize", 0) or 1))
+
+
+def _common_fields(metadata: dict[str, Any]) -> list[dict[str, Any]]:
+    fields: list[dict[str, Any]] = []
+    for cb in metadata["constantBuffers"]:
+        for parameter in cb.get("VectorParameters", []) + cb.get("MatrixParameters", []):
+            fields.append(
+                {
+                    "buffer": cb.get("Name"),
+                    "name": parameter.get("Name"),
+                    "offsetBytes": parameter.get("Index"),
+                    "sizeBytes": _field_size(parameter),
+                    "arraySize": parameter.get("ArraySize", 0),
+                    "isMatrix": bool(parameter.get("IsMatrix")),
+                    "status": "serialized_parameter_resolved",
+                }
+            )
+    return fields
+
+
+def _target_evidence(vertex: dict[str, Any], fragment: dict[str, Any]) -> dict[str, Any]:
+    evidence = _read_json(EVIDENCE_PATH)
+    if evidence.get("status") != "verified":
+        raise VerificationError("existing LitEffect evidence is not verified")
+    reps = {row.get("fileName"): row for row in evidence.get("target", {}).get("representatives", []) if isinstance(row, dict)}
+    manifest_path = BYTECODE_ROOT / "manifest.json"
+    manifest = _read_json(manifest_path)
+    manifest_rows = {row.get("fileName"): row for row in manifest.get("entries", []) if isinstance(row, dict)}
+    for name, path in ((VERTEX_FILE, vertex), (FRAGMENT_FILE, fragment)):
+        row = reps.get(name)
+        if not row:
+            raise VerificationError(f"existing evidence lacks representative {name}")
+        if row.get("sha256") != path["sha256"] or row.get("byteCount") != path["bytes"]:
+            raise VerificationError(f"representative evidence drifted for {name}")
+        if row.get("subProgramIndex") != 19 or row.get("passName") != "HGBuffer" or "_PARALLAX_MAP" not in row.get("keywords", []):
+            raise VerificationError(f"representative metadata mismatch for {name}")
+        manifest_row = manifest_rows.get(name)
+        if not manifest_row:
+            raise VerificationError(f"manifest lacks representative {name}")
+        for key in ("sha256", "byteCount", "sourceOffset", "sourceSize", "passName", "subProgramIndex", "programBlobIndex"):
+            if manifest_row.get(key) != row.get(key):
+                raise VerificationError(f"manifest/evidence mismatch for {name}: {key}")
+    return {
+        "source": evidence.get("source"),
+        "manifest": evidence.get("manifest"),
+        "target": evidence.get("target"),
+    }
+
+
+def _map_vertex_fields(fields: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Attach the one exact physical range proven by the vertex register sizes.
+
+    b0 is exactly the serialized _TransformVariables size.  b1/b2 are the
+    contiguous 20+11 register global slice emitted by this representative;
+    no fragment register is assigned to common named fields without a unique
+    serialized/register proof.
+    """
+    result = []
+    for field in fields:
+        row = dict(field)
+        if field["buffer"] == "_TransformVariables":
+            row.update({"stage": "vertex", "register": 0, "registerOffsetBytes": field["offsetBytes"], "status": "resolved_register_range"})
+        elif field["buffer"] == "ShaderVariablesGlobal" and field["offsetBytes"] < 496:
+            register = 1 if field["offsetBytes"] < 320 else 2
+            row.update({"stage": "vertex", "register": register, "registerOffsetBytes": field["offsetBytes"] - (0 if register == 1 else 320), "status": "resolved_register_range"})
+        else:
+            row.update({"stage": "vertex", "register": None, "registerOffsetBytes": None, "status": "gap"})
+        result.append(row)
+    return result
+
+
+def build_report() -> dict[str, Any]:
+    vertex_path = BYTECODE_ROOT / VERTEX_FILE
+    fragment_path = BYTECODE_ROOT / FRAGMENT_FILE
+    if not vertex_path.is_file() or not fragment_path.is_file():
+        raise VerificationError("representative DXBC sidecars are missing")
+    vertex_reflection = _dxbc_reflection(vertex_path)
+    fragment_reflection = _dxbc_reflection(fragment_path)
+    if vertex_reflection["hasRdef"] or fragment_reflection["hasRdef"]:
+        raise VerificationError("RDEF unexpectedly present; do not mix RDEF and Endfield metadata paths")
+    vertex_ruri = _ruri_declarations(VERTEX_RURI)
+    fragment_ruri = _ruri_declarations(FRAGMENT_RURI)
+    vertex_meta = _compact_metadata(BYTECODE_ROOT / (VERTEX_FILE + ".metadata.json"))
+    fragment_meta = _compact_metadata(BYTECODE_ROOT / (FRAGMENT_FILE + ".metadata.json"))
+    evidence = _target_evidence(vertex_reflection, fragment_reflection)
+    shader_source = SIDE_ROOT / "Shader" / "HGRP_LitEffect_p5936F49FA93F14DD.shader"
+    texture_identities = _texture_identity_map()
+    materials = _material_rows(shader_source, texture_identities)
+
+    expected_vertex = {0: 82, 1: 20, 2: 11}
+    expected_fragment = {0: 45, 1: 106, 2: 5, 3: 31, 4: 1}
+    for actual, expected, label in ((vertex_ruri["physicalCbuffers"], expected_vertex, "vertex"), (fragment_ruri["physicalCbuffers"], expected_fragment, "fragment")):
+        found = {int(row["register"]): row["arraySizes"][-1] for row in actual}
+        if found != expected:
+            raise VerificationError(f"{label} Ruri cbuffer sizes mismatch: {found!r}")
+
+    dynamic_samplers = {row["BindPoint"]: row["Name"] for row in fragment_meta["samplers"] if isinstance(row.get("BindPoint"), int) and 0 <= row["BindPoint"] <= 5 and str(row.get("Name", "")).startswith("_")}
+    if dynamic_samplers != {i: name for i, name in enumerate(TEXTURE_NAMES)}:
+        raise VerificationError(f"PerMaterial sampler/name order mismatch: {dynamic_samplers!r}")
+    vertex_resources = []
+    for resource in vertex_ruri["resources"]:
+        if resource["register"] == 0:
+            vertex_resources.append({**resource, "logicalName": "_VertexSkinMatrices", "status": "resolved", "basis": ["DXBC/Ruri t0", "serialized BufferParameters", "Global descriptor binding 19"]})
+    if len(vertex_resources) != 1:
+        raise VerificationError("expected exactly one vertex t0 resource")
+    fragment_resources = []
+    for resource in fragment_ruri["resources"]:
+        slot = resource["register"]
+        logical = dynamic_samplers.get(slot)
+        fragment_resources.append({**resource, "logicalName": logical, "status": "resolved" if logical else "gap", "basis": ["Ruri register", "serialized SamplerParameters BindPoint 0..5", "PerMaterial descriptor texture binding 6..11"] if logical else []})
+    if len(fragment_resources) != 6:
+        raise VerificationError(f"expected six fragment texture resources, got {len(fragment_resources)}")
+
+    static_samplers = [{**row, "status": "resolved_static_name"} for row in fragment_ruri["samplers"]]
+    if [row["register"] for row in static_samplers] != list(range(6)):
+        raise VerificationError("fragment Ruri samplers are not the six s0..s5 slots")
+
+    common_fields = _common_fields(vertex_meta)
+    physical_vertex = [
+        {"register": row["register"], "space": row["space"], "arraySize": row["arraySizes"][-1], "sizeBytes": row["sizeBytes"], "aliases": row["aliases"], "logicalName": "_TransformVariables" if row["register"] == 0 else ("ShaderVariablesGlobal" if row["register"] in (1, 2) else None), "status": "resolved_register_range" if row["register"] in (0, 1, 2) else "gap", "basis": ["Ruri/DXBC cbuffer array size equals serialized _TransformVariables size"] if row["register"] == 0 else (["Ruri/DXBC contiguous 20+11 register range", "serialized ShaderVariablesGlobal field offsets 304 and 416"] if row["register"] in (1, 2) else [])}
+        for row in vertex_ruri["physicalCbuffers"]
+    ]
+    physical_fragment = [
+        {"register": row["register"], "space": row["space"], "arraySize": row["arraySizes"][-1], "sizeBytes": row["sizeBytes"], "aliases": row["aliases"], "logicalName": "UnityPerMaterial" if row["register"] == 3 else None, "status": "resolved_descriptor_buffer_identity" if row["register"] == 3 else "gap", "basis": ["Ruri physical register", "PerMaterial descriptor set binding 12"] if row["register"] == 3 else (["16-byte register is ambiguous between UnityPerDraw and _TerrainSubsurfaceConstants"] if row["register"] == 4 else []), "candidateLogicalNames": ["UnityPerDraw", "_TerrainSubsurfaceConstants"] if row["register"] == 4 else []}
+        for row in fragment_ruri["physicalCbuffers"]
+    ]
+
+    # The generated Shader JSON exposes parameter metadata, but does not emit
+    # SerializedSubProgram.m_Channels.  Keep this absence explicit.
+    bind_channels = {
+        "status": "gap",
+        "reason": "AnimeStudio Shader JSON omits ParserBindChannels.m_Channels; DXBC ISGN/OSGN signatures above are the available interface reflection.",
+        "serializedMetadataClass": "ParserBindChannels",
+    }
+    report = {
+        "schema": "endfield.endminf-liteffect-resource-mapping.v1",
+        "status": "verified_with_gaps",
+        "scope": {"shader": {"cab": "CAB-2c811ef28608ab220ecdb5c4e0629d2d", "pathId": 6428594484694422749, "name": "HGRP/LitEffect"}, "pass": "HGBuffer", "keywords": ["HG_ENABLE_MV", "_PARALLAX_MAP"], "subProgramIndex": 19, "platform": "d3d11"},
+        "evidence": evidence,
+        "reflection": {
+            "vertex": {**vertex_reflection, "ruri": vertex_ruri, "metadata": vertex_meta},
+            "fragment": {**fragment_reflection, "ruri": fragment_ruri, "metadata": fragment_meta},
+        },
+        "bindChannels": bind_channels,
+        "vertexInputs": vertex_reflection["inputs"],
+        "vertexOutputs": vertex_reflection["outputs"],
+        "fragmentInputs": fragment_reflection["inputs"],
+        "mrtOutputs": fragment_reflection["outputs"],
+        "resources": {"vertex": vertex_resources, "fragmentTextures": fragment_resources, "fragmentSamplers": static_samplers},
+        "constantBuffers": {
+            "vertex": physical_vertex,
+            "fragment": physical_fragment,
+            "serializedFields": _map_vertex_fields(common_fields),
+            "fragmentFieldMapping": [{**field, "stage": "fragment", "register": None, "registerOffsetBytes": None, "status": "gap"} for field in common_fields],
+            "materialConstantBufferFields": [{"property": prop, "constantBuffer": "UnityPerMaterial", "register": 3, "offsetBytes": None, "sizeBytes": None, "status": "gap", "reason": "UnityPerMaterial vector/color parameter offsets are not present in the target serialized metadata"} for prop in (*PARALLAX_FLOATS, *PARALLAX_COLORS)],
+        },
+        "materials": materials,
+        "gaps": [
+            "DXBC has no RDEF chunk; named common-buffer fields come only from serialized Shader metadata.",
+            "UnityPerMaterial property values are resolved from the three Material JSONs, but their b3 offsets are not present in the target metadata.",
+            "Fragment b4 is a 16-byte register; its identity is ambiguous between UnityPerDraw and _TerrainSubsurfaceConstants.",
+            "ParserBindChannels.m_Channels is not exported by AnimeStudio's Shader JSON; do not substitute guessed ShaderLab channels.",
+            "The null _ParallaxNoiseMap and _ParallaxMaskMap PPtrs remain unresolved by design.",
+        ],
+    }
+    return report
+
+
+def verify(report_path: Path | None = None) -> dict[str, Any]:
+    report = build_report()
+    if report_path is not None:
+        report_path.parent.mkdir(parents=True, exist_ok=True)
+        report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return report
+
+
+def main(argv: Iterable[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--write-report", action="store_true", help=f"write the durable report to {REPORT_PATH}")
+    args = parser.parse_args(list(argv) if argv is not None else None)
+    try:
+        report = verify(REPORT_PATH if args.write_report else None)
+    except VerificationError as exc:
+        print(f"verification_failed: {exc}", file=sys.stderr)
+        return 1
+    print(f"status={report['status']} vertexInputs={len(report['vertexInputs'])} mrtOutputs={len(report['mrtOutputs'])} materials={len(report['materials'])}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
