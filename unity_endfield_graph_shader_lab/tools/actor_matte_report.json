@@ -4,8 +4,8 @@
   "pathBase": "repo_root",
   "generatedBy": "unity_endfield_graph_shader_lab/tools/build_priority_actor_mattes.py",
   "manifest": "unity_endfield_graph_shader_lab/scratch/character_recovery/actor_clips/actor_matte_manifest.json",
-  "manifestBytes": 491161,
-  "manifestSha256": "3F3A3BBA5AD5CB471FC44341B6FFBB33EB869C7F568026987C5B4986B1FAFF5F",
+  "manifestBytes": 491571,
+  "manifestSha256": "B9E7EF99678705FDBBB65563658629DFE997A28F29F1D3496926C372A36F8C5B",
   "source": {
     "path": "videos/2026-08-15_10-32-32.mkv",
     "bytes": 1678613397,
@@ -119,7 +119,8 @@
       "pelicaStableStartFrame": 12602,
       "reason": "pinned-source model-swap/glitch interval measured in the phase evidence; no stable Pelica actor component is present",
       "chenExemption": false
-    }
+    },
+    "modelWeightsFile": "deeplabv3_resnet50_coco-cd0a2569.pth"
   },
   "actorSet": [
     "pelica"

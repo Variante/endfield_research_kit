@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import copy
+import json
 import unittest
 from pathlib import Path
 from tempfile import NamedTemporaryFile
@@ -147,6 +149,26 @@ class PriorityActorMatteTests(unittest.TestCase):
         self.assertFalse(gates["componentPurity"])
         self.assertFalse(gates["uiExclusionZero"])
         self.assertEqual(gates["uiOverlapPixels"], 3)
+
+    def test_audit_report_rechecks_manifest_source_weight_and_artifact_identity(self) -> None:
+        report_path = matte.PROJECT_ROOT / "tools" / "actor_matte_report.json"
+        base = json.loads(report_path.read_text(encoding="utf-8"))
+        matte._check_audit_report(base, report_path)
+        mutations = {
+            "source_sha256": lambda value: value["source"].__setitem__("sha256", "0" * 64),
+            "weight_sha256": lambda value: value["algorithm"].__setitem__("modelWeightsSha256", "0" * 64),
+            "artifact_pix_fmt": lambda value: value["artifacts"][0].__setitem__("pix_fmt", "bgr24"),
+            "artifact_codec": lambda value: value["artifacts"][0].__setitem__("codec", "h264"),
+            "artifact_frames": lambda value: value["artifacts"][0].__setitem__("frames", 676),
+            "requested_windows": lambda value: value["requestedWindows"]["pelica"]["framesExclusive"].__setitem__(0, 12561),
+            "excluded_actors": lambda value: value["excludedActors"].clear(),
+        }
+        for label, mutate in mutations.items():
+            with self.subTest(label=label):
+                candidate = copy.deepcopy(base)
+                mutate(candidate)
+                with self.assertRaises(matte.MatteError):
+                    matte._check_audit_report(candidate, report_path)
 
     def test_contiguous_ranges_are_deterministic(self) -> None:
         self.assertEqual(list(matte._contiguous_ranges([4, 3, 2, 9, 10, 12])), [(2, 4), (9, 10), (12, 12)])

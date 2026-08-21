@@ -34,6 +34,7 @@ output root after every gate passes.
 from __future__ import annotations
 
 import argparse
+from functools import lru_cache
 import hashlib
 import json
 import math
@@ -56,6 +57,7 @@ VIDEO_BYTES = 1_678_613_397
 VIDEO_SHA256 = "2F542A3BE7CE3332295D3A841FD8613C62707E084F9E33A0F156DA8A06EBF5E7"
 EXPECTED_SIZE = (3840, 2160)
 EXPECTED_FPS = 60.0
+EXPECTED_SOURCE_FRAME_COUNT = 22702
 
 # These are exact source-window boundaries in seconds from the phase contract.
 # End is exclusive at the 60-Hz frame boundary.
@@ -90,6 +92,8 @@ FRAME_MISSING_THRESHOLD = 8000  # stable actor support in the 480x270 work frame
 MIN_COMPONENT_AREA = 120
 KEYFRAME_INTERVAL = 4
 DEEPLAB_WEIGHT_SHA256 = "CD0A25694C4A0F7106B38F4938BF90A874F2F241CC410B8F63C7024399538F06"
+DEEPLAB_WEIGHT_FILENAME = "deeplabv3_resnet50_coco-cd0a2569.pth"
+UNPUBLISHED_ACTOR_REASON = "retained unpublished; not regenerated in this fail-closed Pelica-only run"
 MANIFEST_SCHEMA = "endfield.character-recovery.actor-matte.v1"
 AUDIT_REPORT_SCHEMA = "endfield.character-recovery.actor-matte.audit.v2"
 
@@ -162,6 +166,29 @@ def _expected_transition_frames(actor: str, window: ActorWindow) -> list[int]:
     ]
 
 
+def _requested_windows_contract() -> dict:
+    return {
+        actor: {
+            "seconds": list(ACTOR_WINDOWS[actor]),
+            "framesExclusive": [_actor_window(actor).start_frame, _actor_window(actor).end_frame_exclusive],
+        }
+        for actor in ACTOR_WINDOWS
+    }
+
+
+def _excluded_actor_contract(actor_set: Iterable[str]) -> list[dict]:
+    selected = set(actor_set)
+    return [
+        {
+            "actor": actor,
+            "status": "unpublished",
+            "reason": UNPUBLISHED_ACTOR_REASON,
+        }
+        for actor in ACTOR_WINDOWS
+        if actor not in selected
+    ]
+
+
 def _transition_diagnostics(frame_number: int) -> dict:
     start, end = PELICA_SOURCE_TRANSITION_RANGE
     return {
@@ -191,6 +218,24 @@ def _sha256(path: Path) -> tuple[int, str]:
             total += len(chunk)
             digest.update(chunk)
     return total, digest.hexdigest().upper()
+
+
+@lru_cache(maxsize=1)
+def _current_pinned_weight() -> tuple[Path, str]:
+    """Resolve and hash the exact torchvision checkpoint used for publication."""
+    try:
+        import torch
+    except ImportError as error:
+        raise MatteError("cannot validate the pinned DeepLab weight file: torch is unavailable") from error
+    path = Path(torch.hub.get_dir()) / "checkpoints" / DEEPLAB_WEIGHT_FILENAME
+    if not path.is_file():
+        raise MatteError(f"pinned DeepLab weight file is missing: {path}")
+    _size, digest = _sha256(path)
+    if digest != DEEPLAB_WEIGHT_SHA256:
+        raise MatteError(
+            f"pinned DeepLab weight file hash mismatch: {digest} != {DEEPLAB_WEIGHT_SHA256}"
+        )
+    return path, digest
 
 
 def verify_source(path: Path) -> dict:
@@ -1041,6 +1086,7 @@ def write_manifest(source: dict, actor_reports: list[dict], output_root: Path) -
             "name": "deeplabv3_resnet50_person_class_with_hard_ui_exclusions",
             "model": "torchvision.deeplabv3_resnet50",
             "modelClass": 15,
+            "modelWeightsFile": DEEPLAB_WEIGHT_FILENAME,
             "modelWeightsSha256": DEEPLAB_WEIGHT_SHA256,
             "workResolution": list(WORK_SIZE),
             "actorRoi": list(ACTOR_ROI),
@@ -1065,16 +1111,9 @@ def write_manifest(source: dict, actor_reports: list[dict], output_root: Path) -
             },
         },
         "actorSet": sorted(item["actor"] for item in actor_reports),
+        "requestedWindows": _requested_windows_contract(),
         "actors": actor_reports,
-        "excludedActors": [
-            {
-                "actor": actor,
-                "status": "unpublished",
-                "reason": "retained unpublished; not regenerated in this fail-closed Pelica-only run",
-            }
-            for actor in ACTOR_WINDOWS
-            if actor not in {item["actor"] for item in actor_reports}
-        ],
+        "excludedActors": _excluded_actor_contract(item["actor"] for item in actor_reports),
         "publicationGates": gates,
     }
     path = output_root / "actor_matte_manifest.json"
@@ -1119,13 +1158,7 @@ def write_durable_report(
         "manifestBytes": manifest_size,
         "manifestSha256": manifest_hash,
         "source": source,
-        "requestedWindows": {
-            actor: {
-                "seconds": list(ACTOR_WINDOWS[actor]),
-                "framesExclusive": [_actor_window(actor).start_frame, _actor_window(actor).end_frame_exclusive],
-            }
-            for actor in ACTOR_WINDOWS
-        },
+        "requestedWindows": _requested_windows_contract(),
         "algorithm": manifest_data["algorithm"],
         "actorSet": sorted(item["actor"] for item in actor_reports),
         "artifacts": artifacts,
@@ -1154,14 +1187,17 @@ def _check_manifest_data(report: dict, manifest_path: Path) -> None:
     algorithm = report.get("algorithm") or {}
     if algorithm.get("name") != "deeplabv3_resnet50_person_class_with_hard_ui_exclusions":
         raise MatteError("manifest does not use the publishable DeepLab segmentation")
+    if algorithm.get("modelWeightsFile") != DEEPLAB_WEIGHT_FILENAME:
+        raise MatteError("manifest DeepLab weight filename pin mismatch")
     if str(algorithm.get("modelWeightsSha256", "")).upper() != DEEPLAB_WEIGHT_SHA256:
         raise MatteError("manifest DeepLab weight pin mismatch")
+    _current_pinned_weight()
     source = report.get("source") or {}
     if source.get("path") != VIDEO_RELATIVE.as_posix():
         raise MatteError(f"manifest source path is stale: {source.get('path')!r}")
     if source.get("bytes") != VIDEO_BYTES or str(source.get("sha256", "")).upper() != VIDEO_SHA256:
         raise MatteError("manifest source pin mismatch")
-    if source.get("width") != EXPECTED_SIZE[0] or source.get("height") != EXPECTED_SIZE[1] or abs(float(source.get("fps", 0)) - EXPECTED_FPS) > 0.01:
+    if source.get("width") != EXPECTED_SIZE[0] or source.get("height") != EXPECTED_SIZE[1] or abs(float(source.get("fps", 0)) - EXPECTED_FPS) > 0.01 or source.get("frameCount") != EXPECTED_SOURCE_FRAME_COUNT:
         raise MatteError("manifest source resolution/fps mismatch")
     source_path = _resolve_repo_relative(source["path"], "manifest source")
     if not source_path.is_file():
@@ -1250,8 +1286,47 @@ def _check_audit_report(report: dict, report_path: Path) -> None:
     except (OSError, ValueError) as error:
         raise MatteError(f"could not read audit manifest: {error}") from error
     _check_manifest_data(manifest, manifest_path)
+    expected_source = {
+        "path": VIDEO_RELATIVE.as_posix(),
+        "bytes": VIDEO_BYTES,
+        "sha256": VIDEO_SHA256,
+        "width": EXPECTED_SIZE[0],
+        "height": EXPECTED_SIZE[1],
+        "fps": EXPECTED_FPS,
+        "frameCount": EXPECTED_SOURCE_FRAME_COUNT,
+    }
+    if manifest.get("source") != expected_source:
+        raise MatteError("manifest source fields do not match the pinned source contract")
+    if report.get("source") != manifest.get("source") or report.get("source") != expected_source:
+        raise MatteError("audit report source fields do not match manifest/constants")
+
+    manifest_algorithm = manifest.get("algorithm") or {}
+    report_algorithm = report.get("algorithm") or {}
+    if report_algorithm != manifest_algorithm:
+        raise MatteError("audit algorithm does not match manifest")
+    if report_algorithm.get("name") != "deeplabv3_resnet50_person_class_with_hard_ui_exclusions":
+        raise MatteError("audit algorithm name is not the publishable matte algorithm")
+    if report_algorithm.get("modelWeightsFile") != DEEPLAB_WEIGHT_FILENAME:
+        raise MatteError("audit model weight filename does not match the pinned checkpoint")
+    if str(report_algorithm.get("modelWeightsSha256", "")).upper() != DEEPLAB_WEIGHT_SHA256:
+        raise MatteError("audit model weight hash does not match the manifest/constants")
+    _weight_path, current_weight_hash = _current_pinned_weight()
+    if current_weight_hash != str(report_algorithm.get("modelWeightsSha256", "")).upper():
+        raise MatteError("audit model weight hash does not match the current pinned weight file")
+
+    expected_windows = _requested_windows_contract()
+    if manifest.get("requestedWindows") != expected_windows:
+        raise MatteError("manifest requestedWindows do not match the actor policy")
+    if report.get("requestedWindows") != manifest.get("requestedWindows"):
+        raise MatteError("audit requestedWindows do not match the manifest")
+
     if report.get("actorSet") != manifest.get("actorSet"):
         raise MatteError("audit actorSet does not match manifest")
+    expected_excluded = _excluded_actor_contract(manifest.get("actorSet") or [])
+    if manifest.get("excludedActors") != expected_excluded:
+        raise MatteError("manifest excludedActors do not match the actor publication policy")
+    if report.get("excludedActors") != manifest.get("excludedActors"):
+        raise MatteError("audit excludedActors do not match the manifest")
     artifacts = report.get("artifacts")
     if not isinstance(artifacts, list) or sorted(item.get("actor") for item in artifacts) != sorted(report.get("actorSet") or []):
         raise MatteError("audit artifacts do not match actor set")
@@ -1262,12 +1337,61 @@ def _check_audit_report(report: dict, report_path: Path) -> None:
             raise MatteError(f"audit artifact actor is absent from manifest: {actor}")
         if artifact.get("path") != manifest_actors[actor].get("clip"):
             raise MatteError(f"audit artifact path does not match manifest for {actor}")
+        manifest_encoded = manifest_actors[actor].get("encoded") or {}
+        for field, manifest_field in (
+            ("bytes", "bytes"),
+            ("sha256", "sha256"),
+            ("codec", "codec"),
+            ("pix_fmt", "pix_fmt"),
+            ("frames", "frames"),
+        ):
+            actual = artifact.get(field)
+            expected = manifest_encoded.get(manifest_field)
+            if field == "sha256":
+                actual = str(actual or "").upper()
+                expected = str(expected or "").upper()
+            if actual != expected:
+                raise MatteError(f"audit artifact {field} does not match manifest for {actor}")
         clip = _resolve_repo_relative(artifact.get("path"), f"audit {actor} clip")
         size, digest = _sha256(clip)
         if size != artifact.get("bytes") or digest != str(artifact.get("sha256", "")).upper():
             raise MatteError(f"audit artifact hash mismatch for {actor}")
+    validation = report.get("validation") or {}
+    expected_rows = {item["actor"]: item["frameCount"] for item in manifest["actors"]}
+    if validation.get("rows") != expected_rows or validation.get("publishedClips") != len(artifacts) or validation.get("largeVideoFilesCommitted") is not False:
+        raise MatteError("audit validation summary does not match the manifest/artifacts")
     if report.get("publicationGates") != manifest.get("publicationGates"):
         raise MatteError("audit publication gates do not match manifest")
+
+
+def _refresh_existing_report(manifest_path: Path, report_path: Path) -> Path:
+    """Re-emit contract metadata/report without decoding or encoding video."""
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as error:
+        raise MatteError(f"could not read existing actor matte manifest: {error}") from error
+    if manifest.get("schema") != MANIFEST_SCHEMA:
+        raise MatteError("existing actor matte manifest has an unsupported schema")
+    manifest["requestedWindows"] = _requested_windows_contract()
+    algorithm = manifest.get("algorithm")
+    if not isinstance(algorithm, dict):
+        raise MatteError("existing actor matte manifest has no algorithm object")
+    algorithm["modelWeightsFile"] = DEEPLAB_WEIGHT_FILENAME
+    actor_set = manifest.get("actorSet") or [item.get("actor") for item in manifest.get("actors") or []]
+    manifest["actorSet"] = sorted(str(actor) for actor in actor_set)
+    manifest["excludedActors"] = _excluded_actor_contract(manifest["actorSet"])
+    temporary = manifest_path.with_suffix(".refresh.partial.json")
+    temporary.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    os.replace(temporary, manifest_path)
+    _check_manifest_data(manifest, manifest_path)
+    durable_report = write_durable_report(
+        manifest_path,
+        manifest["source"],
+        manifest["actors"],
+        report_path,
+    )
+    check_manifest(durable_report)
+    return durable_report
 
 
 def check_manifest(path: Path) -> None:
@@ -1309,6 +1433,11 @@ def _parse_args(argv: list[str]) -> argparse.Namespace:
         default=PROJECT_ROOT / "tools" / "actor_matte_report.json",
         help="tracked durable audit report path (written only after all gates pass)",
     )
+    parser.add_argument(
+        "--refresh-report",
+        type=Path,
+        help="rebuild manifest/report contract metadata from existing clips without re-encoding video",
+    )
     return parser.parse_args(argv)
 
 
@@ -1318,6 +1447,13 @@ def main(argv: list[str] | None = None) -> int:
         if args.check_manifest:
             check_manifest(args.check_manifest)
             print(f"actor matte manifest verified: {args.check_manifest}")
+            return 0
+        if args.refresh_report:
+            durable_report = _refresh_existing_report(
+                args.refresh_report.resolve(),
+                args.report_path.resolve(),
+            )
+            print(f"actor matte durable report refreshed: {durable_report}")
             return 0
         source = verify_source(args.video.resolve())
         actors = list(ACTOR_WINDOWS) if args.actor == "all" else [args.actor]
