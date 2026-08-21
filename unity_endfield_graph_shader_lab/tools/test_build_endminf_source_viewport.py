@@ -65,6 +65,7 @@ class EndminfSourceViewportTests(unittest.TestCase):
         self.assertEqual(overlay["sourceBox"], [2534, 878, 2570, 914])
         self.assertEqual(overlay["cropBox"], [1734, 690, 1770, 726])
         self.assertEqual(overlay["detectedFrames"], 627)
+        self.assertEqual(overlay["actorIntersectionFrameCount"], 192)
 
     def test_report_rows_pin_source_mapping_and_cursor_hashes(self) -> None:
         report = json.loads(viewport.REPORT_PATH.read_text(encoding="utf-8"))

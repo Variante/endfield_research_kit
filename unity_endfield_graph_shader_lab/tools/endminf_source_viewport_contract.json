@@ -208,7 +208,8 @@
         "detectorSha256": "7EE9874E267099E86807336CF9881E3D155E6617ACC6D74155DB5AFDFD94C94B",
         "detectedFrames": 627,
         "invalidMaskValue": 0,
-        "reason": "fixed source pointer visibly intersects viewport; retained in original pixels and excluded only by validity mask"
+        "reason": "fixed source pointer visibly intersects viewport; retained in original pixels and excluded only by validity mask",
+        "actorIntersectionFrameCount": 192
       }
     ],
     "unmodeledCenterOverlayStatus": "not_claimed_clean",
