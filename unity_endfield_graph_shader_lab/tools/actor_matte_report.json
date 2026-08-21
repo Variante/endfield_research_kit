@@ -4,8 +4,8 @@
   "pathBase": "repo_root",
   "generatedBy": "unity_endfield_graph_shader_lab/tools/build_priority_actor_mattes.py",
   "manifest": "unity_endfield_graph_shader_lab/scratch/character_recovery/actor_clips/actor_matte_manifest.json",
-  "manifestBytes": 927504,
-  "manifestSha256": "DC749B3E591F0015614B3BED13C3EA339607EC26FE37FBC5C5803A13E1E79468",
+  "manifestBytes": 927567,
+  "manifestSha256": "09A464FF282AD6B18782BB921CC89D3B179BD601F991347C23F78E860A460347",
   "source": {
     "path": "videos/2026-08-15_10-32-32.mkv",
     "bytes": 1678613397,
@@ -118,8 +118,8 @@
     "uiOverlapPolicy": "hard_zero_and_measured_zero",
     "endminfIdentityEvidence": {
       "path": "unity_endfield_graph_shader_lab/tools/endminf_video_identity_evidence.json",
-      "bytes": 78079,
-      "sha256": "89F579E8321F507A176F3F5DB63994DAD62C7F80AB0B5A5213A07822770AC065"
+      "bytes": 82683,
+      "sha256": "DBA266CE7D25256BD4136AE2B295498074244D1CA3BCCEDE330ACE17B547303F"
     },
     "temporalPolicy": {
       "minRawIoU": 0.08,
@@ -148,7 +148,7 @@
         ]
       ],
       "endminfStableStartFrame": 9783,
-      "endminfReason": "pinned-source Endminf model-swap fade has no person-class component through frame 9782; first stable chr_0003_endminf component is frame 9783; actor exit/next-actor transition is classified non-target and blacked from frame 10410 through 10499",
+      "endminfReason": "pinned-source Endminf model-swap fade has no person-class component through frame 9782; first stable chr_0003_endminf component is frame 9783; target-window exit/non-target transition is classified and blacked from frame 10410 through 10499; following actor identity is not claimed",
       "endminfCleanLoopFrameRangeInclusive": [
         10117,
         10409
@@ -156,7 +156,7 @@
       "endminfCleanLoopFrameCount": 293,
       "endminfCleanLoopDurationSeconds": 4.883333333333334,
       "endminfCleanLoopRuntimePeriods": 2,
-      "endminfTailClassification": "non_target_transition_next_actor",
+      "endminfTailClassification": "evidence_bounded_target_window_exit_non_target_transition",
       "pelicaRangeInclusive": [
         12560,
         12601

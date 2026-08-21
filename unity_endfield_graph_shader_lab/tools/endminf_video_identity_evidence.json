@@ -469,7 +469,7 @@
         ]
       ],
       "stableStartFrame": 9783,
-      "reason": "pinned-source Endminf model-swap fade has no person-class component through frame 9782; first stable chr_0003_endminf component is frame 9783; actor exit/next-actor transition is classified non-target and blacked from frame 10410 through 10499",
+      "reason": "pinned-source Endminf model-swap fade has no person-class component through frame 9782; first stable chr_0003_endminf component is frame 9783; target-window exit/non-target transition is classified and blacked from frame 10410 through 10499; following actor identity is not claimed",
       "evidence": "per-frame pinned DeepLab person-class source scan; zero support through 9782 and support at 9783",
       "perFramePinnedDeepLabScan": {
         "weightSha256": "CD0A25694C4A0F7106B38F4938BF90A874F2F241CC410B8F63C7024399538F06",
@@ -554,14 +554,14 @@
             "bgrSha256": "5E28BDDAB5C7B4B5B6BF5C98EC875D503769A24499AA43BF159F5FED9A55ADF8",
             "characterBandMean": 176.899563,
             "characterBandNonBlackPixels": 2090000,
-            "classification": "non_target_transition_next_actor"
+            "classification": "evidence_bounded_target_window_exit_non_target_transition"
           },
           {
             "frame": 10499,
             "bgrSha256": "A4770352A4BA850756B033F7A32CA37D1C4D6EEBC860C088914FE3DB28242D03",
             "characterBandMean": 163.48666,
             "characterBandNonBlackPixels": 2090000,
-            "classification": "non_target_transition_next_actor"
+            "classification": "evidence_bounded_target_window_exit_non_target_transition"
           }
         ],
         "tailTransition": {
@@ -570,640 +570,639 @@
             10499
           ],
           "frameCount": 90,
-          "classification": "non_target_transition_next_actor",
-          "nextActor": "ikut",
-          "nextTemplate": "chr_0007_ikut",
-          "nextModelSwapFrame": 10500,
+          "classification": "evidence_bounded_target_window_exit_non_target_transition",
+          "followingActorIdentity": "not_proven",
+          "nextSegmentBoundaryFrame": 10500,
           "perFrame": [
             {
               "frame": 10410,
               "bgrSha256": "5E28BDDAB5C7B4B5B6BF5C98EC875D503769A24499AA43BF159F5FED9A55ADF8",
               "characterBandMean": 176.899563,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10411,
               "bgrSha256": "5CFC6F433B4E26CD05EE555FE06AE2F5A2C4F4812B6152E8AA5EE0921FA7902F",
               "characterBandMean": 176.855158,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10412,
               "bgrSha256": "359F241748564A1AAB0930B01F3031B39EBC5E834F5DE84BF583E80A9EDF6F52",
               "characterBandMean": 176.764313,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10413,
               "bgrSha256": "AE9920A5F662385C87AD691958BEC23424126169E8F74F2F609EB33C1A017620",
               "characterBandMean": 176.741092,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10414,
               "bgrSha256": "FFBE82DE83824B1BCA9CF4A63FA9A1B6C883296D8B13E466E83778D1E062BD37",
               "characterBandMean": 176.740683,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10415,
               "bgrSha256": "93D4E09F2933E79F2CFE514E3066DEAE5F7827D827428B472FFA39F84D973E99",
               "characterBandMean": 176.734763,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10416,
               "bgrSha256": "35C9D53DB3BB82E333DB020568A77F59F134C16A8705C561182F3A1E325E3F5C",
               "characterBandMean": 176.728791,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10417,
               "bgrSha256": "933F5948DE307DA21EE8F436FFB15540F78633DB94D98197F13557AAA1B9E7CD",
               "characterBandMean": 176.729815,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10418,
               "bgrSha256": "8BCFF6185EFB3F871A2D7AFA56B1AC52671A252F1A3BFFF6C43237165F421246",
               "characterBandMean": 176.656901,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10419,
               "bgrSha256": "7F2A34686F931B4F69289052C83E84F7A92D5B42DCA0773548562F29B9D82437",
               "characterBandMean": 176.672749,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10420,
               "bgrSha256": "42ED29823547311F5ADE8A152D4BC7F573FF06AAF8EAF13A84E90BDF45F8FA46",
               "characterBandMean": 176.672671,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10421,
               "bgrSha256": "368DED2F0D9DD6F01D4D1E88DE8073776761BB01580D6E8F577C87C9073E6E92",
               "characterBandMean": 176.537419,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10422,
               "bgrSha256": "566668A06574D337A8EB04D806574379D821AFBE2DED5A08737ACF6F730A1B36",
               "characterBandMean": 176.463101,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10423,
               "bgrSha256": "A6678BC92DC259B2DD914E071ED19184B75A10C3EC5D67277A03E5B0CF932191",
               "characterBandMean": 176.4094,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10424,
               "bgrSha256": "6576964C6A3F5C2E6CFD4F79CF563CFD97BCE09ED903B59848E0F2C916767E82",
               "characterBandMean": 176.404257,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10425,
               "bgrSha256": "9D3B770AEF23CBC265804DE1B024ABC7EB34827C22DBEF091E057EA6073A77E7",
               "characterBandMean": 176.347677,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10426,
               "bgrSha256": "1DECC2BC8E09B0EB9C91B923436E983921A96105322F6268AF6EDA5CB75EFD87",
               "characterBandMean": 176.267078,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10427,
               "bgrSha256": "946257CFF39600EB9A8CFEB0A2E6DD928131DAD8656F49A4D0C890FF7CF294B9",
               "characterBandMean": 176.197222,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10428,
               "bgrSha256": "EEAC6CE6B2AE3D5551642E95BC500043BDB9DC2045FE418C3E3948527F6C40E4",
               "characterBandMean": 176.143328,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10429,
               "bgrSha256": "DDD4C1B24116CF470401858F0E9108C370720D2BA620CB6C6B14F07FA2A60923",
               "characterBandMean": 176.14301,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10430,
               "bgrSha256": "B267BA423AB0D7CE37B16A0A0A807CB858FFDE7E0C9ACBA4B5B03F6B0BE6A412",
               "characterBandMean": 176.13409,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10431,
               "bgrSha256": "591BAEA0862E8E6469D4CD814C9125EC171F3B20E1548F319DB1FA5593329681",
               "characterBandMean": 176.136385,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10432,
               "bgrSha256": "90F5A1A549477AD2B12AAA78D6A7B3BC7718F5D67EE156FEE4483D33773BA11B",
               "characterBandMean": 174.178312,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10433,
               "bgrSha256": "EB4C5F630427C9CA2E3B0A6F38410D7D827ABDD334FF5D552D9AC760E43CAF7F",
               "characterBandMean": 158.708807,
               "characterBandNonBlackPixels": 2089405,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10434,
               "bgrSha256": "A12D6E0558FF390A9CAD8C04FFC40CD2C36357121DB3B1B1D77BD2D5F5682958",
               "characterBandMean": 158.711329,
               "characterBandNonBlackPixels": 2089355,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10435,
               "bgrSha256": "9A8D2DA95FB3091E450C16C139EA872CE357398D5CC8988B1CD6958A9C03E5A2",
               "characterBandMean": 158.784715,
               "characterBandNonBlackPixels": 2089838,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10436,
               "bgrSha256": "8A7ED7DC1A76FA652F5A6353147BBB59892F06696204D47817A4DF848C2C93BA",
               "characterBandMean": 162.279417,
               "characterBandNonBlackPixels": 2089780,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10437,
               "bgrSha256": "ECCCBE77F7960BBF2CE0CFCE1733D13F696D6F23FCC5CD84DDB65A3F5694E5EE",
               "characterBandMean": 162.284087,
               "characterBandNonBlackPixels": 2089781,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10438,
               "bgrSha256": "BD0395099ED23393FF6D56E3EF24BC1FF5162D968D13B8C5F05BBF2AAB05B9A3",
               "characterBandMean": 171.117959,
               "characterBandNonBlackPixels": 2089998,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10439,
               "bgrSha256": "AACEACC9A910A132DF323BE04810241E698131BF8926EFFB9E244C6842ADE526",
               "characterBandMean": 170.464211,
               "characterBandNonBlackPixels": 2089997,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10440,
               "bgrSha256": "0F7ED5214B12837BAD83795E7BF9E98B5A44D57E6B6F63814605788861402576",
               "characterBandMean": 174.788761,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10441,
               "bgrSha256": "F1EA66C233A3A8E1D13C2588E762419497477E15674D80491215CF0AFC1EC566",
               "characterBandMean": 175.459345,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10442,
               "bgrSha256": "273582B218021819D0271C1A8339632FF6929AE7D4CE30151647A0A61638E251",
               "characterBandMean": 175.852215,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10443,
               "bgrSha256": "3BCAB6EC194486B4B106B744B432331D11FF9D612D0F70D9B327EBD2FE40A2AB",
               "characterBandMean": 175.786165,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10444,
               "bgrSha256": "894204F19D3872AA2D67303E58EE508918D11796AF38BEF0968F8FB5238B44FD",
               "characterBandMean": 175.854211,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10445,
               "bgrSha256": "219E6FE85607659790BEBD5B05F80F3E22E81AE03377A05E975C32F22981084A",
               "characterBandMean": 175.899471,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10446,
               "bgrSha256": "D2DA0117AD322CA8118B063BFC69906D50792FB674B7098449057BEFB6F49992",
               "characterBandMean": 175.928455,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10447,
               "bgrSha256": "4FF9A743D6DEE7F32680B0AF996B6A18A3169C0BC0A8AE4DB59D3C3F1BCD6824",
               "characterBandMean": 175.902426,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10448,
               "bgrSha256": "414EFC9CB34AC545A635514510B67C88E980903CEF0F1292DE188C9EA6007C95",
               "characterBandMean": 175.902725,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10449,
               "bgrSha256": "E5BA4DB0E5FF63D477C54E20FD688B9C53E0B270CAF0312CFD2270C35413107B",
               "characterBandMean": 175.908824,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10450,
               "bgrSha256": "39B14DE31119B5AED359AE6D4445A9D89698A4A0B4E2E04AE68C4D0B43F0EF9E",
               "characterBandMean": 175.900923,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10451,
               "bgrSha256": "CC411E7DDB15A29C3078BC448774F1A01AD78C5C6EA241E410290D2CD695436E",
               "characterBandMean": 175.905659,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10452,
               "bgrSha256": "93291FAFC4C03153BE4B975F4CCD1CCEBDA844D26D4BEA1F3FAB9B037CBDFF7D",
               "characterBandMean": 175.835324,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10453,
               "bgrSha256": "0E47FC5F032C7930B05CE5EB41445B4BB3886B2B40CB349ADFE76537669FB8A3",
               "characterBandMean": 175.855541,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10454,
               "bgrSha256": "280EE39C07B780DAE7A6FABA7E0CE62A88AB485C2E707AF6395A2C384F2D7AE5",
               "characterBandMean": 175.851358,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10455,
               "bgrSha256": "910209E192D09946CD24D02B2A545919DEAB5AC5CE9BED256CFF400AE1CEC95F",
               "characterBandMean": 175.817103,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10456,
               "bgrSha256": "8946695194D59D4D1FFA23F3DAD4830E525E55A997F644DBE6432A46BF469E3A",
               "characterBandMean": 175.817299,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10457,
               "bgrSha256": "9DCED36BAE825AD9F2CA5BB0B4477E49657A90482CAAF21723BE9A87B8D7BF0B",
               "characterBandMean": 175.830386,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10458,
               "bgrSha256": "F1F76577381D5696AE23D3D80E2198566EF33B1C74BD55F7584906237C458D17",
               "characterBandMean": 175.834755,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10459,
               "bgrSha256": "51722215E5072C803CAB06CF7BA6605CABD8C3640B772DA403B50895EAB3EF67",
               "characterBandMean": 175.886727,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10460,
               "bgrSha256": "980AE724990CDCA21B1E7B5B4E32B8BAFDD3CAE630F91122802B4DE8765C78AE",
               "characterBandMean": 175.928763,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10461,
               "bgrSha256": "277910E8A83458C3B8A6BD2A820C25608C7A9B4E584BBD3E48E648490360A247",
               "characterBandMean": 175.886955,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10462,
               "bgrSha256": "6CD5D5CD491546AD0A1A90EDBEDEC20E0AA0A230B752998DACDDC5DBCC89B27C",
               "characterBandMean": 175.927673,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10463,
               "bgrSha256": "862C0CBD7D63AEF7F9F6C43FF5D4534AFEED17B81C81A1F270C99B5771FB193C",
               "characterBandMean": 175.905619,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10464,
               "bgrSha256": "EA5828FA57959F73D66CAE9FCFC48CBF76D2C5FE179259AAD60E572B79AB7469",
               "characterBandMean": 175.985619,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10465,
               "bgrSha256": "417769E5DDB03EFBD480E77D519912392FA30298DF84B5B68529B386712961AC",
               "characterBandMean": 175.993078,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10466,
               "bgrSha256": "D79248D65A53676D6C11E38BED664C91A6438B522F30C1C9063044EF7DA50E93",
               "characterBandMean": 176.025275,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10467,
               "bgrSha256": "E9E7C6C215DB41D4B632A50E8703B8D12C3738B50391C4CB7BF4D2354C8A1B22",
               "characterBandMean": 176.007748,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10468,
               "bgrSha256": "09C4D41130E735D2C0DAD05A21BBB8CDDBD820563D4E0B2ABB90FA45A250B539",
               "characterBandMean": 176.050484,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10469,
               "bgrSha256": "FD8E25B689F3F6FA738AFEE0C0328327B38BBD3D9ADEF773714B5983E9C9323F",
               "characterBandMean": 176.023534,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10470,
               "bgrSha256": "E86C8C14F37FB15DB0E2FEA2E1B0CC9AAD926446A5E6659EA0159CDAEA770223",
               "characterBandMean": 176.021133,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10471,
               "bgrSha256": "4D4EE83D304EC1560C29F8736FAF615B2294C7386C4CBC01B0C3A9FEB1B10BF8",
               "characterBandMean": 175.996736,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10472,
               "bgrSha256": "78EA8CB97FE1C691E75A96B6075973B597BE0D7B859DCF8D4188B492B4BE10BE",
               "characterBandMean": 176.014272,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10473,
               "bgrSha256": "0450D8CFBBF8E751EA92D61057064285B3C06B832FE6D9B0827BEF2B624B5A7A",
               "characterBandMean": 175.765994,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10474,
               "bgrSha256": "7D912F5047F20DC6260DB267D5CC6AB13EADEA480264D21AEDA0B8EE57BE5372",
               "characterBandMean": 173.851899,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10475,
               "bgrSha256": "079235B3FF247E35776D09805E473E8524B6604276B7CD3528011A1E1888A06B",
               "characterBandMean": 164.152751,
               "characterBandNonBlackPixels": 2089999,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10476,
               "bgrSha256": "0C8C8C65CA78B5333DE1EABD8BA6CE368E6DC21099D6B56B6CE3D26FAF6BC2BE",
               "characterBandMean": 163.398589,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10477,
               "bgrSha256": "EA8DA7F7FAFA57499520942624624795AAC26D06B433F14A3738CE338B261963",
               "characterBandMean": 174.68944,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10478,
               "bgrSha256": "9057119332C8E1B4626083D12298D38101B86D22F34EC00FBEB874A127831F64",
               "characterBandMean": 175.829756,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10479,
               "bgrSha256": "3AB02150BD2506D8D47C4A5E36B6B6BC104D2B25C7C1BAD0971449A20D03B316",
               "characterBandMean": 176.014555,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10480,
               "bgrSha256": "9277489E4E61309613F46DCE64157C14834325649A2367A7C291F6FC958FB068",
               "characterBandMean": 175.978321,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10481,
               "bgrSha256": "E2F697F8D62452C64CF84A42D2CF6C2492E7A1DD16426853C710E8C213659237",
               "characterBandMean": 175.9809,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10482,
               "bgrSha256": "365EA5352CD8F4DE0F7D260B3BF07B3DBCD96FA6D8CF5D864CA69EC2829068B1",
               "characterBandMean": 176.014368,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10483,
               "bgrSha256": "C5C16215B80EBB99BD024EA1902B256588A6A3131F48E46824A3A82766C7CF35",
               "characterBandMean": 176.006128,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10484,
               "bgrSha256": "6520E9CB9898E2DB01C6E2B13EA0577B1691C2B0468FFFC2062856451EC32EFC",
               "characterBandMean": 175.976794,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10485,
               "bgrSha256": "DB67D5C32A031F425B527BE477614CBA792C3546165B99CBD216A926599CF2FF",
               "characterBandMean": 176.005824,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10486,
               "bgrSha256": "6E4388ED53336A04ECA408BBFD6EEA8E20B5E17295614D8C8A146B610B379257",
               "characterBandMean": 176.000609,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10487,
               "bgrSha256": "ECB489E40DAC0D514F6838A01BA5FAA7131667C7613DF97F03CC9B5F576AD210",
               "characterBandMean": 175.968995,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10488,
               "bgrSha256": "5EDEABD57A287DCCC4D6BA7119DE06702819305A9DA49386B9139A23A6C79484",
               "characterBandMean": 176.008379,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10489,
               "bgrSha256": "5FF39FBE5ABA895A08E2F764ACDB3DDBE960E6967344EB04A9C25F9B79ABDD09",
               "characterBandMean": 176.00186,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10490,
               "bgrSha256": "8C64AEC3FC300AC55CFE9BC485D0B1700355ADC9AF2A66374115218420981CAC",
               "characterBandMean": 175.981077,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10491,
               "bgrSha256": "DC29386C8F19B757A06ABE412EB7A18E4953166340112D0C226A8F338B301398",
               "characterBandMean": 175.962957,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10492,
               "bgrSha256": "8D8059B368B92ECD09B9C538F2AB3857BAF2CB63E87F8242C02F02AFAB32524E",
               "characterBandMean": 175.962908,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10493,
               "bgrSha256": "A01C72310CE4406D45D8D2504C1E7E07BFB0C158931B89BBAC2730321A26A807",
               "characterBandMean": 176.000115,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10494,
               "bgrSha256": "DDB85D0AACD8EED0182D121447722F0EEB6EFDDCF28D22FF2CB0C58967362E57",
               "characterBandMean": 176.001077,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10495,
               "bgrSha256": "CC38948DA69DA02E28FD2721980646CA097476F4F0F35D973576156AC8D53BE3",
               "characterBandMean": 175.97643,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10496,
               "bgrSha256": "6F49DC9B2100F73A8CB51B6B05DEA6C90E1A1489C27FEF7569E4E9C08414FB54",
               "characterBandMean": 176.031195,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10497,
               "bgrSha256": "4B5414C4D5A8E7C1ECDBD15A0D17D1E18FEE90D9EADF9D18AFCE3B6F7647B2EA",
               "characterBandMean": 176.0463,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10498,
               "bgrSha256": "C17FBE4F5568B4BB8DA424A0E38AC52F2ED3D0E4736100D247A205D9CE32BFA3",
               "characterBandMean": 176.049107,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             },
             {
               "frame": 10499,
               "bgrSha256": "A4770352A4BA850756B033F7A32CA37D1C4D6EEBC860C088914FE3DB28242D03",
               "characterBandMean": 163.48666,
               "characterBandNonBlackPixels": 2090000,
-              "classification": "non_target_transition_next_actor"
+              "classification": "evidence_bounded_target_window_exit_non_target_transition"
             }
           ]
         }
@@ -1216,640 +1215,639 @@
         10499
       ],
       "frameCount": 90,
-      "classification": "non_target_transition_next_actor",
-      "nextActor": "ikut",
-      "nextTemplate": "chr_0007_ikut",
-      "nextModelSwapFrame": 10500,
+      "classification": "evidence_bounded_target_window_exit_non_target_transition",
+      "followingActorIdentity": "not_proven",
+      "nextSegmentBoundaryFrame": 10500,
       "perFrame": [
         {
           "frame": 10410,
           "bgrSha256": "5E28BDDAB5C7B4B5B6BF5C98EC875D503769A24499AA43BF159F5FED9A55ADF8",
           "characterBandMean": 176.899563,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10411,
           "bgrSha256": "5CFC6F433B4E26CD05EE555FE06AE2F5A2C4F4812B6152E8AA5EE0921FA7902F",
           "characterBandMean": 176.855158,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10412,
           "bgrSha256": "359F241748564A1AAB0930B01F3031B39EBC5E834F5DE84BF583E80A9EDF6F52",
           "characterBandMean": 176.764313,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10413,
           "bgrSha256": "AE9920A5F662385C87AD691958BEC23424126169E8F74F2F609EB33C1A017620",
           "characterBandMean": 176.741092,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10414,
           "bgrSha256": "FFBE82DE83824B1BCA9CF4A63FA9A1B6C883296D8B13E466E83778D1E062BD37",
           "characterBandMean": 176.740683,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10415,
           "bgrSha256": "93D4E09F2933E79F2CFE514E3066DEAE5F7827D827428B472FFA39F84D973E99",
           "characterBandMean": 176.734763,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10416,
           "bgrSha256": "35C9D53DB3BB82E333DB020568A77F59F134C16A8705C561182F3A1E325E3F5C",
           "characterBandMean": 176.728791,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10417,
           "bgrSha256": "933F5948DE307DA21EE8F436FFB15540F78633DB94D98197F13557AAA1B9E7CD",
           "characterBandMean": 176.729815,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10418,
           "bgrSha256": "8BCFF6185EFB3F871A2D7AFA56B1AC52671A252F1A3BFFF6C43237165F421246",
           "characterBandMean": 176.656901,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10419,
           "bgrSha256": "7F2A34686F931B4F69289052C83E84F7A92D5B42DCA0773548562F29B9D82437",
           "characterBandMean": 176.672749,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10420,
           "bgrSha256": "42ED29823547311F5ADE8A152D4BC7F573FF06AAF8EAF13A84E90BDF45F8FA46",
           "characterBandMean": 176.672671,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10421,
           "bgrSha256": "368DED2F0D9DD6F01D4D1E88DE8073776761BB01580D6E8F577C87C9073E6E92",
           "characterBandMean": 176.537419,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10422,
           "bgrSha256": "566668A06574D337A8EB04D806574379D821AFBE2DED5A08737ACF6F730A1B36",
           "characterBandMean": 176.463101,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10423,
           "bgrSha256": "A6678BC92DC259B2DD914E071ED19184B75A10C3EC5D67277A03E5B0CF932191",
           "characterBandMean": 176.4094,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10424,
           "bgrSha256": "6576964C6A3F5C2E6CFD4F79CF563CFD97BCE09ED903B59848E0F2C916767E82",
           "characterBandMean": 176.404257,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10425,
           "bgrSha256": "9D3B770AEF23CBC265804DE1B024ABC7EB34827C22DBEF091E057EA6073A77E7",
           "characterBandMean": 176.347677,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10426,
           "bgrSha256": "1DECC2BC8E09B0EB9C91B923436E983921A96105322F6268AF6EDA5CB75EFD87",
           "characterBandMean": 176.267078,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10427,
           "bgrSha256": "946257CFF39600EB9A8CFEB0A2E6DD928131DAD8656F49A4D0C890FF7CF294B9",
           "characterBandMean": 176.197222,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10428,
           "bgrSha256": "EEAC6CE6B2AE3D5551642E95BC500043BDB9DC2045FE418C3E3948527F6C40E4",
           "characterBandMean": 176.143328,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10429,
           "bgrSha256": "DDD4C1B24116CF470401858F0E9108C370720D2BA620CB6C6B14F07FA2A60923",
           "characterBandMean": 176.14301,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10430,
           "bgrSha256": "B267BA423AB0D7CE37B16A0A0A807CB858FFDE7E0C9ACBA4B5B03F6B0BE6A412",
           "characterBandMean": 176.13409,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10431,
           "bgrSha256": "591BAEA0862E8E6469D4CD814C9125EC171F3B20E1548F319DB1FA5593329681",
           "characterBandMean": 176.136385,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10432,
           "bgrSha256": "90F5A1A549477AD2B12AAA78D6A7B3BC7718F5D67EE156FEE4483D33773BA11B",
           "characterBandMean": 174.178312,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10433,
           "bgrSha256": "EB4C5F630427C9CA2E3B0A6F38410D7D827ABDD334FF5D552D9AC760E43CAF7F",
           "characterBandMean": 158.708807,
           "characterBandNonBlackPixels": 2089405,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10434,
           "bgrSha256": "A12D6E0558FF390A9CAD8C04FFC40CD2C36357121DB3B1B1D77BD2D5F5682958",
           "characterBandMean": 158.711329,
           "characterBandNonBlackPixels": 2089355,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10435,
           "bgrSha256": "9A8D2DA95FB3091E450C16C139EA872CE357398D5CC8988B1CD6958A9C03E5A2",
           "characterBandMean": 158.784715,
           "characterBandNonBlackPixels": 2089838,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10436,
           "bgrSha256": "8A7ED7DC1A76FA652F5A6353147BBB59892F06696204D47817A4DF848C2C93BA",
           "characterBandMean": 162.279417,
           "characterBandNonBlackPixels": 2089780,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10437,
           "bgrSha256": "ECCCBE77F7960BBF2CE0CFCE1733D13F696D6F23FCC5CD84DDB65A3F5694E5EE",
           "characterBandMean": 162.284087,
           "characterBandNonBlackPixels": 2089781,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10438,
           "bgrSha256": "BD0395099ED23393FF6D56E3EF24BC1FF5162D968D13B8C5F05BBF2AAB05B9A3",
           "characterBandMean": 171.117959,
           "characterBandNonBlackPixels": 2089998,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10439,
           "bgrSha256": "AACEACC9A910A132DF323BE04810241E698131BF8926EFFB9E244C6842ADE526",
           "characterBandMean": 170.464211,
           "characterBandNonBlackPixels": 2089997,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10440,
           "bgrSha256": "0F7ED5214B12837BAD83795E7BF9E98B5A44D57E6B6F63814605788861402576",
           "characterBandMean": 174.788761,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10441,
           "bgrSha256": "F1EA66C233A3A8E1D13C2588E762419497477E15674D80491215CF0AFC1EC566",
           "characterBandMean": 175.459345,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10442,
           "bgrSha256": "273582B218021819D0271C1A8339632FF6929AE7D4CE30151647A0A61638E251",
           "characterBandMean": 175.852215,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10443,
           "bgrSha256": "3BCAB6EC194486B4B106B744B432331D11FF9D612D0F70D9B327EBD2FE40A2AB",
           "characterBandMean": 175.786165,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10444,
           "bgrSha256": "894204F19D3872AA2D67303E58EE508918D11796AF38BEF0968F8FB5238B44FD",
           "characterBandMean": 175.854211,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10445,
           "bgrSha256": "219E6FE85607659790BEBD5B05F80F3E22E81AE03377A05E975C32F22981084A",
           "characterBandMean": 175.899471,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10446,
           "bgrSha256": "D2DA0117AD322CA8118B063BFC69906D50792FB674B7098449057BEFB6F49992",
           "characterBandMean": 175.928455,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10447,
           "bgrSha256": "4FF9A743D6DEE7F32680B0AF996B6A18A3169C0BC0A8AE4DB59D3C3F1BCD6824",
           "characterBandMean": 175.902426,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10448,
           "bgrSha256": "414EFC9CB34AC545A635514510B67C88E980903CEF0F1292DE188C9EA6007C95",
           "characterBandMean": 175.902725,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10449,
           "bgrSha256": "E5BA4DB0E5FF63D477C54E20FD688B9C53E0B270CAF0312CFD2270C35413107B",
           "characterBandMean": 175.908824,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10450,
           "bgrSha256": "39B14DE31119B5AED359AE6D4445A9D89698A4A0B4E2E04AE68C4D0B43F0EF9E",
           "characterBandMean": 175.900923,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10451,
           "bgrSha256": "CC411E7DDB15A29C3078BC448774F1A01AD78C5C6EA241E410290D2CD695436E",
           "characterBandMean": 175.905659,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10452,
           "bgrSha256": "93291FAFC4C03153BE4B975F4CCD1CCEBDA844D26D4BEA1F3FAB9B037CBDFF7D",
           "characterBandMean": 175.835324,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10453,
           "bgrSha256": "0E47FC5F032C7930B05CE5EB41445B4BB3886B2B40CB349ADFE76537669FB8A3",
           "characterBandMean": 175.855541,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10454,
           "bgrSha256": "280EE39C07B780DAE7A6FABA7E0CE62A88AB485C2E707AF6395A2C384F2D7AE5",
           "characterBandMean": 175.851358,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10455,
           "bgrSha256": "910209E192D09946CD24D02B2A545919DEAB5AC5CE9BED256CFF400AE1CEC95F",
           "characterBandMean": 175.817103,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10456,
           "bgrSha256": "8946695194D59D4D1FFA23F3DAD4830E525E55A997F644DBE6432A46BF469E3A",
           "characterBandMean": 175.817299,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10457,
           "bgrSha256": "9DCED36BAE825AD9F2CA5BB0B4477E49657A90482CAAF21723BE9A87B8D7BF0B",
           "characterBandMean": 175.830386,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10458,
           "bgrSha256": "F1F76577381D5696AE23D3D80E2198566EF33B1C74BD55F7584906237C458D17",
           "characterBandMean": 175.834755,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10459,
           "bgrSha256": "51722215E5072C803CAB06CF7BA6605CABD8C3640B772DA403B50895EAB3EF67",
           "characterBandMean": 175.886727,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10460,
           "bgrSha256": "980AE724990CDCA21B1E7B5B4E32B8BAFDD3CAE630F91122802B4DE8765C78AE",
           "characterBandMean": 175.928763,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10461,
           "bgrSha256": "277910E8A83458C3B8A6BD2A820C25608C7A9B4E584BBD3E48E648490360A247",
           "characterBandMean": 175.886955,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10462,
           "bgrSha256": "6CD5D5CD491546AD0A1A90EDBEDEC20E0AA0A230B752998DACDDC5DBCC89B27C",
           "characterBandMean": 175.927673,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10463,
           "bgrSha256": "862C0CBD7D63AEF7F9F6C43FF5D4534AFEED17B81C81A1F270C99B5771FB193C",
           "characterBandMean": 175.905619,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10464,
           "bgrSha256": "EA5828FA57959F73D66CAE9FCFC48CBF76D2C5FE179259AAD60E572B79AB7469",
           "characterBandMean": 175.985619,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10465,
           "bgrSha256": "417769E5DDB03EFBD480E77D519912392FA30298DF84B5B68529B386712961AC",
           "characterBandMean": 175.993078,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10466,
           "bgrSha256": "D79248D65A53676D6C11E38BED664C91A6438B522F30C1C9063044EF7DA50E93",
           "characterBandMean": 176.025275,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10467,
           "bgrSha256": "E9E7C6C215DB41D4B632A50E8703B8D12C3738B50391C4CB7BF4D2354C8A1B22",
           "characterBandMean": 176.007748,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10468,
           "bgrSha256": "09C4D41130E735D2C0DAD05A21BBB8CDDBD820563D4E0B2ABB90FA45A250B539",
           "characterBandMean": 176.050484,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10469,
           "bgrSha256": "FD8E25B689F3F6FA738AFEE0C0328327B38BBD3D9ADEF773714B5983E9C9323F",
           "characterBandMean": 176.023534,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10470,
           "bgrSha256": "E86C8C14F37FB15DB0E2FEA2E1B0CC9AAD926446A5E6659EA0159CDAEA770223",
           "characterBandMean": 176.021133,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10471,
           "bgrSha256": "4D4EE83D304EC1560C29F8736FAF615B2294C7386C4CBC01B0C3A9FEB1B10BF8",
           "characterBandMean": 175.996736,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10472,
           "bgrSha256": "78EA8CB97FE1C691E75A96B6075973B597BE0D7B859DCF8D4188B492B4BE10BE",
           "characterBandMean": 176.014272,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10473,
           "bgrSha256": "0450D8CFBBF8E751EA92D61057064285B3C06B832FE6D9B0827BEF2B624B5A7A",
           "characterBandMean": 175.765994,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10474,
           "bgrSha256": "7D912F5047F20DC6260DB267D5CC6AB13EADEA480264D21AEDA0B8EE57BE5372",
           "characterBandMean": 173.851899,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10475,
           "bgrSha256": "079235B3FF247E35776D09805E473E8524B6604276B7CD3528011A1E1888A06B",
           "characterBandMean": 164.152751,
           "characterBandNonBlackPixels": 2089999,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10476,
           "bgrSha256": "0C8C8C65CA78B5333DE1EABD8BA6CE368E6DC21099D6B56B6CE3D26FAF6BC2BE",
           "characterBandMean": 163.398589,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10477,
           "bgrSha256": "EA8DA7F7FAFA57499520942624624795AAC26D06B433F14A3738CE338B261963",
           "characterBandMean": 174.68944,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10478,
           "bgrSha256": "9057119332C8E1B4626083D12298D38101B86D22F34EC00FBEB874A127831F64",
           "characterBandMean": 175.829756,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10479,
           "bgrSha256": "3AB02150BD2506D8D47C4A5E36B6B6BC104D2B25C7C1BAD0971449A20D03B316",
           "characterBandMean": 176.014555,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10480,
           "bgrSha256": "9277489E4E61309613F46DCE64157C14834325649A2367A7C291F6FC958FB068",
           "characterBandMean": 175.978321,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10481,
           "bgrSha256": "E2F697F8D62452C64CF84A42D2CF6C2492E7A1DD16426853C710E8C213659237",
           "characterBandMean": 175.9809,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10482,
           "bgrSha256": "365EA5352CD8F4DE0F7D260B3BF07B3DBCD96FA6D8CF5D864CA69EC2829068B1",
           "characterBandMean": 176.014368,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10483,
           "bgrSha256": "C5C16215B80EBB99BD024EA1902B256588A6A3131F48E46824A3A82766C7CF35",
           "characterBandMean": 176.006128,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10484,
           "bgrSha256": "6520E9CB9898E2DB01C6E2B13EA0577B1691C2B0468FFFC2062856451EC32EFC",
           "characterBandMean": 175.976794,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10485,
           "bgrSha256": "DB67D5C32A031F425B527BE477614CBA792C3546165B99CBD216A926599CF2FF",
           "characterBandMean": 176.005824,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10486,
           "bgrSha256": "6E4388ED53336A04ECA408BBFD6EEA8E20B5E17295614D8C8A146B610B379257",
           "characterBandMean": 176.000609,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10487,
           "bgrSha256": "ECB489E40DAC0D514F6838A01BA5FAA7131667C7613DF97F03CC9B5F576AD210",
           "characterBandMean": 175.968995,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10488,
           "bgrSha256": "5EDEABD57A287DCCC4D6BA7119DE06702819305A9DA49386B9139A23A6C79484",
           "characterBandMean": 176.008379,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10489,
           "bgrSha256": "5FF39FBE5ABA895A08E2F764ACDB3DDBE960E6967344EB04A9C25F9B79ABDD09",
           "characterBandMean": 176.00186,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10490,
           "bgrSha256": "8C64AEC3FC300AC55CFE9BC485D0B1700355ADC9AF2A66374115218420981CAC",
           "characterBandMean": 175.981077,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10491,
           "bgrSha256": "DC29386C8F19B757A06ABE412EB7A18E4953166340112D0C226A8F338B301398",
           "characterBandMean": 175.962957,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10492,
           "bgrSha256": "8D8059B368B92ECD09B9C538F2AB3857BAF2CB63E87F8242C02F02AFAB32524E",
           "characterBandMean": 175.962908,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10493,
           "bgrSha256": "A01C72310CE4406D45D8D2504C1E7E07BFB0C158931B89BBAC2730321A26A807",
           "characterBandMean": 176.000115,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10494,
           "bgrSha256": "DDB85D0AACD8EED0182D121447722F0EEB6EFDDCF28D22FF2CB0C58967362E57",
           "characterBandMean": 176.001077,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10495,
           "bgrSha256": "CC38948DA69DA02E28FD2721980646CA097476F4F0F35D973576156AC8D53BE3",
           "characterBandMean": 175.97643,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10496,
           "bgrSha256": "6F49DC9B2100F73A8CB51B6B05DEA6C90E1A1489C27FEF7569E4E9C08414FB54",
           "characterBandMean": 176.031195,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10497,
           "bgrSha256": "4B5414C4D5A8E7C1ECDBD15A0D17D1E18FEE90D9EADF9D18AFCE3B6F7647B2EA",
           "characterBandMean": 176.0463,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10498,
           "bgrSha256": "C17FBE4F5568B4BB8DA424A0E38AC52F2ED3D0E4736100D247A205D9CE32BFA3",
           "characterBandMean": 176.049107,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         },
         {
           "frame": 10499,
           "bgrSha256": "A4770352A4BA850756B033F7A32CA37D1C4D6EEBC860C088914FE3DB28242D03",
           "characterBandMean": 163.48666,
           "characterBandNonBlackPixels": 2090000,
-          "classification": "non_target_transition_next_actor"
+          "classification": "evidence_bounded_target_window_exit_non_target_transition"
         }
       ]
     }
