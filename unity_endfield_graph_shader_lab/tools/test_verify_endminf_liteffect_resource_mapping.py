@@ -1,8 +1,12 @@
 from __future__ import annotations
 
 import importlib.util
+import json
+import copy
 import sys
+import tempfile
 import unittest
+from pathlib import Path
 
 
 HERE = __import__("pathlib").Path(__file__).resolve().parent
@@ -54,6 +58,84 @@ class LitEffectResourceMappingTests(unittest.TestCase):
         report = MODULE.build_report()
         self.assertEqual(report["bindChannels"]["status"], "gap")
         self.assertIn("ParserBindChannels", report["bindChannels"]["reason"])
+
+    def test_texture_register_attack_fails_closed(self) -> None:
+        original = MODULE._ruri_declarations
+        def altered(path: Path):
+            value = original(path)
+            if path.name == "parallax_hgbuffer_fragment.hlsl":
+                value["resources"][0]["register"] = 6
+            return value
+        MODULE._ruri_declarations = altered
+        try:
+            with self.assertRaisesRegex(MODULE.VerificationError, "texture registers"):
+                MODULE.build_report()
+        finally:
+            MODULE._ruri_declarations = original
+
+    def test_sampler_declaration_attack_fails_closed(self) -> None:
+        original = MODULE._ruri_declarations
+        def altered(path: Path):
+            value = original(path)
+            if path.name == "parallax_hgbuffer_fragment.hlsl":
+                value["samplers"][0]["name"] = "sampler_Tampered"
+            return value
+        MODULE._ruri_declarations = altered
+        try:
+            with self.assertRaisesRegex(MODULE.VerificationError, "sampler declarations"):
+                MODULE.build_report()
+        finally:
+            MODULE._ruri_declarations = original
+
+    def test_descriptor_name_attack_fails_closed(self) -> None:
+        original = MODULE._compact_metadata
+        def altered(path: Path):
+            value = original(path)
+            if path.name.startswith("0115_"):
+                value["descriptorSets"][1]["Bindings"][8]["Name"] = "_TamperedMap"
+            return value
+        MODULE._compact_metadata = altered
+        try:
+            with self.assertRaisesRegex(MODULE.VerificationError, "PerMaterial descriptor"):
+                MODULE.build_report()
+        finally:
+            MODULE._compact_metadata = original
+
+    def test_ruri_hash_attack_fails_closed(self) -> None:
+        original = MODULE._sha256
+        def altered(path: Path):
+            return "0" * 64 if path.suffix == ".hlsl" else original(path)
+        MODULE._sha256 = altered
+        try:
+            with self.assertRaisesRegex(MODULE.VerificationError, "Ruri output hash"):
+                MODULE.build_report()
+        finally:
+            MODULE._sha256 = original
+
+    def test_default_verify_rejects_stale_durable_report(self) -> None:
+        original = MODULE.REPORT_PATH
+        with tempfile.TemporaryDirectory() as temp:
+            MODULE.REPORT_PATH = Path(temp) / "report.json"
+            MODULE.REPORT_PATH.write_text(json.dumps({"schema": "stale"}), encoding="utf-8")
+            try:
+                with self.assertRaisesRegex(MODULE.VerificationError, "durable report is stale"):
+                    MODULE.verify()
+            finally:
+                MODULE.REPORT_PATH = original
+
+    def test_material_closure_fileid_attack_fails_closed(self) -> None:
+        original = MODULE._texture_identity_map
+        def altered():
+            value = original()
+            value[-2770956563882859728] = copy.deepcopy(value[-2770956563882859728])
+            value[-2770956563882859728]["occurrences"][0]["fileId"] = 99
+            return value
+        MODULE._texture_identity_map = altered
+        try:
+            with self.assertRaisesRegex(MODULE.VerificationError, "closure material artifact/PathID/fileId"):
+                MODULE.build_report()
+        finally:
+            MODULE._texture_identity_map = original
 
 
 if __name__ == "__main__":
