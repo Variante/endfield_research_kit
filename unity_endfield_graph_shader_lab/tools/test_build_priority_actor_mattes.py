@@ -50,6 +50,23 @@ class PriorityActorMatteTests(unittest.TestCase):
             "candidate_asset_path": lambda value: value["identity"]["candidateMatrix"]["candidates"][0]["sourceAssets"]["prefab"].__setitem__("path", "stale.prefab"),
             "candidate_asset_hash": lambda value: value["identity"]["candidateMatrix"]["candidates"][0]["sourceAssets"]["manifest"].__setitem__("sha256", "0" * 64),
             "status": lambda value: value["identity"].__setitem__("status", "proven"),
+            "combined_window": lambda value: value["phase"]["combinedActorWindow"]["frameRangeExclusive"].__setitem__(0, 9768),
+            "source_transition_ranges": lambda value: value["phase"]["sourceTransition"]["frameRangesInclusive"].__setitem__(0, [9767, 9781]),
+            "source_transition_reason": lambda value: value["phase"]["sourceTransition"].__setitem__("reason", "mutated transition reason"),
+            "first_gap_mask_row_frame": lambda value: value["phase"]["sourceTransition"]["perFramePinnedDeepLabScan"]["rows"][0].__setitem__("frame", 9768),
+            "first_gap_mask_row_pixels": lambda value: value["phase"]["sourceTransition"]["perFramePinnedDeepLabScan"]["rows"][0].__setitem__("workMaskPixels", 1),
+            "deep_lab_weight_hash": lambda value: value["phase"]["sourceTransition"]["perFramePinnedDeepLabScan"].__setitem__("weightSha256", "0" * 64),
+            "tail_classification": lambda value: value["phase"]["tailTransition"].__setitem__("classification", "mutated_tail_policy"),
+            "tail_next_boundary": lambda value: value["phase"]["tailTransition"].__setitem__("nextSegmentBoundaryFrame", 10499),
+            "tail_following_identity": lambda value: value["phase"]["tailTransition"].__setitem__("followingActorIdentity", "chr_0007_ikut"),
+            "tail_frame_number": lambda value: value["phase"]["tailTransition"]["perFrame"][0].__setitem__("frame", 10411),
+            "tail_frame_hash": lambda value: value["phase"]["tailTransition"]["perFrame"][0].__setitem__("bgrSha256", "0" * 64),
+            "tail_frame_stats": lambda value: value["phase"]["tailTransition"]["perFrame"][0].__setitem__("characterBandMean", 0.0),
+            "tail_frame_classification": lambda value: value["phase"]["tailTransition"]["perFrame"][0].__setitem__("classification", "mutated_tail_frame"),
+            "clean_loop_duration": lambda value: value["phase"]["cleanLoop"].__setitem__("durationSeconds", 1.0),
+            "clean_loop_status": lambda value: value["phase"]["cleanLoop"].__setitem__("publicationStatus", "published"),
+            "clean_loop_cycles": lambda value: value["phase"]["cleanLoop"].__setitem__("completeRuntimePeriods", 1),
+            "source_hash": lambda value: value["source"].__setitem__("sha256", "0" * 64),
         }
         for label, mutate in mutations.items():
             with self.subTest(label=label):

@@ -330,161 +330,57 @@ def _sha256(path: Path) -> tuple[int, str]:
     return total, digest.hexdigest().upper()
 
 
-def _endminf_asset_evidence(path: Path, expected_hash: str, label: str) -> dict[str, object]:
-    if not path.is_file():
-        raise MatteError(f"{label} is missing: {path}")
-    size, digest = _sha256(path)
-    if digest != expected_hash:
-        raise MatteError(f"{label} hash mismatch: {digest} != {expected_hash}")
-    return {"path": _repo_relative_path(path, label), "bytes": size, "sha256": digest}
+@lru_cache(maxsize=1)
+def _canonical_endminf_identity_report() -> dict:
+    """Build the full Endminf contract through its canonical audit tool once.
 
-
-def _endminf_visual_score() -> tuple[dict[str, object], float]:
-    reference = cv2.imread(str(ENDMINF_VISUAL_REFERENCE_PATH), cv2.IMREAD_COLOR)
-    render = cv2.imread(str(ENDMINF_VISUAL_RENDER_PATH), cv2.IMREAD_COLOR)
-    if reference is None or render is None or reference.shape != render.shape:
-        raise MatteError("Endminf candidate render/reference dimensions are not reproducible")
-    x0, y0, x1, y1 = ENDMINF_CHARACTER_BAND
-    ref_gray = cv2.cvtColor(reference[y0:y1, x0:x1], cv2.COLOR_BGR2GRAY).astype("float32")
-    render_gray = cv2.cvtColor(render[y0:y1, x0:x1], cv2.COLOR_BGR2GRAY).astype("float32")
-    warp = cv2.getRotationMatrix2D((ref_gray.shape[1] / 2.0, ref_gray.shape[0] / 2.0), 0.0, 1.0).astype("float32")
-    warp[:, 2] = 0.0
+    The matte manifest checker must not maintain a second, partial phase or
+    matrix schema.  The audit tool is the source of truth and includes the
+    pinned source/weight hashes, controller phase math, first-gap rows, and
+    every hashed/stat'd tail frame.  Caching is process-local so mutation
+    tests and a normal checker run pay for one source scan, not one scan per
+    field.
+    """
     try:
-        score, _solved = cv2.findTransformECC(
-            ref_gray,
-            render_gray,
-            warp,
-            cv2.MOTION_TRANSLATION,
-            criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 100, 1e-6),
-            inputMask=None,
-            gaussFiltSize=5,
-        )
-    except cv2.error as error:
-        raise MatteError(f"could not recompute Endminf candidate ECC: {error}") from error
-    return (
-        _endminf_asset_evidence(ENDMINF_VISUAL_RENDER_PATH, "112EEF6858F7DDB8209BFFA546E861E4843FD4084DD9B9EBD9D36BF286E2B90D", "Endminf candidate render")
-        | {"sampleTimeSeconds": 0.133},
-        round(float(score), 6),
-    )
+        import audit_endminf_video_identity as audit
+    except ImportError as error:
+        raise MatteError(f"cannot load canonical Endminf audit tool: {error}") from error
+    try:
+        report = audit.build_report()
+    except Exception as error:
+        raise MatteError(f"canonical Endminf audit rebuild failed: {error}") from error
+    if not isinstance(report, dict):
+        raise MatteError("canonical Endminf audit returned a non-object report")
+    return report
 
 
-def _expected_endminf_candidate_matrix() -> tuple[dict, float]:
-    target_render, target_score = _endminf_visual_score()
-    exact_assets = {
-        "manifest": _endminf_asset_evidence(ENDMINF_SOURCE_MANIFEST_PATH, ENDMINF_SOURCE_MANIFEST_SHA256, "Endminf source manifest"),
-        "prefab": _endminf_asset_evidence(ENDMINF_PREFAB_PATH, ENDMINF_PREFAB_SHA256, "Endminf prefab"),
-        "controllerAudit": _endminf_asset_evidence(ENDMINF_CONTROLLER_AUDIT_PATH, ENDMINF_CONTROLLER_AUDIT_SHA256, "Endminf controller audit"),
-        "captureProbe": _endminf_asset_evidence(ENDMINF_CAPTURE_PROBE_PATH, ENDMINF_CAPTURE_PROBE_SHA256, "Endminf capture probe"),
-    }
-    endminm_assets = {
-        "manifest": _endminf_asset_evidence(ENDMINM_SOURCE_MANIFEST_PATH, ENDMINM_SOURCE_MANIFEST_SHA256, "Endminm source manifest"),
-        "prefab": _endminf_asset_evidence(ENDMINM_PREFAB_PATH, ENDMINM_PREFAB_SHA256, "Endminm prefab"),
-        "controllerAudit": None,
-        "captureProbe": None,
-    }
-    candidates = [
-        {
-            "candidateId": "chr_0003_endminf",
-            "actorToken": "endminf",
-            "role": "exact_target",
-            "sourceAssets": exact_assets,
-            "render": {
-                "available": True,
-                "sameCameraContract": True,
-                "sameRenderSettingsContract": True,
-                "image": target_render,
-                "score": target_score,
-                "scoreMetric": "ECC translation over pinned character band",
-            },
-        },
-        {
-            "candidateId": "chr_9000_endmin",
-            "actorToken": "endmin",
-            "role": "video_alias_only",
-            "sourceAssets": {"manifest": None, "prefab": None, "controllerAudit": None, "captureProbe": None},
-            "render": {"available": False, "sameCameraContract": False, "sameRenderSettingsContract": False, "score": None},
-            "rejection": "chr_9000_endmin/endmin exists only as the pinned roster/video alias; no original-game-derived prefab/controller/capture exists",
-        },
-        {
-            "candidateId": "endmin",
-            "actorToken": "endmin",
-            "role": "video_alias_only",
-            "sourceAssets": {"manifest": None, "prefab": None, "controllerAudit": None, "captureProbe": None},
-            "render": {"available": False, "sameCameraContract": False, "sameRenderSettingsContract": False, "score": None},
-            "rejection": "generic endmin is not an independent original-game-derived asset identity",
-        },
-        {
-            "candidateId": "chr_0002_endminm",
-            "actorToken": "endminm",
-            "role": "plausible_roster_competitor",
-            "sourceAssets": endminm_assets,
-            "render": {"available": False, "sameCameraContract": False, "sameRenderSettingsContract": False, "score": None},
-            "rejection": "exact Endminm manifest/prefab exists, but no same-camera/same-render-settings capture probe or comparable render exists",
-        },
-    ]
-    comparison_contract = {
-        "cameraContract": _endminf_asset_evidence(OVERVIEW_CAMERA_CONTRACT_PATH, OVERVIEW_CAMERA_CONTRACT_SHA256, "overview camera contract") | {"track": "track_chr_0003_endmin", "templateId": "chr_0003_endmin"},
-        "overviewCameras": _endminf_asset_evidence(OVERVIEW_CAMERAS_PATH, OVERVIEW_CAMERAS_SHA256, "overview cameras"),
-        "cameraTrack": "track_chr_0003_endmin",
-        "resolution": [3840, 2160],
-        "alignment": "ECC translation over pinned character band",
-        "minimumTargetScore": ENDMINF_MIN_VISUAL_ECC,
-        "minimumMarginAboveEveryComparableCompetitor": ENDMINF_MATRIX_MIN_MARGIN,
-    }
-    comparable = [
-        row for row in candidates[1:]
-        if row["render"].get("available") is True
-        and row["render"].get("sameCameraContract") is True
-        and row["render"].get("sameRenderSettingsContract") is True
-        and isinstance(row["render"].get("score"), (int, float))
-        and not isinstance(row["render"].get("score"), bool)
-    ]
-    scores = [float(row["render"]["score"]) for row in comparable]
-    best = max(scores) if scores else None
-    margin = target_score - best if best is not None else None
-    margin_satisfied = target_score > ENDMINF_MIN_VISUAL_ECC and bool(scores) and margin >= ENDMINF_MATRIX_MIN_MARGIN
-    status = "proven" if margin_satisfied else "candidate"
-    matrix = {
-        "schema": "endfield.character-recovery.identity-candidate-matrix.v1",
-        "comparisonContract": comparison_contract,
-        "candidateCount": len(candidates),
-        "comparableCompetitorCount": len(comparable),
-        "comparableCompetitors": [row["candidateId"] for row in comparable],
-        "targetScore": target_score,
-        "bestCompetitorScore": best,
-        "targetMargin": margin,
-        "marginSatisfied": margin_satisfied,
-        "status": status,
-        "candidates": candidates,
-        "admission": {
-            "identityStatus": status,
-            "matteCandidateAllowed": margin_satisfied,
-            "reason": (
-                "target score clears the fixed minimum margin above every comparable competitor"
-                if margin_satisfied
-                else "exact Endminf score is observed, but no comparable competitor render exists; a one-candidate ECC cannot prove identity"
-            ),
-        },
-    }
-    return matrix, target_score
-
-
-def _validate_endminf_candidate_matrix(evidence: dict) -> None:
-    """Recompute every candidate row and summary; never trust report booleans."""
-    identity = evidence.get("identity") or {}
-    expected_matrix, target_score = _expected_endminf_candidate_matrix()
-    actual_matrix = identity.get("candidateMatrix")
-    if actual_matrix != expected_matrix:
-        raise MatteError("Endminf candidate matrix is stale or mutated")
-    visual = identity.get("visualMatch") or {}
-    expected_image = expected_matrix["candidates"][0]["render"]["image"]
-    if visual.get("eccTranslation") != target_score or visual.get("exactEndminfRender") != expected_image:
-        raise MatteError("Endminf target score/render evidence is not consistent with the recomputed matrix")
-    if identity.get("status") != expected_matrix["status"]:
-        raise MatteError("Endminf identity status is not derived from the candidate matrix")
-    publication = evidence.get("publication") or {}
-    if publication.get("matteCandidateAllowed") is not expected_matrix["admission"]["matteCandidateAllowed"]:
-        raise MatteError("Endminf publication admission is not derived from the candidate matrix")
+def _first_difference(expected: object, actual: object, path: str = "report") -> tuple[str, object, object] | None:
+    """Return a bounded actionable path/value mismatch for JSON-like reports."""
+    if type(expected) is not type(actual):
+        return path, expected, actual
+    if isinstance(expected, dict):
+        expected_keys = set(expected)
+        actual_keys = set(actual)
+        if expected_keys != actual_keys:
+            missing = sorted(expected_keys - actual_keys)
+            extra = sorted(actual_keys - expected_keys)
+            return f"{path}.keys", missing, extra
+        for key in sorted(expected_keys):
+            mismatch = _first_difference(expected[key], actual[key], f"{path}.{key}")
+            if mismatch is not None:
+                return mismatch
+        return None
+    if isinstance(expected, list):
+        if len(expected) != len(actual):
+            return f"{path}.length", len(expected), len(actual)
+        for index, (expected_item, actual_item) in enumerate(zip(expected, actual)):
+            mismatch = _first_difference(expected_item, actual_item, f"{path}[{index}]")
+            if mismatch is not None:
+                return mismatch
+        return None
+    if expected != actual:
+        return path, expected, actual
+    return None
 
 
 def _endminf_identity_evidence() -> dict[str, str]:
@@ -496,51 +392,14 @@ def _endminf_identity_evidence() -> dict[str, str]:
         evidence = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError) as error:
         raise MatteError(f"exact Endminf identity evidence is malformed: {error}") from error
-    _validate_endminf_candidate_matrix(evidence)
-    identity = evidence.get("identity") or {}
-    phase = evidence.get("phase") or {}
-    matrix = identity.get("candidateMatrix") or {}
-    clean_loop = phase.get("cleanLoop") or {}
-    tail = phase.get("tailTransition") or {}
-    common_valid = (
-        evidence.get("schema") != ENDMINF_IDENTITY_EVIDENCE_SCHEMA
-        or evidence.get("status") != "ok"
-        or identity.get("status") not in {"candidate", "proven"}
-        or identity.get("characterId") != "chr_0003_endminf"
-        or identity.get("actorToken") != "endminf"
-        or (phase.get("combinedActorWindow") or {}).get("frameRangeExclusive") != list(ENDMINF_COMBINED_FRAME_RANGE)
-        or (phase.get("sourceTransition") or {}).get("frameRangesInclusive") != [list(item) for item in ENDMINF_SOURCE_TRANSITION_RANGES]
-        or (phase.get("sourceTransition") or {}).get("reason") != ENDMINF_TRANSITION_REASON
-        or clean_loop.get("frameRangeInclusive") != list(ENDMINF_CLEAN_LOOP_FRAME_RANGE)
-        or clean_loop.get("frameCount") != ENDMINF_CLEAN_LOOP_FRAME_COUNT
-        or clean_loop.get("completeRuntimePeriods") != ENDMINF_CLEAN_LOOP_RUNTIME_PERIODS
-        or tail.get("frameRangeInclusive") != list(ENDMINF_SOURCE_TRANSITION_RANGES[1])
-        or tail.get("frameCount") != 90
-    )
-    identity_status = identity.get("status")
-    matrix_valid = matrix.get("status") == identity_status
-    candidates = matrix.get("candidates") or []
-    candidate_ids = [row.get("candidateId") for row in candidates if isinstance(row, dict)]
-    target_row = next((row for row in candidates if isinstance(row, dict) and row.get("candidateId") == "chr_0003_endminf"), None)
-    endminm_row = next((row for row in candidates if isinstance(row, dict) and row.get("candidateId") == "chr_0002_endminm"), None)
-    comparison = matrix.get("comparisonContract") or {}
-    matrix_valid = matrix_valid and matrix.get("candidateCount") == 4 and candidate_ids == ["chr_0003_endminf", "chr_9000_endmin", "endmin", "chr_0002_endminm"]
-    matrix_valid = matrix_valid and float(matrix.get("targetScore", 0.0)) >= 0.80
-    matrix_valid = matrix_valid and comparison.get("minimumTargetScore") == 0.8 and comparison.get("minimumMarginAboveEveryComparableCompetitor") == 0.05
-    matrix_valid = matrix_valid and ((comparison.get("cameraContract") or {}).get("sha256") == OVERVIEW_CAMERA_CONTRACT_SHA256)
-    matrix_valid = matrix_valid and ((comparison.get("overviewCameras") or {}).get("sha256") == OVERVIEW_CAMERAS_SHA256)
-    matrix_valid = matrix_valid and ((target_row or {}).get("sourceAssets", {}).get("manifest", {}).get("sha256") == ENDMINF_SOURCE_MANIFEST_SHA256)
-    matrix_valid = matrix_valid and ((target_row or {}).get("sourceAssets", {}).get("prefab", {}).get("sha256") == ENDMINF_PREFAB_SHA256)
-    matrix_valid = matrix_valid and ((target_row or {}).get("sourceAssets", {}).get("controllerAudit", {}).get("sha256") == ENDMINF_CONTROLLER_AUDIT_SHA256)
-    matrix_valid = matrix_valid and ((target_row or {}).get("sourceAssets", {}).get("captureProbe", {}).get("sha256") == ENDMINF_CAPTURE_PROBE_SHA256)
-    matrix_valid = matrix_valid and ((endminm_row or {}).get("sourceAssets", {}).get("manifest", {}).get("sha256") == ENDMINM_SOURCE_MANIFEST_SHA256)
-    matrix_valid = matrix_valid and ((endminm_row or {}).get("sourceAssets", {}).get("prefab", {}).get("sha256") == ENDMINM_PREFAB_SHA256)
-    if identity_status == "candidate":
-        matrix_valid = matrix_valid and matrix.get("comparableCompetitorCount") == 0 and matrix.get("marginSatisfied") is False and (evidence.get("publication") or {}).get("matteCandidateAllowed") is False
-    elif identity_status == "proven":
-        matrix_valid = matrix_valid and matrix.get("comparableCompetitorCount", 0) > 0 and matrix.get("marginSatisfied") is True and (evidence.get("publication") or {}).get("matteCandidateAllowed") is True
-    if common_valid or not matrix_valid:
-        raise MatteError("exact Endminf identity evidence is stale or does not meet the fixed candidate margin contract")
+    canonical = _canonical_endminf_identity_report()
+    mismatch = _first_difference(canonical, evidence)
+    if mismatch is not None:
+        path_text, expected, actual = mismatch
+        raise MatteError(
+            "Endminf identity/phase evidence differs from canonical audit rebuild at "
+            f"{path_text}: expected={expected!r} actual={actual!r}"
+        )
     size, digest = _sha256(path)
     return {"path": _repo_relative_path(path, "Endminf identity evidence"), "bytes": size, "sha256": digest}
 
