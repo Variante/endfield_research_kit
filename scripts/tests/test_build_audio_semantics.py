@@ -1,3 +1,4 @@
+import copy
 import json
 import tempfile
 import unittest
@@ -3950,6 +3951,7 @@ class AudioSemanticDataTests(unittest.TestCase):
                     ],
                     "associations": [
                         {
+                            "childId": 1,
                             "onSwitchMode": "stop",
                             "continuePlayback": True,
                             "isFirstOnly": False,
@@ -3990,6 +3992,352 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertEqual(selector["continuePlaybackAssociationCount"], 1)
         self.assertEqual(selector["nonzeroFadeOutAssociationCount"], 1)
         self.assertNotIn("packages", selector)
+
+    def test_selector_branch_projection_keeps_exact_values_media_and_authored_controls(self) -> None:
+        selector_rows = [{
+            "objectType": 6,
+            "objectId": 700,
+            "rootActionId": 701,
+            "childCount": 3,
+            "parserConfidence": "wwise150TypedReciprocalChildren",
+            "switchMappingEvidence": {
+                "parserStatus": "typedExactV150FlatPackages",
+                "groupType": "state",
+                "groupTypeRaw": 1,
+                "groupId": 0xF6699CF4,
+                "defaultValueId": 0x2CA33BDB,
+                "packages": [
+                    {"packageIndex": 0, "valueId": 0x1A9FC91F, "childIds": [10]},
+                    {"packageIndex": 1, "valueId": 0x1B9ABDB1, "childIds": [900]},
+                    # The authored default has no mapped child and must not be dropped.
+                    {"packageIndex": 2, "valueId": 0x2CA33BDB, "isDefaultValue": True, "childIds": []},
+                ],
+                    "associations": [{
+                        "associationIndex": 0,
+                        "childId": 10,
+                        "flagsRaw": 0x82,
+                        "flagsUnknownMask": 0x80,
+                        "onSwitchMode": "stop",
+                        "onSwitchModeRaw": 1,
+                        "onSwitchModeRawByte": 1,
+                        "onSwitchModeUnknownMask": 0xF8,
+                    "isFirstOnly": True,
+                    "continuePlayback": False,
+                    "fadeOutTimeMs": 500,
+                    "fadeInTimeMs": 25,
+                }],
+                "mappedChildIdsOutsideChildren": [],
+                "unmappedChildIds": [11, 12],
+                "associationChildIdsOutsideChildren": [],
+            },
+        }]
+        media = [{
+            "mediaId": 55,
+            "src": "xinput.flac",
+            "wwiseMediaEvidence": [{"bankId": 1, "soundObjectIds": [10]}],
+        }]
+        branches = event_projection.selector_branch_projection(
+            [{"bankId": 1, "bank": "fixture", "containerEvidence": selector_rows}],
+            media,
+            audio_semantics.wwise_selector_group_catalog(),
+        )
+        self.assertEqual(len(branches), 1)
+        branch = branches[0]
+        self.assertEqual(branch["groupIdHex"], "0xf6699cf4")
+        self.assertEqual(branch["typedExactStatus"], "typedExactV150FlatPackages")
+        self.assertEqual(branch["runtimeSelection"], "groupValueUnobservedAllChildrenRemainPossible")
+        packages = branch["packages"]
+        self.assertEqual(packages[0]["semantic"]["semanticName"], "XInput")
+        self.assertEqual(packages[1]["semantic"]["semanticName"], "ScePad")
+        self.assertEqual(packages[0]["directMediaIds"], [55])
+        self.assertEqual(packages[0]["mediaStatus"], "directMediaExactSoundObjectJoin")
+        self.assertEqual(packages[1]["mediaStatus"], "descendantMediaUnresolved")
+        self.assertEqual(packages[2]["valueIdHex"], "0x2ca33bdb")
+        self.assertTrue(packages[2]["isDefault"])
+        self.assertEqual(packages[2]["childIds"], [])
+        self.assertEqual(packages[2]["semanticJoinStatus"], "unresolvedValueId")
+        association = branch["associations"][0]
+        self.assertEqual(association["onSwitchMode"], "stop")
+        self.assertEqual(association["onSwitchModeRaw"], 1)
+        self.assertEqual(association["flagsRaw"], 0x82)
+        self.assertEqual(association["flagsUnknownMask"], 0x80)
+        self.assertEqual(association["onSwitchModeUnknownMask"], 0xF8)
+        self.assertEqual(association["fadeOutTimeMs"], 500)
+        self.assertEqual(association["fadeInTimeMs"], 25)
+        for forbidden in ("selectedValue", "activeBranch", "playedBranch"):
+            self.assertNotIn(forbidden, str(branch))
+
+    def test_selector_branch_projection_keeps_unresolved_nested_type6_without_closure(self) -> None:
+        row = {
+            "objectType": 6,
+            "objectId": 800,
+            "childCount": 1,
+            "parserConfidence": "wwise150TypedReciprocalChildren",
+            "switchMappingEvidence": {
+                "parserStatus": "typedExactV150FlatPackages",
+                "groupType": "switch",
+                "groupId": 0x12345678,
+                "defaultValueId": 1,
+                "packages": [{"valueId": 1, "childIds": [900]}],
+                "associations": [],
+                "mappedChildIdsOutsideChildren": [],
+                "unmappedChildIds": [],
+                "associationChildIdsOutsideChildren": [],
+            },
+        }
+        branch = event_projection.selector_branch_projection(
+            [{"containerEvidence": [row]}],
+            [{"mediaId": 66, "wwiseMediaEvidence": [{"soundObjectIds": [901]}]}],
+        )[0]
+        self.assertEqual(branch["packages"][0]["childIds"], [900])
+        self.assertEqual(branch["packages"][0]["directMediaIds"], [])
+        self.assertEqual(branch["packages"][0]["mediaStatus"], "descendantMediaUnresolved")
+
+    def test_selector_branch_media_join_requires_exact_selector_and_media_bank(self) -> None:
+        row = {
+            "objectType": 6,
+            "objectId": 801,
+            "childCount": 1,
+            "parserConfidence": "wwise150TypedReciprocalChildren",
+            "switchMappingEvidence": {
+                "parserStatus": "typedExactV150FlatPackages",
+                "groupType": "switch",
+                "groupId": 0x12345678,
+                "defaultValueId": 1,
+                "packages": [{"valueId": 1, "childIds": [10]}],
+                "associations": [],
+                "mappedChildIdsOutsideChildren": [],
+                "unmappedChildIds": [],
+                "associationChildIdsOutsideChildren": [],
+            },
+        }
+        media = [
+            {"mediaId": 66, "wwiseMediaEvidence": [{"bankId": 2, "soundObjectIds": [10]}]},
+            {"mediaId": 67, "wwiseMediaEvidence": [{"bankId": 1, "soundObjectIds": [10]}]},
+            {"mediaId": 68, "wwiseMediaEvidence": [{"soundObjectIds": [10]}]},
+            {"mediaId": 69, "wwiseMediaEvidence": [{"bankId": 1, "soundObjectIds": [10, -1]}]},
+            {"mediaId": 70, "wwiseMediaEvidence": [{"bankId": True, "soundObjectIds": [10]}]},
+        ]
+        branch = event_projection.selector_branch_projection(
+            [{"bankId": 1, "containerEvidence": [row]}], media
+        )[0]
+        self.assertEqual(branch["packages"][0]["directMediaIds"], [67])
+        missing_bank = event_projection.selector_branch_projection(
+            [{"containerEvidence": [row]}], media
+        )[0]
+        self.assertEqual(missing_bank["packages"][0]["directMediaIds"], [])
+
+    def test_selector_branch_projection_fails_closed_for_malformed_type6_shapes(self) -> None:
+        malformed_rows = [
+            {
+                "objectType": "six",
+                "childCount": "bad",
+                "switchMappingEvidence": {
+                    "parserStatus": "typedExactV150FlatPackages",
+                    "groupType": "switch",
+                    "groupId": 1,
+                    "defaultValueId": 1,
+                    "packages": [],
+                    "associations": [],
+                },
+            },
+            {
+                "objectType": 6,
+                "childCount": "bad",
+                "switchMappingEvidence": {
+                    "parserStatus": "typedExactV150FlatPackages",
+                    "groupType": "switch",
+                    "groupId": 1,
+                    "defaultValueId": 1,
+                    "packages": [{"valueId": 1, "childIds": "10"}],
+                    "associations": [],
+                },
+            },
+            {
+                "objectType": 6,
+                "switchMappingEvidence": {
+                    "parserStatus": "typedExactV150FlatPackages",
+                    "groupType": "switch",
+                    "groupId": 1,
+                    "defaultValueId": 1,
+                    "packages": "not-an-array",
+                    "associations": [],
+                },
+            },
+        ]
+        compact = event_projection.compact_container_evidence(malformed_rows)
+        self.assertNotIn("selectorNodeCount", compact[0])
+        branches = event_projection.selector_branch_projection(
+            [{"bankId": 1, "containerEvidence": malformed_rows}], []
+        )
+        self.assertEqual(len(branches), 2)
+        self.assertTrue(all(not branch["typedExact"] for branch in branches))
+        self.assertTrue(all(branch.get("packages", []) == [] for branch in branches))
+        self.assertTrue(all("typedExactV150FlatPackages" not in branch["typedExactStatus"] for branch in branches))
+
+    def test_selector_branch_exact_shape_rejects_bad_id_arrays_and_single_ids(self) -> None:
+        base_row = {
+            "objectType": 6,
+            "objectId": 100,
+            "rootActionId": 200,
+            "switchMappingEvidence": {
+                "parserStatus": "typedExactV150FlatPackages",
+                "groupType": "switch",
+                "groupId": 1,
+                "defaultValueId": 2,
+                "packages": [{"valueId": 2, "childIds": [10]}],
+                "associations": [{"childId": 10}],
+                "mappedChildIdsOutsideChildren": [],
+                "unmappedChildIds": [],
+                "associationChildIdsOutsideChildren": [],
+            },
+        }
+
+        def assert_unresolved(row: dict, *, bank_id: object = 7) -> None:
+            branch = event_projection.selector_branch_projection(
+                [{"bankId": bank_id, "containerEvidence": [row]}], []
+            )[0]
+            self.assertFalse(branch["typedExact"])
+            self.assertNotEqual(branch["typedExactStatus"], "typedExactV150FlatPackages")
+            self.assertEqual(branch.get("packages", []), [])
+            self.assertEqual(branch.get("associations", []), [])
+
+        # A malformed ID array is an invalid exact-shape claim.  In particular,
+        # do not silently discard a bad member or iterate a scalar string.
+        bad_array_members = [{}, True, "not-numeric", -1, 0x100000000]
+        for field in (
+            "mappedChildIdsOutsideChildren",
+            "unmappedChildIds",
+            "associationChildIdsOutsideChildren",
+        ):
+            for bad_member in bad_array_members:
+                row = copy.deepcopy(base_row)
+                row["switchMappingEvidence"][field] = [bad_member]
+                assert_unresolved(row)
+        for bad_member in bad_array_members:
+            row = copy.deepcopy(base_row)
+            row["switchMappingEvidence"]["packages"][0]["childIds"] = [bad_member]
+            assert_unresolved(row)
+
+        # Package and association rows are exact-shape arrays too; malformed
+        # elements must not be skipped to preserve a false exact projection.
+        for field, bad_value in (
+            ("packages", [{}]),
+            ("packages", [True]),
+            ("packages", ["not-a-package"]),
+            ("associations", [{}]),
+            ("associations", [True]),
+            ("associations", ["not-an-association"]),
+        ):
+            row = copy.deepcopy(base_row)
+            row["switchMappingEvidence"][field] = bad_value
+            assert_unresolved(row)
+        for bad_member in bad_array_members[1:]:
+            row = copy.deepcopy(base_row)
+            row["switchMappingEvidence"]["associations"][0]["childId"] = bad_member
+            assert_unresolved(row)
+            row = copy.deepcopy(base_row)
+            row["switchMappingEvidence"]["packages"][0]["valueId"] = bad_member
+            assert_unresolved(row)
+        for field in ("groupId", "defaultValueId"):
+            for bad_value in bad_array_members[1:]:
+                row = copy.deepcopy(base_row)
+                row["switchMappingEvidence"][field] = bad_value
+                assert_unresolved(row)
+        for field in ("objectId", "rootActionId"):
+            for bad_value in bad_array_members[1:]:
+                row = copy.deepcopy(base_row)
+                row[field] = bad_value
+                assert_unresolved(row)
+        for bad_value in bad_array_members[1:]:
+            assert_unresolved(copy.deepcopy(base_row), bank_id=bad_value)
+
+    def test_selector_branch_empty_packages_are_unresolved_not_exact(self) -> None:
+        row = {
+            "objectType": 6,
+            "switchMappingEvidence": {
+                "parserStatus": "typedExactV150FlatPackages",
+                "groupType": "switch",
+                "groupId": 1,
+                "defaultValueId": 2,
+                "packages": [],
+                "associations": [],
+            },
+        }
+        branch = event_projection.selector_branch_projection(
+            [{"bankId": 7, "containerEvidence": [row]}], []
+        )[0]
+        self.assertFalse(branch["typedExact"])
+        self.assertEqual(branch["typedExactStatus"], "unresolvedV150SelectorNoValuePackages")
+        self.assertEqual(branch.get("packages", []), [])
+
+    def test_selector_catalog_join_keeps_inferred_evidence_non_exact(self) -> None:
+        catalog = [{
+            "groupId": 9,
+            "groupType": "switch",
+            "semanticLabel": "Possible group",
+            "semanticEvidence": "highConfidenceHashCorrelation",
+            "values": [{
+                "valueId": 4,
+                "semanticName": "Possible",
+                "semanticEvidence": "inferredValueVocabulary",
+            }],
+        }]
+        row = {
+            "objectType": 6,
+            "childCount": 1,
+            "switchMappingEvidence": {
+                "parserStatus": "typedExactV150FlatPackages",
+                "groupType": "switch",
+                "groupId": 9,
+                "defaultValueId": 4,
+                "packages": [{"valueId": 4, "childIds": [1]}],
+                "associations": [],
+            },
+        }
+        branch = event_projection.selector_branch_projection(
+            [{"bankId": 1, "containerEvidence": [row]}], [], catalog
+        )[0]
+        self.assertEqual(branch["ownershipEvidence"]["groupSemanticJoinStatus"], "inferredCatalogSemanticJoin")
+        self.assertEqual(branch["packages"][0]["semanticJoinStatus"], "inferredCatalogSemanticJoin")
+
+    def test_selector_branches_are_lazy_and_not_copied_to_event_summary(self) -> None:
+        audio = {
+            "eventNames": ["au_selector_fixture"],
+            "events": [{
+                "eventId": "au_selector_fixture",
+                "eventHash": 123,
+                "mediaId": 55,
+                "src": "xinput.flac",
+                "wwiseMediaEvidence": [{"bankId": 1, "soundObjectIds": [10]}],
+            }],
+            "eventEvidence": [{
+                "eventId": "au_selector_fixture",
+                "eventHash": 123,
+                "bankId": 1,
+                "bank": "fixture",
+                "containerEvidence": [{
+                    "objectType": 6,
+                    "objectId": 700,
+                    "childCount": 1,
+                    "parserConfidence": "wwise150TypedReciprocalChildren",
+                    "switchMappingEvidence": {
+                        "parserStatus": "typedExactV150FlatPackages",
+                        "groupType": "switch",
+                        "groupId": 0x12345678,
+                        "defaultValueId": 1,
+                        "packages": [{"valueId": 1, "childIds": [10]}],
+                        "associations": [],
+                    },
+                }],
+            }],
+        }
+        rows, _, _ = event_projection.build_event_rows(audio, {})
+        self.assertEqual(rows[0]["selectorBranchSchemaVersion"], 1)
+        self.assertEqual(len(rows[0]["selectorBranches"]), 1)
+        summary = event_summary.event_summary_row(rows[0], "event_details/00.json")
+        self.assertNotIn("selectorBranches", summary)
+        self.assertNotIn("selectorBranchSchemaVersion", summary)
 
     def test_compact_container_evidence_preserves_random_sequence_policy(self) -> None:
         rows = [
@@ -8306,6 +8654,21 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertNotIn("selected Wwise switch child", source)
         self.assertIn("const PLAYER_COLLAPSE_THRESHOLD = 20", source)
         self.assertIn("candidates.length > PLAYER_COLLAPSE_THRESHOLD", render_body)
+
+    def test_audio_frontend_selector_branches_use_candidate_and_evidence_boundaries(self) -> None:
+        source = (
+            Path(__file__).resolve().parents[2] / "webui/src/features/audio/index.js"
+        ).read_text(encoding="utf-8")
+        branch_body = source.split("function selectorBranchesSection", 1)[1].split(
+            "function sourceEvidenceSummary", 1
+        )[0]
+        self.assertIn('t("selectorBranches")', branch_body)
+        self.assertIn("inferred / possible", branch_body)
+        self.assertIn("mapped selector candidate", branch_body)
+        self.assertIn("outside ownership evidence", branch_body)
+        self.assertIn("Selector candidates, not guaranteed playable children.", branch_body)
+        self.assertIn("selectorRuntimeUnobserved", source)
+        self.assertNotIn("authored child${childCount", branch_body)
 
     def test_audio_frontend_prioritizes_unknown_purpose_and_exposes_enemy_action_mapping(self) -> None:
         source = (

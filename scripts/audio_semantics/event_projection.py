@@ -229,7 +229,7 @@ def compact_media(entry: dict[str, Any]) -> dict[str, Any]:
             {
                 key: row[key]
                 for key in (
-                    "rootActionIds", "soundObjectCount", "relationTypes",
+                    "rootActionIds", "soundObjectCount", "soundObjectIds", "relationTypes",
                     "musicTrackObjectCount", "selectionPaths", "bankId", "bankPackage",
                     "sourceKinds", "pluginIds", "pluginNames", "streamTypes", "sourceBits",
                 )
@@ -260,6 +260,76 @@ def _selector_id_hex(value: Any) -> str:
     return f"0x{number & 0xFFFFFFFF:08x}"
 
 
+def _selector_int(value: Any) -> int | None:
+    """Return one unsigned selector/object id without inventing a fallback."""
+
+    try:
+        if value in (None, "") or isinstance(value, bool):
+            return None
+        if not isinstance(value, (int, str)):
+            return None
+        if isinstance(value, str):
+            text = value.strip()
+            if not text:
+                return None
+            parsed = int(text, 16) if text.lower().startswith("0x") else int(text, 10)
+        else:
+            parsed = int(value)
+        if parsed < 0 or parsed > 0xFFFFFFFF:
+            return None
+        return parsed
+    except (TypeError, ValueError):
+        return None
+
+
+def _selector_count(value: Any) -> int:
+    parsed = _selector_int(value)
+    if parsed is None:
+        return 0
+    # Counts are not unsigned identifiers; malformed negative values fail
+    # closed instead of becoming a wrapped four-billion count.
+    try:
+        if isinstance(value, str):
+            text = value.strip()
+            raw = int(text, 16) if text.lower().startswith("0x") else int(text, 10)
+        else:
+            raw = int(value)
+    except (TypeError, ValueError):
+        return 0
+    return raw if raw >= 0 else 0
+
+
+def _selector_ids(values: Any) -> list[int]:
+    """Parse JSON arrays of ids; never iterate malformed scalar strings."""
+
+    if isinstance(values, (str, bytes, bytearray, dict)) or values is None:
+        return []
+    try:
+        return sorted({parsed for raw in values if (parsed := _selector_int(raw)) is not None})
+    except TypeError:
+        return []
+
+
+def _selector_id_array(value: Any) -> tuple[list[int], bool]:
+    """Parse an authored ID array and reject, rather than drop, bad entries."""
+
+    if not isinstance(value, list):
+        return [], False
+    parsed: list[int] = []
+    for raw in value:
+        item = _selector_int(raw)
+        if item is None:
+            return [], False
+        parsed.append(item)
+    return sorted(set(parsed)), True
+
+
+def _selector_bank_id(value: Any) -> int | None:
+    """Normalize a bank id only when the source explicitly provides one."""
+
+    return _selector_int(value)
+
+
 def _selector_group_catalog(
     selector_groups: Iterable[dict[str, Any]] | None,
 ) -> dict[str, dict[str, Any]]:
@@ -279,11 +349,30 @@ def _compact_selector_group(raw_group: dict[str, Any]) -> dict[str, Any]:
         "semanticEvidence", "recoveredName", "nameEvidence",
         "authoredGroupNameStatus", "runtimeScope", "runtimeObservationStatus",
     )
-    return {
+    compact = {
         key: raw_group[key]
         for key in keys
         if raw_group.get(key) not in (None, "", [])
     }
+    if compact:
+        compact["semanticJoinStatus"] = _selector_catalog_join_status(raw_group)
+    return compact
+
+
+def _selector_catalog_join_status(raw_row: dict[str, Any] | None) -> str:
+    """Classify catalog evidence without upgrading inference to exactness."""
+
+    if not isinstance(raw_row, dict):
+        return "unresolvedCatalogSemanticJoin"
+    evidence = " ".join(
+        str(raw_row.get(key) or "").strip().casefold()
+        for key in ("semanticEvidence", "resolutionEvidence", "resolution", "nameEvidence")
+    )
+    if any(token in evidence for token in ("highconfidence", "high confidence", "inferred", "correlation", "possible")):
+        return "inferredCatalogSemanticJoin"
+    if "exact" in evidence:
+        return "exactCatalogSemanticJoin"
+    return "unverifiedCatalogSemanticJoin"
 
 
 def _selector_value_ids(raw_value: dict[str, Any]) -> set[str]:
@@ -322,6 +411,319 @@ def _has_selector_value_semantics(raw_value: dict[str, Any]) -> bool:
     return bool(compact.get("semanticName") or compact.get("resolvedValueName"))
 
 
+SELECTOR_BRANCH_SCHEMA_VERSION = 1
+SELECTOR_BRANCH_RUNTIME_SELECTION = "groupValueUnobservedAllChildrenRemainPossible"
+
+
+def _selector_semantic_value(
+    group: dict[str, Any] | None,
+    value_id: int | None,
+) -> tuple[dict[str, Any] | None, str]:
+    """Join a package value to the existing current-build catalog only."""
+
+    if group is None or value_id is None:
+        return None, "unresolvedGroupId" if group is None else "unresolvedValueId"
+    value_hex = _selector_id_hex(value_id)
+    for raw_value in group.get("values") or ():
+        if not isinstance(raw_value, dict) or value_hex not in _selector_value_ids(raw_value):
+            continue
+        if not _has_selector_value_semantics(raw_value):
+            return None, "unresolvedValueId"
+        return _compact_selector_value(raw_value), _selector_catalog_join_status(raw_value)
+    return None, "unresolvedValueId"
+
+
+def _selector_media_sound_object_ids(candidate: dict[str, Any]) -> set[int]:
+    """Collect only explicit sound-object IDs from one compact media row."""
+
+    ids: set[int] = set()
+    for media_evidence in candidate.get("wwiseMediaEvidence") or ():
+        if not isinstance(media_evidence, dict):
+            continue
+        sound_object_ids, valid = _selector_id_array(media_evidence.get("soundObjectIds"))
+        if valid:
+            ids.update(sound_object_ids)
+    return ids
+
+
+def _selector_candidate_media_id(candidate: dict[str, Any]) -> int | None:
+    return _selector_int(candidate.get("mediaId") or candidate.get("id"))
+
+
+def _selector_direct_media_ids(
+    child_ids: Iterable[Any],
+    media_candidates: Iterable[dict[str, Any]],
+    selector_bank_id: int | None,
+) -> list[int]:
+    """Join child IDs to media only through exact ``soundObjectIds`` evidence.
+
+    A child that is itself a container intentionally has no recursive closure
+    here.  Its possible descendants remain unresolved until a direct Sound
+    object edge is present in this Event's media evidence.
+    """
+
+    children = set(_selector_ids(child_ids))
+    if not children or selector_bank_id is None:
+        return []
+    direct: set[int] = set()
+    for candidate in media_candidates:
+        if not isinstance(candidate, dict):
+            continue
+        media_id = _selector_candidate_media_id(candidate)
+        if media_id is None:
+            continue
+        for media_evidence in candidate.get("wwiseMediaEvidence") or ():
+            if not isinstance(media_evidence, dict):
+                continue
+            if _selector_bank_id(media_evidence.get("bankId")) != selector_bank_id:
+                continue
+            if children.intersection(_selector_media_sound_object_ids({
+                "wwiseMediaEvidence": [media_evidence],
+            })):
+                direct.add(media_id)
+                break
+    return sorted(direct)
+
+
+def _selector_array(value: Any) -> list[Any] | None:
+    if not isinstance(value, list):
+        return None
+    return value
+
+
+def _selector_exact_structure_status(selector: dict[str, Any]) -> str:
+    """Validate the parser's exact claim before exposing package semantics."""
+
+    if selector.get("groupType") not in {"switch", "state"}:
+        return "unresolvedV150SelectorGroupType"
+    if _selector_int(selector.get("groupId")) is None:
+        return "unresolvedV150SelectorGroupId"
+    if _selector_int(selector.get("defaultValueId")) is None:
+        return "unresolvedV150SelectorDefaultValue"
+    if "groupTypeRaw" in selector and _selector_int(selector.get("groupTypeRaw")) not in {0, 1}:
+        return "unresolvedV150SelectorGroupTypeRaw"
+    if "continuousValidation" in selector and not isinstance(selector.get("continuousValidation"), bool):
+        return "unresolvedV150SelectorContinuousValidation"
+    packages = _selector_array(selector.get("packages"))
+    associations = _selector_array(selector.get("associations"))
+    if packages is None:
+        return "unresolvedV150SelectorPackages"
+    if not packages:
+        return "unresolvedV150SelectorNoValuePackages"
+    if associations is None:
+        return "unresolvedV150SelectorAssociations"
+    for key in (
+        "mappedChildIdsOutsideChildren", "unmappedChildIds",
+        "associationChildIdsOutsideChildren",
+    ):
+        if key in selector and not _selector_id_array(selector.get(key))[1]:
+            return f"unresolvedV150Selector{key}"
+    for package in packages:
+        if not isinstance(package, dict):
+            return "unresolvedV150SelectorPackageRow"
+        if _selector_int(package.get("valueId")) is None:
+            return "unresolvedV150SelectorPackageValue"
+        child_ids, child_ids_valid = _selector_id_array(package.get("childIds"))
+        if not child_ids_valid:
+            return "unresolvedV150SelectorPackageChildren"
+        if "isDefaultValue" in package and not isinstance(package.get("isDefaultValue"), bool):
+            return "unresolvedV150SelectorPackageDefaultFlag"
+    for association in associations:
+        if not isinstance(association, dict):
+            return "unresolvedV150SelectorAssociationRow"
+        if _selector_int(association.get("childId")) is None:
+            return "unresolvedV150SelectorAssociationChild"
+        if "onSwitchMode" in association and not isinstance(association.get("onSwitchMode"), str):
+            return "unresolvedV150SelectorAssociationMode"
+        for key in (
+            "onSwitchModeRaw", "onSwitchModeRawByte", "flagsRaw",
+            "flagsUnknownMask", "onSwitchModeUnknownMask",
+        ):
+            if key in association and _selector_int(association.get(key)) is None:
+                return f"unresolvedV150SelectorAssociation{key}"
+        for key in ("fadeOutTimeMs", "fadeInTimeMs"):
+            if key in association and (
+                isinstance(association.get(key), bool)
+                or not isinstance(association.get(key), (int, float))
+            ):
+                return f"unresolvedV150SelectorAssociation{key}"
+    return "typedExactV150FlatPackages"
+
+
+def selector_branch_projection(
+    evidence_rows: Iterable[dict[str, Any]],
+    media_candidates: Iterable[dict[str, Any]],
+    selector_groups: Iterable[dict[str, Any]] | None = None,
+) -> list[dict[str, Any]]:
+    """Project the coherent, non-recursive subset of v150 type-6 selectors.
+
+    The HIRC parser already proves the flat package/association tail.  This
+    projection keeps that authored shape and exact catalog joins while refusing
+    to infer nested container closure or a live selected branch.
+    """
+
+    catalog = _selector_group_catalog(selector_groups)
+    candidates = [row for row in media_candidates if isinstance(row, dict)]
+    projected: list[dict[str, Any]] = []
+    for evidence in evidence_rows:
+        if not isinstance(evidence, dict):
+            continue
+        bank_id = evidence.get("bankId")
+        bank = evidence.get("bank")
+        for raw_node in evidence.get("containerEvidence") or ():
+            if not isinstance(raw_node, dict) or _selector_int(raw_node.get("objectType")) != 6:
+                continue
+            selector = raw_node.get("switchMappingEvidence")
+            if not isinstance(selector, dict):
+                continue
+            raw_parser_status = str(selector.get("parserStatus") or "unknown")
+            structure_status = (
+                _selector_exact_structure_status(selector)
+                if raw_parser_status == "typedExactV150FlatPackages"
+                else raw_parser_status
+            )
+            node_id = _selector_int(raw_node.get("objectId"))
+            root_action_id = _selector_int(raw_node.get("rootActionId"))
+            raw_bank_id = evidence.get("bankId")
+            if structure_status == "typedExactV150FlatPackages":
+                if "objectId" in raw_node and raw_node.get("objectId") not in (None, "") and node_id is None:
+                    structure_status = "unresolvedV150SelectorObjectId"
+                elif "rootActionId" in raw_node and raw_node.get("rootActionId") not in (None, "") and root_action_id is None:
+                    structure_status = "unresolvedV150SelectorRootActionId"
+                elif raw_bank_id not in (None, "") and _selector_bank_id(raw_bank_id) is None:
+                    structure_status = "unresolvedV150SelectorBankId"
+            parser_status = (
+                raw_parser_status
+                if structure_status == "typedExactV150FlatPackages"
+                else structure_status
+            )
+            group_id = _selector_int(selector.get("groupId"))
+            default_value_id = _selector_int(selector.get("defaultValueId"))
+            group = catalog.get(_selector_id_hex(group_id)) if group_id is not None else None
+            ownership = {
+                "status": str(raw_node.get("parserConfidence") or "unknown"),
+                "containerChildCount": _selector_count(raw_node.get("childCount")),
+                "mappedChildIdsOutsideChildren": _selector_ids(
+                    selector.get("mappedChildIdsOutsideChildren") or ()
+                ),
+                "unmappedChildIds": _selector_ids(selector.get("unmappedChildIds") or ()),
+                "associationChildIdsOutsideChildren": _selector_ids(
+                    selector.get("associationChildIdsOutsideChildren") or ()
+                ),
+            }
+            if group is not None:
+                ownership["groupSemanticJoinStatus"] = _selector_catalog_join_status(group)
+            else:
+                ownership["groupSemanticJoinStatus"] = "unresolvedGroupId"
+            node: dict[str, Any] = {
+                "objectId": node_id,
+                "objectIdHex": _selector_id_hex(node_id) if node_id is not None else None,
+                "rootActionId": root_action_id,
+                "rootActionIdHex": _selector_id_hex(root_action_id) if root_action_id is not None else None,
+                "groupId": group_id,
+                "groupIdHex": _selector_id_hex(group_id) if group_id is not None else None,
+                "groupType": selector.get("groupType"),
+                "groupTypeRaw": selector.get("groupTypeRaw"),
+                "groupSemantic": _compact_selector_group(group) if group is not None else None,
+                "defaultValueId": default_value_id,
+                "defaultValueIdHex": (
+                    _selector_id_hex(default_value_id) if default_value_id is not None else None
+                ),
+                "parserStatus": parser_status,
+                "parserRawStatus": raw_parser_status if parser_status != raw_parser_status else None,
+                "structureValidationStatus": structure_status,
+                "typedExact": structure_status == "typedExactV150FlatPackages",
+                "typedExactStatus": parser_status,
+                "ownershipEvidence": ownership,
+                "bankId": bank_id,
+                "bank": bank,
+                "runtimeSelection": SELECTOR_BRANCH_RUNTIME_SELECTION,
+                "packages": [],
+                "associations": [],
+            }
+            if structure_status == "typedExactV150FlatPackages":
+                for raw_package in selector.get("packages") or ():
+                    if not isinstance(raw_package, dict):
+                        continue
+                    value_id = _selector_int(raw_package.get("valueId"))
+                    child_ids = _selector_ids(raw_package.get("childIds"))
+                    semantic, semantic_status = _selector_semantic_value(group, value_id)
+                    outside = set(ownership["mappedChildIdsOutsideChildren"])
+                    mapped = bool(child_ids) and not bool(outside.intersection(child_ids))
+                    unmapped = not bool(child_ids)
+                    direct_media_ids = _selector_direct_media_ids(child_ids, candidates, _selector_bank_id(raw_bank_id))
+                    package: dict[str, Any] = {
+                        "packageIndex": raw_package.get("packageIndex"),
+                        "valueId": value_id,
+                        "valueIdHex": _selector_id_hex(value_id) if value_id is not None else None,
+                        "semantic": semantic,
+                        "semanticJoin": semantic,
+                        "semanticJoinStatus": semantic_status,
+                        "isDefault": bool(
+                            raw_package.get("isDefaultValue")
+                            or (
+                                value_id is not None
+                                and default_value_id is not None
+                                and value_id == default_value_id
+                            )
+                        ),
+                        "childIds": child_ids,
+                        "mapped": mapped,
+                        "unmapped": unmapped,
+                        "mappedStatus": (
+                            "mappedChildOutsideReciprocalChildren"
+                            if outside.intersection(child_ids)
+                            else "mappedToReciprocalChildren"
+                            if child_ids
+                            else "noMappedChildren"
+                        ),
+                        "unmappedStatus": (
+                            "reciprocalChildMappingAbsent" if unmapped else "reciprocalChildMappingPresent"
+                        ),
+                        "directMediaIds": direct_media_ids,
+                        "mediaStatus": (
+                            "directMediaExactSoundObjectJoin"
+                            if direct_media_ids
+                            else "descendantMediaUnresolved"
+                        ),
+                    }
+                    # Keep empty child/media arrays: an authored default with
+                    # no mapped child is still a real package boundary.
+                    node["packages"].append({
+                        key: value for key, value in package.items()
+                        if value not in (None, "")
+                    })
+                for raw_association in selector.get("associations") or ():
+                    if not isinstance(raw_association, dict):
+                        continue
+                    child_id = _selector_int(raw_association.get("childId"))
+                    association = {
+                        "associationIndex": raw_association.get("associationIndex"),
+                        "childId": child_id,
+                        "childIdHex": _selector_id_hex(child_id) if child_id is not None else None,
+                        "onSwitchMode": raw_association.get("onSwitchMode"),
+                        "onSwitchModeLabel": raw_association.get("onSwitchMode"),
+                        "onSwitchModeRaw": raw_association.get("onSwitchModeRaw"),
+                        "onSwitchModeRawByte": raw_association.get("onSwitchModeRawByte"),
+                        "flagsRaw": raw_association.get("flagsRaw"),
+                        "flagsUnknownMask": raw_association.get("flagsUnknownMask"),
+                        "onSwitchModeUnknownMask": raw_association.get("onSwitchModeUnknownMask"),
+                        "isFirstOnly": bool(raw_association.get("isFirstOnly")),
+                        "continuePlayback": bool(raw_association.get("continuePlayback")),
+                        "fadeOutTimeMs": raw_association.get("fadeOutTimeMs"),
+                        "fadeInTimeMs": raw_association.get("fadeInTimeMs"),
+                    }
+                    node["associations"].append({
+                        key: value for key, value in association.items()
+                        if value not in (None, "", [])
+                    })
+            projected.append({
+                key: value for key, value in node.items()
+                if value not in (None, "", [])
+            })
+    return projected
+
+
 def compact_container_evidence(
     rows: Iterable[Any],
     selector_groups: Iterable[dict[str, Any]] | None = None,
@@ -331,7 +733,7 @@ def compact_container_evidence(
     for row in rows:
         if not isinstance(row, dict):
             continue
-        object_type = int(row.get("objectType") or 0)
+        object_type = _selector_int(row.get("objectType")) or 0
         edge_kind = str(row.get("edgeKind") or "unknown")
         mode_label = str(row.get("modeLabel") or "")
         key = (object_type, edge_kind, mode_label)
@@ -344,7 +746,7 @@ def compact_container_evidence(
             "parserConfidence": row.get("parserConfidence"),
         })
         target["nodeCount"] += 1
-        target["childCount"] += int(row.get("childCount") or 0)
+        target["childCount"] += _selector_count(row.get("childCount"))
         if object_type == 5 and row.get("selectorParserStatus"):
             target["randomSequenceNodeCount"] = int(
                 target.get("randomSequenceNodeCount") or 0
@@ -476,10 +878,15 @@ def compact_container_evidence(
                     target.get("unresolvedLayerNodeCount") or 0
                 ) + 1
         selector = row.get("switchMappingEvidence")
-        if not isinstance(selector, dict):
+        if object_type != 6 or not isinstance(selector, dict):
             continue
         target["selectorNodeCount"] = int(target.get("selectorNodeCount") or 0) + 1
-        parser_status = str(selector.get("parserStatus") or "unknown")
+        raw_parser_status = str(selector.get("parserStatus") or "unknown")
+        parser_status = (
+            _selector_exact_structure_status(selector)
+            if raw_parser_status == "typedExactV150FlatPackages"
+            else raw_parser_status
+        )
         parser_counts = target.setdefault("_selectorParserStatuses", Counter())
         parser_counts[parser_status] += 1
         if parser_status != "typedExactV150FlatPackages":
@@ -494,10 +901,7 @@ def compact_container_evidence(
         group_type = str(selector.get("groupType") or "unknown")
         group_type_counts = target.setdefault("_selectorGroupTypes", Counter())
         group_type_counts[group_type] += 1
-        try:
-            group_id = int(selector.get("groupId")) & 0xFFFFFFFF
-        except (TypeError, ValueError):
-            group_id = None
+        group_id = _selector_int(selector.get("groupId"))
         if group_id is not None:
             target.setdefault("_selectorGroupIds", set()).add(group_id)
         group_key = _selector_id_hex(group_id)
@@ -521,17 +925,13 @@ def compact_container_evidence(
         target["selectorPackageCount"] = int(
             target.get("selectorPackageCount") or 0
         ) + len(packages)
-        authored_child_count = int(row.get("childCount") or 0)
+        authored_child_count = _selector_count(row.get("childCount"))
         package_value_ids: set[int] = set()
         for package in packages:
-            child_ids = [
-                value for value in package.get("childIds") or []
-                if isinstance(value, int)
-            ]
-            try:
-                package_value_ids.add(int(package.get("valueId")) & 0xFFFFFFFF)
-            except (TypeError, ValueError):
-                pass
+            child_ids = _selector_ids(package.get("childIds"))
+            package_value_id = _selector_int(package.get("valueId"))
+            if package_value_id is not None:
+                package_value_ids.add(package_value_id)
             if semantic_group is not None:
                 package_value_key = _selector_id_hex(package.get("valueId"))
                 semantic_value = next(
@@ -567,10 +967,7 @@ def compact_container_evidence(
                     target["strictSubsetSelectorPackageCount"] = int(
                         target.get("strictSubsetSelectorPackageCount") or 0
                     ) + 1
-        try:
-            default_value_id = int(selector.get("defaultValueId")) & 0xFFFFFFFF
-        except (TypeError, ValueError):
-            default_value_id = None
+        default_value_id = _selector_int(selector.get("defaultValueId"))
         if default_value_id is not None and default_value_id not in package_value_ids:
             target["defaultValueMissingPackageCount"] = int(
                 target.get("defaultValueMissingPackageCount") or 0
@@ -1231,6 +1628,12 @@ def build_event_rows(
             "source": evidence.get("source") or "wwiseHirc",
             "nestedReferenceConfidence": evidence.get("nestedReferenceConfidence") or "unknown",
         }
+        # Keep this authored Type-6 subset on the lazy Event detail only.  It
+        # is promoted below after all evidence rows for the Event are merged;
+        # the event summary remains governed by event_summary's field allowlist.
+        compact_evidence["_selectorBranches"] = selector_branch_projection(
+            [evidence], candidates.get(key, []), selector_groups
+        )
         evidence_by_event[key].append(compact_evidence)
         bank_name = str(evidence.get("bank") or "")
         try:
@@ -1684,6 +2087,12 @@ def build_event_rows(
             )
         ]
         evidence_rows = evidence_by_event.get(key, [])
+        selector_branches = [
+            branch
+            for evidence in evidence_rows
+            for branch in (evidence.pop("_selectorBranches", []) or [])
+            if isinstance(branch, dict)
+        ]
         action_profile = wwise_event_action_profile(evidence_rows)
         playback_role = str(action_profile["role"])
         identity_alias = exact_alias_by_hash.get(event_hash) if event_hash is not None else None
@@ -1945,6 +2354,8 @@ def build_event_rows(
                 for variant in custom_footstep_variants
             ),
             "customFootstepParameterVariants": custom_footstep_variants,
+            "selectorBranchSchemaVersion": SELECTOR_BRANCH_SCHEMA_VERSION,
+            "selectorBranches": selector_branches,
             "contexts": event_contexts,
             "evidence": evidence_rows,
             "media": event_candidates,
