@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 import re
@@ -34,15 +35,27 @@ AUDIO_HASH_FIELD_RE = re.compile(
     re.IGNORECASE,
 )
 
+
+def _reject_duplicate_json_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    """Reject duplicate keys instead of silently accepting the last value."""
+
+    result: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError(f"duplicate JSON key: {key}")
+        result[key] = value
+    return result
+
 def _build_remote_common_event_contexts(
     export_root: Path,
 ) -> dict[str, list[dict[str, Any]]]:
-    """Expose exact RemoteCommon auto-play Event requests in event rows.
+    """Expose exact RemoteCommon Event requests in event rows.
 
-    ``audioId`` is the authored SFX/Wwise Event request. ``voiceId`` is a
-    separate dialogue identity and remains separate from the Event/media
-    route. These low-level contexts prevent an authored RemoteCommon Event
-    from being synthesized as a Timeline ownership gap.
+    ``audioId`` is the authored SFX/Wwise Event request. ``startAudioEvent``
+    and ``endAudioEvent`` are authored lifecycle requests on the same row.
+    ``voiceId`` is a separate dialogue identity and remains separate from the
+    Event/media route. These low-level contexts prevent authored RemoteCommon
+    Events from being synthesized as a Timeline ownership gap.
     """
 
     contexts: dict[str, list[dict[str, Any]]] = defaultdict(list)
@@ -51,28 +64,105 @@ def _build_remote_common_event_contexts(
         export_root / "structured" / source_root / "Table" / "RemoteCommonTable.json"
         for source_root in ("Persistent", "StreamingAssets")
     ]
-    for table_path in table_paths:
-        payload = load_json(table_path, {})
+    table_sources: list[tuple[str, Path, dict[str, Any], str]] = []
+    malformed_source = False
+    for source_root, table_path in zip(("Persistent", "StreamingAssets"), table_paths):
+        if not table_path.is_file():
+            continue
+        try:
+            table_data = table_path.read_bytes()
+            payload = json.loads(
+                table_data,
+                object_pairs_hook=_reject_duplicate_json_keys,
+            )
+        except (OSError, UnicodeError, ValueError):
+            malformed_source = True
+            continue
         if not isinstance(payload, dict):
+            malformed_source = True
             continue
         try:
             source_ref = normalize_posix(table_path.relative_to(export_root))
         except ValueError:
             source_ref = normalize_posix(table_path)
-        for remote_id, row in sorted(payload.items(), key=lambda item: str(item[0])):
-            if not isinstance(row, dict) or row.get("autoPlay") is not True:
+        table_sources.append((
+            source_root,
+            table_path,
+            payload,
+            hashlib.sha256(table_data).hexdigest(),
+        ))
+    # A malformed mirror makes the table overlay unverifiable.  Do not let a
+    # valid sibling silently turn into an apparently complete ownership index.
+    if malformed_source:
+        return {}
+
+    if len({digest for _source_root, _path, _payload, digest in table_sources}) != 1:
+        # Persistent/Streaming are duplicate table mirrors for this contract.
+        # A differing mirror is not an overlay we can safely reconcile field by
+        # field: reject the complete RemoteCommon contribution instead of
+        # publishing an apparently exact lifecycle or auto-play request.
+        return {}
+
+    # Preserve the repository-wide Persistent-over-Streaming source rule while
+    # avoiding duplicate evidence rows when both physical mirrors are present.
+    _source_root, _table_path, payload, _digest = next(
+        row for row in table_sources if row[0] == "Persistent"
+    ) if any(row[0] == "Persistent" for row in table_sources) else table_sources[0]
+    source_ref = normalize_posix(_table_path.relative_to(export_root))
+    for remote_id, row in sorted(payload.items(), key=lambda item: str(item[0])):
+        if not isinstance(row, dict):
+            continue
+        remote_id = str(remote_id or "").strip()
+        if not remote_id:
+            continue
+        for field, lifecycle_phase in (
+            ("startAudioEvent", "start"),
+            ("endAudioEvent", "end"),
+        ):
+            event_name = str(row.get(field) or "").strip()
+            if event_name:
+                _append_context(contexts, seen, event_name, {
+                    "kind": "remoteCommonLifecycleAudio",
+                    "semanticRole": "remoteCommonLifecycleAudioEvent",
+                    "confidence": "exact",
+                    "ownershipEvidenceLevel": "exactRemoteCommonLifecycleField",
+                    "triggerEvidenceLevel": "exact",
+                    "triggerBindingStatus": f"exactRemoteCommon{lifecycle_phase.title()}AudioEvent",
+                    "triggerRole": f"RemoteCommonTable{lifecycle_phase.title()}AudioEvent",
+                    "remoteCommonId": remote_id,
+                    "lifecyclePhase": lifecycle_phase,
+                    "field": field,
+                    "authoredEventId": event_name,
+                    "source": source_ref,
+                    "sourcePath": source_ref,
+                    "evidence": "exactRemoteCommonTableLifecycleAudioField",
+                    "triggerRequestEvidence": [
+                        "exactRemoteCommonTableLifecycleAudioField",
+                    ],
+                    "triggerRuntimeActivationStatuses": [
+                        "remoteCommonLifecycleExecutionNotObserved",
+                    ],
+                    "triggerOwnershipMethods": [
+                        f"RemoteCommonTable.{field}",
+                    ],
+                    "runtimeActivationStatus": "remoteCommonLifecycleExecutionNotObserved",
+                    "evidenceBoundary": (
+                        "RemoteCommonTable lifecycle audio fields and their exact row key "
+                        "prove an authored Event request and lifecycle role. The row does "
+                        "not prove RemoteCommon selection, execution, PostEvent, or an "
+                        "audible Wwise media leaf."
+                    ),
+                })
+        if row.get("autoPlay") is not True:
+            continue
+        for line_index, line in enumerate(row.get("remoteCommSingleDataList") or []):
+            if not isinstance(line, dict):
                 continue
-            remote_id = str(remote_id or "").strip()
-            if not remote_id:
+            audio_id = str(line.get("audioId") or "").strip()
+            if not audio_id:
                 continue
-            for line_index, line in enumerate(row.get("remoteCommSingleDataList") or []):
-                if not isinstance(line, dict):
-                    continue
-                audio_id = str(line.get("audioId") or "").strip()
-                if not audio_id:
-                    continue
-                single_id = str(line.get("singleId") or f"{remote_id}:{line_index + 1}").strip()
-                _append_context(contexts, seen, audio_id, {
+            single_id = str(line.get("singleId") or f"{remote_id}:{line_index + 1}").strip()
+            _append_context(contexts, seen, audio_id, {
                     "kind": "remoteCommonAudio",
                     "semanticRole": "remoteCommonAutoPlayAudioEvent",
                     "confidence": "exact",
@@ -112,7 +202,7 @@ def _build_remote_common_event_contexts(
                         "RemoteCommon selection, execution, PostEvent, or an audible "
                         "Wwise media leaf; voiceId remains a separate dialogue identity."
                     ),
-                })
+            })
     return dict(contexts)
 
 

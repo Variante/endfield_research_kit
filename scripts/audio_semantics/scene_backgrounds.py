@@ -2283,7 +2283,36 @@ def _streaming_instance_emitter_projection(
         if entry.get("prefabAssetPathStatus") == "exactUniqueAssetMapContainer"
         and _normalise_asset_path(entry.get("prefabSourceAssetPath")) in emitter_paths
     ]
-    if path_matches:
+    if matches and path_matches:
+        # The component-identity and prefab-path routes are independent
+        # witnesses.  Do not let a broad path match silently override an
+        # explicit component match: that could move an emitter to a different
+        # instance/level when the same prefab is placed more than once.
+        component_keys = {
+            tuple(entry.get("identityKey"))
+            for entry in matches
+            if isinstance(entry.get("identityKey"), list)
+        }
+        path_keys = {
+            tuple(entry.get("identityKey"))
+            for entry in path_matches
+            if isinstance(entry.get("identityKey"), list)
+        }
+        if component_keys != path_keys:
+            return {
+                "status": "conflictingPrefabInstanceIdentityJoins",
+                "diagnostics": _bound_rows([
+                    *diagnostics,
+                    {
+                        "status": "conflicting",
+                        "reason": "componentAndPrefabPathIdentityRoutesDisagree",
+                        "componentIdentityKeys": [list(key) for key in sorted(component_keys)],
+                        "prefabPathIdentityKeys": [list(key) for key in sorted(path_keys)],
+                    },
+                ]),
+            }
+        matches = path_matches
+    elif path_matches:
         matches = path_matches
     if not entries:
         return {

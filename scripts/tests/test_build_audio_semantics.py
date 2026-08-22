@@ -6631,6 +6631,129 @@ class AudioSemanticDataTests(unittest.TestCase):
             self.assertEqual(summary["triggerBindingStatuses"], ["exactRemoteCommonAudioId"])
             self.assertNotIn("timelineOwnershipGapCount", summary)
 
+    def test_remote_common_lifecycle_audio_fields_preserve_exact_row_ownership(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            root = Path(raw_root)
+            table_path = root / "structured/Persistent/Table/RemoteCommonTable.json"
+            table_path.parent.mkdir(parents=True)
+            table_path.write_text(json.dumps({
+                "remotecomm_lifecycle_fixture": {
+                    "autoPlay": False,
+                    "startAudioEvent": "au_music_remotecomm_start_fixture",
+                    "endAudioEvent": "au_music_remotecomm_end_fixture",
+                    "remoteCommSingleDataList": [],
+                },
+            }), encoding="utf-8")
+
+            contexts = table_contexts.collect_table_contexts(root)
+
+            self.assertIn("au_music_remotecomm_start_fixture", contexts)
+            self.assertIn("au_music_remotecomm_end_fixture", contexts)
+            start = next(
+                row for row in contexts["au_music_remotecomm_start_fixture"]
+                if row.get("kind") == "remoteCommonLifecycleAudio"
+            )
+            end = next(
+                row for row in contexts["au_music_remotecomm_end_fixture"]
+                if row.get("kind") == "remoteCommonLifecycleAudio"
+            )
+            self.assertEqual(start["remoteCommonId"], "remotecomm_lifecycle_fixture")
+            self.assertEqual(start["lifecyclePhase"], "start")
+            self.assertEqual(start["field"], "startAudioEvent")
+            self.assertEqual(
+                start["triggerBindingStatus"],
+                "exactRemoteCommonStartAudioEvent",
+            )
+            self.assertEqual(end["lifecyclePhase"], "end")
+            self.assertEqual(end["field"], "endAudioEvent")
+            self.assertEqual(
+                end["triggerBindingStatus"],
+                "exactRemoteCommonEndAudioEvent",
+            )
+            self.assertEqual(
+                start["runtimeActivationStatus"],
+                "remoteCommonLifecycleExecutionNotObserved",
+            )
+
+    def test_remote_common_lifecycle_mirror_conflict_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            root = Path(raw_root)
+            table_dir = root / "structured"
+            payloads = {
+                "Persistent": {
+                    "remotecomm_conflict_fixture": {
+                        "startAudioEvent": "au_music_remotecomm_start_a",
+                    },
+                },
+                "StreamingAssets": {
+                    "remotecomm_conflict_fixture": {
+                        "startAudioEvent": "au_music_remotecomm_start_b",
+                    },
+                },
+            }
+            for source_root, payload in payloads.items():
+                path = table_dir / source_root / "Table/RemoteCommonTable.json"
+                path.parent.mkdir(parents=True)
+                path.write_text(json.dumps(payload), encoding="utf-8")
+
+            contexts = table_contexts.collect_table_contexts(root)
+
+            for event_name in (
+                "au_music_remotecomm_start_a",
+                "au_music_remotecomm_start_b",
+            ):
+                self.assertFalse(any(
+                    row.get("kind") == "remoteCommonLifecycleAudio"
+                    for row in contexts.get(event_name, [])
+                ))
+
+    def test_remote_common_lifecycle_identical_mirror_uses_persistent_once(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            root = Path(raw_root)
+            payload = {
+                "remotecomm_mirror_fixture": {
+                    "startAudioEvent": "au_music_remotecomm_start_fixture",
+                    "endAudioEvent": "au_music_remotecomm_end_fixture",
+                },
+            }
+            for source_root in ("Persistent", "StreamingAssets"):
+                path = root / "structured" / source_root / "Table/RemoteCommonTable.json"
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(json.dumps(payload), encoding="utf-8")
+
+            contexts = table_contexts.collect_table_contexts(root)
+
+            for event_name in (
+                "au_music_remotecomm_start_fixture",
+                "au_music_remotecomm_end_fixture",
+            ):
+                rows = [
+                    row for row in contexts[event_name]
+                    if row.get("kind") == "remoteCommonLifecycleAudio"
+                ]
+                self.assertEqual(len(rows), 1)
+                self.assertIn("structured/Persistent/Table/RemoteCommonTable.json", rows[0]["source"])
+
+    def test_remote_common_lifecycle_duplicate_json_key_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            root = Path(raw_root)
+            table_path = root / "structured/Persistent/Table/RemoteCommonTable.json"
+            table_path.parent.mkdir(parents=True)
+            table_path.write_text(
+                '{"remotecomm_duplicate_fixture": {'
+                '"startAudioEvent": "au_music_remotecomm_start_a", '
+                '"startAudioEvent": "au_music_remotecomm_start_b"}}',
+                encoding="utf-8",
+            )
+
+            contexts = table_contexts.collect_table_contexts(root)
+
+            self.assertFalse(any(
+                row.get("kind") == "remoteCommonLifecycleAudio"
+                for rows in contexts.values()
+                for row in rows
+            ))
+
     def test_audio_cue_separates_behavior_events_from_control_operands(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:
             root = Path(raw_root)

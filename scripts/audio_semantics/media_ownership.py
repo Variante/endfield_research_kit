@@ -113,6 +113,7 @@ CONTEXT_OWNERSHIP_DOMAINS = {
     "domainUpgradeAnimationEvent": "ui",
     "typedUiTableWwiseEvent": "ui",
     "snsVoiceMessageEvent": "snsVoice",
+    "remoteCommonLifecycleAudio": "remoteCommonAudio",
     "audioDialogVoiceDefinition": "voiceSystem",
     "responsiveDialogVoice": "voiceSystem",
     "voiceToneVariant": "voiceSystem",
