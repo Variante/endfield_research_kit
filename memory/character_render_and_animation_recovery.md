@@ -1094,11 +1094,12 @@ targeted postmodel secondary-dynamics evidence as the earlier audit set. The
 generated `secondary_dynamics_owner_recovery.json` contract records their
 exact `BeyondBoneCloth` owners, root-bone paths, collider components, serialized
 constraint hashes, and Overview `MagicaClothWeight`. Endminf sequence captures
-provide a useful fail-closed visual gate: its body and sleeves align at the
-start pose, then the authored body bones move while coat/ribbon bones remain at
-their animation pose because the lab has no Magica solver. This is not a clip,
-camera, LOD, or renderer-isolation defect and must not be hidden by disabling
-the affected meshes. Exact simulation remains unavailable because the project
+provide a useful fail-closed visual gate: the body clip is source-sampled, but
+the detached sleeve/arm and lagging coat/ribbon silhouette depends on the
+missing retail physical-pose and BeyondBoneCloth solve/writeback. This is not
+safely repairable through clip, camera, LOD, or renderer substitution and must
+not be hidden by disabling the affected meshes. Exact simulation remains
+unavailable because the project
 does not contain the retail BeyondDynamicBone/Burst solver, PlayerLoop
 scheduling, or numeric frame fixtures; a substitute spring chain is not
 original-game recovery.
@@ -1115,33 +1116,137 @@ ROI: it clips limbs, hair, cloth, or weapons and cannot serve as a complete
 character matte. Clip delivery remains gated on a verified per-frame alpha
 mask with no foreground-UI intersection.
 
-Endminf's Overview effects are no longer represented only by the external
-`sk_fx_endminf_01_ui.fbx` animation hint. The playable-character catalog now
-retains explicit `A_fx_endminf_ui_*` clips and only the `P_fxui_*` root
-Animator candidates found in each clip's exact original effect-prefab
-container. This is a source-inventory edge, not a playback or renderability
-claim: the current export still lacks the prefab GameObject/Transform,
-renderer, material/texture closure, mount, and runtime scheduling evidence.
-Recover those dependencies with a targeted AnimeStudio extraction before
-admitting any Endminf effect to the viewer. Pelica's private deco controller
+Endminf's exact `FromOveview` behaviour owns `_01`, `_02`, `_03`, and `_04`;
+the earlier `_06` candidate is not runtime-owned and remains quarantined. All
+four records share one state-entry behaviour, an empty actor-root mount,
+stationary position, followed rotation, `finishWhenExit=true`, and
+`finishWhenTransition=false`. The real Viewer selection path spawns the four
+unparented stationary instances together; their internal ParticleSystem delays,
+not separate root spawn times, schedule later families. The exact stage has 101
+hierarchy nodes and 70 particle renderers. Current fail-closed admission is 50
+enabled and 20 disabled: the two `M_fx_endminm_gfx_28` Refract renderers were
+removed after a D3D12 solo probe proved that the lab pass rendered an opaque
+black/white torus instead of retail scene-color distortion. The teleport branch
+and ten `_01` rock renderers also remain blocked. Those ten use exact source
+materials `M_fx_endminm_gfx_01` and `M_fx_endminm_gfx_38`, both pointing to
+unresolved shader PathID `6428594484694422749` at queue 2000.
+
+The maintained approximate visual mode now has two independent Endminf-only
+gates. `ENDFIELD_ENDMINF_VISUAL_COMPATIBILITY=1` admits the two `_28`
+scene-color/refraction users and replays the recovered `_02` radial/chromatic
+curve windows; `ENDFIELD_ENDMINF_LITEFFECT_VISUAL_COMPAT=1` admits the ten
+M01/M38 rock renderers through their explicitly non-exact LitEffect port. With
+both enabled, the real Viewer path admits 62/70 renderers, restores the solid
+orange entrance fragments, starts the body transition at about 5.0 seconds,
+enters `A_actor_endminf_ui_overview_loop` at about 5.75 seconds, settles by
+6.5 seconds, and removes all four entrance roots after their authored exit.
+The closest executable Viewer mode also enables
+`ENDFIELD_RECOVERED_SOURCE_ENERGY_CORE=1`. This selects the existing
+compiled-CharacterNPR-derived diffuse/energy branch rather than an exposure
+gain; an aligned 4 fps rerender restores the previously near-black gray knit
+and coat separation substantially closer to the retail sequence while keeping
+the full transition, 509-particle peak, settled loop, and VFX cleanup gates.
+The capture path now also supplies the exact linear `R8G8B8A8_UNorm` target
+required by the recovered retail final-output contract when
+`ENDFIELD_RECOVERED_LINEAR_UNORM_FINAL_TARGET=1` is requested. This activates
+the binary/DXBC-backed IEC sRGB output transform and deterministic RGB dither
+instead of reading the pre-display half-float buffer as PNG color. The aligned
+result closes the dominant cold/dark whole-frame tone error without a fitted
+RGB multiplier. A normal screen backbuffer remains outside that exact target
+gate; Play Mode still uses the recovered ACES/CharInfo post chain and the
+display's ordinary presentation conversion.
+The closest Endminf mode additionally enables
+`ENDFIELD_ENDMINF_BACKDROP_VISUAL_COMPATIBILITY=1`. A forced `SphereOutside`
+probe confirmed that its unclosed deferred consumer produces a flat dark wall
+and crushes the actor; the ready source subset instead adds a black lower floor
+band absent from the recorded Overview UI. This explicit compatibility mode
+holds those physical presentation paths off and uses the maintained pale
+geometric CharInfo backdrop. It matches the reference field substantially
+better but does not promote the original wall shader. The Endminf-only branch
+now supplies a `2.5` scene-linear `_HdrBoost` through a renderer property block;
+paired 1920x1080 frames show the former charcoal field in the same pale-gray
+range as retail without changing the shared backdrop material or normal Viewer.
+The reproduction mode now also enables the already source-closed world-space
+portrait instead of relying on the backdrop shader's approximate silhouette.
+For Endminf this binds exact `bg_charinfo_chr_0003_endminf` pixels and its
+actor-specific tight quad from the roster profile. The pinned native/post-Uber
+contract proves layer 16 after Uber, `CommonTransparent` sorting,
+`One/OneMinusSrcAlpha`, depth offset `0.011`, and the settled `90/255` alpha;
+its recorded `GameAssembly.dll` and `global-metadata.dat` hashes gate those
+claims to the selected client. The procedural silhouette opacity is zero only
+when this exact portrait selector is active. The remaining pale wall and line
+field are still compatibility output while SphereOutside's deferred consumer
+remains fail-closed.
+The Viewer capture comparison now pairs each retail frame immediately beside
+its Unity frame. A bounded dark-silhouette pose search places retail animation
+zero at about 3.00 seconds; because the first completed Unity 4 fps sample is
+`actualSeconds=0.25`, the paired retail sheet starts at 3.25 seconds. This
+aligns both body motion and the palm-flare phase substantially better than the
+earlier approximate 3.50-second boundary. The aligned retail palm burst still
+has about 61k warm-white pixels in the bounded actor ROI versus under 10k in
+Unity. A targeted 3x `M_fx_endminm_gfx_30` trial was
+rejected: isolation proved that material carries scene refraction as well as
+glow, and the gain produced large rotating distortion discs rather than the
+retail white flare. `M_fx_endminm_gfx_12` does bind the exact recovered
+`T_fx_star_909_D` multi-ray texture and preserves its serialized HDR intensity
+100, but bounded 3.5x and 14x ParticleSystem start-size trials produced the
+same visible peak frame even though runtime readback confirmed the multipliers.
+Those trials were also rejected. The exact rig instead identifies `post (1)` at
+local `(0, 1.266, 0)`, and the pinned native consumers prove that both recovered
+post components use that Transform world position. The compatibility clock now
+projects that authored point and applies the exact overview_02 radial/chromatic
+curve windows through a five-point symmetric accumulation derived from the
+recovered radial VFX sampling graph. A 30 fps paired peak sheet places the
+onset, strongest body-edge smear, and decay on the same retail frames; the
+normal 4 fps paired sheet retains the full entrance-to-loop proof. The compact
+kernel remains explicitly approximate because the shipped Uber resource ABI is
+not source-closed. The remaining burst gap therefore stays assigned to exact
+Uber/refraction composition, not to a retained material-energy or particle-size
+gain.
+This is the closest executable visual reproduction, but remains labeled
+compatibility rather than source-exact HGRP parity; the last eight renderers,
+retail refraction/deferred consumers, body-material response, and physical
+cloth solve stay outside that claim.
+
+Persistent `_01` rig playback puts the otherwise blocked rock systems on the
+raised-hand trajectory: from 2.25 through 4.3 seconds their normalized centres
+cluster around x `0.70--0.77`, y `0.65--0.79`, matching the retail palm/orbit
+region to roughly 0.08 viewport. The corrected temporal probe records 2,668
+changed pixels at 1.75 seconds, 23,041 at 2.5, 34,753 at 4.1, and 139,434 at
+4.55. Visible output is still mostly sparse rays and sparks because the
+correctly positioned solid rock/core renderers are fail-closed; resolving the
+shared M01/M38 shader is the highest-value material gap. This proves placement,
+lifecycle, and Play-mode integration, not retail composition, scale, or bloom
+parity. The Viewer uses the exact settled CharInfo camera endpoint. The authored
+three-waypoint entrance dolly is known, but its runtime `m_PathPosition` driver
+and capture-time gyroscope input are not source-closed. Post parity remains
+gated on exact scene-color refraction, motion history, and retail UI/background
+composition. Pelica's private deco controller
 does source-prove its Overview widget state and clip ownership, but the
 published manifest predates the current controller join; regenerate it only
 with that pending controller change intentionally included. Chen's hidden
 weapon props still have no source-proven Overview visibility or mount binding.
 
-The targeted Endminf effect extractor now expands those catalog roots to the
-complete exact same-container AssetMap row set, writes an AnimeStudio object
-index, and rejects incomplete summaries or root/clip identity drift. The
-validated extraction closes the three prefab hierarchies and their decoded
-ParticleSystem/ParticleSystemRenderer payloads with zero index errors. It does
-not yet close rendering: most particle material slots, every particle mesh,
-all effect scripts, child Animator controllers, and even the local material's
-shader/texture dependencies remain external PPtrs. The root Animators are
-controller-null; three clips have direct root ownership, while the fourth has
-no proven owner. Resolve those external CAB-filename/PathID targets globally
-and recover controller scheduling before building Unity effect prefabs. The
-current extracted hierarchy is evidence-ready but deliberately not admitted
-as visible or playable.
+The targeted stage validator pins all four behaviour-owned roots, complete
+indexes, dependency fingerprints, four `A_fx_endminf_ui_*` clips, and the
+external 5.8833337-second `A_actor_endminf_ui_overview_02` rig clip. Its three
+transform hashes map exactly to the staged `effect_01` Dummy nodes; both source
+Animators have a null Avatar and `m_HasTransformHierarchy=false`, so actor-Avatar
+rebinding is neither allowed nor required. Five ambiguous MonoScript identities
+remain explicit but do not block the closed render-resource dependencies.
+
+The exact external rig playback is partially executable without actor
+rebinding. The 5.8833337-second `A_actor_endminf_ui_overview_02` clip runs
+persistently on `_01/effect_01`, and source-owned A_fx04 Sphere transforms drive
+`_01/effect_nanguan`. A_fx03 belongs to `_02` while addressing paths that exist
+only under `_01`; native `EffectAnimation` samples its own GameObject, so
+cross-root transplantation is invalid and remains blocked. A_fx02's three
+`post (1)` curves resolve to recovered chromatic-aberration and radial-blur
+components, but exact runtime post scheduling still gates their reproduction.
+The four roots' authored particle delays are preserved: `_03` starts at
+2.87--2.90 seconds and `_04` at 2.57--2.97, consistent with measured first-live
+frames and the native common `OnStateEnter` lifecycle. Retiming those roots
+would contradict the source and does not explain the earlier palm rocks.
 
 Secondary-motion lifecycle recovery has begun without adding a visual spring
 approximation. The pinned native `MagicaManager.SetCustomGameLoop` body proves

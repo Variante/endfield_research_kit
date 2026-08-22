@@ -1,0 +1,169 @@
+{
+  "schema": "endfield.endminf-start-camera-motion.v1",
+  "status": "source_closed_writer_and_duration_easing_and_capture_route_unresolved",
+  "native_gate": {
+    "status": "validated",
+    "gameassembly_sha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
+    "metadata_sha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
+  },
+  "camera_producer": {
+    "runtime_owner": {
+      "script": "Lua/Data/LuaScripts/Phase/CharInfo/PhaseCharInfo.lua",
+      "method": "PhaseCharInfo._SetCamWithTrack",
+      "call_chain": [
+        "PhaseCharInfo page/character refresh",
+        "PhaseCharInfo._RefreshCamGroup(sceneObject,isFast,templateId,pageType,pageTypeBefore)",
+        "PhaseCharInfo._SetCamWithTrack(isFast,pathGroup,toCameraPostfix,fromCameraPostfix)"
+      ],
+      "exact_non_fast_writes": [
+        "targetVCam CinemachineTrackedDolly.m_PathPosition = 1",
+        "trackedDolly.m_Path = paths[fromCameraPostfix + '_' + toCameraPostfix].CinemachineSmoothPath",
+        "trackedDolly.m_PathPosition = 0",
+        "CSUtils.TweenTo(0,1,tweenSpeed,setter) writes m_PathPosition=x each update",
+        "m_trackDollyTween.Play()"
+      ],
+      "cancellation": "an existing m_trackDollyTween is Kill()ed before replacement and during phase cleanup",
+      "fast_path": "sets PathPosition=1 and CameraManager:SetNextBlendOverride(0,Cut); no dolly tween",
+      "duration_seconds": 0.5,
+      "duration_source": "track_chr_0003_endmin Lua config item CAMERA_SPEED (floatValue=0.5); no SPEED_weapon_overview override is serialized",
+      "easing": "unresolved: PhaseCharInfo supplies no ease argument; exact CSUtils.TweenTo / shipped DOTween default-ease body still needs instruction-level closure",
+      "source_files": [
+        "unity_endfield_graph_shader_lab/scratch/character_recovery/charinfo_pass0_resources/lua_full_probe/Lua/Data/LuaScripts/Phase/CharInfo/PhaseCharInfo.lua",
+        "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#12053_p7A46D1D8FB5AD823.json"
+      ]
+    },
+    "track": "track_chr_0003_endmin",
+    "component": "CinemachineTrackedDolly",
+    "path": {
+      "endpoint": [
+        0.0,
+        0.998,
+        3.5
+      ],
+      "game_object": {
+        "path": "scratch/charinfo_playable_profiles/dependencies_json/GameObject/weapon_overview_p9B308F94879BD823.json",
+        "path_id": -7264148330855540701,
+        "raw_data_sha256": "",
+        "sha256": "a3c63adc30fd7a7049d11eed8f5d4dd88fe166e479b039a78f3a3cfb4e88a650",
+        "source_file": "",
+        "source_offset": 0,
+        "source_original_file": ""
+      },
+      "loop": false,
+      "m_Looped": 0,
+      "m_Resolution": 6,
+      "name": "weapon_overview",
+      "path_id": -8956663021007808477,
+      "resolution": 6,
+      "source": {
+        "path": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#11670_p83B38A6FD3F3D823.json",
+        "path_id": -8956663021007808477,
+        "raw_data_sha256": "b0962adfd85a2e6931fdec1717c3502e4835f15cc220453cc4da871ef0e0663f",
+        "sha256": "305297f9b4e6343ab8d28f69662722e50028cf79d04830e21b97dc96981c31d8",
+        "source_file": "CAB-e24e47f8b0c3d0b9a509a8043323a4a7",
+        "source_offset": 847606463,
+        "source_original_file": "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+      },
+      "waypoints": [
+        {
+          "position": [
+            1.35,
+            0.519,
+            1.948
+          ],
+          "roll": 0.0
+        },
+        {
+          "position": [
+            0.5971327,
+            0.8897201,
+            2.4992352
+          ],
+          "roll": 0.0
+        },
+        {
+          "position": [
+            0.0,
+            0.998,
+            3.5
+          ],
+          "roll": 0.0
+        }
+      ]
+    },
+    "authored_path_position": 1.0,
+    "settled_vcam": {
+      "localPosition": [
+        0.0,
+        0.998,
+        3.5
+      ],
+      "localRotation": [
+        -0.0015429518,
+        0.9983191,
+        0.04842206,
+        0.03181109
+      ]
+    },
+    "look_at": {
+      "localPosition": [
+        0.022,
+        1.225,
+        0.0
+      ],
+      "localRotation": [
+        -0.0,
+        -0.0,
+        -0.0,
+        1.0
+      ]
+    },
+    "lens": {
+      "fieldOfView": 20.0,
+      "nearClipPlane": 0.1,
+      "farClipPlane": 50.0,
+      "dutch": 0.0,
+      "gateFit": 2,
+      "modeOverride": 0,
+      "sensorSize": [
+        1.7777778,
+        1.0
+      ],
+      "priority": 25
+    }
+  },
+  "gyroscope_producer": {
+    "driver": "Beyond.UI.UIGyroscopeEffect.PreLate",
+    "extension": "Beyond.UI.CinemachineGyroscopeEffect.Finalize",
+    "serialized_entry_offsets_xy": [
+      0.24835543,
+      -0.1448596
+    ],
+    "replacement": "2-second OutQuad toward live cursor/controller input"
+  },
+  "motion_post": {
+    "scene_mv_format": "A2B10G10R10_UNormPack32",
+    "scene_mv_clear": [
+      0.5,
+      0.5,
+      0,
+      0
+    ],
+    "order": [
+      "opaque/CharacterNPR SceneMV writers",
+      "transparent VFX",
+      "DepthOfField",
+      "MotionBlur",
+      "optional HorizontalBlurPreTAAU",
+      "phase-2 post"
+    ],
+    "history": "current/previous non-jittered camera constants; no fabricated history texture"
+  },
+  "play_mode": {
+    "implemented_endpoint": true,
+    "mode": "ENDFIELD_RECOVERED_CHARINFO_GYROSCOPE_MODE=serialized-entry",
+    "transition_implemented": false,
+    "reason": "The runtime PathPosition writer and 0.5-second duration are now closed, but its exact CSUtils.TweenTo easing and the recording's from-page route are not. weapon_overview is selected only when pageTypeBefore maps to weapon and pageType maps to overview; a same-page character replacement does not prove that route. Capture-time cursor/controller samples also remain external. MotionBlur/TAA require the original SceneMV MRT producers and history scheduling, which the lab does not implement."
+  },
+  "conclusion": "PhaseCharInfo is the exact PathPosition producer: on a non-fast page transition it assigns the selected from_to smooth path, resets PathPosition to 0, and tweens it to 1 over Endminf's serialized 0.5 seconds. An executable retail-start implementation remains fail-closed until the no-argument CSUtils.TweenTo easing and the recorded UI from-page route are proven. Gyroscope endpoint math is source-closed, but the recording's live cursor/controller samples are not."
+}

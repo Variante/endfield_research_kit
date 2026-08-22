@@ -22,6 +22,26 @@ This opens the canonical scene:
 Assets/EndfieldGraphShaderLab/Generated/Characters/Scenes/CharacterRecoveryViewer.unity
 ```
 
+For the closest executable Endminf `overview_start -> overview_loop` visual
+reproduction, including the explicitly approximate LitEffect and refraction
+compatibility layers plus the compiled-shader-derived source energy core, run:
+
+```bat
+D:\fluffy-dump\unity_endfield_graph_shader_lab\open_character_recovery_lab.bat --endminf-reproduction
+```
+
+The command rebuilds the four Endminf effect prefabs, opens the canonical
+Viewer, and enters Play Mode. This opt-in mode admits 62 of the 70 recovered
+particle renderers; the remaining eight have no recovered material binding and
+stay fail-closed. It also uses the maintained pale CharInfo compatibility
+backdrop for Endminf: the source `SphereOutside` wall remains excluded because
+its retail deferred-lighting consumer is not yet closed, while the partial
+source subset produces a black floor band absent from the recorded Overview UI.
+Batch Viewer captures also regenerate
+`scratch/character_recovery/endminf_viewer_playmode_sequence/reference_vs_unity_4fps.png`
+as a contact sheet of timestamp-matched reference/Unity frame pairs against
+`videos/2026-08-21_20-15-17.mkv`.
+
 Or directly:
 
 ```bat

@@ -20,6 +20,8 @@ namespace EndfieldGraphShaderLab
             "endfield.zhuangfy-gacha-particle-inventory.v1";
         public const string CharInfoContractSchema =
             "endfield.charinfo-char-effect-particle.v1";
+        public const string EndminfOverviewContractSchema =
+            "endfield.endminf-overview-particle-stage.v1";
 
         public enum BindingKind
         {
@@ -30,7 +32,8 @@ namespace EndfieldGraphShaderLab
         public static bool IsSupportedContractSchema(string schema)
         {
             return string.Equals(schema, ExpectedContractSchema, StringComparison.Ordinal) ||
-                string.Equals(schema, CharInfoContractSchema, StringComparison.Ordinal);
+                string.Equals(schema, CharInfoContractSchema, StringComparison.Ordinal) ||
+                string.Equals(schema, EndminfOverviewContractSchema, StringComparison.Ordinal);
         }
 
         [Serializable]
@@ -68,6 +71,12 @@ namespace EndfieldGraphShaderLab
 
             [Min(0f)]
             public float expectedDuration;
+
+            [Tooltip("Exact AnimatorBehaviourPlayEffect EffectItem.isStationaryPosition.")]
+            public bool stationaryPosition;
+            public bool shouldFollowScale;
+            public bool shouldFollowRotation;
+            public bool shouldFollowMainObjRotation;
         }
 
         [SerializeField]
@@ -179,8 +188,26 @@ namespace EndfieldGraphShaderLab
             Transform mount)
         {
 
-            GameObject instance = Instantiate(binding.prefab, mount, false);
+            GameObject instance;
+            if (binding.stationaryPosition)
+            {
+                instance = Instantiate(binding.prefab);
+                instance.transform.position = mount.position;
+                instance.transform.rotation = binding.shouldFollowRotation
+                    ? mount.rotation : binding.prefab.transform.rotation;
+                instance.transform.localScale = binding.shouldFollowScale
+                    ? mount.localScale : Vector3.one;
+            }
+            else
+            {
+                instance = Instantiate(binding.prefab, mount, false);
+            }
             instance.name = binding.prefab.name + "__OverviewRuntime";
+            if (string.Equals(binding.prefab.name,
+                    "P_fxui_endminm003_overview_02",
+                    StringComparison.Ordinal))
+                EndfieldEndminfVisualCompatibilityClock.MarkOverview02Start(
+                    instance.transform);
             instance.SetActive(false);
 
             ParticleSystem[] systems = binding.bindingKind == BindingKind.Particle
@@ -431,7 +458,9 @@ namespace EndfieldGraphShaderLab
                 if (node == null ||
                     !node.nativeParticlePayloadApplied ||
                     !node.nativeRendererPayloadApplied ||
-                    node.rendererFailClosedForUnrecoveredShader)
+                    (node.rendererFailClosedForUnrecoveredShader &&
+                     !string.Equals(marker.contractSchema,
+                         EndminfOverviewContractSchema, StringComparison.Ordinal)))
                 {
                     reason =
                         "At least one particle node is incomplete or fail-closed for an " +
@@ -454,6 +483,17 @@ namespace EndfieldGraphShaderLab
                     if (renderer.enabled)
                     {
                         reason = "Disabled source renderer became enabled.";
+                        return false;
+                    }
+                    continue;
+                }
+                if (node.rendererFailClosedForUnrecoveredShader &&
+                    string.Equals(marker.contractSchema,
+                        EndminfOverviewContractSchema, StringComparison.Ordinal))
+                {
+                    if (renderer.enabled)
+                    {
+                        reason = "Fail-closed Endminf renderer became enabled.";
                         return false;
                     }
                     continue;

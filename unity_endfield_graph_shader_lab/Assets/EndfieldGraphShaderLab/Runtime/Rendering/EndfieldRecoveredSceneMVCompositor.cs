@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using Unity.Collections;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
@@ -664,7 +665,18 @@ namespace EndfieldGraphShaderLab
                             $"Li Zhiyan SampleStack diagnostic material '{material.name}' " +
                             $"has unsupported preserved queue {queue}");
                     }
+                    long exactEndminfQueue2999Material = material.name == "M_fx_endminm_gfx_31"
+                        ? 0x602883BD6BB1831BL
+                        : material.name == "M_fx_endminm_gfx_43" ? 0x73D80B62F5BA886FL : 0L;
+                    bool isExactEndminfQueue2999 = isBase && queue == 2999 &&
+                        exactEndminfQueue2999Material != 0L &&
+                        renderer.GetComponentInParent<EndfieldRecoveredParticleEffectSource>(true) is EndfieldRecoveredParticleEffectSource endminfSource &&
+                        endminfSource.contractSchema == EndfieldRecoveredCharEffectSpawner.EndminfOverviewContractSchema &&
+                        endminfSource.particleNodes != null &&
+                        endminfSource.particleNodes.Any(node => node.materialPathIds != null &&
+                            node.materialPathIds.Contains(exactEndminfQueue2999Material));
                     if (isBase && queue != 3000 && queue != 3005 &&
+                        !isExactEndminfQueue2999 &&
                         (queue < 3660 || queue > 3740))
                     {
                         return new EndfieldRecoveredSceneMVRequest(
@@ -1629,6 +1641,27 @@ namespace EndfieldGraphShaderLab
                     context.ExecuteCommandBuffer(copy);
                     copy.Release();
 
+                    // SetupCameraProperties publishes the projection for the
+                    // camera's final target.  This subpass instead rasterizes
+                    // into an offscreen RenderTexture attachment.  On APIs
+                    // whose render-texture UV origin is at the top (D3D), the
+                    // GPU projection therefore needs Unity's renderIntoTexture
+                    // conversion for the draw, independently of the old-scene
+                    // fullscreen copy above.  Without it, world-space VFX are
+                    // vertically mirrored while the copied actor remains in
+                    // the existing scene-color convention.
+                    var setOffscreenProjection = new CommandBuffer
+                    {
+                        name = $"Recovered {label} offscreen projection"
+                    };
+                    setOffscreenProjection.SetViewProjectionMatrices(
+                        camera.worldToCameraMatrix,
+                        GL.GetGPUProjectionMatrix(
+                            camera.projectionMatrix,
+                            true));
+                    context.ExecuteCommandBuffer(setOffscreenProjection);
+                    setOffscreenProjection.Release();
+
                     DrawRenderers(
                         context,
                         camera,
@@ -1641,6 +1674,17 @@ namespace EndfieldGraphShaderLab
                         shaderPasses,
                         dynamicBatching,
                         gpuInstancing);
+                    var restoreCameraProjection = new CommandBuffer
+                    {
+                        name = $"Restore {label} camera-target projection"
+                    };
+                    restoreCameraProjection.SetViewProjectionMatrices(
+                        camera.worldToCameraMatrix,
+                        GL.GetGPUProjectionMatrix(
+                            camera.projectionMatrix,
+                            false));
+                    context.ExecuteCommandBuffer(restoreCameraProjection);
+                    restoreCameraProjection.Release();
                     // Retail appends a separate HGMeshRender ECS handle here.
                     // Its deferred producer is source-closed, but Unity has no
                     // equivalent HG GPU-driven handle/consumer. Keep that lane

@@ -1,0 +1,50 @@
+{
+  "schema": "endfield.endminf-visual-compatibility-validation.v1",
+  "classification": "approximate_opt_in_not_source_exact",
+  "selector": "ENDFIELD_ENDMINF_VISUAL_COMPATIBILITY=1",
+  "default_behavior": "fail_closed",
+  "material_scope": {
+    "name": "M_fx_endminm_gfx_28",
+    "path_id_hex": "BF7FEE87831B48FB",
+    "source_shader": "HGRP/Effect/VFXRefract",
+    "compatibility_shader": "Hidden/Endfield/VisualCompatibility/VFXRefract28",
+    "claim": "bounded scene-color sampling approximation; not the retail distortion consumer"
+  },
+  "post_scope": {
+    "clip": "A_fx_endminf_ui_overview_02",
+    "response": "narrow radial/chromatic sampling approximation in the existing final post pass",
+    "recovered_curve_windows": [[0.0, 0.16666667], [4.4, 4.6]],
+    "radial_peaks": [0.152, 0.109],
+    "chromatic_peaks": [0.127, 0.101],
+    "power": 1.0,
+    "claim": "curve inputs are recovered; sampling kernel and scale are visual compatibility only"
+  },
+  "graphical_d3d12_probe": {
+    "log": "unity_endfield_graph_shader_lab/Logs/endminf_visual_compat_clock_temporal.log",
+    "resolution": [768, 768],
+    "admitted": 52,
+    "blocked": 18,
+    "clock_anchor": "P_fxui_endminm003_overview_02 runtime instance creation",
+    "samples": [
+      {"time":1.75,"alive_particles":26,"changed_pixels":2236,"absolute_rgb_difference":40188},
+      {"time":2.25,"alive_particles":7,"changed_pixels":6696,"absolute_rgb_difference":132782},
+      {"time":2.5,"alive_particles":17,"changed_pixels":32782,"absolute_rgb_difference":871800},
+      {"time":2.75,"alive_particles":45,"changed_pixels":67993,"absolute_rgb_difference":9082911},
+      {"time":3.5,"alive_particles":75,"changed_pixels":34013,"absolute_rgb_difference":1588873},
+      {"time":4.1,"alive_particles":71,"changed_pixels":39408,"absolute_rgb_difference":1776921},
+      {"time":4.3,"alive_particles":230,"changed_pixels":283775,"absolute_rgb_difference":10348430},
+      {"time":4.55,"alive_particles":488,"changed_pixels":280952,"absolute_rgb_difference":31349766}
+    ],
+    "same_harness_exact_baseline_at_4_55": {
+      "changed_pixels": 139434,
+      "absolute_rgb_difference": 3692358
+    },
+    "causal_comparison": "not claimed: particle alive counts differed substantially between runs, and the harness control/effect pair shares the same final-post state",
+    "acceptance": "PASS for graphical D3D12 compilation, execution, 52/18 opt-in admission, source-spawn clock anchoring, and absence of shader/native errors. Pixel parity and a post-only causal delta require the independent same-particle-state visual harness."
+  },
+  "provenance": [
+    "reports/assets/endminf_overview_02_post_curve_native_audit.json",
+    "reports/assets/endminf_overview_02_uber_post_native_audit.json",
+    "reports/assets/character_recovery/overview_vfxrefract_live_state_boundary_20260815.md"
+  ]
+}

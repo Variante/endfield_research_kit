@@ -1,0 +1,611 @@
+{
+  "schema": "endfield.endminf-overview-02-post-curves-native-audit.v2",
+  "status": "pinned_apply_writes_closed_composition_unresolved",
+  "inputs": {
+    "gameAssembly": "D:\\Program Files\\Endfield Game\\GameAssembly.dll",
+    "gameAssemblySha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
+    "globalMetadata": "D:\\Program Files\\Endfield Game\\Endfield_Data\\il2cpp_data\\Metadata\\global-metadata.dat",
+    "globalMetadataSha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e",
+    "clip": "scratch/character_recovery/endminf_overview_effect_stage/AnimationClip/A_fx_endminf_ui_overview_02_p74C3E18DD531CF7C.json",
+    "clipSha256": "9814b9de92d5af7902b1967c295f98d29327824bdd7b478984527c5ccccd076c",
+    "codeRegistrationVa": "0x18b9217d0",
+    "nativeApplyMap": "scratch/character_recovery/endminf_overview_02_post/native_apply_map.json",
+    "nativeApplyMapSha256": "950d61814100c7992a7166849fe1d60a9062ec36b3943bbfbdb3aa1d70ebe415"
+  },
+  "targetPath": {
+    "name": "post (1)",
+    "crc32": 669740077
+  },
+  "bindings": [
+    {
+      "curveIndex": 0,
+      "bindingIndex": 0,
+      "component": 0,
+      "binding": {
+        "version": [
+          2021,
+          3,
+          34,
+          5
+        ],
+        "path": 669740077,
+        "attribute": 2754484623,
+        "script": {
+          "m_FileID": 1,
+          "m_PathID": 6948449919205830506,
+          "Name": "",
+          "IsNull": false
+        },
+        "typeID": "MonoBehaviour",
+        "customType": 0,
+        "isPPtrCurve": 0,
+        "isIntCurve": 0
+      },
+      "keys": [
+        {
+          "time": 0.0,
+          "value": 0.12700000405311584
+        },
+        {
+          "time": 0.1666666716337204,
+          "value": 0.0
+        },
+        {
+          "time": 4.400000095367432,
+          "value": 0.0
+        },
+        {
+          "time": 4.433333396911621,
+          "value": 0.10100000351667404
+        },
+        {
+          "time": 4.599999904632568,
+          "value": 0.0
+        }
+      ]
+    },
+    {
+      "curveIndex": 1,
+      "bindingIndex": 1,
+      "component": 0,
+      "binding": {
+        "version": [
+          2021,
+          3,
+          34,
+          5
+        ],
+        "path": 669740077,
+        "attribute": 2754484623,
+        "script": {
+          "m_FileID": 1,
+          "m_PathID": 317588138045017993,
+          "Name": "",
+          "IsNull": false
+        },
+        "typeID": "MonoBehaviour",
+        "customType": 0,
+        "isPPtrCurve": 0,
+        "isIntCurve": 0
+      },
+      "keys": [
+        {
+          "time": 0.0,
+          "value": 0.15199999511241913
+        },
+        {
+          "time": 0.1666666716337204,
+          "value": 0.0
+        },
+        {
+          "time": 4.400000095367432,
+          "value": 0.0
+        },
+        {
+          "time": 4.433333396911621,
+          "value": 0.10899999737739563
+        },
+        {
+          "time": 4.599999904632568,
+          "value": 0.0
+        }
+      ]
+    },
+    {
+      "curveIndex": 2,
+      "bindingIndex": 2,
+      "component": 0,
+      "binding": {
+        "version": [
+          2021,
+          3,
+          34,
+          5
+        ],
+        "path": 669740077,
+        "attribute": 565374268,
+        "script": {
+          "m_FileID": 1,
+          "m_PathID": 317588138045017993,
+          "Name": "",
+          "IsNull": false
+        },
+        "typeID": "MonoBehaviour",
+        "customType": 0,
+        "isPPtrCurve": 0,
+        "isIntCurve": 0
+      },
+      "keys": [
+        {
+          "time": 0.0,
+          "value": 1.0
+        }
+      ]
+    }
+  ],
+  "resolvedMembers": {
+    "2754484623": "_intensity",
+    "565374268": "_power"
+  },
+  "scriptTypes": [
+    {
+      "fullName": "HG.Rendering.Runtime.VFXPPChromaticAberration",
+      "token": "0x0200024e",
+      "fields": [
+        {
+          "name": "_intensity",
+          "attributeCrc32": 2754484623
+        },
+        {
+          "name": "_useAsCenterPosition",
+          "attributeCrc32": 1105047976
+        },
+        {
+          "name": "_averageSteps",
+          "attributeCrc32": 1423812282
+        }
+      ],
+      "methods": [
+        {
+          "methodIndex": 285958,
+          "type": "HG.Rendering.Runtime.VFXPPChromaticAberration",
+          "method": "get_m_VFXPPType",
+          "token": "0x06000b82",
+          "returnTypeName": "HG.Rendering.Runtime.VFXPPType",
+          "virtualAddress": "0x1847df5f0",
+          "fileOffset": "0x47ddbf0",
+          "boundedSizeBytes": 48,
+          "bodySha256": "c2d40020e731c399f753148e3eff1d2fbc2d80a02a9b0b5e51e78288ef11668c"
+        },
+        {
+          "methodIndex": 285959,
+          "type": "HG.Rendering.Runtime.VFXPPChromaticAberration",
+          "method": "SetData",
+          "token": "0x06000b83",
+          "returnTypeName": "System.Void",
+          "virtualAddress": "0x189b5f018",
+          "fileOffset": "0x9b5d618",
+          "boundedSizeBytes": 132,
+          "bodySha256": "f1e4b674fd0b5907636ff3eeda2c2c7fa166b1ac4ee963684c40a41f06984883"
+        },
+        {
+          "methodIndex": 285960,
+          "type": "HG.Rendering.Runtime.VFXPPChromaticAberration",
+          "method": "GetData",
+          "token": "0x06000b84",
+          "returnTypeName": "HG.Rendering.Runtime.VFXPPData",
+          "virtualAddress": "0x189b5ef28",
+          "fileOffset": "0x9b5d528",
+          "boundedSizeBytes": 128,
+          "bodySha256": "4a0f43d7e23a6b08a47f15fb592cba1af4c49d61df7cf7e34c3083bc6b9964f5"
+        },
+        {
+          "methodIndex": 285961,
+          "type": "HG.Rendering.Runtime.VFXPPChromaticAberration",
+          "method": "GetDefaultData",
+          "token": "0x06000b85",
+          "returnTypeName": "HG.Rendering.Runtime.VFXPPData",
+          "virtualAddress": "0x189b5efa8",
+          "fileOffset": "0x9b5d5a8",
+          "boundedSizeBytes": 112,
+          "bodySha256": "436f9b172d053ec1f9d2992a1c0cca32af084954428ca17bdd72afd850da47a7"
+        },
+        {
+          "methodIndex": 285962,
+          "type": "HG.Rendering.Runtime.VFXPPChromaticAberration",
+          "method": "_GetLerpData",
+          "token": "0x06000b86",
+          "returnTypeName": "HG.Rendering.Runtime.VFXPPData",
+          "virtualAddress": "0x189b5f0bc",
+          "fileOffset": "0x9b5d6bc",
+          "boundedSizeBytes": 216,
+          "bodySha256": "db68780e6cc41c08e6a2163e3029bd6edf8abcbb4390a2933e9ff8e5f3208e96"
+        },
+        {
+          "methodIndex": 285963,
+          "type": "HG.Rendering.Runtime.VFXPPChromaticAberration",
+          "method": "Apply",
+          "token": "0x06000b87",
+          "returnTypeName": "System.Void",
+          "virtualAddress": "0x1842126c0",
+          "fileOffset": "0x4210cc0",
+          "boundedSizeBytes": 1024,
+          "bodySha256": "da30ec2809ba5eef7e3f8e8a102e3f49a9c0d7489e314e626b801c360e74fc89"
+        },
+        {
+          "methodIndex": 285964,
+          "type": "HG.Rendering.Runtime.VFXPPChromaticAberration",
+          "method": "ResetByVolumeProfile",
+          "token": "0x06000b88",
+          "returnTypeName": "System.Void",
+          "virtualAddress": "0x184212490",
+          "fileOffset": "0x4210a90",
+          "boundedSizeBytes": 560,
+          "bodySha256": "41960e977aba5e17fa0ffe00222cb2739b569bba79d047808494f61ea48934c6"
+        },
+        {
+          "methodIndex": 285965,
+          "type": "HG.Rendering.Runtime.VFXPPChromaticAberration",
+          "method": "IsActive",
+          "token": "0x06000b89",
+          "returnTypeName": "System.Boolean",
+          "virtualAddress": "0x184585a70",
+          "fileOffset": "0x4584070",
+          "boundedSizeBytes": 48,
+          "bodySha256": "53c0ea2183bdb77d5ee927d8c011e5406cd11c485eccea753cee9ff5a12a37cf"
+        },
+        {
+          "methodIndex": 285966,
+          "type": "HG.Rendering.Runtime.VFXPPChromaticAberration",
+          "method": ".ctor",
+          "token": "0x06000b8a",
+          "returnTypeName": "System.Void",
+          "virtualAddress": "0x1844d8e60",
+          "fileOffset": "0x44d7460",
+          "boundedSizeBytes": 32,
+          "bodySha256": "d7b08d912c0fe7d4dcb5e6fddce1ee49f0c70ece801e4872cec83501439fe1d1"
+        },
+        {
+          "methodIndex": 285967,
+          "type": "HG.Rendering.Runtime.VFXPPChromaticAberration",
+          "method": "<>iFixBaseProxy_get_m_VFXPPType",
+          "token": "0x06000b8b",
+          "returnTypeName": "HG.Rendering.Runtime.VFXPPType",
+          "virtualAddress": "0x189b5d900",
+          "fileOffset": "0x9b5bf00",
+          "boundedSizeBytes": 8,
+          "bodySha256": "88955f5981ef4688dd8a7a58cd35392819602b5b33286066c780d21001f68015"
+        },
+        {
+          "methodIndex": 285968,
+          "type": "HG.Rendering.Runtime.VFXPPChromaticAberration",
+          "method": "<>iFixBaseProxy_SetData",
+          "token": "0x06000b8c",
+          "returnTypeName": "System.Void",
+          "virtualAddress": "0x189b5f0ac",
+          "fileOffset": "0x9b5d6ac",
+          "boundedSizeBytes": 8,
+          "bodySha256": "35a9de84a2220afa733c131edd16831ebd0c9e85abbb28afc6aee34bb95ef5eb"
+        },
+        {
+          "methodIndex": 285969,
+          "type": "HG.Rendering.Runtime.VFXPPChromaticAberration",
+          "method": "<>iFixBaseProxy_GetData",
+          "token": "0x06000b8d",
+          "returnTypeName": "HG.Rendering.Runtime.VFXPPData",
+          "virtualAddress": "0x189b5f09c",
+          "fileOffset": "0x9b5d69c",
+          "boundedSizeBytes": 8,
+          "bodySha256": "a35767ba8c1859b9f8d5d106af5a2c32a46e93887548602a464bc9802cf72cb7"
+        },
+        {
+          "methodIndex": 285970,
+          "type": "HG.Rendering.Runtime.VFXPPChromaticAberration",
+          "method": "<>iFixBaseProxy_GetDefaultData",
+          "token": "0x06000b8e",
+          "returnTypeName": "HG.Rendering.Runtime.VFXPPData",
+          "virtualAddress": "0x189b5f0a4",
+          "fileOffset": "0x9b5d6a4",
+          "boundedSizeBytes": 8,
+          "bodySha256": "f5fe9896af79345df7d082e81cac4479e83295901ef79090132408c8a7c47208"
+        },
+        {
+          "methodIndex": 285971,
+          "type": "HG.Rendering.Runtime.VFXPPChromaticAberration",
+          "method": "<>iFixBaseProxy__GetLerpData",
+          "token": "0x06000b8f",
+          "returnTypeName": "HG.Rendering.Runtime.VFXPPData",
+          "virtualAddress": "0x189b5f0b4",
+          "fileOffset": "0x9b5d6b4",
+          "boundedSizeBytes": 8,
+          "bodySha256": "7fcb1b65965b10a1c3d63cc3fb8e119b4e3675990b710f220241eedbea91a6c8"
+        },
+        {
+          "methodIndex": 285972,
+          "type": "HG.Rendering.Runtime.VFXPPChromaticAberration",
+          "method": "<>iFixBaseProxy_Apply",
+          "token": "0x06000b90",
+          "returnTypeName": "System.Void",
+          "virtualAddress": "0x189b5d8e8",
+          "fileOffset": "0x9b5bee8",
+          "boundedSizeBytes": 8,
+          "bodySha256": "210af53f6e9c1197361b7bfff51565036fe43181729d6f120d37b6d48a2bf12f"
+        },
+        {
+          "methodIndex": 285973,
+          "type": "HG.Rendering.Runtime.VFXPPChromaticAberration",
+          "method": "<>iFixBaseProxy_ResetByVolumeProfile",
+          "token": "0x06000b91",
+          "returnTypeName": "System.Void",
+          "virtualAddress": "0x189b5d8f8",
+          "fileOffset": "0x9b5bef8",
+          "boundedSizeBytes": 8,
+          "bodySha256": "7f25bebe255f2d5f20b6a8904ba3a9a39bc7f0acf3f04e27bc03ff800cf7214d"
+        },
+        {
+          "methodIndex": 285974,
+          "type": "HG.Rendering.Runtime.VFXPPChromaticAberration",
+          "method": "<>iFixBaseProxy_IsActive",
+          "token": "0x06000b92",
+          "returnTypeName": "System.Boolean",
+          "virtualAddress": "0x189b5d8f0",
+          "fileOffset": "0x9b5bef0",
+          "boundedSizeBytes": 8,
+          "bodySha256": "67a22ccc466fe892c2dff539e18eaf9ea4b9f5a2ca7bb897755094873834f202"
+        }
+      ]
+    },
+    {
+      "fullName": "HG.Rendering.Runtime.VFXPPRadialBlur",
+      "token": "0x0200025f",
+      "fields": [
+        {
+          "name": "_intensity",
+          "attributeCrc32": 2754484623
+        },
+        {
+          "name": "_useAsCenterPosition",
+          "attributeCrc32": 1105047976
+        },
+        {
+          "name": "_averageSteps",
+          "attributeCrc32": 1423812282
+        },
+        {
+          "name": "_power",
+          "attributeCrc32": 565374268
+        }
+      ],
+      "methods": [
+        {
+          "methodIndex": 286106,
+          "type": "HG.Rendering.Runtime.VFXPPRadialBlur",
+          "method": "get_m_VFXPPType",
+          "token": "0x06000c16",
+          "returnTypeName": "HG.Rendering.Runtime.VFXPPType",
+          "virtualAddress": "0x184702ec0",
+          "fileOffset": "0x47014c0",
+          "boundedSizeBytes": 48,
+          "bodySha256": "5b08b946f0a1296bdc127b5896d81478746effae8a5187d9fd6769f45949a511"
+        },
+        {
+          "methodIndex": 286107,
+          "type": "HG.Rendering.Runtime.VFXPPRadialBlur",
+          "method": "GetDefaultData",
+          "token": "0x06000c17",
+          "returnTypeName": "HG.Rendering.Runtime.VFXPPData",
+          "virtualAddress": "0x189b622ac",
+          "fileOffset": "0x9b608ac",
+          "boundedSizeBytes": 116,
+          "bodySha256": "14315c54a5d359cbf5fb45805a7bf725300a7104ba6ca2aedd14c405e56ddeae"
+        },
+        {
+          "methodIndex": 286108,
+          "type": "HG.Rendering.Runtime.VFXPPRadialBlur",
+          "method": "_GetLerpData",
+          "token": "0x06000c18",
+          "returnTypeName": "HG.Rendering.Runtime.VFXPPData",
+          "virtualAddress": "0x189b623a8",
+          "fileOffset": "0x9b609a8",
+          "boundedSizeBytes": 236,
+          "bodySha256": "52b7d73a59eb82f042c32529fb30a966ae0bd56c713f667211eb10e3f8817e88"
+        },
+        {
+          "methodIndex": 286109,
+          "type": "HG.Rendering.Runtime.VFXPPRadialBlur",
+          "method": "SetData",
+          "token": "0x06000c19",
+          "returnTypeName": "System.Void",
+          "virtualAddress": "0x189b62320",
+          "fileOffset": "0x9b60920",
+          "boundedSizeBytes": 136,
+          "bodySha256": "5215a0365459126ddb2c030ed56d51c0490344f8e278c77e88e465ea87142cdb"
+        },
+        {
+          "methodIndex": 286110,
+          "type": "HG.Rendering.Runtime.VFXPPRadialBlur",
+          "method": "GetData",
+          "token": "0x06000c1a",
+          "returnTypeName": "HG.Rendering.Runtime.VFXPPData",
+          "virtualAddress": "0x189b62218",
+          "fileOffset": "0x9b60818",
+          "boundedSizeBytes": 148,
+          "bodySha256": "ff9c428bb661ba8e40b307725399c2a0eba8ba33330b608cdecc0c1c884ad337"
+        },
+        {
+          "methodIndex": 286111,
+          "type": "HG.Rendering.Runtime.VFXPPRadialBlur",
+          "method": "Apply",
+          "token": "0x06000c1b",
+          "returnTypeName": "System.Void",
+          "virtualAddress": "0x183087ec0",
+          "fileOffset": "0x30864c0",
+          "boundedSizeBytes": 800,
+          "bodySha256": "ff5ac818a479aa258542d410b878d5be617b09fb19daa3c4776225f272d00824"
+        },
+        {
+          "methodIndex": 286112,
+          "type": "HG.Rendering.Runtime.VFXPPRadialBlur",
+          "method": "ResetByVolumeProfile",
+          "token": "0x06000c1c",
+          "returnTypeName": "System.Void",
+          "virtualAddress": "0x184535470",
+          "fileOffset": "0x4533a70",
+          "boundedSizeBytes": 656,
+          "bodySha256": "dc0271d56d5e5d98249d536f144c90e7f533aacd701eef6562e2ede211026975"
+        },
+        {
+          "methodIndex": 286113,
+          "type": "HG.Rendering.Runtime.VFXPPRadialBlur",
+          "method": "IsActive",
+          "token": "0x06000c1d",
+          "returnTypeName": "System.Boolean",
+          "virtualAddress": "0x18436e7a0",
+          "fileOffset": "0x436cda0",
+          "boundedSizeBytes": 112,
+          "bodySha256": "e96921cabf5910e543b887aabdcda94c1ce8526931ae181be61ed115bc491176"
+        },
+        {
+          "methodIndex": 286114,
+          "type": "HG.Rendering.Runtime.VFXPPRadialBlur",
+          "method": ".ctor",
+          "token": "0x06000c1e",
+          "returnTypeName": "System.Void",
+          "virtualAddress": "0x1844d8cb0",
+          "fileOffset": "0x44d72b0",
+          "boundedSizeBytes": 16,
+          "bodySha256": "80d096b75ca2cd079a4b7c09f3f919a5757ee4cad72763cc6f2b69d53e44ec55"
+        },
+        {
+          "methodIndex": 286115,
+          "type": "HG.Rendering.Runtime.VFXPPRadialBlur",
+          "method": "<>iFixBaseProxy_get_m_VFXPPType",
+          "token": "0x06000c1f",
+          "returnTypeName": "HG.Rendering.Runtime.VFXPPType",
+          "virtualAddress": "0x189b5d900",
+          "fileOffset": "0x9b5bf00",
+          "boundedSizeBytes": 8,
+          "bodySha256": "88955f5981ef4688dd8a7a58cd35392819602b5b33286066c780d21001f68015"
+        },
+        {
+          "methodIndex": 286116,
+          "type": "HG.Rendering.Runtime.VFXPPRadialBlur",
+          "method": "<>iFixBaseProxy_GetDefaultData",
+          "token": "0x06000c20",
+          "returnTypeName": "HG.Rendering.Runtime.VFXPPData",
+          "virtualAddress": "0x189b5f0a4",
+          "fileOffset": "0x9b5d6a4",
+          "boundedSizeBytes": 8,
+          "bodySha256": "f5fe9896af79345df7d082e81cac4479e83295901ef79090132408c8a7c47208"
+        },
+        {
+          "methodIndex": 286117,
+          "type": "HG.Rendering.Runtime.VFXPPRadialBlur",
+          "method": "<>iFixBaseProxy__GetLerpData",
+          "token": "0x06000c21",
+          "returnTypeName": "HG.Rendering.Runtime.VFXPPData",
+          "virtualAddress": "0x189b5f0b4",
+          "fileOffset": "0x9b5d6b4",
+          "boundedSizeBytes": 8,
+          "bodySha256": "7fcb1b65965b10a1c3d63cc3fb8e119b4e3675990b710f220241eedbea91a6c8"
+        },
+        {
+          "methodIndex": 286118,
+          "type": "HG.Rendering.Runtime.VFXPPRadialBlur",
+          "method": "<>iFixBaseProxy_SetData",
+          "token": "0x06000c22",
+          "returnTypeName": "System.Void",
+          "virtualAddress": "0x189b5f0ac",
+          "fileOffset": "0x9b5d6ac",
+          "boundedSizeBytes": 8,
+          "bodySha256": "35a9de84a2220afa733c131edd16831ebd0c9e85abbb28afc6aee34bb95ef5eb"
+        },
+        {
+          "methodIndex": 286119,
+          "type": "HG.Rendering.Runtime.VFXPPRadialBlur",
+          "method": "<>iFixBaseProxy_GetData",
+          "token": "0x06000c23",
+          "returnTypeName": "HG.Rendering.Runtime.VFXPPData",
+          "virtualAddress": "0x189b5f09c",
+          "fileOffset": "0x9b5d69c",
+          "boundedSizeBytes": 8,
+          "bodySha256": "a35767ba8c1859b9f8d5d106af5a2c32a46e93887548602a464bc9802cf72cb7"
+        },
+        {
+          "methodIndex": 286120,
+          "type": "HG.Rendering.Runtime.VFXPPRadialBlur",
+          "method": "<>iFixBaseProxy_Apply",
+          "token": "0x06000c24",
+          "returnTypeName": "System.Void",
+          "virtualAddress": "0x189b5d8e8",
+          "fileOffset": "0x9b5bee8",
+          "boundedSizeBytes": 8,
+          "bodySha256": "210af53f6e9c1197361b7bfff51565036fe43181729d6f120d37b6d48a2bf12f"
+        },
+        {
+          "methodIndex": 286121,
+          "type": "HG.Rendering.Runtime.VFXPPRadialBlur",
+          "method": "<>iFixBaseProxy_ResetByVolumeProfile",
+          "token": "0x06000c25",
+          "returnTypeName": "System.Void",
+          "virtualAddress": "0x189b5d8f8",
+          "fileOffset": "0x9b5bef8",
+          "boundedSizeBytes": 8,
+          "bodySha256": "7f25bebe255f2d5f20b6a8904ba3a9a39bc7f0acf3f04e27bc03ff800cf7214d"
+        },
+        {
+          "methodIndex": 286122,
+          "type": "HG.Rendering.Runtime.VFXPPRadialBlur",
+          "method": "<>iFixBaseProxy_IsActive",
+          "token": "0x06000c26",
+          "returnTypeName": "System.Boolean",
+          "virtualAddress": "0x189b5d8f0",
+          "fileOffset": "0x9b5bef0",
+          "boundedSizeBytes": 8,
+          "bodySha256": "67a22ccc466fe892c2dff539e18eaf9ea4b9f5a2ca7bb897755094873834f202"
+        }
+      ]
+    }
+  ],
+  "applySemantics": {
+    "shared": {
+      "profileCalls": [
+        "UnityEngine.Rendering.VolumeProfile.Has",
+        "UnityEngine.Rendering.VolumeProfile.TryGet"
+      ],
+      "enabledWrite": {
+        "targetOffset": "0x30",
+        "value": true
+      },
+      "intensityWrite": {
+        "targetOffset": "0x40",
+        "source": "this+0x48 (_intensity)"
+      },
+      "centerModeSource": "this+0x4c (_useAsCenterPosition)",
+      "averageStepsSource": "this+0x4d (_averageSteps)",
+      "worldCenterSource": "Component.transform.position"
+    },
+    "HG.Rendering.Runtime.VFXPPChromaticAberration.Apply": {
+      "targetType": "HG.Rendering.Runtime.HGChromaticAbberation",
+      "averageStepsTargetOffset": "0x48",
+      "enableGlobalCenterTargetOffset": "0x50",
+      "globalCenterTargetOffset": "0x58"
+    },
+    "HG.Rendering.Runtime.VFXPPRadialBlur.Apply": {
+      "targetType": "HG.Rendering.Runtime.HGRadialBlur",
+      "powerWrite": {
+        "targetOffset": "0x48",
+        "source": "this+0x50 (_power)"
+      },
+      "averageStepsTargetOffset": "0x50",
+      "enableGlobalCenterTargetOffset": "0x58",
+      "globalCenterTargetOffset": "0x60"
+    },
+    "setterEntryPoints": {
+      "boolParameter": "0x180043df0",
+      "floatParameter": "0x180049310"
+    },
+    "orderingBoundary": "Each Apply only resolves and mutates its VolumeProfile component. These bodies contain no shader-global, material, draw, or pass calls. Cross-component render/composition order is outside these Apply bodies and remains unresolved."
+  },
+  "implementationBoundary": "Do not add a lab approximation yet: the exact render-pass producer and cross-component composition order are not established by these MonoBehaviour Apply methods."
+}

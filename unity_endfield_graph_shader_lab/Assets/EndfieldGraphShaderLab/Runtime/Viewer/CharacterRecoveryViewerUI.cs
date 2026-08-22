@@ -13,6 +13,8 @@ namespace EndfieldGraphShaderLab
 {
     public sealed class CharacterRecoveryViewerUI : MonoBehaviour
     {
+        private const string InitialModelEnvironment =
+            "ENDFIELD_CHARACTER_RECOVERY_INITIAL_MODEL";
         private readonly List<CharacterRecoveryRig> rigs = new List<CharacterRecoveryRig>();
         private readonly List<ModelEntry> models = new List<ModelEntry>();
         private readonly List<ClipEntry> allClips = new List<ClipEntry>();
@@ -253,7 +255,21 @@ namespace EndfieldGraphShaderLab
             modelDropdown.interactable = models.Count > 1;
             updatingUi = false;
 
-            SelectModel(models.Count > 0 ? 0 : -1);
+            int initialIndex = models.Count > 0 ? 0 : -1;
+            string requestedInitialModel =
+                Environment.GetEnvironmentVariable(InitialModelEnvironment);
+            if (!string.IsNullOrWhiteSpace(requestedInitialModel))
+            {
+                int requestedIndex = models.FindIndex(model =>
+                    string.Equals(model.RootName, requestedInitialModel,
+                        StringComparison.OrdinalIgnoreCase));
+                if (requestedIndex >= 0)
+                    initialIndex = requestedIndex;
+                else
+                    Debug.LogWarning("Requested initial character recovery model is unavailable: " +
+                        requestedInitialModel);
+            }
+            SelectModel(initialIndex);
         }
 
         private static int CompareRigs(CharacterRecoveryRig left, CharacterRecoveryRig right)
