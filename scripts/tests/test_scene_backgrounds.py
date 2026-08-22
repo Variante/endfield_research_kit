@@ -943,6 +943,59 @@ class SceneBackgroundCatalogTests(unittest.TestCase):
         )
         self.assertEqual(ambiguous["status"], "unavailablePrefabIdentity")
 
+    def test_streaming_component_and_prefab_path_routes_must_agree(self) -> None:
+        owner = {
+            "serializedFile": "CAB-fixture",
+            "source": "VFS/root/emitter.chk",
+            "sourceOffset": 10,
+            "pathId": 11,
+        }
+        catalog = {
+            "status": "exactPrefabIdentityEntries",
+            "authoritativeContractStatus": "validatedAuthoritative",
+            "schemaVersion": scene_backgrounds.STREAMING_INSTANCE_CONTRACT_VERSION,
+            "sources": [{
+                "path": "recovered/AnimeStudio-cli/StreamingAssets/map_streaming_instances/fixture.json",
+                "levelId": "map01_lv001",
+                "schemaVersion": 2,
+                "prefabIdentityContractStatus": "exact",
+            }, {
+                "path": "recovered/AnimeStudio-cli/StreamingAssets/map_streaming_instances/fixture2.json",
+                "levelId": "map02_lv001",
+                "schemaVersion": 2,
+                "prefabIdentityContractStatus": "exact",
+            }],
+            "counts": {"exactPrefabIdentityInstances": 2, "malformedInstances": 0},
+            "entries": [
+                {
+                    "levelId": "map01_lv001",
+                    "sidecarPath": "recovered/AnimeStudio-cli/StreamingAssets/map_streaming_instances/fixture.json",
+                    "prefabSourceAssetPath": "assets/effects/wind.prefab",
+                    "prefabAssetPathStatus": "exactUniqueAssetMapContainer",
+                    "componentIdentity": dict(owner),
+                    "prefabIdentity": {"source": "VFS/root/prefab.chk", "pathId": 99},
+                    "identityKey": ["assetMap", "root/prefab.chk", 99],
+                },
+                {
+                    "levelId": "map02_lv001",
+                    "sidecarPath": "recovered/AnimeStudio-cli/StreamingAssets/map_streaming_instances/fixture2.json",
+                    "prefabSourceAssetPath": "assets/effects/wind.prefab",
+                    "prefabAssetPathStatus": "exactUniqueAssetMapContainer",
+                    "prefabIdentity": {"source": "VFS/root/prefab2.chk", "pathId": 100},
+                    "identityKey": ["assetMap", "root/prefab2.chk", 100],
+                },
+            ],
+            "diagnostics": [],
+        }
+        result = scene_backgrounds._streaming_instance_emitter_projection(
+            owner, catalog, ["assets/effects/wind.prefab"]
+        )
+        self.assertEqual(result["status"], "conflictingPrefabInstanceIdentityJoins")
+        self.assertTrue(any(
+            row["reason"] == "componentAndPrefabPathIdentityRoutesDisagree"
+            for row in result["diagnostics"]
+        ))
+
     def test_streaming_loader_and_asset_enrichment_produce_authoritative_exact_join(self) -> None:
         owner = {
             "serializedFile": "CAB-fixture",
