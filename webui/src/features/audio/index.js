@@ -227,6 +227,8 @@
       enemyTriggerVoiceActionCatalog: "Enemy trigger-voice action mapping",
       contextAnimation: "Animation",
       contextSceneAudio: "Scene audio",
+      contextSceneGlobalExact: "Exact authored scene-global context",
+      contextSceneGlobalUnavailable: "Scene-global attribution unavailable",
       contextSharedPlayableAnimation: "Shared playable-character animation",
       contextFootstepSystem: "Footstep / material system",
       customFootstepParameters: "OnCustomFootStep parameters",
@@ -235,6 +237,9 @@
       contextOwnerUnresolvedAnimation: "Animation owner unresolved",
       contextNpcAnimation: "NPC animation",
       contextAnimationCallbackNpcOwner: "Animation callback NPC owner",
+      sceneGlobalSceneIds: "Authored scene IDs",
+      sceneGlobalSemanticRoles: "Scene-global semantic roles",
+      sceneGlobalContextStatus: "Scene-global context status",
       contextScripted: "LevelScript",
       contextLevelScriptTrigger: "Scripted audio trigger",
       contextRadioTrigger: "Exact LevelScript radio trigger",
@@ -514,6 +519,8 @@
       audioTriggerContextCatalog: "音频触发情境覆盖",
       contextAnimation: "\u52a8\u753b",
       contextSceneAudio: "\u573a\u666f\u97f3\u9891",
+      contextSceneGlobalExact: "\u7cbe\u786e\u521b\u5efa\u7684\u573a\u666f\u5168\u5c40\u4e0a\u4e0b\u6587",
+      contextSceneGlobalUnavailable: "\u573a\u666f\u5168\u5c40\u5f52\u5c5e\u4e0d\u53ef\u7528",
       contextSharedPlayableAnimation: "\u53ef\u73a9\u89d2\u8272\u5171\u7528\u52a8\u753b",
       contextFootstepSystem: "\u811a\u6b65 / \u6750\u8d28\u7cfb\u7edf",
       customFootstepParameters: "OnCustomFootStep \u53c2\u6570",
@@ -522,6 +529,9 @@
       contextOwnerUnresolvedAnimation: "\u52a8\u753b\u5f52\u5c5e\u672a\u89e3\u6790",
       contextNpcAnimation: "NPC \u52a8\u753b",
       contextAnimationCallbackNpcOwner: "\u52a8\u753b\u56de\u8c03 NPC \u5f52\u5c5e",
+      sceneGlobalSceneIds: "\u521b\u5efa\u7684\u573a\u666f ID",
+      sceneGlobalSemanticRoles: "\u573a\u666f\u5168\u5c40\u8bed\u4e49\u89d2\u8272",
+      sceneGlobalContextStatus: "\u573a\u666f\u5168\u5c40\u4e0a\u4e0b\u6587\u72b6\u6001",
       contextScripted: "LevelScript \u811a\u672c",
       contextLevelScriptTrigger: "\u811a\u672c\u97f3\u9891\u89e6\u53d1",
       contextRadioTrigger: "\u7cbe\u786e LevelScript \u65e0\u7ebf\u7535\u89e6\u53d1",
@@ -831,6 +841,8 @@
     timeline: "contextTimeline",
     animation: "contextAnimation",
     sceneAudio: "contextSceneAudio",
+    sceneGlobalExact: "contextSceneGlobalExact",
+    sceneGlobalUnavailable: "contextSceneGlobalUnavailable",
     sharedPlayableAnimation: "contextSharedPlayableAnimation",
     footstepSystem: "contextFootstepSystem",
     ownerUnresolvedAnimation: "contextOwnerUnresolvedAnimation",
@@ -965,6 +977,11 @@
   function recordContextTags(record, kind) {
     const exactNpcAnimationOwner = hasExactNpcAnimationOwner(record);
     const tags = new Set(asArray(record?.contextGroups).filter(Boolean));
+    if (record?.sceneGlobalContextStatus === "exact"
+      && asArray(record?.sceneGlobalSceneIds).length
+      && asArray(record?.sceneGlobalSemanticRoles).length) {
+      tags.add("sceneGlobalExact");
+    }
     if (exactNpcAnimationOwner) {
       tags.add("npcAnimation");
       tags.add("animationCallbackNpcOwner");
@@ -1104,6 +1121,12 @@
     }
     const contexts = asArray(taxonomy.contextTags);
     if (contexts.length) parts.push(contexts.map(taxonomyLabel).join(" + "));
+    if (kind === "events" && record.sceneGlobalContextStatus === "exact") {
+      const sceneIds = asArray(record.sceneGlobalSceneIds).filter(Boolean);
+      const roles = asArray(record.sceneGlobalSemanticRoles).filter(Boolean);
+      if (sceneIds.length) parts.push(`${t("sceneGlobalSceneIds")}: ${sceneIds.join(" / ")}`);
+      if (roles.length) parts.push(`${t("sceneGlobalSemanticRoles")}: ${roles.join(" / ")}`);
+    }
     const relations = asArray(taxonomy.relationTags);
     if (relations.length) parts.push(relations.slice(0, 2).map(taxonomyLabel).join(" + "));
     const purposeTag = purposeRecoveryTag(record);
@@ -1140,6 +1163,8 @@
       ...asArray(record?.relatedEventCategories).flatMap((value) => [value, categoryLabel(value)]),
       ...asArray(record?.coarseOwnershipDomains), ...asArray(record?.coarseOwnershipRoles),
       ...asArray(record?.coarseOwnershipSceneIds), ...asArray(record?.coarseOwnershipEvidence),
+      ...asArray(record?.sceneGlobalSceneIds), ...asArray(record?.sceneGlobalSemanticRoles),
+      record?.sceneGlobalContextStatus,
       ...asArray(record?.animationActionEventIds), ...asArray(record?.animationActionMatchingClips),
       ...asArray(record?.animationActionOwnerIds), record?.animationActionNameMatchStatus,
       record?.animationActionNameMatchEvidence,
@@ -3093,6 +3118,21 @@
       if (streamingDiagnostics.length) parts.push(`streaming diagnostics ${streamingDiagnostics.slice(0, 4).join(" / ")}`);
       parts.push("authored prefab component / runtime scene instantiation unobserved");
     }
+    if (kind === "sceneGlobalAudioEvent") {
+      if (context?.sceneId) parts.push(`scene ${context.sceneId}`);
+      if (context?.source) parts.push(`source ${context.source}`);
+      if (context?.eventHash !== undefined) parts.push(`event hash ${context.eventHash}`);
+      if (context?.confidence) parts.push(`confidence ${context.confidence}`);
+      if (context?.evidence) parts.push(`evidence ${context.evidence}`);
+      const owner = context?.owner && typeof context.owner === "object" ? context.owner : {};
+      if (owner.table) parts.push(`owner table ${owner.table} / ${owner.levelId || ""}`.trim());
+      else if (owner.serializedFile || owner.pathId !== undefined) {
+        parts.push(`owner ${owner.serializedFile || "?"} / PathID ${owner.pathId ?? "?"}`);
+      }
+      const runtimeStatuses = asArray(context?.triggerRuntimeActivationStatuses).filter(Boolean);
+      if (runtimeStatuses.length) parts.push(`runtime ${runtimeStatuses.join(" / ")}`);
+      parts.push("authored scene-global definition; activation/playback unobserved");
+    }
     if (["audioDialogVoiceDefinition", "responsiveDialogVoice", "voiceToneVariant"].includes(kind)) {
       if (context?.audioDialogPath) parts.push(`AudioDialog ${context.audioDialogPath}`);
       if (context?.voiceId !== undefined) parts.push(`voice id ${context.voiceId}`);
@@ -4778,6 +4818,14 @@
           ["Wwise", raw.foundInWwise], [t("typedTraversal"), raw.traversalStatus], [t("playRoots"), raw.playRootCount],
           [t("possibleMedia"), raw.possibleMediaCount ?? raw.candidateCount], [t("uniqueContent"), raw.uniqueDecodedContentCount],
           [t("equivalentContent"), raw.contentEquivalentLeafCount], ["Runtime selection", raw.runtimeSelection], ["Contexts", raw.contextCount],
+          [t("sceneGlobalContextStatus"), raw.sceneGlobalContextStatus],
+          [t("sceneGlobalSceneIds"), asArray(raw.sceneGlobalSceneIds).join(" / ")],
+          [t("sceneGlobalSemanticRoles"), asArray(raw.sceneGlobalSemanticRoles).join(" / ")],
+          ["Scene-global diagnostics", asArray(raw.sceneGlobalContextDiagnostics)
+            .map((diagnostic) => diagnostic && typeof diagnostic === "object"
+              ? (diagnostic.reason || diagnostic.status || "diagnostic")
+              : diagnostic)
+            .filter(Boolean).join(" / ")],
           ["Playable animation owners", raw.playableCharacterAnimationOwnerCount], ["Animation scope", raw.animationContextScope],
           ["Animation callbacks", asArray(raw.animationFunctions).join(" / ")],
           ["Animation action name match", humanize(raw.animationActionNameMatchStatus || "")],

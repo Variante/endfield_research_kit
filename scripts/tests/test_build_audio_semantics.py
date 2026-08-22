@@ -1626,6 +1626,34 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertEqual(summary["nonMediaSourceCount"], 1)
         self.assertIn("Wwise External Source", summary["contextSearch"])
 
+    def test_scene_global_compact_fields_project_without_promoting_definition_only(self) -> None:
+        row = {
+            "id": "au_amb_scene_fixture",
+            "name": "au_amb_scene_fixture",
+            "hash": 7,
+            "category": "ambience",
+            "foundInWwise": False,
+            "possibleMediaCount": 0,
+            "candidateCount": 0,
+            "sceneGlobalSceneIds": ["map01_lv001", "map02_lv002"],
+            "sceneGlobalSemanticRoles": ["levelExitEvents", "levelInitEvents"],
+            "sceneGlobalContextStatus": "exact",
+            "contexts": [{
+                "kind": "sceneGlobalAudioEvent",
+                "sceneId": "map01_lv001",
+                "semanticRole": "levelInitEvents",
+            }],
+            "media": [],
+            "evidence": [],
+        }
+        summary = event_summary.event_summary_row(row, "event_details/00.json")
+        self.assertEqual(summary["sceneGlobalSceneIds"], ["map01_lv001", "map02_lv002"])
+        self.assertEqual(summary["sceneGlobalSemanticRoles"], ["levelExitEvents", "levelInitEvents"])
+        self.assertEqual(summary["sceneGlobalContextStatus"], "exact")
+        self.assertIn("map02_lv002", summary["contextSearch"])
+        self.assertFalse(summary["foundInWwise"])
+        self.assertEqual(summary["category"], "ambience")
+
     def test_media_playback_location_statuses_keep_evidence_boundaries(self) -> None:
         media = [
             {"id": "dialog", "audioDialogPath": "dialog/path", "storyLineBindingCount": 2},
@@ -9525,6 +9553,31 @@ class AudioSemanticDataTests(unittest.TestCase):
             "context.sceneContainmentDiagnostics",
         ):
             self.assertIn(field, search_body)
+
+    def test_audio_frontend_exposes_scene_global_compact_attribution(self) -> None:
+        source = (
+            Path(__file__).resolve().parents[2] / "webui/src/features/audio/index.js"
+        ).read_text(encoding="utf-8")
+        search_body = source.split("function searchText", 1)[1].split(
+            "function humanize", 1
+        )[0]
+        panel_body = source.split("function recordPanel", 1)[1].split(
+            "function collectIds", 1
+        )[0]
+        evidence_body = source.split("function contextEvidenceLabel", 1)[1].split(
+            "function radioTableLineLabel", 1
+        )[0]
+        for field in (
+            "sceneGlobalSceneIds",
+            "sceneGlobalSemanticRoles",
+            "sceneGlobalContextStatus",
+        ):
+            self.assertIn(f"record?.{field}", search_body)
+            self.assertIn(f"raw.{field}", panel_body)
+        self.assertIn('record?.sceneGlobalContextStatus === "exact"', source)
+        self.assertIn('tags.add("sceneGlobalExact")', source)
+        self.assertIn('kind === "sceneGlobalAudioEvent"', evidence_body)
+        self.assertIn("authored scene-global definition; activation/playback unobserved", evidence_body)
 
     def test_audio_frontend_renders_native_playback_call_chain_stages(self) -> None:
         source = (

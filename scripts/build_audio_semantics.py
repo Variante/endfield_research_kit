@@ -107,7 +107,7 @@ PROJECTILE_SOUND_PHASES = {
 # authoritative value; these names are presentation labels, not a claim that
 # selection behavior was evaluated offline.
 SELECTION_HIRC_TYPES = frozenset({5, 6, 12, 13})
-AUDIO_SEMANTIC_SCHEMA_VERSION = 129
+AUDIO_SEMANTIC_SCHEMA_VERSION = 130
 TRIGGER_CONTEXT_SCHEMA_VERSION = 39
 
 MONO_BEHAVIOUR_AUDIO_EVENT_FIELD_NAMES = frozenset({
@@ -13140,6 +13140,15 @@ def build_audio_semantic_data(
         rtpc_names_by_hex=rtpc_names_by_hex,
         metadata_event_symbols=metadata_event_symbol_catalog.get("entries") or [],
     )
+    # Scene-global attribution is a compact projection of the already merged
+    # scene catalog and Event contexts.  The domain helper owns the exact
+    # producer/scene gates; this entrypoint only wires collected data through.
+    for event in events:
+        event.update(scene_backgrounds.project_scene_global_compact_attribution(
+            event.get("contexts") or [],
+            scene_background_semantics,
+            contexts_truncated=event.get("contextsTruncated") is not False,
+        ))
     # Full AudioCue ASTs are detail-only.  Event list rows remain compact;
     # ``event_summary`` intentionally does not project this payload.
     for event in events:
@@ -13531,6 +13540,28 @@ def build_audio_semantic_data(
         for key, value in scene_background_semantics.items()
         if key != "eventContexts"
     })
+    scene_global_exact_events = [
+        event for event in events
+        if event.get("sceneGlobalContextStatus") == "exact"
+    ]
+    scene_global_unavailable_events = [
+        event for event in events
+        if event.get("sceneGlobalContextStatus") == "unavailable"
+    ]
+    scene_global_exact_context_count = sum(
+        sum(
+            context.get("kind") == "sceneGlobalAudioEvent"
+            for context in event.get("contexts") or ()
+            if isinstance(context, dict)
+        )
+        for event in scene_global_exact_events
+    )
+    scene_global_exact_scene_ids = {
+        str(scene_id)
+        for event in scene_global_exact_events
+        for scene_id in event.get("sceneGlobalSceneIds") or ()
+        if str(scene_id)
+    }
 
     # The raw audio index can be reused from an older build and may contain
     # native/static GameParameter names that were produced without this
@@ -13625,6 +13656,10 @@ def build_audio_semantic_data(
                     "sceneEmitterEventRequests", 0
                 )
             ),
+            "sceneGlobalCompactExactEvents": len(scene_global_exact_events),
+            "sceneGlobalCompactExactContexts": scene_global_exact_context_count,
+            "sceneGlobalCompactExactScenes": len(scene_global_exact_scene_ids),
+            "sceneGlobalCompactUnavailableEvents": len(scene_global_unavailable_events),
             "namedEvents": len(named_event_ids),
             "eventsFoundInWwise": linked_events,
             "wwiseEventObjectHashes": sum(

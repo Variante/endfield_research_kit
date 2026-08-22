@@ -538,6 +538,13 @@ environment, animation, authored component, interaction, or mission narration.
 It may fill an otherwise unknown semantic category only for unambiguous roles
 such as outdoor room tone or an authored ambient emitter; ownership never
 upgrades runtime playback or audibility status.
+Scene-global Event rows also receive a compact attribution only after the
+already merged `scene_backgrounds.py` catalog validates every direct context:
+the complete scene-id and original semantic-role sets are retained, while
+malformed, partial, non-direct, truncated, or out-of-catalog contexts remain
+unavailable with bounded diagnostics. This is authored definition evidence;
+`foundInWwise`, category, runtime activation, branch choice, playback, and
+audibility are unchanged.
 The same module owns the CharacterTable/EnemyTable/EnemyTemplateTable animation
 identity overlay catalog. Persistent rows are authoritative; a malformed Persistent
 layer suppresses that table's identity surface instead of silently falling back

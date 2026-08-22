@@ -234,6 +234,12 @@ definition, not a recovered level instance. Recovering placed scene instances
 requires a structured scene-streaming/instance-relation join. The catalog does
 not infer runtime scene activation, current State/RTPC values, selector choice,
 listener state, playback, or audibility.
+Scene-global Event compact attribution is emitted only after every direct
+scene-global context validates its source/owner shape, exact evidence, runtime
+boundary statuses, and membership in the merged catalog scene set. It retains
+all scene IDs and original semantic-role field names; partial, malformed,
+non-direct, truncated, or out-of-catalog contexts fail closed with bounded
+diagnostics and do not change Event category or `foundInWwise` status.
 Where the authored scene/Event join is available, the catalog still traverses
 matching Wwise Events to possible media leaves. For c35, the mission metadata
 selects `map01_lv001`; `map01_audio` names that scene, and its outdoor room-tone
