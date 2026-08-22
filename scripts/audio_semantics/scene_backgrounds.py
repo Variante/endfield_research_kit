@@ -2288,16 +2288,15 @@ def _streaming_instance_emitter_projection(
         # witnesses.  Do not let a broad path match silently override an
         # explicit component match: that could move an emitter to a different
         # instance/level when the same prefab is placed more than once.
-        component_keys = {
-            tuple(entry.get("identityKey"))
-            for entry in matches
-            if isinstance(entry.get("identityKey"), list)
-        }
-        path_keys = {
-            tuple(entry.get("identityKey"))
-            for entry in path_matches
-            if isinstance(entry.get("identityKey"), list)
-        }
+        def identity_keys(rows: Iterable[dict[str, Any]]) -> set[tuple[Any, ...]]:
+            return {
+                tuple(key)
+                for entry in rows
+                if isinstance((key := entry.get("identityKey")), list)
+            }
+
+        component_keys = identity_keys(matches)
+        path_keys = identity_keys(path_matches)
         if component_keys != path_keys:
             return {
                 "status": "conflictingPrefabInstanceIdentityJoins",
