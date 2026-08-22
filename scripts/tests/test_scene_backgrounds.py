@@ -863,9 +863,23 @@ class SceneBackgroundCatalogTests(unittest.TestCase):
         }
         catalog = {
             "status": "exactPrefabIdentityEntries",
+            "authoritativeContractStatus": "validatedAuthoritative",
+            "schemaVersion": scene_backgrounds.STREAMING_INSTANCE_CONTRACT_VERSION,
+            "sources": [{
+                "path": "recovered/AnimeStudio-cli/StreamingAssets/map_streaming_instances/fixture.json",
+                "levelId": "map01_lv001",
+                "schemaVersion": 2,
+                "prefabIdentityContractStatus": "exact",
+            }],
+            "counts": {
+                "exactPrefabIdentityInstances": 1,
+                "malformedInstances": 0,
+            },
             "entries": [{
                 "levelId": "map01_lv001",
+                "sidecarPath": "recovered/AnimeStudio-cli/StreamingAssets/map_streaming_instances/fixture.json",
                 "prefabIdentity": {"source": "VFS/root/prefab.chk", "pathId": 99},
+                "identityKey": ["assetMap", "root/prefab.chk", 99],
             }],
             "diagnostics": [],
         }
@@ -888,11 +902,25 @@ class SceneBackgroundCatalogTests(unittest.TestCase):
         }
         catalog = {
             "status": "exactPrefabIdentityEntries",
+            "authoritativeContractStatus": "validatedAuthoritative",
+            "schemaVersion": scene_backgrounds.STREAMING_INSTANCE_CONTRACT_VERSION,
+            "sources": [{
+                "path": "recovered/AnimeStudio-cli/StreamingAssets/map_streaming_instances/fixture.json",
+                "levelId": "map01_lv001",
+                "schemaVersion": 2,
+                "prefabIdentityContractStatus": "exact",
+            }],
+            "counts": {
+                "exactPrefabIdentityInstances": 1,
+                "malformedInstances": 0,
+            },
             "entries": [{
                 "levelId": "map01_lv001",
+                "sidecarPath": "recovered/AnimeStudio-cli/StreamingAssets/map_streaming_instances/fixture.json",
                 "prefabSourceAssetPath": "assets/effects/wind.prefab",
                 "prefabAssetPathStatus": "exactUniqueAssetMapContainer",
                 "prefabIdentity": {"source": "VFS/root/prefab.chk", "pathId": 99},
+                "identityKey": ["assetMap", "root/prefab.chk", 99],
             }],
             "diagnostics": [],
         }
@@ -903,14 +931,133 @@ class SceneBackgroundCatalogTests(unittest.TestCase):
         self.assertEqual(exact["levelId"], "map01_lv001")
         catalog["entries"].append({
             "levelId": "map02_lv001",
+            "sidecarPath": "recovered/AnimeStudio-cli/StreamingAssets/map_streaming_instances/fixture.json",
             "prefabSourceAssetPath": "assets/effects/wind.prefab",
             "prefabAssetPathStatus": "exactUniqueAssetMapContainer",
             "prefabIdentity": {"source": "VFS/root/prefab2.chk", "pathId": 100},
+            "identityKey": ["assetMap", "root/prefab2.chk", 100],
         })
+        catalog["counts"]["exactPrefabIdentityInstances"] = 2
         ambiguous = scene_backgrounds._streaming_instance_emitter_projection(
             owner, catalog, ["assets/effects/wind.prefab"]
         )
-        self.assertEqual(ambiguous["status"], "ambiguousPrefabInstanceToLevel")
+        self.assertEqual(ambiguous["status"], "unavailablePrefabIdentity")
+
+    def test_streaming_loader_and_asset_enrichment_produce_authoritative_exact_join(self) -> None:
+        owner = {
+            "serializedFile": "CAB-fixture",
+            "source": "VFS/root/emitter.chk",
+            "sourceOffset": 10,
+            "pathId": 11,
+        }
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            sidecar = (
+                root / "recovered" / "AnimeStudio-cli" / "StreamingAssets"
+                / "map_streaming_instances" / "map01_lv001.json"
+            )
+            sidecar.parent.mkdir(parents=True)
+            sidecar.write_text(json.dumps({
+                "schemaVersion": 2,
+                "levelId": "map01_lv001",
+                "prefabIdentityContract": {"status": "exact"},
+                "instances": [{
+                    "entityId": 7,
+                    "prefabIdentity": {
+                        "status": "exact",
+                        "source": "VFS/root/prefab.chk",
+                        "pathId": 99,
+                    },
+                }],
+            }), encoding="utf-8")
+            asset_map = (
+                root / "recovered" / "AnimeStudio-cli" / "StreamingAssets"
+                / "maps" / "fixture_assets.json"
+            )
+            asset_map.parent.mkdir(parents=True)
+            asset_map.write_text(self._asset_map_payload({
+                "Name": "GameObject",
+                "Container": "assets/effects/wind.prefab",
+                "Source": "D:/Game/Endfield_Data/StreamingAssets/VFS/root/prefab.chk",
+                "PathID": 99,
+                "Type": "GameObject",
+            }), encoding="utf-8")
+            catalog = scene_backgrounds._load_streaming_instance_identity_catalog(root)
+            enriched = scene_backgrounds._enrich_streaming_instance_asset_paths(
+                root, catalog
+            )
+            projection = scene_backgrounds._streaming_instance_emitter_projection(
+                owner, enriched, ["assets/effects/wind.prefab"]
+            )
+            compact = scene_backgrounds.project_scene_emitter_compact_attribution(
+                [{
+                    "kind": "sceneEmitterAudioEvent",
+                    "semanticRole": "authoredAmbientEmitterCandidate",
+                    "owner": dict(owner),
+                    "eventHash": 123,
+                    "confidence": "direct",
+                    "sceneContainmentStatus": "missingSceneAssetLevelContainment",
+                    "streamingPrefabInstanceStatus": projection["status"],
+                    "streamingPrefabInstanceLevelId": projection["levelId"],
+                    "streamingPrefabInstanceEvidence": projection["entries"],
+                }],
+                {
+                    "status": "validatedPublishedObjectIndex",
+                    "scenes": [{"sceneId": "map01_lv001"}],
+                },
+                enriched,
+            )
+        self.assertEqual(
+            enriched["authoritativeContractStatus"],
+            scene_backgrounds.STREAMING_INSTANCE_AUTHORITATIVE_STATUS,
+        )
+        self.assertEqual(projection["status"], "exactPrefabInstanceToLevel")
+        self.assertEqual(projection["levelId"], "map01_lv001")
+        self.assertEqual(compact["sceneEmitterAttributionStatus"], "exactSceneAttribution")
+        self.assertEqual(compact["sceneEmitterSceneIds"], ["map01_lv001"])
+
+    def test_unavailable_streaming_provider_rejects_exact_looking_entries(self) -> None:
+        owner = {
+            "serializedFile": "CAB-fixture",
+            "source": "VFS/root/emitter.chk",
+            "sourceOffset": 10,
+            "pathId": 11,
+        }
+        catalog = {
+            "schemaVersion": scene_backgrounds.STREAMING_INSTANCE_CONTRACT_VERSION,
+            "status": "unavailablePrefabIdentity",
+            "authoritativeContractStatus": "validatedAuthoritative",
+            "sources": [{
+                "path": "fixture.json",
+                "levelId": "map01_lv001",
+                "schemaVersion": 2,
+                "prefabIdentityContractStatus": "exact",
+            }],
+            "counts": {
+                "exactPrefabIdentityInstances": 1,
+                "malformedInstances": 0,
+            },
+            "entries": [{
+                "levelId": "map01_lv001",
+                "prefabSourceAssetPath": "assets/effects/wind.prefab",
+                "prefabAssetPathStatus": "exactUniqueAssetMapContainer",
+                "prefabIdentity": {
+                    "source": "VFS/root/prefab.chk",
+                    "pathId": 99,
+                },
+                "identityKey": ["assetMap", "root/prefab.chk", 99],
+            }],
+            "diagnostics": [],
+        }
+        catalog["status"] = "unavailablePrefabIdentity"
+        projection = scene_backgrounds._streaming_instance_emitter_projection(
+            owner, catalog, ["assets/effects/wind.prefab"]
+        )
+        self.assertEqual(projection["status"], "unavailablePrefabIdentity")
+        self.assertTrue(any(
+            row.get("reason") == "providerContractNotValidatedAuthoritative"
+            for row in projection["diagnostics"]
+        ))
 
     def test_streaming_prefab_identity_resolves_full_asset_map_container_path(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -929,6 +1076,18 @@ class SceneBackgroundCatalogTests(unittest.TestCase):
             }), encoding="utf-8")
             catalog = {
                 "status": "exactPrefabIdentityEntries",
+                "authoritativeContractStatus": "validatedAuthoritative",
+                "schemaVersion": scene_backgrounds.STREAMING_INSTANCE_CONTRACT_VERSION,
+                "sources": [{
+                    "path": "fixture.json",
+                    "levelId": "map01_lv001",
+                    "schemaVersion": 2,
+                    "prefabIdentityContractStatus": "exact",
+                }],
+                "counts": {
+                    "exactPrefabIdentityInstances": 1,
+                    "malformedInstances": 0,
+                },
                 "entries": [{
                     "levelId": "map01_lv001",
                     "prefabIdentity": {
@@ -936,6 +1095,7 @@ class SceneBackgroundCatalogTests(unittest.TestCase):
                         "source": "VFS/root/prefab.chk",
                         "pathId": 99,
                     },
+                    "identityKey": ["assetMap", "root/prefab.chk", 99],
                 }],
                 "diagnostics": [],
             }
@@ -1213,6 +1373,435 @@ class SceneGlobalCompactAttributionTests(unittest.TestCase):
         )
         self.assertEqual(result["sceneGlobalContextStatus"], "unavailable")
         self.assertNotIn("sceneGlobalSceneIds", result)
+
+
+class SceneEmitterCompactAttributionTests(unittest.TestCase):
+    CATALOG = {
+        "status": "validatedPublishedObjectIndex",
+        "scenes": [
+            {"sceneId": "map01_lv001"},
+            {"sceneId": "map02_lv002"},
+        ],
+    }
+    OWNER = {
+        "serializedFile": "CAB-emitter",
+        "source": "VFS/emitter.chk",
+        "sourceOffset": 10,
+        "pathId": 7,
+    }
+
+    @classmethod
+    def context(cls, **overrides: object) -> dict:
+        context = {
+            "kind": "sceneEmitterAudioEvent",
+            "semanticRole": "authoredAmbientEmitterCandidate",
+            "owner": dict(cls.OWNER),
+            "eventHash": 123,
+            "confidence": "direct",
+            "sceneContainmentStatus": "prefabLocalNotSceneContained",
+            "streamingPrefabInstanceStatus": "unavailablePrefabIdentity",
+        }
+        context.update(overrides)
+        return context
+
+    @classmethod
+    def exact_scene_context(
+        cls,
+        scene_id: str = "map01_lv001",
+        **overrides: object,
+    ) -> dict:
+        context = cls.context(
+            sceneContainmentStatus="exactSceneAssetLevelContainment",
+            sceneId=scene_id,
+            sourceName=f"{scene_id}.unity",
+            sourcePath=f"Assets/Scenes/{scene_id}.unity",
+            sceneContainmentEvidence={
+                "kind": "exactSceneAssetLevelContainment",
+                "relation": "explicitObjectIdentityToSceneAssetLevel",
+                "identity": dict(cls.OWNER),
+                "containmentType": "SceneAsset",
+            },
+        )
+        context.update(overrides)
+        return context
+
+    @classmethod
+    def exact_streaming_catalog(cls, level_id: str = "map02_lv002") -> dict:
+        return {
+            "schemaVersion": scene_backgrounds.STREAMING_INSTANCE_CONTRACT_VERSION,
+            "status": "exactPrefabIdentityEntries",
+            "authoritativeContractStatus": "validatedAuthoritative",
+            "sources": [{
+                "path": "recovered/AnimeStudio-cli/StreamingAssets/map_streaming_instances/map.json",
+                "levelId": level_id,
+                "schemaVersion": 2,
+                "prefabIdentityContractStatus": "exact",
+            }],
+            "counts": {
+                "exactPrefabIdentityInstances": 1,
+                "malformedInstances": 0,
+            },
+            "entries": [{
+                "levelId": level_id,
+                "sidecarPath": "recovered/AnimeStudio-cli/StreamingAssets/map_streaming_instances/map.json",
+                "prefabIdentity": {
+                    "source": "VFS/root/prefab.chk",
+                    "pathId": 19,
+                },
+                "identityKey": ["assetMap", "root/prefab.chk", 19],
+            }],
+            "diagnostics": [],
+        }
+
+    def test_current_prefab_local_negative_projection_is_compact_and_non_exact(self) -> None:
+        result = scene_backgrounds.project_scene_emitter_compact_attribution(
+            [self.context(), self.context(owner={**self.OWNER, "pathId": 8})],
+            self.CATALOG,
+        )
+        self.assertEqual(
+            result["sceneEmitterAttributionStatus"],
+            "prefabLocalSceneUnresolved",
+        )
+        self.assertEqual(
+            result["sceneEmitterSceneContainmentStatuses"],
+            ["prefabLocalNotSceneContained"],
+        )
+        self.assertEqual(
+            result["sceneEmitterStreamingPrefabIdentityStatuses"],
+            ["unavailablePrefabIdentity"],
+        )
+        self.assertNotIn("sceneEmitterSceneIds", result)
+
+    def test_exact_scene_containment_is_the_only_scene_id_from_scene_side(self) -> None:
+        result = scene_backgrounds.project_scene_emitter_compact_attribution(
+            [self.exact_scene_context()],
+            self.CATALOG,
+        )
+        self.assertEqual(result["sceneEmitterAttributionStatus"], "exactSceneAttribution")
+        self.assertEqual(result["sceneEmitterSceneIds"], ["map01_lv001"])
+
+    def test_real_containment_producer_shape_promotes_through_projector(self) -> None:
+        raw_index = {"entries": [{
+            "identity": dict(self.OWNER),
+            "sceneId": "map01_lv001",
+            "sourceName": "map01_lv001.unity",
+            "sourcePath": "Assets/Scenes/map01_lv001.unity",
+            "containmentType": "SceneAsset",
+        }]}
+        normalized, diagnostics = scene_backgrounds._normalise_scene_containment_index(
+            raw_index
+        )
+        containment = scene_backgrounds._resolve_scene_emitter_containment(
+            self.OWNER,
+            None,
+            normalized,
+            index_diagnostics=diagnostics,
+        )
+        produced_context = scene_backgrounds._event_context(
+            source="StreamingAssets",
+            owner=dict(self.OWNER),
+            role="authoredAmbientEmitterCandidate",
+            event_hash=123,
+            kind="sceneEmitterAudioEvent",
+            scene_containment=containment,
+        )
+        produced_context["streamingPrefabInstanceStatus"] = "unavailablePrefabIdentity"
+        result = scene_backgrounds.project_scene_emitter_compact_attribution(
+            [produced_context], self.CATALOG
+        )
+        self.assertEqual(containment["status"], "exactSceneAssetLevelContainment")
+        self.assertEqual(
+            produced_context["sceneContainmentEvidence"],
+            containment["sceneContainmentEvidence"],
+        )
+        self.assertEqual(result["sceneEmitterAttributionStatus"], "exactSceneAttribution")
+        self.assertEqual(result["sceneEmitterSceneIds"], ["map01_lv001"])
+
+    def test_missing_or_malformed_containment_evidence_never_promotes(self) -> None:
+        for evidence in (None, {}, {
+            "kind": "exactSceneAssetLevelContainment",
+            "relation": "explicitObjectIdentityToSceneAssetLevel",
+            "identity": {**self.OWNER, "pathId": 999},
+            "containmentType": "SceneAsset",
+        }):
+            with self.subTest(evidence=evidence):
+                context = self.exact_scene_context(
+                    sceneContainmentEvidence=evidence,
+                )
+                result = scene_backgrounds.project_scene_emitter_compact_attribution(
+                    [context], self.CATALOG
+                )
+                self.assertEqual(
+                    result["sceneEmitterAttributionStatus"],
+                    "sceneEmitterAttributionUnavailable",
+                )
+                self.assertNotIn("sceneEmitterSceneIds", result)
+
+    def test_exact_prefab_identity_is_required_before_streaming_level_promotion(self) -> None:
+        result = scene_backgrounds.project_scene_emitter_compact_attribution(
+            [self.context(
+                sceneContainmentStatus="missingSceneAssetLevelContainment",
+                streamingPrefabInstanceStatus="exactPrefabInstanceToLevel",
+                streamingPrefabInstanceLevelId="map02_lv002",
+                streamingPrefabInstanceEvidence=[{
+                    "levelId": "map02_lv002",
+                    "sidecarPath": "recovered/AnimeStudio-cli/StreamingAssets/map_streaming_instances/map.json",
+                    "prefabIdentity": {"source": "VFS/root/prefab.chk", "pathId": 19},
+                    "identityKey": ["assetMap", "root/prefab.chk", 19],
+                }],
+            )],
+            self.CATALOG,
+            self.exact_streaming_catalog(),
+        )
+        self.assertEqual(result["sceneEmitterAttributionStatus"], "exactSceneAttribution")
+        self.assertEqual(result["sceneEmitterSceneIds"], ["map02_lv002"])
+
+    def test_exact_prefab_compact_promotion_rejects_malformed_provider_contract(self) -> None:
+        catalog = self.exact_streaming_catalog()
+        catalog.pop("authoritativeContractStatus")
+        result = scene_backgrounds.project_scene_emitter_compact_attribution(
+            [self.context(
+                sceneContainmentStatus="missingSceneAssetLevelContainment",
+                streamingPrefabInstanceStatus="exactPrefabInstanceToLevel",
+                streamingPrefabInstanceLevelId="map02_lv002",
+                streamingPrefabInstanceEvidence=[{
+                    "levelId": "map02_lv002",
+                    "prefabIdentity": {
+                        "source": "VFS/root/prefab.chk",
+                        "pathId": 19,
+                    },
+                    "identityKey": ["assetMap", "root/prefab.chk", 19],
+                }],
+            )],
+            self.CATALOG,
+            catalog,
+        )
+        self.assertEqual(
+            result["sceneEmitterAttributionStatus"],
+            "sceneEmitterAttributionUnavailable",
+        )
+        self.assertNotIn("sceneEmitterSceneIds", result)
+        self.assertTrue(any(
+            row.get("reason") == "streamingPrefabIdentityCatalogUnavailable"
+            for row in result["sceneEmitterAttributionDiagnostics"]
+        ))
+
+    def test_exact_catalog_requires_canonical_sidecar_provenance(self) -> None:
+        catalog = self.exact_streaming_catalog()
+        catalog["entries"][0].pop("sidecarPath")
+        result = scene_backgrounds.project_scene_emitter_compact_attribution(
+            [self.context(
+                sceneContainmentStatus="missingSceneAssetLevelContainment",
+                streamingPrefabInstanceStatus="exactPrefabInstanceToLevel",
+                streamingPrefabInstanceLevelId="map02_lv002",
+                streamingPrefabInstanceEvidence=[{
+                    "levelId": "map02_lv002",
+                    "sidecarPath": "recovered/AnimeStudio-cli/StreamingAssets/map_streaming_instances/map.json",
+                    "prefabIdentity": {
+                        "source": "VFS/root/prefab.chk",
+                        "pathId": 19,
+                    },
+                    "identityKey": ["assetMap", "root/prefab.chk", 19],
+                }],
+            )],
+            self.CATALOG,
+            catalog,
+        )
+        self.assertEqual(
+            result["sceneEmitterAttributionStatus"],
+            "sceneEmitterAttributionUnavailable",
+        )
+        self.assertNotIn("sceneEmitterSceneIds", result)
+
+    def test_canonical_sidecar_path_rejects_extra_segments_and_nonterminal_json(self) -> None:
+        canonical = "recovered/AnimeStudio-cli/StreamingAssets/map_streaming_instances/map.json"
+        self.assertEqual(
+            scene_backgrounds._canonical_streaming_sidecar_path(canonical),
+            canonical,
+        )
+        for path in (
+            "recovered/AnimeStudio-cli/StreamingAssets/map_streaming_instances/nested/map.json",
+            "recovered/AnimeStudio-cli/StreamingAssets/map_streaming_instances/map.json/",
+            "recovered/AnimeStudio-cli/StreamingAssets/map_streaming_instances/./map.json",
+            "recovered/AnimeStudio-cli/StreamingAssets/map_streaming_instances/map.json.bak",
+        ):
+            with self.subTest(path=path):
+                self.assertIsNone(
+                    scene_backgrounds._canonical_streaming_sidecar_path(path)
+                )
+
+    def test_same_sidecar_path_for_multiple_levels_blocks_authoritative_catalog(self) -> None:
+        catalog = self.exact_streaming_catalog()
+        catalog["sources"].append({
+            "path": catalog["sources"][0]["path"],
+            "levelId": "map03_lv003",
+            "schemaVersion": 2,
+            "prefabIdentityContractStatus": "exact",
+        })
+        duplicate = dict(catalog["entries"][0])
+        duplicate["levelId"] = "map03_lv003"
+        catalog["entries"].append(duplicate)
+        catalog["counts"]["exactPrefabIdentityInstances"] = 2
+        result = scene_backgrounds.project_scene_emitter_compact_attribution(
+            [self.context(
+                sceneContainmentStatus="missingSceneAssetLevelContainment",
+                streamingPrefabInstanceStatus="exactPrefabInstanceToLevel",
+                streamingPrefabInstanceLevelId="map02_lv002",
+                streamingPrefabInstanceEvidence=[catalog["entries"][0]],
+            )],
+            self.CATALOG,
+            catalog,
+        )
+        self.assertEqual(
+            result["sceneEmitterAttributionStatus"],
+            "sceneEmitterAttributionUnavailable",
+        )
+        self.assertNotIn("sceneEmitterSceneIds", result)
+
+    def test_exact_prefab_evidence_must_join_catalog_identity_and_level(self) -> None:
+        for catalog, evidence in (
+            (
+                self.exact_streaming_catalog("map03_lv003"),
+                [{
+                    "levelId": "map02_lv002",
+                    "prefabIdentity": {
+                        "source": "VFS/root/prefab.chk",
+                        "pathId": 19,
+                    },
+                    "identityKey": ["assetMap", "root/prefab.chk", 19],
+                }],
+            ),
+            (
+                self.exact_streaming_catalog(),
+                [{
+                    "levelId": "map02_lv002",
+                    "prefabIdentity": {
+                        "source": "VFS/root/missing.chk",
+                        "pathId": 999,
+                    },
+                    "identityKey": ["assetMap", "root/missing.chk", 999],
+                }],
+            ),
+            (
+                self.exact_streaming_catalog(),
+                [{
+                    "levelId": "map02_lv002",
+                    "sidecarPath": "other-sidecar.json",
+                    "prefabIdentity": {
+                        "source": "VFS/root/prefab.chk",
+                        "pathId": 19,
+                    },
+                    "identityKey": ["assetMap", "root/prefab.chk", 19],
+                }],
+            ),
+        ):
+            with self.subTest(catalog=catalog, evidence=evidence):
+                result = scene_backgrounds.project_scene_emitter_compact_attribution(
+                    [self.context(
+                        sceneContainmentStatus="missingSceneAssetLevelContainment",
+                        streamingPrefabInstanceStatus="exactPrefabInstanceToLevel",
+                        streamingPrefabInstanceLevelId="map02_lv002",
+                        streamingPrefabInstanceEvidence=evidence,
+                    )],
+                    self.CATALOG,
+                    catalog,
+                )
+                self.assertEqual(
+                    result["sceneEmitterAttributionStatus"],
+                    "sceneEmitterAttributionUnavailable",
+                )
+                self.assertNotIn("sceneEmitterSceneIds", result)
+
+    def test_duplicate_catalog_identity_blocks_exact_promotion(self) -> None:
+        catalog = self.exact_streaming_catalog()
+        duplicate = dict(catalog["entries"][0])
+        catalog["entries"].append(duplicate)
+        catalog["counts"]["exactPrefabIdentityInstances"] = 2
+        result = scene_backgrounds.project_scene_emitter_compact_attribution(
+            [self.context(
+                sceneContainmentStatus="missingSceneAssetLevelContainment",
+                streamingPrefabInstanceStatus="exactPrefabInstanceToLevel",
+                streamingPrefabInstanceLevelId="map02_lv002",
+                streamingPrefabInstanceEvidence=[duplicate],
+            )],
+            self.CATALOG,
+            catalog,
+        )
+        self.assertEqual(
+            result["sceneEmitterAttributionStatus"],
+            "sceneEmitterAttributionUnavailable",
+        )
+        self.assertNotIn("sceneEmitterSceneIds", result)
+
+    def test_candidate_only_path_position_and_sidecar_level_do_not_make_scene_id(self) -> None:
+        result = scene_backgrounds.project_scene_emitter_compact_attribution(
+            [self.context(
+                sceneContainmentStatus="sceneAssetContainerWithoutAuthoritativeSceneId",
+                streamingPrefabInstanceStatus="unavailablePrefabIdentity",
+                streamingPrefabInstanceLevelId="map03_lv003",
+                sourceAssetPath="Assets/Scenes/map03_lv003.unity",
+                placement={"worldPosition": {"x": 1, "y": 2, "z": 3}},
+                sceneContainmentDiagnostics=[{
+                    "candidates": [{"sourceAssetPath": "Assets/Scenes/map03_lv003.unity"}],
+                }],
+            )],
+            self.CATALOG,
+        )
+        self.assertEqual(result["sceneEmitterAttributionStatus"], "sceneEmitterAttributionUnavailable")
+        self.assertNotIn("sceneEmitterSceneIds", result)
+
+    def test_mixed_exact_scene_and_prefab_attributions_fail_closed(self) -> None:
+        result = scene_backgrounds.project_scene_emitter_compact_attribution(
+            [
+                self.context(
+                    **self.exact_scene_context(),
+                ),
+                self.context(
+                    sceneContainmentStatus="missingSceneAssetLevelContainment",
+                    streamingPrefabInstanceStatus="exactPrefabInstanceToLevel",
+                    streamingPrefabInstanceLevelId="map02_lv002",
+                    streamingPrefabInstanceEvidence=[{
+                        "levelId": "map02_lv002",
+                        "sidecarPath": "recovered/AnimeStudio-cli/StreamingAssets/map_streaming_instances/map.json",
+                        "prefabIdentity": {"source": "VFS/root/prefab.chk", "pathId": 19},
+                        "identityKey": ["assetMap", "root/prefab.chk", 19],
+                    }],
+                ),
+            ],
+            self.CATALOG,
+            self.exact_streaming_catalog(),
+        )
+        self.assertEqual(result["sceneEmitterAttributionStatus"], "sceneEmitterAttributionConflict")
+        self.assertNotIn("sceneEmitterSceneIds", result)
+
+    def test_exact_owner_mixed_with_unresolved_owner_fails_closed(self) -> None:
+        result = scene_backgrounds.project_scene_emitter_compact_attribution(
+            [
+                self.context(
+                    **self.exact_scene_context(),
+                ),
+                self.context(owner={**self.OWNER, "pathId": 8}),
+            ],
+            self.CATALOG,
+        )
+        self.assertEqual(result["sceneEmitterAttributionStatus"], "sceneEmitterAttributionConflict")
+        self.assertNotIn("sceneEmitterSceneIds", result)
+
+    def test_malformed_or_non_direct_context_is_unavailable_with_bounded_diagnostics(self) -> None:
+        result = scene_backgrounds.project_scene_emitter_compact_attribution(
+            [None, self.context(confidence="inferred"), self.context(owner={})],
+            self.CATALOG,
+        )
+        self.assertEqual(result["sceneEmitterAttributionStatus"], "sceneEmitterAttributionUnavailable")
+        self.assertNotIn("sceneEmitterSceneIds", result)
+        self.assertLessEqual(
+            len(result["sceneEmitterAttributionDiagnostics"]),
+            scene_backgrounds.SCENE_EMITTER_COMPACT_DIAGNOSTIC_LIMIT,
+        )
+        self.assertGreaterEqual(
+            result["sceneEmitterAttributionDiagnosticCount"],
+            len(result["sceneEmitterAttributionDiagnostics"]),
+        )
 
 
 class PublishedObjectIndexGateTests(unittest.TestCase):

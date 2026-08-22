@@ -240,6 +240,13 @@
       sceneGlobalSceneIds: "Authored scene IDs",
       sceneGlobalSemanticRoles: "Scene-global semantic roles",
       sceneGlobalContextStatus: "Scene-global context status",
+      sceneEmitterSceneIds: "Exact emitter scene IDs",
+      sceneEmitterSceneContainmentStatuses: "Emitter scene-containment statuses",
+      sceneEmitterStreamingPrefabIdentityStatuses: "Emitter prefab-identity statuses",
+      sceneEmitterAttributionStatus: "Emitter attribution status",
+      contextSceneEmitterPrefabLocal: "Prefab-local emitter; scene unresolved",
+      contextSceneEmitterUnavailable: "Scene-emitter attribution unavailable",
+      contextSceneEmitterExact: "Exact scene-emitter attribution",
       contextScripted: "LevelScript",
       contextLevelScriptTrigger: "Scripted audio trigger",
       contextRadioTrigger: "Exact LevelScript radio trigger",
@@ -532,6 +539,13 @@
       sceneGlobalSceneIds: "\u521b\u5efa\u7684\u573a\u666f ID",
       sceneGlobalSemanticRoles: "\u573a\u666f\u5168\u5c40\u8bed\u4e49\u89d2\u8272",
       sceneGlobalContextStatus: "\u573a\u666f\u5168\u5c40\u4e0a\u4e0b\u6587\u72b6\u6001",
+      sceneEmitterSceneIds: "\u7cbe\u786e\u53d1\u5c04\u5668\u573a\u666f ID",
+      sceneEmitterSceneContainmentStatuses: "\u53d1\u5c04\u5668\u573a\u666f\u5305\u542b\u72b6\u6001",
+      sceneEmitterStreamingPrefabIdentityStatuses: "\u53d1\u5c04\u5668 Prefab \u8eab\u4efd\u72b6\u6001",
+      sceneEmitterAttributionStatus: "\u53d1\u5c04\u5668\u5f52\u5c5e\u72b6\u6001",
+      contextSceneEmitterPrefabLocal: "Prefab \u672c\u5730\u53d1\u5c04\u5668\uff1b\u573a\u666f\u672a\u89e3\u6790",
+      contextSceneEmitterUnavailable: "\u573a\u666f\u53d1\u5c04\u5668\u5f52\u5c5e\u4e0d\u53ef\u7528",
+      contextSceneEmitterExact: "\u7cbe\u786e\u573a\u666f\u53d1\u5c04\u5668\u5f52\u5c5e",
       contextScripted: "LevelScript \u811a\u672c",
       contextLevelScriptTrigger: "\u811a\u672c\u97f3\u9891\u89e6\u53d1",
       contextRadioTrigger: "\u7cbe\u786e LevelScript \u65e0\u7ebf\u7535\u89e6\u53d1",
@@ -843,6 +857,9 @@
     sceneAudio: "contextSceneAudio",
     sceneGlobalExact: "contextSceneGlobalExact",
     sceneGlobalUnavailable: "contextSceneGlobalUnavailable",
+    sceneEmitterPrefabLocal: "contextSceneEmitterPrefabLocal",
+    sceneEmitterUnavailable: "contextSceneEmitterUnavailable",
+    sceneEmitterExact: "contextSceneEmitterExact",
     sharedPlayableAnimation: "contextSharedPlayableAnimation",
     footstepSystem: "contextFootstepSystem",
     ownerUnresolvedAnimation: "contextOwnerUnresolvedAnimation",
@@ -982,6 +999,15 @@
       && asArray(record?.sceneGlobalSemanticRoles).length) {
       tags.add("sceneGlobalExact");
     }
+    if (record?.sceneEmitterAttributionStatus === "prefabLocalSceneUnresolved") {
+      tags.add("sceneEmitterPrefabLocal");
+    } else if (record?.sceneEmitterAttributionStatus === "exactSceneAttribution"
+      && asArray(record?.sceneEmitterSceneIds).length) {
+      tags.add("sceneEmitterExact");
+    } else if (record?.sceneEmitterAttributionStatus
+      && record.sceneEmitterAttributionStatus !== "exactSceneAttribution") {
+      tags.add("sceneEmitterUnavailable");
+    }
     if (exactNpcAnimationOwner) {
       tags.add("npcAnimation");
       tags.add("animationCallbackNpcOwner");
@@ -1057,6 +1083,7 @@
       const inheritedMediaTags = new Set([
         "gameplay", "cutscene", "timeline", "animation", "sceneAudio", "scripted", "authoredConfig", "managedRuntime", "luaRuntime", "wwiseObjectOnly",
         "sharedPlayableAnimation", "footstepSystem", "ownerUnresolvedAnimation", "npcAnimation", "animationCallbackNpcOwner", "levelScriptTrigger", "radioTrigger", "projectileTrigger", "spawnerPreWarnTrigger", "npcPatrolTrigger", "characterInteraction", "physicsEnvironment", "modelViewState", "componentAudioId", "interactiveTrigger", "globalLifecycle", "audioCueTrigger", "snsVoice",
+        "sceneEmitterPrefabLocal", "sceneEmitterUnavailable",
       ]);
       for (const eventId of asArray(record?.eventIds)) {
         for (const tag of state.eventTaxonomyById.get(normalizeLower(eventId)) || []) {
@@ -1127,6 +1154,11 @@
       if (sceneIds.length) parts.push(`${t("sceneGlobalSceneIds")}: ${sceneIds.join(" / ")}`);
       if (roles.length) parts.push(`${t("sceneGlobalSemanticRoles")}: ${roles.join(" / ")}`);
     }
+    if (kind === "events" && record.sceneEmitterAttributionStatus) {
+      parts.push(`${t("sceneEmitterAttributionStatus")}: ${humanize(record.sceneEmitterAttributionStatus)}`);
+      const sceneIds = asArray(record.sceneEmitterSceneIds).filter(Boolean);
+      if (sceneIds.length) parts.push(`${t("sceneEmitterSceneIds")}: ${sceneIds.join(" / ")}`);
+    }
     const relations = asArray(taxonomy.relationTags);
     if (relations.length) parts.push(relations.slice(0, 2).map(taxonomyLabel).join(" + "));
     const purposeTag = purposeRecoveryTag(record);
@@ -1165,6 +1197,10 @@
       ...asArray(record?.coarseOwnershipSceneIds), ...asArray(record?.coarseOwnershipEvidence),
       ...asArray(record?.sceneGlobalSceneIds), ...asArray(record?.sceneGlobalSemanticRoles),
       record?.sceneGlobalContextStatus,
+      ...asArray(record?.sceneEmitterSceneIds),
+      ...asArray(record?.sceneEmitterSceneContainmentStatuses),
+      ...asArray(record?.sceneEmitterStreamingPrefabIdentityStatuses),
+      record?.sceneEmitterAttributionStatus,
       ...asArray(record?.animationActionEventIds), ...asArray(record?.animationActionMatchingClips),
       ...asArray(record?.animationActionOwnerIds), record?.animationActionNameMatchStatus,
       record?.animationActionNameMatchEvidence,
@@ -3116,6 +3152,15 @@
         diagnostic && typeof diagnostic === "object" ? [diagnostic.reason || diagnostic.status].filter(Boolean) : []
       ));
       if (streamingDiagnostics.length) parts.push(`streaming diagnostics ${streamingDiagnostics.slice(0, 4).join(" / ")}`);
+      if (context?.sceneContainmentStatus === "prefabLocalNotSceneContained"
+        && context?.streamingPrefabInstanceStatus === "unavailablePrefabIdentity") {
+        parts.push("prefab-local emitter; scene unresolved; prefab identity unavailable");
+      } else if (context?.sceneContainmentStatus !== "exactSceneAssetLevelContainment"
+        && context?.streamingPrefabInstanceStatus !== "exactPrefabInstanceToLevel") {
+        parts.push("scene unresolved; prefab identity unavailable");
+      } else {
+        parts.push("exact scene attribution; runtime scene activation unobserved");
+      }
       parts.push("authored prefab component / runtime scene instantiation unobserved");
     }
     if (kind === "sceneGlobalAudioEvent") {
@@ -4822,6 +4867,15 @@
           [t("sceneGlobalSceneIds"), asArray(raw.sceneGlobalSceneIds).join(" / ")],
           [t("sceneGlobalSemanticRoles"), asArray(raw.sceneGlobalSemanticRoles).join(" / ")],
           ["Scene-global diagnostics", asArray(raw.sceneGlobalContextDiagnostics)
+            .map((diagnostic) => diagnostic && typeof diagnostic === "object"
+              ? (diagnostic.reason || diagnostic.status || "diagnostic")
+              : diagnostic)
+            .filter(Boolean).join(" / ")],
+          [t("sceneEmitterAttributionStatus"), humanize(raw.sceneEmitterAttributionStatus || "")],
+          [t("sceneEmitterSceneIds"), asArray(raw.sceneEmitterSceneIds).join(" / ")],
+          [t("sceneEmitterSceneContainmentStatuses"), asArray(raw.sceneEmitterSceneContainmentStatuses).join(" / ")],
+          [t("sceneEmitterStreamingPrefabIdentityStatuses"), asArray(raw.sceneEmitterStreamingPrefabIdentityStatuses).join(" / ")],
+          ["Scene-emitter diagnostics", asArray(raw.sceneEmitterAttributionDiagnostics)
             .map((diagnostic) => diagnostic && typeof diagnostic === "object"
               ? (diagnostic.reason || diagnostic.status || "diagnostic")
               : diagnostic)

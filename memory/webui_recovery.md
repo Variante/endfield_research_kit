@@ -167,6 +167,13 @@ handler/indirect dispatch, runtime variable values, cue execution, Wwise branch
 selection, and audibility remain runtime-blocked and are not presented as
 observed facts.
 
+Scene-emitter cards and details now show compact containment/prefab-identity
+status sets. The current offline result is visibly a prefab-local static
+emitter with scene unresolved and prefab identity unavailable, never an exact
+scene tag. The recovery queue remains blocked on a future exact
+SceneAsset/Level containment or prefab Source+PathID-to-level relation; names,
+candidate paths, positions, and sidecar level IDs remain non-evidence.
+
 Scene-global Event summaries and cards expose all exact authored scene IDs and
 original semantic-role names only when every direct context passes the merged
 scene-catalog gate. Search and context filters use that same exact status;

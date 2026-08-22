@@ -107,7 +107,7 @@ PROJECTILE_SOUND_PHASES = {
 # authoritative value; these names are presentation labels, not a claim that
 # selection behavior was evaluated offline.
 SELECTION_HIRC_TYPES = frozenset({5, 6, 12, 13})
-AUDIO_SEMANTIC_SCHEMA_VERSION = 130
+AUDIO_SEMANTIC_SCHEMA_VERSION = 131
 TRIGGER_CONTEXT_SCHEMA_VERSION = 39
 
 MONO_BEHAVIOUR_AUDIO_EVENT_FIELD_NAMES = frozenset({
@@ -13149,6 +13149,11 @@ def build_audio_semantic_data(
             scene_background_semantics,
             contexts_truncated=event.get("contextsTruncated") is not False,
         ))
+        event.update(scene_backgrounds.project_scene_emitter_compact_attribution(
+            event.get("contexts") or [],
+            scene_background_semantics,
+            scene_background_semantics.get("streamingInstanceCatalog"),
+        ))
     # Full AudioCue ASTs are detail-only.  Event list rows remain compact;
     # ``event_summary`` intentionally does not project this payload.
     for event in events:
@@ -13562,6 +13567,27 @@ def build_audio_semantic_data(
         for scene_id in event.get("sceneGlobalSceneIds") or ()
         if str(scene_id)
     }
+    scene_emitter_exact_events = [
+        event for event in events
+        if event.get("sceneEmitterAttributionStatus") == "exactSceneAttribution"
+    ]
+    scene_emitter_prefab_local_events = [
+        event for event in events
+        if event.get("sceneEmitterAttributionStatus") == "prefabLocalSceneUnresolved"
+    ]
+    scene_emitter_unavailable_events = [
+        event for event in events
+        if event.get("sceneEmitterAttributionStatus") in {
+            "sceneEmitterAttributionUnavailable",
+            "sceneEmitterAttributionConflict",
+        }
+    ]
+    scene_emitter_exact_scene_ids = {
+        str(scene_id)
+        for event in scene_emitter_exact_events
+        for scene_id in event.get("sceneEmitterSceneIds") or ()
+        if str(scene_id)
+    }
 
     # The raw audio index can be reused from an older build and may contain
     # native/static GameParameter names that were produced without this
@@ -13660,6 +13686,10 @@ def build_audio_semantic_data(
             "sceneGlobalCompactExactContexts": scene_global_exact_context_count,
             "sceneGlobalCompactExactScenes": len(scene_global_exact_scene_ids),
             "sceneGlobalCompactUnavailableEvents": len(scene_global_unavailable_events),
+            "sceneEmitterCompactExactEvents": len(scene_emitter_exact_events),
+            "sceneEmitterCompactExactScenes": len(scene_emitter_exact_scene_ids),
+            "sceneEmitterCompactPrefabLocalEvents": len(scene_emitter_prefab_local_events),
+            "sceneEmitterCompactUnavailableEvents": len(scene_emitter_unavailable_events),
             "namedEvents": len(named_event_ids),
             "eventsFoundInWwise": linked_events,
             "wwiseEventObjectHashes": sum(

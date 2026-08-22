@@ -248,6 +248,18 @@ def event_summary_row(row: dict[str, Any], detail_shard: str) -> dict[str, Any]:
     )
     if row.get("sceneGlobalContextStatus"):
         context_search.add(str(row["sceneGlobalContextStatus"]))
+    context_search.update(
+        str(value)
+        for key in (
+            "sceneEmitterSceneContainmentStatuses",
+            "sceneEmitterStreamingPrefabIdentityStatuses",
+            "sceneEmitterSceneIds",
+        )
+        for value in row.get(key) or ()
+        if value not in (None, "")
+    )
+    if row.get("sceneEmitterAttributionStatus"):
+        context_search.add(str(row["sceneEmitterAttributionStatus"]))
     media = row.get("media") or []
     scopes = sorted({str(value.get("audioScope") or value.get("storageRoot") or "") for value in media if value.get("audioScope") or value.get("storageRoot")})
     banks = sorted({str(value.get("bankPackage") or "") for evidence in media for value in evidence.get("wwiseMediaEvidence") or [] if value.get("bankPackage")})
@@ -296,6 +308,8 @@ def event_summary_row(row: dict[str, Any], detail_shard: str) -> dict[str, Any]:
         "audioLibraryMediaPurposeHintStatus",
         "contextStoredCount", "contextsTruncated",
         "sceneGlobalSceneIds", "sceneGlobalSemanticRoles", "sceneGlobalContextStatus",
+        "sceneEmitterSceneIds", "sceneEmitterSceneContainmentStatuses",
+        "sceneEmitterStreamingPrefabIdentityStatuses", "sceneEmitterAttributionStatus",
         "playableCharacterAnimationOwnerCount", "enemyAnimationOwnerCount",
         "animationContextScope", "animationFunctions", "customFootstepOccurrenceCount",
         "animationActionNameMatchStatus", "animationActionMatchingClips",

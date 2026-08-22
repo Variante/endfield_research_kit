@@ -538,6 +538,12 @@ environment, animation, authored component, interaction, or mission narration.
 It may fill an otherwise unknown semantic category only for unambiguous roles
 such as outdoor room tone or an authored ambient emitter; ownership never
 upgrades runtime playback or audibility status.
+Scene-emitter Event rows also publish compact containment and prefab-identity
+status sets. The current valid negative contract is prefab-local/static-authored
+emitter with unresolved scene and unavailable prefab identity; only exact
+SceneAsset/Level containment or an exact prefab Source+PathID evidence row
+joined to one level may publish sceneEmitterSceneIds. Candidate paths, sidecar
+levelId, names, positions, and mixed exact attributions fail closed.
 Scene-global Event rows also receive a compact attribution only after the
 already merged `scene_backgrounds.py` catalog validates every direct context:
 the complete scene-id and original semantic-role sets are retained, while
