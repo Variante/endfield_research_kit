@@ -172,6 +172,12 @@
       characterAudioEvents: "Character audio Events",
       animationCallbackOwners: "Animation callback owners",
       animationCallbackClips: "Animation callback clips",
+      animationCallbackNpcOwners: "NPC callback owners",
+      animationCallbackNpcTemplates: "NPC owner templates",
+      animationCallbackNpcTokens: "NPC actor tokens",
+      animationCallbackNpcOccurrenceOwners: "NPC callback occurrence owners",
+      animationCallbackNpcOccurrenceTemplates: "NPC occurrence templates",
+      animationCallbackNpcOccurrenceTokens: "NPC occurrence actor tokens",
       libraryBankEvent: "Authored Event in the same bank",
       locationDirectDialogMedia: "Direct dialog media",
       locationAuthoredEventContext: "Recovered authored Event context",
@@ -227,6 +233,8 @@
       customFootstepRuntime: "Footstep runtime boundary",
       customFootstepNativeAnchors: "Current-build native anchors",
       contextOwnerUnresolvedAnimation: "Animation owner unresolved",
+      contextNpcAnimation: "NPC animation",
+      contextAnimationCallbackNpcOwner: "Animation callback NPC owner",
       contextScripted: "LevelScript",
       contextLevelScriptTrigger: "Scripted audio trigger",
       contextRadioTrigger: "Exact LevelScript radio trigger",
@@ -451,6 +459,12 @@
       characterAudioEvents: "\u89d2\u8272\u97f3\u9891 Event",
       animationCallbackOwners: "\u52a8\u753b\u56de\u8c03\u5f52\u5c5e",
       animationCallbackClips: "\u52a8\u753b\u56de\u8c03 Clip",
+      animationCallbackNpcOwners: "NPC \u56de\u8c03\u5f52\u5c5e",
+      animationCallbackNpcTemplates: "NPC \u6a21\u677f",
+      animationCallbackNpcTokens: "NPC \u89d2\u8272 token",
+      animationCallbackNpcOccurrenceOwners: "NPC \u56de\u8c03 occurrence \u5f52\u5c5e",
+      animationCallbackNpcOccurrenceTemplates: "NPC occurrence \u6a21\u677f",
+      animationCallbackNpcOccurrenceTokens: "NPC occurrence \u89d2\u8272 token",
       libraryBankEvent: "\u540c\u4e00 bank \u5185\u7684\u521b\u4f5c Event",
       locationDirectDialogMedia: "\u76f4\u63a5\u5bf9\u8bdd\u5a92\u4f53",
       locationAuthoredEventContext: "\u5df2\u6062\u590d\u521b\u4f5c Event \u4e0a\u4e0b\u6587",
@@ -506,6 +520,8 @@
       customFootstepRuntime: "\u811a\u6b65\u8fd0\u884c\u65f6\u8bc1\u636e\u8fb9\u754c",
       customFootstepNativeAnchors: "\u5f53\u524d\u7248\u672c\u539f\u751f\u951a\u70b9",
       contextOwnerUnresolvedAnimation: "\u52a8\u753b\u5f52\u5c5e\u672a\u89e3\u6790",
+      contextNpcAnimation: "NPC \u52a8\u753b",
+      contextAnimationCallbackNpcOwner: "\u52a8\u753b\u56de\u8c03 NPC \u5f52\u5c5e",
       contextScripted: "LevelScript \u811a\u672c",
       contextLevelScriptTrigger: "\u811a\u672c\u97f3\u9891\u89e6\u53d1",
       contextRadioTrigger: "\u7cbe\u786e LevelScript \u65e0\u7ebf\u7535\u89e6\u53d1",
@@ -818,6 +834,8 @@
     sharedPlayableAnimation: "contextSharedPlayableAnimation",
     footstepSystem: "contextFootstepSystem",
     ownerUnresolvedAnimation: "contextOwnerUnresolvedAnimation",
+    npcAnimation: "contextNpcAnimation",
+    animationCallbackNpcOwner: "contextAnimationCallbackNpcOwner",
     scripted: "contextScripted",
     levelScriptTrigger: "contextLevelScriptTrigger",
     radioTrigger: "contextRadioTrigger",
@@ -927,7 +945,7 @@
     if (kind === "cutsceneTimeline") return "cutscene";
     if (kind === "levelSequenceAudio") return "timeline";
     if (kind === "timelineAudioCueBehaviorEvent") return "timeline";
-    if (["characterAnimation", "enemyAnimation", "animationCallbackOwnerUnresolved"].includes(kind)) return "animation";
+    if (["characterAnimation", "enemyAnimation", "animationCallbackOwnerUnresolved", "npcAnimation", "animationCallbackNpcOwner"].includes(kind)) return "animation";
     if (["levelScriptAudioAction", "levelScriptAudioCueBehaviorEvent", "levelScriptRadioTrigger"].includes(kind)) return "scripted";
     if (["table", "tableEventHash", "dialogLifecycle", "interactiveAudioTrigger", "interactiveComponentTrigger", "interactiveComponentPropertyAudio", "interactivePropertyMapAudio", "interactiveTemplateConfigAudio", "interactiveTemplateActionAudio", "interactiveEmbeddedActionAudio", "binaryManagedLiteralCallsite", "nativeCustomStateCallsite", "physicsAudioComponentEvent", "modelViewStateAudioEvent", "modelViewStatePositionAudioEvent", "monoBehaviourAudioIdField", "audioGlobalConfigEvent", "audioGlobalConfigEventHash", "audioCueBehaviorEvent", "audioGlobalMusicCueBehaviorEvent", "spawnerPreWarnAudio", "patrolSubActionPlayAudio", "charInteractAudioEvent", "audioDialogVoiceDefinition", "responsiveDialogVoice", "voiceToneVariant", "voiceDefaultWwiseEvent", "voiceNarratingChannelEvent", "voiceRadioChannelEvent", "audioDialogOverrideWwiseEvent", "responsiveVoiceEventTemplate", "voiceTableWwiseEvent", "uiAnimationOpenEvent", "activityPushPopupBgmEvent", "activityCenterBgmEvent", "uiVideoAudioEvent", "domainRegionSwitchEvent", "domainUpgradeAnimationEvent", "typedUiTableWwiseEvent", "snsVoiceMessageEvent"].includes(kind)) return "authoredConfig";
     if (kind === "binaryManagedLiteral") return "managedRuntime";
@@ -935,8 +953,22 @@
     return "";
   }
 
+  function hasExactNpcAnimationOwner(record) {
+    const ownershipStatus = normalize(record?.animationCallbackOwnershipStatus);
+    const ownerIds = new Set(asArray(record?.animationCallbackNpcOwnerIds).map(normalize).filter(Boolean));
+    if (ownerIds.size !== 1) return false;
+    const resolutionStatuses = asArray(record?.animationCallbackResolutionStatuses).map(normalize).filter(Boolean);
+    if (resolutionStatuses.length) return resolutionStatuses.every((status) => status.startsWith("exactNpc"));
+    return ["exactNpcTableToken", "exactNpcInfoAndTemplateGroup", "exactNpcOwnerAgreement"].includes(ownershipStatus);
+  }
+
   function recordContextTags(record, kind) {
+    const exactNpcAnimationOwner = hasExactNpcAnimationOwner(record);
     const tags = new Set(asArray(record?.contextGroups).filter(Boolean));
+    if (exactNpcAnimationOwner) {
+      tags.add("npcAnimation");
+      tags.add("animationCallbackNpcOwner");
+    }
     if (record?.eventIdentityStatus === "wwiseObjectWithoutRecoveredTriggerName") tags.add("wwiseObjectOnly");
     const addContextKindTags = (contextKind) => {
       if (contextKind === "projectileSoundField") tags.add("projectileTrigger");
@@ -957,7 +989,16 @@
       if (["voiceDefaultWwiseEvent", "voiceNarratingChannelEvent", "voiceRadioChannelEvent", "audioDialogOverrideWwiseEvent", "responsiveVoiceEventTemplate", "voiceTableWwiseEvent"].includes(contextKind)) tags.add("voiceEventRoute");
       if (["uiAnimationOpenEvent", "activityPushPopupBgmEvent", "activityCenterBgmEvent", "uiVideoAudioEvent", "domainRegionSwitchEvent", "domainUpgradeAnimationEvent", "typedUiTableWwiseEvent"].includes(contextKind)) tags.add("typedUiEvent");
       if (contextKind === "snsVoiceMessageEvent") tags.add("snsVoice");
-      if (contextKind === "animationCallbackOwnerUnresolved") tags.add("ownerUnresolvedAnimation");
+      if (contextKind === "animationCallbackOwnerUnresolved") {
+        if (exactNpcAnimationOwner) {
+          tags.add("npcAnimation");
+          tags.add("animationCallbackNpcOwner");
+        } else {
+          tags.add("ownerUnresolvedAnimation");
+        }
+      }
+      if (contextKind === "npcAnimation") tags.add("npcAnimation");
+      if (contextKind === "animationCallbackNpcOwner") tags.add("animationCallbackNpcOwner");
       if (["sceneGlobalAudioEvent", "sceneEmitterAudioEvent"].includes(contextKind)) tags.add("sceneAudio");
       if (["levelScriptAudioAction", "levelScriptAudioCueBehaviorEvent", "levelScriptRadioTrigger"].includes(contextKind)) tags.add("levelScriptTrigger");
       if (contextKind === "levelScriptRadioTrigger") tags.add("radioTrigger");
@@ -998,7 +1039,7 @@
       if (record?.audioDialogKey || record?.audioDialogPath) tags.add("dialogMedia");
       const inheritedMediaTags = new Set([
         "gameplay", "cutscene", "timeline", "animation", "sceneAudio", "scripted", "authoredConfig", "managedRuntime", "luaRuntime", "wwiseObjectOnly",
-        "sharedPlayableAnimation", "footstepSystem", "ownerUnresolvedAnimation", "levelScriptTrigger", "radioTrigger", "projectileTrigger", "spawnerPreWarnTrigger", "npcPatrolTrigger", "characterInteraction", "physicsEnvironment", "modelViewState", "componentAudioId", "interactiveTrigger", "globalLifecycle", "audioCueTrigger", "snsVoice",
+        "sharedPlayableAnimation", "footstepSystem", "ownerUnresolvedAnimation", "npcAnimation", "animationCallbackNpcOwner", "levelScriptTrigger", "radioTrigger", "projectileTrigger", "spawnerPreWarnTrigger", "npcPatrolTrigger", "characterInteraction", "physicsEnvironment", "modelViewState", "componentAudioId", "interactiveTrigger", "globalLifecycle", "audioCueTrigger", "snsVoice",
       ]);
       for (const eventId of asArray(record?.eventIds)) {
         for (const tag of state.eventTaxonomyById.get(normalizeLower(eventId)) || []) {
@@ -1110,6 +1151,13 @@
       record?.characterAudioOwnershipEvidence,
       ...asArray(record?.animationCallbackEventIds), ...asArray(record?.animationCallbackClips),
       ...asArray(record?.animationCallbackOwnerIds), ...asArray(record?.animationCallbackFunctions),
+      ...asArray(record?.animationCallbackOwnerKinds),
+      ...asArray(record?.animationCallbackNpcOwnerIds),
+      ...asArray(record?.animationCallbackNpcOwnerTemplates),
+      ...asArray(record?.animationCallbackNpcActorTokens),
+      ...asArray(record?.animationCallbackNpcOccurrenceOwnerIds),
+      ...asArray(record?.animationCallbackNpcOccurrenceOwnerTemplates),
+      ...asArray(record?.animationCallbackNpcOccurrenceActorTokens),
       ...asArray(record?.animationCallbackReachabilityStatuses),
       ...asArray(record?.animationCallbackAnimatorControllerNames), record?.animationCallbackLinkStatus,
       record?.animationCallbackOwnershipStatus, record?.animationCallbackTokenResolutionStatus,
@@ -1133,7 +1181,11 @@
       ...asArray(taxonomy.contextTags).flatMap((value) => [value, taxonomyLabel(value)]),
       ...asArray(taxonomy.relationTags).flatMap((value) => [value, taxonomyLabel(value)]),
       ...asArray(record?.contexts).flatMap((context) => context && typeof context === "object" ? [
-        context.kind, context.ownerId, context.groupId, context.storyKey, context.table, context.path,
+        context.kind === "animationCallbackOwnerUnresolved" && hasExactNpcAnimationOwner(record)
+          ? "npcAnimation" : context.kind,
+        context.kind === "animationCallbackOwnerUnresolved" && hasExactNpcAnimationOwner(record)
+          ? "animationCallbackNpcOwner" : "",
+        context.ownerId, context.groupId, context.storyKey, context.table, context.path,
         context.consumerType, context.consumerMethod, context.playbackCall, context.triggerRole,
         context.customStateName, context.switchMethod, context.switchMethodVa, context.callsiteVa,
         context.staticArgumentVa, context.metadataUsageWord, context.metadataStringLiteralIndex,
@@ -4739,6 +4791,13 @@
           ["Animation callback link", humanize(raw.animationCallbackLinkStatus || "")],
           [t("animationCallbackClips"), asArray(raw.animationCallbackClips).join(" / ")],
           [t("animationCallbackOwners"), asArray(raw.animationCallbackOwnerIds).join(" / ")],
+          ["Animation callback owner kinds", asArray(raw.animationCallbackOwnerKinds).join(" / ")],
+          [t("animationCallbackNpcOwners"), asArray(raw.animationCallbackNpcOwnerIds).join(" / ")],
+          [t("animationCallbackNpcTemplates"), asArray(raw.animationCallbackNpcOwnerTemplates).join(" / ")],
+          [t("animationCallbackNpcTokens"), asArray(raw.animationCallbackNpcActorTokens).join(" / ")],
+          [t("animationCallbackNpcOccurrenceOwners"), asArray(raw.animationCallbackNpcOccurrenceOwnerIds).join(" / ")],
+          [t("animationCallbackNpcOccurrenceTemplates"), asArray(raw.animationCallbackNpcOccurrenceOwnerTemplates).join(" / ")],
+          [t("animationCallbackNpcOccurrenceTokens"), asArray(raw.animationCallbackNpcOccurrenceActorTokens).join(" / ")],
           ["Animation callback functions", asArray(raw.animationCallbackFunctions).join(" / ")],
           ["Animation reachability", asArray(raw.animationCallbackReachabilityStatuses).map(humanize).join(" / ")],
           ["Animator Controllers", asArray(raw.animationCallbackAnimatorControllerNames).join(" / ")],
@@ -4786,6 +4845,13 @@
           ["Animation callback Events", asArray(raw.animationCallbackEventIds).join(" / ")],
           [t("animationCallbackClips"), asArray(raw.animationCallbackClips).join(" / ")],
           [t("animationCallbackOwners"), asArray(raw.animationCallbackOwnerIds).join(" / ")],
+          ["Animation callback owner kinds", asArray(raw.animationCallbackOwnerKinds).join(" / ")],
+          [t("animationCallbackNpcOwners"), asArray(raw.animationCallbackNpcOwnerIds).join(" / ")],
+          [t("animationCallbackNpcTemplates"), asArray(raw.animationCallbackNpcOwnerTemplates).join(" / ")],
+          [t("animationCallbackNpcTokens"), asArray(raw.animationCallbackNpcActorTokens).join(" / ")],
+          [t("animationCallbackNpcOccurrenceOwners"), asArray(raw.animationCallbackNpcOccurrenceOwnerIds).join(" / ")],
+          [t("animationCallbackNpcOccurrenceTemplates"), asArray(raw.animationCallbackNpcOccurrenceOwnerTemplates).join(" / ")],
+          [t("animationCallbackNpcOccurrenceTokens"), asArray(raw.animationCallbackNpcOccurrenceActorTokens).join(" / ")],
           ["Animation callback functions", asArray(raw.animationCallbackFunctions).join(" / ")],
           ["Animation reachability", asArray(raw.animationCallbackReachabilityStatuses).map(humanize).join(" / ")],
           ["Animator Controllers", asArray(raw.animationCallbackAnimatorControllerNames).join(" / ")],
@@ -4891,6 +4957,15 @@
     }
     if (asArray(raw.animationCallbackOwnerIds).length) {
       panel.appendChild(chipSection(t("animationCallbackOwners"), asArray(raw.animationCallbackOwnerIds)));
+    }
+    if (asArray(raw.animationCallbackNpcOwnerIds).length) {
+      panel.appendChild(chipSection(t("animationCallbackNpcOwners"), asArray(raw.animationCallbackNpcOwnerIds)));
+    }
+    if (asArray(raw.animationCallbackNpcOwnerTemplates).length) {
+      panel.appendChild(chipSection(t("animationCallbackNpcTemplates"), asArray(raw.animationCallbackNpcOwnerTemplates)));
+    }
+    if (asArray(raw.animationCallbackNpcActorTokens).length) {
+      panel.appendChild(chipSection(t("animationCallbackNpcTokens"), asArray(raw.animationCallbackNpcActorTokens)));
     }
     if (asArray(raw.animationCallbackClips).length) {
       panel.appendChild(chipSection(t("animationCallbackClips"), asArray(raw.animationCallbackClips)));

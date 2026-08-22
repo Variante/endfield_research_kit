@@ -468,6 +468,722 @@ class MediaOwnershipTests(unittest.TestCase):
             json.dumps(templates), encoding="utf-8"
         )
 
+    def _write_npc_tables(
+        self,
+        root: Path,
+        *,
+        info_rows: dict[str, dict] | None = None,
+        group_rows: dict[str, dict] | None = None,
+        persistent_info: str | None = None,
+        persistent_group: str | None = None,
+        write_channel: bool = True,
+        persistent_channel: str | None = None,
+        channel_tokens: tuple[str, ...] = ("jsspsi",),
+    ) -> None:
+        table_root = root / "structured/StreamingAssets/Table"
+        table_root.mkdir(parents=True, exist_ok=True)
+        info_rows = info_rows or {
+            "si": {
+                "npcId": "si",
+                "templateId": "npc_chr_0036_jsspsi",
+                "voActor": "jsspsi",
+                "wwiseId": "jsspsi",
+            }
+        }
+        group_rows = group_rows or {
+            "si": {
+                "npcNameId": "si",
+                "templateId": "npc_chr_0036_jsspsi",
+            }
+        }
+        (table_root / "NpcInfoTable.json").write_text(
+            json.dumps(info_rows), encoding="utf-8"
+        )
+        (table_root / "NpcTemplateGroupTable.json").write_text(
+            json.dumps(group_rows), encoding="utf-8"
+        )
+        if write_channel:
+            channel_rows = {
+                token: {
+                    "narratingWwiseEvent": f"vo_narrating_{token}_default",
+                    "radioWwiseEvent": f"vo_narrating_{token}_radio",
+                }
+                for token in channel_tokens
+            }
+            (table_root / "AudioDialogChannel.json").write_text(
+                json.dumps(channel_rows), encoding="utf-8"
+            )
+        if persistent_info is not None or persistent_group is not None:
+            persistent_root = root / "structured/Persistent/Table"
+            persistent_root.mkdir(parents=True, exist_ok=True)
+            (persistent_root / "NpcInfoTable.json").write_text(
+                persistent_info if persistent_info is not None else json.dumps(info_rows),
+                encoding="utf-8",
+            )
+            (persistent_root / "NpcTemplateGroupTable.json").write_text(
+                persistent_group if persistent_group is not None else json.dumps(group_rows),
+                encoding="utf-8",
+            )
+            if write_channel:
+                (persistent_root / "AudioDialogChannel.json").write_text(
+                    persistent_channel
+                    if persistent_channel is not None
+                    else json.dumps({
+                        token: {
+                            "narratingWwiseEvent": f"vo_narrating_{token}_default",
+                            "radioWwiseEvent": f"vo_narrating_{token}_radio",
+                        }
+                        for token in channel_tokens
+                    }),
+                    encoding="utf-8",
+                )
+
+    def test_animation_callback_exact_npc_owner_requires_both_tables(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._write_animation_tables(root)
+            self._write_npc_tables(root)
+            catalog = media_ownership.collect_animation_entity_catalog(root)
+            events = [{
+                "id": "jsspsi_spell_start",
+                "contexts": [{
+                    "kind": "animationCallbackOwnerUnresolved",
+                    "animationFunctions": ["PostAudioEvent"],
+                    "animationClips": ["A_actor_jsspsi_dialog_state_spell_start"],
+                }],
+            }]
+            media_ownership.annotate_event_animation_callback_links(
+                events, entity_catalog=catalog
+            )
+
+        resolution = events[0]["animationCallbackClipResolutions"][0]
+        self.assertEqual(catalog["npcCatalogStatus"], "validatedNpcIdentityCatalog")
+        self.assertEqual(
+            catalog["audioDialogChannelStatus"],
+            "validatedAudioDialogChannelCatalog",
+        )
+        self.assertEqual(resolution["resolutionStatus"], "exactNpcTableToken")
+        self.assertEqual(resolution["ownerKind"], "npc")
+        self.assertEqual(resolution["ownerId"], "si")
+        self.assertEqual(resolution["ownerTemplateId"], "npc_chr_0036_jsspsi")
+        self.assertEqual(resolution["ownerActorToken"], "jsspsi")
+        self.assertEqual(events[0]["animationCallbackOwnerIds"], ["si"])
+        self.assertEqual(events[0]["animationCallbackNpcOwnerIds"], ["si"])
+        self.assertEqual(events[0]["animationCallbackOccurrences"][0]["ownerKind"], "npc")
+        media_rows = [{
+            "id": 1,
+            "src": "/audio/jsspsi.flac",
+            "audioCategory": "unknown",
+            "eventIds": ["jsspsi_spell_start"],
+        }]
+        media_ownership.annotate_media_coarse_ownership(
+            media_rows, {}, event_rows=events
+        )
+        self.assertEqual(media_rows[0]["animationCallbackNpcOwnerIds"], ["si"])
+        self.assertEqual(
+            media_rows[0]["animationCallbackNpcOwnerTemplates"],
+            ["npc_chr_0036_jsspsi"],
+        )
+
+    def test_animation_callback_exact_npc_statuses_agree_on_one_event_owner(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._write_animation_tables(root)
+            self._write_npc_tables(root)
+            catalog = media_ownership.collect_animation_entity_catalog(root)
+            events = [{
+                "id": "jsspsi_two_exact_callbacks",
+                "contexts": [
+                    {
+                        "kind": "animationCallbackOwnerUnresolved",
+                        "animationFunctions": ["PostAudioEvent"],
+                        "animationClips": ["A_actor_jsspsi_dialog_state_spell_start"],
+                    },
+                    {
+                        "kind": "animationCallbackOwnerUnresolved",
+                        "ownerKind": "npc",
+                        "ownerId": "si",
+                        "animationFunctions": ["PostAudioEvent"],
+                        "animationClips": ["A_actor_jsspsi_dialog_state_spell_finish"],
+                    },
+                ],
+            }]
+            media_ownership.annotate_event_animation_callback_links(
+                events, entity_catalog=catalog
+            )
+            media_rows = [{
+                "id": 1,
+                "src": "/audio/jsspsi.flac",
+                "audioCategory": "unknown",
+                "eventIds": ["jsspsi_two_exact_callbacks"],
+            }]
+            media_ownership.annotate_media_coarse_ownership(
+                media_rows, {}, event_rows=events
+            )
+
+        event = events[0]
+        self.assertEqual(
+            set(event["animationCallbackResolutionStatuses"]),
+            {"exactNpcTableToken", "exactNpcInfoAndTemplateGroup"},
+        )
+        self.assertEqual(event["animationCallbackOwnershipStatus"], "exactNpcOwnerAgreement")
+        self.assertEqual(event["animationCallbackNpcOwnerIds"], ["si"])
+        self.assertEqual(media_rows[0]["animationCallbackOwnershipStatus"], "exactNpcOwnerAgreement")
+        self.assertEqual(media_rows[0]["animationCallbackNpcOwnerIds"], ["si"])
+
+    def test_animation_callback_exact_npc_plus_unresolved_does_not_promote(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._write_animation_tables(root)
+            self._write_npc_tables(root)
+            catalog = media_ownership.collect_animation_entity_catalog(root)
+            events = [{
+                "id": "jsspsi_exact_plus_unresolved",
+                "contexts": [
+                    {
+                        "kind": "animationCallbackOwnerUnresolved",
+                        "animationFunctions": ["PostAudioEvent"],
+                        "animationClips": ["A_actor_jsspsi_dialog_state_spell_start"],
+                    },
+                    {
+                        "kind": "animationCallbackOwnerUnresolved",
+                        "ownerKind": "npc",
+                        "animationFunctions": ["PostAudioEvent"],
+                        "animationClips": ["A_actor_missing_dialog_state_spell_finish"],
+                    },
+                ],
+            }]
+            media_ownership.annotate_event_animation_callback_links(
+                events, entity_catalog=catalog
+            )
+
+        event = events[0]
+        self.assertIn("exactNpcTableToken", event["animationCallbackResolutionStatuses"])
+        self.assertIn("unresolved", event["animationCallbackResolutionStatuses"])
+        self.assertEqual(event["animationCallbackOwnershipStatus"], "unresolved")
+        self.assertEqual(event["animationCallbackNpcOwnerIds"], [])
+        self.assertEqual(event["animationCallbackEntityIds"], [])
+
+    def test_animation_callback_multiple_exact_npc_owners_does_not_promote(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._write_animation_tables(root)
+            info_rows = {
+                "si": {
+                    "npcId": "si",
+                    "templateId": "npc_chr_0036_jsspsi",
+                    "voActor": "jsspsi",
+                    "wwiseId": "jsspsi",
+                },
+                "other": {
+                    "npcId": "other",
+                    "templateId": "npc_chr_other",
+                    "voActor": "other",
+                    "wwiseId": "other",
+                },
+            }
+            group_rows = {
+                key: {"npcNameId": key, "templateId": value["templateId"]}
+                for key, value in info_rows.items()
+            }
+            self._write_npc_tables(
+                root,
+                info_rows=info_rows,
+                group_rows=group_rows,
+                channel_tokens=("jsspsi", "other"),
+            )
+            catalog = media_ownership.collect_animation_entity_catalog(root)
+            events = [{
+                "id": "two_npc_exact_owners",
+                "contexts": [
+                    {
+                        "kind": "animationCallbackOwnerUnresolved",
+                        "animationFunctions": ["PostAudioEvent"],
+                        "animationClips": ["A_actor_jsspsi_dialog_state_spell_start"],
+                    },
+                    {
+                        "kind": "animationCallbackOwnerUnresolved",
+                        "ownerKind": "npc",
+                        "ownerId": "other",
+                        "animationFunctions": ["PostAudioEvent"],
+                        "animationClips": ["A_actor_other_dialog_state_spell_finish"],
+                    },
+                ],
+            }]
+            media_ownership.annotate_event_animation_callback_links(
+                events, entity_catalog=catalog
+            )
+            media_rows = [{
+                "id": 1,
+                "src": "/audio/shared.flac",
+                "audioCategory": "unknown",
+                "eventIds": ["two_npc_exact_owners"],
+            }]
+            media_ownership.annotate_media_coarse_ownership(
+                media_rows, {}, event_rows=events
+            )
+
+        event = events[0]
+        self.assertEqual(event["animationCallbackOwnershipStatus"], "shared")
+        self.assertEqual(event["animationCallbackNpcOwnerIds"], [])
+        self.assertEqual(media_rows[0]["animationCallbackNpcOwnerIds"], [])
+
+    def test_media_shared_events_exact_npc_states_agree_on_one_owner(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._write_animation_tables(root)
+            self._write_npc_tables(root)
+            catalog = media_ownership.collect_animation_entity_catalog(root)
+            events = [
+                {
+                    "id": "shared_exact_table",
+                    "contexts": [{
+                        "kind": "animationCallbackOwnerUnresolved",
+                        "animationFunctions": ["PostAudioEvent"],
+                        "animationClips": ["A_actor_jsspsi_dialog_state_spell_start"],
+                    }],
+                },
+                {
+                    "id": "shared_exact_info",
+                    "contexts": [{
+                        "kind": "animationCallbackOwnerUnresolved",
+                        "ownerKind": "npc",
+                        "ownerId": "si",
+                        "animationFunctions": ["PostAudioEvent"],
+                        "animationClips": ["A_actor_jsspsi_dialog_state_spell_finish"],
+                    }],
+                },
+            ]
+            media_ownership.annotate_event_animation_callback_links(
+                events, entity_catalog=catalog
+            )
+            media_rows = [{
+                "id": 1,
+                "src": "/audio/shared-jsspsi.flac",
+                "audioCategory": "unknown",
+                "eventIds": ["shared_exact_table", "shared_exact_info"],
+            }]
+            media_ownership.annotate_media_coarse_ownership(
+                media_rows, {}, event_rows=events
+            )
+
+        media_row = media_rows[0]
+        self.assertEqual(media_row["animationCallbackOwnershipStatus"], "exactNpcOwnerAgreement")
+        self.assertEqual(media_row["animationCallbackNpcOwnerIds"], ["si"])
+        self.assertEqual(media_row["animationCallbackOwnerIds"], ["si"])
+        self.assertEqual(
+            set(media_row["animationCallbackResolutionStatuses"]),
+            {"exactNpcTableToken", "exactNpcInfoAndTemplateGroup"},
+        )
+
+    def test_media_shared_events_exact_npc_plus_unresolved_stays_conservative(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._write_animation_tables(root)
+            self._write_npc_tables(root)
+            catalog = media_ownership.collect_animation_entity_catalog(root)
+            events = [
+                {
+                    "id": "shared_exact_table",
+                    "contexts": [{
+                        "kind": "animationCallbackOwnerUnresolved",
+                        "animationFunctions": ["PostAudioEvent"],
+                        "animationClips": ["A_actor_jsspsi_dialog_state_spell_start"],
+                    }],
+                },
+                {
+                    "id": "shared_unresolved",
+                    "contexts": [{
+                        "kind": "animationCallbackOwnerUnresolved",
+                        "ownerKind": "npc",
+                        "animationFunctions": ["PostAudioEvent"],
+                        "animationClips": ["A_actor_missing_dialog_state_spell_finish"],
+                    }],
+                },
+            ]
+            media_ownership.annotate_event_animation_callback_links(
+                events, entity_catalog=catalog
+            )
+            media_rows = [{
+                "id": 1,
+                "src": "/audio/shared-unresolved.flac",
+                "audioCategory": "unknown",
+                "eventIds": ["shared_exact_table", "shared_unresolved"],
+            }]
+            media_ownership.annotate_media_coarse_ownership(
+                media_rows, {}, event_rows=events
+            )
+
+        self.assertNotEqual(media_rows[0]["animationCallbackOwnershipStatus"], "exactNpcOwnerAgreement")
+        self.assertEqual(media_rows[0]["animationCallbackNpcOwnerIds"], [])
+
+    def test_media_shared_events_multiple_npc_owners_stays_conservative(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._write_animation_tables(root)
+            info_rows = {
+                "si": {
+                    "npcId": "si",
+                    "templateId": "npc_chr_0036_jsspsi",
+                    "voActor": "jsspsi",
+                    "wwiseId": "jsspsi",
+                },
+                "other": {
+                    "npcId": "other",
+                    "templateId": "npc_chr_other",
+                    "voActor": "other",
+                    "wwiseId": "other",
+                },
+            }
+            self._write_npc_tables(
+                root,
+                info_rows=info_rows,
+                group_rows={
+                    key: {"npcNameId": key, "templateId": value["templateId"]}
+                    for key, value in info_rows.items()
+                },
+                channel_tokens=("jsspsi", "other"),
+            )
+            catalog = media_ownership.collect_animation_entity_catalog(root)
+            events = [
+                {
+                    "id": "shared_exact_si",
+                    "contexts": [{
+                        "kind": "animationCallbackOwnerUnresolved",
+                        "animationFunctions": ["PostAudioEvent"],
+                        "animationClips": ["A_actor_jsspsi_dialog_state_spell_start"],
+                    }],
+                },
+                {
+                    "id": "shared_exact_other",
+                    "contexts": [{
+                        "kind": "animationCallbackOwnerUnresolved",
+                        "ownerKind": "npc",
+                        "ownerId": "other",
+                        "animationFunctions": ["PostAudioEvent"],
+                        "animationClips": ["A_actor_other_dialog_state_spell_finish"],
+                    }],
+                },
+            ]
+            media_ownership.annotate_event_animation_callback_links(
+                events, entity_catalog=catalog
+            )
+            media_rows = [{
+                "id": 1,
+                "src": "/audio/shared-multiple-npc.flac",
+                "audioCategory": "unknown",
+                "eventIds": ["shared_exact_si", "shared_exact_other"],
+            }]
+            media_ownership.annotate_media_coarse_ownership(
+                media_rows, {}, event_rows=events
+            )
+
+        self.assertNotEqual(media_rows[0]["animationCallbackOwnershipStatus"], "exactNpcOwnerAgreement")
+        self.assertEqual(media_rows[0]["animationCallbackNpcOwnerIds"], [])
+
+    def test_media_shared_events_cross_domain_stays_conservative(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._write_animation_tables(root)
+            self._write_npc_tables(root)
+            catalog = media_ownership.collect_animation_entity_catalog(root)
+            events = [
+                {
+                    "id": "shared_exact_npc",
+                    "contexts": [{
+                        "kind": "animationCallbackOwnerUnresolved",
+                        "animationFunctions": ["PostAudioEvent"],
+                        "animationClips": ["A_actor_jsspsi_dialog_state_spell_start"],
+                    }],
+                },
+                {
+                    "id": "shared_exact_character",
+                    "contexts": [{
+                        "kind": "characterAnimation",
+                        "ownerKind": "character",
+                        "ownerId": "chr_0028_wulfa",
+                        "animationFunctions": ["PostAudioEvent"],
+                        "animationClips": ["A_actor_wulfa_relax_sp_02"],
+                    }],
+                },
+            ]
+            media_ownership.annotate_event_animation_callback_links(
+                events, entity_catalog=catalog
+            )
+            media_rows = [{
+                "id": 1,
+                "src": "/audio/shared-cross-domain.flac",
+                "audioCategory": "unknown",
+                "eventIds": ["shared_exact_npc", "shared_exact_character"],
+            }]
+            media_ownership.annotate_media_coarse_ownership(
+                media_rows, {}, event_rows=events
+            )
+
+        self.assertNotEqual(media_rows[0]["animationCallbackOwnershipStatus"], "exactNpcOwnerAgreement")
+        self.assertEqual(media_rows[0]["animationCallbackNpcOwnerIds"], [])
+
+    def test_animation_callback_duplicate_npc_token_stays_ambiguous(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._write_animation_tables(root)
+            rows = {
+                npc_id: {
+                    "npcId": npc_id,
+                    "templateId": f"npc_{npc_id}",
+                    "voActor": "gentleman",
+                    "wwiseId": "gentleman",
+                }
+                for npc_id in ("generic_a", "generic_b")
+            }
+            groups = {
+                npc_id: {"npcNameId": npc_id, "templateId": f"npc_{npc_id}"}
+                for npc_id in rows
+            }
+            self._write_npc_tables(
+                root,
+                info_rows=rows,
+                group_rows=groups,
+                channel_tokens=("gentleman",),
+            )
+            catalog = media_ownership.collect_animation_entity_catalog(root)
+            events = [{
+                "id": "generic_gentleman",
+                "contexts": [{
+                    "kind": "animationCallbackOwnerUnresolved",
+                    "ownerKind": "npc",
+                    "ownerId": "generic_a",
+                    "animationFunctions": ["PostAudioEvent"],
+                    "animationClips": ["A_actor_gentleman_dialog_state_spell_start"],
+                }],
+            }]
+            media_ownership.annotate_event_animation_callback_links(
+                events, entity_catalog=catalog
+            )
+
+        resolution = events[0]["animationCallbackClipResolutions"][0]
+        self.assertEqual(catalog["npcCatalog"]["counts"]["duplicateTokens"], 1)
+        for generic_token in ("gentleman", "lady", "boy", "nefys"):
+            self.assertNotEqual(
+                len(catalog["npcTokenIds"].get(generic_token) or []),
+                1,
+                generic_token,
+            )
+        self.assertEqual(resolution["resolutionStatus"], "ambiguous")
+        self.assertEqual(events[0]["animationCallbackNpcOwnerIds"], [])
+        self.assertEqual(events[0]["animationCallbackOwnerIds"], [])
+
+    def test_animation_callback_generic_npc_without_audio_channel_stays_unresolved(self):
+        for token in ("nefys", "gentleman"):
+            with self.subTest(token=token):
+                with tempfile.TemporaryDirectory() as temporary:
+                    root = Path(temporary)
+                    self._write_animation_tables(root)
+                    npc_id = f"{token}_only"
+                    self._write_npc_tables(
+                        root,
+                        info_rows={npc_id: {
+                            "npcId": npc_id,
+                            "templateId": f"npc_{npc_id}",
+                            "voActor": token,
+                            "wwiseId": token,
+                        }},
+                        group_rows={npc_id: {
+                            "npcNameId": npc_id,
+                            "templateId": f"npc_{npc_id}",
+                        }},
+                        write_channel=False,
+                    )
+                    catalog = media_ownership.collect_animation_entity_catalog(root)
+                    events = [{
+                        "id": f"generic_{token}",
+                        "contexts": [{
+                            "kind": "animationCallbackOwnerUnresolved",
+                            "animationFunctions": ["PostAudioEvent"],
+                            "animationClips": [f"A_actor_{token}_dialog_state_spell_start"],
+                        }],
+                    }]
+                    media_ownership.annotate_event_animation_callback_links(
+                        events, entity_catalog=catalog
+                    )
+                    resolution = events[0]["animationCallbackClipResolutions"][0]
+                    self.assertEqual(
+                        catalog["audioDialogChannelStatus"],
+                        "audioDialogChannelUnavailable",
+                    )
+                    self.assertEqual(resolution["resolutionStatus"], "unresolved")
+                    self.assertEqual(resolution["npcTableIds"], [])
+                    self.assertEqual(events[0]["animationCallbackNpcOwnerIds"], [])
+
+    def test_animation_callback_character_context_cannot_upgrade_npc_token(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._write_animation_tables(root)
+            self._write_npc_tables(root)
+            catalog = media_ownership.collect_animation_entity_catalog(root)
+            events = [{
+                "id": "character_context_jsspsi",
+                "contexts": [{
+                    "kind": "characterAnimation",
+                    "ownerKind": "character",
+                    "ownerId": "chr_9999_missing",
+                    "animationFunctions": ["PostAudioEvent"],
+                    "animationClips": ["A_actor_jsspsi_dialog_state_spell_start"],
+                }],
+            }]
+            media_ownership.annotate_event_animation_callback_links(
+                events, entity_catalog=catalog
+            )
+
+        resolution = events[0]["animationCallbackClipResolutions"][0]
+        self.assertEqual(resolution["resolutionStatus"], "unresolved")
+        self.assertEqual(resolution["npcTableIds"], [])
+        self.assertNotIn("si", events[0]["animationCallbackEntityIds"])
+        self.assertEqual(events[0]["animationCallbackNpcOccurrenceOwnerIds"], [])
+
+    def test_animation_callback_malformed_audio_channel_fails_closed(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._write_animation_tables(root)
+            self._write_npc_tables(
+                root,
+                persistent_info=json.dumps({"si": {
+                    "npcId": "si",
+                    "templateId": "npc_chr_0036_jsspsi",
+                    "voActor": "jsspsi",
+                    "wwiseId": "jsspsi",
+                }}),
+                persistent_channel="{malformed",
+            )
+            catalog = media_ownership.collect_animation_entity_catalog(root)
+            events = [{
+                "id": "malformed_channel_jsspsi",
+                "contexts": [{
+                    "kind": "animationCallbackOwnerUnresolved",
+                    "animationFunctions": ["PostAudioEvent"],
+                    "animationClips": ["A_actor_jsspsi_dialog_state_spell_start"],
+                }],
+            }]
+            media_ownership.annotate_event_animation_callback_links(
+                events, entity_catalog=catalog
+            )
+
+        self.assertEqual(
+            catalog["audioDialogChannelStatus"],
+            "audioDialogChannelMalformed",
+        )
+        self.assertEqual(
+            events[0]["animationCallbackClipResolutions"][0]["resolutionStatus"],
+            "unresolved",
+        )
+
+    def test_animation_callback_npc_overlay_conflict_and_malformed_fail_closed(self):
+        for persistent_info, expected_status in (
+            (
+                json.dumps({"si": {
+                    "npcId": "si",
+                    "templateId": "npc_chr_9999_other",
+                    "voActor": "jsspsi",
+                    "wwiseId": "jsspsi",
+                }}),
+                "npcCatalogConflicted",
+            ),
+            ("{malformed", "npcCatalogMalformed"),
+        ):
+            with self.subTest(expected_status=expected_status):
+                with tempfile.TemporaryDirectory() as temporary:
+                    root = Path(temporary)
+                    self._write_animation_tables(root)
+                    self._write_npc_tables(
+                        root,
+                        persistent_info=persistent_info,
+                    )
+                    catalog = media_ownership.collect_animation_entity_catalog(root)
+                    events = [{
+                        "id": "conflicted_npc",
+                        "contexts": [{
+                            "kind": "animationCallbackOwnerUnresolved",
+                            "animationFunctions": ["PostAudioEvent"],
+                            "animationClips": ["A_actor_jsspsi_dialog_state_spell_start"],
+                        }],
+                    }]
+                    media_ownership.annotate_event_animation_callback_links(
+                        events, entity_catalog=catalog
+                    )
+                    self.assertEqual(catalog["npcCatalogStatus"], expected_status)
+                    self.assertEqual(
+                        events[0]["animationCallbackClipResolutions"][0]["resolutionStatus"],
+                        "unresolved",
+                    )
+                    self.assertEqual(events[0]["animationCallbackNpcOwnerIds"], [])
+
+    def test_animation_callback_npc_template_mismatch_stays_unresolved(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._write_animation_tables(root)
+            self._write_npc_tables(
+                root,
+                group_rows={"si": {
+                    "npcNameId": "si",
+                    "templateId": "npc_chr_9999_other",
+                }},
+            )
+            catalog = media_ownership.collect_animation_entity_catalog(root)
+            events = [{
+                "id": "mismatched_npc",
+                "contexts": [{
+                    "kind": "animationCallbackOwnerUnresolved",
+                    "animationFunctions": ["PostAudioEvent"],
+                    "animationClips": ["A_actor_jsspsi_dialog_state_spell_start"],
+                }],
+            }]
+            media_ownership.annotate_event_animation_callback_links(
+                events, entity_catalog=catalog
+            )
+
+        self.assertEqual(catalog["npcCatalogStatus"], "npcCatalogInvalid")
+        self.assertEqual(
+            events[0]["animationCallbackClipResolutions"][0]["resolutionStatus"],
+            "unresolved",
+        )
+
+    def test_animation_callback_mixed_event_keeps_npc_owner_at_occurrence_level(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._write_animation_tables(root)
+            self._write_npc_tables(root)
+            catalog = media_ownership.collect_animation_entity_catalog(root)
+            events = [{
+                "id": "au_dlg_foley_state_spell_start",
+                "contexts": [{
+                    "kind": "animationCallbackOwnerUnresolved",
+                    "animationFunctions": ["PostAudioEvent"],
+                    "animationClips": [
+                        "A_actor_gentleman_dialog_state_spell_start",
+                        "A_actor_jsspsi_dialog_state_spell_start",
+                        "A_actor_lady_dialog_state_spell_start",
+                    ],
+                }],
+            }]
+            media_ownership.annotate_event_animation_callback_links(
+                events, entity_catalog=catalog
+            )
+
+        event = events[0]
+        self.assertIn(event["animationCallbackOwnershipStatus"], {"ambiguous", "unresolved"})
+        self.assertNotEqual(event["animationCallbackOwnerIds"], ["si"])
+        self.assertEqual(event["animationCallbackNpcOwnerIds"], [])
+        self.assertEqual(event["animationCallbackNpcOccurrenceOwnerIds"], ["si"])
+        self.assertNotIn("si", event["animationCallbackResolvedEntityIds"])
+        self.assertNotIn("si", event["animationCallbackEntityIds"])
+        self.assertNotIn("si", event["animationCallbackCandidateEntityIds"])
+        npc_rows = [
+            row for row in event["animationCallbackOccurrences"]
+            if row.get("ownerId") == "si"
+        ]
+        self.assertEqual(len(npc_rows), 1)
+        self.assertEqual(npc_rows[0]["ownerKind"], "npc")
+
     def test_animation_callback_exact_enemy_instance_and_template(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -727,6 +1443,9 @@ class MediaOwnershipTests(unittest.TestCase):
                 "animationCallbackResolutionStatuses": ["uniqueToken"],
                 "animationCallbackResolvedEntityIds": ["eny_0050_silent"],
                 "animationCallbackCandidateEntityIds": ["eny_0050_silent"],
+                "animationCallbackNpcOwnerIds": ["si"],
+                "animationCallbackNpcOwnerTemplates": ["npc_chr_0036_jsspsi"],
+                "animationCallbackNpcActorTokens": ["jsspsi"],
                 "animationCallbackClipResolutions": [{
                     "clip": "A_monster_silent_attack01",
                     "candidateEntityIds": ["eny_0050_silent"],
@@ -747,8 +1466,70 @@ class MediaOwnershipTests(unittest.TestCase):
             summary["animationCallbackCandidateEntityIds"],
             ["eny_0050_silent"],
         )
+        self.assertEqual(summary["animationCallbackNpcOwnerIds"], ["si"])
+        self.assertEqual(
+            summary["animationCallbackNpcOwnerTemplates"],
+            ["npc_chr_0036_jsspsi"],
+        )
         self.assertNotIn("animationCallbackClipResolutions", summary)
         self.assertNotIn("animationCallbackOccurrences", summary)
+
+    def test_event_summary_promotes_exact_npc_animation_display_context(self):
+        summary = event_summary.event_summary_row(
+            {
+                "id": "jsspsi_spell_start",
+                "category": "sfx",
+                "contexts": [{"kind": "animationCallbackOwnerUnresolved"}],
+                "animationCallbackOwnershipStatus": "exactNpcTableToken",
+                "animationCallbackNpcOwnerIds": ["si"],
+            },
+            "events_detail.json",
+        )
+
+        self.assertIn("npcAnimation", summary["contextKinds"])
+        self.assertIn("animationCallbackNpcOwner", summary["contextKinds"])
+        self.assertNotIn("animationCallbackOwnerUnresolved", summary["contextKinds"])
+        self.assertEqual(summary["contextGroups"], ["animation"])
+        self.assertIn("npcAnimation", summary["contextSearch"])
+        self.assertIn("animationCallbackNpcOwner", summary["contextSearch"])
+        self.assertNotIn("animationCallbackOwnerUnresolved", summary["contextSearch"])
+
+    def test_event_summary_keeps_mixed_npc_occurrence_unresolved_display_context(self):
+        summary = event_summary.event_summary_row(
+            {
+                "id": "au_dlg_foley_state_spell_start",
+                "category": "sfx",
+                "contexts": [{"kind": "animationCallbackOwnerUnresolved"}],
+                "animationCallbackOwnershipStatus": "unresolved",
+                "animationCallbackNpcOwnerIds": [],
+                "animationCallbackNpcOccurrenceOwnerIds": ["si"],
+            },
+            "events_detail.json",
+        )
+
+        self.assertIn("animationCallbackOwnerUnresolved", summary["contextKinds"])
+        self.assertNotIn("npcAnimation", summary["contextKinds"])
+        self.assertNotIn("animationCallbackNpcOwner", summary["contextKinds"])
+        self.assertIn("animationCallbackOwnerUnresolved", summary["contextSearch"])
+
+    def test_event_summary_accepts_exact_npc_owner_agreement_contract(self):
+        summary = event_summary.event_summary_row(
+            {
+                "id": "jsspsi_two_exact_callbacks",
+                "contexts": [{"kind": "animationCallbackOwnerUnresolved"}],
+                "animationCallbackOwnershipStatus": "exactNpcOwnerAgreement",
+                "animationCallbackResolutionStatuses": [
+                    "exactNpcTableToken",
+                    "exactNpcInfoAndTemplateGroup",
+                ],
+                "animationCallbackNpcOwnerIds": ["si"],
+            },
+            "events_detail.json",
+        )
+
+        self.assertIn("npcAnimation", summary["contextKinds"])
+        self.assertIn("animationCallbackNpcOwner", summary["contextKinds"])
+        self.assertNotIn("animationCallbackOwnerUnresolved", summary["contextKinds"])
 
 
 if __name__ == "__main__":

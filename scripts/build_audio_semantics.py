@@ -107,7 +107,7 @@ PROJECTILE_SOUND_PHASES = {
 # authoritative value; these names are presentation labels, not a claim that
 # selection behavior was evaluated offline.
 SELECTION_HIRC_TYPES = frozenset({5, 6, 12, 13})
-AUDIO_SEMANTIC_SCHEMA_VERSION = 124
+AUDIO_SEMANTIC_SCHEMA_VERSION = 129
 TRIGGER_CONTEXT_SCHEMA_VERSION = 39
 
 MONO_BEHAVIOUR_AUDIO_EVENT_FIELD_NAMES = frozenset({

@@ -9469,6 +9469,13 @@ class AudioSemanticDataTests(unittest.TestCase):
             "animationCallbackResolutionStatuses",
             "animationCallbackResolvedEntityIds",
             "animationCallbackCandidateEntityIds",
+            "animationCallbackNpcOwnerIds",
+            "animationCallbackNpcOwnerTemplates",
+            "animationCallbackNpcActorTokens",
+            "animationCallbackOwnerKinds",
+            "animationCallbackNpcOccurrenceOwnerIds",
+            "animationCallbackNpcOccurrenceOwnerTemplates",
+            "animationCallbackNpcOccurrenceActorTokens",
         ):
             self.assertIn(f"record?.{field}", search_body)
             self.assertIn(f"raw.{field}", panel_body)
@@ -9476,8 +9483,24 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertIn("Animation callback token resolution", panel_body)
         self.assertIn("Animation callback resolved entities", panel_body)
         self.assertIn("Animation callback candidate entities", panel_body)
+        self.assertIn("raw.animationCallbackNpcOwnerIds", panel_body)
+        self.assertIn("raw.animationCallbackNpcOwnerTemplates", panel_body)
+        self.assertIn("raw.animationCallbackNpcActorTokens", panel_body)
+        self.assertIn("raw.animationCallbackOwnerKinds", panel_body)
+        self.assertIn("raw.animationCallbackNpcOccurrenceOwnerIds", panel_body)
+        self.assertIn("raw.animationCallbackNpcOccurrenceOwnerTemplates", panel_body)
+        self.assertIn("raw.animationCallbackNpcOccurrenceActorTokens", panel_body)
         self.assertNotIn("raw.animationCallbackClipResolutions", panel_body)
         self.assertNotIn("raw.animationCallbackOccurrences", panel_body)
+        self.assertIn('npcAnimation: "contextNpcAnimation"', source)
+        self.assertIn('animationCallbackNpcOwner: "contextAnimationCallbackNpcOwner"', source)
+        self.assertIn("function hasExactNpcAnimationOwner", source)
+        self.assertIn("const resolutionStatuses = asArray(record?.animationCallbackResolutionStatuses)", source)
+        self.assertIn('resolutionStatuses.every((status) => status.startsWith("exactNpc"))', source)
+        self.assertIn('"exactNpcOwnerAgreement"', source)
+        self.assertIn('tags.add("ownerUnresolvedAnimation")', source)
+        self.assertIn('tags.add("animationCallbackNpcOwner")', source)
+        self.assertIn('context.kind === "animationCallbackOwnerUnresolved" && hasExactNpcAnimationOwner(record)', search_body)
         self.assertIn("runtime execution unobserved", source)
 
     def test_audio_frontend_exposes_scene_emitter_containment_boundary(self) -> None:

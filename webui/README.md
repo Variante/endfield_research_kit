@@ -975,3 +975,9 @@ After frontend or generated-data changes:
 
 Useful Story media fixtures are `test_sns_emojicomment`, `test_sns_sticker`,
 and `sns_topic_map02_lv005_12002`.
+When the callback token has one agreeing `NpcInfoTable` plus
+`NpcTemplateGroupTable` owner and one exact `AudioDialogChannel` key, details and
+search expose the NPC id, template, and actor token as `ownerKind=npc`.
+Duplicate/generic tokens, missing channel identity, overlay conflicts,
+malformed rows, and template mismatches stay unresolved. Mixed Events retain
+the NPC only on occurrence/Clip evidence and do not receive a single NPC owner.
