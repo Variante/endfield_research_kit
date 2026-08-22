@@ -6675,7 +6675,7 @@ class AudioSemanticDataTests(unittest.TestCase):
                 "remoteCommonLifecycleExecutionNotObserved",
             )
 
-    def test_remote_common_lifecycle_mirror_conflict_fails_closed(self) -> None:
+    def test_remote_common_lifecycle_mirror_overlay_prefers_persistent(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:
             root = Path(raw_root)
             table_dir = root / "structured"
@@ -6689,6 +6689,9 @@ class AudioSemanticDataTests(unittest.TestCase):
                     "remotecomm_conflict_fixture": {
                         "startAudioEvent": "au_music_remotecomm_start_b",
                     },
+                    "remotecomm_streaming_only_fixture": {
+                        "startAudioEvent": "au_music_remotecomm_streaming_only",
+                    },
                 },
             }
             for source_root, payload in payloads.items():
@@ -6698,14 +6701,44 @@ class AudioSemanticDataTests(unittest.TestCase):
 
             contexts = table_contexts.collect_table_contexts(root)
 
-            for event_name in (
-                "au_music_remotecomm_start_a",
-                "au_music_remotecomm_start_b",
-            ):
-                self.assertFalse(any(
-                    row.get("kind") == "remoteCommonLifecycleAudio"
-                    for row in contexts.get(event_name, [])
-                ))
+            persistent_rows = [
+                row for row in contexts["au_music_remotecomm_start_a"]
+                if row.get("kind") == "remoteCommonLifecycleAudio"
+            ]
+            self.assertEqual(len(persistent_rows), 1)
+            self.assertIn("structured/Persistent/Table/RemoteCommonTable.json", persistent_rows[0]["source"])
+            self.assertFalse(any(
+                row.get("kind") == "remoteCommonLifecycleAudio"
+                for row in contexts.get("au_music_remotecomm_start_b", [])
+            ))
+            streaming_only_rows = [
+                row for row in contexts["au_music_remotecomm_streaming_only"]
+                if row.get("kind") == "remoteCommonLifecycleAudio"
+            ]
+            self.assertEqual(len(streaming_only_rows), 1)
+            self.assertIn("structured/StreamingAssets/Table/RemoteCommonTable.json", streaming_only_rows[0]["source"])
+
+    def test_remote_common_malformed_persistent_mirror_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            root = Path(raw_root)
+            persistent = root / "structured/Persistent/Table/RemoteCommonTable.json"
+            streaming = root / "structured/StreamingAssets/Table/RemoteCommonTable.json"
+            persistent.parent.mkdir(parents=True)
+            streaming.parent.mkdir(parents=True)
+            persistent.write_text('{"broken": ', encoding="utf-8")
+            streaming.write_text(json.dumps({
+                "remotecomm_streaming_fixture": {
+                    "startAudioEvent": "au_music_remotecomm_streaming_fixture",
+                },
+            }), encoding="utf-8")
+
+            contexts = table_contexts.collect_table_contexts(root)
+
+            self.assertFalse(any(
+                row.get("kind") == "remoteCommonLifecycleAudio"
+                for rows in contexts.values()
+                for row in rows
+            ))
 
     def test_remote_common_lifecycle_identical_mirror_uses_persistent_once(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:

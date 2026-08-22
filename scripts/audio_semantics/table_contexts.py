@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
 import math
 import re
@@ -64,7 +63,7 @@ def _build_remote_common_event_contexts(
         export_root / "structured" / source_root / "Table" / "RemoteCommonTable.json"
         for source_root in ("Persistent", "StreamingAssets")
     ]
-    table_sources: list[tuple[str, Path, dict[str, Any], str]] = []
+    table_sources: list[tuple[str, dict[str, Any], str]] = []
     malformed_source = False
     for source_root, table_path in zip(("Persistent", "StreamingAssets"), table_paths):
         if not table_path.is_file():
@@ -85,31 +84,28 @@ def _build_remote_common_event_contexts(
             source_ref = normalize_posix(table_path.relative_to(export_root))
         except ValueError:
             source_ref = normalize_posix(table_path)
-        table_sources.append((
-            source_root,
-            table_path,
-            payload,
-            hashlib.sha256(table_data).hexdigest(),
-        ))
+        table_sources.append((source_root, payload, source_ref))
     # A malformed mirror makes the table overlay unverifiable.  Do not let a
     # valid sibling silently turn into an apparently complete ownership index.
     if malformed_source:
         return {}
 
-    if len({digest for _source_root, _path, _payload, digest in table_sources}) != 1:
-        # Persistent/Streaming are duplicate table mirrors for this contract.
-        # A differing mirror is not an overlay we can safely reconcile field by
-        # field: reject the complete RemoteCommon contribution instead of
-        # publishing an apparently exact lifecycle or auto-play request.
-        return {}
+    # Persistent is the active overlay.  Keep Streaming-only rows, while a
+    # Persistent row replaces the same normalized RemoteCommon ID.  This is
+    # intentionally row-level: the two physical tables are legitimate build
+    # layers and need not have identical content.
+    merged_rows: dict[str, tuple[Any, str]] = {}
+    for source_root in ("StreamingAssets", "Persistent"):
+        for row_source_root, payload, source_ref in table_sources:
+            if row_source_root != source_root:
+                continue
+            for raw_remote_id, row in payload.items():
+                remote_id = str(raw_remote_id or "").strip()
+                if not remote_id:
+                    continue
+                merged_rows[remote_id] = (row, source_ref)
 
-    # Preserve the repository-wide Persistent-over-Streaming source rule while
-    # avoiding duplicate evidence rows when both physical mirrors are present.
-    _source_root, _table_path, payload, _digest = next(
-        row for row in table_sources if row[0] == "Persistent"
-    ) if any(row[0] == "Persistent" for row in table_sources) else table_sources[0]
-    source_ref = normalize_posix(_table_path.relative_to(export_root))
-    for remote_id, row in sorted(payload.items(), key=lambda item: str(item[0])):
+    for remote_id, (row, source_ref) in sorted(merged_rows.items()):
         if not isinstance(row, dict):
             continue
         remote_id = str(remote_id or "").strip()
