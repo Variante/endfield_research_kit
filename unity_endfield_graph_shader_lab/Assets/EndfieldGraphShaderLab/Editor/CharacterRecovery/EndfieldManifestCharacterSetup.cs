@@ -5573,6 +5573,11 @@ namespace EndfieldGraphShaderLabEditor
             Camera camera,
             string outputPath)
         {
+            RenderRuntimeReferenceActorObjectIdMaskCommandBuffer(actorRoot, camera, outputPath);
+            return;
+            /* Legacy camera isolation implementation retained below for audit
+             * history; the command-buffer path bypasses HGCompat postprocess. */
+            #pragma warning disable CS0162
             if (actorRoot == null || camera == null)
                 throw new ArgumentNullException(actorRoot == null ? nameof(actorRoot) : nameof(camera));
             Shader replacement = Shader.Find("Hidden/Endfield/ActorObjectIdMask");
@@ -5683,6 +5688,65 @@ namespace EndfieldGraphShaderLabEditor
                 camera.clearFlags = savedFlags;
                 camera.backgroundColor = savedBackground;
                 camera.targetTexture = savedTarget;
+            }
+        }
+
+        private static void RenderRuntimeReferenceActorObjectIdMaskCommandBuffer(
+            GameObject actorRoot, Camera camera, string outputPath)
+        {
+            Shader shader = Shader.Find("Hidden/Endfield/ActorObjectIdMask");
+            if (shader == null) throw new InvalidOperationException("Actor mask shader missing.");
+            var renderers = actorRoot.GetComponentsInChildren<Renderer>(true)
+                .Where(r => r.enabled && r.transform.IsChildOf(actorRoot.transform)).ToArray();
+            if (renderers.Length == 0) throw new InvalidOperationException("Actor has no enabled renderers.");
+            var material = new Material(shader);
+            var target = new RenderTexture(RuntimeReferenceRenderWidth, RuntimeReferenceRenderHeight, 24, RenderTextureFormat.ARGB32);
+            var texture = new Texture2D(RuntimeReferenceRenderWidth, RuntimeReferenceRenderHeight, TextureFormat.RGB24, false, true);
+            var command = new CommandBuffer { name = "Endminf actor object-ID mask" };
+            try
+            {
+                target.Create();
+                command.SetRenderTarget(target);
+                command.ClearRenderTarget(true, true, Color.black);
+                command.SetViewProjectionMatrices(camera.worldToCameraMatrix,
+                    GL.GetGPUProjectionMatrix(camera.projectionMatrix, true));
+                foreach (Renderer renderer in renderers)
+                {
+                    int submeshes = renderer is SkinnedMeshRenderer skinned && skinned.sharedMesh != null
+                        ? skinned.sharedMesh.subMeshCount
+                        : renderer.GetComponent<MeshFilter>()?.sharedMesh?.subMeshCount ?? 1;
+                    for (int submesh = 0; submesh < submeshes; submesh++)
+                        command.DrawRenderer(renderer, material, submesh, 0);
+                }
+                Graphics.ExecuteCommandBuffer(command);
+                RenderTexture previous = RenderTexture.active;
+                RenderTexture.active = target;
+                texture.ReadPixels(new Rect(0, 0, target.width, target.height), 0, 0, false);
+                texture.Apply(false, false);
+                RenderTexture.active = previous;
+                Color32[] pixels = texture.GetPixels32();
+                int nonEmpty = 0;
+                for (int i = 0; i < pixels.Length; i++)
+                {
+                    byte value = pixels[i].r > 8 || pixels[i].g > 8 || pixels[i].b > 8 ? (byte)255 : (byte)0;
+                    if (value != 0) nonEmpty++;
+                    pixels[i] = new Color32(value, value, value, 255);
+                }
+                float coverage = (float)nonEmpty / pixels.Length;
+                int w = target.width, h = target.height, c = 32;
+                if (coverage <= 0f || coverage > .8f || pixels[c*w+c].r != 0 || pixels[c*w+w-c-1].r != 0 ||
+                    pixels[(h-c-1)*w+c].r != 0 || pixels[(h-c-1)*w+w-c-1].r != 0)
+                    throw new InvalidOperationException($"Command-buffer actor mask invalid: coverage={coverage:0.0000}.");
+                texture.SetPixels32(pixels); texture.Apply(false, false);
+                Directory.CreateDirectory(Path.GetDirectoryName(outputPath) ?? ".");
+                File.WriteAllBytes(outputPath, texture.EncodeToPNG());
+            }
+            finally
+            {
+                command.Release();
+                UnityEngine.Object.DestroyImmediate(material);
+                UnityEngine.Object.DestroyImmediate(texture);
+                UnityEngine.Object.DestroyImmediate(target);
             }
         }
 
