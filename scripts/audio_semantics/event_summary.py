@@ -17,7 +17,7 @@ def semantic_context_group(kind: Any) -> str:
         return "cutscene"
     if value in {
         "characterAnimation", "enemyAnimation", "animationCallbackOwnerUnresolved",
-        "animationVoiceTrigger",
+        "npcAnimation", "animationCallbackNpcOwner", "animationVoiceTrigger",
     }:
         return "animation"
     if value in {"levelSequenceAudio", "timelineAudioCueBehaviorEvent"}:
@@ -53,8 +53,36 @@ def semantic_context_group(kind: Any) -> str:
     return ""
 
 
+def _has_exact_npc_animation_owner(row: dict[str, Any]) -> bool:
+    owner_ids = {str(value).strip() for value in row.get("animationCallbackNpcOwnerIds") or () if str(value).strip()}
+    if len(owner_ids) != 1:
+        return False
+    resolution_statuses = [
+        str(value).strip()
+        for value in row.get("animationCallbackResolutionStatuses") or ()
+        if str(value).strip()
+    ]
+    if resolution_statuses:
+        return all(value.startswith("exactNpc") for value in resolution_statuses)
+    return str(row.get("animationCallbackOwnershipStatus") or "").strip() in {
+        "exactNpcTableToken",
+        "exactNpcInfoAndTemplateGroup",
+        "exactNpcOwnerAgreement",
+    }
+
+
 def event_summary_row(row: dict[str, Any], detail_shard: str) -> dict[str, Any]:
     contexts = row.get("contexts") or []
+    exact_npc_animation_owner = _has_exact_npc_animation_owner(row)
+    raw_context_kinds = {
+        str(context.get("kind") or "")
+        for context in contexts
+        if isinstance(context, dict) and context.get("kind")
+    }
+    display_context_kinds = set(raw_context_kinds)
+    if exact_npc_animation_owner:
+        display_context_kinds.discard("animationCallbackOwnerUnresolved")
+        display_context_kinds.update({"npcAnimation", "animationCallbackNpcOwner"})
     timeline_contexts = [
         context for context in contexts
         if isinstance(context, dict) and context.get("kind") == "levelSequenceAudio"
@@ -209,6 +237,9 @@ def event_summary_row(row: dict[str, Any], detail_shard: str) -> dict[str, Any]:
             for value in field.values():
                 if isinstance(value, (str, int, float, bool)) and value not in ("", None):
                     context_search.add(str(value))
+    if exact_npc_animation_owner:
+        context_search.discard("animationCallbackOwnerUnresolved")
+        context_search.update({"npcAnimation", "animationCallbackNpcOwner"})
     media = row.get("media") or []
     scopes = sorted({str(value.get("audioScope") or value.get("storageRoot") or "") for value in media if value.get("audioScope") or value.get("storageRoot")})
     banks = sorted({str(value.get("bankPackage") or "") for evidence in media for value in evidence.get("wwiseMediaEvidence") or [] if value.get("bankPackage")})
@@ -266,6 +297,11 @@ def event_summary_row(row: dict[str, Any], detail_shard: str) -> dict[str, Any]:
         "characterAudioContextOwnerIds", "characterAudioContextRelationshipStatus",
         "animationCallbackLinkStatus", "animationCallbackClips",
         "animationCallbackOwnerIds", "animationCallbackFunctions",
+        "animationCallbackOwnerKinds", "animationCallbackNpcOwnerIds",
+        "animationCallbackNpcOwnerTemplates", "animationCallbackNpcActorTokens",
+        "animationCallbackNpcOccurrenceOwnerIds",
+        "animationCallbackNpcOccurrenceOwnerTemplates",
+        "animationCallbackNpcOccurrenceActorTokens",
         "animationCallbackContextKinds", "animationCallbackActionKinds",
         "animationCallbackReachabilityStatuses",
         "animationCallbackAnimatorControllerNames",
@@ -283,12 +319,8 @@ def event_summary_row(row: dict[str, Any], detail_shard: str) -> dict[str, Any]:
     )
     summary = {key: row[key] for key in keys if row.get(key) not in (None, "", [])}
     summary.update({
-        "contextGroups": sorted({semantic_context_group(context.get("kind")) for context in contexts if isinstance(context, dict)} - {""}),
-        "contextKinds": sorted({
-            str(context.get("kind") or "")
-            for context in contexts
-            if isinstance(context, dict) and context.get("kind")
-        }),
+        "contextGroups": sorted({semantic_context_group(kind) for kind in display_context_kinds} - {""}),
+        "contextKinds": sorted(display_context_kinds),
         "triggerBindingStatuses": sorted({
             str(context.get("triggerBindingStatus") or "")
             for context in contexts

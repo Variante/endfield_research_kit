@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 
 CHARACTER_TABLE_RELS = (
     "structured/StreamingAssets/Table/CharacterTable.json",
@@ -28,10 +28,22 @@ ENEMY_TEMPLATE_TABLE_RELS = (
     "structured/StreamingAssets/Table/EnemyTemplateTable.json",
     "structured/Persistent/Table/EnemyTemplateTable.json",
 )
+NPC_INFO_TABLE_RELS = (
+    "structured/StreamingAssets/Table/NpcInfoTable.json",
+    "structured/Persistent/Table/NpcInfoTable.json",
+)
+NPC_TEMPLATE_GROUP_TABLE_RELS = (
+    "structured/StreamingAssets/Table/NpcTemplateGroupTable.json",
+    "structured/Persistent/Table/NpcTemplateGroupTable.json",
+)
+AUDIO_DIALOG_CHANNEL_TABLE_RELS = (
+    "structured/StreamingAssets/Table/AudioDialogChannel.json",
+    "structured/Persistent/Table/AudioDialogChannel.json",
+)
 CHARACTER_KEY_RE = re.compile(r"^chr_(\d{4})_([a-z0-9]+)$", re.IGNORECASE)
 ENEMY_KEY_RE = re.compile(r"^eny_\d+_[a-z0-9]+(?:_[a-z0-9]+)*$", re.IGNORECASE)
 ANIMATION_CLIP_RE = re.compile(
-    r"^a_(?P<family>actor|enemy|monster)_(?P<token>[^_]+)(?:_|$)",
+    r"^a_(?P<family>actor|enemy|monster|npc)_(?P<token>[^_]+)(?:_|$)",
     re.IGNORECASE,
 )
 CHARACTER_NUMERIC_EVENT_PREFIX_RE = re.compile(
@@ -59,6 +71,7 @@ ANIMATION_CLIP_PREFIXES = (
     "a_actor_",
     "a_enemy_",
     "a_monster_",
+    "a_npc_",
     "a_char_",
 )
 
@@ -434,10 +447,216 @@ def _load_overlay_table(
     )
 
 
+def _collect_audio_dialog_channel_catalog(export_root: Path) -> dict[str, Any]:
+    """Collect exact actor tokens from the typed AudioDialogChannel rows."""
+
+    rows, sources, conflicts, malformed = _load_overlay_table(
+        export_root, AUDIO_DIALOG_CHANNEL_TABLE_RELS
+    )
+    valid: dict[str, dict[str, str]] = {}
+    invalid_rows: list[str] = []
+    for raw_key, raw in rows.items():
+        token = str(raw_key or "").strip().casefold()
+        if not isinstance(raw, dict) or not token:
+            invalid_rows.append(token or "<empty>")
+            continue
+        narrating = str(raw.get("narratingWwiseEvent") or "").strip()
+        radio = str(raw.get("radioWwiseEvent") or "").strip()
+        # The channel key and both typed Wwise fields must agree exactly. An
+        # empty channel row is a valid non-identity row, not an owner token.
+        if not narrating or not radio:
+            continue
+        if narrating.casefold() != f"vo_narrating_{token}_default" or (
+            radio.casefold() != f"vo_narrating_{token}_radio"
+        ):
+            invalid_rows.append(token)
+            continue
+        valid[token] = {
+            "actorToken": token,
+            "narratingWwiseEvent": narrating,
+            "radioWwiseEvent": radio,
+        }
+    if malformed:
+        status = "audioDialogChannelMalformed"
+    elif conflicts:
+        status = "audioDialogChannelConflicted"
+    elif not sources:
+        status = "audioDialogChannelUnavailable"
+    elif not valid:
+        status = "audioDialogChannelInvalid"
+    else:
+        status = "validatedAudioDialogChannelCatalog"
+    return {
+        "status": status,
+        "sourceFiles": sorted(set(sources)),
+        "conflictingKeys": sorted(set(conflicts)),
+        "malformedSources": sorted(set(malformed)),
+        "invalidRows": sorted(set(invalid_rows))[:32],
+        "tokens": sorted(valid),
+        "rows": [valid[token] for token in sorted(valid)][:256],
+        "counts": {
+            "tokens": len(valid),
+            "invalidRows": len(set(invalid_rows)),
+        },
+        "evidenceBoundary": (
+            "An AudioDialogChannel token is exact only when the current "
+            "Streaming/Persistent row key equals both typed narrating/radio "
+            "Wwise event suffixes. Missing, malformed, conflicting, or "
+            "non-identity channel rows do not establish an actor identity."
+        ),
+    }
+
+
+def _collect_npc_identity_catalog(export_root: Path) -> dict[str, Any]:
+    """Build a conservative NPC owner catalog from the two authored tables.
+
+    The two rows are deliberately joined on ``npcId``/``npcNameId`` and on
+    ``templateId``.  A token is usable only when ``voActor`` and ``wwiseId``
+    are non-empty, equal fields on the same NpcInfo row.  A malformed source
+    or overlay invalidates the catalog; row-level conflicts and cross-table
+    mismatches exclude that candidate, while the rows remain only as bounded
+    diagnostics.
+    """
+
+    channel_catalog = _collect_audio_dialog_channel_catalog(export_root)
+    info_rows, info_sources, info_conflicts, info_malformed = _load_overlay_table(
+        export_root, NPC_INFO_TABLE_RELS
+    )
+    group_rows, group_sources, group_conflicts, group_malformed = _load_overlay_table(
+        export_root, NPC_TEMPLATE_GROUP_TABLE_RELS
+    )
+    invalid_rows: list[str] = []
+    owners: list[dict[str, str]] = []
+    info_by_id: dict[str, dict[str, str]] = {}
+    group_by_id: dict[str, dict[str, str]] = {}
+
+    def text(row: Any, field: str) -> str:
+        value = row.get(field) if isinstance(row, dict) else None
+        return value.strip() if isinstance(value, str) else ""
+
+    for key, raw in info_rows.items():
+        npc_id = str(key or "").strip().casefold()
+        if not isinstance(raw, dict):
+            invalid_rows.append(f"NpcInfoTable:{npc_id or '<empty>'}")
+            continue
+        row_id = text(raw, "npcId").casefold()
+        template_id = text(raw, "templateId").casefold()
+        vo_actor = text(raw, "voActor").casefold()
+        wwise_id = text(raw, "wwiseId").casefold()
+        if not npc_id or row_id != npc_id:
+            invalid_rows.append(f"NpcInfoTable:{npc_id or '<empty>'}")
+            continue
+        # Most NPC rows are archetype-only and intentionally omit one or more
+        # identity fields.  They are not malformed, but cannot participate in
+        # this exact owner catalog.
+        if not template_id or not vo_actor or not wwise_id:
+            continue
+        if vo_actor != wwise_id:
+            invalid_rows.append(f"NpcInfoTable:{npc_id}")
+            continue
+        info_by_id[npc_id] = {
+            "ownerId": npc_id,
+            "ownerTemplateId": template_id,
+            "ownerActorToken": vo_actor,
+        }
+
+    for key, raw in group_rows.items():
+        npc_id = str(key or "").strip().casefold()
+        if not isinstance(raw, dict):
+            invalid_rows.append(f"NpcTemplateGroupTable:{npc_id or '<empty>'}")
+            continue
+        name_id = text(raw, "npcNameId").casefold()
+        template_id = text(raw, "templateId").casefold()
+        if not npc_id or name_id and name_id != npc_id:
+            invalid_rows.append(f"NpcTemplateGroupTable:{npc_id or '<empty>'}")
+            continue
+        if not name_id or not template_id:
+            continue
+        group_by_id[npc_id] = {
+            "ownerId": npc_id,
+            "ownerTemplateId": template_id,
+        }
+
+    for npc_id in sorted(set(info_by_id) | set(group_by_id)):
+        info = info_by_id.get(npc_id)
+        group = group_by_id.get(npc_id)
+        if not info or not group or info["ownerTemplateId"] != group["ownerTemplateId"]:
+            invalid_rows.append(f"templateAgreement:{npc_id}")
+            continue
+        owners.append(dict(info))
+
+    conflicting = sorted(set(info_conflicts) | set(group_conflicts))
+    conflicting_ids = set(conflicting)
+    owners = [
+        owner for owner in owners
+        if owner["ownerId"] not in conflicting_ids
+    ]
+    malformed = sorted(set(info_malformed) | set(group_malformed))
+    table_sources = {
+        "NpcInfoTable": sorted(set(info_sources)),
+        "NpcTemplateGroupTable": sorted(set(group_sources)),
+    }
+    table_conflicts = {
+        "NpcInfoTable": sorted(set(info_conflicts)),
+        "NpcTemplateGroupTable": sorted(set(group_conflicts)),
+    }
+    table_malformed = {
+        "NpcInfoTable": sorted(set(info_malformed)),
+        "NpcTemplateGroupTable": sorted(set(group_malformed)),
+    }
+    if malformed:
+        status = "npcCatalogMalformed"
+    elif not owners and conflicting:
+        status = "npcCatalogConflicted"
+    elif not owners and invalid_rows:
+        status = "npcCatalogInvalid"
+    elif not info_sources or not group_sources:
+        status = "npcCatalogUnavailable"
+    elif not owners:
+        status = "npcCatalogInvalid"
+    else:
+        status = "validatedNpcIdentityCatalog"
+
+    token_ids: dict[str, list[str]] = defaultdict(list)
+    for owner in owners:
+        token_ids[owner["ownerActorToken"]].append(owner["ownerId"])
+    return {
+        "status": status,
+        "audioDialogChannelStatus": channel_catalog.get("status") or "audioDialogChannelUnavailable",
+        "audioDialogChannelCatalog": channel_catalog,
+        "audioDialogChannelTokens": list(channel_catalog.get("tokens") or ()),
+        "sourceFiles": table_sources,
+        "conflictingKeys": table_conflicts,
+        "malformedSources": table_malformed,
+        "invalidRows": sorted(set(invalid_rows))[:32],
+        "blockedConflictIds": sorted(conflicting_ids)[:32],
+        "owners": owners[:256],
+        "npcIds": sorted(owner["ownerId"] for owner in owners),
+        "npcTokenIds": {
+            token: sorted(ids) for token, ids in sorted(token_ids.items())
+        },
+        "counts": {
+            "owners": len(owners),
+            "tokens": len(token_ids),
+            "duplicateTokens": sum(len(ids) > 1 for ids in token_ids.values()),
+        },
+        "evidenceBoundary": (
+            "NPC ownership requires one valid NpcInfoTable row whose npcId, "
+            "templateId, voActor, and wwiseId agree, plus one matching "
+            "NpcTemplateGroupTable npcNameId/templateId row in the current "
+            "Streaming/Persistent overlay and one exact AudioDialogChannel "
+            "token. Clip-name tokens remain ambiguous when more than one NPC "
+            "row owns the token. This does not prove "
+            "CharacterTable identity, Animator execution, playback, or audibility."
+        ),
+    }
+
+
 def collect_animation_entity_catalog(export_root: Path | None) -> dict[str, Any]:
-    """Collect exact CharacterTable/EnemyTable animation identity surfaces."""
+    """Collect exact character, enemy, and NPC animation identity surfaces."""
 
     root = Path(export_root) if export_root is not None else Path()
+    npc_catalog = _collect_npc_identity_catalog(root)
     (
         character_rows,
         character_sources,
@@ -545,8 +764,20 @@ def collect_animation_entity_catalog(export_root: Path | None) -> dict[str, Any]
     else:
         catalog_status = "animationEntityCatalogUnavailable"
     return {
-        "schemaVersion": 1,
+        "schemaVersion": SCHEMA_VERSION,
         "status": catalog_status,
+        "npcCatalogStatus": npc_catalog.get("status") or "npcCatalogUnavailable",
+        "audioDialogChannelStatus": (
+            npc_catalog.get("audioDialogChannelStatus")
+            or "audioDialogChannelUnavailable"
+        ),
+        "audioDialogChannelTokens": list(
+            npc_catalog.get("audioDialogChannelTokens") or ()
+        ),
+        "npcCatalog": npc_catalog,
+        "npcIds": list(npc_catalog.get("npcIds") or ()),
+        "npcTokenIds": dict(npc_catalog.get("npcTokenIds") or {}),
+        "npcOwners": list(npc_catalog.get("owners") or ()),
         "sourceFiles": source_files,
         "conflictingKeys": conflicts,
         "malformedSources": malformed_sources,
@@ -570,7 +801,9 @@ def collect_animation_entity_catalog(export_root: Path | None) -> dict[str, Any]
             "are exact enemy instances/variants; EnemyTemplateTable keys and "
             "templateId fields are exact enemy templates. Animation clip tokens are "
             "accepted only against the current catalog and remain ambiguous when "
-            "more than one identity is possible. No runtime execution is inferred."
+            "more than one identity is possible. NPC ownership additionally requires "
+            "agreeing NpcInfoTable and NpcTemplateGroupTable overlay rows and never "
+            "substitutes for CharacterTable identity. No runtime execution is inferred."
         ),
     }
 
@@ -594,6 +827,9 @@ def _animation_clip_resolution(
             "characterTableIds": [],
             "enemyTableIds": [],
             "enemyTemplateIds": [],
+            "npcTableIds": [],
+            "npcTemplateIds": [],
+            "npcActorTokens": [],
             "candidateEntityIds": [],
             "resolvedEntityIds": [],
         }
@@ -601,13 +837,36 @@ def _animation_clip_resolution(
     token = match.group("token").casefold()
     owner_kind = str(owner_kind or "").strip().casefold()
     owner_id = str(owner_id or "").strip().casefold()
-    if family == "actor":
+    npc_catalog_valid = (
+        catalog.get("npcCatalogStatus") == "validatedNpcIdentityCatalog"
+        and catalog.get("audioDialogChannelStatus")
+        == "validatedAudioDialogChannelCatalog"
+    )
+    npc_owner_rows = {
+        str(row.get("ownerId") or "").strip().casefold(): row
+        for row in catalog.get("npcOwners") or ()
+        if isinstance(row, dict) and str(row.get("ownerId") or "").strip()
+    }
+    candidate_npcs = list(
+        (catalog.get("npcTokenIds") or {}).get(token) or []
+    ) if (
+        npc_catalog_valid
+        and token in set(catalog.get("audioDialogChannelTokens") or ())
+        and family in {"actor", "npc"}
+        and owner_kind in {"", "npc"}
+    ) else []
+    if family == "actor" and owner_kind != "npc":
         candidate_characters = list(
             (catalog.get("characterTokenIds") or {}).get(token) or []
         )
         candidate_enemies: list[str] = []
         candidate_templates: list[str] = []
         family_matches = owner_kind in {"", "character"}
+    elif family == "npc" or owner_kind == "npc":
+        candidate_characters = []
+        candidate_enemies = []
+        candidate_templates = []
+        family_matches = owner_kind in {"", "npc"}
     else:
         candidate_characters = []
         candidate_enemies = list(
@@ -617,10 +876,18 @@ def _animation_clip_resolution(
             (catalog.get("enemyTokenTemplateIds") or {}).get(token) or []
         )
         family_matches = owner_kind in {"", "enemy"}
-    candidates = set(candidate_characters) | set(candidate_enemies) | set(candidate_templates)
+    candidates = (
+        set(candidate_characters)
+        | set(candidate_enemies)
+        | set(candidate_templates)
+        | set(candidate_npcs)
+    )
     if not family_matches or not token or not candidates:
         status = "unresolved"
         evidence = "animationClipTokenNoCurrentTableMatch"
+    elif owner_id and owner_id in set(candidate_npcs) and len(candidate_npcs) == 1:
+        status = "exactNpcInfoAndTemplateGroup"
+        evidence = "exactNpcInfoVoActorWwiseIdAndNpcTemplateGroupToken"
     elif owner_id and owner_id in set(candidate_characters):
         status = "exactCharacterTableInstance"
         evidence = "exactCharacterTableKeyAndAnimationClipToken"
@@ -633,6 +900,11 @@ def _animation_clip_resolution(
     elif owner_id and owner_id in known_owner_ids and len(candidates) == 1:
         status = "uniqueToken"
         evidence = "uniqueAnimationClipTokenForKnownOwner"
+    elif not owner_id and len(candidate_npcs) == 1 and not (
+        candidate_characters or candidate_enemies or candidate_templates
+    ):
+        status = "exactNpcTableToken"
+        evidence = "uniqueNpcInfoAndTemplateGroupToken"
     elif not owner_id and len(candidates) == 1:
         status = "uniqueToken"
         evidence = "uniqueAnimationClipTokenInCurrentEntityCatalog"
@@ -644,7 +916,9 @@ def _animation_clip_resolution(
         evidence = "multipleCurrentEntityIdentitiesShareAnimationClipToken"
     candidate_entity_ids = sorted(candidates)[:32]
     resolved_entity_ids: list[str] = []
-    if status.startswith("exact") and owner_id:
+    if status == "exactNpcTableToken" and len(candidate_npcs) == 1:
+        resolved_entity_ids = [candidate_npcs[0]]
+    elif status.startswith("exact") and owner_id:
         resolved_entity_ids = [owner_id]
     ownership_status = (
         "resolved"
@@ -653,12 +927,18 @@ def _animation_clip_resolution(
         if status == "uniqueToken"
         else "unresolved"
     )
+    resolved_owner_id = (
+        resolved_entity_ids[0]
+        if status == "exactNpcTableToken" and resolved_entity_ids
+        else owner_id
+    )
+    resolved_owner_kind = "npc" if status.startswith("exactNpc") else owner_kind
     return {
         "clip": text,
         "clipFamily": family,
         "clipToken": token,
-        "ownerKind": owner_kind,
-        "ownerId": owner_id,
+        "ownerKind": resolved_owner_kind,
+        "ownerId": resolved_owner_id,
         "resolutionStatus": status,
         "tokenResolutionStatus": status,
         "ownershipStatus": ownership_status,
@@ -666,6 +946,29 @@ def _animation_clip_resolution(
         "characterTableIds": candidate_characters[:32],
         "enemyTableIds": candidate_enemies[:32],
         "enemyTemplateIds": candidate_templates[:32],
+        "npcTableIds": candidate_npcs[:32],
+        "npcTemplateIds": sorted({
+            str(npc_owner_rows[npc_id].get("ownerTemplateId") or "")
+            for npc_id in candidate_npcs
+            if npc_id in npc_owner_rows
+            and npc_owner_rows[npc_id].get("ownerTemplateId")
+        })[:32],
+        "npcActorTokens": sorted({
+            str(npc_owner_rows[npc_id].get("ownerActorToken") or "")
+            for npc_id in candidate_npcs
+            if npc_id in npc_owner_rows
+            and npc_owner_rows[npc_id].get("ownerActorToken")
+        })[:32],
+        "ownerTemplateId": (
+            str(npc_owner_rows.get(resolved_entity_ids[0], {}).get("ownerTemplateId") or "")
+            if resolved_entity_ids and resolved_entity_ids[0] in npc_owner_rows
+            else ""
+        ),
+        "ownerActorToken": (
+            str(npc_owner_rows.get(resolved_entity_ids[0], {}).get("ownerActorToken") or "")
+            if resolved_entity_ids and resolved_entity_ids[0] in npc_owner_rows
+            else ""
+        ),
         "candidateEntityIds": candidate_entity_ids,
         "resolvedEntityIds": resolved_entity_ids,
     }
@@ -686,6 +989,7 @@ def annotate_event_animation_callback_links(
     matched = 0
     unknown_category = 0
     with_controller_reachability = 0
+    npc_occurrence_rows_count = 0
     owner_kind_counts: Counter[str] = Counter()
     for event in event_rows:
         if not isinstance(event, dict):
@@ -704,6 +1008,12 @@ def annotate_event_animation_callback_links(
         ownership_classes: set[str] = set()
         resolved_entity_ids: set[str] = set()
         candidate_entity_ids: set[str] = set()
+        npc_resolved_entity_ids: set[str] = set()
+        npc_candidate_entity_ids: set[str] = set()
+        npc_owner_ids: set[str] = set()
+        npc_owner_templates: set[str] = set()
+        npc_actor_tokens: set[str] = set()
+        npc_resolution_rows: list[dict[str, Any]] = []
         controller_membership_statuses: set[str] = set()
         occurrence_ownership: list[dict[str, Any]] = []
         occurrence_count = 0
@@ -789,6 +1099,10 @@ def annotate_event_animation_callback_links(
                 token_resolution_statuses.add(
                     str(resolution.get("tokenResolutionStatus") or "unresolved")
                 )
+                resolution_is_npc = (
+                    str(resolution.get("ownerKind") or "") == "npc"
+                    or str(resolution.get("resolutionStatus") or "").startswith("exactNpc")
+                )
                 candidate_entity_ids.update(
                     str(value)
                     for key in (
@@ -800,12 +1114,37 @@ def annotate_event_animation_callback_links(
                     for value in resolution.get(key) or ()
                     if str(value)
                 )
-                if str(resolution.get("resolutionStatus") or "").startswith("exact"):
+                if resolution_is_npc:
+                    npc_candidate_entity_ids.update(
+                        str(value)
+                        for key in (
+                            "candidateEntityIds",
+                            "npcTableIds",
+                            "npcTemplateIds",
+                        )
+                        for value in resolution.get(key) or ()
+                        if str(value)
+                    )
+                if (
+                    str(resolution.get("resolutionStatus") or "").startswith("exact")
+                    and not resolution_is_npc
+                ):
                     resolved_entity_ids.update(
                         str(value).casefold()
                         for value in resolution.get("resolvedEntityIds") or ()
                         if str(value)
                     )
+                if resolution_is_npc:
+                    for value in resolution.get("resolvedEntityIds") or ():
+                        if str(value):
+                            resolved_value = str(value).casefold()
+                            npc_resolved_entity_ids.add(resolved_value)
+                            npc_owner_ids.add(resolved_value)
+                    if resolution.get("ownerTemplateId"):
+                        npc_owner_templates.add(str(resolution["ownerTemplateId"]))
+                    if resolution.get("ownerActorToken"):
+                        npc_actor_tokens.add(str(resolution["ownerActorToken"]))
+                    npc_resolution_rows.append(dict(resolution))
             action_kinds.update(
                 str(value) for value in context.get("actionKinds") or () if value
             )
@@ -834,7 +1173,54 @@ def annotate_event_animation_callback_links(
             "exactSerializedAnimationClipAudioCallback"
         )
         event["animationCallbackClips"] = sorted(clips)[:limit]
-        event["animationCallbackOwnerIds"] = sorted(owner_ids)[:limit]
+        # A table-exact NPC owner is promoted to the Event only when every
+        # resolved callback identity agrees.  Mixed events keep the owner on
+        # their occurrence/clip rows so one NPC cannot be presented as the
+        # Event's sole owner.
+        npc_only_exact = bool(npc_resolution_rows) and all(
+            str(row.get("resolutionStatus") or "").startswith("exactNpc")
+            for row in npc_resolution_rows
+        ) and not (
+            resolution_statuses - {
+                str(row.get("resolutionStatus") or "")
+                for row in npc_resolution_rows
+            }
+        )
+        promoted_npc_owner_ids = (
+            npc_owner_ids
+            if npc_only_exact and len(npc_owner_ids) == 1 and not event_owner_ids
+            else set()
+        )
+        if promoted_npc_owner_ids:
+            resolved_entity_ids.update(npc_resolved_entity_ids)
+        else:
+            candidate_entity_ids.difference_update(npc_candidate_entity_ids)
+        effective_owner_ids = owner_ids | promoted_npc_owner_ids
+        event["animationCallbackOwnerIds"] = sorted(effective_owner_ids)[:limit]
+        event["animationCallbackOwnerKinds"] = sorted({
+            "npc" for _value in promoted_npc_owner_ids
+        } | {
+            "character" if kind == "characterAnimation" else
+            "enemy" if kind == "enemyAnimation" else ""
+            for kind in context_kinds
+            if kind in {"characterAnimation", "enemyAnimation"}
+        })[:limit]
+        event["animationCallbackNpcOwnerIds"] = sorted(promoted_npc_owner_ids)[:limit]
+        event["animationCallbackNpcOwnerTemplates"] = sorted(
+            npc_owner_templates if promoted_npc_owner_ids else ()
+        )[:limit]
+        event["animationCallbackNpcActorTokens"] = sorted(
+            npc_actor_tokens if promoted_npc_owner_ids else ()
+        )[:limit]
+        # These fields are explicitly occurrence-scoped and remain populated
+        # for a mixed Event; they are not Event-owner promotion.
+        event["animationCallbackNpcOccurrenceOwnerIds"] = sorted(npc_owner_ids)[:limit]
+        event["animationCallbackNpcOccurrenceOwnerTemplates"] = sorted(
+            npc_owner_templates
+        )[:limit]
+        event["animationCallbackNpcOccurrenceActorTokens"] = sorted(
+            npc_actor_tokens
+        )[:limit]
         event["animationCallbackFunctions"] = sorted(functions)[:limit]
         event["animationCallbackContextKinds"] = sorted(context_kinds)[:limit]
         event["animationCallbackActionKinds"] = sorted(action_kinds)[:limit]
@@ -869,14 +1255,16 @@ def annotate_event_animation_callback_links(
             event["animationCallbackEntityIds"] = sorted(resolved_entity_ids)[:limit]
             event["animationCallbackOwnershipStatus"] = (
                 "shared"
-                if len(event_owner_ids) > 1
+                if len(event_owner_ids | npc_owner_ids) > 1
+                else "exactNpcOwnerAgreement"
+                if promoted_npc_owner_ids and len(resolution_statuses) > 1
                 else next(iter(resolution_statuses))
                 if (
                     len(resolution_statuses) == 1
                     and next(iter(resolution_statuses)).startswith("exact")
                 )
                 else "resolved"
-                if resolved_entity_ids
+                if resolved_entity_ids and not (npc_owner_ids and not npc_only_exact)
                 else "candidateOnly"
                 if "uniqueToken" in token_resolution_statuses
                 else "ambiguous"
@@ -889,6 +1277,23 @@ def annotate_event_animation_callback_links(
             )[:limit]
             event["animationCallbackEntityIds"] = sorted(resolved_entity_ids)[:limit]
         event["animationCallbackOccurrences"] = occurrence_ownership
+        if npc_resolution_rows:
+            existing_markers = {
+                json.dumps(row, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+                for row in occurrence_ownership
+                if isinstance(row, dict)
+            }
+            for resolution in npc_resolution_rows:
+                occurrence = dict(resolution)
+                occurrence["occurrenceKind"] = "animationClipContext"
+                marker = json.dumps(
+                    occurrence, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+                )
+                if marker not in existing_markers and len(occurrence_ownership) < limit:
+                    occurrence_ownership.append(occurrence)
+                    existing_markers.add(marker)
+                    npc_occurrence_rows_count += 1
+            event["animationCallbackOccurrences"] = occurrence_ownership
         event["animationCallbackOccurrenceCount"] = occurrence_count
         event["animationCallbackLinkEvidence"] = (
             "exactAnimationClipPostAudioEventContext"
@@ -900,6 +1305,7 @@ def annotate_event_animation_callback_links(
                 reachability, controller_names, ownership_classes,
                 resolved_entity_ids, candidate_entity_ids,
                 controller_membership_statuses, occurrence_ownership,
+                npc_owner_ids, npc_owner_templates, npc_actor_tokens,
             )
         )
     return {
@@ -910,13 +1316,23 @@ def annotate_event_animation_callback_links(
             with_controller_reachability
         ),
         "animationCallbackOwnerKindCounts": dict(sorted(owner_kind_counts.items())),
+        "npcOwnerIdentityRows": npc_occurrence_rows_count,
         "animationEntityCatalogStatus": catalog.get("status") or "unavailable",
+        "animationNpcCatalogStatus": (
+            catalog.get("npcCatalogStatus") or "npcCatalogUnavailable"
+        ),
+        "animationAudioDialogChannelStatus": (
+            catalog.get("audioDialogChannelStatus")
+            or "audioDialogChannelUnavailable"
+        ),
         "evidenceBoundary": (
             "A supported serialized PostAudioEvent callback on an AnimationClip "
             "proves that the clip requests the Wwise Event and preserves its authored "
-            "character/enemy owner. AnimatorController membership is reported when "
-            "available. The link does not prove Animator execution, callback timing, "
-            "selected Wwise media, playback, audibility, or an SFX category."
+            "character/enemy/NPC owner when the corresponding current-build table "
+            "evidence is exact. NPC owner promotion is occurrence-safe for mixed "
+            "Events. AnimatorController membership is reported when available. The "
+            "link does not prove Animator execution, callback timing, selected Wwise "
+            "media, playback, audibility, or an SFX category."
         ),
     }
 
@@ -1082,6 +1498,9 @@ def annotate_media_coarse_ownership(
             "callbackEventIds": set(),
             "callbackClips": set(),
             "callbackOwnerIds": set(),
+            "callbackNpcOwnerIds": set(),
+            "callbackNpcOwnerTemplates": set(),
+            "callbackNpcActorTokens": set(),
             "callbackFunctions": set(),
             "callbackReachability": set(),
             "callbackControllers": set(),
@@ -1093,6 +1512,7 @@ def annotate_media_coarse_ownership(
             "callbackResolutionStatuses": set(),
             "callbackTokenResolutionStatuses": set(),
             "callbackOwnershipStatuses": set(),
+            "callbackOwnershipStatusEventIds": set(),
             "callbackOccurrences": [],
         }
     )
@@ -1310,6 +1730,17 @@ def annotate_media_coarse_ownership(
             target["callbackOwnerIds"].update(
                 str(value) for value in event.get("animationCallbackOwnerIds") or ()
             )
+            target["callbackNpcOwnerIds"].update(
+                str(value) for value in event.get("animationCallbackNpcOwnerIds") or ()
+            )
+            target["callbackNpcOwnerTemplates"].update(
+                str(value)
+                for value in event.get("animationCallbackNpcOwnerTemplates") or ()
+            )
+            target["callbackNpcActorTokens"].update(
+                str(value)
+                for value in event.get("animationCallbackNpcActorTokens") or ()
+            )
             target["callbackFunctions"].update(
                 str(value) for value in event.get("animationCallbackFunctions") or ()
             )
@@ -1351,6 +1782,9 @@ def annotate_media_coarse_ownership(
             ).strip()
             if ownership_status:
                 target["callbackOwnershipStatuses"].add(ownership_status)
+                target["callbackOwnershipStatusEventIds"].add(
+                    str(event.get("id") or event_id)
+                )
             for resolution in event.get("animationCallbackClipResolutions") or ():
                 if isinstance(resolution, dict) and len(target["callbackOccurrences"]) < limit:
                     target["callbackOccurrences"].append(dict(resolution))
@@ -1382,6 +1816,8 @@ def annotate_media_coarse_ownership(
                 "characterEventIds", "characterOwnerIds", "characterOwnerTokens",
                 "characterIdentityStatuses", "characterContextRelationships",
                 "callbackEventIds", "callbackClips", "callbackOwnerIds",
+                "callbackNpcOwnerIds", "callbackNpcOwnerTemplates",
+                "callbackNpcActorTokens",
                 "callbackFunctions", "callbackReachability", "callbackControllers",
                 "callbackOwnershipClasses", "callbackEntityIds",
                 "callbackResolvedEntityIds", "callbackCandidateEntityIds",
@@ -1423,11 +1859,35 @@ def annotate_media_coarse_ownership(
                 shared_character_media.add(marker)
         if claim["callbackEventIds"]:
             callback_owner_ids = sorted(claim["callbackOwnerIds"])
+            callback_npc_owner_ids = sorted(claim["callbackNpcOwnerIds"])
+            callback_event_count = len(claim["callbackEventIds"])
+            callback_ownership_statuses = {
+                str(value).strip()
+                for value in claim["callbackOwnershipStatuses"]
+                if str(value).strip()
+            }
+            callback_statuses_are_exact_npc = (
+                callback_event_count > 1
+                and len(claim["callbackOwnershipStatusEventIds"]) == callback_event_count
+                and bool(callback_ownership_statuses)
+                and all(value.startswith("exactNpc") for value in callback_ownership_statuses)
+                and len(callback_npc_owner_ids) == 1
+                and callback_owner_ids == callback_npc_owner_ids
+            )
             row["animationCallbackEventIds"] = sorted(
                 claim["callbackEventIds"]
             )[:limit]
             row["animationCallbackClips"] = sorted(claim["callbackClips"])[:limit]
             row["animationCallbackOwnerIds"] = callback_owner_ids[:limit]
+            row["animationCallbackNpcOwnerIds"] = sorted(
+                claim["callbackNpcOwnerIds"]
+            )[:limit]
+            row["animationCallbackNpcOwnerTemplates"] = sorted(
+                claim["callbackNpcOwnerTemplates"]
+            )[:limit]
+            row["animationCallbackNpcActorTokens"] = sorted(
+                claim["callbackNpcActorTokens"]
+            )[:limit]
             row["animationCallbackFunctions"] = sorted(
                 claim["callbackFunctions"]
             )[:limit]
@@ -1459,7 +1919,9 @@ def annotate_media_coarse_ownership(
                 claim["callbackTokenResolutionStatuses"]
             )[:limit]
             row["animationCallbackClipResolutions"] = claim["callbackOccurrences"][:limit]
-            if claim["callbackOwnershipStatuses"]:
+            if callback_statuses_are_exact_npc:
+                row["animationCallbackOwnershipStatus"] = "exactNpcOwnerAgreement"
+            elif claim["callbackOwnershipStatuses"]:
                 row["animationCallbackOwnershipStatus"] = (
                     "shared"
                     if len(callback_owner_ids) > 1
@@ -1489,6 +1951,10 @@ def annotate_media_coarse_ownership(
                         else "sharedAcrossAnimationCallbackOwners"
                     )
                 )
+            if callback_event_count > 1 and not callback_statuses_are_exact_npc:
+                row["animationCallbackNpcOwnerIds"] = []
+                row["animationCallbackNpcOwnerTemplates"] = []
+                row["animationCallbackNpcActorTokens"] = []
             row["animationCallbackLinkEvidence"] = (
                 "exactAnimationClipPostAudioEventContextToPossibleWwiseMedia"
             )

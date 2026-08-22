@@ -1847,3 +1847,14 @@ selection remain unresolved even though all current v150 Bus InitialFX counts
 and authored slots are now parsed.
 - Per-system negative/certification reports that remain actionable after input
   drift.
+The same static callback path can recover an NPC owner without treating it as a
+playable CharacterTable row: one `NpcInfoTable` row must provide identical
+non-empty `voActor` and `wwiseId`, and its `npcId`/`templateId` must agree with
+`NpcTemplateGroupTable` `npcNameId`/`templateId` in the current overlays. The
+same token must also be a unique exact `AudioDialogChannel` key with matching
+typed narrating/radio Event suffixes. The published identity is `ownerKind=npc`
+plus NPC id, template id, and actor token.
+Duplicate tokens, conflicting or malformed overlays, and template mismatches
+fail closed; generic archetypes remain unresolved. A mixed Event keeps a valid
+NPC identity only at occurrence/Clip level. This still does not prove Animator
+execution, playback, media selection, or audibility.

@@ -542,3 +542,9 @@ assets. Local WebUI, report, memory, and scratch changes are excluded.
 
 Changing inventories and schema-specific counts belong in generated reports,
 not this file.
+When the two NPC tables provide one exact agreeing row, the Audio page also
+shows `ownerKind=npc`, NPC id, template, and actor token for the callback Clip
+only when the same token has one exact `AudioDialogChannel` key. Duplicate or
+generic tokens, missing channel identity, overlay conflicts, malformed rows,
+and template mismatches stay unresolved. Mixed Events keep the NPC identity on the
+occurrence/Clip evidence instead of promoting the whole Event to one owner.

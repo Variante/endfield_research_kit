@@ -1160,3 +1160,14 @@ python tools\endfield_source_graph.py issues --limit 20
   removed after validation.
 - New maintained scripts must support the WebUI or the Unity character lab;
   otherwise keep them in `scratch/` or `tmp/`.
+The same catalog also admits an NPC owner only when one valid `NpcInfoTable`
+row has matching non-empty `voActor`/`wwiseId` fields and its
+`NpcTemplateGroupTable` `npcNameId`/`templateId` row agrees. Exact actor tokens
+must also have one exact current `AudioDialogChannel` key whose typed narrating
+and radio Event suffixes agree with that token; then they publish `ownerKind=npc`,
+the `npcId`, template id, and actor token. Rows
+with duplicate tokens, overlay conflicts, malformed layers, or template
+mismatches remain unresolved; generic archetypes are never promoted by name.
+Mixed Events retain that identity only on their callback occurrence/Clip rows,
+not as a single Event owner. This does not prove CharacterTable identity,
+Animator execution, playback, or audibility.
