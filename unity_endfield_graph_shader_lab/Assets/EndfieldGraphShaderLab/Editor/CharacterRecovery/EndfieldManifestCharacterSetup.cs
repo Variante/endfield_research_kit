@@ -5575,7 +5575,7 @@ namespace EndfieldGraphShaderLabEditor
         {
             if (actorRoot == null || camera == null)
                 throw new ArgumentNullException(actorRoot == null ? nameof(actorRoot) : nameof(camera));
-            Shader replacement = Shader.Find("Unlit/Color");
+            Shader replacement = Shader.Find("Hidden/Endfield/ActorObjectIdMask");
             if (replacement == null)
                 throw new InvalidOperationException("Exact actor object-ID mask requires Unlit/Color replacement shader.");
             int savedMask = camera.cullingMask;
@@ -5584,9 +5584,23 @@ namespace EndfieldGraphShaderLabEditor
             RenderTexture savedTarget = camera.targetTexture;
             var transforms = actorRoot.GetComponentsInChildren<Transform>(true);
             var layers = new int[transforms.Length];
+            var allRenderers = UnityEngine.Object.FindObjectsOfType<Renderer>(true);
+            var rendererStates = new bool[allRenderers.Length];
+            var allCanvases = UnityEngine.Object.FindObjectsOfType<Canvas>(true);
+            var canvasStates = new bool[allCanvases.Length];
             const int maskLayer = 31;
             try
             {
+                for (int i = 0; i < allRenderers.Length; i++)
+                {
+                    rendererStates[i] = allRenderers[i].enabled;
+                    allRenderers[i].enabled = allRenderers[i].transform.IsChildOf(actorRoot.transform) || allRenderers[i].transform == actorRoot.transform;
+                }
+                for (int i = 0; i < allCanvases.Length; i++)
+                {
+                    canvasStates[i] = allCanvases[i].enabled;
+                    allCanvases[i].enabled = false;
+                }
                 for (int i = 0; i < transforms.Length; i++)
                 {
                     layers[i] = transforms[i].gameObject.layer;
@@ -5594,12 +5608,16 @@ namespace EndfieldGraphShaderLabEditor
                 }
                 camera.cullingMask = 1 << maskLayer;
                 camera.clearFlags = CameraClearFlags.SolidColor;
-                camera.backgroundColor = Color.black;
+                camera.backgroundColor = Color.white;
                 var target = new RenderTexture(RuntimeReferenceRenderWidth, RuntimeReferenceRenderHeight, 24, RenderTextureFormat.ARGB32);
                 var texture = new Texture2D(RuntimeReferenceRenderWidth, RuntimeReferenceRenderHeight, TextureFormat.RGB24, false, true);
                 try
                 {
                     camera.targetTexture = target;
+                    RenderTexture previousForClear = RenderTexture.active;
+                    RenderTexture.active = target;
+                    GL.Clear(true, true, Color.black);
+                    RenderTexture.active = previousForClear;
                     camera.RenderWithShader(replacement, string.Empty);
                     RenderTexture previous = RenderTexture.active;
                     RenderTexture.active = target;
@@ -5610,12 +5628,19 @@ namespace EndfieldGraphShaderLabEditor
                     int nonEmpty = 0;
                     for (int i = 0; i < pixels.Length; i++)
                     {
-                        byte value = (byte)(pixels[i].r > 8 || pixels[i].g > 8 || pixels[i].b > 8 ? 255 : 0);
+                        byte value = (byte)(pixels[i].r < 248 || pixels[i].g < 248 || pixels[i].b < 248 ? 255 : 0);
                         if (value != 0) nonEmpty++;
                         pixels[i] = new Color32(value, value, value, 255);
                     }
-                    if (nonEmpty == 0)
-                        throw new InvalidOperationException("Actor object-ID mask is empty.");
+                    float coverage = (float)nonEmpty / pixels.Length;
+                    if (nonEmpty == 0 || coverage > 0.80f)
+                        throw new InvalidOperationException($"Actor object-ID mask coverage implausible: {coverage:0.0000}.");
+                    int corner = 32;
+                    if (pixels[corner * target.width + corner].r != 0 ||
+                        pixels[corner * target.width + target.width - corner - 1].r != 0 ||
+                        pixels[(target.height - corner - 1) * target.width + corner].r != 0 ||
+                        pixels[(target.height - corner - 1) * target.width + target.width - corner - 1].r != 0)
+                        throw new InvalidOperationException("Actor object-ID mask background corners are not black.");
                     texture.SetPixels32(pixels);
                     texture.Apply(false, false);
                     Directory.CreateDirectory(Path.GetDirectoryName(outputPath) ?? ".");
@@ -5631,6 +5656,10 @@ namespace EndfieldGraphShaderLabEditor
             {
                 for (int i = 0; i < transforms.Length; i++)
                     if (transforms[i] != null) transforms[i].gameObject.layer = layers[i];
+                for (int i = 0; i < allRenderers.Length; i++)
+                    if (allRenderers[i] != null) allRenderers[i].enabled = rendererStates[i];
+                for (int i = 0; i < allCanvases.Length; i++)
+                    if (allCanvases[i] != null) allCanvases[i].enabled = canvasStates[i];
                 camera.cullingMask = savedMask;
                 camera.clearFlags = savedFlags;
                 camera.backgroundColor = savedBackground;
