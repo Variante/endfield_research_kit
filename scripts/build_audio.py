@@ -27,6 +27,7 @@ if __package__:
         hashed_event_key,
         is_rtpc_parameter_name,
     )
+    from .audio_semantics import name_recovery
     from .audio_semantics.table_contexts import collect_table_audio_events
     from .audio_semantics.event_projection import HIRC_OBJECT_TYPE_LABELS
     from .audio_semantics.rtpc_contract import CANONICAL_RTPC_ENTRIES
@@ -42,6 +43,7 @@ else:
         hashed_event_key,
         is_rtpc_parameter_name,
     )
+    from audio_semantics import name_recovery
     from audio_semantics.table_contexts import collect_table_audio_events
     from audio_semantics.event_projection import HIRC_OBJECT_TYPE_LABELS
     from audio_semantics.rtpc_contract import CANONICAL_RTPC_ENTRIES
@@ -14316,6 +14318,37 @@ def build_audio(args: argparse.Namespace) -> int:
                 if event_hash in skill_id_dictionary_alias_hashes
                 else "typedVoiceTableEventNameRecovered"
             )
+    # Every observed-string source is exhausted by this point, so the Events
+    # still without a name are regenerated from the grammar those names share.
+    grammar_event_name_recovery = name_recovery.recover_event_names(
+        event_names,
+        wwise_event_inventory,
+        # Only alias hashes are excluded: they already carry a proven name.
+        # Projectile/table hashes have a known caller but still no spelling,
+        # so they stay in the target set.
+        named_event_hashes=recovered_alias_hashes,
+    )
+    grammar_recovered_wwise_event_names = list(
+        grammar_event_name_recovery.get("entries") or []
+    )
+    grammar_recovered_name_hashes = {
+        int(row["eventHash"]) for row in grammar_recovered_wwise_event_names
+    }
+    event_names.update(
+        str(row["name"]) for row in grammar_recovered_wwise_event_names
+    )
+    event_name_source_sets["grammarHashPreimage"] = {
+        str(row["name"]) for row in grammar_recovered_wwise_event_names
+    }
+    for name in event_name_source_sets["grammarHashPreimage"]:
+        event_name_sources[name.strip().lower()].append("grammarHashPreimage")
+    for row in wwise_event_inventory:
+        if (
+            isinstance(row, dict)
+            and isinstance(row.get("eventHash"), int)
+            and (int(row["eventHash"]) & 0xFFFFFFFF) in grammar_recovered_name_hashes
+        ):
+            row["eventIdentityStatus"] = "grammarHashPreimageNameRecovered"
     event_entries = [
         entry
         for entries in event_audio_by_id.values()
@@ -14400,6 +14433,19 @@ def build_audio(args: argparse.Namespace) -> int:
             "typedUiTableWwiseEventAliases": len(typed_ui_table_wwise_event_aliases),
             "snsVoiceWwiseEventAliases": len(sns_voice_wwise_event_aliases),
             "skillIdDictionaryWwiseEventAliases": len(skill_id_dictionary_wwise_event_aliases),
+            "grammarRecoveredWwiseEventNames": len(grammar_recovered_wwise_event_names),
+            "grammarRecoveredWwiseEventNameCandidates": int(
+                grammar_event_name_recovery.get("candidateCount") or 0
+            ),
+            "grammarRecoveredWwiseEventNameIsolatedPreimages": int(
+                grammar_event_name_recovery.get("isolatedCount") or 0
+            ),
+            "grammarRecoveredWwiseEventNameAmbiguousHashes": int(
+                grammar_event_name_recovery.get("ambiguousHashCount") or 0
+            ),
+            "grammarRecoveredWwiseEventNameExpectedCoincidences": float(
+                grammar_event_name_recovery.get("expectedCoincidentalPreimages") or 0.0
+            ),
             **duplicate_suppression_stats,
             "luaPostEventNames": len(lua_post_event_names),
             "luaPostEventContexts": sum(
@@ -14429,6 +14475,15 @@ def build_audio(args: argparse.Namespace) -> int:
         "typedUiTableWwiseEventAliases": typed_ui_table_wwise_event_aliases,
         "snsVoiceWwiseEventAliases": sns_voice_wwise_event_aliases,
         "skillIdDictionaryWwiseEventAliases": skill_id_dictionary_wwise_event_aliases,
+        "grammarRecoveredWwiseEventNames": grammar_recovered_wwise_event_names,
+        # ``entries`` are published separately above as the alias list; keep the
+        # summary, the statistics, and the uncorroborated preimages that are
+        # deliberately not promoted to an Event name.
+        "grammarEventNameRecovery": {
+            key: value
+            for key, value in grammar_event_name_recovery.items()
+            if key != "entries"
+        },
         "luaAudioReferenceSummary": lua_audio_payload.get("summary") or {},
         "luaAudioReferences": lua_audio_references,
         # Persist the exact Timeline/LevelSequence/FMV evidence used by the

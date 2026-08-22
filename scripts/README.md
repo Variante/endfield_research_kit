@@ -343,6 +343,21 @@ It publishes each declaring type, field token, metadata hash, and exact
 symbol-to-ID evidence, then uses the existing name-prefix taxonomy only for a
 conservative broad category. This static field identity does not recover the
 runtime setter, caller, trigger, selected branch, execution, or audibility.
+`scripts/audio_semantics/name_recovery.py` then names the Events that no
+shipped string reaches. Sweeping the whole IL2CPP literal blob and every
+metadata type/field name resolves only a handful of hash-only Events, so the
+module instead mines head/tail name templates per naming family from the names
+already proven by exact evidence, regenerates sibling names, and keeps
+candidates whose AudioHashGenerator hash equals a current hash-only Event id.
+Because a generated preimage is weaker than a shipped string, a hash with two
+distinct spellings is dropped and a name is promoted only when its head and
+tail each recur across other recovered Events at one shared split boundary;
+uncorroborated hits stay in `grammarEventNameRecovery.isolatedEntries` and
+never become an Event name. `index.json` publishes the promoted rows as
+`grammarRecoveredWwiseEventNames` plus the candidate count, isolated count,
+ambiguous count, and the coincidental-preimage expectation. Promoted rows set
+`eventIdentityStatus=grammarHashPreimageNameRecovered` and recover only the
+owner and category the spelling encodes, never a caller or audibility.
 The same build now adds 18 exact native `SwitchAudioCustomState` contexts across
 rotate-platform, crane, electric-fence, ForgeIron, LifterButton, and
 MovingPlatform Event rows. The trigger catalog exposes the decoded custom-state
