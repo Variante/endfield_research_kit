@@ -6674,6 +6674,63 @@ class AudioSemanticDataTests(unittest.TestCase):
                 start["runtimeActivationStatus"],
                 "remoteCommonLifecycleExecutionNotObserved",
             )
+            self.assertFalse(any(
+                row.get("kind") == "table"
+                for event_name in (
+                    "au_music_remotecomm_start_fixture",
+                    "au_music_remotecomm_end_fixture",
+                )
+                for row in contexts[event_name]
+            ))
+
+            catalog = audio_semantics.build_trigger_context_catalog(
+                [
+                    {
+                        "id": event_name,
+                        "hash": 123 + index,
+                        "category": "music",
+                        "foundInWwise": True,
+                        "possibleMediaCount": 1,
+                        "playRootCount": 1,
+                        "runtimeSelection": "singlePossibleMedia",
+                        "media": [{
+                            "id": event_name,
+                            "src": f"/audio/{index}.flac",
+                        }],
+                    }
+                    for index, event_name in enumerate((
+                        "au_music_remotecomm_start_fixture",
+                        "au_music_remotecomm_end_fixture",
+                    ))
+                ],
+                [],
+                root / "webui",
+                "CN",
+                export_root=root,
+            )
+            self.assertEqual(
+                catalog["counts"]["bySemanticKind"],
+                {"remoteCommonLifecycleAudio": 2},
+            )
+            self.assertEqual(
+                catalog["coverage"]["remoteCommonLifecycleAudio"]["storedTriggerContextRows"],
+                2,
+            )
+            self.assertEqual(
+                catalog["coverage"]["remoteCommonLifecycleAudio"]["source"],
+                "RemoteCommonTable.startAudioEvent/endAudioEvent with fail-closed "
+                "Persistent-over-Streaming row overlay",
+            )
+            lifecycle_row = next(
+                row for row in catalog["contexts"]
+                if row["semanticKind"] == "remoteCommonLifecycleAudio"
+                and row["situation"]["lifecyclePhase"] == "start"
+            )
+            self.assertEqual(
+                lifecycle_row["selection"]["audioSelectionStatus"],
+                "exactRemoteCommonStartAudioEvent",
+            )
+            self.assertEqual(lifecycle_row["mediaRefs"][0]["src"], "/audio/0.flac")
 
     def test_remote_common_lifecycle_mirror_overlay_prefers_persistent(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:

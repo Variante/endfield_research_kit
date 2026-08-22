@@ -397,6 +397,21 @@ class MediaOwnershipTests(unittest.TestCase):
         self.assertNotIn("coarseOwnershipDomains", rows[1])
         self.assertEqual(counts["mediaWithCoarseOwnership"], 1)
 
+    def test_remote_common_lifecycle_context_promotes_authored_domain(self):
+        rows = [{
+            "id": 12,
+            "audioCategory": "unknown",
+            "purposeKnowledgeStatus": "unknownUse",
+            "eventContextKinds": ["remoteCommonLifecycleAudio"],
+        }]
+
+        counts = media_ownership.annotate_media_coarse_ownership(rows, {})
+
+        self.assertEqual(rows[0]["coarseOwnershipDomains"], ["remoteCommonAudio"])
+        self.assertEqual(rows[0]["coarseOwnershipRoles"], ["remoteCommonLifecycleAudio"])
+        self.assertEqual(rows[0]["purposeKnowledgeStatus"], "coarseOwnershipKnown")
+        self.assertEqual(counts["mediaPurposeRecoveredByCoarseOwnership"], 1)
+
     def test_exact_external_narration_identity_resolves_purpose_not_playback(self):
         rows = [{
             "id": "955778167792087661",

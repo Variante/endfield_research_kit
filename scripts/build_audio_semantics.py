@@ -8869,11 +8869,13 @@ def _build_remote_common_trigger_contexts(
     export_root: Path,
     event_rows: Iterable[dict[str, Any]],
 ) -> list[dict[str, Any]]:
-    """Expose exact RemoteCommonTable auto-play Event requests.
+    """Expose exact RemoteCommonTable Event requests.
 
     ``audioId`` is the SFX/Wwise Event used by the automatic remote-communication
-    surface.  ``voiceId`` is a separate dialogue voice identity and is retained
-    as such; it is never merged into the Event/media candidate.
+    surface.  Lifecycle ``startAudioEvent``/``endAudioEvent`` fields are
+    published separately from auto-play rows. ``voiceId`` is a separate
+    dialogue voice identity and is retained as such; it is never merged into
+    the Event/media candidate.
     """
 
     event_by_id = {
@@ -9002,6 +9004,117 @@ def _build_remote_common_trigger_contexts(
                         str(line.get("voiceId") or ""),
                     ],
                 })
+    for event_id, lifecycle_rows in table_contexts.collect_remote_common_lifecycle_contexts(
+        export_root
+    ).items():
+        for raw_context in lifecycle_rows:
+            if not isinstance(raw_context, dict):
+                continue
+            remote_id = str(raw_context.get("remoteCommonId") or "").strip()
+            lifecycle_phase = str(raw_context.get("lifecyclePhase") or "").strip().lower()
+            field = str(raw_context.get("field") or "").strip()
+            event_name = str(raw_context.get("authoredEventId") or event_id).strip()
+            if not remote_id or lifecycle_phase not in {"start", "end"} or not event_name:
+                continue
+            identity = (
+                remote_id.casefold(), lifecycle_phase, event_name.casefold()
+            )
+            if identity in seen:
+                continue
+            seen.add(identity)
+            event = event_by_id.get(event_name.casefold(), {})
+            media_refs = [
+                _trigger_media_ref(media, fallback_id=event_name)
+                for media in event.get("media") or []
+                if isinstance(media, dict)
+            ]
+            media_refs = [media for media in media_refs if media]
+            found_in_wwise = event.get("foundInWwise") is True
+            if media_refs and any(media.get("src") for media in media_refs):
+                media_status = "directWwiseMediaCandidate"
+                media_evidence = "exactWwiseEventDirectSound"
+            elif found_in_wwise:
+                media_status = "wwiseEventHasNoDecodedMedia"
+                media_evidence = "wwiseEventHasNoDecodedMediaLeaf"
+            else:
+                media_status = "audioEventUnresolved"
+                media_evidence = "audioEventMissingFromCurrentWwiseIndex"
+            event_hash = event.get("hash")
+            if isinstance(event_hash, int):
+                event_hash &= 0xFFFFFFFF
+            event_meaning = {
+                key: event.get(key)
+                for key in (
+                    "category", "foundInWwise", "possibleMediaCount", "playRootCount",
+                    "runtimeSelection", "mediaRelationTypes", "traversalStatus",
+                )
+                if event.get(key) not in (None, "", [])
+            }
+            if event_hash is not None:
+                event_meaning["eventHash"] = event_hash
+            trigger_role = str(
+                raw_context.get("triggerRole")
+                or f"RemoteCommonTable{lifecycle_phase.title()}AudioEvent"
+            )
+            binding_status = str(
+                raw_context.get("triggerBindingStatus")
+                or f"exactRemoteCommon{lifecycle_phase.title()}AudioEvent"
+            )
+            runtime_status = str(
+                raw_context.get("runtimeActivationStatus")
+                or "remoteCommonLifecycleExecutionNotObserved"
+            )
+            source_ref = str(raw_context.get("source") or raw_context.get("sourcePath") or "")
+            contexts.append({
+                "triggerId": ":".join((
+                    "remoteCommonLifecycleAudio", remote_id, lifecycle_phase, event_name,
+                )),
+                "semanticKind": "remoteCommonLifecycleAudio",
+                "triggerRole": trigger_role,
+                "situation": {
+                    "remoteCommonId": remote_id,
+                    "lifecyclePhase": lifecycle_phase,
+                    "field": field,
+                    "autoPlay": raw_context.get("autoPlay") is True,
+                    "eventId": event_name,
+                    "eventHash": event_hash,
+                },
+                "meaning": {
+                    "id": event_name,
+                    "audio": event_name,
+                    "eventId": event_name,
+                    **event_meaning,
+                },
+                "action": {
+                    "action": "RemoteCommonLifecycleAudio",
+                    "triggerRole": trigger_role,
+                    "sourcePath": source_ref,
+                    "runtimeActivationStatus": runtime_status,
+                },
+                "owner": {
+                    "remoteCommonId": remote_id,
+                    "lifecyclePhase": lifecycle_phase,
+                    "field": field,
+                },
+                "selection": {
+                    "autoPlay": raw_context.get("autoPlay") is True,
+                    "audioSelectionStatus": binding_status,
+                    "mediaSelectionStatus": media_status,
+                    "runtimeSelectionStatus": "remoteCommonLifecycleSelectionUnobserved",
+                },
+                "mediaRefs": media_refs,
+                "evidence": {
+                    "definition": "exactRemoteCommonTableLifecycleAudioField",
+                    "owner": "exactRemoteCommonLifecycleField",
+                    "media": media_evidence,
+                    "runtimeExecution": runtime_status,
+                },
+                "runtimeActivationStatus": runtime_status,
+                "sourceRefs": [
+                    value for value in (source_ref, remote_id, field, event_name)
+                    if value
+                ],
+            })
     return contexts
 
 
@@ -10666,13 +10779,25 @@ def build_trigger_context_catalog(
         if not isinstance(event, dict):
             continue
         mono_event_rows.append({**event, "contexts": list(rows or [])})
+    remote_common_contexts = (
+        _build_remote_common_trigger_contexts(export_root, event_rows)
+        if export_root is not None
+        else []
+    )
     grouped = {
         "radio": _build_radio_trigger_contexts(media_rows, line_meanings),
         "envTalk": _build_envtalk_trigger_contexts(webui_root, language, media_rows),
         "remoteCommonAudio": (
-            _build_remote_common_trigger_contexts(export_root, event_rows)
-            if export_root is not None
-            else []
+            [
+                row for row in remote_common_contexts
+                if row.get("semanticKind") == "remoteCommonAudio"
+            ]
+        ),
+        "remoteCommonLifecycleAudio": (
+            [
+                row for row in remote_common_contexts
+                if row.get("semanticKind") == "remoteCommonLifecycleAudio"
+            ]
         ),
         "dialogTimeline": _build_dialog_timeline_trigger_contexts(
             webui_root,
@@ -10735,6 +10860,22 @@ def build_trigger_context_catalog(
                 if isinstance(row, dict)
             ),
             "voiceIdKeptSeparate": True,
+        },
+        "remoteCommonLifecycleAudio": {
+            "source": (
+                "RemoteCommonTable.startAudioEvent/endAudioEvent with fail-closed "
+                "Persistent-over-Streaming row overlay"
+            ),
+            "storedTriggerContextRows": len(grouped["remoteCommonLifecycleAudio"]),
+            "rowsWithPlayableMedia": sum(
+                any(
+                    isinstance(media_ref, dict) and media_ref.get("src")
+                    for media_ref in row.get("mediaRefs") or []
+                )
+                for row in grouped["remoteCommonLifecycleAudio"]
+                if isinstance(row, dict)
+            ),
+            "runtimeExecutionObserved": 0,
         },
         "luaPostEvent": {
             "source": "decrypted VFS Lua AudioAdapter/AudioManager.PostEvent string literals",
@@ -10983,7 +11124,7 @@ def build_trigger_context_catalog(
             "media references. Definition, media availability, and runtime execution "
             "are independent evidence states. The shard never claims that a LevelScript, "
             "NpcProxy, dialog lifecycle state transition, Timeline Director, Wwise branch, "
-            "RemoteCommon auto-play row, or selected line/slot actually ran. "
+            "RemoteCommon auto-play or lifecycle row, or selected line/slot actually ran. "
             "AudioDialogCustomEventTable lifecycle rows identify a static request/scheduling "
             "hook; RemoteCommon voiceId remains separate from its audioId; neither proves "
             "PostEvent or an audible media leaf. ModelView normal Event rows keep the "
