@@ -167,6 +167,13 @@ handler/indirect dispatch, runtime variable values, cue execution, Wwise branch
 selection, and audibility remain runtime-blocked and are not presented as
 observed facts.
 
+Scene-global Event summaries and cards expose all exact authored scene IDs and
+original semantic-role names only when every direct context passes the merged
+scene-catalog gate. Search and context filters use that same exact status;
+malformed, partial, non-direct, truncated, and out-of-catalog contexts remain
+unavailable diagnostics and do not imply runtime activation, branch choice,
+playback, or audibility.
+
 Normal Audio records also include a collapsed LevelScript audio lifecycle
 section for authored producer/consumer links, serialized action ordinals, and
 validated static topology. Raw serialized output paths, record offsets, and

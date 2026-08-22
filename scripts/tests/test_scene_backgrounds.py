@@ -1060,6 +1060,161 @@ class SceneBackgroundCatalogTests(unittest.TestCase):
         self.assertNotIn("prefabSourceAssetPath", enriched["entries"][0])
 
 
+class SceneGlobalCompactAttributionTests(unittest.TestCase):
+    CATALOG = {
+        "status": "validatedPublishedObjectIndex",
+        "scenes": [{"sceneId": "map01_lv001"}, {"sceneId": "map02_lv002"}],
+    }
+    MAP_OWNER = {
+        "serializedFile": "CAB-map",
+        "source": "VFS/map.chk",
+        "sourceOffset": 10,
+        "pathId": 7,
+    }
+
+    @classmethod
+    def context(cls, **overrides: object) -> dict:
+        context = {
+            "kind": "sceneGlobalAudioEvent",
+            "semanticRole": "levelInitEvents",
+            "source": "StreamingAssets",
+            "owner": dict(cls.MAP_OWNER),
+            "eventHash": 123,
+            "confidence": "direct",
+            "evidence": "exactAudioMapDataSceneIndex",
+            "sceneId": "map01_lv001",
+            "triggerRuntimeActivationStatuses": [
+                "authoredDefinitionOnly",
+                "runtimeActivationNotObserved",
+                "wwiseBranchSelectionNotObserved",
+            ],
+        }
+        context.update(overrides)
+        return context
+
+    def test_exact_multi_scene_keeps_all_ids_and_original_roles(self) -> None:
+        result = scene_backgrounds.project_scene_global_compact_attribution(
+            [
+                self.context(),
+                self.context(sceneId="map02_lv002", semanticRole="levelExitEvents"),
+            ],
+            self.CATALOG,
+        )
+        self.assertEqual(result["sceneGlobalContextStatus"], "exact")
+        self.assertEqual(result["sceneGlobalSceneIds"], ["map01_lv001", "map02_lv002"])
+        self.assertEqual(result["sceneGlobalSemanticRoles"], ["levelExitEvents", "levelInitEvents"])
+        self.assertNotIn("sceneKeys", result)
+
+    def test_audio_level_row_is_an_exact_alternate_producer(self) -> None:
+        result = scene_backgrounds.project_scene_global_compact_attribution(
+            [self.context(
+                source="structured/StreamingAssets/Table/AudioLevel.json",
+                owner={"table": "AudioLevel", "levelId": "map01_lv001"},
+                evidence="exactAudioLevelRow",
+                semanticRole="levelInitEvent",
+            )],
+            self.CATALOG,
+        )
+        self.assertEqual(result["sceneGlobalContextStatus"], "exact")
+        self.assertEqual(result["sceneGlobalSemanticRoles"], ["levelInitEvent"])
+
+    def test_audio_level_source_requires_one_canonical_normalized_path(self) -> None:
+        for source in (
+            "structured/persistent/Table/AudioLevel.json",
+            "structured\\Persistent\\Table\\AudioLevel.json",
+            "structured/Persistent/Wrapper/Table/AudioLevel.json",
+            "structured/Persistent/Table/AudioLevel.json/extra",
+        ):
+            result = scene_backgrounds.project_scene_global_compact_attribution(
+                [self.context(
+                    source=source,
+                    owner={"table": "AudioLevel", "levelId": "map01_lv001"},
+                    evidence="exactAudioLevelRow",
+                    semanticRole="levelInitEvent",
+                )],
+                self.CATALOG,
+            )
+            self.assertEqual(result["sceneGlobalContextStatus"], "unavailable")
+            self.assertNotIn("sceneGlobalSceneIds", result)
+            self.assertEqual(
+                result["sceneGlobalContextDiagnostics"][0]["reason"],
+                "audioLevelSourcePathMismatch",
+            )
+
+    def test_empty_contexts_do_not_publish_compact_fields(self) -> None:
+        self.assertEqual(
+            scene_backgrounds.project_scene_global_compact_attribution([], self.CATALOG),
+            {},
+        )
+
+    def test_truncated_or_non_direct_context_fails_closed(self) -> None:
+        cases = (
+            (self.context(), {"contexts_truncated": True}),
+            (self.context(confidence="inferred"), {}),
+        )
+        for context, kwargs in cases:
+            result = scene_backgrounds.project_scene_global_compact_attribution(
+                [context], self.CATALOG, **kwargs
+            )
+            self.assertEqual(result["sceneGlobalContextStatus"], "unavailable")
+            self.assertNotIn("sceneGlobalSceneIds", result)
+            self.assertNotIn("sceneGlobalSemanticRoles", result)
+            self.assertLessEqual(
+                len(result["sceneGlobalContextDiagnostics"]),
+                scene_backgrounds.SCENE_GLOBAL_COMPACT_DIAGNOSTIC_LIMIT,
+            )
+
+    def test_malformed_source_owner_evidence_and_scene_fail_closed(self) -> None:
+        cases = (
+            {"source": "", "reason": "missingSource"},
+            {"owner": {"pathId": 7}, "reason": "audioMapOwnerIdentityIncomplete"},
+            {"evidence": "inferredAudioMap", "reason": "sceneGlobalEvidenceNotExact"},
+            {"sceneId": "not_in_catalog", "reason": "sceneGlobalSceneNotInCatalog"},
+            {"triggerRuntimeActivationStatuses": [None], "reason": "sceneGlobalRuntimeStatusIncomplete"},
+        )
+        for overrides in cases:
+            result = scene_backgrounds.project_scene_global_compact_attribution(
+                [self.context(**{key: value for key, value in overrides.items() if key != "reason"})],
+                self.CATALOG,
+            )
+            self.assertEqual(result["sceneGlobalContextStatus"], "unavailable")
+            self.assertIn(
+                overrides["reason"],
+                {row["reason"] for row in result["sceneGlobalContextDiagnostics"]},
+            )
+
+    def test_diagnostics_are_bounded_while_total_count_is_retained(self) -> None:
+        contexts = [
+            self.context(
+                source="structured/Persistent/Table/AudioLevel.json",
+                owner={"table": "AudioLevel", "levelId": "missing"},
+                evidence="exactAudioLevelRow",
+                sceneId="missing",
+            )
+            for _ in range(20)
+        ]
+        result = scene_backgrounds.project_scene_global_compact_attribution(
+            contexts, self.CATALOG
+        )
+        self.assertEqual(result["sceneGlobalContextStatus"], "unavailable")
+        self.assertEqual(
+            len(result["sceneGlobalContextDiagnostics"]),
+            scene_backgrounds.SCENE_GLOBAL_COMPACT_DIAGNOSTIC_LIMIT,
+        )
+        self.assertGreater(
+            result["sceneGlobalContextDiagnosticCount"],
+            len(result["sceneGlobalContextDiagnostics"]),
+        )
+
+    def test_invalid_catalog_is_not_replaced_by_context_scene_id(self) -> None:
+        result = scene_backgrounds.project_scene_global_compact_attribution(
+            [self.context()],
+            {"status": "unavailable", "scenes": [{"sceneId": "map01_lv001"}]},
+        )
+        self.assertEqual(result["sceneGlobalContextStatus"], "unavailable")
+        self.assertNotIn("sceneGlobalSceneIds", result)
+
+
 class PublishedObjectIndexGateTests(unittest.TestCase):
     @staticmethod
     def _write_json(path: Path, payload: object) -> None:

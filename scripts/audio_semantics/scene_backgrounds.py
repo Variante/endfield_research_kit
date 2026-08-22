@@ -1360,9 +1360,15 @@ def _event_context(
         "eventHex": f"0x{event_hash:08x}",
         "confidence": "direct",
         "evidence": (
-            "exactAudioMapDataSceneIndex"
+            "exactAudioLevelRow"
             if context_kind == "sceneGlobalAudioEvent"
-            else "exactObjectIndexSceneComponentScalar"
+            and isinstance(owner, dict)
+            and owner.get("table") == "AudioLevel"
+            else (
+                "exactAudioMapDataSceneIndex"
+                if context_kind == "sceneGlobalAudioEvent"
+                else "exactObjectIndexSceneComponentScalar"
+            )
         ),
         "triggerRuntimeActivationStatuses": [
             "authoredDefinitionOnly",
@@ -1393,6 +1399,173 @@ def _event_context(
                 scene_containment["diagnostics"]
             )
     return context
+
+
+SCENE_GLOBAL_COMPACT_DIAGNOSTIC_LIMIT = 8
+SCENE_GLOBAL_CONTEXT_STATUS_EXACT = "exact"
+SCENE_GLOBAL_CONTEXT_STATUS_UNAVAILABLE = "unavailable"
+_SCENE_GLOBAL_ROOTS = frozenset({"StreamingAssets", "Persistent"})
+_SCENE_GLOBAL_AUDIO_LEVEL_SOURCES = frozenset({
+    "structured/Persistent/Table/AudioLevel.json",
+    "structured/StreamingAssets/Table/AudioLevel.json",
+})
+_SCENE_GLOBAL_REQUIRED_RUNTIME_STATUSES = frozenset({
+    "authoredDefinitionOnly",
+    "runtimeActivationNotObserved",
+    "wwiseBranchSelectionNotObserved",
+})
+
+
+def _scene_catalog_identity(
+    scene_catalog: Any,
+) -> tuple[set[str], list[dict[str, Any]], int]:
+    """Return the exact merged scene IDs, rejecting malformed catalog rows."""
+
+    if not isinstance(scene_catalog, dict):
+        return set(), [{"reason": "sceneCatalogNotObject"}], 1
+    if scene_catalog.get("status") != "validatedPublishedObjectIndex":
+        return set(), [{
+            "reason": "sceneCatalogStatusUnavailable",
+            "status": str(scene_catalog.get("status") or "missing"),
+        }], 1
+    scenes = scene_catalog.get("scenes")
+    if not isinstance(scenes, list):
+        return set(), [{"reason": "sceneCatalogScenesNotList"}], 1
+    scene_ids: set[str] = set()
+    diagnostics: list[dict[str, Any]] = []
+    diagnostic_count = 0
+
+    def diagnostic(row: dict[str, Any]) -> None:
+        nonlocal diagnostic_count
+        diagnostic_count += 1
+        if len(diagnostics) < SCENE_GLOBAL_COMPACT_DIAGNOSTIC_LIMIT:
+            diagnostics.append(row)
+
+    for index, scene in enumerate(scenes):
+        if not isinstance(scene, dict):
+            diagnostic({"reason": "sceneCatalogRowNotObject", "index": index})
+            continue
+        scene_id = scene.get("sceneId")
+        if not isinstance(scene_id, str) or not scene_id.strip():
+            diagnostic({"reason": "sceneCatalogRowMissingSceneId", "index": index})
+            continue
+        scene_id = scene_id.strip()
+        if scene_id in scene_ids:
+            diagnostic({
+                "reason": "sceneCatalogDuplicateSceneId",
+                "index": index,
+                "sceneId": scene_id,
+            })
+        scene_ids.add(scene_id)
+    if not scene_ids and not diagnostics:
+        diagnostic({"reason": "sceneCatalogHasNoSceneIds"})
+    return scene_ids, diagnostics, diagnostic_count
+
+
+def _scene_global_owner_shape(context: dict[str, Any], scene_id: str) -> str | None:
+    """Validate the two exact producer shapes that emit scene-global contexts."""
+
+    source = context.get("source")
+    owner = context.get("owner")
+    evidence = context.get("evidence")
+    if not isinstance(source, str) or not source.strip():
+        return "missingSource"
+    if not isinstance(owner, dict):
+        return "ownerNotObject"
+    if evidence == "exactAudioMapDataSceneIndex":
+        if source not in _SCENE_GLOBAL_ROOTS:
+            return "audioMapSourceRootMismatch"
+        if _identity_key(owner) is None:
+            return "audioMapOwnerIdentityIncomplete"
+        return None
+    if evidence == "exactAudioLevelRow":
+        if source not in _SCENE_GLOBAL_AUDIO_LEVEL_SOURCES:
+            return "audioLevelSourcePathMismatch"
+        if owner.get("table") != "AudioLevel" or owner.get("levelId") != scene_id:
+            return "audioLevelOwnerRowMismatch"
+        return None
+    return "sceneGlobalEvidenceNotExact"
+
+
+def project_scene_global_compact_attribution(
+    contexts: Iterable[dict[str, Any]],
+    scene_catalog: dict[str, Any],
+    *,
+    contexts_truncated: bool = False,
+) -> dict[str, Any]:
+    """Project exact scene-global contexts onto one compact Event row.
+
+    This helper consumes only the already merged scene catalog and Event
+    contexts. It never scans object indexes or infers scene identity from an
+    Event name, media, basename, or scene-key alias.
+    """
+
+    scene_contexts = [
+        context for context in contexts
+        if isinstance(context, dict)
+        and context.get("kind") == "sceneGlobalAudioEvent"
+    ]
+    if not scene_contexts:
+        return {}
+    scene_ids, catalog_diagnostics, diagnostic_count = _scene_catalog_identity(scene_catalog)
+    diagnostics: list[dict[str, Any]] = list(catalog_diagnostics)
+
+    def diagnostic(row: dict[str, Any]) -> None:
+        nonlocal diagnostic_count
+        diagnostic_count += 1
+        if len(diagnostics) < SCENE_GLOBAL_COMPACT_DIAGNOSTIC_LIMIT:
+            diagnostics.append(row)
+
+    contexts_truncated = contexts_truncated is not False or any(
+        context.get("contextsTruncated") is True for context in scene_contexts
+    )
+    if contexts_truncated:
+        diagnostic({"reason": "sceneGlobalContextsTruncated"})
+    compact_scene_ids: set[str] = set()
+    compact_roles: set[str] = set()
+    for index, context in enumerate(scene_contexts):
+        scene_id = context.get("sceneId")
+        role = context.get("semanticRole")
+        event_hash = context.get("eventHash")
+        runtime_statuses = context.get("triggerRuntimeActivationStatuses")
+        if context.get("confidence") != "direct":
+            diagnostic({"reason": "sceneGlobalContextNotDirect", "index": index})
+        if not isinstance(scene_id, str) or not scene_id.strip():
+            diagnostic({"reason": "sceneGlobalContextMissingSceneId", "index": index})
+        elif scene_id.strip() not in scene_ids:
+            diagnostic({
+                "reason": "sceneGlobalSceneNotInCatalog",
+                "index": index,
+                "sceneId": scene_id.strip(),
+            })
+        if not isinstance(role, str) or not role.strip():
+            diagnostic({"reason": "sceneGlobalContextMissingSemanticRole", "index": index})
+        if isinstance(event_hash, bool) or not isinstance(event_hash, int):
+            diagnostic({"reason": "sceneGlobalContextEventHashInvalid", "index": index})
+        if (
+            not isinstance(runtime_statuses, list)
+            or any(not isinstance(value, str) or not value.strip() for value in runtime_statuses)
+            or not _SCENE_GLOBAL_REQUIRED_RUNTIME_STATUSES.issubset(set(runtime_statuses))
+        ):
+            diagnostic({"reason": "sceneGlobalRuntimeStatusIncomplete", "index": index})
+        if isinstance(scene_id, str) and scene_id.strip() and isinstance(role, str) and role.strip():
+            owner_reason = _scene_global_owner_shape(context, scene_id.strip())
+            if owner_reason:
+                diagnostic({"reason": owner_reason, "index": index})
+            elif scene_id.strip() in scene_ids:
+                compact_scene_ids.add(scene_id.strip())
+                compact_roles.add(role.strip())
+    if diagnostics:
+        return {
+            "sceneGlobalContextStatus": SCENE_GLOBAL_CONTEXT_STATUS_UNAVAILABLE,
+            "sceneGlobalContextDiagnostics": diagnostics,
+            "sceneGlobalContextDiagnosticCount": diagnostic_count,
+        }
+    return {
+        "sceneGlobalSceneIds": sorted(compact_scene_ids),
+        "sceneGlobalSemanticRoles": sorted(compact_roles),
+        "sceneGlobalContextStatus": SCENE_GLOBAL_CONTEXT_STATUS_EXACT,
+    }
 
 
 def _scene_position(scene_context: Any) -> dict[str, Any] | None:

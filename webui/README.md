@@ -235,6 +235,12 @@ source and `sceneOwnershipStatus`/`sceneContainmentStatus`, with
 Missing or malformed AssetMap input is shown as unavailable rather than
 replaced by a name/path guess. A prefab source row is not a recovered level
 instance.
+Scene-global Event cards and details expose exact authored scene IDs and the
+original serialized semantic roles only when every direct context validates
+against the merged scene catalog. The context filter and search use the same
+exact/unavailable contract; partial, malformed, non-direct, truncated, or
+out-of-catalog rows remain diagnostic-only and never alter category, Wwise
+resolution, runtime, branch, playback, or audibility state.
 
 Streaming-instance rows expose their exact entity/name/transform and bounded
 raw ECS evidence separately from prefab identity. The current validated

@@ -240,6 +240,14 @@ def event_summary_row(row: dict[str, Any], detail_shard: str) -> dict[str, Any]:
     if exact_npc_animation_owner:
         context_search.discard("animationCallbackOwnerUnresolved")
         context_search.update({"npcAnimation", "animationCallbackNpcOwner"})
+    context_search.update(
+        str(value)
+        for key in ("sceneGlobalSceneIds", "sceneGlobalSemanticRoles")
+        for value in row.get(key) or ()
+        if value not in (None, "")
+    )
+    if row.get("sceneGlobalContextStatus"):
+        context_search.add(str(row["sceneGlobalContextStatus"]))
     media = row.get("media") or []
     scopes = sorted({str(value.get("audioScope") or value.get("storageRoot") or "") for value in media if value.get("audioScope") or value.get("storageRoot")})
     banks = sorted({str(value.get("bankPackage") or "") for evidence in media for value in evidence.get("wwiseMediaEvidence") or [] if value.get("bankPackage")})
@@ -287,6 +295,7 @@ def event_summary_row(row: dict[str, Any], detail_shard: str) -> dict[str, Any]:
         "audioLibrarySharedMediaIds", "audioLibrarySharedMediaPackages",
         "audioLibraryMediaPurposeHintStatus",
         "contextStoredCount", "contextsTruncated",
+        "sceneGlobalSceneIds", "sceneGlobalSemanticRoles", "sceneGlobalContextStatus",
         "playableCharacterAnimationOwnerCount", "enemyAnimationOwnerCount",
         "animationContextScope", "animationFunctions", "customFootstepOccurrenceCount",
         "animationActionNameMatchStatus", "animationActionMatchingClips",
