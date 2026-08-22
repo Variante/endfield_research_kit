@@ -128,6 +128,7 @@ def _build_remote_common_event_contexts(
                     "remoteCommonId": remote_id,
                     "lifecyclePhase": lifecycle_phase,
                     "field": field,
+                    "autoPlay": row.get("autoPlay") is True,
                     "authoredEventId": event_name,
                     "source": source_ref,
                     "sourcePath": source_ref,
@@ -200,6 +201,27 @@ def _build_remote_common_event_contexts(
                     ),
             })
     return dict(contexts)
+
+
+def collect_remote_common_lifecycle_contexts(
+    export_root: Path,
+) -> dict[str, list[dict[str, Any]]]:
+    """Return only the exact, mirror-gated RemoteCommon lifecycle contexts."""
+
+    return {
+        event_id: [
+            dict(context)
+            for context in contexts
+            if isinstance(context, dict)
+            and context.get("kind") == "remoteCommonLifecycleAudio"
+        ]
+        for event_id, contexts in _build_remote_common_event_contexts(export_root).items()
+        if any(
+            isinstance(context, dict)
+            and context.get("kind") == "remoteCommonLifecycleAudio"
+            for context in contexts
+        )
+    }
 
 
 def _first_recovered_mono_behaviour(export_root: Path, stem: str) -> Path | None:
@@ -1325,6 +1347,10 @@ def collect_table_contexts(
         if isinstance(value, str) and prefix_re.match(value.strip()):
             field_path = re.sub(r"\[\d+\]$", "", path)
             field_name = field_path.rsplit(".", 1)[-1]
+            if table == "RemoteCommonTable" and field_name in {
+                "startAudioEvent", "endAudioEvent",
+            }:
+                return
             semantic_role = ""
             if named_event_field_re.search(field_name):
                 semantic_role = "authoredEventName"
