@@ -57,6 +57,7 @@ def verify() -> dict:
         unity=unity[CROP[1]:CROP[3],CROP[0]:CROP[2]]
         unity_mask_path=rp.with_name(rp.stem+'_object_id.png')
         unity_mask=cv2.imread(str(unity_mask_path),cv2.IMREAD_GRAYSCALE)
+        if unity_mask is not None and unity_mask.shape == (2160,3840): unity_mask=unity_mask[CROP[1]:CROP[3],CROP[0]:CROP[2]]
         if unity_mask is None or unity_mask.shape != src.shape[:2]: raise RuntimeError(f'missing/bad Unity object-ID mask: {unity_mask_path}')
         valid=mask[:,:,0] if mask.ndim==3 else mask
         # Source viewport and validity outputs are already the exact crop; only
