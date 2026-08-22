@@ -1,5 +1,6 @@
 import unittest
 import json
+import copy
 
 import numpy as np
 
@@ -75,6 +76,28 @@ class EndminfSourceViewportTests(unittest.TestCase):
         self.assertTrue(all(len(row["cropSha256"]) == 64 for row in rows))
         self.assertTrue(all(len(row["cursorCoreSha256"]) == 64 for row in rows))
         self.assertTrue(all(row["invalidPixels"] == 1296 for row in rows))
+
+    def test_hostile_report_contract_mutations_fail_closed(self) -> None:
+        base = json.loads(viewport.REPORT_PATH.read_text(encoding="utf-8"))
+        mutations = {
+            "source_sha": lambda report: report["source"].__setitem__("sha256", "0" * 64),
+            "gate_no_ui": lambda report: report["publicationGates"].__setitem__("noUiClaim", True),
+            "gate_complete": lambda report: report["publicationGates"].__setitem__("completeSilhouetteClaim", True),
+            "overlay_name": lambda report: report["uiValidity"]["knownPersistentOverlays"][0].__setitem__("detectorName", "other"),
+            "overlay_version": lambda report: report["uiValidity"]["knownPersistentOverlays"][0].__setitem__("detectorVersion", "v2"),
+            "overlay_sha": lambda report: report["uiValidity"]["knownPersistentOverlays"][0].__setitem__("detectorSha256", "f" * 64),
+            "overlay_count": lambda report: report["uiValidity"]["knownPersistentOverlays"][0].__setitem__("detectedFrames", 626),
+            "overlay_status": lambda report: report["uiValidity"]["knownPersistentOverlays"][0].__setitem__("detectionStatus", "partial"),
+            "not_complete": lambda report: report["noUiVisualization"].__setitem__("notACompleteSilhouette", False),
+            "row_detector": lambda report: report["frames"][17]["cursorDetector"].__setitem__("grayAtLeast230", 0),
+            "row_cursor_hash": lambda report: report["frames"][17].__setitem__("cursorCoreSha256", "0" * 64),
+        }
+        for label, mutate in mutations.items():
+            mutated = copy.deepcopy(base)
+            mutate(mutated)
+            with self.subTest(label=label):
+                with self.assertRaises(viewport.ViewportError):
+                    viewport._validate_report_contract(mutated, base["frames"])
 
 
 if __name__ == "__main__":
