@@ -187,6 +187,12 @@ validated static topology. Raw serialized output paths, record offsets, and
 local IDs stay debug-only. Runtime handle values/state, action execution,
 branch selection, and audibility remain blocked, so the section is not a live
 playback trace.
+RemoteCommon `startAudioEvent`/`endAudioEvent` fields are displayed as
+separate authored lifecycle contexts after the exact Persistent-over-Streaming
+row overlay. The current CN page data has four such rows, all found in Wwise
+music Events and none with a playable media leaf; runtime execution remains
+unobserved. The generated trigger-context catalog currently contains 27,054
+rows.
 
 Serialized `monoBehaviourAudioIdField` context chips expose the narrow authored
 field role, `componentLayout`, component type, and raw serialized path. Search
@@ -204,7 +210,12 @@ a level-instance relation only from an explicit numeric identity, optionally
 resolved to one unique full AssetMap container path or explicit component
 identity; names, basenames, positions, Meshes, and similarity remain
 non-evidence. A separately proven StreamingChunkData record-to-entity relation
-is still a recovery gap.
+is still a recovery gap. If explicit component identity and exact prefab-path
+identity routes disagree, the visible join remains unavailable with
+`conflictingPrefabInstanceIdentityJoins`. Current CN data therefore exposes
+zero exact scene-emitter Events and 43 prefab-local Events; the next recovery
+step is exact prefab identity from exporter/sidecar output, not filename/path
+inference.
 
 Missing or mismatched installed native inputs never erase authored Audio rows.
 They suppress only build-locked callsites/mappings and expose a bounded

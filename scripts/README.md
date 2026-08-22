@@ -480,6 +480,12 @@ Event-detail data under `levelScriptAudioLifecycle` schema version 1; compact
 rows retain only bounded summaries. This is authored serialized topology, not
 runtime handle state, action execution, branch selection, or audibility.
 
+RemoteCommon lifecycle fields use an exact Persistent-over-Streaming row
+overlay: non-empty `startAudioEvent`/`endAudioEvent` values become separate
+authored trigger contexts, while `voiceId` remains a dialogue identity. The
+current CN contract has four lifecycle rows; all resolve to Wwise music Events,
+none has a playable media leaf, and runtime execution remains unobserved.
+
 `build_audio_semantics.py` is the thin orchestration/publishing surface for
 the Audio evidence page. Maintained domain code lives under
 `audio_semantics/`: `native_evidence.py` owns the installed-build gate,
@@ -532,6 +538,9 @@ basename, entity name, position, Mesh, or similarity. If a future sidecar has
 an exact numeric identity, it may resolve through one unique full AssetMap
 container path (or an explicit component identity) before the Audio page
 attaches a level; ambiguous and missing relations stay unresolved.
+If explicit component identity and exact prefab-path identity routes disagree,
+reconciliation fails closed with `conflictingPrefabInstanceIdentityJoins`;
+current sidecars still do not produce the required prefab Source+PathID.
 `media_ownership.py` projects those scene roles plus exact Event-context and
 external-path evidence into coarse decoded-media ownership such as scene
 environment, animation, authored component, interaction, or mission narration.
@@ -543,7 +552,9 @@ status sets. The current valid negative contract is prefab-local/static-authored
 emitter with unresolved scene and unavailable prefab identity; only exact
 SceneAsset/Level containment or an exact prefab Source+PathID evidence row
 joined to one level may publish sceneEmitterSceneIds. Candidate paths, sidecar
-levelId, names, positions, and mixed exact attributions fail closed.
+levelId, names, positions, and mixed exact attributions fail closed. The next
+recovery step is exporter/sidecar production of exact prefab identity, not more
+filename or path inference.
 Scene-global Event rows also receive a compact attribution only after the
 already merged `scene_backgrounds.py` catalog validates every direct context:
 the complete scene-id and original semantic-role sets are retained, while
