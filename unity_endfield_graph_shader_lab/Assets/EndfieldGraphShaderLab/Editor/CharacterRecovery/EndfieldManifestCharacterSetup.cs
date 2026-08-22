@@ -5551,6 +5551,10 @@ namespace EndfieldGraphShaderLabEditor
                         .Replace('.', 'p') + ".png";
                 string outputPath = Path.Combine(outputRoot, fileName);
                 RenderPreview(outputPath, RuntimeReferenceRenderWidth, RuntimeReferenceRenderHeight);
+                RenderRuntimeReferenceActorObjectIdMask(
+                    actorRoot,
+                    camera,
+                    Path.Combine(outputRoot, Path.GetFileNameWithoutExtension(fileName) + "_object_id.png"));
                 Debug.Log(
                     $"Rendered {actorName} sweep sample {index + 1}/{sampleTimes.Length} " +
                     $"at {sampleTime:0.###}s: {outputPath}");
@@ -5558,6 +5562,80 @@ namespace EndfieldGraphShaderLabEditor
             Debug.Log(
                 $"Runtime reference sweep complete: actor={actorName}, " +
                 $"samples={sampleTimes.Length}, output={outputRoot}");
+        }
+
+        // This pass is deliberately separate from the beauty capture. It uses
+        // the same camera/pose but a temporary actor-only culling layer and a
+        // replacement unlit shader, producing a binary object-coverage mask.
+        // No material, lighting, backdrop, or beauty-camera state is retained.
+        private static void RenderRuntimeReferenceActorObjectIdMask(
+            GameObject actorRoot,
+            Camera camera,
+            string outputPath)
+        {
+            if (actorRoot == null || camera == null)
+                throw new ArgumentNullException(actorRoot == null ? nameof(actorRoot) : nameof(camera));
+            Shader replacement = Shader.Find("Unlit/Color");
+            if (replacement == null)
+                throw new InvalidOperationException("Exact actor object-ID mask requires Unlit/Color replacement shader.");
+            int savedMask = camera.cullingMask;
+            CameraClearFlags savedFlags = camera.clearFlags;
+            Color savedBackground = camera.backgroundColor;
+            RenderTexture savedTarget = camera.targetTexture;
+            var transforms = actorRoot.GetComponentsInChildren<Transform>(true);
+            var layers = new int[transforms.Length];
+            const int maskLayer = 31;
+            try
+            {
+                for (int i = 0; i < transforms.Length; i++)
+                {
+                    layers[i] = transforms[i].gameObject.layer;
+                    transforms[i].gameObject.layer = maskLayer;
+                }
+                camera.cullingMask = 1 << maskLayer;
+                camera.clearFlags = CameraClearFlags.SolidColor;
+                camera.backgroundColor = Color.black;
+                var target = new RenderTexture(RuntimeReferenceRenderWidth, RuntimeReferenceRenderHeight, 24, RenderTextureFormat.ARGB32);
+                var texture = new Texture2D(RuntimeReferenceRenderWidth, RuntimeReferenceRenderHeight, TextureFormat.RGB24, false, true);
+                try
+                {
+                    camera.targetTexture = target;
+                    camera.RenderWithShader(replacement, string.Empty);
+                    RenderTexture previous = RenderTexture.active;
+                    RenderTexture.active = target;
+                    texture.ReadPixels(new Rect(0, 0, target.width, target.height), 0, 0, false);
+                    texture.Apply(false, false);
+                    RenderTexture.active = previous;
+                    Color32[] pixels = texture.GetPixels32();
+                    int nonEmpty = 0;
+                    for (int i = 0; i < pixels.Length; i++)
+                    {
+                        byte value = (byte)(pixels[i].r > 8 || pixels[i].g > 8 || pixels[i].b > 8 ? 255 : 0);
+                        if (value != 0) nonEmpty++;
+                        pixels[i] = new Color32(value, value, value, 255);
+                    }
+                    if (nonEmpty == 0)
+                        throw new InvalidOperationException("Actor object-ID mask is empty.");
+                    texture.SetPixels32(pixels);
+                    texture.Apply(false, false);
+                    Directory.CreateDirectory(Path.GetDirectoryName(outputPath) ?? ".");
+                    File.WriteAllBytes(outputPath, texture.EncodeToPNG());
+                }
+                finally
+                {
+                    UnityEngine.Object.DestroyImmediate(texture);
+                    UnityEngine.Object.DestroyImmediate(target);
+                }
+            }
+            finally
+            {
+                for (int i = 0; i < transforms.Length; i++)
+                    if (transforms[i] != null) transforms[i].gameObject.layer = layers[i];
+                camera.cullingMask = savedMask;
+                camera.clearFlags = savedFlags;
+                camera.backgroundColor = savedBackground;
+                camera.targetTexture = savedTarget;
+            }
         }
 
         [MenuItem("Endfield/Character Recovery Lab/Render Far Shared Viewer Preview")]
