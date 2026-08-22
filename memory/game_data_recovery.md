@@ -240,7 +240,12 @@ do not provide a placed scene-instance relation. Compact status projection
 therefore stays prefabLocalSceneUnresolved with unavailablePrefabIdentity; no
 scene ID may come from candidate paths, levelId-only rows, GameObject names,
 positions, or Meshes. Recovery remains queued behind a future exact
-SceneAsset/Level containment or prefab Source+PathID-to-level join.
+SceneAsset/Level containment or prefab Source+PathID-to-level join. When an
+explicit component-identity route and an exact prefab-path route disagree,
+reconciliation fails closed with `conflictingPrefabInstanceIdentityJoins`.
+The current streaming sidecars still do not produce the required prefab
+Source+PathID, so the next step is exporter/sidecar production of that exact
+identity, not more filename/path inference.
 Scene-global Event compact attribution is emitted only after every direct
 scene-global context validates its source/owner shape, exact evidence, runtime
 boundary statuses, and membership in the merged catalog scene set. It retains
@@ -255,6 +260,12 @@ Event `0x7ac43e5e` reaches shared media `593335165`. The separately decoded
 identity rather than that room-tone Event or media. These examples remain
 authored identity/possible-media evidence, not placed-instance or playback
 proof.
+RemoteCommon lifecycle recovery now uses an exact Persistent-over-Streaming
+row overlay for non-empty `startAudioEvent`/`endAudioEvent` fields. The current
+CN generated catalog has four lifecycle trigger rows, all found in Wwise music
+Events, with zero playable media leaves; `voiceId` remains separate dialogue
+identity and runtime execution is unobserved. They are part of the 27,054-row
+`triggerContexts` catalog and do not imply that a lifecycle request ran.
 Decoded media now carries a separate coarse-ownership projection from exact
 scene roles, Event contexts, component fields, and recovered external paths.
 Outdoor room-tone and authored ambient-emitter leaves can be classified as

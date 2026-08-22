@@ -242,6 +242,10 @@ not an exact context tag. Scene IDs appear only for exact SceneAsset/Level
 containment or exact prefab Source+PathID evidence joined to one level.
 Candidate paths, sidecar level IDs, names, positions, and mixed exact rows
 remain diagnostic-only.
+If explicit component identity and exact prefab-path identity disagree, the
+page keeps the join unavailable with `conflictingPrefabInstanceIdentityJoins`
+instead of choosing one route. The current CN generated view therefore has
+zero exact scene-emitter Events and 43 prefab-local Events.
 Scene-global Event cards and details expose exact authored scene IDs and the
 original serialized semantic roles only when every direct context validates
 against the merged scene catalog. The context filter and search use the same
@@ -256,6 +260,12 @@ page leaves level ownership unresolved unless a future exact numeric identity
 resolves to one unique full AssetMap container path or explicit component
 identity. Basenames, names, positions, Meshes, and similarity are never search
 or ownership evidence; StreamingChunkData correlation remains an explicit gap.
+
+RemoteCommon `startAudioEvent`/`endAudioEvent` lifecycle fields are shown as
+separate authored trigger contexts after the exact Persistent-over-Streaming
+row overlay. CN currently exposes four such rows, all found in Wwise music
+Events and none with a playable media leaf; runtime execution remains
+unobserved. The overall generated trigger-context catalog contains 27,054 rows.
 
 AudioCue AST detail is lazy and debug-only. It exposes the validated tree's
 source coordinates, parent/depth, `exprType`, four scalar fields, child paths,
