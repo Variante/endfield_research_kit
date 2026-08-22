@@ -1,12 +1,15 @@
 {
   "schema": "endfield.character-recovery.endminf-current-baseline.v1",
-  "status": "sparse_baseline",
+  "status": "sparse_unpaired_baseline",
   "sourceViewport": {
     "path": "unity_endfield_graph_shader_lab/scratch/character_recovery/endminf_source_viewport",
+    "contractSha256": "675CAEE22390B6D763A7056A4D0B05523C08B683D50C3F95C315F1A5B25F11CC",
     "originalSha256": "106CF18937404CCF53AA8D19F4942188F64A66FAE342BCD2C34A6C4CA8E2B347",
     "maskSha256": "BE4070D47B25648A6DDC2DA356DCDED75567330372E7E8E351366F093B01B588",
     "actorMattePath": "unity_endfield_graph_shader_lab/scratch/character_recovery/actor_clips/endminf_actor_only.mkv",
+    "actorMatteManifestSha256": "526F8F034F62A21655F2FC5322013A85AA84B862FCF5683FE4EFDB2D37B1BA0E",
     "actorMatteSha256": "2B1C7FF70AB21F9B9B6098BF082CC39E78E09F030E41575E98008D3134B01EDB",
+    "actorSourceFrameStart": 9767,
     "cropHalfOpen": [
       800,
       188,
@@ -15,7 +18,7 @@
     ],
     "sourceFrameStart": 9783,
     "fps": 60.0,
-    "validityRule": "mask-zero excluded; actor matte excluded for background metrics; no pixels synthesized"
+    "validityRule": "mask-zero excluded; source actor matte excluded; Unity object-ID mask unavailable, so paired background metrics are not claimed"
   },
   "unityPhaseRenders": {
     "root": "scratch/charinfo_phase_sweep",
@@ -28,7 +31,7 @@
       "start",
       "transition"
     ],
-    "phaseNote": "Current pinned Unity outputs are sparse loop samples; start and transition captures are absent and are not inferred."
+    "phaseNote": "Current outputs are sparse and explicitly unpaired; start and transition captures are absent."
   },
   "comparisons": [
     {
@@ -37,33 +40,33 @@
       "sourceTimeSeconds": 168.616667,
       "unityRender": "endmin_t0p133.png",
       "unityPhaseTimeSeconds": 0.133,
-      "phaseMapping": "nearest available Unity sample; not exact temporal equivalence",
+      "phaseMapping": "explicitly unpaired; temporal correspondence unknown",
       "sourceSha256": "106CF18937404CCF53AA8D19F4942188F64A66FAE342BCD2C34A6C4CA8E2B347",
       "actorMatteSha256": "2B1C7FF70AB21F9B9B6098BF082CC39E78E09F030E41575E98008D3134B01EDB",
       "unitySha256": "112EEF6858F7DDB8209BFFA546E861E4843FD4084DD9B9EBD9D36BF286E2B90D",
       "validPixels": 4249104,
-      "backgroundPixels": 2705856,
+      "backgroundPixels": 2660246,
       "eccTranslation": 0.821318,
       "translationPixels": [
         0.927,
         0.746
       ],
       "sourceBackgroundMeanBgr": [
-        164.0365,
-        167.066,
-        167.003
+        165.531,
+        168.5807,
+        168.5021
       ],
       "sourceBackgroundStdBgr": [
-        35.141,
-        35.4549,
-        35.6781
+        33.0592,
+        33.3373,
+        33.5787
       ],
       "diagnosticDiff": {
         "path": "unity_endfield_graph_shader_lab/scratch/character_recovery/endminf_current_baseline_diagnostics/loop_start_absdiff.png",
         "sha256": "B2E6E3767125EE5830315C2919A9648BE1B6517A6B315147377DE9FFECDC1158",
         "description": "4x absolute BGR difference in exact crop; diagnostic only"
       },
-      "claim": "structural crop alignment only; source mask-zero and actor-occluded pixels excluded from background statistics; no perceptual equivalence"
+      "claim": "diagnostic only; unpaired samples are excluded from phase-quality claims and no perceptual equivalence is asserted"
     },
     {
       "phase": "loop_middle",
@@ -71,33 +74,33 @@
       "sourceTimeSeconds": 171.05,
       "unityRender": "endmin_t1p817.png",
       "unityPhaseTimeSeconds": 1.817,
-      "phaseMapping": "nearest available Unity sample; not exact temporal equivalence",
+      "phaseMapping": "explicitly unpaired; temporal correspondence unknown",
       "sourceSha256": "106CF18937404CCF53AA8D19F4942188F64A66FAE342BCD2C34A6C4CA8E2B347",
       "actorMatteSha256": "2B1C7FF70AB21F9B9B6098BF082CC39E78E09F030E41575E98008D3134B01EDB",
       "unitySha256": "C8FD4A3B9AEB482C1BD9F3A4BF5C9DD4CA6D5697C887DEFBE59E66C9A813BF3E",
       "validPixels": 4249104,
-      "backgroundPixels": 2634496,
+      "backgroundPixels": 2680725,
       "eccTranslation": 0.867594,
       "translationPixels": [
         -3.51,
         0.598
       ],
       "sourceBackgroundMeanBgr": [
-        167.1953,
-        170.2542,
-        170.1592
+        165.6794,
+        168.7183,
+        168.6118
       ],
       "sourceBackgroundStdBgr": [
-        30.2769,
-        30.5065,
-        30.7246
+        33.348,
+        33.6302,
+        33.8694
       ],
       "diagnosticDiff": {
         "path": "unity_endfield_graph_shader_lab/scratch/character_recovery/endminf_current_baseline_diagnostics/loop_middle_absdiff.png",
         "sha256": "F2AC6368095C2D83BC67D7E01B8833B0127A115853577205CC6A77EF9D454117",
         "description": "4x absolute BGR difference in exact crop; diagnostic only"
       },
-      "claim": "structural crop alignment only; source mask-zero and actor-occluded pixels excluded from background statistics; no perceptual equivalence"
+      "claim": "diagnostic only; unpaired samples are excluded from phase-quality claims and no perceptual equivalence is asserted"
     },
     {
       "phase": "loop_end",
@@ -105,39 +108,40 @@
       "sourceTimeSeconds": 173.483333,
       "unityRender": "endmin_t2p017.png",
       "unityPhaseTimeSeconds": 2.017,
-      "phaseMapping": "nearest available Unity sample; not exact temporal equivalence",
+      "phaseMapping": "explicitly unpaired; temporal correspondence unknown",
       "sourceSha256": "106CF18937404CCF53AA8D19F4942188F64A66FAE342BCD2C34A6C4CA8E2B347",
       "actorMatteSha256": "2B1C7FF70AB21F9B9B6098BF082CC39E78E09F030E41575E98008D3134B01EDB",
       "unitySha256": "ABC8F93291CBB86BB5C305AE02498429E3B12BF00DF27BBF0A316730FBADD0F8",
       "validPixels": 4249104,
-      "backgroundPixels": 2691677,
+      "backgroundPixels": 2721591,
       "eccTranslation": 0.86996,
       "translationPixels": [
         -5.161,
         1.58
       ],
       "sourceBackgroundMeanBgr": [
-        165.7899,
-        168.8229,
-        168.7108
+        165.2046,
+        168.2161,
+        168.0955
       ],
       "sourceBackgroundStdBgr": [
-        32.9015,
-        33.2045,
-        33.4472
+        34.1337,
+        34.4922,
+        34.7514
       ],
       "diagnosticDiff": {
         "path": "unity_endfield_graph_shader_lab/scratch/character_recovery/endminf_current_baseline_diagnostics/loop_end_absdiff.png",
         "sha256": "C6C1364E98BEEF320A2CAA4FA9EEC343B8CC7F0B62CD87DEDA3AFACF2BE71752",
         "description": "4x absolute BGR difference in exact crop; diagnostic only"
       },
-      "claim": "structural crop alignment only; source mask-zero and actor-occluded pixels excluded from background statistics; no perceptual equivalence"
+      "claim": "diagnostic only; unpaired samples are excluded from phase-quality claims and no perceptual equivalence is asserted"
     }
   ],
   "diagnostics": {
-    "backgroundMismatch": "source-only bounded background statistics; Unity background mismatch is not isolated",
-    "actorRenderMismatch": "not isolated",
+    "backgroundMismatch": "not measurable without a Unity exact object-ID mask; source-only metrics retained for audit context",
+    "actorRenderMismatch": "not measurable without exact temporal bridge",
     "perceptualEquivalence": false,
-    "diffDirectory": "unity_endfield_graph_shader_lab/scratch/character_recovery/endminf_current_baseline_diagnostics"
+    "diffDirectory": "unity_endfield_graph_shader_lab/scratch/character_recovery/endminf_current_baseline_diagnostics",
+    "phaseQualityClaims": false
   }
 }
