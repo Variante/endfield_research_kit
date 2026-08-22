@@ -5,7 +5,7 @@
   "generatedBy": "unity_endfield_graph_shader_lab/tools/build_priority_actor_mattes.py",
   "manifest": "unity_endfield_graph_shader_lab/scratch/character_recovery/actor_clips/actor_matte_manifest.json",
   "manifestBytes": 1429362,
-  "manifestSha256": "6590C69E0EAEF98D5110B621A46A5E48B7C86D75DF3C490C614BFF8F8AAFD94E",
+  "manifestSha256": "69CA3F02BDB7446BFECA40F7A6A0426A142387744F97F2E3FAFE2555BF9E18A9",
   "source": {
     "path": "videos/2026-08-15_10-32-32.mkv",
     "bytes": 1678613397,
@@ -152,8 +152,8 @@
     "uiOverlapPolicy": "hard_zero_and_measured_zero",
     "endminfIdentityEvidence": {
       "path": "unity_endfield_graph_shader_lab/tools/endminf_video_identity_evidence.json",
-      "bytes": 192400,
-      "sha256": "08008BC4A09193FBB99198AC40A1B6FB14D346BCA15500C3B633E4B4F1A6243A"
+      "bytes": 201942,
+      "sha256": "70D925A0D5FAEE12F0C210DD094AD62C9CE8FEA45E3A4F879F60676794177980"
     },
     "temporalPolicy": {
       "minRawIoU": 0.08,
