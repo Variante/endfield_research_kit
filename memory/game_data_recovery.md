@@ -42,16 +42,11 @@ Never treat a global PathID, filename resemblance, native address order, or one
 same-name asset as unique ownership. Preserve source layer, container, offset,
 schema version, and validation status.
 
-Map streaming recovery preserves the exact InitChunkData entity id, name,
-transform, and observed ECS component columns. In the currently validated
-samples/known columns, no known prefab Source+PathID/hash field is available;
-this is a bounded schema conclusion, not a claim about every future binary
-revision. Prefab-to-level ownership remains fail-closed until an explicit
-numeric identity is recovered and joined to a unique AssetMap container (or an
-explicit component identity). Entity names, positions, Meshes, basenames, and
-similarity cannot supply that join. StreamingChunkData record-to-entity
-correlation is the next evidence gap and does not itself establish prefab
-identity.
+Map streaming recovery preserves exact InitChunkData entity ids, names,
+transforms, and observed ECS component columns. The validated schema exposes no
+known prefab Source+PathID/hash field, so names, positions, meshes, and basename
+similarity never establish prefab-to-level ownership. The next gap is an exact
+StreamingChunkData or component identity joined to a unique AssetMap row.
 
 ## Known data model
 
@@ -261,11 +256,9 @@ identity rather than that room-tone Event or media. These examples remain
 authored identity/possible-media evidence, not placed-instance or playback
 proof.
 RemoteCommon lifecycle recovery now uses an exact Persistent-over-Streaming
-row overlay for non-empty `startAudioEvent`/`endAudioEvent` fields. The current
-CN generated catalog has four lifecycle trigger rows, all found in Wwise music
-Events, with zero playable media leaves; `voiceId` remains separate dialogue
-identity and runtime execution is unobserved. They are part of the 27,054-row
-`triggerContexts` catalog and do not imply that a lifecycle request ran.
+row overlay for non-empty `startAudioEvent`/`endAudioEvent` fields. `voiceId`
+remains a separate dialogue identity, and the authored lifecycle request does
+not prove runtime execution or a playable media leaf.
 Decoded media now carries a separate coarse-ownership projection from exact
 scene roles, Event contexts, component fields, and recovered external paths.
 Outdoor room-tone and authored ambient-emitter leaves can be classified as
@@ -304,6 +297,17 @@ identities remain candidate/ambiguous. Multiple authored callback owners remain
 shared, and missing, malformed, or unsupported identity evidence remains
 unresolved. This is static table/callback evidence only, not Animator execution,
 callback timing, selected Wwise media, playback, or audibility.
+The same static callback path can recover an NPC owner without treating it as a
+playable CharacterTable row: one `NpcInfoTable` row must provide identical
+non-empty `voActor` and `wwiseId`, and its `npcId`/`templateId` must agree with
+`NpcTemplateGroupTable` `npcNameId`/`templateId` in the current overlays. The
+same token must also be a unique exact `AudioDialogChannel` key with matching
+typed narrating/radio Event suffixes. The published identity is `ownerKind=npc`
+plus NPC id, template id, and actor token.
+Duplicate tokens, conflicting or malformed overlays, and template mismatches
+fail closed; generic archetypes remain unresolved. A mixed Event keeps a valid
+NPC identity only at occurrence/Clip level. This still does not prove Animator
+execution, playback, media selection, or audibility.
 Animation action names provide another bounded ownership route. A normalized
 AnimationClip name may classify an unknown Wwise Event as action SFX only when
 the same clip already carries a supported `PostAudioEvent` callback for that
@@ -1871,14 +1875,3 @@ selection remain unresolved even though all current v150 Bus InitialFX counts
 and authored slots are now parsed.
 - Per-system negative/certification reports that remain actionable after input
   drift.
-The same static callback path can recover an NPC owner without treating it as a
-playable CharacterTable row: one `NpcInfoTable` row must provide identical
-non-empty `voActor` and `wwiseId`, and its `npcId`/`templateId` must agree with
-`NpcTemplateGroupTable` `npcNameId`/`templateId` in the current overlays. The
-same token must also be a unique exact `AudioDialogChannel` key with matching
-typed narrating/radio Event suffixes. The published identity is `ownerKind=npc`
-plus NPC id, template id, and actor token.
-Duplicate tokens, conflicting or malformed overlays, and template mismatches
-fail closed; generic archetypes remain unresolved. A mixed Event keeps a valid
-NPC identity only at occurrence/Clip level. This still does not prove Animator
-execution, playback, media selection, or audibility.

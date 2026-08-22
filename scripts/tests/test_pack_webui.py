@@ -55,17 +55,26 @@ class PackWebuiAudioTests(unittest.TestCase):
         router = (project_root / "webui" / "assets.js").read_text(encoding="utf-8")
         html = (project_root / "webui" / "index.html").read_text(encoding="utf-8")
 
-        # Membership, not the exact set literal: the live router gains debug
-        # views over time (map-recovery joined mission-pipeline), and this test
-        # is about audio staying a normal view rather than about the roster.
+        # Mission Pipeline remains debug-only, while Audio and Map are
+        # normal views that must stay directly addressable with debug disabled.
         debug_only = re.search(r"const DEBUG_ONLY_VIEWS = new Set\(\[(.*?)\]\);", router)
         self.assertIsNotNone(debug_only)
         self.assertIn('"mission-pipeline"', debug_only.group(1))
         self.assertNotIn('"audio"', debug_only.group(1))
+        self.assertNotIn('"map-recovery"', debug_only.group(1))
         self.assertIn('audio: "gameplay"', router)
         self.assertIn('id="audio-tab"', html)
         self.assertIn('data-view="audio" data-i18n="audioTab"', html)
         self.assertIn('id="audio-view"', html)
+
+        story_tab = html.index('id="story-tab"')
+        map_tab = html.index('id="map-recovery-tab"')
+        characters_tab = html.index('id="characters-tab"')
+        self.assertLess(story_tab, map_tab)
+        self.assertLess(map_tab, characters_tab)
+        map_button = re.search(r'<button id="map-recovery-tab"[^>]*>', html)
+        self.assertIsNotNone(map_button)
+        self.assertNotIn("data-debug-view", map_button.group(0))
 
     def test_packaged_router_keeps_audio_and_debug_mission_views(self) -> None:
         shim = pack_webui.ASSET_SHIM_JS

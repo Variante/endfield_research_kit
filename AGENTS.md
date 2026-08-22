@@ -388,6 +388,14 @@ Tool pointers:
   assets, material links, and optional AnimeStudio asset maps.
 - `tools/endfield-il2cpp/` contains offline IL2CPP metadata diagnostics. It is
   not part of normal export, Updates, packaging, or serving flows.
+- `tools/Endfield-map-extractor/` is an optional ignored research checkout,
+  not a maintained WebUI dependency. Its BundleScanner/SceneProbe pipeline is
+  a useful reference for recovering scene hierarchy, transforms, and the
+  renderer-to-mesh/material/texture closure, but the current public workflow is
+  specialized to Map01/Map02 and does not establish an `indie_dg002` or e0m0
+  render. Review its PolyForm Noncommercial license before reusing code. Its
+  game-root convention also names the directory containing `Endfield.exe`, not
+  this repository's usual `Endfield_Data` value.
 - Optional local vendor/tool caches may live under ignored `tools/`; keep their
   generated outputs local.
 

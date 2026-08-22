@@ -18,6 +18,7 @@ an explicitly separate server.
 | Page | Scope |
 | --- | --- |
 | Story | Reconstructed dialog, SNS, radio, options, cutscenes, media, and evidence-typed order |
+| Map | Authored world-space evidence with minimap, model, point, and water layers |
 | Characters | Identity groups, source evidence, related assets, and live overrides |
 | Gameplay | Characters, equipment, enemies, items, progression, skills, projectiles, assets, and sound |
 | Audio | Wwise Events/media, authored contexts, decoded playback candidates, and recovery state |
@@ -41,7 +42,7 @@ in Gameplay.
 - `src/features/gameplay/`: Gameplay datasets and sound players.
 - `src/features/audio/`: Audio evidence browser.
 - `src/features/mission_pipeline/`: debug-only Mission Pipeline.
-- `src/features/map_recovery/`: debug-only experimental world-coordinate map recovery for every level that owns a plotted node; the map surface is full-bleed with the title/metrics, controls and inspector as draggable, collapsible floating panels, and the page shows one whole region at a time - every sibling zone's map screen tiles onto the same world surface with no frames between zones, so panning crosses zones seamlessly.
+- `src/features/map_recovery/`: normal Map view immediately after Story, with a full-bleed world surface, a three-column map/task/object-filter tree, a detailed JSON/file inspector, stitched config-proven regions, authored quest routes, and evidence-linked markers. Unnamed single-mission maps use the localized mission code/name; authored cross-map Story continuations are explicit navigation links.
 
 Generated data belongs in `webui/data/`; user-managed inputs belong in
 `webui/overrides/`. Do not hand-edit generated JSON.
@@ -244,8 +245,7 @@ Candidate paths, sidecar level IDs, names, positions, and mixed exact rows
 remain diagnostic-only.
 If explicit component identity and exact prefab-path identity disagree, the
 page keeps the join unavailable with `conflictingPrefabInstanceIdentityJoins`
-instead of choosing one route. The current CN generated view therefore has
-zero exact scene-emitter Events and 43 prefab-local Events.
+instead of choosing one route.
 Scene-global Event cards and details expose exact authored scene IDs and the
 original serialized semantic roles only when every direct context validates
 against the merged scene catalog. The context filter and search use the same
@@ -263,9 +263,7 @@ or ownership evidence; StreamingChunkData correlation remains an explicit gap.
 
 RemoteCommon `startAudioEvent`/`endAudioEvent` lifecycle fields are shown as
 separate authored trigger contexts after the exact Persistent-over-Streaming
-row overlay. CN currently exposes four such rows, all found in Wwise music
-Events and none with a playable media leaf; runtime execution remains
-unobserved. The overall generated trigger-context catalog contains 27,054 rows.
+row overlay; runtime execution and playable-media selection remain separate.
 
 AudioCue AST detail is lazy and debug-only. It exposes the validated tree's
 source coordinates, parent/depth, `exprType`, four scalar fields, child paths,
@@ -377,6 +375,12 @@ malformed overlay evidence, and unsupported Clip tokens, remain unresolved
 instead of being promoted. These are static authored callback labels; Animator
 execution, callback timing, Wwise branch/media selection, playback, and
 audibility remain runtime-unobserved.
+When the callback token has one agreeing `NpcInfoTable` plus
+`NpcTemplateGroupTable` owner and one exact `AudioDialogChannel` key, details and
+search expose the NPC id, template, and actor token as `ownerKind=npc`.
+Duplicate/generic tokens, missing channel identity, overlay conflicts,
+malformed rows, and template mismatches stay unresolved. Mixed Events retain
+the NPC only on occurrence/Clip evidence and do not receive a single NPC owner.
 The semantic
 index also recovers 25 unique `AU_*` field symbols whose AudioHashGenerator
 hash matches a current Wwise Event (for example conveyor, laser, NPC, UI scan,
@@ -543,423 +547,87 @@ Story definitions, mission ownership, activation, and playback.
 - Strong and weak graph edges remain visually and semantically separate.
 - Manual/OCR order may guide research but does not upgrade source evidence.
 
-## Map recovery
+## Map
 
-The debug-only Map Recovery page projects exact authored world-space evidence
-onto X/Z and keeps a rendered scene background optional. Marker coordinates and
-render bounds must share the same declared world-coordinate transform; an image
-that lacks auditable bounds is not evidence of placement.
+Map is a normal page immediately after Story. It plots authored Unity X/Z
+coordinates and only draws a background when the image and its world bounds
+share an explicit transform.
 
-Every level is recovered by the same code path, with no level id written into
-the builder. `WorldEntityRegistry` keys its world entities, script entities and
-NPC proxies by a global id whose leading digits are the level's own `idNum` from
-`LevelBasicInfoTable` (`idNum = id // 10**8`), so a level's plottable entities
-select themselves: `indie_dg002` is `idNum 87` and owns ids from `8700000000`,
-`indie_dg004` is `idNum 239` and owns ids from `23900000000`. A level is
-published when it owns at least one plotted node; an id whose `idNum` no level
-row declares is dropped rather than guessed at, because it has no coordinate
-space to sit in. The map selector groups the published levels by family -
-map01 is 四号谷地 (Valley-IV) and map02 is 武陵 (Wuling), named by the levels'
-own recovered display names - and labels each level with the name the builder
-resolved from `LevelDescTable` plus the per-language `I18nTextTable` (empty or
-placeholder texts keep the bare level id) alongside its node and story counts.
+Current generated contract:
 
-Levels in one region share a single world-space canvas, but remain separate
-selectable sub-maps. `UILevelMapLoadConfig` supplies the exact chunk rectangles,
-optional tier overlays, and the only supported orientation flag
-(`needInverseXZ`); exported tile rows are not flipped independently. Multi-tier
-regions start with the selected sub-map's first tier visible. A current-floor
-slider on the lower-left map surface groups every rendered sibling overlay in
-the stitched region and switches one floor at a time, with an explicit base-map
-position, so transparent floors from different heights never blend. It is
-hidden when no tier image was actually recovered; the same light control dock
-retains the pan/zoom keyboard and wheel hints without a separate floating hint.
-Geographic
-`regiontoast` overlays use their recovered place names; only authored
-`layer_tips` keys are presented as numbered floors. Numbered floors sort in
-ascending order before the remaining tier-id-ordered geographic overlays.
-Tier chunk rows retain the exported top-to-bottom, +Z-at-top orientation just
-like base-map chunks; `needInverseXZ` changes world-pin projection and never
-rotates the exported composite.
-Registry markers, quest points, and authored
-`staticElements` all retain raw X/Z coordinates; marker-to-tier membership is
-published only when the point lies inside that tier's authored rectangle.
-The level display name identifies a gameplay scene, not ownership of every
-pixel in its overlapping map-screen rectangle. Region stitching therefore
-uses a stable background order, and geographic labels are positioned from the
-localized `UILevelMapLoadConfig.staticElements` text anchors. Selecting a
-different sibling level must not reorder the region surfaces or make named
-places appear to exchange positions.
+- `data/map_recovery/index.json` lists maps, their exact `regionKey`, the
+  current default map, and compact counts.
+- `data/map_recovery/maps/<levelId>.json` owns markers, quest points, facets,
+  mission/file evidence, minimap metadata, and one recovered render manifest.
+- `data/map_recovery/render/` owns generated minimap composites, elevation,
+  surface, point, height-mask, and water PNGs plus their manifests.
+- Shared-scene identity comes only from the directly addressed
+  `LevelConfig/<levelId>.json` streaming path. Similar names are not evidence.
+- Streaming-instance sidecars use schema 2 and one `meshes` array per entity
+  base. They feed static render layers only and are not duplicated as clickable
+  map nodes.
+- Every point layer owns its height mask as
+  `pointCloudOverlay.heightMask`; there is no top-level mask fallback.
+- The browser derives stitched bounds from the loaded background rectangles;
+  region bounds are not duplicated in index or payload metadata.
 
-Only the Map01 and Map02 families are stitched into regional canvases. Other
-same-prefix levels can be separate states or decks with identical bounds; the
-two Dijiang maps therefore load independently. Their composites retain the
-exported orientation shown by the in-game reference (prow/bridge left and base
-area right), while `needInverseXZ` converts world pins with the evidenced
-clockwise quarter turn `X'=Z, Z'=-X`. This applies identically to markers,
-routes, and location labels. Where game minimap art is absent, a
-recovered HLOD surface is preferred; otherwise the page uses an explicitly
-evidence-only, height-tinted point cloud made from exact registry and quest
-X/Y/Z transforms without inventing terrain. The expandable mission list links
-the files owned by each mission. Selecting one mission shows all of its plotted
-markers across ordinary marker and floor filters, focuses their footprint, and
-the map can be zoomed to 48x for close inspection.
-The selector orders Dijiang first, then Valley-IV, Wuling, and finally dungeon
-and independent-scene families.
-Map feature scripts, styles, and regenerated background images carry the same
-release cache key so an ordinary page reload cannot mix an old coordinate
-projection with a newly generated minimap composite.
+Frontend behavior:
 
-Both marker points and background rectangles use the same `screenY = maxZ -
-worldZ` projection. Do not place a background with `worldZ - minZ`: that
-mirrors every stitched screen north/south while leaving task coordinates in
-the original orientation, producing apparently mismatched edges and pins.
-Opening any `map01` or `map02` level loads every sibling background in that
-region immediately; readers do not need to change the selector once to finish
-the stitch. Selecting a sub-map automatically frames its own map-screen extent,
-including in the clean view where no entity nodes are enabled. Source minimap
-alpha is rendered directly without an additional whole-image opacity, avoiding
-artificial dark seams where sibling screens overlap. The initial view is a clean
-geographic map with no quest/entity overlay selected, and an available stitched
-surface is not reported as an empty node layer. One primary place label per sibling remains visible,
-collision-free local names appear progressively with zoom, and quests, dialog
-markers, or other entity layers are explicit user choices.
-The pan surface suppresses native text/SVG selection from pointer-down through
-drag completion, including when pointer capture carries the drag outside the
-map, so panning never highlights labels or surrounding interface text.
-The map canvas uses a subdued dark stripe outside recovered textures. The
-lower-left floor control and help text reserve the default controls-panel width
-instead of sitting underneath that floating panel.
+- A map opens as clean geography. The resizable left panel is a three-column
+  map/task/object-filter tree; map status is kept with the task column instead of occupying
+  a separate header panel. The complete JSON/file inspector is also resizable.
+- The plain third column combines entity, quest, story, and mission filters
+  with minimap, elevation, surface, water, point-opacity, and point-height
+  controls without an inner layer container; there is no separate bottom
+  filter dock. The outer panel body owns scrolling for all three columns.
+- Authored floor overlays are discovered by hovering their covered area and
+  cycled locally by clicking; there is no global floor slider.
+- Quest routes are grouped by mission and ordered by authored `questOrder`.
+  Shared-file or shared-script relation webs are not rendered.
+- Entity size is independent from map zoom. Point opacity and the two-thumb
+  world-Y filter change presentation only.
+- Map01, Map02, and config-proven shared blackbox scenes stitch by exact
+  `regionKey`. Dungeon maps with a source-art dependency remain independent.
+- Minimap/model/water rectangles and markers all use X/Z with image top at +Z.
+  `needInverseXZ` applies the evidenced quarter-turn consistently.
+- The inspector keeps strong identity links separate from weak spatial or
+  mission context and never upgrades proximity into ownership.
 
-Because one level hosts many missions and one mission can reach several levels,
-every contribution is gated on the coordinate space it names: mission-area
-proximity rows on their `pin.mapId`, authored map pins on their own `scene`
-field, and quest centroids on `questSpatialTrack.scenes`. A quest whose tracked
-pins span two levels has a centroid averaged over two unrelated coordinate
-spaces, so it is plotted on neither map rather than at a position that exists in
-neither.
+Evidence boundaries:
 
-Every plotted node publishes a `relatedFiles` list, and the page's right-hand
-inspector reads those files in place: dialog and text payloads render as
-speech, `LevelScriptData` blobs render as their embedded identifier strings,
-and anything else renders as truncated raw text. Each pin declares the link
-that produced it, and `strength` separates the two evidence bands the page
-keeps visually apart:
+- A registry or InitChunkData transform proves placement, not visibility,
+  interactivity, prefab identity, or renderer ownership.
+- Static OBJ projection requires an exact matrix and mesh relation. Material
+  color requires one unambiguous Mesh → Material → base texture path plus UVs.
+- HLOD placement remains inferred from the recovered grid fit; weak fits publish
+  no background.
+- e0m0 HLOD clusters use the generated assets' exact level/LOD/signed-suffix
+  contract to bind each cluster to one generated material, then follow that
+  material's `_BaseColorMap` PathID to the exported diffuse atlas. Missing or
+  duplicate links fail closed to the elevation palette. This recovers unlit
+  base color, not the game's environment lighting or post-processing.
+- HLOD point overlays retain a deterministic sparse sample set for every
+  projected pixel and elevation. The normal full-range view uses the compact
+  top-point PNG; a bounded height filter selects the highest remaining sample,
+  so removing an upper layer reveals co-projected geometry below it.
+- Water requires both authored minimap water pixels and exact WaterData scene
+  evidence. Packed flowmaps alone are not coverage.
+- Explicitly named roof/ceiling instances may be omitted for the documented
+  cutaway; no height-based roof guess is made.
 
-- `strong` - an identity match. `story_exact_producer` (registry-backed
-  script/slot producer), `story_npc_proxy` (a scene bound to a named NPC proxy
-  the registry places exactly), `story_script_slot`, `story_map_pin`,
-  `placement_source`, `mission_area_definition`, `level_script`,
-  `mission_runtime`, `entity_registry`.
-- `weak` - diagnostic or scoped context. `story_proximity` (a scene placed
-  near the node), `story_quest_anchor`, `story_script_condition`,
-  `story_script_reference`, `story_anchor_script`,
-  `story_mission_area_candidate`, `story_mission_scope`, `story_source`,
-  `mission_reference`, `level_definition`.
-
-Story files reach the map through five independent bindings:
-
-| Source | Binding | Strength |
-| --- | --- | --- |
-| `flow.missionStoryConnections` | producer script/slot, exact when the registry resolves the entity | strong when exact |
-| `timelineRecovery.npcProxyDialogAttachments` | scene to `npcProxyId`, joined to the registry's `npcProxyBriefInfos` transform | strong |
-| `flow.mapPins` | authored pin with an exact position, the quests it serves, and the NPC proxy it follows | strong |
-| `timelineRecovery.scriptConditionAttachments` | scene play condition to a level script in a named map, with no slot | weak |
-| `levelscriptSpatialProximity` / `questSpatialTrack` | mission-area trigger volumes and quest centroids | weak |
-
-Markers carry a structural `kind` (`story`, `narrative`, `npc`, `trigger`,
-`travel`, `device`, `collectible`, `scenery`, `enemy`, `spawn`, `waypoint`)
-classified from `detailId` and, failing that, from the registry's own
-`entityType`. `kind` is never upgraded because dialog happens to be pinned to a
-node; `storyCount` reports that separately, and the page draws its story ring
-from `storyCount`, so the story layer is exactly the set of nodes with a dialog
-to open.
-
-A node placed by the registry sets `registryBacked` instead of repeating one
-identical level-wide 7 MB registry path on every marker; the inspector rebuilds
-that pin from the map's own `relatedFiles` entry. On the largest map this is
-about a megabyte of pure repetition.
-
-A named slot is a gate, not a hint. Once a connection resolves the entity slot
-its story is produced from, that story is pinned to that slot only - never to
-the script's other slots, and never to its listener or ordering-anchor scripts,
-whose identically numbered slots are unrelated entities. `anchorScriptIds`
-order a scene rather than play it, so they carry their own `story_anchor_script`
-relation and only apply when nothing else resolved.
-
-`triggerSlotIds` (from `ScriptEvent_OnLeaderEnterTriggerVolume`) are numbered in
-a level-script-local space that shares no id with the WorldEntityRegistry
-script/slot space, so they cannot be placed. They are published as
-`unresolvedTriggerSlots` and shown in the rail, which keeps a story's
-mission-area pins from reading as its recovered trigger position.
-
-Spatial proximity rows reach the map through two different doors. A row pinned
-to a mission area becomes a trigger marker; a row pinned to a `trackingPos`
-has no area to become, but still names a quest, so it is pinned to that quest
-point. Consuming only the first kind silently dropped five scenes and two
-level scripts from the payload.
-
-### Why a mission story can be absent from the map
-
-A scene reaches a plotted node only through a spatial anchor. `unplacedStories`
-names every mission scene that has none, grouped by reason, and the rail links
-each one into the Story view:
-
-| Reason | Meaning |
-| --- | --- |
-| `mission_scope_only` | scoped to the mission's whole area set; reachable under map-wide files, but not placed |
-| `cross_level_binding` | driven from another level's `sceneBindings` chain (those scenes are placed on that level's own map instead) |
-| `graph_evidence_only` | scene-to-scene ordering edges only, with no area, producer entity or proximity row |
-| `no_placement_evidence` | no spatial evidence of any kind in the mission payload |
-
-This is an evidence boundary, not a gap in the linker: an unplaced scene carries
-no coordinate anywhere in the exported data. Counts per level are in the
-generated payloads and in the page rail, not repeated here.
-
-Every pinned dialog file also carries a Story deep link
-(`?lang=<LANG>&ui=<locale>&story=<key>#story`), so a marker's text can be read
-in place on the map or opened in the Story view with its full line order,
-options and audio. The data language is read back from the pin's own path.
-
-A story whose mission-area set covers every area of the mission says nothing
-about any single trigger, so it is pinned map-wide (`story_mission_scope`)
-instead of being repeated on each trigger. `unlinkedMissionFiles` therefore
-lists only the mission-referenced files that no plotted node claims at all.
-`linkedMissionFiles` keeps its narrower original meaning: files that prove a
-marker's placement.
-
-`build_map_recovery_data.py` rebuilds every level in one pass, reading each
-mission payload once and reducing it to a compact per-level digest so the whole
-mission corpus is never resident at once. Pass `--level` (repeatable) to rebuild
-a single map while iterating.
-
-### Filtering a map
-
-A world map pools every mission that plays in the level, so the page filters on
-two independent axes and publishes the counts each one needs in the payload's
-`facets` block.
-
-- **Mission.** The selector isolates one mission at a time, ordered by how much
-  of the map each accounts for. A node is claimed by a mission only when that
-  mission authored the dialog pinned to it, when the node is that mission's own
-  map pin or trigger area, or when it is one of its quest points; story rows
-  carry their owning mission for exactly this reason. Registry entities with no
-  dialog are level art and belong to no mission, so they appear only under
-  "All missions" rather than being attributed to whichever mission is selected.
-- **Layers.** `kind` is the top level and `subKind` the second, because
-  `collectible` is not one thing: chests, ore nodes and currency pickups are
-  separate questions. A kind with a single subKind stays a plain row. `All`,
-  `None` and `With dialog` reset the tree; the last keeps only kinds that
-  actually carry recovered dialog. Each row shows its node count and, in the
-  story colour, how many of those nodes have dialog attached.
-
-Counts come from `facets`, not from a node scan, so a hidden layer still reports
-how much it is hiding, and a filtered map shows a `shown by filters` metric
-beside the unchanging level totals. Filter changes coalesce into a single render
-(via a timer, not `requestAnimationFrame`, which does not fire in a hidden tab),
-because re-plotting a full map is a few hundred milliseconds of SVG layout and
-the two-level tree invites several clicks in a row.
-
-Initial activation fetches only the selected level and starts with
-dialog-bearing markers rather than every entity. Selecting another level is the
-explicit request to fetch and merge that region's siblings; the shared loader,
-busy state and inline retry match the other lazy WebUI views. `All`, `None` and
-`With dialog` remain explicit display choices after loading.
-
-### Lines on the map
-
-Two kinds of line are drawn, and they mean different things.
-
-**Quest routes** are one polyline per mission, through that mission's quest
-points in its authored `questOrder`. Both parts matter: a single polyline over
-every quest point on the map drew a false leg from the last quest of one mission
-to the first of the next, and ordering by `questId` sorts lexicographically, so
-`q#10` landed between `q#1` and `q#2`. Every published quest point carries a
-numeric `questOrder`, which is the authored sequence.
-
-**Relation lines** join two markers that share a level-script file or a script
-entity. This is a clique: every pair in a group is joined, so a group of n draws
-n(n-1)/2 lines that all carry the same one fact. They are also a file-level
-co-occurrence, not a spatial or narrative link - one script can own entities
-scattered across the level, so a long line between distant markers says only
-"same file". They are therefore focused by default: only the lines of the node
-under the pointer, or of a pinned node, are shown. `All` and `Off` are available
-in the rail. Visibility is switched by rewriting a single stylesheet rule rather
-than touching each line, so focus can follow the pointer on a map with thousands
-of nodes. Groups larger than 24 members are dropped entirely rather than
-thinned, because a partial clique would misrepresent which members are related.
-
-### Background renders
-
-The preferred background is the game's own map screen: `build_map_recovery_data.py`
-composites the level's medium-LOD chunk textures (exported under
-`convert_by_type/Texture2D`) onto the exact world rectangles
-`UILevelMapLoadConfig` declares for each chunk, with the image top on +Z like
-every marker projection. A chunk grid with a hole, a missing chunk texture or
-a degenerate scale fails closed to the high/low LOD and finally to the HLOD
-preview; whichever source wins also supplies the declared `worldBounds` the
-markers stretch against, and the rail states which one the page is showing.
-Each chunk draws at its own world size (half-size cells included), and a
-sidecar records the chosen textures by hash so an unchanged rebuild reuses the
-published composite instead of repainting it. `basic.needInverseXZ` is recorded
-as a pin-projection contract; it does not rotate the chunk composite.
-
-The page fits a single on-demand zone to its own declared rectangle. After the
-reader requests a sibling, the generated `region.worldBounds` union becomes the
-one full-viewport transform for every loaded zone of the same region (map01,
-map02, base01, ...), so
-the overlapping zone map screens tile into one seamless surface with no
-outline between zones; the selected zone draws last, on top of its
-neighbours. Markers, routes and every zone picture share the fitted
-rectangle. This fixes the former use of only the selected zone's bounds, which
-clipped or displaced sibling screens in Wuling and Valley-IV. Pan/zoom runs over
-the loaded region (the pan limit follows the
-plotted content, not the canvas edge), and fit/reset operate on the region's
-plotted nodes and union bounds. All page chrome - title and
-metrics, map/mission/layer controls and the inspector - is a floating panel
-that drags by its header and collapses onto it.
-
-Every level with HLOD art also gets the diagnostic top-down backdrop, built by
-`build_map_recovery_preview.py` from the AnimeStudio AssetMap and exported OBJ
-meshes. It is the fallback background wherever the in-game map screen is not
-available; a level with neither publishes markers on marker-derived bounds and
-says so in the rail.
-
-The HLOD bundles publish `Mesh`, `Material` and `Texture2D` only - no
-`GameObject` or `Transform` record survives the export - so a cluster's world
-placement cannot be read out. It is inferred from the cluster name
-(`S_HLOD<lod>_<i>_<j>_Cluster_<hash>`), whose grid index is the only spatial
-hint, plus two quantities that are recovered rather than assumed:
-
-- **Cell size.** It doubles per LOD and `HLOD0` is 64 m. The independent check
-  is `indie_dg002`, whose 128 m `HLOD1` cell was derived by hand before this
-  builder existed and which the general rule reproduces exactly.
-- **Grid origin.** Fitted per level by asking which origin makes that level's
-  own exact marker transforms land on cells that actually carry geometry, at
-  every LOD at once. The fit is corroborated across levels rather than tuned:
-  one shared power-of-two-aligned origin (`-1024`) explains `indie_dg002` and
-  every `map01_*` level, and another (`-2048`) explains almost every `map02_*`
-  level - agreement a per-level curve fit would not produce.
-
-Origins are still fitted per level and never forced to the family constant.
-`map02_lv005` is the reason: its own markers score 93% at `(-2048, -1920)` and
-only 59% at the family `(-2048, -2048)`, so levels demonstrably do carry their
-own origin.
-
-Every manifest publishes the fit that produced it - `coverage`, `bestCoverage`,
-`samplePoints`, `tiedOrigins`, `alignmentBits` - and the page prints coverage
-and origin in the rail, so a weak background reads as weak. A level whose origin
-is under-determined (fewer than 50 marker transforms, or under 90% coverage)
-publishes no background at all rather than a plausible-looking guess.
-
-The image uses the earlier dense 3D scan/point-cloud presentation:
-
-1. **Depth pass.** Every cluster triangle is rasterised orthographically from
-   directly above with a depth test on world Y, giving a digital elevation
-   model of the level.
-2. **Density sample.** A deterministic screen-door sample keeps roughly 73% of
-   pixels hit by real HLOD triangles, preserving structure while exposing the
-   background between points.
-3. **Elevation tint.** Exact depth values tint the recovered points from cool
-   blue-grey to warm ivory, retaining readable vertical relief.
-
-The renderer deliberately adds neither mesh-normal lighting nor grown terrain.
-Every visible point comes from a real triangle depth hit; gaps remain missing
-evidence instead of being joined into a plausible-looking solid surface.
-
-Bounds are the marker bounds padded to the page's viewBox aspect, so the image
-is not stretched against the markers drawn over it, and the PNG is ink on
-transparency so it inherits the page's own surface.
-
-Two limits are worth stating plainly, because both are data ceilings rather
-than rendering choices:
-
-- **No textures.** The HLOD containers publish `Mesh`, `Material` and
-  `Texture2D` (15,338 albedo/normal PNGs are exported), but the mesh, material
-  and texture hashes are all different and no `Renderer` binding survives the
-  export, so no mesh can be joined to its material. The surface is shaded, never
-  textured, and the exported HLOD textures are unusable until that binding is
-  recovered.
-- **No ground.** `realPixelRatio` runs from about 12% to 77% per level. The
-  uncovered pixels are not open ground: for these scenes HLOD publishes cliffs,
-  props and structures but no ground surface, and no `TerrainData` or other mesh
-  exists in the art scene either. Everything beyond recovered triangle hits is
-  left empty, because a gap is missing data and an invented floor would imply
-  coverage the export does not have.
-
-These remain diagnostic previews labeled `inferred_hlod_grid_preview`, useful
-for checking route alignment and scene coverage. They are not exact scene
-transforms or textured map renders.
-
-For a level with no usable map-screen texture, the preview manifest also
-publishes a bounded `modelScene` subset of the same exported HLOD OBJ meshes.
-The evidence panel links those meshes into the existing Assets 3D viewer. Paths
-must remain under `export_full`; publication fails closed above 24 meshes or
-120,000 triangles and states marker-only fallback when no safe model survives.
-The grid translation and Unity-to-OBJ axis conversion remain explicitly
-inferred, not exact scene hierarchy evidence.
-
-When a level has no HLOD cluster container but exported OBJ filenames contain
-that exact level id (for example a base01 deck), the map payload publishes an
-asset-only `modelScene` with `positionStatus: unplaced`. Those links open the
-existing Assets viewer but never become map geometry or a background; shared
-family names such as `base01` are not used to assign an OBJ to every deck.
-
-The builders read each other's output, so a full rebuild runs data, then
-previews, then data again to embed the new manifests:
+Maintained commands:
 
 ```bat
-python scriptsuild_map_recovery_data.py
-python scriptsuild_map_recovery_preview.py
-python scriptsuild_map_recovery_data.py
-python scriptsuild_map_recovery_preview.py --level indie_dg002
+python scripts\recover_map_streaming_instances.py --level LEVEL --jobs N
+python scripts\build_map_recovery_preview.py
+python scripts\build_map_recovery_preview.py --level LEVEL
+python scripts\build_map_recovery_data.py
+python scripts\build_map_recovery_data.py --level LEVEL
 ```
 
-`build_map_recovery_preview.py` scans the 750 MB AssetMap once and caches the
-per-level HLOD grid index at `reports/assets/map_recovery/hlod_grid_index.json`,
-keyed by the AssetMap hash; pass `--refresh-index` to force a rescan.
-`audit_map_asset_closure.py` remains available for one-off needle audits of a
-single map's asset closure.
-
-### Sub-levels with no mission of their own
-
-A level that hosts no mission still gets a map when another mission's authored
-chain runs inside it. `indie_dg004` is the worked example: `LevelBasicInfoTable`
-declares it with `idNum 239`, two missions (`e0m0` and `e4m1d5`) host sub-level
-data there, and neither declares it as its own `levelId`, so it is a secondary
-level both missions teleport into rather than a region of either one's map.
-
-Its recovered surface is four exact transforms: three WorldEntityRegistry script
-entities (`int_narrative_empty` narrative anchors) and the arrival point of
-`TpForLs_23900030000_0c8be1bb` from `LevelScriptTeleportValidationDataTable`.
-Everything sits within ~15 m of the level origin, against X -384..512 /
-Z -192..960 for e0m0's content in `indie_dg002` - the two coordinate spaces have
-nothing to do with each other, which is why a quest centroid is never carried
-across a level boundary.
-
-The payoff is that `cutscene_e0m0_6/7/8`, which the `indie_dg002` map has to
-report as `cross_level_binding`, are pinned here on the anchors of the script
-that plays them. Their `sceneBindings` chains name a level-script file but never
-an entity slot, so they attach at slot-less strength rather than being claimed
-as exact placements.
-
-`tools/Endfield-map-extractor/` is an optional research reference rather than a
-WebUI dependency. At inspected commit `956596b48ff04451fc0223021d7af284f2c64cda`,
-its `EndfieldSceneProbe` can inventory GameObject/Transform hierarchies and the
-Renderer-to-Mesh/Material/Texture dependency closure, and export referenced OBJ
-meshes. That is a promising route to an orthographic background after a small,
-audited physical-bundle closure has been selected.
-
-Do not treat the optional extractor's output as an e0m0 map. Its public extraction profiles,
-terrain/instance paths, and Blender bounds are specialized to Map01/Map02; the
-public job path emits audited data packages while Blender build status remains
-`not_ready`. A future exact e0m0 pass must add an `indie_dg002` profile, recover
-the scene Transform closure, and replace or validate the inferred grid formula
-before upgrading the current diagnostic background.
-The checkout is ignored under `tools/`, expects a game root containing
-`Endfield.exe` rather than `Endfield_Data`, and uses the PolyForm Noncommercial
-1.0.0 license; review that license before copying implementation code.
-
+Run the preview builder before the data builder so map payloads embed the
+current render manifests. Focused `--level` runs preserve unrelated generated
+maps; full runs remove stale map JSON and minimap composites.
 ## Updates
 
 Updates displays changes produced by comparing two complete export roots. The
@@ -998,9 +666,3 @@ After frontend or generated-data changes:
 
 Useful Story media fixtures are `test_sns_emojicomment`, `test_sns_sticker`,
 and `sns_topic_map02_lv005_12002`.
-When the callback token has one agreeing `NpcInfoTable` plus
-`NpcTemplateGroupTable` owner and one exact `AudioDialogChannel` key, details and
-search expose the NPC id, template, and actor token as `ownerKind=npc`.
-Duplicate/generic tokens, missing channel identity, overlay conflicts,
-malformed rows, and template mismatches stay unresolved. Mixed Events retain
-the NPC only on occurrence/Clip evidence and do not receive a single NPC owner.

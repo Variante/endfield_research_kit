@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>&#21095;&#24773;&#23545;&#35805; &middot; &#32456;&#26411;&#22320;&#30740;&#31350;&#24037;&#20855;</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg?v=20260701-gp5">
-<link rel="stylesheet" href="style.css?v=20260814-gameplaybuff1">
+<link rel="stylesheet" href="style.css?v=20260822-sanstoken1">
   <link rel="stylesheet" href="src/features/characters/style.css?v=20260809-characters16">
   <link rel="stylesheet" href="src/features/mission_pipeline/style.css?v=20260812-construction1">
-  <link rel="stylesheet" href="src/features/map_recovery/style.css?v=20260820-map45">
+  <link rel="stylesheet" href="src/features/map_recovery/style.css?v=20260822-map70">
   <link rel="stylesheet" href="src/features/audio/style.css?v=20260812-construction1">
 </head>
 <body data-active-view="story">
@@ -31,11 +31,11 @@
     <nav id="view-tabs" role="tablist" aria-label="Primary views" aria-describedby="view-tabs-hint" aria-orientation="horizontal">
       <span id="view-tabs-hint" class="sr-only">Use the left and right arrow keys to move between views.</span>
       <button id="story-tab" class="view-tab is-active" type="button" role="tab" aria-selected="true" aria-controls="story-view" tabindex="0" data-view="story" data-i18n="storyTab">剧情</button>
+      <button id="map-recovery-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="map-recovery-view" tabindex="-1" data-view="map-recovery" data-i18n="mapRecoveryTab">地图</button>
       <button id="characters-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="characters-view" tabindex="-1" data-view="characters" data-i18n="charactersTab">人物</button>
       <button id="gameplay-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="gameplay-view" tabindex="-1" data-view="gameplay" data-i18n="gameplayTab">玩法</button>
       <button id="audio-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="audio-view" tabindex="-1" data-view="audio" data-i18n="audioTab">&#38899;&#39057;</button>
       <button id="mission-pipeline-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="mission-pipeline-view" tabindex="-1" data-view="mission-pipeline" data-debug-view data-i18n="missionPipelineTab">任务流程</button>
-      <button id="map-recovery-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="map-recovery-view" tabindex="-1" data-view="map-recovery" data-debug-view data-i18n="mapRecoveryTab">地图恢复</button>
       <button id="assets-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="assets-view" tabindex="-1" data-view="assets" data-i18n="assetsTab">资源</button>
       <button id="reference-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="reference-view" tabindex="-1" data-view="reference" data-i18n="referenceTab">文本</button>
       <button id="updates-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="updates-view" tabindex="-1" data-view="updates" data-i18n="updatesTab">更新</button>
@@ -645,7 +645,7 @@
 <script src="src/ui/media_player.js?v=20260812-multimedia5"></script>
 <script src="src/ui/splitter.js?v=20260701-gp5"></script>
 <script src="src/ui/filters.js?v=20260701-gp5"></script>
-<script src="app_labels.js?v=20260812-construction1"></script>
+<script src="app_labels.js?v=20260821-mapnav1"></script>
 <script src="app_tree.js?v=20260809-storygendervariant1"></script>
 <script src="src/features/story_triggers.js?v=20260725-mplayout2"></script>
 <script src="app.js?v=20260809-storygendervariant1"></script>
@@ -655,8 +655,8 @@
     <script src="src/features/gameplay/index.js?v=20260814-gameplaybuff10"></script>
 <script src="src/features/audio/index.js?v=20260821-audio-scene-emitter1"></script>
   <script src="src/features/mission_pipeline/index.js?v=20260812-construction1"></script>
-<script src="src/features/map_recovery/index.js?v=20260820-map45"></script>
-<script src="src/features/next_views.js?v=20260809-audio1"></script>
+  <script src="src/features/map_recovery/index.js?v=20260822-map70"></script>
+<script src="src/features/next_views.js?v=20260821-map1"></script>
 <script src="src/features/reference/index.js?v=20260808-titles1"></script>
 <script src="src/features/updates/index.js?v=20260701-gp5"></script>
 </body>

@@ -13,18 +13,38 @@
 }
 
 #map-recovery-app {
-  --mr-quest: #2f7d4f;
+  /* Marker hues, ordered around the wheel so no two adjacent layers land on the
+     same ink. Kept in sync with KIND_COLORS in index.js. */
+  --mr-enemy: #b0342c;
   --mr-story: #c8410f;
-  --mr-travel: #2b6cb0;
   --mr-device: #a2660a;
   --mr-scenery: #7a6a52;
+  --mr-npc: #4d8a1f;
+  --mr-quest: #2f7d4f;
+  --mr-spawn: #2b7f86;
+  --mr-travel: #2b6cb0;
   --mr-trigger: #7759a8;
-  --mr-enemy: #b0342c;
-  --mr-npc: #2f7d4f;
-  --mr-spawn: #367f84;
   --mr-pin: #c8410f;
   --mr-panel: #ffffff;
   --mr-sunken: #ffffff;
+
+  /* One chrome recipe for every floating surface (panels, tool bars, tips,
+     scale bar) so they read as one layer of glass over the map instead of five
+     slightly different whites. */
+  --mr-glass: rgba(255, 255, 255, 0.93);
+  --mr-glass-solid: rgba(255, 255, 255, 0.97);
+  --mr-radius: 12px;
+  --mr-radius-sm: 8px;
+  --mr-radius-xs: 6px;
+  --mr-shadow: 0 10px 30px rgba(var(--fg-rgb), 0.16);
+  --mr-shadow-sm: 0 3px 12px rgba(var(--fg-rgb), 0.13);
+  /* Control labels: the palette text ink, one step lighter than headings. */
+  --mr-control-ink: rgba(var(--fg-rgb), 0.86);
+  /* Sliders and checkboxes take the palette's secondary teal rather than the
+     one-off #397f8c that used to be hard-coded here. */
+  --mr-control-accent: var(--accent-2-text);
+  --mr-hairline: var(--border);
+
   position: absolute;
   inset: 0;
   overflow: hidden;
@@ -44,11 +64,12 @@
   max-height: calc(100% - 24px);
   max-width: calc(100% - 24px);
   border: 1px solid var(--border);
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.93);
+  border-radius: var(--mr-radius);
+  background: var(--mr-glass);
   backdrop-filter: blur(7px);
-  box-shadow: 0 10px 30px rgba(35, 45, 55, 0.16);
+  box-shadow: var(--mr-shadow);
   overflow: hidden;
+  resize: both;
 }
 
 .mr-float-head {
@@ -56,9 +77,9 @@
   align-items: center;
   gap: 10px;
   flex: 0 0 auto;
-  padding: 8px 10px 8px 12px;
+  padding: 9px 10px 9px 13px;
   border-bottom: 1px solid var(--border);
-  background: rgba(var(--fg-rgb), 0.03);
+  background: linear-gradient(rgba(var(--fg-rgb), 0.055), rgba(var(--fg-rgb), 0.025));
   cursor: grab;
   user-select: none;
   touch-action: none;
@@ -72,8 +93,8 @@
   height: 22px;
   padding: 0 6px;
   border: 1px solid var(--border);
-  border-radius: 6px;
-  background: #fff;
+  border-radius: var(--mr-radius-xs);
+  background: var(--mr-panel);
   color: var(--muted);
   font: 700 11px/1 var(--mono);
   cursor: pointer;
@@ -88,39 +109,31 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-size: 13px;
+  font-weight: 700;
   letter-spacing: -0.01em;
 }
 
-.mr-float--header .mr-float-title { font-size: 17px; }
-
 .mr-float-body {
-  padding: 10px 12px 14px;
+  padding: 11px 13px 14px;
   overflow: auto;
   min-height: 0;
   font-size: 12px;
 }
 
-.mr-float.is-collapsed .mr-float-body { display: none; }
+/* The controls panel keeps its content in .mr-float-body, the inspector in its
+   own head/body pair. Collapsing has to hide both, or the inspector's toggle
+   does nothing at all. */
+.mr-float.is-collapsed .mr-float-body,
+.mr-float.is-collapsed .mr-inspector-head,
+.mr-float.is-collapsed .mr-inspector-body { display: none; }
+/* A collapsed panel is the header alone: it must not keep a resized height. */
+.mr-float.is-collapsed { height: auto !important; }
 .mr-float.is-collapsed .mr-float-head { border-bottom-color: transparent; }
+.mr-float.is-collapsed { resize: none; }
 
-/* Default positions: controls top-left, inspector top-right, the title and
-   metrics bar centred between them. */
-.mr-float--header { top: 12px; left: 50%; transform: translateX(-50%); width: clamp(280px, calc(100% - 690px), 560px); }
-.mr-float--header.is-placed { transform: none; }
-.mr-float--controls { top: 12px; left: 12px; width: 264px; }
+.mr-float--controls { top: 12px; left: 12px; width: min(760px, calc(100% - 408px)); }
 .mr-float--inspector { top: 12px; right: 12px; width: 372px; }
-
-.mr-kicker {
-  padding: 2px 7px;
-  border: 1px solid rgba(var(--accent-rgb), 0.3);
-  border-radius: 999px;
-  background: rgba(var(--accent-rgb), 0.08);
-  color: var(--accent-text);
-  font: 700 9px/1.5 var(--mono);
-  letter-spacing: 0.11em;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
 
 .mr-coords {
   margin: 0;
@@ -134,14 +147,12 @@
   margin-bottom: 12px;
   padding: 5px 8px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--mr-radius-sm);
   background: var(--bg-3, #fff);
   color: var(--text);
   font-size: 12px;
 }
 
-/* A single-line stat run inside the header float: the numbers are context for
-   the map, not the subject of the page. */
 .mr-metrics {
   display: flex;
   flex-wrap: wrap;
@@ -169,8 +180,15 @@
 
 /* ---------------------------------------------------------------- layout */
 
-.mr-float-body h2 {
+/* One idiom for every block heading in the panels: small, uppercase, muted.
+   .mr-section-title, the browser column headings and the model-layer legend
+   share it so the panels read as one document rather than three. */
+.mr-float-body h2,
+.mr-map-group h3,
+.mr-model-layers legend,
+.mr-section-title {
   margin: 0 0 7px;
+  padding: 0;
   color: var(--muted);
   font-size: 9px;
   font-weight: 800;
@@ -241,33 +259,127 @@
 
 .mr-layer-actions button:hover { border-color: var(--muted); color: var(--text); }
 
-.mr-mission-list { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
+/* Mission rows are a list to pick from, not a stack of cards: no box, no fill,
+   one line each. Only the picked row is tinted. */
+.mr-mission-list { display: flex; flex-direction: column; gap: 1px; margin-bottom: 12px; }
 .mr-mission-all,
 .mr-mission-item {
-  border: 1px solid var(--border);
-  border-radius: 5px;
-  background: color-mix(in srgb, var(--panel) 88%, transparent);
+  border: 1px solid transparent;
+  border-radius: var(--mr-radius-xs);
+  background: transparent;
   color: var(--text);
-  font: 11px var(--mono);
+  font: 10px/1.3 var(--mono);
 }
-.mr-mission-all { padding: 6px 8px; text-align: left; cursor: pointer; }
-.mr-mission-all:hover,
-.mr-mission-all.is-active,
-.mr-mission-item.is-active { border-color: var(--accent); background: var(--hover); }
-.mr-mission-item summary {
+
+.mr-task-map-status {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.mr-browser-tree {
+  display: grid;
+  grid-template-columns: minmax(170px, 0.85fr) minmax(200px, 1fr) minmax(190px, 0.95fr);
+  gap: 10px;
+  min-height: 0;
+}
+
+.mr-map-column,
+.mr-task-column,
+.mr-object-filters { min-width: 0; }
+
+/* The map list and the mission list are both long enough to push the whole
+   panel body into a single scroll, which drags one list out of view while you
+   read the other. Cap them instead, so each column scrolls on its own and the
+   two stay side by side. */
+.mr-map-column,
+.mr-task-column {
+  max-height: min(56vh, 540px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.mr-map-column { padding-right: 9px; border-right: 1px solid var(--border); }
+.mr-task-column { padding-right: 7px; }
+/* The group name is the heading of its list, so it carries the weight; the map
+   rows under it stay at normal weight and are told apart by position. */
+.mr-map-group + .mr-map-group { margin-top: 11px; }
+.mr-map-group h3 { margin: 0 0 5px; color: var(--text); font-size: 10px; }
+.mr-map-item,
+.mr-map-transition {
   display: flex;
+  width: 100%;
+  align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  padding: 6px 8px;
+  gap: 7px;
+  padding: 5px 7px;
+  border: 1px solid transparent;
+  border-radius: var(--mr-radius-xs);
+  background: transparent;
+  color: var(--text);
+  font: 10px/1.3 var(--mono);
+  text-align: left;
+  cursor: pointer;
+}
+.mr-map-item b { font-weight: 400; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mr-map-item.is-active b { font-weight: 700; }
+.mr-map-item span,
+.mr-map-transition span { flex: 0 0 auto; color: var(--muted); font-size: 9px; }
+.mr-map-item:hover,
+.mr-map-transition:hover { border-color: var(--accent); background: var(--hover); }
+.mr-map-item.is-active {
+  border-color: var(--mr-story);
+  background: color-mix(in srgb, var(--mr-story) 12%, transparent);
+}
+.mr-map-transition { margin: 0 0 7px; border-color: color-mix(in srgb, var(--accent) 55%, var(--border)); }
+.mr-mission-all { width: 100%; padding: 5px 7px; text-align: left; cursor: pointer; }
+.mr-mission-all:hover,
+.mr-mission-item > summary:hover { border-color: var(--accent); background: var(--hover); }
+.mr-mission-all.is-active,
+.mr-mission-item.is-active > summary {
+  border-color: var(--mr-story);
+  background: color-mix(in srgb, var(--mr-story) 12%, transparent);
+}
+.mr-mission-item > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 7px;
+  padding: 5px 7px;
+  border: 1px solid transparent;
+  border-radius: var(--mr-radius-xs);
   cursor: pointer;
   user-select: none;
 }
-.mr-mission-item summary span { color: var(--muted); white-space: nowrap; }
-.mr-mission-files { max-height: 180px; overflow: auto; padding: 0 8px 7px 24px; }
+.mr-mission-item > summary b { min-width: 0; font-weight: 400; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mr-mission-item.is-active > summary b { font-weight: 700; }
+.mr-mission-item > summary span { flex: 0 0 auto; color: var(--muted); font-size: 9px; white-space: nowrap; }
+.mr-mission-files { padding: 4px 7px 7px 14px; }
+.mr-mission-files > details > summary { color: var(--muted); font-size: 9px; cursor: pointer; }
+.mr-mission-files > details > summary:hover { color: var(--text); }
 .mr-mission-files small { color: var(--muted); }
 .mr-mission-files ul { margin: 5px 0 0; padding-left: 12px; }
 .mr-mission-files li { margin: 3px 0; overflow-wrap: anywhere; }
 .mr-mission-files li > a:first-child { margin-right: 6px; }
+
+.mr-object-filters {
+  margin: 0;
+  padding-left: 9px;
+  border-left: 1px solid var(--border);
+}
+
+.mr-object-filters .mr-opacity-dock {
+  grid-template-columns: minmax(0, 1fr) minmax(70px, 100px) 36px;
+}
+
+.mr-object-filters .mr-opacity-dock input { width: 100%; }
+
+.mr-object-filters .mr-height-dock {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.mr-object-filters .mr-height-range { width: 100%; }
+.mr-object-filters .mr-height-dock output { text-align: left; }
 
 /* Layer toggles are the app's chip control, so the checkbox itself is only the
    accessible input and the visible state is carried by the chip. */
@@ -281,34 +393,22 @@
   color: var(--muted);
   font-family: var(--mono);
   font-size: 11px;
+  font-weight: 400;
   cursor: pointer;
   user-select: none;
 }
 
 .mr-layer:hover { border-color: var(--muted); color: var(--text); }
-.mr-layer:has(input:checked) { border-color: var(--muted); background: var(--hover); color: var(--text); }
+/* --mr-chip is set per row in JS to that layer's marker colour, so the "on"
+   state of a chip matches the dots it is showing on the map. */
+.mr-layer:has(input:checked) {
+  border-color: color-mix(in srgb, var(--mr-chip, var(--mr-story)) 60%, var(--border));
+  background: color-mix(in srgb, var(--mr-chip, var(--mr-story)) 12%, transparent);
+  color: var(--text);
+}
 .mr-layer:has(input:disabled) { cursor: default; opacity: 0.85; }
 .mr-layer:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
 .mr-layer input { position: absolute; width: 1px; height: 1px; opacity: 0; }
-
-.mr-floor-picker {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  color: #34464d;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.mr-floor-picker input[type="range"] {
-  width: 100%;
-  min-width: 0;
-  accent-color: var(--accent);
-  cursor: pointer;
-}
-.mr-floor-picker b { color: #172a32; font-size: 13px; font-weight: 750; }
-.mr-floor-ends { display: flex; justify-content: space-between; gap: 12px; color: #52676f; font-size: 10px; font-weight: 600; }
-.mr-floor-ends i { max-width: 46%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-style: normal; }
 
 .mr-swatch {
   width: 9px;
@@ -357,6 +457,8 @@
   overflow: auto;
 }
 
+.mr-float--controls .mr-file-list { max-height: none; overflow: visible; }
+
 .mr-file-list li { margin: 0 0 4px; overflow-wrap: anywhere; }
 .mr-file-list code { color: var(--accent-text); font-size: 10px; overflow-wrap: anywhere; }
 
@@ -390,17 +492,20 @@
 
 .mr-map:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .mr-map.is-panning { cursor: grabbing; }
+.mr-map.has-floor-choice:not(.is-panning) { cursor: pointer; }
 .mr-canvas { display: block; width: 100%; height: 100%; }
 .mr-map-bg { fill: var(--mr-sunken); }
 .mr-route { fill: none; stroke: var(--mr-quest); stroke-width: 2.5; stroke-dasharray: 7 5; opacity: 0.55; }
 .mr-bg-image { pointer-events: none; }
+.mr-bg-model-surface.is-overlay { opacity: 0.72; }
+.mr-bg-elevation { mix-blend-mode: multiply; }
 .mr-location-label {
   /* Location names sit on top of the recovered game texture. A quiet dark
      ink plus a broad white halo reads like a cartographic place label while
      keeping the terrain visible underneath it. The JS collision/zoom pass
      decides when the label is present; these rules only control its visual
      weight once present. */
-  fill: #26343a;
+  fill: var(--text);
   font: 700 13px/1 var(--sans);
   letter-spacing: 0.015em;
   text-anchor: middle;
@@ -463,17 +568,48 @@
 .mr-node:focus { outline: none; }
 .mr-node:focus-visible .mr-shape { stroke: var(--accent); stroke-width: 3.5; }
 
+/* One dock for every map control, centred on the bottom edge. The groups
+   inside it are separated by hairlines rather than by being separate floating
+   bars stacked in the corner. */
 .mr-tools {
   position: absolute;
-  bottom: 10px;
-  right: 12px;
+  left: 50%;
+  bottom: 12px;
+  transform: translateX(-50%);
+  z-index: 4;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 8px;
+  align-items: center;
+  max-width: calc(100% - 24px);
+  padding: 4px 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--mr-radius-sm);
+  background: var(--mr-glass);
+  backdrop-filter: blur(7px);
+  box-shadow: var(--mr-shadow-sm);
+}
+
+.mr-tool-group {
   display: flex;
   gap: 5px;
   align-items: center;
-  padding: 4px;
-  border: 1px solid var(--border);
-  border-radius: 9px;
-  background: rgba(255, 255, 255, 0.92);
+}
+
+.mr-tool-sep {
+  align-self: stretch;
+  width: 1px;
+  margin: 2px 0;
+  background: var(--border);
+}
+.mr-entity-tools > span:first-child {
+  padding: 0 4px;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
 }
 
 .mr-tools button {
@@ -481,8 +617,8 @@
   height: 27px;
   padding: 0 8px;
   border: 1px solid var(--border);
-  border-radius: 7px;
-  background: #fff;
+  border-radius: var(--mr-radius-xs);
+  background: var(--mr-panel);
   color: var(--text);
   font: 600 12px/1 inherit;
   cursor: pointer;
@@ -490,25 +626,9 @@
 
 .mr-tools button:hover { border-color: var(--accent); background: rgba(var(--accent-rgb), 0.07); }
 .mr-zoom-readout { padding: 0 4px; color: var(--muted); font: 11px/1 var(--mono); min-width: 58px; }
+.mr-entity-readout { padding: 0 3px; color: var(--muted); font: 11px/1 var(--mono); min-width: 35px; }
 
-.mr-floor-dock {
-  position: absolute;
-  left: 288px;
-  bottom: 12px;
-  z-index: 3;
-  width: min(540px, calc(100% - 470px));
-  padding: 10px 12px;
-  border: 1px solid rgba(63, 87, 96, 0.24);
-  border-radius: 9px;
-  background: rgba(249, 252, 252, 0.94);
-  box-shadow: 0 5px 20px rgba(45, 64, 72, 0.16);
-  backdrop-filter: blur(7px);
-}
-
-.mr-floor-dock .mr-floor-picker input[type="range"] { accent-color: #397f8c; }
-.mr-floor-dock.is-help-only { width: min(500px, calc(100% - 470px)); }
-.mr-floor-help { margin: 8px 0 0; padding-top: 7px; border-top: 1px solid rgba(63, 87, 96, 0.14); color: #52676f; font-size: 10px; font-weight: 600; line-height: 1.45; }
-.mr-floor-dock.is-help-only .mr-floor-help { margin-top: 0; padding-top: 0; border-top: 0; }
+.mr-floor-help { margin: 8px 0 0; padding-top: 7px; border-top: 1px solid var(--mr-hairline); color: var(--muted); font-size: 10px; font-weight: 600; line-height: 1.45; }
 
 .mr-opacity-dock {
   display: grid;
@@ -516,24 +636,94 @@
   gap: 8px;
   align-items: center;
   padding: 0;
-  color: #3f555e;
-  font-size: 11px;
-  font-weight: 650;
+  color: var(--mr-control-ink);
+  font-size: 10.5px;
+  font-weight: 600;
 }
 
-.mr-opacity-dock input { width: 118px; accent-color: #397f8c; }
+.mr-opacity-dock input { width: 118px; accent-color: var(--mr-control-accent); }
 .mr-opacity-dock output { color: var(--muted); font: 11px/1 var(--mono); text-align: right; }
 
-.mr-axis {
+.mr-height-dock {
+  display: grid;
+  grid-template-columns: auto 160px minmax(92px, auto);
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+  color: var(--mr-control-ink);
+  font-size: 10.5px;
+  font-weight: 600;
+}
+.mr-height-dock output { color: var(--muted); font: 10px/1 var(--mono); text-align: right; white-space: nowrap; }
+.mr-height-range { position: relative; width: 160px; height: 20px; }
+.mr-height-range::before {
+  content: "";
   position: absolute;
-  left: 50%;
-  bottom: 12px;
-  transform: translateX(-50%);
-  padding: 4px 7px;
-  border-radius: 5px;
-  background: rgba(255, 255, 255, 0.88);
+  left: 0;
+  right: 0;
+  top: 9px;
+  height: 3px;
+  border-radius: 2px;
+  background: linear-gradient(to right,
+    rgba(var(--fg-rgb), 0.16) 0 var(--height-low),
+    var(--mr-control-accent) var(--height-low) var(--height-high),
+    rgba(var(--fg-rgb), 0.16) var(--height-high) 100%);
+}
+.mr-height-range input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 20px;
+  margin: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  pointer-events: none;
+  background: transparent;
+}
+.mr-height-range input::-webkit-slider-runnable-track { height: 3px; background: transparent; }
+.mr-height-range input::-moz-range-track { height: 3px; background: transparent; }
+.mr-height-range input::-webkit-slider-thumb {
+  width: 13px;
+  height: 13px;
+  margin-top: -5px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: var(--mr-control-accent);
+  box-shadow: 0 1px 4px rgba(var(--fg-rgb), 0.32);
+  appearance: none;
+  -webkit-appearance: none;
+  pointer-events: auto;
+  cursor: ew-resize;
+}
+.mr-height-range input::-moz-range-thumb {
+  width: 11px;
+  height: 11px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: var(--mr-control-accent);
+  box-shadow: 0 1px 4px rgba(var(--fg-rgb), 0.32);
+  pointer-events: auto;
+  cursor: ew-resize;
+}
+
+.mr-model-layers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 12px;
+  margin: 0 0 8px;
+  padding: 0 0 8px;
+  border: 0;
+  border-bottom: 1px solid var(--mr-hairline);
+}
+.mr-model-layers legend { margin-bottom: 6px; }
+.mr-model-layers label { display: inline-flex; gap: 5px; align-items: center; color: var(--mr-control-ink); font-size: 10.5px; font-weight: 400; }
+.mr-model-layers input { accent-color: var(--mr-control-accent); }
+
+.mr-axis {
+  padding: 0 4px;
   color: var(--muted);
   font: 10px/1 var(--mono);
+  white-space: nowrap;
 }
 
 .mr-empty { position: absolute; inset: auto 0 50% 0; margin: 0; text-align: center; color: var(--muted); }
@@ -557,7 +747,7 @@
 .mr-load-state--error button {
   padding: 5px 12px;
   border: 1px solid var(--border);
-  border-radius: 7px;
+  border-radius: var(--mr-radius-xs);
   background: var(--bg-3, #fff);
   color: var(--text);
   cursor: pointer;
@@ -566,23 +756,28 @@
 
 /* Hover readout: identity only. Everything that needs reading room lives in the
    inspector, so the tooltip never has to be big enough to cover the map. */
-.mr-tip {
+.mr-tip,
+.mr-floor-tip {
   position: absolute;
   z-index: 4;
   max-width: 260px;
   padding: 6px 9px;
   border: 1px solid var(--border);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.97);
-  box-shadow: 0 6px 18px rgba(var(--fg-rgb), 0.14);
+  border-radius: var(--mr-radius-sm);
+  background: var(--mr-glass-solid);
+  backdrop-filter: blur(7px);
+  box-shadow: var(--mr-shadow-sm);
   font-size: 11px;
   line-height: 1.4;
   pointer-events: none;
 }
 
-.mr-tip[hidden] { display: none; }
-.mr-tip strong { display: block; overflow-wrap: anywhere; font-size: 12px; }
-.mr-tip span { display: block; color: var(--muted); font-family: var(--mono); font-size: 10px; overflow-wrap: anywhere; }
+.mr-tip[hidden],
+.mr-floor-tip[hidden] { display: none; }
+.mr-tip strong,
+.mr-floor-tip strong { display: block; overflow-wrap: anywhere; font-size: 12px; }
+.mr-tip span,
+.mr-floor-tip span { display: block; color: var(--muted); font-family: var(--mono); font-size: 10px; overflow-wrap: anywhere; }
 
 /* ---------------------------------------------------------------- inspector */
 
@@ -628,14 +823,7 @@
 .mr-fields dt { color: var(--muted); white-space: nowrap; }
 .mr-fields dd { margin: 0; font-family: var(--mono); overflow-wrap: anywhere; }
 
-.mr-section-title {
-  margin: 0 0 6px;
-  color: var(--muted);
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-}
+.mr-section-title { margin-top: 0; }
 
 .mr-files { display: grid; gap: 4px; margin-bottom: 6px; }
 
@@ -650,7 +838,7 @@
   padding: 5px 7px;
   border: 1px solid var(--border);
   border-left: 3px solid var(--accent-2);
-  border-radius: 7px;
+  border-radius: var(--mr-radius-xs);
   background: var(--mr-sunken);
 }
 
@@ -711,7 +899,7 @@
 .mr-viewer {
   margin-top: 12px;
   border: 1px solid var(--border);
-  border-radius: 9px;
+  border-radius: var(--mr-radius-sm);
   background: var(--mr-sunken);
   overflow: hidden;
 }
@@ -723,7 +911,7 @@
   gap: 8px;
   padding: 7px 9px;
   border-bottom: 1px solid var(--border);
-  background: #fff;
+  background: rgba(var(--fg-rgb), 0.035);
 }
 
 .mr-viewer-head b { flex: 1 1 auto; font-size: 11px; overflow-wrap: anywhere; }
@@ -801,20 +989,22 @@
 /* ---------------------------------------------------------------- responsive */
 
 @media (max-width: 1180px) {
-  .mr-float--controls { width: 232px; }
+  .mr-float--controls { width: min(720px, calc(100% - 348px)); }
   .mr-float--inspector { width: 312px; }
-  .mr-floor-dock { left: 256px; }
-  .mr-floor-dock { width: min(360px, calc(100% - 430px)); }
 }
 
 @media (max-width: 760px) {
-  .mr-float--header { width: min(340px, calc(100% - 24px)); }
-  .mr-float--controls { width: min(260px, calc(100% - 24px)); }
+  .mr-float--controls { width: calc(100% - 24px); }
   .mr-float--inspector { width: min(300px, calc(100% - 24px)); }
-  .mr-axis { display: none; }
-  .mr-floor-dock { left: 12px; right: 12px; width: auto; }
+  /* The axis hint is the first thing to go when the dock runs out of room. */
+  .mr-axis,
+  .mr-tool-sep:has(+ .mr-axis) { display: none; }
   .mr-opacity-dock { grid-template-columns: auto minmax(80px, 1fr) 38px; right: 12px; }
   .mr-opacity-dock input { width: 100%; }
+  .mr-height-dock { grid-template-columns: auto minmax(100px, 1fr); }
+  .mr-height-range { width: 100%; }
+  .mr-height-dock output { grid-column: 1 / -1; text-align: left; }
+  .mr-browser-tree { grid-template-columns: minmax(150px, .85fr) minmax(180px, 1fr) minmax(170px, .95fr); }
 }
 
 @media (prefers-reduced-motion: reduce) {

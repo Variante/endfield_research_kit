@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Recover exact transform-bearing entities from one Endfield streaming level.
+"""Recover exact transform-bearing entities from Endfield streaming levels.
 
 The maintained input boundary is AnimeStudio.CLI ``stream`` JSONL.  The script
 does not read VFS group internals itself and writes a compact, provenance-rich
@@ -19,6 +19,7 @@ import struct
 import subprocess
 import sys
 from collections import Counter
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any
 
@@ -167,6 +168,12 @@ def iter_entities(data: bytes):
             cursor += id_count * stride
         if cursor != blob_length:
             raise ValueError(f"InitChunkData group {group_index} column size mismatch")
+        # Keep the serialized ECS shape as bounded evidence.  These numeric
+        # component ids are useful for a future decoder, but they are not
+        # prefab identities: the currently validated InitChunkData columns do
+        # not expose a known AssetMap Source+PathID reference for the entity.
+        # Keep this scoped to the observed schema; a future binary revision or
+        # a separate StreamingChunkData relation may add such evidence.
         component_type_ids = [type_id for type_id, _stride, _reserved in descriptors]
         component_strides = {
             str(type_id): stride for type_id, stride, _reserved in descriptors
@@ -229,6 +236,9 @@ ENTITY_MESH_FAMILY_OVERRIDES = {
 
 def _mesh_candidates(bases: set[str], asset_map: Path, mesh_root: Path) -> dict[str, list[dict]]:
     wanted = {base.casefold(): base for base in bases if base}
+    wanted_bodies: dict[str, list[str]] = {}
+    for folded, original in wanted.items():
+        wanted_bodies.setdefault(re.sub(r"^[sp]_", "", folded), []).append(original)
     candidates: dict[str, list[dict]] = {base: [] for base in wanted.values()}
     override_names = {
         name.casefold(): base
@@ -258,11 +268,18 @@ def _mesh_candidates(bases: set[str], asset_map: Path, mesh_root: Path) -> dict[
                     "match": "explicit_static_asset_family_closure",
                 })
             continue
-        for folded_base, original in wanted.items():
+        possible_bodies = [body]
+        prefix = body
+        while "_" in prefix:
+            prefix = prefix.rsplit("_", 1)[0]
+            possible_bodies.append(prefix)
+        possible_bases = {
+            original
+            for possible in possible_bodies
+            for original in wanted_bodies.get(possible, ())
+        }
+        for original in possible_bases:
             if original in ENTITY_MESH_FAMILY_OVERRIDES:
-                continue
-            base_body = re.sub(r"^[sp]_", "", folded_base)
-            if body != base_body and not body.startswith(base_body + "_"):
                 continue
             path_id = int(entry.get("PathID"))
             obj = exported.get(path_id)
@@ -284,60 +301,7 @@ def _mesh_candidates(bases: set[str], asset_map: Path, mesh_root: Path) -> dict[
     }
 
 
-def _build_prefab_identity_contract(instances: list[dict]) -> dict:
-    """Build the published, row-validated prefab identity contract."""
-    def identity(row: Any) -> dict:
-        value = row.get("prefabIdentity") if isinstance(row, dict) else None
-        return value if isinstance(value, dict) else {}
-    statuses = Counter(str(identity(row).get("status") or "missing") for row in instances)
-    invalid = sum(
-        1 for row in instances
-        if identity(row).get("status") == "exact"
-        and (
-            not isinstance(identity(row).get("source"), str)
-            or not identity(row).get("source")
-            or isinstance(identity(row).get("pathId"), bool)
-            or not isinstance(identity(row).get("pathId"), int)
-        )
-    )
-    exact = statuses.get("exact", 0) - invalid
-    return {
-        "status": "exact" if exact == len(instances) and instances and not invalid else "unavailable",
-        "joinKey": "AssetMap Source+PathID (or build-gated equivalent hash)",
-        "requiredFields": ["source", "pathId"],
-        "verificationScope": "knownInitChunkDataColumnsObservedByCurrentDecoder",
-        "exactInstanceCount": exact,
-        "unresolvedInstanceCount": len(instances) - exact,
-        "invalidExactIdentityCount": invalid,
-        "statusCounts": dict(sorted(statuses.items())),
-        "diagnostic": (
-            "The current InitChunkData recovery contract exposes no known prefab "
-            "Source+PathID/hash field in the observed schema; entity names, positions, "
-            "matrices, and Mesh joins are not accepted as prefab identity. A separately "
-            "proven StreamingChunkData relation may add evidence and remains a recovery gap."
-        ),
-        "diagnostics": ([{
-            "status": "invalidPrefabIdentityRows",
-            "reason": "exactIdentityRequiresNonEmptySourceAndIntegerPathId",
-            "count": invalid,
-        }] if invalid else []),
-    }
-
-def _compact_component_shapes(instances: list[dict]) -> dict[str, dict[str, Any]]:
-    """Move repeated InitChunkData shape columns to one group-level table."""
-    shapes: dict[str, dict[str, Any]] = {}
-    for row in instances:
-        if not isinstance(row, dict):
-            continue
-        shape_id = f"{row.get('sourceFile', '')}#group{row.get('groupIndex')}"
-        shapes.setdefault(shape_id, {
-            "componentTypeIds": row.pop("initChunkComponentTypeIds", []),
-            "componentStrides": row.pop("initChunkComponentStrides", {}),
-        })
-        row["initChunkComponentShapeId"] = shape_id
-    return shapes
-
-def recover(level_id: str, cli: Path, game_root: Path, asset_map: Path, mesh_root: Path) -> dict:
+def _recover_transform_core(level_id: str, cli: Path, game_root: Path) -> dict:
     pattern = rf"^Data/Streaming/PC/{re.escape(level_id)}/Streaming/InitChunkData_.*[.]bytes$"
     command = [str(cli), "stream", "--streaming-assets", str(game_root / "StreamingAssets"),
                "--fallback-assets", str(game_root / "Persistent"), "--block-type", "streaming",
@@ -346,6 +310,7 @@ def recover(level_id: str, cli: Path, game_root: Path, asset_map: Path, mesh_roo
     if result.returncode:
         raise RuntimeError(f"AnimeStudio stream failed ({result.returncode}): {result.stderr.strip()}")
     instances, sources, by_id, duplicates = [], [], {}, 0
+    component_shapes: dict[str, dict[str, Any]] = {}
     for line in result.stdout.splitlines():
         if not line.startswith("{"):
             continue
@@ -357,6 +322,12 @@ def recover(level_id: str, cli: Path, game_root: Path, asset_map: Path, mesh_roo
         kept = 0
         for entity in parsed:
             entity["sourceFile"] = row["fileName"]
+            shape_id = f"{row['fileName']}#group{entity['groupIndex']}"
+            component_shapes.setdefault(shape_id, {
+                "componentTypeIds": entity.pop("initChunkComponentTypeIds", []),
+                "componentStrides": entity.pop("initChunkComponentStrides", {}),
+            })
+            entity["initChunkComponentShapeId"] = shape_id
             existing = by_id.get(entity["entityId"])
             if existing is not None:
                 duplicates += 1
@@ -368,17 +339,75 @@ def recover(level_id: str, cli: Path, game_root: Path, asset_map: Path, mesh_roo
                         "packedSha256": hashlib.sha256(packed).hexdigest(), "uniqueInstances": kept})
     if not sources:
         raise RuntimeError(f"No InitChunkData files matched {level_id}")
-    bases = Counter(row["entityBase"] for row in instances if row.get("entityBase"))
-    mesh_candidates = _mesh_candidates(set(bases), asset_map, mesh_root)
-    component_shapes = _compact_component_shapes(instances)
-    prefab_identity_contract = _build_prefab_identity_contract(instances)
+    return {
+        "levelId": level_id,
+        "sources": sources,
+        "instances": instances,
+        "duplicates": duplicates,
+        "bases": Counter(row["entityBase"] for row in instances if row.get("entityBase")),
+        "componentShapes": component_shapes,
+    }
+
+
+def _finalize_payload(core: dict, mesh_candidates: dict[str, list[dict]], cli: Path) -> dict:
+    level_id = core["levelId"]
+    sources = core["sources"]
+    instances = core["instances"]
+    duplicates = core["duplicates"]
+    bases = core["bases"]
+    component_shapes = core.get("componentShapes") or {}
+    def prefab_identity(row: Any) -> dict:
+        if not isinstance(row, dict):
+            return {}
+        value = row.get("prefabIdentity")
+        return value if isinstance(value, dict) else {}
+
+    prefab_identity_statuses = Counter(
+        str(prefab_identity(row).get("status") or "missing")
+        for row in instances
+    )
+    invalid_exact_identity_count = sum(
+        1
+        for row in instances
+        if prefab_identity(row).get("status") == "exact"
+        and (
+            not isinstance(prefab_identity(row).get("source"), str)
+            or not prefab_identity(row).get("source")
+            or isinstance(prefab_identity(row).get("pathId"), bool)
+            or not isinstance(prefab_identity(row).get("pathId"), int)
+        )
+    )
+    exact_identity_count = prefab_identity_statuses.get("exact", 0) - invalid_exact_identity_count
     return {
         "schemaVersion": 2,
         "levelId": level_id,
         "coordinateSystem": "Unity column-major 4x4 matrices; translation at indices 12/13/14",
         "source": {"method": "AnimeStudio.CLI stream / Streaming / InitChunkData", "cli": str(cli.relative_to(ROOT)),
                    "cliSha256": sha256_file(cli), "files": sources},
-        "prefabIdentityContract": prefab_identity_contract,
+        "prefabIdentityContract": {
+            "status": (
+                "exact" if exact_identity_count == len(instances) and instances and not invalid_exact_identity_count
+                else "unavailable"
+            ),
+            "joinKey": "AssetMap Source+PathID (or build-gated equivalent hash)",
+            "requiredFields": ["source", "pathId"],
+            "verificationScope": "knownInitChunkDataColumnsObservedByCurrentDecoder",
+            "exactInstanceCount": exact_identity_count,
+            "unresolvedInstanceCount": len(instances) - exact_identity_count,
+            "invalidExactIdentityCount": invalid_exact_identity_count,
+            "statusCounts": dict(sorted(prefab_identity_statuses.items())),
+            "diagnostic": (
+                "The current InitChunkData recovery contract exposes no known prefab "
+                "Source+PathID/hash field in the observed schema; entity names, positions, "
+                "matrices, and Mesh joins are not accepted as prefab identity. A separately "
+                "proven StreamingChunkData relation may add evidence and remains a recovery gap."
+            ),
+            "diagnostics": ([{
+                "status": "invalidPrefabIdentityRows",
+                "reason": "exactIdentityRequiresNonEmptySourceAndIntegerPathId",
+                "count": invalid_exact_identity_count,
+            }] if invalid_exact_identity_count else []),
+        },
         "initChunkComponentShapes": component_shapes,
         "summary": {"sourceFileCount": len(sources), "instanceCount": len(instances), "duplicateCount": duplicates,
                     "uniqueEntityBaseCount": len(bases), "meshResolvedBaseCount": len(mesh_candidates),
@@ -386,35 +415,83 @@ def recover(level_id: str, cli: Path, game_root: Path, asset_map: Path, mesh_roo
         "entityBases": [{
             "entityBase": base,
             "instanceCount": count,
-            "mesh": (mesh_candidates.get(base) or [None])[0],
             "meshes": mesh_candidates.get(base) or [],
         } for base, count in sorted(bases.items())],
         "instances": sorted(instances, key=lambda row: row["entityId"]),
     }
 
 
+def recover(level_id: str, cli: Path, game_root: Path, asset_map: Path, mesh_root: Path) -> dict:
+    core = _recover_transform_core(level_id, cli, game_root)
+    mesh_candidates = _mesh_candidates(set(core["bases"]), asset_map, mesh_root)
+    return _finalize_payload(core, mesh_candidates, cli)
+
+
+def recover_many(
+    level_ids: list[str],
+    cli: Path,
+    game_root: Path,
+    asset_map: Path,
+    mesh_root: Path,
+    *,
+    jobs: int = 1,
+) -> list[dict]:
+    """Recover multiple levels while scanning the large AssetMap only once."""
+    cores: dict[str, dict] = {}
+    failures: dict[str, Exception] = {}
+    with ThreadPoolExecutor(max_workers=max(1, jobs)) as executor:
+        futures = {
+            executor.submit(_recover_transform_core, level_id, cli, game_root): level_id
+            for level_id in level_ids
+        }
+        for future in as_completed(futures):
+            level_id = futures[future]
+            try:
+                cores[level_id] = future.result()
+            except Exception as exc:  # report all independent level failures together
+                failures[level_id] = exc
+    if failures:
+        detail = "\n".join(f"  {level_id}: {failures[level_id]}" for level_id in sorted(failures))
+        raise RuntimeError(f"Streaming recovery failed for {len(failures)} level(s):\n{detail}")
+    all_bases = {base for core in cores.values() for base in core["bases"]}
+    mesh_candidates = _mesh_candidates(all_bases, asset_map, mesh_root)
+    return [
+        _finalize_payload(cores[level_id], mesh_candidates, cli)
+        for level_id in level_ids
+    ]
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--level", required=True)
+    parser.add_argument("--level", action="append", required=True, help="scene id to recover (repeatable)")
+    parser.add_argument("--jobs", type=int, default=1, help="parallel AnimeStudio stream processes")
     parser.add_argument("--cli", type=Path, default=DEFAULT_CLI)
     parser.add_argument("--game-root", type=Path, default=None)
     parser.add_argument("--asset-map", type=Path, default=DEFAULT_ASSET_MAP)
     parser.add_argument("--mesh-root", type=Path, default=DEFAULT_MESH_ROOT)
     parser.add_argument("--output-root", type=Path, default=DEFAULT_OUTPUT_ROOT)
     args = parser.parse_args()
-    if not LEVEL_RE.fullmatch(args.level):
-        raise SystemExit(f"Unsafe level id: {args.level!r}")
+    level_ids = list(dict.fromkeys(args.level))
+    for level_id in level_ids:
+        if not LEVEL_RE.fullmatch(level_id):
+            raise SystemExit(f"Unsafe level id: {level_id!r}")
+    if args.jobs < 1:
+        raise SystemExit("--jobs must be at least 1")
     game_root = (args.game_root or resolve_installed_game_data_root()).resolve()
     if not args.cli.is_file():
         raise SystemExit(f"AnimeStudio CLI not found: {args.cli}")
-    payload = recover(args.level, args.cli.resolve(), game_root, args.asset_map.resolve(), args.mesh_root.resolve())
+    payloads = recover_many(
+        level_ids, args.cli.resolve(), game_root, args.asset_map.resolve(), args.mesh_root.resolve(), jobs=args.jobs
+    )
     args.output_root.mkdir(parents=True, exist_ok=True)
-    output = args.output_root / f"{args.level}.json"
-    output.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
-    print(f"{args.level}: {payload['summary']['instanceCount']} instances, "
-          f"{payload['summary']['meshResolvedInstanceCount']} mesh-resolved, "
-          f"{payload['summary']['uniqueEntityBaseCount']} bases")
-    print(output)
+    for payload in payloads:
+        level_id = payload["levelId"]
+        output = args.output_root / f"{level_id}.json"
+        output.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
+        print(f"{level_id}: {payload['summary']['instanceCount']} instances, "
+              f"{payload['summary']['meshResolvedInstanceCount']} mesh-resolved, "
+              f"{payload['summary']['uniqueEntityBaseCount']} bases")
+        print(output)
     return 0
 
 

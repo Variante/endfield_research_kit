@@ -8,63 +8,44 @@ from scripts import build_map_recovery_data as builder
 
 
 class BuildMapRecoveryDataTests(unittest.TestCase):
-    def test_streaming_instance_markers_preserve_matrix_and_mesh_evidence(self):
+    def test_blackbox_region_key_uses_authored_shared_scene(self):
+        with mock.patch.object(builder, "authored_streaming_scene", return_value={"sceneId": "blackbox02_dg001"}):
+            self.assertEqual(builder._region_key("blackbox_miner_3"), "blackbox02_dg001")
+        # Large-world level families retain their established union region.
+        with mock.patch.object(builder, "authored_streaming_scene") as resolver:
+            self.assertEqual(builder._region_key("map02_lv003"), "map02")
+            resolver.assert_not_called()
+
+    def test_shared_large_region_suppresses_sparse_level_point_cloud(self):
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(builder, "ROOT", Path(tmp)), mock.patch.object(
+                builder, "authored_streaming_scene",
+                return_value={"sceneId": "map01", "method": "level_config_embedded_streaming_path"},
+        ), mock.patch.object(builder, "isolated_art_source", return_value=None):
+            background = builder._render_background("dung01_cdg011")
+        self.assertEqual(background["status"], "shared_authored_region_background")
+        self.assertIsNone(background["src"])
+
+    def test_recovered_model_remains_available_when_a_region_also_has_a_minimap(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            source_root = root / "streaming"
-            source_root.mkdir()
-            (source_root / "indie_dg004.json").write_text(json.dumps({
-                "schemaVersion": 1,
-                "levelId": "indie_dg004",
-                "entityBases": [{
-                    "entityBase": "P_build_indie_floor+1_001_01",
-                    "mesh": {"name": "S_build_indie_floor+1_001_01_lod0", "pathId": 9},
-                }],
-                "instances": [{
-                    "entityId": 7,
-                    "name": "P_build_indie_floor+1_001_01#0_7",
-                    "entityBase": "P_build_indie_floor+1_001_01",
-                    "position": {"x": 1, "y": 2, "z": 3},
-                    "matrixColumnMajor": list(range(16)),
-                    "sourceFile": "InitChunkData_0_0_0_0.bytes",
-                }],
-            }), encoding="utf-8")
-            with mock.patch.object(builder, "ROOT", root), mock.patch.object(
-                builder, "STREAMING_INSTANCE_ROOT", source_root
-            ):
-                rows = builder._streaming_instance_markers("indie_dg004")
+            render = root / "webui/data/map_recovery/render"
+            render.mkdir(parents=True)
+            expected = {"status": "inferred_hlod_grid_preview", "src": "render/map01_lv001_hlod_surface.png"}
+            (render / "map01_lv001_hlod_grid_inferred.json").write_text(json.dumps(expected), encoding="utf-8")
+            with mock.patch.object(builder, "ROOT", root):
+                self.assertEqual(builder._render_background("map01_lv001"), expected)
 
-        self.assertEqual(len(rows), 1)
-        self.assertEqual(rows[0]["subKind"], "streaming_building")
-        self.assertEqual(rows[0]["streamingInstance"]["matrixColumnMajor"], list(range(16)))
-        self.assertEqual(rows[0]["streamingInstance"]["mesh"]["pathId"], 9)
+    def test_danger_map_reusing_large_region_art_remains_its_own_region(self):
+        with mock.patch.object(
+            builder, "isolated_art_source",
+            return_value={"levelId": "map01_lv002", "method": "level_config_embedded_art_level"},
+        ):
+            self.assertEqual(builder._region_key("dung01_bdg001"), "dung01_bdg001")
 
-    def test_e0m0_publishes_exact_reading_trigger_and_quest_coordinates(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            registry = root / "registry.json"
-            mission = root / "webui/data/lang/CN/mission/e0m0.json"
-            mission.parent.mkdir(parents=True)
-            registry.write_text(json.dumps({
-                "worldEntityBriefInfos": {},
-                "m_scriptEntityIdList": [{"scriptIdGlobal": 8700020018, "slotId": 40001}],
-                "m_scriptEntityBriefInfo": [{"entityType": 32, "detailId": "int_mission_beacon", "position": {"x": 1, "y": 2, "z": 3}}],
-            }), encoding="utf-8")
-            mission.write_text(json.dumps({"timelineRecovery": {"questSpatialTrack": [{"questId": "e0m0_q#10", "centroid": {"x": 1.1, "y": 2, "z": 3}}]}}), encoding="utf-8")
-            receiver = {"text_e0m0_1": [{
-                "sourceFile": "source.json",
-                "interactiveEventProducers": [{"scriptIdGlobal": "8700020018", "entitySlotId": 40001, "eventName": "readepitaph"}],
-            }]}
-            with mock.patch.object(builder, "ROOT", root), mock.patch.object(builder, "REGISTRY", registry), mock.patch.object(
-                builder, "build_levelscript_unhosted_reading_popup_receiver_index", return_value=receiver
-            ):
-                payload = builder.build_e0m0("CN")
-            reading = next(row for row in payload["markers"] if row.get("storyKey") == "text_e0m0_1")
-            self.assertEqual(reading["eventName"], "readepitaph")
-            self.assertEqual(reading["position"], {"x": 1, "y": 2, "z": 3})
-            self.assertEqual(payload["questPoints"][0]["questId"], "e0m0_q#10")
-            self.assertEqual(payload["defaultMission"], "e0m0")
-            self.assertEqual(payload["renderBackground"]["status"], "asset_transform_recovery_required")
+        with mock.patch.object(builder, "isolated_art_source", return_value=None), mock.patch.object(
+            builder, "authored_streaming_scene", return_value={"sceneId": "indie_dg006"},
+        ):
+            self.assertEqual(builder._region_key("dung02_bdg002"), "dung02_bdg002")
 
     def test_render_background_exposes_exact_level_obj_assets_without_placing_them(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -99,103 +80,6 @@ class BuildMapRecoveryDataTests(unittest.TestCase):
 
         self.assertEqual(background["modelScene"]["status"], "obj_level_assets_unavailable")
         self.assertEqual(background["modelScene"]["meshes"], [])
-
-    def test_e0m0_tomb_marker_uses_tomb_label(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            registry = root / "registry.json"
-            mission = root / "webui/data/lang/CN/mission/e0m0.json"
-            mission.parent.mkdir(parents=True)
-            registry.write_text(json.dumps({
-                "worldEntityBriefInfos": {
-                    "8700020001": {
-                        "detailId": "int_narrative_common_BTomb01",
-                        "position": {"x": 0, "y": 0, "z": 0},
-                    },
-                },
-                "m_scriptEntityIdList": [],
-                "m_scriptEntityBriefInfo": [],
-            }), encoding="utf-8")
-            mission.write_text(json.dumps({
-                "timelineRecovery": {
-                    "questSpatialTrack": [],
-                    "scenePlacement": {},
-                    "levelscriptSpatialProximity": [],
-                },
-            }), encoding="utf-8")
-            receiver = {"text_e0m0_1": [{
-                "sourceFile": "source.json",
-                "interactiveEventProducers": [{"scriptIdGlobal": "8700020018", "entitySlotId": 40001, "eventName": "readepitaph"}],
-            }]}
-            with mock.patch.object(builder, "ROOT", root), mock.patch.object(builder, "REGISTRY", registry), mock.patch.object(
-                builder, "build_levelscript_unhosted_reading_popup_receiver_index", return_value=receiver
-            ):
-                payload = builder.build_e0m0("CN")
-            tombs = [row for row in payload["markers"] if row.get("detailId") == "int_narrative_common_BTomb01"]
-            self.assertEqual(len(tombs), 1)
-            self.assertEqual(tombs[0]["label"], "\u5893\u7891")
-
-    def test_e0m0_collects_timeline_recovery_trigger_markers_and_links_files(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            registry = root / "registry.json"
-            mission = root / "webui/data/lang/CN/mission/e0m0.json"
-            mission.parent.mkdir(parents=True)
-            registry.write_text(json.dumps({
-                "worldEntityBriefInfos": {},
-                "m_scriptEntityIdList": [],
-                "m_scriptEntityBriefInfo": [],
-            }), encoding="utf-8")
-            mission.write_text(json.dumps({
-                "timelineRecovery": {
-                    "questSpatialTrack": [],
-                    "scenePlacement": {
-                        "scene_e0m0_1": {
-                            "inheritedSpatialQuestCandidates": [{
-                                "pin": {
-                                    "sourceType": "missionArea",
-                                    "missionAreaId": "e0m1_001",
-                                    "label": "e0m1_001",
-                                    "trackingType": "MissionAreaTrackingInfo",
-                                    "mapId": "indie_dg002",
-                                    "position": {"x": 10, "y": 20, "z": 30},
-                                    "radius": 5.0,
-                                },
-                                "questId": "e0m0_q#1",
-                                "file": "export_full/structured/StreamingAssets/Data/Json/LevelScriptData/indie_dg002/8700010007.json",
-                                "scriptId": "8700010007",
-                            }],
-                        },
-                    },
-                    "levelscriptSpatialProximity": [{
-                        "pin": {
-                            "sourceType": "missionArea",
-                            "missionAreaId": "e0m1_002",
-                            "label": "e0m1_002",
-                            "trackingType": "MissionAreaTrackingInfo",
-                            "mapId": "indie_dg002",
-                            "position": {"x": 100, "y": 40, "z": 60},
-                        },
-                        "questId": "e0m0_q#2",
-                        "file": "export_full/structured/StreamingAssets/Data/Json/LevelScriptData/indie_dg002/8700020022.json",
-                        "scriptId": "8700020022",
-                    }],
-                },
-            }), encoding="utf-8")
-            receiver = {"text_e0m0_1": [{
-                "sourceFile": "source.json",
-                "interactiveEventProducers": [{"scriptIdGlobal": "8700020018", "entitySlotId": 40001, "eventName": "readepitaph"}],
-            }]}
-            with mock.patch.object(builder, "ROOT", root), mock.patch.object(builder, "REGISTRY", registry), mock.patch.object(
-                builder, "build_levelscript_unhosted_reading_popup_receiver_index", return_value=receiver
-            ):
-                payload = builder.build_e0m0("CN")
-            triggers = [row for row in payload["markers"] if row["kind"] == "trigger" and row.get("pinLabel") in {"e0m1_001", "e0m1_002"}]
-            self.assertEqual(len(triggers), 2)
-            self.assertTrue(all("sourceFiles" in row and row["sourceFiles"] for row in triggers))
-            self.assertIn("export_full/structured/StreamingAssets/Data/Json/LevelScriptData/indie_dg002/8700010007.json", payload["linkedMissionFiles"])
-            self.assertIn("export_full/structured/StreamingAssets/Data/Json/LevelScriptData/indie_dg002/8700020022.json", payload["linkedMissionFiles"])
-
 
 class RelatedFilePinningTests(unittest.TestCase):
     """The published pins carry their own evidence strength and stay fetchable."""
@@ -746,16 +630,6 @@ class MapNamingAndMinimapTests(unittest.TestCase):
             "source": "export_full/structured/StreamingAssets/Data/Json/UILevelMapLoadConfig/test_lv_static.json",
         }])
 
-    def test_region_bounds_union_only_uses_complete_preferred_backgrounds(self):
-        payloads = [
-            {"minimap": {"src": "render/a.png", "worldBounds": {"minX": -10, "maxX": 5, "minZ": 20, "maxZ": 30}}},
-            {"minimap": {"src": None, "worldBounds": {"minX": -999, "maxX": 999, "minZ": -999, "maxZ": 999}},
-             "renderBackground": {"src": "render/b.png", "worldBounds": {"minX": 5, "maxX": 20, "minZ": 10, "maxZ": 25}}},
-            {"minimap": {"src": "render/incomplete.png", "worldBounds": {"minX": 0, "maxX": 1, "minZ": 0}}},
-        ]
-        self.assertEqual(builder._region_bounds(payloads), {"minX": -10.0, "maxX": 20.0, "minZ": 10.0, "maxZ": 30.0})
-        self.assertIsNone(builder._region_bounds([payloads[-1]]))
-
     def test_level_names_resolve_the_level_table_rows_per_language(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -778,6 +652,18 @@ class MapNamingAndMinimapTests(unittest.TestCase):
         # Trailing tabs are stripped; empty and placeholder texts publish no
         # name so the reader falls back to the level id instead.
         self.assertEqual(names, {"map01_lv001": "枢纽区", "map02_lv002": "武陵城"})
+
+    def test_mission_names_use_the_published_language_bundle(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            folder = root / "webui/data/lang/CN"
+            folder.mkdir(parents=True)
+            (folder / "missions.json").write_text(json.dumps({
+                "missionNames": {"e0m0": "Cold Start", "blank": ""},
+            }), encoding="utf-8")
+            with mock.patch.object(builder, "ROOT", root):
+                names = builder._mission_names("CN")
+        self.assertEqual(names, {"e0m0": "Cold Start"})
 
     def test_minimap_background_composites_the_chunk_grid_top_z_up(self):
         red = (255, 0, 0, 255)
