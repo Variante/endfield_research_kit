@@ -9,8 +9,12 @@ from typing import Any
 
 METADATA_MAGIC = 0xFAB11BAF
 
+# ``vo_`` is a shipped Event namespace alongside ``au_``/``bark_``/``radio_``.
+# The prefix set stays closed on purpose: an unprefixed sweep of the literal
+# blob resolves only generic English words such as ``Stop`` whose hash happens
+# to collide with an Event id, which is a coincidence rather than a name.
 MANAGED_AUDIO_LITERAL_RE = re.compile(
-    r"^(?:au|bark|radio)_[A-Za-z0-9_./+:-]+$",
+    r"^(?:au|bark|radio|vo)_[A-Za-z0-9_./+:-]+$",
     re.IGNORECASE,
 )
 

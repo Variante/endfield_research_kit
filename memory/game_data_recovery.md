@@ -766,6 +766,38 @@ field symbols whose exact AudioHashGenerator hashes match current Wwise Event
 objects. Declaring type, field token, and the metadata hash are retained as
 static identity evidence; name-prefix categories are conservative and do not
 claim a runtime caller, trigger, branch selection, execution, or audibility.
+Observed-string Event-name sources are now exhausted and must not be
+re-attempted. Hashing every one of the 65,756 IL2CPP string literals, rather
+than only the `au_`/`bark_`/`radio_`/`vo_` prefixed ones, resolves three more
+hash-only Events (`vo_raw_alert`, `vo_placeholder_alert`, and the generic word
+`Stop`); hashing all 268,354 metadata type and field names resolves only `Stop`
+and `StopAll`. Both generic words are coincidental preimages, not names, so the
+prefix filters stay closed and only `vo_` was added. The authored names of the
+remaining hash-only Events are not shipped in the binary at all. Bank identity
+gives no grouping either: the client emits one bank per Event and the bank ID
+equals the Event ID (19,312 of 19,401 banks hold exactly one Event), and a
+sampled sweep of `unknownUse` Event IDs finds zero occurrences anywhere in the
+exported gameplay JSON tree.
+Hash-only Event names are therefore recovered by grammar-directed preimage
+search in `scripts/audio_semantics/name_recovery.py`. Recovered names are
+strongly templated (`au_eny_0094_hsfly_skill03_charge`), so the module mines
+head/tail template slots per naming family from names already proven by exact
+evidence, regenerates sibling names, and keeps candidates whose
+AudioHashGenerator hash equals a current hash-only Event id. A hash equality on
+a generated string is weaker than one on a shipped string, because a 32-bit
+space admits coincidental preimages in proportion to candidate volume. Two
+guards apply: a hash with two distinct generated spellings is dropped, and a
+name is promoted only when its head and its tail each recur across other
+recovered Events at one shared split boundary. Independent best-head and
+best-tail counts would pass on the family prefix that every candidate shares by
+construction, so the shared boundary is required. Uncorroborated hits are
+retained as `isolatedEntries` and never become an Event name. The current CN
+corpus mines 10,766 seed names against 10,739 hash-only Events, tries ~4.48M
+candidates over two passes, and promotes 864 names (348 isolated, 2 ambiguous)
+with a reported ~10.6 coincidental-preimage expectation over all matches. A
+recovered name carries the owner and category its spelling encodes and nothing
+more: `eventIdentityStatus` is `grammarHashPreimageNameRecovered`, and no
+caller, trigger, execution, selected Wwise branch, or audibility is implied.
 The same current-build native audit now resolves 18 authored custom-state
 contexts from `InteractiveLogicBase.SwitchAudioCustomState` across
 rotate-platform, crane, electric-fence, ForgeIron, LifterButton, and

@@ -386,7 +386,18 @@ index also recovers 25 unique `AU_*` field symbols whose AudioHashGenerator
 hash matches a current Wwise Event (for example conveyor, laser, NPC, UI scan,
 Qinshi, and mastering symbols). Event details show the declaring IL2CPP type,
 field token, and exact symbol evidence; this is static symbol-to-ID identity,
-not a runtime caller, trigger, branch, or audibility observation. Eighteen
+not a runtime caller, trigger, branch, or audibility observation.
+Events whose name no shipped string reaches are named separately by
+grammar-directed preimage search: head/tail name templates mined from proven
+names regenerate sibling spellings, and a candidate is kept when its
+AudioHashGenerator hash equals a current hash-only Event id. Such a name is
+shown with `eventIdentityStatus=grammarHashPreimageNameRecovered`,
+`eventNameSourceKind=grammarHashPreimage`, and the head/tail sibling counts
+that admitted it, so it reads as a weaker name source than a shipped literal.
+Names with two spellings for one hash, or with no sibling recurrence at a
+shared split boundary, are never promoted to an Event name. The recovered
+spelling supplies the owner and category it encodes and no caller, trigger,
+execution, branch, or audibility. Eighteen
 Event rows now have exact current-build native trigger evidence from
 `InteractiveLogicBase.SwitchAudioCustomState`, covering rotate-platform, crane,
 electric-fence, ForgeIron, LifterButton, and MovingPlatform state machines.

@@ -465,7 +465,7 @@ class StaticRtpcAlignmentTests(unittest.TestCase):
         ]
         self.assertEqual(len(lines), 1)
         self.assertNotIn("20260815-audio-player-order1", lines[0])
-        self.assertRegex(lines[0], r"src/features/audio/index\.js\?v=20260820-audio-")
+        self.assertRegex(lines[0], r"src/features/audio/index\.js\?v=20260822-audio-")
 
 
 if __name__ == "__main__":

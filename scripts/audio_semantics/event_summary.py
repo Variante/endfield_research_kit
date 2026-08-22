@@ -286,6 +286,7 @@ def event_summary_row(row: dict[str, Any], detail_shard: str) -> dict[str, Any]:
         "id", "name", "hash", "category", "categoryEvidence", "categoryNameEvidence", "foundInWwise",
         "audioLibraryResolutionStatus", "eventIdentityStatus", "eventNameEvidence",
         "eventNameSourceKind", "identityOnlyPlaybackPlacementStatus",
+        "eventNameCorroboration", "eventNameHeadSiblingCount", "eventNameTailSiblingCount",
         "eventNameMetadataField", "eventNameMetadataDeclaringType",
         "eventNameMetadataFieldToken",
         "identityNumericSkillIds", "identityTableSources", "identitySkillDataSources", "playbackRole",

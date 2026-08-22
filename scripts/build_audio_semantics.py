@@ -13882,6 +13882,18 @@ def build_audio_semantic_data(
             "skillIdDictionaryWwiseEventAliases": len(
                 audio_index.get("skillIdDictionaryWwiseEventAliases") or []
             ),
+            "grammarRecoveredWwiseEventNames": len(
+                audio_index.get("grammarRecoveredWwiseEventNames") or []
+            ),
+            "grammarRecoveredWwiseEventNameIsolatedPreimages": len(
+                (audio_index.get("grammarEventNameRecovery") or {}).get("isolatedEntries") or []
+            ),
+            "grammarRecoveredWwiseEventNameExpectedCoincidences": float(
+                (audio_index.get("grammarEventNameRecovery") or {}).get(
+                    "expectedCoincidentalPreimages"
+                )
+                or 0.0
+            ),
             "snsVoiceMessageEvents": context_kind_event_counts.get("snsVoiceMessageEvent", 0),
             "voiceNarratingChannelEvents": context_kind_event_counts.get("voiceNarratingChannelEvent", 0),
             "voiceRadioChannelEvents": context_kind_event_counts.get("voiceRadioChannelEvent", 0),

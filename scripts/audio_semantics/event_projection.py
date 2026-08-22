@@ -1095,6 +1095,7 @@ def exact_wwise_event_aliases(audio_index: dict[str, Any]) -> list[dict[str, Any
         "typedUiTableWwiseEventAliases",
         "snsVoiceWwiseEventAliases",
         "skillIdDictionaryWwiseEventAliases",
+        "grammarRecoveredWwiseEventNames",
     ):
         for raw_row in audio_index.get(source_key) or []:
             if not isinstance(raw_row, dict):
@@ -2263,6 +2264,11 @@ def build_event_rows(
                 else "wwiseObjectWithoutRecoveredTriggerName"
             )
         else:
+            grammar_only_name = (
+                (identity_alias or {}).get("corroboration")
+                and key not in authored_name_keys
+                and key not in context_authored_display_names
+            )
             event_identity_status = (
                 "recoveredIl2CppMetadataEventSymbol"
                 if (
@@ -2271,6 +2277,11 @@ def build_event_rows(
                     and key not in authored_name_keys
                     and key not in context_authored_display_names
                 )
+                # The spelling was regenerated from the observed grammar rather
+                # than read from a shipped string, so it never claims to be an
+                # authored name recovered by observation.
+                else "grammarHashPreimageNameRecovered"
+                if grammar_only_name
                 else "recoveredAuthoredName"
             )
         (
@@ -2303,10 +2314,17 @@ def build_event_rows(
             "eventNameSourceKind": (
                 "skillIdDictionary"
                 if (identity_alias or {}).get("dictionaryKind") == "skill_id"
+                else "grammarHashPreimage"
+                if (identity_alias or {}).get("corroboration")
                 else "il2CppMetadataField"
                 if metadata_alias
                 else None
             ),
+            # A generated preimage is a weaker name source than a shipped
+            # string, so the corroboration that admitted it stays on the row.
+            "eventNameCorroboration": (identity_alias or {}).get("corroboration"),
+            "eventNameHeadSiblingCount": (identity_alias or {}).get("headSiblingCount"),
+            "eventNameTailSiblingCount": (identity_alias or {}).get("tailSiblingCount"),
             "eventNameCollectionSources": event_name_sources.get(key, []),
             "eventNameMetadataField": (metadata_alias or {}).get("metadataField"),
             "eventNameMetadataDeclaringType": (metadata_alias or {}).get("metadataDeclaringType"),

@@ -4840,6 +4840,13 @@
           ["Event identity", humanize(raw.eventIdentityStatus || "")],
           ["Event name evidence", humanize(raw.eventNameEvidence || "")],
           ["Event name source", humanize(raw.eventNameSourceKind || "")],
+          ["Event name corroboration", humanize(raw.eventNameCorroboration || "")],
+          [
+            "Event name sibling counts",
+            raw.eventNameCorroboration
+              ? `head ${raw.eventNameHeadSiblingCount ?? 0} / tail ${raw.eventNameTailSiblingCount ?? 0}`
+              : "",
+          ],
           ["IL2CPP metadata field", raw.eventNameMetadataField],
           ["IL2CPP declaring type", raw.eventNameMetadataDeclaringType],
           ["IL2CPP field token", raw.eventNameMetadataFieldToken],
