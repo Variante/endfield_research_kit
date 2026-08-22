@@ -42,6 +42,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from scripts.story_builder.level_bindings import build_levelscript_unhosted_reading_popup_receiver_index
+from scripts.map_recovery_sources import authored_streaming_scene, isolated_art_source
 
 
 GAMEPLAY_CONFIG = "export_full/structured/StreamingAssets/Data/Json/GameplayConfig"
@@ -57,6 +58,7 @@ MISSION_RUNTIME_DIR = "export_full/structured/Persistent/Data/Json/MissionRuntim
 
 LEVEL_DESC_REL = "export_full/structured/StreamingAssets/Table/LevelDescTable.json"
 I18N_TEXT_REL = "export_full/structured/StreamingAssets/Table/I18nTextTable_{0}.json"
+MISSION_NAMES_REL = "webui/data/lang/{0}/missions.json"
 TEXT_TABLE_REL = "export_full/structured/StreamingAssets/Table/TextTable.json"
 MAP_UI_CONFIG_DIR = "export_full/structured/StreamingAssets/Data/Json/UILevelMapLoadConfig"
 MAP_TILE_DIR = "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D"
@@ -84,19 +86,7 @@ _MAP_TEXT_LOOKUPS: dict[tuple[str, str], dict[str, str]] = {}
 # `indie_dg002` has idNum 87, so its entities are 8_700_000_000 upward.
 REGISTRY_ID_SCALE = 10 ** 8
 
-# indie_dg004 is a second level that e0m0 and e4m1d5 both teleport into. It has
-# its own map id and its own coordinate space, so its content can never be
-# plotted on the indie_dg002 map and gets a map of its own instead.
-DG004_LEVEL_ID = "indie_dg004"
-DG004_MISSIONS = ("e0m0", "e4m1d5")
-STREAMING_INSTANCE_ROOT = ROOT / "export_full/recovered/AnimeStudio-cli/StreamingAssets/map_streaming_instances"
-STREAMING_SUBKIND_LABELS = {
-    "streaming_building": "流式建筑 / streaming building",
-    "streaming_prop": "流式道具 / streaming prop",
-    "streaming_decal": "流式贴花 / streaming decal",
-    "streaming_vegetation": "流式植被 / streaming vegetation",
-    "streaming_instance": "流式实例 / streaming instance",
-}
+AUTHORED_REGION_BACKGROUND_SCENES = {"base01", "map01", "map02"}
 
 # A pinned file is published with the strength of the link that produced it, so
 # the reader never has to guess whether a file proves the marker or merely
@@ -270,7 +260,20 @@ def _region_key(level_id: str) -> str:
     """
     value = str(level_id or "").strip()
     match = re.match(r"^(.+?)_lv\d+$", value, re.IGNORECASE)
-    return match.group(1) if match else value
+    if match:
+        return match.group(1)
+    # Danger-reappearance maps are always separate gameplay maps, including
+    # the cases that reuse a complete standalone scene rather than a mapXX
+    # art level.
+    if re.match(r"^dung\d+_bdg\d+$", value, re.IGNORECASE):
+        return value
+    # Dungeon maps are non-seamless gameplay maps. Their LevelConfig may
+    # reuse a map01/map02 streaming root and one source art level, but that is
+    # an asset relation rather than shared WebUI geography.
+    if isolated_art_source(value):
+        return value
+    authored = authored_streaming_scene(value)
+    return str(authored["sceneId"]) if authored else value
 
 
 def _collect_references(node, script_file_map: dict[str, str], file_refs: set[str]) -> None:
@@ -1060,6 +1063,19 @@ def _level_names(language: str) -> dict[str, str]:
         if text and not set(text) <= {"?", "？"}:
             names[str(level_id)] = text
     return names
+
+
+def _mission_names(language: str) -> dict[str, str]:
+    """Published localized mission names keyed by mission code."""
+    payload = _load_json(ROOT / MISSION_NAMES_REL.format(language.upper()), {}) or {}
+    rows = payload.get("missionNames") if isinstance(payload, dict) else {}
+    if not isinstance(rows, dict):
+        return {}
+    return {
+        str(mission_id): str(name).strip()
+        for mission_id, name in rows.items()
+        if str(mission_id).strip() and str(name).strip()
+    }
 
 
 # --------------------------------------------------------------------------
@@ -2168,11 +2184,27 @@ def _render_background(level_id: str) -> dict:
     """Published top-down background, with a non-spatial OBJ fallback."""
     # Resolved from ROOT rather than the module-level OUT so a relocated repo
     # root (and the focused tests that patch it) reads its own render folder.
+    # Keep this lookup ahead of shared-region suppression: a level can own an
+    # authoritative minimap and still expose its aligned HLOD/model layers.
     render_root = ROOT / "webui/data/map_recovery/render"
     preview_path = render_root / f"{level_id}_hlod_grid_inferred.json"
     preview = _load_json(preview_path) if preview_path.exists() else None
     if preview:
         return preview
+    authored = authored_streaming_scene(level_id)
+    if authored and authored.get("sceneId") in AUTHORED_REGION_BACKGROUND_SCENES and not isolated_art_source(level_id):
+        scene_id = str(authored["sceneId"])
+        return {
+            "status": "shared_authored_region_background",
+            "src": None,
+            "worldBounds": None,
+            "modelScene": {"status": "represented_by_shared_region", "meshCount": 0},
+            "boundary": (
+                f"This gameplay level declares the shared {scene_id} streaming scene. Its exact markers are "
+                "drawn over that region's exported minimap screens; the sparse per-level point cloud is "
+                "suppressed so it cannot darken or duplicate the authored regional surface."
+            ),
+        }
     model_scene = _unplaced_model_scene(level_id)
     return {
         "status": "asset_transform_recovery_required",
@@ -2186,41 +2218,6 @@ def _render_background(level_id: str) -> dict:
             "are reconstructed and rendered with an orthographic +Y camera. Level-matched OBJ files "
             "remain available below as unplaced Assets viewer links."
         ),
-    }
-
-
-def _background_bounds(payload: dict) -> dict[str, float] | None:
-    """Return the preferred background bounds for one published level.
-
-    Map-screen art wins over an inferred HLOD image, matching the frontend's
-    background choice.  The helper intentionally requires all four finite
-    coordinates so one incomplete optional background cannot expand a region's
-    projection or silently move sibling screens.
-    """
-    for candidate in (payload.get("minimap"), payload.get("renderBackground")):
-        if not isinstance(candidate, dict) or not candidate.get("src"):
-            continue
-        bounds = candidate.get("worldBounds")
-        if not isinstance(bounds, dict):
-            continue
-        values = {key: bounds.get(key) for key in ("minX", "maxX", "minZ", "maxZ")}
-        if all(isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
-               for value in values.values()):
-            return {key: float(value) for key, value in values.items()}
-    return None
-
-
-def _region_bounds(payloads: list[dict]) -> dict[str, float] | None:
-    """Union preferred background bounds for one shared large-scene region."""
-    bounds = [_background_bounds(payload) for payload in payloads]
-    bounds = [row for row in bounds if row]
-    if not bounds:
-        return None
-    return {
-        "minX": min(row["minX"] for row in bounds),
-        "maxX": max(row["maxX"] for row in bounds),
-        "minZ": min(row["minZ"] for row in bounds),
-        "maxZ": max(row["maxZ"] for row in bounds),
     }
 
 
@@ -2239,7 +2236,7 @@ def _facets(markers: list[dict], quest_points: list[dict], missions: list[str]) 
         sub_kind = row.get("subKind") or row["kind"]
         sub = bucket["subKinds"].setdefault(
             sub_kind,
-            {"count": 0, "label": STREAMING_SUBKIND_LABELS.get(sub_kind, row.get("label") or "")},
+            {"count": 0, "label": row.get("label") or ""},
         )
         sub["count"] += 1
 
@@ -2278,6 +2275,7 @@ def build_level(
     """
     if names is None:
         names = _level_names(language)
+    mission_names = _mission_names(language)
     story_index: dict[str, list[dict]] = {}
     attachment_index: dict[str, list[dict]] = {}
     script_file_map: dict[str, str] = {}
@@ -2409,6 +2407,7 @@ def build_level(
             files.update(pin.get("path") for pin in node.get("relatedFiles") or [] if pin.get("path"))
         mission_details[mission] = {
             **(facets["missions"].get(mission) or {"markers": 0, "questPoints": 0, "stories": 0}),
+            "name": mission_names.get(mission, ""),
             "files": sorted(files),
         }
 
@@ -2470,30 +2469,6 @@ def build_level(
     }
 
 
-# --------------------------------------------------------------------------
-# Legacy single-level entry points, kept for focused tests and probes
-# --------------------------------------------------------------------------
-
-
-def build_e0m0(language: str) -> dict:
-    """Recover indie_dg002 alone, reading only e0m0's mission payload."""
-    registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
-    mission_path = ROOT / f"webui/data/lang/{language}/mission/e0m0.json"
-    mission = json.loads(mission_path.read_text(encoding="utf-8"))
-    catalog = _level_catalog() or {MAP_LEVEL_ID: 87}
-    id_num = catalog.get(MAP_LEVEL_ID, 87)
-    entities = _registry_by_level(registry, {MAP_LEVEL_ID: id_num}).get(MAP_LEVEL_ID, {"world": [], "script": [], "npc": []})
-    digest = _mission_digest("e0m0", mission, language, MAP_LEVEL_ID, registry)
-    reading_by_level = _reading_receivers_by_level(build_levelscript_unhosted_reading_popup_receiver_index({"text_e0m0_1"}))
-    payload = build_level(
-        MAP_LEVEL_ID, id_num, language, registry, entities, [digest],
-        _teleports_by_level().get(MAP_LEVEL_ID, []), reading_by_level,
-    )
-    payload["label"] = "e0m0 / indie_dg002"
-    payload["id"] = "e0m0"
-    return payload
-
-
 def _scene_binding_pins_by_level(mission: dict, mission_id: str, language: str) -> dict[str, dict[str, list[dict]]]:
     """Scenes this mission's chains run in, as `levelId -> condition:<scriptId>`.
 
@@ -2529,110 +2504,6 @@ def _scene_binding_pins_by_level(mission: dict, mission_id: str, language: str) 
                         "sourceFiles": [chain_file],
                     })
     return index
-
-
-def build_indie_dg004(language: str) -> dict:
-    """Recover indie_dg004 alone, from the chains e0m0 and e4m1d5 run in it."""
-    registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
-    catalog = _level_catalog() or {DG004_LEVEL_ID: 239}
-    id_num = catalog.get(DG004_LEVEL_ID, 239)
-    entities = _registry_by_level(registry, {DG004_LEVEL_ID: id_num}).get(DG004_LEVEL_ID, {"world": [], "script": [], "npc": []})
-    bindings: dict[str, list[dict]] = {}
-    for mission_id in DG004_MISSIONS:
-        mission_path = ROOT / f"webui/data/lang/{language}/mission/{mission_id}.json"
-        if not mission_path.exists():
-            continue
-        rows = _scene_binding_pins_by_level(_load_json(mission_path, {}) or {}, mission_id, language)
-        for script_key, stories in (rows.get(DG004_LEVEL_ID) or {}).items():
-            known = {row["key"] for row in bindings.setdefault(script_key, [])}
-            bindings[script_key].extend(row for row in stories if row["key"] not in known)
-    streaming_markers = _streaming_instance_markers(DG004_LEVEL_ID)
-    digest = {
-        "missionId": DG004_MISSIONS[0],
-        "storyIndex": {},
-        "attachmentIndex": bindings,
-        "markers": streaming_markers,
-        "questPoints": [],
-        "scriptFileMap": {},
-        "fileRefs": set(),
-        "sceneUniverse": {},
-        "crossLevel": {},
-        "unresolvedTriggerSlots": {"count": 0, "stories": []},
-        "runtimeAsset": _mission_runtime_asset(DG004_MISSIONS[0]),
-    }
-    payload = build_level(
-        DG004_LEVEL_ID, id_num, language, registry, entities, [digest],
-        _teleports_by_level().get(DG004_LEVEL_ID, []), {},
-    )
-    payload["label"] = f"{DG004_LEVEL_ID} (e0m0 / e4m1d5)"
-    payload["streamingInstanceCoverage"] = {
-        "publishedCount": len(streaming_markers),
-        "source": str((STREAMING_INSTANCE_ROOT / f"{DG004_LEVEL_ID}.json").relative_to(ROOT)).replace("\\", "/"),
-        "boundary": (
-            "Exact transform-bearing InitChunkData entities. A published transform proves placement, not that "
-            "the entity is visible, interactive, or backed by a recovered renderer/mesh."
-        ),
-    }
-    return payload
-
-
-def _streaming_instance_kind(entity_base: str) -> tuple[str, str]:
-    folded = entity_base.casefold()
-    if folded.startswith("p_build_"):
-        return "scenery", "streaming_building"
-    if folded.startswith("p_prop_"):
-        return "scenery", "streaming_prop"
-    if folded.startswith("p_rdecal_"):
-        return "scenery", "streaming_decal"
-    if folded.startswith(("p_grass_", "p_bush_", "p_vine_")):
-        return "scenery", "streaming_vegetation"
-    return "scenery", "streaming_instance"
-
-
-def _streaming_instance_markers(level_id: str) -> list[dict]:
-    """Publish exact streaming transforms without upgrading them to geometry."""
-    path = STREAMING_INSTANCE_ROOT / f"{level_id}.json"
-    payload = _load_json(path, {}) or {}
-    if payload.get("levelId") != level_id or payload.get("schemaVersion") != 1:
-        return []
-    source = str(path.relative_to(ROOT)).replace("\\", "/")
-    mesh_by_base = {
-        row.get("entityBase"): {
-            "mesh": row.get("mesh"),
-            "meshes": row.get("meshes") or ([row.get("mesh")] if row.get("mesh") else []),
-        }
-        for row in payload.get("entityBases") or []
-        if row.get("entityBase") and row.get("mesh")
-    }
-    markers = []
-    for instance in payload.get("instances") or []:
-        position = _finite_position(instance.get("position"))
-        entity_id = instance.get("entityId")
-        entity_base = str(instance.get("entityBase") or instance.get("name") or "streaming instance")
-        matrix = instance.get("matrixColumnMajor")
-        if position is None or not isinstance(entity_id, int) or not isinstance(matrix, list) or len(matrix) != 16:
-            continue
-        kind, sub_kind = _streaming_instance_kind(entity_base)
-        markers.append({
-            "kind": kind,
-            "subKind": sub_kind,
-            "label": entity_base,
-            "identity": f"streaming:{entity_id}",
-            "position": position,
-            "detailId": entity_base,
-            "interactionStatus": "scene_instance_not_proven_interactive",
-            "evidence": "InitChunkData exact column-major transform",
-            "sourceFiles": [source],
-            "streamingInstance": {
-                "entityId": entity_id,
-                "name": instance.get("name"),
-                "matrixColumnMajor": matrix,
-                "sourceFile": instance.get("sourceFile"),
-                "mesh": (mesh_by_base.get(entity_base) or {}).get("mesh"),
-                "meshes": (mesh_by_base.get(entity_base) or {}).get("meshes", []),
-            },
-        })
-    return markers
 
 
 def _reading_receivers_by_level(index: dict[str, list[dict]]) -> dict[str, dict[str, list[dict]]]:
@@ -2715,23 +2586,8 @@ def build_all(language: str, only: set[str] | None = None) -> list[dict]:
         entities = entities_by_level.get(level_id, {"world": [], "script": [], "npc": []})
         digests = digests_by_level.get(level_id, [])
         level_teleports = teleports.get(level_id, [])
-        streaming_markers = _streaming_instance_markers(level_id)
-        if not any((entities["world"], entities["script"], entities["npc"], digests, level_teleports, streaming_markers)):
+        if not any((entities["world"], entities["script"], entities["npc"], digests, level_teleports)):
             continue
-        if streaming_markers:
-            digests = [*digests, {
-                "missionId": "",
-                "storyIndex": {},
-                "attachmentIndex": {},
-                "markers": streaming_markers,
-                "questPoints": [],
-                "scriptFileMap": {},
-                "fileRefs": set(),
-                "sceneUniverse": {},
-                "crossLevel": {},
-                "unresolvedTriggerSlots": {"count": 0, "stories": []},
-                "runtimeAsset": None,
-            }]
         # Chains that run inside a level are the only story evidence some
         # sub-levels have, and they come from the mission that teleports in.
         bindings = bindings_by_level.get(level_id) or {}
@@ -2758,21 +2614,6 @@ def build_all(language: str, only: set[str] | None = None) -> list[dict]:
             continue
         payloads.append(payload)
 
-    # Publish one union rectangle per shared large-scene region.  Individual
-    # minimap PNGs keep their own source bounds, while the reader can fit the
-    # entire region once and place every sibling image in that same projection.
-    # This is intentionally computed only from preferred rendered backgrounds;
-    # marker extents are not a substitute for a map-screen/HLOD coordinate
-    # contract.
-    by_region: dict[str, list[dict]] = {}
-    for payload in payloads:
-        by_region.setdefault(str(payload.get("regionKey") or _region_key(payload.get("id", ""))), []).append(payload)
-    for region_key, members in by_region.items():
-        bounds = _region_bounds(members)
-        level_ids = sorted(str(row.get("levelId") or row.get("id") or "") for row in members)
-        region = {"key": region_key, "levelIds": level_ids, "worldBounds": bounds}
-        for payload in members:
-            payload["region"] = region
     return payloads
 
 
@@ -2799,10 +2640,14 @@ def main() -> int:
             "id": payload["id"],
             "label": payload["label"],
             "name": payload.get("name", ""),
+            "missions": payload.get("missions", []),
+            "missionNames": {
+                mission_id: str((payload.get("missionDetails", {}).get(mission_id) or {}).get("name") or "")
+                for mission_id in payload.get("missions", [])
+            },
             "levelId": payload["levelId"],
             "family": payload["family"],
             "regionKey": payload.get("regionKey") or _region_key(payload["levelId"]),
-            "regionBounds": (payload.get("region") or {}).get("worldBounds"),
             "src": f"maps/{name}",
             "markerCount": len(payload["markers"]),
             "questPointCount": len(payload["questPoints"]),

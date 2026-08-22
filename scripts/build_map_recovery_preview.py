@@ -41,17 +41,27 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from scripts.audit_map_asset_closure import iter_asset_entries, sha256_file
+from scripts.map_recovery_sources import isolated_art_source, projection_streaming_scene
 
 DEFAULT_ASSET_MAP = ROOT / "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json"
 MESH_ROOT = ROOT / "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Mesh"
+TEXTURE_ROOT = ROOT / "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D"
 MAPS_ROOT = ROOT / "webui/data/map_recovery/maps"
 OUTPUT_ROOT = ROOT / "webui/data/map_recovery/render"
 HLOD_INDEX = ROOT / "reports/assets/map_recovery/hlod_grid_index.json"
+ASSET_INDEX = ROOT / "webui/data/assets/index.json"
 
 CLUSTER_RE = re.compile(r"^S_HLOD(\d+)_(-?\d+)_(-?\d+)_Cluster_")
 # `.../<levelId>_art/hlod_v2/pc/hlod<n>/mesh` - the container names the level
 # directly, so no per-level needle scan of the 750 MB asset map is needed.
 LEVEL_RE = re.compile(r"/([a-z0-9_]+)_art/hlod_v2/", re.IGNORECASE)
+OVERHEAD_COVER_RE = re.compile(r"(?:roof|ceiling)", re.IGNORECASE)
+DETAIL_STRUCTURAL_RE = re.compile(r"(?:^|[_+])(?:floor|roof|ceiling|ground|terrain)(?:[_+]|$)", re.IGNORECASE)
+DETAIL_PROP_RE = re.compile(r"(?:^|[_+])(?:prop|decal|bush|tree|vine)(?:[_+]|$)", re.IGNORECASE)
+WATER_SECTOR_RE = re.compile(
+    r"/lunascenes/([^/]+)/releasedata/waterdata/sector/t_(-?\d+)_(-?\d+)[.]asset$",
+    re.IGNORECASE,
+)
 
 BASE_CELL = 64.0  # HLOD0 cell size in metres; each further LOD doubles it
 COVERAGE_TOLERANCE = 0.03  # origins this close to the best fit stay candidates
@@ -68,9 +78,8 @@ MAX_SCENE_TRIANGLES = 120_000
 NO_HIT = -1e30  # empty depth-buffer sentinel
 EDGE_EPSILON = 0.002  # half-pixel slack so adjacent triangles do not seam
 
-# Relief helpers remain available for focused diagnostics, but the published
-# screenshot-matched preview uses only real depth hits as black scan points.
-# These constants define the older optional smoothed-height calculation.
+# Elevation layers use a bounded grow-and-smooth pass while surface and point
+# layers retain only exact depth hits.
 FILL_ROUNDS = 6  # pixels of surface grown into gaps between scattered props
 BLUR_RADIUS = 3
 BLUR_PASSES = 2
@@ -93,12 +102,38 @@ ALPHA_GROWN = 150
 # other HLOD maps retain the conservative depth-point renderer.
 LEVEL_SCAN_MODES = {"indie_dg002": "mesh_vertices"}
 LEVEL_PREFERRED_LODS = {"indie_dg002": 0}
+BASE_TEXTURE_SLOTS = ("_BaseColorMap", "_BaseMap", "_MainTex", "_Layer1BaseMap")
+HLOD_CLUSTER_RE = re.compile(r"^S_HLOD(?P<lod>\d+)_-?\d+_-?\d+_Cluster_(?P<hash>-?\d+)$", re.IGNORECASE)
+HLOD_MATERIAL_REL_RE = re.compile(
+    r"/Material/M_auto_generated_HLOD(?P<lod>\d+)_(?P<level>.+?)_art_(?P<hash>-?\d+)_p[0-9A-F]+[.]json$",
+    re.IGNORECASE,
+)
+TEXTURE_PREVIEW_EDGE = 96
+WATER_SECTOR_SIZE = 128.0
+DETAIL_HORIZONTAL_NORMAL_Y = 0.985
+DETAIL_HORIZONTAL_AREA = 0.1
+DETAIL_PROP_ONLY_LEVELS = {"base01_lv001", "base01_lv003"}
+
+_TEXTURE_BINDINGS: dict[str, dict] | None = None
+_HLOD_TEXTURE_BINDINGS: dict[tuple[str, int, int], dict] | None = None
+_TEXTURE_PREVIEWS: dict[Path, tuple[int, int, bytes] | None] = {}
+_MATERIAL_PARAMS: dict[tuple[Path, str], dict] = {}
 
 
 def build_hlod_index(asset_map: Path) -> dict:
     """One streaming pass over the asset map, grouped by level and LOD."""
     levels: dict[str, dict[str, list]] = {}
+    water_sectors: dict[str, list[dict]] = {}
     for entry in iter_asset_entries(asset_map):
+        water = WATER_SECTOR_RE.search(str(entry.get("Container", "")))
+        if (water and entry.get("Type") == "Texture2D"
+                and str(entry.get("Name", "")).lower().startswith("t_water_sector_flowmap_")):
+            water_sectors.setdefault(water.group(1), []).append({
+                "i": int(water.group(2)),
+                "j": int(water.group(3)),
+                "pathId": entry.get("PathID"),
+                "name": entry.get("Name"),
+            })
         if entry.get("Type") != "Mesh":
             continue
         matched = CLUSTER_RE.match(str(entry.get("Name", "")))
@@ -114,17 +149,18 @@ def build_hlod_index(asset_map: Path) -> dict:
             "name": entry.get("Name"),
         })
     return {
-        "schemaVersion": 1,
+        "schemaVersion": 2,
         "assetMap": str(asset_map),
         "assetMapSha256": sha256_file(asset_map),
         "levels": levels,
+        "waterSectors": water_sectors,
     }
 
 
 def load_hlod_index(asset_map: Path, cache: Path, refresh: bool) -> dict:
     if not refresh and cache.exists():
         cached = json.loads(cache.read_text(encoding="utf-8"))
-        if cached.get("assetMapSha256") == sha256_file(asset_map):
+        if cached.get("schemaVersion") == 2 and cached.get("assetMapSha256") == sha256_file(asset_map):
             return cached
     index = build_hlod_index(asset_map)
     cache.parent.mkdir(parents=True, exist_ok=True)
@@ -236,16 +272,277 @@ def shade(value: float) -> int:
     return max(0, min(255, round(value * 255)))
 
 
-def write_png(path: Path, width: int, height: int, rows: list[bytes]) -> None:
+def write_png(path: Path, width: int, height: int, rows: list[bytes], compression: int = 9) -> None:
     def chunk(kind: bytes, data: bytes) -> bytes:
         return struct.pack(">I", len(data)) + kind + data + struct.pack(">I", zlib.crc32(kind + data) & 0xFFFFFFFF)
 
     raw = b"".join(b"\0" + row for row in rows)
     png = b"\x89PNG\r\n\x1a\n"
     png += chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 6, 0, 0, 0))
-    png += chunk(b"IDAT", zlib.compress(raw, 9))
+    png += chunk(b"IDAT", zlib.compress(raw, compression))
     png += chunk(b"IEND", b"")
     path.write_bytes(png)
+
+
+def _paeth(left: int, up: int, upper_left: int) -> int:
+    estimate = left + up - upper_left
+    left_distance = abs(estimate - left)
+    up_distance = abs(estimate - up)
+    upper_left_distance = abs(estimate - upper_left)
+    if left_distance <= up_distance and left_distance <= upper_left_distance:
+        return left
+    return up if up_distance <= upper_left_distance else upper_left
+
+
+def read_png_preview(path: Path, max_edge: int = TEXTURE_PREVIEW_EDGE) -> tuple[int, int, bytes] | None:
+    """Decode an exported 8-bit RGBA PNG into a bounded nearest-sample preview."""
+    try:
+        payload = path.read_bytes()
+    except OSError:
+        return None
+    if payload[:8] != b"\x89PNG\r\n\x1a\n":
+        return None
+    cursor = 8
+    width = height = 0
+    compressed = bytearray()
+    while cursor + 12 <= len(payload):
+        length = struct.unpack_from(">I", payload, cursor)[0]
+        kind = payload[cursor + 4:cursor + 8]
+        data = payload[cursor + 8:cursor + 8 + length]
+        cursor += 12 + length
+        if kind == b"IHDR":
+            width, height, bit_depth, color_type, compression, filtering, interlace = struct.unpack(
+                ">IIBBBBB", data
+            )
+            if (bit_depth, color_type, compression, filtering, interlace) != (8, 6, 0, 0, 0):
+                return None
+        elif kind == b"IDAT":
+            compressed.extend(data)
+        elif kind == b"IEND":
+            break
+    if width <= 0 or height <= 0 or not compressed:
+        return None
+    try:
+        raw = zlib.decompress(bytes(compressed))
+    except zlib.error:
+        return None
+    stride = width * 4
+    if len(raw) != (stride + 1) * height:
+        return None
+    scale = max(width / max_edge, height / max_edge, 1.0)
+    sample_width = max(1, round(width / scale))
+    sample_height = max(1, round(height / scale))
+    sample_x = [min(width - 1, int(index * width / sample_width)) for index in range(sample_width)]
+    sample_y = {min(height - 1, int(index * height / sample_height)): index for index in range(sample_height)}
+    sampled = bytearray(sample_width * sample_height * 4)
+    previous = bytearray(stride)
+    for y in range(height):
+        start = y * (stride + 1)
+        filter_type = raw[start]
+        current = bytearray(raw[start + 1:start + 1 + stride])
+        for index in range(stride):
+            left = current[index - 4] if index >= 4 else 0
+            up = previous[index]
+            upper_left = previous[index - 4] if index >= 4 else 0
+            if filter_type == 1:
+                current[index] = (current[index] + left) & 255
+            elif filter_type == 2:
+                current[index] = (current[index] + up) & 255
+            elif filter_type == 3:
+                current[index] = (current[index] + ((left + up) >> 1)) & 255
+            elif filter_type == 4:
+                current[index] = (current[index] + _paeth(left, up, upper_left)) & 255
+            elif filter_type != 0:
+                return None
+        target_y = sample_y.get(y)
+        if target_y is not None:
+            target = target_y * sample_width * 4
+            for target_x, source_x in enumerate(sample_x):
+                source = source_x * 4
+                sampled[target + target_x * 4:target + target_x * 4 + 4] = current[source:source + 4]
+        previous = current
+    return sample_width, sample_height, bytes(sampled)
+
+
+def _relation_path(relative: str, source_roots: dict[str, str]) -> Path | None:
+    normalized = str(relative or "").replace("\\", "/")
+    if "/" not in normalized:
+        return None
+    source, tail = normalized.split("/", 1)
+    configured = source_roots.get(source)
+    if not configured:
+        return None
+    path = Path(configured)
+    resolved = (path if path.is_absolute() else ROOT / path) / tail
+    try:
+        resolved.resolve().relative_to(ROOT.resolve())
+    except (OSError, ValueError):
+        return None
+    return resolved
+
+
+def _asset_rel_from_obj(value: object) -> str:
+    obj = str(value or "").replace("\\", "/")
+    parts = obj.split("/recovered/AnimeStudio-cli/", 1)
+    if len(parts) != 2:
+        return ""
+    tail = parts[1].split("/")
+    if len(tail) < 4 or tail[1] != "convert_by_type":
+        return ""
+    return f"{tail[0]}/{'/'.join(tail[2:])}"
+
+
+def texture_bindings() -> dict[str, dict]:
+    """Compact exact one-material Mesh -> base-color texture relations."""
+    global _TEXTURE_BINDINGS, _HLOD_TEXTURE_BINDINGS
+    if _TEXTURE_BINDINGS is not None:
+        return _TEXTURE_BINDINGS
+    _TEXTURE_BINDINGS = {}
+    _HLOD_TEXTURE_BINDINGS = {}
+    if not ASSET_INDEX.is_file():
+        return _TEXTURE_BINDINGS
+    try:
+        payload = json.loads(ASSET_INDEX.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        return _TEXTURE_BINDINGS
+    source_roots = payload.get("sourceRoots") or {}
+    for asset_rel, relation in (payload.get("relations") or {}).items():
+        material_match = HLOD_MATERIAL_REL_RE.search(str(asset_rel).replace("\\", "/"))
+        if material_match and isinstance(relation, dict):
+            selected = None
+            for slot in BASE_TEXTURE_SLOTS:
+                candidates = [
+                    row for row in (relation.get("textures") or [])
+                    if row.get("slot") == slot and row.get("rel")
+                ]
+                if candidates:
+                    if len(candidates) == 1:
+                        selected = candidates[0]
+                    break
+            texture_path = _relation_path(selected["rel"], source_roots) if selected else None
+            material_path = _relation_path(asset_rel, source_roots)
+            key = (
+                material_match.group("level").lower(),
+                int(material_match.group("lod")),
+                int(material_match.group("hash")),
+            )
+            # Ownership is ambiguous as soon as a second generated material
+            # claims the same level/LOD/signed suffix, even if only one of the
+            # candidates happens to have an exportable texture today.
+            if key in _HLOD_TEXTURE_BINDINGS:
+                _HLOD_TEXTURE_BINDINGS[key] = None
+                continue
+            _HLOD_TEXTURE_BINDINGS[key] = None
+            if selected and texture_path and material_path and texture_path.is_file() and material_path.is_file():
+                binding = {
+                    "slot": selected["slot"],
+                    "textureRel": selected["rel"],
+                    "texturePath": texture_path,
+                    "materialRel": asset_rel,
+                    "materialPath": material_path,
+                    "mappingMethod": "exact_hlod_level_lod_signed_suffix_to_generated_material",
+                }
+                _HLOD_TEXTURE_BINDINGS[key] = binding
+        if "/Mesh/" not in asset_rel or not isinstance(relation, dict):
+            continue
+        materials = relation.get("materials") or []
+        if len(materials) != 1 or not materials[0].get("rel"):
+            continue
+        selected = None
+        for slot in BASE_TEXTURE_SLOTS:
+            candidates = [
+                row for row in (relation.get("textures") or [])
+                if row.get("slot") == slot and row.get("rel")
+            ]
+            if candidates:
+                if len(candidates) == 1:
+                    selected = candidates[0]
+                break
+        if not selected:
+            continue
+        texture_path = _relation_path(selected["rel"], source_roots)
+        material_path = _relation_path(materials[0]["rel"], source_roots)
+        if texture_path and material_path and texture_path.is_file() and material_path.is_file():
+            _TEXTURE_BINDINGS[asset_rel] = {
+                "slot": selected["slot"],
+                "textureRel": selected["rel"],
+                "texturePath": texture_path,
+                "materialRel": materials[0]["rel"],
+                "materialPath": material_path,
+            }
+    del payload
+    return _TEXTURE_BINDINGS
+
+
+def hlod_texture_bindings(level_id: str, lod: int, clusters: list[dict]) -> dict[int, dict]:
+    """Bind HLOD clusters to generated materials by their exact authored suffix contract."""
+    texture_bindings()
+    available = _HLOD_TEXTURE_BINDINGS or {}
+    result = {}
+    for cluster in clusters:
+        match = HLOD_CLUSTER_RE.fullmatch(str(cluster.get("name") or ""))
+        if not match or int(match.group("lod")) != lod:
+            continue
+        binding = available.get((level_id.lower(), lod, int(match.group("hash"))))
+        path_id = cluster.get("pathId")
+        if binding and isinstance(path_id, int):
+            result[path_id] = binding
+    return result
+
+
+def _material_render_params(binding: dict) -> dict:
+    key = (Path(binding["materialPath"]), str(binding["slot"]))
+    if key in _MATERIAL_PARAMS:
+        return _MATERIAL_PARAMS[key]
+    result = {"scale": (1.0, 1.0), "offset": (0.0, 0.0), "tint": (1.0, 1.0, 1.0), "cutoff": 0.05}
+    try:
+        payload = json.loads(key[0].read_text(encoding="utf-8"))
+        saved = payload.get("m_SavedProperties") or {}
+        env = (saved.get("m_TexEnvs") or {}).get(key[1]) or {}
+        scale = env.get("m_Scale") or {}
+        offset = env.get("m_Offset") or {}
+        result["scale"] = (float(scale.get("X", 1.0)), float(scale.get("Y", 1.0)))
+        result["offset"] = (float(offset.get("X", 0.0)), float(offset.get("Y", 0.0)))
+        colors = saved.get("m_Colors") or {}
+        tint = colors.get("_BaseColor") or colors.get("_Color") or colors.get("_SurfaceAlbedo") or {}
+        result["tint"] = tuple(max(0.0, float(tint.get(channel, 1.0))) for channel in ("r", "g", "b"))
+        floats = saved.get("m_Floats") or {}
+        result["cutoff"] = max(0.0, min(1.0, float(floats.get("_AlphaClipThreshold", 0.05))))
+    except (OSError, UnicodeError, json.JSONDecodeError, TypeError, ValueError):
+        pass
+    _MATERIAL_PARAMS[key] = result
+    return result
+
+
+def _texture_render_source(binding: dict | None) -> dict | None:
+    if not binding:
+        return None
+    path = Path(binding["texturePath"])
+    if path not in _TEXTURE_PREVIEWS:
+        _TEXTURE_PREVIEWS[path] = read_png_preview(path)
+    preview = _TEXTURE_PREVIEWS[path]
+    if not preview:
+        return None
+    width, height, pixels = preview
+    return {**_material_render_params(binding), "width": width, "height": height, "pixels": pixels,
+            "textureRel": binding["textureRel"], "materialRel": binding["materialRel"]}
+
+
+def _sample_texture(texture: dict, u: float, v: float) -> tuple[int, int, int, int] | None:
+    texture_x = min(texture["width"] - 1, int((u % 1.0) * texture["width"]))
+    texture_y = min(texture["height"] - 1, int(((1.0 - v) % 1.0) * texture["height"]))
+    offset = (texture_y * texture["width"] + texture_x) * 4
+    source = texture["pixels"]
+    alpha = source[offset + 3]
+    if alpha / 255 < texture["cutoff"]:
+        return None
+    tint = texture["tint"]
+    return (
+        min(255, round(source[offset] * tint[0])),
+        min(255, round(source[offset + 1] * tint[1])),
+        min(255, round(source[offset + 2] * tint[2])),
+        alpha,
+    )
 
 
 def level_positions(path: Path) -> list[tuple[float, float, float]]:
@@ -261,14 +558,73 @@ def level_positions(path: Path) -> list[tuple[float, float, float]]:
 
 
 def _instance_meshes(instance: dict) -> list[dict]:
-    """Normalize legacy single-mesh and composite streaming-instance rows."""
+    """Return the current composite mesh list for one streaming instance."""
     meshes = instance.get("meshes")
-    if isinstance(meshes, list):
-        rows = [row for row in meshes if isinstance(row, dict)]
-        if rows:
-            return rows
-    mesh = instance.get("mesh")
-    return [mesh] if isinstance(mesh, dict) else []
+    return [row for row in meshes if isinstance(row, dict)] if isinstance(meshes, list) else []
+
+
+def _is_explicit_overhead_cover(instance: dict) -> bool:
+    """Recognize authored roof/ceiling instances without guessing by height."""
+    names = [instance.get("entityBase"), instance.get("name")]
+    names.extend(mesh.get("name") for mesh in _instance_meshes(instance))
+    return any(OVERHEAD_COVER_RE.search(str(name or "")) for name in names)
+
+
+def _is_detail_structural(instance: dict, mesh: dict) -> bool:
+    """Exclude explicitly authored broad structure from analytical detail."""
+    names = (instance.get("entityBase"), instance.get("name"), mesh.get("name"))
+    return any(DETAIL_STRUCTURAL_RE.search(str(name or "")) for name in names)
+
+
+def _is_detail_prop(instance: dict, mesh: dict) -> bool:
+    """Keep authored props and vegetation even when their useful top is flat."""
+    names = (instance.get("entityBase"), instance.get("name"), mesh.get("name"))
+    return any(DETAIL_PROP_RE.search(str(name or "")) for name in names)
+
+
+def _is_large_horizontal_triangle(points: list[tuple[float, float, float]]) -> bool:
+    """Recognize slab interiors while retaining small table/prop tops."""
+    a, b, c = points
+    ux, uy, uz = b[0] - a[0], b[1] - a[1], b[2] - a[2]
+    vx, vy, vz = c[0] - a[0], c[1] - a[1], c[2] - a[2]
+    nx = uy * vz - uz * vy
+    ny = uz * vx - ux * vz
+    nz = ux * vy - uy * vx
+    magnitude = math.sqrt(nx * nx + ny * ny + nz * nz)
+    if magnitude <= 1e-9 or abs(ny) / magnitude < DETAIL_HORIZONTAL_NORMAL_Y:
+        return False
+    projected_area = abs(ux * vz - uz * vx) * 0.5
+    return projected_area >= DETAIL_HORIZONTAL_AREA
+
+
+def streaming_projection_payload(source: Path) -> tuple[list[tuple[float, float, float]], dict]:
+    """Adapt one exact InitChunkData sidecar to the renderer's compact input."""
+    payload = json.loads(source.read_text(encoding="utf-8"))
+    mesh_by_base = {
+        row.get("entityBase"): row.get("meshes")
+        for row in payload.get("entityBases") or []
+        if row.get("entityBase") and isinstance(row.get("meshes"), list) and row.get("meshes")
+    }
+    positions = []
+    markers = []
+    for instance in payload.get("instances") or []:
+        matrix = instance.get("matrixColumnMajor")
+        if not isinstance(matrix, list) or len(matrix) != 16:
+            continue
+        position = (float(matrix[12]), float(matrix[13]), float(matrix[14]))
+        positions.append(position)
+        meshes = mesh_by_base.get(instance.get("entityBase")) or []
+        markers.append({
+            "streamingInstance": {
+                "entityId": instance.get("entityId"),
+                "entityBase": instance.get("entityBase"),
+                "name": instance.get("name"),
+                "matrixColumnMajor": matrix,
+                "sourceFile": instance.get("sourceFile"),
+                "meshes": meshes,
+            },
+        })
+    return positions, {"markers": markers}
 
 
 def render_point_cloud(
@@ -276,6 +632,7 @@ def render_point_cloud(
     positions: list[tuple[float, float, float]],
     output_root: Path,
     map_payload: dict | None = None,
+    bounds_override: dict[str, float] | None = None,
 ) -> dict | None:
     """Render an evidence-only height-tinted point cloud when no map art exists.
 
@@ -298,27 +655,35 @@ def render_point_cloud(
     # A recovered streaming scene with hundreds of transforms is not the old
     # sparse registry fallback. Four metres keeps its exact extents readable;
     # small evidence sets retain the conservative 32 m context margin.
-    bounds = plot_bounds(
+    bounds = bounds_override or plot_bounds(
         streaming_xz or [(x, z) for x, _y, z in positions],
         min_pad=1.0 if streaming_xz else (4.0 if len(positions) >= 100 else 32.0),
     )
     span_x = max(bounds["maxX"] - bounds["minX"], 1.0)
     span_z = max(bounds["maxZ"] - bounds["minZ"], 1.0)
-    if span_x / span_z >= VIEW_ASPECT:
-        width = LONG_EDGE
-        height = max(1, round(width / VIEW_ASPECT))
-    else:
-        height = LONG_EDGE
-        width = max(1, round(height * VIEW_ASPECT))
+    # The PNG is later fitted to this exact world rectangle. Giving every
+    # streaming scene the UI canvas aspect silently stretched its geometry
+    # when the rectangle was square or portrait (most visibly Dijiang).
+    width, height = raster_size(span_x, span_z)
     pixels = [bytearray(width * 4) for _ in range(height)]
+    sparse_point_depth = [NO_HIT] * (width * height)
     ys = [row[1] for row in positions]
     low, high = min(ys), max(ys)
     y_span = max(high - low, 1.0)
     radius = max(2, min(6, round(9 - math.log2(max(len(positions), 2)) / 2)))
 
-    def blend(px: int, py: int, color: tuple[int, int, int], alpha: int) -> None:
+    def blend(
+        px: int,
+        py: int,
+        color: tuple[int, int, int],
+        alpha: int,
+        point_height: float | None = None,
+    ) -> None:
         if not (0 <= px < width and 0 <= py < height) or alpha <= 0:
             return
+        if point_height is not None:
+            index = py * width + px
+            sparse_point_depth[index] = max(sparse_point_depth[index], point_height)
         row = pixels[py]
         offset = px * 4
         inverse = 255 - alpha
@@ -327,13 +692,44 @@ def render_point_cloud(
         row[offset + 2] = (color[2] * alpha + row[offset + 2] * inverse) // 255
         row[offset + 3] = min(255, alpha + row[offset + 3] * inverse // 255)
 
-    resolved = [row for row in streaming if _instance_meshes(row)]
+    overhead_covers = [
+        row for row in streaming
+        if _instance_meshes(row) and _is_explicit_overhead_cover(row)
+    ]
+    resolved = [
+        row for row in streaming
+        if _instance_meshes(row) and not _is_explicit_overhead_cover(row)
+    ]
     rendered_instances = rendered_triangles = rendered_vertex_samples = 0
+    textured_instances = textured_triangles = textured_pixels = 0
+    used_textures: list[str] = []
     real_pixel_ratio = 0.0
+    surface_depth: list[float] | None = None
+    detail_depth: list[float] | None = None
+    detail_albedo: bytearray | None = None
+    detail_triangles = excluded_detail_triangles = 0
     if resolved:
-        depth, rendered_instances, rendered_triangles, rendered_vertex_samples = rasterise_streaming_depth(
-            resolved, bounds, width, height
-        )
+        detail_props_only = level_id in DETAIL_PROP_ONLY_LEVELS
+        if detail_props_only:
+            raster = rasterise_streaming_depth(
+                resolved, bounds, width, height, texture_bindings(), detail_props_only=True
+            )
+        else:
+            raster = rasterise_streaming_depth(resolved, bounds, width, height, texture_bindings())
+        depth = raster["depth"]
+        albedo = raster["albedo"]
+        surface_depth = depth
+        detail_depth = raster.get("detailDepth", depth)
+        detail_albedo = raster.get("detailAlbedo", albedo)
+        rendered_instances = raster["usedInstances"]
+        textured_instances = raster["texturedInstances"]
+        rendered_triangles = raster["triangles"]
+        textured_triangles = raster["texturedTriangles"]
+        rendered_vertex_samples = raster["vertexSamples"]
+        textured_pixels = raster["texturedPixels"]
+        used_textures = raster["usedTextures"]
+        detail_triangles = raster.get("detailTriangles", rendered_triangles)
+        excluded_detail_triangles = raster.get("excludedDetailTriangles", 0)
         real = [value > NO_HIT for value in depth]
         covered = [value for value in depth if value > NO_HIT]
         if covered:
@@ -348,12 +744,24 @@ def render_point_cloud(
                     if value <= NO_HIT:
                         continue
                     tint = (value - mesh_low) / mesh_span
-                    grey = shade(0.32 - 0.24 * tint)
                     offset = px * 4
-                    row[offset:offset + 4] = bytes((grey, grey, grey, 220))
-    else:
-        # Sparse non-streaming fallbacks remain exact transform points. A soft
-        # halo keeps isolated transforms legible without connecting them.
+                    color_offset = (py * width + px) * 4
+                    if albedo[color_offset + 3]:
+                        row[offset:offset + 4] = bytes((
+                            albedo[color_offset],
+                            albedo[color_offset + 1],
+                            albedo[color_offset + 2],
+                            albedo[color_offset + 3],
+                        ))
+                    else:
+                        grey = shade(0.32 - 0.24 * tint)
+                        row[offset:offset + 4] = bytes((grey, grey, grey, 220))
+    if not rendered_instances:
+        # Sparse fallbacks remain exact transform points. This also covers a
+        # resolved streaming mesh that produces zero analytical hits (for
+        # example indie_dg011's sole structural floor is intentionally
+        # excluded from the point/elevation pass). A soft halo keeps isolated
+        # transforms legible without connecting them.
         for x, y, z in sorted(positions, key=lambda row: row[1]):
             px = round((x - bounds["minX"]) / span_x * (width - 1))
             py = round((bounds["maxZ"] - z) / span_z * (height - 1))
@@ -364,12 +772,18 @@ def render_point_cloud(
                 for dx in range(-radius * 2, radius * 2 + 1):
                     distance = math.hypot(dx, dy)
                     if distance <= radius * 2:
-                        blend(px + dx, py + dy, color, round(42 * height_alpha * (1 - distance / (radius * 2 + 0.01))))
+                        blend(
+                            px + dx, py + dy, color,
+                            round(42 * height_alpha * (1 - distance / (radius * 2 + 0.01))), y,
+                        )
             for dy in range(-radius, radius + 1):
                 for dx in range(-radius, radius + 1):
                     distance = math.hypot(dx, dy)
                     if distance <= radius:
-                        blend(px + dx, py + dy, color, round(210 * height_alpha * (1 - 0.55 * distance / (radius + 0.01))))
+                        blend(
+                            px + dx, py + dy, color,
+                            round(210 * height_alpha * (1 - 0.55 * distance / (radius + 0.01))), y,
+                        )
 
     mesh_rows: dict[str, dict] = {}
     for row in resolved:
@@ -391,22 +805,75 @@ def render_point_cloud(
             current["instanceCount"] += 1
 
     output_root.mkdir(parents=True, exist_ok=True)
-    image_name = f"{level_id}_streaming_topdown.png" if rendered_instances else f"{level_id}_registry_point_cloud.png"
+    elevation_underlay = None
+    point_cloud_overlay = None
+    if rendered_instances and detail_depth:
+        elevation_underlay = render_elevation_underlay(
+            level_id, detail_depth, width, height, output_root,
+            image_suffix="streaming_elevation",
+            source_label="streaming-mesh detail triangle depth",
+        )
+        point_cloud_overlay = render_depth_point_overlay(
+            level_id, detail_depth, width, height, output_root,
+            image_suffix="streaming_points",
+            material_colors=detail_albedo,
+        )
+    image_name = (
+        f"{level_id}_streaming_textured_topdown.png" if textured_pixels else
+        f"{level_id}_streaming_topdown.png" if rendered_instances else
+        f"{level_id}_registry_point_cloud.png"
+    )
     write_png(output_root / image_name, width, height, [bytes(row) for row in pixels])
+    point_height_mask = None if rendered_instances else render_point_height_mask(
+        level_id, sparse_point_depth, width, height, output_root,
+        image_suffix="registry_height_mask", sampling="all",
+    )
+    if not rendered_instances:
+        point_cloud_overlay = {
+            "src": f"render/{image_name}",
+            "method": "exact_registry_transform_point_cloud",
+            "defaultOpacity": 1.0,
+            "heightMask": point_height_mask,
+        }
     return {
         "schemaVersion": 1,
-        "status": "recovered_streaming_mesh_topdown" if rendered_instances else "inferred_registry_point_cloud_preview",
+        "status": (
+            "recovered_streaming_textured_topdown" if textured_pixels else
+            "recovered_streaming_mesh_topdown" if rendered_instances else
+            "inferred_registry_point_cloud_preview"
+        ),
         "levelId": level_id,
         "src": f"render/{image_name}",
+        "elevationUnderlay": elevation_underlay,
+        "pointCloudOverlay": point_cloud_overlay,
         "worldBounds": bounds,
         "coordinateSystem": "Unity world X/Z; image top is +Z; tint derives from exact world Y",
         "render": {
-            "method": "exact_streaming_matrix_obj_depth_pass" if rendered_instances else "exact_registry_transform_point_cloud",
+            "method": (
+                "exact_streaming_matrix_obj_uv_material_texture_depth_pass" if textured_pixels else
+                "exact_streaming_matrix_obj_depth_pass" if rendered_instances else
+                "exact_registry_transform_point_cloud"
+            ),
             "pointCount": 0 if rendered_instances else len(positions),
             "pointRadius": 0 if rendered_instances else radius,
             "renderedInstanceCount": rendered_instances,
             "renderedTriangleCount": rendered_triangles,
             "renderedVertexSampleCount": rendered_vertex_samples,
+            "texturedInstanceCount": textured_instances,
+            "texturedTriangleCount": textured_triangles,
+            "texturedPixelCount": textured_pixels,
+            "detailTriangleCount": detail_triangles,
+            "excludedDetailTriangleCount": excluded_detail_triangles,
+            "detailRule": (
+                "authored prop/decal/vegetation instances only"
+                if level_id in DETAIL_PROP_ONLY_LEVELS else
+                "exclude explicitly named floor/roof/ceiling/ground/terrain meshes and near-horizontal "
+                f"non-prop triangles >= {DETAIL_HORIZONTAL_AREA:g} m2"
+            ),
+            "baseColorTextureCount": len(used_textures),
+            "baseColorTextures": used_textures,
+            "excludedOverheadCoverInstanceCount": len(overhead_covers),
+            "overheadCoverRule": "authored entity/mesh name contains roof or ceiling",
             "realPixelRatio": round(real_pixel_ratio, 4),
             "elevationRange": {"min": low, "max": high},
         },
@@ -420,7 +887,11 @@ def render_point_cloud(
         "boundary": (
             f"Orthographic depth raster of {rendered_instances} static OBJ instances placed by their recovered "
             f"InitChunkData 4x4 matrices ({rendered_triangles} prop triangles and {rendered_vertex_samples} "
-            f"floor-edge vertex samples). The remaining "
+            f"floor-edge vertex samples). Detail point/elevation layers retain {detail_triangles} triangles and "
+            f"exclude {excluded_detail_triangles} broad structural/slab triangles. {textured_pixels} visible pixels sample {len(used_textures)} exact "
+            "single-material base-color texture bindings through exported OBJ UVs; unresolved or multi-material "
+            f"meshes retain height shading. {len(overhead_covers)} explicitly named roof/ceiling instances are "
+            "omitted so capped interiors remain readable; no height-based structural culling is applied. The remaining "
             f"{len(streaming) - rendered_instances} non-rasterized instances are not drawn as location dots."
             if rendered_instances else
             f"Evidence-only point cloud drawn from {len(positions)} exact published registry and quest X/Y/Z transforms. "
@@ -434,6 +905,94 @@ def mesh_file_index(mesh_root: Path) -> dict[str, Path]:
     if not mesh_root.is_dir():
         return {}
     return {path.stem.rsplit("_p", 1)[-1].upper(): path for path in mesh_root.glob("*.obj") if "_p" in path.stem}
+
+
+def texture_file_index(texture_root: Path) -> dict[str, Path]:
+    """Exported PNG files keyed by AnimeStudio's PathID hex suffix."""
+    if not texture_root.is_dir():
+        return {}
+    return {
+        path.stem.rsplit("_p", 1)[-1].upper(): path
+        for path in texture_root.glob("*.png") if "_p" in path.stem
+    }
+
+
+def water_scene_id(level_id: str, source_scene: str | None = None) -> str:
+    """Map gameplay slices to the LunaScene that owns WaterData sectors."""
+    if source_scene:
+        return source_scene
+    matched = re.match(r"^(map[0-9]+)_lv[0-9]+$", level_id, re.IGNORECASE)
+    return matched.group(1) if matched else level_id
+
+
+def render_water_overlay(
+    level_id: str,
+    scene_id: str,
+    bounds: dict[str, float],
+    sectors_by_scene: dict[str, list[dict]],
+    texture_files: dict[str, Path],
+    output_root: Path,
+) -> dict | None:
+    """Render authored minimap water colors as an independent transparent layer.
+
+    WaterData's ``T_water_*flowmap*`` textures are vector/height fields, not
+    binary coverage masks. Treating their blue channel as occupancy produced
+    long rays and bands that do not describe shore geometry. Until the actual
+    water-surface mesh consumer is recovered, maps without authored minimap art
+    deliberately publish no water layer.
+    """
+    sectors = sectors_by_scene.get(scene_id) or []
+    if not sectors:
+        return None
+    minimap_path = output_root / f"{level_id}_minimap.png"
+    preview = read_png_preview(minimap_path, LONG_EDGE) if minimap_path.is_file() else None
+    if not preview:
+        return None
+    span_x = bounds["maxX"] - bounds["minX"]
+    span_z = bounds["maxZ"] - bounds["minZ"]
+    width, height = raster_size(span_x, span_z)
+    rows = [bytearray(width * 4) for _ in range(height)]
+    source_width, source_height, pixels = preview
+    water_pixels = 0
+    for target_y in range(height):
+        source_y = min(source_height - 1, int((target_y + 0.5) / height * source_height))
+        row = rows[target_y]
+        for target_x in range(width):
+            source_x = min(source_width - 1, int((target_x + 0.5) / width * source_width))
+            source = (source_y * source_width + source_x) * 4
+            red, green, blue, alpha = pixels[source:source + 4]
+            # Authored Wuling/Valley minimaps paint water in a stable cyan
+            # family. Blue and green must both dominate red; requiring a
+            # visible midtone rejects transparent padding and near-black map
+            # shadows without tracing roads or the flowmap's vector rays.
+            if not (
+                alpha > 0 and green > red * 1.12 and blue > red * 1.18
+                and green > 55 and blue > 55 and blue > green * 0.62
+            ):
+                continue
+            target = target_x * 4
+            row[target:target + 4] = bytes((32, 142, 184, 168))
+            water_pixels += 1
+    if not water_pixels:
+        return None
+    image_name = f"{level_id}_water.png"
+    write_png(output_root / image_name, width, height, [bytes(row) for row in rows])
+    return {
+        "src": f"render/{image_name}",
+        "status": "recovered_authored_minimap_water_color_mask",
+        "method": "authored minimap cyan-family water-color segmentation",
+        "worldBounds": bounds,
+        "sceneId": scene_id,
+        "sectorSize": WATER_SECTOR_SIZE,
+        "sourceSectorCount": len(sectors),
+        "renderedSectorCount": 0,
+        "waterPixelRatio": round(water_pixels / (width * height), 4),
+        "boundary": (
+            "Independent authored-minimap water-color layer. WaterData sector flowmaps corroborate that the "
+            "scene uses HGWater, but are not treated as coverage: their packed flow/height channels contain "
+            "long vector bands. Maps without authored minimap art remain empty until water meshes are recovered."
+        ),
+    }
 
 
 def _scene_meshes(
@@ -556,6 +1115,45 @@ def _read_cluster(path: Path):
     return vertices, faces
 
 
+def _read_textured_mesh(path: Path):
+    """Read OBJ positions, UVs, and their triangle-corner indices."""
+    vertices = []
+    texcoords = []
+    faces = []
+    try:
+        stream = path.open("r", encoding="utf-8", errors="strict")
+    except OSError:
+        return None
+    with stream:
+        for line in stream:
+            if line.startswith("v "):
+                parts = line.split()
+                try:
+                    vertices.append((float(parts[1]), float(parts[2]), float(parts[3])))
+                except (IndexError, ValueError):
+                    return None
+            elif line.startswith("vt "):
+                parts = line.split()
+                try:
+                    texcoords.append((float(parts[1]), float(parts[2])))
+                except (IndexError, ValueError):
+                    return None
+            elif line.startswith("f "):
+                vertex_indices = []
+                texture_indices = []
+                for token in line.split()[1:4]:
+                    fields = token.split("/")
+                    try:
+                        vertex_indices.append(int(fields[0]) - 1)
+                        texture_indices.append(int(fields[1]) - 1 if len(fields) > 1 and fields[1] else -1)
+                    except ValueError:
+                        vertex_indices = []
+                        break
+                if len(vertex_indices) == 3:
+                    faces.append((tuple(vertex_indices), tuple(texture_indices)))
+    return vertices, texcoords, faces
+
+
 def rasterise_vertices(clusters, lod, fit, bounds, mesh_files, width, height):
     """Project actual OBJ vertices, preserving their irregular scan spacing."""
     span_x = bounds["maxX"] - bounds["minX"]
@@ -597,15 +1195,156 @@ def rasterise_vertices(clusters, lod, fit, bounds, mesh_files, width, height):
     return depth, used, vertex_count
 
 
-def rasterise_streaming_depth(streaming, bounds, width, height):
-    """Rasterize resolved static OBJ instances with their exact 4x4 matrices."""
+def render_hlod_point_samples(
+    level_id: str,
+    clusters: list[dict],
+    lod: int,
+    fit: dict,
+    bounds: dict[str, float],
+    mesh_files: dict[str, Path],
+    width: int,
+    height: int,
+    output_root: Path,
+    bindings: dict[int, dict] | None = None,
+) -> dict | None:
+    """Preserve every projected HLOD vertex so height cuts reveal lower geometry."""
+    span_x = bounds["maxX"] - bounds["minX"]
+    span_z = bounds["maxZ"] - bounds["minZ"]
+    size = cell_size(lod)
+    samples: dict[int, list[tuple[float, tuple[int, int, int, int] | None]]] = {}
+    used_textures: set[str] = set()
+    epsilon = 1e-4
+
+    def add(index: int, world_y: float, color: tuple[int, int, int, int] | None) -> None:
+        rows = samples.setdefault(index, [])
+        for position, (existing_y, existing_color) in enumerate(rows):
+            if abs(existing_y - world_y) <= epsilon:
+                if existing_color is None and color is not None:
+                    rows[position] = (world_y, color)
+                return
+        rows.append((world_y, color))
+
+    for cluster in clusters:
+        suffix = f"{int(cluster['pathId']) & ((1 << 64) - 1):X}"
+        path = mesh_files.get(suffix)
+        if path is None:
+            continue
+        texture = _texture_render_source((bindings or {}).get(cluster.get("pathId")))
+        parsed = _read_textured_mesh(path) if texture else _read_cluster(path)
+        if not parsed:
+            continue
+        translate_x = fit["originX"] + cluster["i"] * size + size / 2
+        translate_z = fit["originZ"] + cluster["j"] * size + size / 2
+        if texture:
+            raw_vertices, texcoords, faces = parsed
+            used_textures.add(texture["textureRel"])
+            corners = []
+            for vertex_face, texture_face in faces:
+                corners.extend(zip(vertex_face, texture_face))
+        else:
+            raw_vertices, _faces = parsed
+            texcoords = []
+            corners = [(index, -1) for index in range(len(raw_vertices))]
+        for vertex_index, texture_index in corners:
+            try:
+                obj_x, obj_y, obj_z = raw_vertices[vertex_index]
+            except IndexError:
+                continue
+            world_x = translate_x - obj_x
+            world_z = translate_z + obj_z
+            px = round((world_x - bounds["minX"]) / span_x * (width - 1))
+            py = round((bounds["maxZ"] - world_z) / span_z * (height - 1))
+            if not (0 <= px < width and 0 <= py < height):
+                continue
+            color = None
+            if texture and texture_index >= 0:
+                try:
+                    u, v = texcoords[texture_index]
+                except IndexError:
+                    pass
+                else:
+                    color = _sample_texture(texture, u * texture["scale"][0] + texture["offset"][0],
+                                            v * texture["scale"][1] + texture["offset"][1])
+                    if color is None:
+                        continue
+            add(py * width + px, obj_y, color)
+
+    all_heights = [world_y for rows in samples.values() for world_y, _color in rows]
+    if not all_heights:
+        return None
+    low, high = min(all_heights), max(all_heights)
+    span = max(high - low, 1.0)
+    top_depth = [NO_HIT] * (width * height)
+    top_colors = bytearray(width * height * 4)
+    records = bytearray(b"MRPS" + struct.pack("<HHII", 1, 12, width, height))
+    record_count = 0
+    for index in sorted(samples):
+        ordered = sorted(samples[index], key=lambda row: row[0])
+        for world_y, recovered_color in ordered:
+            tint = (world_y - low) / span
+            color = recovered_color or (*[max(18, round(channel * 0.62)) for channel in elevation_color(tint)], 225)
+            records.extend(struct.pack("<IfBBBB", index, world_y, *color))
+            record_count += 1
+        top_y, top_color = ordered[-1]
+        tint = (top_y - low) / span
+        color = top_color or (*[max(18, round(channel * 0.62)) for channel in elevation_color(tint)], 225)
+        top_depth[index] = top_y
+        offset = index * 4
+        top_colors[offset:offset + 4] = bytes((*color[:3], 225))
+
+    output_root.mkdir(parents=True, exist_ok=True)
+    image_name = f"{level_id}_hlod_vertex_points.png"
+    write_png(
+        output_root / image_name, width, height,
+        [bytes(top_colors[row * width * 4:(row + 1) * width * 4]) for row in range(height)],
+    )
+    sample_name = f"{level_id}_hlod_vertex_points.samples"
+    (output_root / sample_name).write_bytes(records)
+    height_mask = render_point_height_mask(
+        level_id, top_depth, width, height, output_root,
+        image_suffix="hlod_vertex_points_height_mask", sampling="all",
+    )
+    return {
+        "src": f"render/{image_name}",
+        "method": "orthographic_hlod_layered_mesh_vertex_samples",
+        "defaultOpacity": 0.72,
+        "pointDensity": 1.0,
+        "heightMask": height_mask,
+        "sampleSet": {
+            "src": f"render/{sample_name}",
+            "encoding": "mrps_v1_le_u32_pixel_f32_height_rgba8",
+            "width": width,
+            "height": height,
+            "recordCount": record_count,
+            "pixelCount": len(samples),
+            "elevationRange": {"min": low, "max": high},
+            "dedupeEpsilon": epsilon,
+        },
+        "baseColorTextures": sorted(used_textures),
+        "boundary": (
+            "Every projected OBJ vertex is retained by pixel and world Y. The default PNG shows the highest sample; "
+            "the sample sidecar lets a bounded height filter reveal the next lower sample without changing surface depth."
+        ),
+    }
+
+
+def rasterise_streaming_depth(streaming, bounds, width, height, bindings=None, detail_props_only=False):
+    """Rasterize exact static instances, sampling proven material base textures."""
     span_x = bounds["maxX"] - bounds["minX"]
     span_z = bounds["maxZ"] - bounds["minZ"]
     depth = [NO_HIT] * (width * height)
-    cache: dict[Path, tuple[list, list] | None] = {}
+    detail_depth = [NO_HIT] * (width * height)
+    albedo = bytearray(width * height * 4)
+    detail_albedo = bytearray(width * height * 4)
+    cache: dict[Path, tuple[list, list, list] | None] = {}
     used_instances = 0
+    textured_instances = 0
     triangles = 0
+    textured_triangles = 0
+    detail_triangles = 0
+    excluded_detail_triangles = 0
     vertex_samples = 0
+    used_textures: set[str] = set()
     export_root = (ROOT / "export_full").resolve()
 
     for instance in streaming:
@@ -614,6 +1353,7 @@ def rasterise_streaming_depth(streaming, bounds, width, height):
         if not meshes or not isinstance(matrix, list) or len(matrix) != 16:
             continue
         instance_drawn = False
+        instance_textured = False
         for mesh in meshes:
             path = (ROOT / str(mesh.get("obj") or "")).resolve()
             try:
@@ -621,11 +1361,14 @@ def rasterise_streaming_depth(streaming, bounds, width, height):
             except ValueError:
                 continue
             if path not in cache:
-                cache[path] = _read_cluster(path)
+                cache[path] = _read_textured_mesh(path)
             parsed = cache[path]
             if not parsed:
                 continue
-            raw_vertices, faces = parsed
+            raw_vertices, texcoords, faces = parsed
+            structural_detail = _is_detail_structural(instance, mesh)
+            binding = (bindings or {}).get(_asset_rel_from_obj(mesh.get("obj")))
+            texture = _texture_render_source(binding)
             # AnimeStudio's OBJ conversion mirrors Unity X. Undo that conversion
             # before applying the recovered Unity column-major instance matrix.
             vertices = []
@@ -653,11 +1396,28 @@ def rasterise_streaming_depth(streaming, bounds, width, height):
                     vertex_samples += landed
                 continue
             drawn = 0
-            for face in faces:
+            for vertex_face, texture_face in faces:
                 try:
-                    points = [vertices[index] for index in face]
+                    points = [vertices[index] for index in vertex_face]
                 except IndexError:
                     continue
+                authored_detail_prop = _is_detail_prop(instance, mesh)
+                detail_face = (
+                    authored_detail_prop
+                    if detail_props_only else
+                    not structural_detail
+                    and (authored_detail_prop or not _is_large_horizontal_triangle(points))
+                )
+                if detail_face:
+                    detail_triangles += 1
+                else:
+                    excluded_detail_triangles += 1
+                uvs = None
+                if texture and min(texture_face) >= 0:
+                    try:
+                        uvs = [texcoords[index] for index in texture_face]
+                    except IndexError:
+                        uvs = None
                 screen_x = [(point[0] - bounds["minX"]) / span_x * width for point in points]
                 screen_y = [(bounds["maxZ"] - point[2]) / span_z * height for point in points]
                 x0, x1 = max(0, int(min(screen_x))), min(width - 1, int(max(screen_x)) + 1)
@@ -669,6 +1429,9 @@ def rasterise_streaming_depth(streaming, bounds, width, height):
                 if abs(area) < 1e-12:
                     continue
                 drawn += 1
+                if uvs is not None:
+                    textured_triangles += 1
+                    used_textures.add(texture["textureRel"])
                 for pixel_y in range(y0, y1 + 1):
                     sample_y = pixel_y + 0.5
                     base = pixel_y * width
@@ -683,17 +1446,75 @@ def rasterise_streaming_depth(streaming, bounds, width, height):
                             continue
                         elevation = w0 * points[0][1] + w1 * points[1][1] + w2 * points[2][1]
                         index = base + pixel_x
-                        if elevation > depth[index]:
+                        wins_full = elevation > depth[index]
+                        wins_detail = detail_face and elevation > detail_depth[index]
+                        if not wins_full and not wins_detail:
+                            continue
+                        sampled = None
+                        if uvs is not None:
+                            scale_u, scale_v = texture["scale"]
+                            offset_u, offset_v = texture["offset"]
+                            u = (w0 * uvs[0][0] + w1 * uvs[1][0] + w2 * uvs[2][0]) * scale_u + offset_u
+                            v = (w0 * uvs[0][1] + w1 * uvs[1][1] + w2 * uvs[2][1]) * scale_v + offset_v
+                            texture_x = min(texture["width"] - 1, int((u % 1.0) * texture["width"]))
+                            texture_y = min(texture["height"] - 1, int(((1.0 - v) % 1.0) * texture["height"]))
+                            texture_offset = (texture_y * texture["width"] + texture_x) * 4
+                            source = texture["pixels"]
+                            alpha = source[texture_offset + 3]
+                            if alpha / 255 < texture["cutoff"]:
+                                continue
+                            tint = texture["tint"]
+                            sampled = (
+                                min(255, round(source[texture_offset] * tint[0])),
+                                min(255, round(source[texture_offset + 1] * tint[1])),
+                                min(255, round(source[texture_offset + 2] * tint[2])),
+                                alpha,
+                            )
+                        if wins_full:
                             depth[index] = elevation
+                            color_offset = index * 4
+                            if sampled:
+                                albedo[color_offset:color_offset + 4] = bytes(sampled)
+                                instance_textured = True
+                            else:
+                                albedo[color_offset:color_offset + 4] = b"\0\0\0\0"
+                        if wins_detail:
+                            detail_depth[index] = elevation
+                            color_offset = index * 4
+                            if sampled:
+                                detail_albedo[color_offset:color_offset + 4] = bytes(sampled)
+                            else:
+                                detail_albedo[color_offset:color_offset + 4] = b"\0\0\0\0"
             if drawn:
                 instance_drawn = True
                 triangles += drawn
         if instance_drawn:
             used_instances += 1
-    return depth, used_instances, triangles, vertex_samples
+        if instance_textured:
+            textured_instances += 1
+    textured_pixels = sum(1 for index in range(3, len(albedo), 4) if albedo[index])
+    return {
+        "depth": depth,
+        "detailDepth": detail_depth,
+        "albedo": albedo,
+        "detailAlbedo": detail_albedo,
+        "usedInstances": used_instances,
+        "texturedInstances": textured_instances,
+        "triangles": triangles,
+        "texturedTriangles": textured_triangles,
+        "detailTriangles": detail_triangles,
+        "excludedDetailTriangles": excluded_detail_triangles,
+        "vertexSamples": vertex_samples,
+        "texturedPixels": textured_pixels,
+        "usedTextures": sorted(used_textures),
+    }
 
 
-def rasterise_depth(clusters, lod, fit, bounds, mesh_files, width, height):
+def rasterise_depth(
+    clusters, lod, fit, bounds, mesh_files, width, height,
+    bindings: dict[int, dict] | None = None,
+    material_colors: bytearray | None = None,
+):
     """Render the level's triangles into a top-down height field.
 
     This is an orthographic depth pass from directly above: every triangle is
@@ -713,10 +1534,18 @@ def rasterise_depth(clusters, lod, fit, bounds, mesh_files, width, height):
         path = mesh_files.get(suffix)
         if path is None:
             continue
-        parsed = _read_cluster(path)
+        texture = _texture_render_source((bindings or {}).get(cluster.get("pathId")))
+        parsed = _read_textured_mesh(path) if texture else _read_cluster(path)
         if not parsed:
             continue
-        raw_vertices, faces = parsed
+        if texture:
+            raw_vertices, texcoords, textured_faces = parsed
+            faces = [row[0] for row in textured_faces]
+            texture_faces = [row[1] for row in textured_faces]
+        else:
+            raw_vertices, faces = parsed
+            texcoords = []
+            texture_faces = [(-1, -1, -1)] * len(faces)
         # The cluster's vertices are centred on its own origin, so its world
         # position is the centre of the grid cell its name declares. AnimeStudio
         # writes OBJ right-handed, so X is mirrored back onto Unity's world.
@@ -725,7 +1554,7 @@ def rasterise_depth(clusters, lod, fit, bounds, mesh_files, width, height):
         vertices = [(translate_x - v[0], v[1], translate_z + v[2]) for v in raw_vertices]
 
         drawn = 0
-        for face in faces:
+        for face_index, face in enumerate(faces):
             try:
                 points = [vertices[index] for index in face]
             except IndexError:
@@ -762,10 +1591,45 @@ def rasterise_depth(clusters, lod, fit, bounds, mesh_files, width, height):
                     elevation = w0 * points[0][1] + w1 * points[1][1] + w2 * points[2][1]
                     index = base + pixel_x
                     if elevation > depth[index]:
+                        sampled = None
+                        texture_face = texture_faces[face_index]
+                        if texture and min(texture_face) >= 0:
+                            try:
+                                uvs = [texcoords[uv_index] for uv_index in texture_face]
+                            except IndexError:
+                                uvs = None
+                            if uvs:
+                                scale_u, scale_v = texture["scale"]
+                                offset_u, offset_v = texture["offset"]
+                                u = (w0 * uvs[0][0] + w1 * uvs[1][0] + w2 * uvs[2][0]) * scale_u + offset_u
+                                v = (w0 * uvs[0][1] + w1 * uvs[1][1] + w2 * uvs[2][1]) * scale_v + offset_v
+                                texture_x = min(texture["width"] - 1, int((u % 1.0) * texture["width"]))
+                                texture_y = min(texture["height"] - 1, int(((1.0 - v) % 1.0) * texture["height"]))
+                                texture_offset = (texture_y * texture["width"] + texture_x) * 4
+                                source = texture["pixels"]
+                                alpha = source[texture_offset + 3]
+                                if alpha / 255 < texture["cutoff"]:
+                                    continue
+                                tint = texture["tint"]
+                                sampled = (
+                                    min(255, round(source[texture_offset] * tint[0])),
+                                    min(255, round(source[texture_offset + 1] * tint[1])),
+                                    min(255, round(source[texture_offset + 2] * tint[2])),
+                                    alpha,
+                                )
                         depth[index] = elevation
+                        if material_colors is not None:
+                            color_offset = index * 4
+                            material_colors[color_offset:color_offset + 4] = bytes(sampled or (0, 0, 0, 0))
         if drawn:
             triangles += drawn
-            used.append({"pathId": cluster["pathId"], "name": cluster["name"], "triangles": drawn})
+            used.append({
+                "pathId": cluster["pathId"],
+                "name": cluster["name"],
+                "triangles": drawn,
+                "materialColor": bool(texture),
+                "baseColorTexture": texture["textureRel"] if texture else None,
+            })
     return depth, used, triangles
 
 
@@ -908,8 +1772,16 @@ def render_elevation_underlay(
     width: int,
     height: int,
     output_root: Path,
+    image_suffix: str = "hlod_elevation",
+    source_label: str = "HLOD triangle depth",
+    material_colors: bytearray | bytes | None = None,
 ) -> dict | None:
-    """Restore the earlier smoothed DEM as a quiet layer below a point scan."""
+    """Restore a neutral grayscale DEM below a point scan.
+
+    The elevation layer is analytical rather than an authored surface, so it
+    must never inherit material colors. Material/texture evidence remains
+    available on the separate surface and point layers.
+    """
     grown, real = grow_surface(depth, width, height)
     mask = [value > NO_HIT for value in grown]
     if not any(mask):
@@ -928,14 +1800,15 @@ def render_elevation_underlay(
                 row.extend((255, 255, 255, 0))
                 continue
             tint = (dem[index] - low) / span
-            value = shade((0.97 - 0.16 * tint) * (0.88 + 0.12 * lighting[index]))
-            row.extend((value, value, value, 225 if real[index] else 165))
+            shade = round((54 + 154 * (1.0 - tint)) * (0.84 + 0.16 * lighting[index]))
+            shade = max(24, min(224, shade))
+            row.extend((shade, shade, shade, 225 if real[index] else 165))
         rows.append(bytes(row))
-    image_name = f"{level_id}_hlod_elevation.png"
+    image_name = f"{level_id}_{image_suffix}.png"
     write_png(output_root / image_name, width, height, rows)
     return {
         "src": f"render/{image_name}",
-        "method": "orthographic_depth_pass_then_smoothed_hillshade",
+        "method": "orthographic_depth_pass_grayscale_hillshade",
         "defaultOpacity": 1.0,
         "hillshade": {
             "azimuth": HILLSHADE_AZIMUTH,
@@ -948,7 +1821,172 @@ def render_elevation_underlay(
         "realPixelRatio": round(sum(real) / (width * height), 4),
         "coveredPixelRatio": round(sum(mask) / (width * height), 4),
         "elevationRange": {"min": low, "max": high},
-        "boundary": "Recovered HLOD triangle depth only; gap growth is visibly translucent and does not claim authored ground geometry.",
+        "boundary": (
+            f"Recovered {source_label} only. This analytical elevation layer is intentionally grayscale; "
+            "material color remains confined to the separate surface/point layers. Gap growth is visibly "
+            "translucent and does not claim authored ground geometry."
+        ),
+    }
+
+
+def elevation_color(tint: float) -> tuple[int, int, int]:
+    """A restrained terrain palette for geometry with no proven material binding."""
+    stops = ((91, 126, 116), (167, 151, 105), (151, 104, 82))
+    value = max(0.0, min(1.0, tint)) * 2
+    left = min(1, int(value))
+    mix = value - left
+    return tuple(round(stops[left][channel] * (1 - mix) + stops[left + 1][channel] * mix) for channel in range(3))
+
+
+def render_depth_surface(
+    level_id: str,
+    depth: list[float],
+    width: int,
+    height: int,
+    output_root: Path,
+    image_suffix: str,
+    material_colors: bytearray | bytes | None = None,
+) -> dict | None:
+    """Render exact depth hits as a continuous height-shaded surface layer."""
+    real = [value > NO_HIT for value in depth]
+    covered = [value for value in depth if value > NO_HIT]
+    if not covered:
+        return None
+    low, high = min(covered), max(covered)
+    span = max(high - low, 1.0)
+    rows = []
+    for y in range(height):
+        row = bytearray()
+        for x in range(width):
+            index = y * width + x
+            if not real[index]:
+                row.extend((255, 255, 255, 0))
+                continue
+            tint = (depth[index] - low) / span
+            color_offset = index * 4
+            if material_colors is not None and len(material_colors) > color_offset + 3 and material_colors[color_offset + 3]:
+                base = tuple(material_colors[color_offset + channel] for channel in range(3))
+                alpha = material_colors[color_offset + 3]
+            else:
+                base = elevation_color(tint)
+                light = 0.72 + 0.24 * (1.0 - tint)
+                base = tuple(min(255, round(channel * light)) for channel in base)
+                alpha = 225
+            row.extend((*base, alpha))
+        rows.append(bytes(row))
+    image_name = f"{level_id}_{image_suffix}.png"
+    write_png(output_root / image_name, width, height, rows)
+    return {
+        "src": f"render/{image_name}",
+        "method": "orthographic_exact_depth_material_color_or_elevation_palette_surface",
+        "defaultOpacity": 1.0,
+        "realPixelRatio": round(sum(real) / (width * height), 4),
+        "elevationRange": {"min": low, "max": high},
+        "boundary": "Only exact triangle depth hits are filled; gaps remain transparent.",
+    }
+
+
+def render_depth_point_overlay(
+    level_id: str,
+    depth: list[float],
+    width: int,
+    height: int,
+    output_root: Path,
+    image_suffix: str,
+    material_colors: bytearray | bytes | None = None,
+) -> dict | None:
+    """Render a transparent colored point scan from exact triangle depth hits."""
+    covered = [value for value in depth if value > NO_HIT]
+    if not covered:
+        return None
+    low, high = min(covered), max(covered)
+    span = max(high - low, 1.0)
+    emitted = 0
+    rows = []
+    for y in range(height):
+        row = bytearray(width * 4)
+        for x in range(width):
+            index = y * width + x
+            value = depth[index]
+            if value <= NO_HIT or ((x * 37 + y * 17) % 11) >= 6:
+                continue
+            tint = (value - low) / span
+            color_offset = index * 4
+            if material_colors is not None and len(material_colors) > color_offset + 3 and material_colors[color_offset + 3]:
+                base = tuple(material_colors[color_offset + channel] for channel in range(3))
+            else:
+                base = elevation_color(tint)
+                base = tuple(max(18, round(channel * 0.68)) for channel in base)
+            offset = x * 4
+            row[offset:offset + 4] = bytes((*base, 225))
+            emitted += 1
+        rows.append(bytes(row))
+    image_name = f"{level_id}_{image_suffix}.png"
+    write_png(output_root / image_name, width, height, rows)
+    height_mask = render_point_height_mask(
+        level_id, depth, width, height, output_root,
+        image_suffix=f"{image_suffix}_height_mask",
+        sampling="streaming",
+    )
+    return {
+        "src": f"render/{image_name}",
+        "method": "orthographic_exact_depth_material_color_or_elevation_palette_points",
+        "defaultOpacity": 0.72,
+        "pointDensity": 6 / 11,
+        "pointPixelCount": emitted,
+        "elevationRange": {"min": low, "max": high},
+        "heightMask": height_mask,
+        "boundary": (
+            "Only exact triangle depth-hit pixels can emit points; exact exported material color is retained "
+            "where available and unresolved pixels use the elevation palette. No geometry is grown."
+        ),
+    }
+
+
+def render_point_height_mask(
+    level_id: str,
+    depth: list[float],
+    width: int,
+    height: int,
+    output_root: Path,
+    image_suffix: str,
+    sampling: str,
+) -> dict | None:
+    """Encode exact emitted-point height as opaque unsigned 16-bit RG pixels."""
+    covered = [value for value in depth if value > NO_HIT]
+    if not covered:
+        return None
+    low, high = min(covered), max(covered)
+    span = max(high - low, 1e-9)
+    rows = []
+    encoded_pixels = 0
+    for y in range(height):
+        row = bytearray(width * 4)
+        for x in range(width):
+            index = y * width + x
+            value = depth[index]
+            if value <= NO_HIT:
+                continue
+            sample = (x * 37 + y * 17) % 11
+            if sampling == "streaming" and sample >= 6:
+                continue
+            if sampling == "hlod_depth" and sample >= 8:
+                continue
+            encoded = max(0, min(65535, round((value - low) / span * 65535)))
+            offset = x * 4
+            row[offset:offset + 4] = bytes((encoded >> 8, encoded & 255, 0, 255))
+            encoded_pixels += 1
+        rows.append(bytes(row))
+    if not encoded_pixels:
+        return None
+    image_name = f"{level_id}_{image_suffix}.png"
+    write_png(output_root / image_name, width, height, rows)
+    return {
+        "src": f"render/{image_name}",
+        "encoding": "uint16_rg_normalized_world_y",
+        "elevationRange": {"min": low, "max": high},
+        "pointPixelCount": encoded_pixels,
+        "boundary": "Opaque pixels correspond exactly to emitted point pixels; RG stores normalized world Y.",
     }
 
 
@@ -961,17 +1999,22 @@ def render_level(
     mesh_files: dict[str, Path],
     output_root: Path,
     scan_mode: str | None = None,
+    bindings: dict[int, dict] | None = None,
 ) -> dict | None:
     """Render recovered HLOD geometry as a dense orthographic point cloud."""
     width, height = raster_size(bounds["maxX"] - bounds["minX"], bounds["maxZ"] - bounds["minZ"])
     mode = scan_mode or LEVEL_SCAN_MODES.get(level_id, "depth_points")
+    material_colors = bytearray(width * height * 4) if bindings else None
     if mode == "mesh_vertices":
         depth, used, primitive_count = rasterise_vertices(
             clusters, lod, fit, bounds, mesh_files, width, height
         )
         triangles = 0
     else:
-        depth, used, triangles = rasterise_depth(clusters, lod, fit, bounds, mesh_files, width, height)
+        depth, used, triangles = rasterise_depth(
+            clusters, lod, fit, bounds, mesh_files, width, height,
+            bindings=bindings, material_colors=material_colors,
+        )
         primitive_count = triangles
     if not used:
         return None
@@ -997,42 +2040,87 @@ def render_level(
             if mode == "depth_points" and ((x * 37 + y * 17) % 11) >= 8:
                 continue
             tint = (depth[index] - low) / span
-            grey = shade((0.28 - 0.22 * tint) if mode == "mesh_vertices" else (0.40 - 0.34 * tint))
+            base = elevation_color(tint)
+            light = 0.62 if mode == "mesh_vertices" else 0.72
             offset = x * 4
-            row[offset:offset + 4] = bytes((grey, grey, grey, 215 if mode == "mesh_vertices" else 205))
+            row[offset:offset + 4] = bytes((
+                *[max(18, round(channel * light)) for channel in base],
+                225 if mode == "mesh_vertices" else 215,
+            ))
 
     output_root.mkdir(parents=True, exist_ok=True)
     image_name = f"{level_id}_hlod_grid_inferred.png"
     write_png(output_root / image_name, width, height, rows)
-    elevation_underlay = None
-    if level_id == "indie_dg002":
-        elevation_depth, elevation_used, _ = rasterise_depth(
-            clusters, lod, fit, bounds, mesh_files, width, height
+    if mode == "mesh_vertices":
+        surface_depth, surface_used, surface_triangles = rasterise_depth(
+            clusters, lod, fit, bounds, mesh_files, width, height,
+            bindings=bindings, material_colors=material_colors,
         )
-        if elevation_used:
-            elevation_underlay = render_elevation_underlay(
-                level_id, elevation_depth, width, height, output_root
-            )
+    else:
+        surface_depth, surface_used, surface_triangles = depth, used, triangles
+    elevation_underlay = render_elevation_underlay(
+        level_id, surface_depth, width, height, output_root
+    ) if surface_used else None
+    surface_render = render_depth_surface(
+        level_id, surface_depth, width, height, output_root, "hlod_surface",
+        material_colors=material_colors,
+    ) if surface_used else None
+    textured_pixels = sum(
+        1 for index in range(3, len(material_colors or ()), 4)
+        if material_colors[index]
+    )
+    layered_point_overlay = render_hlod_point_samples(
+        level_id, clusters, lod, fit, bounds, mesh_files, width, height, output_root,
+        bindings=bindings,
+    )
+    point_cloud_overlay = layered_point_overlay or {
+        "src": f"render/{image_name}",
+        "method": "orthographic_hlod_mesh_vertex_scan" if mode == "mesh_vertices" else "orthographic_hlod_depth_black_point_density",
+        "defaultOpacity": 0.72,
+        "pointDensity": 1.0 if mode == "mesh_vertices" else 8 / 11,
+        "heightMask": render_point_height_mask(
+            level_id, depth, width, height, output_root,
+            image_suffix="hlod_height_mask",
+            sampling="all" if mode == "mesh_vertices" else "hlod_depth",
+        ),
+        "boundary": (
+            "Only recovered OBJ vertices emit points."
+            if mode == "mesh_vertices" else
+            "Only pixels hit by recovered HLOD triangles can emit points."
+        ),
+    }
     size = cell_size(lod)
     scene_meshes = _scene_meshes(used, mesh_files, lod=lod, fit=fit)
     return {
         "schemaVersion": 3,
-        "status": "inferred_hlod_grid_preview",
+        "status": "inferred_hlod_textured_preview" if textured_pixels else "inferred_hlod_grid_preview",
         "levelId": level_id,
-        "src": f"render/{image_name}",
+        "src": surface_render["src"] if surface_render else f"render/{image_name}",
         "elevationUnderlay": elevation_underlay,
+        "pointCloudOverlay": point_cloud_overlay if surface_render else None,
+        "surfaceRender": surface_render,
         "worldBounds": bounds,
         "coordinateSystem": "Unity world X/Z; image top is +Z",
         "hlodLevel": lod,
         "render": {
             "method": "orthographic_hlod_mesh_vertex_scan" if mode == "mesh_vertices" else "orthographic_hlod_depth_black_point_density",
             "shading": (
-                "actual OBJ vertices projected orthographically, with world-Y encoded as grey-black on white"
+                "actual OBJ vertices projected orthographically, with world-Y encoded by the bounded elevation palette"
                 if mode == "mesh_vertices" else
-                "the 87b60f49 screen-door sample of real HLOD depth pixels, with its height palette inverted"
+                "the 87b60f49 screen-door sample of real HLOD depth pixels, colored by the bounded elevation palette"
             ),
             "pointDensity": 1.0 if mode == "mesh_vertices" else 8 / 11,
             "sourceSampleCount": primitive_count,
+            "materialBindingCount": len(bindings or {}),
+            "materialColoredMeshCount": sum(1 for row in surface_used if row.get("materialColor")),
+            "materialColoredPixelCount": textured_pixels,
+            "baseColorTextures": sorted({
+                row["baseColorTexture"] for row in surface_used if row.get("baseColorTexture")
+            }),
+            "materialMappingMethod": (
+                "exact_hlod_level_lod_signed_suffix_to_generated_material_then_base_color_pathid"
+                if textured_pixels else None
+            ),
             "heightEcho": {
                 "enabled": False,
                 "boundary": "Disabled for the mesh-vertex scan: height is encoded by tone without duplicating coordinates.",
@@ -1057,7 +2145,7 @@ def render_level(
         "gridFit": fit,
         "candidateMeshCount": len(clusters),
         "renderedMeshCount": len(used),
-        "renderedTriangleCount": triangles,
+        "renderedTriangleCount": surface_triangles,
         "renderedPrimitiveCount": primitive_count,
         "imageSize": {"width": width, "height": height},
         "meshes": used,
@@ -1075,15 +2163,17 @@ def render_level(
             "axisConversion": "worldX = translationX - objX; worldY = objY; worldZ = translationZ + objZ",
             "boundary": (
                 "Optional diagnostic OBJ inspection only. HLOD files carry mesh geometry but no authored "
-                "GameObject/Transform or mesh-to-material binding; missing or failed files must leave the "
+                "GameObject/Transform; generated material ownership is accepted only through the exact "
+                "level/LOD/signed-suffix naming contract. Missing or failed files must leave the "
                 "PNG/marker map visible rather than inventing scene placement."
             ),
         },
         "boundary": (
-            "Diagnostic orthographic black point-density preview only. The HLOD bundles publish no GameObject or Transform "
+            "Diagnostic orthographic HLOD preview. The HLOD bundles publish no GameObject or Transform "
             "record, so cluster placement is inferred from the grid index in each cluster's name and an "
-            "origin fitted to this level's exact marker transforms. No mesh-to-material binding survives "
-            "the export, so the surface is shaded, never textured."
+            "origin fitted to this level's exact marker transforms. Material color is sampled only when the "
+            "cluster and generated material share one exact level/LOD/signed suffix and that material owns "
+            "one exact base-color PathID; every missing or ambiguous link retains the elevation palette."
         ),
     }
 
@@ -1092,10 +2182,34 @@ def level_points(path: Path) -> list[tuple[float, float]]:
     return [(x, z) for x, _y, z in level_positions(path)]
 
 
+def minimap_world_bounds(payload: dict) -> dict[str, float] | None:
+    """Return the authoritative screen rectangle when in-game art exists."""
+    bounds = (payload.get("minimap") or {}).get("worldBounds") or {}
+    keys = ("minX", "maxX", "minZ", "maxZ")
+    if not all(isinstance(bounds.get(key), (int, float)) for key in keys):
+        return None
+    normalized = {key: float(bounds[key]) for key in keys}
+    if normalized["maxX"] <= normalized["minX"] or normalized["maxZ"] <= normalized["minZ"]:
+        return None
+    return normalized
+
+
+def union_bounds(rows: list[dict[str, float]]) -> dict[str, float] | None:
+    if not rows:
+        return None
+    return {
+        "minX": min(row["minX"] for row in rows),
+        "maxX": max(row["maxX"] for row in rows),
+        "minZ": min(row["minZ"] for row in rows),
+        "maxZ": max(row["maxZ"] for row in rows),
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--asset-map", type=Path, default=DEFAULT_ASSET_MAP)
     parser.add_argument("--mesh-root", type=Path, default=MESH_ROOT)
+    parser.add_argument("--texture-root", type=Path, default=TEXTURE_ROOT)
     parser.add_argument("--maps-root", type=Path, default=MAPS_ROOT)
     parser.add_argument("--output-root", type=Path, default=OUTPUT_ROOT)
     parser.add_argument("--hlod-index", type=Path, default=HLOD_INDEX)
@@ -1114,6 +2228,7 @@ def main() -> int:
     if not args.asset_map.is_file():
         print(f"map previews: HLOD skipped - AssetMap not found: {args.asset_map}")
     mesh_files = mesh_file_index(args.mesh_root) if index["levels"] else {}
+    texture_files = texture_file_index(args.texture_root) if index.get("waterSectors") else {}
     only = set(args.level)
 
     published, skipped = [], []
@@ -1126,8 +2241,6 @@ def main() -> int:
             skipped.append((level_id, "no published map"))
             continue
         payload = json.loads(map_path.read_text(encoding="utf-8"))
-        if (payload.get("minimap") or {}).get("src"):
-            continue
         points = level_points(map_path)
         fit = fit_origin(lods, points)
         if fit is None:
@@ -1139,13 +2252,19 @@ def main() -> int:
 
         preferred_lod = args.lod if args.lod is not None else LEVEL_PREFERRED_LODS.get(level_id, 1)
         lod = preferred_lod if str(preferred_lod) in lods else min(int(key) for key in lods)
+        render_bounds = minimap_world_bounds(payload) or plot_bounds(points)
         manifest = render_level(
-            level_id, lods[str(lod)], lod, fit, plot_bounds(points), mesh_files, args.output_root,
+            level_id, lods[str(lod)], lod, fit, render_bounds, mesh_files, args.output_root,
             None if args.scan_mode == "auto" else args.scan_mode,
+            bindings=hlod_texture_bindings(level_id, lod, lods[str(lod)]),
         )
         if manifest is None:
             skipped.append((level_id, "no exported cluster mesh landed in bounds"))
             continue
+        manifest["waterOverlay"] = render_water_overlay(
+            level_id, water_scene_id(level_id), manifest["worldBounds"],
+            index.get("waterSectors") or {}, texture_files, args.output_root,
+        )
         manifest["assetMapSha256"] = index["assetMapSha256"]
         (args.output_root / f"{level_id}_hlod_grid_inferred.json").write_text(
             json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
@@ -1159,21 +2278,179 @@ def main() -> int:
             f"origin ({fit['originX']:g},{fit['originZ']:g}), "
             f"fit {fit['coverage']:.0%} of {fit['samplePoints']} markers"
         )
-    # Every remaining published map without in-game art receives an exact
-    # transform cloud. HLOD success stays preferred; maps with no model export
-    # still gain a useful, explicitly non-geometric spatial backdrop.
-    point_clouds = []
-    for map_path in sorted(args.maps_root.glob("*.json")):
+    map_paths = [
+        path for path in sorted(args.maps_root.glob("*.json"))
+        if not only or path.stem in only
+    ]
+    # Non-seamless dungeon maps can reuse one large-world art level but are not
+    # members of that level's WebUI region. Reuse the source level's recovered
+    # HLOD grid transform, crop it around the danger map's own exact markers,
+    # and publish an independent layered diagnostic surface.
+    source_fits: dict[str, dict | None] = {}
+    for map_path in map_paths:
         level_id = map_path.stem
-        if only and level_id not in only:
+        if level_id in published_ids:
             continue
         payload = json.loads(map_path.read_text(encoding="utf-8"))
-        if (payload.get("minimap") or {}).get("src") or level_id in published_ids:
+        art_source = isolated_art_source(level_id)
+        if not art_source:
             continue
-        manifest = render_point_cloud(level_id, level_positions(map_path), args.output_root, payload)
+        source_level = str(art_source["levelId"])
+        lods = index["levels"].get(source_level)
+        source_map_path = args.maps_root / f"{source_level}.json"
+        if not lods or not source_map_path.is_file():
+            skipped.append((level_id, f"source art level {source_level} has no recoverable HLOD/map payload"))
+            continue
+        if source_level not in source_fits:
+            source_fits[source_level] = fit_origin(lods, level_points(source_map_path))
+        fit = source_fits[source_level]
+        if not fit or fit["coverage"] < MIN_COVERAGE:
+            skipped.append((level_id, f"source art level {source_level} has no validated HLOD grid fit"))
+            continue
+        points = level_points(map_path)
+        if not points:
+            skipped.append((level_id, "no exact marker bounds for source-art HLOD crop"))
+            continue
+        lod = 0 if "0" in lods else min(int(key) for key in lods)
+        manifest = render_level(
+            level_id, lods[str(lod)], lod, fit, plot_bounds(points, min_pad=64.0),
+            mesh_files, args.output_root, "depth_points",
+            bindings=hlod_texture_bindings(source_level, lod, lods[str(lod)]),
+        )
+        if manifest is None:
+            skipped.append((level_id, f"source art HLOD {source_level} has no geometry in danger-map crop"))
+            continue
+        manifest["waterOverlay"] = render_water_overlay(
+            level_id, water_scene_id(level_id, water_scene_id(source_level)), manifest["worldBounds"],
+            index.get("waterSectors") or {}, texture_files, args.output_root,
+        )
+        manifest["assetMapSha256"] = index["assetMapSha256"]
+        manifest["projectionSource"] = {
+            "sourceArtLevelId": source_level,
+            "mappingMethod": art_source["method"],
+            "mapConfigSource": art_source["source"],
+            "cropMethod": "independent_dungeon_exact_marker_bounds_with_64m_pad",
+            "boundary": "Source-art reuse only; this non-seamless gameplay map remains an independent WebUI region.",
+        }
+        (args.output_root / f"{level_id}_hlod_grid_inferred.json").write_text(
+            json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+        )
+        published.append((level_id, manifest))
+        published_ids.add(level_id)
+        print(f"{level_id}: independent dungeon crop from {source_level} HLOD{lod}")
+    # Every remaining published map without in-game art first resolves its
+    # authored streaming scene. Several gameplay map ids can point at one
+    # shared art scene (the blackbox tutorials are the main example), so render
+    # that exact scene once and publish level-specific manifests that reuse it.
+    # Only maps without such evidence fall back to registry transform points.
+    point_clouds = []
+    shared_streaming_payloads: dict[str, tuple[list[tuple[float, float, float]], dict]] = {}
+    shared_streaming_renders: dict[str, dict] = {}
+    scene_level_positions: dict[str, list[tuple[float, float, float]]] = {}
+    scene_minimap_bounds: dict[str, list[dict[str, float]]] = {}
+    for map_path in map_paths:
+        projection = projection_streaming_scene(map_path.stem)
+        if projection:
+            scene_id = str(projection["sceneId"])
+            scene_level_positions.setdefault(scene_id, []).extend(level_positions(map_path))
+            payload = json.loads(map_path.read_text(encoding="utf-8"))
+            exact_bounds = minimap_world_bounds(payload)
+            if exact_bounds:
+                scene_minimap_bounds.setdefault(scene_id, []).append(exact_bounds)
+
+    for map_path in map_paths:
+        level_id = map_path.stem
+        payload = json.loads(map_path.read_text(encoding="utf-8"))
+        if level_id in published_ids:
+            continue
+        projection = projection_streaming_scene(level_id)
+        manifest = None
+        if projection:
+            scene_id = str(projection["sceneId"])
+            if scene_id not in shared_streaming_payloads:
+                shared_streaming_payloads[scene_id] = streaming_projection_payload(Path(projection["instanceSource"]))
+            scene_positions, scene_payload = shared_streaming_payloads[scene_id]
+            group_positions = scene_level_positions.get(scene_id) or scene_positions
+            exact_minimap_bounds = union_bounds(scene_minimap_bounds.get(scene_id, []))
+            # Small interior scenes can have only one or two registry markers,
+            # whose generous view padding used to reduce the recovered props
+            # to a few pixels (the simulation training room exposed this).
+            # Their own InitChunkData translations are the tighter exact
+            # placement envelope. Large shared scenes retain the member-union
+            # crop so unrelated streaming cells do not enlarge the view.
+            if exact_minimap_bounds:
+                group_bounds = exact_minimap_bounds
+            elif scene_positions and len(scene_positions) <= 200:
+                group_bounds = plot_bounds([(x, z) for x, _y, z in scene_positions], min_pad=32.0)
+            else:
+                group_bounds = plot_bounds([(x, z) for x, _y, z in group_positions], min_pad=128.0)
+            # Instance translations just outside the member-union crop can own
+            # geometry that crosses its edge. Retain a conservative 128 m
+            # collar while the published image stays on the stitched rectangle.
+            collar = 128.0
+            selected_markers = []
+            for row in scene_payload.get("markers") or []:
+                instance = row.get("streamingInstance") or {}
+                matrix = instance.get("matrixColumnMajor")
+                if not isinstance(matrix, list) or len(matrix) != 16:
+                    continue
+                if (group_bounds["minX"] - collar <= float(matrix[12]) <= group_bounds["maxX"] + collar
+                        and group_bounds["minZ"] - collar <= float(matrix[14]) <= group_bounds["maxZ"] + collar):
+                    selected_markers.append(row)
+            base_manifest = shared_streaming_renders.get(scene_id)
+            if base_manifest is None:
+                selected_positions = [
+                    (float(row["streamingInstance"]["matrixColumnMajor"][12]),
+                     float(row["streamingInstance"]["matrixColumnMajor"][13]),
+                     float(row["streamingInstance"]["matrixColumnMajor"][14]))
+                    for row in selected_markers
+                ]
+                base_manifest = render_point_cloud(
+                    scene_id,
+                    selected_positions or group_positions,
+                    args.output_root,
+                    {"markers": selected_markers},
+                    bounds_override=group_bounds,
+                )
+                if base_manifest:
+                    shared_streaming_renders[scene_id] = base_manifest
+            if base_manifest:
+                manifest = {**base_manifest,
+                    "levelId": level_id,
+                    "projectionSource": {
+                        "sceneId": scene_id,
+                        "mappingMethod": projection["method"],
+                        "mapConfigSource": projection["source"],
+                        "instanceSource": str(Path(projection["instanceSource"]).relative_to(ROOT)).replace("\\", "/"),
+                        "cropMethod": (
+                            "authoritative_member_minimap_world_bounds_with_128m_instance_collar"
+                            if exact_minimap_bounds else
+                            "exact_sparse_scene_instance_bounds_with_32m_view_pad_and_instance_collar"
+                            if scene_positions and len(scene_positions) <= 200 else
+                            "shared_scene_member_transform_union_with_128m_view_pad_and_instance_collar"
+                        ),
+                    },
+                }
+                manifest["waterOverlay"] = render_water_overlay(
+                    level_id, water_scene_id(level_id, scene_id), manifest["worldBounds"],
+                    index.get("waterSectors") or {}, texture_files, args.output_root,
+                )
+                if scene_id != level_id:
+                    manifest["boundary"] = (
+                        f"This gameplay map declares the shared art scene {scene_id}; the orthographic image is that "
+                        "scene's exact static projection. Level-specific registry and mission markers remain separate. "
+                        + str(base_manifest.get("boundary") or "")
+                    )
+        if manifest is None:
+            manifest = render_point_cloud(level_id, level_positions(map_path), args.output_root, payload)
         if manifest is None:
             skipped.append((level_id, "no exact X/Y/Z positions for point-cloud fallback"))
             continue
+        if "waterOverlay" not in manifest:
+            manifest["waterOverlay"] = render_water_overlay(
+                level_id, water_scene_id(level_id), manifest["worldBounds"],
+                index.get("waterSectors") or {}, texture_files, args.output_root,
+            )
         (args.output_root / f"{level_id}_hlod_grid_inferred.json").write_text(
             json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
         )

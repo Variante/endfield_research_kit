@@ -8,7 +8,10 @@
   const PAD = 64;
   const MIN_SCALE = 0.3; // a whole region can span several zone maps of canvas
   const MAX_SCALE = 48;
-  const MAP_ASSET_VERSION = "20260820-map45";
+  const ENTITY_SCALE_MIN = 0.5;
+  const ENTITY_SCALE_MAX = 3;
+  const ENTITY_SCALE_STEP = 1.25;
+  const MAP_ASSET_VERSION = "20260822-map69";
   const PAN_OVERHANG = 96; // px of surface a pan may run past the content edge
   const LABEL_ZOOM = 1.7; // minor entity labels stay hidden below this zoom
   const GEO_LABEL_ZOOM = 0.3; // keep one primary name per sibling at region view
@@ -28,7 +31,9 @@
     scenery: "#7a6a52",
     trigger: "#7759a8",
     enemy: "#b0342c",
-    npc: "#2f7d4f",
+    // npc used to share the quest green, which made the two layers
+    // indistinguishable on the map. It now owns the yellow-green slot.
+    npc: "#4d8a1f",
     spawn: "#367f84",
     narrative: "#a03c86",
     collectible: "#8a7b1f",
@@ -47,11 +52,14 @@
     kinds: new Set(),
     subKinds: new Set(),
     mapLayers: new Set(), // raw UILevelMapLoadConfig tier ids in the loaded region
+    modelLayers: new Set(["elevation", "surface", "water", "points"]),
+    showMinimap: true,
     showQuests: false,
     storyOnly: false,
     mission: "", // "" means every mission this level hosts
     bound: false,
     transform: { x: 0, y: 0, scale: 1 },
+    entityScale: 1,
     nodes: [],
     locationLabels: [],
     selectedId: "",
@@ -74,11 +82,15 @@
     fileFlight: new Map(),
     payloads: new Map(), // levelId -> payload; siblings of a region share the cache
     backgrounds: [], // every region zone's map screen, in stable draw order
+    modelBackgrounds: [], // recovered geometry, retained even when a minimap is authoritative
     layerBackgrounds: [], // transparent tier overlays, kept separate from base screens
+    floorHitAreas: [], // tier rectangles, including overlays not currently selected
     pointCloudOpacity: 0.82, // only affects scan PNGs that expose an elevation underlay
+    pointHeightRange: null, // exact world-Y bounds and the active two-thumb interval
     contentBox: null, // plotted content extent in viewBox units, for the pan clamp
     selectedMapBox: null, // selected level's fitted background rectangle
     lastNodeScale: null, // skip per-node writes while a pan keeps the same scale
+    lastLocationScale: null,
     loadRequest: 0,
     loadController: null,
   };
@@ -86,16 +98,33 @@
   // The page re-renders its whole DOM on every filter change, so floating panel
   // positions and collapsed states live outside the element tree.
   const panelUi = new Map();
+  const pointPixelCache = new Map();
+  const pointSampleCache = new Map();
+  let pointFilterTimer = 0;
+  let pointFilterToken = 0;
 
   const root = () => document.querySelector("#map-recovery-app");
   const mapEl = () => root()?.querySelector(".mr-map");
   const svgEl = () => root()?.querySelector(".mr-canvas");
   const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]);
   const clamp = (value, low, high) => Math.min(high, Math.max(low, value));
+  const pointHeightMasks = () => state.modelBackgrounds
+    .map((row) => row.pointCloudOverlay?.sampleSet || row.pointCloudOverlay?.heightMask)
+    .filter((row) => row?.src && Number.isFinite(Number(row.elevationRange?.min)) && Number.isFinite(Number(row.elevationRange?.max)));
+  const resetPointHeightRange = () => {
+    const masks = pointHeightMasks();
+    if (!masks.length) {
+      state.pointHeightRange = null;
+      return;
+    }
+    const min = Math.min(...masks.map((row) => Number(row.elevationRange.min)));
+    const max = Math.max(...masks.map((row) => Number(row.elevationRange.max)));
+    state.pointHeightRange = { min, max, low: min, high: max };
+  };
+  const formatHeight = (value) => `${Math.round(Number(value) * 10) / 10}m`;
   // Mission text carries inline rich-text tags such as <@qu.key>; strip them
   // the same way the mission-pipeline view does instead of rendering markup.
   const plainText = (value) => String(value ?? "").replace(/<@[^>]*>/g, "").replace(/<\/[^>]+>/g, "").replace(/<[^>]+>/g, "").replaceAll("\\n", " ").trim();
-  const uniq = (values) => [...new Set(values.map((value) => String(value || "").trim()).filter(Boolean))];
   // The builder marks registry-placed nodes with `registryBacked` instead of
   // repeating one identical 7 MB registry path on thousands of markers. The pin
   // is rebuilt here from the node's own level entry, so the inspector shows the
@@ -114,6 +143,11 @@
   };
   const fileName = (path) => String(path || "").replace(/\\/g, "/").split("/").filter(Boolean).pop() || String(path || "");
   const kindColor = (node) => (node?.type === "quest" ? QUEST_COLOR : KIND_COLORS[node?.kind] || "#8b9298");
+  const KIND_LABELS = {
+    en: { story: "Story", travel: "Travel", device: "Device", scenery: "Scenery", trigger: "Trigger zone", enemy: "Enemy", npc: "NPC", spawn: "Spawn", narrative: "Narrative", collectible: "Collectible", waypoint: "Waypoint", quest: "Quest" },
+    zh: { story: "剧情", travel: "移动设施", device: "交互装置", scenery: "场景物件", trigger: "触发区域", enemy: "敌人", npc: "NPC", spawn: "出生点", narrative: "叙事锚点", collectible: "收集物", waypoint: "任务坐标", quest: "任务点" },
+  };
+  const kindLabel = (kind) => (isZh() ? KIND_LABELS.zh : KIND_LABELS.en)[kind] || kind;
   // Re-plotting a full map is a few hundred milliseconds of SVG layout, and the
   // two-level layer tree invites several clicks in a row, so filter changes
   // coalesce into a single render. This deliberately uses a timer rather than
@@ -151,50 +185,31 @@
     return `Y ${Number(range.minY).toFixed(1)} - ${Number(range.maxY).toFixed(1)}`;
   };
 
-  // A stitched region owns the floor selector as a whole. Keep sibling maps
-  // grouped so every authored tier remains reachable without pretending that
-  // unrelated local overlays are consecutive floors of one building.
-  const mapLayerTreeHtml = (data) => {
-    const renderedIds = new Set(state.layerBackgrounds.map((row) => String(row.id)));
-    const layers = (data.mapLayers || []).filter((row) => renderedIds.has(String(row.id)));
-    if (!layers.length) return "";
-    const selected = [...state.mapLayers][0] || "";
-    const groups = new Map();
-    for (const layer of layers) {
-      if (!groups.has(layer.levelId)) groups.set(layer.levelId, []);
-      groups.get(layer.levelId).push(layer);
-    }
-    const sliderRows = [...groups.entries()].flatMap(([levelId, rows]) => {
-      const levelName = rows[0]?.levelName || levelId;
-      return [...rows].sort((a, b) => {
-        const floorA = Number(mapFloorNumber(a));
-        const floorB = Number(mapFloorNumber(b));
-        if (floorA && floorB) return floorA - floorB;
-        if (floorA) return -1;
-        if (floorB) return 1;
-        return Number(a.tierId) - Number(b.tierId) || String(a.id).localeCompare(String(b.id));
-      }).map((layer) => ({
-        id: String(layer.id),
-        label: `${levelName === levelId ? "" : `${levelName} · `}${mapLayerLabel(layer)}${mapLayerRange(layer) ? ` · ${mapLayerRange(layer)}` : ""}`,
-      }));
-    });
-    const sliderValues = [{ id: "", label: t("mapFloorNone") }, ...sliderRows];
-    const sliderIndex = Math.max(0, sliderValues.findIndex((row) => row.id === selected));
-    return `<label class="mr-floor-picker"><span>${esc(t("mapFloorChoose"))}: <b>${esc(sliderValues[sliderIndex].label)}</b></span>`
-      + `<input type="range" min="0" max="${sliderValues.length - 1}" step="1" value="${sliderIndex}" data-map-floor-slider data-floor-values="${esc(JSON.stringify(sliderValues.map((row) => row.id)))}" aria-label="${esc(t("mapLayers"))}" title="${esc(t("mapFloorNoneHint"))}">`
-      + `<span class="mr-floor-ends"><i>${esc(t("mapFloorNone"))}</i><i>${esc(sliderValues.at(-1).label)}</i></span></label>`;
-  };
+  const orderedMapLayers = (rows) => [...rows].sort((a, b) => {
+    const floorA = Number(mapFloorNumber(a));
+    const floorB = Number(mapFloorNumber(b));
+    if (floorA && floorB) return floorA - floorB;
+    if (floorA) return -1;
+    if (floorB) return 1;
+    return Number(a.tierId) - Number(b.tierId) || String(a.id).localeCompare(String(b.id));
+  });
 
-  // A full region can contain thousands of entity markers. Keep the first
-  // view useful (quest points plus markers that carry dialog) without asking
-  // the browser to lay out every collectible, prop and scenery marker before
-  // the reader has chosen a layer. The layer controls remain the explicit way
-  // to widen or narrow this initial view.
-  const storyKinds = (map) => new Set(
-    Object.entries(map?.facets?.kinds || {})
-      .filter(([, info]) => Number(info?.storyCount || 0) > 0)
-      .map(([kind]) => kind)
-  );
+  const modelLayerControlsHtml = () => {
+    const hasMinimap = state.backgrounds.some((row) => row.sourceKind === "minimap");
+    if (!state.modelBackgrounds.length && !hasMinimap) return "";
+    const rows = [
+      ["elevation", "modelElevation", state.modelBackgrounds.some((row) => row.elevationUnderlay?.src)],
+      ["surface", "modelSurface", state.modelBackgrounds.some((row) => row.status !== "inferred_registry_point_cloud_preview")],
+      ["water", "modelWater", state.modelBackgrounds.some((row) => row.waterOverlay?.src)],
+      ["points", "modelPoints", state.modelBackgrounds.some((row) => row.pointCloudOverlay?.src)],
+    ];
+    const minimap = hasMinimap
+      ? `<label><input type="checkbox" data-map-minimap ${state.showMinimap ? "checked" : ""}>${esc(t("minimapLayer"))}</label>`
+      : "";
+    return `<fieldset class="mr-model-layers"><legend>${esc(t("modelLayers"))}</legend>${minimap}${rows.filter(([, , available]) => available).map(([id, label]) => (
+      `<label><input type="checkbox" data-map-model-layer="${id}" ${state.modelLayers.has(id) ? "checked" : ""}>${esc(t(label))}</label>`
+    )).join("")}</fieldset>`;
+  };
 
   // Every level in LevelBasicInfoTable that owns a plottable node is published,
   // which is far too many for a flat list to be readable. The options are
@@ -205,7 +220,29 @@
   // every level carries the display name the builder recovered from the
   // level's own table rows (LevelDescTable + per-language I18nTextTable),
   // keeping the id as the stable handle next to it.
-  const mapTitle = (row) => (row.name ? `${row.name} (${row.id})` : row.label);
+  const missionTitle = (id, detail = {}) => detail.name ? `${id} · ${detail.name}` : id;
+  const mapTitle = (row) => {
+    if (row.name) return `${row.name} (${row.id})`;
+    const missions = row.missions || [];
+    if (missions.length === 1) {
+      const mission = missions[0];
+      const name = row.missionNames?.[mission] || row.missionDetails?.[mission]?.name || "";
+      return `${missionTitle(mission, { name })} (${row.id})`;
+    }
+    return row.label;
+  };
+
+  const mapTreeHtml = () => {
+    const groups = new Map();
+    for (const row of state.index?.maps || []) {
+      const family = row.family || "Other";
+      if (!groups.has(family)) groups.set(family, []);
+      groups.get(family).push(row);
+    }
+    return [...groups.entries()].map(([family, rows]) => `<section class="mr-map-group"><h3>${esc(family)}</h3>${rows.map((row) => (
+      `<button type="button" class="mr-map-item${row.id === state.selected ? " is-active" : ""}" data-map-id="${esc(row.id)}" title="${esc(mapTitle(row))}"><b>${esc(mapTitle(row))}</b><span>${row.storyKeyCount || 0}${esc(t("countStories"))}</span></button>`
+    )).join("")}</section>`).join("");
+  };
 
   const mapOptions = () => {
     const groups = new Map();
@@ -241,10 +278,13 @@
   const layerTreeHtml = (data) => {
     const kinds = data.facets?.kinds || {};
     return Object.entries(kinds).map(([kind, info]) => {
-      const swatch = `<span class="mr-swatch" style="background:${esc(KIND_COLORS[kind] || "#8b9298")}"></span>`;
-      const head = `<label class="mr-layer" title="${esc(`${info.count}${t("countMarkers")}${info.storyCount ? ` · ${info.storyCount}${t("countStories")}` : ""}`)}">`
+      // The chip carries its layer's own hue when checked (--mr-chip), so a
+      // green swatch never sits on an orange "on" tint.
+      const color = KIND_COLORS[kind] || "#8b9298";
+      const swatch = `<span class="mr-swatch" style="background:${esc(color)}"></span>`;
+      const head = `<label class="mr-layer" style="--mr-chip:${esc(color)}" title="${esc(`${info.count}${t("countMarkers")}${info.storyCount ? ` · ${info.storyCount}${t("countStories")}` : ""}`)}">`
         + `<input type="checkbox" data-map-kind="${esc(kind)}" ${state.kinds.has(kind) ? "checked" : ""}>`
-        + `${swatch}${esc(kind)}<span class="mr-layer-count">${info.count}${info.storyCount ? `<i>+${info.storyCount}</i>` : ""}</span></label>`;
+        + `${swatch}${esc(kindLabel(kind))}<span class="mr-layer-count">${info.count}${info.storyCount ? `<i>+${info.storyCount}</i>` : ""}</span></label>`;
       const subs = Object.entries(info.subKinds || {});
       if (subs.length < 2) return `<div class="mr-layer-group">${head}</div>`;
       const rows = subs
@@ -252,9 +292,9 @@
         .map(([subKind, sub]) => {
           // The recovered labels are Chinese, so an English reader is better
           // served by the subKind slug. Both are always in the tooltip.
-          const shown = isZh() ? (sub.label || subKind) : subKind;
+          const shown = isZh() ? (sub.label || kindLabel(subKind)) : kindLabel(subKind);
           const title = sub.label && sub.label !== subKind ? `${sub.label} / ${subKind}` : subKind;
-          return `<label class="mr-layer mr-sublayer" title="${esc(title)}"><input type="checkbox" data-map-subkind="${esc(subKind)}" ${state.subKinds.has(subKind) ? "checked" : ""}>`
+          return `<label class="mr-layer mr-sublayer" style="--mr-chip:${esc(color)}" title="${esc(title)}"><input type="checkbox" data-map-subkind="${esc(subKind)}" ${state.subKinds.has(subKind) ? "checked" : ""}>`
             + `${esc(shown)}<span class="mr-layer-count">${sub.count}</span></label>`;
         })
         .join("");
@@ -273,9 +313,12 @@
       .map(([id, counts]) => {
         const active = id === state.mission;
         const files = (counts.files || []).map((path) => `<li><a href="/${esc(path)}" target="_blank" rel="noreferrer" title="${esc(path)}">${esc(fileName(path))}</a>${storyLink(path)}</li>`).join("");
+        const linkedMap = id === "e0m0" && data.levelId === "indie_dg002"
+          ? (state.index?.maps || []).find((row) => row.id === "indie_dg004")
+          : null;
         return `<details class="mr-mission-item${active ? " is-active" : ""}" ${active ? "open" : ""}>
-          <summary data-map-mission="${esc(id)}"><b>${esc(id)}</b><span>${counts.markers + counts.questPoints}${esc(t("countMarkers"))}${counts.stories ? ` · ${counts.stories}${esc(t("countStories"))}` : ""}</span></summary>
-          <div class="mr-mission-files"><small>${esc(`${t("missionFiles")} (${counts.files?.length || 0})`)}</small>${files ? `<ul>${files}</ul>` : `<p>${esc(t("noFiles"))}</p>`}</div>
+          <summary data-map-mission="${esc(id)}"><b>${esc(missionTitle(id, counts))}</b><span>${counts.stories || 0}${esc(t("countStories"))}</span></summary>
+          <div class="mr-mission-files">${linkedMap ? `<button type="button" class="mr-map-transition" data-map-id="${esc(linkedMap.id)}"><b>${esc(id)} → dg004</b><span>${esc(t("missionNextMap"))}</span></button>` : ""}<details><summary>${esc(`${t("missionFiles")} (${counts.files?.length || 0})`)}</summary>${files ? `<ul>${files}</ul>` : `<p>${esc(t("noFiles"))}</p>`}</details></div>
         </details>`;
       }).join("");
     return `<div class="mr-mission-list"><button type="button" class="mr-mission-all${state.mission ? "" : " is-active"}" data-map-mission="">${esc(`${t("missionAll")} (${missions.length})`)}</button>${rows}</div>`;
@@ -315,8 +358,9 @@
 
   const TEXT = {
     en: {
-      title: "Map Recovery",
+      title: "Map",
       layers: "Layers",
+      objectFilters: "Object display",
       mapLayers: "Map floors",
       mapLayersNone: "No tier overlays are declared by this level's UILevelMapLoadConfig.",
       mapFloor: "Floor",
@@ -324,22 +368,40 @@
       mapFloorNone: "Base map",
       mapFloorNoneHint: "Show the stitched geographic base without a floor overlay.",
       mapFloorChoose: "Displayed floor",
+      mapFloorHover: "More floors here",
+      mapFloorClickCycle: "Click to cycle",
+      mapFloorCurrent: "Current",
       pointCloudOpacity: "Point cloud opacity",
+      pointCloudHeight: "Point height",
+      pointCloudHeightRange: "Visible point height range",
+      pointCloudHeightMin: "Minimum visible point height",
+      pointCloudHeightMax: "Maximum visible point height",
       evidence: "Evidence",
       controls: "Controls",
       collapse: "Collapse panel",
+      expand: "Expand panel",
       regionSurface: "zone map screens stitched into one seamless surface",
       selectedSurface: "selected zone map screen loaded; choose another zone to load the stitched region",
       loading: "Loading map recovery data...",
       mapSurface: "World map, pan and zoom surface",
       zoomIn: "Zoom in",
       zoomOut: "Zoom out",
+      entitySize: "Entity size",
+      entityZoomIn: "Enlarge entities",
+      entityZoomOut: "Shrink entities",
+      entityReset: "Reset entity size",
+      modelLayers: "Recovered model layers",
+      minimapLayer: "In-game minimap",
+      modelSurface: "Material / surface",
+      modelElevation: "Grayscale elevation",
+      modelWater: "Recovered water",
+      modelPoints: "Colored point cloud",
       fit: "Fit",
       fitLong: "Fit all plotted nodes",
       reset: "Reset",
       resetLong: "Reset to full declared world bounds",
       zoomLevel: "Zoom",
-      help: "Wheel or +/- zooms, drag or arrows pan, Tab walks the nodes, Enter pins one, Esc clears, 0 resets, F fits.",
+      help: "Wheel or +/- zooms, drag or arrows pan, Tab walks the nodes, Enter pins one, Esc clears, 0 resets, F fits. Hover multi-floor areas and click to cycle.",
       questPoint: "Quest point",
       missionStart: "Mission start",
       missionEnd: "Mission end",
@@ -358,6 +420,7 @@
       missionAll: "All missions",
       missionNone: "No mission plots content in this level.",
       missionFiles: "Mission files",
+      missionNextMap: "e0m0 finishes in this linked map",
       layersAll: "All",
       layersNone: "None",
       layersStory: "With dialog",
@@ -374,9 +437,6 @@
       questOrder: "Order",
       objective: "Objective",
       coordinates: "Coordinates",
-      streamingSource: "Streaming source",
-      matchedMesh: "Matched mesh",
-      meshPathId: "Mesh PathID",
       name: "Label",
       kind: "Kind",
       identity: "Identity",
@@ -401,6 +461,7 @@
       mapFiles: "Map-wide files",
       story: "story",
       openInStory: "Open in Story",
+      noStoryAtNode: "No story information is linked to this map item.",
       unplacedStories: "Mission stories not on the map",
       reason_mission_scope_only: "Scoped to the whole mission",
       reason_cross_level_binding: "Driven from another level",
@@ -420,34 +481,53 @@
       scene3dUnavailable: "No safe OBJ model is published for this level; the map stays marker-only.",
     },
     zh: {
+      objectFilters: "\u5bf9\u8c61\u663e\u793a",
       mapFloor: "\u697c\u5c42",
       mapTier: "\u5c42\u7ea7",
       mapFloorNone: "\u4ec5\u663e\u793a\u5e95\u56fe",
       mapFloorNoneHint: "\u663e\u793a\u62fc\u63a5\u540e\u7684\u5730\u7406\u5e95\u56fe\uff0c\u4e0d\u53e0\u52a0\u697c\u5c42\u56fe\u3002",
       mapFloorChoose: "\u5f53\u524d\u663e\u793a\u697c\u5c42",
+      mapFloorHover: "\u6b64\u5904\u8fd8\u6709\u66f4\u591a\u697c\u5c42",
+      mapFloorClickCycle: "\u70b9\u51fb\u5faa\u73af\u5207\u6362",
+      mapFloorCurrent: "\u5f53\u524d",
       pointCloudOpacity: "\u70b9\u4e91\u900f\u660e\u5ea6",
+      pointCloudHeight: "\u70b9\u4e91\u9ad8\u5ea6",
+      pointCloudHeightRange: "\u53ef\u89c1\u70b9\u4e91\u9ad8\u5ea6\u533a\u95f4",
+      pointCloudHeightMin: "\u6700\u4f4e\u53ef\u89c1\u70b9\u4e91\u9ad8\u5ea6",
+      pointCloudHeightMax: "\u6700\u9ad8\u53ef\u89c1\u70b9\u4e91\u9ad8\u5ea6",
       mapLayers: "地图楼层",
       mapLayersNone: "该关卡的 UILevelMapLoadConfig 未声明楼层叠图。",
       layerSelectionHint: "\u9ed8\u8ba4\u4ee5\u5e72\u51c0\u7684\u5730\u7406\u5730\u56fe\u663e\u793a\u3002\u9700\u8981\u65f6\u518d\u5f00\u542f\u4efb\u52a1\u3001\u5267\u60c5\u6216\u5176\u5b83\u6807\u8bb0\u3002",
       loadError: "\u65e0\u6cd5\u52a0\u8f7d\u5730\u56fe\u6062\u590d\u6570\u636e",
       retry: "\u91cd\u8bd5",
-      title: "地图恢复",
+      title: "地图",
       layers: "图层",
       evidence: "证据",
       controls: "控制面板",
       collapse: "收起面板",
+      expand: "展开面板",
       regionSurface: "张区域地图屏按世界坐标拼成无缝整面",
       selectedSurface: "\u5df2\u52a0\u8f7d\u5f53\u524d\u533a\u57df\u5730\u56fe\u5c4f\uff1b\u9009\u62e9\u5176\u4ed6\u533a\u57df\u540e\u52a0\u8f7d\u62fc\u63a5\u5730\u56fe",
-      loading: "正在加载地图恢复数据...",
+      loading: "正在加载地图数据...",
       mapSurface: "世界地图，可平移缩放",
       zoomIn: "放大",
       zoomOut: "缩小",
+      entitySize: "实体大小",
+      entityZoomIn: "放大实体",
+      entityZoomOut: "缩小实体",
+      entityReset: "重置实体大小",
+      modelLayers: "重建模型图层",
+      minimapLayer: "游戏小地图",
+      modelSurface: "材质 / 表面",
+      modelElevation: "灰度高程",
+      modelWater: "恢复水体",
+      modelPoints: "彩色点云",
       fit: "适配",
       fitLong: "适配全部节点",
       reset: "复位",
       resetLong: "复位到完整声明世界边界",
       zoomLevel: "缩放",
-      help: "滚轮或 +/- 缩放，拖拽或方向键平移，Tab 遍历节点，Enter 固定，Esc 取消，0 复位，F 适配。",
+      help: "滚轮或 +/- 缩放，拖拽或方向键平移，Tab 遍历节点，Enter 固定，Esc 取消，0 复位，F 适配。悬浮多层区域可查看提示，点击循环切换楼层。",
       questPoint: "任务点",
       missionStart: "任务开始",
       missionEnd: "任务结束",
@@ -466,6 +546,7 @@
       missionAll: "全部任务",
       missionNone: "本关卡没有任务内容。",
       missionFiles: "任务文件",
+      missionNextMap: "e0m0 在此关联地图结束",
       layersAll: "全选",
       layersNone: "全不选",
       layersStory: "含剧情",
@@ -479,9 +560,6 @@
       questOrder: "顺序",
       objective: "目标",
       coordinates: "坐标",
-      streamingSource: "流式场景来源",
-      matchedMesh: "匹配网格",
-      meshPathId: "网格 PathID",
       name: "名称",
       kind: "类型",
       identity: "标识",
@@ -506,6 +584,7 @@
       mapFiles: "地图级文件",
       story: "剧情",
       openInStory: "在剧情页打开",
+      noStoryAtNode: "此地图项目没有关联的剧情信息。",
       unplacedStories: "未出现在地图上的任务剧情",
       reason_mission_scope_only: "仅限定到整个任务范围",
       reason_cross_level_binding: "由其他关卡驱动",
@@ -569,11 +648,6 @@
         [t("coordinates"), coords],
       ];
     rows.push([t("scenes"), (node.sceneKeys || []).join(", ")]);
-    if (node.streamingInstance) {
-      rows.push([t("streamingSource"), node.streamingInstance.sourceFile]);
-      rows.push([t("matchedMesh"), node.streamingInstance.mesh?.name]);
-      rows.push([t("meshPathId"), node.streamingInstance.mesh?.pathId]);
-    }
     return rows.filter(([, value]) => value !== null && value !== undefined && String(value) !== "");
   }
 
@@ -807,9 +881,12 @@
     // at any zoom or container width. Panning keeps the scale, so the per-node
     // attribute only changes on zoom or resize - a region holds up to 11k nodes
     // and panning must not rewrite all of them on every pointer move.
-    const nodeScale = clamp(1 / (m.k * scale), 0.05, 8);
+    const nodeScale = clamp(state.entityScale / (m.k * scale), 0.025, 24);
+    const locationScale = clamp(1 / (m.k * scale), 0.05, 8);
     const nodeScaleChanged = nodeScale !== state.lastNodeScale;
+    const locationScaleChanged = locationScale !== state.lastLocationScale;
     if (nodeScaleChanged) state.lastNodeScale = nodeScale;
+    if (locationScaleChanged) state.lastLocationScale = locationScale;
     state.nodes.forEach((node) => {
       node.px = toPixel(m, node.plot);
       if (nodeScaleChanged && node.el) {
@@ -818,16 +895,18 @@
     });
     state.locationLabels.forEach((label) => {
       label.px = toPixel(m, label.plot);
-      if (nodeScaleChanged && label.el) {
+      if (locationScaleChanged && label.el) {
         // Geographic labels use the same counter-scale as pins. They remain
         // readable while zooming, and their collision boxes stay in screen px.
-        label.el.setAttribute("transform", `translate(${label.plot.x.toFixed(3)} ${label.plot.y.toFixed(3)}) scale(${nodeScale.toFixed(5)})`);
+        label.el.setAttribute("transform", `translate(${label.plot.x.toFixed(3)} ${label.plot.y.toFixed(3)}) scale(${locationScale.toFixed(5)})`);
       }
     });
     const labelBoxes = layoutLocationLabels(m);
     layoutLabels(m, labelBoxes);
     const readout = host.querySelector(".mr-zoom-readout");
     if (readout) readout.textContent = `${t("zoomLevel")} ${Math.round(scale * 100)}%`;
+    const entityReadout = host.querySelector(".mr-entity-readout");
+    if (entityReadout) entityReadout.textContent = `${Math.round(state.entityScale * 100)}%`;
     syncTip(m);
   }
 
@@ -949,6 +1028,75 @@
     tip.style.top = `${clamp(node.px.y - height - 12, 6, Math.max(6, m.height - height - 6))}px`;
   }
 
+  function mapFloorChoice(event) {
+    const m = metrics();
+    if (!m || !state.floorHitAreas.length) return null;
+    const canvas = {
+      x: (((event.clientX - m.originX) - m.ox) / m.k - state.transform.x) / state.transform.scale,
+      y: (((event.clientY - m.originY) - m.oy) / m.k - state.transform.y) / state.transform.scale,
+    };
+    const hits = state.floorHitAreas.filter((row) => (
+      canvas.x >= row.x && canvas.x <= row.x + row.w
+      && canvas.y >= row.y && canvas.y <= row.y + row.h
+    ));
+    if (!hits.length) return null;
+    const levelId = hits.some((row) => row.levelId === state.selected)
+      ? state.selected
+      : [...new Set(hits.map((row) => row.levelId))].sort()[0];
+    const hitIds = new Set(hits.filter((row) => row.levelId === levelId).map((row) => row.id));
+    const layers = orderedMapLayers((state.map?.mapLayers || []).filter((row) => hitIds.has(String(row.id))));
+    if (!layers.length) return null;
+    const choices = [{ id: "", label: t("mapFloorNone") }, ...layers.map((layer) => ({
+      id: String(layer.id),
+      label: `${mapLayerLabel(layer)}${mapLayerRange(layer) ? ` · ${mapLayerRange(layer)}` : ""}`,
+    }))];
+    const selectedId = [...state.mapLayers].find((id) => hitIds.has(String(id))) || "";
+    const index = Math.max(0, choices.findIndex((row) => row.id === selectedId));
+    return { choices, index, m };
+  }
+
+  function hideMapFloorTip() {
+    const tip = root()?.querySelector(".mr-floor-tip");
+    if (tip) tip.hidden = true;
+    mapEl()?.classList.remove("has-floor-choice");
+  }
+
+  function previewMapFloors(event) {
+    if (state.dragging?.moved || event.target.closest(".mr-node, .mr-float, .mr-tools, .mr-entity-tools")) {
+      hideMapFloorTip();
+      return;
+    }
+    const choice = mapFloorChoice(event);
+    const tip = root()?.querySelector(".mr-floor-tip");
+    if (!choice || !tip) {
+      hideMapFloorTip();
+      return;
+    }
+    const current = choice.choices[choice.index];
+    tip.innerHTML = `<strong>${esc(`${t("mapFloorHover")} · ${choice.choices.length}`)}</strong>`
+      + `<span>${esc(`${t("mapFloorCurrent")}: ${current.label}`)}</span>`
+      + `<span>${esc(t("mapFloorClickCycle"))}</span>`;
+    tip.hidden = false;
+    mapEl()?.classList.add("has-floor-choice");
+    const width = tip.offsetWidth || 210;
+    const height = tip.offsetHeight || 62;
+    const x = event.clientX - choice.m.originX;
+    const y = event.clientY - choice.m.originY;
+    tip.style.left = `${clamp(x + 14, 6, Math.max(6, choice.m.width - width - 6))}px`;
+    tip.style.top = `${clamp(y - height - 12, 6, Math.max(6, choice.m.height - height - 6))}px`;
+  }
+
+  function cycleMapFloor(event) {
+    if (performance.now() < state.suppressClickUntil) return;
+    if (event.target.closest(".mr-node, .mr-float, .mr-tools, button, input, select, a")) return;
+    const choice = mapFloorChoice(event);
+    if (!choice) return;
+    const next = choice.choices[(choice.index + 1) % choice.choices.length];
+    state.mapLayers = next.id ? new Set([next.id]) : new Set();
+    event.preventDefault();
+    render();
+  }
+
   // ---------------------------------------------------------------- inspector
 
   function fileRow(pin, active) {
@@ -986,14 +1134,14 @@
     state.inspectorKey = key;
 
     if (!node) {
-      head.innerHTML = `<p class="mr-role">${esc(t("inspector"))}</p><h2>${esc(t("title"))}</h2>`;
+      head.innerHTML = `<p class="mr-role">${esc(t("inspector"))}</p><h2>${esc(mapTitle(state.map || {}))}</h2>`;
       body.innerHTML = `<p class="mr-placeholder">${esc(t("inspectorHint"))}</p>${mapFilesHtml()}<div class="mr-viewer-slot"></div>`;
       bindFilePicks(body);
       renderViewer();
       return;
     }
 
-    head.innerHTML = `<p class="mr-role" style="color:${esc(kindColor(node))}">${esc(nodeRole(node))}${node.kind ? ` / ${esc(node.kind)}` : ""}</p>
+    head.innerHTML = `<p class="mr-role" style="color:${esc(kindColor(node))}">${esc(nodeRole(node))}${node.kind ? ` / ${esc(kindLabel(node.kind))}` : ""}</p>
       <h2>${esc(nodeTitle(node))}</h2>`;
     body.innerHTML = `<dl class="mr-fields">${fields(node).map(([label, value]) => `<dt>${esc(label)}</dt><dd>${esc(value)}</dd>`).join("")}</dl>
       <h3 class="mr-section-title">${esc(`${t("relatedFiles")} (${relatedFiles(node).length})`)}</h3>
@@ -1158,12 +1306,142 @@
     if (m) layoutLabels(m, layoutLocationLabels(m));
   }
 
+  async function pointPixels(src) {
+    if (!pointPixelCache.has(src)) pointPixelCache.set(src, (async () => {
+      const response = await fetch(src);
+      if (!response.ok) throw new Error(`point filter asset ${response.status}: ${src}`);
+      const bitmap = await createImageBitmap(await response.blob());
+      const canvas = document.createElement("canvas");
+      canvas.width = bitmap.width;
+      canvas.height = bitmap.height;
+      const context = canvas.getContext("2d", { willReadFrequently: true });
+      context.drawImage(bitmap, 0, 0);
+      bitmap.close?.();
+      return context.getImageData(0, 0, canvas.width, canvas.height);
+    })());
+    return pointPixelCache.get(src);
+  }
+
+  async function pointSamples(src) {
+    if (!pointSampleCache.has(src)) pointSampleCache.set(src, (async () => {
+      const response = await fetch(src);
+      if (!response.ok) throw new Error(`point sample asset ${response.status}: ${src}`);
+      const buffer = await response.arrayBuffer();
+      const view = new DataView(buffer);
+      if (buffer.byteLength < 16
+          || view.getUint8(0) !== 77 || view.getUint8(1) !== 82
+          || view.getUint8(2) !== 80 || view.getUint8(3) !== 83
+          || view.getUint16(4, true) !== 1 || view.getUint16(6, true) !== 12
+          || (buffer.byteLength - 16) % 12 !== 0) {
+        throw new Error(`invalid point sample asset: ${src}`);
+      }
+      return {
+        view,
+        width: view.getUint32(8, true),
+        height: view.getUint32(12, true),
+        recordCount: (buffer.byteLength - 16) / 12,
+      };
+    })());
+    return pointSampleCache.get(src);
+  }
+
+  function revokePointFilter(image) {
+    const url = image?.dataset?.pointFilterUrl;
+    if (url) URL.revokeObjectURL(url);
+    if (image?.dataset) delete image.dataset.pointFilterUrl;
+  }
+
+  async function filterPointImage(image, token) {
+    const sourceUrl = image.dataset.pointSrc;
+    const maskUrl = image.dataset.pointHeightMask;
+    const sampleUrl = image.dataset.pointSamples;
+    const range = state.pointHeightRange;
+    if (!sourceUrl || (!maskUrl && !sampleUrl) || !range) return;
+    const fullRange = range.low <= range.min && range.high >= range.max;
+    if (fullRange) {
+      revokePointFilter(image);
+      image.setAttribute("href", sourceUrl);
+      return;
+    }
+    try {
+      if (sampleUrl) {
+        const samples = await pointSamples(sampleUrl);
+        if (token !== pointFilterToken || !image.isConnected) return;
+        const pixels = new Uint8ClampedArray(samples.width * samples.height * 4);
+        for (let cursor = 16; cursor < samples.view.byteLength; cursor += 12) {
+          const height = samples.view.getFloat32(cursor + 4, true);
+          if (height < range.low || height > range.high) continue;
+          const offset = samples.view.getUint32(cursor, true) * 4;
+          if (offset + 3 >= pixels.length) continue;
+          pixels[offset] = samples.view.getUint8(cursor + 8);
+          pixels[offset + 1] = samples.view.getUint8(cursor + 9);
+          pixels[offset + 2] = samples.view.getUint8(cursor + 10);
+          pixels[offset + 3] = samples.view.getUint8(cursor + 11);
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = samples.width;
+        canvas.height = samples.height;
+        canvas.getContext("2d").putImageData(new ImageData(pixels, samples.width, samples.height), 0, 0);
+        const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+        if (!blob || token !== pointFilterToken || !image.isConnected) return;
+        const url = URL.createObjectURL(blob);
+        revokePointFilter(image);
+        image.dataset.pointFilterUrl = url;
+        image.setAttribute("href", url);
+        return;
+      }
+      const [source, mask] = await Promise.all([pointPixels(sourceUrl), pointPixels(maskUrl)]);
+      if (token !== pointFilterToken || !image.isConnected || source.width !== mask.width || source.height !== mask.height) return;
+      const maskMin = Number(image.dataset.pointHeightMin);
+      const maskMax = Number(image.dataset.pointHeightMax);
+      const maskSpan = Math.max(maskMax - maskMin, 1e-9);
+      const pixels = new Uint8ClampedArray(source.data);
+      for (let offset = 0; offset < pixels.length; offset += 4) {
+        if (!mask.data[offset + 3]) {
+          pixels[offset + 3] = 0;
+          continue;
+        }
+        const encoded = mask.data[offset] * 256 + mask.data[offset + 1];
+        const height = maskMin + encoded / 65535 * maskSpan;
+        if (height < range.low || height > range.high) pixels[offset + 3] = 0;
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = source.width;
+      canvas.height = source.height;
+      canvas.getContext("2d").putImageData(new ImageData(pixels, source.width, source.height), 0, 0);
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+      if (!blob || token !== pointFilterToken || !image.isConnected) return;
+      const url = URL.createObjectURL(blob);
+      revokePointFilter(image);
+      image.dataset.pointFilterUrl = url;
+      image.setAttribute("href", url);
+    } catch (error) {
+      console.warn("Map point-height filter failed", error);
+    }
+  }
+
+  function applyPointHeightFilter() {
+    const token = ++pointFilterToken;
+    root()?.querySelectorAll(".mr-bg-point-cloud[data-point-height-mask], .mr-bg-point-cloud[data-point-samples]").forEach((image) => {
+      filterPointImage(image, token);
+    });
+  }
+
+  function queuePointHeightFilter() {
+    if (pointFilterTimer) clearTimeout(pointFilterTimer);
+    pointFilterTimer = setTimeout(() => {
+      pointFilterTimer = 0;
+      applyPointHeightFilter();
+    }, 40);
+  }
+
   // ---------------------------------------------------------------- rendering
 
   function render() {
     const host = root();
     const data = state.map;
     if (!host || !data) return;
+    host.querySelectorAll(".mr-bg-point-cloud[data-point-filter-url]").forEach(revokePointFilter);
 
     // A level pools every mission that plays in it, so isolating one mission is
     // the difference between a readable route and a wall of markers. A node with
@@ -1218,16 +1496,19 @@
     const backgroundSource = minimapBg.src && minimapBg.worldBounds
       ? minimapBg
       : (hlodBg.src && hlodBg.worldBounds ? hlodBg : null);
-    // Region payloads publish one shared world rectangle for all stitched
-    // sibling screens. Prefer it over the selected screen's local minimap
-    // bounds so markers keep one projection when the region is loaded on
-    // demand or when a sibling has a wider rendered surface.
-    // A single on-demand zone should still fit its own screen. The region
-    // union becomes authoritative only after sibling screens are actually
-    // loaded; otherwise the first screen would be rendered as a tiny island
-    // inside the bounds of content the user has not chosen to display.
-    const declaredBounds = state.backgrounds.length > 1
-      ? (data.region?.worldBounds || data.regionBounds || backgroundSource?.worldBounds)
+    // The loaded background rectangles are the current projection contract.
+    // Their union keeps stitched siblings in one coordinate space without a
+    // second copy of region bounds in the index or map payload.
+    const backgroundBounds = [...state.backgrounds, ...state.modelBackgrounds]
+      .map((row) => row.worldBounds)
+      .filter((bounds) => ["minX", "maxX", "minZ", "maxZ"].every((key) => Number.isFinite(Number(bounds?.[key]))));
+    const declaredBounds = backgroundBounds.length
+      ? {
+        minX: Math.min(...backgroundBounds.map((bounds) => Number(bounds.minX))),
+        maxX: Math.max(...backgroundBounds.map((bounds) => Number(bounds.maxX))),
+        minZ: Math.min(...backgroundBounds.map((bounds) => Number(bounds.minZ))),
+        maxZ: Math.max(...backgroundBounds.map((bounds) => Number(bounds.maxZ))),
+      }
       : backgroundSource?.worldBounds;
     const hasDeclaredBounds = ["minX", "maxX", "minZ", "maxZ"].every((key) => Number.isFinite(Number(declaredBounds?.[key])));
     const positions = [...questRows, ...markerRows].map((row) => row.position);
@@ -1314,7 +1595,13 @@
     // which is what makes the surfaces tile into one seamless region: the
     // neighbours are drawn first, the selected zone on top, and no outline is
     // drawn between them.
-    const bgRects = [...state.backgrounds, ...state.layerBackgrounds.filter((bg) => state.mapLayers.has(bg.id))]
+    const visibleBackgrounds = state.showMinimap
+      ? state.backgrounds
+      : state.backgrounds.filter((bg) => bg.sourceKind !== "minimap");
+    const visibleFloorBackgrounds = state.showMinimap
+      ? state.layerBackgrounds.filter((bg) => state.mapLayers.has(bg.id))
+      : [];
+    const bgRects = [...visibleBackgrounds, ...visibleFloorBackgrounds]
       .filter((bg) => ["minX", "maxX", "minZ", "maxZ"].every((key) => Number.isFinite(Number(bg.worldBounds?.[key]))))
       .map((bg) => {
         const x = viewX + (Number(bg.worldBounds.minX) - minX) * fitScale;
@@ -1332,7 +1619,29 @@
           h: (Number(bg.worldBounds.maxZ) - Number(bg.worldBounds.minZ)) * fitScale,
         };
       });
-    const selectedBackground = bgRects.find(({ bg }) => bg.levelId === state.selected);
+    const modelRects = state.modelBackgrounds
+      .filter((bg) => ["minX", "maxX", "minZ", "maxZ"].every((key) => Number.isFinite(Number(bg.worldBounds?.[key]))))
+      .map((bg) => ({
+        bg,
+        x: viewX + (Number(bg.worldBounds.minX) - minX) * fitScale,
+        y: viewY + (maxZ - Number(bg.worldBounds.maxZ)) * fitScale,
+        w: (Number(bg.worldBounds.maxX) - Number(bg.worldBounds.minX)) * fitScale,
+        h: (Number(bg.worldBounds.maxZ) - Number(bg.worldBounds.minZ)) * fitScale,
+      }));
+    const layerInfo = new Map((data.mapLayers || []).map((row) => [String(row.id), row]));
+    state.floorHitAreas = (state.showMinimap ? state.layerBackgrounds : [])
+      .filter((bg) => ["minX", "maxX", "minZ", "maxZ"].every((key) => Number.isFinite(Number(bg.worldBounds?.[key]))))
+      .map((bg) => ({
+        id: String(bg.id),
+        levelId: bg.levelId,
+        layer: layerInfo.get(String(bg.id)) || bg,
+        x: viewX + (Number(bg.worldBounds.minX) - minX) * fitScale,
+        y: viewY + (maxZ - Number(bg.worldBounds.maxZ)) * fitScale,
+        w: (Number(bg.worldBounds.maxX) - Number(bg.worldBounds.minX)) * fitScale,
+        h: (Number(bg.worldBounds.maxZ) - Number(bg.worldBounds.minZ)) * fitScale,
+      }));
+    const selectedBackground = bgRects.find(({ bg }) => bg.levelId === state.selected)
+      || modelRects.find(({ bg }) => bg.levelId === state.selected);
     state.selectedMapBox = selectedBackground
       ? { x: selectedBackground.x, y: selectedBackground.y, w: selectedBackground.w, h: selectedBackground.h }
       : null;
@@ -1341,17 +1650,64 @@
     // made overlapping sibling screens visibly darker than their neighbours.
     // Keep the source alpha intact so the region surface has one consistent
     // tone; transparency still exposes the map background below.
-    const backgroundImages = bgRects
-      .map(({ bg, x, y, w, h }) => {
-        const geometry = `x="${x.toFixed(2)}" y="${y.toFixed(2)}" width="${w.toFixed(2)}" height="${h.toFixed(2)}"`;
-        const underlay = bg.elevationUnderlay?.src
+    const modelImages = ({ bg, x, y, w, h }, overMinimap = false, part = "all") => {
+        const orientation = bg.mapInverted
+          ? ` transform="rotate(90 ${(x + w / 2).toFixed(2)} ${(y + h / 2).toFixed(2)})"`
+          : "";
+        const geometry = `x="${x.toFixed(2)}" y="${y.toFixed(2)}" width="${w.toFixed(2)}" height="${h.toFixed(2)}"${orientation}`;
+        const underlay = state.modelLayers.has("elevation") && bg.elevationUnderlay?.src
           ? `<image class="mr-bg-image mr-bg-elevation" href="data/map_recovery/${esc(bg.elevationUnderlay.src)}?v=${MAP_ASSET_VERSION}" ${geometry}><title>${esc(`${bg.levelId} elevation`)}</title></image>`
           : "";
-        const pointClass = underlay ? " mr-bg-point-cloud" : "";
-        const opacity = underlay ? ` style="opacity:${state.pointCloudOpacity.toFixed(2)}"` : "";
-        return `${underlay}<image class="mr-bg-image${pointClass}" href="data/map_recovery/${esc(bg.src)}?v=${MAP_ASSET_VERSION}" ${geometry}${opacity}><title>${esc(bg.levelId)}</title></image>`;
+        const pointSrc = bg.pointCloudOverlay?.src || "";
+        const mainIsPointCloud = bg.status === "inferred_registry_point_cloud_preview";
+        const surface = state.modelLayers.has("surface") && !mainIsPointCloud
+          ? `<image class="mr-bg-image mr-bg-model-surface${overMinimap ? " is-overlay" : ""}" href="data/map_recovery/${esc(bg.src)}?v=${MAP_ASSET_VERSION}" ${geometry}><title>${esc(bg.levelId)}</title></image>`
+          : "";
+        const water = state.modelLayers.has("water") && bg.waterOverlay?.src
+          ? `<image class="mr-bg-image mr-bg-water" href="data/map_recovery/${esc(bg.waterOverlay.src)}?v=${MAP_ASSET_VERSION}" ${geometry}><title>${esc(`${bg.levelId} water`)}</title></image>`
+          : "";
+        const visiblePointSrc = pointSrc;
+        const pointUrl = visiblePointSrc ? `data/map_recovery/${visiblePointSrc}?v=${MAP_ASSET_VERSION}` : "";
+        const heightMask = bg.pointCloudOverlay?.heightMask;
+        const sampleSet = bg.pointCloudOverlay?.sampleSet;
+        const heightMaskUrl = heightMask?.src ? `data/map_recovery/${heightMask.src}?v=${MAP_ASSET_VERSION}` : "";
+        const sampleUrl = sampleSet?.src ? `data/map_recovery/${sampleSet.src}?v=${MAP_ASSET_VERSION}` : "";
+        const pointRange = sampleSet?.elevationRange || heightMask?.elevationRange;
+        const heightAttrs = (heightMaskUrl || sampleUrl) && pointRange
+          ? ` data-point-src="${esc(pointUrl)}"${heightMaskUrl ? ` data-point-height-mask="${esc(heightMaskUrl)}"` : ""}${sampleUrl ? ` data-point-samples="${esc(sampleUrl)}"` : ""} data-point-height-min="${Number(pointRange.min)}" data-point-height-max="${Number(pointRange.max)}"`
+          : "";
+        const points = state.modelLayers.has("points") && visiblePointSrc
+          ? `<image class="mr-bg-image mr-bg-point-cloud" href="${esc(pointUrl)}"${heightAttrs} ${geometry} style="opacity:${state.pointCloudOpacity.toFixed(2)}"><title>${esc(`${bg.levelId} point cloud`)}</title></image>`
+          : "";
+        if (part === "base") return `${underlay}${surface}`;
+        if (part === "water") return water;
+        if (part === "points") return points;
+        return `${underlay}${surface}${water}${points}`;
+      };
+    const modelBaseLevels = new Set(state.backgrounds.filter((bg) => bg.sourceKind === "model").map((bg) => bg.levelId));
+    const modelOverlayRects = [
+      ...bgRects.filter(({ bg }) => bg.sourceKind === "model").map((rect) => ({ ...rect, overMinimap: false })),
+      ...modelRects.filter(({ bg }) => !modelBaseLevels.has(bg.levelId)).map((rect) => ({ ...rect, overMinimap: true })),
+    ];
+    const minimapImages = bgRects
+      .filter(({ bg }) => bg.sourceKind !== "model")
+      .map(({ bg, x, y, w, h }) => {
+        const geometry = `x="${x.toFixed(2)}" y="${y.toFixed(2)}" width="${w.toFixed(2)}" height="${h.toFixed(2)}"`;
+        return `<image class="mr-bg-image" href="data/map_recovery/${esc(bg.src)}?v=${MAP_ASSET_VERSION}" ${geometry}><title>${esc(bg.levelId)}</title></image>`;
       })
       .join("");
+    const modelBaseImages = modelOverlayRects.map((rect) => modelImages(rect, rect.overMinimap, "base")).join("");
+    const waterImages = modelOverlayRects.map((rect) => modelImages(rect, rect.overMinimap, "water")).join("");
+    // Regional minimaps overlap by design. Rendering each semi-transparent
+    // water PNG independently made overlap counts visible as darker blocks.
+    // SVG filters a group offscreen before compositing it, so normalize every
+    // covered output pixel to the one authored overlay alpha and draw the
+    // union exactly once regardless of how many sibling screens cover it.
+    const waterUnion = waterImages
+      ? `<defs><filter id="mr-water-union-alpha" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncA type="discrete" tableValues="0 0.6588235"/></feComponentTransfer></filter></defs><g class="mr-bg-water-union" filter="url(#mr-water-union-alpha)">${waterImages}</g>`
+      : "";
+    const pointImages = modelOverlayRects.map((rect) => modelImages(rect, rect.overMinimap, "points")).join("");
+    const backgroundImages = `${minimapImages}${modelBaseImages}${waterUnion}${pointImages}`;
     // Level display names describe gameplay scenes, not geographic ownership
     // of the whole (overlapping) map-screen rectangle. Location labels come
     // from the map UI's own staticElements text anchors instead. Keep them as
@@ -1379,7 +1735,7 @@
       };
     }).filter(Boolean);
     const locationLabelSvg = state.locationLabels.map((row, index) => `<text class="mr-location-label${row.major ? " is-major" : ""}" data-location-label="${index}" x="0" y="4" aria-label="${esc(row.labelText)}"><title>${esc(row.labelText)}</title>${esc(row.labelText)}</text>`).join("");
-    state.contentBox = state.nodes.length || bgRects.length
+    state.contentBox = state.nodes.length || bgRects.length || modelRects.length
       ? (() => {
         let minXc = Infinity;
         let minYc = Infinity;
@@ -1397,10 +1753,17 @@
           maxXc = Math.max(maxXc, x + w);
           maxYc = Math.max(maxYc, y + h);
         });
+        modelRects.forEach(({ x, y, w, h }) => {
+          minXc = Math.min(minXc, x);
+          minYc = Math.min(minYc, y);
+          maxXc = Math.max(maxXc, x + w);
+          maxYc = Math.max(maxYc, y + h);
+        });
         return { minX: minXc, minY: minYc, maxX: maxXc, maxY: maxYc };
       })()
       : null;
     state.lastNodeScale = null;
+    state.lastLocationScale = null;
 
     const nodeSvg = state.nodes.map((node) => {
       const quest = node.type === "quest";
@@ -1424,19 +1787,47 @@
     }).join("");
 
     const layerControls = layerTreeHtml(data);
-    const mapLayerControls = mapLayerTreeHtml(data);
-    const hasPointCloudUnderlay = bgRects.some(({ bg }) => bg.elevationUnderlay?.src);
+    const modelLayerControls = modelLayerControlsHtml();
+    const hasPointCloudUnderlay = state.modelBackgrounds.some((bg) => bg.pointCloudOverlay?.src);
     const pointCloudOpacity = Math.round(state.pointCloudOpacity * 100);
     const opacityControl = hasPointCloudUnderlay
       ? `<label class="mr-opacity-dock"><span>${esc(t("pointCloudOpacity"))}</span><input type="range" min="0" max="100" step="1" value="${pointCloudOpacity}" data-map-point-opacity><output>${pointCloudOpacity}%</output></label>`
       : "";
+    const height = state.pointHeightRange;
+    const heightSpan = height ? Math.max(height.max - height.min, 1e-9) : 1;
+    const heightLowPercent = height ? (height.low - height.min) / heightSpan * 100 : 0;
+    const heightHighPercent = height ? (height.high - height.min) / heightSpan * 100 : 100;
+    const heightControl = height
+      ? `<div class="mr-height-dock"><span>${esc(t("pointCloudHeight"))}</span><div class="mr-height-range" style="--height-low:${heightLowPercent.toFixed(2)}%;--height-high:${heightHighPercent.toFixed(2)}%"><input type="range" min="${height.min}" max="${height.max}" step="any" value="${height.low}" aria-label="${esc(t("pointCloudHeightMin"))}" data-map-point-height="low"><input type="range" min="${height.min}" max="${height.max}" step="any" value="${height.high}" aria-label="${esc(t("pointCloudHeightMax"))}" data-map-point-height="high"></div><output aria-label="${esc(t("pointCloudHeightRange"))}">${esc(`${formatHeight(height.low)} – ${formatHeight(height.high)}`)}</output></div>`
+      : "";
     const missionControls = missionSelectHtml(data);
+    const mapMetrics = `<p class="mr-coords">${esc(data.coordinateSystem)}</p>
+      <section class="mr-metrics">
+        ${state.nodes.length === (data.questPoints || []).length + (data.markers || []).length
+          ? ""
+          : `<span class="mr-metric-active"><b>${state.nodes.length}</b>${esc(t("shownNodes"))}</span>`}
+        <span><b>${(data.questPoints || []).length}</b>${esc(t("questPoints"))}</span>
+        <span><b>${(data.markers || []).length}</b>${esc(t("entityMarkers"))}</span>
+        <span><b>${(data.markers || []).filter((row) => (row.storyCount || 0) > 0).length}</b>${esc(t("storyNodes"))}</span>
+        <span><b>${data.pinnedFileCount ?? 0}</b>${esc(t("pinnedFiles"))}</span>
+        <span><b>${data.npcCoverage?.exactProxyCount ?? 0}</b>${esc(t("exactNpcs"))}</span>
+      </section>`;
+    const objectFilters = `<section class="mr-object-filters" aria-label="${esc(t("objectFilters"))}">
+      <h2>${esc(t("objectFilters"))}</h2>
+      <div class="mr-layer-actions">
+        <button type="button" data-map-layers="all">${esc(t("layersAll"))}</button>
+        <button type="button" data-map-layers="none">${esc(t("layersNone"))}</button>
+        <button type="button" data-map-layers="story">${esc(t("layersStory"))}</button>
+      </div>
+      <p class="mr-note mr-layer-selection-hint">${esc(t("layerSelectionHint"))}</p>
+      <div class="mr-layers">${(data.questPoints || []).length ? `<label class="mr-layer" style="--mr-chip:${QUEST_COLOR}"><input type="checkbox" data-map-quests ${state.showQuests ? "checked" : ""}><span class="mr-swatch" style="background:${QUEST_COLOR}"></span>${esc(kindLabel("quest"))}<span class="mr-layer-count">${data.questPoints.length}</span></label>` : ""}${layerControls}</div>
+      ${modelLayerControls}${opacityControl}${heightControl}<p class="mr-floor-help">${esc(t("help"))}</p>
+    </section>`;
     const unlinked = (data.unlinkedMissionFiles || []).filter((path) => String(path || "").trim()).sort((a, b) => a.localeCompare(b));
     const unresolvedSlots = data.unresolvedTriggerSlots || { count: 0 };
     const unplaced = data.unplacedStories || { count: 0 };
     const bg = data.renderBackground || {};
-    const regionLevelCount = data.region?.levelIds?.length
-      || state.index?.maps?.filter((row) => regionKey(row.id) === regionKey(state.selected)).length
+    const regionLevelCount = state.index?.maps?.filter((row) => regionKey(row.id) === regionKey(state.selected)).length
       || state.backgrounds.length;
     const surfaceLabel = state.backgrounds.length < regionLevelCount ? t("selectedSurface") : t("regionSurface");
     // A minimap may be authoritative for the surface while the render
@@ -1462,54 +1853,40 @@
     host.innerHTML = `<div class="mr-map${hasPointCloudUnderlay ? " has-point-opacity" : ""}" tabindex="0" role="group" aria-label="${esc(`${mapTitle(data)} - ${t("mapSurface")}`)}">
         <svg class="mr-canvas" viewBox="0 0 ${WIDTH} ${HEIGHT}" role="group" aria-label="${esc(mapTitle(data))}"><rect width="100%" height="100%" class="mr-map-bg"/><g class="mr-viewport">${backgroundImages}<g class="mr-location-labels">${locationLabelSvg}</g><g class="mr-routes">${routeSvg}</g><g class="mr-nodes">${nodeSvg}</g></g></svg>
         <div class="mr-tip" hidden></div>
-        <div class="mr-tools" role="group" aria-label="${esc(t("zoomLevel"))}">
-          <button type="button" data-map-zoom="out" aria-label="${esc(t("zoomOut"))}" title="${esc(t("zoomOut"))}">-</button>
-          <button type="button" data-map-zoom="in" aria-label="${esc(t("zoomIn"))}" title="${esc(t("zoomIn"))}">+</button>
-          <button type="button" data-map-fit aria-label="${esc(t("fitLong"))}" title="${esc(t("fitLong"))}">${esc(t("fit"))}</button>
-          <button type="button" data-map-reset aria-label="${esc(t("resetLong"))}" title="${esc(t("resetLong"))}">${esc(t("reset"))}</button>
-          <span class="mr-zoom-readout" role="status" aria-live="polite"></span>
+        <div class="mr-floor-tip" hidden></div>
+        <div class="mr-tools" role="toolbar" aria-label="${esc(t("mapSurface"))}">
+          <div class="mr-tool-group" role="group" aria-label="${esc(t("zoomLevel"))}">
+            <button type="button" data-map-zoom="out" aria-label="${esc(t("zoomOut"))}" title="${esc(t("zoomOut"))}">-</button>
+            <button type="button" data-map-zoom="in" aria-label="${esc(t("zoomIn"))}" title="${esc(t("zoomIn"))}">+</button>
+            <button type="button" data-map-fit aria-label="${esc(t("fitLong"))}" title="${esc(t("fitLong"))}">${esc(t("fit"))}</button>
+            <button type="button" data-map-reset aria-label="${esc(t("resetLong"))}" title="${esc(t("resetLong"))}">${esc(t("reset"))}</button>
+            <span class="mr-zoom-readout" role="status" aria-live="polite"></span>
+          </div>
+          <span class="mr-tool-sep" aria-hidden="true"></span>
+          <div class="mr-tool-group mr-entity-tools" role="group" aria-label="${esc(t("entitySize"))}">
+            <span>${esc(t("entitySize"))}</span>
+            <button type="button" data-map-entity-size="out" aria-label="${esc(t("entityZoomOut"))}" title="${esc(t("entityZoomOut"))}">−</button>
+            <button type="button" data-map-entity-size="in" aria-label="${esc(t("entityZoomIn"))}" title="${esc(t("entityZoomIn"))}">+</button>
+            <button type="button" data-map-entity-size="reset" aria-label="${esc(t("entityReset"))}" title="${esc(t("entityReset"))}">${esc(t("reset"))}</button>
+            <span class="mr-entity-readout" role="status" aria-live="polite"></span>
+          </div>
+          <span class="mr-tool-sep" aria-hidden="true"></span>
+          <span class="mr-axis">+Z -> X -></span>
         </div>
-        <div class="mr-floor-dock${mapLayerControls || opacityControl ? "" : " is-help-only"}">${opacityControl}${mapLayerControls}<p class="mr-floor-help">${esc(t("help"))}</p></div>
-        <div class="mr-axis">+Z -> X -></div>
-        ${state.nodes.length || bgRects.length || state.locationLabels.length ? "" : `<p class="mr-empty">${esc(t("noNodes"))}</p>`}
+        ${state.nodes.length || bgRects.length || modelRects.length || state.locationLabels.length ? "" : `<p class="mr-empty">${esc(t("noNodes"))}</p>`}
       </div>
-      <section class="mr-float mr-float--header" data-panel="header" aria-label="${esc(t("title"))}">
-        <div class="mr-float-head" data-panel-drag>
-          <span class="mr-kicker">EXPERIMENTAL</span>
-          <h1 class="mr-float-title">${esc(t("title"))}</h1>
-          <button type="button" class="mr-float-toggle" data-panel-toggle aria-label="${esc(t("collapse"))}">–</button>
-        </div>
-        <div class="mr-float-body">
-          <p class="mr-coords">${esc(data.coordinateSystem)}</p>
-          <section class="mr-metrics">
-            ${state.nodes.length === (data.questPoints || []).length + (data.markers || []).length
-              ? ""
-              : `<span class="mr-metric-active"><b>${state.nodes.length}</b>${esc(t("shownNodes"))}</span>`}
-            <span><b>${(data.questPoints || []).length}</b>${esc(t("questPoints"))}</span>
-            <span><b>${(data.markers || []).length}</b>${esc(t("entityMarkers"))}</span>
-            <span><b>${(data.markers || []).filter((row) => (row.storyCount || 0) > 0).length}</b>${esc(t("storyNodes"))}</span>
-            <span><b>${data.pinnedFileCount ?? 0}</b>${esc(t("pinnedFiles"))}</span>
-            <span><b>${data.npcCoverage?.exactProxyCount ?? 0}</b>${esc(t("exactNpcs"))}</span>
-          </section>
-        </div>
-      </section>
       <aside class="mr-float mr-float--controls" data-panel="controls" aria-label="${esc(t("controls"))}">
         <div class="mr-float-head" data-panel-drag>
           <h2 class="mr-float-title">${esc(t("controls"))}</h2>
           <button type="button" class="mr-float-toggle" data-panel-toggle aria-label="${esc(t("collapse"))}">–</button>
         </div>
         <div class="mr-float-body">
-          <select id="map-recovery-select" aria-label="${esc(t("title"))}">${mapOptions()}</select>
-          <h2>${esc(t("mission"))}</h2>
-          ${missionControls}
-          <h2>${esc(t("layers"))}</h2>
-           <div class="mr-layer-actions">
-             <button type="button" data-map-layers="all">${esc(t("layersAll"))}</button>
-             <button type="button" data-map-layers="none">${esc(t("layersNone"))}</button>
-             <button type="button" data-map-layers="story">${esc(t("layersStory"))}</button>
-           </div>
-           <p class="mr-note mr-layer-selection-hint">${esc(t("layerSelectionHint"))}</p>
-          <div class="mr-layers">${(data.questPoints || []).length ? `<label class="mr-layer"><input type="checkbox" data-map-quests ${state.showQuests ? "checked" : ""}><span class="mr-swatch" style="background:${QUEST_COLOR}"></span>quest<span class="mr-layer-count">${data.questPoints.length}</span></label>` : ""}${layerControls}</div>
+          <div class="mr-browser-tree">
+            <nav class="mr-map-column" aria-label="${esc(t("title"))}">${mapTreeHtml()}</nav>
+            <section class="mr-task-column" aria-label="${esc(t("mission"))}"><h2>${esc(t("mission"))}</h2>${missionControls}<div class="mr-task-map-status">${mapMetrics}</div></section>
+            ${objectFilters}
+          </div>
+          <div class="mr-technical-evidence" hidden>
           <h2>${esc(t("evidence"))}</h2>
            <p class="mr-note"><b>${state.backgrounds.length}</b> ${esc(surfaceLabel)}</p>
           <p class="mr-note"><code>${esc(minimapBg.status || "unknown")}</code>${minimapBg.src
@@ -1537,7 +1914,7 @@
             ${unlinked.length
               ? `<ul class="mr-file-list">${unlinked.map((path) => `<li><a href="/${esc(path)}" target="_blank" rel="noreferrer">${esc(path)}</a></li>`).join("")}</ul>`
               : `<p class="mr-note">${esc(t("noFilesLinked"))}</p>`}
-          </details>
+          </details></div>
         </div>
       </aside>
       <aside class="mr-float mr-float--inspector" data-panel="inspector" aria-label="${esc(t("inspector"))}">
@@ -1560,6 +1937,9 @@
     host.querySelector("#map-recovery-select")?.addEventListener("change", (event) => {
       void switchMap(event.target.value);
     });
+    host.querySelectorAll("[data-map-id]").forEach((button) => button.addEventListener("click", () => {
+      void switchMap(button.dataset.mapId);
+    }));
     host.querySelectorAll("[data-map-mission]").forEach((button) => button.addEventListener("click", () => {
       state.mission = button.dataset.mapMission || "";
       // A selected mission always exposes its complete footprint, regardless
@@ -1580,12 +1960,6 @@
       state.subKinds = new Set([...[...state.subKinds].filter((key) => !shown.has(key)), ...checked]);
       scheduleRender();
     }));
-    host.querySelector("[data-map-floor-slider]")?.addEventListener("input", (event) => {
-      const values = JSON.parse(event.currentTarget.dataset.floorValues || "[]");
-      const id = values[Number(event.currentTarget.value)] || "";
-      state.mapLayers = id ? new Set([id]) : new Set();
-      scheduleRender();
-    });
     host.querySelector("[data-map-point-opacity]")?.addEventListener("input", (event) => {
       state.pointCloudOpacity = clamp(Number(event.currentTarget.value) / 100, 0, 1);
       host.querySelectorAll(".mr-bg-point-cloud").forEach((image) => {
@@ -1593,6 +1967,33 @@
       });
       const output = event.currentTarget.parentElement?.querySelector("output");
       if (output) output.textContent = `${Math.round(state.pointCloudOpacity * 100)}%`;
+    });
+    host.querySelectorAll("[data-map-point-height]").forEach((input) => input.addEventListener("input", (event) => {
+      const range = state.pointHeightRange;
+      if (!range) return;
+      const value = clamp(Number(event.currentTarget.value), range.min, range.max);
+      if (event.currentTarget.dataset.mapPointHeight === "low") range.low = Math.min(value, range.high);
+      else range.high = Math.max(value, range.low);
+      const dock = event.currentTarget.closest(".mr-height-dock");
+      const lowInput = dock?.querySelector('[data-map-point-height="low"]');
+      const highInput = dock?.querySelector('[data-map-point-height="high"]');
+      if (lowInput) lowInput.value = String(range.low);
+      if (highInput) highInput.value = String(range.high);
+      const span = Math.max(range.max - range.min, 1e-9);
+      const track = dock?.querySelector(".mr-height-range");
+      track?.style.setProperty("--height-low", `${(range.low - range.min) / span * 100}%`);
+      track?.style.setProperty("--height-high", `${(range.high - range.min) / span * 100}%`);
+      const output = dock?.querySelector("output");
+      if (output) output.textContent = `${formatHeight(range.low)} – ${formatHeight(range.high)}`;
+      queuePointHeightFilter();
+    }));
+    host.querySelectorAll("[data-map-model-layer]").forEach((input) => input.addEventListener("change", () => {
+      state.modelLayers = new Set([...host.querySelectorAll("[data-map-model-layer]:checked")].map((row) => row.dataset.mapModelLayer));
+      render();
+    }));
+    host.querySelector("[data-map-minimap]")?.addEventListener("change", (event) => {
+      state.showMinimap = event.currentTarget.checked;
+      render();
     });
     host.querySelectorAll("[data-map-layers]").forEach((button) => button.addEventListener("click", () => {
       const mode = button.dataset.mapLayers;
@@ -1613,6 +2014,14 @@
     if (!map) return;
     host.querySelectorAll("[data-map-zoom]").forEach((button) => button.addEventListener("click", () => {
       animateTo(zoomed(button.dataset.mapZoom === "in" ? 1.35 : 1 / 1.35, null));
+    }));
+    host.querySelectorAll("[data-map-entity-size]").forEach((button) => button.addEventListener("click", () => {
+      const mode = button.dataset.mapEntitySize;
+      state.entityScale = mode === "reset"
+        ? 1
+        : clamp(state.entityScale * (mode === "in" ? ENTITY_SCALE_STEP : 1 / ENTITY_SCALE_STEP), ENTITY_SCALE_MIN, ENTITY_SCALE_MAX);
+      state.lastNodeScale = null;
+      applyTransform();
     }));
     host.querySelector("[data-map-fit]")?.addEventListener("click", () => animateTo(fitTransform(state.nodes.length ? "nodes" : "map")));
     host.querySelector("[data-map-reset]")?.addEventListener("click", () => animateTo({ x: 0, y: 0, scale: 1 }));
@@ -1647,8 +2056,11 @@
     map.addEventListener("pointerdown", beginPan);
     map.addEventListener("selectstart", (event) => event.preventDefault());
     map.addEventListener("pointermove", movePan);
+    map.addEventListener("pointermove", previewMapFloors);
     map.addEventListener("pointerup", endPan);
     map.addEventListener("pointercancel", endPan);
+    map.addEventListener("pointerleave", hideMapFloorTip);
+    map.addEventListener("click", cycleMapFloor);
     // Non-passive so the page never scrolls behind a wheel zoom over the map.
     map.addEventListener("wheel", mapWheel, { passive: false });
     map.addEventListener("keydown", mapKeydown);
@@ -1660,6 +2072,7 @@
       state.observer.observe(map);
     }
     bindFloatPanels(host);
+    applyPointHeightFilter();
   }
 
   // The page is one full-bleed map surface; every piece of chrome is a
@@ -1669,18 +2082,27 @@
     host.querySelectorAll(".mr-float").forEach((panel) => {
       const key = panel.dataset.panel;
       const saved = panelUi.get(key) || {};
-      panel.classList.toggle("is-collapsed", !!saved.collapsed);
+      const toggle = panel.querySelector("[data-panel-toggle]");
+      const paintToggle = (collapsed) => {
+        panel.classList.toggle("is-collapsed", collapsed);
+        if (!toggle) return;
+        toggle.textContent = collapsed ? "+" : "–";
+        toggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
+        toggle.setAttribute("aria-label", t(collapsed ? "expand" : "collapse"));
+        toggle.setAttribute("title", t(collapsed ? "expand" : "collapse"));
+      };
+      paintToggle(!!saved.collapsed);
       if (Number.isFinite(saved.x) && Number.isFinite(saved.y)) {
         panel.style.left = `${saved.x}px`;
         panel.style.top = `${saved.y}px`;
         panel.style.right = "auto";
         panel.classList.add("is-placed");
       }
-      panel.querySelector("[data-panel-toggle]")?.addEventListener("click", () => {
+      toggle?.addEventListener("click", () => {
         const flags = panelUi.get(key) || {};
         flags.collapsed = !flags.collapsed;
         panelUi.set(key, flags);
-        panel.classList.toggle("is-collapsed", flags.collapsed);
+        paintToggle(flags.collapsed);
       });
       const head = panel.querySelector("[data-panel-drag]");
       if (!head) return;
@@ -1815,10 +2237,14 @@
   // same world coordinate space, and each zone's map screen also depicts its
   // neighbours. The main regional surfaces (map01 / map02) are loaded as a
   // complete set on first open, so opening 武陵城 or 四号谷地 cannot show an
-  // isolated island until the user changes the level selector. Other levels
-  // remain on-demand to keep the initial payload bounded.
-  const regionKey = (id) => (String(id).includes("_lv") ? String(id).split("_lv")[0] : String(id));
-  const stitchOnInitialOpen = (id) => ["map01", "map02"].includes(regionKey(id));
+  // isolated island. The two authored blackbox art scenes follow the same
+  // contract; unrelated standalone levels remain on-demand.
+  const regionKey = (id) => {
+    const value = String(id || "");
+    const published = (state.index?.maps || []).find((row) => row.id === value)?.regionKey;
+    return published || value;
+  };
+  const stitchOnInitialOpen = (id) => ["map01", "map02", "blackbox01_dg001", "blackbox02_dg001"].includes(regionKey(id));
 
   async function ensurePayload(row) {
     if (!state.payloads.has(row.id)) {
@@ -1830,8 +2256,8 @@
   function zoneBackground(payload) {
     const minimap = payload.minimap || {};
     const hlod = payload.renderBackground || {};
-    return (minimap.src && minimap.worldBounds) ? minimap
-      : (hlod.src && hlod.worldBounds ? hlod : null);
+    return (minimap.src && minimap.worldBounds) ? { ...minimap, sourceKind: "minimap" }
+      : (hlod.src && hlod.worldBounds ? { ...hlod, sourceKind: "model" } : null);
   }
 
   // Merges a whole region's payloads into the shape render() always consumed,
@@ -1850,6 +2276,7 @@
     const unplacedReasons = {};
     const unresolved = [];
     const backgrounds = [];
+    const modelBackgrounds = [];
     const mapLayers = [];
     const layerBackgrounds = [];
     const locationLabels = new Map();
@@ -1904,7 +2331,8 @@
         entry.stories += counts.stories || 0;
       }
       for (const [missionId, detail] of Object.entries(payload.missionDetails || {})) {
-        const entry = (missionDetails[missionId] ||= { files: new Set() });
+        const entry = (missionDetails[missionId] ||= { files: new Set(), name: "" });
+        if (detail.name && !entry.name) entry.name = detail.name;
         for (const path of detail.files || []) if (path) entry.files.add(path);
       }
       const unplacedStories = payload.unplacedStories;
@@ -1922,13 +2350,39 @@
         src: background.src,
         worldBounds: background.worldBounds,
         elevationUnderlay: background.elevationUnderlay || null,
+        pointCloudOverlay: background.pointCloudOverlay || null,
+        waterOverlay: background.waterOverlay || null,
+        sourceKind: background.sourceKind,
+        status: background.status || "",
+        mapInverted,
+      });
+      const model = payload.renderBackground || {};
+      if (model.src && model.worldBounds) modelBackgrounds.push({
+        levelId: member.id,
+        src: model.src,
+        worldBounds: model.worldBounds,
+        elevationUnderlay: model.elevationUnderlay || null,
+        pointCloudOverlay: model.pointCloudOverlay || null,
+        waterOverlay: model.waterOverlay || null,
+        status: model.status || "",
+        mapInverted,
       });
     }
     // These are overlapping map screens, not disjoint rectangles owned by
     // the selected gameplay level. A stable order prevents selection changes
     // from making whole geographic areas appear to exchange positions.
     backgrounds.sort((a, b) => a.levelId.localeCompare(b.levelId));
-    state.backgrounds = backgrounds;
+    // Variant maps can publish the same cropped shared-scene image and bounds.
+    // Drawing that alpha image repeatedly would darken it without adding any
+    // geometry, so identical slices are represented once in the stitched set.
+    state.backgrounds = [...new Map(backgrounds.map((row) => [
+      `${row.src}|${["minX", "maxX", "minZ", "maxZ"].map((key) => Number(row.worldBounds?.[key])).join(",")}`,
+      row,
+    ])).values()];
+    state.modelBackgrounds = [...new Map(modelBackgrounds.map((row) => [
+      `${row.src}|${["minX", "maxX", "minZ", "maxZ"].map((key) => Number(row.worldBounds?.[key])).join(",")}`,
+      row,
+    ])).values()];
     state.layerBackgrounds = layerBackgrounds;
     return {
       ...selected,
@@ -1939,6 +2393,7 @@
       facets: { kinds, missions },
       missionDetails: Object.fromEntries(Object.entries(missionDetails).map(([missionId, detail]) => [missionId, {
         ...(missions[missionId] || { markers: 0, questPoints: 0, stories: 0 }),
+        name: detail.name || "",
         files: [...detail.files].sort(),
       }])),
       pinnedFileCount,
@@ -1964,9 +2419,8 @@
     const row = (state.index?.maps || []).find((item) => item.id === id) || state.index?.maps?.[0];
     if (!row) return false;
     const key = regionKey(row.id);
-    // Only Map01/Map02 are one geographic surface. Shared prefixes elsewhere
-    // can denote separate states/decks with identical bounds: notably the two
-    // Dijiang maps. Overlaying those rotated images displaces correct markers.
+    // Only explicitly published region keys are stitched. Similar prefixes can
+    // denote separate states or decks with identical bounds.
     const memberRows = includeRegion
       ? (state.index?.maps || []).filter((item) => regionKey(item.id) === key)
       : [row];
@@ -1985,18 +2439,6 @@
     state.selected = row.id;
     state.map = mergeRegion(members, row.id);
     if (!state.map) return false;
-    // New indexes may carry region bounds without repeating the region object
-    // in every payload. Keep that compact catalog fallback compatible with
-    // payloads produced before the region metadata was added.
-    const regionBounds = row.regionBounds
-      || state.index?.regionBounds?.[regionKey(row.id)]
-      || state.index?.regions?.[regionKey(row.id)]?.worldBounds;
-    if (!state.map.region?.worldBounds && regionBounds) {
-      state.map.region = {
-        key: regionKey(row.id),
-        worldBounds: regionBounds,
-      };
-    }
     // Start as a geographic map. A region can contain thousands of entities
     // and quest points; the explicit layer controls opt those overlays in.
     // Start with recovered geography only. Streaming instances are now drawn
@@ -2015,6 +2457,15 @@
     state.mapLayers = initialMapLayer
       ? new Set([String(initialMapLayer.id)])
       : new Set();
+    // Preserve the in-game map as the readable base when it exists, and show
+    // the colored point scan as the least-obscuring recovered model overlay.
+    // Geometry-only scenes begin with all three aligned model layers visible.
+    const hasMinimapBase = state.backgrounds.some((background) => background.sourceKind === "minimap");
+    state.showMinimap = true;
+    state.modelLayers = state.modelBackgrounds.length
+      ? new Set(hasMinimapBase ? ["points"] : ["elevation", "surface", "water", "points"])
+      : new Set();
+    resetPointHeightRange();
     state.storyOnly = false;
     state.mission = state.map.defaultMission || "";
     state.transform = { x: 0, y: 0, scale: 1 };

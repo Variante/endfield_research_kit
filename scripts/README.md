@@ -61,6 +61,7 @@ a degraded reason instead of using them as direct evidence.
 | Story links | `story_builder/source_links.py` | localized reference data |
 | Story | `story_builder/build.py` | `webui/data/lang/<LANG>/` |
 | Mission Pipeline | `build_mission_pipeline_data.py` | `webui/data/mission_pipeline/` |
+| Map | `build_map_recovery_preview.py` renders current minimap/model/point/water layers; `build_map_recovery_data.py` publishes the map index and payloads; `recover_map_streaming_instances.py --level LEVEL [--level LEVEL ...] --jobs N` refreshes schema-2 exact-transform sidecars with one shared AssetMap mesh scan | `export_full/recovered/AnimeStudio-cli/StreamingAssets/map_streaming_instances/`, `reports/assets/map_recovery/`, `webui/data/map_recovery/` |
 | Lua consumer index | `story_builder/lua_consumer_references.py` | fingerprinted Mission Pipeline evidence |
 | Characters | `build_character_data.py` | character indexes |
 | Gameplay | `build_gameplay.py` | Gameplay datasets |
@@ -482,9 +483,8 @@ runtime handle state, action execution, branch selection, or audibility.
 
 RemoteCommon lifecycle fields use an exact Persistent-over-Streaming row
 overlay: non-empty `startAudioEvent`/`endAudioEvent` values become separate
-authored trigger contexts, while `voiceId` remains a dialogue identity. The
-current CN contract has four lifecycle rows; all resolve to Wwise music Events,
-none has a playable media leaf, and runtime execution remains unobserved.
+authored trigger contexts, while `voiceId` remains a dialogue identity and
+runtime execution remains unobserved.
 
 `build_audio_semantics.py` is the thin orchestration/publishing surface for
 the Audio evidence page. Maintained domain code lives under
@@ -540,7 +540,7 @@ container path (or an explicit component identity) before the Audio page
 attaches a level; ambiguous and missing relations stay unresolved.
 If explicit component identity and exact prefab-path identity routes disagree,
 reconciliation fails closed with `conflictingPrefabInstanceIdentityJoins`;
-current sidecars still do not produce the required prefab Source+PathID.
+the remaining gap is exporter/sidecar production of exact prefab identity.
 `media_ownership.py` projects those scene roles plus exact Event-context and
 external-path evidence into coarse decoded-media ownership such as scene
 environment, animation, authored component, interaction, or mission narration.
@@ -552,9 +552,7 @@ status sets. The current valid negative contract is prefab-local/static-authored
 emitter with unresolved scene and unavailable prefab identity; only exact
 SceneAsset/Level containment or an exact prefab Source+PathID evidence row
 joined to one level may publish sceneEmitterSceneIds. Candidate paths, sidecar
-levelId, names, positions, and mixed exact attributions fail closed. The next
-recovery step is exporter/sidecar production of exact prefab identity, not more
-filename or path inference.
+levelId, names, positions, and mixed exact attributions fail closed.
 Scene-global Event rows also receive a compact attribution only after the
 already merged `scene_backgrounds.py` catalog validates every direct context:
 the complete scene-id and original semantic-role sets are retained, while
@@ -571,6 +569,17 @@ Enemy, or EnemyTemplate matches may resolve, while unique-token and multi-match
 possibilities remain candidate/ambiguous. Shared callback owners remain shared,
 and missing, malformed, or unsupported evidence stays unresolved/fail-closed;
 candidate IDs never become resolved ownership.
+The same catalog also admits an NPC owner only when one valid `NpcInfoTable`
+row has matching non-empty `voActor`/`wwiseId` fields and its
+`NpcTemplateGroupTable` `npcNameId`/`templateId` row agrees. Exact actor tokens
+must also have one exact current `AudioDialogChannel` key whose typed narrating
+and radio Event suffixes agree with that token; then they publish `ownerKind=npc`,
+the `npcId`, template id, and actor token. Rows
+with duplicate tokens, overlay conflicts, malformed layers, or template
+mismatches remain unresolved; generic archetypes are never promoted by name.
+Mixed Events retain that identity only on their callback occurrence/Clip rows,
+not as a single Event owner. This does not prove CharacterTable identity,
+Animator execution, playback, or audibility.
 The same domain loads current `CharacterTable` keys and assigns authored
 `chr_*`/`au_chr_*` Event namespaces, plus Event-leading internal character
 tokens such as `lastrite_*`, to a character only through a delimited full key,
@@ -1184,14 +1193,3 @@ python tools\endfield_source_graph.py issues --limit 20
   removed after validation.
 - New maintained scripts must support the WebUI or the Unity character lab;
   otherwise keep them in `scratch/` or `tmp/`.
-The same catalog also admits an NPC owner only when one valid `NpcInfoTable`
-row has matching non-empty `voActor`/`wwiseId` fields and its
-`NpcTemplateGroupTable` `npcNameId`/`templateId` row agrees. Exact actor tokens
-must also have one exact current `AudioDialogChannel` key whose typed narrating
-and radio Event suffixes agree with that token; then they publish `ownerKind=npc`,
-the `npcId`, template id, and actor token. Rows
-with duplicate tokens, overlay conflicts, malformed layers, or template
-mismatches remain unresolved; generic archetypes are never promoted by name.
-Mixed Events retain that identity only on their callback occurrence/Clip rows,
-not as a single Event owner. This does not prove CharacterTable identity,
-Animator execution, playback, or audibility.

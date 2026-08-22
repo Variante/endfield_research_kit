@@ -42,28 +42,81 @@ class StreamingInstanceRecoveryTests(unittest.TestCase):
         ])
         self.assertTrue(all(row["match"] == "explicit_static_asset_family_closure" for row in rows))
 
+    def test_batch_recovery_scans_asset_map_once_for_all_levels(self):
+        def core(level_id, _cli, _game_root):
+            return {
+                "levelId": level_id,
+                "sources": [{"fileName": f"{level_id}.bytes"}],
+                "instances": [],
+                "duplicates": 0,
+                "bases": {f"P_{level_id}": 1},
+            }
+
+        with mock.patch.object(recovery, "_recover_transform_core", side_effect=core), \
+                mock.patch.object(recovery, "_mesh_candidates", return_value={}) as mesh_candidates, \
+                mock.patch.object(recovery, "sha256_file", return_value="hash"):
+            payloads = recovery.recover_many(
+                ["dung01_cdg001", "indie_dg008"],
+                recovery.ROOT / "cli", Path("game"), Path("AssetMap.json"), Path("Mesh"), jobs=2,
+            )
+
+        self.assertEqual([row["levelId"] for row in payloads], ["dung01_cdg001", "indie_dg008"])
+        mesh_candidates.assert_called_once_with(
+            {"P_dung01_cdg001", "P_indie_dg008"}, Path("AssetMap.json"), Path("Mesh")
+        )
+
     def test_payload_keeps_component_shape_at_group_level(self):
-        instances = [{
-            "entityId": 1, "sourceFile": "chunk.bytes", "groupIndex": 0,
-            "initChunkComponentTypeIds": [18, 21, 67],
-            "initChunkComponentStrides": {"18": 64, "21": 64, "67": 16},
-            "prefabIdentity": {"status": "unavailableInValidatedInitChunkSchema"},
-        }]
-        shapes = recovery._compact_component_shapes(instances)
-        self.assertEqual(shapes["chunk.bytes#group0"]["componentTypeIds"], [18, 21, 67])
-        self.assertEqual(instances[0]["initChunkComponentShapeId"], "chunk.bytes#group0")
-        self.assertNotIn("initChunkComponentTypeIds", instances[0])
-        self.assertNotIn("initChunkComponentStrides", instances[0])
+        core = {
+            "levelId": "indie_dg008",
+            "sources": [],
+            "instances": [{
+                "entityId": 1,
+                "entityBase": "P_fixture",
+                "initChunkComponentShapeId": "chunk.bytes#group0",
+                "prefabIdentity": {
+                    "status": "unavailableInValidatedInitChunkSchema",
+                },
+            }],
+            "duplicates": 0,
+            "bases": Counter({"P_fixture": 1}),
+            "componentShapes": {
+                "chunk.bytes#group0": {
+                    "componentTypeIds": [18, 21, 67],
+                    "componentStrides": {"18": 64, "21": 64, "67": 16},
+                },
+            },
+        }
+        with mock.patch.object(recovery, "sha256_file", return_value="hash"):
+            payload = recovery._finalize_payload(core, {}, recovery.ROOT / "cli")
+        self.assertEqual(payload["schemaVersion"], 2)
+        self.assertEqual(payload["prefabIdentityContract"]["status"], "unavailable")
+        self.assertEqual(payload["initChunkComponentShapes"]["chunk.bytes#group0"]["componentTypeIds"], [18, 21, 67])
+        self.assertEqual(payload["instances"][0]["initChunkComponentShapeId"], "chunk.bytes#group0")
+        self.assertNotIn("initChunkComponentTypeIds", payload["instances"][0])
+        self.assertNotIn("initChunkComponentStrides", payload["instances"][0])
 
     def test_prefab_contract_revalidates_exact_identity_fields(self):
-        contract = recovery._build_prefab_identity_contract([{
-            "entityId": 1,
-            "prefabIdentity": {"status": "exact", "source": "", "pathId": True},
-        }])
+        core = {
+            "levelId": "indie_dg008",
+            "sources": [],
+            "instances": [{
+                "entityId": 1,
+                "entityBase": "P_fixture",
+                "prefabIdentity": {"status": "exact", "source": "", "pathId": True},
+            }],
+            "duplicates": 0,
+            "bases": Counter({"P_fixture": 1}),
+        }
+        with mock.patch.object(recovery, "sha256_file", return_value="hash"):
+            payload = recovery._finalize_payload(core, {}, recovery.ROOT / "cli")
+        contract = payload["prefabIdentityContract"]
         self.assertEqual(contract["status"], "unavailable")
         self.assertEqual(contract["exactInstanceCount"], 0)
         self.assertEqual(contract["invalidExactIdentityCount"], 1)
-        self.assertEqual(contract["diagnostics"][0]["reason"], "exactIdentityRequiresNonEmptySourceAndIntegerPathId")
+        self.assertEqual(
+            contract["diagnostics"][0]["reason"],
+            "exactIdentityRequiresNonEmptySourceAndIntegerPathId",
+        )
 
 
 if __name__ == "__main__":

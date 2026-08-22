@@ -34,6 +34,11 @@
   /* One monospace stack for the whole app (four near-identical variants were
      in use). Existing declarations still resolve the same. */
   --mono: ui-monospace, SFMono-Regular, "SF Mono", Consolas, monospace;
+  /* The body UI stack, exposed as a token so feature CSS can name it inside a
+     `font:` shorthand. An undefined var there makes the whole shorthand invalid
+     at computed-value time and silently drops the size/weight with it. */
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+          "Microsoft YaHei", sans-serif;
   --hover: rgba(118, 171, 174, 0.14);
   --selected: rgba(118, 171, 174, 0.22);
   --good: #76abae;

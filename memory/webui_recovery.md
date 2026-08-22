@@ -191,8 +191,7 @@ RemoteCommon `startAudioEvent`/`endAudioEvent` fields are displayed as
 separate authored lifecycle contexts after the exact Persistent-over-Streaming
 row overlay. The current CN page data has four such rows, all found in Wwise
 music Events and none with a playable media leaf; runtime execution remains
-unobserved. The generated trigger-context catalog currently contains 27,054
-rows.
+unobserved.
 
 Serialized `monoBehaviourAudioIdField` context chips expose the narrow authored
 field role, `componentLayout`, component type, and raw serialized path. Search
@@ -390,6 +389,12 @@ Missing or malformed overlay data and unsupported Clip tokens stay unresolved
 and fail closed. The visible callback relation is authored static evidence;
 Animator execution, callback timing, Wwise branch/media selection, playback,
 and audibility remain runtime-unobserved.
+When the two NPC tables provide one exact agreeing row, the Audio page also
+shows `ownerKind=npc`, NPC id, template, and actor token for the callback Clip
+only when the same token has one exact `AudioDialogChannel` key. Duplicate or
+generic tokens, missing channel identity, overlay conflicts, malformed rows,
+and template mismatches stay unresolved. Mixed Events keep the NPC identity on the
+occurrence/Clip evidence instead of promoting the whole Event to one owner.
 Event rows
 now distinguish serialized User-Defined Aux
 slots from Game-Defined send enablement: the current unique-node corpus has
@@ -536,6 +541,76 @@ gaps. Native registration, source order, code address, proximity, OCR, and
 manual order never become mission chronology by themselves. Weak placement is
 visually separate and cannot override exact placement.
 
+## Map
+
+Map is a normal page after Story. It uses one generated contract for all levels:
+registry, quest, mission, minimap, HLOD, and streaming-instance evidence remain
+typed instead of being flattened into a generic location claim.
+
+Current state:
+
+- Level ownership comes from `LevelBasicInfoTable.idNum` and registry ids;
+  shared scene ownership comes only from the current compact LevelConfig path.
+- Map01, Map02, and config-proven blackbox scenes stitch by published
+  `regionKey`. Non-seamless dungeon and danger maps remain independent even
+  when they reuse source art.
+- The browser derives the active world rectangle from loaded backgrounds and
+  projects backgrounds, markers, labels, routes, floors, and model layers with
+  the same X/Z transform.
+- Minimap, grayscale elevation, material/surface, water, and point layers stay
+  independent. Point layers own an exact 16-bit world-Y mask and the frontend
+  filters only their alpha.
+- Current streaming sidecars are schema 2. Entity bases expose one `meshes`
+  array; exact instances feed static render layers rather than duplicate UI
+  nodes.
+- Authored floor images are selected by spatial hover/click, not a global
+  slider. Mission routes use authored quest order; co-occurrence relation webs
+  stay absent.
+- The resizable left rail is a three-column map/task/object-filter tree; its
+  task column owns the map status formerly shown in a top panel. The plain
+  third column combines object and render-layer filters without a disclosure
+  header, nested layer container, separate bottom dock, or inner column
+  scrollbars. The resizable right
+  inspector retains complete node fields and raw JSON/file access. Unnamed single-mission maps inherit that mission's
+  localized code/name. e0m0 explicitly links from `indie_dg002` to its
+  `indie_dg004` ending scene; trigger-volume slots without a recovered world
+  transform remain visible unresolved evidence.
+- Static projections may omit explicitly named roof/ceiling instances for a
+  documented cutaway. Material color is used only with an exact, unique
+  mesh/material/base-texture/UV closure; those recovered texture samples keep
+  their source RGB in surface and point output instead of receiving synthetic
+  height darkening.
+- Water coverage requires authored minimap pixels plus exact WaterData scene
+  evidence. Flowmaps remain corroboration only.
+- e0m0's generated HLOD naming contract now supplies a material closure: every
+  published cluster must uniquely match a generated material by exact
+  level/LOD/signed suffix, and the material must own one `_BaseColorMap`
+  PathID. The resulting surface and point layers are textured base-color
+  diagnostics; game lighting, fog, exposure, tone mapping, and grading remain
+  unrecovered and must not be approximated with a global color correction.
+- HLOD point output preserves every deduplicated projected vertex in a sparse,
+  deterministic height sidecar. Partial height filters select the highest
+  in-range sample per pixel, while the existing top-point PNG remains the
+  full-range fast path; upper-layer removal therefore exposes lower geometry.
+
+Evidence boundary:
+
+- Coordinates and matrices prove placement, not runtime activation,
+  interactivity, visibility, prefab identity, or renderer ownership.
+- HLOD grid placement remains inferred and fail-closed below its published fit
+  threshold.
+- Story producer/slot, NPC proxy, and authored map-pin joins remain distinct
+  from script-condition, proximity, mission-area, and quest context.
+- Generated counts and per-build inventories belong in
+  `reports/assets/map_recovery/`, not this file.
+
+Highest-value gaps:
+
+- Recover exact scene hierarchy and renderer ownership where HLOD or
+  InitChunkData currently proves only geometry/placement.
+- Recover water-surface geometry for scenes without sufficient authored map art.
+- Add behavior-level frontend coverage if a maintained browser test harness is
+  introduced; do not restore source-string snapshot tests.
 ## Updates and packaging
 
 ```bat
@@ -552,6 +627,8 @@ assets. Local WebUI, report, memory, and scratch changes are excluded.
 - Keep optional semantic sidecars visibly degraded rather than silently stale.
 - Improve exact Gameplay-to-asset and sound ownership without weakening labels.
 - Preserve clear evidence boundaries as Mission Pipeline gains runtime joins.
+- Recover exact `indie_dg002` scene Transforms and use them to validate or
+  replace the current inferred HLOD grid preview.
 - Keep Characters false-positive exclusions and live overrides clean.
 - Maintain accessible behavior across large Story, Gameplay, Audio, and Assets
   datasets.
@@ -567,9 +644,3 @@ assets. Local WebUI, report, memory, and scratch changes are excluded.
 
 Changing inventories and schema-specific counts belong in generated reports,
 not this file.
-When the two NPC tables provide one exact agreeing row, the Audio page also
-shows `ownerKind=npc`, NPC id, template, and actor token for the callback Clip
-only when the same token has one exact `AudioDialogChannel` key. Duplicate or
-generic tokens, missing channel identity, overlay conflicts, malformed rows,
-and template mismatches stay unresolved. Mixed Events keep the NPC identity on the
-occurrence/Clip evidence instead of promoting the whole Event to one owner.
