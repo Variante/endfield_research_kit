@@ -234,6 +234,13 @@ definition, not a recovered level instance. Recovering placed scene instances
 requires a structured scene-streaming/instance-relation join. The catalog does
 not infer runtime scene activation, current State/RTPC values, selector choice,
 listener state, playback, or audibility.
+The durable scene-emitter blocker is now explicit: the validated offline
+sidecars and object index prove authored prefab-local emitter definitions but
+do not provide a placed scene-instance relation. Compact status projection
+therefore stays prefabLocalSceneUnresolved with unavailablePrefabIdentity; no
+scene ID may come from candidate paths, levelId-only rows, GameObject names,
+positions, or Meshes. Recovery remains queued behind a future exact
+SceneAsset/Level containment or prefab Source+PathID-to-level join.
 Scene-global Event compact attribution is emitted only after every direct
 scene-global context validates its source/owner shape, exact evidence, runtime
 boundary statuses, and membership in the merged catalog scene set. It retains

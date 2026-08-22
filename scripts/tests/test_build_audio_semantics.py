@@ -1654,6 +1654,27 @@ class AudioSemanticDataTests(unittest.TestCase):
         self.assertFalse(summary["foundInWwise"])
         self.assertEqual(summary["category"], "ambience")
 
+    def test_scene_emitter_compact_negative_fields_are_searchable_without_exact_tag(self) -> None:
+        row = {
+            "id": "au_amb_emitter_fixture",
+            "name": "au_amb_emitter_fixture",
+            "hash": 8,
+            "category": "ambience",
+            "foundInWwise": False,
+            "sceneEmitterSceneContainmentStatuses": ["prefabLocalNotSceneContained"],
+            "sceneEmitterStreamingPrefabIdentityStatuses": ["unavailablePrefabIdentity"],
+            "sceneEmitterAttributionStatus": "prefabLocalSceneUnresolved",
+            "contexts": [{"kind": "sceneEmitterAudioEvent"}],
+            "media": [],
+            "evidence": [],
+        }
+        summary = event_summary.event_summary_row(row, "event_details/00.json")
+        self.assertEqual(summary["sceneEmitterAttributionStatus"], "prefabLocalSceneUnresolved")
+        self.assertNotIn("sceneEmitterSceneIds", summary)
+        self.assertIn("prefabLocalSceneUnresolved", summary["contextSearch"])
+        self.assertIn("unavailablePrefabIdentity", summary["contextSearch"])
+        self.assertFalse(summary["foundInWwise"])
+
     def test_media_playback_location_statuses_keep_evidence_boundaries(self) -> None:
         media = [
             {"id": "dialog", "audioDialogPath": "dialog/path", "storyLineBindingCount": 2},
@@ -9342,6 +9363,9 @@ class AudioSemanticDataTests(unittest.TestCase):
         evidence_body = source.split("function contextEvidenceLabel", 1)[1].split(
             "function radioTableLineLabel", 1
         )[0]
+        panel_body = source.split("function recordPanel", 1)[1].split(
+            "function collectIds", 1
+        )[0]
 
         self.assertIn('priority === "resolvedTerminal"', purpose_body)
         self.assertIn("storyLineBindingCount", purpose_body)
@@ -9541,6 +9565,9 @@ class AudioSemanticDataTests(unittest.TestCase):
         evidence_body = source.split("function contextEvidenceLabel", 1)[1].split(
             "function radioTableLineLabel", 1
         )[0]
+        panel_body = source.split("function recordPanel", 1)[1].split(
+            "function collectIds", 1
+        )[0]
         self.assertIn('kind === "sceneEmitterAudioEvent"', evidence_body)
         self.assertIn("sceneContainmentStatus", evidence_body)
         self.assertIn("sourceAssetPath", evidence_body)
@@ -9553,6 +9580,25 @@ class AudioSemanticDataTests(unittest.TestCase):
             "context.sceneContainmentDiagnostics",
         ):
             self.assertIn(field, search_body)
+        for field in (
+            "record?.sceneEmitterSceneIds",
+            "record?.sceneEmitterSceneContainmentStatuses",
+            "record?.sceneEmitterStreamingPrefabIdentityStatuses",
+            "record?.sceneEmitterAttributionStatus",
+        ):
+            self.assertIn(field, search_body)
+        self.assertIn('tags.add("sceneEmitterPrefabLocal")', source)
+        self.assertIn('tags.add("sceneEmitterUnavailable")', source)
+        self.assertIn('tags.add("sceneEmitterExact")', source)
+        self.assertIn("prefab-local emitter; scene unresolved; prefab identity unavailable", evidence_body)
+        self.assertIn("exact scene attribution; runtime scene activation unobserved", evidence_body)
+        for field in (
+            "sceneEmitterAttributionStatus",
+            "sceneEmitterSceneIds",
+            "sceneEmitterSceneContainmentStatuses",
+            "sceneEmitterStreamingPrefabIdentityStatuses",
+        ):
+            self.assertIn(f"raw.{field}", panel_body)
 
     def test_audio_frontend_exposes_scene_global_compact_attribution(self) -> None:
         source = (

@@ -73,6 +73,7 @@ PREFAB_CONTAINMENT_TYPES = frozenset({"Prefab", "PrefabAsset"})
 UNRESOLVED_CONTAINER_TYPES = frozenset({"SceneAssetContainer", "AssetContainer"})
 STREAMING_INSTANCE_CONTRACT_VERSION = 1
 STREAMING_INSTANCE_DIAGNOSTIC_LIMIT = 8
+STREAMING_INSTANCE_AUTHORITATIVE_STATUS = "validatedAuthoritative"
 SceneIdentityKey = tuple[Any, ...]
 
 
@@ -221,11 +222,13 @@ def _load_streaming_instance_identity_catalog(export_root: Path) -> dict[str, An
             exact_instances += 1
             entries.append({
                 "levelId": level_id,
+                "sidecarPath": relative,
                 "entityId": instance.get("entityId"),
                 "sourceFile": instance.get("sourceFile"),
                 "groupIndex": instance.get("groupIndex"),
                 "entityIndex": instance.get("entityIndex"),
                 "prefabIdentity": {
+                    "status": "exact",
                     "source": identity.get("source", identity.get("Source")),
                     "pathId": identity.get("pathId", identity.get("PathID")),
                 },
@@ -248,6 +251,10 @@ def _load_streaming_instance_identity_catalog(export_root: Path) -> dict[str, An
     return {
         "schemaVersion": STREAMING_INSTANCE_CONTRACT_VERSION,
         "status": status,
+        "authoritativeContractStatus": (
+            STREAMING_INSTANCE_AUTHORITATIVE_STATUS
+            if status == "exactPrefabIdentityEntries" else "unavailable"
+        ),
         "sources": sources,
         "counts": {
             "sidecars": len(sources),
@@ -276,6 +283,129 @@ def _normalise_asset_path(value: Any) -> str | None:
     if not normalized or "/" not in normalized:
         return None
     return normalized.casefold()
+
+
+def _canonical_streaming_sidecar_path(value: Any) -> str | None:
+    """Accept only the exporter-relative, forward-slash sidecar path."""
+
+    if not isinstance(value, str) or not value or value != value.strip():
+        return None
+    if "\\" in value or value.startswith("/") or ":" in value:
+        return None
+    parts = value.split("/")
+    if any(not part or part in {".", ".."} for part in parts):
+        return None
+    if len(parts) != 5 or parts[:2] != ["recovered", "AnimeStudio-cli"]:
+        return None
+    if parts[2] not in {"StreamingAssets", "Persistent"}:
+        return None
+    if (
+        parts[3] != "map_streaming_instances"
+        or not parts[4]
+        or not parts[4].endswith(".json")
+    ):
+        return None
+    return value
+
+
+def _streaming_identity_catalog_is_authoritative(catalog: Any) -> bool:
+    """Accept exact streaming rows only from the validated loader contract.
+
+    A caller can provide an ``entries`` list independently of the sidecar
+    collector.  Such rows are deliberately insufficient: promotion also
+    requires the collector's authoritative status, schema, source contracts,
+    counts, and empty diagnostics.  This keeps hand-authored or partially
+    malformed provider output from becoming a level attribution.
+    """
+
+    if not isinstance(catalog, dict):
+        return False
+    if catalog.get("status") != "exactPrefabIdentityEntries":
+        return False
+    if catalog.get("authoritativeContractStatus") != STREAMING_INSTANCE_AUTHORITATIVE_STATUS:
+        return False
+    if catalog.get("schemaVersion") != STREAMING_INSTANCE_CONTRACT_VERSION:
+        return False
+    diagnostics = catalog.get("diagnostics")
+    sources = catalog.get("sources")
+    entries = catalog.get("entries")
+    counts = catalog.get("counts")
+    if diagnostics != [] or not isinstance(sources, list) or not sources:
+        return False
+    if not isinstance(entries, list) or not entries:
+        return False
+    if not isinstance(counts, dict):
+        return False
+    exact_count = counts.get("exactPrefabIdentityInstances")
+    malformed_count = counts.get("malformedInstances")
+    if (
+        isinstance(exact_count, bool)
+        or not isinstance(exact_count, int)
+        or exact_count != len(entries)
+        or isinstance(malformed_count, bool)
+        or not isinstance(malformed_count, int)
+    ):
+        return False
+    if malformed_count != 0:
+        return False
+    source_keys: set[tuple[str, str]] = set()
+    source_levels_by_path: dict[str, str] = {}
+    for source in sources:
+        if not isinstance(source, dict):
+            return False
+        if source.get("schemaVersion") != 2:
+            return False
+        if source.get("prefabIdentityContractStatus") != "exact":
+            return False
+        source_path = source.get("path")
+        source_level = source.get("levelId")
+        if (
+            _canonical_streaming_sidecar_path(source_path) is None
+            or not isinstance(source_level, str) or not source_level.strip()
+        ):
+            return False
+        source_key = (source_path.strip(), source_level.strip())
+        previous_level = source_levels_by_path.get(source_path)
+        if previous_level is not None and previous_level != source_level.strip():
+            return False
+        if source_key in source_keys:
+            return False
+        source_keys.add(source_key)
+        source_levels_by_path[source_path] = source_level.strip()
+    identity_keys: set[SceneIdentityKey] = set()
+    for entry in entries:
+        if (
+            not isinstance(entry, dict)
+            or not isinstance(entry.get("levelId"), str)
+            or not entry["levelId"].strip()
+        ):
+            return False
+        level_id = entry["levelId"].strip()
+        sidecar_path = entry.get("sidecarPath")
+        if (
+            _canonical_streaming_sidecar_path(sidecar_path) is None
+            or (sidecar_path, level_id) not in source_keys
+        ):
+            return False
+        source_file = entry.get("sourceFile")
+        if source_file is not None and (
+            not isinstance(source_file, str) or not source_file.strip()
+        ):
+            return False
+        identity = entry.get("prefabIdentity")
+        key = _prefab_identity_key({
+            "status": "exact",
+            "source": identity.get("source", identity.get("Source"))
+            if isinstance(identity, dict) else None,
+            "pathId": identity.get("pathId", identity.get("PathID"))
+            if isinstance(identity, dict) else None,
+        })
+        if key is None or entry.get("identityKey") != list(key):
+            return False
+        if key in identity_keys:
+            return False
+        identity_keys.add(key)
+    return True
 
 
 def _enrich_streaming_instance_asset_paths(
@@ -1568,6 +1698,278 @@ def project_scene_global_compact_attribution(
     }
 
 
+SCENE_EMITTER_COMPACT_DIAGNOSTIC_LIMIT = 8
+SCENE_EMITTER_ATTRIBUTION_EXACT = "exactSceneAttribution"
+SCENE_EMITTER_ATTRIBUTION_PREFAB_LOCAL = "prefabLocalSceneUnresolved"
+SCENE_EMITTER_ATTRIBUTION_UNAVAILABLE = "sceneEmitterAttributionUnavailable"
+SCENE_EMITTER_ATTRIBUTION_CONFLICT = "sceneEmitterAttributionConflict"
+
+
+def _scene_emitter_exact_scene_id(
+    context: dict[str, Any],
+    scene_catalog: dict[str, Any] | None = None,
+) -> tuple[str | None, str | None]:
+    """Accept a scene ID only from the real containment producer shape.
+
+    ``_resolve_scene_emitter_containment`` emits the source/name on the
+    context and keeps the identity/relation in ``sceneContainmentEvidence``.
+    The evidence is mandatory here; a status or sceneId copied without that
+    relation is not an exact join.
+    """
+
+    if context.get("sceneContainmentStatus") != "exactSceneAssetLevelContainment":
+        return None, None
+    scene_id = context.get("sceneId")
+    if not isinstance(scene_id, str) or not scene_id.strip():
+        return None, "exactSceneContainmentMissingSceneId"
+    if not isinstance(context.get("sourceName"), str) or not context["sourceName"].strip():
+        return None, "exactSceneContainmentSourceNameMissing"
+    if not isinstance(context.get("sourcePath"), str) or not context["sourcePath"].strip():
+        return None, "exactSceneContainmentSourcePathMissing"
+    evidence = context.get("sceneContainmentEvidence")
+    if not isinstance(evidence, dict):
+        return None, "exactSceneContainmentEvidenceMalformed"
+    if evidence.get("kind") != "exactSceneAssetLevelContainment":
+        return None, "exactSceneContainmentEvidenceKindInvalid"
+    if evidence.get("relation") != "explicitObjectIdentityToSceneAssetLevel":
+        return None, "exactSceneContainmentEvidenceRelationInvalid"
+    if evidence.get("containmentType") not in SCENE_CONTAINMENT_TYPES:
+        return None, "exactSceneContainmentFamilyInvalid"
+    evidence_identity = evidence.get("identity")
+    if not isinstance(evidence_identity, dict):
+        return None, "exactSceneContainmentEvidenceIdentityMissing"
+    owner_keys = set(_containment_lookup_keys(context.get("owner")))
+    placement = context.get("placement")
+    if isinstance(placement, dict):
+        for key in ("gameObject", "transform"):
+            owner_keys.update(_containment_lookup_keys(placement.get(key)))
+    if not owner_keys or not owner_keys.intersection(_containment_lookup_keys(evidence_identity)):
+        return None, "exactSceneContainmentEvidenceIdentityMismatch"
+    if isinstance(scene_catalog, dict):
+        scene_ids = {
+            str(row.get("sceneId"))
+            for row in scene_catalog.get("scenes") or ()
+            if isinstance(row, dict) and isinstance(row.get("sceneId"), str)
+        }
+        if scene_id.strip() not in scene_ids:
+            return None, "exactSceneContainmentSceneNotInCatalog"
+    return scene_id.strip(), None
+
+
+def _scene_emitter_exact_prefab_level_id(
+    context: dict[str, Any],
+    streaming_instance_catalog: dict[str, Any] | None,
+) -> tuple[str | None, str | None]:
+    """Accept a level only after evidence joins one validated catalog row."""
+
+    if context.get("streamingPrefabInstanceStatus") != "exactPrefabInstanceToLevel":
+        return None, None
+    if not _streaming_identity_catalog_is_authoritative(streaming_instance_catalog):
+        return None, "streamingPrefabIdentityCatalogUnavailable"
+    level_id = context.get("streamingPrefabInstanceLevelId")
+    if not isinstance(level_id, str) or not level_id.strip():
+        return None, "exactPrefabInstanceMissingLevelId"
+    evidence = context.get("streamingPrefabInstanceEvidence")
+    if not isinstance(evidence, list) or not evidence:
+        return None, "exactPrefabInstanceEvidenceMissing"
+    catalog_entries = [
+        entry for entry in streaming_instance_catalog.get("entries") or ()
+        if isinstance(entry, dict)
+    ]
+    identity_keys: set[SceneIdentityKey] = set()
+    for entry in evidence:
+        if not isinstance(entry, dict) or entry.get("levelId") != level_id:
+            return None, "exactPrefabInstanceEvidenceLevelMismatch"
+        identity = entry.get("prefabIdentity")
+        if not isinstance(identity, dict):
+            return None, "exactPrefabInstanceIdentityMissing"
+        key = _prefab_identity_key({
+            "status": "exact",
+            "source": identity.get("source", identity.get("Source")),
+            "pathId": identity.get("pathId", identity.get("PathID")),
+        })
+        if key is None:
+            return None, "exactPrefabInstanceIdentityMalformed"
+        published_key = entry.get("identityKey")
+        if not isinstance(published_key, list) or tuple(published_key) != key:
+            return None, "exactPrefabInstanceIdentityEvidenceMismatch"
+        if key in identity_keys:
+            return None, "exactPrefabInstanceEvidenceDuplicateIdentity"
+        matches = [
+            candidate for candidate in catalog_entries
+            if candidate.get("levelId") == level_id
+            and candidate.get("identityKey") == published_key
+        ]
+        if len(matches) != 1:
+            return None, (
+                "exactPrefabInstanceEvidenceCatalogMissing"
+                if not matches else "exactPrefabInstanceEvidenceCatalogAmbiguous"
+            )
+        candidate = matches[0]
+        evidence_sidecar_path = entry.get("sidecarPath")
+        if _canonical_streaming_sidecar_path(evidence_sidecar_path) is None:
+            return None, "exactPrefabInstanceEvidenceSidecarMissing"
+        if evidence_sidecar_path != candidate.get("sidecarPath"):
+            return None, "exactPrefabInstanceEvidenceSourceMismatch"
+        for field in ("sidecarPath", "sourceFile"):
+            if field == "sidecarPath":
+                continue
+            if field in entry and entry.get(field) != candidate.get(field):
+                return None, "exactPrefabInstanceEvidenceSourceMismatch"
+        identity_keys.add(key)
+    if not identity_keys:
+        return None, "exactPrefabInstanceIdentityEmpty"
+    return level_id.strip(), None
+
+
+def project_scene_emitter_compact_attribution(
+    contexts: Iterable[dict[str, Any]],
+    scene_catalog: dict[str, Any],
+    streaming_instance_catalog: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Project scene-emitter containment boundaries without inventing scene IDs.
+
+    The current valid outcome is a prefab-local authored emitter with scene and
+    prefab identity unresolved.  A scene ID can be promoted only from exact
+    SceneAsset/Level containment or from an exact prefab Source+PathID evidence
+    row joined to one membership-checked validated catalog entry and explicit
+    level.  Candidate paths, object names,
+    positions, and sidecar ``levelId`` values without that identity evidence
+    remain non-exact.
+    """
+
+    raw_contexts = list(contexts or ())
+    emitter_contexts = [
+        context for context in raw_contexts
+        if isinstance(context, dict)
+        and context.get("kind") == "sceneEmitterAudioEvent"
+    ]
+    if not emitter_contexts:
+        return {}
+    diagnostics: list[dict[str, Any]] = []
+    diagnostic_count = 0
+
+    def diagnostic(reason: str, index: int | None = None, **extra: Any) -> None:
+        nonlocal diagnostic_count
+        diagnostic_count += 1
+        if len(diagnostics) < SCENE_EMITTER_COMPACT_DIAGNOSTIC_LIMIT:
+            row: dict[str, Any] = {"reason": reason}
+            if index is not None:
+                row["index"] = index
+            row.update(extra)
+            diagnostics.append(row)
+
+    for index, context in enumerate(raw_contexts):
+        if not isinstance(context, dict):
+            diagnostic("sceneEmitterContextNotObject", index)
+
+    if not isinstance(scene_catalog, dict) or scene_catalog.get("status") != "validatedPublishedObjectIndex":
+        diagnostic("sceneCatalogUnavailable")
+
+    containment_statuses: set[str] = set()
+    prefab_statuses: set[str] = set()
+    exact_scene_ids: set[str] = set()
+    exact_prefab_level_ids: set[str] = set()
+    exact_context_count = 0
+    for index, context in enumerate(emitter_contexts):
+        if context.get("confidence") != "direct":
+            diagnostic("sceneEmitterContextNotDirect", index)
+        if _identity_key(context.get("owner")) is None:
+            diagnostic("sceneEmitterOwnerIdentityMalformed", index)
+        role = context.get("semanticRole")
+        if not isinstance(role, str) or not role.strip():
+            diagnostic("sceneEmitterSemanticRoleMissing", index)
+        event_hash = context.get("eventHash")
+        if isinstance(event_hash, bool) or not isinstance(event_hash, int):
+            diagnostic("sceneEmitterEventHashMalformed", index)
+
+        containment_status = context.get("sceneContainmentStatus")
+        if not isinstance(containment_status, str) or not containment_status.strip():
+            diagnostic("sceneEmitterContainmentStatusMissing", index)
+        else:
+            containment_statuses.add(containment_status.strip())
+        prefab_status = context.get("streamingPrefabInstanceStatus")
+        if not isinstance(prefab_status, str) or not prefab_status.strip():
+            diagnostic("sceneEmitterPrefabIdentityStatusMissing", index)
+        else:
+            prefab_statuses.add(prefab_status.strip())
+
+        scene_id, reason = _scene_emitter_exact_scene_id(context, scene_catalog)
+        context_has_exact_attribution = False
+        if reason:
+            diagnostic(reason, index)
+        elif scene_id:
+            exact_scene_ids.add(scene_id)
+            context_has_exact_attribution = True
+        elif context.get("sceneId") not in (None, ""):
+            diagnostic("sceneIdSuppressedWithoutExactContainment", index)
+
+        level_id, reason = _scene_emitter_exact_prefab_level_id(
+            context, streaming_instance_catalog
+        )
+        if reason:
+            diagnostic(reason, index)
+        elif level_id:
+            exact_prefab_level_ids.add(level_id)
+            context_has_exact_attribution = True
+        elif context.get("streamingPrefabInstanceLevelId") not in (None, ""):
+            diagnostic("streamingLevelIdSuppressedWithoutExactPrefabIdentity", index)
+        if context_has_exact_attribution:
+            exact_context_count += 1
+
+    result: dict[str, Any] = {
+        "sceneEmitterSceneContainmentStatuses": sorted(containment_statuses),
+        "sceneEmitterStreamingPrefabIdentityStatuses": sorted(prefab_statuses),
+    }
+    if diagnostics:
+        result.update({
+            "sceneEmitterAttributionStatus": SCENE_EMITTER_ATTRIBUTION_UNAVAILABLE,
+            "sceneEmitterAttributionDiagnostics": diagnostics,
+            "sceneEmitterAttributionDiagnosticCount": diagnostic_count,
+        })
+        return result
+
+    if (
+        (exact_scene_ids or exact_prefab_level_ids)
+        and exact_context_count != len(emitter_contexts)
+    ):
+        diagnostic(
+            "mixedExactAndUnresolvedSceneEmitterContexts",
+            exactContextCount=exact_context_count,
+            contextCount=len(emitter_contexts),
+        )
+    elif len(exact_scene_ids) > 1 or len(exact_prefab_level_ids) > 1:
+        diagnostic("multipleExactSceneEmitterAttributions", sceneIds=sorted(exact_scene_ids), levelIds=sorted(exact_prefab_level_ids))
+    elif exact_scene_ids and exact_prefab_level_ids and exact_scene_ids != exact_prefab_level_ids:
+        diagnostic(
+            "sceneAndPrefabExactAttributionConflict",
+            sceneIds=sorted(exact_scene_ids),
+            levelIds=sorted(exact_prefab_level_ids),
+        )
+    if diagnostics:
+        result.update({
+            "sceneEmitterAttributionStatus": SCENE_EMITTER_ATTRIBUTION_CONFLICT,
+            "sceneEmitterAttributionDiagnostics": diagnostics,
+            "sceneEmitterAttributionDiagnosticCount": diagnostic_count,
+        })
+        return result
+
+    exact_ids = exact_scene_ids | exact_prefab_level_ids
+    if exact_ids:
+        result["sceneEmitterSceneIds"] = sorted(exact_ids)
+        result["sceneEmitterAttributionStatus"] = SCENE_EMITTER_ATTRIBUTION_EXACT
+    elif (
+        containment_statuses
+        and containment_statuses <= {"prefabLocalNotSceneContained"}
+        and prefab_statuses
+        and prefab_statuses <= {"unavailablePrefabIdentity"}
+    ):
+        result["sceneEmitterAttributionStatus"] = SCENE_EMITTER_ATTRIBUTION_PREFAB_LOCAL
+    else:
+        result["sceneEmitterAttributionStatus"] = SCENE_EMITTER_ATTRIBUTION_UNAVAILABLE
+    return result
+
+
 def _scene_position(scene_context: Any) -> dict[str, Any] | None:
     if not isinstance(scene_context, dict):
         return None
@@ -1841,6 +2243,27 @@ def _streaming_instance_emitter_projection(
     status = str(catalog.get("status") or "unavailable")
     diagnostics = _bound_rows(catalog.get("diagnostics") or [])
     entries = [entry for entry in catalog.get("entries") or () if isinstance(entry, dict)]
+    known_statuses = {
+        "exactPrefabIdentityEntries",
+        "unavailablePrefabIdentity",
+        "unavailableNoPrefabIdentityEntries",
+        "unavailableNoStreamingInstanceSidecars",
+    }
+    if status not in known_statuses:
+        status = "unavailablePrefabIdentity"
+    if not _streaming_identity_catalog_is_authoritative(catalog) and (
+        entries or status == "exactPrefabIdentityEntries"
+    ):
+        return {
+            "status": "unavailablePrefabIdentity",
+            "diagnostics": _bound_rows([
+                *diagnostics,
+                {
+                    "status": "streamingIdentityCatalogUnavailable",
+                    "reason": "providerContractNotValidatedAuthoritative",
+                },
+            ]),
+        }
     owner_keys = set(_containment_lookup_keys(owner))
     matches: list[dict[str, Any]] = []
     for entry in entries:

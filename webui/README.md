@@ -235,6 +235,13 @@ source and `sceneOwnershipStatus`/`sceneContainmentStatus`, with
 Missing or malformed AssetMap input is shown as unavailable rather than
 replaced by a name/path guess. A prefab source row is not a recovered level
 instance.
+Event cards and search expose compact scene-emitter containment and prefab
+identity status sets. The current prefab-local result is labeled as a static
+authored emitter with scene unresolved and prefab identity unavailable; it is
+not an exact context tag. Scene IDs appear only for exact SceneAsset/Level
+containment or exact prefab Source+PathID evidence joined to one level.
+Candidate paths, sidecar level IDs, names, positions, and mixed exact rows
+remain diagnostic-only.
 Scene-global Event cards and details expose exact authored scene IDs and the
 original serialized semantic roles only when every direct context validates
 against the merged scene catalog. The context filter and search use the same
