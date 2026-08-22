@@ -1,0 +1,87 @@
+{
+  "schema": "endfield.charinfo.gyroscope-camera-state.original-data.v1",
+  "generated_utc": "2026-07-14T00:00:00Z",
+  "status": "native-finalize-callback-and-input-endpoints-recovered",
+  "camera_extension": {
+    "type": "Beyond.UI.CinemachineGyroscopeEffect",
+    "image": "UI.Beyond.dll",
+    "type_token": "0x02000027",
+    "callback": "PostPipelineStageCallback",
+    "method_token": "0x060000E5",
+    "method_index": 388505,
+    "native_va": "0x18BBD3CCC",
+    "native_rva": "0xBBD3CCC",
+    "stage": "CinemachineCore.Stage.Finalize",
+    "has_look_at_behavior": "PositionCorrection += RawOrientation * float3(offsetX,offsetY,0); rebuild RawOrientation toward ReferenceLookAt and reapply the negated prior camera rotation-to-target offset.",
+    "centered_overview_specialization": "The recovered CharInfo Overview Composer is centered with zero damping, so the prior angular look offset is zero. The lab adds the camera-local world-space correction to the authored position and looks at the original ReferenceLookAt.",
+    "delta_time_used": false,
+    "state_accumulates_between_evaluations": false
+  },
+  "input_driver": {
+    "type": "Beyond.UI.UIGyroscopeEffect",
+    "tick": "PreLate",
+    "enable_detect": true,
+    "mouse_x_normalization": "(clamp(mouse.x,0,width)-width*0.5)/(width*0.5)",
+    "mouse_y_normalization": "(clamp(mouse.y,0,height)-height*0.5)/(height*0.5)",
+    "target_mapping": "target=(verticalCurve(mouseY)*0.15,horizontalCurve(mouseX)*-0.25,0); DOTween setter writes offsetX=target.y and offsetY=target.x",
+    "tween_seconds": 2.0,
+    "tween_ease": "OutQuad",
+    "update_threshold_squared": 1e-10,
+    "vertical_curve_scale": 0.15,
+    "horizontal_curve_scale": -0.25,
+    "vertical_curve_unweighted_keys": [
+      [-1.0, -1.0, 0.30492884, 0.30492884],
+      [-0.5103161, -0.85068125, 0.504885, 0.504885],
+      [0.50977415, 0.8643059, 0.97900516, 0.97900516],
+      [1.0, 1.0, 0.2767991, 0.2767991]
+    ],
+    "horizontal_curve_unweighted_keys": [
+      [-1.0, -1.0, 0.05619042, 0.05619042],
+      [-0.3998412, -0.9662768, 0.129704, 0.129704],
+      [0.0, 0.005836278, 2.6192734, 2.6192734],
+      [0.3447942, 0.9737766, 0.12496684, 0.12496684],
+      [1.0, 1.0, 0.04002318, 0.04002318]
+    ],
+    "centered_mouse_settled_offsets_xy": [-0.0014590695, -0.0079590753]
+  },
+  "actors": {
+    "Wulfa": {
+      "driver_source": "scratch/charinfo_operator_camera_tracks_json/MonoBehaviour/MonoBehaviour#272_p371F0E4A2F8CA0F2.json",
+      "driver_raw_sha256": "25209ff40548d09153d9c7c9822d5a2fc5c47772b2c4fa2b46be2693275e9d18",
+      "extension_source": "scratch/charinfo_operator_camera_tracks_json/MonoBehaviour/MonoBehaviour#312_p49C16CF1F734A0F2.json",
+      "extension_raw_sha256": "7e33d537632e2fdd8f117aec195728eafdd34040c23ed39775617c023c901816",
+      "serialized_entry_offsets_xy": [0.2483662, -0.143241],
+      "serialized_entry_analytic_portrait_shift_pixels_3840x2160": [89.20, 50.97]
+    },
+    "Zhuangfy": {
+      "driver_source": "scratch/charinfo_operator_camera_tracks_json/MonoBehaviour/MonoBehaviour#479_pB49C4EC2D2475FC8.json",
+      "driver_raw_sha256": "6bf8944ed4a54a61de15f965084719e2610f105b685a42d4430db64f2333cd63",
+      "extension_source": "scratch/charinfo_operator_camera_tracks_json/MonoBehaviour/MonoBehaviour#450_p9D2AA2D591C85FC8.json",
+      "extension_raw_sha256": "00dfc4fd026c322de2121e0d4cce93baacfbcf067b9b295b779a4925d28d23e3",
+      "serialized_entry_offsets_xy": [-0.2489724, 0.08848439],
+      "serialized_entry_analytic_portrait_shift_pixels_3840x2160": [-75.91, -26.91]
+    },
+    "Endminf": {
+      "driver_source": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#11970_p4490FBDC85C5D823.json",
+      "driver_raw_sha256": "e6319ea33d7a86dba37acd47a5c345a2c99d08dbef454ed9e1a82d7e26183431",
+      "extension_source": "scratch/charinfo_playable_profiles/dependencies_json/MonoBehaviour/MonoBehaviour#11727_pAECF307BD265D823.json",
+      "extension_raw_sha256": "5f43304690874ef78e4ddc64b309107278217aa6f83b385d59e25862ffe3a6cb",
+      "serialized_entry_offsets_xy": [0.24835543, -0.1448596],
+      "camera_track": "track_chr_0003_endmin/DollyCart/vcam_overview",
+      "boundary": "exact authored entry endpoint; capture-time input and the two-second OutQuad trajectory are not recorded"
+    }
+  },
+  "lab_modes": {
+    "selector": "ENDFIELD_RECOVERED_CHARINFO_GYROSCOPE_MODE",
+    "default": "off",
+    "neutral-centered-input": "Evaluate the original mouse curves at normalized input (0,0) and apply the settled two-second endpoint.",
+    "serialized-entry": "Apply the exact actor prefab offsets before UIGyroscopeEffect replaces them.",
+    "recorded-input-endpoint": "Read normalized source-domain mouse X/Y and apply the original curve endpoint; this does not synthesize the two-second transition."
+  },
+  "boundaries": [
+    "The cursor/controller state in the supplied reference captures was not recorded, so no one live offset is recoverable from static game data.",
+    "The lab implements the exact centered-Composer HasLookAt specialization used by CharInfo Overview, not the unrelated no-LookAt Euler branch.",
+    "The 2-second input transition and continuous recorded input replay remain deferred with animation; validation modes select source-defined endpoints.",
+    "A later network-delivered UI IFix patch absent from the indexed installed client would be external state; the indexed install contains no UI.Beyond.patch.bytes."
+  ]
+}

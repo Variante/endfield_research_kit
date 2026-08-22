@@ -31,6 +31,8 @@ namespace EndfieldGraphShaderLab
             "ENDFIELD_RECOVERED_CHARINFO_READY_SUBSET_DIAGNOSTIC";
         public const string ReadySubsetCommandLineArgument =
             "-endfield-recovered-charinfo-ready-subset-diagnostic";
+        public const string EndminfBackdropVisualCompatibilityEnvironmentVariable =
+            "ENDFIELD_ENDMINF_BACKDROP_VISUAL_COMPATIBILITY";
 
         public const string GridShaderName =
             "Endfield/Recovered/CharInfo/VFXDsWrite";
@@ -90,6 +92,7 @@ namespace EndfieldGraphShaderLab
         private bool readySubsetStateApplied;
         private bool previousBackdropEnabled;
         private Renderer appliedBackdropRenderer;
+        private MaterialPropertyBlock endminfBackdropProperties;
         private bool loggedReadinessFailure;
         private bool loggedReadySubsetFailure;
         private bool loggedReadySubsetActivation;
@@ -289,6 +292,11 @@ namespace EndfieldGraphShaderLab
             BeginSourceState(true);
             sourceContent.SetActive(true);
 
+            if (ApplyEndminfBackdropCompatibility())
+            {
+                return;
+            }
+
             // The diagnostic is intentionally an allow-list. Do not permit
             // either unresolved pass to draw even if its GameObject or source
             // renderer is enabled in the recovered prefab.
@@ -311,6 +319,36 @@ namespace EndfieldGraphShaderLab
                     this);
                 loggedReadySubsetActivation = true;
             }
+        }
+
+        private bool ApplyEndminfBackdropCompatibility()
+        {
+            if (EndfieldRecoveredSelector.Explicit(
+                    EndminfBackdropVisualCompatibilityEnvironmentVariable) != true)
+                return false;
+
+            sourceContent.SetActive(false);
+            Renderer backdrop = appliedBackdropRenderer != null
+                ? appliedBackdropRenderer
+                : compatibilityBackdropRenderer;
+            if (backdrop != null)
+            {
+                backdrop.enabled = true;
+                if (endminfBackdropProperties == null)
+                    endminfBackdropProperties = new MaterialPropertyBlock();
+                backdrop.GetPropertyBlock(endminfBackdropProperties);
+                endminfBackdropProperties.SetFloat("_HdrBoost", 2.5f);
+                bool exactPortrait = EndfieldRecoveredSelector.Explicit(
+                    EndfieldRecoveredCharInfoBackgroundPortrait.EnvironmentVariable) == true;
+                endminfBackdropProperties.SetFloat(
+                    "_SilhouetteOpacity",
+                    exactPortrait ? 0.0f : 0.22f);
+                backdrop.SetPropertyBlock(endminfBackdropProperties);
+            }
+            Shader.DisableKeyword(Keyword);
+            Shader.DisableKeyword(ReadySubsetKeyword);
+            loggedReadySubsetFailure = false;
+            return true;
         }
 
         public bool ValidateSourceReadiness(out string failure)

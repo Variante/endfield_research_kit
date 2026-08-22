@@ -1,0 +1,80 @@
+{
+  "status": "shader_asset_recovered_public_unity_shader_abi_missing_fail_closed",
+  "scope": "A_fx_endminf_ui_overview_02 radial blur and chromatic aberration render producer",
+  "pinned_inputs": {
+    "gameassembly_sha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
+    "global_metadata_sha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
+  },
+  "native_methods": [
+    {"name":"HG.Rendering.Runtime.PostProcessPassConstructor..ctor","method_index":286903,"token":"0x06000f33","va":"0x183d75990","body_sha256":"fd2efdf671b11de4480421479d472b924ea283817b5acbcbb78db9f254af9b40"},
+    {"name":"HG.Rendering.Runtime.PostProcessPassConstructor.ConstructPass","method_index":286908,"token":"0x06000f38","va":"0x189b8c79c","body_sha256":"2262b4b6eed42afa8999a860d4163ef84b3713d47c00bd1aff3efe4266a8df5e"},
+    {"name":"HG.Rendering.Runtime.PostProcessPassConstructor.UberPass","method_index":286912,"token":"0x06000f3c","va":"0x189b8d8b0","body_sha256":"12fb9ae40583c8a4dcc1454afd12805bf84a4d0be472b9581787ab11fee119c9"},
+    {"name":"HG.Rendering.Runtime.UberPostPassUtils.PrepareRadialBlurAndChromaticAberrationParameters","method_index":286867,"token":"0x06000f0f","va":"0x189b860f0","body_sha256":"a5711413dc91ff5271fcf50298292f339a3bba23be9f0feab6536b9e83c75d75"}
+  ],
+  "closed_execution": {
+    "ownership": "PostProcessPassConstructor Uber pass; there is no standalone radial/chromatic draw pass",
+    "call_order": [
+      "UberPass +0x129a PrepareDirtyLensParameters",
+      "UberPass +0x12c2 PrepareRadialBlurAndChromaticAberrationParameters",
+      "UberPass +0x12d9 PrepareBWFlashParameters",
+      "render-graph input reads, destination write, paired depth attachment, UI renderer lists, SetRenderFunc"
+    ],
+    "volume_inputs": ["HGRadialBlur", "HGChromaticAbberation"],
+    "pass_data_outputs": ["UberPostPassData.radialBlurParams", "UberPostPassData.radialBlurParams2"],
+    "shader_keywords": ["RADIAL_BLUR", "RADIAL_BLUR_CHROMATIC_ABERRATION"],
+    "shader_property_ids": ["_RadialBlurParams", "_RadialBlurParams2"],
+    "material_creation": "PostProcessPassConstructor..ctor calls HGRenderPipelineMaterialCollector.CreateMaterial with HGRenderPipelineRuntimeResources.ShaderResources.uberPostPS; native resource access is the shader-resource slot observed at ctor +0xe8 before CreateMaterial +0xf8."
+  },
+  "source_resource_identity": {
+    "owner_type": "HG.Rendering.Runtime.HGRenderPipelineRuntimeResources+ShaderResources",
+    "field": "uberPostPS",
+    "field_ordinal": 91,
+    "cpp_mirror": "UnityEngine.HyperGryphEngineCode.HGRenderPipelineRuntimeResourcesShaderResourcesCPP.uberPostPS",
+    "runtime_resources": {
+      "container": "assets/beyond/initialassets/settings/renderpipeline/hgrenderpipelineglobalsettings.asset",
+      "serialized_file": "CAB-5edbf457631197eaf84a8374582f8cca",
+      "path_id": 5613980184714137857,
+      "raw_payload_sha256": "0376ca02e3cac7a1d29419e187cedabc62c60b2a20bb9d08035acffc8649c1c5",
+      "export_json_sha256": "bc91082a0ca56bc396e31ac89bee7763733eb6a0bb51edfe09f667b58af42488"
+    },
+    "uber_post_shader_pptr": {
+      "file_id": 212,
+      "expected_serialized_file": "CAB-feee320eebbc6443871160405c47e630",
+      "path_id": -2664880953429036268,
+      "asset_name": "HGRP/PostProcessing/UberPost",
+      "asset_map_hash": "48ceeba1a45762d8",
+      "source_offset": 27891014
+    }
+  },
+  "recovered_shader": {
+    "raw_shader_sha256": "04dd5b16ed28d1314a4e360d4a9eb618a33f04bbcda7f9350e370182a242f14b",
+    "json_sha256": "26fdcc5bf162d20db3ecd665539a69fb31f52d3107094712b0d635219bb255a7",
+    "converted_diagnostic_sha256": "04e58fd89f6060414e2d0354ff5acaecfb3146d9255f1528ad47a5d6369ba511",
+    "platforms": ["D3D11", "Vulkan"],
+    "d3d12_platform_blob_present": false,
+    "programs_per_platform": 775,
+    "passes": ["UberPost", "UberPost_CompositeUI", "UberPost_BWFlash", "UberPost_FisheyeEffect", "UberPost_FisheyeEffectDepth"],
+    "radial_chromatic_variant": {
+      "keyword": "RADIAL_BLUR_CHROMATIC_ABERRATION",
+      "vertex_dxbc_hash": "833324977c629596",
+      "fragment_dxbc_hash": "524235fff5fcaad4",
+      "textures": ["source color (DXBC t0)", "secondary Uber input (DXBC t1)"],
+      "samplers": ["linear source sampler (DXBC s0)"],
+      "constants": ["_RadialBlurParams (pass cbuffer vector 0)", "_RadialBlurParams2 (pass cbuffer vector 25)", "ShaderVariablesGlobal/_ScreenSize", "_ExposureWithMiscParams", "_Lut_Params", "_PerPassConstants including _HGFlipX/_HGFlipY"]
+    }
+  },
+  "implementation_decision": {
+    "admitted": false,
+    "reason": "The exact resource, Shader, pass table, and D3D11/Vulkan subprograms are recovered. The converted .shader is explicitly diagnostic and not valid Unity shader source. The pinned asset has no D3D12 platform blob, and public Unity 2022 does not expose a supported API to construct a Shader from the recovered compiled DXBC program table. Hand-translating the disassembly to HLSL would be an approximation and violates the source-exact admission gate.",
+    "next_missing_artifact": "A source-exact, Unity-importable UberPost shader source/include closure from the pinned build, or a proven public-Unity loader path that consumes the recovered serialized Shader/D3D11 program table without rewriting it. The native SetRenderFunc/C++ mirror that binds the secondary Uber input and per-pass constant buffer is also required before reproducing the full five-pass composition."
+  },
+  "evidence": {
+    "native_map_json": "unity_endfield_graph_shader_lab/scratch/character_recovery/endminf_a_fx02_uber_post/native_map.json",
+    "native_map_markdown": "unity_endfield_graph_shader_lab/scratch/character_recovery/endminf_a_fx02_uber_post/native_map.md",
+    "curve_and_apply_audit": "reports/assets/endminf_overview_02_post_curve_native_audit.json",
+    "runtime_resources_json": "scratch/animestudio/endminf_uber_post/runtime_resources_json/MonoBehaviour/HGRenderPipelineRuntimeResources_p4DE8DD3BDDF7D101.json",
+    "shader_json": "scratch/animestudio/endminf_uber_post/shader_json/Shader/HGRP_PostProcessing_UberPost_pDB0470E45A287314.json",
+    "shader_raw": "scratch/animestudio/endminf_uber_post/shader_raw/Shader/HGRP_PostProcessing_UberPost_pDB0470E45A287314.dat",
+    "shader_diagnostic": "scratch/animestudio/endminf_uber_post/shader_convert/Shader/HGRP_PostProcessing_UberPost_pDB0470E45A287314.shader"
+  }
+}

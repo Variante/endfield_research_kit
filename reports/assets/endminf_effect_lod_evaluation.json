@@ -1,0 +1,484 @@
+{
+  "schema": "endfield.effect-lod-evaluation.v1",
+  "nativeRule": "(settingLodLevel & showSettingLodLevel) != 0 && (targetLayer & showTargetLayers) != 0 && selectedDistanceInfo.isActive",
+  "inputs": {
+    "showSettingLodLevel": 15,
+    "showTargetLayers": 3,
+    "distanceIndex": 0,
+    "isUseDistanceLod": 0,
+    "isCullDisable": 1,
+    "cullDistance": 100.0
+  },
+  "cameraBoundary": "Camera position/distance is not consumed for this prefab because isUseDistanceLod=0 and _isCullDisable=1. Serialized distance row 0 remains selected.",
+  "rows": [
+    {
+      "row": 0,
+      "gameObjectPathId": 644358100928130169,
+      "settingLodLevel": 15,
+      "targetLayer": 3,
+      "distanceActive": true,
+      "active": true
+    },
+    {
+      "row": 1,
+      "gameObjectPathId": -8947665970063446919,
+      "settingLodLevel": 15,
+      "targetLayer": 3,
+      "distanceActive": true,
+      "active": true
+    },
+    {
+      "row": 2,
+      "gameObjectPathId": 496903090291108985,
+      "settingLodLevel": 15,
+      "targetLayer": 3,
+      "distanceActive": true,
+      "active": true
+    },
+    {
+      "row": 3,
+      "gameObjectPathId": -6828525816245359495,
+      "settingLodLevel": 15,
+      "targetLayer": 3,
+      "distanceActive": true,
+      "active": true
+    },
+    {
+      "row": 4,
+      "gameObjectPathId": -7637484799926506375,
+      "settingLodLevel": 15,
+      "targetLayer": 3,
+      "distanceActive": true,
+      "active": true
+    },
+    {
+      "row": 5,
+      "gameObjectPathId": -4456450453208667015,
+      "settingLodLevel": 15,
+      "targetLayer": 3,
+      "distanceActive": true,
+      "active": true
+    },
+    {
+      "row": 6,
+      "gameObjectPathId": 2926954151713270905,
+      "settingLodLevel": 15,
+      "targetLayer": 3,
+      "distanceActive": true,
+      "active": true
+    },
+    {
+      "row": 7,
+      "gameObjectPathId": 5587022036373433465,
+      "settingLodLevel": 15,
+      "targetLayer": 3,
+      "distanceActive": true,
+      "active": true
+    },
+    {
+      "row": 8,
+      "gameObjectPathId": -1767898205817639815,
+      "settingLodLevel": 15,
+      "targetLayer": 3,
+      "distanceActive": true,
+      "active": true
+    },
+    {
+      "row": 9,
+      "gameObjectPathId": -1868355154486334343,
+      "settingLodLevel": 15,
+      "targetLayer": 3,
+      "distanceActive": true,
+      "active": true
+    },
+    {
+      "row": 10,
+      "gameObjectPathId": -1985326932119032711,
+      "settingLodLevel": 15,
+      "targetLayer": 3,
+      "distanceActive": true,
+      "active": true
+    },
+    {
+      "row": 11,
+      "gameObjectPathId": -8837273897525941127,
+      "settingLodLevel": 15,
+      "targetLayer": 3,
+      "distanceActive": true,
+      "active": true
+    },
+    {
+      "row": 12,
+      "gameObjectPathId": 2376111990022499449,
+      "settingLodLevel": 15,
+      "targetLayer": 3,
+      "distanceActive": true,
+      "active": true
+    },
+    {
+      "row": 13,
+      "gameObjectPathId": -8498887544102884231,
+      "settingLodLevel": 15,
+      "targetLayer": 3,
+      "distanceActive": true,
+      "active": true
+    },
+    {
+      "row": 14,
+      "gameObjectPathId": -9147818123849470855,
+      "settingLodLevel": 15,
+      "targetLayer": 3,
+      "distanceActive": true,
+      "active": true
+    },
+    {
+      "row": 15,
+      "gameObjectPathId": -4440886746465276807,
+      "settingLodLevel": 12,
+      "targetLayer": 3,
+      "distanceActive": true,
+      "active": true
+    },
+    {
+      "row": 16,
+      "gameObjectPathId": -8640398850400555911,
+      "settingLodLevel": 15,
+      "targetLayer": 3,
+      "distanceActive": true,
+      "active": true
+    },
+    {
+      "row": 17,
+      "gameObjectPathId": -6981985968283358087,
+      "settingLodLevel": 15,
+      "targetLayer": 3,
+      "distanceActive": true,
+      "active": true
+    },
+    {
+      "row": 18,
+      "gameObjectPathId": 5442122015683406969,
+      "settingLodLevel": 15,
+      "targetLayer": 3,
+      "distanceActive": true,
+      "active": true
+    },
+    {
+      "row": 19,
+      "gameObjectPathId": 3940891493467188345,
+      "settingLodLevel": 15,
+      "targetLayer": 3,
+      "distanceActive": true,
+      "active": true
+    },
+    {
+      "row": 20,
+      "gameObjectPathId": 2023677891727092857,
+      "settingLodLevel": 15,
+      "targetLayer": 3,
+      "distanceActive": true,
+      "active": true
+    },
+    {
+      "row": 21,
+      "gameObjectPathId": 4040795893417667705,
+      "settingLodLevel": 15,
+      "targetLayer": 3,
+      "distanceActive": true,
+      "active": true
+    },
+    {
+      "row": 22,
+      "gameObjectPathId": -1404565365764821895,
+      "settingLodLevel": 15,
+      "targetLayer": 3,
+      "distanceActive": true,
+      "active": true
+    },
+    {
+      "row": 23,
+      "gameObjectPathId": -1360749089670992775,
+      "settingLodLevel": 15,
+      "targetLayer": 3,
+      "distanceActive": true,
+      "active": true
+    },
+    {
+      "row": 24,
+      "gameObjectPathId": 4499704467801009273,
+      "settingLodLevel": 15,
+      "targetLayer": 3,
+      "distanceActive": true,
+      "active": true
+    },
+    {
+      "row": 25,
+      "gameObjectPathId": 2242306857605426297,
+      "settingLodLevel": 15,
+      "targetLayer": 3,
+      "distanceActive": true,
+      "active": true
+    },
+    {
+      "row": 26,
+      "gameObjectPathId": 1872604012454440057,
+      "settingLodLevel": 15,
+      "targetLayer": 3,
+      "distanceActive": true,
+      "active": true
+    },
+    {
+      "row": 27,
+      "gameObjectPathId": 1343106962351484025,
+      "settingLodLevel": 15,
+      "targetLayer": 3,
+      "distanceActive": true,
+      "active": true
+    },
+    {
+      "row": 28,
+      "gameObjectPathId": -2294782594461766535,
+      "settingLodLevel": 15,
+      "targetLayer": 3,
+      "distanceActive": true,
+      "active": true
+    },
+    {
+      "row": 29,
+      "gameObjectPathId": 3597285135005543545,
+      "settingLodLevel": 15,
+      "targetLayer": 3,
+      "distanceActive": true,
+      "active": true
+    },
+    {
+      "row": 30,
+      "gameObjectPathId": 4476131385385512057,
+      "settingLodLevel": 15,
+      "targetLayer": 3,
+      "distanceActive": true,
+      "active": true
+    },
+    {
+      "row": 31,
+      "gameObjectPathId": -1722782521022845831,
+      "settingLodLevel": 15,
+      "targetLayer": 3,
+      "distanceActive": true,
+      "active": true
+    },
+    {
+      "row": 32,
+      "gameObjectPathId": 3662967129923087481,
+      "settingLodLevel": 15,
+      "targetLayer": 3,
+      "distanceActive": true,
+      "active": true
+    },
+    {
+      "row": 33,
+      "gameObjectPathId": 4020419883133201529,
+      "settingLodLevel": 15,
+      "targetLayer": 3,
+      "distanceActive": true,
+      "active": true
+    },
+    {
+      "row": 34,
+      "gameObjectPathId": 4523587384448085113,
+      "settingLodLevel": 15,
+      "targetLayer": 3,
+      "distanceActive": true,
+      "active": true
+    },
+    {
+      "row": 35,
+      "gameObjectPathId": -802699095016706951,
+      "settingLodLevel": 15,
+      "targetLayer": 3,
+      "distanceActive": true,
+      "active": true
+    },
+    {
+      "row": 36,
+      "gameObjectPathId": -471337412914746247,
+      "settingLodLevel": 15,
+      "targetLayer": 3,
+      "distanceActive": true,
+      "active": true
+    },
+    {
+      "row": 37,
+      "gameObjectPathId": -1052161294400852871,
+      "settingLodLevel": 15,
+      "targetLayer": 3,
+      "distanceActive": true,
+      "active": true
+    },
+    {
+      "row": 38,
+      "gameObjectPathId": 753354739349417081,
+      "settingLodLevel": 15,
+      "targetLayer": 3,
+      "distanceActive": true,
+      "active": true
+    },
+    {
+      "row": 39,
+      "gameObjectPathId": 2714469750500781177,
+      "settingLodLevel": 15,
+      "targetLayer": 3,
+      "distanceActive": true,
+      "active": true
+    },
+    {
+      "row": 40,
+      "gameObjectPathId": 4834023672155499641,
+      "settingLodLevel": 15,
+      "targetLayer": 3,
+      "distanceActive": true,
+      "active": true
+    },
+    {
+      "row": 41,
+      "gameObjectPathId": 4134042529781673081,
+      "settingLodLevel": 15,
+      "targetLayer": 3,
+      "distanceActive": true,
+      "active": true
+    },
+    {
+      "row": 42,
+      "gameObjectPathId": -188629422848250759,
+      "settingLodLevel": 15,
+      "targetLayer": 3,
+      "distanceActive": true,
+      "active": true
+    },
+    {
+      "row": 43,
+      "gameObjectPathId": -5003046203317130119,
+      "settingLodLevel": 15,
+      "targetLayer": 3,
+      "distanceActive": true,
+      "active": true
+    },
+    {
+      "row": 44,
+      "gameObjectPathId": 4712319999993015417,
+      "settingLodLevel": 15,
+      "targetLayer": 3,
+      "distanceActive": true,
+      "active": true
+    },
+    {
+      "row": 45,
+      "gameObjectPathId": -8628302516491293575,
+      "settingLodLevel": 15,
+      "targetLayer": 3,
+      "distanceActive": true,
+      "active": true
+    },
+    {
+      "row": 46,
+      "gameObjectPathId": 4240350341979139193,
+      "settingLodLevel": 15,
+      "targetLayer": 3,
+      "distanceActive": true,
+      "active": true
+    },
+    {
+      "row": 47,
+      "gameObjectPathId": 975623524646284409,
+      "settingLodLevel": 15,
+      "targetLayer": 3,
+      "distanceActive": true,
+      "active": true
+    },
+    {
+      "row": 48,
+      "gameObjectPathId": -2419729484045980551,
+      "settingLodLevel": 15,
+      "targetLayer": 3,
+      "distanceActive": true,
+      "active": true
+    },
+    {
+      "row": 49,
+      "gameObjectPathId": -5155698796128801671,
+      "settingLodLevel": 15,
+      "targetLayer": 3,
+      "distanceActive": true,
+      "active": true
+    },
+    {
+      "row": 50,
+      "gameObjectPathId": -2608144299264217991,
+      "settingLodLevel": 15,
+      "targetLayer": 3,
+      "distanceActive": true,
+      "active": true
+    },
+    {
+      "row": 51,
+      "gameObjectPathId": -6230128792345809799,
+      "settingLodLevel": 15,
+      "targetLayer": 3,
+      "distanceActive": true,
+      "active": true
+    },
+    {
+      "row": 52,
+      "gameObjectPathId": -2921976608690574215,
+      "settingLodLevel": 15,
+      "targetLayer": 3,
+      "distanceActive": true,
+      "active": true
+    },
+    {
+      "row": 53,
+      "gameObjectPathId": 235909906788478073,
+      "settingLodLevel": 15,
+      "targetLayer": 3,
+      "distanceActive": true,
+      "active": true
+    },
+    {
+      "row": 54,
+      "gameObjectPathId": -9069408142067536775,
+      "settingLodLevel": 15,
+      "targetLayer": 3,
+      "distanceActive": true,
+      "active": true
+    },
+    {
+      "row": 55,
+      "gameObjectPathId": 8638561524310568057,
+      "settingLodLevel": 15,
+      "targetLayer": 3,
+      "distanceActive": true,
+      "active": true
+    },
+    {
+      "row": 56,
+      "gameObjectPathId": -228236085753123719,
+      "settingLodLevel": 15,
+      "targetLayer": 3,
+      "distanceActive": true,
+      "active": true
+    },
+    {
+      "row": 57,
+      "gameObjectPathId": 8953141407210302585,
+      "settingLodLevel": 15,
+      "targetLayer": 3,
+      "distanceActive": true,
+      "active": true
+    }
+  ],
+  "summary": {
+    "active": 58,
+    "total": 58,
+    "effectNanguanRow30Active": true
+  }
+}

@@ -55,6 +55,7 @@ namespace EndfieldGraphShaderLabEditor
         private const long CharacterNprClothShaderPathId = -7822190029627442914L;
         private const long WulfaBodySkinMaterialPathId = 7152188194418193687L;
         private const long ZhuangfyBodySkinMaterialPathId = -6228499253811589790L;
+        private const long EndminfBodySkinMaterialPathId = -8084013477027282831L;
         private const long LastRiteSilkStockingsMaterialPathId = -1435421870657246405L;
         private const long CharacterNprEyeShaderPathId = -1706220712117210762L;
         private const long ZhuangfyPiaodaiVfxShaderPathId = -1430105248647086886L;
@@ -5551,10 +5552,9 @@ namespace EndfieldGraphShaderLabEditor
                         .Replace('.', 'p') + ".png";
                 string outputPath = Path.Combine(outputRoot, fileName);
                 RenderPreview(outputPath, RuntimeReferenceRenderWidth, RuntimeReferenceRenderHeight);
-                RenderRuntimeReferenceActorObjectIdMask(
+                RenderRuntimeReferenceActorBackgroundOnly(
                     actorRoot,
-                    camera,
-                    Path.Combine(outputRoot, Path.GetFileNameWithoutExtension(fileName) + "_object_id.png"));
+                    Path.Combine(outputRoot, Path.GetFileNameWithoutExtension(fileName) + "_background_only.png"));
                 Debug.Log(
                     $"Rendered {actorName} sweep sample {index + 1}/{sampleTimes.Length} " +
                     $"at {sampleTime:0.###}s: {outputPath}");
@@ -5562,6 +5562,24 @@ namespace EndfieldGraphShaderLabEditor
             Debug.Log(
                 $"Runtime reference sweep complete: actor={actorName}, " +
                 $"samples={sampleTimes.Length}, output={outputRoot}");
+        }
+
+        private static void RenderRuntimeReferenceActorBackgroundOnly(GameObject actorRoot, string outputPath)
+        {
+            Renderer[] renderers = actorRoot.GetComponentsInChildren<Renderer>(true);
+            bool[] states = renderers.Select(r => r.enabled).ToArray();
+            try
+            {
+                for (int i = 0; i < renderers.Length; i++) renderers[i].enabled = false;
+                RenderPreview(outputPath, RuntimeReferenceRenderWidth, RuntimeReferenceRenderHeight);
+            }
+            finally
+            {
+                for (int i = 0; i < renderers.Length; i++)
+                    if (renderers[i] != null) renderers[i].enabled = states[i];
+            }
+            if (!File.Exists(outputPath) || new FileInfo(outputPath).Length == 0)
+                throw new InvalidOperationException("Background-only capture was not written.");
         }
 
         // This pass is deliberately separate from the beauty capture. It uses
@@ -7560,7 +7578,13 @@ namespace EndfieldGraphShaderLabEditor
                     materialName,
                     "M_actor_zhuangfy_body_01",
                     StringComparison.Ordinal);
-            if (!wulfaBody && !zhuangfyBody)
+            bool endminfBody =
+                materialPathId == EndminfBodySkinMaterialPathId &&
+                string.Equals(
+                    materialName,
+                    "M_actor_endminf_body_01",
+                    StringComparison.Ordinal);
+            if (!wulfaBody && !zhuangfyBody && !endminfBody)
                 return false;
 
             string[] zeroFeatures =
@@ -7580,6 +7604,18 @@ namespace EndfieldGraphShaderLabEditor
             };
             foreach (string feature in zeroFeatures)
             {
+                // These legacy controls are absent, rather than serialized as
+                // zero, on the pinned Endminf material. Its authoritative
+                // disable state is _DisableRainEffectOnMaterial=0 plus the
+                // absence of both properties; do not invent float rows.
+                if (endminfBody &&
+                    (feature == "_RainEffectIntensity" ||
+                     feature == "_WetEffectIntensity"))
+                {
+                    if (floats.ContainsKey(feature))
+                        return false;
+                    continue;
+                }
                 if (!HasExactRecoveredFloat(floats, feature, 0f))
                     return false;
             }
@@ -7587,7 +7623,6 @@ namespace EndfieldGraphShaderLabEditor
             string[] oneFeatures =
             {
                 "_UseBumpMap",
-                "_BumpScale",
                 "_UseDiffRampMap",
                 "_UseShadowLutTex",
             };
@@ -7596,13 +7631,48 @@ namespace EndfieldGraphShaderLabEditor
                 if (!HasExactRecoveredFloat(floats, feature, 1f))
                     return false;
             }
+            if (!HasExactRecoveredFloat(
+                    floats,
+                    "_BumpScale",
+                    endminfBody ? 0.6f : 1f))
+            {
+                return false;
+            }
 
             var textures = Dict(
                 info.TryGetValue("textures", out object texturesObj)
                     ? texturesObj
                     : null);
-            if (textures.Count != 4 ||
-                !HasExactRecoveredTexture(
+            if (textures.Count != 4)
+            {
+                return false;
+            }
+
+            if (endminfBody)
+            {
+                return HasExactRecoveredTexture(
+                        textures,
+                        "_BaseMap",
+                        "T_actor_endminf_body_01_D",
+                        6666606937086026583L) &&
+                    HasExactRecoveredTexture(
+                        textures,
+                        "_BumpMap",
+                        "T_actor_endminf_body_01_N",
+                        -7567685407150974306L) &&
+                    HasExactRecoveredTexture(
+                        textures,
+                        "_DiffRampMap",
+                        "T_actor_common_face_01_RD",
+                        5848563174712869001L) &&
+                    HasExactRecoveredTexture(
+                        textures,
+                        "_ShadowLutTex",
+                        "T_actor_common_femaleskincolor02_lut_D",
+                        7838960105793206527L);
+            }
+
+            if (!HasExactRecoveredTexture(
                     textures,
                     "_DiffRampMap",
                     "T_actor_common_body_01_RD",

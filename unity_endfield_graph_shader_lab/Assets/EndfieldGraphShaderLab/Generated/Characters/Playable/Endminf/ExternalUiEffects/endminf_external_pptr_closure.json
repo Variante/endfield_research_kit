@@ -4,7 +4,7 @@
   "characterId": "chr_0003_endminf",
   "actorToken": "endminf",
   "stage": {
-    "path": "unity_endfield_graph_shader_lab/Temp/Codex/endminf_fx_exact_stage/external_ui_effect_stage.json",
+    "path": "scratch/character_recovery/endminf_overview_effect_stage/external_ui_effect_stage.json",
     "stageFingerprint": "3c42f62962eae9d67ddbc530d0f4146f3325c4f650fe66ab53490671a3d491d4",
     "entryCount": 30,
     "containerCount": 3,
@@ -12,9 +12,9 @@
     "expectedClipCount": 4
   },
   "sourceInputs": {
-    "stage": "unity_endfield_graph_shader_lab/Temp/Codex/endminf_fx_exact_stage/external_ui_effect_stage.json",
+    "stage": "scratch/character_recovery/endminf_overview_effect_stage/external_ui_effect_stage.json",
     "stageObjectIndexes": [
-      "unity_endfield_graph_shader_lab/Temp/Codex/endminf_fx_exact_stage/object_index/001_98E51B76A48F5BEF8D07BDFD3E4DA7ED.jsonl"
+      "scratch/character_recovery/endminf_overview_effect_stage/object_index/001_98E51B76A48F5BEF8D07BDFD3E4DA7ED.jsonl"
     ],
     "completeObjectIndexes": [],
     "exportedJsonRoots": [
@@ -67,7 +67,7 @@
         "ambiguous": 5
       }
     },
-    "sourceFingerprint": "554288743e2183a66b03558ca0cac79678c7c14f9559f39ac6724dfa293cb13d"
+    "sourceFingerprint": "dfc0f4d6f94e8e16f805426dde5b0921eb7d1ea6fdc32284a4d5c5210354ebb5"
   },
   "identities": [
     {
@@ -80,7 +80,7 @@
       "occurrences": [
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#219",
+          "ownerName": "ParticleSystemRenderer#7",
           "ownerSerializedFile": "CAB-e27c3ded749317d6e87d346c3cd1e4c3",
           "ownerPathId": -6442268130263056910,
           "path": "$.m_Materials[0]",
@@ -148,7 +148,7 @@
       "occurrences": [
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#287",
+          "ownerName": "ParticleSystemRenderer#75",
           "ownerSerializedFile": "CAB-e27c3ded749317d6e87d346c3cd1e4c3",
           "ownerPathId": 9002280987563769330,
           "path": "$.m_Mesh",
@@ -213,7 +213,7 @@
       "occurrences": [
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#271",
+          "ownerName": "ParticleSystemRenderer#59",
           "ownerSerializedFile": "CAB-e27c3ded749317d6e87d346c3cd1e4c3",
           "ownerPathId": 5474936436028915186,
           "path": "$.m_Materials[0]",
@@ -282,7 +282,7 @@
       "occurrences": [
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#271",
+          "ownerName": "ParticleSystemRenderer#59",
           "ownerSerializedFile": "CAB-e27c3ded749317d6e87d346c3cd1e4c3",
           "ownerPathId": 5474936436028915186,
           "path": "$.m_Mesh",
@@ -347,7 +347,7 @@
       "occurrences": [
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#223",
+          "ownerName": "ParticleSystemRenderer#11",
           "ownerSerializedFile": "CAB-e27c3ded749317d6e87d346c3cd1e4c3",
           "ownerPathId": -5111521920287195662,
           "path": "$.m_Materials[0]",
@@ -415,16 +415,7 @@
       "occurrences": [
         {
           "ownerType": "MonoBehaviour",
-          "ownerName": "MonoBehaviour#238",
-          "ownerSerializedFile": "CAB-e27c3ded749317d6e87d346c3cd1e4c3",
-          "ownerPathId": -732389422409728526,
-          "path": "$.m_Script",
-          "fileId": 1,
-          "targetType": "MonoScript"
-        },
-        {
-          "ownerType": "MonoBehaviour",
-          "ownerName": "MonoBehaviour#391",
+          "ownerName": "MonoBehaviour#179",
           "ownerSerializedFile": "CAB-8fac05233bac82edb23cdafb58f7cf34",
           "ownerPathId": 5897928427159753203,
           "path": "$.m_Script",
@@ -433,7 +424,16 @@
         },
         {
           "ownerType": "MonoBehaviour",
-          "ownerName": "MonoBehaviour#61",
+          "ownerName": "MonoBehaviour#26",
+          "ownerSerializedFile": "CAB-e27c3ded749317d6e87d346c3cd1e4c3",
+          "ownerPathId": -732389422409728526,
+          "path": "$.m_Script",
+          "fileId": 1,
+          "targetType": "MonoScript"
+        },
+        {
+          "ownerType": "MonoBehaviour",
+          "ownerName": "MonoBehaviour#263",
           "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
           "ownerPathId": -3635073804346626951,
           "path": "$.m_Script",
@@ -503,16 +503,7 @@
       "occurrences": [
         {
           "ownerType": "MonoBehaviour",
-          "ownerName": "MonoBehaviour#198",
-          "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
-          "ownerPathId": 7967956049358908537,
-          "path": "$.m_Script",
-          "fileId": 1,
-          "targetType": "MonoScript"
-        },
-        {
-          "ownerType": "MonoBehaviour",
-          "ownerName": "MonoBehaviour#314",
+          "ownerName": "MonoBehaviour#102",
           "ownerSerializedFile": "CAB-8fac05233bac82edb23cdafb58f7cf34",
           "ownerPathId": -6337693127196143117,
           "path": "$.m_Script",
@@ -521,7 +512,7 @@
         },
         {
           "ownerType": "MonoBehaviour",
-          "ownerName": "MonoBehaviour#330",
+          "ownerName": "MonoBehaviour#118",
           "ownerSerializedFile": "CAB-8fac05233bac82edb23cdafb58f7cf34",
           "ownerPathId": -3861842700918976013,
           "path": "$.m_Script",
@@ -530,16 +521,7 @@
         },
         {
           "ownerType": "MonoBehaviour",
-          "ownerName": "MonoBehaviour#37",
-          "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
-          "ownerPathId": -6047828662301004679,
-          "path": "$.m_Script",
-          "fileId": 1,
-          "targetType": "MonoScript"
-        },
-        {
-          "ownerType": "MonoBehaviour",
-          "ownerName": "MonoBehaviour#393",
+          "ownerName": "MonoBehaviour#181",
           "ownerSerializedFile": "CAB-8fac05233bac82edb23cdafb58f7cf34",
           "ownerPathId": 6452817218049544691,
           "path": "$.m_Script",
@@ -548,9 +530,27 @@
         },
         {
           "ownerType": "MonoBehaviour",
-          "ownerName": "MonoBehaviour#60",
+          "ownerName": "MonoBehaviour#239",
+          "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
+          "ownerPathId": -6047828662301004679,
+          "path": "$.m_Script",
+          "fileId": 1,
+          "targetType": "MonoScript"
+        },
+        {
+          "ownerType": "MonoBehaviour",
+          "ownerName": "MonoBehaviour#262",
           "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
           "ownerPathId": -3764154283796960135,
+          "path": "$.m_Script",
+          "fileId": 1,
+          "targetType": "MonoScript"
+        },
+        {
+          "ownerType": "MonoBehaviour",
+          "ownerName": "MonoBehaviour#400",
+          "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
+          "ownerPathId": 7967956049358908537,
           "path": "$.m_Script",
           "fileId": 1,
           "targetType": "MonoScript"
@@ -618,7 +618,7 @@
       "occurrences": [
         {
           "ownerType": "MonoBehaviour",
-          "ownerName": "MonoBehaviour#25",
+          "ownerName": "MonoBehaviour#227",
           "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
           "ownerPathId": -6703146496467112839,
           "path": "$.m_Script",
@@ -688,34 +688,7 @@
       "occurrences": [
         {
           "ownerType": "MonoBehaviour",
-          "ownerName": "MonoBehaviour#110",
-          "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
-          "ownerPathId": 319942023280553081,
-          "path": "$.m_Script",
-          "fileId": 1,
-          "targetType": "MonoScript"
-        },
-        {
-          "ownerType": "MonoBehaviour",
-          "ownerName": "MonoBehaviour#267",
-          "ownerSerializedFile": "CAB-e27c3ded749317d6e87d346c3cd1e4c3",
-          "ownerPathId": 4609685821636853234,
-          "path": "$.m_Script",
-          "fileId": 1,
-          "targetType": "MonoScript"
-        },
-        {
-          "ownerType": "MonoBehaviour",
-          "ownerName": "MonoBehaviour#308",
-          "ownerSerializedFile": "CAB-8fac05233bac82edb23cdafb58f7cf34",
-          "ownerPathId": -7074725829882801677,
-          "path": "$.m_Script",
-          "fileId": 1,
-          "targetType": "MonoScript"
-        },
-        {
-          "ownerType": "MonoBehaviour",
-          "ownerName": "MonoBehaviour#327",
+          "ownerName": "MonoBehaviour#115",
           "ownerSerializedFile": "CAB-8fac05233bac82edb23cdafb58f7cf34",
           "ownerPathId": -4237007143754853901,
           "path": "$.m_Script",
@@ -724,7 +697,7 @@
         },
         {
           "ownerType": "MonoBehaviour",
-          "ownerName": "MonoBehaviour#387",
+          "ownerName": "MonoBehaviour#175",
           "ownerSerializedFile": "CAB-8fac05233bac82edb23cdafb58f7cf34",
           "ownerPathId": 5603108962103071219,
           "path": "$.m_Script",
@@ -733,7 +706,7 @@
         },
         {
           "ownerType": "MonoBehaviour",
-          "ownerName": "MonoBehaviour#91",
+          "ownerName": "MonoBehaviour#293",
           "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
           "ownerPathId": -1638432011302048647,
           "path": "$.m_Script",
@@ -742,9 +715,36 @@
         },
         {
           "ownerType": "MonoBehaviour",
-          "ownerName": "MonoBehaviour#97",
+          "ownerName": "MonoBehaviour#299",
           "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
           "ownerPathId": -1276989992228393863,
+          "path": "$.m_Script",
+          "fileId": 1,
+          "targetType": "MonoScript"
+        },
+        {
+          "ownerType": "MonoBehaviour",
+          "ownerName": "MonoBehaviour#312",
+          "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
+          "ownerPathId": 319942023280553081,
+          "path": "$.m_Script",
+          "fileId": 1,
+          "targetType": "MonoScript"
+        },
+        {
+          "ownerType": "MonoBehaviour",
+          "ownerName": "MonoBehaviour#55",
+          "ownerSerializedFile": "CAB-e27c3ded749317d6e87d346c3cd1e4c3",
+          "ownerPathId": 4609685821636853234,
+          "path": "$.m_Script",
+          "fileId": 1,
+          "targetType": "MonoScript"
+        },
+        {
+          "ownerType": "MonoBehaviour",
+          "ownerName": "MonoBehaviour#96",
+          "ownerSerializedFile": "CAB-8fac05233bac82edb23cdafb58f7cf34",
+          "ownerPathId": -7074725829882801677,
           "path": "$.m_Script",
           "fileId": 1,
           "targetType": "MonoScript"
@@ -812,7 +812,7 @@
       "occurrences": [
         {
           "ownerType": "MonoBehaviour",
-          "ownerName": "MonoBehaviour#58",
+          "ownerName": "MonoBehaviour#260",
           "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
           "ownerPathId": -4102117296909161351,
           "path": "$.m_Script",
@@ -882,7 +882,7 @@
       "occurrences": [
         {
           "ownerType": "ParticleSystem",
-          "ownerName": "ParticleSystem#264",
+          "ownerName": "ParticleSystem#52",
           "ownerSerializedFile": "CAB-e27c3ded749317d6e87d346c3cd1e4c3",
           "ownerPathId": 4475954733560217074,
           "path": "$.ShapeModule.m_Texture",
@@ -891,7 +891,7 @@
         },
         {
           "ownerType": "ParticleSystem",
-          "ownerName": "ParticleSystem#279",
+          "ownerName": "ParticleSystem#67",
           "ownerSerializedFile": "CAB-e27c3ded749317d6e87d346c3cd1e4c3",
           "ownerPathId": 8226107722155408882,
           "path": "$.ShapeModule.m_Texture",
@@ -956,7 +956,7 @@
       "occurrences": [
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#219",
+          "ownerName": "ParticleSystemRenderer#7",
           "ownerSerializedFile": "CAB-e27c3ded749317d6e87d346c3cd1e4c3",
           "ownerPathId": -6442268130263056910,
           "path": "$.m_Mesh1",
@@ -1021,7 +1021,7 @@
       "occurrences": [
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#219",
+          "ownerName": "ParticleSystemRenderer#7",
           "ownerSerializedFile": "CAB-e27c3ded749317d6e87d346c3cd1e4c3",
           "ownerPathId": -6442268130263056910,
           "path": "$.m_Mesh2",
@@ -1086,7 +1086,7 @@
       "occurrences": [
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#219",
+          "ownerName": "ParticleSystemRenderer#7",
           "ownerSerializedFile": "CAB-e27c3ded749317d6e87d346c3cd1e4c3",
           "ownerPathId": -6442268130263056910,
           "path": "$.m_Mesh3",
@@ -1151,7 +1151,7 @@
       "occurrences": [
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#219",
+          "ownerName": "ParticleSystemRenderer#7",
           "ownerSerializedFile": "CAB-e27c3ded749317d6e87d346c3cd1e4c3",
           "ownerPathId": -6442268130263056910,
           "path": "$.m_Mesh",
@@ -1216,7 +1216,7 @@
       "occurrences": [
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#324",
+          "ownerName": "ParticleSystemRenderer#112",
           "ownerSerializedFile": "CAB-8fac05233bac82edb23cdafb58f7cf34",
           "ownerPathId": -4798169355150421517,
           "path": "$.m_Materials[0]",
@@ -1225,7 +1225,7 @@
         },
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#324",
+          "ownerName": "ParticleSystemRenderer#112",
           "ownerSerializedFile": "CAB-8fac05233bac82edb23cdafb58f7cf34",
           "ownerPathId": -4798169355150421517,
           "path": "$.m_Materials[1]",
@@ -1234,7 +1234,7 @@
         },
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#348",
+          "ownerName": "ParticleSystemRenderer#136",
           "ownerSerializedFile": "CAB-8fac05233bac82edb23cdafb58f7cf34",
           "ownerPathId": -1568124381149130253,
           "path": "$.m_Materials[0]",
@@ -1243,7 +1243,7 @@
         },
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#348",
+          "ownerName": "ParticleSystemRenderer#136",
           "ownerSerializedFile": "CAB-8fac05233bac82edb23cdafb58f7cf34",
           "ownerPathId": -1568124381149130253,
           "path": "$.m_Materials[1]",
@@ -1252,7 +1252,7 @@
         },
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#394",
+          "ownerName": "ParticleSystemRenderer#182",
           "ownerSerializedFile": "CAB-8fac05233bac82edb23cdafb58f7cf34",
           "ownerPathId": 6569262745803624947,
           "path": "$.m_Materials[0]",
@@ -1261,7 +1261,7 @@
         },
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#394",
+          "ownerName": "ParticleSystemRenderer#182",
           "ownerSerializedFile": "CAB-8fac05233bac82edb23cdafb58f7cf34",
           "ownerPathId": 6569262745803624947,
           "path": "$.m_Materials[1]",
@@ -1270,25 +1270,7 @@
         },
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#170",
-          "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
-          "ownerPathId": 5429597860634913913,
-          "path": "$.m_Materials[0]",
-          "fileId": 6,
-          "targetType": "Material"
-        },
-        {
-          "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#170",
-          "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
-          "ownerPathId": 5429597860634913913,
-          "path": "$.m_Materials[1]",
-          "fileId": 6,
-          "targetType": "Material"
-        },
-        {
-          "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#18",
+          "ownerName": "ParticleSystemRenderer#220",
           "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
           "ownerPathId": -7539581391041827719,
           "path": "$.m_Materials[0]",
@@ -1297,7 +1279,7 @@
         },
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#18",
+          "ownerName": "ParticleSystemRenderer#220",
           "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
           "ownerPathId": -7539581391041827719,
           "path": "$.m_Materials[1]",
@@ -1306,7 +1288,7 @@
         },
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#66",
+          "ownerName": "ParticleSystemRenderer#268",
           "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
           "ownerPathId": -3122587711448585095,
           "path": "$.m_Materials[0]",
@@ -1315,9 +1297,27 @@
         },
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#66",
+          "ownerName": "ParticleSystemRenderer#268",
           "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
           "ownerPathId": -3122587711448585095,
+          "path": "$.m_Materials[1]",
+          "fileId": 6,
+          "targetType": "Material"
+        },
+        {
+          "ownerType": "ParticleSystemRenderer",
+          "ownerName": "ParticleSystemRenderer#372",
+          "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
+          "ownerPathId": 5429597860634913913,
+          "path": "$.m_Materials[0]",
+          "fileId": 6,
+          "targetType": "Material"
+        },
+        {
+          "ownerType": "ParticleSystemRenderer",
+          "ownerName": "ParticleSystemRenderer#372",
+          "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
+          "ownerPathId": 5429597860634913913,
           "path": "$.m_Materials[1]",
           "fileId": 6,
           "targetType": "Material"
@@ -1389,25 +1389,7 @@
       "occurrences": [
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#299",
-          "ownerSerializedFile": "CAB-8fac05233bac82edb23cdafb58f7cf34",
-          "ownerPathId": -8237188368703745549,
-          "path": "$.m_Materials[0]",
-          "fileId": 3,
-          "targetType": "Material"
-        },
-        {
-          "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#299",
-          "ownerSerializedFile": "CAB-8fac05233bac82edb23cdafb58f7cf34",
-          "ownerPathId": -8237188368703745549,
-          "path": "$.m_Materials[1]",
-          "fileId": 3,
-          "targetType": "Material"
-        },
-        {
-          "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#383",
+          "ownerName": "ParticleSystemRenderer#171",
           "ownerSerializedFile": "CAB-8fac05233bac82edb23cdafb58f7cf34",
           "ownerPathId": 4626584637405073907,
           "path": "$.m_Materials[0]",
@@ -1416,7 +1398,7 @@
         },
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#383",
+          "ownerName": "ParticleSystemRenderer#171",
           "ownerSerializedFile": "CAB-8fac05233bac82edb23cdafb58f7cf34",
           "ownerPathId": 4626584637405073907,
           "path": "$.m_Materials[1]",
@@ -1425,7 +1407,7 @@
         },
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#405",
+          "ownerName": "ParticleSystemRenderer#193",
           "ownerSerializedFile": "CAB-8fac05233bac82edb23cdafb58f7cf34",
           "ownerPathId": 8104058987643539955,
           "path": "$.m_Materials[0]",
@@ -1434,7 +1416,7 @@
         },
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#405",
+          "ownerName": "ParticleSystemRenderer#193",
           "ownerSerializedFile": "CAB-8fac05233bac82edb23cdafb58f7cf34",
           "ownerPathId": 8104058987643539955,
           "path": "$.m_Materials[1]",
@@ -1443,43 +1425,25 @@
         },
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#123",
-          "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
-          "ownerPathId": 1067125438202735737,
+          "ownerName": "ParticleSystemRenderer#87",
+          "ownerSerializedFile": "CAB-8fac05233bac82edb23cdafb58f7cf34",
+          "ownerPathId": -8237188368703745549,
           "path": "$.m_Materials[0]",
-          "fileId": 6,
+          "fileId": 3,
           "targetType": "Material"
         },
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#123",
-          "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
-          "ownerPathId": 1067125438202735737,
+          "ownerName": "ParticleSystemRenderer#87",
+          "ownerSerializedFile": "CAB-8fac05233bac82edb23cdafb58f7cf34",
+          "ownerPathId": -8237188368703745549,
           "path": "$.m_Materials[1]",
-          "fileId": 6,
+          "fileId": 3,
           "targetType": "Material"
         },
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#194",
-          "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
-          "ownerPathId": 7629537811759131769,
-          "path": "$.m_Materials[0]",
-          "fileId": 6,
-          "targetType": "Material"
-        },
-        {
-          "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#194",
-          "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
-          "ownerPathId": 7629537811759131769,
-          "path": "$.m_Materials[1]",
-          "fileId": 6,
-          "targetType": "Material"
-        },
-        {
-          "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#62",
+          "ownerName": "ParticleSystemRenderer#264",
           "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
           "ownerPathId": -3489889395237557127,
           "path": "$.m_Materials[0]",
@@ -1488,9 +1452,45 @@
         },
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#62",
+          "ownerName": "ParticleSystemRenderer#264",
           "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
           "ownerPathId": -3489889395237557127,
+          "path": "$.m_Materials[1]",
+          "fileId": 6,
+          "targetType": "Material"
+        },
+        {
+          "ownerType": "ParticleSystemRenderer",
+          "ownerName": "ParticleSystemRenderer#325",
+          "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
+          "ownerPathId": 1067125438202735737,
+          "path": "$.m_Materials[0]",
+          "fileId": 6,
+          "targetType": "Material"
+        },
+        {
+          "ownerType": "ParticleSystemRenderer",
+          "ownerName": "ParticleSystemRenderer#325",
+          "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
+          "ownerPathId": 1067125438202735737,
+          "path": "$.m_Materials[1]",
+          "fileId": 6,
+          "targetType": "Material"
+        },
+        {
+          "ownerType": "ParticleSystemRenderer",
+          "ownerName": "ParticleSystemRenderer#396",
+          "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
+          "ownerPathId": 7629537811759131769,
+          "path": "$.m_Materials[0]",
+          "fileId": 6,
+          "targetType": "Material"
+        },
+        {
+          "ownerType": "ParticleSystemRenderer",
+          "ownerName": "ParticleSystemRenderer#396",
+          "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
+          "ownerPathId": 7629537811759131769,
           "path": "$.m_Materials[1]",
           "fileId": 6,
           "targetType": "Material"
@@ -1562,7 +1562,7 @@
       "occurrences": [
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#344",
+          "ownerName": "ParticleSystemRenderer#132",
           "ownerSerializedFile": "CAB-8fac05233bac82edb23cdafb58f7cf34",
           "ownerPathId": -1843829179316956685,
           "path": "$.m_Materials[0]",
@@ -1571,7 +1571,7 @@
         },
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#401",
+          "ownerName": "ParticleSystemRenderer#189",
           "ownerSerializedFile": "CAB-8fac05233bac82edb23cdafb58f7cf34",
           "ownerPathId": 7476990694923375091,
           "path": "$.m_Materials[0]",
@@ -1580,7 +1580,7 @@
         },
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#411",
+          "ownerName": "ParticleSystemRenderer#199",
           "ownerSerializedFile": "CAB-8fac05233bac82edb23cdafb58f7cf34",
           "ownerPathId": 8866360509544665587,
           "path": "$.m_Materials[0]",
@@ -1589,7 +1589,7 @@
         },
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#27",
+          "ownerName": "ParticleSystemRenderer#229",
           "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
           "ownerPathId": -6663280689141683079,
           "path": "$.m_Materials[0]",
@@ -1598,7 +1598,7 @@
         },
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#29",
+          "ownerName": "ParticleSystemRenderer#231",
           "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
           "ownerPathId": -6499685321774240647,
           "path": "$.m_Materials[0]",
@@ -1607,7 +1607,7 @@
         },
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#43",
+          "ownerName": "ParticleSystemRenderer#245",
           "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
           "ownerPathId": -5212740472355525511,
           "path": "$.m_Materials[0]",
@@ -1681,7 +1681,7 @@
       "occurrences": [
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#242",
+          "ownerName": "ParticleSystemRenderer#30",
           "ownerSerializedFile": "CAB-e27c3ded749317d6e87d346c3cd1e4c3",
           "ownerPathId": 270586253893484018,
           "path": "$.m_Materials[0]",
@@ -1749,7 +1749,7 @@
       "occurrences": [
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#140",
+          "ownerName": "ParticleSystemRenderer#342",
           "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
           "ownerPathId": 2895389620727147641,
           "path": "$.m_Materials[0]",
@@ -1758,7 +1758,7 @@
         },
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#388",
+          "ownerName": "ParticleSystemRenderer#176",
           "ownerSerializedFile": "CAB-8fac05233bac82edb23cdafb58f7cf34",
           "ownerPathId": 5846834017166496243,
           "path": "$.m_Materials[0]",
@@ -1826,34 +1826,7 @@
       "occurrences": [
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#146",
-          "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
-          "ownerPathId": 3300944936158325881,
-          "path": "$.m_Materials[0]",
-          "fileId": 7,
-          "targetType": "Material"
-        },
-        {
-          "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#19",
-          "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
-          "ownerPathId": -7385011155470291847,
-          "path": "$.m_Materials[0]",
-          "fileId": 7,
-          "targetType": "Material"
-        },
-        {
-          "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#195",
-          "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
-          "ownerPathId": 7650932811832585337,
-          "path": "$.m_Materials[0]",
-          "fileId": 7,
-          "targetType": "Material"
-        },
-        {
-          "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#340",
+          "ownerName": "ParticleSystemRenderer#128",
           "ownerSerializedFile": "CAB-8fac05233bac82edb23cdafb58f7cf34",
           "ownerPathId": -2883123446734450189,
           "path": "$.m_Materials[0]",
@@ -1862,7 +1835,7 @@
         },
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#375",
+          "ownerName": "ParticleSystemRenderer#163",
           "ownerSerializedFile": "CAB-8fac05233bac82edb23cdafb58f7cf34",
           "ownerPathId": 3495825391571046899,
           "path": "$.m_Materials[0]",
@@ -1871,9 +1844,36 @@
         },
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#390",
+          "ownerName": "ParticleSystemRenderer#178",
           "ownerSerializedFile": "CAB-8fac05233bac82edb23cdafb58f7cf34",
           "ownerPathId": 5878562526504751603,
+          "path": "$.m_Materials[0]",
+          "fileId": 7,
+          "targetType": "Material"
+        },
+        {
+          "ownerType": "ParticleSystemRenderer",
+          "ownerName": "ParticleSystemRenderer#221",
+          "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
+          "ownerPathId": -7385011155470291847,
+          "path": "$.m_Materials[0]",
+          "fileId": 7,
+          "targetType": "Material"
+        },
+        {
+          "ownerType": "ParticleSystemRenderer",
+          "ownerName": "ParticleSystemRenderer#348",
+          "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
+          "ownerPathId": 3300944936158325881,
+          "path": "$.m_Materials[0]",
+          "fileId": 7,
+          "targetType": "Material"
+        },
+        {
+          "ownerType": "ParticleSystemRenderer",
+          "ownerName": "ParticleSystemRenderer#397",
+          "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
+          "ownerPathId": 7650932811832585337,
           "path": "$.m_Materials[0]",
           "fileId": 7,
           "targetType": "Material"
@@ -1939,7 +1939,7 @@
       "occurrences": [
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#241",
+          "ownerName": "ParticleSystemRenderer#29",
           "ownerSerializedFile": "CAB-e27c3ded749317d6e87d346c3cd1e4c3",
           "ownerPathId": 59284134265994738,
           "path": "$.m_Mesh",
@@ -1948,70 +1948,7 @@
         },
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#120",
-          "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
-          "ownerPathId": 816961256667835513,
-          "path": "$.m_Mesh",
-          "fileId": 3,
-          "targetType": "Mesh"
-        },
-        {
-          "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#127",
-          "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
-          "ownerPathId": 1330706239730052217,
-          "path": "$.m_Mesh",
-          "fileId": 3,
-          "targetType": "Mesh"
-        },
-        {
-          "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#139",
-          "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
-          "ownerPathId": 2873669779905604729,
-          "path": "$.m_Mesh",
-          "fileId": 3,
-          "targetType": "Mesh"
-        },
-        {
-          "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#152",
-          "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
-          "ownerPathId": 4015052246259100793,
-          "path": "$.m_Mesh",
-          "fileId": 3,
-          "targetType": "Mesh"
-        },
-        {
-          "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#181",
-          "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
-          "ownerPathId": 6249283556360744057,
-          "path": "$.m_Mesh",
-          "fileId": 3,
-          "targetType": "Mesh"
-        },
-        {
-          "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#187",
-          "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
-          "ownerPathId": 6773003853100051577,
-          "path": "$.m_Mesh",
-          "fileId": 3,
-          "targetType": "Mesh"
-        },
-        {
-          "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#59",
-          "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
-          "ownerPathId": -3867827057186411399,
-          "path": "$.m_Mesh",
-          "fileId": 3,
-          "targetType": "Mesh"
-        },
-        {
-          "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#6",
+          "ownerName": "ParticleSystemRenderer#208",
           "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
           "ownerPathId": -8639657970089300871,
           "path": "$.m_Mesh",
@@ -2020,7 +1957,16 @@
         },
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#63",
+          "ownerName": "ParticleSystemRenderer#261",
+          "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
+          "ownerPathId": -3867827057186411399,
+          "path": "$.m_Mesh",
+          "fileId": 3,
+          "targetType": "Mesh"
+        },
+        {
+          "ownerType": "ParticleSystemRenderer",
+          "ownerName": "ParticleSystemRenderer#265",
           "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
           "ownerPathId": -3280230972981416839,
           "path": "$.m_Mesh",
@@ -2029,7 +1975,7 @@
         },
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#92",
+          "ownerName": "ParticleSystemRenderer#294",
           "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
           "ownerPathId": -1630031932420821895,
           "path": "$.m_Mesh",
@@ -2038,25 +1984,61 @@
         },
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#304",
-          "ownerSerializedFile": "CAB-8fac05233bac82edb23cdafb58f7cf34",
-          "ownerPathId": -7568794477879160333,
+          "ownerName": "ParticleSystemRenderer#322",
+          "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
+          "ownerPathId": 816961256667835513,
           "path": "$.m_Mesh",
-          "fileId": 5,
+          "fileId": 3,
           "targetType": "Mesh"
         },
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#310",
-          "ownerSerializedFile": "CAB-8fac05233bac82edb23cdafb58f7cf34",
-          "ownerPathId": -6975699642045230605,
+          "ownerName": "ParticleSystemRenderer#329",
+          "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
+          "ownerPathId": 1330706239730052217,
           "path": "$.m_Mesh",
-          "fileId": 5,
+          "fileId": 3,
           "targetType": "Mesh"
         },
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#323",
+          "ownerName": "ParticleSystemRenderer#341",
+          "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
+          "ownerPathId": 2873669779905604729,
+          "path": "$.m_Mesh",
+          "fileId": 3,
+          "targetType": "Mesh"
+        },
+        {
+          "ownerType": "ParticleSystemRenderer",
+          "ownerName": "ParticleSystemRenderer#354",
+          "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
+          "ownerPathId": 4015052246259100793,
+          "path": "$.m_Mesh",
+          "fileId": 3,
+          "targetType": "Mesh"
+        },
+        {
+          "ownerType": "ParticleSystemRenderer",
+          "ownerName": "ParticleSystemRenderer#383",
+          "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
+          "ownerPathId": 6249283556360744057,
+          "path": "$.m_Mesh",
+          "fileId": 3,
+          "targetType": "Mesh"
+        },
+        {
+          "ownerType": "ParticleSystemRenderer",
+          "ownerName": "ParticleSystemRenderer#389",
+          "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
+          "ownerPathId": 6773003853100051577,
+          "path": "$.m_Mesh",
+          "fileId": 3,
+          "targetType": "Mesh"
+        },
+        {
+          "ownerType": "ParticleSystemRenderer",
+          "ownerName": "ParticleSystemRenderer#111",
           "ownerSerializedFile": "CAB-8fac05233bac82edb23cdafb58f7cf34",
           "ownerPathId": -5276057543692971533,
           "path": "$.m_Mesh",
@@ -2065,7 +2047,7 @@
         },
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#364",
+          "ownerName": "ParticleSystemRenderer#152",
           "ownerSerializedFile": "CAB-8fac05233bac82edb23cdafb58f7cf34",
           "ownerPathId": 1464116753302098419,
           "path": "$.m_Mesh",
@@ -2074,7 +2056,7 @@
         },
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#379",
+          "ownerName": "ParticleSystemRenderer#167",
           "ownerSerializedFile": "CAB-8fac05233bac82edb23cdafb58f7cf34",
           "ownerPathId": 3776715080317473267,
           "path": "$.m_Mesh",
@@ -2083,9 +2065,27 @@
         },
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#395",
+          "ownerName": "ParticleSystemRenderer#183",
           "ownerSerializedFile": "CAB-8fac05233bac82edb23cdafb58f7cf34",
           "ownerPathId": 6615489514101346803,
+          "path": "$.m_Mesh",
+          "fileId": 5,
+          "targetType": "Mesh"
+        },
+        {
+          "ownerType": "ParticleSystemRenderer",
+          "ownerName": "ParticleSystemRenderer#92",
+          "ownerSerializedFile": "CAB-8fac05233bac82edb23cdafb58f7cf34",
+          "ownerPathId": -7568794477879160333,
+          "path": "$.m_Mesh",
+          "fileId": 5,
+          "targetType": "Mesh"
+        },
+        {
+          "ownerType": "ParticleSystemRenderer",
+          "ownerName": "ParticleSystemRenderer#98",
+          "ownerSerializedFile": "CAB-8fac05233bac82edb23cdafb58f7cf34",
+          "ownerPathId": -6975699642045230605,
           "path": "$.m_Mesh",
           "fileId": 5,
           "targetType": "Mesh"
@@ -2148,7 +2148,7 @@
       "occurrences": [
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#241",
+          "ownerName": "ParticleSystemRenderer#29",
           "ownerSerializedFile": "CAB-e27c3ded749317d6e87d346c3cd1e4c3",
           "ownerPathId": 59284134265994738,
           "path": "$.m_Materials[0]",
@@ -2230,7 +2230,7 @@
       "occurrences": [
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#290",
+          "ownerName": "ParticleSystemRenderer#78",
           "ownerSerializedFile": "CAB-e27c3ded749317d6e87d346c3cd1e4c3",
           "ownerPathId": 9074521250604301810,
           "path": "$.m_Materials[0]",
@@ -2312,7 +2312,7 @@
       "occurrences": [
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#212",
+          "ownerName": "ParticleSystemRenderer#0",
           "ownerSerializedFile": "CAB-e27c3ded749317d6e87d346c3cd1e4c3",
           "ownerPathId": -9099246727259308558,
           "path": "$.m_Materials[0]",
@@ -2394,7 +2394,7 @@
       "occurrences": [
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#233",
+          "ownerName": "ParticleSystemRenderer#21",
           "ownerSerializedFile": "CAB-e27c3ded749317d6e87d346c3cd1e4c3",
           "ownerPathId": -3161538797788152334,
           "path": "$.m_Materials[0]",
@@ -2476,7 +2476,7 @@
       "occurrences": [
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#283",
+          "ownerName": "ParticleSystemRenderer#71",
           "ownerSerializedFile": "CAB-e27c3ded749317d6e87d346c3cd1e4c3",
           "ownerPathId": 8581620787658538482,
           "path": "$.m_Materials[0]",
@@ -2558,7 +2558,7 @@
       "occurrences": [
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#272",
+          "ownerName": "ParticleSystemRenderer#60",
           "ownerSerializedFile": "CAB-e27c3ded749317d6e87d346c3cd1e4c3",
           "ownerPathId": 6040736806136954354,
           "path": "$.m_Materials[0]",
@@ -2640,7 +2640,7 @@
       "occurrences": [
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#284",
+          "ownerName": "ParticleSystemRenderer#72",
           "ownerSerializedFile": "CAB-e27c3ded749317d6e87d346c3cd1e4c3",
           "ownerPathId": 8584929296771235314,
           "path": "$.m_Mesh2",
@@ -2705,7 +2705,7 @@
       "occurrences": [
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#284",
+          "ownerName": "ParticleSystemRenderer#72",
           "ownerSerializedFile": "CAB-e27c3ded749317d6e87d346c3cd1e4c3",
           "ownerPathId": 8584929296771235314,
           "path": "$.m_Mesh1",
@@ -2770,7 +2770,7 @@
       "occurrences": [
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#284",
+          "ownerName": "ParticleSystemRenderer#72",
           "ownerSerializedFile": "CAB-e27c3ded749317d6e87d346c3cd1e4c3",
           "ownerPathId": 8584929296771235314,
           "path": "$.m_Mesh",
@@ -2835,16 +2835,7 @@
       "occurrences": [
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#104",
-          "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
-          "ownerPathId": -101618041132454791,
-          "path": "$.m_Materials[0]",
-          "fileId": 4,
-          "targetType": "Material"
-        },
-        {
-          "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#11",
+          "ownerName": "ParticleSystemRenderer#213",
           "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
           "ownerPathId": -8005828936193053575,
           "path": "$.m_Materials[0]",
@@ -2853,7 +2844,16 @@
         },
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#111",
+          "ownerName": "ParticleSystemRenderer#306",
+          "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
+          "ownerPathId": -101618041132454791,
+          "path": "$.m_Materials[0]",
+          "fileId": 4,
+          "targetType": "Material"
+        },
+        {
+          "ownerType": "ParticleSystemRenderer",
+          "ownerName": "ParticleSystemRenderer#313",
           "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
           "ownerPathId": 449135315027848313,
           "path": "$.m_Materials[0]",
@@ -2862,7 +2862,7 @@
         },
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#134",
+          "ownerName": "ParticleSystemRenderer#336",
           "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
           "ownerPathId": 2322847418683583609,
           "path": "$.m_Materials[0]",
@@ -2931,18 +2931,18 @@
       "occurrences": [
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#160",
+          "ownerName": "ParticleSystemRenderer#275",
           "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
-          "ownerPathId": 4337495603818884217,
+          "ownerPathId": -2681930632250430343,
           "path": "$.m_Materials[0]",
           "fileId": 4,
           "targetType": "Material"
         },
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#73",
+          "ownerName": "ParticleSystemRenderer#362",
           "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
-          "ownerPathId": -2681930632250430343,
+          "ownerPathId": 4337495603818884217,
           "path": "$.m_Materials[0]",
           "fileId": 4,
           "targetType": "Material"
@@ -3009,25 +3009,7 @@
       "occurrences": [
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#127",
-          "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
-          "ownerPathId": 1330706239730052217,
-          "path": "$.m_Materials[0]",
-          "fileId": 2,
-          "targetType": "Material"
-        },
-        {
-          "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#181",
-          "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
-          "ownerPathId": 6249283556360744057,
-          "path": "$.m_Materials[0]",
-          "fileId": 2,
-          "targetType": "Material"
-        },
-        {
-          "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#92",
+          "ownerName": "ParticleSystemRenderer#294",
           "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
           "ownerPathId": -1630031932420821895,
           "path": "$.m_Materials[0]",
@@ -3036,7 +3018,34 @@
         },
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#304",
+          "ownerName": "ParticleSystemRenderer#329",
+          "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
+          "ownerPathId": 1330706239730052217,
+          "path": "$.m_Materials[0]",
+          "fileId": 2,
+          "targetType": "Material"
+        },
+        {
+          "ownerType": "ParticleSystemRenderer",
+          "ownerName": "ParticleSystemRenderer#383",
+          "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
+          "ownerPathId": 6249283556360744057,
+          "path": "$.m_Materials[0]",
+          "fileId": 2,
+          "targetType": "Material"
+        },
+        {
+          "ownerType": "ParticleSystemRenderer",
+          "ownerName": "ParticleSystemRenderer#152",
+          "ownerSerializedFile": "CAB-8fac05233bac82edb23cdafb58f7cf34",
+          "ownerPathId": 1464116753302098419,
+          "path": "$.m_Materials[0]",
+          "fileId": 4,
+          "targetType": "Material"
+        },
+        {
+          "ownerType": "ParticleSystemRenderer",
+          "ownerName": "ParticleSystemRenderer#92",
           "ownerSerializedFile": "CAB-8fac05233bac82edb23cdafb58f7cf34",
           "ownerPathId": -7568794477879160333,
           "path": "$.m_Materials[0]",
@@ -3045,18 +3054,9 @@
         },
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#310",
+          "ownerName": "ParticleSystemRenderer#98",
           "ownerSerializedFile": "CAB-8fac05233bac82edb23cdafb58f7cf34",
           "ownerPathId": -6975699642045230605,
-          "path": "$.m_Materials[0]",
-          "fileId": 4,
-          "targetType": "Material"
-        },
-        {
-          "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#364",
-          "ownerSerializedFile": "CAB-8fac05233bac82edb23cdafb58f7cf34",
-          "ownerPathId": 1464116753302098419,
           "path": "$.m_Materials[0]",
           "fileId": 4,
           "targetType": "Material"
@@ -3125,52 +3125,7 @@
       "occurrences": [
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#120",
-          "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
-          "ownerPathId": 816961256667835513,
-          "path": "$.m_Materials[0]",
-          "fileId": 2,
-          "targetType": "Material"
-        },
-        {
-          "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#139",
-          "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
-          "ownerPathId": 2873669779905604729,
-          "path": "$.m_Materials[0]",
-          "fileId": 2,
-          "targetType": "Material"
-        },
-        {
-          "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#152",
-          "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
-          "ownerPathId": 4015052246259100793,
-          "path": "$.m_Materials[0]",
-          "fileId": 2,
-          "targetType": "Material"
-        },
-        {
-          "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#187",
-          "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
-          "ownerPathId": 6773003853100051577,
-          "path": "$.m_Materials[0]",
-          "fileId": 2,
-          "targetType": "Material"
-        },
-        {
-          "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#59",
-          "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
-          "ownerPathId": -3867827057186411399,
-          "path": "$.m_Materials[0]",
-          "fileId": 2,
-          "targetType": "Material"
-        },
-        {
-          "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#6",
+          "ownerName": "ParticleSystemRenderer#208",
           "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
           "ownerPathId": -8639657970089300871,
           "path": "$.m_Materials[0]",
@@ -3179,7 +3134,16 @@
         },
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#63",
+          "ownerName": "ParticleSystemRenderer#261",
+          "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
+          "ownerPathId": -3867827057186411399,
+          "path": "$.m_Materials[0]",
+          "fileId": 2,
+          "targetType": "Material"
+        },
+        {
+          "ownerType": "ParticleSystemRenderer",
+          "ownerName": "ParticleSystemRenderer#265",
           "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
           "ownerPathId": -3280230972981416839,
           "path": "$.m_Materials[0]",
@@ -3188,7 +3152,43 @@
         },
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#323",
+          "ownerName": "ParticleSystemRenderer#322",
+          "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
+          "ownerPathId": 816961256667835513,
+          "path": "$.m_Materials[0]",
+          "fileId": 2,
+          "targetType": "Material"
+        },
+        {
+          "ownerType": "ParticleSystemRenderer",
+          "ownerName": "ParticleSystemRenderer#341",
+          "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
+          "ownerPathId": 2873669779905604729,
+          "path": "$.m_Materials[0]",
+          "fileId": 2,
+          "targetType": "Material"
+        },
+        {
+          "ownerType": "ParticleSystemRenderer",
+          "ownerName": "ParticleSystemRenderer#354",
+          "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
+          "ownerPathId": 4015052246259100793,
+          "path": "$.m_Materials[0]",
+          "fileId": 2,
+          "targetType": "Material"
+        },
+        {
+          "ownerType": "ParticleSystemRenderer",
+          "ownerName": "ParticleSystemRenderer#389",
+          "ownerSerializedFile": "CAB-72044df92f6ff49458941a0aad30ac4d",
+          "ownerPathId": 6773003853100051577,
+          "path": "$.m_Materials[0]",
+          "fileId": 2,
+          "targetType": "Material"
+        },
+        {
+          "ownerType": "ParticleSystemRenderer",
+          "ownerName": "ParticleSystemRenderer#111",
           "ownerSerializedFile": "CAB-8fac05233bac82edb23cdafb58f7cf34",
           "ownerPathId": -5276057543692971533,
           "path": "$.m_Materials[0]",
@@ -3197,7 +3197,7 @@
         },
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#379",
+          "ownerName": "ParticleSystemRenderer#167",
           "ownerSerializedFile": "CAB-8fac05233bac82edb23cdafb58f7cf34",
           "ownerPathId": 3776715080317473267,
           "path": "$.m_Materials[0]",
@@ -3206,7 +3206,7 @@
         },
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#395",
+          "ownerName": "ParticleSystemRenderer#183",
           "ownerSerializedFile": "CAB-8fac05233bac82edb23cdafb58f7cf34",
           "ownerPathId": 6615489514101346803,
           "path": "$.m_Materials[0]",
@@ -3277,7 +3277,7 @@
       "occurrences": [
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#284",
+          "ownerName": "ParticleSystemRenderer#72",
           "ownerSerializedFile": "CAB-e27c3ded749317d6e87d346c3cd1e4c3",
           "ownerPathId": 8584929296771235314,
           "path": "$.m_Materials[0]",
@@ -3356,7 +3356,7 @@
       "occurrences": [
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#266",
+          "ownerName": "ParticleSystemRenderer#54",
           "ownerSerializedFile": "CAB-e27c3ded749317d6e87d346c3cd1e4c3",
           "ownerPathId": 4581967884341460466,
           "path": "$.m_Materials[0]",
@@ -3365,7 +3365,7 @@
         },
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#266",
+          "ownerName": "ParticleSystemRenderer#54",
           "ownerSerializedFile": "CAB-e27c3ded749317d6e87d346c3cd1e4c3",
           "ownerPathId": 4581967884341460466,
           "path": "$.m_Materials[1]",
@@ -3444,7 +3444,7 @@
       "occurrences": [
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#237",
+          "ownerName": "ParticleSystemRenderer#25",
           "ownerSerializedFile": "CAB-e27c3ded749317d6e87d346c3cd1e4c3",
           "ownerPathId": -817697371302806030,
           "path": "$.m_Materials[0]",
@@ -3523,7 +3523,7 @@
       "occurrences": [
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#224",
+          "ownerName": "ParticleSystemRenderer#12",
           "ownerSerializedFile": "CAB-e27c3ded749317d6e87d346c3cd1e4c3",
           "ownerPathId": -4708872410606682638,
           "path": "$.m_Materials[0]",
@@ -3602,7 +3602,7 @@
       "occurrences": [
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#285",
+          "ownerName": "ParticleSystemRenderer#73",
           "ownerSerializedFile": "CAB-e27c3ded749317d6e87d346c3cd1e4c3",
           "ownerPathId": 8742686751503597042,
           "path": "$.m_Materials[0]",
@@ -3681,7 +3681,7 @@
       "occurrences": [
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#218",
+          "ownerName": "ParticleSystemRenderer#6",
           "ownerSerializedFile": "CAB-e27c3ded749317d6e87d346c3cd1e4c3",
           "ownerPathId": -7420189553749934606,
           "path": "$.m_Materials[0]",
@@ -3760,7 +3760,7 @@
       "occurrences": [
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#287",
+          "ownerName": "ParticleSystemRenderer#75",
           "ownerSerializedFile": "CAB-e27c3ded749317d6e87d346c3cd1e4c3",
           "ownerPathId": 9002280987563769330,
           "path": "$.m_Materials[0]",
@@ -3839,7 +3839,7 @@
       "occurrences": [
         {
           "ownerType": "ParticleSystemRenderer",
-          "ownerName": "ParticleSystemRenderer#258",
+          "ownerName": "ParticleSystemRenderer#46",
           "ownerSerializedFile": "CAB-e27c3ded749317d6e87d346c3cd1e4c3",
           "ownerPathId": 3953572516906188274,
           "path": "$.m_Materials[0]",

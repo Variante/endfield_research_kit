@@ -3388,7 +3388,11 @@ namespace EndfieldGraphShaderLabEditor
                     return;
 #endif
                 case SerializedPropertyType.LayerMask:
-                    property.intValue = Int(value);
+                    object layerValue = value is Dictionary<string, object>
+                        ? Dict(value)["m_Bits"]
+                        : value;
+                    property.intValue = unchecked((int)Convert.ToUInt32(
+                        layerValue, CultureInfo.InvariantCulture));
                     return;
                 case SerializedPropertyType.Generic:
                     ApplyChildren(property, Dict(value), context, path);
@@ -3413,7 +3417,22 @@ namespace EndfieldGraphShaderLabEditor
                     PreserveKnownRetailOnlyField(pair.Key, path, context);
                     continue;
                 }
-                ApplyProperty(child, pair.Value, context, path + "." + pair.Key);
+                string childPath = path + "." + pair.Key;
+                try
+                {
+                    ApplyProperty(child, pair.Value, context, childPath);
+                }
+                catch (Exception exception)
+                {
+                    string valueType = pair.Value == null
+                        ? "null"
+                        : pair.Value.GetType().FullName;
+                    throw new InvalidDataException(
+                        "Failed to apply serialized particle field " + childPath +
+                        " (propertyType=" + child.propertyType +
+                        ", valueType=" + valueType + ")",
+                        exception);
+                }
             }
         }
 

@@ -1,0 +1,29 @@
+{
+  "schema": "endfield.endminf-liteffect-visual-compatibility.v1",
+  "status": "verified_non_exact",
+  "classification": "visual_compatibility_not_source_exact",
+  "defaultMode": "disabled_fail_closed",
+  "optInEnvironment": "ENDFIELD_ENDMINF_LITEFFECT_VISUAL_COMPAT=1",
+  "scope": {
+    "shaderPathId": 6428594484694422749,
+    "materials": [
+      "M_fx_endminm_gfx_01",
+      "M_fx_endminm_gfx_38"
+    ],
+    "expectedRendererCount": 10
+  },
+  "sourceInputsUsed": [
+    "material identities",
+    "_PARALLAX_MAP keyword",
+    "queue 2000",
+    "recovered texture identities",
+    "serialized colors/floats"
+  ],
+  "approximated": [
+    "converted PNG texture derivatives where native payloads are absent",
+    "forward lighting",
+    "emission scale",
+    "HGBuffer/deferred replacement"
+  ],
+  "failures": []
+}

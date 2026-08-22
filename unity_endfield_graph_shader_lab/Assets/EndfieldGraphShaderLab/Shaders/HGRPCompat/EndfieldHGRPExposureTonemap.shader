@@ -38,6 +38,10 @@ Shader "Hidden/Endfield/HGRPCompat/ExposureTonemap"
             float _EndfieldRecoveredPostSemantics;
             float _RecoveredColorGradingLutReady;
             float _EndfieldRecoveredLinearUnormFinalTarget;
+            // x=radial, y=chromatic, z=opt-in label/gate. This is a narrow
+            // visual-compatibility response, not the recovered UberPost shader.
+            float4 _EndminfVisualCompatibilityParams;
+            float2 _EndminfVisualCompatibilityCenter;
 
             // Presentation flip. CommandBuffer.Blit to the backbuffer inverts Y
             // on UV-starts-at-top devices while a RenderTexture destination does
@@ -98,11 +102,42 @@ Shader "Hidden/Endfield/HGRPCompat/ExposureTonemap"
                 return lerp(color, shoulderCurve, shoulderStrength);
             }
 
+            float4 SampleEndminfRadial(float2 uv, float2 radialStep)
+            {
+                float4 sum = tex2D(_MainTex, saturate(uv));
+                sum += tex2D(_MainTex, saturate(uv - radialStep * 0.5));
+                sum += tex2D(_MainTex, saturate(uv - radialStep));
+                sum += tex2D(_MainTex, saturate(uv + radialStep * 0.5));
+                sum += tex2D(_MainTex, saturate(uv + radialStep));
+                return sum * 0.2;
+            }
+
             float4 Frag(v2f_img input) : SV_Target
             {
                 float2 presentUv = input.uv;
                 presentUv.y = lerp(presentUv.y, 1.0 - presentUv.y, _EndfieldPresentFlipY);
+                float2 centered = presentUv - _EndminfVisualCompatibilityCenter;
+                float radial = _EndminfVisualCompatibilityParams.x *
+                    _EndminfVisualCompatibilityParams.z;
+                float chromatic = _EndminfVisualCompatibilityParams.y *
+                    _EndminfVisualCompatibilityParams.z;
+                // Compatibility reconstruction: the five-point symmetric
+                // accumulation follows the recovered Endfield radial VFX
+                // sampling graph. The intensity curve and world-space center
+                // are exact overview_02 evidence; this compact Uber kernel is
+                // deliberately not claimed as the unavailable shipped ABI.
+                float2 radialStep = centered * radial * 0.55;
                 float4 source = tex2D(_MainTex, presentUv);
+                if (_EndminfVisualCompatibilityParams.z > 0.5 &&
+                    radial + chromatic > 0.00001)
+                {
+                    float2 chromaOffset = centered * chromatic * 0.018;
+                    source = SampleEndminfRadial(presentUv, radialStep);
+                    source.r = SampleEndminfRadial(
+                        presentUv + chromaOffset, radialStep).r;
+                    source.b = SampleEndminfRadial(
+                        presentUv - chromaOffset, radialStep).b;
+                }
                 float3 bloom = max(tex2D(_BloomTex, presentUv).rgb, 0.0);
                 float bloomIntensity = _EndfieldRecoveredPostSemantics > 0.5
                     ? EF_BloomIntensityFromSerialized(_BloomIntensity)

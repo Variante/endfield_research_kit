@@ -97,11 +97,166 @@ def _state_records(document: dict[str, Any]) -> list[dict[str, Any]]:
     return records
 
 
+def _overview_clip_path_ids(document: dict[str, Any]) -> tuple[int, int] | None:
+    """Return the serialized main Overview start/idle clip PPtrs.
+
+    The controller filename is not a stable identity across exports: Unity's
+    generated AnimatorController filename includes the build-local object id.
+    The two clip PPtrs are stable evidence in the current controller document,
+    so use them as the identity for the main UI handoff instead.
+    """
+
+    records = _state_records(document)
+    by_path = {str(item["path"]): item for item in records}
+    entrance = by_path.get("Overview.FromOveview")
+    settled = by_path.get("Overview.OverviewIdle")
+    if entrance is None or settled is None:
+        return None
+    start_path_id = int(entrance.get("clip_path_id") or 0)
+    loop_path_id = int(settled.get("clip_path_id") or 0)
+    if not start_path_id or not loop_path_id or start_path_id == loop_path_id:
+        return None
+    return start_path_id, loop_path_id
+
+
+def _resolve_main_overview_document(character: dict[str, Any]) -> dict[str, Any] | None:
+    """Resolve a current controller by its selected body clip PathIDs.
+
+    ``m_Name`` is retained as a preference, not as the identity.  This lets a
+    refreshed export resolve a controller whose numeric filename changed while
+    refusing to guess when the selected clip pair is missing or ambiguous.
+    """
+
+    by_name, _ = _controller_documents()
+    character_id = str(character.get("character_id") or "")
+    preferred = by_name.get(f"{character_id}_controller".casefold())
+    selected_ids = {
+        int(item.get("PathID") or 0)
+        for item in (character.get("ui_animation") or {}).get("selected_entries") or []
+        if int(item.get("PathID") or 0)
+    }
+
+    documents: dict[str, dict[str, Any]] = {}
+    for document in by_name.values():
+        source = str(document.get("_source_json") or "")
+        documents[source or f"{id(document)}"] = document
+
+    matches: list[dict[str, Any]] = []
+    for document in documents.values():
+        try:
+            pair = _overview_clip_path_ids(document)
+        except (KeyError, IndexError, TypeError, ValueError, RuntimeError):
+            # A malformed unrelated controller must not become a substitute
+            # candidate.  The named candidate is checked strictly below.
+            continue
+        if pair is not None and set(pair).issubset(selected_ids):
+            matches.append(document)
+
+    if preferred is not None:
+        try:
+            preferred_pair = _overview_clip_path_ids(preferred)
+        except (KeyError, IndexError, TypeError, ValueError, RuntimeError) as exc:
+            raise RuntimeError(
+                f"{character_id}: preferred UI controller is malformed"
+            ) from exc
+        if any(document is preferred for document in matches):
+            return preferred
+        if preferred_pair is not None:
+            raise RuntimeError(
+                f"{character_id}: current UI controller Overview clip PathIDs are "
+                "outside the selected body UI set"
+            )
+
+    if len(matches) == 1:
+        return matches[0]
+    if len(matches) > 1:
+        names = ", ".join(sorted(str(item.get("m_Name") or "") for item in matches))
+        raise RuntimeError(
+            f"{character_id}: selected Overview clip PathIDs match multiple UI controllers: {names}"
+        )
+    return None
+
+
+def _controller_source_owns_prefab(
+    document: dict[str, Any],
+    character_id: str,
+    prefab_name: str,
+) -> bool:
+    """Require the exported controller container to name this exact deco owner."""
+
+    normalized = str((document.get("$animestudio") or {}).get("container") or "")
+    normalized = normalized.replace("\\", "/").casefold().rstrip("/")
+    prefab = str(prefab_name or "").casefold()
+    character = str(character_id or "").casefold()
+    if not prefab or not character or not prefab.startswith(f"{character}_deco_"):
+        return False
+    return normalized.endswith(
+        f"/prefabs/uimodels/decoitems/{prefab}_controller.controller"
+    )
+
+
+def resolve_private_widget_controller(
+    character_id: str,
+    prefab_name: str,
+    controller_path_id: int,
+    required_clip_path_ids: set[int],
+) -> dict[str, Any] | None:
+    """Resolve a private widget controller from current PPtrs and clip ownership.
+
+    The Animator PPtr is the preferred current-build owner edge.  If that PPtr
+    is unavailable after an export refresh, the exact source container plus the
+    selected state clip PathID set can recover it without consulting the old
+    controller filename.  A resolved PPtr that fails either gate is rejected
+    rather than replaced by a similarly shaped controller.
+    """
+
+    by_name, by_path_id = _controller_documents()
+    required = {int(path_id) for path_id in required_clip_path_ids if int(path_id)}
+    if not required:
+        return None
+
+    documents: dict[str, dict[str, Any]] = {}
+    for document in by_name.values():
+        source = str(document.get("_source_json") or "")
+        documents[source or f"{id(document)}"] = document
+
+    def matches(document: dict[str, Any]) -> bool:
+        if not _controller_source_owns_prefab(document, character_id, prefab_name):
+            return False
+        state_clip_path_ids = {
+            int(item.get("clip_path_id") or 0)
+            for item in _state_records(document)
+            if int(item.get("clip_path_id") or 0)
+        }
+        return required.issubset(state_clip_path_ids)
+
+    pptr_document = by_path_id.get(int(controller_path_id or 0))
+    if pptr_document is not None:
+        return pptr_document if matches(pptr_document) else None
+
+    candidates: list[dict[str, Any]] = []
+    for document in documents.values():
+        try:
+            if matches(document):
+                candidates.append(document)
+        except (KeyError, IndexError, TypeError, ValueError, RuntimeError):
+            continue
+    if len(candidates) == 1:
+        return candidates[0]
+    if len(candidates) > 1:
+        names = ", ".join(sorted(str(item.get("m_Name") or "") for item in candidates))
+        raise RuntimeError(
+            f"{character_id}/{prefab_name}: private widget clip set matches "
+            f"multiple controllers: {names}"
+        )
+    return None
+
+
 def recover_main_overview_controller(character: dict[str, Any]) -> dict[str, Any]:
     """Recover the exact controller entrance and start-to-idle transition."""
 
     character_id = str(character.get("character_id") or "")
-    document = _controller_documents()[0].get(f"{character_id}_controller".casefold())
+    document = _resolve_main_overview_document(character)
     if document is None:
         return {}
 
@@ -170,7 +325,7 @@ def recover_controller_proven_widget_states(
     """Join body and private-deco clips by exact controller state path."""
 
     character_id = str(character.get("character_id") or "")
-    main = _controller_documents()[0].get(f"{character_id}_controller".casefold())
+    main = _resolve_main_overview_document(character)
     if main is None:
         return []
     body_names = {

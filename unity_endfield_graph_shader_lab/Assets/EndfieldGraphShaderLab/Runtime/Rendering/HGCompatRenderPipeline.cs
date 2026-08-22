@@ -260,6 +260,10 @@ namespace EndfieldGraphShaderLab
         private static readonly int AutoExposureCenterPixelWeightId =
             Shader.PropertyToID("_HGAutoExposureCenterPixelWeight");
         private static readonly int PostExposureId = Shader.PropertyToID("_PostExposure");
+        private static readonly int EndminfVisualCompatibilityParamsId =
+            Shader.PropertyToID("_EndminfVisualCompatibilityParams");
+        private static readonly int EndminfVisualCompatibilityCenterId =
+            Shader.PropertyToID("_EndminfVisualCompatibilityCenter");
         private static readonly int TonemapModeId = Shader.PropertyToID("_TonemapMode");
         private static readonly int ToneCurveParams0Id = Shader.PropertyToID("_ToneCurveParams0");
         private static readonly int ToneCurveParams1Id = Shader.PropertyToID("_ToneCurveParams1");
@@ -2663,6 +2667,14 @@ namespace EndfieldGraphShaderLab
                 ? liveAutoExposureState.CurrentExposure
                 : Mathf.Pow(2.0f, exposureEv);
             postProcessMaterial.SetFloat(PostExposureId, exposure);
+            Vector2 endminfCompatibility = EvaluateEndminfVisualCompatibility();
+            postProcessMaterial.SetVector(
+                EndminfVisualCompatibilityParamsId,
+                new Vector4(endminfCompatibility.x, endminfCompatibility.y,
+                    EndfieldEndminfVisualCompatibilityClock.Requested ? 1.0f : 0.0f, 0.0f));
+            postProcessMaterial.SetVector(
+                EndminfVisualCompatibilityCenterId,
+                EndfieldEndminfVisualCompatibilityClock.GetRecoveredPostCenterViewport(camera));
             postProcessMaterial.SetFloat(
                 TonemapModeId,
                 asset.applyAcesModifiedApproximation ? 1.0f : 0.0f);
@@ -2830,6 +2842,35 @@ namespace EndfieldGraphShaderLab
             }
             context.ExecuteCommandBuffer(commandBuffer);
             commandBuffer.Release();
+        }
+
+        private static Vector2 EvaluateEndminfVisualCompatibility()
+        {
+            if (!EndfieldEndminfVisualCompatibilityClock.TryGetElapsed(out float t))
+                return Vector2.zero;
+
+            // Visual compatibility only. Values and times are the recovered
+            // A_fx_endminf_ui_overview_02 bindings, while the compact radial /
+            // chromatic sampling below is intentionally not an exact UberPost claim.
+            float chromatic = EvaluateEndminfPostCurve(t, 0.127f, 0.101f);
+            float radial = EvaluateEndminfPostCurve(t, 0.152f, 0.109f);
+            return new Vector2(radial, chromatic);
+        }
+
+        private static float EvaluateEndminfPostCurve(
+            float time,
+            float initialPeak,
+            float latePeak)
+        {
+            if (time <= 0.16666667f)
+                return Mathf.Lerp(initialPeak, 0.0f, time / 0.16666667f);
+            if (time < 4.4f)
+                return 0.0f;
+            if (time <= 4.4333334f)
+                return Mathf.Lerp(0.0f, latePeak, (time - 4.4f) / 0.0333333f);
+            if (time <= 4.6f)
+                return Mathf.Lerp(latePeak, 0.0f, (time - 4.4333334f) / 0.1666665f);
+            return 0.0f;
         }
 
         private void DrawRecoveredPostUberWorldUi(
