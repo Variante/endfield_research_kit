@@ -58,7 +58,7 @@ SAMPLE_ROOT = SCRATCH_ROOT / "samples"
 CAMERA_CONTRACT_PATH = PROJECT_ROOT / "Assets" / "EndfieldGraphShaderLab" / "Generated" / "OriginalData" / "CharInfoPresentation" / "charinfo_overview_camera_contract.json"
 COMPARISON_EVIDENCE_PATH = PROJECT_ROOT / "tools" / "endminm_comparable_capture_evidence.json"
 CAMERA_CONTRACT_SHA256 = "F7DF587923FD848C828C44E39BF11A98F5376EB2DA73D7642EFCA10E40EB43A0"
-COMPARISON_EVIDENCE_SHA256 = "76AA472409042F42935D0CC70EF5D3574C00D12595F9F266D292899764F59755"
+COMPARISON_EVIDENCE_SHA256 = "50EC54AEFB4093D22669405D40D23AB39E1418F07264D0A742DA33001B45D020"
 COMPARISON_CAMERA_ID = "chr_0003_endmin_comparison"
 
 SOURCE_FRAME_START = 9783
@@ -93,6 +93,9 @@ CURSOR_DETECTOR = {
     "minPixelsGrayAtLeast245": 150,
     "protectionBoxSource": list(CURSOR_PROTECTION),
 }
+CURSOR_DETECTOR_NAME = "pinned_bright_cursor_core"
+CURSOR_DETECTOR_VERSION = "v1"
+CURSOR_DETECTION_STATUS = "detected_all_frames"
 CURSOR_DETECTOR_SHA256 = hashlib.sha256(
     json.dumps(CURSOR_DETECTOR, sort_keys=True, separators=(",", ":")).encode("utf-8")
 ).hexdigest().upper()
@@ -208,6 +211,49 @@ def _camera_comparison_contract() -> dict[str, Any]:
     }
 
 
+def _cursor_overlay_contract() -> dict[str, Any]:
+    return {
+        "name": "mouse_cursor",
+        "detectorName": CURSOR_DETECTOR_NAME,
+        "detectorVersion": CURSOR_DETECTOR_VERSION,
+        "detectorSha256": CURSOR_DETECTOR_SHA256,
+        "detectionStatus": CURSOR_DETECTION_STATUS,
+        "sourceBox": list(CURSOR_PROTECTION),
+        "cropBox": list(CURSOR_PROTECTION_RELATIVE),
+        "coreBoxSource": list(CURSOR_CORE),
+        "detector": CURSOR_DETECTOR,
+        "detectedFrames": FRAME_COUNT,
+        "actorIntersectionFrameCount": CURSOR_ACTOR_INTERSECTION_FRAMES,
+        "invalidMaskValue": 0,
+        "reason": "fixed source pointer visibly intersects viewport; retained in original pixels and excluded only by validity mask",
+    }
+
+
+def _publication_gates_contract() -> dict[str, bool]:
+    return {
+        "sourcePin": True,
+        "fullFrameSourceMapping": True,
+        "exactCropOnly": True,
+        "cursorDetectedEveryFrame": True,
+        "validityMaskSynchronized": True,
+        "noUiClaim": False,
+        "completeSilhouetteClaim": False,
+        "ffv1OriginalBgr0": True,
+        "ffv1ValidityMask": True,
+        "noUiVisualizationMarked": True,
+    }
+
+
+def _no_ui_visualization_contract(path: str) -> dict[str, Any]:
+    return {
+        "policy": NO_UI_VISUALIZATION_POLICY,
+        "path": path,
+        "invalidRegionOnly": True,
+        "validPixelsRemainSourceExact": True,
+        "notACompleteSilhouette": True,
+    }
+
+
 def _cursor_mask() -> np.ndarray:
     mask = np.full((CROP_HEIGHT, CROP_WIDTH), 255, dtype=np.uint8)
     x0, y0, x1, y1 = CURSOR_PROTECTION_RELATIVE
@@ -238,6 +284,65 @@ def _cursor_detected(frame_bgr0: bytes) -> tuple[bool, dict[str, int]]:
     bright245 = int(np.count_nonzero(gray >= 245))
     facts = {"grayAtLeast230": bright230, "grayAtLeast245": bright245}
     return bright230 >= 200 and bright245 >= 150, facts
+
+
+def _normalize_source_frame(raw: bytes) -> bytes:
+    expected = CROP_WIDTH * CROP_HEIGHT * 4
+    if len(raw) != expected:
+        raise ViewportError(f"source decoder returned {len(raw)} bytes; expected {expected}")
+    # FFmpeg's bgr0 source filler is not a pixel channel.  Canonicalize it so
+    # source evidence hashes equal the FFV1/BGR0 readback hashes.
+    array = np.frombuffer(raw, dtype=np.uint8).reshape((CROP_HEIGHT, CROP_WIDTH, 4)).copy()
+    array[:, :, 3] = 0
+    return array.tobytes()
+
+
+def _source_row(output_index: int, source_frame: int, raw: bytes) -> dict[str, Any]:
+    detected, detector_facts = _cursor_detected(raw)
+    if not detected:
+        raise ViewportError(f"pinned cursor detector failed at source frame {source_frame}")
+    array = np.frombuffer(raw, dtype=np.uint8).reshape((CROP_HEIGHT, CROP_WIDTH, 4))
+    cursor_core = array[
+        CURSOR_CORE[1] - CROP[1]:CURSOR_CORE[3] - CROP[1],
+        CURSOR_CORE[0] - CROP[0]:CURSOR_CORE[2] - CROP[0],
+    ].tobytes()
+    invalid_pixels = (CURSOR_PROTECTION_RELATIVE[2] - CURSOR_PROTECTION_RELATIVE[0]) * (
+        CURSOR_PROTECTION_RELATIVE[3] - CURSOR_PROTECTION_RELATIVE[1]
+    )
+    return {
+        "outputFrameIndex": output_index,
+        "sourceFrame": source_frame,
+        "sourcePtsSeconds": source_frame / EXPECTED_FPS,
+        "phase": _phase(source_frame),
+        "cropSha256": _sha256_bytes(raw),
+        "cursorCoreSha256": _sha256_bytes(cursor_core),
+        "cursorDetector": detector_facts,
+        "validPixels": CROP_WIDTH * CROP_HEIGHT - invalid_pixels,
+        "invalidPixels": invalid_pixels,
+        "noUiVisualizationSha256": _sha256_bytes(_no_ui_visualization(raw)),
+    }
+
+
+def _canonical_source_rows() -> list[dict[str, Any]]:
+    """Rebuild every source row without trusting report row summaries."""
+    decoder = _decoder()
+    assert decoder.stdout is not None
+    rows: list[dict[str, Any]] = []
+    frame_bytes = CROP_WIDTH * CROP_HEIGHT * 4
+    try:
+        for output_index, source_frame in enumerate(range(SOURCE_FRAME_START, SOURCE_FRAME_END + 1)):
+            raw = decoder.stdout.read(frame_bytes)
+            normalized = _normalize_source_frame(raw)
+            rows.append(_source_row(output_index, source_frame, normalized))
+    finally:
+        decoder.stdout.close()
+        stderr = decoder.stderr.read().decode("utf-8", "replace") if decoder.stderr else ""
+        code = decoder.wait()
+        if code:
+            raise ViewportError(f"canonical source rebuild failed ({code}): {stderr[-500:]}")
+    if len(rows) != FRAME_COUNT:
+        raise ViewportError(f"canonical source rebuild returned {len(rows)} rows")
+    return rows
 
 
 def _decoder() -> subprocess.Popen[bytes]:
@@ -468,43 +573,15 @@ def _build() -> dict[str, Any]:
         "crop": crop_contract,
         "cameraComparisonContract": _camera_comparison_contract(),
         "uiValidity": {
-            "knownPersistentOverlays": [{
-                "name": "mouse_cursor",
-                "sourceBox": list(CURSOR_PROTECTION),
-                "cropBox": list(CURSOR_PROTECTION_RELATIVE),
-                "coreBoxSource": list(CURSOR_CORE),
-                "detector": CURSOR_DETECTOR,
-                "detectorSha256": CURSOR_DETECTOR_SHA256,
-                "detectedFrames": FRAME_COUNT,
-                "actorIntersectionFrameCount": CURSOR_ACTOR_INTERSECTION_FRAMES,
-                "invalidMaskValue": 0,
-                "reason": "fixed source pointer visibly intersects viewport; retained in original pixels and excluded only by validity mask",
-            }],
+            "knownPersistentOverlays": [_cursor_overlay_contract()],
             "unmodeledCenterOverlayStatus": "not_claimed_clean",
             "comparisonRule": "ignore_all_mask_zero_pixels; never synthesize replacement pixels",
         },
         "artifacts": {"originalViewport": clip, "validityMask": validity, "noUiVisualization": visualization},
-        "noUiVisualization": {
-            "policy": NO_UI_VISUALIZATION_POLICY,
-            "path": visualization["path"],
-            "invalidRegionOnly": True,
-            "validPixelsRemainSourceExact": True,
-            "notACompleteSilhouette": True,
-        },
+        "noUiVisualization": _no_ui_visualization_contract(visualization["path"]),
         "visualSamples": samples,
         "frames": rows,
-        "publicationGates": {
-            "sourcePin": True,
-            "fullFrameSourceMapping": len(rows) == FRAME_COUNT,
-            "exactCropOnly": True,
-            "cursorDetectedEveryFrame": cursor_hits == FRAME_COUNT,
-            "validityMaskSynchronized": True,
-            "noUiClaim": False,
-            "completeSilhouetteClaim": False,
-            "ffv1OriginalBgr0": True,
-            "ffv1ValidityMask": True,
-            "noUiVisualizationMarked": True,
-        },
+        "publicationGates": _publication_gates_contract(),
     }
     _write_json_lf(REPORT_PATH, report)
     return report
@@ -520,8 +597,61 @@ def _load_report() -> dict[str, Any]:
     return value
 
 
+def _validate_report_contract(report: dict[str, Any], canonical_rows: list[dict[str, Any]] | None = None) -> None:
+    """Validate every fail-closed report summary before artifact I/O."""
+    if report.get("schema") != SCHEMA or report.get("status") != "published_with_invalid_ui_mask":
+        raise ViewportError("viewport report status/schema is not the admitted masked source contract")
+    if report.get("pathBase") != "repo_root" or report.get("pixelPolicy") != PIXEL_POLICY:
+        raise ViewportError("viewport report path/pixel policy mismatch")
+    if report.get("bgr0FillerBytePolicy") != "canonical_zero_only; BGR channels are copied unchanged":
+        raise ViewportError("viewport BGR0 filler-byte policy is stale")
+    if report.get("source") != _expected_source_contract():
+        raise ViewportError("viewport source pin summary is stale")
+    if report.get("crop") != _assert_crop_contract():
+        raise ViewportError("viewport crop summary is stale")
+    if report.get("publicationGates") != _publication_gates_contract():
+        raise ViewportError("viewport publication gates are not the exact fail-closed contract")
+    if report.get("cameraComparisonContract") != _camera_comparison_contract():
+        raise ViewportError("Unity comparison camera/crop contract is stale")
+    if report.get("noUiVisualization") != _no_ui_visualization_contract(_relative(NO_UI_VISUALIZATION_PATH)):
+        raise ViewportError("no-UI visualization policy/path contract is stale")
+    ui = report.get("uiValidity") or {}
+    if ui.get("unmodeledCenterOverlayStatus") != "not_claimed_clean":
+        raise ViewportError("center overlay status cannot be upgraded without evidence")
+    overlays = ui.get("knownPersistentOverlays") or []
+    if overlays != [_cursor_overlay_contract()]:
+        raise ViewportError("cursor overlay detector/name/version/hash/count contract is stale")
+    window = report.get("window") or {}
+    if window.get("sourceFrameRangeInclusive") != [SOURCE_FRAME_START, SOURCE_FRAME_END] or window.get("frameCount") != FRAME_COUNT:
+        raise ViewportError("viewport frame range is stale")
+    expected_phases = {name: {"rangeInclusive": list(bounds), "frameCount": bounds[1] - bounds[0] + 1} for name, bounds in PHASE_RANGES.items()}
+    if window.get("phases") != expected_phases:
+        raise ViewportError("viewport phase contract is stale")
+    rows = report.get("frames") or []
+    if len(rows) != FRAME_COUNT:
+        raise ViewportError("viewport frame rows are incomplete")
+    for index, row in enumerate(rows):
+        expected_frame = SOURCE_FRAME_START + index
+        if row.get("outputFrameIndex") != index or row.get("sourceFrame") != expected_frame or row.get("phase") != _phase(expected_frame):
+            raise ViewportError(f"viewport row {index} mapping is not contiguous")
+        if row.get("invalidPixels") != 36 * 36 or row.get("validPixels") != CROP_WIDTH * CROP_HEIGHT - 36 * 36:
+            raise ViewportError(f"viewport row {index} validity stats are stale")
+        for field in ("cropSha256", "cursorCoreSha256", "noUiVisualizationSha256"):
+            if not isinstance(row.get(field), str) or len(row[field]) != 64:
+                raise ViewportError(f"viewport row {index} {field} is missing")
+        detector = row.get("cursorDetector")
+        if not isinstance(detector, dict) or set(detector) != {"grayAtLeast230", "grayAtLeast245"}:
+            raise ViewportError(f"viewport row {index} cursor detector facts are malformed")
+    if canonical_rows is not None and rows != canonical_rows:
+        for index, (actual, expected) in enumerate(zip(rows, canonical_rows)):
+            if actual != expected:
+                raise ViewportError(f"viewport row {index} differs from canonical source rebuild")
+        raise ViewportError("viewport rows differ from canonical source rebuild")
+
+
 def _check() -> None:
     report = _load_report()
+    _validate_report_contract(report)
     if report.get("schema") != SCHEMA or report.get("status") != "published_with_invalid_ui_mask":
         raise ViewportError("viewport report status/schema is not the admitted masked source contract")
     if report.get("pathBase") != "repo_root" or report.get("pixelPolicy") != PIXEL_POLICY:
@@ -549,6 +679,8 @@ def _check() -> None:
     crop = _assert_crop_contract()
     if report.get("crop") != crop:
         raise ViewportError("viewport crop contract is stale")
+    canonical_rows = _canonical_source_rows()
+    _validate_report_contract(report, canonical_rows)
     window = report.get("window") or {}
     if window.get("sourceFrameRangeInclusive") != [SOURCE_FRAME_START, SOURCE_FRAME_END] or window.get("frameCount") != FRAME_COUNT:
         raise ViewportError("viewport frame range is stale")
@@ -610,6 +742,9 @@ def _check() -> None:
 def _refresh_report_contract() -> None:
     report = _load_report()
     report["cameraComparisonContract"] = _camera_comparison_contract()
+    report["publicationGates"] = _publication_gates_contract()
+    report["noUiVisualization"] = _no_ui_visualization_contract(_relative(NO_UI_VISUALIZATION_PATH))
+    report.setdefault("uiValidity", {})["knownPersistentOverlays"] = [_cursor_overlay_contract()]
     overlays = report.get("uiValidity", {}).get("knownPersistentOverlays", [])
     if len(overlays) == 1:
         overlays[0]["actorIntersectionFrameCount"] = CURSOR_ACTOR_INTERSECTION_FRAMES

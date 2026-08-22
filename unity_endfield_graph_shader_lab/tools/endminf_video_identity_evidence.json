@@ -289,7 +289,7 @@
           "evidence": {
             "path": "unity_endfield_graph_shader_lab/tools/endminm_comparable_capture_evidence.json",
             "bytes": 93940,
-            "sha256": "76AA472409042F42935D0CC70EF5D3574C00D12595F9F266D292899764F59755"
+            "sha256": "50EC54AEFB4093D22669405D40D23AB39E1418F07264D0A742DA33001B45D020"
           },
           "cameraTrack": "track_chr_0003_endmin",
           "resolution": [
@@ -605,7 +605,7 @@
           "captureEvidence": {
             "path": "unity_endfield_graph_shader_lab/tools/endminm_comparable_capture_evidence.json",
             "bytes": 93940,
-            "sha256": "76AA472409042F42935D0CC70EF5D3574C00D12595F9F266D292899764F59755"
+            "sha256": "50EC54AEFB4093D22669405D40D23AB39E1418F07264D0A742DA33001B45D020"
           },
           "render": {
             "available": true,
@@ -817,8 +817,8 @@
               "captureHarness": {
                 "setup": {
                   "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/EndfieldManifestCharacterSetup.cs",
-                  "bytes": 613967,
-                  "sha256": "D6312D6424B570F11451968CA1E40E3944C6BF0EA8B0DD88D60A9564054BB535"
+                  "bytes": 620170,
+                  "sha256": "469B16C228411D37415D478D5C990AA032CA1846F64D140D32D361BF9FEBA3A8"
                 },
                 "phaseSweep": {
                   "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/EndfieldRecoveredOverviewPhaseSweep.cs",
