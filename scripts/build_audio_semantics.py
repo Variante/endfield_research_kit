@@ -9004,11 +9004,14 @@ def _build_remote_common_trigger_contexts(
                         str(line.get("voiceId") or ""),
                     ],
                 })
-    for event_id, lifecycle_rows in table_contexts.collect_remote_common_lifecycle_contexts(
+    for event_id, lifecycle_rows in table_contexts.collect_remote_common_event_contexts(
         export_root
     ).items():
         for raw_context in lifecycle_rows:
-            if not isinstance(raw_context, dict):
+            if (
+                not isinstance(raw_context, dict)
+                or raw_context.get("kind") != "remoteCommonLifecycleAudio"
+            ):
                 continue
             remote_id = str(raw_context.get("remoteCommonId") or "").strip()
             lifecycle_phase = str(raw_context.get("lifecyclePhase") or "").strip().lower()

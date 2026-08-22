@@ -45,7 +45,7 @@ def _reject_duplicate_json_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
         result[key] = value
     return result
 
-def _build_remote_common_event_contexts(
+def collect_remote_common_event_contexts(
     export_root: Path,
 ) -> dict[str, list[dict[str, Any]]]:
     """Expose exact RemoteCommon Event requests in event rows.
@@ -59,13 +59,12 @@ def _build_remote_common_event_contexts(
 
     contexts: dict[str, list[dict[str, Any]]] = defaultdict(list)
     seen: dict[str, set[str]] = defaultdict(set)
-    table_paths = [
-        export_root / "structured" / source_root / "Table" / "RemoteCommonTable.json"
-        for source_root in ("Persistent", "StreamingAssets")
-    ]
     table_sources: list[tuple[str, dict[str, Any], str]] = []
-    malformed_source = False
-    for source_root, table_path in zip(("Persistent", "StreamingAssets"), table_paths):
+    for source_root in ("StreamingAssets", "Persistent"):
+        table_path = (
+            export_root / "structured" / source_root / "Table"
+            / "RemoteCommonTable.json"
+        )
         if not table_path.is_file():
             continue
         try:
@@ -75,41 +74,27 @@ def _build_remote_common_event_contexts(
                 object_pairs_hook=_reject_duplicate_json_keys,
             )
         except (OSError, UnicodeError, ValueError):
-            malformed_source = True
-            continue
+            return {}
         if not isinstance(payload, dict):
-            malformed_source = True
-            continue
+            return {}
         try:
             source_ref = normalize_posix(table_path.relative_to(export_root))
         except ValueError:
             source_ref = normalize_posix(table_path)
         table_sources.append((source_root, payload, source_ref))
-    # A malformed mirror makes the table overlay unverifiable.  Do not let a
-    # valid sibling silently turn into an apparently complete ownership index.
-    if malformed_source:
-        return {}
-
     # Persistent is the active overlay.  Keep Streaming-only rows, while a
     # Persistent row replaces the same normalized RemoteCommon ID.  This is
     # intentionally row-level: the two physical tables are legitimate build
     # layers and need not have identical content.
-    merged_rows: dict[str, tuple[Any, str]] = {}
-    for source_root in ("StreamingAssets", "Persistent"):
-        for row_source_root, payload, source_ref in table_sources:
-            if row_source_root != source_root:
-                continue
-            for raw_remote_id, row in payload.items():
-                remote_id = str(raw_remote_id or "").strip()
-                if not remote_id:
-                    continue
-                merged_rows[remote_id] = (row, source_ref)
+    merged_rows: dict[str, tuple[str, Any, str]] = {}
+    for _source_root, payload, source_ref in table_sources:
+        for raw_remote_id, row in payload.items():
+            remote_id = str(raw_remote_id or "").strip()
+            if remote_id:
+                merged_rows[remote_id.casefold()] = (remote_id, row, source_ref)
 
-    for remote_id, (row, source_ref) in sorted(merged_rows.items()):
+    for _key, (remote_id, row, source_ref) in sorted(merged_rows.items()):
         if not isinstance(row, dict):
-            continue
-        remote_id = str(remote_id or "").strip()
-        if not remote_id:
             continue
         for field, lifecycle_phase in (
             ("startAudioEvent", "start"),
@@ -201,27 +186,6 @@ def _build_remote_common_event_contexts(
                     ),
             })
     return dict(contexts)
-
-
-def collect_remote_common_lifecycle_contexts(
-    export_root: Path,
-) -> dict[str, list[dict[str, Any]]]:
-    """Return only the exact, mirror-gated RemoteCommon lifecycle contexts."""
-
-    return {
-        event_id: [
-            dict(context)
-            for context in contexts
-            if isinstance(context, dict)
-            and context.get("kind") == "remoteCommonLifecycleAudio"
-        ]
-        for event_id, contexts in _build_remote_common_event_contexts(export_root).items()
-        if any(
-            isinstance(context, dict)
-            and context.get("kind") == "remoteCommonLifecycleAudio"
-            for context in contexts
-        )
-    }
 
 
 def _first_recovered_mono_behaviour(export_root: Path, stem: str) -> Path | None:
@@ -1419,7 +1383,7 @@ def collect_table_contexts(
     # adjacent voiceId/audioOverride identities that the generic table walker
     # intentionally leaves out. Keep this route explicit so Event summaries
     # do not manufacture a Timeline-carrier gap for it.
-    for event_id, rows in _build_remote_common_event_contexts(export_root).items():
+    for event_id, rows in collect_remote_common_event_contexts(export_root).items():
         for row in rows:
             _append_context(contexts, seen, event_id, row)
     return dict(contexts)
