@@ -2,9 +2,10 @@ Shader "Hidden/Endfield/ActorObjectIdMask"
 {
     SubShader
     {
-        Tags { "RenderType"="Opaque" }
+        Tags { "RenderType"="Opaque" "LightMode"="SRPDefaultUnlit" }
         Pass
         {
+            Tags { "LightMode"="SRPDefaultUnlit" }
             ZWrite On
             ZTest LEqual
             Cull Back

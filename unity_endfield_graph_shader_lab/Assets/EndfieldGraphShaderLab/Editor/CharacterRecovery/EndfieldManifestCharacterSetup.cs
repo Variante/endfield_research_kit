@@ -5586,6 +5586,7 @@ namespace EndfieldGraphShaderLabEditor
             var layers = new int[transforms.Length];
             var allRenderers = UnityEngine.Object.FindObjectsOfType<Renderer>(true);
             var rendererStates = new bool[allRenderers.Length];
+            var rendererMaterials = new Material[allRenderers.Length][];
             var allCanvases = UnityEngine.Object.FindObjectsOfType<Canvas>(true);
             var canvasStates = new bool[allCanvases.Length];
             const int maskLayer = 31;
@@ -5594,7 +5595,15 @@ namespace EndfieldGraphShaderLabEditor
                 for (int i = 0; i < allRenderers.Length; i++)
                 {
                     rendererStates[i] = allRenderers[i].enabled;
-                    allRenderers[i].enabled = allRenderers[i].transform.IsChildOf(actorRoot.transform) || allRenderers[i].transform == actorRoot.transform;
+                    bool owned = allRenderers[i].transform.IsChildOf(actorRoot.transform) || allRenderers[i].transform == actorRoot.transform;
+                    allRenderers[i].enabled = owned && rendererStates[i];
+                    if (owned && allRenderers[i].enabled)
+                    {
+                        rendererMaterials[i] = allRenderers[i].sharedMaterials;
+                        var maskMaterials = new Material[rendererMaterials[i].Length];
+                        for (int j = 0; j < maskMaterials.Length; j++) maskMaterials[j] = new Material(replacement);
+                        allRenderers[i].sharedMaterials = maskMaterials;
+                    }
                 }
                 for (int i = 0; i < allCanvases.Length; i++)
                 {
@@ -5618,7 +5627,7 @@ namespace EndfieldGraphShaderLabEditor
                     RenderTexture.active = target;
                     GL.Clear(true, true, Color.black);
                     RenderTexture.active = previousForClear;
-                    camera.RenderWithShader(replacement, string.Empty);
+                camera.Render();
                     RenderTexture previous = RenderTexture.active;
                     RenderTexture.active = target;
                     texture.ReadPixels(new Rect(0, 0, target.width, target.height), 0, 0, false);
@@ -5657,7 +5666,17 @@ namespace EndfieldGraphShaderLabEditor
                 for (int i = 0; i < transforms.Length; i++)
                     if (transforms[i] != null) transforms[i].gameObject.layer = layers[i];
                 for (int i = 0; i < allRenderers.Length; i++)
-                    if (allRenderers[i] != null) allRenderers[i].enabled = rendererStates[i];
+                    if (allRenderers[i] != null)
+                    {
+                        if (rendererMaterials[i] != null)
+                        {
+                            Material[] temporary = allRenderers[i].sharedMaterials;
+                            allRenderers[i].sharedMaterials = rendererMaterials[i];
+                            for (int j = 0; j < temporary.Length; j++)
+                                if (temporary[j] != null) UnityEngine.Object.DestroyImmediate(temporary[j]);
+                        }
+                        allRenderers[i].enabled = rendererStates[i];
+                    }
                 for (int i = 0; i < allCanvases.Length; i++)
                     if (allCanvases[i] != null) allCanvases[i].enabled = canvasStates[i];
                 camera.cullingMask = savedMask;
