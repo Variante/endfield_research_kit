@@ -2794,6 +2794,63 @@ class MissionFlowLevelScriptEventTests(unittest.TestCase):
             dynamic_output["triggerSlotIdOutputParam"],
         )
 
+    def test_leader_trigger_volume_list_decodes_complete_constant_selector(self):
+        param_tail = (
+            b"\xff\xff\xff\xff"
+            + (0).to_bytes(4, "little", signed=True)
+            + b"\xff\xff\xff\xff"
+        )
+        payload = (
+            bytes(17)
+            + b"\x04\x01"
+            + param_tail
+            + b"\xff"
+            + (0).to_bytes(4, "little", signed=True)
+            + b"\x04"
+            + (2).to_bytes(4, "little", signed=True)
+            + (80001).to_bytes(4, "little", signed=True)
+            + (80002).to_bytes(4, "little", signed=True)
+            + param_tail
+        )
+        detail = decode_levelscript_record_payload(
+            payload,
+            {
+                "code": 0x11BF,
+                "kind": 0,
+                "unionTag": 0xBF,
+                "serializedMemberCount": 17,
+                "payloadStart": 0,
+                "nextId": 0,
+                "strings": [],
+            },
+            next_start=len(payload),
+            action_map_role="headerList#1",
+        )["nativeEventDetail"]
+        self.assertEqual([80001, 80002], detail["triggerSlotIdFilters"])
+        self.assertEqual(2, detail["triggerSlotIdFilterCount"])
+        self.assertEqual(
+            "constant-trigger-slot-list-selector-prefix",
+            detail["payloadShape"],
+        )
+
+        duplicate = bytearray(payload)
+        duplicate[-16:-12] = (80001).to_bytes(4, "little", signed=True)
+        rejected = decode_levelscript_record_payload(
+            bytes(duplicate),
+            {
+                "code": 0x11BF,
+                "kind": 0,
+                "unionTag": 0xBF,
+                "serializedMemberCount": 17,
+                "payloadStart": 0,
+                "nextId": 0,
+                "strings": [],
+            },
+            next_start=len(duplicate),
+            action_map_role="headerList#1",
+        )
+        self.assertNotIn("nativeEventDetail", rejected)
+
     def test_pos_tracking_matches_exact_event_selected_trigger_center(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             source_path = Path(temp_dir) / "90000000001.json"
