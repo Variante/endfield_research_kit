@@ -9,6 +9,23 @@ from __future__ import annotations
 from typing import Any
 
 
+def classify_lua_accepted_playback_counts(
+    lua_playback_evidence: dict[str, Any],
+) -> dict[str, int]:
+    """Partition admitted Lua calls without erasing casefold evidence."""
+    rows = list(lua_playback_evidence.get("acceptedExactPlaybackCalls") or [])
+    casefold = sum(
+        row.get("recoveryAssociationStatus")
+        == "accepted_unique_ascii_case_insensitive"
+        for row in rows
+    )
+    return {
+        "acceptedLuaPlaybackCalls": len(rows),
+        "acceptedLuaExactCasePlaybackCalls": len(rows) - casefold,
+        "acceptedLuaUniqueCaseInsensitivePlaybackCalls": casefold,
+    }
+
+
 def build_report(
     *,
     ACTIONBASE_FORMATTER_NAME_AUDIT: Any,
@@ -84,6 +101,9 @@ def build_report(
     unresolved_timeline_containment: Any,
     variable_bridge_summary: Any,
 ) -> dict[str, Any]:
+    lua_accepted_counts = classify_lua_accepted_playback_counts(
+        lua_playback_evidence
+    )
     report = {
         "schemaVersion": 19,
         "generated": int(time.time()),
@@ -187,6 +207,10 @@ def build_report(
             "acceptedLuaExactPlaybackCalls": len(
                 lua_playback_evidence["acceptedExactPlaybackCalls"]
             ),
+            # Legacy alias above is preserved for existing consumers. New
+            # fields distinguish exact-case from official unique casefold
+            # associations.
+            **lua_accepted_counts,
             "acceptedLuaTableCarrierCalls":
                 lua_playback_evidence["acceptedTableCarrierCalls"],
             "rejectedLuaCaseMismatchCalls": len(

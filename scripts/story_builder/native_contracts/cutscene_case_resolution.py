@@ -31,8 +31,8 @@ from .ifix_patch import (
 )
 
 
-SCHEMA = "cutsceneCaseResolutionNativeContract.v1"
-AUDIT_SCHEMA = "cutsceneCaseResolutionNativeContractAudit.v1"
+SCHEMA = "cutsceneCaseResolutionNativeContract.v2"
+AUDIT_SCHEMA = "cutsceneCaseResolutionNativeContractAudit.v2"
 DEFAULT_CONTRACT = Path(__file__).with_name("cutscene_case_resolution.json")
 GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
@@ -88,7 +88,7 @@ def load_cutscene_case_resolution_contract(
     gameassembly: Path | None = None,
     metadata: Path | None = None,
 ) -> dict[str, Any]:
-    """Return the exact rejection rule only while every source gate matches."""
+    """Validate the pinned runtime fact and offline association policy."""
 
     path = Path(contract_path)
     source_file = _source_file(path)
@@ -118,6 +118,17 @@ def load_cutscene_case_resolution_contract(
         if isinstance(contract.get("conclusion"), dict)
         else {}
     )
+    association = (
+        contract.get("recoveryAssociationPolicy")
+        if isinstance(contract.get("recoveryAssociationPolicy"), dict)
+        else {}
+    )
+    bridge = (
+        contract.get("genderSelectBridge")
+        if isinstance(contract.get("genderSelectBridge"), dict)
+        else {}
+    )
+    bridge_script = bridge.get("levelScript") or {}
     exact_gates = (
         ("schema", SCHEMA, contract.get("schema")),
         ("status", "validated", contract.get("status")),
@@ -136,8 +147,28 @@ def load_cutscene_case_resolution_contract(
         ("ifix_resolver_matches", 0, resolver.get("ifixResolverMatches")),
         ("case_resolution", "case_sensitive", conclusion.get("caseResolution")),
         ("literal_resolution", False, conclusion.get("literalResolvesToCanonicalKey")),
-        ("graph_action", "reject_case_mismatch_no_playback_binding", conclusion.get("graphAction")),
+        ("graph_action", "record_native_case_mismatch", conclusion.get("graphAction")),
         ("ownership_action", "none", conclusion.get("ownershipAction")),
+        ("association_comparison", "ascii_case_insensitive", association.get("comparison")),
+        ("association_unique_key", True, association.get("requiresUniqueCanonicalStoryKey")),
+        ("association_result", True, association.get("literalAssociatesToCanonicalKey")),
+        ("association_graph_action", "associate_casefolded_playback_reference", association.get("graphAction")),
+        ("association_ownership", False, association.get("suppliesMissionOrQuestOwnership")),
+        ("association_spatial", False, association.get("suppliesSpatialEvidence")),
+        ("gender_select_bridge_status", "validated", bridge.get("status")),
+        ("gender_select_action_type", "Beyond.Gameplay.Actions.StartGenderSelect", bridge.get("actionType")),
+        ("gender_select_action_token", "0x02001768", bridge.get("actionTypeToken")),
+        ("gender_select_level", "indie_dg002", bridge_script.get("levelId")),
+        ("gender_select_script", 8700020000, bridge_script.get("scriptId")),
+        ("gender_select_header", 12, bridge_script.get("headerLocalId")),
+        ("gender_select_trigger_slot", 80001, bridge_script.get("triggerSlotId")),
+        ("gender_select_switch", 13, bridge_script.get("switchLocalId")),
+        ("gender_select_switch_case", 0, bridge_script.get("switchCase")),
+        ("gender_select_action", 16, bridge_script.get("actionLocalId")),
+        ("gender_select_action_offset", 310, bridge_script.get("actionRecordOffset")),
+        ("gender_select_story", "cutscene_e0m0_1", bridge.get("storyKey")),
+        ("gender_select_conditional", True, bridge.get("conditionalPlayback")),
+        ("gender_select_ownership", False, bridge.get("suppliesMissionOrQuestOwnership")),
     )
     for gate, expected, actual in exact_gates:
         if actual != expected:
@@ -196,6 +227,61 @@ def load_cutscene_case_resolution_contract(
             {"status": NATIVE_EVIDENCE_VALIDATED},
             {"status": native.status, "detail": native.detail},
         )
+    gameassembly_path = getattr(native, "gameassembly", None)
+    try:
+        image = Path(gameassembly_path).read_bytes() if gameassembly_path else b""
+    except OSError as error:
+        image = b""
+        reject("read_gameassembly", True, str(error)[:400])
+    bridge_methods = {
+        "execute": ("0x06008b48", "0x18765b560"),
+        "gameAction": ("0x0600800c", "0x1875eda48"),
+    } if gameassembly_path else {}
+    for method_name, identity in bridge_methods.items():
+        method = bridge.get(method_name) or {}
+        actual_identity = (method.get("token"), method.get("virtualAddress"))
+        if actual_identity != identity:
+            reject(f"gender_select_{method_name}_identity", identity, actual_identity)
+            continue
+        offset, size = method.get("fileOffset"), method.get("bodySize")
+        if not isinstance(offset, int) or not isinstance(size, int) or size <= 0:
+            reject(f"gender_select_{method_name}_range", {"offset": "int", "size": ">0"}, method)
+            continue
+        body = image[offset:offset + size]
+        actual_hash = hashlib.sha256(body).hexdigest().upper()
+        expected_hash = str(method.get("bodySha256") or "").upper()
+        if len(body) != size or actual_hash != expected_hash:
+            reject(f"gender_select_{method_name}_body", expected_hash, actual_hash)
+
+    bridge_calls = (
+        ("execute", "gameActionCallOffset", "gameActionCallBytes", "0x1875eda48"),
+        ("gameAction", "messageDispatchCallOffset", "messageDispatchCallBytes", "0x183194740"),
+    ) if gameassembly_path else ()
+    for method_name, offset_key, bytes_key, target in bridge_calls:
+        method = bridge.get(method_name) or {}
+        offset = method.get("fileOffset")
+        call_offset = method.get(offset_key)
+        expected_bytes = bytes.fromhex(str(method.get(bytes_key) or ""))
+        if not isinstance(offset, int) or not isinstance(call_offset, int):
+            reject(f"gender_select_{method_name}_call_range", True, method)
+            continue
+        actual_bytes = image[offset + call_offset:offset + call_offset + 5]
+        if actual_bytes != expected_bytes or actual_bytes[:1] != b"\xe8":
+            reject(f"gender_select_{method_name}_call_bytes", expected_bytes.hex(), actual_bytes.hex())
+            continue
+        method_va = int(str(method.get("virtualAddress")), 16)
+        relative = int.from_bytes(actual_bytes[1:], "little", signed=True)
+        actual_target = method_va + call_offset + 5 + relative
+        if actual_target != int(target, 16):
+            reject(f"gender_select_{method_name}_call_target", target, hex(actual_target))
+
+    script_path = Path(__file__).resolve().parents[3] / str(bridge_script.get("sourceFile") or "")
+    try:
+        script_hash = hashlib.sha256(script_path.read_bytes()).hexdigest().upper()
+    except OSError as error:
+        script_hash = str(error)[:400]
+    if script_hash != bridge_script.get("sourceSha256"):
+        reject("gender_select_levelscript_sha256", bridge_script.get("sourceSha256"), script_hash)
 
     source_sha256 = hashlib.sha256(raw).hexdigest().upper() if raw else ""
     status = NATIVE_EVIDENCE_VALIDATED

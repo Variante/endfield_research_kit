@@ -18,6 +18,9 @@
   --mr-enemy: #b0342c;
   --mr-story: #c8410f;
   --mr-device: #a2660a;
+  --mr-script-target-candidate: #4d668f;
+  --mr-script-target: #315f91;
+  --mr-empty-slot: #6f7780;
   --mr-scenery: #7a6a52;
   --mr-npc: #4d8a1f;
   --mr-quest: #2f7d4f;
@@ -262,6 +265,30 @@
 /* Mission rows are a list to pick from, not a stack of cards: no box, no fill,
    one line each. Only the picked row is tinted. */
 .mr-mission-list { display: flex; flex-direction: column; gap: 1px; margin-bottom: 12px; }
+.mr-npc-phase { display: grid; gap: 4px; margin: 0 4px 12px; color: var(--muted); font-size: 10px; }
+.mr-npc-phase select { width: 100%; min-width: 0; }
+.mr-map-variants { display: flex; flex-direction: column; gap: 1px; margin-bottom: 10px; padding-bottom: 9px; border-bottom: 1px solid var(--border); }
+.mr-map-variant {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 7px;
+  padding: 5px 7px;
+  border: 1px solid transparent;
+  border-radius: var(--mr-radius-xs);
+  background: transparent;
+  color: var(--text);
+  font: 10px/1.3 var(--mono);
+  text-align: left;
+  cursor: pointer;
+}
+.mr-map-variant b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 400; }
+.mr-map-variant span { flex: 0 0 auto; color: var(--muted); font-size: 9px; }
+.mr-map-variant:hover { border-color: var(--accent); background: transparent; }
+.mr-map-variant.is-active { border-color: var(--mr-story); background: color-mix(in srgb, var(--mr-story) 12%, transparent); }
+.mr-map-variant.is-active:hover { background: transparent; }
+.mr-map-variant.is-active b { font-weight: 700; }
 .mr-mission-all,
 .mr-mission-item {
   border: 1px solid transparent;
@@ -276,6 +303,27 @@
   padding-top: 10px;
   border-top: 1px solid var(--border);
 }
+
+.mr-surface-evidence {
+  display: grid;
+  gap: 3px;
+  margin-top: 10px;
+  padding-left: 8px;
+  border-left: 2px solid var(--accent, #df7a2e);
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.mr-surface-evidence > span {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.mr-surface-evidence > b { color: var(--text); font-size: 11px; }
+.mr-surface-evidence > small { font-size: 10px; }
 
 .mr-browser-tree {
   display: grid;
@@ -326,20 +374,23 @@
 .mr-map-item span,
 .mr-map-transition span { flex: 0 0 auto; color: var(--muted); font-size: 9px; }
 .mr-map-item:hover,
-.mr-map-transition:hover { border-color: var(--accent); background: var(--hover); }
+.mr-map-transition:hover { border-color: var(--accent); background: transparent; }
 .mr-map-item.is-active {
   border-color: var(--mr-story);
   background: color-mix(in srgb, var(--mr-story) 12%, transparent);
 }
+.mr-map-item.is-active:hover { background: transparent; }
 .mr-map-transition { margin: 0 0 7px; border-color: color-mix(in srgb, var(--accent) 55%, var(--border)); }
 .mr-mission-all { width: 100%; padding: 5px 7px; text-align: left; cursor: pointer; }
 .mr-mission-all:hover,
-.mr-mission-item > summary:hover { border-color: var(--accent); background: var(--hover); }
+.mr-mission-item > summary:hover { border-color: var(--accent); background: transparent; }
 .mr-mission-all.is-active,
 .mr-mission-item.is-active > summary {
   border-color: var(--mr-story);
   background: color-mix(in srgb, var(--mr-story) 12%, transparent);
 }
+.mr-mission-all.is-active:hover,
+.mr-mission-item.is-active > summary:hover { background: transparent; }
 .mr-mission-item > summary {
   display: flex;
   align-items: center;
@@ -355,8 +406,7 @@
 .mr-mission-item.is-active > summary b { font-weight: 700; }
 .mr-mission-item > summary span { flex: 0 0 auto; color: var(--muted); font-size: 9px; white-space: nowrap; }
 .mr-mission-files { padding: 4px 7px 7px 14px; }
-.mr-mission-files > details > summary { color: var(--muted); font-size: 9px; cursor: pointer; }
-.mr-mission-files > details > summary:hover { color: var(--text); }
+.mr-mission-file-list > span { color: var(--muted); font-size: 9px; }
 .mr-mission-files small { color: var(--muted); }
 .mr-mission-files ul { margin: 5px 0 0; padding-left: 12px; }
 .mr-mission-files li { margin: 3px 0; overflow-wrap: anywhere; }
@@ -367,12 +417,6 @@
   padding-left: 9px;
   border-left: 1px solid var(--border);
 }
-
-.mr-object-filters .mr-opacity-dock {
-  grid-template-columns: minmax(0, 1fr) minmax(70px, 100px) 36px;
-}
-
-.mr-object-filters .mr-opacity-dock input { width: 100%; }
 
 .mr-object-filters .mr-height-dock {
   grid-template-columns: minmax(0, 1fr);
@@ -524,6 +568,21 @@
 /* Nodes are counter-scaled in JS, so every length below is effectively a
    constant on-screen pixel size at any zoom level. */
 .mr-node { cursor: pointer; }
+.mr-trigger-zone-shape {
+  fill: rgba(226, 78, 106, 0.16);
+  stroke: #e24e6a;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+  stroke-dasharray: 7 4;
+  transition: fill 0.12s ease-out, stroke-width 0.12s ease-out;
+}
+.mr-trigger-zone:hover .mr-trigger-zone-shape,
+.mr-trigger-zone:focus-visible .mr-trigger-zone-shape {
+  fill: rgba(226, 78, 106, 0.28);
+  stroke-width: 3;
+}
+.mr-trigger-zone.is-selected .mr-trigger-zone-shape,
+.mr-trigger-zone.is-target .mr-trigger-zone-shape { fill: rgba(226, 78, 106, 0.34); }
 .mr-node .mr-shape { stroke: #fff; stroke-width: 1.6; transition: stroke-width 0.12s ease-out; }
 .mr-quest .mr-shape { fill: var(--mr-quest); }
 .mr-quest .mr-endpoint-halo {
@@ -630,20 +689,6 @@
 
 .mr-floor-help { margin: 8px 0 0; padding-top: 7px; border-top: 1px solid var(--mr-hairline); color: var(--muted); font-size: 10px; font-weight: 600; line-height: 1.45; }
 
-.mr-opacity-dock {
-  display: grid;
-  grid-template-columns: auto 118px 38px;
-  gap: 8px;
-  align-items: center;
-  padding: 0;
-  color: var(--mr-control-ink);
-  font-size: 10.5px;
-  font-weight: 600;
-}
-
-.mr-opacity-dock input { width: 118px; accent-color: var(--mr-control-accent); }
-.mr-opacity-dock output { color: var(--muted); font: 11px/1 var(--mono); text-align: right; }
-
 .mr-height-dock {
   display: grid;
   grid-template-columns: auto 160px minmax(92px, auto);
@@ -707,17 +752,39 @@
 }
 
 .mr-model-layers {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px 12px;
+  display: grid;
+  gap: 6px;
   margin: 0 0 8px;
   padding: 0 0 8px;
   border: 0;
   border-bottom: 1px solid var(--mr-hairline);
 }
-.mr-model-layers legend { margin-bottom: 6px; }
-.mr-model-layers label { display: inline-flex; gap: 5px; align-items: center; color: var(--mr-control-ink); font-size: 10.5px; font-weight: 400; }
-.mr-model-layers input { accent-color: var(--mr-control-accent); }
+.mr-region-tools > span:first-child {
+  padding: 0 4px;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+.mr-region-tools button[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: rgba(var(--accent-rgb), 0.14);
+  color: var(--accent);
+}
+.mr-model-layers legend { margin-bottom: 7px; }
+.mr-model-layer-row {
+  display: grid;
+  grid-template-columns: 15px minmax(80px, 1fr) minmax(90px, 120px);
+  gap: 7px;
+  align-items: center;
+  min-width: 0;
+  color: var(--mr-control-ink);
+  font-size: 10.5px;
+  font-weight: 400;
+}
+.mr-model-layer-row input[type="checkbox"] { margin: 0; accent-color: var(--mr-control-accent); }
+.mr-model-layer-row input[type="range"] { width: 100%; min-width: 0; accent-color: var(--mr-control-accent); }
 
 .mr-axis {
   padding: 0 4px;
@@ -986,6 +1053,30 @@
 
 .mr-raw.is-hex { white-space: pre; word-break: break-all; }
 
+.mr-registry-code {
+  margin: 0;
+  padding: 4px 0;
+  overflow: auto;
+  font: 10.5px/1.55 var(--mono);
+  background: #fff8d8;
+  border: 1px solid #e2bd54;
+  border-radius: 5px;
+}
+
+.mr-registry-line { display: block; white-space: pre-wrap; overflow-wrap: anywhere; }
+.mr-registry-line i {
+  display: inline-block;
+  min-width: 30px;
+  margin-right: 8px;
+  padding-right: 7px;
+  color: var(--muted);
+  text-align: right;
+  border-right: 1px solid #e2bd54;
+  font-style: normal;
+  user-select: none;
+}
+.mr-registry-line mark { color: inherit; background: #fff0a8; }
+
 /* ---------------------------------------------------------------- responsive */
 
 @media (max-width: 1180px) {
@@ -999,8 +1090,6 @@
   /* The axis hint is the first thing to go when the dock runs out of room. */
   .mr-axis,
   .mr-tool-sep:has(+ .mr-axis) { display: none; }
-  .mr-opacity-dock { grid-template-columns: auto minmax(80px, 1fr) 38px; right: 12px; }
-  .mr-opacity-dock input { width: 100%; }
   .mr-height-dock { grid-template-columns: auto minmax(100px, 1fr); }
   .mr-height-range { width: 100%; }
   .mr-height-dock output { grid-column: 1 / -1; text-align: left; }

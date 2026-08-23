@@ -31,6 +31,11 @@ Only validated typed relations from the first four layers can create accepted
 connection or order edges. Cross-reference evidence guides investigation but
 does not prove ownership, activation, or chronology.
 
+Recovery name matching defaults to case-insensitive comparison. Reports retain
+the authored spelling, canonical spelling, and ambiguity set; a folded match is
+accepted only when it is unique. Case-colliding candidates fail closed rather
+than selecting one by file order.
+
 ## Maintained code boundary
 
 Production parsers, validators, joins, attachment logic, and generated schemas
@@ -98,13 +103,44 @@ leave only the report/CLI surface in recovery.
   activation or Wwise playback.
 - Weak LevelScript placement is diagnostic and cannot enter accepted chronology
   unless a typed route closes the gap.
-- Every one of the 152 exact-native-playback ownership gaps now has an
-  active-overlay, source-hash-gated trigger classification. The current corpus
-  resolves 66 to one exact authored local trigger volume, 2 to multiple exact
-  authored volumes, and 84 to exact non-spatial local event carriers, with no
-  unresolved spatial selector. This identifies the per-file local trigger
-  carrier only; it does not prove mission ownership, event firing, branch
-  choice, activation, or Story order.
+- Active-overlay direct playback enumeration now classifies Story trigger
+  carriers independently of the older missionless-receiver subset. Exact map
+  placement requires the same typed header-to-playback action path, current
+  script and source hash, one exact slot selector, and one decoded authored
+  Leader shape. Multiple exact observations remain multiple locations;
+  missing slots, ambiguous shapes, preload/load/stop rows, and sibling actions
+  remain diagnostic only. A second exact spatial carrier is a current-build
+  event payload that selects one constant EntityPtr: specified-entity property
+  events and bounded single-entity lifecycle filters may attach the Story to
+  that exact WorldEntityRegistry marker. Arbitrary-entity events, dynamic
+  filters/lists/paths, and event payloads without an entity selector remain
+  non-spatial. A subtype may remain opaque while its inherited EntityEvent
+  specified-entity scope is decoded independently; that narrow schema proves
+  only the constant target and validation fields, never the subtype payload or
+  broader event semantics. Multiple typed control paths from the same event header may
+  converge on one Story-bearing playback node without becoming sibling
+  inheritance; multiple playback nodes or foreign headers remain ambiguous.
+  Exact SpawnerPtr filters are spatial only when the same level contains one
+  matching `sc_<level>_<id>` SpawnerConfig and one logical typed LevelData host
+  record whose finite position/rotation agrees across the active overlay.
+  Entity-spawn/lifecycle listeners walk the formatter fields in order and
+  preserve nullable group/wave filters.  When the listener is the final
+  header-list record, the exact consumed subtype prefix is authoritative even
+  though the generic byte window also contains following ActionMap lists;
+  those trailing bytes are never scanned for a SpawnerPtr.
+  Wave/group configuration, spawned-entity output, or a raw numeric hit alone
+  remains non-spatial.
+  Generated frontier and map reports own the changing counts.
+- For e0m0, the current two-map union has 23 mapped Story keys and 25 disjoint
+  unmapped keys. The unmapped set is 15 ordering-graph-only, 8 without spatial
+  placement evidence, and 2 mission-scope-only; 17 have exact non-spatial
+  event context and 8 have no frontier row. `cutscene_e0m0_1` is the reviewed
+  exception recovered under the repository's unique case-insensitive name
+  policy: Leader slot 80001 -> stage case 0 -> StartGenderSelect -> phase Lua
+  playback, with its authored Box geometry and conditional status preserved.
+  No exact spatial frontier
+  observation remains unprojected. Source-graph mission/order edges do not
+  upgrade these rows to map locations.
 - Current offline client-static ownership recovery is exhausted at the known
   native receiver frontier: reverse PPtr, GameObject/carrier, LevelData,
   SubGame, MissionRuntime operand, IFix, and recursive protobuf scans produce no
@@ -180,4 +216,8 @@ per-run proof belong in reports rather than this file.
 - Improve cutscene root activation, subtitle, and audio-lane evidence.
 - Recover stronger cross-file order while preserving partial-order semantics.
 - Reduce unlinked Story files with typed routes, not filename or address order.
+- For e0m0, pursue files with no frontier row and new typed spatial carriers;
+  revisit an event only when its own payload supplies a build-validated
+  constant EntityPtr or authored trigger geometry, never through sibling
+  actions or listener proximity.
 - Keep parser and validator failures deterministic, bounded, and actionable.

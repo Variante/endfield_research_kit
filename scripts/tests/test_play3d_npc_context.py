@@ -77,6 +77,10 @@ class Play3DNpcContextTests(unittest.TestCase):
             decoded,
             decode_play3d_radio_action(payload, (0x034A, 0x14)),
         )
+        waiting = decode_play3d_radio_action(payload, (0x034B, 0x14))
+        self.assertEqual("Play3DRadioAndWait", waiting["actionKind"])
+        self.assertEqual("radio_e3m3_1", waiting["radioId"])
+        self.assertEqual(len(payload), waiting["consumedBytes"])
 
         framed = decode_levelscript_record_payload(
             payload + b"\x00\x00\x00\x00",

@@ -248,7 +248,8 @@ def load_lua_story_playback_evidence(
             continue
         contract = case_resolution_contract_audit["nativeContract"]
         source = contract["sources"]
-        rejected.append({
+        association = contract["recoveryAssociationPolicy"]
+        accepted.append({
             "storyKey": str(row.get("canonicalStoryKey") or ""),
             "luaLiteral": str(row.get("resolvedLiteral") or ""),
             "luaFile": f"Lua/Data/LuaScripts/{row['module']}",
@@ -258,8 +259,20 @@ def load_lua_story_playback_evidence(
             "luaSymbol": str(row.get("firstArgument") or ""),
             "luaCall": f"GameAction.{method}",
             "nativeEntry": native_entry,
-            "reason": "case_sensitive_native_resource_lookup",
-            "confidence": "binary_proven_rejection",
+            "phase": _lua_phase(str(row.get("module") or "")),
+            "playbackKind": row.get("playbackKind"),
+            "literalResolution": "official_ascii_case_insensitive_association",
+            "missionId": None,
+            "questId": None,
+            "table": "",
+            "tableKey": "",
+            "tableField": "",
+            "tableLookupKeyExpression": "",
+            "tableSourcePath": "",
+            "tableSourceSha256": "",
+            "runtimeLookupStatus": "case_sensitive_case_mismatch",
+            "recoveryAssociationStatus": "accepted_unique_ascii_case_insensitive",
+            "confidence": "official_case_insensitive_recovery_policy_plus_binary_runtime_boundary",
             "auditReport": str(case_resolution_contract_audit["sourceFile"]),
             "auditSha256": str(
                 case_resolution_contract_audit["sourceSha256"]
@@ -267,10 +280,11 @@ def load_lua_story_playback_evidence(
             "gameAssemblySha256": str(source["gameAssemblySha256"]).lower(),
             "metadataSha256": str(source["metadataSha256"]).lower(),
             "note": (
-                "The installed binary preserves this mismatched literal through "
-                "StringPathHash lookup, so it cannot prove playback of the "
-                "differently-cased Story registry key."
+                "The official recovery policy associates the unique ASCII-case-insensitive "
+                "Story key. The installed runtime lookup remains case-sensitive; this "
+                "association supplies playback evidence but no ownership or spatial evidence."
             ),
+            "recoveryAssociationPolicy": association["comparison"],
         })
 
     accepted.sort(key=lambda row: (_natural_quest_key(row["storyKey"]), row["luaFile"], row["luaLine"]))
@@ -305,6 +319,19 @@ def load_lua_story_playback_evidence(
             f"expected=complete_binary_dispatch_family actual=invalid "
             f"source={_repo_path(lua_audit_path)}"
         )
+    case_insensitive_associations = [{
+        "storyKey": str(row.get("storyKey") or ""),
+        "luaLiteral": str(row.get("luaLiteral") or ""),
+        "luaFile": str(row.get("luaFile") or ""),
+        "luaLine": row.get("luaLine"),
+        "wouldResolvePlaybackResource": bool(
+            row.get("storyKey")
+            and str(row.get("storyKey")).casefold()
+            == str(row.get("luaLiteral") or "").casefold()
+        ),
+        "suppliesSpatialEvidence": False,
+        "suppliesMissionOrQuestOwnership": False,
+    } for row in accepted if row.get("recoveryAssociationStatus")]
     return {
         "validator": validator,
         "status": "validated",
@@ -335,6 +362,22 @@ def load_lua_story_playback_evidence(
             )
             if case_resolution_contract_audit.get(field) not in (None, "")
         },
+        "caseInsensitiveResourceNameAssociation": {
+            "status": "official_recovery_policy",
+            "associationPolicy": "ascii_case_insensitive_unique_story_key",
+            "playbackResourceCandidateCount": sum(
+                1 for row in case_insensitive_associations
+                if row["wouldResolvePlaybackResource"]
+            ),
+            "spatialMapCandidateCount": 0,
+            "candidates": case_insensitive_associations,
+            "boundary": (
+                "This offline association policy changes only resource-name equality for the "
+                "reviewed unique case-mismatch call; native runtime lookup remains case-sensitive. "
+                "Lua playback calls carry no authored trigger geometry, "
+                "entity transform, mission owner, quest owner, or Story order evidence."
+            ),
+        },
         "evidenceBoundary": (
             "Exact shipped-Lua bytes and typed GameAction calls prove controller "
             "playback. A mission/quest attachment is admitted only when the same "
@@ -345,7 +388,7 @@ def load_lua_story_playback_evidence(
             "A binary-discovered typed action-to-producer route can annotate an exact "
             "LevelScript playback route and attach its audit file, but cannot supply "
             "mission ownership or order by itself. "
-            "Case-folded matches create no route without matching installed-binary proof."
+            "A unique case-folded match creates a playback-only route under the official "
+            "recovery policy while preserving the binary-proven case-sensitive runtime note."
         ),
     }
-

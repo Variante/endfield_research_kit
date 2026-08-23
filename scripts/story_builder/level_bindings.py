@@ -88,6 +88,26 @@ from .native_contracts.callserver_callback import (
 from .native_contracts.actionbase_formatter import (
     load_actionbase_formatter_names as _load_actionbase_formatter_names,
 )
+from .native_contracts.action_entity_fields import (
+    NATIVE_MAPPING_ID as ACTION_ENTITY_FIELD_NATIVE_MAPPING_ID,
+    load_action_entity_field_contract,
+)
+from .native_contracts.entityptr_script_slot import (
+    NATIVE_MAPPING_ID as ENTITYPTR_SCRIPT_SLOT_NATIVE_MAPPING_ID,
+    load_entityptr_script_slot_contract,
+)
+from .native_contracts.entityptr_output_alias import (
+    NATIVE_MAPPING_ID as ENTITYPTR_OUTPUT_ALIAS_NATIVE_MAPPING_ID,
+    load_entityptr_output_alias_contract,
+)
+from .native_contracts.entityptr_property_initialization import (
+    NATIVE_MAPPING_ID as ENTITYPTR_PROPERTY_INITIALIZATION_NATIVE_MAPPING_ID,
+    load_entityptr_property_initialization_contract,
+)
+from .native_contracts.entityptr_getter import (
+    NATIVE_MAPPING_ID as ENTITYPTR_GETTER_NATIVE_MAPPING_ID,
+    load_entityptr_getter_contract,
+)
 from .codecs.leveldata.memorypack import (
     read_bool as _read_leveldata_bool,
     read_count as _read_leveldata_count,
@@ -105,6 +125,12 @@ from .codecs.leveldata.radio_contexts import (
     parse_function_area_radio_trigger,
 )
 from .codecs.leveldata import interactive_layout
+from .codecs.levelscript.params import (
+    decode_bool_param,
+    decode_constant_entity_ptr_param,
+    decode_constant_string_param,
+    decode_param_output,
+)
 
 _LEVELSCRIPT_DIALOG_EXIT_TEXT_PAIR_CACHE: dict[str, list[dict]] = {}
 _LEVELSCRIPT_ACTION_STORY_OCCURRENCES_CACHE: dict[str, list[dict]] | None = None
@@ -132,6 +158,30 @@ _LEVELSCRIPT_DIALOG_FILES_BY_LEVEL: dict[
 _LEVELSCRIPT_DIALOGS_BY_LEVEL_MISSION: dict[tuple[str, str], list[dict]] = {}
 
 GLOBAL_SCRIPT_ID_SCALE = 100_000_000
+ACTION_ENTITY_FIELD_DIAGNOSTICS_KEY = "__action_entity_field_diagnostics__"
+
+
+def _entity_ptr_field_state(pointer: dict) -> tuple[str, str | None]:
+    """Classify a decoded Param<EntityPtr> without resolving runtime dataflow."""
+    if (
+        pointer.get("idRef") == -1
+        and pointer.get("paramSource") == 0
+        and pointer.get("path") is None
+    ):
+        return "constant", None
+    path = pointer.get("path")
+    param_source = pointer.get("paramSource")
+    id_ref = pointer.get("idRef")
+    if isinstance(id_ref, int) and not isinstance(id_ref, bool) and id_ref >= 0 and path is None:
+        return "dynamic", "getter_id_ref"
+    if param_source == 100 and isinstance(path, str):
+        return (
+            "dynamic",
+            "local_output_ref" if re.match(r"^\$[^@]+@[^@]+$", path) else "named_action_argument",
+        )
+    if param_source == 200:
+        return "dynamic", "named_script_variable" if isinstance(path, str) else "unnamed_script_variable"
+    return "dynamic", "opaque_dynamic"
 
 # GameAssembly's recovered MemoryPack union table maps compact ActionHeader tag
 # 0x55 with 0x13 subtype members to Beyond.Gameplay.LevelEvent_OnDialogExit.
@@ -1183,6 +1233,30 @@ LEVELSCRIPT_OPCODE_TABLE: dict[tuple[int, int], str] = {
     (0x0450, 0x0f): "show_guide",
     (0x048C, 0x09): "play_reading_popup",
 }
+
+LEVELSCRIPT_STORY_ACTION_EXECUTION_ROLES: dict[str, str] = {
+    "LoadLevelSequenceAction": "load_only",
+    "PreloadCutsceneAction": "preload_only",
+    "PreloadLevelSeqAction": "preload_only",
+    "StopLevelSequenceAction": "stop_only",
+    "StopRadio": "stop_only",
+}
+
+
+def _levelscript_story_action_execution_role(
+    action_name: str | None,
+    record_class: str | None,
+) -> str:
+    explicit = LEVELSCRIPT_STORY_ACTION_EXECUTION_ROLES.get(
+        str(action_name or "")
+    )
+    if explicit:
+        return explicit
+    return (
+        "direct_playback"
+        if str(record_class or "").startswith("play_")
+        else "non_playback"
+    )
 
 _LEVELSCRIPT_BLACK_LINE_ID_RE = re.compile(r"^black_.+_\d{3,}$", re.IGNORECASE)
 
@@ -3690,9 +3764,17 @@ def build_levelscript_action_story_occurrences(
                         "nextId": record.get("nextId"),
                     })
                     if action_name and record_class:
+                        execution_role = _levelscript_story_action_execution_role(
+                            action_name,
+                            record_class,
+                        )
                         out[story_key][-1].update({
                             "actionName": action_name,
                             "recordClass": record_class,
+                            "playbackExecutionRole": execution_role,
+                            "triggerPlaybackBindingEligible": (
+                                execution_role == "direct_playback"
+                            ),
                             "nativeMappingId": LEVELSCRIPT_NATIVE_ACTION_MAPPING_ID,
                         })
                         if action_name == "Play3DRadio":
@@ -3733,7 +3815,7 @@ def build_levelscript_action_story_occurrences(
                             record,
                             prepared=control_context,
                         )
-                        if control_paths:
+                        if control_paths and execution_role == "direct_playback":
                             for control_path in control_paths:
                                 event_detail = control_path.get("eventDetail") or {}
                                 if (
@@ -4481,6 +4563,114 @@ def _load_world_entity_registry_global_script_index() -> dict[int, list[dict]]:
     return compact
 
 
+def _resolve_exact_npc_proxy_spatial_target(
+    logic_id: int,
+    npc_proxy_briefs: object,
+    npc_proxy_table: object,
+    *,
+    registry_source_file: str,
+    npc_proxy_table_source_file: str,
+) -> tuple[dict | None, dict]:
+    """Resolve one missing world identity through the exact NPC proxy join.
+
+    The fallback is deliberately narrower than a general entity lookup: the
+    global logic id must be the exact ``npcProxyBriefInfos`` key, its proxy id
+    must name one table row, and both sources must publish the same finite
+    position.  Parent ids, nearby positions, and local-script suffixes are not
+    identities and are never considered.
+    """
+    diagnostic = {
+        "validator": "exactNpcProxySpatialTarget",
+        "identity": f"world:{logic_id}",
+        "registrySourceFile": registry_source_file,
+        "npcProxyTableSourceFile": npc_proxy_table_source_file,
+    }
+    if not isinstance(npc_proxy_briefs, dict):
+        return None, {**diagnostic, "gate": "npc_proxy_brief_map", "status": "missing"}
+    brief = npc_proxy_briefs.get(str(logic_id))
+    if not isinstance(brief, dict):
+        return None, {**diagnostic, "gate": "exact_npc_proxy_brief_key", "status": "missing"}
+    segment_id = brief.get("segmentIdGlobal")
+    if segment_id != logic_id:
+        return None, {
+            **diagnostic,
+            "gate": "npc_proxy_segment_identity",
+            "status": "mismatched",
+            "expected": logic_id,
+            "actual": segment_id,
+        }
+    proxy_id = str(brief.get("proxyId") or "")
+    if not proxy_id:
+        return None, {**diagnostic, "gate": "npc_proxy_id", "status": "missing"}
+    table_rows = (
+        npc_proxy_table.get("dataTable")
+        if isinstance(npc_proxy_table, dict)
+        else None
+    )
+    if not isinstance(table_rows, dict):
+        return None, {**diagnostic, "gate": "npc_proxy_table_rows", "status": "missing"}
+    matches = [
+        row for key, row in table_rows.items()
+        if key == proxy_id and isinstance(row, dict)
+    ]
+    if len(matches) != 1:
+        return None, {
+            **diagnostic,
+            "gate": "unique_proxy_id_join",
+            "status": "missing" if not matches else "ambiguous",
+            "proxyId": proxy_id,
+            "matchCount": len(matches),
+        }
+    table_row = matches[0]
+    brief_position = _finite_native_vector3(brief.get("position"))
+    table_position = _finite_native_vector3(table_row.get("position"))
+    if brief_position is None or table_position is None:
+        return None, {
+            **diagnostic,
+            "gate": "finite_authored_position",
+            "status": "invalid",
+            "proxyId": proxy_id,
+        }
+    if brief_position != table_position:
+        return None, {
+            **diagnostic,
+            "gate": "equal_authored_position",
+            "status": "mismatched",
+            "proxyId": proxy_id,
+            "expected": dict(zip(("x", "y", "z"), brief_position)),
+            "actual": dict(zip(("x", "y", "z"), table_position)),
+        }
+    rotation = _finite_native_vector3(table_row.get("rotation"))
+    if rotation is None:
+        return None, {
+            **diagnostic,
+            "gate": "finite_table_rotation",
+            "status": "invalid",
+            "proxyId": proxy_id,
+        }
+    position = dict(zip(("x", "y", "z"), brief_position))
+    validated_diagnostic = {
+        **diagnostic,
+        "gate": "exact_npc_proxy_spatial_join",
+        "status": "validated",
+        "proxyId": proxy_id,
+    }
+    return {
+        "entityDetailId": proxy_id,
+        "entityType": table_row.get("entityType"),
+        "position": position,
+        "rotation": dict(zip(("x", "y", "z"), rotation)),
+        "npcProxyId": proxy_id,
+        "registrySourceFile": registry_source_file,
+        "placementSourceFiles": [
+            registry_source_file,
+            npc_proxy_table_source_file,
+        ],
+        "spatialResolutionEvidence": "exact_npc_proxy_brief_and_table_join",
+        "spatialResolutionDiagnostics": [validated_diagnostic],
+    }, validated_diagnostic
+
+
 def _parse_levelscript_registered_script_entity_list(
     data: bytes,
     registry_rows: list[dict],
@@ -4494,6 +4684,12 @@ def _parse_levelscript_registered_script_entity_list(
     position, and rotation.  This is intentionally fail-closed: a partial
     string hit or a duplicate candidate is not a runtime entity host.
     """
+    # WorldEntityRegistry JSON prints transforms at a precision that differs
+    # slightly from the authored float32 values retained in LevelScriptData.
+    # The complete current corpus peaks below 0.000519 on every position and
+    # rotation component; 0.0006 is the smallest rounded bound covering all
+    # observed exact slot/detail/type/list matches.
+    transform_abs_tolerance = 6e-4
     ordered = sorted(
         (
             row
@@ -4580,7 +4776,7 @@ def _parse_levelscript_registered_script_entity_list(
                         position[axis],
                         float(expected_position[axis]),
                         rel_tol=0.0,
-                        abs_tol=1e-4,
+                        abs_tol=transform_abs_tolerance,
                     )
                     for axis in ("x", "y", "z")
                 )
@@ -4590,7 +4786,7 @@ def _parse_levelscript_registered_script_entity_list(
                         rotation[axis],
                         float(expected_rotation[axis]),
                         rel_tol=0.0,
-                        abs_tol=1e-4,
+                        abs_tol=transform_abs_tolerance,
                     )
                     for axis in ("x", "y", "z")
                 )
@@ -4611,6 +4807,1189 @@ def _parse_levelscript_registered_script_entity_list(
         if valid and len(parsed_rows) == len(ordered):
             candidates.append(parsed_rows)
     return candidates[0] if len(candidates) == 1 else []
+
+
+def _build_levelscript_entityptr_output_aliases(
+    data: bytes,
+    records: list[dict],
+    membership: dict[int, str],
+    next_starts: dict[int, int],
+    contracts: dict[tuple[int, int], dict],
+) -> dict[str, dict]:
+    """Decode only build-locked header output aliases from their own record."""
+    aliases: dict[str, dict] = {}
+    for record in records:
+        record_start = int(record.get("start") or 0)
+        if not str(membership.get(record_start) or "").startswith("headerList#"):
+            continue
+        key = levelscript_record_semantic_key(record)
+        contract = contracts.get(key)
+        if not contract:
+            continue
+        payload_start = int(record.get("payloadStart") or 0)
+        record_end = int(next_starts.get(record_start) or len(data))
+        local_id = record.get("localId")
+        output_name = str((contract.get("outputField") or {}).get("fieldName") or "")
+        expected_path = f"${local_id}@{output_name}"
+        outputs: list[tuple[int, dict, int]] = []
+        constants: list[tuple[int, dict, int]] = []
+        for cursor in range(payload_start, record_end):
+            output = decode_param_output(data, cursor)
+            if output is not None and output[1] <= record_end:
+                detail, end = output
+                if detail.get("paramSource") == 0 and detail.get("path") == expected_path:
+                    outputs.append((cursor, detail, end))
+            pointer = decode_constant_entity_ptr_param(data, cursor)
+            if pointer is not None and pointer[1] <= record_end:
+                constants.append((cursor, pointer[0], pointer[1]))
+        if len(outputs) != 1 or len(constants) != 1:
+            continue
+        output_start, _output, output_end = outputs[0]
+        constant_start, pointer, constant_end = constants[0]
+        alias_status = contract.get("aliasStatus")
+        serialized_gate = False
+        if key == (160, 16):
+            serialized_gate = output_end == constant_start
+        elif key == (18, 19):
+            try:
+                bridge = bytes.fromhex(
+                    str((contract.get("guard") or {}).get(
+                        "serializedBytesBetweenFilterAndOutput"
+                    ) or "")
+                )
+            except ValueError:
+                bridge = b""
+            serialized_gate = (
+                bool(bridge)
+                and constant_end + len(bridge) == output_start
+                and data[constant_end:output_start] == bridge
+            )
+        elif alias_status == "validated_non_alias":
+            serialized_gate = output_end == constant_start
+        if not serialized_gate:
+            continue
+        pointer_state, _pointer_dynamic_kind = _entity_ptr_field_state(pointer)
+        aliases[expected_path] = {
+            "status": (
+                (
+                    "exact_constant_filter_alias"
+                    if pointer_state == "constant"
+                    else "validated_dynamic_filter_alias"
+                )
+                if alias_status == "aliases_filter_when_guard_matches"
+                else "validated_non_alias"
+            ),
+            "path": expected_path,
+            "producerHeaderName": contract.get("headerName"),
+            "producerHeaderLocalId": local_id,
+            "producerRecordOffset": record_start,
+            "outputFieldName": output_name,
+            "filterFieldName": (contract.get("filterField") or {}).get("fieldName"),
+            "constantPointer": pointer if alias_status != "validated_non_alias" else None,
+            "constantPointerOffset": constant_start,
+            "constantPointerEndOffset": constant_end,
+            "nativeMappingId": ENTITYPTR_OUTPUT_ALIAS_NATIVE_MAPPING_ID,
+        }
+    return aliases
+
+
+_LEVELSCRIPT_RUNTIME_SPAWNED_ENTITY_OUTPUT_PAIRS = {
+    (0x0094, 21),
+}
+
+
+def _classify_levelscript_entityptr_output_reference(
+    path: str,
+    *,
+    prepared: dict,
+    contracts: dict[tuple[int, int], dict],
+    aliases: dict[str, dict],
+    consumer_paths: list[dict],
+) -> dict:
+    """Describe one local output producer without treating it as spatial."""
+    match = re.fullmatch(r"\$(\d+)@(.+)", str(path or ""))
+    if not match:
+        return {
+            "status": "unresolved",
+            "failureGate": "local_output_reference_shape",
+            "path": path,
+        }
+    local_id = int(match.group(1))
+    output_field = match.group(2)
+    action = (prepared.get("actionByLocal") or {}).get(local_id)
+    header = (prepared.get("headerByLocal") or {}).get(local_id)
+    if action is not None and header is not None:
+        return {
+            "status": "unresolved",
+            "failureGate": "producer_role_collision",
+            "path": path,
+            "producerLocalId": local_id,
+            "outputFieldName": output_field,
+        }
+    producer = action or header
+    if producer is None:
+        return {
+            "status": "unresolved",
+            "failureGate": "producer_local_id_missing",
+            "path": path,
+            "producerLocalId": local_id,
+            "outputFieldName": output_field,
+        }
+    pair = levelscript_record_semantic_key(producer)
+    role = "action" if action is not None else "header"
+    evidence = {
+        "path": path,
+        "producerRole": role,
+        "producerLocalId": local_id,
+        "producerRecordOffset": int(producer.get("start") or 0),
+        "producerUnionTag": f"0x{pair[0]:04x}",
+        "producerSerializedMemberCount": pair[1],
+        "producerName": (
+            levelscript_native_action_name(producer) if action is not None else None
+        ),
+        "outputFieldName": output_field,
+    }
+    if action is not None:
+        contract = contracts.get(pair)
+        expected_field = str(
+            (contract.get("outputField") or {}).get("fieldName") or ""
+        ) if contract else ""
+        if (
+            contract
+            and contract.get("producerRole") == "action"
+            and contract.get("aliasStatus") == "validated_non_alias"
+            and output_field == expected_field
+        ):
+            return {
+                **evidence,
+                "producerName": contract.get("actionName"),
+                "expectedOutputFieldName": expected_field,
+                "nativeMappingId": ENTITYPTR_OUTPUT_ALIAS_NATIVE_MAPPING_ID,
+                "status": "runtime_list_element_non_spatial",
+                "aliasStatus": "validated_non_alias",
+                "failureGate": "native_runtime_list_element_is_not_constant_alias",
+            }
+        return {
+            **evidence,
+            "status": "unresolved_action_output",
+            "failureGate": "unvalidated_action_output_contract",
+        }
+    contract = contracts.get(pair)
+    if contract is None:
+        return {
+            **evidence,
+            "status": (
+                "runtime_spawned_entity"
+                if pair in _LEVELSCRIPT_RUNTIME_SPAWNED_ENTITY_OUTPUT_PAIRS
+                else "runtime_event_entity"
+            ),
+            "failureGate": "runtime_header_output_not_static",
+        }
+    expected_field = str(
+        (contract.get("outputField") or {}).get("fieldName") or ""
+    )
+    evidence["producerName"] = contract.get("headerName")
+    evidence["expectedOutputFieldName"] = expected_field
+    evidence["nativeMappingId"] = ENTITYPTR_OUTPUT_ALIAS_NATIVE_MAPPING_ID
+    if output_field != expected_field:
+        return {
+            **evidence,
+            "status": "unresolved",
+            "failureGate": "unknown_output_field",
+        }
+    alias = aliases.get(path)
+    if contract.get("aliasStatus") == "validated_non_alias":
+        return {
+            **evidence,
+            **({key: value for key, value in alias.items() if key != "constantPointer"}
+               if alias else {}),
+            "status": "validated_non_alias",
+            "failureGate": "native_output_is_not_filter_alias",
+        }
+    if alias is None:
+        return {
+            **evidence,
+            "status": "unresolved",
+            "failureGate": "constant_filter_or_serialized_alias_gate",
+        }
+    if alias.get("status") == "validated_dynamic_filter_alias":
+        return {
+            **evidence,
+            **{key: value for key, value in alias.items() if key != "constantPointer"},
+            "status": "validated_dynamic_filter_alias",
+            "failureGate": "native_alias_filter_value_is_dynamic",
+        }
+    reached_headers = sorted({
+        int(path_row.get("headerLocalId"))
+        for path_row in consumer_paths
+        if path_row.get("status") == "exact_serialized_control_path"
+        and isinstance(path_row.get("headerLocalId"), int)
+    })
+    if local_id not in reached_headers:
+        return {
+            **evidence,
+            **{key: value for key, value in alias.items() if key != "constantPointer"},
+            "status": "unresolved",
+            "failureGate": "producer_not_on_consumer_control_path",
+            "reachedHeaderLocalIds": reached_headers,
+        }
+    return {
+        **evidence,
+        **{key: value for key, value in alias.items() if key != "constantPointer"},
+        "status": "exact_constant_filter_alias",
+        "failureGate": None,
+        "controlPathStatus": "exact_same_header_execution_path",
+    }
+
+
+def _resolve_levelscript_entityptr_getter(
+    pointer: dict,
+    *,
+    data: bytes,
+    prepared: dict,
+    contracts: dict[tuple[int, int], dict],
+    npc_proxy_briefs: object,
+    npc_proxy_table: object,
+    registry_source_file: str,
+    npc_proxy_table_source_file: str,
+) -> tuple[dict | None, dict | None]:
+    """Resolve one active indexed getter only for two proven pure shapes."""
+    getter_id = pointer.get("idRef")
+    if (
+        not isinstance(getter_id, int)
+        or isinstance(getter_id, bool)
+        or getter_id < 0
+        or pointer.get("paramSource") != -1
+        or pointer.get("path") is not None
+    ):
+        return None, None
+    getter = (prepared.get("getterByLocal") or {}).get(getter_id)
+    if not isinstance(getter, dict):
+        return None, {"status": "missing_active_getter_slot", "getterLocalId": getter_id}
+    pair = levelscript_record_semantic_key(getter)
+    contract = contracts.get(pair)
+    if not contract:
+        return None, {"status": "unvalidated_getter_shape", "getterLocalId": getter_id,
+                      "unionTag": pair[0], "serializedMemberCount": pair[1]}
+    start = int(getter.get("start") or 0)
+    payload_start = int(getter.get("payloadStart") or 0)
+    # The shared record scanner advances through eight ActionBase members;
+    # PureGetter has seven, so its first action-specific member starts four
+    # bytes before that ActionBase-oriented cursor.
+    member_start = payload_start - 4
+    end = int((prepared.get("nextStarts") or {}).get(start) or len(data))
+    evidence = {
+        "status": "validated_runtime_dependent",
+        "getterLocalId": getter_id,
+        "getterRecordOffset": start,
+        "getterName": contract.get("getterName"),
+        "resolutionKind": contract.get("resolutionKind"),
+        "nativeMappingId": ENTITYPTR_GETTER_NATIVE_MAPPING_ID,
+        "runtimeGetterSlotMappingId": prepared.get("runtimeGetterSlotMappingId"),
+        "runtimeShadowedRecordOffsets": (
+            prepared.get("runtimeShadowedGetterRecordOffsets") or {}
+        ).get(getter_id),
+    }
+    if contract.get("resolutionKind") == "constant_param_alias":
+        decoded = decode_constant_entity_ptr_param(data, member_start)
+        if decoded is None or decoded[1] not in (end, end - 4):
+            return None, {**evidence, "status": "nonconstant_or_unbounded_alias_value"}
+        return decoded[0], {**evidence, "status": "exact_constant_param_alias",
+                            "getterValueOffset": member_start, "getterValueEndOffset": end,
+                            "resolvedValue": decoded[0]}
+    if contract.get("resolutionKind") == "constant_proxy_id_lookup":
+        decoded = decode_constant_string_param(data, member_start)
+        if decoded is None or decoded[1] not in (end, end - 4):
+            return None, {**evidence, "status": "nonconstant_or_unbounded_proxy_id"}
+        proxy_id = decoded[0]
+        matches = [
+            (logic_id, brief) for logic_id, brief in (
+                npc_proxy_briefs.items() if isinstance(npc_proxy_briefs, dict) else []
+            )
+            if isinstance(brief, dict) and str(brief.get("proxyId") or "") == proxy_id
+        ]
+        if len(matches) != 1:
+            return None, {**evidence, "status": "missing_or_ambiguous_proxy_id",
+                          "proxyId": proxy_id, "matchCount": len(matches)}
+        logic_id_text, brief = matches[0]
+        try:
+            logic_id = int(logic_id_text)
+        except (TypeError, ValueError):
+            return None, {**evidence, "status": "invalid_proxy_logic_id",
+                          "proxyId": proxy_id, "logicId": logic_id_text}
+        target, diagnostic = _resolve_exact_npc_proxy_spatial_target(
+            logic_id,
+            npc_proxy_briefs,
+            npc_proxy_table,
+            registry_source_file=registry_source_file,
+            npc_proxy_table_source_file=npc_proxy_table_source_file,
+        )
+        if target is None or brief.get("segmentIdGlobal") != logic_id:
+            return None, {**evidence, "status": "proxy_spatial_join_failed",
+                          "proxyId": proxy_id, "diagnostic": diagnostic}
+        return {
+            "logicId": logic_id,
+            "slotId": 0,
+            "useSlotId": False,
+            "idRef": -1,
+            "paramSource": 0,
+            "path": None,
+        }, {**evidence, "status": "exact_constant_proxy_id_lookup",
+            "proxyId": proxy_id, "logicId": logic_id,
+            "spatialJoinStatus": diagnostic.get("status"),
+            "resolvedTarget": target}
+    return None, evidence
+
+
+def _resolve_levelscript_named_entityptr_initial_value(
+    pointer: dict,
+    *,
+    level_id: str,
+    script_id: str,
+    brief_hosts_by_script: dict[str, list[dict]],
+    world_briefs: dict,
+    native_audit: dict,
+    graph_writer_count: int,
+    consumer_source_sha256: str = "",
+) -> dict | None:
+    """Join source-200 EntityPtr to its exact mutable Brief initializer."""
+    if (
+        native_audit.get("status") != "validated"
+        or pointer.get("idRef") != -1
+        or pointer.get("paramSource") != 200
+        or not isinstance(pointer.get("path"), str)
+        or not pointer["path"]
+    ):
+        return None
+    property_name = pointer["path"]
+    hosts = brief_hosts_by_script.get(script_id) or []
+    base = {
+        "status": "unresolved",
+        "levelId": level_id,
+        "consumerScriptId": script_id,
+        "propertyName": property_name,
+        "nativeContractStatus": native_audit.get("status"),
+        "nativeMappingId": ENTITYPTR_PROPERTY_INITIALIZATION_NATIVE_MAPPING_ID,
+        "diagnosticOnly": True,
+        "mutableAfterBind": True,
+        "allowTargetPromotion": False,
+        "graphWriterCount": graph_writer_count,
+        "graphWriterStatus": "exact_named_writer_inventory",
+        "consumerSourceSha256": consumer_source_sha256,
+    }
+    if len(hosts) != 1:
+        return {**base, "failureGate": "unique_exact_script_brief_host",
+                "briefHostCount": len(hosts)}
+    host = hosts[0]
+    brief = host.get("brief") or {}
+    properties = [
+        prop for prop in brief.get("properties") or []
+        if isinstance(prop, dict) and prop.get("name") == property_name
+    ]
+    if len(properties) != 1:
+        return {**base, "failureGate": "unique_exact_property_name",
+                "propertyMatchCount": len(properties)}
+    prop = properties[0]
+    value = prop.get("value") if isinstance(prop.get("value"), dict) else prop
+    atoms = value.get("atoms") if isinstance(value, dict) else None
+    if not (
+        isinstance(value, dict)
+        and value.get("valueType") == 13
+        and value.get("atomCount") == 1
+        and isinstance(atoms, list)
+        and len(atoms) == 1
+        and isinstance(atoms[0], dict)
+        and isinstance(atoms[0].get("valueBit64"), int)
+        and not isinstance(atoms[0].get("valueBit64"), bool)
+        and atoms[0]["valueBit64"] > 0
+    ):
+        return {**base, "failureGate": "entityptr_type13_atom1_value"}
+    logic_id = int(atoms[0]["valueBit64"])
+    brief_refs = {str(value) for value in brief.get("refWorldEntityIds") or []}
+    if str(logic_id) not in brief_refs:
+        return {**base, "failureGate": "same_brief_ref_world_entity_ids",
+                "initialEntityLogicId": logic_id}
+    registry = world_briefs.get(str(logic_id))
+    if not isinstance(registry, dict):
+        return {**base, "failureGate": "unique_world_registry_identity",
+                "initialEntityLogicId": logic_id}
+    return {
+        **base,
+        "status": "validated_initial_entityptr_value_nonfinal",
+        "failureGate": None,
+        "briefHostScriptId": script_id,
+        "briefSourceFile": host.get("sourceFile"),
+        "briefSourceSha256": host.get("sourceSha256"),
+        "initialEntityLogicId": logic_id,
+        "initialTarget": {
+            "logicId": logic_id,
+            "detailId": registry.get("detailId"),
+            "entityType": registry.get("entityType"),
+            "position": registry.get("position"),
+            "rotation": registry.get("rotation"),
+        },
+        "evidenceBoundary": (
+            "native-validated source-200 Brief initialization; mutable after "
+            "binding and never an action-target promotion"
+        ),
+    }
+
+
+def build_levelscript_registered_action_target_index(
+    level_id: str,
+    *,
+    levelscript_root: Path = LEVELSCRIPT_DIR,
+) -> dict[str, list[dict]]:
+    """Return registered entities named by strict action-record pointer bytes.
+
+    Promotion requires an active ``actionList``
+    record, a current-build formatter action name, and either a fully decoded
+    constant ``Param<EntityPtr>`` in that record or one build-locked producer
+    output that aliases its constant filter on the same exact control path.
+    Current-script slot addressing also requires one unique
+    WorldEntityRegistry row. An aligned
+    LevelInteractiveData row corroborates that identity; when it is absent,
+    the pinned native resolver contract proves that it is not a runtime lookup
+    prerequisite.  Static publication never proves runtime lifecycle state.
+    Named formatter members are build-locked separately. Event paths are
+    context only; sibling actions and Story playback are never inherited onto
+    the entity.
+    """
+    if not level_id or not levelscript_root.is_dir():
+        return {}
+    field_contracts, field_contract_audit = load_action_entity_field_contract()
+    _slot_contract, slot_contract_audit = load_entityptr_script_slot_contract()
+    output_alias_contracts, output_alias_contract_audit = (
+        load_entityptr_output_alias_contract()
+    )
+    getter_contracts, getter_contract_audit = load_entityptr_getter_contract()
+    (
+        _property_initialization_contract,
+        property_initialization_audit,
+    ) = load_entityptr_property_initialization_contract()
+    slot_contract_valid = slot_contract_audit.get("status") == "validated"
+    info = (
+        _load_levelscript_binding_data(level_id)
+        if levelscript_root == LEVELSCRIPT_DIR
+        else _load_levelscript_binding_data(level_id, levelscript_root)
+    )
+    registry_by_script = _load_world_entity_registry_global_script_index()
+    registry_path = GAMEPLAY_CONFIG_DIR / "WorldEntityRegistry.json"
+    try:
+        registry_payload = json.loads(registry_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        registry_payload = {}
+    world_briefs = (
+        registry_payload.get("worldEntityBriefInfos")
+        if isinstance(registry_payload, dict) else {}
+    )
+    if not isinstance(world_briefs, dict):
+        world_briefs = {}
+    npc_proxy_briefs = (
+        registry_payload.get("npcProxyBriefInfos")
+        if isinstance(registry_payload, dict) else {}
+    )
+    try:
+        npc_proxy_table = json.loads(
+            NPC_PROXY_TABLE_PATH.read_text(encoding="utf-8")
+        )
+    except (OSError, json.JSONDecodeError):
+        npc_proxy_table = {}
+    out: dict[str, list[dict]] = defaultdict(list)
+    field_diagnostics: list[dict] = []
+    script_ids = {
+        int(file_info.get("fileStem"))
+        for file_info in info.get("files") or []
+        if str(file_info.get("fileStem") or "").isdigit()
+    }
+    brief_hosts_by_script: dict[str, list[dict]] = defaultdict(list)
+    leveldata_dir = LEVELDATA_DIR / level_id
+    if leveldata_dir.is_dir():
+        for leveldata_path in sorted(leveldata_dir.glob("*.json")):
+            try:
+                leveldata_bytes = read_bytes_cached(leveldata_path)
+            except OSError:
+                continue
+            brief_dictionary = parse_leveldata_levelscript_brief_dictionary(
+                leveldata_bytes,
+                script_ids,
+            )
+            for brief_script_id, brief in brief_dictionary.items():
+                brief_hosts_by_script[str(brief_script_id)].append({
+                    "sourceFile": repo_rel(leveldata_path),
+                    "sourceSha256": hashlib.sha256(leveldata_bytes).hexdigest().upper(),
+                    "brief": brief,
+                })
+    for file_info in info.get("files") or []:
+        script_id = str(file_info.get("fileStem") or "")
+        source_file = str(file_info.get("file") or "")
+        if not script_id.isdigit() or not source_file:
+            continue
+        try:
+            data = read_bytes_cached(ROOT / source_file)
+        except OSError:
+            continue
+        source_sha256 = hashlib.sha256(data).hexdigest().upper()
+        raw_registry_rows = registry_by_script.get(int(script_id)) or []
+        registered = _parse_levelscript_registered_script_entity_list(
+            data,
+            raw_registry_rows,
+        )
+        registered_by_slot: dict[int, list[dict]] = defaultdict(list)
+        for entity in registered:
+            slot_id = entity.get("entitySlotId")
+            if isinstance(slot_id, int) and not isinstance(slot_id, bool):
+                registered_by_slot[slot_id].append(entity)
+        raw_registry_by_slot: dict[int, list[dict]] = defaultdict(list)
+        for entity in raw_registry_rows:
+            slot_id = entity.get("entitySlotId")
+            if isinstance(slot_id, int) and not isinstance(slot_id, bool):
+                raw_registry_by_slot[slot_id].append(entity)
+        records = sorted(
+            (row for row in file_info.get("records") or [] if isinstance(row, dict)),
+            key=lambda row: int(row.get("start") or 0),
+        )
+        _action_map, membership = levelscript_action_map_membership(data, records)
+        prepared = _prepare_levelscript_native_control_context(data, records, membership)
+        named_entityptr_writer_counts: Counter[str] = Counter()
+        for candidate in records:
+            candidate_start = int(candidate.get("start") or 0)
+            if not str(membership.get(candidate_start) or "").startswith("actionList#"):
+                continue
+            if levelscript_native_action_name(candidate) not in {
+                "SetEntityPtr",
+                "Set_Beyond_Gameplay_Core_EntityPtr",
+            }:
+                continue
+            for property_name in _levelscript_record_texts(candidate):
+                if property_name:
+                    named_entityptr_writer_counts[property_name] += 1
+        next_starts = prepared.get("nextStarts") or {}
+        output_aliases = _build_levelscript_entityptr_output_aliases(
+            data,
+            records,
+            membership,
+            next_starts,
+            output_alias_contracts,
+        )
+        for record in records:
+            record_start = int(record.get("start") or 0)
+            role = str(membership.get(record_start) or "")
+            action_name = levelscript_native_action_name(record)
+            if not role.startswith("actionList#") or not action_name:
+                continue
+            payload_start = int(record.get("payloadStart") or 0)
+            record_end = int(next_starts.get(record_start) or len(data))
+            if payload_start <= record_start or record_end <= payload_start:
+                continue
+            pair = levelscript_record_semantic_key(record)
+            field_contract = field_contracts.get(pair) or {}
+            if field_contract.get("nonEntityContract") is True:
+                continue
+            cursor = payload_start
+            pointer_occurrences: list[tuple[int, dict, int]] = []
+            while True:
+                pointer_offset = data.find(b"\x04\x03", cursor, record_end)
+                if pointer_offset < 0:
+                    break
+                cursor = pointer_offset + 1
+                decoded = decode_constant_entity_ptr_param(data, pointer_offset)
+                if decoded is None or decoded[1] > record_end:
+                    continue
+                pointer, pointer_end = decoded
+                pointer_occurrences.append((pointer_offset, pointer, pointer_end))
+            entity_fields = field_contract.get("entityFields") or []
+            contracted_entity_fields = entity_fields
+            special_field_states: dict[str, dict] = {}
+            # EntityCastSkill has two contracted EntityPtr members separated
+            # by three typed members.  A nullable target serializes as one FF
+            # byte, so occurrence-count matching cannot see it.  Walk the
+            # intervening formatter members and, only when the walk lands on
+            # that exact null byte, retain the constant `_entity` member while
+            # proving `_targetEntity` is present-but-null rather than missing.
+            if pair == (0x0094, 15) and len(entity_fields) == 2:
+                entity_value = decode_constant_entity_ptr_param(data, payload_start)
+                if entity_value is not None:
+                    cursor = entity_value[1]
+                    if cursor < record_end and data[cursor] == 0xFF:
+                        cursor += 1
+                    else:
+                        decoded_member = decode_bool_param(data, cursor)
+                        cursor = decoded_member[1] if decoded_member is not None else -1
+                    output_member = decode_param_output(data, cursor) if cursor >= 0 else None
+                    cursor = output_member[1] if output_member is not None else -1
+                    if cursor >= 0 and cursor < record_end and data[cursor] == 0xFF:
+                        cursor += 1
+                    elif cursor >= 0:
+                        string_member = decode_constant_string_param(data, cursor)
+                        cursor = string_member[1] if string_member is not None else -1
+                    if cursor >= 0 and cursor < record_end and data[cursor] == 0xFF:
+                        special_field_states["_targetEntity"] = {
+                            "state": "null",
+                            "startOffset": cursor,
+                            "endOffset": cursor + 1,
+                        }
+                        pointer_occurrences = [(
+                            payload_start,
+                            entity_value[0],
+                            entity_value[1],
+                        )]
+                        entity_fields = [entity_fields[0]]
+            # MemoryPack action records expose the action-specific payload
+            # after the eight inherited ActionBase members.  When the native
+            # contract proves one EntityPtr field at overall ordinal 8, its
+            # value starts exactly at payload_start.  Decode that member
+            # directly so embedded downstream actions sharing this physical
+            # record cannot contribute stray 04/03 byte patterns.
+            direct_first_field = (
+                len(entity_fields) == 1
+                and entity_fields[0].get("memberOrdinalZeroBased") == 8
+            )
+            if direct_first_field:
+                decoded = decode_constant_entity_ptr_param(data, payload_start)
+                pointer_occurrences = (
+                    [(payload_start, decoded[0], decoded[1])]
+                    if decoded is not None and decoded[1] <= record_end
+                    else []
+                )
+            resolved_fields = (
+                entity_fields
+                if len(pointer_occurrences) == len(entity_fields)
+                and str(field_contract.get("actionName") or "") == action_name
+                else []
+            )
+            layout_states: list[dict] | None = None
+            if not resolved_fields and entity_fields:
+                fields_by_name = {
+                    str(field.get("fieldName") or ""): field
+                    for field in entity_fields
+                    if isinstance(field, dict) and field.get("fieldName")
+                }
+                for layout in field_contract.get("serializedRecordLayouts") or []:
+                    if (
+                        not isinstance(layout, dict)
+                        or layout.get("sourceFile") != source_file
+                        or layout.get("recordOffset") != record_start
+                        or hashlib.sha256(data).hexdigest().upper()
+                        != layout.get("sourceSha256")
+                    ):
+                        continue
+                    layout_fields: list[dict] = []
+                    layout_occurrences: list[tuple[int, dict, int]] = []
+                    valid_layout = True
+                    for state in layout.get("fieldStates") or []:
+                        field = fields_by_name.get(str(state.get("fieldName") or ""))
+                        start = state.get("startOffset")
+                        end = state.get("endOffset")
+                        if (
+                            not field
+                            or not isinstance(start, int)
+                            or not isinstance(end, int)
+                            or not (record_start <= start < end <= record_end)
+                        ):
+                            valid_layout = False
+                            break
+                        if state.get("state") == "null":
+                            try:
+                                expected = bytes.fromhex(str(state.get("serializedHex") or ""))
+                            except ValueError:
+                                valid_layout = False
+                                break
+                            if data[start:end] != expected:
+                                valid_layout = False
+                                break
+                        elif state.get("state") == "constant":
+                            matches = [
+                                occurrence for occurrence in pointer_occurrences
+                                if occurrence[0] == start and occurrence[2] == end
+                            ]
+                            if len(matches) != 1:
+                                valid_layout = False
+                                break
+                            layout_fields.append({
+                                **field,
+                                "constantPointerOrdinal": len(layout_occurrences),
+                            })
+                            layout_occurrences.append(matches[0])
+                        else:
+                            valid_layout = False
+                            break
+                    if valid_layout:
+                        resolved_fields = layout_fields
+                        pointer_occurrences = layout_occurrences
+                        layout_states = [dict(state) for state in layout.get("fieldStates") or []]
+                        break
+            diagnostic_occurrences = {
+                field.get("fieldName"): occurrence
+                for field, occurrence in zip(resolved_fields, pointer_occurrences)
+            }
+            layout_by_field = {
+                str(state.get("fieldName") or ""): state
+                for state in (layout_states or [])
+            }
+            layout_by_field.update(special_field_states)
+            getter_resolutions = {
+                occurrence[0]: _resolve_levelscript_entityptr_getter(
+                    occurrence[1],
+                    data=data,
+                    prepared=prepared,
+                    contracts=getter_contracts,
+                    npc_proxy_briefs=npc_proxy_briefs,
+                    npc_proxy_table=npc_proxy_table,
+                    registry_source_file=repo_rel(registry_path),
+                    npc_proxy_table_source_file=repo_rel(NPC_PROXY_TABLE_PATH),
+                )
+                for occurrence in pointer_occurrences
+                if _entity_ptr_field_state(occurrence[1]) == (
+                    "dynamic", "getter_id_ref"
+                )
+            }
+            consumer_paths = [
+                path
+                for path in _levelscript_native_control_paths_to_record(
+                    data,
+                    records,
+                    membership,
+                    record,
+                    prepared=prepared,
+                )
+                if path.get("status") == "exact_serialized_control_path"
+            ]
+            for field in contracted_entity_fields:
+                field_name = str(field.get("fieldName") or "")
+                occurrence = diagnostic_occurrences.get(field_name)
+                layout_state = layout_by_field.get(field_name)
+                pointer = occurrence[1] if occurrence else None
+                if pointer is not None:
+                    state, dynamic_kind = _entity_ptr_field_state(pointer)
+                    serialized_start = occurrence[0]
+                    serialized_end = occurrence[2]
+                elif layout_state and layout_state.get("state") == "null":
+                    state, dynamic_kind = "null", None
+                    serialized_start = layout_state.get("startOffset")
+                    serialized_end = layout_state.get("endOffset")
+                else:
+                    state, dynamic_kind = "opaque", None
+                    serialized_start = None
+                    serialized_end = None
+                field_diagnostics.append({
+                    "state": state,
+                    "dynamicKind": dynamic_kind,
+                    "idRef": pointer.get("idRef") if pointer else None,
+                    "paramSource": pointer.get("paramSource") if pointer else None,
+                    "path": pointer.get("path") if pointer else None,
+                    "logicId": pointer.get("logicId") if pointer else None,
+                    "slotId": pointer.get("slotId") if pointer else None,
+                    "useSlotId": pointer.get("useSlotId") if pointer else None,
+                    "levelId": level_id,
+                    "scriptId": script_id,
+                    "sourceFile": source_file,
+                    "actionName": action_name,
+                    "actionLocalId": record.get("localId"),
+                    "actionRecordOffset": record_start,
+                    "fieldName": field_name,
+                    "memberOrdinalZeroBased": field.get("memberOrdinalZeroBased"),
+                    "nativeFieldOffset": field.get("fieldOffset"),
+                    "pointerOffset": serialized_start,
+                    "pointerEndOffset": serialized_end,
+                    "serializedOffsetStatus": (
+                        "exact" if serialized_start is not None else "unresolved"
+                    ),
+                    "nativeFieldContractStatus": field_contract_audit.get("status"),
+                    "localOutputAliasResolution": (
+                        _classify_levelscript_entityptr_output_reference(
+                            str(pointer.get("path") or ""),
+                            prepared=prepared,
+                            contracts=output_alias_contracts,
+                            aliases=output_aliases,
+                            consumer_paths=consumer_paths,
+                        )
+                        if pointer is not None
+                        and dynamic_kind == "local_output_ref"
+                        else None
+                    ),
+                    "nativeOutputAliasContractStatus": (
+                        output_alias_contract_audit.get("status")
+                    ),
+                    "namedEntityPtrResolution": (
+                        _resolve_levelscript_named_entityptr_initial_value(
+                            pointer,
+                            level_id=level_id,
+                            script_id=script_id,
+                            brief_hosts_by_script=brief_hosts_by_script,
+                            world_briefs=world_briefs,
+                            native_audit=property_initialization_audit,
+                            graph_writer_count=named_entityptr_writer_counts.get(
+                                str(pointer.get("path") or ""), 0
+                            ),
+                            consumer_source_sha256=source_sha256,
+                        )
+                        if pointer is not None
+                        and dynamic_kind == "named_script_variable"
+                        else None
+                    ),
+                    "nativePropertyInitializationContractStatus": (
+                        property_initialization_audit.get("status")
+                    ),
+                    "getterResolution": (
+                        getter_resolutions.get(serialized_start, (None, None))[1]
+                        if serialized_start is not None else None
+                    ),
+                    "nativeGetterContractStatus": getter_contract_audit.get("status"),
+                })
+            for pointer_ordinal, (pointer_offset, pointer, pointer_end) in enumerate(
+                pointer_occurrences
+            ):
+                field = (
+                    resolved_fields[pointer_ordinal]
+                    if pointer_ordinal < len(resolved_fields)
+                    and resolved_fields[pointer_ordinal].get("constantPointerOrdinal")
+                    == pointer_ordinal
+                    else {}
+                )
+                paths = consumer_paths
+                effective_pointer = pointer
+                output_alias_evidence: dict | None = None
+                getter_resolution_evidence: dict | None = None
+                if (
+                    pointer.get("idRef") != -1
+                    or pointer.get("paramSource") != 0
+                    or pointer.get("path") is not None
+                ):
+                    getter_pointer, getter_resolution_evidence = (
+                        getter_resolutions.get(pointer_offset, (None, None))
+                    )
+                    if isinstance(getter_pointer, dict):
+                        effective_pointer = getter_pointer
+                    else:
+                        alias = output_aliases.get(str(pointer.get("path") or ""))
+                        header_local_id = alias.get("producerHeaderLocalId") if alias else None
+                        path_matches_header = any(
+                            path.get("headerLocalId") == header_local_id
+                            for path in paths
+                        )
+                        if (
+                            not alias
+                            or alias.get("status") != "exact_constant_filter_alias"
+                            or not path_matches_header
+                            or not isinstance(alias.get("constantPointer"), dict)
+                        ):
+                            continue
+                        effective_pointer = alias["constantPointer"]
+                        output_alias_evidence = {
+                            key: value for key, value in alias.items()
+                            if key != "constantPointer"
+                        }
+                        output_alias_evidence["consumerPointerOffset"] = pointer_offset
+                        output_alias_evidence["consumerDynamicKind"] = "local_output_ref"
+                        output_alias_evidence["controlPathStatus"] = (
+                            "exact_same_header_execution_path"
+                        )
+                logic_id = effective_pointer.get("logicId")
+                slot_id = effective_pointer.get("slotId")
+                target: dict[str, Any] | None = None
+                target_domain = ""
+                key = ""
+                registry_match_count = 0
+                level_interactive_alignment_status: str | None = None
+                runtime_lifecycle_status: str | None = None
+                slot_native_mapping_id: str | None = None
+                if (
+                    logic_id == 0
+                    and effective_pointer.get("useSlotId") is True
+                    and isinstance(slot_id, int)
+                    and not isinstance(slot_id, bool)
+                    and slot_id > 0
+                ):
+                    targets = registered_by_slot.get(slot_id) or []
+                    registry_match_count = len(targets)
+                    if len(targets) == 1:
+                        target = targets[0]
+                        target_domain = "registered_script_slot"
+                        key = f"{script_id}:{slot_id}"
+                        level_interactive_alignment_status = "corroborated"
+                        runtime_lifecycle_status = "unproven"
+                        if slot_contract_valid:
+                            slot_native_mapping_id = (
+                                ENTITYPTR_SCRIPT_SLOT_NATIVE_MAPPING_ID
+                            )
+                    else:
+                        registry_targets = raw_registry_by_slot.get(slot_id) or []
+                        registry_match_count = len(registry_targets)
+                        if len(registry_targets) == 1:
+                            target = registry_targets[0]
+                            target_domain = (
+                                "registered_script_slot"
+                                if slot_contract_valid
+                                else "registered_script_slot_unresolved"
+                            )
+                            key = f"{script_id}:{slot_id}"
+                            level_interactive_alignment_status = "not_required_missing"
+                            runtime_lifecycle_status = "unproven"
+                            if slot_contract_valid:
+                                slot_native_mapping_id = (
+                                    ENTITYPTR_SCRIPT_SLOT_NATIVE_MAPPING_ID
+                                )
+                        else:
+                            target = {}
+                            target_domain = "registered_script_slot_unplaced"
+                            key = f"unplaced-script:{script_id}:{slot_id}"
+                elif (
+                    getter_resolution_evidence
+                    and getter_resolution_evidence.get("status")
+                    == "exact_constant_proxy_id_lookup"
+                    and isinstance(
+                        getter_resolution_evidence.get("resolvedTarget"), dict
+                    )
+                ):
+                    target = getter_resolution_evidence["resolvedTarget"]
+                    registry_match_count = 1
+                    target_domain = "npc_proxy_logic_id"
+                    key = f"npc:{logic_id}"
+                elif (
+                    isinstance(logic_id, int)
+                    and not isinstance(logic_id, bool)
+                    and logic_id > 0
+                    and effective_pointer.get("useSlotId") is False
+                    and slot_id == 0
+                ):
+                    world_brief_key = str(logic_id)
+                    brief = world_briefs.get(world_brief_key)
+                    if isinstance(brief, dict):
+                        registry_match_count = 1
+                        target = {
+                            "entityDetailId": str(brief.get("detailId") or ""),
+                            "entityType": brief.get("entityType"),
+                            "position": brief.get("position"),
+                            "rotation": brief.get("rotation"),
+                            "registrySourceFile": repo_rel(registry_path),
+                        }
+                        target_domain = "world_logic_id"
+                        key = f"world:{logic_id}"
+                    elif world_brief_key not in world_briefs:
+                        npc_target, npc_diagnostic = (
+                            _resolve_exact_npc_proxy_spatial_target(
+                                logic_id,
+                                npc_proxy_briefs,
+                                npc_proxy_table,
+                                registry_source_file=repo_rel(registry_path),
+                                npc_proxy_table_source_file=repo_rel(
+                                    NPC_PROXY_TABLE_PATH
+                                ),
+                            )
+                        )
+                        if npc_target is not None:
+                            registry_match_count = 1
+                            target = npc_target
+                            target_domain = "world_logic_id"
+                            key = f"world:{logic_id}"
+                        else:
+                            target = {
+                                "spatialResolutionDiagnostics": [npc_diagnostic]
+                            }
+                            target_domain = "world_logic_id_unplaced"
+                            key = f"unplaced-world:{logic_id}"
+                    else:
+                        target = {
+                            "spatialResolutionDiagnostics": [{
+                                "validator": "exactNpcProxySpatialTarget",
+                                "identity": f"world:{logic_id}",
+                                "gate": "world_entity_brief_value",
+                                "status": "invalid",
+                                "expected": "missing key or object",
+                                "actual": type(brief).__name__,
+                            }]
+                        }
+                        target_domain = "world_logic_id_unplaced"
+                        key = f"unplaced-world:{logic_id}"
+                else:
+                    continue
+                control_triggers = []
+                for path in paths:
+                    detail = path.get("eventDetail") or {}
+                    trigger = {
+                        "relation": "exact_execution_path",
+                        "headerName": path.get("headerName"),
+                        "headerLocalId": path.get("headerLocalId"),
+                        "eventType": detail.get("type"),
+                        "triggerSlotId": detail.get("triggerSlotIdFilter"),
+                        "pathLocalIds": path.get("pathLocalIds") or [],
+                    }
+                    if trigger not in control_triggers:
+                        control_triggers.append(trigger)
+                row = {
+                    "status": (
+                        (
+                            (
+                                "exact_world_entity_action_target"
+                                if target_domain == "world_logic_id"
+                                else "exact_world_entity_action_target_unplaced"
+                            )
+                            if target_domain.startswith("world_logic_id")
+                            else (
+                                "exact_npc_proxy_action_target"
+                                if target_domain == "npc_proxy_logic_id"
+                                else (
+                                    "exact_registered_script_action_target_unplaced"
+                                    if target_domain != "registered_script_slot"
+                                    else "exact_registered_script_action_target"
+                                )
+                            )
+                        )
+                        if field and target_domain != "registered_script_slot_unresolved"
+                        else "registered_script_action_target_candidate"
+                    ),
+                    "pointerOccurrenceStatus": (
+                        "exact_local_output_alias_to_constant_filter"
+                        if output_alias_evidence
+                        else (
+                            "exact_getter_to_static_entity"
+                            if getter_resolution_evidence
+                            else "exact_constant_param_bytes_in_validated_action_record"
+                        )
+                    ),
+                    "fieldNameStatus": (
+                        "exact_native_formatter_member" if field
+                        else "unresolved_formatter_member"
+                    ),
+                    "actionFieldContractKnown": bool(entity_fields),
+                    "fieldName": field.get("fieldName"),
+                    "fieldManagedType": (
+                        (field_contract.get("serializedValueLayout") or {}).get(
+                            "managedType"
+                        )
+                        if field else None
+                    ),
+                    "memberOrdinalZeroBased": field.get("memberOrdinalZeroBased"),
+                    "nativeFieldOffset": field.get("fieldOffset"),
+                    "nativeFieldMappingId": (
+                        ACTION_ENTITY_FIELD_NATIVE_MAPPING_ID if field else None
+                    ),
+                    "nativeFieldContractStatus": field_contract_audit.get("status"),
+                    "entityPtrOutputAliasEvidence": output_alias_evidence,
+                    "nativeOutputAliasContractStatus": output_alias_contract_audit.get(
+                        "status"
+                    ),
+                    "entityPtrGetterResolution": getter_resolution_evidence,
+                    "nativeGetterContractStatus": getter_contract_audit.get("status"),
+                    "runtimeLifecycleStatus": runtime_lifecycle_status,
+                    "levelInteractiveAlignmentStatus": (
+                        level_interactive_alignment_status
+                    ),
+                    "nativeScriptSlotMappingId": slot_native_mapping_id,
+                    "nativeScriptSlotContractStatus": slot_contract_audit.get("status"),
+                    "levelId": level_id,
+                    "scriptId": script_id,
+                    "targetDomain": target_domain,
+                    "registryResolutionStatus": (
+                        "exact_unique_spatial" if registry_match_count == 1
+                        else "missing" if registry_match_count == 0
+                        else "ambiguous"
+                    ),
+                    "registryMatchCount": registry_match_count,
+                    "entityLogicId": (
+                        logic_id
+                        if target_domain.startswith("world_logic_id")
+                        or target_domain == "npc_proxy_logic_id"
+                        else None
+                    ),
+                    "entitySlotId": slot_id,
+                    "entityDetailId": target.get("entityDetailId"),
+                    "npcProxyId": target.get("npcProxyId"),
+                    "spatialResolutionEvidence": target.get(
+                        "spatialResolutionEvidence"
+                    ),
+                    "spatialResolutionDiagnostics": target.get(
+                        "spatialResolutionDiagnostics"
+                    ) or [],
+                    "placementSourceFiles": target.get(
+                        "placementSourceFiles"
+                    ) or [],
+                    "registryIndex": target.get("registryIndex"),
+                    "interactiveRecordOffset": target.get("recordOffset"),
+                    "actionName": action_name,
+                    "actionLocalId": record.get("localId"),
+                    "actionRecordOffset": record_start,
+                    "pointerOffset": pointer_offset,
+                    "pointerEndOffset": pointer_end,
+                    "sourceFile": source_file,
+                    "controlTriggers": control_triggers,
+                    "storyBinding": False,
+                    "orderEvidence": False,
+                }
+                # Play3DRadio and its waiting subclass serialize the exact
+                # Story radio id and emitting EntityPtr in this same action
+                # record.  Admit the binding only when the pinned formatter
+                # contract named the EntityPtr member, the complete 12-field
+                # payload consumes through the record boundary, and the
+                # entity identity already passed the strict spatial resolver.
+                # This does not inherit from a sibling action or proximity.
+                if (
+                    pair in {(0x034A, 0x14), (0x034B, 0x14)}
+                    and field
+                    and field.get("fieldName") == "_entityPtr"
+                    and field_contract_audit.get("status") == "validated"
+                    and row["status"].startswith("exact_")
+                    and row["registryResolutionStatus"] == "exact_unique_spatial"
+                ):
+                    playback = decode_levelscript_record_payload(
+                        data,
+                        record,
+                        next_start=record_end,
+                        action_map_role=role,
+                    ).get("play3DRadio") or {}
+                    radio_id = str(playback.get("radioId") or "")
+                    if (
+                        playback.get("consumedBytes") == record_end - payload_start
+                        and playback.get("payloadShape")
+                        == "play3d-radio-native-12-field-exact-eof"
+                        and re.fullmatch(r"radio_[A-Za-z0-9][A-Za-z0-9_]*", radio_id)
+                    ):
+                        row.update({
+                            "storyBinding": True,
+                            "storyKey": radio_id,
+                            "storyPlaybackBinding": {
+                                "status": "exact_same_record_radio_entity_binding",
+                                "storyKey": radio_id,
+                                "actionName": action_name,
+                                "payloadShape": playback.get("payloadShape"),
+                                "nativeFieldMappingId": (
+                                    ACTION_ENTITY_FIELD_NATIVE_MAPPING_ID
+                                ),
+                                "sourceRecordOffset": record_start,
+                                "noSiblingOrProximityInheritance": True,
+                            },
+                        })
+                signature = (
+                    row["actionRecordOffset"],
+                    row["pointerOffset"],
+                    row["actionName"],
+                )
+                if not any(
+                    (
+                        existing.get("actionRecordOffset"),
+                        existing.get("pointerOffset"),
+                        existing.get("actionName"),
+                    ) == signature
+                    for existing in out[key]
+                ):
+                    out[key].append(row)
+    result = {
+        key: sorted(rows, key=lambda row: (
+            int(row.get("actionRecordOffset") or 0),
+            int(row.get("pointerOffset") or 0),
+        ))
+        for key, rows in sorted(out.items())
+    }
+    result[ACTION_ENTITY_FIELD_DIAGNOSTICS_KEY] = sorted(
+        field_diagnostics,
+        key=lambda row: (
+            str(row.get("sourceFile") or ""),
+            int(row.get("actionRecordOffset") or 0),
+            int(row.get("memberOrdinalZeroBased") or 0),
+        ),
+    )
+    return result
 
 
 def resolve_interactive_condition_script_entity(condition: dict) -> dict:
@@ -11489,6 +12868,10 @@ def build_leveldata_authoritative_scope_script_host_index(
     script_pairs: set[tuple[str, str]],
     mission_runtime_ids: set[str],
     script_scope_references: dict[tuple[str, str], list[dict]],
+    *,
+    leveldata_roots: tuple[Path, ...] | None = None,
+    levelscript_roots: tuple[Path, ...] | None = None,
+    mission_runtime_root: Path | None = None,
 ) -> dict[tuple[str, str], dict]:
     """Scope sibling playback scripts through one complete LevelData shell.
 
@@ -11510,21 +12893,64 @@ def build_leveldata_authoritative_scope_script_host_index(
     if not targets_by_level:
         return {}
 
+    # LevelData follows the same shipped overlay rule as LevelScriptData:
+    # StreamingAssets is the fallback and Persistent is the complete-file
+    # override.  Keep this selection local to the authoritative shell gate;
+    # callers must never union dictionaries from shadowed files.
+    leveldata_roots = leveldata_roots or (
+        LEVELDATA_DIR,
+        PERSISTENT_DATA_JSON_DIR / "LevelData",
+    )
+    levelscript_roots = levelscript_roots or (
+        LEVELSCRIPT_DIR,
+        PERSISTENT_DATA_JSON_DIR / "LevelScriptData",
+    )
+    mission_runtime_root = mission_runtime_root or MRA_DIR
+
+    mission_runtime_level_ids: dict[str, str] = {}
+    for mission_id in sorted(mission_runtime_ids):
+        path = mission_runtime_root / f"{mission_id}.json"
+        if not path.is_file():
+            continue
+        raw = read_json_cached(path)
+        if not isinstance(raw, dict):
+            continue
+        runtime_mission_id = str(raw.get("missionId") or mission_id).strip()
+        runtime_level_id = str(raw.get("levelId") or "").strip()
+        if runtime_mission_id == mission_id and runtime_level_id:
+            mission_runtime_level_ids[mission_id] = runtime_level_id
+
     mission_area_references = _collect_typed_mission_area_parent_references()
     matches: dict[tuple[str, str], list[dict]] = defaultdict(list)
     for level_id, target_script_ids in sorted(targets_by_level.items()):
-        leveldata_dir = LEVELDATA_DIR / level_id
-        levelscript_dir = LEVELSCRIPT_DIR / level_id
-        if not leveldata_dir.is_dir() or not levelscript_dir.is_dir():
-            continue
-        all_level_script_ids = {
-            int(path.stem)
-            for path in levelscript_dir.glob("*.json")
-            if path.stem.isdigit()
-        }
+        all_level_script_ids = set()
+        for root in levelscript_roots:
+            levelscript_dir = root / level_id
+            all_level_script_ids.update(
+                int(path.stem)
+                for path in levelscript_dir.glob("*.json")
+                if path.stem.isdigit()
+            )
         if not all_level_script_ids:
             continue
-        for path in sorted(leveldata_dir.glob("*.json")):
+
+        leveldata_path_candidates: dict[str, list[tuple[Path, int]]] = defaultdict(list)
+        for precedence, root in enumerate(leveldata_roots):
+            leveldata_dir = root / level_id
+            if not leveldata_dir.is_dir():
+                continue
+            for path in sorted(leveldata_dir.glob("*.json")):
+                leveldata_path_candidates[path.name].append((path, precedence))
+
+        active_leveldata_paths = [
+            (*sorted(candidates, key=lambda item: item[1])[-1], len(candidates))
+            for candidates in leveldata_path_candidates.values()
+        ]
+
+        for path, precedence, candidate_count in sorted(
+            active_leveldata_paths,
+            key=lambda item: item[0].name,
+        ):
             try:
                 brief_dictionary = parse_leveldata_levelscript_brief_dictionary(
                     read_bytes_cached(path),
@@ -11541,13 +12967,27 @@ def build_leveldata_authoritative_scope_script_host_index(
                 level_id,
                 mission_runtime_ids,
             )
-            if filename_mission:
+            if (
+                filename_mission
+                and mission_runtime_level_ids.get(filename_mission) == level_id
+            ):
                 authoritative_references.append({
                     "missionId": filename_mission,
                     "questId": "",
                     "scriptId": "",
                     "scopeKind": "exact_mission_leveldata_filename",
                     "sourceFile": repo_rel(path),
+                    "missionRuntimeSourceFile": repo_rel(
+                        mission_runtime_root / f"{filename_mission}.json"
+                    ),
+                    "missionRuntimeLevelId": level_id,
+                    "activeOverlayStatus": (
+                        "persistent_override"
+                        if precedence > 0 and candidate_count > 1
+                        else "persistent_only"
+                        if precedence > 0
+                        else "streaming_fallback"
+                    ),
                 })
             for numeric_script_id in brief_dictionary:
                 script_id = str(numeric_script_id)

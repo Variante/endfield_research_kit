@@ -5,9 +5,1153 @@ from pathlib import Path
 from unittest import mock
 
 from scripts import build_map_recovery_data as builder
+from scripts.story_builder import level_bindings
 
 
 class BuildMapRecoveryDataTests(unittest.TestCase):
+    def setUp(self):
+        builder._NATIVE_TRIGGER_FRONTIER_CACHE = None
+
+    def test_exact_story_entity_event_index_accepts_only_constant_specified_entity(self):
+        exact = {
+            "storyTriggerZoneCoverage": {"rows": [{
+                "storyKey": "radio_exact",
+                "observations": [{
+                    "status": "exact_non_spatial_event_trigger",
+                    "levelId": "map_fixture",
+                    "scriptId": "1001",
+                    "eventName": "EntityEvent_OnInteractiveStateChanged",
+                    "sourceFile": "LevelScriptData/map_fixture/1001.json",
+                    "eventDetail": {
+                        "type": "EntityEvent_OnInteractiveStateChanged",
+                        "payloadSchemaStatus": "exact_current_build_memorypack_fields",
+                        "payloadSchemaMappingId": "native-event-v1",
+                        "serverExchange": False,
+                        "serializedMissionOrQuestId": False,
+                        "entityEventScope": "specified-entity",
+                        "triggerTarget": "SPECIFY_ENTITY",
+                        "targetEntity": {"logicId": 0, "slotId": 40001, "useSlotId": True},
+                        "targetEntityParam": {"idRef": -1, "paramSource": 0, "path": None},
+                        "targetEntityListPresent": False,
+                        "targetEntityListOutputPresent": False,
+                        "validateParam": {"constValue": True, "idRef": -1, "paramSource": 0, "path": None},
+                    },
+                }],
+            }]},
+        }
+        with mock.patch.object(builder, "_load_json", return_value=exact):
+            index = builder._exact_story_entity_event_index("map_fixture")
+        self.assertEqual(list(index), ["script:1001:40001"])
+        self.assertEqual(index["script:1001:40001"][0]["status"], "exact_entity_event_target")
+
+        exact["storyTriggerZoneCoverage"]["rows"][0]["observations"][0]["eventDetail"]["validateParam"]["idRef"] = 7
+        with mock.patch.object(builder, "_load_json", return_value=exact):
+            self.assertEqual(builder._exact_story_entity_event_index("map_fixture"), {})
+
+    def test_exact_story_entity_event_index_accepts_bounded_single_entity_die_list(self):
+        report = {"storyTriggerZoneCoverage": {"rows": [{
+            "storyKey": "radio_die",
+            "observations": [{
+                "status": "exact_non_spatial_event_trigger",
+                "levelId": "map_fixture",
+                "scriptId": "1001",
+                "eventName": "LevelEvent_OnAnyEntityDie",
+                "eventDetail": {
+                    "payloadSchemaStatus": "exact_current_build_memorypack_fields",
+                    "serverExchange": False,
+                    "serializedMissionOrQuestId": False,
+                    "filterByList": True,
+                    "isMonsterFilter": True,
+                    "payloadShape": "constant-entity-list-and-bool-filters-exact-eof",
+                    "entityListFilter": [{
+                        "logicId": 0, "slotId": 30004, "useSlotId": True,
+                    }],
+                },
+            }],
+        }]}}
+        with mock.patch.object(builder, "_load_json", return_value=report):
+            index = builder._exact_story_entity_event_index("map_fixture")
+        self.assertEqual(list(index), ["script:1001:30004"])
+
+        report["storyTriggerZoneCoverage"]["rows"][0]["observations"][0]["eventDetail"]["filterByList"] = False
+        with mock.patch.object(builder, "_load_json", return_value=report):
+            self.assertEqual(builder._exact_story_entity_event_index("map_fixture"), {})
+
+    def test_exact_story_entity_event_index_accepts_exact_inherited_scope_only(self):
+        report = {"storyTriggerZoneCoverage": {"rows": [{
+            "storyKey": "radio_scope",
+            "observations": [{
+                "status": "non_spatial_event_payload_unresolved",
+                "levelId": "map_fixture",
+                "scriptId": "1001",
+                "listenerHeaderLocalId": 19,
+                "eventName": "EntityEvent_OnEntityDestroy",
+                "eventDetail": {
+                    "payloadSchemaStatus": "exact_current_build_entity_event_scope_fields",
+                    "serverExchange": False,
+                    "serializedMissionOrQuestId": False,
+                    "entityEventScope": "specified-entity",
+                    "triggerTarget": "SPECIFY_ENTITY",
+                    "targetEntity": {"logicId": 101, "slotId": 0, "useSlotId": False},
+                    "targetEntityParam": {"idRef": -1, "paramSource": 0, "path": None},
+                    "targetEntityListPresent": False,
+                    "targetEntityListOutputPresent": False,
+                    "validateParam": {"constValue": True, "idRef": -1, "paramSource": 0, "path": None},
+                },
+            }],
+        }]}}
+        with mock.patch.object(builder, "_load_json", return_value=report):
+            index = builder._exact_story_entity_event_index("map_fixture")
+        self.assertEqual(list(index), ["world:101"])
+        self.assertEqual(index["world:101"][0]["headerLocalId"], 19)
+
+    def test_exact_story_trigger_levels_include_undeclared_trigger_coordinate_spaces(self):
+        report = {
+            "storyTriggerZoneCoverage": {"rows": [{
+                "observations": [
+                    {
+                        "status": "exact_local_trigger_volume",
+                        "levelId": "dung_trigger_only",
+                        "decodedShape": [{
+                            "shapeType": "Box",
+                            "position": {"x": 1.0, "y": 2.0, "z": 3.0},
+                        }],
+                    },
+                    {
+                        "status": "trigger_event_known_spatial_unresolved",
+                        "levelId": "unresolved_only",
+                        "decodedShape": [],
+                    },
+                ],
+            }]},
+        }
+        with mock.patch.object(builder, "_load_json", return_value=report):
+            self.assertEqual(
+                builder._exact_story_trigger_level_ids(),
+                {"dung_trigger_only"},
+            )
+
+    def test_entity_ptr_dynamic_kinds_are_normalized_without_resolution(self):
+        fixtures = [
+            ({"idRef": 7, "paramSource": -1, "path": None}, "getter_id_ref"),
+            ({"idRef": -1, "paramSource": 100, "path": "$12@entity"}, "local_output_ref"),
+            ({"idRef": -1, "paramSource": 100, "path": "target"}, "named_action_argument"),
+            ({"idRef": -1, "paramSource": 200, "path": "owner"}, "named_script_variable"),
+            ({"idRef": -1, "paramSource": 200, "path": None}, "unnamed_script_variable"),
+        ]
+        for pointer, expected_kind in fixtures:
+            with self.subTest(kind=expected_kind):
+                self.assertEqual(
+                    level_bindings._entity_ptr_field_state(pointer),
+                    ("dynamic", expected_kind),
+                )
+        self.assertEqual(
+            level_bindings._entity_ptr_field_state(
+                {"idRef": -1, "paramSource": 0, "path": None}
+            ),
+            ("constant", None),
+        )
+
+    def test_action_binding_report_keeps_dynamic_refs_unplaced(self):
+        dynamic = {
+            "state": "dynamic",
+            "dynamicKind": "local_output_ref",
+            "idRef": -1,
+            "paramSource": 100,
+            "path": "$12@entity",
+            "sourceFile": "LevelScriptData/map_fixture/1.json",
+            "scriptId": "1",
+            "actionName": "EntityCastSkill",
+            "actionRecordOffset": 100,
+            "fieldName": "_targetEntity",
+            "memberOrdinalZeroBased": 12,
+            "nativeFieldOffset": 64,
+            "pointerOffset": 120,
+            "pointerEndOffset": 160,
+        }
+        report = builder._action_binding_report([{
+            "id": "map_fixture",
+            "levelId": "map_fixture",
+            "markers": [],
+            "unplacedActionTargets": {"targets": []},
+            "actionEntityFieldDiagnostics": {"fields": [dynamic]},
+        }], "CN")
+
+        self.assertEqual(report["dynamicReferenceSummary"]["count"], 1)
+        self.assertEqual(
+            report["dynamicReferenceSummary"]["resolvedDynamicReferenceCount"],
+            0,
+        )
+        self.assertEqual(
+            report["dynamicReferenceSummary"]["unresolvedDynamicReferenceCount"],
+            1,
+        )
+        self.assertEqual(
+            report["dynamicReferenceSummary"]["kindCounts"],
+            {"local_output_ref": 1},
+        )
+        self.assertEqual(report["unplacedDynamicReferences"][0]["path"], "$12@entity")
+        self.assertEqual(report["maps"][0]["slots"], [])
+
+    def test_action_binding_report_preserves_resolved_dynamic_evidence(self):
+        getter = {
+            "state": "dynamic",
+            "dynamicKind": "getter_id_ref",
+            "idRef": 7,
+            "paramSource": -1,
+            "path": None,
+            "sourceFile": "LevelScriptData/map_fixture/1.json",
+            "scriptId": "1",
+            "actionName": "NpcEnableStim",
+            "actionRecordOffset": 100,
+            "fieldName": "_target",
+            "pointerOffset": 120,
+            "pointerEndOffset": 147,
+            "getterResolution": {
+                "status": "exact_constant_proxy_id_lookup",
+                "getterLocalId": 7,
+                "proxyId": "npc_exact",
+            },
+        }
+        output_alias = {
+            **getter,
+            "dynamicKind": "local_output_ref",
+            "idRef": -1,
+            "paramSource": 100,
+            "path": "$12@entity",
+            "pointerOffset": 150,
+            "pointerEndOffset": 187,
+            "getterResolution": None,
+            "localOutputAliasResolution": {
+                "status": "exact_constant_filter_alias",
+                "producerHeaderLocalId": 12,
+            },
+        }
+        unresolved = {
+            **getter,
+            "idRef": 8,
+            "pointerOffset": 190,
+            "pointerEndOffset": 217,
+            "getterResolution": {
+                "status": "validated_runtime_dependent",
+                "getterLocalId": 8,
+            },
+        }
+        runtime_non_spatial = {
+            **getter,
+            "dynamicKind": "local_output_ref",
+            "idRef": -1,
+            "paramSource": 100,
+            "path": "$20@_entity",
+            "pointerOffset": 220,
+            "pointerEndOffset": 257,
+            "getterResolution": None,
+            "nativeOutputAliasContractStatus": "validated",
+            "localOutputAliasResolution": {
+                "status": "runtime_list_element_non_spatial",
+                "nativeMappingId": "native-output-contract",
+            },
+        }
+        report = builder._action_binding_report([{
+            "id": "map_fixture",
+            "levelId": "map_fixture",
+            "markers": [{
+                "identity": "npc:101",
+                "actions": [
+                    {
+                        "sourceFile": getter["sourceFile"],
+                        "actionRecordOffset": getter["actionRecordOffset"],
+                        "pointerOffset": getter["pointerOffset"],
+                        "entityPtrGetterResolution": getter["getterResolution"],
+                    },
+                    {
+                        "sourceFile": output_alias["sourceFile"],
+                        "actionRecordOffset": output_alias["actionRecordOffset"],
+                        "pointerOffset": output_alias["pointerOffset"],
+                        "entityPtrOutputAliasEvidence": (
+                            output_alias["localOutputAliasResolution"]
+                        ),
+                    },
+                ],
+                "unresolvedActionReferences": [],
+            }],
+            "unplacedActionTargets": {"targets": []},
+            "actionEntityFieldDiagnostics": {
+                "fields": [getter, output_alias, unresolved, runtime_non_spatial]
+            },
+        }], "CN")
+
+        summary = report["dynamicReferenceSummary"]
+        self.assertEqual(summary["count"], 4)
+        self.assertEqual(summary["resolvedDynamicReferenceCount"], 2)
+        self.assertEqual(
+            summary["exactSpatiallyResolvedDynamicReferenceCount"], 2
+        )
+        self.assertEqual(
+            summary["validatedRuntimeNonSpatialReferenceCount"], 1
+        )
+        self.assertEqual(summary["unresolvedDynamicReferenceCount"], 1)
+        self.assertEqual(
+            [
+                (row["pointerOffset"], row["dynamicResolutionClass"])
+                for row in report["unplacedDynamicReferences"]
+            ],
+            [(190, "unresolved"), (220, "validated_runtime_non_spatial")],
+        )
+        self.assertEqual(len(report["entityPtrFieldDiagnostics"]), 4)
+        self.assertEqual(
+            report["entityPtrFieldDiagnostics"][0]["getterResolution"]["proxyId"],
+            "npc_exact",
+        )
+
+    def test_local_output_diagnostics_distinguish_runtime_producer_domains(self):
+        contracts, _audit = (
+            level_bindings.load_entityptr_output_alias_contract()
+        )
+
+        def classify(path, *, actions=None, headers=None, aliases=None, paths=None):
+            return level_bindings._classify_levelscript_entityptr_output_reference(
+                path,
+                prepared={
+                    "actionByLocal": actions or {},
+                    "headerByLocal": headers or {},
+                },
+                contracts=contracts,
+                aliases=aliases or {},
+                consumer_paths=paths or [],
+            )
+
+        repeat = classify(
+            "$12@_entity",
+            actions={12: {
+                "start": 40,
+                "unionTag": 0x0391,
+                "serializedMemberCount": 12,
+            }},
+        )
+        spawned = classify(
+            "$7@_entityOutput",
+            headers={7: {
+                "start": 50,
+                "unionTag": 0x0094,
+                "serializedMemberCount": 21,
+            }},
+        )
+        event = classify(
+            "$8@_entityOutput",
+            headers={8: {
+                "start": 60,
+                "unionTag": 0x00BC,
+                "serializedMemberCount": 20,
+            }},
+        )
+        patrol_event = classify(
+            "$9@_entityOutput",
+            headers={9: {
+                "start": 70,
+                "unionTag": 0x0066,
+                "serializedMemberCount": 18,
+            }},
+        )
+
+        self.assertEqual(
+            repeat["producerName"],
+            "Beyond.Gameplay.Actions.RepeatEntityPtrListAction",
+        )
+        self.assertEqual(repeat["status"], "runtime_list_element_non_spatial")
+        self.assertEqual(repeat["aliasStatus"], "validated_non_alias")
+        self.assertEqual(
+            repeat["failureGate"],
+            "native_runtime_list_element_is_not_constant_alias",
+        )
+        self.assertEqual(spawned["status"], "runtime_spawned_entity")
+        self.assertEqual(event["status"], "runtime_event_entity")
+        self.assertEqual(patrol_event["status"], "runtime_event_entity")
+        self.assertEqual(event["producerRecordOffset"], 60)
+
+    def test_local_output_diagnostics_preserve_alias_and_non_alias_gates(self):
+        contracts, _audit = (
+            level_bindings.load_entityptr_output_alias_contract()
+        )
+        exact_alias = {
+            "status": "exact_constant_filter_alias",
+            "producerHeaderLocalId": 5,
+            "constantPointerOffset": 100,
+        }
+        exact = level_bindings._classify_levelscript_entityptr_output_reference(
+            "$5@_entity",
+            prepared={
+                "actionByLocal": {},
+                "headerByLocal": {5: {
+                    "start": 20,
+                    "unionTag": 0x00A0,
+                    "serializedMemberCount": 16,
+                }},
+            },
+            contracts=contracts,
+            aliases={"$5@_entity": exact_alias},
+            consumer_paths=[{
+                "status": "exact_serialized_control_path",
+                "headerLocalId": 5,
+            }],
+        )
+        non_alias = level_bindings._classify_levelscript_entityptr_output_reference(
+            "$9@_entityOutput",
+            prepared={
+                "actionByLocal": {},
+                "headerByLocal": {9: {
+                    "start": 30,
+                    "unionTag": 0x00BD,
+                    "serializedMemberCount": 20,
+                }},
+            },
+            contracts=contracts,
+            aliases={},
+            consumer_paths=[],
+        )
+
+        self.assertEqual(exact["status"], "exact_constant_filter_alias")
+        self.assertIsNone(exact["failureGate"])
+        self.assertEqual(exact["controlPathStatus"],
+                         "exact_same_header_execution_path")
+        self.assertEqual(non_alias["status"], "validated_non_alias")
+        self.assertEqual(non_alias["failureGate"],
+                         "native_output_is_not_filter_alias")
+
+    def test_named_entityptr_initializer_requires_exact_consumer_script_host(self):
+        pointer = {"idRef": -1, "paramSource": 200, "path": "puzzle4"}
+        brief = {
+            "properties": [{
+                "name": "puzzle4",
+                "valueType": 13,
+                "atomCount": 1,
+                "atoms": [{"valueBit64": 10100020736, "text": ""}],
+            }],
+            "refWorldEntityIds": ["10100020736"],
+        }
+        mismatch = level_bindings._resolve_levelscript_named_entityptr_initial_value(
+            pointer,
+            level_id="map02_lv001",
+            script_id="10100020024",
+            brief_hosts_by_script={"different_receiver_context": [{"brief": brief}]},
+            world_briefs={"10100020736": {"detailId": "int_target"}},
+            native_audit={"status": "validated"},
+            graph_writer_count=0,
+        )
+        exact = level_bindings._resolve_levelscript_named_entityptr_initial_value(
+            pointer,
+            level_id="map02_lv001",
+            script_id="10100020024",
+            brief_hosts_by_script={"10100020024": [{
+                "brief": brief,
+                "sourceFile": "LevelData/map02_lv001/sub.json",
+                "sourceSha256": "ABC",
+            }]},
+            world_briefs={"10100020736": {"detailId": "int_target"}},
+            native_audit={"status": "validated"},
+            graph_writer_count=2,
+        )
+
+        self.assertEqual(mismatch["failureGate"], "unique_exact_script_brief_host")
+        self.assertEqual(exact["status"],
+                         "validated_initial_entityptr_value_nonfinal")
+        self.assertEqual(exact["briefHostScriptId"], "10100020024")
+        self.assertEqual(exact["initialEntityLogicId"], 10100020736)
+        self.assertEqual(exact["graphWriterCount"], 2)
+        self.assertTrue(exact["diagnosticOnly"])
+        self.assertTrue(exact["mutableAfterBind"])
+        self.assertFalse(exact["allowTargetPromotion"])
+        self.assertIn("mutable", exact["evidenceBoundary"])
+
+    def test_named_entityptr_initializer_is_nonspatial_dynamic_summary_class(self):
+        diagnostic = {
+            "state": "dynamic",
+            "dynamicKind": "named_script_variable",
+            "sourceFile": "LevelScriptData/map/1.json",
+            "actionRecordOffset": 10,
+            "pointerOffset": 20,
+            "namedEntityPtrResolution": {
+                "status": "validated_initial_entityptr_value_nonfinal",
+                "nativeMappingId": "native-property-init",
+                "allowTargetPromotion": False,
+            },
+            "nativePropertyInitializationContractStatus": "validated",
+        }
+        report = builder._action_binding_report([{
+            "id": "map",
+            "levelId": "map",
+            "markers": [],
+            "actionEntityFieldDiagnostics": {"fields": [diagnostic]},
+        }], "CN")
+
+        summary = report["dynamicReferenceSummary"]
+        self.assertEqual(summary["count"], 1)
+        self.assertEqual(summary["exactSpatiallyResolvedDynamicReferenceCount"], 0)
+        self.assertEqual(summary["validatedRuntimeNonSpatialReferenceCount"], 1)
+        self.assertEqual(summary["unresolvedDynamicReferenceCount"], 0)
+        self.assertEqual(
+            report["unplacedDynamicReferences"][0]["dynamicResolutionClass"],
+            "validated_runtime_non_spatial",
+        )
+        self.assertEqual(
+            report["unplacedDynamicReferences"][0]["dynamicResolutionFailureGate"],
+            "native_validated_runtime_non_spatial",
+        )
+
+    def test_dynamic_summary_assigns_actionable_gate_to_every_unresolved_family(self):
+        rows = [
+            {"state": "dynamic", "dynamicKind": "named_action_argument"},
+            {"state": "dynamic", "dynamicKind": "unnamed_script_variable"},
+            {"state": "dynamic", "dynamicKind": "opaque_dynamic"},
+            {
+                "state": "dynamic",
+                "dynamicKind": "getter_id_ref",
+                "getterResolution": {"status": "validated_runtime_dependent"},
+            },
+            {
+                "state": "dynamic",
+                "dynamicKind": "local_output_ref",
+                "localOutputAliasResolution": {
+                    "status": "exact_constant_filter_alias",
+                    "failureGate": None,
+                },
+            },
+        ]
+        report = builder._action_binding_report([{
+            "id": "map",
+            "levelId": "map",
+            "markers": [],
+            "actionEntityFieldDiagnostics": {"fields": rows},
+        }], "CN")
+
+        gates = [
+            row["dynamicResolutionFailureGate"]
+            for row in report["unplacedDynamicReferences"]
+        ]
+        self.assertEqual(gates, [
+            "runtime_named_action_argument",
+            "unnamed_script_property",
+            "opaque_dynamic_form",
+            "validated_runtime_dependent",
+            "exact_output_alias_not_spatially_placed",
+        ])
+        self.assertEqual(
+            sum(report["dynamicReferenceSummary"]["resolutionFailureGateCounts"].values()),
+            5,
+        )
+
+    def test_null_getter_and_dynamic_filter_alias_are_validated_nonspatial(self):
+        rows = [
+            {
+                "state": "dynamic",
+                "dynamicKind": "getter_id_ref",
+                "getterResolution": {
+                    "status": "exact_constant_param_alias",
+                    "resolvedValue": {
+                        "logicId": 0,
+                        "slotId": 0,
+                        "useSlotId": False,
+                    },
+                },
+                "nativeGetterContractStatus": "validated",
+            },
+            {
+                "state": "dynamic",
+                "dynamicKind": "local_output_ref",
+                "localOutputAliasResolution": {
+                    "status": "validated_dynamic_filter_alias",
+                    "failureGate": "native_alias_filter_value_is_dynamic",
+                    "nativeMappingId": "native-output-alias",
+                },
+                "nativeOutputAliasContractStatus": "validated",
+            },
+        ]
+        report = builder._action_binding_report([{
+            "id": "map",
+            "levelId": "map",
+            "markers": [],
+            "actionEntityFieldDiagnostics": {"fields": rows},
+        }], "CN")
+
+        summary = report["dynamicReferenceSummary"]
+        self.assertEqual(summary["exactSpatiallyResolvedDynamicReferenceCount"], 0)
+        self.assertEqual(summary["validatedRuntimeNonSpatialReferenceCount"], 2)
+        self.assertEqual(summary["unresolvedDynamicReferenceCount"], 0)
+        self.assertEqual(
+            [row["dynamicResolutionFailureGate"]
+             for row in report["unplacedDynamicReferences"]],
+            [
+                "validated_null_entityptr_value",
+                "native_alias_filter_value_is_dynamic",
+            ],
+        )
+
+    def test_exact_npc_proxy_spatial_fallback_requires_identity_and_equal_transform(self):
+        target, diagnostic = level_bindings._resolve_exact_npc_proxy_spatial_target(
+            2100290001,
+            {"2100290001": {
+                "segmentIdGlobal": 2100290001,
+                "proxyId": "modun_map01_sm1l1m10",
+                "position": {"x": 1.0, "y": 2.0, "z": 3.0},
+            }},
+            {"dataTable": {"modun_map01_sm1l1m10": {
+                "entityType": 256,
+                "position": {"x": 1.0, "y": 2.0, "z": 3.0},
+                "rotation": {"x": 0.0, "y": 90.0, "z": 0.0},
+            }}},
+            registry_source_file="WorldEntityRegistry.json",
+            npc_proxy_table_source_file="NpcProxyTable.json",
+        )
+
+        self.assertEqual(diagnostic["status"], "validated")
+        self.assertEqual(target["npcProxyId"], "modun_map01_sm1l1m10")
+        self.assertEqual(target["position"], {"x": 1.0, "y": 2.0, "z": 3.0})
+        self.assertEqual(target["rotation"], {"x": 0.0, "y": 90.0, "z": 0.0})
+        self.assertEqual(
+            target["spatialResolutionEvidence"],
+            "exact_npc_proxy_brief_and_table_join",
+        )
+
+    def test_npc_proxy_spatial_fallback_rejects_every_identity_and_transform_gap(self):
+        valid_brief = {"101": {
+            "segmentIdGlobal": 101,
+            "proxyId": "npc_exact",
+            "position": {"x": 1.0, "y": 2.0, "z": 3.0},
+        }}
+        valid_table = {"dataTable": {"npc_exact": {
+            "entityType": 256,
+            "position": {"x": 1.0, "y": 2.0, "z": 3.0},
+            "rotation": {"x": 0.0, "y": 90.0, "z": 0.0},
+        }}}
+
+        fixtures = [
+            ({}, valid_table, "exact_npc_proxy_brief_key"),
+            ({"101": {**valid_brief["101"], "segmentIdGlobal": 102}}, valid_table,
+             "npc_proxy_segment_identity"),
+            (valid_brief, {"dataTable": {}}, "unique_proxy_id_join"),
+            (valid_brief, {"dataTable": {"npc_exact": {
+                **valid_table["dataTable"]["npc_exact"],
+                "position": {"x": 9.0, "y": 2.0, "z": 3.0},
+            }}}, "equal_authored_position"),
+            (valid_brief, {"dataTable": {"npc_exact": {
+                **valid_table["dataTable"]["npc_exact"],
+                "rotation": {"x": 0.0, "y": float("nan"), "z": 0.0},
+            }}}, "finite_table_rotation"),
+        ]
+        for briefs, table, expected_gate in fixtures:
+            with self.subTest(gate=expected_gate):
+                target, diagnostic = (
+                    level_bindings._resolve_exact_npc_proxy_spatial_target(
+                        101,
+                        briefs,
+                        table,
+                        registry_source_file="WorldEntityRegistry.json",
+                        npc_proxy_table_source_file="NpcProxyTable.json",
+                    )
+                )
+                self.assertIsNone(target)
+                self.assertEqual(diagnostic["gate"], expected_gate)
+
+    def test_npc_proxy_action_target_is_published_as_world_identity(self):
+        rows = builder._registry_markers(
+            {"world": [], "script": [], "npc": [("101", {
+                "proxyId": "npc_exact",
+                "position": {"x": 1.0, "y": 2.0, "z": 3.0},
+            })]},
+            "map_fixture",
+            "CN",
+            {},
+            {},
+            {},
+            {},
+            {"world:101": [{
+                "status": "exact_world_entity_action_target",
+                "actionName": "LevelCameraLookAt",
+                "fieldName": "lookAt1",
+                "sourceFile": "LevelScriptData/map_fixture/1.json",
+                "spatialResolutionEvidence": (
+                    "exact_npc_proxy_brief_and_table_join"
+                ),
+            }]},
+            {},
+        )
+
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["identity"], "world:101")
+        self.assertEqual(rows[0]["actionBindingStatus"], "exact_bound")
+        self.assertEqual(rows[0]["placementEvidenceStatus"],
+                         "exact_npc_proxy_brief_and_table_join")
+
+    def test_registry_marker_attaches_exact_entity_event_story_without_ownership(self):
+        binding = {
+            "storyKey": "radio_exact",
+            "eventName": "EntityEvent_OnInteractiveStateChanged",
+            "sourceFile": "LevelScriptData/map_fixture/1001.json",
+            "status": "exact_entity_event_target",
+            "ownership": False,
+            "activation": False,
+            "orderEvidence": False,
+        }
+        rows = builder._registry_markers(
+            {"world": [], "npc": [], "script": [(
+                {"scriptIdGlobal": 1001, "slotId": 40001},
+                {
+                    "detailId": "int_exact",
+                    "entityType": 32,
+                    "position": {"x": 1.0, "y": 2.0, "z": 3.0},
+                },
+            )]},
+            "map_fixture", "CN", {}, {}, {}, {}, {}, {},
+            {"script:1001:40001": [binding]},
+        )
+        self.assertEqual(rows[0]["sceneKeys"], ["radio_exact"])
+        self.assertEqual(rows[0]["entityEventStoryBindings"], [binding])
+        self.assertFalse(rows[0]["entityEventStoryBindings"][0]["ownership"])
+
+    def test_npc_proxy_getter_identity_does_not_collide_with_world_fallback(self):
+        getter_target = {
+            "status": "exact_npc_proxy_action_target",
+            "actionName": "FinishBuffUsingId",
+            "fieldName": "target",
+            "sourceFile": "LevelScriptData/map_fixture/1.json",
+            "targetDomain": "npc_proxy_logic_id",
+            "npcProxyId": "npc_exact",
+            "entityLogicId": 101,
+            "entityPtrGetterResolution": {
+                "status": "exact_constant_proxy_id_lookup",
+                "getterName": "NpcProxyGetter",
+            },
+            "nativeGetterContractStatus": "validated",
+        }
+        world_target = {
+            "status": "exact_world_entity_action_target",
+            "actionName": "LevelCameraLookAt",
+            "fieldName": "lookAt1",
+            "sourceFile": "LevelScriptData/map_fixture/2.json",
+            "targetDomain": "world_logic_id",
+            "entityLogicId": 101,
+            "spatialResolutionEvidence": "exact_npc_proxy_brief_and_table_join",
+        }
+        rows = builder._registry_markers(
+            {"world": [], "script": [], "npc": [("101", {
+                "proxyId": "npc_exact",
+                "position": {"x": 1.0, "y": 2.0, "z": 3.0},
+            })]},
+            "map_fixture", "CN", {}, {}, {}, {},
+            {"npc:101": [getter_target], "world:101": [world_target]},
+            {},
+        )
+
+        self.assertEqual(rows[0]["identity"], "npc:101")
+        self.assertEqual(len(rows[0]["actions"]), 1)
+        self.assertEqual(rows[0]["actions"][0]["name"], "FinishBuffUsingId")
+        self.assertEqual(rows[0]["actions"][0]["targetDomain"],
+                         "npc_proxy_logic_id")
+        self.assertEqual(rows[0]["worldFallbackActionTargets"], [world_target])
+
+        report = builder._action_binding_report([{
+            "id": "map_fixture",
+            "levelId": "map_fixture",
+            "markers": rows,
+        }], "CN")
+        slots = report["maps"][0]["slots"]
+        self.assertEqual(
+            [(row["identity"], row["domain"]) for row in slots],
+            [("npc:101", "npc_proxy_logic_id"),
+             ("world:101", "world_logic_id")],
+        )
+        self.assertEqual(slots[0]["actions"][0]["targetDomain"],
+                         "npc_proxy_logic_id")
+        self.assertEqual(
+            slots[0]["actions"][0]["entityPtrGetterResolution"]["getterName"],
+            "NpcProxyGetter",
+        )
+        self.assertEqual(
+            slots[0]["actions"][0]["nativeGetterContractStatus"],
+            "validated",
+        )
+        self.assertEqual(slots[1]["actions"][0]["targetDomain"],
+                         "world_logic_id")
+
+    def test_empty_interactive_shell_is_not_claimed_as_generic_interactive(self):
+        self.assertEqual(
+            builder._classify_entity("int_empty", 32),
+            ("empty_slot", "unresolved_empty_slot", "未解析空槽", "empty_interactive_shell"),
+        )
+
+    def test_enemy_name_and_document_title_use_exact_localized_sources(self):
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(builder, "ROOT", Path(tmp)):
+            root = Path(tmp)
+            display = root / builder.ENEMY_TEMPLATE_DISPLAY_REL
+            display.parent.mkdir(parents=True)
+            display.write_text(json.dumps({"eny_test": {"name": {"id": 42}}}), encoding="utf-8")
+            i18n = root / builder.I18N_TEXT_REL.format("CN")
+            i18n.parent.mkdir(parents=True, exist_ok=True)
+            i18n.write_text(json.dumps({"42": "测试敌人"}), encoding="utf-8")
+            conv = root / "webui/data/lang/CN/conv/text_test.json"
+            conv.parent.mkdir(parents=True)
+            conv.write_text(json.dumps({"title": "测试文档"}), encoding="utf-8")
+            builder._ENTITY_NAMES.clear()
+            builder._STORY_TITLES.clear()
+            with mock.patch.object(builder, "_conv_file_for_key", return_value="webui/data/lang/CN/conv/text_test.json"):
+                self.assertEqual(builder._entity_display_name("eny_test", "CN"), "测试敌人")
+                self.assertEqual(builder._story_display_title("CN", "text_test"), "测试文档")
+
+    def test_grenade_tower_enemy_and_tomb_have_exact_semantic_evidence(self):
+        self.assertEqual(
+            builder._classify_entity("int_fac_battle_cannon_1_dg002", 32),
+            ("device", "grenade_tower", "榴弹塔", "authored_combat_device"),
+        )
+        self.assertEqual(
+            [row["path"] for row in builder._interactive_semantic_files("int_fac_battle_cannon_1_dg002")],
+            [builder.FACTORY_BUILDING_REL, builder.FACTORY_BATTLE_REL, builder.MODEL_TABLE_REL],
+        )
+        self.assertEqual(
+            [row["path"] for row in builder._interactive_semantic_files("eny_0080_reaper")],
+            [builder.ENEMY_TEMPLATE_REL, builder.ENEMY_TEMPLATE_DISPLAY_REL, builder.MODEL_TABLE_REL],
+        )
+        self.assertEqual(
+            [row["path"] for row in builder._interactive_semantic_files("int_narrative_common_BTomb01")],
+            [builder.MODEL_TABLE_REL],
+        )
+
+    def test_exact_story_trigger_markers_publish_decoded_box_and_story_link(self):
+        report = {"rows": [{"levelId": "indie_dg002", "scriptId": "8700010001", "storyTriggerZoneConfirmations": [{
+            "storyKey": "radio_e0m0_9", "status": "exact_local_trigger_volume", "observations": [{
+                "status": "exact_local_trigger_volume", "levelId": "indie_dg002",
+                "scriptId": "8700010001", "triggerSlotIdFilter": 80002,
+                "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/indie_dg002/8700010001.json",
+                "triggerVolume": {"slotId": 80002, "triggerVolumeType": "Leader"},
+                "triggerVolumeContext": {
+                    "status": "exact_local_levelscript_trigger_volume_without_foreign_identity",
+                    "scriptIdVerified": True, "matchedSlotIds": [80002],
+                    "missingSlotIds": [], "ambiguousSlotIds": [],
+                },
+                "decodedShape": [{"offset": "0x114c", "shapeType": "Box",
+                    "position": {"x": 275.328, "y": 47.044, "z": 491.653},
+                    "rotation": {"x": 0, "y": 327.299, "z": 0},
+                    "size": {"x": 8, "y": 25, "z": 35}, "radius": 3}],
+            }],
+        }]}]}
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(builder, "ROOT", Path(tmp)):
+            path = Path(tmp) / builder.NATIVE_TRIGGER_FRONTIER_REL
+            path.parent.mkdir(parents=True)
+            path.write_text(json.dumps(report), encoding="utf-8")
+            with mock.patch.object(builder, "_conv_file_for_key", return_value="webui/data/lang/CN/conv/radio_e0m0_9.json"):
+                rows = builder._exact_story_trigger_markers("indie_dg002", "CN")
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["triggerShape"]["type"], "box")
+        self.assertEqual(rows[0]["triggerShape"]["size"]["z"], 35)
+        self.assertEqual(rows[0]["sceneKeys"], ["radio_e0m0_9"])
+        self.assertEqual(rows[0]["missionContexts"], ["e0m0"])
+        self.assertEqual(rows[0]["triggerIdentityDomain"], "LevelScriptData.triggerVolumes local slot")
+        self.assertEqual(rows[0]["registryIdentityStatus"], "not_applicable")
+        self.assertNotIn("missions", rows[0])
+
+    def test_exact_story_trigger_markers_fail_closed_for_non_spatial_events(self):
+        report = {"rows": [{"levelId": "indie_dg002", "scriptId": "1", "storyTriggerZoneConfirmations": [{
+            "storyKey": "radio_e0m0_2", "status": "exact_non_spatial_event_trigger",
+            "observations": [{"status": "exact_non_spatial_event_trigger"}],
+        }]}]}
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(builder, "ROOT", Path(tmp)):
+            path = Path(tmp) / builder.NATIVE_TRIGGER_FRONTIER_REL
+            path.parent.mkdir(parents=True)
+            path.write_text(json.dumps(report), encoding="utf-8")
+            self.assertEqual(builder._exact_story_trigger_markers("indie_dg002", "CN"), [])
+
+    def test_exact_story_trigger_markers_merge_stories_sharing_one_shape(self):
+        observation = {
+            "status": "exact_local_trigger_volume", "levelId": "map", "scriptId": "100",
+            "triggerSlotIdFilter": 80001, "sourceFile": "LevelScriptData/map/100.json",
+            "triggerVolume": {"slotId": 80001, "triggerVolumeType": "Leader"},
+            "triggerVolumeContext": {
+                "status": "exact_local_levelscript_trigger_volume_without_foreign_identity",
+                "scriptIdVerified": True, "matchedSlotIds": [80001],
+                "missingSlotIds": [], "ambiguousSlotIds": [],
+            },
+            "decodedShape": [{"offset": "0x100", "shapeType": "Sphere",
+                "position": {"x": 1, "y": 2, "z": 3},
+                "rotation": {"x": 0, "y": 0, "z": 0},
+                "size": {"x": 0, "y": 0, "z": 0}, "radius": 5}],
+        }
+        report = {"rows": [{"levelId": "map", "scriptId": "100", "storyTriggerZoneConfirmations": [
+            {"storyKey": "radio_e1m1_1", "status": "exact_local_trigger_volume",
+             "observations": [observation]},
+            {"storyKey": "cutscene_e1m1_2", "status": "exact_local_trigger_volume",
+             "observations": [observation]},
+        ]}]}
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(builder, "ROOT", Path(tmp)):
+            path = Path(tmp) / builder.NATIVE_TRIGGER_FRONTIER_REL
+            path.parent.mkdir(parents=True)
+            path.write_text(json.dumps(report), encoding="utf-8")
+            with mock.patch.object(builder, "_conv_file_for_key", side_effect=lambda _lang, key: f"conv/{key}.json"):
+                rows = builder._exact_story_trigger_markers("map", "CN")
+
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["sceneKeys"], ["radio_e1m1_1", "cutscene_e1m1_2"])
+        self.assertEqual(rows[0]["missionContexts"], ["e1m1"])
+        self.assertEqual(
+            sorted(pin["path"] for pin in rows[0]["relatedFiles"] if pin["relation"] == "story_exact_trigger"),
+            ["conv/cutscene_e1m1_2.json", "conv/radio_e1m1_1.json"],
+        )
+
+    def test_exact_story_trigger_markers_preserve_world_polyline_points(self):
+        points = [{"x": -440.0, "y": -180.0}, {"x": -430.0, "y": -180.0},
+                  {"x": -435.0, "y": -170.0}]
+        report = {"storyTriggerZoneCoverage": {"rows": [{
+            "storyKey": "radio_poly", "status": "exact_local_trigger_volume", "observations": [{
+                "status": "exact_local_trigger_volume", "levelId": "map", "scriptId": "100",
+                "sourceFile": "LevelScriptData/map/100.json", "triggerSlotIdFilter": 80002,
+                "triggerVolumeContext": {
+                    "status": "exact_local_levelscript_trigger_volume_without_foreign_identity",
+                    "scriptIdVerified": True, "matchedSlotIds": [80002],
+                    "missingSlotIds": [], "ambiguousSlotIds": [],
+                },
+                "triggerVolume": {"slotId": 80002, "triggerVolumeType": "Leader"},
+                "decodedShape": [{"shapeType": "PolyLine", "offset": "0x200",
+                    "position": {"x": -435, "y": 246, "z": -175},
+                    "polyLinePoints": {"status": "present", "parseStatus": "decoded",
+                                       "points": points}}],
+            }],
+        }]}}
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(builder, "ROOT", Path(tmp)):
+            path = Path(tmp) / builder.NATIVE_TRIGGER_FRONTIER_REL
+            path.parent.mkdir(parents=True)
+            path.write_text(json.dumps(report), encoding="utf-8")
+            rows = builder._exact_story_trigger_markers("map", "CN")
+
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["triggerShape"]["type"], "polyline")
+        self.assertEqual(rows[0]["triggerShape"]["polyLinePoints"], points)
+
+    def test_multiple_exact_trigger_zones_project_only_current_script_observation(self):
+        def observation(level, script, slot, x):
+            return {
+                "status": "exact_local_trigger_volume", "levelId": level,
+                "scriptId": script, "triggerSlotIdFilter": slot,
+                "sourceFile": f"root/{level}/{script}.json",
+                "decodedShape": [{"shapeType": "Box", "position": {"x": x, "y": 2, "z": 3}}],
+                "triggerVolume": {"slotId": slot, "triggerVolumeType": "Leader"},
+                "triggerVolumeContext": {
+                    "status": "exact_local_levelscript_trigger_volume_without_foreign_identity",
+                    "scriptIdVerified": True, "matchedSlotIds": [slot],
+                    "missingSlotIds": [], "ambiguousSlotIds": [],
+                },
+                "playbackControlPathEvidence": {"status": "exact_trigger_rooted_playback"},
+            }
+        report = {"rows": [{"levelId": "map", "scriptId": "outer", "storyTriggerZoneConfirmations": [{
+            "storyKey": "radio_e1m1_1", "status": "multiple_or_ambiguous_trigger_zones",
+            "observations": [observation("map", "100", 80001, 1), observation("other", "200", 80002, 9)],
+        }]}]}
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(builder, "ROOT", Path(tmp)):
+            path = Path(tmp) / builder.NATIVE_TRIGGER_FRONTIER_REL
+            path.parent.mkdir(parents=True)
+            path.write_text(json.dumps(report), encoding="utf-8")
+            rows = builder._exact_story_trigger_markers("map", "CN")
+
+        self.assertEqual(1, len(rows))
+        self.assertEqual("100", rows[0]["scriptId"])
+        self.assertEqual("80001", rows[0]["triggerSlotId"])
+        self.assertEqual("multiple_or_ambiguous_trigger_zones", rows[0]["storyTriggerMultiplicityStatus"])
+
+    def test_unplaced_story_trigger_evidence_distinguishes_nonspatial_and_missing_projection(self):
+        report = {"rows": [{"levelId": "indie_dg002", "scriptId": "1", "storyTriggerZoneConfirmations": [
+            {"storyKey": "nonspatial", "status": "exact_non_spatial_event_trigger",
+             "observations": [{"levelId": "indie_dg002"}]},
+            {"storyKey": "spatial", "status": "exact_local_trigger_volume",
+             "observations": [{"levelId": "indie_dg002"}]},
+        ]}]}
+        rows = [{"key": "nonspatial"}, {"key": "spatial"}, {"key": "unknown"}]
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(builder, "ROOT", Path(tmp)):
+            path = Path(tmp) / builder.NATIVE_TRIGGER_FRONTIER_REL
+            path.parent.mkdir(parents=True)
+            path.write_text(json.dumps(report), encoding="utf-8")
+            builder._annotate_unplaced_story_trigger_evidence(rows, "indie_dg002")
+
+        self.assertEqual(
+            rows[0]["storyTriggerEvidence"]["resolutionClass"],
+            "exact_non_spatial_trigger_context_only",
+        )
+        self.assertEqual(
+            rows[1]["storyTriggerEvidence"]["failureGate"],
+            "exact_trigger_marker_missing_from_current_map_payload",
+        )
+        self.assertNotIn("storyTriggerEvidence", rows[2])
+
+    def test_unplaced_story_trigger_evidence_uses_complete_direct_coverage_and_level_scope(self):
+        report = {"storyTriggerZoneCoverage": {"rows": [{
+            "storyKey": "radio_direct", "status": "exact_non_spatial_event_trigger",
+            "observations": [
+                {"levelId": "map", "scriptId": "100", "status": "exact_non_spatial_event_trigger"},
+                {"levelId": "other", "scriptId": "200", "status": "exact_non_spatial_event_trigger"},
+            ],
+        }]}, "rows": []}
+        rows = [{"key": "radio_direct"}]
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(builder, "ROOT", Path(tmp)):
+            path = Path(tmp) / builder.NATIVE_TRIGGER_FRONTIER_REL
+            path.parent.mkdir(parents=True)
+            path.write_text(json.dumps(report), encoding="utf-8")
+            builder._annotate_unplaced_story_trigger_evidence(rows, "map")
+
+        evidence = rows[0]["storyTriggerEvidence"]
+        self.assertEqual("exact_non_spatial_trigger_context_only", evidence["resolutionClass"])
+        self.assertEqual(["100"], evidence["confirmations"][0]["scriptIds"])
+        self.assertEqual(1, evidence["confirmations"][0]["observationCount"])
+
+    def test_unplaced_story_absence_requires_complete_validated_active_coverage(self):
+        validated = {
+            "storyTriggerZoneCoverage": {
+                "schema": "nativeReceiverStoryTriggerZone.v1",
+                "overlay": {"status": "validated_active_overlay", "validationFailures": []},
+                "rows": [{
+                    "storyKey": "different_story", "status": "exact_non_spatial_event_trigger",
+                    "observations": [{"levelId": "map", "scriptId": "100"}],
+                }],
+            }
+        }
+        rows = [{"key": "missing_story", "reason": "graph_evidence_only"}]
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(builder, "ROOT", Path(tmp)):
+            path = Path(tmp) / builder.NATIVE_TRIGGER_FRONTIER_REL
+            path.parent.mkdir(parents=True)
+            path.write_text(json.dumps(validated), encoding="utf-8")
+            builder._annotate_unplaced_story_trigger_evidence(rows, "map")
+        absence = rows[0]["storyCarrierAbsenceEvidence"]
+        self.assertEqual("not_observed_in_active_direct_playback_frontier", absence["status"])
+        self.assertFalse(absence["spatialPromotion"])
+        self.assertEqual("graph_evidence_only", rows[0]["reason"])
+        self.assertEqual(
+            {"not_observed_in_active_direct_playback_frontier": 1},
+            builder._unplaced_report(rows)["carrierAbsenceCounts"],
+        )
+
+        degraded_rows = [{"key": "missing_story"}]
+        validated["storyTriggerZoneCoverage"]["overlay"]["status"] = "unavailable_fail_closed"
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(builder, "ROOT", Path(tmp)):
+            path = Path(tmp) / builder.NATIVE_TRIGGER_FRONTIER_REL
+            path.parent.mkdir(parents=True)
+            path.write_text(json.dumps(validated), encoding="utf-8")
+            builder._annotate_unplaced_story_trigger_evidence(degraded_rows, "map")
+        self.assertNotIn("storyCarrierAbsenceEvidence", degraded_rows[0])
+
+    def test_unplaced_cutscene_definition_adds_related_files_without_spatial_promotion(self):
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(builder, "ROOT", Path(tmp)):
+            conv = Path(tmp) / "webui/data/lang/CN/conv/cutscene_fixture.json"
+            conv.parent.mkdir(parents=True)
+            conv.write_text(json.dumps({
+                "key": "cutscene_fixture",
+                "cutscene": {
+                    "semanticShape": "unityTimeline", "hasSubtitleTrack": True,
+                    "audioEvents": ["au_fixture"],
+                    "variants": [
+                        {"name": "cutscene_fixture", "file": "export/root.json"},
+                        {"name": "cutscene_fixture_Audio", "file": "export/audio.json"},
+                    ],
+                },
+            }), encoding="utf-8")
+            rows = [{
+                "key": "cutscene_fixture", "reason": "no_placement_evidence",
+                "path": "webui/data/lang/CN/conv/cutscene_fixture.json",
+            }]
+            builder._annotate_unplaced_story_definition_evidence(rows)
+
+        evidence = rows[0]["storyDefinitionEvidence"]
+        self.assertEqual("exact_published_cutscene_definition", evidence["status"])
+        self.assertEqual(2, evidence["variantCount"])
+        self.assertFalse(evidence["spatialPromotion"])
+        self.assertEqual(
+            ["export/audio.json", "export/root.json"],
+            [item["path"] for item in rows[0]["relatedFiles"]],
+        )
+        self.assertEqual(
+            {"exact_published_cutscene_definition": 1},
+            builder._unplaced_report(rows)["definitionEvidenceCounts"],
+        )
+
+    def test_unplaced_story_absence_does_not_reclassify_cross_level_carrier(self):
+        report = {
+            "storyTriggerZoneCoverage": {
+                "schema": "nativeReceiverStoryTriggerZone.v1",
+                "overlay": {"status": "validated_active_overlay", "validationFailures": []},
+                "rows": [{
+                    "storyKey": "cross_level_story",
+                    "status": "exact_local_trigger_volume",
+                    "observations": [{
+                        "levelId": "other_map",
+                        "scriptId": "200",
+                        "status": "exact_local_trigger_volume",
+                    }],
+                }],
+            },
+        }
+        rows = [{"key": "cross_level_story", "reason": "cross_level_binding"}]
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(builder, "ROOT", Path(tmp)):
+            path = Path(tmp) / builder.NATIVE_TRIGGER_FRONTIER_REL
+            path.parent.mkdir(parents=True)
+            path.write_text(json.dumps(report), encoding="utf-8")
+            builder._annotate_unplaced_story_trigger_evidence(rows, "current_map")
+
+        self.assertNotIn("storyCarrierAbsenceEvidence", rows[0])
+
+    def test_authored_teleport_interactives_get_specific_travel_facets(self):
+        self.assertEqual(
+            builder._classify_entity("int_campfire_v2", 32),
+            ("travel", "campfire_teleport", "营火传送点", "teleport_related_map_mark"),
+        )
+        self.assertEqual(
+            builder._classify_entity("int_system_spaceship_visit_portal", 32),
+            ("travel", "spaceship_visit_portal", "访问传送门", "authored_visit_portal"),
+        )
+        self.assertEqual(
+            builder._classify_entity("int_teleport_test", 32)[:2],
+            ("travel", "teleport_point"),
+        )
+        self.assertEqual(
+            builder._classify_entity("int_campfire_base_quest_smaller", 32)[:2],
+            ("device", "interactive"),
+        )
+
+    def test_interactive_semantic_evidence_fails_closed_for_unknown_details(self):
+        campfire = builder._interactive_semantic_files("int_campfire_v2_smaller")
+        portal = builder._interactive_semantic_files("int_system_spaceship_visit_portal")
+        self.assertEqual([row["path"] for row in campfire], [builder.MAP_MARK_TEMP_REL, builder.TEXT_TABLE_REL])
+        self.assertEqual([row["path"] for row in portal], [builder.MODEL_TABLE_REL, builder.SPACESHIP_CONST_REL])
+        self.assertEqual(builder._interactive_semantic_files("int_campfire_base_quest_smaller"), [])
+        self.assertEqual(builder._interactive_semantic_files("int_system_unknown_portal"), [])
+
+    def test_index_collapses_authored_map_variants_without_losing_task_data(self):
+        rows = [
+            {
+                "id": "base01_lv001", "levelId": "base01_lv001", "src": "maps/base01_lv001.json",
+                "missions": ["main"], "missionNames": {"main": "Main"},
+                "markerCount": 10, "questPointCount": 2, "storyKeyCount": 3, "missionCount": 1,
+            },
+            {
+                "id": "base01_lv003", "levelId": "base01_lv003", "src": "maps/base01_lv003.json",
+                "missions": ["variant"], "missionNames": {"variant": "Variant"},
+                "markerCount": 4, "questPointCount": 1, "storyKeyCount": 2, "missionCount": 1,
+            },
+        ]
+
+        grouped = builder._collapse_index_variants(rows)
+
+        self.assertEqual(len(grouped), 1)
+        self.assertEqual(grouped[0]["id"], "base01_lv001")
+        self.assertEqual(grouped[0]["missions"], ["main", "variant"])
+        self.assertEqual(grouped[0]["markerCount"], 14)
+        self.assertEqual([row["id"] for row in grouped[0]["variants"]], ["base01_lv001", "base01_lv003"])
+        self.assertEqual(grouped[0]["variants"][1]["src"], "maps/base01_lv003.json")
+
+    def test_grouped_index_expands_for_focused_variant_replacement(self):
+        grouped = builder._collapse_index_variants([
+            {"id": "dung01_wrdg001", "missions": [], "missionNames": {}, "markerCount": 1},
+            {"id": "dung01_wrdg001_guide", "missions": ["db01m3"], "missionNames": {"db01m3": "Guide"}, "markerCount": 2},
+        ])
+
+        expanded = builder._expand_index_variants(grouped)
+
+        self.assertEqual([row["id"] for row in expanded], ["dung01_wrdg001", "dung01_wrdg001_guide"])
+        self.assertNotIn("variants", expanded[0])
+
     def test_blackbox_region_key_uses_authored_shared_scene(self):
         with mock.patch.object(builder, "authored_streaming_scene", return_value={"sceneId": "blackbox02_dg001"}):
             self.assertEqual(builder._region_key("blackbox_miner_3"), "blackbox02_dg001")
@@ -25,7 +1169,7 @@ class BuildMapRecoveryDataTests(unittest.TestCase):
         self.assertEqual(background["status"], "shared_authored_region_background")
         self.assertIsNone(background["src"])
 
-    def test_recovered_model_remains_available_when_a_region_also_has_a_minimap(self):
+    def test_inferred_hlod_is_suppressed_even_when_a_region_has_a_minimap(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             render = root / "webui/data/map_recovery/render"
@@ -33,7 +1177,72 @@ class BuildMapRecoveryDataTests(unittest.TestCase):
             expected = {"status": "inferred_hlod_grid_preview", "src": "render/map01_lv001_hlod_surface.png"}
             (render / "map01_lv001_hlod_grid_inferred.json").write_text(json.dumps(expected), encoding="utf-8")
             with mock.patch.object(builder, "ROOT", root):
-                self.assertEqual(builder._render_background("map01_lv001"), expected)
+                background = builder._render_background("map01_lv001")
+        self.assertEqual(background["status"], "inferred_hlod_alignment_suppressed")
+        self.assertIsNone(background["src"])
+        self.assertIsNone(background["worldBounds"])
+        self.assertEqual(background["diagnosticManifest"], "render/map01_lv001_hlod_grid_inferred.json")
+
+    def test_inferred_hlod_without_minimap_restores_exact_point_fallback(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            render = root / "webui/data/map_recovery/render"
+            render.mkdir(parents=True)
+            expected = {
+                "status": "inferred_hlod_grid_preview",
+                "src": "render/test_hlod_surface.png",
+                "exactPointFallback": {
+                    "status": "exact_registry_transform_point_cloud",
+                    "src": "render/test_registry_point_cloud.png",
+                    "worldBounds": {"minX": 0, "maxX": 1, "minZ": 0, "maxZ": 1},
+                    "pointCloudOverlay": {"src": "render/test_registry_point_cloud.png"},
+                },
+            }
+            (render / "test_hlod_grid_inferred.json").write_text(json.dumps(expected), encoding="utf-8")
+            with mock.patch.object(builder, "ROOT", root):
+                background = builder._render_background("test")
+
+        self.assertEqual(background["status"], "exact_registry_transform_point_cloud")
+        self.assertEqual(background["src"], "render/test_registry_point_cloud.png")
+        self.assertTrue(background["suppressedInferredSurface"])
+
+    def test_danger_surface_accuracy_labels_are_evidence_specific(self):
+        for level_id in (
+            "dung01_bdg001", "dung01_bdg002", "dung01_bdg003", "dung02_bdg001",
+        ):
+            with self.subTest(level_id=level_id):
+                evidence = builder._danger_surface_evidence(
+                    level_id, {"status": "inferred_hlod_textured_preview"},
+                )
+                self.assertEqual(evidence["accuracy"], "inferred_hlod_crop")
+
+        mesh = builder._danger_surface_evidence(
+            "dung02_bdg002", {"status": "recovered_streaming_mesh_topdown"},
+        )
+        textured = builder._danger_surface_evidence(
+            "dung02_bdg005", {"status": "recovered_streaming_textured_topdown"},
+        )
+        self.assertEqual(mesh["accuracy"], "exact_mesh_color_unverified")
+        self.assertEqual(textured["accuracy"], "exact_mesh_partial_base_color")
+
+    def test_danger_surface_accuracy_fails_closed_on_mismatched_preview(self):
+        self.assertIsNone(builder._danger_surface_evidence(
+            "dung02_bdg005", {"status": "recovered_streaming_mesh_topdown"},
+        ))
+
+    def test_render_background_publishes_danger_surface_accuracy(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            render = root / "webui/data/map_recovery/render"
+            render.mkdir(parents=True)
+            preview = {"status": "recovered_streaming_mesh_topdown", "src": "render/bdg002.png"}
+            (render / "dung02_bdg002_hlod_grid_inferred.json").write_text(
+                json.dumps(preview), encoding="utf-8",
+            )
+            with mock.patch.object(builder, "ROOT", root):
+                background = builder._render_background("dung02_bdg002")
+
+        self.assertEqual(background["surfaceEvidence"]["accuracy"], "exact_mesh_color_unverified")
 
     def test_danger_map_reusing_large_region_art_remains_its_own_region(self):
         with mock.patch.object(
@@ -219,13 +1428,7 @@ class RelatedFilePinningTests(unittest.TestCase):
         self.assertEqual(report["stories"][0]["key"], "radio_in_volume")
         self.assertIn("not the recovered trigger position", report["boundary"])
 
-    def test_proximity_rows_pinned_to_a_tracking_position_still_reach_their_quest(self):
-        """Only mission-area pins become trigger markers, but every row names a quest.
-
-        Rows pinned to a `trackingPos` used to be dropped entirely, which is
-        why scenes like `radio_e0m0_8d4` and the level scripts behind them were
-        absent from the payload.
-        """
+    def test_proximity_rows_do_not_bind_story_files_to_a_quest_centroid(self):
         timeline = {
             "levelscriptSpatialProximity": [{
                 "sceneKey": "radio_e0m0_8d4",
@@ -249,10 +1452,50 @@ class RelatedFilePinningTests(unittest.TestCase):
                 index,
             )
 
-        self.assertEqual(point["sceneKeys"], ["radio_e0m0_8d4"])
+        self.assertEqual(point["sceneKeys"], [])
+        self.assertEqual(point["storyBindingStatus"], "unresolved")
         paths = {pin["path"] for pin in point["relatedFiles"]}
-        self.assertIn("webui/data/lang/CN/conv/radio_e0m0_8d4.json", paths)
-        self.assertIn("export_full/structured/StreamingAssets/Data/Json/LevelScriptData/indie_dg002/8700040000.json", paths)
+        self.assertNotIn("webui/data/lang/CN/conv/radio_e0m0_8d4.json", paths)
+        self.assertNotIn("export_full/structured/StreamingAssets/Data/Json/LevelScriptData/indie_dg002/8700040000.json", paths)
+
+    def test_mission_area_uses_authored_pin_without_proximity_story_fanout(self):
+        mission = {
+            "flow": {"mapPins": [{
+                "scene": "indie_dg002",
+                "sourceType": "missionArea",
+                "trackingType": "MissionAreaTrackingInfo",
+                "missionAreaId": "e0m1_002",
+                "position": {"x": -231.85, "y": 86.76, "z": -72.0},
+                "questIds": ["e0m0_q#1"],
+            }]},
+            "timelineRecovery": {"levelscriptSpatialProximity": [{
+                "sceneKey": "cutscene_e0m0_13",
+                "scriptId": "8700040001",
+                "pin": {"sourceType": "missionArea", "missionAreaId": "e0m1_002"},
+            }]},
+        }
+        area = {"subDataParentId": 8700020000, "shape": {
+            "type": 1,
+            "position": {"x": -231.85, "y": 86.76, "z": -72.0},
+            "eulerAngles": {"x": 0, "y": 355.854, "z": 0},
+            "size": {"x": 10, "y": 10, "z": 25},
+            "radius": 0,
+        }}
+        with mock.patch.object(builder, "_mission_runtime_asset", return_value="mission.json"), \
+                mock.patch.object(builder, "_exact_mission_area_definition", return_value=area):
+            rows = builder._collect_trigger_markers(mission, "e0m0", "indie_dg002")
+
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["sceneKeys"], [])
+        self.assertEqual(rows[0]["storyBindingStatus"], "unresolved")
+        self.assertEqual(rows[0]["identity"], "mission_area:e0m0:e0m1_002:0")
+        self.assertEqual(rows[0]["triggerShape"]["type"], "box")
+        self.assertEqual(rows[0]["triggerShape"]["size"]["z"], 25)
+        self.assertEqual(rows[0]["subDataParentId"], 8700020000)
+        self.assertEqual(
+            [pin["path"] for pin in rows[0]["relatedFiles"]],
+            [builder.MISSION_AREA_TABLE_REL, "mission.json"],
+        )
 
     def test_unplaced_stories_state_why_each_scene_is_absent(self):
         mission = {
@@ -385,6 +1628,20 @@ class LevelGeneralizationTests(unittest.TestCase):
         self.assertEqual([row["key"] for row in index["proxy:weiermolin_map02_v1d2d0_a1m9Start"]], ["dlg_a1m9_2"])
         self.assertEqual([row["key"] for row in index["condition:2800080001"]], ["dlg_c13m2_5"])
 
+    def test_npc_phases_keep_only_explicit_mission_quest_attachments(self):
+        phases = builder._npc_mission_phases([
+            {"mission": "a1m9", "questId": "a1m9_q#3", "key": "dlg_a1m9_2"},
+            {"mission": "a1m9", "questId": "a1m9_q#3", "key": "dlg_a1m9_3"},
+            {"mission": "a1m9", "questId": None, "key": "dlg_without_phase"},
+            {"mission": "", "questId": "unknown_q#1", "key": "dlg_without_mission"},
+        ])
+
+        self.assertEqual(phases, [{
+            "missionId": "a1m9",
+            "questId": "a1m9_q#3",
+            "sceneKeys": ["dlg_a1m9_2", "dlg_a1m9_3"],
+        }])
+
     def test_map_pins_only_plot_in_the_level_they_name(self):
         mission = {
             "flow": {
@@ -438,6 +1695,220 @@ class LevelGeneralizationTests(unittest.TestCase):
         # Repeating one identical 7 MB path on every node is what the flag
         # replaces; the map's own relatedFiles still publishes it once.
         self.assertEqual([pin["relation"] for pin in rows[0]["relatedFiles"]], [])
+
+    def test_world_tomb_marker_uses_exact_leveldata_narrative_binding(self):
+        entities = {
+            "world": [("8700020002", {
+                "entityType": 32,
+                "detailId": "int_narrative_common_BTomb02",
+                "position": {"x": 264.8843, "y": 60.1501, "z": 624.9785},
+            })],
+            "script": [],
+            "npc": [],
+        }
+        binding = {
+            "embeddedLogicId": 8700020002,
+            "entityDetailId": "int_narrative_common_BTomb02",
+            "sourceFile": "export_full/structured/StreamingAssets/Data/Json/LevelData/indie_dg002/sub.json",
+            "levelDataAsset": "indie_dg002_lv_data_sub_mission_e0m1",
+            "recordIndex": 1,
+            "recordOffset": 947,
+            "originalStoryKey": "dlg_e0m0_0d9",
+            "webuiStoryKey": "misc_dlg_e0m0_0d9",
+            "nativeConsumer": "NarrativeComponent.ClientCollectNarrative",
+            "nativeMappingId": "leveldata-interactive-narrative-config-v5",
+        }
+        with mock.patch.object(
+            builder,
+            "_conv_file_for_key",
+            return_value="webui/data/lang/CN/conv/misc_dlg_e0m0_0d9.json",
+        ):
+            row = builder._registry_markers(
+                entities, "indie_dg002", "CN", {}, {}, {}, {}, None,
+                {"indie_dg002:8700020002": [binding]},
+            )[0]
+
+        self.assertEqual(row["sceneKeys"], ["misc_dlg_e0m0_0d9"])
+        self.assertEqual(row["interactionStatus"], "exact_narrative_component")
+        self.assertEqual(row["narrativeBindings"][0]["originalStoryKey"], "dlg_e0m0_0d9")
+        self.assertEqual(
+            [pin["relation"] for pin in row["relatedFiles"][:2]],
+            ["story_world_narrative", "story_world_narrative"],
+        )
+        self.assertTrue(all(pin["strength"] == "strong" for pin in row["relatedFiles"][:2]))
+
+    def test_script_container_context_does_not_fan_out_across_sibling_slots(self):
+        entities = {
+            "world": [],
+            "script": [
+                ({"scriptIdGlobal": "8700040001", "slotId": "40003"}, {"entityType": 32, "detailId": "int_empty", "position": {"x": 1, "y": 2, "z": 3}}),
+                ({"scriptIdGlobal": "8700040001", "slotId": "40004"}, {"entityType": 32, "detailId": "int_empty", "position": {"x": 4, "y": 5, "z": 6}}),
+            ],
+            "npc": [],
+        }
+        broad_story = {"key": "radio_broad", "convFile": "webui/data/lang/CN/conv/radio_broad.json", "sourceFiles": ["shared.json"], "mission": "e0m0"}
+        exact_story = {"key": "radio_exact", "convFile": "webui/data/lang/CN/conv/radio_exact.json", "sourceFiles": ["exact.json"], "mission": "e0m0"}
+        rows = builder._registry_markers(
+            entities,
+            "indie_dg002",
+            "CN",
+            {
+                "anchor:8700040001": [broad_story],
+                "script:8700040001": [broad_story],
+                "slot:8700040001:40003": [exact_story],
+            },
+            {"condition:8700040001": [broad_story]},
+            {},
+            {"8700040001": "shared.json"},
+        )
+
+        first, second = rows
+        self.assertEqual(first["sceneKeys"], ["radio_exact"])
+        self.assertEqual(first["missions"], ["e0m0"])
+        self.assertEqual([pin["path"] for pin in first["relatedFiles"]], [
+            "webui/data/lang/CN/conv/radio_exact.json",
+            "exact.json",
+        ])
+        self.assertEqual(second["sceneKeys"], [])
+        self.assertEqual(second["missions"], [])
+        self.assertEqual(second["relatedFiles"], [])
+        self.assertNotIn("sourceFiles", first)
+        self.assertNotIn("sourceFiles", second)
+
+    def test_registered_action_pointer_candidate_gets_own_hidden_layer_without_story_fanout(self):
+        entities = {
+            "world": [],
+            "script": [
+                ({"scriptIdGlobal": "8700010002", "slotId": "40003"}, {"entityType": 32, "detailId": "int_empty", "position": {"x": 1, "y": 2, "z": 3}}),
+                ({"scriptIdGlobal": "8700010002", "slotId": "40004"}, {"entityType": 32, "detailId": "int_empty", "position": {"x": 4, "y": 5, "z": 6}}),
+            ],
+            "npc": [],
+        }
+        targets = {"8700010002:40003": [{
+            "actionName": "LevelCameraLookAt",
+            "actionLocalId": 23,
+            "actionRecordOffset": 777,
+            "pointerOffset": 1037,
+            "sourceFile": "8700010002.json",
+            "controlTriggers": [{"headerName": "ScriptEvent_OnLeaderEnterTriggerVolume", "triggerSlotId": 80002}],
+        }]}
+        rows = builder._registry_markers(entities, "indie_dg002", "CN", {}, {}, {}, {}, targets)
+
+        first, second = rows
+        self.assertEqual(first["kind"], "script_target_candidate")
+        self.assertEqual(first["interactionStatus"], "unresolved_action_formatter_member")
+        self.assertEqual(first["sceneKeys"], [])
+        self.assertEqual(first["missions"], [])
+        self.assertEqual(first["actions"], [])
+        self.assertEqual(first["actionBindingStatus"], "unresolved_decoder")
+        self.assertEqual(
+            first["unresolvedActionReferences"][0]["name"],
+            "LevelCameraLookAt",
+        )
+        self.assertEqual(
+            first["unresolvedActionReferences"][0]["controlTriggers"][0]["triggerSlotId"],
+            80002,
+        )
+        self.assertEqual(first["relatedFiles"][0]["strength"], "weak")
+        self.assertEqual(second["kind"], "empty_slot")
+        self.assertEqual(second["actionBindingStatus"], "no_reference_observed")
+        self.assertEqual(second["actions"], [])
+        self.assertEqual(second["unresolvedActionReferences"], [])
+        self.assertEqual(second["relatedFiles"], [])
+
+    def test_native_formatter_resolved_action_target_gets_exact_layer(self):
+        entities = {
+            "world": [],
+            "script": [
+                ({"scriptIdGlobal": "8700010002", "slotId": "40003"},
+                 {"entityType": 32, "detailId": "int_empty",
+                  "position": {"x": 1, "y": 2, "z": 3}}),
+            ],
+            "npc": [],
+        }
+        targets = {"8700010002:40003": [{
+            "status": "exact_registered_script_action_target",
+            "actionName": "EntityMoveToWithDuration",
+            "fieldName": "_entity",
+            "memberOrdinalZeroBased": 11,
+            "sourceFile": "8700010002.json",
+            "controlTriggers": [],
+        }]}
+        row = builder._registry_markers(
+            entities, "indie_dg002", "CN", {}, {}, {}, {}, targets
+        )[0]
+
+        self.assertEqual(row["kind"], "script_target")
+        self.assertEqual(row["subKind"], "registered_action_target")
+        self.assertEqual(row["interactionStatus"], "exact_script_action_target")
+        self.assertEqual(row["actions"][0]["fieldName"], "_entity")
+        self.assertEqual(row["sceneKeys"], [])
+        self.assertEqual(row["missions"], [])
+
+    def test_exact_world_action_target_preserves_entity_kind_and_name(self):
+        entities = {
+            "world": [
+                ("8700040028", {
+                    "entityType": 32,
+                    "detailId": "int_fac_battle_cannon_1_dg002",
+                    "position": {"x": 1, "y": 2, "z": 3},
+                }),
+            ],
+            "script": [],
+            "npc": [],
+        }
+        targets = {"world:8700040028": [{
+            "status": "exact_world_entity_action_target",
+            "actionName": "FacForceBattleBuildingCast",
+            "fieldName": "_entity",
+            "fieldManagedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>",
+            "memberOrdinalZeroBased": 8,
+            "sourceFile": "8700040000.json",
+            "controlTriggers": [{
+                "headerName": "ScriptEvent_OnLeaderEnterTriggerVolume",
+                "triggerSlotId": 80002,
+            }],
+        }]}
+
+        row = builder._registry_markers(
+            entities, "indie_dg002", "CN", {}, {}, {}, {}, targets
+        )[0]
+
+        self.assertEqual(row["kind"], "device")
+        self.assertEqual(row["subKind"], "grenade_tower")
+        self.assertEqual(row["label"], "榴弹塔")
+        self.assertEqual(row["actions"][0]["fieldName"], "_entity")
+        self.assertEqual(row["controlledByTriggers"][0]["triggerSlotId"], 80002)
+        self.assertEqual(row["sceneKeys"], [])
+        self.assertEqual(row["relatedFiles"][0]["relation"], "script_action_target_source")
+        self.assertEqual(row["relatedFiles"][0]["strength"], "strong")
+
+    def test_exact_world_action_target_promotes_consumed_empty_shell(self):
+        entities = {
+            "world": [("8700040999", {
+                "entityType": 32,
+                "detailId": "int_empty",
+                "position": {"x": 1, "y": 2, "z": 3},
+            })],
+            "script": [],
+            "npc": [],
+        }
+        targets = {"world:8700040999": [{
+            "status": "exact_world_entity_action_target",
+            "actionName": "SetEntityPosition",
+            "fieldName": "_target",
+            "sourceFile": "8700040000.json",
+            "controlTriggers": [],
+        }]}
+
+        row = builder._registry_markers(
+            entities, "indie_dg002", "CN", {}, {}, {}, {}, targets
+        )[0]
+
+        self.assertEqual(row["kind"], "script_target")
+        self.assertEqual(row["subKind"], "world_action_target")
+        self.assertEqual(row["label"], "SetEntityPosition")
+        self.assertEqual(row["interactionStatus"], "exact_world_entity_action_target")
 
 
 class FilterFacetTests(unittest.TestCase):

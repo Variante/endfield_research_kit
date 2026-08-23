@@ -1,0 +1,40 @@
+{
+  "schema": "entityPtrScriptSlotNativeContract.v1",
+  "status": "validated",
+  "nativeMappingId": "gameassembly-2026-07-11-entityptr-current-script-slot",
+  "metadata": {
+    "gameAssemblySha256": "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE",
+    "metadataSha256": "90C58E26E87C7227A85DDA3FEDF6CE5ED0B06DC1F76E0ABBE75AB20750ADF97E"
+  },
+  "methods": [
+    {"id":"getSlotParentScriptId","type":"Beyond.Gameplay.Core.EntityPtr","name":"GetSlotParentScriptId","methodToken":"0x060135a0","methodPointerVa":"0x187072e10","fileOffset":117904400,"bodySize":400,"bodySha256":"AB8FC280FA79E0D0F0838026BC9A38AA1DA42D965B86254CF8A91A2DA04706C8"},
+    {"id":"tryGetEntityBySlotId","type":"Beyond.Gameplay.Core.EntityPtr","name":"_TryGetEntityBySlotId","methodToken":"0x060135a9","methodPointerVa":"0x1870737e0","fileOffset":117906912,"bodySize":600,"bodySha256":"9B7762609C6DA341D0F960B3FB1E52A02464FCC584038CFA24056A9FECE37A4C"},
+    {"id":"tryGetScriptEntityLogicIdBySlotId","type":"Beyond.Gameplay.Core.EntityManager","name":"TryGetScriptEntityLogicIdBySlotId","methodToken":"0x06013b99","methodPointerVa":"0x183be6c60","fileOffset":62804576,"bodySize":192,"bodySha256":"5637D8228B7796BE4370F00F7F33D61C405D36D2C7694FFEBc4694FDC6EEBC88"},
+    {"id":"onScriptEntityDataAdd","type":"Beyond.Gameplay.Core.EntityManager","name":"OnScriptEntityDataAdd","methodToken":"0x06013b97","methodPointerVa":"0x1844c6500","fileOffset":72108800,"bodySize":272,"bodySha256":"E089AEBF7DCA289EF77D494F92F03CCB9C47435F60F8216EDB580C4FA0090C23"},
+    {"id":"onScriptEntityDataRemove","type":"Beyond.Gameplay.Core.EntityManager","name":"OnScriptEntityDataRemove","methodToken":"0x06013b98","methodPointerVa":"0x183be6d20","fileOffset":62804768,"bodySize":336,"bodySha256":"72D4C7D9DBA884FAFF01F3D467B57379C508FFE3A9C0D76BF7C8AC3F06B88210"}
+  ],
+  "directCalls": [
+    {"methodId":"getSlotParentScriptId","offset":246,"targetVa":"0x1875f2acc","target":"Beyond.Gameplay.Actions.ActionContext.get_current"},
+    {"methodId":"getSlotParentScriptId","offset":303,"targetVa":"0x1836a87b0","target":"Beyond.Gameplay.Core.LevelScriptRuntime.get_scriptId"},
+    {"methodId":"tryGetEntityBySlotId","offset":181,"targetVa":"0x187072e10","target":"Beyond.Gameplay.Core.EntityPtr.GetSlotParentScriptId"},
+    {"methodId":"tryGetEntityBySlotId","offset":246,"targetVa":"0x183be6c60","target":"Beyond.Gameplay.Core.EntityManager.TryGetScriptEntityLogicIdBySlotId"},
+    {"methodId":"tryGetScriptEntityLogicIdBySlotId","offset":116,"targetVa":"0x184190360","target":"System.Collections.Generic.Dictionary.TryGetValue"},
+    {"methodId":"onScriptEntityDataAdd","offset":121,"targetVa":"0x1845b7fd0","target":"System.Collections.Generic.Dictionary.set_Item(logicIdToSlotId)"},
+    {"methodId":"onScriptEntityDataAdd","offset":181,"targetVa":"0x1845b8060","target":"System.Collections.Generic.Dictionary.set_Item(slotIdToLogicId)"},
+    {"methodId":"onScriptEntityDataRemove","offset":105,"targetVa":"0x18401dc10","target":"System.Collections.Generic.Dictionary.Remove(logicIdToSlotId)"},
+    {"methodId":"onScriptEntityDataRemove","offset":164,"targetVa":"0x184190360","target":"System.Collections.Generic.Dictionary.TryGetValue(slotIdToLogicId)"},
+    {"methodId":"onScriptEntityDataRemove","offset":229,"targetVa":"0x184190170","target":"System.Collections.Generic.Dictionary.Remove(slotIdToLogicId)"}
+  ],
+  "criticalByteSequences": [
+    {"methodId":"getSlotParentScriptId","offset":244,"hex":"33C9E8C1FB57004885C0"},
+    {"methodId":"getSlotParentScriptId","offset":298,"hex":"33D2488BC8E86C5863FC48894308"},
+    {"methodId":"tryGetEntityBySlotId","offset":198,"hex":"488B0DC3A92807488B91B8000000488B8AE8010000"},
+    {"methodId":"tryGetScriptEntityLogicIdBySlotId","offset":61,"hex":"488B8E40010000"},
+    {"methodId":"onScriptEntityDataAdd","offset":66,"hex":"488B8D38010000"},
+    {"methodId":"onScriptEntityDataAdd","offset":126,"hex":"488B8D40010000"},
+    {"methodId":"onScriptEntityDataRemove","offset":79,"hex":"488B8B38010000"},
+    {"methodId":"onScriptEntityDataRemove","offset":110,"hex":"488B8B40010000"},
+    {"methodId":"onScriptEntityDataRemove","offset":180,"hex":"488B8B40010000"}
+  ],
+  "runtimeBoundary": "The live EntityManager mapping is authoritative at execution. WorldEntityRegistry uniquely identifies an authored static target but does not prove runtime registration, initialization, or start state."
+}

@@ -1,5 +1,5 @@
 {
-  "schema": "cutsceneCaseResolutionNativeContract.v1",
+  "schema": "cutsceneCaseResolutionNativeContract.v2",
   "status": "validated",
   "sources": {
     "gameAssemblySha256": "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE",
@@ -43,8 +43,58 @@
   "conclusion": {
     "caseResolution": "case_sensitive",
     "literalResolvesToCanonicalKey": false,
-    "graphAction": "reject_case_mismatch_no_playback_binding",
+    "graphAction": "record_native_case_mismatch",
     "ownershipAction": "none"
   },
-  "boundary": "The reviewed current-build resolver preserves the original cutscene spelling through StringPathHash. This contract rejects only its exact Lua call and supplies no mission ownership or order."
+  "recoveryAssociationPolicy": {
+    "comparison": "ascii_case_insensitive",
+    "requiresUniqueCanonicalStoryKey": true,
+    "literalAssociatesToCanonicalKey": true,
+    "graphAction": "associate_casefolded_playback_reference",
+    "suppliesMissionOrQuestOwnership": false,
+    "suppliesSpatialEvidence": false
+  },
+  "genderSelectBridge": {
+    "status": "validated",
+    "nativeMappingId": "gameassembly-2026-08-23-start-gender-select-phase-bridge",
+    "actionType": "Beyond.Gameplay.Actions.StartGenderSelect",
+    "actionTypeToken": "0x02001768",
+    "execute": {
+      "token": "0x06008b48",
+      "virtualAddress": "0x18765b560",
+      "fileOffset": 124099424,
+      "bodySize": 220,
+      "bodySha256": "9CDD33A29B7DEF241BD40369914CF22DB4A6A66DE94445909C35F2535B050EE2",
+      "gameActionCallOffset": 159,
+      "gameActionCallBytes": "E84424F9FF"
+    },
+    "gameAction": {
+      "token": "0x0600800c",
+      "virtualAddress": "0x1875eda48",
+      "fileOffset": 123650120,
+      "bodySize": 184,
+      "bodySha256": "89B62AF66309BD4F8E9848E5E537D42910BA408731B932159AB3F3D5DC4DC010",
+      "messageDispatchCallOffset": 130,
+      "messageDispatchCallBytes": "E8716CBAFB",
+      "messageDispatchTarget": "0x183194740"
+    },
+    "levelScript": {
+      "levelId": "indie_dg002",
+      "scriptId": 8700020000,
+      "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/indie_dg002/8700020000.json",
+      "sourceSha256": "86F89BFBCCDFF9111FFBE851CA73886B931B390753F8D5C4F7E3D7B6E6448B88",
+      "headerLocalId": 12,
+      "triggerSlotId": 80001,
+      "switchLocalId": 13,
+      "switchCase": 0,
+      "actionLocalId": 16,
+      "actionRecordOffset": 310,
+      "actionName": "StartGenderSelect"
+    },
+    "luaMessage": "GENDER_SELECT_START",
+    "storyKey": "cutscene_e0m0_1",
+    "suppliesMissionOrQuestOwnership": false,
+    "conditionalPlayback": true
+  },
+  "boundary": "The reviewed current-build resolver preserves the original cutscene spelling through StringPathHash and therefore remains case-sensitive at runtime. The recovery association policy intentionally admits the unique ASCII-case-insensitive Story key as playback evidence only; this contract supplies no mission ownership, order, or spatial evidence."
 }

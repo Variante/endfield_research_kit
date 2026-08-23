@@ -61,7 +61,7 @@ a degraded reason instead of using them as direct evidence.
 | Story links | `story_builder/source_links.py` | localized reference data |
 | Story | `story_builder/build.py` | `webui/data/lang/<LANG>/` |
 | Mission Pipeline | `build_mission_pipeline_data.py` | `webui/data/mission_pipeline/` |
-| Map | `build_map_recovery_preview.py` renders current minimap/model/point/water layers; `build_map_recovery_data.py` publishes the map index and payloads; `recover_map_streaming_instances.py --level LEVEL [--level LEVEL ...] --jobs N` refreshes schema-2 exact-transform sidecars with one shared AssetMap mesh scan | `export_full/recovered/AnimeStudio-cli/StreamingAssets/map_streaming_instances/`, `reports/assets/map_recovery/`, `webui/data/map_recovery/` |
+| Map | `build_map_recovery_preview.py [--surface-point-density N]` renders current minimap/model/point/water layers (`N` is exact-surface samples/m2, default `0.25`); `build_map_recovery_data.py` publishes the map index and payloads; `recover_map_streaming_instances.py --level LEVEL [--level LEVEL ...] --jobs N` refreshes schema-2 exact-transform sidecars with one shared AssetMap mesh scan | `export_full/recovered/AnimeStudio-cli/StreamingAssets/map_streaming_instances/`, `reports/assets/map_recovery/`, `webui/data/map_recovery/` |
 | Lua consumer index | `story_builder/lua_consumer_references.py` | fingerprinted Mission Pipeline evidence |
 | Characters | `build_character_data.py` | character indexes |
 | Gameplay | `build_gameplay.py` | Gameplay datasets |

@@ -29,6 +29,81 @@ else:  # pragma: no cover - direct file execution is intentionally unsupported
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_REPORT_ROOT = ROOT / "reports" / "mission_graph"
 
+AUTHORITATIVE_LEVELDATA_MISSION_RELATIONS = frozenset({
+    "authoritative_scope_leveldata_mission_context",
+    "leveldata_levelscript_mission_context",
+})
+
+
+def classify_spatial_route_mission_ownership_gate(
+    placement: dict[str, Any],
+    manifest_row: dict[str, Any],
+    candidate_placements: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Explain why exact spatial playback still does not prove ownership."""
+    spatial = manifest_row.get("spatialPlaybackRoute") or {}
+    observations = [
+        row for row in spatial.get("observations") or []
+        if isinstance(row, dict)
+    ]
+    spatial_scripts = {
+        str(row.get("scriptId") or "") for row in observations
+        if row.get("status") == "exact_local_trigger_volume"
+        and row.get("scriptId")
+    }
+    placement_scripts = {
+        str(value) for value in placement.get("scriptIds") or [] if str(value)
+    }
+    mission_id = str(placement.get("missionId") or "")
+    quest_id = str(placement.get("questId") or "")
+    same_story_candidates = [
+        row for row in candidate_placements
+        if str(row.get("storyKey") or "")
+        == str(placement.get("storyKey") or "")
+    ]
+    candidate_pairs = sorted({
+        (str(row.get("missionId") or ""), str(row.get("questId") or ""))
+        for row in same_story_candidates
+        if row.get("missionId") and row.get("questId")
+    })
+    authoritative_hosts = [
+        row for row in manifest_row.get("routes") or []
+        if isinstance(row, dict)
+        and row.get("relation") in AUTHORITATIVE_LEVELDATA_MISSION_RELATIONS
+        and str(row.get("missionId") or "") == mission_id
+        and placement_scripts.intersection(
+            str(value) for value in row.get("scriptIds") or []
+        )
+    ]
+    gates = {
+        "exactSpatialPlaybackRoute": (
+            spatial.get("status") == "exact_native_local_trigger_playback"
+            and bool(spatial_scripts)
+        ),
+        "sameExactLevelScript": bool(spatial_scripts & placement_scripts),
+        "uniqueMissionQuestScope": candidate_pairs == [(mission_id, quest_id)],
+        "uniqueAuthoritativeLevelDataMissionHost": len(authoritative_hosts) == 1,
+        # No current native/original-data contract connects quest activation
+        # to this local Leader event. This gate intentionally remains false.
+        "questActivatesLocalTriggerContract": False,
+    }
+    first_failed = next((name for name, passed in gates.items() if not passed), "")
+    return {
+        "status": "ownership_not_proven",
+        "ownershipPromotion": False,
+        "firstFailedGate": first_failed,
+        "gates": gates,
+        "candidateMissionQuestPairs": [list(pair) for pair in candidate_pairs],
+        "spatialScriptIds": sorted(spatial_scripts),
+        "scopeScriptIds": sorted(placement_scripts),
+        "authoritativeLevelDataHostCount": len(authoritative_hosts),
+        "boundary": (
+            "Exact local trigger geometry, same-script quest scope, and a unique "
+            "LevelData mission host still do not prove that the quest activates "
+            "this local event; no mission/quest ownership edge is published."
+        ),
+    }
+
 
 def _read_json(path: Path) -> Any:
     with path.open("r", encoding="utf-8") as handle:
@@ -92,6 +167,22 @@ def publish_quest_objective_story_scope(
     write_report_json(report_json, report)
     write_text_if_changed(report_markdown, render_node_attachment_markdown(report))
 
+    coverage = _read_json(coverage_report)
+    # The activation-frontier publisher runs after the frozen coverage report
+    # and adds spatialPlaybackRoute to the in-memory index. Prefer that complete
+    # overlay; the report remains the fallback for standalone callers.
+    story_trigger_manifest = (
+        (index.get("storyCoverage") or {}).get("storyTriggerManifest") or
+        (
+            coverage.get("storyTriggerManifest") or {}
+            if isinstance(coverage, dict) else {}
+        )
+    )
+    candidate_placements = [
+        row for row in report.get("scriptScopedQuestPlacements") or []
+        if isinstance(row, dict)
+    ]
+
     placements_by_mission: dict[str, dict[str, list[dict[str, Any]]]] = defaultdict(
         lambda: defaultdict(list)
     )
@@ -154,6 +245,17 @@ def publish_quest_objective_story_scope(
                     "ownershipStatus": "non_owning_context",
                     "playbackOwnership": False,
                     "orderEvidence": False,
+                    "spatialMissionOwnershipGate": (
+                        classify_spatial_route_mission_ownership_gate(
+                            placement,
+                            story_trigger_manifest.get(story_key) or {},
+                            candidate_placements,
+                        )
+                        if (story_trigger_manifest.get(story_key) or {}).get(
+                            "spatialPlaybackRoute"
+                        )
+                        else None
+                    ),
                     "source": _repo_path(report_json),
                     "evidence": evidence_text,
                 }

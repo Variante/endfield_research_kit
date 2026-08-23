@@ -18,9 +18,12 @@ server-side state selector.
 from __future__ import annotations
 
 import argparse
+import filecmp
 import hashlib
 import json
+import os
 import re
+import tempfile
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -36,7 +39,6 @@ if __package__ == "story_builder":
         read_json,
         rel_path,
         write_json,
-        write_report_json,
         write_text_if_changed,
     )
 elif __package__ == "scripts.story_builder":
@@ -47,7 +49,6 @@ elif __package__ == "scripts.story_builder":
         read_json,
         rel_path,
         write_json,
-        write_report_json,
         write_text_if_changed,
     )
 else:  # pragma: no cover - direct file execution is intentionally unsupported
@@ -60,6 +61,7 @@ from .context import (
     LEVELDATA_DIR,
     LEVELSCRIPT_DIR,
     MRA_DIR,
+    PERSISTENT_DATA_JSON_DIR,
     SPAWNER_CONFIG_DIR,
 )
 from .level_bindings import (
@@ -67,6 +69,7 @@ from .level_bindings import (
     _parse_leveldata_mission_host_name,
     build_active_levelscript_overlay_index,
     build_active_levelscript_action_story_occurrences,
+    build_leveldata_authoritative_scope_script_host_index,
     build_leveldata_mission_area_script_host_index,
     decode_levelscript_native_action_topology,
     parse_leveldata_levelscript_brief_dictionary,
@@ -111,6 +114,61 @@ _PLAYBACK_ACTION_NAMES = frozenset({
     "StartDialogAndTeleportAction",
     "StartNarrativeBlackScreenAndTeleport",
 })
+
+
+def _classify_trigger_rooted_story_playback(
+    occurrences: list[dict[str, Any]], *, story_key: str, level_id: str,
+    script_id: str, source_file: str, header_local_id: int,
+) -> dict[str, Any]:
+    """Require one typed-header path to the Story-bearing playback node itself."""
+    candidates: list[dict[str, Any]] = []
+    excluded: Counter[str] = Counter()
+    normalized_source = source_file.replace("\\", "/")
+    for occurrence in occurrences:
+        if not isinstance(occurrence, dict):
+            continue
+        if (safe_text(occurrence.get("levelId")) != level_id
+                or safe_text(occurrence.get("scriptId")) != script_id
+                or safe_text(occurrence.get("sourceFile")).replace("\\", "/") != normalized_source):
+            continue
+        action_name = safe_text(occurrence.get("actionName"))
+        record_class = safe_text(occurrence.get("recordClass"))
+        if action_name not in _PLAYBACK_ACTION_NAMES:
+            excluded["not_typed_playback_action"] += 1
+            continue
+        if (occurrence.get("triggerPlaybackBindingEligible") is not True
+                or occurrence.get("playbackExecutionRole") != "direct_playback"):
+            excluded["non_playback_lifecycle_action"] += 1
+            continue
+        local_id = occurrence.get("localId")
+        if not isinstance(local_id, int):
+            excluded["playback_action_local_id_missing"] += 1
+            continue
+        owners = [owner for owner in occurrence.get("nativeEventOwners") or []
+                  if isinstance(owner, dict)
+                  and owner.get("status") == "exact_serialized_control_path"
+                  and owner.get("headerLocalId") == header_local_id
+                  and local_id in {step.get("localId") for step in owner.get("path") or []
+                                   if isinstance(step, dict)}]
+        if not owners:
+            excluded["typed_header_does_not_uniquely_reach_playback_action"] += 1
+            continue
+        candidates.append({
+            "storyKey": story_key, "actionName": action_name,
+            "recordClass": record_class, "actionLocalId": local_id,
+            "actionRecordOffset": occurrence.get("recordOffset"),
+            "headerLocalId": header_local_id,
+            "exactControlPathCount": len(owners),
+            "controlPathStatus": "exact_same_typed_header_to_playback_action",
+        })
+    return {
+        "status": ("exact_trigger_rooted_playback" if len(candidates) == 1
+                   else "ambiguous_trigger_rooted_playback" if len(candidates) > 1
+                   else "unresolved_trigger_rooted_playback"),
+        "candidateCount": len(candidates), "candidates": candidates,
+        "excludedReasonCounts": dict(sorted(excluded.items())),
+        "noSiblingInheritance": True,
+    }
 
 TELEPORT_FINISH_CORRELATION_MAPPING_ID = (
     "gameassembly-2026-08-02-teleport-finish-action-id-correlation-v1"
@@ -200,6 +258,33 @@ DEFAULT_PIPELINE_MISSION_ROOT = (
 )
 DEFAULT_JSON = STORY_RECOVERY_REPORTS_DIR / "native_receiver_activation_frontier.json"
 DEFAULT_MARKDOWN = STORY_RECOVERY_REPORTS_DIR / "native_receiver_activation_frontier.md"
+
+
+def _write_large_report_json(path: Path, payload: Any) -> bool:
+    """Stream the large frontier report to avoid duplicate in-memory copies."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary_path: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            newline=None,
+            dir=path.parent,
+            prefix=f".{path.name}.",
+            suffix=".tmp",
+            delete=False,
+        ) as handle:
+            temporary_path = Path(handle.name)
+            json.dump(payload, handle, ensure_ascii=False, indent=2)
+            handle.write("\n")
+        if path.is_file() and filecmp.cmp(path, temporary_path, shallow=False):
+            temporary_path.unlink()
+            return False
+        os.replace(temporary_path, path)
+        return True
+    finally:
+        if temporary_path is not None and temporary_path.exists():
+            temporary_path.unlink()
 DEFAULT_MISSION_AREA_TABLE = GAMEPLAY_CONFIG_DIR / "MissionAreaTable.json"
 DEFAULT_LEVEL_BASIC_INFO_TABLE = GAMEPLAY_CONFIG_DIR / "LevelBasicInfoTable.json"
 DEFAULT_SCRIPT_TASK_EXTRA_INFO_TABLE = (
@@ -1656,7 +1741,7 @@ def structured_identity_cocarrier_census(
 def receiver_script_rows(index_payload: dict[str, Any]) -> list[dict[str, Any]]:
     """Collapse exact receiver nodes to one row per hosting LevelScript."""
     grouped: dict[tuple[str, str], dict[str, Any]] = {}
-    nodes = (
+    nodes = list(
         (index_payload.get("storyCoverage") or {}).get(
             "missionlessNativeRuntimeNodes"
         )
@@ -1758,6 +1843,83 @@ def build_story_trigger_zone_coverage(
     binary_cache: dict[str, dict[str, Any]] = {}
     active_occurrences_by_story: dict[str, list[dict[str, Any]]] | None = None
 
+    # Enumerate active Story-bearing playback records directly as well as the
+    # missionless presentation subset.  Every synthetic node still passes the
+    # same exact typed-owner, selector-slot, current-script volume, and unique
+    # decoded-shape gates below; this only broadens discovery, not admission.
+    active_occurrences_by_story = (
+        build_active_levelscript_action_story_occurrences(overlay)
+    )
+    direct_candidate_count = 0
+    direct_seen: set[tuple[str, str, str, int, int]] = set()
+    existing_receiver_keys = {
+        (
+            safe_text(story_file.get("key")),
+            safe_text((node.get("selector") or {}).get("levelId")),
+            safe_text((node.get("selector") or {}).get("listenerScriptId")),
+            (node.get("selector") or {}).get("listenerHeaderLocalId"),
+        )
+        for node in nodes
+        if isinstance(node, dict)
+        for story_file in node.get("storyFiles") or []
+        if isinstance(story_file, dict) and safe_text(story_file.get("key"))
+    }
+    for direct_story_key, occurrences in active_occurrences_by_story.items():
+        for occurrence in occurrences or []:
+            if not isinstance(occurrence, dict):
+                continue
+            action_name = safe_text(occurrence.get("actionName"))
+            record_class = safe_text(occurrence.get("recordClass"))
+            action_local_id = occurrence.get("localId")
+            if (
+                action_name not in _PLAYBACK_ACTION_NAMES
+                or occurrence.get("triggerPlaybackBindingEligible") is not True
+                or occurrence.get("playbackExecutionRole") != "direct_playback"
+                or not isinstance(action_local_id, int)
+            ):
+                continue
+            for owner in occurrence.get("nativeEventOwners") or []:
+                if not isinstance(owner, dict) or owner.get("status") != "exact_serialized_control_path":
+                    continue
+                header_local_id = owner.get("headerLocalId")
+                if (
+                    not isinstance(header_local_id, int)
+                    or action_local_id not in {
+                        step.get("localId") for step in owner.get("path") or []
+                        if isinstance(step, dict)
+                    }
+                ):
+                    continue
+                identity = (
+                    safe_text(direct_story_key),
+                    safe_text(occurrence.get("levelId")),
+                    safe_text(occurrence.get("scriptId")),
+                    header_local_id,
+                    action_local_id,
+                )
+                if identity in direct_seen:
+                    continue
+                direct_seen.add(identity)
+                direct_candidate_count += 1
+                if identity[:4] in existing_receiver_keys:
+                    continue
+                nodes.append({
+                    "eventName": safe_text(owner.get("headerName")),
+                    "selector": {
+                        "levelId": identity[1],
+                        "listenerScriptId": identity[2],
+                        "listenerHeaderLocalId": header_local_id,
+                    },
+                    "storyFiles": [{
+                        "key": identity[0],
+                        "nativeActions": [action_name],
+                        "sourceFiles": [safe_text(occurrence.get("sourceFile"))],
+                    }],
+                    "directPlaybackEnumeration": True,
+                    "playbackActionLocalId": action_local_id,
+                    "playbackActionRecordOffset": occurrence.get("recordOffset"),
+                })
+
     def repo_path(source_file: str) -> Path:
         path = Path(source_file)
         return path if path.is_absolute() else ROOT / path
@@ -1792,8 +1954,8 @@ def build_story_trigger_zone_coverage(
                 or safe_text(occurrence.get("scriptId")) != script_id
                 or safe_text(occurrence.get("actionName"))
                 not in _PLAYBACK_ACTION_NAMES
-                or safe_text(occurrence.get("recordClass"))
-                in {"preload_cutscene", "preload"}
+                or occurrence.get("triggerPlaybackBindingEligible") is not True
+                or occurrence.get("playbackExecutionRole") != "direct_playback"
             ):
                 continue
             active_source = safe_text(occurrence.get("sourceFile"))
@@ -1995,6 +2157,9 @@ def build_story_trigger_zone_coverage(
                     "eventName": safe_text(node.get("eventName")),
                     "sourceFile": source_file,
                     "sourceSha256": "",
+                    "directPlaybackEnumeration": bool(
+                        node.get("directPlaybackEnumeration")
+                    ),
                 }
                 if overlay_diagnostic or not active_row:
                     add_observation(story_key, {
@@ -2129,6 +2294,19 @@ def build_story_trigger_zone_coverage(
                     "eventSummary": safe_text(event_detail.get("summary")),
                     "eventDetail": event_detail,
                 })
+                if native_actions:
+                    if active_occurrences_by_story is None:
+                        active_occurrences_by_story = (
+                            build_active_levelscript_action_story_occurrences(overlay)
+                        )
+                    base["playbackControlPathEvidence"] = (
+                        _classify_trigger_rooted_story_playback(
+                            list(active_occurrences_by_story.get(story_key) or []),
+                            story_key=story_key, level_id=level_id,
+                            script_id=script_id, source_file=active_source,
+                            header_local_id=header_id,
+                        )
+                    )
                 if event_name in _SPATIAL_TRIGGER_EVENT_NAMES:
                     selector_kind = "triggerSlotIdFilter"
                     slot_id = event_detail.get("triggerSlotIdFilter")
@@ -2414,7 +2592,7 @@ def build_story_trigger_zone_coverage(
                         "status": (
                             "exact_non_spatial_event_trigger"
                             if exact_non_spatial
-                            else "trigger_event_known_spatial_unresolved"
+                            else "non_spatial_event_payload_unresolved"
                         ),
                         "spatiallyApplicable": False,
                         "diagnostics": [] if exact_non_spatial else [{
@@ -2445,6 +2623,10 @@ def build_story_trigger_zone_coverage(
             row for row in observations
             if row.get("status") == "trigger_event_known_spatial_unresolved"
         ]
+        unresolved_non_spatial = [
+            row for row in observations
+            if row.get("status") == "non_spatial_event_payload_unresolved"
+        ]
         overlay_failures = [
             row for row in observations
             if row.get("status") == "active_overlay_unavailable"
@@ -2467,6 +2649,8 @@ def build_story_trigger_zone_coverage(
             status = "exact_local_trigger_volume"
         elif unresolved_spatial:
             status = "trigger_event_known_spatial_unresolved"
+        elif unresolved_non_spatial:
+            status = "non_spatial_event_payload_unresolved"
         elif observations and all(
             row.get("status") == "exact_non_spatial_event_trigger"
             for row in observations
@@ -2526,6 +2710,7 @@ def build_story_trigger_zone_coverage(
                 row.get("preloadExcludedPlacementCount") or 0
                 for row in rows
             ),
+            "directPlaybackCandidateCount": direct_candidate_count,
             "status": dict(sorted(status_counts.items())),
         },
         "ownership": False,
@@ -2537,6 +2722,105 @@ def build_story_trigger_zone_coverage(
             "quest ownership or inter-Story order is inferred."
         ),
     }
+
+
+def attach_direct_playback_mission_shell_context(
+    coverage: dict[str, Any],
+    *,
+    mission_runtime_ids: set[str],
+    eligible_story_keys: set[str] | None = None,
+    leveldata_roots: tuple[Path, ...] | None = None,
+    levelscript_roots: tuple[Path, ...] | None = None,
+    mission_runtime_root: Path = MRA_DIR,
+) -> None:
+    """Attach a unique authoritative LevelData shell to exact direct playback.
+
+    This deliberately does not turn the shell into quest ownership or Story
+    order.  A row must identify one exact direct-playback script pair, and the
+    complete validated LevelData dictionary must resolve to one mission only.
+    """
+    eligible: dict[str, tuple[str, str]] = {}
+    pairs: set[tuple[str, str]] = set()
+    for row in coverage.get("rows") or []:
+        if (
+            not isinstance(row, dict)
+            or safe_text(row.get("status")) != "exact_local_trigger_volume"
+            or row.get("uniqueZoneCount") != 1
+        ):
+            continue
+        exact_pairs = {
+            (
+                safe_text(observation.get("levelId")),
+                safe_text(observation.get("scriptId")),
+            )
+            for observation in row.get("observations") or []
+            if isinstance(observation, dict)
+            and observation.get("directPlaybackEnumeration") is True
+            and safe_text(observation.get("status"))
+            == "exact_local_trigger_volume"
+            and safe_text(
+                (observation.get("playbackControlPathEvidence") or {}).get(
+                    "status"
+                )
+            )
+            == "exact_trigger_rooted_playback"
+            and safe_text(observation.get("levelId"))
+            and safe_text(observation.get("scriptId"))
+        }
+        if len(exact_pairs) != 1:
+            continue
+        pair = next(iter(exact_pairs))
+        story_key = safe_text(row.get("storyKey"))
+        if (
+            not story_key
+            or eligible_story_keys is not None
+            and story_key not in eligible_story_keys
+        ):
+            continue
+        eligible[story_key] = pair
+        pairs.add(pair)
+
+    hosts = build_leveldata_authoritative_scope_script_host_index(
+        pairs,
+        mission_runtime_ids,
+        {},
+        leveldata_roots=leveldata_roots,
+        levelscript_roots=levelscript_roots,
+        mission_runtime_root=mission_runtime_root,
+    )
+    attached = 0
+    for row in coverage.get("rows") or []:
+        story_key = safe_text(row.get("storyKey")) if isinstance(row, dict) else ""
+        pair = eligible.get(story_key)
+        host = hosts.get(pair) if pair else None
+        if (
+            not isinstance(host, dict)
+            or safe_text(host.get("status")) != "unique"
+            or len(host.get("hostMissionIds") or []) != 1
+        ):
+            continue
+        row["authoritativeMissionShellContext"] = {
+            "status": "exact_unique_authoritative_leveldata_mission_shell",
+            "missionId": safe_text(host["hostMissionIds"][0]),
+            "levelId": pair[0],
+            "scriptId": pair[1],
+            "hosts": host.get("hosts") or [],
+            "questId": "",
+            "missionOwnerStatus": "context_only",
+            "ownership": False,
+            "activation": False,
+            "orderEvidence": False,
+            "evidenceBoundary": (
+                "The exact direct-playback script is a member of one complete "
+                "active LevelData dictionary whose authoritative mission union "
+                "contains exactly one MissionRuntime id. This supplies mission-"
+                "shell context only; it does not identify a quest, establish "
+                "Story ownership, prove activation, or add Story order."
+            ),
+        }
+        attached += 1
+    counts = coverage.setdefault("counts", {})
+    counts["authoritativeMissionShellContextStoryCount"] = attached
 
 
 def subgame_script_bindings(
@@ -4510,6 +4794,32 @@ def build_report(
         index_payload,
         overlay_index=active_levelscript_overlay,
     )
+    attach_direct_playback_mission_shell_context(
+        story_trigger_zone_coverage,
+        mission_runtime_ids=authored_mission_ids,
+        eligible_story_keys={
+            safe_text(key)
+            for key, manifest_row in (
+                (index_payload.get("storyCoverage") or {}).get(
+                    "storyTriggerManifest"
+                )
+                or {}
+            ).items()
+            if safe_text(key)
+            and isinstance(manifest_row, dict)
+            and safe_text(manifest_row.get("kind")) == "dlg"
+            and not (manifest_row.get("routes") or [])
+        },
+        leveldata_roots=(
+            leveldata_root,
+            PERSISTENT_DATA_JSON_DIR / "LevelData",
+        ),
+        levelscript_roots=(
+            levelscript_root,
+            PERSISTENT_DATA_JSON_DIR / "LevelScriptData",
+        ),
+        mission_runtime_root=mission_runtime_root,
+    )
     story_trigger_zone_by_story = {
         safe_text(row.get("storyKey")): row
         for row in story_trigger_zone_coverage.get("rows") or []
@@ -5806,6 +6116,99 @@ def publish_to_pipeline_index(
     coverage["nativeReceiverStoryContextIndex"] = _receiver_story_context_index(
         report
     )
+    trigger_manifest = coverage.get("storyTriggerManifest") or {}
+    spatial_playback_rows = 0
+    for trigger_row in (
+        report.get("storyTriggerZoneCoverage") or {}
+    ).get("rows") or []:
+        if (
+            not isinstance(trigger_row, dict)
+            or safe_text(trigger_row.get("status"))
+            != "exact_local_trigger_volume"
+            or trigger_row.get("uniqueZoneCount") != 1
+        ):
+            continue
+        story_key = safe_text(trigger_row.get("storyKey"))
+        manifest_row = trigger_manifest.get(story_key)
+        if not isinstance(manifest_row, dict):
+            continue
+        exact_observations = [
+            observation
+            for observation in trigger_row.get("observations") or []
+            if isinstance(observation, dict)
+            and observation.get("directPlaybackEnumeration") is True
+            and safe_text(observation.get("status"))
+            == "exact_local_trigger_volume"
+            and safe_text(
+                (observation.get("playbackControlPathEvidence") or {}).get(
+                    "status"
+                )
+            )
+            == "exact_trigger_rooted_playback"
+        ]
+        if not exact_observations:
+            continue
+        mission_shell = trigger_row.get(
+            "authoritativeMissionShellContext"
+        ) or {}
+        manifest_row["spatialPlaybackRoute"] = {
+            "status": "exact_native_local_trigger_playback",
+            "missionOwnerStatus": "unresolved",
+            "uniqueZoneCount": 1,
+            "observations": exact_observations,
+            "ownership": False,
+            "orderEvidence": False,
+            "noSiblingInheritance": True,
+            "authoritativeMissionShellContext": mission_shell,
+            "evidenceBoundary": (
+                "The active direct playback action is reached from this exact "
+                "typed Leader trigger and the local slot has one decoded authored "
+                "shape. This locates playback on the map; it does not identify a "
+                "mission/quest owner, prove event firing, or add Story order."
+            ),
+        }
+        mission_id = safe_text(mission_shell.get("missionId"))
+        if mission_id:
+            routes = manifest_row.setdefault("routes", [])
+            route = {
+                "relation": (
+                    "authoritative_scope_direct_spatial_playback_context"
+                ),
+                "missionId": mission_id,
+                "questId": "",
+                "levelId": safe_text(mission_shell.get("levelId")),
+                "scriptId": safe_text(mission_shell.get("scriptId")),
+                "status": "exact_mission_shell_context",
+                "ownership": False,
+                "activation": False,
+                "orderEvidence": False,
+                "evidenceBoundary": safe_text(
+                    mission_shell.get("evidenceBoundary")
+                ),
+            }
+            route_identity = (
+                route["relation"], route["missionId"], route["levelId"],
+                route["scriptId"],
+            )
+            if not any(
+                isinstance(existing, dict)
+                and (
+                    safe_text(existing.get("relation")),
+                    safe_text(existing.get("missionId")),
+                    safe_text(existing.get("levelId")),
+                    safe_text(existing.get("scriptId")),
+                ) == route_identity
+                for existing in routes
+            ):
+                routes.append(route)
+        if manifest_row.get("attachmentStatus") == "unlinked_no_trigger_route":
+            manifest_row["attachmentStatus"] = (
+                "spatial_trigger_known_owner_unresolved"
+            )
+        spatial_playback_rows += 1
+    coverage["nativeReceiverSpatialPlaybackRouteCount"] = (
+        spatial_playback_rows
+    )
     row_index = {
         (safe_text(row.get("levelId")), safe_text(row.get("scriptId"))): row
         for row in report.get("rows") or []
@@ -6178,6 +6581,42 @@ def publish_to_pipeline_index(
         annotated += 1
 
     contexts_by_mission: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    direct_shell_contexts_by_mission: dict[str, list[dict[str, Any]]] = (
+        defaultdict(list)
+    )
+    for trigger_row in (
+        report.get("storyTriggerZoneCoverage") or {}
+    ).get("rows") or []:
+        if not isinstance(trigger_row, dict):
+            continue
+        shell = trigger_row.get("authoritativeMissionShellContext") or {}
+        mission_id = safe_text(shell.get("missionId"))
+        story_key = safe_text(trigger_row.get("storyKey"))
+        if not mission_id or not story_key:
+            continue
+        direct_shell_contexts_by_mission[mission_id].append({
+            "relation": "authoritative_scope_direct_spatial_playback_context",
+            "missionId": mission_id,
+            "questId": "",
+            "levelId": safe_text(shell.get("levelId")),
+            "scriptId": safe_text(shell.get("scriptId")),
+            "storyKeys": [story_key],
+            "triggerObservations": [
+                observation
+                for observation in trigger_row.get("observations") or []
+                if isinstance(observation, dict)
+                and observation.get("directPlaybackEnumeration") is True
+                and safe_text(observation.get("status"))
+                == "exact_local_trigger_volume"
+            ],
+            "levelDataHosts": shell.get("hosts") or [],
+            "missionOwnerStatus": "context_only",
+            "ownership": False,
+            "activation": False,
+            "storyPlayback": True,
+            "orderEvidence": False,
+            "evidenceBoundary": safe_text(shell.get("evidenceBoundary")),
+        })
     for row in report.get("rows") or []:
         if not isinstance(row, dict):
             continue
@@ -6235,6 +6674,7 @@ def publish_to_pipeline_index(
     published_mission_named_contexts = 0
     published_mission_area_contexts = 0
     published_receiver_story_contexts = 0
+    published_direct_shell_contexts = 0
     if mission_root is not None:
         mission_summaries = {
             safe_text(row.get("id")): row
@@ -6449,6 +6889,42 @@ def publish_to_pipeline_index(
                         "selection, completion, or inter-file Story order."
                     ),
                 })
+        for mission_id, contexts in sorted(
+            direct_shell_contexts_by_mission.items()
+        ):
+            if mission_id not in mission_summaries:
+                continue
+            path = mission_root / f"{mission_id}.json"
+            payload = read_json(path)
+            if not isinstance(payload, dict):
+                continue
+            unique = {
+                (
+                    safe_text(context.get("levelId")),
+                    safe_text(context.get("scriptId")),
+                    tuple(context.get("storyKeys") or []),
+                ): context
+                for context in contexts
+            }
+            ordered = [unique[key] for key in sorted(unique, key=str)]
+            story_order = payload.setdefault("storyOrder", {})
+            story_order[
+                "authoritativeScopeDirectSpatialPlaybackContexts"
+            ] = ordered
+            summary = story_order.setdefault("summary", {})
+            summary[
+                "authoritativeScopeDirectSpatialPlaybackContextCount"
+            ] = len(ordered)
+            summary[
+                "authoritativeScopeDirectSpatialPlaybackContextStoryCount"
+            ] = len({
+                key for context in ordered for key in context["storyKeys"]
+            })
+            write_json(path, payload)
+            published_direct_shell_contexts += len(ordered)
+            mission_summaries[mission_id][
+                "storyOrderAuthoritativeScopeDirectSpatialPlaybackContextCount"
+            ] = len(ordered)
         for mission_id, contexts in sorted(contexts_by_mission.items()):
             path = mission_root / f"{mission_id}.json"
             payload = read_json(path)
@@ -6654,6 +7130,9 @@ def publish_to_pipeline_index(
             published_mission_area_contexts
         ),
         "publishedNativeReceiverStoryContexts": published_receiver_story_contexts,
+        "publishedAuthoritativeScopeDirectSpatialPlaybackContexts": (
+            published_direct_shell_contexts
+        ),
     }
     return annotated
 
@@ -7109,7 +7588,7 @@ def main() -> None:
     payload["sources"]["structuredJsonRoot"] = rel_path(
         args.structured_json_root
     )
-    write_report_json(args.json, payload)
+    _write_large_report_json(args.json, payload)
     write_text_if_changed(args.markdown, markdown_report(payload))
     counts = payload["counts"]
     print(
