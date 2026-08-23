@@ -128,14 +128,15 @@ leave only the report/CLI surface in recovery.
   final-header exact subtype prefix remains bounded by consumed members.
   `EntityHpChanged` likewise keeps a fully validated constant entity/ratio
   payload spatial when only its inherited validation predicate is getter-backed.
-  `ProxyPatrolCheckpointReach` walks the complete patrol-id, point-index,
-  nullable output, and proxy-id member sequence. Its patrol id and zero-based
-  point index attach playback to one unique, fully decoded LevelData
-  `NpcPatrolData` checkpoint. The listener co-filters the proxy identity and
-  checkpoint tuple, but this does not prove permanent ownership of the whole
-  patrol. The checkpoint is authored geometry; the event's runtime NPC
-  position output may differ. A proxy registry/table join is useful identity
-  corroboration but is not substituted for the checkpoint coordinate.
+  Patrol-checkpoint listeners attach playback to one unique, fully decoded
+  LevelData `NpcPatrolData` point when their patrol id and zero-based point
+  index are constant. `ProxyPatrolCheckpointReach` additionally walks its
+  nullable outputs and constant proxy-id filter. The non-proxy variant may
+  retain a runtime-bound NPC property while its checkpoint tuple is still
+  exact. In both cases the point is authored geometry, not the event's runtime
+  NPC position, permanent ownership of the patrol, mission ownership, or quest
+  activation. A proxy registry/table join corroborates identity but never
+  replaces the checkpoint coordinate.
   Exact SpawnerPtr filters are spatial only when the same level contains one
   matching `sc_<level>_<id>` SpawnerConfig and one logical typed LevelData host
   record whose finite position/rotation agrees across the active overlay.
