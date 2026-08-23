@@ -12,7 +12,7 @@
   const ENTITY_SCALE_MAX = 3;
   const ENTITY_SCALE_STEP = 1.25;
   const POINT_HEIGHT_SLICE_COUNT = 32;
-  const MAP_ASSET_VERSION = "20260823-map110";
+  const MAP_ASSET_VERSION = "20260823-map112";
   const PAN_OVERHANG = 96; // px of surface a pan may run past the content edge
   const LABEL_ZOOM = 1.7; // minor entity labels stay hidden below this zoom
   const GEO_LABEL_ZOOM = 0.3; // keep one primary name per sibling at region view

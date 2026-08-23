@@ -42,8 +42,10 @@ from scripts.build_map_recovery_preview import (
 
 class CellSizeTests(unittest.TestCase):
     def test_art_level_water_uses_owning_world_scene(self):
-        self.assertEqual(water_scene_id("map01_lv005"), "map01")
-        self.assertEqual(water_scene_id("dung", "map01_lv005"), "map01")
+        self.assertEqual(water_scene_id("map01_lv005"), "map01_lv005")
+        self.assertEqual(water_scene_id("dung", "map01_lv005"), "map01_lv005")
+        self.assertEqual(water_scene_id("map02_lv005"), "map02")
+        self.assertEqual(water_scene_id("dung", "map02_lv005"), "map02")
         self.assertEqual(water_scene_id("dung01_wrdg001"), "dung01_wrdg001")
 
     def test_cell_size_doubles_from_the_native_32_m_base_grid(self):
