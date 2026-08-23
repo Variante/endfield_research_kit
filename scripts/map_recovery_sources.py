@@ -72,13 +72,28 @@ def projection_streaming_scene(
         level_id,
         level_config_root=level_config_root,
     )
-    if not authored:
+    if authored:
+        sidecar = instance_root / f"{authored['sceneId']}.json"
+        if sidecar.is_file():
+            return {
+                **authored,
+                "instanceSource": sidecar,
+            }
+    # Large-region danger/challenge levels declare both the common streaming
+    # root (for example map01) and the exact art-level member they instantiate.
+    # The exporter publishes per-member InitChunkData sidecars, not a synthetic
+    # common-root sidecar, so use that authored member instead of falling back
+    # to an inferred HLOD grid crop.
+    art = isolated_art_source(level_id, level_config_root=level_config_root)
+    if not art:
         return None
-    sidecar = instance_root / f"{authored['sceneId']}.json"
+    sidecar = instance_root / f"{art['levelId']}.json"
     if not sidecar.is_file():
         return None
     return {
-        **authored,
+        "sceneId": art["levelId"],
+        "method": "level_config_embedded_art_level_init_chunk_data",
+        "source": art["source"],
         "instanceSource": sidecar,
     }
 

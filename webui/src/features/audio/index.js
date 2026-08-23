@@ -36,7 +36,6 @@
   const TEXT = {
     en: {
       title: "Audio System",
-      underConstruction: "Under construction",
       countLabel: "records",
       events: "Events",
       media: "Media",
@@ -335,7 +334,6 @@
     },
     zh: {
       title: "\u97f3\u9891\u7cfb\u7edf",
-      underConstruction: "\u5efa\u8bbe\u4e2d",
       countLabel: "\u6761\u8bb0\u5f55",
       events: "\u4e8b\u4ef6",
       media: "\u5a92\u4f53",
@@ -1630,7 +1628,6 @@
     if (!state.container) return;
     state.container.innerHTML = `
       <div class="audio-page-shell">
-        <div id="audio-construction-banner" class="construction-banner" role="note"></div>
         <div class="audio-shell">
         <aside id="audio-left">
           <header>
@@ -1866,7 +1863,7 @@
 
   function applyUiText() {
     const pairs = {
-      "audio-construction-banner": "underConstruction", "audio-title": "title", "audio-count-label": "countLabel", "audio-filter-toggle": state.filterPanel?.collapsed ? "showFilters" : "hideFilters",
+      "audio-title": "title", "audio-count-label": "countLabel", "audio-filter-toggle": state.filterPanel?.collapsed ? "showFilters" : "hideFilters",
       "audio-reset": "reset", "audio-events-mode": "events", "audio-media-mode": "media", "audio-basic-filter-label": "basicFilters",
       "audio-sort-label": "sort", "audio-sort-purpose-priority": "sortPurposePriority", "audio-sort-title": "sortTitle", "audio-sort-duration-desc": "sortDurationDesc", "audio-sort-duration-asc": "sortDurationAsc",
       "audio-context-label": "context", "audio-relation-label": "relation", "audio-recovery-label": "recovery",
@@ -1998,10 +1995,10 @@
 
   function applyFilters({ resetScroll = false } = {}) {
     const records = state.datasets[state.mode] || [];
-    const tokens = normalizeLower(state.query).split(/\s+/).filter(Boolean);
+    const tokens = window.WebUI.parseQuery(state.query);
     state.filtered = records.filter((record) => {
       const searchable = `${record.search}\n${normalizeLower(recordNote(record))}`;
-      if (tokens.length && !tokens.every((token) => searchable.includes(token))) return false;
+      if (tokens.length && !window.WebUI.queryMatches(searchable, tokens)) return false;
       if (state.filters.categories.size && !state.filters.categories.has(record.category)) return false;
       if (state.filters.contexts.size && !record.contextTags.some((value) => state.filters.contexts.has(value))) return false;
       if (state.filters.relations.size && !record.relationTags.some((value) => state.filters.relations.has(value))) return false;

@@ -149,6 +149,9 @@ builder never writes this consumer-specific sidecar.
   recovery-method filters remain visible in normal mode.
 - Missing optional data is a visible unavailable/degraded state, not an empty
   success state.
+- All search boxes accept case-insensitive regular expressions. Queries are
+  split on whitespace with OR semantics, so `^npc_`, `boss|elite`, and `map0[12]`
+  are useful examples; malformed expressions are treated as literal text.
 - Filters, keyboard focus, modal behavior, and large result sets must remain
   usable on narrow and wide screens.
 

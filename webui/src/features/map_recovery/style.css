@@ -687,6 +687,42 @@
 .mr-zoom-readout { padding: 0 4px; color: var(--muted); font: 11px/1 var(--mono); min-width: 58px; }
 .mr-entity-readout { padding: 0 3px; color: var(--muted); font: 11px/1 var(--mono); min-width: 35px; }
 
+.mr-display-menu { position: relative; }
+.mr-display-menu > summary {
+  display: flex;
+  align-items: center;
+  height: 27px;
+  padding: 0 9px;
+  border: 1px solid var(--border);
+  border-radius: var(--mr-radius-xs);
+  background: var(--mr-panel);
+  color: var(--text);
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  list-style: none;
+  white-space: nowrap;
+}
+.mr-display-menu > summary::-webkit-details-marker { display: none; }
+.mr-display-menu > summary::after { content: "▴"; margin-left: 6px; color: var(--muted); font-size: 8px; }
+.mr-display-menu[open] > summary { border-color: var(--accent); color: var(--accent); }
+.mr-display-menu[open] > summary::after { content: "▾"; }
+.mr-display-menu-popover {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 9px);
+  width: min(430px, calc(100vw - 32px));
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--mr-radius-sm);
+  background: var(--mr-glass);
+  box-shadow: var(--mr-shadow);
+  backdrop-filter: blur(9px);
+  transform: translateX(-50%);
+}
+.mr-display-menu-popover .mr-model-layers { margin: 0; padding: 0; border: 0; }
+.mr-display-menu-popover .mr-height-dock { margin-top: 9px; padding-top: 9px; border-top: 1px solid var(--mr-hairline); }
+
 .mr-floor-help { margin: 8px 0 0; padding-top: 7px; border-top: 1px solid var(--mr-hairline); color: var(--muted); font-size: 10px; font-weight: 600; line-height: 1.45; }
 
 .mr-height-dock {
@@ -772,7 +808,6 @@
   background: rgba(var(--accent-rgb), 0.14);
   color: var(--accent);
 }
-.mr-model-layers legend { margin-bottom: 7px; }
 .mr-model-layer-row {
   display: grid;
   grid-template-columns: 15px minmax(80px, 1fr) minmax(90px, 120px);
@@ -824,7 +859,8 @@
 /* Hover readout: identity only. Everything that needs reading room lives in the
    inspector, so the tooltip never has to be big enough to cover the map. */
 .mr-tip,
-.mr-floor-tip {
+.mr-floor-tip,
+.mr-coordinate-tip {
   position: absolute;
   z-index: 4;
   max-width: 260px;
@@ -840,11 +876,18 @@
 }
 
 .mr-tip[hidden],
-.mr-floor-tip[hidden] { display: none; }
+.mr-floor-tip[hidden],
+.mr-coordinate-tip[hidden] { display: none; }
 .mr-tip strong,
 .mr-floor-tip strong { display: block; overflow-wrap: anywhere; font-size: 12px; }
 .mr-tip span,
 .mr-floor-tip span { display: block; color: var(--muted); font-family: var(--mono); font-size: 10px; overflow-wrap: anywhere; }
+.mr-coordinate-tip {
+  padding: 4px 7px;
+  color: var(--text);
+  font: 10px/1.2 var(--mono);
+  white-space: nowrap;
+}
 
 /* ---------------------------------------------------------------- inspector */
 

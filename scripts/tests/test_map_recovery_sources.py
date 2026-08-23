@@ -86,6 +86,25 @@ class MapRecoverySourceTests(unittest.TestCase):
         self.assertEqual(source["sceneId"], "blackbox01_dg001")
         self.assertEqual(source["instanceSource"], sidecar)
 
+    def test_dungeon_projection_uses_exact_art_level_sidecar_when_common_root_is_absent(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            level_root = root / "levels"
+            instance_root = root / "instances"
+            level_root.mkdir()
+            instance_root.mkdir()
+            (level_root / "dung01_bdg001.json").write_bytes(
+                b"map01/map01_streaming.asset\x00map01_lv002_art"
+            )
+            sidecar = instance_root / "map01_lv002.json"
+            sidecar.write_text("{}", encoding="utf-8")
+            source = projection_streaming_scene(
+                "dung01_bdg001", instance_root=instance_root, level_config_root=level_root,
+            )
+        self.assertEqual(source["sceneId"], "map01_lv002")
+        self.assertEqual(source["method"], "level_config_embedded_art_level_init_chunk_data")
+        self.assertEqual(source["instanceSource"], sidecar)
+
 
 if __name__ == "__main__":
     unittest.main()

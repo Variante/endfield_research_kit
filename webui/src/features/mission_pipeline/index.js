@@ -3002,12 +3002,15 @@
 
   function applyMissionFilters() {
     if (!state.index) return;
-    const query = normalize(byId("mp-search")?.value);
+    const tokens = window.WebUI.parseQuery(byId("mp-search")?.value);
     const structure = byId("mp-structure")?.value || "";
     state.filtered = (state.index.missions || []).filter((row) => {
       if (!missionMatchesStructure(row, structure)) return false;
-      if (!query) return true;
-      return normalize([row.id, missionName(row.id), row.levelId, ...(row.conditionTypes || [])].join(" ")).includes(query);
+      if (!tokens.length) return true;
+      return window.WebUI.queryMatches(
+        [row.id, missionName(row.id), row.levelId, ...(row.conditionTypes || [])].join(" "),
+        tokens,
+      );
     });
     renderMissionList();
   }

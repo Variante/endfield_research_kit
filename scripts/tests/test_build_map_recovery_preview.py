@@ -79,6 +79,10 @@ class PreviewInputTests(unittest.TestCase):
 
         frontend = (builder.ROOT / "webui/src/features/map_recovery/index.js").read_text(encoding="utf-8")
         self.assertIn("worldBounds: model.worldBounds", frontend)
+        self.assertIn("const revealSelectedMap = (host) =>", frontend)
+        self.assertIn("column.scrollTop +=", frontend)
+        self.assertIn("function previewMapCoordinates(event)", frontend)
+        self.assertIn("projection.maxZ - (canvasY - projection.viewY)", frontend)
         self.assertNotIn("alignment.scaleX", frontend)
         self.assertNotIn("minimapMaskRects", frontend)
 
@@ -216,8 +220,14 @@ class PreviewInputTests(unittest.TestCase):
             self.assertEqual(manifest["render"]["pointCount"], 2)
             self.assertEqual(manifest["render"]["elevationRange"], {"min": -2.0, "max": 12.0})
             self.assertIn("Evidence-only", manifest["boundary"])
+            self.assertEqual(
+                manifest["elevationUnderlay"]["method"],
+                "exact_registry_transform_grayscale_elevation_points",
+            )
+            self.assertIn("no growth", manifest["elevationUnderlay"]["boundary"])
             self.assertEqual(manifest["pointCloudOverlay"]["heightMask"]["elevationRange"], {"min": -2.0, "max": 12.0})
             self.assertTrue(Path(tmp, "test_level_registry_height_mask.png").is_file())
+            self.assertTrue(Path(tmp, "test_level_registry_elevation_points.png").is_file())
             image = Path(tmp, "test_level_registry_point_cloud.png")
             self.assertTrue(image.is_file())
             self.assertEqual(image.read_bytes()[:8], b"\x89PNG\r\n\x1a\n")
