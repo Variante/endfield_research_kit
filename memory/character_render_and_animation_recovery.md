@@ -956,6 +956,11 @@ textures. Atlas geometry, selector formulas, and publication/lifetime are
 closed, but live character/light rows, atlas pixels, and resolved mask pixels
 remain capture-only. See
 `reports/assets/character_recovery/hdpls_character_shadow_resource_contract.md`.
+The exact-consumer diagnostic now labels its `b6` binding accurately: the
+216-vector HDPLS constant buffer is a lab-created zero fallback, not one of the
+source-backed constant-buffer transports. Its allocation failure is reported
+separately and the closure log emits `b6=HDPLS:zero-local-fallback`; the
+resolver remains non-presented and fail-closed.
 
 V2 irradiance ownership is now source-pinned for the updated AnimeStudio
 exporter and unchanged installed game binaries. The Gacha Lua
@@ -1055,6 +1060,21 @@ sidecar is however the same-camera SphereOutside sidecar, and SphereOutside is
 the source wall geometry whose absence blacks the background. The deferred pass
 and the missing backdrop are one problem: closing pass 0 is the route to the
 backdrop.
+The selected original pass-0 VS/PS pair now decompiles into an executable Unity
+HLSL diagnostic (roughly 2 KB vertex and 102 KB fragment source). Recovered
+metadata collapses the duplicate DXBC cbuffer aliases to one `b0..b8` declaration,
+publishes the existing `t0..t25` and `s0..s4` bridge names, restores the exact
+constant-buffer extents, and preserves integer flag-table bit patterns with
+explicit `asfloat(uint)` literals. Unity D3D11 warms the shader with zero compiler
+messages. On the existing one-pixel neutral fixture it matches the original DXBC
+at `(0,0,0,1)`; on the full same-camera 640x720 Wulfa fixture all 1,843,200 floats
+are finite and the HLSL differs from the original program by at most one float ULP
+(`maxAbs=1.1920929e-7`, `RMSE=4.8018086e-9`, no values over `1e-6`). Both outputs
+remain separate, non-presented render targets, and a sidecars-on versus ordinary
+3840x2160 beauty comparison is byte-identical. This closes the static program
+port and recovered-input numerical equivalence. Retail settled resource contents,
+physical render-graph alias lifetime, and actual CharInfo draw-event state remain
+capture-only; presenting the sidecar before those are known would still overclaim.
 
 ## CharInfo per-character presentation
 
@@ -1155,6 +1175,101 @@ result closes the dominant cold/dark whole-frame tone error without a fitted
 RGB multiplier. A normal screen backbuffer remains outside that exact target
 gate; Play Mode still uses the recovered ACES/CharInfo post chain and the
 display's ordinary presentation conversion.
+Manual Viewer replay now observes the `overview_start` Legacy AnimationState
+itself instead of relying on the Restart button. Every time the state wraps it
+finishes the previous four roots, republishes the recovered Overview parameters,
+respawns `_01` through `_04`, and replays the exact overview Wwise media. The
+maintained capture now also drains the actor's delayed-enable restart and issues
+one authoritative selection restart before establishing time zero. Previously
+frame 0 recorded clip time `0.284` and frame 1 jumped backward to `0.034`, making
+particle delays about 0.47 seconds older than the paired body/reference frame.
+The corrected monotonic gate records `0.284, 0.534, 0.784...`; at frame 12 the
+thin horizontal hand flash, crystals, and body are compared at clip time
+`3.284`. A bounded actor-ROI pose sweep places that state at recording time
+`6.64` seconds (PSNR `19.70` at the selected 460x500 actor crop), closing the
+older approximate 3.00-second animation-zero assumption in favor of a measured
+`3.356`-second boundary. The formerly oversized orange radial glow then decays on its exact
+serialized schedule and the horizontal flash extends beyond the old billboard
+clamp without any fitted material-intensity reduction.
+The
+exact CharInfo portrait remains `bg_charinfo_chr_0003_endminf` and is selected
+explicitly in the Endminf reproduction scene. The conspicuous retail silhouette
+edge is source-backed rather than a generic outline: Endminf owns enabled NPR
+type-3 `RimLight_2` rows at intensities 16 and 18. All 12 rows reach the recovered
+clustered-light upload. The earlier generic rim compatibility carrier is now
+disabled: a same-frame 0.25-versus-zero A/B changed average luma by only `0.071`
+code values and the exact selected cloth/hair/skin type-3 equations are the
+authoritative consumer. The isolated punctual producer admits both exact rows:
+`RimLight_2` source row 3 and `RimLight_2 (1)` source row 11. At runtime they
+pack according to the camera light order, render eight actor casters into D16
+dynamic slots 40 and 41 at 1024 px, and publish their independent source spot
+projections/receiver contracts. Extending this exposed and closed an old
+eight-row shadow-publication limit; the producer and shader now match the
+16-row operator-light ABI. The Skin branch's former Wulfa-only admission gate
+(`slot=40`, source row 4) also skipped both valid Endminf publications. It now
+admits only the validator-backed Endminf row 11/slot 40 and row 3/slot 41 pairs;
+the selected rim equation is unchanged, and the aligned actor-ROI PSNR moves
+slightly from `19.658645` to `19.658714`. Exact retail cache scheduling beyond
+this isolated two-tile topology remains open.
+The `overview_loop` clip contains no `PostAudioEvent`; the recovered entrance
+media lasts 5.818313 seconds against the 5.866667-second start clip, so the
+controller now stops that entrance-owned source at the actual start-to-loop
+handoff rather than inventing a loop cue. Endminf visual compatibility also
+removes Unity's built-in `maxParticleSize=0.5` screen clamp at runtime for its
+billboard renderers; retail HGRP owns a distinct VFX draw path, while the exact
+serialized renderer payload remains unchanged in the generated prefabs. The
+remaining apparent crop was instead the `_28` scene-refraction replacement
+pass: both source renderers use the exact torus mesh PathID
+`9180196635748412994`, not a billboard, so a billboard-edge fade cannot conceal
+an ordinary-geometry replacement seam. Pinned native
+`DistortionPassConstructor.ConstructPass` evidence closes the topology more
+narrowly than the former missing-resolve hypothesis: retail clones a texture
+from the scene descriptor, copies scene color into it, binds two color
+attachments plus depth, and draws the opaque and transparent distortion lists.
+The installed VFS shader inventory contains `HGRP/Effect/VFXRefract` and no
+separately named distortion-resolve shader; the full-screen helper is not by
+itself evidence of a second resolve stage. The recovered compositor already
+implements the scene clone/copy/direct-sample contract. The torus leak was
+fragment coverage: the exact material's serialized
+`SrcAlpha/OneMinusSrcAlpha` blend was fed only distance fade, omitting particle
+opacity/strength. Multiplying coverage by that field while retaining the
+serialized `_DissolveAffectBlend=0` selector preserves the recovered MRT output
+and authored dissolve semantics while suppressing inactive carrier pixels.
+A D3D12 41-frame direct-pair audit at recording timestamps `5.14..7.64`
+seconds shows no torus or clipped circular edge, while the exact crystals and
+horizontal flare remain active. The formerly missing raised-hand halo is
+partly source-closed: `_04/guangyun (4)` uses exact material
+`M_fx_endminm_gfx_31` (PathID `0x602883BD6BB1831B`) from `2.87` seconds for a
+`1.8`-second particle interval, and sibling `guangyun (5)` uses
+`M_fx_endminm_gfx_43` (PathID `0x73D80B62F5BA886F`). Both are authored at
+queue 2999. HGCompat had sent that queue through the ordinary single-target
+transparent lane even though the recovered compositor already classifies
+these materials as exact Endminf MRT identities. The non-overlapping boundary
+is now ordinary `2501..2998` followed by recovered MRT `2999..3000`.
+The translated soft-depth branch also now matches the shader blob's
+`abs(ViewMatrix * worldPosition).z` particle depth instead of treating D3D12
+fragment `SV_Position.z` as eye depth. Aligned D3D12 pairs at entrance frames
+12 and 16 consequently recover the broad amber hand halo; isolated captures
+assign its broad disc to gfx_31 and its compact white centre to gfx_43.
+Retail remains softer and less brown, while an angular frame-12 contribution
+survives in other queue-3000 materials, so the final halo response/ownership
+is still open rather than being tuned by an unsupported global scale.
+Material-isolated D3D12 captures close that remaining local ownership:
+gfx_30 owns the soft circular field, gfx_39 the star, gfx_40 the horizontal
+streak, and gfx_24/gfx_34 the moving sparks; gfx_32/gfx_42 are visually inactive
+at the aligned frame. At frame 16 no single isolated material produces the
+recovered white bar: it appears only after their HDR overlap enters the scene
+bloom, so the current residual is bloom input/order/response rather than an
+unknown particle renderer. Exact fragment 0139 also rules out an exposure
+division workaround: it multiplies RGB by
+`lerp(1, reciprocalExposure, IgnorePostExposure)`. The production MRT path
+retains that equation and the older SampleStack translation now matches it.
+The Viewer capture now sets the same six explicit Endminf reproduction-profile
+gates as `open_character_recovery_lab.bat`; batch results can no longer silently
+fall back to the retained dark gacha-room presentation when launched from a
+clean shell. The self-contained 41-frame D3D12 capture passes. The next
+source-evidence boundary is whether queue-2999/3000 HDR transparents enter the
+retail bloom input before or after their respective compositor lanes.
 The closest Endminf mode additionally enables
 `ENDFIELD_ENDMINF_BACKDROP_VISUAL_COMPATIBILITY=1`. A forced `SphereOutside`
 probe confirmed that its unclosed deferred consumer produces a flat dark wall
@@ -1163,9 +1278,71 @@ band absent from the recorded Overview UI. This explicit compatibility mode
 holds those physical presentation paths off and uses the maintained pale
 geometric CharInfo backdrop. It matches the reference field substantially
 better but does not promote the original wall shader. The Endminf-only branch
-now supplies a `2.5` scene-linear `_HdrBoost` through a renderer property block;
-paired 1920x1080 frames show the former charcoal field in the same pale-gray
-range as retail without changing the shared backdrop material or normal Viewer.
+now supplies paired-frame-fitted top/bottom colors, the recorded lower-field
+fade, and a `1.30` scene-linear `_HdrBoost` through a renderer property block.
+The maintained frame-12 gate measures the upper neutral field at YUV
+`145.33/126.00/129.01` against retail `146.22/127.00/129.00`; the former warm
+and 10-plus-code luminance residual is therefore closed without changing actor
+lighting. The orthogonal carrier is Endminf-specific at approximately 3.1 by
+7.25 cells, matching the reference density instead of the generic plate's 6 by
+5 layout. A later live-source isolation corrected the earlier interpretation:
+exact `GridDeco/Far` overlays the compatibility plate at its serialized queue
+2950 and exposes a dense perspective mesh that is not the retail composition.
+Its former apparent invisibility came from the presentation controller
+disabling the source hierarchy after OnEnable while leaving the plate property
+block behind. Far now stays fail-closed with the unresolved physical wall, and
+the plate owns the low-contrast procedural grey grid (`0.11` primary and
+`0.025` diagonal opacity). The sibling opaque wall likewise stays fail-closed
+because admitting its unresolved consumer covers the camera black. The fit
+reverses the generic backdrop gradient to the retail direction (darker top,
+lighter lower field); bounded neutral-pixel medians reduce the former roughly
+40-85 code-value error to a low-teens spatial residual without changing the
+shared backdrop material or normal Viewer. Installed-binary and serialized
+evidence constrain the physical alternative: `M_CharInfo_outside` is untextured
+white Default Lit geometry (`_BaseColorMap=null`, only `_MROMap` bound), ignores
+post exposure, and is lit by the serialized 8.631674-intensity 7000 K
+directional/SH rig under neutral manual CharInfo exposure. Those facts explain
+why the field is lighting-driven, but they do not close the original deferred
+pass-0 physical resources or resolve; this fitted plate therefore remains
+explicitly compatibility output.
+
+Endminf's Overview entrance audio is source-closed. The exact
+`A_actor_endminf_ui_overview_start` AnimationClip posts
+`au_actor_endminf_ui_overview` at `0.058666665` seconds. Wwise bank version 150
+resolves that event through one typed play action to the single direct media
+identity `925835917` (48 kHz stereo FLAC, SHA-256
+`67f9dc72df9d448d046d1ad6d11dc2ff423c4b6a6967856b2a915852b2799fc9`),
+with no serialized Wwise delay, transition, probability gate, or runtime
+branch. Unity schedules that exact media at the clip event time, adjusted for
+the recovered non-zero controller entry offset. The recovered GachaRoom stays
+attached as an inactive diagnostic child; the Endminf reference reproduction
+uses the pale CharInfo compatibility backdrop instead.
+
+The Endminf backdrop fit must keep `_BottomVignette` inside the backdrop
+shader's serialized `0..1` domain. The former `2.70` property-block value made
+the lower plate negative before tone mapping and produced a visibly non-retail
+cyan band. Full 60 Hz Play Mode recaptures at `0.55` and `1.0` prove the
+artifact disappears; `1.0` is retained because it gives the closer RGB-only
+full-frame result (`15.282726` dB versus `15.195535`). That aggregate remains
+below the former artifact-bearing frame because the retail half includes its
+dark lower UI overlay while the lab intentionally renders the background
+without UI. The retained matched-frame comparison is
+`unity_endfield_graph_shader_lab/scratch/character_recovery/endminf_viewer_playmode_sequence/pair_backdrop_vignette1_ref17_rec18.png`.
+The current frame-17/18 audit further removes the plate's excess yellow cast:
+Endminf compatibility colors are now top `(0.59,0.595,0.595)` and bottom
+`(0.785,0.79,0.80)`, with the valid bottom-vignette height extended from
+`0.25` to `0.27`. On five 50x50 neutral patches this reduces representative
+chroma residuals from `3.77` to `0.67` combined absolute U/V codes at the
+upper center and from `3.01` to `1.06` at the lower center; upper/right
+luminance remains within about one code. Full-frame RGB PSNR falls from
+`15.2950` to `15.2695` because the metric is dominated by missing retail UI
+and the mismatched bright entrance effect, so it is not used to reject the
+measured background-tone improvement. The retained same-frame visual is
+`pair_backdrop_neutral_vignette027_ref17_rec18.png`. A spatial patch map also
+rules out another simple vertical-gradient fit: residuals vary with x where
+retail UI panels and overlays are present, so those differences must not be
+baked into the shared background carrier.
+
 The reproduction mode now also enables the already source-closed world-space
 portrait instead of relying on the backdrop shader's approximate silhouette.
 For Endminf this binds exact `bg_charinfo_chr_0003_endminf` pixels and its
@@ -1203,6 +1380,53 @@ kernel remains explicitly approximate because the shipped Uber resource ABI is
 not source-closed. The remaining burst gap therefore stays assigned to exact
 Uber/refraction composition, not to a retained material-energy or particle-size
 gain.
+An aligned 4 fps audit across frames 13--19 further narrows that gap. The body
+pose remains aligned, but retail changes from a horizontal palm glow into a
+bounded circular ring while the compatibility path changes into a full-frame
+radial burst; nearby retail frames do not contain the recovered burst shape, so
+this is not a global trigger offset. A post-disabled frame-17 capture leaves the
+particle flare localized and sharp, proving that the excessive body smear is
+introduced by the explicitly approximate five-tap post kernel. The serialized
+`post (1)` components provide stronger constraints than that kernel currently
+uses: both have priority 400, world-center selection, and `_averageSteps=0`;
+the powered component has `_power=1.124`, while their base intensities are 0
+and 0.3 and animation supplies the recovered curve windows. The shipped Uber
+ABI is now source-closed for this specialization: native parameter packing
+plus DXBC prove one-sided centre-directed RGB taps rather than a symmetric
+five-tap kernel. The compatibility pass translates those sample locations
+directly and removes the erroneous full-frame zoom burst. The retail circular
+rim is a separate transparent producer. Exact closure and material isolation
+disprove the earlier `kuosan` attribution: `_02/all/kuosan`, mesh PathID
+`468687656999008020` (`Plane059`), and BaseV2 material
+`M_fx_endminm_gfx_18` PathID `8075097199211487815` form the broad expanding
+wash, not the rim. The rim is adjacent `_02/all/huan` (GameObject
+`6106329229577272818`, renderer `6040736806136954354`) with
+`M_fx_endminm_gfx_13` PathID `6314714165000208687`. Its exact non-instanced
+DXBC pair is blob 1289 (`0210/0211`) and uses Main/Sample0/Sample1/Sample2/
+Sample3 on LinearClamp, LinearRepeat, LinearMirror, LinearMirrorOnce, and
+PointClamp. The recovered route is Sample0/Sample1 disturbance, Sample2 mask,
+and Sample3 dissolve. Isolated frame 17 now produces the source-timed
+orange-white palm ring; the full D3D12 capture composes it with the central
+flare. Remaining error is ring/post composition, character scale, and retail
+UI/background composition rather than a billboard clamp.
+The reference plate fade was also remeasured from the aligned frame instead of
+judged from the UI-obscured composite. A normalized left-edge scan now matches
+retail within about 0--3 luma through y=240 and within one luma at y=520; the
+remaining open-field maximum is about 8 luma through y=360--420. The recovered
+plate therefore uses a narrow lower fade (`height=0.25`, strength `2.70`)
+instead of the former broad `height=0.55`, strength `1.05` curve that was
+30--70 luma too dark across the lower third.
+
+The audit also corrected an independent BaseV2 port omission. The recovered
+original ForwardOnly equation multiplies `mainColor` by particle vertex RGB
+before material tint/intensity, while the Endminf sample-stack port previously
+consumed only vertex alpha. The port now restores that term; a clean D3D12
+Viewer capture passes with exact source particle payloads and no energy fitting.
+Material-isolated frame 17 identifies `M_fx_endminm_gfx_31` on
+`_04/1/guangyun (4)` as the surviving broad disc; queue-3000
+`M_fx_endminm_gfx_43` on `guangyun (5)` is visually inactive at that sample.
+The earlier assignments of the missing ring to radial/chromatic post or
+`kuosan` are superseded by the exact `huan` renderer/material join above.
 This is the closest executable visual reproduction, but remains labeled
 compatibility rather than source-exact HGRP parity; the last eight renderers,
 retail refraction/deferred consumers, body-material response, and physical
@@ -1242,7 +1466,270 @@ persistently on `_01/effect_01`, and source-owned A_fx04 Sphere transforms drive
 only under `_01`; native `EffectAnimation` samples its own GameObject, so
 cross-root transplantation is invalid and remains blocked. A_fx02's three
 `post (1)` curves resolve to recovered chromatic-aberration and radial-blur
-components, but exact runtime post scheduling still gates their reproduction.
+components. The shipped Uber fragment `524235fff5fcaad4` closes the selected
+`RADIAL_BLUR_CHROMATIC_ABERRATION` sampling kernel, including its high/low step
+branches and parameter registers. The validated installed-client body for
+`UberPostPassUtils.PrepareRadialBlurAndChromaticAberrationParameters` closes the
+producer side too: it tests both components, computes
+`saturate(radialIntensity / chromaticIntensity)`, blends their power values,
+and packs radial center/intensity/power separately from chromatic steps and
+intensity. The lab implements that ABI with the recovered A_fx02 curve values.
+AnimeStudio's exact AnimationClip conversion additionally proves zero tangents
+on every intensity key; the lab now evaluates the pulse with Unity's cubic
+zero-slope interpolation instead of the earlier linear approximation. The
+installed-client `VFXPPRadialBlur.Apply` and
+`VFXPPChromaticAberration.Apply` bodies write each animated intensity directly
+to its volume FloatParameter, so there is no hidden runtime amplitude scale to
+fit. The fragment also proves explicit LOD-zero fetches and exposes only its
+precomposed color input plus LUT; the lab now warps bloom-composited color
+instead of adding unwarped bloom after the kernel. Native setup writes the
+3/6-sample selector from the radial threshold, and both Endminf
+`_averageSteps` flags are zero, confirming the unnormalized powered vector.
+The retail final-target/viewport display domain remains incomplete: the lab
+keeps the exact source curves intact but applies a visibly labeled `0.35`
+peak-frame display-domain calibration against the pinned 3840x2160 recording.
+That calibration is presentation fit, not a recovered runtime multiplier.
+The active CharInfo profile and installed-client bloom path are now bounded as
+well. `Bloom_pA9B6D77F43D9B560` is active, high quality, half resolution, with
+threshold `0.75`, intensity `0.45`, scatter `0.8`, and
+`characterBloomControl=0`. The shipped Bloom fragment matches the lab's
+five-tap Karis prefilter, horizontal nine-tap/vertical five-fetch blur, cubic
+upsample, and `lerp(0.05,0.95,scatter)=0.77` reconstruction. The pinned native
+`UberPostPassUtils.GetMipsUp0SizeTempForCPP` body independently proves the
+1080-line cap; the 1920x1080 Viewer log consequently produces the exact
+`960x540 ... 8x4` eight-level chain. Bloom parameters and mip sizing are no
+longer plausible explanations for the remaining sharp flare.
+The comparison harness previously conflated output sampling with simulation:
+it forced `Time.captureDeltaTime=1/4` although the pinned MKV is exactly 60 fps.
+It now simulates at 60 fps and writes only every fifteenth frame. Exact video
+matching places `retail_exact_13..19` at source frames `413..503`, spaced by
+15 frames each, and the corrected Unity sequence aligns actor poses one saved
+sample later than the old labels. Use the corrected 60-fps simulation before
+judging particle timing, motion history, or the late flare; prior 4-fps visual
+pairs are retained evidence of the tooling error, not parity evidence. The
+first retained temporal closure now resolves the physical HDR scene before
+Bloom/Uber, maintains camera-local persistent history, clips history to the
+current 3x3 neighborhood, resets on an overview-clock rewind or size change,
+and uses the serialized desktop TAAU in-motion history weight `0.85`. The
+corrected D3D12 60-Hz capture passes and improves matched frame-17/18 RGB PSNR
+from `14.821481` to `14.833655`; bounded effect-region SSIM improves from
+`0.494109` to `0.496034`. This is a real but small improvement, not TAAU
+parity. The retained side-by-side is
+`unity_endfield_graph_shader_lab/scratch/character_recovery/endminf_viewer_playmode_sequence/pair_temporal_v5_ref17_rec18.png`.
+The next temporal boundary is the native `HGCamera.GetJitteredProjectionMatrix`
+sample sequence plus motion/depth reprojection and responsive-mask decisions;
+a plain cross-frame blend remains rejected because it ghosts the actor.
+The retained resolve consumes the existing full-resolution SceneMV target.
+Direct inspection of ordinary/desktop `HGRP/TAAUResolve` D3D11 fragment
+`fef9bcfe80de1c24` corrected the earlier inferred decoder: the shader computes
+`(abs(encoded) * 2 - 1)^4`, selects positive below neutral `0.5` and negative
+above it, and subtracts that value directly as a history-UV delta. It is not a
+half-scaled NDC delta. Desktop `Quality=0` selects this specialization;
+Desktop/Common settings prove static/motion weights `0.95/0.85` and motion
+range `0..0.1`. The resolve now selects the motion weight by decoded magnitude
+rather than motion-vector validity. That change is byte-inert at the matched
+frame but preserves the proved ABI. Jitter remains disabled until the upstream
+skinned current/previous-position producer exists; do not replace it with an
+unlabelled optical-flow estimate.
+Unity's installed HDRP source confirms the previous deformed position arrives
+as `TEXCOORD4` only through its motion-vector draw contract. Endminf's eleven
+SkinnedMeshRenderers serialize `m_SkinnedMotionVectors=1`, but two bounded
+SceneMV-only probes (`CommandBuffer.DrawRenderer`, with and without an explicit
+`MotionVectors` LightMode) remain byte-identical to neutral history. The engine
+does not bind the previous-deformation stream on that submission route. Both
+probes were removed. A third bounded probe used the actual Unity
+`ScriptableRenderContext.DrawRenderers` path: only the selected Endminf actor
+was marked before culling through an isolated rendering-layer bit, the pass
+requested `PerObjectData.MotionVectors`, and the exact fourth-root SceneMV
+encoder consumed `TEXCOORD4`. Unlike direct draws, it changed the matched frame
+(old/new PSNR `51.269506`, SSIM `0.997659`), proving that this path binds a
+non-neutral deformation-history stream. It nevertheless moved away from the
+retail frame: matched RGB PSNR fell from `14.822077` to `14.809935`, and the
+probe also exposed a temporary-depth target restore warning. The renderer-list
+probe and shader were therefore removed. The remaining valid upstream route is
+the fork's paired previous skin buffers plus the retail current/previous
+matrix and validity policy; Unity's generic previous-position binding is not a
+source-equivalent substitute.
+The exact Endminf LitEffect evidence was regenerated from the installed,
+hash-pinned `19F0903A12BA87C0D43E67E64889B525.chk` with AnimeStudio's targeted
+`Shader:Both` export and bytecode sidecars enabled. All 2,240 manifest entries,
+84 `_PARALLAX_MAP` HGBuffer D3D11 entries, representative DXBC hashes, and
+Ruri vertex/fragment HLSL hashes pass the existing fail-closed verifiers. The
+fragment proves five MRT outputs and writes parallax HDR radiance directly to
+SceneColor target 0; M01 and M38 retain source HDR colors near
+`(964.7,330.9,85.6)` and `(135.6,46.9,12.8)`. Doubling the forward
+compatibility emission scale from `0.0125` to `0.025` nevertheless reduced the
+matched frame RGB PSNR from `14.822077` to `14.811428` and barely changed the
+broad flare, so the test was rejected. LitEffect owns crystal-surface/deferred
+response, not the missing low-frequency flare sheet.
+After all 70 source renderers were admitted, the prior `0.35` Uber
+final-target compatibility calibration was no longer optimal. A bounded sweep
+that leaves the recovered A_fx02 curve values and exact one-sided Uber kernel
+unchanged measured matched-frame RGB PSNR `14.918950` at `0.50`, `14.956575`
+at `0.65`, and `14.943613` at `0.80`; `0.65` is retained. It restores more of
+the retail horizontal flare/body smear and improves roughly `0.1345` dB over
+the prior 70-renderer `14.822077` baseline. The retained direct frame pair is
+`pair_uber_scale_065_ref17_rec18.png`; this remains a clearly labeled
+display-domain calibration, not a mutation of source animation or a claim of
+exact final-target ownership.
+The apparent matched-frame framing mismatch was checked before changing the
+camera. Endminf already uses the exact profile endpoint
+`camera=(0,0.998,3.5)`, `lookAt=(0.022,1.225,0)`, vertical FOV 20, and 16:9
+aspect; head/body extents align within only a few output pixels. The capture
+does not enable the recovered gyroscope specialization, and the recording does
+not preserve the live normalized cursor/controller input needed to select a
+source endpoint. No camera, actor-root, FOV, or gyroscope adjustment was
+retained.
+The final-target Uber calibration was then split by component while preserving
+the exact radial/chromatic animation values and combined source kernel.
+Reducing chromatic to `0.35` with radial `0.65` regressed matched RGB PSNR to
+`14.912214`, disproving a separable chromatic-overstrength diagnosis. Holding
+chromatic at `0.65` while increasing radial measured `14.963725` at radial
+`0.80` and `14.964017` at radial `0.95`; the latter is retained, and the
+`0.000292` dB increment from `0.80` establishes the plateau. The updated direct
+pair is `pair_uber_radial095_chromatic065_ref17_rec18.png`. Further scalar
+sweeps are not justified; remaining post error belongs to the unrecovered
+retail final-target/viewport composition rather than source curve amplitude.
+The selected radial/chromatic Uber fragment now also closes the CharInfo LUT
+lookup itself. Its apparent `zxy` register shuffle is compensated by the
+following addressing: the 32-cube is flattened as blue slices with red along
+texture X and green along Y, exactly matching
+`EF_SampleRecoveredCharInfoLut`. The two exposure products, LogC constants,
+LOD-zero two-slice interpolation, IEC sRGB transfer, and deterministic RGB
+dither also match the lab path. Do not add a LUT channel shuffle. This fragment
+contains no vignette branch, but it is one specialization rather than proof of
+the complete retail pass/keyword composition. Removing the lab's recovered
+vignette reduced matched RGB PSNR from `14.964017` to `14.291307`; moving it
+inside every pre-warp source sample measured `14.897255`. Both trials were
+rejected, so the post-warp compatibility grade remains the best evidenced
+placement until another shipped specialization or live binding closes its
+owner. A fresh pre-tint-audit capture reproduced the retained `14.964017`
+result; its direct pair is `pair_after_lut_audit_ref17_rec18.png`.
+
+The matched-frame live ownership report now records each enabled particle
+renderer, shader, material, and particle count. At recovery frame 18 it finds
+24 live renderers and 296 particles; `M_fx_endminm_gfx_14` owns 200 of them,
+while the palm-ring group is split across M13/M31/M43. This rules out a generic
+post-only explanation for the remaining orange/pale-gold mismatch and identifies
+the admitted BaseV2 material path as the dominant source layer. The exact
+`_USE_SOFTBLEND` fragment also resolves the apparent `_VFXParams1`
+contradiction: `_IsSceneEffect` is the material lane `cb3[2].w`, and the final
+RGB explicitly selects untouched color when it is zero. All selected Endminf
+materials serialize zero, so no guessed global `_VFXParams1` was published.
+The material importer previously passed serialized `m_Colors._TintColor`
+through Unity's `Color` property upload, although the recovered exact cbuffer
+path consumes the raw serialized vector. Endminf's admitted BaseV2 materials
+now carry that value through an opt-in hidden Vector property, leaving other
+VFX specializations unchanged. A fresh 60-Hz D3D12 Play Mode capture improves
+matched frame 17/18 RGB PSNR from `14.964017` to `15.022553` dB; every channel
+improves (`r 15.322799 -> 15.441695`, `g 16.264594 -> 16.325320`,
+`b 13.699195 -> 13.715478`). The retained frame pair is
+`unity_endfield_graph_shader_lab/scratch/character_recovery/endminf_viewer_playmode_sequence/pair_raw_tint_trial_ref17_rec18.png`.
+Matched-frame renderer ablations then isolate the remaining ring error without
+deleting source content. At frame 18, disabling M13 alone raises RGB PSNR to
+`15.218238`; disabling M31 or M15 regresses, M14 changes little, and
+M18/M24/M26 are pixel-inert at that instant. M13 is one short-lived `huan`
+particle with exact source renderer streams Position/Normal/Color/UV/UV2/
+Custom1XYZW, matching serialized bytes `[0,1,3,4,5,34]`; missing custom data
+is therefore rejected as the cause. Its exact D3D11 specialization is
+VS0210 `dd9f63eb42356a96` plus PS0211 `6df6673154b8fde4`, with the six authored
+keywords and serialized M13 material payload.
+A 25-sample 60-Hz sweep around the same retail frame exposed a comparison
+schedule error: the standard recovery sample observed body clip `4.5342`
+instead of the retail-matched `4.5000` phase because two 60-Hz ticks elapsed
+between the selection restart and first renderable sample. Sampling elapsed
+`4.4667` produces body clip `4.5009` and improves matched RGB PSNR from
+`15.022553` to `15.431298` without changing runtime animation, effects, or
+post parameters. The normal capture now subtracts this two-tick lead and its
+side-by-side sheet pairs retail sample N with Unity file N+1. The retained
+direct pair is `pair_clip_phase_corrected_ref17_rec18.png`; the full paired
+sheet remains `reference_vs_unity_4fps.png`.
+The next ordinary-TAAU closure is retained from the same exact fragment.
+History reconstruction uses its five-fetch Catmull-Rom reduction in the
+luma-compressed domain, bounds RGB history to `0.2x..1.8x` the center, then
+clips it against the shipped 3x3 mean/deviation envelope in the exact
+`Y=R+B+2G, Co=2R-2B, Cg=-R-B+2G` basis. The variance-only capture improves
+matched RGB PSNR from `15.431298` to `15.454955`; adding five-fetch history
+reconstruction improves it again to `15.485406` (`r 16.206051`, `g 16.903756`,
+`b 13.927442`). The cumulative `+0.054108 dB` change is source-backed and
+reduces the previously over-sharp flare. The direct pair is
+`pair_taau_bicubic_ref17_rec18.png`. Remaining TAAU gaps are the exact current-
+sample Gaussian kernel, depth/occlusion and responsive-transparency masks, and
+the upstream jitter/deformation-history producer.
+The ordinary current-sample kernel is now closed independently. The pinned
+metadata maps `TAAUPassConstructor.ComputeGaussianKernel` token `0x06001255`
+to GameAssembly VA `0x183c00bb0`; its constructor is VA `0x1845a8a20` and
+stores `m_gaussianKernelStdDev=1.0`. The body evaluates and normalizes the exact
+3x3 Gaussian: corner `0.0751136080`, edge `0.1238414032`, center
+`0.2041799556`. Resolve fragment `fef9bcfe80de1c24` extracts bit 1 from the
+10-bit SceneMV B lane to choose this filtered current sample versus the center.
+The lab now implements that exact masked choice. At the matched frame it is
+effectively byte-inert (old/new PSNR about `109.08 dB`, retail PSNR unchanged
+at displayed precision `15.485406`), which is evidence that the remaining
+effect pixels do not materially exercise that selector, not evidence for a
+different kernel. Native mappings for `PrepareParameters`, dilation, mask
+dilation, and resolve construction are retained under
+`scratch/character_recovery/endminf_taau_kernel/`; all six targets map against
+the installed build. The shipped mask dilation is a five-sample cross maximum
+of SceneMV B followed by a binary nonzero test. Exact global history cannot be
+enabled yet: the lab's opaque character path does not publish retail previous-
+deformation motion, while the current bounded resolve deliberately gates
+history to recovered VFX coverage. Applying static `0.95` history globally
+would recreate the already rejected actor ghosting rather than retail TAAU.
+The remaining sharp flare is therefore upstream VFX shading/history or
+unresolved retail composition, not the recovered LUT layout or the already
+removed billboard-size clamp.
+The Endminf overview particle dependency gate now admits all `70/70` authored
+renderers in the explicit visual-reproduction profile. The final seven were
+source-enabled renderers whose materials were already identified but whose
+mesh/material closure was incomplete: overview `_02` adds the exact M27
+LitEffect rock, Refract teleport shard, and M21 rock mesh variants; overview
+`_04` adds the exact `Loft003`/`Sphere001` meshes used by M35/M29. At the
+matched 4.5-second frame this changes admitted live particles from 261 to 296
+and leaves no blocked renderer identity. It slightly reduces whole-frame RGB
+PSNR (`14.833655` to `14.822076`), which is expected to remain timing/shading
+sensitive rather than evidence for deleting source-authored crystals. The
+retained comparison is `pair_all_crystals_ref17_rec18.png`; audit their
+per-frame coverage and exact LitEffect/Refract shading before tuning emission.
+The original Endminf punctual-shadow producer is already active after the
+viewer applies the selected presentation profile: source rows 3/11, dynamic
+slots 40/41, 1024 base tiles, the 6144x4096 D16 atlas, and eight recovered
+casters are positively logged. The pre-selection shared scene rig still owns
+Chen and deliberately serializes this producer off; do not force it before the
+profile-selection edge binds the Endminf actor and twelve-light list.
+Endminf's separate VisibilitySH capsule producer is now source-closed too. A
+targeted ScriptFirst AnimeStudio export of the pinned postmodel recovers
+`HGCapsuleShadowHelper` path ID `-5549173678509628216`, raw SHA-256
+`130e080c0683f6b8cc4fbfa657677da56c6e66ff6477432bff335b8b20f1dd11`,
+global intensity `2.0`, and ten enabled source capsules. The runtime payload
+binds all ten to the recovered Endminf skeleton; a 1920x1080 Play Mode frame
+logs 10/10 retail-cull survivors, CPU fixture SHA-256
+`c2ba333ab64df6c3dd33d8ee677b9ffbe259534ddca0dcadfbefa46383858d75`,
+and a nonzero 960x540 RGBAHalf VisibilitySH readback (168,196 pixels, SHA-256
+`9acc0ff5041ab1eb99c338892d7c975ed5fcde5746db47dcd11fc3ad76398200`).
+The reproduction now keeps the bounded source hierarchy live so ShadowPlane is
+enabled, active, and camera-frustum visible. The ordinary transparent renderer
+list did not submit its `ForwardOnly` pass; the pipeline now performs a bounded
+manual submission before VisibilitySH globals reset. A forced-half diagnostic
+proved that draw changes 198,849 pixels, and was reverted. Exact-stencil and
+stencil-bypass receiver captures are byte-identical, ruling out stencil as the
+neutral-output cause. An exact capsule-only probe then remained byte-identical
+even though the producer readback is nonzero. Floor/receiver PreGBuffer
+carriers, all four screen-UV orientations, direct evaluation of the exact
+sphere/LUT equations, and explicit receiver-material bindings were tested and
+removed because they did not change the image. The decisive gate was instead
+visible in the live log: 10/10 capsules were written, but the broad canonical
+deferred publication failed closed and incorrectly forced the otherwise
+source-complete ShadowReceiver readiness scalar to zero. Receiver readiness
+now depends only on its exact constants and producer success; canonical
+`_VisibilitySHRT` publication remains independently fail-closed. A clean
+retail-stencil capture then changed matched frame 18 (old/new PSNR 54.6769 dB)
+with no diagnostic shader, logging `canonicalPublication=fail-closed,
+receiverPublication=ready`. Aggregate retail-frame PSNR moves slightly from
+15.2981 to 15.2950 dB, so this is retained as source-correct pipeline
+activation rather than a fitted visual win. The remaining ShadowPlane gap is
+the exact physical background GBuffer/depth composition and resulting shadow
+strength/shape, not capsule serialization, submission, constants, or stencil.
 The four roots' authored particle delays are preserved: `_03` starts at
 2.87--2.90 seconds and `_04` at 2.57--2.97, consistent with measured first-live
 frames and the native common `OnStateEnter` lifecycle. Retiming those roots
