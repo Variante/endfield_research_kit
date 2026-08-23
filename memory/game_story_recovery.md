@@ -194,8 +194,13 @@ leave only the report/CLI surface in recovery.
   finite table rotation. Nested `lazyDestroyEnvTalkData.envTalkIds` is retained
   as a distinct authored lifecycle variant. Neither direct nor lazy-destroy
   configuration proves current playback, activation, mission ownership, or
-  Story order. Atmospheric-cluster and character-level envTalk consumers stay
-  context-only because they do not identify a unique authored map point.
+  Story order. `AtmosphericNpcClusterDataTable` is independently spatial when
+  one self-consistent cluster row co-serializes its exact envTalk id, level,
+  complete NPC member list, and finite position. Each cluster is published as
+  its own authored ambient point; repeated Story keys remain explicit
+  multi-location content. This still proves neither runtime playback nor
+  mission ownership. Character-level envTalk consumers stay context-only
+  because they do not identify an authored map point.
   Generated frontier and map reports own the changing counts.
 - For e0m0, the current two-map union has 23 mapped Story keys and 25 disjoint
   unmapped keys. The unmapped set is 15 ordering-graph-only, 8 without spatial

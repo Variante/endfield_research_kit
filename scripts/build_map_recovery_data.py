@@ -62,6 +62,7 @@ REGISTRY_REL = f"{GAMEPLAY_CONFIG}/WorldEntityRegistry.json"
 REGISTRY = ROOT / REGISTRY_REL
 NPC_PROXY_TABLE_REL = f"{GAMEPLAY_CONFIG}/NpcProxyTable.json"
 NPC_PROXY_EX_REL = f"{GAMEPLAY_CONFIG}/NpcProxyExDataTable.json"
+ATMOSPHERIC_NPC_CLUSTER_REL = f"{GAMEPLAY_CONFIG}/AtmosphericNpcClusterDataTable.json"
 PERSISTENT_GAMEPLAY_CONFIG = (
     "export_full/structured/Persistent/Data/Json/GameplayConfig"
 )
@@ -94,6 +95,7 @@ _NATIVE_TRIGGER_FRONTIER_CACHE: dict | None = None
 _NATIVE_TRIGGER_FRONTIER_CACHE_KEY: tuple[str, int, int] | None = None
 _NPC_PROXY_EX_STORY_INDEX_CACHE: dict[str, dict[str, list[dict]]] = {}
 _NPC_PROXY_ENV_TALK_STORY_INDEX_CACHE: dict[str, dict[str, list[dict]]] = {}
+_ATMOSPHERIC_ENV_TALK_MARKER_INDEX_CACHE: dict[str, dict[str, list[dict]]] = {}
 
 
 def _native_trigger_frontier() -> dict:
@@ -1878,6 +1880,106 @@ def _exact_npc_proxy_env_talk_story_index(language: str) -> dict[str, list[dict]
         ))
     _NPC_PROXY_ENV_TALK_STORY_INDEX_CACHE[language] = index
     return index
+
+
+def _exact_atmospheric_env_talk_marker_index(language: str) -> dict[str, list[dict]]:
+    """Index authored atmospheric-cluster positions by exact envTalk Story.
+
+    The cluster table co-serializes its identity, level, envTalk id, members,
+    and world position. Each cluster remains an independent point; repeated
+    Story keys are explicit multi-location ambient content and are not merged.
+    """
+    cached = _ATMOSPHERIC_ENV_TALK_MARKER_INDEX_CACHE.get(language)
+    if cached is not None:
+        return cached
+
+    conv_root = ROOT / f"webui/data/lang/{language}/conv"
+    folded_story_keys: dict[str, list[str]] = {}
+    if conv_root.is_dir():
+        for path in sorted(conv_root.glob("*.json")):
+            folded_story_keys.setdefault(path.stem.casefold(), []).append(path.stem)
+
+    table_path = _active_gameplay_config_path("AtmosphericNpcClusterDataTable.json")
+    payload = _load_json(table_path, {}) or {}
+    rows = payload.get("dataTable") if isinstance(payload, dict) else None
+    if not isinstance(rows, dict):
+        _ATMOSPHERIC_ENV_TALK_MARKER_INDEX_CACHE[language] = {}
+        return {}
+
+    try:
+        source_file = str(table_path.relative_to(ROOT)).replace("\\", "/")
+    except ValueError:
+        source_file = str(table_path).replace("\\", "/")
+
+    index: dict[str, list[dict]] = {}
+    for row_key, row in rows.items():
+        if not isinstance(row, dict) or row.get("clusterId") != row_key:
+            continue
+        env_talk_id = str(row.get("envTalkId") or "")
+        level_id = str(row.get("levelId") or "")
+        candidates = folded_story_keys.get(f"env_{env_talk_id}".casefold(), [])
+        position = _finite_position(row.get("position"))
+        if (
+            not env_talk_id
+            or not level_id
+            or len(candidates) != 1
+            or position is None
+            or any(
+                component is None or not math.isfinite(component)
+                for component in position.values()
+            )
+        ):
+            continue
+        npc_ids = row.get("npcIds")
+        if not isinstance(npc_ids, list) or not all(
+            isinstance(npc_id, str) and npc_id for npc_id in npc_ids
+        ):
+            continue
+        story_key = candidates[0]
+        index.setdefault(level_id, []).append({
+            "kind": "story",
+            "subKind": "atmospheric_npc_cluster",
+            "label": story_key,
+            "identity": f"story-env-cluster:{row_key}",
+            "position": position,
+            "sceneKeys": [story_key],
+            "missions": [],
+            "interactionStatus": "exact_atmospheric_env_talk_configuration",
+            "evidence": (
+                "AtmosphericNpcClusterDataTable exact cluster/envTalk/level/position"
+            ),
+            "registryBacked": False,
+            "clusterId": str(row_key),
+            "envTalkId": env_talk_id,
+            "npcIds": list(npc_ids),
+            "multiLocationSemantics": "explicit_independent_authored_clusters",
+            "activationStatus": "runtime_ambient_selection_unproven",
+            "missionOwnershipStatus": "unresolved_non_owning",
+            "activation": False,
+            "ownership": False,
+            "orderEvidence": False,
+            "sourceFiles": [source_file],
+            "relatedFiles": _sorted_related(_merge_related([], [
+                _related(
+                    source_file,
+                    "story_atmospheric_cluster",
+                    "authored cluster identity, members, level, and position",
+                ),
+                _related(
+                    _conv_file_for_key(language, story_key),
+                    "story_atmospheric_cluster",
+                    "ambient Story configured on this exact cluster",
+                ),
+            ])),
+        })
+    for markers in index.values():
+        markers.sort(key=lambda row: (row["identity"], row["sceneKeys"][0]))
+    _ATMOSPHERIC_ENV_TALK_MARKER_INDEX_CACHE[language] = index
+    return index
+
+
+def _exact_atmospheric_env_talk_markers(level_id: str, language: str) -> list[dict]:
+    return list(_exact_atmospheric_env_talk_marker_index(language).get(level_id, []))
 
 
 def _world_narrative_bindings(language: str) -> dict[str, list[dict]]:
@@ -4637,6 +4739,7 @@ def build_level(
     markers.extend(_gender_select_casefold_trigger_markers(level_id, language))
     markers.extend(_exact_story_spawner_markers(level_id, language))
     markers.extend(_exact_story_encounter_markers(level_id, language))
+    markers.extend(_exact_atmospheric_env_talk_markers(level_id, language))
     markers.extend(_exact_story_patrol_checkpoint_markers(
         [*proxy_patrol_contexts, *npc_patrol_contexts],
         language,
