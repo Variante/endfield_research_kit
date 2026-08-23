@@ -1762,7 +1762,9 @@ def _exact_npc_proxy_env_talk_story_index(language: str) -> dict[str, list[dict]
             folded_story_keys.setdefault(path.stem.casefold(), []).append(path.stem)
 
     proxy_table_path = _active_gameplay_config_path("NpcProxyTable.json")
+    proxy_ex_path = _active_gameplay_config_path("NpcProxyExDataTable.json")
     proxy_table = _load_json(proxy_table_path, {}) or {}
+    proxy_ex = _load_json(proxy_ex_path, {}) or {}
     registry = _load_json(REGISTRY, {}) or {}
     table_rows = proxy_table.get("dataTable") if isinstance(proxy_table, dict) else None
     briefs = registry.get("npcProxyBriefInfos") if isinstance(registry, dict) else None
@@ -1818,7 +1820,50 @@ def _exact_npc_proxy_env_talk_story_index(language: str) -> dict[str, list[dict]
         return refs
 
     index: dict[str, list[dict]] = {}
-    seen: set[tuple[str, str, str]] = set()
+    seen: set[tuple[str, str, str, str]] = set()
+
+    def add_binding(
+        *,
+        proxy_id: str,
+        segment_id: int,
+        level_id: str,
+        env_talk_id: str,
+        field_path: str,
+        lifecycle_status: str,
+        mission_context: str,
+        source_files: list[str],
+    ) -> None:
+        authored_story_key = f"env_{env_talk_id}"
+        candidates = folded_story_keys.get(authored_story_key.casefold(), [])
+        if len(candidates) != 1:
+            return
+        story_key = candidates[0]
+        identity = f"npc:{segment_id}"
+        signature = (identity, story_key, lifecycle_status, mission_context)
+        if signature in seen:
+            return
+        seen.add(signature)
+        index.setdefault(identity, []).append({
+            "storyKey": story_key,
+            "authoredStoryKey": authored_story_key,
+            "envTalkId": env_talk_id,
+            "npcProxyId": proxy_id,
+            "entityLogicId": segment_id,
+            "levelId": level_id,
+            "fieldPath": field_path,
+            "missionContext": mission_context,
+            "status": "exact_npc_proxy_env_talk_target",
+            "lifecycleStatus": lifecycle_status,
+            "activationStatus": "runtime_selection_unproven",
+            "spatialResolutionEvidence": (
+                "exact_npc_proxy_env_talk_and_registry_table_transform"
+            ),
+            "activation": False,
+            "ownership": False,
+            "orderEvidence": False,
+            "sourceFiles": source_files,
+        })
+
     for proxy_id, table_row in table_rows.items():
         if not isinstance(table_row, dict):
             continue
@@ -1839,41 +1884,73 @@ def _exact_npc_proxy_env_talk_story_index(language: str) -> dict[str, list[dict]
             or not level_id
         ):
             continue
-        identity = f"npc:{segment_id}"
         for env_talk_id, field_path in refs:
-            authored_story_key = f"env_{env_talk_id}"
-            candidates = folded_story_keys.get(authored_story_key.casefold(), [])
-            if len(candidates) != 1:
-                continue
-            story_key = candidates[0]
             lifecycle_status = (
                 "lazy_destroy_variant_authored"
                 if "lazyDestroyEnvTalkData" in field_path
                 else "direct_proxy_ambient_configuration"
             )
-            signature = (identity, story_key, lifecycle_status)
-            if signature in seen:
+            add_binding(
+                proxy_id=str(proxy_id),
+                segment_id=segment_id,
+                level_id=level_id,
+                env_talk_id=env_talk_id,
+                field_path=field_path,
+                lifecycle_status=lifecycle_status,
+                mission_context="",
+                source_files=[relative(proxy_table_path), REGISTRY_REL],
+            )
+
+    ex_rows = proxy_ex.get("data") if isinstance(proxy_ex, dict) else None
+    if isinstance(ex_rows, dict):
+        for proxy_id, variants in ex_rows.items():
+            table_row = table_rows.get(proxy_id)
+            brief_matches = brief_rows_by_proxy.get(str(proxy_id), [])
+            if (
+                not isinstance(variants, list)
+                or not isinstance(table_row, dict)
+                or len(brief_matches) != 1
+            ):
                 continue
-            seen.add(signature)
-            index.setdefault(identity, []).append({
-                "storyKey": story_key,
-                "authoredStoryKey": authored_story_key,
-                "envTalkId": env_talk_id,
-                "npcProxyId": str(proxy_id),
-                "entityLogicId": segment_id,
-                "levelId": level_id,
-                "fieldPath": field_path,
-                "status": "exact_npc_proxy_env_talk_target",
-                "lifecycleStatus": lifecycle_status,
-                "activationStatus": "runtime_selection_unproven",
-                "spatialResolutionEvidence": (
-                    "exact_npc_proxy_env_talk_and_registry_table_transform"
-                ),
-                "activation": False,
-                "ownership": False,
-                "orderEvidence": False,
-                "sourceFiles": [relative(proxy_table_path), REGISTRY_REL],
-            })
+            segment_id, brief = brief_matches[0]
+            level_id = str(table_row.get("levelId") or "")
+            if (
+                finite_vector(brief.get("position")) is None
+                or finite_vector(brief.get("position"))
+                != finite_vector(table_row.get("position"))
+                or finite_vector(table_row.get("rotation")) is None
+                or not level_id
+            ):
+                continue
+            for row_index, variant in enumerate(variants):
+                if not isinstance(variant, dict):
+                    continue
+                env_data = variant.get("envTalkData")
+                env_talk_ids = (
+                    env_data.get("envTalkIds")
+                    if isinstance(env_data, dict)
+                    else None
+                )
+                if not isinstance(env_talk_ids, list):
+                    continue
+                mission_context = str(variant.get("missionId") or "")
+                for env_talk_id in env_talk_ids:
+                    if not isinstance(env_talk_id, str) or not env_talk_id:
+                        continue
+                    add_binding(
+                        proxy_id=str(proxy_id),
+                        segment_id=segment_id,
+                        level_id=level_id,
+                        env_talk_id=env_talk_id,
+                        field_path=f"data.{proxy_id}[{row_index}].envTalkData.envTalkIds",
+                        lifecycle_status="npc_proxy_ex_ambient_variant_authored",
+                        mission_context=mission_context,
+                        source_files=[
+                            relative(proxy_ex_path),
+                            relative(proxy_table_path),
+                            REGISTRY_REL,
+                        ],
+                    )
     for bindings in index.values():
         bindings.sort(key=lambda row: (
             row["storyKey"], row["lifecycleStatus"], row["fieldPath"]

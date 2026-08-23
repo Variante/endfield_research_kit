@@ -192,8 +192,10 @@ leave only the report/CLI surface in recovery.
   requires a unique case-insensitive published key, one self-consistent
   `npcProxyBriefInfos` identity, and equal finite registry/table position plus
   finite table rotation. Nested `lazyDestroyEnvTalkData.envTalkIds` is retained
-  as a distinct authored lifecycle variant. Neither direct nor lazy-destroy
-  configuration proves current playback, activation, mission ownership, or
+  as a distinct authored lifecycle variant. `NpcProxyExDataTable.envTalkData`
+  may add mission-conditioned ambient variants on the same exact proxy; its
+  mission id remains context rather than ownership. None of these proxy
+  configurations proves current playback, activation, mission ownership, or
   Story order. `AtmosphericNpcClusterDataTable` is independently spatial when
   one self-consistent cluster row co-serializes its exact envTalk id, level,
   complete NPC member list, and finite position. Each cluster is published as

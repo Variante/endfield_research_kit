@@ -107,6 +107,12 @@ class BuildMapRecoveryDataTests(unittest.TestCase):
                     "rotation": {"x": 0, "y": 90, "z": 0},
                 }},
             }), encoding="utf-8")
+            (gameplay / "NpcProxyExDataTable.json").write_text(json.dumps({
+                "data": {"proxy_exact": [{
+                    "missionId": "m1",
+                    "envTalkData": {"envTalkIds": ["direct"]},
+                }]},
+            }), encoding="utf-8")
             registry = root / builder.REGISTRY_REL
             registry.parent.mkdir(parents=True, exist_ok=True)
             registry.write_text(json.dumps({
@@ -120,13 +126,16 @@ class BuildMapRecoveryDataTests(unittest.TestCase):
             ):
                 index = builder._exact_npc_proxy_env_talk_story_index("CN")
         bindings = index["npc:101"]
+        self.assertEqual(len(bindings), 3)
         self.assertEqual(
-            [row["storyKey"] for row in bindings],
-            ["env_direct", "env_lazy"],
+            {row["lifecycleStatus"] for row in bindings},
+            {"direct_proxy_ambient_configuration", "lazy_destroy_variant_authored",
+             "npc_proxy_ex_ambient_variant_authored"},
         )
         self.assertEqual(
-            [row["lifecycleStatus"] for row in bindings],
-            ["direct_proxy_ambient_configuration", "lazy_destroy_variant_authored"],
+            [row["missionContext"] for row in bindings
+             if row["lifecycleStatus"] == "npc_proxy_ex_ambient_variant_authored"],
+            ["m1"],
         )
         self.assertTrue(all(not row["activation"] for row in bindings))
 
