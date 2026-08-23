@@ -341,7 +341,15 @@ def _hlod_mesh_candidates(level_ids: set[str], asset_map: Path, mesh_root: Path)
 def recover_hlod_region_levels(
     level_ids: list[str], cli: Path, game_root: Path, asset_map: Path, mesh_root: Path,
 ) -> list[dict]:
-    """Recover HLOD matrices once per region and partition by the authored level suffix."""
+    """Recover regional HLODs through exact AssetMap ownership and proven member suffixes.
+
+    The number after ``#`` in an InitChunk HLOD entity name is a dense region
+    member index, not the numeric suffix of ``mapXX_lvYYY``.  Map01 has no
+    lv004, so treating the level number as that member index shifted lv005-007
+    onto the next member's boundary HLODs.  Unique AssetMap level/key ownership
+    proves each level's member index; that proven index is used only to
+    disambiguate keys which are exported in more than one adjacent level.
+    """
     requested = {level_id.lower() for level_id in level_ids}
     candidates = _hlod_mesh_candidates(requested, asset_map, mesh_root)
     by_region: dict[str, list[tuple[str, int]]] = {}
@@ -354,16 +362,48 @@ def recover_hlod_region_levels(
     payloads = []
     for region, members in sorted(by_region.items()):
         region_core = _recover_transform_core(region, cli, game_root)
-        for level_id, member_number in members:
+        key_owners: dict[str, set[str]] = {}
+        for owner_level, rows in candidates.items():
+            for key, meshes in rows.items():
+                if len(meshes) == 1:
+                    key_owners.setdefault(key, set()).add(owner_level)
+
+        unique_suffixes: dict[str, Counter] = {level_id: Counter() for level_id, _number in members}
+        for row in region_core["instances"]:
+            match = HLOD_INSTANCE_RE.match(str(row.get("name") or ""))
+            if not match:
+                continue
+            key = match.group(1).casefold()
+            suffix = int(match.group(2))
+            owners = key_owners.get(key) or set()
+            if suffix > 0 and len(owners) == 1:
+                unique_suffixes[next(iter(owners))][suffix] += 1
+
+        proven_member_suffix: dict[str, int] = {}
+        for level_id, _number in members:
+            observed = unique_suffixes[level_id]
+            if len(observed) == 1:
+                proven_member_suffix[level_id] = next(iter(observed))
+
+        for level_id, _member_number in members:
             mesh_by_key = candidates.get(level_id) or {}
             instances = []
             for row in region_core["instances"]:
                 match = HLOD_INSTANCE_RE.match(str(row.get("name") or ""))
-                if not match or int(match.group(2)) != member_number:
+                if not match:
                     continue
                 key = match.group(1).casefold()
                 meshes = mesh_by_key.get(key)
-                if not meshes:
+                if not meshes or len(meshes) != 1:
+                    continue
+                owners = key_owners.get(key) or set()
+                suffix = int(match.group(2))
+                unique_owner = owners == {level_id}
+                shared_owner_proven = (
+                    len(owners) > 1
+                    and proven_member_suffix.get(level_id) == suffix
+                )
+                if not unique_owner and not shared_owner_proven:
                     continue
                 exact = dict(row)
                 exact["entityBase"] = key
@@ -371,7 +411,11 @@ def recover_hlod_region_levels(
                     "status": "exact",
                     "key": key,
                     "levelId": level_id,
-                    "evidence": "InitChunkData HLOD key/member suffix + AssetMap level/grid/cluster/hash key",
+                    "evidence": (
+                        "InitChunkData HLOD key + unique AssetMap level/grid/cluster/hash ownership"
+                        if unique_owner else
+                        "InitChunkData HLOD key/member suffix proven by unique AssetMap ownership"
+                    ),
                 }
                 instances.append(exact)
             core = {
@@ -386,9 +430,13 @@ def recover_hlod_region_levels(
             payload["hlodIdentityContract"] = {
                 "status": "exact",
                 "joinKey": "levelId + HLOD level + grid i/j + signed cluster hash",
-                "instanceMemberSuffix": member_number,
+                "instanceMemberSuffix": proven_member_suffix.get(level_id),
+                "memberSuffixEvidence": "unique AssetMap level/key ownership in the same InitChunkData region",
                 "resolvedInstanceCount": len(instances),
-                "boundary": "Unmatched or non-unique HLOD assets are omitted; no name-prefix fallback is used.",
+                "boundary": (
+                    "Unique level/key ownership is accepted directly. Cross-level shared keys require the member "
+                    "suffix proved by unique keys; unmatched, ambiguous, or unproved rows are omitted."
+                ),
             }
             payloads.append(payload)
     return payloads

@@ -12,7 +12,7 @@
   const ENTITY_SCALE_MAX = 3;
   const ENTITY_SCALE_STEP = 1.25;
   const POINT_HEIGHT_SLICE_COUNT = 32;
-  const MAP_ASSET_VERSION = "20260823-map103";
+  const MAP_ASSET_VERSION = "20260823-map110";
   const PAN_OVERHANG = 96; // px of surface a pan may run past the content edge
   const LABEL_ZOOM = 1.7; // minor entity labels stay hidden below this zoom
   const GEO_LABEL_ZOOM = 0.3; // keep one primary name per sibling at region view
@@ -95,8 +95,10 @@
     layerBackgrounds: [], // transparent tier overlays, kept separate from base screens
     floorHitAreas: [], // tier rectangles, including overlays not currently selected
     pointHeightRange: null, // exact world-Y bounds and the active two-thumb interval
+    displayMenuOpen: false, // retained while layer changes rebuild the map DOM
     contentBox: null, // plotted content extent in viewBox units, for the pan clamp
     selectedMapBox: null, // selected level's fitted background rectangle
+    projection: null, // current world X/Z <-> untransformed SVG canvas contract
     lastNodeScale: null, // skip per-node writes while a pan keeps the same scale
     lastLocationScale: null,
     loadRequest: 0,
@@ -224,7 +226,7 @@
       ...(hasMinimap ? [["minimap", "minimapLayer", state.showMinimap]] : []),
       ...rows.filter(([, , present]) => present).map(([id, label]) => [id, label, state.modelLayers.has(id)]),
     ];
-    return `<fieldset class="mr-model-layers"><legend>${esc(t("modelLayers"))}</legend>${available.map(([id, label, checked]) => {
+    return `<fieldset class="mr-model-layers" aria-label="${esc(t("modelLayers"))}">${available.map(([id, label, checked]) => {
       const opacity = Math.round((state.layerOpacities[id] ?? 1) * 100);
       const text = t(label);
       return `<div class="mr-model-layer-row"><input type="checkbox" data-map-display-layer="${id}" aria-label="${esc(text)}" ${checked ? "checked" : ""}><span>${esc(text)}</span><input type="range" min="0" max="100" step="1" value="${opacity}" data-map-layer-opacity="${id}" aria-label="${esc(`${text} ${t("layerOpacity")}`)}" title="${opacity}%"></div>`;
@@ -349,6 +351,16 @@
         </details>`;
       }).join("");
     return `<div class="mr-mission-list"><button type="button" class="mr-mission-all${state.mission ? "" : " is-active"}" data-map-mission="">${esc(`${t("missionAll")} (${missions.length})`)}</button>${rows}</div>`;
+  };
+
+  const revealSelectedMap = (host) => {
+    const column = host.querySelector(".mr-map-column");
+    const selected = column?.querySelector(".mr-map-item.is-active");
+    if (!column || !selected) return;
+    const columnRect = column.getBoundingClientRect();
+    const selectedRect = selected.getBoundingClientRect();
+    column.scrollTop += selectedRect.top + selectedRect.height / 2
+      - columnRect.top - columnRect.height / 2;
   };
 
   const npcPhaseSelectHtml = (data) => {
@@ -1389,6 +1401,39 @@
     });
   }
 
+  function hideMapCoordinateTip() {
+    const tip = root()?.querySelector(".mr-coordinate-tip");
+    if (tip) tip.hidden = true;
+  }
+
+  function previewMapCoordinates(event) {
+    const projection = state.projection;
+    const m = metrics();
+    const tip = root()?.querySelector(".mr-coordinate-tip");
+    if (!projection || !m || !tip || event.pointerType === "touch"
+        || state.dragging?.moved || event.target.closest(".mr-node, .mr-float, .mr-tools")) {
+      hideMapCoordinateTip();
+      return;
+    }
+    const canvasX = (((event.clientX - m.originX) - m.ox) / m.k - state.transform.x) / state.transform.scale;
+    const canvasY = (((event.clientY - m.originY) - m.oy) / m.k - state.transform.y) / state.transform.scale;
+    if (canvasX < projection.viewX || canvasX > projection.viewX + projection.viewW
+        || canvasY < projection.viewY || canvasY > projection.viewY + projection.viewH) {
+      hideMapCoordinateTip();
+      return;
+    }
+    const worldX = projection.minX + (canvasX - projection.viewX) / projection.fitScale;
+    const worldZ = projection.maxZ - (canvasY - projection.viewY) / projection.fitScale;
+    tip.textContent = `X ${worldX.toFixed(2)} · Z ${worldZ.toFixed(2)}`;
+    tip.hidden = false;
+    const width = tip.offsetWidth || 150;
+    const height = tip.offsetHeight || 28;
+    const x = event.clientX - m.originX;
+    const y = event.clientY - m.originY;
+    tip.style.left = `${clamp(x + 14, 6, Math.max(6, m.width - width - 6))}px`;
+    tip.style.top = `${clamp(y + 18, 6, Math.max(6, m.height - height - 6))}px`;
+  }
+
   function registryExcerptHtml(registry, focus) {
     let excerpt = null;
     let source = "";
@@ -1775,6 +1820,7 @@
     const viewH = rangeZ * fitScale;
     const viewX = (WIDTH - viewW) / 2;
     const viewY = (HEIGHT - viewH) / 2;
+    state.projection = { minX, maxZ, fitScale, viewX, viewY, viewW, viewH };
     // `needInverseXZ` is a quarter-turn axis conversion, not an image flip.
     // The in-game Dijiang reference has its prow/bridge on the left and the
     // base area on the right. Raw bridge (X~0,Z~-71) and base-area
@@ -2117,7 +2163,7 @@
       </div>
       <p class="mr-note mr-layer-selection-hint">${esc(t("layerSelectionHint"))}</p>
       <div class="mr-layers">${(data.questPoints || []).length ? `<label class="mr-layer" style="--mr-chip:${QUEST_COLOR}"><input type="checkbox" data-map-quests ${state.showQuests ? "checked" : ""}><span class="mr-swatch" style="background:${QUEST_COLOR}"></span>${esc(kindLabel("quest"))}<span class="mr-layer-count">${data.questPoints.length}</span></label>` : ""}${layerControls}</div>
-      ${modelLayerControls}${heightControl}<p class="mr-floor-help">${esc(t("help"))}</p>
+      <p class="mr-floor-help">${esc(t("help"))}</p>
     </section>`;
     const unlinked = (data.unlinkedMissionFiles || []).filter((path) => String(path || "").trim()).sort((a, b) => a.localeCompare(b));
     const unresolvedSlots = data.unresolvedTriggerSlots || { count: 0 };
@@ -2163,8 +2209,13 @@
         <svg class="mr-canvas" viewBox="0 0 ${WIDTH} ${HEIGHT}" role="group" aria-label="${esc(mapTitle(data))}"><rect width="100%" height="100%" class="mr-map-bg"/><g class="mr-viewport">${backgroundImages}<g class="mr-location-labels">${locationLabelSvg}</g><g class="mr-routes">${routeSvg}</g><g class="mr-trigger-zones">${triggerZoneSvg}</g><g class="mr-nodes">${nodeSvg}</g></g></svg>
         <div class="mr-tip" hidden></div>
         <div class="mr-floor-tip" hidden></div>
+        <div class="mr-coordinate-tip" hidden aria-hidden="true"></div>
         <div class="mr-tools" role="toolbar" aria-label="${esc(t("mapSurface"))}">
           ${regionScopeTools}
+          ${(modelLayerControls || heightControl) ? `<details class="mr-display-menu" ${state.displayMenuOpen ? "open" : ""}>
+            <summary>${esc(t("modelLayers"))}</summary>
+            <div class="mr-display-menu-popover">${modelLayerControls}${heightControl}</div>
+          </details><span class="mr-tool-sep" aria-hidden="true"></span>` : ""}
           <div class="mr-tool-group" role="group" aria-label="${esc(t("zoomLevel"))}">
             <button type="button" data-map-zoom="out" aria-label="${esc(t("zoomOut"))}" title="${esc(t("zoomOut"))}">-</button>
             <button type="button" data-map-zoom="in" aria-label="${esc(t("zoomIn"))}" title="${esc(t("zoomIn"))}">+</button>
@@ -2248,6 +2299,7 @@
         <div class="mr-inspector-body"></div>
       </aside>`;
     bindMap(host);
+    revealSelectedMap(host);
     state.inspectorKey = "";
     renderInspector();
     applyTransform();
@@ -2256,6 +2308,9 @@
   // ---------------------------------------------------------------- events
 
   function bindMap(host) {
+    host.querySelector(".mr-display-menu")?.addEventListener("toggle", (event) => {
+      state.displayMenuOpen = event.currentTarget.open;
+    });
     host.querySelector("#map-recovery-select")?.addEventListener("change", (event) => {
       void switchMap(event.target.value);
     });
@@ -2404,10 +2459,14 @@
     map.addEventListener("pointerdown", beginPan);
     map.addEventListener("selectstart", (event) => event.preventDefault());
     map.addEventListener("pointermove", movePan);
+    map.addEventListener("pointermove", previewMapCoordinates);
     map.addEventListener("pointermove", previewMapFloors);
     map.addEventListener("pointerup", endPan);
     map.addEventListener("pointercancel", endPan);
-    map.addEventListener("pointerleave", hideMapFloorTip);
+    map.addEventListener("pointerleave", () => {
+      hideMapFloorTip();
+      hideMapCoordinateTip();
+    });
     map.addEventListener("click", cycleMapFloor);
     // Non-passive so the page never scrolls behind a wheel zoom over the map.
     map.addEventListener("wheel", mapWheel, { passive: false });

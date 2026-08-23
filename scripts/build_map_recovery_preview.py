@@ -902,6 +902,9 @@ def render_point_cloud(
         image_suffix="registry_height_mask", sampling="all",
     )
     if not rendered_instances:
+        elevation_underlay = render_sparse_point_elevation(
+            level_id, sparse_point_depth, width, height, output_root,
+        )
         point_cloud_overlay = {
             "src": f"render/{image_name}",
             "method": "exact_registry_transform_point_cloud",
@@ -1882,6 +1885,49 @@ def render_elevation_underlay(
             f"Recovered {source_label} only. This analytical elevation layer is intentionally grayscale; "
             "material color remains confined to the separate surface/point layers. Gap growth is visibly "
             "translucent and does not claim authored ground geometry."
+        ),
+    }
+
+
+def render_sparse_point_elevation(
+    level_id: str,
+    depth: list[float],
+    width: int,
+    height: int,
+    output_root: Path,
+) -> dict | None:
+    """Render exact point footprints as grayscale elevation without inventing a surface."""
+    real = [value > NO_HIT for value in depth]
+    covered = [value for value in depth if value > NO_HIT]
+    if not covered:
+        return None
+    low, high = min(covered), max(covered)
+    span = max(high - low, 1.0)
+    rows = []
+    for y in range(height):
+        row = bytearray()
+        for x in range(width):
+            value = depth[y * width + x]
+            if value <= NO_HIT:
+                row.extend((255, 255, 255, 0))
+                continue
+            shade = max(32, min(224, round(224 - 176 * ((value - low) / span))))
+            row.extend((shade, shade, shade, 225))
+        rows.append(bytes(row))
+    image_name = f"{level_id}_registry_elevation_points.png"
+    write_png(output_root / image_name, width, height, rows)
+    ratio = round(sum(real) / (width * height), 4)
+    return {
+        "src": f"render/{image_name}",
+        "method": "exact_registry_transform_grayscale_elevation_points",
+        "defaultOpacity": 1.0,
+        "realPixelRatio": ratio,
+        "coveredPixelRatio": ratio,
+        "elevationRange": {"min": low, "max": high},
+        "boundary": (
+            "Grayscale elevation is drawn only on the visible footprints of exact published registry/quest "
+            "X/Y/Z points. Transparent gaps remain empty; no growth, smoothing, triangulation, or inferred "
+            "terrain is applied."
         ),
     }
 

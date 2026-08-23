@@ -419,7 +419,7 @@
   }
 
   function filteredRecords() {
-    const query = state.query.trim().toLocaleLowerCase();
+    const tokens = window.WebUI.parseQuery(state.query);
     const activeCountFilters = activeCountRangeFilters();
     const rows = groupedRecords().filter((row) => {
       if (state.kind !== "all" && !(row.kinds || []).includes(state.kind)) return false;
@@ -441,7 +441,7 @@
       if (state.specialFilters.has("merged") && !(row.mergedIds || []).length) return false;
       if (state.specialFilters.has("needs_merge") && !state.flaggedIds.has(row.id)) return false;
       if (state.specialFilters.has("name_overridden") && !row.nameOverridden) return false;
-      if (!query) return true;
+      if (!tokens.length) return true;
       const haystack = [
         row.id,
         row.primaryName,
@@ -451,8 +451,8 @@
           identity.id,
           ...(identity.evidence || []).flatMap((item) => [item.key, ...(item.paths || [])]),
         ]),
-      ].join(" ").toLocaleLowerCase();
-      return haystack.includes(query);
+      ].join(" ");
+      return window.WebUI.queryMatches(haystack, tokens);
     });
     return sortRecords(rows);
   }
