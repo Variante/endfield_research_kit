@@ -128,6 +128,12 @@ leave only the report/CLI surface in recovery.
   final-header exact subtype prefix remains bounded by consumed members.
   `EntityHpChanged` likewise keeps a fully validated constant entity/ratio
   payload spatial when only its inherited validation predicate is getter-backed.
+  `ProxyPatrolCheckpointReach` walks the complete patrol-id, point-index,
+  nullable output, and proxy-id member sequence. A nonempty constant proxy id
+  may attach playback to one exact `npcProxyBriefInfos`/`NpcProxyTable` point
+  only when identity and finite authored transforms agree. This point is the
+  NPC proxy's authored placement; the event's runtime checkpoint position
+  output is not statically recovered. Missing proxy rows remain unplaced.
   Exact SpawnerPtr filters are spatial only when the same level contains one
   matching `sc_<level>_<id>` SpawnerConfig and one logical typed LevelData host
   record whose finite position/rotation agrees across the active overlay.
