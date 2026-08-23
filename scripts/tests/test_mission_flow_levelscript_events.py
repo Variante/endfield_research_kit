@@ -2570,6 +2570,72 @@ class MissionFlowLevelScriptEventTests(unittest.TestCase):
         self.assertEqual("npcPosition", detail["npcPositionOutputRefs"][0]["field"])
         self.assertFalse(detail["serverExchange"])
 
+    def test_npc_patrol_checkpoint_preserves_runtime_blackboard_filters(self):
+        tail = b"\xff\xff\xff\xff\x00\x00\x00\x00\xff\xff\xff\xff"
+        payload = bytearray(17)
+        payload[5:9] = (3).to_bytes(4, "little", signed=True)
+        payload.extend(b"\x04\x01" + tail)
+        alias = b"rabbitNPC"
+        payload.extend(
+            b"\x04\x03" + b"\x00" * 13
+            + (-1).to_bytes(4, "little", signed=True)
+            + (200).to_bytes(4, "little", signed=True)
+            + len(alias).to_bytes(4, "little", signed=True) + alias
+        )
+        for path in (b"patrolId", b"radioIndex"):
+            payload.extend(
+                b"\x04" + (0).to_bytes(4, "little", signed=True)
+                + (-1).to_bytes(4, "little", signed=True)
+                + (200).to_bytes(4, "little", signed=True)
+                + len(path).to_bytes(4, "little", signed=True) + path
+            )
+        for path in (
+            b"$0@_npcEntity", b"$0@_npcPosition", b"$0@_patrolId", b"$0@_pointIndex",
+        ):
+            payload.extend(
+                b"\x02" + (0).to_bytes(4, "little")
+                + len(path).to_bytes(4, "little", signed=True) + path
+            )
+        detail = decode_levelscript_record_payload(
+            bytes(payload),
+            {
+                "payloadStart": 0,
+                "code": 0x157C,
+                "kind": 0,
+                "unionTag": 0x7C,
+                "serializedMemberCount": 21,
+                "localId": 0,
+                "nextId": 1,
+            },
+            next_start=len(payload),
+            action_map_role="headerList#1",
+        )["nativeEventDetail"]
+        self.assertEqual(
+            "dynamic-blackboard-npc-patrol-checkpoint-and-outputs-exact-eof",
+            detail["payloadShape"],
+        )
+        self.assertEqual("patrolId", detail["patrolIdFilterParam"]["path"])
+        self.assertEqual("radioIndex", detail["checkpointIndexFilterParam"]["path"])
+        self.assertEqual(4, len(detail["eventOutputs"]))
+        self.assertNotIn("patrolIdFilter", detail)
+
+        payload.append(0)
+        rejected = decode_levelscript_record_payload(
+            bytes(payload),
+            {
+                "payloadStart": 0,
+                "code": 0x157C,
+                "kind": 0,
+                "unionTag": 0x7C,
+                "serializedMemberCount": 21,
+                "localId": 0,
+                "nextId": 1,
+            },
+            next_start=len(payload),
+            action_map_role="headerList#1",
+        )
+        self.assertNotIn("nativeEventDetail", rejected)
+
     def test_native_event_fields_label_battle_custom_guide_and_trigger_payloads(self):
         battle_payload = bytes.fromhex(
             "00 00 00 00 00 66 00 00 00 00 00 00 00 00 00 00 00 "

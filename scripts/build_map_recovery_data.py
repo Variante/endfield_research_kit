@@ -928,6 +928,8 @@ def _exact_story_proxy_patrol_checkpoint_contexts(level_id: str) -> list[dict]:
                 and observation.get("levelId") == level_id
                 and observation.get("eventName") == "LevelEvent_OnProxyPatrolCheckpointReach"
                 and detail.get("payloadSchemaStatus") == "exact_current_build_memorypack_fields"
+                and detail.get("payloadSchemaMappingId")
+                == "gameassembly-2026-07-17-memorypack-native-event-fields"
                 and detail.get("serverExchange") is False
                 and detail.get("serializedMissionOrQuestId") is False
                 and detail.get("payloadShape") in {
@@ -1009,6 +1011,8 @@ def _exact_story_npc_patrol_checkpoint_contexts(level_id: str) -> list[dict]:
                 and observation.get("levelId") == level_id
                 and observation.get("eventName") == "LevelEvent_OnNpcPatrolCheckpointReach"
                 and detail.get("payloadSchemaStatus") == "exact_current_build_memorypack_fields"
+                and detail.get("payloadSchemaMappingId")
+                == "gameassembly-2026-07-17-memorypack-native-event-fields"
                 and detail.get("payloadShape") == "dynamic-npc-patrol-checkpoint-fields"
                 and detail.get("serverExchange") is False
                 and detail.get("serializedMissionOrQuestId") is False
