@@ -1260,6 +1260,45 @@ class BuildMapRecoveryDataTests(unittest.TestCase):
             path.write_text(json.dumps(report), encoding="utf-8")
             self.assertEqual(builder._exact_story_trigger_markers("indie_dg002", "CN"), [])
 
+    def test_exact_story_trigger_markers_publish_each_explicit_list_slot(self):
+        slots = [80001, 80002]
+        observations = []
+        for index, slot_id in enumerate(slots):
+            observations.append({
+                "status": "exact_local_trigger_volume", "levelId": "map",
+                "scriptId": "100", "triggerSlotIdFilter": slot_id,
+                "triggerSlotIdFilters": slots,
+                "multiLocationSemantics": "explicit_independent_trigger_slots",
+                "sourceFile": "LevelScriptData/map/100.json",
+                "playbackControlPathEvidence": {
+                    "status": "exact_trigger_rooted_playback",
+                },
+                "triggerVolume": {
+                    "slotId": slot_id, "triggerVolumeType": "Leader",
+                },
+                "triggerVolumeContext": {
+                    "status": "exact_local_levelscript_trigger_volume_without_foreign_identity",
+                    "scriptIdVerified": True, "matchedSlotIds": slots,
+                    "missingSlotIds": [], "ambiguousSlotIds": [],
+                },
+                "decodedShape": [{
+                    "offset": f"0x{100 + index:x}", "shapeType": "Box",
+                    "position": {"x": index + 1, "y": 2, "z": 3},
+                    "rotation": {}, "size": {"x": 1, "y": 1, "z": 1},
+                }],
+            })
+        report = {"storyTriggerZoneCoverage": {"rows": [{
+            "storyKey": "radio_multi", "status": "multiple_or_ambiguous_trigger_zones",
+            "observations": observations,
+        }]}}
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(builder, "ROOT", Path(tmp)):
+            path = Path(tmp) / builder.NATIVE_TRIGGER_FRONTIER_REL
+            path.parent.mkdir(parents=True)
+            path.write_text(json.dumps(report), encoding="utf-8")
+            rows = builder._exact_story_trigger_markers("map", "CN")
+        self.assertEqual(["80001", "80002"], [row["triggerSlotId"] for row in rows])
+        self.assertTrue(all(row["sceneKeys"] == ["radio_multi"] for row in rows))
+
     def test_exact_story_trigger_markers_merge_stories_sharing_one_shape(self):
         observation = {
             "status": "exact_local_trigger_volume", "levelId": "map", "scriptId": "100",
