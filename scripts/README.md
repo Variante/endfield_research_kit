@@ -71,6 +71,12 @@ a degraded reason instead of using them as direct evidence.
 | Updates | `build_updates.py` | `webui/data/updates/latest.json` |
 | Packaging | `pack_webui.py` | distributable static package |
 
+Packaging emits three matching archives: the main Story archive owns Story,
+Text, Updates, Mission Pipeline, shared WebUI code, and compact Audio semantics;
+the assets archive owns Map, Characters, Gameplay, and exported image/video
+payloads; the audio archive owns FLAC media and raw audio indexes. The retired
+Asset Browser and 3D model payloads are intentionally excluded.
+
 `build_gameplay.py` owns every Gameplay dataset. Behavior-focused stages live
 in `gameplay_builder/`; its `asset-refs` stage calls the public
 `asset_builder.gameplay_refs` API with the current Gameplay and Assets indexes

@@ -11,6 +11,22 @@ SCRIPT = Path(pack_webui.__file__).resolve()
 
 
 class PackWebuiAudioTests(unittest.TestCase):
+    def test_companion_assets_own_map_character_and_gameplay_pages(self) -> None:
+        companion = {
+            "src/features/map_recovery/index.js",
+            "data/map_recovery/index.json",
+            "src/features/characters/index.js",
+            "data/lang/CN/characters/index.json",
+            "src/features/gameplay/index.js",
+            "data/lang/CN/gameplay/index.json",
+            "data/gameplay/projectiles.json",
+            "data/assets/gameplay_refs.json",
+        }
+        for rel in companion:
+            self.assertTrue(pack_webui.is_companion_feature_path(rel), rel)
+        for rel in ("app.js", "data/lang/CN/index.json", "src/features/audio/index.js"):
+            self.assertFalse(pack_webui.is_companion_feature_path(rel), rel)
+
     def test_story_media_resolution_is_owned_by_asset_builder(self) -> None:
         self.assertTrue(hasattr(pack_webui.media_resolver, "AssetCandidate"))
         self.assertFalse(hasattr(pack_webui, "AssetCandidate"))
@@ -80,6 +96,7 @@ class PackWebuiAudioTests(unittest.TestCase):
         shim = pack_webui.ASSET_SHIM_JS
 
         self.assertIn('"audio"', shim)
+        self.assertIn('"map-recovery"', shim)
         self.assertIn('const DEBUG_ONLY_VIEWS = new Set(["mission-pipeline"]);', shim)
         self.assertIn('audio: "gameplay"', shim)
         self.assertIn('"mission-pipeline": "gameplay"', shim)
