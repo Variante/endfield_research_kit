@@ -3288,6 +3288,24 @@ def _decode_named_native_event_detail(
                     f"{receiver} saved property {literal_texts[0]} changes"
                 ),
             }
+    elif native_header_name == levelscript_entity_events.SPECIFIC_ENTITY_LIST_DIE:
+        list_die_fields = levelscript_entity_events.decode_entity_event_fields(
+            payload,
+            native_header_name,
+        )
+        if list_die_fields:
+            detail = {
+                "type": native_header_name,
+                **list_die_fields,
+                "entityOutputRefs": refs("entity"),
+                "transport": "local-entity-lifecycle-runtime-event",
+                "serverExchange": False,
+                "serializedMissionOrQuestId": False,
+                "summary": (
+                    "matching entity in a "
+                    f"{len(list_die_fields['entityListFilter'])}-member specific list dies"
+                ),
+            }
     elif native_header_name in {
         "EntityEvent_OnBeingScanned",
         "EntityEvent_OnEntityDestroy",

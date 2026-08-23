@@ -714,6 +714,7 @@ _EXACT_ENTITY_EVENT_TYPES = {
     "LevelEvent_OnAnyEntityDie",
     "LevelEvent_OnEntityHpChanged",
     "LevelEvent_OnSpecificEntityDie",
+    "LevelEvent_OnSpecificEntityListDie",
 }
 
 
@@ -805,6 +806,10 @@ def _exact_story_entity_event_index(level_id: str) -> dict[str, list[dict]]:
                 ):
                     continue
                 pointers = [pointer]
+            elif event_name == "LevelEvent_OnSpecificEntityListDie":
+                if detail.get("payloadShape") != "specific-constant-entity-list-exact-eof":
+                    continue
+                pointers = list(detail.get("entityListFilter") or [])
 
             for pointer in pointers:
                 if not isinstance(pointer, dict):

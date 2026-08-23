@@ -7,6 +7,7 @@ from scripts.story_builder.codecs.levelscript.entity_cast_and_death_events impor
     ANY_ENTITY_DIE,
     ENTITY_CAST_SKILL,
     SPECIFIC_ENTITY_DIE,
+    SPECIFIC_ENTITY_LIST_DIE,
     decode_entity_event_fields,
 )
 
@@ -89,6 +90,25 @@ class LevelScriptEntityCastAndDeathEventTests(unittest.TestCase):
         self.assertEqual([100, 200], [item["logicId"] for item in fields["entityListFilter"]])
         self.assertTrue(fields["isMonsterFilter"])
         self.assertFalse(fields["filterByList"])
+
+    def test_specific_entity_list_die_decodes_constant_slot_list(self) -> None:
+        entity_list = (
+            b"\x04"
+            + struct.pack("<I", 1)
+            + b"\x03"
+            + struct.pack("<QI?", 0, 30005, True)
+            + _PARAM_TAIL
+        )
+        payload = _event_prefix() + _output("$78@_entity") + entity_list
+
+        fields = decode_entity_event_fields(payload, SPECIFIC_ENTITY_LIST_DIE)
+
+        self.assertEqual("$78@_entity", fields["entityOutputRef"])
+        self.assertEqual(
+            [{"logicId": 0, "slotId": 30005, "useSlotId": True}],
+            fields["entityListFilter"],
+        )
+        self.assertEqual("specific-constant-entity-list-exact-eof", fields["payloadShape"])
 
     def test_unknown_and_malformed_payloads_fail_closed(self) -> None:
         self.assertEqual({}, decode_entity_event_fields(b"", ENTITY_CAST_SKILL))
