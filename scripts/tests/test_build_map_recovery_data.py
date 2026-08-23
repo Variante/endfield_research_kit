@@ -13,6 +13,7 @@ class BuildMapRecoveryDataTests(unittest.TestCase):
     def setUp(self):
         builder._NATIVE_TRIGGER_FRONTIER_CACHE = None
         builder._NPC_PROXY_EX_STORY_INDEX_CACHE.clear()
+        builder._NPC_PROXY_ENV_TALK_STORY_INDEX_CACHE.clear()
 
     def test_npc_proxy_ex_story_index_requires_unique_casefold_story_and_exact_transform(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -86,6 +87,122 @@ class BuildMapRecoveryDataTests(unittest.TestCase):
                 return_value=[Path("dlg_same.json"), Path("DLG_SAME.json")],
             ):
                 self.assertEqual({}, builder._exact_npc_proxy_ex_story_index("CN"))
+
+    def test_npc_proxy_env_talk_index_preserves_direct_and_lazy_lifecycle(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            gameplay = root / builder.PERSISTENT_GAMEPLAY_CONFIG
+            gameplay.mkdir(parents=True)
+            conv = root / "webui/data/lang/CN/conv"
+            conv.mkdir(parents=True)
+            (conv / "env_direct.json").write_text("{}", encoding="utf-8")
+            (conv / "env_lazy.json").write_text("{}", encoding="utf-8")
+            (gameplay / "NpcProxyTable.json").write_text(json.dumps({
+                "dataTable": {"proxy_exact": {
+                    "levelId": "map_fixture",
+                    "envTalkIds": ["direct"],
+                    "lazyDestroyEnvTalkData": {"envTalkIds": ["lazy"]},
+                    "position": {"x": 1, "y": 2, "z": 3},
+                    "rotation": {"x": 0, "y": 90, "z": 0},
+                }},
+            }), encoding="utf-8")
+            registry = root / builder.REGISTRY_REL
+            registry.parent.mkdir(parents=True, exist_ok=True)
+            registry.write_text(json.dumps({
+                "npcProxyBriefInfos": {"101": {
+                    "proxyId": "proxy_exact", "segmentIdGlobal": 101,
+                    "position": {"x": 1, "y": 2, "z": 3},
+                }},
+            }), encoding="utf-8")
+            with mock.patch.object(builder, "ROOT", root), mock.patch.object(
+                builder, "REGISTRY", registry
+            ):
+                index = builder._exact_npc_proxy_env_talk_story_index("CN")
+        bindings = index["npc:101"]
+        self.assertEqual(
+            [row["storyKey"] for row in bindings],
+            ["env_direct", "env_lazy"],
+        )
+        self.assertEqual(
+            [row["lifecycleStatus"] for row in bindings],
+            ["direct_proxy_ambient_configuration", "lazy_destroy_variant_authored"],
+        )
+        self.assertTrue(all(not row["activation"] for row in bindings))
+
+    def test_npc_proxy_env_talk_index_rejects_identity_transform_and_case_gaps(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            gameplay = root / builder.PERSISTENT_GAMEPLAY_CONFIG
+            gameplay.mkdir(parents=True)
+            conv = root / "webui/data/lang/CN/conv"
+            conv.mkdir(parents=True)
+            (conv / "env_same.json").write_text("{}", encoding="utf-8")
+            (gameplay / "NpcProxyTable.json").write_text(json.dumps({
+                "dataTable": {
+                    "proxy_bad_position": {
+                        "levelId": "map_fixture", "envTalkIds": ["same"],
+                        "position": {"x": 9, "y": 2, "z": 3},
+                        "rotation": {"x": 0, "y": 0, "z": 0},
+                    },
+                    "proxy_missing_brief": {
+                        "levelId": "map_fixture", "envTalkIds": ["same"],
+                        "position": {"x": 1, "y": 2, "z": 3},
+                        "rotation": {"x": 0, "y": 0, "z": 0},
+                    },
+                },
+            }), encoding="utf-8")
+            registry = root / builder.REGISTRY_REL
+            registry.parent.mkdir(parents=True, exist_ok=True)
+            registry.write_text(json.dumps({
+                "npcProxyBriefInfos": {"101": {
+                    "proxyId": "proxy_bad_position", "segmentIdGlobal": 101,
+                    "position": {"x": 1, "y": 2, "z": 3},
+                }},
+            }), encoding="utf-8")
+            with mock.patch.object(builder, "ROOT", root), mock.patch.object(
+                builder, "REGISTRY", registry
+            ), mock.patch.object(
+                Path,
+                "glob",
+                return_value=[Path("env_same.json"), Path("ENV_SAME.json")],
+            ):
+                self.assertEqual(
+                    {}, builder._exact_npc_proxy_env_talk_story_index("CN")
+                )
+
+    def test_npc_proxy_marker_publishes_exact_env_talk_without_activation(self):
+        binding = {
+            "storyKey": "env_exact",
+            "npcProxyId": "proxy_exact",
+            "levelId": "map_fixture",
+            "status": "exact_npc_proxy_env_talk_target",
+            "lifecycleStatus": "direct_proxy_ambient_configuration",
+            "activation": False,
+            "ownership": False,
+            "orderEvidence": False,
+            "sourceFiles": [builder.NPC_PROXY_TABLE_REL, builder.REGISTRY_REL],
+        }
+        with mock.patch.object(
+            builder,
+            "_exact_npc_proxy_env_talk_story_index",
+            return_value={"npc:101": [binding]},
+        ), mock.patch.object(
+            builder, "_exact_npc_proxy_ex_story_index", return_value={}
+        ):
+            rows = builder._registry_markers(
+                {"world": [], "script": [], "npc": [("101", {
+                    "proxyId": "proxy_exact",
+                    "position": {"x": 1, "y": 2, "z": 3},
+                })]},
+                "map_fixture", "CN", {}, {}, {}, {}, {}, {},
+            )
+        self.assertEqual(rows[0]["sceneKeys"], ["env_exact"])
+        self.assertEqual(rows[0]["npcProxyEnvTalkStoryBindings"], [binding])
+        self.assertEqual(
+            rows[0]["interactionStatus"],
+            "exact_npc_proxy_env_talk_configuration",
+        )
+        self.assertFalse(rows[0]["npcProxyEnvTalkStoryBindings"][0]["activation"])
 
     def test_exact_encounter_marker_requires_positive_typed_spawner_and_unique_host(self):
         level_id = "map_fixture"
