@@ -2560,6 +2560,132 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
         self.assertFalse(observation.get("spatiallyApplicable"))
         self.assertEqual(0, report["rows"][0]["exactZoneCount"])
 
+    def test_story_trigger_zone_uses_unique_enriched_playback_owner_detail(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            source = Path(temporary) / "LevelScriptData" / "map_fixture" / "1001.json"
+            source.parent.mkdir(parents=True)
+            source.write_bytes(b"active")
+            source_file = source.resolve().as_posix()
+            fallback_detail = {
+                "type": "LevelEvent_OnSpawnerWaveBegin",
+                "payloadDecodeStatus": "partial_known_fields",
+                "payloadSchemaStatus": "partial_known_fields",
+            }
+            enriched_detail = {
+                "type": "LevelEvent_OnSpawnerWaveBegin",
+                "spawnerFilterId": 1002003,
+                "payloadDecodeStatus": "exact_complete_subtype",
+                "payloadSchemaStatus": "exact_current_build_memorypack_fields",
+            }
+            occurrence = {
+                "levelId": "map_fixture",
+                "scriptId": "1001",
+                "sourceFile": source_file,
+                "actionName": "PlayRadio",
+                "recordClass": "play_radio",
+                "localId": 12,
+                "triggerPlaybackBindingEligible": True,
+                "playbackExecutionRole": "direct_playback",
+                "nativeEventOwners": [{
+                    "status": "exact_serialized_control_path",
+                    "headerLocalId": 7,
+                    "eventDetail": enriched_detail,
+                    "path": [{"localId": 9}, {"localId": 12}],
+                }],
+            }
+            with mock.patch.object(
+                frontier,
+                "build_active_levelscript_action_story_occurrences",
+                return_value={"radio_fixture": [occurrence]},
+            ), mock.patch.object(
+                frontier,
+                "decode_levelscript_native_action_topology",
+                return_value=self._exact_topology(
+                    "LevelEvent_OnSpawnerWaveBegin", fallback_detail,
+                ),
+            ):
+                report = frontier.build_story_trigger_zone_coverage(
+                    self._trigger_fixture_index([{
+                        "key": "radio_fixture",
+                        "sourceFiles": [source_file],
+                    }]),
+                    overlay_index=self._trigger_overlay(source),
+                )
+
+        observation = report["rows"][0]["observations"][0]
+        self.assertEqual(enriched_detail, observation["eventDetail"])
+        self.assertEqual(1002003, observation["eventDetail"]["spawnerFilterId"])
+        self.assertEqual("exact_non_spatial_event_trigger", observation["status"])
+
+    def test_story_trigger_zone_does_not_use_ambiguous_or_foreign_enriched_detail(self) -> None:
+        fallback_detail = {
+            "type": "LevelEvent_OnSpawnerWaveBegin",
+            "payloadDecodeStatus": "partial_known_fields",
+            "payloadSchemaStatus": "partial_known_fields",
+        }
+        exact_details = [
+            {
+                "type": "LevelEvent_OnSpawnerWaveBegin",
+                "spawnerFilterId": spawner_id,
+                "payloadDecodeStatus": "exact_complete_subtype",
+                "payloadSchemaStatus": "exact_current_build_memorypack_fields",
+            }
+            for spawner_id in (1002003, 1002004)
+        ]
+        for case in ("ambiguous", "foreign_source"):
+            with self.subTest(case=case), tempfile.TemporaryDirectory() as temporary:
+                source = Path(temporary) / "LevelScriptData" / "map_fixture" / "1001.json"
+                source.parent.mkdir(parents=True)
+                source.write_bytes(b"active")
+                source_file = source.resolve().as_posix()
+                occurrences = []
+                for index, detail in enumerate(exact_details):
+                    occurrence_source = source_file
+                    if case == "foreign_source":
+                        occurrence_source = f"{source_file}.foreign"
+                    occurrences.append({
+                        "levelId": "map_fixture",
+                        "scriptId": "1001",
+                        "sourceFile": occurrence_source,
+                        "actionName": "PlayRadio",
+                        "recordClass": "play_radio",
+                        "localId": 12 + index,
+                        "triggerPlaybackBindingEligible": True,
+                        "playbackExecutionRole": "direct_playback",
+                        "nativeEventOwners": [{
+                            "status": "exact_serialized_control_path",
+                            "headerLocalId": 7,
+                            "eventDetail": detail,
+                            "path": [{"localId": 12 + index}],
+                        }],
+                    })
+                with mock.patch.object(
+                    frontier,
+                    "build_active_levelscript_action_story_occurrences",
+                    return_value={"radio_fixture": occurrences},
+                ), mock.patch.object(
+                    frontier,
+                    "decode_levelscript_native_action_topology",
+                    return_value=self._exact_topology(
+                        "LevelEvent_OnSpawnerWaveBegin", fallback_detail,
+                    ),
+                ):
+                    report = frontier.build_story_trigger_zone_coverage(
+                        self._trigger_fixture_index([{
+                            "key": "radio_fixture",
+                            "sourceFiles": [source_file],
+                        }]),
+                        overlay_index=self._trigger_overlay(source),
+                    )
+
+            matching = [
+                row for row in report["rows"][0]["observations"]
+                if row.get("sourceFile") == source_file
+            ]
+            self.assertEqual(1, len(matching))
+            self.assertEqual(fallback_detail, matching[0]["eventDetail"])
+            self.assertNotIn("spawnerFilterId", matching[0]["eventDetail"])
+
     def test_non_spatial_event_with_unvalidated_payload_is_not_labeled_spatial(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             source = Path(temporary) / "LevelScriptData" / "map_fixture" / "1001.json"

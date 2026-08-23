@@ -1933,6 +1933,46 @@ def build_story_trigger_zone_coverage(
         )
         story_entries[story_key][identity] = observation
 
+    def exact_playback_owner_event_detail(
+        story_key: str,
+        level_id: str,
+        script_id: str,
+        source_file: str,
+        header_local_id: int,
+    ) -> dict[str, Any] | None:
+        """Return one exact enriched header detail from the playback path.
+
+        The topology decoder establishes the active header identity. The
+        occurrence path additionally resolves build-locked pure getter
+        operands, so retain that richer detail only when every matching
+        direct playback occurrence agrees byte-for-byte.
+        """
+        details: dict[str, dict[str, Any]] = {}
+        for occurrence in active_occurrences_by_story.get(story_key) or []:
+            if not isinstance(occurrence, dict) or (
+                safe_text(occurrence.get("levelId")) != level_id
+                or safe_text(occurrence.get("scriptId")) != script_id
+                or safe_text(occurrence.get("sourceFile")) != source_file
+                or occurrence.get("triggerPlaybackBindingEligible") is not True
+                or occurrence.get("playbackExecutionRole") != "direct_playback"
+            ):
+                continue
+            action_local_id = occurrence.get("localId")
+            for owner in occurrence.get("nativeEventOwners") or []:
+                detail = owner.get("eventDetail") if isinstance(owner, dict) else None
+                if not (
+                    isinstance(detail, dict)
+                    and owner.get("status") == "exact_serialized_control_path"
+                    and owner.get("headerLocalId") == header_local_id
+                    and action_local_id in {
+                        step.get("localId") for step in owner.get("path") or []
+                        if isinstance(step, dict)
+                    }
+                ):
+                    continue
+                details[json.dumps(detail, sort_keys=True, ensure_ascii=True)] = detail
+        return next(iter(details.values())) if len(details) == 1 else None
+
     def active_header_remap_candidates(
         story_key: str,
         level_id: str,
@@ -2289,6 +2329,18 @@ def build_story_trigger_zone_coverage(
                     continue
                 event_name = safe_text(event.get("headerName"))
                 event_detail = event.get("eventDetail") or {}
+                enriched_event_detail = exact_playback_owner_event_detail(
+                    story_key,
+                    level_id,
+                    script_id,
+                    active_source,
+                    header_id,
+                )
+                if (
+                    isinstance(enriched_event_detail, dict)
+                    and enriched_event_detail.get("type") == event_name
+                ):
+                    event_detail = enriched_event_detail
                 base.update({
                     "eventName": event_name,
                     "eventSummary": safe_text(event_detail.get("summary")),

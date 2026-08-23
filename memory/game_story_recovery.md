@@ -147,7 +147,10 @@ leave only the report/CLI surface in recovery.
   neither changes a separately constant SpawnerPtr filter. Getter-backed
   spawner filters, group/wave text, and event outputs never substitute for the
   spawner identity. Partial known fields are reported separately from a fully
-  consumed native subtype.
+  consumed native subtype. A build-locked `SpawnerPtrGetter` may fold a getter
+  reference only when its corrected `payloadStart - 4` member boundary contains
+  one complete constant `Param<SpawnerPtr>`; source-200 property getters retain
+  their authored initial value as non-final diagnostics and do not place Story.
   Entity-spawn/lifecycle listeners walk the formatter fields in order and
   preserve nullable group/wave filters.  When the listener is the final
   header-list record, the exact consumed subtype prefix is authoritative even

@@ -79,6 +79,30 @@ def _read_u64_param(
     return value, cursor + 21
 
 
+def _read_u64_param_detail(
+    payload: bytes,
+    cursor: int,
+) -> tuple[dict[str, Any], int] | None:
+    if cursor + 21 > len(payload) or payload[cursor] != 0x04:
+        return None
+    value = struct.unpack_from("<Q", payload, cursor + 1)[0]
+    id_ref, source, path_size = struct.unpack_from("<iii", payload, cursor + 9)
+    cursor += 21
+    if id_ref < -1 or source < -1:
+        return None
+    if path_size == -1:
+        path = None
+    elif 0 < path_size <= 256 and cursor + path_size <= len(payload):
+        try:
+            path = payload[cursor:cursor + path_size].decode("utf-8")
+        except UnicodeDecodeError:
+            return None
+        cursor += path_size
+    else:
+        return None
+    return {"value": value, "idRef": id_ref, "paramSource": source, "path": path}, cursor
+
+
 def _read_i32_param(
     payload: bytes,
     cursor: int,
@@ -164,35 +188,47 @@ def _read_i32_param_detail(
 
 
 def _decode_begin(payload: bytes, *, wave: bool) -> dict[str, Any]:
-    """Decode exact constant spawner group/wave filters and null outputs."""
+    """Decode exact spawner group/wave filters and nullable outputs."""
     if not _has_bounded_header_validate_param(payload):
         return {}
     cursor = 31
 
     if wave:
-        spawner_result = _read_u64_param(payload, cursor)
+        spawner_result = _read_u64_param_detail(payload, cursor)
         if spawner_result is None:
             return {}
-        spawner_id, cursor = spawner_result
-        if cursor >= len(payload) or payload[cursor] != 0xFF:
+        spawner_param, cursor = spawner_result
+        spawner_output = _read_nullable_output_param(payload, cursor)
+        if spawner_output is None:
             return {}
-        key_result = _read_string_param(payload, cursor + 1)
+        spawner_output_detail, cursor = spawner_output
+        key_result = _read_nullable_string_param(payload, cursor)
         if key_result is None:
             return {}
         key, cursor = key_result
-        if cursor >= len(payload) or payload[cursor] != 0xFF:
+        key_output = _read_nullable_output_param(payload, cursor)
+        if key_output is None:
             return {}
-        cursor += 1
+        key_output_detail, cursor = key_output
         return {
-            "spawnerFilterId": spawner_id,
-            "spawnerOutputPresent": False,
+            "spawnerFilterId": (
+                spawner_param["value"]
+                if spawner_param.get("idRef") == -1
+                and spawner_param.get("paramSource") == 0
+                and spawner_param.get("path") is None
+                else None
+            ),
+            "spawnerFilterParam": spawner_param,
+            "spawnerOutputParam": spawner_output_detail,
+            "spawnerOutputPresent": spawner_output_detail is not None,
             "waveKeyFilter": key,
-            "waveKeyOutputPresent": False,
+            "waveKeyOutputParam": key_output_detail,
+            "waveKeyOutputPresent": key_output_detail is not None,
             "subtypeConsumedBytes": cursor,
             "payloadShape": (
-                "constant-spawner-and-wave-key-null-outputs-exact-eof"
+                "nullable-wave-key-and-spawner-exact-eof"
                 if cursor == len(payload)
-                else "constant-spawner-and-wave-key-null-outputs-exact-prefix"
+                else "nullable-wave-key-and-spawner-exact-prefix"
             ),
         }
 
@@ -334,11 +370,20 @@ def _decode_group_complete(payload: bytes) -> dict[str, Any]:
 def _decode_wave_complete(payload: bytes) -> dict[str, Any]:
     if not _has_bounded_header_validate_param(payload):
         return {}
-    spawner_result = _read_u64_param(payload, 31)
+    spawner_result = _read_u64_param_detail(payload, 31)
     if spawner_result is None:
         return {}
-    spawner_id, cursor = spawner_result
-    detail: dict[str, Any] = {"spawnerFilterId": spawner_id}
+    spawner_param, cursor = spawner_result
+    detail: dict[str, Any] = {
+        "spawnerFilterId": (
+            spawner_param["value"]
+            if spawner_param.get("idRef") == -1
+            and spawner_param.get("paramSource") == 0
+            and spawner_param.get("path") is None
+            else None
+        ),
+        "spawnerFilterParam": spawner_param,
+    }
     spawner_output = _read_nullable_output_param(payload, cursor)
     if spawner_output is None:
         return {}
