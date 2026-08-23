@@ -171,6 +171,12 @@ leave only the report/CLI surface in recovery.
   explicitly, while getter-backed SpawnerPtr values remain non-spatial.
   Wave/group configuration, spawned-entity output, or a raw numeric hit alone
   remains non-spatial.
+  Encounter activation and battle-part listeners may resolve to an authored
+  spawner host only through a complete constant `LsmPtr` filter, one matching
+  typed encounter property family, a positive type-50 `spawner_id`, and unique
+  same-level SpawnerConfig and LevelData transform. This locates the authored
+  encounter-associated spawner; it does not prove the encounter center,
+  runtime enemy position, activation, mission ownership, or Story order.
   Generated frontier and map reports own the changing counts.
 - For e0m0, the current two-map union has 23 mapped Story keys and 25 disjoint
   unmapped keys. The unmapped set is 15 ordering-graph-only, 8 without spatial

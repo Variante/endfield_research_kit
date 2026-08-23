@@ -707,6 +707,181 @@ def _exact_story_spawner_markers(level_id: str, language: str) -> list[dict]:
     return markers
 
 
+def _exact_story_encounter_markers(level_id: str, language: str) -> list[dict]:
+    """Project exact Encounter filters through their typed spawner property.
+
+    This is a non-owning authored-location relation. The event's constant
+    LsmPtr must select one native-validated Encounter property family, whose
+    type-50 ``spawner_id`` resolves to one config and one logical LevelData
+    transform. Runtime position, mission ownership, and activation are not
+    inferred.
+    """
+    report = _native_trigger_frontier()
+    contexts: dict[tuple[str, str, str], list[dict]] = {}
+    for receiver in report.get("rows") or []:
+        if not isinstance(receiver, dict):
+            continue
+        receiver_level = str(receiver.get("levelId") or "")
+        receiver_script = str(receiver.get("scriptId") or "")
+        for context in receiver.get("encounterControllerContexts") or []:
+            if not isinstance(context, dict):
+                continue
+            contexts.setdefault(
+                (receiver_level, receiver_script, str(context.get("moduleId") or "")),
+                [],
+            ).append(context)
+
+    bindings_by_spawner: dict[int, list[dict]] = {}
+    for row in (report.get("storyTriggerZoneCoverage") or {}).get("rows") or []:
+        if not isinstance(row, dict):
+            continue
+        story_key = str(row.get("storyKey") or "")
+        for observation in row.get("observations") or []:
+            if not isinstance(observation, dict):
+                continue
+            detail = observation.get("eventDetail") or {}
+            event_name = str(observation.get("eventName") or "")
+            lsm_ptr = detail.get("lsmPtrFilter")
+            script_id = str(observation.get("scriptId") or "")
+            if (
+                not story_key
+                or observation.get("levelId") != level_id
+                or observation.get("status") != "exact_non_spatial_event_trigger"
+                or event_name not in {
+                    "LevelEvent_OnEncounterActivated",
+                    "LevelEvent_OnEncounterBattlePartBegin",
+                }
+                or observation.get("headerUnionTag") not in {"0x0058", "0x0059"}
+                or observation.get("headerSerializedMemberCount") != 16
+                or detail.get("type") != event_name
+                or detail.get("payloadShape")
+                != "constant-lsm-pointer-null-output-exact-prefix"
+                or detail.get("lsmPtrOutputPresent") is not False
+                or detail.get("payloadSchemaStatus")
+                != "exact_current_build_memorypack_fields"
+                or detail.get("payloadSchemaMappingId")
+                != "gameassembly-2026-07-17-memorypack-native-event-fields"
+                or detail.get("serverExchange") is not False
+                or detail.get("serializedMissionOrQuestId") is not False
+                or not isinstance(lsm_ptr, int)
+                or isinstance(lsm_ptr, bool)
+                or lsm_ptr <= 0
+            ):
+                continue
+            matches = contexts.get((level_id, script_id, str(lsm_ptr))) or []
+            if len(matches) != 1:
+                continue
+            context = matches[0]
+            spawner_raw = context.get("spawnerId")
+            try:
+                spawner_id = int(spawner_raw)
+            except (TypeError, ValueError):
+                continue
+            if (
+                spawner_id <= 0
+                or context.get("classification")
+                != "encounter_controller_property_contract"
+                or context.get("mappingId")
+                != "gameassembly-2026-08-02-levelscriptmodule-save-prefix-encounter-contract"
+                or context.get("runtimeType") != "Beyond.Gameplay.Core.EncounterBase<T>"
+                or context.get("dataType") != "Beyond.Gameplay.EncounterData"
+                or f"@{lsm_ptr}_spawner_id"
+                not in (context.get("matchedPropertyNames") or [])
+            ):
+                continue
+            bindings_by_spawner.setdefault(spawner_id, []).append({
+                "storyKey": story_key,
+                "eventName": event_name,
+                "lsmPtr": lsm_ptr,
+                "scriptId": script_id,
+                "sourceFile": observation.get("sourceFile"),
+                "headerLocalId": observation.get("listenerHeaderLocalId"),
+                "encounterPropertyContext": context,
+                "playbackControlPathEvidence": observation.get(
+                    "playbackControlPathEvidence"
+                ),
+            })
+
+    markers: list[dict] = []
+    for spawner_id, bindings in sorted(bindings_by_spawner.items()):
+        config_matches = list((
+            ROOT / "export_full/structured/StreamingAssets/Data/Json/SpawnerConfig" / level_id
+        ).glob(f"sc_{level_id}_{spawner_id}.json"))
+        if len(config_matches) != 1:
+            continue
+        name = f"sc_{level_id}_{spawner_id}".encode("ascii")
+        host_rows: list[dict] = []
+        for root in (
+            ROOT / "export_full/structured/StreamingAssets/Data/Json/LevelData" / level_id,
+            ROOT / "export_full/structured/Persistent/Data/Json/LevelData" / level_id,
+        ):
+            if not root.is_dir():
+                continue
+            for path in root.glob("*.json"):
+                try:
+                    data = path.read_bytes()
+                except OSError:
+                    continue
+                cursor = 0
+                while True:
+                    offset = data.find(name, cursor)
+                    if offset < 0:
+                        break
+                    cursor = offset + 1
+                    end = offset + len(name)
+                    if (
+                        offset < 4
+                        or int.from_bytes(data[offset - 4:offset], "little") != len(name)
+                        or end + 25 > len(data)
+                        or data[end] != 0
+                    ):
+                        continue
+                    values = struct.unpack_from("<6f", data, end + 1)
+                    if all(math.isfinite(value) for value in values):
+                        host_rows.append({
+                            "sourceFile": str(path.relative_to(ROOT)).replace("\\", "/"),
+                            "position": {"x": values[0], "y": values[1], "z": values[2]},
+                            "rotation": {"x": values[3], "y": values[4], "z": values[5]},
+                        })
+        transforms = {
+            tuple(row["position"].values()) + tuple(row["rotation"].values())
+            for row in host_rows
+        }
+        logical_hosts = {Path(row["sourceFile"]).name for row in host_rows}
+        if len(transforms) != 1 or len(logical_hosts) != 1:
+            continue
+        host = host_rows[0]
+        story_keys = sorted({binding["storyKey"] for binding in bindings})
+        config_rel = str(config_matches[0].relative_to(ROOT)).replace("\\", "/")
+        markers.append({
+            "kind": "trigger",
+            "subKind": "exact_encounter_spawner_host",
+            "label": "鍓ф儏閬遇鐐?",
+            "identity": f"encounter_spawner:{level_id}:{spawner_id}",
+            "position": host["position"],
+            "rotation": host["rotation"],
+            "detailId": str(spawner_id),
+            "sceneKeys": story_keys,
+            "interactionStatus": "runtime_encounter_event",
+            "evidence": "exact LsmPtr event filter, typed Encounter spawner property, and unique LevelData transform",
+            "storyRelation": "exact_encounter_spawner_host; mission ownership unresolved",
+            "spawnerId": spawner_id,
+            "encounterStoryBindings": bindings,
+            "missionOwnershipStatus": "unresolved_non_owning",
+            "relatedFiles": _sorted_related(_merge_related([], [
+                _related(host["sourceFile"], "level_data", "unique typed spawner host transform"),
+                _related(config_rel, "spawner_config", "type-50 Encounter spawner property target"),
+                *[
+                    _related(_conv_file_for_key(language, key), "story_exact_encounter", "Story played by exact Encounter event filter")
+                    for key in story_keys
+                ],
+            ])),
+            "sourceFiles": sorted({host["sourceFile"], config_rel}),
+            "source": host["sourceFile"],
+        })
+    return markers
+
+
 _EXACT_ENTITY_EVENT_TYPES = {
     "EntityEvent_OnInteractiveStateChanged",
     "EntityEvent_OnSavePropertyChanged",
@@ -4069,6 +4244,7 @@ def build_level(
     markers.extend(_exact_story_trigger_markers(level_id, language))
     markers.extend(_gender_select_casefold_trigger_markers(level_id, language))
     markers.extend(_exact_story_spawner_markers(level_id, language))
+    markers.extend(_exact_story_encounter_markers(level_id, language))
     markers.extend(_exact_story_patrol_checkpoint_markers(
         [*proxy_patrol_contexts, *npc_patrol_contexts],
         language,

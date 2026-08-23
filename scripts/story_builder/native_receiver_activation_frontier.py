@@ -2347,6 +2347,10 @@ def build_story_trigger_zone_coverage(
                     "eventName": event_name,
                     "eventSummary": safe_text(event_detail.get("summary")),
                     "eventDetail": event_detail,
+                    "headerUnionTag": event.get("unionTag"),
+                    "headerSerializedMemberCount": event.get(
+                        "serializedMemberCount"
+                    ),
                 })
                 if native_actions:
                     if active_occurrences_by_story is None:
