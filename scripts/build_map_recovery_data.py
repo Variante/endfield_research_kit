@@ -869,6 +869,104 @@ def _exact_story_entity_event_index(level_id: str) -> dict[str, list[dict]]:
     return index
 
 
+def _exact_story_proxy_patrol_event_index(level_id: str) -> dict[str, list[dict]]:
+    """Index proxy-patrol Story events by exact authored NPC proxy identity.
+
+    Patrol/checkpoint values describe runtime progress. The map point remains
+    the proxy's exact authored placement, never a claimed checkpoint position.
+    """
+    registry = _load_json(REGISTRY, {}) or {}
+    proxy_table = _load_json(ROOT / NPC_PROXY_TABLE_REL, {}) or {}
+    briefs = registry.get("npcProxyBriefInfos") if isinstance(registry, dict) else {}
+    table_rows = proxy_table.get("dataTable") if isinstance(proxy_table, dict) else {}
+    if not isinstance(briefs, dict) or not isinstance(table_rows, dict):
+        return {}
+
+    expected_level_num = _level_catalog().get(level_id)
+    index: dict[str, list[dict]] = {}
+    for row in (_native_trigger_frontier().get("storyTriggerZoneCoverage") or {}).get("rows") or []:
+        if not isinstance(row, dict) or not row.get("storyKey"):
+            continue
+        for observation in row.get("observations") or []:
+            if (
+                not isinstance(observation, dict)
+                or observation.get("status") != "exact_non_spatial_event_trigger"
+                or observation.get("levelId") != level_id
+                or observation.get("eventName") != "LevelEvent_OnProxyPatrolCheckpointReach"
+            ):
+                continue
+            detail = observation.get("eventDetail") or {}
+            if (
+                detail.get("payloadSchemaStatus") != "exact_current_build_memorypack_fields"
+                or detail.get("serverExchange") is not False
+                or detail.get("serializedMissionOrQuestId") is not False
+                or detail.get("payloadShape") not in {
+                    "constant-proxy-patrol-checkpoint-and-outputs-exact-eof",
+                    "constant-proxy-patrol-checkpoint-and-outputs-exact-prefix",
+                }
+            ):
+                continue
+            proxy_id = str(detail.get("proxyIdFilter") or "")
+            if not proxy_id:
+                continue
+            matches: list[tuple[str, dict]] = []
+            for segment_id, brief in briefs.items():
+                if not isinstance(brief, dict) or brief.get("proxyId") != proxy_id:
+                    continue
+                try:
+                    numeric_segment_id = int(segment_id)
+                except (TypeError, ValueError):
+                    continue
+                if (
+                    expected_level_num is None
+                    or numeric_segment_id // REGISTRY_ID_SCALE != expected_level_num
+                    or brief.get("segmentIdGlobal") != numeric_segment_id
+                ):
+                    continue
+                matches.append((str(segment_id), brief))
+            if len(matches) != 1:
+                continue
+            segment_id, brief = matches[0]
+            table_match = table_rows.get(proxy_id)
+            brief_position = _finite_position(brief.get("position"))
+            table_position = _finite_position(
+                table_match.get("position") if isinstance(table_match, dict) else None
+            )
+            table_rotation = _finite_position(
+                table_match.get("rotation") if isinstance(table_match, dict) else None
+            )
+            if (
+                not isinstance(table_match, dict)
+                or brief_position is None
+                or table_position is None
+                or table_rotation is None
+                or brief_position != table_position
+            ):
+                continue
+            identity = f"npc:{segment_id}"
+            index.setdefault(identity, []).append({
+                "storyKey": row["storyKey"],
+                "eventName": observation["eventName"],
+                "sourceFile": observation.get("sourceFile"),
+                "sourceSha256": observation.get("sourceSha256"),
+                "scriptId": observation.get("scriptId"),
+                "headerLocalId": observation.get("listenerHeaderLocalId"),
+                "playbackControlPathEvidence": observation.get("playbackControlPathEvidence"),
+                "nativeMappingId": detail.get("payloadSchemaMappingId"),
+                "identity": identity,
+                "npcProxyId": proxy_id,
+                "patrolIdFilter": detail.get("patrolIdFilter"),
+                "pointIndexFilter": detail.get("pointIndexFilter"),
+                "status": "exact_proxy_patrol_event_target",
+                "spatialResolutionEvidence": "exact_npc_proxy_brief_and_table_join",
+                "runtimeCheckpointPositionStatus": "unresolved",
+                "ownership": False,
+                "activation": False,
+                "orderEvidence": False,
+            })
+    return index
+
+
 def _level_family(level_id: str) -> str:
     for prefix, label in LEVEL_FAMILY_RULES:
         if level_id.startswith(prefix):
@@ -2876,8 +2974,13 @@ def _registry_markers(
                     binding.get("sourceFile"),
                     "story_exact_entity_event_target",
                     (
-                        f"{binding.get('eventName')} names this exact constant "
-                        "EntityPtr before the Story playback path"
+                        f"{binding.get('eventName')} names this exact "
+                        + (
+                            "NPC proxy before the Story playback path"
+                            if binding.get("status")
+                            == "exact_proxy_patrol_event_target"
+                            else "constant EntityPtr before the Story playback path"
+                        )
                     ),
                 )
                 for binding in bindings
@@ -3248,6 +3351,7 @@ def _registry_markers(
                     ],
                 ],
             ))
+        attach_entity_event_stories(row, f"npc:{segment_id}")
         markers.append(row)
     return markers
 
@@ -3588,6 +3692,9 @@ def build_level(
         if key.startswith("unplaced-")
         for target in targets
     ]
+    entity_event_story_index = _exact_story_entity_event_index(level_id)
+    for identity, bindings in _exact_story_proxy_patrol_event_index(level_id).items():
+        entity_event_story_index.setdefault(identity, []).extend(bindings)
     markers = _registry_markers(
         entities,
         level_id,
@@ -3598,7 +3705,7 @@ def build_level(
         script_file_map,
         action_target_index,
         _world_narrative_bindings(language),
-        _exact_story_entity_event_index(level_id),
+        entity_event_story_index,
     ) + markers
     markers.extend(_exact_story_trigger_markers(level_id, language))
     markers.extend(_gender_select_casefold_trigger_markers(level_id, language))

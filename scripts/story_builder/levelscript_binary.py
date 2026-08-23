@@ -28,6 +28,7 @@ from .codecs.levelscript.params import (
     decode_param_tail as _decode_param_tail,
 )
 from .codecs.levelscript import play3d_radio as levelscript_play3d_radio
+from .codecs.levelscript import proxy_patrol_checkpoint as levelscript_proxy_patrol
 from .codecs.levelscript import raise_custom_script_event as levelscript_custom_event
 from .codecs.levelscript import scalar_value_getters as levelscript_scalar_getters
 from .codecs.levelscript import script_event_scope as levelscript_script_event_scope
@@ -3286,6 +3287,25 @@ def _decode_named_native_event_detail(
                 "serializedMissionOrQuestId": False,
                 "summary": (
                     f"{receiver} saved property {literal_texts[0]} changes"
+                ),
+            }
+    elif native_header_name == levelscript_proxy_patrol.EVENT_NAME:
+        patrol_fields = levelscript_proxy_patrol.decode_proxy_patrol_checkpoint_event(
+            payload,
+            levelscript_proxy_patrol.EVENT_SEMANTIC_KEY,
+            header_role=True,
+        )
+        if patrol_fields:
+            detail = {
+                "type": native_header_name,
+                **patrol_fields,
+                "transport": "local-proxy-patrol-runtime-event",
+                "serverExchange": False,
+                "serializedMissionOrQuestId": False,
+                "summary": (
+                    f"NPC proxy {patrol_fields['proxyIdFilter']} reaches patrol "
+                    f"{patrol_fields['patrolIdFilter']} point "
+                    f"{patrol_fields['pointIndexFilter']}"
                 ),
             }
     elif native_header_name == levelscript_entity_events.SPECIFIC_ENTITY_LIST_DIE:

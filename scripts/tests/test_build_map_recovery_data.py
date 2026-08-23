@@ -12,6 +12,62 @@ class BuildMapRecoveryDataTests(unittest.TestCase):
     def setUp(self):
         builder._NATIVE_TRIGGER_FRONTIER_CACHE = None
 
+    def test_exact_proxy_patrol_event_index_requires_unique_equal_npc_join(self):
+        report = {"storyTriggerZoneCoverage": {"rows": [{
+            "storyKey": "radio_proxy_patrol",
+            "observations": [{
+                "status": "exact_non_spatial_event_trigger",
+                "levelId": "map_fixture",
+                "scriptId": "42000010001",
+                "listenerHeaderLocalId": 9,
+                "eventName": "LevelEvent_OnProxyPatrolCheckpointReach",
+                "sourceFile": "LevelScriptData/map_fixture/42000010001.json",
+                "eventDetail": {
+                    "payloadSchemaStatus": "exact_current_build_memorypack_fields",
+                    "payloadSchemaMappingId": "native-event-v1",
+                    "payloadShape": "constant-proxy-patrol-checkpoint-and-outputs-exact-eof",
+                    "serverExchange": False,
+                    "serializedMissionOrQuestId": False,
+                    "proxyIdFilter": "npc_fixture",
+                    "patrolIdFilter": 10000,
+                    "pointIndexFilter": 4,
+                },
+            }],
+        }]}}
+        registry = {"npcProxyBriefInfos": {"4200000101": {
+            "segmentIdGlobal": 4200000101,
+            "proxyId": "npc_fixture",
+            "position": {"x": 1.0, "y": 2.0, "z": 3.0},
+        }}}
+        table = {"dataTable": {"npc_fixture": {
+            "position": {"x": 1.0, "y": 2.0, "z": 3.0},
+            "rotation": {"x": 0.0, "y": 90.0, "z": 0.0},
+        }}}
+
+        def load(path, default):
+            return table if str(path).endswith("NpcProxyTable.json") else registry
+
+        with (
+            mock.patch.object(builder, "_native_trigger_frontier", return_value=report),
+            mock.patch.object(builder, "_level_catalog", return_value={"map_fixture": 42}),
+            mock.patch.object(builder, "_load_json", side_effect=load),
+        ):
+            index = builder._exact_story_proxy_patrol_event_index("map_fixture")
+        self.assertEqual(list(index), ["npc:4200000101"])
+        binding = index["npc:4200000101"][0]
+        self.assertEqual("exact_proxy_patrol_event_target", binding["status"])
+        self.assertEqual("unresolved", binding["runtimeCheckpointPositionStatus"])
+
+        table["dataTable"]["npc_fixture"]["position"]["x"] = 1.5
+        with (
+            mock.patch.object(builder, "_native_trigger_frontier", return_value=report),
+            mock.patch.object(builder, "_level_catalog", return_value={"map_fixture": 42}),
+            mock.patch.object(builder, "_load_json", side_effect=load),
+        ):
+            self.assertEqual(
+                {}, builder._exact_story_proxy_patrol_event_index("map_fixture")
+            )
+
     def test_exact_story_entity_event_index_accepts_only_constant_specified_entity(self):
         exact = {
             "storyTriggerZoneCoverage": {"rows": [{
