@@ -599,12 +599,13 @@ def _exact_story_spawner_markers(level_id: str, language: str) -> list[dict]:
             if (
                 not story_key
                 or str(observation.get("levelId") or "") != level_id
-                or observation.get("status") not in {
-                    "exact_non_spatial_event_trigger",
-                    "non_spatial_event_payload_unresolved",
-                }
+                or observation.get("status") != "exact_non_spatial_event_trigger"
                 or event_name not in _SPATIAL_SPAWNER_EVENT_TYPES
+                or detail.get("type") != event_name
+                or detail.get("payloadDecodeStatus") != "exact_complete_subtype"
                 or detail.get("payloadSchemaStatus") != "exact_current_build_memorypack_fields"
+                or detail.get("payloadSchemaMappingId")
+                != "gameassembly-2026-07-17-memorypack-native-event-fields"
                 or not isinstance(spawner_id, int)
                 or isinstance(spawner_id, bool)
                 or spawner_id <= 0

@@ -3040,35 +3040,55 @@ def _decode_named_native_event_detail(
             payload,
             native_header_name,
         )
-        detail = {
-            "type": native_header_name,
-            **spawner_fields,
-            "groupKeyFilter": (
-                spawner_fields.get("groupKeyFilter")
-                or (literal_texts[0] if literal_texts else "")
-            ),
-            "groupKeyOutputRefs": refs("groupKeyOutput"),
-            "spawnerOutputRefs": refs("spawnerOutput"),
-            "summary": (
-                "spawner group begin "
-                f"{spawner_fields.get('groupKeyFilter') or (literal_texts[0] if literal_texts else '')}"
-            ),
-        }
+        if spawner_fields:
+            detail = {
+                "type": native_header_name,
+                **spawner_fields,
+                "groupKeyOutputRefs": refs("groupKeyOutput"),
+                "spawnerOutputRefs": refs("spawnerOutput"),
+                "transport": "local-spawner-runtime-event",
+                "serverExchange": False,
+                "serializedMissionOrQuestId": False,
+                "payloadDecodeStatus": "exact_complete_subtype",
+                "summary": f"spawner group begin {spawner_fields.get('groupKeyFilter') or ''}",
+            }
+        elif refs("groupKeyOutput") or refs("spawnerOutput") or literal_texts:
+            detail = {
+                "type": native_header_name,
+                "observedLiteralTexts": literal_texts,
+                "groupKeyOutputRefs": refs("groupKeyOutput"),
+                "spawnerOutputRefs": refs("spawnerOutput"),
+                "payloadDecodeStatus": "partial_known_fields",
+                "_payloadSchemaStatus": "partial_known_fields",
+                "summary": "spawner group begin with unresolved filter fields",
+            }
     elif native_header_name == "LevelEvent_OnSpawnerWaveBegin":
         spawner_fields = levelscript_spawner_events.decode_spawner_event_fields(
             payload,
             native_header_name,
         )
-        detail = {
-            "type": native_header_name,
-            **spawner_fields,
-            "spawnerOutputRefs": refs("spawnerOutput"),
-            "waveKeyOutputRefs": refs("waveKeyOutput"),
-            "summary": (
-                "spawner wave begin "
-                f"{spawner_fields.get('waveKeyFilter') or (literal_texts[0] if literal_texts else '')}"
-            ),
-        }
+        if spawner_fields:
+            detail = {
+                "type": native_header_name,
+                **spawner_fields,
+                "spawnerOutputRefs": refs("spawnerOutput"),
+                "waveKeyOutputRefs": refs("waveKeyOutput"),
+                "transport": "local-spawner-runtime-event",
+                "serverExchange": False,
+                "serializedMissionOrQuestId": False,
+                "payloadDecodeStatus": "exact_complete_subtype",
+                "summary": f"spawner wave begin {spawner_fields.get('waveKeyFilter') or ''}",
+            }
+        elif refs("spawnerOutput") or refs("waveKeyOutput") or literal_texts:
+            detail = {
+                "type": native_header_name,
+                "observedLiteralTexts": literal_texts,
+                "spawnerOutputRefs": refs("spawnerOutput"),
+                "waveKeyOutputRefs": refs("waveKeyOutput"),
+                "payloadDecodeStatus": "partial_known_fields",
+                "_payloadSchemaStatus": "partial_known_fields",
+                "summary": "spawner wave begin with unresolved filter fields",
+            }
     elif native_header_name == "LevelEvent_OnSpawnerComplete":
         spawner_fields = levelscript_spawner_events.decode_spawner_event_fields(
             payload,
@@ -3513,6 +3533,7 @@ def _decode_named_native_event_detail(
             }
     if not detail:
         return {}
+    detail.setdefault("payloadDecodeStatus", "exact_complete_subtype")
     detail["payloadSchemaStatus"] = detail.pop(
         "_payloadSchemaStatus",
         "exact_current_build_memorypack_fields",

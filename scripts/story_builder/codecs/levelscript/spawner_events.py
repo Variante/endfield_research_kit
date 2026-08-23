@@ -56,6 +56,17 @@ def _read_string_param(
     return value, cursor + 12
 
 
+def _read_nullable_string_param(
+    payload: bytes,
+    cursor: int,
+) -> tuple[str | None, int] | None:
+    if cursor >= len(payload):
+        return None
+    if payload[cursor] == 0xFF:
+        return None, cursor + 1
+    return _read_string_param(payload, cursor)
+
+
 def _read_u64_param(
     payload: bytes,
     cursor: int,
@@ -185,29 +196,34 @@ def _decode_begin(payload: bytes, *, wave: bool) -> dict[str, Any]:
             ),
         }
 
-    key_result = _read_string_param(payload, cursor)
+    key_result = _read_nullable_string_param(payload, cursor)
     if key_result is None:
         return {}
     key, cursor = key_result
-    if cursor >= len(payload) or payload[cursor] != 0xFF:
+    key_output = _read_nullable_output_param(payload, cursor)
+    if key_output is None:
         return {}
-    spawner_result = _read_u64_param(payload, cursor + 1)
+    key_output_detail, cursor = key_output
+    spawner_result = _read_u64_param(payload, cursor)
     if spawner_result is None:
         return {}
     spawner_id, cursor = spawner_result
-    if cursor >= len(payload) or payload[cursor] != 0xFF:
+    spawner_output = _read_nullable_output_param(payload, cursor)
+    if spawner_output is None:
         return {}
-    cursor += 1
+    spawner_output_detail, cursor = spawner_output
     return {
         "groupKeyFilter": key,
-        "groupKeyOutputPresent": False,
+        "groupKeyOutputParam": key_output_detail,
+        "groupKeyOutputPresent": key_output_detail is not None,
         "spawnerFilterId": spawner_id,
-        "spawnerOutputPresent": False,
+        "spawnerOutputParam": spawner_output_detail,
+        "spawnerOutputPresent": spawner_output_detail is not None,
         "subtypeConsumedBytes": cursor,
         "payloadShape": (
-            "constant-group-key-and-spawner-null-outputs-exact-eof"
+            "nullable-group-key-and-constant-spawner-exact-eof"
             if cursor == len(payload)
-            else "constant-group-key-and-spawner-null-outputs-exact-prefix"
+            else "nullable-group-key-and-constant-spawner-exact-prefix"
         ),
     }
 
@@ -355,7 +371,7 @@ def _decode_entity_spawn(payload: bytes) -> dict[str, Any]:
     template_result = _read_i32_param(payload, cursor)
     if template_result is None:
         return {}
-    entity_template_filter, cursor = template_result
+    filter_type, cursor = template_result
     if cursor >= len(payload):
         return {}
     if payload[cursor] == 0xFF:
@@ -394,7 +410,7 @@ def _decode_entity_spawn(payload: bytes) -> dict[str, Any]:
         return {}
     return {
         "entityOutputRef": entity_output,
-        "entityTemplateIdFilter": entity_template_filter,
+        "filterType": filter_type,
         "groupKeyFilter": group_key,
         "groupKeyOutputRef": group_output,
         "spawnerFilterId": spawner_id,
@@ -402,7 +418,7 @@ def _decode_entity_spawn(payload: bytes) -> dict[str, Any]:
         "waveKeyFilter": wave_key,
         "waveKeyOutputRef": wave_output,
         "subtypeConsumedBytes": cursor,
-        "payloadShape": "constant-spawner-optional-group-wave-and-template-exact-eof",
+        "payloadShape": "constant-spawner-optional-group-wave-and-filter-type-exact-eof",
     }
 
 

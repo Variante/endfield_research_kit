@@ -1,4 +1,5 @@
 import json
+import struct
 import tempfile
 import unittest
 from pathlib import Path
@@ -67,6 +68,47 @@ class BuildMapRecoveryDataTests(unittest.TestCase):
             self.assertEqual(
                 {}, builder._exact_story_proxy_patrol_event_index("map_fixture")
             )
+
+    def test_spawner_marker_requires_complete_validated_native_payload(self):
+        detail = {
+            "type": "LevelEvent_OnSpawnerGroupBegin",
+            "payloadDecodeStatus": "exact_complete_subtype",
+            "payloadSchemaStatus": "exact_current_build_memorypack_fields",
+            "payloadSchemaMappingId": "gameassembly-2026-07-17-memorypack-native-event-fields",
+            "spawnerFilterId": 420001,
+        }
+        report = {"storyTriggerZoneCoverage": {"rows": [{
+            "storyKey": "radio_spawner",
+            "observations": [{
+                "status": "exact_non_spatial_event_trigger",
+                "levelId": "map_fixture",
+                "eventName": "LevelEvent_OnSpawnerGroupBegin",
+                "sourceFile": "LevelScriptData/map_fixture/1001.json",
+                "eventDetail": detail,
+            }],
+        }]}}
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            config = root / "export_full/structured/StreamingAssets/Data/Json/SpawnerConfig/map_fixture/sc_map_fixture_420001.json"
+            config.parent.mkdir(parents=True)
+            config.write_bytes(b"config")
+            leveldata = root / "export_full/structured/Persistent/Data/Json/LevelData/map_fixture/map_fixture_lv_data.json"
+            leveldata.parent.mkdir(parents=True)
+            name = b"sc_map_fixture_420001"
+            leveldata.write_bytes(
+                struct.pack("<I", len(name)) + name + b"\x00"
+                + struct.pack("<6f", 1.0, 2.0, 3.0, 0.0, 90.0, 0.0)
+            )
+            with (
+                mock.patch.object(builder, "ROOT", root),
+                mock.patch.object(builder, "_native_trigger_frontier", return_value=report),
+            ):
+                markers = builder._exact_story_spawner_markers("map_fixture", "CN")
+                self.assertEqual(1, len(markers))
+                self.assertEqual({"x": 1.0, "y": 2.0, "z": 3.0}, markers[0]["position"])
+
+                detail["payloadSchemaMappingId"] = "wrong-build"
+                self.assertEqual([], builder._exact_story_spawner_markers("map_fixture", "CN"))
 
     def test_proxy_patrol_checkpoint_context_uses_unique_typed_patrol_point(self):
         report = {"storyTriggerZoneCoverage": {"rows": [{
