@@ -136,7 +136,10 @@ leave only the report/CLI surface in recovery.
   exact. In both cases the point is authored geometry, not the event's runtime
   NPC position, permanent ownership of the patrol, mission ownership, or quest
   activation. A proxy registry/table join corroborates identity but never
-  replaces the checkpoint coordinate.
+  replaces the checkpoint coordinate. When patrol id or point index is a
+  mutable named blackboard value, the decoder preserves that exact dynamic
+  filter and its event outputs but publishes no checkpoint; an initializer is
+  only a candidate until later lifecycle writes are excluded.
   Exact SpawnerPtr filters are spatial only when the same level contains one
   matching `sc_<level>_<id>` SpawnerConfig and one logical typed LevelData host
   record whose finite position/rotation agrees across the active overlay.

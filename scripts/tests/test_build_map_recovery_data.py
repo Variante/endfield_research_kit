@@ -24,7 +24,7 @@ class BuildMapRecoveryDataTests(unittest.TestCase):
                 "sourceFile": "LevelScriptData/map_fixture/42000010001.json",
                 "eventDetail": {
                     "payloadSchemaStatus": "exact_current_build_memorypack_fields",
-                    "payloadSchemaMappingId": "native-event-v1",
+                    "payloadSchemaMappingId": "gameassembly-2026-07-17-memorypack-native-event-fields",
                     "payloadShape": "constant-proxy-patrol-checkpoint-and-outputs-exact-eof",
                     "serverExchange": False,
                     "serializedMissionOrQuestId": False,
@@ -80,7 +80,7 @@ class BuildMapRecoveryDataTests(unittest.TestCase):
                 "sourceFile": "LevelScriptData/map_fixture/1001.json",
                 "eventDetail": {
                     "payloadSchemaStatus": "exact_current_build_memorypack_fields",
-                    "payloadSchemaMappingId": "native-event-v1",
+                    "payloadSchemaMappingId": "gameassembly-2026-07-17-memorypack-native-event-fields",
                     "payloadShape": "constant-proxy-patrol-checkpoint-and-outputs-exact-eof",
                     "serverExchange": False,
                     "serializedMissionOrQuestId": False,
@@ -146,7 +146,7 @@ class BuildMapRecoveryDataTests(unittest.TestCase):
                 "sourceFile": "LevelScriptData/map_fixture/1001.json",
                 "eventDetail": {
                     "payloadSchemaStatus": "exact_current_build_memorypack_fields",
-                    "payloadSchemaMappingId": "native-event-v1",
+                    "payloadSchemaMappingId": "gameassembly-2026-07-17-memorypack-native-event-fields",
                     "payloadShape": "dynamic-npc-patrol-checkpoint-fields",
                     "serverExchange": False,
                     "serializedMissionOrQuestId": False,

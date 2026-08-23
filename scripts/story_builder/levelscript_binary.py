@@ -2812,19 +2812,48 @@ def _decode_npc_patrol_checkpoint_fields(payload: bytes) -> dict[str, Any]:
         return {}
     cursor += path_size
 
-    def read_i32_param() -> int | None:
+    def read_i32_param() -> dict[str, Any] | None:
         nonlocal cursor
-        if cursor + 17 > len(payload) or payload[cursor] != 0x04:
+        decoded = levelscript_params.decode_i32_param(payload, cursor)
+        if decoded is None:
             return None
-        value = struct.unpack_from("<i", payload, cursor + 1)[0]
-        if payload[cursor + 5 : cursor + 17] != param_tail:
-            return None
-        cursor += 17
-        return value
+        detail, cursor = decoded
+        return detail
 
     patrol_id = read_i32_param()
     checkpoint_index = read_i32_param()
     if patrol_id is None or checkpoint_index is None:
+        return {}
+    if (
+        patrol_id.get("idRef") == -1
+        and patrol_id.get("paramSource") == 0
+        and patrol_id.get("path") is None
+        and checkpoint_index.get("idRef") == -1
+        and checkpoint_index.get("paramSource") == 0
+        and checkpoint_index.get("path") is None
+    ):
+        return {
+            "npcEntityFilter": {
+                "logicId": logic_id,
+                "slotId": slot_id,
+                "useSlotId": bool(use_slot_id),
+                "idRef": target_id_ref,
+                "paramSource": target_source,
+                "path": target_path,
+            },
+            "patrolIdFilter": patrol_id["value"],
+            "checkpointIndexFilter": checkpoint_index["value"],
+            "payloadShape": "dynamic-npc-patrol-checkpoint-fields",
+        }
+
+    outputs: list[dict[str, Any]] = []
+    for field_name in ("npcEntity", "npcPosition", "patrolId", "pointIndex"):
+        decoded = levelscript_params.decode_param_output(payload, cursor)
+        if decoded is None:
+            return {}
+        output, cursor = decoded
+        outputs.append({"field": field_name, **output})
+    if cursor != len(payload):
         return {}
     return {
         "npcEntityFilter": {
@@ -2835,9 +2864,10 @@ def _decode_npc_patrol_checkpoint_fields(payload: bytes) -> dict[str, Any]:
             "paramSource": target_source,
             "path": target_path,
         },
-        "patrolIdFilter": patrol_id,
-        "checkpointIndexFilter": checkpoint_index,
-        "payloadShape": "dynamic-npc-patrol-checkpoint-fields",
+        "patrolIdFilterParam": patrol_id,
+        "checkpointIndexFilterParam": checkpoint_index,
+        "eventOutputs": outputs,
+        "payloadShape": "dynamic-blackboard-npc-patrol-checkpoint-and-outputs-exact-eof",
     }
 
 
@@ -3137,8 +3167,8 @@ def _decode_named_native_event_detail(
                 "serializedMissionOrQuestId": False,
                 "summary": (
                     f"NPC {patrol_fields['npcEntityFilter']['path']} reaches "
-                    f"patrol {patrol_fields['patrolIdFilter']} checkpoint "
-                    f"{patrol_fields['checkpointIndexFilter']}"
+                    f"patrol {patrol_fields.get('patrolIdFilter', 'runtime')} "
+                    f"checkpoint {patrol_fields.get('checkpointIndexFilter', 'runtime')}"
                 ),
             }
     elif native_header_name == "LevelEvent_OnTeleportFinish" and literal_texts:
