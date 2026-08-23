@@ -123,6 +123,9 @@ leave only the report/CLI surface in recovery.
   A typed `SpecificEntityListDie` constant list is also spatial evidence for
   each exact list member; it remains distinct from a same-record 3D playback
   target, so one Story may legitimately have multiple authored points.
+  `EnemyInFight` uses the same rule when its formatter yields a complete
+  constant entity list; dynamic validation affects execution only, and a
+  final-header exact subtype prefix remains bounded by consumed members.
   Exact SpawnerPtr filters are spatial only when the same level contains one
   matching `sc_<level>_<id>` SpawnerConfig and one logical typed LevelData host
   record whose finite position/rotation agrees across the active overlay.

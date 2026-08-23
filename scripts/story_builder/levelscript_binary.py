@@ -3306,6 +3306,24 @@ def _decode_named_native_event_detail(
                     f"{len(list_die_fields['entityListFilter'])}-member specific list dies"
                 ),
             }
+    elif native_header_name == levelscript_entity_events.ENEMY_IN_FIGHT:
+        fight_fields = levelscript_entity_events.decode_entity_event_fields(
+            payload,
+            native_header_name,
+        )
+        if fight_fields:
+            detail = {
+                "type": native_header_name,
+                **fight_fields,
+                "entityOutputRefs": refs("entity"),
+                "transport": "local-entity-combat-runtime-event",
+                "serverExchange": False,
+                "serializedMissionOrQuestId": False,
+                "summary": (
+                    f"matching entity in a {len(fight_fields['entityListFilter'])}-member "
+                    "constant list enters combat"
+                ),
+            }
     elif native_header_name in {
         "EntityEvent_OnBeingScanned",
         "EntityEvent_OnEntityDestroy",

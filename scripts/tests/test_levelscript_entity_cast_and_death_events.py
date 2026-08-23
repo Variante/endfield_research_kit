@@ -6,6 +6,7 @@ import unittest
 from scripts.story_builder.codecs.levelscript.entity_cast_and_death_events import (
     ANY_ENTITY_DIE,
     ENTITY_CAST_SKILL,
+    ENEMY_IN_FIGHT,
     SPECIFIC_ENTITY_DIE,
     SPECIFIC_ENTITY_LIST_DIE,
     decode_entity_event_fields,
@@ -109,6 +110,26 @@ class LevelScriptEntityCastAndDeathEventTests(unittest.TestCase):
             fields["entityListFilter"],
         )
         self.assertEqual("specific-constant-entity-list-exact-eof", fields["payloadShape"])
+
+    def test_enemy_in_fight_decodes_constant_slot_list_with_getter_validation(self) -> None:
+        prefix = bytearray(17)
+        payload = bytes(prefix) + b"\x04\x01" + struct.pack("<iii", 8, -1, -1)
+        payload += (
+            b"\x04"
+            + struct.pack("<I", 1)
+            + b"\x03"
+            + struct.pack("<QI?", 0, 30001, True)
+            + _PARAM_TAIL
+            + b"\xff"
+        )
+
+        fields = decode_entity_event_fields(payload, ENEMY_IN_FIGHT)
+
+        self.assertEqual(30001, fields["entityListFilter"][0]["slotId"])
+        self.assertIsNone(fields["entityOutputRef"])
+        prefixed = decode_entity_event_fields(payload + b"\x01\x00", ENEMY_IN_FIGHT)
+        self.assertEqual(len(payload), prefixed["subtypeConsumedBytes"])
+        self.assertTrue(prefixed["payloadShape"].endswith("exact-prefix"))
 
     def test_unknown_and_malformed_payloads_fail_closed(self) -> None:
         self.assertEqual({}, decode_entity_event_fields(b"", ENTITY_CAST_SKILL))
