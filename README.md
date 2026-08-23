@@ -40,14 +40,17 @@ starting the server.
 
 - **Story** reconstructs dialog, radio, SNS, cutscenes, options, media, and
   evidence-typed ordering.
+- **Map** stitches authored regional screens with recovered grayscale elevation,
+  colored surfaces, water, point clouds, missions, and exact world coordinates.
 - **Characters** groups identity evidence and supports live merge/name
   overrides.
 - **Gameplay** covers characters, equipment, enemies, progression, skills,
   projectiles, related assets, and recovered sound effects.
-- **Map** stitches authored regional screens with recovered grayscale elevation,
-  colored surfaces, water, point clouds, missions, and exact world coordinates.
-- **Audio**, **Assets**, and **Text** expose decoded media, exported resources,
-  and localized tables.
+- **Audio** exposes decoded voices, music, sound effects, event relationships,
+  and playback evidence.
+- **Assets** browses exported images, videos, materials, models, and their
+  recovered references.
+- **Text** provides searchable localized tables and source records.
 - **Updates** compares exported game data across two saved versions.
 - **Mission Pipeline** is an experimental debug-only quest/Story evidence view.
 

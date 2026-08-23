@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Build split WebUI zips without the 3D asset browser payload.
 
-The primary package keeps the story/gameplay/reference browser text data, code,
-and emoji image files. A companion assets package contains the larger exported
-image/video files that the story renderer can display, and a standalone audio
+The primary package keeps Story/reference browser text data, shared code, and
+emoji image files. A companion assets package contains Map, Characters, and
+Gameplay code/data plus exported image/video files, and a standalone audio
 package contains lossless FLAC story audio files. OBJ/FBX files,
 legacy local index folders, and the asset-browser data page are intentionally
 left out.
@@ -60,13 +60,25 @@ TEXT_EXTENSIONS = {
 
 PACK_AUDIO_FORMAT = "flac"
 
+COMPANION_FEATURE_PREFIXES = (
+    "data/gameplay/",
+    "data/map_recovery/",
+    "src/features/characters/",
+    "src/features/gameplay/",
+    "src/features/map_recovery/",
+)
+COMPANION_FEATURE_FILES = {
+    "data/assets/gameplay_refs.json",
+}
+COMPANION_LANGUAGE_FEATURE_RE = re.compile(r"^data/lang/[^/]+/(?:characters|gameplay)(?:/|$)")
+
 ASSET_VIEW_START_RE = re.compile(r'<section\s+id="assets-view"(?=[\s>])', re.IGNORECASE)
 ASSET_TAB_RE = re.compile(r'(<button\s+id="assets-tab"(?=[\s>]))([^>]*>)', re.IGNORECASE)
 
 ASSET_SHIM_JS = """(() => {
   const $ = (sel) => document.querySelector(sel);
   const $$ = (sel) => Array.from(document.querySelectorAll(sel));
-  const AVAILABLE_VIEWS = new Set(["story", "characters", "gameplay", "audio", "mission-pipeline", "reference", "updates"]);
+  const AVAILABLE_VIEWS = new Set(["story", "map-recovery", "characters", "gameplay", "audio", "mission-pipeline", "reference", "updates"]);
   const HIDDEN_VIEWS = new Set(["assets"]);
   const DEBUG_ONLY_VIEWS = new Set(["mission-pipeline"]);
   const DEBUG_VIEW_FALLBACKS = Object.freeze({ audio: "gameplay", "mission-pipeline": "gameplay" });
@@ -169,11 +181,11 @@ Run from this extracted directory:
 
 Then open the printed localhost URL.
 
-This package includes Story, Characters, Gameplay, Text, Updates, the
-experimental Mission Pipeline, the debug-only Audio semantic index, WebUI code,
-emoji images, and compact media indexes. Larger story images and videos are in
-the companion assets zip. Decoded audio and raw audio indexes are in the
-standalone audio zip.
+This package includes Story, Text, Updates, the experimental Mission Pipeline,
+the debug-only Audio semantic index, shared WebUI code, emoji images, and
+compact media indexes. Map, Characters, Gameplay, and larger exported images
+and videos are in the companion assets zip. Decoded audio and raw audio indexes
+are in the standalone audio zip.
 Extract those zips into the same directory after this one when you want
 inline/wiki media or playable audio too.
 
@@ -211,10 +223,11 @@ ASSETS_PACKAGE_README = """Endfield WebUI story assets package
 Extract this zip into the same directory as the matching story package, after
 the story package has been extracted.
 
-It contains larger exported image and video files used by inline/wiki media in
-the WebUI, plus the full media indexes that enable them. Decoded story audio is
-in the standalone audio package. Emoji images, WebUI code, and story/reference
-text data are in the main story package.
+It contains the Map, Characters, and Gameplay pages and their generated data,
+plus exported image and video files and the full image/video indexes that
+enable them. Decoded story audio is in the standalone audio package. Emoji
+images, shared WebUI code, and Story/reference text data are in the main Story
+package.
 """
 
 AUDIO_PACKAGE_README = """Endfield WebUI story audio package
@@ -319,6 +332,13 @@ def archive_name(path: str | Path) -> str:
     return normalize_posix(str(path))
 
 
+def is_companion_feature_path(rel: str) -> bool:
+    normalized = normalize_posix(rel)
+    return normalized in COMPANION_FEATURE_FILES or normalized.startswith(COMPANION_FEATURE_PREFIXES) or bool(
+        COMPANION_LANGUAGE_FEATURE_RE.match(normalized)
+    )
+
+
 def iter_webui_text_files(webui_root: Path) -> Iterable[Path]:
     for path in sorted(webui_root.rglob("*")):
         if not path.is_file():
@@ -326,6 +346,8 @@ def iter_webui_text_files(webui_root: Path) -> Iterable[Path]:
         if "__pycache__" in path.parts:
             continue
         rel = path.relative_to(webui_root).as_posix()
+        if is_companion_feature_path(rel):
+            continue
         if rel.startswith("data/audio/"):
             continue
         if rel.startswith("data/game_data/"):
@@ -335,6 +357,15 @@ def iter_webui_text_files(webui_root: Path) -> Iterable[Path]:
         if re.match(r"^data/lang/[^/]+/progression(?:/|$)", rel):
             continue
         if path.suffix.lower() in TEXT_EXTENSIONS:
+            yield path
+
+
+def iter_companion_feature_files(webui_root: Path) -> Iterable[Path]:
+    for path in sorted(webui_root.rglob("*")):
+        if not path.is_file() or "__pycache__" in path.parts:
+            continue
+        rel = path.relative_to(webui_root).as_posix()
+        if is_companion_feature_path(rel):
             yield path
 
 
@@ -496,16 +527,25 @@ def plan_package(
     export_root = EXPORT_ROOT.resolve()
 
     story_media_payload = load_required_asset_index(webui_root / "data" / "assets" / "story_media.json")
+    full_asset_payload = load_required_asset_index(webui_root / "data" / "assets" / "index.json")
     story_entries = [
         dict(entry)
         for entry in (story_media_payload.get("entries") or [])
         if isinstance(entry, dict) and entry.get("r")
     ]
-    selected_images = [entry for entry in story_entries if entry.get("k") == "image"]
-    selected_videos = [entry for entry in story_entries if entry.get("k") == "video"]
+    def merged_entries(kind: str) -> list[dict]:
+        by_rel: dict[str, dict] = {}
+        for entry in [*(full_asset_payload.get("entries") or []), *story_entries]:
+            if not isinstance(entry, dict) or entry.get("k") != kind or not entry.get("r"):
+                continue
+            by_rel[normalize_posix(str(entry["r"]))] = dict(entry)
+        return [by_rel[rel] for rel in sorted(by_rel)]
 
-    filtered_payload = filtered_asset_index(story_media_payload, selected_images, kind="image")
-    filtered_video_payload = filtered_asset_index(story_media_payload, selected_videos, kind="video")
+    selected_images = merged_entries("image")
+    selected_videos = merged_entries("video")
+
+    filtered_payload = filtered_asset_index(full_asset_payload, selected_images, kind="image")
+    filtered_video_payload = filtered_asset_index(full_asset_payload, selected_videos, kind="video")
 
     exported_images = [
         resolve_exported_image(project_root, export_root, filtered_payload, rel)
@@ -528,7 +568,7 @@ def plan_package(
         if include_audio
         else []
     )
-    counts = story_media_payload.get("counts") if isinstance(story_media_payload.get("counts"), dict) else {}
+    counts = full_asset_payload.get("counts") if isinstance(full_asset_payload.get("counts"), dict) else {}
 
     return PackagePlan(
         filtered_asset_payload=filtered_payload,
@@ -580,6 +620,7 @@ def create_package(args: argparse.Namespace) -> int:
             "index.html",
         }
     ]
+    companion_feature_files = list(iter_companion_feature_files(webui_root))
 
     print(f"WebUI root: {webui_root}")
     print(f"Export root: {export_root}")
@@ -590,6 +631,7 @@ def create_package(args: argparse.Namespace) -> int:
         print(f"Audio format: {PACK_AUDIO_FORMAT}")
     generated_text_count = 6
     print(f"Text files: {len(copied_text_files) + generated_text_count:,}")
+    print(f"Map/Characters/Gameplay files in assets zip: {len(companion_feature_files):,}")
     print(f"Story image IDs: {plan.image_refs:,}")
     print(f"Resolved image files: {len(existing_images):,} ({len(emoji_images):,} emoji, {len(asset_images):,} asset)")
     print(f"Wiki video refs: {plan.video_refs:,}")
@@ -626,6 +668,7 @@ def create_package(args: argparse.Namespace) -> int:
             webui_root=webui_root,
             plan=plan,
             copied_text_files=copied_text_files,
+            companion_feature_files=companion_feature_files,
             emoji_images=emoji_images,
             asset_images=asset_images,
             existing_videos=existing_videos,
@@ -672,6 +715,7 @@ def _write_packages(
     webui_root: Path,
     plan: PackagePlan,
     copied_text_files: list[Path],
+    companion_feature_files: list[Path],
     emoji_images: list[ExportedImage],
     asset_images: list[ExportedImage],
     existing_videos: list[ExportedImage],
@@ -708,6 +752,8 @@ def _write_packages(
         zip_writestr(zipf, assets_written, "README-webui-assets-package.txt", ASSETS_PACKAGE_README)
         asset_index_json = json.dumps(plan.filtered_asset_payload, ensure_ascii=False, separators=(",", ":"))
         zip_writestr(zipf, assets_written, "webui/data/assets/index.json", asset_index_json)
+        for path in companion_feature_files:
+            zip_write_file(zipf, assets_written, path, webui_arcname(webui_root, path))
         for image in asset_images:
             zip_write_file(zipf, assets_written, image.source_path, image.archive_path)
         for video in existing_videos:
