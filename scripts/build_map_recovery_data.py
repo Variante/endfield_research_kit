@@ -404,13 +404,33 @@ def _exact_story_trigger_markers(level_id: str, language: str) -> list[dict]:
                 context = observation.get("triggerVolumeContext") or {}
                 volume = observation.get("triggerVolume") or {}
                 playback = observation.get("playbackControlPathEvidence") or {}
+                selector_slots = observation.get("triggerSlotIdFilters")
+                explicit_slot_list = (
+                    observation.get("multiLocationSemantics")
+                    == "explicit_independent_trigger_slots"
+                    and isinstance(selector_slots, list)
+                    and selector_slots
+                    and all(
+                        isinstance(value, int)
+                        and not isinstance(value, bool)
+                        and value > 0
+                        for value in selector_slots
+                    )
+                    and len(set(selector_slots)) == len(selector_slots)
+                )
+                matched_slots_exact = (
+                    context.get("matchedSlotIds") == selector_slots
+                    and slot_raw in selector_slots
+                    if explicit_slot_list
+                    else context.get("matchedSlotIds") == [slot_raw]
+                )
                 if (
                     str(observation.get("levelId") or "") != level_id
                     or not script_id or Path(source_file).stem != script_id
                     or not isinstance(slot_raw, int) or isinstance(slot_raw, bool) or slot_raw <= 0
                     or context.get("status") != "exact_local_levelscript_trigger_volume_without_foreign_identity"
                     or context.get("scriptIdVerified") is not True
-                    or context.get("matchedSlotIds") != [slot_raw]
+                    or not matched_slots_exact
                     or context.get("missingSlotIds") not in (None, [])
                     or context.get("ambiguousSlotIds") not in (None, [])
                     or volume.get("slotId") != slot_raw
