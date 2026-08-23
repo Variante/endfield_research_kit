@@ -11,6 +11,7 @@ from . import params
 ENTITY_CAST_SKILL = "LevelEvent_OnEntityCastSkill"
 ANY_ENTITY_DIE = "LevelEvent_OnAnyEntityDie"
 SPECIFIC_ENTITY_DIE = "LevelEvent_OnSpecificEntityDie"
+SPECIFIC_ENTITY_LIST_DIE = "LevelEvent_OnSpecificEntityListDie"
 
 
 def _decode_entity_cast_skill(payload: bytes) -> dict[str, Any]:
@@ -122,6 +123,44 @@ def _decode_any_entity_die(payload: bytes) -> dict[str, Any]:
     }
 
 
+def _decode_specific_entity_list_die(payload: bytes) -> dict[str, Any]:
+    if len(payload) < 31 or payload[17:31] != b"\x04\x01" + params.DEFAULT_PARAM_TAIL:
+        return {}
+    output = params.decode_param_output_ref(payload, 31)
+    if output is None:
+        return {}
+    output_ref, cursor = output
+    if cursor + 5 > len(payload) or payload[cursor] != 0x04:
+        return {}
+    count = struct.unpack_from("<I", payload, cursor + 1)[0]
+    cursor += 5
+    if count == 0 or count > 64:
+        return {}
+    entity_filters: list[dict[str, Any]] = []
+    for _ in range(count):
+        if cursor + 14 > len(payload) or payload[cursor] != 0x03:
+            return {}
+        use_slot_id = payload[cursor + 13]
+        if use_slot_id not in (0, 1):
+            return {}
+        entity_filters.append({
+            "logicId": struct.unpack_from("<Q", payload, cursor + 1)[0],
+            "slotId": struct.unpack_from("<I", payload, cursor + 9)[0],
+            "useSlotId": bool(use_slot_id),
+        })
+        cursor += 14
+    if payload[cursor : cursor + 12] != params.DEFAULT_PARAM_TAIL:
+        return {}
+    cursor += 12
+    if cursor != len(payload):
+        return {}
+    return {
+        "entityOutputRef": output_ref,
+        "entityListFilter": entity_filters,
+        "payloadShape": "specific-constant-entity-list-exact-eof",
+    }
+
+
 def decode_entity_event_fields(
     payload: bytes,
     native_header_name: str,
@@ -132,4 +171,6 @@ def decode_entity_event_fields(
         return _decode_any_entity_die(payload)
     if native_header_name == SPECIFIC_ENTITY_DIE:
         return _decode_specific_entity_die(payload)
+    if native_header_name == SPECIFIC_ENTITY_LIST_DIE:
+        return _decode_specific_entity_list_die(payload)
     return {}

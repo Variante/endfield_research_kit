@@ -120,6 +120,9 @@ leave only the report/CLI surface in recovery.
   broader event semantics. Multiple typed control paths from the same event header may
   converge on one Story-bearing playback node without becoming sibling
   inheritance; multiple playback nodes or foreign headers remain ambiguous.
+  A typed `SpecificEntityListDie` constant list is also spatial evidence for
+  each exact list member; it remains distinct from a same-record 3D playback
+  target, so one Story may legitimately have multiple authored points.
   Exact SpawnerPtr filters are spatial only when the same level contains one
   matching `sc_<level>_<id>` SpawnerConfig and one logical typed LevelData host
   record whose finite position/rotation agrees across the active overlay.
