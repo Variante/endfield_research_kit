@@ -78,6 +78,17 @@ def _group_begin_payload() -> bytes:
     ))
 
 
+def _group_begin_nullable_filter_with_outputs() -> bytes:
+    return b"".join((
+        bytes(17),
+        b"\x04\x01" + _PARAM_TAIL,
+        b"\xff",
+        _output(0, "$42@_groupKeyOutput"),
+        b"\x04" + struct.pack("<Q", 200210000) + _PARAM_TAIL,
+        _output(0, "$42@_spawnerOutput"),
+    ))
+
+
 class LevelScriptSpawnerEventTests(unittest.TestCase):
     def test_start_pause_group_and_wave_complete_decode_constant_spawners(self) -> None:
         prefix = bytes(17) + b"\x04\x01" + _PARAM_TAIL
@@ -110,10 +121,27 @@ class LevelScriptSpawnerEventTests(unittest.TestCase):
         self.assertEqual(len(payload), detail["subtypeConsumedBytes"])
         self.assertTrue(detail["payloadShape"].endswith("exact-prefix"))
 
+    def test_group_begin_accepts_nullable_filter_and_present_outputs(self) -> None:
+        payload = _group_begin_nullable_filter_with_outputs()
+        detail = decode_spawner_event_fields(payload, "LevelEvent_OnSpawnerGroupBegin")
+        self.assertIsNone(detail["groupKeyFilter"])
+        self.assertEqual(200210000, detail["spawnerFilterId"])
+        self.assertEqual(
+            {"paramSource": 0, "path": "$42@_groupKeyOutput"},
+            detail["groupKeyOutputParam"],
+        )
+        self.assertEqual(
+            {"paramSource": 0, "path": "$42@_spawnerOutput"},
+            detail["spawnerOutputParam"],
+        )
+        self.assertEqual(len(payload), detail["subtypeConsumedBytes"])
+
     def test_entity_spawn_decodes_nullable_group_and_constant_wave(self) -> None:
         payload = _spawn_payload()
         detail = decode_spawner_event_fields(payload, "LevelEvent_OnSpawnerEntitySpawn")
         self.assertEqual(10200060003, detail["spawnerFilterId"])
+        self.assertEqual(4, detail["filterType"])
+        self.assertNotIn("entityTemplateIdFilter", detail)
         self.assertIsNone(detail["groupKeyFilter"])
         self.assertEqual("wave2", detail["waveKeyFilter"])
         self.assertEqual(len(payload), detail["subtypeConsumedBytes"])

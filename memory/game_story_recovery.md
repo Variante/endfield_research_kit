@@ -143,6 +143,11 @@ leave only the report/CLI surface in recovery.
   Exact SpawnerPtr filters are spatial only when the same level contains one
   matching `sc_<level>_<id>` SpawnerConfig and one logical typed LevelData host
   record whose finite position/rotation agrees across the active overlay.
+  Group filters may be nullable wildcards and output parameters may be present;
+  neither changes a separately constant SpawnerPtr filter. Getter-backed
+  spawner filters, group/wave text, and event outputs never substitute for the
+  spawner identity. Partial known fields are reported separately from a fully
+  consumed native subtype.
   Entity-spawn/lifecycle listeners walk the formatter fields in order and
   preserve nullable group/wave filters.  When the listener is the final
   header-list record, the exact consumed subtype prefix is authoritative even
