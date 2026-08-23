@@ -61,6 +61,10 @@ GAMEPLAY_CONFIG = "export_full/structured/StreamingAssets/Data/Json/GameplayConf
 REGISTRY_REL = f"{GAMEPLAY_CONFIG}/WorldEntityRegistry.json"
 REGISTRY = ROOT / REGISTRY_REL
 NPC_PROXY_TABLE_REL = f"{GAMEPLAY_CONFIG}/NpcProxyTable.json"
+NPC_PROXY_EX_REL = f"{GAMEPLAY_CONFIG}/NpcProxyExDataTable.json"
+PERSISTENT_GAMEPLAY_CONFIG = (
+    "export_full/structured/Persistent/Data/Json/GameplayConfig"
+)
 LEVEL_BASIC_INFO_REL = f"{GAMEPLAY_CONFIG}/LevelBasicInfoTable.json"
 MAP_ID_TABLE_REL = f"{GAMEPLAY_CONFIG}/MapIdTable.json"
 TELEPORT_TABLE_REL = f"{GAMEPLAY_CONFIG}/LevelScriptTeleportValidationDataTable.json"
@@ -88,6 +92,7 @@ MISSION_AREA_TABLE_REL = f"{GAMEPLAY_CONFIG}/MissionAreaTable.json"
 NATIVE_TRIGGER_FRONTIER_REL = "reports/story/recovery/native_receiver_activation_frontier.json"
 _NATIVE_TRIGGER_FRONTIER_CACHE: dict | None = None
 _NATIVE_TRIGGER_FRONTIER_CACHE_KEY: tuple[str, int, int] | None = None
+_NPC_PROXY_EX_STORY_INDEX_CACHE: dict[str, dict[str, list[dict]]] = {}
 
 
 def _native_trigger_frontier() -> dict:
@@ -1605,6 +1610,135 @@ def _conv_file_for_key(language: str, story_key: str) -> str | None:
     if candidate.exists():
         return f"webui/data/lang/{language}/conv/{story_key}.json"
     return None
+
+
+def _active_gameplay_config_path(filename: str) -> Path:
+    """Select one complete-file Persistent/Streaming gameplay-config overlay."""
+    persistent = ROOT / PERSISTENT_GAMEPLAY_CONFIG / filename
+    if persistent.is_file():
+        return persistent
+    return ROOT / GAMEPLAY_CONFIG / filename
+
+
+def _exact_npc_proxy_ex_story_index(language: str) -> dict[str, list[dict]]:
+    """Index authored NPC-proxy dialog rows by exact registry identity.
+
+    ``NpcProxyExDataTable`` is the runtime dialog-selection table consumed by
+    ``NpcInteractComponent._TryGetNpcProxyInteractDialogId``.  Its row proves
+    that a dialog is authored for one named proxy, while server state chooses
+    the active row.  Spatial publication therefore requires an exact proxy-id
+    join through both WorldEntityRegistry and NpcProxyTable, but deliberately
+    does not claim current activation, quest ownership, or Story order.
+    """
+    cached = _NPC_PROXY_EX_STORY_INDEX_CACHE.get(language)
+    if cached is not None:
+        return cached
+
+    conv_root = ROOT / f"webui/data/lang/{language}/conv"
+    folded_story_keys: dict[str, list[str]] = {}
+    if conv_root.is_dir():
+        for path in sorted(conv_root.glob("*.json")):
+            folded_story_keys.setdefault(path.stem.casefold(), []).append(path.stem)
+
+    proxy_ex_path = _active_gameplay_config_path("NpcProxyExDataTable.json")
+    proxy_table_path = _active_gameplay_config_path("NpcProxyTable.json")
+    proxy_ex = _load_json(proxy_ex_path, {}) or {}
+    proxy_table = _load_json(proxy_table_path, {}) or {}
+    registry = _load_json(REGISTRY, {}) or {}
+    ex_rows = proxy_ex.get("data") if isinstance(proxy_ex, dict) else None
+    table_rows = (
+        proxy_table.get("dataTable") if isinstance(proxy_table, dict) else None
+    )
+    briefs = (
+        registry.get("npcProxyBriefInfos") if isinstance(registry, dict) else None
+    )
+    if not all(isinstance(value, dict) for value in (ex_rows, table_rows, briefs)):
+        _NPC_PROXY_EX_STORY_INDEX_CACHE[language] = {}
+        return {}
+
+    brief_rows_by_proxy: dict[str, list[tuple[int, dict]]] = {}
+    for raw_segment_id, brief in briefs.items():
+        if not isinstance(brief, dict) or not brief.get("proxyId"):
+            continue
+        try:
+            segment_id = int(raw_segment_id)
+        except (TypeError, ValueError):
+            continue
+        if brief.get("segmentIdGlobal") != segment_id:
+            continue
+        brief_rows_by_proxy.setdefault(str(brief["proxyId"]), []).append(
+            (segment_id, brief)
+        )
+
+    def relative(path: Path) -> str:
+        try:
+            return str(path.relative_to(ROOT)).replace("\\", "/")
+        except ValueError:
+            return str(path).replace("\\", "/")
+
+    index: dict[str, list[dict]] = {}
+    seen: set[tuple[str, str, str]] = set()
+    for proxy_id, configured_rows in ex_rows.items():
+        if not isinstance(configured_rows, list):
+            continue
+        table_row = table_rows.get(proxy_id)
+        brief_matches = brief_rows_by_proxy.get(str(proxy_id), [])
+        if not isinstance(table_row, dict) or len(brief_matches) != 1:
+            continue
+        segment_id, brief = brief_matches[0]
+        brief_position = _finite_position(brief.get("position"))
+        table_position = _finite_position(table_row.get("position"))
+        table_rotation = _finite_position(table_row.get("rotation"))
+        if (
+            brief_position is None
+            or table_position is None
+            or table_rotation is None
+            or brief_position != table_position
+            or not str(table_row.get("levelId") or "")
+        ):
+            continue
+        identity = f"npc:{segment_id}"
+        for row_index, configured in enumerate(configured_rows):
+            if not isinstance(configured, dict):
+                continue
+            raw_story_key = str(configured.get("dialogId") or "")
+            candidates = folded_story_keys.get(raw_story_key.casefold(), [])
+            if not raw_story_key or len(candidates) != 1:
+                continue
+            story_key = candidates[0]
+            signature = (identity, story_key, str(configured.get("missionId") or ""))
+            if signature in seen:
+                continue
+            seen.add(signature)
+            index.setdefault(identity, []).append({
+                "storyKey": story_key,
+                "authoredStoryKey": raw_story_key,
+                "npcProxyId": str(proxy_id),
+                "entityLogicId": segment_id,
+                "levelId": str(table_row["levelId"]),
+                "missionContext": str(configured.get("missionId") or ""),
+                "rowIndex": row_index,
+                "status": "exact_npc_proxy_ex_dialog_target",
+                "selectionStatus": "server_selected_active_condition_unproven",
+                "nativeMappingId": "npc-proxy-dialog-selection-native-v1",
+                "spatialResolutionEvidence": (
+                    "exact_npc_proxy_ex_proxy_id_and_registry_table_transform"
+                ),
+                "activation": False,
+                "ownership": False,
+                "orderEvidence": False,
+                "sourceFiles": [
+                    relative(proxy_ex_path),
+                    relative(proxy_table_path),
+                    REGISTRY_REL,
+                ],
+            })
+    for rows in index.values():
+        rows.sort(key=lambda row: (
+            row["storyKey"], row["missionContext"], row["rowIndex"]
+        ))
+    _NPC_PROXY_EX_STORY_INDEX_CACHE[language] = index
+    return index
 
 
 def _world_narrative_bindings(language: str) -> dict[str, list[dict]]:
@@ -3385,6 +3519,7 @@ def _registry_markers(
 ) -> list[dict]:
     """Plot every registry entity this level owns, with its story pins."""
     markers: list[dict] = []
+    npc_proxy_ex_story_index = _exact_npc_proxy_ex_story_index(language)
 
     def action_story_missions(targets: Iterable[dict]) -> list[str]:
         missions = set()
@@ -3789,6 +3924,12 @@ def _registry_markers(
             continue
         proxy_id = str(info.get("proxyId") or "")
         stories = attachment_index.get(f"proxy:{proxy_id}", []) if proxy_id else []
+        proxy_dialog_bindings = [
+            binding
+            for binding in npc_proxy_ex_story_index.get(f"npc:{segment_id}", [])
+            if binding.get("levelId") == level_id
+            and binding.get("npcProxyId") == proxy_id
+        ]
         world_fallback_action_targets = [
             target
             for target in (action_target_index or {}).get(
@@ -3826,13 +3967,57 @@ def _registry_markers(
             "evidence": "WorldEntityRegistry exact npc proxy transform",
             "npcProxyId": proxy_id,
             "registryBacked": True,
-            "sceneKeys": sorted({story["key"] for story in stories}),
+            "sceneKeys": sorted(
+                {story["key"] for story in stories}
+                | {
+                    str(binding.get("storyKey") or "")
+                    for binding in proxy_dialog_bindings
+                    if binding.get("storyKey")
+                }
+            ),
             "missions": _story_missions(stories),
             "missionPhases": _npc_mission_phases(stories),
             "relatedFiles": _sorted_related(_merge_related([], [
                 *_story_pins(stories, "story_npc_proxy", "dialog attached to this NPC proxy"),
             ])),
         }
+        if proxy_dialog_bindings:
+            row["npcProxyExStoryBindings"] = proxy_dialog_bindings
+            row["npcProxyExMissionContexts"] = sorted({
+                str(binding.get("missionContext") or "")
+                for binding in proxy_dialog_bindings
+                if binding.get("missionContext")
+            })
+            row["interactionStatus"] = "exact_npc_proxy_dialog_configuration"
+            row["evidence"] = (
+                "NpcProxyEx exact proxy/dialog row + unique WorldEntityRegistry/"
+                "NpcProxyTable identity and transform"
+            )
+            row["relatedFiles"] = _sorted_related(_merge_related(
+                row["relatedFiles"],
+                [
+                    *[
+                        _related(
+                            source_file,
+                            "story_npc_proxy",
+                            "authored NPC proxy dialog-selection configuration",
+                        )
+                        for source_file in sorted({
+                            source_file
+                            for binding in proxy_dialog_bindings
+                            for source_file in binding.get("sourceFiles") or []
+                        })
+                    ],
+                    *[
+                        _related(
+                            _conv_file_for_key(language, binding["storyKey"]),
+                            "story_npc_proxy",
+                            "dialog selected from this exact NPC proxy configuration",
+                        )
+                        for binding in proxy_dialog_bindings
+                    ],
+                ],
+            ))
         exact_action_targets, _unresolved_action_targets = attach_action_bindings(
             row,
             action_targets,

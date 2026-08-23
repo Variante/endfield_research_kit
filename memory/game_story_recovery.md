@@ -177,6 +177,16 @@ leave only the report/CLI surface in recovery.
   same-level SpawnerConfig and LevelData transform. This locates the authored
   encounter-associated spawner; it does not prove the encounter center,
   runtime enemy position, activation, mission ownership, or Story order.
+  NPC interaction dialogs have a separate direct spatial carrier:
+  `NpcProxyExDataTable` stores `proxyId`, `dialogId`, and optional mission
+  context in one authored selection row, and the build-locked native consumer
+  uses the server-selected active row for that same proxy. A dialog may attach
+  to the proxy marker only when its case-insensitive published key is unique,
+  the proxy id has exactly one self-consistent `npcProxyBriefInfos` identity,
+  and NpcProxyTable supplies the same finite position plus finite rotation.
+  This proves the dialog is configured for that authored NPC location; it does
+  not prove which row the server currently selects, interaction activation,
+  quest ownership, or cross-row Story order.
   Generated frontier and map reports own the changing counts.
 - For e0m0, the current two-map union has 23 mapped Story keys and 25 disjoint
   unmapped keys. The unmapped set is 15 ordering-graph-only, 8 without spatial
