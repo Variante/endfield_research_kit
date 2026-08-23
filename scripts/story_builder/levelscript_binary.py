@@ -2775,23 +2775,25 @@ def _decode_leader_trigger_volume_list_fields(payload: bytes) -> dict[str, Any]:
     }
 
 
-def _decode_encounter_battle_part_begin_fields(payload: bytes) -> dict[str, Any]:
-    """Decode the exact LevelScript-variable pointer filter and null output."""
+def _decode_encounter_lsm_fields(payload: bytes) -> dict[str, Any]:
+    """Decode the exact constant ``LsmPtr`` filter and null output prefix."""
     if (
-        len(payload) != 53
+        len(payload) < 53
         or payload[17:31] != b"\x04\x01" + _DEFAULT_PARAM_TAIL
         or payload[31] != 0x04
         or payload[40:52] != _DEFAULT_PARAM_TAIL
         or payload[52] != 0xFF
     ):
         return {}
-    # Param<LevelScriptVariablePtr> is tag 0x04, a uint64 script pointer,
-    # the ordinary Param tail, then a null output.  The pointer's low byte can
-    # itself be 0x03; it is data, not a nested union tag.
+    # Param<LsmPtr> is tag 0x04, a uint64 module pointer, the ordinary Param
+    # tail, then a null ParamOutput<LsmPtr>. The wider record window can also
+    # contain LevelScriptData members, so only the exact subtype prefix is
+    # consumed and no later integer is scanned.
     return {
-        "levelScriptVariableFilter": struct.unpack_from("<Q", payload, 32)[0],
-        "levelScriptVariableOutputPresent": False,
-        "payloadShape": "constant-level-script-variable-pointer-null-output-exact-eof",
+        "lsmPtrFilter": struct.unpack_from("<Q", payload, 32)[0],
+        "lsmPtrOutputPresent": False,
+        "subtypeConsumedBytes": 22,
+        "payloadShape": "constant-lsm-pointer-null-output-exact-prefix",
     }
 
 
@@ -3319,19 +3321,22 @@ def _decode_named_native_event_detail(
                 "serializedMissionOrQuestId": False,
                 "summary": f"{receiver} dies",
             }
-    elif native_header_name == "LevelEvent_OnEncounterBattlePartBegin":
-        encounter_fields = _decode_encounter_battle_part_begin_fields(payload)
+    elif native_header_name in {
+        "LevelEvent_OnEncounterActivated",
+        "LevelEvent_OnEncounterBattlePartBegin",
+    }:
+        encounter_fields = _decode_encounter_lsm_fields(payload)
         if encounter_fields:
             detail = {
                 "type": native_header_name,
                 **encounter_fields,
-                "levelScriptVariableOutputRefs": refs("lsvPtrOutput"),
+                "lsmPtrOutputRefs": refs("lsmPtrOutput"),
                 "transport": "local-encounter-runtime-event",
                 "serverExchange": False,
                 "serializedMissionOrQuestId": False,
                 "summary": (
-                    "encounter battle part begins for LevelScript variable "
-                    f"{encounter_fields['levelScriptVariableFilter']}"
+                    f"{native_header_name.removeprefix('LevelEvent_On')} for "
+                    f"Encounter module {encounter_fields['lsmPtrFilter']}"
                 ),
             }
     elif native_header_name == "LevelEvent_OnScriptedCharPatrolEvent":

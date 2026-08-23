@@ -3865,14 +3865,14 @@ def build_levelscript_action_story_occurrences(
                                     control_path.get("headerName")
                                     == "LevelEvent_OnEncounterBattlePartBegin"
                                     and isinstance(
-                                        event_detail.get("levelScriptVariableFilter"),
+                                        event_detail.get("lsmPtrFilter"),
                                         int,
                                     )
                                 ):
                                     runtime_target = (
                                         decode_levelscript_encounter_module_target(
                                             data,
-                                            event_detail["levelScriptVariableFilter"],
+                                            event_detail["lsmPtrFilter"],
                                             file_info.get("fileStem") or "",
                                         )
                                     )

@@ -611,7 +611,24 @@ class MissionFlowLevelScriptEventTests(unittest.TestCase):
             16,
             common + b"\x04" + (34_700_000_003).to_bytes(8, "little") + param_tail + b"\xff",
         )
-        self.assertEqual(34_700_000_003, encounter["levelScriptVariableFilter"])
+        self.assertEqual(34_700_000_003, encounter["lsmPtrFilter"])
+        self.assertFalse(encounter["lsmPtrOutputPresent"])
+
+        activated = decode(
+            0x58,
+            16,
+            common
+            + b"\x04"
+            + (10_200_060_006).to_bytes(8, "little")
+            + param_tail
+            + b"\xff"
+            + b"container",
+        )
+        self.assertEqual(10_200_060_006, activated["lsmPtrFilter"])
+        self.assertEqual(
+            "constant-lsm-pointer-null-output-exact-prefix",
+            activated["payloadShape"],
+        )
 
         patrol = decode(
             0x88,

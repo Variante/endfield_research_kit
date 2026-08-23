@@ -13,6 +13,89 @@ class BuildMapRecoveryDataTests(unittest.TestCase):
     def setUp(self):
         builder._NATIVE_TRIGGER_FRONTIER_CACHE = None
 
+    def test_exact_encounter_marker_requires_positive_typed_spawner_and_unique_host(self):
+        level_id = "map_fixture"
+        script_id = "42000010001"
+        lsm_ptr = 42000010002
+        spawner_id = 42000010003
+        context = {
+            "classification": "encounter_controller_property_contract",
+            "mappingId": "gameassembly-2026-08-02-levelscriptmodule-save-prefix-encounter-contract",
+            "runtimeType": "Beyond.Gameplay.Core.EncounterBase<T>",
+            "dataType": "Beyond.Gameplay.EncounterData",
+            "moduleId": str(lsm_ptr),
+            "spawnerId": str(spawner_id),
+            "matchedPropertyNames": [f"@{lsm_ptr}_spawner_id"],
+        }
+        observation = {
+            "status": "exact_non_spatial_event_trigger",
+            "levelId": level_id,
+            "scriptId": script_id,
+            "sourceFile": f"LevelScriptData/{level_id}/{script_id}.json",
+            "listenerHeaderLocalId": 4,
+            "eventName": "LevelEvent_OnEncounterActivated",
+            "headerUnionTag": "0x0058",
+            "headerSerializedMemberCount": 16,
+            "eventDetail": {
+                "type": "LevelEvent_OnEncounterActivated",
+                "lsmPtrFilter": lsm_ptr,
+                "lsmPtrOutputPresent": False,
+                "payloadShape": "constant-lsm-pointer-null-output-exact-prefix",
+                "payloadSchemaStatus": "exact_current_build_memorypack_fields",
+                "payloadSchemaMappingId": "gameassembly-2026-07-17-memorypack-native-event-fields",
+                "serverExchange": False,
+                "serializedMissionOrQuestId": False,
+            },
+        }
+        report = {
+            "rows": [{
+                "levelId": level_id,
+                "scriptId": script_id,
+                "encounterControllerContexts": [context],
+            }],
+            "storyTriggerZoneCoverage": {"rows": [{
+                "storyKey": "radio_fixture",
+                "observations": [observation],
+            }]},
+        }
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            config = root / "export_full/structured/StreamingAssets/Data/Json/SpawnerConfig" / level_id / f"sc_{level_id}_{spawner_id}.json"
+            config.parent.mkdir(parents=True)
+            config.write_bytes(b"config")
+            leveldata = root / "export_full/structured/StreamingAssets/Data/Json/LevelData" / level_id / "host.json"
+            leveldata.parent.mkdir(parents=True)
+            name = f"sc_{level_id}_{spawner_id}".encode("ascii")
+            leveldata.write_bytes(
+                len(name).to_bytes(4, "little")
+                + name
+                + b"\x00"
+                + struct.pack("<6f", 1.0, 2.0, 3.0, 0.0, 90.0, 0.0)
+            )
+            with (
+                mock.patch.object(builder, "ROOT", root),
+                mock.patch.object(builder, "_native_trigger_frontier", return_value=report),
+            ):
+                markers = builder._exact_story_encounter_markers(level_id, "CN")
+                self.assertEqual(1, len(markers))
+                self.assertEqual(["radio_fixture"], markers[0]["sceneKeys"])
+                self.assertEqual(
+                    "unresolved_non_owning",
+                    markers[0]["missionOwnershipStatus"],
+                )
+                report["rows"][0]["encounterControllerContexts"][0]["spawnerId"] = "0"
+                self.assertEqual(
+                    [],
+                    builder._exact_story_encounter_markers(level_id, "CN"),
+                )
+                report["rows"][0]["encounterControllerContexts"][0]["spawnerId"] = str(spawner_id)
+                duplicate = leveldata.with_name("other.json")
+                duplicate.write_bytes(leveldata.read_bytes())
+                self.assertEqual(
+                    [],
+                    builder._exact_story_encounter_markers(level_id, "CN"),
+                )
+
     def test_exact_proxy_patrol_event_index_requires_unique_equal_npc_join(self):
         report = {"storyTriggerZoneCoverage": {"rows": [{
             "storyKey": "radio_proxy_patrol",
