@@ -542,7 +542,6 @@
 .mr-route { fill: none; stroke: var(--mr-quest); stroke-width: 2.5; stroke-dasharray: 7 5; opacity: 0.55; }
 .mr-bg-image { pointer-events: none; }
 .mr-bg-model-surface.is-overlay { opacity: 0.72; }
-.mr-bg-elevation { mix-blend-mode: multiply; }
 .mr-location-label {
   /* Location names sit on top of the recovered game texture. A quiet dark
      ink plus a broad white halo reads like a cartographic place label while

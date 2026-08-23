@@ -995,10 +995,9 @@ def texture_file_index(texture_root: Path) -> dict[str, Path]:
 
 def water_scene_id(level_id: str, source_scene: str | None = None) -> str:
     """Map gameplay slices to the LunaScene that owns WaterData sectors."""
-    if source_scene:
-        return source_scene
-    matched = re.match(r"^(map[0-9]+)_lv[0-9]+$", level_id, re.IGNORECASE)
-    return matched.group(1) if matched else level_id
+    candidate = source_scene or level_id
+    matched = re.match(r"^(map[0-9]+)_lv[0-9]+$", candidate, re.IGNORECASE)
+    return matched.group(1) if matched else candidate
 
 
 def render_water_overlay(

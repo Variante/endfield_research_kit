@@ -1949,7 +1949,7 @@
           : "";
         const geometry = `x="${x.toFixed(2)}" y="${y.toFixed(2)}" width="${w.toFixed(2)}" height="${h.toFixed(2)}"${orientation}`;
         const underlay = state.modelLayers.has("elevation") && bg.elevationUnderlay?.src
-          ? `<image class="mr-bg-image mr-bg-elevation" href="data/map_recovery/${esc(bg.elevationUnderlay.src)}?v=${MAP_ASSET_VERSION}" ${geometry} style="opacity:${layerOpacity("elevation")}"><title>${esc(`${bg.levelId} elevation`)}</title></image>`
+          ? `<image class="mr-bg-image mr-bg-elevation" filter="url(#mr-elevation-opaque-alpha)" href="data/map_recovery/${esc(bg.elevationUnderlay.src)}?v=${MAP_ASSET_VERSION}" ${geometry}><title>${esc(`${bg.levelId} elevation`)}</title></image>`
           : "";
         const pointSrc = bg.pointCloudOverlay?.src || "";
         const mainIsPointCloud = bg.status === "inferred_registry_point_cloud_preview";
@@ -1972,7 +1972,8 @@
         const points = state.modelLayers.has("points") && visiblePointSrc
           ? `<image class="mr-bg-image mr-bg-point-cloud" href="${esc(pointUrl)}"${heightAttrs} ${geometry} style="opacity:${layerOpacity("points")}"><title>${esc(`${bg.levelId} point cloud`)}</title></image>`
           : "";
-        if (part === "base") return `${underlay}${surface}`;
+        if (part === "elevation") return underlay;
+        if (part === "base") return surface;
         if (part === "water") return water;
         if (part === "points") return points;
         return `${underlay}${surface}${water}${points}`;
@@ -1992,6 +1993,14 @@
     const minimapLayer = minimapImages
       ? `<g class="mr-bg-minimap-layer" style="opacity:${layerOpacity("minimap")}">${minimapImages}</g>`
       : "";
+    const elevationImages = modelOverlayRects.map((rect) => modelImages(rect, rect.overMinimap, "elevation")).join("");
+    // Elevation PNGs use translucent edge pixels. Normalize every materially
+    // covered source pixel to opaque before composing sibling screens so an overlap
+    // replaces the previous value instead of accumulating a darker shade.
+    // The user's opacity is then applied once to the completed elevation set.
+    const elevationLayer = elevationImages
+      ? `<defs><filter id="mr-elevation-opaque-alpha" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncA type="discrete" tableValues="0 1"/></feComponentTransfer></filter></defs><g class="mr-bg-elevation-layer" style="opacity:${layerOpacity("elevation")}">${elevationImages}</g>`
+      : "";
     const modelBaseImages = modelOverlayRects.map((rect) => modelImages(rect, rect.overMinimap, "base")).join("");
     const waterImages = modelOverlayRects.map((rect) => modelImages(rect, rect.overMinimap, "water")).join("");
     // Regional minimaps overlap by design. Rendering each semi-transparent
@@ -2003,7 +2012,7 @@
       ? `<defs><filter id="mr-water-union-alpha" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncA type="discrete" tableValues="0 0.6588235"/></feComponentTransfer></filter></defs><g class="mr-bg-water-union" filter="url(#mr-water-union-alpha)" style="opacity:${layerOpacity("water")}">${waterImages}</g>`
       : "";
     const pointImages = modelOverlayRects.map((rect) => modelImages(rect, rect.overMinimap, "points")).join("");
-    const backgroundImages = `${minimapLayer}${modelBaseImages}${waterUnion}${pointImages}`;
+    const backgroundImages = `${minimapLayer}${elevationLayer}${modelBaseImages}${waterUnion}${pointImages}`;
     // Level display names describe gameplay scenes, not geographic ownership
     // of the whole (overlapping) map-screen rectangle. Location labels come
     // from the map UI's own staticElements text anchors instead. Keep them as
@@ -2354,7 +2363,7 @@
       event.currentTarget.title = `${Math.round(opacity * 100)}%`;
       const selector = {
         minimap: ".mr-bg-minimap-layer",
-        elevation: ".mr-bg-elevation",
+        elevation: ".mr-bg-elevation-layer",
         surface: ".mr-bg-model-surface",
         water: ".mr-bg-water-union",
         points: ".mr-bg-point-cloud",

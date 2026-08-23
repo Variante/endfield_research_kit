@@ -36,10 +36,16 @@ from scripts.build_map_recovery_preview import (
     select_shared_origin,
     streaming_projection_payload,
     smooth_surface,
+    water_scene_id,
 )
 
 
 class CellSizeTests(unittest.TestCase):
+    def test_art_level_water_uses_owning_world_scene(self):
+        self.assertEqual(water_scene_id("map01_lv005"), "map01")
+        self.assertEqual(water_scene_id("dung", "map01_lv005"), "map01")
+        self.assertEqual(water_scene_id("dung01_wrdg001"), "dung01_wrdg001")
+
     def test_cell_size_doubles_from_the_native_32_m_base_grid(self):
         self.assertEqual(cell_size(0), 32.0)
         self.assertEqual(cell_size(1), 64.0)
