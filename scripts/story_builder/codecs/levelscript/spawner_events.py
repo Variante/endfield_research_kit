@@ -10,6 +10,10 @@ _PARAM_TAIL = b"\xff\xff\xff\xff\x00\x00\x00\x00\xff\xff\xff\xff"
 _GROUP_BEGIN = "LevelEvent_OnSpawnerGroupBegin"
 _WAVE_BEGIN = "LevelEvent_OnSpawnerWaveBegin"
 _COMPLETE = "LevelEvent_OnSpawnerComplete"
+_START = "LevelEvent_OnSpawnerStart"
+_PAUSE = "LevelEvent_OnSpawnerPause"
+_GROUP_COMPLETE = "LevelEvent_OnSpawnerGroupComplete"
+_WAVE_COMPLETE = "LevelEvent_OnSpawnerWaveComplete"
 _ENTITY_SPAWN = "LevelEvent_OnSpawnerEntitySpawn"
 _ENTITY_LIFECYCLE_EVENTS = {
     "LevelEvent_OnSpawnerEntityDie",
@@ -113,6 +117,17 @@ def _read_output_param(
     return {"paramSource": source, "path": value}, cursor + size
 
 
+def _read_nullable_output_param(
+    payload: bytes,
+    cursor: int,
+) -> tuple[dict[str, Any] | None, int] | None:
+    if cursor >= len(payload):
+        return None
+    if payload[cursor] == 0xFF:
+        return None, cursor + 1
+    return _read_output_param(payload, cursor)
+
+
 def _read_i32_param_detail(
     payload: bytes,
     cursor: int,
@@ -211,6 +226,122 @@ def _decode_complete(payload: bytes) -> dict[str, Any]:
         "spawnerOutputPresent": False,
         "payloadShape": "constant-spawner-null-output-exact-eof",
     }
+
+
+def _finish_prefix(detail: dict[str, Any], cursor: int, payload: bytes, shape: str) -> dict[str, Any]:
+    detail["subtypeConsumedBytes"] = cursor
+    detail["payloadShape"] = f"{shape}-exact-{'eof' if cursor == len(payload) else 'prefix'}"
+    return detail
+
+
+def _decode_start(payload: bytes) -> dict[str, Any]:
+    if not _has_bounded_header_validate_param(payload):
+        return {}
+    decoded = _read_u64_param(payload, 31)
+    if decoded is None:
+        return {}
+    spawner_id, cursor = decoded
+    output = _read_nullable_output_param(payload, cursor)
+    if output is None:
+        return {}
+    spawner_output, cursor = output
+    return _finish_prefix(
+        {"spawnerFilterId": spawner_id, "spawnerOutputParam": spawner_output},
+        cursor,
+        payload,
+        "constant-spawner-start",
+    )
+
+
+def _decode_pause(payload: bytes) -> dict[str, Any]:
+    if not _has_bounded_header_validate_param(payload):
+        return {}
+    key_result = _read_string_param(payload, 31)
+    if key_result is None:
+        return {}
+    pause_key, cursor = key_result
+    key_output = _read_nullable_output_param(payload, cursor)
+    if key_output is None:
+        return {}
+    pause_key_output, cursor = key_output
+    spawner_result = _read_u64_param(payload, cursor)
+    if spawner_result is None:
+        return {}
+    spawner_id, cursor = spawner_result
+    spawner_output = _read_nullable_output_param(payload, cursor)
+    if spawner_output is None:
+        return {}
+    spawner_output_detail, cursor = spawner_output
+    return _finish_prefix(
+        {
+            "pauseKeyFilter": pause_key,
+            "pauseKeyOutputParam": pause_key_output,
+            "spawnerFilterId": spawner_id,
+            "spawnerOutputParam": spawner_output_detail,
+        },
+        cursor,
+        payload,
+        "constant-pause-key-and-spawner",
+    )
+
+
+def _decode_group_complete(payload: bytes) -> dict[str, Any]:
+    if not _has_bounded_header_validate_param(payload) or len(payload) <= 31:
+        return {}
+    cursor = 31
+    detail: dict[str, Any] = {}
+    if payload[cursor] == 0xFF:
+        detail["groupKeyFilter"] = None
+        cursor += 1
+    elif payload[cursor] == 0x04:
+        group_result = _read_string_param(payload, cursor)
+        if group_result is None:
+            return {}
+        detail["groupKeyFilter"], cursor = group_result
+    else:
+        return {}
+    group_output = _read_nullable_output_param(payload, cursor)
+    if group_output is None:
+        return {}
+    detail["groupKeyOutputParam"], cursor = group_output
+    spawner_result = _read_u64_param(payload, cursor)
+    if spawner_result is None:
+        return {}
+    detail["spawnerFilterId"], cursor = spawner_result
+    spawner_output = _read_nullable_output_param(payload, cursor)
+    if spawner_output is None:
+        return {}
+    detail["spawnerOutputParam"], cursor = spawner_output
+    return _finish_prefix(detail, cursor, payload, "group-complete-and-constant-spawner")
+
+
+def _decode_wave_complete(payload: bytes) -> dict[str, Any]:
+    if not _has_bounded_header_validate_param(payload):
+        return {}
+    spawner_result = _read_u64_param(payload, 31)
+    if spawner_result is None:
+        return {}
+    spawner_id, cursor = spawner_result
+    detail: dict[str, Any] = {"spawnerFilterId": spawner_id}
+    spawner_output = _read_nullable_output_param(payload, cursor)
+    if spawner_output is None:
+        return {}
+    detail["spawnerOutputParam"], cursor = spawner_output
+    if cursor < len(payload) and payload[cursor] == 0xFF:
+        detail["waveKeyFilter"] = None
+        cursor += 1
+    elif cursor < len(payload) and payload[cursor] == 0x04:
+        wave_result = _read_string_param(payload, cursor)
+        if wave_result is None:
+            return {}
+        detail["waveKeyFilter"], cursor = wave_result
+    else:
+        return {}
+    wave_output = _read_nullable_output_param(payload, cursor)
+    if wave_output is None:
+        return {}
+    detail["waveKeyOutputParam"], cursor = wave_output
+    return _finish_prefix(detail, cursor, payload, "wave-complete-and-constant-spawner")
 
 
 def _decode_entity_spawn(payload: bytes) -> dict[str, Any]:
@@ -354,6 +485,14 @@ def decode_spawner_event_fields(
         return _decode_begin(payload, wave=True)
     if native_header_name == _COMPLETE:
         return _decode_complete(payload)
+    if native_header_name == _START:
+        return _decode_start(payload)
+    if native_header_name == _PAUSE:
+        return _decode_pause(payload)
+    if native_header_name == _GROUP_COMPLETE:
+        return _decode_group_complete(payload)
+    if native_header_name == _WAVE_COMPLETE:
+        return _decode_wave_complete(payload)
     if native_header_name == _ENTITY_SPAWN:
         return _decode_entity_spawn(payload)
     if native_header_name in _ENTITY_LIFECYCLE_EVENTS:

@@ -130,6 +130,9 @@ leave only the report/CLI surface in recovery.
   those trailing bytes are never scanned for a SpawnerPtr.
   A getter-backed inherited validation predicate makes playback conditional
   but does not erase an independently constant, fully decoded SpawnerPtr.
+  Start, pause, group-complete, and wave-complete listeners likewise require
+  their complete ordered filter/output layout; nullable outputs are consumed
+  explicitly, while getter-backed SpawnerPtr values remain non-spatial.
   Wave/group configuration, spawned-entity output, or a raw numeric hit alone
   remains non-spatial.
   Generated frontier and map reports own the changing counts.

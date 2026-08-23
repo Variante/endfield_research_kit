@@ -573,7 +573,11 @@ _SPATIAL_SPAWNER_EVENT_TYPES = {
     "LevelEvent_OnSpawnerEntityDieEnd",
     "LevelEvent_OnSpawnerEntitySpawn",
     "LevelEvent_OnSpawnerGroupBegin",
+    "LevelEvent_OnSpawnerGroupComplete",
+    "LevelEvent_OnSpawnerPause",
+    "LevelEvent_OnSpawnerStart",
     "LevelEvent_OnSpawnerWaveBegin",
+    "LevelEvent_OnSpawnerWaveComplete",
 }
 
 

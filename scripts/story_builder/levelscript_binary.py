@@ -3102,6 +3102,28 @@ def _decode_named_native_event_detail(
                 "serializedMissionOrQuestId": False,
                 "summary": f"an entity from spawner {spawner_fields['spawnerFilterId']} {phase}",
             }
+    elif native_header_name in {
+        "LevelEvent_OnSpawnerStart",
+        "LevelEvent_OnSpawnerPause",
+        "LevelEvent_OnSpawnerGroupComplete",
+        "LevelEvent_OnSpawnerWaveComplete",
+    }:
+        spawner_fields = levelscript_spawner_events.decode_spawner_event_fields(
+            payload,
+            native_header_name,
+        )
+        if spawner_fields:
+            detail = {
+                "type": native_header_name,
+                **spawner_fields,
+                "transport": "local-spawner-runtime-event",
+                "serverExchange": False,
+                "serializedMissionOrQuestId": False,
+                "summary": (
+                    f"{native_header_name.removeprefix('LevelEvent_On')} "
+                    f"for spawner {spawner_fields['spawnerFilterId']}"
+                ),
+            }
     elif native_header_name == "LevelEvent_OnNpcPatrolCheckpointReach":
         patrol_fields = _decode_npc_patrol_checkpoint_fields(payload)
         if patrol_fields:
