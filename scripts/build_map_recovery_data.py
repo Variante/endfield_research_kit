@@ -93,6 +93,7 @@ NATIVE_TRIGGER_FRONTIER_REL = "reports/story/recovery/native_receiver_activation
 _NATIVE_TRIGGER_FRONTIER_CACHE: dict | None = None
 _NATIVE_TRIGGER_FRONTIER_CACHE_KEY: tuple[str, int, int] | None = None
 _NPC_PROXY_EX_STORY_INDEX_CACHE: dict[str, dict[str, list[dict]]] = {}
+_NPC_PROXY_ENV_TALK_STORY_INDEX_CACHE: dict[str, dict[str, list[dict]]] = {}
 
 
 def _native_trigger_frontier() -> dict:
@@ -1738,6 +1739,144 @@ def _exact_npc_proxy_ex_story_index(language: str) -> dict[str, list[dict]]:
             row["storyKey"], row["missionContext"], row["rowIndex"]
         ))
     _NPC_PROXY_EX_STORY_INDEX_CACHE[language] = index
+    return index
+
+
+def _exact_npc_proxy_env_talk_story_index(language: str) -> dict[str, list[dict]]:
+    """Index ambient Story rows authored directly on placed NPC proxies.
+
+    ``NpcProxyTable.envTalkIds`` and the same field under
+    ``lazyDestroyEnvTalkData`` identify ambient lines configured for one exact
+    proxy. They do not prove current activation, mission ownership, or order.
+    """
+    cached = _NPC_PROXY_ENV_TALK_STORY_INDEX_CACHE.get(language)
+    if cached is not None:
+        return cached
+
+    conv_root = ROOT / f"webui/data/lang/{language}/conv"
+    folded_story_keys: dict[str, list[str]] = {}
+    if conv_root.is_dir():
+        for path in sorted(conv_root.glob("*.json")):
+            folded_story_keys.setdefault(path.stem.casefold(), []).append(path.stem)
+
+    proxy_table_path = _active_gameplay_config_path("NpcProxyTable.json")
+    proxy_table = _load_json(proxy_table_path, {}) or {}
+    registry = _load_json(REGISTRY, {}) or {}
+    table_rows = proxy_table.get("dataTable") if isinstance(proxy_table, dict) else None
+    briefs = registry.get("npcProxyBriefInfos") if isinstance(registry, dict) else None
+    if not isinstance(table_rows, dict) or not isinstance(briefs, dict):
+        _NPC_PROXY_ENV_TALK_STORY_INDEX_CACHE[language] = {}
+        return {}
+
+    brief_rows_by_proxy: dict[str, list[tuple[int, dict]]] = {}
+    for raw_segment_id, brief in briefs.items():
+        if not isinstance(brief, dict) or not brief.get("proxyId"):
+            continue
+        try:
+            segment_id = int(raw_segment_id)
+        except (TypeError, ValueError):
+            continue
+        if brief.get("segmentIdGlobal") != segment_id:
+            continue
+        brief_rows_by_proxy.setdefault(str(brief["proxyId"]), []).append(
+            (segment_id, brief)
+        )
+
+    def relative(path: Path) -> str:
+        try:
+            return str(path.relative_to(ROOT)).replace("\\", "/")
+        except ValueError:
+            return str(path).replace("\\", "/")
+
+    def finite_vector(value: object) -> dict[str, float] | None:
+        vector = _finite_position(value)
+        if vector is None or any(
+            component is not None and not math.isfinite(component)
+            for component in vector.values()
+        ):
+            return None
+        return vector
+
+    def env_talk_refs(node: object, path: str = "") -> list[tuple[str, str]]:
+        refs: list[tuple[str, str]] = []
+        if isinstance(node, dict):
+            for key, value in node.items():
+                child_path = f"{path}.{key}" if path else key
+                if key == "envTalkIds" and isinstance(value, list):
+                    refs.extend(
+                        (item, child_path)
+                        for item in value
+                        if isinstance(item, str) and item
+                    )
+                else:
+                    refs.extend(env_talk_refs(value, child_path))
+        elif isinstance(node, list):
+            for item_index, value in enumerate(node):
+                refs.extend(env_talk_refs(value, f"{path}[{item_index}]"))
+        return refs
+
+    index: dict[str, list[dict]] = {}
+    seen: set[tuple[str, str, str]] = set()
+    for proxy_id, table_row in table_rows.items():
+        if not isinstance(table_row, dict):
+            continue
+        refs = env_talk_refs(table_row)
+        brief_matches = brief_rows_by_proxy.get(str(proxy_id), [])
+        if not refs or len(brief_matches) != 1:
+            continue
+        segment_id, brief = brief_matches[0]
+        brief_position = finite_vector(brief.get("position"))
+        table_position = finite_vector(table_row.get("position"))
+        table_rotation = finite_vector(table_row.get("rotation"))
+        level_id = str(table_row.get("levelId") or "")
+        if (
+            brief_position is None
+            or table_position is None
+            or table_rotation is None
+            or brief_position != table_position
+            or not level_id
+        ):
+            continue
+        identity = f"npc:{segment_id}"
+        for env_talk_id, field_path in refs:
+            authored_story_key = f"env_{env_talk_id}"
+            candidates = folded_story_keys.get(authored_story_key.casefold(), [])
+            if len(candidates) != 1:
+                continue
+            story_key = candidates[0]
+            lifecycle_status = (
+                "lazy_destroy_variant_authored"
+                if "lazyDestroyEnvTalkData" in field_path
+                else "direct_proxy_ambient_configuration"
+            )
+            signature = (identity, story_key, lifecycle_status)
+            if signature in seen:
+                continue
+            seen.add(signature)
+            index.setdefault(identity, []).append({
+                "storyKey": story_key,
+                "authoredStoryKey": authored_story_key,
+                "envTalkId": env_talk_id,
+                "npcProxyId": str(proxy_id),
+                "entityLogicId": segment_id,
+                "levelId": level_id,
+                "fieldPath": field_path,
+                "status": "exact_npc_proxy_env_talk_target",
+                "lifecycleStatus": lifecycle_status,
+                "activationStatus": "runtime_selection_unproven",
+                "spatialResolutionEvidence": (
+                    "exact_npc_proxy_env_talk_and_registry_table_transform"
+                ),
+                "activation": False,
+                "ownership": False,
+                "orderEvidence": False,
+                "sourceFiles": [relative(proxy_table_path), REGISTRY_REL],
+            })
+    for bindings in index.values():
+        bindings.sort(key=lambda row: (
+            row["storyKey"], row["lifecycleStatus"], row["fieldPath"]
+        ))
+    _NPC_PROXY_ENV_TALK_STORY_INDEX_CACHE[language] = index
     return index
 
 
@@ -3520,6 +3659,7 @@ def _registry_markers(
     """Plot every registry entity this level owns, with its story pins."""
     markers: list[dict] = []
     npc_proxy_ex_story_index = _exact_npc_proxy_ex_story_index(language)
+    npc_proxy_env_talk_story_index = _exact_npc_proxy_env_talk_story_index(language)
 
     def action_story_missions(targets: Iterable[dict]) -> list[str]:
         missions = set()
@@ -3930,6 +4070,12 @@ def _registry_markers(
             if binding.get("levelId") == level_id
             and binding.get("npcProxyId") == proxy_id
         ]
+        proxy_env_talk_bindings = [
+            binding
+            for binding in npc_proxy_env_talk_story_index.get(f"npc:{segment_id}", [])
+            if binding.get("levelId") == level_id
+            and binding.get("npcProxyId") == proxy_id
+        ]
         world_fallback_action_targets = [
             target
             for target in (action_target_index or {}).get(
@@ -3974,6 +4120,11 @@ def _registry_markers(
                     for binding in proxy_dialog_bindings
                     if binding.get("storyKey")
                 }
+                | {
+                    str(binding.get("storyKey") or "")
+                    for binding in proxy_env_talk_bindings
+                    if binding.get("storyKey")
+                }
             ),
             "missions": _story_missions(stories),
             "missionPhases": _npc_mission_phases(stories),
@@ -4015,6 +4166,42 @@ def _registry_markers(
                             "dialog selected from this exact NPC proxy configuration",
                         )
                         for binding in proxy_dialog_bindings
+                    ],
+                ],
+            ))
+        if proxy_env_talk_bindings:
+            row["npcProxyEnvTalkStoryBindings"] = proxy_env_talk_bindings
+            row["interactionStatus"] = (
+                "exact_npc_proxy_dialog_and_env_talk_configuration"
+                if proxy_dialog_bindings
+                else "exact_npc_proxy_env_talk_configuration"
+            )
+            row["evidence"] = (
+                "NpcProxyTable exact envTalk configuration + unique "
+                "WorldEntityRegistry/NpcProxyTable identity and transform"
+            )
+            row["relatedFiles"] = _sorted_related(_merge_related(
+                row["relatedFiles"],
+                [
+                    *[
+                        _related(
+                            source_file,
+                            "story_npc_proxy_env_talk",
+                            "authored ambient Story configuration on this NPC proxy",
+                        )
+                        for source_file in sorted({
+                            source_file
+                            for binding in proxy_env_talk_bindings
+                            for source_file in binding.get("sourceFiles") or []
+                        })
+                    ],
+                    *[
+                        _related(
+                            _conv_file_for_key(language, binding["storyKey"]),
+                            "story_npc_proxy_env_talk",
+                            "ambient Story configured on this exact NPC proxy",
+                        )
+                        for binding in proxy_env_talk_bindings
                     ],
                 ],
             ))

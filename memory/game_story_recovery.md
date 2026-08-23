@@ -187,6 +187,15 @@ leave only the report/CLI surface in recovery.
   This proves the dialog is configured for that authored NPC location; it does
   not prove which row the server currently selects, interaction activation,
   quest ownership, or cross-row Story order.
+  Ambient `env_*` Story has a parallel direct carrier when
+  `NpcProxyTable.envTalkIds` names it on that same exact proxy. The map join
+  requires a unique case-insensitive published key, one self-consistent
+  `npcProxyBriefInfos` identity, and equal finite registry/table position plus
+  finite table rotation. Nested `lazyDestroyEnvTalkData.envTalkIds` is retained
+  as a distinct authored lifecycle variant. Neither direct nor lazy-destroy
+  configuration proves current playback, activation, mission ownership, or
+  Story order. Atmospheric-cluster and character-level envTalk consumers stay
+  context-only because they do not identify a unique authored map point.
   Generated frontier and map reports own the changing counts.
 - For e0m0, the current two-map union has 23 mapped Story keys and 25 disjoint
   unmapped keys. The unmapped set is 15 ordering-graph-only, 8 without spatial
