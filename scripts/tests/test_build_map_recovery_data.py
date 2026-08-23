@@ -243,7 +243,7 @@ class BuildMapRecoveryDataTests(unittest.TestCase):
             ):
                 self.assertEqual([], builder._exact_story_npc_patrol_checkpoint_contexts("map_fixture"))
 
-    def test_exact_story_entity_event_index_accepts_only_constant_specified_entity(self):
+    def test_exact_story_entity_event_index_accepts_getter_validated_constant_target(self):
         exact = {
             "storyTriggerZoneCoverage": {"rows": [{
                 "storyKey": "radio_exact",
@@ -275,9 +275,96 @@ class BuildMapRecoveryDataTests(unittest.TestCase):
         self.assertEqual(list(index), ["script:1001:40001"])
         self.assertEqual(index["script:1001:40001"][0]["status"], "exact_entity_event_target")
 
-        exact["storyTriggerZoneCoverage"]["rows"][0]["observations"][0]["eventDetail"]["validateParam"]["idRef"] = 7
+        validate = exact["storyTriggerZoneCoverage"]["rows"][0]["observations"][0]["eventDetail"]["validateParam"]
+        validate.update({"idRef": 7, "paramSource": -1})
         with mock.patch.object(builder, "_load_json", return_value=exact):
-            self.assertEqual(builder._exact_story_entity_event_index("map_fixture"), {})
+            index = builder._exact_story_entity_event_index("map_fixture")
+        binding = index["script:1001:40001"][0]
+        self.assertEqual("exact_structure_only", binding["validateParamStatus"])
+        self.assertEqual(7, binding["validateParam"]["idRef"])
+        self.assertFalse(binding["activation"])
+
+    def test_exact_story_entity_event_index_rejects_dynamic_target(self):
+        report = {"storyTriggerZoneCoverage": {"rows": [{
+            "storyKey": "radio_dynamic_target",
+            "observations": [{
+                "status": "exact_non_spatial_event_trigger",
+                "levelId": "map_fixture",
+                "scriptId": "1001",
+                "eventName": "EntityEvent_OnInteractiveStateChanged",
+                "eventDetail": {
+                    "payloadSchemaStatus": "exact_current_build_memorypack_fields",
+                    "serverExchange": False,
+                    "serializedMissionOrQuestId": False,
+                    "entityEventScope": "specified-entity",
+                    "triggerTarget": "SPECIFY_ENTITY",
+                    "targetEntity": {
+                        "logicId": 0, "slotId": 0, "useSlotId": False,
+                    },
+                    "targetEntityParam": {
+                        "idRef": 9, "paramSource": -1, "path": None,
+                    },
+                    "targetEntityListPresent": False,
+                    "targetEntityListOutputPresent": False,
+                    "validateParam": {
+                        "constValue": True,
+                        "idRef": 7,
+                        "paramSource": -1,
+                        "path": None,
+                    },
+                },
+            }],
+        }]}}
+        with mock.patch.object(builder, "_load_json", return_value=report):
+            self.assertEqual({}, builder._exact_story_entity_event_index("map_fixture"))
+
+    def test_exact_story_entity_event_index_keeps_multiple_targets_separate_nonactivating(self):
+        observations = []
+        for header_id, logic_id in ((12, 10101), (19, 10102)):
+            observations.append({
+                "status": "exact_non_spatial_event_trigger",
+                "levelId": "map_fixture",
+                "scriptId": "1001",
+                "listenerHeaderLocalId": header_id,
+                "eventName": "EntityEvent_OnInteractiveStateChanged",
+                "eventDetail": {
+                    "payloadSchemaStatus": "exact_current_build_memorypack_fields",
+                    "serverExchange": False,
+                    "serializedMissionOrQuestId": False,
+                    "entityEventScope": "specified-entity",
+                    "triggerTarget": "SPECIFY_ENTITY",
+                    "targetEntity": {
+                        "logicId": logic_id, "slotId": 0, "useSlotId": False,
+                    },
+                    "targetEntityParam": {
+                        "idRef": -1, "paramSource": 0, "path": None,
+                    },
+                    "targetEntityListPresent": False,
+                    "targetEntityListOutputPresent": False,
+                    "validateParam": {
+                        "constValue": True,
+                        "idRef": header_id - 1,
+                        "paramSource": -1,
+                        "path": None,
+                    },
+                },
+            })
+        report = {"storyTriggerZoneCoverage": {"rows": [{
+            "storyKey": "radio_multiple_targets",
+            "observations": observations,
+        }]}}
+        with mock.patch.object(builder, "_load_json", return_value=report):
+            index = builder._exact_story_entity_event_index("map_fixture")
+        self.assertEqual(["world:10101", "world:10102"], list(index))
+        self.assertEqual(
+            [12, 19],
+            [index[identity][0]["headerLocalId"] for identity in index],
+        )
+        self.assertTrue(all(
+            binding["activation"] is False
+            for bindings in index.values()
+            for binding in bindings
+        ))
 
     def test_exact_story_entity_event_index_accepts_bounded_single_entity_die_list(self):
         report = {"storyTriggerZoneCoverage": {"rows": [{

@@ -774,15 +774,40 @@ def _exact_story_entity_event_index(level_id: str) -> dict[str, list[dict]]:
             pointers: list[dict] = []
             if event_name.startswith("EntityEvent_"):
                 validate = detail.get("validateParam") or {}
+                validate_id_ref = validate.get("idRef")
+                validate_source = validate.get("paramSource")
+                validate_path = validate.get("path")
+                validate_param_exact = (
+                    type(validate.get("constValue")) is bool
+                    and type(validate_id_ref) is int
+                    and validate_id_ref >= -1
+                    and type(validate_source) is int
+                    and validate_source >= -1
+                    and (
+                        (
+                            validate_id_ref >= 0
+                            and validate_source == -1
+                            and validate_path is None
+                        )
+                        or (
+                            validate_id_ref == -1
+                            and validate_source >= 0
+                            and (
+                                validate_path is None
+                                or (
+                                    isinstance(validate_path, str)
+                                    and bool(validate_path)
+                                )
+                            )
+                        )
+                    )
+                )
                 if not (
                     detail.get("entityEventScope") == "specified-entity"
                     and detail.get("triggerTarget") == "SPECIFY_ENTITY"
                     and detail.get("targetEntityListPresent") is False
                     and detail.get("targetEntityListOutputPresent") is False
-                    and validate.get("constValue") is True
-                    and validate.get("idRef") == -1
-                    and validate.get("paramSource") == 0
-                    and validate.get("path") is None
+                    and validate_param_exact
                 ):
                     continue
                 pointer = detail.get("targetEntity") or {}
@@ -853,7 +878,7 @@ def _exact_story_entity_event_index(level_id: str) -> dict[str, list[dict]]:
                     identity = f"world:{logic_id}"
                 if not identity:
                     continue
-                index.setdefault(identity, []).append({
+                binding = {
                     "storyKey": story_key,
                     "eventName": event_name,
                     "sourceFile": observation.get("sourceFile"),
@@ -872,7 +897,13 @@ def _exact_story_entity_event_index(level_id: str) -> dict[str, list[dict]]:
                     "ownership": False,
                     "activation": False,
                     "orderEvidence": False,
-                })
+                }
+                if event_name.startswith("EntityEvent_"):
+                    binding.update({
+                        "validateParam": validate,
+                        "validateParamStatus": "exact_structure_only",
+                    })
+                index.setdefault(identity, []).append(binding)
     return index
 
 
