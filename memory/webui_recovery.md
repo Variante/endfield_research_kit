@@ -11,6 +11,12 @@ Story, localized references, character identities, gameplay semantics, assets,
 audio, and update comparisons build reproducibly from a current
 `export_full/`. Optional datasets fail visibly when absent or stale.
 
+Story recovery uses unique case-insensitive resource-name matching by default
+while preserving authored spelling in evidence. The Story page may label an
+authored cutscene definition as unused only after a complete, non-degraded
+playback-carrier census finds no exact or uniquely folded reference. Missing,
+stale, ambiguous, or failed scans remain unresolved and never auto-mark unused.
+
 Mission Pipeline currently keeps 152 exact native-playback Story files visibly
 unowned. Current reverse-PPtr, carrier, LevelData/SubGame, MissionRuntime,
 IFix, and protobuf evidence closes playback context but supplies no promotable
@@ -558,14 +564,201 @@ Current state:
   projects backgrounds, markers, labels, routes, floors, and model layers with
   the same X/Z transform.
 - Minimap, grayscale elevation, material/surface, water, and point layers stay
-  independent. Point layers own an exact 16-bit world-Y mask and the frontend
-  filters only their alpha.
+  independent. Each available layer has one row with a visibility checkbox and
+  persistent opacity slider. Point layers additionally own exact world-Y
+  samples so filtering an upper band can reveal lower co-projected geometry.
 - Current streaming sidecars are schema 2. Entity bases expose one `meshes`
   array; exact instances feed static render layers rather than duplicate UI
   nodes.
 - Authored floor images are selected by spatial hover/click, not a global
   slider. Mission routes use authored quest order; co-occurrence relation webs
   stay absent.
+- Mission-selected NPC proxies can be filtered by their exact attachment
+  quest id. Phase rows are published only from `npcProxyDialogAttachments`;
+  lexical presentation is not treated as mission chronology.
+- e0m0 on `indie_dg002` now publishes the current-build validated local
+  `8700010001#80002` Story trigger as its authored rotated Box footprint and
+  links it to `radio_e0m0_9`. Nominal e0m0 context keeps it visible with the
+  selected route while remaining explicitly separate from mission ownership,
+  event firing, and observed playback.
+- Exact Story-to-map publication also recognizes build-locked
+  `Play3DRadio`/`Play3DRadioAndWait` records when the same complete serialized
+  record contains both the `radio_*` id and an exact spatial EntityPtr. The
+  current corpus publishes 105 such action links across 69 map points and 102
+  Story files; one otherwise complete radio record remains unplaced because
+  its world identity has no authored registry or NPC-proxy transform. Shared
+  local trigger geometry is drawn once while retaining every exact Story key.
+  Full active-playback enumeration now publishes 2,148 trigger markers carrying
+  2,771 Story links and 2,324 unique Story keys. Six dungeon sub-levels that
+  own exact trigger geometry but no `LevelBasicInfo` row are retained as
+  trigger-only maps with an explicitly absent `idNum`, rather than silently
+  dropping their exact Story links or inventing a level declaration. This
+  includes one native-
+  validated PolyLine trigger whose authored Vector2 points are world X/Z and
+  are rendered directly without center translation or yaw rotation. Neither
+  path inherits sibling actions, same-script files, mission context, or spatial
+  proximity.
+  Direct playback topology is independently checked at the action node: the
+  current receiver frontier records 3,716 exact typed header-to-playback
+  observations, 16 ambiguous, and 22 unresolved. `PlayRadio`, `StartDialog`,
+  `PlayCutscene`, and validated direct sequence playback are eligible;
+  preload, load, stop, and sibling-branch actions are inventory/context only.
+- The e0m0 map audit currently covers 49 nominal CN files: 19 are placed on
+  `indie_dg002`, three belong to the later `indie_dg004` context, and 27 have
+  no map position. Of the unplaced set, 17 have an exact playback path from a
+  non-spatial BattleSignal, GuideGroupComplete, or CustomEvent; nine Story
+  files have no active serialized playback carrier; and the standalone
+  `video_cs_video_e0m0_3` wrapper is already embedded under the placed
+  `cutscene_e0m0_3` rather than representing a second location. There is no
+  omitted exact trigger shape in this set. The highest-value recovery queue is
+  the upstream producer chain for BattleSignal, custom hashes `#bb775d95` and
+  `#f5c434f1`, and `TLCall_Summon_Cannon_1_Step_01`. Listener scripts, sibling
+  entity actions, Story order, and proximity must not supply their position.
+  Full LevelScript-corpus recovery finds `#bb775d95` and `#f5c434f1` only in
+  their exact listener headers, with no serialized producer or spatial/entity
+  selector. The Timeline producer after `#f5c434f1` is exact: at 7.75 seconds
+  `cutscene_e0m0_13` raises `TLCall_Summon_Cannon_1_Step_01`, whose listener
+  stops the sequence and plays `radio_e0m0_8d4`. This proves their relative
+  chain but still cannot place either file until the external/runtime producer
+  of the initial custom hash is recovered.
+  The three GuideGroupComplete radios also have unique matching
+  `ManuallyStartGuideGroup` producers, and the ten BattleSignal Story files
+  have exact signal literals joined to the ability/buff
+  `SendBattleSignalToLevel` producer family. Both are runtime-causality links,
+  not spatial links: neither producer payload closes to one decoded trigger
+  slot or registry-backed EntityPtr, so the safe map gain remains zero.
+- Native consumer recovery confirms that `CheckIsInTriggerVolume` resolves a
+  LevelScript-local trigger slot through the runtime registered-trigger id and
+  TriggerVolumeManager overlap test. WorldEntityRegistry script slots are a
+  separate identity domain and cannot define or upgrade trigger geometry.
+- MissionArea/PosTracking schemas contain no authored script-slot identity.
+  MissionArea points therefore draw only their exact MissionAreaTable shape and
+  keep Story binding unresolved. Proximity rows remain debug diagnostics and
+  cannot attach Story/files to a map point or produce source-backed Story order.
+- `8700010002:40003` is no longer understood as a possible cutscene trigger.
+  Binary evidence finds strict constant `Param<EntityPtr>` values inside
+  the validated `LevelCameraLookAt` and `EntityMoveToWithDuration` action
+  records, both on exact control paths from local trigger slot `80002`. The
+  `0x04/0x03` are the outer `Param` and nested `EntityPtr` member counts, not
+  a `ScriptEntityPtr` discriminator. The current-build native formatter bodies
+  resolve those members precisely as
+  `LevelCameraLookAt.lookAt1` and `EntityMoveToWithDuration._entity`; the map
+  publishes the registered shell as an exact script action target. The contract
+  fails closed on installed hashes and bounded formatter/setter body hashes;
+  an unvalidated build falls back to the default-hidden candidate boundary.
+  This proves a script action target, not player interaction. The same event
+  root separately plays
+  `levelseq_e0m0_watchtowerhitandfall`; that sibling sequence is not inherited
+  by the point, and no `cutscene_e0m0_1`/`cutscene_e0m0_2` consumer is present.
+- Action target recovery now keeps the two authored `EntityPtr` identity domains
+  separate. `logicId=0/useSlotId=true` resolves only through the current
+  script's registered slot; `logicId>0/useSlotId=false/slotId=0` resolves only
+  through the exact global WorldEntityRegistry key. Build-locked formatter
+  contracts currently add exact visibility, enable, look-at, and cast actions
+  to all five e0m0 grenade towers, plus pause/AI-mode actions to enemy
+  `8700050000`; the latter is also the exact target of `WaitForEntityStart`.
+  The maintained contract now covers all 78 observed real action shapes,
+  including entity
+  show/hide, position/rotation, enemy/NPC patrol, wait, and animator actions.
+  Movement/rotation, force-target, buff, positional audio, and entity tracking
+  actions are also covered. Constant global targets without a registry
+  transform remain explicit debug-only unplaced action rows; e0m0 currently
+  includes three `EntityCastSkill._targetEntity` references to `8700040047`
+  plus seven camera targets, without manufacturing coordinates for them.
+  The map's technical-evidence panel is controlled by the global debug switch
+  rather than a permanent HTML `hidden` attribute, so these unplaced action
+  rows and their exact source-script links are visible only in debug mode.
+  Exact action source LevelScripts are strong related-file pins, while
+  unresolved formatter candidates remain weak. These annotations preserve the
+  entity's device/enemy kind and localized label and do not add Story or
+  mission ownership.
+  A registry `int_empty` row with an exact action consumer is promoted to the
+  visible script-target layer; only shells without an exact consumer remain in
+  the default-hidden empty-slot layer.
+  Camera follow/look-at, bamboo movement, entity attachment, effect attachment,
+  rune-anchor source/target, Buff completion, NavMesh area, and voice target
+  fields all use pinned formatter contracts. Nullable multi-entity actions are
+  promoted only through a source-hashed serialized record layout that proves
+  each null/constant field state; `EnterDollyTrackCamera` therefore maps its
+  authored slot to `_lookAt`, while `_follow` remains explicitly null.
+  The current authored spatial inventory contains 23,213 world/script/NPC-proxy
+  identities. A complete corpus audit finds 1,346 with exact authored spatial
+  bindings, 21,867 with no
+  observed constant action reference. The last group is not claimed to be
+  actionless because dynamic and opaque runtime values remain non-spatial.
+  All 81 observed real EntityPtr action shapes now have native formatter
+  contracts; two additional naked-byte shapes are pinned negative contracts,
+  and complex nullable/multi-field records have explicit typed or source-hashed
+  member layouts. Every map slot carries this observational binding status plus
+  separate exact and unresolved arrays.
+  The exhaustive report also retains 3,157 constant, 2,406 dynamic, 38 null,
+  and 27 opaque contracted field states. Dynamic `idRef`, local-output, named
+  argument, and script-variable evidence remains unplaced unless a pinned
+  producer contract proves a same-header constant alias. Current contracts
+  safely recover five such additional identities from specific-entity death
+  and specified-entity trigger events, while explicitly rejecting kickable
+  leave-trigger output as a non-alias. Four otherwise-unplaced world identities
+  are exact NPC proxy placements through matching registry segment key,
+  unique proxy-table row, identical finite position, and authored rotation.
+  The remaining 53 identities / 77 constant references stay non-spatial.
+  All 1,840 NPC proxy points now participate in the same observational action
+  audit under an explicit NPC identity domain. A pinned `NpcProxyGetter`
+  contract resolves 14 exact getter-backed action fields to eight unique NPC
+  points;
+  the report retains the selected getter slot, proxy lookup, native contract,
+  and exact registry/table placement chain. The formerly unresolved
+  `NpcEnableStim`, `NpcPatrolOverrideGait`, and
+  `SetEntityEulerAnglesLookAt` fields are pinned formatter members, so all
+  seven corresponding references across six NPC points are exact. Of the
+  serialized dynamic fields, 28 now resolve to an actually published spatial
+  action, 494 are native-validated runtime non-spatial values, and 1,884 remain
+  unresolved. Nineteen of the runtime non-spatial rows have an exact
+  `LevelScriptBriefData` type-13 EntityPtr initializer and matching authored
+  registry position, but the native lifecycle proves that the source-200
+  blackboard remains mutable after binding; they are published as non-final
+  diagnostics and never promoted to action targets. Resolved spatial rows stay
+  in the full field diagnostics but no
+  longer appear in `unplacedDynamicReferences`.
+  Every retained unplaced dynamic row now carries a bounded resolution failure
+  gate. Exact null EntityPtr getter values, native non-aliases, runtime list
+  elements, mutable initial properties, named runtime arguments, and missing
+  authored spatial identities therefore remain distinguishable instead of
+  collapsing into one generic unresolved class.
+  `RepeatEntityPtrListAction._entity` accounts for 461 of the validated
+  non-spatial rows: its pinned execution path selects an entity from a runtime
+  list rather than aliasing a serialized constant. Spawner and other event
+  outputs are separately classified as runtime-produced diagnostics, but stay
+  unresolved unless their exact native producer semantics are contracted.
+  Pinned native consumers prove that current-script EntityPtr resolution uses
+  `ActionContext`'s LevelScriptRuntime script id plus EntityManager's live
+  `(scriptId, slotId) -> logicId` dictionary; LevelInteractiveData is not in
+  that lookup. A unique aligned WorldEntityRegistry script/slot row therefore
+  proves the authored offline target and transform without requiring a second
+  LevelInteractiveData match. It does not prove that the entity was registered,
+  initialized, or alive when the action executed, so every such action retains
+  `runtimeLifecycleStatus: unproven`.
+- Mission selection no longer suppresses exact missionless level-world rows.
+  Compact maps expose all recovered types initially; the current e0m0 view
+  visibly includes five authored grenade towers, one enemy, four tomb scenery
+  props, travel poles, triggers, and the Story reading point. The tombs now
+  carry their exact LevelData NarrativeComponent bindings:
+  `8700020001 -> misc_dlg_e0m0_0d5`, `8700020002 -> misc_dlg_e0m0_0d9`,
+  `8700020003 -> misc_dlg_e0m0_0d8`, and
+  `8700020004 -> misc_dlg_e0m0_0d7`. Each edge comes from one counted
+  LevelInteractiveData record containing both `embeddedLogicId` and `typeId`,
+  not entity-number order or spatial proximity. Grenade-tower
+  semantics are backed by exact FactoryBuilding, FactoryBattle, and Model rows.
+  Enemy markers use localized EnemyTemplateDisplayInfo names, and exact reading
+  points use their generated Story title (for example `text_e0m0_1` is shown as
+  `墓志铭`). The remaining e0m0 `int_empty` rows are published in a separate,
+  default-hidden unresolved-empty-slot layer with `empty_interactive_shell`
+  status; no unsupported interaction role is inferred from an empty definition.
+  LevelScript ownership and
+  script-wide condition/order context no longer fan out across every sibling
+  slot; point-level Story/file links require an exact script/slot consumer.
+  Registry evidence opens as an identity-focused highlighted excerpt: world
+  ids address `worldEntityBriefInfos`, while script id/slot pairs first resolve
+  their shared index in `m_scriptEntityIdList` and `m_scriptEntityBriefInfo`.
 - The resizable left rail is a three-column map/task/object-filter tree; its
   task column owns the map status formerly shown in a top panel. The plain
   third column combines object and render-layer filters without a disclosure
@@ -575,11 +768,25 @@ Current state:
   localized code/name. e0m0 explicitly links from `indie_dg002` to its
   `indie_dg004` ending scene; trigger-volume slots without a recovered world
   transform remain visible unresolved evidence.
+- Map-wide files and weak file associations are hidden in the normal inspector
+  unless their path resolves to an exact Story deep link. Debug mode restores
+  the complete evidence inventory and turning it off closes a now-hidden file.
+- The two physical `O.M.V.帝江号` levels and the main/guide `谷地像差` levels
+  are collapsed into one place each in the map column. Their variants remain
+  explicit task-column items and load their own payloads. `谷地像差` now uses
+  its exact streaming render by default while retaining the inferred HLOD as
+  diagnostic evidence. The six published danger-reappearance maps expose a
+  concise surface-accuracy grade without hiding their detailed JSON.
 - Static projections may omit explicitly named roof/ceiling instances for a
   documented cutaway. Material color is used only with an exact, unique
   mesh/material/base-texture/UV closure; those recovered texture samples keep
   their source RGB in surface and point output instead of receiving synthetic
-  height darkening.
+  height darkening. Unbound pixels retain the established colored elevation
+  fallback so the material/surface layer stays readable; exact bound samples
+  continue to take priority over that fallback.
+- Map01/Map02 default to loading the selected zone only. The bottom-centre
+  range control explicitly opts into every Wuling or Valley-IV member and
+  releases sibling payloads again when returning to the single-zone scope.
 - Water coverage requires authored minimap pixels plus exact WaterData scene
   evidence. Flowmaps remain corroboration only.
 - e0m0's generated HLOD naming contract now supplies a material closure: every
@@ -588,6 +795,15 @@ Current state:
   PathID. The resulting surface and point layers are textured base-color
   diagnostics; game lighting, fog, exposure, tone mapping, and grading remain
   unrecovered and must not be approximated with a global color correction.
+- That exact generated-material closure now covers all published HLOD maps and
+  source-art dungeon crops, rather than being limited to e0m0. The current
+  index resolves every cluster uniquely; future missing or duplicate keys fail
+  closed. Streaming meshes still require exact ordered Renderer material PPtrs
+  before normalized-name gaps or multi-material submeshes can be recovered.
+- Ordinary streaming scenes now apply the same exact level/LOD/grid/cluster
+  HLOD key used by Map01/Map02. `indie_dg002` therefore retains its large HLOD
+  environment through original InitChunkData matrices while unresolved keys
+  remain omitted; this replaces the former local-static-only projection.
 - HLOD point output preserves every deduplicated projected vertex in a sparse,
   deterministic height sidecar. Partial height filters select the highest
   in-range sample per pixel, while the existing top-point PNG remains the
@@ -597,8 +813,27 @@ Evidence boundary:
 
 - Coordinates and matrices prove placement, not runtime activation,
   interactivity, visibility, prefab identity, or renderer ownership.
-- HLOD grid placement remains inferred and fail-closed below its published fit
-  threshold.
+- Current-build GameAssembly confirms that map UI positions and lengths use a
+  single linear `world / gridWorldLength * gridRectLength` conversion;
+  `InverseUILevelMapPosition` only swaps axes and negates one axis. The same
+  build's `DynamicSceneUtil.GetGridSizeByLen` starts at 32 m and doubles per
+  encoded grid level; the exported HLOD index ranges halve at each adjacent
+  HLOD, establishing HLOD0/HLOD1/HLOD2 as 32/64/128 m rather than the former
+  hand-derived 64/128/256 m assumption. Map01/Map02 no longer use that grid to
+  publish geometry: their original region `InitChunkData` contains HLOD entity
+  names plus complete 4x4 matrices. The maintained recovery joins a matrix to
+  an exported Mesh only when level number, HLOD level, grid i/j, and signed
+  cluster hash all agree exactly. Normal map alignment uses those matrices and
+  authored `UILevelMapLoadConfig` rectangles with no presentation transform;
+  missing joins fail closed. Exact HLOD surface output retains the joined
+  geometry. Material and grayscale elevation layers retain that full surface;
+  only the sparse point layer excludes named structural meshes and broad
+  near-horizontal non-prop slabs. The point layer is a
+  deterministic world-space surface sample controlled by
+  `--surface-point-density` in samples/m2; density affects presentation only.
+  Maps without minimap art retain an exact registry/quest-transform point
+  fallback when inferred HLOD placement is suppressed.
+  Exact authored HLOD GameObject/Transform records remain unrecovered.
 - Story producer/slot, NPC proxy, and authored map-pin joins remain distinct
   from script-condition, proximity, mission-area, and quest context.
 - Generated counts and per-build inventories belong in

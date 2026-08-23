@@ -60,6 +60,39 @@ from .context import (
     write_json,
 )
 
+
+def append_native_event_producer_family_diagnostic(
+    row: dict,
+    *,
+    family: str,
+    status: str,
+    routes: list[dict],
+) -> None:
+    """Retain every exact producer family when compatibility fields overwrite."""
+    diagnostics = row.setdefault("nativeEventProducerFamilyDiagnostics", [])
+    entry = {
+        "family": family,
+        "status": status,
+        "routeCount": len(routes),
+        "producerActions": sorted({
+            str(route.get("producerAction") or route.get("actionType") or "")
+            for route in routes
+            if route.get("producerAction") or route.get("actionType")
+        }),
+        "producerSourceFiles": sorted({
+            str(route.get("producerSourceFile") or "")
+            for route in routes if route.get("producerSourceFile")
+        }),
+    }
+    if not any(existing.get("family") == family for existing in diagnostics):
+        diagnostics.append(entry)
+        diagnostics.sort(key=lambda item: str(item.get("family") or ""))
+    row["nativeEventProducerFamilyDiagnosticStatus"] = (
+        "multiple_exact_local_producer_families"
+        if len(diagnostics) > 1
+        else "one_exact_local_producer_family"
+    )
+
 if __package__ == "story_builder":
     from common import write_report_json, write_text_if_changed
 elif __package__ == "scripts.story_builder":
@@ -313,6 +346,7 @@ else:
     from scripts.scene_order_gap_shared import write_scene_order_gap_reports
 from .cutscene_semantics import (
     _line_id_list_equal,
+    apply_cutscene_playback_use_postpass,
     cutscene_semantic_shape,
     cutscene_subtitle_evidence,
     cutscene_line_text_groups,
@@ -320,6 +354,7 @@ from .cutscene_semantics import (
     merge_duplicate_cutscene_rows,
     normalize_cutscene_text_group,
     select_subtitle_text_group_from_display_names,
+    validated_lua_cutscene_playback_keys,
 )
 from .ability_binary import (
     build_battle_signal_producer_index,
@@ -19589,6 +19624,12 @@ def build_language_bundle(
                         "mission_or_server_identity"
                     ),
                 })
+                append_native_event_producer_family_diagnostic(
+                    native_unscoped_row,
+                    family="levelscript_custom_event",
+                    status="exact_serialized_local_producer",
+                    routes=producer_routes,
+                )
             battle_signal_routes = match_battle_signal_story_producers(
                 story_key,
                 occurrences,
@@ -19637,6 +19678,12 @@ def build_language_bundle(
                         "mission_or_server_identity"
                     ),
                 })
+                append_native_event_producer_family_diagnostic(
+                    native_unscoped_row,
+                    family="ability_battle_signal",
+                    status="exact_ability_battle_signal_local_producer",
+                    routes=battle_signal_routes,
+                )
             mission_state_routes = list(
                 mission_state_story_routes_by_story.get(story_key) or []
             )
@@ -19980,6 +20027,68 @@ def build_language_bundle(
         })
 
     emit_webui_secret_notice()
+
+    # This must remain a late pass: absence is meaningful only after every
+    # authored/native carrier family and the final mission connection indexes
+    # above have been collected.  Include broad decoded action hits as usage
+    # evidence so an unresolved native formatter can suppress an unused claim.
+    playback_use_keys = {
+        *action_story_occurrences,
+        *native_story_playback_index,
+        *native_black_action_index,
+        *globally_attached_story_keys,
+        *[pair[0] for pair in dialog_tree_story_playback_groups],
+        *[pair[0] for pair in dialog_tree_prime_story_playback_groups],
+        *[pair[0] for pair in dialog_tree_narrative_groups],
+    }
+    cutscene_payloads_by_key: dict[str, dict] = {}
+    cutscene_scan_failures: list[dict] = []
+    lua_audit_path = (
+        _RadioContPath(__file__).resolve().parents[2]
+        / "reports" / "mission_order" / "lua_consumer_reference_audit.json"
+    )
+    try:
+        lua_audit = json.loads(lua_audit_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        lua_audit = {}
+        cutscene_scan_failures.append({
+            "gate": "read_lua_consumer_reference_audit",
+            "source": repo_rel(lua_audit_path),
+            "error": type(error).__name__,
+        })
+    lua_cutscene_keys, lua_cutscene_failures = validated_lua_cutscene_playback_keys(lua_audit)
+    playback_use_keys.update(lua_cutscene_keys)
+    cutscene_scan_failures.extend(lua_cutscene_failures)
+    if cutscene_out_keys and not action_story_occurrences:
+        cutscene_scan_failures.append({
+            "gate": "nonempty_complete_levelscript_action_carrier_index",
+            "expected": "one_or_more_decoded_action_story_occurrences",
+            "actual": 0,
+        })
+    for cutscene_key in sorted(cutscene_out_keys):
+        path = conv_dir / f"{cutscene_key}.json"
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as error:
+            cutscene_scan_failures.append({
+                "gate": "read_generated_cutscene_payload",
+                "key": cutscene_key,
+                "source": repo_rel(path),
+                "error": type(error).__name__,
+            })
+            continue
+        if isinstance(payload, dict):
+            cutscene_payloads_by_key[cutscene_key] = payload
+    playback_use_summary = apply_cutscene_playback_use_postpass(
+        cutscene_payloads_by_key,
+        index_entries,
+        playback_story_keys=sorted(playback_use_keys),
+        scan_status=("validated_complete" if not cutscene_scan_failures else "degraded"),
+        validation_failures=cutscene_scan_failures,
+    )
+    for cutscene_key, payload in cutscene_payloads_by_key.items():
+        write_conv_payload(cutscene_key, payload)
+
     generated = int(time.time())
     search_entries: list[dict] = []
     for entry in index_entries:
@@ -20011,6 +20120,11 @@ def build_language_bundle(
         "missions": "missions.json",
         "search": "search.json",
         "entries": index_entries,
+        "cutscenePlaybackUse": {
+            "status": "validated_complete" if not cutscene_scan_failures else "degraded",
+            "summary": playback_use_summary,
+            "validationFailures": cutscene_scan_failures,
+        },
     }
     if write_reference and reference_stats:
         index_payload["reference"] = {

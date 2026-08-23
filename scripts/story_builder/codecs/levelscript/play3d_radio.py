@@ -6,7 +6,10 @@ import struct
 from typing import Any
 
 
-ACTION_SEMANTIC_KEY = (0x034A, 0x14)
+ACTION_SEMANTIC_KEYS = {
+    (0x034A, 0x14),  # Play3DRadio
+    (0x034B, 0x14),  # Play3DRadioAndWait; inherits the same serialized fields
+}
 PARAM_SENTINEL = b"\xff\xff\xff\xff\x00\x00\x00\x00\xff\xff\xff\xff"
 
 
@@ -19,7 +22,7 @@ def decode_play3d_radio_action(
     A minority of records have serialized list framing after the action. They
     remain unsupported until that outer framing is independently decoded.
     """
-    if semantic_key != ACTION_SEMANTIC_KEY:
+    if semantic_key not in ACTION_SEMANTIC_KEYS:
         return {}
 
     cursor = 0
@@ -118,6 +121,11 @@ def decode_play3d_radio_action(
         return {}
     return {
         "payloadShape": "play3d-radio-native-12-field-exact-eof",
+        "actionKind": (
+            "Play3DRadioAndWait"
+            if semantic_key == (0x034B, 0x14)
+            else "Play3DRadio"
+        ),
         "radioId": str(values.get("radioId") or ""),
         "npcProxyId": str(values.get("npcProxyId") or ""),
         "useNpcProxy": bool(values.get("useNpcProxy")),

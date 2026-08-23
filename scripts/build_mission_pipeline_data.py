@@ -4713,6 +4713,24 @@ POST_PLAYBACK_VARIABLE_LISTENER_FIELDS = {
 }
 
 
+def normalize_story_binding_coverage_index_row(row: dict[str, Any]) -> dict[str, Any]:
+    """Keep compact playback diagnostics without promoting a connection."""
+    normalized = {
+        "key": str(row.get("k") or ""),
+        "kind": str(row.get("d") or ""),
+        "missionId": str(row.get("m") or ""),
+        "preview": str(row.get("p") or ""),
+    }
+    playback_use = row.get("playbackUse")
+    if isinstance(playback_use, dict):
+        normalized["playbackUse"] = {
+            "status": str(playback_use.get("status") or ""),
+            "automaticUnused": bool(playback_use.get("automaticUnused")),
+        }
+        normalized["automaticUnused"] = bool(row.get("automaticUnused"))
+    return normalized
+
+
 def build_story_binding_coverage(
     pipeline_index: dict[str, Any],
     pipeline_index_path: Path,
@@ -4759,12 +4777,7 @@ def build_story_binding_coverage(
         kind = str(row.get("d") or "")
         mission_id = str(row.get("m") or "")
         if key:
-            normalized_row = {
-                "key": key,
-                "kind": kind,
-                "missionId": mission_id,
-                "preview": str(row.get("p") or ""),
-            }
+            normalized_row = normalize_story_binding_coverage_index_row(row)
             all_index_rows[key] = normalized_row
         if key and kind in PIPELINE_STORY_KINDS:
             all_story_rows[key] = normalized_row

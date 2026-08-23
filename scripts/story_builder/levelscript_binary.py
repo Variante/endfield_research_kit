@@ -3266,6 +3266,41 @@ def _decode_named_native_event_detail(
                     f"{receiver} saved property {literal_texts[0]} changes"
                 ),
             }
+    elif native_header_name in {
+        "EntityEvent_OnBeingScanned",
+        "EntityEvent_OnEntityDestroy",
+        "EntityEvent_OnEntityStart",
+        "EntityEvent_OnHpChanged",
+        "EntityEvent_OnIntUnlocked",
+        "EntityEvent_OnIntUnlockFailed",
+    }:
+        # The inherited EntityEventHeader selector is independently exact even
+        # when this subtype's trailing members are not yet named.  Preserve a
+        # narrower schema status so consumers may use only the specified
+        # constant EntityPtr and cannot mistake the subtype for fully decoded.
+        entity_scope = levelscript_entity_event_scope.decode_entity_event_header_scope(payload)
+        entity_scope.pop("_subtypeOffset", None)
+        if entity_scope:
+            target = entity_scope["targetEntity"]
+            target_param = entity_scope["targetEntityParam"]
+            receiver = (
+                f"entity slot {target.get('slotId')}"
+                if target.get("useSlotId")
+                else f"entity {target.get('logicId')}"
+                if target.get("logicId")
+                else f"entity pointer {target_param.get('path')}"
+                if target_param.get("path")
+                else "selected entity"
+            )
+            detail = {
+                "type": native_header_name,
+                **entity_scope,
+                "transport": "local-entity-runtime-event",
+                "serverExchange": False,
+                "serializedMissionOrQuestId": False,
+                "summary": f"{receiver} receives {native_header_name}",
+                "_payloadSchemaStatus": "exact_current_build_entity_event_scope_fields",
+            }
     elif native_header_name == "EntityEvent_OnInteractiveStateChanged":
         entity_scope = levelscript_entity_event_scope.decode_entity_event_header_scope(payload)
         entity_scope.pop("_subtypeOffset", None)
@@ -3370,7 +3405,10 @@ def _decode_named_native_event_detail(
             }
     if not detail:
         return {}
-    detail["payloadSchemaStatus"] = "exact_current_build_memorypack_fields"
+    detail["payloadSchemaStatus"] = detail.pop(
+        "_payloadSchemaStatus",
+        "exact_current_build_memorypack_fields",
+    )
     detail["payloadSchemaMappingId"] = LEVELSCRIPT_NATIVE_EVENT_PAYLOAD_MAPPING_ID
     return _drop_empty(detail)
 
@@ -4046,7 +4084,7 @@ def _decode_announce_audio_target_param(
 ) -> tuple[dict[str, Any], int] | None:
     """Decode the installed ``AnnounceAudioOnTarget._target`` null shape.
 
-    ``AnnounceAudioOnTarget`` uses the same managed ``Param<ScriptEntityPtr>``
+    ``AnnounceAudioOnTarget`` uses the same managed ``Param<EntityPtr>``
     generic as the other target actions, but the current formatter writes its
     unset target as a compact ten-byte reference prefix rather than the
     27-byte ``0x04 0x03`` constant pointer used by ``PlayAudioOnTarget``.

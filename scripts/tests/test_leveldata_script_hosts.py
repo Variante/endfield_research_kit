@@ -1992,6 +1992,77 @@ class LevelDataScriptHostTests(unittest.TestCase):
                 index[(level_id, "2002")]["hostMissionIds"],
             )
 
+    def test_authoritative_scope_uses_persistent_mission_named_shell(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            streaming_data = root / "StreamingAssets" / "Data" / "Json"
+            persistent_data = root / "Persistent" / "Data" / "Json"
+            leveldata_dir = streaming_data / "LevelData"
+            levelscript_dir = streaming_data / "LevelScriptData"
+            persistent_leveldata = persistent_data / "LevelData"
+            persistent_levelscript = persistent_data / "LevelScriptData"
+            mra_dir = persistent_data / "MissionRuntimeAsset"
+            gameplay_dir = streaming_data / "GameplayConfig"
+            level_id = "map_test"
+            for path in (
+                leveldata_dir / level_id,
+                levelscript_dir / level_id,
+                persistent_leveldata / level_id,
+                persistent_levelscript / level_id,
+                mra_dir,
+                gameplay_dir,
+            ):
+                path.mkdir(parents=True, exist_ok=True)
+            (gameplay_dir / "MissionAreaTable.json").write_text(
+                json.dumps({"m_areas": {}}),
+                encoding="utf-8",
+            )
+            (leveldata_dir / level_id / "map_test_lv_data_sub_missiona.json").write_bytes(
+                self._brief_dictionary([1002])
+            )
+            (persistent_leveldata / level_id / "map_test_lv_data_sub_missiona.json").write_bytes(
+                self._brief_dictionary([1001])
+            )
+            (persistent_leveldata / level_id / "map_test_lv_data_sub_unknownname.json").write_bytes(
+                self._brief_dictionary([1002])
+            )
+            for script_id in (1001, 1002):
+                (persistent_levelscript / level_id / f"{script_id}.json").write_bytes(
+                    b"fixture"
+                )
+            (mra_dir / "missiona.json").write_text(
+                json.dumps({"missionId": "missiona", "levelId": level_id}),
+                encoding="utf-8",
+            )
+            (mra_dir / "unknownname.json").write_text(
+                json.dumps({"missionId": "unknownname", "levelId": "other_map"}),
+                encoding="utf-8",
+            )
+            with (
+                patch.object(level_bindings, "MRA_DIR", mra_dir),
+                patch.object(level_bindings, "GAMEPLAY_CONFIG_DIR", gameplay_dir),
+                patch.object(level_bindings, "LEVELDATA_DIR", leveldata_dir),
+                patch.object(level_bindings, "LEVELSCRIPT_DIR", levelscript_dir),
+                patch.object(
+                    level_bindings,
+                    "PERSISTENT_DATA_JSON_DIR",
+                    persistent_data,
+                ),
+            ):
+                index = build_leveldata_authoritative_scope_script_host_index(
+                    {(level_id, "1001"), (level_id, "1002")},
+                    {"missiona", "unknownname"},
+                    {},
+                )
+
+            exact = index[(level_id, "1001")]
+            self.assertEqual("unique", exact["status"])
+            self.assertEqual(["missiona"], exact["hostMissionIds"])
+            reference = exact["hosts"][0]["authoritativeReferences"][0]
+            self.assertEqual("persistent_override", reference["activeOverlayStatus"])
+            self.assertEqual(level_id, reference["missionRuntimeLevelId"])
+            self.assertNotIn((level_id, "1002"), index)
+
     def test_npc_proxy_segment_scope_requires_exact_typed_source_agreement(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             gameplay_dir = Path(temp_dir) / "GameplayConfig"

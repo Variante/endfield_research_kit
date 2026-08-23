@@ -1,0 +1,1683 @@
+{
+  "schema": "actionEntityFieldNativeContract.v2",
+  "status": "validated",
+  "metadata": {
+    "gameAssemblySha256": "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE",
+    "metadataSha256": "90C58E26E87C7227A85DDA3FEDF6CE5ED0B06DC1F76E0ABBE75AB20750ADF97E",
+    "codeRegistration": "0x18b9217d0",
+    "metadataRegistration": "0x18b921c30"
+  },
+  "actionCount": 83,
+  "actions": [
+{
+      "actionName": "AddBuffToTarget",
+      "unionTag": 8,
+      "serializedMemberCount": 16,
+      "serializedValueLayout": {
+        "managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>",
+        "parameterTypeIndex": 85044,
+        "fieldTypeIndex": 85046,
+        "genericTypeDefinitionToken": "0x02001930",
+        "genericArgumentTypeDefinitionToken": "0x02002f3a",
+        "outerMemberCount": 4,
+        "valueMemberCount": 3,
+        "valueFields": [
+          "logicId",
+          "slotId",
+          "useSlotId"
+        ]
+      },
+      "deserialize": {
+        "methodToken": "0x06009e26",
+        "methodPointerVa": "0x18447b700",
+        "fileOffset": 71802112,
+        "bodySize": 1040,
+        "bodySha256": "6E936F113D9EF2884FB78CD41CC47DF23707E60CCBC85EAF641FA3269830E4E2"
+      },
+      "entityFields": [
+        {
+          "fieldName": "_source",
+          "memberOrdinalZeroBased": 13,
+          "constantPointerOrdinal": 0,
+          "fieldOffset": "0xd8",
+          "setterToken": "0x06009e1e",
+          "setterPointerVa": "0x18447bc50",
+          "setterFileOffset": 71803472,
+          "setterBodySize": 64,
+          "setterBodySha256": "7C01D9B7E06D0F392CCC43E971E7C156DCBD2E41785BCED5727A508C37C13A5C"
+        },
+        {
+          "fieldName": "_target",
+          "memberOrdinalZeroBased": 14,
+          "constantPointerOrdinal": 1,
+          "fieldOffset": "0xd0",
+          "setterToken": "0x06009e1f",
+          "setterPointerVa": "0x18447bc90",
+          "setterFileOffset": 71803536,
+          "setterBodySize": 64,
+          "setterBodySha256": "C2884934DEBB8B77066667824D10137FD15DD5D5F4E905CC510B931FF5EE23CB"
+        }
+      ]
+    },
+{
+      "actionName": "AddBuffToTargetFromGodEntity", "unionTag": 9, "serializedMemberCount": 13,
+      "serializedValueLayout": {"managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>", "parameterTypeIndex": 85044, "fieldTypeIndex": 85046, "genericTypeDefinitionToken": "0x02001930", "genericArgumentTypeDefinitionToken": "0x02002f3a", "outerMemberCount": 4, "valueMemberCount": 3, "valueFields": ["logicId", "slotId", "useSlotId"]},
+      "deserialize": {"methodToken": "0x06009e3a", "methodPointerVa": "0x18a343204", "fileOffset": 171186180, "bodySize": 1472, "bodySha256": "3480202AA966DF95FF5691F4FD4903DE08BFB25878634A17F19C1EB887AEC2AE"},
+      "entityFields": [{"fieldName": "_target", "memberOrdinalZeroBased": 11, "constantPointerOrdinal": 0, "fieldOffset": "0xd0", "setterToken": "0x06009e33", "setterPointerVa": "0x18a343c2c", "setterFileOffset": 171188780, "setterBodySize": 52, "setterBodySha256": "DF724A363C7D7AB9D25D89C5BADA2DD68D67B6A3B7804B905534E99FA913A868"}]
+    },
+{
+      "actionName": "AddBuffToTargetV2",
+      "unionTag": 10,
+      "serializedMemberCount": 14,
+      "serializedValueLayout": {
+        "managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>",
+        "parameterTypeIndex": 85044,
+        "fieldTypeIndex": 85046,
+        "genericTypeDefinitionToken": "0x02001930",
+        "genericArgumentTypeDefinitionToken": "0x02002f3a",
+        "outerMemberCount": 4,
+        "valueMemberCount": 3,
+        "valueFields": [
+          "logicId",
+          "slotId",
+          "useSlotId"
+        ]
+      },
+      "deserialize": {
+        "methodToken": "0x06009e4f",
+        "methodPointerVa": "0x18a343e40",
+        "fileOffset": 171189312,
+        "bodySize": 1556,
+        "bodySha256": "E77F495090D0BF36D36290206B9D0DD5699F490543F65A66C9DBD289E5C84517"
+      },
+      "entityFields": [
+        {
+          "fieldName": "_source",
+          "memberOrdinalZeroBased": 11,
+          "constantPointerOrdinal": 0,
+          "fieldOffset": "0xd8",
+          "setterToken": "0x06009e47",
+          "setterPointerVa": "0x18a3448bc",
+          "setterFileOffset": 171191996,
+          "setterBodySize": 52,
+          "setterBodySha256": "E3F3935AFCE5CE65D2F7F1E3BC55C13252F6741B7F187F65D07D59FEDEC5F157"
+        },
+        {
+          "fieldName": "_target",
+          "memberOrdinalZeroBased": 12,
+          "constantPointerOrdinal": 1,
+          "fieldOffset": "0xd0",
+          "setterToken": "0x06009e48",
+          "setterPointerVa": "0x18a3448f0",
+          "setterFileOffset": 171192048,
+          "setterBodySize": 52,
+          "setterBodySha256": "9E2EE0A53C3AFFAD24D21CFF86380C7D7F9255D58F8AAAEFDA7061EFB750A493"
+        }
+      ]
+    },
+{
+      "actionName": "AddTrackingPointForEntity", "unionTag": 18, "serializedMemberCount": 14,
+      "serializedValueLayout": {"managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>", "parameterTypeIndex": 85044, "fieldTypeIndex": 85046, "genericTypeDefinitionToken": "0x02001930", "genericArgumentTypeDefinitionToken": "0x02002f3a", "outerMemberCount": 4, "valueMemberCount": 3, "valueFields": ["logicId", "slotId", "useSlotId"]},
+      "deserialize": {"methodToken": "0x0600c83c", "methodPointerVa": "0x18a49e9e8", "fileOffset": 172609512, "bodySize": 1556, "bodySha256": "C76598795DA48B281718C8CE16CF05C9B665A5FDAE8AD8F07A9B1F055DF5CBF7"},
+      "entityFields": [{"fieldName": "_entityPtr", "memberOrdinalZeroBased": 8, "constantPointerOrdinal": 0, "fieldOffset": "0xf8", "setterToken": "0x0600c831", "setterPointerVa": "0x18a49f424", "setterFileOffset": 172612132, "setterBodySize": 52, "setterBodySha256": "9A920A10D89E542A2923162EDB7375FE8F30154AADCB1803D7D5AC79911B5048"}]
+    },
+{
+      "actionName": "AttachEntityToDecoration",
+      "unionTag": 24,
+      "serializedMemberCount": 15,
+      "serializedValueLayout": {
+        "managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>",
+        "parameterTypeIndex": 85044,
+        "fieldTypeIndex": 85046,
+        "genericTypeDefinitionToken": "0x02001930",
+        "genericArgumentTypeDefinitionToken": "0x02002f3a",
+        "outerMemberCount": 4,
+        "valueMemberCount": 3,
+        "valueFields": [
+          "logicId",
+          "slotId",
+          "useSlotId"
+        ]
+      },
+      "deserialize": {
+        "methodToken": "0x0600ba0a",
+        "methodPointerVa": "0x18a423c14",
+        "fileOffset": 172106260,
+        "bodySize": 1624,
+        "bodySha256": "9C5356DAD93BF78F8CE8F14E9941F61CE3BE94DFA082D801AE6119306DBAEAD5"
+      },
+      "entityFields": [
+        {
+          "fieldName": "_target",
+          "memberOrdinalZeroBased": 13,
+          "constantPointerOrdinal": 0,
+          "fieldOffset": "0xf8",
+          "setterToken": "0x0600ba03",
+          "setterPointerVa": "0x18a424714",
+          "setterFileOffset": 172109076,
+          "setterBodySize": 52,
+          "setterBodySha256": "8AE46EAE13DF50456FA9205B7D4A9EE2F3003B8E659409A534218067401EF964"
+        }
+      ]
+    },
+{
+      "actionName": "BakeEntityNavmeshArea", "unionTag": 26, "serializedMemberCount": 10,
+      "serializedValueLayout": {"managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>", "parameterTypeIndex": 85044, "fieldTypeIndex": 85046, "genericTypeDefinitionToken": "0x02001930", "genericArgumentTypeDefinitionToken": "0x02002f3a", "outerMemberCount": 4, "valueMemberCount": 3, "valueFields": ["logicId", "slotId", "useSlotId"]},
+      "deserialize": {"methodToken": "0x0600aaec", "methodPointerVa": "0x18a3b2fec", "fileOffset": 171644396, "bodySize": 1144, "bodySha256": "835247FFCC0177977F0C6257CB443E75B0FD4B984D32844EF0D34D096A33A2EE"},
+      "entityFields": [{"fieldName": "_target", "memberOrdinalZeroBased": 9, "constantPointerOrdinal": 0, "fieldOffset": "0xd0", "setterToken": "0x0600aae6", "setterPointerVa": "0x18a3b3808", "setterFileOffset": 171646472, "setterBodySize": 52, "setterBodySha256": "ACF3F95DC58CC6CE22218A93AB00D12A791CB563EF04D3A9423331AB7F96719F"}]
+    },
+{
+      "actionName": "CacheDroneEnemy", "unionTag": 50, "serializedMemberCount": 9,
+      "serializedValueLayout": {"managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>", "parameterTypeIndex": 85044, "fieldTypeIndex": 85046, "genericTypeDefinitionToken": "0x02001930", "genericArgumentTypeDefinitionToken": "0x02002f3a", "outerMemberCount": 4, "valueMemberCount": 3, "valueFields": ["logicId", "slotId", "useSlotId"]},
+      "deserialize": {"methodToken": "0x0600a8ac", "methodPointerVa": "0x18a3a05ac", "fileOffset": 171568044, "bodySize": 1028, "bodySha256": "28118ED2E47734C33E7478170866081E63F3001AEB226E8FCDB0780EE7869D92"},
+      "entityFields": [{"fieldName": "entity", "memberOrdinalZeroBased": 8, "constantPointerOrdinal": 0, "fieldOffset": "0xd0", "setterToken": "0x0600a8a6", "setterPointerVa": "0x18a3a0d20", "setterFileOffset": 171569952, "setterBodySize": 52, "setterBodySha256": "99BD334A467FD89AAD990183929F4A13F3FF434E24B21644F17B457A515BAFF4"}]
+    },
+{
+      "actionName": "CharacterPlayMontage",
+      "unionTag": 65,
+      "serializedMemberCount": 24,
+      "serializedValueLayout": {
+        "managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>",
+        "parameterTypeIndex": 85044,
+        "fieldTypeIndex": 85046,
+        "genericTypeDefinitionToken": "0x02001930",
+        "genericArgumentTypeDefinitionToken": "0x02002f3a",
+        "outerMemberCount": 4,
+        "valueMemberCount": 3,
+        "valueFields": [
+          "logicId",
+          "slotId",
+          "useSlotId"
+        ]
+      },
+      "deserialize": {
+        "methodToken": "0x0600a338",
+        "methodPointerVa": "0x18a37bfc4",
+        "fileOffset": 171419076,
+        "bodySize": 2468,
+        "bodySha256": "94AE06A171C36308BCBABBEC4A4A18BAD46BD6B8A61DA273E7374F1F3DA428F9"
+      },
+      "entityFields": [
+        {
+          "fieldName": "_target",
+          "memberOrdinalZeroBased": 19,
+          "constantPointerOrdinal": 0,
+          "fieldOffset": "0xd0",
+          "setterToken": "0x0600a32e",
+          "setterPointerVa": "0x18a37cf48",
+          "setterFileOffset": 171423048,
+          "setterBodySize": 52,
+          "setterBodySha256": "2F75C06977E749D6761C1B624868621323B697C82B1417829D649FEDFEBBB9FA"
+        }
+      ]
+    },
+{
+      "actionName": "CreateEffectAttachToEntity", "unionTag": 108, "serializedMemberCount": 14,
+      "serializedValueLayout": {"managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>", "parameterTypeIndex": 85044, "fieldTypeIndex": 85046, "genericTypeDefinitionToken": "0x02001930", "genericArgumentTypeDefinitionToken": "0x02002f3a", "outerMemberCount": 4, "valueMemberCount": 3, "valueFields": ["logicId", "slotId", "useSlotId"]},
+      "deserialize": {"methodToken": "0x0600a9d9", "methodPointerVa": "0x18431d6d0", "fileOffset": 70368464, "bodySize": 944, "bodySha256": "713AE731476633D05AA2373D9981739E485A601952C47AE81DBE63E3A9DAAF4C"},
+      "entityFields": [{"fieldName": "_target", "memberOrdinalZeroBased": 13, "constantPointerOrdinal": 0, "fieldOffset": "0xd0", "setterToken": "0x0600a9d3", "setterPointerVa": "0x18431dbc0", "setterFileOffset": 70369728, "setterBodySize": 64, "setterBodySha256": "055978DEB60EA79443B071B68285B6080CBC95B508EA43734311A72CA56ED465"}]
+    },
+{
+      "actionName": "DestroyAbilityEntity",
+      "unionTag": 117,
+      "serializedMemberCount": 9,
+      "serializedValueLayout": {
+        "managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>",
+        "parameterTypeIndex": 85044,
+        "fieldTypeIndex": 85046,
+        "genericTypeDefinitionToken": "0x02001930",
+        "genericArgumentTypeDefinitionToken": "0x02002f3a",
+        "outerMemberCount": 4,
+        "valueMemberCount": 3,
+        "valueFields": [
+          "logicId",
+          "slotId",
+          "useSlotId"
+        ]
+      },
+      "deserialize": {
+        "methodToken": "0x0600aafc",
+        "methodPointerVa": "0x18a3b39e8",
+        "fileOffset": 171646952,
+        "bodySize": 1028,
+        "bodySha256": "198559676962F16AC219ED2D8D3F5BAECDCF987AACD0ECB94C1A10A554FDC8D4"
+      },
+      "entityFields": [
+        {
+          "fieldName": "_target",
+          "memberOrdinalZeroBased": 8,
+          "constantPointerOrdinal": 0,
+          "fieldOffset": "0xd0",
+          "setterToken": "0x0600aaf6",
+          "setterPointerVa": "0x18a3b415c",
+          "setterFileOffset": 171648860,
+          "setterBodySize": 52,
+          "setterBodySha256": "5F26A01E544963AC8E2E1BD128A7211D48C638D80F38493B4702A602F527BDC8"
+        }
+      ]
+    },
+{
+      "actionName": "EnemyPatrolStart", "unionTag": 136, "serializedMemberCount": 10,
+      "serializedValueLayout": {"managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>", "parameterTypeIndex": 85044, "fieldTypeIndex": 85046, "genericTypeDefinitionToken": "0x02001930", "genericArgumentTypeDefinitionToken": "0x02002f3a", "outerMemberCount": 4, "valueMemberCount": 3, "valueFields": ["logicId", "slotId", "useSlotId"]},
+      "deserialize": {"methodToken": "0x0600aaa8", "methodPointerVa": "0x18a3b433c", "fileOffset": 171649340, "bodySize": 1144, "bodySha256": "B5417BCB80EF56E3DB1BB9F403B6BBD58B940A5551941E82AD06F98ABD3B39DC"},
+      "entityFields": [{"fieldName": "_target", "memberOrdinalZeroBased": 9, "constantPointerOrdinal": 0, "fieldOffset": "0xd0", "setterToken": "0x0600aaa2", "setterPointerVa": "0x18a3b4b58", "setterFileOffset": 171651416, "setterBodySize": 52, "setterBodySha256": "BC1EC812F056108BEFF5B56D1AAF95A427B1743D5977147A52D0AA0B27DB0517"}]
+    },
+{
+      "actionName": "EnterDollyTrackCamera", "unionTag": 138, "serializedMemberCount": 37,
+      "serializedValueLayout": {"managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>", "parameterTypeIndex": 85044, "fieldTypeIndex": 85046, "genericTypeDefinitionToken": "0x02001930", "genericArgumentTypeDefinitionToken": "0x02002f3a", "outerMemberCount": 4, "valueMemberCount": 3, "valueFields": ["logicId", "slotId", "useSlotId"]},
+      "deserialize": {"methodToken": "0x0600a159", "methodPointerVa": "0x18a36c6ec", "fileOffset": 171355372, "bodySize": 3720, "bodySha256": "EF7CF01F0220BF7BDE9143E4206B53C2FFB6A465DF9F496D1CD4359090253B4D"},
+      "entityFields": [{"fieldName": "_follow", "memberOrdinalZeroBased": 17, "constantPointerOrdinal": 0, "fieldOffset": "0x140", "setterToken": "0x0600a140", "setterPointerVa": "0x18a36dba4", "setterFileOffset": 171360676, "setterBodySize": 52, "setterBodySha256": "13B93BF3FB03D2DC4C969F0B0CABB3DD3164C66120558A1D0B402D13A6FAD535"}, {"fieldName": "_lookAt", "memberOrdinalZeroBased": 21, "constantPointerOrdinal": 1, "fieldOffset": "0x158", "setterToken": "0x0600a144", "setterPointerVa": "0x18a36dc40", "setterFileOffset": 171360832, "setterBodySize": 52, "setterBodySha256": "B5644139F42A4E4EC010FED85CE9E73128B1A0427B24A2276D76BF1DB54989C0"}],
+      "serializedRecordLayouts": [{
+        "sourceFile": "export_full/structured/StreamingAssets/Data/Json/LevelScriptData/dung01_rdg007/24700010033.json",
+        "sourceSha256": "1651A06198C94AB12E453BBE3EFFF90787D638A684F2B3B3C9933867FDCF3645",
+        "recordOffset": 1317,
+        "fieldStates": [
+          {"fieldName": "_follow", "state": "null", "startOffset": 1420, "endOffset": 1421, "serializedHex": "ff"},
+          {"fieldName": "_lookAt", "state": "constant", "startOffset": 1424, "endOffset": 1451}
+        ]
+      },
+      {"sourceFile": "export_full/structured/StreamingAssets/Data/Json/LevelScriptData/base01_dg001/9900000002.json", "sourceSha256": "B5CB9B7029E816581D5AA7772E6B00E4590A2B2739641E45034F813BBDE05DA7", "recordOffset": 358, "fieldStates": [{"fieldName": "_follow", "state": "null", "startOffset": 461, "endOffset": 462, "serializedHex": "ff"}, {"fieldName": "_lookAt", "state": "constant", "startOffset": 465, "endOffset": 492}]},
+      {"sourceFile": "export_full/structured/StreamingAssets/Data/Json/LevelScriptData/base01_dg003/30300040001.json", "sourceSha256": "2BEA1E3601111BC2A8F3B2879FE941BEF16C5BB47E04716DF9FD0E02624D50C9", "recordOffset": 397, "fieldStates": [{"fieldName": "_follow", "state": "null", "startOffset": 500, "endOffset": 501, "serializedHex": "ff"}, {"fieldName": "_lookAt", "state": "constant", "startOffset": 520, "endOffset": 547}]},
+      {"sourceFile": "export_full/structured/StreamingAssets/Data/Json/LevelScriptData/dung02_bdg001/40200000024.json", "sourceSha256": "325E9A05669E6A3418E028FFBEFFA75D9B2BA8BCD7D3B26226846D504ACFCD9F", "recordOffset": 255, "fieldStates": [{"fieldName": "_follow", "state": "null", "startOffset": 384, "endOffset": 385, "serializedHex": "ff"}, {"fieldName": "_lookAt", "state": "constant", "startOffset": 404, "endOffset": 431}]},
+      {"sourceFile": "export_full/structured/StreamingAssets/Data/Json/LevelScriptData/dung02_bdg001/40200000024.json", "sourceSha256": "325E9A05669E6A3418E028FFBEFFA75D9B2BA8BCD7D3B26226846D504ACFCD9F", "recordOffset": 6962, "fieldStates": [{"fieldName": "_follow", "state": "null", "startOffset": 7091, "endOffset": 7092, "serializedHex": "ff"}, {"fieldName": "_lookAt", "state": "constant", "startOffset": 7111, "endOffset": 7138}]},
+      {"sourceFile": "export_full/structured/StreamingAssets/Data/Json/LevelScriptData/dung02_cdg001/26600000001.json", "sourceSha256": "60DE4FD480CE55A5C537B47423B5EB220C47467B5730B2C163B1E1DACEA6E4BA", "recordOffset": 1483, "fieldStates": [{"fieldName": "_follow", "state": "null", "startOffset": 1586, "endOffset": 1587, "serializedHex": "ff"}, {"fieldName": "_lookAt", "state": "constant", "startOffset": 1590, "endOffset": 1617}]},
+      {"sourceFile": "export_full/structured/StreamingAssets/Data/Json/LevelScriptData/dung02_cdg001/26600000001.json", "sourceSha256": "60DE4FD480CE55A5C537B47423B5EB220C47467B5730B2C163B1E1DACEA6E4BA", "recordOffset": 2796, "fieldStates": [{"fieldName": "_follow", "state": "null", "startOffset": 2899, "endOffset": 2900, "serializedHex": "ff"}, {"fieldName": "_lookAt", "state": "constant", "startOffset": 2903, "endOffset": 2930}]},
+      {"sourceFile": "export_full/structured/StreamingAssets/Data/Json/LevelScriptData/indie_dg007/26200040000.json", "sourceSha256": "54063D2DBB467E24DA6E2BFBCC6656BF16BF2CEC5879024E79FB494BC9AE8441", "recordOffset": 3644, "fieldStates": [{"fieldName": "_follow", "state": "null", "startOffset": 3747, "endOffset": 3748, "serializedHex": "ff"}, {"fieldName": "_lookAt", "state": "constant", "startOffset": 3767, "endOffset": 3794}]},
+      {"sourceFile": "export_full/structured/StreamingAssets/Data/Json/LevelScriptData/indie_dg007/26200040000.json", "sourceSha256": "54063D2DBB467E24DA6E2BFBCC6656BF16BF2CEC5879024E79FB494BC9AE8441", "recordOffset": 5812, "fieldStates": [{"fieldName": "_follow", "state": "null", "startOffset": 5915, "endOffset": 5916, "serializedHex": "ff"}, {"fieldName": "_lookAt", "state": "constant", "startOffset": 5935, "endOffset": 5962}]},
+      {"sourceFile": "export_full/structured/StreamingAssets/Data/Json/LevelScriptData/map02_lv001/10100033001.json", "sourceSha256": "0F831261179E681A1D73D083ABEA679D2012D36EFB2E9DBBD08420EA97410B93", "recordOffset": 167, "fieldStates": [{"fieldName": "_follow", "state": "null", "startOffset": 270, "endOffset": 271, "serializedHex": "ff"}, {"fieldName": "_lookAt", "state": "constant", "startOffset": 290, "endOffset": 317}]},
+      {"sourceFile": "export_full/structured/StreamingAssets/Data/Json/LevelScriptData/map02_lv001/10100060000.json", "sourceSha256": "51F18524E27E94B0DB06A42DC2A9C0E5165895558FED733421DD2C53D7B371D1", "recordOffset": 2100, "fieldStates": [{"fieldName": "_follow", "state": "null", "startOffset": 2243, "endOffset": 2244, "serializedHex": "ff"}, {"fieldName": "_lookAt", "state": "constant", "startOffset": 2263, "endOffset": 2290}]},
+      {"sourceFile": "export_full/structured/StreamingAssets/Data/Json/LevelScriptData/map02_lv001/10100290000.json", "sourceSha256": "C06A16D950D667EE9F8B9CCE18D97F40A8FFEC616A531347E60837DB8292971A", "recordOffset": 1030, "fieldStates": [{"fieldName": "_follow", "state": "null", "startOffset": 1133, "endOffset": 1134, "serializedHex": "ff"}, {"fieldName": "_lookAt", "state": "constant", "startOffset": 1153, "endOffset": 1180}]},
+      {"sourceFile": "export_full/structured/StreamingAssets/Data/Json/LevelScriptData/map02_lv001/10100290001.json", "sourceSha256": "E3C64B8C57EB722E5C10858DD22C6CAB750E4FFEAF29AB8CF90A039D6E4F6C10", "recordOffset": 1649, "fieldStates": [{"fieldName": "_follow", "state": "null", "startOffset": 1752, "endOffset": 1753, "serializedHex": "ff"}, {"fieldName": "_lookAt", "state": "constant", "startOffset": 1772, "endOffset": 1799}]},
+      {"sourceFile": "export_full/structured/StreamingAssets/Data/Json/LevelScriptData/map02_lv001/10100290002.json", "sourceSha256": "97EBB6C96650DC78B4CB396B6637FE078A67A0DC404748EA7BE895BA49A6E2D3", "recordOffset": 1506, "fieldStates": [{"fieldName": "_follow", "state": "null", "startOffset": 1609, "endOffset": 1610, "serializedHex": "ff"}, {"fieldName": "_lookAt", "state": "constant", "startOffset": 1629, "endOffset": 1656}]},
+      {"sourceFile": "export_full/structured/StreamingAssets/Data/Json/LevelScriptData/map02_lv003/23300000023.json", "sourceSha256": "07BD1DCAECE3C9D9C2D376C56DB4E49C53CF32D0F1594CF8FDDB77F087E4FB67", "recordOffset": 899, "fieldStates": [{"fieldName": "_follow", "state": "null", "startOffset": 1002, "endOffset": 1003, "serializedHex": "ff"}, {"fieldName": "_lookAt", "state": "constant", "startOffset": 1022, "endOffset": 1049}]},
+      {"sourceFile": "export_full/structured/StreamingAssets/Data/Json/LevelScriptData/map02_lv003/23300000023.json", "sourceSha256": "07BD1DCAECE3C9D9C2D376C56DB4E49C53CF32D0F1594CF8FDDB77F087E4FB67", "recordOffset": 7653, "fieldStates": [{"fieldName": "_follow", "state": "null", "startOffset": 7756, "endOffset": 7757, "serializedHex": "ff"}, {"fieldName": "_lookAt", "state": "constant", "startOffset": 7776, "endOffset": 7803}]},
+      {"sourceFile": "export_full/structured/StreamingAssets/Data/Json/LevelScriptData/map02_lv005/23200013032.json", "sourceSha256": "AF75BF7279E95589C0F3294114FFAC41606D61CF639322F7A79B207B45B30722", "recordOffset": 1118, "fieldStates": [{"fieldName": "_follow", "state": "null", "startOffset": 1221, "endOffset": 1222, "serializedHex": "ff"}, {"fieldName": "_lookAt", "state": "constant", "startOffset": 1225, "endOffset": 1252}]}
+      ]
+    },
+{
+      "actionName": "EntityAttachToParent", "unionTag": 147, "serializedMemberCount": 14,
+      "serializedValueLayout": {"managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>", "parameterTypeIndex": 85044, "fieldTypeIndex": 85046, "genericTypeDefinitionToken": "0x02001930", "genericArgumentTypeDefinitionToken": "0x02002f3a", "outerMemberCount": 4, "valueMemberCount": 3, "valueFields": ["logicId", "slotId", "useSlotId"]},
+      "deserialize": {"methodToken": "0x0600b325", "methodPointerVa": "0x1845b9490", "fileOffset": 73104016, "bodySize": 896, "bodySha256": "555A917C2C47310AE12D724A9CF1099AAF6206F84139D2E56D0BB08923651EF5"},
+      "entityFields": [{"fieldName": "_child", "memberOrdinalZeroBased": 8, "constantPointerOrdinal": 0, "fieldOffset": "0xd0", "setterToken": "0x0600b31a", "setterPointerVa": "0x1845b9810", "setterFileOffset": 73104912, "setterBodySize": 64, "setterBodySha256": "F9C34E2CD8080FCD61F5235332B38B28EA97D99D0B280BA82D6EDF5A7C1998DB"}, {"fieldName": "_parent", "memberOrdinalZeroBased": 13, "constantPointerOrdinal": 1, "fieldOffset": "0xd8", "setterToken": "0x0600b31f", "setterPointerVa": "0x1845b9950", "setterFileOffset": 73105232, "setterBodySize": 64, "setterBodySha256": "A6551C5C8CC8D89211EB2D6348CD49EEA688FF66A2FC47C210B2858C06511F63"}]
+    },
+{
+      "actionName": "EntityCastSkill",
+      "unionTag": 148,
+      "serializedMemberCount": 15,
+      "serializedValueLayout": {
+        "managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>", "parameterTypeIndex": 85044, "fieldTypeIndex": 85046,
+        "genericTypeDefinitionToken": "0x02001930", "genericArgumentTypeDefinitionToken": "0x02002f3a",
+        "outerMemberCount": 4, "valueMemberCount": 3, "valueFields": ["logicId", "slotId", "useSlotId"]
+      },
+      "deserialize": {"methodToken": "0x06009eac", "methodPointerVa": "0x18442ad60", "fileOffset": 71471968, "bodySize": 1008, "bodySha256": "A53F8DEDBEEC749BEDA70AEA859E39B6BFAB75A9759482E3A90AD7D5B6A43431"},
+      "entityFields": [
+        {"fieldName": "_entity", "memberOrdinalZeroBased": 8, "constantPointerOrdinal": 0, "fieldOffset": "0xd0", "setterToken": "0x06009ea0", "setterPointerVa": "0x18442b150", "setterFileOffset": 71472976, "setterBodySize": 64, "setterBodySha256": "1432A82D5C72BA9E7663763EE29247C87D568FC2ADF0AEEC3EDF616C5C47476C"},
+        {"fieldName": "_targetEntity", "memberOrdinalZeroBased": 12, "constantPointerOrdinal": 1, "fieldOffset": "0xe8", "setterToken": "0x06009ea4", "setterPointerVa": "0x18442b250", "setterFileOffset": 71473232, "setterBodySize": 64, "setterBodySha256": "8DDFF2CA2AF05E99F34326C0D376EAD904A537A6187CAB5C834C1AFE6DCAAEE1"}
+      ]
+    },
+{
+      "actionName": "EntityHide", "unionTag": 152, "serializedMemberCount": 10,
+      "serializedValueLayout": {"managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>", "parameterTypeIndex": 85044, "fieldTypeIndex": 85046, "genericTypeDefinitionToken": "0x02001930", "genericArgumentTypeDefinitionToken": "0x02002f3a", "outerMemberCount": 4, "valueMemberCount": 3, "valueFields": ["logicId", "slotId", "useSlotId"]},
+      "deserialize": {"methodToken": "0x0600ab2f", "methodPointerVa": "0x18459db10", "fileOffset": 72990992, "bodySize": 704, "bodySha256": "6CBF650838ED3454FE9C1A94E6242DFB4C692DBFBC6C79101C7A1BA02B1E716E"},
+      "entityFields": [{"fieldName": "_entityPtr", "memberOrdinalZeroBased": 9, "constantPointerOrdinal": 0, "fieldOffset": "0xd0", "setterToken": "0x0600ab29", "setterPointerVa": "0x18459de10", "setterFileOffset": 72991760, "setterBodySize": 64, "setterBodySha256": "7BA50F40B8C0D4F71BD283FD512FAF9A2C368E134C795327E0F71E763B5C4684"}]
+    },
+{
+      "actionName": "EntityInterruptSkill",
+      "unionTag": 154,
+      "serializedMemberCount": 10,
+      "serializedValueLayout": {
+        "managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>",
+        "parameterTypeIndex": 85044,
+        "fieldTypeIndex": 85046,
+        "genericTypeDefinitionToken": "0x02001930",
+        "genericArgumentTypeDefinitionToken": "0x02002f3a",
+        "outerMemberCount": 4,
+        "valueMemberCount": 3,
+        "valueFields": [
+          "logicId",
+          "slotId",
+          "useSlotId"
+        ]
+      },
+      "deserialize": {
+        "methodToken": "0x06009ecf",
+        "methodPointerVa": "0x18a35e864",
+        "fileOffset": 171298404,
+        "bodySize": 1144,
+        "bodySha256": "44B9122F13BE809A7D591816FA978F8A823676B8B7F6715B3E6C9082071F95B8"
+      },
+      "entityFields": [
+        {
+          "fieldName": "_target",
+          "memberOrdinalZeroBased": 9,
+          "constantPointerOrdinal": 0,
+          "fieldOffset": "0xd0",
+          "setterToken": "0x06009ec9",
+          "setterPointerVa": "0x18a35f080",
+          "setterFileOffset": 171300480,
+          "setterBodySize": 52,
+          "setterBodySha256": "2C69FDA8B3CAC640E3E31267F38ED62E5B00905BC3CAF809313388CC14718989"
+        }
+      ]
+    },
+{
+      "actionName": "EntityMoveToWithDuration",
+      "unionTag": 155,
+      "serializedMemberCount": 15,
+      "serializedValueLayout": {
+        "managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>",
+        "parameterTypeIndex": 85044,
+        "fieldTypeIndex": 85046,
+        "genericTypeDefinitionToken": "0x02001930",
+        "genericArgumentTypeDefinitionToken": "0x02002f3a",
+        "outerMemberCount": 4,
+        "valueMemberCount": 3,
+        "valueFields": ["logicId", "slotId", "useSlotId"]
+      },
+      "deserialize": {
+        "methodToken": "0x0600ab56",
+        "methodPointerVa": "0x183d94f30",
+        "fileOffset": 64566576,
+        "bodySize": 1008,
+        "bodySha256": "CF9F0B076201AF5D30508E04D765E3649D2FC0C5097BEB7E7528C2B2B2417D25"
+      },
+      "entityFields": [
+        {
+          "fieldName": "_entity",
+          "memberOrdinalZeroBased": 11,
+          "constantPointerOrdinal": 0,
+          "fieldOffset": "0xd0",
+          "setterToken": "0x0600ab4d",
+          "setterPointerVa": "0x183d93aa0",
+          "setterFileOffset": 64561312,
+          "setterBodySize": 64,
+          "setterBodySha256": "E1E6EA8546BF49282ACD88441BDB5E1F19C4369E90A6B4B2E2E5AC3EAD3C5D4E"
+        }
+      ]
+    },
+{
+      "actionName": "EntityMoveToWithSpeed", "unionTag": 156, "serializedMemberCount": 15,
+      "serializedValueLayout": {"managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>", "parameterTypeIndex": 85044, "fieldTypeIndex": 85046, "genericTypeDefinitionToken": "0x02001930", "genericArgumentTypeDefinitionToken": "0x02002f3a", "outerMemberCount": 4, "valueMemberCount": 3, "valueFields": ["logicId", "slotId", "useSlotId"]},
+      "deserialize": {"methodToken": "0x0600ab6c", "methodPointerVa": "0x18a3b5a4c", "fileOffset": 171655244, "bodySize": 1672, "bodySha256": "3348905CA80F56E168104F19DEFDF577023B49A548DD1E559BC984A5CA91FFED"},
+      "entityFields": [{"fieldName": "_entity", "memberOrdinalZeroBased": 10, "constantPointerOrdinal": 0, "fieldOffset": "0xd0", "setterToken": "0x0600ab62", "setterPointerVa": "0x18a3b64f4", "setterFileOffset": 171657972, "setterBodySize": 52, "setterBodySha256": "2E91B5A7C5E142908C07592597154C0A7BD523650387DC9D970B8742DA9B1762"}]
+    },
+{
+      "actionName": "EntityRotateDeltaWithDuration", "unionTag": 164, "serializedMemberCount": 13,
+      "serializedValueLayout": {"managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>", "parameterTypeIndex": 85044, "fieldTypeIndex": 85046, "genericTypeDefinitionToken": "0x02001930", "genericArgumentTypeDefinitionToken": "0x02002f3a", "outerMemberCount": 4, "valueMemberCount": 3, "valueFields": ["logicId", "slotId", "useSlotId"]},
+      "deserialize": {"methodToken": "0x0600abb9", "methodPointerVa": "0x18a3b8930", "fileOffset": 171667248, "bodySize": 1472, "bodySha256": "DD593F9693E1EFD8659C78F80177EFBCB4C9B56FA015FCE1D6EA64F06B786D97"},
+      "entityFields": [{"fieldName": "_entity", "memberOrdinalZeroBased": 11, "constantPointerOrdinal": 0, "fieldOffset": "0xd0", "setterToken": "0x0600abb2", "setterPointerVa": "0x18a3b9358", "setterFileOffset": 171669848, "setterBodySize": 52, "setterBodySha256": "134A07F121301E448C89F6BB7001880204F36B5093F2CC9ECF6AE3990AA687B4"}]
+    },
+{
+      "actionName": "EntityRotateToWithDuration", "unionTag": 166, "serializedMemberCount": 13,
+      "serializedValueLayout": {"managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>", "parameterTypeIndex": 85044, "fieldTypeIndex": 85046, "genericTypeDefinitionToken": "0x02001930", "genericArgumentTypeDefinitionToken": "0x02002f3a", "outerMemberCount": 4, "valueMemberCount": 3, "valueFields": ["logicId", "slotId", "useSlotId"]},
+      "deserialize": {"methodToken": "0x0600abe2", "methodPointerVa": "0x183d92aa0", "fileOffset": 64557216, "bodySize": 880, "bodySha256": "52FA253AD733EC8EC91E707FFBF73CF37181B3AD4DCF57959536DA0E64A175DB"},
+      "entityFields": [{"fieldName": "_entity", "memberOrdinalZeroBased": 11, "constantPointerOrdinal": 0, "fieldOffset": "0xd0", "setterToken": "0x0600abdb", "setterPointerVa": "0x183d928d0", "setterFileOffset": 64556752, "setterBodySize": 64, "setterBodySha256": "A5F0419623F7DD8956D7D81504ADA59C4D7795BFE5FFDA002D6F0460DE23B53E"}]
+    },
+{
+      "actionName": "EntityRotateToWithSpeed", "unionTag": 167, "serializedMemberCount": 14,
+      "serializedValueLayout": {"managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>", "parameterTypeIndex": 85044, "fieldTypeIndex": 85046, "genericTypeDefinitionToken": "0x02001930", "genericArgumentTypeDefinitionToken": "0x02002f3a", "outerMemberCount": 4, "valueMemberCount": 3, "valueFields": ["logicId", "slotId", "useSlotId"]},
+      "deserialize": {"methodToken": "0x0600abf7", "methodPointerVa": "0x183d92370", "fileOffset": 64555376, "bodySize": 944, "bodySha256": "113B62E98CA7DDC9C6D68484B5D4FD19ED24BEB5C00623CDC03BFA0D2FA04ACB"},
+      "entityFields": [{"fieldName": "_entity", "memberOrdinalZeroBased": 10, "constantPointerOrdinal": 0, "fieldOffset": "0xd0", "setterToken": "0x0600abee", "setterPointerVa": "0x183d920d0", "setterFileOffset": 64554704, "setterBodySize": 64, "setterBodySha256": "81ACDE17DFB8BF325AEEE09D516329951BE4B813C5AA37A8077E251C9B6F52EB"}]
+    },
+{
+      "actionName": "EntityShow", "unionTag": 168, "serializedMemberCount": 10,
+      "serializedValueLayout": {"managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>", "parameterTypeIndex": 85044, "fieldTypeIndex": 85046, "genericTypeDefinitionToken": "0x02001930", "genericArgumentTypeDefinitionToken": "0x02002f3a", "outerMemberCount": 4, "valueMemberCount": 3, "valueFields": ["logicId", "slotId", "useSlotId"]},
+      "deserialize": {"methodToken": "0x0600ac08", "methodPointerVa": "0x18459d560", "fileOffset": 72989536, "bodySize": 704, "bodySha256": "2CCF7DB1A96FF6701FD8A99CEE7974FC0EC6A31434491C80A2AC1E8E3F2F39FB"},
+      "entityFields": [{"fieldName": "_entityPtr", "memberOrdinalZeroBased": 9, "constantPointerOrdinal": 0, "fieldOffset": "0xd0", "setterToken": "0x0600ac02", "setterPointerVa": "0x18459d860", "setterFileOffset": 72990304, "setterBodySize": 64, "setterBodySha256": "03CD8CE3F818F7418BB6BE1DF527C78D4AEF1136D351A56DAFF4B481F24467B8"}]
+    },
+{
+      "actionName": "EventArgsAssignEntityPtr", "unionTag": 174, "serializedMemberCount": 11,
+      "serializedValueLayout": {"managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>", "parameterTypeIndex": 85044, "fieldTypeIndex": 85046, "genericTypeDefinitionToken": "0x02001930", "genericArgumentTypeDefinitionToken": "0x02002f3a", "outerMemberCount": 4, "valueMemberCount": 3, "valueFields": ["logicId", "slotId", "useSlotId"]},
+      "deserialize": {"methodToken": "0x0600ad60", "methodPointerVa": "0x18a3c6048", "fileOffset": 171722312, "bodySize": 1252, "bodySha256": "7900051D4D81B3BFE01E16A9F09E7F392DCA77B7D7D705ACBD921A7F1FB9D6D0"},
+      "entityFields": [{"fieldName": "_value", "memberOrdinalZeroBased": 10, "constantPointerOrdinal": 0, "fieldOffset": "0xe0", "setterToken": "0x0600ad5a", "setterPointerVa": "0x18a3c6904", "setterFileOffset": 171724548, "setterBodySize": 52, "setterBodySha256": "8A117436800F641681278471BE7634E7D8003EC2F33F6224B45B8AAA695AAC9B"}]
+    },
+{
+      "actionName": "FacBattleBuildingSetEnabled",
+      "unionTag": 187,
+      "serializedMemberCount": 10,
+      "serializedValueLayout": {
+        "managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>", "parameterTypeIndex": 85044, "fieldTypeIndex": 85046,
+        "genericTypeDefinitionToken": "0x02001930", "genericArgumentTypeDefinitionToken": "0x02002f3a",
+        "outerMemberCount": 4, "valueMemberCount": 3, "valueFields": ["logicId", "slotId", "useSlotId"]
+      },
+      "deserialize": {"methodToken": "0x0600ae73", "methodPointerVa": "0x18a3c9a50", "fileOffset": 171737168, "bodySize": 1144, "bodySha256": "3E456A7CBA619660F8EC42EAE235773926CC020E71C7A3F3EF73643CB69B9314"},
+      "entityFields": [
+        {"fieldName": "_entity", "memberOrdinalZeroBased": 8, "constantPointerOrdinal": 0, "fieldOffset": "0xd0", "setterToken": "0x0600ae6c", "setterPointerVa": "0x18a3ca238", "setterFileOffset": 171739192, "setterBodySize": 52, "setterBodySha256": "03E49DB6B22A8E63E98C6DC4176B1A2F2B687B5BF9D019379C65F5171AAC071F"}
+      ]
+    },
+{
+      "actionName": "FacForceBattleBuildingCast",
+      "unionTag": 195,
+      "serializedMemberCount": 11,
+      "serializedValueLayout": {
+        "managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>", "parameterTypeIndex": 85044, "fieldTypeIndex": 85046,
+        "genericTypeDefinitionToken": "0x02001930", "genericArgumentTypeDefinitionToken": "0x02002f3a",
+        "outerMemberCount": 4, "valueMemberCount": 3, "valueFields": ["logicId", "slotId", "useSlotId"]
+      },
+      "deserialize": {"methodToken": "0x0600af08", "methodPointerVa": "0x18a3cf2c0", "fileOffset": 171759808, "bodySize": 1228, "bodySha256": "5F3F07108B77AF0CA62257F6AEF367D1E3E6B2B6AF8AA37C4711AD7077F846D3"},
+      "entityFields": [
+        {"fieldName": "_entity", "memberOrdinalZeroBased": 8, "constantPointerOrdinal": 0, "fieldOffset": "0xd0", "setterToken": "0x0600af00", "setterPointerVa": "0x18a3cfafc", "setterFileOffset": 171761916, "setterBodySize": 52, "setterBodySha256": "26B2842A996BF0983244FBD88864A81A98EA55986DC6C93D5F6EFDCA790CE66C"},
+        {"fieldName": "_targetEntity", "memberOrdinalZeroBased": 9, "constantPointerOrdinal": 1, "fieldOffset": "0xd8", "setterToken": "0x0600af01", "setterPointerVa": "0x18a3cfb30", "setterFileOffset": 171761968, "setterBodySize": 52, "setterBodySha256": "80B2D723DF3DA8E20E8A43C2C53B097B54BCD318BA8825722C0D8C55DA644CD0"}
+      ]
+    },
+{
+      "actionName": "FacSetBattleBuildingLookAt",
+      "unionTag": 209,
+      "serializedMemberCount": 10,
+      "serializedValueLayout": {
+        "managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>", "parameterTypeIndex": 85044, "fieldTypeIndex": 85046,
+        "genericTypeDefinitionToken": "0x02001930", "genericArgumentTypeDefinitionToken": "0x02002f3a",
+        "outerMemberCount": 4, "valueMemberCount": 3, "valueFields": ["logicId", "slotId", "useSlotId"]
+      },
+      "deserialize": {"methodToken": "0x0600b002", "methodPointerVa": "0x18a3db7b4", "fileOffset": 171810228, "bodySize": 1144, "bodySha256": "1504026E55DB0554EC11EDD182E2B565DBB7B7433975A67B1B22CC45A99EBA7B"},
+      "entityFields": [
+        {"fieldName": "_buildingEntity", "memberOrdinalZeroBased": 8, "constantPointerOrdinal": 0, "fieldOffset": "0xd0", "setterToken": "0x0600affb", "setterPointerVa": "0x18a3dbf9c", "setterFileOffset": 171812252, "setterBodySize": 52, "setterBodySha256": "DB3BFC4E1B5365E048EF22131B1924D5F1AB489CD12DCB7B219011F7F40239A1"}
+      ]
+    },
+{
+      "actionName": "FinishBuffUsingId", "unionTag": 223, "serializedMemberCount": 10,
+      "serializedValueLayout": {"managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>", "parameterTypeIndex": 85044, "fieldTypeIndex": 85046, "genericTypeDefinitionToken": "0x02001930", "genericArgumentTypeDefinitionToken": "0x02002f3a", "outerMemberCount": 4, "valueMemberCount": 3, "valueFields": ["logicId", "slotId", "useSlotId"]},
+      "deserialize": {"methodToken": "0x06009f11", "methodPointerVa": "0x18a3605b0", "fileOffset": 171305904, "bodySize": 1144, "bodySha256": "3F6391887FF6D32CE3DE50F1432577FAF42A0BD683A6944DE0735F0F51C24A5C"},
+      "entityFields": [{"fieldName": "_targetEntity", "memberOrdinalZeroBased": 9, "constantPointerOrdinal": 0, "fieldOffset": "0xd0", "setterToken": "0x06009f0b", "setterPointerVa": "0x18a360dcc", "setterFileOffset": 171307980, "setterBodySize": 52, "setterBodySha256": "1561C621A3C246268CD33F82138B34F1D92B4B1A3850C1C428A181A4423B1C13"}]
+    },
+{
+      "actionName": "ImmediateStartBambooRaftMove", "unionTag": 256, "serializedMemberCount": 10,
+      "serializedValueLayout": {"managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>", "parameterTypeIndex": 85044, "fieldTypeIndex": 85046, "genericTypeDefinitionToken": "0x02001930", "genericArgumentTypeDefinitionToken": "0x02002f3a", "outerMemberCount": 4, "valueMemberCount": 3, "valueFields": ["logicId", "slotId", "useSlotId"]},
+      "deserialize": {"methodToken": "0x0600b6ce", "methodPointerVa": "0x18a414cc4", "fileOffset": 172044996, "bodySize": 1144, "bodySha256": "8A9ABE7682A05DC14C5DB1194B92274BB38FB7CE1E96C3ECFD0C14072A227AAF"},
+      "entityFields": [{"fieldName": "targetEntityParam", "memberOrdinalZeroBased": 9, "constantPointerOrdinal": 0, "fieldOffset": "0xd0", "setterToken": "0x0600b6c8", "setterPointerVa": "0x18a4154e0", "setterFileOffset": 172047072, "setterBodySize": 52, "setterBodySha256": "405AE7B02BA61247D5CC1953F6217E27897B375E0784AF30BF74C17181212BD2"}]
+    },
+{
+      "actionName": "InteractiveSetVisible",
+      "unionTag": 259,
+      "serializedMemberCount": 10,
+      "serializedValueLayout": {
+        "managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>", "parameterTypeIndex": 85044, "fieldTypeIndex": 85046,
+        "genericTypeDefinitionToken": "0x02001930", "genericArgumentTypeDefinitionToken": "0x02002f3a",
+        "outerMemberCount": 4, "valueMemberCount": 3, "valueFields": ["logicId", "slotId", "useSlotId"]
+      },
+      "deserialize": {"methodToken": "0x0600b7ba", "methodPointerVa": "0x18a416014", "fileOffset": 172049940, "bodySize": 1144, "bodySha256": "5C121C20BE78330CC79AC33641EF376A67EBBB362C3A0C4A01E05343D4184DE7"},
+      "entityFields": [
+        {"fieldName": "_entity", "memberOrdinalZeroBased": 8, "constantPointerOrdinal": 0, "fieldOffset": "0xd0", "setterToken": "0x0600b7b3", "setterPointerVa": "0x18a4167fc", "setterFileOffset": 172051964, "setterBodySize": 52, "setterBodySha256": "503AFF81E83D92D2AD4CF526526CA1DAD8321B97EAF8F2B08BF65D2878CE95A4"}
+      ]
+    },
+{
+      "actionName": "IsLookAtPointInScreen", "unionTag": 263, "serializedMemberCount": 16,
+      "serializedValueLayout": {"managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>", "parameterTypeIndex": 85044, "fieldTypeIndex": 85046, "genericTypeDefinitionToken": "0x02001930", "genericArgumentTypeDefinitionToken": "0x02002f3a", "outerMemberCount": 4, "valueMemberCount": 3, "valueFields": ["logicId", "slotId", "useSlotId"]},
+      "deserialize": {"methodToken": "0x0600a19b", "methodPointerVa": "0x184082180", "fileOffset": 67635072, "bodySize": 1024, "bodySha256": "EEDAD21A4AB19B73A8AF38FF6E35F71C97430693DE312353B2F51AD86F235B0E"},
+      "entityFields": [{"fieldName": "lookAt", "memberOrdinalZeroBased": 9, "constantPointerOrdinal": 0, "fieldOffset": "0xd8", "setterToken": "0x0600a18f", "setterPointerVa": "0x184081720", "setterFileOffset": 67632416, "setterBodySize": 64, "setterBodySha256": "39BFFED4D2A455BDE03093F2EDB609047FC81CB12226625D2D78F7506DE54901"}]
+    },
+{
+      "actionName": "KillKickableInteractive",
+      "unionTag": 271,
+      "serializedMemberCount": 12,
+      "serializedValueLayout": {
+        "managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>",
+        "parameterTypeIndex": 85044,
+        "fieldTypeIndex": 85046,
+        "genericTypeDefinitionToken": "0x02001930",
+        "genericArgumentTypeDefinitionToken": "0x02002f3a",
+        "outerMemberCount": 4,
+        "valueMemberCount": 3,
+        "valueFields": [
+          "logicId",
+          "slotId",
+          "useSlotId"
+        ]
+      },
+      "deserialize": {
+        "methodToken": "0x0600b80d",
+        "methodPointerVa": "0x18a418f68",
+        "fileOffset": 172062056,
+        "bodySize": 2084,
+        "bodySha256": "2B9CC65E22652F6232E97E9AEC5DFB913260B2603BF579C6D56CE0B1CE60EDB5"
+      },
+      "entityFields": [
+        {
+          "fieldName": "_kickableEntity",
+          "memberOrdinalZeroBased": 9,
+          "constantPointerOrdinal": 0,
+          "fieldOffset": "0xd0",
+          "setterToken": "0x0600b805",
+          "setterPointerVa": "0x18a419b58",
+          "setterFileOffset": 172065112,
+          "setterBodySize": 52,
+          "setterBodySha256": "7DBD94679555269E5D3A1042DAD92A92CD57CE7C55F1FE978833B4BF14C6EC1D"
+        }
+      ]
+    },
+{
+      "actionName": "LevelCameraLookAt",
+      "unionTag": 277,
+      "serializedMemberCount": 39,
+      "serializedValueLayout": {
+        "managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>",
+        "parameterTypeIndex": 85044,
+        "fieldTypeIndex": 85046,
+        "genericTypeDefinitionToken": "0x02001930",
+        "genericArgumentTypeDefinitionToken": "0x02002f3a",
+        "outerMemberCount": 4,
+        "valueMemberCount": 3,
+        "valueFields": ["logicId", "slotId", "useSlotId"]
+      },
+      "deserialize": {
+        "methodToken": "0x0600a1f2",
+        "methodPointerVa": "0x184082580",
+        "fileOffset": 67636096,
+        "bodySize": 1984,
+        "bodySha256": "3D4A09096BD0FE7D5851AF18131028EDD80663E879B101162D7E7919008F9BD5"
+      },
+      "entityFields": [
+        {
+          "fieldName": "lookAt1",
+          "memberOrdinalZeroBased": 21,
+          "constantPointerOrdinal": 0,
+          "fieldOffset": "0xd8",
+          "setterToken": "0x0600a1db",
+          "setterPointerVa": "0x184081ca0",
+          "setterFileOffset": 67633824,
+          "setterBodySize": 64,
+          "setterBodySha256": "467AD37835B48B9EA797557917F276A58DE35EA38FD0B3F1E5710F54F1FCED5B"
+        },
+        {
+          "fieldName": "lookAt2",
+          "memberOrdinalZeroBased": 23,
+          "constantPointerOrdinal": 1,
+          "fieldOffset": "0x110",
+          "setterToken": "0x0600a1dd",
+          "setterPointerVa": "0x184081d20",
+          "setterFileOffset": 67633952,
+          "setterBodySize": 64,
+          "setterBodySha256": "3B9C6F95967369B3C313014D2BD56D7BBDA2D1D9D15D6F82FA6C160AA5B87C63"
+        }
+      ]
+    },
+    {
+      "actionName": "ListSetValueEntityPtr",
+      "unionTag": 694,
+      "serializedMemberCount": 11,
+      "proofKind": "closed_generic_companion_setter_call",
+      "actionFormatterType": "Beyond_Gameplay_Actions_ListSetValueEntityPtrForMemoryPack",
+      "actionFormatterTypeToken": "0x020018b4",
+      "genericDefinitionType": "Beyond.Gameplay.Actions.ListSetValue`1",
+      "genericDefinitionTypeToken": "0x020015a8",
+      "genericDefinitionFieldName": "_value",
+      "genericDefinitionFieldToken": "0x040062a3",
+      "closedGenericCompanionType": "Beyond_Gameplay_Actions_ListSetValue_Beyond_Gameplay_Core_EntityPtr_ForMemoryPack",
+      "closedGenericCompanionTypeToken": "0x020018b7",
+      "serializedValueLayout": {
+        "managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>",
+        "parameterTypeIndex": 85044,
+        "fieldTypeIndex": 85046,
+        "genericTypeDefinitionToken": "0x02001930",
+        "genericArgumentTypeDefinitionToken": "0x02002f3a",
+        "outerMemberCount": 4,
+        "valueMemberCount": 3,
+        "valueFields": [
+          "logicId",
+          "slotId",
+          "useSlotId"
+        ]
+      },
+      "deserialize": {
+        "methodToken": "0x0600941e",
+        "methodPointerVa": "0x18a2fc9e0",
+        "fileOffset": 170897376,
+        "bodySize": 1252,
+        "bodySha256": "1BABB3E92166E3C9ADF40984C672306223A4156B252C36908E64F088B960AF3E"
+      },
+      "entityFields": [
+        {
+          "fieldName": "_value",
+          "declaringType": "Beyond.Gameplay.Actions.ListSetValue`1",
+          "memberOrdinalZeroBased": 10,
+          "constantPointerOrdinal": 0,
+          "fieldOffset": "0xe0",
+          "setterToken": "0x06009425",
+          "setterDeclaringType": "Beyond_Gameplay_Actions_ListSetValue_Beyond_Gameplay_Core_EntityPtr_ForMemoryPack",
+          "setterPointerVa": "0x18a307b9c",
+          "setterFileOffset": 170942876,
+          "setterBodySize": 52,
+          "setterBodySha256": "BE89117E68AB4F974E8D12486A29CEEF4CFA31C4C230A00F0A966B85C248AD8E",
+          "deserializeDirectCallOffsets": [
+            857,
+            1205
+          ],
+          "deserializeDirectCallVas": [
+            "0x18a2fcd39",
+            "0x18a2fce95"
+          ],
+          "deserializeDirectCallTargetVa": "0x18a307b9c"
+        }
+      ]
+    },
+{
+      "actionName": "ManipulateCraneTower",
+      "unionTag": 769,
+      "serializedMemberCount": 12,
+      "serializedValueLayout": {
+        "managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>",
+        "parameterTypeIndex": 85044,
+        "fieldTypeIndex": 85046,
+        "genericTypeDefinitionToken": "0x02001930",
+        "genericArgumentTypeDefinitionToken": "0x02002f3a",
+        "outerMemberCount": 4,
+        "valueMemberCount": 3,
+        "valueFields": [
+          "logicId",
+          "slotId",
+          "useSlotId"
+        ]
+      },
+      "deserialize": {
+        "methodToken": "0x0600b830",
+        "methodPointerVa": "0x18a419e68",
+        "fileOffset": 172065896,
+        "bodySize": 1364,
+        "bodySha256": "B4D14627B7FEDDB803B64ED12769D155231F6F9884C7E8D24B637D09B309FD37"
+      },
+      "entityFields": [
+        {
+          "fieldName": "entityTarget",
+          "memberOrdinalZeroBased": 8,
+          "constantPointerOrdinal": 0,
+          "fieldOffset": "0xd0",
+          "setterToken": "0x0600b827",
+          "setterPointerVa": "0x18a41a788",
+          "setterFileOffset": 172068232,
+          "setterBodySize": 52,
+          "setterBodySha256": "AEBCA285371FC79C39957ED1F450EB3A28125D35DAAB464015EBDBB494471542"
+        }
+      ]
+    },
+{
+      "actionName": "MoveBambooLast", "unionTag": 780, "serializedMemberCount": 9,
+      "serializedValueLayout": {"managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>", "parameterTypeIndex": 85044, "fieldTypeIndex": 85046, "genericTypeDefinitionToken": "0x02001930", "genericArgumentTypeDefinitionToken": "0x02002f3a", "outerMemberCount": 4, "valueMemberCount": 3, "valueFields": ["logicId", "slotId", "useSlotId"]},
+      "deserialize": {"methodToken": "0x0600b840", "methodPointerVa": "0x18a41aa04", "fileOffset": 172068868, "bodySize": 1028, "bodySha256": "0985307D9F505BB0D7DB61EBA34E870681CA3FBEE3CB6B2EF6A1659DFB84BAB6"},
+      "entityFields": [{"fieldName": "entity", "memberOrdinalZeroBased": 8, "constantPointerOrdinal": 0, "fieldOffset": "0xd0", "setterToken": "0x0600b83a", "setterPointerVa": "0x18a41b178", "setterFileOffset": 172070776, "setterBodySize": 52, "setterBodySha256": "688534CC0E3F45A7D093E65FA1957FAE364E0BF5A4BD58448B755E6346F128E2"}]
+    },
+{
+      "actionName": "MoveBambooNext", "unionTag": 781, "serializedMemberCount": 9,
+      "serializedValueLayout": {"managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>", "parameterTypeIndex": 85044, "fieldTypeIndex": 85046, "genericTypeDefinitionToken": "0x02001930", "genericArgumentTypeDefinitionToken": "0x02002f3a", "outerMemberCount": 4, "valueMemberCount": 3, "valueFields": ["logicId", "slotId", "useSlotId"]},
+      "deserialize": {"methodToken": "0x0600b850", "methodPointerVa": "0x18a41b358", "fileOffset": 172071256, "bodySize": 1028, "bodySha256": "8250C5B9B44790252D0F8432573BD272E2467DE658373270312E1ACC4DFE2CB1"},
+      "entityFields": [{"fieldName": "entity", "memberOrdinalZeroBased": 8, "constantPointerOrdinal": 0, "fieldOffset": "0xd0", "setterToken": "0x0600b84a", "setterPointerVa": "0x18a41bacc", "setterFileOffset": 172073164, "setterBodySize": 52, "setterBodySha256": "E8C84D225BA3B956E1161D5DC09A0131294975A97C1A71CCFC0D2C8B03AE6DB1"}]
+    },
+{
+      "actionName": "NpcEnableStim", "unionTag": 790, "serializedMemberCount": 10,
+      "serializedValueLayout": {"managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>", "parameterTypeIndex": 85044, "fieldTypeIndex": 85046, "genericTypeDefinitionToken": "0x02001930", "genericArgumentTypeDefinitionToken": "0x02002f3a", "outerMemberCount": 4, "valueMemberCount": 3, "valueFields": ["logicId", "slotId", "useSlotId"]},
+      "deserialize": {"methodToken": "0x0600c278", "methodPointerVa": "0x18a46e3c0", "fileOffset": 172411328, "bodySize": 1144, "bodySha256": "7AC3119901B6B6E112A4B719500ED8D40E7A43B715C8F8F12C976C5AA9EF557B"},
+      "entityFields": [{"fieldName": "_targetNpc", "memberOrdinalZeroBased": 9, "constantPointerOrdinal": 0, "fieldOffset": "0xd0", "setterToken": "0x0600c272", "setterPointerVa": "0x18a46ebdc", "setterFileOffset": 172413404, "setterBodySize": 52, "setterBodySha256": "47101C4FF1347CA8622A525FF95AFC93E22E9004045C901AEF56B22006209E92"}]
+    },
+{
+      "actionName": "NpcPatrolOverrideGait", "unionTag": 796, "serializedMemberCount": 11,
+      "serializedValueLayout": {"managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>", "parameterTypeIndex": 85044, "fieldTypeIndex": 85046, "genericTypeDefinitionToken": "0x02001930", "genericArgumentTypeDefinitionToken": "0x02002f3a", "outerMemberCount": 4, "valueMemberCount": 3, "valueFields": ["logicId", "slotId", "useSlotId"]},
+      "deserialize": {"methodToken": "0x0600c327", "methodPointerVa": "0x18a47d2ec", "fileOffset": 172472556, "bodySize": 1252, "bodySha256": "EC2947804828629DF48565346CE710FD1B0C072ADEB86D782F9FE68F4101F265"},
+      "entityFields": [{"fieldName": "_targetNpc", "memberOrdinalZeroBased": 10, "constantPointerOrdinal": 0, "fieldOffset": "0xd0", "setterToken": "0x0600c321", "setterPointerVa": "0x18a47dc04", "setterFileOffset": 172474884, "setterBodySize": 52, "setterBodySha256": "E2B4C43782B25350D9611CE893E70726014CC7B705D4787D7E8816023E3A215E"}]
+    },
+{
+      "actionName": "NpcPatrolPause", "unionTag": 797, "serializedMemberCount": 9,
+      "serializedValueLayout": {"managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>", "parameterTypeIndex": 85044, "fieldTypeIndex": 85046, "genericTypeDefinitionToken": "0x02001930", "genericArgumentTypeDefinitionToken": "0x02002f3a", "outerMemberCount": 4, "valueMemberCount": 3, "valueFields": ["logicId", "slotId", "useSlotId"]},
+      "deserialize": {"methodToken": "0x0600c337", "methodPointerVa": "0x1847f40e0", "fileOffset": 75441888, "bodySize": 624, "bodySha256": "6663794632AA1D6C613D8D3D618C0EF90ED44E83C06FAD001C8E351B83982B7D"},
+      "entityFields": [{"fieldName": "_targetNpc", "memberOrdinalZeroBased": 8, "constantPointerOrdinal": 0, "fieldOffset": "0xd0", "setterToken": "0x0600c331", "setterPointerVa": "0x1847f4350", "setterFileOffset": 75442512, "setterBodySize": 64, "setterBodySha256": "1422513EF5D663F042365BFB86A0401E54BC4F989BDF014C8D260A43CF40E866"}]
+    },
+{
+      "actionName": "NpcPatrolStart", "unionTag": 798, "serializedMemberCount": 12,
+      "serializedValueLayout": {"managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>", "parameterTypeIndex": 85044, "fieldTypeIndex": 85046, "genericTypeDefinitionToken": "0x02001930", "genericArgumentTypeDefinitionToken": "0x02002f3a", "outerMemberCount": 4, "valueMemberCount": 3, "valueFields": ["logicId", "slotId", "useSlotId"]},
+      "deserialize": {"methodToken": "0x0600c34a", "methodPointerVa": "0x18455c090", "fileOffset": 72722064, "bodySize": 816, "bodySha256": "4F28F6CC78E1D94D0B4ED12A99A5866C9E983A095ECC69AF2DEE27040E24CBBC"},
+      "entityFields": [{"fieldName": "_targetNpc", "memberOrdinalZeroBased": 11, "constantPointerOrdinal": 0, "fieldOffset": "0xd0", "setterToken": "0x0600c344", "setterPointerVa": "0x18455c480", "setterFileOffset": 72723072, "setterBodySize": 64, "setterBodySha256": "961E500CD08D75F54353BA19B9377467BD7722A57E59EA06D8E2F7B3570AE95B"}]
+    },
+{
+      "actionName": "NpcPatrolStop", "unionTag": 799, "serializedMemberCount": 10,
+      "serializedValueLayout": {"managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>", "parameterTypeIndex": 85044, "fieldTypeIndex": 85046, "genericTypeDefinitionToken": "0x02001930", "genericArgumentTypeDefinitionToken": "0x02002f3a", "outerMemberCount": 4, "valueMemberCount": 3, "valueFields": ["logicId", "slotId", "useSlotId"]},
+      "deserialize": {"methodToken": "0x0600c35b", "methodPointerVa": "0x1845c69f0", "fileOffset": 73158640, "bodySize": 704, "bodySha256": "B0529B5E9C75497FB823D7793002DCF891E32D397D4077AAAC6CA99AE2FCAEC3"},
+      "entityFields": [{"fieldName": "_targetNpc", "memberOrdinalZeroBased": 9, "constantPointerOrdinal": 0, "fieldOffset": "0xd0", "setterToken": "0x0600c355", "setterPointerVa": "0x1845c6cf0", "setterFileOffset": 73159408, "setterBodySize": 64, "setterBodySha256": "D228F4200AD149B2066B48C3745EAFBC476402A6CE586B2F6E468E998ADF8598"}]
+    },
+{
+      "actionName": "NpcPlayMontage",
+      "unionTag": 802,
+      "serializedMemberCount": 14,
+      "serializedValueLayout": {
+        "managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>",
+        "parameterTypeIndex": 85044,
+        "fieldTypeIndex": 85046,
+        "genericTypeDefinitionToken": "0x02001930",
+        "genericArgumentTypeDefinitionToken": "0x02002f3a",
+        "outerMemberCount": 4,
+        "valueMemberCount": 3,
+        "valueFields": [
+          "logicId",
+          "slotId",
+          "useSlotId"
+        ]
+      },
+      "deserialize": {
+        "methodToken": "0x0600c2e1",
+        "methodPointerVa": "0x1841d3720",
+        "fileOffset": 69016864,
+        "bodySize": 944,
+        "bodySha256": "AF92C82FBDBC85C67F7951F0F5330EEE29BBB566697E3435F88AB399A83E0106"
+      },
+      "entityFields": [
+        {
+          "fieldName": "_targetNpc",
+          "memberOrdinalZeroBased": 13,
+          "constantPointerOrdinal": 0,
+          "fieldOffset": "0xd0",
+          "setterToken": "0x0600c2db",
+          "setterPointerVa": "0x1841d42c0",
+          "setterFileOffset": 69019840,
+          "setterBodySize": 64,
+          "setterBodySha256": "18C02846DB54E2E9AEDF80DD790BB9D478C29A574D5423922097C417E4397658"
+        }
+      ]
+    },
+{
+      "actionName": "NpcPlayMontageWithRootMotion",
+      "unionTag": 803,
+      "serializedMemberCount": 13,
+      "serializedValueLayout": {
+        "managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>",
+        "parameterTypeIndex": 85044,
+        "fieldTypeIndex": 85046,
+        "genericTypeDefinitionToken": "0x02001930",
+        "genericArgumentTypeDefinitionToken": "0x02002f3a",
+        "outerMemberCount": 4,
+        "valueMemberCount": 3,
+        "valueFields": [
+          "logicId",
+          "slotId",
+          "useSlotId"
+        ]
+      },
+      "deserialize": {
+        "methodToken": "0x0600c380",
+        "methodPointerVa": "0x1841d3b30",
+        "fileOffset": 69017904,
+        "bodySize": 880,
+        "bodySha256": "BEB8533B15530DE2F9E7CDE2B3DF9DA68F8C1950E00377D43CDC6333CAE823B8"
+      },
+      "entityFields": [
+        {
+          "fieldName": "targetNpc",
+          "memberOrdinalZeroBased": 11,
+          "constantPointerOrdinal": 0,
+          "fieldOffset": "0xd0",
+          "setterToken": "0x0600c379",
+          "setterPointerVa": "0x1841d3f60",
+          "setterFileOffset": 69018976,
+          "setterBodySize": 64,
+          "setterBodySha256": "5C451510FEBB16B14A3658FDB2B7F1B27490100768738DFD4237C0095CB44C3C"
+        }
+      ]
+    },
+{
+      "actionName": "NpcSwitchToAIBehavior",
+      "unionTag": 826,
+      "serializedMemberCount": 10,
+      "serializedValueLayout": {
+        "managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>",
+        "parameterTypeIndex": 85044,
+        "fieldTypeIndex": 85046,
+        "genericTypeDefinitionToken": "0x02001930",
+        "genericArgumentTypeDefinitionToken": "0x02002f3a",
+        "outerMemberCount": 4,
+        "valueMemberCount": 3,
+        "valueFields": [
+          "logicId",
+          "slotId",
+          "useSlotId"
+        ]
+      },
+      "deserialize": {
+        "methodToken": "0x0600c568",
+        "methodPointerVa": "0x18a4927a4",
+        "fileOffset": 172559780,
+        "bodySize": 1144,
+        "bodySha256": "70CEF3F63632ABCCCA80C56AF1A3145B6285F207E028A629D3DC2B89B13954F2"
+      },
+      "entityFields": [
+        {
+          "fieldName": "_targetNpc",
+          "memberOrdinalZeroBased": 9,
+          "constantPointerOrdinal": 0,
+          "fieldOffset": "0xd0",
+          "setterToken": "0x0600c562",
+          "setterPointerVa": "0x18a492fc0",
+          "setterFileOffset": 172561856,
+          "setterBodySize": 52,
+          "setterBodySha256": "16AA164F40AAC0E2E8B0F4344038E2C73193B117BE0E02A5DE0290717509DA41"
+        }
+      ]
+    },
+{
+      "actionName": "OpenBeaconPole",
+      "unionTag": 827,
+      "serializedMemberCount": 9,
+      "serializedValueLayout": {
+        "managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>",
+        "parameterTypeIndex": 85044,
+        "fieldTypeIndex": 85046,
+        "genericTypeDefinitionToken": "0x02001930",
+        "genericArgumentTypeDefinitionToken": "0x02002f3a",
+        "outerMemberCount": 4,
+        "valueMemberCount": 3,
+        "valueFields": [
+          "logicId",
+          "slotId",
+          "useSlotId"
+        ]
+      },
+      "deserialize": {
+        "methodToken": "0x0600b378",
+        "methodPointerVa": "0x18a3efbc0",
+        "fileOffset": 171893184,
+        "bodySize": 1028,
+        "bodySha256": "B44F3C6B4EACF637E419A853992658A60FE012F972187E53830E086450352DBF"
+      },
+      "entityFields": [
+        {
+          "fieldName": "_beaconPoleEntityPtr",
+          "memberOrdinalZeroBased": 8,
+          "constantPointerOrdinal": 0,
+          "fieldOffset": "0xd0",
+          "setterToken": "0x0600b372",
+          "setterPointerVa": "0x18a3f0334",
+          "setterFileOffset": 171895092,
+          "setterBodySize": 52,
+          "setterBodySha256": "858731859ED5EA59B14136112620A08688B6F0D08772331FA4182F2E9FA8DDDC"
+        }
+      ]
+    },
+{
+      "actionName": "PauseEnemyAI",
+      "unionTag": 837,
+      "serializedMemberCount": 10,
+      "serializedValueLayout": {
+        "managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>", "parameterTypeIndex": 85044, "fieldTypeIndex": 85046,
+        "genericTypeDefinitionToken": "0x02001930", "genericArgumentTypeDefinitionToken": "0x02002f3a",
+        "outerMemberCount": 4, "valueMemberCount": 3, "valueFields": ["logicId", "slotId", "useSlotId"]
+      },
+      "deserialize": {"methodToken": "0x0600aab9", "methodPointerVa": "0x18a3bd760", "fileOffset": 171687264, "bodySize": 1144, "bodySha256": "16A653C7A04A4C9450D8DE6D1EDA08F27A15752FC07C290B32021F95DD4E6385"},
+      "entityFields": [
+        {"fieldName": "_target", "memberOrdinalZeroBased": 9, "constantPointerOrdinal": 0, "fieldOffset": "0xd0", "setterToken": "0x0600aab3", "setterPointerVa": "0x18a3bdf7c", "setterFileOffset": 171689340, "setterBodySize": 52, "setterBodySha256": "B4E1C42B0F236DE25ADC365CF06456A2B4A986EBB233C926CE307C9F38285F83"}
+      ]
+    },
+{
+      "actionName": "Play3DRadio", "unionTag": 842, "serializedMemberCount": 20,
+      "serializedValueLayout": {"managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>", "parameterTypeIndex": 85044, "fieldTypeIndex": 85046, "genericTypeDefinitionToken": "0x02001930", "genericArgumentTypeDefinitionToken": "0x02002f3a", "outerMemberCount": 4, "valueMemberCount": 3, "valueFields": ["logicId", "slotId", "useSlotId"]},
+      "deserialize": {"methodToken": "0x0600bf7a", "methodPointerVa": "0x18a460988", "fileOffset": 172355464, "bodySize": 2100, "bodySha256": "CE28A43F22FFC40A3597B2120374518D3E0C24A427F809099D4EA421CA1BA0BA"},
+      "entityFields": [{"fieldName": "_entityPtr", "memberOrdinalZeroBased": 10, "constantPointerOrdinal": 0, "fieldOffset": "0xf8", "setterToken": "0x0600bf6b", "setterPointerVa": "0x1845a9f10", "setterFileOffset": 73041168, "setterBodySize": 64, "setterBodySha256": "B60A12DC34B2738EBF5C092C3D58DA5CB3D4CA30537FAD0296BB34B6AAFFF73C"}]
+    },
+{
+      "actionName": "Play3DRadioAndWait", "unionTag": 843, "serializedMemberCount": 20,
+      "serializedValueLayout": {"managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>", "parameterTypeIndex": 85044, "fieldTypeIndex": 85046, "genericTypeDefinitionToken": "0x02001930", "genericArgumentTypeDefinitionToken": "0x02002f3a", "outerMemberCount": 4, "valueMemberCount": 3, "valueFields": ["logicId", "slotId", "useSlotId"]},
+      "deserialize": {"methodToken": "0x0600bf89", "methodPointerVa": "0x1845a9a10", "fileOffset": 73039888, "bodySize": 1152, "bodySha256": "39CCE8A27BECCB39CDB75283E7253158A490336B05AFFAC72A9E306DA3540A06"},
+      "entityFields": [{"fieldName": "_entityPtr", "memberOrdinalZeroBased": 10, "constantPointerOrdinal": 0, "fieldOffset": "0xf8", "setterToken": "0x0600bf6b", "setterPointerVa": "0x1845a9f10", "setterFileOffset": 73041168, "setterBodySize": 64, "setterBodySha256": "B60A12DC34B2738EBF5C092C3D58DA5CB3D4CA30537FAD0296BB34B6AAFFF73C"}]
+    },
+{
+      "actionName": "PlayAudioOnTarget", "unionTag": 850, "serializedMemberCount": 12,
+      "serializedValueLayout": {"managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>", "parameterTypeIndex": 85044, "fieldTypeIndex": 85046, "genericTypeDefinitionToken": "0x02001930", "genericArgumentTypeDefinitionToken": "0x02002f3a", "outerMemberCount": 4, "valueMemberCount": 3, "valueFields": ["logicId", "slotId", "useSlotId"]},
+      "deserialize": {"methodToken": "0x06007732", "methodPointerVa": "0x183706180", "fileOffset": 57689984, "bodySize": 832, "bodySha256": "B7B9399B7772AFD5B54258F7C72C87BD05424C88796530C3193851C1B35B62BD"},
+      "entityFields": [{"fieldName": "_target", "memberOrdinalZeroBased": 11, "constantPointerOrdinal": 0, "fieldOffset": "0xd0", "setterToken": "0x0600772c", "setterPointerVa": "0x1837060e0", "setterFileOffset": 57689824, "setterBodySize": 64, "setterBodySha256": "9E95929C3F14FA9BE615FAEAF2843A789533726FB05D3E7BDEF86EE40D08D37E"}]
+    },
+{
+      "actionName": "PlayVoice", "unionTag": 872, "serializedMemberCount": 11,
+      "serializedValueLayout": {"managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>", "parameterTypeIndex": 85044, "fieldTypeIndex": 85046, "genericTypeDefinitionToken": "0x02001930", "genericArgumentTypeDefinitionToken": "0x02002f3a", "outerMemberCount": 4, "valueMemberCount": 3, "valueFields": ["logicId", "slotId", "useSlotId"]},
+      "deserialize": {"methodToken": "0x0600777e", "methodPointerVa": "0x18453f500", "fileOffset": 72604416, "bodySize": 768, "bodySha256": "C2B363D86833E8B8A9690E209B3E394D5022F22230A567AB1CE388FB1A5B9806"},
+      "entityFields": [{"fieldName": "_target", "memberOrdinalZeroBased": 8, "constantPointerOrdinal": 0, "fieldOffset": "0xd0", "setterToken": "0x06007776", "setterPointerVa": "0x18453f800", "setterFileOffset": 72605184, "setterBodySize": 64, "setterBodySha256": "96EA133C4C4284F68CBFF5E63785E2C661CEC3CE6ADCA50D1B75A31036821BF4"}]
+    },
+{
+      "actionName": "RemoveEntityNavmeshArea", "unionTag": 904, "serializedMemberCount": 9,
+      "serializedValueLayout": {"managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>", "parameterTypeIndex": 85044, "fieldTypeIndex": 85046, "genericTypeDefinitionToken": "0x02001930", "genericArgumentTypeDefinitionToken": "0x02002f3a", "outerMemberCount": 4, "valueMemberCount": 3, "valueFields": ["logicId", "slotId", "useSlotId"]},
+      "deserialize": {"methodToken": "0x0600ac6b", "methodPointerVa": "0x18a3be36c", "fileOffset": 171690348, "bodySize": 1028, "bodySha256": "07A60B9DABF79EFADEF9BA1EEE17BE5841C287C731662B0CFD18863BA6EC04FD"},
+      "entityFields": [{"fieldName": "_target", "memberOrdinalZeroBased": 8, "constantPointerOrdinal": 0, "fieldOffset": "0xd0", "setterToken": "0x0600ac65", "setterPointerVa": "0x18a3beae0", "setterFileOffset": 171692256, "setterBodySize": 52, "setterBodySha256": "CB2190B82AF8C0D5E31E363931F2850BD5580E5B4D903C54FF53BF98D03DB1CC"}]
+    },
+{
+      "actionName": "SetAnimatorInt", "unionTag": 977, "serializedMemberCount": 11,
+      "serializedValueLayout": {"managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>", "parameterTypeIndex": 85044, "fieldTypeIndex": 85046, "genericTypeDefinitionToken": "0x02001930", "genericArgumentTypeDefinitionToken": "0x02002f3a", "outerMemberCount": 4, "valueMemberCount": 3, "valueFields": ["logicId", "slotId", "useSlotId"]},
+      "deserialize": {"methodToken": "0x0600a769", "methodPointerVa": "0x1844b90a0", "fileOffset": 72054432, "bodySize": 768, "bodySha256": "5CE17C6B58F7F37534E2F8D4FC20991423E126BD981F380B39A2837CA94AAB97"},
+      "entityFields": [{"fieldName": "_entity", "memberOrdinalZeroBased": 8, "constantPointerOrdinal": 0, "fieldOffset": "0xd0", "setterToken": "0x0600a761", "setterPointerVa": "0x1844b93a0", "setterFileOffset": 72055200, "setterBodySize": 64, "setterBodySha256": "E297947268A0A8A5E5E0A03D3CD1519CA1AE8A081E53EB67BA9A7E1F5C98F7C0"}]
+    },
+{
+      "actionName": "SetAnimatorTrigger", "unionTag": 979, "serializedMemberCount": 10,
+      "serializedValueLayout": {"managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>", "parameterTypeIndex": 85044, "fieldTypeIndex": 85046, "genericTypeDefinitionToken": "0x02001930", "genericArgumentTypeDefinitionToken": "0x02002f3a", "outerMemberCount": 4, "valueMemberCount": 3, "valueFields": ["logicId", "slotId", "useSlotId"]},
+      "deserialize": {"methodToken": "0x0600a78b", "methodPointerVa": "0x1845c6530", "fileOffset": 73157424, "bodySize": 704, "bodySha256": "C9699B60FBF1371DE3B797E2DC54B29990E6525EDDA1F9949160A480FCCB9038"},
+      "entityFields": [{"fieldName": "_entity", "memberOrdinalZeroBased": 8, "constantPointerOrdinal": 0, "fieldOffset": "0xd0", "setterToken": "0x0600a784", "setterPointerVa": "0x1845c67f0", "setterFileOffset": 73158128, "setterBodySize": 64, "setterBodySha256": "07826AD05974242B63B1B929D406806DB0354ED252C9003649E3FD05F977FBF6"}]
+    },
+{
+      "actionName": "SetCraneContainerState",
+      "unionTag": 1001,
+      "serializedMemberCount": 10,
+      "serializedValueLayout": {
+        "managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>",
+        "parameterTypeIndex": 85044,
+        "fieldTypeIndex": 85046,
+        "genericTypeDefinitionToken": "0x02001930",
+        "genericArgumentTypeDefinitionToken": "0x02002f3a",
+        "outerMemberCount": 4,
+        "valueMemberCount": 3,
+        "valueFields": [
+          "logicId",
+          "slotId",
+          "useSlotId"
+        ]
+      },
+      "deserialize": {
+        "methodToken": "0x0600b8c8",
+        "methodPointerVa": "0x18a41e660",
+        "fileOffset": 172084320,
+        "bodySize": 1144,
+        "bodySha256": "8CDF6596247AFED2F8920CDB31EEC87DEC775576A9F3624D8409EAA7CE8441FF"
+      },
+      "entityFields": [
+        {
+          "fieldName": "entityTarget",
+          "memberOrdinalZeroBased": 8,
+          "constantPointerOrdinal": 0,
+          "fieldOffset": "0xd0",
+          "setterToken": "0x0600b8c1",
+          "setterPointerVa": "0x18a41eea4",
+          "setterFileOffset": 172086436,
+          "setterBodySize": 52,
+          "setterBodySha256": "1474084802BDA8A2A924D829FCF9BF55A8C74D01E06199B2B87C847A17D224E0"
+        }
+      ]
+    },
+{
+      "actionName": "SetEnablePlayerAction", "unionTag": 1007, "serializedMemberCount": 11,
+      "nonEntityContract": true,
+      "deserialize": {"methodToken": "0x0600a553", "methodPointerVa": "0x184515b50", "fileOffset": 72434000, "bodySize": 752, "bodySha256": "78894CB33386E61008F280AAFCBB09CD4BED89577056DBD5A2A7240219A480AF"},
+      "entityFields": []
+    },
+{
+      "actionName": "SetEnemyAIMode",
+      "unionTag": 1012,
+      "serializedMemberCount": 10,
+      "serializedValueLayout": {
+        "managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>", "parameterTypeIndex": 85044, "fieldTypeIndex": 85046,
+        "genericTypeDefinitionToken": "0x02001930", "genericArgumentTypeDefinitionToken": "0x02002f3a",
+        "outerMemberCount": 4, "valueMemberCount": 3, "valueFields": ["logicId", "slotId", "useSlotId"]
+      },
+      "deserialize": {"methodToken": "0x0600aadb", "methodPointerVa": "0x18a3c176c", "fileOffset": 171703660, "bodySize": 1144, "bodySha256": "78A0973F7E624DBECDB99470B582DDA7B9056592E6250300C2425F1B8DDDDC28"},
+      "entityFields": [
+        {"fieldName": "_target", "memberOrdinalZeroBased": 9, "constantPointerOrdinal": 0, "fieldOffset": "0xd0", "setterToken": "0x0600aad5", "setterPointerVa": "0x18a3c1fe4", "setterFileOffset": 171705828, "setterBodySize": 52, "setterBodySha256": "A74E828D3838A02C0BAA11A978AFFFDDFE3709821169B9479E49FBF10C065896"}
+      ]
+    },
+{
+      "actionName": "SetEntityEulerAngles", "unionTag": 1015, "serializedMemberCount": 10,
+      "serializedValueLayout": {"managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>", "parameterTypeIndex": 85044, "fieldTypeIndex": 85046, "genericTypeDefinitionToken": "0x02001930", "genericArgumentTypeDefinitionToken": "0x02002f3a", "outerMemberCount": 4, "valueMemberCount": 3, "valueFields": ["logicId", "slotId", "useSlotId"]},
+      "deserialize": {"methodToken": "0x0600acc6", "methodPointerVa": "0x1847a7e60", "fileOffset": 75129952, "bodySize": 688, "bodySha256": "7FAE14D3A6AC8A14D80EB532CD7F4E4D6743F1ED0DE15678E5BAAF49D5E4AFDE"},
+      "entityFields": [{"fieldName": "_target", "memberOrdinalZeroBased": 9, "constantPointerOrdinal": 0, "fieldOffset": "0xd0", "setterToken": "0x0600acc0", "setterPointerVa": "0x1847a8150", "setterFileOffset": 75130704, "setterBodySize": 64, "setterBodySha256": "D81D41D0EA114410789489903CFD165C1CF7080B53743AB5864D548F9F6B3107"}]
+    },
+{
+      "actionName": "SetEntityEulerAnglesLookAt", "unionTag": 1016, "serializedMemberCount": 11,
+      "serializedValueLayout": {"managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>", "parameterTypeIndex": 85044, "fieldTypeIndex": 85046, "genericTypeDefinitionToken": "0x02001930", "genericArgumentTypeDefinitionToken": "0x02002f3a", "outerMemberCount": 4, "valueMemberCount": 3, "valueFields": ["logicId", "slotId", "useSlotId"]},
+      "deserialize": {"methodToken": "0x0600acd8", "methodPointerVa": "0x1844e51a0", "fileOffset": 72234912, "bodySize": 752, "bodySha256": "4468E1CF7E6A9AACEA84DE0D542C5ADD96AB04EB50299CEE9EE5D18F1CFC7FA8"},
+      "entityFields": [{"fieldName": "_lookatTarget", "memberOrdinalZeroBased": 8, "constantPointerOrdinal": 0, "fieldOffset": "0xd8", "setterToken": "0x0600acd0", "setterPointerVa": "0x1844e5490", "setterFileOffset": 72235664, "setterBodySize": 64, "setterBodySha256": "A5BF013C955A69F8FEA9C7AB622C2A1F00E66C9830B8573B38530BA7AE8DA112"}, {"fieldName": "_target", "memberOrdinalZeroBased": 9, "constantPointerOrdinal": 1, "fieldOffset": "0xd0", "setterToken": "0x0600acd1", "setterPointerVa": "0x1844e54d0", "setterFileOffset": 72235728, "setterBodySize": 64, "setterBodySha256": "7C0AB446737269C89EEFBC3CC23209AB48EAB64143835A5E8A75BEF40E8685DA"}]
+    },
+{
+      "actionName": "SetEntityPosition", "unionTag": 1018, "serializedMemberCount": 10,
+      "serializedValueLayout": {"managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>", "parameterTypeIndex": 85044, "fieldTypeIndex": 85046, "genericTypeDefinitionToken": "0x02001930", "genericArgumentTypeDefinitionToken": "0x02002f3a", "outerMemberCount": 4, "valueMemberCount": 3, "valueFields": ["logicId", "slotId", "useSlotId"]},
+      "deserialize": {"methodToken": "0x0600ace9", "methodPointerVa": "0x18a3d4108", "fileOffset": 171779848, "bodySize": 1144, "bodySha256": "1DEF4DFDA5858BDD452B91CC0D29A7FD27FB1EE1EAAE6CE5E384114171A4A156"},
+      "entityFields": [{"fieldName": "_target", "memberOrdinalZeroBased": 9, "constantPointerOrdinal": 0, "fieldOffset": "0xd0", "setterToken": "0x0600ace3", "setterPointerVa": "0x18a3d4924", "setterFileOffset": 171781924, "setterBodySize": 52, "setterBodySha256": "77DB059438051BFE1A65178F1328CF2358F26A41D5626CDF0F4CE6BD059A19BB"}]
+    },
+{
+      "actionName": "SetInteractiveResponseToWaterGun",
+      "unionTag": 1042,
+      "serializedMemberCount": 10,
+      "serializedValueLayout": {
+        "managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>",
+        "parameterTypeIndex": 85044,
+        "fieldTypeIndex": 85046,
+        "genericTypeDefinitionToken": "0x02001930",
+        "genericArgumentTypeDefinitionToken": "0x02002f3a",
+        "outerMemberCount": 4,
+        "valueMemberCount": 3,
+        "valueFields": [
+          "logicId",
+          "slotId",
+          "useSlotId"
+        ]
+      },
+      "deserialize": {
+        "methodToken": "0x0600b8fb",
+        "methodPointerVa": "0x18a41fab4",
+        "fileOffset": 172089524,
+        "bodySize": 1144,
+        "bodySha256": "A588A81FBADAAA3F8E7020A45BD70FD2A80D34B41372CC4D947F37CF8A93EC44"
+      },
+      "entityFields": [
+        {
+          "fieldName": "_target",
+          "memberOrdinalZeroBased": 9,
+          "constantPointerOrdinal": 0,
+          "fieldOffset": "0xd0",
+          "setterToken": "0x0600b8f5",
+          "setterPointerVa": "0x18a4202d0",
+          "setterFileOffset": 172091600,
+          "setterBodySize": 52,
+          "setterBodySha256": "5614E8D236FB40403CA4545D1AF106D524DA47FBD8ECCBC48044316CBB94158A"
+        }
+      ]
+    },
+{
+      "actionName": "SetMainCharFocusTarget", "unionTag": 1100, "serializedMemberCount": 10,
+      "serializedValueLayout": {"managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>", "parameterTypeIndex": 85044, "fieldTypeIndex": 85046, "genericTypeDefinitionToken": "0x02001930", "genericArgumentTypeDefinitionToken": "0x02002f3a", "outerMemberCount": 4, "valueMemberCount": 3, "valueFields": ["logicId", "slotId", "useSlotId"]},
+      "deserialize": {"methodToken": "0x0600a5da", "methodPointerVa": "0x18a396eb4", "fileOffset": 171529396, "bodySize": 1144, "bodySha256": "FFFE08EE86EC733972FB0F29AA451D353E540CDBE43186C3BCC605566CBAD649"},
+      "entityFields": [{"fieldName": "_target", "memberOrdinalZeroBased": 9, "constantPointerOrdinal": 0, "fieldOffset": "0xd0", "setterToken": "0x0600a5d4", "setterPointerVa": "0x18a3976d0", "setterFileOffset": 171531472, "setterBodySize": 52, "setterBodySha256": "51361A15BF9CABFD36B52CC43192481238D1AC38804EE77036E6E5B409CF2BB6"}]
+    },
+{
+      "actionName": "SetNpcTransform",
+      "unionTag": 1107,
+      "serializedMemberCount": 11,
+      "serializedValueLayout": {
+        "managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>",
+        "parameterTypeIndex": 85044,
+        "fieldTypeIndex": 85046,
+        "genericTypeDefinitionToken": "0x02001930",
+        "genericArgumentTypeDefinitionToken": "0x02002f3a",
+        "outerMemberCount": 4,
+        "valueMemberCount": 3,
+        "valueFields": [
+          "logicId",
+          "slotId",
+          "useSlotId"
+        ]
+      },
+      "deserialize": {
+        "methodToken": "0x0600ad0c",
+        "methodPointerVa": "0x18a3d5500",
+        "fileOffset": 171784960,
+        "bodySize": 1228,
+        "bodySha256": "F1549D2199DFA0A6ECC317FC1BC8C35675859F873F2443579C8BB8C09C25C337"
+      },
+      "entityFields": [
+        {
+          "fieldName": "_target",
+          "memberOrdinalZeroBased": 10,
+          "constantPointerOrdinal": 0,
+          "fieldOffset": "0xd0",
+          "setterToken": "0x0600ad06",
+          "setterPointerVa": "0x18a3d5da4",
+          "setterFileOffset": 171787172,
+          "setterBodySize": 52,
+          "setterBodySha256": "FF5FEA163C2B0EED5E4D3DDF2392EBB031BF45FE2722CADB3469234DBC72FDD0"
+        }
+      ]
+    },
+{
+      "actionName": "SetTargetForceInFight", "unionTag": 1126, "serializedMemberCount": 10,
+      "serializedValueLayout": {"managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>", "parameterTypeIndex": 85044, "fieldTypeIndex": 85046, "genericTypeDefinitionToken": "0x02001930", "genericArgumentTypeDefinitionToken": "0x02002f3a", "outerMemberCount": 4, "valueMemberCount": 3, "valueFields": ["logicId", "slotId", "useSlotId"]},
+      "deserialize": {"methodToken": "0x06009fe9", "methodPointerVa": "0x184661190", "fileOffset": 73791376, "bodySize": 688, "bodySha256": "F6E5C6830BFE141C43EE43F049D8D17B737846FD8DB8FB9D9918D448A5053EFD"},
+      "entityFields": [{"fieldName": "_target", "memberOrdinalZeroBased": 9, "constantPointerOrdinal": 0, "fieldOffset": "0xd0", "setterToken": "0x06009fe3", "setterPointerVa": "0x184661480", "setterFileOffset": 73792128, "setterBodySize": 64, "setterBodySha256": "279DCBBA7779E7593FF0C3CBE4EED93680A74EF46E652FD49F6BF45FC28CA763"}]
+    },
+{
+      "actionName": "SetTriggerIsActive",
+      "unionTag": 1130,
+      "serializedMemberCount": 10,
+      "serializedValueLayout": {
+        "managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>",
+        "parameterTypeIndex": 85044,
+        "fieldTypeIndex": 85046,
+        "genericTypeDefinitionToken": "0x02001930",
+        "genericArgumentTypeDefinitionToken": "0x02002f3a",
+        "outerMemberCount": 4,
+        "valueMemberCount": 3,
+        "valueFields": [
+          "logicId",
+          "slotId",
+          "useSlotId"
+        ]
+      },
+      "deserialize": {
+        "methodToken": "0x0600b9a1",
+        "methodPointerVa": "0x184660cf0",
+        "fileOffset": 73790192,
+        "bodySize": 688,
+        "bodySha256": "0D931331FC40CB2F2BB528B9375827F79D55D95F162CB6BBBBC2AE564EEE08E1"
+      },
+      "entityFields": [
+        {
+          "fieldName": "_entity",
+          "memberOrdinalZeroBased": 8,
+          "constantPointerOrdinal": 0,
+          "fieldOffset": "0xd0",
+          "setterToken": "0x0600b99a",
+          "setterPointerVa": "0x184660fa0",
+          "setterFileOffset": 73790880,
+          "setterBodySize": 64,
+          "setterBodySha256": "1D8DCB1503E16657EC311185378C69D0D71EA212D5AEC9A40DEAA733EF48F9C7"
+        }
+      ]
+    },
+{
+      "actionName": "SetWaterPipeRotateState",
+      "unionTag": 1136,
+      "serializedMemberCount": 10,
+      "serializedValueLayout": {
+        "managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>",
+        "parameterTypeIndex": 85044,
+        "fieldTypeIndex": 85046,
+        "genericTypeDefinitionToken": "0x02001930",
+        "genericArgumentTypeDefinitionToken": "0x02002f3a",
+        "outerMemberCount": 4,
+        "valueMemberCount": 3,
+        "valueFields": [
+          "logicId",
+          "slotId",
+          "useSlotId"
+        ]
+      },
+      "deserialize": {
+        "methodToken": "0x0600bd25",
+        "methodPointerVa": "0x18a43da4c",
+        "fileOffset": 172212300,
+        "bodySize": 1144,
+        "bodySha256": "7C1AD87F87E50F1B703781EB847951B8A5036440F7EC2519D58CD38C66080CBE"
+      },
+      "entityFields": [
+        {
+          "fieldName": "_targetEntity",
+          "memberOrdinalZeroBased": 9,
+          "constantPointerOrdinal": 0,
+          "fieldOffset": "0xd0",
+          "setterToken": "0x0600bd1f",
+          "setterPointerVa": "0x18a43e268",
+          "setterFileOffset": 172214376,
+          "setterBodySize": 52,
+          "setterBodySha256": "5E202CB3892391F05766003AB16B713705A04126D5C761D57BDB78A4DDCA55D9"
+        }
+      ]
+    },
+{
+      "actionName": "ShowUIToast_DevOnly", "unionTag": 1166, "serializedMemberCount": 10,
+      "nonEntityContract": true,
+      "deserialize": {"methodToken": "0x0600cad0", "methodPointerVa": "0x1843fa2d0", "fileOffset": 71272656, "bodySize": 704, "bodySha256": "1F7A88AC7DFCE705B1DBF62D549CCE01E306D399AF8C3545E1FE860C7F23523C"},
+      "entityFields": []
+    },
+{
+      "actionName": "SkipEntityDieDisplay",
+      "unionTag": 1168,
+      "serializedMemberCount": 9,
+      "serializedValueLayout": {
+        "managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>",
+        "parameterTypeIndex": 85044,
+        "fieldTypeIndex": 85046,
+        "genericTypeDefinitionToken": "0x02001930",
+        "genericArgumentTypeDefinitionToken": "0x02002f3a",
+        "outerMemberCount": 4,
+        "valueMemberCount": 3,
+        "valueFields": [
+          "logicId",
+          "slotId",
+          "useSlotId"
+        ]
+      },
+      "deserialize": {
+        "methodToken": "0x06009ff9",
+        "methodPointerVa": "0x18a368f3c",
+        "fileOffset": 171341116,
+        "bodySize": 1028,
+        "bodySha256": "7D1FAA400A9F27023902AD35371EF47D156E300158700C2EC91E4090C348F0D2"
+      },
+      "entityFields": [
+        {
+          "fieldName": "_target",
+          "memberOrdinalZeroBased": 8,
+          "constantPointerOrdinal": 0,
+          "fieldOffset": "0xd0",
+          "setterToken": "0x06009ff3",
+          "setterPointerVa": "0x18a3696b0",
+          "setterFileOffset": 171343024,
+          "setterBodySize": 52,
+          "setterBodySha256": "F7A428463218C7559944E7CD089F292DA2D9E0DD1195C1BA108C4DD5FE5F19F7"
+        }
+      ]
+    },
+{
+      "actionName": "SpawnOrResetKickableInteractive",
+      "unionTag": 1171,
+      "serializedMemberCount": 9,
+      "serializedValueLayout": {
+        "managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>",
+        "parameterTypeIndex": 85044,
+        "fieldTypeIndex": 85046,
+        "genericTypeDefinitionToken": "0x02001930",
+        "genericArgumentTypeDefinitionToken": "0x02002f3a",
+        "outerMemberCount": 4,
+        "valueMemberCount": 3,
+        "valueFields": [
+          "logicId",
+          "slotId",
+          "useSlotId"
+        ]
+      },
+      "deserialize": {
+        "methodToken": "0x0600b95f",
+        "methodPointerVa": "0x18a431db8",
+        "fileOffset": 172164024,
+        "bodySize": 1028,
+        "bodySha256": "310D124D8F620440F85F91C3509501717500142E648DD165EF676223BB4C4C25"
+      },
+      "entityFields": [
+        {
+          "fieldName": "spawnerEntity",
+          "memberOrdinalZeroBased": 8,
+          "constantPointerOrdinal": 0,
+          "fieldOffset": "0xd0",
+          "setterToken": "0x0600b959",
+          "setterPointerVa": "0x18a43252c",
+          "setterFileOffset": 172165932,
+          "setterBodySize": 52,
+          "setterBodySha256": "D9DE2E11790084158A73377E8DF347A55F2B18911B46E2711BC29693202C76A7"
+        }
+      ]
+    },
+{
+      "actionName": "SpawnPreloadedEntity", "unionTag": 1172, "serializedMemberCount": 9,
+      "serializedValueLayout": {"managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>", "parameterTypeIndex": 85044, "fieldTypeIndex": 85046, "genericTypeDefinitionToken": "0x02001930", "genericArgumentTypeDefinitionToken": "0x02002f3a", "outerMemberCount": 4, "valueMemberCount": 3, "valueFields": ["logicId", "slotId", "useSlotId"]},
+      "deserialize": {"methodToken": "0x0600ad1c", "methodPointerVa": "0x18a3d5f84", "fileOffset": 171787652, "bodySize": 1028, "bodySha256": "73DD88643DF59780722D83033366DBDCB314CE874F411624C6BF3A65A0873745"},
+      "entityFields": [{"fieldName": "entityId", "memberOrdinalZeroBased": 8, "constantPointerOrdinal": 0, "fieldOffset": "0xd0", "setterToken": "0x0600ad16", "setterPointerVa": "0x18a3d66f8", "setterFileOffset": 171789560, "setterBodySize": 52, "setterBodySha256": "A432B0FA8CC07B1D5C5B8D9529BD74DD86F68E2154E4E5A493A8560052A83CB9"}]
+    },
+{
+      "actionName": "StartSeamlessPortal", "unionTag": 1193, "serializedMemberCount": 9,
+      "serializedValueLayout": {"managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>", "parameterTypeIndex": 85044, "fieldTypeIndex": 85046, "genericTypeDefinitionToken": "0x02001930", "genericArgumentTypeDefinitionToken": "0x02002f3a", "outerMemberCount": 4, "valueMemberCount": 3, "valueFields": ["logicId", "slotId", "useSlotId"]},
+      "deserialize": {"methodToken": "0x0600a79b", "methodPointerVa": "0x18a39c670", "fileOffset": 171551856, "bodySize": 1028, "bodySha256": "92B9F26C80563D913C10B0C7082AA53F046FF278E18B550D6A15FE8D9F8C243F"},
+      "entityFields": [{"fieldName": "entity", "memberOrdinalZeroBased": 8, "constantPointerOrdinal": 0, "fieldOffset": "0xd0", "setterToken": "0x0600a795", "setterPointerVa": "0x18a39cde4", "setterFileOffset": 171553764, "setterBodySize": 52, "setterBodySha256": "EC5EA3D2DD4DCCF4E598EC5FF870EC771228F821798DE48574D7B830D4A73B1E"}]
+    },
+{
+      "actionName": "StartTrackCamera", "unionTag": 1195, "serializedMemberCount": 14,
+      "serializedValueLayout": {"managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>", "parameterTypeIndex": 85044, "fieldTypeIndex": 85046, "genericTypeDefinitionToken": "0x02001930", "genericArgumentTypeDefinitionToken": "0x02002f3a", "outerMemberCount": 4, "valueMemberCount": 3, "valueFields": ["logicId", "slotId", "useSlotId"]},
+      "deserialize": {"methodToken": "0x0600a2cf", "methodPointerVa": "0x18a3768fc", "fileOffset": 171396860, "bodySize": 1532, "bodySha256": "EF6FE249723E30817FC4D54109DFE068354422B5BDCD8FDAF92D20A709E2DDF3"},
+      "entityFields": [{"fieldName": "follow", "memberOrdinalZeroBased": 9, "constantPointerOrdinal": 0, "fieldOffset": "0xe8", "setterToken": "0x0600a2c5", "setterPointerVa": "0x18a3772d0", "setterFileOffset": 171399376, "setterBodySize": 52, "setterBodySha256": "B3E503AB7A457D24C96383B3A1E5D6A78A969AE10D36E1E66257910E9FAB28E4"}, {"fieldName": "lookAt", "memberOrdinalZeroBased": 11, "constantPointerOrdinal": 1, "fieldOffset": "0xf0", "setterToken": "0x0600a2c7", "setterPointerVa": "0x18a377304", "setterFileOffset": 171399428, "setterBodySize": 52, "setterBodySha256": "EAF015993CF1183C242AC1F61EAC78B23955A238DAC088530E987260BC267E0C"}]
+    },
+{
+      "actionName": "SwitchAudioState",
+      "unionTag": 1212,
+      "serializedMemberCount": 11,
+      "serializedValueLayout": {
+        "managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>",
+        "parameterTypeIndex": 85044,
+        "fieldTypeIndex": 85046,
+        "genericTypeDefinitionToken": "0x02001930",
+        "genericArgumentTypeDefinitionToken": "0x02002f3a",
+        "outerMemberCount": 4,
+        "valueMemberCount": 3,
+        "valueFields": [
+          "logicId",
+          "slotId",
+          "useSlotId"
+        ]
+      },
+      "deserialize": {
+        "methodToken": "0x060078b5",
+        "methodPointerVa": "0x183d9a030",
+        "fileOffset": 64587312,
+        "bodySize": 768,
+        "bodySha256": "599BDD17C5DECBF833BEAC34116B556EBA352C66EEF12285D23F965B08AE8908"
+      },
+      "entityFields": [
+        {
+          "fieldName": "_target",
+          "memberOrdinalZeroBased": 9,
+          "constantPointerOrdinal": 0,
+          "fieldOffset": "0xd0",
+          "setterToken": "0x060078ae",
+          "setterPointerVa": "0x183d9a460",
+          "setterFileOffset": 64588384,
+          "setterBodySize": 64,
+          "setterBodySha256": "497064AB03273A9CD136CAFCA8D9A1A4AFB109BC467F94FADA45A0EC5D3AB736"
+        }
+      ]
+    },
+{
+      "actionName": "SwitchToCamera", "unionTag": 1217, "serializedMemberCount": 18,
+      "serializedValueLayout": {"managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>", "parameterTypeIndex": 85044, "fieldTypeIndex": 85046, "genericTypeDefinitionToken": "0x02001930", "genericArgumentTypeDefinitionToken": "0x02002f3a", "outerMemberCount": 4, "valueMemberCount": 3, "valueFields": ["logicId", "slotId", "useSlotId"]},
+      "deserialize": {"methodToken": "0x0600a2e8", "methodPointerVa": "0x18a37754c", "fileOffset": 171400012, "bodySize": 1956, "bodySha256": "369F6770A4BB660F1F8EF3F58B7E15356FF30F7CF89109A40BB422C4E64277CE"},
+      "entityFields": [{"fieldName": "_spawnLookAt", "memberOrdinalZeroBased": 14, "constantPointerOrdinal": 0, "fieldOffset": "0xf0", "setterToken": "0x0600a2df", "setterPointerVa": "0x18a378228", "setterFileOffset": 171403304, "setterBodySize": 52, "setterBodySha256": "2DB7CEA836575F7CD9BDAEB2E920D939855004257B01BAFE4EFCC858D6B27337"}]
+    },
+{
+      "actionName": "WaitCraneTowerOperationsFinish",
+      "unionTag": 1261,
+      "serializedMemberCount": 9,
+      "serializedValueLayout": {
+        "managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>",
+        "parameterTypeIndex": 85044,
+        "fieldTypeIndex": 85046,
+        "genericTypeDefinitionToken": "0x02001930",
+        "genericArgumentTypeDefinitionToken": "0x02002f3a",
+        "outerMemberCount": 4,
+        "valueMemberCount": 3,
+        "valueFields": [
+          "logicId",
+          "slotId",
+          "useSlotId"
+        ]
+      },
+      "deserialize": {
+        "methodToken": "0x0600b9e4",
+        "methodPointerVa": "0x18a432814",
+        "fileOffset": 172166676,
+        "bodySize": 1028,
+        "bodySha256": "AD968B3BBFA45BC9DC053C4029DD1FADB7AB646DF1A96D4004B082A5FD45579A"
+      },
+      "entityFields": [
+        {
+          "fieldName": "_craneTowerEntity",
+          "memberOrdinalZeroBased": 8,
+          "constantPointerOrdinal": 0,
+          "fieldOffset": "0xd0",
+          "setterToken": "0x0600b9de",
+          "setterPointerVa": "0x18a432f88",
+          "setterFileOffset": 172168584,
+          "setterBodySize": 52,
+          "setterBodySha256": "90CCEF1F09E2C4B4C0F65C155F3D6688A0F669A416608E7ABB6E1A2A1B34AE05"
+        }
+      ]
+    },
+{
+      "actionName": "WaitForEntityStart", "unionTag": 1266, "serializedMemberCount": 9,
+      "serializedValueLayout": {"managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>", "parameterTypeIndex": 85044, "fieldTypeIndex": 85046, "genericTypeDefinitionToken": "0x02001930", "genericArgumentTypeDefinitionToken": "0x02002f3a", "outerMemberCount": 4, "valueMemberCount": 3, "valueFields": ["logicId", "slotId", "useSlotId"]},
+      "deserialize": {"methodToken": "0x0600ad2c", "methodPointerVa": "0x1844678f0", "fileOffset": 71720688, "bodySize": 656, "bodySha256": "72627C7D7EAF2F5B964CBECCB5F4D840C508CFD2075A69965F54916CFDC115F3"},
+      "entityFields": [{"fieldName": "_target", "memberOrdinalZeroBased": 8, "constantPointerOrdinal": 0, "fieldOffset": "0xd0", "setterToken": "0x0600ad26", "setterPointerVa": "0x184467b80", "setterFileOffset": 71721344, "setterBodySize": 64, "setterBodySha256": "D7072AA63FDC656C59459C8C48F348F7463B4FB0DDB74A347D2AE035C495D356"}]
+    },
+{
+      "actionName": "ActiveRopeAnim",
+      "unionTag": 1283,
+      "serializedMemberCount": 9,
+      "serializedValueLayout": {
+        "managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>",
+        "parameterTypeIndex": 85044,
+        "fieldTypeIndex": 85046,
+        "genericTypeDefinitionToken": "0x02001930",
+        "genericArgumentTypeDefinitionToken": "0x02002f3a",
+        "outerMemberCount": 4,
+        "valueMemberCount": 3,
+        "valueFields": [
+          "logicId",
+          "slotId",
+          "useSlotId"
+        ]
+      },
+      "deserialize": {
+        "methodToken": "0x0600b69d",
+        "methodPointerVa": "0x18a40fa90",
+        "fileOffset": 172023952,
+        "bodySize": 1028,
+        "bodySha256": "0C4D5F5E00BAFD84F505D53633DB2E4F8CDE6457C5E65F2D07C765AD835C4B7E"
+      },
+      "entityFields": [
+        {
+          "fieldName": "target",
+          "memberOrdinalZeroBased": 8,
+          "constantPointerOrdinal": 0,
+          "fieldOffset": "0xd0",
+          "setterToken": "0x0600b697",
+          "setterPointerVa": "0x18a410204",
+          "setterFileOffset": 172025860,
+          "setterBodySize": 52,
+          "setterBodySha256": "AD8A9EC6D21BF39A40630B53CD211C480903E9CA881CEECC221752818B2DCB70"
+        }
+      ]
+    },
+{
+      "actionName": "FreezeSingleAnchorWave",
+      "unionTag": 1289,
+      "serializedMemberCount": 9,
+      "serializedValueLayout": {
+        "managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>",
+        "parameterTypeIndex": 85044,
+        "fieldTypeIndex": 85046,
+        "genericTypeDefinitionToken": "0x02001930",
+        "genericArgumentTypeDefinitionToken": "0x02002f3a",
+        "outerMemberCount": 4,
+        "valueMemberCount": 3,
+        "valueFields": [
+          "logicId",
+          "slotId",
+          "useSlotId"
+        ]
+      },
+      "deserialize": {
+        "methodToken": "0x0600b2cf",
+        "methodPointerVa": "0x18a3f98c8",
+        "fileOffset": 171933384,
+        "bodySize": 1028,
+        "bodySha256": "490203FC1FDE1104AE8D340055F0E57EF317F194E147470232DD8E49762D264B"
+      },
+      "entityFields": [
+        {
+          "fieldName": "_entity",
+          "memberOrdinalZeroBased": 8,
+          "constantPointerOrdinal": 0,
+          "fieldOffset": "0xd0",
+          "setterToken": "0x0600b2c9",
+          "setterPointerVa": "0x18a3fa03c",
+          "setterFileOffset": 171935292,
+          "setterBodySize": 52,
+          "setterBodySha256": "276B378F9B5371D26402697E69923074F187C352A29F5869CECA38C28082627D"
+        }
+      ]
+    },
+{
+      "actionName": "MoveUnstableRuneColumn",
+      "unionTag": 1292,
+      "serializedMemberCount": 10,
+      "serializedValueLayout": {
+        "managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>",
+        "parameterTypeIndex": 85044,
+        "fieldTypeIndex": 85046,
+        "genericTypeDefinitionToken": "0x02001930",
+        "genericArgumentTypeDefinitionToken": "0x02002f3a",
+        "outerMemberCount": 4,
+        "valueMemberCount": 3,
+        "valueFields": [
+          "logicId",
+          "slotId",
+          "useSlotId"
+        ]
+      },
+      "deserialize": {
+        "methodToken": "0x0600bbab",
+        "methodPointerVa": "0x18a445a58",
+        "fileOffset": 172245080,
+        "bodySize": 1116,
+        "bodySha256": "5F0EA1D469A33F6057D162122320FAFB93B9DF64ADFA4CEB024F17B79F4B67D3"
+      },
+      "entityFields": [
+        {
+          "fieldName": "_targetEntity",
+          "memberOrdinalZeroBased": 8,
+          "constantPointerOrdinal": 0,
+          "fieldOffset": "0xd0",
+          "setterToken": "0x0600bba4",
+          "setterPointerVa": "0x18a446224",
+          "setterFileOffset": 172247076,
+          "setterBodySize": 52,
+          "setterBodySha256": "650DA7F825A3846C22ECA70F3F3E7D86A5B7FE13017CFDB628A3C2F8ABB333AB"
+        },
+        {
+          "fieldName": "_targetPointEntity",
+          "memberOrdinalZeroBased": 9,
+          "constantPointerOrdinal": 1,
+          "fieldOffset": "0xd8",
+          "setterToken": "0x0600bba5",
+          "setterPointerVa": "0x18a446258",
+          "setterFileOffset": 172247128,
+          "setterBodySize": 52,
+          "setterBodySha256": "FA21A00C7E3DDF310BC6C277D4047F18F1422265C4C7A3FE12252AA3ACC16C71"
+        }
+      ]
+    },
+{
+      "actionName": "SetHintPerformEnableState",
+      "unionTag": 1301,
+      "serializedMemberCount": 10,
+      "serializedValueLayout": {
+        "managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>",
+        "parameterTypeIndex": 85044,
+        "fieldTypeIndex": 85046,
+        "genericTypeDefinitionToken": "0x02001930",
+        "genericArgumentTypeDefinitionToken": "0x02002f3a",
+        "outerMemberCount": 4,
+        "valueMemberCount": 3,
+        "valueFields": [
+          "logicId",
+          "slotId",
+          "useSlotId"
+        ]
+      },
+      "deserialize": {
+        "methodToken": "0x0600b8ea",
+        "methodPointerVa": "0x184427460",
+        "fileOffset": 71457376,
+        "bodySize": 704,
+        "bodySha256": "C0BDB4BA647E151D465A4BB9AAA288EB99959786EB9ABAE7053E8D9616F7ABEB"
+      },
+      "entityFields": [
+        {
+          "fieldName": "_entityId",
+          "memberOrdinalZeroBased": 8,
+          "constantPointerOrdinal": 0,
+          "fieldOffset": "0xd0",
+          "setterToken": "0x0600b8e3",
+          "setterPointerVa": "0x184427720",
+          "setterFileOffset": 71458080,
+          "setterBodySize": 64,
+          "setterBodySha256": "E7C744B0B9DF5BB605F357555A71B249791B17CCAA4B22B4126A9B27F6A86755"
+        }
+      ]
+    },
+{
+      "actionName": "SetRuneAnchorPointForbidState", "unionTag": 1303, "serializedMemberCount": 12,
+      "serializedValueLayout": {"managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>", "parameterTypeIndex": 85044, "fieldTypeIndex": 85046, "genericTypeDefinitionToken": "0x02001930", "genericArgumentTypeDefinitionToken": "0x02002f3a", "outerMemberCount": 4, "valueMemberCount": 3, "valueFields": ["logicId", "slotId", "useSlotId"]},
+      "deserialize": {"methodToken": "0x0600bcbf", "methodPointerVa": "0x18a446438", "fileOffset": 172247608, "bodySize": 1340, "bodySha256": "F42EDB6ABF3C23F3A1F8EB85433D1E1863202969BCAF7D46CD6DE04B61CA584B"},
+      "entityFields": [{"fieldName": "_sourceEntity", "memberOrdinalZeroBased": 10, "constantPointerOrdinal": 0, "fieldOffset": "0xd8", "setterToken": "0x0600bcb8", "setterPointerVa": "0x18a446d4c", "setterFileOffset": 172249932, "setterBodySize": 52, "setterBodySha256": "D01235CED4B8DC2B70B95C711E836F567C7D6CDA885D43818EC8E3E6D751F265"}, {"fieldName": "_targetEntity", "memberOrdinalZeroBased": 11, "constantPointerOrdinal": 1, "fieldOffset": "0xe0", "setterToken": "0x0600bcb9", "setterPointerVa": "0x18a446d80", "setterFileOffset": 172249984, "setterBodySize": 52, "setterBodySha256": "32D333C414FF2D4D96D425C8D90A61577F98D7D635D9EDA533BC6A04F8A3CE39"}],
+      "serializedRecordLayouts": [{
+        "sourceFile": "export_full/structured/StreamingAssets/Data/Json/LevelScriptData/dung02_cdg009/38300000002.json",
+        "sourceSha256": "47D8EBEA0BEF064102DF9F4BEBF01AC25F731CCE8EC927B82435342ED77C4469",
+        "recordOffset": 1876,
+        "fieldStates": [
+          {"fieldName": "_sourceEntity", "state": "constant", "startOffset": 1943, "endOffset": 1970},
+          {"fieldName": "_targetEntity", "state": "constant", "startOffset": 1970, "endOffset": 1997}
+        ]
+      }]
+    },
+{
+      "actionName": "SetRuneColumnUnstableState",
+      "unionTag": 1306,
+      "serializedMemberCount": 10,
+      "serializedValueLayout": {
+        "managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>",
+        "parameterTypeIndex": 85044,
+        "fieldTypeIndex": 85046,
+        "genericTypeDefinitionToken": "0x02001930",
+        "genericArgumentTypeDefinitionToken": "0x02002f3a",
+        "outerMemberCount": 4,
+        "valueMemberCount": 3,
+        "valueFields": [
+          "logicId",
+          "slotId",
+          "useSlotId"
+        ]
+      },
+      "deserialize": {
+        "methodToken": "0x0600bcf2",
+        "methodPointerVa": "0x18a4483b4",
+        "fileOffset": 172255668,
+        "bodySize": 1144,
+        "bodySha256": "7F3EF604B884F2DA89D0C9CCBA789E4ACA2805AD5BE49FE9AA842C0706C27E56"
+      },
+      "entityFields": [
+        {
+          "fieldName": "_targetEntity",
+          "memberOrdinalZeroBased": 9,
+          "constantPointerOrdinal": 0,
+          "fieldOffset": "0xd0",
+          "setterToken": "0x0600bcec",
+          "setterPointerVa": "0x18a448bd0",
+          "setterFileOffset": 172257744,
+          "setterBodySize": 52,
+          "setterBodySha256": "D6D541F915BF13D49D9EC25E68FF5A2F0DAA0EF98CB509EC4DCC32545F2C5880"
+        }
+      ]
+    },
+{
+      "actionName": "TemporarilyHideInteractOptions",
+      "unionTag": 1307,
+      "serializedMemberCount": 10,
+      "serializedValueLayout": {
+        "managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>",
+        "parameterTypeIndex": 85044,
+        "fieldTypeIndex": 85046,
+        "genericTypeDefinitionToken": "0x02001930",
+        "genericArgumentTypeDefinitionToken": "0x02002f3a",
+        "outerMemberCount": 4,
+        "valueMemberCount": 3,
+        "valueFields": [
+          "logicId",
+          "slotId",
+          "useSlotId"
+        ]
+      },
+      "deserialize": {
+        "methodToken": "0x0600b990",
+        "methodPointerVa": "0x18a433910",
+        "fileOffset": 172171024,
+        "bodySize": 1144,
+        "bodySha256": "7759D2A8A7E5B03DDA956ED04CA590B51B73A07D887CB54817A2D7DFA1FB497E"
+      },
+      "entityFields": [
+        {
+          "fieldName": "_entity",
+          "memberOrdinalZeroBased": 8,
+          "constantPointerOrdinal": 0,
+          "fieldOffset": "0xd0",
+          "setterToken": "0x0600b989",
+          "setterPointerVa": "0x18a4340f8",
+          "setterFileOffset": 172173048,
+          "setterBodySize": 52,
+          "setterBodySha256": "AAE21F4F7AAEEA414A44A5B0ED13A8C37F81B85AFEF26458FA3DF06BD56EC69D"
+        }
+      ]
+    },
+{
+      "actionName": "UnfreezeSingleAnchorWave",
+      "unionTag": 1308,
+      "serializedMemberCount": 9,
+      "serializedValueLayout": {
+        "managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>",
+        "parameterTypeIndex": 85044,
+        "fieldTypeIndex": 85046,
+        "genericTypeDefinitionToken": "0x02001930",
+        "genericArgumentTypeDefinitionToken": "0x02002f3a",
+        "outerMemberCount": 4,
+        "valueMemberCount": 3,
+        "valueFields": [
+          "logicId",
+          "slotId",
+          "useSlotId"
+        ]
+      },
+      "deserialize": {
+        "methodToken": "0x0600b300",
+        "methodPointerVa": "0x18a3fb56c",
+        "fileOffset": 171940716,
+        "bodySize": 1028,
+        "bodySha256": "060C1D0810D7E7D730BA1B58092E235D40D801D7B79A61AF80D0B2F9CA7D4BED"
+      },
+      "entityFields": [
+        {
+          "fieldName": "_entity",
+          "memberOrdinalZeroBased": 8,
+          "constantPointerOrdinal": 0,
+          "fieldOffset": "0xd0",
+          "setterToken": "0x0600b2fa",
+          "setterPointerVa": "0x18a3fbce0",
+          "setterFileOffset": 171942624,
+          "setterBodySize": 52,
+          "setterBodySha256": "6EC5DA71F30E862250A3E4852B62351DCCBF46FEBD2496072376DA061CD6C3E5"
+        }
+      ]
+    }
+  ]
+}

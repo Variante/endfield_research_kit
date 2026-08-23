@@ -421,6 +421,10 @@ body:not(.show-debug) .view-tab[data-debug-view] {
   display: none;
 }
 
+body:not(.show-debug) .mr-technical-evidence {
+  display: none;
+}
+
 .view-tab:hover {
   background: rgba(var(--accent-rgb), 0.14);
   border-color: var(--border);
@@ -7751,6 +7755,7 @@ body:not(.show-debug) .story-order-remove-from-mission {
 
 /* Story order entry tag badges - informational, always visible */
 .story-order-unused-badge,
+.story-automatic-unused-badge,
 .story-order-branch-badge {
   display: inline-flex;
   align-items: center;
@@ -7765,6 +7770,11 @@ body:not(.show-debug) .story-order-remove-from-mission {
   color: #8a6a00;
   background: rgba(245, 196, 0, 0.18);
   border: 1px solid rgba(184, 134, 0, 0.45);
+}
+.story-automatic-unused-badge {
+  color: #7b3f00;
+  background: rgba(230, 126, 34, 0.16);
+  border: 1px solid rgba(180, 82, 0, 0.48);
 }
 .story-order-branch-badge {
   color: #286575;

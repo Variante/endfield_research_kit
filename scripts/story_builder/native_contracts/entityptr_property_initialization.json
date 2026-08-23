@@ -1,0 +1,88 @@
+{
+  "schema": "entityPtrPropertyInitializationNativeContract.v1",
+  "status": "validated_initial_entityptr_value_nonfinal",
+  "nativeMappingId": "gameassembly-2026-08-22-entityptr-property-initialization",
+  "metadata": {
+    "gameAssemblySha256": "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE",
+    "metadataSha256": "90C58E26E87C7227A85DDA3FEDF6CE5ED0B06DC1F76E0ABBE75AB20750ADF97E",
+    "codeRegistrationVa": "0x18b9217d0",
+    "metadataRegistrationVa": "0x18b921c30"
+  },
+  "paramRealType": {
+    "declaringType": "Beyond.GEnums.ParamRealType",
+    "declaringTypeToken": "0x020009d3",
+    "fieldName": "EntityPtr",
+    "fieldToken": "0x0400249b",
+    "value": 13
+  },
+  "briefProperties": {
+    "declaringType": "Beyond.Gameplay.LevelScriptBriefData",
+    "declaringTypeToken": "0x020003d0",
+    "propertiesFieldToken": "0x04001914",
+    "refWorldEntityIdListFieldToken": "0x04001913",
+    "paramSource": 200
+  },
+  "methods": [
+    {
+      "id": "level_script_runtime_init",
+      "declaringType": "Beyond.Gameplay.Core.LevelScriptRuntime",
+      "name": "Init",
+      "token": "0x0601218d",
+      "virtualAddress": "0x183179e50",
+      "fileOffset": 51872848,
+      "bodySize": 304,
+      "bodySha256": "6EFCB35A7FE14CE597EC316284458E3C2622EF09B958389ED3AA74309D914A6C"
+    },
+    {
+      "id": "level_script_runtime_setup",
+      "declaringType": "Beyond.Gameplay.Core.LevelScriptRuntime",
+      "name": "Setup",
+      "token": "0x0601218e",
+      "virtualAddress": "0x182fdc3a0",
+      "fileOffset": 50178464,
+      "bodySize": 20624,
+      "bodySha256": "3FD93B2F312B2872ED61FCA45FB3D7A39A8B69AF2C38DAFD15EC3F6A81454330"
+    },
+    {
+      "id": "reset_action_graph_param_blackboard",
+      "declaringType": "Beyond.Gameplay.Core.LevelScriptRuntime",
+      "name": "ResetActionGraphParamBlackboard",
+      "token": "0x06012197",
+      "virtualAddress": "0x184254c10",
+      "fileOffset": 69546512,
+      "bodySize": 208,
+      "bodySha256": "C13011792D8A279723A391D14990570DBD88CB8F3B5BB071C93923F0CCCD6082"
+    },
+    {
+      "id": "param_blackboard_load_value",
+      "declaringType": "Beyond.Gameplay.ParamBlackboard",
+      "name": "LoadValue",
+      "token": "0x06003523",
+      "virtualAddress": "0x182fd3850",
+      "fileOffset": 50142800,
+      "bodySize": 272,
+      "bodySha256": "FF27131524C9242D9ACF0E6CBE0BB517B89A68D70AE4CFD284306C6ED4F248FE"
+    }
+  ],
+  "criticalCalls": [
+    {"caller": "level_script_runtime_init", "callOffset": 157, "callBytes": "E85EF6E5FF", "targetVa": "0x182fd9550", "targetToken": "0x06003516", "targetName": "ParamBlackboard.NewEmpty"},
+    {"caller": "level_script_runtime_init", "callOffset": 171, "callBytes": "E840300000", "targetVa": "0x18317cf40", "targetToken": "0x06012164", "targetName": "LevelScriptRuntime.set_properties"},
+    {"caller": "level_script_runtime_init", "callOffset": 181, "callBytes": "E8C6180000", "targetVa": "0x18317b7d0", "targetToken": "0x06012163", "targetName": "LevelScriptRuntime.get_properties"},
+    {"caller": "level_script_runtime_init", "callOffset": 206, "callBytes": "E82D99E5FF", "targetVa": "0x182fd3850", "targetToken": "0x06003523", "targetName": "ParamBlackboard.LoadValue"},
+    {"caller": "level_script_runtime_setup", "callOffset": 757, "callBytes": "E876852701", "targetVa": "0x184254c10", "targetToken": "0x06012197", "targetName": "LevelScriptRuntime.ResetActionGraphParamBlackboard"},
+    {"caller": "level_script_runtime_setup", "callOffset": 789, "callBytes": "E8D6F1FFFF", "targetVa": "0x182fdb890", "targetToken": "0x06007eb6", "targetName": "ActionContext.SetupNodeBinding"},
+    {"caller": "reset_action_graph_param_blackboard", "callOffset": 135, "callBytes": "E8B4EBD7FE", "targetVa": "0x182fd3850", "targetToken": "0x06003523", "targetName": "ParamBlackboard.LoadValue"}
+  ],
+  "ordering": {
+    "setupResetCallOffset": 757,
+    "setupActionContextBindCallOffset": 789,
+    "requiredRelation": "reset_and_load_before_action_context_bind"
+  },
+  "lifecycleBoundary": {
+    "classification": "validated_initial_entityptr_value_nonfinal",
+    "mutableAfterBind": true,
+    "diagnosticOnly": true,
+    "allowTargetPromotion": false,
+    "reason": "The same source-200 ParamBlackboard is initialized from LevelScriptBriefData before binding, but runtime setters, server synchronization, and graph reset/reload can replace values later."
+  }
+}

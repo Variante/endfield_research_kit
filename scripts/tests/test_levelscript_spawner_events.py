@@ -42,7 +42,29 @@ def _lifecycle_payload() -> bytes:
     ))
 
 
+def _spawn_payload() -> bytes:
+    return b"".join((
+        bytes(17),
+        b"\x04\x01" + _PARAM_TAIL,
+        _output(0, "$170@_entityOutput"),
+        b"\x04" + struct.pack("<i", 4) + _PARAM_TAIL,
+        b"\xff",
+        _output(0, "$170@_groupKeyOutput"),
+        b"\x04" + struct.pack("<Q", 10200060003) + _PARAM_TAIL,
+        _string("wave2"),
+        _output(0, "$170@_waveKeyOutput"),
+    ))
+
+
 class LevelScriptSpawnerEventTests(unittest.TestCase):
+    def test_entity_spawn_decodes_nullable_group_and_constant_wave(self) -> None:
+        payload = _spawn_payload()
+        detail = decode_spawner_event_fields(payload, "LevelEvent_OnSpawnerEntitySpawn")
+        self.assertEqual(10200060003, detail["spawnerFilterId"])
+        self.assertIsNone(detail["groupKeyFilter"])
+        self.assertEqual("wave2", detail["waveKeyFilter"])
+        self.assertEqual(len(payload), detail["subtypeConsumedBytes"])
+
     def test_entity_lifecycle_family_decodes_exact_schema(self) -> None:
         payload = _lifecycle_payload()
         for event_name in _LIFECYCLE_EVENTS:
@@ -63,9 +85,11 @@ class LevelScriptSpawnerEventTests(unittest.TestCase):
     def test_entity_lifecycle_family_rejects_wrong_owner_or_trailing_bytes(self) -> None:
         payload = _lifecycle_payload()
         self.assertEqual({}, decode_spawner_event_fields(payload, "LevelEvent_OnSpawnerStop"))
+        detail = decode_spawner_event_fields(payload + b"\x00", _LIFECYCLE_EVENTS[0])
+        self.assertEqual(len(payload), detail["subtypeConsumedBytes"])
         self.assertEqual(
-            {},
-            decode_spawner_event_fields(payload + b"\x00", _LIFECYCLE_EVENTS[0]),
+            "spawner-entity-lifecycle-filters-and-outputs-exact-prefix",
+            detail["payloadShape"],
         )
 
 

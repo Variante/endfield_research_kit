@@ -14,6 +14,139 @@ CUTSCENE_SEMANTIC_SHAPES = frozenset({
 })
 
 
+def validated_lua_cutscene_playback_keys(report: Any) -> tuple[list[str], list[dict[str, Any]]]:
+    """Return authored Lua cutscene ids only from the complete census.
+
+    Recovery association is case-insensitive, so a reviewed case-mismatch row
+    is still positive playback evidence.  The caller's definition-identity
+    gate remains responsible for rejecting folded-name collisions.
+    """
+    if not isinstance(report, dict) or report.get("schemaVersion") != "luaConsumerReferenceAudit.v5":
+        return [], [{
+            "gate": "validated_lua_consumer_reference_audit_schema",
+            "expected": "luaConsumerReferenceAudit.v5",
+            "actual": report.get("schemaVersion") if isinstance(report, dict) else type(report).__name__,
+        }]
+    read_errors = report.get("readErrors")
+    if read_errors not in (None, []):
+        return [], [{
+            "gate": "complete_lua_consumer_reference_census",
+            "expected": [],
+            "actual": read_errors,
+        }]
+    game_action = report.get("gameActionAudit")
+    rows = game_action.get("authoredStoryPlaybackCalls") if isinstance(game_action, dict) else None
+    if not isinstance(rows, list):
+        return [], [{
+            "gate": "authored_lua_story_playback_calls_present",
+            "expected": "list",
+            "actual": type(rows).__name__,
+        }]
+    keys = sorted({
+        str(row.get("canonicalStoryKey") or row.get("resolvedLiteral") or "").strip()
+        for row in rows
+        if isinstance(row, dict)
+        and row.get("playbackKind") == "cutscene"
+        and str(row.get("canonicalStoryKey") or row.get("resolvedLiteral") or "").strip()
+    })
+    return keys, []
+
+
+def classify_cutscene_playback_use(
+    cutscene_key: str,
+    *,
+    definition_keys: list[str],
+    playback_story_keys: list[str],
+    scan_status: str,
+    validation_failures: list[dict] | None = None,
+) -> dict[str, Any]:
+    """Classify unused only from a complete uniquely-folded carrier census."""
+    folded = str(cutscene_key or "").casefold()
+    definition_matches = sorted({
+        key for key in definition_keys if str(key).casefold() == folded
+    })
+    if len(definition_matches) != 1:
+        return {
+            "status": "unresolved_definition_identity",
+            "automaticUnused": False,
+            "caseInsensitiveDefinitionMatches": definition_matches,
+            "failureGate": "unique_case_insensitive_definition_identity",
+        }
+    if scan_status != "validated_complete" or validation_failures:
+        return {
+            "status": "unresolved_playback_scan",
+            "automaticUnused": False,
+            "failureGate": "complete_non_degraded_playback_carrier_scan",
+            "scanStatus": scan_status,
+            "validationFailureCount": len(validation_failures or []),
+        }
+    playback_matches = sorted({
+        key for key in playback_story_keys if str(key).casefold() == folded
+    })
+    if playback_matches:
+        return {
+            "status": "playback_observed",
+            "automaticUnused": False,
+            "caseInsensitivePlaybackMatches": playback_matches,
+        }
+    return {
+        "status": "conclusive_no_playback_observed",
+        "automaticUnused": True,
+        "caseInsensitivePlaybackMatches": [],
+        "boundary": (
+            "A complete non-degraded playback-carrier census found no exact or uniquely "
+            "case-insensitive reference to this authored cutscene definition."
+        ),
+    }
+
+
+def apply_cutscene_playback_use_postpass(
+    payloads_by_key: dict[str, dict[str, Any]],
+    index_entries: list[dict[str, Any]],
+    *,
+    playback_story_keys: list[str],
+    scan_status: str,
+    validation_failures: list[dict] | None = None,
+) -> dict[str, int]:
+    """Publish playback-use diagnostics after every carrier index is complete."""
+    definition_keys = sorted(payloads_by_key)
+    index_by_key = {
+        str(entry.get("k") or ""): entry
+        for entry in index_entries
+        if isinstance(entry, dict)
+    }
+    counts = {"definitions": 0, "playbackObserved": 0, "automaticUnused": 0,
+              "unresolved": 0}
+    for key in definition_keys:
+        payload = payloads_by_key[key]
+        if payload.get("kind") != "cutscene" or not isinstance(payload.get("cutscene"), dict):
+            continue
+        result = classify_cutscene_playback_use(
+            key,
+            definition_keys=definition_keys,
+            playback_story_keys=playback_story_keys,
+            scan_status=scan_status,
+            validation_failures=validation_failures,
+        )
+        payload["cutscene"]["playbackUse"] = result
+        payload["automaticUnused"] = bool(result.get("automaticUnused"))
+        entry = index_by_key.get(key)
+        if entry is not None:
+            entry["playbackUse"] = {
+                "status": result.get("status"),
+                "automaticUnused": bool(result.get("automaticUnused")),
+            }
+            entry["automaticUnused"] = bool(result.get("automaticUnused"))
+        counts["definitions"] += 1
+        if result.get("status") == "playback_observed":
+            counts["playbackObserved"] += 1
+        elif result.get("automaticUnused"):
+            counts["automaticUnused"] += 1
+        else:
+            counts["unresolved"] += 1
+    return counts
+
+
 def exact_levelscript_fmv_bindings(
     cutscene: dict[str, Any],
 ) -> list[dict[str, Any]]:

@@ -206,10 +206,16 @@ def _decode_entity_spawn(payload: bytes) -> dict[str, Any]:
     if template_result is None:
         return {}
     entity_template_filter, cursor = template_result
-    group_result = _read_string_param(payload, cursor)
-    if group_result is None:
+    if cursor >= len(payload):
         return {}
-    group_key, cursor = group_result
+    if payload[cursor] == 0xFF:
+        group_key = None
+        cursor += 1
+    else:
+        group_result = _read_string_param(payload, cursor)
+        if group_result is None:
+            return {}
+        group_key, cursor = group_result
     group_output_result = _read_output(payload, cursor)
     if group_output_result is None:
         return {}
@@ -218,13 +224,21 @@ def _decode_entity_spawn(payload: bytes) -> dict[str, Any]:
     if spawner_result is None:
         return {}
     spawner_id, cursor = spawner_result
-    if cursor >= len(payload) or payload[cursor] != 0xFF:
+    if cursor >= len(payload):
         return {}
-    wave_output_result = _read_output(payload, cursor + 1)
+    if payload[cursor] == 0xFF:
+        wave_key = None
+        cursor += 1
+    else:
+        wave_result = _read_string_param(payload, cursor)
+        if wave_result is None:
+            return {}
+        wave_key, cursor = wave_result
+    wave_output_result = _read_output(payload, cursor)
     if wave_output_result is None:
         return {}
     wave_output, cursor = wave_output_result
-    if not entity_output or not group_key or not group_output or not wave_output:
+    if not entity_output or not group_output or not wave_output:
         return {}
     if cursor != len(payload):
         return {}
@@ -235,8 +249,10 @@ def _decode_entity_spawn(payload: bytes) -> dict[str, Any]:
         "groupKeyOutputRef": group_output,
         "spawnerFilterId": spawner_id,
         "spawnerOutputPresent": False,
+        "waveKeyFilter": wave_key,
         "waveKeyOutputRef": wave_output,
-        "payloadShape": "constant-spawner-group-and-template-exact-eof",
+        "subtypeConsumedBytes": cursor,
+        "payloadShape": "constant-spawner-optional-group-wave-and-template-exact-eof",
     }
 
 
@@ -293,9 +309,6 @@ def _decode_entity_lifecycle(payload: bytes) -> dict[str, Any]:
     if wave_output is None:
         return {}
     wave_output_detail, cursor = wave_output
-    if cursor != len(payload):
-        return {}
-
     return {
         "entityOutputParam": entity_output_detail,
         "filterType": filter_type_detail,
@@ -304,7 +317,12 @@ def _decode_entity_lifecycle(payload: bytes) -> dict[str, Any]:
         "spawnerFilterId": spawner_id,
         "waveKeyFilter": wave_key,
         "waveKeyOutputParam": wave_output_detail,
-        "payloadShape": "spawner-entity-lifecycle-filters-and-outputs-exact-eof",
+        "subtypeConsumedBytes": cursor,
+        "payloadShape": (
+            "spawner-entity-lifecycle-filters-and-outputs-exact-eof"
+            if cursor == len(payload)
+            else "spawner-entity-lifecycle-filters-and-outputs-exact-prefix"
+        ),
     }
 def decode_spawner_event_fields(
     payload: bytes,

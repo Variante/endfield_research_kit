@@ -3801,6 +3801,7 @@ function renderItem(row) {
   const inStorySort = (STATE.sortMode || "story") === "story";
   let storyOrderTagState = STORY_ORDER_ENTRY_TAG_DEFAULT;
   let storyOrderTagBadge = "";
+  let automaticUnusedBadge = "";
   let storyOrderTagToggle = "";
   let removeFromMissionButton = "";
   if (missionIdForEntry && inStorySort) {
@@ -3856,6 +3857,13 @@ function renderItem(row) {
     }
   }
 
+  if (e.d === "cutscene" && e.automaticUnused === true) {
+    div.classList.add("story-automatic-unused");
+    const title = escapeHtml(uiText("storyAutomaticUnusedTitle"));
+    const label = escapeHtml(uiText("storyAutomaticUnusedBadge"));
+    automaticUnusedBadge = `<span class="story-automatic-unused-badge" title="${title}">${label}</span>`;
+  }
+
   // Static-recovery phase remains debug-gated; confidence/review text tags are hidden.
   let phaseChip = "";
   let ocrRankChip = "";
@@ -3889,6 +3897,7 @@ function renderItem(row) {
       ocrRankChip +
       `<span class="item-key">${highlightTextFragment(displayEntryTitle(e), STATE.filters.q)}</span>` +
       storyOrderTagBadge +
+      automaticUnusedBadge +
       `<span class="item-meta">${e.n} ${uiText("lineUnit")}</span>` +
       storyOrderTagToggle +
       removeFromMissionButton +

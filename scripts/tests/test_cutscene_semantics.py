@@ -4,6 +4,7 @@ import unittest
 from pathlib import Path
 
 from scripts.story_builder.cutscene_semantics import (
+    classify_cutscene_playback_use,
     cutscene_line_text_groups,
     cutscene_pair_normalize,
     cutscene_semantic_shape,

@@ -129,6 +129,50 @@ class CutsceneCaseResolutionContractTests(unittest.TestCase):
             "installed_native_inputs",
             evidence["caseResolutionContract"]["validationFailures"][0]["gate"],
         )
+        association = evidence["caseInsensitiveResourceNameAssociation"]
+        self.assertEqual(0, association["playbackResourceCandidateCount"])
+        self.assertEqual(0, association["spatialMapCandidateCount"])
+
+    def test_case_insensitive_policy_admits_playback_but_preserves_runtime_boundary(self) -> None:
+        contract = json.loads(
+            cutscene_case_resolution.DEFAULT_CONTRACT.read_text(encoding="utf-8")
+        )
+        reviewed = dict(contract["luaPlayback"])
+        reviewed.update({
+            "classification": "story_playback", "playbackKind": "cutscene",
+            "argumentSemantics": "story_id", "playbackRole": "authored_reference",
+            "firstArgument": "EnterCutsceneId", "literalResolution": "module_constant",
+            "nearbyTables": [], "tableFieldResolution": None,
+        })
+        with self._native_gates():
+            audit = cutscene_case_resolution.load_cutscene_case_resolution_contract()
+        with tempfile.TemporaryDirectory() as temporary:
+            audit_path = Path(temporary) / "lua.json"
+            audit_path.write_text(json.dumps({
+                "schemaVersion": pipeline.LUA_CONSUMER_REFERENCE_SCHEMA,
+                "summary": {"readErrorCount": 0},
+                "gameActionAudit": {"storyPlaybackCalls": [reviewed]},
+            }), encoding="utf-8")
+            evidence = lua_story_projection.load_lua_story_playback_evidence(
+                audit_path,
+                lua_consumer_reference_schema=pipeline.LUA_CONSUMER_REFERENCE_SCHEMA,
+                native_game_action_type="Beyond.Gameplay.Actions.GameAction",
+                case_resolution_contract_audit=audit,
+            )
+
+        self.assertEqual(1, len(evidence["acceptedExactPlaybackCalls"]))
+        self.assertEqual(0, len(evidence["rejectedCaseMismatchCalls"]))
+        admitted = evidence["acceptedExactPlaybackCalls"][0]
+        self.assertEqual("case_sensitive_case_mismatch", admitted["runtimeLookupStatus"])
+        self.assertEqual(
+            "accepted_unique_ascii_case_insensitive",
+            admitted["recoveryAssociationStatus"],
+        )
+        association = evidence["caseInsensitiveResourceNameAssociation"]
+        self.assertEqual(1, association["playbackResourceCandidateCount"])
+        self.assertEqual(0, association["spatialMapCandidateCount"])
+        self.assertTrue(association["candidates"][0]["wouldResolvePlaybackResource"])
+        self.assertFalse(association["candidates"][0]["suppliesSpatialEvidence"])
 
     def test_relevant_ifix_method_drops_the_rejection_rule(self) -> None:
         with patch.object(

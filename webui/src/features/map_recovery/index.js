@@ -11,7 +11,8 @@
   const ENTITY_SCALE_MIN = 0.5;
   const ENTITY_SCALE_MAX = 3;
   const ENTITY_SCALE_STEP = 1.25;
-  const MAP_ASSET_VERSION = "20260822-map69";
+  const POINT_HEIGHT_SLICE_COUNT = 32;
+  const MAP_ASSET_VERSION = "20260823-map103";
   const PAN_OVERHANG = 96; // px of surface a pan may run past the content edge
   const LABEL_ZOOM = 1.7; // minor entity labels stay hidden below this zoom
   const GEO_LABEL_ZOOM = 0.3; // keep one primary name per sibling at region view
@@ -28,6 +29,9 @@
     story: "#c8410f",
     travel: "#2b6cb0",
     device: "#a2660a",
+    script_target: "#315f91",
+    script_target_candidate: "#4d668f",
+    empty_slot: "#6f7780",
     scenery: "#7a6a52",
     trigger: "#7759a8",
     enemy: "#b0342c",
@@ -49,14 +53,18 @@
     index: null,
     map: null,
     selected: "",
+    selectedVariant: "",
+    regionScope: "single", // map01/map02: load one selected zone or the complete authored region
     kinds: new Set(),
     subKinds: new Set(),
     mapLayers: new Set(), // raw UILevelMapLoadConfig tier ids in the loaded region
     modelLayers: new Set(["elevation", "surface", "water", "points"]),
+    layerOpacities: { minimap: 1, elevation: 1, surface: 1, water: 1, points: 0.82 },
     showMinimap: true,
     showQuests: false,
     storyOnly: false,
     mission: "", // "" means every mission this level hosts
+    missionPhase: "", // exact questId from an NPC dialog attachment; never inferred order
     bound: false,
     transform: { x: 0, y: 0, scale: 1 },
     entityScale: 1,
@@ -67,6 +75,7 @@
     inspectorKey: "",
     filePath: "",
     filePathLabel: "",
+    fileFocus: null,
     pendingFit: false,
     // A map switch should frame the selected map screen even when the clean
     // geographic view intentionally has no entity nodes enabled. Keep this
@@ -85,7 +94,6 @@
     modelBackgrounds: [], // recovered geometry, retained even when a minimap is authoritative
     layerBackgrounds: [], // transparent tier overlays, kept separate from base screens
     floorHitAreas: [], // tier rectangles, including overlays not currently selected
-    pointCloudOpacity: 0.82, // only affects scan PNGs that expose an elevation underlay
     pointHeightRange: null, // exact world-Y bounds and the active two-thumb interval
     contentBox: null, // plotted content extent in viewBox units, for the pan clamp
     selectedMapBox: null, // selected level's fitted background rectangle
@@ -135,17 +143,26 @@
     const source = state.payloads.get(node?.levelId) || state.map;
     return ((source?.relatedFiles) || []).find((row) => row?.relation === "entity_registry");
   };
+  const registryFocus = (node) => {
+    const identity = String(node?.identity || "");
+    let match = /^world:(.+)$/.exec(identity);
+    if (match) return { kind: "world", logicId: match[1] };
+    match = /^script:([^:]+):([^:]+)$/.exec(identity);
+    if (match) return { kind: "script", scriptIdGlobal: match[1], slotId: match[2] };
+    match = /^npc:(.+)$/.exec(identity);
+    return match ? { kind: "npc", logicId: match[1] } : null;
+  };
   const relatedFiles = (node) => {
     const rows = (node?.relatedFiles || []).filter((row) => row && row.path);
     const registry = node?.registryBacked ? registryPin(node) : null;
     if (!registry || rows.some((row) => row.path === registry.path)) return rows;
-    return [...rows, { ...registry, note: t("registryBacked") }];
+    return [...rows, { ...registry, note: t("registryBacked"), focus: registryFocus(node) }];
   };
   const fileName = (path) => String(path || "").replace(/\\/g, "/").split("/").filter(Boolean).pop() || String(path || "");
   const kindColor = (node) => (node?.type === "quest" ? QUEST_COLOR : KIND_COLORS[node?.kind] || "#8b9298");
   const KIND_LABELS = {
-    en: { story: "Story", travel: "Travel", device: "Device", scenery: "Scenery", trigger: "Trigger zone", enemy: "Enemy", npc: "NPC", spawn: "Spawn", narrative: "Narrative", collectible: "Collectible", waypoint: "Waypoint", quest: "Quest" },
-    zh: { story: "剧情", travel: "移动设施", device: "交互装置", scenery: "场景物件", trigger: "触发区域", enemy: "敌人", npc: "NPC", spawn: "出生点", narrative: "叙事锚点", collectible: "收集物", waypoint: "任务坐标", quest: "任务点" },
+    en: { story: "Story", travel: "Travel", device: "Device", scenery: "Scenery", trigger: "Trigger zone", enemy: "Enemy", npc: "NPC", spawn: "Spawn", narrative: "Narrative", collectible: "Collectible", waypoint: "Waypoint", quest: "Quest", campfire_teleport: "Campfire teleport", spaceship_visit_portal: "Spaceship visit portal", teleport_point: "Teleport point" },
+    zh: { story: "剧情", travel: "移动设施", device: "交互装置", scenery: "场景物件", trigger: "触发区域", enemy: "敌人", npc: "NPC", spawn: "出生点", narrative: "叙事锚点", collectible: "收集物", waypoint: "任务坐标", quest: "任务点", campfire_teleport: "营火传送点", spaceship_visit_portal: "访问传送门", teleport_point: "传送点" },
   };
   const kindLabel = (kind) => (isZh() ? KIND_LABELS.zh : KIND_LABELS.en)[kind] || kind;
   // Re-plotting a full map is a few hundred milliseconds of SVG layout, and the
@@ -203,13 +220,23 @@
       ["water", "modelWater", state.modelBackgrounds.some((row) => row.waterOverlay?.src)],
       ["points", "modelPoints", state.modelBackgrounds.some((row) => row.pointCloudOverlay?.src)],
     ];
-    const minimap = hasMinimap
-      ? `<label><input type="checkbox" data-map-minimap ${state.showMinimap ? "checked" : ""}>${esc(t("minimapLayer"))}</label>`
-      : "";
-    return `<fieldset class="mr-model-layers"><legend>${esc(t("modelLayers"))}</legend>${minimap}${rows.filter(([, , available]) => available).map(([id, label]) => (
-      `<label><input type="checkbox" data-map-model-layer="${id}" ${state.modelLayers.has(id) ? "checked" : ""}>${esc(t(label))}</label>`
-    )).join("")}</fieldset>`;
+    const available = [
+      ...(hasMinimap ? [["minimap", "minimapLayer", state.showMinimap]] : []),
+      ...rows.filter(([, , present]) => present).map(([id, label]) => [id, label, state.modelLayers.has(id)]),
+    ];
+    return `<fieldset class="mr-model-layers"><legend>${esc(t("modelLayers"))}</legend>${available.map(([id, label, checked]) => {
+      const opacity = Math.round((state.layerOpacities[id] ?? 1) * 100);
+      const text = t(label);
+      return `<div class="mr-model-layer-row"><input type="checkbox" data-map-display-layer="${id}" aria-label="${esc(text)}" ${checked ? "checked" : ""}><span>${esc(text)}</span><input type="range" min="0" max="100" step="1" value="${opacity}" data-map-layer-opacity="${id}" aria-label="${esc(`${text} ${t("layerOpacity")}`)}" title="${opacity}%"></div>`;
+    }).join("")}</fieldset>`;
   };
+  KIND_LABELS.en.empty_slot = "Unresolved empty slots";
+  KIND_LABELS.zh.empty_slot = "\u672a\u89e3\u6790\u7a7a\u69fd";
+  KIND_LABELS.en.script_target_candidate = "Script target candidates";
+  KIND_LABELS.zh.script_target_candidate = "\u811a\u672c\u76ee\u6807\u5019\u9009";
+  KIND_LABELS.en.script_target = "Script action targets";
+  KIND_LABELS.zh.script_target = "\u811a\u672c\u52a8\u4f5c\u76ee\u6807";
+  const DEFAULT_HIDDEN_KINDS = new Set(["empty_slot", "script_target_candidate"]);
 
   // Every level in LevelBasicInfoTable that owns a plottable node is published,
   // which is far too many for a flat list to be readable. The options are
@@ -318,10 +345,38 @@
           : null;
         return `<details class="mr-mission-item${active ? " is-active" : ""}" ${active ? "open" : ""}>
           <summary data-map-mission="${esc(id)}"><b>${esc(missionTitle(id, counts))}</b><span>${counts.stories || 0}${esc(t("countStories"))}</span></summary>
-          <div class="mr-mission-files">${linkedMap ? `<button type="button" class="mr-map-transition" data-map-id="${esc(linkedMap.id)}"><b>${esc(id)} → dg004</b><span>${esc(t("missionNextMap"))}</span></button>` : ""}<details><summary>${esc(`${t("missionFiles")} (${counts.files?.length || 0})`)}</summary>${files ? `<ul>${files}</ul>` : `<p>${esc(t("noFiles"))}</p>`}</details></div>
+          <div class="mr-mission-files">${linkedMap ? `<button type="button" class="mr-map-transition" data-map-id="${esc(linkedMap.id)}"><b>${esc(id)} → dg004</b><span>${esc(t("missionNextMap"))}</span></button>` : ""}<div class="mr-mission-file-list"><span>${esc(`${t("missionFiles")} (${counts.files?.length || 0})`)}</span>${files ? `<ul>${files}</ul>` : `<p>${esc(t("noFiles"))}</p>`}</div></div>
         </details>`;
       }).join("");
     return `<div class="mr-mission-list"><button type="button" class="mr-mission-all${state.mission ? "" : " is-active"}" data-map-mission="">${esc(`${t("missionAll")} (${missions.length})`)}</button>${rows}</div>`;
+  };
+
+  const npcPhaseSelectHtml = (data) => {
+    if (!state.mission) return "";
+    const phases = new Set();
+    for (const row of data.markers || []) {
+      if (row.kind !== "npc") continue;
+      for (const phase of row.missionPhases || []) {
+        if (phase.missionId === state.mission && phase.questId) phases.add(phase.questId);
+      }
+    }
+    const ordered = [...phases].sort((a, b) => a.localeCompare(b));
+    if (ordered.length < 2) return "";
+    return `<label class="mr-npc-phase"><span>${esc(t("npcMissionPhase"))}</span><select data-map-npc-phase><option value="">${esc(t("npcMissionPhaseAll"))}</option>${ordered.map((questId) => `<option value="${esc(questId)}" ${questId === state.missionPhase ? "selected" : ""}>${esc(questId)}</option>`).join("")}</select></label>`;
+  };
+
+  const mapVariantHtml = () => {
+    const entry = (state.index?.maps || []).find((row) => row.id === state.selected);
+    const variants = entry?.variants || [];
+    if (variants.length < 2) return "";
+    return `<div class="mr-map-variants" role="group" aria-label="${esc(t("mapVariants"))}">${variants.map((variant) => {
+      const active = variant.id === state.selectedVariant;
+      const counts = [
+        variant.markerCount ? `${variant.markerCount}${t("countMarkers")}` : "",
+        variant.storyKeyCount ? `${variant.storyKeyCount}${t("countStories")}` : "",
+      ].filter(Boolean).join(" / ");
+      return `<button type="button" class="mr-map-variant${active ? " is-active" : ""}" data-map-variant="${esc(variant.id)}" aria-pressed="${active ? "true" : "false"}"><b>${esc(mapTitle(variant))}</b>${counts ? `<span>${esc(counts)}</span>` : ""}</button>`;
+    }).join("")}</div>`;
   };
 
   // A pinned dialog file is the same payload the Story view renders, so its
@@ -343,11 +398,27 @@
     return ref ? `<a class="mr-story-link" href="${esc(ref.href)}" title="${esc(`${t("openInStory")}: ${ref.key}`)}">${esc(label || t("story"))}</a>` : "";
   };
 
+  const debugEnabled = () => document.body.classList.contains("show-debug")
+    || document.querySelector("#show-debug")?.getAttribute("aria-pressed") === "true";
+
+  // A generated conversation is the reader-facing result. Once a node has an
+  // exact Story payload, normal mode shows only that payload; placement files,
+  // registries, scripts, and the rest of the evidence inventory are debug-only.
+  // Nodes without a Story payload keep their strong ownership file as a useful
+  // fallback, while map-wide and weak evidence remain debug-only as before.
+  const visibleFilePins = (pins, { mapWide = false } = {}) => {
+    const rows = (pins || []).filter((pin) => pin?.path);
+    if (debugEnabled()) return rows;
+    const stories = rows.filter((pin) => storyRef(pin.path));
+    if (stories.length) return stories;
+    return rows.filter((pin) => !mapWide && pin.strength !== "weak");
+  };
+
   const nodeDisplayLabel = (node) => {
     if (node.type === "quest") return String(node.questId).replace("e0m0_", "");
     const alias = node.detailAlias && (isZh() ? node.detailAlias.zh : node.detailAlias.en);
-    if (alias && alias !== node.label) return `${alias} / ${node.label}`;
-    return String(node.label || node.identity);
+    const base = alias && alias !== node.label ? `${alias} / ${node.label}` : String(node.label || node.identity);
+    return node.kind === "npc" && node.phaseLabel ? `${base} · ${node.phaseLabel}` : base;
   };
 
   function labelWidth(text) {
@@ -371,17 +442,27 @@
       mapFloorHover: "More floors here",
       mapFloorClickCycle: "Click to cycle",
       mapFloorCurrent: "Current",
-      pointCloudOpacity: "Point cloud opacity",
+      layerOpacity: "opacity",
       pointCloudHeight: "Point height",
       pointCloudHeightRange: "Visible point height range",
       pointCloudHeightMin: "Minimum visible point height",
       pointCloudHeightMax: "Maximum visible point height",
       evidence: "Evidence",
+      surfaceAccuracy: "Surface accuracy",
+      surface_inferred_hlod_crop: "Inferred HLOD crop",
+      surface_exact_mesh_color_unverified: "Exact mesh placement - color unverified",
+      surface_exact_mesh_partial_base_color: "Exact mesh placement - partial base color",
+      surfaceNote_inferred_hlod_crop: "Exact danger markers define the crop; the source-art HLOD grid is inferred.",
+      surfaceNote_exact_mesh_color_unverified: "Mesh geometry and placement are exact; no reliable texture color was recovered.",
+      surfaceNote_exact_mesh_partial_base_color: "Mesh geometry and placement are exact; base color appears only where material bindings were recovered.",
       controls: "Controls",
       collapse: "Collapse panel",
       expand: "Expand panel",
       regionSurface: "zone map screens stitched into one seamless surface",
       selectedSurface: "selected zone map screen loaded; choose another zone to load the stitched region",
+      regionScope: "Region range",
+      regionScopeSingle: "Current zone",
+      regionScopeAll: "All zones",
       loading: "Loading map recovery data...",
       mapSurface: "World map, pan and zoom surface",
       zoomIn: "Zoom in",
@@ -392,7 +473,7 @@
       entityReset: "Reset entity size",
       modelLayers: "Recovered model layers",
       minimapLayer: "In-game minimap",
-      modelSurface: "Material / surface",
+      modelSurface: "Color textures",
       modelElevation: "Grayscale elevation",
       modelWater: "Recovered water",
       modelPoints: "Colored point cloud",
@@ -417,8 +498,11 @@
       countStories: " stories",
       registryBacked: "Placed by the WorldEntityRegistry row for this level.",
       mission: "Mission",
+      mapVariants: "Map items",
       missionAll: "All missions",
       missionNone: "No mission plots content in this level.",
+      npcMissionPhase: "NPC mission phase",
+      npcMissionPhaseAll: "All explicit phases",
       missionFiles: "Mission files",
       missionNextMap: "e0m0 finishes in this linked map",
       layersAll: "All",
@@ -437,6 +521,9 @@
       questOrder: "Order",
       objective: "Objective",
       coordinates: "Coordinates",
+      documentTitle: "Document title",
+      triggerGeometry: "Trigger geometry",
+      missionContext: "Mission context",
       name: "Label",
       kind: "Kind",
       identity: "Identity",
@@ -446,6 +533,14 @@
       storyKey: "Story key",
       eventName: "Event",
       action: "Action",
+      actionBinding: "Action binding",
+      actionBinding_exact_bound: "Exact action binding",
+      actionBinding_exact_plus_unresolved: "Exact binding + unresolved references",
+      actionBinding_unresolved_decoder: "Unresolved action format",
+      actionBinding_unresolved_registry_bridge: "Exact action field; registry bridge unresolved",
+      actionBinding_unresolved_member_layout: "Action field known; serialized member layout unresolved",
+      actionBinding_no_reference_observed: "No reference observed in decoded evidence",
+      controlledByTriggers: "Controlled by triggers",
       scenes: "Scenes",
       relatedFiles: "Related files",
       weakerLinks: "Weaker links",
@@ -458,11 +553,14 @@
       sceneNotes: "Scene metadata",
       binaryNote: "Binary level-script payload; the readable identifiers it contains are listed below.",
       hexHead: "First bytes (hex)",
+      registryMatch: "Exact WorldEntityRegistry row",
+      registryMissing: "The requested registry identity was not found.",
       mapFiles: "Map-wide files",
       story: "story",
       openInStory: "Open in Story",
       noStoryAtNode: "No story information is linked to this map item.",
       unplacedStories: "Mission stories not on the map",
+      unplacedActionTargets: "Script action targets without positions",
       reason_mission_scope_only: "Scoped to the whole mission",
       reason_cross_level_binding: "Driven from another level",
       reason_graph_evidence_only: "Ordering evidence only",
@@ -473,12 +571,13 @@
       boundsOutline: "Declared world bounds outline",
       minimapFrom: "in-game map texture",
       minimapTiles: "tiles",
-      minimapLayer: "layer",
+      minimapTier: "layer",
       scene3d: "Recovered 3D models",
       scene3dHint: "Open a representative OBJ in the existing Assets 3D viewer. Mesh placement is inferred and diagnostic only.",
       streamingSceneHint: "The instance transform is exact, and matched static OBJ geometry is rasterized into the top-down background.",
       scene3dUnplacedHint: "These level-matched OBJ exports have no recovered scene transform. Open them in Assets for inspection; they are not placed on this map.",
       scene3dUnavailable: "No safe OBJ model is published for this level; the map stays marker-only.",
+      documentTitle: "\u6587\u6863\u540d",
     },
     zh: {
       objectFilters: "\u5bf9\u8c61\u663e\u793a",
@@ -490,7 +589,7 @@
       mapFloorHover: "\u6b64\u5904\u8fd8\u6709\u66f4\u591a\u697c\u5c42",
       mapFloorClickCycle: "\u70b9\u51fb\u5faa\u73af\u5207\u6362",
       mapFloorCurrent: "\u5f53\u524d",
-      pointCloudOpacity: "\u70b9\u4e91\u900f\u660e\u5ea6",
+      layerOpacity: "\u900f\u660e\u5ea6",
       pointCloudHeight: "\u70b9\u4e91\u9ad8\u5ea6",
       pointCloudHeightRange: "\u53ef\u89c1\u70b9\u4e91\u9ad8\u5ea6\u533a\u95f4",
       pointCloudHeightMin: "\u6700\u4f4e\u53ef\u89c1\u70b9\u4e91\u9ad8\u5ea6",
@@ -503,11 +602,21 @@
       title: "地图",
       layers: "图层",
       evidence: "证据",
+      surfaceAccuracy: "表面准确度",
+      surface_inferred_hlod_crop: "推断的 HLOD 裁切",
+      surface_exact_mesh_color_unverified: "精确网格放置 - 颜色未验证",
+      surface_exact_mesh_partial_base_color: "精确网格放置 - 部分基础色",
+      surfaceNote_inferred_hlod_crop: "裁切范围由精确的危险地图标记确定；源美术 HLOD 网格为推断放置。",
+      surfaceNote_exact_mesh_color_unverified: "网格几何与放置精确；尚未恢复可靠的贴图颜色。",
+      surfaceNote_exact_mesh_partial_base_color: "网格几何与放置精确；仅已恢复材质绑定的表面显示基础色。",
       controls: "控制面板",
       collapse: "收起面板",
       expand: "展开面板",
       regionSurface: "张区域地图屏按世界坐标拼成无缝整面",
       selectedSurface: "\u5df2\u52a0\u8f7d\u5f53\u524d\u533a\u57df\u5730\u56fe\u5c4f\uff1b\u9009\u62e9\u5176\u4ed6\u533a\u57df\u540e\u52a0\u8f7d\u62fc\u63a5\u5730\u56fe",
+      regionScope: "\u533a\u57df\u8303\u56f4",
+      regionScopeSingle: "\u5f53\u524d\u533a\u57df",
+      regionScopeAll: "\u5168\u90e8\u533a\u57df",
       loading: "正在加载地图数据...",
       mapSurface: "世界地图，可平移缩放",
       zoomIn: "放大",
@@ -518,7 +627,7 @@
       entityReset: "重置实体大小",
       modelLayers: "重建模型图层",
       minimapLayer: "游戏小地图",
-      modelSurface: "材质 / 表面",
+      modelSurface: "彩色贴图",
       modelElevation: "灰度高程",
       modelWater: "恢复水体",
       modelPoints: "彩色点云",
@@ -543,8 +652,11 @@
       countStories: " 剧情",
       registryBacked: "由本关卡的 WorldEntityRegistry 行确定坐标。",
       mission: "任务",
+      mapVariants: "地图项目",
       missionAll: "全部任务",
       missionNone: "本关卡没有任务内容。",
+      npcMissionPhase: "NPC 任务阶段",
+      npcMissionPhaseAll: "全部明确阶段",
       missionFiles: "任务文件",
       missionNextMap: "e0m0 在此关联地图结束",
       layersAll: "全选",
@@ -560,6 +672,8 @@
       questOrder: "顺序",
       objective: "目标",
       coordinates: "坐标",
+      triggerGeometry: "触发体几何",
+      missionContext: "任务上下文",
       name: "名称",
       kind: "类型",
       identity: "标识",
@@ -569,6 +683,14 @@
       storyKey: "剧情键",
       eventName: "事件",
       action: "动作",
+      actionBinding: "动作绑定",
+      actionBinding_exact_bound: "精确动作绑定",
+      actionBinding_exact_plus_unresolved: "精确绑定 + 未解析引用",
+      actionBinding_unresolved_decoder: "动作格式待解析",
+      actionBinding_unresolved_registry_bridge: "动作字段精确；注册桥待恢复",
+      actionBinding_unresolved_member_layout: "动作字段已知；序列化成员布局待恢复",
+      actionBinding_no_reference_observed: "已解码证据中未观察到引用",
+      controlledByTriggers: "控制触发链",
       scenes: "关联场景",
       relatedFiles: "关联文件",
       weakerLinks: "弱关联",
@@ -581,11 +703,14 @@
       sceneNotes: "场景元数据",
       binaryNote: "二进制关卡脚本负载；下方列出其中可读的标识符。",
       hexHead: "起始字节（十六进制）",
+      registryMatch: "WorldEntityRegistry 精确行",
+      registryMissing: "未在注册表中找到请求的实体身份。",
       mapFiles: "地图级文件",
       story: "剧情",
       openInStory: "在剧情页打开",
       noStoryAtNode: "此地图项目没有关联的剧情信息。",
       unplacedStories: "未出现在地图上的任务剧情",
+      unplacedActionTargets: "缺少坐标的脚本动作目标",
       reason_mission_scope_only: "仅限定到整个任务范围",
       reason_cross_level_binding: "由其他关卡驱动",
       reason_graph_evidence_only: "仅有顺序证据",
@@ -596,7 +721,7 @@
       boundsOutline: "声明世界边界轮廓",
       minimapFrom: "游戏内地图贴图",
       minimapTiles: "块",
-      minimapLayer: "图层",
+      minimapTier: "\u56fe\u5c42",
       scene3d: "Recovered 3D models",
       scene3dHint: "Open a representative OBJ in the existing Assets 3D viewer. Mesh placement is inferred and diagnostic only.",
       streamingSceneHint: "实例变换为精确恢复，已匹配的静态 OBJ 网格已栅格化进俯视背景。",
@@ -627,6 +752,13 @@
   function fields(node) {
     const p = node.position;
     const coords = `X ${p.x} / Y ${p.y ?? "?"} / Z ${p.z}`;
+    const triggerGeometry = node.triggerShape
+      ? node.triggerShape.type === "box"
+        ? `Box ${node.triggerShape.size?.x ?? "?"} × ${node.triggerShape.size?.z ?? "?"} m · Y ${node.triggerShape.rotation?.y ?? 0}°`
+        : node.triggerShape.type === "polyline"
+          ? `PolyLine ${(node.triggerShape.polyLinePoints || []).length} points`
+          : `Sphere R ${node.triggerShape.radius ?? "?"} m`
+      : "";
     const rows = node.type === "quest"
       ? [
         [t("mission"), node.endpointRole ? t(node.endpointRole === "start" ? "missionStart" : "missionEnd") : ""],
@@ -641,9 +773,25 @@
         [t("identity"), node.identity],
         [t("detailId"), node.detailId],
         [t("interaction"), node.interactionStatus],
+        [t("documentTitle"), node.documentTitle],
         [t("storyKey"), node.storyKey],
         [t("eventName"), node.eventName],
+        [t("actionBinding"), node.actionBindingStatus ? t(`actionBinding_${node.actionBindingStatus}`) : ""],
         [t("action"), node.action],
+        [t("action"), (node.actions || []).map((action) => {
+          const name = String(action?.name || "");
+          const field = String(action?.fieldName || "");
+          return name && field ? `${name}.${field}` : name || field;
+        }).filter(Boolean).join("; ")],
+        [t("controlledByTriggers"), (node.controlledByTriggers || []).map((trigger) => {
+          const header = trigger.headerName || trigger.eventType || "";
+          return trigger.triggerSlotId !== null && trigger.triggerSlotId !== undefined
+            ? `${header} #${trigger.triggerSlotId}`
+            : header;
+        }).filter(Boolean).join("; ")],
+        [t("npcMissionPhase"), (node.missionPhases || []).map((phase) => `${phase.missionId}: ${phase.questId}`).join(", ")],
+        [t("missionContext"), (node.missionContexts || []).join(", ")],
+        [t("triggerGeometry"), triggerGeometry],
         [t("evidenceField"), node.evidence],
         [t("coordinates"), coords],
       ];
@@ -710,6 +858,11 @@
         if (hasNull || (buffer.length && controls / buffer.length > 0.04)) {
           const hex = [...buffer.slice(0, 256)].map((byte) => byte.toString(16).padStart(2, "0")).join(" ");
           return { kind: "binary", byteLength: buffer.length, data: hex, tokens: asciiTokens(buffer) };
+        }
+        if (/WorldEntityRegistry\.json(?:$|[?#])/i.test(url)) {
+          try {
+            return { kind: "registry", byteLength: buffer.length, registry: JSON.parse(text) };
+          } catch { /* malformed registry falls through to text preview */ }
         }
         // A conv payload is rendered as dialog rather than as JSON, so it is
         // parsed here once and cached in its parsed form.
@@ -1100,15 +1253,17 @@
   // ---------------------------------------------------------------- inspector
 
   function fileRow(pin, active) {
+    const focus = pin.focus ? encodeURIComponent(JSON.stringify(pin.focus)) : "";
     return `<div class="mr-file${pin.strength === "weak" ? " is-weak" : ""}${active ? " is-active" : ""}">
-      <button type="button" class="mr-file-pick" data-map-file="${esc(pin.href)}" data-map-file-path="${esc(pin.path)}" aria-pressed="${active ? "true" : "false"}">
+      <button type="button" class="mr-file-pick" data-map-file="${esc(pin.href)}" data-map-file-path="${esc(pin.path)}" data-map-file-focus="${esc(focus)}" aria-pressed="${active ? "true" : "false"}">
         <b>${esc(fileName(pin.path))}</b><small>${esc(pin.note || pin.relation)}</small>
       </button>
       <span class="mr-file-actions">${storyLink(pin.path)}<a class="mr-file-open" href="${esc(pin.href)}" target="_blank" rel="noreferrer">${esc(t("openRaw"))}</a></span>
     </div>`;
   }
 
-  function fileListHtml(pins) {
+  function fileListHtml(pins, options = {}) {
+    pins = visibleFilePins(pins, options);
     if (!pins.length) return `<p class="mr-placeholder">${esc(t("noFiles"))}</p>`;
     const strong = pins.filter((pin) => pin.strength !== "weak");
     const weak = pins.filter((pin) => pin.strength === "weak");
@@ -1143,23 +1298,28 @@
 
     head.innerHTML = `<p class="mr-role" style="color:${esc(kindColor(node))}">${esc(nodeRole(node))}${node.kind ? ` / ${esc(kindLabel(node.kind))}` : ""}</p>
       <h2>${esc(nodeTitle(node))}</h2>`;
+    const nodeFiles = visibleFilePins(relatedFiles(node));
     body.innerHTML = `<dl class="mr-fields">${fields(node).map(([label, value]) => `<dt>${esc(label)}</dt><dd>${esc(value)}</dd>`).join("")}</dl>
-      <h3 class="mr-section-title">${esc(`${t("relatedFiles")} (${relatedFiles(node).length})`)}</h3>
-      ${fileListHtml(relatedFiles(node))}
+      <h3 class="mr-section-title">${esc(`${t("relatedFiles")} (${nodeFiles.length})`)}</h3>
+      ${fileListHtml(nodeFiles)}
       <div class="mr-viewer-slot"></div>`;
     bindFilePicks(body);
     renderViewer();
   }
 
   function mapFilesHtml() {
-    const pins = (state.map?.relatedFiles || []).filter((row) => row && row.path);
+    const pins = visibleFilePins(state.map?.relatedFiles || [], { mapWide: true });
     if (!pins.length) return "";
-    return `<h3 class="mr-section-title">${esc(`${t("mapFiles")} (${pins.length})`)}</h3>${fileListHtml(pins)}`;
+    return `<h3 class="mr-section-title">${esc(`${t("mapFiles")} (${pins.length})`)}</h3>${fileListHtml(pins, { mapWide: true })}`;
   }
 
   function bindFilePicks(scope) {
     scope.querySelectorAll("[data-map-file]").forEach((button) => {
-      button.addEventListener("click", () => openFile(button.dataset.mapFile, button.dataset.mapFilePath));
+      button.addEventListener("click", () => {
+        let focus = null;
+        try { focus = button.dataset.mapFileFocus ? JSON.parse(decodeURIComponent(button.dataset.mapFileFocus)) : null; } catch { /* invalid focus fails closed */ }
+        openFile(button.dataset.mapFile, button.dataset.mapFilePath, focus);
+      });
     });
   }
 
@@ -1171,9 +1331,11 @@
     });
   }
 
-  function openFile(href, path) {
-    state.filePath = href === state.filePath ? "" : href;
+  function openFile(href, path, focus = null) {
+    const sameFocus = JSON.stringify(focus) === JSON.stringify(state.fileFocus);
+    state.filePath = href === state.filePath && sameFocus ? "" : href;
     state.filePathLabel = path || "";
+    state.fileFocus = state.filePath ? focus : null;
     syncFileSelection();
     renderViewer();
   }
@@ -1217,9 +1379,45 @@
         target.innerHTML = convHtml(result.conv);
         return;
       }
+      if (result.kind === "registry") {
+        target.innerHTML = registryExcerptHtml(result.registry, state.fileFocus);
+        target.querySelector(".mr-registry-hit")?.scrollIntoView({ block: "center" });
+        return;
+      }
       target.innerHTML = `<pre class="mr-raw">${esc(result.text || "")}</pre>`
         + (result.truncated ? `<p class="mr-viewer-state">${esc(`+ ${t("moreLines")}`)}</p>` : "");
     });
+  }
+
+  function registryExcerptHtml(registry, focus) {
+    let excerpt = null;
+    let source = "";
+    if (focus?.kind === "world") {
+      const row = registry?.worldEntityBriefInfos?.[String(focus.logicId)];
+      if (row) {
+        source = `worldEntityBriefInfos.${focus.logicId}`;
+        excerpt = { [focus.logicId]: row };
+      }
+    } else if (focus?.kind === "script") {
+      const ids = Array.isArray(registry?.m_scriptEntityIdList) ? registry.m_scriptEntityIdList : [];
+      const index = ids.findIndex((row) => String(row?.scriptIdGlobal) === String(focus.scriptIdGlobal) && String(row?.slotId) === String(focus.slotId));
+      if (index >= 0) {
+        source = `m_scriptEntityIdList[${index}] + m_scriptEntityBriefInfo[${index}]`;
+        excerpt = {
+          [`m_scriptEntityIdList[${index}]`]: ids[index],
+          [`m_scriptEntityBriefInfo[${index}]`]: registry?.m_scriptEntityBriefInfo?.[index] ?? null,
+        };
+      }
+    } else if (focus?.kind === "npc") {
+      const row = registry?.npcProxyBriefInfos?.[String(focus.logicId)];
+      if (row) {
+        source = `npcProxyBriefInfos.${focus.logicId}`;
+        excerpt = { [focus.logicId]: row };
+      }
+    }
+    if (!excerpt) return `<p class="mr-viewer-state is-error">${esc(t("registryMissing"))}</p>`;
+    const lines = JSON.stringify(excerpt, null, 2).split("\n");
+    return `<p class="mr-viewer-state"><b>${esc(t("registryMatch"))}</b><br>${esc(source)}</p><pre class="mr-registry-code">${lines.map((line, index) => `<span class="mr-registry-line mr-registry-hit"><i>${index + 1}</i><mark>${esc(line)}</mark></span>`).join("")}</pre>`;
   }
 
   function convHtml(conv) {
@@ -1274,7 +1472,7 @@
     if (!next) return;
     // A story file is what the reader is usually after, so it wins the auto-open
     // even when a stronger placement file is listed above it.
-    const pins = relatedFiles(state.nodes.find((row) => row.id === next));
+    const pins = visibleFilePins(relatedFiles(state.nodes.find((row) => row.id === next)));
     const first = pins.find((pin) => pin.relation.startsWith("story"))
       || pins.find((pin) => pin.strength !== "weak")
       || pins[0];
@@ -1358,7 +1556,12 @@
     const range = state.pointHeightRange;
     if (!sourceUrl || (!maskUrl && !sampleUrl) || !range) return;
     const fullRange = range.low <= range.min && range.high >= range.max;
-    if (fullRange) {
+    // A height mask only knows the already-rasterized top hit, so it can use
+    // the compact source PNG when no height cut is active.  Layered sample
+    // sets must still be rebuilt: their source PNG deliberately stores only
+    // the highest sample and cannot alpha-compose lower geometry beneath a
+    // transparent or hidden upper sample.
+    if (fullRange && !sampleUrl) {
       revokePointFilter(image);
       image.setAttribute("href", sourceUrl);
       return;
@@ -1368,15 +1571,41 @@
         const samples = await pointSamples(sampleUrl);
         if (token !== pointFilterToken || !image.isConnected) return;
         const pixels = new Uint8ClampedArray(samples.width * samples.height * 4);
+        const sliceSpan = Math.max(range.max - range.min, 1e-9) / POINT_HEIGHT_SLICE_COUNT;
+        const slices = Array.from({ length: POINT_HEIGHT_SLICE_COUNT }, () => new Map());
         for (let cursor = 16; cursor < samples.view.byteLength; cursor += 12) {
           const height = samples.view.getFloat32(cursor + 4, true);
           if (height < range.low || height > range.high) continue;
-          const offset = samples.view.getUint32(cursor, true) * 4;
-          if (offset + 3 >= pixels.length) continue;
-          pixels[offset] = samples.view.getUint8(cursor + 8);
-          pixels[offset + 1] = samples.view.getUint8(cursor + 9);
-          pixels[offset + 2] = samples.view.getUint8(cursor + 10);
-          pixels[offset + 3] = samples.view.getUint8(cursor + 11);
+          const pixelIndex = samples.view.getUint32(cursor, true);
+          if (pixelIndex * 4 + 3 >= pixels.length) continue;
+          const sliceIndex = clamp(Math.floor((height - range.min) / sliceSpan), 0, POINT_HEIGHT_SLICE_COUNT - 1);
+          const previous = slices[sliceIndex].get(pixelIndex);
+          // One slice represents one shallow height slab. Keep its top sample;
+          // separate slabs are composited below so disabling upper slabs never
+          // destroys a co-projected lower point.
+          if (!previous || height >= previous.height) {
+            slices[sliceIndex].set(pixelIndex, {
+              height,
+              red: samples.view.getUint8(cursor + 8),
+              green: samples.view.getUint8(cursor + 9),
+              blue: samples.view.getUint8(cursor + 10),
+              alpha: samples.view.getUint8(cursor + 11),
+            });
+          }
+        }
+        for (const slice of slices) {
+          for (const [pixelIndex, sample] of slice) {
+            const offset = pixelIndex * 4;
+            const sourceAlpha = sample.alpha / 255;
+            if (sourceAlpha <= 0) continue;
+            const destinationAlpha = pixels[offset + 3] / 255;
+            const outputAlpha = sourceAlpha + destinationAlpha * (1 - sourceAlpha);
+            if (outputAlpha <= 0) continue;
+            pixels[offset] = Math.round((sample.red * sourceAlpha + pixels[offset] * destinationAlpha * (1 - sourceAlpha)) / outputAlpha);
+            pixels[offset + 1] = Math.round((sample.green * sourceAlpha + pixels[offset + 1] * destinationAlpha * (1 - sourceAlpha)) / outputAlpha);
+            pixels[offset + 2] = Math.round((sample.blue * sourceAlpha + pixels[offset + 2] * destinationAlpha * (1 - sourceAlpha)) / outputAlpha);
+            pixels[offset + 3] = Math.round(outputAlpha * 255);
+          }
         }
         const canvas = document.createElement("canvas");
         canvas.width = samples.width;
@@ -1447,22 +1676,39 @@
     // the difference between a readable route and a wall of markers. A node with
     // no mission of its own is level art: it is only shown when no mission is
     // selected, because claiming it for the selected mission would be a lie.
-    const inMission = (row) => !state.mission || (row.missions || []).includes(state.mission);
+    const matchesMission = (row) => !!state.mission && (
+      (row.missions || []).includes(state.mission)
+      || (row.missionContexts || []).includes(state.mission)
+    );
+    const hasMissionScope = (row) => (row.missions || []).length || (row.missionContexts || []).length;
+    const inMission = (row) => !state.mission || matchesMission(row) || !hasMissionScope(row);
+    const questInMission = (row) => !state.mission || matchesMission(row);
+    const npcPhases = (row) => (row.missionPhases || []).filter((phase) => phase.missionId === state.mission);
+    const inNpcPhase = (row) => row.kind !== "npc" || !state.missionPhase
+      || npcPhases(row).some((phase) => phase.questId === state.missionPhase);
     const inMapLayer = (row) => {
       const ids = row.mapLayerIds || [];
       return ids.length ? ids.some((id) => state.mapLayers.has(id)) : true;
     };
     const missionSelected = !!state.mission;
     const questRows = ((state.showQuests || missionSelected) ? (data.questPoints || []) : [])
-      .filter((row) => inMission(row) && (missionSelected || inMapLayer(row)))
+      .filter((row) => questInMission(row) && (missionSelected || inMapLayer(row)))
       .map((row) => ({ ...row, type: "quest", position: finitePosition(row.position) }))
       .filter((row) => row.position);
     const markerRows = (data.markers || [])
       .filter((row) => inMission(row))
-      .filter((row) => missionSelected || (state.kinds.has(row.kind) && state.subKinds.has(row.subKind || row.kind)))
-      .filter((row) => missionSelected || inMapLayer(row))
-      .filter((row) => missionSelected || !state.storyOnly || Number(row.storyCount || 0) > 0)
-      .map((row) => ({ ...row, type: "marker", position: finitePosition(row.position) }))
+      .filter((row) => inNpcPhase(row))
+      .filter((row) => matchesMission(row) || (state.kinds.has(row.kind) && state.subKinds.has(row.subKind || row.kind)))
+      .filter((row) => matchesMission(row) || inMapLayer(row))
+      .filter((row) => matchesMission(row) || !state.storyOnly || Number(row.storyCount || 0) > 0)
+      .map((row) => ({
+        ...row,
+        type: "marker",
+        phaseLabel: row.kind === "npc" && state.mission
+          ? npcPhases(row).map((phase) => phase.questId).join(", ")
+          : "",
+        position: finitePosition(row.position),
+      }))
       .filter((row) => row.position);
 
     // Start/end pins are derived strictly from each mission's authored
@@ -1650,18 +1896,19 @@
     // made overlapping sibling screens visibly darker than their neighbours.
     // Keep the source alpha intact so the region surface has one consistent
     // tone; transparency still exposes the map background below.
+    const layerOpacity = (id) => clamp(Number(state.layerOpacities[id] ?? 1), 0, 1).toFixed(2);
     const modelImages = ({ bg, x, y, w, h }, overMinimap = false, part = "all") => {
         const orientation = bg.mapInverted
           ? ` transform="rotate(90 ${(x + w / 2).toFixed(2)} ${(y + h / 2).toFixed(2)})"`
           : "";
         const geometry = `x="${x.toFixed(2)}" y="${y.toFixed(2)}" width="${w.toFixed(2)}" height="${h.toFixed(2)}"${orientation}`;
         const underlay = state.modelLayers.has("elevation") && bg.elevationUnderlay?.src
-          ? `<image class="mr-bg-image mr-bg-elevation" href="data/map_recovery/${esc(bg.elevationUnderlay.src)}?v=${MAP_ASSET_VERSION}" ${geometry}><title>${esc(`${bg.levelId} elevation`)}</title></image>`
+          ? `<image class="mr-bg-image mr-bg-elevation" href="data/map_recovery/${esc(bg.elevationUnderlay.src)}?v=${MAP_ASSET_VERSION}" ${geometry} style="opacity:${layerOpacity("elevation")}"><title>${esc(`${bg.levelId} elevation`)}</title></image>`
           : "";
         const pointSrc = bg.pointCloudOverlay?.src || "";
         const mainIsPointCloud = bg.status === "inferred_registry_point_cloud_preview";
         const surface = state.modelLayers.has("surface") && !mainIsPointCloud
-          ? `<image class="mr-bg-image mr-bg-model-surface${overMinimap ? " is-overlay" : ""}" href="data/map_recovery/${esc(bg.src)}?v=${MAP_ASSET_VERSION}" ${geometry}><title>${esc(bg.levelId)}</title></image>`
+          ? `<image class="mr-bg-image mr-bg-model-surface${overMinimap ? " is-overlay" : ""}" href="data/map_recovery/${esc(bg.src)}?v=${MAP_ASSET_VERSION}" ${geometry} style="opacity:${layerOpacity("surface")}"><title>${esc(bg.levelId)}</title></image>`
           : "";
         const water = state.modelLayers.has("water") && bg.waterOverlay?.src
           ? `<image class="mr-bg-image mr-bg-water" href="data/map_recovery/${esc(bg.waterOverlay.src)}?v=${MAP_ASSET_VERSION}" ${geometry}><title>${esc(`${bg.levelId} water`)}</title></image>`
@@ -1677,7 +1924,7 @@
           ? ` data-point-src="${esc(pointUrl)}"${heightMaskUrl ? ` data-point-height-mask="${esc(heightMaskUrl)}"` : ""}${sampleUrl ? ` data-point-samples="${esc(sampleUrl)}"` : ""} data-point-height-min="${Number(pointRange.min)}" data-point-height-max="${Number(pointRange.max)}"`
           : "";
         const points = state.modelLayers.has("points") && visiblePointSrc
-          ? `<image class="mr-bg-image mr-bg-point-cloud" href="${esc(pointUrl)}"${heightAttrs} ${geometry} style="opacity:${state.pointCloudOpacity.toFixed(2)}"><title>${esc(`${bg.levelId} point cloud`)}</title></image>`
+          ? `<image class="mr-bg-image mr-bg-point-cloud" href="${esc(pointUrl)}"${heightAttrs} ${geometry} style="opacity:${layerOpacity("points")}"><title>${esc(`${bg.levelId} point cloud`)}</title></image>`
           : "";
         if (part === "base") return `${underlay}${surface}`;
         if (part === "water") return water;
@@ -1696,6 +1943,9 @@
         return `<image class="mr-bg-image" href="data/map_recovery/${esc(bg.src)}?v=${MAP_ASSET_VERSION}" ${geometry}><title>${esc(bg.levelId)}</title></image>`;
       })
       .join("");
+    const minimapLayer = minimapImages
+      ? `<g class="mr-bg-minimap-layer" style="opacity:${layerOpacity("minimap")}">${minimapImages}</g>`
+      : "";
     const modelBaseImages = modelOverlayRects.map((rect) => modelImages(rect, rect.overMinimap, "base")).join("");
     const waterImages = modelOverlayRects.map((rect) => modelImages(rect, rect.overMinimap, "water")).join("");
     // Regional minimaps overlap by design. Rendering each semi-transparent
@@ -1704,10 +1954,10 @@
     // covered output pixel to the one authored overlay alpha and draw the
     // union exactly once regardless of how many sibling screens cover it.
     const waterUnion = waterImages
-      ? `<defs><filter id="mr-water-union-alpha" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncA type="discrete" tableValues="0 0.6588235"/></feComponentTransfer></filter></defs><g class="mr-bg-water-union" filter="url(#mr-water-union-alpha)">${waterImages}</g>`
+      ? `<defs><filter id="mr-water-union-alpha" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncA type="discrete" tableValues="0 0.6588235"/></feComponentTransfer></filter></defs><g class="mr-bg-water-union" filter="url(#mr-water-union-alpha)" style="opacity:${layerOpacity("water")}">${waterImages}</g>`
       : "";
     const pointImages = modelOverlayRects.map((rect) => modelImages(rect, rect.overMinimap, "points")).join("");
-    const backgroundImages = `${minimapImages}${modelBaseImages}${waterUnion}${pointImages}`;
+    const backgroundImages = `${minimapLayer}${modelBaseImages}${waterUnion}${pointImages}`;
     // Level display names describe gameplay scenes, not geographic ownership
     // of the whole (overlapping) map-screen rectangle. Location labels come
     // from the map UI's own staticElements text anchors instead. Keep them as
@@ -1765,6 +2015,45 @@
     state.lastNodeScale = null;
     state.lastLocationScale = null;
 
+    const triggerZoneSvg = state.nodes.map((node) => {
+      const shape = node.triggerShape;
+      if (!shape || !shape.position) return "";
+      const center = finitePosition(shape.position);
+      if (!center) return "";
+      const projected = (position) => plot(oriented(position, node));
+      const title = esc(`${node.labelText} · ${node.detailId || ""}`);
+      let geometry = "";
+      if (shape.type === "sphere" && Number(shape.radius) > 0) {
+        const c = projected(center);
+        const x = projected({ ...center, x: center.x + Number(shape.radius) });
+        const z = projected({ ...center, z: center.z + Number(shape.radius) });
+        geometry = `<ellipse class="mr-trigger-zone-shape" cx="${c.x.toFixed(3)}" cy="${c.y.toFixed(3)}" rx="${Math.abs(x.x - c.x).toFixed(3)}" ry="${Math.abs(z.y - c.y).toFixed(3)}"/>`;
+      } else if (shape.type === "box") {
+        const sx = Number(shape.size?.x);
+        const sz = Number(shape.size?.z);
+        if (!(sx > 0 && sz > 0)) return "";
+        const yaw = Number(shape.rotation?.y || 0) * Math.PI / 180;
+        const corners = [[-sx / 2, -sz / 2], [sx / 2, -sz / 2], [sx / 2, sz / 2], [-sx / 2, sz / 2]];
+        const points = corners.map(([dx, dz]) => projected({
+          ...center,
+          x: center.x + dx * Math.cos(yaw) + dz * Math.sin(yaw),
+          z: center.z - dx * Math.sin(yaw) + dz * Math.cos(yaw),
+        })).map((point) => `${point.x.toFixed(3)},${point.y.toFixed(3)}`).join(" ");
+        geometry = `<polygon class="mr-trigger-zone-shape" points="${points}"/>`;
+      } else if (shape.type === "polyline") {
+        // Native overlap consumes these authored Vector2 values directly as
+        // world X/Z. Shape position/rotation only gates the vertical slab.
+        const worldPoints = (shape.polyLinePoints || [])
+          .map((point) => ({ x: Number(point?.x), y: center.y, z: Number(point?.y) }))
+          .filter((point) => Number.isFinite(point.x) && Number.isFinite(point.z));
+        if (worldPoints.length < 3) return "";
+        const points = worldPoints.map(projected)
+          .map((point) => `${point.x.toFixed(3)},${point.y.toFixed(3)}`).join(" ");
+        geometry = `<polygon class="mr-trigger-zone-shape" points="${points}"/>`;
+      }
+      return geometry ? `<g class="mr-node mr-trigger-zone" data-node="${esc(node.id)}" data-kind="trigger" role="button" tabindex="0" aria-label="${title}"><title>${title}</title>${geometry}</g>` : "";
+    }).join("");
+
     const nodeSvg = state.nodes.map((node) => {
       const quest = node.type === "quest";
       // A node reads as a story node when dialog is actually pinned to it, not
@@ -1773,13 +2062,24 @@
       const hasStory = quest ? false : (node.storyCount || 0) > 0;
       const endpoint = quest && node.endpointRole;
       const endpointLabel = endpoint ? t(endpoint === "start" ? "missionStart" : "missionEnd") : "";
+      const markerGlyph = node.kind === "enemy"
+        ? `<path class="mr-shape" d="M0,-8 L8,0 L0,8 L-8,0 Z" fill="${esc(kindColor(node))}"/>`
+        : node.kind === "device"
+          ? `<rect class="mr-shape" x="-6.5" y="-6.5" width="13" height="13" rx="2" fill="${esc(kindColor(node))}"/>`
+          : node.kind === "script_target_candidate" || node.kind === "script_target"
+            ? `<circle class="mr-shape" r="7" fill="none" stroke="${esc(kindColor(node))}" stroke-width="2.5"/><path class="mr-shape" d="M-10,0 H10 M0,-10 V10" stroke="${esc(kindColor(node))}" stroke-width="2"/>`
+          : node.kind === "scenery"
+            ? `<path class="mr-shape" d="M-6,-3.5 L0,-7 L6,-3.5 L6,3.5 L0,7 L-6,3.5 Z" fill="${esc(kindColor(node))}"/>`
+            : node.kind === "travel"
+              ? `<path class="mr-shape" d="M0,-8 L7,6 L-7,6 Z" fill="${esc(kindColor(node))}"/>`
+              : `<circle class="mr-shape" r="${hasStory || node.kind === "story" ? 9 : 6}" fill="${esc(kindColor(node))}"/>`;
       const shape = endpoint === "start"
         ? `<circle class="mr-endpoint-halo" r="11"/><circle class="mr-shape" r="7"/><path class="mr-endpoint-glyph" d="M-2.5,-4 L4,0 L-2.5,4 Z"/>`
         : endpoint === "end"
           ? `<circle class="mr-endpoint-halo" r="11"/><rect class="mr-shape" x="-6" y="-6" width="12" height="12" transform="rotate(45)"/><path class="mr-endpoint-glyph" d="M-3,-3 H3 V3 H-3 Z"/>`
           : quest
             ? `<rect class="mr-shape" x="-5.5" y="-5.5" width="11" height="11"/>`
-        : `<circle class="mr-shape" r="${hasStory || node.kind === "story" ? 9 : 6}" fill="${esc(kindColor(node))}"/>`;
+        : markerGlyph;
       return `<g class="mr-node${quest ? " mr-quest" : " mr-marker"}${endpoint ? ` is-mission-${endpoint}` : ""}${hasStory || node.kind === "story" ? " is-story" : ""}" data-node="${esc(node.id)}" data-kind="${esc(node.kind || "quest")}" role="button" tabindex="0" aria-pressed="${node.id === state.selectedId ? "true" : "false"}" aria-label="${esc(accessibleName(node))}">`
         + `<circle class="mr-hit" r="15" fill="none" pointer-events="all"/>${shape}`
         + (endpoint ? `<text class="mr-endpoint-label" x="0" y="-17">${esc(endpointLabel)}</text>` : "")
@@ -1788,11 +2088,6 @@
 
     const layerControls = layerTreeHtml(data);
     const modelLayerControls = modelLayerControlsHtml();
-    const hasPointCloudUnderlay = state.modelBackgrounds.some((bg) => bg.pointCloudOverlay?.src);
-    const pointCloudOpacity = Math.round(state.pointCloudOpacity * 100);
-    const opacityControl = hasPointCloudUnderlay
-      ? `<label class="mr-opacity-dock"><span>${esc(t("pointCloudOpacity"))}</span><input type="range" min="0" max="100" step="1" value="${pointCloudOpacity}" data-map-point-opacity><output>${pointCloudOpacity}%</output></label>`
-      : "";
     const height = state.pointHeightRange;
     const heightSpan = height ? Math.max(height.max - height.min, 1e-9) : 1;
     const heightLowPercent = height ? (height.low - height.min) / heightSpan * 100 : 0;
@@ -1800,7 +2095,8 @@
     const heightControl = height
       ? `<div class="mr-height-dock"><span>${esc(t("pointCloudHeight"))}</span><div class="mr-height-range" style="--height-low:${heightLowPercent.toFixed(2)}%;--height-high:${heightHighPercent.toFixed(2)}%"><input type="range" min="${height.min}" max="${height.max}" step="any" value="${height.low}" aria-label="${esc(t("pointCloudHeightMin"))}" data-map-point-height="low"><input type="range" min="${height.min}" max="${height.max}" step="any" value="${height.high}" aria-label="${esc(t("pointCloudHeightMax"))}" data-map-point-height="high"></div><output aria-label="${esc(t("pointCloudHeightRange"))}">${esc(`${formatHeight(height.low)} – ${formatHeight(height.high)}`)}</output></div>`
       : "";
-    const missionControls = missionSelectHtml(data);
+    const missionControls = `${missionSelectHtml(data)}${npcPhaseSelectHtml(data)}`;
+    const variantControls = mapVariantHtml();
     const mapMetrics = `<p class="mr-coords">${esc(data.coordinateSystem)}</p>
       <section class="mr-metrics">
         ${state.nodes.length === (data.questPoints || []).length + (data.markers || []).length
@@ -1821,12 +2117,17 @@
       </div>
       <p class="mr-note mr-layer-selection-hint">${esc(t("layerSelectionHint"))}</p>
       <div class="mr-layers">${(data.questPoints || []).length ? `<label class="mr-layer" style="--mr-chip:${QUEST_COLOR}"><input type="checkbox" data-map-quests ${state.showQuests ? "checked" : ""}><span class="mr-swatch" style="background:${QUEST_COLOR}"></span>${esc(kindLabel("quest"))}<span class="mr-layer-count">${data.questPoints.length}</span></label>` : ""}${layerControls}</div>
-      ${modelLayerControls}${opacityControl}${heightControl}<p class="mr-floor-help">${esc(t("help"))}</p>
+      ${modelLayerControls}${heightControl}<p class="mr-floor-help">${esc(t("help"))}</p>
     </section>`;
     const unlinked = (data.unlinkedMissionFiles || []).filter((path) => String(path || "").trim()).sort((a, b) => a.localeCompare(b));
     const unresolvedSlots = data.unresolvedTriggerSlots || { count: 0 };
     const unplaced = data.unplacedStories || { count: 0 };
+    const unplacedActions = data.unplacedActionTargets || { count: 0 };
     const bg = data.renderBackground || {};
+    const surfaceEvidence = bg.surfaceEvidence && typeof bg.surfaceEvidence === "object" ? bg.surfaceEvidence : null;
+    const surfaceAccuracy = surfaceEvidence?.accuracy
+      ? `<div class="mr-surface-evidence" data-accuracy="${esc(surfaceEvidence.accuracy)}"><span>${esc(t("surfaceAccuracy"))}</span><b>${esc(t(`surface_${surfaceEvidence.accuracy}`))}</b><small>${esc(t(`surfaceNote_${surfaceEvidence.accuracy}`))}</small></div>`
+      : "";
     const regionLevelCount = state.index?.maps?.filter((row) => regionKey(row.id) === regionKey(state.selected)).length
       || state.backgrounds.length;
     const surfaceLabel = state.backgrounds.length < regionLevelCount ? t("selectedSurface") : t("regionSurface");
@@ -1849,12 +2150,21 @@
     const sceneBlock = sceneMeshes.length
       ? `<details><summary>${esc(`${t("scene3d")} (${scene.meshCount || sceneMeshes.length})`)}</summary><p class="mr-note">${esc(sceneHint)}</p><ul class="mr-file-list">${sceneFiles}</ul></details>`
       : `<p class="mr-note"><code>${esc(scene.status || "obj_cluster_files_unavailable")}</code> ${esc(t("scene3dUnavailable"))}</p>`;
+    const supportsRegionScope = ["map01", "map02"].includes(regionKey(state.selected));
+    const regionScopeTools = supportsRegionScope ? `
+      <div class="mr-tool-group mr-region-tools" role="group" aria-label="${esc(t("regionScope"))}">
+        <span>${esc(t("regionScope"))}</span>
+        <button type="button" data-map-region-scope="single" aria-pressed="${state.regionScope === "single"}">${esc(t("regionScopeSingle"))}</button>
+        <button type="button" data-map-region-scope="all" aria-pressed="${state.regionScope === "all"}">${esc(t("regionScopeAll"))}</button>
+      </div>
+      <span class="mr-tool-sep" aria-hidden="true"></span>` : "";
 
-    host.innerHTML = `<div class="mr-map${hasPointCloudUnderlay ? " has-point-opacity" : ""}" tabindex="0" role="group" aria-label="${esc(`${mapTitle(data)} - ${t("mapSurface")}`)}">
-        <svg class="mr-canvas" viewBox="0 0 ${WIDTH} ${HEIGHT}" role="group" aria-label="${esc(mapTitle(data))}"><rect width="100%" height="100%" class="mr-map-bg"/><g class="mr-viewport">${backgroundImages}<g class="mr-location-labels">${locationLabelSvg}</g><g class="mr-routes">${routeSvg}</g><g class="mr-nodes">${nodeSvg}</g></g></svg>
+    host.innerHTML = `<div class="mr-map" tabindex="0" role="group" aria-label="${esc(`${mapTitle(data)} - ${t("mapSurface")}`)}">
+        <svg class="mr-canvas" viewBox="0 0 ${WIDTH} ${HEIGHT}" role="group" aria-label="${esc(mapTitle(data))}"><rect width="100%" height="100%" class="mr-map-bg"/><g class="mr-viewport">${backgroundImages}<g class="mr-location-labels">${locationLabelSvg}</g><g class="mr-routes">${routeSvg}</g><g class="mr-trigger-zones">${triggerZoneSvg}</g><g class="mr-nodes">${nodeSvg}</g></g></svg>
         <div class="mr-tip" hidden></div>
         <div class="mr-floor-tip" hidden></div>
         <div class="mr-tools" role="toolbar" aria-label="${esc(t("mapSurface"))}">
+          ${regionScopeTools}
           <div class="mr-tool-group" role="group" aria-label="${esc(t("zoomLevel"))}">
             <button type="button" data-map-zoom="out" aria-label="${esc(t("zoomOut"))}" title="${esc(t("zoomOut"))}">-</button>
             <button type="button" data-map-zoom="in" aria-label="${esc(t("zoomIn"))}" title="${esc(t("zoomIn"))}">+</button>
@@ -1883,14 +2193,14 @@
         <div class="mr-float-body">
           <div class="mr-browser-tree">
             <nav class="mr-map-column" aria-label="${esc(t("title"))}">${mapTreeHtml()}</nav>
-            <section class="mr-task-column" aria-label="${esc(t("mission"))}"><h2>${esc(t("mission"))}</h2>${missionControls}<div class="mr-task-map-status">${mapMetrics}</div></section>
+            <section class="mr-task-column" aria-label="${esc(t("mission"))}"><h2>${esc(t("mission"))}</h2>${variantControls}${missionControls}<div class="mr-task-map-status">${mapMetrics}${surfaceAccuracy}</div></section>
             ${objectFilters}
           </div>
-          <div class="mr-technical-evidence" hidden>
+          <div class="mr-technical-evidence">
           <h2>${esc(t("evidence"))}</h2>
            <p class="mr-note"><b>${state.backgrounds.length}</b> ${esc(surfaceLabel)}</p>
           <p class="mr-note"><code>${esc(minimapBg.status || "unknown")}</code>${minimapBg.src
-            ? ` · ${t("minimapFrom")}: <b>${minimapBg.tileCount}</b> ${t("minimapTiles")} / ${t("minimapLayer")} <b>${minimapBg.layer}</b>`
+            ? ` · ${t("minimapFrom")}: <b>${minimapBg.tileCount}</b> ${t("minimapTiles")} / ${t("minimapTier")} <b>${minimapBg.layer}</b>`
             : ""}${esc(minimapBg.boundary || "")}</p>
           <p class="mr-note"><code>${esc(bg.status || "unknown")}</code>${esc(bg.boundary || "")}</p>
           ${sceneBlock}
@@ -1908,6 +2218,18 @@
             ? `<details><summary>${esc(`${t("unplacedTriggers")} (${unresolvedSlots.count})`)}</summary>
                 <p class="mr-note">${esc(unresolvedSlots.boundary || "")}</p>
                 <ul class="mr-file-list">${(unresolvedSlots.stories || []).map((row) => `<li><code>${esc(row.key)}</code> ${esc((row.triggerSlotIds || []).join(", "))}</li>`).join("")}</ul>
+              </details>`
+            : ""}
+          ${unplacedActions.count
+            ? `<details><summary>${esc(`${t("unplacedActionTargets")} (${unplacedActions.count})`)}</summary>
+                <p class="mr-note">${esc(unplacedActions.boundary || "")}</p>
+                <ul class="mr-file-list">${(unplacedActions.targets || []).map((row) => {
+                  const source = String(row.sourceFile || "");
+                  const sourceLink = source
+                    ? `<a href="/${esc(source)}" target="_blank" rel="noreferrer">${esc(row.actionName || source)}</a>`
+                    : esc(row.actionName || "");
+                  return `<li><code>${esc(String(row.entityLogicId || ""))}</code> ${sourceLink} <small>${esc(row.fieldName || "")}</small></li>`;
+                }).join("")}</ul>
               </details>`
             : ""}
           <details><summary>${esc(`${t("unlinkedFiles")} (${unlinked.length})`)}</summary>
@@ -1940,8 +2262,18 @@
     host.querySelectorAll("[data-map-id]").forEach((button) => button.addEventListener("click", () => {
       void switchMap(button.dataset.mapId);
     }));
+    host.querySelectorAll("[data-map-variant]").forEach((button) => button.addEventListener("click", () => {
+      void switchMap(state.selected, button.dataset.mapVariant);
+    }));
+    host.querySelectorAll("[data-map-region-scope]").forEach((button) => button.addEventListener("click", () => {
+      const scope = button.dataset.mapRegionScope;
+      if (scope === state.regionScope || !["single", "all"].includes(scope)) return;
+      state.regionScope = scope;
+      void switchMap(state.selected, state.selectedVariant);
+    }));
     host.querySelectorAll("[data-map-mission]").forEach((button) => button.addEventListener("click", () => {
       state.mission = button.dataset.mapMission || "";
+      state.missionPhase = "";
       // A selected mission always exposes its complete footprint, regardless
       // of the ordinary marker and floor filters.
       state.pendingFit = true;
@@ -1960,14 +2292,22 @@
       state.subKinds = new Set([...[...state.subKinds].filter((key) => !shown.has(key)), ...checked]);
       scheduleRender();
     }));
-    host.querySelector("[data-map-point-opacity]")?.addEventListener("input", (event) => {
-      state.pointCloudOpacity = clamp(Number(event.currentTarget.value) / 100, 0, 1);
-      host.querySelectorAll(".mr-bg-point-cloud").forEach((image) => {
-        image.style.opacity = state.pointCloudOpacity.toFixed(2);
+    host.querySelectorAll("[data-map-layer-opacity]").forEach((input) => input.addEventListener("input", (event) => {
+      const id = event.currentTarget.dataset.mapLayerOpacity;
+      const opacity = clamp(Number(event.currentTarget.value) / 100, 0, 1);
+      state.layerOpacities[id] = opacity;
+      event.currentTarget.title = `${Math.round(opacity * 100)}%`;
+      const selector = {
+        minimap: ".mr-bg-minimap-layer",
+        elevation: ".mr-bg-elevation",
+        surface: ".mr-bg-model-surface",
+        water: ".mr-bg-water-union",
+        points: ".mr-bg-point-cloud",
+      }[id];
+      if (selector) host.querySelectorAll(selector).forEach((layer) => {
+        layer.style.opacity = opacity.toFixed(2);
       });
-      const output = event.currentTarget.parentElement?.querySelector("output");
-      if (output) output.textContent = `${Math.round(state.pointCloudOpacity * 100)}%`;
-    });
+    }));
     host.querySelectorAll("[data-map-point-height]").forEach((input) => input.addEventListener("input", (event) => {
       const range = state.pointHeightRange;
       if (!range) return;
@@ -1987,12 +2327,20 @@
       if (output) output.textContent = `${formatHeight(range.low)} – ${formatHeight(range.high)}`;
       queuePointHeightFilter();
     }));
-    host.querySelectorAll("[data-map-model-layer]").forEach((input) => input.addEventListener("change", () => {
-      state.modelLayers = new Set([...host.querySelectorAll("[data-map-model-layer]:checked")].map((row) => row.dataset.mapModelLayer));
+    host.querySelectorAll("[data-map-display-layer]").forEach((input) => input.addEventListener("change", (event) => {
+      const id = event.currentTarget.dataset.mapDisplayLayer;
+      if (id === "minimap") state.showMinimap = event.currentTarget.checked;
+      else {
+        state.modelLayers = new Set(state.modelLayers);
+        if (event.currentTarget.checked) state.modelLayers.add(id);
+        else state.modelLayers.delete(id);
+      }
       render();
     }));
-    host.querySelector("[data-map-minimap]")?.addEventListener("change", (event) => {
-      state.showMinimap = event.currentTarget.checked;
+    host.querySelector("[data-map-npc-phase]")?.addEventListener("change", (event) => {
+      state.missionPhase = event.currentTarget.value || "";
+      state.pendingFit = true;
+      state.pendingFitTarget = "nodes";
       render();
     });
     host.querySelectorAll("[data-map-layers]").forEach((button) => button.addEventListener("click", () => {
@@ -2275,6 +2623,7 @@
     const unplaced = [];
     const unplacedReasons = {};
     const unresolved = [];
+    const unplacedActions = [];
     const backgrounds = [];
     const modelBackgrounds = [];
     const mapLayers = [];
@@ -2344,6 +2693,10 @@
       }
       const unresolvedSlots = payload.unresolvedTriggerSlots;
       if (unresolvedSlots?.count) unresolved.push(...(unresolvedSlots.stories || []));
+      const unplacedActionTargets = payload.unplacedActionTargets;
+      if (unplacedActionTargets?.count) {
+        unplacedActions.push(...(unplacedActionTargets.targets || []));
+      }
       const background = zoneBackground(payload);
       if (background) backgrounds.push({
         levelId: member.id,
@@ -2409,21 +2762,38 @@
         boundary: selected.unresolvedTriggerSlots?.boundary || "",
         stories: unresolved,
       },
+      unplacedActionTargets: {
+        count: unplacedActions.length,
+        boundary: selected.unplacedActionTargets?.boundary || "",
+        targets: unplacedActions,
+      },
       unlinkedMissionFiles: [...unlinked],
     };
   }
 
   // ---------------------------------------------------------------- lifecycle
 
-  async function loadMap(id, { includeRegion = stitchOnInitialOpen(id) } = {}) {
-    const row = (state.index?.maps || []).find((item) => item.id === id) || state.index?.maps?.[0];
+  async function loadMap(id, { includeRegion = state.regionScope === "all" && stitchOnInitialOpen(id), variantId = "" } = {}) {
+    const rows = state.index?.maps || [];
+    const row = rows.find((item) => item.id === id)
+      || rows.find((item) => (item.variants || []).some((variant) => variant.id === id))
+      || rows[0];
     if (!row) return false;
+    const variants = row.variants?.length ? row.variants : [row];
+    const requestedVariant = variantId || (id !== row.id ? id : row.id);
+    const selectedRow = variants.find((variant) => variant.id === requestedVariant)
+      || variants.find((variant) => variant.id === row.id)
+      || variants[0];
     const key = regionKey(row.id);
     // Only explicitly published region keys are stitched. Similar prefixes can
     // denote separate states or decks with identical bounds.
     const memberRows = includeRegion
-      ? (state.index?.maps || []).filter((item) => regionKey(item.id) === key)
-      : [row];
+      ? rows.filter((item) => regionKey(item.id) === key).map((item) => (
+        item.id === row.id
+          ? selectedRow
+          : ((item.variants || []).find((variant) => variant.id === item.id) || item.variants?.[0] || item)
+      ))
+      : [selectedRow];
     const members = memberRows
       .sort((a, b) => a.id.localeCompare(b.id))
       .map((item) => ({ id: item.id, row: item }));
@@ -2437,14 +2807,24 @@
       }
     }
     state.selected = row.id;
-    state.map = mergeRegion(members, row.id);
+    state.selectedVariant = selectedRow.id;
+    state.map = mergeRegion(members, selectedRow.id);
     if (!state.map) return false;
+    if (!includeRegion) {
+      for (const cached of [...state.payloads.keys()]) {
+        if (cached !== selectedRow.id && regionKey(cached) === key) state.payloads.delete(cached);
+      }
+    }
     // Start as a geographic map. A region can contain thousands of entities
     // and quest points; the explicit layer controls opt those overlays in.
     // Start with recovered geography only. Streaming instances are now drawn
     // as static geometry in the background; their optional evidence nodes no
     // longer need to cover that render with hundreds of location dots.
-    state.kinds = new Set();
+    const markerCount = Object.values(state.map.facets?.kinds || {})
+      .reduce((sum, row) => sum + Number(row.count || 0), 0);
+    state.kinds = markerCount <= 250
+      ? new Set(Object.keys(state.map.facets?.kinds || {}).filter((kind) => !DEFAULT_HIDDEN_KINDS.has(kind)))
+      : new Set();
     state.subKinds = allSubKinds(state.map);
     state.showQuests = false;
     // Multi-floor maps must not begin as a stack of every transparent tier.
@@ -2452,7 +2832,7 @@
     // Prefer the selected sub-map's first authored tier even though region
     // members are merged in stable id order for rendering and caching.
     const renderedLayerIds = new Set(state.layerBackgrounds.map((row) => String(row.id)));
-    const initialMapLayer = state.map.mapLayers?.find((row) => row.levelId === state.selected && renderedLayerIds.has(String(row.id)))
+    const initialMapLayer = state.map.mapLayers?.find((row) => row.levelId === state.selectedVariant && renderedLayerIds.has(String(row.id)))
       || state.map.mapLayers?.find((row) => renderedLayerIds.has(String(row.id)));
     state.mapLayers = initialMapLayer
       ? new Set([String(initialMapLayer.id)])
@@ -2468,6 +2848,7 @@
     resetPointHeightRange();
     state.storyOnly = false;
     state.mission = state.map.defaultMission || "";
+    state.missionPhase = "";
     state.transform = { x: 0, y: 0, scale: 1 };
     state.pendingFit = true;
     state.pendingFitTarget = "map";
@@ -2479,11 +2860,11 @@
     return true;
   }
 
-  async function switchMap(id) {
+  async function switchMap(id, variantId = "") {
     window.WebUI?.setViewBusy?.("map-recovery", true);
     window.WebUI?.showLoader?.("map-recovery", t("loading"));
     try {
-      return await loadMap(id);
+      return await loadMap(id, { variantId });
     } catch (error) {
       renderLoadError(error);
       return false;
@@ -2530,7 +2911,7 @@
       // indeterminate while those files are being decoded and merged.
       window.WebUI?.updateLoader?.("map-recovery", null, t("loading"));
       const initialId = state.selected || state.index.defaultMap;
-      const loaded = await loadMap(initialId, { includeRegion: stitchOnInitialOpen(initialId) });
+      const loaded = await loadMap(initialId, { includeRegion: state.regionScope === "all" && stitchOnInitialOpen(initialId) });
       if (request !== state.loadRequest) return null;
       window.WebUI?.updateLoader?.("map-recovery", 1, t("loading"));
       return loaded;
@@ -2555,6 +2936,18 @@
     window.addEventListener("webui:ui-locale-changed", () => {
       state.inspectorKey = "";
       render();
+    });
+    window.addEventListener("webui:debug-changed", () => {
+      const node = targetNode();
+      const visible = node
+        ? visibleFilePins(relatedFiles(node))
+        : visibleFilePins(state.map?.relatedFiles || [], { mapWide: true });
+      if (state.filePath && !visible.some((pin) => pin.href === state.filePath)) {
+        state.filePath = "";
+        state.filePathLabel = "";
+      }
+      state.inspectorKey = "";
+      renderInspector();
     });
     const resync = () => { if (state.map && metrics()) applyTransform(); };
     window.addEventListener("resize", resync);

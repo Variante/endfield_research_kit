@@ -15,6 +15,9 @@ from scripts.story_builder.ability_binary import (
 from scripts.story_builder.levelscript_binary import (
     LEVELSCRIPT_NATIVE_HEADER_MAPPING_ID,
 )
+from scripts.story_builder.language_bundle import (
+    append_native_event_producer_family_diagnostic,
+)
 
 
 def memorypack_string(value: str | None) -> bytes:
@@ -152,6 +155,31 @@ class BattleSignalProducerRouteTests(unittest.TestCase):
                 ),
                 [],
             )
+
+
+    def test_producer_family_diagnostics_preserve_custom_and_battle_signal(self) -> None:
+        row = {}
+        append_native_event_producer_family_diagnostic(
+            row,
+            family="levelscript_custom_event",
+            status="exact_serialized_local_producer",
+            routes=[{"producerAction": "RaiseCustomLevelEvent", "producerSourceFile": "a.json"}],
+        )
+        append_native_event_producer_family_diagnostic(
+            row,
+            family="ability_battle_signal",
+            status="exact_ability_battle_signal_local_producer",
+            routes=[{"actionType": "Core_SendBattleSignalToLevel_Data", "producerSourceFile": "b.bytes"}],
+        )
+
+        self.assertEqual(
+            "multiple_exact_local_producer_families",
+            row["nativeEventProducerFamilyDiagnosticStatus"],
+        )
+        self.assertEqual(
+            ["ability_battle_signal", "levelscript_custom_event"],
+            [item["family"] for item in row["nativeEventProducerFamilyDiagnostics"]],
+        )
 
 
 if __name__ == "__main__":

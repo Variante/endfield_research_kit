@@ -202,7 +202,11 @@ def decode_constant_entity_ptr_param(
     payload: bytes,
     cursor: int,
 ) -> tuple[dict[str, Any], int] | None:
-    """Decode the installed constant ``Param<ScriptEntityPtr>`` form."""
+    """Decode the installed constant ``Param<EntityPtr>`` form.
+
+    ``0x04`` is the outer Param member count and ``0x03`` is the nested
+    EntityPtr member count; neither byte is a ScriptEntityPtr union tag.
+    """
     if cursor + 27 > len(payload) or payload[cursor : cursor + 2] != b"\x04\x03":
         return None
     logic_id = struct.unpack_from("<Q", payload, cursor + 2)[0]

@@ -2660,10 +2660,9 @@ def build_scene_order_info(
 
     Ports the per-key resolution from
     scratch/story/main_story_order_compare/recover_main_story_order_compare.py so the
-    maintained builder emits the same questOrder / orderSource / confidence /
-    evidenceKinds the scratch report's ``keyInfo`` carries. This is STATIC
-    recovery only: confidence never folds in any OCR-derived signal. It adds no
-    new ordering heuristic and does not change any existing field or sort.
+    maintained builder emits questOrder only from authored flow attachment or
+    an explicit scene-placement quest id. Spatial proximity remains diagnostic
+    evidence and is intentionally barred from Story order.
     """
     flow = mission_flow if isinstance(mission_flow, dict) else {}
     quest_spatial_track = quest_spatial_track or []
@@ -2703,23 +2702,6 @@ def build_scene_order_info(
             if key in values:
                 flow_attach[key].append(index)
 
-    quest_spatial_attach: dict[str, list[int]] = defaultdict(list)
-    for row in quest_spatial_track:
-        if not isinstance(row, dict) or not isinstance(row.get("questOrder"), int):
-            continue
-        quest_order = int(row["questOrder"])
-        row_keys: set[str] = set()
-        for key in row.get("attachedSceneKeys") or []:
-            row_keys.add(str(key))
-        for resource in row.get("resources") or []:
-            if isinstance(resource, dict) and resource.get("key"):
-                row_keys.add(str(resource["key"]))
-        for match in row.get("spatialSourceMatches") or []:
-            if isinstance(match, dict) and match.get("sceneKey"):
-                row_keys.add(str(match["sceneKey"]))
-        for key in candidate_keys & row_keys:
-            quest_spatial_attach[key].append(quest_order)
-
     out: dict[str, dict] = {}
     for key in sorted(candidate_keys, key=natural_key):
         placement = scene_placement.get(key) if isinstance(scene_placement.get(key), dict) else {}
@@ -2729,21 +2711,13 @@ def build_scene_order_info(
         for quest_id in placement.get("questIds") or []:
             if quest_id in quest_order_by_id:
                 candidates.append((quest_order_by_id[quest_id], 1, "scenePlacementQuest"))
-        for order in quest_spatial_attach.get(key) or []:
-            candidates.append((int(order), 2, "questSpatialTrack"))
-        for spatial in placement.get("spatialQuestCandidates") or []:
-            if isinstance(spatial, dict) and isinstance(spatial.get("questOrder"), int):
-                candidates.append((int(spatial["questOrder"]), 3, "levelscriptSpatialProximity"))
-
         if candidates:
             quest_order, source_priority, source = sorted(candidates)[0]
         else:
             quest_order, source_priority, source = 999999, 9, "numericFallback"
         evidence_kinds = sorted(str(value) for value in (placement.get("evidenceKinds") or []))
-        if source_priority <= 1 or any(kind.startswith("sourceBacked") for kind in evidence_kinds):
+        if source_priority <= 1:
             confidence = "source-backed"
-        elif source_priority <= 3:
-            confidence = "weak"
         else:
             confidence = "fallback"
         resolved_order = quest_order if quest_order != 999999 else None

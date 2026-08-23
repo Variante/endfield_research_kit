@@ -31,19 +31,19 @@ from scripts.build_map_recovery_preview import (
     render_level,
     render_point_cloud,
     render_point_height_mask,
+    render_streaming_surface_samples,
     render_water_overlay,
+    select_shared_origin,
     streaming_projection_payload,
     smooth_surface,
 )
 
 
 class CellSizeTests(unittest.TestCase):
-    def test_cell_size_doubles_per_lod_and_matches_the_hand_derived_hlod1(self):
-        self.assertEqual(cell_size(0), 64.0)
-        # 128 m for HLOD1 was derived by hand for indie_dg002 before this
-        # builder existed, and is the independent check on the doubling rule.
-        self.assertEqual(cell_size(1), 128.0)
-        self.assertEqual(cell_size(2), 256.0)
+    def test_cell_size_doubles_from_the_native_32_m_base_grid(self):
+        self.assertEqual(cell_size(0), 32.0)
+        self.assertEqual(cell_size(1), 64.0)
+        self.assertEqual(cell_size(2), 128.0)
 
     def test_material_surface_preserves_source_rgba(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -58,7 +58,46 @@ class CellSizeTests(unittest.TestCase):
         self.assertEqual(pixels, bytes((120, 80, 40, 191)))
 
 
+
 class PreviewInputTests(unittest.TestCase):
+    def test_streaming_hlod_uses_exact_level_lod_hash_material_binding(self):
+        binding = {"slot": "_BaseColorMap"}
+        instances = [{"meshes": [{
+            "name": "S_HLOD1_10_9_Cluster_-7",
+            "obj": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Mesh/S_HLOD1_10_9_Cluster_-7_p7.obj",
+        }]}]
+        with mock.patch.object(builder, "_HLOD_TEXTURE_BINDINGS", {("indie_dg002", 1, -7): binding}), \
+                mock.patch.object(builder, "texture_bindings", return_value={}):
+            result = builder.streaming_texture_bindings("indie_dg002", instances)
+
+        self.assertEqual(result["StreamingAssets/Mesh/S_HLOD1_10_9_Cluster_-7_p7.obj"], binding)
+
+    def test_map_regions_use_fixed_hlod_grid_origins_without_image_registration(self):
+        self.assertEqual(builder.REGION_HLOD_GRID_ORIGINS["map01"], (-1024.0, -1024.0))
+        self.assertEqual(builder.REGION_HLOD_GRID_ORIGINS["map02"], (-2048.0, -2048.0))
+        self.assertEqual(builder.LEVEL_RENDER_ALIGNMENTS, {})
+
+        frontend = (builder.ROOT / "webui/src/features/map_recovery/index.js").read_text(encoding="utf-8")
+        self.assertIn("worldBounds: model.worldBounds", frontend)
+        self.assertNotIn("alignment.scaleX", frontend)
+        self.assertNotIn("minimapMaskRects", frontend)
+
+    def test_exact_streaming_geometry_supersedes_inferred_hlod_background(self):
+        hlod = {"status": "inferred_hlod_textured_preview", "src": "render/level_hlod_surface.png"}
+        exact = {
+            "status": "recovered_streaming_textured_topdown",
+            "src": "render/scene_streaming_textured_topdown.png",
+        }
+        self.assertIs(builder.preferred_background_preview(exact, hlod), exact)
+
+    def test_registry_points_do_not_supersede_recovered_hlod_surface(self):
+        hlod = {"status": "inferred_hlod_grid_preview", "src": "render/level_hlod_surface.png"}
+        points = {
+            "status": "inferred_registry_point_cloud_preview",
+            "src": "render/level_registry_point_cloud.png",
+        }
+        self.assertIs(builder.preferred_background_preview(points, hlod), hlod)
+
     def test_only_explicit_roof_or_ceiling_names_are_overhead_covers(self):
         self.assertTrue(_is_explicit_overhead_cover({"entityBase": "P_mod_map02_sfroof+1_001_02"}))
         self.assertTrue(_is_explicit_overhead_cover({"meshes": [{"name": "S_mod_com_ceiling+1_001_01_lod0"}]}))
@@ -173,7 +212,7 @@ class PreviewInputTests(unittest.TestCase):
                 [(-10.0, -2.0, 20.0), (30.0, 12.0, -40.0)],
                 Path(tmp),
             )
-            self.assertEqual(manifest["status"], "inferred_registry_point_cloud_preview")
+            self.assertEqual(manifest["status"], "exact_registry_transform_point_cloud")
             self.assertEqual(manifest["render"]["pointCount"], 2)
             self.assertEqual(manifest["render"]["elevationRange"], {"min": -2.0, "max": 12.0})
             self.assertIn("Evidence-only", manifest["boundary"])
@@ -238,9 +277,50 @@ class PreviewInputTests(unittest.TestCase):
         ):
             manifest = render_point_cloud("test_level", [(0.0, 100.0, 0.0)], Path(tmp), payload)
 
-        self.assertEqual(manifest["status"], "inferred_registry_point_cloud_preview")
+        self.assertEqual(manifest["status"], "exact_registry_transform_point_cloud")
         self.assertEqual(manifest["pointCloudOverlay"]["heightMask"]["elevationRange"], {"min": 100.0, "max": 100.0})
         self.assertGreater(manifest["pointCloudOverlay"]["heightMask"]["pointPixelCount"], 0)
+
+    def test_exact_hlod_elevation_keeps_floor_but_omits_ceiling(self):
+        matrix = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]
+        payload = {
+            "exactHlodMatrices": True,
+            "markers": [{"streamingInstance": {
+                "entityBase": "P_build_ceiling_001",
+                "matrixColumnMajor": matrix,
+                "meshes": [{"name": "S_build_ceiling_lod0", "pathId": 42, "obj": "missing.obj"}],
+            }}, {"streamingInstance": {
+                "entityBase": "P_build_floor_001",
+                "matrixColumnMajor": matrix,
+                "meshes": [{"name": "S_build_floor_lod0", "pathId": 43, "obj": "missing.obj"}],
+            }}],
+        }
+
+        def fake_raster(streaming, _bounds, width, height, _bindings):
+            self.assertEqual([row["entityBase"] for row in streaming], ["P_build_floor_001"])
+            return {
+                "depth": [5.0] * (width * height), "albedo": bytearray(width * height * 4),
+                "detailDepth": [NO_HIT] * (width * height),
+                "detailAlbedo": bytearray(width * height * 4),
+                "usedInstances": 1, "texturedInstances": 0, "triangles": 2,
+                "texturedTriangles": 0, "vertexSamples": 0, "texturedPixels": 0,
+                "usedTextures": [], "detailTriangles": 0, "excludedDetailTriangles": 2,
+            }
+
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(
+            builder, "rasterise_streaming_depth", side_effect=fake_raster
+        ), mock.patch.object(builder, "texture_bindings", return_value={}), mock.patch.object(
+            builder, "render_elevation_underlay", return_value={"src": "full.png"}
+        ) as elevation, mock.patch.object(
+            builder, "render_streaming_surface_samples", return_value={"src": "points.png"}
+        ), mock.patch.object(builder, "LONG_EDGE", 8):
+            manifest = render_point_cloud("exact", [(0.0, 0.0, 0.0)], Path(tmp), payload)
+
+        self.assertTrue(elevation.call_args.args[1])
+        self.assertTrue(all(value == 5.0 for value in elevation.call_args.args[1]))
+        self.assertEqual(elevation.call_args.kwargs["source_label"], "full exact streaming-mesh triangle depth")
+        self.assertEqual(manifest["elevationUnderlay"]["src"], "full.png")
+        self.assertEqual(manifest["render"]["excludedOverheadCoverInstanceCount"], 1)
 
     def test_exact_texture_pixels_publish_colored_streaming_contract(self):
         payload = {"markers": [{"streamingInstance": {
@@ -356,9 +436,9 @@ class FitOriginTests(unittest.TestCase):
         return {"0": [{"i": i, "j": j, "pathId": 1, "name": "n"} for i, j in cells]}
 
     def test_origin_is_recovered_from_markers_that_sit_on_occupied_cells(self):
-        # Cells (16,16)..(17,17) are occupied; with a -1024 origin and 64 m
+        # Cells (32,32)..(35,35) are occupied; with a -1024 origin and 32 m
         # cells that is world x/z 0..128.
-        lods = self._lods([(16, 16), (17, 16), (16, 17), (17, 17)])
+        lods = self._lods([(i, j) for i in range(32, 36) for j in range(32, 36)])
         points = [(x, z) for x in range(4, 128, 8) for z in range(4, 128, 16)]
         fit = fit_origin(lods, points)
 
@@ -378,14 +458,22 @@ class FitOriginTests(unittest.TestCase):
         self.assertGreater(_alignment_bits(-2048), _alignment_bits(-2176))
         self.assertGreater(_alignment_bits(-1024), _alignment_bits(-960))
 
+    def test_region_origin_uses_marker_weighted_member_agreement(self):
+        fits = [
+            {"originX": -2048, "originZ": -2048, "samplePoints": 1500},
+            {"originX": -2048, "originZ": -2048, "samplePoints": 1000},
+            {"originX": -2048, "originZ": -1920, "samplePoints": 1017},
+        ]
+        self.assertEqual(select_shared_origin(fits), (-2048.0, -2048.0))
+
     def test_lods_must_agree_so_a_coarse_lod_cannot_carry_a_wrong_origin(self):
-        # HLOD0 says the content is at world 0..128; HLOD1's single cell covers
-        # 0..128 too. Only an origin satisfying both may win.
+        # HLOD0 and HLOD1 describe the same world cell with adjacent 32/64 m
+        # grids. Only an origin satisfying both may win.
         lods = {
-            "0": [{"i": 16, "j": 16, "pathId": 1, "name": "n"}],
-            "1": [{"i": 8, "j": 8, "pathId": 2, "name": "n"}],
+            "0": [{"i": 32, "j": 32, "pathId": 1, "name": "n"}],
+            "1": [{"i": 16, "j": 16, "pathId": 2, "name": "n"}],
         }
-        points = [(float(x), float(x)) for x in range(2, 62)]
+        points = [(float(x), float(x)) for x in range(2, 30)] * 2
         fit = fit_origin(lods, points)
         self.assertEqual((fit["originX"], fit["originZ"]), (-1024.0, -1024.0))
         self.assertEqual(fit["coverage"], 1.0)
@@ -428,6 +516,84 @@ class SurfaceRasterTests(unittest.TestCase):
         # Normals are deliberately not read: shading comes from the smoothed
         # height field, and per-facet normals would only add back the noise.
         self.assertEqual(faces, [(0, 1, 2)])
+
+    def test_exact_surface_sampling_density_is_world_area_based_and_deterministic(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            mesh = root / "export_full/recovered/mesh.obj"
+            mesh.parent.mkdir(parents=True)
+            # OBJ X is mirrored by AnimeStudio; after undoing that mirror this
+            # is a 4x4 right triangle in Unity world X/Z.
+            mesh.write_text("v 0 2 0\nv -4 6 0\nv 0 2 4\nf 1 2 3\n", encoding="utf-8")
+            streaming = [{
+                "matrixColumnMajor": [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
+                "meshes": [{"obj": "export_full/recovered/mesh.obj", "pathId": 1}],
+            }]
+            bounds = {"minX": 0.0, "maxX": 4.0, "minZ": 0.0, "maxZ": 4.0}
+            with mock.patch.object(builder, "ROOT", root):
+                sparse = render_streaming_surface_samples(
+                    "sparse", streaming, bounds, 8, 8, root / "out", 0.25, {}
+                )
+                dense = render_streaming_surface_samples(
+                    "dense", streaming, bounds, 8, 8, root / "out", 1.0, {}
+                )
+
+        self.assertEqual(sparse["method"], "exact_matrix_world_surface_area_samples")
+        self.assertEqual(sparse["sourceSampleCount"], 3)
+        self.assertEqual(dense["sourceSampleCount"], 10)
+        self.assertEqual(sparse["densityPerSquareMeter"], 0.25)
+        self.assertEqual(sparse["spacingMeters"], 2.0)
+
+    def test_exact_surface_sampling_excludes_floor_and_ceiling_surfaces(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            floor = root / "export_full/recovered/floor.obj"
+            ceiling = root / "export_full/recovered/ceiling.obj"
+            floor.parent.mkdir(parents=True)
+            floor.write_text("v 0 2 0\nv -4 2 0\nv 0 2 4\nf 1 2 3\n", encoding="utf-8")
+            # A named ceiling is excluded even when its triangle is vertical.
+            ceiling.write_text("v 0 0 0\nv 0 4 0\nv 0 0 4\nf 1 2 3\n", encoding="utf-8")
+            matrix = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]
+            streaming = [{
+                "entityBase": "P_build_platform_001",
+                "matrixColumnMajor": matrix,
+                "meshes": [{"obj": "export_full/recovered/floor.obj", "pathId": 1}],
+            }, {
+                "entityBase": "P_build_ceiling_001",
+                "matrixColumnMajor": matrix,
+                "meshes": [{"obj": "export_full/recovered/ceiling.obj", "pathId": 2}],
+            }]
+            bounds = {"minX": 0.0, "maxX": 4.0, "minZ": 0.0, "maxZ": 4.0}
+            with mock.patch.object(builder, "ROOT", root):
+                result = render_streaming_surface_samples(
+                    "structural", streaming, bounds, 8, 8, root / "out", 0.25, {}
+                )
+
+        self.assertIsNone(result)
+
+    def test_streaming_floor_fills_surface_depth_but_not_detail_depth(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            mesh = root / "export_full/recovered/floor.obj"
+            mesh.parent.mkdir(parents=True)
+            mesh.write_text("v 0 2 0\nv -4 2 0\nv 0 2 4\nf 1 2 3\n", encoding="utf-8")
+            streaming = [{
+                "entityBase": "P_build_indie_floor_001",
+                "matrixColumnMajor": [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
+                "meshes": [{
+                    "name": "S_build_indie_floor_lod0",
+                    "obj": "export_full/recovered/floor.obj",
+                    "pathId": 1,
+                }],
+            }]
+            bounds = {"minX": 0.0, "maxX": 4.0, "minZ": 0.0, "maxZ": 4.0}
+            with mock.patch.object(builder, "ROOT", root):
+                raster = builder.rasterise_streaming_depth(streaming, bounds, 8, 8, {})
+
+        self.assertTrue(any(value > NO_HIT for value in raster["depth"]))
+        self.assertTrue(all(value <= NO_HIT for value in raster["detailDepth"]))
+        self.assertEqual(raster["triangles"], 1)
+        self.assertEqual(raster["excludedDetailTriangles"], 1)
 
     def test_streaming_obj_preserves_triangle_uv_indices(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -546,6 +712,39 @@ class SurfaceRasterTests(unittest.TestCase):
 
         self.assertEqual(bindings, {})
 
+    def test_material_alpha_uses_render_state_not_an_opaque_default_threshold(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            material = Path(tmp) / "material.json"
+            binding = {"materialPath": material, "slot": "_BaseColorMap"}
+            base = {
+                "m_CustomRenderQueue": 2000,
+                "m_StringTagMap": {"RenderType": "Opaque"},
+                "m_ValidKeywords": [],
+                "m_SavedProperties": {
+                    "m_TexEnvs": {"_BaseColorMap": {}},
+                    "m_Floats": {"_AlphaClipThreshold": 0.5},
+                },
+            }
+            material.write_text(json.dumps(base), encoding="utf-8")
+            builder._MATERIAL_PARAMS.clear()
+            opaque = builder._material_render_params(binding)
+            texture = {**opaque, "width": 1, "height": 1, "pixels": bytes((20, 40, 60, 0))}
+            self.assertEqual(builder._sample_texture(texture, 0.0, 0.0), (20, 40, 60, 255))
+
+            base["m_ValidKeywords"] = ["_ALPHATEST_ON"]
+            material.write_text(json.dumps(base), encoding="utf-8")
+            builder._MATERIAL_PARAMS.clear()
+            cutout = builder._material_render_params(binding)
+            self.assertIsNone(builder._sample_texture({**texture, **cutout}, 0.0, 0.0))
+
+            base["m_ValidKeywords"] = []
+            base["m_CustomRenderQueue"] = 3000
+            base["m_StringTagMap"]["RenderType"] = "Transparent"
+            material.write_text(json.dumps(base), encoding="utf-8")
+            builder._MATERIAL_PARAMS.clear()
+            transparent = builder._material_render_params(binding)
+            self.assertEqual(builder._sample_texture({**texture, **transparent}, 0.0, 0.0), (20, 40, 60, 0))
+
     def test_exported_rgba_png_preview_round_trips_color(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "texture.png"
@@ -562,7 +761,7 @@ class SurfaceRasterTests(unittest.TestCase):
         fit = {"originX": 0.0, "originZ": 0.0}
         with tempfile.TemporaryDirectory() as tmp:
             # A large upward-facing triangle sitting at world Y = 5.
-            path = self._cluster_obj(tmp, "g c\nv 60 5 -60\nv -60 5 -60\nv -60 5 60\n"
+            path = self._cluster_obj(tmp, "g c\nv 30 5 -30\nv -30 5 -30\nv -30 5 30\n"
                                           "f 1 2 3\n")
             clusters = [{"i": 0, "j": 0, "pathId": 1, "name": "S_HLOD1_0_0_Cluster_1"}]
             depth, used, triangles = rasterise_depth(
@@ -582,8 +781,8 @@ class SurfaceRasterTests(unittest.TestCase):
             # Two stacked triangles; only the upper one may reach the image,
             # because the camera looks straight down.
             path = self._cluster_obj(tmp, "g c\n"
-                                          "v 60 2 -60\nv -60 2 -60\nv -60 2 60\n"
-                                          "v 60 9 -60\nv -60 9 -60\nv -60 9 60\n"
+                                          "v 30 2 -30\nv -30 2 -30\nv -30 2 30\n"
+                                          "v 30 9 -30\nv -30 9 -30\nv -30 9 30\n"
                                           "f 1 2 3\nf 4 5 6\n")
             clusters = [{"i": 0, "j": 0, "pathId": 1, "name": "S_HLOD1_0_0_Cluster_1"}]
             depth, _, triangles = rasterise_depth(
@@ -608,7 +807,7 @@ class SurfaceRasterTests(unittest.TestCase):
         bounds = {"minX": 0.0, "maxX": 8.0, "minZ": 0.0, "maxZ": 8.0}
         fit = {"originX": 0.0, "originZ": 0.0}
         with tempfile.TemporaryDirectory() as tmp:
-            path = self._cluster_obj(tmp, "g c\nv 60 5 -60\nv -60 5 -60\nv -60 5 60\nf 1 2 3\n")
+            path = self._cluster_obj(tmp, "g c\nv 30 5 -30\nv -30 5 -30\nv -30 5 30\nf 1 2 3\n")
             clusters = [{"i": 0, "j": 0, "pathId": 1, "name": "S_HLOD1_0_0_Cluster_1"}]
             with mock.patch.object(builder, "raster_size", return_value=(16, 16)):
                 manifest = render_level(clusters=clusters, level_id="test", lod=1, fit=fit,
@@ -627,7 +826,7 @@ class SurfaceRasterTests(unittest.TestCase):
         bounds = {"minX": -1.0, "maxX": 1.0, "minZ": -1.0, "maxZ": 1.0}
         fit = {"originX": 0.0, "originZ": 0.0}
         with tempfile.TemporaryDirectory() as tmp:
-            path = self._cluster_obj(tmp, "g c\nv 64 10 -64\nv 64 20 -64\n")
+            path = self._cluster_obj(tmp, "g c\nv 32 10 -32\nv 32 20 -32\n")
             clusters = [{"i": 0, "j": 0, "pathId": 1, "name": "S_HLOD1_0_0_Cluster_1"}]
             overlay = builder.render_hlod_point_samples(
                 "stacked", clusters, 1, fit, bounds, {"1": path}, 8, 8, Path(tmp)
@@ -649,7 +848,7 @@ class SurfaceRasterTests(unittest.TestCase):
         bounds = {"minX": 0.0, "maxX": 8.0, "minZ": 0.0, "maxZ": 8.0}
         fit = {"originX": 0.0, "originZ": 0.0}
         with tempfile.TemporaryDirectory() as tmp:
-            path = self._cluster_obj(tmp, "g c\nv 60 1 -60\nv -60 9 -60\nv -60 1 60\nf 1 2 3\n")
+            path = self._cluster_obj(tmp, "g c\nv 30 1 -30\nv -30 9 -30\nv -30 1 30\nf 1 2 3\n")
             clusters = [{"i": 0, "j": 0, "pathId": 1, "name": "S_HLOD1_0_0_Cluster_1"}]
             with mock.patch.object(builder, "raster_size", return_value=(32, 32)):
                 manifest = render_level(clusters=clusters, level_id="indie_dg002", lod=1, fit=fit,

@@ -35,6 +35,13 @@ DEFAULT_ASSET_MAP = ROOT / "export_full/recovered/AnimeStudio-cli/StreamingAsset
 DEFAULT_MESH_ROOT = ROOT / "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Mesh"
 DEFAULT_OUTPUT_ROOT = ROOT / "export_full/recovered/AnimeStudio-cli/StreamingAssets/map_streaming_instances"
 LEVEL_RE = re.compile(r"^[a-z0-9_]+$", re.IGNORECASE)
+REGION_LEVEL_RE = re.compile(r"^(map0[12])_lv(\d+)$", re.IGNORECASE)
+HLOD_MESH_RE = re.compile(r"^S_(HLOD\d+_-?\d+_-?\d+_Cluster_-?\d+)$", re.IGNORECASE)
+HLOD_INSTANCE_RE = re.compile(
+    r"^(HLOD\d+_-?\d+_-?\d+_Cluster_-?\d+)_\d+#(\d+)_",
+    re.IGNORECASE,
+)
+HLOD_LEVEL_CONTAINER_RE = re.compile(r"/([a-z0-9_]+)_art/hlod_v2/", re.IGNORECASE)
 
 
 def decompress_inverted_lz4(source: bytes, expected: int) -> bytes:
@@ -301,6 +308,92 @@ def _mesh_candidates(bases: set[str], asset_map: Path, mesh_root: Path) -> dict[
     }
 
 
+def _hlod_mesh_candidates(level_ids: set[str], asset_map: Path, mesh_root: Path) -> dict[str, dict[str, list[dict]]]:
+    """Join one generated HLOD mesh to its exact level/key identity."""
+    exported = _mesh_file_index(mesh_root)
+    result: dict[str, dict[str, list[dict]]] = {level_id: {} for level_id in level_ids}
+    for entry in iter_asset_entries(asset_map) if asset_map.is_file() else ():
+        if entry.get("Type") != "Mesh":
+            continue
+        mesh_match = HLOD_MESH_RE.fullmatch(str(entry.get("Name") or ""))
+        level_match = HLOD_LEVEL_CONTAINER_RE.search(str(entry.get("Container") or ""))
+        if not mesh_match or not level_match:
+            continue
+        level_id = level_match.group(1).lower()
+        if level_id not in result:
+            continue
+        path_id = int(entry["PathID"])
+        obj = exported.get(path_id)
+        if obj is None:
+            continue
+        key = mesh_match.group(1).casefold()
+        result[level_id].setdefault(key, []).append({
+            "name": entry.get("Name"),
+            "pathId": path_id,
+            "container": entry.get("Container"),
+            "obj": str(obj.relative_to(ROOT)).replace("\\", "/"),
+            "rank": 0,
+            "match": "exact_hlod_level_grid_cluster_hash_identity",
+        })
+    return result
+
+
+def recover_hlod_region_levels(
+    level_ids: list[str], cli: Path, game_root: Path, asset_map: Path, mesh_root: Path,
+) -> list[dict]:
+    """Recover HLOD matrices once per region and partition by the authored level suffix."""
+    requested = {level_id.lower() for level_id in level_ids}
+    candidates = _hlod_mesh_candidates(requested, asset_map, mesh_root)
+    by_region: dict[str, list[tuple[str, int]]] = {}
+    for level_id in level_ids:
+        match = REGION_LEVEL_RE.fullmatch(level_id)
+        if not match:
+            raise ValueError(f"not a Map01/Map02 member: {level_id}")
+        by_region.setdefault(match.group(1).lower(), []).append((level_id.lower(), int(match.group(2))))
+
+    payloads = []
+    for region, members in sorted(by_region.items()):
+        region_core = _recover_transform_core(region, cli, game_root)
+        for level_id, member_number in members:
+            mesh_by_key = candidates.get(level_id) or {}
+            instances = []
+            for row in region_core["instances"]:
+                match = HLOD_INSTANCE_RE.match(str(row.get("name") or ""))
+                if not match or int(match.group(2)) != member_number:
+                    continue
+                key = match.group(1).casefold()
+                meshes = mesh_by_key.get(key)
+                if not meshes:
+                    continue
+                exact = dict(row)
+                exact["entityBase"] = key
+                exact["hlodIdentity"] = {
+                    "status": "exact",
+                    "key": key,
+                    "levelId": level_id,
+                    "evidence": "InitChunkData HLOD key/member suffix + AssetMap level/grid/cluster/hash key",
+                }
+                instances.append(exact)
+            core = {
+                "levelId": level_id,
+                "sources": region_core["sources"],
+                "instances": instances,
+                "duplicates": 0,
+                "bases": Counter(row["entityBase"] for row in instances),
+                "componentShapes": region_core.get("componentShapes") or {},
+            }
+            payload = _finalize_payload(core, mesh_by_key, cli)
+            payload["hlodIdentityContract"] = {
+                "status": "exact",
+                "joinKey": "levelId + HLOD level + grid i/j + signed cluster hash",
+                "instanceMemberSuffix": member_number,
+                "resolvedInstanceCount": len(instances),
+                "boundary": "Unmatched or non-unique HLOD assets are omitted; no name-prefix fallback is used.",
+            }
+            payloads.append(payload)
+    return payloads
+
+
 def _recover_transform_core(level_id: str, cli: Path, game_root: Path) -> dict:
     pattern = rf"^Data/Streaming/PC/{re.escape(level_id)}/Streaming/InitChunkData_.*[.]bytes$"
     command = [str(cli), "stream", "--streaming-assets", str(game_root / "StreamingAssets"),
@@ -437,12 +530,21 @@ def recover_many(
     jobs: int = 1,
 ) -> list[dict]:
     """Recover multiple levels while scanning the large AssetMap only once."""
+    regional = [level_id for level_id in level_ids if REGION_LEVEL_RE.fullmatch(level_id)]
+    ordinary = [level_id for level_id in level_ids if level_id not in regional]
+    regional_payloads = (
+        recover_hlod_region_levels(regional, cli, game_root, asset_map, mesh_root)
+        if regional else []
+    )
+    if not ordinary:
+        by_id = {row["levelId"]: row for row in regional_payloads}
+        return [by_id[level_id.lower()] for level_id in level_ids]
     cores: dict[str, dict] = {}
     failures: dict[str, Exception] = {}
     with ThreadPoolExecutor(max_workers=max(1, jobs)) as executor:
         futures = {
             executor.submit(_recover_transform_core, level_id, cli, game_root): level_id
-            for level_id in level_ids
+            for level_id in ordinary
         }
         for future in as_completed(futures):
             level_id = futures[future]
@@ -454,11 +556,53 @@ def recover_many(
         detail = "\n".join(f"  {level_id}: {failures[level_id]}" for level_id in sorted(failures))
         raise RuntimeError(f"Streaming recovery failed for {len(failures)} level(s):\n{detail}")
     all_bases = {base for core in cores.values() for base in core["bases"]}
-    mesh_candidates = _mesh_candidates(all_bases, asset_map, mesh_root)
-    return [
-        _finalize_payload(cores[level_id], mesh_candidates, cli)
-        for level_id in level_ids
-    ]
+    generic_candidates = _mesh_candidates(all_bases, asset_map, mesh_root)
+    hlod_candidates = _hlod_mesh_candidates({level_id.lower() for level_id in ordinary}, asset_map, mesh_root)
+    payloads = []
+    for level_id in ordinary:
+        core = cores[level_id]
+        level_hlod = hlod_candidates.get(level_id.lower()) or {}
+        instances = []
+        resolved_hlod = unresolved_hlod = 0
+        for source in core["instances"]:
+            row = dict(source)
+            match = HLOD_INSTANCE_RE.match(str(row.get("name") or ""))
+            if match:
+                key = match.group(1).casefold()
+                meshes = level_hlod.get(key) or []
+                if len(meshes) == 1:
+                    row["entityBase"] = key
+                    row["hlodIdentity"] = {
+                        "status": "exact",
+                        "key": key,
+                        "levelId": level_id.lower(),
+                        "evidence": "InitChunkData HLOD key + AssetMap level/grid/cluster/hash key",
+                    }
+                    resolved_hlod += 1
+                else:
+                    unresolved_hlod += 1
+            instances.append(row)
+        exact_candidates = {
+            key: rows for key, rows in level_hlod.items() if len(rows) == 1
+        }
+        composite_candidates = {**generic_candidates, **exact_candidates}
+        exact_core = {
+            **core,
+            "instances": instances,
+            "bases": Counter(row["entityBase"] for row in instances),
+        }
+        payload = _finalize_payload(exact_core, composite_candidates, cli)
+        payload["hlodIdentityContract"] = {
+            "status": "exact" if resolved_hlod else "unavailable",
+            "joinKey": "levelId + HLOD level + grid i/j + signed cluster hash",
+            "resolvedInstanceCount": resolved_hlod,
+            "unresolvedInstanceCount": unresolved_hlod,
+            "boundary": "Unmatched or non-unique HLOD assets remain unresolved; no prefix or spatial fallback is used.",
+        }
+        payloads.append(payload)
+    payloads.extend(regional_payloads)
+    by_id = {row["levelId"]: row for row in payloads}
+    return [by_id[level_id.lower()] for level_id in level_ids]
 
 
 def main() -> int:

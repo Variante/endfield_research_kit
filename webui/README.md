@@ -43,6 +43,60 @@ in Gameplay.
 - `src/features/audio/`: Audio evidence browser.
 - `src/features/mission_pipeline/`: debug-only Mission Pipeline.
 - `src/features/map_recovery/`: normal Map view immediately after Story, with a full-bleed world surface, a three-column map/task/object-filter tree, a detailed JSON/file inspector, stitched config-proven regions, authored quest routes, and evidence-linked markers. Unnamed single-mission maps use the localized mission code/name; authored cross-map Story continuations are explicit navigation links.
+  Current-build validated local Story trigger volumes are drawn from their
+  decoded Box/Sphere geometry at authored X/Z position and rotation. Their
+  Story links remain distinct from nominal mission context and do not imply
+  mission ownership or runtime firing. Current-build native consumers confirm
+  that these ids address the LevelScript-local `triggerVolumes` domain through
+  a runtime registered-id bridge; they are not WorldEntityRegistry slots.
+  MissionArea pins draw their exact MissionAreaTable Box/Sphere definition but
+  remain Story-unresolved. Spatial proximity never supplies their Story files
+  or Story order.
+  Selecting a mission keeps missionless level-world entities available through
+  the ordinary type/floor filters; compact maps enable all recovered object
+  types by default. Enemy, device, scenery, and travel markers use distinct
+  glyphs, and authored grenade towers retain their Factory/Combat/Model evidence.
+  Enemy labels resolve through EnemyTemplateDisplayInfo plus localized text;
+  exact reading points use the generated Story title instead of their internal
+  `text_*` key. Empty `int_empty` shells live in their own unresolved-empty-slot
+  layer, disabled by default, rather than being presented as understood
+  interactions. A registered shell referenced by a strict constant
+  `Param<EntityPtr>` value inside a validated action record moves to a separate
+  script-target layer only when a build-locked native formatter contract also
+  proves its named member boundary; unresolved occurrences remain in the
+  default-hidden candidate layer. Neither form inherits sibling Story,
+  cutscene, or sequence ownership. Script-container files,
+  conditions, and ordering anchors stay map-level context: they are not repeated
+  on every sibling slot. A point receives a Story or file only from an exact
+  script/slot consumer. Opening `WorldEntityRegistry.json` from a registry-backed
+  point resolves its exact world id or script-id/slot pair, jumps to the matched
+  row (and paired brief-info array index), and highlights the focused excerpt.
+  Every spatial world/script registry slot publishes an observational action
+  binding status and an action array. `no_reference_observed` means only that
+  current decoded LevelScript evidence contains no matching constant pointer;
+  it is not proof that the slot has no action. Exact and unresolved references
+  remain separate when both address the same slot. Full builds also write the
+  exhaustive audit to `reports/assets/map_recovery/action_binding_index.json`,
+  including every contracted EntityPtr field state, diagnostic-only dynamic
+  `idRef`/output/variable references, and non-spatial references that must not
+  become map markers. A dynamic local-output reference becomes a slot action
+  only when a pinned producer contract proves a same-header constant alias;
+  validated non-alias outputs remain unplaced.
+  NPC proxy rows use their own identity domain. Build-locked `NpcProxyGetter`
+  references can attach actions through an exact proxy-id/segment/table join;
+  they never reuse a numerically equal world-entity identity.
+  Current-script slot actions use a pinned native resolver contract: the
+  runtime lookup is keyed by the current LevelScriptRuntime script id and slot
+  in EntityManager. A unique WorldEntityRegistry script/slot row proves the
+  authored map target, while runtime registration and lifetime remain explicitly
+  unproven.
+  World scenery also receives Story links when one counted LevelInteractiveData
+  record stores both its exact `embeddedLogicId` and NarrativeComponent
+  `typeId`; e0m0's four tombs use this direct binding rather than numeric order
+  or spatial proximity.
+  When a map node has a generated Story conversation, its inspector shows that
+  conversation as the normal reader-facing file and keeps placement, registry,
+  script, and other evidence files behind `Show debug info`.
 
 Generated data belongs in `webui/data/`; user-managed inputs belong in
 `webui/overrides/`. Do not hand-edit generated JSON.
@@ -126,6 +180,11 @@ Manual inputs:
 - `overrides/story_order.json` is the active user-managed order. Export tools
   never replace it.
 - `data/story_order_ocr.json` contains OCR proposals only.
+- Cutscene rows can show an automatic `未使用` badge only when the current
+  build's complete, non-degraded playback-carrier census finds no exact or
+  uniquely case-insensitive consumer. Case collisions and incomplete scans
+  remain unresolved and unmarked. This evidence badge is separate from the
+  user-managed `possiblyUnused` Story-order override.
 - `overrides/options.json` stores manual option placement/response recovery.
 - `overrides/narrative_videos.json` controls inline video attachment,
   suppression, and optional audio inheritance.
@@ -587,22 +646,38 @@ Frontend behavior:
 - A map opens as clean geography. The resizable left panel is a three-column
   map/task/object-filter tree; map status is kept with the task column instead of occupying
   a separate header panel. The complete JSON/file inspector is also resizable.
+- Physical level variants that share one authored place are one map entry and
+  remain selectable as map items in the task column. Their per-level payloads
+  and inspector JSON are retained; only the duplicate navigation entry is collapsed.
 - The plain third column combines entity, quest, story, and mission filters
-  with minimap, elevation, surface, water, point-opacity, and point-height
+  with minimap, elevation, surface, water, point, and point-height
   controls without an inner layer container; there is no separate bottom
   filter dock. The outer panel body owns scrolling for all three columns.
+- Each available raster layer occupies one row with a visibility checkbox and
+  its own opacity slider. Layer opacity persists while switching maps and does
+  not reset when that layer is temporarily hidden.
 - Authored floor overlays are discovered by hovering their covered area and
   cycled locally by clicking; there is no global floor slider.
 - Quest routes are grouped by mission and ordered by authored `questOrder`.
   Shared-file or shared-script relation webs are not rendered.
-- Entity size is independent from map zoom. Point opacity and the two-thumb
-  world-Y filter change presentation only.
+- NPC proxies with explicit `npcProxyDialogAttachments` expose their owning
+  mission and quest ids as selectable phases. The selector does not derive an
+  order from proxy ids, registration order, or coordinates.
+- Entity size is independent from map zoom. Layer opacity and the two-thumb
+  point world-Y filter change presentation only.
 - Map01, Map02, and config-proven shared blackbox scenes stitch by exact
   `regionKey`. Dungeon maps with a source-art dependency remain independent.
+- The bottom-centre range switch defaults Map01/Map02 to the selected zone.
+  `All zones` explicitly loads and stitches every Wuling or Valley-IV member;
+  switching back releases cached sibling payloads as well as removing them
+  from the rendered surface.
 - Minimap/model/water rectangles and markers all use X/Z with image top at +Z.
   `needInverseXZ` applies the evidenced quarter-turn consistently.
 - The inspector keeps strong identity links separate from weak spatial or
   mission context and never upgrades proximity into ownership.
+- Map-wide files and weak file links are debug-only unless the file has an
+  exact generated Story deep link; disabling debug also closes any file viewer
+  whose link is no longer visible.
 
 Evidence boundaries:
 
@@ -610,21 +685,56 @@ Evidence boundaries:
   interactivity, prefab identity, or renderer ownership.
 - Static OBJ projection requires an exact matrix and mesh relation. Material
   color requires one unambiguous Mesh → Material → base texture path plus UVs.
-- HLOD placement remains inferred from the recovered grid fit; weak fits publish
-  no background.
+- HLOD exports without an exact instance matrix remain diagnostic only. Map01
+- HLOD exports without an exact instance matrix remain diagnostic only. Map01
+  and Map02 now join each exported cluster to its `InitChunkData` 4x4 matrix by
+  exact level, HLOD level, grid i/j, and signed cluster hash; unmatched or
+  non-unique rows are omitted without a name-prefix or spatial fallback.
+- Seamless Map01/Map02 members vote on a shared HLOD origin, but a member uses
+  that origin only when its own multi-LOD marker coverage remains within the
+  accepted fit tolerance. Rejected regional origins and their bounded coverage
+  are retained in the render manifest instead of silently shifting a local
+  grid by one cell.
+- Danger-map surfaces state their evidence grade in the task column: inferred
+  source-art HLOD crop, exact streaming mesh with unverified color, or exact
+  streaming mesh with partial recovered base color. `dung01_wrdg001` prefers
+  its exact streaming projection; its older inferred HLOD remains diagnostic.
 - e0m0 HLOD clusters use the generated assets' exact level/LOD/signed-suffix
   contract to bind each cluster to one generated material, then follow that
   material's `_BaseColorMap` PathID to the exported diffuse atlas. Missing or
   duplicate links fail closed to the elevation palette. This recovers unlit
   base color, not the game's environment lighting or post-processing.
+- The same generated-material contract is applied to every published HLOD
+  source and independent crop. Current indexed HLOD clusters all resolve
+  uniquely; unresolved or duplicate future exports still fail closed.
 - HLOD point overlays retain a deterministic sparse sample set for every
   projected pixel and elevation. The normal full-range view uses the compact
-  top-point PNG; a bounded height filter selects the highest remaining sample,
-  so removing an upper layer reveals co-projected geometry below it.
+  sample sidecar; the browser groups samples into shallow height slabs and
+  alpha-composites those slabs from low to high. A bounded height filter omits
+  excluded slabs, so removing an upper layer reveals co-projected geometry
+  below it instead of retaining the upper layer's raster coverage.
+- Map01 and Map02 use exact `UILevelMapLoadConfig` world rectangles for their
+  authored minimaps and exact `InitChunkData` matrices for recovered HLOD
+  geometry. Surface/elevation layers retain all successfully joined triangles;
+  the point layer samples those exact transformed surfaces on a deterministic
+  world-space X/Z lattice. `--surface-point-density N` controls samples per
+  square metre (default `0.25`, approximately 2 m spacing) without changing
+  transforms or alignment. Point sampling excludes named floor, roof,
+  ceiling, ground, and terrain meshes plus broad near-horizontal non-prop
+  slabs from the point layer only; material and grayscale elevation layers
+  retain floors and the remaining recovered environment surface while omitting
+  explicitly named roof/ceiling covers.
+  Levels without in-game minimaps retain an exact registry/quest
+  transform point layer when an inferred HLOD surface is suppressed.
+  The frontend applies no image-registration scale or translation. A level
+  with no exact Mesh join remains transform points only rather than falling
+  back to inferred geometry.
 - Water requires both authored minimap water pixels and exact WaterData scene
   evidence. Packed flowmaps alone are not coverage.
-- Explicitly named roof/ceiling instances may be omitted for the documented
-  cutaway; no height-based roof guess is made.
+- Explicitly named roof/ceiling instances are omitted from every recovered
+  geometry layer. Broad near-horizontal structural slabs are additionally
+  omitted from the point presentation only; floors remain in material and
+  grayscale elevation layers.
 
 Maintained commands:
 
@@ -632,6 +742,7 @@ Maintained commands:
 python scripts\recover_map_streaming_instances.py --level LEVEL --jobs N
 python scripts\build_map_recovery_preview.py
 python scripts\build_map_recovery_preview.py --level LEVEL
+python scripts\build_map_recovery_preview.py --surface-point-density 0.25
 python scripts\build_map_recovery_data.py
 python scripts\build_map_recovery_data.py --level LEVEL
 ```
