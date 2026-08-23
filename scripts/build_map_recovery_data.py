@@ -44,9 +44,11 @@ if str(ROOT) not in sys.path:
 
 from scripts.story_builder.level_bindings import (
     ACTION_ENTITY_FIELD_DIAGNOSTICS_KEY,
+    LevelDataNpcPatrolDecodeError,
     build_leveldata_interactive_narrative_story_contexts,
     build_levelscript_registered_action_target_index,
     build_levelscript_unhosted_reading_popup_receiver_index,
+    decode_leveldata_npc_patrol_list,
 )
 from scripts.story_builder.levelscript_binary import decode_levelscript_binary_summary
 from scripts.story_builder.native_contracts.cutscene_case_resolution import (
@@ -65,6 +67,7 @@ TELEPORT_TABLE_REL = f"{GAMEPLAY_CONFIG}/LevelScriptTeleportValidationDataTable.
 READING_POPUP_REL = "export_full/structured/StreamingAssets/Table/ReadingPopUpTable.json"
 LEVEL_SCRIPT_DATA = "export_full/structured/StreamingAssets/Data/Json/LevelScriptData"
 LEVEL_DATA = "export_full/structured/StreamingAssets/Data/Json/LevelData"
+PERSISTENT_LEVEL_DATA = "export_full/structured/Persistent/Data/Json/LevelData"
 MISSION_RUNTIME_DIR = "export_full/structured/Persistent/Data/Json/MissionRuntimeAsset"
 
 LEVEL_DESC_REL = "export_full/structured/StreamingAssets/Table/LevelDescTable.json"
@@ -869,7 +872,124 @@ def _exact_story_entity_event_index(level_id: str) -> dict[str, list[dict]]:
     return index
 
 
-def _exact_story_proxy_patrol_event_index(level_id: str) -> dict[str, list[dict]]:
+def _active_leveldata_files(level_id: str) -> list[Path]:
+    """Return complete-file Streaming/Persistent LevelData overlays."""
+    selected: dict[str, Path] = {}
+    for root in (ROOT / LEVEL_DATA, ROOT / PERSISTENT_LEVEL_DATA):
+        level_dir = root / level_id
+        if not level_dir.is_dir():
+            continue
+        for path in sorted(level_dir.glob("*.json")):
+            selected[path.name] = path
+    return [selected[name] for name in sorted(selected)]
+
+
+def _exact_story_proxy_patrol_checkpoint_contexts(level_id: str) -> list[dict]:
+    """Resolve exact proxy-patrol listeners to authored patrol checkpoints."""
+    patrols_by_id: dict[int, list[dict]] = {}
+    for path in _active_leveldata_files(level_id):
+        try:
+            data = path.read_bytes()
+            decoded = decode_leveldata_npc_patrol_list(data)
+        except (OSError, LevelDataNpcPatrolDecodeError):
+            # An undecoded active file could hide a competing patrol id.
+            return []
+        try:
+            source_file = str(path.relative_to(ROOT)).replace("\\", "/")
+        except ValueError:
+            source_file = str(path).replace("\\", "/")
+        for patrol in decoded.get("patrols") or []:
+            patrol_id = patrol.get("patrolId")
+            if not isinstance(patrol_id, int) or isinstance(patrol_id, bool):
+                continue
+            patrols_by_id.setdefault(patrol_id, []).append({
+                **patrol,
+                "sourceFile": source_file,
+                "sourceSha256": hashlib.sha256(data).hexdigest().upper(),
+            })
+
+    contexts: list[dict] = []
+    for row in (_native_trigger_frontier().get("storyTriggerZoneCoverage") or {}).get("rows") or []:
+        if not isinstance(row, dict) or not row.get("storyKey"):
+            continue
+        for observation in row.get("observations") or []:
+            detail = observation.get("eventDetail") if isinstance(observation, dict) else None
+            if not (
+                isinstance(detail, dict)
+                and observation.get("status") == "exact_non_spatial_event_trigger"
+                and observation.get("levelId") == level_id
+                and observation.get("eventName") == "LevelEvent_OnProxyPatrolCheckpointReach"
+                and detail.get("payloadSchemaStatus") == "exact_current_build_memorypack_fields"
+                and detail.get("serverExchange") is False
+                and detail.get("serializedMissionOrQuestId") is False
+                and detail.get("payloadShape") in {
+                    "constant-proxy-patrol-checkpoint-and-outputs-exact-eof",
+                    "constant-proxy-patrol-checkpoint-and-outputs-exact-prefix",
+                }
+                and isinstance(detail.get("patrolIdFilter"), int)
+                and not isinstance(detail.get("patrolIdFilter"), bool)
+                and detail.get("patrolIdFilter") > 0
+                and isinstance(detail.get("pointIndexFilter"), int)
+                and not isinstance(detail.get("pointIndexFilter"), bool)
+                and detail.get("pointIndexFilter") >= 0
+                and str(detail.get("proxyIdFilter") or "")
+            ):
+                continue
+            patrol_id = int(detail["patrolIdFilter"])
+            point_index = int(detail["pointIndexFilter"])
+            patrol_matches = patrols_by_id.get(patrol_id) or []
+            if len(patrol_matches) != 1:
+                continue
+            patrol = patrol_matches[0]
+            points = patrol.get("points") or []
+            if not (
+                point_index < len(points)
+                and isinstance(points[point_index], dict)
+                and points[point_index].get("pointIndex") == point_index
+            ):
+                continue
+            position = _finite_position(points[point_index].get("position"))
+            if position is None:
+                continue
+            contexts.append({
+                "storyKey": row["storyKey"],
+                "levelId": level_id,
+                "scriptId": observation.get("scriptId"),
+                "sourceFile": observation.get("sourceFile"),
+                "sourceSha256": observation.get("sourceSha256"),
+                "headerLocalId": observation.get("listenerHeaderLocalId"),
+                "eventName": observation.get("eventName"),
+                "proxyId": detail["proxyIdFilter"],
+                "patrolId": patrol_id,
+                "pointIndex": point_index,
+                "position": position,
+                "levelDataSourceFile": patrol["sourceFile"],
+                "levelDataSourceSha256": patrol["sourceSha256"],
+                "nativeMappingId": detail.get("payloadSchemaMappingId"),
+                "playbackControlPathEvidence": observation.get(
+                    "playbackControlPathEvidence"
+                ),
+                "status": "exact_proxy_patrol_checkpoint",
+                "runtimeNpcPositionStatus": "unresolved",
+                "ownership": False,
+                "activation": False,
+                "orderEvidence": False,
+            })
+    return contexts
+
+
+def _proxy_patrol_context_signature(row: dict) -> tuple[str, object, str]:
+    return (
+        str(row.get("sourceFile") or ""),
+        row.get("headerLocalId"),
+        str(row.get("storyKey") or ""),
+    )
+
+
+def _exact_story_proxy_patrol_event_index(
+    level_id: str,
+    checkpoint_contexts: list[dict] | None = None,
+) -> dict[str, list[dict]]:
     """Index proxy-patrol Story events by exact authored NPC proxy identity.
 
     Patrol/checkpoint values describe runtime progress. The map point remains
@@ -884,6 +1004,10 @@ def _exact_story_proxy_patrol_event_index(level_id: str) -> dict[str, list[dict]
 
     expected_level_num = _level_catalog().get(level_id)
     index: dict[str, list[dict]] = {}
+    checkpoint_signatures = {
+        _proxy_patrol_context_signature(row)
+        for row in checkpoint_contexts or []
+    }
     for row in (_native_trigger_frontier().get("storyTriggerZoneCoverage") or {}).get("rows") or []:
         if not isinstance(row, dict) or not row.get("storyKey"):
             continue
@@ -896,6 +1020,12 @@ def _exact_story_proxy_patrol_event_index(level_id: str) -> dict[str, list[dict]
             ):
                 continue
             detail = observation.get("eventDetail") or {}
+            if _proxy_patrol_context_signature({
+                "sourceFile": observation.get("sourceFile"),
+                "headerLocalId": observation.get("listenerHeaderLocalId"),
+                "storyKey": row.get("storyKey"),
+            }) in checkpoint_signatures:
+                continue
             if (
                 detail.get("payloadSchemaStatus") != "exact_current_build_memorypack_fields"
                 or detail.get("serverExchange") is not False
@@ -965,6 +1095,101 @@ def _exact_story_proxy_patrol_event_index(level_id: str) -> dict[str, list[dict]
                 "orderEvidence": False,
             })
     return index
+
+
+def _exact_story_proxy_patrol_checkpoint_markers(
+    contexts: list[dict],
+    language: str,
+) -> list[dict]:
+    """Publish exact authored patrol points without claiming runtime position."""
+    grouped: dict[tuple[int, int, tuple[float, float, float]], list[dict]] = {}
+    for context in contexts:
+        position = _finite_position(context.get("position"))
+        patrol_id = context.get("patrolId")
+        point_index = context.get("pointIndex")
+        if (
+            position is None
+            or not isinstance(patrol_id, int)
+            or not isinstance(point_index, int)
+        ):
+            continue
+        key = (
+            patrol_id,
+            point_index,
+            (position["x"], position["y"], position["z"]),
+        )
+        grouped.setdefault(key, []).append(context)
+
+    markers: list[dict] = []
+    for (patrol_id, point_index, position_values), rows in sorted(grouped.items()):
+        story_keys = sorted({str(row.get("storyKey") or "") for row in rows if row.get("storyKey")})
+        proxy_ids = sorted({str(row.get("proxyId") or "") for row in rows if row.get("proxyId")})
+        source_files = sorted({
+            str(row.get(field) or "")
+            for row in rows
+            for field in ("sourceFile", "levelDataSourceFile")
+            if row.get(field)
+        })
+        markers.append({
+            "kind": "story",
+            "subKind": "proxy_patrol_checkpoint",
+            "label": _story_display_title(language, story_keys[0]) if len(story_keys) == 1 else " / ".join(story_keys),
+            "identity": f"proxy-patrol-checkpoint:{patrol_id}:{point_index}",
+            "position": dict(zip(("x", "y", "z"), position_values)),
+            "interactionStatus": "exact_proxy_patrol_checkpoint",
+            "evidence": (
+                "exact proxy/patrol/checkpoint event filters + unique fully "
+                "decoded LevelData NpcPatrolData point"
+            ),
+            "sceneKeys": story_keys,
+            "missions": sorted({
+                match.group(1)
+                for story_key in story_keys
+                if (match := re.search(
+                    r"(?:^|_)([a-z]+\d+m\d+(?:d\d+)?)(?:_|$)",
+                    story_key,
+                    re.IGNORECASE,
+                ))
+            }),
+            "proxyIds": proxy_ids,
+            "patrolId": patrol_id,
+            "pointIndex": point_index,
+            "authoredCheckpointPosition": True,
+            "runtimeNpcPositionStatus": "unresolved",
+            "ownership": False,
+            "activation": False,
+            "orderEvidence": False,
+            "proxyPatrolCheckpointBindings": rows,
+            "sourceFiles": source_files,
+            "source": source_files[0] if source_files else "",
+            "relatedFiles": _sorted_related(_merge_related([], [
+                *[
+                    _related(
+                        row.get("sourceFile"),
+                        "story_exact_proxy_patrol_event",
+                        "exact proxy, patrol id and checkpoint listener before playback",
+                    )
+                    for row in rows
+                ],
+                *[
+                    _related(
+                        row.get("levelDataSourceFile"),
+                        "placement_source",
+                        "fully decoded authored NpcPatrolData checkpoint position",
+                    )
+                    for row in rows
+                ],
+                *[
+                    _related(
+                        _conv_file_for_key(language, story_key),
+                        "story_exact_proxy_patrol_checkpoint",
+                        "Story reached from this exact patrol checkpoint event",
+                    )
+                    for story_key in story_keys
+                ],
+            ])),
+        })
+    return markers
 
 
 def _level_family(level_id: str) -> str:
@@ -3692,8 +3917,12 @@ def build_level(
         if key.startswith("unplaced-")
         for target in targets
     ]
+    proxy_patrol_contexts = _exact_story_proxy_patrol_checkpoint_contexts(level_id)
     entity_event_story_index = _exact_story_entity_event_index(level_id)
-    for identity, bindings in _exact_story_proxy_patrol_event_index(level_id).items():
+    for identity, bindings in _exact_story_proxy_patrol_event_index(
+        level_id,
+        proxy_patrol_contexts,
+    ).items():
         entity_event_story_index.setdefault(identity, []).extend(bindings)
     markers = _registry_markers(
         entities,
@@ -3710,6 +3939,10 @@ def build_level(
     markers.extend(_exact_story_trigger_markers(level_id, language))
     markers.extend(_gender_select_casefold_trigger_markers(level_id, language))
     markers.extend(_exact_story_spawner_markers(level_id, language))
+    markers.extend(_exact_story_proxy_patrol_checkpoint_markers(
+        proxy_patrol_contexts,
+        language,
+    ))
     markers.extend(_teleport_markers(level_id, teleports, attachment_index, language))
 
     # The map UI config is also the authority for map floors/overlays.  Join

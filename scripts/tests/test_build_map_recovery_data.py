@@ -68,6 +68,72 @@ class BuildMapRecoveryDataTests(unittest.TestCase):
                 {}, builder._exact_story_proxy_patrol_event_index("map_fixture")
             )
 
+    def test_proxy_patrol_checkpoint_context_uses_unique_typed_patrol_point(self):
+        report = {"storyTriggerZoneCoverage": {"rows": [{
+            "storyKey": "radio_checkpoint",
+            "observations": [{
+                "status": "exact_non_spatial_event_trigger",
+                "levelId": "map_fixture",
+                "scriptId": "1001",
+                "listenerHeaderLocalId": 9,
+                "eventName": "LevelEvent_OnProxyPatrolCheckpointReach",
+                "sourceFile": "LevelScriptData/map_fixture/1001.json",
+                "eventDetail": {
+                    "payloadSchemaStatus": "exact_current_build_memorypack_fields",
+                    "payloadSchemaMappingId": "native-event-v1",
+                    "payloadShape": "constant-proxy-patrol-checkpoint-and-outputs-exact-eof",
+                    "serverExchange": False,
+                    "serializedMissionOrQuestId": False,
+                    "proxyIdFilter": "npc_fixture",
+                    "patrolIdFilter": 10000,
+                    "pointIndexFilter": 1,
+                },
+            }],
+        }]}}
+        decoded = {
+            "status": "exactNonemptyTypedPatrolList",
+            "patrols": [{
+                "patrolId": 10000,
+                "pointCount": 2,
+                "points": [
+                    {"pointIndex": 0, "position": {"x": 1.0, "y": 2.0, "z": 3.0}},
+                    {"pointIndex": 1, "position": {"x": 4.0, "y": 5.0, "z": 6.0}},
+                ],
+            }],
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            source = Path(tmp) / "fixture.json"
+            source.write_bytes(b"fixture")
+            with (
+                mock.patch.object(builder, "_native_trigger_frontier", return_value=report),
+                mock.patch.object(builder, "_active_leveldata_files", return_value=[source]),
+                mock.patch.object(builder, "decode_leveldata_npc_patrol_list", return_value=decoded),
+            ):
+                contexts = builder._exact_story_proxy_patrol_checkpoint_contexts(
+                    "map_fixture"
+                )
+        self.assertEqual(1, len(contexts))
+        self.assertEqual({"x": 4.0, "y": 5.0, "z": 6.0}, contexts[0]["position"])
+        self.assertTrue(
+            builder._exact_story_proxy_patrol_checkpoint_markers(contexts, "CN")[0][
+                "authoredCheckpointPosition"
+            ]
+        )
+
+        decoded["patrols"].append(dict(decoded["patrols"][0]))
+        with tempfile.TemporaryDirectory() as tmp:
+            source = Path(tmp) / "fixture.json"
+            source.write_bytes(b"fixture")
+            with (
+                mock.patch.object(builder, "_native_trigger_frontier", return_value=report),
+                mock.patch.object(builder, "_active_leveldata_files", return_value=[source]),
+                mock.patch.object(builder, "decode_leveldata_npc_patrol_list", return_value=decoded),
+            ):
+                self.assertEqual(
+                    [],
+                    builder._exact_story_proxy_patrol_checkpoint_contexts("map_fixture"),
+                )
+
     def test_exact_story_entity_event_index_accepts_only_constant_specified_entity(self):
         exact = {
             "storyTriggerZoneCoverage": {"rows": [{
