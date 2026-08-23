@@ -73,8 +73,8 @@ def decode_entity_hp_changed_event(
     if not (
         payload[17] == 4
         and payload[18] in (0, 1)
-        and struct.unpack_from("<i", payload, 19)[0] == -1
-        and struct.unpack_from("<i", payload, 23)[0] == 0
+        and struct.unpack_from("<i", payload, 19)[0] >= -1
+        and struct.unpack_from("<i", payload, 23)[0] >= -1
         and struct.unpack_from("<i", payload, 27)[0] == -1
         and payload[35] == 4
         and struct.unpack_from("<i", payload, 36)[0] == 1
