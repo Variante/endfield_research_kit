@@ -996,7 +996,11 @@ def texture_file_index(texture_root: Path) -> dict[str, Path]:
 def water_scene_id(level_id: str, source_scene: str | None = None) -> str:
     """Map gameplay slices to the LunaScene that owns WaterData sectors."""
     candidate = source_scene or level_id
-    matched = re.match(r"^(map[0-9]+)_lv[0-9]+$", candidate, re.IGNORECASE)
+    # The map01 WaterData flow fields do not establish an authored minimap
+    # water surface; cyan segmentation there misclassifies Wuling terrain.
+    # Valley map screens are the validated regional consumer of the shared
+    # map02 WaterData sectors. Other/isolated scenes keep their own exact id.
+    matched = re.match(r"^(map02)_lv[0-9]+$", candidate, re.IGNORECASE)
     return matched.group(1) if matched else candidate
 
 
@@ -1931,6 +1935,39 @@ def render_sparse_point_elevation(
     }
 
 
+def refresh_water_overlay_manifests(
+    level_ids: list[str],
+    sectors_by_scene: dict[str, list[dict]],
+    texture_files: dict[str, Path],
+    output_root: Path,
+) -> int:
+    """Refresh only derived water layers in already-rendered map manifests."""
+    refreshed = 0
+    for level_id in level_ids:
+        manifest_path = output_root / f"{level_id}_hlod_grid_inferred.json"
+        if not manifest_path.is_file():
+            raise RuntimeError(f"water-only refresh requires existing manifest: {manifest_path}")
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        bounds = manifest.get("worldBounds")
+        if not isinstance(bounds, dict):
+            raise RuntimeError(f"water-only refresh requires worldBounds: {manifest_path}")
+        projection = manifest.get("projectionSource") or {}
+        scene_id = water_scene_id(level_id, projection.get("sceneId"))
+        overlay = render_water_overlay(
+            level_id, scene_id, bounds, sectors_by_scene, texture_files, output_root,
+        )
+        if overlay is None:
+            stale_image = output_root / f"{level_id}_water.png"
+            if stale_image.is_file():
+                stale_image.unlink()
+        manifest["waterOverlay"] = overlay
+        manifest_path.write_text(
+            json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8",
+        )
+        refreshed += 1
+    return refreshed
+
+
 def elevation_color(tint: float) -> tuple[int, int, int]:
     """A restrained terrain palette for geometry with no proven material binding."""
     stops = ((91, 126, 116), (167, 151, 105), (151, 104, 82))
@@ -2541,6 +2578,10 @@ def main() -> int:
     )
     parser.add_argument("--level", action="append", default=[], help="build only these level ids (repeatable)")
     parser.add_argument(
+        "--water-only", action="store_true",
+        help="refresh derived water overlays in existing manifests without rerendering model geometry",
+    )
+    parser.add_argument(
         "--exact-point-fallback-only", action="store_true",
         help="skip inferred HLOD rendering and publish only exact registry/quest transform point layers",
     )
@@ -2563,6 +2604,14 @@ def main() -> int:
     mesh_files = mesh_file_index(args.mesh_root) if index["levels"] else {}
     texture_files = texture_file_index(args.texture_root) if index.get("waterSectors") else {}
     only = set(args.level)
+    if args.water_only:
+        if not args.level:
+            raise SystemExit("--water-only requires at least one --level")
+        refreshed = refresh_water_overlay_manifests(
+            args.level, index.get("waterSectors") or {}, texture_files, args.output_root,
+        )
+        print(f"map previews: refreshed {refreshed} water overlays")
+        return 0
 
     published, skipped = [], []
     published_ids: set[str] = set()
