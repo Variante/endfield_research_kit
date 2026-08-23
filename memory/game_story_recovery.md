@@ -126,6 +126,8 @@ leave only the report/CLI surface in recovery.
   `EnemyInFight` uses the same rule when its formatter yields a complete
   constant entity list; dynamic validation affects execution only, and a
   final-header exact subtype prefix remains bounded by consumed members.
+  `EntityHpChanged` likewise keeps a fully validated constant entity/ratio
+  payload spatial when only its inherited validation predicate is getter-backed.
   Exact SpawnerPtr filters are spatial only when the same level contains one
   matching `sc_<level>_<id>` SpawnerConfig and one logical typed LevelData host
   record whose finite position/rotation agrees across the active overlay.

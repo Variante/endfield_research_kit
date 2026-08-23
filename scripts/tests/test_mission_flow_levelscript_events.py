@@ -2336,6 +2336,15 @@ class MissionFlowLevelScriptEventTests(unittest.TestCase):
                 header_role=True,
             ),
         )
+        getter_validated = bytearray(payload)
+        getter_validated[19:23] = (46).to_bytes(4, "little", signed=True)
+        getter_validated[23:27] = (-1).to_bytes(4, "little", signed=True)
+        conditional_event = decode_entity_hp_changed_event(
+            bytes(getter_validated),
+            (0x006A, 0x12),
+            header_role=True,
+        )
+        self.assertEqual(40021, conditional_event["entityFilter"][0]["slotId"])
 
     def test_dynamic_hp_list_and_exact_spawner_writer_fields_decode(self):
         tail = b"\xff\xff\xff\xff\x00\x00\x00\x00\xff\xff\xff\xff"
