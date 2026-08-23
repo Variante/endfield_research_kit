@@ -79,6 +79,21 @@ def _group_begin_payload() -> bytes:
 
 
 class LevelScriptSpawnerEventTests(unittest.TestCase):
+    def test_start_pause_group_and_wave_complete_decode_constant_spawners(self) -> None:
+        prefix = bytes(17) + b"\x04\x01" + _PARAM_TAIL
+        spawner = b"\x04" + struct.pack("<Q", 35300010001) + _PARAM_TAIL
+        fixtures = {
+            "LevelEvent_OnSpawnerStart": prefix + spawner + b"\xff",
+            "LevelEvent_OnSpawnerPause": prefix + _string("Pause") + b"\xff" + spawner + b"\xff",
+            "LevelEvent_OnSpawnerGroupComplete": prefix + _string("B") + b"\xff" + spawner + b"\xff",
+            "LevelEvent_OnSpawnerWaveComplete": prefix + spawner + b"\xff" + _string("wave2") + b"\xff",
+        }
+        for event_name, payload in fixtures.items():
+            with self.subTest(event_name=event_name):
+                detail = decode_spawner_event_fields(payload, event_name)
+                self.assertEqual(35300010001, detail["spawnerFilterId"])
+                self.assertEqual(len(payload), detail["subtypeConsumedBytes"])
+
     def test_wave_begin_retains_constant_spawner_with_getter_validation(self) -> None:
         payload = _wave_begin_with_getter_validation()
         detail = decode_spawner_event_fields(payload, "LevelEvent_OnSpawnerWaveBegin")
