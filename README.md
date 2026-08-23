@@ -10,6 +10,7 @@ comparisons into one searchable interface.
   <img src="res/story_screenshot2.png" alt="Gameplay browser showing 诀 with character skills, progression, projectiles, and audio" height="150">
   <img src="res/story_screenshot3.png" alt="Asset browser previewing the Endministrator female cloth OBJ model" height="150">
   <img src="res/story_screenshot4.png" alt="Updates browser showing the modified m_cs_video_dlg_sm2l6m1_9.mp4 entry" height="150">
+  <img src="res/map_screenshot.png" alt="Map browser showing the full Wuling region with recovered elevation, color surface, and water layers" height="150">
 </p>
 
 > Research only. Use a legally obtained client, do not redistribute proprietary
@@ -43,6 +44,8 @@ starting the server.
   overrides.
 - **Gameplay** covers characters, equipment, enemies, progression, skills,
   projectiles, related assets, and recovered sound effects.
+- **Map** stitches authored regional screens with recovered grayscale elevation,
+  colored surfaces, water, point clouds, missions, and exact world coordinates.
 - **Audio**, **Assets**, and **Text** expose decoded media, exported resources,
   and localized tables.
 - **Updates** compares exported game data across two saved versions.
