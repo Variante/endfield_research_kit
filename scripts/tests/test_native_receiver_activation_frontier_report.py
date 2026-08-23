@@ -2483,6 +2483,176 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
         self.assertRegex(observation["sourceSha256"], r"^[0-9a-f]{64}$")
         self.assertFalse(row["ownership"])
 
+    def test_story_trigger_zone_list_selector_keeps_each_exact_slot_independent(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            source = Path(temporary) / "LevelScriptData" / "map_fixture" / "1001.json"
+            source.parent.mkdir(parents=True)
+            source.write_bytes(b"active")
+            detail = {
+                "type": "ScriptEvent_OnLeaderEnterTriggerVolumeList",
+                "scriptEventScope": "owning-level-script",
+                "triggerTarget": "SELF",
+                "targetScriptPresent": False,
+                "validateParam": {"constValue": True},
+                "triggerSlotIdFilters": [80001, 80002],
+                "triggerSlotIdFilterCount": 2,
+                "payloadShape": "constant-trigger-slot-list-selector-prefix",
+                "transport": "local-authored-trigger-volume-event",
+                "serverExchange": False,
+                "serializedMissionOrQuestId": False,
+                "payloadSchemaStatus": "exact_current_build_memorypack_fields",
+                "payloadSchemaMappingId": frontier.LEVELSCRIPT_NATIVE_EVENT_PAYLOAD_MAPPING_ID,
+            }
+            topology = self._exact_topology(
+                "ScriptEvent_OnLeaderEnterTriggerVolumeList", detail,
+            )
+            topology[0]["eventRoots"][0].update({
+                "unionTag": "0x00bf",
+                "serializedMemberCount": 17,
+            })
+            volumes = [{
+                "slotId": slot_id,
+                "triggerVolumeType": "Leader",
+                "shapeList": {"shapes": [{
+                    "shapeType": "Sphere",
+                    "position": {"x": float(index), "y": 2.0, "z": 3.0},
+                }]},
+            } for index, slot_id in enumerate((80001, 80002), start=1)]
+            with mock.patch.object(
+                frontier,
+                "decode_levelscript_native_action_topology",
+                return_value=topology,
+            ), mock.patch.object(
+                frontier,
+                "decode_levelscript_binary_summary",
+                return_value={
+                    "scriptIdVerified": True,
+                    "triggerVolumesDetails": {"volumes": volumes},
+                },
+            ), mock.patch.object(
+                frontier,
+                "classify_local_trigger_volume_context",
+                return_value={
+                    "status": "exact_local_levelscript_trigger_volume_without_foreign_identity",
+                    "triggerVolumes": volumes,
+                    "missingSlotIds": [],
+                    "ambiguousSlotIds": [],
+                },
+            ) as classifier:
+                report = frontier.build_story_trigger_zone_coverage(
+                    self._trigger_fixture_index([{
+                        "key": "radio_trigger_list",
+                        "sourceFiles": [source.resolve().as_posix()],
+                    }]),
+                    overlay_index=self._trigger_overlay(source),
+                )
+
+        row = report["rows"][0]
+        self.assertEqual("multiple_or_ambiguous_trigger_zones", row["status"])
+        self.assertEqual(2, row["observationCount"])
+        self.assertEqual(2, row["exactZoneCount"])
+        observations = sorted(
+            row["observations"], key=lambda item: item["triggerSlotIdFilter"],
+        )
+        self.assertEqual([80001, 80002], [
+            item["triggerSlotIdFilter"] for item in observations
+        ])
+        self.assertTrue(all(
+            item["triggerSlotIdFilters"] == [80001, 80002]
+            and item["multiLocationSemantics"]
+            == "explicit_independent_trigger_slots"
+            for item in observations
+        ))
+        self.assertEqual(
+            [1.0, 2.0],
+            [item["decodedShape"][0]["position"]["x"] for item in observations],
+        )
+        classifier.assert_called_once()
+        self.assertEqual([80001, 80002], classifier.call_args.args[1])
+
+    def test_story_trigger_zone_list_selector_duplicate_or_missing_slot_fails_closed(self) -> None:
+        for case in ("duplicate_selector", "missing_volume"):
+            with self.subTest(case=case), tempfile.TemporaryDirectory() as temporary:
+                source = Path(temporary) / "LevelScriptData" / "map_fixture" / "1001.json"
+                source.parent.mkdir(parents=True)
+                source.write_bytes(b"active")
+                selector_slots = (
+                    [80001, 80001]
+                    if case == "duplicate_selector"
+                    else [80001, 80002]
+                )
+                detail = {
+                    "type": "ScriptEvent_OnLeaderEnterTriggerVolumeList",
+                    "scriptEventScope": "owning-level-script",
+                    "triggerTarget": "SELF",
+                    "targetScriptPresent": False,
+                    "validateParam": {"constValue": True},
+                    "triggerSlotIdFilters": selector_slots,
+                    "triggerSlotIdFilterCount": 2,
+                    "payloadShape": "constant-trigger-slot-list-selector-prefix",
+                    "transport": "local-authored-trigger-volume-event",
+                    "serverExchange": False,
+                    "serializedMissionOrQuestId": False,
+                    "payloadSchemaStatus": "exact_current_build_memorypack_fields",
+                    "payloadSchemaMappingId": frontier.LEVELSCRIPT_NATIVE_EVENT_PAYLOAD_MAPPING_ID,
+                }
+                topology = self._exact_topology(
+                    "ScriptEvent_OnLeaderEnterTriggerVolumeList", detail,
+                )
+                topology[0]["eventRoots"][0].update({
+                    "unionTag": "0x00bf",
+                    "serializedMemberCount": 17,
+                })
+                with mock.patch.object(
+                    frontier,
+                    "decode_levelscript_native_action_topology",
+                    return_value=topology,
+                ), mock.patch.object(
+                    frontier,
+                    "decode_levelscript_binary_summary",
+                    return_value={
+                        "scriptIdVerified": True,
+                        "triggerVolumesDetails": {
+                            "volumes": [{"slotId": 80001}],
+                        },
+                    },
+                ), mock.patch.object(
+                    frontier,
+                    "classify_local_trigger_volume_context",
+                    return_value={
+                        "status": "unresolved_local_levelscript_trigger_volume",
+                        "triggerVolumes": [],
+                        "missingSlotIds": [80002],
+                        "ambiguousSlotIds": [],
+                        "triggerVolumesStatus": "present",
+                        "triggerVolumesParseStatus": "decoded",
+                    },
+                ) as classifier:
+                    report = frontier.build_story_trigger_zone_coverage(
+                        self._trigger_fixture_index([{
+                            "key": f"radio_trigger_list_{case}",
+                            "sourceFiles": [source.resolve().as_posix()],
+                        }]),
+                        overlay_index=self._trigger_overlay(source),
+                    )
+
+            row = report["rows"][0]
+            self.assertEqual("trigger_event_known_spatial_unresolved", row["status"])
+            self.assertEqual(0, row["exactZoneCount"])
+            observation = row["observations"][0]
+            if case == "duplicate_selector":
+                self.assertEqual(
+                    "exactEntityTriggerSelectorContract",
+                    observation["diagnostics"][0]["gate"],
+                )
+                classifier.assert_not_called()
+            else:
+                self.assertEqual(
+                    "uniqueDecodedLocalTriggerVolume",
+                    observation["diagnostics"][0]["gate"],
+                )
+                classifier.assert_called_once()
+
     def test_story_trigger_zone_shared_zone_is_exact_for_each_story_without_fanout(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             source = Path(temporary) / "LevelScriptData" / "map_fixture" / "1001.json"

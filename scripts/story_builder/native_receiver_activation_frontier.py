@@ -98,6 +98,7 @@ _SPATIAL_TRIGGER_EVENT_NAMES = frozenset({
     "EntityEvent_OnLeaderEnterTrigger",
     "EntityEvent_OnLeaderLeaveTrigger",
     "ScriptEvent_OnLeaderEnterTriggerVolume",
+    "ScriptEvent_OnLeaderEnterTriggerVolumeList",
     "ScriptEvent_OnLeaderLeaveTriggerVolume",
 })
 _PLAYBACK_ACTION_NAMES = frozenset({
@@ -1930,6 +1931,7 @@ def build_story_trigger_zone_coverage(
             safe_text(observation.get("sourceSha256")),
             observation.get("listenerHeaderLocalId"),
             safe_text(observation.get("eventName")),
+            observation.get("triggerSlotIdFilter"),
         )
         story_entries[story_key][identity] = observation
 
@@ -2362,7 +2364,57 @@ def build_story_trigger_zone_coverage(
                 if event_name in _SPATIAL_TRIGGER_EVENT_NAMES:
                     selector_kind = "triggerSlotIdFilter"
                     slot_id = event_detail.get("triggerSlotIdFilter")
+                    selector_slot_ids = (
+                        [slot_id] if isinstance(slot_id, int) else []
+                    )
                     entity_selector_failures: list[dict[str, Any]] = []
+                    if event_name == "ScriptEvent_OnLeaderEnterTriggerVolumeList":
+                        selector_kind = "triggerSlotIdFilters"
+                        raw_slot_ids = event_detail.get("triggerSlotIdFilters")
+                        validate_param = event_detail.get("validateParam") or {}
+                        list_checks = (
+                            (event.get("unionTag"), "0x00bf", "headerUnionTag"),
+                            (event.get("serializedMemberCount"), 17, "headerSerializedMemberCount"),
+                            (event_detail.get("scriptEventScope"), "owning-level-script", "scriptEventScope"),
+                            (event_detail.get("triggerTarget"), "SELF", "triggerTarget"),
+                            (event_detail.get("targetScriptPresent"), False, "targetScriptPresent"),
+                            (event_detail.get("payloadShape"), "constant-trigger-slot-list-selector-prefix", "payloadShape"),
+                            (event_detail.get("transport"), "local-authored-trigger-volume-event", "transport"),
+                            (event_detail.get("serverExchange"), False, "serverExchange"),
+                            (event_detail.get("serializedMissionOrQuestId"), False, "serializedMissionOrQuestId"),
+                            (event_detail.get("payloadSchemaStatus"), "exact_current_build_memorypack_fields", "payloadSchemaStatus"),
+                            (event_detail.get("payloadSchemaMappingId"), LEVELSCRIPT_NATIVE_EVENT_PAYLOAD_MAPPING_ID, "payloadSchemaMappingId"),
+                            (validate_param.get("constValue"), True, "validateParam.constValue"),
+                        )
+                        for actual, expected, field in list_checks:
+                            if actual != expected:
+                                entity_selector_failures.append({
+                                    "field": field,
+                                    "expected": expected,
+                                    "actual": actual,
+                                })
+                        if not (
+                            isinstance(raw_slot_ids, list)
+                            and raw_slot_ids
+                            and all(
+                                isinstance(value, int)
+                                and not isinstance(value, bool)
+                                and value > 0
+                                for value in raw_slot_ids
+                            )
+                            and len(set(raw_slot_ids)) == len(raw_slot_ids)
+                            and event_detail.get("triggerSlotIdFilterCount")
+                            == len(raw_slot_ids)
+                        ):
+                            entity_selector_failures.append({
+                                "field": "triggerSlotIdFilters",
+                                "expected": "non-empty unique positive integer list with exact count",
+                                "actual": raw_slot_ids,
+                            })
+                            selector_slot_ids = []
+                        else:
+                            selector_slot_ids = list(raw_slot_ids)
+                        slot_id = None
                     if event_name in {
                         "EntityEvent_OnLeaderEnterTrigger",
                         "EntityEvent_OnLeaderLeaveTrigger",
@@ -2515,6 +2567,9 @@ def build_story_trigger_zone_coverage(
                         slot_id = (
                             target_slot_id if exact_entity_selector else None
                         )
+                        selector_slot_ids = (
+                            [slot_id] if isinstance(slot_id, int) else []
+                        )
                     if active_source not in binary_cache:
                         try:
                             data = read_bytes_cached(repo_path(active_source))
@@ -2576,30 +2631,35 @@ def build_story_trigger_zone_coverage(
                         continue
                     context = classify_local_trigger_volume_context(
                         decoded,
-                        [slot_id] if isinstance(slot_id, int) else [],
+                        selector_slot_ids,
                     )
                     if context.get("status") == (
                         "exact_local_levelscript_trigger_volume_without_foreign_identity"
                     ):
-                        volume = (context.get("triggerVolumes") or [None])[0]
-                        add_observation(story_key, {
-                            **base,
-                            "status": "exact_local_trigger_volume",
-                            "triggerSlotIdFilter": slot_id,
-                            "triggerSelectorKind": selector_kind,
-                            "triggerVolumeType": safe_text(
-                                (volume or {}).get("triggerVolumeType")
-                            ),
-                            "triggerVolume": volume or {},
-                            "decodedShape": (
-                                ((volume or {}).get("shapeList") or {}).get(
-                                    "shapes"
-                                )
-                                or []
-                            ),
-                            "triggerVolumeContext": context,
-                            "diagnostics": [],
-                        })
+                        for volume in context.get("triggerVolumes") or []:
+                            selected_slot_id = volume.get("slotId")
+                            add_observation(story_key, {
+                                **base,
+                                "status": "exact_local_trigger_volume",
+                                "triggerSlotIdFilter": selected_slot_id,
+                                "triggerSlotIdFilters": list(selector_slot_ids),
+                                "triggerSelectorKind": selector_kind,
+                                "multiLocationSemantics": (
+                                    "explicit_independent_trigger_slots"
+                                    if len(selector_slot_ids) > 1
+                                    else "single_trigger_slot"
+                                ),
+                                "triggerVolumeType": safe_text(
+                                    volume.get("triggerVolumeType")
+                                ),
+                                "triggerVolume": volume,
+                                "decodedShape": (
+                                    (volume.get("shapeList") or {}).get("shapes")
+                                    or []
+                                ),
+                                "triggerVolumeContext": context,
+                                "diagnostics": [],
+                            })
                     else:
                         add_observation(story_key, {
                             **base,

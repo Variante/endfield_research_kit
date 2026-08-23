@@ -114,7 +114,10 @@ leave only the report/CLI surface in recovery.
   events and bounded single-entity lifecycle filters may attach the Story to
   that exact WorldEntityRegistry marker. Arbitrary-entity events, dynamic
   filters/lists/paths, and event payloads without an entity selector remain
-  non-spatial. A subtype may remain opaque while its inherited EntityEvent
+  non-spatial. A getter-backed validation predicate makes execution
+  conditional but does not erase an independently constant specified-entity
+  target; publication still records activation, ownership, and order as
+  unproven. A subtype may remain opaque while its inherited EntityEvent
   specified-entity scope is decoded independently; that narrow schema proves
   only the constant target and validation fields, never the subtype payload or
   broader event semantics. Multiple typed control paths from the same event header may
@@ -128,6 +131,11 @@ leave only the report/CLI surface in recovery.
   final-header exact subtype prefix remains bounded by consumed members.
   `EntityHpChanged` likewise keeps a fully validated constant entity/ratio
   payload spatial when only its inherited validation predicate is getter-backed.
+  Leader trigger-volume list listeners are decoded as bounded constant slot
+  lists. Every positive unique slot must resolve to its own typed Leader
+  volume and shape; the Story is then published at each explicit authored
+  location without choosing, averaging, or collapsing the list. Duplicate or
+  missing slots remain fail-closed.
   Patrol-checkpoint listeners attach playback to one unique, fully decoded
   LevelData `NpcPatrolData` point when their patrol id and zero-based point
   index are constant. `ProxyPatrolCheckpointReach` additionally walks its

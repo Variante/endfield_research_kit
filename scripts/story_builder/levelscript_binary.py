@@ -2738,6 +2738,43 @@ def _decode_leader_trigger_volume_fields(payload: bytes) -> dict[str, Any]:
     }
 
 
+def _decode_leader_trigger_volume_list_fields(payload: bytes) -> dict[str, Any]:
+    """Decode the complete constant ``_triggerSlotIds`` Param<List<int>>.
+
+    Only the exact constant tag, bounded list, and complete ordinary Param
+    tail are accepted. Bytes after that tail belong to the surrounding
+    LevelScriptData container and are deliberately not scanned.
+    """
+    scope = levelscript_script_event_scope.decode_script_event_header_scope(payload)
+    cursor = scope.pop("_subtypeOffset", None)
+    if not scope or not isinstance(cursor, int) or cursor + 17 > len(payload):
+        return {}
+    subtype_offset = cursor
+    if payload[cursor] != 0x04:
+        return {}
+    cursor += 1
+    count = struct.unpack_from("<i", payload, cursor)[0]
+    cursor += 4
+    if count <= 0 or count > 1024 or cursor + count * 4 + 12 > len(payload):
+        return {}
+    slot_ids = list(struct.unpack_from(f"<{count}i", payload, cursor))
+    cursor += count * 4
+    if (
+        any(slot_id <= 0 for slot_id in slot_ids)
+        or len(set(slot_ids)) != len(slot_ids)
+        or payload[cursor:cursor + 12] != _DEFAULT_PARAM_TAIL
+    ):
+        return {}
+    cursor += 12
+    return {
+        **scope,
+        "triggerSlotIdFilters": slot_ids,
+        "triggerSlotIdFilterCount": count,
+        "subtypeConsumedBytes": cursor - subtype_offset,
+        "payloadShape": "constant-trigger-slot-list-selector-prefix",
+    }
+
+
 def _decode_encounter_battle_part_begin_fields(payload: bytes) -> dict[str, Any]:
     """Decode the exact LevelScript-variable pointer filter and null output."""
     if (
@@ -3530,6 +3567,23 @@ def _decode_named_native_event_detail(
                 "serializedMissionOrQuestId": False,
                 "summary": (
                     f"{event_phrase} {trigger_fields['triggerSlotIdFilter']}"
+                ),
+            }
+    elif native_header_name == "ScriptEvent_OnLeaderEnterTriggerVolumeList":
+        trigger_fields = _decode_leader_trigger_volume_list_fields(payload)
+        if trigger_fields:
+            detail = {
+                "type": native_header_name,
+                **trigger_fields,
+                "transport": "local-authored-trigger-volume-event",
+                "serverExchange": False,
+                "serializedMissionOrQuestId": False,
+                "summary": (
+                    "leader enters one of trigger slots "
+                    + ", ".join(
+                        str(slot_id)
+                        for slot_id in trigger_fields["triggerSlotIdFilters"]
+                    )
                 ),
             }
     if not detail:
@@ -4863,6 +4917,7 @@ def decode_levelscript_record_payload(
         or native_header_name in {
             "ScriptEvent_OnLeaderEnterTriggerVolume",
             "ScriptEvent_OnLeaderLeaveTriggerVolume",
+            "ScriptEvent_OnLeaderEnterTriggerVolumeList",
         }
         else []
     )
