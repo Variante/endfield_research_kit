@@ -56,7 +56,45 @@ def _spawn_payload() -> bytes:
     ))
 
 
+def _wave_begin_with_getter_validation() -> bytes:
+    return b"".join((
+        bytes(17),
+        b"\x04\x01" + struct.pack("<iii", 14, -1, -1),
+        b"\x04" + struct.pack("<Q", 10100510001) + _PARAM_TAIL,
+        b"\xff",
+        _string("C"),
+        b"\xff",
+    ))
+
+
+def _group_begin_payload() -> bytes:
+    return b"".join((
+        bytes(17),
+        b"\x04\x01" + _PARAM_TAIL,
+        _string("group02"),
+        b"\xff",
+        b"\x04" + struct.pack("<Q", 22800110003) + _PARAM_TAIL,
+        b"\xff",
+    ))
+
+
 class LevelScriptSpawnerEventTests(unittest.TestCase):
+    def test_wave_begin_retains_constant_spawner_with_getter_validation(self) -> None:
+        payload = _wave_begin_with_getter_validation()
+        detail = decode_spawner_event_fields(payload, "LevelEvent_OnSpawnerWaveBegin")
+        self.assertEqual(10100510001, detail["spawnerFilterId"])
+        self.assertEqual("C", detail["waveKeyFilter"])
+
+    def test_group_begin_accepts_exact_subtype_before_following_lists(self) -> None:
+        payload = _group_begin_payload()
+        detail = decode_spawner_event_fields(
+            payload + b"\x01\x00\x00\x00",
+            "LevelEvent_OnSpawnerGroupBegin",
+        )
+        self.assertEqual(22800110003, detail["spawnerFilterId"])
+        self.assertEqual(len(payload), detail["subtypeConsumedBytes"])
+        self.assertTrue(detail["payloadShape"].endswith("exact-prefix"))
+
     def test_entity_spawn_decodes_nullable_group_and_constant_wave(self) -> None:
         payload = _spawn_payload()
         detail = decode_spawner_event_fields(payload, "LevelEvent_OnSpawnerEntitySpawn")

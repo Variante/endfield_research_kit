@@ -18,6 +18,19 @@ _ENTITY_LIFECYCLE_EVENTS = {
 }
 
 
+def _has_bounded_header_validate_param(payload: bytes) -> bool:
+    """Validate the fixed-width inherited ``Param<bool>`` structurally.
+
+    A getter-backed validation predicate still leaves the derived spawner
+    filter exact; it affects event execution, not the serialized identity.
+    This helper deliberately accepts only the observed null-path 14-byte form.
+    """
+    if len(payload) < 31 or payload[17] != 0x04 or payload[18] not in (0, 1):
+        return False
+    id_ref, source, path_size = struct.unpack_from("<iii", payload, 19)
+    return id_ref >= -1 and source >= -1 and path_size == -1
+
+
 def _read_string_param(
     payload: bytes,
     cursor: int,
@@ -126,7 +139,7 @@ def _read_i32_param_detail(
 
 def _decode_begin(payload: bytes, *, wave: bool) -> dict[str, Any]:
     """Decode exact constant spawner group/wave filters and null outputs."""
-    if len(payload) < 31 or payload[17:31] != b"\x04\x01" + _PARAM_TAIL:
+    if not _has_bounded_header_validate_param(payload):
         return {}
     cursor = 31
 
@@ -144,14 +157,17 @@ def _decode_begin(payload: bytes, *, wave: bool) -> dict[str, Any]:
         if cursor >= len(payload) or payload[cursor] != 0xFF:
             return {}
         cursor += 1
-        if cursor != len(payload):
-            return {}
         return {
             "spawnerFilterId": spawner_id,
             "spawnerOutputPresent": False,
             "waveKeyFilter": key,
             "waveKeyOutputPresent": False,
-            "payloadShape": "constant-spawner-and-wave-key-null-outputs-exact-eof",
+            "subtypeConsumedBytes": cursor,
+            "payloadShape": (
+                "constant-spawner-and-wave-key-null-outputs-exact-eof"
+                if cursor == len(payload)
+                else "constant-spawner-and-wave-key-null-outputs-exact-prefix"
+            ),
         }
 
     key_result = _read_string_param(payload, cursor)
@@ -167,14 +183,17 @@ def _decode_begin(payload: bytes, *, wave: bool) -> dict[str, Any]:
     if cursor >= len(payload) or payload[cursor] != 0xFF:
         return {}
     cursor += 1
-    if cursor != len(payload):
-        return {}
     return {
         "groupKeyFilter": key,
         "groupKeyOutputPresent": False,
         "spawnerFilterId": spawner_id,
         "spawnerOutputPresent": False,
-        "payloadShape": "constant-group-key-and-spawner-null-outputs-exact-eof",
+        "subtypeConsumedBytes": cursor,
+        "payloadShape": (
+            "constant-group-key-and-spawner-null-outputs-exact-eof"
+            if cursor == len(payload)
+            else "constant-group-key-and-spawner-null-outputs-exact-prefix"
+        ),
     }
 
 
