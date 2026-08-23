@@ -1,0 +1,26 @@
+{
+  "schema": "spawnerPtrGetterNativeContract.v1",
+  "status": "validated",
+  "nativeMappingId": "gameassembly-2026-08-23-spawnerptr-getter",
+  "metadata": {
+    "gameAssemblySha256": "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE",
+    "metadataSha256": "90C58E26E87C7227A85DDA3FEDF6CE5ED0B06DC1F76E0ABBE75AB20750ADF97E"
+  },
+  "getter": {
+    "unionTag": 420,
+    "serializedMemberCount": 8,
+    "getterName": "Beyond.Gameplay.Actions.SpawnerPtrGetter",
+    "fieldName": "_value",
+    "fieldOrdinal": 7,
+    "fieldManagedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.SpawnerPtr>",
+    "recordBoundary": {
+      "payloadStartAdjustment": -4,
+      "paramMarker": 4,
+      "constantByteLength": 8,
+      "tailByteLength": 12
+    },
+    "setter": {"methodToken":"0x060105fa","methodPointerVa":"0x18a6a5644","fileOffset":174734404,"bodySize":48,"bodySha256":"7447C7A8432184E8ECC839684D5A26622C00DE6B277F58AE3D1866C22EBC0BE9"},
+    "deserialize": {"methodToken":"0x06010600","methodPointerVa":"0x18a6a4f14","fileOffset":174732564,"bodySize":960,"bodySha256":"C0607BBC065295F41FA82A0B30E989716487D998E08F62133E9DEFC79F1DD951"},
+    "getResult": {"methodToken":"0x0600854f","methodPointerVa":"0x18760f33c","fileOffset":123787580,"bodySize":120,"bodySha256":"1D2414A618A44DB1F0B5B2C91C03A08489C517497F2BB1B4227CC4944BCDBD95"}
+  }
+}

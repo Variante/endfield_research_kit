@@ -111,6 +111,19 @@ class LevelScriptSpawnerEventTests(unittest.TestCase):
         self.assertEqual(10100510001, detail["spawnerFilterId"])
         self.assertEqual("C", detail["waveKeyFilter"])
 
+    def test_wave_begin_retains_getter_spawner_and_nullable_outputs(self) -> None:
+        prefix = bytes(17) + b"\x04\x01" + _PARAM_TAIL
+        getter_spawner = b"\x04" + struct.pack("<Qiii", 0, 6, -1, -1)
+        payload = prefix + getter_spawner + b"\xff\xff" + _output(0, "$7@_waveKeyOutput")
+        detail = decode_spawner_event_fields(payload, "LevelEvent_OnSpawnerWaveBegin")
+        self.assertIsNone(detail["spawnerFilterId"])
+        self.assertEqual(6, detail["spawnerFilterParam"]["idRef"])
+        self.assertIsNone(detail["waveKeyFilter"])
+        self.assertEqual(
+            "$7@_waveKeyOutput",
+            detail["waveKeyOutputParam"]["path"],
+        )
+
     def test_group_begin_accepts_exact_subtype_before_following_lists(self) -> None:
         payload = _group_begin_payload()
         detail = decode_spawner_event_fields(

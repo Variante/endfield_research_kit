@@ -1988,6 +1988,47 @@ def _levelscript_native_control_paths_to_record(
                 return detail_kind, detail
         return "", {}
 
+    def resolve_spawner_filter_getter(event_detail: dict) -> dict:
+        """Resolve only the pinned constant SpawnerPtrGetter operand."""
+        if not isinstance(event_detail, dict):
+            return {}
+        result = copy.deepcopy(event_detail)
+        parameter = result.get("spawnerFilterParam") or {}
+        getter_local_id = parameter.get("idRef")
+        if not isinstance(getter_local_id, int) or getter_local_id < 0:
+            return result
+        getter_record = getter_by_local.get(getter_local_id)
+        if not isinstance(getter_record, dict):
+            result["spawnerFilterResolution"] = {
+                "status": "unresolved_getter_ref",
+                "getterLocalId": getter_local_id,
+            }
+            return result
+        getter_value = (decoded(getter_record).get("spawnerPtrGetter") or {})
+        evidence = {
+            "getterLocalId": getter_local_id,
+            "getterUnionTag": getter_record.get("unionTag"),
+            "getterSerializedMemberCount": getter_record.get("serializedMemberCount"),
+            "bindingKind": getter_value.get("bindingKind"),
+            "nativeMappingId": getter_value.get("nativeMappingId"),
+            "getterValue": getter_value,
+        }
+        if (
+            getter_record.get("unionTag") == 420
+            and getter_record.get("serializedMemberCount") == 8
+            and getter_value.get("bindingKind") == "constant"
+            and isinstance(getter_value.get("spawnerId"), int)
+            and getter_value["spawnerId"] > 0
+        ):
+            result["spawnerFilterId"] = getter_value["spawnerId"]
+            evidence["status"] = "exact_constant_spawnerptr_getter"
+        elif getter_value.get("bindingKind") == "source200_property":
+            evidence["status"] = "validated_source200_spawnerptr_nonfinal"
+        else:
+            evidence["status"] = "runtime_getter_unresolved"
+        result["spawnerFilterResolution"] = evidence
+        return result
+
     def compact_step(record: dict, edge: str) -> dict:
         code = int(record.get("code") or 0)
         kind = int(record.get("kind") or 0)
@@ -2300,7 +2341,9 @@ def _levelscript_native_control_paths_to_record(
                     ),
                     "headerLocalId": header.get("localId"),
                     "headerTexts": _levelscript_record_texts(header)[:8],
-                    "eventDetail": header_detail.get("nativeEventDetail") or {},
+                    "eventDetail": resolve_spawner_filter_getter(
+                        header_detail.get("nativeEventDetail") or {}
+                    ),
                     "targetLocalId": first_local_id,
                     "triggerSlotIds": list(header_detail.get("triggerSlotIds") or []),
                     "pathLocalIds": [step.get("localId") for step in path],

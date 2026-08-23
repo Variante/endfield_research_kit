@@ -618,6 +618,9 @@ def _exact_story_spawner_markers(level_id: str, language: str) -> list[dict]:
                 "sourceSha256": observation.get("sourceSha256"),
                 "headerLocalId": observation.get("listenerHeaderLocalId"),
                 "playbackControlPathEvidence": observation.get("playbackControlPathEvidence"),
+                "payloadShape": detail.get("payloadShape"),
+                "nativePayloadMappingId": detail.get("payloadSchemaMappingId"),
+                "spawnerFilterResolution": detail.get("spawnerFilterResolution"),
             })
     if not stories_by_id:
         return []

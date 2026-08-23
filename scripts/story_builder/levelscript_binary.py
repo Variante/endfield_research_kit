@@ -37,6 +37,7 @@ from .codecs.levelscript import spawner_events as levelscript_spawner_events
 from .codecs.levelscript import switch_actions as levelscript_switch_actions
 from .codecs.levelscript import top_level_tail as levelscript_top_level_tail
 from .codecs.levelscript import trigger_volumes as levelscript_trigger_volumes
+from .native_contracts.spawnerptr_getter import decode_spawnerptr_getter_member
 
 if __package__ == "story_builder":
     from common import (
@@ -4834,6 +4835,19 @@ def decode_levelscript_record_payload(
             "exact current-build ActionHeader formatter mapping; regenerate for other game builds",
         )
         hint.setdefault("nativeHeaderMappingId", LEVELSCRIPT_NATIVE_HEADER_MAPPING_ID)
+    if (
+        getter_role
+        and record.get("unionTag") == 420
+        and record.get("serializedMemberCount") == 8
+    ):
+        spawner_getter = decode_spawnerptr_getter_member(
+            data,
+            payload_start=record_payload_start,
+            record_end=payload_start + len(payload),
+        )
+        if spawner_getter:
+            hint["pureGetter"] = "SpawnerPtrGetter"
+            hint["spawnerPtrGetter"] = spawner_getter
     fields = _decode_tagged_payload_fields(payload)
     texts = _record_text_values(record, fields)
     property_outputs = _extract_property_output_refs(texts)
