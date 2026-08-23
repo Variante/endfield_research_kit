@@ -14,6 +14,7 @@ class BuildMapRecoveryDataTests(unittest.TestCase):
         builder._NATIVE_TRIGGER_FRONTIER_CACHE = None
         builder._NPC_PROXY_EX_STORY_INDEX_CACHE.clear()
         builder._NPC_PROXY_ENV_TALK_STORY_INDEX_CACHE.clear()
+        builder._ATMOSPHERIC_ENV_TALK_MARKER_INDEX_CACHE.clear()
 
     def test_npc_proxy_ex_story_index_requires_unique_casefold_story_and_exact_transform(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -203,6 +204,75 @@ class BuildMapRecoveryDataTests(unittest.TestCase):
             "exact_npc_proxy_env_talk_configuration",
         )
         self.assertFalse(rows[0]["npcProxyEnvTalkStoryBindings"][0]["activation"])
+
+    def test_atmospheric_env_talk_keeps_each_authored_cluster_location(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            gameplay = root / builder.PERSISTENT_GAMEPLAY_CONFIG
+            gameplay.mkdir(parents=True)
+            conv = root / "webui/data/lang/CN/conv"
+            conv.mkdir(parents=True)
+            (conv / "env_shared.json").write_text("{}", encoding="utf-8")
+            rows = {
+                "cluster_a": {
+                    "clusterId": "cluster_a", "envTalkId": "shared",
+                    "levelId": "map_fixture", "npcIds": ["npc_a"],
+                    "position": {"x": 1, "y": 2, "z": 3},
+                },
+                "cluster_b": {
+                    "clusterId": "cluster_b", "envTalkId": "shared",
+                    "levelId": "map_fixture", "npcIds": ["npc_b", "npc_c"],
+                    "position": {"x": 4, "y": 5, "z": 6},
+                },
+            }
+            (gameplay / "AtmosphericNpcClusterDataTable.json").write_text(
+                json.dumps({"dataTable": rows}), encoding="utf-8"
+            )
+            with mock.patch.object(builder, "ROOT", root):
+                markers = builder._exact_atmospheric_env_talk_markers(
+                    "map_fixture", "CN"
+                )
+        self.assertEqual(len(markers), 2)
+        self.assertEqual(
+            [row["position"] for row in markers],
+            [{"x": 1.0, "y": 2.0, "z": 3.0},
+             {"x": 4.0, "y": 5.0, "z": 6.0}],
+        )
+        self.assertTrue(all(row["sceneKeys"] == ["env_shared"] for row in markers))
+        self.assertTrue(all(not row["activation"] for row in markers))
+
+    def test_atmospheric_env_talk_rejects_case_identity_and_position_gaps(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            gameplay = root / builder.PERSISTENT_GAMEPLAY_CONFIG
+            gameplay.mkdir(parents=True)
+            conv = root / "webui/data/lang/CN/conv"
+            conv.mkdir(parents=True)
+            (conv / "env_same.json").write_text("{}", encoding="utf-8")
+            (gameplay / "AtmosphericNpcClusterDataTable.json").write_text(
+                json.dumps({"dataTable": {
+                    "bad_identity": {
+                        "clusterId": "different", "envTalkId": "same",
+                        "levelId": "map_fixture", "npcIds": ["npc"],
+                        "position": {"x": 1, "y": 2, "z": 3},
+                    },
+                    "bad_position": {
+                        "clusterId": "bad_position", "envTalkId": "same",
+                        "levelId": "map_fixture", "npcIds": ["npc"],
+                        "position": {"x": 1, "y": float("nan"), "z": 3},
+                    },
+                }}), encoding="utf-8"
+            )
+            with mock.patch.object(builder, "ROOT", root), mock.patch.object(
+                Path,
+                "glob",
+                return_value=[Path("env_same.json"), Path("ENV_SAME.json")],
+            ):
+                self.assertEqual(
+                    [], builder._exact_atmospheric_env_talk_markers(
+                        "map_fixture", "CN"
+                    )
+                )
 
     def test_exact_encounter_marker_requires_positive_typed_spawner_and_unique_host(self):
         level_id = "map_fixture"
