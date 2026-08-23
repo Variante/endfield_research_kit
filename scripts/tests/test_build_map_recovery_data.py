@@ -12,6 +12,80 @@ from scripts.story_builder import level_bindings
 class BuildMapRecoveryDataTests(unittest.TestCase):
     def setUp(self):
         builder._NATIVE_TRIGGER_FRONTIER_CACHE = None
+        builder._NPC_PROXY_EX_STORY_INDEX_CACHE.clear()
+
+    def test_npc_proxy_ex_story_index_requires_unique_casefold_story_and_exact_transform(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            gameplay = root / builder.PERSISTENT_GAMEPLAY_CONFIG
+            gameplay.mkdir(parents=True)
+            conv = root / "webui/data/lang/CN/conv"
+            conv.mkdir(parents=True)
+            (conv / "dlg_exact.json").write_text("{}", encoding="utf-8")
+            (gameplay / "NpcProxyExDataTable.json").write_text(json.dumps({
+                "data": {"proxy_exact": [{
+                    "dialogId": "DLG_EXACT", "missionId": "m1",
+                }]},
+            }), encoding="utf-8")
+            (gameplay / "NpcProxyTable.json").write_text(json.dumps({
+                "dataTable": {"proxy_exact": {
+                    "levelId": "map_fixture",
+                    "position": {"x": 1, "y": 2, "z": 3},
+                    "rotation": {"x": 0, "y": 90, "z": 0},
+                }},
+            }), encoding="utf-8")
+            registry = root / builder.REGISTRY_REL
+            registry.parent.mkdir(parents=True, exist_ok=True)
+            registry.write_text(json.dumps({
+                "npcProxyBriefInfos": {"101": {
+                    "proxyId": "proxy_exact", "segmentIdGlobal": 101,
+                    "position": {"x": 1, "y": 2, "z": 3},
+                }},
+            }), encoding="utf-8")
+            with mock.patch.object(builder, "ROOT", root), mock.patch.object(
+                builder, "REGISTRY", registry
+            ):
+                index = builder._exact_npc_proxy_ex_story_index("CN")
+        binding = index["npc:101"][0]
+        self.assertEqual("dlg_exact", binding["storyKey"])
+        self.assertEqual("DLG_EXACT", binding["authoredStoryKey"])
+        self.assertEqual("exact_npc_proxy_ex_dialog_target", binding["status"])
+        self.assertFalse(binding["activation"])
+        self.assertFalse(binding["ownership"])
+
+    def test_npc_proxy_ex_story_index_rejects_casefold_collision(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            gameplay = root / builder.PERSISTENT_GAMEPLAY_CONFIG
+            gameplay.mkdir(parents=True)
+            conv = root / "webui/data/lang/CN/conv"
+            conv.mkdir(parents=True)
+            (gameplay / "NpcProxyExDataTable.json").write_text(json.dumps({
+                "data": {"proxy_bad": [{"dialogId": "dlg_same"}]},
+            }), encoding="utf-8")
+            (gameplay / "NpcProxyTable.json").write_text(json.dumps({
+                "dataTable": {"proxy_bad": {
+                    "levelId": "map_fixture",
+                    "position": {"x": 1, "y": 2, "z": 3},
+                    "rotation": {"x": 0, "y": 0, "z": 0},
+                }},
+            }), encoding="utf-8")
+            registry = root / builder.REGISTRY_REL
+            registry.parent.mkdir(parents=True, exist_ok=True)
+            registry.write_text(json.dumps({
+                "npcProxyBriefInfos": {"101": {
+                    "proxyId": "proxy_bad", "segmentIdGlobal": 101,
+                    "position": {"x": 1, "y": 2, "z": 3},
+                }},
+            }), encoding="utf-8")
+            with mock.patch.object(builder, "ROOT", root), mock.patch.object(
+                builder, "REGISTRY", registry
+            ), mock.patch.object(
+                Path,
+                "glob",
+                return_value=[Path("dlg_same.json"), Path("DLG_SAME.json")],
+            ):
+                self.assertEqual({}, builder._exact_npc_proxy_ex_story_index("CN"))
 
     def test_exact_encounter_marker_requires_positive_typed_spawner_and_unique_host(self):
         level_id = "map_fixture"
