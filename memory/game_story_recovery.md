@@ -128,6 +128,8 @@ leave only the report/CLI surface in recovery.
   header-list record, the exact consumed subtype prefix is authoritative even
   though the generic byte window also contains following ActionMap lists;
   those trailing bytes are never scanned for a SpawnerPtr.
+  A getter-backed inherited validation predicate makes playback conditional
+  but does not erase an independently constant, fully decoded SpawnerPtr.
   Wave/group configuration, spawned-entity output, or a raw numeric hit alone
   remains non-spatial.
   Generated frontier and map reports own the changing counts.
