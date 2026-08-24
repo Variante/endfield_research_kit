@@ -79,13 +79,18 @@ archetypes remain labeled source kits rather than finished characters.
   `ParserBindChannels`, complete HGBuffer frame publication, and the visibly
   over-bright raised-hand glow remain fail-closed; do not tune the non-exact
   compatibility shader against the video.
-- A renderer-isolation audit of the later raised-hand event identifies the
-  broad glow as `overview_04/1/guangyun (3)` with
-  `M_fx_endminm_gfx_30`, while the actual ten-piece crystal burst is
+- A renderer-isolation audit distinguishes the earlier broad glow
+  `overview_04/1/guangyun (3)` with `M_fx_endminm_gfx_30` from the actual
+  ten-piece crystal burst,
   `overview_02/all/shitou (1)` with `M_fx_endminm_gfx_21`. The crystal row is
   an exact mesh-particle binding with the serialized 4.45-second delay and the
   hash-pinned `_USE_FRESNEL` BaseV2 variant; it must not be resized, brightened,
-  or retimed to compensate for the glow. Explicit batch selector values of
+  or retimed to compensate for the glow. At the strongest saved raised-hand
+  frame M30 is already dead; isolating the live `overview_02` companions with
+  M21 disabled still produces the large amber ring/globe, while isolated M21
+  produces only the small stone burst. The large volume therefore belongs to
+  the surrounding ring/glow/particle family and its composition, not to the
+  crystal mesh. Explicit batch selector values of
   zero and one produced byte-identical focused frames because the active Viewer
   presentation republishes its scene-owned recovered-post selector; that run is
   not evidence for a post bypass or a material correction. The selected BaseV2
