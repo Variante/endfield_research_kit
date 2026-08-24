@@ -114,13 +114,17 @@ archetypes remain labeled source kits rather than finished characters.
   zero, and no reactive or transparency-composition masks enter DLSS. The
   exact velocity kernel only fourth-root decodes packed SceneMV XY into
   normalized UV-fraction motion; depth and camera matrices do not enter that
-  kernel. Its transient input/output formats and direct producer attachment
-  remain open. The same-frame reset is exactly large de-jittered camera
+  kernel. Packed SceneMV is exactly `A2B10G10R10_UNormPack32`; the native
+  `0x2d` descriptor is instead `R16_SFloat` dilated depth and supplies no
+  evidence for combined velocity. The transient combined-output format and
+  direct producer attachment remain open. The same-frame reset is exactly large de-jittered camera
   movement or `isFirstFrame`, after which `isFirstFrame` is cleared; size and
   AA-mode changes are not independent compiled terms. DLAA scale is delegated
-  to Streamline optimal-settings mode 6 rather than forced to one by HG, so an
-  exact SDK return or live texture observation is still required to prove
-  equal input/output extents. Until those close, do not map
+  to Streamline optimal-settings mode 6 rather than forced to one by HG. The
+  installed default callback maps mode 6 to NGX quality index 5 and its 1.0
+  scale, proving equal input/output extents for that path; explicit profile
+  overrides and live feature availability remain outside the static proof.
+  Until the remaining motion boundary closes, do not map
   the game contract onto Unity's public NVIDIA wrapper by convention.
   That wrapper can carry the recovered numeric resource subset, including
   negated pixel jitter, reverse depth, reset, exposure, and combined motion at

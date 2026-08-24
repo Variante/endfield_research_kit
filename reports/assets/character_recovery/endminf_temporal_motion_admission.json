@@ -1,5 +1,5 @@
 {
-  "schema": "endfield.endminf-temporal-motion-admission.v9",
+  "schema": "endfield.endminf-temporal-motion-admission.v10",
   "subject": "Endminf Character Info temporal and motion admission",
   "reference": {
     "recording": "videos/2026-08-21_20-15-17.mkv",
@@ -72,7 +72,7 @@
     "boundary": "The public Unity wrapper has no DLAA enum and feature creation does not establish Endfield's exact Streamline schedule, motion/depth/reactive inputs, jitter, reset policy, executed output, or frame-generation path. This is an implementation-feasibility result only."
   },
   "nativeStreamlineRuntimeContract": {
-    "status": "pinned custom Streamline DLAA schedule, tags, constants, options, and evaluate call recovered; velocity conversion and reset producer remain incomplete",
+    "status": "pinned custom Streamline DLAA schedule, tags, constants, options, evaluate call, velocity conversion, reset producer, and default native-scale extent recovered; combined-motion storage format remains incomplete",
     "sourceGate": {
       "unityPlayerSha256": "b47728ba10f09c46e8a107b4c7055e48cfe402d3d8c88a4529074981f9672aa2",
       "gameAssemblySha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
@@ -160,7 +160,7 @@
     },
     "renderScale": {
       "managedPolicy": "When DLSS is supported, UpdateRenderingScale calls DLSSOptimalSettings.GetDLSSOptimalSetting(quality, outputSize), divides returned optimalRenderWidth by outputWidth, and writes renderingScale when changed.",
-      "dlaaBoundary": "HG quality 4 maps to Streamline mode 6, but neither managed HG code nor UnityPlayer special-cases DLAA to renderingScale 1.0. Equal input/output extent depends on installed slDLSSGetOptimalSettings returning output width for mode 6.",
+      "dlaaBoundary": "HG quality 4 maps to Streamline mode 6. The installed default callback path maps mode 6 to NGX perf-quality index 5, selects scale 1.0, and returns rounded output dimensions times that scale, so ordinary mode-6 input and output extents are equal. Explicit internal override/profile paths and live feature availability remain outside this static proof.",
       "renderGraphExtent": "Output viewport sets actualWidth/Height; sceneRTSize is even-clamped actual dimensions times HGUtils.GetRenderingScale.",
       "gameAssemblyUpdateRenderingScale": {
         "token": "0x06000e9c",
@@ -173,6 +173,26 @@
         "rva": "0xdfb2dc",
         "size": "0x273",
         "sha256": "dc2c7a47fd938032c8495c42451a9b3e0ab75c3c830a0f9ffba74868c9327b9e"
+      },
+      "installedOptimalSettings": {
+        "streamlineDlssSha256": "164750168cb36a79e7552e7fc74bf5723347f97f69e5d466167aa09623615c03",
+        "streamlineGetOptimalSettingsThunkRva": "0x20850",
+        "streamlineGetOptimalSettingsCoreRva": "0x1eac0",
+        "modeMapping": "PerfQualityValue = Streamline mode - 1; eDLAA mode 6 therefore reaches NGX index 5",
+        "nvngxDlssSha256": "a8f23de8116727a160a196f9f43604284cd973d801a62bb68c19c828f78e5f3b",
+        "d3d11CallbackRva": "0x44640",
+        "d3d11CallbackSize": "0xd0",
+        "d3d11CallbackSha256": "4fb678f9d763b7810e5d909a841ba4788ad5d48739dbce6a95f6f09f369064d5",
+        "d3d12CallbackRva": "0x46290",
+        "d3d12CallbackSize": "0xd0",
+        "d3d12CallbackSha256": "008d7245bcbcae215f5aea8cefd6035a74e941e84b8856211d0cd63e368966ce",
+        "helperRva": "0xd9dd0",
+        "helperSize": "0x2d8",
+        "helperSha256": "8e4a428e1a1668a71ca14b16be647e52a09def8a0a9dc550296a81527468adde",
+        "index5BranchRva": "0xd9e71",
+        "scaleConstantRva": "0x12afa8",
+        "scale": 1.0,
+        "result": "optimalRenderWidth=outputWidth and optimalRenderHeight=outputHeight on the installed default callback path"
       }
     },
     "velocityCombine": {
@@ -196,7 +216,13 @@
       "unusedInputs": "The selected D3D kernel declares no depth SRV and performs no depth or matrix calculation. Depth/matrix data visible in the broader native scheduling path do not enter this kernel.",
       "qualifiedProducerComposition": "For the recovered CharacterNPR producer p=0.5+0.5*sign(d)*abs(0.5*d)^0.25, composition yields 0.5*d: half current-minus-previous non-jittered NDC X and negative half current-minus-previous non-jittered NDC Y, which is viewport/UV-fraction motion consistent with Streamline mvecScale (1,1). Direct attachment of every renderer's producer to this exact _Velocity binding is not yet proven.",
       "streamlineSideConvention": "combined camera-plus-object motion already normalized; mvecScale remains (1,1)",
-      "boundary": "Exact input/output storage formats remain unresolved: typed float DXBC resources do not encode the bound DXGI/Unity GraphicsFormat, the resources are transient, and native descriptor literal 0x2d has not been mapped through a validated pinned-build enum table."
+      "storageFormats": {
+        "packedInputSceneMv": "GraphicsFormat.A2B10G10R10_UNormPack32 (public enum 75 / 0x4b; DXGI_FORMAT_R10G10B10A2_UNORM), full-resolution, Point/Repeat, no random write, neutral clear (0.5,0.5,0,0)",
+        "taauDilationInheritance": "TAAU's dilated SceneMV descriptor inherits PassInput.sceneMV.colorFormat dynamically.",
+        "combinedOutput": "unresolved"
+      },
+      "correctedLiteralAttribution": "Native descriptor literal 0x2d maps exactly to GraphicsFormat.R16_SFloat / DXGI_FORMAT_R16_FLOAT, but the pinned writer is TAAUPassConstructor.ConstructDilationPass and uses it for dilated depth. It is not evidence for _CombinedVelocity.",
+      "boundary": "The packed input SceneMV format is exact. The combined-output UAV format remains unresolved because typed float DXBC resources do not encode the bound DXGI/Unity GraphicsFormat and its transient allocation writer has not been recovered. Do not infer R16G16_SFloat from the shader declaration."
     },
     "dlssOptions": {
       "hgToStreamlineQuality": {
@@ -251,6 +277,14 @@
       "unityPlayerQualityMapper": {
         "rva": "0xdf9770"
       },
+      "gameAssemblyTaauDilationPass": {
+        "token": "0x06001250",
+        "rva": "0x9bd1948",
+        "formatLiteral": "0x2d",
+        "format": "GraphicsFormat.R16_SFloat",
+        "resource": "dilated depth, not combined velocity"
+      },
+      "packedSceneMvContractSha256": "966bbc1ab65409e34f572af039923e7850e5044e7a5cbc6e2c482d9486b53802",
       "gameAssemblyHgCameraUpdate": {
         "token": "0x06000e8f",
         "rva": "0x3100120",
@@ -259,8 +293,7 @@
       }
     },
     "remainingBlockers": [
-      "exact packed-input and combined-output GraphicsFormat plus direct producer attachment",
-      "installed slDLSSGetOptimalSettings mode-6 return or live texture evidence proving DLAA input extent equals output extent",
+      "exact combined-output GraphicsFormat plus direct producer attachment",
       "external/IFix callers that may set isFirstFrame or invoke HGCamera.Reset on size or mode changes"
     ]
   },
