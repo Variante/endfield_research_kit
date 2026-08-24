@@ -32,6 +32,13 @@ namespace EndfieldGraphShaderLabEditor
         // cursor-input path; they are not static game-data defaults.
         private const string RecordingGyroscopeInputX = "0.989";
         private const string RecordingGyroscopeInputY = "-0.874";
+        // Wolfgd remains visible through source frame 1099, while Endminf's
+        // first compared body frame is 1110. The recovered _02 post owner is
+        // created on the intervening selection edge, nine simulation ticks
+        // before the first local render sample. This explicit recording-only
+        // pre-roll prevents both short source pulses from being shifted onto
+        // comparison frames 0 and 18.
+        private const string RecordingVisualPostPreRollSeconds = "0.15";
         // RestartOverviewFromSelection is invoked on an editor update edge;
         // the body Animation has advanced by two 60-Hz simulation ticks before
         // the first renderable sample. Offset later requested timestamps so
@@ -79,6 +86,7 @@ namespace EndfieldGraphShaderLabEditor
             public string gyroscopeMode;
             public string gyroscopeInputX;
             public string gyroscopeInputY;
+            public float visualPostPreRollSeconds;
             public FrameRow[] frames;
         }
 
@@ -236,6 +244,13 @@ namespace EndfieldGraphShaderLabEditor
             };
             foreach (string flag in reproductionFlags)
                 Environment.SetEnvironmentVariable(flag, "1");
+            if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(
+                    EndfieldEndminfVisualCompatibilityClock.PreRollSecondsEnvironmentVariable)))
+            {
+                Environment.SetEnvironmentVariable(
+                    EndfieldEndminfVisualCompatibilityClock.PreRollSecondsEnvironmentVariable,
+                    RecordingVisualPostPreRollSeconds);
+            }
             if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(
                     EndfieldRecoveredCharInfoGyroscopeCameraState.ModeEnvironmentVariable)))
             {
@@ -555,6 +570,14 @@ namespace EndfieldGraphShaderLabEditor
                     EndfieldRecoveredCharInfoGyroscopeCameraState.InputXEnvironmentVariable),
                 gyroscopeInputY = Environment.GetEnvironmentVariable(
                     EndfieldRecoveredCharInfoGyroscopeCameraState.InputYEnvironmentVariable),
+                // The _02 owner is destroyed before the full sequence report
+                // is published, which deliberately clears the live clock.
+                // Preserve the observed first-frame phase difference instead.
+                visualPostPreRollSeconds = Frames.Count > 0
+                    ? Mathf.Max(
+                        0.0f,
+                        Frames[0].endminfPostSeconds - Frames[0].actualSeconds)
+                    : 0.0f,
                 frames = Frames.ToArray()
             };
             File.WriteAllText(Path.Combine(output, "report.json"), JsonUtility.ToJson(report, true));
