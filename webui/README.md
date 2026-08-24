@@ -439,6 +439,10 @@ Gameplay character items also expose these exact namespace-owned Events and
 their playable candidates in a separate collapsed group. They are not merged
 with skill or animation-triggered SFX: the group is identity-only and does not
 claim an action, skill, Event post, selected Wwise branch, or playback.
+Enemy items expose a parallel collapsed group for recovered `au_` Event names
+whose complete prefix exactly matches one current EnemyTable id. These rows
+remain separate from enemy skill and animation audio because the names come
+from bounded grammar/hash recovery rather than a recovered consumer.
 All supported AnimationClip audio callbacks are shown separately from the
 same-name action classification. Event/media details expose the exact clips,
 callback functions, owners, reachability, and recovered AnimatorController

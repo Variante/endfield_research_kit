@@ -293,6 +293,10 @@ The same exact namespace relation can safely project Event/media candidates to
 an existing character item for discovery, but it remains an identity edge. It
 does not lower strict unknown-use status or become a gameplay consumer edge
 without independent trigger or runtime evidence.
+Recovered grammar/hash names can also be attached to an enemy item when their
+complete `au_` prefix matches exactly one current EnemyTable id. This is a
+separate recovered-namespace identity edge; it improves discovery but does not
+reduce strict unknown-use status or establish an enemy consumer.
 Serialized AnimationClip audio callbacks are independently sufficient to link
 an Event to the exact clips and character/enemy owner recorded by the callback
 context. The Event and clip names need not match. AnimatorController membership

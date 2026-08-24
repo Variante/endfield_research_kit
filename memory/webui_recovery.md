@@ -405,6 +405,10 @@ Gameplay character cards reuse the exact CharacterTable namespace evidence as
 a separate collapsed authored-namespace audio group with playable media. Those
 rows are not mixed into skill or animation-triggered SFX and visibly retain the
 unresolved action, Event-post, Wwise-selection, and playback boundary.
+Enemy cards now have the same separate surface for recovered `au_` names with
+an exact full EnemyTable-id prefix. Because these names are grammar/hash
+recovery rather than consumer evidence, the UI retains the identity-only label
+and does not promote them to enemy skill or animation playback.
 Audio detail keeps each callback Clip's resolved entity IDs separate from its
 candidate entity IDs. Exact Character/Enemy/EnemyTemplate overlay matches are
 resolved; unique-token or multi-match identities remain candidate/ambiguous,

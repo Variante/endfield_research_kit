@@ -642,6 +642,10 @@ of these exact namespace Events and playable candidates. The semantics entry
 point only publishes that projection into the language-specific
 `gameplay/sound_effects.json` sidecar; it remains separate from trigger-backed
 skill and animation audio.
+The same publisher projects recovered grammar-derived `au_` names to an enemy
+only when the full current EnemyTable id prefix plus delimiter matches exactly.
+That `enemyNamespaceAudio` projection is identity-only and is not a trigger or
+runtime-consumer claim.
 Every supported serialized AnimationClip `PostAudioEvent` context is also
 projected as an explicit Event/media callback link with its clip, owner,
 function, reachability, and AnimatorController names when available. This
