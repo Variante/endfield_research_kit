@@ -139,6 +139,9 @@ namespace EndfieldGraphShaderLab
             }
             EnsureZeroHdplsBuffer();
             if (!TryBuildConstantBuffers(
+                    camera,
+                    width,
+                    height,
                     transformVariables,
                     shaderVariablesGlobal,
                     reflectionProbeFallback,
@@ -354,6 +357,9 @@ namespace EndfieldGraphShaderLab
         }
 
         private bool TryBuildConstantBuffers(
+            Camera camera,
+            int width,
+            int height,
             EndfieldRecoveredDeferredTransformVariables transformVariables,
             EndfieldRecoveredShaderVariablesGlobal shaderVariablesGlobal,
             EndfieldRecoveredReflectionProbeFallback reflectionProbeFallback,
@@ -364,16 +370,31 @@ namespace EndfieldGraphShaderLab
             out ComputeBuffer[] buffers,
             out string failure)
         {
+            failure = string.Empty;
+            if (lightBinning == null ||
+                !lightBinning.TryGetCurrentExactConstantBuffers(
+                    camera,
+                    width,
+                    height,
+                    out ComputeBuffer lightBinningConstants,
+                    out ComputeBuffer lightCookieData,
+                    out failure))
+            {
+                if (lightBinning == null)
+                    failure = "exact consumer light-binning owner is unavailable";
+                buffers = null;
+                return false;
+            }
             buffers = new[]
             {
                 transformVariables?.CurrentBuffer,
                 shaderVariablesGlobal?.CurrentBuffer,
                 reflectionProbeFallback?.CurrentGlobalDataBuffer,
-                lightBinning?.CurrentRetailConstantsBuffer,
+                lightBinningConstants,
                 lightData?.CurrentBuffer,
                 shadowData?.CurrentBuffer,
                 zeroHdplsBuffer,
-                lightBinning?.CurrentLightCookieDataBuffer,
+                lightCookieData,
                 visibilitySHConstants?.CurrentBuffer,
             };
             failure = string.Empty;

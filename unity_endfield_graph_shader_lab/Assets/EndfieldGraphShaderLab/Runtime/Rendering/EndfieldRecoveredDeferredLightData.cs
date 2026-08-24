@@ -238,6 +238,7 @@ namespace EndfieldGraphShaderLab
             }
 
             int expectedLightCount;
+            bool endminfFixture = false;
             if (string.Equals(
                     rig.actorRoot.name,
                     "Wulfa",
@@ -252,11 +253,19 @@ namespace EndfieldGraphShaderLab
             {
                 expectedLightCount = 6;
             }
+            else if (string.Equals(
+                         rig.actorRoot.name,
+                         "Endminf",
+                         StringComparison.OrdinalIgnoreCase))
+            {
+                expectedLightCount = 12;
+                endminfFixture = true;
+            }
             else
             {
                 failure =
                     "actor identity '" + rig.actorRoot.name +
-                    "' is outside the selected Wulfa/Zhuangfy deferred fixture";
+                    "' is outside the selected Wulfa/Zhuangfy/Endminf deferred fixture";
                 return false;
             }
             if (rig.lights == null ||
@@ -289,24 +298,35 @@ namespace EndfieldGraphShaderLab
                 if (row.shadowType == 0)
                     continue;
                 shadowedRowCount++;
-                if (sourceIndex != 4 ||
-                    !string.Equals(
+                bool expectedShadowRow = endminfFixture
+                    ? (sourceIndex == 3 && row.spot && string.Equals(
+                           row.sourceName,
+                           "RimLight_2",
+                           StringComparison.Ordinal)) ||
+                      (sourceIndex == 11 && row.spot && string.Equals(
+                           row.sourceName,
+                           "RimLight_2 (1)",
+                           StringComparison.Ordinal))
+                    : sourceIndex == 4 && string.Equals(
                         row.sourceName,
                         "RimLight_2 (5)",
-                        StringComparison.Ordinal) ||
-                    row.shadowType != 2)
+                        StringComparison.Ordinal);
+                if (!expectedShadowRow || row.shadowType != 2)
                 {
                     failure =
                         "unexpected shadowed light row " + sourceIndex +
-                        " (" + row.sourceName + ")";
+                        " (" + row.sourceName + ") for actor " +
+                        rig.actorRoot.name;
                     return false;
                 }
             }
-            if (shadowedRowCount != 1)
+            int expectedShadowedRowCount = endminfFixture ? 2 : 1;
+            if (shadowedRowCount != expectedShadowedRowCount)
             {
                 failure =
-                    "expected exactly one isolated shadowed overview row, found " +
-                    shadowedRowCount;
+                    "expected exactly " + expectedShadowedRowCount +
+                    " isolated shadowed overview rows for actor " +
+                    rig.actorRoot.name + ", found " + shadowedRowCount;
                 return false;
             }
 

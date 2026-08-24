@@ -42,6 +42,33 @@ class VerifyDeferredExactConsumerTests(unittest.TestCase):
         self.assertIn("fallbackTextureSlots=t2,t3,t4.", source)
         self.assertIn("legacy Gacha payload", source)
 
+    def test_exact_consumer_requires_current_cookie_publication_provenance(self):
+        consumer = (
+            LAB_ROOT
+            / "Assets"
+            / "EndfieldGraphShaderLab"
+            / "Runtime"
+            / "Rendering"
+            / "EndfieldRecoveredDeferredExactConsumer.cs"
+        ).read_text(encoding="utf-8")
+        binning = (
+            LAB_ROOT
+            / "Assets"
+            / "EndfieldGraphShaderLab"
+            / "Runtime"
+            / "Rendering"
+            / "EndfieldRecoveredLightBinning.cs"
+        ).read_text(encoding="utf-8")
+        self.assertIn("TryGetCurrentExactConstantBuffers", consumer)
+        self.assertIn("lightCookiePublicationValid", binning)
+        self.assertIn("retailConstantsPublicationValid", binning)
+        self.assertIn("retailPublicationCameraInstanceId", binning)
+        self.assertIn("retailPublicationFrame != Time.frameCount", binning)
+        self.assertIn(
+            "current-camera LightBinningConstants/zero-cookie publication is not provenance-valid",
+            binning,
+        )
+
     def test_accepts_exact_non_presented_frame(self):
         report = validate_log(GOOD_LOG, Path("fixture.log"))
         self.assertTrue(report["valid"], report["failures"])
