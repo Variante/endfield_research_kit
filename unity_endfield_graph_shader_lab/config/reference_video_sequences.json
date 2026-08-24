@@ -1,0 +1,65 @@
+{
+  "schema": "endfield.character-reference-video.v1",
+  "outputRoot": "scratch/character_recovery/reference_sequences",
+  "defaults": {
+    "fps": 60,
+    "imageFormat": "png",
+    "pixelFormat": "rgb24",
+    "videoDecoder": "h264_cuvid"
+  },
+  "recordings": [
+    {
+      "id": "endminf_overview_2026-08-21",
+      "source": "../videos/2026-08-21_20-15-17.mkv",
+      "resolution": [1920, 1080],
+      "notes": "Focused Endminf Character Info capture. The retained reference begins at original decoded frame 1109 (18.4666667 seconds at 60 fps), as selected by the user, and continues through the end of the recording.",
+      "segments": [
+        {
+          "id": "endminf_overview_start_and_loop",
+          "character": "endminf",
+          "behavior": "ui_overview_start_then_loop",
+          "startFrame": 1109,
+          "startSeconds": 18.4666667,
+          "endSeconds": 30.584
+        }
+      ]
+    },
+    {
+      "id": "roster_overview_2026-08-15",
+      "source": "../videos/2026-08-15_10-32-32.mkv",
+      "resolution": [3840, 2160],
+      "notes": "Roster walk. Marker times are measured model-swap frames from the prior frame-accurate boundary audit. Each marker runs until the next marker. The recorded Endministrator is user-confirmed female and labeled endminf.",
+      "markers": [
+        {"character": "camille", "atSeconds": 23.8667},
+        {"character": "lizhiyan", "atSeconds": 43.6333},
+        {"character": "wulfa", "atSeconds": 51.7167},
+        {"character": "aglina", "atSeconds": 63.1667},
+        {"character": "liino", "atSeconds": 79.5333},
+        {"character": "mifu", "atSeconds": 88.3833},
+        {"character": "zhuangfy", "atSeconds": 110.1167},
+        {"character": "yvonne", "atSeconds": 115.8},
+        {"character": "tangtang", "atSeconds": 130.3833},
+        {"character": "pograni", "atSeconds": 150.85},
+        {"character": "endminf", "atSeconds": 162.7833, "identityStatus": "user_confirmed_female"},
+        {"character": "ikut", "atSeconds": 175.0},
+        {"character": "wolfgd", "atSeconds": 189.4833},
+        {"character": "chen", "atSeconds": 199.3},
+        {"character": "pelica", "atSeconds": 209.3333},
+        {"character": "whiten", "atSeconds": 220.6167},
+        {"character": "lifeng", "atSeconds": 231.85},
+        {"character": "azrila", "atSeconds": 246.35},
+        {"character": "ardelia", "atSeconds": 257.0667},
+        {"character": "lastrite", "atSeconds": 271.9167},
+        {"character": "dapan", "atSeconds": 283.4},
+        {"character": "seraph", "atSeconds": 296.1},
+        {"character": "aurora", "atSeconds": 309.8333},
+        {"character": "deepfin", "atSeconds": 318.1667},
+        {"character": "karin", "atSeconds": 330.4333},
+        {"character": "avywen", "atSeconds": 340.7},
+        {"character": "antal", "atSeconds": 350.6667},
+        {"character": "bounda", "atSeconds": 361.1333},
+        {"character": "meurs", "atSeconds": 370.7333}
+      ]
+    }
+  ]
+}

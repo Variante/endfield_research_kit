@@ -15,7 +15,7 @@ character.
 | Selected CharacterNPR equations | partial but source-backed |
 | Complete HGRP/CharInfo frame | partial |
 | Playable UI clips | complete for the selected `all-ui` scope |
-| Runtime animation behavior | partial |
+| Runtime animation behavior | Endminf start/loop handoff source-backed; broader systems partial |
 | Retail visual parity | not reached |
 
 The canonical identities comprise 31 playables, one NPC character, one
@@ -33,6 +33,22 @@ archetypes remain labeled source kits rather than finished characters.
 - The selected playable UI body and private item/deco clip scope is recovered.
   The Endfield 101-muscle Avatar contract and selected exact clip paths are
   source-backed.
+- Endminf now executes `ui_overview_start -> ui_overview_loop` through a
+  generated Animator controller rather than the former Legacy
+  `Animation.CrossFade` approximation. The controller preserves the recovered
+  `FromIndex=0`, `ToIndex=0`, `EnableSwitch` entry route, 0.75 exit time, 0.25
+  normalized transition duration, destination offset, Write Defaults, and
+  interruption ordering. A 41-frame 60 Hz Viewer capture proves controller
+  entry, the transition, settled looping, four entrance-effect roots, and
+  effect cleanup. Stock Unity 2022.3 does not serialize the retail
+  per-transition `m_EnableBlendRootMotion` field; the recovered true value is
+  currently mapped to Animator-level root-motion execution and remains an
+  explicit compatibility boundary.
+- Endminf's overview rock/crystal animation now combines the exact retained
+  transform clip with four source-resolved `GameObject.m_IsActive` curves.
+  They remain active through 1.5 seconds and deactivate on the source boundary.
+  The fifth constant-zero binding has no resolved hierarchy target and remains
+  fail-closed rather than being fabricated.
 - Blink, facial, physical-transform, CharacterNPR, eye, hair, shadow, GBuffer,
   light, cookie, irradiance, particle, gacha, and post-processing behavior is
   recovered only where its input contract is verified. Unknown inputs remain
@@ -114,8 +130,9 @@ The maintained video-to-frame workflow is
 explicit character intervals and uncertain identities; generated PNG sequences
 and source-pinned sidecars stay disposable under the lab's
 `scratch/character_recovery/reference_sequences/` tree. The focused Endminf
-capture is currently labeled as `ui_overview_start_then_loop` because the exact
-retail transition time has not yet been independently established.
+capture is labeled `ui_overview_start_then_loop`; its maintained reference
+window begins at user-selected original decoded frame 1109 (18.4666667 seconds
+at 60 fps) and continues through the recording end.
 
 Do not fork the renderer per actor. Endminf-specific code may own source asset
 selection and timing, while the importer, material mapping, animation,
@@ -142,10 +159,11 @@ its absence no longer pauses the Unity reproduction work.
 
 ## Main animation gap
 
-The remaining runtime systems are controller transitions and blending, root
-motion, broader Avatar transport, grounding and IK, facial emotion/lip sync,
-gaze, secondary motion, cloth/hair dynamics, item/deco/FX lifecycle, gacha
-timing, and non-playable runtime assembly.
+The remaining runtime systems are generalized controller routing, exact
+per-transition root-motion semantics, broader Avatar transport, grounding and
+IK, facial emotion/lip sync, gaze, secondary motion, cloth/hair dynamics,
+remaining item/deco/FX lifecycle, gacha timing, and non-playable runtime
+assembly.
 
 These are implementation gaps, not reasons to weaken the recovered evidence
 boundary. Static prefabs and isolated clip playback must remain labeled as
@@ -172,8 +190,9 @@ or shaders rather than hand-editing generated prefabs.
 
 1. Reproduce the complete Endminf Character Info frame against the reference
    video, closing the presentation scene before further isolated shader work.
-2. Complete runtime animation systems from source contracts, prioritizing
-   controller behavior, IK, facial systems, and secondary motion.
+2. Generalize Endminf's proven Animator path from source contracts, close the
+   root-motion compatibility boundary, then prioritize IK, facial systems, and
+   secondary motion.
 3. Generalize the finished Endminf path and rebuild every playable character
    without actor-specific renderer forks.
 4. Keep changing inventories and exhaustive validation output under

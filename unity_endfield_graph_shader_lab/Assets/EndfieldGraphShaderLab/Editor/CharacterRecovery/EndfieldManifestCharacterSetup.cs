@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using EndfieldGraphShaderLab;
 using UnityEditor;
+using UnityEditor.Animations;
 using UnityEditor.Build.Reporting;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -900,7 +901,10 @@ namespace EndfieldGraphShaderLabEditor
                     character.PrefabAssetPath);
                 try
                 {
-                    ConfigureRecoveredOverviewPlayback(prefabRoot, manifest);
+                    ConfigureRecoveredOverviewPlayback(
+                        prefabRoot,
+                        manifest,
+                        ActorGeneratedRoot(character.ManifestAssetPath, character.RootName));
                     PrefabUtility.SaveAsPrefabAsset(
                         prefabRoot,
                         character.PrefabAssetPath);
@@ -6195,7 +6199,7 @@ namespace EndfieldGraphShaderLabEditor
                 : LoadExistingAnimationClips(actorGeneratedRoot);
             AddOriginalF5FullPoseFixture(root, rootName, actorGeneratedRoot, clips);
             ConfigureAnimation(root, clips, displayName, previewPreference);
-            ConfigureRecoveredOverviewPlayback(root, manifest);
+            ConfigureRecoveredOverviewPlayback(root, manifest, actorGeneratedRoot);
             if (configureSourceCharacterSemantics)
                 ConfigureRecoveredSkeletalMorphBasePose(root, manifest);
             ConfigureClipMetadata(
@@ -9643,7 +9647,11 @@ namespace EndfieldGraphShaderLabEditor
             {
                 string assetPath = AssetDatabase.GUIDToAssetPath(guid);
                 var clip = AssetDatabase.LoadAssetAtPath<AnimationClip>(assetPath);
-                if (clip != null)
+                // Animator-ready copies live below Animations/Animator and
+                // must never be fed back into the Legacy Animation component
+                // on a targeted cached-asset refresh.
+                if (clip != null && clip.legacy &&
+                    assetPath.IndexOf("/Animations/Animator/", StringComparison.OrdinalIgnoreCase) < 0)
                     clips.Add(clip);
             }
             clips.Sort((a, b) => string.Compare(a.name, b.name, StringComparison.OrdinalIgnoreCase));
@@ -9916,9 +9924,169 @@ namespace EndfieldGraphShaderLabEditor
             rig.focusTarget = root.transform;
         }
 
+        private static AnimatorController BuildRecoveredOverviewAnimatorController(
+            string actorGeneratedRoot,
+            AnimationClip legacyStart,
+            AnimationClip legacyLoop,
+            EndfieldOverviewPlayback playback)
+        {
+            if (legacyStart == null || legacyLoop == null || playback == null)
+                throw new InvalidDataException("Recovered Overview Animator inputs are incomplete.");
+            if (playback.transitionDurationFixed ||
+                !Mathf.Approximately(playback.entryNormalizedOffset, 0.0058366423f) ||
+                !Mathf.Approximately(playback.exitNormalizedTime, 0.75f) ||
+                !Mathf.Approximately(playback.normalizedTransitionDuration, 0.25f) ||
+                !Mathf.Approximately(playback.destinationNormalizedOffset, 0f) ||
+                playback.interruptionSource != 2 || !playback.orderedInterruption ||
+                !playback.blendRootMotion)
+            {
+                throw new InvalidDataException(
+                    "Endminf Overview Animator values differ from the recovered controller contract.");
+            }
+
+            string animatorFolder = actorGeneratedRoot + "/Animations/Animator";
+            EnsureAssetFolder(animatorFolder);
+            AnimationClip start = SaveAnimatorClipCopy(
+                legacyStart, animatorFolder + "/" + Safe(legacyStart.name) + ".anim", false);
+            AnimationClip loop = SaveAnimatorClipCopy(
+                legacyLoop, animatorFolder + "/" + Safe(legacyLoop.name) + ".anim", true);
+            string controllerPath = animatorFolder + "/EndminfOverview.controller";
+            AnimatorController controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(controllerPath);
+            if (controller == null)
+                controller = AnimatorController.CreateAnimatorControllerAtPath(controllerPath);
+            if (controller.layers.Length == 0)
+                controller.AddLayer("Base Layer");
+            if (controller.layers.Length != 1)
+                throw new InvalidDataException(
+                    $"Recovered Overview Animator requires exactly one layer; found {controller.layers.Length}.");
+
+            for (int index = controller.parameters.Length - 1; index >= 0; index--)
+                controller.RemoveParameter(index);
+            controller.AddParameter("FromIndex", AnimatorControllerParameterType.Int);
+            controller.AddParameter("ToIndex", AnimatorControllerParameterType.Int);
+            controller.AddParameter("EnableSwitch", AnimatorControllerParameterType.Trigger);
+
+            AnimatorStateMachine root = controller.layers[0].stateMachine;
+            foreach (ChildAnimatorState child in root.states.ToArray())
+                root.RemoveState(child.state);
+            foreach (ChildAnimatorStateMachine child in root.stateMachines.ToArray())
+                root.RemoveStateMachine(child.stateMachine);
+            foreach (AnimatorStateTransition transition in root.anyStateTransitions.ToArray())
+                root.RemoveAnyStateTransition(transition);
+
+            AnimatorState waiting = root.AddState("AwaitOverview");
+            waiting.writeDefaultValues = true;
+            root.defaultState = waiting;
+            AnimatorStateMachine overview = root.AddStateMachine("Overview");
+            AnimatorState entrance = overview.AddState("FromOveview");
+            entrance.motion = start;
+            entrance.speed = 1f;
+            entrance.mirror = false;
+            entrance.iKOnFeet = false;
+            entrance.writeDefaultValues = true;
+            AnimatorState settled = overview.AddState("OverviewIdle");
+            settled.motion = loop;
+            settled.speed = 1f;
+            settled.mirror = false;
+            settled.iKOnFeet = false;
+            settled.writeDefaultValues = true;
+
+            AnimatorStateTransition handoff = entrance.AddTransition(settled);
+            handoff.hasExitTime = true;
+            handoff.exitTime = playback.exitNormalizedTime;
+            handoff.hasFixedDuration = false;
+            handoff.duration = playback.normalizedTransitionDuration;
+            handoff.offset = playback.destinationNormalizedOffset;
+            handoff.interruptionSource = TransitionInterruptionSource.SourceThenDestination;
+            handoff.orderedInterruption = true;
+            handoff.canTransitionToSelf = true;
+
+            AnimatorStateTransition entry = root.AddAnyStateTransition(entrance);
+            entry.hasExitTime = false;
+            entry.hasFixedDuration = true;
+            entry.duration = 0f;
+            entry.offset = playback.entryNormalizedOffset;
+            entry.canTransitionToSelf = true;
+            entry.orderedInterruption = true;
+            entry.AddCondition(AnimatorConditionMode.Equals, 0f, "FromIndex");
+            entry.AddCondition(AnimatorConditionMode.Equals, 0f, "ToIndex");
+            entry.AddCondition(AnimatorConditionMode.If, 0f, "EnableSwitch");
+
+            EditorUtility.SetDirty(controller);
+            AssetDatabase.SaveAssets();
+            ValidateRecoveredOverviewAnimatorController(controller, start, loop, playback);
+            return controller;
+        }
+
+        private static AnimationClip SaveAnimatorClipCopy(
+            AnimationClip source,
+            string assetPath,
+            bool loop)
+        {
+            AnimationClip saved = AssetDatabase.LoadAssetAtPath<AnimationClip>(assetPath);
+            AnimationClip rebuilt = new AnimationClip();
+            EditorUtility.CopySerialized(source, rebuilt);
+            rebuilt.name = source.name;
+            rebuilt.legacy = false;
+            rebuilt.wrapMode = loop ? WrapMode.Loop : WrapMode.Once;
+            ApplyClipLoopSettings(rebuilt, loop, false);
+            if (saved == null)
+            {
+                AssetDatabase.CreateAsset(rebuilt, assetPath);
+                return rebuilt;
+            }
+            EditorUtility.CopySerialized(rebuilt, saved);
+            saved.name = source.name;
+            saved.legacy = false;
+            EditorUtility.SetDirty(saved);
+            UnityEngine.Object.DestroyImmediate(rebuilt);
+            return saved;
+        }
+
+        private static void ValidateRecoveredOverviewAnimatorController(
+            AnimatorController controller,
+            AnimationClip start,
+            AnimationClip loop,
+            EndfieldOverviewPlayback playback)
+        {
+            if (controller == null || start == null || loop == null ||
+                start.legacy || loop.legacy || controller.layers.Length != 1)
+                throw new InvalidDataException("Generated Overview Animator assets are incomplete.");
+            AnimatorStateMachine root = controller.layers[0].stateMachine;
+            AnimatorStateMachine overview = root.stateMachines
+                .Select(value => value.stateMachine)
+                .SingleOrDefault(value => value != null && value.name == "Overview");
+            AnimatorState entrance = overview == null ? null : overview.states
+                .Select(value => value.state)
+                .SingleOrDefault(value => value != null && value.name == "FromOveview");
+            AnimatorState settled = overview == null ? null : overview.states
+                .Select(value => value.state)
+                .SingleOrDefault(value => value != null && value.name == "OverviewIdle");
+            AnimatorStateTransition handoff = entrance == null
+                ? null
+                : entrance.transitions.SingleOrDefault();
+            if (entrance == null || settled == null || entrance.motion != start || settled.motion != loop ||
+                !entrance.writeDefaultValues || !settled.writeDefaultValues || handoff == null ||
+                handoff.destinationState != settled || !handoff.hasExitTime || handoff.hasFixedDuration ||
+                !Mathf.Approximately(handoff.exitTime, playback.exitNormalizedTime) ||
+                !Mathf.Approximately(handoff.duration, playback.normalizedTransitionDuration) ||
+                handoff.interruptionSource != TransitionInterruptionSource.SourceThenDestination ||
+                !handoff.orderedInterruption)
+            {
+                throw new InvalidDataException("Generated Overview Animator state contract drifted.");
+            }
+            AnimatorStateTransition entry = root.anyStateTransitions.SingleOrDefault();
+            if (entry == null || entry.destinationState != entrance || entry.hasExitTime ||
+                !entry.hasFixedDuration || !Mathf.Approximately(entry.duration, 0f) ||
+                !Mathf.Approximately(entry.offset, playback.entryNormalizedOffset) ||
+                entry.conditions.Length != 3)
+                throw new InvalidDataException("Generated Overview Animator entry contract drifted.");
+        }
+
         private static void ConfigureRecoveredOverviewPlayback(
             GameObject root,
-            Dictionary<string, object> manifest)
+            Dictionary<string, object> manifest,
+            string actorGeneratedRoot)
         {
             if (root == null || manifest == null)
                 return;
@@ -10018,6 +10186,34 @@ namespace EndfieldGraphShaderLabEditor
                 });
             }
             playback.entryTransitionConditions = entryConditions.ToArray();
+
+            string characterId = Str(
+                manifest.TryGetValue("character_id", out object characterIdObj)
+                    ? characterIdObj
+                    : null);
+            if (string.Equals(characterId, "chr_0003_endminf", StringComparison.Ordinal))
+            {
+                AnimatorController controller = BuildRecoveredOverviewAnimatorController(
+                    actorGeneratedRoot,
+                    animation[startClip].clip,
+                    animation[loopClip].clip,
+                    playback);
+                Animator animator = EnsureComponent<Animator>(root);
+                animator.runtimeAnimatorController = controller;
+                // The retail controller records m_EnableBlendRootMotion=true
+                // on both transitions. Stock Unity 2022.3 has no serialized
+                // per-transition field, so the closest supported execution
+                // boundary is the Animator-level root-motion path.
+                animator.applyRootMotion = playback.blendRootMotion;
+                animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+                animator.updateMode = AnimatorUpdateMode.Normal;
+                animator.enabled = false;
+                playback.animatorSource = animator;
+                playback.requireAnimatorContract = true;
+                playback.animatorStartStatePath = "Base Layer.Overview.FromOveview";
+                playback.animatorLoopStatePath = "Base Layer.Overview.OverviewIdle";
+                EditorUtility.SetDirty(animator);
+            }
             playback.weaponHide = Float(
                 overview.TryGetValue("weapon_hide", out object weaponHideObj)
                     ? weaponHideObj

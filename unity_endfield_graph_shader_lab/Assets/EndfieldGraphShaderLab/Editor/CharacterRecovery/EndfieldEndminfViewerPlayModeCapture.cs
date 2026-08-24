@@ -43,6 +43,7 @@ namespace EndfieldGraphShaderLabEditor
         private static string output;
         private static float[] requestedTimes;
         private static float captureFps = Fps;
+        private static string captureFailure;
         private static readonly List<FrameRow> Frames = new List<FrameRow>();
 
         [Serializable]
@@ -65,6 +66,7 @@ namespace EndfieldGraphShaderLabEditor
             public string expectedSequence = "overview_start -> overview_loop";
             public bool observedTransition;
             public bool observedSettledLoop;
+            public bool observedAnimatorContract;
             public bool observedEntranceVfx;
             public bool observedEntranceVfxCleanup;
             public FrameRow[] frames;
@@ -86,6 +88,10 @@ namespace EndfieldGraphShaderLabEditor
             public float activeBodyClipTime;
             public bool overviewTransitioning;
             public bool overviewLooping;
+            public bool animatorContractActive;
+            public int currentAnimatorStateHash;
+            public int nextAnimatorStateHash;
+            public float animatorTransitionNormalizedTime;
             public bool shadowPlaneEnabled;
             public bool shadowPlaneActive;
             public bool shadowPlaneInCameraFrustum;
@@ -151,6 +157,7 @@ namespace EndfieldGraphShaderLabEditor
                 Environment.SetEnvironmentVariable(flag, "1");
             EditorSceneManager.OpenScene(Scene, OpenSceneMode.Single);
             Frames.Clear();
+            captureFailure = null;
             next = 0;
             selected = false;
             selectionSettleFrames = 0;
@@ -188,7 +195,7 @@ namespace EndfieldGraphShaderLabEditor
             else if (state == PlayModeStateChange.EnteredEditMode)
             {
                 Time.captureDeltaTime = 0f;
-                EditorApplication.Exit(0);
+                EditorApplication.Exit(string.IsNullOrEmpty(captureFailure) ? 0 : 1);
             }
         }
 
@@ -242,6 +249,8 @@ namespace EndfieldGraphShaderLabEditor
                 return;
             }
 
+            if (requestedTimes == null || next >= requestedTimes.Length)
+                return;
             float requested = requestedTimes[next];
             float elapsed = Time.time - started;
             if (elapsed + 0.0001f < requested) return;
@@ -257,6 +266,32 @@ namespace EndfieldGraphShaderLabEditor
                     .Where(value => value.enabled && value.weight > 0.0001f)
                     .OrderByDescending(value => value.weight)
                     .FirstOrDefault();
+            string activeBodyClip = activeBodyState == null ? "" : activeBodyState.name;
+            float activeBodyClipTime = activeBodyState == null ? 0f : activeBodyState.time;
+            if (overview != null && overview.AnimatorContractActive &&
+                overview.animatorSource != null)
+            {
+                Animator animator = overview.animatorSource;
+                bool animatorTransition = animator.IsInTransition(0);
+                AnimatorClipInfo[] currentClips = animator.GetCurrentAnimatorClipInfo(0);
+                AnimatorClipInfo[] nextClips = animatorTransition
+                    ? animator.GetNextAnimatorClipInfo(0)
+                    : Array.Empty<AnimatorClipInfo>();
+                AnimatorClipInfo selectedClip = currentClips
+                    .Concat(nextClips)
+                    .OrderByDescending(value => value.weight)
+                    .FirstOrDefault();
+                if (selectedClip.clip != null)
+                {
+                    activeBodyClip = selectedClip.clip.name;
+                    AnimatorStateInfo selectedState = nextClips.Contains(selectedClip)
+                        ? animator.GetNextAnimatorStateInfo(0)
+                        : animator.GetCurrentAnimatorStateInfo(0);
+                    activeBodyClipTime = Mathf.Repeat(
+                        selectedState.normalizedTime,
+                        1f) * selectedClip.clip.length;
+                }
+            }
             // Endminf's four source bindings are stationary-position effects.
             // The runtime spawner therefore instantiates them without a parent,
             // at the actor mount's world TRS.  An actor-local census silently
@@ -326,10 +361,16 @@ namespace EndfieldGraphShaderLabEditor
                 activeAdmittedRenderers = renderers.Count(value => value.enabled && value.gameObject.activeInHierarchy),
                 admittedAliveParticles = renderers.Where(value => value.enabled && value.gameObject.activeInHierarchy)
                     .Sum(value => value.GetComponent<ParticleSystem>().particleCount),
-                activeBodyClip = activeBodyState == null ? "" : activeBodyState.name,
-                activeBodyClipTime = activeBodyState == null ? 0f : activeBodyState.time,
+                activeBodyClip = activeBodyClip,
+                activeBodyClipTime = activeBodyClipTime,
                 overviewTransitioning = overview != null && overview.IsTransitioning,
                 overviewLooping = overview != null && overview.IsLooping,
+                animatorContractActive = overview != null && overview.AnimatorContractActive,
+                currentAnimatorStateHash = overview != null ? overview.CurrentAnimatorStateHash : 0,
+                nextAnimatorStateHash = overview != null ? overview.NextAnimatorStateHash : 0,
+                animatorTransitionNormalizedTime = overview != null
+                    ? overview.AnimatorTransitionNormalizedTime
+                    : 0f,
                 shadowPlaneEnabled = shadowPlane != null && shadowPlane.enabled,
                 shadowPlaneActive = shadowPlane != null && shadowPlane.gameObject.activeInHierarchy,
                 shadowPlaneInCameraFrustum = shadowPlaneInFrustum,
@@ -361,13 +402,23 @@ namespace EndfieldGraphShaderLabEditor
             bool observedSettledLoop = Frames.Any(value => value.overviewLooping &&
                 value.activeBodyClip.IndexOf("overview_loop", StringComparison.OrdinalIgnoreCase) >= 0 &&
                 !value.overviewTransitioning);
+            bool observedAnimatorContract = Frames.Any(value => value.animatorContractActive);
             bool observedEntranceVfx = Frames.Any(value =>
                 value.activeBodyClip.IndexOf("overview_start", StringComparison.OrdinalIgnoreCase) >= 0 &&
                 value.effectRootCount == 4 && value.admittedRenderers > 0 &&
                 value.activeAdmittedRenderers > 0 && value.admittedAliveParticles > 0);
             bool observedEntranceVfxCleanup = Frames.Any(value =>
                 value.overviewLooping && !value.overviewTransitioning && value.effectRootCount == 0);
+            var missingObservations = new List<string>();
+            if (!observedAnimatorContract) missingObservations.Add("Animator contract");
+            if (!observedTransition) missingObservations.Add("start-to-loop transition");
+            if (!observedSettledLoop) missingObservations.Add("settled loop");
+            if (!observedEntranceVfx) missingObservations.Add("entrance VFX");
+            if (!observedEntranceVfxCleanup) missingObservations.Add("entrance VFX cleanup");
             Report report = new Report {
+                status = missingObservations.Count == 0
+                    ? "ok"
+                    : "failed: missing " + string.Join(", ", missingObservations.ToArray()),
                 fps = captureFps,
                 recoveredLinearUnormFinalTargetRequested =
                     HDRenderPipeline.IsRecoveredLinearUnormFinalTargetRequested(),
@@ -378,6 +429,7 @@ namespace EndfieldGraphShaderLabEditor
                     value.GetType().Name.IndexOf("Volume", StringComparison.OrdinalIgnoreCase) >= 0),
                 observedTransition = observedTransition,
                 observedSettledLoop = observedSettledLoop,
+                observedAnimatorContract = observedAnimatorContract,
                 observedEntranceVfx = observedEntranceVfx,
                 observedEntranceVfxCleanup = observedEntranceVfxCleanup,
                 frames = Frames.ToArray()
@@ -387,16 +439,20 @@ namespace EndfieldGraphShaderLabEditor
                 "ENDFIELD_ENDMINF_CAPTURE_FINE_WINDOW") == "1";
             bool videoExport = Environment.GetEnvironmentVariable(
                 "ENDFIELD_ENDMINF_CAPTURE_VIDEO_EXPORT") == "1";
-            if (!fineWindow && (!observedTransition || !observedSettledLoop ||
-                !observedEntranceVfx || !observedEntranceVfxCleanup))
-                throw new InvalidOperationException(
-                    "Endminf Viewer capture did not observe the complete " +
-                    "overview_start + entrance VFX -> overview_loop + VFX cleanup sequence");
+            EditorApplication.update -= Tick;
+            if (!fineWindow && missingObservations.Count > 0)
+            {
+                captureFailure =
+                    "Endminf Viewer capture did not observe: " +
+                    string.Join(", ", missingObservations.ToArray());
+                Debug.LogError(captureFailure);
+                EditorApplication.ExitPlaymode();
+                return;
+            }
             if (!fineWindow && !videoExport)
                 BuildSideBySideComparison();
             Debug.Log("PASS Endminf actual Viewer Play-mode sequence: roots=" + Frames.Last().effectRootCount +
                 " admitted=" + Frames.Last().admittedRenderers + " output=" + output);
-            EditorApplication.update -= Tick;
             EditorApplication.ExitPlaymode();
         }
 
