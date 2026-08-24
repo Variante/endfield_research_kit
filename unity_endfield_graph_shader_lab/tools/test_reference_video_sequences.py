@@ -29,6 +29,28 @@ class ReferenceVideoSequenceTests(unittest.TestCase):
         row = pipeline.expand_segments(recording, 3.0)[0]
         self.assertEqual(row["behavior"], "ui_overview_start_then_loop")
 
+    def test_explicit_segment_preserves_bounded_comparison_contract(self):
+        comparison = {
+            "bodyClipStartSourceFrame": 115,
+            "firstVisibleSourceFrame": 114,
+            "anchorUncertaintyFrames": 1,
+            "unmaskedBodyStartSourceFrame": 472,
+            "comparisonWidth": 1920,
+            "comparisonHeight": 1080,
+            "resamplingFilter": "lanczos",
+        }
+        recording = {
+            "id": "focused",
+            "segments": [{
+                "id": "start_and_loop", "character": "endminf",
+                "behavior": "ui_overview_start_then_loop",
+                "startSeconds": 0, "endSeconds": 3,
+                "comparison": comparison,
+            }],
+        }
+        row = pipeline.expand_segments(recording, 3.0)[0]
+        self.assertEqual(row["comparison"], comparison)
+
     def test_overlap_fails_closed(self):
         recording = {
             "id": "bad",

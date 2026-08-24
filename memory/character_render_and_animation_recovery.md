@@ -38,9 +38,11 @@ archetypes remain labeled source kits rather than finished characters.
   `Animation.CrossFade` approximation. The controller preserves the recovered
   `FromIndex=0`, `ToIndex=0`, `EnableSwitch` entry route, 0.75 exit time, 0.25
   normalized transition duration, destination offset, Write Defaults, and
-  interruption ordering. A 41-frame 60 Hz Viewer capture proves controller
+  interruption ordering. A Viewer capture of 41 saved frames proves controller
   entry, the transition, settled looping, four entrance-effect roots, and
-  effect cleanup. Its AnimatorMove path now follows the pinned native consumer:
+  effect cleanup. Those frames are sampled at 4 fps from a 60 Hz
+  simulation; they are not a 41-frame 60 fps movie. Its AnimatorMove path now
+  follows the pinned native consumer:
   it multiplies the actor rotation by `animator.deltaRotation` and never reads
   or applies `deltaPosition`. The capture observed 599 callbacks, zero root
   position drift, and no authored rotation delta in these two clips. Stock
@@ -336,16 +338,22 @@ earlier occurrence at 3.64 seconds. The latest 28-pair sheet and its explicit
 source-frame map remain disposable beside the Viewer capture output.
 
 The August 24 sequence retains one-based source frame 113 as the final
-model-swap/prehistory frame and begins visible Endminf on frame 114. The same
-strong opening comb trails remain visible with frame generation disabled, so
-they must not be attributed to generated-frame interpolation; their exact
-game-rendered temporal or authored-effect producer remains open. The amber
-rock/crystal, orbiting fragments, and bloom are a separate actor-owned entrance
-effect. Evaluate them as an effect, but mask their moving amber component and
-bloom halo through source frame 420 when measuring general body motion,
-lighting, exposure, materials, or temporal trails. Never compare the 4K and
-1080p references with whole-frame error metrics without recording an explicit
-resampling contract.
+model-swap/prehistory frame and begins visible Endminf on frame 114. Motion
+correlation best aligns the first saved Unity phase to source frame 115, with a
+bounded plus-or-minus-one source-frame uncertainty; this companion pairing is
+diagnostic rather than exact. The same strong opening comb trails remain
+visible with frame generation disabled, so they must not be attributed to
+generated-frame interpolation; their exact game-rendered temporal or
+authored-effect producer remains open. The amber rock/crystal, orbiting
+fragments, and bloom are a separate actor-owned entrance effect. Obvious amber
+particles persist through source frame 461 and frame 462 remains ambiguous;
+unmasked body/material measurements begin at source frame 472, and the phase
+uncertainty excludes any paired row whose lower bound precedes 472. Earlier
+rows require an actual moving amber-component mask dilated for bloom because a
+fixed ROI crosses unrelated character pixels. The maintained comparison
+resamples 3840x2160 to 1920x1080 with Lanczos and no crop before sheet
+downscaling; do not use cross-resolution whole-frame metrics outside that
+explicit contract.
 
 Do not fork the renderer per actor. Endminf-specific code may own source asset
 selection and timing, while the importer, material mapping, animation,
