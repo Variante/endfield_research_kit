@@ -29,6 +29,7 @@ class VerifyEndminfRefractAdmissionTests(unittest.TestCase):
             )
             self.assertEqual(len(report["programs"]), 4)
             self.assertTrue(report["admissionDecision"]["programEvidenceComplete"])
+            self.assertTrue(report["admissionDecision"]["sourceMaterialComplete"])
             self.assertFalse(report["admissionDecision"]["admitted"])
             fragment_rows = [
                 row for row in report["programs"] if row["stageFromDxbc"] == "fragment"
@@ -43,8 +44,15 @@ class VerifyEndminfRefractAdmissionTests(unittest.TestCase):
                 all(report["fragmentContract"]["checks"].values())
             )
             self.assertEqual(len(report["runtimePrerequisites"]), 6)
-            self.assertEqual(len(report["remainingGates"]), 5)
+            self.assertEqual(len(report["remainingGates"]), 4)
             self.assertGreaterEqual(len(report["currentUnityConsumer"]["gaps"]), 6)
+            self.assertEqual(
+                report["currentUnityConsumer"]["m28FixedValueEquivalence"]["status"],
+                "closed_for_four_fragment_differences_only",
+            )
+            self.assertTrue(all(
+                report["currentUnityConsumer"]["m28FixedValueEquivalence"]["checks"].values()
+            ))
 
     def test_malformed_dxbc_is_rejected(self) -> None:
         with self.assertRaisesRegex(MODULE.VerificationError, "DXBC chunk table"):

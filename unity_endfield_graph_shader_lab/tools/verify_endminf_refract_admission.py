@@ -426,19 +426,44 @@ def audit_recovered_shader() -> dict[str, Any]:
     source_present = SOURCE_MATERIAL.is_file()
     source_hash = sha256(SOURCE_MATERIAL) if source_present else None
     source_identity = False
+    fixed_value_equivalence: dict[str, bool] = {}
     if source_present and source_hash == SOURCE_MATERIAL_SHA256:
         row = json.loads(SOURCE_MATERIAL.read_text(encoding="utf-8"))
         source_identity = (row.get("m_Shader", {}).get("m_PathID") == SHADER_PATH_ID
                            and row.get("m_ValidKeywords") == ["_USE_DISSOLVE"]
                            and row.get("m_CustomRenderQueue") == 3000)
+        saved = row.get("m_SavedProperties", {})
+        floats = saved.get("m_Floats", {})
+        colors = saved.get("m_Colors", {})
+        dissolve_speed = colors.get("_DissolveUVSpeed", {})
+        fixed_value_equivalence = {
+            "rawVsSaturatedRefractSelector": floats.get("_RefractIsNormal") == 0.0,
+            "extraDissolveCustomLaneIsZero": all(
+                dissolve_speed.get(lane) == 0.0 for lane in ("b", "a")
+            ),
+            "nearFadeBranchIsDisabled": floats.get("_UseNearCameraFade") == 0.0,
+            "sceneMvGateProducesZeroXy": (
+                floats.get("_SurfaceType") == 1.0
+                and floats.get("_EnableTransparentMV") == 0.0
+            ),
+        }
+        require(all(fixed_value_equivalence.values()),
+                "M28 fixed-value equivalence boundary drifted")
     return {
         "path": relative(RECOVERED_SHADER), "sha256": sha256(RECOVERED_SHADER),
         "equationParity": False, "gaps": gaps,
         "sourceMaterial": {"path": relative(SOURCE_MATERIAL), "present": source_present,
                            "expectedSha256": SOURCE_MATERIAL_SHA256, "actualSha256": source_hash,
                            "identityValidated": source_identity},
+        "m28FixedValueEquivalence": {
+            "status": "closed_for_four_fragment_differences_only"
+                if fixed_value_equivalence and all(fixed_value_equivalence.values())
+                else "not_validated",
+            "checks": fixed_value_equivalence,
+            "boundary": "These selected material constants collapse four fragment-source differences for M28 only; they do not close vertex publication, transforms, LOD/time uploads, pair selection, or the general shared shader.",
+        },
         "admissionReady": False,
-        "reason": "Exact original programs are closed, but Unity vertex/publisher and source equations are not bytecode-equivalent; material-fixed zeros do not prove the general program or engine IA contract.",
+        "reason": "Exact original programs, source material, and four M28-only fixed-value fragment equivalences are closed, but Unity vertex/publisher, pair selection, and the remaining frame/resource equations are not exact.",
     }
 
 
@@ -499,10 +524,9 @@ def main(program_only: bool, output: Path) -> int:
             },
         ],
         "remainingGates": [
-            "re-extract and hash/identity-check the exact M28 AnimeStudio Material JSON",
             "capture or otherwise prove which complete pair the retail M28 draw selects",
             "recover the engine-generated TEXCOORD4/BLEND/instance publisher and every vertex constant/resource upload",
-            "make the Unity shader equations match the exact vertex and fragment programs rather than relying on M28 fixed zeros",
+            "close screen-position, LOD/time, texture/sampler, attachment, and PSO publication for the selected M28 pair",
             "validate both M28 consumers at 60 Hz only after the program and renderer tuples are admitted",
         ],
         "bindingEvidenceBoundary": {
@@ -512,7 +536,8 @@ def main(program_only: bool, output: Path) -> int:
         },
         "currentUnityConsumer": recovered,
         "admissionDecision": {"admitted": False, "programEvidenceComplete": True,
-                              "reason": "Fail closed: actual pair selection, retail vertex publisher, current source material, and recovered-shader parity are not all closed."},
+                              "sourceMaterialComplete": recovered["sourceMaterial"]["identityValidated"],
+                              "reason": "Fail closed: actual pair selection, retail vertex publisher, and recovered-shader parity are not closed; the current source material is closed."},
         "protectedControls": {
             "overview_02/all/shitou (1)": "M21 exact small crystal; not read or modified",
             "overview_02/all/suikuai (1)": "admitted exact refract shards; shared shader not modified",
@@ -522,7 +547,7 @@ def main(program_only: bool, output: Path) -> int:
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     print(f"M28 exact VFXRefract pairs: validated; report={output}")
-    print("Unity admission: fail closed (equation/publisher/source gates remain)")
+    print("Unity admission: fail closed (pair-selection/equation/publisher gates remain)")
     return 0 if program_only else 1
 
 

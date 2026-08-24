@@ -1,6 +1,6 @@
 {
   "schema": "endfield.endminf-m28-consumer-boundary.v1",
-  "status": "fail_closed_program_and_source_tuple_incomplete",
+  "status": "fail_closed_runtime_pair_publisher_and_frame_resources_incomplete",
   "scope": {
     "material": "M_fx_endminm_gfx_28",
     "materialPathId": -4647734024635463429,
@@ -124,32 +124,67 @@
         "size": 3664,
         "sha256": "a3c9bfc94f0caea930c20bd61ee49fdb95ab58ef1f2e7c64f0f19a74c7e1ea92"
       }
-    ]
+    ],
+    "exactProgramClosure": {
+      "report": "reports/assets/character_recovery/endminf_m28_refract_program.json",
+      "status": "both_complete_d3d11_pairs_and_fragment_equations_validated",
+      "pairs": [
+        "0090 vertex + 0091 fragment, HG_ENABLE_MV + _USE_DISSOLVE",
+        "0624 vertex + 0625 fragment, HG_ENABLE_MV + SRP_INSTANCING_ON + _USE_DISSOLVE"
+      ]
+    },
+    "exactSourceClosure": {
+      "report": "reports/assets/character_recovery/endminf_m28_source_contract.json",
+      "status": "current_material_and_both_renderer_tuples_validated",
+      "materialSha256": "51ae58da347abf62408380255d2abc290145642736094dedd121dc2ac8081d80",
+      "sourceEnabledConsumers": 2,
+      "sharedMeshPathIdHex": "7F669C3392052E42",
+      "vertexStreams": [0, 1, 3, 4, 5, 34]
+    },
+    "m28FixedValueFragmentEquivalence": {
+      "status": "four_differences_collapse_for_selected_material_only",
+      "checks": [
+        "raw and saturated RefractIsNormal are identical at source value 0",
+        "the extra compatibility dissolve custom lane is multiplied by source speed zw = 0",
+        "the compatibility Euclidean fade is bypassed at source UseNearCameraFade = 0",
+        "the exact SceneMV XY gate is zero at SurfaceType = 1 and EnableTransparentMV = 0"
+      ],
+      "boundary": "This does not close vertex publication, pair selection, LOD/time/frame uploads, texture/sampler bindings, attachments, or the general shared shader."
+    },
+    "nativeInstancingBoundary": {
+      "report": "reports/assets/character_recovery/endminf_m28_native_instancing.json",
+      "status": "native_keyword_and_instance_shape_closed_pair_selection_undetermined",
+      "srpInstancingBuiltInKeywordOrdinal": 30,
+      "instanceRecordBytes": 256,
+      "instanceCapacity": 256,
+      "shaderSideBaseOffset": false,
+      "owner": "HyperGryph-modified UnityPlayer.dll"
+    }
   },
   "blockingDiagnostics": [
     {
-      "gate": "selected original program pair",
+      "gate": "retail draw pair selection",
       "status": "failed",
-      "diagnostic": "unity_endfield_graph_shader_lab/tools/verify_endminf_refract_admission.py matches only *_dxbc_0 vertex metadata. It does not require the paired 0091/0625 fragment programs, pin any of the four bytecode hashes, validate the two-MRT output signature, or compare the full recovered _USE_DISSOLVE program against the original fragment.",
-      "required": "A fail-closed verifier must select one complete VS+PS pair for the renderer's actual instancing state and validate hashes, signatures, resources, constant-buffer lanes, and the complete dissolve/refraction equation."
+      "diagnostic": "Both complete D3D11 pairs are exact. Current-build UnityPlayer proves SRP_INSTANCING_ON is native built-in keyword ordinal 30 and the instanced programs directly index one of 256 256-byte records with no shader-side base. Both source renderers serialize one-particle mesh GPU instancing, but m_EnableGPUInstancing and batch size one do not prove that the retail draw enabled ordinal 30.",
+      "required": "Recover and body-hash the UnityPlayer draw discriminator that toggles built-in keyword ordinal 30, or capture the retail bound VS hash, so exactly one complete pair or an explicit one-instance equivalence is established."
     },
     {
-      "gate": "current exact material source",
+      "gate": "engine vertex and instance publisher",
       "status": "failed",
-      "diagnostic": "The validator's exact AnimeStudio Material JSON is absent at export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_28_pBF7FEE87831B48FB.json. Its pinned expected SHA-256 is 51ae58da347abf62408380255d2abc290145642736094dedd121dc2ac8081d80; the retained Unity .mat is a generated consumer and cannot replace that source gate.",
-      "required": "Re-extract the PathID-targeted material from the selected installed build and rerun the source hash/identity gate."
+      "diagnostic": "The exact vertex programs require POSITION/COLOR/TEXCOORD0/1/4/BLENDWEIGHTS/BLENDINDICES, optional VertexSkinMatrices t0, current/previous transforms, and for 0624 an SV_InstanceID-selected 16-float4 record. The public Unity compatibility shader uses UnityStandardParticleInstancing and a reduced source struct; equivalence has not been proven.",
+      "required": "Recover the retail ParserBindChannels/input-assembler mapping, VertexSkinMatrices producer, current/previous transform uploads, and exact instance indexing."
     },
     {
-      "gate": "two exact renderer source tuples",
+      "gate": "selected frame resources and PSO",
       "status": "failed",
-      "diagnostic": "The exact four-root AnimeStudio stage is currently absent/empty. The retained overview_03 marker contains 64-bit component PathIDs rounded to 256-value boundaries, and both retained M28 marker rows predate the importer correction that records serialized m_Enabled before admission gating.",
-      "required": "Targeted AnimeStudio GameObject/Transform/ParticleSystem/ParticleSystemRenderer extraction must republish exact integer PathIDs, m_Enabled, mesh/material PPtrs, renderer stream/state, and particle payload for both hierarchy rows."
+      "diagnostic": "Material-fixed values close four fragment differences for M28, but the exact screen-position path, b1 VFX time/global mip bias, b2 LOD lane, texture/sampler descriptors, pre-distortion SceneColor, two attachments, depth, and serialized blend/depth/cull state are not yet jointly validated on the selected draw.",
+      "required": "Publish and verify every selected vertex/fragment buffer lane, texture/sampler, attachment, depth input, and PSO state through the D3D11 runtime path."
     },
     {
       "gate": "focused visual validation",
       "status": "failed",
       "diagnostic": "The prior M28 isolate sampled only overview_02 at 4.75 seconds and found seven thresholded pixels. It is neither a 60 Hz active-window comparison nor evidence for overview_03, and it predates the exact retained suikuai (1) admission/current three-blocker baseline.",
-      "required": "After the three source gates above close, compare exact-vs-control at 60 Hz over both authored live windows while keeping overview_02/all/shitou (1), overview_02/all/suikuai (1), and overview_02/all/suikuai (2) fixed."
+      "required": "After the three runtime gates above close, compare exact-vs-control at 60 Hz over both authored live windows while keeping overview_02/all/shitou (1), overview_02/all/suikuai (1), and overview_02/all/suikuai (2) fixed."
     }
   ],
   "admissionDecision": {
@@ -158,7 +193,7 @@
       "overview_02/all/Particle System (9)",
       "overview_03/all/glow/Particle System (10)"
     ],
-    "reason": "The recovered Distortion compositor is sufficient infrastructure, but it does not substitute for a complete selected shader-program proof, current source material, exact per-renderer tuples, and two-window 60 Hz validation."
+    "reason": "The exact programs, current material, and both source renderer tuples are closed. Admission still requires retail pair selection, the engine vertex/instance publisher, complete selected frame resources/PSO, and two-window 60 Hz validation."
   },
   "protectedControls": {
     "overview_02/all/shitou (1)": "M21 exact small crystal; untouched and must remain fixed",
