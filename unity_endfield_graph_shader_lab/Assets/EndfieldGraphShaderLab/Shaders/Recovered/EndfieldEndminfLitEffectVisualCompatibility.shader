@@ -17,7 +17,7 @@ Shader "Hidden/Endfield/Compatibility/Endminf/LitEffectM01M38"
         // Presentation-domain calibration only. The retail fragment writes
         // HDR parallax radiance directly to SceneColor before deferred
         // lighting; this forward compatibility pass cannot reproduce the
-        // unresolved b3 layout/deferred consumer yet.
+        // unresolved _PARALLAX_MAP b3 extension/live deferred frame yet.
         _RecoveredParallaxCompatibilityScale ("Recovered Parallax Compatibility Scale", Float) = 0.0125
     }
     SubShader
@@ -93,7 +93,7 @@ Shader "Hidden/Endfield/Compatibility/Endminf/LitEffectM01M38"
                 // texture in tangent-view space. M01/M38 author five steps,
                 // strength 0.096 and tiling 3.36. This bounded forward port
                 // restores that orientation-dependent internal pattern while
-                // leaving the still-unresolved deferred MRT consumer explicit.
+                // leaving the unresolved parallax-CB and live-frame contract explicit.
                 float3 viewWS = normalize(_WorldSpaceCameraPos.xyz - input.positionWS);
                 float3 viewTS = float3(
                     dot(viewWS, tangent),

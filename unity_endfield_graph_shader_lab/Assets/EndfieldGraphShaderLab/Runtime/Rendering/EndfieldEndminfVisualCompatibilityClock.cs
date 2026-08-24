@@ -82,14 +82,14 @@ namespace EndfieldGraphShaderLab
                 : 0;
 
             // A_fx_endminf_ui_overview_02 animates radial power to exactly
-            // 1.0. The pinned Uber parameter producer blends from 1.2 only
-            // when both effects are active and radial/chromatic is below one.
+            // 1.0. The pinned Uber parameter producer blends from 1.0 when
+            // both effects are active. Its separate no-radial default is 1.2.
             const float animatedRadialPower = 1.0f;
             float effectivePower = animatedRadialPower;
             if (chromaticActive && radialActive)
             {
                 effectivePower = Mathf.Lerp(
-                    1.2f,
+                    1.0f,
                     animatedRadialPower,
                     Mathf.Clamp01(radial / chromatic));
             }
@@ -134,9 +134,21 @@ namespace EndfieldGraphShaderLab
 
             Vector3 viewport = camera.WorldToViewportPoint(
                 overview02Root.TransformPoint(RecoveredPostCenterLocal));
-            return viewport.z > 0.0f
-                ? new Vector2(viewport.x, viewport.y)
-                : new Vector2(0.5f, 0.5f);
+            if (viewport.z <= 0.0f)
+                return new Vector2(0.5f, 0.5f);
+
+            // PrepareRadialBlurAndChromaticAberrationParameters does not
+            // forward viewport XY. It first moves the point into signed
+            // viewport space, applies its far-offscreen normalization branch,
+            // and only then clamps each component for the Uber constant.
+            Vector2 packed = new Vector2(
+                viewport.x * 2.0f - 1.0f,
+                viewport.y * 2.0f - 1.0f);
+            if (packed.magnitude > 1.414f)
+                packed = (packed.normalized + Vector2.one) * 0.5f;
+            return new Vector2(
+                Mathf.Clamp01(packed.x),
+                Mathf.Clamp01(packed.y));
         }
     }
 }

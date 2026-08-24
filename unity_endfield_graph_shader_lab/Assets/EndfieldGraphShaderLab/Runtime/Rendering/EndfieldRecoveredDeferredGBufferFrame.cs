@@ -12,8 +12,9 @@ namespace EndfieldGraphShaderLab
     /// <summary>
     /// Default-off, non-presented same-camera replay of the source-closed
     /// SphereOutside HGBuffer producer. This owns the exact five logical color
-    /// attachments and D32S8 depth/stencil sidecar but deliberately does not run
-    /// or approximate the still-incomplete deferred-lighting consumer.
+    /// attachments and D32S8 depth/stencil sidecar. The selected deferred
+    /// consumer is source-closed elsewhere; this default-off producer does not
+    /// run it because the complete live frame-resource set is not yet admitted.
     /// </summary>
     internal sealed class EndfieldRecoveredDeferredGBufferFrame : IDisposable
     {

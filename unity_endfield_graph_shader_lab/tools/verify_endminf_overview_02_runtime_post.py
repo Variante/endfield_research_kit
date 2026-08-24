@@ -67,11 +67,17 @@ def verify() -> dict[str, object]:
         "EvaluateSourceCurve(elapsed, 0.152f, 0.109f)",
         "const float animatedRadialPower = 1.0f",
         "Mathf.Lerp(",
-        "1.2f,",
+        "1.0f,",
         "Mathf.Clamp01(radial / chromatic)",
         "(chromaticActive && radial > 0.01f ? 6 : 3)",
         "camera.WorldToViewportPoint(",
         "overview02Root.TransformPoint(RecoveredPostCenterLocal)",
+        "viewport.x * 2.0f - 1.0f",
+        "viewport.y * 2.0f - 1.0f",
+        "packed.magnitude > 1.414f",
+        "(packed.normalized + Vector2.one) * 0.5f",
+        "Mathf.Clamp01(packed.x)",
+        "Mathf.Clamp01(packed.y)",
         "time <= 0.16666667f",
         "time < 4.4f",
         "time <= 4.4333334f",
@@ -94,6 +100,7 @@ def verify() -> dict[str, object]:
     require_tokens(shader, (
         "float4 SampleEndminfSceneLod0(float2 uv)",
         "float effectivePower)",
+        "if (_EndminfVisualCompatibilityParams.z > 3.0)",
         "_EndminfVisualCompatibilityParams.w",
         "float3 bloom = max(tex2D(_BloomTex, presentUv).rgb, 0.0)",
         "source.rgb + bloom * bloomIntensity",
@@ -114,15 +121,16 @@ def verify() -> dict[str, object]:
         "curveCount": len(bindings),
         "runtime": {
             "radialPower": 1.0,
-            "combinedPowerBase": 1.2,
+            "combinedPowerBase": 1.0,
             "combinedMode": 6,
             "singleMode": 3,
             "averageSteps": [0, 0],
         },
         "boundary": (
-            "The animated values, native parameter packing, source-only warp, and "
-            "separate bloom combine are verified. The complete shipped Uber shader "
-            "and exact D3D12 presentation implementation remain unresolved."
+            "The animated values, native center/mode/power packing, source-only "
+            "warp, and separate bloom sampling order are verified. The combined "
+            "shipped Uber bloom merge and exact D3D12 presentation bindings remain "
+            "unresolved."
         ),
     }
 

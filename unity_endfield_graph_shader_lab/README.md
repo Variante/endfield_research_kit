@@ -75,13 +75,15 @@ the completed result can later rebuild all characters.
   missing-texture white quad. The focused comparison anchors its first Unity
   image to retail frame 1110 instead of the former three-frame-late pairing.
   The broader all-character runtime remains partial.
-- Effect-02's curve state, radial power, native parameter packing, viewport
-  center, and source-before-bloom order are recovered. Its complete shipped
-  Uber/presentation implementation remains an explicit compatibility gap.
-- The rock-family `HGRP/LitEffect` physical constant buffers are identified,
-  but stripped per-material offsets and the exact five-MRT deferred consumer
-  remain unresolved; the ten affected renderers therefore stay blocked by
-  default.
+- Effect-02's curve state, radial power, native parameter packing, signed and
+  clamped viewport-center transform, and source-before-bloom order are
+  recovered. Its complete combined Uber bloom/pre-exposure implementation
+  remains an explicit compatibility gap.
+- The rock-family `HGRP/LitEffect` physical constant buffers, named base
+  `UnityPerMaterial` prefix, and five-MRT deferred consumer are identified.
+  The `_PARALLAX_MAP` layout extension and complete live frame-resource
+  publication remain unresolved; the ten affected renderers therefore stay
+  blocked by default.
 - Selected CharacterNPR, eye, hair, shadow, GBuffer, lighting, particle, and
   post-process contracts are source-backed and fail closed where inputs are
   unknown.

@@ -131,7 +131,7 @@ Shader "Hidden/Endfield/HGRPCompat/ExposureTonemap"
                 // coarser mips across the warped coordinates and visibly
                 // break Endminf's thin late-pulse ring.
                 float3 source = SampleEndminfSceneLod0(uv).rgb;
-                if (radialIntensity > 0.01)
+                if (_EndminfVisualCompatibilityParams.z > 3.0)
                 {
                     float combined = chromaticIntensity + radialIntensity;
                     float3 accumulated = float3(source.r, 0.0, 0.0);
