@@ -179,6 +179,20 @@ namespace EndfieldGraphShaderLab
             }
         }
 
+        /// <summary>
+        /// Re-reads process selectors after an editor capture changes them in
+        /// the already-running Unity process. Runtime launches initialize the
+        /// cache once before scene load; editor sequence tools set their
+        /// bounded reproduction profile immediately before opening the scene.
+        /// </summary>
+        public static void RefreshStandaloneSelection()
+        {
+            standaloneSelectionInitialized = false;
+            standaloneSelectionRequested = null;
+            standaloneReadySubsetRequested = null;
+            InitializeStandaloneSelection();
+        }
+
         private void OnEnable()
         {
             ApplySelection();
