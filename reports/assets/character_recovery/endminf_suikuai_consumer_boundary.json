@@ -117,10 +117,12 @@
       "sourceStreamContract": "Position, Normal, Color, UV, UV2, Custom1XYZW; retained YAML 000103040522 and GPU instancing match, while the BLENDWEIGHTS/BLENDINDICES particle-instance ABI still requires validation",
       "currentCompatibilityConsumer": "one-target ForwardOnly shader validated only for M01 and M38",
       "firstSourceProvenBlocker": "fragment ShaderVariablesGlobal b1 c105.z/w consumes live HGVFXManager.GetAnchorWaveBright output that the lab does not yet publish",
+      "terrainProfileBoundary": "the current-build Get/Register/Update terrain-profile producer and zero sentinel are closed, but the retail CharInfo selected-frame value remains unobserved",
       "integrationBoundary": "use a PathID-targeted M27-only five-MRT owner before deferred resolve; never add GBuffer to the ordinary opaque pass list",
       "evidenceReports": [
         "reports/assets/character_recovery/endminf_m27_suikuai_source_contract.json",
         "reports/assets/character_recovery/endminf_m27_liteffect_program_recovery.json",
+        "reports/assets/character_recovery/endminf_m27_terrain_profile_native_contract.json",
         "reports/assets/character_recovery/endminf_m27_live_integration_contract.json"
       ],
       "admission": "blocked until live b1/b2/b4 state, particle-instance ABI, five-MRT publication, and a content-valid presented deferred resolver are all source-closed"
