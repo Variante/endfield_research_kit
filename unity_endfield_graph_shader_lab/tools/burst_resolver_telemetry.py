@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import json
 import re
 import sys
 import threading
@@ -47,7 +48,10 @@ TARGET_IDS = {
     "start_simulation_step_range_kernel",
     "update_step_basic_poture_range_kernel",
     "end_simulation_step_range_kernel",
+    "collider_start_simulation_step_range_kernel",
+    "collider_end_simulation_step_range_kernel",
 }
+TARGETS_SHA256 = "a8d85d9ee9a45af95d109622f9e7e2d613e7353a93a7802cbffda0c369231cd9"
 TARGET_WINDOW_ROLES = {
     "constructor",
     "static_constructor",
@@ -163,7 +167,14 @@ def load_manifest(path: Path) -> dict[str, Any]:
 
     targets = manifest.get("targets")
     if not isinstance(targets, list) or len(targets) != len(TARGET_IDS) or {target.get("id") for target in targets if isinstance(target, dict)} != TARGET_IDS:
-        raise CaptureConfigurationError("manifest targets must contain exactly the three pinned Burst range targets")
+        raise CaptureConfigurationError("manifest targets must contain exactly the five pinned Burst range targets")
+    target_digest = hashlib.sha256(
+        json.dumps(targets, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+    if target_digest != TARGETS_SHA256:
+        raise CaptureConfigurationError(
+            f"manifest pinned Burst target windows drifted: {target_digest}"
+        )
     for target in targets:
         if not isinstance(target, dict):
             raise CaptureConfigurationError("each manifest target must be an object")
