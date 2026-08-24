@@ -96,7 +96,17 @@ archetypes remain labeled source kits rather than finished characters.
   not evidence for a post bypass or a material correction. The selected BaseV2
   fragment already premultiplies RGB by recovered coverage before the authored
   `One / OneMinusSrcAlpha` blend, so a second alpha multiplication is also not
-  admissible. The combined burst remains clipped relative to the
+  admissible. A deterministic Viewer-path readback now captures the canonical
+  packed `B10G11R11_UFloatPack32` CameraColor immediately before bloom/Uber.
+  Two independent full runs at saved frame 18 (4.4667 seconds) are
+  byte-identical. Excluding only M21 removes exactly one live renderer and its
+  ten particles; every companion row remains identical, and the crystal
+  changes only 90 of 2,073,600 pre-post pixels. By contrast, excluding the
+  unique `overview_02/all/huan` M13 row changes 352,660 pixels and removes the
+  large outer amber ring. This closes the attribution boundary without
+  changing any authored material: M21 owns the small stones, while M13 and the
+  other `overview_02` companions own the surrounding burst and its
+  compositing footprint. The combined burst remains clipped relative to the
   no-frame-generation reference, so the open boundary is complete
   presentation/compositing admission, not either authored particle system or
   material.

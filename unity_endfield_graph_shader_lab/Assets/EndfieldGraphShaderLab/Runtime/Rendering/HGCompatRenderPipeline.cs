@@ -2058,6 +2058,14 @@ namespace EndfieldGraphShaderLab
                 context.ExecuteCommandBuffer(commandBuffer);
                 commandBuffer.Release();
             }
+            if (applyPostProcess)
+            {
+                EndfieldRecoveredPrePostHdrDiagnostic.CaptureIfArmed(
+                    context,
+                    camera,
+                    new RenderTargetIdentifier(CameraColorId),
+                    cameraColorDescriptor);
+            }
             recoveredScreenDirectAudit.EndForward(
                 context,
                 camera,

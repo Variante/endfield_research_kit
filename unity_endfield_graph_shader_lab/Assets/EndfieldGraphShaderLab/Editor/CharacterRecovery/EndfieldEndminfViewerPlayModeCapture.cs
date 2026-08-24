@@ -65,6 +65,9 @@ namespace EndfieldGraphShaderLabEditor
         private static float[] requestedTimes;
         private static float captureFps = Fps;
         private static string captureFailure;
+        private static bool capturePrePostHdr;
+        private static string prePostHdrCohort;
+        private static string prePostHdrOutput;
         private static readonly List<FrameRow> Frames = new List<FrameRow>();
 
         [Serializable]
@@ -79,6 +82,8 @@ namespace EndfieldGraphShaderLabEditor
             public string selectionPath = "CharacterRecoveryViewerUI.SelectModel(Endminf)";
             public bool actorOnlyCapture = false;
             public bool postProcessingExplicitlyDisabled = false;
+            public bool prePostHdrDiagnostic;
+            public string excludedMaterial;
             public bool recoveredLinearUnormFinalTargetRequested;
             public string renderPipeline;
             public string cameraClearFlags;
@@ -321,14 +326,33 @@ namespace EndfieldGraphShaderLabEditor
                 "ENDFIELD_ENDMINF_CAPTURE_FINE_WINDOW") == "1";
             bool videoExport = Environment.GetEnvironmentVariable(
                 "ENDFIELD_ENDMINF_CAPTURE_VIDEO_EXPORT") == "1";
+            capturePrePostHdr = Environment.GetEnvironmentVariable(
+                "ENDFIELD_ENDMINF_CAPTURE_PREPOST_HDR") == "1";
+            string excludedMaterial = Environment.GetEnvironmentVariable(
+                "ENDFIELD_ENDMINF_CAPTURE_EXCLUDE_MATERIAL");
+            prePostHdrCohort = string.IsNullOrWhiteSpace(excludedMaterial)
+                ? "full"
+                : "exclude_material=" + excludedMaterial;
+            string prePostHdrRun = Environment.GetEnvironmentVariable(
+                "ENDFIELD_ENDMINF_CAPTURE_PREPOST_HDR_RUN");
+            if (string.IsNullOrWhiteSpace(prePostHdrRun))
+                prePostHdrRun = string.IsNullOrWhiteSpace(excludedMaterial)
+                    ? "full"
+                    : "excluded_" + excludedMaterial;
             captureFps = videoExport ? SimulationFps : Fps;
             output = Path.GetFullPath(Path.Combine(Application.dataPath,
-                videoExport
+                capturePrePostHdr
+                    ? "../scratch/character_recovery/endminf_viewer_prepost_hdr/" +
+                        SafePathComponent(prePostHdrRun)
+                    : videoExport
                     ? "../exports/endminf_overview/frames"
                     : fineWindow
                         ? "../scratch/character_recovery/endminf_viewer_playmode_fine_window"
                         : "../scratch/character_recovery/endminf_viewer_playmode_sequence"));
-            requestedTimes = videoExport
+            requestedTimes = capturePrePostHdr
+                ? Enumerable.Range(0, 19).Select(value =>
+                    Mathf.Max(0f, value / Fps - PlayModeClipLeadSeconds)).ToArray()
+                : videoExport
                 ? Enumerable.Range(0, VideoFrameCount).Select(value =>
                     Mathf.Max(0f, value / SimulationFps - PlayModeClipLeadSeconds)).ToArray()
                 : fineWindow
@@ -511,7 +535,19 @@ namespace EndfieldGraphShaderLabEditor
                     renderer.enabled = false;
                 }
             }
+            if (capturePrePostHdr && next == 18)
+            {
+                prePostHdrOutput = Path.Combine(output, "prepost_hdr");
+                Directory.CreateDirectory(prePostHdrOutput);
+                EndfieldRecoveredPrePostHdrDiagnostic.Arm(
+                    prePostHdrOutput,
+                    "frame_000018",
+                    prePostHdrCohort,
+                    requested);
+            }
             Color32[] pixels = Render(camera);
+            if (capturePrePostHdr && next == 18)
+                EndfieldRecoveredPrePostHdrDiagnostic.WaitForPending();
             int changed = 0;
             long difference = 0;
             if (next > 0)
@@ -663,9 +699,14 @@ namespace EndfieldGraphShaderLabEditor
                         "Endminf b31-only probe unexpectedly admitted unresolved b34/pass-0 readiness");
             }
             Report report = new Report {
-                status = missingObservations.Count == 0
+                status = capturePrePostHdr
+                    ? "diagnostic_ok"
+                    : missingObservations.Count == 0
                     ? "ok"
                     : "failed: missing " + string.Join(", ", missingObservations.ToArray()),
+                prePostHdrDiagnostic = capturePrePostHdr,
+                excludedMaterial = Environment.GetEnvironmentVariable(
+                    "ENDFIELD_ENDMINF_CAPTURE_EXCLUDE_MATERIAL") ?? string.Empty,
                 fps = captureFps,
                 recoveredLinearUnormFinalTargetRequested =
                     HDRenderPipeline.IsRecoveredLinearUnormFinalTargetRequested(),
@@ -709,7 +750,7 @@ namespace EndfieldGraphShaderLabEditor
             bool videoExport = Environment.GetEnvironmentVariable(
                 "ENDFIELD_ENDMINF_CAPTURE_VIDEO_EXPORT") == "1";
             EditorApplication.update -= Tick;
-            if (!fineWindow && missingObservations.Count > 0)
+            if (!capturePrePostHdr && !fineWindow && missingObservations.Count > 0)
             {
                 captureFailure =
                     "Endminf Viewer capture did not observe: " +
@@ -718,7 +759,7 @@ namespace EndfieldGraphShaderLabEditor
                 EditorApplication.ExitPlaymode();
                 return;
             }
-            if (!fineWindow && !videoExport)
+            if (!capturePrePostHdr && !fineWindow && !videoExport)
             {
                 try
                 {
@@ -742,7 +783,10 @@ namespace EndfieldGraphShaderLabEditor
                     return;
                 }
             }
-            Debug.Log("PASS Endminf actual Viewer Play-mode sequence: roots=" + Frames.Last().effectRootCount +
+            Debug.Log((capturePrePostHdr
+                    ? "PASS Endminf Viewer pre-post HDR diagnostic"
+                    : "PASS Endminf actual Viewer Play-mode sequence") +
+                ": roots=" + Frames.Last().effectRootCount +
                 " admitted=" + Frames.Last().admittedRenderers + " output=" + output);
             EditorApplication.ExitPlaymode();
         }
@@ -1063,6 +1107,13 @@ namespace EndfieldGraphShaderLabEditor
             var pixels = new Color32[raw.Length];
             for (int y = 0; y < Height; y++) Array.Copy(raw, y * Width, pixels, (Height - 1 - y) * Width, Width);
             return pixels;
+        }
+
+        private static string SafePathComponent(string value)
+        {
+            char[] invalid = Path.GetInvalidFileNameChars();
+            return new string(value.Select(character =>
+                Array.IndexOf(invalid, character) >= 0 ? '_' : character).ToArray());
         }
 
         private static void Write(string path, Color32[] pixels)
