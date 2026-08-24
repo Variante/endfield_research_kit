@@ -291,6 +291,7 @@ namespace EndfieldGraphShaderLab
 
             BeginSourceState(true);
             sourceContent.SetActive(true);
+            ApplySettledOpenState(openState);
 
             if (ApplyEndminfBackdropCompatibility())
             {
@@ -301,8 +302,6 @@ namespace EndfieldGraphShaderLab
             // either unresolved pass to draw even if its GameObject or source
             // renderer is enabled in the recovered prefab.
             SetRendererEnabledStates(false, true, true, false, true);
-            ApplySettledOpenState(openState);
-
             if (appliedBackdropRenderer != null)
                 appliedBackdropRenderer.enabled = false;
             Shader.DisableKeyword(Keyword);
@@ -327,7 +326,25 @@ namespace EndfieldGraphShaderLab
                     EndminfBackdropVisualCompatibilityEnvironmentVariable) != true)
                 return false;
 
-            sourceContent.SetActive(false);
+            // The recovered GeoSphere wall is an unresolved opaque HGRP pass:
+            // admitting it covers the camera with black before its retail
+            // material consumer exists. The source GridDeco/Far pass is in the
+            // validated ready subset, so admit that renderer alone over the
+            // bounded neutral screen plate.
+            sourceContent.SetActive(true);
+            if (sphereOutsideRenderer != null) sphereOutsideRenderer.enabled = false;
+            if (floorRenderer != null) floorRenderer.enabled = false;
+            if (wallRenderer != null) wallRenderer.enabled = false;
+            // The receiver's VisibilitySH constants, dual LUTs, capsule set,
+            // stencil state, and character-atlas sampling are now source-
+            // closed. Admit the original plane over the compatibility wall;
+            // SphereOutside remains excluded for its unresolved deferred path.
+            if (shadowPlaneRenderer != null) shadowPlaneRenderer.enabled = true;
+            // Far is source-complete, but its retail composition is against
+            // the unresolved physical wall. Over this neutral carrier it
+            // exposes the full dense perspective mesh and diverges sharply;
+            // keep it fail-closed until SphereOutside's consumer is live.
+            if (farGridRenderer != null) farGridRenderer.enabled = false;
             Renderer backdrop = appliedBackdropRenderer != null
                 ? appliedBackdropRenderer
                 : compatibilityBackdropRenderer;
@@ -337,7 +354,41 @@ namespace EndfieldGraphShaderLab
                 if (endminfBackdropProperties == null)
                     endminfBackdropProperties = new MaterialPropertyBlock();
                 backdrop.GetPropertyBlock(endminfBackdropProperties);
-                endminfBackdropProperties.SetFloat("_HdrBoost", 2.5f);
+                // The retail CharInfo UI field is darker at the top and opens
+                // toward the lower edge. Neutral-pixel medians from paired
+                // frames constrain this compatibility plate; it is not a
+                // SphereOutside material claim.
+                endminfBackdropProperties.SetColor(
+                    "_TopColor",
+                    new Color(0.59f, 0.595f, 0.595f, 1.0f));
+                endminfBackdropProperties.SetColor(
+                    "_BottomColor",
+                    new Color(0.785f, 0.79f, 0.80f, 1.0f));
+                // The exact Far renderer remains admitted, but its recovered
+                // transparent pass sorts behind this presentation plate in the
+                // public pipeline. Retain a low-contrast carrier on the plate
+                // until that queue relationship is closed.
+                endminfBackdropProperties.SetColor(
+                    "_GridColor",
+                    new Color(0.32f, 0.325f, 0.32f, 1.0f));
+                endminfBackdropProperties.SetFloat("_GridOpacity", 0.11f);
+                endminfBackdropProperties.SetFloat("_DiagonalOpacity", 0.025f);
+                endminfBackdropProperties.SetFloat("_GridColumns", 3.1f);
+                endminfBackdropProperties.SetFloat("_GridRows", 7.25f);
+                endminfBackdropProperties.SetFloat("_GridPhaseX", -0.45f);
+                endminfBackdropProperties.SetFloat("_GridPhaseY", 0.25f);
+                // Keep this inside the shader's serialized 0..1 contract.
+                // The former 2.70 compatibility fit multiplied the bottom of
+                // the plate by a negative value before tone mapping, which
+                // surfaced as the non-retail cyan band at the lower edge.
+                endminfBackdropProperties.SetFloat("_BottomVignette", 1.0f);
+                endminfBackdropProperties.SetFloat(
+                    "_BottomVignetteHeight", 0.27f);
+                // This plate now really reaches the render list (the sky owner
+                // no longer restores its stale disabled snapshot). Retain the
+                // earlier paired-frame fit; the larger values tested while the
+                // plate was accidentally absent saturate the post composite.
+                endminfBackdropProperties.SetFloat("_HdrBoost", 1.30f);
                 bool exactPortrait = EndfieldRecoveredSelector.Explicit(
                     EndfieldRecoveredCharInfoBackgroundPortrait.EnvironmentVariable) == true;
                 endminfBackdropProperties.SetFloat(

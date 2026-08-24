@@ -146,6 +146,107 @@ namespace EndfieldGraphShaderLab
                 ", failures=" + Native.GetFailureCount();
         }
 
+        public static Color RunRecoveredHlslNeutralFixture(Shader shader)
+        {
+            if (SystemInfo.graphicsDeviceType != GraphicsDeviceType.Direct3D11)
+                throw new InvalidOperationException(
+                    "Recovered HLSL fixture requires Direct3D11.");
+            if (shader == null || !shader.isSupported)
+                throw new InvalidOperationException(
+                    "Recovered HLSL fixture shader is unavailable or unsupported.");
+
+            Material material = null;
+            var buffers = new List<ComputeBuffer>();
+            var textures = new List<Texture>();
+            var command = new CommandBuffer
+            {
+                name = "Endfield Recovered Deferred HLSL Neutral Fixture",
+            };
+            RenderTexture target = null;
+            Texture2D readback = null;
+            try
+            {
+                material = new Material(shader)
+                {
+                    name = "Endfield Recovered Deferred HLSL Neutral Fixture",
+                    hideFlags = HideFlags.HideAndDontSave,
+                };
+                BindConstantBuffers(command, buffers);
+                BindResources(command, buffers, textures);
+
+                var descriptor = new RenderTextureDescriptor(1, 1)
+                {
+                    graphicsFormat = GraphicsFormat.R32G32B32A32_SFloat,
+                    depthStencilFormat = GraphicsFormat.None,
+                    dimension = TextureDimension.Tex2D,
+                    msaaSamples = 1,
+                    mipCount = 1,
+                    sRGB = false,
+                    useMipMap = false,
+                    autoGenerateMips = false,
+                    enableRandomWrite = false,
+                };
+                target = new RenderTexture(descriptor)
+                {
+                    name = "Endfield Recovered Deferred HLSL Fixture Target",
+                    hideFlags = HideFlags.HideAndDontSave,
+                    filterMode = FilterMode.Point,
+                    wrapMode = TextureWrapMode.Clamp,
+                };
+                if (!target.Create())
+                    throw new InvalidOperationException(
+                        "Could not create recovered HLSL fixture target.");
+
+                command.SetRenderTarget(target);
+                command.ClearRenderTarget(false, true, Color.magenta);
+                command.DrawProcedural(
+                    Matrix4x4.identity,
+                    material,
+                    0,
+                    MeshTopology.Triangles,
+                    3,
+                    1);
+                Graphics.ExecuteCommandBuffer(command);
+
+                readback = new Texture2D(
+                    1,
+                    1,
+                    TextureFormat.RGBAFloat,
+                    false,
+                    true)
+                {
+                    hideFlags = HideFlags.HideAndDontSave,
+                };
+                RenderTexture previous = RenderTexture.active;
+                try
+                {
+                    RenderTexture.active = target;
+                    readback.ReadPixels(new Rect(0, 0, 1, 1), 0, 0, false);
+                    readback.Apply(false, false);
+                }
+                finally
+                {
+                    RenderTexture.active = previous;
+                }
+                return readback.GetPixel(0, 0);
+            }
+            finally
+            {
+                command.Release();
+                foreach (ComputeBuffer buffer in buffers)
+                    buffer?.Release();
+                foreach (Texture texture in textures)
+                    DisposeUnityObject(texture);
+                if (target != null)
+                {
+                    target.Release();
+                    DisposeUnityObject(target);
+                }
+                DisposeUnityObject(readback);
+                DisposeUnityObject(material);
+            }
+        }
+
         private static DiagnosticResult Run(
             Shader shader,
             Material materialTemplate,

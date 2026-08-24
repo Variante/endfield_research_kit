@@ -102,14 +102,81 @@ Shader "Hidden/Endfield/HGRPCompat/ExposureTonemap"
                 return lerp(color, shoulderCurve, shoulderStrength);
             }
 
-            float4 SampleEndminfRadial(float2 uv, float2 radialStep)
+            float4 SampleEndminfPreUberLod0(float2 uv)
             {
-                float4 sum = tex2D(_MainTex, saturate(uv));
-                sum += tex2D(_MainTex, saturate(uv - radialStep * 0.5));
-                sum += tex2D(_MainTex, saturate(uv - radialStep));
-                sum += tex2D(_MainTex, saturate(uv + radialStep * 0.5));
-                sum += tex2D(_MainTex, saturate(uv + radialStep));
-                return sum * 0.2;
+                float2 clampedUv = saturate(uv);
+                float4 color = tex2Dlod(
+                    _MainTex, float4(clampedUv, 0.0, 0.0));
+                float3 bloom = max(tex2Dlod(
+                    _BloomTex, float4(clampedUv, 0.0, 0.0)).rgb, 0.0);
+                float bloomIntensity = _EndfieldRecoveredPostSemantics > 0.5
+                    ? EF_BloomIntensityFromSerialized(_BloomIntensity)
+                    : _BloomIntensity;
+                color.rgb += bloom * bloomIntensity;
+                return color;
+            }
+
+            float3 SampleEndminfRecoveredRadialChromatic(
+                float2 uv,
+                float2 center,
+                float radialIntensity,
+                float chromaticIntensity)
+            {
+                // Direct translation of shipped UberPost DXBC fragment
+                // 524235fff5fcaad4 (RADIAL_BLUR_CHROMATIC_ABERRATION),
+                // specialized to Endminf's two active components. Both exact
+                // serialized _averageSteps values are zero, so the DXBC keeps
+                // the powered radial vector unnormalized.
+                float2 delta = uv - center;
+                float distanceSquared = dot(delta, delta);
+                float ratio = saturate(radialIntensity /
+                    max(chromaticIntensity, 1e-8));
+                float power = lerp(1.0, 1.124, ratio);
+                float2 poweredRadial = delta * pow(
+                    max(distanceSquared, 1e-8), power * 0.5);
+
+                // The shipped kernel uses SampleLevel(..., 0) for every
+                // source-color fetch. Implicit tex2D derivatives select
+                // coarser mips across the warped coordinates and visibly
+                // break Endminf's thin late-pulse ring.
+                float3 source = SampleEndminfPreUberLod0(uv).rgb;
+                if (radialIntensity > 0.01)
+                {
+                    float combined = chromaticIntensity + radialIntensity;
+                    float3 accumulated = float3(source.r, 0.0, 0.0);
+                    accumulated.r += SampleEndminfPreUberLod0(
+                        uv - poweredRadial * combined).r;
+                    accumulated.r += SampleEndminfPreUberLod0(
+                        uv - poweredRadial * (2.0 * combined)).r;
+
+                    accumulated.g += SampleEndminfPreUberLod0(
+                        uv - poweredRadial * chromaticIntensity).g;
+                    accumulated.g += SampleEndminfPreUberLod0(
+                        uv - poweredRadial *
+                        (2.0 * chromaticIntensity + radialIntensity)).g;
+                    accumulated.g += SampleEndminfPreUberLod0(
+                        uv - poweredRadial *
+                        (3.0 * chromaticIntensity + 2.0 * radialIntensity)).g;
+
+                    accumulated.b += SampleEndminfPreUberLod0(
+                        uv - poweredRadial * (2.0 * chromaticIntensity)).b;
+                    accumulated.b += SampleEndminfPreUberLod0(
+                        uv - poweredRadial *
+                        (3.0 * chromaticIntensity + radialIntensity)).b;
+                    accumulated.b += SampleEndminfPreUberLod0(
+                        uv - poweredRadial *
+                        (4.0 * chromaticIntensity + 2.0 * radialIntensity)).b;
+                    return accumulated * 0.333333403;
+                }
+
+                // The DXBC low branch keeps source red and samples green/blue
+                // once along the same powered vector.
+                return float3(
+                    source.r,
+                    SampleEndminfPreUberLod0(uv - poweredRadial *
+                        (2.0 * chromaticIntensity + radialIntensity)).g,
+                    SampleEndminfPreUberLod0(uv - poweredRadial *
+                        (3.0 * chromaticIntensity + 2.0 * radialIntensity)).b);
             }
 
             float4 Frag(v2f_img input) : SV_Target
@@ -121,28 +188,28 @@ Shader "Hidden/Endfield/HGRPCompat/ExposureTonemap"
                     _EndminfVisualCompatibilityParams.z;
                 float chromatic = _EndminfVisualCompatibilityParams.y *
                     _EndminfVisualCompatibilityParams.z;
-                // Compatibility reconstruction: the five-point symmetric
-                // accumulation follows the recovered Endfield radial VFX
-                // sampling graph. The intensity curve and world-space center
-                // are exact overview_02 evidence; this compact Uber kernel is
-                // deliberately not claimed as the unavailable shipped ABI.
-                float2 radialStep = centered * radial * 0.55;
                 float4 source = tex2D(_MainTex, presentUv);
-                if (_EndminfVisualCompatibilityParams.z > 0.5 &&
-                    radial + chromatic > 0.00001)
+                bool endminfWarpActive =
+                    _EndminfVisualCompatibilityParams.z > 0.5 &&
+                    radial + chromatic > 0.00001;
+                if (endminfWarpActive)
                 {
-                    float2 chromaOffset = centered * chromatic * 0.018;
-                    source = SampleEndminfRadial(presentUv, radialStep);
-                    source.r = SampleEndminfRadial(
-                        presentUv + chromaOffset, radialStep).r;
-                    source.b = SampleEndminfRadial(
-                        presentUv - chromaOffset, radialStep).b;
+                    source.rgb = SampleEndminfRecoveredRadialChromatic(
+                        presentUv,
+                        _EndminfVisualCompatibilityCenter,
+                        radial,
+                        chromatic);
                 }
                 float3 bloom = max(tex2D(_BloomTex, presentUv).rgb, 0.0);
                 float bloomIntensity = _EndfieldRecoveredPostSemantics > 0.5
                     ? EF_BloomIntensityFromSerialized(_BloomIntensity)
                     : _BloomIntensity;
-                float3 color = max(source.rgb + bloom * bloomIntensity, 0.0) * _PostExposure;
+                // The exact radial/chromatic Uber variant exposes only its
+                // precomposed color input and LUT. When active, bloom has
+                // already been sampled through the recovered warp above.
+                float3 color = max(source.rgb +
+                    (endminfWarpActive ? 0.0.xxx : bloom * bloomIntensity), 0.0) *
+                    _PostExposure;
 
                 if (_EndfieldRecoveredPostSemantics > 0.5)
                 {

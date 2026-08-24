@@ -4,8 +4,8 @@ using UnityEngine;
 namespace EndfieldGraphShaderLab
 {
     /// <summary>
-    /// Opt-in timing bridge for the explicitly approximate Endminf visual mode.
-    /// It is anchored to the source `_02` effect creation, never level load.
+    /// Opt-in timing bridge for Endminf's recovered `_02` post components.
+    /// It is anchored to source effect creation, never level load.
     /// </summary>
     public static class EndfieldEndminfVisualCompatibilityClock
     {

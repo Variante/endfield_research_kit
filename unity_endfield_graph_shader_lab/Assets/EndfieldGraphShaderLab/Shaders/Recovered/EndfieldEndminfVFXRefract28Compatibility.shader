@@ -27,6 +27,13 @@ Shader "Hidden/Endfield/VisualCompatibility/VFXRefract28"
             Name "VISUAL_COMPATIBILITY_REFRACTION_NOT_EXACT"
             Tags { "LightMode"="ForwardOnly" }
             Blend One Zero
+            // The source carrier is a circular mesh whose authored UV rim is
+            // interior to 0..1. Without the retail full-screen distortion
+            // resolve, any ordinary scene-color replacement exposes that rim
+            // as the conspicuous cropped disc. Keep the recovered material and
+            // schedule bound, but fail the unresolved color write closed; the
+            // independently source-backed additive flare remains visible.
+            ColorMask 0
             ZWrite Off
             ZTest [_ZTest]
             Cull [_CullMode]
@@ -91,8 +98,15 @@ Shader "Hidden/Endfield/VisualCompatibility/VFXRefract28"
                 #endif
                 // Deliberately bounded compatibility scale: source units cannot be
                 // transferred directly without the retail distortion consumer.
+                // The retail consumer resolves distortion into a full-screen
+                // target; drawing this recovered carrier as ordinary geometry
+                // otherwise leaves a hard circular replacement edge. Fade the
+                // displacement to zero at the billboard boundary so the sampled
+                // scene color becomes identical to the underlying pixel there.
+                float2 edgeUv = abs(i.uv - 0.5) * 2.0;
+                float edgeFade = 1.0 - smoothstep(0.78, 1.0, max(edgeUv.x, edgeUv.y));
                 float strength = saturate(abs(_Intensity)) * _TintColorAlpha *
-                    i.color.a * dissolve * 0.0125;
+                    i.color.a * dissolve * edgeFade * 0.0125;
                 float2 screenUV = i.screenPos.xy / max(i.screenPos.w, 1e-6);
                 #if UNITY_UV_STARTS_AT_TOP
                     // The compatibility pass executes in the recovered

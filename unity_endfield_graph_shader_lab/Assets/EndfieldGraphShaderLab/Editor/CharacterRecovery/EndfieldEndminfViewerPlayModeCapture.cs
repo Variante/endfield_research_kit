@@ -18,16 +18,31 @@ namespace EndfieldGraphShaderLabEditor
         private const string Scene = "Assets/EndfieldGraphShaderLab/Generated/Characters/Scenes/CharacterRecoveryViewer.unity";
         private const int Width = 1920;
         private const int Height = 1080;
+        // The pinned retail recording is 1920x1080 at exactly 60 fps. Keep the
+        // Play-mode simulation on that clock and only thin the written PNGs
+        // to 4 fps. Driving Time.captureDeltaTime at 4 fps changed particle
+        // integration, AnimationEvent stepping, and every temporal producer,
+        // so the old side-by-side frames were not equivalent observations.
+        private const float SimulationFps = 60f;
         private const float Fps = 4f;
+        private const int VideoFrameCount = 600;
+        // RestartOverviewFromSelection is invoked on an editor update edge;
+        // the body Animation has advanced by two 60-Hz simulation ticks before
+        // the first renderable sample. Offset later requested timestamps so
+        // saved frame N observes clip phase N/Fps instead of N/Fps + 2/60.
+        private const float PlayModeClipLeadSeconds = 2f / SimulationFps;
         // The recovered entrance is almost six seconds long. Capture far
         // enough past its handoff to prove that the actual viewer reaches and
         // sustains overview_loop instead of stopping on the entrance pose.
         private const int FrameCount = 41;
         private static float started;
         private static bool selected;
+        private static int selectionSettleFrames;
         private static int next;
         private static Camera camera;
         private static string output;
+        private static float[] requestedTimes;
+        private static float captureFps = Fps;
         private static readonly List<FrameRow> Frames = new List<FrameRow>();
 
         [Serializable]
@@ -37,7 +52,7 @@ namespace EndfieldGraphShaderLabEditor
             public string status = "ok";
             public int width = Width;
             public int height = Height;
-            public float fps = Fps;
+            public float fps;
             public string scene = Scene;
             public string selectionPath = "CharacterRecoveryViewerUI.SelectModel(Endminf)";
             public bool actorOnlyCapture = false;
@@ -61,6 +76,7 @@ namespace EndfieldGraphShaderLabEditor
             public int index;
             public float requestedSeconds;
             public float actualSeconds;
+            public float endminfPostSeconds;
             public string file;
             public int effectRootCount;
             public int admittedRenderers;
@@ -70,7 +86,13 @@ namespace EndfieldGraphShaderLabEditor
             public float activeBodyClipTime;
             public bool overviewTransitioning;
             public bool overviewLooping;
+            public bool shadowPlaneEnabled;
+            public bool shadowPlaneActive;
+            public bool shadowPlaneInCameraFrustum;
+            public Vector3 shadowPlaneBoundsCenter;
+            public Vector3 shadowPlaneBoundsExtents;
             public string[] effectRoots;
+            public ParticleRow[] liveRenderers;
             public ParticleRow[] handFamily;
             public string[] blockedRendererIdentities;
             public int changedPixelsFromPrevious;
@@ -81,6 +103,18 @@ namespace EndfieldGraphShaderLabEditor
         private sealed class ParticleRow
         {
             public string path;
+            public string[] materials;
+            public string[] shaders;
+            public string[] vertexStreams;
+            public string renderMode;
+            public string renderAlignment;
+            public float lengthScale;
+            public float velocityScale;
+            public float maxParticleSize;
+            public bool allowRoll;
+            public bool freeformStretching;
+            public bool rotateWithStretchDirection;
+            public Vector3 localScale;
             public float startDelay;
             public float duration;
             public float startLifetimeMin;
@@ -94,12 +128,50 @@ namespace EndfieldGraphShaderLabEditor
 
         public static void Run()
         {
+            if (SystemInfo.graphicsDeviceType != GraphicsDeviceType.Direct3D12)
+                throw new InvalidOperationException(
+                    "Endminf Viewer capture requires -force-d3d12; repeated " +
+                    "manual SRP Camera.Render calls crash Unity 2022.3's " +
+                    "D3D11 geometry path with an outVertices assertion.");
+            // Exercise the same explicit reproduction profile as
+            // open_character_recovery_lab.bat. Batch validation must not
+            // silently fall back to the preserved gacha-room presentation
+            // merely because its parent shell lacks these process variables.
+            string[] reproductionFlags = {
+                "ENDFIELD_ENDMINF_VISUAL_COMPATIBILITY",
+                "ENDFIELD_ENDMINF_LITEFFECT_VISUAL_COMPAT",
+                "ENDFIELD_ENDMINF_BACKDROP_VISUAL_COMPATIBILITY",
+                "ENDFIELD_RECOVERED_CHARINFO_READY_SUBSET_DIAGNOSTIC",
+                "ENDFIELD_RECOVERED_SOURCE_ENERGY_CORE",
+                "ENDFIELD_RECOVERED_VISIBILITY_SH",
+                "ENDFIELD_RECOVERED_LINEAR_UNORM_FINAL_TARGET",
+                "ENDFIELD_RECOVERED_CHARINFO_BACKGROUND_PORTRAIT"
+            };
+            foreach (string flag in reproductionFlags)
+                Environment.SetEnvironmentVariable(flag, "1");
             EditorSceneManager.OpenScene(Scene, OpenSceneMode.Single);
             Frames.Clear();
             next = 0;
             selected = false;
+            selectionSettleFrames = 0;
+            bool fineWindow = Environment.GetEnvironmentVariable(
+                "ENDFIELD_ENDMINF_CAPTURE_FINE_WINDOW") == "1";
+            bool videoExport = Environment.GetEnvironmentVariable(
+                "ENDFIELD_ENDMINF_CAPTURE_VIDEO_EXPORT") == "1";
+            captureFps = videoExport ? SimulationFps : Fps;
             output = Path.GetFullPath(Path.Combine(Application.dataPath,
-                "../scratch/character_recovery/endminf_viewer_playmode_sequence"));
+                videoExport
+                    ? "../exports/endminf_overview/frames"
+                    : fineWindow
+                        ? "../scratch/character_recovery/endminf_viewer_playmode_fine_window"
+                        : "../scratch/character_recovery/endminf_viewer_playmode_sequence"));
+            requestedTimes = videoExport
+                ? Enumerable.Range(0, VideoFrameCount).Select(value =>
+                    Mathf.Max(0f, value / SimulationFps - PlayModeClipLeadSeconds)).ToArray()
+                : fineWindow
+                ? Enumerable.Range(0, 25).Select(value => 4.30f + value / 60f).ToArray()
+                : Enumerable.Range(0, FrameCount).Select(value =>
+                    Mathf.Max(0f, value / Fps - PlayModeClipLeadSeconds)).ToArray();
             Directory.CreateDirectory(output);
             EditorApplication.playModeStateChanged += State;
             EditorApplication.EnterPlaymode();
@@ -110,7 +182,7 @@ namespace EndfieldGraphShaderLabEditor
             if (state == PlayModeStateChange.EnteredPlayMode)
             {
                 started = Time.time;
-                Time.captureDeltaTime = 1f / Fps;
+                Time.captureDeltaTime = 1f / SimulationFps;
                 EditorApplication.update += Tick;
             }
             else if (state == PlayModeStateChange.EnteredEditMode)
@@ -147,11 +219,30 @@ namespace EndfieldGraphShaderLabEditor
                 select.Invoke(viewer, new object[] { index });
                 camera = Camera.main ?? UnityEngine.Object.FindObjectOfType<Camera>();
                 selected = true;
-                started = Time.time;
+                // Enabling the actor schedules its one-frame delayed Overview
+                // restart. Do not establish capture time zero until that edge
+                // has drained; otherwise frame 0 precedes a body/effect reset
+                // and every later reference pair is offset by roughly 0.47 s.
+                selectionSettleFrames = 2;
                 return;
             }
 
-            float requested = next / Fps;
+            if (selectionSettleFrames > 0)
+            {
+                selectionSettleFrames--;
+                if (selectionSettleFrames == 0 &&
+                    CharacterRecoveryViewerUI.TryGetSelectedActorRoot(
+                        out Transform selectedActor))
+                {
+                    EndfieldOverviewPlayback selectedOverview = selectedActor
+                        .GetComponentInChildren<EndfieldOverviewPlayback>(true);
+                    selectedOverview?.RestartOverviewFromSelection();
+                    started = Time.time;
+                }
+                return;
+            }
+
+            float requested = requestedTimes[next];
             float elapsed = Time.time - started;
             if (elapsed + 0.0001f < requested) return;
             CharacterRecoveryViewerUI.TryGetSelectedActorRoot(out Transform actor);
@@ -177,6 +268,30 @@ namespace EndfieldGraphShaderLabEditor
                 .ToArray();
             ParticleSystemRenderer[] renderers = roots
                 .SelectMany(value => value.GetComponentsInChildren<ParticleSystemRenderer>(true)).ToArray();
+            bool disableLitEffectParallax = Environment.GetEnvironmentVariable(
+                "ENDFIELD_ENDMINF_DISABLE_LITEFFECT_PARALLAX") == "1";
+            foreach (Material material in renderers
+                .SelectMany(value => value.sharedMaterials)
+                .Where(value => value != null &&
+                    value.HasProperty("_RecoveredParallaxMarchCompatibility"))
+                .Distinct())
+            {
+                material.SetFloat(
+                    "_RecoveredParallaxMarchCompatibility",
+                    disableLitEffectParallax ? 0.0f : 1.0f);
+            }
+            string excludedMaterial = Environment.GetEnvironmentVariable(
+                "ENDFIELD_ENDMINF_CAPTURE_EXCLUDE_MATERIAL");
+            if (!string.IsNullOrWhiteSpace(excludedMaterial))
+            {
+                foreach (ParticleSystemRenderer renderer in renderers.Where(value =>
+                    value.enabled && value.sharedMaterials.Any(material => material != null &&
+                        string.Equals(material.name, excludedMaterial,
+                            StringComparison.Ordinal))))
+                {
+                    renderer.enabled = false;
+                }
+            }
             Color32[] pixels = Render(camera);
             int changed = 0;
             long difference = 0;
@@ -193,8 +308,20 @@ namespace EndfieldGraphShaderLabEditor
             }
             string file = "frame_" + next.ToString("D6") + ".png";
             Write(Path.Combine(output, file), pixels);
+            EndfieldEndminfVisualCompatibilityClock.TryGetElapsed(
+                out float endminfPostSeconds);
+            EndfieldRecoveredCharInfoPresentation charInfoPresentation =
+                UnityEngine.Object.FindObjectOfType<EndfieldRecoveredCharInfoPresentation>(true);
+            Renderer shadowPlane = charInfoPresentation == null
+                ? null
+                : charInfoPresentation.shadowPlaneRenderer;
+            bool shadowPlaneInFrustum = shadowPlane != null &&
+                GeometryUtility.TestPlanesAABB(
+                    GeometryUtility.CalculateFrustumPlanes(camera),
+                    shadowPlane.bounds);
             Frames.Add(new FrameRow {
                 index = next, requestedSeconds = requested, actualSeconds = elapsed, file = file,
+                endminfPostSeconds = endminfPostSeconds,
                 effectRootCount = roots.Length, admittedRenderers = renderers.Count(value => value.enabled),
                 activeAdmittedRenderers = renderers.Count(value => value.enabled && value.gameObject.activeInHierarchy),
                 admittedAliveParticles = renderers.Where(value => value.enabled && value.gameObject.activeInHierarchy)
@@ -203,7 +330,18 @@ namespace EndfieldGraphShaderLabEditor
                 activeBodyClipTime = activeBodyState == null ? 0f : activeBodyState.time,
                 overviewTransitioning = overview != null && overview.IsTransitioning,
                 overviewLooping = overview != null && overview.IsLooping,
+                shadowPlaneEnabled = shadowPlane != null && shadowPlane.enabled,
+                shadowPlaneActive = shadowPlane != null && shadowPlane.gameObject.activeInHierarchy,
+                shadowPlaneInCameraFrustum = shadowPlaneInFrustum,
+                shadowPlaneBoundsCenter = shadowPlane == null ? Vector3.zero : shadowPlane.bounds.center,
+                shadowPlaneBoundsExtents = shadowPlane == null ? Vector3.zero : shadowPlane.bounds.extents,
                 effectRoots = roots.Select(value => value.name + " @ " + Hierarchy(value.transform)).ToArray(),
+                liveRenderers = renderers.Where(value => value.enabled &&
+                        value.gameObject.activeInHierarchy &&
+                        value.GetComponent<ParticleSystem>().particleCount > 0)
+                    .Select(value => Particle(value))
+                    .OrderBy(value => value.path, StringComparer.Ordinal)
+                    .ToArray(),
                 handFamily = renderers.Where(value =>
                     value.GetComponentInParent<EndfieldRecoveredParticleEffectSource>(true) is EndfieldRecoveredParticleEffectSource owner &&
                     (owner.name.IndexOf("_03", StringComparison.Ordinal) >= 0 || owner.name.IndexOf("_04", StringComparison.Ordinal) >= 0))
@@ -217,7 +355,7 @@ namespace EndfieldGraphShaderLabEditor
                 changedPixelsFromPrevious = changed, absoluteRgbDifferenceFromPrevious = difference
             });
             next++;
-            if (next < FrameCount) return;
+            if (next < requestedTimes.Length) return;
 
             bool observedTransition = Frames.Any(value => value.overviewTransitioning);
             bool observedSettledLoop = Frames.Any(value => value.overviewLooping &&
@@ -230,6 +368,7 @@ namespace EndfieldGraphShaderLabEditor
             bool observedEntranceVfxCleanup = Frames.Any(value =>
                 value.overviewLooping && !value.overviewTransitioning && value.effectRootCount == 0);
             Report report = new Report {
+                fps = captureFps,
                 recoveredLinearUnormFinalTargetRequested =
                     HDRenderPipeline.IsRecoveredLinearUnormFinalTargetRequested(),
                 renderPipeline = GraphicsSettings.currentRenderPipeline == null ? "BuiltIn" : GraphicsSettings.currentRenderPipeline.GetType().FullName,
@@ -244,17 +383,23 @@ namespace EndfieldGraphShaderLabEditor
                 frames = Frames.ToArray()
             };
             File.WriteAllText(Path.Combine(output, "report.json"), JsonUtility.ToJson(report, true));
-            if (!observedTransition || !observedSettledLoop ||
-                !observedEntranceVfx || !observedEntranceVfxCleanup)
+            bool fineWindow = Environment.GetEnvironmentVariable(
+                "ENDFIELD_ENDMINF_CAPTURE_FINE_WINDOW") == "1";
+            bool videoExport = Environment.GetEnvironmentVariable(
+                "ENDFIELD_ENDMINF_CAPTURE_VIDEO_EXPORT") == "1";
+            if (!fineWindow && (!observedTransition || !observedSettledLoop ||
+                !observedEntranceVfx || !observedEntranceVfxCleanup))
                 throw new InvalidOperationException(
                     "Endminf Viewer capture did not observe the complete " +
                     "overview_start + entrance VFX -> overview_loop + VFX cleanup sequence");
-            BuildSideBySideComparison();
+            if (!fineWindow && !videoExport)
+                BuildSideBySideComparison();
             Debug.Log("PASS Endminf actual Viewer Play-mode sequence: roots=" + Frames.Last().effectRootCount +
                 " admitted=" + Frames.Last().admittedRenderers + " output=" + output);
             EditorApplication.update -= Tick;
             EditorApplication.ExitPlaymode();
         }
+
 
         private static void BuildSideBySideComparison()
         {
@@ -274,12 +419,12 @@ namespace EndfieldGraphShaderLabEditor
             // Pair matching timestamps first, then tile those pairs. This
             // keeps every retail frame immediately beside its Unity frame
             // instead of presenting two independently tiled sequences.
-            // Silhouette/pose alignment places the recording's animation-zero
-            // boundary at approximately 3.00 seconds. The first captured Unity
-            // image is the first completed 4 fps step (actualSeconds=0.25), so
-            // begin the retail samples at 3.25 seconds.
-            RunFfmpeg("-y -v error -ss 3.25 -t 7 -i " + Quote(reference) +
-                " -framerate 4 -start_number 0 -t 7 -i " +
+            // A bounded 60-Hz sweep now pairs retail sample N with Unity sample
+            // N+1: retail frame 17 at 7.89 s matches Unity frame 18 at body clip
+            // 4.5009 s. Start Unity at file 1 so each tile is a matched pair,
+            // rather than two independently indexed sequences.
+            RunFfmpeg("-y -v error -ss 3.64 -t 7 -i " + Quote(reference) +
+                " -framerate 4 -start_number 1 -t 7 -i " +
                 Quote(Path.Combine(output, "frame_%06d.png")) +
                 " -filter_complex \"[0:v]fps=4,scale=384:-1[reference];" +
                 "[1:v]scale=384:-1[unity];[reference][unity]hstack=inputs=2," +
@@ -313,8 +458,26 @@ namespace EndfieldGraphShaderLabEditor
             ParticleSystem system = renderer.GetComponent<ParticleSystem>();
             ParticleSystem.MainModule main = system.main;
             ParticleSystem.EmissionModule emission = system.emission;
+            var vertexStreams = new List<ParticleSystemVertexStream>();
+            renderer.GetActiveVertexStreams(vertexStreams);
             return new ParticleRow {
                 path = Hierarchy(renderer.transform),
+                materials = renderer.sharedMaterials.Select(material =>
+                    material == null ? "<null>" : material.name).ToArray(),
+                shaders = renderer.sharedMaterials.Select(material =>
+                    material == null || material.shader == null
+                        ? "<null>"
+                        : material.shader.name).ToArray(),
+                vertexStreams = vertexStreams.Select(value => value.ToString()).ToArray(),
+                renderMode = renderer.renderMode.ToString(),
+                renderAlignment = renderer.alignment.ToString(),
+                lengthScale = renderer.lengthScale,
+                velocityScale = renderer.velocityScale,
+                maxParticleSize = renderer.maxParticleSize,
+                allowRoll = renderer.allowRoll,
+                freeformStretching = renderer.freeformStretching,
+                rotateWithStretchDirection = renderer.rotateWithStretchDirection,
+                localScale = renderer.transform.localScale,
                 startDelay = main.startDelay.constant,
                 duration = main.duration,
                 startLifetimeMin = main.startLifetime.constantMin,

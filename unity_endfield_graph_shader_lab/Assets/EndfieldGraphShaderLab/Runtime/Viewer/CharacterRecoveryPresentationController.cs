@@ -252,6 +252,10 @@ namespace EndfieldGraphShaderLab
                 return;
 
             operatorLightRig.normalLightCompatibilityScale = 0.0f;
+            // The exact selected cloth/hair/skin type-3 equations and both
+            // Endminf type-2 punctual-shadow rows are now live. Keep the old
+            // generic silhouette carrier disabled so it cannot double-light
+            // the recovered clustered response.
             operatorLightRig.rimLightCompatibilityScale = 0.0f;
             operatorLightRig.sourceBackedClusteredNprLightLoop =
                 enableSourceBackedClusteredNprLights;
@@ -262,7 +266,8 @@ namespace EndfieldGraphShaderLab
                 enableSourceBackedClusteredNprLights &&
                 enableIsolatedPunctualSoftShadows &&
                 (string.Equals(profile.rootName, "Wulfa", StringComparison.OrdinalIgnoreCase) ||
-                 string.Equals(profile.rootName, "Zhuangfy", StringComparison.OrdinalIgnoreCase));
+                 string.Equals(profile.rootName, "Zhuangfy", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(profile.rootName, "Endminf", StringComparison.OrdinalIgnoreCase));
             operatorLightRig.lights = profile.operatorLights ??
                 Array.Empty<EndfieldHGOperatorLightData>();
             operatorLightRig.BindActorRootAndDescribe(actorRoot);

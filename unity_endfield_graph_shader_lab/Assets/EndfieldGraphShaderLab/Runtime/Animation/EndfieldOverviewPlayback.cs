@@ -102,6 +102,13 @@ namespace EndfieldGraphShaderLab
         public EndfieldOverviewEffectRequest[] entranceEffects =
             System.Array.Empty<EndfieldOverviewEffectRequest>();
 
+        [Header("Recovered overview audio")]
+        [Tooltip("Exact media selected by the serialized Wwise event posted by the overview-start AnimationClip.")]
+        public AudioClip overviewStartAudio;
+        [Tooltip("Exact AnimationEvent time for PostAudioEvent(au_actor_endminf_ui_overview).")]
+        public float overviewStartAudioEventTime = 0.058666665f;
+        public AudioSource overviewAudioSource;
+
         [Header("Recovered float-curve values")]
         public float weaponHide = 1.0f;
         public float magicaClothWeight = 0.01f;
@@ -114,6 +121,8 @@ namespace EndfieldGraphShaderLab
         private bool waitingForExit;
         private bool hasStarted;
         private int playbackGeneration;
+        private bool observingManualOverviewStart;
+        private float lastObservedOverviewStartTime;
 
         private Animation AnimationSource
         {
@@ -151,6 +160,7 @@ namespace EndfieldGraphShaderLab
             waitingForExit = false;
             IsTransitioning = false;
             IsLooping = false;
+            observingManualOverviewStart = false;
 
             // PhaseCharInfo removes the previous PhaseCharItem and clears its
             // AnimatorPlayEffectHelper before the replacement actor enters.
@@ -159,6 +169,7 @@ namespace EndfieldGraphShaderLab
             // leak into its next selection.
             RestoreRecoveredParameters();
             FinishAllEntranceEffects();
+            StopOverviewAudio();
         }
 
         private IEnumerator RestartAfterEnable()
@@ -169,6 +180,8 @@ namespace EndfieldGraphShaderLab
 
         private void Update()
         {
+            ObserveManualOverviewStartReplay();
+
             if (!waitingForExit)
                 return;
 
@@ -224,6 +237,8 @@ namespace EndfieldGraphShaderLab
             StartItemWidgets(animation);
             PublishRecoveredParameters();
             PublishEntranceEffects();
+            PlayOverviewAudio(startState.time);
+            ArmOverviewStartReplayObservation(startState);
             waitingForExit = true;
             IsTransitioning = false;
             IsLooping = false;
@@ -265,7 +280,121 @@ namespace EndfieldGraphShaderLab
             IsLooping = false;
             StopAllCoroutines();
             RestoreRecoveredParameters();
-            enabled = false;
+            observingManualOverviewStart = false;
+        }
+
+        /// <summary>
+        /// Applies the non-body composition owned by a manually selected UI
+        /// clip. The viewer and automatic controller paths must publish the
+        /// same Overview entrance effects every time overview_start begins.
+        /// Other UI clips explicitly retire that transient entrance state.
+        /// </summary>
+        public void ApplyManualUiClipComposition(string clipName)
+        {
+            string key = (clipName ?? string.Empty).ToLowerInvariant();
+            bool isUiClip = key.Contains("_ui_") || key.Contains("uiteam");
+            if (!isUiClip)
+                return;
+
+            FinishAllEntranceEffects();
+            StopOverviewAudio();
+            if (key.Contains("_ui_overview_start"))
+            {
+                PublishRecoveredParameters();
+                PublishEntranceEffects();
+                PlayOverviewAudio(0f);
+                ArmOverviewStartReplayObservation(
+                    AnimationSource != null ? AnimationSource[startClip] : null);
+            }
+            else
+            {
+                observingManualOverviewStart = false;
+                RestoreRecoveredParameters();
+            }
+        }
+
+        private void ArmOverviewStartReplayObservation(AnimationState state)
+        {
+            observingManualOverviewStart = state != null && state.enabled;
+            lastObservedOverviewStartTime = state != null ? state.time : 0f;
+        }
+
+        /// <summary>
+        /// Manual clip browsing can loop overview_start without passing back
+        /// through the viewer UI. Treat the AnimationState wrap itself as the
+        /// source event so its crystals, particles, parameters, and Wwise cue
+        /// are recreated on every playback cycle.
+        /// </summary>
+        private void ObserveManualOverviewStartReplay()
+        {
+            if (waitingForExit)
+                return;
+
+            Animation animation = AnimationSource;
+            AnimationState state = animation != null ? animation[startClip] : null;
+            bool playing = state != null && state.enabled && animation.IsPlaying(startClip);
+            if (!playing)
+            {
+                observingManualOverviewStart = false;
+                return;
+            }
+
+            if (!observingManualOverviewStart)
+            {
+                observingManualOverviewStart = true;
+                lastObservedOverviewStartTime = state.time;
+                return;
+            }
+
+            float currentTime = state.time;
+            bool wrapped = currentTime + 1e-4f < lastObservedOverviewStartTime;
+            if (!wrapped && state.length > 1e-5f)
+            {
+                int previousCycle = Mathf.FloorToInt(
+                    Mathf.Max(0f, lastObservedOverviewStartTime) / state.length);
+                int currentCycle = Mathf.FloorToInt(
+                    Mathf.Max(0f, currentTime) / state.length);
+                wrapped = currentCycle > previousCycle;
+            }
+            lastObservedOverviewStartTime = currentTime;
+            if (!wrapped)
+                return;
+
+            FinishAllEntranceEffects();
+            StopOverviewAudio();
+            PublishRecoveredParameters();
+            PublishEntranceEffects();
+            PlayOverviewAudio(state.length > 1e-5f
+                ? Mathf.Repeat(currentTime, state.length)
+                : 0f);
+        }
+
+        private void PlayOverviewAudio(float clipTime)
+        {
+            if (overviewStartAudio == null)
+                return;
+            if (overviewAudioSource == null)
+            {
+                overviewAudioSource = GetComponent<AudioSource>();
+                if (overviewAudioSource == null)
+                    overviewAudioSource = gameObject.AddComponent<AudioSource>();
+            }
+            overviewAudioSource.playOnAwake = false;
+            overviewAudioSource.loop = false;
+            overviewAudioSource.spatialBlend = 0f;
+            // Keep the recovered clip, event time, and playback state alive for
+            // validation, but do not emit sound while iterating in the Editor
+            // or a Development Build.
+            overviewAudioSource.mute = Application.isEditor || Debug.isDebugBuild;
+            overviewAudioSource.Stop();
+            overviewAudioSource.clip = overviewStartAudio;
+            overviewAudioSource.PlayDelayed(Mathf.Max(0f, overviewStartAudioEventTime - clipTime));
+        }
+
+        private void StopOverviewAudio()
+        {
+            if (overviewAudioSource != null)
+                overviewAudioSource.Stop();
         }
 
         private void BeginLoopTransition(AnimationState startState)
@@ -285,6 +414,10 @@ namespace EndfieldGraphShaderLab
             loopState.wrapMode = WrapMode.Loop;
             animation.CrossFade(loopClip, duration, PlayMode.StopSameLayer);
             loopState.time = Mathf.Clamp01(destinationNormalizedOffset) * loopState.length;
+            // The recovered loop clip has no PostAudioEvent. Its entrance cue
+            // is 5.818313 s long and belongs only to the 5.866667 s start
+            // state, so retire it on the controller's actual loop handoff.
+            StopOverviewAudio();
             TransitionItemWidgets(animation, duration);
             StartCoroutine(FinishEntranceEffectsAfterStateExit(
                 duration,

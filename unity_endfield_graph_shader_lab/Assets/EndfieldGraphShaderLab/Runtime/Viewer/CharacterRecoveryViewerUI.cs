@@ -1740,6 +1740,11 @@ namespace EndfieldGraphShaderLab
             activeAnimation.Play(clipName, PlayMode.StopSameLayer);
             ApplyRecoveredLayers();
             RefreshActivePropVisibility();
+            EndfieldOverviewPlayback overviewPlayback =
+                activeRig != null
+                    ? activeRig.GetComponent<EndfieldOverviewPlayback>()
+                    : null;
+            overviewPlayback?.ApplyManualUiClipComposition(clipName);
             playing = true;
             if (playPauseText != null)
                 playPauseText.text = "Pause";
@@ -2343,6 +2348,11 @@ namespace EndfieldGraphShaderLab
             }
             activeAnimation.Sample();
             ApplyPoseCorrectionOnce();
+            EndfieldOverviewPlayback overviewPlayback =
+                activeRig != null
+                    ? activeRig.GetComponent<EndfieldOverviewPlayback>()
+                    : null;
+            overviewPlayback?.ApplyManualUiClipComposition(activeClipName);
             Play();
         }
 
