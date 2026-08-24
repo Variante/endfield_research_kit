@@ -67,6 +67,10 @@ the completed result can later rebuild all characters.
   portraits, and the selected Overview animation sources are recovered.
 - The selected playable UI animation scope is complete; runtime transition,
   blending, IK, secondary motion, and effect lifecycle behavior remain partial.
+- Endminf's selected `ui_overview_start -> ui_overview_loop` handoff now runs
+  through a generated source-backed Animator controller, and its four resolved
+  overview rocks/crystals follow the exact 1.5-second active-state gate. The
+  broader all-character runtime remains partial.
 - Selected CharacterNPR, eye, hair, shadow, GBuffer, lighting, particle, and
   post-process contracts are source-backed and fail closed where inputs are
   unknown.

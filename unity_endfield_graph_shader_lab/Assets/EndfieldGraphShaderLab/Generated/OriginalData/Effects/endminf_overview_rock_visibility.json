@@ -1,0 +1,45 @@
+{
+  "schema": "endfield.endminf-overview-rock-visibility.v1",
+  "boundary": "source_closed_animation_binding_contract",
+  "source": {
+    "path": "scratch/character_recovery/endminf_overview_effect_stage/AnimationClip/A_fx_endminf_ui_overview_03_p74482923CB70A4E8.json",
+    "sha256": "81ee25bc86197850e8c9fbf45e23d99a77da958ac9c0258e0ebfede1ab421426"
+  },
+  "clip": "A_fx_endminf_ui_overview_03",
+  "sampleRate": 30.0,
+  "durationSeconds": 1.5,
+  "resolvedBindings": [
+    {
+      "path": "Sphere002/Dummy002/P_endminf_ui_overview_01_rock_01",
+      "property": "m_IsActive",
+      "initialValue": 1.0,
+      "finalValue": 0.0
+    },
+    {
+      "path": "Sphere003/Dummy005/P_endminf_ui_overview_01_rock_02",
+      "property": "m_IsActive",
+      "initialValue": 1.0,
+      "finalValue": 0.0
+    },
+    {
+      "path": "Sphere004/Dummy004/P_endminf_ui_overview_01_rock_03",
+      "property": "m_IsActive",
+      "initialValue": 1.0,
+      "finalValue": 0.0
+    },
+    {
+      "path": "Sphere005/Dummy003/P_endminf_ui_overview_01_rock_04",
+      "property": "m_IsActive",
+      "initialValue": 1.0,
+      "finalValue": 0.0
+    }
+  ],
+  "unresolvedBindings": [
+    {
+      "attribute": 2086281974,
+      "type": "GameObject",
+      "constantValue": 0.0,
+      "policy": "fail_closed_do_not_fabricate_target"
+    }
+  ]
+}

@@ -65,9 +65,17 @@ namespace EndfieldGraphShaderLab
     {
         [Header("Recovered clips")]
         public Animation animationSource;
+        [Tooltip("Generated source-exact Animator used by automatic Overview playback. Manual clip browsing still uses animationSource.")]
+        public Animator animatorSource;
         public string startClip = "A_actor_zhuangfy_ui_overview_start_01";
         public string loopClip = "A_actor_zhuangfy_ui_overview_loop_01";
         public bool playOnEnable = true;
+
+        [Header("Recovered Animator contract")]
+        [Tooltip("Fail closed instead of falling back to Legacy Animation when the generated Animator contract is absent or stale.")]
+        public bool requireAnimatorContract;
+        public string animatorStartStatePath = "Base Layer.Overview.FromOveview";
+        public string animatorLoopStatePath = "Base Layer.Overview.OverviewIdle";
 
         [Header("Recovered item widgets")]
         [Tooltip("Source-bound UI item widgets. Each widget plays on its own Animation layer.")]
@@ -117,12 +125,19 @@ namespace EndfieldGraphShaderLab
         public bool IsTransitioning { get; private set; }
         public bool IsLooping { get; private set; }
         public float RecoveredTransitionSeconds { get; private set; }
+        public bool AnimatorContractActive { get; private set; }
+        public int CurrentAnimatorStateHash { get; private set; }
+        public int NextAnimatorStateHash { get; private set; }
+        public float AnimatorTransitionNormalizedTime { get; private set; }
 
         private bool waitingForExit;
         private bool hasStarted;
         private int playbackGeneration;
         private bool observingManualOverviewStart;
         private float lastObservedOverviewStartTime;
+        private bool animatorTransitionObserved;
+        private bool animatorExitCompleted;
+        private bool warnedMissingAnimatorContract;
 
         private Animation AnimationSource
         {
@@ -160,7 +175,13 @@ namespace EndfieldGraphShaderLab
             waitingForExit = false;
             IsTransitioning = false;
             IsLooping = false;
+            AnimatorContractActive = false;
+            CurrentAnimatorStateHash = 0;
+            NextAnimatorStateHash = 0;
+            AnimatorTransitionNormalizedTime = 0f;
             observingManualOverviewStart = false;
+            if (animatorSource != null)
+                animatorSource.enabled = false;
 
             // PhaseCharInfo removes the previous PhaseCharItem and clears its
             // AnimatorPlayEffectHelper before the replacement actor enters.
@@ -180,6 +201,12 @@ namespace EndfieldGraphShaderLab
 
         private void Update()
         {
+            if (AnimatorContractActive)
+            {
+                ObserveRecoveredAnimator();
+                return;
+            }
+
             ObserveManualOverviewStartReplay();
 
             if (!waitingForExit)
@@ -202,6 +229,27 @@ namespace EndfieldGraphShaderLab
 
         public void RestartOverview()
         {
+            if (TryRestartRecoveredAnimator())
+                return;
+            if (requireAnimatorContract)
+            {
+                Animation legacy = AnimationSource;
+                if (legacy != null)
+                {
+                    legacy.Stop();
+                    legacy.enabled = false;
+                }
+                if (!warnedMissingAnimatorContract)
+                {
+                    warnedMissingAnimatorContract = true;
+                    Debug.LogError(
+                        $"Recovered Overview Animator contract is missing or stale on {name}; " +
+                        "automatic playback is disabled instead of using the Legacy Animation approximation.",
+                        this);
+                }
+                return;
+            }
+
             Animation animation = AnimationSource;
             AnimationState startState = animation != null ? animation[startClip] : null;
             AnimationState loopState = animation != null ? animation[loopClip] : null;
@@ -215,6 +263,10 @@ namespace EndfieldGraphShaderLab
             }
 
             playbackGeneration++;
+            AnimatorContractActive = false;
+            if (animatorSource != null)
+                animatorSource.enabled = false;
+            animation.enabled = true;
             animation.Stop();
             startState.layer = 0;
             startState.blendMode = AnimationBlendMode.Blend;
@@ -275,12 +327,190 @@ namespace EndfieldGraphShaderLab
         {
             playOnEnable = false;
             playbackGeneration++;
+            AnimatorContractActive = false;
+            if (animatorSource != null)
+                animatorSource.enabled = false;
+            if (AnimationSource != null)
+                AnimationSource.enabled = true;
             waitingForExit = false;
             IsTransitioning = false;
             IsLooping = false;
             StopAllCoroutines();
             RestoreRecoveredParameters();
             observingManualOverviewStart = false;
+        }
+
+        private bool TryRestartRecoveredAnimator()
+        {
+            Animator animator = animatorSource;
+            if (animator == null || animator.runtimeAnimatorController == null ||
+                string.IsNullOrEmpty(animatorStartStatePath) ||
+                string.IsNullOrEmpty(animatorLoopStatePath))
+                return false;
+
+            int startHash = Animator.StringToHash(animatorStartStatePath);
+            int loopHash = Animator.StringToHash(animatorLoopStatePath);
+            AnimationClip[] controllerClips = animator.runtimeAnimatorController.animationClips;
+            bool hasStartClip = false;
+            bool hasLoopClip = false;
+            foreach (AnimationClip clip in controllerClips)
+            {
+                if (clip == null || clip.legacy)
+                    continue;
+                hasStartClip |= clip.name == startClip;
+                hasLoopClip |= clip.name == loopClip;
+            }
+            if (!hasStartClip || !hasLoopClip)
+                return false;
+
+            bool hasFromIndexParameter = false;
+            bool hasToIndexParameter = false;
+            bool hasEnableSwitchParameter = false;
+            foreach (AnimatorControllerParameter parameter in animator.parameters)
+            {
+                hasFromIndexParameter |= parameter.name == "FromIndex" &&
+                    parameter.type == AnimatorControllerParameterType.Int;
+                hasToIndexParameter |= parameter.name == "ToIndex" &&
+                    parameter.type == AnimatorControllerParameterType.Int;
+                hasEnableSwitchParameter |= parameter.name == "EnableSwitch" &&
+                    parameter.type == AnimatorControllerParameterType.Trigger;
+            }
+            if (!hasFromIndexParameter || !hasToIndexParameter ||
+                !hasEnableSwitchParameter)
+                return false;
+
+            Animation legacy = AnimationSource;
+            if (legacy != null)
+            {
+                legacy.Stop();
+                // The recovered body pose is owned by Animator, while the
+                // source item-widget clips remain isolated on Legacy
+                // Animation layers. Keep that component evaluating after
+                // stopping every prior body state.
+                legacy.enabled = true;
+            }
+            animator.enabled = true;
+            animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+            animator.applyRootMotion = blendRootMotion;
+            animator.Rebind();
+            animator.Update(0f);
+            if (!animator.HasState(0, startHash) || !animator.HasState(0, loopHash))
+            {
+                animator.enabled = false;
+                if (legacy != null)
+                    legacy.enabled = true;
+                return false;
+            }
+
+            bool setFromIndex = false;
+            bool setToIndex = false;
+            bool setEnableSwitch = false;
+            foreach (EndfieldOverviewTransitionCondition condition in
+                entryTransitionConditions ?? System.Array.Empty<EndfieldOverviewTransitionCondition>())
+            {
+                if (condition.mode == 6 && condition.parameter == "FromIndex")
+                {
+                    animator.SetInteger(condition.parameter, Mathf.RoundToInt(condition.threshold));
+                    setFromIndex = true;
+                }
+                else if (condition.mode == 6 && condition.parameter == "ToIndex")
+                {
+                    animator.SetInteger(condition.parameter, Mathf.RoundToInt(condition.threshold));
+                    setToIndex = true;
+                }
+                else if (condition.mode == 1 && condition.parameter == "EnableSwitch")
+                {
+                    animator.ResetTrigger(condition.parameter);
+                    setEnableSwitch = true;
+                }
+            }
+            if (!setFromIndex || !setToIndex || !setEnableSwitch)
+            {
+                animator.enabled = false;
+                if (legacy != null)
+                    legacy.enabled = true;
+                return false;
+            }
+
+            playbackGeneration++;
+            waitingForExit = false;
+            animatorTransitionObserved = false;
+            animatorExitCompleted = false;
+            AnimatorContractActive = true;
+            IsTransitioning = false;
+            IsLooping = false;
+            CurrentAnimatorStateHash = 0;
+            NextAnimatorStateHash = 0;
+            AnimatorTransitionNormalizedTime = 0f;
+            RecoveredTransitionSeconds = Mathf.Max(0f, normalizedTransitionDuration);
+            AnimationClip sourceStart = System.Array.Find(controllerClips, value =>
+                value != null && value.name == startClip);
+            if (!transitionDurationFixed && sourceStart != null)
+                RecoveredTransitionSeconds *= sourceStart.length;
+
+            StartItemWidgets(legacy);
+            PublishRecoveredParameters();
+            PublishEntranceEffects();
+            PlayOverviewAudio(Mathf.Clamp01(entryNormalizedOffset) *
+                (sourceStart != null ? sourceStart.length : 0f));
+            animator.SetTrigger("EnableSwitch");
+            animator.Update(0f);
+            ObserveRecoveredAnimator();
+            return true;
+        }
+
+        private void ObserveRecoveredAnimator()
+        {
+            Animator animator = animatorSource;
+            if (animator == null || !animator.enabled || animator.runtimeAnimatorController == null)
+            {
+                AnimatorContractActive = false;
+                return;
+            }
+
+            int startHash = Animator.StringToHash(animatorStartStatePath);
+            int loopHash = Animator.StringToHash(animatorLoopStatePath);
+            AnimatorStateInfo current = animator.GetCurrentAnimatorStateInfo(0);
+            bool inTransition = animator.IsInTransition(0);
+            AnimatorStateInfo next = inTransition
+                ? animator.GetNextAnimatorStateInfo(0)
+                : default;
+            CurrentAnimatorStateHash = current.fullPathHash;
+            NextAnimatorStateHash = inTransition ? next.fullPathHash : 0;
+            AnimatorTransitionNormalizedTime = inTransition
+                ? animator.GetAnimatorTransitionInfo(0).normalizedTime
+                : 0f;
+
+            bool transitioningToLoop = inTransition &&
+                current.fullPathHash == startHash && next.fullPathHash == loopHash;
+            if (transitioningToLoop && !animatorTransitionObserved)
+            {
+                animatorTransitionObserved = true;
+                StopOverviewAudio();
+                TransitionItemWidgets(AnimationSource, RecoveredTransitionSeconds);
+            }
+
+            if (transitioningToLoop)
+            {
+                IsTransitioning = true;
+                IsLooping = true;
+                return;
+            }
+
+            if (current.fullPathHash == loopHash)
+            {
+                IsTransitioning = false;
+                IsLooping = true;
+                if (animatorTransitionObserved && !animatorExitCompleted)
+                {
+                    animatorExitCompleted = true;
+                    CompleteEntranceStateExit();
+                }
+                return;
+            }
+
+            IsTransitioning = false;
+            IsLooping = false;
         }
 
         /// <summary>
@@ -488,6 +718,11 @@ namespace EndfieldGraphShaderLab
             if (generation != playbackGeneration)
                 yield break;
 
+            CompleteEntranceStateExit();
+        }
+
+        private void CompleteEntranceStateExit()
+        {
             HideFinishedItemWidgets();
 
             if (entranceEffects != null && entranceEffects.Length > 0)
