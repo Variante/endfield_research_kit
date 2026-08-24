@@ -124,9 +124,12 @@ MONO_BEHAVIOUR_AUDIO_EVENT_FIELD_NAMES = frozenset({
 })
 MONO_BEHAVIOUR_AUDIO_EVENT_PREFILTERS = tuple(sorted(
     {f"{name}._id" for name in MONO_BEHAVIOUR_AUDIO_EVENT_FIELD_NAMES}
-    | {"soundBase.soundSpawn", "soundBase.soundFinish", "PlayLineSound"}
+    | {
+        "soundBase.soundSpawn", "soundBase.soundFinish", "PlayLineSound",
+        "triggerFunctions", "levelGlobalEvents",
+    }
 ))
-MONO_BEHAVIOUR_AUDIO_CONTEXT_CACHE_SCHEMA_VERSION = 3
+MONO_BEHAVIOUR_AUDIO_CONTEXT_CACHE_SCHEMA_VERSION = 4
 RUNTIME_MODEL_CACHE_SCHEMA_VERSION = 109
 METADATA_EVENT_SYMBOL_SCHEMA_VERSION = 1
 METADATA_EVENT_SYMBOL_RE = re.compile(r"^AU_[A-Z0-9_]+$")
@@ -7064,10 +7067,15 @@ def _iter_mono_audio_object_index_rows(path: Path) -> Iterable[dict[str, Any]]:
                     yield row
 
     schema_ids: set[str] = set()
+    schema_fields: dict[str, frozenset[str]] = {}
     seen_objects: set[tuple[str, int]] = set()
     for row in matching_rows(MONO_BEHAVIOUR_AUDIO_EVENT_PREFILTERS):
         if row.get("recordType") == "schema" and row.get("schemaId"):
-            schema_ids.add(str(row["schemaId"]))
+            schema_id = str(row["schemaId"])
+            schema_ids.add(schema_id)
+            schema_fields[schema_id] = frozenset(
+                str(value) for value in row.get("fields") or []
+            )
             continue
         if row.get("recordType") != "object":
             continue
@@ -7075,7 +7083,11 @@ def _iter_mono_audio_object_index_rows(path: Path) -> Iterable[dict[str, Any]]:
         identity = (str(object_row.get("serializedFile") or ""), int(object_row.get("pathId") or 0))
         if identity not in seen_objects:
             seen_objects.add(identity)
-            yield row
+            enriched = dict(row)
+            enriched["_audioSchemaFields"] = schema_fields.get(
+                str(row.get("schemaId") or ""), frozenset()
+            )
+            yield enriched
     if not schema_ids:
         return
     schema_patterns = [f'\"schemaId\":\"{schema_id}\"' for schema_id in sorted(schema_ids)]
@@ -7087,7 +7099,11 @@ def _iter_mono_audio_object_index_rows(path: Path) -> Iterable[dict[str, Any]]:
         if identity in seen_objects:
             continue
         seen_objects.add(identity)
-        yield row
+        enriched = dict(row)
+        enriched["_audioSchemaFields"] = schema_fields.get(
+            str(row.get("schemaId") or ""), frozenset()
+        )
+        yield enriched
 
 
 def _mono_audio_event_scalar(path: Any, value: Any) -> tuple[int, str] | None:
@@ -7330,8 +7346,16 @@ def collect_mono_behaviour_audio_id_contexts(
                 for scalar in scalars
                 if isinstance(scalar[0], str)
             }
+            audio_map_schema_fields = row.get("_audioSchemaFields")
+            if not isinstance(audio_map_schema_fields, frozenset):
+                audio_map_schema_fields = frozenset()
             for scalar_path, _scalar_type, scalar_value in scalars:
-                parsed = _mono_audio_event_scalar(scalar_path, scalar_value)
+                parsed = (
+                    _mono_audio_event_scalar(scalar_path, scalar_value)
+                    or scene_backgrounds.audio_map_event_scalar(
+                        scalar_path, scalar_value, audio_map_schema_fields,
+                    )
+                )
                 if parsed is None:
                     continue
                 event_hash, authored_role = parsed
@@ -7415,6 +7439,20 @@ def collect_mono_behaviour_audio_id_contexts(
                     component_layout=context.get("managedReferenceLayout"),
                     component_type=script.get("fullName") or row.get("name"),
                 ))
+                if authored_role.startswith("audioMap"):
+                    context.update({
+                        "authoredFieldRole": authored_role,
+                        "authoredFieldRoleEvidence": "exactSerializedAudioMapDataSchemaField",
+                        "componentLayout": "Beyond.Gameplay.Audio.AudioMapData",
+                        "componentLayoutStatus": "exactSerializedSchema",
+                        "serializedFieldPathStatus": "exact",
+                        "evidence": "exactSerializedAudioMapDataEventFieldAndCurrentWwiseEvent",
+                        "triggerRequestEvidence": [
+                            "exactCompleteSerializedAudioMapDataSchema",
+                            "exactTypedAudioMapDataEventField",
+                            "exactCurrentWwiseEventHash",
+                        ],
+                    })
                 context["authoredFieldNameRaw"] = authored_role
                 role_counts[str(context.get("authoredFieldRole") or managed_literals.MONO_BEHAVIOUR_AUDIO_GENERIC_ROLE)] += 1
                 layout_counts[str(context.get("componentLayout") or "unknown")] += 1
@@ -7595,7 +7633,9 @@ def collect_mono_behaviour_audio_id_contexts(
         "state/callback execution, Event posting, Wwise acceptance, selected media, and audibility "
         "were not observed. The one raw-word exception is an exact typed PlayLineSound "
         "managed-reference payload whose six-field/24-byte layout is fixed by current IL2CPP "
-        "metadata and complete payload consumption. RTPC fields, generic integers, PathIDs, "
+        "metadata and complete payload consumption. AudioMapData trigger, level lifecycle, and "
+        "outdoor room-tone values are accepted only with the complete exact serialized schema. "
+        "RTPC fields, generic integers, PathIDs, "
         "untyped raw words, AudioVoTone selection rows, and ResponsiveDialog membership are excluded."
     )
     result = {
