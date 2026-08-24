@@ -6,7 +6,7 @@ from pathlib import Path
 REPORT = Path(__file__).resolve().parents[1] / "Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/ExternalUiEffects/endminf_liteffect_mesh_probe_evidence.json"
 EXPECTED = {"name":"S_rock_small_1_017_02_lod2", "pathID":-8157825361227167527, "pathIDHex":"8EC9950E5461C8D9", "containerOffset":247138057, "vertexCount":29, "indexCount":72, "sha256":"55dd5a73380a0b64b8fc173cb636f58b0178e377e7fd4445362a4a6c0de2f58d"}
 CHANNELS = {"POSITION3":87, "NORMAL3":87, "TANGENT4":116, "UV0_2":58, "UV1_2":58, "COLOR":None, "UV2_UV7":None, "skinning":None}
-SCOPE = "One exact Mesh in the LitEffect material closure; does not prove complete shader BindChannels. b3/b4 and BindChannels remain gaps."
+SCOPE = "One exact Mesh in the LitEffect material closure; does not prove complete shader BindChannels. The selected physical b3 slice is recovered, while b4 and BindChannels remain gaps."
 SOURCE = {"source":"StreamingAssets/maps/endfield_streamingassets_assets.json", "type":"Mesh", "name":EXPECTED["name"], "pathID":EXPECTED["pathID"], "offset":EXPECTED["containerOffset"], "sourceHash":"eb09b25a6c2dea5b"}
 
 def verify(path: Path) -> dict:

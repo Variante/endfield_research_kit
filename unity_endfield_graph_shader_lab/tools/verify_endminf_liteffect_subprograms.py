@@ -22,8 +22,8 @@ from typing import Any, Iterable
 REPO = Path(__file__).resolve().parents[2]
 UNITY = REPO / "unity_endfield_graph_shader_lab"
 DEFAULT_MANIFEST = (
-    UNITY
-    / "Temp/Codex/liteffect_subprograms/Shader/"
+    REPO
+    / "scratch/animestudio/endminf_liteffect_shader/sidecars/Shader/"
     "HGRP_LitEffect_p5936F49FA93F14DD.shader.bytecode/manifest.json"
 )
 DEFAULT_RAW_EVIDENCE = (
@@ -44,8 +44,8 @@ DEFAULT_CLI = (
 DEFAULT_RURI = UNITY / "tools/bin/Release/net10.0/Ruri.ShaderDecompiler.Endfield.exe"
 
 EXPECTED_SCHEMA = "animestudio.shader-subprogram.v1"
-EXPECTED_SUBMODULE_COMMIT = "dae13ed6dee2b4141756dd7b25795c8b2d778d02"
-EXPECTED_CLI_SHA256 = "e39ac4e3584a2de13ff393d091f27e6c15df93b7f6c385bbf2859f171ac3ebc8"
+EXPECTED_SUBMODULE_COMMIT = "8ca2a2671d5d775e7f5db68a9c6d874165ecb5ee"
+EXPECTED_CLI_SHA256 = "0af5f79d258580dd41466daefa5c0a7203f51c5ef35e982f54787f82bc1c2307"
 EXPECTED_RURI_SHA256 = "d42aced865043a724bf9e7a2bd9e5dc379a056a9a2b70e99aff81c4e0b7f7b06"
 EXPECTED_MANIFEST_SHA256 = "ad2bf8f1c7a78305ecb4d3f17702c07b36da018e2552b3ffced529fe1274ab99"
 
@@ -130,6 +130,18 @@ EXPECTED_REPRESENTATIVES = {
         "shaderHardwareTier": -1,
         "keywords": ["HG_ENABLE_MV", "_PARALLAX_MAP"],
         "localKeywords": [],
+    },
+}
+EXPECTED_METADATA = {
+    "0114_endfield_dxbc_0.dxbc.metadata.json": {
+        "size": 31827,
+        "sha256": "2866f1fd1cfd939d17cbf55c3a82b659c2edfe7da802f9e3f29a04f4c6344245",
+        "decodedStage": "vertex",
+    },
+    "0115_endfield_dxbc_1.dxbc.metadata.json": {
+        "size": 31829,
+        "sha256": "5f0ef12fa6cbe19b16d51b7ff7a613c9007779ec2e27f3187eb25c14d421760d",
+        "decodedStage": "fragment",
     },
 }
 
@@ -356,6 +368,37 @@ def _validate_target_variant(manifest: dict[str, Any], ruri_dir: Path) -> dict[s
         for key, value in expected.items():
             _require(actual.get(key), value, f"target representative {stage} {key}")
 
+    metadata = []
+    sidecar_root = Path(manifest["path"]).parent
+    for filename, expected in EXPECTED_METADATA.items():
+        path = sidecar_root / filename
+        digest = _hash_file(path)
+        _require(path.stat().st_size, expected["size"], f"metadata {filename} size")
+        _require(digest, expected["sha256"], f"metadata {filename} SHA-256")
+        data = _read_json(path)
+        _require(
+            data.get("SourceEndfieldParameterRecordParsed"),
+            True,
+            f"metadata {filename} Endfield parameter record",
+        )
+        _require(
+            data.get("SourceEndfieldConstantBufferTableParsed"),
+            True,
+            f"metadata {filename} Endfield constant-buffer table",
+        )
+        _require(
+            data.get("DecodedProgramStage"),
+            expected["decodedStage"],
+            f"metadata {filename} decoded stage",
+        )
+        metadata.append({
+            "fileName": filename,
+            "size": path.stat().st_size,
+            "sha256": digest,
+            "decodedStage": expected["decodedStage"],
+            "endfieldConstantBufferTableParsed": True,
+        })
+
     ruri = []
     for filename, expected in EXPECTED_RURI_OUTPUTS.items():
         path = ruri_dir / filename
@@ -367,7 +410,12 @@ def _validate_target_variant(manifest: dict[str, Any], ruri_dir: Path) -> dict[s
             if marker not in text:
                 _fail(f"Ruri output {filename}: missing marker {marker}")
         ruri.append({"fileName": filename, "size": path.stat().st_size, "sha256": digest})
-    return {"entryCount": len(rows), "representatives": EXPECTED_REPRESENTATIVES, "ruriOutputs": ruri}
+    return {
+        "entryCount": len(rows),
+        "representatives": EXPECTED_REPRESENTATIVES,
+        "metadata": metadata,
+        "ruriOutputs": ruri,
+    }
 
 
 def _relative(path: Path, repo: Path) -> str:
@@ -414,7 +462,7 @@ def _build_evidence(
             "shader": EXPECTED_SHADER,
             "shaderLOD": 600,
             "target": "HGBuffer / d3d11 / _PARALLAX_MAP",
-            "rawProgramBytes": "not embedded; sidecars remain disposable Temp output",
+            "rawProgramBytes": "not embedded; sidecars remain disposable scratch output",
         },
         "source": manifest["source"],
         "rawObjectEvidence": {
@@ -437,11 +485,13 @@ def _build_evidence(
         "target": {
             "entryCount": target["entryCount"],
             "representatives": representatives,
+            "metadata": target["metadata"],
             "ruriOutputs": target["ruriOutputs"],
         },
         "evidenceBoundary": [
             "CAB/PathID/name and serialized Shader object identity are exact.",
             "Every exported sidecar length, SHA-256, source offset, and source size is checked.",
+            "The selected vertex/fragment metadata sidecars are hash-pinned and must report a parsed Endfield constant-buffer table.",
             "serializedStage and decodedStage remain separate; no visual behavior is inferred.",
             "This JSON contains summaries and hashes only, never raw shader program bytes.",
         ],

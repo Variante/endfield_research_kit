@@ -85,6 +85,26 @@ PARALLAX_COLORS = (
     "_WorldParallaxAdditionalColor",
 )
 
+EXPECTED_SELECTED_PARALLAX_FIELDS = {
+    "_ParallaxStrength": (352, 4),
+    "_ParallaxMarchNum": (384, 4),
+    "_ParallaxTilling": (388, 4),
+    "_ParallaxAnimSpeed": (392, 4),
+    "_ParallaxAnimRandom": (396, 4),
+    "_ParallaxMinBrightness": (400, 4),
+    "_ParallaxFresnelStrength": (404, 4),
+    "_ParallaxIgnorePostExposure": (408, 4),
+    "_ParallaxMaskByLayerBlend": (420, 4),
+    "_ParallaxNoiseMapTilling": (424, 4),
+    "_ParallaxCharPos": (428, 4),
+    "_ParallaxBrightOuterRadius": (432, 4),
+    "_ParallaxBrightInnerRadius": (436, 4),
+    "_ParallaxBrightStrength": (440, 4),
+    "_ParallaxIntensity": (460, 4),
+    "_ParallaxColor": (464, 16),
+    "_ParallaxColorDark": (480, 16),
+}
+
 
 class VerificationError(ValueError):
     """Raised when evidence is absent, malformed, or no longer matches."""
@@ -275,6 +295,10 @@ def _compact_metadata(path: Path) -> dict[str, Any]:
         "bufferBindings": data["BufferBindingParameters"],
         "samplers": data["SamplerParameters"],
         "descriptorSets": descriptor_sets,
+        "sourceEndfieldParameterRecordParsed":
+            data.get("SourceEndfieldParameterRecordParsed"),
+        "sourceEndfieldConstantBufferTableParsed":
+            data.get("SourceEndfieldConstantBufferTableParsed"),
     }
 
 
@@ -308,7 +332,11 @@ def _material_path_id_from_name(name: str) -> tuple[int, str]:
     return signed, match.group(1).upper()
 
 
-def _material_rows(shader_source: Path, texture_identities: dict[int, dict[str, Any]]) -> list[dict[str, Any]]:
+def _material_rows(
+    shader_source: Path,
+    texture_identities: dict[int, dict[str, Any]],
+    material_fields: dict[str, dict[str, Any]],
+) -> list[dict[str, Any]]:
     declared = _material_property_names(shader_source)
     rows: list[dict[str, Any]] = []
     for name in MATERIAL_NAMES:
@@ -361,9 +389,11 @@ def _material_rows(shader_source: Path, texture_identities: dict[int, dict[str, 
         colors = data.get("m_SavedProperties", {}).get("m_Colors", {})
         properties = []
         for prop in PARALLAX_FLOATS:
-            properties.append({"property": prop, "kind": "float", "value": floats.get(prop), "shaderPropertyDeclared": prop in declared, "constantBufferOffsetBytes": None, "status": "resolved_material_value_only" if prop in floats and prop in declared else "gap"})
+            selected = material_fields[prop]
+            properties.append({"property": prop, "kind": "float", "value": floats.get(prop), "shaderPropertyDeclared": prop in declared, "constantBufferOffsetBytes": selected["offsetBytes"], "status": ("resolved_material_value_and_selected_variant_offset" if prop in floats and prop in declared and selected["offsetBytes"] is not None else "resolved_material_value_only_selected_variant_offset_absent" if prop in floats and prop in declared else "gap")})
         for prop in PARALLAX_COLORS:
-            properties.append({"property": prop, "kind": "color", "value": colors.get(prop), "shaderPropertyDeclared": prop in declared, "constantBufferOffsetBytes": None, "status": "resolved_material_value_only" if prop in colors and prop in declared else "gap"})
+            selected = material_fields[prop]
+            properties.append({"property": prop, "kind": "color", "value": colors.get(prop), "shaderPropertyDeclared": prop in declared, "constantBufferOffsetBytes": selected["offsetBytes"], "status": ("resolved_material_value_and_selected_variant_offset" if prop in colors and prop in declared and selected["offsetBytes"] is not None else "resolved_material_value_only_selected_variant_offset_absent" if prop in colors and prop in declared else "gap")})
         rows.append(
             {
                 "file": str(path.relative_to(ROOT)).replace("\\", "/"),
@@ -399,6 +429,81 @@ def _common_fields(metadata: dict[str, Any]) -> list[dict[str, Any]]:
                 }
             )
     return fields
+
+
+def _selected_material_fields(metadata: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    if metadata.get("sourceEndfieldParameterRecordParsed") is not True:
+        raise VerificationError("selected fragment Endfield parameter record was not parsed")
+    if metadata.get("sourceEndfieldConstantBufferTableParsed") is not True:
+        raise VerificationError(
+            "selected fragment Endfield constant-buffer table was not parsed")
+    buffers = [
+        row for row in metadata["constantBuffers"]
+        if row.get("Name") == "UnityPerMaterial"
+    ]
+    if len(buffers) != 1:
+        raise VerificationError(
+            f"selected fragment has {len(buffers)} UnityPerMaterial tables")
+    buffer = buffers[0]
+    if buffer.get("Size") != 576 or buffer.get("IsPartialCB") is not True:
+        raise VerificationError(
+            "selected fragment UnityPerMaterial size/partial-table contract drifted")
+
+    fields: dict[str, dict[str, Any]] = {}
+    for parameter in (
+        buffer.get("VectorParameters", []) + buffer.get("MatrixParameters", [])
+    ):
+        name = parameter.get("Name")
+        offset = parameter.get("Index")
+        size = _field_size(parameter)
+        if not isinstance(name, str) or not name or name in fields:
+            raise VerificationError(
+                "selected fragment UnityPerMaterial has a missing or duplicate field")
+        if not isinstance(offset, int) or offset < 0 or offset + size > 576:
+            raise VerificationError(
+                f"selected fragment UnityPerMaterial field is out of range: {name}")
+        fields[name] = {
+            "property": name,
+            "constantBuffer": "UnityPerMaterial",
+            "register": 3,
+            "offsetBytes": offset,
+            "sizeBytes": size,
+            "type": parameter.get("Type"),
+            "status": "resolved_selected_variant_offset",
+            "basis": [
+                "Endfield combined-program constant-buffer table",
+                "serialized PerMaterial descriptor binding 12",
+                "same-blob SPIR-V 576-byte layout",
+                "DXBC/Ruri fragment b3 496-byte used prefix",
+            ],
+        }
+
+    actual = {
+        name: (fields[name]["offsetBytes"], fields[name]["sizeBytes"])
+        for name in EXPECTED_SELECTED_PARALLAX_FIELDS
+        if name in fields
+    }
+    if actual != EXPECTED_SELECTED_PARALLAX_FIELDS:
+        raise VerificationError(
+            f"selected fragment parallax field map drifted: {actual!r}")
+
+    return {
+        prop: fields.get(prop, {
+            "property": prop,
+            "constantBuffer": "UnityPerMaterial",
+            "register": 3,
+            "offsetBytes": None,
+            "sizeBytes": None,
+            "type": None,
+            "status": "selected_variant_offset_absent",
+            "reason": (
+                "The recovered selected-subprogram constant table contains no "
+                "field with this name; retain the serialized material value "
+                "without inventing a b3 offset."
+            ),
+        })
+        for prop in (*PARALLAX_FLOATS, *PARALLAX_COLORS)
+    }
 
 
 def _descriptor_bindings(metadata: dict[str, Any], set_id: int) -> list[dict[str, Any]]:
@@ -570,6 +675,7 @@ def build_report() -> dict[str, Any]:
     fragment_ruri = _ruri_declarations(FRAGMENT_RURI)
     vertex_meta = _compact_metadata(BYTECODE_ROOT / (VERTEX_FILE + ".metadata.json"))
     fragment_meta = _compact_metadata(BYTECODE_ROOT / (FRAGMENT_FILE + ".metadata.json"))
+    material_fields = _selected_material_fields(fragment_meta)
     descriptor_contract = _validate_descriptor_contract(fragment_meta)
     vertex_spirv_ubos = _reflect_spirv_ubos(BYTECODE_ROOT / VERTEX_SPIRV_FILE)
     fragment_spirv_ubos = _reflect_spirv_ubos(BYTECODE_ROOT / FRAGMENT_SPIRV_FILE)
@@ -584,7 +690,7 @@ def build_report() -> dict[str, Any]:
             raise VerificationError(f"Ruri output hash/size mismatch for {name}")
     shader_source = SIDE_ROOT / "Shader" / "HGRP_LitEffect_p5936F49FA93F14DD.shader"
     texture_identities = _texture_identity_map()
-    materials = _material_rows(shader_source, texture_identities)
+    materials = _material_rows(shader_source, texture_identities, material_fields)
 
     expected_vertex = {0: 82, 1: 20, 2: 11}
     expected_fragment = {0: 45, 1: 106, 2: 5, 3: 31, 4: 1}
@@ -715,7 +821,7 @@ def build_report() -> dict[str, Any]:
     }
     report = {
         "schema": "endfield.endminf-liteffect-resource-mapping.v1",
-        "status": "verified_with_named_layout_and_consumer_gaps",
+        "status": "verified_with_selected_variant_material_offsets_and_consumer_gaps",
         "scope": {"shader": {"cab": "CAB-2c811ef28608ab220ecdb5c4e0629d2d", "pathId": 6428594484694422749, "name": "HGRP/LitEffect"}, "pass": "HGBuffer", "keywords": ["HG_ENABLE_MV", "_PARALLAX_MAP"], "subProgramIndex": 19, "platform": "d3d11"},
         "evidence": evidence,
         "reflection": {
@@ -739,12 +845,12 @@ def build_report() -> dict[str, Any]:
             "descriptorContract": descriptor_contract,
             "serializedFields": _map_vertex_fields(common_fields),
             "fragmentFieldMapping": fragment_fields,
-            "materialConstantBufferFields": [{"property": prop, "constantBuffer": "UnityPerMaterial", "register": 3, "offsetBytes": None, "sizeBytes": None, "status": "resolved_register_unresolved_named_offset", "reason": "PackedBinding and same-blob SPIR-V prove b3 and its 576-byte logical layout, but stripped member names do not map this property to one member offset"} for prop in (*PARALLAX_FLOATS, *PARALLAX_COLORS)],
+            "materialConstantBufferFields": list(material_fields.values()),
         },
         "materials": materials,
         "gaps": [
             "DXBC has no RDEF chunk; named common-buffer fields come only from serialized Shader metadata.",
-            "UnityPerMaterial is proven at fragment b3 with a 576-byte same-blob SPIR-V layout and 496-byte DXBC used prefix, but stripped member names still leave property-to-offset mapping unresolved.",
+            "The selected b3 field map does not by itself close the other physical constant buffers or complete HGBuffer frame publication.",
             "ParserBindChannels.m_Channels is not exported by AnimeStudio's Shader JSON; do not substitute guessed ShaderLab channels.",
             "The null _ParallaxNoiseMap and _ParallaxMaskMap PPtrs remain unresolved by design.",
         ],

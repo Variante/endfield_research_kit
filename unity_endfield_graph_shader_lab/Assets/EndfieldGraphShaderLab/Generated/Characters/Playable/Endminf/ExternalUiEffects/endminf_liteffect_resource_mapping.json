@@ -1,6 +1,6 @@
 {
   "schema": "endfield.endminf-liteffect-resource-mapping.v1",
-  "status": "verified_with_named_layout_and_consumer_gaps",
+  "status": "verified_with_selected_variant_material_offsets_and_consumer_gaps",
   "scope": {
     "shader": {
       "cab": "CAB-2c811ef28608ab220ecdb5c4e0629d2d",
@@ -71,6 +71,22 @@
           ],
           "serializedStage": "vertex",
           "decodedStage": "fragment"
+        }
+      ],
+      "metadata": [
+        {
+          "fileName": "0114_endfield_dxbc_0.dxbc.metadata.json",
+          "size": 31827,
+          "sha256": "2866f1fd1cfd939d17cbf55c3a82b659c2edfe7da802f9e3f29a04f4c6344245",
+          "decodedStage": "vertex",
+          "endfieldConstantBufferTableParsed": true
+        },
+        {
+          "fileName": "0115_endfield_dxbc_1.dxbc.metadata.json",
+          "size": 31829,
+          "sha256": "5f0ef12fa6cbe19b16d51b7ff7a613c9007779ec2e27f3187eb25c14d421760d",
+          "decodedStage": "fragment",
+          "endfieldConstantBufferTableParsed": true
         }
       ],
       "ruriOutputs": [
@@ -291,7 +307,7 @@
       },
       "metadata": {
         "file": "scratch/animestudio/endminf_liteffect_shader/sidecars/Shader/HGRP_LitEffect_p5936F49FA93F14DD.shader.bytecode/0114_endfield_dxbc_0.dxbc.metadata.json",
-        "sha256": "4a7ca8b5937e1fc716692ff185f9cd7e2e698fedf69a2f0fc968ea78d7abc30d",
+        "sha256": "2866f1fd1cfd939d17cbf55c3a82b659c2edfe7da802f9e3f29a04f4c6344245",
         "decodedStage": "vertex",
         "serializedStage": "vertex",
         "sourceStage": "vertex",
@@ -331,6 +347,66 @@
                 "Type": 0,
                 "RowCount": 4,
                 "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_ScreenSize",
+                "NameIndex": -1,
+                "Index": 0,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 4,
+                "IsMatrix": false
+              },
+              {
+                "Name": "unity_OrthoParams",
+                "NameIndex": -1,
+                "Index": 64,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 4,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_VFXParams2",
+                "NameIndex": -1,
+                "Index": 1680,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 4,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_GlobalMipBiasPow2",
+                "NameIndex": -1,
+                "Index": 420,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_ExposureWithMiscParams",
+                "NameIndex": -1,
+                "Index": 432,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 4,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_VFXParams0",
+                "NameIndex": -1,
+                "Index": 1648,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 4,
                 "IsMatrix": false
               }
             ],
@@ -381,6 +457,26 @@
                 "RowCount": 4,
                 "ColumnCount": 4,
                 "IsMatrix": true
+              },
+              {
+                "Name": "_ViewMatrix",
+                "NameIndex": -1,
+                "Index": 0,
+                "ArraySize": 1,
+                "Type": 0,
+                "RowCount": 4,
+                "ColumnCount": 4,
+                "IsMatrix": true
+              },
+              {
+                "Name": "_InvViewProjMatrix",
+                "NameIndex": -1,
+                "Index": 384,
+                "ArraySize": 1,
+                "Type": 0,
+                "RowCount": 4,
+                "ColumnCount": 4,
+                "IsMatrix": true
               }
             ],
             "VectorParameters": [
@@ -407,6 +503,447 @@
             ],
             "StructParameters": [],
             "Size": 1312,
+            "IsPartialCB": true
+          },
+          {
+            "Name": "UnityPerDraw",
+            "NameIndex": -1,
+            "MatrixParameters": [
+              {
+                "Name": "unity_ObjectToWorld",
+                "NameIndex": -1,
+                "Index": 0,
+                "ArraySize": 1,
+                "Type": 0,
+                "RowCount": 4,
+                "ColumnCount": 4,
+                "IsMatrix": true
+              },
+              {
+                "Name": "unity_MatrixPreviousM",
+                "NameIndex": -1,
+                "Index": 96,
+                "ArraySize": 1,
+                "Type": 0,
+                "RowCount": 4,
+                "ColumnCount": 4,
+                "IsMatrix": true
+              }
+            ],
+            "VectorParameters": [
+              {
+                "Name": "unity_LODFade",
+                "NameIndex": -1,
+                "Index": 64,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 4,
+                "IsMatrix": false
+              },
+              {
+                "Name": "unity_WorldTransformParams",
+                "NameIndex": -1,
+                "Index": 80,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 4,
+                "IsMatrix": false
+              },
+              {
+                "Name": "unity_MotionVectorsParamsInternal",
+                "NameIndex": -1,
+                "Index": 160,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 4,
+                "IsMatrix": false
+              }
+            ],
+            "StructParameters": [],
+            "Size": 256,
+            "IsPartialCB": true
+          },
+          {
+            "Name": "UnityPerMaterial",
+            "NameIndex": -1,
+            "MatrixParameters": [],
+            "VectorParameters": [
+              {
+                "Name": "_NormalScale",
+                "NameIndex": -1,
+                "Index": 0,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_RoughnessMin",
+                "NameIndex": -1,
+                "Index": 8,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_RoughnessMax",
+                "NameIndex": -1,
+                "Index": 12,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_OcclusionStrength",
+                "NameIndex": -1,
+                "Index": 16,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_TwoSidedNormal",
+                "NameIndex": -1,
+                "Index": 28,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_BaseUVSet",
+                "NameIndex": -1,
+                "Index": 44,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_BasePbrMapUVSet",
+                "NameIndex": -1,
+                "Index": 48,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_TAAUNormalBiasReverse",
+                "NameIndex": -1,
+                "Index": 52,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_BaseTextureMapCount",
+                "NameIndex": -1,
+                "Index": 60,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_BaseColorTintCover",
+                "NameIndex": -1,
+                "Index": 64,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_Metallic",
+                "NameIndex": -1,
+                "Index": 68,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_BaseColorBrighterScale",
+                "NameIndex": -1,
+                "Index": 72,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_AntiFlicker",
+                "NameIndex": -1,
+                "Index": 112,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_TaauMaskModeValue",
+                "NameIndex": -1,
+                "Index": 120,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_BaseColor",
+                "NameIndex": -1,
+                "Index": 128,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 4,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_BaseColorMap_ST",
+                "NameIndex": -1,
+                "Index": 176,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 4,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_NormalMap_ST",
+                "NameIndex": -1,
+                "Index": 192,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 4,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_ParallaxStrength",
+                "NameIndex": -1,
+                "Index": 352,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_ParallaxMarchNum",
+                "NameIndex": -1,
+                "Index": 384,
+                "ArraySize": 0,
+                "Type": 5,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_ParallaxTilling",
+                "NameIndex": -1,
+                "Index": 388,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_ParallaxAnimSpeed",
+                "NameIndex": -1,
+                "Index": 392,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_ParallaxAnimRandom",
+                "NameIndex": -1,
+                "Index": 396,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_ParallaxMinBrightness",
+                "NameIndex": -1,
+                "Index": 400,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_ParallaxFresnelStrength",
+                "NameIndex": -1,
+                "Index": 404,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_ParallaxIgnorePostExposure",
+                "NameIndex": -1,
+                "Index": 408,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_ParallaxMaskChannel",
+                "NameIndex": -1,
+                "Index": 412,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_ParallaxMapUVType",
+                "NameIndex": -1,
+                "Index": 416,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_ParallaxMaskByLayerBlend",
+                "NameIndex": -1,
+                "Index": 420,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_ParallaxNoiseMapTilling",
+                "NameIndex": -1,
+                "Index": 424,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_ParallaxCharPos",
+                "NameIndex": -1,
+                "Index": 428,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_ParallaxBrightOuterRadius",
+                "NameIndex": -1,
+                "Index": 432,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_ParallaxBrightInnerRadius",
+                "NameIndex": -1,
+                "Index": 436,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_ParallaxBrightStrength",
+                "NameIndex": -1,
+                "Index": 440,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_UseParallaxMask",
+                "NameIndex": -1,
+                "Index": 452,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_ParallaxIntensity",
+                "NameIndex": -1,
+                "Index": 460,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_ParallaxColor",
+                "NameIndex": -1,
+                "Index": 464,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 4,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_ParallaxColorDark",
+                "NameIndex": -1,
+                "Index": 480,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 4,
+                "IsMatrix": false
+              }
+            ],
+            "StructParameters": [],
+            "Size": 576,
             "IsPartialCB": true
           }
         ],
@@ -795,7 +1332,9 @@
               }
             ]
           }
-        ]
+        ],
+        "sourceEndfieldParameterRecordParsed": true,
+        "sourceEndfieldConstantBufferTableParsed": true
       }
     },
     "fragment": {
@@ -1061,7 +1600,7 @@
       },
       "metadata": {
         "file": "scratch/animestudio/endminf_liteffect_shader/sidecars/Shader/HGRP_LitEffect_p5936F49FA93F14DD.shader.bytecode/0115_endfield_dxbc_1.dxbc.metadata.json",
-        "sha256": "1e57dafd0a46c3d2e57acc16f1b29ddb5c98f9b5ed3926d9a11f2e2857368ba4",
+        "sha256": "5f0ef12fa6cbe19b16d51b7ff7a613c9007779ec2e27f3187eb25c14d421760d",
         "decodedStage": "fragment",
         "serializedStage": "vertex",
         "sourceStage": "fragment",
@@ -1101,6 +1640,66 @@
                 "Type": 0,
                 "RowCount": 4,
                 "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_ScreenSize",
+                "NameIndex": -1,
+                "Index": 0,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 4,
+                "IsMatrix": false
+              },
+              {
+                "Name": "unity_OrthoParams",
+                "NameIndex": -1,
+                "Index": 64,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 4,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_VFXParams2",
+                "NameIndex": -1,
+                "Index": 1680,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 4,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_GlobalMipBiasPow2",
+                "NameIndex": -1,
+                "Index": 420,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_ExposureWithMiscParams",
+                "NameIndex": -1,
+                "Index": 432,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 4,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_VFXParams0",
+                "NameIndex": -1,
+                "Index": 1648,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 4,
                 "IsMatrix": false
               }
             ],
@@ -1151,6 +1750,26 @@
                 "RowCount": 4,
                 "ColumnCount": 4,
                 "IsMatrix": true
+              },
+              {
+                "Name": "_ViewMatrix",
+                "NameIndex": -1,
+                "Index": 0,
+                "ArraySize": 1,
+                "Type": 0,
+                "RowCount": 4,
+                "ColumnCount": 4,
+                "IsMatrix": true
+              },
+              {
+                "Name": "_InvViewProjMatrix",
+                "NameIndex": -1,
+                "Index": 384,
+                "ArraySize": 1,
+                "Type": 0,
+                "RowCount": 4,
+                "ColumnCount": 4,
+                "IsMatrix": true
               }
             ],
             "VectorParameters": [
@@ -1177,6 +1796,447 @@
             ],
             "StructParameters": [],
             "Size": 1312,
+            "IsPartialCB": true
+          },
+          {
+            "Name": "UnityPerDraw",
+            "NameIndex": -1,
+            "MatrixParameters": [
+              {
+                "Name": "unity_ObjectToWorld",
+                "NameIndex": -1,
+                "Index": 0,
+                "ArraySize": 1,
+                "Type": 0,
+                "RowCount": 4,
+                "ColumnCount": 4,
+                "IsMatrix": true
+              },
+              {
+                "Name": "unity_MatrixPreviousM",
+                "NameIndex": -1,
+                "Index": 96,
+                "ArraySize": 1,
+                "Type": 0,
+                "RowCount": 4,
+                "ColumnCount": 4,
+                "IsMatrix": true
+              }
+            ],
+            "VectorParameters": [
+              {
+                "Name": "unity_LODFade",
+                "NameIndex": -1,
+                "Index": 64,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 4,
+                "IsMatrix": false
+              },
+              {
+                "Name": "unity_WorldTransformParams",
+                "NameIndex": -1,
+                "Index": 80,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 4,
+                "IsMatrix": false
+              },
+              {
+                "Name": "unity_MotionVectorsParamsInternal",
+                "NameIndex": -1,
+                "Index": 160,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 4,
+                "IsMatrix": false
+              }
+            ],
+            "StructParameters": [],
+            "Size": 256,
+            "IsPartialCB": true
+          },
+          {
+            "Name": "UnityPerMaterial",
+            "NameIndex": -1,
+            "MatrixParameters": [],
+            "VectorParameters": [
+              {
+                "Name": "_NormalScale",
+                "NameIndex": -1,
+                "Index": 0,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_RoughnessMin",
+                "NameIndex": -1,
+                "Index": 8,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_RoughnessMax",
+                "NameIndex": -1,
+                "Index": 12,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_OcclusionStrength",
+                "NameIndex": -1,
+                "Index": 16,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_TwoSidedNormal",
+                "NameIndex": -1,
+                "Index": 28,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_BaseUVSet",
+                "NameIndex": -1,
+                "Index": 44,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_BasePbrMapUVSet",
+                "NameIndex": -1,
+                "Index": 48,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_TAAUNormalBiasReverse",
+                "NameIndex": -1,
+                "Index": 52,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_BaseTextureMapCount",
+                "NameIndex": -1,
+                "Index": 60,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_BaseColorTintCover",
+                "NameIndex": -1,
+                "Index": 64,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_Metallic",
+                "NameIndex": -1,
+                "Index": 68,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_BaseColorBrighterScale",
+                "NameIndex": -1,
+                "Index": 72,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_AntiFlicker",
+                "NameIndex": -1,
+                "Index": 112,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_TaauMaskModeValue",
+                "NameIndex": -1,
+                "Index": 120,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_BaseColor",
+                "NameIndex": -1,
+                "Index": 128,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 4,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_BaseColorMap_ST",
+                "NameIndex": -1,
+                "Index": 176,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 4,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_NormalMap_ST",
+                "NameIndex": -1,
+                "Index": 192,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 4,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_ParallaxStrength",
+                "NameIndex": -1,
+                "Index": 352,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_ParallaxMarchNum",
+                "NameIndex": -1,
+                "Index": 384,
+                "ArraySize": 0,
+                "Type": 5,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_ParallaxTilling",
+                "NameIndex": -1,
+                "Index": 388,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_ParallaxAnimSpeed",
+                "NameIndex": -1,
+                "Index": 392,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_ParallaxAnimRandom",
+                "NameIndex": -1,
+                "Index": 396,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_ParallaxMinBrightness",
+                "NameIndex": -1,
+                "Index": 400,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_ParallaxFresnelStrength",
+                "NameIndex": -1,
+                "Index": 404,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_ParallaxIgnorePostExposure",
+                "NameIndex": -1,
+                "Index": 408,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_ParallaxMaskChannel",
+                "NameIndex": -1,
+                "Index": 412,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_ParallaxMapUVType",
+                "NameIndex": -1,
+                "Index": 416,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_ParallaxMaskByLayerBlend",
+                "NameIndex": -1,
+                "Index": 420,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_ParallaxNoiseMapTilling",
+                "NameIndex": -1,
+                "Index": 424,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_ParallaxCharPos",
+                "NameIndex": -1,
+                "Index": 428,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_ParallaxBrightOuterRadius",
+                "NameIndex": -1,
+                "Index": 432,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_ParallaxBrightInnerRadius",
+                "NameIndex": -1,
+                "Index": 436,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_ParallaxBrightStrength",
+                "NameIndex": -1,
+                "Index": 440,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_UseParallaxMask",
+                "NameIndex": -1,
+                "Index": 452,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_ParallaxIntensity",
+                "NameIndex": -1,
+                "Index": 460,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 1,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_ParallaxColor",
+                "NameIndex": -1,
+                "Index": 464,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 4,
+                "IsMatrix": false
+              },
+              {
+                "Name": "_ParallaxColorDark",
+                "NameIndex": -1,
+                "Index": 480,
+                "ArraySize": 0,
+                "Type": 0,
+                "RowCount": 1,
+                "ColumnCount": 4,
+                "IsMatrix": false
+              }
+            ],
+            "StructParameters": [],
+            "Size": 576,
             "IsPartialCB": true
           }
         ],
@@ -1565,7 +2625,9 @@
               }
             ]
           }
-        ]
+        ],
+        "sourceEndfieldParameterRecordParsed": true,
+        "sourceEndfieldConstantBufferTableParsed": true
       }
     }
   },
@@ -2344,6 +3406,78 @@
         "registerOffsetBytes": 304
       },
       {
+        "buffer": "ShaderVariablesGlobal",
+        "name": "_ScreenSize",
+        "offsetBytes": 0,
+        "sizeBytes": 16,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "resolved_register_range",
+        "stage": "vertex",
+        "register": 1,
+        "registerOffsetBytes": 0
+      },
+      {
+        "buffer": "ShaderVariablesGlobal",
+        "name": "unity_OrthoParams",
+        "offsetBytes": 64,
+        "sizeBytes": 16,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "resolved_register_range",
+        "stage": "vertex",
+        "register": 1,
+        "registerOffsetBytes": 64
+      },
+      {
+        "buffer": "ShaderVariablesGlobal",
+        "name": "_VFXParams2",
+        "offsetBytes": 1680,
+        "sizeBytes": 16,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "vertex",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "ShaderVariablesGlobal",
+        "name": "_GlobalMipBiasPow2",
+        "offsetBytes": 420,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "vertex",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "ShaderVariablesGlobal",
+        "name": "_ExposureWithMiscParams",
+        "offsetBytes": 432,
+        "sizeBytes": 16,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "vertex",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "ShaderVariablesGlobal",
+        "name": "_VFXParams0",
+        "offsetBytes": 1648,
+        "sizeBytes": 16,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "vertex",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
         "buffer": "_TerrainSubsurfaceConstants",
         "name": "_TerrainSubsurfaceProfileInt",
         "offsetBytes": 12,
@@ -2402,6 +3536,534 @@
         "stage": "vertex",
         "register": 0,
         "registerOffsetBytes": 912
+      },
+      {
+        "buffer": "_TransformVariables",
+        "name": "_ViewMatrix",
+        "offsetBytes": 0,
+        "sizeBytes": 64,
+        "arraySize": 1,
+        "isMatrix": true,
+        "status": "resolved_register_range",
+        "stage": "vertex",
+        "register": 0,
+        "registerOffsetBytes": 0
+      },
+      {
+        "buffer": "_TransformVariables",
+        "name": "_InvViewProjMatrix",
+        "offsetBytes": 384,
+        "sizeBytes": 64,
+        "arraySize": 1,
+        "isMatrix": true,
+        "status": "resolved_register_range",
+        "stage": "vertex",
+        "register": 0,
+        "registerOffsetBytes": 384
+      },
+      {
+        "buffer": "UnityPerDraw",
+        "name": "unity_LODFade",
+        "offsetBytes": 64,
+        "sizeBytes": 16,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "vertex",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerDraw",
+        "name": "unity_WorldTransformParams",
+        "offsetBytes": 80,
+        "sizeBytes": 16,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "vertex",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerDraw",
+        "name": "unity_MotionVectorsParamsInternal",
+        "offsetBytes": 160,
+        "sizeBytes": 16,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "vertex",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerDraw",
+        "name": "unity_ObjectToWorld",
+        "offsetBytes": 0,
+        "sizeBytes": 64,
+        "arraySize": 1,
+        "isMatrix": true,
+        "status": "gap",
+        "stage": "vertex",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerDraw",
+        "name": "unity_MatrixPreviousM",
+        "offsetBytes": 96,
+        "sizeBytes": 64,
+        "arraySize": 1,
+        "isMatrix": true,
+        "status": "gap",
+        "stage": "vertex",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_NormalScale",
+        "offsetBytes": 0,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "vertex",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_RoughnessMin",
+        "offsetBytes": 8,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "vertex",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_RoughnessMax",
+        "offsetBytes": 12,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "vertex",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_OcclusionStrength",
+        "offsetBytes": 16,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "vertex",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_TwoSidedNormal",
+        "offsetBytes": 28,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "vertex",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_BaseUVSet",
+        "offsetBytes": 44,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "vertex",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_BasePbrMapUVSet",
+        "offsetBytes": 48,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "vertex",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_TAAUNormalBiasReverse",
+        "offsetBytes": 52,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "vertex",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_BaseTextureMapCount",
+        "offsetBytes": 60,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "vertex",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_BaseColorTintCover",
+        "offsetBytes": 64,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "vertex",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_Metallic",
+        "offsetBytes": 68,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "vertex",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_BaseColorBrighterScale",
+        "offsetBytes": 72,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "vertex",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_AntiFlicker",
+        "offsetBytes": 112,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "vertex",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_TaauMaskModeValue",
+        "offsetBytes": 120,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "vertex",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_BaseColor",
+        "offsetBytes": 128,
+        "sizeBytes": 16,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "vertex",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_BaseColorMap_ST",
+        "offsetBytes": 176,
+        "sizeBytes": 16,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "vertex",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_NormalMap_ST",
+        "offsetBytes": 192,
+        "sizeBytes": 16,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "vertex",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_ParallaxStrength",
+        "offsetBytes": 352,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "vertex",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_ParallaxMarchNum",
+        "offsetBytes": 384,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "vertex",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_ParallaxTilling",
+        "offsetBytes": 388,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "vertex",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_ParallaxAnimSpeed",
+        "offsetBytes": 392,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "vertex",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_ParallaxAnimRandom",
+        "offsetBytes": 396,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "vertex",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_ParallaxMinBrightness",
+        "offsetBytes": 400,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "vertex",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_ParallaxFresnelStrength",
+        "offsetBytes": 404,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "vertex",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_ParallaxIgnorePostExposure",
+        "offsetBytes": 408,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "vertex",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_ParallaxMaskChannel",
+        "offsetBytes": 412,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "vertex",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_ParallaxMapUVType",
+        "offsetBytes": 416,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "vertex",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_ParallaxMaskByLayerBlend",
+        "offsetBytes": 420,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "vertex",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_ParallaxNoiseMapTilling",
+        "offsetBytes": 424,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "vertex",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_ParallaxCharPos",
+        "offsetBytes": 428,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "vertex",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_ParallaxBrightOuterRadius",
+        "offsetBytes": 432,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "vertex",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_ParallaxBrightInnerRadius",
+        "offsetBytes": 436,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "vertex",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_ParallaxBrightStrength",
+        "offsetBytes": 440,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "vertex",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_UseParallaxMask",
+        "offsetBytes": 452,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "vertex",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_ParallaxIntensity",
+        "offsetBytes": 460,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "vertex",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_ParallaxColor",
+        "offsetBytes": 464,
+        "sizeBytes": 16,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "vertex",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_ParallaxColorDark",
+        "offsetBytes": 480,
+        "sizeBytes": 16,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "vertex",
+        "register": null,
+        "registerOffsetBytes": null
       }
     ],
     "fragmentFieldMapping": [
@@ -2428,6 +4090,78 @@
         "stage": "fragment",
         "register": 1,
         "registerOffsetBytes": 304
+      },
+      {
+        "buffer": "ShaderVariablesGlobal",
+        "name": "_ScreenSize",
+        "offsetBytes": 0,
+        "sizeBytes": 16,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "resolved_register_range",
+        "stage": "fragment",
+        "register": 1,
+        "registerOffsetBytes": 0
+      },
+      {
+        "buffer": "ShaderVariablesGlobal",
+        "name": "unity_OrthoParams",
+        "offsetBytes": 64,
+        "sizeBytes": 16,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "resolved_register_range",
+        "stage": "fragment",
+        "register": 1,
+        "registerOffsetBytes": 64
+      },
+      {
+        "buffer": "ShaderVariablesGlobal",
+        "name": "_VFXParams2",
+        "offsetBytes": 1680,
+        "sizeBytes": 16,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "resolved_register_range",
+        "stage": "fragment",
+        "register": 1,
+        "registerOffsetBytes": 1680
+      },
+      {
+        "buffer": "ShaderVariablesGlobal",
+        "name": "_GlobalMipBiasPow2",
+        "offsetBytes": 420,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "resolved_register_range",
+        "stage": "fragment",
+        "register": 1,
+        "registerOffsetBytes": 420
+      },
+      {
+        "buffer": "ShaderVariablesGlobal",
+        "name": "_ExposureWithMiscParams",
+        "offsetBytes": 432,
+        "sizeBytes": 16,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "resolved_register_range",
+        "stage": "fragment",
+        "register": 1,
+        "registerOffsetBytes": 432
+      },
+      {
+        "buffer": "ShaderVariablesGlobal",
+        "name": "_VFXParams0",
+        "offsetBytes": 1648,
+        "sizeBytes": 16,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "resolved_register_range",
+        "stage": "fragment",
+        "register": 1,
+        "registerOffsetBytes": 1648
       },
       {
         "buffer": "_TerrainSubsurfaceConstants",
@@ -2488,6 +4222,534 @@
         "stage": "fragment",
         "register": null,
         "registerOffsetBytes": null
+      },
+      {
+        "buffer": "_TransformVariables",
+        "name": "_ViewMatrix",
+        "offsetBytes": 0,
+        "sizeBytes": 64,
+        "arraySize": 1,
+        "isMatrix": true,
+        "status": "resolved_register_range",
+        "stage": "fragment",
+        "register": 0,
+        "registerOffsetBytes": 0
+      },
+      {
+        "buffer": "_TransformVariables",
+        "name": "_InvViewProjMatrix",
+        "offsetBytes": 384,
+        "sizeBytes": 64,
+        "arraySize": 1,
+        "isMatrix": true,
+        "status": "resolved_register_range",
+        "stage": "fragment",
+        "register": 0,
+        "registerOffsetBytes": 384
+      },
+      {
+        "buffer": "UnityPerDraw",
+        "name": "unity_LODFade",
+        "offsetBytes": 64,
+        "sizeBytes": 16,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "fragment",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerDraw",
+        "name": "unity_WorldTransformParams",
+        "offsetBytes": 80,
+        "sizeBytes": 16,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "fragment",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerDraw",
+        "name": "unity_MotionVectorsParamsInternal",
+        "offsetBytes": 160,
+        "sizeBytes": 16,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "fragment",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerDraw",
+        "name": "unity_ObjectToWorld",
+        "offsetBytes": 0,
+        "sizeBytes": 64,
+        "arraySize": 1,
+        "isMatrix": true,
+        "status": "gap",
+        "stage": "fragment",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerDraw",
+        "name": "unity_MatrixPreviousM",
+        "offsetBytes": 96,
+        "sizeBytes": 64,
+        "arraySize": 1,
+        "isMatrix": true,
+        "status": "gap",
+        "stage": "fragment",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_NormalScale",
+        "offsetBytes": 0,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "fragment",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_RoughnessMin",
+        "offsetBytes": 8,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "fragment",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_RoughnessMax",
+        "offsetBytes": 12,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "fragment",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_OcclusionStrength",
+        "offsetBytes": 16,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "fragment",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_TwoSidedNormal",
+        "offsetBytes": 28,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "fragment",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_BaseUVSet",
+        "offsetBytes": 44,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "fragment",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_BasePbrMapUVSet",
+        "offsetBytes": 48,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "fragment",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_TAAUNormalBiasReverse",
+        "offsetBytes": 52,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "fragment",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_BaseTextureMapCount",
+        "offsetBytes": 60,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "fragment",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_BaseColorTintCover",
+        "offsetBytes": 64,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "fragment",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_Metallic",
+        "offsetBytes": 68,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "fragment",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_BaseColorBrighterScale",
+        "offsetBytes": 72,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "fragment",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_AntiFlicker",
+        "offsetBytes": 112,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "fragment",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_TaauMaskModeValue",
+        "offsetBytes": 120,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "fragment",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_BaseColor",
+        "offsetBytes": 128,
+        "sizeBytes": 16,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "fragment",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_BaseColorMap_ST",
+        "offsetBytes": 176,
+        "sizeBytes": 16,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "fragment",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_NormalMap_ST",
+        "offsetBytes": 192,
+        "sizeBytes": 16,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "fragment",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_ParallaxStrength",
+        "offsetBytes": 352,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "fragment",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_ParallaxMarchNum",
+        "offsetBytes": 384,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "fragment",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_ParallaxTilling",
+        "offsetBytes": 388,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "fragment",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_ParallaxAnimSpeed",
+        "offsetBytes": 392,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "fragment",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_ParallaxAnimRandom",
+        "offsetBytes": 396,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "fragment",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_ParallaxMinBrightness",
+        "offsetBytes": 400,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "fragment",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_ParallaxFresnelStrength",
+        "offsetBytes": 404,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "fragment",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_ParallaxIgnorePostExposure",
+        "offsetBytes": 408,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "fragment",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_ParallaxMaskChannel",
+        "offsetBytes": 412,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "fragment",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_ParallaxMapUVType",
+        "offsetBytes": 416,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "fragment",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_ParallaxMaskByLayerBlend",
+        "offsetBytes": 420,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "fragment",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_ParallaxNoiseMapTilling",
+        "offsetBytes": 424,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "fragment",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_ParallaxCharPos",
+        "offsetBytes": 428,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "fragment",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_ParallaxBrightOuterRadius",
+        "offsetBytes": 432,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "fragment",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_ParallaxBrightInnerRadius",
+        "offsetBytes": 436,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "fragment",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_ParallaxBrightStrength",
+        "offsetBytes": 440,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "fragment",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_UseParallaxMask",
+        "offsetBytes": 452,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "fragment",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_ParallaxIntensity",
+        "offsetBytes": 460,
+        "sizeBytes": 4,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "fragment",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_ParallaxColor",
+        "offsetBytes": 464,
+        "sizeBytes": 16,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "fragment",
+        "register": null,
+        "registerOffsetBytes": null
+      },
+      {
+        "buffer": "UnityPerMaterial",
+        "name": "_ParallaxColorDark",
+        "offsetBytes": 480,
+        "sizeBytes": 16,
+        "arraySize": 0,
+        "isMatrix": false,
+        "status": "gap",
+        "stage": "fragment",
+        "register": null,
+        "registerOffsetBytes": null
       }
     ],
     "materialConstantBufferFields": [
@@ -2497,107 +4759,174 @@
         "register": 3,
         "offsetBytes": null,
         "sizeBytes": null,
-        "status": "resolved_register_unresolved_named_offset",
-        "reason": "PackedBinding and same-blob SPIR-V prove b3 and its 576-byte logical layout, but stripped member names do not map this property to one member offset"
+        "type": null,
+        "status": "selected_variant_offset_absent",
+        "reason": "The recovered selected-subprogram constant table contains no field with this name; retain the serialized material value without inventing a b3 offset."
       },
       {
         "property": "_ParallaxStrength",
         "constantBuffer": "UnityPerMaterial",
         "register": 3,
-        "offsetBytes": null,
-        "sizeBytes": null,
-        "status": "resolved_register_unresolved_named_offset",
-        "reason": "PackedBinding and same-blob SPIR-V prove b3 and its 576-byte logical layout, but stripped member names do not map this property to one member offset"
+        "offsetBytes": 352,
+        "sizeBytes": 4,
+        "type": 0,
+        "status": "resolved_selected_variant_offset",
+        "basis": [
+          "Endfield combined-program constant-buffer table",
+          "serialized PerMaterial descriptor binding 12",
+          "same-blob SPIR-V 576-byte layout",
+          "DXBC/Ruri fragment b3 496-byte used prefix"
+        ]
       },
       {
         "property": "_ParallaxMarchNum",
         "constantBuffer": "UnityPerMaterial",
         "register": 3,
-        "offsetBytes": null,
-        "sizeBytes": null,
-        "status": "resolved_register_unresolved_named_offset",
-        "reason": "PackedBinding and same-blob SPIR-V prove b3 and its 576-byte logical layout, but stripped member names do not map this property to one member offset"
+        "offsetBytes": 384,
+        "sizeBytes": 4,
+        "type": 5,
+        "status": "resolved_selected_variant_offset",
+        "basis": [
+          "Endfield combined-program constant-buffer table",
+          "serialized PerMaterial descriptor binding 12",
+          "same-blob SPIR-V 576-byte layout",
+          "DXBC/Ruri fragment b3 496-byte used prefix"
+        ]
       },
       {
         "property": "_ParallaxTilling",
         "constantBuffer": "UnityPerMaterial",
         "register": 3,
-        "offsetBytes": null,
-        "sizeBytes": null,
-        "status": "resolved_register_unresolved_named_offset",
-        "reason": "PackedBinding and same-blob SPIR-V prove b3 and its 576-byte logical layout, but stripped member names do not map this property to one member offset"
+        "offsetBytes": 388,
+        "sizeBytes": 4,
+        "type": 0,
+        "status": "resolved_selected_variant_offset",
+        "basis": [
+          "Endfield combined-program constant-buffer table",
+          "serialized PerMaterial descriptor binding 12",
+          "same-blob SPIR-V 576-byte layout",
+          "DXBC/Ruri fragment b3 496-byte used prefix"
+        ]
       },
       {
         "property": "_ParallaxAnimRandom",
         "constantBuffer": "UnityPerMaterial",
         "register": 3,
-        "offsetBytes": null,
-        "sizeBytes": null,
-        "status": "resolved_register_unresolved_named_offset",
-        "reason": "PackedBinding and same-blob SPIR-V prove b3 and its 576-byte logical layout, but stripped member names do not map this property to one member offset"
+        "offsetBytes": 396,
+        "sizeBytes": 4,
+        "type": 0,
+        "status": "resolved_selected_variant_offset",
+        "basis": [
+          "Endfield combined-program constant-buffer table",
+          "serialized PerMaterial descriptor binding 12",
+          "same-blob SPIR-V 576-byte layout",
+          "DXBC/Ruri fragment b3 496-byte used prefix"
+        ]
       },
       {
         "property": "_ParallaxAnimSpeed",
         "constantBuffer": "UnityPerMaterial",
         "register": 3,
-        "offsetBytes": null,
-        "sizeBytes": null,
-        "status": "resolved_register_unresolved_named_offset",
-        "reason": "PackedBinding and same-blob SPIR-V prove b3 and its 576-byte logical layout, but stripped member names do not map this property to one member offset"
+        "offsetBytes": 392,
+        "sizeBytes": 4,
+        "type": 0,
+        "status": "resolved_selected_variant_offset",
+        "basis": [
+          "Endfield combined-program constant-buffer table",
+          "serialized PerMaterial descriptor binding 12",
+          "same-blob SPIR-V 576-byte layout",
+          "DXBC/Ruri fragment b3 496-byte used prefix"
+        ]
       },
       {
         "property": "_ParallaxBrightInnerRadius",
         "constantBuffer": "UnityPerMaterial",
         "register": 3,
-        "offsetBytes": null,
-        "sizeBytes": null,
-        "status": "resolved_register_unresolved_named_offset",
-        "reason": "PackedBinding and same-blob SPIR-V prove b3 and its 576-byte logical layout, but stripped member names do not map this property to one member offset"
+        "offsetBytes": 436,
+        "sizeBytes": 4,
+        "type": 0,
+        "status": "resolved_selected_variant_offset",
+        "basis": [
+          "Endfield combined-program constant-buffer table",
+          "serialized PerMaterial descriptor binding 12",
+          "same-blob SPIR-V 576-byte layout",
+          "DXBC/Ruri fragment b3 496-byte used prefix"
+        ]
       },
       {
         "property": "_ParallaxBrightOuterRadius",
         "constantBuffer": "UnityPerMaterial",
         "register": 3,
-        "offsetBytes": null,
-        "sizeBytes": null,
-        "status": "resolved_register_unresolved_named_offset",
-        "reason": "PackedBinding and same-blob SPIR-V prove b3 and its 576-byte logical layout, but stripped member names do not map this property to one member offset"
+        "offsetBytes": 432,
+        "sizeBytes": 4,
+        "type": 0,
+        "status": "resolved_selected_variant_offset",
+        "basis": [
+          "Endfield combined-program constant-buffer table",
+          "serialized PerMaterial descriptor binding 12",
+          "same-blob SPIR-V 576-byte layout",
+          "DXBC/Ruri fragment b3 496-byte used prefix"
+        ]
       },
       {
         "property": "_ParallaxBrightStrength",
         "constantBuffer": "UnityPerMaterial",
         "register": 3,
-        "offsetBytes": null,
-        "sizeBytes": null,
-        "status": "resolved_register_unresolved_named_offset",
-        "reason": "PackedBinding and same-blob SPIR-V prove b3 and its 576-byte logical layout, but stripped member names do not map this property to one member offset"
+        "offsetBytes": 440,
+        "sizeBytes": 4,
+        "type": 0,
+        "status": "resolved_selected_variant_offset",
+        "basis": [
+          "Endfield combined-program constant-buffer table",
+          "serialized PerMaterial descriptor binding 12",
+          "same-blob SPIR-V 576-byte layout",
+          "DXBC/Ruri fragment b3 496-byte used prefix"
+        ]
       },
       {
         "property": "_ParallaxFresnelStrength",
         "constantBuffer": "UnityPerMaterial",
         "register": 3,
-        "offsetBytes": null,
-        "sizeBytes": null,
-        "status": "resolved_register_unresolved_named_offset",
-        "reason": "PackedBinding and same-blob SPIR-V prove b3 and its 576-byte logical layout, but stripped member names do not map this property to one member offset"
+        "offsetBytes": 404,
+        "sizeBytes": 4,
+        "type": 0,
+        "status": "resolved_selected_variant_offset",
+        "basis": [
+          "Endfield combined-program constant-buffer table",
+          "serialized PerMaterial descriptor binding 12",
+          "same-blob SPIR-V 576-byte layout",
+          "DXBC/Ruri fragment b3 496-byte used prefix"
+        ]
       },
       {
         "property": "_ParallaxIgnorePostExposure",
         "constantBuffer": "UnityPerMaterial",
         "register": 3,
-        "offsetBytes": null,
-        "sizeBytes": null,
-        "status": "resolved_register_unresolved_named_offset",
-        "reason": "PackedBinding and same-blob SPIR-V prove b3 and its 576-byte logical layout, but stripped member names do not map this property to one member offset"
+        "offsetBytes": 408,
+        "sizeBytes": 4,
+        "type": 0,
+        "status": "resolved_selected_variant_offset",
+        "basis": [
+          "Endfield combined-program constant-buffer table",
+          "serialized PerMaterial descriptor binding 12",
+          "same-blob SPIR-V 576-byte layout",
+          "DXBC/Ruri fragment b3 496-byte used prefix"
+        ]
       },
       {
         "property": "_ParallaxIntensity",
         "constantBuffer": "UnityPerMaterial",
         "register": 3,
-        "offsetBytes": null,
-        "sizeBytes": null,
-        "status": "resolved_register_unresolved_named_offset",
-        "reason": "PackedBinding and same-blob SPIR-V prove b3 and its 576-byte logical layout, but stripped member names do not map this property to one member offset"
+        "offsetBytes": 460,
+        "sizeBytes": 4,
+        "type": 0,
+        "status": "resolved_selected_variant_offset",
+        "basis": [
+          "Endfield combined-program constant-buffer table",
+          "serialized PerMaterial descriptor binding 12",
+          "same-blob SPIR-V 576-byte layout",
+          "DXBC/Ruri fragment b3 496-byte used prefix"
+        ]
       },
       {
         "property": "_ParallaxMaskMapColorStrength",
@@ -2605,44 +4934,69 @@
         "register": 3,
         "offsetBytes": null,
         "sizeBytes": null,
-        "status": "resolved_register_unresolved_named_offset",
-        "reason": "PackedBinding and same-blob SPIR-V prove b3 and its 576-byte logical layout, but stripped member names do not map this property to one member offset"
+        "type": null,
+        "status": "selected_variant_offset_absent",
+        "reason": "The recovered selected-subprogram constant table contains no field with this name; retain the serialized material value without inventing a b3 offset."
       },
       {
         "property": "_ParallaxMinBrightness",
         "constantBuffer": "UnityPerMaterial",
         "register": 3,
-        "offsetBytes": null,
-        "sizeBytes": null,
-        "status": "resolved_register_unresolved_named_offset",
-        "reason": "PackedBinding and same-blob SPIR-V prove b3 and its 576-byte logical layout, but stripped member names do not map this property to one member offset"
+        "offsetBytes": 400,
+        "sizeBytes": 4,
+        "type": 0,
+        "status": "resolved_selected_variant_offset",
+        "basis": [
+          "Endfield combined-program constant-buffer table",
+          "serialized PerMaterial descriptor binding 12",
+          "same-blob SPIR-V 576-byte layout",
+          "DXBC/Ruri fragment b3 496-byte used prefix"
+        ]
       },
       {
         "property": "_ParallaxNoiseMapTilling",
         "constantBuffer": "UnityPerMaterial",
         "register": 3,
-        "offsetBytes": null,
-        "sizeBytes": null,
-        "status": "resolved_register_unresolved_named_offset",
-        "reason": "PackedBinding and same-blob SPIR-V prove b3 and its 576-byte logical layout, but stripped member names do not map this property to one member offset"
+        "offsetBytes": 424,
+        "sizeBytes": 4,
+        "type": 0,
+        "status": "resolved_selected_variant_offset",
+        "basis": [
+          "Endfield combined-program constant-buffer table",
+          "serialized PerMaterial descriptor binding 12",
+          "same-blob SPIR-V 576-byte layout",
+          "DXBC/Ruri fragment b3 496-byte used prefix"
+        ]
       },
       {
         "property": "_ParallaxCharPos",
         "constantBuffer": "UnityPerMaterial",
         "register": 3,
-        "offsetBytes": null,
-        "sizeBytes": null,
-        "status": "resolved_register_unresolved_named_offset",
-        "reason": "PackedBinding and same-blob SPIR-V prove b3 and its 576-byte logical layout, but stripped member names do not map this property to one member offset"
+        "offsetBytes": 428,
+        "sizeBytes": 4,
+        "type": 0,
+        "status": "resolved_selected_variant_offset",
+        "basis": [
+          "Endfield combined-program constant-buffer table",
+          "serialized PerMaterial descriptor binding 12",
+          "same-blob SPIR-V 576-byte layout",
+          "DXBC/Ruri fragment b3 496-byte used prefix"
+        ]
       },
       {
         "property": "_ParallaxMaskByLayerBlend",
         "constantBuffer": "UnityPerMaterial",
         "register": 3,
-        "offsetBytes": null,
-        "sizeBytes": null,
-        "status": "resolved_register_unresolved_named_offset",
-        "reason": "PackedBinding and same-blob SPIR-V prove b3 and its 576-byte logical layout, but stripped member names do not map this property to one member offset"
+        "offsetBytes": 420,
+        "sizeBytes": 4,
+        "type": 0,
+        "status": "resolved_selected_variant_offset",
+        "basis": [
+          "Endfield combined-program constant-buffer table",
+          "serialized PerMaterial descriptor binding 12",
+          "same-blob SPIR-V 576-byte layout",
+          "DXBC/Ruri fragment b3 496-byte used prefix"
+        ]
       },
       {
         "property": "_ParallaxLerpSchedule",
@@ -2650,8 +5004,9 @@
         "register": 3,
         "offsetBytes": null,
         "sizeBytes": null,
-        "status": "resolved_register_unresolved_named_offset",
-        "reason": "PackedBinding and same-blob SPIR-V prove b3 and its 576-byte logical layout, but stripped member names do not map this property to one member offset"
+        "type": null,
+        "status": "selected_variant_offset_absent",
+        "reason": "The recovered selected-subprogram constant table contains no field with this name; retain the serialized material value without inventing a b3 offset."
       },
       {
         "property": "_ParallaxSignControl",
@@ -2659,26 +5014,39 @@
         "register": 3,
         "offsetBytes": null,
         "sizeBytes": null,
-        "status": "resolved_register_unresolved_named_offset",
-        "reason": "PackedBinding and same-blob SPIR-V prove b3 and its 576-byte logical layout, but stripped member names do not map this property to one member offset"
+        "type": null,
+        "status": "selected_variant_offset_absent",
+        "reason": "The recovered selected-subprogram constant table contains no field with this name; retain the serialized material value without inventing a b3 offset."
       },
       {
         "property": "_ParallaxColor",
         "constantBuffer": "UnityPerMaterial",
         "register": 3,
-        "offsetBytes": null,
-        "sizeBytes": null,
-        "status": "resolved_register_unresolved_named_offset",
-        "reason": "PackedBinding and same-blob SPIR-V prove b3 and its 576-byte logical layout, but stripped member names do not map this property to one member offset"
+        "offsetBytes": 464,
+        "sizeBytes": 16,
+        "type": 0,
+        "status": "resolved_selected_variant_offset",
+        "basis": [
+          "Endfield combined-program constant-buffer table",
+          "serialized PerMaterial descriptor binding 12",
+          "same-blob SPIR-V 576-byte layout",
+          "DXBC/Ruri fragment b3 496-byte used prefix"
+        ]
       },
       {
         "property": "_ParallaxColorDark",
         "constantBuffer": "UnityPerMaterial",
         "register": 3,
-        "offsetBytes": null,
-        "sizeBytes": null,
-        "status": "resolved_register_unresolved_named_offset",
-        "reason": "PackedBinding and same-blob SPIR-V prove b3 and its 576-byte logical layout, but stripped member names do not map this property to one member offset"
+        "offsetBytes": 480,
+        "sizeBytes": 16,
+        "type": 0,
+        "status": "resolved_selected_variant_offset",
+        "basis": [
+          "Endfield combined-program constant-buffer table",
+          "serialized PerMaterial descriptor binding 12",
+          "same-blob SPIR-V 576-byte layout",
+          "DXBC/Ruri fragment b3 496-byte used prefix"
+        ]
       },
       {
         "property": "_ParallaxPatternColor",
@@ -2686,8 +5054,9 @@
         "register": 3,
         "offsetBytes": null,
         "sizeBytes": null,
-        "status": "resolved_register_unresolved_named_offset",
-        "reason": "PackedBinding and same-blob SPIR-V prove b3 and its 576-byte logical layout, but stripped member names do not map this property to one member offset"
+        "type": null,
+        "status": "selected_variant_offset_absent",
+        "reason": "The recovered selected-subprogram constant table contains no field with this name; retain the serialized material value without inventing a b3 offset."
       },
       {
         "property": "_ParallaxPatternColorDark",
@@ -2695,8 +5064,9 @@
         "register": 3,
         "offsetBytes": null,
         "sizeBytes": null,
-        "status": "resolved_register_unresolved_named_offset",
-        "reason": "PackedBinding and same-blob SPIR-V prove b3 and its 576-byte logical layout, but stripped member names do not map this property to one member offset"
+        "type": null,
+        "status": "selected_variant_offset_absent",
+        "reason": "The recovered selected-subprogram constant table contains no field with this name; retain the serialized material value without inventing a b3 offset."
       },
       {
         "property": "_ParallaxSignLerpFactor0",
@@ -2704,8 +5074,9 @@
         "register": 3,
         "offsetBytes": null,
         "sizeBytes": null,
-        "status": "resolved_register_unresolved_named_offset",
-        "reason": "PackedBinding and same-blob SPIR-V prove b3 and its 576-byte logical layout, but stripped member names do not map this property to one member offset"
+        "type": null,
+        "status": "selected_variant_offset_absent",
+        "reason": "The recovered selected-subprogram constant table contains no field with this name; retain the serialized material value without inventing a b3 offset."
       },
       {
         "property": "_ParallaxSignLerpFactor1",
@@ -2713,8 +5084,9 @@
         "register": 3,
         "offsetBytes": null,
         "sizeBytes": null,
-        "status": "resolved_register_unresolved_named_offset",
-        "reason": "PackedBinding and same-blob SPIR-V prove b3 and its 576-byte logical layout, but stripped member names do not map this property to one member offset"
+        "type": null,
+        "status": "selected_variant_offset_absent",
+        "reason": "The recovered selected-subprogram constant table contains no field with this name; retain the serialized material value without inventing a b3 offset."
       },
       {
         "property": "_WorldParallaxAdditionalColor",
@@ -2722,8 +5094,9 @@
         "register": 3,
         "offsetBytes": null,
         "sizeBytes": null,
-        "status": "resolved_register_unresolved_named_offset",
-        "reason": "PackedBinding and same-blob SPIR-V prove b3 and its 576-byte logical layout, but stripped member names do not map this property to one member offset"
+        "type": null,
+        "status": "selected_variant_offset_absent",
+        "reason": "The recovered selected-subprogram constant table contains no field with this name; retain the serialized material value without inventing a b3 offset."
       }
     ]
   },
@@ -2846,95 +5219,95 @@
           "value": 1.0,
           "shaderPropertyDeclared": true,
           "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "status": "resolved_material_value_only_selected_variant_offset_absent"
         },
         {
           "property": "_ParallaxStrength",
           "kind": "float",
           "value": 0.096,
           "shaderPropertyDeclared": true,
-          "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "constantBufferOffsetBytes": 352,
+          "status": "resolved_material_value_and_selected_variant_offset"
         },
         {
           "property": "_ParallaxMarchNum",
           "kind": "float",
           "value": 5.0,
           "shaderPropertyDeclared": true,
-          "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "constantBufferOffsetBytes": 384,
+          "status": "resolved_material_value_and_selected_variant_offset"
         },
         {
           "property": "_ParallaxTilling",
           "kind": "float",
           "value": 3.36,
           "shaderPropertyDeclared": true,
-          "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "constantBufferOffsetBytes": 388,
+          "status": "resolved_material_value_and_selected_variant_offset"
         },
         {
           "property": "_ParallaxAnimRandom",
           "kind": "float",
           "value": 1.0,
           "shaderPropertyDeclared": true,
-          "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "constantBufferOffsetBytes": 396,
+          "status": "resolved_material_value_and_selected_variant_offset"
         },
         {
           "property": "_ParallaxAnimSpeed",
           "kind": "float",
           "value": 0.0,
           "shaderPropertyDeclared": true,
-          "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "constantBufferOffsetBytes": 392,
+          "status": "resolved_material_value_and_selected_variant_offset"
         },
         {
           "property": "_ParallaxBrightInnerRadius",
           "kind": "float",
           "value": 10.0,
           "shaderPropertyDeclared": true,
-          "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "constantBufferOffsetBytes": 436,
+          "status": "resolved_material_value_and_selected_variant_offset"
         },
         {
           "property": "_ParallaxBrightOuterRadius",
           "kind": "float",
           "value": 20.0,
           "shaderPropertyDeclared": true,
-          "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "constantBufferOffsetBytes": 432,
+          "status": "resolved_material_value_and_selected_variant_offset"
         },
         {
           "property": "_ParallaxBrightStrength",
           "kind": "float",
           "value": 1.0,
           "shaderPropertyDeclared": true,
-          "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "constantBufferOffsetBytes": 440,
+          "status": "resolved_material_value_and_selected_variant_offset"
         },
         {
           "property": "_ParallaxFresnelStrength",
           "kind": "float",
           "value": 1.0,
           "shaderPropertyDeclared": true,
-          "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "constantBufferOffsetBytes": 404,
+          "status": "resolved_material_value_and_selected_variant_offset"
         },
         {
           "property": "_ParallaxIgnorePostExposure",
           "kind": "float",
           "value": 1.0,
           "shaderPropertyDeclared": true,
-          "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "constantBufferOffsetBytes": 408,
+          "status": "resolved_material_value_and_selected_variant_offset"
         },
         {
           "property": "_ParallaxIntensity",
           "kind": "float",
           "value": 1.0,
           "shaderPropertyDeclared": true,
-          "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "constantBufferOffsetBytes": 460,
+          "status": "resolved_material_value_and_selected_variant_offset"
         },
         {
           "property": "_ParallaxMaskMapColorStrength",
@@ -2942,39 +5315,39 @@
           "value": 1.0,
           "shaderPropertyDeclared": true,
           "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "status": "resolved_material_value_only_selected_variant_offset_absent"
         },
         {
           "property": "_ParallaxMinBrightness",
           "kind": "float",
           "value": 0.2,
           "shaderPropertyDeclared": true,
-          "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "constantBufferOffsetBytes": 400,
+          "status": "resolved_material_value_and_selected_variant_offset"
         },
         {
           "property": "_ParallaxNoiseMapTilling",
           "kind": "float",
           "value": 1.0,
           "shaderPropertyDeclared": true,
-          "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "constantBufferOffsetBytes": 424,
+          "status": "resolved_material_value_and_selected_variant_offset"
         },
         {
           "property": "_ParallaxCharPos",
           "kind": "float",
           "value": 0.0,
           "shaderPropertyDeclared": true,
-          "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "constantBufferOffsetBytes": 428,
+          "status": "resolved_material_value_and_selected_variant_offset"
         },
         {
           "property": "_ParallaxMaskByLayerBlend",
           "kind": "float",
           "value": 0.0,
           "shaderPropertyDeclared": true,
-          "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "constantBufferOffsetBytes": 420,
+          "status": "resolved_material_value_and_selected_variant_offset"
         },
         {
           "property": "_ParallaxLerpSchedule",
@@ -2982,7 +5355,7 @@
           "value": 0.0,
           "shaderPropertyDeclared": true,
           "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "status": "resolved_material_value_only_selected_variant_offset_absent"
         },
         {
           "property": "_ParallaxSignControl",
@@ -2990,7 +5363,7 @@
           "value": 0.0,
           "shaderPropertyDeclared": true,
           "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "status": "resolved_material_value_only_selected_variant_offset_absent"
         },
         {
           "property": "_ParallaxColor",
@@ -3002,8 +5375,8 @@
             "a": 1.0
           },
           "shaderPropertyDeclared": true,
-          "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "constantBufferOffsetBytes": 464,
+          "status": "resolved_material_value_and_selected_variant_offset"
         },
         {
           "property": "_ParallaxColorDark",
@@ -3015,8 +5388,8 @@
             "a": 1.0
           },
           "shaderPropertyDeclared": true,
-          "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "constantBufferOffsetBytes": 480,
+          "status": "resolved_material_value_and_selected_variant_offset"
         },
         {
           "property": "_ParallaxPatternColor",
@@ -3029,7 +5402,7 @@
           },
           "shaderPropertyDeclared": true,
           "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "status": "resolved_material_value_only_selected_variant_offset_absent"
         },
         {
           "property": "_ParallaxPatternColorDark",
@@ -3042,7 +5415,7 @@
           },
           "shaderPropertyDeclared": true,
           "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "status": "resolved_material_value_only_selected_variant_offset_absent"
         },
         {
           "property": "_ParallaxSignLerpFactor0",
@@ -3055,7 +5428,7 @@
           },
           "shaderPropertyDeclared": true,
           "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "status": "resolved_material_value_only_selected_variant_offset_absent"
         },
         {
           "property": "_ParallaxSignLerpFactor1",
@@ -3068,7 +5441,7 @@
           },
           "shaderPropertyDeclared": true,
           "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "status": "resolved_material_value_only_selected_variant_offset_absent"
         },
         {
           "property": "_WorldParallaxAdditionalColor",
@@ -3081,7 +5454,7 @@
           },
           "shaderPropertyDeclared": true,
           "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "status": "resolved_material_value_only_selected_variant_offset_absent"
         }
       ]
     },
@@ -3203,95 +5576,95 @@
           "value": 1.0,
           "shaderPropertyDeclared": true,
           "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "status": "resolved_material_value_only_selected_variant_offset_absent"
         },
         {
           "property": "_ParallaxStrength",
           "kind": "float",
           "value": 0.096,
           "shaderPropertyDeclared": true,
-          "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "constantBufferOffsetBytes": 352,
+          "status": "resolved_material_value_and_selected_variant_offset"
         },
         {
           "property": "_ParallaxMarchNum",
           "kind": "float",
           "value": 5.0,
           "shaderPropertyDeclared": true,
-          "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "constantBufferOffsetBytes": 384,
+          "status": "resolved_material_value_and_selected_variant_offset"
         },
         {
           "property": "_ParallaxTilling",
           "kind": "float",
           "value": 3.36,
           "shaderPropertyDeclared": true,
-          "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "constantBufferOffsetBytes": 388,
+          "status": "resolved_material_value_and_selected_variant_offset"
         },
         {
           "property": "_ParallaxAnimRandom",
           "kind": "float",
           "value": 1.0,
           "shaderPropertyDeclared": true,
-          "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "constantBufferOffsetBytes": 396,
+          "status": "resolved_material_value_and_selected_variant_offset"
         },
         {
           "property": "_ParallaxAnimSpeed",
           "kind": "float",
           "value": 0.0,
           "shaderPropertyDeclared": true,
-          "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "constantBufferOffsetBytes": 392,
+          "status": "resolved_material_value_and_selected_variant_offset"
         },
         {
           "property": "_ParallaxBrightInnerRadius",
           "kind": "float",
           "value": 10.0,
           "shaderPropertyDeclared": true,
-          "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "constantBufferOffsetBytes": 436,
+          "status": "resolved_material_value_and_selected_variant_offset"
         },
         {
           "property": "_ParallaxBrightOuterRadius",
           "kind": "float",
           "value": 20.0,
           "shaderPropertyDeclared": true,
-          "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "constantBufferOffsetBytes": 432,
+          "status": "resolved_material_value_and_selected_variant_offset"
         },
         {
           "property": "_ParallaxBrightStrength",
           "kind": "float",
           "value": 1.0,
           "shaderPropertyDeclared": true,
-          "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "constantBufferOffsetBytes": 440,
+          "status": "resolved_material_value_and_selected_variant_offset"
         },
         {
           "property": "_ParallaxFresnelStrength",
           "kind": "float",
           "value": 1.0,
           "shaderPropertyDeclared": true,
-          "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "constantBufferOffsetBytes": 404,
+          "status": "resolved_material_value_and_selected_variant_offset"
         },
         {
           "property": "_ParallaxIgnorePostExposure",
           "kind": "float",
           "value": 1.0,
           "shaderPropertyDeclared": true,
-          "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "constantBufferOffsetBytes": 408,
+          "status": "resolved_material_value_and_selected_variant_offset"
         },
         {
           "property": "_ParallaxIntensity",
           "kind": "float",
           "value": 1.0,
           "shaderPropertyDeclared": true,
-          "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "constantBufferOffsetBytes": 460,
+          "status": "resolved_material_value_and_selected_variant_offset"
         },
         {
           "property": "_ParallaxMaskMapColorStrength",
@@ -3299,39 +5672,39 @@
           "value": 1.0,
           "shaderPropertyDeclared": true,
           "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "status": "resolved_material_value_only_selected_variant_offset_absent"
         },
         {
           "property": "_ParallaxMinBrightness",
           "kind": "float",
           "value": 0.2,
           "shaderPropertyDeclared": true,
-          "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "constantBufferOffsetBytes": 400,
+          "status": "resolved_material_value_and_selected_variant_offset"
         },
         {
           "property": "_ParallaxNoiseMapTilling",
           "kind": "float",
           "value": 1.0,
           "shaderPropertyDeclared": true,
-          "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "constantBufferOffsetBytes": 424,
+          "status": "resolved_material_value_and_selected_variant_offset"
         },
         {
           "property": "_ParallaxCharPos",
           "kind": "float",
           "value": 0.0,
           "shaderPropertyDeclared": true,
-          "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "constantBufferOffsetBytes": 428,
+          "status": "resolved_material_value_and_selected_variant_offset"
         },
         {
           "property": "_ParallaxMaskByLayerBlend",
           "kind": "float",
           "value": 0.0,
           "shaderPropertyDeclared": true,
-          "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "constantBufferOffsetBytes": 420,
+          "status": "resolved_material_value_and_selected_variant_offset"
         },
         {
           "property": "_ParallaxLerpSchedule",
@@ -3339,7 +5712,7 @@
           "value": 0.0,
           "shaderPropertyDeclared": true,
           "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "status": "resolved_material_value_only_selected_variant_offset_absent"
         },
         {
           "property": "_ParallaxSignControl",
@@ -3347,7 +5720,7 @@
           "value": 0.0,
           "shaderPropertyDeclared": true,
           "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "status": "resolved_material_value_only_selected_variant_offset_absent"
         },
         {
           "property": "_ParallaxColor",
@@ -3359,8 +5732,8 @@
             "a": 1.0
           },
           "shaderPropertyDeclared": true,
-          "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "constantBufferOffsetBytes": 464,
+          "status": "resolved_material_value_and_selected_variant_offset"
         },
         {
           "property": "_ParallaxColorDark",
@@ -3372,8 +5745,8 @@
             "a": 1.0
           },
           "shaderPropertyDeclared": true,
-          "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "constantBufferOffsetBytes": 480,
+          "status": "resolved_material_value_and_selected_variant_offset"
         },
         {
           "property": "_ParallaxPatternColor",
@@ -3386,7 +5759,7 @@
           },
           "shaderPropertyDeclared": true,
           "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "status": "resolved_material_value_only_selected_variant_offset_absent"
         },
         {
           "property": "_ParallaxPatternColorDark",
@@ -3399,7 +5772,7 @@
           },
           "shaderPropertyDeclared": true,
           "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "status": "resolved_material_value_only_selected_variant_offset_absent"
         },
         {
           "property": "_ParallaxSignLerpFactor0",
@@ -3412,7 +5785,7 @@
           },
           "shaderPropertyDeclared": true,
           "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "status": "resolved_material_value_only_selected_variant_offset_absent"
         },
         {
           "property": "_ParallaxSignLerpFactor1",
@@ -3425,7 +5798,7 @@
           },
           "shaderPropertyDeclared": true,
           "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "status": "resolved_material_value_only_selected_variant_offset_absent"
         },
         {
           "property": "_WorldParallaxAdditionalColor",
@@ -3438,7 +5811,7 @@
           },
           "shaderPropertyDeclared": true,
           "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "status": "resolved_material_value_only_selected_variant_offset_absent"
         }
       ]
     },
@@ -3560,95 +5933,95 @@
           "value": 1.0,
           "shaderPropertyDeclared": true,
           "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "status": "resolved_material_value_only_selected_variant_offset_absent"
         },
         {
           "property": "_ParallaxStrength",
           "kind": "float",
           "value": 0.096,
           "shaderPropertyDeclared": true,
-          "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "constantBufferOffsetBytes": 352,
+          "status": "resolved_material_value_and_selected_variant_offset"
         },
         {
           "property": "_ParallaxMarchNum",
           "kind": "float",
           "value": 5.0,
           "shaderPropertyDeclared": true,
-          "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "constantBufferOffsetBytes": 384,
+          "status": "resolved_material_value_and_selected_variant_offset"
         },
         {
           "property": "_ParallaxTilling",
           "kind": "float",
           "value": 3.36,
           "shaderPropertyDeclared": true,
-          "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "constantBufferOffsetBytes": 388,
+          "status": "resolved_material_value_and_selected_variant_offset"
         },
         {
           "property": "_ParallaxAnimRandom",
           "kind": "float",
           "value": 1.0,
           "shaderPropertyDeclared": true,
-          "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "constantBufferOffsetBytes": 396,
+          "status": "resolved_material_value_and_selected_variant_offset"
         },
         {
           "property": "_ParallaxAnimSpeed",
           "kind": "float",
           "value": 0.0,
           "shaderPropertyDeclared": true,
-          "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "constantBufferOffsetBytes": 392,
+          "status": "resolved_material_value_and_selected_variant_offset"
         },
         {
           "property": "_ParallaxBrightInnerRadius",
           "kind": "float",
           "value": 10.0,
           "shaderPropertyDeclared": true,
-          "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "constantBufferOffsetBytes": 436,
+          "status": "resolved_material_value_and_selected_variant_offset"
         },
         {
           "property": "_ParallaxBrightOuterRadius",
           "kind": "float",
           "value": 20.0,
           "shaderPropertyDeclared": true,
-          "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "constantBufferOffsetBytes": 432,
+          "status": "resolved_material_value_and_selected_variant_offset"
         },
         {
           "property": "_ParallaxBrightStrength",
           "kind": "float",
           "value": 1.0,
           "shaderPropertyDeclared": true,
-          "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "constantBufferOffsetBytes": 440,
+          "status": "resolved_material_value_and_selected_variant_offset"
         },
         {
           "property": "_ParallaxFresnelStrength",
           "kind": "float",
           "value": 1.0,
           "shaderPropertyDeclared": true,
-          "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "constantBufferOffsetBytes": 404,
+          "status": "resolved_material_value_and_selected_variant_offset"
         },
         {
           "property": "_ParallaxIgnorePostExposure",
           "kind": "float",
           "value": 1.0,
           "shaderPropertyDeclared": true,
-          "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "constantBufferOffsetBytes": 408,
+          "status": "resolved_material_value_and_selected_variant_offset"
         },
         {
           "property": "_ParallaxIntensity",
           "kind": "float",
           "value": 1.0,
           "shaderPropertyDeclared": true,
-          "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "constantBufferOffsetBytes": 460,
+          "status": "resolved_material_value_and_selected_variant_offset"
         },
         {
           "property": "_ParallaxMaskMapColorStrength",
@@ -3656,39 +6029,39 @@
           "value": 1.0,
           "shaderPropertyDeclared": true,
           "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "status": "resolved_material_value_only_selected_variant_offset_absent"
         },
         {
           "property": "_ParallaxMinBrightness",
           "kind": "float",
           "value": 0.2,
           "shaderPropertyDeclared": true,
-          "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "constantBufferOffsetBytes": 400,
+          "status": "resolved_material_value_and_selected_variant_offset"
         },
         {
           "property": "_ParallaxNoiseMapTilling",
           "kind": "float",
           "value": 1.0,
           "shaderPropertyDeclared": true,
-          "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "constantBufferOffsetBytes": 424,
+          "status": "resolved_material_value_and_selected_variant_offset"
         },
         {
           "property": "_ParallaxCharPos",
           "kind": "float",
           "value": 0.0,
           "shaderPropertyDeclared": true,
-          "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "constantBufferOffsetBytes": 428,
+          "status": "resolved_material_value_and_selected_variant_offset"
         },
         {
           "property": "_ParallaxMaskByLayerBlend",
           "kind": "float",
           "value": 0.0,
           "shaderPropertyDeclared": true,
-          "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "constantBufferOffsetBytes": 420,
+          "status": "resolved_material_value_and_selected_variant_offset"
         },
         {
           "property": "_ParallaxLerpSchedule",
@@ -3696,7 +6069,7 @@
           "value": 0.0,
           "shaderPropertyDeclared": true,
           "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "status": "resolved_material_value_only_selected_variant_offset_absent"
         },
         {
           "property": "_ParallaxSignControl",
@@ -3704,7 +6077,7 @@
           "value": 0.0,
           "shaderPropertyDeclared": true,
           "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "status": "resolved_material_value_only_selected_variant_offset_absent"
         },
         {
           "property": "_ParallaxColor",
@@ -3716,8 +6089,8 @@
             "a": 1.0
           },
           "shaderPropertyDeclared": true,
-          "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "constantBufferOffsetBytes": 464,
+          "status": "resolved_material_value_and_selected_variant_offset"
         },
         {
           "property": "_ParallaxColorDark",
@@ -3729,8 +6102,8 @@
             "a": 1.0
           },
           "shaderPropertyDeclared": true,
-          "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "constantBufferOffsetBytes": 480,
+          "status": "resolved_material_value_and_selected_variant_offset"
         },
         {
           "property": "_ParallaxPatternColor",
@@ -3743,7 +6116,7 @@
           },
           "shaderPropertyDeclared": true,
           "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "status": "resolved_material_value_only_selected_variant_offset_absent"
         },
         {
           "property": "_ParallaxPatternColorDark",
@@ -3756,7 +6129,7 @@
           },
           "shaderPropertyDeclared": true,
           "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "status": "resolved_material_value_only_selected_variant_offset_absent"
         },
         {
           "property": "_ParallaxSignLerpFactor0",
@@ -3769,7 +6142,7 @@
           },
           "shaderPropertyDeclared": true,
           "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "status": "resolved_material_value_only_selected_variant_offset_absent"
         },
         {
           "property": "_ParallaxSignLerpFactor1",
@@ -3782,7 +6155,7 @@
           },
           "shaderPropertyDeclared": true,
           "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "status": "resolved_material_value_only_selected_variant_offset_absent"
         },
         {
           "property": "_WorldParallaxAdditionalColor",
@@ -3795,14 +6168,14 @@
           },
           "shaderPropertyDeclared": true,
           "constantBufferOffsetBytes": null,
-          "status": "resolved_material_value_only"
+          "status": "resolved_material_value_only_selected_variant_offset_absent"
         }
       ]
     }
   ],
   "gaps": [
     "DXBC has no RDEF chunk; named common-buffer fields come only from serialized Shader metadata.",
-    "UnityPerMaterial is proven at fragment b3 with a 576-byte same-blob SPIR-V layout and 496-byte DXBC used prefix, but stripped member names still leave property-to-offset mapping unresolved.",
+    "The selected b3 field map does not by itself close the other physical constant buffers or complete HGBuffer frame publication.",
     "ParserBindChannels.m_Channels is not exported by AnimeStudio's Shader JSON; do not substitute guessed ShaderLab channels.",
     "The null _ParallaxNoiseMap and _ParallaxMaskMap PPtrs remain unresolved by design."
   ]
