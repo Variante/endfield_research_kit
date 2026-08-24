@@ -1,0 +1,168 @@
+{
+  "schema": "endfield.endminf-m28-consumer-boundary.v1",
+  "status": "fail_closed_program_and_source_tuple_incomplete",
+  "scope": {
+    "material": "M_fx_endminm_gfx_28",
+    "materialPathId": -4647734024635463429,
+    "materialPathIdHex": "BF7FEE87831B48FB",
+    "shader": "HGRP/Effect/VFXRefract",
+    "shaderPathId": 7766268189260370413,
+    "pass": "Refraction",
+    "lightMode": "Distortion",
+    "queue": 3000,
+    "materialKeywords": [
+      "_USE_DISSOLVE"
+    ],
+    "consumers": [
+      {
+        "root": "P_fxui_endminm003_overview_02",
+        "hierarchy": "all/Particle System (9)",
+        "authoredTimingFromRetainedPrefab": {
+          "startDelaySeconds": 4.4,
+          "durationSeconds": 5.0,
+          "startLifetimeSeconds": 1.0
+        }
+      },
+      {
+        "root": "P_fxui_endminm003_overview_03",
+        "hierarchy": "all/glow/Particle System (10)",
+        "authoredTimingFromRetainedPrefab": {
+          "startDelaySeconds": 2.9,
+          "durationSeconds": 5.0,
+          "startLifetimeSeconds": 0.35
+        }
+      }
+    ]
+  },
+  "closedEvidence": {
+    "distortionConsumer": {
+      "status": "closed_for_lab_topology",
+      "implementation": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredSceneMVCompositor.cs",
+      "contract": "incoming SceneColor snapshot and clone, SceneMV Target1 Load/Store, explicit depth, queue 3000 and LightMode Distortion"
+    },
+    "retainedMaterial": {
+      "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/Effects/Overview/Materials/M_fx_endminm_gfx_28_pBF7FEE87831B48FB.mat",
+      "size": 2336,
+      "sha256": "802d654056083863cc9d8178fa306228892bcc87e063cae4a1550285c781250c",
+      "keyword": "_USE_DISSOLVE",
+      "refractTexture": "T_fx_flow_121_M_p60BC4C6374C4832A.png",
+      "dissolveTexture": "T_fx_mask_17_C_M_p9005CF701425ABBC.png",
+      "selectedScalars": {
+        "_Intensity": 0.534,
+        "_TintColorAlpha": 4.41,
+        "_RefractIsNormal": 0.0,
+        "_DissolveUVRotate": -90.0,
+        "_DissolveScheduleOffset": 0.571,
+        "_DissolveEdgeSharp": 1.0,
+        "_ZTest": 8.0,
+        "_ZWrite": 0.0,
+        "_CullMode": 0.0
+      }
+    },
+    "textures": [
+      {
+        "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/Effects/Overview/Textures/T_fx_flow_121_M_p60BC4C6374C4832A.png",
+        "size": 58841,
+        "sha256": "8eeab0f7fad4e618db4d033180c5bee70aee6f9229a19566cd6bbba513b3d1eb"
+      },
+      {
+        "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/Effects/Overview/Textures/T_fx_mask_17_C_M_p9005CF701425ABBC.png",
+        "size": 19298,
+        "sha256": "ad20c2ec13f71e8cd7b1bdacaebd600e3787a518162e3ce704648472c546c0c3"
+      }
+    ],
+    "meshAndParticleStream": {
+      "mesh": "Sphere001_p7F669C3392052E42.obj",
+      "meshPathIdHex": "7F669C3392052E42",
+      "meshSize": 56719,
+      "meshSha256": "290bb923dfe636e44a52723f3dbce1f0007bfa682fcd3241f7ea7ba65fc07204",
+      "renderMode": "Mesh",
+      "gpuInstancing": true,
+      "serializedVertexStreamsHex": "000103040522",
+      "sharedByBothConsumers": true
+    },
+    "originalD3D11SidecarsPresent": [
+      {
+        "file": "0090_endfield_dxbc_0.dxbc",
+        "stage": "vertex",
+        "keywords": [
+          "HG_ENABLE_MV",
+          "_USE_DISSOLVE"
+        ],
+        "size": 5388,
+        "sha256": "a88a2a22943a5db135230f01b36cf83e2219a0afc626a1c820ddbe51b7dfb798"
+      },
+      {
+        "file": "0091_endfield_dxbc_1.dxbc",
+        "stage": "fragment",
+        "keywords": [
+          "HG_ENABLE_MV",
+          "_USE_DISSOLVE"
+        ],
+        "size": 3592,
+        "sha256": "8c449c9377e39f90af7dca4543c8be1dbd3a50c846df2015e54abaa6b6bfb241"
+      },
+      {
+        "file": "0624_endfield_dxbc_0.dxbc",
+        "stage": "vertex",
+        "keywords": [
+          "HG_ENABLE_MV",
+          "SRP_INSTANCING_ON",
+          "_USE_DISSOLVE"
+        ],
+        "size": 5756,
+        "sha256": "7f5111cf80387beeac8aacb30aa7298d58af6d26a62c981a3e15ba9a1d7468ab"
+      },
+      {
+        "file": "0625_endfield_dxbc_1.dxbc",
+        "stage": "fragment",
+        "keywords": [
+          "HG_ENABLE_MV",
+          "SRP_INSTANCING_ON",
+          "_USE_DISSOLVE"
+        ],
+        "size": 3664,
+        "sha256": "a3c9bfc94f0caea930c20bd61ee49fdb95ab58ef1f2e7c64f0f19a74c7e1ea92"
+      }
+    ]
+  },
+  "blockingDiagnostics": [
+    {
+      "gate": "selected original program pair",
+      "status": "failed",
+      "diagnostic": "unity_endfield_graph_shader_lab/tools/verify_endminf_refract_admission.py matches only *_dxbc_0 vertex metadata. It does not require the paired 0091/0625 fragment programs, pin any of the four bytecode hashes, validate the two-MRT output signature, or compare the full recovered _USE_DISSOLVE program against the original fragment.",
+      "required": "A fail-closed verifier must select one complete VS+PS pair for the renderer's actual instancing state and validate hashes, signatures, resources, constant-buffer lanes, and the complete dissolve/refraction equation."
+    },
+    {
+      "gate": "current exact material source",
+      "status": "failed",
+      "diagnostic": "The validator's exact AnimeStudio Material JSON is absent at export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_28_pBF7FEE87831B48FB.json. Its pinned expected SHA-256 is 51ae58da347abf62408380255d2abc290145642736094dedd121dc2ac8081d80; the retained Unity .mat is a generated consumer and cannot replace that source gate.",
+      "required": "Re-extract the PathID-targeted material from the selected installed build and rerun the source hash/identity gate."
+    },
+    {
+      "gate": "two exact renderer source tuples",
+      "status": "failed",
+      "diagnostic": "The exact four-root AnimeStudio stage is currently absent/empty. The retained overview_03 marker contains 64-bit component PathIDs rounded to 256-value boundaries, and both retained M28 marker rows predate the importer correction that records serialized m_Enabled before admission gating.",
+      "required": "Targeted AnimeStudio GameObject/Transform/ParticleSystem/ParticleSystemRenderer extraction must republish exact integer PathIDs, m_Enabled, mesh/material PPtrs, renderer stream/state, and particle payload for both hierarchy rows."
+    },
+    {
+      "gate": "focused visual validation",
+      "status": "failed",
+      "diagnostic": "The prior M28 isolate sampled only overview_02 at 4.75 seconds and found seven thresholded pixels. It is neither a 60 Hz active-window comparison nor evidence for overview_03, and it predates the exact retained suikuai (1) admission/current three-blocker baseline.",
+      "required": "After the three source gates above close, compare exact-vs-control at 60 Hz over both authored live windows while keeping overview_02/all/shitou (1), overview_02/all/suikuai (1), and overview_02/all/suikuai (2) fixed."
+    }
+  ],
+  "admissionDecision": {
+    "admitted": false,
+    "retainedCanonicalBlockedRenderers": [
+      "overview_02/all/Particle System (9)",
+      "overview_03/all/glow/Particle System (10)"
+    ],
+    "reason": "The recovered Distortion compositor is sufficient infrastructure, but it does not substitute for a complete selected shader-program proof, current source material, exact per-renderer tuples, and two-window 60 Hz validation."
+  },
+  "protectedControls": {
+    "overview_02/all/shitou (1)": "M21 exact small crystal; untouched and must remain fixed",
+    "overview_02/all/suikuai (1)": "admitted exact VFXRefract shards; untouched and must remain fixed",
+    "overview_02/all/suikuai (2)": "M27 LitEffect consumer; untouched and must remain fixed"
+  }
+}
