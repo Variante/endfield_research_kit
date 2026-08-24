@@ -229,6 +229,13 @@ archetypes remain labeled source kits rather than finished characters.
   layout or buffer identity. The exact remaining constant inputs are bounded to
   ShaderVariablesGlobal c27.y and live AnchorWaveBright c105.z/w, validated
   UnityPerDraw history/LOD state, and terrain subsurface profile c0.w.
+  For Endminf M27 specifically, the unique selected D3D11 pair is HGBuffer
+  source subprogram 19 with `HG_ENABLE_MV,_PARALLAX_MAP`; its retained particle
+  streams already match Position/Normal/Color/UV/UV2/Custom1XYZW. The first
+  valid pipeline change is an M27-PathID-only five-MRT owner before deferred
+  resolve, never global `GBuffer` admission. It remains fail-closed because live
+  AnchorWaveBright, per-draw/instance history, terrain profile, and a presented
+  content-valid deferred consumer are not yet closed.
 - The `M_fx_endminm_gfx_09` burst stripes now bind the exact exported RGBA
   `T_fx_star_07_D` payload. The previous missing `_MainTex` silently sampled
   white and produced a large opaque rectangle; the repaired source-alpha
@@ -467,7 +474,11 @@ particles persist through source frame 461 and frame 462 remains ambiguous;
 unmasked body/material measurements begin at source frame 472, and the phase
 uncertainty excludes any paired row whose lower bound precedes 472. Earlier
 rows require an actual moving amber-component mask dilated for bloom because a
-fixed ROI crosses unrelated character pixels. The maintained comparison
+fixed ROI crosses unrelated character pixels. M27's authored 4.49-second delay
+maps near one-based source frames 384-385; inspection of decoded frames 381-392
+confirms the physical faceted-shard burst in the no-frame-generation capture,
+but overlapping exact consumers prevent assigning every visible shard to M27.
+The maintained comparison
 resamples 3840x2160 to 1920x1080 with Lanczos and no crop before sheet
 downscaling; do not use cross-resolution whole-frame metrics outside that
 explicit contract.

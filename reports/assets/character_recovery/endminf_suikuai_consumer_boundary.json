@@ -5,7 +5,13 @@
     "recording": "videos/2026-08-24_06-37-22.mkv",
     "sha256": "36318de82bc3afabcf62d56946a9263614abaca0c7c3e7c57d16da938abcbb39",
     "provenance": "user-confirmed frame generation disabled",
-    "observation": "small faceted fragments and dust are visible around the raised hand; no oversized opaque or chromatic triangles are present"
+    "observation": "small faceted fragments and dust are visible around the raised hand; no oversized opaque or chromatic triangles are present",
+    "m27AuditWindow": {
+      "phaseAlignment": "Unity phase 0 aligns to one-based source frame 115 with plus-or-minus-one-frame uncertainty",
+      "authoredEmissionPrediction": "the 4.49-second M27 delay lands near one-based source frame 384-385",
+      "inspectedFrames": "zero-based decoded frames 380-391 (one-based 381-392)",
+      "finding": "the frame-generation-off recording shows the physical faceted-shard burst across this window, but several exact authored consumers overlap; these frames validate timing and shape only and do not identify every visible shard as M27"
+    }
   },
   "sourceAuthoredBurst": {
     "simulationSpace": "World",
@@ -97,8 +103,27 @@
         "GBufferC",
         "depth"
       ],
+      "selectedOriginalPrograms": {
+        "sourceSubProgramIndex": 19,
+        "compiledKeywords": [
+          "HG_ENABLE_MV",
+          "_PARALLAX_MAP"
+        ],
+        "vertexSidecar": "0114_endfield_dxbc_0.dxbc",
+        "vertexSha256": "b38d5e7661abdcb0d56a1c349eb673d205547fef5a30ba7d10befbe78b638253",
+        "fragmentSidecar": "0115_endfield_dxbc_1.dxbc",
+        "fragmentSha256": "b2248a1deb886a0e9226695d46e650756be932addd55a81d2b1114fdeb5f932a"
+      },
+      "sourceStreamContract": "Position, Normal, Color, UV, UV2, Custom1XYZW; retained YAML 000103040522 and GPU instancing match, while the BLENDWEIGHTS/BLENDINDICES particle-instance ABI still requires validation",
       "currentCompatibilityConsumer": "one-target ForwardOnly shader validated only for M01 and M38",
-      "admission": "blocked until the exact five-MRT deferred consumer, ParserBindChannels, and live per-frame/per-draw inputs are available"
+      "firstSourceProvenBlocker": "fragment ShaderVariablesGlobal b1 c105.z/w consumes live HGVFXManager.GetAnchorWaveBright output that the lab does not yet publish",
+      "integrationBoundary": "use a PathID-targeted M27-only five-MRT owner before deferred resolve; never add GBuffer to the ordinary opaque pass list",
+      "evidenceReports": [
+        "reports/assets/character_recovery/endminf_m27_suikuai_source_contract.json",
+        "reports/assets/character_recovery/endminf_m27_liteffect_program_recovery.json",
+        "reports/assets/character_recovery/endminf_m27_live_integration_contract.json"
+      ],
+      "admission": "blocked until live b1/b2/b4 state, particle-instance ABI, five-MRT publication, and a content-valid presented deferred resolver are all source-closed"
     }
   ],
   "canonicalRegression": {
