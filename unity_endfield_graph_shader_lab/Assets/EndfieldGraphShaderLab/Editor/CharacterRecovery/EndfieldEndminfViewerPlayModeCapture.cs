@@ -56,7 +56,6 @@ namespace EndfieldGraphShaderLabEditor
             "Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/Effects/Overview/Materials/M_fx_common_teleport_03_p19E6A2A7AE736DA5.mat";
         private static readonly string[] ExpectedRemainingBlockedEffects = {
             "/all/Particle System (9) | ",
-            "/all/suikuai (1) | ",
             "/all/suikuai (2) | ",
             "/all/glow/Particle System (10) | ",
         };
@@ -715,7 +714,7 @@ namespace EndfieldGraphShaderLabEditor
                 value.effectRootCount == 4);
             bool observedPrimaryRockCompatibilityBinding =
                 firstEntranceFrame != null &&
-                firstEntranceFrame.admittedRenderers == 66 &&
+                firstEntranceFrame.admittedRenderers == 67 &&
                 firstEntranceFrame.blockedRendererIdentities != null &&
                 firstEntranceFrame.blockedRendererIdentities.Length ==
                     ExpectedRemainingBlockedEffects.Length &&
@@ -744,7 +743,8 @@ namespace EndfieldGraphShaderLabEditor
                 missingObservations.Add("rotation-only root motion with invariant position");
             if (!observedPrimaryRockCompatibilityBinding)
                 missingObservations.Add(
-                    "ten-row primary rock compatibility binding with four separate blocked effects");
+                    "ten-row primary rock compatibility plus exact suikuai (1) " +
+                    "binding with three separate blocked effects");
             if (string.Equals(
                     Environment.GetEnvironmentVariable(
                         "ENDFIELD_ENDMINF_DEFERRED_B31_PROBE"),
