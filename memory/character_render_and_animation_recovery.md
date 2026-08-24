@@ -334,6 +334,18 @@ archetypes remain labeled source kits rather than finished characters.
   light, cookie, irradiance, particle, gacha, and post-processing behavior is
   recovered only where its input contract is verified. Unknown inputs remain
   explicit gaps.
+- Four new neutral D3D11 `ui_overview_start`/loop frame analyses now pin the
+  live Endminf body producer as a five-color-target draw over D32S8: scene
+  color, scene motion, GBuffer A/B, and GBuffer C. The Unity deferred-sidecar
+  formats and depth ownership agree with this boundary. The capture does not
+  yet source-join that build-specific shader/material binding to the recovered
+  body shader, so it strengthens the producer contract but does not authorize
+  global GBuffer admission or a guessed material change.
+  Across the four newest captures the draw remains 27,615 indices with the
+  same build-specific VS/PS pair; only its event number shifts as transient
+  setup draws vary. Treat this as a stable Endminf presentation boundary, not
+  a one-frame artifact. The full event/resource matrix is in
+  `reports/assets/character_recovery/endminf_ui_overview_frame_analysis_20260824.md`.
 - The selected deferred resolver DXBC has a compile-valid Unity HLSL port. It
   matches the neutral fixture exactly and the recovered Wulfa fixture within
   one float ULP. The non-presented Endminf D3D11 fixture now also binds all 26
