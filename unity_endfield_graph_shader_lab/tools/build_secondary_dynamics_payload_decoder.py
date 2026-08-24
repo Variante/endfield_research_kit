@@ -9,9 +9,9 @@ source contract and projects two unambiguous payloads:
 * ``selectionData``'s explicit JSON positions/attributes; and
 * every PPtr in ``uniquePreBuildData.proxyMesh.transformData.transformArray``;
   and
-* all 35 ``VirtualMesh.ShareSerializationData`` proxy-array slots using the
-  separately native-gated element-layout contract.  The three nested
-  ``TransformData`` capacity arrays remain explicitly raw.
+* all 35 ``VirtualMesh.ShareSerializationData`` proxy-array slots and the
+  three nested ``TransformData`` arrays using the separately native-gated
+  element-layout and unpatched serializer-assignment contract.
 
 This remains a static decoder.  It does not construct a cloth solver, execute
 Burst code, schedule jobs, or write a Transform.
@@ -55,7 +55,7 @@ LAYOUT_CONTRACT = (
 # never treat a newly substituted installed build as the pinned source used by
 # the reviewed static-input contract.
 EXPECTED_INPUT_SHA256 = "f12ba5d88013a2e28a82c93c1f56c171388cc74d3a3a040f7e33ffb6cf90c197"
-EXPECTED_LAYOUT_SHA256 = "ec39a2968d5af703c8bf691d77cec653d4a9029fe7bd786fa98b1272eca5e48f"
+EXPECTED_LAYOUT_SHA256 = "d176af62924a288fec60823e4ac7b2d62784669f6ecdc10defddf3fbceab62da"
 EXPECTED_SOURCE_BUILD = {
     "game_assembly": {
         "size": 280436712,
@@ -455,21 +455,29 @@ def _load_proxy_layouts() -> tuple[dict[str, dict[str, Any]], dict[str, Any]]:
             f"expected={EXPECTED_LAYOUT_SHA256} actual={actual_hash}"
         )
     contract = load_json(LAYOUT_CONTRACT)
-    if (contract.get("schema") != "endfield.charinfo.secondary-dynamics-proxy-layout.v2" or
-            contract.get("status") != "proxy_array_layout_and_unpatched_native_assignment_closed" or
+    if (contract.get("schema") != "endfield.charinfo.secondary-dynamics-proxy-layout.v3" or
+            contract.get("status") != "proxy_and_transform_array_layout_assignments_closed_unpatched" or
             contract.get("serializedSlotCount") != 35 or
+            contract.get("nestedTransformSlotCount") != 3 or
             contract.get("secondaryDynamicsVerified") is not False or
             contract.get("solverImplemented") is not False or
             contract.get("retailEquivalent") is not False):
         raise PayloadDecodeError("proxy layout contract boundary drift")
     methods = contract.get("serializerMethods")
-    if (not isinstance(methods, dict) or set(methods) != {"serialize", "deserialize"} or
+    transform_methods = contract.get("transformSerializerMethods")
+    if any(
+            not isinstance(group, dict) or set(group) != {"serialize", "deserialize"} or
             any((row.get("ifixBoundary") or {}).get("status") !=
-                "patch_activity_and_target_unproven" for row in methods.values())):
+                "patch_activity_and_target_unproven" for row in group.values())
+            for group in (methods, transform_methods)):
         raise PayloadDecodeError("proxy layout serializer-method boundary drift")
     layouts = contract.get("serializedLayouts")
-    if not isinstance(layouts, dict) or len(layouts) != 35:
+    nested_layouts = contract.get("nestedTransformLayouts")
+    if (not isinstance(layouts, dict) or len(layouts) != 35 or
+            not isinstance(nested_layouts, dict) or len(nested_layouts) != 3 or
+            set(layouts).intersection(nested_layouts)):
         raise PayloadDecodeError("proxy layout contract census drift")
+    layouts = {**layouts, **nested_layouts}
     allowed_kinds = {
         "uint8", "uint16", "uint32", "int32", "float32", "float2",
         "float3", "float4", "int2", "int3", "float16", "opaque",
@@ -734,6 +742,7 @@ def decode_payload(
                 "schema": layout_contract["schema"],
                 "status": layout_contract["status"],
                 "serialized_slot_count": layout_contract["serializedSlotCount"],
+                "nested_transform_slot_count": layout_contract["nestedTransformSlotCount"],
             },
         },
         "actors": actors,

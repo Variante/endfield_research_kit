@@ -30,6 +30,8 @@ DEFAULT_OUTPUT = LAB_ROOT / (
 
 VIRTUAL_MESH = ("BeyondDynamicBone.VirtualMesh", 48620, 230909, 62)
 SHARE_DATA = ("BeyondDynamicBone.VirtualMesh+ShareSerializationData", 48610, 231259, 55)
+TRANSFORM_DATA = ("BeyondDynamicBone.TransformData", 48446, 230557, 16)
+TRANSFORM_SHARE_DATA = ("BeyondDynamicBone.TransformData+ShareSerializationData", 48444, 230584, 3)
 
 SERIALIZER_METHODS = {
     "serialize": {
@@ -45,6 +47,27 @@ SERIALIZER_METHODS = {
         "ifixPatchId": 0x60, "ifixCallOffset": 55,
     },
 }
+
+TRANSFORM_SERIALIZER_METHODS = {
+    "serialize": {
+        "methodIndex": 385816, "method": "ShareSerialize", "token": "0x060008e1",
+        "va": 0x186789E9C, "endVa": 0x18678A050,
+        "bodySha256": "08698043ad28ccba1fedfae3b4019a8c4bbbf0d1a4d34484c0c6e5a80ed5f259",
+        "ifixPatchId": 0x49A, "ifixCallOffset": 86,
+    },
+    "deserialize": {
+        "methodIndex": 385817, "method": "ShareDeserialize", "token": "0x060008e2",
+        "va": 0x183E8FA80, "endVa": 0x183E8FE60,
+        "bodySha256": "3032c4024914e56830fb4b1be6250e15cd858cd9c491b24dc9fec44d693ab287",
+        "ifixPatchId": 0x61, "ifixCallOffset": 36,
+    },
+}
+
+TRANSFORM_LAYOUT_SPECS = (
+    ("transformData.flagArray", "flagArray", 33190, "uint8", 88930, 0x18, 0x10),
+    ("transformData.initLocalPositionArray", "initLocalPositionArray", 33196, "float3", 88935, 0x20, 0x18),
+    ("transformData.initLocalRotationArray", "initLocalRotationArray", 33201, "float4", 88939, 0x28, 0x20),
+)
 
 # The offsets are boxed managed-object field offsets.  They are repeated here
 # only as fail-closed expectations; the observed values are read from
@@ -239,7 +262,9 @@ def _field_offsets(pe: Any, registration: dict[str, Any], type_index: int,
     }
 
 
-def _serializer_methods(native: Any, md: Any, pe: Any) -> tuple[dict[str, Any], dict[str, list[dict[str, Any]]]]:
+def _serializer_methods(native: Any, md: Any, pe: Any, *,
+                        specs: dict[str, dict[str, Any]] = SERIALIZER_METHODS,
+                        declaring_type: str = VIRTUAL_MESH[0]) -> tuple[dict[str, Any], dict[str, list[dict[str, Any]]]]:
     image_names = {md.string(image.name_index) for image in md.images}
     code_registration = native.find_code_registration(pe, image_names)
     modules = native.parse_codegen_modules(pe, code_registration)
@@ -248,7 +273,7 @@ def _serializer_methods(native: Any, md: Any, pe: Any) -> tuple[dict[str, Any], 
     pointers = sorted(pointer for pointer in by_pointer if pointer)
     records: dict[str, Any] = {}
     instructions: dict[str, list[dict[str, Any]]] = {}
-    for direction, expected in SERIALIZER_METHODS.items():
+    for direction, expected in specs.items():
         candidates = [
             (pointer, signature)
             for pointer, signatures in by_pointer.items()
@@ -261,7 +286,7 @@ def _serializer_methods(native: Any, md: Any, pe: Any) -> tuple[dict[str, Any], 
         position = bisect.bisect_right(pointers, pointer)
         end = pointers[position] if position < len(pointers) else 0
         if (pointer != expected["va"] or end != expected["endVa"] or
-                signature.get("type") != VIRTUAL_MESH[0] or
+                signature.get("type") != declaring_type or
                 signature.get("method") != expected["method"] or
                 str(signature.get("token", "")).lower() != expected["token"]):
             raise ContractError(f"{expected['method']} identity or authoritative span drift")
@@ -307,6 +332,32 @@ def _serializer_methods(native: Any, md: Any, pe: Any) -> tuple[dict[str, Any], 
         }
         instructions[direction] = decoded
     return records, instructions
+
+
+def _transform_assignment_evidence(name: str, runtime_offset: int, share_offset: int,
+                                   instructions: dict[str, list[dict[str, Any]]]) -> dict[str, Any]:
+    return {
+        "classification": "exact_unpatched_native_assignment",
+        "operation": "ExSimpleNativeArray.Serialize/Deserialize",
+        "serializeInstructionOffsets": {
+            "runtimeSource": _one_instruction(
+                instructions["serialize"], f"mov rcx, [rdi+0x{runtime_offset:x}]",
+                name + " serialize source"),
+            "serializedTarget": _one_instruction(
+                instructions["serialize"], f"mov [rbx+0x{share_offset:x}], rax",
+                name + " serialize target"),
+        },
+        "deserializeInstructionOffsets": {
+            "serializedSource": _one_instruction(
+                instructions["deserialize"], f"mov r14, [rdi+0x{share_offset:x}]"
+                if share_offset != 0x20 else f"mov rsi, [rdi+0x{share_offset:x}]",
+                name + " deserialize source"),
+            "runtimeTarget": _one_instruction(
+                instructions["deserialize"],
+                f"mov [rbx+0x{runtime_offset:x}], " + ("rsi" if runtime_offset != 0x28 else "rdi"),
+                name + " deserialize target"),
+        },
+    }
 
 
 def _one_instruction(instructions: list[dict[str, Any]], text: str, label: str) -> int:
@@ -374,9 +425,18 @@ def build_contract(*, game_assembly: Path | None = None,
     pointer_index = element_layout._build_type_pointer_index(pe, registration)
     _, virtual_fields = _type_definition(md, VIRTUAL_MESH)
     _, share_fields = _type_definition(md, SHARE_DATA)
+    _, transform_fields = _type_definition(md, TRANSFORM_DATA)
+    _, transform_share_fields = _type_definition(md, TRANSFORM_SHARE_DATA)
     virtual_offsets = _field_offsets(pe, registration, VIRTUAL_MESH[1], virtual_fields)
     share_offsets = _field_offsets(pe, registration, SHARE_DATA[1], share_fields)
     serializer_methods, serializer_instructions = _serializer_methods(native, md, pe)
+    transform_offsets = _field_offsets(pe, registration, TRANSFORM_DATA[1], transform_fields)
+    transform_share_offsets = _field_offsets(
+        pe, registration, TRANSFORM_SHARE_DATA[1], transform_share_fields)
+    transform_serializer_methods, transform_serializer_instructions = _serializer_methods(
+        native, md, pe, specs=TRANSFORM_SERIALIZER_METHODS,
+        declaring_type=TRANSFORM_DATA[0],
+    )
 
     layouts: dict[str, Any] = {}
     for path, runtime_name, runtime_index, argument_index, decode_kind in LAYOUT_SPECS:
@@ -456,9 +516,49 @@ def build_contract(*, game_assembly: Path | None = None,
 
     if len(layouts) != 35:
         raise ContractError(f"serialized layout census drifted: {len(layouts)}")
+
+    transform_layouts: dict[str, Any] = {}
+    for path, field_name, runtime_type_index, decode_kind, share_type_index, runtime_offset, share_offset in TRANSFORM_LAYOUT_SPECS:
+        runtime_field = transform_fields.get(field_name)
+        share_field = transform_share_fields.get(field_name)
+        if (runtime_field is None or runtime_field.type_index != runtime_type_index or
+                share_field is None or share_field.type_index != share_type_index):
+            raise ContractError(f"{path} declaration drift")
+        if (transform_offsets[field_name] != runtime_offset or
+                transform_share_offsets[field_name] != share_offset):
+            raise ContractError(f"{path} field offset drift")
+        container = _resolve_type(
+            md, pe, registration, pointer_index, share_field.type_index,
+            f"{TRANSFORM_SHARE_DATA[0]}.{field_name}",
+        )
+        arguments = container.get("resolvedGenericArguments") or []
+        if container.get("category") != "generic" or len(arguments) != 1:
+            raise ContractError(f"{path} serialized field is no longer one-argument SerializationData")
+        element = arguments[0]
+        stride, stride_evidence = _element_size(
+            element, md=md, pe=pe, registration=registration,
+            pointer_index=pointer_index, label=path,
+        )
+        expected_stride, fmt = DECODER_FORMATS[decode_kind]
+        if stride != expected_stride:
+            raise ContractError(f"{path} stride drift: {stride} != {expected_stride}")
+        transform_layouts[path] = {
+            "declaringType": TRANSFORM_SHARE_DATA[0], "field": field_name,
+            "fieldIndex": share_field.index, "metadataTypeIndex": share_field.type_index,
+            "serializedContainerType": container["name"],
+            "runtimeField": field_name, "runtimeFieldIndex": runtime_field.index,
+            "runtimeMetadataTypeIndex": runtime_field.type_index,
+            "runtimeFieldOffset": f"0x{runtime_offset:x}",
+            "serializedFieldOffset": f"0x{share_offset:x}",
+            "elementType": element["name"], "strideBytes": stride,
+            "strideEvidence": stride_evidence, "decodeKind": decode_kind,
+            "structFormat": fmt, "serializedEncoding": "serialization_data",
+            "mappingEvidence": _transform_assignment_evidence(
+                path, runtime_offset, share_offset, transform_serializer_instructions),
+        }
     return {
-        "schema": "endfield.charinfo.secondary-dynamics-proxy-layout.v2",
-        "status": "proxy_array_layout_and_unpatched_native_assignment_closed",
+        "schema": "endfield.charinfo.secondary-dynamics-proxy-layout.v3",
+        "status": "proxy_and_transform_array_layout_assignments_closed_unpatched",
         "nativeGate": gate,
         "metadataRegistration": {
             "codeRegistrationVa": f"0x{code_registration:x}",
@@ -467,14 +567,19 @@ def build_contract(*, game_assembly: Path | None = None,
         "declarations": {
             "virtualMesh": {"typeDefinitionIndex": VIRTUAL_MESH[1], "fieldStart": VIRTUAL_MESH[2], "fieldCount": VIRTUAL_MESH[3]},
             "shareSerializationData": {"typeDefinitionIndex": SHARE_DATA[1], "fieldStart": SHARE_DATA[2], "fieldCount": SHARE_DATA[3]},
+            "transformData": {"typeDefinitionIndex": TRANSFORM_DATA[1], "fieldStart": TRANSFORM_DATA[2], "fieldCount": TRANSFORM_DATA[3]},
+            "transformShareSerializationData": {"typeDefinitionIndex": TRANSFORM_SHARE_DATA[1], "fieldStart": TRANSFORM_SHARE_DATA[2], "fieldCount": TRANSFORM_SHARE_DATA[3]},
         },
         "serializerMethods": serializer_methods,
+        "transformSerializerMethods": transform_serializer_methods,
         "serializedLayouts": layouts,
         "serializedSlotCount": len(layouts),
+        "nestedTransformLayouts": transform_layouts,
+        "nestedTransformSlotCount": len(transform_layouts),
         "secondaryDynamicsVerified": False,
         "solverImplemented": False,
         "retailEquivalent": False,
-        "boundary": "Exact declarations, element strides, object field offsets, and bidirectional assignments in the hash-pinned unpatched ShareSerialize/ShareDeserialize bodies. IFix patch IDs 0x555 and 0x60 have not been proven inactive or audited, so unconditional runtime equivalence is not claimed. No solver numerics, scheduling, Burst export mapping, or Transform writeback is claimed.",
+        "boundary": "Exact declarations, element strides, object field offsets, and bidirectional assignments for 35 VirtualMesh proxy slots and three nested TransformData arrays in their hash-pinned unpatched ShareSerialize/ShareDeserialize bodies. IFix patch activity and targets have not been proven, so unconditional runtime equivalence is not claimed. No solver numerics, scheduling, Burst export mapping, or Transform writeback is claimed.",
     }
 
 

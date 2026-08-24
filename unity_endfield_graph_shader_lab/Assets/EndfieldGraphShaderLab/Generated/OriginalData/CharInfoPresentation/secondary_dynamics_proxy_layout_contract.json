@@ -1,6 +1,6 @@
 {
-  "schema": "endfield.charinfo.secondary-dynamics-proxy-layout.v2",
-  "status": "proxy_array_layout_and_unpatched_native_assignment_closed",
+  "schema": "endfield.charinfo.secondary-dynamics-proxy-layout.v3",
+  "status": "proxy_and_transform_array_layout_assignments_closed_unpatched",
   "nativeGate": {
     "gameAssembly": {
       "path": "D:/Program Files/Endfield Game/GameAssembly.dll",
@@ -27,6 +27,16 @@
       "typeDefinitionIndex": 48610,
       "fieldStart": 231259,
       "fieldCount": 55
+    },
+    "transformData": {
+      "typeDefinitionIndex": 48446,
+      "fieldStart": 230557,
+      "fieldCount": 16
+    },
+    "transformShareSerializationData": {
+      "typeDefinitionIndex": 48444,
+      "fieldStart": 230584,
+      "fieldCount": 3
     }
   },
   "serializerMethods": {
@@ -59,6 +69,40 @@
         "patchId": "0x60",
         "patchIdLoadInstructionOffset": 50,
         "isPatchedCallInstructionOffset": 55,
+        "status": "patch_activity_and_target_unproven"
+      }
+    }
+  },
+  "transformSerializerMethods": {
+    "serialize": {
+      "methodIndex": 385816,
+      "declaringType": "BeyondDynamicBone.TransformData",
+      "method": "ShareSerialize",
+      "token": "0x060008e1",
+      "va": "0x186789e9c",
+      "endVa": "0x18678a050",
+      "spanBytes": 436,
+      "bodySha256": "08698043ad28ccba1fedfae3b4019a8c4bbbf0d1a4d34484c0c6e5a80ed5f259",
+      "ifixBoundary": {
+        "patchId": "0x49a",
+        "patchIdLoadInstructionOffset": 79,
+        "isPatchedCallInstructionOffset": 86,
+        "status": "patch_activity_and_target_unproven"
+      }
+    },
+    "deserialize": {
+      "methodIndex": 385817,
+      "declaringType": "BeyondDynamicBone.TransformData",
+      "method": "ShareDeserialize",
+      "token": "0x060008e2",
+      "va": "0x183e8fa80",
+      "endVa": "0x183e8fe60",
+      "spanBytes": 992,
+      "bodySha256": "3032c4024914e56830fb4b1be6250e15cd858cd9c491b24dc9fec44d693ab287",
+      "ifixBoundary": {
+        "patchId": "0x61",
+        "patchIdLoadInstructionOffset": 31,
+        "isPatchedCallInstructionOffset": 36,
         "status": "patch_activity_and_target_unproven"
       }
     }
@@ -1303,8 +1347,113 @@
     }
   },
   "serializedSlotCount": 35,
+  "nestedTransformLayouts": {
+    "transformData.flagArray": {
+      "declaringType": "BeyondDynamicBone.TransformData+ShareSerializationData",
+      "field": "flagArray",
+      "fieldIndex": 230584,
+      "metadataTypeIndex": 88930,
+      "serializedContainerType": "BeyondDynamicBone.ExSimpleNativeArray`1+SerializationData<BeyondDynamicBone.ExBitFlag8>",
+      "runtimeField": "flagArray",
+      "runtimeFieldIndex": 230558,
+      "runtimeMetadataTypeIndex": 33190,
+      "runtimeFieldOffset": "0x18",
+      "serializedFieldOffset": "0x10",
+      "elementType": "BeyondDynamicBone.ExBitFlag8",
+      "strideBytes": 1,
+      "strideEvidence": {
+        "basis": "MetadataRegistration.typeDefinitionsSizes",
+        "typeDefinitionIndex": 48538,
+        "nativeSizeBytes": 1
+      },
+      "decodeKind": "uint8",
+      "structFormat": "<B",
+      "serializedEncoding": "serialization_data",
+      "mappingEvidence": {
+        "classification": "exact_unpatched_native_assignment",
+        "operation": "ExSimpleNativeArray.Serialize/Deserialize",
+        "serializeInstructionOffsets": {
+          "runtimeSource": 128,
+          "serializedTarget": 154
+        },
+        "deserializeInstructionOffsets": {
+          "serializedSource": 87,
+          "runtimeTarget": 133
+        }
+      }
+    },
+    "transformData.initLocalPositionArray": {
+      "declaringType": "BeyondDynamicBone.TransformData+ShareSerializationData",
+      "field": "initLocalPositionArray",
+      "fieldIndex": 230585,
+      "metadataTypeIndex": 88935,
+      "serializedContainerType": "BeyondDynamicBone.ExSimpleNativeArray`1+SerializationData<Unity.Mathematics.float3>",
+      "runtimeField": "initLocalPositionArray",
+      "runtimeFieldIndex": 230559,
+      "runtimeMetadataTypeIndex": 33196,
+      "runtimeFieldOffset": "0x20",
+      "serializedFieldOffset": "0x18",
+      "elementType": "Unity.Mathematics.float3",
+      "strideBytes": 12,
+      "strideEvidence": {
+        "basis": "MetadataRegistration.typeDefinitionsSizes",
+        "typeDefinitionIndex": 57216,
+        "nativeSizeBytes": 12
+      },
+      "decodeKind": "float3",
+      "structFormat": "<3f",
+      "serializedEncoding": "serialization_data",
+      "mappingEvidence": {
+        "classification": "exact_unpatched_native_assignment",
+        "operation": "ExSimpleNativeArray.Serialize/Deserialize",
+        "serializeInstructionOffsets": {
+          "runtimeSource": 167,
+          "serializedTarget": 193
+        },
+        "deserializeInstructionOffsets": {
+          "serializedSource": 146,
+          "runtimeTarget": 192
+        }
+      }
+    },
+    "transformData.initLocalRotationArray": {
+      "declaringType": "BeyondDynamicBone.TransformData+ShareSerializationData",
+      "field": "initLocalRotationArray",
+      "fieldIndex": 230586,
+      "metadataTypeIndex": 88939,
+      "serializedContainerType": "BeyondDynamicBone.ExSimpleNativeArray`1+SerializationData<Unity.Mathematics.quaternion>",
+      "runtimeField": "initLocalRotationArray",
+      "runtimeFieldIndex": 230560,
+      "runtimeMetadataTypeIndex": 33201,
+      "runtimeFieldOffset": "0x28",
+      "serializedFieldOffset": "0x20",
+      "elementType": "Unity.Mathematics.quaternion",
+      "strideBytes": 16,
+      "strideEvidence": {
+        "basis": "MetadataRegistration.typeDefinitionsSizes",
+        "typeDefinitionIndex": 57247,
+        "nativeSizeBytes": 16
+      },
+      "decodeKind": "float4",
+      "structFormat": "<4f",
+      "serializedEncoding": "serialization_data",
+      "mappingEvidence": {
+        "classification": "exact_unpatched_native_assignment",
+        "operation": "ExSimpleNativeArray.Serialize/Deserialize",
+        "serializeInstructionOffsets": {
+          "runtimeSource": 206,
+          "serializedTarget": 232
+        },
+        "deserializeInstructionOffsets": {
+          "serializedSource": 205,
+          "runtimeTarget": 251
+        }
+      }
+    }
+  },
+  "nestedTransformSlotCount": 3,
   "secondaryDynamicsVerified": false,
   "solverImplemented": false,
   "retailEquivalent": false,
-  "boundary": "Exact declarations, element strides, object field offsets, and bidirectional assignments in the hash-pinned unpatched ShareSerialize/ShareDeserialize bodies. IFix patch IDs 0x555 and 0x60 have not been proven inactive or audited, so unconditional runtime equivalence is not claimed. No solver numerics, scheduling, Burst export mapping, or Transform writeback is claimed."
+  "boundary": "Exact declarations, element strides, object field offsets, and bidirectional assignments for 35 VirtualMesh proxy slots and three nested TransformData arrays in their hash-pinned unpatched ShareSerialize/ShareDeserialize bodies. IFix patch activity and targets have not been proven, so unconditional runtime equivalence is not claimed. No solver numerics, scheduling, Burst export mapping, or Transform writeback is claimed."
 }

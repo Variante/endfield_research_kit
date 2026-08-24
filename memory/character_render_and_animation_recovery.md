@@ -245,7 +245,6 @@ all-character pass:
   decoder preserves the original serialized bytes, accepts signed parent/root
   sentinels, and keeps `FixedList32Bytes<uint>` plus 32-byte
   `VirtualMeshBoneWeight` elements opaque rather than inventing inner fields.
-  The three nested `TransformData` capacity arrays remain separately raw.
   The authoritative codegen pointer table and full-body hashes now pin the
   unpatched `VirtualMesh.ShareSerialize`/`ShareDeserialize` implementations,
   their object field offsets, and all 35 bidirectional assignments: 11
@@ -253,7 +252,11 @@ all-character pass:
   keys/values, and two managed array copies. This is exact unpatched native
   assignment only. IFix patch IDs `0x555` and `0x60` are present, but their
   runtime activity and patch targets remain unaudited, so unconditional runtime
-  serializer equivalence is not established.
+  serializer equivalence is not established. The same gate now closes the
+  three nested `TransformData` arrays as `ExBitFlag8`, `float3`, and
+  `quaternion` with 1/12/16-byte strides and exact unpatched bidirectional
+  assignments; all 38 array-like payload rows are therefore typed while their
+  original serialized bytes remain preserved.
   Regenerate with
   `python unity_endfield_graph_shader_lab/tools/build_secondary_dynamics_proxy_layout_contract.py`,
   then publish the read-only decode explicitly with

@@ -79,6 +79,14 @@ class SecondaryDynamicsPayloadDecoderTests(unittest.TestCase):
                 self.assertEqual(reference["semantic"], "System.Int32")
                 self.assertEqual(reference["stride_bytes"], 4)
                 self.assertEqual(reference["byte_length"], reference["length"] * 4)
+                transform = arrays["transformData"]
+                self.assertEqual(transform["flagArray"]["stride_bytes"], 1)
+                self.assertEqual(transform["initLocalPositionArray"]["stride_bytes"], 12)
+                self.assertEqual(transform["initLocalRotationArray"]["stride_bytes"], 16)
+                self.assertTrue(all(
+                    row["status"] == "typed_decoded_native_layout"
+                    for row in transform.values()
+                ))
 
     def test_endminf_coat_closes_all_populated_proxy_arrays(self) -> None:
         report = decoder.decode_payload(self.payload)
@@ -96,10 +104,9 @@ class SecondaryDynamicsPayloadDecoderTests(unittest.TestCase):
         self.assertEqual(len(populated), 34)
         typed = [row for row in rows if row["status"] == "typed_decoded_native_layout"]
         raw = [row for row in rows if row["status"] == "raw_preserved"]
-        self.assertEqual(len(typed), 35)
-        self.assertEqual(len(raw), 3)
+        self.assertEqual(len(typed), 38)
+        self.assertEqual(len(raw), 0)
         self.assertTrue(all(not row["semantic_unresolved"] for row in typed))
-        self.assertTrue(all(row["semantic_unresolved"] for row in raw))
         self.assertEqual(arrays["vertexToTriangles"]["stride_bytes"], 32)
         self.assertEqual(arrays["edges"]["semantic"], "Unity.Mathematics.int2")
         self.assertEqual(arrays["centerFixedList"]["values"], [2, 4, 12, 26, 28, 33, 45, 47, 55])
