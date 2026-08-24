@@ -43,19 +43,38 @@ namespace EndfieldGraphShaderLabEditor
         // renderer lists. The recovered compositor now supplies that topology;
         // Endminf admission remains explicit until its direct-frame gate passes.
         private const long EndminfRefract28Material = unchecked((long)0xBF7FEE87831B48FBUL);
+        private const long EndminfRefractSuikuai1Material = 0x19E6A2A7AE736DA5L;
+        private const long EndminfRefractSuikuai1BlendTexture =
+            unchecked((long)0xFC31CA27BFE1C466UL);
+        private const string EndminfRefractSuikuai1Source =
+            "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/Materials/" +
+            "M_fx_common_teleport_03_p19E6A2A7AE736DA5.raw.json";
+        private const string EndminfRefractSuikuai1SourceSha256 =
+            // Semantically byte-for-byte equivalent to the targeted
+            // AnimeStudio export (export SHA-256 69940c6a...f9a8d), with only
+            // whitespace normalized for the versioned Unity source contract.
+            "8309e72e17d9fe1cc44a8ba1bd81ab39535db679c2899c29996cc4fd189d39c5";
+        private const string EndminfRefractSuikuai1BlendSha256 =
+            "10d9f377b725cb47b55ca84556bc3db07f2766399133877eac46d5b921cc8334";
+        private const string EndminfRefractSuikuai1BlendAsset = TextureRoot +
+            "/T_fx_mask_138_M_pFC31CA27BFE1C466.png";
+        private static readonly string[] EndminfRefractSuikuai1Keywords = {
+            "_USE_BLEND", "_USE_RBOFFSET", "_USE_RGBOFFSET" };
         private const string VisualCompatibilityEnvironment =
             "ENDFIELD_ENDMINF_VISUAL_COMPATIBILITY";
         private static readonly long[] AdmittedRefractMaterials =
             IsVisualCompatibilityRequested()
                 ? new[] {
                     EndminfRefract28Material,
+                    EndminfRefractSuikuai1Material,
                 }
                 : Array.Empty<long>();
         // overview_02/all/suikuai (1), material p19E6A2A7AE736DA5,
         // requires both the original GPU-instanced particle vertex ABI and
         // the distinct _USE_BLEND + _USE_RBOFFSET + _USE_RGBOFFSET fragment.
-        // M28's selected _USE_RBOFFSET fragment lacks the source BlendTex
-        // alpha and three-tap RGB-offset contract, so it is not admissible.
+        // It is admitted only after the recovered shader, pinned material,
+        // exact BlendTex identity and complete selected payload all pass the
+        // fail-closed gates in BuildAdmittedDependencies.
         // Exact source identities selected by the focused Endminf BaseV2
         // variant audit. Each row is revalidated against name, shader PathID,
         // queue and ordered local keywords before any renderer is enabled.
@@ -335,6 +354,51 @@ namespace EndfieldGraphShaderLabEditor
                 material.name + "._MainTex -> " + texture.name);
         }
 
+        [MenuItem("Endfield/Character Recovery Lab/Rebuild Endminf Suikuai 1 Material")]
+        public static void RebuildAndValidateSuikuai1Material()
+        {
+            Shader shader = Shader.Find(
+                "Hidden/Endfield/Recovered/Zhuangfy/VFXRefractMRT");
+            L.Require(shader != null,
+                "Exact recovered VFXRefract shader is missing");
+            ValidateSuikuai1ShaderContract(shader);
+
+            string source = L.ProjectAbsolute(EndminfRefractSuikuai1Source);
+            L.Require(File.Exists(source),
+                "Pinned suikuai (1) source material is missing");
+            Dictionary<string, object> row = L.Dict(
+                ManifestMiniJson.Deserialize(File.ReadAllText(source, Encoding.UTF8)));
+            ValidateSuikuai1SourceMaterial(source, row);
+
+            Texture2D blendTexture = AssetDatabase.LoadAssetAtPath<Texture2D>(
+                EndminfRefractSuikuai1BlendAsset);
+            L.Require(blendTexture != null,
+                "Pinned suikuai (1) BlendTex asset is missing");
+            var context = new EndfieldZhuangfyParticleEffectImporter.Context();
+            context.textures[EndminfRefractSuikuai1BlendTexture] = blendTexture;
+
+            L.EnsureFolder(GeneratedRoot);
+            L.EnsureFolder(MaterialRoot);
+            string materialAsset = MaterialRoot +
+                "/M_fx_common_teleport_03_p19E6A2A7AE736DA5.mat";
+            Material material = AssetDatabase.LoadAssetAtPath<Material>(materialAsset);
+            if (material == null)
+            {
+                material = new Material(shader);
+                AssetDatabase.CreateAsset(material, materialAsset);
+            }
+            material.shader = shader;
+            material.name = "M_fx_common_teleport_03";
+            EndfieldZhuangfyParticleEffectImporter.ApplyRecoveredMaterialPayload(
+                material, row, context);
+            material.renderQueue = L.Int(row, "m_CustomRenderQueue");
+            ValidateSuikuai1ImportedMaterial(material);
+            EditorUtility.SetDirty(material);
+            AssetDatabase.SaveAssets();
+            Debug.Log("Rebuilt exact Endminf suikuai (1) source material: " +
+                materialAsset);
+        }
+
         [MenuItem("Endfield/Character Recovery Lab/Repair Endminf Overview M13 Textures")]
         public static void RepairOverviewM13Textures()
         {
@@ -534,8 +598,12 @@ namespace EndfieldGraphShaderLabEditor
                 "Hidden/Endfield/Recovered/Zhuangfy/VFXRefractMRT");
             L.Require(shader != null, "Exact recovered VFXRefract shader is missing");
             if (visualCompatibility)
-                Debug.Log("Endminf M_fx_endminm_gfx_28 admitted through the recovered " +
+            {
+                ValidateSuikuai1ShaderContract(shader);
+                Debug.Log("Endminf M_fx_endminm_gfx_28 and exact suikuai (1) " +
+                    "VFXRefract branches admitted through the recovered " +
                     "Distortion MRT scene-color clone path for direct-frame validation.");
+            }
             Shader baseV2Shader = Shader.Find("Hidden/Endfield/Recovered/Zhuangfy/VFXBaseV2MRT");
             L.Require(baseV2Shader != null, "Exact recovered VFXBaseV2 shader is missing");
             bool litEffectCompatibility = string.Equals(
@@ -584,9 +652,15 @@ namespace EndfieldGraphShaderLabEditor
             foreach (long id in AdmittedRefractMaterials)
             {
                 string suffix = "_p" + unchecked((ulong)id).ToString("X16", CultureInfo.InvariantCulture) + ".json";
-                string source = Directory.GetFiles(materialSourceRoot, "*" + suffix).Single();
+                string source = id == EndminfRefractSuikuai1Material
+                    ? L.ProjectAbsolute(EndminfRefractSuikuai1Source)
+                    : Directory.GetFiles(materialSourceRoot, "*" + suffix).Single();
+                L.Require(File.Exists(source),
+                    "Exact Refract material source is missing: " + suffix);
                 Dictionary<string, object> row = L.Dict(ManifestMiniJson.Deserialize(File.ReadAllText(source, Encoding.UTF8)));
                 L.Require(L.PPtrId(row["m_Shader"]) == RefractShaderPathId, "Refract material shader identity drifted");
+                if (id == EndminfRefractSuikuai1Material)
+                    ValidateSuikuai1SourceMaterial(source, row);
                 materialRows[id] = row;
                 foreach (object item in L.Dict(L.Dict(row["m_SavedProperties"])["m_TexEnvs"]).Values)
                 {
@@ -737,6 +811,8 @@ namespace EndfieldGraphShaderLabEditor
                         Mathf.Abs(material.GetFloat("_DissolveEdgeSharp") - 1f) <= 1.0e-6f,
                         "M28 visual-compatibility dissolve payload drifted");
                 }
+                if (visualCompatibility && id == EndminfRefractSuikuai1Material)
+                    ValidateSuikuai1ImportedMaterial(material);
                 material.renderQueue = L.Int(row, "m_CustomRenderQueue"); EditorUtility.SetDirty(material);
                 context.materials[id] = material;
                 context.materialShaderPathIds[id] = AdmittedBaseV2Materials.ContainsKey(id)
@@ -744,6 +820,167 @@ namespace EndfieldGraphShaderLabEditor
                         ? LitEffectShaderPathId : RefractShaderPathId;
             }
             return context;
+        }
+
+        private static void ValidateSuikuai1ShaderContract(Shader shader)
+        {
+            string[] requiredProperties = {
+                "_BlendTex", "_UseBlend", "_UseBlendTexAsAlpha",
+                "_BlendTexUseRefract", "_BlendSwitchUV",
+                "_BlendTexUVSpeed", "_BlendTexUVRotate", "_BlendColor",
+                "_UseRBOffset", "_RBIntensity", "_RBOffset",
+                "_UseRGBOffset", "_GOffset", "_RBMainColorMask",
+                "_RBOffsetColorMask", "_RBOffset1ColorMask",
+                "_RBOffset2ColorMask" };
+            var shaderProperties = new HashSet<string>(
+                Enumerable.Range(0, ShaderUtil.GetPropertyCount(shader))
+                    .Select(index => ShaderUtil.GetPropertyName(shader, index)),
+                StringComparer.Ordinal);
+            L.Require(requiredProperties.All(shaderProperties.Contains),
+                "Recovered VFXRefract shader lacks the exact suikuai (1) " +
+                "blend/RGB-offset property contract");
+        }
+
+        private static void ValidateSuikuai1SourceMaterial(
+            string source,
+            Dictionary<string, object> row)
+        {
+            string actualSha256;
+            byte[] normalizedSource = Encoding.UTF8.GetBytes(
+                File.ReadAllText(source, Encoding.UTF8)
+                    .Replace("\r\n", "\n"));
+            using (SHA256 sha = SHA256.Create())
+                actualSha256 = BitConverter.ToString(
+                        sha.ComputeHash(normalizedSource))
+                    .Replace("-", string.Empty).ToLowerInvariant();
+            string[] keywords = L.List(row["m_ValidKeywords"]).Cast<object>()
+                .Select(value => Convert.ToString(value, CultureInfo.InvariantCulture))
+                .ToArray();
+            string[] disabledPasses = L.List(row["m_DisabledShaderPasses"])
+                .Cast<object>()
+                .Select(value => Convert.ToString(value, CultureInfo.InvariantCulture))
+                .ToArray();
+            Dictionary<string, object> tags = L.Dict(row["m_StringTagMap"]);
+            Dictionary<string, object> saved = L.Dict(row["m_SavedProperties"]);
+            Dictionary<string, object> textures = L.Dict(saved["m_TexEnvs"]);
+            Dictionary<string, object> blendTexture = L.Dict(textures["_BlendTex"]);
+            Dictionary<string, object> blendScale = L.Dict(blendTexture["m_Scale"]);
+            Dictionary<string, object> blendOffset = L.Dict(blendTexture["m_Offset"]);
+            L.Require(actualSha256 == EndminfRefractSuikuai1SourceSha256 &&
+                L.Str(row, "m_Name") == "M_fx_common_teleport_03" &&
+                L.PPtrId(row["m_Shader"]) == RefractShaderPathId &&
+                keywords.SequenceEqual(EndminfRefractSuikuai1Keywords) &&
+                L.Int(row, "m_CustomRenderQueue") == 3000 &&
+                L.Str(tags, "RenderType") == "Transparent" &&
+                disabledPasses.SequenceEqual(new[] { "GBuffer" }) &&
+                L.PPtrId(blendTexture["m_Texture"]) ==
+                    EndminfRefractSuikuai1BlendTexture &&
+                Mathf.Abs(L.Float(blendScale, "X") - 1f) <= 1.0e-6f &&
+                Mathf.Abs(L.Float(blendScale, "Y") - 1f) <= 1.0e-6f &&
+                Mathf.Abs(L.Float(blendOffset, "X")) <= 1.0e-6f &&
+                Mathf.Abs(L.Float(blendOffset, "Y")) <= 1.0e-6f,
+                "Exact suikuai (1) VFXRefract source identity/binding drifted");
+
+            Dictionary<string, object> floats = L.Dict(saved["m_Floats"]);
+            var expectedFloats = new Dictionary<string, float> {
+                { "_Bi_Refract", 1f }, { "_Intensity", 0.028f },
+                { "_RefractUseRBOffset", 0f }, { "_UseBlend", 1f },
+                { "_UseBlendTexAsAlpha", 1f },
+                { "_BlendTexUseRefract", 0f }, { "_BlendSwitchUV", 0f },
+                { "_BlendTexUVRotate", 0f }, { "_UseRBOffset", 1f },
+                { "_RBIntensity", 1f }, { "_UseRGBOffset", 1f },
+                { "_GOffset", -2f }, { "_TintColorAlpha", 1f },
+                { "_ZTest", 8f }, { "_ZWrite", 0f },
+                { "_SrcBlend", 5f }, { "_DstBlend", 10f },
+            };
+            foreach (KeyValuePair<string, float> expected in expectedFloats)
+                L.Require(floats.ContainsKey(expected.Key) &&
+                    Mathf.Abs(L.Float(floats, expected.Key) - expected.Value) <= 1.0e-6f,
+                    "Exact suikuai (1) source scalar drifted: " + expected.Key);
+
+            Dictionary<string, object> colors = L.Dict(saved["m_Colors"]);
+            var expectedColors = new Dictionary<string, Vector4> {
+                { "_BlendColor", new Vector4(1f, 1f, 1f, 1f) },
+                { "_BlendTexUVSpeed", new Vector4(0.94f, 0f, 0f, 0f) },
+                { "_RBOffset", new Vector4(2.58f, 1.94f, 0f, 0f) },
+                { "_RBMainColorMask", new Vector4(1f, 0f, 0f, 1f) },
+                { "_RBOffsetColorMask", new Vector4(0f, 1f, 1f, 1f) },
+                { "_RBOffset1ColorMask", new Vector4(0f, 1f, 0f, 1f) },
+                { "_RBOffset2ColorMask", new Vector4(0f, 0f, 1f, 1f) },
+                { "_RefractDir", new Vector4(1f, 1f, 0f, 0f) },
+            };
+            foreach (KeyValuePair<string, Vector4> expected in expectedColors)
+            {
+                Dictionary<string, object> value = L.Dict(colors[expected.Key]);
+                Vector4 actual = new Vector4(L.Float(value, "r"), L.Float(value, "g"),
+                    L.Float(value, "b"), L.Float(value, "a"));
+                L.Require(Vector4.Distance(actual, expected.Value) <= 1.0e-6f,
+                    "Exact suikuai (1) source color/vector drifted: " + expected.Key);
+            }
+        }
+
+        private static void ValidateSuikuai1ImportedMaterial(Material material)
+        {
+            Texture blendTexture = material.GetTexture("_BlendTex");
+            string blendPath = blendTexture == null
+                ? null
+                : AssetDatabase.GetAssetPath(blendTexture);
+            string actualBlendSha256 = string.Empty;
+            if (!string.IsNullOrEmpty(blendPath) &&
+                File.Exists(L.ProjectAbsolute(blendPath)))
+            {
+                using (SHA256 sha = SHA256.Create())
+                    actualBlendSha256 = BitConverter.ToString(sha.ComputeHash(
+                            File.ReadAllBytes(L.ProjectAbsolute(blendPath))))
+                        .Replace("-", string.Empty).ToLowerInvariant();
+            }
+            string[] enabledKeywords = material.shaderKeywords
+                .Where(value => value.StartsWith("_", StringComparison.Ordinal))
+                .OrderBy(value => value, StringComparer.Ordinal).ToArray();
+            string[] expectedKeywords = EndminfRefractSuikuai1Keywords
+                .OrderBy(value => value, StringComparer.Ordinal).ToArray();
+            L.Require(blendTexture != null,
+                "Exact suikuai (1) imported _BlendTex is null");
+            L.Require(blendTexture.name ==
+                    "T_fx_mask_138_M_pFC31CA27BFE1C466",
+                "Exact suikuai (1) imported _BlendTex name drifted: " +
+                blendTexture.name + " expected " +
+                "T_fx_mask_138_M_pFC31CA27BFE1C466");
+            L.Require(Path.GetFileNameWithoutExtension(blendPath).EndsWith(
+                    "_pFC31CA27BFE1C466", StringComparison.Ordinal),
+                "Exact suikuai (1) imported _BlendTex PathID filename drifted: " +
+                blendPath);
+            L.Require(actualBlendSha256 == EndminfRefractSuikuai1BlendSha256,
+                "Exact suikuai (1) imported _BlendTex hash drifted: " +
+                actualBlendSha256);
+            L.Require(enabledKeywords.SequenceEqual(expectedKeywords),
+                "Exact suikuai (1) imported keywords drifted: [" +
+                string.Join(",", enabledKeywords) + "] expected [" +
+                string.Join(",", expectedKeywords) + "]");
+            L.Require(material.GetVector("_BlendTex_ST") ==
+                    new Vector4(1f, 1f, 0f, 0f),
+                "Exact suikuai (1) imported _BlendTex_ST drifted: " +
+                material.GetVector("_BlendTex_ST"));
+            var expectedFloats = new Dictionary<string, float> {
+                { "_UseBlend", 1f }, { "_UseBlendTexAsAlpha", 1f },
+                { "_UseRBOffset", 1f }, { "_UseRGBOffset", 1f },
+                { "_GOffset", -2f },
+            };
+            foreach (KeyValuePair<string, float> expected in expectedFloats)
+                L.Require(Mathf.Abs(material.GetFloat(expected.Key) - expected.Value) <= 1.0e-6f,
+                    "Exact suikuai (1) imported scalar drifted: " + expected.Key +
+                    "=" + material.GetFloat(expected.Key).ToString("R", CultureInfo.InvariantCulture) +
+                    " expected " + expected.Value.ToString("R", CultureInfo.InvariantCulture));
+            var expectedVectors = new Dictionary<string, Vector4> {
+                { "_BlendTexUVSpeed", new Vector4(0.94f, 0f, 0f, 0f) },
+                { "_RBOffset", new Vector4(2.58f, 1.94f, 0f, 0f) },
+                { "_RBOffset1ColorMask", new Vector4(0f, 1f, 0f, 1f) },
+                { "_RBOffset2ColorMask", new Vector4(0f, 0f, 1f, 1f) },
+            };
+            foreach (KeyValuePair<string, Vector4> expected in expectedVectors)
+                L.Require(material.GetVector(expected.Key) == expected.Value,
+                    "Exact suikuai (1) imported color/vector drifted: " + expected.Key +
+                    "=" + material.GetVector(expected.Key) + " expected " + expected.Value);
         }
 
         private static bool IsVisualCompatibilityRequested()
