@@ -34,8 +34,8 @@ exit /b 2
   set "ENDFIELD_RECOVERED_CHARINFO_GYROSCOPE_INPUT_Y=-0.874"
   set "ENDFIELD_CHARACTER_RECOVERY_INITIAL_MODEL=Endminf"
   echo Opening Endminf visual reproduction with explicitly approximate compatibility layers.
-  "%UNITY_EXE%" -projectPath "%PROJECT_PATH%" -force-d3d12 -executeMethod EndfieldGraphShaderLabEditor.EndfieldEndminfOverviewEffectBindingBuilder.OpenVisualReproductionInPlayMode
+  "%UNITY_EXE%" -projectPath "%PROJECT_PATH%" -force-d3d11 -executeMethod EndfieldGraphShaderLabEditor.EndfieldEndminfOverviewEffectBindingBuilder.OpenVisualReproductionInPlayMode
   exit /b %ERRORLEVEL%
 
 :open_lab
-"%UNITY_EXE%" -projectPath "%PROJECT_PATH%"
+"%UNITY_EXE%" -projectPath "%PROJECT_PATH%" -force-d3d11

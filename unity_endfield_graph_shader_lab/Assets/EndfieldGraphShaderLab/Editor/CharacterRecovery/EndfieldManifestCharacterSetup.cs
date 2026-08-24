@@ -2228,7 +2228,7 @@ namespace EndfieldGraphShaderLabEditor
         }
 
         /// <summary>
-        /// Builds a development D3D12 standalone player for frame-debugger and
+        /// Builds a development D3D11 standalone player for frame-debugger and
         /// timing-profiler work. Keeping capture tooling out of the Editor avoids
         /// recording unrelated Editor windows and render loops.
         /// </summary>
@@ -2296,7 +2296,7 @@ namespace EndfieldGraphShaderLabEditor
                     false);
                 PlayerSettings.SetGraphicsAPIs(
                     BuildTarget.StandaloneWindows64,
-                    new[] { GraphicsDeviceType.Direct3D12 });
+                    new[] { GraphicsDeviceType.Direct3D11 });
 
                 var options = new BuildPlayerOptions
                 {
@@ -2317,7 +2317,7 @@ namespace EndfieldGraphShaderLabEditor
                 Debug.Log(
                     $"Fast render-style capture player built: path={playerPath}, " +
                     $"size={report.summary.totalSize} bytes, " +
-                    $"time={report.summary.totalTime.TotalSeconds:0.0}s, api=D3D12.");
+                    $"time={report.summary.totalTime.TotalSeconds:0.0}s, api=D3D11.");
             }
             finally
             {

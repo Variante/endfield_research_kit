@@ -1,0 +1,79 @@
+{
+  "schema": "endfield.character-recovery.d3d11-migration.v1",
+  "status": "validated",
+  "authoritativeBackend": "Direct3D11",
+  "projectSettings": {
+    "path": "unity_endfield_graph_shader_lab/ProjectSettings/ProjectSettings.asset",
+    "windowsStandaloneGraphicsApiBytes": "02000000",
+    "automaticGraphicsApiSelection": false
+  },
+  "activeWorkflows": [
+    {
+      "path": "unity_endfield_graph_shader_lab/build_all_character_recovery.bat",
+      "sha256": "eda542bcef73efc72100f3924becfe05e387697c004e5581e17a1a12384f89eb"
+    },
+    {
+      "path": "unity_endfield_graph_shader_lab/open_character_recovery_lab.bat",
+      "sha256": "b5715e890fa6c4f5da497f8fe87f9ff46afe31f40ce30644dc316926602ec321"
+    },
+    {
+      "path": "unity_endfield_graph_shader_lab/tools/character_import/pipeline.py",
+      "sha256": "35071872c284962928ac41e87143c2139f65c71c508de6d345e5fafa3fe65a12"
+    },
+    {
+      "path": "unity_endfield_graph_shader_lab/tools/character_import/model_pipeline.py",
+      "sha256": "0617ea5735d00cba6d2cc77e13472e4ee38c4e3240ef764e76eef4b1f5b02e46"
+    },
+    {
+      "path": "unity_endfield_graph_shader_lab/tools/run_settled_phase_sweeps.py",
+      "sha256": "2a7668def4785579932337eca017aa1b369b3138c726a09fe6a476168a0d2cdb"
+    }
+  ],
+  "canonicalCapture": {
+    "path": "unity_endfield_graph_shader_lab/scratch/character_recovery/endminf_viewer_playmode_sequence_d3d11",
+    "reportSha256": "ddd920b25e65a83dffd9dd2426804966c58a25a25d0bf6c38db1a3b297690c10",
+    "aggregateFrameSha256": "cc0aa78209e1ec007c223f294cb06047dabb96770e36708a8bdce611c9fd6de5",
+    "graphicsDeviceType": "Direct3D11",
+    "frameCount": 41,
+    "admittedRenderersAtEntrance": 67,
+    "blockedRendererCountAtEntrance": 3,
+    "requiredObservations": [
+      "observedTransition",
+      "observedSettledLoop",
+      "observedAnimatorContract",
+      "observedEntranceVfx",
+      "observedEntranceVfxCleanup",
+      "observedRotationOnlyRootMotion",
+      "observedPrimaryRockCompatibilityBinding"
+    ]
+  },
+  "referenceComparisons": [
+    {
+      "path": "unity_endfield_graph_shader_lab/scratch/character_recovery/endminf_viewer_playmode_sequence_d3d11/reference_comparison.json",
+      "sha256": "a8f00a02d269bf839ff38bbc980c3920d99a19abd28e6fd5962b004011092e1e",
+      "recordingId": "endminf_overview_2026-08-21",
+      "comparisonBoundary": "exact_60hz_source_sample",
+      "rowCount": 28,
+      "crystalContaminatedRows": 0,
+      "crystalCleanRows": 28,
+      "phaseErrorSpreadFrames": 4.57763671875e-05
+    },
+    {
+      "path": "unity_endfield_graph_shader_lab/scratch/character_recovery/endminf_viewer_playmode_sequence_d3d11/reference_no_framegen_comparison.json",
+      "sha256": "8ab4f8166eda6267960ecf53120e2799fba7473a6626741043eb7705197ea10f",
+      "recordingId": "endminf_overview_no_framegen_2026-08-24",
+      "comparisonBoundary": "diagnostic_cross_capture_bounded_phase_crystal_excluded",
+      "rowCount": 28,
+      "crystalContaminatedRows": 25,
+      "crystalCleanRows": 3,
+      "phaseErrorSpreadFrames": 4.57763671875e-05
+    }
+  ],
+  "historicalCapture": {
+    "path": "unity_endfield_graph_shader_lab/scratch/character_recovery/endminf_viewer_playmode_sequence",
+    "role": "pre-migration D3D12 comparison snapshot",
+    "reportSha256": "48c63bd241e35cbb31e98726af52b06a655f884c98b4fa6fc9ea43fd7682dc24",
+    "aggregateFrameSha256": "202ed84ff732ac2b996f0b86b2dc8b31431ef3171457c4c71ae6e2f778929484"
+  },
+  "boundary": "D3D11 is authoritative for current Windows execution. Historical D3D12 diagnostics remain labeled evidence and are not rewritten. The August 24 comparison continues to exclude crystal-contaminated rows."
+}

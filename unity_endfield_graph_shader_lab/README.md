@@ -5,6 +5,11 @@ original Character Info render. Endminf is the current reference actor. Once
 that frame is faithful, the same data-driven pipeline will be applied to every
 playable character.
 
+Windows Editor, batch, capture, and standalone-player workflows use Direct3D
+11 exclusively. This matches the recovered retail shader binaries and keeps
+backend-specific validation on the same API as its source evidence. Historical
+D3D12 comparison probes remain evidence snapshots, not active workflow defaults.
+
 ## Open the viewer
 
 ```bat

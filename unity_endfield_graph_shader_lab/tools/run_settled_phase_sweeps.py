@@ -198,7 +198,7 @@ def unity_command(
         "-quit",
         "-projectPath",
         str(project_path),
-        "-force-d3d12",
+        "-force-d3d11",
         "-executeMethod",
         UNITY_METHOD,
     ]
