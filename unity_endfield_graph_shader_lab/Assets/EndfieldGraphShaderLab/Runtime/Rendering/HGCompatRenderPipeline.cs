@@ -233,6 +233,8 @@ namespace EndfieldGraphShaderLab
             Shader.PropertyToID("_RecoveredTemporalHistory");
         private static readonly int RecoveredTemporalCurrentId =
             Shader.PropertyToID("_RecoveredTemporalCurrent");
+        private static readonly int RecoveredTemporalCurrentLoadId =
+            Shader.PropertyToID("_RecoveredTemporalCurrentLoad");
         private static readonly int RecoveredTemporalSceneMVId =
             Shader.PropertyToID("_RecoveredTemporalSceneMV");
         private static readonly int RecoveredTemporalSceneDepthId =
@@ -265,6 +267,16 @@ namespace EndfieldGraphShaderLab
             Shader.PropertyToID("_RecoveredTemporalHistoryWeight");
         private static readonly int RecoveredTemporalStaticHistoryWeightId =
             Shader.PropertyToID("_RecoveredTemporalStaticHistoryWeight");
+        private static readonly int RecoveredTemporalPackedResolveId =
+            Shader.PropertyToID("_RecoveredTemporalPackedResolve");
+        private static readonly int RecoveredTemporalJitterId =
+            Shader.PropertyToID("_RecoveredTemporalJitter");
+        private static readonly int RecoveredTemporalFrameInfoYId =
+            Shader.PropertyToID("_RecoveredTemporalFrameInfoY");
+        private static readonly int RecoveredTemporalFastConvergeId =
+            Shader.PropertyToID("_RecoveredTemporalFastConverge");
+        private static readonly int RecoveredTemporalResponsiveTransparencyId =
+            Shader.PropertyToID("_RecoveredTemporalResponsiveTransparency");
         private static readonly int RecoveredTemporalResolveId =
             Shader.PropertyToID("_EndfieldRecoveredTemporalResolve");
         private static readonly int RecoveredPostSemanticsId = Shader.PropertyToID("_EndfieldRecoveredPostSemantics");
@@ -453,6 +465,12 @@ namespace EndfieldGraphShaderLab
             "ENDFIELD_RECOVERED_LIVE_CHARINFO_AUTO_EXPOSURE";
         public const string LiveCharInfoAutoExposureCommandLineArgument =
             "-endfield-recovered-live-charinfo-auto-exposure";
+        // The ordinary Quality-0 shader math is closed, but the August capture
+        // does not admit TAAU over DLSS/DLAA and does not expose live jitter,
+        // frame-info, or convergence state. Keep packed-resource consumption
+        // as an explicit comparison experiment until those gates close.
+        public const string PackedTemporalResolveEnvironmentVariable =
+            "ENDFIELD_RECOVERED_TAAU_PACKED_RESOLVE";
         private const string LiveCharInfoAutoExposureComputeResource =
             "EndfieldRecoveredCharInfoExposure";
 
@@ -3143,6 +3161,7 @@ namespace EndfieldGraphShaderLab
             bool useCurrentSceneMVDilation = canRunDilation &&
                 state.historyDilatedDepth != null &&
                 state.historyDilatedSceneMV != null;
+            bool useCurrentMaskDilation = false;
             if (useCurrentSceneMVDilation)
             {
                 var sceneMvDescriptor = new RenderTextureDescriptor(
@@ -3171,7 +3190,7 @@ namespace EndfieldGraphShaderLab
                     RecoveredTemporalDilatedDepthId,
                     depthDescriptor,
                     FilterMode.Point);
-                bool useCurrentMaskDilation =
+                useCurrentMaskDilation =
                     recoveredTemporalMaskDilationMaterial != null;
                 if (useCurrentMaskDilation)
                 {
@@ -3260,13 +3279,52 @@ namespace EndfieldGraphShaderLab
                     RecoveredTemporalCurrentId,
                     new RenderTargetIdentifier(CameraColorId));
                 commandBuffer.SetGlobalTexture(
+                    RecoveredTemporalCurrentLoadId,
+                    new RenderTargetIdentifier(CameraColorId));
+                bool usePackedResolve = useCurrentSceneMVDilation &&
+                    useCurrentMaskDilation &&
+                    System.String.Equals(
+                        System.Environment.GetEnvironmentVariable(
+                            PackedTemporalResolveEnvironmentVariable),
+                        "1",
+                        System.StringComparison.Ordinal);
+                commandBuffer.SetGlobalTexture(
                     RecoveredTemporalSceneMVId,
-                    useCurrentSceneMVDilation
+                    usePackedResolve
+                        ? new RenderTargetIdentifier(
+                            RecoveredTemporalDilatedSceneMVId)
+                        : useCurrentSceneMVDilation
                         ? new RenderTargetIdentifier(
                             RecoveredTemporalSelectedSceneMVId)
                         : recoveredSceneMV != null
                         ? new RenderTargetIdentifier(recoveredSceneMV)
                         : new RenderTargetIdentifier(Texture2D.grayTexture));
+                recoveredTemporalMaterial.SetFloat(
+                    RecoveredTemporalPackedResolveId,
+                    usePackedResolve ? 1.0f : 0.0f);
+                if (usePackedResolve)
+                {
+                    commandBuffer.SetGlobalTexture(
+                        RecoveredTemporalDilatedDepthId,
+                        new RenderTargetIdentifier(
+                            RecoveredTemporalDilatedDepthId));
+                    commandBuffer.SetGlobalTexture(
+                        RecoveredTemporalDilatedMaskId,
+                        new RenderTargetIdentifier(
+                            RecoveredTemporalDilatedMaskId));
+                    recoveredTemporalMaterial.SetVector(
+                        RecoveredTemporalJitterId,
+                        Vector4.zero);
+                    recoveredTemporalMaterial.SetFloat(
+                        RecoveredTemporalFrameInfoYId,
+                        1.0f);
+                    recoveredTemporalMaterial.SetFloat(
+                        RecoveredTemporalFastConvergeId,
+                        0.0f);
+                    recoveredTemporalMaterial.SetFloat(
+                        RecoveredTemporalResponsiveTransparencyId,
+                        0.0f);
+                }
                 // Desktop TAAU serializes distinct 0.95 static and 0.85
                 // in-motion history weights. The exact SceneMV decoder in the
                 // resolve selects between them per pixel.
@@ -3281,12 +3339,26 @@ namespace EndfieldGraphShaderLab
                     RecoveredTemporalResolveId,
                     recoveredTemporalMaterial,
                     0);
-                commandBuffer.CopyTexture(
-                    new RenderTargetIdentifier(RecoveredTemporalResolveId),
-                    new RenderTargetIdentifier(CameraColorId));
-                commandBuffer.CopyTexture(
-                    new RenderTargetIdentifier(RecoveredTemporalResolveId),
-                    state.history);
+                if (usePackedResolve)
+                {
+                    commandBuffer.CopyTexture(
+                        new RenderTargetIdentifier(RecoveredTemporalResolveId),
+                        state.history);
+                    commandBuffer.Blit(
+                        RecoveredTemporalResolveId,
+                        CameraColorId,
+                        recoveredTemporalMaterial,
+                        1);
+                }
+                else
+                {
+                    commandBuffer.CopyTexture(
+                        new RenderTargetIdentifier(RecoveredTemporalResolveId),
+                        new RenderTargetIdentifier(CameraColorId));
+                    commandBuffer.CopyTexture(
+                        new RenderTargetIdentifier(RecoveredTemporalResolveId),
+                        state.history);
+                }
                 commandBuffer.ReleaseTemporaryRT(RecoveredTemporalResolveId);
 
                 if (!loggedRecoveredTemporalResolve)
@@ -3295,7 +3367,10 @@ namespace EndfieldGraphShaderLab
                         "Recovered Endminf pre-Bloom temporal history resolve is active " +
                         "with the shipped current-frame max-depth SceneMV dilation, " +
                         "exact fourth-root reprojection, and desktop static/motion " +
-                        "weights 0.95/0.85.");
+                        "weights 0.95/0.85" +
+                        (usePackedResolve
+                            ? "; opt-in packed Quality-0 consumer experiment active."
+                            : "."));
                     loggedRecoveredTemporalResolve = true;
                 }
             }
