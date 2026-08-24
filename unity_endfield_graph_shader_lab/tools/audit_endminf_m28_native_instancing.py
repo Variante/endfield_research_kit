@@ -36,12 +36,17 @@ KEYWORD_TABLE_COUNT = 57
 KEYWORD_ENTRY_BYTES = 16
 SRP_KEYWORD_ORDINAL = 30
 SRP_KEYWORD_ENTRY_OFFSET = 0x2104B90
-KEYWORD_ACCESSOR_RANGE = (0x180618C50, 0x180619518)
-KEYWORD_ACCESSOR_SHA256 = "13ea0815a067a39fff56ecabb150635a1533c8573475d870f49fa98483ff4d87"
+KEYWORD_ACCESSOR_RANGE = (0x180618C50, 0x180618CAC)
+KEYWORD_ACCESSOR_SHA256 = "eba3b7e55afd88fe83bef747331e36147f9e114e0a623ac10f534df62219da5f"
+KEYWORD_ACCESSOR_CALL_SITES = (0x180614039, 0x180619587)
 KEYWORD_REGISTRY_INIT_RANGE = (0x180619520, 0x180619664)
 KEYWORD_REGISTRY_INIT_SHA256 = "4ecca66c0514341ce460dde5513efe3da215a87cc803ca6d1a2f3cf1d787b52a"
+KEYWORD_REGISTRY_INIT_CALL_SITE = 0x18062850C
 DEFAULT_BUILTIN_SET_RANGE = (0x180614000, 0x18061419D)
 DEFAULT_BUILTIN_SET_SHA256 = "ef0bf83b663f8506250eb7ad692eab57c319abc8dd8fd589557887b4927c996f"
+DEFAULT_BUILTIN_SET_CALLER_RANGE = (0x1805E5700, 0x1805E5A18)
+DEFAULT_BUILTIN_SET_CALLER_SHA256 = "bc7bca2c140c79762d7ed618646cc6c3b420f126149e25431a3693647521ee06"
+DEFAULT_BUILTIN_SET_CALL_SITE = 0x1805E57D8
 DEFAULT_BUILTIN_ORDINALS_VA = 0x181D88A48
 DEFAULT_BUILTIN_ORDINALS = (35, 33, 36, 37)
 KEYWORD_REGISTER_RANGE = (0x180627040, 0x1806272D0)
@@ -154,6 +159,20 @@ def read_va_bytes(
     return data[offset : offset + size]
 
 
+def require_rel32_call(
+    data: bytes,
+    site: int,
+    target: int,
+    image_base: int,
+    sections: list[dict[str, int | str]],
+) -> None:
+    encoded = read_va_bytes(data, site, 5, image_base, sections)
+    require(encoded[0] == 0xE8, f"expected direct call at 0x{site:X}")
+    displacement = struct.unpack_from("<i", encoded, 1)[0]
+    require(site + 5 + displacement == target,
+            f"direct call target drifted at 0x{site:X}")
+
+
 def validate_native_selection_search(
     data: bytes,
     image_base: int,
@@ -166,6 +185,8 @@ def validate_native_selection_search(
          KEYWORD_REGISTRY_INIT_SHA256),
         ("defaultBuiltInSet", DEFAULT_BUILTIN_SET_RANGE,
          DEFAULT_BUILTIN_SET_SHA256),
+        ("defaultBuiltInSetCaller", DEFAULT_BUILTIN_SET_CALLER_RANGE,
+         DEFAULT_BUILTIN_SET_CALLER_SHA256),
         ("keywordRegister", KEYWORD_REGISTER_RANGE, KEYWORD_REGISTER_SHA256),
     )
     bodies = []
@@ -195,6 +216,18 @@ def validate_native_selection_search(
     )
     require(bit_sequence == KEYWORD_ID_BIT30_SEQUENCE,
             "keyword-ID bit-30 classifier sequence drifted")
+    for site in KEYWORD_ACCESSOR_CALL_SITES:
+        require_rel32_call(
+            data, site, KEYWORD_ACCESSOR_RANGE[0], image_base, sections
+        )
+    require_rel32_call(
+        data, KEYWORD_REGISTRY_INIT_CALL_SITE, KEYWORD_REGISTRY_INIT_RANGE[0],
+        image_base, sections
+    )
+    require_rel32_call(
+        data, DEFAULT_BUILTIN_SET_CALL_SITE, DEFAULT_BUILTIN_SET_RANGE[0],
+        image_base, sections
+    )
 
     return {
         "bodyHashedFunctions": bodies,
@@ -203,8 +236,37 @@ def validate_native_selection_search(
             "names": [names[index] for index in ordinals],
             "containsSrpInstancing": False,
             "conclusion": (
-                "The exact four-keyword default seed contains only stereo modes; "
-                "it does not enable SRP_INSTANCING_ON."
+                "The exact four-keyword default seed contains only stereo modes. "
+                "Each name is resolved to an internal 16-bit keyword ID before "
+                "setting the corresponding dynamic-bitset lane; ordinal 30 is "
+                "not itself the runtime bit position."
+            ),
+        },
+        "keywordBitset": {
+            "ownerArgument": "defaultBuiltInSet rcx, passed as r12 by its sole audited caller",
+            "inlineWordsOffset": "0x100",
+            "capacityOffset": "0x118",
+            "inlineCapacityBytes": 128,
+            "indexEquation": "word = internalKeywordId >> 6; bit = internalKeywordId & 63",
+            "heapBoundary": (
+                "capacity <= 0x80 uses inline qwords at owner+0x100; larger "
+                "storage uses the pointer at owner+0x100"
+            ),
+            "selectionBoundary": (
+                "A draw publisher must operate on the resolved internal ID. "
+                "Searching for immediate ordinal 30 or mask 0x40000000 cannot "
+                "identify SRP_INSTANCING_ON soundly."
+            ),
+        },
+        "registrationOnlyBoundary": {
+            "auditedAccessorCallSites": [
+                f"0x{site:X}" for site in KEYWORD_ACCESSOR_CALL_SITES
+            ],
+            "registryInitCallSite": f"0x{KEYWORD_REGISTRY_INIT_CALL_SITE:X}",
+            "defaultSeedCallSite": f"0x{DEFAULT_BUILTIN_SET_CALL_SITE:X}",
+            "conclusion": (
+                "The ordinal table feeds registration and the stereo default "
+                "seed; it is not a draw-time ordinal-indexed selector."
             ),
         },
         "rejectedBit30FalsePositive": {

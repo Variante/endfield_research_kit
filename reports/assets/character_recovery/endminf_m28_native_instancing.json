@@ -72,8 +72,8 @@
       {
         "name": "keywordAccessor",
         "virtualAddress": "0x180618C50",
-        "bytes": 2248,
-        "sha256": "13ea0815a067a39fff56ecabb150635a1533c8573475d870f49fa98483ff4d87"
+        "bytes": 92,
+        "sha256": "eba3b7e55afd88fe83bef747331e36147f9e114e0a623ac10f534df62219da5f"
       },
       {
         "name": "keywordRegistryInit",
@@ -86,6 +86,12 @@
         "virtualAddress": "0x180614000",
         "bytes": 413,
         "sha256": "ef0bf83b663f8506250eb7ad692eab57c319abc8dd8fd589557887b4927c996f"
+      },
+      {
+        "name": "defaultBuiltInSetCaller",
+        "virtualAddress": "0x1805E5700",
+        "bytes": 792,
+        "sha256": "bc7bca2c140c79762d7ed618646cc6c3b420f126149e25431a3693647521ee06"
       },
       {
         "name": "keywordRegister",
@@ -108,7 +114,25 @@
         "STEREO_CUBEMAP_RENDER_ON"
       ],
       "containsSrpInstancing": false,
-      "conclusion": "The exact four-keyword default seed contains only stereo modes; it does not enable SRP_INSTANCING_ON."
+      "conclusion": "The exact four-keyword default seed contains only stereo modes. Each name is resolved to an internal 16-bit keyword ID before setting the corresponding dynamic-bitset lane; ordinal 30 is not itself the runtime bit position."
+    },
+    "keywordBitset": {
+      "ownerArgument": "defaultBuiltInSet rcx, passed as r12 by its sole audited caller",
+      "inlineWordsOffset": "0x100",
+      "capacityOffset": "0x118",
+      "inlineCapacityBytes": 128,
+      "indexEquation": "word = internalKeywordId >> 6; bit = internalKeywordId & 63",
+      "heapBoundary": "capacity <= 0x80 uses inline qwords at owner+0x100; larger storage uses the pointer at owner+0x100",
+      "selectionBoundary": "A draw publisher must operate on the resolved internal ID. Searching for immediate ordinal 30 or mask 0x40000000 cannot identify SRP_INSTANCING_ON soundly."
+    },
+    "registrationOnlyBoundary": {
+      "auditedAccessorCallSites": [
+        "0x180614039",
+        "0x180619587"
+      ],
+      "registryInitCallSite": "0x18062850C",
+      "defaultSeedCallSite": "0x1805E57D8",
+      "conclusion": "The ordinal table feeds registration and the stereo default seed; it is not a draw-time ordinal-indexed selector."
     },
     "rejectedBit30FalsePositive": {
       "virtualAddress": "0x180627145",
