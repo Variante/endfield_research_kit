@@ -452,6 +452,9 @@ Enemy items expose a parallel collapsed group for recovered `au_` Event names
 whose complete prefix exactly matches one current EnemyTable id. These rows
 remain separate from enemy skill and animation audio because the names come
 from bounded grammar/hash recovery rather than a recovered consumer.
+Leading `au_monster_<token>_*` names are shown only when the token has one exact
+current EnemyTable owner; this remains identity-only, not runtime or playback
+evidence.
 All supported AnimationClip audio callbacks are shown separately from the
 same-name action classification. Event/media details expose the exact clips,
 callback functions, owners, reachability, and recovered AnimatorController
