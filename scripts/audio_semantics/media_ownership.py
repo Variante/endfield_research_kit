@@ -250,11 +250,17 @@ def annotate_event_character_audio_identity(
             event.get("id") or event.get("eventId") or event.get("name") or ""
         ).strip()
         folded_event_id = event_id.casefold()
+        actor_token_match = re.match(
+            r"^au_actor_([a-z0-9]+)(?:_|$)", folded_event_id, re.IGNORECASE
+        )
+        actor_token = actor_token_match.group(1) if actor_token_match else ""
         token_prefix_matches = sorted(
             token
             for token in token_ids
             if folded_event_id == token or folded_event_id.startswith(f"{token}_")
         )
+        if actor_token and actor_token in token_ids:
+            token_prefix_matches = sorted(set(token_prefix_matches) | {actor_token})
         is_chr_namespace = "chr_" in folded_event_id
         if not is_chr_namespace and not token_prefix_matches:
             continue
@@ -304,8 +310,12 @@ def annotate_event_character_audio_identity(
                 token_candidates = sorted(token_ids[token_prefix_matches[0]])
                 if len(token_candidates) == 1:
                     owner_ids = token_candidates
-                    match_status = "uniqueCharacterTableTokenPrefix"
-                    evidence = "uniqueCharacterTableTokenAtWwiseEventPrefix"
+                    if actor_token and token_prefix_matches[0] == actor_token:
+                        match_status = "uniqueCharacterTableActorToken"
+                        evidence = "uniqueCharacterTableTokenAtActorEventPrefix"
+                    else:
+                        match_status = "uniqueCharacterTableTokenPrefix"
+                        evidence = "uniqueCharacterTableTokenAtWwiseEventPrefix"
                 else:
                     event["characterAudioIdentityStatus"] = (
                         "ambiguousCharacterTableTokenPrefix"
@@ -382,8 +392,10 @@ def annotate_event_character_audio_identity(
             "A delimited full CharacterTable key in an Event id is exact authored "
             "namespace ownership. When the authored token is shortened or omitted, "
             "a leading chr_NNNN segment is accepted only when that four-digit id is "
-            "unique in the current CharacterTable. An Event-leading internal character "
-            "token is accepted only with an exact delimiter and one catalog owner. "
+            "unique in the current CharacterTable. A delimited actor_<token> Event "
+            "prefix is accepted only when its token has one catalog owner. An "
+            "Event-leading internal character token is accepted only with an exact "
+            "delimiter and one catalog owner. "
             "This recovers the named character "
             "domain, not an action, skill, runtime request, selected Wwise leaf, "
             "playback location, or audibility."
@@ -500,8 +512,9 @@ def project_character_namespace_gameplay_audio(
         },
         "evidenceBoundary": (
             "Each row has one exact CharacterTable owner recovered from a delimited "
-            "full key, a current-table-unique four-digit chr namespace, or a unique "
-            "Event-leading internal character token. This is authored namespace "
+            "full key, a current-table-unique four-digit chr namespace, a unique "
+            "actor_<token> prefix, or a unique Event-leading internal character token. "
+            "This is authored namespace "
             "identity only: no action execution, skill ownership, callback, Event "
             "posting, Wwise branch selection, playback, or audibility is claimed."
         ),

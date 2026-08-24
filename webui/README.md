@@ -442,6 +442,8 @@ such as `lastrite_*`, `lizhiyan_*`, and `pograni_*` are accepted only when the
 token has one exact CharacterTable owner. Shared media shows all named
 character owners, while generic character templates and concrete playback
 locations remain unresolved.
+The same exact-token rule covers leading `au_actor_<token>_*` Events, which
+are surfaced on the matching character item as authored namespace audio.
 Gameplay character items also expose these exact namespace-owned Events and
 their playable candidates in a separate collapsed group. They are not merged
 with skill or animation-triggered SFX: the group is identity-only and does not

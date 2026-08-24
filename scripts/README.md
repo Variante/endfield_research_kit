@@ -642,9 +642,10 @@ Mixed Events retain that identity only on their callback occurrence/Clip rows,
 not as a single Event owner. This does not prove CharacterTable identity,
 Animator execution, playback, or audibility.
 The same domain loads current `CharacterTable` keys and assigns authored
-`chr_*`/`au_chr_*` Event namespaces, plus Event-leading internal character
-tokens such as `lastrite_*`, to a character only through a delimited full key,
-a unique four-digit character-id prefix, or a uniquely owned exact token. It
+`chr_*`/`au_chr_*` Event namespaces, leading `au_actor_<token>_*` Events, plus
+Event-leading internal character tokens such as `lastrite_*`, to a character
+only through a delimited full key, a unique four-digit character-id prefix, or
+a uniquely owned exact token. It
 propagates that owner set to possible media, retaining every owner when a Wwise
 leaf is shared.
 Generic character templates, display-name similarity, actions, runtime

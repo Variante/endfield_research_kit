@@ -284,8 +284,9 @@ Character audio naming is a second exact ownership boundary. A delimited
 current `CharacterTable` key inside a Wwise Event id assigns that authored
 namespace to the character; a shortened `chr_NNNN_*` form is accepted only
 when the numeric id is unique in the same table. An Event-leading internal
-token such as `lastrite_*`, `lizhiyan_*`, or `pograni_*` is accepted only when
-it has one exact table owner. Possible media inherit the complete named-
+token such as `lastrite_*`, `lizhiyan_*`, or `pograni_*`, and a leading
+`au_actor_<token>_*` form, are accepted only when it has one exact table owner.
+Possible media inherit the complete named-
 character set, so cross-character Wwise leaf reuse stays explicit. This does
 not identify an action, runtime caller, selected leaf, playback position, or
 audibility, and generic `chr_*` templates remain unowned.

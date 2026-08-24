@@ -51,6 +51,11 @@ class MediaOwnershipTests(unittest.TestCase):
                 "contexts": [{"kind": "characterSkill", "ownerId": "chr_0031_mifu"}],
             },
             {
+                "id": "au_actor_wulfa_ui_overview_start",
+                "category": "ui",
+                "contexts": [],
+            },
+            {
                 "id": "lizhiyan_relax_sp_01",
                 "category": "unknown",
                 "contexts": [{
@@ -81,13 +86,12 @@ class MediaOwnershipTests(unittest.TestCase):
             events[2]["characterAudioIdentityStatus"],
             "uniqueCharacterTableNumericIdPrefix",
         )
-        self.assertEqual(events[3]["characterAudioOwnerIds"], ["chr_0032_lizhiyan"])
-        self.assertEqual(
-            events[3]["characterAudioIdentityStatus"],
-            "uniqueCharacterTableTokenPrefix",
-        )
-        self.assertNotIn("characterAudioOwnerIds", events[4])
-        self.assertEqual(counts["eventsWithCharacterAudioIdentity"], 4)
+        self.assertEqual(events[3]["characterAudioOwnerIds"], ["chr_0028_wulfa"])
+        self.assertEqual(events[3]["characterAudioIdentityStatus"], "uniqueCharacterTableActorToken")
+        self.assertEqual(events[4]["characterAudioOwnerIds"], ["chr_0032_lizhiyan"])
+        self.assertEqual(events[4]["characterAudioIdentityStatus"], "uniqueCharacterTableTokenPrefix")
+        self.assertNotIn("characterAudioOwnerIds", events[5])
+        self.assertEqual(counts["eventsWithCharacterAudioIdentity"], 5)
 
     def test_character_namespace_gameplay_projection_keeps_identity_separate(self):
         projected = media_ownership.project_character_namespace_gameplay_audio([
@@ -128,6 +132,25 @@ class MediaOwnershipTests(unittest.TestCase):
         self.assertNotIn("sourceSkillIds", rows[0])
         self.assertEqual(projected["counts"]["uniqueEvents"], 1)
         self.assertEqual(projected["counts"]["mediaOwnerAssociations"], 1)
+
+    def test_actor_namespace_fails_closed_on_duplicate_tokens_and_bad_delimiters(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            table = root / "structured/StreamingAssets/Table/CharacterTable.json"
+            table.parent.mkdir(parents=True)
+            table.write_text(json.dumps({
+                "chr_0001_wulfa": {},
+                "chr_0002_wulfa": {},
+            }), encoding="utf-8")
+            catalog = media_ownership.collect_character_audio_identity_catalog(root)
+        events = [
+            {"id": "au_actor_wulfa_ui_open", "contexts": []},
+            {"id": "au_actor_wulfa2_ui_open", "contexts": []},
+            {"id": "prefix_au_actor_wulfa_ui_open", "contexts": []},
+        ]
+        result = media_ownership.annotate_event_character_audio_identity(events, catalog)
+        self.assertEqual(result["eventsWithCharacterAudioIdentity"], 0)
+        self.assertTrue(all("characterAudioOwnerIds" not in event for event in events))
 
     def test_enemy_namespace_projection_requires_exact_catalog_prefix(self):
         projected = media_ownership.project_enemy_namespace_gameplay_audio(
