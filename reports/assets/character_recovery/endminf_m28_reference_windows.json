@@ -1,0 +1,286 @@
+{
+  "schema": "endfield.endminf-m28-reference-windows.v1",
+  "status": "authored_clocks_closed_reference_pixel_ownership_open",
+  "scope": "The two M_fx_endminm_gfx_28 VFXRefract consumers only",
+  "evidenceBoundary": {
+    "closed": [
+      "Both retained particle payloads use one deterministic burst particle, integral 60 Hz delay/lifetime clocks, zero speed, growth over lifetime, and the same mesh renderer stream.",
+      "Both recordings are hash-pinned 60 Hz sources; the 2026-08-24 recording is the primary frame-generation-off reference.",
+      "The capture sweeps and guard ticks are fixed independently of any observed pixel amplitude."
+    ],
+    "open": [
+      "The exact AnimeStudio four-root source stage is absent, so current exact source component PathIDs, serialized source m_Enabled, and material/mesh PPtr tuples are not revalidated here.",
+      "No retail telemetry exposes the M28 effect-root clock. Mapping its authored ticks onto the body anchor is therefore a candidate pairing with the stated review uncertainty, not source ownership proof.",
+      "No M28-only exact-vs-control render exists yet; raw reference pixels cannot establish M28 visibility or amplitude."
+    ]
+  },
+  "targets": [
+    {
+      "id": "overview03_glow_particle10",
+      "effectRoot": "P_fxui_endminm003_overview_03",
+      "hierarchy": "all/glow/Particle System (10)",
+      "retainedPrefab": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/Effects/Overview/P_fxui_endminm003_overview_03.prefab",
+      "retainedPrefabSha256": "3a02c7ec96c3dbd1963dfafcf3736a2d49c064513c4787398892116691d62d15",
+      "retainedComponentIds": {
+        "gameObject": 6260966525740911143,
+        "particleSystem": 7406973434428183252,
+        "particleSystemRenderer": 5518510725583238169
+      },
+      "authoredParticleClock": {
+        "fps": 60,
+        "startDelaySeconds": 2.9,
+        "startDelayTick": 174,
+        "lifetimeSeconds": 0.35,
+        "lifetimeTicks": 21,
+        "liveIntervalSecondsHalfOpen": [
+          2.9,
+          3.25
+        ],
+        "liveTicksInclusive": [
+          174,
+          194
+        ],
+        "firstExpiredTick": 195,
+        "durationSeconds": 5.0,
+        "simulationSpeed": 1.0,
+        "moveWithTransform": 0,
+        "looping": false,
+        "playOnAwake": true,
+        "randomSeed": 5834,
+        "startSpeed": 0.0,
+        "startSize": 0.13,
+        "emission": {
+          "rateOverTime": 0,
+          "rateOverDistance": 0,
+          "burstTimeSeconds": 0,
+          "burstCount": 1,
+          "cycleCount": 1,
+          "probability": 1
+        }
+      },
+      "retainedRenderer": {
+        "enabledAfterFailClosedAdmission": false,
+        "renderMode": 4,
+        "gpuInstancing": true,
+        "vertexStreamsHex": "000103040522"
+      },
+      "captureSweep": {
+        "ticksInclusive": [
+          168,
+          200
+        ],
+        "secondsInclusive": [
+          2.8,
+          3.3333333333333335
+        ],
+        "writtenFrameCount": 33,
+        "guardTicks": [
+          173,
+          195
+        ]
+      }
+    },
+    {
+      "id": "overview02_particle9",
+      "effectRoot": "P_fxui_endminm003_overview_02",
+      "hierarchy": "all/Particle System (9)",
+      "retainedPrefab": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/Effects/Overview/P_fxui_endminm003_overview_02.prefab",
+      "retainedPrefabSha256": "d8faebb42f86cd31f382790853260073b373709ca47d885105bf312d9a76a447",
+      "retainedComponentIds": {
+        "gameObject": 98165056548732041,
+        "particleSystem": 4644945903845900291,
+        "particleSystemRenderer": 8451643910425493895
+      },
+      "authoredParticleClock": {
+        "fps": 60,
+        "startDelaySeconds": 4.4,
+        "startDelayTick": 264,
+        "lifetimeSeconds": 1.0,
+        "lifetimeTicks": 60,
+        "liveIntervalSecondsHalfOpen": [
+          4.4,
+          5.4
+        ],
+        "liveTicksInclusive": [
+          264,
+          323
+        ],
+        "firstExpiredTick": 324,
+        "durationSeconds": 5.0,
+        "simulationSpeed": 1.0,
+        "moveWithTransform": 0,
+        "looping": false,
+        "playOnAwake": true,
+        "randomSeed": 5834,
+        "startSpeed": 0.0,
+        "startSize": 0.3,
+        "emission": {
+          "rateOverTime": 0,
+          "rateOverDistance": 0,
+          "burstTimeSeconds": 0,
+          "burstCount": 1,
+          "cycleCount": 1,
+          "probability": 1
+        }
+      },
+      "retainedRenderer": {
+        "enabledAfterFailClosedAdmission": false,
+        "renderMode": 4,
+        "gpuInstancing": true,
+        "vertexStreamsHex": "000103040522"
+      },
+      "captureSweep": {
+        "ticksInclusive": [
+          258,
+          330
+        ],
+        "secondsInclusive": [
+          4.3,
+          5.5
+        ],
+        "writtenFrameCount": 73,
+        "guardTicks": [
+          263,
+          324
+        ]
+      }
+    }
+  ],
+  "referenceMappings": [
+    {
+      "recordingId": "endminf_overview_2026-08-21",
+      "segmentId": "endminf_overview_start_and_loop",
+      "frameGenerationDisabled": false,
+      "source": "../videos/2026-08-21_20-15-17.mkv",
+      "sourceSha256": "2b3bd557ca1a319ddc14d303a95848a3ed66161b983f3d06943577488442b8f5",
+      "resolution": [
+        1920,
+        1080
+      ],
+      "fps": 60,
+      "bodyClipAnchorSourceFrameOneBased": 1110,
+      "effectRootCoStartUncertaintyFrames": 1,
+      "firstExtractedSourceFrameOneBased": 1109,
+      "windows": [
+        {
+          "target": "overview03_glow_particle10",
+          "nominalSourceFramesOneBasedInclusive": [
+            1284,
+            1304
+          ],
+          "nominalExtractedFramesOneBasedInclusive": [
+            176,
+            196
+          ],
+          "reviewBracketSourceFramesOneBasedInclusive": [
+            1283,
+            1305
+          ],
+          "reviewBracketExtractedFramesOneBasedInclusive": [
+            175,
+            197
+          ]
+        },
+        {
+          "target": "overview02_particle9",
+          "nominalSourceFramesOneBasedInclusive": [
+            1374,
+            1433
+          ],
+          "nominalExtractedFramesOneBasedInclusive": [
+            266,
+            325
+          ],
+          "reviewBracketSourceFramesOneBasedInclusive": [
+            1373,
+            1434
+          ],
+          "reviewBracketExtractedFramesOneBasedInclusive": [
+            265,
+            326
+          ]
+        }
+      ]
+    },
+    {
+      "recordingId": "endminf_overview_no_framegen_2026-08-24",
+      "segmentId": "endminf_overview_start_and_loop_no_framegen",
+      "frameGenerationDisabled": true,
+      "source": "../videos/2026-08-24_06-37-22.mkv",
+      "sourceSha256": "36318de82bc3afabcf62d56946a9263614abaca0c7c3e7c57d16da938abcbb39",
+      "resolution": [
+        3840,
+        2160
+      ],
+      "fps": 60,
+      "bodyClipAnchorSourceFrameOneBased": 115,
+      "effectRootCoStartUncertaintyFrames": 1,
+      "firstExtractedSourceFrameOneBased": 113,
+      "windows": [
+        {
+          "target": "overview03_glow_particle10",
+          "nominalSourceFramesOneBasedInclusive": [
+            289,
+            309
+          ],
+          "nominalExtractedFramesOneBasedInclusive": [
+            177,
+            197
+          ],
+          "reviewBracketSourceFramesOneBasedInclusive": [
+            288,
+            310
+          ],
+          "reviewBracketExtractedFramesOneBasedInclusive": [
+            176,
+            198
+          ]
+        },
+        {
+          "target": "overview02_particle9",
+          "nominalSourceFramesOneBasedInclusive": [
+            379,
+            438
+          ],
+          "nominalExtractedFramesOneBasedInclusive": [
+            267,
+            326
+          ],
+          "reviewBracketSourceFramesOneBasedInclusive": [
+            378,
+            439
+          ],
+          "reviewBracketExtractedFramesOneBasedInclusive": [
+            266,
+            327
+          ]
+        }
+      ]
+    }
+  ],
+  "fixedControlProtocol": {
+    "simulationFps": 60,
+    "captureEverySimulationTick": true,
+    "comparisons": [
+      "Run overview_03/all/glow/Particle System (10) exact versus only that renderer disabled over ticks 168..200.",
+      "Run overview_02/all/Particle System (9) exact versus only that renderer disabled over ticks 258..330."
+    ],
+    "mustRemainBitIdenticalAcrossEachPair": [
+      "camera and 1920x1080 render target",
+      "selection edge, body/effect clocks, and temporal-history reset",
+      "all particle random seeds and simulation stepping",
+      "overview_02/all/shitou (1) M21 exact small crystal",
+      "overview_02/all/suikuai (1) admitted exact VFXRefract shards",
+      "overview_02/all/suikuai (2) M27 LitEffect consumer",
+      "every other renderer, post stage, exposure, bloom, TAA, and backdrop input"
+    ],
+    "admissionRule": "A changed pixel is attributable to one M28 consumer only inside its one-renderer exact-vs-control pair after deterministic equality of all fixed controls is proven. Reference similarity alone is insufficient."
+  },
+  "pixelOwnershipCautions": [
+    "The M28 mesh is a transparent distortion carrier; its retail contribution is displaced scene color, not an independently colored object that can be segmented from a still frame.",
+    "The overview_03 interval overlaps the moving amber crystal/rock actor effect and bloom. The overview_02 interval overlaps M21 plus the 4.49-second suikuai (1) and M27 bursts. Bright amber pixels, rings, stones, and trails therefore do not identify M28.",
+    "Disabling frame generation removes synthesized display frames but does not remove retail TAA, bloom, motion blur, exposure, body motion, or overlapping authored particles. The 2026-08-24 video is the preferred temporal reference, not a clean M28 layer.",
+    "Never resize, brighten, retime, disable, or otherwise tune M21 overview_02/all/shitou (1) to compensate for an M28 mismatch.",
+    "Do not subtract the two retail recordings from one another: their resolution, camera/body phase, UI sampling, and temporal histories differ, so the residual is not an M28 matte."
+  ]
+}
