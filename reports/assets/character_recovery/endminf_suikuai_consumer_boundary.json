@@ -114,14 +114,16 @@
         "fragmentSidecar": "0115_endfield_dxbc_1.dxbc",
         "fragmentSha256": "b2248a1deb886a0e9226695d46e650756be932addd55a81d2b1114fdeb5f932a"
       },
-      "sourceStreamContract": "Position, Normal, Color, UV, UV2, Custom1XYZW; retained YAML 000103040522 and GPU instancing match, while the BLENDWEIGHTS/BLENDINDICES particle-instance ABI still requires validation",
+      "sourceStreamContract": "Position, Normal, Color, UV, UV2, Custom1XYZW; retained YAML 000103040522 and GPU instancing match. The exact unskinned mesh excludes authored BLEND data, but missing ParserBindChannels/retail draw state cannot prove whether Endfield synthesizes BLENDWEIGHTS/BLENDINDICES or maps Custom1XYZW to DXBC TEXCOORD4.",
       "currentCompatibilityConsumer": "one-target ForwardOnly shader validated only for M01 and M38",
-      "firstSourceProvenBlocker": "fragment ShaderVariablesGlobal b1 c105.z/w consumes live HGVFXManager.GetAnchorWaveBright output that the lab does not yet publish",
+      "anchorWaveBoundary": "the current-build setter/getter/global-CB publisher is closed: c105.z is radius and c105.w is enabled-gated intensity; the selected CharInfo frame value remains unobserved and must not be replaced by the zero construction default",
       "terrainProfileBoundary": "the current-build Get/Register/Update terrain-profile producer and zero sentinel are closed, but the retail CharInfo selected-frame value remains unobserved",
       "integrationBoundary": "use a PathID-targeted M27-only five-MRT owner before deferred resolve; never add GBuffer to the ordinary opaque pass list",
       "evidenceReports": [
         "reports/assets/character_recovery/endminf_m27_suikuai_source_contract.json",
         "reports/assets/character_recovery/endminf_m27_liteffect_program_recovery.json",
+        "reports/assets/character_recovery/endminf_anchor_wave_bright_contract.json",
+        "reports/assets/character_recovery/endminf_m27_particle_abi.json",
         "reports/assets/character_recovery/endminf_m27_terrain_profile_native_contract.json",
         "reports/assets/character_recovery/endminf_m27_live_integration_contract.json"
       ],
