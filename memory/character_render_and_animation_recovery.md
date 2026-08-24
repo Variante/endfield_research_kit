@@ -268,12 +268,15 @@ archetypes remain labeled source kits rather than finished characters.
   no shader-side base. The body-hashed native registry/accessor path seeds only
   stereo built-ins 35/33/36/37 by default; it does not seed ordinal 30. An
   apparent `bts ..., 0x1e` site is instead mutually exclusive high-bit encoding
-  of a dynamic keyword ID, not a built-in keyword-set write. Selection remains
-  open because GPU-instancing state, registry ownership, and the one-particle
-  batch do not prove that ordinal 30 was enabled. Admission
-  therefore still requires the native draw discriminator and publisher gates
-  plus both fixed-control 60 Hz windows; M21, exact `suikuai (1)`, and M27 must
-  remain unchanged throughout.
+  of a dynamic keyword ID, not a built-in keyword-set write. The sole audited
+  default-set caller closes the actual keyword storage as an inline-or-heap
+  bitset at owner offsets `0x100`/`0x118`; names are first resolved to internal
+  16-bit IDs, so immediate ordinal-30 or `0x40000000` searches cannot identify
+  the draw publisher. The ordinal table is registration-only. Selection and
+  the per-instance publisher therefore require a live D3D11 draw capture;
+  GPU-instancing state, registry ownership, and the one-particle batch are not
+  substitutes. Admission still requires that capture plus both fixed-control
+  60 Hz windows; M21, exact `suikuai (1)`, and M27 must remain unchanged.
 - The `M_fx_endminm_gfx_09` burst stripes now bind the exact exported RGBA
   `T_fx_star_07_D` payload. The previous missing `_MainTex` silently sampled
   white and produced a large opaque rectangle; the repaired source-alpha

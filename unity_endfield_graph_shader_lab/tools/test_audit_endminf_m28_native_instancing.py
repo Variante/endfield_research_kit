@@ -56,6 +56,20 @@ class AuditEndminfM28NativeInstancingTests(unittest.TestCase):
         )
         self.assertEqual(MODULE.DEFAULT_BUILTIN_ORDINALS, (35, 33, 36, 37))
 
+    def test_direct_call_gate_fails_on_wrong_target(self) -> None:
+        data = bytearray(32)
+        data[4] = 0xE8
+        struct.pack_into("<i", data, 5, 7)
+        sections = [{
+            "virtualAddress": 0,
+            "virtualSize": len(data),
+            "rawSize": len(data),
+            "rawOffset": 0,
+        }]
+        MODULE.require_rel32_call(bytes(data), 4, 16, 0, sections)
+        with self.assertRaisesRegex(MODULE.AuditError, "target drifted"):
+            MODULE.require_rel32_call(bytes(data), 4, 17, 0, sections)
+
 
 if __name__ == "__main__":
     unittest.main()
