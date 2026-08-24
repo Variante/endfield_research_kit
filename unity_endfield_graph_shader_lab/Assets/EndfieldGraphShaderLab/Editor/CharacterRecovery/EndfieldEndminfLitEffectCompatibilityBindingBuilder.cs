@@ -33,8 +33,8 @@ namespace EndfieldGraphShaderLabEditor
 
         private static readonly Dictionary<string, string> ExpectedSha256 =
             new Dictionary<string, string>(StringComparer.Ordinal) {
-                { Material01, "2eedcde1c67336cc77b011334d4eb2879c666dc053c662210920cdcf23ba4117" },
-                { Material38, "0840a85415e10ee11cec6789715f7be86fb2a363ed4d4ebb250cf7832171e73e" },
+                { Material01, "59909a2b8dd43a2fcebdc9267a5c25f5761ffd4629cbe4fabd94a1ae128bab81" },
+                { Material38, "664521fc66d6d33789250eb500dc8f821239c4c902d761fc2ff633afa8c4308c" },
                 { RockMesh, "e3bbdc9973e5f9dfb2d499fb440be36f99a525b525a22af8ce63b9c48402f8a7" },
             };
 

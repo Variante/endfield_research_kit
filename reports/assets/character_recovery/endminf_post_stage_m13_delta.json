@@ -1,0 +1,1584 @@
+{
+  "schema": "endfield.post-stage-m13-delta.v1",
+  "status": "ok",
+  "fullCohort": "M13 enabled; M21 crystal enabled",
+  "excludedCohort": "M13 disabled; M21 crystal enabled",
+  "interpretationBoundary": "Paired Unity-run attribution only. It does not establish a retail mismatch and must not be used to resize, brighten, or retime M21.",
+  "rows": [
+    {
+      "frame": 0,
+      "sampleTime": 4.400000095367432,
+      "stage": "before_temporal",
+      "graphicsFormat": "B10G11R11_UFloatPack32",
+      "width": 1920,
+      "height": 1080,
+      "fullSha256": "7cd6be26ad588187a4a32dee5987c1734fbc895e09aa9974e3b09bf101955166",
+      "excludedM13Sha256": "58db283ac4d1f10cf19e1207870a467a8344e02afa2a99ed8bc96e253b5eadce",
+      "pixelCount": 2073600,
+      "exactChangedPixels": 317296,
+      "changedPixelsByMaxRgbDelta": {
+        "0.0": 317296,
+        "0.0001": 317282,
+        "0.001": 310220,
+        "0.01": 157288,
+        "0.1": 14247
+      },
+      "positiveDeltaPixels": 35237,
+      "negativeDeltaPixels": 286903,
+      "changedPixelBounds": {
+        "minimum": [
+          909,
+          319
+        ],
+        "maximum": [
+          1591,
+          1001
+        ]
+      },
+      "sumAbsoluteChannelDelta": [
+        32262.720153808594,
+        32178.556091308594,
+        32904.265758514404
+      ],
+      "sumSignedChannelDelta": [
+        28327.350219726562,
+        28407.026306152344,
+        26855.750621795654
+      ],
+      "maximumAbsoluteChannelDelta": [
+        11.5,
+        11.375,
+        11.4375
+      ],
+      "maximumFullChannelValue": [
+        81.0,
+        32.0,
+        13.5
+      ],
+      "maximumExcludedChannelValue": [
+        74.0,
+        25.25,
+        13.75
+      ],
+      "maxRgbDeltaPercentiles": {
+        "p50": 0.0,
+        "p95": 0.015625,
+        "p99": 0.03125,
+        "p999": 4.5625,
+        "max": 11.5
+      }
+    },
+    {
+      "frame": 0,
+      "sampleTime": 4.400000095367432,
+      "stage": "after_temporal_bloom_input",
+      "graphicsFormat": "B10G11R11_UFloatPack32",
+      "width": 1920,
+      "height": 1080,
+      "fullSha256": "8933123f661f1afc328734690ad4a86c376e6099ab1819c3b8897e7a8f3ae622",
+      "excludedM13Sha256": "96d8433c4d3a18338a57a8d06d60f5d7ccfe03a4054263cf48d077488d79c01d",
+      "pixelCount": 2073600,
+      "exactChangedPixels": 317115,
+      "changedPixelsByMaxRgbDelta": {
+        "0.0": 317115,
+        "0.0001": 317098,
+        "0.001": 309920,
+        "0.01": 154033,
+        "0.1": 14913
+      },
+      "positiveDeltaPixels": 36095,
+      "negativeDeltaPixels": 285923,
+      "changedPixelBounds": {
+        "minimum": [
+          909,
+          319
+        ],
+        "maximum": [
+          1591,
+          1001
+        ]
+      },
+      "sumAbsoluteChannelDelta": [
+        31846.87109375,
+        31670.138122558594,
+        32032.159643173218
+      ],
+      "sumSignedChannelDelta": [
+        27960.019165039062,
+        27733.1708984375,
+        26139.95859336853
+      ],
+      "maximumAbsoluteChannelDelta": [
+        11.5,
+        11.25,
+        11.21875
+      ],
+      "maximumFullChannelValue": [
+        80.0,
+        31.75,
+        13.25
+      ],
+      "maximumExcludedChannelValue": [
+        73.0,
+        25.25,
+        13.5
+      ],
+      "maxRgbDeltaPercentiles": {
+        "p50": 0.0,
+        "p95": 0.015625,
+        "p99": 0.03125,
+        "p999": 4.5,
+        "max": 11.5
+      }
+    },
+    {
+      "frame": 0,
+      "sampleTime": 4.400000095367432,
+      "stage": "bloom_prefilter_mip0",
+      "graphicsFormat": "R16G16B16A16_SFloat",
+      "width": 960,
+      "height": 540,
+      "fullSha256": "963bb27103354db3081cc167c0546f50ce06229de095034870e8b68737ed166b",
+      "excludedM13Sha256": "7aa349c99ffc2da904de1db8dd2ffd6e7a883dfb1ae9d46e32f8083596f330e6",
+      "pixelCount": 518400,
+      "exactChangedPixels": 77859,
+      "changedPixelsByMaxRgbDelta": {
+        "0.0": 77859,
+        "0.0001": 76928,
+        "0.001": 72468,
+        "0.01": 15678,
+        "0.1": 3707
+      },
+      "positiveDeltaPixels": 7617,
+      "negativeDeltaPixels": 72085,
+      "changedPixelBounds": {
+        "minimum": [
+          454,
+          159
+        ],
+        "maximum": [
+          796,
+          500
+        ]
+      },
+      "sumAbsoluteChannelDelta": [
+        7685.1212911605835,
+        7494.1313019394875,
+        7320.854984879494
+      ],
+      "sumSignedChannelDelta": [
+        7003.3100707530975,
+        6855.828112185001,
+        6642.956032752991
+      ],
+      "maximumAbsoluteChannelDelta": [
+        11.21875,
+        10.9375,
+        10.72265625
+      ],
+      "maximumFullChannelValue": [
+        78.8125,
+        31.484375,
+        12.5625
+      ],
+      "maximumExcludedChannelValue": [
+        72.4375,
+        25.0625,
+        2.939453125
+      ],
+      "maxRgbDeltaPercentiles": {
+        "p50": 0.0,
+        "p95": 0.0064697265625,
+        "p99": 0.02734375,
+        "p999": 4.324951171875,
+        "max": 11.21875
+      }
+    },
+    {
+      "frame": 0,
+      "sampleTime": 4.400000095367432,
+      "stage": "bloom_reconstructed_mip0",
+      "graphicsFormat": "R16G16B16A16_SFloat",
+      "width": 960,
+      "height": 540,
+      "fullSha256": "1858b83140b2a7ce5c1230d30c27fb212a24fe27b7e33945ae933bb32cf9564c",
+      "excludedM13Sha256": "9531d65e50b8d8b43ee47f570422e97cbee24c0ac8b1ff31bf4f7ed252d8c35d",
+      "pixelCount": 518400,
+      "exactChangedPixels": 518400,
+      "changedPixelsByMaxRgbDelta": {
+        "0.0": 518400,
+        "0.0001": 518400,
+        "0.001": 388996,
+        "0.01": 30200,
+        "0.1": 6268
+      },
+      "positiveDeltaPixels": 517212,
+      "negativeDeltaPixels": 3238,
+      "changedPixelBounds": {
+        "minimum": [
+          0,
+          0
+        ],
+        "maximum": [
+          959,
+          539
+        ]
+      },
+      "sumAbsoluteChannelDelta": [
+        6745.309539794922,
+        6601.473724365234,
+        6402.413864135742
+      ],
+      "sumSignedChannelDelta": [
+        6742.456268310547,
+        6599.203704833984,
+        6389.926315307617
+      ],
+      "maximumAbsoluteChannelDelta": [
+        4.984375,
+        4.90625,
+        4.7861328125
+      ],
+      "maximumFullChannelValue": [
+        46.53125,
+        18.015625,
+        6.08203125
+      ],
+      "maximumExcludedChannelValue": [
+        44.375,
+        15.6171875,
+        1.869140625
+      ],
+      "maxRgbDeltaPercentiles": {
+        "p50": 0.0020751953125,
+        "p95": 0.01220703125,
+        "p99": 0.14453125,
+        "p999": 2.453125,
+        "max": 4.984375
+      }
+    },
+    {
+      "frame": 0,
+      "sampleTime": 4.400000095367432,
+      "stage": "final_uber",
+      "graphicsFormat": "R8G8B8A8_UNorm",
+      "width": 1920,
+      "height": 1080,
+      "fullSha256": "12eff2f78d091f3bf84d0155504bd96612fdbd0461b7ee4f0e265458b8335452",
+      "excludedM13Sha256": "560d7f2cda75a5d659f018ebcf4cef8f02ba210f77dea70e6d5ac6fe6010bebb",
+      "pixelCount": 2073600,
+      "exactChangedPixels": 876443,
+      "changedPixelsByMaxRgbDelta": {
+        "0.0": 876443,
+        "0.0001": 876443,
+        "0.001": 876443,
+        "0.01": 74737,
+        "0.1": 5484
+      },
+      "positiveDeltaPixels": 562872,
+      "negativeDeltaPixels": 338153,
+      "changedPixelBounds": {
+        "minimum": [
+          0,
+          0
+        ],
+        "maximum": [
+          1919,
+          1079
+        ]
+      },
+      "sumAbsoluteChannelDelta": [
+        1487.396038312465,
+        2012.3136718198657,
+        5460.3449888676405
+      ],
+      "sumSignedChannelDelta": [
+        496.0784501619637,
+        744.1882522031665,
+        2315.050904944539
+      ],
+      "maximumAbsoluteChannelDelta": [
+        0.20392155647277832,
+        0.2666666507720947,
+        0.31372547149658203
+      ],
+      "maximumFullChannelValue": [
+        1.0,
+        1.0,
+        0.9921568632125854
+      ],
+      "maximumExcludedChannelValue": [
+        1.0,
+        1.0,
+        0.9921568632125854
+      ],
+      "maxRgbDeltaPercentiles": {
+        "p50": 0.0,
+        "p95": 0.00784313678741455,
+        "p99": 0.05098041892051697,
+        "p999": 0.14117646217346191,
+        "max": 0.31372547149658203
+      }
+    },
+    {
+      "frame": 1,
+      "sampleTime": 4.433333396911621,
+      "stage": "before_temporal",
+      "graphicsFormat": "B10G11R11_UFloatPack32",
+      "width": 1920,
+      "height": 1080,
+      "fullSha256": "a6526f4936c5afd6ecd3745f472ebdada400260094692bc8f8c610843e458ce5",
+      "excludedM13Sha256": "b5a4d165b96296e7ed158a2d834a69366aceabb926243259a81f4825c0cf474e",
+      "pixelCount": 2073600,
+      "exactChangedPixels": 332551,
+      "changedPixelsByMaxRgbDelta": {
+        "0.0": 332551,
+        "0.0001": 332550,
+        "0.001": 330300,
+        "0.01": 180669,
+        "0.1": 36935
+      },
+      "positiveDeltaPixels": 45626,
+      "negativeDeltaPixels": 289977,
+      "changedPixelBounds": {
+        "minimum": [
+          909,
+          319
+        ],
+        "maximum": [
+          1591,
+          1001
+        ]
+      },
+      "sumAbsoluteChannelDelta": [
+        165377.1541748047,
+        90682.36572265625,
+        42724.48974609375
+      ],
+      "sumSignedChannelDelta": [
+        159926.1424560547,
+        85716.5263671875,
+        35603.24169921875
+      ],
+      "maximumAbsoluteChannelDelta": [
+        24.359375,
+        13.5546875,
+        6.421875
+      ],
+      "maximumFullChannelValue": [
+        168.0,
+        115.0,
+        56.0
+      ],
+      "maximumExcludedChannelValue": [
+        172.0,
+        117.0,
+        57.0
+      ],
+      "maxRgbDeltaPercentiles": {
+        "p50": 0.0,
+        "p95": 0.015625,
+        "p99": 1.28125,
+        "p999": 16.21875,
+        "max": 24.359375
+      }
+    },
+    {
+      "frame": 1,
+      "sampleTime": 4.433333396911621,
+      "stage": "after_temporal_bloom_input",
+      "graphicsFormat": "B10G11R11_UFloatPack32",
+      "width": 1920,
+      "height": 1080,
+      "fullSha256": "9d452e957b34fe5e2e9fa016d7fe25377f43e96033b91bd360c30272fb03be50",
+      "excludedM13Sha256": "065f42df6b05c13e1e6ef1b498be28cb098e040b688af10e72d6d078c63f5056",
+      "pixelCount": 2073600,
+      "exactChangedPixels": 332246,
+      "changedPixelsByMaxRgbDelta": {
+        "0.0": 332246,
+        "0.0001": 332245,
+        "0.001": 329982,
+        "0.01": 177689,
+        "0.1": 36925
+      },
+      "positiveDeltaPixels": 46659,
+      "negativeDeltaPixels": 288678,
+      "changedPixelBounds": {
+        "minimum": [
+          909,
+          319
+        ],
+        "maximum": [
+          1591,
+          1001
+        ]
+      },
+      "sumAbsoluteChannelDelta": [
+        163487.5968017578,
+        89746.9921875,
+        41756.0107421875
+      ],
+      "sumSignedChannelDelta": [
+        158088.4874267578,
+        84746.56420898438,
+        34794.64599609375
+      ],
+      "maximumAbsoluteChannelDelta": [
+        24.125,
+        13.4375,
+        6.3046875
+      ],
+      "maximumFullChannelValue": [
+        166.0,
+        114.0,
+        55.0
+      ],
+      "maximumExcludedChannelValue": [
+        170.0,
+        116.0,
+        56.0
+      ],
+      "maxRgbDeltaPercentiles": {
+        "p50": 0.0,
+        "p95": 0.015625,
+        "p99": 1.2578125,
+        "p999": 16.0,
+        "max": 24.125
+      }
+    },
+    {
+      "frame": 1,
+      "sampleTime": 4.433333396911621,
+      "stage": "bloom_prefilter_mip0",
+      "graphicsFormat": "R16G16B16A16_SFloat",
+      "width": 960,
+      "height": 540,
+      "fullSha256": "7e604d8e1f8600bb87d387683d7c0f469103afeec26272a0e61af074a6e022bc",
+      "excludedM13Sha256": "d1da3ed9570f9b351de6220c2fc3f9ab0aa4a8bf5f974e61e13e020e9cb42479",
+      "pixelCount": 518400,
+      "exactChangedPixels": 87490,
+      "changedPixelsByMaxRgbDelta": {
+        "0.0": 87490,
+        "0.0001": 86627,
+        "0.001": 82802,
+        "0.01": 21774,
+        "0.1": 9583
+      },
+      "positiveDeltaPixels": 14953,
+      "negativeDeltaPixels": 75624,
+      "changedPixelBounds": {
+        "minimum": [
+          454,
+          159
+        ],
+        "maximum": [
+          796,
+          500
+        ]
+      },
+      "sumAbsoluteChannelDelta": [
+        39252.376646995544,
+        21482.889322042465,
+        9656.000832438469
+      ],
+      "sumSignedChannelDelta": [
+        38633.95580518246,
+        20886.342051506042,
+        8908.438640117645
+      ],
+      "maximumAbsoluteChannelDelta": [
+        36.71875,
+        22.1328125,
+        10.5810546875
+      ],
+      "maximumFullChannelValue": [
+        41.21875,
+        25.09375,
+        12.0
+      ],
+      "maximumExcludedChannelValue": [
+        12.0,
+        6.78515625,
+        2.599609375
+      ],
+      "maxRgbDeltaPercentiles": {
+        "p50": 0.0,
+        "p95": 0.0084228515625,
+        "p99": 1.29638671875,
+        "p999": 15.639404296875,
+        "max": 36.71875
+      }
+    },
+    {
+      "frame": 1,
+      "sampleTime": 4.433333396911621,
+      "stage": "bloom_reconstructed_mip0",
+      "graphicsFormat": "R16G16B16A16_SFloat",
+      "width": 960,
+      "height": 540,
+      "fullSha256": "56691a1265f83ace6b8e948fbf60bd37f242c804f8803587668724401b5a3f64",
+      "excludedM13Sha256": "f4ef5b87b8c067369f015f8cfc213b4cae717992e7e5f68d2593098cfeac9fd1",
+      "pixelCount": 518400,
+      "exactChangedPixels": 518400,
+      "changedPixelsByMaxRgbDelta": {
+        "0.0": 518400,
+        "0.0001": 518400,
+        "0.001": 518400,
+        "0.01": 303275,
+        "0.1": 25958
+      },
+      "positiveDeltaPixels": 518400,
+      "negativeDeltaPixels": 1358,
+      "changedPixelBounds": {
+        "minimum": [
+          0,
+          0
+        ],
+        "maximum": [
+          959,
+          539
+        ]
+      },
+      "sumAbsoluteChannelDelta": [
+        37170.415466308594,
+        20091.740310668945,
+        8578.731475830078
+      ],
+      "sumSignedChannelDelta": [
+        37170.415466308594,
+        20091.740310668945,
+        8569.268341064453
+      ],
+      "maximumAbsoluteChannelDelta": [
+        12.69921875,
+        7.4755859375,
+        3.5322265625
+      ],
+      "maximumFullChannelValue": [
+        14.9765625,
+        8.7734375,
+        4.09375
+      ],
+      "maximumExcludedChannelValue": [
+        6.25,
+        2.849609375,
+        0.86767578125
+      ],
+      "maxRgbDeltaPercentiles": {
+        "p50": 0.011962890625,
+        "p95": 0.10009765625,
+        "p99": 1.57421875,
+        "p999": 7.22186279296875,
+        "max": 12.69921875
+      }
+    },
+    {
+      "frame": 1,
+      "sampleTime": 4.433333396911621,
+      "stage": "final_uber",
+      "graphicsFormat": "R8G8B8A8_UNorm",
+      "width": 1920,
+      "height": 1080,
+      "fullSha256": "5b3b0a889c0a0fc8a6359cd87af030ef4053e4df1067e81ee938ffd149a5bf50",
+      "excludedM13Sha256": "5395dcc2c1029d61298fb1db876e93fd494da410d4c183dc7e5db359a8dc734a",
+      "pixelCount": 2073600,
+      "exactChangedPixels": 1465772,
+      "changedPixelsByMaxRgbDelta": {
+        "0.0": 1465772,
+        "0.0001": 1465772,
+        "0.001": 1465772,
+        "0.01": 155202,
+        "0.1": 20905
+      },
+      "positiveDeltaPixels": 1393344,
+      "negativeDeltaPixels": 195177,
+      "changedPixelBounds": {
+        "minimum": [
+          0,
+          0
+        ],
+        "maximum": [
+          1919,
+          1079
+        ]
+      },
+      "sumAbsoluteChannelDelta": [
+        6852.031198036391,
+        5532.94491318753,
+        7811.901709390804
+      ],
+      "sumSignedChannelDelta": [
+        6807.5606124508195,
+        5281.729241884779,
+        5888.403626633808
+      ],
+      "maximumAbsoluteChannelDelta": [
+        0.3372548818588257,
+        0.40784314274787903,
+        0.5215686559677124
+      ],
+      "maximumFullChannelValue": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "maximumExcludedChannelValue": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "maxRgbDeltaPercentiles": {
+        "p50": 0.003921568393707275,
+        "p95": 0.011764705181121826,
+        "p99": 0.10196077823638916,
+        "p999": 0.27843135595321655,
+        "max": 0.5215686559677124
+      }
+    },
+    {
+      "frame": 2,
+      "sampleTime": 4.4666666984558105,
+      "stage": "before_temporal",
+      "graphicsFormat": "B10G11R11_UFloatPack32",
+      "width": 1920,
+      "height": 1080,
+      "fullSha256": "46480b03f7a1a74ae7452f07602301562f713ec02c35c6d0d56a00959739bf35",
+      "excludedM13Sha256": "c49d611253cdea54f978a369244eb9cc9abf21fc0cf620d5c30f95d75a1ff85b",
+      "pixelCount": 2073600,
+      "exactChangedPixels": 350019,
+      "changedPixelsByMaxRgbDelta": {
+        "0.0": 350019,
+        "0.0001": 350016,
+        "0.001": 345975,
+        "0.01": 199830,
+        "0.1": 78909
+      },
+      "positiveDeltaPixels": 100429,
+      "negativeDeltaPixels": 303700,
+      "changedPixelBounds": {
+        "minimum": [
+          910,
+          320
+        ],
+        "maximum": [
+          1590,
+          1000
+        ]
+      },
+      "sumAbsoluteChannelDelta": [
+        291124.95947265625,
+        77677.66680908203,
+        4894.327819824219
+      ],
+      "sumSignedChannelDelta": [
+        287362.0510253906,
+        73847.7885131836,
+        -1847.6445922851562
+      ],
+      "maximumAbsoluteChannelDelta": [
+        17.875,
+        5.046875,
+        1.5
+      ],
+      "maximumFullChannelValue": [
+        404.0,
+        316.0,
+        156.0
+      ],
+      "maximumExcludedChannelValue": [
+        404.0,
+        316.0,
+        156.0
+      ],
+      "maxRgbDeltaPercentiles": {
+        "p50": 0.0,
+        "p95": 0.015625,
+        "p99": 6.125,
+        "p999": 12.396484375,
+        "max": 17.875
+      }
+    },
+    {
+      "frame": 2,
+      "sampleTime": 4.4666666984558105,
+      "stage": "after_temporal_bloom_input",
+      "graphicsFormat": "B10G11R11_UFloatPack32",
+      "width": 1920,
+      "height": 1080,
+      "fullSha256": "a3aa10669096484fb261f62af58c196bfb98563d759b2642325f09f390bcede9",
+      "excludedM13Sha256": "93140a34c8a21a65239269b555900ea9b26abb81c36fcf2c5c8773f68b3dd6cf",
+      "pixelCount": 2073600,
+      "exactChangedPixels": 350012,
+      "changedPixelsByMaxRgbDelta": {
+        "0.0": 350012,
+        "0.0001": 350011,
+        "0.001": 345780,
+        "0.01": 194693,
+        "0.1": 78808
+      },
+      "positiveDeltaPixels": 100355,
+      "negativeDeltaPixels": 303685,
+      "changedPixelBounds": {
+        "minimum": [
+          910,
+          320
+        ],
+        "maximum": [
+          1590,
+          1000
+        ]
+      },
+      "sumAbsoluteChannelDelta": [
+        287902.69140625,
+        77108.16790771484,
+        4801.899658203125
+      ],
+      "sumSignedChannelDelta": [
+        284181.9016113281,
+        73324.26495361328,
+        -1769.5811767578125
+      ],
+      "maximumAbsoluteChannelDelta": [
+        17.640625,
+        5.046875,
+        1.5
+      ],
+      "maximumFullChannelValue": [
+        400.0,
+        312.0,
+        152.0
+      ],
+      "maximumExcludedChannelValue": [
+        400.0,
+        312.0,
+        152.0
+      ],
+      "maxRgbDeltaPercentiles": {
+        "p50": 0.0,
+        "p95": 0.015625,
+        "p99": 6.06640625,
+        "p999": 12.2734375,
+        "max": 17.640625
+      }
+    },
+    {
+      "frame": 2,
+      "sampleTime": 4.4666666984558105,
+      "stage": "bloom_prefilter_mip0",
+      "graphicsFormat": "R16G16B16A16_SFloat",
+      "width": 960,
+      "height": 540,
+      "fullSha256": "ccab672805d19102a62f72d26f24089a674217986656cc96a4f246b097598a7b",
+      "excludedM13Sha256": "4d804c47f457fee6121f6fc85c2dc8bd6fa4c223ec445de41f1e137f6969ddca",
+      "pixelCount": 518400,
+      "exactChangedPixels": 83791,
+      "changedPixelsByMaxRgbDelta": {
+        "0.0": 83791,
+        "0.0001": 82627,
+        "0.001": 78421,
+        "0.01": 33279,
+        "0.1": 20810
+      },
+      "positiveDeltaPixels": 26335,
+      "negativeDeltaPixels": 59286,
+      "changedPixelBounds": {
+        "minimum": [
+          454,
+          159
+        ],
+        "maximum": [
+          795,
+          500
+        ]
+      },
+      "sumAbsoluteChannelDelta": [
+        66253.49233007431,
+        20896.841673731804,
+        4159.715402066708
+      ],
+      "sumSignedChannelDelta": [
+        65726.05061149597,
+        20416.88846027851,
+        3612.383608162403
+      ],
+      "maximumAbsoluteChannelDelta": [
+        19.3369140625,
+        8.41796875,
+        2.85009765625
+      ],
+      "maximumFullChannelValue": [
+        21.640625,
+        9.9921875,
+        4.06640625
+      ],
+      "maximumExcludedChannelValue": [
+        11.8984375,
+        7.3125,
+        4.06640625
+      ],
+      "maxRgbDeltaPercentiles": {
+        "p50": 0.0,
+        "p95": 0.0166015625,
+        "p99": 5.0589599609375,
+        "p999": 11.721284866333008,
+        "max": 19.3369140625
+      }
+    },
+    {
+      "frame": 2,
+      "sampleTime": 4.4666666984558105,
+      "stage": "bloom_reconstructed_mip0",
+      "graphicsFormat": "R16G16B16A16_SFloat",
+      "width": 960,
+      "height": 540,
+      "fullSha256": "523dfabcca38aa24fd706035f4a5344cb05700e534dd16de792daf76d208a65e",
+      "excludedM13Sha256": "417fdaf86d09135219bc04f5ef0e08d9d21fd37eab6d5b657b938c743fdf0211",
+      "pixelCount": 518400,
+      "exactChangedPixels": 518400,
+      "changedPixelsByMaxRgbDelta": {
+        "0.0": 518400,
+        "0.0001": 518400,
+        "0.001": 518400,
+        "0.01": 384276,
+        "0.1": 62171
+      },
+      "positiveDeltaPixels": 518400,
+      "negativeDeltaPixels": 4225,
+      "changedPixelBounds": {
+        "minimum": [
+          0,
+          0
+        ],
+        "maximum": [
+          959,
+          539
+        ]
+      },
+      "sumAbsoluteChannelDelta": [
+        63247.4598236084,
+        19644.820388793945,
+        3505.755096435547
+      ],
+      "sumSignedChannelDelta": [
+        63247.4598236084,
+        19644.820388793945,
+        3477.3841247558594
+      ],
+      "maximumAbsoluteChannelDelta": [
+        7.5869140625,
+        2.96826171875,
+        0.834228515625
+      ],
+      "maximumFullChannelValue": [
+        8.2109375,
+        3.595703125,
+        1.6748046875
+      ],
+      "maximumExcludedChannelValue": [
+        6.12109375,
+        3.48828125,
+        1.66796875
+      ],
+      "maxRgbDeltaPercentiles": {
+        "p50": 0.0223388671875,
+        "p95": 0.41796875,
+        "p99": 2.99664306640625,
+        "p999": 5.25969123840332,
+        "max": 7.5869140625
+      }
+    },
+    {
+      "frame": 2,
+      "sampleTime": 4.4666666984558105,
+      "stage": "final_uber",
+      "graphicsFormat": "R8G8B8A8_UNorm",
+      "width": 1920,
+      "height": 1080,
+      "fullSha256": "574d3c471a5de874ce6ecfd9210e6b2133b18683f87223d3e5a25e9882ac9013",
+      "excludedM13Sha256": "1240a87f80088baa7bd0cc8e25435017959ce4db362e8d2e75451280bf30d0e2",
+      "pixelCount": 2073600,
+      "exactChangedPixels": 1661054,
+      "changedPixelsByMaxRgbDelta": {
+        "0.0": 1661054,
+        "0.0001": 1661054,
+        "0.001": 1661054,
+        "0.01": 492444,
+        "0.1": 82046
+      },
+      "positiveDeltaPixels": 1642902,
+      "negativeDeltaPixels": 167965,
+      "changedPixelBounds": {
+        "minimum": [
+          0,
+          0
+        ],
+        "maximum": [
+          1919,
+          1079
+        ]
+      },
+      "sumAbsoluteChannelDelta": [
+        35063.5872678482,
+        20752.20718365535,
+        8046.168542783242
+      ],
+      "sumSignedChannelDelta": [
+        35061.563738557044,
+        20701.85424548015,
+        6314.670495063532
+      ],
+      "maximumAbsoluteChannelDelta": [
+        0.8470588326454163,
+        0.7764706015586853,
+        0.5568627715110779
+      ],
+      "maximumFullChannelValue": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "maximumExcludedChannelValue": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "maxRgbDeltaPercentiles": {
+        "p50": 0.003921568393707275,
+        "p95": 0.0627450942993164,
+        "p99": 0.27843135595321655,
+        "p999": 0.6588234901428223,
+        "max": 0.8470588326454163
+      }
+    },
+    {
+      "frame": 3,
+      "sampleTime": 4.5,
+      "stage": "before_temporal",
+      "graphicsFormat": "B10G11R11_UFloatPack32",
+      "width": 1920,
+      "height": 1080,
+      "fullSha256": "3f277bc6ceb075bef3a7046bbb17a2f8748b79b533637f83024e7386cf797065",
+      "excludedM13Sha256": "878a210b1f478eb4754f75fb9bdc11f9b84abad1ac5a99e51158d4a677ba0ab8",
+      "pixelCount": 2073600,
+      "exactChangedPixels": 341108,
+      "changedPixelsByMaxRgbDelta": {
+        "0.0": 341108,
+        "0.0001": 341107,
+        "0.001": 335857,
+        "0.01": 176057,
+        "0.1": 86924
+      },
+      "positiveDeltaPixels": 117434,
+      "negativeDeltaPixels": 287443,
+      "changedPixelBounds": {
+        "minimum": [
+          913,
+          323
+        ],
+        "maximum": [
+          1587,
+          996
+        ]
+      },
+      "sumAbsoluteChannelDelta": [
+        178159.22290039062,
+        47551.63641357422,
+        3499.9163608551025
+      ],
+      "sumSignedChannelDelta": [
+        175693.12145996094,
+        44769.83074951172,
+        -1900.43825340271
+      ],
+      "maximumAbsoluteChannelDelta": [
+        12.4375,
+        3.40625,
+        1.0
+      ],
+      "maximumFullChannelValue": [
+        408.0,
+        320.0,
+        156.0
+      ],
+      "maximumExcludedChannelValue": [
+        408.0,
+        320.0,
+        156.0
+      ],
+      "maxRgbDeltaPercentiles": {
+        "p50": 0.0,
+        "p95": 0.03125,
+        "p99": 3.484375,
+        "p999": 7.38671875,
+        "max": 12.4375
+      }
+    },
+    {
+      "frame": 3,
+      "sampleTime": 4.5,
+      "stage": "after_temporal_bloom_input",
+      "graphicsFormat": "B10G11R11_UFloatPack32",
+      "width": 1920,
+      "height": 1080,
+      "fullSha256": "8011200ebf97d87eaa6a26d7fac4a1eef104c1c9c258941ad1f7d0823e420370",
+      "excludedM13Sha256": "073781d67d2d6b668ab84f028f4a483f8ed29e5521c60ffa935b7449f01330a4",
+      "pixelCount": 2073600,
+      "exactChangedPixels": 341107,
+      "changedPixelsByMaxRgbDelta": {
+        "0.0": 341107,
+        "0.0001": 341106,
+        "0.001": 335728,
+        "0.01": 172053,
+        "0.1": 86730
+      },
+      "positiveDeltaPixels": 117455,
+      "negativeDeltaPixels": 287439,
+      "changedPixelBounds": {
+        "minimum": [
+          913,
+          323
+        ],
+        "maximum": [
+          1587,
+          996
+        ]
+      },
+      "sumAbsoluteChannelDelta": [
+        176159.0194091797,
+        47081.941650390625,
+        3410.1541748046875
+      ],
+      "sumSignedChannelDelta": [
+        173732.56909179688,
+        44349.4951171875,
+        -1859.3602294921875
+      ],
+      "maximumAbsoluteChannelDelta": [
+        12.328125,
+        3.4140625,
+        1.0
+      ],
+      "maximumFullChannelValue": [
+        404.0,
+        316.0,
+        152.0
+      ],
+      "maximumExcludedChannelValue": [
+        404.0,
+        316.0,
+        152.0
+      ],
+      "maxRgbDeltaPercentiles": {
+        "p50": 0.0,
+        "p95": 0.03125,
+        "p99": 3.453125,
+        "p999": 7.31787109375,
+        "max": 12.328125
+      }
+    },
+    {
+      "frame": 3,
+      "sampleTime": 4.5,
+      "stage": "bloom_prefilter_mip0",
+      "graphicsFormat": "R16G16B16A16_SFloat",
+      "width": 960,
+      "height": 540,
+      "fullSha256": "d5c5e743a30b211bdd70cd5638a5acf5d11b995fafe190207b4c71a8df894d58",
+      "excludedM13Sha256": "0f6fb4df0c472471a71122f842d763b343aed3bdf24096fce01abaa9e1cc5f1e",
+      "pixelCount": 518400,
+      "exactChangedPixels": 81719,
+      "changedPixelsByMaxRgbDelta": {
+        "0.0": 81719,
+        "0.0001": 80868,
+        "0.001": 74816,
+        "0.01": 31791,
+        "0.1": 21326
+      },
+      "positiveDeltaPixels": 30504,
+      "negativeDeltaPixels": 52709,
+      "changedPixelBounds": {
+        "minimum": [
+          456,
+          161
+        ],
+        "maximum": [
+          794,
+          498
+        ]
+      },
+      "sumAbsoluteChannelDelta": [
+        37778.674293637276,
+        13244.216597139835,
+        4148.391491115093
+      ],
+      "sumSignedChannelDelta": [
+        37420.10676252842,
+        12911.198678910732,
+        3775.4839302897453
+      ],
+      "maximumAbsoluteChannelDelta": [
+        11.63818359375,
+        3.42578125,
+        0.91552734375
+      ],
+      "maximumFullChannelValue": [
+        12.1796875,
+        6.5859375,
+        3.677734375
+      ],
+      "maximumExcludedChannelValue": [
+        10.3984375,
+        6.54296875,
+        3.67578125
+      ],
+      "maxRgbDeltaPercentiles": {
+        "p50": 0.0,
+        "p95": 0.02496337890625,
+        "p99": 2.8663330078125,
+        "p999": 6.146470069885254,
+        "max": 11.63818359375
+      }
+    },
+    {
+      "frame": 3,
+      "sampleTime": 4.5,
+      "stage": "bloom_reconstructed_mip0",
+      "graphicsFormat": "R16G16B16A16_SFloat",
+      "width": 960,
+      "height": 540,
+      "fullSha256": "da5150ba3d759ec6020e487c86f03d99ed9d543ebd8c6d7f8dacc50cc83f0ecf",
+      "excludedM13Sha256": "fa008e2660c79c792c7303d9e825eac38471103226a3b994170e35a38e4e327e",
+      "pixelCount": 518400,
+      "exactChangedPixels": 518400,
+      "changedPixelsByMaxRgbDelta": {
+        "0.0": 518400,
+        "0.0001": 518400,
+        "0.001": 518400,
+        "0.01": 306933,
+        "0.1": 55736
+      },
+      "positiveDeltaPixels": 518400,
+      "negativeDeltaPixels": 2156,
+      "changedPixelBounds": {
+        "minimum": [
+          0,
+          0
+        ],
+        "maximum": [
+          959,
+          539
+        ]
+      },
+      "sumAbsoluteChannelDelta": [
+        36099.76417541504,
+        12455.39859008789,
+        3654.668182373047
+      ],
+      "sumSignedChannelDelta": [
+        36099.76417541504,
+        12455.39859008789,
+        3643.4939880371094
+      ],
+      "maximumAbsoluteChannelDelta": [
+        3.75244140625,
+        1.159423828125,
+        0.3341064453125
+      ],
+      "maximumFullChannelValue": [
+        5.5546875,
+        3.04296875,
+        1.4775390625
+      ],
+      "maximumExcludedChannelValue": [
+        4.92578125,
+        2.931640625,
+        1.46875
+      ],
+      "maxRgbDeltaPercentiles": {
+        "p50": 0.0120849609375,
+        "p95": 0.2562255859375,
+        "p99": 1.56201171875,
+        "p999": 2.700634002685547,
+        "max": 3.75244140625
+      }
+    },
+    {
+      "frame": 3,
+      "sampleTime": 4.5,
+      "stage": "final_uber",
+      "graphicsFormat": "R8G8B8A8_UNorm",
+      "width": 1920,
+      "height": 1080,
+      "fullSha256": "0041c2f500750790978e0bf1aa281057759a09745926482b6c4d334f3e9b4667",
+      "excludedM13Sha256": "aead8c95f4f705181b131052aaabc3e223cdf2e1f8ad96d799e16b93eefc7390",
+      "pixelCount": 2073600,
+      "exactChangedPixels": 1458966,
+      "changedPixelsByMaxRgbDelta": {
+        "0.0": 1458966,
+        "0.0001": 1458966,
+        "0.001": 1458966,
+        "0.01": 356998,
+        "0.1": 91723
+      },
+      "positiveDeltaPixels": 1441573,
+      "negativeDeltaPixels": 136077,
+      "changedPixelBounds": {
+        "minimum": [
+          0,
+          0
+        ],
+        "maximum": [
+          1919,
+          1079
+        ]
+      },
+      "sumAbsoluteChannelDelta": [
+        37721.7204689919,
+        20850.630745146424,
+        6686.721443094313
+      ],
+      "sumSignedChannelDelta": [
+        37717.89301823964,
+        20758.57584867254,
+        5327.505747153424
+      ],
+      "maximumAbsoluteChannelDelta": [
+        0.8941176533699036,
+        0.8274509906768799,
+        0.5960784554481506
+      ],
+      "maximumFullChannelValue": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "maximumExcludedChannelValue": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "maxRgbDeltaPercentiles": {
+        "p50": 0.003921568393707275,
+        "p95": 0.07843136787414551,
+        "p99": 0.3529411554336548,
+        "p999": 0.7450979948043823,
+        "max": 0.8941176533699036
+      }
+    },
+    {
+      "frame": 4,
+      "sampleTime": 4.550000190734863,
+      "stage": "before_temporal",
+      "graphicsFormat": "B10G11R11_UFloatPack32",
+      "width": 1920,
+      "height": 1080,
+      "fullSha256": "8cf5b96e8c42fd615a2a24d89c0199e2b2ae96989cf2196b748d5814f177e54a",
+      "excludedM13Sha256": "24abba6dfad44a129759940b174f28092a90ba90c8855c078a64bf58ac0c4535",
+      "pixelCount": 2073600,
+      "exactChangedPixels": 263878,
+      "changedPixelsByMaxRgbDelta": {
+        "0.0": 263878,
+        "0.0001": 263877,
+        "0.001": 257776,
+        "0.01": 126498,
+        "0.1": 51375
+      },
+      "positiveDeltaPixels": 109466,
+      "negativeDeltaPixels": 175217,
+      "changedPixelBounds": {
+        "minimum": [
+          913,
+          331
+        ],
+        "maximum": [
+          1576,
+          989
+        ]
+      },
+      "sumAbsoluteChannelDelta": [
+        29112.7099609375,
+        7945.07177734375,
+        1425.999282836914
+      ],
+      "sumSignedChannelDelta": [
+        28056.2939453125,
+        6671.76513671875,
+        -1308.8878021240234
+      ],
+      "maximumAbsoluteChannelDelta": [
+        8.06640625,
+        2.189453125,
+        2.0
+      ],
+      "maximumFullChannelValue": [
+        400.0,
+        316.0,
+        156.0
+      ],
+      "maximumExcludedChannelValue": [
+        400.0,
+        316.0,
+        156.0
+      ],
+      "maxRgbDeltaPercentiles": {
+        "p50": 0.0,
+        "p95": 0.015625,
+        "p99": 0.4189453125,
+        "p999": 1.625,
+        "max": 8.06640625
+      }
+    },
+    {
+      "frame": 4,
+      "sampleTime": 4.550000190734863,
+      "stage": "after_temporal_bloom_input",
+      "graphicsFormat": "B10G11R11_UFloatPack32",
+      "width": 1920,
+      "height": 1080,
+      "fullSha256": "b044e56306ca899c8f3eeaf2cc710551549e9ae3896af398c8a2b78ef981ae54",
+      "excludedM13Sha256": "f6dac99a16aacb0443b905b1289e3adf9c48d9267607648f2c23226a4c740292",
+      "pixelCount": 2073600,
+      "exactChangedPixels": 263853,
+      "changedPixelsByMaxRgbDelta": {
+        "0.0": 263853,
+        "0.0001": 263853,
+        "0.001": 257597,
+        "0.01": 122951,
+        "0.1": 51009
+      },
+      "positiveDeltaPixels": 109498,
+      "negativeDeltaPixels": 175182,
+      "changedPixelBounds": {
+        "minimum": [
+          913,
+          331
+        ],
+        "maximum": [
+          1576,
+          989
+        ]
+      },
+      "sumAbsoluteChannelDelta": [
+        28768.95703125,
+        7848.80859375,
+        1384.001724243164
+      ],
+      "sumSignedChannelDelta": [
+        27745.732421875,
+        6591.47119140625,
+        -1266.8780059814453
+      ],
+      "maximumAbsoluteChannelDelta": [
+        7.9453125,
+        2.16015625,
+        2.0
+      ],
+      "maximumFullChannelValue": [
+        396.0,
+        312.0,
+        152.0
+      ],
+      "maximumExcludedChannelValue": [
+        396.0,
+        312.0,
+        152.0
+      ],
+      "maxRgbDeltaPercentiles": {
+        "p50": 0.0,
+        "p95": 0.015625,
+        "p99": 0.4140625,
+        "p999": 1.6015625,
+        "max": 7.9453125
+      }
+    },
+    {
+      "frame": 4,
+      "sampleTime": 4.550000190734863,
+      "stage": "bloom_prefilter_mip0",
+      "graphicsFormat": "R16G16B16A16_SFloat",
+      "width": 960,
+      "height": 540,
+      "fullSha256": "10d737930b77736fe5e5378cf6f8659a65974cc2f9a3245e809831db56a394f8",
+      "excludedM13Sha256": "62d40a73888c7faefc2d3673d21406c782dcb733eafb7dbe44f35f7bf20bc7a7",
+      "pixelCount": 518400,
+      "exactChangedPixels": 68603,
+      "changedPixelsByMaxRgbDelta": {
+        "0.0": 68603,
+        "0.0001": 67259,
+        "0.001": 55551,
+        "0.01": 24181,
+        "0.1": 11239
+      },
+      "positiveDeltaPixels": 32487,
+      "negativeDeltaPixels": 37421,
+      "changedPixelBounds": {
+        "minimum": [
+          462,
+          165
+        ],
+        "maximum": [
+          788,
+          495
+        ]
+      },
+      "sumAbsoluteChannelDelta": [
+        4970.874238550663,
+        2391.2284492254257,
+        1402.9470173716545
+      ],
+      "sumSignedChannelDelta": [
+        4844.7031262516975,
+        2270.3778903484344,
+        1262.9870359301567
+      ],
+      "maximumAbsoluteChannelDelta": [
+        2.68212890625,
+        1.2724609375,
+        0.46826171875
+      ],
+      "maximumFullChannelValue": [
+        189.5,
+        149.375,
+        73.1875
+      ],
+      "maximumExcludedChannelValue": [
+        189.0,
+        149.25,
+        73.1875
+      ],
+      "maxRgbDeltaPercentiles": {
+        "p50": 0.0,
+        "p95": 0.0076904296875,
+        "p99": 0.30078125,
+        "p999": 1.103292465209961,
+        "max": 2.68212890625
+      }
+    },
+    {
+      "frame": 4,
+      "sampleTime": 4.550000190734863,
+      "stage": "bloom_reconstructed_mip0",
+      "graphicsFormat": "R16G16B16A16_SFloat",
+      "width": 960,
+      "height": 540,
+      "fullSha256": "2dad7770c1ffb5cf10a51269724c088bb2e7825996a6d791de0cf14fd2ca7957",
+      "excludedM13Sha256": "a3f2ea72e34ee2ff19c6f989e167d5d2fcc3f64931b2cb05dcc41fef30489eb1",
+      "pixelCount": 518400,
+      "exactChangedPixels": 518400,
+      "changedPixelsByMaxRgbDelta": {
+        "0.0": 518400,
+        "0.0001": 518400,
+        "0.001": 357190,
+        "0.01": 78422,
+        "0.1": 8986
+      },
+      "positiveDeltaPixels": 518400,
+      "negativeDeltaPixels": 1088,
+      "changedPixelBounds": {
+        "minimum": [
+          0,
+          0
+        ],
+        "maximum": [
+          959,
+          539
+        ]
+      },
+      "sumAbsoluteChannelDelta": [
+        4667.618240356445,
+        2187.7469787597656,
+        1219.5364379882812
+      ],
+      "sumSignedChannelDelta": [
+        4667.618240356445,
+        2187.5155334472656,
+        1217.2952270507812
+      ],
+      "maximumAbsoluteChannelDelta": [
+        0.7386474609375,
+        0.3125,
+        0.13140869140625
+      ],
+      "maximumFullChannelValue": [
+        44.1875,
+        34.8125,
+        17.0625
+      ],
+      "maximumExcludedChannelValue": [
+        44.0,
+        34.75,
+        17.0625
+      ],
+      "maxRgbDeltaPercentiles": {
+        "p50": 0.001739501953125,
+        "p95": 0.038177490234375,
+        "p99": 0.14739990234375,
+        "p999": 0.4090080261230469,
+        "max": 0.7386474609375
+      }
+    },
+    {
+      "frame": 4,
+      "sampleTime": 4.550000190734863,
+      "stage": "final_uber",
+      "graphicsFormat": "R8G8B8A8_UNorm",
+      "width": 1920,
+      "height": 1080,
+      "fullSha256": "281ce9d415b3b1b2d497e47841194ee66954bf340ea6e3298ee0bb858dc01a43",
+      "excludedM13Sha256": "c5f9fca9734c35d39ee88e262f2519fa0f9f107b58f370cf8cd8487b6caddd53",
+      "pixelCount": 2073600,
+      "exactChangedPixels": 646572,
+      "changedPixelsByMaxRgbDelta": {
+        "0.0": 646572,
+        "0.0001": 646572,
+        "0.001": 646572,
+        "0.01": 123775,
+        "0.1": 38412
+      },
+      "positiveDeltaPixels": 592283,
+      "negativeDeltaPixels": 125251,
+      "changedPixelBounds": {
+        "minimum": [
+          0,
+          0
+        ],
+        "maximum": [
+          1919,
+          1079
+        ]
+      },
+      "sumAbsoluteChannelDelta": [
+        13377.011383220088,
+        6535.203802164644,
+        2333.1411666381173
+      ],
+      "sumSignedChannelDelta": [
+        13305.740799232852,
+        6226.929310526699,
+        978.4509225762449
+      ],
+      "maximumAbsoluteChannelDelta": [
+        0.8039215803146362,
+        0.7019608020782471,
+        0.22745096683502197
+      ],
+      "maximumFullChannelValue": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "maximumExcludedChannelValue": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "maxRgbDeltaPercentiles": {
+        "p50": 0.0,
+        "p95": 0.011764705181121826,
+        "p99": 0.1921568661928177,
+        "p999": 0.5333333015441895,
+        "max": 0.8039215803146362
+      }
+    }
+  ]
+}
