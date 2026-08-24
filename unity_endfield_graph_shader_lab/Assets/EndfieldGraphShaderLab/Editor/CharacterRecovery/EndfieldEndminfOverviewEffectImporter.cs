@@ -101,6 +101,17 @@ namespace EndfieldGraphShaderLabEditor
             new Dictionary<string, float>(StringComparer.Ordinal) {
                 { Roots[0], 9f }, { Roots[1], 10f }, { Roots[2], 9f }, { Roots[3], 9f } };
 
+        public static bool ExactStageAvailable
+        {
+            get
+            {
+                string repo = Directory.GetParent(Application.dataPath).Parent.FullName;
+                string stage = Path.Combine(repo,
+                    StageRelative.Replace('/', Path.DirectorySeparatorChar));
+                return File.Exists(Path.Combine(stage, "external_ui_effect_stage.json"));
+            }
+        }
+
         [MenuItem("Endfield/Character Recovery Lab/Build Endminf Overview Effects")]
         public static void BuildAndValidate()
         {

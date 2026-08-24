@@ -38,7 +38,13 @@ namespace EndfieldGraphShaderLabEditor
             Environment.SetEnvironmentVariable(
                 EndfieldRecoveredCharInfoBackgroundPortrait.EnvironmentVariable,
                 "1");
-            EndfieldEndminfOverviewEffectImporter.BuildAndValidate();
+            if (EndfieldEndminfOverviewEffectImporter.ExactStageAvailable)
+                EndfieldEndminfOverviewEffectImporter.BuildAndValidate();
+            else
+                Debug.LogWarning(
+                    "The disposable exact Endminf effect stage is absent; " +
+                    "preserving the existing source-retained effect prefabs.");
+            EndfieldEndminfLitEffectCompatibilityBindingBuilder.BuildAndValidate();
             BuildAndValidate();
             EditorSceneManager.OpenScene(ViewerScene, OpenSceneMode.Single);
             GameObject sceneActor = UnityEngine.Object

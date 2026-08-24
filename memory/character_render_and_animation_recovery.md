@@ -52,6 +52,19 @@ archetypes remain labeled source kits rather than finished characters.
   They remain active through 1.5 seconds and deactivate on the source boundary.
   The fifth constant-zero binding has no resolved hierarchy target and remains
   fail-closed rather than being fabricated.
+- The canonical capture now restores the ten retained physical rock renderers
+  that were absent from the previous sheet: seven M01 rows and three M38 rows,
+  all keyed by exact renderer/material PathIDs and the exact
+  `S_rock_small_1_017_02_lod2` mesh. Direct references are validated against
+  pinned asset hashes, the default remains disabled/fail-closed, and only
+  `ENDFIELD_ENDMINF_LITEFFECT_VISUAL_COMPAT=1` activates them. Capture schema
+  v4 proves 66 admitted entrance renderers and exactly four separately blocked
+  rows (one secondary LitEffect and three VFXRefract). This restores the amber
+  faceted stone/chunks but remains a non-exact forward LitEffect compatibility
+  layer; do not treat its emission, lighting, or whole-frame MAE as retail
+  HGBuffer parity. Both references support the existing spawn, 1.5-second
+  nanguan visibility, hand-focus, peak-burst, and state-exit cleanup cadence,
+  so no crystal retiming or bloom tuning was admitted in this batch.
 - The focused Endminf comparison now anchors its first saved Unity frame
   directly to retail frame 1110, the first visible body frame. The former map
   added the already-advanced 0.0509083-second body phase a second time and put
