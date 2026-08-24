@@ -245,7 +245,9 @@ retail behavior.
 ## Active reproduction target
 
 The visual source of truth is `videos/2026-08-15_10-32-32.mkv`, with
-`videos/2026-08-21_20-15-17.mkv` used by the focused Endminf comparison path.
+`videos/2026-08-21_20-15-17.mkv` used by the focused Endminf comparison path
+and `videos/2026-08-24_06-37-22.mkv` retained as its 4K, user-confirmed
+frame-generation-off companion reference.
 Current work should compare camera, timing, pose, materials, effects, lighting,
 background, shadows, and final post-processing against those recordings.
 
@@ -263,6 +265,18 @@ each saved Unity frame to an exact decoded source frame from measured
 selection-edge elapsed time. It no longer compares against the unrelated
 earlier occurrence at 3.64 seconds. The latest 28-pair sheet and its explicit
 source-frame map remain disposable beside the Viewer capture output.
+
+The August 24 sequence retains one-based source frame 113 as the final
+model-swap/prehistory frame and begins visible Endminf on frame 114. The same
+strong opening comb trails remain visible with frame generation disabled, so
+they must not be attributed to generated-frame interpolation; their exact
+game-rendered temporal or authored-effect producer remains open. The amber
+rock/crystal, orbiting fragments, and bloom are a separate actor-owned entrance
+effect. Evaluate them as an effect, but mask their moving amber component and
+bloom halo through source frame 420 when measuring general body motion,
+lighting, exposure, materials, or temporal trails. Never compare the 4K and
+1080p references with whole-frame error metrics without recording an explicit
+resampling contract.
 
 Do not fork the renderer per actor. Endminf-specific code may own source asset
 selection and timing, while the importer, material mapping, animation,
@@ -285,6 +299,11 @@ another per-material shader approximation. The missing boundary includes:
 - the full TAA producer/consumer chain beyond the now-complete actor SceneMV
   MRT coverage, recorded blank-frame history boundary, and recovered Dilation
   auxiliary-history producer.
+- the exact `_CombinedVelocity` allocation format used by the recovered
+  Streamline DLAA velocity-combine dispatch. The pinned retail helper has no
+  credible stock Unity/PDB equivalent, and its later `0x2d` virtual-call
+  argument has no statically recoverable enum domain. Keep the native proxy
+  disabled until a D3D12/PIX/RenderDoc resource descriptor proves the format.
 
 `SphereOutside` is asset-complete. Its remaining gates are runtime frame state
 and resources. The exact deferred program is no longer a blocker.

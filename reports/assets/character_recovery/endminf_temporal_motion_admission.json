@@ -1,5 +1,5 @@
 {
-  "schema": "endfield.endminf-temporal-motion-admission.v10",
+  "schema": "endfield.endminf-temporal-motion-admission.v11",
   "subject": "Endminf Character Info temporal and motion admission",
   "reference": {
     "recording": "videos/2026-08-21_20-15-17.mkv",
@@ -11,6 +11,33 @@
       "y": 110,
       "width": 1100,
       "height": 970
+    },
+    "noFrameGenerationReference": {
+      "recording": "videos/2026-08-24_06-37-22.mkv",
+      "sha256": "36318de82bc3afabcf62d56946a9263614abaca0c7c3e7c57d16da938abcbb39",
+      "fileModifiedLocal": "2026-08-24T06:37:38-04:00",
+      "video": "3840x2160 at 60 fps, 14.717 seconds, 882 decoded frames",
+      "blankModelSwapSourceFrameZeroBased": 112,
+      "firstVisibleEndminfSourceFrameZeroBased": 113,
+      "lastVisibleEndminfSourceFrameZeroBased": 881,
+      "maintainedSegmentStartFrameOneBased": 113,
+      "maintainedFirstVisibleFrameOneBased": 114,
+      "comparisonRoi": {
+        "x": 800,
+        "y": 220,
+        "width": 2200,
+        "height": 1940
+      },
+      "captureProvenance": "The user recorded this capture with frame generation disabled. The MKV contains no embedded graphics telemetry, so this is operator/setup provenance rather than container proof.",
+      "temporalConclusion": "The conspicuous opening comb trails remain present without frame generation. They are not admissible evidence of generated/interpolated frames and remain part of the game-rendered temporal or authored-effect boundary until their exact producer is recovered.",
+      "resolutionBoundary": "This reference is 4K while the 2026-08-21 focused capture is 1080p. Do not use direct whole-frame MAE between them without an explicit, recorded resampling contract.",
+      "crystalStoneExclusion": {
+        "owner": "Endminf actor-owned entrance prop/effect complex",
+        "sourceResolvedIdentity": "S_rock_small_1_017_02_lod2 with M_endminf_ui_overview_01_rock_03 and Endminf ExternalUiEffects textures",
+        "conservativeZeroBasedSourceFrames": [113, 419],
+        "mask": "moving amber connected component dilated for its bloom halo",
+        "policy": "Include this region when evaluating the rock/crystal effect itself. Exclude it from generic body motion, temporal trails, exposure, lighting, and material-fit metrics; do not use a fixed ROI because the effect travels from the torso/head area to the raised screen-right hand."
+      }
     }
   },
   "upscalerAdmission": {
@@ -21,7 +48,7 @@
       "video": "1920x1080 at 60 fps, 30.584 seconds",
       "graphicsTelemetry": "none"
     },
-    "currentSavedRequest": {
+    "priorPostAug21SavedRequest": {
       "readLocal": "2026-08-24",
       "rawValues": {
         "video_quality_upscaler_2": 1000,
@@ -39,6 +66,22 @@
       "metadataSha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e",
       "registryKeyLastWriteLocal": "2026-08-23T23:15:20.9139567-04:00",
       "boundary": "The registry exposes only a whole-key last-write time, not per-value timestamps, and this state postdates the recording by two days. It cannot prove the live capture path."
+    },
+    "postAug24RecordingSavedRequest": {
+      "readLocal": "2026-08-24 after the recording",
+      "rawValues": {
+        "video_quality_upscaler_2": 1000,
+        "video_quality_dlss_mode_1": 5000,
+        "video_quality_framegen_1": 1000,
+        "video_quality_dlssg_mode_1": 4000
+      },
+      "decoded": {
+        "upscaler": "DLSS",
+        "quality": "DLAA",
+        "frameGeneration": "off",
+        "dormantFrameGenerationMultiplier": "X3"
+      },
+      "boundary": "This post-record registry read supports the user's no-frame-generation setup statement but is not time-correlated embedded capture telemetry. The X3 value remains saved but is inactive while frame generation is off."
     },
     "datedPriorSnapshot": {
       "date": "2026-07-14",
@@ -222,6 +265,23 @@
         "combinedOutput": "unresolved"
       },
       "correctedLiteralAttribution": "Native descriptor literal 0x2d maps exactly to GraphicsFormat.R16_SFloat / DXGI_FORMAT_R16_FLOAT, but the pinned writer is TAAUPassConstructor.ConstructDilationPass and uses it for dilated depth. It is not evidence for _CombinedVelocity.",
+      "allocationFormatAudit": {
+        "result": "not statically recoverable from the pinned retail binary and matching stock Unity symbols",
+        "retailHelper": {
+          "rva": "0x1282a40",
+          "size": "0x2fc",
+          "sha256": "ebc29b9475c6c830982e764c5d470c9cac2b153011c91279c4ed33f4abb2d69e"
+        },
+        "soleDirectCallerSlice": {
+          "rva": "0x1281860",
+          "size": "0x1e2",
+          "callSiteRva": "0x12818fb",
+          "sha256": "9512e62bfbaec0e94ca8e863f8af195f7e2d2e093f32c98412962766aa97103b"
+        },
+        "stockSymbolBoundary": "The Unity 2022.3.62f3 nondevelopment Mono player PDB has no RenderGraph or TextureDesc symbols and no usable UDT, enum, or typedef records. No credible stock equivalent of the retail helper was found; the helper is consistent with a HyperGryph fork addition.",
+        "literalBoundary": "The caller later supplies 0x2d to an unidentified virtual method at vtable offset 0x700. The concrete vtable and enum domain are not statically materialized, so numeric coincidence cannot identify GraphicsFormat, DXGI_FORMAT, or RenderTextureFormat.",
+        "minimalRuntimeProbe": "Break at UnityPlayer.dll+0x12819f8 on a DLSS frame, resolve the concrete vtable target, follow the allocation to D3D12 resource creation, and inspect D3D12_RESOURCE_DESC.Format at descriptor offset 0x20; PIX or RenderDoc inspection of velocity-combine UAV u0 is equivalent."
+      },
       "boundary": "The packed input SceneMV format is exact. The combined-output UAV format remains unresolved because typed float DXBC resources do not encode the bound DXGI/Unity GraphicsFormat and its transient allocation writer has not been recovered. Do not infer R16G16_SFloat from the shader declaration."
     },
     "dlssOptions": {
