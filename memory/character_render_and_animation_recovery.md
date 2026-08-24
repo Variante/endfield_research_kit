@@ -112,10 +112,21 @@ archetypes remain labeled source kits rather than finished characters.
   jittered nor dilated, and Streamline receives the rendered camera jitter
   with both signs negated. Pre-exposure/exposure scale are one, sharpness is
   zero, and no reactive or transparency-composition masks enter DLSS. The
-  remaining fail-closed gates are the compiled velocity-combine shader's exact
-  arithmetic/storage format, the managed reset expression, and direct proof
-  that live DLAA input and output extents match. Until those close, do not map
+  exact velocity kernel only fourth-root decodes packed SceneMV XY into
+  normalized UV-fraction motion; depth and camera matrices do not enter that
+  kernel. Its transient input/output formats and direct producer attachment
+  remain open. The same-frame reset is exactly large de-jittered camera
+  movement or `isFirstFrame`, after which `isFirstFrame` is cleared; size and
+  AA-mode changes are not independent compiled terms. DLAA scale is delegated
+  to Streamline optimal-settings mode 6 rather than forced to one by HG, so an
+  exact SDK return or live texture observation is still required to prove
+  equal input/output extents. Until those close, do not map
   the game contract onto Unity's public NVIDIA wrapper by convention.
+  That wrapper can carry the recovered numeric resource subset, including
+  negated pixel jitter, reverse depth, reset, exposure, and combined motion at
+  scale `(1,1)`, but it cannot select Streamline DLAA mode 6, model presets, or
+  the game's constants/tag schedule. Any future experiment must be labeled
+  `UnityPublicNgxProxy`, stay opt-in, and never count as parity evidence.
 - Effect-02's animated radial/chromatic values, exact 1.0 radial power, native
   mode/effective-power packing, signed/clamped post-projection center transform,
   source-only warped taps, and separate bloom sampling order are source-backed.
