@@ -284,6 +284,12 @@ all-character pass:
   as a scalar while operating on 184-byte records. The filter therefore has no
   semantic survivor; runtime GetProcAddress telemetry remains the exact
   identity gate instead of assigning either hash.
+  The bounded read-only Burst resolver telemetry manifest now includes exact
+  constructor, static-constructor, shared-initializer, function-pointer, and
+  invoke windows for Collider Start and Collider End alongside the three
+  Simulation kernels. Its target block is hash-pinned and passes the installed
+  four-file check-only gate; no live attach or kernel execution observation has
+  been performed.
   Regenerate with
   `python unity_endfield_graph_shader_lab/tools/build_secondary_dynamics_proxy_layout_contract.py`,
   then publish the read-only decode explicitly with

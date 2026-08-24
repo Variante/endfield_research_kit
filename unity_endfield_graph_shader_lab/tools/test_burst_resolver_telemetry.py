@@ -6,6 +6,7 @@ import sys
 import tempfile
 import unittest
 import hashlib
+import json
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -28,6 +29,18 @@ class BurstResolverTelemetryTests(unittest.TestCase):
         self.assertEqual(manifest["files"]["metadata"]["sha256"], "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e")
         self.assertEqual(manifest["files"]["resolver"]["sha256"], "ee8702dd63dec2db7dc29d5bc23b8acd032f0e19a0daad5f69e6c45f9d3ceb99")
         self.assertEqual({target["id"] for target in manifest["targets"]}, telemetry.TARGET_IDS)
+        self.assertEqual(len(manifest["targets"]), 5)
+        by_id = {target["id"]: target for target in manifest["targets"]}
+        self.assertEqual(by_id["collider_start_simulation_step_range_kernel"]["methodIndex"], 385394)
+        self.assertEqual(by_id["collider_end_simulation_step_range_kernel"]["methodIndex"], 385295)
+        self.assertEqual(by_id["collider_start_simulation_step_range_kernel"]["windows"][-1], {
+            "role": "invoke", "methodIndex": 385416,
+            "startOffset": "0x6762cc0", "endOffsetExclusive": "0x6762edc",
+        })
+        self.assertEqual(by_id["collider_end_simulation_step_range_kernel"]["windows"][-1], {
+            "role": "invoke", "methodIndex": 385317,
+            "startOffset": "0x675b0cc", "endOffsetExclusive": "0x675b1d4",
+        })
         for target in manifest["targets"]:
             self.assertEqual(
                 {window["role"] for window in target["windows"]},
@@ -55,6 +68,15 @@ class BurstResolverTelemetryTests(unittest.TestCase):
             self.assertNotIn(forbidden, rendered)
         self.assertIn("pointer.isNull()", rendered)
         self.assertIn('type: "null"', rendered)
+
+    def test_manifest_rejects_target_window_drift(self) -> None:
+        manifest = telemetry.load_manifest(telemetry.DEFAULT_MANIFEST)
+        manifest["targets"][-1]["windows"][-1]["endOffsetExclusive"] = "0x675b1d5"
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "manifest.json"
+            path.write_text(json.dumps(manifest), encoding="utf-8")
+            with self.assertRaisesRegex(telemetry.CaptureConfigurationError, "target windows drifted"):
+                telemetry.load_manifest(path)
 
     def test_check_only_does_not_load_frida_or_attach(self) -> None:
         with tempfile.TemporaryDirectory() as temp:

@@ -95,6 +95,34 @@
         {"role": "get_function_pointer", "methodIndex": 385644, "startOffset": "0x6770180", "endOffsetExclusive": "0x67701d4"},
         {"role": "invoke", "methodIndex": 385648, "startOffset": "0x67701d4", "endOffsetExclusive": "0x67703f0"}
       ]
+    },
+    {
+      "id": "collider_start_simulation_step_range_kernel",
+      "methodIndex": 385394,
+      "methodName": "Initialize$StartSimulationStepJobKernels_StartSimulationStepRangeKernel_000003D8$BurstDirectCall",
+      "fullName": "BeyondDynamicBone.ColliderManager+StartSimulationStepJobKernels+StartSimulationStepRangeKernel_000003D8$BurstDirectCall",
+      "windows": [
+        {"role": "constructor", "methodIndex": 385413, "startOffset": "0x3fb2660", "endOffsetExclusive": "0x3fb26f0"},
+        {"role": "static_constructor", "methodIndex": 385415, "startOffset": "0x3fb2cf0", "endOffsetExclusive": "0x3fb2d00"},
+        {"role": "initializer", "methodIndex": 385414, "startOffset": "0x41e1670", "endOffsetExclusive": "0x41e1680"},
+        {"role": "get_function_pointer_discard", "methodIndex": 385411, "startOffset": "0x6762b68", "endOffsetExclusive": "0x6762c6c"},
+        {"role": "get_function_pointer", "methodIndex": 385412, "startOffset": "0x6762c6c", "endOffsetExclusive": "0x6762cc0"},
+        {"role": "invoke", "methodIndex": 385416, "startOffset": "0x6762cc0", "endOffsetExclusive": "0x6762edc"}
+      ]
+    },
+    {
+      "id": "collider_end_simulation_step_range_kernel",
+      "methodIndex": 385295,
+      "methodName": "Initialize$EndSimulationStepJobKernels_EndSimulationStepRangeKernel_000003BB$BurstDirectCall",
+      "fullName": "BeyondDynamicBone.EndSimulationStepJobKernels+EndSimulationStepRangeKernel_000003BB$BurstDirectCall",
+      "windows": [
+        {"role": "constructor", "methodIndex": 385314, "startOffset": "0x3fb29c0", "endOffsetExclusive": "0x3fb2a50"},
+        {"role": "static_constructor", "methodIndex": 385316, "startOffset": "0x3fb2d50", "endOffsetExclusive": "0x3fb2d60"},
+        {"role": "initializer", "methodIndex": 385315, "startOffset": "0x41e1670", "endOffsetExclusive": "0x41e1680"},
+        {"role": "get_function_pointer_discard", "methodIndex": 385312, "startOffset": "0x675af74", "endOffsetExclusive": "0x675b078"},
+        {"role": "get_function_pointer", "methodIndex": 385313, "startOffset": "0x675b078", "endOffsetExclusive": "0x675b0cc"},
+        {"role": "invoke", "methodIndex": 385317, "startOffset": "0x675b0cc", "endOffsetExclusive": "0x675b1d4"}
+      ]
     }
   ],
   "resolverExportEnumeration": {
@@ -110,7 +138,7 @@
       "A returned proc pointer is an identity observation only; it does not prove the pointer was called or map it to a Burst generic.",
       "Only GetProcAddress calls whose hModule equals the observed lib_burst_generated.dll HMODULE are recorded.",
       "The callerBacktrace is bounded and includes only frames Frida resolves to a loaded module; gameAssemblyCallerBacktrace is the verified GameAssembly.dll subset, and an empty backtrace is not identity proof.",
-      "Target-window attribution is a caller-address observation against the three pinned wrapper/initializer ranges; it does not prove the hashed export was called or that the Burst kernel executed.",
+      "Target-window attribution is a caller-address observation against the five pinned wrapper/initializer ranges; it does not prove the hashed export was called or that the Burst kernel executed.",
       "The pinned executable, GameAssembly.dll, global-metadata.dat, and resolver hashes verify disk files for one client build; runtime path/size/base matching is recorded separately, and this does not claim a memory-image hash."
     ],
     "stopRule": "Stop on attach refusal, protection termination, native hash/module drift, missing kernel32 exports, hook failure, malformed bounded read, or event cap; do not retry through evasion."
