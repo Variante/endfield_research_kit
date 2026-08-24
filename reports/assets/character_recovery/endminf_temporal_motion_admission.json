@@ -1,5 +1,5 @@
 {
-  "schema": "endfield.endminf-temporal-motion-admission.v1",
+  "schema": "endfield.endminf-temporal-motion-admission.v2",
   "subject": "Endminf Character Info temporal and motion admission",
   "reference": {
     "recording": "videos/2026-08-21_20-15-17.mkv",
@@ -63,6 +63,38 @@
       "Vulkan"
     ]
   },
+  "taauRuntimeContract": {
+    "status": "exact ordinary Quality-0 assets, schedule, bindings, and serialized base settings recovered",
+    "schedule": [
+      "Dilation",
+      "MaskDilation",
+      "Resolve"
+    ],
+    "shaderAssets": {
+      "dilation": {
+        "pathId": "8092119532838451211",
+        "d3dProgramHash": "77b62116189f596e"
+      },
+      "maskDilation": {
+        "pathId": "1854649510155605052",
+        "d3dProgramHash": "8009cfbca0decfad"
+      },
+      "resolve": {
+        "pathId": "4448799274458902827",
+        "quality0D3dProgramHash": "fef9bcfe80de1c24"
+      }
+    },
+    "quality0ResolveInputs": [
+      "current scene color",
+      "current dilated depth",
+      "current dilated SceneMV",
+      "current dilated mask",
+      "history scene color"
+    ],
+    "historyGate": "Scene-color, dilated-depth, and dilated-SceneMV histories must all be valid, and TAAU must have been enabled on the preceding frame. Otherwise effective history weight is zero and firstFrame is one.",
+    "implementedSubset": "The compatibility path now performs the exact current-frame spatial half of Dilation: choose maximum reversed-Z depth over the 3x3 footprint and load SceneMV from that pixel before the partial resolve.",
+    "explicitBoundary": "Previous-frame depth/MV reprojection, B-lane flag repacking, four-neighbor mask dilation, full ordinary resolve policy, jitter, and untouched constructor-seeded TAAU constant lanes remain unimplemented. The recovered managed base branch also does not prove live CharInfo IFix activation or override the saved DLSS/DLAA selection evidence."
+  },
   "sceneMotionVectors": {
     "status": "actor MRT completion implemented",
     "encoding": "CharacterNPR fourth-root reprojection encoding",
@@ -81,13 +113,13 @@
     "output": "SV_Target1 with recovered SceneMV encoding"
   },
   "temporalHistory": {
-    "status": "source boundary reproduced with partial TAA consumer",
+    "status": "source boundary reproduced with partial ordinary Quality-0 TAA consumer",
     "behavior": "While the explicit compatibility profile is requested but Endminf's effect clock is inactive, the camera preserves the latest scene color without resolving. The capture renders source-equivalent blank model-swap frame 1109 before selecting Endminf, allowing visible frame 1110 to consume that history instead of self-seeding.",
     "knownPartialBoundary": [
       "one scene-color history rather than the full recovered history set",
-      "no exact TAA compute-kernel implementation",
+      "no exact complete TAA shader implementation",
       "no recovered jitter or previous-camera matrix publication",
-      "no depth/motion dilation, masks, rejection, or fast-converge path",
+      "no auxiliary depth/MV histories, temporal dilation flag repacking, mask, complete rejection, or fast-converge path",
       "incomplete 192-byte TAA constant-buffer publication"
     ]
   },
@@ -116,6 +148,14 @@
       "pixelAnyChannelAtLeast16": 0.4290318650,
       "frame0Mae": 22.6546802521,
       "frame18Mae": 25.8107471466
+    },
+    "currentFrameSceneMvDilation": {
+      "mae": 22.3099174500,
+      "rmse": 39.3489418030,
+      "bias": 10.5441560745,
+      "pixelAnyChannelAtLeast16": 0.4290171040,
+      "frame0Mae": 22.6546802521,
+      "frame18Mae": 25.8107490540
     }
   },
   "clothBoundary": {

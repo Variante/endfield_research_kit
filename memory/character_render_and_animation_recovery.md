@@ -70,9 +70,13 @@ archetypes remain labeled source kits rather than finished characters.
   would import an unrelated profile. Skin, hair, eye, and cloth now publish the
   recovered CharacterNPR SceneMV encoding. The camera preserves the recorded
   blank model-swap frame as temporal history before Endminf becomes visible,
-  avoiding first-frame self-seeding. The remaining TAA consumer is still
-  partial: its exact compute kernels, jitter/matrix state, dilation, masks,
-  rejection, fast convergence, and full constant buffer are open.
+  avoiding first-frame self-seeding. The ordinary Quality-0 TAA schedule and
+  shader bindings are now closed as Dilation -> MaskDilation -> Resolve, with
+  scene-color, dilated-depth, and dilated-SceneMV histories. The compatibility
+  path implements Dilation's exact current-frame 3x3 maximum-depth SceneMV
+  selection. Its prior-frame reprojection/flag repacking, mask, complete
+  resolve policy, jitter/matrix state, fast convergence, live IFix selection,
+  and constructor-seeded constant lanes remain open.
 - Effect-02's animated radial/chromatic values, exact 1.0 radial power, native
   mode/effective-power packing, signed/clamped post-projection center transform,
   source-only warped taps, and separate bloom sampling order are source-backed.
@@ -85,8 +89,9 @@ archetypes remain labeled source kits rather than finished characters.
   applying that explicit 0.15-second recording pre-roll removes the two
   incorrectly shifted chromatic pulses and, together with the recovered
   gyroscope transition, lowers the same MAE to 22.3254. Actor SceneMV coverage
-  and the source blank-frame history boundary lower the current comparison to
-  22.3102. Exact retail D3D12 presentation binding remains open.
+  and the source blank-frame history boundary lower the comparison to 22.3102;
+  current-frame SceneMV dilation lowers it again to 22.3099. Exact retail D3D12
+  presentation binding remains open.
 - The selected rock-family `HGRP/LitEffect` subprograms now have cross-platform
   physical constant-buffer identities: transform variables, global variables,
   `UnityPerDraw`, `UnityPerMaterial`, and terrain subsurface constants. The

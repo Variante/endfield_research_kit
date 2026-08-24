@@ -235,6 +235,14 @@ namespace EndfieldGraphShaderLab
             Shader.PropertyToID("_RecoveredTemporalCurrent");
         private static readonly int RecoveredTemporalSceneMVId =
             Shader.PropertyToID("_RecoveredTemporalSceneMV");
+        private static readonly int RecoveredTemporalSceneDepthId =
+            Shader.PropertyToID("_RecoveredTemporalSceneDepth");
+        private static readonly int RecoveredTemporalRawSceneMVId =
+            Shader.PropertyToID("_RecoveredTemporalRawSceneMV");
+        private static readonly int RecoveredTemporalRenderSizeId =
+            Shader.PropertyToID("_RecoveredTemporalRenderSize");
+        private static readonly int RecoveredTemporalDilatedSceneMVId =
+            Shader.PropertyToID("_EndfieldRecoveredTemporalDilatedSceneMV");
         private static readonly int RecoveredTemporalHistoryWeightId =
             Shader.PropertyToID("_RecoveredTemporalHistoryWeight");
         private static readonly int RecoveredTemporalStaticHistoryWeightId =
@@ -578,6 +586,7 @@ namespace EndfieldGraphShaderLab
         private bool loggedRecoveredDeferredShadowDataActivation;
         private bool loggedRecoveredDeferredShadowDataFailure;
         private Material recoveredTemporalMaterial;
+        private Material recoveredTemporalDilationMaterial;
         private bool loggedRecoveredTemporalResolve;
 
         private static int[] CreateBloomMipIds(string prefix)
@@ -695,6 +704,16 @@ namespace EndfieldGraphShaderLab
                     name = "Endfield HGRP TAAU History Resolve (Pipeline)"
                 };
             }
+            Shader temporalDilationShader = Shader.Find(
+                "Hidden/Endfield/HGRPCompat/TemporalSceneMVDilation");
+            if (temporalDilationShader != null && temporalDilationShader.isSupported)
+            {
+                recoveredTemporalDilationMaterial = new Material(temporalDilationShader)
+                {
+                    hideFlags = HideFlags.HideAndDontSave,
+                    name = "Endfield HGRP TAAU SceneMV Dilation (Pipeline)"
+                };
+            }
         }
 
         protected override void Dispose(bool disposing)
@@ -741,6 +760,14 @@ namespace EndfieldGraphShaderLab
                 else
                     Object.DestroyImmediate(recoveredTemporalMaterial);
                 recoveredTemporalMaterial = null;
+            }
+            if (recoveredTemporalDilationMaterial != null)
+            {
+                if (Application.isPlaying)
+                    Object.Destroy(recoveredTemporalDilationMaterial);
+                else
+                    Object.DestroyImmediate(recoveredTemporalDilationMaterial);
+                recoveredTemporalDilationMaterial = null;
             }
             if (postProcessMaterial == null)
                 return;
@@ -2574,6 +2601,7 @@ namespace EndfieldGraphShaderLab
                     camera,
                     width,
                     height,
+                    recoveredPrimarySceneDepth,
                     recoveredSceneMV,
                     recoveredSceneColorDescriptor);
             }
@@ -2972,6 +3000,7 @@ namespace EndfieldGraphShaderLab
             Camera camera,
             int width,
             int height,
+            RenderTexture recoveredPrimarySceneDepth,
             RenderTexture recoveredSceneMV,
             RenderTextureDescriptor sceneDescriptor)
         {
@@ -3029,6 +3058,44 @@ namespace EndfieldGraphShaderLab
             }
             else if (temporalResolveActive)
             {
+                bool useCurrentSceneMVDilation =
+                    recoveredTemporalDilationMaterial != null &&
+                    recoveredPrimarySceneDepth != null &&
+                    recoveredSceneMV != null;
+                if (useCurrentSceneMVDilation)
+                {
+                    var dilationDescriptor = new RenderTextureDescriptor(
+                        width,
+                        height)
+                    {
+                        graphicsFormat =
+                            EndfieldRecoveredSceneMVCompositor.SceneMVFormat,
+                        depthStencilFormat = GraphicsFormat.None,
+                        msaaSamples = 1,
+                        useMipMap = false,
+                        autoGenerateMips = false,
+                        sRGB = false
+                    };
+                    commandBuffer.GetTemporaryRT(
+                        RecoveredTemporalDilatedSceneMVId,
+                        dilationDescriptor,
+                        FilterMode.Point);
+                    commandBuffer.SetGlobalTexture(
+                        RecoveredTemporalSceneDepthId,
+                        new RenderTargetIdentifier(recoveredPrimarySceneDepth));
+                    commandBuffer.SetGlobalTexture(
+                        RecoveredTemporalRawSceneMVId,
+                        new RenderTargetIdentifier(recoveredSceneMV));
+                    commandBuffer.SetGlobalVector(
+                        RecoveredTemporalRenderSizeId,
+                        new Vector4(width, height, 1.0f / width, 1.0f / height));
+                    commandBuffer.Blit(
+                        CameraColorId,
+                        RecoveredTemporalDilatedSceneMVId,
+                        recoveredTemporalDilationMaterial,
+                        0);
+                }
+
                 RenderTextureDescriptor resolveDescriptor = sceneDescriptor;
                 resolveDescriptor.width = width;
                 resolveDescriptor.height = height;
@@ -3049,7 +3116,10 @@ namespace EndfieldGraphShaderLab
                     new RenderTargetIdentifier(CameraColorId));
                 commandBuffer.SetGlobalTexture(
                     RecoveredTemporalSceneMVId,
-                    recoveredSceneMV != null
+                    useCurrentSceneMVDilation
+                        ? new RenderTargetIdentifier(
+                            RecoveredTemporalDilatedSceneMVId)
+                        : recoveredSceneMV != null
                         ? new RenderTargetIdentifier(recoveredSceneMV)
                         : new RenderTargetIdentifier(Texture2D.grayTexture));
                 // Desktop TAAU serializes distinct 0.95 static and 0.85
@@ -3073,13 +3143,17 @@ namespace EndfieldGraphShaderLab
                     new RenderTargetIdentifier(RecoveredTemporalResolveId),
                     state.history);
                 commandBuffer.ReleaseTemporaryRT(RecoveredTemporalResolveId);
+                if (useCurrentSceneMVDilation)
+                    commandBuffer.ReleaseTemporaryRT(
+                        RecoveredTemporalDilatedSceneMVId);
 
                 if (!loggedRecoveredTemporalResolve)
                 {
                     Debug.Log(
                         "Recovered Endminf pre-Bloom temporal history resolve is active " +
-                        "with exact SceneMV fourth-root reprojection and shipped " +
-                        "desktop static/motion weights 0.95/0.85.");
+                        "with the shipped current-frame max-depth SceneMV dilation, " +
+                        "exact fourth-root reprojection, and desktop static/motion " +
+                        "weights 0.95/0.85.");
                     loggedRecoveredTemporalResolve = true;
                 }
             }
