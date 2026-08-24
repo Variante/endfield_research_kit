@@ -49,12 +49,39 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     )
     parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
     parser.add_argument("--agent", type=Path, default=DEFAULT_AGENT)
-    parser.add_argument("--process")
-    parser.add_argument("--pid", type=int)
-    parser.add_argument("--output", type=Path)
-    parser.add_argument("--wait-seconds", type=float, default=900.0)
-    parser.add_argument("--duration", type=float)
-    parser.add_argument("--check-only", action="store_true")
+    parser.add_argument(
+        "--process",
+        help="Expected process name; omitted uses the hash-locked manifest value.",
+    )
+    parser.add_argument(
+        "--pid",
+        type=int,
+        help=(
+            "Attach to this already-running PID after verifying its process name. "
+            "Use this when the game was started normally before the capture command."
+        ),
+    )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        help="Raw event-v1 JSONL output; omitted uses the timestamped capture path.",
+    )
+    parser.add_argument(
+        "--wait-seconds",
+        type=float,
+        default=900.0,
+        help="Seconds to wait for the expected process when --pid is omitted (default: 900).",
+    )
+    parser.add_argument(
+        "--duration",
+        type=float,
+        help="Stop the capture after this many seconds; omitted runs until Ctrl+C or detach.",
+    )
+    parser.add_argument(
+        "--check-only",
+        action="store_true",
+        help="Verify files, hook ranges, manifest, and rendered agent without attaching.",
+    )
 
 
 def default_output_path() -> Path:

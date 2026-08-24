@@ -62,6 +62,17 @@ class RuntimeTraceCliTests(unittest.TestCase):
         with redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
             runtime_trace.parse_args(["capture"])
 
+    def test_audio_capture_pid_is_an_explicit_attach_to_existing_process_path(self):
+        parser = runtime_trace.command_parser("capture", "audio")
+        help_text = parser.format_help()
+        self.assertIn("already-running PID", help_text)
+        self.assertIn("without attaching", help_text)
+        args = runtime_trace.parse_args(
+            ["capture", "--profile", "audio", "--pid", "1234", "--duration", "30"]
+        )
+        self.assertEqual(args.pid, 1234)
+        self.assertEqual(args.duration, 30.0)
+
     def test_import_failure_is_reported_by_single_cli(self):
         with tempfile.TemporaryDirectory() as temporary:
             missing = Path(temporary) / "missing.jsonl"
