@@ -60,19 +60,22 @@ archetypes remain labeled source kits rather than finished characters.
   central comparison improves 24 of 28 pairs over the old three-frame-late map.
 - Effect-02's animated radial/chromatic values, exact 1.0 radial power, native
   mode/effective-power packing, signed/clamped post-projection center transform,
-  source-only warped taps, and separate bloom sampling order are now
-  source-backed. Correcting the center transform reduced the UI-free 28-frame
-  RGB MAE from 28.2811 to 27.6888 and the >=16 residual from 47.01% to 43.20%.
-  The lab still uses a compatibility presentation shader: the combined shipped
-  Uber bloom/pre-exposure merge and exact D3D12 presentation binding remain open.
+  source-only warped taps, and separate bloom sampling order are source-backed.
+  The exact combined Uber variant now also closes the CharInfo merge: source-only
+  global exposure, channel-wise bloom decoding above 0.3, serialized intensity,
+  white normalized tint, zero blend mode, and saturated source alpha. The D3D12
+  compatibility implementation reduced the UI-free 28-frame RGB MAE from
+  27.6888 to 27.6752. Exact retail D3D12 presentation binding remains open.
 - The selected rock-family `HGRP/LitEffect` subprograms now have cross-platform
   physical constant-buffer identities: transform variables, global variables,
   `UnityPerDraw`, `UnityPerMaterial`, and terrain subsurface constants. The
-  Shader JSON also closes the named base `UnityPerMaterial` prefix through the
-  texture ST/texel-size rows, and the selected `HGRP/DeferredLighting` pass
-  closes the five-MRT A/B/C consumer at t23/t24/t25. The `_PARALLAX_MAP`
-  extension at byte 352 and later, plus complete live SceneColor/motion/history
-  publication, remain unresolved, so the ten rock renderers stay blocked.
+  shader parameter blob's pre-descriptor table closes all 37 named
+  `UnityPerMaterial` members, including the complete `_PARALLAX_MAP` extension
+  from byte 352. Decompiled use also corrects the physical texture order to
+  BaseColor, Normal, MRO, ParallaxNoise, ParallaxMask, and Parallax at t0..t5.
+  The selected `HGRP/DeferredLighting` pass closes the five-MRT A/B/C consumer
+  at t23/t24/t25. The ten rock renderers remain blocked only on live retail
+  b0/b1/b2/b4 publication and the complete deferred frame, not material layout.
 - The `M_fx_endminm_gfx_09` burst stripes now bind the exact exported RGBA
   `T_fx_star_07_D` payload. The previous missing `_MainTex` silently sampled
   white and produced a large opaque rectangle; the repaired source-alpha
@@ -86,6 +89,12 @@ archetypes remain labeled source kits rather than finished characters.
   matches the neutral fixture exactly and the recovered Wulfa fixture within
   one float ULP. This proves executable program and recovered-input
   equivalence; it does not prove the retail frame resources.
+- D3D12 diagnostic capture proves canonical light/reflection binning,
+  VisibilitySH, and SphereOutside's exact five-MRT sidecars can populate during
+  the full Endminf sequence without changing any of the 41 presented beauty
+  frames. The exact DXBC consumer remains D3D11-only and its private float
+  readback is intentionally non-presented; those sidecars are evidence, not a
+  hidden beauty path.
 - The recovered VisibilitySH/capsule term improves measured character deltas,
   but it still runs against the partial ready-subset floor rather than the real
   presentation scene. The softer result is not evidence of a missing constant
@@ -183,10 +192,10 @@ another per-material shader approximation. The missing boundary includes:
 - the exact character stencil writer and receiver integration;
 - render-graph/subpass state and frame-produced lighting resources;
 - confirmation of the final source camera and presentation bindings.
-- ten still-blocked rock-family renderer identities, including the
-  `_PARALLAX_MAP` `UnityPerMaterial` extension and live deferred frame resources;
-- the complete Effect-02 combined Uber bloom/pre-exposure implementation beyond
-  the recovered state, packing, and source-before-bloom sampling order.
+- ten still-blocked rock-family renderer identities awaiting live retail
+  b0/b1/b2/b4 uploads and the complete deferred frame resources;
+- exact retail D3D12 presentation binding after the now-closed Effect-02
+  combined Uber source, bloom, LUT, and output-tail contract.
 
 `SphereOutside` is asset-complete. Its remaining gates are runtime frame state
 and resources. The exact deferred program is no longer a blocker.

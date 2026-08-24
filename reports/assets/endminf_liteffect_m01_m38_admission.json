@@ -1,0 +1,117 @@
+{
+  "schema": "endfield.endminf-liteffect-m01-m38-admission.v1",
+  "status": "blocked_live_global_and_deferred_frame_publication",
+  "shader": {
+    "name": "HGRP/LitEffect",
+    "pathId": 6428594484694422749,
+    "pass": "HGBuffer",
+    "variantKeywords": [
+      "HG_ENABLE_MV",
+      "_PARALLAX_MAP"
+    ]
+  },
+  "nativeInputs": [
+    {
+      "path": "D:\\Program Files\\Endfield Game\\GameAssembly.dll",
+      "expectedSha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
+      "actualSha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
+    },
+    {
+      "path": "D:\\Program Files\\Endfield Game\\Endfield_Data\\il2cpp_data\\Metadata\\global-metadata.dat",
+      "expectedSha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e",
+      "actualSha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
+    }
+  ],
+  "materials": [
+    {
+      "name": "M_fx_endminm_gfx_01_p5A6341E8A834E421.json",
+      "expectedSha256": "247e90600649b896249bdb4884abaa9d89aaa961d3a76d826cad9159a420426d",
+      "actualSha256": "247e90600649b896249bdb4884abaa9d89aaa961d3a76d826cad9159a420426d",
+      "shaderPathId": 6428594484694422749,
+      "keywords": [
+        "_PARALLAX_MAP"
+      ],
+      "queue": 2000
+    },
+    {
+      "name": "M_fx_endminm_gfx_38_pAFCE491DD7BC5724.json",
+      "expectedSha256": "3581bdfd934d8c8e3d3cdbdfdbe7188dd38f2a1b951f8114a6a47a7da34aa8f6",
+      "actualSha256": "3581bdfd934d8c8e3d3cdbdfdbe7188dd38f2a1b951f8114a6a47a7da34aa8f6",
+      "shaderPathId": 6428594484694422749,
+      "keywords": [
+        "_PARALLAX_MAP"
+      ],
+      "queue": 2000
+    }
+  ],
+  "resolved": {
+    "textures": {
+      "physicalD3d11Registers": {
+        "t0": "BaseColorMap",
+        "t1": "NormalMap",
+        "t2": "MROMap",
+        "t3": "ParallaxNoiseMap",
+        "t4": "ParallaxMaskMap",
+        "t5": "ParallaxMap"
+      },
+      "proof": "decompiled use matched to the named UnityPerMaterial ST, scale, channel, and parallax fields; descriptor-tail ordering is not physical DXBC register ordering"
+    },
+    "samplers": "s0..s5 static",
+    "fragmentB3": {
+      "identity": "UnityPerMaterial",
+      "source": "shader parameter blob 19 pre-descriptor constant-buffer table",
+      "recordOffset": 79956,
+      "recordLength": 4780,
+      "recordSha256": "f801da3737087699e41a3dfc8a15211207703167b771e44d15575884febfa06b",
+      "declaredSize": 576,
+      "namedFieldCount": 37,
+      "selectedDxbcAccessCoverage": "complete, including every _PARALLAX_MAP access from byte 352 through _ParallaxColorDark at byte 480"
+    },
+    "fragmentB4Identity": "_TerrainSubsurfaceConstants; _TerrainSubsurfaceProfileInt is byte 12",
+    "deferredConsumer": "the selected HGRP/DeferredLighting pass consumes GBufferA/B/C at t23/t24/t25; exact five-MRT attachment ownership is closed",
+    "attachments": [
+      "SceneColor",
+      "SceneMV",
+      "GBufferA",
+      "GBufferB",
+      "GBufferC",
+      "SceneDepth"
+    ]
+  },
+  "unresolved": [
+    {
+      "register": "fragment b0",
+      "bytes": 720,
+      "missing": "unique retail upload producer and field layout"
+    },
+    {
+      "register": "fragment b1",
+      "bytes": 1696,
+      "missing": "unique retail upload producer and field layout"
+    },
+    {
+      "register": "fragment b2",
+      "bytes": 80,
+      "missing": "unique retail upload producer and field layout"
+    },
+    {
+      "register": "fragment b4",
+      "bytes": 16,
+      "identity": "_TerrainSubsurfaceConstants",
+      "missing": "live retail upload/publication"
+    },
+    {
+      "consumer": "HGBuffer deferred",
+      "known": "GBufferPassConstructor.ConstructPass 0x189badf00; SceneColor, SceneMV, GBufferA/B/C + writable depth; five-MRT consumer closed",
+      "missing": "complete live retail frame publication for exact admission"
+    }
+  ],
+  "failures": [
+    "unresolved fragment b0",
+    "unresolved fragment b1",
+    "unresolved fragment b2",
+    "unresolved fragment b4",
+    "unresolved HGBuffer deferred"
+  ],
+  "admissionRule": "admit only when unresolved is empty and every pinned identity still matches"
+}
