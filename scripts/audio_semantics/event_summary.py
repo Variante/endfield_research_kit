@@ -300,6 +300,8 @@ def event_summary_row(row: dict[str, Any], detail_shard: str) -> dict[str, Any]:
         "runtimeSelection", "mediaRelationTypes", "selectionContainerTypes",
         "traversalStatus", "unresolvedNodeCount", "contextCount",
         "playbackLocationStatus", "purposeKnowledgeStatus", "purposeInvestigationPriority",
+        "runtimeObservationStatus", "runtimeObservationCount",
+        "runtimeObservationSessionIds", "runtimeObservationSourceKinds",
         "audioLibraryPlaybackTargetStatus", "audioLibraryEquivalentEventIds",
         "audioLibraryEquivalentEventCount", "audioLibraryEquivalentCategories",
         "audioLibrarySharedPlayTargetSets", "audioLibraryPurposeHintStatus",

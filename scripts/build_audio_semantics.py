@@ -47,6 +47,7 @@ if __package__ == "scripts":
         purpose,
         responsive_voice,
         rtpc_alignment,
+        runtime_observations,
         scene_backgrounds,
         table_contexts,
         voice_requests,
@@ -68,6 +69,7 @@ elif not __package__:
         purpose,
         responsive_voice,
         rtpc_alignment,
+        runtime_observations,
         scene_backgrounds,
         table_contexts,
         voice_requests,
@@ -109,7 +111,7 @@ PROJECTILE_SOUND_PHASES = {
 # authoritative value; these names are presentation labels, not a claim that
 # selection behavior was evaluated offline.
 SELECTION_HIRC_TYPES = frozenset({5, 6, 12, 13})
-AUDIO_SEMANTIC_SCHEMA_VERSION = 131
+AUDIO_SEMANTIC_SCHEMA_VERSION = 132
 TRIGGER_CONTEXT_SCHEMA_VERSION = 39
 
 MONO_BEHAVIOUR_AUDIO_EVENT_FIELD_NAMES = frozenset({
@@ -13091,6 +13093,7 @@ def build_audio_semantic_data(
     metadata_path: Path | None = None,
     gameassembly_path: Path | None = None,
     cutscene_events: dict[str, list[str]] | None = None,
+    runtime_trace_bundle: Path | None = None,
 ) -> dict[str, Any]:
     language = language.upper()
     native_context = native_evidence.validate_native_audio_evidence(
@@ -13459,6 +13462,14 @@ def build_audio_semantic_data(
             if event.get("id")
         },
         event_rows=events,
+    )
+    runtime_observation_projection = (
+        runtime_observations.apply_verified_runtime_observations(
+            events,
+            media,
+            runtime_trace_bundle,
+            expected_language=language,
+        )
     )
     character_namespace_gameplay = (
         media_ownership.project_character_namespace_gameplay_audio(events)
@@ -13944,6 +13955,12 @@ def build_audio_semantic_data(
                 if key not in {"schemaVersion", "evidenceBoundary"}
             },
             "eventRecords": len(events),
+            "runtimeObservedEventRecords": int(
+                runtime_observation_projection.get("eventCount") or 0
+            ),
+            "runtimeObservedMediaRecords": int(
+                runtime_observation_projection.get("mediaCount") or 0
+            ),
             "sceneBackgroundExactNamedScenes": int(
                 (scene_background_semantics.get("counts") or {}).get(
                     "exactNamedScenes", 0
@@ -14651,6 +14668,7 @@ def build_audio_semantic_data(
             "evidenceBoundary": "Cue behavior exprType=3 values, constant LevelScript Event parameters, LevelScript cue names joined by the native AudioHashGenerator to exact cue behavior expressions, non-empty PhysicsAudio Event properties, and normal ModelView Event plus positioned direct-position hashes are authored requests. Positioned custom/entity state rows are typed controls only and never Event ownership. Metadata-named InitialRTPC rows are exact ID/hash joins that preserve authored curve targets and controlled properties; they do not observe live RTPC updates or audibility. PhysicsAudio/ModelView RTPC names, ModelView spatial/custom-audio rows, cue/action execution, handler conditions, exprType=8 strings, dynamic Params, state/variable writes, playback handles, placeholder-music ids, unresolved cue hashes, and musicCue* values remain typed controls or unresolved runtime state. LevelEvent OnAudioStateChanged and OnMusicBeatEvent are current-build trigger-input definitions, not playback requests; exhaustive active-overlay scanning found zero authored occurrences. Two non-music Wwise selector groups have exact native setter callsites; three more have high-confidence semantic correlation only, and ten music State groups have exact current-metadata/native-setter joins. None reveal a live value, selected branch, or authored group name.",
         },
         "runtimeModel": runtime_model,
+        "runtimeObservations": runtime_observation_projection,
         "externalSourceEventIdentityAudit": external_source_event_identity_audit,
         "evidenceBoundary": {
             "decodedMedia": "A decoded FLAC/WAV/WEM is a source media object, not proof that it played.",
@@ -14700,6 +14718,9 @@ def build_audio_semantic_data(
                 "IL2CPP names prove shipped system structure. Selected current-build native call chains "
                 "prove static request routing, asynchronous Event preparation, Wwise posting, and playing-id "
                 "lifetime handling; they are not a live execution trace, active state, or selected media leaf."
+            ),
+            "runtimeObservations": runtime_observation_projection.get(
+                "evidenceBoundary", ""
             ),
             "externalSourceEventIdentity": external_source_event_identity_audit.get(
                 "evidenceBoundary", ""
@@ -14775,6 +14796,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         ),
     )
     parser.add_argument("--metadata", type=Path, default=None)
+    parser.add_argument(
+        "--runtime-trace-bundle",
+        type=Path,
+        default=None,
+        help="Optional verified audio runtime-trace JSON bundle to project onto Event/media rows.",
+    )
     args = parser.parse_args(argv)
     if args.metadata is None and args.game_root is not None:
         installed = args.game_root / DEFAULT_METADATA_REL
@@ -14798,6 +14825,11 @@ def main(argv: list[str] | None = None) -> int:
         gameassembly_path=(
             (args.game_root.parent / "GameAssembly.dll").resolve()
             if args.game_root is not None
+            else None
+        ),
+        runtime_trace_bundle=(
+            args.runtime_trace_bundle.resolve()
+            if args.runtime_trace_bundle is not None
             else None
         ),
     )

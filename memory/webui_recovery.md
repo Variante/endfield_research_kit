@@ -157,6 +157,11 @@ user research state and do not upgrade or modify generated evidence.
 Audio separates Event/media identity, Wwise graph relation, authored consumer,
 and observed runtime execution. A stronger layer never appears unless its typed
 evidence exists.
+The semantic publisher can consume a verified offline audio-trace bundle. It
+then marks the exact captured managed request on Event details and propagates
+only the matching Event relation to media details. Unverified, mismatched, or
+language-incompatible bundles remain degraded and do not create bindings;
+observed requests still do not prove branch selection or audibility.
 
 The current pipeline can join raw HIRC Events, decoded media, AudioDialog and
 responsive-voice tables, Timeline audio, Lua consumers, selected serialized

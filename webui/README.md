@@ -276,6 +276,13 @@ Audio keeps four layers separate:
 3. authored consumer/trigger context;
 4. observed runtime execution or selected branch.
 
+When a verified offline audio capture bundle is supplied to the semantic
+publisher, Event details show the observed managed request boundary and media
+details show the exact related Event/session. Missing, mismatched, or
+unverified bundles remain degraded diagnostics and add no runtime bindings.
+Observed request evidence still does not claim Wwise branch selection,
+decoded-media selection, or audibility.
+
 Only the available layer is claimed. Exact HIRC traversal can prove possible
 media but not switch/random selection or audibility. String literals and
 same-name assets remain identity evidence until a typed consumer reaches a
