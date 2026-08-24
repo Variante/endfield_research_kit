@@ -22,6 +22,9 @@ ACTIVE_D3D11_FILES = (
     LAB / "tools/character_import/model_pipeline.py",
     LAB / "tools/run_settled_phase_sweeps.py",
 )
+ACTIVE_D3D11_RUNTIME_FILES = (
+    LAB / "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRenderDocAutoCapture.cs",
+)
 
 
 def sha256(path: Path) -> str:
@@ -53,6 +56,13 @@ def build() -> dict[str, object]:
         text = path.read_text(encoding="utf-8")
         if "-force-d3d11" not in text or "-force-d3d12" in text:
             raise ValueError(f"{relative(path)} is not an exclusive D3D11 workflow")
+        workflow_rows.append({"path": relative(path), "sha256": sha256(path)})
+    for path in ACTIVE_D3D11_RUNTIME_FILES:
+        text = path.read_text(encoding="utf-8")
+        if "GraphicsDeviceType.Direct3D11" not in text:
+            raise ValueError(f"{relative(path)} does not require Direct3D11")
+        if "GraphicsDeviceType.Direct3D12" in text:
+            raise ValueError(f"{relative(path)} still contains an active Direct3D12 gate")
         workflow_rows.append({"path": relative(path), "sha256": sha256(path)})
 
     report_path = CAPTURE / "report.json"
