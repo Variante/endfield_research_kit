@@ -207,6 +207,19 @@ class AnimeStudioStageOptionsTests(unittest.TestCase):
 
         self.assertTrue(options["json_by_type"]["asset_map_filter"])
 
+    def test_default_assets_publish_audio_animation_evidence(self) -> None:
+        options = animestudio_stage_options_for_scope("assets", "default")
+
+        self.assertIn("AnimationClip:Both", options["convert_by_type"]["types"])
+        self.assertIn("AnimatorController:Both", options["json_by_type"]["types"])
+        self.assertIn("AnimatorOverrideController:Both", options["json_by_type"]["types"])
+
+    def test_audio_controller_json_requires_broad_dependency_loading(self) -> None:
+        for type_name in ("AnimatorController:Both", "AnimatorOverrideController:Both"):
+            self.assertFalse(export_full_from_game.animestudio_map_filter_is_safe((type_name,)))
+
+        self.assertTrue(export_full_from_game.animestudio_map_filter_is_safe(("AnimationClip:Both",)))
+
     def test_auto_does_not_merge_broad_story_json(self) -> None:
         items = [{"item_name": name} for name in ("TextAsset", "MonoBehaviour", "PlayableDirector")]
 

@@ -67,6 +67,11 @@ skipping raw bundles, audio packages, world-streaming bytes, irradiance, patch
 bytes, and Lua. Asset-only refresh uses `--skip-structured` and a lightweight
 VFS index. Debug mode is for broad VFS diagnostics.
 
+The default asset scope publishes AnimationClip conversion and
+AnimatorController/AnimatorOverrideController JSON for Audio callback ownership.
+Controller JSON deliberately uses broad dependency loading because filtered
+type-only loads cannot guarantee resolved cross-bundle clip/controller PPtrs.
+
 ## Stable boundaries
 
 - Combined Story+asset export keeps Story JSON broad; map filtering can omit
