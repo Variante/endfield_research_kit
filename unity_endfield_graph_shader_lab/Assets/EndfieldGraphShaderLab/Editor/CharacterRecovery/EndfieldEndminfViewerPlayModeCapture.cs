@@ -185,6 +185,12 @@ namespace EndfieldGraphShaderLabEditor
         {
             public int bodyClipStartSourceFrame;
             public float bodyClipPhaseSeconds;
+            public int firstVisibleSourceFrame;
+            public int anchorUncertaintyFrames;
+            public int unmaskedBodyStartSourceFrame;
+            public int comparisonWidth;
+            public int comparisonHeight;
+            public string resamplingFilter;
             public int sampleCount;
             public int tileColumns;
         }
@@ -215,6 +221,13 @@ namespace EndfieldGraphShaderLabEditor
             public int bodyClipStartSourceFrame;
             public float sourceFps;
             public float unityAnchorBodyClipPhaseSeconds;
+            public string comparisonBoundary;
+            public int firstVisibleSourceFrame;
+            public int anchorUncertaintyFrames;
+            public int unmaskedBodyStartSourceFrame;
+            public int comparisonWidth;
+            public int comparisonHeight;
+            public string resamplingFilter;
             public float phaseErrorSpreadFrames;
             public ReferenceComparisonRow[] rows;
         }
@@ -226,8 +239,11 @@ namespace EndfieldGraphShaderLabEditor
             public float unitySequenceSeconds;
             public float activeBodyClipSeconds;
             public int sourceFrame;
+            public int minimumSourceFrame;
+            public int maximumSourceFrame;
             public int extractedFrame;
             public float phaseErrorFrames;
+            public bool crystalContaminated;
         }
 
         public static void Run()
@@ -640,7 +656,16 @@ namespace EndfieldGraphShaderLabEditor
             {
                 try
                 {
-                    BuildSideBySideComparison();
+                    BuildSideBySideComparison(
+                        "endminf_overview_2026-08-21",
+                        "endminf_overview_start_and_loop",
+                        "reference_vs_unity_4fps.png",
+                        "reference_comparison.json");
+                    BuildSideBySideComparison(
+                        "endminf_overview_no_framegen_2026-08-24",
+                        "endminf_overview_start_and_loop_no_framegen",
+                        "reference_no_framegen_vs_unity_4fps.png",
+                        "reference_no_framegen_comparison.json");
                 }
                 catch (Exception error)
                 {
@@ -657,10 +682,12 @@ namespace EndfieldGraphShaderLabEditor
         }
 
 
-        private static void BuildSideBySideComparison()
+        private static void BuildSideBySideComparison(
+            string recordingId,
+            string segmentId,
+            string sheetName,
+            string reportName)
         {
-            const string recordingId = "endminf_overview_2026-08-21";
-            const string segmentId = "endminf_overview_start_and_loop";
             string lab = Directory.GetParent(Application.dataPath).FullName;
             ValidateReferenceSequence(lab, recordingId, segmentId);
             string sequence = Path.Combine(lab, "scratch", "character_recovery",
@@ -684,6 +711,7 @@ namespace EndfieldGraphShaderLabEditor
                 Mathf.Abs(sidecar.output.fps - SimulationFps) > 0.0001f ||
                 comparison.bodyClipStartSourceFrame < sidecar.segment.startFrame ||
                 comparison.bodyClipPhaseSeconds <= 0.0f ||
+                comparison.anchorUncertaintyFrames < 0 ||
                 comparison.sampleCount <= 0 || comparison.sampleCount > Frames.Count ||
                 comparison.tileColumns <= 0)
                 throw new InvalidDataException(
@@ -696,11 +724,23 @@ namespace EndfieldGraphShaderLabEditor
             float firstReferenceEffectSeconds =
                 (comparison.bodyClipStartSourceFrame - sidecar.segment.startFrame) /
                 sidecar.source.fps;
+            bool diagnosticAnchor = comparison.anchorUncertaintyFrames > 0;
             if (Mathf.Abs(
                     firstStartClipPhase - comparison.bodyClipPhaseSeconds) > 0.00001f ||
-                Mathf.Abs(firstSequenceElapsed - firstReferenceEffectSeconds) > 0.00001f)
+                (!diagnosticAnchor &&
+                 Mathf.Abs(firstSequenceElapsed - firstReferenceEffectSeconds) > 0.00001f))
                 throw new InvalidDataException(
                     "Endminf reference absolute body/effect phase anchor drifted");
+            if (diagnosticAnchor &&
+                (comparison.firstVisibleSourceFrame < sidecar.segment.startFrame ||
+                 comparison.bodyClipStartSourceFrame < comparison.firstVisibleSourceFrame ||
+                 comparison.unmaskedBodyStartSourceFrame <=
+                    comparison.bodyClipStartSourceFrame ||
+                 comparison.comparisonWidth != 1920 ||
+                 comparison.comparisonHeight != 1080 ||
+                 comparison.resamplingFilter != "lanczos"))
+                throw new InvalidDataException(
+                    "Endminf diagnostic comparison boundary drifted");
             for (int index = 0; index < comparison.sampleCount; index++)
             {
                 FrameRow unity = Frames[index];
@@ -725,7 +765,8 @@ namespace EndfieldGraphShaderLabEditor
                 if (sourceFrame <= previousSourceFrame || extractedFrame < 1 ||
                     extractedFrame > sidecar.output.frameCount ||
                     Mathf.Abs(exactOffsetFrames - roundedOffsetFrames) > 0.075f ||
-                    Mathf.Abs(referenceEffectSeconds - unity.actualSeconds) > 0.00001f ||
+                    (!diagnosticAnchor &&
+                     Mathf.Abs(referenceEffectSeconds - unity.actualSeconds) > 0.00001f) ||
                     !startClipCrossCheck)
                     throw new InvalidDataException(
                         "Endminf reference phase match is not a unique 60-Hz source sample: " +
@@ -738,8 +779,13 @@ namespace EndfieldGraphShaderLabEditor
                     unitySequenceSeconds = sequenceSeconds,
                     activeBodyClipSeconds = unity.activeBodyClipTime,
                     sourceFrame = sourceFrame,
+                    minimumSourceFrame = sourceFrame - comparison.anchorUncertaintyFrames,
+                    maximumSourceFrame = sourceFrame + comparison.anchorUncertaintyFrames,
                     extractedFrame = extractedFrame,
-                    phaseErrorFrames = exactOffsetFrames - roundedOffsetFrames
+                    phaseErrorFrames = exactOffsetFrames - roundedOffsetFrames,
+                    crystalContaminated = diagnosticAnchor &&
+                        sourceFrame - comparison.anchorUncertaintyFrames <
+                            comparison.unmaskedBodyStartSourceFrame
                 });
             }
             float phaseErrorSpreadFrames = rows.Max(row => row.phaseErrorFrames) -
@@ -749,7 +795,7 @@ namespace EndfieldGraphShaderLabEditor
                     "Endminf reference phase residue drifted across the comparison window: " +
                     phaseErrorSpreadFrames + " source frames");
 
-            string sideBySide = Path.Combine(output, "reference_vs_unity_4fps.png");
+            string sideBySide = Path.Combine(output, sheetName);
             string selectedFrames = string.Join("+", rows.Select(row =>
                 "eq(n\\," + (row.extractedFrame - 1) + ")").ToArray());
             int tileRows = Mathf.CeilToInt(
@@ -759,12 +805,45 @@ namespace EndfieldGraphShaderLabEditor
                 " -framerate 4 -start_number 0 -i " +
                 Quote(Path.Combine(output, "frame_%06d.png")) +
                 " -filter_complex \"[0:v]select='" + selectedFrames +
-                "',setpts=N/(4*TB),scale=384:-1[reference];" +
+                "',setpts=N/(4*TB),scale=1920:1080:flags=lanczos," +
+                "scale=384:-1:flags=lanczos[reference];" +
                 "[1:v]trim=end_frame=" + comparison.sampleCount +
-                ",setpts=N/(4*TB),scale=384:-1[unity];" +
+                ",setpts=N/(4*TB),scale=384:-1:flags=lanczos[unity];" +
                 "[reference][unity]hstack=inputs=2,tile=" +
                 comparison.tileColumns + "x" + tileRows +
                 "\" -frames:v 1 " + Quote(sideBySide));
+
+            if (diagnosticAnchor)
+            {
+                ReferenceComparisonRow[] cleanRows = rows
+                    .Where(row => !row.crystalContaminated)
+                    .ToArray();
+                if (cleanRows.Length == 0)
+                    throw new InvalidDataException(
+                        "Endminf diagnostic comparison has no crystal-clean rows");
+                string cleanReferenceFrames = string.Join("+", cleanRows.Select(row =>
+                    "eq(n\\," + (row.extractedFrame - 1) + ")").ToArray());
+                string cleanUnityFrames = string.Join("+", cleanRows.Select(row =>
+                    "eq(n\\," + row.unityFrameIndex + ")").ToArray());
+                int cleanColumns = Mathf.Min(2, cleanRows.Length);
+                int cleanTileRows = Mathf.CeilToInt(
+                    cleanRows.Length / (float)cleanColumns);
+                string cleanSheet = Path.Combine(output,
+                    Path.GetFileNameWithoutExtension(sheetName) +
+                    "_clean_body.png");
+                RunFfmpeg("-y -v error -framerate 60 -start_number 1 -i " +
+                    Quote(Path.Combine(sequence, "frame_%06d.png")) +
+                    " -framerate 4 -start_number 0 -i " +
+                    Quote(Path.Combine(output, "frame_%06d.png")) +
+                    " -filter_complex \"[0:v]select='" + cleanReferenceFrames +
+                    "',setpts=N/(4*TB),scale=1920:1080:flags=lanczos," +
+                    "scale=384:-1:flags=lanczos[reference];" +
+                    "[1:v]select='" + cleanUnityFrames +
+                    "',setpts=N/(4*TB),scale=384:-1:flags=lanczos[unity];" +
+                    "[reference][unity]hstack=inputs=2,tile=" +
+                    cleanColumns + "x" + cleanTileRows +
+                    "\" -frames:v 1 " + Quote(cleanSheet));
+            }
 
             var report = new ReferenceComparisonReport {
                 recordingId = recordingId,
@@ -774,10 +853,21 @@ namespace EndfieldGraphShaderLabEditor
                 bodyClipStartSourceFrame = comparison.bodyClipStartSourceFrame,
                 sourceFps = sidecar.source.fps,
                 unityAnchorBodyClipPhaseSeconds = firstStartClipPhase,
+                comparisonBoundary = diagnosticAnchor
+                    ? "diagnostic_cross_capture_bounded_phase_crystal_excluded"
+                    : "exact_60hz_source_sample",
+                firstVisibleSourceFrame = comparison.firstVisibleSourceFrame,
+                anchorUncertaintyFrames = comparison.anchorUncertaintyFrames,
+                unmaskedBodyStartSourceFrame = comparison.unmaskedBodyStartSourceFrame,
+                comparisonWidth = diagnosticAnchor ? comparison.comparisonWidth : 1920,
+                comparisonHeight = diagnosticAnchor ? comparison.comparisonHeight : 1080,
+                resamplingFilter = diagnosticAnchor
+                    ? comparison.resamplingFilter
+                    : "lanczos",
                 phaseErrorSpreadFrames = phaseErrorSpreadFrames,
                 rows = rows.ToArray()
             };
-            File.WriteAllText(Path.Combine(output, "reference_comparison.json"),
+            File.WriteAllText(Path.Combine(output, reportName),
                 JsonUtility.ToJson(report, true));
         }
 
