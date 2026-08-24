@@ -375,6 +375,11 @@ archetypes remain labeled source kits rather than finished characters.
   GPU word-readback is still open because the historical verifier's pinned
   decompiled shader inputs were retired from scratch; do not extend its older
   eight-row proof by implication.
+- The interactive D3D11 Endminf B31 probe now reproduces that selected
+  12-light/zero-cookie transport over the actual `ui_overview_start` to loop
+  41-frame sequence. It still reports no presented deferred pass-0/shadow
+  consumer, so the probe is transport evidence only; it must not be promoted
+  into the beauty path or used to admit the captured five-MRT body producer.
 - Endminf's two punctual-shadow rows now populate the lab-owned diagnostic
   atlas and selected b34 transport as two validated spot entries in contiguous
   dynamic slots 40-41. Publication still requires exact source rows 11 and 3
