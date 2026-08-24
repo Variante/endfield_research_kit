@@ -241,6 +241,18 @@ archetypes remain labeled source kits rather than finished characters.
   file-backed Endminf-local assets. It restores reproducible source bindings;
   it does not justify changing M13 material values or the separately authored
   M21 crystal.
+- A fail-closed five-stage Viewer diagnostic now captures owned, exact-format
+  copies before temporal resolve, after temporal resolve, at bloom prefilter
+  mip 0, after bloom reconstruction, and after final Uber. Paired 4.40-4.55
+  second D3D12 runs retain M21 in both cohorts and exclude only M13 in the
+  second. The pre-temporal difference remains bounded to the raised-hand
+  effect region; temporal resolve preserves that boundary, bloom prefilter
+  downsamples it, and bloom reconstruction spreads its energy across the
+  frame before Uber. The broad final halo is therefore downstream propagation
+  of M13, not evidence that M21's small crystal mesh should be resized,
+  brightened, or retimed. Detailed per-stage thresholds, bounds, and hashes
+  live in `reports/assets/character_recovery/endminf_post_stage_m13_delta.json`.
+  This is Unity-path attribution only and does not establish a retail mismatch.
 - Blink, facial, physical-transform, CharacterNPR, eye, hair, shadow, GBuffer,
   light, cookie, irradiance, particle, gacha, and post-processing behavior is
   recovered only where its input contract is verified. Unknown inputs remain

@@ -2079,6 +2079,12 @@ namespace EndfieldGraphShaderLab
             }
             if (applyPostProcess)
             {
+                EndfieldRecoveredPostStageDiagnostic
+                    .CaptureBeforeTemporalIfArmed(
+                        context,
+                        camera,
+                        new RenderTargetIdentifier(CameraColorId),
+                        cameraColorDescriptor);
                 EndfieldRecoveredPrePostHdrDiagnostic.CaptureIfArmed(
                     context,
                     camera,
@@ -2763,6 +2769,11 @@ namespace EndfieldGraphShaderLab
                     recoveredPrimarySceneDepth,
                     recoveredSceneMV,
                     recoveredSceneColorDescriptor);
+                EndfieldRecoveredPostStageDiagnostic.EnqueueStageIfActive(
+                    commandBuffer,
+                    EndfieldRecoveredPostStageDiagnostic.AfterTemporal,
+                    new RenderTargetIdentifier(CameraColorId),
+                    recoveredSceneColorDescriptor);
             }
             if (!useRecoveredPostSemantics)
             {
@@ -2997,6 +3008,12 @@ namespace EndfieldGraphShaderLab
                     EndfieldRecoveredSceneMVCompositor.PostColorId,
                     postProcessMaterial,
                     0);
+                EndfieldRecoveredPostStageDiagnostic.EnqueueStageIfActive(
+                    commandBuffer,
+                    EndfieldRecoveredPostStageDiagnostic.FinalUber,
+                    new RenderTargetIdentifier(
+                        EndfieldRecoveredSceneMVCompositor.PostColorId),
+                    deferredPostDescriptor);
                 postColorTarget = new RenderTargetIdentifier(
                     EndfieldRecoveredSceneMVCompositor.PostColorId);
                 deferredPostColor = new EndfieldRecoveredSceneColorHandle(
@@ -3028,6 +3045,11 @@ namespace EndfieldGraphShaderLab
                     RecoveredFinalDisplayId,
                     postProcessMaterial,
                     0);
+                EndfieldRecoveredPostStageDiagnostic.EnqueueStageIfActive(
+                    commandBuffer,
+                    EndfieldRecoveredPostStageDiagnostic.FinalUber,
+                    new RenderTargetIdentifier(RecoveredFinalDisplayId),
+                    finalDisplayDescriptor);
                 postColorTarget = new RenderTargetIdentifier(RecoveredFinalDisplayId);
 
                 if (!loggedRecoveredLinearUnormFinalTarget)
@@ -3049,6 +3071,23 @@ namespace EndfieldGraphShaderLab
                     BuiltinRenderTextureType.CameraTarget,
                     postProcessMaterial,
                     0);
+                var cameraTargetDescriptor = new RenderTextureDescriptor(
+                    width,
+                    height,
+                    RenderTextureFormat.ARGB32,
+                    0)
+                {
+                    msaaSamples = 1,
+                    sRGB = true,
+                    useMipMap = false,
+                    autoGenerateMips = false
+                };
+                EndfieldRecoveredPostStageDiagnostic.EnqueueStageIfActive(
+                    commandBuffer,
+                    EndfieldRecoveredPostStageDiagnostic.FinalUber,
+                    new RenderTargetIdentifier(
+                        BuiltinRenderTextureType.CameraTarget),
+                    cameraTargetDescriptor);
                 postColorTarget = new RenderTargetIdentifier(
                     BuiltinRenderTextureType.CameraTarget);
             }
@@ -3639,6 +3678,20 @@ namespace EndfieldGraphShaderLab
                 RecoveredBloomMipDownIds[0],
                 postProcessMaterial,
                 1);
+            var diagnosticMip0Descriptor = new RenderTextureDescriptor(
+                recoveredBloomMipWidths[0],
+                recoveredBloomMipHeights[0],
+                RenderTextureFormat.DefaultHDR,
+                0)
+            {
+                msaaSamples = 1,
+                sRGB = false
+            };
+            EndfieldRecoveredPostStageDiagnostic.EnqueueStageIfActive(
+                commandBuffer,
+                EndfieldRecoveredPostStageDiagnostic.BloomPrefilterMip0,
+                new RenderTargetIdentifier(RecoveredBloomMipDownIds[0]),
+                diagnosticMip0Descriptor);
 
             // Each lower level uses the shipped nine-sample horizontal kernel
             // while downsampling, followed by the optimized five-fetch vertical
@@ -3694,6 +3747,14 @@ namespace EndfieldGraphShaderLab
                     postProcessMaterial,
                     3);
             }
+            int reconstructedMip0Id = mipCount > 1
+                ? RecoveredBloomMipUpIds[0]
+                : RecoveredBloomMipDownIds[0];
+            EndfieldRecoveredPostStageDiagnostic.EnqueueStageIfActive(
+                commandBuffer,
+                EndfieldRecoveredPostStageDiagnostic.BloomReconstructedMip0,
+                new RenderTargetIdentifier(reconstructedMip0Id),
+                diagnosticMip0Descriptor);
 
             LogRecoveredBloomGraphOnce(
                 sourceWidth,
