@@ -103,6 +103,19 @@ archetypes remain labeled source kits rather than finished characters.
   input conventions, executed output, or frame generation. Do not wire it into
   the canonical beauty path until those contracts are recovered and an
   opt-in comparison improves the reference sequence.
+- The pinned client now closes most of that custom Streamline contract. Its
+  order is velocity combine, current-frame constants/resource tags, then DLSS
+  evaluate; HG quality 4 maps exactly to Streamline DLAA mode 6. The five DLSS
+  resources are HDR input color, output color, reverse-Z depth, a newly built
+  full-resolution combined motion texture, and optional exposure. Motion is
+  tagged as normalized with scale `(1,1)`, includes camera motion, is neither
+  jittered nor dilated, and Streamline receives the rendered camera jitter
+  with both signs negated. Pre-exposure/exposure scale are one, sharpness is
+  zero, and no reactive or transparency-composition masks enter DLSS. The
+  remaining fail-closed gates are the compiled velocity-combine shader's exact
+  arithmetic/storage format, the managed reset expression, and direct proof
+  that live DLAA input and output extents match. Until those close, do not map
+  the game contract onto Unity's public NVIDIA wrapper by convention.
 - Effect-02's animated radial/chromatic values, exact 1.0 radial power, native
   mode/effective-power packing, signed/clamped post-projection center transform,
   source-only warped taps, and separate bloom sampling order are source-backed.
