@@ -32,6 +32,22 @@
       ]
     },
     {
+      "id": "endminf_overview_no_framegen_2026-08-24",
+      "source": "../videos/2026-08-24_06-37-22.mkv",
+      "resolution": [3840, 2160],
+      "notes": "Focused Endminf Character Info capture recorded by the user with frame generation disabled. The retained interval starts on one blank model-swap frame (one-based source frame 113) so first-visible frame 114 can consume the recorded temporal prehistory. The amber rock/crystal prop, orbiting fragments, and bloom are a separate actor-owned entrance effect: include them when evaluating that effect, but exclude them from generic body-motion, lighting, exposure, and temporal-trail measurements. Use a moving amber connected-component mask dilated for bloom through one-based source frame 420; a fixed ROI would remove unrelated character pixels.",
+      "segments": [
+        {
+          "id": "endminf_overview_start_and_loop_no_framegen",
+          "character": "endminf",
+          "behavior": "ui_overview_start_then_loop",
+          "startFrame": 113,
+          "startSeconds": 1.8666667,
+          "endSeconds": 14.717
+        }
+      ]
+    },
+    {
       "id": "roster_overview_2026-08-15",
       "source": "../videos/2026-08-15_10-32-32.mkv",
       "resolution": [3840, 2160],
