@@ -34,6 +34,11 @@ Useful shared flags:
 - `--with-assets` adds asset indexes and CN audio relinking.
 - `--focused-assets`, `--default-assets`, and `--debug-assets` select asset
   scope from narrowest to broadest.
+- The default asset scope includes AnimationClip conversion plus
+  AnimatorController and AnimatorOverrideController JSON. Audio uses these as
+  authored callback, controller-reachability, and clip-substitution evidence;
+  controller JSON stays on the broad dependency-loading path so cross-bundle
+  PPtr targets are not silently withheld.
 - `--asset-jobs N` caps AnimeStudio workers; `--webui-jobs N` caps independent
   post-Story builders.
 - `--game-root PATH` overrides the configured client for one run.

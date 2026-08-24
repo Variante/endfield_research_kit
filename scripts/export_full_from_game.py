@@ -190,6 +190,10 @@ ANIMESTUDIO_FULL_CONVERT_TYPES = (
     "Mesh:Both",
     "Sprite:Both",
     "Animator:Both",
+    # Audio semantics consumes serialized AnimationClip callbacks in the normal
+    # asset workflow; keeping this debug-only leaves authored Event requests
+    # unavailable after a production refresh.
+    "AnimationClip:Both",
 )
 ANIMESTUDIO_DEBUG_CONVERT_TYPES = (
     "Texture2D:Both",
@@ -211,6 +215,10 @@ ANIMESTUDIO_STORY_JSON_TYPES = (
 )
 ANIMESTUDIO_FULL_JSON_TYPES = (
     "Material:Both",
+    # These controller types provide authored clip reachability and override
+    # substitutions for AnimationClip audio callbacks.
+    "AnimatorController:Both",
+    "AnimatorOverrideController:Both",
 )
 ANIMESTUDIO_DEBUG_JSON_TYPES = (
     "TextAsset:Both",
@@ -283,6 +291,10 @@ ANIMESTUDIO_ASSET_MAP_FILTER_UNSAFE_TYPES = frozenset({
     # Texture2D objects that a strict Animator-only map slice would not load.
     "Animator",
     "GameObject",
+    # Audio ownership needs resolved cross-bundle clip/controller PPtrs.  A
+    # type-only AssetMap load can emit the object while withholding its target.
+    "AnimatorController",
+    "AnimatorOverrideController",
 })
 
 FAILED_EXTRACT_RE = re.compile(r"Failed to extract (?P<file>.+?): (?P<reason>.+)")
