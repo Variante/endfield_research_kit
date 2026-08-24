@@ -27,6 +27,58 @@ class SecondaryDynamicsProxyLayoutTests(unittest.TestCase):
         self.assertFalse(published["solverImplemented"])
         self.assertFalse(published["retailEquivalent"])
 
+    def test_serializer_methods_use_authoritative_pointer_spans(self) -> None:
+        methods = builder.build_contract()["serializerMethods"]
+        self.assertEqual(
+            (methods["serialize"]["va"], methods["serialize"]["endVa"],
+             methods["serialize"]["spanBytes"], methods["serialize"]["bodySha256"]),
+            ("0x1866be154", "0x1866beb44", 0x9F0,
+             "fb553ce505afefa75eb06817016c5f1c244d1af4eb9d4fde8ef7d041f67fd166"),
+        )
+        self.assertEqual(
+            (methods["deserialize"]["va"], methods["deserialize"]["endVa"],
+             methods["deserialize"]["spanBytes"], methods["deserialize"]["bodySha256"]),
+            ("0x183e8fe60", "0x183e90a00", 0xBA0,
+             "283daa75da452fdda631e2608af23a7b1e1f143c9eadb128ae30257ebfa8eeae"),
+        )
+        self.assertEqual(methods["serialize"]["ifixBoundary"]["patchId"], "0x555")
+        self.assertEqual(methods["deserialize"]["ifixBoundary"]["patchId"], "0x60")
+        self.assertEqual(
+            methods["deserialize"]["ifixBoundary"]["status"],
+            "patch_activity_and_target_unproven",
+        )
+
+    def test_all_slots_have_exact_unpatched_bidirectional_assignments(self) -> None:
+        layouts = builder.build_contract()["serializedLayouts"]
+        self.assertEqual(len(layouts), 35)
+        self.assertTrue(all(
+            row["mappingEvidence"]["classification"] ==
+            "exact_unpatched_native_assignment"
+            for row in layouts.values()
+        ))
+        self.assertEqual(
+            layouts["referenceIndices"]["mappingEvidence"]["operation"],
+            "ExSimpleNativeArray.Serialize/Deserialize",
+        )
+        self.assertEqual(
+            layouts["vertexBindPosePositions"]["mappingEvidence"]["operation"],
+            "NativeArrayExtensions.MC2ToRawBytes/MC2FromRawBytes",
+        )
+        self.assertEqual(
+            layouts["edgeToTrianglesKeys"]["mappingEvidence"]["operation"],
+            "NativeMultiHashMapExtensions.MC2Serialize/MC2Deserialize",
+        )
+        self.assertEqual(
+            layouts["centerFixedList"]["mappingEvidence"]["operation"],
+            "DataUtility.ArrayCopy",
+        )
+        self.assertEqual(
+            (layouts["edgeToTrianglesKeys"]["runtimeFieldOffset"],
+             layouts["edgeToTrianglesKeys"]["serializedFieldOffset"],
+             layouts["edgeToTrianglesValues"]["serializedFieldOffset"]),
+            ("0x1e0", "0x198", "0x1a0"),
+        )
+
     def test_high_value_layouts_are_native_proven(self) -> None:
         layouts = builder.build_contract()["serializedLayouts"]
         expected = {
