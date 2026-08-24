@@ -35,6 +35,7 @@ if __package__ == "scripts":
     from scripts.audio_semantics import (
         authored_components,
         context_utils,
+        dialog_lifecycle,
         event_projection,
         event_summary,
         external_source,
@@ -57,6 +58,7 @@ elif not __package__:
     from audio_semantics import (
         authored_components,
         context_utils,
+        dialog_lifecycle,
         event_projection,
         event_summary,
         external_source,
@@ -14730,6 +14732,40 @@ def build_audio_semantic_data(
     gameplay_sound_effects_path = (
         webui_root / f"data/lang/{language}/gameplay/sound_effects.json"
     )
+    conversation_dir = webui_root / f"data/lang/{language}/conv"
+    conversation_ids = {
+        path.stem for path in conversation_dir.glob("*.json") if path.is_file()
+    }
+    dialog_lifecycle_story = dialog_lifecycle.project_story_lifecycle_audio(
+        trigger_context_catalog.get("contexts") or (),
+        conversation_ids,
+    )
+    previous_audio_index = load_json(out_root / "index.json", {})
+    previous_lifecycle_ids = set(
+        ((previous_audio_index.get("storyDialogLifecycleAudio") or {}).get(
+            "conversationIds"
+        ) or ())
+        if isinstance(previous_audio_index, dict)
+        else ()
+    )
+    lifecycle_by_conversation = dialog_lifecycle_story.get("conversations") or {}
+    for conversation_id in sorted(previous_lifecycle_ids | set(lifecycle_by_conversation)):
+        conversation_path = conversation_dir / f"{conversation_id}.json"
+        conversation = load_json(conversation_path, {})
+        if not isinstance(conversation, dict) or not conversation:
+            continue
+        rows = lifecycle_by_conversation.get(conversation_id) or []
+        if rows:
+            conversation["dialogLifecycleAudio"] = rows
+        else:
+            conversation.pop("dialogLifecycleAudio", None)
+        json_dump(conversation_path, conversation)
+    payload["storyDialogLifecycleAudio"] = {
+        "schemaVersion": dialog_lifecycle_story.get("schemaVersion"),
+        "counts": dialog_lifecycle_story.get("counts") or {},
+        "conversationIds": sorted(lifecycle_by_conversation),
+        "evidenceBoundary": dialog_lifecycle_story.get("evidenceBoundary") or "",
+    }
     gameplay_sound_effects = load_json(gameplay_sound_effects_path, {})
     if isinstance(gameplay_sound_effects, dict) and gameplay_sound_effects:
         gameplay_characters = gameplay_sound_effects.setdefault("characters", {})
