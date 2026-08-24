@@ -353,7 +353,7 @@ def run_capture(
             if shader_manifest is not None:
                 writer.shader_event("session_end")
             raise RuntimeError(
-                f"normal Frida attach was refused for PID {process.pid}: {exc}"
+                core.describe_attach_refusal(process.name, process.pid, exc)
             ) from exc
         session.on("detached", on_detached)
         required_modules = [manifest["moduleName"]]

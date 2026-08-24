@@ -576,7 +576,7 @@ def run_capture(
         except Exception as exc:
             writer.diagnostic("attach_refused", {"processName": process.name, "pid": process.pid, "error": str(exc)})
             writer.event("session_end")
-            raise RuntimeError(f"normal Frida attach was refused for PID {process.pid}: {exc}") from exc
+            raise RuntimeError(core.describe_attach_refusal(process.name, process.pid, exc)) from exc
         session.on("detached", on_detached)
         module_names = [manifest["moduleName"]]
         if manifest.get("nativeHooks"):

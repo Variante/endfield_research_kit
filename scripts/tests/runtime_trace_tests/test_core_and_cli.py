@@ -13,6 +13,18 @@ from scripts.story_recovery import runtime_trace_mission_import as mission_impor
 
 
 class RuntimeTraceCoreTests(unittest.TestCase):
+    def test_windows_access_denied_attach_is_not_misreported_as_hook_failure(self):
+        message = core.describe_attach_refusal(
+            "Endfield.exe",
+            1234,
+            RuntimeError("VirtualAllocEx returned 0x00000005"),
+        )
+        self.assertIn("Windows denied", message)
+        self.assertIn("No hooks were installed", message)
+        self.assertIn("not a manifest, module-hash, or hook-RVA failure", message)
+        self.assertIn("externally recorded event-v1 JSONL", message)
+        self.assertIn("do not treat this denial as runtime evidence", message)
+
     def test_file_hash_verification_is_profile_independent(self):
         for profile in ("mission", "audio"):
             with self.subTest(profile=profile), tempfile.TemporaryDirectory() as temporary:
