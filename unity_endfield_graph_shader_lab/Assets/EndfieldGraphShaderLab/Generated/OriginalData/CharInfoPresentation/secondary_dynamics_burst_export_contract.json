@@ -23564,8 +23564,8 @@
     },
     "innerLayout": {
       "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_inner_layout_contract.json",
-      "schema": "endfield.charinfo.secondary-dynamics-inner-layout.v1",
-      "status": "inner_payload_offsets_closed_size_unresolved_burst_mapping_unresolved"
+      "schema": "endfield.charinfo.secondary-dynamics-inner-layout.v2",
+      "status": "selected_job_inner_payload_layout_closed_burst_mapping_unresolved"
     },
     "jobLayout": {
       "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_job_layout_contract.json",
