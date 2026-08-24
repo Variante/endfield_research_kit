@@ -23,6 +23,7 @@ class SecondaryDynamicsProxyLayoutTests(unittest.TestCase):
         published = json.loads(builder.DEFAULT_OUTPUT.read_text(encoding="utf-8"))
         self.assertEqual(observed, published)
         self.assertEqual(published["serializedSlotCount"], 35)
+        self.assertEqual(published["nestedTransformSlotCount"], 3)
         self.assertFalse(published["secondaryDynamicsVerified"])
         self.assertFalse(published["solverImplemented"])
         self.assertFalse(published["retailEquivalent"])
@@ -47,6 +48,14 @@ class SecondaryDynamicsProxyLayoutTests(unittest.TestCase):
             methods["deserialize"]["ifixBoundary"]["status"],
             "patch_activity_and_target_unproven",
         )
+        transform_methods = builder.build_contract()["transformSerializerMethods"]
+        self.assertEqual(
+            (transform_methods["serialize"]["spanBytes"],
+             transform_methods["deserialize"]["spanBytes"]),
+            (0x1B4, 0x3E0),
+        )
+        self.assertEqual(transform_methods["serialize"]["ifixBoundary"]["patchId"], "0x49a")
+        self.assertEqual(transform_methods["deserialize"]["ifixBoundary"]["patchId"], "0x61")
 
     def test_all_slots_have_exact_unpatched_bidirectional_assignments(self) -> None:
         layouts = builder.build_contract()["serializedLayouts"]
@@ -78,6 +87,28 @@ class SecondaryDynamicsProxyLayoutTests(unittest.TestCase):
              layouts["edgeToTrianglesValues"]["serializedFieldOffset"]),
             ("0x1e0", "0x198", "0x1a0"),
         )
+
+    def test_nested_transform_arrays_have_exact_native_layouts_and_assignments(self) -> None:
+        layouts = builder.build_contract()["nestedTransformLayouts"]
+        self.assertEqual(
+            {
+                name: (row["elementType"], row["strideBytes"], row["serializedEncoding"])
+                for name, row in layouts.items()
+            },
+            {
+                "transformData.flagArray":
+                    ("BeyondDynamicBone.ExBitFlag8", 1, "serialization_data"),
+                "transformData.initLocalPositionArray":
+                    ("Unity.Mathematics.float3", 12, "serialization_data"),
+                "transformData.initLocalRotationArray":
+                    ("Unity.Mathematics.quaternion", 16, "serialization_data"),
+            },
+        )
+        self.assertTrue(all(
+            row["mappingEvidence"]["classification"] ==
+            "exact_unpatched_native_assignment"
+            for row in layouts.values()
+        ))
 
     def test_high_value_layouts_are_native_proven(self) -> None:
         layouts = builder.build_contract()["serializedLayouts"]
