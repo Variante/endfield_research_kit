@@ -83,6 +83,20 @@ archetypes remain labeled source kits rather than finished characters.
   resolve policy, jitter, fast convergence, live IFix selection, the retail
   first-frame auxiliary clear payload, and
   constructor-seeded constant lanes remain open.
+- Upscaler admission for the August 21 reference remains deliberately
+  fail-closed. The dated July 14 saved profile and the post-capture August 24
+  read both request DLSS/DLAA, so it is the strongest comparison target, but
+  neither brackets the recording with live telemetry and runtime fallback is
+  unobserved. The current saved request additionally selects DLSS frame
+  generation X3; the older `render_parameter_provenance.json` off/Auto result
+  is explicitly a July snapshot, not current state. A disposable Unity 2022
+  NVIDIA-module probe successfully created a valid 1920x1080-to-1920x1080 DLSS
+  feature through the installed game's application directory and NGX binary.
+  That proves a native-scale lab experiment is feasible, not that Unity's
+  public wrapper reproduces Endfield's custom Streamline schedule, DLAA model,
+  input conventions, executed output, or frame generation. Do not wire it into
+  the canonical beauty path until those contracts are recovered and an
+  opt-in comparison improves the reference sequence.
 - Effect-02's animated radial/chromatic values, exact 1.0 radial power, native
   mode/effective-power packing, signed/clamped post-projection center transform,
   source-only warped taps, and separate bloom sampling order are source-backed.

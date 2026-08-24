@@ -1,5 +1,5 @@
 {
-  "schema": "endfield.endminf-temporal-motion-admission.v3",
+  "schema": "endfield.endminf-temporal-motion-admission.v4",
   "subject": "Endminf Character Info temporal and motion admission",
   "reference": {
     "recording": "videos/2026-08-21_20-15-17.mkv",
@@ -12,6 +12,64 @@
       "width": 1100,
       "height": 970
     }
+  },
+  "upscalerAdmission": {
+    "captureConclusion": "The 2026-08-21 recording does not exactly admit either ordinary TAAU or DLSS/DLAA. DLSS/DLAA is the strongest historical inference because both the dated 2026-07-14 profile snapshot and the post-capture 2026-08-24 read request it, but an intervening selection or runtime capability fallback remains possible.",
+    "captureArtifact": {
+      "path": "videos/2026-08-21_20-15-17.mkv",
+      "fileModifiedLocal": "2026-08-21T20:15:48-04:00",
+      "video": "1920x1080 at 60 fps, 30.584 seconds",
+      "graphicsTelemetry": "none"
+    },
+    "currentSavedRequest": {
+      "readLocal": "2026-08-24",
+      "rawValues": {
+        "video_quality_upscaler_2": 1000,
+        "video_quality_dlss_mode_1": 5000,
+        "video_quality_framegen_1": 2000,
+        "video_quality_dlssg_mode_1": 4000
+      },
+      "decoded": {
+        "upscaler": "DLSS",
+        "quality": "DLAA",
+        "frameGeneration": "DLSS",
+        "frameGenerationMultiplier": "X3"
+      },
+      "decodeContract": "The shipped dropdown encoding is 1000 times the one-based option position. Pinned metadata enum order independently maps the selected positions to UpscalerMode.DLSS, DLSSQuality.DLAA, FrameGenMode.DLSS, and DLSSFrameGenQualityEnum.X3.",
+      "metadataSha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e",
+      "registryKeyLastWriteLocal": "2026-08-23T23:15:20.9139567-04:00",
+      "boundary": "The registry exposes only a whole-key last-write time, not per-value timestamps, and this state postdates the recording by two days. It cannot prove the live capture path."
+    },
+    "datedPriorSnapshot": {
+      "date": "2026-07-14",
+      "requestedUpscaler": "DLSS/DLAA",
+      "frameGeneration": "off/Auto",
+      "correction": "render_parameter_provenance.json scopes this result to installed_client_current_user_profile_20260714. Its frame-generation-off result must not be described as current."
+    },
+    "timeCorrelatedEvidenceSearch": {
+      "result": "no graphics setting or settled runtime upscaler telemetry found",
+      "notes": "The Aug-21 Vulkan PSO cache and SDK log bracket neither the selected quality values nor capability fallback. Aug-23 Player logs and settings files are post-capture."
+    },
+    "ordinaryTaauBoundary": "Ordinary TAAU is source-proven as the CharInfo camera startup/default and a possible capability fallback, not as the live Aug-21 path."
+  },
+  "nativeDlssLabCapability": {
+    "status": "native-scale feature creation proven; Endfield parity not proven",
+    "unityModule": "UnityEngine.NVIDIAModule in Unity 2022.3.62f3",
+    "graphicsDeviceApiVersion": 4,
+    "installedGameApplicationDirectory": "D:/Program Files/Endfield Game",
+    "installedGameNvngxDlssSha256": "a8f23de8116727a160a196f9f43604284cd973d801a62bb68c19c828f78e5f3b",
+    "installedGameNvngxDlssVersion": "310.5.2.0",
+    "probe": {
+      "input": "1920x1080",
+      "output": "1920x1080",
+      "publicQualityEnum": "MaximumQuality",
+      "flags": [
+        "IsHDR",
+        "DepthInverted"
+      ],
+      "featureValid": true
+    },
+    "boundary": "The public Unity wrapper has no DLAA enum and feature creation does not establish Endfield's exact Streamline schedule, motion/depth/reactive inputs, jitter, reset policy, executed output, or frame-generation path. This is an implementation-feasibility result only."
   },
   "charInfoVolume": {
     "owner": "CharInfoChar/CharInfo_Scene/Light/LookDev_Lights/Global Volume",
