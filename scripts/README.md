@@ -561,13 +561,18 @@ and exact GameObject placement stay separately searchable. Component or
 callback execution, Event posting, Wwise selection, and audibility remain
 unobserved. Role/layout coverage is emitted in generated Audio stats and Event
 summaries rather than fixed in this document.
+Complete serialized AudioMapData schemas also admit their exact trigger
+enter/exit, level lifecycle, and outdoor-room-tone uint32 Event fields. The
+schema gate rejects incomplete lookalikes before a numeric Wwise match becomes
+a context.
 
-`scene_backgrounds.py` owns the scene-background catalog. It consumes the real
-AnimeStudio AssetMap object root in one bounded streaming pass, using exact
-AssetMap `Source` + `PathID` identities. Prefab-local and scene-asset
+`scene_backgrounds.py` owns the scene-background catalog. It consumes each
+validated AnimeStudio AssetMap object root in one bounded streaming pass,
+using exact AssetMap `Source` + `PathID` identities. Prefab-local and scene-asset
 containment candidates remain separate; only an authoritative scene ID with
 unique scene containment promotes scene ownership. Missing, malformed, or
-unreadable maps fail closed rather than falling back to names or paths. It
+unreadable sources are excluded with explicit diagnostics while independently
+validated sources remain publishable; no cross-source edge is inferred. It
 resolves `AudioMapData` and scene emitters by script type, and joins exact
 `AudioLevel` rows plus `MissionRuntimeAsset.acceptMode.levelId`. The semantic
 publisher writes `webui/data/lang/<LANG>/audio/scene_backgrounds.json` with
