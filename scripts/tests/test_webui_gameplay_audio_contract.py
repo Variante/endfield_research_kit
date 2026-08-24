@@ -252,10 +252,39 @@ assert.deepEqual(rows[0].audio, []);
         labels = (ROOT / "webui" / "src" / "features" / "gameplay" / "labels.js").read_text(encoding="utf-8")
         self.assertIn("authoredNamespaceEvents", renderer)
         self.assertIn('label: text("authoredNamespaceAudio")', renderer)
+        self.assertIn("ENDADMINISTRATOR_VARIANTS.find", renderer)
+        self.assertIn("currentCharacterGender()", renderer)
+        self.assertIn("characters?.[namespaceOwnerId]", renderer)
         self.assertNotIn("gameplaySoundHasExactSkillTrigger", renderer)
         self.assertIn("exactCharacterTableNamespaceIdentity", evidence)
         self.assertIn("soundAuthoredNamespaceEvidence", evidence)
         self.assertIn("It does not prove an action, skill, Event post", labels)
+        function_source = "function renderCharacterSoundEffects" + renderer
+        self.run_node(
+            f"""
+const assert = require("node:assert/strict");
+const ENDADMINISTRATOR_VARIANTS = [
+  {{gender: "f", characterId: "chr_0003_endminf"}},
+  {{gender: "m", characterId: "chr_0002_endminm"}},
+];
+const STATE = {{integration: {{soundEffects: {{characters: {{
+  chr_0003_endminf: {{authoredNamespaceEvents: [{{id: "au_actor_endminf_ui"}}]}},
+}}}}}}}};
+function isEndministrator(entry) {{ return entry?.id === "chr_9000_endmin"; }}
+function currentCharacterGender() {{ return "f"; }}
+function filterEndministratorVariant(rows) {{ return rows || []; }}
+function renderGameplaySoundGroup(rows) {{ return (rows || []).map((row) => row.id).join(","); }}
+function renderSoundEffectsUnavailable() {{ return "unavailable"; }}
+function renderCharacterSkillSounds() {{ return ""; }}
+function renderCharacterAnimationSounds() {{ return ""; }}
+function text(value) {{ return value; }}
+{function_source}
+assert.equal(
+  renderCharacterSoundEffects({{id: "chr_9000_endmin", kind: "character"}}),
+  "au_actor_endminf_ui",
+);
+"""
+        )
 
     def test_enemy_namespace_audio_is_a_distinct_surface(self) -> None:
         source = GAMEPLAY.read_text(encoding="utf-8")
