@@ -616,6 +616,10 @@ semantic rebuild.
 When native inputs are missing or mismatched, authored Audio rows remain
 visible; only build-locked callsites, mappings, and addresses disappear, with
 the unavailable state shown explicitly.
+When the selected build gate validates, the same surface publishes the
+fingerprint-locked anchor-wave hit routes and 3D-radio narrative selector
+routes as authored contexts. These rows identify a static managed/native
+callsite only; execution, selected Wwise media, and audibility remain separate.
 
 Shared SFX/music and language voice stay in separate storage roots. Repeated
 media IDs preserve every physical occurrence and package provenance. Direct
