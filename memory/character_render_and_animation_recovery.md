@@ -239,8 +239,23 @@ all-character pass:
   when those inputs are absent; exact retail scheduling and the complete
   numeric solver are still unproven. Endminf's MC_Coat payload closes its
   particles, transforms, lines, roots, capsules, and active constraint feature
-  set, but 35 proxy/prebuild arrays still lack proven strides and element
-  semantics; do not replace that gap with a simple spring/gravity surrogate;
+  set. The pinned `VirtualMesh.ShareSerializationData` contract now closes the
+  element identity and native stride for all 35 serialized proxy-array slots;
+  31 contain MC_Coat data and four are source-authored empty arrays. The typed
+  decoder preserves the original serialized bytes, accepts signed parent/root
+  sentinels, and keeps `FixedList32Bytes<uint>` plus 32-byte
+  `VirtualMeshBoneWeight` elements opaque rather than inventing inner fields.
+  The three nested `TransformData` capacity arrays remain separately raw.
+  Raw-byte-field pairing to same-named runtime `VirtualMesh` fields is exact
+  declaration correspondence, but `ShareSerialize`/`ShareDeserialize` body
+  assignment is not yet pinned; do not call it exact serializer behavior.
+  Regenerate with
+  `python unity_endfield_graph_shader_lab/tools/build_secondary_dynamics_proxy_layout_contract.py`,
+  then publish the read-only decode explicitly with
+  `python unity_endfield_graph_shader_lab/tools/build_secondary_dynamics_payload_decoder.py --allow-source-hash-mismatch`
+  while the three disposable target-filter inputs are absent. The complete
+  solver numerics remain open; do not replace them with a simple spring/gravity
+  surrogate;
 - the Last Rite head effect and Li Zhiyan finger effect remain as exact,
   fail-closed source contracts and builders. They are useful reference cases
   for hierarchy, mount, timing, particle, mesh, material, and texture recovery,
