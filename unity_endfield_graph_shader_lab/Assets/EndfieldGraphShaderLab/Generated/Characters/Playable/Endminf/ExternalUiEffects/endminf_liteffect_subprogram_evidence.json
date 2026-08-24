@@ -41,7 +41,7 @@
     }
   },
   "manifest": {
-    "path": "unity_endfield_graph_shader_lab/Temp/Codex/liteffect_subprograms/Shader/HGRP_LitEffect_p5936F49FA93F14DD.shader.bytecode/manifest.json",
+    "path": "scratch/animestudio/endminf_liteffect_shader/sidecars/Shader/HGRP_LitEffect_p5936F49FA93F14DD.shader.bytecode/manifest.json",
     "schema": "animestudio.shader-subprogram.v1",
     "size": 2608532,
     "sha256": "ad2bf8f1c7a78305ecb4d3f17702c07b36da018e2552b3ffced529fe1274ab99",

@@ -158,6 +158,7 @@ namespace EndfieldGraphShaderLabEditor
         private sealed class ReferenceComparison
         {
             public int bodyClipStartSourceFrame;
+            public float bodyClipPhaseSeconds;
             public int sampleCount;
             public int tileColumns;
         }
@@ -187,6 +188,7 @@ namespace EndfieldGraphShaderLabEditor
             public int extractedStartSourceFrame;
             public int bodyClipStartSourceFrame;
             public float sourceFps;
+            public float unityAnchorBodyClipPhaseSeconds;
             public float phaseErrorSpreadFrames;
             public ReferenceComparisonRow[] rows;
         }
@@ -581,6 +583,7 @@ namespace EndfieldGraphShaderLabEditor
                 Mathf.Abs(sidecar.source.fps - SimulationFps) > 0.0001f ||
                 Mathf.Abs(sidecar.output.fps - SimulationFps) > 0.0001f ||
                 comparison.bodyClipStartSourceFrame < sidecar.segment.startFrame ||
+                comparison.bodyClipPhaseSeconds <= 0.0f ||
                 comparison.sampleCount <= 0 || comparison.sampleCount > Frames.Count ||
                 comparison.tileColumns <= 0)
                 throw new InvalidDataException(
@@ -588,23 +591,41 @@ namespace EndfieldGraphShaderLabEditor
 
             var rows = new List<ReferenceComparisonRow>();
             int previousSourceFrame = -1;
-            float firstSequenceElapsed = Frames[0].endminfPostSeconds;
+            float firstSequenceElapsed = Frames[0].actualSeconds;
             float firstStartClipPhase = Frames[0].activeBodyClipTime;
+            float firstReferenceEffectSeconds =
+                (comparison.bodyClipStartSourceFrame - sidecar.segment.startFrame) /
+                sidecar.source.fps;
+            if (Mathf.Abs(
+                    firstStartClipPhase - comparison.bodyClipPhaseSeconds) > 0.00001f ||
+                Mathf.Abs(firstSequenceElapsed - firstReferenceEffectSeconds) > 0.00001f)
+                throw new InvalidDataException(
+                    "Endminf reference absolute body/effect phase anchor drifted");
             for (int index = 0; index < comparison.sampleCount; index++)
             {
                 FrameRow unity = Frames[index];
-                float sequenceSeconds = firstStartClipPhase +
-                    unity.endminfPostSeconds - firstSequenceElapsed;
+                // bodyClipStartSourceFrame is the first visible decoded body
+                // frame, not source clip time zero. Frames[0] is the first
+                // saved Unity image and is therefore anchored directly to
+                // that decoded frame. Adding its already-advanced Animator
+                // phase here used to shift every pair three source frames
+                // late while preserving a deceptively perfect phase residue.
+                float sequenceSeconds = unity.actualSeconds - firstSequenceElapsed;
                 float exactOffsetFrames = sequenceSeconds * sidecar.source.fps;
                 int roundedOffsetFrames = Mathf.FloorToInt(exactOffsetFrames + 0.5f);
                 int sourceFrame = comparison.bodyClipStartSourceFrame + roundedOffsetFrames;
                 int extractedFrame = sourceFrame - sidecar.output.firstSourceFrame + 1;
+                float referenceEffectSeconds = firstReferenceEffectSeconds +
+                    exactOffsetFrames / sidecar.source.fps;
                 bool startClipCrossCheck = unity.overviewTransitioning ||
                     unity.overviewLooping ||
-                    Mathf.Abs(unity.activeBodyClipTime - sequenceSeconds) <= 0.002f;
+                    Mathf.Abs(
+                        unity.activeBodyClipTime - firstStartClipPhase -
+                        sequenceSeconds) <= 0.002f;
                 if (sourceFrame <= previousSourceFrame || extractedFrame < 1 ||
                     extractedFrame > sidecar.output.frameCount ||
                     Mathf.Abs(exactOffsetFrames - roundedOffsetFrames) > 0.075f ||
+                    Mathf.Abs(referenceEffectSeconds - unity.actualSeconds) > 0.00001f ||
                     !startClipCrossCheck)
                     throw new InvalidDataException(
                         "Endminf reference phase match is not a unique 60-Hz source sample: " +
@@ -652,6 +673,7 @@ namespace EndfieldGraphShaderLabEditor
                 extractedStartSourceFrame = sidecar.output.firstSourceFrame,
                 bodyClipStartSourceFrame = comparison.bodyClipStartSourceFrame,
                 sourceFps = sidecar.source.fps,
+                unityAnchorBodyClipPhaseSeconds = firstStartClipPhase,
                 phaseErrorSpreadFrames = phaseErrorSpreadFrames,
                 rows = rows.ToArray()
             };

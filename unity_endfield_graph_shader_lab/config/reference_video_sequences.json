@@ -23,9 +23,10 @@
           "endSeconds": 30.584,
           "comparison": {
             "bodyClipStartSourceFrame": 1110,
+            "bodyClipPhaseSeconds": 0.05090830227,
             "sampleCount": 28,
             "tileColumns": 4,
-            "notes": "Source frame 1109 is the blank model-swap boundary; frame 1110 is the first visible ui_overview_start body frame. Match later frames from measured Unity AnimationClip time at the exact 60 Hz source rate."
+            "notes": "Source frame 1109 is the blank model-swap boundary; frame 1110 is the first visible ui_overview_start body frame and anchors the first saved Unity frame. Match later frames from selection-edge elapsed time at the exact 60 Hz source rate; retain the first Unity Animator phase as telemetry, not an additional source offset."
           }
         }
       ]

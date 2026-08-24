@@ -1,6 +1,6 @@
 {
   "schema": "endfield.endminf-liteffect-resource-mapping.v1",
-  "status": "verified_with_gaps",
+  "status": "verified_with_named_layout_and_consumer_gaps",
   "scope": {
     "shader": {
       "cab": "CAB-2c811ef28608ab220ecdb5c4e0629d2d",
@@ -22,7 +22,7 @@
       "sha256": "cbc87c7d8f41d90da25af7758cf77ced7321d19c52c067f6f77a75aa5dabc380"
     },
     "manifest": {
-      "path": "unity_endfield_graph_shader_lab/Temp/Codex/liteffect_subprograms/Shader/HGRP_LitEffect_p5936F49FA93F14DD.shader.bytecode/manifest.json",
+      "path": "scratch/animestudio/endminf_liteffect_shader/sidecars/Shader/HGRP_LitEffect_p5936F49FA93F14DD.shader.bytecode/manifest.json",
       "schema": "animestudio.shader-subprogram.v1",
       "size": 2608532,
       "sha256": "ad2bf8f1c7a78305ecb4d3f17702c07b36da018e2552b3ffced529fe1274ab99",
@@ -89,7 +89,7 @@
   },
   "reflection": {
     "vertex": {
-      "file": "unity_endfield_graph_shader_lab/Temp/Codex/liteffect_subprograms/Shader/HGRP_LitEffect_p5936F49FA93F14DD.shader.bytecode/0114_endfield_dxbc_0.dxbc",
+      "file": "scratch/animestudio/endminf_liteffect_shader/sidecars/Shader/HGRP_LitEffect_p5936F49FA93F14DD.shader.bytecode/0114_endfield_dxbc_0.dxbc",
       "bytes": 7820,
       "sha256": "b38d5e7661abdcb0d56a1c349eb673d205547fef5a30ba7d10befbe78b638253",
       "chunks": [
@@ -239,7 +239,7 @@
         }
       ],
       "ruri": {
-        "file": "unity_endfield_graph_shader_lab/Temp/Codex/liteffect_subprograms/Shader/HGRP_LitEffect_p5936F49FA93F14DD.shader.bytecode/ruri_final/parallax_hgbuffer_vertex.hlsl",
+        "file": "scratch/animestudio/endminf_liteffect_shader/sidecars/Shader/HGRP_LitEffect_p5936F49FA93F14DD.shader.bytecode/ruri_final/parallax_hgbuffer_vertex.hlsl",
         "bytes": 23831,
         "sha256": "766bb181381150caf1e732abb67e885e3388f6a589e8685cc82b8435dd689d9c",
         "physicalCbuffers": [
@@ -290,7 +290,7 @@
         "samplers": []
       },
       "metadata": {
-        "file": "unity_endfield_graph_shader_lab/Temp/Codex/liteffect_subprograms/Shader/HGRP_LitEffect_p5936F49FA93F14DD.shader.bytecode/0114_endfield_dxbc_0.dxbc.metadata.json",
+        "file": "scratch/animestudio/endminf_liteffect_shader/sidecars/Shader/HGRP_LitEffect_p5936F49FA93F14DD.shader.bytecode/0114_endfield_dxbc_0.dxbc.metadata.json",
         "sha256": "4a7ca8b5937e1fc716692ff185f9cd7e2e698fedf69a2f0fc968ea78d7abc30d",
         "decodedStage": "vertex",
         "serializedStage": "vertex",
@@ -799,7 +799,7 @@
       }
     },
     "fragment": {
-      "file": "unity_endfield_graph_shader_lab/Temp/Codex/liteffect_subprograms/Shader/HGRP_LitEffect_p5936F49FA93F14DD.shader.bytecode/0115_endfield_dxbc_1.dxbc",
+      "file": "scratch/animestudio/endminf_liteffect_shader/sidecars/Shader/HGRP_LitEffect_p5936F49FA93F14DD.shader.bytecode/0115_endfield_dxbc_1.dxbc",
       "bytes": 8068,
       "sha256": "b2248a1deb886a0e9226695d46e650756be932addd55a81d2b1114fdeb5f932a",
       "chunks": [
@@ -925,7 +925,7 @@
         }
       ],
       "ruri": {
-        "file": "unity_endfield_graph_shader_lab/Temp/Codex/liteffect_subprograms/Shader/HGRP_LitEffect_p5936F49FA93F14DD.shader.bytecode/ruri_final/parallax_hgbuffer_fragment.hlsl",
+        "file": "scratch/animestudio/endminf_liteffect_shader/sidecars/Shader/HGRP_LitEffect_p5936F49FA93F14DD.shader.bytecode/ruri_final/parallax_hgbuffer_fragment.hlsl",
         "bytes": 15426,
         "sha256": "7783cc2a916242f273853b115b2b4b67dfb8736940d86220d1cdf91dfe459744",
         "physicalCbuffers": [
@@ -1060,7 +1060,7 @@
         ]
       },
       "metadata": {
-        "file": "unity_endfield_graph_shader_lab/Temp/Codex/liteffect_subprograms/Shader/HGRP_LitEffect_p5936F49FA93F14DD.shader.bytecode/0115_endfield_dxbc_1.dxbc.metadata.json",
+        "file": "scratch/animestudio/endminf_liteffect_shader/sidecars/Shader/HGRP_LitEffect_p5936F49FA93F14DD.shader.bytecode/0115_endfield_dxbc_1.dxbc.metadata.json",
         "sha256": "1e57dafd0a46c3d2e57acc16f1b29ddb5c98f9b5ed3926d9a11f2e2857368ba4",
         "decodedStage": "fragment",
         "serializedStage": "vertex",
@@ -1965,6 +1965,69 @@
       }
     ]
   },
+  "crossPlatformSpirv": {
+    "vertex": [
+      {
+        "name": "_20_21",
+        "set": 0,
+        "binding": 13,
+        "blockSize": 1312,
+        "type": "_20"
+      },
+      {
+        "name": "_22_23",
+        "set": 0,
+        "binding": 16,
+        "blockSize": 3200,
+        "type": "_22"
+      },
+      {
+        "name": "_24_25",
+        "set": 2,
+        "binding": 0,
+        "blockSize": 256,
+        "type": "_24"
+      }
+    ],
+    "fragment": [
+      {
+        "name": "_16_17",
+        "set": 0,
+        "binding": 13,
+        "blockSize": 1312,
+        "type": "_16"
+      },
+      {
+        "name": "_18_19",
+        "set": 0,
+        "binding": 16,
+        "blockSize": 3200,
+        "type": "_18"
+      },
+      {
+        "name": "_20_21",
+        "set": 2,
+        "binding": 0,
+        "blockSize": 256,
+        "type": "_20"
+      },
+      {
+        "name": "_36_37",
+        "set": 1,
+        "binding": 12,
+        "blockSize": 576,
+        "type": "_36"
+      },
+      {
+        "name": "_38_39",
+        "set": 0,
+        "binding": 33,
+        "blockSize": 16,
+        "type": "_38"
+      }
+    ],
+    "packedBindingDecode": "low byte is stage mask; byte 2 is fragment register; byte 3 is vertex register; 0xFF means unbound"
+  },
   "constantBuffers": {
     "vertex": [
       {
@@ -1977,9 +2040,11 @@
           "_20_22"
         ],
         "logicalName": "_TransformVariables",
-        "status": "resolved_register_range",
+        "status": "resolved_cross_platform_register",
         "basis": [
-          "Ruri/DXBC cbuffer array size equals serialized _TransformVariables size"
+          "serialized PackedBinding stage/register bytes",
+          "same-blob SPIR-V descriptor set/binding and block size",
+          "DXBC/Ruri used-prefix size"
         ]
       },
       {
@@ -1991,10 +2056,11 @@
           "_25_27"
         ],
         "logicalName": "ShaderVariablesGlobal",
-        "status": "resolved_register_range",
+        "status": "resolved_cross_platform_register",
         "basis": [
-          "Ruri/DXBC contiguous 20+11 register range",
-          "serialized ShaderVariablesGlobal field offsets 304 and 416"
+          "serialized PackedBinding stage/register bytes",
+          "same-blob SPIR-V descriptor set/binding and block size",
+          "DXBC/Ruri used-prefix size"
         ]
       },
       {
@@ -2006,11 +2072,12 @@
           "_30_32",
           "_35_37"
         ],
-        "logicalName": "ShaderVariablesGlobal",
-        "status": "resolved_register_range",
+        "logicalName": "UnityPerDraw",
+        "status": "resolved_cross_platform_register",
         "basis": [
-          "Ruri/DXBC contiguous 20+11 register range",
-          "serialized ShaderVariablesGlobal field offsets 304 and 416"
+          "serialized PackedBinding stage/register bytes",
+          "same-blob SPIR-V descriptor set/binding and block size",
+          "DXBC/Ruri used-prefix size"
         ]
       }
     ],
@@ -2024,10 +2091,13 @@
           "_17_19",
           "_23_25"
         ],
-        "logicalName": null,
-        "status": "gap",
-        "basis": [],
-        "candidateLogicalNames": []
+        "logicalName": "_TransformVariables",
+        "status": "resolved_cross_platform_register",
+        "basis": [
+          "serialized PackedBinding stage/register bytes",
+          "same-blob SPIR-V descriptor set/binding and block size",
+          "DXBC/Ruri used-prefix size"
+        ]
       },
       {
         "register": 1,
@@ -2038,10 +2108,13 @@
           "_28_30",
           "_33_35"
         ],
-        "logicalName": null,
-        "status": "gap",
-        "basis": [],
-        "candidateLogicalNames": []
+        "logicalName": "ShaderVariablesGlobal",
+        "status": "resolved_cross_platform_register",
+        "basis": [
+          "serialized PackedBinding stage/register bytes",
+          "same-blob SPIR-V descriptor set/binding and block size",
+          "DXBC/Ruri used-prefix size"
+        ]
       },
       {
         "register": 2,
@@ -2051,10 +2124,13 @@
         "aliases": [
           "_38_40"
         ],
-        "logicalName": null,
-        "status": "gap",
-        "basis": [],
-        "candidateLogicalNames": []
+        "logicalName": "UnityPerDraw",
+        "status": "resolved_cross_platform_register",
+        "basis": [
+          "serialized PackedBinding stage/register bytes",
+          "same-blob SPIR-V descriptor set/binding and block size",
+          "DXBC/Ruri used-prefix size"
+        ]
       },
       {
         "register": 3,
@@ -2065,13 +2141,12 @@
           "_43_45",
           "_48_50"
         ],
-        "logicalName": null,
-        "status": "gap",
+        "logicalName": "UnityPerMaterial",
+        "status": "resolved_cross_platform_register",
         "basis": [
-          "DescriptorSet binding names do not encode a D3D b-register relation"
-        ],
-        "candidateLogicalNames": [
-          "UnityPerMaterial"
+          "serialized PackedBinding stage/register bytes",
+          "same-blob SPIR-V descriptor set/binding and block size",
+          "DXBC/Ruri used-prefix size"
         ]
       },
       {
@@ -2082,14 +2157,12 @@
         "aliases": [
           "_53_55"
         ],
-        "logicalName": null,
-        "status": "gap",
+        "logicalName": "_TerrainSubsurfaceConstants",
+        "status": "resolved_cross_platform_register",
         "basis": [
-          "DescriptorSet binding names do not encode a D3D b-register relation"
-        ],
-        "candidateLogicalNames": [
-          "UnityPerDraw",
-          "_TerrainSubsurfaceConstants"
+          "serialized PackedBinding stage/register bytes",
+          "same-blob SPIR-V descriptor set/binding and block size",
+          "DXBC/Ruri used-prefix size"
         ]
       }
     ],
@@ -2253,10 +2326,10 @@
         "sizeBytes": 4,
         "arraySize": 0,
         "isMatrix": false,
-        "status": "resolved_register_range",
+        "status": "gap",
         "stage": "vertex",
-        "register": 2,
-        "registerOffsetBytes": 96
+        "register": null,
+        "registerOffsetBytes": null
       },
       {
         "buffer": "ShaderVariablesGlobal",
@@ -2339,10 +2412,10 @@
         "sizeBytes": 4,
         "arraySize": 0,
         "isMatrix": false,
-        "status": "gap",
+        "status": "resolved_register_range",
         "stage": "fragment",
-        "register": null,
-        "registerOffsetBytes": null
+        "register": 1,
+        "registerOffsetBytes": 416
       },
       {
         "buffer": "ShaderVariablesGlobal",
@@ -2351,10 +2424,10 @@
         "sizeBytes": 16,
         "arraySize": 0,
         "isMatrix": false,
-        "status": "gap",
+        "status": "resolved_register_range",
         "stage": "fragment",
-        "register": null,
-        "registerOffsetBytes": null
+        "register": 1,
+        "registerOffsetBytes": 304
       },
       {
         "buffer": "_TerrainSubsurfaceConstants",
@@ -2363,10 +2436,10 @@
         "sizeBytes": 4,
         "arraySize": 0,
         "isMatrix": false,
-        "status": "gap",
+        "status": "resolved_register_range",
         "stage": "fragment",
-        "register": null,
-        "registerOffsetBytes": null
+        "register": 4,
+        "registerOffsetBytes": 12
       },
       {
         "buffer": "_TransformVariables",
@@ -2375,10 +2448,10 @@
         "sizeBytes": 16,
         "arraySize": 0,
         "isMatrix": false,
-        "status": "gap",
+        "status": "resolved_register_range",
         "stage": "fragment",
-        "register": null,
-        "registerOffsetBytes": null
+        "register": 0,
+        "registerOffsetBytes": 704
       },
       {
         "buffer": "_TransformVariables",
@@ -2399,10 +2472,10 @@
         "sizeBytes": 64,
         "arraySize": 0,
         "isMatrix": true,
-        "status": "gap",
+        "status": "resolved_register_range",
         "stage": "fragment",
-        "register": null,
-        "registerOffsetBytes": null
+        "register": 0,
+        "registerOffsetBytes": 512
       },
       {
         "buffer": "_TransformVariables",
@@ -2421,236 +2494,236 @@
       {
         "property": "_EnableParallaxMap",
         "constantBuffer": "UnityPerMaterial",
-        "register": null,
+        "register": 3,
         "offsetBytes": null,
         "sizeBytes": null,
-        "status": "gap",
-        "reason": "DescriptorSetParameters names UnityPerMaterial but does not prove its D3D b-register or vector/color offsets"
+        "status": "resolved_register_unresolved_named_offset",
+        "reason": "PackedBinding and same-blob SPIR-V prove b3 and its 576-byte logical layout, but stripped member names do not map this property to one member offset"
       },
       {
         "property": "_ParallaxStrength",
         "constantBuffer": "UnityPerMaterial",
-        "register": null,
+        "register": 3,
         "offsetBytes": null,
         "sizeBytes": null,
-        "status": "gap",
-        "reason": "DescriptorSetParameters names UnityPerMaterial but does not prove its D3D b-register or vector/color offsets"
+        "status": "resolved_register_unresolved_named_offset",
+        "reason": "PackedBinding and same-blob SPIR-V prove b3 and its 576-byte logical layout, but stripped member names do not map this property to one member offset"
       },
       {
         "property": "_ParallaxMarchNum",
         "constantBuffer": "UnityPerMaterial",
-        "register": null,
+        "register": 3,
         "offsetBytes": null,
         "sizeBytes": null,
-        "status": "gap",
-        "reason": "DescriptorSetParameters names UnityPerMaterial but does not prove its D3D b-register or vector/color offsets"
+        "status": "resolved_register_unresolved_named_offset",
+        "reason": "PackedBinding and same-blob SPIR-V prove b3 and its 576-byte logical layout, but stripped member names do not map this property to one member offset"
       },
       {
         "property": "_ParallaxTilling",
         "constantBuffer": "UnityPerMaterial",
-        "register": null,
+        "register": 3,
         "offsetBytes": null,
         "sizeBytes": null,
-        "status": "gap",
-        "reason": "DescriptorSetParameters names UnityPerMaterial but does not prove its D3D b-register or vector/color offsets"
+        "status": "resolved_register_unresolved_named_offset",
+        "reason": "PackedBinding and same-blob SPIR-V prove b3 and its 576-byte logical layout, but stripped member names do not map this property to one member offset"
       },
       {
         "property": "_ParallaxAnimRandom",
         "constantBuffer": "UnityPerMaterial",
-        "register": null,
+        "register": 3,
         "offsetBytes": null,
         "sizeBytes": null,
-        "status": "gap",
-        "reason": "DescriptorSetParameters names UnityPerMaterial but does not prove its D3D b-register or vector/color offsets"
+        "status": "resolved_register_unresolved_named_offset",
+        "reason": "PackedBinding and same-blob SPIR-V prove b3 and its 576-byte logical layout, but stripped member names do not map this property to one member offset"
       },
       {
         "property": "_ParallaxAnimSpeed",
         "constantBuffer": "UnityPerMaterial",
-        "register": null,
+        "register": 3,
         "offsetBytes": null,
         "sizeBytes": null,
-        "status": "gap",
-        "reason": "DescriptorSetParameters names UnityPerMaterial but does not prove its D3D b-register or vector/color offsets"
+        "status": "resolved_register_unresolved_named_offset",
+        "reason": "PackedBinding and same-blob SPIR-V prove b3 and its 576-byte logical layout, but stripped member names do not map this property to one member offset"
       },
       {
         "property": "_ParallaxBrightInnerRadius",
         "constantBuffer": "UnityPerMaterial",
-        "register": null,
+        "register": 3,
         "offsetBytes": null,
         "sizeBytes": null,
-        "status": "gap",
-        "reason": "DescriptorSetParameters names UnityPerMaterial but does not prove its D3D b-register or vector/color offsets"
+        "status": "resolved_register_unresolved_named_offset",
+        "reason": "PackedBinding and same-blob SPIR-V prove b3 and its 576-byte logical layout, but stripped member names do not map this property to one member offset"
       },
       {
         "property": "_ParallaxBrightOuterRadius",
         "constantBuffer": "UnityPerMaterial",
-        "register": null,
+        "register": 3,
         "offsetBytes": null,
         "sizeBytes": null,
-        "status": "gap",
-        "reason": "DescriptorSetParameters names UnityPerMaterial but does not prove its D3D b-register or vector/color offsets"
+        "status": "resolved_register_unresolved_named_offset",
+        "reason": "PackedBinding and same-blob SPIR-V prove b3 and its 576-byte logical layout, but stripped member names do not map this property to one member offset"
       },
       {
         "property": "_ParallaxBrightStrength",
         "constantBuffer": "UnityPerMaterial",
-        "register": null,
+        "register": 3,
         "offsetBytes": null,
         "sizeBytes": null,
-        "status": "gap",
-        "reason": "DescriptorSetParameters names UnityPerMaterial but does not prove its D3D b-register or vector/color offsets"
+        "status": "resolved_register_unresolved_named_offset",
+        "reason": "PackedBinding and same-blob SPIR-V prove b3 and its 576-byte logical layout, but stripped member names do not map this property to one member offset"
       },
       {
         "property": "_ParallaxFresnelStrength",
         "constantBuffer": "UnityPerMaterial",
-        "register": null,
+        "register": 3,
         "offsetBytes": null,
         "sizeBytes": null,
-        "status": "gap",
-        "reason": "DescriptorSetParameters names UnityPerMaterial but does not prove its D3D b-register or vector/color offsets"
+        "status": "resolved_register_unresolved_named_offset",
+        "reason": "PackedBinding and same-blob SPIR-V prove b3 and its 576-byte logical layout, but stripped member names do not map this property to one member offset"
       },
       {
         "property": "_ParallaxIgnorePostExposure",
         "constantBuffer": "UnityPerMaterial",
-        "register": null,
+        "register": 3,
         "offsetBytes": null,
         "sizeBytes": null,
-        "status": "gap",
-        "reason": "DescriptorSetParameters names UnityPerMaterial but does not prove its D3D b-register or vector/color offsets"
+        "status": "resolved_register_unresolved_named_offset",
+        "reason": "PackedBinding and same-blob SPIR-V prove b3 and its 576-byte logical layout, but stripped member names do not map this property to one member offset"
       },
       {
         "property": "_ParallaxIntensity",
         "constantBuffer": "UnityPerMaterial",
-        "register": null,
+        "register": 3,
         "offsetBytes": null,
         "sizeBytes": null,
-        "status": "gap",
-        "reason": "DescriptorSetParameters names UnityPerMaterial but does not prove its D3D b-register or vector/color offsets"
+        "status": "resolved_register_unresolved_named_offset",
+        "reason": "PackedBinding and same-blob SPIR-V prove b3 and its 576-byte logical layout, but stripped member names do not map this property to one member offset"
       },
       {
         "property": "_ParallaxMaskMapColorStrength",
         "constantBuffer": "UnityPerMaterial",
-        "register": null,
+        "register": 3,
         "offsetBytes": null,
         "sizeBytes": null,
-        "status": "gap",
-        "reason": "DescriptorSetParameters names UnityPerMaterial but does not prove its D3D b-register or vector/color offsets"
+        "status": "resolved_register_unresolved_named_offset",
+        "reason": "PackedBinding and same-blob SPIR-V prove b3 and its 576-byte logical layout, but stripped member names do not map this property to one member offset"
       },
       {
         "property": "_ParallaxMinBrightness",
         "constantBuffer": "UnityPerMaterial",
-        "register": null,
+        "register": 3,
         "offsetBytes": null,
         "sizeBytes": null,
-        "status": "gap",
-        "reason": "DescriptorSetParameters names UnityPerMaterial but does not prove its D3D b-register or vector/color offsets"
+        "status": "resolved_register_unresolved_named_offset",
+        "reason": "PackedBinding and same-blob SPIR-V prove b3 and its 576-byte logical layout, but stripped member names do not map this property to one member offset"
       },
       {
         "property": "_ParallaxNoiseMapTilling",
         "constantBuffer": "UnityPerMaterial",
-        "register": null,
+        "register": 3,
         "offsetBytes": null,
         "sizeBytes": null,
-        "status": "gap",
-        "reason": "DescriptorSetParameters names UnityPerMaterial but does not prove its D3D b-register or vector/color offsets"
+        "status": "resolved_register_unresolved_named_offset",
+        "reason": "PackedBinding and same-blob SPIR-V prove b3 and its 576-byte logical layout, but stripped member names do not map this property to one member offset"
       },
       {
         "property": "_ParallaxCharPos",
         "constantBuffer": "UnityPerMaterial",
-        "register": null,
+        "register": 3,
         "offsetBytes": null,
         "sizeBytes": null,
-        "status": "gap",
-        "reason": "DescriptorSetParameters names UnityPerMaterial but does not prove its D3D b-register or vector/color offsets"
+        "status": "resolved_register_unresolved_named_offset",
+        "reason": "PackedBinding and same-blob SPIR-V prove b3 and its 576-byte logical layout, but stripped member names do not map this property to one member offset"
       },
       {
         "property": "_ParallaxMaskByLayerBlend",
         "constantBuffer": "UnityPerMaterial",
-        "register": null,
+        "register": 3,
         "offsetBytes": null,
         "sizeBytes": null,
-        "status": "gap",
-        "reason": "DescriptorSetParameters names UnityPerMaterial but does not prove its D3D b-register or vector/color offsets"
+        "status": "resolved_register_unresolved_named_offset",
+        "reason": "PackedBinding and same-blob SPIR-V prove b3 and its 576-byte logical layout, but stripped member names do not map this property to one member offset"
       },
       {
         "property": "_ParallaxLerpSchedule",
         "constantBuffer": "UnityPerMaterial",
-        "register": null,
+        "register": 3,
         "offsetBytes": null,
         "sizeBytes": null,
-        "status": "gap",
-        "reason": "DescriptorSetParameters names UnityPerMaterial but does not prove its D3D b-register or vector/color offsets"
+        "status": "resolved_register_unresolved_named_offset",
+        "reason": "PackedBinding and same-blob SPIR-V prove b3 and its 576-byte logical layout, but stripped member names do not map this property to one member offset"
       },
       {
         "property": "_ParallaxSignControl",
         "constantBuffer": "UnityPerMaterial",
-        "register": null,
+        "register": 3,
         "offsetBytes": null,
         "sizeBytes": null,
-        "status": "gap",
-        "reason": "DescriptorSetParameters names UnityPerMaterial but does not prove its D3D b-register or vector/color offsets"
+        "status": "resolved_register_unresolved_named_offset",
+        "reason": "PackedBinding and same-blob SPIR-V prove b3 and its 576-byte logical layout, but stripped member names do not map this property to one member offset"
       },
       {
         "property": "_ParallaxColor",
         "constantBuffer": "UnityPerMaterial",
-        "register": null,
+        "register": 3,
         "offsetBytes": null,
         "sizeBytes": null,
-        "status": "gap",
-        "reason": "DescriptorSetParameters names UnityPerMaterial but does not prove its D3D b-register or vector/color offsets"
+        "status": "resolved_register_unresolved_named_offset",
+        "reason": "PackedBinding and same-blob SPIR-V prove b3 and its 576-byte logical layout, but stripped member names do not map this property to one member offset"
       },
       {
         "property": "_ParallaxColorDark",
         "constantBuffer": "UnityPerMaterial",
-        "register": null,
+        "register": 3,
         "offsetBytes": null,
         "sizeBytes": null,
-        "status": "gap",
-        "reason": "DescriptorSetParameters names UnityPerMaterial but does not prove its D3D b-register or vector/color offsets"
+        "status": "resolved_register_unresolved_named_offset",
+        "reason": "PackedBinding and same-blob SPIR-V prove b3 and its 576-byte logical layout, but stripped member names do not map this property to one member offset"
       },
       {
         "property": "_ParallaxPatternColor",
         "constantBuffer": "UnityPerMaterial",
-        "register": null,
+        "register": 3,
         "offsetBytes": null,
         "sizeBytes": null,
-        "status": "gap",
-        "reason": "DescriptorSetParameters names UnityPerMaterial but does not prove its D3D b-register or vector/color offsets"
+        "status": "resolved_register_unresolved_named_offset",
+        "reason": "PackedBinding and same-blob SPIR-V prove b3 and its 576-byte logical layout, but stripped member names do not map this property to one member offset"
       },
       {
         "property": "_ParallaxPatternColorDark",
         "constantBuffer": "UnityPerMaterial",
-        "register": null,
+        "register": 3,
         "offsetBytes": null,
         "sizeBytes": null,
-        "status": "gap",
-        "reason": "DescriptorSetParameters names UnityPerMaterial but does not prove its D3D b-register or vector/color offsets"
+        "status": "resolved_register_unresolved_named_offset",
+        "reason": "PackedBinding and same-blob SPIR-V prove b3 and its 576-byte logical layout, but stripped member names do not map this property to one member offset"
       },
       {
         "property": "_ParallaxSignLerpFactor0",
         "constantBuffer": "UnityPerMaterial",
-        "register": null,
+        "register": 3,
         "offsetBytes": null,
         "sizeBytes": null,
-        "status": "gap",
-        "reason": "DescriptorSetParameters names UnityPerMaterial but does not prove its D3D b-register or vector/color offsets"
+        "status": "resolved_register_unresolved_named_offset",
+        "reason": "PackedBinding and same-blob SPIR-V prove b3 and its 576-byte logical layout, but stripped member names do not map this property to one member offset"
       },
       {
         "property": "_ParallaxSignLerpFactor1",
         "constantBuffer": "UnityPerMaterial",
-        "register": null,
+        "register": 3,
         "offsetBytes": null,
         "sizeBytes": null,
-        "status": "gap",
-        "reason": "DescriptorSetParameters names UnityPerMaterial but does not prove its D3D b-register or vector/color offsets"
+        "status": "resolved_register_unresolved_named_offset",
+        "reason": "PackedBinding and same-blob SPIR-V prove b3 and its 576-byte logical layout, but stripped member names do not map this property to one member offset"
       },
       {
         "property": "_WorldParallaxAdditionalColor",
         "constantBuffer": "UnityPerMaterial",
-        "register": null,
+        "register": 3,
         "offsetBytes": null,
         "sizeBytes": null,
-        "status": "gap",
-        "reason": "DescriptorSetParameters names UnityPerMaterial but does not prove its D3D b-register or vector/color offsets"
+        "status": "resolved_register_unresolved_named_offset",
+        "reason": "PackedBinding and same-blob SPIR-V prove b3 and its 576-byte logical layout, but stripped member names do not map this property to one member offset"
       }
     ]
   },
@@ -3729,8 +3802,7 @@
   ],
   "gaps": [
     "DXBC has no RDEF chunk; named common-buffer fields come only from serialized Shader metadata.",
-    "UnityPerMaterial property values are resolved from the three Material JSONs, but DescriptorSetParameters does not prove a b3 relation or property offsets.",
-    "Fragment b4 is a 16-byte register; its identity is ambiguous between UnityPerDraw and _TerrainSubsurfaceConstants.",
+    "UnityPerMaterial is proven at fragment b3 with a 576-byte same-blob SPIR-V layout and 496-byte DXBC used prefix, but stripped member names still leave property-to-offset mapping unresolved.",
     "ParserBindChannels.m_Channels is not exported by AnimeStudio's Shader JSON; do not substitute guessed ShaderLab channels.",
     "The null _ParallaxNoiseMap and _ParallaxMaskMap PPtrs remain unresolved by design."
   ]
