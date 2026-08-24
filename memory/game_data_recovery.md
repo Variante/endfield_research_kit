@@ -289,6 +289,10 @@ it has one exact table owner. Possible media inherit the complete named-
 character set, so cross-character Wwise leaf reuse stays explicit. This does
 not identify an action, runtime caller, selected leaf, playback position, or
 audibility, and generic `chr_*` templates remain unowned.
+The same exact namespace relation can safely project Event/media candidates to
+an existing character item for discovery, but it remains an identity edge. It
+does not lower strict unknown-use status or become a gameplay consumer edge
+without independent trigger or runtime evidence.
 Serialized AnimationClip audio callbacks are independently sufficient to link
 an Event to the exact clips and character/enemy owner recorded by the callback
 context. The Event and clip names need not match. AnimatorController membership

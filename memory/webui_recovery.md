@@ -401,6 +401,10 @@ AnimationClip audio callbacks are projected independently of same-name action
 matching, so normal Event/media details retain their exact clips, callback
 owner/function, reachability, and AnimatorController names without claiming
 runtime execution or forcing an unknown category to SFX.
+Gameplay character cards reuse the exact CharacterTable namespace evidence as
+a separate collapsed authored-namespace audio group with playable media. Those
+rows are not mixed into skill or animation-triggered SFX and visibly retain the
+unresolved action, Event-post, Wwise-selection, and playback boundary.
 Audio detail keeps each callback Clip's resolved entity IDs separate from its
 candidate entity IDs. Exact Character/Enemy/EnemyTemplate overlay matches are
 resolved; unique-token or multi-match identities remain candidate/ambiguous,
