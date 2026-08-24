@@ -58,6 +58,15 @@ namespace EndfieldGraphShaderLabEditor
             "10d9f377b725cb47b55ca84556bc3db07f2766399133877eac46d5b921cc8334";
         private const string EndminfRefractSuikuai1BlendAsset = TextureRoot +
             "/T_fx_mask_138_M_pFC31CA27BFE1C466.png";
+        private const string EndminfOverview02Prefab = GeneratedRoot +
+            "/P_fxui_endminm003_overview_02.prefab";
+        private const long EndminfSuikuai1GameObject = 1582063910123453938L;
+        private const long EndminfSuikuai1Transform = -6167980846328005134L;
+        private const long EndminfSuikuai1ParticleSystem = 2534334133066055154L;
+        private const long EndminfSuikuai1ParticleRenderer = -6442268130263056910L;
+        private static readonly long[] EndminfSuikuai1Meshes = {
+            6551658390352545759L, 2869508565256554463L,
+            4104586682243008479L, 5519914799358855135L };
         private static readonly string[] EndminfRefractSuikuai1Keywords = {
             "_USE_BLEND", "_USE_RBOFFSET", "_USE_RGBOFFSET" };
         private const string VisualCompatibilityEnvironment =
@@ -395,8 +404,117 @@ namespace EndfieldGraphShaderLabEditor
             ValidateSuikuai1ImportedMaterial(material);
             EditorUtility.SetDirty(material);
             AssetDatabase.SaveAssets();
-            Debug.Log("Rebuilt exact Endminf suikuai (1) source material: " +
-                materialAsset);
+            IntegrateSuikuai1RetainedRenderer(material);
+            Debug.Log("Rebuilt exact Endminf suikuai (1) source material and " +
+                "integrated its retained overview_02 renderer: " + materialAsset);
+        }
+
+        private static void IntegrateSuikuai1RetainedRenderer(Material material)
+        {
+            L.Require(File.Exists(L.ProjectAbsolute(EndminfOverview02Prefab)),
+                "Retained Endminf overview_02 prefab is missing: " +
+                EndminfOverview02Prefab);
+            GameObject root = PrefabUtility.LoadPrefabContents(EndminfOverview02Prefab);
+            try
+            {
+                L.Require(root != null &&
+                    root.name == "P_fxui_endminm003_overview_02",
+                    "Retained Endminf overview_02 prefab root identity drifted");
+                Transform host = root.transform.Find("all/suikuai (1)");
+                L.Require(host != null,
+                    "Retained Endminf renderer hierarchy is missing: " +
+                    "overview_02/all/suikuai (1)");
+                ParticleSystemRenderer renderer =
+                    host.GetComponent<ParticleSystemRenderer>();
+                ParticleSystem system = host.GetComponent<ParticleSystem>();
+                EndfieldRecoveredParticleEffectSource marker =
+                    root.GetComponent<EndfieldRecoveredParticleEffectSource>();
+                L.Require(renderer != null && system != null && marker != null &&
+                    marker.effectRoot == "P_fxui_endminm003_overview_02",
+                    "Retained Endminf suikuai (1) component/marker identity drifted");
+                EndfieldRecoveredParticleNodeSource[] sourceRows =
+                    marker.particleNodes.Where(row =>
+                        row.particleRendererPathId ==
+                            EndminfSuikuai1ParticleRenderer).ToArray();
+                L.Require(sourceRows.Length == 1,
+                    "Retained Endminf suikuai (1) marker row count drifted: " +
+                    sourceRows.Length.ToString(CultureInfo.InvariantCulture) +
+                    " expected 1");
+                EndfieldRecoveredParticleNodeSource sourceRow = sourceRows[0];
+                L.Require(sourceRow.gameObjectPathId == EndminfSuikuai1GameObject &&
+                    sourceRow.transformPathId == EndminfSuikuai1Transform &&
+                    sourceRow.particleSystemPathId ==
+                        EndminfSuikuai1ParticleSystem &&
+                    sourceRow.materialPathIds.SequenceEqual(new[] {
+                        EndminfRefractSuikuai1Material }) &&
+                    sourceRow.meshPathIds.SequenceEqual(EndminfSuikuai1Meshes) &&
+                    sourceRow.nativeParticlePayloadApplied &&
+                    sourceRow.nativeRendererPayloadApplied,
+                    "Retained Endminf suikuai (1) exact source PathID closure drifted");
+                bool preIntegrationBoundary =
+                    !sourceRow.sourceRendererEnabled &&
+                    sourceRow.rendererFailClosedForUnrecoveredShader &&
+                    renderer.sharedMaterials.Length == 0 && !renderer.enabled;
+                bool integratedBoundary =
+                    sourceRow.sourceRendererEnabled &&
+                    !sourceRow.rendererFailClosedForUnrecoveredShader &&
+                    renderer.sharedMaterials.Length == 1 &&
+                    renderer.sharedMaterial == material && renderer.enabled;
+                L.Require(preIntegrationBoundary || integratedBoundary,
+                    "Retained Endminf suikuai (1) admission boundary drifted: " +
+                    "sourceEnabled=" + sourceRow.sourceRendererEnabled +
+                    ", failClosed=" +
+                    sourceRow.rendererFailClosedForUnrecoveredShader +
+                    ", rendererEnabled=" + renderer.enabled +
+                    ", materialCount=" + renderer.sharedMaterials.Length);
+                L.Require(renderer.renderMode == ParticleSystemRenderMode.Mesh &&
+                    renderer.meshCount == EndminfSuikuai1Meshes.Length &&
+                    renderer.enableGPUInstancing && system.main.playOnAwake &&
+                    !system.main.loop &&
+                    Mathf.Abs(system.main.startDelay.constant - 4.49f) <= 1.0e-6f,
+                    "Retained Endminf suikuai (1) authored renderer/particle " +
+                    "contract drifted");
+
+                renderer.sharedMaterial = material;
+                renderer.enabled = true;
+                sourceRow.sourceRendererEnabled = true;
+                sourceRow.rendererFailClosedForUnrecoveredShader = false;
+                sourceRow.shaderNames = new[] {
+                    "Hidden/Endfield/Recovered/Zhuangfy/VFXRefractMRT" };
+                sourceRow.shaderPathIds = new[] { RefractShaderPathId };
+                EditorUtility.SetDirty(renderer);
+                EditorUtility.SetDirty(marker);
+                PrefabUtility.SaveAsPrefabAsset(root, EndminfOverview02Prefab);
+            }
+            finally
+            {
+                if (root != null)
+                    PrefabUtility.UnloadPrefabContents(root);
+            }
+
+            GameObject saved = AssetDatabase.LoadAssetAtPath<GameObject>(
+                EndminfOverview02Prefab);
+            L.Require(saved != null,
+                "Integrated Endminf overview_02 prefab did not reload");
+            Transform savedHost = saved.transform.Find("all/suikuai (1)");
+            ParticleSystemRenderer savedRenderer = savedHost == null
+                ? null
+                : savedHost.GetComponent<ParticleSystemRenderer>();
+            EndfieldRecoveredParticleEffectSource savedMarker =
+                saved.GetComponent<EndfieldRecoveredParticleEffectSource>();
+            EndfieldRecoveredParticleNodeSource savedRow = savedMarker == null
+                ? null
+                : savedMarker.particleNodes.SingleOrDefault(row =>
+                    row.particleRendererPathId ==
+                        EndminfSuikuai1ParticleRenderer);
+            L.Require(savedRenderer != null && savedRenderer.enabled &&
+                savedRenderer.sharedMaterials.Length == 1 &&
+                savedRenderer.sharedMaterial == material && savedRow != null &&
+                savedRow.sourceRendererEnabled &&
+                !savedRow.rendererFailClosedForUnrecoveredShader &&
+                savedRow.shaderPathIds.SequenceEqual(new[] {
+                    RefractShaderPathId }),
+                "Integrated Endminf suikuai (1) prefab binding did not persist");
         }
 
         [MenuItem("Endfield/Character Recovery Lab/Repair Endminf Overview M13 Textures")]
