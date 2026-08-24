@@ -10204,6 +10204,9 @@ namespace EndfieldGraphShaderLabEditor
                 // on both transitions. Stock Unity 2022.3 has no serialized
                 // per-transition field, so the closest supported execution
                 // boundary is the Animator-level root-motion path.
+                // This enables AnimatorMove delivery. The runtime component
+                // consumes deltaRotation only, matching the pinned native
+                // callback, and deliberately ignores deltaPosition.
                 animator.applyRootMotion = playback.blendRootMotion;
                 animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
                 animator.updateMode = AnimatorUpdateMode.Normal;

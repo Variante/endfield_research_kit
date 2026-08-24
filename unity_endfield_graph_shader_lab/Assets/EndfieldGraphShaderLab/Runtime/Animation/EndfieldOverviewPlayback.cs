@@ -129,6 +129,10 @@ namespace EndfieldGraphShaderLab
         public int CurrentAnimatorStateHash { get; private set; }
         public int NextAnimatorStateHash { get; private set; }
         public float AnimatorTransitionNormalizedTime { get; private set; }
+        public int RootMotionCallbackCount { get; private set; }
+        public float AppliedRootDeltaRotationDegrees { get; private set; }
+        public Vector3 RootMotionPositionDelta =>
+            transform.position - rootMotionAnchorPosition;
 
         private bool waitingForExit;
         private bool hasStarted;
@@ -138,6 +142,7 @@ namespace EndfieldGraphShaderLab
         private bool animatorTransitionObserved;
         private bool animatorExitCompleted;
         private bool warnedMissingAnimatorContract;
+        private Vector3 rootMotionAnchorPosition;
 
         private Animation AnimationSource
         {
@@ -436,6 +441,9 @@ namespace EndfieldGraphShaderLab
             waitingForExit = false;
             animatorTransitionObserved = false;
             animatorExitCompleted = false;
+            rootMotionAnchorPosition = transform.position;
+            RootMotionCallbackCount = 0;
+            AppliedRootDeltaRotationDegrees = 0f;
             AnimatorContractActive = true;
             IsTransitioning = false;
             IsLooping = false;
@@ -457,6 +465,26 @@ namespace EndfieldGraphShaderLab
             animator.Update(0f);
             ObserveRecoveredAnimator();
             return true;
+        }
+
+        private void OnAnimatorMove()
+        {
+            if (!AnimatorContractActive || !blendRootMotion ||
+                animatorSource == null || !animatorSource.enabled)
+                return;
+
+            // Pinned CharUIModelMono._OnAnimatorMove consumes deltaRotation
+            // only. It never reads deltaPosition. Implementing this callback
+            // prevents stock Animator root-motion translation from being
+            // applied while preserving the source controller's root-motion
+            // blend/callback path.
+            Vector3 positionBefore = transform.position;
+            Quaternion deltaRotation = animatorSource.deltaRotation;
+            transform.rotation = transform.rotation * deltaRotation;
+            transform.position = positionBefore;
+            RootMotionCallbackCount++;
+            AppliedRootDeltaRotationDegrees +=
+                Quaternion.Angle(Quaternion.identity, deltaRotation);
         }
 
         private void ObserveRecoveredAnimator()

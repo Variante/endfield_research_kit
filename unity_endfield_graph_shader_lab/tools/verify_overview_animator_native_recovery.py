@@ -188,6 +188,15 @@ def main() -> int:
         assert token in playback_source, token
         assert token in setup_source, token
 
+    for token in (
+        "private void OnAnimatorMove()",
+        "animatorSource.deltaRotation",
+        "transform.rotation = transform.rotation * deltaRotation",
+        "RootMotionPositionDelta",
+    ):
+        assert token in playback_source, token
+    assert "animatorSource.deltaPosition" not in playback_source
+
     prefab_paths = sorted(PLAYABLE_ROOT.glob("*/Prefabs/*.prefab"))
     assert len(prefab_paths) == int(serialized["actor_count"]), len(prefab_paths)
     for prefab_path in prefab_paths:

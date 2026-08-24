@@ -40,15 +40,23 @@ archetypes remain labeled source kits rather than finished characters.
   normalized transition duration, destination offset, Write Defaults, and
   interruption ordering. A 41-frame 60 Hz Viewer capture proves controller
   entry, the transition, settled looping, four entrance-effect roots, and
-  effect cleanup. Stock Unity 2022.3 does not serialize the retail
-  per-transition `m_EnableBlendRootMotion` field; the recovered true value is
-  currently mapped to Animator-level root-motion execution and remains an
-  explicit compatibility boundary.
+  effect cleanup. Its AnimatorMove path now follows the pinned native consumer:
+  it multiplies the actor rotation by `animator.deltaRotation` and never reads
+  or applies `deltaPosition`. The capture observed 599 callbacks, zero root
+  position drift, and no authored rotation delta in these two clips. Stock
+  Unity 2022.3 still does not serialize the retail per-transition
+  `m_EnableBlendRootMotion` field; that flag remains retained evidence for the
+  transition/callback path rather than permission to apply translation.
 - Endminf's overview rock/crystal animation now combines the exact retained
   transform clip with four source-resolved `GameObject.m_IsActive` curves.
   They remain active through 1.5 seconds and deactivate on the source boundary.
   The fifth constant-zero binding has no resolved hierarchy target and remains
   fail-closed rather than being fabricated.
+- The `M_fx_endminm_gfx_09` burst stripes now bind the exact exported RGBA
+  `T_fx_star_07_D` payload. The previous missing `_MainTex` silently sampled
+  white and produced a large opaque rectangle; the repaired source-alpha
+  binding restores the narrow retail-like horizontal streaks without a shader
+  tuning constant.
 - Blink, facial, physical-transform, CharacterNPR, eye, hair, shadow, GBuffer,
   light, cookie, irradiance, particle, gacha, and post-processing behavior is
   recovered only where its input contract is verified. Unknown inputs remain
@@ -132,7 +140,13 @@ and source-pinned sidecars stay disposable under the lab's
 `scratch/character_recovery/reference_sequences/` tree. The focused Endminf
 capture is labeled `ui_overview_start_then_loop`; its maintained reference
 window begins at user-selected original decoded frame 1109 (18.4666667 seconds
-at 60 fps) and continues through the recording end.
+at 60 fps) and continues through the recording end. Frame 1109 is the blank
+model-swap boundary and frame 1110 is the first visible body frame. The Viewer
+comparison validates the extracted sidecar, anchors that body frame, and maps
+each saved Unity frame to an exact decoded source frame from measured
+selection-edge elapsed time. It no longer compares against the unrelated
+earlier occurrence at 3.64 seconds. The latest 28-pair sheet and its explicit
+source-frame map remain disposable beside the Viewer capture output.
 
 Do not fork the renderer per actor. Endminf-specific code may own source asset
 selection and timing, while the importer, material mapping, animation,
@@ -148,6 +162,8 @@ another per-material shader approximation. The missing boundary includes:
 - the exact character stencil writer and receiver integration;
 - render-graph/subpass state and frame-produced lighting resources;
 - confirmation of the final source camera and presentation bindings.
+- ten still-blocked rock-family renderer identities and the complete
+  Effect-02 post-process/pass-order path.
 
 `SphereOutside` is asset-complete. Its remaining gates are runtime frame state
 and resources. The exact deferred program is no longer a blocker.
@@ -159,9 +175,9 @@ its absence no longer pauses the Unity reproduction work.
 
 ## Main animation gap
 
-The remaining runtime systems are generalized controller routing, exact
-per-transition root-motion semantics, broader Avatar transport, grounding and
-IK, facial emotion/lip sync, gaze, secondary motion, cloth/hair dynamics,
+The remaining runtime systems are generalized controller and rotation-only
+root-motion routing, broader Avatar transport, grounding and IK, facial
+emotion/lip sync, gaze, secondary motion, cloth/hair dynamics,
 remaining item/deco/FX lifecycle, gacha timing, and non-playable runtime
 assembly.
 

@@ -274,6 +274,49 @@ namespace EndfieldGraphShaderLabEditor
             ValidateGenerated();
         }
 
+        [MenuItem("Endfield/Character Recovery Lab/Repair Endminf Overview Stripe Texture")]
+        public static void RepairOverviewStripeTexture()
+        {
+            const long texturePathId = unchecked((long)0xEE1B76A5C2D86411UL);
+            const string expectedSha256 =
+                "f4d1623d32b3144b10bcfc1ff9e1fb6a0eca8bee5cc182a5502a6c82fd8b13ea";
+            string repo = Directory.GetParent(Application.dataPath).Parent.FullName;
+            string textureSourceRoot = Path.Combine(repo,
+                "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D");
+            string source = Directory.GetFiles(textureSourceRoot,
+                "*_pEE1B76A5C2D86411.png").Single();
+            string actualSha256;
+            using (SHA256 sha = SHA256.Create())
+                actualSha256 = BitConverter.ToString(
+                    sha.ComputeHash(File.ReadAllBytes(source)))
+                    .Replace("-", "").ToLowerInvariant();
+            L.Require(actualSha256 == expectedSha256,
+                "Pinned Endminf stripe texture source hash drifted");
+
+            L.EnsureFolder(GeneratedRoot);
+            L.EnsureFolder(TextureRoot);
+            string textureAsset = BuildExactEndminfDecodedTexture(
+                texturePathId, textureSourceRoot);
+            string materialAsset = MaterialRoot +
+                "/M_fx_endminm_gfx_09_p632B1622242536EC.mat";
+            Material material = AssetDatabase.LoadAssetAtPath<Material>(materialAsset);
+            Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(textureAsset);
+            L.Require(material != null && texture != null &&
+                material.HasProperty("_MainTex"),
+                "Generated Endminf stripe material or texture is missing");
+            material.SetTexture("_MainTex", texture);
+            EditorUtility.SetDirty(material);
+            AssetDatabase.SaveAssets();
+
+            TextureImporter importer = AssetImporter.GetAtPath(textureAsset)
+                as TextureImporter;
+            L.Require(material.GetTexture("_MainTex") == texture &&
+                importer != null && importer.DoesSourceTextureHaveAlpha(),
+                "Endminf stripe texture did not retain its source alpha channel");
+            Debug.Log("Repaired exact Endminf stripe texture binding: " +
+                material.name + "._MainTex -> " + texture.name);
+        }
+
         private static void AttachExactLodActivation(GameObject root, string rootName,
             Dictionary<long, GameObject> generated, Dictionary<long, long> transformByGo,
             Dictionary<long, long> goByTransform, Dictionary<long, Dictionary<string, object>> gos,
@@ -441,6 +484,9 @@ namespace EndfieldGraphShaderLabEditor
                             path.StartsWith(TextureRoot, StringComparison.Ordinal) ? 1 : 2).ToArray();
                     string asset = candidates.FirstOrDefault();
                     if (asset == null) asset = BuildExactEndminfNativeTexture(textureId);
+                    if (asset == null)
+                        asset = BuildExactEndminfDecodedTexture(
+                            textureId, textureSourceRoot);
                     L.Require(asset != null, "BaseV2 native texture payload is not already admitted: p" + hex);
                     context.textures[textureId] = AssetDatabase.LoadAssetAtPath<Texture2D>(asset);
                 }
@@ -470,6 +516,9 @@ namespace EndfieldGraphShaderLabEditor
                             path.StartsWith(TextureRoot, StringComparison.Ordinal) ? 1 : 2).ToArray();
                     string asset = candidates.FirstOrDefault();
                     if (asset == null) asset = BuildExactEndminfNativeTexture(textureId);
+                    if (asset == null)
+                        asset = BuildExactEndminfDecodedTexture(
+                            textureId, textureSourceRoot);
                     L.Require(asset != null, "BaseV2 native texture payload is not already admitted: p" + hex);
                     context.textures[textureId] = AssetDatabase.LoadAssetAtPath<Texture2D>(asset);
                 }
@@ -521,6 +570,21 @@ namespace EndfieldGraphShaderLabEditor
                 if (material == null) { material = new Material(selectedShader); AssetDatabase.CreateAsset(material, asset); }
                 material.shader = selectedShader; material.name = name;
                 EndfieldZhuangfyParticleEffectImporter.ApplyRecoveredMaterialPayload(material, row, context);
+                foreach (KeyValuePair<string, object> textureRow in
+                    L.Dict(L.Dict(row["m_SavedProperties"])["m_TexEnvs"]))
+                {
+                    long textureId = L.PPtrId(L.Dict(textureRow.Value)["m_Texture"]);
+                    if (textureId == 0) continue;
+                    Texture bound = material.GetTexture(textureRow.Key);
+                    string boundPath = bound == null
+                        ? null
+                        : AssetDatabase.GetAssetPath(bound);
+                    L.Require(bound != null && !string.IsNullOrEmpty(boundPath) &&
+                        File.Exists(L.ProjectAbsolute(boundPath)),
+                        "Recovered Endminf material retained a missing texture binding: " +
+                        name + "." + textureRow.Key + " p" +
+                        unchecked((ulong)textureId).ToString("X16", CultureInfo.InvariantCulture));
+                }
                 if (AdmittedBaseV2Materials.ContainsKey(id))
                 {
                     Dictionary<string, object> saved = L.Dict(row["m_SavedProperties"]);
@@ -626,6 +690,26 @@ namespace EndfieldGraphShaderLabEditor
                 loaded.height == L.Int(manifest, "height") && loaded.mipmapCount == L.Int(manifest, "mipCount") &&
                 loaded.format == TextureFormat.BC7,
                 "Unity exact Endminf native texture validation failed: p" + hex);
+            return assetPath;
+        }
+
+        private static string BuildExactEndminfDecodedTexture(
+            long pathId, string textureSourceRoot)
+        {
+            string hex = unchecked((ulong)pathId).ToString(
+                "X16", CultureInfo.InvariantCulture);
+            string[] sources = Directory.GetFiles(
+                textureSourceRoot, "*_p" + hex + ".png");
+            if (sources.Length == 0) return null;
+            L.Require(sources.Length == 1,
+                "Ambiguous decoded Endminf texture payload: p" + hex);
+            string assetPath = TextureRoot + "/" + Path.GetFileName(sources[0]);
+            File.Copy(sources[0], L.ProjectAbsolute(assetPath), true);
+            AssetDatabase.ImportAsset(
+                assetPath, ImportAssetOptions.ForceSynchronousImport);
+            Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(assetPath);
+            L.Require(texture != null,
+                "Decoded Endminf texture import failed: p" + hex);
             return assetPath;
         }
     }

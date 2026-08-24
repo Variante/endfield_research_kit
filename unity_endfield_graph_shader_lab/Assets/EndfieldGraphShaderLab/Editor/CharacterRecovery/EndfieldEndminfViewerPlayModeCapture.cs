@@ -49,7 +49,7 @@ namespace EndfieldGraphShaderLabEditor
         [Serializable]
         private sealed class Report
         {
-            public string schema = "endfield.endminf-viewer-playmode-sequence.v2";
+            public string schema = "endfield.endminf-viewer-playmode-sequence.v3";
             public string status = "ok";
             public int width = Width;
             public int height = Height;
@@ -69,6 +69,7 @@ namespace EndfieldGraphShaderLabEditor
             public bool observedAnimatorContract;
             public bool observedEntranceVfx;
             public bool observedEntranceVfxCleanup;
+            public bool observedRotationOnlyRootMotion;
             public FrameRow[] frames;
         }
 
@@ -92,6 +93,9 @@ namespace EndfieldGraphShaderLabEditor
             public int currentAnimatorStateHash;
             public int nextAnimatorStateHash;
             public float animatorTransitionNormalizedTime;
+            public int rootMotionCallbackCount;
+            public float appliedRootDeltaRotationDegrees;
+            public Vector3 rootMotionPositionDelta;
             public bool shadowPlaneEnabled;
             public bool shadowPlaneActive;
             public bool shadowPlaneInCameraFrustum;
@@ -130,6 +134,72 @@ namespace EndfieldGraphShaderLabEditor
             public bool isPlaying;
             public bool isEmitting;
             public int alive;
+        }
+
+        [Serializable]
+        private sealed class ReferenceSequenceSidecar
+        {
+            public string schema;
+            public string recordingId;
+            public ReferenceSegment segment;
+            public ReferenceSource source;
+            public ReferenceOutput output;
+        }
+
+        [Serializable]
+        private sealed class ReferenceSegment
+        {
+            public string id;
+            public int startFrame;
+            public ReferenceComparison comparison;
+        }
+
+        [Serializable]
+        private sealed class ReferenceComparison
+        {
+            public int bodyClipStartSourceFrame;
+            public int sampleCount;
+            public int tileColumns;
+        }
+
+        [Serializable]
+        private sealed class ReferenceSource
+        {
+            public float fps;
+            public string sha256;
+        }
+
+        [Serializable]
+        private sealed class ReferenceOutput
+        {
+            public float fps;
+            public int frameCount;
+            public int firstSourceFrame;
+        }
+
+        [Serializable]
+        private sealed class ReferenceComparisonReport
+        {
+            public string schema = "endfield.endminf-reference-comparison.v1";
+            public string recordingId;
+            public string segmentId;
+            public string sourceSha256;
+            public int extractedStartSourceFrame;
+            public int bodyClipStartSourceFrame;
+            public float sourceFps;
+            public float phaseErrorSpreadFrames;
+            public ReferenceComparisonRow[] rows;
+        }
+
+        [Serializable]
+        private sealed class ReferenceComparisonRow
+        {
+            public int unityFrameIndex;
+            public float unitySequenceSeconds;
+            public float activeBodyClipSeconds;
+            public int sourceFrame;
+            public int extractedFrame;
+            public float phaseErrorFrames;
         }
 
         public static void Run()
@@ -371,6 +441,15 @@ namespace EndfieldGraphShaderLabEditor
                 animatorTransitionNormalizedTime = overview != null
                     ? overview.AnimatorTransitionNormalizedTime
                     : 0f,
+                rootMotionCallbackCount = overview != null
+                    ? overview.RootMotionCallbackCount
+                    : 0,
+                appliedRootDeltaRotationDegrees = overview != null
+                    ? overview.AppliedRootDeltaRotationDegrees
+                    : 0f,
+                rootMotionPositionDelta = overview != null
+                    ? overview.RootMotionPositionDelta
+                    : Vector3.zero,
                 shadowPlaneEnabled = shadowPlane != null && shadowPlane.enabled,
                 shadowPlaneActive = shadowPlane != null && shadowPlane.gameObject.activeInHierarchy,
                 shadowPlaneInCameraFrustum = shadowPlaneInFrustum,
@@ -409,12 +488,17 @@ namespace EndfieldGraphShaderLabEditor
                 value.activeAdmittedRenderers > 0 && value.admittedAliveParticles > 0);
             bool observedEntranceVfxCleanup = Frames.Any(value =>
                 value.overviewLooping && !value.overviewTransitioning && value.effectRootCount == 0);
+            bool observedRotationOnlyRootMotion =
+                Frames.Any(value => value.rootMotionCallbackCount > 0) &&
+                Frames.All(value => value.rootMotionPositionDelta.sqrMagnitude <= 1.0e-10f);
             var missingObservations = new List<string>();
             if (!observedAnimatorContract) missingObservations.Add("Animator contract");
             if (!observedTransition) missingObservations.Add("start-to-loop transition");
             if (!observedSettledLoop) missingObservations.Add("settled loop");
             if (!observedEntranceVfx) missingObservations.Add("entrance VFX");
             if (!observedEntranceVfxCleanup) missingObservations.Add("entrance VFX cleanup");
+            if (!observedRotationOnlyRootMotion)
+                missingObservations.Add("rotation-only root motion with invariant position");
             Report report = new Report {
                 status = missingObservations.Count == 0
                     ? "ok"
@@ -432,6 +516,7 @@ namespace EndfieldGraphShaderLabEditor
                 observedAnimatorContract = observedAnimatorContract,
                 observedEntranceVfx = observedEntranceVfx,
                 observedEntranceVfxCleanup = observedEntranceVfxCleanup,
+                observedRotationOnlyRootMotion = observedRotationOnlyRootMotion,
                 frames = Frames.ToArray()
             };
             File.WriteAllText(Path.Combine(output, "report.json"), JsonUtility.ToJson(report, true));
@@ -450,7 +535,20 @@ namespace EndfieldGraphShaderLabEditor
                 return;
             }
             if (!fineWindow && !videoExport)
-                BuildSideBySideComparison();
+            {
+                try
+                {
+                    BuildSideBySideComparison();
+                }
+                catch (Exception error)
+                {
+                    captureFailure =
+                        "Endminf reference comparison failed closed: " + error.Message;
+                    Debug.LogException(error);
+                    EditorApplication.ExitPlaymode();
+                    return;
+                }
+            }
             Debug.Log("PASS Endminf actual Viewer Play-mode sequence: roots=" + Frames.Last().effectRootCount +
                 " admitted=" + Frames.Last().admittedRenderers + " output=" + output);
             EditorApplication.ExitPlaymode();
@@ -459,32 +557,138 @@ namespace EndfieldGraphShaderLabEditor
 
         private static void BuildSideBySideComparison()
         {
-            string repo = Directory.GetParent(
-                Directory.GetParent(Application.dataPath).FullName).FullName;
-            string reference = Path.Combine(
-                repo, "videos", "2026-08-21_20-15-17.mkv");
-            if (!File.Exists(reference))
+            const string recordingId = "endminf_overview_2026-08-21";
+            const string segmentId = "endminf_overview_start_and_loop";
+            string lab = Directory.GetParent(Application.dataPath).FullName;
+            ValidateReferenceSequence(lab, recordingId, segmentId);
+            string sequence = Path.Combine(lab, "scratch", "character_recovery",
+                "reference_sequences", recordingId, "endminf", segmentId);
+            string sidecarPath = Path.Combine(sequence, "sequence.json");
+            if (!File.Exists(sidecarPath))
                 throw new FileNotFoundException(
-                    "Endminf reference video is missing", reference);
+                    "Validated Endminf reference sidecar is missing", sidecarPath);
+            ReferenceSequenceSidecar sidecar = JsonUtility.FromJson<ReferenceSequenceSidecar>(
+                File.ReadAllText(sidecarPath));
+            if (sidecar == null ||
+                sidecar.schema != "endfield.character-reference-sequence.v1" ||
+                sidecar.recordingId != recordingId || sidecar.segment == null ||
+                sidecar.segment.id != segmentId || sidecar.segment.comparison == null ||
+                sidecar.source == null || sidecar.output == null)
+                throw new InvalidDataException(
+                    "Endminf reference sidecar lost its maintained comparison contract");
+            ReferenceComparison comparison = sidecar.segment.comparison;
+            if (sidecar.segment.startFrame != sidecar.output.firstSourceFrame ||
+                Mathf.Abs(sidecar.source.fps - SimulationFps) > 0.0001f ||
+                Mathf.Abs(sidecar.output.fps - SimulationFps) > 0.0001f ||
+                comparison.bodyClipStartSourceFrame < sidecar.segment.startFrame ||
+                comparison.sampleCount <= 0 || comparison.sampleCount > Frames.Count ||
+                comparison.tileColumns <= 0)
+                throw new InvalidDataException(
+                    "Endminf reference comparison timing contract drifted");
+
+            var rows = new List<ReferenceComparisonRow>();
+            int previousSourceFrame = -1;
+            float firstSequenceElapsed = Frames[0].endminfPostSeconds;
+            float firstStartClipPhase = Frames[0].activeBodyClipTime;
+            for (int index = 0; index < comparison.sampleCount; index++)
+            {
+                FrameRow unity = Frames[index];
+                float sequenceSeconds = firstStartClipPhase +
+                    unity.endminfPostSeconds - firstSequenceElapsed;
+                float exactOffsetFrames = sequenceSeconds * sidecar.source.fps;
+                int roundedOffsetFrames = Mathf.FloorToInt(exactOffsetFrames + 0.5f);
+                int sourceFrame = comparison.bodyClipStartSourceFrame + roundedOffsetFrames;
+                int extractedFrame = sourceFrame - sidecar.output.firstSourceFrame + 1;
+                bool startClipCrossCheck = unity.overviewTransitioning ||
+                    unity.overviewLooping ||
+                    Mathf.Abs(unity.activeBodyClipTime - sequenceSeconds) <= 0.002f;
+                if (sourceFrame <= previousSourceFrame || extractedFrame < 1 ||
+                    extractedFrame > sidecar.output.frameCount ||
+                    Mathf.Abs(exactOffsetFrames - roundedOffsetFrames) > 0.075f ||
+                    !startClipCrossCheck)
+                    throw new InvalidDataException(
+                        "Endminf reference phase match is not a unique 60-Hz source sample: " +
+                        "unityFrame=" + index + " sequence=" + sequenceSeconds +
+                        " clip=" + unity.activeBodyClipTime +
+                        " sourceFrame=" + sourceFrame);
+                previousSourceFrame = sourceFrame;
+                rows.Add(new ReferenceComparisonRow {
+                    unityFrameIndex = unity.index,
+                    unitySequenceSeconds = sequenceSeconds,
+                    activeBodyClipSeconds = unity.activeBodyClipTime,
+                    sourceFrame = sourceFrame,
+                    extractedFrame = extractedFrame,
+                    phaseErrorFrames = exactOffsetFrames - roundedOffsetFrames
+                });
+            }
+            float phaseErrorSpreadFrames = rows.Max(row => row.phaseErrorFrames) -
+                rows.Min(row => row.phaseErrorFrames);
+            if (phaseErrorSpreadFrames > 0.001f)
+                throw new InvalidDataException(
+                    "Endminf reference phase residue drifted across the comparison window: " +
+                    phaseErrorSpreadFrames + " source frames");
 
             string sideBySide = Path.Combine(output, "reference_vs_unity_4fps.png");
-            // The supplied recording shows Endminf from approximately 3.5 to
-            // 10.5 seconds. Keep the visual sheet on that bounded interval;
-            // the JSON capture still continues through ten Viewer seconds to
-            // validate the settled loop independently.
-            // Pair matching timestamps first, then tile those pairs. This
-            // keeps every retail frame immediately beside its Unity frame
-            // instead of presenting two independently tiled sequences.
-            // A bounded 60-Hz sweep now pairs retail sample N with Unity sample
-            // N+1: retail frame 17 at 7.89 s matches Unity frame 18 at body clip
-            // 4.5009 s. Start Unity at file 1 so each tile is a matched pair,
-            // rather than two independently indexed sequences.
-            RunFfmpeg("-y -v error -ss 3.64 -t 7 -i " + Quote(reference) +
-                " -framerate 4 -start_number 1 -t 7 -i " +
+            string selectedFrames = string.Join("+", rows.Select(row =>
+                "eq(n\\," + (row.extractedFrame - 1) + ")").ToArray());
+            int tileRows = Mathf.CeilToInt(
+                comparison.sampleCount / (float)comparison.tileColumns);
+            RunFfmpeg("-y -v error -framerate 60 -start_number 1 -i " +
+                Quote(Path.Combine(sequence, "frame_%06d.png")) +
+                " -framerate 4 -start_number 0 -i " +
                 Quote(Path.Combine(output, "frame_%06d.png")) +
-                " -filter_complex \"[0:v]fps=4,scale=384:-1[reference];" +
-                "[1:v]scale=384:-1[unity];[reference][unity]hstack=inputs=2," +
-                "tile=4x7\" -frames:v 1 " + Quote(sideBySide));
+                " -filter_complex \"[0:v]select='" + selectedFrames +
+                "',setpts=N/(4*TB),scale=384:-1[reference];" +
+                "[1:v]trim=end_frame=" + comparison.sampleCount +
+                ",setpts=N/(4*TB),scale=384:-1[unity];" +
+                "[reference][unity]hstack=inputs=2,tile=" +
+                comparison.tileColumns + "x" + tileRows +
+                "\" -frames:v 1 " + Quote(sideBySide));
+
+            var report = new ReferenceComparisonReport {
+                recordingId = recordingId,
+                segmentId = segmentId,
+                sourceSha256 = sidecar.source.sha256,
+                extractedStartSourceFrame = sidecar.output.firstSourceFrame,
+                bodyClipStartSourceFrame = comparison.bodyClipStartSourceFrame,
+                sourceFps = sidecar.source.fps,
+                phaseErrorSpreadFrames = phaseErrorSpreadFrames,
+                rows = rows.ToArray()
+            };
+            File.WriteAllText(Path.Combine(output, "reference_comparison.json"),
+                JsonUtility.ToJson(report, true));
+        }
+
+        private static void ValidateReferenceSequence(
+            string lab, string recordingId, string segmentId)
+        {
+            string script = Path.Combine(lab, "tools", "reference_video_sequences.py");
+            if (!File.Exists(script))
+                throw new FileNotFoundException(
+                    "Maintained reference-sequence validator is missing", script);
+            string arguments = Quote(script) + " --check --recording " + recordingId +
+                " --segment " + segmentId;
+            var start = new System.Diagnostics.ProcessStartInfo("python", arguments)
+            {
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                WorkingDirectory = lab,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true
+            };
+            using (System.Diagnostics.Process process =
+                   System.Diagnostics.Process.Start(start))
+            {
+                string stdout = process.StandardOutput.ReadToEnd();
+                string stderr = process.StandardError.ReadToEnd();
+                process.WaitForExit();
+                if (process.ExitCode != 0)
+                    throw new InvalidDataException(
+                        "Endminf reference sequence is stale; regenerate it with " +
+                        "scripts\\reference_video\\extract_reference_sequences.bat " +
+                        "--recording " + recordingId + " --force.\n" +
+                        stdout + stderr);
+            }
         }
 
         private static void RunFfmpeg(string arguments)
