@@ -73,10 +73,14 @@ archetypes remain labeled source kits rather than finished characters.
   avoiding first-frame self-seeding. The ordinary Quality-0 TAA schedule and
   shader bindings are now closed as Dilation -> MaskDilation -> Resolve, with
   scene-color, dilated-depth, and dilated-SceneMV histories. The compatibility
-  path implements Dilation's exact current-frame 3x3 maximum-depth SceneMV
-  selection. Its prior-frame reprojection/flag repacking, mask, complete
-  resolve policy, jitter/matrix state, fast convergence, live IFix selection,
-  and constructor-seeded constant lanes remain open.
+  path now persists the auxiliary depth/SceneMV histories and implements
+  Dilation's recovered 3x3 maximum-depth winner scan, previous-non-jittered-VP
+  reprojection, and exact B/Z-lane flag repacking. The packed result is not yet
+  fed to the partial beauty resolve: that consumer still expects raw SceneMV B,
+  while retail reads normalized 10-bit flags. MaskDilation, packed-flag resolve
+  consumption, complete resolve policy, jitter, fast convergence, live IFix
+  selection, the retail first-frame auxiliary clear payload, and
+  constructor-seeded constant lanes remain open.
 - Effect-02's animated radial/chromatic values, exact 1.0 radial power, native
   mode/effective-power packing, signed/clamped post-projection center transform,
   source-only warped taps, and separate bloom sampling order are source-backed.
@@ -229,7 +233,8 @@ another per-material shader approximation. The missing boundary includes:
 - exact retail D3D12 presentation binding after the now-closed Effect-02
   combined Uber source, bloom, LUT, and output-tail contract;
 - the full TAA producer/consumer chain beyond the now-complete actor SceneMV
-  MRT coverage and recorded blank-frame history boundary.
+  MRT coverage, recorded blank-frame history boundary, and recovered Dilation
+  auxiliary-history producer.
 
 `SphereOutside` is asset-complete. Its remaining gates are runtime frame state
 and resources. The exact deferred program is no longer a blocker.

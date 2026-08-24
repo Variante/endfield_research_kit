@@ -1,5 +1,5 @@
 {
-  "schema": "endfield.endminf-temporal-motion-admission.v2",
+  "schema": "endfield.endminf-temporal-motion-admission.v3",
   "subject": "Endminf Character Info temporal and motion admission",
   "reference": {
     "recording": "videos/2026-08-21_20-15-17.mkv",
@@ -91,9 +91,16 @@
       "current dilated mask",
       "history scene color"
     ],
+    "dilationOcclusionDepthDiff": {
+      "value": 0.0002,
+      "source": "HGRenderPipelineGlobalSettings desktop TAAU settings",
+      "transport": "HGRenderPathScene PassInput.occlusionDepthDiff -> TAAUPassConstructor _TAAUParams1.y -> Dilation depth mismatch test",
+      "boundary": "No CharInfo-specific runtime override is evidenced; an unobserved runtime mutation remains possible."
+    },
     "historyGate": "Scene-color, dilated-depth, and dilated-SceneMV histories must all be valid, and TAAU must have been enabled on the preceding frame. Otherwise effective history weight is zero and firstFrame is one.",
-    "implementedSubset": "The compatibility path now performs the exact current-frame spatial half of Dilation: choose maximum reversed-Z depth over the 3x3 footprint and load SceneMV from that pixel before the partial resolve.",
-    "explicitBoundary": "Previous-frame depth/MV reprojection, B-lane flag repacking, four-neighbor mask dilation, full ordinary resolve policy, jitter, and untouched constructor-seeded TAAU constant lanes remain unimplemented. The recovered managed base branch also does not prove live CharInfo IFix activation or override the saved DLSS/DLAA selection evidence."
+    "implementedSubset": "The compatibility path now runs Dilation's recovered 3x3 reversed-Z winner scan, exact fourth-root SceneMV decode, previous-non-jittered-VP reprojection, previous dilated-depth/SceneMV lookup, and exact B/Z-lane flag repacking into persistent auxiliary histories. A separate raw-lane copy of the same spatial winner remains the input to the partial beauty resolve until that resolve's packed-bit consumer is ported.",
+    "firstFrameSeedBoundary": "The retail auxiliary texture allocation/clear payload is not recovered. The compatibility pass uses deterministic depth 0 and SceneMV (0.5,0.5,0,0) only while its explicit auxiliary-history-valid gate is false; the recovered managed history gate independently makes scene-color history weight zero on that first frame.",
+    "explicitBoundary": "MaskDilation, the packed B/Z-lane tests in the ordinary resolve, the rest of the complete Quality-0 resolve policy, jitter, fast convergence, live IFix selection, and untouched constructor-seeded TAAU constant lanes remain unimplemented. The packed auxiliary SceneMV is therefore generated and persisted but deliberately not beauty-consumed. The recovered managed base branch also does not prove live CharInfo IFix activation or override the saved DLSS/DLAA selection evidence."
   },
   "sceneMotionVectors": {
     "status": "actor MRT completion implemented",
@@ -113,13 +120,13 @@
     "output": "SV_Target1 with recovered SceneMV encoding"
   },
   "temporalHistory": {
-    "status": "source boundary reproduced with partial ordinary Quality-0 TAA consumer",
+    "status": "source boundary and auxiliary history schedule reproduced with partial ordinary Quality-0 TAA consumer",
     "behavior": "While the explicit compatibility profile is requested but Endminf's effect clock is inactive, the camera preserves the latest scene color without resolving. The capture renders source-equivalent blank model-swap frame 1109 before selecting Endminf, allowing visible frame 1110 to consume that history instead of self-seeding.",
     "knownPartialBoundary": [
-      "one scene-color history rather than the full recovered history set",
+      "the full recovered scene-color/dilated-depth/dilated-SceneMV history set is allocated, but only scene color and raw-lane spatially selected SceneMV feed the current partial beauty resolve",
       "no exact complete TAA shader implementation",
-      "no recovered jitter or previous-camera matrix publication",
-      "no auxiliary depth/MV histories, temporal dilation flag repacking, mask, complete rejection, or fast-converge path",
+      "no recovered jitter",
+      "no MaskDilation, packed-flag beauty consumption, complete rejection, or fast-converge path",
       "incomplete 192-byte TAA constant-buffer publication"
     ]
   },
@@ -156,6 +163,15 @@
       "pixelAnyChannelAtLeast16": 0.4290171040,
       "frame0Mae": 22.6546802521,
       "frame18Mae": 25.8107490540
+    },
+    "exactAuxiliaryHistoryBeautyIsolated": {
+      "mae": 22.3100680591,
+      "rmse": 39.3491267213,
+      "bias": 10.5443298969,
+      "pixelAnyChannelAtLeast16": 0.4290189450,
+      "frame0Mae": 22.6550178528,
+      "frame18Mae": 25.8108272552,
+      "interpretation": "Canonical rerun after exact auxiliary-history persistence and flag repacking. The partial beauty resolve deliberately consumed a separate raw-lane spatial winner, so this validates non-regression and resource scheduling rather than a claimed quality gain."
     }
   },
   "clothBoundary": {
