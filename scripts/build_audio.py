@@ -1705,6 +1705,7 @@ def collect_animation_override_index(export_root: Path) -> dict[str, Any]:
         "overrideControllerCount": 0,
         "controllerPathIdReferences": 0,
         "controllerPathIdCorpusUnique": 0,
+        "controllerSourceExact": 0,
         "controllerPathIdUnresolved": 0,
         "controllerPathIdAmbiguous": 0,
         "overrideReferenceCount": 0,
@@ -1712,15 +1713,17 @@ def collect_animation_override_index(export_root: Path) -> dict[str, Any]:
         "replacementReferenceCount": 0,
         "effectiveClipReferenceCount": 0,
         "effectiveClipCorpusUniqueReferences": 0,
+        "effectiveClipSourceExactReferences": 0,
         "effectiveClipMissingReferences": 0,
         "effectiveClipAmbiguousReferences": 0,
         "uniqueEffectiveClipPathIds": 0,
         "assetIdentityTokenCount": 0,
         "assetIdentityTokenReferences": 0,
         "sourceBoundary": (
-            "Override payloads have no exporter source-file envelope; joins are "
-            "VFS-root-scoped corpus-unique PathID annotations only. They do not prove the Unity "
-            "serialized-file identity or live AnimatorOverrideController activation."
+            "Override payloads have no exporter source-file envelope. When the AssetMap "
+            "uniquely identifies the override object's Source+PathID and a PPtr has FileID=0, "
+            "same-file controller/clip joins are exact; all other joins remain VFS-root-scoped "
+            "corpus-unique PathID annotations. Neither proves live override activation."
         ),
     }
     if not available_roots:
@@ -1734,6 +1737,33 @@ def collect_animation_override_index(export_root: Path) -> dict[str, Any]:
         if not isinstance(value, int) or isinstance(value, bool) or value == 0:
             return None
         return int(value)
+
+    def is_local_file_id(pointer: dict[str, Any]) -> bool:
+        value = pointer.get("m_FileID")
+        return isinstance(value, int) and not isinstance(value, bool) and value == 0
+
+    # Recover the serialized-file source of exported override/controller/clip
+    # objects from the generated AssetMap.  This is stronger than a bare PathID
+    # only for FileID=0 pointers, whose target is in the same serialized file.
+    asset_sources: dict[tuple[str, str, int], list[str]] = defaultdict(list)
+    for storage_root in ("StreamingAssets", "Persistent"):
+        asset_map = (
+            export_root / "recovered" / "AnimeStudio-cli" / storage_root
+            / "maps" / f"endfield_{storage_root.lower()}_assets.json"
+        )
+        for entry in iter_asset_map_objects(asset_map):
+            if not isinstance(entry, dict):
+                continue
+            asset_type = str(entry.get("Type") or "")
+            if asset_type not in {"AnimationClip", "AnimatorController", "AnimatorOverrideController"}:
+                continue
+            asset_path_id = path_id(entry.get("PathID"))
+            source = normalize_posix(str(entry.get("Source") or "")).lower()
+            if asset_path_id is None or not source:
+                continue
+            key = (storage_root, asset_type, asset_path_id)
+            if source not in asset_sources[key]:
+                asset_sources[key].append(source)
 
     # PathID uniqueness is measured over the actual exported AnimationClip
     # files within one VFS storage root, not over names. Ambiguous or missing
@@ -1779,6 +1809,9 @@ def collect_animation_override_index(export_root: Path) -> dict[str, Any]:
                     "sourceFile": str(metadata.get("sourceFile") or ""),
                     "pathId": controller_path_id,
                     "storageRoot": storage_root,
+                    "assetMapSources": list(asset_sources.get(
+                        (storage_root, "AnimatorController", controller_path_id), []
+                    )),
                 }
                 controller_paths_by_storage_id[
                     (storage_root, controller_path_id)
@@ -1814,11 +1847,26 @@ def collect_animation_override_index(export_root: Path) -> dict[str, Any]:
         controller_pointer = payload.get("m_Controller")
         controller_pointer = controller_pointer if isinstance(controller_pointer, dict) else {}
         controller_path_id = path_id(controller_pointer.get("m_PathID"))
+        override_path_id = animation_clip_path_id(path)
+        override_sources = asset_sources.get(
+            (storage_root, "AnimatorOverrideController", override_path_id or 0), []
+        )
+        override_source = override_sources[0] if len(override_sources) == 1 else ""
         counts["controllerPathIdReferences"] += 1
         controller_matches = (
             controller_paths_by_storage_id.get((storage_root, controller_path_id or 0)) or []
         )
-        if len(controller_matches) == 1:
+        exact_controller_matches = [
+            row for row in controller_matches
+            if override_source
+            and is_local_file_id(controller_pointer)
+            and override_source in (row.get("assetMapSources") or [])
+        ]
+        if len(exact_controller_matches) == 1:
+            controller_join_status = "exactSameSerializedFileControllerPathId"
+            controller_context = exact_controller_matches[0]
+            counts["controllerSourceExact"] += 1
+        elif len(controller_matches) == 1:
             controller_join_status = "corpusUniqueControllerPathId"
             controller_context = controller_matches[0]
             counts["controllerPathIdCorpusUnique"] += 1
@@ -1853,7 +1901,18 @@ def collect_animation_override_index(export_root: Path) -> dict[str, Any]:
             else:
                 counts["baseClipReferenceCount"] += 1
             clip_matches = clip_paths_by_storage_id.get((storage_root, effective_path_id)) or []
-            if len(clip_matches) == 1:
+            effective_pointer = override_pointer if is_replacement else original_pointer
+            exact_clip_source = bool(
+                override_source
+                and is_local_file_id(effective_pointer)
+                and override_source in asset_sources.get(
+                    (storage_root, "AnimationClip", effective_path_id), []
+                )
+            )
+            if exact_clip_source:
+                clip_join_status = "exactSameSerializedFileAnimationClipPathId"
+                counts["effectiveClipSourceExactReferences"] += 1
+            elif len(clip_matches) == 1:
                 clip_join_status = "corpusUniqueAnimationClipPathId"
                 counts["effectiveClipCorpusUniqueReferences"] += 1
             elif len(clip_matches) > 1:
@@ -1866,6 +1925,7 @@ def collect_animation_override_index(export_root: Path) -> dict[str, Any]:
                 "overrideName": override_name,
                 "overrideSourcePath": normalize_posix(path.relative_to(export_root)),
                 "overrideControllerPathId": controller_path_id,
+                "overrideAssetMapSource": override_source,
                 "controllerJoinStatus": controller_join_status,
                 "controllerName": controller_context.get("name") or "",
                 "controllerSourcePath": controller_context.get("sourcePath") or "",
@@ -1946,6 +2006,25 @@ def animation_override_contexts(
         return []
     contexts = override_index.get((animestudio_storage_root(path), path_id)) or {}
     return [dict(row) for row in contexts if isinstance(row, dict)]
+
+
+def animation_override_reachability_status(contexts: Iterable[dict[str, Any]]) -> str:
+    """Classify exact same-file mappings ahead of bounded corpus-unique joins."""
+
+    rows = [row for row in contexts if isinstance(row, dict)]
+    if any(
+        str(row.get("clipJoinStatus") or "").startswith("exactSameSerializedFile")
+        and str(row.get("controllerJoinStatus") or "").startswith("exactSameSerializedFile")
+        for row in rows
+    ):
+        return "exactAnimatorOverrideMapping"
+    if any(
+        str(row.get("clipJoinStatus") or "") == "corpusUniqueAnimationClipPathId"
+        and str(row.get("controllerJoinStatus") or "") == "corpusUniqueControllerPathId"
+        for row in rows
+    ):
+        return "corpusUniqueAnimatorOverrideMapping"
+    return "unresolved"
 
 
 def animation_clip_reachability_status(
@@ -2042,22 +2121,14 @@ def collect_gameplay_animation_audio(
                 "directAnimatorController" if controller_contexts else "unresolved"
             )
             override_contexts = animation_override_contexts(override_index, path)
-            override_reachability = (
-                "corpusUniqueAnimatorOverrideMapping"
-                if any(
-                    str(row.get("clipJoinStatus") or "") == "corpusUniqueAnimationClipPathId"
-                    and str(row.get("controllerJoinStatus") or "") == "corpusUniqueControllerPathId"
-                    for row in override_contexts
-                )
-                else "unresolved"
-            )
+            override_reachability = animation_override_reachability_status(override_contexts)
             if controller_contexts:
                 controller_reachable_clips += 1
                 controller_reachable_callback_rows += len(clip_events)
             else:
                 controller_unresolved_clips += 1
                 controller_unresolved_callback_rows += len(clip_events)
-            if override_reachability == "corpusUniqueAnimatorOverrideMapping":
+            if override_reachability != "unresolved":
                 override_reachable_clips += 1
                 override_reachable_callback_rows += len(clip_events)
             else:
@@ -3239,14 +3310,8 @@ def link_gameplay_audio(
                 "animatorControllerContexts": animator_controller_contexts,
                 "animatorControllerReachableClipCount": animator_controller_reachable_clip_count,
                 "animatorControllerUnresolvedClipCount": animator_controller_unresolved_clip_count,
-                "overrideReachability": (
-                    "corpusUniqueAnimatorOverrideMapping"
-                    if any(
-                        str(row.get("clipJoinStatus") or "") == "corpusUniqueAnimationClipPathId"
-                        and str(row.get("controllerJoinStatus") or "") == "corpusUniqueControllerPathId"
-                        for row in animator_override_contexts
-                    )
-                    else "unresolved"
+                "overrideReachability": animation_override_reachability_status(
+                    animator_override_contexts
                 ),
                 "animatorOverrideCount": len(animator_override_contexts),
                 "animatorOverrideContexts": animator_override_contexts,
@@ -3316,14 +3381,8 @@ def link_gameplay_audio(
                     )
                 )
                 current["animatorOverrideCount"] = len(current_override_contexts)
-                current["overrideReachability"] = (
-                    "corpusUniqueAnimatorOverrideMapping"
-                    if any(
-                        str(row.get("clipJoinStatus") or "") == "corpusUniqueAnimationClipPathId"
-                        and str(row.get("controllerJoinStatus") or "") == "corpusUniqueControllerPathId"
-                        for row in current_override_contexts
-                    )
-                    else "unresolved"
+                current["overrideReachability"] = animation_override_reachability_status(
+                    current_override_contexts
                 )
                 current["authoredEventIds"] = sorted(
                     set(current.get("authoredEventIds") or []).union(event.get("authoredEventIds") or [])
@@ -3701,15 +3760,7 @@ def link_gameplay_audio(
             "animatorControllerContexts": controller_contexts,
             "animatorControllerReachableClipCount": controller_reachable_clips,
             "animatorControllerUnresolvedClipCount": controller_unresolved_clips,
-            "overrideReachability": (
-                "corpusUniqueAnimatorOverrideMapping"
-                if any(
-                    str(row.get("clipJoinStatus") or "") == "corpusUniqueAnimationClipPathId"
-                    and str(row.get("controllerJoinStatus") or "") == "corpusUniqueControllerPathId"
-                    for row in override_contexts
-                )
-                else "unresolved"
-            ),
+            "overrideReachability": animation_override_reachability_status(override_contexts),
             "animatorOverrideCount": len(override_contexts),
             "animatorOverrideContexts": override_contexts,
             "sourceAnimationClips": sorted({str(row.get("clip") or "") for row in rows if row.get("clip")}),

@@ -3840,6 +3840,67 @@ AnimationClip:
                 "missingControllerPathId",
             )
 
+    def test_animator_override_index_uses_exact_asset_map_same_file_identity(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            export_root = Path(raw_root) / "export_full"
+            base = export_root / "recovered/AnimeStudio-cli/StreamingAssets"
+            clip_root = base / "convert_by_type/AnimationClip"
+            controller_root = base / "json_by_type/AnimatorController"
+            override_root = base / "json_by_type/AnimatorOverrideController"
+            map_root = base / "maps"
+            for root in (clip_root, controller_root, override_root, map_root):
+                root.mkdir(parents=True)
+            (clip_root / "A_actor_test_battle_override_p0000000000000002.anim").write_text(
+                "%YAML 1.1\nAnimationClip:\n  m_Name: A_actor_test_battle_override\n",
+                encoding="utf-8",
+            )
+            (controller_root / "AnimatorController#fixture_p0000000000000003.json").write_text(
+                json.dumps({
+                    "$animestudio": {
+                        "type": "AnimatorController", "pathId": 3,
+                        "sourceFile": "CAB-shared",
+                    },
+                    "m_Name": "AC_fixture_override",
+                }),
+                encoding="utf-8",
+            )
+            (override_root / "AC_eny_0001_fixture_p0000000000000004.json").write_text(
+                json.dumps({
+                    "m_Controller": {"m_FileID": 0, "m_PathID": 3, "IsNull": False},
+                    "m_Clips": [{
+                        "m_OriginalClip": {"m_FileID": 0, "m_PathID": 1, "IsNull": False},
+                        "m_OverrideClip": {"m_FileID": 0, "m_PathID": 2, "IsNull": False},
+                    }],
+                }),
+                encoding="utf-8",
+            )
+            rows = [
+                {"Name": "clip", "Container": "clip.anim", "Source": "shared.chk", "PathID": 2, "Type": "AnimationClip"},
+                {"Name": "controller", "Container": "controller.controller", "Source": "shared.chk", "PathID": 3, "Type": "AnimatorController"},
+                {"Name": "override", "Container": "override.overrideController", "Source": "shared.chk", "PathID": 4, "Type": "AnimatorOverrideController"},
+            ]
+            (map_root / "endfield_streamingassets_assets.json").write_text(
+                json.dumps({"Assets": rows}, indent=2), encoding="utf-8"
+            )
+
+            result = build_audio.collect_animation_override_index(export_root)
+            context = result["byClipPathId"][2][0]
+            self.assertEqual(
+                context["controllerJoinStatus"],
+                "exactSameSerializedFileControllerPathId",
+            )
+            self.assertEqual(
+                context["clipJoinStatus"],
+                "exactSameSerializedFileAnimationClipPathId",
+            )
+            self.assertEqual(context["overrideAssetMapSource"], "shared.chk")
+            self.assertEqual(result["summary"]["controllerSourceExact"], 1)
+            self.assertEqual(result["summary"]["effectiveClipSourceExactReferences"], 1)
+            self.assertEqual(
+                build_audio.animation_override_reachability_status([context]),
+                "exactAnimatorOverrideMapping",
+            )
+
     def test_collects_direct_character_and_bounded_enemy_audio(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:
             root = Path(raw_root)
