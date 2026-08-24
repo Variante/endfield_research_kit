@@ -1,0 +1,203 @@
+{
+  "schema": "endfield.charinfo.endminf-anchor-wave-bright-contract.v1",
+  "status": "native_contract_closed_selected_frame_value_unobserved",
+  "nativeContractClosed": true,
+  "selectedFrameValueClosed": false,
+  "safeToInventSelectedFrameValue": false,
+  "nativeGate": {
+    "status": "validated",
+    "gameAssembly": {
+      "path": "D:/Program Files/Endfield Game/GameAssembly.dll",
+      "sha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
+    },
+    "globalMetadata": {
+      "path": "D:/Program Files/Endfield Game/Endfield_Data/il2cpp_data/Metadata/global-metadata.dat",
+      "sha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
+    },
+    "codeRegistrationVa": "0x18b9217d0",
+    "metadataRegistrationVa": "0x18b921c30"
+  },
+  "owner": {
+    "type": "HG.Rendering.Runtime.HGVFXManager",
+    "typeIndex": 37934,
+    "token": "0x02000245"
+  },
+  "fields": [
+    {
+      "name": "m_anchorPosition",
+      "fieldIndex": 171293,
+      "token": "0x04000f4c",
+      "instanceOffsetBytes": "0x70"
+    },
+    {
+      "name": "m_anchorRadius",
+      "fieldIndex": 171294,
+      "token": "0x04000f4d",
+      "instanceOffsetBytes": "0x78"
+    },
+    {
+      "name": "m_anchorBrightIntensity",
+      "fieldIndex": 171295,
+      "token": "0x04000f4e",
+      "instanceOffsetBytes": "0x7c"
+    },
+    {
+      "name": "m_brightInnerRadius",
+      "fieldIndex": 171296,
+      "token": "0x04000f4f",
+      "instanceOffsetBytes": "0x80"
+    },
+    {
+      "name": "m_brightOuterRadius",
+      "fieldIndex": 171297,
+      "token": "0x04000f50",
+      "instanceOffsetBytes": "0x84"
+    },
+    {
+      "name": "m_anchorBrightFlag",
+      "fieldIndex": 171298,
+      "token": "0x04000f51",
+      "instanceOffsetBytes": "0x88"
+    }
+  ],
+  "methods": {
+    "SetAnchorWaveBright": {
+      "declaringType": "HG.Rendering.Runtime.HGVFXManager",
+      "methodIndex": 285884,
+      "token": "0x06000b38",
+      "virtualAddress": "0x189b599e8",
+      "endVirtualAddressExclusive": "0x189b59af4",
+      "bodyBytes": 268,
+      "bodySha256": "252474358c40153ae9681b3b8ad6eaa001e3b9a9e0cc9bd49f91ed27f8093b8f"
+    },
+    "GetAnchorWaveBright": {
+      "declaringType": "HG.Rendering.Runtime.HGVFXManager",
+      "methodIndex": 285885,
+      "token": "0x06000b39",
+      "virtualAddress": "0x183104670",
+      "endVirtualAddressExclusive": "0x183104890",
+      "bodyBytes": 544,
+      "bodySha256": "829cc7835b73c9dae9f0b299604ff0498ae99e1ada5a54a1408b0e6425ec4549"
+    },
+    "UpdateShaderVariablesGlobalVFX": {
+      "declaringType": "HG.Rendering.Runtime.HGRenderPathBase",
+      "methodIndex": 287947,
+      "token": "0x06001347",
+      "virtualAddress": "0x189bde508",
+      "endVirtualAddressExclusive": "0x189bde6b0",
+      "bodyBytes": 424,
+      "bodySha256": "29c6e5d227133143db585788aa1da0b84f45d9b898ffffb4920fa61a9c48593b"
+    }
+  },
+  "setterContract": {
+    "signature": "SetAnchorWaveBright(Vector2 anchorPosition, float anchorRadius, float anchorBrightIntensity, bool anchorBrightFlag)",
+    "semantics": "the visible managed path stores the four inputs without clamping or remapping",
+    "stores": {
+      "anchorPositionX": {
+        "instructionOffset": "0x81",
+        "instructionBytes": "f30f114070"
+      },
+      "anchorPositionY": {
+        "instructionOffset": "0x86",
+        "instructionBytes": "f30f114874"
+      },
+      "anchorRadius": {
+        "instructionOffset": "0x97",
+        "instructionBytes": "f30f117878"
+      },
+      "anchorBrightIntensity": {
+        "instructionOffset": "0xa8",
+        "instructionBytes": "f30f11707c"
+      },
+      "anchorBrightFlag": {
+        "instructionOffset": "0xb7",
+        "instructionBytes": "889888000000"
+      }
+    },
+    "alternateImplementation": {
+      "callOffset": "0xee",
+      "targetVa": "0x189cd6038",
+      "boundary": "same four arguments are forwarded; callee identity is not promoted here"
+    }
+  },
+  "getterContract": {
+    "signature": "Vector4 GetAnchorWaveBright()",
+    "value": [
+      "m_anchorPosition.x",
+      "m_anchorPosition.y",
+      "m_anchorRadius",
+      "m_anchorBrightIntensity * (m_anchorBrightFlag ? 1.0 : 0.0)"
+    ],
+    "sites": {
+      "flagTest": {
+        "instructionOffset": "0xaa",
+        "instructionBytes": "80b88800000000"
+      },
+      "falseValue": {
+        "instructionOffset": "0xb7",
+        "instructionBytes": "33c0"
+      },
+      "positionX": {
+        "instructionOffset": "0xe6",
+        "instructionBytes": "f30f107070"
+      },
+      "positionY": {
+        "instructionOffset": "0xfb",
+        "instructionBytes": "f3440f105074"
+      },
+      "radius": {
+        "instructionOffset": "0x111",
+        "instructionBytes": "f3440f104878"
+      },
+      "intensity": {
+        "instructionOffset": "0x12e",
+        "instructionBytes": "f30f10787c"
+      },
+      "multiplyByFlag": {
+        "instructionOffset": "0x147",
+        "instructionBytes": "f3410f59f8"
+      },
+      "returnVector": {
+        "instructionOffset": "0x193",
+        "instructionBytes": "0f1133"
+      }
+    },
+    "trueFlagBranch": {
+      "virtualAddress": "0x184fb92af",
+      "instructionBytes": "b801000000e970b414fe",
+      "value": 1
+    },
+    "falseFlagValue": 0
+  },
+  "shaderVariablesGlobalPublisher": {
+    "method": "HG.Rendering.Runtime.HGRenderPathBase.UpdateShaderVariablesGlobalVFX",
+    "getterCallOffset": "0x113",
+    "getterCallTargetVa": "0x183104670",
+    "destinationByteOffset": "0x690",
+    "destinationRegister": "c105",
+    "destinationComponents": {
+      "z": "anchor radius",
+      "w": "enabled-gated bright intensity"
+    },
+    "store": {
+      "instructionOffset": "0x122",
+      "instructionBytes": "f30f7f8790060000"
+    }
+  },
+  "constructionBoundary": {
+    "managedFieldsAreZeroInitialized": true,
+    "defaultGetterValueBeforeAnySetter": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "selectedCharInfoFrameInference": "not_source_proven",
+    "reason": "No synchronized runtime capture or serialized CharInfo publisher input establishes whether SetAnchorWaveBright ran before the selected M27 frame."
+  },
+  "m27Decision": {
+    "c105LayoutAndPublisherClosed": true,
+    "c105SelectedFrameValueClosed": false,
+    "admissionImpact": "The recovery may bind a captured/source-proven c105 value, but must not substitute the construction default as a selected-frame fact."
+  }
+}
