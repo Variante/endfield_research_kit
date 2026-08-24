@@ -38,8 +38,6 @@ namespace EndfieldGraphShaderLab
         };
         private static readonly int BufferT0Id =
             Shader.PropertyToID("_EndfieldBufferT0");
-        private static readonly int CameraDepthId =
-            Shader.PropertyToID("_EndfieldRecoveredCameraDepthTexture");
         private static readonly int[] TextureIds = CreateTextureIds();
 
         private readonly bool requested;
@@ -166,7 +164,7 @@ namespace EndfieldGraphShaderLab
             {
                 return FailClosed(gBufferFailure);
             }
-            Texture cameraDepth = Shader.GetGlobalTexture(CameraDepthId);
+            Texture cameraDepth = resources.t1CameraDepth;
             if (!IsCreated(cameraDepth))
                 return FailClosed("same-frame camera depth texture is unavailable");
             string materialFailure = string.Empty;

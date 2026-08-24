@@ -59,6 +59,7 @@ namespace EndfieldGraphShaderLabEditor
             public int d3d11SelectedVectors;
             public int fixtureTileResolution;
             public int fixtureFaceCount;
+            public bool endminfTwoSpotFixtureAccepted;
             public bool namedReadyObserved;
             public bool bridgeReadyObserved;
             public bool namedWordsExact;
@@ -159,6 +160,13 @@ namespace EndfieldGraphShaderLabEditor
                 throw new InvalidOperationException(
                     "Known-good deferred ShadowData fixture was rejected: " +
                     fixtureFailure);
+            }
+            bool endminfTwoSpotFixtureAccepted =
+                VerifyEndminfTwoSpotFixture(out string endminfFixtureFailure);
+            if (!endminfTwoSpotFixtureAccepted)
+            {
+                failures.Add(
+                    "endminf_two_spot_fixture: " + endminfFixtureFailure);
             }
             uint[] expected = EndfieldRecoveredDeferredShadowDataContract
                 .BuildExpectedWords(fixture);
@@ -278,7 +286,7 @@ namespace EndfieldGraphShaderLabEditor
                 var report = new ValidationReport
                 {
                     schema =
-                        "endfield-recovered-deferred-shadow-data-validation-v1",
+                        "endfield-recovered-deferred-shadow-data-validation-v2",
                     valid = failures.Count == 0,
                     graphicsApi = api,
                     defaultOff = true,
@@ -299,6 +307,8 @@ namespace EndfieldGraphShaderLabEditor
                             .D3D11SelectedVectorCount,
                     fixtureTileResolution = tileResolution,
                     fixtureFaceCount = faceCount,
+                    endminfTwoSpotFixtureAccepted =
+                        endminfTwoSpotFixtureAccepted,
                     namedReadyObserved = namedReady,
                     bridgeReadyObserved = bridgeReady,
                     namedWordsExact = namedExact,
@@ -435,13 +445,39 @@ namespace EndfieldGraphShaderLabEditor
             Fixture(out Matrix4x4[] m, out Vector4[] p, out Vector4[] r);
             bool accepted = EndfieldRecoveredDeferredShadowDataContract
                 .TryBuildSelectedPunctualSubset(
-                    m, p, r, Texel(), 1024, 2, new Vector4[715],
+                    m, p, r, Texel(), 1024, 3, new Vector4[715],
                     out string diagnostic);
             return Rejection(
                 "face_count",
-                "exactly 1 or 6",
+                "exactly 1, 2, or 6",
                 accepted,
                 diagnostic);
+        }
+
+        private static bool VerifyEndminfTwoSpotFixture(
+            out string diagnostic)
+        {
+            Fixture(out Matrix4x4[] m, out Vector4[] p, out Vector4[] r);
+            m[41] = Matrix4x4.TRS(
+                new Vector3(-0.25f, 0.5f, -0.75f),
+                Quaternion.Euler(21.0f, 43.0f, 65.0f),
+                new Vector3(0.75f, 1.25f, 0.5f));
+            p[41] = new Vector4(0.0f, 0.004f, 0.003f, 1.0f);
+            r[41] = new Vector4(
+                4.0f / 6.0f,
+                1.0f / 4.0f,
+                5.0f / 6.0f,
+                2.0f / 4.0f);
+            return EndfieldRecoveredDeferredShadowDataContract
+                .TryBuildSelectedPunctualSubset(
+                    m,
+                    p,
+                    r,
+                    Texel(),
+                    1024,
+                    2,
+                    new Vector4[715],
+                    out diagnostic);
         }
 
         private static RejectionReport VerifyInactiveSlotRejection()

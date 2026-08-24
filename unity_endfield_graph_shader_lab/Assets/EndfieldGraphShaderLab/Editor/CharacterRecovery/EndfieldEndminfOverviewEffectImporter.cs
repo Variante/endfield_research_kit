@@ -328,6 +328,104 @@ namespace EndfieldGraphShaderLabEditor
                 material.name + "._MainTex -> " + texture.name);
         }
 
+        [MenuItem("Endfield/Character Recovery Lab/Repair Endminf Overview M13 Textures")]
+        public static void RepairOverviewM13Textures()
+        {
+            const long sample1PathId = unchecked((long)0xE924975F4B2F54A4UL);
+            const long sample3PathId = unchecked((long)0xD7AB7F885B7BC330UL);
+            const string sample1Sha256 =
+                "fd335206b2de7d4578b941ceb2bcec79e56541017f07b3eb9f6655ad76450939";
+            const string sample3Sha256 =
+                "737f73ecb27a3484199f58b2a4eb9e54b8760bf48f7ef43d252539f86edec402";
+
+            string repo = Directory.GetParent(Application.dataPath).Parent.FullName;
+            string textureSourceRoot = Path.Combine(repo,
+                "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D");
+            string sample1Source = RequireDecodedTextureSource(
+                textureSourceRoot, sample1PathId, sample1Sha256);
+            string sample3Source = RequireDecodedTextureSource(
+                textureSourceRoot, sample3PathId, sample3Sha256);
+
+            L.EnsureFolder(GeneratedRoot);
+            L.EnsureFolder(TextureRoot);
+            string sample1Asset = BuildExactEndminfDecodedTexture(
+                sample1PathId, textureSourceRoot);
+            string sample3Asset = BuildExactEndminfDecodedTexture(
+                sample3PathId, textureSourceRoot);
+            Texture2D sample1 = AssetDatabase.LoadAssetAtPath<Texture2D>(
+                sample1Asset);
+            Texture2D sample3 = AssetDatabase.LoadAssetAtPath<Texture2D>(
+                sample3Asset);
+            string materialAsset = MaterialRoot +
+                "/M_fx_endminm_gfx_13_p57A25F1386F7012F.mat";
+            Material material = AssetDatabase.LoadAssetAtPath<Material>(
+                materialAsset);
+            L.Require(material != null && sample1 != null && sample3 != null,
+                "Generated Endminf M13 material or decoded textures are missing");
+
+            string[] sample1Properties = { "_DisturbTex2", "_SampleTex1" };
+            string[] sample3Properties = { "_DissolveTex", "_SampleTex3" };
+            foreach (string property in sample1Properties)
+            {
+                L.Require(material.HasProperty(property),
+                    "Generated Endminf M13 material lost " + property);
+                material.SetTexture(property, sample1);
+            }
+            foreach (string property in sample3Properties)
+            {
+                L.Require(material.HasProperty(property),
+                    "Generated Endminf M13 material lost " + property);
+                material.SetTexture(property, sample3);
+            }
+            EditorUtility.SetDirty(material);
+            AssetDatabase.SaveAssets();
+
+            foreach (string property in sample1Properties.Concat(sample3Properties))
+            {
+                Texture bound = material.GetTexture(property);
+                string boundPath = bound == null
+                    ? null
+                    : AssetDatabase.GetAssetPath(bound);
+                L.Require(bound != null && !string.IsNullOrEmpty(boundPath) &&
+                    File.Exists(L.ProjectAbsolute(boundPath)),
+                    "Generated Endminf M13 retained a missing texture binding: " +
+                    property);
+            }
+            L.Require(
+                File.Exists(sample1Source) && File.Exists(sample3Source) &&
+                material.GetTexture("_DisturbTex2") == sample1 &&
+                material.GetTexture("_SampleTex1") == sample1 &&
+                material.GetTexture("_DissolveTex") == sample3 &&
+                material.GetTexture("_SampleTex3") == sample3,
+                "Generated Endminf M13 texture identity validation failed");
+            Debug.Log(
+                "Repaired exact decoded Endminf M13 texture bindings: " +
+                "Sample1/Disturb2=pE924975F4B2F54A4, " +
+                "Sample3/Dissolve=pD7AB7F885B7BC330.");
+        }
+
+        private static string RequireDecodedTextureSource(
+            string textureSourceRoot,
+            long pathId,
+            string expectedSha256)
+        {
+            string hex = unchecked((ulong)pathId).ToString(
+                "X16", CultureInfo.InvariantCulture);
+            string source = Directory.GetFiles(
+                textureSourceRoot, "*_p" + hex + ".png").Single();
+            string actualSha256;
+            using (SHA256 sha = SHA256.Create())
+            {
+                actualSha256 = BitConverter.ToString(
+                        sha.ComputeHash(File.ReadAllBytes(source)))
+                    .Replace("-", string.Empty)
+                    .ToLowerInvariant();
+            }
+            L.Require(actualSha256 == expectedSha256,
+                "Pinned Endminf decoded texture source hash drifted: p" + hex);
+            return source;
+        }
+
         private static void AttachExactLodActivation(GameObject root, string rootName,
             Dictionary<long, GameObject> generated, Dictionary<long, long> transformByGo,
             Dictionary<long, long> goByTransform, Dictionary<long, Dictionary<string, object>> gos,

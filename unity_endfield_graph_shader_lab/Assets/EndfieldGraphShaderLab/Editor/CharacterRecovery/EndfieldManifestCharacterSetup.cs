@@ -4745,6 +4745,18 @@ namespace EndfieldGraphShaderLabEditor
                 "runtime_reference_zhuangfy.png");
         }
 
+        [MenuItem("Endfield/Character Recovery Lab/Render Runtime Reference/Endminf")]
+        public static void RenderRuntimeReferenceEndminfPreview()
+        {
+            // The no-frame-generation comparison maps its final retained
+            // settled-loop sample to this exact clip phase.
+            RenderRuntimeReferenceActorPreview(
+                "Endminf",
+                "A_actor_endminf_ui_overview_loop",
+                0.26758835f,
+                "runtime_reference_endminf.png");
+        }
+
         [MenuItem(
             "Endfield/Character Recovery Lab/Render Diagnostics/Multi-Character Shadow Atlas")]
         public static void RenderRecoveredMultiCharacterShadowAtlasPreview()
@@ -12131,6 +12143,16 @@ namespace EndfieldGraphShaderLabEditor
                 camera.targetTexture = renderTexture;
                 RenderTexture.active = renderTexture;
                 camera.Render();
+                if (IsEnvironmentFlagEnabled(
+                        "ENDFIELD_RECOVERED_DEFERRED_EXACT_CONSUMER"))
+                {
+                    // The exact consumer is deliberately non-presented, so
+                    // its proof lives in two asynchronous output readbacks.
+                    // Batch-mode preview teardown must not destroy those
+                    // diagnostic targets before both callbacks publish their
+                    // masks, hashes, and numerical comparison.
+                    AsyncGPUReadback.WaitAllRequests();
+                }
                 texture.ReadPixels(new Rect(0, 0, renderTexture.width, renderTexture.height), 0, 0);
                 texture.Apply();
                 File.WriteAllBytes(path, texture.EncodeToPNG());

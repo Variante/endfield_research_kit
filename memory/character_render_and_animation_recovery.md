@@ -234,14 +234,28 @@ archetypes remain labeled source kits rather than finished characters.
   white and produced a large opaque rectangle; the repaired source-alpha
   binding restores the narrow retail-like horizontal streaks without a shader
   tuning constant.
+- The `M_fx_endminm_gfx_13` surrounding ring now has a focused, hash-pinned
+  repair path for its exact exported decoded textures. `_DisturbTex2` and
+  `_SampleTex1` share `T_fx_flow_01_M`; `_DissolveTex` and `_SampleTex3` share
+  `T_fx_flow_26_M`. This replaces two dangling generated GUIDs with persistent,
+  file-backed Endminf-local assets. It restores reproducible source bindings;
+  it does not justify changing M13 material values or the separately authored
+  M21 crystal.
 - Blink, facial, physical-transform, CharacterNPR, eye, hair, shadow, GBuffer,
   light, cookie, irradiance, particle, gacha, and post-processing behavior is
   recovered only where its input contract is verified. Unknown inputs remain
   explicit gaps.
 - The selected deferred resolver DXBC has a compile-valid Unity HLSL port. It
   matches the neutral fixture exactly and the recovered Wulfa fixture within
-  one float ULP. This proves executable program and recovered-input
-  equivalence; it does not prove the retail frame resources.
+  one float ULP. The non-presented Endminf D3D11 fixture now also binds all 26
+  shader resources and all nine constant buffers with zero binding failures;
+  its 33,177,600 finite output floats match the recovered HLSL with maximum
+  absolute error `1.1920929e-7` and no value above `1e-6`. The fixture uses an
+  explicitly owned same-frame depth resource and waits for both asynchronous
+  readbacks before batch teardown. This proves executable program, transport,
+  and fixture-input equivalence; its screen-shadow R remains explicitly
+  content-invalid and the exact output is not presented, so it does not prove
+  the complete retail frame.
 - D3D12 diagnostic capture proves canonical light/reflection binning,
   VisibilitySH, and SphereOutside's exact five-MRT sidecars can populate during
   the full Endminf sequence without changing any of the 41 presented beauty
@@ -260,11 +274,14 @@ archetypes remain labeled source kits rather than finished characters.
   GPU word-readback is still open because the historical verifier's pinned
   decompiled shader inputs were retired from scratch; do not extend its older
   eight-row proof by implication.
-- Endminf's two punctual-shadow rows can populate lab-owned diagnostic atlas
-  slots, but the retail settled-frame light-to-shadow slot mapping has not been
-  captured. Their b34 transport and atlas pixels therefore remain fail-closed
-  for exact pass-0 claims. Do not infer retail order from source row, packed
-  light, registration, or lab allocation order.
+- Endminf's two punctual-shadow rows now populate the lab-owned diagnostic
+  atlas and selected b34 transport as two validated spot entries in contiguous
+  dynamic slots 40-41. Publication still requires exact source rows 11 and 3
+  by name/type, and the one-spot and six-face fixtures remain independently
+  validated. The retail settled-frame light-to-shadow slot mapping has not
+  been captured, so this closes the non-presented exact-consumer fixture only;
+  do not infer retail order from source row, packed light, registration, or lab
+  allocation order.
 - The recovered VisibilitySH/capsule term improves measured character deltas,
   but it still runs against the partial ready-subset floor rather than the real
   presentation scene. The softer result is not evidence of a missing constant
