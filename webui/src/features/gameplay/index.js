@@ -1742,6 +1742,15 @@
     return `<${wrapper} class="gameplay-related-sfx${options.inline ? " gameplay-sfx-inline" : ""}"><header class="gameplay-related-sfx-summary"><strong>${escapeHtml(options.label || text("relatedSoundEffects"))}</strong><span>${escapeHtml(gameplaySoundCountText(playableEvents, options))}</span>${confidence}</header><p>${escapeHtml(options.note || text("soundRuntimeNote"))}</p>${renderGameplaySoundEventList(playableEvents, playableAudio, options)}</${wrapper}>`;
   }
 
+  function gameplayIntegrationError(kind) {
+    return STATE.integration.errors.find((error) => error?.kind === kind) || null;
+  }
+
+  function renderSoundEffectsUnavailable() {
+    if (STATE.integration.status !== "ready" || !gameplayIntegrationError("soundEffects")) return "";
+    return `<div class="gameplay-integration-note is-warning" role="status">${escapeHtml(text("soundEffectsUnavailable"))}</div>`;
+  }
+
   function renderCharacterSkillSounds(entry) {
     const groups = STATE.integration.soundEffects?.characters?.[entry?.id]?.groups || {};
     const events = (entry?.skillGroups || []).flatMap((group) => {
@@ -1770,6 +1779,7 @@
   }
 
   function renderEnemySoundEffects(entry) {
+    if (!STATE.integration.soundEffects) return renderSoundEffectsUnavailable();
     const sounds = STATE.integration.soundEffects?.enemies?.[entry?.id] || {};
     const playableEvents = gameplayResolvedSoundEvents(mergeGameplaySoundEvents([...(sounds.events || []), ...(sounds.animationEvents || [])]))
       .filter((event) => (event.audio || []).some((candidate) => candidate?.src) || Number(event.possibleMediaCount || event.playableCandidates || 0) > 0);
@@ -1810,6 +1820,7 @@
   }
 
   function renderCharacterSoundEffects(entry) {
+    if (!STATE.integration.soundEffects) return renderSoundEffectsUnavailable();
     return `${renderCharacterSkillSounds(entry)}${renderCharacterAnimationSounds(entry)}`;
   }
 
@@ -4206,7 +4217,10 @@
         integration[result.kind] = result.payload;
         // Asset refs are an optional visual enhancement. Missing visual refs
         // must not turn a valid Gameplay/Combat/Projectile build into an error.
-        if (result.error && !["assets", "soundEffects", "projectileAudio"].includes(result.kind)) integration.errors.push({ kind: result.kind, message: result.error });
+        // Asset refs are purely visual. Audio sidecars are optional for the
+        // authored Gameplay page, but their failure must stay visible: an
+        // empty sound section otherwise looks like a valid zero-owner result.
+        if (result.error && !["assets", "projectileAudio"].includes(result.kind)) integration.errors.push({ kind: result.kind, message: result.error });
       }
       integration.indexes = buildIntegrationIndexes();
       integration.status = "ready";
