@@ -27,6 +27,10 @@
     {
       "path": "unity_endfield_graph_shader_lab/tools/run_settled_phase_sweeps.py",
       "sha256": "2a7668def4785579932337eca017aa1b369b3138c726a09fe6a476168a0d2cdb"
+    },
+    {
+      "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRenderDocAutoCapture.cs",
+      "sha256": "37ef4ad82dbf51591be60a2be3043253e29f4fc0d7b022d60982ee127261ff86"
     }
   ],
   "canonicalCapture": {
