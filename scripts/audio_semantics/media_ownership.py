@@ -829,6 +829,98 @@ def project_character_native_voice_response_audio(
     )
 
 
+ENEMY_RESPONSE_CANDIDATE_CONTEXT_KINDS = frozenset({
+    "responsiveDialogVoice", "abilityVoiceTriggerAction",
+    "responsiveDialogToneVariant", "animationVoiceTrigger",
+})
+
+
+def project_enemy_response_candidate_audio(
+    event_rows: Iterable[dict[str, Any]], enemy_ids: Iterable[str],
+) -> dict[str, Any]:
+    """Project explicit authored response owners, excluding native-covered rows."""
+
+    known = {str(value).strip() for value in enemy_ids if str(value).strip()}
+    enemies: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    unique_media: set[tuple[str, str]] = set()
+    evidence_counts: Counter[str] = Counter()
+    for event in event_rows:
+        if not isinstance(event, dict):
+            continue
+        event_id = str(event.get("id") or "").strip()
+        contexts = [row for row in event.get("contexts") or () if isinstance(row, dict)]
+        if not event_id or any(row.get("kind") == "nativeVoiceTriggerCallsite" for row in contexts):
+            continue
+        by_owner: dict[str, list[dict[str, Any]]] = defaultdict(list)
+        for context in contexts:
+            kind = str(context.get("kind") or "")
+            if kind not in ENEMY_RESPONSE_CANDIDATE_CONTEXT_KINDS:
+                continue
+            owner_field = "speakerId" if kind in {
+                "responsiveDialogVoice", "responsiveDialogToneVariant",
+            } else "ownerId"
+            owner_id = str(context.get(owner_field) or "").strip()
+            if owner_id in known:
+                by_owner[owner_id].append(context)
+        if not by_owner:
+            continue
+        media_refs = [{
+            key: media[key]
+            for key in (
+                "mediaId", "src", "rel", "format", "duration", "contentSha256",
+                "audioCategory", "audioScope", "sourceLanguage",
+            ) if media.get(key) not in (None, "", [])
+        } for media in event.get("media") or () if isinstance(media, dict) and media.get("src")]
+        for owner_id, owner_contexts in by_owner.items():
+            compact_by_identity: dict[str, dict[str, Any]] = {}
+            for context in owner_contexts:
+                compact = {key: context[key] for key in (
+                    "kind", "speakerId", "ownerId", "ownerKind", "triggerKey",
+                    "triggerTypeId", "sentenceType", "responseIndex", "configId",
+                    "source", "sourcePath", "clip", "time", "function", "evidence",
+                    "playbackPlacementStatus", "runtimeRoute", "runtimeSelectionStatus",
+                    "runtimeActivationStatus", "triggerBindingStatus", "nativeMappingId",
+                ) if context.get(key) not in (None, "", [])}
+                compact_by_identity[json.dumps(compact, sort_keys=True, ensure_ascii=False)] = compact
+            kinds = sorted({str(row.get("kind")) for row in owner_contexts})
+            evidence_counts.update(kinds)
+            enemies[owner_id].append({
+                "id": event_id,
+                "category": str(event.get("category") or "voice"),
+                "foundInWwise": bool(event.get("foundInWwise")),
+                "possibleMediaCount": int(event.get("possibleMediaCount") or 0),
+                "mediaRefs": media_refs,
+                "ownerId": owner_id,
+                "ownerBindingStatus": "exactResponseContextEnemyId",
+                "evidenceKinds": kinds,
+                "triggerKeys": sorted({str(row.get("triggerKey")) for row in owner_contexts if row.get("triggerKey")}),
+                "evidenceRows": [compact_by_identity[key] for key in sorted(compact_by_identity)],
+                "runtimeActivationStatus": "authoredResponseSelectionUnobserved",
+            })
+            unique_media.update((str(row.get("src") or ""), str(row.get("mediaId") or "")) for row in media_refs)
+    for rows in enemies.values():
+        rows.sort(key=lambda row: str(row.get("id") or "").casefold())
+    return {
+        "schemaVersion": 1,
+        "enemies": dict(sorted(enemies.items())),
+        "counts": {
+            "enemies": len(enemies),
+            "uniqueEvents": len({row["id"].casefold() for rows in enemies.values() for row in rows}),
+            "eventOwnerAssociations": sum(map(len, enemies.values())),
+            "playableMediaRefs": sum(len(row["mediaRefs"]) for rows in enemies.values() for row in rows),
+            "uniquePlayableMedia": len(unique_media),
+            "evidenceKindAssociations": dict(sorted(evidence_counts.items())),
+        },
+        "evidenceBoundary": (
+            "Each row uses an explicit ResponsiveDialog speakerId or serialized "
+            "ability/animation ownerId equal to one current EnemyTable id. Evidence "
+            "is merged per enemy and Event. This proves authored response eligibility, "
+            "not live selection, selected Wwise media, playback, or audibility. "
+            "Native-covered Events remain only in the stronger native response group."
+        ),
+    }
+
+
 def _load_overlay_table(
     export_root: Path,
     relatives: tuple[str, ...],

@@ -425,6 +425,10 @@ audibility remain unresolved.
 Character cards expose the matching native-response group for exact
 CharacterTable prefixes, with Endministrator variant rows routed through the
 existing synthetic character item.
+Enemy cards additionally expose explicit authored response candidates from
+serialized/ResponsiveDialog contexts when their owner equals a current enemy;
+these remain separate from native callsites and do not claim live selection or
+playback.
 Audio detail keeps each callback Clip's resolved entity IDs separate from its
 candidate entity IDs. Exact Character/Enemy/EnemyTemplate overlay matches are
 resolved; unique-token or multi-match identities remain candidate/ambiguous,

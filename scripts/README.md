@@ -668,6 +668,9 @@ playback.
 The same bounded projection is published for unique CharacterTable prefixes;
 Endministrator gender variants continue to use the existing synthetic-item
 alias rather than inventing a new WebUI owner.
+Explicit enemy response candidates from ResponsiveDialog, skill, and animation
+contexts are published separately when their owner field exactly equals a
+current EnemyTable id; native-covered Events stay in the stronger native group.
 The same publisher projects recovered grammar-derived `au_` names to an enemy
 only when the full current EnemyTable id prefix plus delimiter matches exactly.
 That `enemyNamespaceAudio` projection is identity-only and is not a trigger or
