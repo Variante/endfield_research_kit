@@ -79,6 +79,22 @@ archetypes remain labeled source kits rather than finished characters.
   `ParserBindChannels`, complete HGBuffer frame publication, and the visibly
   over-bright raised-hand glow remain fail-closed; do not tune the non-exact
   compatibility shader against the video.
+- A renderer-isolation audit of the later raised-hand event identifies the
+  broad glow as `overview_04/1/guangyun (3)` with
+  `M_fx_endminm_gfx_30`, while the actual ten-piece crystal burst is
+  `overview_02/all/shitou (1)` with `M_fx_endminm_gfx_21`. The crystal row is
+  an exact mesh-particle binding with the serialized 4.45-second delay and the
+  hash-pinned `_USE_FRESNEL` BaseV2 variant; it must not be resized, brightened,
+  or retimed to compensate for the glow. Explicit batch selector values of
+  zero and one produced byte-identical focused frames because the active Viewer
+  presentation republishes its scene-owned recovered-post selector; that run is
+  not evidence for a post bypass or a material correction. The selected BaseV2
+  fragment already premultiplies RGB by recovered coverage before the authored
+  `One / OneMinusSrcAlpha` blend, so a second alpha multiplication is also not
+  admissible. The combined burst remains clipped relative to the
+  no-frame-generation reference, so the open boundary is complete
+  presentation/compositing admission, not either authored particle system or
+  material.
 - The focused Endminf comparison now anchors its first saved Unity frame
   directly to retail frame 1110, the first visible body frame. The former map
   added the already-advanced 0.0509083-second body phase a second time and put
