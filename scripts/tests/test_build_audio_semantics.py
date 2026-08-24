@@ -142,6 +142,63 @@ def char_interact_fixture(event_id: int) -> bytes:
     ))
 
 
+class MediaShardTests(unittest.TestCase):
+    def test_prune_stale_shards_drops_unsharded_and_orphan_files(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            for name in ("media.json", "media.000.json", "media.001.json", "media.002.json"):
+                (root / name).write_text("{}", encoding="utf-8")
+            (root / "events.json").write_text("{}", encoding="utf-8")
+            audio_semantics.prune_stale_shards(root, "media", keep=["media.000.json", "media.001.json"])
+            self.assertEqual(
+                sorted(path.name for path in root.iterdir()),
+                ["events.json", "media.000.json", "media.001.json"],
+            )
+
+    def test_split_media_row_moves_only_heavy_detail_fields(self) -> None:
+        row = {
+            "id": "42",
+            "rel": "wwise/42.flac",
+            "animationCallbackClips": ["clip_a"],
+            "postProcessEffectChainCount": 3,
+            "postProcessEffectChain": [{"stage": 1}],
+            "animationCallbackClipResolutions": [{"clip": "clip_a"}],
+        }
+        summary, detail = audio_semantics.split_media_row(row)
+        self.assertEqual(
+            sorted(summary),
+            ["animationCallbackClips", "id", "postProcessEffectChainCount", "rel"],
+        )
+        self.assertEqual(
+            sorted(detail),
+            ["animationCallbackClipResolutions", "id", "postProcessEffectChain"],
+        )
+        # Every field survives the split so no data is dropped from the export.
+        self.assertEqual(set(summary) | set(detail), set(row) | {"id"})
+
+    def test_split_media_row_keeps_light_rows_whole(self) -> None:
+        row = {"id": "42", "rel": "wwise/42.flac", "postProcessEffectChain": []}
+        summary, detail = audio_semantics.split_media_row(row)
+        self.assertEqual(summary, row)
+        self.assertEqual(detail, {})
+
+    def test_prune_stale_detail_shards_drops_unwritten_buckets(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir) / "media_details"
+            root.mkdir()
+            for name in ("00.json", "01.json", "3f.json"):
+                (root / name).write_text("{}", encoding="utf-8")
+            audio_semantics.prune_stale_detail_shards(
+                root, keep=["media_details/00.json", "media_details/3f.json"]
+            )
+            self.assertEqual(sorted(path.name for path in root.iterdir()), ["00.json", "3f.json"])
+
+    def test_media_shard_rows_keep_shards_parseable_in_a_browser(self) -> None:
+        # V8 caps strings at ~512MB; rows average ~8KB, so the shard size must
+        # leave a wide margin below that ceiling.
+        self.assertLess(audio_semantics.MEDIA_SHARD_ROWS * 8192, 256 * 1024 * 1024)
+
+
 class AudioSemanticDataTests(unittest.TestCase):
     def test_semantic_cli_does_not_select_module_global_game_root(self) -> None:
         args = audio_semantics.parse_args([])
@@ -9444,7 +9501,7 @@ class AudioSemanticDataTests(unittest.TestCase):
 
             out_root = webui_root / "data/lang/CN/audio"
             event_payload = json.loads((out_root / "events.json").read_text(encoding="utf-8"))
-            media_payload = json.loads((out_root / "media.json").read_text(encoding="utf-8"))
+            media_payload = json.loads((out_root / "media.000.json").read_text(encoding="utf-8"))
             event_summary = next(row for row in event_payload["events"] if row["id"] == "au_sfx_test")
             detail_payload = json.loads((out_root / event_summary["detailShard"]).read_text(encoding="utf-8"))
             event = next(row for row in detail_payload["events"] if row["id"] == "au_sfx_test")
@@ -9452,7 +9509,7 @@ class AudioSemanticDataTests(unittest.TestCase):
 
             self.assertEqual(payload["shards"], {
                 "events": "events.json",
-                "media": "media.json",
+                "media": ["media.000.json"],
                 "sceneBackgrounds": "scene_backgrounds.json",
             })
             scene_background_payload = json.loads(

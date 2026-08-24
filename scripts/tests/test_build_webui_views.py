@@ -79,21 +79,27 @@ class WebuiViewPlanTests(unittest.TestCase):
             if task.name == "gameplay"
         )
         stages = [
-            command.argv[command.argv.index("--stage") + 1]
+            command.argv[index + 1]
             for command in gameplay_task.commands
+            for index, argument in enumerate(command.argv)
+            if argument == "--stage"
         ]
         self.assertEqual(["base", "audit"], stages)
         for command in gameplay_task.commands:
             self.assertIn("--languages", command.argv)
             self.assertIn("--default-language", command.argv)
 
-    def test_graph_refreshes_gameplay_asset_refs_without_rebuilding_base(self) -> None:
+    def test_gameplay_asset_refs_refresh_after_graph_without_rebuilding_base(self) -> None:
         args = build_webui_views.parse_args([])
         phases = build_webui_views.build_phases(args)
         phase_names = [name for name, _ in phases]
         graph_index = phase_names.index("source_graph")
-        consumer_index = phase_names.index("graph_consumers")
-        self.assertLess(graph_index, consumer_index)
+        refs_phase_index = next(
+            index
+            for index, (_, tasks) in enumerate(phases)
+            if any(task.name == "gameplay_asset_refs" for task in tasks)
+        )
+        self.assertLess(refs_phase_index, graph_index)
 
         asset_ref_tasks = [
             task
@@ -113,8 +119,9 @@ class WebuiViewPlanTests(unittest.TestCase):
         gameplay_commands = commands_for(phases, "gameplay")
         self.assertEqual(
             [command[command.index("--stage") + 1] for command in gameplay_commands],
-            ["base", "audit"],
+            ["base"],
         )
+        self.assertEqual(gameplay_commands[0].count("--stage"), 2)
 
     def test_asset_plan_joins_character_and_refs_after_fresh_asset_index(self) -> None:
         args = build_webui_views.parse_args(
@@ -143,6 +150,36 @@ class WebuiViewPlanTests(unittest.TestCase):
             protocol_command[1:3],
             ("-m", "scripts.story_builder.protocol_registry"),
         )
+        map_command = commands_for(phases, "mission_pipeline")[-1]
+        self.assertIn("--with-preview", map_command)
+
+    def test_mission_data_only_plan_skips_evidence_refresh_and_preview(self) -> None:
+        args = build_webui_views.parse_args(["--mission-pipeline-data-only"])
+        phases = build_webui_views.build_phases(args)
+
+        self.assertEqual(task_names(phases), [["mission_pipeline_data"]])
+        commands = commands_for(phases, "mission_pipeline_data")
+        self.assertEqual(
+            commands[0][1:3],
+            ("-m", "scripts.story_builder.protocol_registry"),
+        )
+        self.assertIn("scripts.build_mission_pipeline_data", commands[1])
+        self.assertNotIn("--refresh-source-story-gap-queue", commands[1])
+        self.assertIn("scripts.build_map_recovery_data", commands[2])
+        self.assertNotIn("--with-preview", commands[2])
+        self.assertNotIn("--preview-only", commands[2])
+
+    def test_full_plan_refreshes_preview_without_rebuilding_map_data(self) -> None:
+        phases = build_webui_views.build_phases(build_webui_views.parse_args([]))
+        mission_commands = commands_for(phases, "mission_pipeline")
+        map_commands = [
+            command
+            for command in mission_commands + commands_for(phases, "map_recovery")
+            if "scripts.build_map_recovery_data" in command
+        ]
+        self.assertEqual(len(map_commands), 2)
+        self.assertNotIn("--preview-only", map_commands[0])
+        self.assertIn("--preview-only", map_commands[1])
 
     def test_full_graph_omits_relevant_scope_filters(self) -> None:
         args = build_webui_views.parse_args(["--full-source-graph"])
@@ -176,15 +213,121 @@ class WebuiViewPlanTests(unittest.TestCase):
             self.assertEqual(payload["sourcePath"], str(asset_index_path).replace("\\", "/"))
 
     def test_asset_export_runs_gameplay_owner_after_asset_index(self) -> None:
-        source = (ROOT / "export_assets.bat").read_text(encoding="utf-8")
-
-        asset_index = source.index("scripts\\build_assets.py")
-        gameplay_refs = source.index(
-            "scripts\\build_gameplay.py --stage asset-refs --default-language CN"
+        source = (ROOT / "export.bat").read_text(encoding="utf-8")
+        self.assertIn(
+            "scripts\\build_webui_views.py %WEBUI_VIEW_ARGS% %GAME_ROOT_ARG% %EXPORT_ROOT_ARG%",
+            source,
         )
-        audio = source.index("scripts\\build_audio.py", gameplay_refs)
-        self.assertLess(asset_index, gameplay_refs)
-        self.assertLess(gameplay_refs, audio)
+        self.assertIn('set "WEBUI_VIEW_ARGS=--jobs "', source)
+        self.assertIn("--with-assets", source)
+        self.assertIn("--decode-audio", source)
+        self.assertNotIn("scripts\\build_assets.py --mode", source)
+        self.assertNotIn("scripts\\build_gameplay.py --stage asset-refs", source)
+        self.assertNotIn("scripts\\build_audio.py --skip-decode", source)
+
+    def test_asset_wrapper_delegates_to_the_single_export_entry_point(self) -> None:
+        source = (ROOT / "export_assets.bat").read_text(encoding="utf-8")
+        self.assertIn('call "%~dp0export.bat" --assets-only %*', source)
+        # The wrapper must not carry its own copy of the option parser, the
+        # freshness check, or the builder invocation; those drifted before.
+        for duplicated in (
+            ":parse_args",
+            ":validate_asset_mode",
+            "verify_export_freshness",
+            "build_webui_views.py",
+            "export_full_from_game.py",
+        ):
+            self.assertNotIn(duplicated, source)
+
+    def test_export_wrapper_announces_long_running_stages_and_uses_crlf(self) -> None:
+        messages = (
+            "Resolved export options",
+            "Checking export_full freshness",
+            "Refreshing Story recovery evidence",
+            "Building CN Story conversations",
+            "Building Mission Pipeline, map recovery, Characters",
+            "source graph, and combat relationships",
+            "Export pipeline complete",
+        )
+        for name in ("export.bat", "export_assets.bat"):
+            raw = (ROOT / name).read_bytes()
+            self.assertNotIn(b"\n", raw.replace(b"\r\n", b""), name)
+        source = (ROOT / "export.bat").read_text(encoding="utf-8")
+        self.assertIn("[export.bat %time%] === %~1 ===", source)
+        for message in messages:
+            self.assertIn(message, source)
+
+    def test_export_wrapper_owns_no_second_copy_of_the_mission_stage(self) -> None:
+        # `--mission-pipeline-data-only` used to inline protocol_registry,
+        # build_mission_pipeline_data and build_map_recovery_data, which drifted
+        # from the mission_pipeline task: no gap-queue refresh, single-threaded
+        # map build, stale previews. It now routes through the shared plan.
+        source = (ROOT / "export.bat").read_text(encoding="utf-8")
+        for builder in (
+            "build_mission_pipeline_data",
+            "build_map_recovery_data",
+            "story_builder.protocol_registry",
+        ):
+            self.assertNotIn(builder, source)
+
+        args = build_webui_views.parse_args(["--mission-pipeline-only"])
+        mission_commands = commands_for(
+            build_webui_views.build_phases(args), "mission_pipeline"
+        )
+        self.assertIn("--refresh-source-story-gap-queue", mission_commands[1])
+        self.assertIn("--with-preview", mission_commands[-1])
+
+        data_args = build_webui_views.parse_args(["--mission-pipeline-data-only"])
+        data_commands = commands_for(
+            build_webui_views.build_phases(data_args), "mission_pipeline_data"
+        )
+        self.assertNotIn("--refresh-source-story-gap-queue", data_commands[1])
+        self.assertNotIn("--with-preview", data_commands[-1])
+
+    def test_export_wrapper_preflights_the_arguments_it_will_actually_run(self) -> None:
+        source = (ROOT / "export.bat").read_text(encoding="utf-8")
+        preflight = (
+            "python .\\scripts\\build_webui_views.py %WEBUI_VIEW_ARGS%"
+            " %GAME_ROOT_ARG% %EXPORT_ROOT_ARG% --dry-run >nul"
+        )
+        self.assertIn(preflight, source)
+        # The dry run has to follow the assembly of the args it validates.
+        self.assertLess(
+            source.index('set "WEBUI_VIEW_ARGS=--jobs "'),
+            source.index(preflight),
+        )
+        self.assertNotIn("--mission-pipeline-only --dry-run", source)
+        self.assertNotIn("if \"%POST_STORY_VIEWS%\"==\"0\" goto :preflight_done", source)
+
+    def test_export_wrapper_forwards_configured_output_to_extraction(self) -> None:
+        source = (ROOT / "export.bat").read_text(encoding="utf-8")
+        self.assertIn(
+            'set "EXTRACTION_OUTPUT_ARG=--output "%ENDFIELD_EXPORT_ROOT%""',
+            source,
+        )
+        extraction_lines = [
+            line
+            for line in source.splitlines()
+            if line.startswith("python .\\scripts\\export_full_from_game.py")
+        ]
+        self.assertEqual(len(extraction_lines), 3)
+        for line in extraction_lines:
+            self.assertIn("%EXTRACTION_OUTPUT_ARG%", line)
+
+    def test_export_wrapper_rejects_object_index_when_story_is_reused(self) -> None:
+        source = (ROOT / "export.bat").read_text(encoding="utf-8")
+        self.assertIn(
+            'if "%STORY_BUILD%"=="0" if "%ANIMESTUDIO_OBJECT_INDEX%"=="1" goto :object_index_without_story',
+            source,
+        )
+
+    def test_export_wrapper_checks_freshness_once_for_every_scope(self) -> None:
+        source = (ROOT / "export.bat").read_text(encoding="utf-8")
+        self.assertEqual(source.count("verify_export_freshness.py"), 1)
+        self.assertIn(
+            "python .\\scripts\\verify_export_freshness.py %GAME_ROOT_ARG%",
+            source,
+        )
 
     def test_custom_roots_are_forwarded_to_every_subprocess_environment(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

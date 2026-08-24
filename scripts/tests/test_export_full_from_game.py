@@ -4,6 +4,7 @@ import unittest
 import tempfile
 import gzip
 import hashlib
+import inspect
 import json
 from pathlib import Path
 from unittest import mock
@@ -30,10 +31,51 @@ from scripts.export_full_from_game import (
     run_animestudio_stage,
     should_merge_animestudio_type_jobs,
     stable_hash,
+    structured_freshness_source_sizes,
     structured_dump_steps_for_source,
     structured_dump_steps_with_world_scenes,
     world_scene_chunk_file_regex,
 )
+
+
+class StructuredFreshnessProvenanceTests(unittest.TestCase):
+    def test_final_export_summary_uses_structured_freshness_provenance(self) -> None:
+        source = inspect.getsource(export_full_from_game.main)
+        calculation = "structured_source_sizes = structured_freshness_source_sizes("
+        publication = '"source_sizes": structured_source_sizes'
+        self.assertEqual(source.count(calculation), 1)
+        self.assertLess(source.index(calculation), source.index(publication))
+
+    def test_full_export_publishes_current_source_sizes(self) -> None:
+        current = {"StreamingAssets": {"fingerprint": "current"}}
+        self.assertIs(
+            structured_freshness_source_sizes(
+                skip_structured=False,
+                selected_sources=("StreamingAssets",),
+                current_source_sizes=current,
+                previous_summary={},
+            ),
+            current,
+        )
+
+    def test_asset_only_export_preserves_structured_source_sizes(self) -> None:
+        previous = {"StreamingAssets": {"fingerprint": "structured-old"}}
+        result = structured_freshness_source_sizes(
+            skip_structured=True,
+            selected_sources=("StreamingAssets",),
+            current_source_sizes={"StreamingAssets": {"fingerprint": "asset-current"}},
+            previous_summary={"source_sizes": previous},
+        )
+        self.assertEqual(result, previous)
+
+    def test_asset_only_export_without_prior_provenance_fails_closed(self) -> None:
+        result = structured_freshness_source_sizes(
+            skip_structured=True,
+            selected_sources=("StreamingAssets", "Persistent"),
+            current_source_sizes={},
+            previous_summary={},
+        )
+        self.assertEqual(result, {"StreamingAssets": {}, "Persistent": {}})
 
 
 def object_index_cli_provenance() -> dict:

@@ -28,6 +28,7 @@ A level whose fit is under-determined publishes no background at all.
 from __future__ import annotations
 
 import argparse
+import io
 import json
 import math
 import re
@@ -36,6 +37,11 @@ import sys
 import zlib
 from array import array
 from pathlib import Path
+
+try:  # Optional: only the PNG unfilter loop below is accelerated by it.
+    from PIL import Image as _PILImage
+except ImportError:  # pragma: no cover - exercised by the stdlib fallback path
+    _PILImage = None
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
@@ -360,19 +366,58 @@ def read_png_preview(path: Path, max_edge: int = TEXTURE_PREVIEW_EDGE) -> tuple[
             break
     if width <= 0 or height <= 0 or not compressed:
         return None
-    try:
-        raw = zlib.decompress(bytes(compressed))
-    except zlib.error:
-        return None
     stride = width * 4
-    if len(raw) != (stride + 1) * height:
-        return None
     scale = max(width / max_edge, height / max_edge, 1.0)
     sample_width = max(1, round(width / scale))
     sample_height = max(1, round(height / scale))
     sample_x = [min(width - 1, int(index * width / sample_width)) for index in range(sample_width)]
     sample_y = {min(height - 1, int(index * height / sample_height)): index for index in range(sample_height)}
+    rows = _unfilter_rgba8_rows(payload, bytes(compressed), width, height)
+    if rows is None:
+        return None
     sampled = bytearray(sample_width * sample_height * 4)
+    # Only sampled rows are ever read, so this walks the preview grid rather
+    # than every scanline in the source image.
+    for source_y, target_y in sample_y.items():
+        row = source_y * stride
+        target = target_y * sample_width * 4
+        for target_x, source_x in enumerate(sample_x):
+            source = row + source_x * 4
+            sampled[target + target_x * 4:target + target_x * 4 + 4] = rows[source:source + 4]
+    return sample_width, sample_height, bytes(sampled)
+
+
+def _unfilter_rgba8_rows(payload: bytes, compressed: bytes, width: int, height: int) -> bytes | None:
+    """Return the image's unfiltered 8-bit RGBA rows, without the filter bytes.
+
+    PNG's Sub/Average/Paeth filters each depend on the pixel to their left, so
+    the reconstruction cannot be vectorised along a scanline and the stdlib
+    loop below costs about three quarters of a full preview build. Pillow does
+    the same reconstruction in C, so it is used when importable and the pure
+    Python loop stays as an exact fallback. Both paths are byte-identical: the
+    caller has already rejected anything that is not non-interlaced 8-bit RGBA,
+    which is the one layout where Pillow's ``RGBA`` buffer is precisely these
+    reconstructed rows. Pillow inflates the IDAT stream itself, so the caller
+    hands over the still-compressed bytes and only the fallback pays for a
+    ``zlib.decompress``; a stream Pillow cannot decode raises and is rejected
+    here exactly as a short inflate was before.
+    """
+    if _PILImage is not None:
+        try:
+            with _PILImage.open(io.BytesIO(payload)) as image:
+                if image.mode != "RGBA":
+                    return None
+                return image.tobytes()
+        except Exception:
+            return None
+    stride = width * 4
+    try:
+        raw = zlib.decompress(compressed)
+    except zlib.error:
+        return None
+    if len(raw) != (stride + 1) * height:
+        return None
+    rows = bytearray(stride * height)
     previous = bytearray(stride)
     for y in range(height):
         start = y * (stride + 1)
@@ -392,14 +437,9 @@ def read_png_preview(path: Path, max_edge: int = TEXTURE_PREVIEW_EDGE) -> tuple[
                 current[index] = (current[index] + _paeth(left, up, upper_left)) & 255
             elif filter_type != 0:
                 return None
-        target_y = sample_y.get(y)
-        if target_y is not None:
-            target = target_y * sample_width * 4
-            for target_x, source_x in enumerate(sample_x):
-                source = source_x * 4
-                sampled[target + target_x * 4:target + target_x * 4 + 4] = current[source:source + 4]
+        rows[y * stride:(y + 1) * stride] = current
         previous = current
-    return sample_width, sample_height, bytes(sampled)
+    return bytes(rows)
 
 
 def _relation_path(relative: str, source_roots: dict[str, str]) -> Path | None:
@@ -2562,7 +2602,7 @@ def preferred_background_preview(exact: dict | None, hlod: dict | None) -> dict 
     return hlod or exact
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--asset-map", type=Path, default=DEFAULT_ASSET_MAP)
     parser.add_argument("--mesh-root", type=Path, default=MESH_ROOT)
@@ -2590,7 +2630,7 @@ def main() -> int:
         help=("exact-matrix HLOD surface samples per square metre; default 0.25 "
               "(approximately 2 m spacing); presentation only"),
     )
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     if not math.isfinite(args.surface_point_density) or args.surface_point_density <= 0:
         raise SystemExit("--surface-point-density must be a finite number greater than zero")
 

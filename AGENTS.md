@@ -123,7 +123,9 @@ for the Story/Mission Pipeline edit loop; it stops before unrelated semantic
 views and the graph. Pass `--mission-pipeline-data-only` when generated Story
 bundles/evidence are already current and only Mission Pipeline JSON or frontend
 work changed; it verifies export freshness, then deliberately skips Story,
-evidence, other semantic views, and the graph. The Combat builder refuses graph edges when the database predates
+evidence, other semantic views, and the graph. Its shared data-only plan
+validates the protocol registry and rebuilds Mission Pipeline/map JSON without
+refreshing the source-story gap queue or map previews. The Combat builder refuses graph edges when the database predates
 its Gameplay/manifest/asset/AbilityEntity/CharacterTemplate inputs and records a
 visible degraded-mode reason instead of treating stale edges as direct.
 `export.bat` does not refresh `webui/overrides/story_order.json`; active Story
@@ -141,14 +143,23 @@ decoded audio while keeping other asset entries. Pass `--text-only` only for a
 text-only update feed, and `--exact` to hash asset contents instead of
 comparing sizes. The wrapper forwards any other option to
 `scripts/build_updates.py`.
-Use `export_assets.bat` for WebUI Assets tab indexes, compact Story media
-lookup, and CN audio relinking from existing decoded assets when Story is
-already current. Pass `--from-game` only when the user explicitly asks to
-run the default AnimeStudio image/model decode, `Material` JSON, and CN
+Use `export_assets.bat` (a thin wrapper around `export.bat --assets-only`, so
+it shares one option parser, freshness check, and benchmark report) when
+generated Story is already current to rebuild
+Mission Pipeline, map recovery, Characters, Gameplay/projectiles, WebUI Assets
+indexes, compact Story media, CN audio links, the curated source graph, and
+combat relationships. Pass `--from-game` only when the user explicitly asks
+to run the default AnimeStudio image/model decode, `Material` JSON, and CN
 audio decode from installed game data first. Prefer
 `export.bat --from-game --with-assets` when Story and assets both need an
 installed-game refresh. Asset modes, from narrowest to broadest, are
 `--focused-assets`, `--default-assets`, and `--debug-assets`.
+Asset-only extraction preserves the previous structured Story/Table source
+fingerprints and records its current asset scan separately; it must never make
+untouched structured data appear fresh after a client update. The configured
+export root is passed as `--output` to extraction and `--export-root` to
+downstream builders. Reject `--animestudio-object-index` in scopes that skip
+Story evidence, because those scopes cannot refresh its Story consumer report.
 Use direct `scripts/build_audio.py` runs for non-CN languages or audio-only
 maintenance. The audio builder writes shared SFX/music once under
 `export_full/structured/Audio/shared/` and language voice under
@@ -337,7 +348,8 @@ Setup and export internals:
   streams Wwise bank metadata directly from VFS when relinking audio events.
   `--structured-dump-mode full` keeps the same production skip rules; use
   `--structured-dump-mode debug` only for broad VFS diagnostics.
-- `export_assets.bat --from-game` passes `--skip-structured`, writes a
+- `export_assets.bat --from-game` (that is, `export.bat --assets-only
+  --from-game`) passes `--skip-structured`, writes a
   lightweight VFS metadata index, runs WebUI-facing image/model/Material
   export, and decodes CN audio before relinking.
 - `export.bat --from-game --with-assets` keeps the structured Story

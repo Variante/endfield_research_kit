@@ -43,6 +43,14 @@ python serve.py
 python scripts\pack_webui.py
 ```
 
+When Story bundles and evidence are already current, `export_assets.bat`
+rebuilds all downstream semantic views, including Mission Pipeline/map,
+Characters, Gameplay/projectiles, Assets/audio, the curated source graph, and
+debug-only combat relationships; `--from-game` refreshes decoded assets first
+without changing the structured Story/Table freshness fingerprint. The
+Mission Pipeline data-only scope reuses current evidence and previews rather
+than refreshing either one.
+
 Before a builder reads an existing extraction, verify freshness with
 `python scripts\verify_export_freshness.py`. Reuse an existing server at
 `http://127.0.0.1:8765/` instead of starting another default instance.

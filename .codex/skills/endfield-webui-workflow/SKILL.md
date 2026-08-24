@@ -23,9 +23,11 @@ graph evidence or edits to `webui/overrides/options.json`.
 - Refresh installed-game Story data: `export.bat --from-game`.
 - Refresh installed-game Story and assets together:
   `export.bat --from-game --with-assets`.
-- Rebuild asset indexes and relink CN audio from existing decoded assets:
+- Rebuild post-Story semantic views, asset indexes, the curated graph and
+  combat relationships, while relinking existing decoded CN audio:
   `export_assets.bat`.
-- Refresh assets from the installed game when Story is already current:
+- Refresh assets from the installed game and rebuild those post-Story views
+  when Story is already current:
   `export_assets.bat --from-game`.
 - Rebuild only Story/Mission Pipeline during recovery:
   `export.bat --mission-pipeline-only`.
@@ -49,6 +51,11 @@ For direct `scripts\story_builder\build.py` runs, allow at least 15 minutes.
 For repeated Mission Pipeline work with unchanged Timeline and Table inputs,
 use `--reuse-timeline-orders --reuse-reference`; never combine reference reuse
 with `--from-game`.
+
+The data-only Mission Pipeline scope reuses current Story gap evidence and map
+previews. Asset-only `--from-game` refreshes decoded assets but must preserve
+the structured Story/Table freshness fingerprints; use the full
+`export.bat --from-game --with-assets` path after a client update.
 
 ## Recovery Edit Loop
 

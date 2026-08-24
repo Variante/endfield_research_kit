@@ -1562,16 +1562,24 @@ compatibility emission scale from `0.0125` to `0.025` nevertheless reduced the
 matched frame RGB PSNR from `14.822077` to `14.811428` and barely changed the
 broad flare, so the test was rejected. LitEffect owns crystal-surface/deferred
 response, not the missing low-frequency flare sheet.
-After all 70 source renderers were admitted, the prior `0.35` Uber
-final-target compatibility calibration was no longer optimal. A bounded sweep
-that leaves the recovered A_fx02 curve values and exact one-sided Uber kernel
-unchanged measured matched-frame RGB PSNR `14.918950` at `0.50`, `14.956575`
-at `0.65`, and `14.943613` at `0.80`; `0.65` is retained. It restores more of
-the retail horizontal flare/body smear and improves roughly `0.1345` dB over
-the prior 70-renderer `14.822077` baseline. The retained direct frame pair is
-`pair_uber_scale_065_ref17_rec18.png`; this remains a clearly labeled
-display-domain calibration, not a mutation of source animation or a claim of
-exact final-target ownership.
+The disposable LitEffect sidecars were regenerated again from the pinned CHK
+with `ANIMESTUDIO_EXPORT_SHADER_BYTECODE_SIDECARS=1`; the 2,240-entry manifest,
+84 selected variants, representative DXBC, and both Ruri outputs reproduce the
+durable hashes exactly. The selected fragment proves the normal decode is
+red-times-alpha/green with reconstructed Z and a tangent/bitangent transform.
+It also proves tangent-view parallax marching; M01/M38 author strength `0.096`,
+tiling `3.36`, five steps, and minimum brightness `0.2`. The forward
+compatibility shader now preserves those inputs. Its bounded on/off capture is
+byte-identical at the final 8-bit target because the retained `0.0125` forward
+emission scale quantizes the difference away; this closes shader orientation
+logic but does not claim visible deferred-HGBuffer parity.
+After all 70 source renderers were admitted, a later direct 1920x1080
+frame-pair audit superseded the earlier common Uber scalar sweep: the old
+shared scale visibly produced several times retail's RGB separation. The
+current presentation-only scales are radial `0.85` and chromatic `0.18`; the
+recovered A_fx02 values, one-sided kernel, and exact serialized late window
+`4.400--4.600 s` remain unchanged. A tested four-frame delay was rejected
+because it left the recovered image undistorted at retail's matched peak.
 The apparent matched-frame framing mismatch was checked before changing the
 camera. Endminf already uses the exact profile endpoint
 `camera=(0,0.998,3.5)`, `lookAt=(0.022,1.225,0)`, vertical FOV 20, and 16:9
@@ -1580,16 +1588,51 @@ does not enable the recovered gyroscope specialization, and the recording does
 not preserve the live normalized cursor/controller input needed to select a
 source endpoint. No camera, actor-root, FOV, or gyroscope adjustment was
 retained.
-The final-target Uber calibration was then split by component while preserving
-the exact radial/chromatic animation values and combined source kernel.
-Reducing chromatic to `0.35` with radial `0.65` regressed matched RGB PSNR to
-`14.912214`, disproving a separable chromatic-overstrength diagnosis. Holding
-chromatic at `0.65` while increasing radial measured `14.963725` at radial
-`0.80` and `14.964017` at radial `0.95`; the latter is retained, and the
-`0.000292` dB increment from `0.80` establishes the plateau. The updated direct
-pair is `pair_uber_radial095_chromatic065_ref17_rec18.png`. Further scalar
-sweeps are not justified; remaining post error belongs to the unrecovered
-retail final-target/viewport composition rather than source curve amplitude.
+The remaining sharpness at the flare peak is not evidence for shifting the
+particle clock: retail's temporal reconstruction/motion history is still not
+available to the compatibility path, and M22's exact Stretch/View ray producer
+remains visibly sharper than retail. Its runtime renderer fields now match the
+serialized source (`lengthScale=2`, `maxParticleSize=0.5`, roll enabled,
+freeform stretch disabled); the billboard clamp workaround applies only to
+true Billboard renderers.
+A fresh M22/temporal ablation measured the matched peak at `15.200295` dB with
+the retained resolve, `15.144136` with temporal resolve disabled, and
+`15.235337` with M22 removed. Keep M22: retail visibly contains faint rays and
+its renderer/material contract is exact; the small removal gain instead
+localizes remaining error to temporal/shading softness. A separate Endminf-only
+CPU `BakeMesh` previous-deformation sidecar activated all eleven skinned
+renderers but regressed the peak to `15.151733` and produced mixed early-frame
+results, so it was removed. The offline boundary remains the fork's paired GPU
+skin buffers and retail validity/jitter policy; generic Unity previous-position
+draws and CPU baking are both experimentally rejected substitutes.
+The pinned `UnityPlayer.dll` contains all nine expected compute/property names,
+but a PE-aware x64 scan finds no direct RIP-relative references and no static
+VA/RVA pointer cells to them. Nearby executable pointers belong to generic
+option/resource destructors and wrappers, not the skin upload producer. These
+names are embedded shader/registration metadata consumed through hashed IDs, so
+string ownership cannot close the buffer-swap schedule. Continue only from a
+hashed-property/call-graph lead or a captured runtime binding; do not infer the
+current/previous swap from string proximity. A clean rebuild after removing the
+rejected CPU sidecar now measures `15.216481` dB at the same matched peak. Two
+different capture-only bloom parameter attempts produced byte-identical PNGs,
+so no bloom scalar change was retained and the small gain is attributed to the
+rebuilt maintained shader/material state rather than that ablation.
+Unity 2022.3 resolves the nine names to sequential runtime intern IDs
+`1438--1446`; a full `.text` immediate scan also finds no users, and even a
+RIP-relative scan of the surrounding metadata region has no owners. This closes
+the static name/ID route. A separate public-SRP gap was actionable: the pipeline
+already requests exact `PerObjectData.MotionVectors`, but the recovered
+CharacterCloth Forward pass did not emit retail CharacterNPR's auxiliary
+SceneMV target. It now consumes Unity's documented previous-skinned-position
+stream at `TEXCOORD4`, `unity_MatrixPreviousM`, and
+`unity_MotionVectorsParams`, then writes the already recovered fourth-root MRT
+encoding. The overview camera is fixed, so current `UNITY_MATRIX_VP` is also
+the prior camera transform; do not generalize that assumption to a moving-camera
+scene. A 41-frame 4-fps moving-entrance audit improves valid Endminf reference
+samples by about `0.0015--0.0093 dB` (peak essentially neutral); comparisons
+after the recording switches characters are invalid and excluded. Retain this
+source-backed GPU history path; it is distinct from the rejected CPU BakeMesh
+sidecar.
 The selected radial/chromatic Uber fragment now also closes the CharInfo LUT
 lookup itself. Its apparent `zxy` register shuffle is compensated by the
 following addressing: the 32-cube is flattened as blue slices with red along
@@ -1691,6 +1734,20 @@ PSNR (`14.833655` to `14.822076`), which is expected to remain timing/shading
 sensitive rather than evidence for deleting source-authored crystals. The
 retained comparison is `pair_all_crystals_ref17_rec18.png`; audit their
 per-frame coverage and exact LitEffect/Refract shading before tuning emission.
+The four large stone families were previously assigned their exact mesh
+PathIDs but accidentally left in Billboard mode; the importer now switches
+those renderers to Mesh mode after `SetMeshes`, restoring the missing stones.
+Runtime orientation fields agree with source: M01/M38 stones are Mesh/Local,
+M45/M46 glow sheets are Billboard/View, and M22 rays are Stretch/View. The
+explicitly approximate M01/M38 forward shader now consumes the recovered
+NORMAL, TANGENT, `_NormalMap`, and source `_NormalScale=1` inputs instead of
+lighting only geometric normals. Exact deferred LitEffect/HGBuffer response
+and retail temporal flare reconstruction remain the highest-value visual gaps.
+Use retail timestamp `captured_frame / 60 + 3.423 s` for the maintained
+600-frame export. With that corrected mapping, early body poses and crystal
+positions/orientations align closely frame-for-frame; the apparent earlier
+orientation mismatch came from comparing reference timestamps against the
+lead-adjusted requested simulation time instead of exported frame time.
 The original Endminf punctual-shadow producer is already active after the
 viewer applies the selected presentation profile: source rows 3/11, dynamic
 slots 40/41, 1024 base tiles, the 6144x4096 D16 atlas, and eight recovered

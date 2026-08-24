@@ -653,8 +653,8 @@
     filters: { categories: new Set(), contexts: new Set(), relations: new Set(), recovery: new Set(), scopes: new Set(), sources: new Set() },
     eventTaxonomyById: new Map(),
     gameParameterNameById: new Map(),
-    eventDetailCache: new Map(),
-    eventDetailPromises: new Map(),
+    detailCache: new Map(),
+    detailPromises: new Map(),
     notes: {},
     notesPromise: null,
     filterPanel: null,
@@ -1412,29 +1412,33 @@
     return new URL(value, new URL(indexPath, window.location.href)).toString();
   }
 
-  async function ensureEventDetail(record) {
+  // Events and media both ship as a compact list row plus a lazily fetched
+  // `detailShard`, so the browser never has to hold every detail field for
+  // every row at once. Rows without a `detailShard` are already complete.
+  async function ensureRecordDetail(record) {
     const shard = normalize(record?.raw?.detailShard);
     if (!shard || record?.raw?._detailLoaded) return record?.raw;
-    let records = state.eventDetailCache.get(shard);
+    const kind = record.kind;
+    let records = state.detailCache.get(shard);
     if (!records) {
-      let promise = state.eventDetailPromises.get(shard);
+      let promise = state.detailPromises.get(shard);
       if (!promise) {
         const token = state.loadToken;
         const url = shardUrl(shard, INDEX_PATH(state.language));
-        promise = fetch(url).then((response) => {
+        promise = fetch(url, { cache: "no-store" }).then((response) => {
           if (!response.ok) throw new Error(`${url}: HTTP ${response.status}`);
           return response.json();
         }).then((payload) => {
           if (token !== state.loadToken) return new Map();
-          const rows = new Map(recordsFromPayload(payload, "events").map((row) => [normalizeLower(recordId(row, "events")), row]));
-          state.eventDetailCache.set(shard, rows);
+          const rows = new Map(recordsFromPayload(payload, kind).map((row) => [normalizeLower(recordId(row, kind)), row]));
+          state.detailCache.set(shard, rows);
           return rows;
-        }).finally(() => state.eventDetailPromises.delete(shard));
-        state.eventDetailPromises.set(shard, promise);
+        }).finally(() => state.detailPromises.delete(shard));
+        state.detailPromises.set(shard, promise);
       }
       records = await promise;
     }
-    const detail = records?.get(normalizeLower(recordId(record.raw, "events")));
+    const detail = records?.get(normalizeLower(recordId(record.raw, kind)));
     if (!detail) return record.raw;
     record.raw = { ...record.raw, ...detail, _detailLoaded: true };
     record.contextTags = recordContextTags(record.raw, record.kind);
@@ -1488,7 +1492,7 @@
       if (!url) return [];
       const response = await window.WebUI.fetchWithProgress(url, {
         signal: controllers[index].signal,
-        cache: force ? "reload" : "default",
+        cache: "no-store",
         onProgress: (ratio) => {
           if (ratio !== null && Number.isFinite(ratio)) progress[index] = Math.max(progress[index], Math.min(0.98, ratio));
           updateProgress();
@@ -1530,8 +1534,8 @@
     state.datasetPromises = { events: null, media: null };
     state.eventTaxonomyById = new Map();
     state.gameParameterNameById = new Map();
-    state.eventDetailCache = new Map();
-    state.eventDetailPromises = new Map();
+    state.detailCache = new Map();
+    state.detailPromises = new Map();
     state.selected = null;
     state.indexController = new AbortController();
     resetFilters({ render: false });
@@ -1548,7 +1552,7 @@
         const path = INDEX_PATH(nextLanguage);
         const response = await window.WebUI.fetchWithProgress(path, {
           signal: state.indexController.signal,
-          cache: force ? "reload" : "default",
+          cache: "no-store",
           onProgress: (ratio) => window.WebUI?.updateLoader?.("audio", ratio === null ? null : ratio * 0.25, t("loading")),
         });
         if (!response.ok) throw new Error(`${path}: HTTP ${response.status}`);
@@ -2099,7 +2103,7 @@
     if (detail) detail.scrollTop = 0;
     renderList();
     renderDetail();
-    if (record.kind === "events") ensureEventDetail(record).catch((error) => {
+    ensureRecordDetail(record).catch((error) => {
       if (state.selected === record) window.WebUI?.showShellStatus?.("audio", `${t("shardError")} ${error.message || error}`, "error");
     });
   }

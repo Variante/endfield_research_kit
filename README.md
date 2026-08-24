@@ -68,11 +68,12 @@ First-time setup generates Story and Text. Run `export.bat --from-game --with-as
 :: Rebuild Story and Mission Pipeline with reusable inputs
 .\export.bat --mission-pipeline-only --reuse-timeline-orders --reuse-reference
 
-:: Rebuild only Mission Pipeline JSON when Story inputs are current
+:: Rebuild only Mission Pipeline/map JSON when Story inputs are current
 .\export.bat --mission-pipeline-data-only
 
-:: Reindex existing assets/audio, or refresh them from the game
+:: Rebuild post-Story views plus existing assets/audio
 .\export_assets.bat
+:: Refresh assets only when Story/Table exports already match this game build
 .\export_assets.bat --from-game
 
 :: Serve or package the static WebUI

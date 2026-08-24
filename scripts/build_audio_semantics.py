@@ -16,7 +16,9 @@ import copy
 import hashlib
 import importlib.util
 import json
+import math
 import os
+import tempfile
 import re
 import shutil
 import struct
@@ -3578,12 +3580,74 @@ _append_context = context_utils.append_context
 load_json = context_utils.load_json
 
 
+# The media catalog is fetched and parsed as a single JSON string by the WebUI
+# audio view, and V8 caps strings at ~512MB, so a one-file catalog stops loading
+# entirely once it outgrows that. Split it into shards of this many rows
+# (~65MB each at current row sizes) and let the view concatenate them.
+MEDIA_SHARD_ROWS = 8000
+
+
+# Bulky per-media arrays that only the detail pane reads.  Together these are
+# ~80% of the media catalog, so keeping them out of the list rows is what makes
+# the media tab affordable to hold in a browser heap; the WebUI fetches them on
+# demand from `media_details/` the same way it already does for events.
+MEDIA_DETAIL_FIELDS = (
+    "animationCallbackClipResolutions",
+    "postProcessProperties",
+    "postProcessEffectChain",
+    "postProcessBusControls",
+    "postProcessAuxSends",
+    "postProcessRanges",
+    "postProcessBusPaths",
+    "postProcessRtpcControls",
+)
+
+
+def split_media_row(row: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Split one media row into its list projection and its detail projection.
+
+    The detail row is empty when the media carries none of the heavy fields, so
+    those rows stay complete in the list shard and never trigger a fetch.
+    """
+    detail_row = {field: row[field] for field in MEDIA_DETAIL_FIELDS if row.get(field)}
+    if not detail_row:
+        return dict(row), {}
+    summary_row = {key: value for key, value in row.items() if key not in detail_row}
+    detail_row["id"] = row.get("id")
+    return summary_row, detail_row
+
+
+def prune_stale_detail_shards(root: Path, keep: Iterable[str]) -> None:
+    """Delete detail shards under `root` that this run did not write."""
+    if not root.is_dir():
+        return
+    kept = {PurePosixPath(name).name for name in keep}
+    for path in root.glob("*.json"):
+        if path.name not in kept:
+            path.unlink()
+
+
+def prune_stale_shards(root: Path, stem: str, keep: Iterable[str]) -> None:
+    """Delete `<stem>.json` / `<stem>.NNN.json` files not in `keep`."""
+    kept = {str(name) for name in keep}
+    for path in [root / f"{stem}.json", *root.glob(f"{stem}.[0-9][0-9][0-9].json")]:
+        if path.name not in kept and path.exists():
+            path.unlink()
+
+
 def json_dump(path: Path, payload: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        json.dumps(payload, ensure_ascii=False, separators=(",", ":")),
-        encoding="utf-8",
-    )
+    text = json.dumps(payload, ensure_ascii=False, separators=(",", ":")) + "\n"
+    fd, tmp_name = tempfile.mkstemp(prefix=f".{path.stem}.", suffix=".tmp", dir=path.parent)
+    tmp_path = Path(tmp_name)
+    try:
+        with open(fd, "w", encoding="utf-8", newline="\n") as handle:
+            handle.write(text)
+            handle.flush()
+        tmp_path.replace(path)
+    finally:
+        if tmp_path.exists():
+            tmp_path.unlink()
 
 
 
@@ -13657,7 +13721,22 @@ def build_audio_semantic_data(
 
     out_root = webui_root / f"data/lang/{language}/audio"
     events_name = "events.json"
-    media_name = "media.json"
+    media_details: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    media_summaries: list[dict[str, Any]] = []
+    for row in media:
+        summary_row, detail_row = split_media_row(row)
+        if detail_row:
+            bucket_value = int(
+                hashlib.sha256(str(row.get("id") or "").encode("utf-8")).hexdigest()[:8], 16
+            ) & 0x3F
+            detail_shard = f"media_details/{bucket_value:02x}.json"
+            summary_row["detailShard"] = detail_shard
+            media_details[detail_shard].append(detail_row)
+        media_summaries.append(summary_row)
+    media_names = [
+        f"media.{index:03d}.json"
+        for index in range(max(1, math.ceil(len(media_summaries) / MEDIA_SHARD_ROWS)))
+    ]
     event_details: dict[str, list[dict[str, Any]]] = defaultdict(list)
     event_summaries: list[dict[str, Any]] = []
     for row in events:
@@ -13676,11 +13755,22 @@ def build_audio_semantic_data(
         "language": language,
         "events": event_summaries,
     })
-    json_dump(out_root / media_name, {
-        "schemaVersion": AUDIO_SEMANTIC_SCHEMA_VERSION,
-        "language": language,
-        "media": media,
-    })
+    for detail_shard, detail_rows in media_details.items():
+        json_dump(out_root / detail_shard, {
+            "schemaVersion": AUDIO_SEMANTIC_SCHEMA_VERSION,
+            "language": language,
+            "media": detail_rows,
+        })
+    for index, media_name in enumerate(media_names):
+        json_dump(out_root / media_name, {
+            "schemaVersion": AUDIO_SEMANTIC_SCHEMA_VERSION,
+            "language": language,
+            "media": media_summaries[index * MEDIA_SHARD_ROWS:(index + 1) * MEDIA_SHARD_ROWS],
+        })
+    # Drop the pre-sharding single file and any shards left over from a larger
+    # previous run so stale rows cannot resurface.
+    prune_stale_shards(out_root, "media", keep=media_names)
+    prune_stale_detail_shards(out_root / "media_details", keep=media_details)
     trigger_context_name = "trigger_contexts.json"
     json_dump(out_root / trigger_context_name, trigger_context_catalog)
     scene_background_name = "scene_backgrounds.json"
@@ -13784,7 +13874,7 @@ def build_audio_semantic_data(
         "metadataEventSymbolAliases": metadata_event_symbol_catalog,
         "shards": {
             "events": events_name,
-            "media": media_name,
+            "media": media_names,
             "sceneBackgrounds": scene_background_name,
         },
         "triggerContexts": {

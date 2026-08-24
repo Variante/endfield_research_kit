@@ -25264,18 +25264,34 @@ class SourceGraphBuilder:
         useful graph evidence, but they must remain separate from playback
         placement and ownership.
         """
-        path = (
+        audio_root = (
             self.root
             / "webui"
             / "data"
             / "lang"
             / safe_key(self.language).upper()
             / "audio"
-            / "media.json"
         )
-        payload = read_json(path, {})
-        media_rows = payload.get("media") if isinstance(payload, dict) else None
-        if not isinstance(media_rows, list):
+        # The catalog is sharded (``media.NNN.json``) once it outgrows what a
+        # browser can parse in one string; older data is a single ``media.json``.
+        shard_paths = sorted(audio_root.glob("media.[0-9][0-9][0-9].json"))
+        if not shard_paths and (audio_root / "media.json").exists():
+            shard_paths = [audio_root / "media.json"]
+        if not shard_paths:
+            return
+        path = shard_paths[0]
+        payload: dict[str, Any] = {}
+        media_rows: list[Any] = []
+        for shard_path in shard_paths:
+            shard = read_json(shard_path, {})
+            if not isinstance(shard, dict):
+                continue
+            if not payload:
+                payload = shard
+            rows = shard.get("media")
+            if isinstance(rows, list):
+                media_rows.extend(rows)
+        if not media_rows:
             return
 
         source = f"webui/audio/{safe_key(self.language).upper()}"
@@ -25302,7 +25318,8 @@ class SourceGraphBuilder:
                 "evidenceBoundary": "authored media identity and file path only; no playback trigger, placement, speaker, or story ownership inferred",
             },
         )
-        self.add_file(slash(path), kind="generated_audio_media", source=source)
+        for shard_path in shard_paths:
+            self.add_file(slash(shard_path), kind="generated_audio_media", source=source)
 
         for row in recovered_rows:
             audio_key = safe_key(row.get("externalAuthoredAudioId"))
