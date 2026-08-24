@@ -111,6 +111,9 @@ namespace EndfieldGraphShaderLabEditor
             public bool observedDeferredLightDataReady;
             public bool observedDeferredShadowDataReady;
             public bool observedDeferredPass0InputSubsetReady;
+            public bool observedDeferredGBufferFrameReady;
+            public bool observedPreGBufferDepthOwnerReady;
+            public bool observedDeferredExactConsumerReady;
             public bool observedLightCookieDataReady;
             public string gyroscopeMode;
             public string gyroscopeInputX;
@@ -150,6 +153,9 @@ namespace EndfieldGraphShaderLabEditor
             public bool deferredLightDataReady;
             public bool deferredShadowDataReady;
             public bool deferredPass0InputSubsetReady;
+            public bool deferredGBufferFrameReady;
+            public bool preGBufferDepthOwnerReady;
+            public bool deferredExactConsumerReady;
             public bool lightCookieDataReady;
             public string[] effectRoots;
             public ParticleRow[] liveRenderers;
@@ -288,11 +294,13 @@ namespace EndfieldGraphShaderLabEditor
                 "ENDFIELD_RECOVERED_CHARINFO_READY_SUBSET_DIAGNOSTIC",
                 "ENDFIELD_RECOVERED_SOURCE_ENERGY_CORE",
                 "ENDFIELD_RECOVERED_VISIBILITY_SH",
+                "ENDFIELD_RECOVERED_PREGBUFFER_DEPTH_OWNER",
                 "ENDFIELD_RECOVERED_LINEAR_UNORM_FINAL_TARGET",
                 "ENDFIELD_RECOVERED_CHARINFO_BACKGROUND_PORTRAIT"
             };
             foreach (string flag in reproductionFlags)
                 Environment.SetEnvironmentVariable(flag, "1");
+            EndfieldRecoveredCharInfoPresentation.RefreshStandaloneSelection();
             // The exact source stage is disposable and may be absent between
             // recovery batches. Rebind the ten retained primary rock rows from
             // their pinned PathIDs and direct tracked assets before the scene
@@ -412,6 +420,26 @@ namespace EndfieldGraphShaderLabEditor
                 "ENDFIELD_RECOVERED_DEFERRED_RESOLVER_RESOURCE_PROBE",
                 "ENDFIELD_RECOVERED_DEFERRED_EXACT_CONSUMER",
                 "ENDFIELD_RECOVERED_DEFERRED_SHADOW_DATA"
+            };
+            foreach (string flag in excluded)
+                Environment.SetEnvironmentVariable(flag, null);
+            Run();
+        }
+
+        public static void RunDeferredExactConsumerProbe()
+        {
+            string[] enabled = {
+                "ENDFIELD_RECOVERED_DEFERRED_EXACT_CONSUMER",
+                "ENDFIELD_RECOVERED_CANONICAL_BINNING_BUFFER",
+                "ENDFIELD_RECOVERED_SEPARATE_CHARACTER_SHADOW",
+                "ENDFIELD_RECOVERED_LOW_RES_DIRECTIONAL_SHADOW",
+                "ENDFIELD_RECOVERED_SCREEN_SHADOW_R_ATTACHMENT_DIAGNOSTIC"
+            };
+            foreach (string flag in enabled)
+                Environment.SetEnvironmentVariable(flag, "1");
+            string[] excluded = {
+                "ENDFIELD_ENDMINF_DEFERRED_B31_PROBE",
+                "ENDFIELD_RECOVERED_DEFERRED_RESOLVER_RESOURCE_PROBE"
             };
             foreach (string flag in excluded)
                 Environment.SetEnvironmentVariable(flag, null);
@@ -679,6 +707,12 @@ namespace EndfieldGraphShaderLabEditor
                     "_EndfieldRecoveredDeferredShadowDataReady") > 0.5f,
                 deferredPass0InputSubsetReady = Shader.GetGlobalFloat(
                     "_EndfieldRecoveredDeferredPass0InputSubsetReady") > 0.5f,
+                deferredGBufferFrameReady = Shader.GetGlobalFloat(
+                    "_EndfieldRecoveredDeferredGBufferFrameReady") > 0.5f,
+                preGBufferDepthOwnerReady = Shader.GetGlobalFloat(
+                    "_EndfieldRecoveredPreGBufferDepthOwnerReady") > 0.5f,
+                deferredExactConsumerReady = Shader.GetGlobalFloat(
+                    "_EndfieldRecoveredDeferredExactConsumerReady") > 0.5f,
                 lightCookieDataReady = Shader.GetGlobalFloat(
                     "_EndfieldRecoveredLightCookieDataReady") > 0.5f,
                 effectRoots = roots.Select(value => value.name + " @ " + Hierarchy(value.transform)).ToArray(),
@@ -738,6 +772,12 @@ namespace EndfieldGraphShaderLabEditor
                 value.deferredShadowDataReady);
             bool observedDeferredPass0InputSubsetReady = Frames.All(value =>
                 value.deferredPass0InputSubsetReady);
+            bool observedDeferredGBufferFrameReady = Frames.All(value =>
+                value.deferredGBufferFrameReady);
+            bool observedPreGBufferDepthOwnerReady = Frames.All(value =>
+                value.preGBufferDepthOwnerReady);
+            bool observedDeferredExactConsumerReady = Frames.Any(value =>
+                value.deferredExactConsumerReady);
             bool observedLightCookieDataReady = Frames.All(value =>
                 value.lightCookieDataReady);
             var missingObservations = new List<string>();
@@ -752,6 +792,9 @@ namespace EndfieldGraphShaderLabEditor
                 missingObservations.Add(
                     "ten-row primary rock compatibility plus exact suikuai (1) " +
                     "binding with three separate blocked effects");
+            if (!observedPreGBufferDepthOwnerReady)
+                missingObservations.Add(
+                    "canonical CharacterPrePass depth/stencil ownership");
             if (string.Equals(
                     Environment.GetEnvironmentVariable(
                         "ENDFIELD_ENDMINF_DEFERRED_B31_PROBE"),
@@ -766,6 +809,25 @@ namespace EndfieldGraphShaderLabEditor
                         value.deferredPass0InputSubsetReady))
                     missingObservations.Add(
                         "Endminf b31-only probe unexpectedly admitted unresolved b34/pass-0 readiness");
+            }
+            if (string.Equals(
+                    Environment.GetEnvironmentVariable(
+                        "ENDFIELD_RECOVERED_DEFERRED_EXACT_CONSUMER"),
+                    "1",
+                    StringComparison.Ordinal))
+            {
+                if (!observedDeferredLightDataReady)
+                    missingObservations.Add("exact-consumer deferred b31 readiness");
+                if (!observedDeferredShadowDataReady)
+                    missingObservations.Add("exact-consumer deferred b34 readiness");
+                if (!observedDeferredPass0InputSubsetReady)
+                    missingObservations.Add("exact-consumer pass-0 input subset readiness");
+                if (!observedDeferredGBufferFrameReady)
+                    missingObservations.Add("exact-consumer five-MRT GBuffer readiness");
+                if (!observedDeferredExactConsumerReady)
+                    missingObservations.Add("exact-consumer submitted output");
+                if (!observedLightCookieDataReady)
+                    missingObservations.Add("exact-consumer LightCookieData readiness");
             }
             Report report = new Report {
                 status = capturePrePostHdr || capturePostStages
@@ -802,6 +864,12 @@ namespace EndfieldGraphShaderLabEditor
                 observedDeferredShadowDataReady = observedDeferredShadowDataReady,
                 observedDeferredPass0InputSubsetReady =
                     observedDeferredPass0InputSubsetReady,
+                observedDeferredGBufferFrameReady =
+                    observedDeferredGBufferFrameReady,
+                observedPreGBufferDepthOwnerReady =
+                    observedPreGBufferDepthOwnerReady,
+                observedDeferredExactConsumerReady =
+                    observedDeferredExactConsumerReady,
                 observedLightCookieDataReady = observedLightCookieDataReady,
                 gyroscopeMode = Environment.GetEnvironmentVariable(
                     EndfieldRecoveredCharInfoGyroscopeCameraState.ModeEnvironmentVariable),

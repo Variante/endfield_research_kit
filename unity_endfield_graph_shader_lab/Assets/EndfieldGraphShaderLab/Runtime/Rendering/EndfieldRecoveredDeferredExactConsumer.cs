@@ -38,6 +38,8 @@ namespace EndfieldGraphShaderLab
         };
         private static readonly int BufferT0Id =
             Shader.PropertyToID("_EndfieldBufferT0");
+        private static readonly int ReadyId =
+            Shader.PropertyToID("_EndfieldRecoveredDeferredExactConsumerReady");
         private static readonly int[] TextureIds = CreateTextureIds();
 
         private readonly bool requested;
@@ -54,6 +56,7 @@ namespace EndfieldGraphShaderLab
         private int allocatedWidth;
         private int allocatedHeight;
         private bool loggedFailure;
+        private string lastFailure = string.Empty;
         private bool readbackRequested;
         private bool recoveredHlslReadbackRequested;
         private float[] exactReadbackFloats;
@@ -67,6 +70,7 @@ namespace EndfieldGraphShaderLab
             requested =
                 EndfieldRecoveredDeferredResolverBindingPolicy
                     .IsExactConsumerRequested;
+            Shader.SetGlobalFloat(ReadyId, 0.0f);
         }
 
         internal bool Requested => requested;
@@ -92,6 +96,7 @@ namespace EndfieldGraphShaderLab
             RenderTargetIdentifier canonicalColorTarget,
             RenderTargetIdentifier canonicalDepthTarget)
         {
+            Shader.SetGlobalFloat(ReadyId, 0.0f);
             if (!requested)
                 return false;
             if (nativeEventPending)
@@ -119,7 +124,8 @@ namespace EndfieldGraphShaderLab
                 return FailClosed("exact consumer received no camera or GBuffer frame");
             if (!resources.AllPhysical)
                 return FailClosed(
-                    "exact consumer requires physical t0/t1/t5/t6/t7/t11 resources: " +
+                    $"exact consumer camera={camera.name} requires physical " +
+                    "t0/t1/t5/t6/t7/t11 resources: " +
                     resources.BuildStatusToken());
             if (!resources.T14Ready || !resources.T15Ready)
                 return FailClosed(
@@ -301,6 +307,8 @@ namespace EndfieldGraphShaderLab
                     "t22=wetness:white-disabled-fallback," +
                     "fallbackTextureSlots=t2,t3,t4.");
                 loggedFailure = false;
+                lastFailure = string.Empty;
+                Shader.SetGlobalFloat(ReadyId, 1.0f);
                 return true;
             }
             catch (Exception exception)
@@ -323,6 +331,7 @@ namespace EndfieldGraphShaderLab
             if (disposed)
                 return;
             disposed = true;
+            Shader.SetGlobalFloat(ReadyId, 0.0f);
             try
             {
                 Native.SetDiagnosticTexturePointers(null, 0);
@@ -807,12 +816,16 @@ namespace EndfieldGraphShaderLab
 
         private bool FailClosed(string failure)
         {
-            if (!loggedFailure)
+            if (!loggedFailure || !string.Equals(
+                    failure,
+                    lastFailure,
+                    StringComparison.Ordinal))
             {
                 Debug.LogWarning(
                     "Recovered exact deferred resolver consumer failed closed: " +
                     failure + ".");
                 loggedFailure = true;
+                lastFailure = failure;
             }
             return false;
         }

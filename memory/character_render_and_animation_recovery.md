@@ -334,17 +334,18 @@ archetypes remain labeled source kits rather than finished characters.
   light, cookie, irradiance, particle, gacha, and post-processing behavior is
   recovered only where its input contract is verified. Unknown inputs remain
   explicit gaps.
-- Four new neutral D3D11 `ui_overview_start`/loop frame analyses now pin the
-  live Endminf body producer as a five-color-target draw over D32S8: scene
-  color, scene motion, GBuffer A/B, and GBuffer C. The Unity deferred-sidecar
-  formats and depth ownership agree with this boundary. The capture does not
-  yet source-join that build-specific shader/material binding to the recovered
-  body shader, so it strengthens the producer contract but does not authorize
-  global GBuffer admission or a guessed material change.
-  Across the four newest captures the draw remains 27,615 indices with the
-  same build-specific VS/PS pair; only its event number shifts as transient
-  setup draws vary. Treat this as a stable Endminf presentation boundary, not
-  a one-frame artifact. The full event/resource matrix is in
+- Four neutral D3D11 `ui_overview_start`/loop frame analyses pin one stable
+  five-color-target CharacterNPR draw over D32S8. Its 27,615 indices uniquely
+  match Endminf hair LOD0 submesh 0 rather than the 16,524-index body submesh;
+  captured stencil ref 36 also matches `M_actor_endminf_hair_01`'s recovered
+  `_HairStencilRef`. The build-specific VS/PS pair is therefore a
+  high-confidence opaque-hair PreG/character candidate, not a body-producer
+  proof. Attachment JPGs are cumulative snapshots and their complete actor
+  silhouette does not assign every visible pixel to this draw. The event
+  number shifts as transient setup draws vary, but the mesh-sized draw and
+  shader pair remain stable across all four captures. Do not use this evidence
+  to admit the generic HGRP/Lit resolver or guess body material packing. The
+  full event/resource matrix is in
   `reports/assets/character_recovery/endminf_ui_overview_frame_analysis_20260824.md`.
 - The selected deferred resolver DXBC has a compile-valid Unity HLSL port. It
   matches the neutral fixture exactly and the recovered Wulfa fixture within
@@ -379,7 +380,23 @@ archetypes remain labeled source kits rather than finished characters.
   12-light/zero-cookie transport over the actual `ui_overview_start` to loop
   41-frame sequence. It still reports no presented deferred pass-0/shadow
   consumer, so the probe is transport evidence only; it must not be promoted
-  into the beauty path or used to admit the captured five-MRT body producer.
+  into the beauty path or used to admit the captured opaque-hair candidate.
+- The maintained 41-frame D3D11 Endminf reproduction now executes a canonical
+  CharacterPrePass depth/stencil owner before Forward: seven opaque
+  DepthCharacterOnly-compatible draws plus one source-safe generic depth draw
+  populate the shared D32S8 target, and recovered source `Equal` testing is
+  activated only after that owner succeeds. The capture observes the owner and
+  active shadow plane in all 41 frames. The editor harness also refreshes its
+  cached standalone selectors after installing the bounded Endminf profile, so
+  an earlier process-wide cache no longer deactivates the selected source
+  hierarchy.
+- A strengthened interactive exact-consumer probe now requires an actual DXBC
+  submission instead of passing on b31/b34/GBuffer readiness alone. It remains
+  fail-closed: on `MainCamera`, physical camera depth and the Endminf punctual
+  atlas become ready in different observed phases, so t1 and t6 never coexist
+  with the otherwise physical t0/t5/t7/t11 set. This is a bounded transport
+  scheduling gap in the non-presented SphereOutside diagnostic, not evidence
+  for routing CharacterNPR hair through that resolver.
 - Endminf's two punctual-shadow rows now populate the lab-owned diagnostic
   atlas and selected b34 transport as two validated spot entries in contiguous
   dynamic slots 40-41. Publication still requires exact source rows 11 and 3
