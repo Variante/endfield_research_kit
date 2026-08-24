@@ -339,9 +339,15 @@ namespace EndfieldGraphShaderLabEditor
                 // Force the same real selection edge even when editor state happened
                 // to start with Endminf selected; the runtime VFX contract is owned by
                 // RestartOverviewFromSelection, not by merely finding an active actor.
-                select.Invoke(viewer, new object[] { -1 });
-                select.Invoke(viewer, new object[] { index });
                 camera = Camera.main ?? UnityEngine.Object.FindObjectOfType<Camera>();
+                select.Invoke(viewer, new object[] { -1 });
+                // Source frame 1109 is the blank model-swap frame immediately
+                // before Endminf first appears at 1110. Render that boundary
+                // through the real pipeline so camera temporal history does
+                // not self-seed from the first visible Endminf frame.
+                if (camera != null)
+                    Render(camera);
+                select.Invoke(viewer, new object[] { index });
                 selected = true;
                 // Enabling the actor schedules its one-frame delayed Overview
                 // restart. Do not establish capture time zero until that edge

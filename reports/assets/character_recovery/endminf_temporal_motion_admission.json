@@ -1,0 +1,140 @@
+{
+  "schema": "endfield.endminf-temporal-motion-admission.v1",
+  "subject": "Endminf Character Info temporal and motion admission",
+  "reference": {
+    "recording": "videos/2026-08-21_20-15-17.mkv",
+    "blankModelSwapSourceFrame": 1109,
+    "firstVisibleEndminfSourceFrame": 1110,
+    "comparisonPairs": 28,
+    "comparisonRoi": {
+      "x": 400,
+      "y": 110,
+      "width": 1100,
+      "height": 970
+    }
+  },
+  "charInfoVolume": {
+    "owner": "CharInfoChar/CharInfo_Scene/Light/LookDev_Lights/Global Volume",
+    "profile": "CharInfo_Volume",
+    "profilePathId": "-8401698007244884640",
+    "components": [
+      "Bloom",
+      "Tonemapping",
+      "ColorAdjustments",
+      "Vignette",
+      "HGSharpen",
+      "ColorLookup",
+      "HGAutoExposure",
+      "HGShadowSettings",
+      "HGCharacterVolume",
+      "ShadowsMidtonesHighlights",
+      "HGDisableDirectionalShadowComponent",
+      "HGChromaticAbberation"
+    ],
+    "motionBlurAdmitted": false,
+    "conclusion": "The complete serialized Character Info profile contains no HGMotionBlur component. Values recovered from c31m2_5_volume are unrelated and must not be transplanted into Character Info."
+  },
+  "motionBlurComputeAsset": {
+    "status": "exact asset recovered; inactive for the admitted Character Info profile",
+    "runtimeResourceCarrier": "HGRenderPipelineRuntimeResources",
+    "carrierPathId": "5613980184714137857",
+    "carrierSource": "Endfield_Data/StreamingAssets/VFS/0CE8FA57/19F0903A12BA87C0D43E67E64889B525.chk",
+    "carrierSourceOffset": 157608586,
+    "pointerField": "$.shaders.motionBlurCS",
+    "serializedFile": "CAB-d2980d33fd7a2a76503c10142d782181",
+    "computeShaderName": "MotionBlurCS",
+    "computeShaderPathId": "6037886420662956413",
+    "cabOffset": 4777529,
+    "serializedByteSize": 85016,
+    "rawSha256": "31058efd4e1024806e826374257fd67ce913f29f0da86f1d308dd9e739fe90b9",
+    "kernels": [
+      "Packing",
+      "TileMax",
+      "TileNeighbor",
+      "MotionBlur",
+      "BlendMotionBlur"
+    ],
+    "variants": [
+      "default",
+      "MOTION_BLUR_USE_R11G11B10F"
+    ],
+    "renderers": [
+      "D3D",
+      "Vulkan"
+    ]
+  },
+  "sceneMotionVectors": {
+    "status": "actor MRT completion implemented",
+    "encoding": "CharacterNPR fourth-root reprojection encoding",
+    "renderers": [
+      "cloth",
+      "skin",
+      "hair",
+      "eye"
+    ],
+    "inputs": [
+      "previous skinned position",
+      "unity_MatrixPreviousM",
+      "current and previous clip XYW",
+      "unity_MotionVectorsParams"
+    ],
+    "output": "SV_Target1 with recovered SceneMV encoding"
+  },
+  "temporalHistory": {
+    "status": "source boundary reproduced with partial TAA consumer",
+    "behavior": "While the explicit compatibility profile is requested but Endminf's effect clock is inactive, the camera preserves the latest scene color without resolving. The capture renders source-equivalent blank model-swap frame 1109 before selecting Endminf, allowing visible frame 1110 to consume that history instead of self-seeding.",
+    "knownPartialBoundary": [
+      "one scene-color history rather than the full recovered history set",
+      "no exact TAA compute-kernel implementation",
+      "no recovered jitter or previous-camera matrix publication",
+      "no depth/motion dilation, masks, rejection, or fast-converge path",
+      "incomplete 192-byte TAA constant-buffer publication"
+    ]
+  },
+  "canonicalCapture": {
+    "status": "ok",
+    "renderApi": "Direct3D12",
+    "frameCount": 41,
+    "observedTransition": true,
+    "observedSettledLoop": true,
+    "observedEntranceVfx": true,
+    "observedEntranceVfxCleanup": true,
+    "gyroscopeMode": "recorded-input",
+    "visualPostPreRollSeconds": 0.15,
+    "sceneMvBaseline": {
+      "mae": 22.3188423707,
+      "rmse": 39.3609024806,
+      "bias": 10.5858200897,
+      "pixelAnyChannelAtLeast16": 0.4295133887,
+      "frame0Mae": 22.8958721161,
+      "frame18Mae": 25.8107471466
+    },
+    "blankPrehistory": {
+      "mae": 22.3102283478,
+      "rmse": 39.3490943909,
+      "bias": 10.5460529327,
+      "pixelAnyChannelAtLeast16": 0.4290318650,
+      "frame0Mae": 22.6546802521,
+      "frame18Mae": 25.8107471466
+    }
+  },
+  "clothBoundary": {
+    "status": "exact managed fallback not yet implementable",
+    "closedPayload": {
+      "proxyParticles": 70,
+      "transforms": 71,
+      "lines": 65,
+      "roots": 5,
+      "capsules": 4
+    },
+    "activeFeatures": [
+      "distance",
+      "angle restore",
+      "tether compression",
+      "spring",
+      "point collision and friction",
+      "gravity"
+    ],
+    "blocker": "Thirty-five proxy/prebuild arrays remain raw-preserved because their element strides and semantic types are unresolved. A simple spring/gravity substitute is not source-equivalent."
+  }
+}

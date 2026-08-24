@@ -2981,12 +2981,14 @@ namespace EndfieldGraphShaderLab
                         "ENDFIELD_ENDMINF_DISABLE_TEMPORAL_RESOLVE"),
                     "1",
                     System.StringComparison.Ordinal) ||
-                !EndfieldEndminfVisualCompatibilityClock.Requested ||
-                !EndfieldEndminfVisualCompatibilityClock.TryGetElapsed(
-                    out float elapsed))
+                !EndfieldEndminfVisualCompatibilityClock.Requested)
             {
                 return;
             }
+
+            bool temporalResolveActive =
+                EndfieldEndminfVisualCompatibilityClock.TryGetElapsed(
+                    out float elapsed);
 
             if (!recoveredTemporalStates.TryGetValue(
                     camera,
@@ -2999,7 +3001,9 @@ namespace EndfieldGraphShaderLab
             bool invalidHistory = state.history == null ||
                 state.history.width != width ||
                 state.history.height != height ||
-                (!float.IsNaN(state.lastElapsed) && elapsed + 0.001f < state.lastElapsed);
+                (temporalResolveActive &&
+                    !float.IsNaN(state.lastElapsed) &&
+                    elapsed + 0.001f < state.lastElapsed);
             if (invalidHistory)
             {
                 ReleaseRecoveredTemporalHistory(state);
@@ -3023,7 +3027,7 @@ namespace EndfieldGraphShaderLab
                     new RenderTargetIdentifier(CameraColorId),
                     state.history);
             }
-            else
+            else if (temporalResolveActive)
             {
                 RenderTextureDescriptor resolveDescriptor = sceneDescriptor;
                 resolveDescriptor.width = width;
@@ -3079,8 +3083,18 @@ namespace EndfieldGraphShaderLab
                     loggedRecoveredTemporalResolve = true;
                 }
             }
+            else
+            {
+                // TAA history belongs to the camera, not Endminf's `_02`
+                // effect clock. Keep the latest pre-selection scene color so
+                // the first visible actor frame can consume the immediately
+                // preceding blank model-swap frame observed in retail.
+                commandBuffer.CopyTexture(
+                    new RenderTargetIdentifier(CameraColorId),
+                    state.history);
+            }
 
-            state.lastElapsed = elapsed;
+            state.lastElapsed = temporalResolveActive ? elapsed : float.NaN;
             state.lastFrame = Time.frameCount;
         }
 

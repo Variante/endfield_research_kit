@@ -65,7 +65,14 @@ archetypes remain labeled source kits rather than finished characters.
   two-second OutQuad camera correction on selection; the UI-free 28-frame RGB
   MAE falls from 27.6752 to 24.0733, with frame 1 falling from 56.156 to 30.986.
   This endpoint remains explicitly recording-specific rather than a roster
-  default. Retail motion-vector blur and TAA history are still unresolved.
+  default. The admitted `CharInfo_Volume` contains no `HGMotionBlur`; an exact
+  `MotionBlurCS` asset is recovered for future scenes, but enabling it here
+  would import an unrelated profile. Skin, hair, eye, and cloth now publish the
+  recovered CharacterNPR SceneMV encoding. The camera preserves the recorded
+  blank model-swap frame as temporal history before Endminf becomes visible,
+  avoiding first-frame self-seeding. The remaining TAA consumer is still
+  partial: its exact compute kernels, jitter/matrix state, dilation, masks,
+  rejection, fast convergence, and full constant buffer are open.
 - Effect-02's animated radial/chromatic values, exact 1.0 radial power, native
   mode/effective-power packing, signed/clamped post-projection center transform,
   source-only warped taps, and separate bloom sampling order are source-backed.
@@ -77,8 +84,9 @@ archetypes remain labeled source kits rather than finished characters.
   this post owner nine 60 Hz frames before the first visible Endminf body frame;
   applying that explicit 0.15-second recording pre-roll removes the two
   incorrectly shifted chromatic pulses and, together with the recovered
-  gyroscope transition, lowers the same MAE to 22.3254. Exact retail D3D12
-  presentation binding remains open.
+  gyroscope transition, lowers the same MAE to 22.3254. Actor SceneMV coverage
+  and the source blank-frame history boundary lower the current comparison to
+  22.3102. Exact retail D3D12 presentation binding remains open.
 - The selected rock-family `HGRP/LitEffect` subprograms now have cross-platform
   physical constant-buffer identities: transform variables, global variables,
   `UnityPerDraw`, `UnityPerMaterial`, and terrain subsurface constants. The
@@ -157,7 +165,10 @@ all-character pass:
   They preserve recovered inputs and boundaries. Some native reconstruction
   checks require the original disposable capture inputs and now fail closed
   when those inputs are absent; exact retail scheduling and the complete
-  numeric solver are still unproven;
+  numeric solver are still unproven. Endminf's MC_Coat payload closes its
+  particles, transforms, lines, roots, capsules, and active constraint feature
+  set, but 35 proxy/prebuild arrays still lack proven strides and element
+  semantics; do not replace that gap with a simple spring/gravity surrogate;
 - the Last Rite head effect and Li Zhiyan finger effect remain as exact,
   fail-closed source contracts and builders. They are useful reference cases
   for hierarchy, mount, timing, particle, mesh, material, and texture recovery,
@@ -211,7 +222,9 @@ another per-material shader approximation. The missing boundary includes:
 - ten still-blocked rock-family renderer identities awaiting the bounded live
   global/per-draw/subsurface values and the complete deferred frame resources;
 - exact retail D3D12 presentation binding after the now-closed Effect-02
-  combined Uber source, bloom, LUT, and output-tail contract.
+  combined Uber source, bloom, LUT, and output-tail contract;
+- the full TAA producer/consumer chain beyond the now-complete actor SceneMV
+  MRT coverage and recorded blank-frame history boundary.
 
 `SphereOutside` is asset-complete. Its remaining gates are runtime frame state
 and resources. The exact deferred program is no longer a blocker.
