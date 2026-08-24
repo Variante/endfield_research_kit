@@ -73,7 +73,12 @@ archetypes remain labeled source kits rather than finished characters.
   global exposure, channel-wise bloom decoding above 0.3, serialized intensity,
   white normalized tint, zero blend mode, and saturated source alpha. The D3D12
   compatibility implementation reduced the UI-free 28-frame RGB MAE from
-  27.6888 to 27.6752. Exact retail D3D12 presentation binding remains open.
+  27.6888 to 27.6752. The supplied recording's Wolfgd-to-Endminf route starts
+  this post owner nine 60 Hz frames before the first visible Endminf body frame;
+  applying that explicit 0.15-second recording pre-roll removes the two
+  incorrectly shifted chromatic pulses and, together with the recovered
+  gyroscope transition, lowers the same MAE to 22.3254. Exact retail D3D12
+  presentation binding remains open.
 - The selected rock-family `HGRP/LitEffect` subprograms now have cross-platform
   physical constant-buffer identities: transform variables, global variables,
   `UnityPerDraw`, `UnityPerMaterial`, and terrain subsurface constants. The

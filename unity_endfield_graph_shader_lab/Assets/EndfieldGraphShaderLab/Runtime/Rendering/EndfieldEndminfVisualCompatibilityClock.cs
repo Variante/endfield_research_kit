@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using UnityEngine;
 
 namespace EndfieldGraphShaderLab
@@ -21,7 +22,10 @@ namespace EndfieldGraphShaderLab
 
         public const string EnvironmentVariable =
             "ENDFIELD_ENDMINF_VISUAL_COMPATIBILITY";
+        public const string PreRollSecondsEnvironmentVariable =
+            "ENDFIELD_ENDMINF_VISUAL_COMPATIBILITY_PREROLL_SECONDS";
         private static float startTime = float.NaN;
+        private static float configuredPreRollSeconds;
         private static Transform overview02Root;
         private static readonly Vector3 RecoveredPostCenterLocal =
             new Vector3(0.0f, 1.266f, 0.0f);
@@ -41,17 +45,45 @@ namespace EndfieldGraphShaderLab
         {
             if (Requested)
             {
-                startTime = Time.time;
+                configuredPreRollSeconds = ResolvePreRollSeconds();
+                startTime = Time.time - configuredPreRollSeconds;
                 overview02Root = effectRoot;
             }
         }
+
+        public static float ConfiguredPreRollSeconds => configuredPreRollSeconds;
 
         public static void ClearOverview02(Transform effectRoot)
         {
             if (overview02Root != effectRoot)
                 return;
             startTime = float.NaN;
+            configuredPreRollSeconds = 0.0f;
             overview02Root = null;
+        }
+
+        private static float ResolvePreRollSeconds()
+        {
+            string text = Environment.GetEnvironmentVariable(
+                PreRollSecondsEnvironmentVariable);
+            if (string.IsNullOrWhiteSpace(text))
+                return 0.0f;
+            if (float.TryParse(
+                    text,
+                    NumberStyles.Float,
+                    CultureInfo.InvariantCulture,
+                    out float seconds) &&
+                !float.IsNaN(seconds) &&
+                !float.IsInfinity(seconds) &&
+                seconds >= 0.0f &&
+                seconds <= 1.0f)
+            {
+                return seconds;
+            }
+            Debug.LogWarning(
+                "Recovered Endminf visual compatibility pre-roll failed closed: " +
+                $"{PreRollSecondsEnvironmentVariable} must be a finite value in [0,1].");
+            return 0.0f;
         }
 
         public static bool TryGetElapsed(out float elapsed)
