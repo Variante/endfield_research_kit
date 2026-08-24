@@ -1,5 +1,5 @@
 {
-  "schema": "endfield.endminf-temporal-motion-admission.v5",
+  "schema": "endfield.endminf-temporal-motion-admission.v6",
   "subject": "Endminf Character Info temporal and motion admission",
   "reference": {
     "recording": "videos/2026-08-21_20-15-17.mkv",
@@ -70,6 +70,151 @@
       "featureValid": true
     },
     "boundary": "The public Unity wrapper has no DLAA enum and feature creation does not establish Endfield's exact Streamline schedule, motion/depth/reactive inputs, jitter, reset policy, executed output, or frame-generation path. This is an implementation-feasibility result only."
+  },
+  "nativeStreamlineRuntimeContract": {
+    "status": "pinned custom Streamline DLAA schedule, tags, constants, options, and evaluate call recovered; velocity conversion and reset producer remain incomplete",
+    "sourceGate": {
+      "unityPlayerSha256": "b47728ba10f09c46e8a107b4c7055e48cfe402d3d8c88a4529074981f9672aa2",
+      "gameAssemblySha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
+      "globalMetadataSha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e",
+      "streamlineVersion": "2.10.3"
+    },
+    "implementation": "The installed client uses custom UnityPlayer Streamline render-graph code, not UnityEngine.NVIDIAModule's public ExecuteDLSS contract.",
+    "schedule": [
+      "full-input-resolution velocity combine",
+      "slGetNewFrameToken",
+      "slSetConstants and five resource tags",
+      "slDLSSSetOptions",
+      "slEvaluateFeature"
+    ],
+    "resourcePacketOrder": [
+      "scaling input color",
+      "scaling output color",
+      "depth",
+      "combined motion vectors",
+      "optional exposure"
+    ],
+    "streamlineTags": [
+      {
+        "type": "kBufferTypeScalingInputColor",
+        "numeric": 3,
+        "packetIndex": 0
+      },
+      {
+        "type": "kBufferTypeScalingOutputColor",
+        "numeric": 4,
+        "packetIndex": 1
+      },
+      {
+        "type": "kBufferTypeMotionVectors",
+        "numeric": 1,
+        "packetIndex": 3
+      },
+      {
+        "type": "kBufferTypeDepth",
+        "numeric": 0,
+        "packetIndex": 2
+      },
+      {
+        "type": "kBufferTypeExposure",
+        "numeric": 13,
+        "packetIndex": 4,
+        "optional": true
+      }
+    ],
+    "tagContract": "All five tags use eOnlyValidNow with extent (0,0,native texture width,native texture height). The DLSS path contains no ReactiveMaskHint or TransparencyAndCompositionMaskHint. The optional HG UI hint is separately tagged UIColorAndAlpha for UI/frame generation and is not a DLSS reactive input.",
+    "constants": {
+      "matrixConvention": "five row-major matrices, explicitly de-jittered upstream",
+      "jitterOffset": "negative source camera jitter on both axes, in pixel space",
+      "motionVectorScale": [
+        1.0,
+        1.0
+      ],
+      "depthInverted": true,
+      "cameraMotionIncluded": "packet-provided boolean",
+      "motionVectors3D": false,
+      "motionVectorsDilated": false,
+      "motionVectorsJittered": false,
+      "reset": "packet byte applied through slSetConstants for the same frame token as evaluation",
+      "motionVectorsInvalidValue": "FLT_MAX"
+    },
+    "velocityCombine": {
+      "inputs": [
+        "source velocity",
+        "depth",
+        "two camera matrices",
+        "input width and height"
+      ],
+      "output": "new full-input-resolution combined velocity texture tagged as Streamline motion vectors",
+      "dispatch": "ceil(width/8) by ceil(height/8)",
+      "streamlineSideConvention": "combined camera-plus-object motion already normalized; mvecScale remains (1,1)",
+      "boundary": "The compiled ComputeShader arithmetic, sign conversion, channel storage, and mapping of native descriptor literal 0x2d to a public Unity GraphicsFormat are not yet recovered."
+    },
+    "dlssOptions": {
+      "hgToStreamlineQuality": {
+        "0": 4,
+        "1": 1,
+        "2": 2,
+        "3": 3,
+        "4": 6
+      },
+      "dlaa": "HG quality 4 maps exactly to sl::DLSSMode::eDLAA 6",
+      "outputExtent": "final/display width and height",
+      "sharpness": 0.0,
+      "preExposure": 1.0,
+      "exposureScale": 1.0,
+      "colorBuffersHDR": true,
+      "indicatorInvertAxisX": true,
+      "indicatorInvertAxisY": true,
+      "alphaUpscaling": false,
+      "useAutoExposure": "HG setting byte",
+      "modelPresets": {
+        "0": "default/0",
+        "1": "M/13",
+        "2": "L/12"
+      }
+    },
+    "nativeEvidence": {
+      "unityPlayerScheduler": {
+        "rva": "0x1281860",
+        "size": "0x36b",
+        "sha256": "e893a23f474fa25b9de1fea368b4398e9712681aba88ad4876ee008a295c2a5f"
+      },
+      "unityPlayerVelocityBuilder": {
+        "rva": "0x1282a40",
+        "size": "0x2fc",
+        "sha256": "ebc29b9475c6c830982e764c5d470c9cac2b153011c91279c4ed33f4abb2d69e"
+      },
+      "unityPlayerGeneralTagCore": {
+        "rva": "0xe058b0",
+        "size": "0x75f",
+        "sha256": "1308b32c944ab73f29c0fc062d714cfa65ac8afe47d6c45263a45cd43b6553be"
+      },
+      "unityPlayerConstantsConverter": {
+        "rva": "0xe08ad0",
+        "size": "0x3a3",
+        "sha256": "7bc9717751b246ed207647736df4fbbf04395aef572571009d12db7c5d0b0532"
+      },
+      "unityPlayerDlssEvaluateCore": {
+        "rva": "0xe068b0",
+        "size": "0x245",
+        "sha256": "d3463263584e0bfe1a5fe0472ab15970e44b8b376e30dd30a700df044271a36b"
+      },
+      "unityPlayerQualityMapper": {
+        "rva": "0xdf9770"
+      },
+      "gameAssemblyHgCameraUpdate": {
+        "token": "0x06000e8f",
+        "rva": "0x3100120",
+        "size": "0x19d0",
+        "sha256": "e8f4614506e2a4d9bb11fb970c109439f7df6c72f359a07efe09dcdef97fbaad"
+      }
+    },
+    "remainingBlockers": [
+      "velocity-combine ComputeShader arithmetic and exact output GraphicsFormat",
+      "exact managed boolean expression that produces the same-frame reset byte",
+      "direct proof that live DLAA forces input extent equal to output extent"
+    ]
   },
   "charInfoVolume": {
     "owner": "CharInfoChar/CharInfo_Scene/Light/LookDev_Lights/Global Volume",
