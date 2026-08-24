@@ -1,0 +1,68 @@
+using System;
+using UnityEngine;
+
+namespace EndfieldGraphShaderLab
+{
+    /// <summary>
+    /// Opt-in binding for the ten source-identified Endminf overview rock
+    /// renderers whose retained prefab was generated while LitEffect remained
+    /// fail-closed. Direct references are published by the editor validator;
+    /// runtime path/name searches are deliberately forbidden.
+    /// </summary>
+    [DisallowMultipleComponent]
+    public sealed class EndfieldEndminfLitEffectCompatibilityBinding : MonoBehaviour
+    {
+        public const string EnvironmentVariable =
+            "ENDFIELD_ENDMINF_LITEFFECT_VISUAL_COMPAT";
+        public const string ContractSchema =
+            "endfield.endminf-liteffect-runtime-binding.v1";
+
+        [Serializable]
+        public sealed class Row
+        {
+            public long particleRendererPathId;
+            public long materialPathId;
+            public long meshPathId;
+            public ParticleSystemRenderer renderer;
+            public Material material;
+            public Mesh mesh;
+        }
+
+        public string contractSchema = ContractSchema;
+        public Row[] rows = Array.Empty<Row>();
+
+        private void OnEnable()
+        {
+            if (!Requested)
+                return;
+
+            foreach (Row row in rows)
+            {
+                if (row == null || row.renderer == null ||
+                    row.material == null || row.mesh == null)
+                {
+                    Debug.LogError(
+                        "Recovered Endminf LitEffect compatibility binding " +
+                        "failed closed because a direct reference is missing.", this);
+                    continue;
+                }
+
+                row.renderer.renderMode = ParticleSystemRenderMode.Mesh;
+                row.renderer.SetMeshes(new[] { row.mesh }, 1);
+                row.renderer.sharedMaterials = new[] { row.material };
+                row.renderer.enabled = true;
+            }
+        }
+
+        public static bool Requested
+        {
+            get
+            {
+                string value = Environment.GetEnvironmentVariable(EnvironmentVariable);
+                return string.Equals(value, "1", StringComparison.Ordinal) ||
+                    string.Equals(value, "true", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(value, "on", StringComparison.OrdinalIgnoreCase);
+            }
+        }
+    }
+}

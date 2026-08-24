@@ -48,6 +48,14 @@ namespace EndfieldGraphShaderLabEditor
         // enough past its handoff to prove that the actual viewer reaches and
         // sustains overview_loop instead of stopping on the entrance pose.
         private const int FrameCount = 41;
+        private const string LitEffectCompatibilityShader =
+            "Hidden/Endfield/Compatibility/Endminf/LitEffectM01M38";
+        private static readonly string[] ExpectedRemainingBlockedEffects = {
+            "/all/Particle System (9) | ",
+            "/all/suikuai (1) | ",
+            "/all/suikuai (2) | ",
+            "/all/glow/Particle System (10) | ",
+        };
         private static float started;
         private static bool selected;
         private static int selectionSettleFrames;
@@ -62,7 +70,7 @@ namespace EndfieldGraphShaderLabEditor
         [Serializable]
         private sealed class Report
         {
-            public string schema = "endfield.endminf-viewer-playmode-sequence.v3";
+            public string schema = "endfield.endminf-viewer-playmode-sequence.v4";
             public string status = "ok";
             public int width = Width;
             public int height = Height;
@@ -83,6 +91,7 @@ namespace EndfieldGraphShaderLabEditor
             public bool observedEntranceVfx;
             public bool observedEntranceVfxCleanup;
             public bool observedRotationOnlyRootMotion;
+            public bool observedPrimaryRockCompatibilityBinding;
             public string gyroscopeMode;
             public string gyroscopeInputX;
             public string gyroscopeInputY;
@@ -244,6 +253,12 @@ namespace EndfieldGraphShaderLabEditor
             };
             foreach (string flag in reproductionFlags)
                 Environment.SetEnvironmentVariable(flag, "1");
+            // The exact source stage is disposable and may be absent between
+            // recovery batches. Rebind the ten retained primary rock rows from
+            // their pinned PathIDs and direct tracked assets before the scene
+            // instantiates its actor prefab. This remains opt-in and does not
+            // broaden the four separately blocked non-primary effect rows.
+            EndfieldEndminfLitEffectCompatibilityBindingBuilder.BuildAndValidate();
             if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(
                     EndfieldEndminfVisualCompatibilityClock.PreRollSecondsEnvironmentVariable)))
             {
@@ -544,6 +559,21 @@ namespace EndfieldGraphShaderLabEditor
             bool observedRotationOnlyRootMotion =
                 Frames.Any(value => value.rootMotionCallbackCount > 0) &&
                 Frames.All(value => value.rootMotionPositionDelta.sqrMagnitude <= 1.0e-10f);
+            FrameRow firstEntranceFrame = Frames.FirstOrDefault(value =>
+                value.effectRootCount == 4);
+            bool observedPrimaryRockCompatibilityBinding =
+                firstEntranceFrame != null &&
+                firstEntranceFrame.admittedRenderers == 66 &&
+                firstEntranceFrame.blockedRendererIdentities != null &&
+                firstEntranceFrame.blockedRendererIdentities.Length ==
+                    ExpectedRemainingBlockedEffects.Length &&
+                ExpectedRemainingBlockedEffects.All(expected =>
+                    firstEntranceFrame.blockedRendererIdentities.Count(value =>
+                        value.Contains(expected)) == 1) &&
+                Frames.Any(frame => frame.liveRenderers != null &&
+                    frame.liveRenderers.Any(renderer =>
+                        renderer.shaders != null &&
+                        renderer.shaders.Contains(LitEffectCompatibilityShader)));
             var missingObservations = new List<string>();
             if (!observedAnimatorContract) missingObservations.Add("Animator contract");
             if (!observedTransition) missingObservations.Add("start-to-loop transition");
@@ -552,6 +582,9 @@ namespace EndfieldGraphShaderLabEditor
             if (!observedEntranceVfxCleanup) missingObservations.Add("entrance VFX cleanup");
             if (!observedRotationOnlyRootMotion)
                 missingObservations.Add("rotation-only root motion with invariant position");
+            if (!observedPrimaryRockCompatibilityBinding)
+                missingObservations.Add(
+                    "ten-row primary rock compatibility binding with four separate blocked effects");
             Report report = new Report {
                 status = missingObservations.Count == 0
                     ? "ok"
@@ -570,6 +603,8 @@ namespace EndfieldGraphShaderLabEditor
                 observedEntranceVfx = observedEntranceVfx,
                 observedEntranceVfxCleanup = observedEntranceVfxCleanup,
                 observedRotationOnlyRootMotion = observedRotationOnlyRootMotion,
+                observedPrimaryRockCompatibilityBinding =
+                    observedPrimaryRockCompatibilityBinding,
                 gyroscopeMode = Environment.GetEnvironmentVariable(
                     EndfieldRecoveredCharInfoGyroscopeCameraState.ModeEnvironmentVariable),
                 gyroscopeInputX = Environment.GetEnvironmentVariable(

@@ -1,0 +1,67 @@
+{
+  "schema": "endfield.endminf-liteffect-visual-compatibility.v2",
+  "status": "verified_non_exact",
+  "classification": "visual_compatibility_not_source_exact",
+  "defaultMode": "disabled_fail_closed",
+  "optInEnvironment": "ENDFIELD_ENDMINF_LITEFFECT_VISUAL_COMPAT=1",
+  "scope": {
+    "shaderPathId": 6428594484694422749,
+    "materials": [
+      "M_fx_endminm_gfx_01",
+      "M_fx_endminm_gfx_38"
+    ],
+    "mesh": "S_rock_small_1_017_02_lod2",
+    "expectedRendererCount": 10,
+    "materialRendererCounts": {
+      "M_fx_endminm_gfx_01": 7,
+      "M_fx_endminm_gfx_38": 3
+    }
+  },
+  "assetEvidence": {
+    "M01": {
+      "path": "unity_endfield_graph_shader_lab\\Assets\\EndfieldGraphShaderLab\\Generated\\Characters\\Playable\\Endminf\\Effects\\Overview\\Materials\\M_fx_endminm_gfx_01_p5A6341E8A834E421.mat",
+      "sha256": "2eedcde1c67336cc77b011334d4eb2879c666dc053c662210920cdcf23ba4117",
+      "expectedSha256": "2eedcde1c67336cc77b011334d4eb2879c666dc053c662210920cdcf23ba4117",
+      "validated": true
+    },
+    "M38": {
+      "path": "unity_endfield_graph_shader_lab\\Assets\\EndfieldGraphShaderLab\\Generated\\Characters\\Playable\\Endminf\\Effects\\Overview\\Materials\\M_fx_endminm_gfx_38_pAFCE491DD7BC5724.mat",
+      "sha256": "0840a85415e10ee11cec6789715f7be86fb2a363ed4d4ebb250cf7832171e73e",
+      "expectedSha256": "0840a85415e10ee11cec6789715f7be86fb2a363ed4d4ebb250cf7832171e73e",
+      "validated": true
+    },
+    "rockMesh": {
+      "path": "unity_endfield_graph_shader_lab\\Assets\\EndfieldGraphShaderLab\\Generated\\Characters\\Playable\\Endminf\\Effects\\Overview\\Meshes\\S_rock_small_1_017_02_lod2_p8EC9950E5461C8D9.obj",
+      "sha256": "e3bbdc9973e5f9dfb2d499fb440be36f99a525b525a22af8ce63b9c48402f8a7",
+      "expectedSha256": "e3bbdc9973e5f9dfb2d499fb440be36f99a525b525a22af8ce63b9c48402f8a7",
+      "validated": true
+    }
+  },
+  "runtimeBinding": {
+    "schema": "endfield.endminf-liteffect-runtime-binding.v1",
+    "policy": "ten direct renderer/material/mesh references; no runtime hierarchy/name search",
+    "default": "renderers remain disabled with empty material arrays"
+  },
+  "canonicalCapture": {
+    "path": "unity_endfield_graph_shader_lab\\scratch\\character_recovery\\endminf_viewer_playmode_sequence\\report.json",
+    "validated": true,
+    "admittedRenderersDuringEntrance": 66,
+    "remainingBlockedRendererCount": 4,
+    "remainingBoundary": "one secondary LitEffect and three VFXRefract renderers remain separate"
+  },
+  "sourceInputsUsed": [
+    "material identities",
+    "_PARALLAX_MAP keyword",
+    "queue 2000",
+    "recovered texture identities",
+    "serialized colors/floats"
+  ],
+  "approximated": [
+    "converted PNG texture derivatives where native payloads are absent",
+    "forward lighting",
+    "emission scale",
+    "HGBuffer/deferred replacement"
+  ],
+  "measurementBoundary": "Restoring physical amber geometry is a completeness correction. Whole-frame ROI MAE is not an acceptance gate because this explicitly non-exact forward shader and the authored moving crystal occupy the compared pixels.",
+  "failures": []
+}

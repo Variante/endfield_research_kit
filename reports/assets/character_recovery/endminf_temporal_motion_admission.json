@@ -1,5 +1,5 @@
 {
-  "schema": "endfield.endminf-temporal-motion-admission.v11",
+  "schema": "endfield.endminf-temporal-motion-admission.v12",
   "subject": "Endminf Character Info temporal and motion admission",
   "reference": {
     "recording": "videos/2026-08-21_20-15-17.mkv",
@@ -591,6 +591,25 @@
       "frame0Mae": 22.6550178069,
       "frame18Mae": 25.8108253671,
       "interpretation": "The opt-in consumer is off by default. A fresh D3D12 capture reproduces the prior beauty-isolated canonical metrics within PNG/accumulation rounding."
+    },
+    "primaryRockCompatibilityCapture": {
+      "classification": "visual_compatibility_not_source_exact",
+      "captureSchema": "endfield.endminf-viewer-playmode-sequence.v4",
+      "status": "ok",
+      "observedPrimaryRockCompatibilityBinding": true,
+      "admittedEntranceRenderers": 66,
+      "restoredPrimaryRockRenderers": 10,
+      "remainingBlockedRenderers": 4,
+      "remainingBoundary": "one secondary LitEffect and three VFXRefract rows remain separately fail-closed",
+      "roiMetrics": {
+        "mae": 22.3765735261,
+        "rmse": 39.4227702786,
+        "bias": 10.7126311197,
+        "pixelAnyChannelAtLeast16": 0.4300856206,
+        "frame0Mae": 23.2499134645,
+        "frame18Mae": 25.8108253671
+      },
+      "interpretation": "The ten direct bindings restore the previously absent amber faceted stone and chunks. Whole-frame ROI MAE rises by about 0.0665 from the prior 22.3101 capture because the explicitly non-exact forward LitEffect shader now contributes moving crystal pixels; this metric is recorded as a regression boundary, not used to reject the source-identity completeness correction. Default rendering remains fail-closed, and crystal pixels remain excluded from generic temporal or lighting calibration."
     }
   },
   "clothBoundary": {
