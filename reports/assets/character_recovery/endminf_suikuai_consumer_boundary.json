@@ -1,6 +1,6 @@
 {
   "schema": "endfield.endminf-suikuai-consumer-boundary.v1",
-  "status": "fail_closed",
+  "status": "refract_admitted_liteffect_fail_closed",
   "reference": {
     "recording": "videos/2026-08-24_06-37-22.mkv",
     "sha256": "36318de82bc3afabcf62d56946a9263614abaca0c7c3e7c57d16da938abcbb39",
@@ -40,21 +40,19 @@
         "fragmentSha256": "8ed5ee6637ecb36bf07a815d98d799de9f43db3677af6042687ca615d61fa0b9",
         "fragmentSnippetHash": "2ed24a13e2b41d91"
       },
-      "currentConsumerProgram": {
+      "recoveredConsumerProgram": {
         "keywords": [
-          "_USE_RBOFFSET"
+          "_USE_BLEND",
+          "_USE_RBOFFSET",
+          "_USE_RGBOFFSET"
         ],
-        "vertexSidecar": "0012_endfield_dxbc_0.dxbc",
+        "vertexSidecar": "0186_endfield_dxbc_0.dxbc",
         "vertexSha256": "ce67c18524733ee3a7eb045fff537b6ce804423d0302775371c6867a9559ef5a",
-        "fragmentSidecar": "0013_endfield_dxbc_1.dxbc",
-        "fragmentSha256": "5b4daa9b59f8203e99c136a62f04c14bb75d2b13c327d4fd41b6fc1e292de3cf",
-        "fragmentSnippetHash": "f905de094d0261d5",
-        "missing": [
-          "_BlendTex alpha path",
-          "_UseBlendTexAsAlpha",
-          "_GOffset",
-          "three-tap RGB-offset masks"
-        ]
+        "fragmentSidecar": "0187_endfield_dxbc_1.dxbc",
+        "fragmentSha256": "8ed5ee6637ecb36bf07a815d98d799de9f43db3677af6042687ca615d61fa0b9",
+        "fragmentSnippetHash": "2ed24a13e2b41d91",
+        "blendTexture": "T_fx_mask_138_M_pFC31CA27BFE1C466.png",
+        "blendTextureSha256": "10d9f377b725cb47b55ca84556bc3db07f2766399133877eac46d5b921cc8334"
       },
       "focusedProbe": {
         "captureFps": 60,
@@ -64,11 +62,18 @@
         ],
         "unityExit": 0,
         "admittedRendererCount": 67,
-        "result": "rejected: oversized chromatic triangles remain at burst onset",
-        "disposableCapture": "unity_endfield_graph_shader_lab/scratch/character_recovery/endminf_viewer_playmode_fine_window",
-        "log": "tmp/character_recovery/endminf_suikuai1_instanced_fine.log"
+        "result": "accepted: bounded translucent distortion shards; no oversized chromatic triangles",
+        "firstChangedSeconds": 4.5,
+        "peakChangedPixels": 3260,
+        "peakChangedPixelThresholdRgbSum": 6,
+        "peakAbsoluteRgbDifference": 334464,
+        "peakBboxPixelsTopOrigin": [1196, 661, 1357, 709],
+        "preBurstFramesByteIdentical": 12,
+        "disposableExactCapture": "tmp/character_recovery/endminf_suikuai1_exact_fine",
+        "disposableControlCapture": "unity_endfield_graph_shader_lab/scratch/character_recovery/endminf_viewer_playmode_fine_window",
+        "log": "tmp/character_recovery/endminf_suikuai1_exact_fine.log"
       },
-      "admission": "blocked until the selected blend/RGB-offset fragment and its texture bindings are recovered"
+      "admission": "exact selected fragment/material/texture and retained renderer admitted"
     },
     {
       "path": "overview_02/all/suikuai (2)",
@@ -100,25 +105,24 @@
     "status": "pass",
     "unityExit": 0,
     "sequenceStatus": "ok",
-    "admittedRendererCount": 66,
-    "blockedRendererCount": 4,
+    "admittedRendererCount": 67,
+    "blockedRendererCount": 3,
     "blockedRendererIdentities": [
       "overview_02/all/Particle System (9)",
-      "overview_02/all/suikuai (1)",
       "overview_02/all/suikuai (2)",
       "overview_03/all/glow/Particle System (10)"
     ],
     "observedTransition": true,
     "observedSettledLoop": true,
     "observedEntranceVfxCleanup": true,
-    "sequenceReportSha256": "860700b0ce96b87d51612fd95896bf2a1cacd3e8f142d7599e2271eaa192251b",
+    "sequenceReportSha256": "48c63bd241e35cbb31e98726af52b06a655f884c98b4fa6fc9ea43fd7682dc24",
     "august21ComparisonSha256": "a8f00a02d269bf839ff38bbc980c3920d99a19abd28e6fd5962b004011092e1e",
     "august24NoFramegenComparisonSha256": "8ab4f8166eda6267960ecf53120e2799fba7473a6626741043eb7705197ea10f",
-    "log": "tmp/character_recovery/endminf_canonical_after_particle_abi.log"
+    "log": "tmp/character_recovery/endminf_suikuai1_importer/unity_canonical_three_blocked.log"
   },
   "protectedCrystalBoundary": {
     "path": "overview_02/all/shitou (1)",
     "material": "M_fx_endminm_gfx_21",
-    "policy": "unrelated exact small-crystal row; do not resize, brighten, retime, or disable it to compensate for either blocked suikuai consumer"
+    "policy": "unrelated exact small-crystal row; do not resize, brighten, retime, or disable it to compensate for surrounding consumers"
   }
 }
