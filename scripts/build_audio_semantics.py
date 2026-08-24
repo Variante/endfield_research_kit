@@ -13460,6 +13460,9 @@ def build_audio_semantic_data(
         },
         event_rows=events,
     )
+    character_namespace_gameplay = (
+        media_ownership.project_character_namespace_gameplay_audio(events)
+    )
     static_rtpc_alignment = rtpc_alignment.build_static_rtpc_alignment(
         alignment_audio_index,
         events,
@@ -14703,6 +14706,33 @@ def build_audio_semantic_data(
             ),
         },
     }
+    gameplay_sound_effects_path = (
+        webui_root / f"data/lang/{language}/gameplay/sound_effects.json"
+    )
+    gameplay_sound_effects = load_json(gameplay_sound_effects_path, {})
+    if isinstance(gameplay_sound_effects, dict) and gameplay_sound_effects:
+        gameplay_characters = gameplay_sound_effects.setdefault("characters", {})
+        for gameplay_character in gameplay_characters.values():
+            if isinstance(gameplay_character, dict):
+                gameplay_character.pop("authoredNamespaceEvents", None)
+        for character_id, namespace_events in (
+            character_namespace_gameplay.get("characters") or {}
+        ).items():
+            gameplay_characters.setdefault(character_id, {})[
+                "authoredNamespaceEvents"
+            ] = namespace_events
+        gameplay_sound_effects["schemaVersion"] = 6
+        gameplay_sound_effects["characterNamespaceAudio"] = {
+            "schemaVersion": character_namespace_gameplay.get("schemaVersion"),
+            "counts": character_namespace_gameplay.get("counts") or {},
+            "evidenceBoundary": (
+                character_namespace_gameplay.get("evidenceBoundary") or ""
+            ),
+        }
+        gameplay_counts = gameplay_sound_effects.setdefault("counts", {})
+        for key, value in (character_namespace_gameplay.get("counts") or {}).items():
+            gameplay_counts[f"characterNamespace{key[0].upper()}{key[1:]}"] = value
+        json_dump(gameplay_sound_effects_path, gameplay_sound_effects)
     json_dump(out_root / "index.json", payload)
     return payload
 
