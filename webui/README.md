@@ -415,6 +415,14 @@ leaf as scene environment, scene object, animation, gameplay component,
 interaction, UI, voice system, or mission narration. Outdoor room tone and
 authored ambient-emitter roles may recover `ambience`; generic scene emitters
 retain scene ownership without being forced into an audio category.
+The Audio overview loads `data/lang/<LANG>/audio/scene_backgrounds.json` as a
+compact scene catalog. It reports validated and missing object-index sources,
+keeps partial coverage visible, and lets users filter scenes by scene id,
+mission id, or Event. Event chips navigate to the existing Audio Event detail;
+the catalog does not duplicate Wwise branches or media. AudioLevel rows and
+mission-to-scene references are authored static evidence. Prefab-local
+emitters stay visibly unresolved to a level, and the page does not claim
+runtime scene activation, Event posting, branch selection, or audibility.
 Exact same-name AnimationClip callback evidence can similarly recover an
 action SFX category. Event and media details show the matching clip, actor,
 callback-derived ownership, and evidence status; partial/similar names and

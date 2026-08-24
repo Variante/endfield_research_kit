@@ -356,6 +356,108 @@
   border-left: 4px solid var(--accent-2);
 }
 
+.audio-scene-catalog {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
+  border-radius: 9px;
+  background: rgba(var(--fg-rgb), 0.018);
+}
+
+.audio-scene-catalog.is-partial {
+  border-left-color: var(--warning, #b98225);
+}
+
+.audio-scene-catalog-heading,
+.audio-scene-card > summary {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.audio-scene-catalog-heading > strong {
+  font-size: 13px;
+}
+
+.audio-scene-catalog-heading > span,
+.audio-scene-card > summary > span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.audio-scene-search {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+}
+
+.audio-scene-list {
+  display: grid;
+  gap: 6px;
+}
+
+.audio-scene-emitter-list {
+  display: grid;
+  gap: 6px;
+}
+
+.audio-scene-emitter {
+  padding: 8px 10px;
+  border: 1px solid rgba(var(--fg-rgb), 0.08);
+  border-radius: 8px;
+  background: rgba(var(--fg-rgb), 0.022);
+  color: var(--muted);
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+.audio-scene-card {
+  padding: 8px 10px;
+  border: 1px solid rgba(var(--fg-rgb), 0.08);
+  border-radius: 8px;
+  background: rgba(var(--fg-rgb), 0.022);
+}
+
+.audio-scene-card > summary {
+  cursor: pointer;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 11px;
+}
+
+.audio-scene-link-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 9px;
+}
+
+.audio-scene-event-link {
+  max-width: 100%;
+  padding: 3px 7px;
+  border: 1px solid rgba(var(--accent-rgb), 0.28);
+  border-radius: 999px;
+  background: rgba(var(--accent-rgb), 0.07);
+  color: var(--accent-text);
+  cursor: pointer;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 10px;
+  overflow-wrap: anywhere;
+}
+
+.audio-scene-event-link:hover,
+.audio-scene-event-link:focus-visible {
+  background: rgba(var(--accent-rgb), 0.14);
+}
+
 .audio-runtime-note,
 .audio-detail-note {
   margin: 0;
