@@ -77,12 +77,18 @@ archetypes remain labeled source kits rather than finished characters.
   Dilation's recovered 3x3 maximum-depth winner scan, previous-non-jittered-VP
   reprojection, and exact B/Z-lane flag repacking. Exact MaskDilation also
   generates its R8 current-frame resource from packed B/Z at the center plus
-  four diagonals. These packed resources are not yet fed to the partial beauty
-  resolve: that consumer still expects raw SceneMV B, while retail reads
-  normalized 10-bit flags. Packed-flag/mask resolve consumption, complete
-  resolve policy, jitter, fast convergence, live IFix selection, the retail
-  first-frame auxiliary clear payload, and
-  constructor-seeded constant lanes remain open.
+  four diagonals. The no-keyword Quality-0 resolve math is now decoded through
+  its packed bit-1 Gaussian selector, direct-history bound, topology/confidence
+  rejection, adaptive weights, and confidence-alpha history. It is available
+  only through `ENDFIELD_RECOVERED_TAAU_PACKED_RESOLVE=1`: with zero jitter,
+  frame-info Y one, default-zero convergence/responsive lanes, and the
+  deterministic alpha-one seed, the 28-frame ROI MAE regresses from 22.3101 to
+  58.2411. A fresh gate-off capture returns to 22.3101. Keep the canonical
+  raw-lane partial consumer until live jitter/frame state, first-allocation
+  history alpha, IFix selection, and capture-time upscaler admission close.
+  Retail confidence alpha must remain internal history metadata; the lab's
+  later Uber treats source alpha as opacity, so the experiment presents RGB
+  through a separate opaque-alpha copy.
 - Upscaler admission for the August 21 reference remains deliberately
   fail-closed. The dated July 14 saved profile and the post-capture August 24
   read both request DLSS/DLAA, so it is the strongest comparison target, but
