@@ -624,6 +624,7 @@ namespace EndfieldGraphShaderLab
         private bool loggedRecoveredShaderVariablesGlobalFailure;
         private bool loggedRecoveredDeferredLightDataActivation;
         private bool loggedRecoveredDeferredLightDataFailure;
+        private bool loggedRecoveredDeferredEndminfLightDataResult;
         private bool loggedRecoveredDeferredShadowDataActivation;
         private bool loggedRecoveredDeferredShadowDataFailure;
         private Material recoveredTemporalMaterial;
@@ -1513,6 +1514,21 @@ namespace EndfieldGraphShaderLab
                 lightDataCommand.Release();
                 if (recoveredDeferredLightDataReady)
                 {
+                    bool endminfLightData = operatorLightRig != null &&
+                        operatorLightRig.actorRoot != null &&
+                        string.Equals(
+                            operatorLightRig.actorRoot.name,
+                            "Endminf",
+                            System.StringComparison.OrdinalIgnoreCase);
+                    if (endminfLightData &&
+                        !loggedRecoveredDeferredEndminfLightDataResult)
+                    {
+                        Debug.Log(
+                            "Recovered selected deferred _LightDataBuffer b31 " +
+                            "reads are active for the source-closed Endminf " +
+                            "12-light CharInfo fixture; pass0=disabled, presented=false.");
+                        loggedRecoveredDeferredEndminfLightDataResult = true;
+                    }
                     if (!loggedRecoveredDeferredLightDataActivation)
                     {
                         Debug.Log(
@@ -1522,12 +1538,30 @@ namespace EndfieldGraphShaderLab
                         loggedRecoveredDeferredLightDataActivation = true;
                     }
                 }
-                else if (!loggedRecoveredDeferredLightDataFailure)
+                else
                 {
-                    Debug.LogWarning(
-                        "Recovered selected deferred _LightDataBuffer failed " +
-                        "closed: " + lightDataFailure + ".");
-                    loggedRecoveredDeferredLightDataFailure = true;
+                    bool endminfLightData = operatorLightRig != null &&
+                        operatorLightRig.actorRoot != null &&
+                        string.Equals(
+                            operatorLightRig.actorRoot.name,
+                            "Endminf",
+                            System.StringComparison.OrdinalIgnoreCase);
+                    if (endminfLightData &&
+                        !loggedRecoveredDeferredEndminfLightDataResult)
+                    {
+                        Debug.LogWarning(
+                            "Recovered selected deferred Endminf 12-light " +
+                            "_LightDataBuffer failed closed: " +
+                            lightDataFailure + ".");
+                        loggedRecoveredDeferredEndminfLightDataResult = true;
+                    }
+                    if (!loggedRecoveredDeferredLightDataFailure)
+                    {
+                        Debug.LogWarning(
+                            "Recovered selected deferred _LightDataBuffer failed " +
+                            "closed: " + lightDataFailure + ".");
+                        loggedRecoveredDeferredLightDataFailure = true;
+                    }
                 }
             }
 

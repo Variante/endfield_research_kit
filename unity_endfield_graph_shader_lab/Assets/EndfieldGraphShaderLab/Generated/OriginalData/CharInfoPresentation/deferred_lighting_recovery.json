@@ -3,7 +3,7 @@
   "recovered_at": "2026-08-09",
   "runtime_ready": false,
   "activation_policy": "default-off-fail-closed",
-  "outcome": "The original HGRP/Lit HGBuffer stages, GBuffer renderer-list LightMode, five-color-target DefaultDeferred render-graph topology, HGRP deferred resolver shader family, HighEnd GBuffer formats, native draw entry points, unpatched render-parameter initializer, and current installed CharInfo draw route are recovered. A default-off same-camera SphereOutside sidecar now binds the exact logical five-MRT formats plus D32S8, applies the source material's depth/stencil state and transform, and produces bit-identical 640x720 readbacks on D3D11 and D3D12 without changing the presented beauty frame. The selected pass-0 b30 TransformVariables and isolated-CharInfo b31 LightDataBuffer reads are source/GPU-closed. The selected b34 punctual transport is also same-frame closed for Wulfa spot slot 40 and Zhuangfy point slots 40..45 with the matching 6144x4096 D16 atlas; full named and original-DXBC bridge buffers read back bit-exactly with unowned words zero. These transports remain default-off and never enable pass 0; CharacterOnly exits before the selected resolver reads b34. The selected physical Gacha camera is source-closed RenderWithAlpha=false, so the callback invokes the WriteAlpha helper but submits no WriteAlpha draws. Future/network patch state, render-graph physical resource identity/lifetime, a binding-compatible pass-0 implementation, general-scene/static-cache lighting rows, non-punctual ShadowData sections, and retail settled atlas pixels are not recovered. A forward/PBR substitute is not equivalent and must not activate SphereOutside.",
+  "outcome": "The original HGRP/Lit HGBuffer stages, GBuffer renderer-list LightMode, five-color-target DefaultDeferred render-graph topology, HGRP deferred resolver shader family, HighEnd GBuffer formats, native draw entry points, unpatched render-parameter initializer, and current installed CharInfo draw route are recovered. A default-off same-camera SphereOutside sidecar now binds the exact logical five-MRT formats plus D32S8, applies the source material's depth/stencil state and transform, and produces bit-identical 640x720 readbacks on D3D11 and D3D12 without changing the presented beauty frame. The selected pass-0 b30 TransformVariables and isolated-CharInfo b31 LightDataBuffer reads are source/GPU-closed for Wulfa/Zhuangfy; Endminf's exact 12-row b31 subset and zero-cookie transport additionally remain ready across a 41-frame D3D12 runtime probe, while a new 12-row GPU word readback remains open. The selected b34 punctual transport is same-frame closed only for Wulfa spot slot 40 and Zhuangfy point slots 40..45 with the matching 6144x4096 D16 atlas; Endminf's retail light-to-shadow slot order is not recovered. These transports remain default-off and never enable pass 0; CharacterOnly exits before the selected resolver reads b34. The selected physical Gacha camera is source-closed RenderWithAlpha=false, so the callback invokes the WriteAlpha helper but submits no WriteAlpha draws. Future/network patch state, render-graph physical resource identity/lifetime, a binding-compatible pass-0 implementation, general-scene/static-cache lighting rows, non-punctual ShadowData sections, and retail settled atlas pixels are not recovered. A forward/PBR substitute is not equivalent and must not activate SphereOutside.",
   "selected_hgbuffer": {
     "shader": "HGRP/Lit",
     "pass": "HGBuffer",
@@ -111,7 +111,7 @@
     "sources": {
       "producer": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredGBufferFrame.cs", "sha256": "788a2409be51116a9b32a9cdacbfb88c5a98282e4f55673a2dec83f53efdde69"},
       "shader": {"path": "Assets/EndfieldGraphShaderLab/Shaders/Recovered/EndfieldCharInfoHGRPLitUnavailable.shader", "sha256": "05b000f1a143d0c8522a261f464d7b4d82ec0eadbe7afcb374b02b22ecbee6a2"},
-      "pipeline": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/HGCompatRenderPipeline.cs", "sha256": "f921ffa65a753cd95ea401794ef6d63db1539a77e8c4729246a0e1cd79a0b4c1"},
+      "pipeline": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/HGCompatRenderPipeline.cs", "sha256": "ed7dc7a1d95964b24fd7745fe59c040231d63ae60b9d62b5f441469c1005a218"},
       "material_source": {"path": "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/Materials/M_CharInfo_outside.raw.json", "sha256": "45b4e36ddf66010b838abdbad0e7bf8906d5cf2ec2ea9997771bd14c75ecfaf7"}
     },
     "validation": {
@@ -183,7 +183,7 @@
     }
   },
   "selected_deferred_light_data_transport": {
-    "status": "selected original pass-0 b31 reads source-closed and same-frame GPU-closed for the isolated Wulfa/Zhuangfy CharInfo fixture; unknown words stay zero and pass 0 remains disabled",
+    "status": "selected original pass-0 b31 reads are source/GPU-closed for Wulfa/Zhuangfy and source/runtime-closed for Endminf's exact 12-row fixture; Endminf GPU word readback remains open and pass 0 remains disabled",
     "default_off": true,
     "published_by_default": false,
     "pass0_consumer_enabled": false,
@@ -203,17 +203,19 @@
     },
     "selected_punctual_control_flow": "For every isolated CharInfo row, record[5].w=0 disables OBB and record[3].z=1 marks CharacterOnly; SphereOutside then exits before general punctual or shadow-slot words.",
     "source_environment": {"path_id": 1201129019072041203, "forward": [0.021389274, -0.64278764, -0.76574594], "direct_intensity": 8.631674, "specular_intensity": 1.0, "soft_radius_degrees": 0.0, "color_temperature": 7000.0},
-    "required_same_frame_resources": ["canonical binning/reflection/VisibilitySHConstData", "selected b30 TransformVariables", "source-backed Wulfa/Zhuangfy operator-light rig"],
+    "required_same_frame_resources": ["canonical binning/reflection/VisibilitySHConstData", "selected b30 TransformVariables", "source-backed Wulfa/Zhuangfy/Endminf operator-light rig"],
     "source_audit": {"path": "scratch/character_recovery/deferred_light_data/audit.json", "sha256": "ae3fc61b167a017796371f674bcec5e5ce60d1402eb53787f7e6b4e022a3434f"},
     "sources": {
       "contract": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredLightDataContract.cs", "sha256": "af3d17ec8d18adba5cd0a2cb6b7f6809dc7424c64955fa05cf44eb0651a0f8f7"},
-      "owner": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredLightData.cs", "sha256": "847ba86c64ba249f6c47adcd9e2755c446cfdcdee7c3875402257277e3c92267"},
-      "pipeline": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/HGCompatRenderPipeline.cs", "sha256": "f921ffa65a753cd95ea401794ef6d63db1539a77e8c4729246a0e1cd79a0b4c1"},
+      "owner": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredLightData.cs", "sha256": "dc0cc9bde3b30c3f94f0168bf5a4bb486920a014923b430d54c28399ea31e0b4"},
+      "light_binning": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredLightBinning.cs", "sha256": "1f2ce5c43742f1528ad9ad94260e26f9f958f13403f87a31447726b2760d4e4e"},
+      "exact_consumer": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredExactConsumer.cs", "sha256": "41d24afb948489124256ad99e9933646b8c6552fd033ae6bbb27f2f19a8be0b3"},
+      "pipeline": {"path": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/HGCompatRenderPipeline.cs", "sha256": "ed7dc7a1d95964b24fd7745fe59c040231d63ae60b9d62b5f441469c1005a218"},
       "probe": {"path": "Assets/EndfieldGraphShaderLab/Resources/EndfieldRecoveredDeferredLightDataProbe.compute", "sha256": "27355147d9dd502e4195b5555665bcfe0b29ca3d6e25e73ad1af32d87b192229"},
       "batch_verifier": {"path": "Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/EndfieldRecoveredDeferredLightDataBatchVerifier.cs", "sha256": "eaad687eb8705cea8b1e46319947aa952b415663511c57be3b8cf9e8f5e9a9ea"},
       "source_auditor": {"path": "tools/audit_deferred_light_data.py", "sha256": "2c8125f75f8b397a4d5e2e80cf582edfcca402cdedea34d110d7d934cc9c3a9a"},
       "validator": {"path": "tools/verify_deferred_light_data.py", "sha256": "d1ad202783d41494427891d0ede9d8abf1df4480caf9bafc2a9b20ffa062cd8a"},
-      "wrapper": {"path": "verify_recovered_deferred_light_data.bat", "sha256": "3f149186110828b953c17286b817f92e9ed5f11dc198ed3b3c785a2c8d1c1198"}
+      "capture_probe": {"path": "Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/EndfieldEndminfViewerPlayModeCapture.cs", "sha256": "ee552b5614df9fc16434ad558b6cf6410978aae8e15ab5448830a6b19287a616"}
     },
     "validation": {
       "frame_report": {"path": "scratch/character_recovery/deferred_light_data/frame_validation.json", "sha256": "62bfa3576cdcf6b21a33f4640160e3752ca56d7b0f2bd997f54731f0860ce1a7"},
@@ -224,6 +226,10 @@
       "named_and_d3d11_bridge_words_bit_exact": true,
       "unresolved_words_zero": true,
       "same_frame_activation": true,
+      "endminf_12_row_d3d12_runtime_ready": true,
+      "endminf_12_row_gpu_word_readback": false,
+      "endminf_b34_and_pass0_subset_ready": false,
+      "exact_consumer_requires_current_frame_cookie_provenance": true,
       "fail_closed_without_canonical_prerequisites": true,
       "beauty_unchanged": true
     }

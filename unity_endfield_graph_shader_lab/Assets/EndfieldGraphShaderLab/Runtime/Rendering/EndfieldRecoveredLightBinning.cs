@@ -129,6 +129,12 @@ namespace EndfieldGraphShaderLab
         private int canonicalPublicationFrame;
         private int canonicalPublicationWidth;
         private int canonicalPublicationHeight;
+        private bool retailConstantsPublicationValid;
+        private bool lightCookiePublicationValid;
+        private int retailPublicationCameraInstanceId;
+        private int retailPublicationFrame;
+        private int retailPublicationWidth;
+        private int retailPublicationHeight;
         private bool disposed;
 
         internal EndfieldRecoveredLightBinning()
@@ -192,6 +198,8 @@ namespace EndfieldGraphShaderLab
             if (commandBuffer == null)
                 throw new ArgumentNullException(nameof(commandBuffer));
             canonicalPublicationValid = false;
+            retailConstantsPublicationValid = false;
+            lightCookiePublicationValid = false;
             commandBuffer.SetGlobalFloat(CanonicalBinningReadyId, 0.0f);
 
             bool membershipRequested =
@@ -231,17 +239,21 @@ namespace EndfieldGraphShaderLab
                 return false;
             }
 
-            PublishRetailConstants(
+            retailConstantsPublicationValid = PublishRetailConstants(
                 commandBuffer,
                 lightCount,
                 width,
                 height,
                 camera.nearClipPlane,
                 camera.farClipPlane);
-            PublishRetailLightCookieData(
+            lightCookiePublicationValid = PublishRetailLightCookieData(
                 commandBuffer,
                 rig,
                 lightCount);
+            retailPublicationCameraInstanceId = camera.GetInstanceID();
+            retailPublicationFrame = Time.frameCount;
+            retailPublicationWidth = width;
+            retailPublicationHeight = height;
 
             if (!SystemInfo.supportsComputeShaders)
             {
@@ -364,6 +376,38 @@ namespace EndfieldGraphShaderLab
 
         internal ComputeBuffer CurrentLightCookieDataBuffer =>
             zeroRetailLightCookieDataBuffer;
+
+        internal bool TryGetCurrentExactConstantBuffers(
+            Camera camera,
+            int width,
+            int height,
+            out ComputeBuffer constants,
+            out ComputeBuffer lightCookieData,
+            out string failure)
+        {
+            constants = null;
+            lightCookieData = null;
+            failure = string.Empty;
+            if (!retailConstantsPublicationValid ||
+                !lightCookiePublicationValid ||
+                camera == null ||
+                retailPublicationCameraInstanceId != camera.GetInstanceID() ||
+                retailPublicationFrame != Time.frameCount ||
+                retailPublicationWidth != width ||
+                retailPublicationHeight != height ||
+                retailConstantsBuffer == null ||
+                !retailConstantsBuffer.IsValid() ||
+                zeroRetailLightCookieDataBuffer == null ||
+                !zeroRetailLightCookieDataBuffer.IsValid())
+            {
+                failure =
+                    "current-camera LightBinningConstants/zero-cookie publication is not provenance-valid";
+                return false;
+            }
+            constants = retailConstantsBuffer;
+            lightCookieData = zeroRetailLightCookieDataBuffer;
+            return true;
+        }
 
         private bool PublishCanonicalBinning(
             CommandBuffer commandBuffer,
@@ -507,7 +551,7 @@ namespace EndfieldGraphShaderLab
             };
         }
 
-        private void PublishRetailConstants(
+        private bool PublishRetailConstants(
             CommandBuffer commandBuffer,
             int sourceClosedLightCount,
             int width,
@@ -518,7 +562,7 @@ namespace EndfieldGraphShaderLab
             if (!retailConstantsRequested)
             {
                 commandBuffer.SetGlobalFloat(RetailConstantsReadyId, 0.0f);
-                return;
+                return false;
             }
 
             EndfieldRecoveredLightBinningConstantsContract.Data data;
@@ -534,7 +578,7 @@ namespace EndfieldGraphShaderLab
             {
                 ReportConstantsFailure(failure);
                 BindRetailConstantsFallback(commandBuffer);
-                return;
+                return false;
             }
 
             try
@@ -559,7 +603,7 @@ namespace EndfieldGraphShaderLab
                 ReportConstantsFailure(
                     "48-byte constant-buffer publication failed: " + exception.Message);
                 BindRetailConstantsFallback(commandBuffer);
-                return;
+                return false;
             }
 
             if (!loggedConstantsActivation)
@@ -573,6 +617,7 @@ namespace EndfieldGraphShaderLab
                     "exact resolver bridge=EndfieldCB3.");
                 loggedConstantsActivation = true;
             }
+            return true;
         }
 
         private void EnsureRetailConstantsBuffers()
@@ -600,7 +645,7 @@ namespace EndfieldGraphShaderLab
             }
         }
 
-        private void PublishRetailLightCookieData(
+        private bool PublishRetailLightCookieData(
             CommandBuffer commandBuffer,
             EndfieldHGOperatorLightRig rig,
             int sourceClosedLightCount)
@@ -608,7 +653,7 @@ namespace EndfieldGraphShaderLab
             if (!retailLightCookieDataRequested)
             {
                 commandBuffer.SetGlobalFloat(RetailLightCookieDataReadyId, 0.0f);
-                return;
+                return false;
             }
 
             string failure = string.Empty;
@@ -620,7 +665,7 @@ namespace EndfieldGraphShaderLab
                 ReportLightCookieDataFailure(
                     failure);
                 BindRetailLightCookieDataFallback(commandBuffer);
-                return;
+                return false;
             }
 
             try
@@ -649,7 +694,7 @@ namespace EndfieldGraphShaderLab
                 ReportLightCookieDataFailure(
                     "2,560-byte constant-buffer publication failed: " + exception.Message);
                 BindRetailLightCookieDataFallback(commandBuffer);
-                return;
+                return false;
             }
 
             if (!loggedLightCookieDataActivation)
@@ -662,6 +707,7 @@ namespace EndfieldGraphShaderLab
                     "retail whole-scene cookie atlas; exact resolver bridge=EndfieldCB7.");
                 loggedLightCookieDataActivation = true;
             }
+            return true;
         }
 
         private static bool TryValidateSourceClosedZeroCookieFrame(
@@ -698,11 +744,18 @@ namespace EndfieldGraphShaderLab
             {
                 installedFixtureCount = 6;
             }
+            else if (rig.actorRoot != null && string.Equals(
+                         rig.actorRoot.name,
+                         "Endminf",
+                         StringComparison.OrdinalIgnoreCase))
+            {
+                installedFixtureCount = 12;
+            }
             else
             {
                 failure =
                     $"actor identity '{(rig.actorRoot != null ? rig.actorRoot.name : "<null>")}' " +
-                    "is outside the source-closed Wulfa/Zhuangfy Overview fixtures";
+                    "is outside the source-closed Wulfa/Zhuangfy/Endminf Overview fixtures";
                 return false;
             }
             if (rig.lights == null || rig.lights.Length != installedFixtureCount ||

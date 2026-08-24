@@ -193,6 +193,23 @@ archetypes remain labeled source kits rather than finished characters.
   frames. The exact DXBC consumer remains D3D11-only and its private float
   readback is intentionally non-presented; those sidecars are evidence, not a
   hidden beauty path.
+- Endminf's exact 12-row Overview light fixture now passes the selected
+  SphereOutside b31 boundary for every saved frame: all rows are
+  CharacterOnly, no-OBB, no-cookie, no-flicker, and no-culling, while the two
+  serialized soft-shadow identities remain fixed at rows 3 and 11. A bounded
+  D3D12 capture observes `_LightDataBuffer` and the exact zero-cookie buffer
+  ready across all 41 frames while b34, the combined pass-0 gate, and beauty
+  presentation remain false. The exact-consumer bridge now also requires a
+  successful same-camera, same-size, same-frame constants/cookie publication;
+  an allocated zero fallback can no longer pass as provenance. A new 12-row
+  GPU word-readback is still open because the historical verifier's pinned
+  decompiled shader inputs were retired from scratch; do not extend its older
+  eight-row proof by implication.
+- Endminf's two punctual-shadow rows can populate lab-owned diagnostic atlas
+  slots, but the retail settled-frame light-to-shadow slot mapping has not been
+  captured. Their b34 transport and atlas pixels therefore remain fail-closed
+  for exact pass-0 claims. Do not infer retail order from source row, packed
+  light, registration, or lab allocation order.
 - The recovered VisibilitySH/capsule term improves measured character deltas,
   but it still runs against the partial ready-subset floor rather than the real
   presentation scene. The softer result is not evidence of a missing constant

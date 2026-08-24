@@ -92,6 +92,10 @@ namespace EndfieldGraphShaderLabEditor
             public bool observedEntranceVfxCleanup;
             public bool observedRotationOnlyRootMotion;
             public bool observedPrimaryRockCompatibilityBinding;
+            public bool observedDeferredLightDataReady;
+            public bool observedDeferredShadowDataReady;
+            public bool observedDeferredPass0InputSubsetReady;
+            public bool observedLightCookieDataReady;
             public string gyroscopeMode;
             public string gyroscopeInputX;
             public string gyroscopeInputY;
@@ -127,6 +131,10 @@ namespace EndfieldGraphShaderLabEditor
             public bool shadowPlaneInCameraFrustum;
             public Vector3 shadowPlaneBoundsCenter;
             public Vector3 shadowPlaneBoundsExtents;
+            public bool deferredLightDataReady;
+            public bool deferredShadowDataReady;
+            public bool deferredPass0InputSubsetReady;
+            public bool lightCookieDataReady;
             public string[] effectRoots;
             public ParticleRow[] liveRenderers;
             public ParticleRow[] handFamily;
@@ -330,6 +338,28 @@ namespace EndfieldGraphShaderLabEditor
             Directory.CreateDirectory(output);
             EditorApplication.playModeStateChanged += State;
             EditorApplication.EnterPlaymode();
+        }
+
+        public static void RunDeferredB31Probe()
+        {
+            string[] enabled = {
+                "ENDFIELD_ENDMINF_DEFERRED_B31_PROBE",
+                "ENDFIELD_RECOVERED_DEFERRED_TRANSFORM_VARIABLES",
+                "ENDFIELD_RECOVERED_DEFERRED_LIGHT_DATA",
+                "ENDFIELD_RECOVERED_LIGHT_COOKIE_DATA",
+                "ENDFIELD_RECOVERED_CANONICAL_BINNING_BUFFER"
+            };
+            foreach (string flag in enabled)
+                Environment.SetEnvironmentVariable(flag, "1");
+            string[] excluded = {
+                "ENDFIELD_RECOVERED_DEFERRED_RESOLVER_INPUT_PROBE",
+                "ENDFIELD_RECOVERED_DEFERRED_RESOLVER_RESOURCE_PROBE",
+                "ENDFIELD_RECOVERED_DEFERRED_EXACT_CONSUMER",
+                "ENDFIELD_RECOVERED_DEFERRED_SHADOW_DATA"
+            };
+            foreach (string flag in excluded)
+                Environment.SetEnvironmentVariable(flag, null);
+            Run();
         }
 
         private static void State(PlayModeStateChange state)
@@ -539,6 +569,14 @@ namespace EndfieldGraphShaderLabEditor
                 shadowPlaneInCameraFrustum = shadowPlaneInFrustum,
                 shadowPlaneBoundsCenter = shadowPlane == null ? Vector3.zero : shadowPlane.bounds.center,
                 shadowPlaneBoundsExtents = shadowPlane == null ? Vector3.zero : shadowPlane.bounds.extents,
+                deferredLightDataReady = Shader.GetGlobalFloat(
+                    "_EndfieldRecoveredDeferredLightDataReady") > 0.5f,
+                deferredShadowDataReady = Shader.GetGlobalFloat(
+                    "_EndfieldRecoveredDeferredShadowDataReady") > 0.5f,
+                deferredPass0InputSubsetReady = Shader.GetGlobalFloat(
+                    "_EndfieldRecoveredDeferredPass0InputSubsetReady") > 0.5f,
+                lightCookieDataReady = Shader.GetGlobalFloat(
+                    "_EndfieldRecoveredLightCookieDataReady") > 0.5f,
                 effectRoots = roots.Select(value => value.name + " @ " + Hierarchy(value.transform)).ToArray(),
                 liveRenderers = renderers.Where(value => value.enabled &&
                         value.gameObject.activeInHierarchy &&
@@ -590,6 +628,14 @@ namespace EndfieldGraphShaderLabEditor
                     frame.liveRenderers.Any(renderer =>
                         renderer.shaders != null &&
                         renderer.shaders.Contains(LitEffectCompatibilityShader)));
+            bool observedDeferredLightDataReady = Frames.All(value =>
+                value.deferredLightDataReady);
+            bool observedDeferredShadowDataReady = Frames.All(value =>
+                value.deferredShadowDataReady);
+            bool observedDeferredPass0InputSubsetReady = Frames.All(value =>
+                value.deferredPass0InputSubsetReady);
+            bool observedLightCookieDataReady = Frames.All(value =>
+                value.lightCookieDataReady);
             var missingObservations = new List<string>();
             if (!observedAnimatorContract) missingObservations.Add("Animator contract");
             if (!observedTransition) missingObservations.Add("start-to-loop transition");
@@ -601,6 +647,21 @@ namespace EndfieldGraphShaderLabEditor
             if (!observedPrimaryRockCompatibilityBinding)
                 missingObservations.Add(
                     "ten-row primary rock compatibility binding with four separate blocked effects");
+            if (string.Equals(
+                    Environment.GetEnvironmentVariable(
+                        "ENDFIELD_ENDMINF_DEFERRED_B31_PROBE"),
+                    "1",
+                    StringComparison.Ordinal))
+            {
+                if (!observedDeferredLightDataReady)
+                    missingObservations.Add("Endminf deferred b31 LightData readiness");
+                if (!observedLightCookieDataReady)
+                    missingObservations.Add("Endminf zero-cookie LightCookieData readiness");
+                if (Frames.Any(value => value.deferredShadowDataReady ||
+                        value.deferredPass0InputSubsetReady))
+                    missingObservations.Add(
+                        "Endminf b31-only probe unexpectedly admitted unresolved b34/pass-0 readiness");
+            }
             Report report = new Report {
                 status = missingObservations.Count == 0
                     ? "ok"
@@ -621,6 +682,11 @@ namespace EndfieldGraphShaderLabEditor
                 observedRotationOnlyRootMotion = observedRotationOnlyRootMotion,
                 observedPrimaryRockCompatibilityBinding =
                     observedPrimaryRockCompatibilityBinding,
+                observedDeferredLightDataReady = observedDeferredLightDataReady,
+                observedDeferredShadowDataReady = observedDeferredShadowDataReady,
+                observedDeferredPass0InputSubsetReady =
+                    observedDeferredPass0InputSubsetReady,
+                observedLightCookieDataReady = observedLightCookieDataReady,
                 gyroscopeMode = Environment.GetEnvironmentVariable(
                     EndfieldRecoveredCharInfoGyroscopeCameraState.ModeEnvironmentVariable),
                 gyroscopeInputX = Environment.GetEnvironmentVariable(

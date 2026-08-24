@@ -117,7 +117,7 @@ namespace EndfieldGraphShaderLab
         public bool sourceBackedClusteredNprLightLoop;
         [Tooltip("Default-off exact 32-pixel XY/2048-slice Z membership for the isolated original overview rig. When disabled, the source-backed shading loop keeps its direct-loop fallback.")]
         public bool sourceBackedLightBinningMembership;
-        [Tooltip("Default-off isolated overview producer for only Wulfa/Zhuangfy RimLight_2 (5). It requires the source-backed clustered NPR loop and fails closed if the exact actor, light, atlas, or caster contract is unavailable.")]
+        [Tooltip("Default-off isolated overview producer for Wulfa/Zhuangfy RimLight_2 (5) and Endminf RimLight_2/RimLight_2 (1). It requires the source-backed clustered NPR loop and fails closed if the exact actor, light, atlas, or caster contract is unavailable.")]
         public bool sourceBackedIsolatedPunctualSoftShadowProducer;
         [Tooltip("Source-backed original punctual-shadow quality profile. Only 512 and 1024 are valid recovered base tile sizes; the captured RTX 5080 device default selects 1024.")]
         public int sourceBackedPunctualShadowTileResolution = 1024;
