@@ -68,6 +68,13 @@
       "selectedDxbcAccessCoverage": "complete, including every _PARALLAX_MAP access from byte 352 through _ParallaxColorDark at byte 480"
     },
     "fragmentB4Identity": "_TerrainSubsurfaceConstants; _TerrainSubsurfaceProfileInt is byte 12",
+    "fragmentConstantBuffers": {
+      "b0": "_TransformVariables; 720-byte selected slice of canonical 1312-byte buffer; selected reads c0..c2, c24..c27, c44 are covered by the existing full-size publisher",
+      "b1": "ShaderVariablesGlobal; 1696-byte selected slice of canonical 3200-byte buffer; native publisher ownership is HGRenderPathBase.UpdateShaderVariablesGlobalCB plus scene/VFX domain writers",
+      "b2": "UnityPerDraw; 80-byte selected slice published per renderer-list draw by Unity/SRP",
+      "b3": "UnityPerMaterial; selected physical slice closes against the recovered 576-byte named table",
+      "b4": "_TerrainSubsurfaceConstants; selected read is c0.w / _TerrainSubsurfaceProfileInt at byte 12"
+    },
     "deferredConsumer": "the selected HGRP/DeferredLighting pass consumes GBufferA/B/C at t23/t24/t25; exact five-MRT attachment ownership is closed",
     "attachments": [
       "SceneColor",
@@ -80,25 +87,23 @@
   },
   "unresolved": [
     {
-      "register": "fragment b0",
-      "bytes": 720,
-      "missing": "unique retail upload producer and field layout"
-    },
-    {
       "register": "fragment b1",
       "bytes": 1696,
-      "missing": "unique retail upload producer and field layout"
+      "publisher": "HGRenderPathBase.UpdateShaderVariablesGlobalCB and UpdateShaderVariablesGlobalVFX",
+      "missing": "selected live c27.y and c105.z/w; c105.z/w are specifically HGVFXManager.GetAnchorWaveBright output"
     },
     {
       "register": "fragment b2",
       "bytes": 80,
-      "missing": "unique retail upload producer and field layout"
+      "identity": "UnityPerDraw",
+      "missing": "fail-closed current/previous transform, LOD, and motion-state validation for all ten renderers"
     },
     {
       "register": "fragment b4",
       "bytes": 16,
       "identity": "_TerrainSubsurfaceConstants",
-      "missing": "live retail upload/publication"
+      "publisher": "SubsurfaceManager.BindSubsurfaceData; selected scalar comes from SubsurfaceProfileManager.GetTerrainSubsurfaceProfileInt",
+      "missing": "current-build body mapping and selected live c0.w value"
     },
     {
       "consumer": "HGBuffer deferred",
@@ -107,10 +112,9 @@
     }
   ],
   "failures": [
-    "unresolved fragment b0",
-    "unresolved fragment b1",
-    "unresolved fragment b2",
-    "unresolved fragment b4",
+    "incomplete fragment b1 selected live values",
+    "unvalidated fragment b2 per-draw history/LOD state",
+    "incomplete fragment b4 selected live value",
     "unresolved HGBuffer deferred"
   ],
   "admissionRule": "admit only when unresolved is empty and every pinned identity still matches"

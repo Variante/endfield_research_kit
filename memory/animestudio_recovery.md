@@ -75,6 +75,12 @@ VFS index. Debug mode is for broad VFS diagnostics.
 - `$partial` objects remain queryable and visibly incomplete.
 - Material export preserves keywords, queues, tags, instancing, and disabled
   passes; shader bytecode does not prove runtime variant selection.
+- Endfield combined shader parameter records expose a fail-closed named
+  constant-buffer table before their resource and descriptor sections. Shader
+  sidecar metadata merges those exact field names, kinds, dimensions, byte
+  offsets, and declared sizes with the serialized partial tables; opaque
+  resource framing is used only to establish the unique boundary and is not
+  mislabeled as a physical D3D register map.
 - Animation fixes must preserve curves and fail visibly on unknown layouts.
 - Shared audio and language voice use separate output roots.
 - Timeline track and Director links prove authored scheduling, not activation

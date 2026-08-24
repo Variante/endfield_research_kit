@@ -75,7 +75,10 @@ archetypes remain labeled source kits rather than finished characters.
   BaseColor, Normal, MRO, ParallaxNoise, ParallaxMask, and Parallax at t0..t5.
   The selected `HGRP/DeferredLighting` pass closes the five-MRT A/B/C consumer
   at t23/t24/t25. The ten rock renderers remain blocked only on live retail
-  b0/b1/b2/b4 publication and the complete deferred frame, not material layout.
+  global/per-draw completeness and the complete deferred frame, not material
+  layout or buffer identity. The exact remaining constant inputs are bounded to
+  ShaderVariablesGlobal c27.y and live AnchorWaveBright c105.z/w, validated
+  UnityPerDraw history/LOD state, and terrain subsurface profile c0.w.
 - The `M_fx_endminm_gfx_09` burst stripes now bind the exact exported RGBA
   `T_fx_star_07_D` payload. The previous missing `_MainTex` silently sampled
   white and produced a large opaque rectangle; the repaired source-alpha
@@ -192,8 +195,8 @@ another per-material shader approximation. The missing boundary includes:
 - the exact character stencil writer and receiver integration;
 - render-graph/subpass state and frame-produced lighting resources;
 - confirmation of the final source camera and presentation bindings.
-- ten still-blocked rock-family renderer identities awaiting live retail
-  b0/b1/b2/b4 uploads and the complete deferred frame resources;
+- ten still-blocked rock-family renderer identities awaiting the bounded live
+  global/per-draw/subsurface values and the complete deferred frame resources;
 - exact retail D3D12 presentation binding after the now-closed Effect-02
   combined Uber source, bloom, LUT, and output-tail contract.
 
