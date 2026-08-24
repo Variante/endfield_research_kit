@@ -2,6 +2,7 @@
   const ROW_HEIGHT = 66;
   const OVERSCAN_PX = 260;
   const INDEX_PATH = (language) => `data/lang/${encodeURIComponent(language)}/audio/index.json`;
+  const SCENE_CATALOG_PATH = (language) => `data/lang/${encodeURIComponent(language)}/audio/scene_backgrounds.json`;
   const PANE_STORAGE_KEY = "webui_audio_splitter_width";
   const FILTER_HEIGHT_STORAGE_KEY = "webui_filter_splitter_height_audio";
   const FILTER_PANEL_STORAGE_KEY = "audio_browser_filters_collapsed";
@@ -223,6 +224,20 @@
       levelSequenceGapContexts: "Ownership gaps",
       levelSequenceRuntimeBoundary: "Timeline runtime boundary",
       audioTriggerContextCatalog: "Authored trigger-context coverage",
+      sceneCatalog: "Scene audio catalog",
+      sceneCatalogSearch: "Filter scenes, missions, or Events",
+      sceneCatalogPartial: "Partial source coverage",
+      sceneCatalogComplete: "Validated source coverage",
+      sceneCatalogUnavailable: "Scene audio catalog unavailable",
+      sceneCatalogBoundary: "Scene evidence boundary",
+      sceneCatalogSources: "Object-index sources",
+      sceneCatalogScenes: "Catalog scenes",
+      sceneCatalogEvents: "Scene-global Event occurrences",
+      sceneCatalogEmitters: "Authored emitters",
+      sceneCatalogMissionRefs: "Mission references",
+      sceneCatalogNoMatches: "No catalog scenes match this filter.",
+      sceneCatalogMore: "additional matching scenes",
+      sceneCatalogEmitterGap: "Emitter placement remains prefab-local; no level ownership is claimed.",
       enemyTriggerVoiceActionCatalog: "Enemy trigger-voice action mapping",
       contextAnimation: "Animation",
       contextSceneAudio: "Scene audio",
@@ -522,6 +537,20 @@
       levelSequenceGapContexts: "\u5f52属缺口",
       levelSequenceRuntimeBoundary: "Timeline \u8fd0行时证据边界",
       audioTriggerContextCatalog: "音频触发情境覆盖",
+      sceneCatalog: "场景音频目录",
+      sceneCatalogSearch: "筛选场景、任务或事件",
+      sceneCatalogPartial: "来源覆盖不完整",
+      sceneCatalogComplete: "来源覆盖已验证",
+      sceneCatalogUnavailable: "场景音频目录不可用",
+      sceneCatalogBoundary: "场景证据边界",
+      sceneCatalogSources: "对象索引来源",
+      sceneCatalogScenes: "目录场景",
+      sceneCatalogEvents: "场景全局事件记录",
+      sceneCatalogEmitters: "已创作发声器",
+      sceneCatalogMissionRefs: "任务引用",
+      sceneCatalogNoMatches: "没有场景符合此筛选条件。",
+      sceneCatalogMore: "个其他匹配场景",
+      sceneCatalogEmitterGap: "发声器位置仍仅归属于预制体；不声明关卡归属。",
      contextAnimation: "\u52a8\u753b",
      contextSceneAudio: "\u573a\u666f\u97f3\u9891",
       contextSceneGlobalExact: "\u7cbe\u786e\u521b\u5efa\u7684\u573a\u666f\u5168\u5c40\u4e0a\u4e0b\u6587",
@@ -638,8 +667,10 @@
     language: "CN",
     uiLocale: "zh",
     index: null,
+    sceneCatalog: null,
     indexPromise: null,
     indexController: null,
+    sceneCatalogController: null,
     loadToken: 0,
     datasets: { events: null, media: null },
     datasetPromises: { events: null, media: null },
@@ -888,6 +919,7 @@
     authoredConfig: "contextAuthoredConfig",
     managedRuntime: "contextManagedRuntime",
     luaRuntime: "contextLuaRuntime",
+    nativeTrigger: "contextNativeTrigger",
     wwiseObjectOnly: "contextWwiseObjectOnly",
     dialogMedia: "contextDialogMedia",
     eventRelationOnly: "contextEventRelationOnly",
@@ -1459,8 +1491,32 @@
 
   function abortAll() {
     state.indexController?.abort();
+    state.sceneCatalogController?.abort();
     abortDataset("events");
     abortDataset("media");
+  }
+
+  async function loadSceneCatalog(language, token) {
+    state.sceneCatalogController = new AbortController();
+    const path = SCENE_CATALOG_PATH(language);
+    try {
+      const response = await fetch(path, {
+        signal: state.sceneCatalogController.signal,
+        cache: "no-store",
+      });
+      if (!response.ok) throw new Error(`${path}: HTTP ${response.status}`);
+      const payload = await response.json();
+      if (token !== state.loadToken) return null;
+      return payload && typeof payload === "object" ? payload : null;
+    } catch (error) {
+      if (error?.name === "AbortError" || token !== state.loadToken) return null;
+      return {
+        status: "unavailable",
+        sourceDiagnostics: [{ status: "loadFailed", diagnostic: normalize(error?.message || error) }],
+      };
+    } finally {
+      if (token === state.loadToken) state.sceneCatalogController = null;
+    }
   }
 
   async function ensureDataset(kind, { token = state.loadToken, force = false, progressBase = 0, progressSpan = 1 } = {}) {
@@ -1530,6 +1586,7 @@
     state.language = nextLanguage;
     state.mode = "events";
     state.index = null;
+    state.sceneCatalog = null;
     state.datasets = { events: null, media: null };
     state.datasetPromises = { events: null, media: null };
     state.eventTaxonomyById = new Map();
@@ -1559,6 +1616,8 @@
         const payload = await response.json();
         if (token !== state.loadToken) return null;
         state.index = payload && typeof payload === "object" ? payload : {};
+        state.sceneCatalog = await loadSceneCatalog(nextLanguage, token);
+        if (token !== state.loadToken) return null;
         state.gameParameterNameById = new Map(asArray(
           state.index?.hircSummary?.postProcessSummary?.gameParameterNameEvidence?.entries,
         ).filter((row) => row && typeof row === "object").map((row) => [
@@ -2221,6 +2280,7 @@
       for (const [label, value] of recoveryStats) grid.appendChild(statNode(label, formatNumber(value)));
       panel.append(heading, grid);
     }
+    if (state.sceneCatalog) panel.appendChild(sceneCatalogSection(state.sceneCatalog));
 
     const components = asArray(runtime.components ?? runtime.layers).map((value) => typeof value === "object" ? (value.name ?? value.id ?? value.type) : value).filter(Boolean);
     if (components.length) panel.appendChild(chipSection(t("runtimeComponents"), components));
@@ -2274,6 +2334,161 @@
       panel.appendChild(note);
     }
     return panel;
+  }
+
+  function buildSceneCatalogViewModel(catalog, query = "", limit = 30) {
+    const sourceDiagnostics = asArray(catalog?.sourceDiagnostics).filter((row) => row && typeof row === "object");
+    const unavailableSources = sourceDiagnostics.filter((row) => normalize(row.status) !== "validated");
+    const scenes = asArray(catalog?.scenes).filter((row) => row && typeof row === "object").map((scene) => {
+      const events = asArray(scene?.audioLevel?.events).filter((row) => row && typeof row === "object");
+      const missions = asArray(scene?.missionRefs).filter((row) => row && typeof row === "object");
+      const search = [
+        scene.sceneId,
+        ...events.flatMap((row) => [row.eventId, row.eventHashHex, row.role]),
+        ...missions.map((row) => row.missionId),
+      ].map(normalizeLower).join("\n");
+      return { scene, events, missions, search };
+    });
+    const tokens = normalizeLower(query).split(/\s+/).filter(Boolean);
+    const matches = scenes.filter((row) => tokens.every((token) => row.search.includes(token))).sort((left, right) => (
+      Number(Boolean(right.events.length || right.missions.length)) - Number(Boolean(left.events.length || left.missions.length))
+      || right.events.length - left.events.length
+      || right.missions.length - left.missions.length
+      || normalize(left.scene?.sceneId).localeCompare(normalize(right.scene?.sceneId))
+    ));
+    const emitters = asArray(catalog?.sceneEmitters).filter((row) => row && typeof row === "object");
+    const status = normalize(catalog?.status);
+    return {
+      unavailable: status === "unavailable",
+      partial: status === "validatedPartialPublishedObjectIndex" || unavailableSources.length > 0,
+      sourceDiagnostics,
+      unavailableSources,
+      scenes: matches.slice(0, Math.max(1, limit)),
+      totalMatches: matches.length,
+      emitters,
+      counts: catalog?.counts && typeof catalog.counts === "object" ? catalog.counts : {},
+    };
+  }
+
+  function sceneEventButton(event) {
+    const eventId = normalize(event?.eventId || event?.eventHashHex || event?.eventHash);
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "audio-scene-event-link";
+    button.textContent = eventId || t("unknown");
+    button.title = [event?.role, event?.eventHashHex].map(normalize).filter(Boolean).join(" / ");
+    button.addEventListener("click", () => {
+      const record = (state.datasets.events || []).find((candidate) => {
+        const ids = [candidate.key, recordId(candidate.raw, "events"), candidate.raw?.eventHashHex]
+          .map(normalizeLower);
+        return ids.includes(normalizeLower(eventId));
+      });
+      if (record) selectRecord(record);
+      else {
+        const url = new URL(window.location.href);
+        url.searchParams.set("audio", eventId);
+        url.searchParams.set("audioKind", "events");
+        url.hash = "#audio";
+        window.location.assign(url.toString());
+      }
+    });
+    return button;
+  }
+
+  function renderSceneCatalogRows(host, catalog, query = "") {
+    const view = buildSceneCatalogViewModel(catalog, query);
+    host.replaceChildren();
+    if (!view.scenes.length) {
+      const empty = document.createElement("p");
+      empty.className = "audio-runtime-note";
+      empty.textContent = t("sceneCatalogNoMatches");
+      host.appendChild(empty);
+      return;
+    }
+    for (const { scene, events, missions } of view.scenes) {
+      const card = document.createElement("details");
+      card.className = "audio-scene-card";
+      if (events.length || missions.length) card.open = view.scenes.length <= 8;
+      const summary = document.createElement("summary");
+      summary.innerHTML = `<strong>${esc(scene.sceneId || t("unknown"))}</strong><span>${formatNumber(events.length)} ${esc(t("events"))} · ${formatNumber(missions.length)} ${esc(t("sceneCatalogMissionRefs"))}</span>`;
+      card.appendChild(summary);
+      if (events.length) {
+        const eventList = document.createElement("div");
+        eventList.className = "audio-scene-link-list";
+        for (const event of events) eventList.appendChild(sceneEventButton(event));
+        card.appendChild(eventList);
+      }
+      if (missions.length) card.appendChild(chipSection(t("sceneCatalogMissionRefs"), missions.map((row) => row.missionId).filter(Boolean)));
+      host.appendChild(card);
+    }
+    if (view.totalMatches > view.scenes.length) {
+      const more = document.createElement("p");
+      more.className = "audio-runtime-note";
+      more.textContent = `${formatNumber(view.totalMatches - view.scenes.length)} ${t("sceneCatalogMore")}`;
+      host.appendChild(more);
+    }
+  }
+
+  function sceneCatalogSection(catalog) {
+    const view = buildSceneCatalogViewModel(catalog);
+    const section = document.createElement("section");
+    section.className = `audio-scene-catalog${view.partial ? " is-partial" : ""}`;
+    const heading = document.createElement("div");
+    heading.className = "audio-scene-catalog-heading";
+    const statusLabel = view.unavailable ? "sceneCatalogUnavailable" : (view.partial ? "sceneCatalogPartial" : "sceneCatalogComplete");
+    heading.innerHTML = `<strong>${esc(t("sceneCatalog"))}</strong><span>${esc(t(statusLabel))}</span>`;
+    section.appendChild(heading);
+    const stats = document.createElement("div");
+    stats.className = "audio-stat-grid";
+    const facts = [
+      [t("sceneCatalogSources"), `${view.counts.validatedObjectIndexSources ?? 0} / ${view.counts.requestedObjectIndexSources ?? view.sourceDiagnostics.length}`],
+      [t("sceneCatalogScenes"), view.counts.catalogScenes ?? view.totalMatches],
+      [t("sceneCatalogEvents"), view.counts.sceneGlobalEventOccurrences ?? 0],
+      [t("sceneCatalogEmitters"), view.counts.sceneEmitterComponents ?? view.emitters.length],
+    ];
+    for (const [label, value] of facts) stats.appendChild(statNode(label, formatNumber(value)));
+    section.appendChild(stats);
+    if (view.unavailableSources.length) {
+      section.appendChild(noteSection(t("sceneCatalogPartial"), view.unavailableSources.map((row) => row.diagnostic || `${row.source}: ${row.status}`).join(" ")));
+    }
+    if (catalog?.evidenceBoundary) section.appendChild(noteSection(t("sceneCatalogBoundary"), catalog.evidenceBoundary));
+    if (view.emitters.length) {
+      const emitterWrap = document.createElement("div");
+      emitterWrap.className = "audio-scene-emitter-list";
+      const emitterTitle = document.createElement("div");
+      emitterTitle.className = "audio-fact-label";
+      emitterTitle.textContent = t("sceneCatalogEmitters");
+      emitterWrap.appendChild(emitterTitle);
+      for (const row of view.emitters) {
+        const placement = row.placement || {};
+        const card = document.createElement("div");
+        card.className = "audio-scene-emitter";
+        const label = document.createElement("span");
+        label.textContent = `${placement.gameObjectName || row.name || "emitter"} · ${row.sceneOwnershipStatus || "unresolved"}`;
+        card.appendChild(label);
+        const links = document.createElement("div");
+        links.className = "audio-scene-link-list";
+        for (const event of asArray(row.eventRequests)) links.appendChild(sceneEventButton(event));
+        card.appendChild(links);
+        emitterWrap.appendChild(card);
+      }
+      section.appendChild(emitterWrap);
+      const gap = document.createElement("p");
+      gap.className = "audio-runtime-note";
+      gap.textContent = t("sceneCatalogEmitterGap");
+      section.appendChild(gap);
+    }
+    const input = document.createElement("input");
+    input.type = "search";
+    input.className = "audio-scene-search";
+    input.placeholder = t("sceneCatalogSearch");
+    input.setAttribute("aria-label", t("sceneCatalogSearch"));
+    const rows = document.createElement("div");
+    rows.className = "audio-scene-list";
+    input.addEventListener("input", () => renderSceneCatalogRows(rows, catalog, input.value));
+    section.append(input, rows);
+    renderSceneCatalogRows(rows, catalog);
+    return section;
   }
 
   function hircInventorySection(hirc) {
