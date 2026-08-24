@@ -75,11 +75,13 @@ archetypes remain labeled source kits rather than finished characters.
   scene-color, dilated-depth, and dilated-SceneMV histories. The compatibility
   path now persists the auxiliary depth/SceneMV histories and implements
   Dilation's recovered 3x3 maximum-depth winner scan, previous-non-jittered-VP
-  reprojection, and exact B/Z-lane flag repacking. The packed result is not yet
-  fed to the partial beauty resolve: that consumer still expects raw SceneMV B,
-  while retail reads normalized 10-bit flags. MaskDilation, packed-flag resolve
-  consumption, complete resolve policy, jitter, fast convergence, live IFix
-  selection, the retail first-frame auxiliary clear payload, and
+  reprojection, and exact B/Z-lane flag repacking. Exact MaskDilation also
+  generates its R8 current-frame resource from packed B/Z at the center plus
+  four diagonals. These packed resources are not yet fed to the partial beauty
+  resolve: that consumer still expects raw SceneMV B, while retail reads
+  normalized 10-bit flags. Packed-flag/mask resolve consumption, complete
+  resolve policy, jitter, fast convergence, live IFix selection, the retail
+  first-frame auxiliary clear payload, and
   constructor-seeded constant lanes remain open.
 - Effect-02's animated radial/chromatic values, exact 1.0 radial power, native
   mode/effective-power packing, signed/clamped post-projection center transform,

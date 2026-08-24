@@ -98,9 +98,9 @@
       "boundary": "No CharInfo-specific runtime override is evidenced; an unobserved runtime mutation remains possible."
     },
     "historyGate": "Scene-color, dilated-depth, and dilated-SceneMV histories must all be valid, and TAAU must have been enabled on the preceding frame. Otherwise effective history weight is zero and firstFrame is one.",
-    "implementedSubset": "The compatibility path now runs Dilation's recovered 3x3 reversed-Z winner scan, exact fourth-root SceneMV decode, previous-non-jittered-VP reprojection, previous dilated-depth/SceneMV lookup, and exact B/Z-lane flag repacking into persistent auxiliary histories. A separate raw-lane copy of the same spatial winner remains the input to the partial beauty resolve until that resolve's packed-bit consumer is ported.",
+    "implementedSubset": "The compatibility path now runs Dilation's recovered 3x3 reversed-Z winner scan, exact fourth-root SceneMV decode, previous-non-jittered-VP reprojection, previous dilated-depth/SceneMV lookup, and exact B/Z-lane flag repacking into persistent auxiliary histories. It also runs exact MaskDilation into an R8 current-frame resource: maximum packed B/Z over the center and four diagonals, then one iff the maximum is positive. A separate raw-lane copy of the same spatial winner remains the input to the partial beauty resolve until that resolve's packed-bit consumer is ported.",
     "firstFrameSeedBoundary": "The retail auxiliary texture allocation/clear payload is not recovered. The compatibility pass uses deterministic depth 0 and SceneMV (0.5,0.5,0,0) only while its explicit auxiliary-history-valid gate is false; the recovered managed history gate independently makes scene-color history weight zero on that first frame.",
-    "explicitBoundary": "MaskDilation, the packed B/Z-lane tests in the ordinary resolve, the rest of the complete Quality-0 resolve policy, jitter, fast convergence, live IFix selection, and untouched constructor-seeded TAAU constant lanes remain unimplemented. The packed auxiliary SceneMV is therefore generated and persisted but deliberately not beauty-consumed. The recovered managed base branch also does not prove live CharInfo IFix activation or override the saved DLSS/DLAA selection evidence."
+    "explicitBoundary": "The packed B/Z-lane and current-mask tests in the ordinary resolve, the rest of the complete Quality-0 resolve policy, jitter, fast convergence, live IFix selection, and untouched constructor-seeded TAAU constant lanes remain unimplemented. The packed auxiliary SceneMV and mask are therefore generated but deliberately not beauty-consumed. The recovered managed base branch also does not prove live CharInfo IFix activation or override the saved DLSS/DLAA selection evidence."
   },
   "sceneMotionVectors": {
     "status": "actor MRT completion implemented",
@@ -126,7 +126,7 @@
       "the full recovered scene-color/dilated-depth/dilated-SceneMV history set is allocated, but only scene color and raw-lane spatially selected SceneMV feed the current partial beauty resolve",
       "no exact complete TAA shader implementation",
       "no recovered jitter",
-      "no MaskDilation, packed-flag beauty consumption, complete rejection, or fast-converge path",
+      "MaskDilation is generated but not beauty-consumed; packed-flag consumption, complete rejection, and the fast-converge path remain absent",
       "incomplete 192-byte TAA constant-buffer publication"
     ]
   },

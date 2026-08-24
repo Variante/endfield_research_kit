@@ -257,6 +257,10 @@ namespace EndfieldGraphShaderLab
             Shader.PropertyToID("_EndfieldRecoveredTemporalDilatedSceneMV");
         private static readonly int RecoveredTemporalSelectedSceneMVId =
             Shader.PropertyToID("_EndfieldRecoveredTemporalSelectedSceneMV");
+        private static readonly int RecoveredTemporalPackedSceneMVId =
+            Shader.PropertyToID("_RecoveredTemporalPackedSceneMV");
+        private static readonly int RecoveredTemporalDilatedMaskId =
+            Shader.PropertyToID("_EndfieldRecoveredTemporalDilatedMask");
         private static readonly int RecoveredTemporalHistoryWeightId =
             Shader.PropertyToID("_RecoveredTemporalHistoryWeight");
         private static readonly int RecoveredTemporalStaticHistoryWeightId =
@@ -606,6 +610,7 @@ namespace EndfieldGraphShaderLab
         private bool loggedRecoveredDeferredShadowDataFailure;
         private Material recoveredTemporalMaterial;
         private Material recoveredTemporalDilationMaterial;
+        private Material recoveredTemporalMaskDilationMaterial;
         private bool loggedRecoveredTemporalResolve;
 
         private static int[] CreateBloomMipIds(string prefix)
@@ -733,6 +738,18 @@ namespace EndfieldGraphShaderLab
                     name = "Endfield HGRP TAAU SceneMV Dilation (Pipeline)"
                 };
             }
+            Shader temporalMaskDilationShader = Shader.Find(
+                "Hidden/Endfield/HGRPCompat/TemporalMaskDilation");
+            if (temporalMaskDilationShader != null &&
+                temporalMaskDilationShader.isSupported)
+            {
+                recoveredTemporalMaskDilationMaterial = new Material(
+                    temporalMaskDilationShader)
+                {
+                    hideFlags = HideFlags.HideAndDontSave,
+                    name = "Endfield HGRP TAAU Mask Dilation (Pipeline)"
+                };
+            }
         }
 
         protected override void Dispose(bool disposing)
@@ -787,6 +804,14 @@ namespace EndfieldGraphShaderLab
                 else
                     Object.DestroyImmediate(recoveredTemporalDilationMaterial);
                 recoveredTemporalDilationMaterial = null;
+            }
+            if (recoveredTemporalMaskDilationMaterial != null)
+            {
+                if (Application.isPlaying)
+                    Object.Destroy(recoveredTemporalMaskDilationMaterial);
+                else
+                    Object.DestroyImmediate(recoveredTemporalMaskDilationMaterial);
+                recoveredTemporalMaskDilationMaterial = null;
             }
             if (postProcessMaterial == null)
                 return;
@@ -3146,6 +3171,17 @@ namespace EndfieldGraphShaderLab
                     RecoveredTemporalDilatedDepthId,
                     depthDescriptor,
                     FilterMode.Point);
+                bool useCurrentMaskDilation =
+                    recoveredTemporalMaskDilationMaterial != null;
+                if (useCurrentMaskDilation)
+                {
+                    var maskDescriptor = sceneMvDescriptor;
+                    maskDescriptor.graphicsFormat = GraphicsFormat.R8_UNorm;
+                    commandBuffer.GetTemporaryRT(
+                        RecoveredTemporalDilatedMaskId,
+                        maskDescriptor,
+                        FilterMode.Point);
+                }
                 commandBuffer.SetGlobalTexture(
                     RecoveredTemporalSceneDepthId,
                     new RenderTargetIdentifier(recoveredPrimarySceneDepth));
@@ -3188,6 +3224,18 @@ namespace EndfieldGraphShaderLab
                     RecoveredTemporalSelectedSceneMVId,
                     recoveredTemporalDilationMaterial,
                     2);
+                if (useCurrentMaskDilation)
+                {
+                    commandBuffer.SetGlobalTexture(
+                        RecoveredTemporalPackedSceneMVId,
+                        new RenderTargetIdentifier(
+                            RecoveredTemporalDilatedSceneMVId));
+                    commandBuffer.Blit(
+                        CameraColorId,
+                        RecoveredTemporalDilatedMaskId,
+                        recoveredTemporalMaskDilationMaterial,
+                        0);
+                }
             }
 
             if (!invalidHistory && temporalResolveActive)
@@ -3276,6 +3324,9 @@ namespace EndfieldGraphShaderLab
                     RecoveredTemporalDilatedSceneMVId);
                 commandBuffer.ReleaseTemporaryRT(
                     RecoveredTemporalSelectedSceneMVId);
+                if (recoveredTemporalMaskDilationMaterial != null)
+                    commandBuffer.ReleaseTemporaryRT(
+                        RecoveredTemporalDilatedMaskId);
                 state.auxiliaryHistoryValid = true;
             }
             else
