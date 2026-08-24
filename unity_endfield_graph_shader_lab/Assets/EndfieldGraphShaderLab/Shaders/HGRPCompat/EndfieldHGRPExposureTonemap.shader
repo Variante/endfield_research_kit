@@ -170,6 +170,26 @@ Shader "Hidden/Endfield/HGRPCompat/ExposureTonemap"
                         (3.0 * chromaticIntensity + 2.0 * radialIntensity)).b);
             }
 
+            float3 DecodeEndminfUberBloomInput(float3 bloom)
+            {
+                // The shipped combined BLOOM +
+                // RADIAL_BLUR_CHROMATIC_ABERRATION Uber variant conditionally
+                // decodes each bloom channel before the merge. Endminf/CharInfo
+                // uses BloomParams.z == 0, so the retail condition is simply
+                // channel > 0.3 and no blend-mode source subtraction remains.
+                float3 decoded;
+                decoded.r = bloom.r > 0.3
+                    ? pow(bloom.r, 0.33) * 1.49380004 - 0.7
+                    : bloom.r;
+                decoded.g = bloom.g > 0.3
+                    ? pow(bloom.g, 0.33) * 1.49380004 - 0.7
+                    : bloom.g;
+                decoded.b = bloom.b > 0.3
+                    ? pow(bloom.b, 0.33) * 1.49380004 - 0.7
+                    : bloom.b;
+                return decoded;
+            }
+
             float4 Frag(v2f_img input) : SV_Target
             {
                 float2 presentUv = input.uv;
@@ -197,9 +217,22 @@ Shader "Hidden/Endfield/HGRPCompat/ExposureTonemap"
                 // input first, then combines its separate bloom input at the
                 // presentation UV. Bloom must not be resampled at each radial
                 // or chromatic tap.
-                float3 color = max(
-                    source.rgb + bloom * bloomIntensity, 0.0) *
-                    _PostExposure;
+                float3 color;
+                if (_EndfieldRecoveredPostSemantics > 0.5)
+                {
+                    // Retail Uber multiplies only the warped HDR source by
+                    // _ExposureWithMiscParams.x. Its separate bloom input is
+                    // decoded and merged afterwards. CharInfo's blend mode is
+                    // zero and its normalized tint is white.
+                    color = source.rgb * _PostExposure +
+                        DecodeEndminfUberBloomInput(bloom) * bloomIntensity;
+                }
+                else
+                {
+                    color = (source.rgb + bloom * bloomIntensity) *
+                        _PostExposure;
+                }
+                color = max(color, 0.0);
 
                 if (_EndfieldRecoveredPostSemantics > 0.5)
                 {
@@ -236,7 +269,7 @@ Shader "Hidden/Endfield/HGRPCompat/ExposureTonemap"
                     // or render-target OETF can occur.
                     if (_EndfieldRecoveredLinearUnormFinalTarget > 0.5)
                         color = EF_RecoveredFinalOETFAndDither(color, presentUv);
-                    return float4(color, source.a);
+                    return float4(color, min(source.a, 1.0));
                 }
 
                 float luminance = dot(color, float3(0.2126, 0.7152, 0.0722));
