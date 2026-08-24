@@ -640,34 +640,31 @@ def project_enemy_namespace_gameplay_audio(
     }
 
 
-def project_enemy_native_voice_response_audio(
+def _project_native_voice_response_audio(
     event_rows: Iterable[dict[str, Any]],
-    enemy_ids: Iterable[str],
+    owner_ids: Iterable[str],
+    *,
+    owner_bucket: str,
+    owner_binding_status: str,
+    evidence_boundary: str,
 ) -> dict[str, Any]:
-    """Project exact native voice-response routes onto current enemy items.
+    """Project exact native response routes through one bounded owner prefix."""
 
-    The native context already proves the current-build response callsite and
-    AudioDialog Event identity.  This projection adds an enemy owner only when
-    the Event id starts with exactly one longest current EnemyTable id plus a
-    delimiter.  It does not turn the static response route into observed
-    playback or a selected voice/media leaf.
-    """
-
-    enemy_id_by_key: dict[str, str] = {}
+    owner_id_by_key: dict[str, str] = {}
     duplicate_keys: set[str] = set()
-    for value in enemy_ids:
-        enemy_id = str(value or "").strip()
-        if not enemy_id:
+    for value in owner_ids:
+        owner_id = str(value or "").strip()
+        if not owner_id:
             continue
-        key = enemy_id.casefold()
-        if key in enemy_id_by_key and enemy_id_by_key[key] != enemy_id:
+        key = owner_id.casefold()
+        if key in owner_id_by_key and owner_id_by_key[key] != owner_id:
             duplicate_keys.add(key)
         else:
-            enemy_id_by_key[key] = enemy_id
+            owner_id_by_key[key] = owner_id
     for key in duplicate_keys:
-        enemy_id_by_key.pop(key, None)
+        owner_id_by_key.pop(key, None)
 
-    enemies: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    owners_by_id: dict[str, list[dict[str, Any]]] = defaultdict(list)
     seen_trigger_ids: set[str] = set()
     unique_events: set[str] = set()
     unique_media: set[tuple[str, str]] = set()
@@ -686,7 +683,7 @@ def project_enemy_native_voice_response_audio(
         if not event_id or not native_contexts:
             continue
         matches = [
-            key for key in enemy_id_by_key
+            key for key in owner_id_by_key
             if event_key.startswith(f"{key}_")
         ]
         if not matches:
@@ -697,7 +694,7 @@ def project_enemy_native_voice_response_audio(
         if len(owners) != 1:
             ambiguous_contexts += 1
             continue
-        owner_id = enemy_id_by_key[owners[0]]
+        owner_id = owner_id_by_key[owners[0]]
         media_refs = [
             {
                 key: media[key]
@@ -746,15 +743,13 @@ def project_enemy_native_voice_response_audio(
                     context.get("playbackInvocationVa") or ""
                 ),
                 "ownerId": owner_id,
-                "ownerBindingStatus": (
-                    "exactCurrentEnemyTableIdPrefixInNativeVoiceEvent"
-                ),
+                "ownerBindingStatus": owner_binding_status,
                 "runtimeActivationStatus": (
                     context.get("runtimeActivationStatus")
                     or "nativeBranchAndLiveResponseSelectionUnobserved"
                 ),
             }
-            enemies[owner_id].append(row)
+            owners_by_id[owner_id].append(row)
             seen_trigger_ids.add(trigger_id)
             unique_events.add(event_key)
             for media in media_refs:
@@ -763,28 +758,43 @@ def project_enemy_native_voice_response_audio(
                     str(media.get("mediaId") or ""),
                 ))
 
-    for rows in enemies.values():
+    for rows in owners_by_id.values():
         rows.sort(key=lambda row: (
             str(row.get("triggerRole") or "").casefold(),
             str(row.get("id") or "").casefold(),
         ))
     return {
         "schemaVersion": 1,
-        "enemies": dict(sorted(enemies.items())),
+        owner_bucket: dict(sorted(owners_by_id.items())),
         "counts": {
-            "enemies": len(enemies),
+            owner_bucket: len(owners_by_id),
             "uniqueEvents": len(unique_events),
-            "triggerContexts": sum(len(rows) for rows in enemies.values()),
+            "triggerContexts": sum(len(rows) for rows in owners_by_id.values()),
             "playableMediaRefs": sum(
                 len(row.get("mediaRefs") or ())
-                for rows in enemies.values()
+                for rows in owners_by_id.values()
                 for row in rows
             ),
             "uniquePlayableMedia": len(unique_media),
             "unmatchedContexts": unmatched_contexts,
             "ambiguousContexts": ambiguous_contexts,
         },
-        "evidenceBoundary": (
+        "evidenceBoundary": evidence_boundary,
+    }
+
+
+def project_enemy_native_voice_response_audio(
+    event_rows: Iterable[dict[str, Any]],
+    enemy_ids: Iterable[str],
+) -> dict[str, Any]:
+    """Project exact native voice-response routes onto current enemy items."""
+
+    return _project_native_voice_response_audio(
+        event_rows,
+        enemy_ids,
+        owner_bucket="enemies",
+        owner_binding_status="exactCurrentEnemyTableIdPrefixInNativeVoiceEvent",
+        evidence_boundary=(
             "Each row preserves a fingerprint-gated current-build native voice "
             "response callsite and exact AudioDialog Event identity, then maps it "
             "to one current EnemyTable item only when that complete enemy id is the "
@@ -792,7 +802,31 @@ def project_enemy_native_voice_response_audio(
             "exact; branch execution, speaker/cooldown/probability choice, selected "
             "Wwise media, playback, and audibility remain unobserved."
         ),
-    }
+    )
+
+
+def project_character_native_voice_response_audio(
+    event_rows: Iterable[dict[str, Any]],
+    character_ids: Iterable[str],
+) -> dict[str, Any]:
+    """Project exact native voice-response routes onto current characters."""
+
+    return _project_native_voice_response_audio(
+        event_rows,
+        character_ids,
+        owner_bucket="characters",
+        owner_binding_status=(
+            "exactCurrentCharacterTableIdPrefixInNativeVoiceEvent"
+        ),
+        evidence_boundary=(
+            "Each row preserves a fingerprint-gated current-build native voice "
+            "response callsite and exact AudioDialog Event identity, then maps it "
+            "to one current CharacterTable item only when that complete character "
+            "id is the unique longest delimited Event prefix. The static response "
+            "route is exact; branch execution, speaker/cooldown/probability choice, "
+            "selected Wwise media, playback, and audibility remain unobserved."
+        ),
+    )
 
 
 def _load_overlay_table(

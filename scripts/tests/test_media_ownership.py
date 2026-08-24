@@ -280,6 +280,59 @@ class MediaOwnershipTests(unittest.TestCase):
         self.assertEqual(projected["counts"]["unmatchedContexts"], 2)
         self.assertNotIn("eny_0053_hsmob", projected["enemies"])
 
+    def test_native_voice_response_projection_requires_longest_character_prefix(self):
+        context = {
+            "kind": "nativeVoiceTriggerCallsite",
+            "triggerKey": "combat_heavy_hurt",
+            "triggerRole": "temporarySpeakerHeavyHurtResponse",
+            "consumerType": "Beyond.Gameplay.Audio.VoiceTempSpeakerProcessor",
+            "consumerMethod": "ResponseHeavyHurt",
+            "triggerBindingStatus": (
+                "exactCurrentBuildLiteralArgumentAndAudioDialogEventSuffix"
+            ),
+            "runtimeActivationStatus": (
+                "nativeBranchAndLiveResponseSelectionUnobserved"
+            ),
+            "nativeMappingId": "current-build-character-test",
+        }
+        projected = media_ownership.project_character_native_voice_response_audio(
+            [
+                {
+                    "id": "chr_0003_endminf_combat_heavy_hurt_sv",
+                    "category": "voice",
+                    "foundInWwise": True,
+                    "possibleMediaCount": 1,
+                    "contexts": [context],
+                    "media": [{"mediaId": 8, "src": "/export/audio/8.flac"}],
+                },
+                {
+                    "id": "chr_0003_endminf2_combat_heavy_hurt_sv",
+                    "contexts": [context],
+                    "media": [],
+                },
+                {
+                    "id": "chr_generic_combat_heavy_hurt_sv",
+                    "contexts": [context],
+                    "media": [],
+                },
+            ],
+            ["chr_0003_endmin", "chr_0003_endminf"],
+        )
+
+        rows = projected["characters"]["chr_0003_endminf"]
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["mediaRefs"][0]["mediaId"], 8)
+        self.assertEqual(
+            rows[0]["ownerBindingStatus"],
+            "exactCurrentCharacterTableIdPrefixInNativeVoiceEvent",
+        )
+        self.assertEqual(
+            rows[0]["runtimeActivationStatus"],
+            "nativeBranchAndLiveResponseSelectionUnobserved",
+        )
+        self.assertEqual(projected["counts"]["unmatchedContexts"], 2)
+        self.assertNotIn("chr_0003_endmin", projected["characters"])
+
     def test_animation_callback_link_preserves_non_matching_clip_and_owner(self):
         events = [
             {

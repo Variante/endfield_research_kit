@@ -100,9 +100,9 @@ assert.equal(merged[0].possibleMediaCount, 2);
             f"""
 const assert = require("node:assert/strict");
 {function_source}
-const current = {{schemaVersion: 8, characters: {{}}, enemies: {{}}}};
+const current = {{schemaVersion: 9, characters: {{}}, enemies: {{}}}};
 assert.equal(validSoundEffectsPayload(current), true);
-assert.equal(validSoundEffectsPayload({{schemaVersion: 9, characters: {{}}, enemies: {{}}}}), false);
+assert.equal(validSoundEffectsPayload({{schemaVersion: 10, characters: {{}}, enemies: {{}}}}), false);
 assert.equal(validSoundEffectsPayload({{schemaVersion: 5, characters: {{}}}}), false);
 """
         )
@@ -268,7 +268,13 @@ const ENDADMINISTRATOR_VARIANTS = [
   {{gender: "m", characterId: "chr_0002_endminm"}},
 ];
 const STATE = {{integration: {{soundEffects: {{characters: {{
-  chr_0003_endminf: {{authoredNamespaceEvents: [{{id: "au_actor_endminf_ui"}}]}},
+  chr_0003_endminf: {{
+    authoredNamespaceEvents: [{{id: "au_actor_endminf_ui"}}],
+    nativeVoiceResponseEvents: [{{
+      id: "chr_0003_endminf_combat_dead_sv",
+      mediaRefs: [{{mediaId: 8, src: "/8.flac"}}],
+    }}],
+  }},
 }}}}}}}};
 function isEndministrator(entry) {{ return entry?.id === "chr_9000_endmin"; }}
 function currentCharacterGender() {{ return "f"; }}
@@ -281,10 +287,13 @@ function text(value) {{ return value; }}
 {function_source}
 assert.equal(
   renderCharacterSoundEffects({{id: "chr_9000_endmin", kind: "character"}}),
-  "au_actor_endminf_ui",
+  "chr_0003_endminf_combat_dead_svau_actor_endminf_ui",
 );
 """
         )
+        self.assertIn("nativeVoiceResponseEvents", renderer)
+        self.assertIn('text("characterNativeVoiceResponses")', renderer)
+        self.assertIn("characterNativeVoiceResponsesNote", labels)
 
     def test_enemy_namespace_audio_is_a_distinct_surface(self) -> None:
         source = GAMEPLAY.read_text(encoding="utf-8")

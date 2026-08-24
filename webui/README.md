@@ -460,6 +460,9 @@ locked current-build voice callsite requests an exact AudioDialog Event whose
 longest delimited prefix identifies that enemy. The group preserves response
 role and playable candidates, but not live speaker choice, Wwise selection, or
 audibility.
+Character cards expose the corresponding exact native-response group for
+unique CharacterTable prefixes, including the existing Endministrator
+gender-variant routing through its synthetic item.
 All supported AnimationClip audio callbacks are shown separately from the
 same-name action classification. Event/media details expose the exact clips,
 callback functions, owners, reachability, and recovered AnimatorController

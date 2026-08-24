@@ -665,6 +665,9 @@ Native voice-response callsites are published separately when their exact
 AudioDialog Event has one longest delimited current EnemyTable prefix. They
 retain response role and media candidates without claiming live selection or
 playback.
+The same bounded projection is published for unique CharacterTable prefixes;
+Endministrator gender variants continue to use the existing synthetic-item
+alias rather than inventing a new WebUI owner.
 The same publisher projects recovered grammar-derived `au_` names to an enemy
 only when the full current EnemyTable id prefix plus delimiter matches exactly.
 That `enemyNamespaceAudio` projection is identity-only and is not a trigger or

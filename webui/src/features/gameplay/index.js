@@ -1854,7 +1854,18 @@
       label: text("authoredNamespaceAudio"),
       note: text("authoredNamespaceAudioNote"),
     });
-    return `${renderCharacterSkillSounds(entry)}${renderCharacterAnimationSounds(entry)}${authoredNamespaces}`;
+    const nativeVoiceResponses = (
+      STATE.integration.soundEffects?.characters?.[namespaceOwnerId]?.nativeVoiceResponseEvents || []
+    ).map((event) => ({
+      ...event,
+      audio: event?.mediaRefs || [],
+    }));
+    const nativeVoiceGroup = renderGameplaySoundGroup(nativeVoiceResponses, {
+      label: text("characterNativeVoiceResponses"),
+      confidence: "direct",
+      note: text("characterNativeVoiceResponsesNote"),
+    });
+    return `${renderCharacterSkillSounds(entry)}${renderCharacterAnimationSounds(entry)}${nativeVoiceGroup}${authoredNamespaces}`;
   }
 
   function renderCharacterProjectileCompact(match) {
@@ -4208,7 +4219,7 @@
   function validSoundEffectsPayload(payload) {
     return Boolean(
       payload
-      && [1, 2, 3, 4, 5, 6, 7, 8].includes(payload.schemaVersion)
+      && [1, 2, 3, 4, 5, 6, 7, 8, 9].includes(payload.schemaVersion)
       && payload.characters
       && payload.enemies
     );

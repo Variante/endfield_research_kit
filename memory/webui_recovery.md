@@ -422,6 +422,9 @@ Enemy cards also show a separate native-response group for exact fingerprint-
 locked voice callsites whose Event prefix identifies one current enemy. This
 is a static response-route relation; speaker choice, Wwise selection, and
 audibility remain unresolved.
+Character cards expose the matching native-response group for exact
+CharacterTable prefixes, with Endministrator variant rows routed through the
+existing synthetic character item.
 Audio detail keeps each callback Clip's resolved entity IDs separate from its
 candidate entity IDs. Exact Character/Enemy/EnemyTemplate overlay matches are
 resolved; unique-token or multi-match identities remain candidate/ambiguous,
