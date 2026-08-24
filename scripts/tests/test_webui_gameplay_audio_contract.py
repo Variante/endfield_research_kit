@@ -100,9 +100,9 @@ assert.equal(merged[0].possibleMediaCount, 2);
             f"""
 const assert = require("node:assert/strict");
 {function_source}
-const current = {{schemaVersion: 7, characters: {{}}, enemies: {{}}}};
+const current = {{schemaVersion: 8, characters: {{}}, enemies: {{}}}};
 assert.equal(validSoundEffectsPayload(current), true);
-assert.equal(validSoundEffectsPayload({{schemaVersion: 8, characters: {{}}, enemies: {{}}}}), false);
+assert.equal(validSoundEffectsPayload({{schemaVersion: 9, characters: {{}}, enemies: {{}}}}), false);
 assert.equal(validSoundEffectsPayload({{schemaVersion: 5, characters: {{}}}}), false);
 """
         )
@@ -295,6 +295,9 @@ assert.equal(
         self.assertIn("authoredNamespaceEvents", renderer)
         self.assertIn('text("authoredEnemyNamespaceAudio")', renderer)
         self.assertIn("authoredEnemyNamespaceAudioNote", labels)
+        self.assertIn("nativeVoiceResponseEvents", renderer)
+        self.assertIn('text("enemyNativeVoiceResponses")', renderer)
+        self.assertIn("enemyNativeVoiceResponsesNote", labels)
 
 
 if __name__ == "__main__":
