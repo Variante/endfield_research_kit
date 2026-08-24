@@ -7,13 +7,14 @@ Transform state, or changes any input object.  It only validates the pinned
 source contract and projects two unambiguous payloads:
 
 * ``selectionData``'s explicit JSON positions/attributes; and
-* every PPtr in ``uniquePreBuildData.proxyMesh.transformData.transformArray``.
+* every PPtr in ``uniquePreBuildData.proxyMesh.transformData.transformArray``;
+  and
+* all 35 ``VirtualMesh.ShareSerializationData`` proxy-array slots using the
+  separately native-gated element-layout contract.  The three nested
+  ``TransformData`` capacity arrays remain explicitly raw.
 
-The serialized proxy-mesh byte arrays deliberately remain raw unless their
-record contains an explicit ``count`` and ``stride`` and the field is one of
-the small, reviewed layouts below.  The current contract has no stride fields
-for those arrays, so its generated report keeps them raw and marks their
-semantics unresolved.
+This remains a static decoder.  It does not construct a cloth solver, execute
+Burst code, schedule jobs, or write a Transform.
 """
 
 from __future__ import annotations
@@ -33,7 +34,7 @@ from typing import Any
 LAB_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = LAB_ROOT.parent
 CONTRACT_SCHEMA = "endfield.charinfo.secondary-dynamics-solver-inputs.v1"
-REPORT_SCHEMA = "endfield.charinfo.secondary-dynamics-payload-decoder.v1"
+REPORT_SCHEMA = "endfield.charinfo.secondary-dynamics-payload-decoder.v2"
 INPUT = (
     LAB_ROOT
     / "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/"
@@ -44,11 +45,17 @@ OUTPUT = (
     / "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/"
     / "secondary_dynamics_payload_decode.json"
 )
+LAYOUT_CONTRACT = (
+    LAB_ROOT
+    / "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/"
+    / "secondary_dynamics_proxy_layout_contract.json"
+)
 
 # These values are intentionally duplicated as a small gate.  A decoder must
 # never treat a newly substituted installed build as the pinned source used by
 # the reviewed static-input contract.
 EXPECTED_INPUT_SHA256 = "f12ba5d88013a2e28a82c93c1f56c171388cc74d3a3a040f7e33ffb6cf90c197"
+EXPECTED_LAYOUT_SHA256 = "f7558f709c55748f097c25c1b89b510da5df0327e0e383e5dca87870b3a01ce2"
 EXPECTED_SOURCE_BUILD = {
     "game_assembly": {
         "size": 280436712,
@@ -132,15 +139,16 @@ def _repo_path(value: Any, label: str) -> Path:
 
 def _validate_file_record(record: dict[str, Any], label: str, *, strict: bool = True) -> Path:
     path = _repo_path(record.get("repo_path"), label)
-    if not path.is_file():
-        raise PayloadDecodeError(f"{label}: missing source file {record['repo_path']}")
     if not _is_int(record.get("size")) or int(record["size"]) < 0:
         raise PayloadDecodeError(f"{label}: source size drift")
     expected = record.get("sha256")
     if not isinstance(expected, str) or len(expected) != 64 or any(c not in "0123456789abcdef" for c in expected):
         raise PayloadDecodeError(f"{label}: invalid source hash")
-    if strict and (int(record["size"]) != path.stat().st_size or file_sha256(path) != expected):
-        raise PayloadDecodeError(f"{label}: source hash drift")
+    if strict:
+        if not path.is_file():
+            raise PayloadDecodeError(f"{label}: missing source file {record['repo_path']}")
+        if int(record["size"]) != path.stat().st_size or file_sha256(path) != expected:
+            raise PayloadDecodeError(f"{label}: source hash drift")
     return path
 
 
@@ -189,6 +197,10 @@ def _hierarchy_map(actor: dict[str, Any], actor_name: str) -> dict[int, str]:
         f"{actor_name}.hierarchy_name_map",
         strict=False,
     )
+    if not path.is_file():
+        raise PayloadDecodeError(
+            f"{actor_name}.hierarchy_name_map: missing required hierarchy source {path}"
+        )
     manifest = load_json(path)
     rows = manifest.get("transforms")
     if not isinstance(rows, list):
@@ -216,15 +228,17 @@ def _source_hash_checks(payload: dict[str, Any]) -> dict[str, Any]:
         for key in ("owner_contract", "target_filter", "hierarchy_name_map"):
             record = actor["source"][key]
             path = _repo_path(record["repo_path"], f"{actor_name}.{key}")
-            actual_size = path.stat().st_size
-            actual_hash = file_sha256(path)
+            exists = path.is_file()
+            actual_size = path.stat().st_size if exists else None
+            actual_hash = file_sha256(path) if exists else None
             actor_checks[key] = {
                 "repo_path": record["repo_path"],
                 "recorded_size": int(record["size"]),
                 "actual_size": actual_size,
                 "recorded_sha256": record["sha256"],
                 "actual_sha256": actual_hash,
-                "matches": int(record["size"]) == actual_size and record["sha256"] == actual_hash,
+                "exists": exists,
+                "matches": exists and int(record["size"]) == actual_size and record["sha256"] == actual_hash,
             }
         checks[actor_name] = actor_checks
     return checks
@@ -237,6 +251,11 @@ def _source_hash_mismatch_details(source_hash_checks: dict[str, Any]) -> list[st
     for actor_name, actor_checks in source_hash_checks.items():
         for source_name, check in actor_checks.items():
             if check["matches"]:
+                continue
+            if not check.get("exists", True):
+                details.append(
+                    f"{actor_name}.{source_name} ({check['repo_path']}): missing"
+                )
                 continue
             details.append(
                 f"{actor_name}.{source_name} ({check['repo_path']}): "
@@ -344,8 +363,8 @@ TYPED_LAYOUTS: dict[str, tuple[str, int, str]] = {
     "localNormals": ("float3", 12, "<3f"),
     "localTangents": ("float3", 12, "<3f"),
     "uv": ("float2", 8, "<2f"),
-    "triangles": ("int32", 4, "<i"),
-    "lines": ("int32", 4, "<i"),
+    "triangles": ("int3", 12, "<3i"),
+    "lines": ("int2", 8, "<2i"),
     "skinBoneTransformIndices": ("int32", 4, "<i"),
     "skinBoneBindPoses": ("float16", 64, "<16f"),
     "transformData.flagArray": ("uint8", 1, "<B"),
@@ -401,13 +420,9 @@ def _typed_array(value: dict[str, Any], label: str, layout: tuple[str, int, str]
     values = []
     for index in range(count):
         decoded = struct.unpack_from(fmt, raw_bytes, index * stride)
-        if element_type == "int32":
-            integer = int(decoded[0])
-            if integer < 0:
-                raise PayloadDecodeError(f"{label}[{index}]: negative index {integer}")
-            values.append(integer)
-        elif element_type == "uint8":
-            values.append(int(decoded[0]))
+        if element_type.startswith("int") or element_type.startswith("uint"):
+            integers = [int(item) for item in decoded]
+            values.append(integers[0] if len(integers) == 1 else integers)
         else:
             numbers = [_finite(item, f"{label}[{index}]") for item in decoded]
             values.append(numbers)
@@ -424,14 +439,159 @@ def _typed_array(value: dict[str, Any], label: str, layout: tuple[str, int, str]
         "checks": {
             "count_length": True,
             "byte_length": True,
-            "index_values_nonnegative": element_type == "int32",
+            "signed_sentinels_allowed": element_type.startswith("int"),
             "finite": element_type.startswith("float"),
         },
     }
 
 
-def _proxy_arrays(proxy: dict[str, Any], label: str) -> dict[str, Any]:
+def _load_proxy_layouts() -> tuple[dict[str, dict[str, Any]], dict[str, Any]]:
+    if not LAYOUT_CONTRACT.is_file():
+        raise PayloadDecodeError(f"missing proxy layout contract: {LAYOUT_CONTRACT}")
+    actual_hash = file_sha256(LAYOUT_CONTRACT)
+    if actual_hash != EXPECTED_LAYOUT_SHA256:
+        raise PayloadDecodeError(
+            "proxy layout contract hash drift: "
+            f"expected={EXPECTED_LAYOUT_SHA256} actual={actual_hash}"
+        )
+    contract = load_json(LAYOUT_CONTRACT)
+    if (contract.get("schema") != "endfield.charinfo.secondary-dynamics-proxy-layout.v1" or
+            contract.get("status") != "proxy_array_element_types_and_strides_closed" or
+            contract.get("serializedSlotCount") != 35 or
+            contract.get("secondaryDynamicsVerified") is not False or
+            contract.get("solverImplemented") is not False or
+            contract.get("retailEquivalent") is not False):
+        raise PayloadDecodeError("proxy layout contract boundary drift")
+    layouts = contract.get("serializedLayouts")
+    if not isinstance(layouts, dict) or len(layouts) != 35:
+        raise PayloadDecodeError("proxy layout contract census drift")
+    allowed_kinds = {
+        "uint8", "uint16", "uint32", "int32", "float32", "float2",
+        "float3", "float4", "int2", "int3", "float16", "opaque",
+    }
+    for name, row in layouts.items():
+        if (not isinstance(name, str) or not isinstance(row, dict) or
+                not isinstance(row.get("elementType"), str) or
+                not _is_int(row.get("strideBytes")) or row["strideBytes"] <= 0 or
+                row.get("decodeKind") not in allowed_kinds or
+                row.get("serializedEncoding") not in {
+                    "serialization_data", "raw_byte_list", "element_value_list"
+                }):
+            raise PayloadDecodeError(f"invalid proxy layout row: {name}")
+        if row["decodeKind"] == "opaque":
+            if row.get("structFormat") is not None:
+                raise PayloadDecodeError(f"opaque proxy layout has a format: {name}")
+        else:
+            fmt = row.get("structFormat")
+            if not isinstance(fmt, str) or struct.calcsize(fmt) != row["strideBytes"]:
+                raise PayloadDecodeError(f"proxy layout format/stride drift: {name}")
+    return layouts, contract
+
+
+def _contract_array(value: Any, label: str, layout: dict[str, Any]) -> dict[str, Any]:
+    encoding = layout["serializedEncoding"]
+    stride = int(layout["strideBytes"])
+    kind = layout["decodeKind"]
+    fmt = layout.get("structFormat")
+    direct_values: list[Any] | None = None
+    if encoding == "element_value_list":
+        if not isinstance(value, list):
+            raise PayloadDecodeError(f"{label}: expected logical element list")
+        if kind == "opaque" or not isinstance(fmt, str):
+            raise PayloadDecodeError(f"{label}: logical element list has no scalar/vector format")
+        arity = len(struct.unpack(fmt, b"\0" * stride))
+        component_names = ("x", "y", "z", "w")
+        packed = bytearray()
+        direct_values = []
+        for index, item in enumerate(value):
+            if arity == 1:
+                components = [item]
+            elif isinstance(item, dict):
+                components = [item.get(component_names[i]) for i in range(arity)]
+            elif isinstance(item, (list, tuple)) and len(item) == arity:
+                components = list(item)
+            else:
+                raise PayloadDecodeError(f"{label}[{index}]: invalid {arity}-component value")
+            if kind.startswith("float"):
+                normalized = [_finite(component, f"{label}[{index}]") for component in components]
+            else:
+                if any(not _is_int(component) for component in components):
+                    raise PayloadDecodeError(f"{label}[{index}]: expected integer components")
+                normalized = [int(component) for component in components]
+            try:
+                packed.extend(struct.pack(fmt, *normalized))
+            except struct.error as exc:
+                raise PayloadDecodeError(f"{label}[{index}]: value outside native element range") from exc
+            direct_values.append(normalized[0] if arity == 1 else normalized)
+        raw = list(packed)
+        count = length = len(value)
+    elif encoding == "serialization_data" and isinstance(value, dict):
+        raw = value.get("arrayBytes")
+        count = value.get("count")
+        length = value.get("length")
+        if not _is_int(count) or not _is_int(length) or count < 0 or length < count:
+            raise PayloadDecodeError(f"{label}: invalid count/length")
+    elif encoding == "raw_byte_list" and isinstance(value, list):
+        raw = value
+        count = length = None
+    else:
+        raise PayloadDecodeError(f"{label}: expected serialized byte array")
+    if not isinstance(raw, list) or any(
+            not _is_int(item) or not 0 <= item <= 255 for item in raw):
+        raise PayloadDecodeError(f"{label}: invalid byte payload")
+    if len(raw) % stride:
+        raise PayloadDecodeError(f"{label}: byte length is not divisible by native stride {stride}")
+    element_length = len(raw) // stride
+    if length is None:
+        count = length = element_length
+    elif length != element_length:
+        raise PayloadDecodeError(
+            f"{label}: serialized length {length} does not match {element_length} elements"
+        )
+    raw_bytes = bytes(raw)
+    values: list[Any] = []
+    if direct_values is not None:
+        values = direct_values
+    else:
+        for index in range(int(count)):
+            offset = index * stride
+            if kind == "opaque":
+                values.append(raw_bytes[offset:offset + stride].hex())
+                continue
+            decoded = struct.unpack_from(fmt, raw_bytes, offset)
+            if kind.startswith("float"):
+                row = [_finite(item, f"{label}[{index}]") for item in decoded]
+            else:
+                row = [int(item) for item in decoded]
+            values.append(row[0] if len(row) == 1 else row)
+    checks = {
+        "native_layout_contract": True,
+        "byte_length": True,
+    }
+    if kind.startswith("float"):
+        checks["finite"] = True
+    return {
+        "status": "typed_decoded_native_layout",
+        "semantic": layout["elementType"],
+        "raw_preserved": False,
+        "source_bytes_preserved": True,
+        "semantic_unresolved": False,
+        "serialized_encoding": encoding,
+        "count": int(count),
+        "length": int(length),
+        "stride_bytes": stride,
+        "byte_length": len(raw_bytes),
+        "array_bytes_sha256": hashlib.sha256(raw_bytes).hexdigest(),
+        "array_bytes": list(raw),
+        "values": values,
+        "checks": checks,
+    }
+
+
+def _proxy_arrays(proxy: dict[str, Any], label: str,
+                  layouts: dict[str, dict[str, Any]]) -> dict[str, Any]:
     result: dict[str, Any] = {}
+    seen: set[str] = set()
     for name, value in proxy.items():
         path = f"{label}.{name}"
         if name == "transformData" and isinstance(value, dict):
@@ -439,12 +599,13 @@ def _proxy_arrays(proxy: dict[str, Any], label: str) -> dict[str, Any]:
             for nested_name, nested_value in value.items():
                 nested_path = f"{path}.{nested_name}"
                 if isinstance(nested_value, dict) and "arrayBytes" in nested_value:
-                    layout = TYPED_LAYOUTS.get(f"transformData.{nested_name}")
-                    nested[nested_name] = (
-                        _typed_array(nested_value, nested_path, layout)
-                        if layout is not None
-                        else _raw_array(nested_value, nested_path)
-                    )
+                    key = f"transformData.{nested_name}"
+                    layout = layouts.get(key)
+                    if layout is None:
+                        nested[nested_name] = _raw_array(nested_value, nested_path)
+                    else:
+                        nested[nested_name] = _contract_array(nested_value, nested_path, layout)
+                        seen.add(key)
                 else:
                     nested[nested_name] = {
                         "status": "raw_preserved",
@@ -455,27 +616,37 @@ def _proxy_arrays(proxy: dict[str, Any], label: str) -> dict[str, Any]:
                     }
             result[name] = nested
         elif isinstance(value, dict) and "arrayBytes" in value:
-            layout = TYPED_LAYOUTS.get(name)
-            result[name] = _typed_array(value, path, layout) if layout is not None else _raw_array(value, path)
+            layout = layouts.get(name)
+            if layout is None:
+                raise PayloadDecodeError(f"{path}: missing native layout")
+            result[name] = _contract_array(value, path, layout)
+            seen.add(name)
         elif isinstance(value, list):
-            result[name] = {
-                "status": "raw_preserved",
-                "semantic": "semantic_unresolved",
-                "raw_preserved": True,
-                "semantic_unresolved": True,
-                "value": _copy(value),
-            }
+            layout = layouts.get(name)
+            if layout is None:
+                raise PayloadDecodeError(f"{path}: missing native layout")
+            result[name] = _contract_array(value, path, layout)
+            seen.add(name)
+    missing = sorted(set(layouts) - seen)
+    if missing:
+        raise PayloadDecodeError(
+            f"{label}: missing {len(missing)} native-layout array slots: {missing}"
+        )
     return result
 
 
 def decode_payload(
-    payload: dict[str, Any], *, source_hash_checks: dict[str, Any] | None = None
+    payload: dict[str, Any], *, source_hash_checks: dict[str, Any] | None = None,
+    proxy_layouts: dict[str, dict[str, Any]] | None = None,
+    layout_contract: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Return a decoded report without mutating ``payload``."""
 
     validate_input(payload)
     actors: dict[str, Any] = {}
     resolved_source_hash_checks = source_hash_checks or _source_hash_checks(payload)
+    if proxy_layouts is None or layout_contract is None:
+        proxy_layouts, layout_contract = _load_proxy_layouts()
     source_hashes_match = all(
         check["matches"]
         for actor_checks in resolved_source_hash_checks.values()
@@ -527,7 +698,8 @@ def decode_payload(
                         "all_non_null_mapped": all(entry["status"] != "unresolved" for entry in transform_array),
                     },
                 },
-                "proxy_mesh_arrays": _proxy_arrays(source_proxy, f"{label}.proxyMesh"),
+                "proxy_mesh_arrays": _proxy_arrays(
+                    source_proxy, f"{label}.proxyMesh", proxy_layouts),
             })
         actors[actor_name] = {
             "character_id": actor.get("character_id"),
@@ -537,9 +709,9 @@ def decode_payload(
     return {
         "schema": REPORT_SCHEMA,
         "status": (
-            "decoded_read_only_payload"
+            "decoded_typed_proxy_payload"
             if source_hashes_match
-            else "decoded_read_only_payload_source_hash_mismatch"
+            else "decoded_typed_proxy_payload_source_hash_mismatch"
         ),
         "source": {
             "input_schema": CONTRACT_SCHEMA,
@@ -548,6 +720,13 @@ def decode_payload(
             "source_build": _copy(payload["source_build"]),
             "hash_checks": resolved_source_hash_checks,
             "hashes_match": source_hashes_match,
+            "proxy_layout_contract": {
+                "path": LAYOUT_CONTRACT.relative_to(REPO_ROOT).as_posix(),
+                "sha256": EXPECTED_LAYOUT_SHA256,
+                "schema": layout_contract["schema"],
+                "status": layout_contract["status"],
+                "serialized_slot_count": layout_contract["serializedSlotCount"],
+            },
         },
         "actors": actors,
         "implementation_boundary": {
@@ -558,7 +737,8 @@ def decode_payload(
             "solver_implemented": False,
             "retail_equivalent": False,
             "source_hashes_match": source_hashes_match,
-            "limitation": "Decoded static payload only; no solver, Unity object, Transform writeback, or verified claim.",
+            "proxy_array_element_layouts_recovered": True,
+            "limitation": "Decoded static payload and native-proven proxy element layouts only; no solver, Unity object, Transform writeback, or verified claim.",
         },
     }
 
@@ -641,8 +821,8 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
-    if args.check and (args.allow_source_hash_mismatch or args.refresh_input_hash):
-        print("error: --check cannot be combined with diagnostic or refresh modes", file=sys.stderr)
+    if args.check and args.refresh_input_hash:
+        print("error: --check cannot be combined with refresh mode", file=sys.stderr)
         return 2
     if args.refresh_input_hash and args.allow_source_hash_mismatch:
         print("error: --refresh-input-hash cannot be combined with --allow-source-hash-mismatch", file=sys.stderr)
