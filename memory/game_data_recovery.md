@@ -306,6 +306,10 @@ reduce strict unknown-use status or establish an enemy consumer.
 Leading `au_monster_<token>_*` names follow the same boundary only when the
 token maps to one exact current `EnemyTable` id; the token relation is kept
 separate from full `au_eny_<id>_*` matches and remains identity-only.
+The selected native build gate now validates the fingerprint-locked managed
+literal contracts for anchor-wave hit states and 3D-radio narrative selector
+values. Those rows can leave `unknownUse` as authored callsite context, but
+they still do not prove execution, selected Wwise media, or audibility.
 Serialized AnimationClip audio callbacks are independently sufficient to link
 an Event to the exact clips and character/enemy owner recorded by the callback
 context. The Event and clip names need not match. AnimatorController membership

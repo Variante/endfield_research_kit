@@ -564,6 +564,9 @@ rejects the parent before child projection. `audio_cue_native.py` owns the
 selected `global-metadata.dat` / `GameAssembly.dll` gate: enum/operator names
 are published only for a validated exact contract, while missing or mismatched
 native inputs keep those names absent.
+The validated native-literal catalog also covers exact anchor-wave hit-state
+routes and 3D-radio narrative selector values; these are authored callsite
+contexts, not runtime execution or audible-playback evidence.
 
 MonoBehaviour `monoBehaviourAudioIdField` contexts are projected by
 `audio_semantics.managed_literals.project_mono_behaviour_audio_field`. The
