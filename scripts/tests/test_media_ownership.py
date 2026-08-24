@@ -129,6 +129,34 @@ class MediaOwnershipTests(unittest.TestCase):
         self.assertEqual(projected["counts"]["uniqueEvents"], 1)
         self.assertEqual(projected["counts"]["mediaOwnerAssociations"], 1)
 
+    def test_enemy_namespace_projection_requires_exact_catalog_prefix(self):
+        projected = media_ownership.project_enemy_namespace_gameplay_audio(
+            [
+                {
+                    "id": "au_eny_0007_mimicw_die",
+                    "name": "au_eny_0007_mimicw_die",
+                    "eventIdentityStatus": "recoveredAuthoredName",
+                    "purposeKnowledgeStatus": "unknownUse",
+                    "playbackLocationStatus": "unknown",
+                    "possibleMediaCount": 1,
+                    "media": [{"mediaId": 7, "src": "/export/audio/7.flac"}],
+                },
+                {
+                    "id": "au_eny_0007_mimicw2_skill01",
+                    "eventIdentityStatus": "recoveredAuthoredName",
+                    "purposeKnowledgeStatus": "unknownUse",
+                    "playbackLocationStatus": "unknown",
+                    "possibleMediaCount": 1,
+                    "media": [{"mediaId": 8, "src": "/export/audio/8.flac"}],
+                },
+            ],
+            ["eny_0007_mimicw"],
+        )
+        rows = projected["enemies"]["eny_0007_mimicw"]
+        self.assertEqual([row["id"] for row in rows], ["au_eny_0007_mimicw_die"])
+        self.assertEqual(rows[0]["authoredNamespaceOwnershipStatus"], "recoveredEnemyNamespaceIdentity")
+        self.assertEqual(projected["counts"]["uniqueEvents"], 1)
+
     def test_animation_callback_link_preserves_non_matching_clip_and_owner(self):
         events = [
             {

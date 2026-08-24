@@ -508,6 +508,110 @@ def project_character_namespace_gameplay_audio(
     }
 
 
+def project_enemy_namespace_gameplay_audio(
+    event_rows: Iterable[dict[str, Any]],
+    enemy_ids: Iterable[str],
+) -> dict[str, Any]:
+    """Project recovered full enemy namespaces onto existing enemy owners.
+
+    Grammar-derived Event names are kept separate from trigger-backed enemy
+    audio.  A full ``au_`` + current EnemyTable id + delimiter is an authored
+    namespace identity, not proof of a skill, animation, callback, or playback
+    consumer.
+    """
+
+    known_enemy_ids = sorted({
+        str(value).strip().casefold()
+        for value in enemy_ids
+        if str(value).strip()
+    })
+    enemies: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    unique_event_ids: set[str] = set()
+    unique_media: set[tuple[str, str]] = set()
+    media_associations = 0
+    playable_event_associations = 0
+    for event in event_rows:
+        if not isinstance(event, dict):
+            continue
+        if event.get("purposeKnowledgeStatus") != "unknownUse":
+            continue
+        if event.get("contextCount") or event.get("playbackLocationStatus") != "unknown":
+            continue
+        if event.get("eventIdentityStatus") != "recoveredAuthoredName":
+            continue
+        event_id = str(event.get("id") or event.get("name") or "").strip()
+        event_key = event_id.casefold()
+        if not event_key.startswith("au_"):
+            continue
+        owners = [
+            enemy_id for enemy_id in known_enemy_ids
+            if event_key.startswith(f"au_{enemy_id}_")
+        ]
+        if len(owners) != 1:
+            continue
+        audio: list[dict[str, Any]] = []
+        for media in event.get("media") or ():
+            if not isinstance(media, dict) or not media.get("src"):
+                continue
+            compact = {
+                key: media[key]
+                for key in ("mediaId", "src", "duration", "format", "contentSha256")
+                if media.get(key) not in (None, "", [])
+            }
+            evidence = [
+                {
+                    key: item[key]
+                    for key in ("rootActionIds", "soundObjectCount", "relationTypes")
+                    if item.get(key) not in (None, "", [])
+                }
+                for item in media.get("wwiseMediaEvidence") or ()
+                if isinstance(item, dict)
+            ]
+            if evidence:
+                compact["wwiseMediaEvidence"] = evidence
+            audio.append(compact)
+        compact_event = {
+            key: event[key]
+            for key in CHARACTER_NAMESPACE_GAMEPLAY_EVENT_FIELDS
+            if event.get(key) not in (None, "", [])
+        }
+        compact_event.update({
+            "audio": audio,
+            "authoredNamespaceOwnershipStatus": "recoveredEnemyNamespaceIdentity",
+            "namespaceEvidence": "exactRecoveredNamePrefixAgainstCurrentEnemyTableId",
+            "runtimeActivationStatus": "unobserved",
+        })
+        owner_id = owners[0]
+        enemies[owner_id].append(compact_event)
+        unique_event_ids.add(event_key)
+        media_associations += len(audio)
+        if audio or int(event.get("possibleMediaCount") or 0):
+            playable_event_associations += 1
+        for media in audio:
+            unique_media.add((str(media.get("src") or ""), str(media.get("mediaId") or "")))
+
+    for rows in enemies.values():
+        rows.sort(key=lambda row: str(row.get("id") or "").casefold())
+    return {
+        "schemaVersion": 1,
+        "enemies": dict(sorted(enemies.items())),
+        "counts": {
+            "enemies": len(enemies),
+            "uniqueEvents": len(unique_event_ids),
+            "eventOwnerAssociations": sum(len(rows) for rows in enemies.values()),
+            "playableEventOwnerAssociations": playable_event_associations,
+            "mediaOwnerAssociations": media_associations,
+            "uniquePlayableMedia": len(unique_media),
+        },
+        "evidenceBoundary": (
+            "Each row uses a recovered grammar-derived Event name whose complete au_"
+            " + current EnemyTable id + delimiter matches exactly. This is recovered "
+            "enemy namespace identity only: no skill, action, animation callback, "
+            "Event posting, Wwise branch selection, playback, or audibility is claimed."
+        ),
+    }
+
+
 def _load_overlay_table(
     export_root: Path,
     relatives: tuple[str, ...],
