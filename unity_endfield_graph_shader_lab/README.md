@@ -50,10 +50,13 @@ runtime component, or shader instead of editing generated files by hand.
 ## Active target
 
 The source reference is `../videos/2026-08-15_10-32-32.mkv`; the focused
-Endminf comparison capture is `../videos/2026-08-21_20-15-17.mkv`. Keep image
-comparison, timing, camera, lighting, materials, effects, and post-processing
-anchored to those recordings. Do not reintroduce actor-specific approximation
-branches without source evidence.
+Endminf comparison capture is `../videos/2026-08-21_20-15-17.mkv`, with
+`../videos/2026-08-24_06-37-22.mkv` as its 4K frame-generation-off companion.
+Keep image comparison, timing, camera, lighting, materials, effects, and
+post-processing anchored to those recordings. Treat the amber crystal/stone
+entrance effect separately from general body comparisons as defined by the
+maintained sequence annotation. Do not reintroduce actor-specific
+approximation branches without source evidence.
 
 Endminf is the only fidelity target during this phase. Shared import, material,
 animation, camera, and render-pipeline code must remain character-neutral so

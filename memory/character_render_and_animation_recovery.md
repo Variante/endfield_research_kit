@@ -236,8 +236,9 @@ all-character pass:
   integration, and writeback contracts and their validators are retained.
   They preserve recovered inputs and boundaries. Some native reconstruction
   checks require the original disposable capture inputs and now fail closed
-  when those inputs are absent; exact retail scheduling and the complete
-  numeric solver are still unproven. Endminf's MC_Coat payload closes its
+  when those inputs are absent. The exact unpatched native schedule is now
+  closed, while IFix route selection and the complete numeric solver remain
+  unproven. Endminf's MC_Coat payload closes its
   particles, transforms, lines, roots, capsules, and active constraint feature
   set. The pinned `VirtualMesh.ShareSerializationData` contract now closes the
   element identity and native stride for all 35 serialized proxy-array slots;
@@ -265,6 +266,24 @@ all-character pass:
   bytes of unclaimed-value trailing padding. This is intentionally scoped to
   the selected closed job instances and does not claim a universal open-generic
   IL2CPP size.
+  `SimulationStepUpdate` schedules the exact ordered cross-frame chain
+  ClearStepCounter, CreateUpdateParticleList, StartSimulationStepJob,
+  UpdateStepBasicPotureJob, and EndSimulationStepJob at schedule mode two and
+  priority zero. `CompleteMasterJob` completes the same master handle and
+  clears its 16-byte storage. `WriteTransform` constructs the exact 0x70-byte
+  TransformAccess job, using the manager's current position/rotation/local
+  arrays for the job fields named `last*`, and schedules the closed
+  `WriteTransformJob` MethodSpec at mode one. Full native bodies, generic
+  identities, icall slots, and literals are pinned in the generated schedule
+  contract. IFix IDs `0x31a` and `0x32a` are present but unaudited, so these
+  conclusions apply only to the unpatched route and do not recover Burst
+  numerics or prove Unity runtime execution.
+  The two former Collider End ABI-shape candidates are now both rejected by
+  their pinned AVX2/SSE2 cores: one uses 12-byte float3 positions where the
+  canonical job requires 24-byte double3, and the other treats its first lane
+  as a scalar while operating on 184-byte records. The filter therefore has no
+  semantic survivor; runtime GetProcAddress telemetry remains the exact
+  identity gate instead of assigning either hash.
   Regenerate with
   `python unity_endfield_graph_shader_lab/tools/build_secondary_dynamics_proxy_layout_contract.py`,
   then publish the read-only decode explicitly with

@@ -704,6 +704,20 @@ def _collider_end_candidate_audit(pe: dict[str, Any], rows: list[dict[str, Any]]
     if actual_job_schema != expected_job_schema:
         raise ContractError(f"canonical ColliderManager End job schema drift: {actual_job_schema}")
     by_hash = {row["hash"]: row for row in rows}
+    semantic_cores = {
+        "5d15fdfe5676d33316f2415a1f41d523": {
+            "status": "incompatible_with_canonical_job_element_strides",
+            "reason": "The core indexes position rows at 12 bytes and copies float3 plus quaternion; canonical now/old positions are double3 at 24 bytes.",
+            "variants": (("AVX2", 0x24D8D0, 0x61, "2c13d41676b518db37f84558a675726189ca29ffc4fadb757af6f8ef921bc0e1"),
+                         ("SSE2", 0xB2E80, 0x5F, "fa0774f9c385ab162d8e03093ee29d2bbd3af70ab544b99fd943f447bd8c25e6")),
+        },
+        "e6aec003f0525fe127cd9c0ccb59b1e2": {
+            "status": "incompatible_with_direct_invoke_container_abi",
+            "reason": "The core treats the first incoming lane as a scalar count and operates on 184-byte records, rather than consuming six container pointers.",
+            "variants": (("AVX2", 0x2A0670, 0x23D, "ed1dfada261fad7c4a7a63f9987d11e4edf34f99a99290e278d6c457a5eff9c9"),
+                         ("SSE2", 0x117860, 0x2CE, "166dda52f397ef0c4d56d544bf30a1f3d0345153a9494d30447b4c63e3177a86")),
+        },
+    }
     candidates: list[dict[str, Any]] = []
     for candidate_hash in candidate_hashes:
         row = by_hash[candidate_hash]
@@ -785,9 +799,20 @@ def _collider_end_candidate_audit(pe: dict[str, Any], rows: list[dict[str, Any]]
                 "outgoingStackForwarding": stack_forwards,
             }
         _validate_collider_wrapper_evidence(candidate_wrapper, [field.get("name") for field in job_fields])
+        semantic = semantic_cores[candidate_hash]
+        variants = []
+        for architecture, core_rva, core_size, expected_hash in semantic["variants"]:
+            offset = _rva_file_offset(pe, core_rva, core_size)
+            actual_hash = hashlib.sha256(pe["data"][offset:offset + core_size]).hexdigest()
+            if actual_hash != expected_hash:
+                raise ContractError(f"candidate {candidate_hash} {architecture} core hash drift")
+            variants.append({"architecture": architecture, "rva": f"0x{core_rva:x}",
+                             "spanBytes": core_size, "bodySha256": actual_hash})
         candidates.append({
             "hash": candidate_hash,
             "wrapper": candidate_wrapper,
+            "semanticCompatibility": {"status": semantic["status"], "reason": semantic["reason"],
+                                      "coreVariants": variants},
             "runtimeFunctionPointerSlot": {
                 "targetVa": f"0x{slot_va:x}",
                 "targetRva": f"0x{slot_va - pe['imageBase']:x}",
@@ -805,7 +830,7 @@ def _collider_end_candidate_audit(pe: dict[str, Any], rows: list[dict[str, Any]]
     stack_forwarding_equal = all(c["wrapper"]["stackParameterForwarding"] == candidates[0]["wrapper"]["stackParameterForwarding"] and c["wrapper"]["outgoingStackForwarding"] == candidates[0]["wrapper"]["outgoingStackForwarding"] for c in candidates)
     slot_rvas = [c["runtimeFunctionPointerSlot"]["targetRva"] for c in candidates]
     return {
-        "status": "two_abi_compatible_candidates_static_non_discriminating",
+        "status": "abi_shape_filter_incomplete_no_semantic_survivor",
         "parameterContract": {
             "methodIndex": 385317,
             "method": "Invoke",
@@ -842,6 +867,7 @@ def _collider_end_candidate_audit(pe: dict[str, Any], rows: list[dict[str, Any]]
         "provenance": {"solver": solver_provenance, "jobLayout": job_provenance},
         "comparison": {
             "candidateCount": len(candidates),
+            "semanticCompatibleCandidateCount": 0,
             "sameWrapperCfg": all(c["wrapper"]["branchCount"] == candidates[0]["wrapper"]["branchCount"] and c["wrapper"]["indirectCall"]["kind"] == candidates[0]["wrapper"]["indirectCall"]["kind"] for c in candidates),
             "sameParameterForwarding": wrapper_forwarding_equal and stack_forwarding_equal,
             "sameNativeArrayParameterOrder": all(c["wrapper"]["decodedForwardingParameterNames"] == [field.get("name") for field in job_fields] for c in candidates),
@@ -851,11 +877,11 @@ def _collider_end_candidate_audit(pe: dict[str, Any], rows: list[dict[str, Any]]
             "wrapperSlotsDistinct": len(set(slot_rvas)) > 1,
             "runtimeSelectedPointerObserved": False,
             "externalInitializerRequiresRuntimeCallback": any(bool(c["runtimeFunctionPointerSlot"]["initializers"].get("externals")) for c in candidates),
-            "requiredNextEvidence": "runtime GetProcAddress/resolver callback trace for this exact lib_burst_generated.dll HMODULE and EndSimulationStep wrapper caller window",
+            "requiredNextEvidence": "runtime GetProcAddress/resolver callback trace for this exact lib_burst_generated.dll HMODULE and EndSimulationStep wrapper caller window; the current ABI-shape filter has no semantic survivor",
         },
         "candidates": candidates,
         "nonClaims": [
-            "The two candidate hashes are not assigned to EndSimulationStepRangeKernel by this static audit.",
+            "Neither retained ABI-shape candidate is compatible with EndSimulationStepRangeKernel semantics; the static filter is incomplete.",
             "Resolver/static initializer slot writes do not prove which returned pointer was selected or called at runtime.",
             "Managed now/old position and rotation writebacks do not distinguish a wrapper that contains no job-field accesses.",
         ],
@@ -876,12 +902,19 @@ def _target_candidates(pe: dict[str, Any], rows: list[dict[str, Any]], gate: dic
     end_preserved = [row for row in end_all if not row["incomingGprClobbers"]]
     def brief(row: dict[str, Any]) -> dict[str, Any]:
         return {key: row[key] for key in ("hash", "rva", "spanBytes", "bodyBytes", "bodySha256", "stackWriteOffsets", "stackWriteWidths", "incomingGprClobbers")}
+    end_audit = _collider_end_candidate_audit(pe, rows, gate)
     return {
         "simulationStartRange": {
             "managedMethodIndex": 385542,
             "directInvokeMethodIndex": 385570,
             "directInvokeVa": "0x1867775fc",
-            "parameterContract": {"parameterCount": 29, "leadingSingleCount": 5, "nativeArrayCount": 24, "lastParameter": "lengthPtr NativeArray<int>"},
+            "parameterContract": {
+                "parameterCount": 29, "leadingSingleCount": 5,
+                "directInvokeNativeArrayParameterCount": 24,
+                "sourceJobNativeArrayFieldCount": 23,
+                "sourceJobNativeReferenceFieldCount": 1,
+                "lastParameter": "lengthPtr NativeArray<int> (direct ABI) / _indexCount NativeReference<int> (source job)",
+            },
             "status": "unique_abi_candidate_identity_unresolved" if len(sim_qword) == 1 else "bounded_candidate_set",
             "candidates": [brief(row) for row in sim_qword],
             "nearCandidatesExcluded": [brief(row) for row in sim_all if row not in sim_qword],
@@ -901,12 +934,19 @@ def _target_candidates(pe: dict[str, Any], rows: list[dict[str, Any]], gate: dic
             "managedMethodIndex": 385295,
             "directInvokeMethodIndex": 385317,
             "directInvokeVa": "0x18675b0cc",
-            "parameterContract": {"parameterCount": 6, "nativeArrayCount": 6, "stackNativeArrayCount": 2},
-            "status": "bounded_candidate_set" if len(end_preserved) > 1 else "unique_abi_candidate_identity_unresolved",
+            "parameterContract": {
+                "parameterCount": 6,
+                "directInvokeNativeArrayParameterCount": 6,
+                "sourceJobNativeArrayFieldCount": 5,
+                "sourceJobNativeReferenceFieldCount": 1,
+                "stackDirectInvokeNativeArrayParameterCount": 2,
+                "lastParameter": "lengthPtr NativeArray<int> (direct ABI) / _indexCount NativeReference<int> (source job)",
+            },
+            "status": "abi_shape_filter_incomplete_no_semantic_survivor",
             "candidates": [brief(row) for row in end_preserved],
             "nearCandidatesExcluded": [brief(row) for row in end_all if row not in end_preserved],
             "exclusionReason": "09829f... loads the second stack argument into rdx and 1adf3a... into r9, clobbering incoming target GPRs; 89666f... uses displaced stack slots. The surviving r10 forms preserve rcx/rdx/r8/r9.",
-            "candidateAudit": _collider_end_candidate_audit(pe, rows, gate),
+            "candidateAudit": end_audit,
         },
     }
 
@@ -1040,7 +1080,9 @@ def _managed_layout_cross_check() -> dict[str, Any]:
             "parameterCount": 29,
             "leadingScalarCount": 5,
             "containerArgumentCount": 24,
-            "nativeArrayCount": 24,
+            "directInvokeNativeArrayParameterCount": 24,
+            "sourceJobNativeArrayFieldCount": 23,
+            "sourceJobNativeReferenceFieldCount": 1,
             "lengthPointerArgumentIndex": start_length_argument_index,
             "lengthPointerType": "NativeArray<int>",
             "boundary": "Burst direct-invoke ABI spelling; the corresponding managed job field is NativeReference<int>",
@@ -1170,7 +1212,9 @@ def _simulation_semantic_fingerprint(pe: dict[str, Any], rows: list[dict[str, An
         "abi": {
             "leadingScalarCount": 5,
             "leadingScalarRegisters": ["xmm0", "xmm1", "xmm2", "xmm3", "xmm4"],
-            "nativeArrayCount": 24,
+            "directInvokeNativeArrayParameterCount": 24,
+            "sourceJobNativeArrayFieldCount": 23,
+            "sourceJobNativeReferenceFieldCount": 1,
             "stackInputLoads": fingerprint["stackLoads"],
             "stackOutputStores": fingerprint["stackStores"],
             "directCalls": fingerprint["directCalls"],
