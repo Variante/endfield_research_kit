@@ -95,6 +95,18 @@ archetypes remain labeled source kits rather than finished characters.
   no-frame-generation reference, so the open boundary is complete
   presentation/compositing admission, not either authored particle system or
   material.
+- The original `HGRP/PostProcessing/UberPost` serialized Shader now has an
+  exact public-loader transport experiment. Its containing Endfield VFS node
+  can be unpacked and wrapped in a standard uncompressed UnityFS container
+  without changing the CAB bytes; AnimeStudio re-exports the Shader from that
+  wrapper byte-identically. Public Unity loads the AssetBundle, asset names,
+  Shader name, and pass table, but marks the Shader unsupported on both D3D11
+  and D3D12 in the 2022.3.62f3 lab. An isolated 2021.3.34f1 D3D11 project also
+  loads it but marks its sole post pass unsupported; the source CAB records
+  2021.3.34f5 and the retail HyperGryph engine fork. Therefore exact serialized
+  transport is closed, while executable Shader ABI admission remains
+  fail-closed. Do not replace the compatibility post path or use this result to
+  tune the separately authored crystal material.
 - The focused Endminf comparison now anchors its first saved Unity frame
   directly to retail frame 1110, the first visible body frame. The former map
   added the already-advanced 0.0509083-second body phase a second time and put
