@@ -246,9 +246,14 @@ all-character pass:
   sentinels, and keeps `FixedList32Bytes<uint>` plus 32-byte
   `VirtualMeshBoneWeight` elements opaque rather than inventing inner fields.
   The three nested `TransformData` capacity arrays remain separately raw.
-  Raw-byte-field pairing to same-named runtime `VirtualMesh` fields is exact
-  declaration correspondence, but `ShareSerialize`/`ShareDeserialize` body
-  assignment is not yet pinned; do not call it exact serializer behavior.
+  The authoritative codegen pointer table and full-body hashes now pin the
+  unpatched `VirtualMesh.ShareSerialize`/`ShareDeserialize` implementations,
+  their object field offsets, and all 35 bidirectional assignments: 11
+  `ExSimpleNativeArray` rows, 20 raw native-array rows, the split edge hash-map
+  keys/values, and two managed array copies. This is exact unpatched native
+  assignment only. IFix patch IDs `0x555` and `0x60` are present, but their
+  runtime activity and patch targets remain unaudited, so unconditional runtime
+  serializer equivalence is not established.
   Regenerate with
   `python unity_endfield_graph_shader_lab/tools/build_secondary_dynamics_proxy_layout_contract.py`,
   then publish the read-only decode explicitly with

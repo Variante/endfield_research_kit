@@ -55,7 +55,7 @@ LAYOUT_CONTRACT = (
 # never treat a newly substituted installed build as the pinned source used by
 # the reviewed static-input contract.
 EXPECTED_INPUT_SHA256 = "f12ba5d88013a2e28a82c93c1f56c171388cc74d3a3a040f7e33ffb6cf90c197"
-EXPECTED_LAYOUT_SHA256 = "f7558f709c55748f097c25c1b89b510da5df0327e0e383e5dca87870b3a01ce2"
+EXPECTED_LAYOUT_SHA256 = "ec39a2968d5af703c8bf691d77cec653d4a9029fe7bd786fa98b1272eca5e48f"
 EXPECTED_SOURCE_BUILD = {
     "game_assembly": {
         "size": 280436712,
@@ -455,13 +455,18 @@ def _load_proxy_layouts() -> tuple[dict[str, dict[str, Any]], dict[str, Any]]:
             f"expected={EXPECTED_LAYOUT_SHA256} actual={actual_hash}"
         )
     contract = load_json(LAYOUT_CONTRACT)
-    if (contract.get("schema") != "endfield.charinfo.secondary-dynamics-proxy-layout.v1" or
-            contract.get("status") != "proxy_array_element_types_and_strides_closed" or
+    if (contract.get("schema") != "endfield.charinfo.secondary-dynamics-proxy-layout.v2" or
+            contract.get("status") != "proxy_array_layout_and_unpatched_native_assignment_closed" or
             contract.get("serializedSlotCount") != 35 or
             contract.get("secondaryDynamicsVerified") is not False or
             contract.get("solverImplemented") is not False or
             contract.get("retailEquivalent") is not False):
         raise PayloadDecodeError("proxy layout contract boundary drift")
+    methods = contract.get("serializerMethods")
+    if (not isinstance(methods, dict) or set(methods) != {"serialize", "deserialize"} or
+            any((row.get("ifixBoundary") or {}).get("status") !=
+                "patch_activity_and_target_unproven" for row in methods.values())):
+        raise PayloadDecodeError("proxy layout serializer-method boundary drift")
     layouts = contract.get("serializedLayouts")
     if not isinstance(layouts, dict) or len(layouts) != 35:
         raise PayloadDecodeError("proxy layout contract census drift")
@@ -478,6 +483,9 @@ def _load_proxy_layouts() -> tuple[dict[str, dict[str, Any]], dict[str, Any]]:
                     "serialization_data", "raw_byte_list", "element_value_list"
                 }):
             raise PayloadDecodeError(f"invalid proxy layout row: {name}")
+        if ((row.get("mappingEvidence") or {}).get("classification") !=
+                "exact_unpatched_native_assignment"):
+            raise PayloadDecodeError(f"proxy layout assignment boundary drift: {name}")
         if row["decodeKind"] == "opaque":
             if row.get("structFormat") is not None:
                 raise PayloadDecodeError(f"opaque proxy layout has a format: {name}")

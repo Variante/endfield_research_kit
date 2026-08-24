@@ -1,6 +1,6 @@
 {
-  "schema": "endfield.charinfo.secondary-dynamics-proxy-layout.v1",
-  "status": "proxy_array_element_types_and_strides_closed",
+  "schema": "endfield.charinfo.secondary-dynamics-proxy-layout.v2",
+  "status": "proxy_array_layout_and_unpatched_native_assignment_closed",
   "nativeGate": {
     "gameAssembly": {
       "path": "D:/Program Files/Endfield Game/GameAssembly.dll",
@@ -29,6 +29,40 @@
       "fieldCount": 55
     }
   },
+  "serializerMethods": {
+    "serialize": {
+      "methodIndex": 386635,
+      "declaringType": "BeyondDynamicBone.VirtualMesh",
+      "method": "ShareSerialize",
+      "token": "0x06000c14",
+      "va": "0x1866be154",
+      "endVa": "0x1866beb44",
+      "spanBytes": 2544,
+      "bodySha256": "fb553ce505afefa75eb06817016c5f1c244d1af4eb9d4fde8ef7d041f67fd166",
+      "ifixBoundary": {
+        "patchId": "0x555",
+        "patchIdLoadInstructionOffset": 364,
+        "isPatchedCallInstructionOffset": 371,
+        "status": "patch_activity_and_target_unproven"
+      }
+    },
+    "deserialize": {
+      "methodIndex": 386636,
+      "declaringType": "BeyondDynamicBone.VirtualMesh",
+      "method": "ShareDeserialize",
+      "token": "0x06000c15",
+      "va": "0x183e8fe60",
+      "endVa": "0x183e90a00",
+      "spanBytes": 2976,
+      "bodySha256": "283daa75da452fdda631e2608af23a7b1e1f143c9eadb128ae30257ebfa8eeae",
+      "ifixBoundary": {
+        "patchId": "0x60",
+        "patchIdLoadInstructionOffset": 50,
+        "isPatchedCallInstructionOffset": 55,
+        "status": "patch_activity_and_target_unproven"
+      }
+    }
+  },
   "serializedLayouts": {
     "referenceIndices": {
       "declaringType": "BeyondDynamicBone.VirtualMesh+ShareSerializationData",
@@ -39,6 +73,8 @@
       "runtimeField": "referenceIndices",
       "runtimeFieldIndex": 230914,
       "runtimeMetadataTypeIndex": 33192,
+      "runtimeFieldOffset": "0x30",
+      "serializedFieldOffset": "0x20",
       "containerType": "BeyondDynamicBone.ExSimpleNativeArray`1+SerializationData<System.Int32>",
       "elementType": "System.Int32",
       "strideBytes": 4,
@@ -50,7 +86,18 @@
       "decodeKind": "int32",
       "structFormat": "<i",
       "serializedEncoding": "serialization_data",
-      "mappingEvidence": "direct_serialized_element_declaration"
+      "mappingEvidence": {
+        "classification": "exact_unpatched_native_assignment",
+        "operation": "ExSimpleNativeArray.Serialize/Deserialize",
+        "serializeInstructionOffsets": {
+          "runtimeSource": 444,
+          "serializedTarget": 470
+        },
+        "deserializeInstructionOffsets": {
+          "serializedSource": 172,
+          "runtimeTarget": 152
+        }
+      }
     },
     "attributes": {
       "declaringType": "BeyondDynamicBone.VirtualMesh+ShareSerializationData",
@@ -61,6 +108,8 @@
       "runtimeField": "attributes",
       "runtimeFieldIndex": 230915,
       "runtimeMetadataTypeIndex": 33193,
+      "runtimeFieldOffset": "0x38",
+      "serializedFieldOffset": "0x28",
       "containerType": "BeyondDynamicBone.ExSimpleNativeArray`1+SerializationData<BeyondDynamicBone.VertexAttribute>",
       "elementType": "BeyondDynamicBone.VertexAttribute",
       "strideBytes": 1,
@@ -72,7 +121,18 @@
       "decodeKind": "uint8",
       "structFormat": "<B",
       "serializedEncoding": "serialization_data",
-      "mappingEvidence": "direct_serialized_element_declaration"
+      "mappingEvidence": {
+        "classification": "exact_unpatched_native_assignment",
+        "operation": "ExSimpleNativeArray.Serialize/Deserialize",
+        "serializeInstructionOffsets": {
+          "runtimeSource": 483,
+          "serializedTarget": 509
+        },
+        "deserializeInstructionOffsets": {
+          "serializedSource": 201,
+          "runtimeTarget": 181
+        }
+      }
     },
     "localPositions": {
       "declaringType": "BeyondDynamicBone.VirtualMesh+ShareSerializationData",
@@ -83,6 +143,8 @@
       "runtimeField": "localPositions",
       "runtimeFieldIndex": 230916,
       "runtimeMetadataTypeIndex": 33197,
+      "runtimeFieldOffset": "0x40",
+      "serializedFieldOffset": "0x30",
       "containerType": "BeyondDynamicBone.ExSimpleNativeArray`1+SerializationData<Unity.Mathematics.float3>",
       "elementType": "Unity.Mathematics.float3",
       "strideBytes": 12,
@@ -94,7 +156,18 @@
       "decodeKind": "float3",
       "structFormat": "<3f",
       "serializedEncoding": "serialization_data",
-      "mappingEvidence": "direct_serialized_element_declaration"
+      "mappingEvidence": {
+        "classification": "exact_unpatched_native_assignment",
+        "operation": "ExSimpleNativeArray.Serialize/Deserialize",
+        "serializeInstructionOffsets": {
+          "runtimeSource": 522,
+          "serializedTarget": 548
+        },
+        "deserializeInstructionOffsets": {
+          "serializedSource": 230,
+          "runtimeTarget": 210
+        }
+      }
     },
     "localNormals": {
       "declaringType": "BeyondDynamicBone.VirtualMesh+ShareSerializationData",
@@ -105,6 +178,8 @@
       "runtimeField": "localNormals",
       "runtimeFieldIndex": 230917,
       "runtimeMetadataTypeIndex": 33197,
+      "runtimeFieldOffset": "0x48",
+      "serializedFieldOffset": "0x38",
       "containerType": "BeyondDynamicBone.ExSimpleNativeArray`1+SerializationData<Unity.Mathematics.float3>",
       "elementType": "Unity.Mathematics.float3",
       "strideBytes": 12,
@@ -116,7 +191,18 @@
       "decodeKind": "float3",
       "structFormat": "<3f",
       "serializedEncoding": "serialization_data",
-      "mappingEvidence": "direct_serialized_element_declaration"
+      "mappingEvidence": {
+        "classification": "exact_unpatched_native_assignment",
+        "operation": "ExSimpleNativeArray.Serialize/Deserialize",
+        "serializeInstructionOffsets": {
+          "runtimeSource": 561,
+          "serializedTarget": 587
+        },
+        "deserializeInstructionOffsets": {
+          "serializedSource": 259,
+          "runtimeTarget": 239
+        }
+      }
     },
     "localTangents": {
       "declaringType": "BeyondDynamicBone.VirtualMesh+ShareSerializationData",
@@ -127,6 +213,8 @@
       "runtimeField": "localTangents",
       "runtimeFieldIndex": 230918,
       "runtimeMetadataTypeIndex": 33197,
+      "runtimeFieldOffset": "0x50",
+      "serializedFieldOffset": "0x40",
       "containerType": "BeyondDynamicBone.ExSimpleNativeArray`1+SerializationData<Unity.Mathematics.float3>",
       "elementType": "Unity.Mathematics.float3",
       "strideBytes": 12,
@@ -138,7 +226,18 @@
       "decodeKind": "float3",
       "structFormat": "<3f",
       "serializedEncoding": "serialization_data",
-      "mappingEvidence": "direct_serialized_element_declaration"
+      "mappingEvidence": {
+        "classification": "exact_unpatched_native_assignment",
+        "operation": "ExSimpleNativeArray.Serialize/Deserialize",
+        "serializeInstructionOffsets": {
+          "runtimeSource": 600,
+          "serializedTarget": 626
+        },
+        "deserializeInstructionOffsets": {
+          "serializedSource": 288,
+          "runtimeTarget": 268
+        }
+      }
     },
     "uv": {
       "declaringType": "BeyondDynamicBone.VirtualMesh+ShareSerializationData",
@@ -149,6 +248,8 @@
       "runtimeField": "uv",
       "runtimeFieldIndex": 230919,
       "runtimeMetadataTypeIndex": 33195,
+      "runtimeFieldOffset": "0x58",
+      "serializedFieldOffset": "0x48",
       "containerType": "BeyondDynamicBone.ExSimpleNativeArray`1+SerializationData<Unity.Mathematics.float2>",
       "elementType": "Unity.Mathematics.float2",
       "strideBytes": 8,
@@ -160,7 +261,18 @@
       "decodeKind": "float2",
       "structFormat": "<2f",
       "serializedEncoding": "serialization_data",
-      "mappingEvidence": "direct_serialized_element_declaration"
+      "mappingEvidence": {
+        "classification": "exact_unpatched_native_assignment",
+        "operation": "ExSimpleNativeArray.Serialize/Deserialize",
+        "serializeInstructionOffsets": {
+          "runtimeSource": 639,
+          "serializedTarget": 665
+        },
+        "deserializeInstructionOffsets": {
+          "serializedSource": 317,
+          "runtimeTarget": 297
+        }
+      }
     },
     "boneWeights": {
       "declaringType": "BeyondDynamicBone.VirtualMesh+ShareSerializationData",
@@ -171,6 +283,8 @@
       "runtimeField": "boneWeights",
       "runtimeFieldIndex": 230920,
       "runtimeMetadataTypeIndex": 33194,
+      "runtimeFieldOffset": "0x60",
+      "serializedFieldOffset": "0x50",
       "containerType": "BeyondDynamicBone.ExSimpleNativeArray`1+SerializationData<BeyondDynamicBone.VirtualMeshBoneWeight>",
       "elementType": "BeyondDynamicBone.VirtualMeshBoneWeight",
       "strideBytes": 32,
@@ -182,7 +296,18 @@
       "decodeKind": "opaque",
       "structFormat": null,
       "serializedEncoding": "serialization_data",
-      "mappingEvidence": "direct_serialized_element_declaration"
+      "mappingEvidence": {
+        "classification": "exact_unpatched_native_assignment",
+        "operation": "ExSimpleNativeArray.Serialize/Deserialize",
+        "serializeInstructionOffsets": {
+          "runtimeSource": 678,
+          "serializedTarget": 704
+        },
+        "deserializeInstructionOffsets": {
+          "serializedSource": 346,
+          "runtimeTarget": 326
+        }
+      }
     },
     "triangles": {
       "declaringType": "BeyondDynamicBone.VirtualMesh+ShareSerializationData",
@@ -193,6 +318,8 @@
       "runtimeField": "triangles",
       "runtimeFieldIndex": 230921,
       "runtimeMetadataTypeIndex": 33200,
+      "runtimeFieldOffset": "0x68",
+      "serializedFieldOffset": "0x58",
       "containerType": "BeyondDynamicBone.ExSimpleNativeArray`1+SerializationData<Unity.Mathematics.int3>",
       "elementType": "Unity.Mathematics.int3",
       "strideBytes": 12,
@@ -204,7 +331,18 @@
       "decodeKind": "int3",
       "structFormat": "<3i",
       "serializedEncoding": "serialization_data",
-      "mappingEvidence": "direct_serialized_element_declaration"
+      "mappingEvidence": {
+        "classification": "exact_unpatched_native_assignment",
+        "operation": "ExSimpleNativeArray.Serialize/Deserialize",
+        "serializeInstructionOffsets": {
+          "runtimeSource": 717,
+          "serializedTarget": 743
+        },
+        "deserializeInstructionOffsets": {
+          "serializedSource": 375,
+          "runtimeTarget": 355
+        }
+      }
     },
     "lines": {
       "declaringType": "BeyondDynamicBone.VirtualMesh+ShareSerializationData",
@@ -215,6 +353,8 @@
       "runtimeField": "lines",
       "runtimeFieldIndex": 230922,
       "runtimeMetadataTypeIndex": 33199,
+      "runtimeFieldOffset": "0x70",
+      "serializedFieldOffset": "0x60",
       "containerType": "BeyondDynamicBone.ExSimpleNativeArray`1+SerializationData<Unity.Mathematics.int2>",
       "elementType": "Unity.Mathematics.int2",
       "strideBytes": 8,
@@ -226,7 +366,18 @@
       "decodeKind": "int2",
       "structFormat": "<2i",
       "serializedEncoding": "serialization_data",
-      "mappingEvidence": "direct_serialized_element_declaration"
+      "mappingEvidence": {
+        "classification": "exact_unpatched_native_assignment",
+        "operation": "ExSimpleNativeArray.Serialize/Deserialize",
+        "serializeInstructionOffsets": {
+          "runtimeSource": 756,
+          "serializedTarget": 782
+        },
+        "deserializeInstructionOffsets": {
+          "serializedSource": 404,
+          "runtimeTarget": 384
+        }
+      }
     },
     "skinBoneTransformIndices": {
       "declaringType": "BeyondDynamicBone.VirtualMesh+ShareSerializationData",
@@ -237,6 +388,8 @@
       "runtimeField": "skinBoneTransformIndices",
       "runtimeFieldIndex": 230930,
       "runtimeMetadataTypeIndex": 33192,
+      "runtimeFieldOffset": "0x130",
+      "serializedFieldOffset": "0x120",
       "containerType": "BeyondDynamicBone.ExSimpleNativeArray`1+SerializationData<System.Int32>",
       "elementType": "System.Int32",
       "strideBytes": 4,
@@ -248,7 +401,18 @@
       "decodeKind": "int32",
       "structFormat": "<i",
       "serializedEncoding": "serialization_data",
-      "mappingEvidence": "direct_serialized_element_declaration"
+      "mappingEvidence": {
+        "classification": "exact_unpatched_native_assignment",
+        "operation": "ExSimpleNativeArray.Serialize/Deserialize",
+        "serializeInstructionOffsets": {
+          "runtimeSource": 978,
+          "serializedTarget": 1007
+        },
+        "deserializeInstructionOffsets": {
+          "serializedSource": 613,
+          "runtimeTarget": 590
+        }
+      }
     },
     "skinBoneBindPoses": {
       "declaringType": "BeyondDynamicBone.VirtualMesh+ShareSerializationData",
@@ -259,6 +423,8 @@
       "runtimeField": "skinBoneBindPoses",
       "runtimeFieldIndex": 230931,
       "runtimeMetadataTypeIndex": 33198,
+      "runtimeFieldOffset": "0x138",
+      "serializedFieldOffset": "0x128",
       "containerType": "BeyondDynamicBone.ExSimpleNativeArray`1+SerializationData<Unity.Mathematics.float4x4>",
       "elementType": "Unity.Mathematics.float4x4",
       "strideBytes": 64,
@@ -270,7 +436,18 @@
       "decodeKind": "float16",
       "structFormat": "<16f",
       "serializedEncoding": "serialization_data",
-      "mappingEvidence": "direct_serialized_element_declaration"
+      "mappingEvidence": {
+        "classification": "exact_unpatched_native_assignment",
+        "operation": "ExSimpleNativeArray.Serialize/Deserialize",
+        "serializeInstructionOffsets": {
+          "runtimeSource": 1026,
+          "serializedTarget": 1055
+        },
+        "deserializeInstructionOffsets": {
+          "serializedSource": 648,
+          "runtimeTarget": 625
+        }
+      }
     },
     "vertexToTriangles": {
       "declaringType": "BeyondDynamicBone.VirtualMesh+ShareSerializationData",
@@ -281,6 +458,8 @@
       "runtimeField": "vertexToTriangles",
       "runtimeFieldIndex": 230938,
       "runtimeMetadataTypeIndex": 83078,
+      "runtimeFieldOffset": "0x190",
+      "serializedFieldOffset": "0x170",
       "containerType": "Unity.Collections.NativeArray`1<Unity.Collections.FixedList32Bytes`1<System.UInt32>>",
       "elementType": "Unity.Collections.FixedList32Bytes`1<System.UInt32>",
       "strideBytes": 32,
@@ -304,7 +483,18 @@
       "decodeKind": "opaque",
       "structFormat": null,
       "serializedEncoding": "raw_byte_list",
-      "mappingEvidence": "exact_same_name_declaration_correspondence_serializer_body_unproven"
+      "mappingEvidence": {
+        "classification": "exact_unpatched_native_assignment",
+        "operation": "NativeArrayExtensions.MC2ToRawBytes/MC2FromRawBytes",
+        "serializeInstructionOffsets": {
+          "runtimeSource": 1268,
+          "serializedTarget": 1287
+        },
+        "deserializeInstructionOffsets": {
+          "serializedSource": 1054,
+          "runtimeTarget": 1076
+        }
+      }
     },
     "vertexToVertexIndexArray": {
       "declaringType": "BeyondDynamicBone.VirtualMesh+ShareSerializationData",
@@ -315,6 +505,8 @@
       "runtimeField": "vertexToVertexIndexArray",
       "runtimeFieldIndex": 230939,
       "runtimeMetadataTypeIndex": 83269,
+      "runtimeFieldOffset": "0x1a0",
+      "serializedFieldOffset": "0x178",
       "containerType": "Unity.Collections.NativeArray`1<System.UInt32>",
       "elementType": "System.UInt32",
       "strideBytes": 4,
@@ -326,7 +518,18 @@
       "decodeKind": "uint32",
       "structFormat": "<I",
       "serializedEncoding": "raw_byte_list",
-      "mappingEvidence": "exact_same_name_declaration_correspondence_serializer_body_unproven"
+      "mappingEvidence": {
+        "classification": "exact_unpatched_native_assignment",
+        "operation": "NativeArrayExtensions.MC2ToRawBytes/MC2FromRawBytes",
+        "serializeInstructionOffsets": {
+          "runtimeSource": 1306,
+          "serializedTarget": 1325
+        },
+        "deserializeInstructionOffsets": {
+          "serializedSource": 1093,
+          "runtimeTarget": 1115
+        }
+      }
     },
     "vertexToVertexDataArray": {
       "declaringType": "BeyondDynamicBone.VirtualMesh+ShareSerializationData",
@@ -337,6 +540,8 @@
       "runtimeField": "vertexToVertexDataArray",
       "runtimeFieldIndex": 230940,
       "runtimeMetadataTypeIndex": 83266,
+      "runtimeFieldOffset": "0x1b0",
+      "serializedFieldOffset": "0x180",
       "containerType": "Unity.Collections.NativeArray`1<System.UInt16>",
       "elementType": "System.UInt16",
       "strideBytes": 2,
@@ -348,7 +553,18 @@
       "decodeKind": "uint16",
       "structFormat": "<H",
       "serializedEncoding": "raw_byte_list",
-      "mappingEvidence": "exact_same_name_declaration_correspondence_serializer_body_unproven"
+      "mappingEvidence": {
+        "classification": "exact_unpatched_native_assignment",
+        "operation": "NativeArrayExtensions.MC2ToRawBytes/MC2FromRawBytes",
+        "serializeInstructionOffsets": {
+          "runtimeSource": 1344,
+          "serializedTarget": 1363
+        },
+        "deserializeInstructionOffsets": {
+          "serializedSource": 1132,
+          "runtimeTarget": 1154
+        }
+      }
     },
     "edges": {
       "declaringType": "BeyondDynamicBone.VirtualMesh+ShareSerializationData",
@@ -359,6 +575,8 @@
       "runtimeField": "edges",
       "runtimeFieldIndex": 230941,
       "runtimeMetadataTypeIndex": 83311,
+      "runtimeFieldOffset": "0x1c0",
+      "serializedFieldOffset": "0x188",
       "containerType": "Unity.Collections.NativeArray`1<Unity.Mathematics.int2>",
       "elementType": "Unity.Mathematics.int2",
       "strideBytes": 8,
@@ -370,7 +588,18 @@
       "decodeKind": "int2",
       "structFormat": "<2i",
       "serializedEncoding": "raw_byte_list",
-      "mappingEvidence": "exact_same_name_declaration_correspondence_serializer_body_unproven"
+      "mappingEvidence": {
+        "classification": "exact_unpatched_native_assignment",
+        "operation": "NativeArrayExtensions.MC2ToRawBytes/MC2FromRawBytes",
+        "serializeInstructionOffsets": {
+          "runtimeSource": 1382,
+          "serializedTarget": 1401
+        },
+        "deserializeInstructionOffsets": {
+          "serializedSource": 1171,
+          "runtimeTarget": 1193
+        }
+      }
     },
     "edgeFlags": {
       "declaringType": "BeyondDynamicBone.VirtualMesh+ShareSerializationData",
@@ -381,6 +610,8 @@
       "runtimeField": "edgeFlags",
       "runtimeFieldIndex": 230943,
       "runtimeMetadataTypeIndex": 83139,
+      "runtimeFieldOffset": "0x1d0",
+      "serializedFieldOffset": "0x190",
       "containerType": "Unity.Collections.NativeArray`1<BeyondDynamicBone.ExBitFlag8>",
       "elementType": "BeyondDynamicBone.ExBitFlag8",
       "strideBytes": 1,
@@ -392,7 +623,18 @@
       "decodeKind": "uint8",
       "structFormat": "<B",
       "serializedEncoding": "raw_byte_list",
-      "mappingEvidence": "exact_same_name_declaration_correspondence_serializer_body_unproven"
+      "mappingEvidence": {
+        "classification": "exact_unpatched_native_assignment",
+        "operation": "NativeArrayExtensions.MC2ToRawBytes/MC2FromRawBytes",
+        "serializeInstructionOffsets": {
+          "runtimeSource": 1420,
+          "serializedTarget": 1439
+        },
+        "deserializeInstructionOffsets": {
+          "serializedSource": 1210,
+          "runtimeTarget": 1232
+        }
+      }
     },
     "edgeToTrianglesKeys": {
       "declaringType": "BeyondDynamicBone.VirtualMesh+ShareSerializationData",
@@ -403,6 +645,8 @@
       "runtimeField": "edgeToTriangles",
       "runtimeFieldIndex": 230944,
       "runtimeMetadataTypeIndex": 83598,
+      "runtimeFieldOffset": "0x1e0",
+      "serializedFieldOffset": "0x198",
       "containerType": "Unity.Mathematics.int2[]",
       "elementType": "Unity.Mathematics.int2",
       "strideBytes": 8,
@@ -414,7 +658,18 @@
       "decodeKind": "int2",
       "structFormat": "<2i",
       "serializedEncoding": "element_value_list",
-      "mappingEvidence": "direct_serialized_element_declaration"
+      "mappingEvidence": {
+        "classification": "exact_unpatched_native_assignment",
+        "operation": "NativeMultiHashMapExtensions.MC2Serialize/MC2Deserialize",
+        "serializeInstructionOffsets": {
+          "runtimeSource": 1458,
+          "serializedTarget": 1487
+        },
+        "deserializeInstructionOffsets": {
+          "serializedSource": 1249,
+          "runtimeTarget": 1269
+        }
+      }
     },
     "edgeToTrianglesValues": {
       "declaringType": "BeyondDynamicBone.VirtualMesh+ShareSerializationData",
@@ -425,6 +680,8 @@
       "runtimeField": "edgeToTriangles",
       "runtimeFieldIndex": 230944,
       "runtimeMetadataTypeIndex": 83598,
+      "runtimeFieldOffset": "0x1e0",
+      "serializedFieldOffset": "0x1a0",
       "containerType": "System.UInt16[]",
       "elementType": "System.UInt16",
       "strideBytes": 2,
@@ -436,7 +693,18 @@
       "decodeKind": "uint16",
       "structFormat": "<H",
       "serializedEncoding": "element_value_list",
-      "mappingEvidence": "direct_serialized_element_declaration"
+      "mappingEvidence": {
+        "classification": "exact_unpatched_native_assignment",
+        "operation": "NativeMultiHashMapExtensions.MC2Serialize/MC2Deserialize",
+        "serializeInstructionOffsets": {
+          "runtimeSource": 1458,
+          "serializedTarget": 1511
+        },
+        "deserializeInstructionOffsets": {
+          "serializedSource": 1242,
+          "runtimeTarget": 1269
+        }
+      }
     },
     "vertexBindPosePositions": {
       "declaringType": "BeyondDynamicBone.VirtualMesh+ShareSerializationData",
@@ -447,6 +715,8 @@
       "runtimeField": "vertexBindPosePositions",
       "runtimeFieldIndex": 230945,
       "runtimeMetadataTypeIndex": 83304,
+      "runtimeFieldOffset": "0x1f0",
+      "serializedFieldOffset": "0x1a8",
       "containerType": "Unity.Collections.NativeArray`1<Unity.Mathematics.float3>",
       "elementType": "Unity.Mathematics.float3",
       "strideBytes": 12,
@@ -458,7 +728,18 @@
       "decodeKind": "float3",
       "structFormat": "<3f",
       "serializedEncoding": "raw_byte_list",
-      "mappingEvidence": "exact_same_name_declaration_correspondence_serializer_body_unproven"
+      "mappingEvidence": {
+        "classification": "exact_unpatched_native_assignment",
+        "operation": "NativeArrayExtensions.MC2ToRawBytes/MC2FromRawBytes",
+        "serializeInstructionOffsets": {
+          "runtimeSource": 1530,
+          "serializedTarget": 1549
+        },
+        "deserializeInstructionOffsets": {
+          "serializedSource": 1286,
+          "runtimeTarget": 1308
+        }
+      }
     },
     "vertexBindPoseRotations": {
       "declaringType": "BeyondDynamicBone.VirtualMesh+ShareSerializationData",
@@ -469,6 +750,8 @@
       "runtimeField": "vertexBindPoseRotations",
       "runtimeFieldIndex": 230946,
       "runtimeMetadataTypeIndex": 83315,
+      "runtimeFieldOffset": "0x200",
+      "serializedFieldOffset": "0x1b0",
       "containerType": "Unity.Collections.NativeArray`1<Unity.Mathematics.quaternion>",
       "elementType": "Unity.Mathematics.quaternion",
       "strideBytes": 16,
@@ -480,7 +763,18 @@
       "decodeKind": "float4",
       "structFormat": "<4f",
       "serializedEncoding": "raw_byte_list",
-      "mappingEvidence": "exact_same_name_declaration_correspondence_serializer_body_unproven"
+      "mappingEvidence": {
+        "classification": "exact_unpatched_native_assignment",
+        "operation": "NativeArrayExtensions.MC2ToRawBytes/MC2FromRawBytes",
+        "serializeInstructionOffsets": {
+          "runtimeSource": 1568,
+          "serializedTarget": 1587
+        },
+        "deserializeInstructionOffsets": {
+          "serializedSource": 1325,
+          "runtimeTarget": 1347
+        }
+      }
     },
     "vertexToTransformRotations": {
       "declaringType": "BeyondDynamicBone.VirtualMesh+ShareSerializationData",
@@ -491,6 +785,8 @@
       "runtimeField": "vertexToTransformRotations",
       "runtimeFieldIndex": 230947,
       "runtimeMetadataTypeIndex": 83315,
+      "runtimeFieldOffset": "0x210",
+      "serializedFieldOffset": "0x1b8",
       "containerType": "Unity.Collections.NativeArray`1<Unity.Mathematics.quaternion>",
       "elementType": "Unity.Mathematics.quaternion",
       "strideBytes": 16,
@@ -502,7 +798,18 @@
       "decodeKind": "float4",
       "structFormat": "<4f",
       "serializedEncoding": "raw_byte_list",
-      "mappingEvidence": "exact_same_name_declaration_correspondence_serializer_body_unproven"
+      "mappingEvidence": {
+        "classification": "exact_unpatched_native_assignment",
+        "operation": "NativeArrayExtensions.MC2ToRawBytes/MC2FromRawBytes",
+        "serializeInstructionOffsets": {
+          "runtimeSource": 1606,
+          "serializedTarget": 1625
+        },
+        "deserializeInstructionOffsets": {
+          "serializedSource": 1364,
+          "runtimeTarget": 1386
+        }
+      }
     },
     "vertexDepths": {
       "declaringType": "BeyondDynamicBone.VirtualMesh+ShareSerializationData",
@@ -513,6 +820,8 @@
       "runtimeField": "vertexDepths",
       "runtimeFieldIndex": 230948,
       "runtimeMetadataTypeIndex": 83240,
+      "runtimeFieldOffset": "0x220",
+      "serializedFieldOffset": "0x1c0",
       "containerType": "Unity.Collections.NativeArray`1<System.Single>",
       "elementType": "System.Single",
       "strideBytes": 4,
@@ -524,7 +833,18 @@
       "decodeKind": "float32",
       "structFormat": "<f",
       "serializedEncoding": "raw_byte_list",
-      "mappingEvidence": "exact_same_name_declaration_correspondence_serializer_body_unproven"
+      "mappingEvidence": {
+        "classification": "exact_unpatched_native_assignment",
+        "operation": "NativeArrayExtensions.MC2ToRawBytes/MC2FromRawBytes",
+        "serializeInstructionOffsets": {
+          "runtimeSource": 1644,
+          "serializedTarget": 1663
+        },
+        "deserializeInstructionOffsets": {
+          "serializedSource": 1403,
+          "runtimeTarget": 1425
+        }
+      }
     },
     "vertexRootIndices": {
       "declaringType": "BeyondDynamicBone.VirtualMesh+ShareSerializationData",
@@ -535,6 +855,8 @@
       "runtimeField": "vertexRootIndices",
       "runtimeFieldIndex": 230949,
       "runtimeMetadataTypeIndex": 83201,
+      "runtimeFieldOffset": "0x230",
+      "serializedFieldOffset": "0x1c8",
       "containerType": "Unity.Collections.NativeArray`1<System.Int32>",
       "elementType": "System.Int32",
       "strideBytes": 4,
@@ -546,7 +868,18 @@
       "decodeKind": "int32",
       "structFormat": "<i",
       "serializedEncoding": "raw_byte_list",
-      "mappingEvidence": "exact_same_name_declaration_correspondence_serializer_body_unproven"
+      "mappingEvidence": {
+        "classification": "exact_unpatched_native_assignment",
+        "operation": "NativeArrayExtensions.MC2ToRawBytes/MC2FromRawBytes",
+        "serializeInstructionOffsets": {
+          "runtimeSource": 1682,
+          "serializedTarget": 1701
+        },
+        "deserializeInstructionOffsets": {
+          "serializedSource": 1442,
+          "runtimeTarget": 1464
+        }
+      }
     },
     "vertexParentIndices": {
       "declaringType": "BeyondDynamicBone.VirtualMesh+ShareSerializationData",
@@ -557,6 +890,8 @@
       "runtimeField": "vertexParentIndices",
       "runtimeFieldIndex": 230950,
       "runtimeMetadataTypeIndex": 83201,
+      "runtimeFieldOffset": "0x240",
+      "serializedFieldOffset": "0x1d0",
       "containerType": "Unity.Collections.NativeArray`1<System.Int32>",
       "elementType": "System.Int32",
       "strideBytes": 4,
@@ -568,7 +903,18 @@
       "decodeKind": "int32",
       "structFormat": "<i",
       "serializedEncoding": "raw_byte_list",
-      "mappingEvidence": "exact_same_name_declaration_correspondence_serializer_body_unproven"
+      "mappingEvidence": {
+        "classification": "exact_unpatched_native_assignment",
+        "operation": "NativeArrayExtensions.MC2ToRawBytes/MC2FromRawBytes",
+        "serializeInstructionOffsets": {
+          "runtimeSource": 1720,
+          "serializedTarget": 1739
+        },
+        "deserializeInstructionOffsets": {
+          "serializedSource": 1481,
+          "runtimeTarget": 1503
+        }
+      }
     },
     "vertexChildIndexArray": {
       "declaringType": "BeyondDynamicBone.VirtualMesh+ShareSerializationData",
@@ -579,6 +925,8 @@
       "runtimeField": "vertexChildIndexArray",
       "runtimeFieldIndex": 230951,
       "runtimeMetadataTypeIndex": 83269,
+      "runtimeFieldOffset": "0x250",
+      "serializedFieldOffset": "0x1d8",
       "containerType": "Unity.Collections.NativeArray`1<System.UInt32>",
       "elementType": "System.UInt32",
       "strideBytes": 4,
@@ -590,7 +938,18 @@
       "decodeKind": "uint32",
       "structFormat": "<I",
       "serializedEncoding": "raw_byte_list",
-      "mappingEvidence": "exact_same_name_declaration_correspondence_serializer_body_unproven"
+      "mappingEvidence": {
+        "classification": "exact_unpatched_native_assignment",
+        "operation": "NativeArrayExtensions.MC2ToRawBytes/MC2FromRawBytes",
+        "serializeInstructionOffsets": {
+          "runtimeSource": 1758,
+          "serializedTarget": 1777
+        },
+        "deserializeInstructionOffsets": {
+          "serializedSource": 1520,
+          "runtimeTarget": 1542
+        }
+      }
     },
     "vertexChildDataArray": {
       "declaringType": "BeyondDynamicBone.VirtualMesh+ShareSerializationData",
@@ -601,6 +960,8 @@
       "runtimeField": "vertexChildDataArray",
       "runtimeFieldIndex": 230952,
       "runtimeMetadataTypeIndex": 83266,
+      "runtimeFieldOffset": "0x260",
+      "serializedFieldOffset": "0x1e0",
       "containerType": "Unity.Collections.NativeArray`1<System.UInt16>",
       "elementType": "System.UInt16",
       "strideBytes": 2,
@@ -612,7 +973,18 @@
       "decodeKind": "uint16",
       "structFormat": "<H",
       "serializedEncoding": "raw_byte_list",
-      "mappingEvidence": "exact_same_name_declaration_correspondence_serializer_body_unproven"
+      "mappingEvidence": {
+        "classification": "exact_unpatched_native_assignment",
+        "operation": "NativeArrayExtensions.MC2ToRawBytes/MC2FromRawBytes",
+        "serializeInstructionOffsets": {
+          "runtimeSource": 1796,
+          "serializedTarget": 1815
+        },
+        "deserializeInstructionOffsets": {
+          "serializedSource": 1559,
+          "runtimeTarget": 1581
+        }
+      }
     },
     "vertexLocalPositions": {
       "declaringType": "BeyondDynamicBone.VirtualMesh+ShareSerializationData",
@@ -623,6 +995,8 @@
       "runtimeField": "vertexLocalPositions",
       "runtimeFieldIndex": 230953,
       "runtimeMetadataTypeIndex": 83304,
+      "runtimeFieldOffset": "0x270",
+      "serializedFieldOffset": "0x1e8",
       "containerType": "Unity.Collections.NativeArray`1<Unity.Mathematics.float3>",
       "elementType": "Unity.Mathematics.float3",
       "strideBytes": 12,
@@ -634,7 +1008,18 @@
       "decodeKind": "float3",
       "structFormat": "<3f",
       "serializedEncoding": "raw_byte_list",
-      "mappingEvidence": "exact_same_name_declaration_correspondence_serializer_body_unproven"
+      "mappingEvidence": {
+        "classification": "exact_unpatched_native_assignment",
+        "operation": "NativeArrayExtensions.MC2ToRawBytes/MC2FromRawBytes",
+        "serializeInstructionOffsets": {
+          "runtimeSource": 1834,
+          "serializedTarget": 1853
+        },
+        "deserializeInstructionOffsets": {
+          "serializedSource": 1598,
+          "runtimeTarget": 1620
+        }
+      }
     },
     "vertexLocalRotations": {
       "declaringType": "BeyondDynamicBone.VirtualMesh+ShareSerializationData",
@@ -645,6 +1030,8 @@
       "runtimeField": "vertexLocalRotations",
       "runtimeFieldIndex": 230954,
       "runtimeMetadataTypeIndex": 83315,
+      "runtimeFieldOffset": "0x280",
+      "serializedFieldOffset": "0x1f0",
       "containerType": "Unity.Collections.NativeArray`1<Unity.Mathematics.quaternion>",
       "elementType": "Unity.Mathematics.quaternion",
       "strideBytes": 16,
@@ -656,7 +1043,18 @@
       "decodeKind": "float4",
       "structFormat": "<4f",
       "serializedEncoding": "raw_byte_list",
-      "mappingEvidence": "exact_same_name_declaration_correspondence_serializer_body_unproven"
+      "mappingEvidence": {
+        "classification": "exact_unpatched_native_assignment",
+        "operation": "NativeArrayExtensions.MC2ToRawBytes/MC2FromRawBytes",
+        "serializeInstructionOffsets": {
+          "runtimeSource": 1872,
+          "serializedTarget": 1891
+        },
+        "deserializeInstructionOffsets": {
+          "serializedSource": 1637,
+          "runtimeTarget": 1659
+        }
+      }
     },
     "normalAdjustmentRotations": {
       "declaringType": "BeyondDynamicBone.VirtualMesh+ShareSerializationData",
@@ -667,6 +1065,8 @@
       "runtimeField": "normalAdjustmentRotations",
       "runtimeFieldIndex": 230955,
       "runtimeMetadataTypeIndex": 83315,
+      "runtimeFieldOffset": "0x290",
+      "serializedFieldOffset": "0x1f8",
       "containerType": "Unity.Collections.NativeArray`1<Unity.Mathematics.quaternion>",
       "elementType": "Unity.Mathematics.quaternion",
       "strideBytes": 16,
@@ -678,7 +1078,18 @@
       "decodeKind": "float4",
       "structFormat": "<4f",
       "serializedEncoding": "raw_byte_list",
-      "mappingEvidence": "exact_same_name_declaration_correspondence_serializer_body_unproven"
+      "mappingEvidence": {
+        "classification": "exact_unpatched_native_assignment",
+        "operation": "NativeArrayExtensions.MC2ToRawBytes/MC2FromRawBytes",
+        "serializeInstructionOffsets": {
+          "runtimeSource": 1910,
+          "serializedTarget": 1929
+        },
+        "deserializeInstructionOffsets": {
+          "serializedSource": 1676,
+          "runtimeTarget": 1698
+        }
+      }
     },
     "baseLineFlags": {
       "declaringType": "BeyondDynamicBone.VirtualMesh+ShareSerializationData",
@@ -689,6 +1100,8 @@
       "runtimeField": "baseLineFlags",
       "runtimeFieldIndex": 230957,
       "runtimeMetadataTypeIndex": 83139,
+      "runtimeFieldOffset": "0x2a0",
+      "serializedFieldOffset": "0x200",
       "containerType": "Unity.Collections.NativeArray`1<BeyondDynamicBone.ExBitFlag8>",
       "elementType": "BeyondDynamicBone.ExBitFlag8",
       "strideBytes": 1,
@@ -700,7 +1113,18 @@
       "decodeKind": "uint8",
       "structFormat": "<B",
       "serializedEncoding": "raw_byte_list",
-      "mappingEvidence": "exact_same_name_declaration_correspondence_serializer_body_unproven"
+      "mappingEvidence": {
+        "classification": "exact_unpatched_native_assignment",
+        "operation": "NativeArrayExtensions.MC2ToRawBytes/MC2FromRawBytes",
+        "serializeInstructionOffsets": {
+          "runtimeSource": 1948,
+          "serializedTarget": 1967
+        },
+        "deserializeInstructionOffsets": {
+          "serializedSource": 1715,
+          "runtimeTarget": 1737
+        }
+      }
     },
     "baseLineStartDataIndices": {
       "declaringType": "BeyondDynamicBone.VirtualMesh+ShareSerializationData",
@@ -711,6 +1135,8 @@
       "runtimeField": "baseLineStartDataIndices",
       "runtimeFieldIndex": 230958,
       "runtimeMetadataTypeIndex": 83266,
+      "runtimeFieldOffset": "0x2b0",
+      "serializedFieldOffset": "0x208",
       "containerType": "Unity.Collections.NativeArray`1<System.UInt16>",
       "elementType": "System.UInt16",
       "strideBytes": 2,
@@ -722,7 +1148,18 @@
       "decodeKind": "uint16",
       "structFormat": "<H",
       "serializedEncoding": "raw_byte_list",
-      "mappingEvidence": "exact_same_name_declaration_correspondence_serializer_body_unproven"
+      "mappingEvidence": {
+        "classification": "exact_unpatched_native_assignment",
+        "operation": "NativeArrayExtensions.MC2ToRawBytes/MC2FromRawBytes",
+        "serializeInstructionOffsets": {
+          "runtimeSource": 1986,
+          "serializedTarget": 2005
+        },
+        "deserializeInstructionOffsets": {
+          "serializedSource": 1754,
+          "runtimeTarget": 1776
+        }
+      }
     },
     "baseLineDataCounts": {
       "declaringType": "BeyondDynamicBone.VirtualMesh+ShareSerializationData",
@@ -733,6 +1170,8 @@
       "runtimeField": "baseLineDataCounts",
       "runtimeFieldIndex": 230959,
       "runtimeMetadataTypeIndex": 83266,
+      "runtimeFieldOffset": "0x2c0",
+      "serializedFieldOffset": "0x210",
       "containerType": "Unity.Collections.NativeArray`1<System.UInt16>",
       "elementType": "System.UInt16",
       "strideBytes": 2,
@@ -744,7 +1183,18 @@
       "decodeKind": "uint16",
       "structFormat": "<H",
       "serializedEncoding": "raw_byte_list",
-      "mappingEvidence": "exact_same_name_declaration_correspondence_serializer_body_unproven"
+      "mappingEvidence": {
+        "classification": "exact_unpatched_native_assignment",
+        "operation": "NativeArrayExtensions.MC2ToRawBytes/MC2FromRawBytes",
+        "serializeInstructionOffsets": {
+          "runtimeSource": 2024,
+          "serializedTarget": 2043
+        },
+        "deserializeInstructionOffsets": {
+          "serializedSource": 1793,
+          "runtimeTarget": 1815
+        }
+      }
     },
     "baseLineData": {
       "declaringType": "BeyondDynamicBone.VirtualMesh+ShareSerializationData",
@@ -755,6 +1205,8 @@
       "runtimeField": "baseLineData",
       "runtimeFieldIndex": 230960,
       "runtimeMetadataTypeIndex": 83266,
+      "runtimeFieldOffset": "0x2d0",
+      "serializedFieldOffset": "0x218",
       "containerType": "Unity.Collections.NativeArray`1<System.UInt16>",
       "elementType": "System.UInt16",
       "strideBytes": 2,
@@ -766,7 +1218,18 @@
       "decodeKind": "uint16",
       "structFormat": "<H",
       "serializedEncoding": "raw_byte_list",
-      "mappingEvidence": "exact_same_name_declaration_correspondence_serializer_body_unproven"
+      "mappingEvidence": {
+        "classification": "exact_unpatched_native_assignment",
+        "operation": "NativeArrayExtensions.MC2ToRawBytes/MC2FromRawBytes",
+        "serializeInstructionOffsets": {
+          "runtimeSource": 2062,
+          "serializedTarget": 2081
+        },
+        "deserializeInstructionOffsets": {
+          "serializedSource": 1832,
+          "runtimeTarget": 1854
+        }
+      }
     },
     "customSkinningBoneIndices": {
       "declaringType": "BeyondDynamicBone.VirtualMesh+ShareSerializationData",
@@ -777,6 +1240,8 @@
       "runtimeField": "customSkinningBoneIndices",
       "runtimeFieldIndex": 230961,
       "runtimeMetadataTypeIndex": 118931,
+      "runtimeFieldOffset": "0x2e0",
+      "serializedFieldOffset": "0x220",
       "containerType": "System.Int32[]",
       "elementType": "System.Int32",
       "strideBytes": 4,
@@ -788,7 +1253,18 @@
       "decodeKind": "int32",
       "structFormat": "<i",
       "serializedEncoding": "element_value_list",
-      "mappingEvidence": "direct_serialized_element_declaration"
+      "mappingEvidence": {
+        "classification": "exact_unpatched_native_assignment",
+        "operation": "DataUtility.ArrayCopy",
+        "serializeInstructionOffsets": {
+          "runtimeSource": 2114,
+          "serializedTarget": 2100
+        },
+        "deserializeInstructionOffsets": {
+          "serializedSource": 1875,
+          "runtimeTarget": 1861
+        }
+      }
     },
     "centerFixedList": {
       "declaringType": "BeyondDynamicBone.VirtualMesh+ShareSerializationData",
@@ -799,6 +1275,8 @@
       "runtimeField": "centerFixedList",
       "runtimeFieldIndex": 230962,
       "runtimeMetadataTypeIndex": 119545,
+      "runtimeFieldOffset": "0x2e8",
+      "serializedFieldOffset": "0x228",
       "containerType": "System.UInt16[]",
       "elementType": "System.UInt16",
       "strideBytes": 2,
@@ -810,12 +1288,23 @@
       "decodeKind": "uint16",
       "structFormat": "<H",
       "serializedEncoding": "element_value_list",
-      "mappingEvidence": "direct_serialized_element_declaration"
+      "mappingEvidence": {
+        "classification": "exact_unpatched_native_assignment",
+        "operation": "DataUtility.ArrayCopy",
+        "serializeInstructionOffsets": {
+          "runtimeSource": 2140,
+          "serializedTarget": 2126
+        },
+        "deserializeInstructionOffsets": {
+          "serializedSource": 1901,
+          "runtimeTarget": 1887
+        }
+      }
     }
   },
   "serializedSlotCount": 35,
   "secondaryDynamicsVerified": false,
   "solverImplemented": false,
   "retailEquivalent": false,
-  "boundary": "Exact serialized declarations and element strides. Same-name byte[] to runtime-field correspondence is structural until ShareSerialize/ShareDeserialize bodies are pinned; no solver numerics, scheduling, Burst export mapping, or Transform writeback is claimed."
+  "boundary": "Exact declarations, element strides, object field offsets, and bidirectional assignments in the hash-pinned unpatched ShareSerialize/ShareDeserialize bodies. IFix patch IDs 0x555 and 0x60 have not been proven inactive or audited, so unconditional runtime equivalence is not claimed. No solver numerics, scheduling, Burst export mapping, or Transform writeback is claimed."
 }
