@@ -1,0 +1,936 @@
+{
+  "schema": "endfield.endminf-m27-suikuai-source-contract.v1",
+  "status": "source_closed_visual_ownership_unresolved",
+  "scope": "P_fxui_endminm003_overview_02/all/suikuai (2) only",
+  "assetMap": {
+    "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json",
+    "sha256": "148415835f911fc94a634925c50c2d8b9a1cd4f5f141412f956cbb143805b6f3",
+    "exactUniqueRows": [
+      {
+        "Name": "P_fxui_endminm003_overview_02",
+        "Container": "assets/beyond/dynamicassets/gameplay/effects/prefabs/p_fxui_endminm003_overview_02.prefab",
+        "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+        "PathID": 4503240569034685938,
+        "Type": "Animator",
+        "Hash": "4e9da3a832cb3da",
+        "Offset": 373845082
+      },
+      {
+        "Name": "M_fx_endminm_gfx_27",
+        "Container": "assets/beyond/arts/effects/commonassets/arts/m_material/m_fx_endminm_gfx_27.mat",
+        "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+        "PathID": -6543263480174539080,
+        "Type": "Material",
+        "Hash": "dbd79b4c057101a2",
+        "Offset": 540787460
+      },
+      {
+        "Name": "T_fx_sourcerocks+2_D",
+        "Container": "assets/beyond/arts/effects/commonassets/arts/t_texture/object/meshtex/t_fx_sourcerocks+2_d.tga",
+        "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\967825B10DBE250981C6AEA5FB9691B4.chk",
+        "PathID": 5406992154111209049,
+        "Type": "Texture2D",
+        "Hash": "4ee72f8501a3baa3",
+        "Offset": 81202418
+      },
+      {
+        "Name": "T_fx_sourcerocks+3_N",
+        "Container": "assets/beyond/arts/effects/commonassets/arts/t_texture/object/meshtex/t_fx_sourcerocks+3_n.tga",
+        "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\CE9C11821BB0D5D69E4AA80EB5F33989.chk",
+        "PathID": 5597062348073817015,
+        "Type": "Texture2D",
+        "Hash": "3f08fb2a1f925ccf",
+        "Offset": 355691189
+      },
+      {
+        "Name": "T_fx_sourcerocks+1_N",
+        "Container": "assets/beyond/arts/effects/commonassets/arts/t_texture/object/meshtex/t_fx_sourcerocks+1_n.tga",
+        "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\967825B10DBE250981C6AEA5FB9691B4.chk",
+        "PathID": -8583694459516385401,
+        "Type": "Texture2D",
+        "Hash": "bf4152785bc36853",
+        "Offset": 613212742
+      },
+      {
+        "Name": "T_fx_flow_04_02_M",
+        "Container": "assets/beyond/arts/effects/commonassets/arts/m_material/m_fx_endminm_gfx_27.mat",
+        "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+        "PathID": -2770956563882859728,
+        "Type": "Texture2D",
+        "Hash": "ae79f95a9a3a9ae1",
+        "Offset": 448727288
+      },
+      {
+        "Name": "S_rock_small_1_017_02_lod2",
+        "Container": "assets/beyond/arts/effects/commonassets/arts/s_model/s_fx_stone_300.fbx",
+        "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+        "PathID": -8157825361227167527,
+        "Type": "Mesh",
+        "Hash": "eb09b25a6c2dea5b",
+        "Offset": 247138057
+      }
+    ]
+  },
+  "targetedExtraction": {
+    "filter": {
+      "path": "scratch/animestudio/endminf_m27_source_contract/filter_data.json",
+      "sha256": "1acf3f309b5e61f60225b8eea368da7f942776574822dbe01fb0d85c6b5a0300"
+    },
+    "selectedIdentityCount": 7,
+    "prefabExportedObjects": 7,
+    "assetExportedObjects": {
+      "material": 1,
+      "textures": 4,
+      "meshes": 1
+    },
+    "objectIndex": {
+      "path": "scratch/animestudio/endminf_m27_source_contract/prefab_objects.jsonl",
+      "sha256": "91b439c102208eb53eb564016c423b9bdebdfd3b399b1b0a8736dd3f12524481",
+      "summary": {
+        "recordType": "summary",
+        "schemaVersion": 1,
+        "complete": true,
+        "counts": {
+          "objects": 3,
+          "schemas": 3,
+          "monoScripts": 0,
+          "scalars": 94,
+          "pptrs": 63,
+          "objectsWithTruncatedScalars": 0,
+          "errors": 0,
+          "suppressedErrors": 0
+        },
+        "errors": []
+      }
+    },
+    "evidenceBoundary": "direct AnimeStudio --filter_data exports from exact AssetMap source/offset rows; no broad source scan or name-only ownership"
+  },
+  "particleSystem": {
+    "path": "scratch/animestudio/endminf_m27_source_contract/prefab_json/ParticleSystem/ParticleSystem#19_pD0F8EAE40ECBBDF2.json",
+    "artifactSha256": "53bc4e0ec5c4d0f743ce90dfc9951c74816ea7028dff312d9696798ab2b085bf",
+    "pathId": -3388700454374621710,
+    "rawDataLength": 7692,
+    "rawDataSha256": "8954241756066faa9de14c4d73da702c7adf07037346fd743ce5f6625730efd5",
+    "sourceFile": "CAB-e27c3ded749317d6e87d346c3cd1e4c3",
+    "sourceOffset": 373845082,
+    "durationSeconds": 1.0,
+    "simulationSpeed": 1.0,
+    "simulationSpace": "World",
+    "moveWithTransformSerialized": 0,
+    "looping": false,
+    "playOnAwake": true,
+    "startDelaySeconds": 4.49,
+    "randomSeed": 1370369433,
+    "lifetimeSeconds": [
+      0.1,
+      1.1
+    ],
+    "speed": [
+      2.0,
+      4.0
+    ],
+    "size": [
+      0.01,
+      0.035
+    ],
+    "startColor": {
+      "minMaxState": 2,
+      "minColor": {
+        "r": 0.0,
+        "g": 0.0,
+        "b": 0.0,
+        "a": 0.76862746
+      },
+      "maxColor": {
+        "r": 1.0,
+        "g": 0.5576689,
+        "b": 0.13396227,
+        "a": 1.0
+      },
+      "maxGradient": {
+        "key0": {
+          "r": 1.0,
+          "g": 1.0,
+          "b": 1.0,
+          "a": 1.0
+        },
+        "key1": {
+          "r": 1.0,
+          "g": 1.0,
+          "b": 1.0,
+          "a": 1.0
+        },
+        "key2": {
+          "r": 0.0,
+          "g": 0.0,
+          "b": 0.0,
+          "a": 0.0
+        },
+        "key3": {
+          "r": 0.0,
+          "g": 0.0,
+          "b": 0.0,
+          "a": 0.0
+        },
+        "key4": {
+          "r": 0.0,
+          "g": 0.0,
+          "b": 0.0,
+          "a": 0.0
+        },
+        "key5": {
+          "r": 0.0,
+          "g": 0.0,
+          "b": 0.0,
+          "a": 0.0
+        },
+        "key6": {
+          "r": 0.0,
+          "g": 0.0,
+          "b": 0.0,
+          "a": 0.0
+        },
+        "key7": {
+          "r": 0.0,
+          "g": 0.0,
+          "b": 0.0,
+          "a": 0.0
+        },
+        "ctime0": 0,
+        "ctime1": 65535,
+        "ctime2": 0,
+        "ctime3": 0,
+        "ctime4": 0,
+        "ctime5": 0,
+        "ctime6": 0,
+        "ctime7": 0,
+        "atime0": 0,
+        "atime1": 65535,
+        "atime2": 0,
+        "atime3": 0,
+        "atime4": 0,
+        "atime5": 0,
+        "atime6": 0,
+        "atime7": 0,
+        "m_Mode": 0,
+        "m_NumColorKeys": 2,
+        "m_NumAlphaKeys": 2
+      },
+      "minGradient": {
+        "key0": {
+          "r": 1.0,
+          "g": 1.0,
+          "b": 1.0,
+          "a": 1.0
+        },
+        "key1": {
+          "r": 1.0,
+          "g": 1.0,
+          "b": 1.0,
+          "a": 1.0
+        },
+        "key2": {
+          "r": 0.0,
+          "g": 0.0,
+          "b": 0.0,
+          "a": 0.0
+        },
+        "key3": {
+          "r": 0.0,
+          "g": 0.0,
+          "b": 0.0,
+          "a": 0.0
+        },
+        "key4": {
+          "r": 0.0,
+          "g": 0.0,
+          "b": 0.0,
+          "a": 0.0
+        },
+        "key5": {
+          "r": 0.0,
+          "g": 0.0,
+          "b": 0.0,
+          "a": 0.0
+        },
+        "key6": {
+          "r": 0.0,
+          "g": 0.0,
+          "b": 0.0,
+          "a": 0.0
+        },
+        "key7": {
+          "r": 0.0,
+          "g": 0.0,
+          "b": 0.0,
+          "a": 0.0
+        },
+        "ctime0": 0,
+        "ctime1": 65535,
+        "ctime2": 0,
+        "ctime3": 0,
+        "ctime4": 0,
+        "ctime5": 0,
+        "ctime6": 0,
+        "ctime7": 0,
+        "atime0": 0,
+        "atime1": 65535,
+        "atime2": 0,
+        "atime3": 0,
+        "atime4": 0,
+        "atime5": 0,
+        "atime6": 0,
+        "atime7": 0,
+        "m_Mode": 0,
+        "m_NumColorKeys": 2,
+        "m_NumAlphaKeys": 2
+      }
+    },
+    "burst": {
+      "timeAfterDelaySeconds": 0.0,
+      "count": 15.0,
+      "cycleCount": 1,
+      "repeatInterval": 0.01,
+      "probability": 1.0
+    },
+    "customData": {
+      "enabled": true,
+      "mode0": 1,
+      "componentCount": 4,
+      "xRange": [
+        0.0,
+        1000.0
+      ],
+      "yzw": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    }
+  },
+  "renderer": {
+    "path": "scratch/animestudio/endminf_m27_source_contract/prefab_json/ParticleSystemRenderer/ParticleSystemRenderer#29_p00D29E9B23BDBDF2.json",
+    "artifactSha256": "4047a8fbc2ec4a755c196c20cd973edc0cbc60db156418e090b426bce8951b7f",
+    "pathId": 59284134265994738,
+    "rawDataLength": 376,
+    "rawDataSha256": "9d782b66bb7bf6375ddf80ab9c776c35bb0718af154c41a574b1c29be98aae9c",
+    "sourceEnabled": true,
+    "renderMode": {
+      "serialized": 4,
+      "name": "Mesh"
+    },
+    "meshDistribution": {
+      "serialized": 0,
+      "name": "UniformRandom"
+    },
+    "customVertexStreams": {
+      "serialized": [
+        0,
+        1,
+        3,
+        4,
+        5,
+        34
+      ],
+      "names": [
+        "Position",
+        "Normal",
+        "Color",
+        "UV",
+        "UV2",
+        "Custom1XYZW"
+      ]
+    },
+    "materialPathId": -6543263480174539080,
+    "meshPathId": -8157825361227167527,
+    "meshWeights": [
+      1.0,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "localTransform": {
+      "m_LocalRotation": {
+        "X": -0.7071068,
+        "Y": -0.0,
+        "Z": -0.0,
+        "W": 0.7071068
+      },
+      "m_LocalPosition": {
+        "X": 0.0,
+        "Y": 0.0,
+        "Z": 0.0
+      },
+      "m_LocalScale": {
+        "X": 0.677369,
+        "Y": 0.67736876,
+        "Z": 0.6773689
+      },
+      "m_Children": [],
+      "m_Father": {
+        "m_FileID": 0,
+        "m_PathID": -6040943547072922126,
+        "Name": "",
+        "IsNull": false
+      },
+      "m_GameObject": {
+        "m_FileID": 0,
+        "m_PathID": 9090700144688676338,
+        "Name": "suikuai (2)",
+        "IsNull": false
+      },
+      "Name": ""
+    }
+  },
+  "material": {
+    "path": "scratch/animestudio/endminf_m27_source_contract/fc_json/Material/M_fx_endminm_gfx_27_pA531A88850690EB8.json",
+    "artifactSha256": "a18e7860af2c6a028ffd2018f466ee2681e8bce8a5fe00fa5dffeaec68639b53",
+    "name": "M_fx_endminm_gfx_27",
+    "pathId": -6543263480174539080,
+    "pathIdHex": "A531A88850690EB8",
+    "shader": {
+      "name": "HGRP/LitEffect",
+      "pathId": 6428594484694422749
+    },
+    "validKeywords": [
+      "_PARALLAX_MAP"
+    ],
+    "disabledPasses": [
+      "ForwardOnly",
+      "DepthOnly",
+      "ForwardReflection"
+    ],
+    "renderQueue": 2000,
+    "selectedProperties": {
+      "_EmissiveColor": {
+        "r": 47.937256,
+        "g": 13.552941,
+        "b": 1.7568628,
+        "a": 1.0
+      },
+      "_ParallaxColor": {
+        "r": 964.7226,
+        "g": 330.88165,
+        "b": 85.55083,
+        "a": 1.0
+      },
+      "_ParallaxColorDark": {
+        "r": 0.0,
+        "g": 0.0,
+        "b": 0.0,
+        "a": 1.0
+      },
+      "_ParallaxStrength": 0.096,
+      "_ParallaxTilling": 3.36,
+      "_ParallaxMarchNum": 5.0,
+      "_ParallaxAnimRandom": 1.0,
+      "_ParallaxIgnorePostExposure": 1.0
+    },
+    "textures": [
+      {
+        "property": "_BaseColorMap",
+        "name": "T_fx_sourcerocks+2_D",
+        "pathId": 5406992154111209049,
+        "pathIdHex": "4B097EB7791F6E59",
+        "format": "BC7",
+        "width": 1024,
+        "height": 1024,
+        "mipCount": 11,
+        "colorSpace": 1,
+        "payload": {
+          "path": "scratch/animestudio/endminf_m27_source_contract/967_convert/Texture2D/T_fx_sourcerocks+2_D_p4B097EB7791F6E59.texture2d.bc7",
+          "bytes": 1398128,
+          "sha256": "9f5255c1a12b2a17586362f864097453db9158288dafaf0b234ea81e964e88ba"
+        },
+        "decodedPng": {
+          "path": "scratch/animestudio/endminf_m27_source_contract/967_convert/Texture2D/T_fx_sourcerocks+2_D_p4B097EB7791F6E59.png",
+          "sha256": "60d79e89f47f7e019abf56ac51317e51bed21d2acef059c246e4928f841e1f91"
+        },
+        "exporterLayoutValidated": true,
+        "independentLayout": {
+          "method": "independent 4x4 block-compressed mip chain, 16 bytes per block",
+          "validated": true,
+          "bytes": 1398128,
+          "mips": [
+            {
+              "mip": 0,
+              "width": 1024,
+              "height": 1024,
+              "offset": 0,
+              "byteSize": 1048576
+            },
+            {
+              "mip": 1,
+              "width": 512,
+              "height": 512,
+              "offset": 1048576,
+              "byteSize": 262144
+            },
+            {
+              "mip": 2,
+              "width": 256,
+              "height": 256,
+              "offset": 1310720,
+              "byteSize": 65536
+            },
+            {
+              "mip": 3,
+              "width": 128,
+              "height": 128,
+              "offset": 1376256,
+              "byteSize": 16384
+            },
+            {
+              "mip": 4,
+              "width": 64,
+              "height": 64,
+              "offset": 1392640,
+              "byteSize": 4096
+            },
+            {
+              "mip": 5,
+              "width": 32,
+              "height": 32,
+              "offset": 1396736,
+              "byteSize": 1024
+            },
+            {
+              "mip": 6,
+              "width": 16,
+              "height": 16,
+              "offset": 1397760,
+              "byteSize": 256
+            },
+            {
+              "mip": 7,
+              "width": 8,
+              "height": 8,
+              "offset": 1398016,
+              "byteSize": 64
+            },
+            {
+              "mip": 8,
+              "width": 4,
+              "height": 4,
+              "offset": 1398080,
+              "byteSize": 16
+            },
+            {
+              "mip": 9,
+              "width": 2,
+              "height": 2,
+              "offset": 1398096,
+              "byteSize": 16
+            },
+            {
+              "mip": 10,
+              "width": 1,
+              "height": 1,
+              "offset": 1398112,
+              "byteSize": 16
+            }
+          ]
+        }
+      },
+      {
+        "property": "_MROMap",
+        "name": "T_fx_sourcerocks+3_N",
+        "pathId": 5597062348073817015,
+        "pathIdHex": "4DACC28D12A753B7",
+        "format": "BC5",
+        "width": 1024,
+        "height": 1024,
+        "mipCount": 11,
+        "colorSpace": 0,
+        "payload": {
+          "path": "scratch/animestudio/endminf_m27_source_contract/ce_convert/Texture2D/T_fx_sourcerocks+3_N_p4DACC28D12A753B7.texture2d.raw",
+          "bytes": 1398128,
+          "sha256": "da6f07ae91303fe587f0e363e4f37f3df2631bac6a47c95ac55bbbedd9e4e434"
+        },
+        "decodedPng": {
+          "path": "scratch/animestudio/endminf_m27_source_contract/ce_convert/Texture2D/T_fx_sourcerocks+3_N_p4DACC28D12A753B7.png",
+          "sha256": "5e9b53832ec20c6e461c9920ff7576dd5f29299e1ad1d9ccf9e66d262a058144"
+        },
+        "exporterLayoutValidated": false,
+        "independentLayout": {
+          "method": "independent 4x4 block-compressed mip chain, 16 bytes per block",
+          "validated": true,
+          "bytes": 1398128,
+          "mips": [
+            {
+              "mip": 0,
+              "width": 1024,
+              "height": 1024,
+              "offset": 0,
+              "byteSize": 1048576
+            },
+            {
+              "mip": 1,
+              "width": 512,
+              "height": 512,
+              "offset": 1048576,
+              "byteSize": 262144
+            },
+            {
+              "mip": 2,
+              "width": 256,
+              "height": 256,
+              "offset": 1310720,
+              "byteSize": 65536
+            },
+            {
+              "mip": 3,
+              "width": 128,
+              "height": 128,
+              "offset": 1376256,
+              "byteSize": 16384
+            },
+            {
+              "mip": 4,
+              "width": 64,
+              "height": 64,
+              "offset": 1392640,
+              "byteSize": 4096
+            },
+            {
+              "mip": 5,
+              "width": 32,
+              "height": 32,
+              "offset": 1396736,
+              "byteSize": 1024
+            },
+            {
+              "mip": 6,
+              "width": 16,
+              "height": 16,
+              "offset": 1397760,
+              "byteSize": 256
+            },
+            {
+              "mip": 7,
+              "width": 8,
+              "height": 8,
+              "offset": 1398016,
+              "byteSize": 64
+            },
+            {
+              "mip": 8,
+              "width": 4,
+              "height": 4,
+              "offset": 1398080,
+              "byteSize": 16
+            },
+            {
+              "mip": 9,
+              "width": 2,
+              "height": 2,
+              "offset": 1398096,
+              "byteSize": 16
+            },
+            {
+              "mip": 10,
+              "width": 1,
+              "height": 1,
+              "offset": 1398112,
+              "byteSize": 16
+            }
+          ]
+        }
+      },
+      {
+        "property": "_NormalMap",
+        "name": "T_fx_sourcerocks+1_N",
+        "pathId": -8583694459516385401,
+        "pathIdHex": "88E0975E10098787",
+        "format": "BC5",
+        "width": 1024,
+        "height": 1024,
+        "mipCount": 11,
+        "colorSpace": 0,
+        "payload": {
+          "path": "scratch/animestudio/endminf_m27_source_contract/967_convert/Texture2D/T_fx_sourcerocks+1_N_p88E0975E10098787.texture2d.raw",
+          "bytes": 1398128,
+          "sha256": "ee27e904469e3879349ac52a5e7eac9247c150914a7d9a940d0c0c16ec512af7"
+        },
+        "decodedPng": {
+          "path": "scratch/animestudio/endminf_m27_source_contract/967_convert/Texture2D/T_fx_sourcerocks+1_N_p88E0975E10098787.png",
+          "sha256": "aa4ca97d0104dd7830398c52cb125603f192dd0851e2e861a2faf30eca813870"
+        },
+        "exporterLayoutValidated": false,
+        "independentLayout": {
+          "method": "independent 4x4 block-compressed mip chain, 16 bytes per block",
+          "validated": true,
+          "bytes": 1398128,
+          "mips": [
+            {
+              "mip": 0,
+              "width": 1024,
+              "height": 1024,
+              "offset": 0,
+              "byteSize": 1048576
+            },
+            {
+              "mip": 1,
+              "width": 512,
+              "height": 512,
+              "offset": 1048576,
+              "byteSize": 262144
+            },
+            {
+              "mip": 2,
+              "width": 256,
+              "height": 256,
+              "offset": 1310720,
+              "byteSize": 65536
+            },
+            {
+              "mip": 3,
+              "width": 128,
+              "height": 128,
+              "offset": 1376256,
+              "byteSize": 16384
+            },
+            {
+              "mip": 4,
+              "width": 64,
+              "height": 64,
+              "offset": 1392640,
+              "byteSize": 4096
+            },
+            {
+              "mip": 5,
+              "width": 32,
+              "height": 32,
+              "offset": 1396736,
+              "byteSize": 1024
+            },
+            {
+              "mip": 6,
+              "width": 16,
+              "height": 16,
+              "offset": 1397760,
+              "byteSize": 256
+            },
+            {
+              "mip": 7,
+              "width": 8,
+              "height": 8,
+              "offset": 1398016,
+              "byteSize": 64
+            },
+            {
+              "mip": 8,
+              "width": 4,
+              "height": 4,
+              "offset": 1398080,
+              "byteSize": 16
+            },
+            {
+              "mip": 9,
+              "width": 2,
+              "height": 2,
+              "offset": 1398096,
+              "byteSize": 16
+            },
+            {
+              "mip": 10,
+              "width": 1,
+              "height": 1,
+              "offset": 1398112,
+              "byteSize": 16
+            }
+          ]
+        }
+      },
+      {
+        "property": "_ParallaxMap",
+        "name": "T_fx_flow_04_02_M",
+        "pathId": -2770956563882859728,
+        "pathIdHex": "D98B95AFB1B9A330",
+        "format": "BC7",
+        "width": 128,
+        "height": 128,
+        "mipCount": 8,
+        "colorSpace": 1,
+        "payload": {
+          "path": "scratch/animestudio/endminf_m27_source_contract/fc_convert/Texture2D/T_fx_flow_04_02_M_pD98B95AFB1B9A330.texture2d.bc7",
+          "bytes": 21872,
+          "sha256": "9bdc2187bbc5ee1c2c74c4b0486060fa46c3aba2a1860c3221693f77b00a27e8"
+        },
+        "decodedPng": {
+          "path": "scratch/animestudio/endminf_m27_source_contract/fc_convert/Texture2D/T_fx_flow_04_02_M_pD98B95AFB1B9A330.png",
+          "sha256": "d7ac4b741f76d3ef0ccfd732caaf3d2069ec3839e0190472baf900d54e1090c5"
+        },
+        "exporterLayoutValidated": true,
+        "independentLayout": {
+          "method": "independent 4x4 block-compressed mip chain, 16 bytes per block",
+          "validated": true,
+          "bytes": 21872,
+          "mips": [
+            {
+              "mip": 0,
+              "width": 128,
+              "height": 128,
+              "offset": 0,
+              "byteSize": 16384
+            },
+            {
+              "mip": 1,
+              "width": 64,
+              "height": 64,
+              "offset": 16384,
+              "byteSize": 4096
+            },
+            {
+              "mip": 2,
+              "width": 32,
+              "height": 32,
+              "offset": 20480,
+              "byteSize": 1024
+            },
+            {
+              "mip": 3,
+              "width": 16,
+              "height": 16,
+              "offset": 21504,
+              "byteSize": 256
+            },
+            {
+              "mip": 4,
+              "width": 8,
+              "height": 8,
+              "offset": 21760,
+              "byteSize": 64
+            },
+            {
+              "mip": 5,
+              "width": 4,
+              "height": 4,
+              "offset": 21824,
+              "byteSize": 16
+            },
+            {
+              "mip": 6,
+              "width": 2,
+              "height": 2,
+              "offset": 21840,
+              "byteSize": 16
+            },
+            {
+              "mip": 7,
+              "width": 1,
+              "height": 1,
+              "offset": 21856,
+              "byteSize": 16
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "mesh": {
+    "json": {
+      "path": "scratch/animestudio/endminf_m27_source_contract/fc_json/Mesh/S_rock_small_1_017_02_lod2_p8EC9950E5461C8D9.json",
+      "sha256": "55dd5a73380a0b64b8fc173cb636f58b0178e377e7fd4445362a4a6c0de2f58d"
+    },
+    "obj": {
+      "path": "scratch/animestudio/endminf_m27_source_contract/fc_convert/Mesh/S_rock_small_1_017_02_lod2_p8EC9950E5461C8D9.obj",
+      "sha256": "e3bbdc9973e5f9dfb2d499fb440be36f99a525b525a22af8ce63b9c48402f8a7"
+    },
+    "name": "S_rock_small_1_017_02_lod2",
+    "pathId": -8157825361227167527,
+    "pathIdHex": "8EC9950E5461C8D9",
+    "vertexCount": 29,
+    "indexCount": 72,
+    "localAabb": {
+      "m_Center": {
+        "X": 0.0031448454,
+        "Y": 0.10171987,
+        "Z": 1.4901161e-08
+      },
+      "m_Extent": {
+        "X": 0.2545169,
+        "Y": 0.11124012,
+        "Z": 0.3913505
+      }
+    }
+  },
+  "noFramegen60HzComparison": {
+    "recording": {
+      "path": "videos/2026-08-24_06-37-22.mkv",
+      "sha256": "36318de82bc3afabcf62d56946a9263614abaca0c7c3e7c57d16da938abcbb39"
+    },
+    "mapping": "sourceFrame = 115 + round(sequenceSeconds * 60), with +/-1 source-frame anchor uncertainty",
+    "authoredDelaySeconds": 4.49,
+    "nominalBoundary": {
+      "lastPreBurstSequenceSeconds": 4.483333333333333,
+      "lastPreBurstSourceFrame": 384,
+      "firstPostBurstSequenceSeconds": 4.5,
+      "firstPostBurstSourceFrame": 385,
+      "uncertaintySourceFrames": [
+        383,
+        386
+      ]
+    },
+    "reviewedFrames": [
+      {
+        "sourceFrameOneBased": 382,
+        "path": "scratch/character_recovery/endminf_m27_source_contract/no_framegen_4p49_window/source_382_to_390_01.png",
+        "sha256": "9419f97667ff49a87f0429442735d213ce9ea381eb5ecb093e6eccffdad3d119"
+      },
+      {
+        "sourceFrameOneBased": 383,
+        "path": "scratch/character_recovery/endminf_m27_source_contract/no_framegen_4p49_window/source_382_to_390_02.png",
+        "sha256": "b1bc498a40313ff00a9562dfc80b725eec01451cebc2194df5110cb97e105e6d"
+      },
+      {
+        "sourceFrameOneBased": 384,
+        "path": "scratch/character_recovery/endminf_m27_source_contract/no_framegen_4p49_window/source_382_to_390_03.png",
+        "sha256": "55c0c004e447de003522cafa143ac816313a86c01c7ad7401d163b8e97db1098"
+      },
+      {
+        "sourceFrameOneBased": 385,
+        "path": "scratch/character_recovery/endminf_m27_source_contract/no_framegen_4p49_window/source_382_to_390_04.png",
+        "sha256": "2ff43eccac7eddbe57389aa4e84ee35f5f9e509305dfed57ef846688f373aec5"
+      },
+      {
+        "sourceFrameOneBased": 386,
+        "path": "scratch/character_recovery/endminf_m27_source_contract/no_framegen_4p49_window/source_382_to_390_05.png",
+        "sha256": "e9b39d30ddf6ec48e1d00b9ff9cf147271316ae6e8a0ad4c7dd20a94b5a2badd"
+      },
+      {
+        "sourceFrameOneBased": 387,
+        "path": "scratch/character_recovery/endminf_m27_source_contract/no_framegen_4p49_window/source_382_to_390_06.png",
+        "sha256": "c47e38093fee686593cd172e76c5c68827b83cb6882390f3ce44ef7ee1dc5680"
+      },
+      {
+        "sourceFrameOneBased": 388,
+        "path": "scratch/character_recovery/endminf_m27_source_contract/no_framegen_4p49_window/source_382_to_390_07.png",
+        "sha256": "2b14d577ccd857d1c7817d7bc25976cf91e6b431312dc89659c329f1d418f471"
+      },
+      {
+        "sourceFrameOneBased": 389,
+        "path": "scratch/character_recovery/endminf_m27_source_contract/no_framegen_4p49_window/source_382_to_390_08.png",
+        "sha256": "8d4fc3c3a1a5705652f0c9f2ecbe98670f0a6f0da7ff39c0ed95eca48ed877c8"
+      },
+      {
+        "sourceFrameOneBased": 390,
+        "path": "scratch/character_recovery/endminf_m27_source_contract/no_framegen_4p49_window/source_382_to_390_09.png",
+        "sha256": "acc38b17e092b85ee1ff24489b823a5acf84875ac1ff586150cf429739db9bdb"
+      }
+    ],
+    "observation": "Small amber faceted fragments are visible throughout source frames 382-390, including before the nominal M27 burst boundary. The window is physically compatible with an additional 15-fragment M27 burst, but it has no clean visual onset that separates M27 from the earlier actor-owned rock/crystal complex.",
+    "ownershipConclusion": "source role closed; retail pixel ownership unresolved"
+  },
+  "runtimeBoundary": {
+    "sourceRole": "authored-enabled late World-space physical-rock burst using the same small-rock mesh and four-texture family as the earlier LitEffect rocks",
+    "managedStreamConstruction": "serialized ParticleSystem CustomData plus renderer vertex streams are sufficient for Unity to construct Position/Normal/Color/UV/UV2/Custom1XYZW",
+    "remainingConsumer": "exact LitEffect HGBuffer/GBuffer five-MRT consumer, ParserBindChannels, and live per-frame/per-draw inputs",
+    "admission": "fail_closed"
+  },
+  "protectedCrystalBoundary": {
+    "path": "overview_02/all/shitou (1)",
+    "material": "M_fx_endminm_gfx_21",
+    "policy": "not modified and not used as a substitute for M27"
+  }
+}
