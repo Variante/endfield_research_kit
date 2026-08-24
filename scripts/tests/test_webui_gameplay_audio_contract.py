@@ -90,6 +90,27 @@ assert.equal(merged[0].possibleMediaCount, 2);
 """
         )
 
+    def test_current_sound_effects_schema_is_accepted_by_gameplay_loader(self) -> None:
+        source = GAMEPLAY.read_text(encoding="utf-8")
+        body = source.split("  function validSoundEffectsPayload", 1)[1].split(
+            "\n  function loadGameplayIntegration", 1
+        )[0]
+        function_source = "function validSoundEffectsPayload" + body
+        self.run_node(
+            f"""
+const assert = require("node:assert/strict");
+{function_source}
+const current = {{schemaVersion: 5, characters: {{}}, enemies: {{}}}};
+assert.equal(validSoundEffectsPayload(current), true);
+assert.equal(validSoundEffectsPayload({{schemaVersion: 6, characters: {{}}, enemies: {{}}}}), false);
+assert.equal(validSoundEffectsPayload({{schemaVersion: 5, characters: {{}}}}), false);
+"""
+        )
+        self.assertIn(
+            '["soundEffects", integrationPath("soundEffects", nextLanguage), validSoundEffectsPayload]',
+            source,
+        )
+
     def test_projectile_audio_sidecar_joins_by_id_field_and_unsigned_hash(self) -> None:
         source = GAMEPLAY.read_text(encoding="utf-8")
         projectile_helpers = source.split("  function projectileEventHash", 1)[1].split(

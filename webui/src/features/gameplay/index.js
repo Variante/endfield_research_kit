@@ -4161,6 +4161,15 @@
     if (STATE.entries.length) renderList();
   }
 
+  function validSoundEffectsPayload(payload) {
+    return Boolean(
+      payload
+      && [1, 2, 3, 4, 5].includes(payload.schemaVersion)
+      && payload.characters
+      && payload.enemies
+    );
+  }
+
   function loadGameplayIntegration(language = currentLanguage(), force = false) {
     const nextLanguage = String(language || "CN").toUpperCase();
     const integration = STATE.integration;
@@ -4182,7 +4191,7 @@
       ["combat", integrationPath("combat", nextLanguage), (payload) => payload && Array.isArray(payload.nodes) && Array.isArray(payload.edges)],
       ["projectiles", integrationPath("projectiles", nextLanguage), (payload) => payload && Array.isArray(payload.entries)],
       ["projectileAudio", integrationPath("projectileAudio", nextLanguage), (payload) => payload?.schemaVersion === 1 && Array.isArray(payload.links)],
-      ["soundEffects", integrationPath("soundEffects", nextLanguage), (payload) => payload && [1, 2, 3, 4].includes(payload.schemaVersion) && payload.characters && payload.enemies],
+      ["soundEffects", integrationPath("soundEffects", nextLanguage), validSoundEffectsPayload],
       ["assets", integrationPath("assets", nextLanguage), (payload) => payload && payload.entries && typeof payload.entries === "object"],
     ];
     const promise = Promise.all(requests.map(async ([kind, path, validator]) => {

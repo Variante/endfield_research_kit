@@ -149,7 +149,7 @@ class PackWebuiAudioTests(unittest.TestCase):
         self.assertIn('<audio controls preload="none" src="${escapeHtml(candidate.src)}"', source)
         self.assertNotIn('[data-gameplay-sfx-src]:not([data-gameplay-sfx-bound])', source)
         self.assertNotIn('data-gameplay-sfx-player', source)
-        self.assertIn("[1, 2, 3, 4].includes(payload.schemaVersion)", source)
+        self.assertIn("[1, 2, 3, 4, 5].includes(payload.schemaVersion)", source)
         self.assertNotIn('section(text("characterActionAudio")', character_detail)
         self.assertIn('entry.kind === "character"', detail_renderer)
         self.assertIn('section(text("relatedSoundEffects"), renderCharacterSoundEffects', detail_renderer)
