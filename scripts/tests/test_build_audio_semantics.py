@@ -19,6 +19,7 @@ from scripts.audio_semantics import (
     native_evidence,
     purpose,
     responsive_voice,
+    scene_backgrounds,
     table_contexts,
     voice_requests,
 )
@@ -7446,6 +7447,65 @@ class AudioSemanticDataTests(unittest.TestCase):
             rows[0]["runtimeActivationStatus"],
             "monoBehaviourComponentExecutionNotObserved",
         )
+
+    def test_mono_behaviour_audio_map_fields_require_complete_typed_schema(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            root = Path(raw_root)
+            index = (
+                root / "recovered/AnimeStudio-cli/StreamingAssets/object_index/parts"
+                / "StreamingAssets_animestudio_json_by_type_MonoBehaviour.jsonl"
+            )
+            index.parent.mkdir(parents=True)
+            required_fields = sorted(scene_backgrounds.AUDIO_MAP_SCHEMA_FIELDS)
+            rows = [{
+                "recordType": "schema",
+                "schemaId": "audio-map-schema",
+                "fields": required_fields,
+            }, {
+                "recordType": "object",
+                "schemaId": "audio-map-schema",
+                "object": {"serializedFile": "CAB-map", "pathId": 200},
+                "name": "map01_audio",
+                "scalars": [
+                    ["$.triggerFunctions[0].eventIn[0]", "i", 0x11111111],
+                    ["$.triggerFunctions[0].eventOut[0]", "i", 0x22222222],
+                    ["$.levelGlobalEvents._events[0].levelInitEvents[0]", "i", 0x33333333],
+                    ["$.levelGlobalEvents._events[0].outdoorRoomToneEvent", "i", 0x44444444],
+                ],
+            }, {
+                "recordType": "schema",
+                "schemaId": "lookalike-schema",
+                "fields": required_fields[:-1],
+            }, {
+                "recordType": "object",
+                "schemaId": "lookalike-schema",
+                "object": {"serializedFile": "CAB-lookalike", "pathId": 201},
+                "name": "NotAudioMapData",
+                "scalars": [
+                    ["$.triggerFunctions[0].eventIn[0]", "i", 0x55555555],
+                ],
+            }]
+            index.write_text(
+                "".join(json.dumps(row) + "\n" for row in rows),
+                encoding="utf-8",
+            )
+
+            result = audio_semantics.collect_mono_behaviour_audio_id_contexts(
+                root,
+                {0x11111111, 0x22222222, 0x33333333, 0x44444444, 0x55555555},
+            )
+
+            self.assertEqual(result["stats"]["distinctEventHashes"], 4)
+            self.assertEqual(result["stats"]["eventContextOccurrences"], 4)
+            self.assertNotIn("#0x55555555", result["eventContexts"])
+            trigger = result["eventContexts"]["#0x11111111"][0]
+            self.assertEqual(trigger["authoredFieldRole"], "audioMapTriggerEnter")
+            self.assertEqual(trigger["componentLayout"], "Beyond.Gameplay.Audio.AudioMapData")
+            self.assertEqual(trigger["componentLayoutStatus"], "exactSerializedSchema")
+            self.assertEqual(
+                trigger["evidence"],
+                "exactSerializedAudioMapDataEventFieldAndCurrentWwiseEvent",
+            )
 
     def test_mono_behaviour_audio_field_roles_are_narrow_and_fail_closed(self) -> None:
         spawn = managed_literals.project_mono_behaviour_audio_field(

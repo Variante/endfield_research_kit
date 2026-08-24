@@ -64,6 +64,13 @@ INDEXED_EVENT_RE = re.compile(r"^(levelInitEvents|levelExitEvents)\[(\d+)\]$")
 EVENT_HASH_FIELD_RE = re.compile(
     r"(?:audio|sound|event).*?(?:\._id|event)$", re.IGNORECASE
 )
+AUDIO_MAP_SCHEMA_FIELDS = frozenset({
+    "triggerFunctions.Array.data.eventIn.Array.data:unsigned int",
+    "triggerFunctions.Array.data.eventOut.Array.data:unsigned int",
+    "levelGlobalEvents._events.Array.data.levelInitEvents.Array.data:unsigned int",
+    "levelGlobalEvents._events.Array.data.levelExitEvents.Array.data:unsigned int",
+    "levelGlobalEvents._events.Array.data.outdoorRoomToneEvent:unsigned int",
+})
 AMBIENCE_NAME_MARKERS = (
     "au_amb_", "ambient", "ambience", "roomtone", "room_tone",
 )
@@ -79,6 +86,46 @@ SceneIdentityKey = tuple[Any, ...]
 
 class SceneBackgroundError(RuntimeError):
     """Raised when the published object-index evidence cannot be trusted."""
+
+
+def audio_map_event_scalar(
+    path: Any,
+    value: Any,
+    schema_fields: frozenset[str],
+) -> tuple[int, str] | None:
+    """Classify an Event only under the complete serialized AudioMapData schema."""
+
+    if not AUDIO_MAP_SCHEMA_FIELDS.issubset(schema_fields):
+        return None
+    scalar_path = str(path or "")
+    role = ""
+    if re.fullmatch(r"\$\.triggerFunctions\[\d+\]\.eventIn\[\d+\]", scalar_path):
+        role = "audioMapTriggerEnter"
+    elif re.fullmatch(r"\$\.triggerFunctions\[\d+\]\.eventOut\[\d+\]", scalar_path):
+        role = "audioMapTriggerExit"
+    elif re.fullmatch(
+        r"\$\.levelGlobalEvents\._events\[\d+\]\.levelInitEvents\[\d+\]",
+        scalar_path,
+    ):
+        role = "audioMapLevelInit"
+    elif re.fullmatch(
+        r"\$\.levelGlobalEvents\._events\[\d+\]\.levelExitEvents\[\d+\]",
+        scalar_path,
+    ):
+        role = "audioMapLevelExit"
+    elif re.fullmatch(
+        r"\$\.levelGlobalEvents\._events\[\d+\]\.outdoorRoomToneEvent",
+        scalar_path,
+    ):
+        role = "audioMapOutdoorRoomTone"
+    if not role:
+        return None
+    try:
+        numeric = int(value, 0) if isinstance(value, str) else int(value)
+    except (TypeError, ValueError):
+        return None
+    event_hash = numeric & 0xFFFFFFFF
+    return (event_hash, role) if event_hash else None
 
 
 def _streaming_instance_paths(export_root: Path) -> list[Path]:
