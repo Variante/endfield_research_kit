@@ -20,14 +20,14 @@
   "assetEvidence": {
     "M01": {
       "path": "unity_endfield_graph_shader_lab\\Assets\\EndfieldGraphShaderLab\\Generated\\Characters\\Playable\\Endminf\\Effects\\Overview\\Materials\\M_fx_endminm_gfx_01_p5A6341E8A834E421.mat",
-      "sha256": "2eedcde1c67336cc77b011334d4eb2879c666dc053c662210920cdcf23ba4117",
-      "expectedSha256": "2eedcde1c67336cc77b011334d4eb2879c666dc053c662210920cdcf23ba4117",
+      "sha256": "59909a2b8dd43a2fcebdc9267a5c25f5761ffd4629cbe4fabd94a1ae128bab81",
+      "expectedSha256": "59909a2b8dd43a2fcebdc9267a5c25f5761ffd4629cbe4fabd94a1ae128bab81",
       "validated": true
     },
     "M38": {
       "path": "unity_endfield_graph_shader_lab\\Assets\\EndfieldGraphShaderLab\\Generated\\Characters\\Playable\\Endminf\\Effects\\Overview\\Materials\\M_fx_endminm_gfx_38_pAFCE491DD7BC5724.mat",
-      "sha256": "0840a85415e10ee11cec6789715f7be86fb2a363ed4d4ebb250cf7832171e73e",
-      "expectedSha256": "0840a85415e10ee11cec6789715f7be86fb2a363ed4d4ebb250cf7832171e73e",
+      "sha256": "664521fc66d6d33789250eb500dc8f821239c4c902d761fc2ff633afa8c4308c",
+      "expectedSha256": "664521fc66d6d33789250eb500dc8f821239c4c902d761fc2ff633afa8c4308c",
       "validated": true
     },
     "rockMesh": {
