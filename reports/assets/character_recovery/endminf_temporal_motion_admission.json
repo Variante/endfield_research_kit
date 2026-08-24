@@ -1,5 +1,5 @@
 {
-  "schema": "endfield.endminf-temporal-motion-admission.v6",
+  "schema": "endfield.endminf-temporal-motion-admission.v9",
   "subject": "Endminf Character Info temporal and motion admission",
   "reference": {
     "recording": "videos/2026-08-21_20-15-17.mkv",
@@ -135,20 +135,68 @@
       "motionVectors3D": false,
       "motionVectorsDilated": false,
       "motionVectorsJittered": false,
-      "reset": "packet byte applied through slSetConstants for the same frame token as evaluation",
+      "reset": "prevTransformReset produced in HGCamera.Update and applied through slSetConstants for the same frame token as evaluation",
       "motionVectorsInvalidValue": "FLT_MAX"
     },
+    "resetProducer": {
+      "equation": "prevTransformReset = IsLargeCameraMovement(mainViewConstants, camera-derived threshold, 0.22303554) || isFirstFrame; isFirstFrame is then cleared in the same HGCamera.Update",
+      "largeMovement": "Compares old/current de-jittered transforms and returns true for rotational/FOV-derived or position-threshold excess.",
+      "resetMethod": "HGCamera.Reset sets isFirstFrame, prevTransformReset, cameraFrameCount zero, and the antialiasing/history state byte.",
+      "negativeEvidence": "Size, antialiasing, and DLSS-mode transitions are not additional direct terms in this compiled boolean. They affect reset only if an external/IFix caller invokes Reset or sets isFirstFrame, or movement independently crosses the threshold.",
+      "gameAssemblyEvidence": {
+        "hgCameraUpdateToken": "0x06000e8f",
+        "tailRva": "0x31013db",
+        "tailSize": "0x2d",
+        "tailSha256": "fc0e9cdf4715f0f10e9ee6650c53187e4bd7b68f448a5e13020d3594deb69bd9",
+        "hgCameraResetToken": "0x06000e2f",
+        "resetRva": "0x4b4ed20",
+        "resetSize": "0x42",
+        "resetSha256": "bc8dd6df05908a382b0e9ec6300ef38ccb351e18f46ec895eacdc92dde561e21",
+        "isLargeCameraMovementToken": "0x06000e95",
+        "isLargeCameraMovementRva": "0x39c10b0",
+        "semanticSliceSize": "0x3e1",
+        "semanticSliceSha256": "8a208780d23a74ef7360a492301741f8d88c63558245a83b9ccbe2d511073342"
+      }
+    },
+    "renderScale": {
+      "managedPolicy": "When DLSS is supported, UpdateRenderingScale calls DLSSOptimalSettings.GetDLSSOptimalSetting(quality, outputSize), divides returned optimalRenderWidth by outputWidth, and writes renderingScale when changed.",
+      "dlaaBoundary": "HG quality 4 maps to Streamline mode 6, but neither managed HG code nor UnityPlayer special-cases DLAA to renderingScale 1.0. Equal input/output extent depends on installed slDLSSGetOptimalSettings returning output width for mode 6.",
+      "renderGraphExtent": "Output viewport sets actualWidth/Height; sceneRTSize is even-clamped actual dimensions times HGUtils.GetRenderingScale.",
+      "gameAssemblyUpdateRenderingScale": {
+        "token": "0x06000e9c",
+        "hotRva": "0x344d000",
+        "hotSize": "0x1e0",
+        "coldRva": "0x507536f",
+        "coldSize": "0x73"
+      },
+      "unityPlayerOptimalCache": {
+        "rva": "0xdfb2dc",
+        "size": "0x273",
+        "sha256": "dc2c7a47fd938032c8495c42451a9b3e0ab75c3c830a0f9ffba74868c9327b9e"
+      }
+    },
     "velocityCombine": {
+      "asset": {
+        "name": "DLSSVelocityCombineCS",
+        "pathId": "5353222885795618806",
+        "serializedFile": "CAB-681080d65b56a1ed5b5b13f568c65a32",
+        "installedChunkSha256": "cbc87c7d8f41d90da25af7758cf77ced7321d19c52c067f6f77a75aa5dabc380",
+        "rawObjectSha256": "ebd179cf7d0bde0e39a16a3545030ad3041bf62235005dd038705fbcbee8b537",
+        "d3dDxbcSha256": "9cf3ef9b3c8bf9609c068bc685aec7d98ab23b9d70dec5a6f5870bc3596b78dc"
+      },
+      "kernel": "CombineVelocity, CS 5.0, no keywords, numthreads(8,8,1)",
+      "bindings": "b0 CombinedVelocityData with integer extent bit patterns in _InputExtentData.xy; t0 _Velocity; u0 _CombinedVelocity",
       "inputs": [
-        "source velocity",
-        "depth",
-        "two camera matrices",
+        "packed source velocity",
         "input width and height"
       ],
       "output": "new full-input-resolution combined velocity texture tagged as Streamline motion vectors",
       "dispatch": "ceil(width/8) by ceil(height/8)",
+      "equation": "For each packed p in source xy, decode(p)=sign(p-0.5)*(2*abs(p)-1)^4. Store float4(decode(x),decode(y),decode(x),decode(x)); only xy are semantic and z/w may be discarded by a two-channel UAV.",
+      "unusedInputs": "The selected D3D kernel declares no depth SRV and performs no depth or matrix calculation. Depth/matrix data visible in the broader native scheduling path do not enter this kernel.",
+      "qualifiedProducerComposition": "For the recovered CharacterNPR producer p=0.5+0.5*sign(d)*abs(0.5*d)^0.25, composition yields 0.5*d: half current-minus-previous non-jittered NDC X and negative half current-minus-previous non-jittered NDC Y, which is viewport/UV-fraction motion consistent with Streamline mvecScale (1,1). Direct attachment of every renderer's producer to this exact _Velocity binding is not yet proven.",
       "streamlineSideConvention": "combined camera-plus-object motion already normalized; mvecScale remains (1,1)",
-      "boundary": "The compiled ComputeShader arithmetic, sign conversion, channel storage, and mapping of native descriptor literal 0x2d to a public Unity GraphicsFormat are not yet recovered."
+      "boundary": "Exact input/output storage formats remain unresolved: typed float DXBC resources do not encode the bound DXGI/Unity GraphicsFormat, the resources are transient, and native descriptor literal 0x2d has not been mapped through a validated pinned-build enum table."
     },
     "dlssOptions": {
       "hgToStreamlineQuality": {
@@ -211,10 +259,43 @@
       }
     },
     "remainingBlockers": [
-      "velocity-combine ComputeShader arithmetic and exact output GraphicsFormat",
-      "exact managed boolean expression that produces the same-frame reset byte",
-      "direct proof that live DLAA forces input extent equal to output extent"
+      "exact packed-input and combined-output GraphicsFormat plus direct producer attachment",
+      "installed slDLSSGetOptimalSettings mode-6 return or live texture evidence proving DLAA input extent equals output extent",
+      "external/IFix callers that may set isFirstFrame or invoke HGCamera.Reset on size or mode changes"
     ]
+  },
+  "unityPublicNgxProxyBoundary": {
+    "status": "opt-in visual proxy is implementable but cannot be evidence-equivalent to Endfield Streamline DLAA",
+    "backendName": "UnityPublicNgxProxy",
+    "representableContract": {
+      "nativeInputOutputExtent": true,
+      "hdr": "DLSSFeatureFlags.IsHDR",
+      "reversedDepth": "DLSSFeatureFlags.DepthInverted",
+      "motionVectorScale": [
+        1.0,
+        1.0
+      ],
+      "jitter": "negative source camera jitter in pixels on both axes",
+      "reset": "per-frame integer",
+      "preExposure": 1.0,
+      "sharpness": 0.0,
+      "indicatorInvertAxisX": 1,
+      "indicatorInvertAxisY": 1,
+      "reactiveInputs": "transparencyMask and biasColorMask null; ExecuteDLSS clears the native table before binding non-null slots"
+    },
+    "motionRestriction": "Scale (1,1) is valid only for the recovered Endfield-convention precombined motion texture. Installed HDRP instead marks its generic normalized Unity motion as MVLowRes and uses scale (-inputWidth,-inputHeight); substituting that texture with scale one is incorrect.",
+    "pixelJitterEvidence": "Installed HDRP passes -hdCamera.taaJitter.xy, and HDCamera stores pixel Halton offsets in xy while normalized offsets are separate zw lanes.",
+    "unrepresentableStreamlineContract": [
+      "sl::DLSSMode::eDLAA numeric 6; public quality offers MaximumQuality only",
+      "Streamline model presets M=13 and L=12",
+      "useAutoExposure and exposureScale options",
+      "alphaUpscaling option",
+      "five Streamline matrices and cameraMotionIncluded declaration",
+      "motionVectors3D, motionVectorsDilated, and FLT_MAX invalid-value declarations",
+      "slGetNewFrameToken, slSetConstants/tags, slDLSSSetOptions, slEvaluateFeature schedule"
+    ],
+    "binaryDifference": "The Editor wrapper is direct NVUnityPlugin/NGX. Its bundled NGX is 3.1.11; Endfield uses Streamline 2.10.3 and nvngx_dlss 310.5.2. Selecting the game application directory does not restore missing Streamline semantics.",
+    "admission": "Never enable silently or use for canonical parity evidence. Require prepared Endfield-convention resources, supported NVIDIA hardware, device API 4, distinct native-scale input/output textures, successful feature creation, and a valid post-execution debug record."
   },
   "charInfoVolume": {
     "owner": "CharInfoChar/CharInfo_Scene/Light/LookDev_Lights/Global Volume",
