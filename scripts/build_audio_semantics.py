@@ -14755,6 +14755,12 @@ def build_audio_semantic_data(
                 gameplay_enemies.keys(),
             )
         )
+        enemy_response_candidates = (
+            media_ownership.project_enemy_response_candidate_audio(
+                events,
+                gameplay_enemies.keys(),
+            )
+        )
         character_native_voice_responses = (
             media_ownership.project_character_native_voice_response_audio(
                 events,
@@ -14778,6 +14784,7 @@ def build_audio_semantic_data(
             if isinstance(gameplay_enemy, dict):
                 gameplay_enemy.pop("authoredNamespaceEvents", None)
                 gameplay_enemy.pop("nativeVoiceResponseEvents", None)
+                gameplay_enemy.pop("enemyResponseCandidateEvents", None)
         for enemy_id, namespace_events in (
             enemy_namespace_gameplay.get("enemies") or {}
         ).items():
@@ -14790,7 +14797,13 @@ def build_audio_semantic_data(
             gameplay_enemies.setdefault(enemy_id, {})[
                 "nativeVoiceResponseEvents"
             ] = response_events
-        gameplay_sound_effects["schemaVersion"] = 9
+        for enemy_id, response_events in (
+            enemy_response_candidates.get("enemies") or {}
+        ).items():
+            gameplay_enemies.setdefault(enemy_id, {})[
+                "enemyResponseCandidateEvents"
+            ] = response_events
+        gameplay_sound_effects["schemaVersion"] = 10
         gameplay_sound_effects["characterNamespaceAudio"] = {
             "schemaVersion": character_namespace_gameplay.get("schemaVersion"),
             "counts": character_namespace_gameplay.get("counts") or {},
@@ -14817,6 +14830,11 @@ def build_audio_semantic_data(
                 character_native_voice_responses.get("evidenceBoundary") or ""
             ),
         }
+        gameplay_sound_effects["enemyResponseCandidates"] = {
+            "schemaVersion": enemy_response_candidates.get("schemaVersion"),
+            "counts": enemy_response_candidates.get("counts") or {},
+            "evidenceBoundary": enemy_response_candidates.get("evidenceBoundary") or "",
+        }
         gameplay_counts = gameplay_sound_effects.setdefault("counts", {})
         for key, value in (character_namespace_gameplay.get("counts") or {}).items():
             gameplay_counts[f"characterNamespace{key[0].upper()}{key[1:]}"] = value
@@ -14828,6 +14846,8 @@ def build_audio_semantic_data(
             character_native_voice_responses.get("counts") or {}
         ).items():
             gameplay_counts[f"characterNativeVoice{key[0].upper()}{key[1:]}"] = value
+        for key, value in (enemy_response_candidates.get("counts") or {}).items():
+            gameplay_counts[f"enemyResponseCandidate{key[0].upper()}{key[1:]}"] = value
         json_dump(gameplay_sound_effects_path, gameplay_sound_effects)
     json_dump(out_root / "index.json", payload)
     return payload

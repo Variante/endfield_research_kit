@@ -280,6 +280,45 @@ class MediaOwnershipTests(unittest.TestCase):
         self.assertEqual(projected["counts"]["unmatchedContexts"], 2)
         self.assertNotIn("eny_0053_hsmob", projected["enemies"])
 
+    def test_enemy_response_candidates_require_explicit_owner_and_skip_native(self):
+        projected = media_ownership.project_enemy_response_candidate_audio(
+            [
+                {
+                    "id": "enemy_voice_exact",
+                    "category": "voice",
+                    "foundInWwise": True,
+                    "possibleMediaCount": 1,
+                    "contexts": [
+                        {"kind": "responsiveDialogVoice", "speakerId": "eny_0007_mimicw", "triggerKey": "combat_hurt", "evidence": "responsive"},
+                        {"kind": "abilityVoiceTriggerAction", "ownerId": "eny_0007_mimicw", "triggerKey": "combat_hurt", "evidence": "ability"},
+                    ],
+                    "media": [{"mediaId": 7, "src": "/audio/7.flac"}],
+                },
+                {
+                    "id": "eny_0007_mimicw_name_only",
+                    "contexts": [],
+                    "media": [{"mediaId": 8, "src": "/audio/8.flac"}],
+                },
+                {
+                    "id": "enemy_voice_native",
+                    "contexts": [
+                        {"kind": "responsiveDialogVoice", "speakerId": "eny_0007_mimicw"},
+                        {"kind": "nativeVoiceTriggerCallsite", "triggerKey": "combat_dead"},
+                    ],
+                    "media": [{"mediaId": 9, "src": "/audio/9.flac"}],
+                },
+            ],
+            ["eny_0007_mimicw"],
+        )
+        rows = projected["enemies"]["eny_0007_mimicw"]
+        self.assertEqual([row["id"] for row in rows], ["enemy_voice_exact"])
+        self.assertEqual(rows[0]["evidenceKinds"], [
+            "abilityVoiceTriggerAction", "responsiveDialogVoice",
+        ])
+        self.assertEqual(rows[0]["mediaRefs"][0]["mediaId"], 7)
+        self.assertEqual(rows[0]["ownerBindingStatus"], "exactResponseContextEnemyId")
+        self.assertEqual(projected["counts"]["uniqueEvents"], 1)
+
     def test_native_voice_response_projection_requires_longest_character_prefix(self):
         context = {
             "kind": "nativeVoiceTriggerCallsite",

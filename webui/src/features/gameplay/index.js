@@ -1804,14 +1804,23 @@
       confidence: "direct",
       note: text("enemyNativeVoiceResponsesNote"),
     });
-    if (!playableEvents.length) return `${nativeVoiceGroup}${namespaceGroup}`;
+    const responseCandidates = (sounds.enemyResponseCandidateEvents || []).map((event) => ({
+      ...event,
+      audio: event?.mediaRefs || [],
+    }));
+    const responseCandidateGroup = renderGameplaySoundGroup(responseCandidates, {
+      label: text("enemyResponseCandidates"),
+      confidence: "direct",
+      note: text("enemyResponseCandidatesNote"),
+    });
+    if (!playableEvents.length) return `${nativeVoiceGroup}${responseCandidateGroup}${namespaceGroup}`;
     const confidence = integrationConfidence(
       sounds.ownershipConfidence === "inferred" || sounds.animationOwnershipConfidence === "inferred" ? "inferred" : "direct",
     );
     const notes = [text("soundRuntimeNote")];
     if ((sounds.animationEvents || []).length) notes.push(text("animationSoundNote"));
     const playableAudio = playableEvents.reduce((total, event) => total + (event.audio || []).filter((candidate) => candidate?.src).length, 0);
-    return `${nativeVoiceGroup}${namespaceGroup}<div class="gameplay-enemy-sfx-meta"><strong>${escapeHtml(gameplaySoundCountText(playableEvents))}</strong>${confidence}</div><p class="gameplay-enemy-sfx-note">${escapeHtml(notes.join(" "))}</p>${renderGameplaySoundEventList(playableEvents, playableAudio, { flattenGroups: true })}`;
+    return `${nativeVoiceGroup}${responseCandidateGroup}${namespaceGroup}<div class="gameplay-enemy-sfx-meta"><strong>${escapeHtml(gameplaySoundCountText(playableEvents))}</strong>${confidence}</div><p class="gameplay-enemy-sfx-note">${escapeHtml(notes.join(" "))}</p>${renderGameplaySoundEventList(playableEvents, playableAudio, { flattenGroups: true })}`;
   }
 
   function renderCharacterAnimationSounds(entry) {
@@ -4219,7 +4228,7 @@
   function validSoundEffectsPayload(payload) {
     return Boolean(
       payload
-      && [1, 2, 3, 4, 5, 6, 7, 8, 9].includes(payload.schemaVersion)
+      && [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].includes(payload.schemaVersion)
       && payload.characters
       && payload.enemies
     );

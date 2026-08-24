@@ -463,6 +463,10 @@ audibility.
 Character cards expose the corresponding exact native-response group for
 unique CharacterTable prefixes, including the existing Endministrator
 gender-variant routing through its synthetic item.
+Enemy cards also expose authored response candidates when a serialized
+ResponsiveDialog, skill, or animation context carries an explicit owner equal
+to the current EnemyTable id. These candidates are separate from native
+response callsites and retain their unresolved live-selection boundary.
 All supported AnimationClip audio callbacks are shown separately from the
 same-name action classification. Event/media details expose the exact clips,
 callback functions, owners, reachability, and recovered AnimatorController
