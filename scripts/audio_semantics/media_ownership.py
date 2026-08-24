@@ -538,6 +538,11 @@ def project_enemy_namespace_gameplay_audio(
         for value in enemy_ids
         if str(value).strip()
     })
+    enemy_token_ids: dict[str, list[str]] = defaultdict(list)
+    for enemy_id in known_enemy_ids:
+        parts = enemy_id.split("_", 2)
+        if len(parts) == 3 and parts[2]:
+            enemy_token_ids[parts[2]].append(enemy_id)
     enemies: dict[str, list[dict[str, Any]]] = defaultdict(list)
     unique_event_ids: set[str] = set()
     unique_media: set[tuple[str, str]] = set()
@@ -560,6 +565,15 @@ def project_enemy_namespace_gameplay_audio(
             enemy_id for enemy_id in known_enemy_ids
             if event_key.startswith(f"au_{enemy_id}_")
         ]
+        namespace_evidence = "exactRecoveredNamePrefixAgainstCurrentEnemyTableId"
+        monster_match = re.match(
+            r"^au_monster_([a-z0-9]+)(?:_|$)", event_key, re.IGNORECASE
+        )
+        if not owners and monster_match:
+            monster_owners = enemy_token_ids.get(monster_match.group(1), [])
+            if len(monster_owners) == 1:
+                owners = list(monster_owners)
+                namespace_evidence = "uniqueRecoveredMonsterTokenAgainstCurrentEnemyTable"
         if len(owners) != 1:
             continue
         audio: list[dict[str, Any]] = []
@@ -591,7 +605,7 @@ def project_enemy_namespace_gameplay_audio(
         compact_event.update({
             "audio": audio,
             "authoredNamespaceOwnershipStatus": "recoveredEnemyNamespaceIdentity",
-            "namespaceEvidence": "exactRecoveredNamePrefixAgainstCurrentEnemyTableId",
+            "namespaceEvidence": namespace_evidence,
             "runtimeActivationStatus": "unobserved",
         })
         owner_id = owners[0]
@@ -618,7 +632,8 @@ def project_enemy_namespace_gameplay_audio(
         },
         "evidenceBoundary": (
             "Each row uses a recovered grammar-derived Event name whose complete au_"
-            " + current EnemyTable id + delimiter matches exactly. This is recovered "
+            " + current EnemyTable id + delimiter, or unique au_monster_ token, "
+            "matches the current EnemyTable. This is recovered "
             "enemy namespace identity only: no skill, action, animation callback, "
             "Event posting, Wwise branch selection, playback, or audibility is claimed."
         ),

@@ -655,6 +655,9 @@ of these exact namespace Events and playable candidates. The semantics entry
 point only publishes that projection into the language-specific
 `gameplay/sound_effects.json` sidecar; it remains separate from trigger-backed
 skill and animation audio.
+The same projection accepts a leading `au_monster_<token>_*` Event only when
+that token maps to one exact current `EnemyTable` id; it remains separate from
+full `au_eny_<id>_*` matches and is identity-only.
 The same publisher projects recovered grammar-derived `au_` names to an enemy
 only when the full current EnemyTable id prefix plus delimiter matches exactly.
 That `enemyNamespaceAudio` projection is identity-only and is not a trigger or

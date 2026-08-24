@@ -303,6 +303,9 @@ Recovered grammar/hash names can also be attached to an enemy item when their
 complete `au_` prefix matches exactly one current EnemyTable id. This is a
 separate recovered-namespace identity edge; it improves discovery but does not
 reduce strict unknown-use status or establish an enemy consumer.
+Leading `au_monster_<token>_*` names follow the same boundary only when the
+token maps to one exact current `EnemyTable` id; the token relation is kept
+separate from full `au_eny_<id>_*` matches and remains identity-only.
 Serialized AnimationClip audio callbacks are independently sufficient to link
 an Event to the exact clips and character/enemy owner recorded by the callback
 context. The Event and clip names need not match. AnimatorController membership

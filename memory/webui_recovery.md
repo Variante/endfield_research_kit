@@ -415,6 +415,9 @@ Enemy cards now have the same separate surface for recovered `au_` names with
 an exact full EnemyTable-id prefix. Because these names are grammar/hash
 recovery rather than consumer evidence, the UI retains the identity-only label
 and does not promote them to enemy skill or animation playback.
+Uniquely owned leading `au_monster_<token>_*` names are included under the same
+collapsed group, with the token relation labeled separately from a full enemy
+id prefix and retaining the identity-only boundary.
 Audio detail keeps each callback Clip's resolved entity IDs separate from its
 candidate entity IDs. Exact Character/Enemy/EnemyTemplate overlay matches are
 resolved; unique-token or multi-match identities remain candidate/ambiguous,

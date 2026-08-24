@@ -172,13 +172,42 @@ class MediaOwnershipTests(unittest.TestCase):
                     "possibleMediaCount": 1,
                     "media": [{"mediaId": 8, "src": "/export/audio/8.flac"}],
                 },
+                {
+                    "id": "au_monster_aghornb_hit_fullbody_big_stagger",
+                    "eventIdentityStatus": "recoveredAuthoredName",
+                    "purposeKnowledgeStatus": "unknownUse",
+                    "playbackLocationStatus": "unknown",
+                    "possibleMediaCount": 1,
+                    "media": [{"mediaId": 9, "src": "/export/audio/9.flac"}],
+                },
             ],
-            ["eny_0007_mimicw"],
+            ["eny_0007_mimicw", "eny_0023_aghornb"],
         )
         rows = projected["enemies"]["eny_0007_mimicw"]
         self.assertEqual([row["id"] for row in rows], ["au_eny_0007_mimicw_die"])
         self.assertEqual(rows[0]["authoredNamespaceOwnershipStatus"], "recoveredEnemyNamespaceIdentity")
-        self.assertEqual(projected["counts"]["uniqueEvents"], 1)
+        self.assertEqual(projected["counts"]["uniqueEvents"], 2)
+        monster_rows = projected["enemies"]["eny_0023_aghornb"]
+        self.assertEqual([row["id"] for row in monster_rows], ["au_monster_aghornb_hit_fullbody_big_stagger"])
+        self.assertEqual(
+            monster_rows[0]["namespaceEvidence"],
+            "uniqueRecoveredMonsterTokenAgainstCurrentEnemyTable",
+        )
+
+    def test_monster_namespace_fails_closed_on_duplicate_token(self):
+        projected = media_ownership.project_enemy_namespace_gameplay_audio(
+            [{
+                "id": "au_monster_aghornb_hit",
+                "eventIdentityStatus": "recoveredAuthoredName",
+                "purposeKnowledgeStatus": "unknownUse",
+                "playbackLocationStatus": "unknown",
+                "possibleMediaCount": 1,
+                "media": [{"mediaId": 9, "src": "/export/audio/9.flac"}],
+            }],
+            ["eny_0023_aghornb", "eny_0042_aghornb"],
+        )
+        self.assertEqual(projected["counts"]["uniqueEvents"], 0)
+        self.assertEqual(projected["counts"]["enemies"], 0)
 
     def test_animation_callback_link_preserves_non_matching_clip_and_owner(self):
         events = [
