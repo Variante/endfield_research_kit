@@ -265,8 +265,12 @@ archetypes remain labeled source kits rather than finished characters.
   attachments, or PSO. Current-build `UnityPlayer.dll` now proves
   `SRP_INSTANCING_ON` is HyperGryph built-in keyword ordinal 30, and the exact
   instanced pair directly indexes 256-byte records for instance IDs 0-255 with
-  no shader-side base. Selection remains open because GPU-instancing state and
-  the one-particle batch do not prove that ordinal 30 was enabled. Admission
+  no shader-side base. The body-hashed native registry/accessor path seeds only
+  stereo built-ins 35/33/36/37 by default; it does not seed ordinal 30. An
+  apparent `bts ..., 0x1e` site is instead mutually exclusive high-bit encoding
+  of a dynamic keyword ID, not a built-in keyword-set write. Selection remains
+  open because GPU-instancing state, registry ownership, and the one-particle
+  batch do not prove that ordinal 30 was enabled. Admission
   therefore still requires the native draw discriminator and publisher gates
   plus both fixed-control 60 Hz windows; M21, exact `suikuai (1)`, and M27 must
   remain unchanged throughout.

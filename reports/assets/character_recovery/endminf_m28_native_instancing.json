@@ -67,12 +67,65 @@
     "sourceConsumerBurstCount": 1,
     "oneInstanceSelectionBoundary": "Instance 0 makes the instanced and non-instanced per-object lanes numerically compatible; it does not prove which pair was selected."
   },
+  "nativeSelectionSearch": {
+    "bodyHashedFunctions": [
+      {
+        "name": "keywordAccessor",
+        "virtualAddress": "0x180618C50",
+        "bytes": 2248,
+        "sha256": "13ea0815a067a39fff56ecabb150635a1533c8573475d870f49fa98483ff4d87"
+      },
+      {
+        "name": "keywordRegistryInit",
+        "virtualAddress": "0x180619520",
+        "bytes": 324,
+        "sha256": "4ecca66c0514341ce460dde5513efe3da215a87cc803ca6d1a2f3cf1d787b52a"
+      },
+      {
+        "name": "defaultBuiltInSet",
+        "virtualAddress": "0x180614000",
+        "bytes": 413,
+        "sha256": "ef0bf83b663f8506250eb7ad692eab57c319abc8dd8fd589557887b4927c996f"
+      },
+      {
+        "name": "keywordRegister",
+        "virtualAddress": "0x180627040",
+        "bytes": 656,
+        "sha256": "68e731952f52c629e7ae95e12b67834cc7cb14fa76659aac700ee76ff5e94e0a"
+      }
+    ],
+    "defaultBuiltInSeed": {
+      "ordinals": [
+        35,
+        33,
+        36,
+        37
+      ],
+      "names": [
+        "STEREO_INSTANCING_ON",
+        "UNITY_SINGLE_PASS_STEREO",
+        "STEREO_MULTIVIEW_ON",
+        "STEREO_CUBEMAP_RENDER_ON"
+      ],
+      "containsSrpInstancing": false,
+      "conclusion": "The exact four-keyword default seed contains only stereo modes; it does not enable SRP_INSTANCING_ON."
+    },
+    "rejectedBit30FalsePositive": {
+      "virtualAddress": "0x180627145",
+      "instruction": "bts eax, 0x1e",
+      "classification": "dynamic keyword-ID namespace encoding",
+      "reason": "The bit is applied to a dynamically returned keyword ID inside the string-registration function, alongside mutually exclusive bit-31 and bit-30-plus-31 encodings. It is not a write to a built-in keyword-set lane and cannot prove ordinal 30 selection."
+    },
+    "selectionConsequence": "Static registry ownership, the default seed, and the apparent bit-30 site do not close the retail M28 draw discriminator."
+  },
   "selection": {
     "selectedPair": "undetermined",
     "admitted": false,
     "closed": [
       "both complete D3D11 pair programs",
       "native built-in keyword identity and ordinal",
+      "keyword registry/accessor ownership and the stereo-only default seed",
+      "rejection of the keyword-ID bit-30 false positive",
       "256-byte instance record, capacity 256, and no shader-side base",
       "both source renderers use one-particle mesh GPU instancing"
     ],

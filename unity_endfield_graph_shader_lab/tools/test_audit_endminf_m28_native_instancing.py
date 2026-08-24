@@ -45,6 +45,17 @@ class AuditEndminfM28NativeInstancingTests(unittest.TestCase):
         self.assertFalse(contract["shaderSideBaseOffset"])
         self.assertEqual(contract["sourceConsumerBurstCount"], 1)
 
+    def test_static_search_keeps_bit30_false_positive_separate(self) -> None:
+        self.assertNotIn(
+            MODULE.SRP_KEYWORD_ORDINAL,
+            MODULE.DEFAULT_BUILTIN_ORDINALS,
+        )
+        self.assertIn(
+            bytes.fromhex("0fbae81e"),
+            MODULE.KEYWORD_ID_BIT30_SEQUENCE,
+        )
+        self.assertEqual(MODULE.DEFAULT_BUILTIN_ORDINALS, (35, 33, 36, 37))
+
 
 if __name__ == "__main__":
     unittest.main()

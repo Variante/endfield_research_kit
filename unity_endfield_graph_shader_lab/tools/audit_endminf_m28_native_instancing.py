@@ -36,6 +36,20 @@ KEYWORD_TABLE_COUNT = 57
 KEYWORD_ENTRY_BYTES = 16
 SRP_KEYWORD_ORDINAL = 30
 SRP_KEYWORD_ENTRY_OFFSET = 0x2104B90
+KEYWORD_ACCESSOR_RANGE = (0x180618C50, 0x180619518)
+KEYWORD_ACCESSOR_SHA256 = "13ea0815a067a39fff56ecabb150635a1533c8573475d870f49fa98483ff4d87"
+KEYWORD_REGISTRY_INIT_RANGE = (0x180619520, 0x180619664)
+KEYWORD_REGISTRY_INIT_SHA256 = "4ecca66c0514341ce460dde5513efe3da215a87cc803ca6d1a2f3cf1d787b52a"
+DEFAULT_BUILTIN_SET_RANGE = (0x180614000, 0x18061419D)
+DEFAULT_BUILTIN_SET_SHA256 = "ef0bf83b663f8506250eb7ad692eab57c319abc8dd8fd589557887b4927c996f"
+DEFAULT_BUILTIN_ORDINALS_VA = 0x181D88A48
+DEFAULT_BUILTIN_ORDINALS = (35, 33, 36, 37)
+KEYWORD_REGISTER_RANGE = (0x180627040, 0x1806272D0)
+KEYWORD_REGISTER_SHA256 = "68e731952f52c629e7ae95e12b67834cc7cb14fa76659aac700ee76ff5e94e0a"
+KEYWORD_ID_BIT30_SEQUENCE_VA = 0x180627145
+KEYWORD_ID_BIT30_SEQUENCE = bytes.fromhex(
+    "8b8424800000000fbae81eeb42488d"
+)
 EXPECTED_KEYWORD_NEIGHBORS = {
     26: "INSTANCING_ON",
     27: "PROCEDURAL_INSTANCING_ON",
@@ -128,6 +142,89 @@ def read_keyword_table(
     return names
 
 
+def read_va_bytes(
+    data: bytes,
+    va: int,
+    size: int,
+    image_base: int,
+    sections: list[dict[str, int | str]],
+) -> bytes:
+    offset = va_to_offset(va, image_base, sections)
+    require(offset + size <= len(data), f"VA range exceeds UnityPlayer: 0x{va:X}")
+    return data[offset : offset + size]
+
+
+def validate_native_selection_search(
+    data: bytes,
+    image_base: int,
+    sections: list[dict[str, int | str]],
+    names: list[str],
+) -> dict[str, object]:
+    ranges = (
+        ("keywordAccessor", KEYWORD_ACCESSOR_RANGE, KEYWORD_ACCESSOR_SHA256),
+        ("keywordRegistryInit", KEYWORD_REGISTRY_INIT_RANGE,
+         KEYWORD_REGISTRY_INIT_SHA256),
+        ("defaultBuiltInSet", DEFAULT_BUILTIN_SET_RANGE,
+         DEFAULT_BUILTIN_SET_SHA256),
+        ("keywordRegister", KEYWORD_REGISTER_RANGE, KEYWORD_REGISTER_SHA256),
+    )
+    bodies = []
+    for name, (start, end), expected_sha in ranges:
+        body = read_va_bytes(data, start, end - start, image_base, sections)
+        require(sha256_bytes(body) == expected_sha,
+                f"{name} native body drifted")
+        bodies.append({
+            "name": name,
+            "virtualAddress": f"0x{start:X}",
+            "bytes": len(body),
+            "sha256": expected_sha,
+        })
+
+    ordinal_bytes = read_va_bytes(
+        data, DEFAULT_BUILTIN_ORDINALS_VA,
+        len(DEFAULT_BUILTIN_ORDINALS) * 4, image_base, sections
+    )
+    ordinals = struct.unpack(f"<{len(DEFAULT_BUILTIN_ORDINALS)}I", ordinal_bytes)
+    require(ordinals == DEFAULT_BUILTIN_ORDINALS,
+            "default built-in keyword ordinal seed drifted")
+    require(SRP_KEYWORD_ORDINAL not in ordinals,
+            "SRP_INSTANCING_ON unexpectedly entered the default seed")
+    bit_sequence = read_va_bytes(
+        data, KEYWORD_ID_BIT30_SEQUENCE_VA, len(KEYWORD_ID_BIT30_SEQUENCE),
+        image_base, sections
+    )
+    require(bit_sequence == KEYWORD_ID_BIT30_SEQUENCE,
+            "keyword-ID bit-30 classifier sequence drifted")
+
+    return {
+        "bodyHashedFunctions": bodies,
+        "defaultBuiltInSeed": {
+            "ordinals": list(ordinals),
+            "names": [names[index] for index in ordinals],
+            "containsSrpInstancing": False,
+            "conclusion": (
+                "The exact four-keyword default seed contains only stereo modes; "
+                "it does not enable SRP_INSTANCING_ON."
+            ),
+        },
+        "rejectedBit30FalsePositive": {
+            "virtualAddress": f"0x{KEYWORD_ID_BIT30_SEQUENCE_VA:X}",
+            "instruction": "bts eax, 0x1e",
+            "classification": "dynamic keyword-ID namespace encoding",
+            "reason": (
+                "The bit is applied to a dynamically returned keyword ID inside "
+                "the string-registration function, alongside mutually exclusive "
+                "bit-31 and bit-30-plus-31 encodings. It is not a write to a "
+                "built-in keyword-set lane and cannot prove ordinal 30 selection."
+            ),
+        },
+        "selectionConsequence": (
+            "Static registry ownership, the default seed, and the apparent bit-30 "
+            "site do not close the retail M28 draw discriminator."
+        ),
+    }
+
+
 def validate_instance_contract() -> dict[str, object]:
     program = json.loads(PROGRAM_REPORT.read_text(encoding="utf-8"))
     source = json.loads(SOURCE_REPORT.read_text(encoding="utf-8"))
@@ -207,6 +304,9 @@ def build(unity_player: Path, gate: common.InstalledNativeInputs) -> dict[str, o
             "SRP_INSTANCING_ON is not unique in the built-in table")
     require(data.count(b"SRP_INSTANCING_ON\0") == 1,
             "SRP_INSTANCING_ON string occurrence count drifted")
+    selection_search = validate_native_selection_search(
+        data, image_base, sections, names
+    )
 
     return {
         "schema": "endfield.endminf-m28-native-instancing.v1",
@@ -241,12 +341,15 @@ def build(unity_player: Path, gate: common.InstalledNativeInputs) -> dict[str, o
             ),
         },
         "instanceContract": validate_instance_contract(),
+        "nativeSelectionSearch": selection_search,
         "selection": {
             "selectedPair": "undetermined",
             "admitted": False,
             "closed": [
                 "both complete D3D11 pair programs",
                 "native built-in keyword identity and ordinal",
+                "keyword registry/accessor ownership and the stereo-only default seed",
+                "rejection of the keyword-ID bit-30 false positive",
                 "256-byte instance record, capacity 256, and no shader-side base",
                 "both source renderers use one-particle mesh GPU instancing",
             ],
