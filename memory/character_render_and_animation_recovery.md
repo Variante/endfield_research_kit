@@ -253,6 +253,16 @@ archetypes remain labeled source kits rather than finished characters.
   brightened, or retimed. Detailed per-stage thresholds, bounds, and hashes
   live in `reports/assets/character_recovery/endminf_post_stage_m13_delta.json`.
   This is Unity-path attribution only and does not establish a retail mismatch.
+- The frame-generation-off recording visibly confirms additional faceted
+  fragments around the raised hand, but the two blocked `overview_02/all/suikuai`
+  rows are not yet safe substitutes for M21. Their exact material and mesh
+  identities are retained, and a focused binding probe admitted only those two
+  rows. At their authored late-burst time the current public Refract/LitEffect
+  consumers produced large gray and rainbow geometry rather than the retail
+  fragments. The probe was rejected and both rows were restored fail-closed;
+  the canonical sequence again reports 66 admitted renderers and the same four
+  blocked identities. Recover their exact live shader/particle-stream consumer
+  before publishing either row. Do not compensate by modifying M21.
 - Blink, facial, physical-transform, CharacterNPR, eye, hair, shadow, GBuffer,
   light, cookie, irradiance, particle, gacha, and post-processing behavior is
   recovered only where its input contract is verified. Unknown inputs remain
