@@ -255,14 +255,20 @@ archetypes remain labeled source kits rather than finished characters.
   This is Unity-path attribution only and does not establish a retail mismatch.
 - The frame-generation-off recording visibly confirms additional faceted
   fragments around the raised hand, but the two blocked `overview_02/all/suikuai`
-  rows are not yet safe substitutes for M21. Their exact material and mesh
-  identities are retained, and a focused binding probe admitted only those two
-  rows. At their authored late-burst time the current public Refract/LitEffect
-  consumers produced large gray and rainbow geometry rather than the retail
-  fragments. The probe was rejected and both rows were restored fail-closed;
-  the canonical sequence again reports 66 admitted renderers and the same four
-  blocked identities. Recover their exact live shader/particle-stream consumer
-  before publishing either row. Do not compensate by modifying M21.
+  rows are not safe substitutes for M21. Both source renderers are authored
+  enabled, nonlooping, GPU-instanced mesh bursts at 4.49 seconds; an importer
+  marker bug formerly mislabeled blocked rows as source-disabled and is now
+  corrected. The Refract row selects the distinct `_USE_BLEND +
+  _USE_RBOFFSET + _USE_RGBOFFSET` fragment, including BlendTex alpha and a
+  three-tap RGB split, plus the original particle-instance vertex transport;
+  the M28 consumer implements only `_USE_RBOFFSET`. The LitEffect row disables
+  ForwardOnly and selects the five-MRT deferred HGBuffer program, while the
+  compatibility shader is a one-target ForwardOnly stand-in. A 60 Hz focused
+  probe at the authored burst boundary still produced oversized chromatic
+  triangles from the incomplete Refract program. Both rows therefore remain
+  fail-closed and outside the M01/M38/M28 compatibility sets. Recover their
+  exact fragment/deferred consumers before publishing either row; do not
+  compensate by resizing, brightening, retiming, or disabling M21.
 - Blink, facial, physical-transform, CharacterNPR, eye, hair, shadow, GBuffer,
   light, cookie, irradiance, particle, gacha, and post-processing behavior is
   recovered only where its input contract is verified. Unknown inputs remain
