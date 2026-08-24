@@ -91,6 +91,8 @@
       noData: "No records were emitted for this audio dataset.",
       runtimeSystem: "Runtime system",
       runtimeBoundary: "Evidence boundary",
+      runtimeObservedRequest: "Verified runtime request",
+      runtimeObservedRequestNote: "This Event was observed at a managed audio request boundary in a hash-verified capture. It proves the request executed in that capture, not Wwise branch selection, decoded-media selection, or audibility.",
       runtimeComponents: "Runtime components",
       hircInventory: "Wwise HIRC inventory",
       controlCatalog: "Audio controls / cue catalog",
@@ -403,6 +405,8 @@
       noData: "\u8be5\u97f3\u9891\u6570\u636e\u96c6\u6ca1\u6709\u751f\u6210\u8bb0\u5f55\u3002",
       runtimeSystem: "\u8fd0\u884c\u65f6\u7cfb\u7edf",
       runtimeBoundary: "\u8bc1\u636e\u8fb9\u754c",
+      runtimeObservedRequest: "\u5df2\u9a8c\u8bc1\u8fd0\u884c\u65f6\u8bf7\u6c42",
+      runtimeObservedRequestNote: "\u6b64 Event \u5728\u5df2\u9a8c\u8bc1\u54c8\u5e0c\u7684\u6355\u83b7\u4e2d\u4e8e\u97f3\u9891\u8bf7\u6c42\u8fb9\u754c\u88ab\u89c2\u5bdf\u5230\u3002\u8fd9\u4ec5\u8bc1\u660e\u8be5\u6355\u83b7\u4e2d\u7684\u8bf7\u6c42\u6267\u884c\uff0c\u4e0d\u8bc1\u660e Wwise \u5206\u652f\u3001\u5df2\u89e3\u7801\u5a92\u4f53\u6216\u53ef\u542c\u6027\u3002",
       runtimeComponents: "\u8fd0\u884c\u65f6\u7ec4\u4ef6",
       hircInventory: "Wwise HIRC \u5e93\u5b58",
       controlCatalog: "\u97f3\u9891\u63a7\u5236 / Cue \u76ee\u5f55",
@@ -5554,6 +5558,21 @@
       panel.appendChild(noteSection(t("runtimeBoundary"), t("unknownLocationBoundary")));
     } else if (record.kind === "media" && raw.playbackLocationStatus === "eventRelationOnly") {
       panel.appendChild(noteSection(t("runtimeBoundary"), t("eventOnlyLocationBoundary")));
+    }
+    if (raw.runtimeObservationStatus === "verifiedObservedRequest") {
+      const sessions = asArray(raw.runtimeObservationSessionIds).join(" / ");
+      const sources = asArray(raw.runtimeObservationSourceKinds).join(" / ");
+      panel.appendChild(noteSection(
+        t("runtimeObservedRequest"),
+        `${t("runtimeObservedRequestNote")} ${formatNumber(raw.runtimeObservationCount || 0)} observation(s)`
+          + (sessions ? ` / session(s): ${sessions}` : "")
+          + (sources ? ` / source(s): ${sources}` : ""),
+      ));
+    } else if (raw.runtimeObservationStatus === "verifiedObservedEventRelation") {
+      panel.appendChild(noteSection(
+        t("runtimeObservedRequest"),
+        `${t("runtimeObservedRequestNote")} ${formatNumber(raw.runtimeObservationCount || 0)} related observation(s).`,
+      ));
     }
 
     const evidence = asArray(raw.evidence).filter((value) => value && typeof value === "object");

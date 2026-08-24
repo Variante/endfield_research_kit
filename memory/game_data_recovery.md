@@ -293,6 +293,11 @@ The same exact namespace relation can safely project Event/media candidates to
 an existing character item for discovery, but it remains an identity edge. It
 does not lower strict unknown-use status or become a gameplay consumer edge
 without independent trigger or runtime evidence.
+Verified offline capture bundles are a separate evidence source: a captured
+managed request can bind an Event and its exact possible-media relations for
+that build/session, but the result remains an observed request boundary. It
+does not convert static possibilities into a selected Wwise leaf or audible
+playback claim.
 Recovered grammar/hash names can also be attached to an enemy item when their
 complete `au_` prefix matches exactly one current EnemyTable id. This is a
 separate recovered-namespace identity edge; it improves discovery but does not

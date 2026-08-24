@@ -249,6 +249,18 @@ python -m scripts.story_recovery.runtime_trace import --profile mission CAPTURE.
 python -m scripts.story_recovery.runtime_trace import --profile audio CAPTURE.jsonl
 ```
 
+To publish a verified imported capture onto the Audio Event/media detail rows,
+rerun the semantic publisher with its JSON bundle:
+
+```bat
+python scripts\build_audio_semantics.py --language CN --runtime-trace-bundle reports\story\recovery\audio_runtime_trace.json
+```
+
+The projection requires the bundle's current schema, matching language, and
+verified GameAssembly path/size/SHA-256 facts. It records observed managed
+request boundaries and exact Event-to-media relations, but never promotes a
+capture to selected Wwise branch, decoded leaf, or audibility evidence.
+
 The reviewed LevelScript task paths are builder-owned in
 `story_builder/native_contracts/mission_task_paths.json`. The protocol registry
 reads that contract directly; the mission runtime hook manifest references and
