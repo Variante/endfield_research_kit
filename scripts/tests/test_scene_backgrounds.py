@@ -1942,6 +1942,79 @@ class PublishedObjectIndexGateTests(unittest.TestCase):
             self.assertEqual(result["counts"]["missionSceneRefs"], 1)
             self.assertEqual(result["counts"]["audioLevelEventOccurrences"], 2)
 
+    def test_missing_source_preserves_independently_validated_source(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            index_dir = root / "persistent-index"
+            index_dir.mkdir()
+            objects_path = index_dir / "objects.jsonl.gz"
+            with gzip.open(objects_path, "wt", encoding="utf-8") as stream:
+                stream.write(json.dumps(object_row(
+                    scene_backgrounds.AUDIO_MAP_DATA_TYPE,
+                    [["$.levelGlobalEvents._sceneNames[0]", "s", "map01_lv001"]],
+                    path_id=6,
+                    name="persistent_audio",
+                )) + "\n")
+            summary = {
+                "complete": True,
+                "counts": {"objects": 1},
+                "outputs": {"objects": {"path": objects_path.name, "sha256": "fixture"}},
+                "stageSignature": {"sha256": "stage"},
+            }
+
+            def load_summary(_root: Path, source: str) -> dict[str, object] | None:
+                return summary if source == "Persistent" else None
+
+            with (
+                patch.object(
+                    scene_backgrounds,
+                    "load_animestudio_object_index_summary",
+                    side_effect=load_summary,
+                ),
+                patch.object(
+                    scene_backgrounds,
+                    "animestudio_object_index_dir",
+                    return_value=index_dir,
+                ),
+            ):
+                result = scene_backgrounds.collect_scene_background_semantics(
+                    root, {}, sources=("StreamingAssets", "Persistent")
+                )
+
+            self.assertEqual(result["status"], "validatedPartialPublishedObjectIndex")
+            self.assertEqual(result["counts"]["requestedObjectIndexSources"], 2)
+            self.assertEqual(result["counts"]["validatedObjectIndexSources"], 1)
+            self.assertEqual(result["counts"]["unavailableObjectIndexSources"], 1)
+            self.assertEqual(
+                result["counts"]["objectRowsScannedBySource"], {"Persistent": 1}
+            )
+            self.assertEqual(result["sources"][0]["source"], "Persistent")
+            self.assertEqual(result["sourceDiagnostics"], [{
+                "source": "StreamingAssets",
+                "status": "missingPublishedObjectIndex",
+                "diagnostic": (
+                    "StreamingAssets: no published object index; run an installed-game "
+                    "Story/all export with --animestudio-object-index"
+                ),
+            }])
+            self.assertEqual(result["scenes"][0]["sceneId"], "map01_lv001")
+            self.assertIn("no cross-source identity", result["evidenceBoundary"])
+
+    def test_all_missing_sources_still_fail_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            with patch.object(
+                scene_backgrounds,
+                "load_animestudio_object_index_summary",
+                return_value=None,
+            ):
+                with self.assertRaisesRegex(
+                    scene_backgrounds.SceneBackgroundError,
+                    "no published object index",
+                ):
+                    scene_backgrounds.collect_scene_background_semantics(
+                        Path(temporary), {}, sources=("StreamingAssets", "Persistent")
+                    )
+
     def test_conflicting_audio_level_mirrors_fail_closed(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

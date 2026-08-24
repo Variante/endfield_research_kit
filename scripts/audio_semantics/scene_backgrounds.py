@@ -2667,26 +2667,48 @@ def collect_scene_background_semantics(
     sources: tuple[str, ...] = ("StreamingAssets", "Persistent"),
     scene_containment_index: Any = None,
 ) -> dict[str, Any]:
-    """Load validated merged indexes, scan each once, and build the catalog."""
+    """Load each validated merged index once and build a source-scoped catalog.
+
+    A missing or invalid index excludes only that VFS source.  Exact rows from
+    another independently validated source remain usable; no object identity
+    or containment edge is joined across the missing-source boundary.
+    """
     rows_by_source: dict[str, Iterable[dict[str, Any]]] = {}
     evidence: list[dict[str, Any]] = []
+    source_diagnostics: list[dict[str, Any]] = []
     expected_counts: dict[str, int] = {}
     for source in sources:
         summary = load_animestudio_object_index_summary(export_root, source)
         if summary is None:
-            raise SceneBackgroundError(
-                f"{source}: no published object index; run an installed-game Story/all "
-                "export with --animestudio-object-index"
-            )
+            source_diagnostics.append({
+                "source": source,
+                "status": "missingPublishedObjectIndex",
+                "diagnostic": (
+                    f"{source}: no published object index; run an installed-game "
+                    "Story/all export with --animestudio-object-index"
+                ),
+            })
+            continue
         if summary.get("complete") is not True:
             errors = "; ".join(str(value) for value in summary.get("errors") or ())
-            raise SceneBackgroundError(
-                f"{source}: published object index is invalid: {errors or 'unknown error'}"
-            )
+            source_diagnostics.append({
+                "source": source,
+                "status": "invalidPublishedObjectIndex",
+                "diagnostic": (
+                    f"{source}: published object index is invalid: "
+                    f"{errors or 'unknown error'}"
+                ),
+            })
+            continue
         output = (summary.get("outputs") or {}).get("objects") or {}
         relative_name = str(output.get("path") or "")
         if not relative_name or Path(relative_name).name != relative_name:
-            raise SceneBackgroundError(f"{source}: merged objects output path is invalid")
+            source_diagnostics.append({
+                "source": source,
+                "status": "invalidPublishedObjectIndex",
+                "diagnostic": f"{source}: merged objects output path is invalid",
+            })
+            continue
         index_dir = animestudio_object_index_dir(export_root, source)
         rows_by_source[source] = _iter_gzip_rows(index_dir / relative_name)
         expected_counts[source] = int((summary.get("counts") or {}).get("objects") or 0)
@@ -2698,6 +2720,14 @@ def collect_scene_background_semantics(
             "expectedObjectRows": expected_counts[source],
             "stageSignatureSha256": (summary.get("stageSignature") or {}).get("sha256"),
         })
+
+    if not rows_by_source:
+        diagnostics = "; ".join(
+            str(row.get("diagnostic") or "") for row in source_diagnostics
+        )
+        raise SceneBackgroundError(
+            diagnostics or "no validated published object index is available"
+        )
 
     streaming_instance_catalog = _load_streaming_instance_identity_catalog(export_root)
     result = build_scene_background_catalog(
@@ -2719,6 +2749,13 @@ def collect_scene_background_semantics(
             raise SceneBackgroundError(
                 f"{source}: merged object count mismatch: {actual} parsed, {expected} published"
             )
+
+    result["sourceDiagnostics"] = source_diagnostics
+    result["counts"]["requestedObjectIndexSources"] = len(sources)
+    result["counts"]["validatedObjectIndexSources"] = len(rows_by_source)
+    result["counts"]["unavailableObjectIndexSources"] = len(source_diagnostics)
+    if source_diagnostics:
+        result["status"] = "validatedPartialPublishedObjectIndex"
 
     wwise_by_hash = _wwise_lookup(audio_index)
     media_by_id = _media_lookup(audio_index)
@@ -2842,4 +2879,9 @@ def collect_scene_background_semantics(
         "scene activation, live State/RTPC values, listener position, branch selection, "
         "playback, and audibility remain unobserved."
     )
+    if source_diagnostics:
+        result["evidenceBoundary"] += (
+            " Missing or invalid VFS object-index sources are excluded source-locally; "
+            "no cross-source identity, containment, or ownership join is inferred."
+        )
     return result
