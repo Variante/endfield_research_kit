@@ -70,7 +70,9 @@ the completed result can later rebuild all characters.
 - Endminf's selected `ui_overview_start -> ui_overview_loop` handoff now runs
   through a generated source-backed Animator controller, and its four resolved
   overview rocks/crystals follow the exact 1.5-second active-state gate. The
-  broader all-character runtime remains partial.
+  runtime consumes rotation-only root motion like the pinned native callback.
+  Its burst stripes bind the exact source-alpha texture rather than the former
+  missing-texture white quad. The broader all-character runtime remains partial.
 - Selected CharacterNPR, eye, hair, shadow, GBuffer, lighting, particle, and
   post-process contracts are source-backed and fail closed where inputs are
   unknown.
