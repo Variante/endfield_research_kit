@@ -637,6 +637,11 @@ propagates that owner set to possible media, retaining every owner when a Wwise
 leaf is shared.
 Generic character templates, display-name similarity, actions, runtime
 requests, selected leaves, and playback positions are not inferred.
+`audio_semantics/media_ownership.py` also owns the compact Gameplay projection
+of these exact namespace Events and playable candidates. The semantics entry
+point only publishes that projection into the language-specific
+`gameplay/sound_effects.json` sidecar; it remains separate from trigger-backed
+skill and animation audio.
 Every supported serialized AnimationClip `PostAudioEvent` context is also
 projected as an explicit Event/media callback link with its clip, owner,
 function, reachability, and AnimatorController names when available. This

@@ -435,6 +435,10 @@ such as `lastrite_*`, `lizhiyan_*`, and `pograni_*` are accepted only when the
 token has one exact CharacterTable owner. Shared media shows all named
 character owners, while generic character templates and concrete playback
 locations remain unresolved.
+Gameplay character items also expose these exact namespace-owned Events and
+their playable candidates in a separate collapsed group. They are not merged
+with skill or animation-triggered SFX: the group is identity-only and does not
+claim an action, skill, Event post, selected Wwise branch, or playback.
 All supported AnimationClip audio callbacks are shown separately from the
 same-name action classification. Event/media details expose the exact clips,
 callback functions, owners, reachability, and recovered AnimatorController
