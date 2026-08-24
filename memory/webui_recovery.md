@@ -429,6 +429,9 @@ Enemy cards additionally expose explicit authored response candidates from
 serialized/ResponsiveDialog contexts when their owner equals a current enemy;
 these remain separate from native callsites and do not claim live selection or
 playback.
+Conversation cards now expose exact playable lifecycle hooks for existing
+`AudioDialogCustomEventTable` dialog IDs, with phase labels and the same
+runtime-dispatch/playback boundary.
 Audio detail keeps each callback Clip's resolved entity IDs separate from its
 candidate entity IDs. Exact Character/Enemy/EnemyTemplate overlay matches are
 resolved; unique-token or multi-match identities remain candidate/ambiguous,

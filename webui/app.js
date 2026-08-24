@@ -6064,6 +6064,35 @@ function isWikiCharacterArchiveConv(conv) {
   return String(conv && conv.key || "").startsWith("wiki_chr_");
 }
 
+function renderDialogLifecycleAudioBlock(conv) {
+  const rows = Array.isArray(conv?.dialogLifecycleAudio) ? conv.dialogLifecycleAudio : [];
+  if (!rows.length) return null;
+  const details = document.createElement("details");
+  details.className = "summary-box cutscene-audio-block dialog-lifecycle-audio-block";
+  const summary = document.createElement("summary");
+  summary.className = "summary-label";
+  summary.textContent = `${uiText("dialogLifecycleAudio")} (${rows.length})`;
+  details.appendChild(summary);
+  for (const row of rows) {
+    const entry = document.createElement("div");
+    entry.className = "cutscene-audio-row";
+    const title = document.createElement("div");
+    title.className = "cutscene-audio-title";
+    title.textContent = [uiText(`dialogLifecycle_${row.lifecyclePhase}`), row.eventId].filter(Boolean).join(" | ");
+    entry.appendChild(title);
+    for (const media of row.mediaRefs || []) {
+      const control = createAudioControl(media.src, row.eventId);
+      if (control) entry.appendChild(control);
+    }
+    const note = document.createElement("div");
+    note.className = "cutscene-audio-detail";
+    note.textContent = uiText("dialogLifecycleAudioNote");
+    entry.appendChild(note);
+    details.appendChild(entry);
+  }
+  return details;
+}
+
 function usesLineHintsAsSpeakers(conv) {
   return isWikiCharacterArchiveConv(conv) || String(conv && conv.kind || "") === "responsive";
 }
@@ -6939,6 +6968,9 @@ function renderConv(conv) {
 
   const hintBlock = renderConversationHints(conv);
   if (hintBlock) frag.appendChild(hintBlock);
+
+  const dialogLifecycleAudioBlock = renderDialogLifecycleAudioBlock(conv);
+  if (dialogLifecycleAudioBlock) frag.appendChild(dialogLifecycleAudioBlock);
 
   const archiveLinksBlock = renderArchiveLinksBlock(entry, conv);
   if (archiveLinksBlock) frag.appendChild(archiveLinksBlock);

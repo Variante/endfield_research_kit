@@ -467,6 +467,10 @@ Enemy cards also expose authored response candidates when a serialized
 ResponsiveDialog, skill, or animation context carries an explicit owner equal
 to the current EnemyTable id. These candidates are separate from native
 response callsites and retain their unresolved live-selection boundary.
+Story conversation cards also show exact playable AudioDialog lifecycle hooks
+when their `dialogId` exists in the current conversation bundle. Preload and
+post-enter phases remain authored scheduling evidence, not runtime dispatch or
+playback proof.
 All supported AnimationClip audio callbacks are shown separately from the
 same-name action classification. Event/media details expose the exact clips,
 callback functions, owners, reachability, and recovered AnimatorController
