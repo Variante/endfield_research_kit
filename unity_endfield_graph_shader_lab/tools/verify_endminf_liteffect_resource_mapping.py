@@ -14,13 +14,14 @@ import hashlib
 import json
 import re
 import struct
+import subprocess
 import sys
 from pathlib import Path
 from typing import Any, Iterable
 
 
 ROOT = Path(__file__).resolve().parents[2]
-SIDE_ROOT = ROOT / "unity_endfield_graph_shader_lab" / "Temp" / "Codex" / "liteffect_subprograms"
+SIDE_ROOT = ROOT / "scratch" / "animestudio" / "endminf_liteffect_shader" / "sidecars"
 BYTECODE_ROOT = SIDE_ROOT / "Shader" / "HGRP_LitEffect_p5936F49FA93F14DD.shader.bytecode"
 EVIDENCE_PATH = ROOT / "unity_endfield_graph_shader_lab" / "Assets" / "EndfieldGraphShaderLab" / "Generated" / "Characters" / "Playable" / "Endminf" / "ExternalUiEffects" / "endminf_liteffect_subprogram_evidence.json"
 CLOSURE_PATH = ROOT / "unity_endfield_graph_shader_lab" / "Assets" / "EndfieldGraphShaderLab" / "Generated" / "Characters" / "Playable" / "Endminf" / "ExternalUiEffects" / "endminf_material_closure.json"
@@ -29,8 +30,16 @@ REPORT_PATH = ROOT / "unity_endfield_graph_shader_lab" / "Assets" / "EndfieldGra
 
 VERTEX_FILE = "0114_endfield_dxbc_0.dxbc"
 FRAGMENT_FILE = "0115_endfield_dxbc_1.dxbc"
+VERTEX_SPIRV_FILE = "0117_endfield_spirv_0.spv"
+FRAGMENT_SPIRV_FILE = "0119_endfield_spirv_1.spv"
 VERTEX_RURI = SIDE_ROOT / "Shader" / "HGRP_LitEffect_p5936F49FA93F14DD.shader.bytecode" / "ruri_final" / "parallax_hgbuffer_vertex.hlsl"
 FRAGMENT_RURI = SIDE_ROOT / "Shader" / "HGRP_LitEffect_p5936F49FA93F14DD.shader.bytecode" / "ruri_final" / "parallax_hgbuffer_fragment.hlsl"
+SPIRV_CROSS = ROOT / "tools" / "RenderDoc_1.45" / "RenderDoc_1.45_64" / "plugins" / "spirv" / "spirv-cross.exe"
+
+EXPECTED_SPIRV = {
+    VERTEX_SPIRV_FILE: (15888, "29629b9daddd336e8c3a549ed459108f340d1af00186717bedf31c8e301ef362"),
+    FRAGMENT_SPIRV_FILE: (20160, "5c4f933ae2a53e2f8ba8ee65d1db4b541621d3c0d6174dd0923025a8582de526"),
+}
 
 MATERIAL_NAMES = (
     "M_fx_endminm_gfx_01_p5A6341E8A834E421.json",
@@ -399,6 +408,42 @@ def _descriptor_bindings(metadata: dict[str, Any], set_id: int) -> list[dict[str
     return rows[0].get("Bindings", [])
 
 
+def _packed_stage_register(binding: dict[str, Any], stage: str) -> int | None:
+    packed = int(binding.get("PackedBinding", 0)) & 0xFFFFFFFF
+    stage_mask = packed & 0xFF
+    shift = 24 if stage == "vertex" else 16
+    register = (packed >> shift) & 0xFF
+    stage_bit = 1 if stage == "vertex" else 2
+    return register if stage_mask & stage_bit and register != 0xFF else None
+
+
+def _reflect_spirv_ubos(path: Path) -> list[dict[str, Any]]:
+    expected_size, expected_hash = EXPECTED_SPIRV[path.name]
+    if path.stat().st_size != expected_size or _sha256(path) != expected_hash:
+        raise VerificationError(f"pinned SPIR-V identity drifted: {path.name}")
+    try:
+        completed = subprocess.run(
+            [str(SPIRV_CROSS), str(path), "--reflect"],
+            check=True,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+        )
+        reflection = json.loads(completed.stdout)
+    except (OSError, subprocess.CalledProcessError, json.JSONDecodeError) as exc:
+        raise VerificationError(f"could not reflect {path.name}: {exc}") from exc
+    return [
+        {
+            "name": row.get("name"),
+            "set": int(row["set"]),
+            "binding": int(row["binding"]),
+            "blockSize": int(row["block_size"]),
+            "type": row.get("type"),
+        }
+        for row in reflection.get("ubos", [])
+    ]
+
+
 def _validate_descriptor_contract(metadata: dict[str, Any]) -> dict[str, Any]:
     global_bindings = {row.get("BindingIndex"): row for row in _descriptor_bindings(metadata, 0)}
     for index, name in ((13, "_TransformVariables"), (16, "ShaderVariablesGlobal"), (19, "_VertexSkinMatrices"), (33, "_TerrainSubsurfaceConstants")):
@@ -504,9 +549,8 @@ def _map_vertex_fields(fields: list[dict[str, Any]]) -> list[dict[str, Any]]:
         row = dict(field)
         if field["buffer"] == "_TransformVariables":
             row.update({"stage": "vertex", "register": 0, "registerOffsetBytes": field["offsetBytes"], "status": "resolved_register_range"})
-        elif field["buffer"] == "ShaderVariablesGlobal" and field["offsetBytes"] < 496:
-            register = 1 if field["offsetBytes"] < 320 else 2
-            row.update({"stage": "vertex", "register": register, "registerOffsetBytes": field["offsetBytes"] - (0 if register == 1 else 320), "status": "resolved_register_range"})
+        elif field["buffer"] == "ShaderVariablesGlobal" and field["offsetBytes"] < 320:
+            row.update({"stage": "vertex", "register": 1, "registerOffsetBytes": field["offsetBytes"], "status": "resolved_register_range"})
         else:
             row.update({"stage": "vertex", "register": None, "registerOffsetBytes": None, "status": "gap"})
         result.append(row)
@@ -527,6 +571,8 @@ def build_report() -> dict[str, Any]:
     vertex_meta = _compact_metadata(BYTECODE_ROOT / (VERTEX_FILE + ".metadata.json"))
     fragment_meta = _compact_metadata(BYTECODE_ROOT / (FRAGMENT_FILE + ".metadata.json"))
     descriptor_contract = _validate_descriptor_contract(fragment_meta)
+    vertex_spirv_ubos = _reflect_spirv_ubos(BYTECODE_ROOT / VERTEX_SPIRV_FILE)
+    fragment_spirv_ubos = _reflect_spirv_ubos(BYTECODE_ROOT / FRAGMENT_SPIRV_FILE)
     evidence = _target_evidence(vertex_reflection, fragment_reflection)
     _validate_stage_metadata(vertex_meta, vertex_reflection, evidence, VERTEX_FILE, "vertex")
     _validate_stage_metadata(fragment_meta, fragment_reflection, evidence, FRAGMENT_FILE, "fragment")
@@ -546,6 +592,59 @@ def build_report() -> dict[str, Any]:
         found = {int(row["register"]): row["arraySizes"][-1] for row in actual}
         if found != expected:
             raise VerificationError(f"{label} Ruri cbuffer sizes mismatch: {found!r}")
+
+    logical_descriptor_rows = {
+        row["Name"]: row
+        for row in (
+            descriptor_contract["global"] +
+            [row for row in descriptor_contract["perMaterial"] if row.get("DescriptorType") == 4] +
+            descriptor_contract["perObject"]
+        )
+        if row.get("DescriptorType") == 4
+    }
+    expected_physical = {
+        "vertex": {
+            0: "_TransformVariables",
+            1: "ShaderVariablesGlobal",
+            2: "UnityPerDraw",
+        },
+        "fragment": {
+            0: "_TransformVariables",
+            1: "ShaderVariablesGlobal",
+            2: "UnityPerDraw",
+            3: "UnityPerMaterial",
+            4: "_TerrainSubsurfaceConstants",
+        },
+    }
+    for stage, expected in expected_physical.items():
+        decoded = {
+            register: name
+            for name, row in logical_descriptor_rows.items()
+            if (register := _packed_stage_register(row, stage)) is not None
+        }
+        if decoded != expected:
+            raise VerificationError(
+                f"{stage} PackedBinding register map mismatch: {decoded!r}")
+    expected_spirv_ubos = {
+        (0, 13): ("_TransformVariables", 1312),
+        (0, 16): ("ShaderVariablesGlobal", 3200),
+        (2, 0): ("UnityPerDraw", 256),
+        (1, 12): ("UnityPerMaterial", 576),
+        (0, 33): ("_TerrainSubsurfaceConstants", 16),
+    }
+    for rows, stage in ((vertex_spirv_ubos, "vertex"), (fragment_spirv_ubos, "fragment")):
+        actual = {
+            (row["set"], row["binding"]): row["blockSize"]
+            for row in rows
+        }
+        expected = {
+            location: size
+            for location, (name, size) in expected_spirv_ubos.items()
+            if _packed_stage_register(logical_descriptor_rows[name], stage) is not None
+        }
+        if actual != expected:
+            raise VerificationError(
+                f"{stage} SPIR-V UBO map mismatch: {actual!r}")
 
     dynamic_samplers = {row["BindPoint"]: row["Name"] for row in fragment_meta["samplers"] if isinstance(row.get("BindPoint"), int) and 0 <= row["BindPoint"] <= 5 and str(row.get("Name", "")).startswith("_")}
     if dynamic_samplers != {i: name for i, name in enumerate(TEXTURE_NAMES)}:
@@ -582,13 +681,30 @@ def build_report() -> dict[str, Any]:
 
     common_fields = _common_fields(vertex_meta)
     physical_vertex = [
-        {"register": row["register"], "space": row["space"], "arraySize": row["arraySizes"][-1], "sizeBytes": row["sizeBytes"], "aliases": row["aliases"], "logicalName": "_TransformVariables" if row["register"] == 0 else ("ShaderVariablesGlobal" if row["register"] in (1, 2) else None), "status": "resolved_register_range" if row["register"] in (0, 1, 2) else "gap", "basis": ["Ruri/DXBC cbuffer array size equals serialized _TransformVariables size"] if row["register"] == 0 else (["Ruri/DXBC contiguous 20+11 register range", "serialized ShaderVariablesGlobal field offsets 304 and 416"] if row["register"] in (1, 2) else [])}
+        {"register": row["register"], "space": row["space"], "arraySize": row["arraySizes"][-1], "sizeBytes": row["sizeBytes"], "aliases": row["aliases"], "logicalName": expected_physical["vertex"][row["register"]], "status": "resolved_cross_platform_register", "basis": ["serialized PackedBinding stage/register bytes", "same-blob SPIR-V descriptor set/binding and block size", "DXBC/Ruri used-prefix size"]}
         for row in vertex_ruri["physicalCbuffers"]
     ]
     physical_fragment = [
-        {"register": row["register"], "space": row["space"], "arraySize": row["arraySizes"][-1], "sizeBytes": row["sizeBytes"], "aliases": row["aliases"], "logicalName": None, "status": "gap", "basis": ["DescriptorSet binding names do not encode a D3D b-register relation"] if row["register"] in (3, 4) else [], "candidateLogicalNames": ["UnityPerMaterial"] if row["register"] == 3 else (["UnityPerDraw", "_TerrainSubsurfaceConstants"] if row["register"] == 4 else [])}
+        {"register": row["register"], "space": row["space"], "arraySize": row["arraySizes"][-1], "sizeBytes": row["sizeBytes"], "aliases": row["aliases"], "logicalName": expected_physical["fragment"][row["register"]], "status": "resolved_cross_platform_register", "basis": ["serialized PackedBinding stage/register bytes", "same-blob SPIR-V descriptor set/binding and block size", "DXBC/Ruri used-prefix size"]}
         for row in fragment_ruri["physicalCbuffers"]
     ]
+
+    fragment_fields = []
+    fragment_limits = {
+        "_TransformVariables": (0, 720),
+        "ShaderVariablesGlobal": (1, 1696),
+        "_TerrainSubsurfaceConstants": (4, 16),
+    }
+    for field in common_fields:
+        row = {**field, "stage": "fragment", "register": None,
+               "registerOffsetBytes": None, "status": "gap"}
+        if field["buffer"] in fragment_limits:
+            register, limit = fragment_limits[field["buffer"]]
+            if field["offsetBytes"] + field["sizeBytes"] <= limit:
+                row.update({"register": register,
+                            "registerOffsetBytes": field["offsetBytes"],
+                            "status": "resolved_register_range"})
+        fragment_fields.append(row)
 
     # The generated Shader JSON exposes parameter metadata, but does not emit
     # SerializedSubProgram.m_Channels.  Keep this absence explicit.
@@ -599,7 +715,7 @@ def build_report() -> dict[str, Any]:
     }
     report = {
         "schema": "endfield.endminf-liteffect-resource-mapping.v1",
-        "status": "verified_with_gaps",
+        "status": "verified_with_named_layout_and_consumer_gaps",
         "scope": {"shader": {"cab": "CAB-2c811ef28608ab220ecdb5c4e0629d2d", "pathId": 6428594484694422749, "name": "HGRP/LitEffect"}, "pass": "HGBuffer", "keywords": ["HG_ENABLE_MV", "_PARALLAX_MAP"], "subProgramIndex": 19, "platform": "d3d11"},
         "evidence": evidence,
         "reflection": {
@@ -612,19 +728,23 @@ def build_report() -> dict[str, Any]:
         "fragmentInputs": fragment_reflection["inputs"],
         "mrtOutputs": fragment_reflection["outputs"],
         "resources": {"vertex": vertex_resources, "fragmentTextures": fragment_resources, "fragmentSamplers": static_samplers},
+        "crossPlatformSpirv": {
+            "vertex": vertex_spirv_ubos,
+            "fragment": fragment_spirv_ubos,
+            "packedBindingDecode": "low byte is stage mask; byte 2 is fragment register; byte 3 is vertex register; 0xFF means unbound",
+        },
         "constantBuffers": {
             "vertex": physical_vertex,
             "fragment": physical_fragment,
             "descriptorContract": descriptor_contract,
             "serializedFields": _map_vertex_fields(common_fields),
-            "fragmentFieldMapping": [{**field, "stage": "fragment", "register": None, "registerOffsetBytes": None, "status": "gap"} for field in common_fields],
-            "materialConstantBufferFields": [{"property": prop, "constantBuffer": "UnityPerMaterial", "register": None, "offsetBytes": None, "sizeBytes": None, "status": "gap", "reason": "DescriptorSetParameters names UnityPerMaterial but does not prove its D3D b-register or vector/color offsets"} for prop in (*PARALLAX_FLOATS, *PARALLAX_COLORS)],
+            "fragmentFieldMapping": fragment_fields,
+            "materialConstantBufferFields": [{"property": prop, "constantBuffer": "UnityPerMaterial", "register": 3, "offsetBytes": None, "sizeBytes": None, "status": "resolved_register_unresolved_named_offset", "reason": "PackedBinding and same-blob SPIR-V prove b3 and its 576-byte logical layout, but stripped member names do not map this property to one member offset"} for prop in (*PARALLAX_FLOATS, *PARALLAX_COLORS)],
         },
         "materials": materials,
         "gaps": [
             "DXBC has no RDEF chunk; named common-buffer fields come only from serialized Shader metadata.",
-            "UnityPerMaterial property values are resolved from the three Material JSONs, but DescriptorSetParameters does not prove a b3 relation or property offsets.",
-            "Fragment b4 is a 16-byte register; its identity is ambiguous between UnityPerDraw and _TerrainSubsurfaceConstants.",
+            "UnityPerMaterial is proven at fragment b3 with a 576-byte same-blob SPIR-V layout and 496-byte DXBC used prefix, but stripped member names still leave property-to-offset mapping unresolved.",
             "ParserBindChannels.m_Channels is not exported by AnimeStudio's Shader JSON; do not substitute guessed ShaderLab channels.",
             "The null _ParallaxNoiseMap and _ParallaxMaskMap PPtrs remain unresolved by design.",
         ],

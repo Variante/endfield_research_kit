@@ -52,7 +52,7 @@ class LitEffectResourceMappingTests(unittest.TestCase):
 
     def test_representative_contract_is_reflected_without_rdef(self) -> None:
         report = MODULE.build_report()
-        self.assertEqual(report["status"], "verified_with_gaps")
+        self.assertEqual(report["status"], "verified_with_named_layout_and_consumer_gaps")
         self.assertFalse(report["reflection"]["vertex"]["hasRdef"])
         self.assertFalse(report["reflection"]["fragment"]["hasRdef"])
         self.assertEqual(len(report["vertexInputs"]), 9)
@@ -76,9 +76,12 @@ class LitEffectResourceMappingTests(unittest.TestCase):
         fragment = {row["register"]: row for row in report["constantBuffers"]["fragment"]}
         self.assertEqual({register: row["sizeBytes"] for register, row in vertex.items()}, {0: 1312, 1: 320, 2: 176})
         self.assertEqual({register: row["sizeBytes"] for register, row in fragment.items()}, {0: 720, 1: 1696, 2: 80, 3: 496, 4: 16})
+        self.assertEqual(vertex[2]["logicalName"], "UnityPerDraw")
+        self.assertEqual(fragment[3]["logicalName"], "UnityPerMaterial")
+        self.assertEqual(fragment[4]["logicalName"], "_TerrainSubsurfaceConstants")
         fields = {row["name"]: row for row in report["constantBuffers"]["serializedFields"]}
         self.assertEqual((fields["_NonJitteredViewNoTransProjMatrix"]["register"], fields["_NonJitteredViewNoTransProjMatrix"]["offsetBytes"], fields["_NonJitteredViewNoTransProjMatrix"]["sizeBytes"]), (0, 512, 64))
-        self.assertEqual((fields["_GlobalMipBias"]["register"], fields["_GlobalMipBias"]["registerOffsetBytes"]), (2, 96))
+        self.assertEqual((fields["_GlobalMipBias"]["register"], fields["_GlobalMipBias"]["registerOffsetBytes"]), (None, None))
         self.assertIsNone(fields["_TerrainSubsurfaceProfileInt"]["register"])
 
     def test_malformed_dxbc_chunk_fails_closed(self) -> None:

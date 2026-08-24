@@ -52,6 +52,22 @@ archetypes remain labeled source kits rather than finished characters.
   They remain active through 1.5 seconds and deactivate on the source boundary.
   The fifth constant-zero binding has no resolved hierarchy target and remains
   fail-closed rather than being fabricated.
+- The focused Endminf comparison now anchors its first saved Unity frame
+  directly to retail frame 1110, the first visible body frame. The former map
+  added the already-advanced 0.0509083-second body phase a second time and put
+  every retail sample three frames late. The latest D3D12 capture maps frames
+  1110 through 1512 with less than 0.000046 source-frame residue; the corrected
+  central comparison improves 24 of 28 pairs over the old three-frame-late map.
+- Effect-02's animated radial/chromatic values, exact 1.0 radial power, native
+  mode/effective-power packing, world-to-viewport center, source-only warped
+  taps, and separate bloom combine are now source-backed. The lab still uses a
+  compatibility presentation shader: the complete shipped Uber implementation
+  and exact D3D12 presentation binding remain open.
+- The selected rock-family `HGRP/LitEffect` subprograms now have cross-platform
+  physical constant-buffer identities: transform variables, global variables,
+  `UnityPerDraw`, `UnityPerMaterial`, and terrain subsurface constants. The
+  stripped per-material member offsets and exact five-MRT deferred consumer are
+  still unresolved, so the ten rock renderers remain blocked by default.
 - The `M_fx_endminm_gfx_09` burst stripes now bind the exact exported RGBA
   `T_fx_star_07_D` payload. The previous missing `_MainTex` silently sampled
   white and produced a large opaque rectangle; the repaired source-alpha
@@ -162,8 +178,10 @@ another per-material shader approximation. The missing boundary includes:
 - the exact character stencil writer and receiver integration;
 - render-graph/subpass state and frame-produced lighting resources;
 - confirmation of the final source camera and presentation bindings.
-- ten still-blocked rock-family renderer identities and the complete
-  Effect-02 post-process/pass-order path.
+- ten still-blocked rock-family renderer identities, including the named
+  `UnityPerMaterial` layout and five-MRT deferred consumer;
+- the complete Effect-02 Uber/presentation implementation beyond the recovered
+  state, packing, and source-before-bloom combination order.
 
 `SphereOutside` is asset-complete. Its remaining gates are runtime frame state
 and resources. The exact deferred program is no longer a blocker.

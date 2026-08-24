@@ -72,7 +72,16 @@ the completed result can later rebuild all characters.
   overview rocks/crystals follow the exact 1.5-second active-state gate. The
   runtime consumes rotation-only root motion like the pinned native callback.
   Its burst stripes bind the exact source-alpha texture rather than the former
-  missing-texture white quad. The broader all-character runtime remains partial.
+  missing-texture white quad. The focused comparison anchors its first Unity
+  image to retail frame 1110 instead of the former three-frame-late pairing.
+  The broader all-character runtime remains partial.
+- Effect-02's curve state, radial power, native parameter packing, viewport
+  center, and source-before-bloom order are recovered. Its complete shipped
+  Uber/presentation implementation remains an explicit compatibility gap.
+- The rock-family `HGRP/LitEffect` physical constant buffers are identified,
+  but stripped per-material offsets and the exact five-MRT deferred consumer
+  remain unresolved; the ten affected renderers therefore stay blocked by
+  default.
 - Selected CharacterNPR, eye, hair, shadow, GBuffer, lighting, particle, and
   post-process contracts are source-backed and fail closed where inputs are
   unknown.

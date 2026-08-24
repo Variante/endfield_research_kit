@@ -304,6 +304,9 @@ namespace EndfieldGraphShaderLab
             if (instance == null)
                 return;
 
+            EndfieldEndminfVisualCompatibilityClock.ClearOverview02(
+                instance.transform);
+
             foreach (ParticleSystem system in
                 instance.GetComponentsInChildren<ParticleSystem>(true))
             {

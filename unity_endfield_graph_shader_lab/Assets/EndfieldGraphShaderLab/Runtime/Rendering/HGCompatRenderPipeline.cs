@@ -2731,14 +2731,25 @@ namespace EndfieldGraphShaderLab
                 ? liveAutoExposureState.CurrentExposure
                 : Mathf.Pow(2.0f, exposureEv);
             postProcessMaterial.SetFloat(PostExposureId, exposure);
-            Vector2 endminfCompatibility = EvaluateEndminfVisualCompatibility();
+            bool hasEndminfPost =
+                EndfieldEndminfVisualCompatibilityClock.TryEvaluateRecoveredPost(
+                    camera,
+                    out EndfieldEndminfVisualCompatibilityClock.RecoveredPostState
+                        endminfPost);
             postProcessMaterial.SetVector(
                 EndminfVisualCompatibilityParamsId,
-                new Vector4(endminfCompatibility.x, endminfCompatibility.y,
-                    EndfieldEndminfVisualCompatibilityClock.Requested ? 1.0f : 0.0f, 0.0f));
+                hasEndminfPost
+                    ? new Vector4(
+                        endminfPost.radialIntensity,
+                        endminfPost.chromaticIntensity,
+                        endminfPost.mode,
+                        endminfPost.effectivePower)
+                    : Vector4.zero);
             postProcessMaterial.SetVector(
                 EndminfVisualCompatibilityCenterId,
-                EndfieldEndminfVisualCompatibilityClock.GetRecoveredPostCenterViewport(camera));
+                hasEndminfPost
+                    ? endminfPost.centerViewport
+                    : new Vector2(0.5f, 0.5f));
             postProcessMaterial.SetFloat(
                 TonemapModeId,
                 asset.applyAcesModifiedApproximation ? 1.0f : 0.0f);
@@ -2906,56 +2917,6 @@ namespace EndfieldGraphShaderLab
             }
             context.ExecuteCommandBuffer(commandBuffer);
             commandBuffer.Release();
-        }
-
-        private static Vector2 EvaluateEndminfVisualCompatibility()
-        {
-            if (!EndfieldEndminfVisualCompatibilityClock.TryGetElapsed(out float t))
-                return Vector2.zero;
-
-            // Values and times are the recovered A_fx_endminf_ui_overview_02
-            // bindings. The paired Uber sampling kernel and parameter packing are
-            // source-closed by fragment 524235fff5fcaad4 plus the validated native
-            // PrepareRadialBlurAndChromaticAberrationParameters body.
-            float chromatic = EvaluateEndminfPostCurve(t, 0.127f, 0.101f);
-            float radial = EvaluateEndminfPostCurve(t, 0.152f, 0.109f);
-            // The source values above remain authoritative. The lab presents
-            // the recovered Uber kernel through a different final-target/
-            // viewport stack than retail HGRP; a peak-frame calibration
-            // against the pinned 3840x2160 recording closes that display-domain
-            // scale without mutating either recovered animation curve.
-            // Direct 1920x1080 matched-frame measurement against the pinned
-            // retail capture showed that the earlier 4K-domain calibration
-            // over-expanded the radial footprint and produced roughly 3-4x
-            // the retail RGB separation. Keep the authored source curves
-            // unchanged and correct only the lab presentation-domain scale.
-            const float LabUberRadialDisplayDomainScale = 0.85f;
-            const float LabUberChromaticDisplayDomainScale = 0.18f;
-            return new Vector2(
-                radial * LabUberRadialDisplayDomainScale,
-                chromatic * LabUberChromaticDisplayDomainScale);
-        }
-
-        private static float EvaluateEndminfPostCurve(
-            float time,
-            float initialPeak,
-            float latePeak)
-        {
-            if (time <= 0.16666667f)
-                return Mathf.SmoothStep(initialPeak, 0.0f, time / 0.16666667f);
-            if (time < 4.4f)
-                return 0.0f;
-            if (time <= 4.4333334f)
-                return Mathf.SmoothStep(
-                    0.0f,
-                    latePeak,
-                    (time - 4.4f) / 0.0333333f);
-            if (time <= 4.6f)
-                return Mathf.SmoothStep(
-                    latePeak,
-                    0.0f,
-                    (time - 4.4333334f) / 0.1666665f);
-            return 0.0f;
         }
 
         private void DrawRecoveredPostUberWorldUi(
