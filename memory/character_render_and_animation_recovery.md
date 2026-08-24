@@ -253,13 +253,23 @@ archetypes remain labeled source kits rather than finished characters.
   CharInfo selected-frame value remains unobserved, so canonical M27 still must
   not assume zero.
 - The two remaining M28 `VFXRefract` rows stay fail-closed even though the
-  Distortion SceneColor/SceneMV/depth compositor topology is available. Their
-  verifier currently pins only vertex programs, the selected-build material
-  JSON and exact four-root renderer tuples are absent, and the old visual probe
-  covers only one terminal overview_02 frame. Admission requires a complete
-  VS+PS `_USE_DISSOLVE` pair, exact unrounded tuples for both overview_02 and
-  overview_03, and two fixed-control 60 Hz windows; M21, exact `suikuai (1)`,
-  and M27 must remain unchanged throughout.
+  Distortion SceneColor/SceneMV/depth compositor topology is available. Exact
+  current-build recovery now closes the material and both unrounded
+  GameObject/Transform/ParticleSystem/Renderer tuples, including source-enabled
+  state, Sphere001, GPU instancing, and streams `[0,1,3,4,5,34]`. Both complete
+  D3D11 program pairs (0090/0091 non-instanced and 0624/0625 SRP-instanced) are
+  hash-, signature-, resource-, instruction-, and two-MRT-equation-pinned.
+  Four compatibility-fragment differences collapse for this exact material's
+  fixed values, but that does not select the retail pair or prove the engine
+  BLEND/TEXCOORD4/instance publisher, LOD/time/frame resources, descriptors,
+  attachments, or PSO. Current-build `UnityPlayer.dll` now proves
+  `SRP_INSTANCING_ON` is HyperGryph built-in keyword ordinal 30, and the exact
+  instanced pair directly indexes 256-byte records for instance IDs 0-255 with
+  no shader-side base. Selection remains open because GPU-instancing state and
+  the one-particle batch do not prove that ordinal 30 was enabled. Admission
+  therefore still requires the native draw discriminator and publisher gates
+  plus both fixed-control 60 Hz windows; M21, exact `suikuai (1)`, and M27 must
+  remain unchanged throughout.
 - The `M_fx_endminm_gfx_09` burst stripes now bind the exact exported RGBA
   `T_fx_star_07_D` payload. The previous missing `_MainTex` silently sampled
   white and produced a large opaque rectangle; the repaired source-alpha

@@ -763,10 +763,9 @@
     }
   ],
   "remainingGates": [
-    "re-extract and hash/identity-check the exact M28 AnimeStudio Material JSON",
     "capture or otherwise prove which complete pair the retail M28 draw selects",
     "recover the engine-generated TEXCOORD4/BLEND/instance publisher and every vertex constant/resource upload",
-    "make the Unity shader equations match the exact vertex and fragment programs rather than relying on M28 fixed zeros",
+    "close screen-position, LOD/time, texture/sampler, attachment, and PSO publication for the selected M28 pair",
     "validate both M28 consumers at 60 Hz only after the program and renderer tuples are admitted"
   ],
   "bindingEvidenceBoundary": {
@@ -827,13 +826,24 @@
       "actualSha256": "51ae58da347abf62408380255d2abc290145642736094dedd121dc2ac8081d80",
       "identityValidated": true
     },
+    "m28FixedValueEquivalence": {
+      "status": "closed_for_four_fragment_differences_only",
+      "checks": {
+        "rawVsSaturatedRefractSelector": true,
+        "extraDissolveCustomLaneIsZero": true,
+        "nearFadeBranchIsDisabled": true,
+        "sceneMvGateProducesZeroXy": true
+      },
+      "boundary": "These selected material constants collapse four fragment-source differences for M28 only; they do not close vertex publication, transforms, LOD/time uploads, pair selection, or the general shared shader."
+    },
     "admissionReady": false,
-    "reason": "Exact original programs are closed, but Unity vertex/publisher and source equations are not bytecode-equivalent; material-fixed zeros do not prove the general program or engine IA contract."
+    "reason": "Exact original programs, source material, and four M28-only fixed-value fragment equivalences are closed, but Unity vertex/publisher, pair selection, and the remaining frame/resource equations are not exact."
   },
   "admissionDecision": {
     "admitted": false,
     "programEvidenceComplete": true,
-    "reason": "Fail closed: actual pair selection, retail vertex publisher, current source material, and recovered-shader parity are not all closed."
+    "sourceMaterialComplete": true,
+    "reason": "Fail closed: actual pair selection, retail vertex publisher, and recovered-shader parity are not closed; the current source material is closed."
   },
   "protectedControls": {
     "overview_02/all/shitou (1)": "M21 exact small crystal; not read or modified",
