@@ -67,6 +67,18 @@ archetypes remain labeled source kits rather than finished characters.
   HGBuffer parity. Both references support the existing spawn, 1.5-second
   nanguan visibility, hand-focus, peak-burst, and state-exit cleanup cadence,
   so no crystal retiming or bloom tuning was admitted in this batch.
+- The no-frame-generation reference makes two stone systems distinguishable:
+  the ten LitEffect M01/M38 rows are the early fly-in faceted rocks, while the
+  later raised-hand glow/particles are separate BaseV2 renderers and must not
+  be calibrated as one material. A refreshed, hash-pinned LitEffect export now
+  recovers the selected HGBuffer fragment's 576-byte `UnityPerMaterial` table
+  and exact offsets for all 17 parallax fields used through the 496-byte b3
+  prefix (including `_ParallaxColor` at byte 464 and its dark color at 480).
+  This closes the selected physical b3 slice, not visual admission. Live b1
+  VFX globals, b2 per-draw history/LOD state, the selected b4 value,
+  `ParserBindChannels`, complete HGBuffer frame publication, and the visibly
+  over-bright raised-hand glow remain fail-closed; do not tune the non-exact
+  compatibility shader against the video.
 - The focused Endminf comparison now anchors its first saved Unity frame
   directly to retail frame 1110, the first visible body frame. The former map
   added the already-advanced 0.0509083-second body phase a second time and put

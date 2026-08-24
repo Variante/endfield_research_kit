@@ -9,7 +9,7 @@
     },
     "shaderLOD": 600,
     "target": "HGBuffer / d3d11 / _PARALLAX_MAP",
-    "rawProgramBytes": "not embedded; sidecars remain disposable Temp output"
+    "rawProgramBytes": "not embedded; sidecars remain disposable scratch output"
   },
   "source": {
     "path": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\0CE8FA57\\19F0903A12BA87C0D43E67E64889B525.chk",
@@ -28,11 +28,11 @@
     }
   },
   "toolchain": {
-    "animestudioSubmoduleCommit": "dae13ed6dee2b4141756dd7b25795c8b2d778d02",
+    "animestudioSubmoduleCommit": "8ca2a2671d5d775e7f5db68a9c6d874165ecb5ee",
     "cli": {
       "path": "tools/AnimeStudio/AnimeStudio.CLI/bin/Release/net9.0-windows/AnimeStudio.CLI.exe",
       "size": 168960,
-      "sha256": "e39ac4e3584a2de13ff393d091f27e6c15df93b7f6c385bbf2859f171ac3ebc8"
+      "sha256": "0af5f79d258580dd41466daefa5c0a7203f51c5ef35e982f54787f82bc1c2307"
     },
     "ruri": {
       "path": "unity_endfield_graph_shader_lab/tools/bin/Release/net10.0/Ruri.ShaderDecompiler.Endfield.exe",
@@ -92,6 +92,22 @@
         "decodedStage": "fragment"
       }
     ],
+    "metadata": [
+      {
+        "fileName": "0114_endfield_dxbc_0.dxbc.metadata.json",
+        "size": 31827,
+        "sha256": "2866f1fd1cfd939d17cbf55c3a82b659c2edfe7da802f9e3f29a04f4c6344245",
+        "decodedStage": "vertex",
+        "endfieldConstantBufferTableParsed": true
+      },
+      {
+        "fileName": "0115_endfield_dxbc_1.dxbc.metadata.json",
+        "size": 31829,
+        "sha256": "5f0ef12fa6cbe19b16d51b7ff7a613c9007779ec2e27f3187eb25c14d421760d",
+        "decodedStage": "fragment",
+        "endfieldConstantBufferTableParsed": true
+      }
+    ],
     "ruriOutputs": [
       {
         "fileName": "parallax_hgbuffer_vertex.hlsl",
@@ -108,6 +124,7 @@
   "evidenceBoundary": [
     "CAB/PathID/name and serialized Shader object identity are exact.",
     "Every exported sidecar length, SHA-256, source offset, and source size is checked.",
+    "The selected vertex/fragment metadata sidecars are hash-pinned and must report a parsed Endfield constant-buffer table.",
     "serializedStage and decodedStage remain separate; no visual behavior is inferred.",
     "This JSON contains summaries and hashes only, never raw shader program bytes."
   ]
