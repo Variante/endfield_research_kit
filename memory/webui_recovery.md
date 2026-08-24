@@ -400,8 +400,9 @@ token, and shared Wwise media lists every named character owner. A unique
 numeric-prefix recovery is labeled separately from a full-key match; generic
 templates and action/playback claims remain unresolved without their own
 evidence.
-The same visible ownership now covers uniquely owned Event-leading character
-tokens such as `lastrite_*`, `lizhiyan_*`, and `pograni_*`. Supported
+The same visible ownership now covers uniquely owned `au_actor_<token>_*`
+Events and Event-leading character tokens such as `lastrite_*`, `lizhiyan_*`,
+and `pograni_*`. Supported
 AnimationClip audio callbacks are projected independently of same-name action
 matching, so normal Event/media details retain their exact clips, callback
 owner/function, reachability, and AnimatorController names without claiming
